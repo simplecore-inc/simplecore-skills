@@ -16,23 +16,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-
-// ── Theme ──
-
-const THEMES = {
-  'tokyo-night': {
-    bg: '#1a1b26', fg: '#c0caf5', line: '#3d59a1',
-    accent: '#7aa2f7', muted: '#565f89',
-  },
-  'dracula': {
-    bg: '#282a36', fg: '#f8f8f2', line: '#6272a4',
-    accent: '#bd93f9', muted: '#6272a4',
-  },
-  'nord': {
-    bg: '#2e3440', fg: '#d8dee9', line: '#4c566a',
-    accent: '#88c0d0', muted: '#4c566a',
-  },
-};
+import { THEMES, textW, escXml, svgHeader, renderNodeBox } from './svgcommon.js';
 
 // ── Layout Constants ──
 
@@ -54,30 +38,6 @@ const DEFAULTS = {
   edgeLabelH: 20,
   edgeLabelPad: 8,
 };
-
-// ── Text Width (CJK-aware) ──
-// Hangul/Kana/CJK/fullwidth glyphs render ~1 em wide; Latin ~0.6 em. A
-// Latin-only per-char constant makes Korean/Japanese titles overflow their
-// boxes, so width estimation must count wide glyphs at wide width.
-
-// Keep in sync with svgkit._is_wide and audit.py._is_wide — the generator
-// and the linter must measure text identically.
-function isWide(ch) {
-  const o = ch.codePointAt(0);
-  return (o >= 0x1100 && o <= 0x11FF) || (o >= 0x3000 && o <= 0x303F)
-    || (o >= 0x3040 && o <= 0x30FF) || (o >= 0x3130 && o <= 0x318F)
-    || (o >= 0x31F0 && o <= 0x31FF) || (o >= 0x3200 && o <= 0x33FF)
-    || (o >= 0x3400 && o <= 0x4DBF) || (o >= 0x4E00 && o <= 0x9FFF)
-    || (o >= 0xA960 && o <= 0xA97F) || (o >= 0xAC00 && o <= 0xD7A3)
-    || (o >= 0xD7B0 && o <= 0xD7FF) || (o >= 0xF900 && o <= 0xFAFF)
-    || (o >= 0xFF00 && o <= 0xFFEF) || (o >= 0x20000 && o <= 0x3FFFD);
-}
-
-function textW(s, perLatin, perWide) {
-  let w = 0;
-  for (const ch of String(s || '')) w += isWide(ch) ? perWide : perLatin;
-  return w;
-}
 
 // ── Layout Engine ──
 
@@ -214,28 +174,7 @@ function renderSVG(spec, layout) {
   const lines = [];
 
   // Header
-  lines.push(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${canvasW} ${totalHeight}" width="${canvasW}" height="${totalHeight}"`);
-  lines.push(`     style="--bg:${theme.bg};--fg:${theme.fg};--line:${theme.line};--accent:${theme.accent};--muted:${theme.muted};background:var(--bg)">`);
-  lines.push(`<style>`);
-  lines.push(`  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap');`);
-  lines.push(`  text { font-family: 'Inter', system-ui, sans-serif; }`);
-  lines.push(`  svg {`);
-  lines.push(`    --_text:        var(--fg);`);
-  lines.push(`    --_text-sec:    var(--muted);`);
-  lines.push(`    --_line:        var(--line);`);
-  lines.push(`    --_arrow:       var(--accent);`);
-  lines.push(`    --_node-fill:   color-mix(in srgb, var(--fg) 5%, var(--bg));`);
-  lines.push(`    --_node-stroke: color-mix(in srgb, var(--fg) 20%, var(--bg));`);
-  lines.push(`    --_group-fill:  var(--bg);`);
-  lines.push(`    --_group-hdr:   color-mix(in srgb, var(--fg) 6%, var(--bg));`);
-  lines.push(`    --_inner-stroke:color-mix(in srgb, var(--fg) 12%, var(--bg));`);
-  lines.push(`  }`);
-  lines.push(`</style>`);
-  lines.push(`<defs>`);
-  lines.push(`  <marker id="ah" markerWidth="8" markerHeight="5" refX="7" refY="2.5" orient="auto">`);
-  lines.push(`    <polygon points="0 0, 8 2.5, 0 5" fill="var(--_arrow)" stroke="var(--_arrow)" stroke-width="0.75" stroke-linejoin="round"/>`);
-  lines.push(`  </marker>`);
-  lines.push(`</defs>`);
+  lines.push(...svgHeader(canvasW, totalHeight, theme));
 
   // Render layers (subgroups)
   function renderLayer(layer, depth) {
@@ -257,30 +196,8 @@ function renderSVG(spec, layout) {
   spec.layers.forEach(l => renderLayer(l, 0));
 
   // Render nodes
-  for (const [id, n] of nodes) {
-    if (n.fill) {
-      // Colored node (pipeline style)
-      lines.push(`<g class="node">`);
-      lines.push(`  <rect x="${n.x}" y="${n.y}" width="${n.w}" height="${n.h}" rx="3" fill="${n.fill}" stroke="${n.fill}" stroke-width="0.75"/>`);
-      if (n.subtitle) {
-        lines.push(`  <text x="${n.cx}" y="${n.y + 22}" text-anchor="middle" font-size="13" font-weight="500" fill="${n.color || '#1a1b26'}">${escXml(n.title)}</text>`);
-        lines.push(`  <text x="${n.cx}" y="${n.y + 40}" text-anchor="middle" font-size="11" fill="${n.color || '#1a1b26'}" opacity="0.7">${escXml(n.subtitle)}</text>`);
-      } else {
-        lines.push(`  <text x="${n.cx}" y="${n.y + 24}" text-anchor="middle" font-size="13" font-weight="500" fill="${n.color || '#1a1b26'}">${escXml(n.title)}</text>`);
-      }
-      lines.push(`</g>`);
-    } else {
-      // Standard node
-      lines.push(`<g class="node">`);
-      lines.push(`  <rect x="${n.x}" y="${n.y}" width="${n.w}" height="${n.h}" rx="3" fill="var(--_node-fill)" stroke="var(--_node-stroke)" stroke-width="0.75"/>`);
-      if (n.subtitle) {
-        lines.push(`  <text x="${n.cx}" y="${n.y + 22}" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)">${escXml(n.title)}</text>`);
-        lines.push(`  <text x="${n.cx}" y="${n.y + 40}" text-anchor="middle" font-size="11" fill="var(--_text-sec)">${escXml(n.subtitle)}</text>`);
-      } else {
-        lines.push(`  <text x="${n.cx}" y="${n.y + 24}" text-anchor="middle" font-size="13" font-weight="500" fill="var(--_text)">${escXml(n.title)}</text>`);
-      }
-      lines.push(`</g>`);
-    }
+  for (const [, n] of nodes) {
+    lines.push(...renderNodeBox(n));
   }
 
   // Render edges — group fan-outs for clean routing
@@ -384,10 +301,6 @@ function renderFanOut(lines, from, edges, nodes) {
       lines.push(`<text x="${lx + lw / 2}" y="${ly + 14}" text-anchor="middle" font-size="10" fill="var(--_text-sec)">${escXml(edge.label)}</text>`);
     }
   }
-}
-
-function escXml(s) {
-  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
 // ── Public API (for import from convert.js) ──

@@ -231,6 +231,80 @@ function parseNode(raw) {
   };
 }
 
+// ── Mermaid → Graph Spec Parser (flat nodes + edges + clusters, for dagre) ──
+// Reuses parseNode; where mermaidToLayoutSpec nests nodes into stacked layers,
+// this flattens them and tags each with its subgraph so graph.js (dagre) ranks
+// by topology. Subgraphs become single-level clusters; a node in a nested
+// subgraph is tagged with its innermost group.
+
+function mermaidToGraphSpec(mermaidCode, options = {}) {
+  const lines = mermaidCode.split('\n').map(l => l.trim()).filter(l => l && !l.startsWith('%%'));
+  if (!/^(graph|flowchart)\s/i.test(lines[0] || '')) {
+    throw new Error(
+      '--to-graph/--dagre support flowchart/graph syntax only; '
+      + 'use --svg (beautiful-mermaid) for sequence/state/class/er diagrams');
+  }
+
+  const dirMatch = (lines[0] || '').match(/^(graph|flowchart)\s+(TD|TB|LR|RL|BT)/i);
+  const direction = dirMatch ? dirMatch[2].toUpperCase().replace('TD', 'TB') : 'TB';
+  const spec = { theme: options.theme || 'tokyo-night', direction, nodes: [], groups: [], edges: [] };
+  const colors = ['#7aa2f7', '#bb9af7', '#f7768e', '#9ece6a', '#e0af68', '#73daca', '#7dcfff', '#ff007c'];
+  let colorIdx = 0;
+  const nodeMap = new Map();
+  const groupStack = [];
+
+  const addNode = (n) => {
+    if (!n || nodeMap.has(n.id)) return;
+    const node = { id: n.id, title: n.title, subtitle: n.subtitle };
+    const group = groupStack[groupStack.length - 1];
+    if (group) node.group = group;
+    nodeMap.set(n.id, node);
+    spec.nodes.push(node);
+  };
+
+  for (const line of lines) {
+    if (/^(graph|flowchart)\s/i.test(line)) continue;
+    if (line === 'end') { if (groupStack.length) groupStack.pop(); continue; }
+
+    const subMatch = line.match(/^subgraph\s+(\S+?)(?:\["(.+?)"\])?$/i);
+    if (subMatch) {
+      const id = subMatch[1];
+      spec.groups.push({ id, label: subMatch[2] || subMatch[1], color: colors[colorIdx++ % colors.length] });
+      groupStack.push(id);
+      continue;
+    }
+    if (/^direction\s/i.test(line)) continue;   // dagre uses one global rankdir
+    if (/^style\s/i.test(line) || /^classDef\s/i.test(line) || /^class\s/i.test(line)) continue;
+
+    const edgeParts = line.split(/\s*(-->|==>|-.->|---)\s*/);
+    if (edgeParts.length >= 3) {
+      for (let i = 0; i < edgeParts.length; i += 2) {
+        let part = edgeParts[i].trim();
+        const labelMatch = part.match(/^\|"?(.+?)"?\|\s*(.+)$/);
+        if (labelMatch) part = labelMatch[2];
+        addNode(parseNode(part));
+      }
+      for (let i = 0; i < edgeParts.length - 2; i += 2) {
+        const fromNode = parseNode(edgeParts[i].trim());
+        let toRaw = edgeParts[i + 2].trim();
+        let edgeLabel;
+        const lblMatch = toRaw.match(/^\|"?(.+?)"?\|\s*(.+)$/);
+        if (lblMatch) { edgeLabel = lblMatch[1]; toRaw = lblMatch[2]; }
+        const toNode = parseNode(toRaw);
+        if (fromNode && toNode) spec.edges.push({ from: fromNode.id, to: toNode.id, label: edgeLabel });
+      }
+      continue;
+    }
+
+    addNode(parseNode(line));
+  }
+
+  // Drop clusters that ended up with no members so dagre has no dangling parent.
+  const used = new Set(spec.nodes.filter(n => n.group).map(n => n.group));
+  spec.groups = spec.groups.filter(g => used.has(g.id));
+  return spec;
+}
+
 // ── CLI ──
 
 function parseArgs(args) {
@@ -240,7 +314,9 @@ function parseArgs(args) {
     useAscii: false,
     outputSvg: false,
     useLayout: false,
+    useDagre: false,
     toJson: false,
+    toGraph: false,
     theme: null,
     bg: null,
     fg: null,
@@ -255,7 +331,9 @@ function parseArgs(args) {
     else if (arg === '--ascii') options.useAscii = true;
     else if (arg === '--svg') options.outputSvg = true;
     else if (arg === '--layout') options.useLayout = true;
+    else if (arg === '--dagre') options.useDagre = true;
     else if (arg === '--to-json') options.toJson = true;
+    else if (arg === '--to-graph') options.toGraph = true;
     else if (arg === '--theme' && args[i + 1]) options.theme = args[++i];
     else if (arg === '--bg' && args[i + 1]) options.bg = args[++i];
     else if (arg === '--fg' && args[i + 1]) options.fg = args[++i];
@@ -281,11 +359,16 @@ Output Modes:
   (default)     Unicode ASCII text
   --ascii       Pure ASCII (+-|) text
   --svg         SVG via beautiful-mermaid (auto layout)
-  --layout      SVG via layout engine (precise coordinates)
-  --to-json     Convert Mermaid to layout JSON (for editing)
+  --layout      SVG via layered layout engine (stacked layers)
+  --dagre       SVG via dagre graph engine (topology, no extra install)
+  --to-json     Convert Mermaid to layered layout JSON (for editing)
+  --to-graph    Convert Mermaid to dagre graph JSON (for editing)
 
 Layout Options (--layout / --to-json):
   --width <n>   Canvas width (default: 680)
+  --theme <name> Theme: tokyo-night, dracula, nord
+
+Graph Options (--dagre / --to-graph):
   --theme <name> Theme: tokyo-night, dracula, nord
 
 SVG Options (--svg):
@@ -300,13 +383,21 @@ Examples:
   # SVG with auto layout (beautiful-mermaid)
   node convert.js diagram.mmd --svg --theme tokyo-night
 
-  # SVG with precise layout engine
+  # SVG with layered layout engine
   node convert.js diagram.mmd --layout --theme tokyo-night
+
+  # SVG with dagre graph engine (topology layout, no extra install)
+  node convert.js diagram.mmd --dagre --theme tokyo-night
 
   # Export to JSON, edit, then render
   node convert.js diagram.mmd --to-json > diagram.json
   # edit diagram.json...
   node layout.js diagram.json -o diagram.svg
+
+  # Export a graph spec, edit, then render via dagre
+  node convert.js diagram.mmd --to-graph > graph.json
+  # edit graph.json...
+  node graph.js graph.json -o diagram.svg
 
   # Inline with layout engine
   node convert.js --inline "graph TD; A-->B-->C" --layout
@@ -366,6 +457,18 @@ async function main() {
       const layout = computeLayout(spec);
       const svg = renderSVG(spec, layout);
       console.log(svg);
+
+    } else if (options.toGraph) {
+      // Mermaid → graph spec (flat nodes+edges+clusters, for dagre)
+      const spec = mermaidToGraphSpec(mermaidCode, { theme: options.theme || 'tokyo-night' });
+      console.log(JSON.stringify(spec, null, 2));
+
+    } else if (options.useDagre) {
+      // Mermaid → graph spec → dagre engine → SVG
+      const spec = mermaidToGraphSpec(mermaidCode, { theme: options.theme || 'tokyo-night' });
+      const { computeGraphLayout, renderGraphSVG } = await import(path.join(__dirname, 'graph.js'));
+      const layout = computeGraphLayout(spec);
+      console.log(renderGraphSVG(spec, layout));
 
     } else if (options.outputSvg) {
       // SVG via beautiful-mermaid

@@ -14,13 +14,14 @@ Produce a diagram as SVG (or ASCII). Pick the technique by what you are drawing,
 | What you're drawing | Technique | Open |
 |---|---|---|
 | Architecture, protocol stack, pipeline, network/infra — precise & spatial | **Hand-crafted SVG** (default) | `scripts/svgkit.py` (import) or `references/svg-templates.md` (XML) |
-| Layered box diagram, want auto-placement with less hand-coding | **JSON-spec auto-layout** | `scripts/layout.js` |
+| Layered box diagram (explicit stacked bands), want auto-placement | **JSON-spec layered layout** | `scripts/layout.js` |
+| Branching graph / arbitrary topology, want auto-placement — themed, CJK-safe, zero install | **JSON-spec graph layout (dagre)** | `scripts/graph.js` |
 | Flowchart / sequence / state / class / ER from text | **Mermaid auto-layout** | `scripts/convert.js` |
 | Terminal / markdown / quick text output | **ASCII** (Mermaid-fed only) | `scripts/convert.js` |
 
 Default for spatially demanding pictures is hand-crafted SVG. **Mermaid is one technique, not a prerequisite** — most architecture diagrams never touch it.
 
-Execution model: `scripts/audit.py`, `scripts/convert.js`, `scripts/layout.js` are CLIs you **run**; `scripts/svgkit.py` is a library you **import**.
+Execution model: `scripts/audit.py`, `scripts/convert.js`, `scripts/layout.js`, `scripts/graph.js` are CLIs you **run**; `scripts/svgkit.py` is a library you **import**.
 
 ## Hand-crafted SVG (default for precise/architecture)
 
@@ -42,7 +43,7 @@ c.save("pipeline.svg")
 
 **Theme** with `Canvas(w, h, theme=…)`: `tokyo-night` (default), `nord`, `catppuccin`, `gruvbox`, `one-dark`. Reference accents as `c.blue c.cyan c.teal c.green c.purple c.red c.orange c.yellow` and chrome as `c.t["muted"|"line"|"bg"|…]` — passing these (not literal hex) lets a diagram re-theme by changing one arg. Chrome (bg/box/line/muted/fg) resolves from the theme automatically. (Module constants `BLUE`, `MUTED`, … remain for Tokyo-Night-only code.)
 
-Helpers: `rrect · text · line · path · ortho · elbow · bez · dot · chip · card · spec_card · node · edge_label · group_frame · title · legend · row_positions · tw · edge_pt`.
+Helpers: `rrect · text · line · path · ortho · elbow · bez · dot · chip · card · spec_card · node · edge_label · group_frame · title · legend · matrix · row_positions · tw · edge_pt`.
 
 Composite patterns (reusable across diagrams):
 - `title(text, sub)` — diagram heading (bold title + muted subtitle).
@@ -53,30 +54,45 @@ Composite patterns (reusable across diagrams):
 - `spec_card(x,y,w,h, accent, title, attrs, footer=)` — attribute/spec card: title + divider + `● key (emphasized) + detail (muted)` rows; `attrs` is `[(key, detail), …]`, `footer` an accent chip. Prefer over `card(lines=…)` for spec lists.
 - `group_frame(x,y,w,h, label, accent, sub=)` — dashed boundary panel with a legend chip (e.g. Edge/Center zones). Draws on the **underlay layer**, so it stays behind nodes regardless of call order (`underlay=False` to force on top).
 - `legend(x,y, [(color, dash, label), …])` — line-style key (dash=None for solid).
+- `matrix(x,y, rows, cols, marks, …)` — dependency/coverage/RACI grid: `rows` are `name` or `(id, name)`, `cols` are `(label, color)` header chips, `marks` are `(r, c[, color])` filled cells. An empty column reads as "no dependency". Returns `(w, h)` to size the canvas. See domain-templates.md §9.
 
 Sub-route: programmatic / most diagrams → import `svgkit.py`; quick copy-paste one-off → `references/svg-templates.md` XML. **Pick ONE convention per file** — do not mix svgkit markers (`arr-<name>`) and template markers (`ah`) in the same SVG; lint checks markers per file and will not catch a mixed file.
 
 Canvas sizes and domain wireframes: `references/domain-templates.md`.
 
-## JSON-spec auto-layout (Mermaid NOT required)
+## JSON-spec layered layout (Mermaid NOT required)
 
-Auto-places layered architecture / sublayers / edges from a hand-written JSON spec — use when you want auto-placement and less hand-coding than svgkit.
+Auto-places layered architecture / sublayers / edges from a hand-written JSON spec — use when the diagram is a stack of explicit bands and you want less hand-coding than svgkit.
 
 ```bash
 node <skill>/scripts/layout.js spec.json -o out.svg     # then audit out.svg
 ```
 
-Spec shape: `{ theme, canvas:{width,padding}, layers:[{label,color,nodes:[{id,title,subtitle}],sublayers:[…],direction}], edges:[{from,to,label}] }`. `theme` here accepts `tokyo-night · dracula · nord` only (unknown themes error out); the canvas auto-widens when a node label cannot fit at the requested width.
+Spec shape: `{ theme, canvas:{width,padding}, layers:[{label,color,nodes:[{id,title,subtitle}],sublayers:[…],direction}], edges:[{from,to,label}] }`. `theme` here accepts `tokyo-night · dracula · nord` only (unknown themes error out); the canvas auto-widens when a node label cannot fit at the requested width. This engine stacks the layers you declare; it does **not** re-rank by edges — for a branching graph, use the dagre engine below.
+
+## JSON-spec graph layout (dagre backend, zero install)
+
+Ranks an arbitrary directed graph by its edges (branches, joins, back-references) instead of stacking declared layers — use when topology, not banding, drives the picture. Positions come from a vendored dagre bundle (`scripts/vendor/`, MIT, no npm install); node sizes are measured CJK-aware and the result renders through the same themes and passes the same audit as the other engines.
+
+```bash
+node <skill>/scripts/graph.js spec.json -o out.svg      # then audit out.svg
+```
+
+Spec shape: `{ theme, direction, canvas:{padding}, nodesep, ranksep, nodes:[{id,title,subtitle?,color?,fill?,group?}], groups:[{id,label,color?}], edges:[{from,to,label?}] }`. `theme` is `tokyo-night · dracula · nord`; `direction` is `TB · BT · LR · RL` (`TD` == `TB`, unknown values error out). `groups` are single-level clusters (a node joins one via `group`); the cluster label renders as a left tab so edges dropping into member nodes never strike through it. The final segment of every edge is snapped perpendicular to the target so arrowheads land square on the border.
+
+Compared with `layout.js`: same spec vocabulary (theme/nodes/edges/groups) but edge-driven ranking and obstacle-aware routing, so branching diagrams avoid the arrow-through-node and single-column-flattening that the layered engine hits on non-layered graphs.
 
 ## Mermaid auto-layout (structured diagrams from text)
 
 ```bash
 node <skill>/scripts/convert.js diagram.mmd --svg --theme tokyo-night  # faithful layout (beautiful-mermaid)
+node <skill>/scripts/convert.js diagram.mmd --dagre --theme tokyo-night # topology layout, zero install (dagre)
+node <skill>/scripts/convert.js diagram.mmd --to-graph > graph.json    # export an editable dagre graph spec
 node <skill>/scripts/convert.js diagram.mmd --to-json > spec.json      # export an editable layered spec
 node <skill>/scripts/convert.js diagram.mmd --layout                   # render that spec via layout.js
 ```
 
-Prefer **`--svg`** for any branching graph — it lays out topology faithfully. `--to-json`/`--layout` route through `layout.js`, which stacks nodes into layered boxes: great for layered/hierarchical structure, but it flattens arbitrary graphs into a single column and can place edge labels on borders, so always render-and-check `--layout` output.
+For a branching graph, prefer **`--dagre`** (edge-ranked topology through our themes/CJK sizing/audit, no npm install) or **`--svg`** (beautiful-mermaid; needs the global install and sizes its own boxes, so lint for CJK clipping). `--to-json`/`--layout` route through `layout.js`, which stacks nodes into layered boxes: great for explicitly layered structure, but it flattens arbitrary graphs into a single column and can place edge labels on borders, so always render-and-check `--layout` output. `--to-graph` emits the flat node+edge+cluster spec that `graph.js` consumes.
 
 Types: flowchart (`graph TD|LR|BT|RL`), `sequenceDiagram`, `stateDiagram-v2`, `classDiagram`, `erDiagram` — for `--svg`/ASCII. **`--to-json`/`--layout` parse flowchart/graph syntax only** (other types error out; render them with `--svg`).
 Syntax: shapes `[rect] (rounded) {diamond} [[sub]] [(db)] ((circle))`; edges `-->` `---` `-.->` `==>` `-->|label|`.
