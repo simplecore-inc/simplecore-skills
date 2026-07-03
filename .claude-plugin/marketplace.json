@@ -6,7 +6,7 @@
     "url": "https://github.com/simplecore-inc"
   },
   "metadata": {
-    "description": "SimpleCore's curated Claude Code skills: SVG diagrams, Korean documentation standards, and Apache Ignite 3 reference",
+    "description": "SimpleCore's curated Claude Code skills",
     "version": "1.0.0"
   },
   "plugins": [
@@ -22,7 +22,7 @@
       "name": "korean-docs",
       "source": "./",
       "description": "Korean output standards for all deliverables — writing, translation, proofreading, and glossary management with automated audit tooling",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "skills": ["./skills/korean-docs"],
       "keywords": ["korean", "documentation", "translation", "glossary", "style"]
     },

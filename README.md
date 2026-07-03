@@ -47,6 +47,12 @@ claude plugin update ignite3
 
 A restart is required for updates to take effect.
 
+## Global Instructions Example
+
+[`examples/CLAUDE.md`](examples/CLAUDE.md) is a ready-to-use global instruction file that pairs with these skills. Copy it to `~/.claude/CLAUDE.md` to apply to every project, or merge individual sections into a project-level `CLAUDE.md`.
+
+Every section is written to be environment-agnostic — code comment language, import discipline, no-stub/no-test-bypass rules, error handling, git conventions, and emoji-free output. The final "Korean Output Environment" section is optional: keep it together with the `korean-docs` plugin for a Korean-first setup, or delete it otherwise.
+
 ## Repository Layout
 
 ```
@@ -57,6 +63,8 @@ simplecore-skills/
 │   ├── svg-diagrams/      # SKILL.md + references/ + scripts/
 │   ├── korean-docs/       # SKILL.md + references/ + scripts/ + templates/
 │   └── ignite3/           # SKILL.md + references/
+├── examples/
+│   └── CLAUDE.md          # Global instruction file example
 ├── LICENSE
 └── README.md
 ```
