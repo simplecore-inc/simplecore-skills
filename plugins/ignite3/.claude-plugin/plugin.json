@@ -1,9 +1,9 @@
 {
   "name": "ignite3",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Apache Ignite 3 reference — SQL, client APIs (Java/.NET/C++/JDBC), configuration, operations, and architecture documentation",
   "author": {
-    "name": "SimpleCore Inc.",
+    "name": "SimpleCORE Inc.",
     "email": "dev@simplecore.kr",
     "url": "https://github.com/simplecore-inc"
   },

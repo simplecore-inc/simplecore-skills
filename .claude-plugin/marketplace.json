@@ -1,12 +1,12 @@
 {
   "name": "simplecore-skills",
   "owner": {
-    "name": "SimpleCore Inc.",
+    "name": "SimpleCORE Inc.",
     "email": "dev@simplecore.kr",
     "url": "https://github.com/simplecore-inc"
   },
   "metadata": {
-    "description": "SimpleCore's curated Claude Code skills",
+    "description": "SimpleCORE's curated Claude Code skills",
     "version": "1.1.0"
   },
   "plugins": [

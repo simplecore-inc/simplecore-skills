@@ -1,6 +1,6 @@
-# SimpleCore Skills
+# SimpleCORE Skills
 
-A collection of [Claude Code](https://claude.com/claude-code) skills maintained by SimpleCore Inc., distributed as a plugin marketplace. Each skill is packaged as an independent plugin so you can install only what you need.
+A collection of [Claude Code](https://claude.com/claude-code) skills maintained by SimpleCORE Inc., distributed as a plugin marketplace. Each skill is packaged as an independent plugin so you can install only what you need.
 
 ## Available Plugins
 

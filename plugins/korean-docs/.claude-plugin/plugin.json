@@ -1,9 +1,9 @@
 {
   "name": "korean-docs",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Korean output standards for all deliverables — writing, translation, proofreading, and glossary management with automated audit tooling",
   "author": {
-    "name": "SimpleCore Inc.",
+    "name": "SimpleCORE Inc.",
     "email": "dev@simplecore.kr",
     "url": "https://github.com/simplecore-inc"
   },

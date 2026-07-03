@@ -1,9 +1,9 @@
 {
   "name": "svg-diagrams",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Create diagrams as SVG or ASCII — flowcharts, sequence/state/class/ER, system architecture, pipelines, network layouts — with auto-layout and render audit tooling",
   "author": {
-    "name": "SimpleCore Inc.",
+    "name": "SimpleCORE Inc.",
     "email": "dev@simplecore.kr",
     "url": "https://github.com/simplecore-inc"
   },
