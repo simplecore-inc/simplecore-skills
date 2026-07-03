@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 /**
- * PostToolUse hook: audit a Markdown file touched by Write/Edit against the
- * Korean glossary rules bundled with the korean-docs skill.
+ * PostToolUse hook: audit a Markdown or SVG file touched by Write/Edit against
+ * the Korean glossary rules bundled with the korean-docs skill. SVG files are
+ * checked on their <text>/<tspan> content so diagram labels stay consistent
+ * with the documents they illustrate.
  *
  * Scope guard: the audit runs only when the edited file belongs to a project
  * that has a project glossary (<dir>/.claude/GLOSSARY.md or <dir>/GLOSSARY.md,
@@ -20,7 +22,7 @@ import {fileURLToPath} from 'node:url';
 const AUDIT_SCRIPT = fileURLToPath(
   new URL('../skills/korean-docs/scripts/check-glossary.mjs', import.meta.url),
 );
-const MARKDOWN_EXTENSIONS = new Set(['.md', '.mdx', '.markdown']);
+const AUDIT_EXTENSIONS = new Set(['.md', '.mdx', '.markdown', '.svg']);
 
 /** Mirrors the glossary discovery in check-glossary.mjs: walk up from
  * startDir, stop at the git boundary or the home directory. */
@@ -48,7 +50,7 @@ function main() {
 
   const filePath = payload?.tool_input?.file_path;
   if (typeof filePath !== 'string' || filePath.length === 0) return 0;
-  if (!MARKDOWN_EXTENSIONS.has(extname(filePath).toLowerCase())) return 0;
+  if (!AUDIT_EXTENSIONS.has(extname(filePath).toLowerCase())) return 0;
 
   const abs = resolve(payload.cwd || process.cwd(), filePath);
   if (!existsSync(abs)) return 0;

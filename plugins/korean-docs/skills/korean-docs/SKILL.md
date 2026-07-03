@@ -1,6 +1,6 @@
 ---
 name: korean-docs
-description: Use for virtually EVERY task — all user-facing output in this environment is Korean, and this skill governs ALL Korean output. Assistant replies and explanations, documentation, translations, proofreading, README/design docs/release notes, commit-adjacent prose, and Korean glossary (GLOSSARY.md) management. Invoke it even for ordinary answers with no document work, and always before writing, translating, reviewing, or auditing any Korean document. Also use when the user mentions 번역투, awkward Korean, terminology consistency, or asks to re-check documents against glossary rules. 한국어로 답변·설명·문서 작성·번역·교정·검수·용어사전 관리를 하는 모든 상황에서 사용한다 — 일반 답변도 예외가 아니다.
+description: Use for virtually EVERY task — all user-facing output in this environment is Korean, and this skill governs ALL Korean output. Assistant replies and explanations, documentation, translations, proofreading, README/design docs/release notes, commit-adjacent prose, and Korean glossary (GLOSSARY.md) management. Invoke it even for ordinary answers with no document work, and always before writing, translating, reviewing, or auditing any Korean document. Also use when the user mentions 번역투, awkward Korean, terminology consistency, or asks to re-check documents against glossary rules. Text labels inside SVG diagram files (embedded or standalone) are audited and corrected to the same standard as the documents they illustrate. 한국어로 답변·설명·문서 작성·번역·교정·검수·용어사전 관리를 하는 모든 상황에서 사용한다 — 일반 답변도 예외가 아니다.
 ---
 
 # 한국어 산출물 기준 (답변·문서·번역·교정)
@@ -22,7 +22,7 @@ description: Use for virtually EVERY task — all user-facing output in this env
 | 파일 | 용도 |
 | ---- | ---- |
 | `GLOSSARY.base.md` | 기본 용어사전. 프로젝트와 무관한 표기·번역투 규칙. 감사 시 항상 함께 적용 |
-| `scripts/check-glossary.mjs` | 감사 스크립트. 기본 + 프로젝트 용어사전을 병합해 검사 |
+| `scripts/check-glossary.mjs` | 감사 스크립트. 기본 + 프로젝트 용어사전을 병합해 `.md`·`.mdx`·`.svg`(`<text>`/`<tspan>` 라벨) 검사 |
 | `templates/GLOSSARY.md` | 프로젝트 용어사전 템플릿 (`--init`으로 생성) |
 | `references/response-style.md` | 상시 적용 기준 — 문장 원칙·금지 패턴·어휘 대체 목록·표기법·말투·금융/퀀트 도메인 용어. 어휘·표기의 원본 (전역 CLAUDE.md가 필수 참조) |
 | `references/korean-style.md` | 심각도(S1/S2)별 번역투·AI 문체 패턴 카탈로그 + 번역 문체·원문 충실도 기준 (교정·검수용) |
@@ -95,12 +95,20 @@ node ~/.claude/skills/korean-docs/scripts/check-glossary.mjs --all         # 프
 - 코드 블록·인라인 코드·링크 경로·URL은 검사에서 제외되므로 코드 예제는 오탐을 만들지 않는다.
 - 표 형식(열 구성, `/pattern/` 정규식, `,` 구분, 셀 내 `|` 금지, 정규식 내 `,` 금지)을 지켜야 파싱된다.
 
+## SVG 다이어그램 텍스트
+
+SVG 파일의 `<text>`·`<tspan>` 내용은 렌더된 한국어 산출물이다 — 문서와 똑같은 표기·용어·번역투 기준을 적용한다. 문서를 작성·번역·교정·감사할 때 범위 안의 SVG를 함께 손본다. 문서에 삽입된 SVG뿐 아니라 **저장소에 독립으로 있는 외부 `.svg` 파일도 대상**이다. 다이어그램 라벨이 고친 본문과 어긋나면 그 자체가 불일치다.
+
+- **감사 대상.** 감사 스크립트가 `.svg`를 검사한다 — `<text>`/`<tspan>` 본문만 보고 태그·속성·스타일·경로 데이터는 무시하므로 좌표·색·`id`에서 오탐하지 않는다. 프로젝트 전체 스캔·디렉터리 지정에 SVG가 포함되고, 파일을 직접 지정해도 검사한다. 감사 훅도 SVG 쓰기에 발동한다. 특정 SVG를 빼려면 `audit.exclude`에 넣는다.
+- **mermaid 코드 블록과 구분한다.** 문서 안 다이어그램 **코드 블록**(mermaid 등)은 노드 ID·내장 문법과 섞여 있어 통째로 원문 유지한다(보존 대상). 반면 렌더돼 저장된 `.svg` 파일의 보이는 라벨은 완성된 산출물이라 기준을 적용한다.
+- **텍스트를 고치면 레이아웃을 다시 검증한다.** 라벨의 글자가 바뀌면 글자폭이 달라져 박스를 넘치거나 잘릴 수 있다. SVG 텍스트를 수정한 뒤에는 `svg-diagrams` 스킬로 다시 렌더·감사한다(`audit.py lint`·render). 텍스트만 치환하고 레이아웃을 확인하지 않으면 잘린 그림이 남는다.
+
 ## 기본 규칙 커스터마이징
 
 기본 용어사전이 프로젝트·도메인과 맞지 않을 때, 기본 파일을 고치지 말고 프로젝트 용어사전에서 조정한다:
 
 - **대체**: 같은 `영어` 키(또는 같은 `금지` 패턴)의 행을 프로젝트 용어사전에 정의하면 기본 행 **전체**가 교체된다. 기본 행의 금지 표기 검사를 유지하려면 프로젝트 행에 함께 옮겨 적는다. 새 오표기만 보태려면 행 재정의 대신 `## 금지 표현`에 별도 행으로 추가하는 편이 안전하다.
-- **비활성화**: `## 기본 규칙 예외` 표에 영어 키(행 전체) 또는 패턴 텍스트(개별 규칙)를 적는다. 예: 금융 문서의 "레버리지", 메시징 문서의 "소비".
+- **비활성화**: `## 기본 규칙 예외` 표에 영어 키(행 전체) 또는 패턴 텍스트(개별 규칙)를 적는다. 예: 금융 문서의 `레버리지`, 메시징 문서의 `소비`.
 
 `GLOSSARY.base.md` 자체는 수정하지 않는다 — 모든 프로젝트에 공유되는 파일이라 한 프로젝트의 사정을 넣으면 다른 프로젝트에서 틀린 결과를 낸다.
 
@@ -111,7 +119,7 @@ node ~/.claude/skills/korean-docs/scripts/check-glossary.mjs --all         # 프
 - 링크 경로·앵커·이미지 경로. 링크 **텍스트**는 번역한다.
 - 마크다운 구조(제목 수준, MDX import/export 문, 컴포넌트 이름·속성, HTML 태그).
 - 제목 자동 생성 앵커를 쓰는 사이트(Docusaurus 등)에서는 번역한 제목(h2~h6)에 원문 앵커를 명시한다: `## 버전 저장 {#version-storage}`. 앵커가 바뀌면 들어오는 링크가 깨진다.
-- 다이어그램 코드 블록(mermaid 등)은 라벨까지 통째로 원문 유지 — 노드 ID·내장 코드와 섞여 있어 부분 번역 시 렌더링이 깨진다.
+- 다이어그램 **코드 블록**(mermaid 등)은 라벨까지 통째로 원문 유지 — 노드 ID·내장 코드와 섞여 있어 부분 번역 시 렌더링이 깨진다. 단, 렌더돼 저장된 외부 `.svg` 파일의 `<text>` 라벨은 보존 대상이 아니라 감사·수정 대상이다 (아래 "SVG 다이어그램 텍스트").
 - 제품명·언어명·약어(프로젝트 용어사전의 "원문 유지 용어" 표).
 
 ## 문체 기준

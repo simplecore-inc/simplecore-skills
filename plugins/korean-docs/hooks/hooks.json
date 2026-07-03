@@ -1,5 +1,5 @@
 {
-  "description": "Korean glossary audit on Markdown writes. Active only in projects that have a project glossary (.claude/GLOSSARY.md or GLOSSARY.md).",
+  "description": "Korean glossary audit on Markdown and SVG writes (SVG checked on <text>/<tspan> labels). Active only in projects that have a project glossary (.claude/GLOSSARY.md or GLOSSARY.md).",
   "hooks": {
     "PostToolUse": [
       {

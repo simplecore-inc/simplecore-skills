@@ -5,7 +5,7 @@ argument-hint: "[paths...] [--all] [--strict] [--untranslated]"
 
 # Glossary Audit
 
-Run the Korean glossary audit for this project and drive it to zero errors.
+Run the Korean glossary audit for this project and drive it to zero errors. The audit covers Markdown/MDX prose and the `<text>`/`<tspan>` labels of SVG files (embedded or standalone), so diagram text is held to the same standard as the docs.
 
 1. Locate and read the project glossary before auditing: walk up from the current directory checking `<dir>/.claude/GLOSSARY.md` first, then `<dir>/GLOSSARY.md`. Read it in full — it may have changed since the session started. Tell the user which glossary file is in use.
 2. If no project glossary exists, say so and offer to create one:

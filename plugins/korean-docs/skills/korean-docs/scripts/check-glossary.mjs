@@ -1,6 +1,11 @@
 #!/usr/bin/env node
 /**
- * Korean glossary audit for markdown/MDX documents.
+ * Korean glossary audit for Markdown/MDX documents and SVG diagrams.
+ *
+ * Markdown/MDX are audited as prose. SVG files are audited on the text content
+ * of <text>/<tspan> elements only — markup, attributes, styles, and path data
+ * are ignored — so diagram labels follow the same orthography and
+ * translation-ese rules as the documents they illustrate.
  *
  * Rule sources, merged before auditing:
  *   1. The base glossary bundled with this skill (../GLOSSARY.base.md) —
@@ -328,7 +333,7 @@ function walk(dir) {
     if (entry.isDirectory()) {
       if (entry.name.startsWith('.') || DEFAULT_EXCLUDE_DIRS.has(entry.name)) continue;
       found.push(...walk(full));
-    } else if (/\.(md|mdx)$/.test(entry.name)) {
+    } else if (/\.(md|mdx|svg)$/.test(entry.name)) {
       found.push(full);
     }
   }
@@ -465,6 +470,44 @@ function stripLines(content) {
   });
 }
 
+/**
+ * Returns lines with every character blanked except the text content of
+ * <text>/<tspan> elements, preserving line numbers and column offsets so
+ * findings report accurate positions. SVG markup — tags, attribute values
+ * (coordinates, colors, styles), <style>/<defs>/path data — carries no prose
+ * and would produce false positives if matched, so only visible label text is
+ * kept. Nested <tspan> inside <text> stays included; other children do not.
+ */
+function stripSvgLines(content) {
+  const chars = content.split('');
+  const blankRange = (start, end) => {
+    for (let i = start; i < end; i++) {
+      if (chars[i] !== '\n' && chars[i] !== '\r') chars[i] = ' ';
+    }
+  };
+  const tagRe = /<[^>]*>/g;
+  let inText = 0; // depth of open <text>/<tspan> elements
+  let cursor = 0;
+  let m;
+  while ((m = tagRe.exec(content)) !== null) {
+    const tag = m[0];
+    if (inText === 0) blankRange(cursor, m.index); // content outside text elements
+    blankRange(m.index, tagRe.lastIndex);          // the tag markup itself
+    if (/^<[!?]/.test(tag)) {
+      // declarations, comments, CDATA — no element nesting
+    } else if (/^<\//.test(tag)) {
+      const name = tag.match(/^<\/\s*([A-Za-z0-9:_-]+)/);
+      if (name && (name[1] === 'text' || name[1] === 'tspan')) inText = Math.max(0, inText - 1);
+    } else if (!/\/>\s*$/.test(tag)) {
+      const name = tag.match(/^<\s*([A-Za-z0-9:_-]+)/);
+      if (name && (name[1] === 'text' || name[1] === 'tspan')) inText++;
+    }
+    cursor = tagRe.lastIndex;
+  }
+  if (inText === 0) blankRange(cursor, content.length);
+  return chars.join('').split(/\r?\n/);
+}
+
 // ---------------------------------------------------------------------------
 // Auditing
 // ---------------------------------------------------------------------------
@@ -480,8 +523,9 @@ function frontMatterRange(rawLines) {
 
 function auditFile(filePath, rules, checkUntranslated) {
   const content = readFileSync(filePath, 'utf8');
-  const lines = stripLines(content);
-  const fm = frontMatterRange(content.split(/\r?\n/));
+  const isSvg = /\.svg$/i.test(filePath);
+  const lines = isSvg ? stripSvgLines(content) : stripLines(content);
+  const fm = isSvg ? null : frontMatterRange(content.split(/\r?\n/));
   const errors = [];
   const warnings = [];
 
@@ -501,7 +545,9 @@ function auditFile(filePath, rules, checkUntranslated) {
   }
 
   // Untranslated-content heuristic: flag remaining English prose lines.
-  if (checkUntranslated) {
+  // Markdown-only — the SVG mask leaves isolated short labels that would
+  // misfire this prose detector.
+  if (checkUntranslated && !isSvg) {
     const englishProse = [];
     lines.forEach((line, idx) => {
       // Inside front matter only title/description hold translatable prose.

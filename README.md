@@ -10,7 +10,7 @@ A collection of [Claude Code](https://claude.com/claude-code) skills maintained 
 | Plugin | Components | Description |
 | ------ | ---------- | ----------- |
 | `svg-diagrams` | skill | Create diagrams as SVG or ASCII — flowcharts, sequence/state/class/ER diagrams, system architecture, pipelines, and network layouts. Includes JSON-spec auto-layout, Mermaid conversion, and a render audit script that catches missing arrowheads, text overflow, and clipped content. |
-| `korean-docs` | skill, `/glossary-audit` command, PostToolUse hook | Korean output standards for all deliverables — writing, translation, proofreading, and glossary (GLOSSARY.md) management. Ships a base glossary, a style reference catalog, an automated glossary audit script, a slash command that drives audits to zero errors, and a hook that audits Markdown files as they are written. |
+| `korean-docs` | skill, `/glossary-audit` command, PostToolUse hook | Korean output standards for all deliverables — writing, translation, proofreading, and glossary (GLOSSARY.md) management. Ships a base glossary, a style reference catalog, an automated glossary audit script, a slash command that drives audits to zero errors, and a hook that audits Markdown and SVG files as they are written. |
 | `ignite3` | skill | Apache Ignite 3 reference — SQL (DDL/DML/grammar/data types/functions), client APIs (Java/JDBC/.NET/C++), table/transaction/compute/streaming APIs, cluster configuration, operations, and architecture. |
 
 ## Requirements
