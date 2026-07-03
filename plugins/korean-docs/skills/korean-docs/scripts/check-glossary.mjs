@@ -99,7 +99,7 @@ function parseInlineArray(value) {
 
 function parseGlossaryConfig(markdown) {
   const config = {paths: [], exclude: [], untranslated: false};
-  const lines = markdown.split('\n');
+  const lines = markdown.split(/\r?\n/);
   if (lines[0]?.trim() !== '---') return {config, body: markdown};
   let end = -1;
   for (let i = 1; i < lines.length; i++) {
@@ -164,7 +164,7 @@ function isSeparatorRow(cells) {
  * rows inside ``` fences without them becoming live rules.
  */
 function tableRowsUnderHeading(markdown, heading) {
-  const lines = markdown.split('\n');
+  const lines = markdown.split(/\r?\n/);
   const start = lines.findIndex((l) => l.trim() === `## ${heading}`);
   if (start === -1) return null;
   const rows = [];
@@ -426,7 +426,7 @@ function blank(match) {
 
 /** Returns lines with unmatchable regions blanked out, preserving line numbers and offsets. */
 function stripLines(content) {
-  const lines = content.split('\n');
+  const lines = content.split(/\r?\n/);
   let inFence = false;
   let inJsxTemplate = false;
   let inJsxComment = false;
@@ -481,7 +481,7 @@ function frontMatterRange(rawLines) {
 function auditFile(filePath, rules, checkUntranslated) {
   const content = readFileSync(filePath, 'utf8');
   const lines = stripLines(content);
-  const fm = frontMatterRange(content.split('\n'));
+  const fm = frontMatterRange(content.split(/\r?\n/));
   const errors = [];
   const warnings = [];
 

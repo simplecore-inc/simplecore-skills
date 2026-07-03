@@ -1,0 +1,17 @@
+{
+  "description": "Korean glossary audit on Markdown writes. Active only in projects that have a project glossary (.claude/GLOSSARY.md or GLOSSARY.md).",
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/check-md-glossary.mjs\"",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
+}

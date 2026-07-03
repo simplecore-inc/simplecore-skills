@@ -7,31 +7,25 @@
   },
   "metadata": {
     "description": "SimpleCore's curated Claude Code skills",
-    "version": "1.0.0"
+    "version": "1.1.0"
   },
   "plugins": [
     {
       "name": "svg-diagrams",
-      "source": "./",
+      "source": "./plugins/svg-diagrams",
       "description": "Create diagrams as SVG or ASCII — flowcharts, sequence/state/class/ER, system architecture, pipelines, network layouts — with auto-layout and render audit tooling",
-      "version": "1.0.0",
-      "skills": ["./skills/svg-diagrams"],
       "keywords": ["svg", "diagram", "flowchart", "architecture", "mermaid"]
     },
     {
       "name": "korean-docs",
-      "source": "./",
+      "source": "./plugins/korean-docs",
       "description": "Korean output standards for all deliverables — writing, translation, proofreading, and glossary management with automated audit tooling",
-      "version": "1.0.1",
-      "skills": ["./skills/korean-docs"],
       "keywords": ["korean", "documentation", "translation", "glossary", "style"]
     },
     {
       "name": "ignite3",
-      "source": "./",
+      "source": "./plugins/ignite3",
       "description": "Apache Ignite 3 reference — SQL, client APIs (Java/.NET/C++/JDBC), configuration, operations, and architecture documentation",
-      "version": "1.0.0",
-      "skills": ["./skills/ignite3"],
       "keywords": ["ignite", "apache-ignite", "sql", "database", "distributed"]
     }
   ]
