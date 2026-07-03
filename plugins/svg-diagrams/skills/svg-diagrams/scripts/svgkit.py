@@ -472,6 +472,77 @@ class Canvas:
             sx += iw
         return w
 
+    def matrix(self, x, y, rows, cols, marks, label_w=260, col_w=116,
+               row_h=36, header_h=30):
+        """Labeled dependency / coverage matrix — a grid of rows x columns
+        with filled cells. Good for dependency, coverage, RACI, or feature
+        comparison tables where each cell is present/absent.
+
+        rows:  list — each item is a name str, or an (id, name) tuple (id
+               renders as a leading chip, colored by the row's first mark).
+        cols:  list of (label, color) — column headers (solid accent chips).
+        marks: iterable of (row_idx, col_idx) or (row_idx, col_idx, color) —
+               filled cells; color defaults to the column's color. An empty
+               column stays blank (reads as 'no dependency in that column').
+
+        Draws column separators, header chips, per-row id chip + name, and a
+        tinted pill + dot in each marked cell. Returns (total_w, total_h) so
+        the caller can size the canvas (add the title band + margins).
+        """
+        ncol, nrow = len(cols), len(rows)
+        grid_left = x + label_w
+        cxs = [grid_left + i * col_w + col_w / 2 for i in range(ncol)]
+        body_top = y + header_h + 8
+        body_bottom = body_top + nrow * row_h
+        row_cy = [body_top + row_h / 2 + i * row_h for i in range(nrow)]
+
+        # normalize marks -> {(r, c): color}
+        cell = {}
+        for m in marks:
+            r, c = m[0], m[1]
+            cell[(r, c)] = m[2] if len(m) > 2 else cols[c][1]
+
+        # column separators
+        for i in range(ncol + 1):
+            gx = grid_left + i * col_w
+            self.line(gx, body_top, gx, body_bottom, color=self.t["line"],
+                      sw=1, marker=None)
+        # row separators (between rows)
+        for i in range(1, nrow):
+            ry = body_top + i * row_h
+            self.line(x, ry, grid_left + ncol * col_w, ry,
+                      color=self.t["line"], sw=1, marker=None)
+
+        # header chips (solid accent, dark centered label)
+        hcy = y + header_h / 2
+        for (label, color), cx in zip(cols, cxs):
+            hw = min(col_w - 24, tw(label, 15, False) + 34)
+            self.rrect(cx - hw / 2, hcy - header_h / 2, hw, header_h, rx=8,
+                       fill=color, stroke=None)
+            self.text(cx, hcy + 5.5, label, size=15, color=self.t["bg_deep"],
+                      family=SANS, weight=700, anchor="middle")
+
+        # rows: id chip + name, then marked cells
+        for i, item in enumerate(rows):
+            cy = row_cy[i]
+            rid, name = item if isinstance(item, (tuple, list)) else (None, item)
+            rcol = next((cell[(i, c)] for c in range(ncol)
+                         if (i, c) in cell), self.t["muted"])
+            lx = x
+            if rid is not None:
+                lx += self.chip(x, cy - 12, rid, color=rcol, dot=rcol) + 12
+            self.text(lx, cy + 5, name, size=14, color=self.t["fg"],
+                      family=SANS, weight=500)
+            for c in range(ncol):
+                if (i, c) in cell:
+                    col = cell[(i, c)]
+                    cw = col_w - 12
+                    self.rrect(cxs[c] - cw / 2, cy - 15, cw, 30, rx=8,
+                               fill=col, stroke=col, sw=1.2, opacity=0.16)
+                    self.dot(cxs[c], cy, 5, col)
+
+        return (label_w + ncol * col_w, header_h + 8 + nrow * row_h)
+
     # -- assembly -----------------------------------------------------------
     def _arrow_color(self, role):
         return self.t["fg_dim"] if role == "fg" else self.t[role]
