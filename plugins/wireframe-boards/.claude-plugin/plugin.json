@@ -1,0 +1,19 @@
+{
+  "name": "wireframe-boards",
+  "version": "1.0.0",
+  "description": "Author low-fidelity phone, tablet, and desktop wireframes as a single self-contained HTML board — fixed-viewport device frames, flow connectors, and an implementation contract that keeps readers from copying the board as a design",
+  "author": {
+    "name": "SimpleCORE Inc.",
+    "email": "dev@simplecore.kr",
+    "url": "https://github.com/simplecore-inc"
+  },
+  "repository": "https://github.com/simplecore-inc/simplecore-skills",
+  "license": "Apache-2.0",
+  "keywords": [
+    "wireframe",
+    "mockup",
+    "lo-fi",
+    "ui-design",
+    "html"
+  ]
+}

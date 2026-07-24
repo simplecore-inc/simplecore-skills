@@ -12,6 +12,7 @@ A collection of [Claude Code](https://claude.com/claude-code) skills maintained 
 | `svg-diagrams` | skill | Create diagrams as SVG or ASCII — flowcharts, sequence/state/class/ER diagrams, system architecture, pipelines, and network layouts. Includes JSON-spec auto-layout, Mermaid conversion, and a render audit script that catches missing arrowheads, text overflow, and clipped content. |
 | `korean-docs` | skill, `/glossary-audit` command, PostToolUse hook | Korean output standards for all deliverables — writing, translation, proofreading, and glossary (GLOSSARY.md) management. Ships a base glossary, a style reference catalog, an automated glossary audit script, a slash command that drives audits to zero errors, and a hook that audits Markdown and SVG files as they are written. |
 | `ignite3` | skill | Apache Ignite 3 reference — SQL (DDL/DML/grammar/data types/functions), client APIs (Java/JDBC/.NET/C++), table/transaction/compute/streaming APIs, cluster configuration, operations, and architecture. |
+| `wireframe-boards` | skill | Author low-fidelity wireframes as a single self-contained HTML board — fixed-viewport phone and tablet frames, fluid-height desktop frames with a fold marker, a CSS-only narrow ⇄ wide viewport toggle, greybox primitives, flow connectors, and annotation callouts. Ships a board template plus an implementation contract that travels with every board so readers build from the structure instead of copying the greyboxes as a design. |
 
 ## Requirements
 
@@ -30,6 +31,7 @@ Inside a Claude Code session:
 /plugin install svg-diagrams@simplecore-skills
 /plugin install korean-docs@simplecore-skills
 /plugin install ignite3@simplecore-skills
+/plugin install wireframe-boards@simplecore-skills
 ```
 
 Or from the terminal:
@@ -39,6 +41,7 @@ claude plugin marketplace add simplecore-inc/simplecore-skills
 claude plugin install svg-diagrams@simplecore-skills
 claude plugin install korean-docs@simplecore-skills
 claude plugin install ignite3@simplecore-skills
+claude plugin install wireframe-boards@simplecore-skills
 ```
 
 Restart your Claude Code session to load the installed components. Commands and hooks register automatically with the plugin — no manual configuration is needed.
@@ -52,6 +55,7 @@ claude plugin marketplace update simplecore-skills
 claude plugin update svg-diagrams
 claude plugin update korean-docs
 claude plugin update ignite3
+claude plugin update wireframe-boards
 ```
 
 A restart is required for updates to take effect.
@@ -82,7 +86,7 @@ When the hook finds violations, the report is fed back to Claude, which fixes th
 ```text
 simplecore-skills/
 ├── .claude-plugin/
-│   └── marketplace.json           # Marketplace manifest listing the three plugins
+│   └── marketplace.json           # Marketplace manifest listing the plugins
 ├── plugins/
 │   ├── svg-diagrams/
 │   │   ├── .claude-plugin/plugin.json
@@ -92,9 +96,12 @@ simplecore-skills/
 │   │   ├── commands/glossary-audit.md
 │   │   ├── hooks/                 # hooks.json + check-md-glossary.mjs
 │   │   └── skills/korean-docs/    # SKILL.md + references/ + scripts/ + templates/
-│   └── ignite3/
+│   ├── ignite3/
+│   │   ├── .claude-plugin/plugin.json
+│   │   └── skills/ignite3/        # SKILL.md + references/
+│   └── wireframe-boards/
 │       ├── .claude-plugin/plugin.json
-│       └── skills/ignite3/        # SKILL.md + references/
+│       └── skills/wireframe-boards/  # SKILL.md + assets/board-template.html
 ├── examples/
 │   └── CLAUDE.md                  # Global instruction file example
 ├── LICENSE
@@ -116,9 +123,10 @@ To work on a skill and have Claude Code pick up changes immediately, clone this 
 ```bash
 git clone https://github.com/simplecore-inc/simplecore-skills.git
 cd simplecore-skills
-ln -s "$(pwd)/plugins/svg-diagrams/skills/svg-diagrams" ~/.claude/skills/svg-diagrams
-ln -s "$(pwd)/plugins/korean-docs/skills/korean-docs"   ~/.claude/skills/korean-docs
-ln -s "$(pwd)/plugins/ignite3/skills/ignite3"           ~/.claude/skills/ignite3
+ln -s "$(pwd)/plugins/svg-diagrams/skills/svg-diagrams"         ~/.claude/skills/svg-diagrams
+ln -s "$(pwd)/plugins/korean-docs/skills/korean-docs"           ~/.claude/skills/korean-docs
+ln -s "$(pwd)/plugins/ignite3/skills/ignite3"                   ~/.claude/skills/ignite3
+ln -s "$(pwd)/plugins/wireframe-boards/skills/wireframe-boards" ~/.claude/skills/wireframe-boards
 ```
 
 Personal skills in `~/.claude/skills/` load on every session, so edits in the working tree apply without reinstalling. Do not install the marketplace plugins on the same machine — the skills would be registered twice.

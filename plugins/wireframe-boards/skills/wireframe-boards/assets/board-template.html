@@ -1,0 +1,587 @@
+<!doctype html>
+<html lang="en">
+<head>
+<!--
+  ┌──────────────────────────────────────────────────────────────────────────┐
+  │  READ FIRST — anyone (human or LLM) turning this board into real UI       │
+  │  MUST read the "HOW TO READ THIS BOARD" block rendered at the top of      │
+  │  <body> before writing a single line of code. It is the implementation    │
+  │  contract for this file.                                                  │
+  │                                                                          │
+  │  The one-line version: this is a LOW-FIDELITY WIREFRAME. It specifies     │
+  │  screens, content, states, and flow — NOT appearance. Reproducing its     │
+  │  greys, borders, spacing, or device chrome as a design is a defect.       │
+  └──────────────────────────────────────────────────────────────────────────┘
+-->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wireframe — {Product} {Area}</title>
+<style>
+  :root {
+    --ink: #1f2430;         /* primary text */
+    --muted: #5a6270;       /* secondary text, notes */
+    --faint: #8b93a1;       /* placeholder input text, status bar */
+    --line: #a9b1bd;        /* block borders */
+    --line-strong: #3a4150; /* device + emphasized borders */
+    --fill: #e8ebef;        /* light greybox fill */
+    --fill-deep: #d5dae1;   /* deep greybox fill */
+    --paper: #f7f8fa;       /* board background */
+    --screen: #ffffff;
+    --accent: #e05d38;      /* the ONE accent: arrows, pins, stickies, folds, OPEN */
+    --accent-tint: #fdeee7;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    --sans: system-ui, -apple-system, "Segoe UI", "Helvetica Neue", sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--paper);
+    background-image: radial-gradient(var(--fill-deep) 1px, transparent 1px);
+    background-size: 24px 24px;
+    color: var(--ink);
+    font-family: var(--sans);
+    padding: 32px 40px 64px;
+  }
+
+  /* ── Board chrome ─────────────────────────────────────────────── */
+  .board-header { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; }
+  .board-header h1 { font-size: 22px; font-weight: 800; letter-spacing: -0.01em; }
+  .tag {
+    border: 1.5px dashed var(--accent); color: var(--accent);
+    font: 600 12px var(--mono); padding: 4px 10px;
+    transform: rotate(-2deg); background: var(--screen);
+  }
+  .dateline { margin-left: auto; font: 12px var(--mono); color: var(--muted); }
+  .toc { display: flex; flex-wrap: wrap; gap: 6px 18px; font: 12px var(--mono); margin-bottom: 36px; }
+  .toc a { color: var(--muted); text-decoration: none; border-bottom: 1px dashed var(--line); }
+  .toc a:hover { color: var(--accent); border-color: var(--accent); }
+
+  /* ── Implementation contract (never delete) ───────────────────── */
+  .readme {
+    max-width: 1180px; margin-bottom: 30px; padding: 16px 20px;
+    background: var(--screen); border: 1.5px solid var(--line-strong);
+    border-left: 5px solid var(--accent);
+    font-size: 13px; line-height: 1.75;
+  }
+  .readme h2 { font: 700 12px var(--mono); letter-spacing: 0.06em; color: var(--accent); margin-bottom: 8px; }
+  .readme ol { margin-left: 20px; }
+  .readme li { margin-bottom: 3px; }
+  .readme code { font: 11.5px var(--mono); background: var(--fill); padding: 1px 5px; border-radius: 3px; }
+  .readme strong { font-weight: 700; }
+
+  /* ── Flow sections ────────────────────────────────────────────── */
+  .flow { margin-bottom: 56px; }
+  .flow-title {
+    display: flex; align-items: baseline; gap: 10px;
+    font-size: 15px; font-weight: 800; letter-spacing: 0.02em;
+    border-bottom: 2px solid var(--ink); padding-bottom: 6px; margin-bottom: 16px;
+  }
+  .flow-title .count { font: 11px var(--mono); color: var(--muted); font-weight: 400; }
+  .row { display: flex; align-items: flex-start; gap: 24px; overflow-x: auto; padding: 6px 2px 12px; margin-bottom: 8px; }
+  .row.wrap { flex-wrap: wrap; overflow-x: visible; } /* never wrap a row holding desktop frames */
+
+  /* Horizontal scrollbars stay permanently visible. macOS hides overlay
+     scrollbars until the user scrolls, so a row of 1440px desktop frames looks
+     like it ends at the viewport edge and reviewers never find the rest of the
+     flow. Declaring ::-webkit-scrollbar with an explicit height opts the row
+     out of overlay scrollbars in WebKit/Blink; scrollbar-color does the same in
+     Firefox. Keep this block on every horizontally scrollable region. */
+  .row, .scroll-x { scrollbar-width: auto; scrollbar-color: var(--line) var(--fill); }
+  .row::-webkit-scrollbar, .scroll-x::-webkit-scrollbar { height: 12px; -webkit-appearance: none; }
+  .row::-webkit-scrollbar-track, .scroll-x::-webkit-scrollbar-track {
+    background: var(--fill); border-radius: 999px; border: 1px solid var(--fill-deep);
+  }
+  .row::-webkit-scrollbar-thumb, .scroll-x::-webkit-scrollbar-thumb {
+    background: var(--line); border-radius: 999px; border: 2px solid var(--fill);
+  }
+  .row::-webkit-scrollbar-thumb:hover, .scroll-x::-webkit-scrollbar-thumb:hover { background: var(--line-strong); }
+
+  /* ── Device frames ────────────────────────────────────────────── */
+  /* --vh is the reference viewport height: a hard device height on phone and
+     tablet, the smallest supported window height on desktop. .screen never
+     shrinks below it, and grows when the page is longer. */
+  .frame { width: 390px; --vh: 844px; flex: 0 0 auto; }
+  .frame.phone.wide     { width: 844px;  --vh: 390px; }
+  .frame.tablet         { width: 768px;  --vh: 1024px; }
+  .frame.tablet.wide    { width: 1024px; --vh: 768px; }
+  .frame.desktop        { width: 1440px; --vh: 900px; }
+  .frame.desktop.narrow { width: 1024px; --vh: 720px; }
+  .device {
+    position: relative; border: 2px solid var(--line-strong); border-radius: 24px;
+    background: var(--screen); overflow: hidden;
+    box-shadow: 3px 4px 0 rgba(31, 36, 48, 0.08);
+  }
+  .frame.tablet .device { border-radius: 18px; }
+  .frame.desktop .device { border-radius: 10px; }
+  .screen { position: relative; min-height: var(--vh); display: flex; flex-direction: column; }
+  .frame-label { font: 600 12px var(--mono); margin-top: 10px; }
+  .frame-notes { font: 11px var(--mono); color: var(--muted); margin-top: 4px; line-height: 1.6; }
+  .frame-notes .open { color: var(--accent); font-weight: 700; }
+
+  /* Fold line — drawn at --vh, so it lands on the viewport bottom however far
+     page content pushes the frame. Required on every desktop frame. */
+  .fold {
+    position: absolute; left: 0; right: 0; top: var(--vh); z-index: 2;
+    border-top: 1.5px dashed var(--accent); pointer-events: none;
+  }
+  /* Label sits ABOVE the line so it stays inside the frame when the page is
+     shorter than --vh and the fold lands on the bottom edge. */
+  .fold span {
+    position: absolute; right: 10px; bottom: 5px;
+    background: var(--screen); border: 1px solid var(--accent); color: var(--accent);
+    font: 600 10px var(--mono); padding: 1px 6px; border-radius: 3px;
+  }
+
+  /* ── Viewport toggle (narrow ⇄ wide) ──────────────────────────── */
+  /* CSS-only: the checkbox is the FIRST element in <body>; every rule below
+     reaches frames through the sibling (~) combinator. No JavaScript. Only
+     frames tagged .narrow / .wide participate — an untagged frame is always
+     visible, which is how single-viewport screens are authored. */
+  .view-input { position: absolute; opacity: 0; pointer-events: none; }
+  .view-toggle {
+    display: inline-flex; border: 1.5px solid var(--line-strong); border-radius: 8px;
+    overflow: hidden; font: 600 12px var(--mono); cursor: pointer; user-select: none;
+    background: var(--screen);
+  }
+  .view-toggle span { padding: 5px 12px; color: var(--muted); }
+  .view-toggle .opt-narrow { background: var(--fill-deep); color: var(--ink); }
+  .view-input ~ * .frame.wide { display: none; }
+  .view-input:checked ~ * .frame.wide { display: block; }
+  .view-input:checked ~ * .frame.narrow { display: none; }
+  .view-input:checked ~ * .opt-narrow { background: transparent; color: var(--muted); }
+  .view-input:checked ~ * .opt-wide { background: var(--fill-deep); color: var(--ink); }
+
+  /* ── Phone / tablet chrome ────────────────────────────────────── */
+  .statusbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 7px 16px 5px; font: 11px var(--mono); color: var(--faint);
+    position: relative;
+  }
+  .statusbar::after {
+    content: ""; position: absolute; left: 50%; top: 6px; transform: translateX(-50%);
+    width: 84px; height: 10px; border-radius: 999px; background: var(--fill-deep);
+  }
+  .frame.tablet .statusbar::after { display: none; } /* tablets have no notch */
+  .appbar {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 14px; border-bottom: 1px solid var(--fill-deep);
+    font-size: 15px; font-weight: 700;
+  }
+  .appbar .back { color: var(--muted); font-weight: 400; }
+  .appbar .trail { margin-left: auto; }
+  .body { flex: 1; display: flex; flex-direction: column; gap: 10px; padding: 14px; }
+  .cta { padding: 12px 14px; border-top: 1px dashed var(--line); display: flex; flex-direction: column; gap: 8px; }
+  .tabbar { display: flex; border-top: 1.5px solid var(--line-strong); margin-top: auto; }
+  .tab { flex: 1; text-align: center; padding: 8px 0 10px; font-size: 11px; color: var(--muted); }
+  .tab .ic { width: 18px; height: 18px; border: 1.5px solid currentColor; border-radius: 5px; margin: 0 auto 3px; }
+  .tab.active { color: var(--ink); font-weight: 700; }
+
+  /* ── Desktop chrome ───────────────────────────────────────────── */
+  /* .browserbar sits OUTSIDE .screen so the fold measures the page viewport,
+     not the browser window. */
+  .browserbar {
+    display: flex; align-items: center; gap: 10px; padding: 8px 12px;
+    border-bottom: 1px solid var(--line); background: var(--fill);
+    font: 11px var(--mono); color: var(--muted);
+  }
+  .browserbar .dots { display: flex; gap: 5px; }
+  .browserbar .dots i { width: 9px; height: 9px; border-radius: 50%; background: var(--fill-deep); border: 1px solid var(--line); }
+  .browserbar .url { flex: 1; background: var(--screen); border: 1px solid var(--line); border-radius: 999px; padding: 4px 12px; }
+  .shell { flex: 1; display: flex; min-height: 0; }
+  .sidebar {
+    flex: 0 0 220px; display: flex; flex-direction: column; gap: 2px;
+    padding: 12px 10px; border-right: 1px solid var(--fill-deep); background: var(--paper);
+  }
+  .sidebar .brand { font-size: 13px; font-weight: 800; padding: 4px 8px 10px; }
+  .nav-group { font: 10px var(--mono); color: var(--faint); letter-spacing: 0.06em; padding: 12px 8px 4px; }
+  .nav-item { display: flex; align-items: center; gap: 8px; padding: 7px 8px; border-radius: 6px; font-size: 13px; color: var(--muted); }
+  .nav-item .ic { width: 14px; height: 14px; flex: 0 0 auto; border: 1.5px solid currentColor; border-radius: 4px; }
+  .nav-item.active { background: var(--fill-deep); color: var(--ink); font-weight: 700; }
+  .sidebar.rail { flex-basis: 60px; align-items: center; } /* collapsed at the narrow breakpoint */
+  .sidebar.rail .nav-item { justify-content: center; }
+  /* :not(.ic) keeps the glyph — the icon is a span too */
+  .sidebar.rail .brand, .sidebar.rail .nav-group, .sidebar.rail .nav-item span:not(.ic) { display: none; }
+  .main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .topbar { display: flex; align-items: center; gap: 12px; padding: 10px 16px; border-bottom: 1px solid var(--fill-deep); }
+  .topbar .search { flex: 0 1 320px; }
+  .topbar .spacer { flex: 1; }
+  .topbar .avatar { width: 26px; height: 26px; border-radius: 50%; background: var(--fill-deep); border: 1px solid var(--line); }
+  .crumb { font: 11px var(--mono); color: var(--faint); padding: 12px 16px 0; }
+  .toolbar { display: flex; align-items: center; gap: 10px; padding: 8px 16px 0; }
+  .toolbar .actions { margin-left: auto; display: flex; gap: 8px; }
+  .toolbar .btn { padding: 7px 12px; font-size: 13px; }
+  .frame.desktop .body { padding: 14px 16px 18px; gap: 12px; }
+
+  /* ── Layout primitives (master-detail, card grids, tables) ────── */
+  .split { flex: 1; display: flex; min-height: 0; }
+  .pane { flex: 1; display: flex; flex-direction: column; gap: 10px; padding: 14px; min-width: 0; }
+  .pane.list { flex: 0 0 280px; border-right: 1px solid var(--fill-deep); }
+  .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .table { border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  .trow { display: flex; align-items: center; gap: 12px; padding: 9px 12px; border-top: 1px solid var(--fill-deep); }
+  .trow:first-child { border-top: 0; }
+  .trow.thead { background: var(--fill); font: 600 11px var(--mono); color: var(--muted); letter-spacing: 0.04em; }
+  .td { flex: 1; min-width: 0; }
+  .td.w2 { flex: 2; }
+  .td.fix { flex: 0 0 110px; }
+  .td.right { text-align: right; }
+  .pagination { display: flex; align-items: center; gap: 6px; padding: 2px; font: 11px var(--mono); color: var(--muted); }
+  .pagination .pg { border: 1px solid var(--line); border-radius: 5px; padding: 3px 8px; background: var(--screen); }
+  .pagination .pg.active { background: var(--fill-deep); border-color: var(--line-strong); color: var(--ink); font-weight: 700; }
+
+  /* ── Greybox primitives ───────────────────────────────────────── */
+  .img-ph {
+    min-height: 120px; background: var(--fill); border: 1px solid var(--line);
+    background-image:
+      linear-gradient(to top right, transparent calc(50% - 0.5px), var(--line) calc(50% - 0.5px), var(--line) calc(50% + 0.5px), transparent calc(50% + 0.5px)),
+      linear-gradient(to bottom right, transparent calc(50% - 0.5px), var(--line) calc(50% - 0.5px), var(--line) calc(50% + 0.5px), transparent calc(50% + 0.5px));
+  }
+  .qr-ph {
+    width: 150px; height: 150px; margin: 8px auto; border: 1px solid var(--line-strong);
+    background: conic-gradient(var(--fill-deep) 90deg, transparent 90deg 180deg, var(--fill-deep) 180deg 270deg, transparent 270deg) 0 0 / 20px 20px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .qr-ph span { background: var(--screen); font: 11px var(--mono); color: var(--muted); padding: 2px 6px; border: 1px solid var(--line); }
+  /* display:block so a .bar also renders inside inline hosts such as a .td */
+  .bar { display: block; height: 10px; border-radius: 3px; background: var(--fill-deep); }
+  .bar.light { background: var(--fill); }
+  .w25 { width: 25%; } .w40 { width: 40%; } .w60 { width: 60%; } .w80 { width: 80%; } .w100 { width: 100%; }
+  .t-title { font-size: 16px; font-weight: 700; }
+  .t-sub { font-size: 13px; color: var(--muted); }
+  .t-body { font-size: 13px; line-height: 1.5; }
+  .divider { border: 0; border-top: 1px solid var(--fill-deep); margin: 2px 0; }
+
+  .btn {
+    border: 1.5px solid var(--line-strong); border-radius: 8px;
+    padding: 11px; text-align: center; font-size: 14px; font-weight: 600;
+    background: var(--screen);
+  }
+  .btn.primary { background: var(--fill-deep); }
+  .btn.ghost { border-style: dashed; color: var(--muted); }
+
+  .field { display: flex; flex-direction: column; gap: 4px; }
+  .label { font-size: 12px; color: var(--muted); font-weight: 600; }
+  .input {
+    border: 1px solid var(--line); border-radius: 6px; background: var(--screen);
+    padding: 10px 12px; font-size: 13px; color: var(--faint);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .topbar .input { padding: 6px 10px; font-size: 12px; }
+
+  .chip {
+    display: inline-block; border: 1px solid var(--line); border-radius: 999px;
+    padding: 4px 12px; font-size: 12px; background: var(--screen);
+  }
+  .chip.active { background: var(--fill-deep); border-color: var(--line-strong); font-weight: 600; }
+  .badge {
+    display: inline-block; border-radius: 4px; padding: 2px 8px;
+    font-size: 11px; font-weight: 600; background: var(--fill-deep);
+  }
+  .badge.outline { background: transparent; border: 1px solid var(--line-strong); }
+  .chips, .badges { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+
+  .card { border: 1px solid var(--line); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+  .list-card { border: 1px solid var(--line); border-radius: 8px; padding: 10px; display: flex; gap: 10px; align-items: center; }
+  .list-card .thumb { width: 48px; height: 48px; flex: 0 0 auto; min-height: 0; }
+  .list-card .lines { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+
+  /* ── Overlay states (bottom sheet on touch, centered modal on desktop) ─── */
+  .dim { position: absolute; inset: 0; background: rgba(31, 36, 48, 0.35); z-index: 1; }
+  .sheet {
+    position: absolute; left: 14px; right: 14px; bottom: 14px; z-index: 1;
+    background: var(--screen); border: 1.5px solid var(--line-strong); border-radius: 12px;
+    padding: 16px; display: flex; flex-direction: column; gap: 10px;
+  }
+  .modal {
+    position: absolute; left: 50%; top: 110px; transform: translateX(-50%); z-index: 1;
+    width: 460px; background: var(--screen); border: 1.5px solid var(--line-strong);
+    border-radius: 12px; padding: 18px; display: flex; flex-direction: column; gap: 12px;
+    box-shadow: 4px 6px 0 rgba(31, 36, 48, 0.12);
+  }
+
+  /* ── Connectors & annotations ─────────────────────────────────── */
+  .arrow {
+    flex: 0 0 auto; align-self: center; width: 120px; margin: 0 4px;
+    border-top: 2px dashed var(--accent); position: relative;
+  }
+  .arrow::after {
+    content: ""; position: absolute; right: -2px; top: -6px;
+    border: 5px solid transparent; border-left: 8px solid var(--accent);
+  }
+  .arrow .step {
+    position: absolute; left: 50%; transform: translateX(-50%); bottom: 6px;
+    white-space: nowrap; font: 600 11px var(--mono); color: var(--accent);
+    background: var(--paper); padding: 1px 4px; border-radius: 3px;
+  }
+  .sticky {
+    flex: 0 0 auto; align-self: flex-start; width: 190px; margin: 24px 8px 0;
+    background: var(--accent-tint); border: 1px solid var(--accent);
+    padding: 12px; font-size: 12px; line-height: 1.5;
+    transform: rotate(-2deg); box-shadow: 2px 3px 0 rgba(31, 36, 48, 0.1);
+  }
+</style>
+</head>
+<body>
+
+<!-- Viewport toggle state — keep ONLY on boards that pair frames with
+     .narrow / .wide (delete input + label otherwise). Must stay the FIRST
+     element in <body>: the CSS reaches frames via the sibling combinator. Add
+     the `checked` attribute to make the wide view the default. -->
+<input type="checkbox" id="viewport" class="view-input" aria-label="Viewport width">
+
+<header class="board-header">
+  <h1>{Product} — {Area} Wireframes</h1>
+  <span class="tag">WIREFRAME v0.1 · {PHONE | TABLET | DESKTOP}</span>
+  <label class="view-toggle" for="viewport"><span class="opt-narrow">Narrow</span><span class="opt-wide">Wide</span></label>
+  <span class="dateline">{date} · {390×844 · 768×1024 ⇄ 1024×768 · 1024/1440 fluid} · lo-fi</span>
+</header>
+
+<!-- IMPLEMENTATION CONTRACT — ships with every board, never deleted, never
+     trimmed. Adjust only items 11+ (board-specific notes). -->
+<section class="readme">
+  <h2>HOW TO READ THIS BOARD — REQUIRED BEFORE IMPLEMENTING</h2>
+  <ol>
+    <li><strong>This is a low-fidelity wireframe, not a design.</strong> It fixes <em>what is on each screen, in which state, and how the user moves between screens</em> — the minimum needed to start building. It says nothing about how the product should look.</li>
+    <li><strong>Never reproduce this board's appearance.</strong> Greyscale fills, 1px borders, corner radii, paddings, the single accent color, device chrome, and this monospaced notation are board notation. Build with the project's own design system and component library, and let it decide color, type, spacing, elevation, and motion.</li>
+    <li><strong>Grey bars and boxes are placeholders</strong> (<code>.bar</code>, <code>.img-ph</code>, <code>.qr-ph</code>, <code>.thumb</code>) standing in for real data. They are not grey rectangles in the product.</li>
+    <li><strong>Real text is the specified wording — keep it.</strong> Button labels, screen titles, field labels, tab names, empty-state and error copy are the intended strings. Placeholder bars are not strings.</li>
+    <li><strong>Every frame is one screen × one state.</strong> States drawn here (empty, error, loading, expired, terminal, permission-gated, overlay) are requirements; implement all of them, not only the happy path.</li>
+    <li><strong>The frame label reads <code>route — screen — state</code>.</strong> Notes carry <code>AUTH:</code> (entry precondition), <code>DATA:</code> (source endpoint), <code>OPEN:</code> (unresolved question).</li>
+    <li><strong>An <code>OPEN:</code> note blocks that part of the implementation.</strong> Resolve it with the board's author — never guess, and never let the drawn shape stand in for the missing decision.</li>
+    <li><strong>Device frames are reference viewports, not breakpoints to hard-code.</strong> Phone and tablet frames are fixed device viewports. Desktop frames pin only the width: the page height is fluid, and the dashed <em>fold</em> line marks the smallest supported window — everything the user must act on belongs above it.</li>
+    <li><strong>A narrow/wide pair is one responsive screen, not two screens.</strong> The pair records how the layout reflows between the two viewports; implement a single screen that spans them.</li>
+    <li><strong>Arrows, numbered steps, stickies, and fold lines are annotations</strong> describing navigation and intent. Never render them as UI.</li>
+    <li><strong>Visual detail is deliberately unspecified; screens and states are not.</strong> A screen or state missing from this board has not been specified — ask, do not invent. Where this board and the project's frontend conventions disagree about structure or components, the project's conventions win.</li>
+  </ol>
+</section>
+
+<nav class="toc">
+  <a href="#flow-a">A. Sign-in (2)</a>
+  <a href="#flow-t">T. Requests · tablet (1 pair)</a>
+  <a href="#flow-w">W. Console · desktop (1 pair)</a>
+  <!-- one link per flow section: "{letter}. {name} ({frame count})" -->
+</nav>
+
+<!-- EXAMPLE PHONE SECTION — delete after copying; it only demonstrates the vocabulary. -->
+<section class="flow" id="flow-a">
+  <div class="flow-title">A. Sign-in <span class="count">2 frames · phone 390×844</span></div>
+  <div class="row">
+
+    <article class="frame">
+      <div class="device"><div class="screen">
+        <div class="statusbar"><span>9:41</span><span>▮▮ ⏻</span></div>
+        <div class="appbar"><span class="back">←</span> Sign in <span class="chip trail">EN ▾</span></div>
+        <div class="body">
+          <div class="t-title">Welcome back</div>
+          <div class="t-sub">Sign in to continue.</div>
+          <div class="field"><span class="label">Email</span><span class="input">name@example.com</span></div>
+          <div class="btn primary">Sign in</div>
+          <hr class="divider">
+          <div class="btn ghost">Create an account</div>
+        </div>
+      </div></div>
+      <div class="frame-label">/login — Sign-in — default</div>
+      <div class="frame-notes">
+        AUTH: public<br>
+        DATA: POST /auth/session<br>
+        <span class="open">OPEN:</span> SSO providers not settled in spec §2
+      </div>
+    </article>
+
+    <div class="arrow"><span class="step">① tap Sign in</span></div>
+
+    <article class="frame">
+      <div class="device"><div class="screen">
+        <div class="statusbar"><span>9:41</span><span>▮▮ ⏻</span></div>
+        <div class="appbar">Home <span class="badge trail">3 new</span></div>
+        <div class="body">
+          <div class="chips"><span class="chip active">All</span><span class="chip">Open</span><span class="chip">Done</span></div>
+          <div class="list-card"><div class="img-ph thumb"></div><div class="lines"><div class="bar w60"></div><div class="bar light w40"></div></div><span class="badge outline">Open</span></div>
+          <div class="list-card"><div class="img-ph thumb"></div><div class="lines"><div class="bar w80"></div><div class="bar light w25"></div></div><span class="badge outline">Open</span></div>
+          <div class="list-card"><div class="img-ph thumb"></div><div class="lines"><div class="bar w60"></div><div class="bar light w40"></div></div><span class="badge">Done</span></div>
+        </div>
+        <div class="tabbar">
+          <div class="tab active"><div class="ic"></div>Home</div>
+          <div class="tab"><div class="ic"></div>Requests</div>
+          <div class="tab"><div class="ic"></div>Profile</div>
+        </div>
+      </div></div>
+      <div class="frame-label">/ — Home — signed in</div>
+      <div class="frame-notes">AUTH: session<br>DATA: GET /me/items (paged)</div>
+    </article>
+
+    <div class="sticky">Structural labels are real text; record data stays as bars. One accent only.</div>
+
+  </div>
+</section>
+
+<!-- EXAMPLE TABLET SECTION — delete after copying. Each tablet screen×state is
+     an adjacent narrow(portrait) + wide(landscape) pair sharing one label; the
+     board-level toggle shows exactly one of the pair. -->
+<section class="flow" id="flow-t">
+  <div class="flow-title">T. Requests (tablet) <span class="count">1 screen · 768×1024 ⇄ 1024×768</span></div>
+  <div class="row">
+
+    <article class="frame tablet narrow">
+      <div class="device"><div class="screen">
+        <div class="statusbar"><span>9:41</span><span>▮▮ ⏻</span></div>
+        <div class="appbar">Requests <span class="badge trail">3 new</span></div>
+        <div class="body">
+          <div class="chips"><span class="chip active">All</span><span class="chip">Open</span><span class="chip">Done</span></div>
+          <div class="grid-2">
+            <div class="card"><div class="bar w60"></div><div class="bar light w40"></div><div class="badges"><span class="badge outline">Open</span></div></div>
+            <div class="card"><div class="bar w80"></div><div class="bar light w25"></div><div class="badges"><span class="badge outline">Open</span></div></div>
+            <div class="card"><div class="bar w60"></div><div class="bar light w40"></div><div class="badges"><span class="badge">Done</span></div></div>
+            <div class="card"><div class="bar w80"></div><div class="bar light w60"></div><div class="badges"><span class="badge">Done</span></div></div>
+          </div>
+        </div>
+        <div class="tabbar">
+          <div class="tab active"><div class="ic"></div>Home</div>
+          <div class="tab"><div class="ic"></div>Requests</div>
+          <div class="tab"><div class="ic"></div>Profile</div>
+        </div>
+      </div></div>
+      <div class="frame-label">/requests — Requests — default · portrait</div>
+      <div class="frame-notes">AUTH: session<br>DATA: GET /me/requests (paged)</div>
+    </article>
+
+    <article class="frame tablet wide">
+      <div class="device"><div class="screen">
+        <div class="statusbar"><span>9:41</span><span>▮▮ ⏻</span></div>
+        <div class="appbar">Requests <span class="badge trail">3 new</span></div>
+        <div class="split">
+          <div class="pane list">
+            <div class="chips"><span class="chip active">All</span><span class="chip">Open</span><span class="chip">Done</span></div>
+            <div class="list-card"><div class="lines"><div class="bar w60"></div><div class="bar light w40"></div></div><span class="badge outline">Open</span></div>
+            <div class="list-card"><div class="lines"><div class="bar w80"></div><div class="bar light w25"></div></div><span class="badge outline">Open</span></div>
+            <div class="list-card"><div class="lines"><div class="bar w60"></div><div class="bar light w40"></div></div><span class="badge">Done</span></div>
+          </div>
+          <div class="pane">
+            <div class="t-title">Request detail</div>
+            <div class="bar w40"></div>
+            <div class="img-ph"></div>
+            <div class="bar light w100"></div>
+            <div class="bar light w80"></div>
+            <div class="btn primary">Approve</div>
+            <div class="btn ghost">Reject</div>
+          </div>
+        </div>
+      </div></div>
+      <div class="frame-label">/requests — Requests — default · landscape</div>
+      <div class="frame-notes">AUTH: session<br>DATA: GET /me/requests (paged)</div>
+    </article>
+
+    <div class="sticky">Tablet pair: one screen×state authored at both viewports, adjacent. Wide reflows to master-detail — never a stretched phone column.</div>
+
+  </div>
+</section>
+
+<!-- EXAMPLE DESKTOP SECTION — delete after copying. Desktop frames pin the
+     width and let the page height grow; the .fold marks the smallest supported
+     window. The narrow(1024) + wide(1440) pair documents the breakpoint
+     reflow: full sidebar ⇄ icon rail, 4-up ⇄ 2-up cards. -->
+<section class="flow" id="flow-w">
+  <div class="flow-title">W. Console (desktop) <span class="count">1 screen · 1024 ⇄ 1440, fluid height</span></div>
+  <div class="row">
+
+    <article class="frame desktop narrow">
+      <div class="device">
+        <div class="browserbar"><span class="dots"><i></i><i></i><i></i></span><span class="url">app.example.com/console</span></div>
+        <div class="screen">
+          <div class="shell">
+            <div class="sidebar rail">
+              <div class="nav-item active"><span class="ic"></span><span>Console</span></div>
+              <div class="nav-item"><span class="ic"></span><span>Requests</span></div>
+              <div class="nav-item"><span class="ic"></span><span>Reports</span></div>
+            </div>
+            <div class="main">
+              <div class="topbar"><span class="input search">Search…</span><span class="spacer"></span><span class="avatar"></span></div>
+              <div class="crumb">Home / Console</div>
+              <div class="toolbar"><span class="t-title">Console</span><span class="actions"><span class="btn primary">New request</span></span></div>
+              <div class="body">
+                <div class="grid-2">
+                  <div class="card"><div class="t-sub">Pending</div><div class="bar w25"></div></div>
+                  <div class="card"><div class="t-sub">In review</div><div class="bar w25"></div></div>
+                </div>
+                <div class="table">
+                  <div class="trow thead"><span class="td w2">REQUEST</span><span class="td">OWNER</span><span class="td fix">STATUS</span></div>
+                  <div class="trow"><span class="td w2"><span class="bar w80"></span></span><span class="td"><span class="bar light w60"></span></span><span class="td fix"><span class="badge outline">Open</span></span></div>
+                  <div class="trow"><span class="td w2"><span class="bar w60"></span></span><span class="td"><span class="bar light w40"></span></span><span class="td fix"><span class="badge">Done</span></span></div>
+                </div>
+                <div class="pagination"><span class="pg active">1</span><span class="pg">2</span><span class="pg">3</span><span>of 12</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="fold"><span>fold · 1024×720</span></div>
+        </div>
+      </div>
+      <div class="frame-label">/console — Console — default · 1024 breakpoint</div>
+      <div class="frame-notes">AUTH: session<br>DATA: GET /requests (paged)<br><span class="open">OPEN:</span> rail tooltip labels undecided</div>
+    </article>
+
+    <article class="frame desktop wide">
+      <div class="device">
+        <div class="browserbar"><span class="dots"><i></i><i></i><i></i></span><span class="url">app.example.com/console</span></div>
+        <div class="screen">
+          <div class="shell">
+            <div class="sidebar">
+              <div class="brand">EXAMPLE</div>
+              <div class="nav-group">WORK</div>
+              <div class="nav-item active"><span class="ic"></span><span>Console</span></div>
+              <div class="nav-item"><span class="ic"></span><span>Requests</span></div>
+              <div class="nav-group">INSIGHT</div>
+              <div class="nav-item"><span class="ic"></span><span>Reports</span></div>
+            </div>
+            <div class="main">
+              <div class="topbar"><span class="input search">Search…</span><span class="spacer"></span><span class="t-sub">Jane Doe</span><span class="avatar"></span></div>
+              <div class="crumb">Home / Console</div>
+              <div class="toolbar"><span class="t-title">Console</span><span class="actions"><span class="btn ghost">Export</span><span class="btn primary">New request</span></span></div>
+              <div class="body">
+                <div class="grid-4">
+                  <div class="card"><div class="t-sub">Pending</div><div class="bar w25"></div></div>
+                  <div class="card"><div class="t-sub">In review</div><div class="bar w25"></div></div>
+                  <div class="card"><div class="t-sub">Approved</div><div class="bar w25"></div></div>
+                  <div class="card"><div class="t-sub">Rejected</div><div class="bar w25"></div></div>
+                </div>
+                <div class="table">
+                  <div class="trow thead"><span class="td w2">REQUEST</span><span class="td">OWNER</span><span class="td">SUBMITTED</span><span class="td fix">STATUS</span></div>
+                  <div class="trow"><span class="td w2"><span class="bar w80"></span></span><span class="td"><span class="bar light w60"></span></span><span class="td"><span class="bar light w40"></span></span><span class="td fix"><span class="badge outline">Open</span></span></div>
+                  <div class="trow"><span class="td w2"><span class="bar w60"></span></span><span class="td"><span class="bar light w40"></span></span><span class="td"><span class="bar light w40"></span></span><span class="td fix"><span class="badge outline">Open</span></span></div>
+                  <div class="trow"><span class="td w2"><span class="bar w100"></span></span><span class="td"><span class="bar light w60"></span></span><span class="td"><span class="bar light w40"></span></span><span class="td fix"><span class="badge outline">Open</span></span></div>
+                  <div class="trow"><span class="td w2"><span class="bar w80"></span></span><span class="td"><span class="bar light w40"></span></span><span class="td"><span class="bar light w60"></span></span><span class="td fix"><span class="badge">Done</span></span></div>
+                  <div class="trow"><span class="td w2"><span class="bar w60"></span></span><span class="td"><span class="bar light w60"></span></span><span class="td"><span class="bar light w40"></span></span><span class="td fix"><span class="badge">Done</span></span></div>
+                  <div class="trow"><span class="td w2"><span class="bar w100"></span></span><span class="td"><span class="bar light w40"></span></span><span class="td"><span class="bar light w40"></span></span><span class="td fix"><span class="badge">Done</span></span></div>
+                </div>
+                <div class="pagination"><span class="pg active">1</span><span class="pg">2</span><span class="pg">3</span><span>of 12</span></div>
+                <hr class="divider">
+                <div class="t-title">Recent activity</div>
+                <div class="grid-2">
+                  <div class="card"><div class="t-sub">Approvals this week</div><div class="img-ph"></div><div class="bar light w80"></div></div>
+                  <div class="card"><div class="t-sub">Average time to decision</div><div class="img-ph"></div><div class="bar light w60"></div></div>
+                </div>
+                <div class="t-title">Audit trail</div>
+                <div class="table">
+                  <div class="trow thead"><span class="td">WHEN</span><span class="td w2">EVENT</span><span class="td">ACTOR</span></div>
+                  <div class="trow"><span class="td"><span class="bar light w60"></span></span><span class="td w2"><span class="bar w80"></span></span><span class="td"><span class="bar light w40"></span></span></div>
+                  <div class="trow"><span class="td"><span class="bar light w60"></span></span><span class="td w2"><span class="bar w60"></span></span><span class="td"><span class="bar light w60"></span></span></div>
+                  <div class="trow"><span class="td"><span class="bar light w40"></span></span><span class="td w2"><span class="bar w100"></span></span><span class="td"><span class="bar light w40"></span></span></div>
+                  <div class="trow"><span class="td"><span class="bar light w60"></span></span><span class="td w2"><span class="bar w80"></span></span><span class="td"><span class="bar light w60"></span></span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="fold"><span>fold · 1440×900</span></div>
+        </div>
+      </div>
+      <div class="frame-label">/console — Console — default · 1440</div>
+      <div class="frame-notes">AUTH: session<br>DATA: GET /requests (paged)</div>
+    </article>
+
+    <div class="sticky">Desktop height is fluid: the frame grows with the page, and the fold marks the smallest supported window. Everything the operator must act on stays above it.</div>
+
+  </div>
+</section>
+
+</body>
+</html>

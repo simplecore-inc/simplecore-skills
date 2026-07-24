@@ -7,7 +7,7 @@
   },
   "metadata": {
     "description": "SimpleCORE's curated Claude Code skills",
-    "version": "1.1.0"
+    "version": "1.2.0"
   },
   "plugins": [
     {
@@ -27,6 +27,12 @@
       "source": "./plugins/ignite3",
       "description": "Apache Ignite 3 reference — SQL, client APIs (Java/.NET/C++/JDBC), configuration, operations, and architecture documentation",
       "keywords": ["ignite", "apache-ignite", "sql", "database", "distributed"]
+    },
+    {
+      "name": "wireframe-boards",
+      "source": "./plugins/wireframe-boards",
+      "description": "Author low-fidelity phone, tablet, and desktop wireframes as a single self-contained HTML board — fixed-viewport device frames, flow connectors, and an implementation contract for downstream readers",
+      "keywords": ["wireframe", "mockup", "lo-fi", "ui-design", "html"]
     }
   ]
 }
