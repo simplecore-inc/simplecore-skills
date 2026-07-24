@@ -7,4 +7,4 @@
 *.json text
 
 # Vendored third-party bundles: keep out of diffs and language stats
-plugins/svg-diagrams/skills/svg-diagrams/scripts/vendor/dagre.esm.js linguist-vendored -diff
+plugins/simplecore/skills/svg-diagrams/scripts/vendor/dagre.esm.js linguist-vendored -diff

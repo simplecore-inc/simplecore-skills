@@ -1,7 +1,7 @@
 {
-  "name": "korean-docs",
-  "version": "1.3.0",
-  "description": "Korean output standards for all deliverables — writing, translation, proofreading, and glossary management with automated audit tooling",
+  "name": "simplecore",
+  "version": "1.0.0",
+  "description": "SimpleCORE's curated skill set — Korean output standards with glossary tooling, SVG and ASCII diagrams, low-fidelity wireframe boards, and an Apache Ignite 3 reference",
   "author": {
     "name": "SimpleCORE Inc.",
     "email": "dev@simplecore.kr",
@@ -12,8 +12,10 @@
   "keywords": [
     "korean",
     "documentation",
-    "translation",
     "glossary",
-    "style"
+    "svg",
+    "diagram",
+    "wireframe",
+    "ignite"
   ]
 }

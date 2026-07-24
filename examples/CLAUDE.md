@@ -261,7 +261,7 @@ Never use emojis in any output or file. Use plain text symbols instead:
 
 ## Optional: Korean Output Environment
 
-Keep this chapter only if user-facing output should be Korean. It pairs with the `korean-docs` plugin from this marketplace (`claude plugin install korean-docs@simplecore-skills`).
+Keep this chapter only if user-facing output should be Korean. It pairs with the `korean-docs` plugin from this marketplace (`claude plugin install simplecore@simplecore-skills`).
 
 ### Language & Communication
 

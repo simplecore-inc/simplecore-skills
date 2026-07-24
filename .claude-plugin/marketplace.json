@@ -7,32 +7,14 @@
   },
   "metadata": {
     "description": "SimpleCORE's curated Claude Code skills",
-    "version": "1.2.0"
+    "version": "2.0.0"
   },
   "plugins": [
     {
-      "name": "svg-diagrams",
-      "source": "./plugins/svg-diagrams",
-      "description": "Create diagrams as SVG or ASCII — flowcharts, sequence/state/class/ER, system architecture, pipelines, network layouts — with auto-layout and render audit tooling",
-      "keywords": ["svg", "diagram", "flowchart", "architecture", "mermaid"]
-    },
-    {
-      "name": "korean-docs",
-      "source": "./plugins/korean-docs",
-      "description": "Korean output standards for all deliverables — writing, translation, proofreading, and glossary management with automated audit tooling",
-      "keywords": ["korean", "documentation", "translation", "glossary", "style"]
-    },
-    {
-      "name": "ignite3",
-      "source": "./plugins/ignite3",
-      "description": "Apache Ignite 3 reference — SQL, client APIs (Java/.NET/C++/JDBC), configuration, operations, and architecture documentation",
-      "keywords": ["ignite", "apache-ignite", "sql", "database", "distributed"]
-    },
-    {
-      "name": "wireframe-boards",
-      "source": "./plugins/wireframe-boards",
-      "description": "Author low-fidelity phone, tablet, and desktop wireframes as a single self-contained HTML board — fixed-viewport device frames, flow connectors, and an implementation contract for downstream readers",
-      "keywords": ["wireframe", "mockup", "lo-fi", "ui-design", "html"]
+      "name": "simplecore",
+      "source": "./plugins/simplecore",
+      "description": "SimpleCORE's curated skill set — Korean output standards with glossary tooling, SVG and ASCII diagrams, low-fidelity wireframe boards, and an Apache Ignite 3 reference",
+      "keywords": ["korean", "documentation", "glossary", "svg", "diagram", "wireframe", "ignite"]
     }
   ]
 }
