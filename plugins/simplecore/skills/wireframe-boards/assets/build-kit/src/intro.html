@@ -1,0 +1,27 @@
+<!-- Board intro — shipped with every board so the built HTML always carries the reading
+     contract. Adjust the header text and add board-specific rules as items 11+; never
+     delete or trim items 1-10. The view-toggle label pairs with the checkbox build.mjs
+     emits first in <body>; keep it only if your board uses .narrow/.wide pairs. -->
+<header class="board-header">
+  <h1>{{PRODUCT}} — {{AREA}} Wireframes</h1>
+  <span class="tag">WIREFRAME v0.1 · LO-FI</span>
+  <label class="view-toggle" for="viewport"><span class="opt-narrow">Narrow</span><span class="opt-wide">Wide</span></label>
+  <span class="dateline">{{date}} · lo-fi</span>
+</header>
+
+<section class="readme">
+  <h2>HOW TO READ THIS BOARD — REQUIRED BEFORE IMPLEMENTING</h2>
+  <ol>
+    <li><strong>This is a low-fidelity wireframe, not a design.</strong> It fixes <em>what is on each screen, in which state, and how the user moves between screens</em> — the minimum needed to start building. It says nothing about how the product should look.</li>
+    <li><strong>Never reproduce this board's appearance.</strong> Greyscale fills, 1px borders, corner radii, paddings, the single accent color, device chrome, and this monospaced notation are board notation. Build with the project's own design system and component library, and let it decide color, type, spacing, elevation, and motion.</li>
+    <li><strong>Grey bars and boxes are placeholders</strong> (<code>.bar</code>, <code>.img-ph</code>, <code>.qr-ph</code>, <code>.thumb</code>) standing in for real data. They are not grey rectangles in the product.</li>
+    <li><strong>Real text is the specified wording — keep it.</strong> Button labels, screen titles, field labels, tab names, empty-state and error copy are the intended strings. Placeholder bars are not strings.</li>
+    <li><strong>Every frame is one screen × one state.</strong> States drawn here (empty, error, loading, expired, terminal, permission-gated, overlay) are requirements; implement all of them, not only the happy path.</li>
+    <li><strong>The frame label reads <code>route — screen — state</code>.</strong> Notes carry <code>AUTH:</code> (entry precondition), <code>DATA:</code> (source endpoint), <code>OPEN:</code> (unresolved question).</li>
+    <li><strong>An <code>OPEN:</code> note blocks that part of the implementation.</strong> Resolve it with the board's author — never guess, and never let the drawn shape stand in for the missing decision.</li>
+    <li><strong>Device frames are reference viewports, not breakpoints to hard-code.</strong> Phone and tablet frames are fixed device viewports. Desktop frames pin only the width: the page height is fluid, and the dashed <em>fold</em> line marks the smallest supported window — everything the user must act on belongs above it.</li>
+    <li><strong>A narrow/wide pair is one responsive screen, not two screens.</strong> The pair records how the layout reflows between the two viewports; implement a single screen that spans them.</li>
+    <li><strong>Arrows, numbered steps, stickies, and fold lines are annotations</strong> describing navigation and intent. Never render them as UI.</li>
+    <li><strong>Visual detail is deliberately unspecified; screens and states are not.</strong> A screen or state missing from this board has not been specified — ask, do not invent. Where this board and the project's frontend conventions disagree about structure or components, the project's conventions win.</li>
+  </ol>
+</section>
