@@ -21,6 +21,7 @@ const intro = existsSync(join(here, 'src/intro.html'))
 
 const sidebarSections = [];
 const sectionBlocks = [];
+const loaded = [];
 
 for (const sec of manifest) {
   const scList = [];
@@ -31,6 +32,7 @@ for (const sec of manifest) {
     const num = `${sec.letter}-${String(i + 1).padStart(2, '0')}`;
     frames.push(frame(mod, num));
     scList.push({ num, label: sc.label, anchor: `s-${num.toLowerCase()}` });
+    loaded.push({ num, file: sc.file, label: sc.label, mod });
   }
   sidebarSections.push({ letter: sec.letter, title: sec.title, screens: scList });
   const caption = sec.count || `${sec.screens.length} frames`;
@@ -62,6 +64,25 @@ const missing = REQUIRED.filter((l) => !present.has(l));
 if (release && (manifest.length === 0 || missing.length)) {
   console.error(`refusing --release: ${manifest.length === 0 ? 'manifest is empty' : 'sections not present: ' + missing.join(', ')}. Build stays in _proof.html.`);
   process.exit(1);
+}
+
+// Content gate: a section can be present while a frame has quietly lost what it promises —
+// a refactor or a bad merge leaves the label intact and the drawing gone, and a gate that
+// counts sections passes it. The manifest label is the frame's contract, so a frame the
+// label calls a dialog has to draw one. Checked against the screen module rather than the
+// rendered HTML so a failure names the source file. Add your own label conventions here.
+const DIALOG_LABEL = /dialog|다이얼로그/i;
+const hollow = loaded.filter(
+  (s) => DIALOG_LABEL.test(s.label) && !/class="(modal|sheet)\b/.test(s.mod.overlay ?? '')
+);
+if (hollow.length) {
+  const named = hollow.map((s) => `${s.num} (${s.file})`).join(', ');
+  console.error(
+    release
+      ? `refusing --release: labelled a dialog but draws none: ${named}. Build stays in _proof.html.`
+      : `warning: labelled a dialog but draws none: ${named}`
+  );
+  if (release) process.exit(1);
 }
 const out = release ? 'board.html' : '_proof.html';
 writeFileSync(join(here, out), html);

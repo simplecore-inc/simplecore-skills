@@ -1,0 +1,533 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>component catalog</title>
+<style>
+  :root {
+    --ink: #1f2430;         /* primary text */
+    --muted: #5a6270;       /* secondary text, notes */
+    --faint: #8b93a1;       /* placeholder input text, status bar */
+    --line: #a9b1bd;        /* block borders */
+    --line-strong: #3a4150; /* device + emphasized borders */
+    --fill: #e8ebef;        /* light greybox fill */
+    --fill-deep: #d5dae1;   /* deep greybox fill */
+    --paper: #f7f8fa;       /* board background */
+    --screen: #ffffff;
+    --accent: #e05d38;      /* the ONE accent: arrows, pins, stickies, folds, OPEN */
+    --accent-tint: #fdeee7;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    --sans: system-ui, -apple-system, "Segoe UI", "Helvetica Neue", sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--paper);
+    background-image: radial-gradient(var(--fill-deep) 1px, transparent 1px);
+    background-size: 24px 24px;
+    color: var(--ink);
+    font-family: var(--sans);
+    padding: 32px 40px 64px;
+  }
+
+  /* ── Board chrome ─────────────────────────────────────────────── */
+  .board-header { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; }
+  .board-header h1 { font-size: 22px; font-weight: 800; letter-spacing: -0.01em; }
+  .tag {
+    border: 1.5px dashed var(--accent); color: var(--accent);
+    font: 600 12px var(--mono); padding: 4px 10px;
+    transform: rotate(-2deg); background: var(--screen);
+  }
+  .dateline { margin-left: auto; font: 12px var(--mono); color: var(--muted); }
+  .toc { display: flex; flex-wrap: wrap; gap: 6px 18px; font: 12px var(--mono); margin-bottom: 36px; }
+  .toc a { color: var(--muted); text-decoration: none; border-bottom: 1px dashed var(--line); }
+  .toc a:hover { color: var(--accent); border-color: var(--accent); }
+
+  /* ── Implementation contract (never delete) ───────────────────── */
+  .readme {
+    max-width: 1180px; margin-bottom: 30px; padding: 16px 20px;
+    background: var(--screen); border: 1.5px solid var(--line-strong);
+    border-left: 5px solid var(--accent);
+    font-size: 13px; line-height: 1.75;
+  }
+  .readme h2 { font: 700 12px var(--mono); letter-spacing: 0.06em; color: var(--accent); margin-bottom: 8px; }
+  .readme ol { margin-left: 20px; }
+  .readme li { margin-bottom: 3px; }
+  .readme code { font: 11.5px var(--mono); background: var(--fill); padding: 1px 5px; border-radius: 3px; }
+  .readme strong { font-weight: 700; }
+
+  /* ── Flow sections ────────────────────────────────────────────── */
+  .flow { margin-bottom: 56px; }
+  .flow-title {
+    display: flex; align-items: baseline; gap: 10px;
+    font-size: 15px; font-weight: 800; letter-spacing: 0.02em;
+    border-bottom: 2px solid var(--ink); padding-bottom: 6px; margin-bottom: 16px;
+  }
+  .flow-title .count { font: 11px var(--mono); color: var(--muted); font-weight: 400; }
+  .row { display: flex; align-items: flex-start; gap: 24px; overflow-x: auto; padding: 6px 2px 12px; margin-bottom: 8px; }
+  .row.wrap { flex-wrap: wrap; overflow-x: visible; } /* never wrap a row holding desktop frames */
+
+  /* Horizontal scrollbars stay permanently visible. macOS hides overlay
+     scrollbars until the user scrolls, so a row of 1440px desktop frames looks
+     like it ends at the viewport edge and reviewers never find the rest of the
+     flow. Declaring ::-webkit-scrollbar with an explicit height opts the row
+     out of overlay scrollbars in WebKit/Blink; scrollbar-color does the same in
+     Firefox. Keep this block on every horizontally scrollable region. */
+  .row, .scroll-x { scrollbar-width: auto; scrollbar-color: var(--line) var(--fill); }
+  .row::-webkit-scrollbar, .scroll-x::-webkit-scrollbar { height: 12px; -webkit-appearance: none; }
+  .row::-webkit-scrollbar-track, .scroll-x::-webkit-scrollbar-track {
+    background: var(--fill); border-radius: 999px; border: 1px solid var(--fill-deep);
+  }
+  .row::-webkit-scrollbar-thumb, .scroll-x::-webkit-scrollbar-thumb {
+    background: var(--line); border-radius: 999px; border: 2px solid var(--fill);
+  }
+  .row::-webkit-scrollbar-thumb:hover, .scroll-x::-webkit-scrollbar-thumb:hover { background: var(--line-strong); }
+
+  /* ── Device frames ────────────────────────────────────────────── */
+  /* --vh is the reference viewport height: a hard device height on phone and
+     tablet, the smallest supported window height on desktop. .screen never
+     shrinks below it, and grows when the page is longer. */
+  .frame { width: 390px; --vh: 844px; flex: 0 0 auto; }
+  .frame.phone.wide     { width: 844px;  --vh: 390px; }
+  .frame.tablet         { width: 768px;  --vh: 1024px; }
+  .frame.tablet.wide    { width: 1024px; --vh: 768px; }
+  .frame.desktop        { width: 1440px; --vh: 900px; }
+  .frame.desktop.narrow { width: 1024px; --vh: 720px; }
+  .device {
+    position: relative; border: 2px solid var(--line-strong); border-radius: 24px;
+    background: var(--screen); overflow: hidden;
+    box-shadow: 3px 4px 0 rgba(31, 36, 48, 0.08);
+  }
+  .frame.tablet .device { border-radius: 18px; }
+  .frame.desktop .device { border-radius: 10px; }
+  .screen { position: relative; min-height: var(--vh); display: flex; flex-direction: column; }
+  .frame-label { font: 600 12px var(--mono); margin-top: 10px; }
+  .frame-notes { font: 11px var(--mono); color: var(--muted); margin-top: 4px; line-height: 1.6; }
+  .frame-notes .open { color: var(--accent); font-weight: 700; }
+
+  /* Fold line — drawn at --vh, so it lands on the viewport bottom however far
+     page content pushes the frame. Required on every desktop frame. */
+  .fold {
+    position: absolute; left: 0; right: 0; top: var(--vh); z-index: 2;
+    border-top: 1.5px dashed var(--accent); pointer-events: none;
+  }
+  /* Label sits ABOVE the line so it stays inside the frame when the page is
+     shorter than --vh and the fold lands on the bottom edge. */
+  .fold span {
+    position: absolute; right: 10px; bottom: 5px;
+    background: var(--screen); border: 1px solid var(--accent); color: var(--accent);
+    font: 600 10px var(--mono); padding: 1px 6px; border-radius: 3px;
+  }
+
+  /* ── Viewport toggle (narrow ⇄ wide) ──────────────────────────── */
+  /* CSS-only: the checkbox is the FIRST element in <body>; every rule below
+     reaches frames through the sibling (~) combinator. No JavaScript. Only
+     frames tagged .narrow / .wide participate — an untagged frame is always
+     visible, which is how single-viewport screens are authored. */
+  .view-input { position: absolute; opacity: 0; pointer-events: none; }
+  .view-toggle {
+    display: inline-flex; border: 1.5px solid var(--line-strong); border-radius: 8px;
+    overflow: hidden; font: 600 12px var(--mono); cursor: pointer; user-select: none;
+    background: var(--screen);
+  }
+  .view-toggle span { padding: 5px 12px; color: var(--muted); }
+  .view-toggle .opt-narrow { background: var(--fill-deep); color: var(--ink); }
+  .view-input ~ * .frame.wide { display: none; }
+  .view-input:checked ~ * .frame.wide { display: block; }
+  .view-input:checked ~ * .frame.narrow { display: none; }
+  .view-input:checked ~ * .opt-narrow { background: transparent; color: var(--muted); }
+  .view-input:checked ~ * .opt-wide { background: var(--fill-deep); color: var(--ink); }
+
+  /* ── Phone / tablet chrome ────────────────────────────────────── */
+  .statusbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 7px 16px 5px; font: 11px var(--mono); color: var(--faint);
+    position: relative;
+  }
+  .statusbar::after {
+    content: ""; position: absolute; left: 50%; top: 6px; transform: translateX(-50%);
+    width: 84px; height: 10px; border-radius: 999px; background: var(--fill-deep);
+  }
+  .frame.tablet .statusbar::after { display: none; } /* tablets have no notch */
+  .appbar {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 14px; border-bottom: 1px solid var(--fill-deep);
+    font-size: 15px; font-weight: 700;
+  }
+  .appbar .back { color: var(--muted); font-weight: 400; }
+  .appbar .trail { margin-left: auto; }
+  .body { flex: 1; display: flex; flex-direction: column; gap: 10px; padding: 14px; }
+  .cta { padding: 12px 14px; border-top: 1px dashed var(--line); display: flex; flex-direction: column; gap: 8px; }
+  .tabbar { display: flex; border-top: 1.5px solid var(--line-strong); margin-top: auto; }
+  .tab { flex: 1; text-align: center; padding: 8px 0 10px; font-size: 11px; color: var(--muted); }
+  .tab .ic { width: 18px; height: 18px; border: 1.5px solid currentColor; border-radius: 5px; margin: 0 auto 3px; }
+  .tab.active { color: var(--ink); font-weight: 700; }
+
+  /* ── Desktop chrome ───────────────────────────────────────────── */
+  /* .browserbar sits OUTSIDE .screen so the fold measures the page viewport,
+     not the browser window. */
+  .browserbar {
+    display: flex; align-items: center; gap: 10px; padding: 8px 12px;
+    border-bottom: 1px solid var(--line); background: var(--fill);
+    font: 11px var(--mono); color: var(--muted);
+  }
+  .browserbar .dots { display: flex; gap: 5px; }
+  .browserbar .dots i { width: 9px; height: 9px; border-radius: 50%; background: var(--fill-deep); border: 1px solid var(--line); }
+  .browserbar .url { flex: 1; background: var(--screen); border: 1px solid var(--line); border-radius: 999px; padding: 4px 12px; }
+  .shell { flex: 1; display: flex; min-height: 0; }
+  .sidebar {
+    flex: 0 0 220px; display: flex; flex-direction: column; gap: 2px;
+    padding: 12px 10px; border-right: 1px solid var(--fill-deep); background: var(--paper);
+  }
+  .sidebar .brand { font-size: 13px; font-weight: 800; padding: 4px 8px 10px; }
+  .nav-group { font: 10px var(--mono); color: var(--faint); letter-spacing: 0.06em; padding: 12px 8px 4px; }
+  .nav-item { display: flex; align-items: center; gap: 8px; padding: 7px 8px; border-radius: 6px; font-size: 13px; color: var(--muted); }
+  .nav-item .ic { width: 14px; height: 14px; flex: 0 0 auto; border: 1.5px solid currentColor; border-radius: 4px; }
+  .nav-item.active { background: var(--fill-deep); color: var(--ink); font-weight: 700; }
+  .sidebar.rail { flex-basis: 60px; align-items: center; } /* collapsed at the narrow breakpoint */
+  .sidebar.rail .nav-item { justify-content: center; }
+  /* :not(.ic) keeps the glyph — the icon is a span too */
+  .sidebar.rail .brand, .sidebar.rail .nav-group, .sidebar.rail .nav-item span:not(.ic) { display: none; }
+  .main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .topbar { display: flex; align-items: center; gap: 12px; padding: 10px 16px; border-bottom: 1px solid var(--fill-deep); }
+  .topbar .search { flex: 0 1 320px; }
+  .topbar .spacer { flex: 1; }
+  .topbar .avatar { width: 26px; height: 26px; border-radius: 50%; background: var(--fill-deep); border: 1px solid var(--line); }
+  .crumb { font: 11px var(--mono); color: var(--faint); padding: 12px 16px 0; }
+  .toolbar { display: flex; align-items: center; gap: 10px; padding: 8px 16px 0; }
+  .toolbar .actions { margin-left: auto; display: flex; gap: 8px; }
+  .toolbar .btn { padding: 7px 12px; font-size: 13px; }
+  .frame.desktop .body { padding: 14px 16px 18px; gap: 12px; }
+
+  /* ── Layout primitives (master-detail, card grids, tables) ────── */
+  .split { flex: 1; display: flex; min-height: 0; }
+  .pane { flex: 1; display: flex; flex-direction: column; gap: 10px; padding: 14px; min-width: 0; }
+  .pane.list { flex: 0 0 280px; border-right: 1px solid var(--fill-deep); }
+  .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .table { border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  .trow { display: flex; align-items: center; gap: 12px; padding: 9px 12px; border-top: 1px solid var(--fill-deep); }
+  .trow:first-child { border-top: 0; }
+  .trow.thead { background: var(--fill); font: 600 11px var(--mono); color: var(--muted); letter-spacing: 0.04em; }
+  .td { flex: 1; min-width: 0; }
+  .td.w2 { flex: 2; }
+  .td.fix { flex: 0 0 110px; }
+  .td.right { text-align: right; }
+  .pagination { display: flex; align-items: center; gap: 6px; padding: 2px; font: 11px var(--mono); color: var(--muted); }
+  .pagination .pg { border: 1px solid var(--line); border-radius: 5px; padding: 3px 8px; background: var(--screen); }
+  .pagination .pg.active { background: var(--fill-deep); border-color: var(--line-strong); color: var(--ink); font-weight: 700; }
+
+  /* ── Greybox primitives ───────────────────────────────────────── */
+  .img-ph {
+    min-height: 120px; background: var(--fill); border: 1px solid var(--line);
+    background-image:
+      linear-gradient(to top right, transparent calc(50% - 0.5px), var(--line) calc(50% - 0.5px), var(--line) calc(50% + 0.5px), transparent calc(50% + 0.5px)),
+      linear-gradient(to bottom right, transparent calc(50% - 0.5px), var(--line) calc(50% - 0.5px), var(--line) calc(50% + 0.5px), transparent calc(50% + 0.5px));
+  }
+  .qr-ph {
+    width: 150px; height: 150px; margin: 8px auto; border: 1px solid var(--line-strong);
+    background: conic-gradient(var(--fill-deep) 90deg, transparent 90deg 180deg, var(--fill-deep) 180deg 270deg, transparent 270deg) 0 0 / 20px 20px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .qr-ph span { background: var(--screen); font: 11px var(--mono); color: var(--muted); padding: 2px 6px; border: 1px solid var(--line); }
+  /* display:block so a .bar also renders inside inline hosts such as a .td */
+  .bar { display: block; height: 10px; border-radius: 3px; background: var(--fill-deep); }
+  .bar.light { background: var(--fill); }
+  .w25 { width: 25%; } .w40 { width: 40%; } .w60 { width: 60%; } .w80 { width: 80%; } .w100 { width: 100%; }
+  .t-title { font-size: 16px; font-weight: 700; }
+  .t-sub { font-size: 13px; color: var(--muted); }
+  .t-body { font-size: 13px; line-height: 1.5; }
+  .mono { font: 11px var(--mono); }
+  .muted { color: var(--muted); }
+  .faint { color: var(--faint); }
+  .divider { border: 0; border-top: 1px solid var(--fill-deep); margin: 2px 0; }
+
+  .btn {
+    border: 1.5px solid var(--line-strong); border-radius: 8px;
+    padding: 11px; text-align: center; font-size: 14px; font-weight: 600;
+    background: var(--screen);
+  }
+  .btn.primary { background: var(--fill-deep); }
+  .btn.ghost { border-style: dashed; color: var(--muted); }
+
+  .field { display: flex; flex-direction: column; gap: 4px; }
+  .label { font-size: 12px; color: var(--muted); font-weight: 600; }
+  .input {
+    border: 1px solid var(--line); border-radius: 6px; background: var(--screen);
+    padding: 10px 12px; font-size: 13px; color: var(--faint);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .topbar .input { padding: 6px 10px; font-size: 12px; }
+
+  .chip {
+    display: inline-block; border: 1px solid var(--line); border-radius: 999px;
+    padding: 4px 12px; font-size: 12px; background: var(--screen);
+  }
+  .chip.active { background: var(--fill-deep); border-color: var(--line-strong); font-weight: 600; }
+  .badge {
+    display: inline-block; border-radius: 4px; padding: 2px 8px;
+    font-size: 11px; font-weight: 600; background: var(--fill-deep);
+  }
+  .badge.outline { background: transparent; border: 1px solid var(--line-strong); }
+  .chips, .badges { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+
+  .card { border: 1px solid var(--line); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+  .list-card { border: 1px solid var(--line); border-radius: 8px; padding: 10px; display: flex; gap: 10px; align-items: center; }
+  .list-card .thumb { width: 48px; height: 48px; flex: 0 0 auto; min-height: 0; }
+  .list-card .lines { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+
+  /* ── Overlay states (bottom sheet on touch, centered modal on desktop) ─── */
+  .dim { position: absolute; inset: 0; background: rgba(31, 36, 48, 0.35); z-index: 1; }
+  .sheet {
+    position: absolute; left: 14px; right: 14px; bottom: 14px; z-index: 1;
+    background: var(--screen); border: 1.5px solid var(--line-strong); border-radius: 12px;
+    padding: 16px; display: flex; flex-direction: column; gap: 10px;
+  }
+  .modal {
+    position: absolute; left: 50%; top: 110px; transform: translateX(-50%); z-index: 1;
+    width: 460px; background: var(--screen); border: 1.5px solid var(--line-strong);
+    border-radius: 12px; padding: 18px; display: flex; flex-direction: column; gap: 12px;
+    box-shadow: 4px 6px 0 rgba(31, 36, 48, 0.12);
+  }
+
+  /* ── Connectors & annotations ─────────────────────────────────── */
+  .arrow {
+    flex: 0 0 auto; align-self: center; width: 120px; margin: 0 4px;
+    border-top: 2px dashed var(--accent); position: relative;
+  }
+  .arrow::after {
+    content: ""; position: absolute; right: -2px; top: -6px;
+    border: 5px solid transparent; border-left: 8px solid var(--accent);
+  }
+  .arrow .step {
+    position: absolute; left: 50%; transform: translateX(-50%); bottom: 6px;
+    white-space: nowrap; font: 600 11px var(--mono); color: var(--accent);
+    background: var(--paper); padding: 1px 4px; border-radius: 3px;
+  }
+  .sticky {
+    flex: 0 0 auto; align-self: flex-start; width: 190px; margin: 24px 8px 0;
+    background: var(--accent-tint); border: 1px solid var(--accent);
+    padding: 12px; font-size: 12px; line-height: 1.5;
+    transform: rotate(-2deg); box-shadow: 2px 3px 0 rgba(31, 36, 48, 0.1);
+  }
+
+  /* ── build-generated: sidebar TOC · screen numbers · anchor navigation ── */
+  html { scroll-behavior: smooth; }
+  .wf-sidebar { position: fixed; top: 0; left: 0; width: 214px; height: 100vh; overflow-y: auto;
+    background: var(--screen); border-right: 2px solid var(--line-strong); padding: 14px 12px 40px; z-index: 50; }
+  .wf-sidebar h2 { font: 800 13px var(--sans); letter-spacing: -.01em; }
+  .wf-sidebar .sb-sub { font: 10px var(--mono); color: var(--muted); margin: 3px 0 12px; }
+  .wf-sidebar .sb-sec { font: 700 10.5px var(--mono); color: var(--muted); letter-spacing: .05em; margin: 13px 0 4px; }
+  .wf-sidebar a { display: flex; gap: 8px; align-items: baseline; text-decoration: none;
+    padding: 3px 6px; border-radius: 5px; border-left: 2px solid transparent; }
+  .wf-sidebar a:hover { background: var(--fill); }
+  .wf-sidebar a:target, .wf-sidebar a.on { border-left-color: var(--accent); background: var(--fill); }
+  .wf-sidebar a .num { font: 700 10px var(--mono); color: var(--accent); flex: 0 0 40px; }
+  .wf-sidebar a .lbl { font-size: 11px; color: var(--muted); line-height: 1.3; }
+  .wf-board { margin-left: 214px; }
+  /* section title sticks to the top so a selected frame never hides which section it is in */
+  .flow-title { position: sticky; top: 0; z-index: 40; background: var(--paper); padding-top: 10px; }
+  /* --frame-zoom: scale the display only so a frame fits on low-res screens (design basis unchanged) */
+  :root { --frame-zoom: 0.85; }
+  .row { zoom: var(--frame-zoom); padding: 8px 10px 14px; }
+  /* keep an anchor-jumped frame below the sticky title and clear of row clipping */
+  .frame { scroll-margin: 64px 24px; }
+  .frame > .device { transition: outline-color .2s; }
+  .frame:target > .device { outline: 3px solid var(--accent); outline-offset: 4px; }
+  .frame-label .fnum { display: inline-block; background: var(--accent); color: var(--screen);
+    font: 700 10px var(--mono); padding: 1px 7px; border-radius: 4px; margin-right: 8px; letter-spacing: .03em; }
+
+</style>
+</head>
+<body>
+<input type="checkbox" id="viewport" class="view-input" aria-label="Viewport width">
+<nav class="wf-sidebar"><h2>component catalog</h2><div class="sb-sub">shared components · building blocks</div>
+  <div class="sb-sec">C. categories</div>
+  <a href="#cat-0"><span class="num">C-01</span><span class="lbl">text & placeholder</span></a>
+  <a href="#cat-1"><span class="num">C-02</span><span class="lbl">input</span></a>
+  <a href="#cat-2"><span class="num">C-03</span><span class="lbl">container</span></a>
+  <a href="#cat-3"><span class="num">C-04</span><span class="lbl">data</span></a>
+  <a href="#cat-4"><span class="num">C-05</span><span class="lbl">touch chrome</span></a>
+  <a href="#cat-5"><span class="num">C-06</span><span class="lbl">desktop chrome</span></a>
+  <a href="#cat-6"><span class="num">C-07</span><span class="lbl">layout</span></a>
+  <a href="#cat-7"><span class="num">C-08</span><span class="lbl">overlay</span></a>
+</nav>
+<div class="wf-board">
+<header class="board-header"><h1>component catalog</h1><span class="tag">COMPONENTS · building blocks</span></header>
+<section class="readme"><h2>How to read this catalog</h2><ol>
+  <li>Screens are made by <em>composing</em> the components below — never by hand-writing raw HTML. Each is a function in <code>src/components.mjs</code> mapped to a class in <code>styles.css</code>.</li>
+  <li>Onboarding starts <strong>here</strong>: stand up the shared components — content plus the device chrome (appbar/tabbar/shell/sidebarNav/topbar/browserbar) — and a sample screen before drawing product screens.</li>
+  <li>Add a component → register it in <code>CATALOG</code> and it appears on this page automatically.</li>
+  <li>Grey and the single accent are lo-fi notation — color, type, and spacing are the design system's call.</li>
+</ol></section>
+<section class="flow" id="cat-0">
+  <div class="flow-title">C-01. text & placeholder <span class="count">3 components</span></div>
+  <div class="row" style="flex-wrap:wrap; overflow-x:visible">
+<article class="frame" id="comp-t-title-t-sub-t-body" style="width:auto">
+      <div class="card" style="min-width:340px;max-width:520px">
+        <div style="display:flex;align-items:baseline;gap:8px"><span class="t-title mono">t-title · t-sub · t-body</span></div>
+        <div class="t-sub" style="font-size:11px">real copy: titles, guidance, body</div>
+        <div style="border:1px dashed var(--line); border-radius:6px; padding:12px; background:var(--paper)"><div class="t-title">Welcome back</div><div class="t-sub">Sign in to continue.</div></div>
+      </div>
+    </article>
+<article class="frame" id="comp-bar-width-light-" style="width:auto">
+      <div class="card" style="min-width:340px;max-width:520px">
+        <div style="display:flex;align-items:baseline;gap:8px"><span class="t-title mono">bar(width, light)</span></div>
+        <div class="t-sub" style="font-size:11px">placeholder text line — w25/w40/w60/w80/w100</div>
+        <div style="border:1px dashed var(--line); border-radius:6px; padding:12px; background:var(--paper)"><div class="bar w80"></div><div class="bar light w40"></div></div>
+      </div>
+    </article>
+<article class="frame" id="comp-imgPh-qrPh-label-" style="width:auto">
+      <div class="card" style="min-width:340px;max-width:520px">
+        <div style="display:flex;align-items:baseline;gap:8px"><span class="t-title mono">imgPh() · qrPh(label)</span></div>
+        <div class="t-sub" style="font-size:11px">image placeholder (X) · QR/barcode placeholder</div>
+        <div style="border:1px dashed var(--line); border-radius:6px; padding:12px; background:var(--paper)"><div style="display:flex;gap:10px"><div class="img-ph thumb"></div><div class="qr-ph"><span>QR</span></div></div></div>
+      </div>
+    </article>
+  </div>
+</section>
+
+<section class="flow" id="cat-1">
+  <div class="flow-title">C-02. input <span class="count">3 components</span></div>
+  <div class="row" style="flex-wrap:wrap; overflow-x:visible">
+<article class="frame" id="comp-btn-text-variant-" style="width:auto">
+      <div class="card" style="min-width:340px;max-width:520px">
+        <div style="display:flex;align-items:baseline;gap:8px"><span class="t-title mono">btn(text, variant)</span></div>
+        <div class="t-sub" style="font-size:11px">'' · primary · ghost</div>
+        <div style="border:1px dashed var(--line); border-radius:6px; padding:12px; background:var(--paper)"><div class="btn primary">Sign in</div><div class="btn ghost">Create an account</div></div>
+      </div>
+    </article>
+<article class="frame" id="comp-field-label-value-hint-select-" style="width:auto">
+      <div class="card" style="min-width:340px;max-width:520px">
+        <div style="display:flex;align-items:baseline;gap:8px"><span class="t-title mono">field({label, value, hint, select})</span></div>
+        <div class="t-sub" style="font-size:11px">label + input; select shows ▾</div>
+        <div style="border:1px dashed var(--line); border-radius:6px; padding:12px; background:var(--paper)"><div class="field"><span class="label">Email</span><span class="input">name@example.com</span></div></div>
+      </div>
+    </article>
+<article class="frame" id="comp-chip-text-active-badge-text-variant-" style="width:auto">
+      <div class="card" style="min-width:340px;max-width:520px">
+        <div style="display:flex;align-items:baseline;gap:8px"><span class="t-title mono">chip(text, active) · badge(text, variant)</span></div>
+        <div class="t-sub" style="font-size:11px">filter chip · status badge (outline)</div>
+        <div style="border:1px dashed var(--line); border-radius:6px; padding:12px; background:var(--paper)"><div class="chips"><span class="chip active">All</span><span class="chip">Open</span><span class="chip">Done</span></div><div class="badges"><span class="badge outline">Open</span><span class="badge">Done</span></div></div>
+      </div>
+    </article>
+  </div>
+</section>
+
+<section class="flow" id="cat-2">
+  <div class="flow-title">C-03. container <span class="count">3 components</span></div>
+  <div class="row" style="flex-wrap:wrap; overflow-x:visible">
+<article class="frame" id="comp-card-sub-body-" style="width:auto">
+      <div class="card" style="min-width:340px;max-width:520px">
+        <div style="display:flex;align-items:baseline;gap:8px"><span class="t-title mono">card({sub, body})</span></div>
+        <div class="t-sub" style="font-size:11px">content card</div>
+        <div style="border:1px dashed var(--line); border-radius:6px; padding:12px; background:var(--paper)"><div class="card"><div class="t-sub">Pending</div><div class="bar w25"></div></div></div>
+      </div>
+    </article>
+<article class="frame" id="comp-listCard-thumb-lines-trail-" style="width:auto">
+      <div class="card" style="min-width:340px;max-width:520px">
+        <div style="display:flex;align-items:baseline;gap:8px"><span class="t-title mono">listCard({thumb, lines, trail})</span></div>
+        <div class="t-sub" style="font-size:11px">list row with thumbnail</div>
+        <div style="border:1px dashed var(--line); border-radius:6px; padding:12px; background:var(--paper)"><div class="list-card"><div class="img-ph thumb"></div><div class="lines"><div class="bar w60"></div><div class="bar light w40"></div></div><span class="badge outline">Open</span></div></div>
+      </div>
+    </article>
+<article class="frame" id="comp-grid-n-children-" style="width:auto">
+      <div class="card" style="min-width:340px;max-width:520px">
+        <div style="display:flex;align-items:baseline;gap:8px"><span class="t-title mono">grid(n, children)</span></div>
+        <div class="t-sub" style="font-size:11px">card grid — 2 · 3 · 4 columns</div>
+        <div style="border:1px dashed var(--line); border-radius:6px; padding:12px; background:var(--paper)"><div class="grid-2"><div class="card"><div class="t-sub">A</div><div class="bar w25"></div></div><div class="card"><div class="t-sub">B</div><div class="bar w25"></div></div></div></div>
+      </div>
+    </article>
+  </div>
+</section>
+
+<section class="flow" id="cat-3">
+  <div class="flow-title">C-04. data <span class="count">2 components</span></div>
+  <div class="row" style="flex-wrap:wrap; overflow-x:visible">
+<article class="frame" id="comp-table-head-rows-" style="width:auto">
+      <div class="card" style="min-width:340px;max-width:520px">
+        <div style="display:flex;align-items:baseline;gap:8px"><span class="t-title mono">table({head, rows})</span></div>
+        <div class="t-sub" style="font-size:11px">data table; size cells with w2/fix/right</div>
+        <div style="border:1px dashed var(--line); border-radius:6px; padding:12px; background:var(--paper)"><div class="table"><div class="trow thead"><span class="td w2">REQUEST</span><span class="td">OWNER</span><span class="td fix">STATUS</span></div><div class="trow"><span class="td w2"><div class="bar w80"></div></span><span class="td"><div class="bar light w60"></div></span><span class="td fix"><span class="badge outline">Open</span></span></div></div></div>
+      </div>
+    </article>
+<article class="frame" id="comp-pagination-pages-of-" style="width:auto">
+      <div class="card" style="min-width:340px;max-width:520px">
+        <div style="display:flex;align-items:baseline;gap:8px"><span class="t-title mono">pagination(pages, of)</span></div>
+        <div class="t-sub" style="font-size:11px">page controls under a table</div>
+        <div style="border:1px dashed var(--line); border-radius:6px; padding:12px; background:var(--paper)"><div class="pagination"><span class="pg active">1</span><span class="pg">2</span><span class="pg">3</span><span>of 12</span></div></div>
+      </div>
+    </article>
+  </div>
+</section>
+
+<section class="flow" id="cat-4">
+  <div class="flow-title">C-05. touch chrome <span class="count">1 components</span></div>
+  <div class="row" style="flex-wrap:wrap; overflow-x:visible">
+<article class="frame" id="comp-statusbar-appbar-tabbar-" style="width:auto">
+      <div class="card" style="min-width:340px;max-width:520px">
+        <div style="display:flex;align-items:baseline;gap:8px"><span class="t-title mono">statusbar() · appbar() · tabbar()</span></div>
+        <div class="t-sub" style="font-size:11px">phone/tablet: status bar (notch), app bar, bottom tabs</div>
+        <div style="border:1px dashed var(--line); border-radius:6px; padding:12px; background:var(--paper)"><div class="device" style="width:230px;border-radius:16px"><div class="screen"><div class="statusbar"><span>9:41</span><span>▮▮ ⏻</span></div><div class="appbar">Home<span class="trail"><span class="badge">3 new</span></span></div><div class="body"><div class="bar w60"></div></div><div class="tabbar"><div class="tab active"><div class="ic"></div>Home</div><div class="tab"><div class="ic"></div>Requests</div><div class="tab"><div class="ic"></div>Profile</div></div></div></div></div>
+      </div>
+    </article>
+  </div>
+</section>
+
+<section class="flow" id="cat-5">
+  <div class="flow-title">C-06. desktop chrome <span class="count">1 components</span></div>
+  <div class="row" style="flex-wrap:wrap; overflow-x:visible">
+<article class="frame" id="comp-browserbar-sidebarNav-topbar-toolbar-shell" style="width:auto">
+      <div class="card" style="min-width:340px;max-width:520px">
+        <div style="display:flex;align-items:baseline;gap:8px"><span class="t-title mono">browserbar · sidebarNav · topbar · toolbar · shell</span></div>
+        <div class="t-sub" style="font-size:11px">browser bar, left nav (+rail), top bar, breadcrumb+actions</div>
+        <div style="border:1px dashed var(--line); border-radius:6px; padding:12px; background:var(--paper)"><div class="browserbar"><span class="dots"><i></i><i></i><i></i></span><span class="url">app.example.com/console</span></div><div class="toolbar"><span class="t-title">Console</span><span class="actions"><div class="btn primary">New</div></span></div></div>
+      </div>
+    </article>
+  </div>
+</section>
+
+<section class="flow" id="cat-6">
+  <div class="flow-title">C-07. layout <span class="count">1 components</span></div>
+  <div class="row" style="flex-wrap:wrap; overflow-x:visible">
+<article class="frame" id="comp-split-list-detail-shell-sidebar-main-" style="width:auto">
+      <div class="card" style="min-width:340px;max-width:520px">
+        <div style="display:flex;align-items:baseline;gap:8px"><span class="t-title mono">split(list, detail) · shell(sidebar, main)</span></div>
+        <div class="t-sub" style="font-size:11px">master-detail panes · app shell</div>
+        <div style="border:1px dashed var(--line); border-radius:6px; padding:12px; background:var(--paper)"><div class="device" style="width:360px"><div class="screen"><div class="split"><div class="pane list"><div class="bar w80"></div><div class="bar light w60"></div></div><div class="pane"><div class="t-title">Detail</div><div class="bar w40"></div></div></div></div></div></div>
+      </div>
+    </article>
+  </div>
+</section>
+
+<section class="flow" id="cat-7">
+  <div class="flow-title">C-08. overlay <span class="count">1 components</span></div>
+  <div class="row" style="flex-wrap:wrap; overflow-x:visible">
+<article class="frame" id="comp-sheet-children-modal-children-" style="width:auto">
+      <div class="card" style="min-width:340px;max-width:520px">
+        <div style="display:flex;align-items:baseline;gap:8px"><span class="t-title mono">sheet(children) · modal(children)</span></div>
+        <div class="t-sub" style="font-size:11px">bottom sheet (touch) · centered modal (desktop)</div>
+        <div style="border:1px dashed var(--line); border-radius:6px; padding:12px; background:var(--paper)"><div class="device" style="width:230px;height:150px;border-radius:16px"><div class="screen"><div class="dim"></div><div class="sheet"><div class="t-title">Confirm</div><div class="btn primary">OK</div></div></div></div></div>
+      </div>
+    </article>
+  </div>
+</section>
+</div>
+<script>
+(function () {
+  var links = document.querySelectorAll('.wf-sidebar a[href^="#"]');
+  var byId = {};
+  links.forEach(function (a) { byId[a.getAttribute('href').slice(1)] = a; });
+  function setOn(id) { links.forEach(function (a) { a.classList.remove('on'); }); if (byId[id]) byId[id].classList.add('on'); }
+  var io = new IntersectionObserver(function (entries) {
+    var best = null, r = 0;
+    entries.forEach(function (e) { if (e.intersectionRatio > r) { r = e.intersectionRatio; best = e.target; } });
+    if (best && r > 0) setOn(best.id);
+  }, { threshold: [0.2, 0.5, 0.8], rootMargin: '-8% 0px -55% 0px' });
+  document.querySelectorAll('.frame[id]').forEach(function (f) { io.observe(f); });
+  links.forEach(function (a) { a.addEventListener('click', function () { setOn(a.getAttribute('href').slice(1)); }); });
+})();
+</script>
+</body>
+</html>

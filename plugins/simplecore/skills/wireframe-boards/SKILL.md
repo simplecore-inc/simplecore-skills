@@ -254,6 +254,15 @@ build from scratch; `assets/build-kit/README.md` is the adoption checklist.
   greybox vocabulary as `board-template.html`**, so the single-file and built
   paths speak one language. A working copy of all of this ships in
   `assets/build-kit/`.
+- **The release gate checks what a frame draws, not just that it exists.** A section can be
+  present while a frame has quietly lost what it promises — a refactor or a bad merge leaves the
+  label intact and the drawing gone, and a gate that counts sections passes it. The manifest label
+  is the frame's contract, so hold each frame to it: a screen the label calls a dialog has to draw
+  one. Check against the screen module rather than the built HTML so the failure names the source
+  file, and warn on a preview build while refusing only a release — a gate that blocks the build
+  you iterate with gets switched off. *Why:* the gap this closes is silent by construction, since
+  a frame that draws nothing still renders, still counts, and still reads as covered.
+
 - **Screen numbers are the address.** The build numbers each frame `<letter>-<nn>`
   by its position in the manifest (A-01, A-02). That number is how a human and
   an LLM refer to a screen — "fix A-01", not "the sign-in frame near the middle"
