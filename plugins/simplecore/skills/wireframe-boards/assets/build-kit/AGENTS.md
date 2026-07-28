@@ -34,6 +34,11 @@ under `src/` plus the build.** Read this file before touching a screen.
   HTML) — that narrow read is what keeps a large board tractable.
 - **Screens are addressed by number** (e.g. `A-02`). The number comes from the screen's
   position in its section; the sidebar and anchors resolve it.
+- **The number and the file name are different values, and they drift.** A file keeps the
+  number it was born with, while the board renumbers on every reorder — so
+  `f-11a-provider-settings` can sit at `F-13`. The sidebar and each frame label therefore
+  show BOTH, and a reference handed to a reader can be looked up either way. In prose that
+  outlives a build (plans, specs, notes), name screens by FILE, because that name is stable.
 - **A new screen = one file in `src/screens/` + one line in `manifest.mjs`.**
 - **A body writes no raw HTML tags.** Compose from `components.mjs` functions; when a
   primitive is missing, build it as a component and register it in `CATALOG` (it then

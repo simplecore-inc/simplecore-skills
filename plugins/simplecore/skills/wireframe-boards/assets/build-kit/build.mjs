@@ -30,8 +30,8 @@ for (const sec of manifest) {
     const sc = sec.screens[i];
     const mod = (await import(`./src/screens/${sc.file}.mjs`)).default;
     const num = `${sec.letter}-${String(i + 1).padStart(2, '0')}`;
-    frames.push(frame(mod, num));
-    scList.push({ num, label: sc.label, anchor: `s-${num.toLowerCase()}` });
+    frames.push(frame(mod, num, sc.file));
+    scList.push({ num, label: sc.label, file: sc.file, anchor: `s-${num.toLowerCase()}` });
     loaded.push({ num, file: sc.file, label: sc.label, mod });
   }
   sidebarSections.push({ letter: sec.letter, title: sec.title, screens: scList });

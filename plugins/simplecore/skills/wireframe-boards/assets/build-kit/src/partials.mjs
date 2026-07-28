@@ -10,7 +10,7 @@ import { browserbar } from './components.mjs';
 // shell/sidebar/main for desktop) IS the screen content; frame() only adds the
 // device shell, the desktop browser bar + fold, the label, and the notes. `num`
 // (e.g. A-02) is the stable screen number the sidebar and author address it by.
-export function frame(s, num) {
+export function frame(s, num, file = '') {
   const arrow = s.arrowBefore ? `\n    ${s.arrowBefore}\n` : '';
   const notes = s.notes ? `\n      <div class="frame-notes">\n        ${s.notes}\n      </div>` : '';
   const anchor = `s-${num.toLowerCase()}`;
@@ -22,7 +22,11 @@ export function frame(s, num) {
   const isDesktop = device === 'desktop';
   const browser = isDesktop ? `${browserbar(s.url || 'app.example.com')}\n        ` : '';
   const fold = isDesktop ? `\n          <div class="fold"><span>fold · ${s.fold || 'smallest window'}</span></div>` : '';
-  const label = `<span class="fnum">${num}</span>${s.route ? s.route + ' — ' : ''}${s.screen}${s.state ? ' — ' + s.state : ''}`;
+  // The number comes from the manifest position, the slug from the file name — they drift
+  // apart the moment a screen is reordered, so the label carries BOTH. A reader who was given
+  // one of them can find the frame by either.
+  const slug = file ? `<span class="fslug">${file}</span>` : '';
+  const label = `<span class="fnum">${num}</span>${s.route ? s.route + ' — ' : ''}${s.screen}${s.state ? ' — ' + s.state : ''}${slug}`;
   return `${arrow}    <article class="${classes.join(' ')}" id="${anchor}">
       <div class="device">
         ${browser}<div class="screen">
@@ -34,17 +38,19 @@ export function frame(s, num) {
 }
 
 // sidebar(sections): the fixed table of contents. sections = [{letter, title,
-// screens:[{num, label, anchor}]}].
+// screens:[{num, label, anchor, file}]}]. Each entry shows the number AND the source file
+// slug, because a reference handed to a reader may be written either way.
 export function sidebar(sections) {
   const body = sections.map((sec) =>
     `<div class="sb-sec">${sec.letter}. ${sec.title}</div>\n` +
     sec.screens.map((sc) =>
-      `    <a href="#${sc.anchor}"><span class="num">${sc.num}</span><span class="lbl">${sc.label}</span></a>`
+      `    <a href="#${sc.anchor}"><span class="num">${sc.num}</span><span class="lbl">${sc.label}` +
+      (sc.file ? `<span class="slug">${sc.file}</span>` : '') + `</span></a>`
     ).join('\n')
   ).join('\n    ');
   return `<nav class="wf-sidebar">
     <h2>product name</h2>
-    <div class="sb-sub">screen index · by number</div>
+    <div class="sb-sub">screen index · number and file</div>
     ${body}
   </nav>`;
 }
