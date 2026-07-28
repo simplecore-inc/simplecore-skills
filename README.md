@@ -12,7 +12,6 @@ A collection of [Claude Code](https://claude.com/claude-code) skills maintained 
 | `simplecore:korean-docs` | Korean output standards for all deliverables — writing, translation, proofreading, and glossary (GLOSSARY.md) management. Ships a base glossary, a style reference catalog, and an automated glossary audit script. |
 | `simplecore:svg-diagrams` | Create diagrams as SVG or ASCII — flowcharts, sequence/state/class/ER diagrams, system architecture, pipelines, and network layouts. Includes JSON-spec auto-layout, Mermaid conversion, and a render audit script that catches missing arrowheads, text overflow, and clipped content. |
 | `simplecore:wireframe-boards` | Author low-fidelity wireframes as a single self-contained HTML board — fixed-viewport phone and tablet frames, fluid-height desktop frames with a fold marker, a CSS-only narrow ⇄ wide viewport toggle, greybox primitives, flow connectors, and annotation callouts. Ships a board template plus an implementation contract that travels with every board so readers build from the structure instead of copying the greyboxes as a design. |
-| `simplecore:ignite3` | Apache Ignite 3 reference — SQL (DDL/DML/grammar/data types/functions), client APIs (Java/JDBC/.NET/C++), table/transaction/compute/streaming APIs, cluster configuration, operations, and architecture. |
 
 The plugin also registers the `/simplecore:glossary-audit` command and a PostToolUse hook that audits Markdown and SVG files as they are written — both belong to `korean-docs` and are documented below.
 
@@ -100,8 +99,7 @@ simplecore-skills/
 │       └── skills/
 │           ├── korean-docs/              # SKILL.md + references/ + scripts/ + templates/
 │           ├── svg-diagrams/             # SKILL.md + references/ + scripts/
-│           ├── wireframe-boards/         # SKILL.md + assets/board-template.html
-│           └── ignite3/                  # SKILL.md + references/
+│           └── wireframe-boards/         # SKILL.md + assets/board-template.html
 ├── examples/
 │   └── CLAUDE.md                         # Global instruction file example
 ├── LICENSE
@@ -123,7 +121,7 @@ To work on a skill and have Claude Code pick up changes immediately, clone this 
 ```bash
 git clone https://github.com/simplecore-inc/simplecore-skills.git
 cd simplecore-skills
-for s in korean-docs svg-diagrams wireframe-boards ignite3; do
+for s in korean-docs svg-diagrams wireframe-boards; do
   ln -s "$(pwd)/plugins/simplecore/skills/$s" ~/.claude/skills/"$s"
 done
 ```
@@ -162,10 +160,6 @@ Notes for symlink users:
 2. Bump the `version` in `plugins/simplecore/.claude-plugin/plugin.json` (semantic versioning). The skills share one version — a change to any of them bumps it.
 3. Validate the manifest: `claude plugin validate .`
 4. Commit and push. Users receive the new version through `claude plugin marketplace update` followed by `claude plugin update simplecore`.
-
-## Attribution
-
-The `ignite3` skill's reference documentation is derived from the [Apache Ignite 3 documentation](https://ignite.apache.org/docs/ignite3/latest/), licensed under the Apache License 2.0.
 
 ## License
 

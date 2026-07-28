@@ -1,7 +1,7 @@
 {
   "name": "simplecore",
-  "version": "1.1.0",
-  "description": "SimpleCORE's curated skill set — Korean output standards with glossary tooling, SVG and ASCII diagrams, low-fidelity wireframe boards, and an Apache Ignite 3 reference",
+  "version": "2.1.0",
+  "description": "SimpleCORE's curated skill set — Korean output standards with glossary tooling, SVG and ASCII diagrams, and low-fidelity wireframe boards",
   "author": {
     "name": "SimpleCORE Inc.",
     "email": "dev@simplecore.kr",
@@ -15,7 +15,6 @@
     "glossary",
     "svg",
     "diagram",
-    "wireframe",
-    "ignite"
+    "wireframe"
   ]
 }

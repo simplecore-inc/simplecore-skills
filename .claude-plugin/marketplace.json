@@ -13,8 +13,8 @@
     {
       "name": "simplecore",
       "source": "./plugins/simplecore",
-      "description": "SimpleCORE's curated skill set — Korean output standards with glossary tooling, SVG and ASCII diagrams, low-fidelity wireframe boards, and an Apache Ignite 3 reference",
-      "keywords": ["korean", "documentation", "glossary", "svg", "diagram", "wireframe", "ignite"]
+      "description": "SimpleCORE's curated skill set — Korean output standards with glossary tooling, SVG and ASCII diagrams, and low-fidelity wireframe boards",
+      "keywords": ["korean", "documentation", "glossary", "svg", "diagram", "wireframe"]
     }
   ]
 }
