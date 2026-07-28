@@ -33,7 +33,7 @@ description: Use for virtually EVERY task — all user-facing output in this env
 2. **찾았으면 처음부터 끝까지 읽는다.** 세션마다 다시 읽는다 — 직전 세션 이후 바뀌었을 수 있다. 어느 위치의 용어사전을 사용하는지 사용자에게 알린다.
 3. **없으면 생성을 제안한다.** 용어사전 없이 여러 문서를 작업하면 같은 용어가 문서마다 다르게 번역된다. 다음을 안내한다:
    ```bash
-   node ~/.claude/skills/korean-docs/scripts/check-glossary.mjs --init   # .claude/GLOSSARY.md 생성
+   node "${CLAUDE_PLUGIN_ROOT}/skills/korean-docs/scripts/check-glossary.mjs" --init   # .claude/GLOSSARY.md 생성
    ```
    사용자가 원하지 않으면 기본 용어사전만으로 진행하되, 작업 중 용어 결정이 쌓이면(3개 이상) 결정 목록과 함께 다시 제안한다.
 4. **기본 용어사전(`GLOSSARY.base.md`)의 규칙도 함께 적용된다.** 프로젝트 규칙이 기본 규칙과 충돌하면 프로젝트 규칙이 우선한다(아래 "기본 규칙 커스터마이징").
@@ -49,7 +49,7 @@ description: Use for virtually EVERY task — all user-facing output in this env
 공통 마무리:
 
 ```bash
-node ~/.claude/skills/korean-docs/scripts/check-glossary.mjs <작업한 파일...>
+node "${CLAUDE_PLUGIN_ROOT}/skills/korean-docs/scripts/check-glossary.mjs" <작업한 파일...>
 ```
 
 오류 0건까지 수정한다. 경고는 하나씩 검토해 수정하거나 유지 근거를 확인한다.
@@ -104,9 +104,9 @@ node ~/.claude/skills/korean-docs/scripts/check-glossary.mjs <작업한 파일..
 ## 감사 도구
 
 ```bash
-node ~/.claude/skills/korean-docs/scripts/check-glossary.mjs               # audit.paths 설정 대상, 없으면 프로젝트 전체
-node ~/.claude/skills/korean-docs/scripts/check-glossary.mjs <경로...>     # 특정 파일·디렉터리
-node ~/.claude/skills/korean-docs/scripts/check-glossary.mjs --all         # 프로젝트 전체 (audit.paths 무시)
+node "${CLAUDE_PLUGIN_ROOT}/skills/korean-docs/scripts/check-glossary.mjs"               # audit.paths 설정 대상, 없으면 프로젝트 전체
+node "${CLAUDE_PLUGIN_ROOT}/skills/korean-docs/scripts/check-glossary.mjs" <경로...>     # 특정 파일·디렉터리
+node "${CLAUDE_PLUGIN_ROOT}/skills/korean-docs/scripts/check-glossary.mjs" --all         # 프로젝트 전체 (audit.paths 무시)
   --strict          # 경고도 실패 처리
   --untranslated    # 영문 문장 잔존 경고 (번역 프로젝트)
   --glossary <p>    # 용어사전 경로 직접 지정 (탐색 생략)
@@ -156,7 +156,7 @@ SVG 파일의 `<text>`·`<tspan>` 내용은 렌더된 한국어 산출물이다 
 
 모든 세션의 답변에 상시 적용하려면 전역 CLAUDE.md에 다음을 둔다:
 
-> 세션에서 한국어 답변·산출물을 처음 작성하기 전에 `~/.claude/skills/korean-docs/references/response-style.md`를 반드시 읽고 세션 내내 적용한다.
+> 세션에서 한국어 답변·산출물을 처음 작성하기 전에 `simplecore:korean-docs` 스킬의 `references/response-style.md`를 반드시 읽고 세션 내내 적용한다.
 
 ## 흔한 합리화 (전부 금지)
 

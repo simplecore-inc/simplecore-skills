@@ -41,9 +41,9 @@ korean-docs/
 
 > **영어 단어를 그대로 직역한 어색한 표현을 만들어 쓰지 않는다. 맥락에 맞는 자연스러운
 > 한국어를 쓴다.** 상세 규칙(금지 표현·어휘 대체 목록·답변 말투·표기법·금융/퀀트/트레이딩
-> 도메인 용어)은 전부 `~/.claude/skills/korean-docs/references/response-style.md`에 있다.
+> 도메인 용어)은 전부 `simplecore:korean-docs` 스킬의 `references/response-style.md`에 있다.
 
-- **한국어 산출물이 있는 거의 모든 작업에서 `korean-docs` 스킬을 적극 호출한다 — 일반
+- **한국어 산출물이 있는 거의 모든 작업에서 `simplecore:korean-docs` 스킬을 적극 호출한다 — 일반
   답변도 포함한다.** 문서 작성·번역·교정·검수·용어사전 작업에는 필수다(용어사전 감사
   도구와 번역투 전체 카탈로그 포함).
 - **스킬 호출 여부와 무관하게, 세션에서 한국어 답변·산출물을 처음 작성하기 전에 반드시
@@ -57,14 +57,14 @@ korean-docs/
 
 ```bash
 # 1. 프로젝트 용어사전 생성 (권장 위치: .claude/GLOSSARY.md)
-node ~/.claude/skills/korean-docs/scripts/check-glossary.mjs --init
+node "${CLAUDE_PLUGIN_ROOT}/skills/korean-docs/scripts/check-glossary.mjs" --init
 
 # 2. 생성된 파일에서 프로젝트명을 채우고, front matter의 audit.paths에 감사 대상 지정
 #    (예: paths: [docs])
 
 # 3. 작업하면서 용어를 등재하고, 감사 실행
-node ~/.claude/skills/korean-docs/scripts/check-glossary.mjs            # audit.paths 대상
-node ~/.claude/skills/korean-docs/scripts/check-glossary.mjs <경로...>  # 특정 파일·폴더
+node "${CLAUDE_PLUGIN_ROOT}/skills/korean-docs/scripts/check-glossary.mjs"            # audit.paths 대상
+node "${CLAUDE_PLUGIN_ROOT}/skills/korean-docs/scripts/check-glossary.mjs" <경로...>  # 특정 파일·폴더
 ```
 
 용어사전이 없어도 스킬은 동작한다 — 기본 용어사전(GLOSSARY.base.md)의 규칙만으로 검사하고, Claude가 문서 작업 중 용어 결정이 쌓이면 생성을 제안한다.

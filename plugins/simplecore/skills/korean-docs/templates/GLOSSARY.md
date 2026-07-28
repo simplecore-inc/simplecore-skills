@@ -9,7 +9,7 @@ audit:
 
 이 프로젝트의 한국어 용어·표기 표준. 한국어 문서를 작성·번역·교정하는 모든 작업은 이 파일을 먼저 읽고 진행한다.
 
-- korean-docs 스킬(`~/.claude/skills/korean-docs/`)의 감사 스크립트가 이 파일을 기본 용어사전(GLOSSARY.base.md)과 병합해 검사한다. 감사 실행: `node ~/.claude/skills/korean-docs/scripts/check-glossary.mjs [경로...]`
+- korean-docs 스킬(`${CLAUDE_PLUGIN_ROOT}/skills/korean-docs/`)의 감사 스크립트가 이 파일을 기본 용어사전(GLOSSARY.base.md)과 병합해 검사한다. 감사 실행: `/simplecore:glossary-audit [경로...]` 또는 `node "${CLAUDE_PLUGIN_ROOT}/skills/korean-docs/scripts/check-glossary.mjs" [경로...]`
 - 표의 형식(열 구성·헤더)은 스크립트가 파싱하므로 임의로 바꾸지 않는다. 항목은 `,`로 구분한다. `/pattern/` 형태는 정규식, 그 외는 리터럴이다. 셀 안에 `|`를 쓰지 않고(alternation 대신 항목 분리), 정규식 안에 `,`를 쓰지 않는다.
 - `금지 표현`의 `수준` 열: `오류`는 발견 즉시 위반(감사 실패), `경고`는 검토 대상, `경고(N+)`는 한 파일에서 N회 이상일 때만 보고. 세 형식 외의 표기는 파싱 오류이며, `경고(3+)`처럼 공백 없이 정확히 쓴다.
 - 표준 번역을 바꾸거나 금지 표기를 추가했다면 같은 세션에서 감사를 다시 실행해 기존 문서를 일괄 수정한다. 용어사전과 문서가 어긋난 채로 두지 않는다.
