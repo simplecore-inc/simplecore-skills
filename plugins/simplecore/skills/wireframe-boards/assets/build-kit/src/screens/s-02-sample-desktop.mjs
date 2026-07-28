@@ -38,6 +38,6 @@ const main =
 export default {
   device: 'desktop', url: 'app.example.com/console', fold: '1440×900',
   route: '/console', screen: 'Console', state: 'default',
-  notes: 'AUTH: session<br>DATA: GET /requests (paged)<br>Desktop height is fluid; the dashed fold marks the smallest supported window.',
+  notes: 'AUTH: session<br>DATA: GET /requests (paged)<br>Desktop height is fluid; the dashed fold marks the smallest supported window.<br>The phone view of this flow is {{s-01-sample}} — write the FILE name in a note and the build prints the current number.',
   body: shell(sidebar, main),
 };

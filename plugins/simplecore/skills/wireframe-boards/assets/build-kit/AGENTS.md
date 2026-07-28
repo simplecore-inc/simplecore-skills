@@ -47,6 +47,18 @@ under `src/` plus the build.** Read this file before touching a screen.
 - **Preview** with `node build.mjs` and open `_proof.html`. Replacing `board.html` is
   `--release` only, gated on the board being complete.
 
+## Pointing at another screen
+
+A number is a position, so writing one into a note makes that note wrong as soon as a screen is
+inserted above it. Point with the **file name** and let the build print the current number:
+
+```js
+notes: 'Different from a refund ({{f-04-refund}}) — a refund revokes immediately'
+```
+
+A slug that matches nothing is left in place as `{{slug?}}` rather than dropped, so a reference
+to a screen that was renamed or removed shows up in the board instead of vanishing quietly.
+
 ## The reading contract
 
 A wireframe fixes **what** is on each screen, which **states** exist, and how screens

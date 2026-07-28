@@ -44,6 +44,14 @@ A-01", not "the sign-in frame near the middle" — and the sidebar entry anchors
 it so a click scrolls both axes to the frame. Adding a screen is one file under
 `src/screens/` plus one line in the manifest.
 
+That number is a *position*, so it changes whenever a screen is inserted or
+reordered while the file name keeps whatever number it was created with — after a
+few passes most frames disagree with their own file. The sidebar and each frame
+label therefore print **both**, so a reference written either way can be found,
+and a note points at another screen by FILE NAME (`{{a-01-sign-in}}`) which the
+build resolves to the current number. Prose that outlives a build — plans, specs,
+review notes — names screens by file for the same reason.
+
 ## The release gate checks what a frame draws, not just that it exists
 
 A section can be present while a frame has quietly lost what it promises — a

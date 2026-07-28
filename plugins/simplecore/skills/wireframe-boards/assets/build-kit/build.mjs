@@ -23,6 +23,20 @@ const sidebarSections = [];
 const sectionBlocks = [];
 const loaded = [];
 
+// A frame's number comes from its position here, so a note that writes one goes stale the
+// moment a screen is inserted above it. Notes reference a screen by its FILE NAME instead —
+// `{{d-04-contract-detail}}` — and the build resolves that to the current number. An unknown
+// slug is left visible as `{{slug?}}` rather than dropped, so a bad reference fails loudly
+// instead of disappearing.
+const numberOf = new Map();
+for (const sec of manifest) {
+  sec.screens.forEach((sc, i) => {
+    numberOf.set(sc.file, `${sec.letter}-${String(i + 1).padStart(2, '0')}`);
+  });
+}
+const resolveRefs = (text) => (text || '').replace(/\{\{([a-z0-9-]+)\}\}/g,
+  (_, slug) => numberOf.get(slug) ?? `{{${slug}?}}`);
+
 for (const sec of manifest) {
   const scList = [];
   const frames = [];
@@ -30,7 +44,7 @@ for (const sec of manifest) {
     const sc = sec.screens[i];
     const mod = (await import(`./src/screens/${sc.file}.mjs`)).default;
     const num = `${sec.letter}-${String(i + 1).padStart(2, '0')}`;
-    frames.push(frame(mod, num, sc.file));
+    frames.push(frame({ ...mod, notes: resolveRefs(mod.notes) }, num, sc.file));
     scList.push({ num, label: sc.label, file: sc.file, anchor: `s-${num.toLowerCase()}` });
     loaded.push({ num, file: sc.file, label: sc.label, mod });
   }
