@@ -1,0 +1,16 @@
+{
+  "description": "Detects a SimpliX backend or simplix-react frontend in the working directory at session start and tells Claude which handbook skills bind. Silent in projects with no SimpliX marker.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/session-start.mjs\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

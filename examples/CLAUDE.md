@@ -13,7 +13,17 @@ The skills from the `simplecore-skills` marketplace are designed for proactive u
 - **svg-diagrams** — invoke for ANY diagram or visualization request: architecture pictures, flowcharts, sequence/state/class/ER diagrams, pipelines, network and infrastructure layouts, ASCII diagrams, Mermaid. Trigger even when the user only says "draw", "visualize", "show the structure", or uses Korean phrases such as 다이어그램, 구성도, 도식화, 그림 그려. Always run the bundled render audit before delivering an SVG.
 - **korean-docs** — when the [Korean Output Environment](#optional-korean-output-environment) chapter below is active, invoke for virtually every task that produces Korean output, including ordinary answers; it is mandatory for document writing, translation, proofreading, review, and glossary work.
 
-These skills load only where their plugins are installed (`claude plugin install <name>@simplecore-skills`) or where the skill directories are present under `~/.claude/skills/`.
+### SimpliX projects
+
+When a repository is built on the SimpliX stack, its handbook skill is a first-touch gate — invoke it with the Skill tool before reading, writing, reviewing, or explaining any file it covers, and follow it rather than memory.
+
+- **`simplix:backend`** — a Spring Boot repository whose classes extend `SimpliXBaseController` / `SimpliXBaseService` / `SimpliXBaseRepository`, whose endpoints return `SimpliXApiResponse`, or that carries a `.simplix/` generator directory.
+- **`simplix:frontend`** — a React repository with a `simplix.config.ts` or `@simplix-react/*` dependencies.
+- **`simplix:frontend-e2e`** — before declaring any frontend feature complete, and whenever a task asks to walk a feature as a user, check screens against each other, or find what is confusing, missing, or unusable.
+
+In a monorepo the marker sits in the subproject, so the gate applies per subproject and a cross-subproject task invokes both skills. Neither skill applies to the simplix-react framework repository itself — that one is the framework, not a project using it.
+
+These skills load only where the plugin is installed (`claude plugin install simplecore@simplecore-skills`) or where the plugin directory is linked under `~/.claude/skills/`.
 
 ## Communication & Reporting
 

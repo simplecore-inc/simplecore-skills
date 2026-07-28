@@ -7,7 +7,7 @@
   },
   "metadata": {
     "description": "SimpleCORE's curated Claude Code skills",
-    "version": "2.1.0"
+    "version": "3.0.0"
   },
   "plugins": [
     {
@@ -15,6 +15,12 @@
       "source": "./plugins/simplecore",
       "description": "SimpleCORE's curated skill set — Korean output standards with glossary tooling, SVG and ASCII diagrams, and low-fidelity wireframe boards",
       "keywords": ["korean", "documentation", "glossary", "svg", "diagram", "wireframe"]
+    },
+    {
+      "name": "simplix",
+      "source": "./plugins/simplix",
+      "description": "Development handbooks for the SimpliX stack — Spring Boot backend conventions with YAML-driven code generation, simplix-react frontend conventions with OpenAPI-driven scaffolding, and a browser-driven end-to-end usability audit",
+      "keywords": ["simplix", "spring-boot", "react", "openapi", "scaffolding", "code-review", "e2e"]
     }
   ]
 }
