@@ -1,6 +1,6 @@
 {
   "name": "simplix",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Development handbooks for the SimpliX stack — Spring Boot backend conventions with YAML-driven code generation, simplix-react frontend conventions with OpenAPI-driven scaffolding, and a browser-driven end-to-end usability audit",
   "author": {
     "name": "SimpleCORE Inc.",
