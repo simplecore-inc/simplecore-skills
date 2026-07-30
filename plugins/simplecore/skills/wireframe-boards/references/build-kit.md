@@ -30,27 +30,44 @@ Copy that folder as the starting point instead of writing the build from scratch
 - `src/intro.html` — the board header and the `.readme` reading contract, so
   every built board ships it.
 - `src/manifest.mjs` — the table of contents and build order.
-- `build.mjs` numbers the frames, renders the sidebar, and writes the
-  deliverable; `catalog.mjs` renders `CATALOG` into a storybook.
+- `build.mjs` reads each screen's permanent id from its file name, stamps the
+  board position beside it, renders the sidebar, and writes the deliverable;
+  `catalog.mjs` renders `CATALOG` into a storybook.
 - Keep the CSS in one `src/styles.css` the build inlines — **the same greybox
   vocabulary as `board-template.html`**, so the single-file and built paths speak
   one language.
 
-## Screen numbers are the address
+## A permanent id, and a position that moves
 
-The build numbers each frame `<letter>-<nn>` by its position in the manifest
-(A-01, A-02). That number is how a human and an LLM refer to a screen — "fix
-A-01", not "the sign-in frame near the middle" — and the sidebar entry anchors to
-it so a click scrolls both axes to the frame. Adding a screen is one file under
-`src/screens/` plus one line in the manifest.
+A frame carries two numbers, and keeping them apart is what makes a board
+possible to talk about:
 
-That number is a *position*, so it changes whenever a screen is inserted or
-reordered while the file name keeps whatever number it was created with — after a
-few passes most frames disagree with their own file. The sidebar and each frame
-label therefore print **both**, so a reference written either way can be found,
-and a note points at another screen by FILE NAME (`{{a-01-sign-in}}`) which the
-build resolves to the current number. Prose that outlives a build — plans, specs,
-review notes — names screens by file for the same reason.
+| | Where it comes from | When it changes |
+| --- | --- | --- |
+| **Id** — `A-20` | the file name (`a-20-contract-detail.mjs`) | never |
+| **Position** — `[02]` | the manifest order, recomputed every build | on any reorder |
+
+The label prints them together as `[02]A-20`: the position so a reader scanning
+the board can see where they are, the id because that is what they were given.
+The sidebar and the anchor use the id, so a link into the board survives a
+reorder.
+
+**The id is permanent, and that is the whole point.** It is assigned once, when
+the screen is born, and survives insertion above it, reordering, and the deletion
+of neighbours. Everything that outlives a build — a plan, a parity list, a review
+note, a message to a person — names screens by id and stays correct. Never
+renumber to close a gap: gaps cost nothing, and a renumber invalidates every
+reference anyone wrote down.
+
+Because the id lives in the file name, there is exactly one source for it and no
+way for the two to disagree. The build enforces that: it refuses to build when a
+file name carries no id, when an id does not belong to its section, or when two
+screens claim one id. **A narrow/wide pair is one screen** — both halves share
+the id and the position, and differ only by `variant`.
+
+Adding a screen is one file under `src/screens/` plus one line in the manifest.
+A note points at another screen by FILE NAME (`{{a-01-sign-in}}`), which the
+build resolves to that screen's id.
 
 ## The release gate checks what a frame draws, not just that it exists
 

@@ -59,13 +59,40 @@ stale board is worse than none because it lies with authority.
 Extend the one board with new lettered `<section class="flow">` blocks and TOC
 entries; never spawn a second board.
 
-## Wire yourself into the project so the next session doesn't rely on memory
+## Check the wiring every time this skill loads
 
-*When you use this skill against a project that has (or just got) a board.*
-Judge whether that project already points future sessions here: a line in its
-`CLAUDE.md` / `AGENTS.md` naming the board's path and this
-build-from/reconcile/sync discipline. If a board exists but no such pointer does,
-say so and offer to add a one-line pointer — ask first, since `CLAUDE.md` is
-durable — then add it on approval. *Why:* the description trigger alone is not
-perfectly reliable, and a durable project pointer is what keeps the board alive
-without the user hand-writing guidance for every project.
+*Every invocation against a project that has, or is about to have, a board —
+including one that only means to touch a single screen.* Three lookups, and a
+board nobody is routed to is a board that goes stale.
+
+| Look for | Missing means |
+| --- | --- |
+| a pointer in `CLAUDE.md` / `AGENTS.md` naming the board's path and this build-from / reconcile / sync discipline | a session that starts elsewhere in the repository never learns the board exists, and writes UI from scratch |
+| an `AGENTS.md` in the board folder, and a folder `CLAUDE.md` pointing at it | the next agent opens the built HTML, floods its context, and bypasses the reading contract |
+| the board itself, when the project builds screens | there is no contract to build from — see "Propose it when it is missing" above |
+
+**When anything is missing, say so and offer to fix it in one step, before doing
+the work you were asked for.** Do not assume the user knows this wiring exists —
+they asked for a screen, not for a skill to be configured. Name what is missing,
+say what it buys them in one clause each, and offer:
+
+> `/simplecore:board-init` writes the missing pieces. Shall I run it?
+
+Run it on agreement. The command reports what already exists, writes only what is
+missing, and shows each file before creating it. When the user declines, continue
+with the task and do not offer again in that session.
+
+*Why the offer rather than silent creation:* `CLAUDE.md` is durable and the board
+path is the user's to name. *Why the offer at all:* the description trigger alone
+is not reliable, and a durable project pointer is what keeps a board alive without
+the user hand-writing guidance for every project.
+
+## Walking a whole board to empty
+
+The reconcile step above is for one screen or one unfamiliar area. Working
+through every frame of a board — section by section, across sessions, until a
+parity list is empty — is a longer job with its own failure modes, and the
+`board-parity-walk` skill carries it: subagent rotation so no context dies
+mid-cluster, the facts-vs-narrative split that lets sequential walkers hand off,
+parking a decision instead of stopping, and keeping the walk watchable without
+the captures landing in the coordinating context.

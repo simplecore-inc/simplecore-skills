@@ -55,22 +55,42 @@ inline in one `<style>` block. These six hold on every board:
    conventions outrank anything the board's shapes imply. Board-specific caveats
    are appended as further numbered items, never substituted for the standing
    ones.
-5. **Horizontal scrollbars are always visible.** Rows scroll sideways and macOS
-   hides overlay scrollbars until something scrolls, so a row of 1440px frames
-   looks like it ends at the window edge. The template pins a permanent scrollbar
-   on `.row`; any other horizontally scrollable region gets `.scroll-x`.
+5. **The board never scrolls sideways.** Rows **wrap**: frames flow left to right
+   and continue on the next line, so reading a board is one vertical scroll and no
+   frame can hide past the right edge where a reviewer will not find it. `--row-max`
+   (the widest device frame plus one gap) fixes where a line breaks, so a phone row
+   holds exactly three and anything wider than a phone takes a line of its own —
+   the wrap points are a property of the board, not of the reader's window. A
+   `--frame-zoom` step scales the display down as the window narrows, keeping the
+   promise on a laptop; the design basis stays at true device pixels, so a label
+   that overflows at 390px still overflows. The one region that may scroll
+   sideways is content genuinely wider than the screen holding it (a wide table),
+   and it gets `.scroll-x`, which pins a permanent scrollbar — macOS hides overlay
+   scrollbars until something scrolls, so without it the region looks like it ends
+   at the frame's edge.
 6. **The viewport toggle is pure CSS** — a checkbox plus sibling selectors —
    precisely so rules 1 and 2 survive it.
 
 ## Workflow
 
 1. **Build the frame inventory first.** Before writing any HTML, list every
-   frame as `device — route — screen — state`. Every distinct state is its own
+   frame as `id — device — route — screen — state`. Every distinct state is its own
    frame: empty, error, expired token, terminal statuses, gated variants, dialog
    overlays. A screen×state authored as a viewport pair is one inventory item.
    State variants are where wireframe reviews catch real defects — a
    happy-path-only board hides them. If the brief carries a checklist, the
    inventory must cover it item by item.
+
+   **The id is assigned here, once, and is permanent** — `A-01`, `A-02`, per
+   lettered section. It never changes afterwards: not when a screen is inserted
+   above it, not when the board is reordered, not when a neighbour is deleted, and
+   a gap left by a deletion is never closed by renumbering. Everything that
+   outlives the board's current order — a plan, a parity list, a review note, a
+   message telling somebody which screen to look at — names screens by id, and
+   renumbering silently invalidates all of it. The board additionally shows each
+   frame's **position** in brackets (`[02]A-20`), which is recomputed and may
+   change freely; on a kit-built board the id lives in the screen's file name and
+   the build refuses to build if two screens claim one id.
 2. **Let that inventory pick the authoring path, then copy its starting point.**
    - *Under roughly twenty frames, with chrome that varies screen to screen:*
      copy `assets/board-template.html` as the document skeleton. It defines the
@@ -121,24 +141,43 @@ not drawn once and abandoned — `references/living-contract.md` carries the
 build-from, reconcile, and sync discipline, and applies whenever this skill is
 used against a project that has a board.
 
+**Check the project's wiring on every invocation**, before the work you were
+asked for: does an instruction file route future sessions to the board, and does
+the board folder carry its own reading contract? A board nobody is routed to goes
+stale, and the next session writes UI from scratch beside it. When either is
+missing, say so and offer `/simplecore:board-init` — do not assume the user knows
+the wiring exists. `references/living-contract.md` holds the check and what each
+piece buys.
+
 ## Self-check (before delivering)
+
+Six of these are checked mechanically the moment the board is written — the
+`.readme` contract, external resources, the script rule, frame labels,
+narrow/wide pairing, desktop folds, and the single accent. That check reports at
+write time and reports again on every edit, so treat a finding from it as this
+list speaking early rather than as a separate gate. Everything below that it
+cannot see — overflow at a given width, reading order, step numbering, whether
+the fold sits under the primary action — is still yours to verify by looking.
 
 - The `.readme` implementation contract is present, complete, and above the
   first flow section.
 - Frame inventory ⇄ board: every inventory item (and every brief checklist item)
   has exactly one frame — one pair, for paired items; report the final frame
   count per section.
-- Every frame has a `.frame-label`; every state variant is adjacent to its base
-  screen; every `.narrow` frame has its `.wide` twin adjacent, and neither tag
-  appears on a single-viewport screen.
+- Every frame has a `.frame-label` carrying its permanent id and its bracketed
+  position (`[02]A-20`); no id changed from the previous build; a viewport pair
+  shares one id. Every state variant is adjacent to its base screen; every
+  `.narrow` frame has its `.wide` twin adjacent, and neither tag appears on a
+  single-viewport screen.
 - Toggling the viewport switch shows exactly one frame of each pair and flips
   the highlighted segment in the header; the toggle is absent on boards with no
   pairs.
 - Every desktop frame has a `.fold` with its reference size, and the screen's
   primary action sits above it. No phone or tablet frame with `.tabbar` / `.cta`
   runs past its fold.
-- Each row's horizontal scrollbar is visible without scrolling — verify at a
-  window narrower than the row's content.
+- Nothing scrolls sideways: neither the page nor any row, at a wide window and at
+  a laptop width. A phone row holds three frames per line. Any `.scroll-x` region
+  shows its scrollbar without being scrolled.
 - No label overflow at any frame's width in either viewport; no
   near-white-on-white regions.
 - Flow reads left-to-right within each row; step numbering is continuous and

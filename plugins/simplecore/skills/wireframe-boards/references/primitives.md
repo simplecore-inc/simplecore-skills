@@ -72,6 +72,11 @@ real, and how frames are joined and annotated.
   numbering inside step labels instead of drawing long arrows — arrows that cross
   rows turn the board into spaghetti. On rows with viewport pairs, arrows sit
   between pairs (never inside one), so numbering holds in both toggle states.
+- **A row wraps, so the step numbers carry the flow, not the arrows.** Frames flow
+  left to right and continue on the next line, which means an arrow can land at the
+  end of a line with its target below rather than beside it. The numbered `.step`
+  labels are what make the order unambiguous wherever the line breaks — so number
+  every step, and never rely on a frame's left-right neighbour to imply sequence.
 - **`.frame-notes` carry machine-checkable context** as short mono lines with
   fixed prefixes: `AUTH:` (entry/token precondition), `DATA:` (endpoint or
   source), `OPEN:` (unresolved question — accent-colored). When the source

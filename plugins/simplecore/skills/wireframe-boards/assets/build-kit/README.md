@@ -18,7 +18,7 @@ catalog.mjs        # renders CATALOG into a component storybook (_catalog.html)
 AGENTS.md          # agent-facing contract template  → copy to your board folder
 CLAUDE.md          # folder pointer template          → copy to your board folder
 src/
-  manifest.mjs     # table of contents + build order + screen numbers
+  manifest.mjs     # table of contents + board order (numbers live in the file names)
   intro.html       # board header + the .readme reading contract (ships in every built board)
   partials.mjs     # frame() device shell + sidebar() TOC + page() document
   components.mjs   # content + chrome primitives (appbar/tabbar/shell/sidebarNav/…) + self-registering CATALOG
@@ -44,8 +44,9 @@ src/
 5. Author product screens: one file in `src/screens/` + one line in `src/manifest.mjs`
    each. A screen is a data object (`device`, route, screen, state, notes) plus a
    `body` composed from components; `device` is `phone` (default) / `tablet` /
-   `desktop`, and `variant` is `narrow` / `wide` for a responsive pair. Address screens
-   by number (`A-01`).
+   `desktop`, and `variant` is `narrow` / `wide` for a responsive pair. **The file name
+   carries the screen's permanent number** (`a-01-login.mjs` → `A-01`); a responsive pair
+   shares one number across both halves.
 6. `node build.mjs --release` writes `board.html` — the artifact humans review. Set the
    `REQUIRED` letters in `build.mjs` so `--release` refuses an incomplete board.
 
@@ -55,8 +56,11 @@ src/
   board — that is what keeps a large board tractable.
 - **The device shell is generated once** by `frame()` in `partials.mjs`; chrome and
   content are composed from `components.mjs`; screens carry only their bespoke body.
-- **Screen numbers** (`A-01`) are the address a person and an agent use to name a
-  screen; the sidebar and anchors resolve them.
+- **A screen's id** (`A-01`) is the address a person and an agent use to name it. It comes
+  from the file name and is **permanent** — never renumbered on a reorder, an insertion, or
+  a deletion, so a reference written anywhere stays correct. The sidebar and anchors use it.
+- **The bracketed number beside it** (`[02]A-01`) is only the frame's current position on the
+  board, recomputed every build. Reorder the manifest freely; the brackets move, ids do not.
 
 See the `wireframe-boards` skill for the full board contract and the living-contract
 (build-from / reconcile / sync) discipline.

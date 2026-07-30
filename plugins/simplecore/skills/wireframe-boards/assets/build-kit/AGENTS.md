@@ -32,13 +32,18 @@ under `src/` plus the build.** Read this file before touching a screen.
 - **To touch one screen**, find its file in `manifest.mjs`, then open only that screen
   file and the components it composes from. Never read the whole board (the built
   HTML) — that narrow read is what keeps a large board tractable.
-- **Screens are addressed by number** (e.g. `A-02`). The number comes from the screen's
-  position in its section; the sidebar and anchors resolve it.
-- **The number and the file name are different values, and they drift.** A file keeps the
-  number it was born with, while the board renumbers on every reorder — so
-  `f-11a-provider-settings` can sit at `F-13`. The sidebar and each frame label therefore
-  show BOTH, and a reference handed to a reader can be looked up either way. In prose that
-  outlives a build (plans, specs, notes), name screens by FILE, because that name is stable.
+- **Screens are addressed by their permanent id** (e.g. `A-02`), which lives in the file
+  name and NEVER changes — not on insertion above it, not on a reorder, not when a
+  neighbour is deleted. Name screens by id in anything that outlives a build: plans,
+  specs, notes, a message to a person.
+- **The bracketed number beside it is only the position** (`[02]A-02`), recomputed every
+  build so a reader scanning the board can see where they are. Reorder the manifest freely;
+  the brackets move and nothing else does.
+- **Never renumber to close a gap.** Gaps are free. A renumber invalidates every reference
+  anyone has written down, which is the one failure this scheme exists to prevent.
+- **A narrow/wide pair is ONE screen**: both halves take the same id and position, and
+  differ only by `variant`. The build refuses to build if two other screens claim one id,
+  if a file name carries no id, or if an id does not match its section letter.
 - **A new screen = one file in `src/screens/` + one line in `manifest.mjs`.**
 - **A body writes no raw HTML tags.** Compose from `components.mjs` functions; when a
   primitive is missing, build it as a component and register it in `CATALOG` (it then
@@ -49,8 +54,8 @@ under `src/` plus the build.** Read this file before touching a screen.
 
 ## Pointing at another screen
 
-A number is a position, so writing one into a note makes that note wrong as soon as a screen is
-inserted above it. Point with the **file name** and let the build print the current number:
+Point with the **file name** and let the build print that screen's id, so the note keeps working
+even if the screen is renamed later:
 
 ```js
 notes: 'Different from a refund ({{f-04-refund}}) — a refund revokes immediately'

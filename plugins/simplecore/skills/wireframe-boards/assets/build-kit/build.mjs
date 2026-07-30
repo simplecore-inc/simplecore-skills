@@ -23,33 +23,110 @@ const sidebarSections = [];
 const sectionBlocks = [];
 const loaded = [];
 
-// A frame's number comes from its position here, so a note that writes one goes stale the
-// moment a screen is inserted above it. Notes reference a screen by its FILE NAME instead —
-// `{{d-04-contract-detail}}` — and the build resolves that to the current number. An unknown
-// slug is left visible as `{{slug?}}` rather than dropped, so a bad reference fails loudly
-// instead of disappearing.
-const numberOf = new Map();
-for (const sec of manifest) {
-  sec.screens.forEach((sc, i) => {
-    numberOf.set(sc.file, `${sec.letter}-${String(i + 1).padStart(2, '0')}`);
-  });
-}
-const resolveRefs = (text) => (text || '').replace(/\{\{([a-z0-9-]+)\}\}/g,
-  (_, slug) => numberOf.get(slug) ?? `{{${slug}?}}`);
+// A screen has TWO numbers, and conflating them is what makes a board unusable to talk about.
+//
+//   - Its ID (A-20) is PERMANENT. It comes from the file name, is assigned once when the screen
+//     is born, and never changes — not when a screen is inserted above it, not when the board is
+//     reordered, not when a neighbour is deleted. It is what a person, a note, a parity list, and
+//     an agent all address the screen by.
+//   - Its SEQUENCE ([02]) is the frame's position in the board's visual order, recomputed on every
+//     build. It exists so a reader scanning the board left to right can see where they are.
+//
+// The label prints both, as `[02]A-20`. Deriving the id from the file name leaves exactly one
+// source for it, so the two can never disagree the way a position-derived number does.
+const ID_FROM_FILE = /^([a-z])-(\d{2,}[a-z]?)-/;
 
+const idOf = (file) => {
+  const m = ID_FROM_FILE.exec(file);
+  return m ? `${m[1].toUpperCase()}-${m[2]}` : null;
+};
+
+// Load every screen module up front: validating the numbering needs each frame's `variant`, and
+// a narrow/wide pair is ONE screen sharing ONE id.
+const sections = [];
 for (const sec of manifest) {
+  const entries = [];
+  for (const sc of sec.screens) {
+    const mod = (await import(`./src/screens/${sc.file}.mjs`)).default;
+    entries.push({ ...sc, mod, id: idOf(sc.file) });
+    loaded.push({ num: idOf(sc.file) ?? sc.file, file: sc.file, label: sc.label, mod });
+  }
+  sections.push({ ...sec, entries });
+}
+
+// A permanent id has to be present, belong to its section, and be shared by nothing except the
+// two halves of one responsive screen. Each failure produces a board whose numbers cannot be
+// trusted, so the build refuses rather than emitting one.
+const idErrors = [];
+const byId = new Map();
+for (const sec of sections) {
+  for (const e of sec.entries) {
+    if (!e.id) {
+      idErrors.push(`${e.file}: file name carries no permanent id — name it <letter>-<nn>-<slug>.mjs`);
+      continue;
+    }
+    if (!e.id.startsWith(`${sec.letter}-`)) {
+      idErrors.push(`${e.file}: id ${e.id} does not belong to section ${sec.letter}`);
+    }
+    if (!byId.has(e.id)) byId.set(e.id, []);
+    byId.get(e.id).push(e);
+  }
+}
+for (const [id, group] of byId) {
+  if (group.length === 1) continue;
+  const files = group.map((e) => e.file).join(', ');
+  // Two files may share an id only as one screen's narrow and wide halves — the viewport toggle
+  // shows one at a time, so they are one screen×state, not two.
+  const variants = group.map((e) => e.mod.variant);
+  const isPair =
+    group.length === 2 && variants.includes('narrow') && variants.includes('wide');
+  if (!isPair) {
+    idErrors.push(
+      `id ${id} is used by ${group.length} screens (${files}) — an id is shared only by the narrow and wide halves of one responsive screen`
+    );
+  }
+}
+if (idErrors.length) {
+  console.error(`refusing to build:\n  ${idErrors.join('\n  ')}`);
+  process.exit(1);
+}
+
+// Notes reference a screen by its FILE NAME — `{{d-04-contract-detail}}` — and the build resolves
+// that to the screen's permanent id. An unknown slug is left visible as `{{slug?}}` rather than
+// dropped, so a bad reference fails loudly instead of disappearing.
+const resolveRefs = (text) => (text || '').replace(/\{\{([a-z0-9-]+)\}\}/g,
+  (_, slug) => (idOf(slug) && byId.has(idOf(slug)) ? idOf(slug) : `{{${slug}?}}`));
+
+for (const sec of sections) {
   const scList = [];
   const frames = [];
-  for (let i = 0; i < sec.screens.length; i++) {
-    const sc = sec.screens[i];
-    const mod = (await import(`./src/screens/${sc.file}.mjs`)).default;
-    const num = `${sec.letter}-${String(i + 1).padStart(2, '0')}`;
-    frames.push(frame({ ...mod, notes: resolveRefs(mod.notes) }, num, sc.file));
-    scList.push({ num, label: sc.label, file: sc.file, anchor: `s-${num.toLowerCase()}` });
-    loaded.push({ num, file: sc.file, label: sc.label, mod });
+  // The sequence counts SCREENS, not frames: a responsive pair occupies one position because it
+  // is one screen. Assigned by first appearance, so it always reads in board order.
+  const seqOf = new Map();
+  for (const e of sec.entries) {
+    if (!seqOf.has(e.id)) seqOf.set(e.id, String(seqOf.size + 1).padStart(2, '0'));
+  }
+  const anchored = new Set();
+  for (const e of sec.entries) {
+    const seq = seqOf.get(e.id);
+    // The anchor comes from the permanent id, so a link into the board survives a reorder. The
+    // second half of a pair takes a suffix, because two elements cannot carry one id.
+    const base = `s-${e.id.toLowerCase()}`;
+    const anchor = anchored.has(base) ? `${base}-${e.mod.variant ?? 'b'}` : base;
+    anchored.add(base);
+    frames.push(frame({ ...e.mod, notes: resolveRefs(e.mod.notes) }, e.id, seq, e.file, anchor));
+    // One sidebar entry per screen: a reader looking up T-01 wants the screen, not each half.
+    if (anchor === base) scList.push({ id: e.id, seq, label: e.label, file: e.file, anchor });
   }
   sidebarSections.push({ letter: sec.letter, title: sec.title, screens: scList });
-  const caption = sec.count || `${sec.screens.length} frames`;
+  const screenCount = seqOf.size;
+  const frameCount = sec.entries.length;
+  const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
+  const caption =
+    sec.count ||
+    (screenCount === frameCount
+      ? plural(frameCount, 'frame')
+      : `${plural(screenCount, 'screen')} · ${plural(frameCount, 'frame')}`);
   sectionBlocks.push(
     `<section class="flow" id="flow-${sec.letter.toLowerCase()}">
   <div class="flow-title">${sec.letter}. ${sec.title} <span class="count">${caption}</span></div>

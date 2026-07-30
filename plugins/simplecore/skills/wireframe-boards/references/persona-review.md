@@ -35,6 +35,31 @@ walk-up, a screen-reader user, or a reviewer working on a phone gets that person
 too — derive them from the flow sections, the way `AUTH:` notes already name who
 may enter a screen.
 
+## Delegate it — one agent per persona, in parallel
+
+A persona review reads every frame of every flow, several times over. On a board of
+any size that is the single most context-expensive thing this skill does, and it is
+also the most parallel: each persona is independent, none of them edits the board,
+and their findings are compared afterwards rather than during. So run them as
+concurrent subagents, one per persona, and let each return findings only.
+
+Give each agent: the persona (its question and what counts as a defect for it), the
+flow sections in scope, and how to read the board — `src/manifest.mjs` then the one
+screen file per frame on a built board, **never the built HTML**. Ask it back for a
+list of `frame id · state · what this person could not do`, and nothing else.
+
+Two rules keep this honest:
+
+- **No agent edits the board.** They report; the findings are folded in afterwards,
+  once, by the session that owns the board. Several agents rewriting frames in
+  parallel produces a board nobody authored.
+- **One persona per agent.** Handing two personas to one agent is how the
+  administrator's knowledge rescues the end user's screen — the exact failure the
+  in-character rule below exists to prevent.
+
+A board small enough to hold in view — a few frames, one flow — is reviewed in
+place. The delegation is for the case where reading the board is itself the cost.
+
 ## How the review runs
 
 1. **One persona, one flow, in character.** Walk a whole `<section class="flow">`

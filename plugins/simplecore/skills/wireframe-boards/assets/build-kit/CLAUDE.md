@@ -11,8 +11,10 @@ board-reading contract, the source layout, and how to build.
   reading it whole just floods context. To find a screen, read `src/manifest.mjs` (the
   table of contents), then open the one `src/screens/<num>.mjs` you need and the
   components it composes from.
-- Screens are addressed by **number** (e.g. `A-02`). A new screen = one file in
-  `src/screens/` + one line in `manifest.mjs`. Preview with `node build.mjs` →
-  `_proof.html`.
+- Screens are addressed by their **permanent id** (e.g. `A-02`), which lives in the file
+  name and never changes — the bracketed number beside it on the board (`[02]A-02`) is only
+  the frame's current position and moves on every reorder, so never cite it on its own. A new
+  screen = one file in `src/screens/` (named `<letter>-<nn>-<slug>.mjs`) + one line in
+  `manifest.mjs`. Preview with `node build.mjs` → `_proof.html`.
 - The board is maintained with the `wireframe-boards` skill — when screens, states, or
   flow change, update the board in the same change.
