@@ -152,11 +152,21 @@ SVG 파일의 `<text>`·`<tspan>` 내용은 렌더된 한국어 산출물이다 
 - [references/response-style.md](references/response-style.md) — 상시 적용 기준(문장 원칙, 최우선 금지 패턴, 어휘 대체 목록, 표기법, 답변 말투, 금융·퀀트·트레이딩 도메인 용어). 어휘·표기 기준의 원본이며, 답변을 포함한 모든 한국어 산출물에 적용하고 문서 작업 전에도 읽는다.
 - [references/korean-style.md](references/korean-style.md) — 심각도(S1/S2)별 번역투·AI 문체 패턴 카탈로그와 번역 문체·원문 충실도 기준. 교정·검수 작업 전에 읽는다.
 
-## 전역 지침 연결
+## 전역 지침 연결 — 없으면 먼저 제안한다
 
-모든 세션의 답변에 상시 적용하려면 전역 CLAUDE.md에 다음을 둔다:
+이 스킬은 문서 작업뿐 아니라 **모든 한국어 답변**을 지배한다. 그런데 description 트리거는 "문서를 써 줘" 같은 요청에만 확실히 걸리고, 평범한 질문에는 걸리지 않는다. 그 간극을 메우는 것은 전역 `~/.claude/CLAUDE.md`의 한 문단뿐이다.
+
+**로드 시 한 번 확인하고, 없으면 제안한다.** 사용자는 이 연결이 필요하다는 사실을 알 이유가 없다.
+
+```bash
+node "${CLAUDE_PLUGIN_ROOT}/scripts/detect-simplecore.mjs" --json   # globalKorean.present 를 읽는다
+```
+
+`globalKorean.present`가 false면, 한 문장으로 무엇이 빠졌고 그것이 무엇을 막아 주는지 말하고 `/simplecore:init`을 제안한다. 세션당 한 번만 제안하고, 거절하면 그대로 진행하며 다시 꺼내지 않는다. 직접 쓰겠다는 경우 넣을 문단은 다음이다:
 
 > 세션에서 한국어 답변·산출물을 처음 작성하기 전에 `simplecore:korean-docs` 스킬의 `references/response-style.md`를 반드시 읽고 세션 내내 적용한다.
+
+프로젝트 용어사전이 없을 때도 같다 — 없으면 감사 훅이 침묵하고 용어가 문서마다 갈린다. 시작 절차 3의 `--init`을 제안한다.
 
 ## 흔한 합리화 (전부 금지)
 

@@ -5,7 +5,7 @@ description: Create diagrams as SVG (also ASCII) — flowcharts, sequence/state/
 
 # SVG Diagrams
 
-Produce a diagram as SVG (or ASCII). Pick the technique by what you are drawing, then verify any SVG before delivering. (For terminal UI-layout wireframes, defer to the `wireframing` skill — this skill is architecture/flow/system pictures.)
+Produce a diagram as SVG (or ASCII). Pick the technique by what you are drawing, then verify any SVG before delivering. (For screen layouts — wireframes, mockups, a screen inventory — defer to the `simplecore:wireframe-boards` skill; this skill is architecture/flow/system pictures.)
 
 **Paths.** All files live under this skill's base directory — the `Base directory for this skill: …` path shown when the skill loads. Below, `<skill>` stands for that directory; substitute the real path at use time. Never hardcode an absolute or `~/…` path (it differs per user and platform).
 
@@ -111,6 +111,8 @@ ASCII is reachable **only via the Mermaid path** — there is no ASCII route for
 
 Valid SVG XML is not a correct picture. Missing/oblique arrowheads, text overflow, head-only arrows, occluded labels, and content jammed against an edge are invisible in the source — render and inspect first. Applies to SVG from **any** technique above.
 
+**The lint runs itself on every SVG written or edited in a session** — a write-time hook ships with this plugin and reports the same findings as the command below, so a defect surfaces at the moment it is introduced rather than at delivery. That covers the static half only: `render` and `hotspots` are still yours to run, because a static scan cannot see an arrowhead landing on a chip or a label kissing a box. A project turns the hook off with `{"svgLint": false}` in `.claude/simplecore.json` — and a diagram whose lint was silenced still needs the pass below.
+
 ```bash
 python3 <skill>/scripts/audit.py lint     one.svg [more.svg …]   # static defect scan (multi-file; exit 1 on any issue)
 python3 <skill>/scripts/audit.py render   diagram.svg out.png 2  # full raster — Read it
@@ -121,6 +123,8 @@ python3 <skill>/scripts/audit.py crop     diagram.svg X Y W H z.png 5   # zoom o
 Loop: **lint → render → hotspots → fix → repeat** until lint is clean *and* the endpoint crops look right. A full render viewed downscaled hides sub-10px defects (an arrowhead landing on a chip, a label kissing a box) — `hotspots` turns "eyeball the overview" into a systematic pass over exactly the places those defects live. Lint is a screen, not the verdict. Checks: `UNRESOLVED-MARKER`, `OBLIQUE-ARROW`, `SHORT-ARROW`, `TEXT-OVERFLOW`, `TEXT-COLLISION`, `TIGHT-BOTTOM`, `OVERLAP`, `LABEL-OCCLUSION`, `ARROW-THROUGH-BOX`, `ARROWHEAD-IN-BOX`, `LINE-THROUGH-BOX`, `FRAME-OVER-NODE`, `OFFCANVAS-TEXT`, `OFFCANVAS-RECT`, `MARKER-NO-ORIENT`, `WIDE-CANVAS`. Full catalog, fixes, prevention rules: `references/render-audit.md`.
 
 **CJK / non-Latin text:** width estimation is CJK-aware across the toolchain (`svgkit.tw`, `layout.js`, and the lint all count Hangul/Kana/CJK glyphs at ~1 em, Latin at ~0.55 em). A box or chip auto-sized for Latin will overflow Korean/Japanese if you hardcode a width — size boxes from `tw()`, not by eye. The Mermaid `--svg` path (beautiful-mermaid) sizes its own boxes and can clip CJK labels; lint its output and prefer svgkit/layout.js when labels are CJK-heavy.
+
+**Read it as somebody who has never seen the system (the pass no lint replaces).** A clean lint means the picture is well-formed, not that it explains anything. Once the crops look right, look at the full render once more as a first-time reader and answer four questions: what is this a picture *of* (is there a title saying so); where does the eye start, and is that where the flow starts; is every label a word the reader knows rather than an internal identifier or an abbreviation only the author expands; and does every line style, colour, and shape difference mean something a legend states. A diagram that fails one of these is redrawn, not re-linted — and an unexplained visual distinction is the most common failure, because the author knows what it meant.
 
 **Placement checks that XML review cannot catch:** `LABEL-OCCLUSION` — a free/edge label (or its pill) sitting on a box it does not belong to; `TEXT-COLLISION` — two labels overlapping each other; `ARROW-THROUGH-BOX` — a connector routed across a box that is neither its source nor target; `ARROWHEAD-IN-BOX` — a connector endpoint buried inside a box instead of landing on its edge (the classic case: an arrow into a frame top landing on the frame's title chip — enter frames away from the chip); `LINE-THROUGH-BOX` — a plain separator/boundary line striking through a box (split the line around it); `FRAME-OVER-NODE` — a frame/panel emitted after the nodes it encloses, hiding them (document order is z-order; svgkit's `group_frame` avoids this by drawing on the underlay layer). Place edge labels in open space above/below the arrow rather than in a narrow gap, and route connectors around intervening boxes.
 

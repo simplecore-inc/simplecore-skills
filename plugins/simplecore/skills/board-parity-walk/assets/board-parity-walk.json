@@ -1,0 +1,7 @@
+{
+  "parityList": "_plans/SCREEN-PARITY.md",
+  "handoverFile": "_plans/WALK-NOTES.md",
+  "parkedSection": "Parked decisions",
+  "logDir": ".walk-logs",
+  "narrativePhrases": []
+}
