@@ -15,6 +15,15 @@ Single source of truth for backend Java work in a SimpliX project. SimpliX is a 
 3. **Past the generator (customizing, or a permitted hand-authored surface), run the precedent gate (invariant #19)** — locate two same-shape precedent surfaces and read them end to end before writing.
 4. Then review the rest of the **Non-Negotiable Invariants** — especially #2 (`@PreAuthorize`), #8 (constructor).
 5. After writing, verify all 19 invariants hold per the **After Writing** checklist.
+6. **Check the project's wiring once per session** (see below) and offer `/simplix:init` when a piece is missing.
+
+### Project wiring — check on load, offer once
+
+Two halves make this handbook hold: the routing block in the project's instruction file, and the gate config in `<subproject>/.claude/simplix.json` that lets the plugin's hooks enforce it. Run `node "${CLAUDE_PLUGIN_ROOT}/scripts/detect-simplix.mjs" --json` and read `routedBy` and this subproject's `skillGate`.
+
+Without `routedBy`, a session that starts elsewhere in the repository never learns this handbook binds. Without `skillGate`, an edit written from memory is not refused, and drift lands before anyone reads a reference.
+
+When either is missing, say so in one sentence each — the user has no reason to know this wiring exists — and offer `/simplix:init`. It shows what it will write and writes nothing without agreement. Offer once per session; if declined, continue and do not raise it again.
 
 ---
 

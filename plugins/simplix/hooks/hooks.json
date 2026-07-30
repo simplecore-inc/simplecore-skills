@@ -1,5 +1,5 @@
 {
-  "description": "Detects a SimpliX backend or simplix-react frontend in the working directory at session start and tells Claude which handbook skills bind. Silent in projects with no SimpliX marker.",
+  "description": "Session-start detection of a SimpliX backend or simplix-react frontend, a skill gate that refuses a source edit until the subproject's handbook skill has been invoked, and a completion gate that refuses to end a session which changed screens without driving them in a browser and without running the convention audit. Detection is silent in projects with no SimpliX marker; each gate is inactive until the project declares it in .claude/simplix.json.",
   "hooks": {
     "SessionStart": [
       {
@@ -7,6 +7,61 @@
           {
             "type": "command",
             "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/session-start.mjs\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Skill",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/skill-gate.mjs\" mark",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/e2e-gate.mjs\" touch",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/e2e-gate.mjs\" mark-audit",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/skill-gate.mjs\" check",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/e2e-gate.mjs\" check",
             "timeout": 10
           }
         ]

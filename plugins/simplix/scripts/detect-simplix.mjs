@@ -162,9 +162,33 @@ function routingDocument(root, matchedDirs) {
 }
 
 /**
+ * Which gates a subproject has armed, read from its own `.claude/simplix.json`.
+ *
+ * @remarks
+ * A routing block in an instruction file tells Claude to invoke the skill; these tell the
+ * plugin's hooks to hold it to that. Reporting them separately is what lets a session say
+ * which half is missing instead of assuming the project is wired because one half is.
+ */
+function gatesOf(dir) {
+  const file = path.join(dir, ".claude", "simplix.json");
+  const raw = readIfPresent(file);
+  if (!raw) return { skillGate: false, e2eGate: false };
+  try {
+    const config = JSON.parse(raw);
+    return {
+      skillGate: Array.isArray(config.skillGate?.skills) && config.skillGate.skills.length > 0,
+      e2eGate: Boolean(config.e2eGate?.skill),
+    };
+  } catch {
+    return { skillGate: false, e2eGate: false };
+  }
+}
+
+/**
  * Analyze a directory tree. Returns
- * `{ root, frameworkRepo, matches: [{kind, dir, markers}], skills, routedBy }`
- * with every `dir` relative to `root`.
+ * `{ root, frameworkRepo, matches: [{kind, dir, markers, skillGate, e2eGate}], skills, routedBy, wired }`
+ * with every `dir` relative to `root`. `wired` is true when the routing document exists and
+ * every subproject has armed the gates that apply to it.
  */
 export function analyze(root) {
   const resolved = path.resolve(root);
@@ -177,12 +201,24 @@ export function analyze(root) {
   const skills = [...new Set(matches.map((m) => `simplix:${m.kind}`))];
   if (skills.includes("simplix:frontend")) skills.push("simplix:frontend-e2e");
 
+  const reported = matches.map((m) => ({
+    ...m,
+    dir: path.relative(resolved, m.dir) || ".",
+    ...gatesOf(m.dir),
+  }));
+
+  // The e2e gate is a frontend concern; a backend subproject is fully wired without it.
+  const wired =
+    Boolean(routing) &&
+    reported.every((m) => m.skillGate && (m.kind !== "frontend" || m.e2eGate));
+
   return {
     root: resolved,
     frameworkRepo,
-    matches: matches.map((m) => ({ ...m, dir: path.relative(resolved, m.dir) || "." })),
+    matches: reported,
     skills,
     routedBy: routing ? path.relative(resolved, routing) : null,
+    wired,
   };
 }
 
@@ -205,6 +241,13 @@ function main() {
       console.log(`  ${m.kind.padEnd(8)} ${m.dir.padEnd(28)} ${m.markers.join("; ")}`);
     }
     console.log(`\nSkills that apply: ${report.skills.join(", ")}`);
+    for (const m of report.matches) {
+      const gates = [
+        m.skillGate ? "skill gate armed" : "skill gate OFF",
+        m.kind === "frontend" ? (m.e2eGate ? "e2e gate armed" : "e2e gate OFF") : null,
+      ].filter(Boolean);
+      console.log(`  ${m.dir.padEnd(28)} ${gates.join(", ")}`);
+    }
     console.log(
       report.routedBy
         ? `Routed from: ${report.routedBy}`

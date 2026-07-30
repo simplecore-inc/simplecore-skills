@@ -6,10 +6,19 @@ The browser is the instrument. Everything below is about keeping it honest and k
 
 ## Environment
 
-1. **Read the project dev-server policy first** (whatever the project documents under its own `.claude/`, else its README / package scripts): which URLs the app and API serve on, the HTTPS/self-signed-certificate requirement, and whether you may start a server yourself or must ask the user. Do not hardcode a port from memory — a dev server that finds its usual port taken silently moves to another one, so take the URL from the dev-server output or a readiness probe.
-2. **Confirm the build is current before trusting the screen.** The app is served from workspace packages; a failed or stale build serves old output, and old output looks exactly like a missing translation, a vanished column, or an unstyled control. If something looks structurally wrong, check the build/dev-server log before writing it down as a defect.
-3. **Confirm the API is up** (a readiness probe against the backend) — an area that renders empty because the API is down is not an empty-state defect.
-4. After a change to a workspace package's public surface, the consuming app needs that package rebuilt before the browser shows the change (see the `simplix:frontend` skill's verification rules). A hot reload does not cover it.
+**On the local machine the servers are yours to run.** An audit that stops to ask before every restart cannot cover a feature area, and the restart is not optional — it is the difference between a defect and a stale build. Start, restart, and stop the app and its API as the work needs, within these bounds:
+
+1. **Take the commands from the project, never from memory** — whatever it documents under its own `.claude/`, else its README, package scripts, Gradle tasks, or compose file: how the app and the API start and stop, how a workspace package is rebuilt, and the HTTPS/self-signed-certificate requirement.
+2. **Read the port from the server's own output or a readiness probe.** A dev server that finds its usual port taken silently moves to another one, so a hardcoded port verifies the wrong thing — or nothing.
+3. **Reclaim only a port you own.** A port held by a development server from an earlier session of *this* project is stopped and replaced. A process you cannot identify as this project's dev server is left alone, and reported instead.
+4. **Local only.** Remote hosts of any kind — production, staging, shared development — and orchestrators outside this machine are out of scope. Ask first.
+5. **Leave the environment as you found it.** Stop what you started once the work no longer needs it, and say in the report what you left running and why.
+
+Then, before trusting anything on screen:
+
+6. **Confirm the build is current.** The app is served from workspace packages; a failed or stale build serves old output, and old output looks exactly like a missing translation, a vanished column, or an unstyled control. When the screen disagrees with the source, rebuild or restart and look again *before* writing it down as a defect.
+7. **Confirm the API is up** (a readiness probe against the backend) — an area that renders empty because the API is down is not an empty-state defect.
+8. After a change to a workspace package's public surface, the consuming app needs that package rebuilt before the browser shows the change (see the `simplix:frontend` skill's verification rules). A hot reload does not cover it.
 
 ---
 

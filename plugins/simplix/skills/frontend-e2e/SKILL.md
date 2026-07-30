@@ -12,7 +12,42 @@ It is the **testing** counterpart of the `simplix:frontend` skill — and that s
 
 ---
 
+## This is a completion gate, not an optional pass
+
+**A change that touched a screen is not done until that screen has been driven here.** Not when the build is green, not when the diff reads correctly, not when the component renders in isolation. Those are the conditions under which the browser pass gets skipped, and they are exactly the conditions under which the defects this audit exists to find survive: a filter that returns nothing, an empty state that never renders, a dialog that cannot be dismissed, two screens that disagree about the same record.
+
+So the gate is mechanical. When the project arms it (`e2eGate` in `<subproject>/.claude/simplix.json`), the plugin's `Stop` hook refuses to let a session end after UI files changed if this skill was never invoked. It fires once, and it can be answered two ways:
+
+1. **Walk the screens.** The default. Take the changed screens and the ones either side of them through the census below.
+2. **Say why there is nothing to walk** — a refactor with no reachable screen, a change the user asked to keep to code. State it plainly; do not silence the gate with `SIMPLIX_E2E_GATE=off` on a change that has screens.
+
+What the gate cannot check is scope, and scope is where this pass is usually lost. Driving the one screen you edited is not the audit: the unit is the **cluster** — every surface that shows or moves the record — because a screen that passes alone and disagrees with its neighbour is the defect that reaches the operator.
+
+**When the project has not armed the gate**, say so once and offer `/simplix:init` — it writes the config. Until then the discipline holds only while somebody remembers it, which on a green build is not long.
+
+---
+
+## The audit runs in a subagent — one per cluster
+
+Screenshots, accessibility trees, console dumps, and network logs are what this audit is made of, and they are also what fills a context fastest. Run in the session that is coordinating the work, an audit of any real size dries that context out partway through — and the half it does not reach is indistinguishable from a half that passed. A cluster abandoned at 80% leaves fixes half-applied and a report that reads as complete.
+
+So the browser work is delegated, and `simplix:screen-auditor` ships with this plugin to be delegated to. It carries the whole of this handbook's execution half: how to drive, the personas, the five censuses, the four lenses, the fix rules, and the exact shape of what it returns.
+
+1. **One cluster, one auditor.** Hand it the cluster (the entity and every surface that shows or moves it), the personas, and the base URLs. It reads this skill, the `simplix:frontend` handbook, and the code itself.
+2. **Finish, then replace.** A new auditor for the next cluster. Never stack a second cluster on a running one.
+3. **One at a time.** An auditor fixes code and drives the dev server, so two of them in one working tree collide over the same files and the same ports. Sequence them, or give each its own worktree and its own ports.
+4. **It returns conclusions, never contents** — defects with their anchors, the cross-sweep per type, agreement results, the data ledger, verification. No screenshots, no page text. Captures that justify a finding go to files, and the report carries their paths; the coordinator surfaces a path **without opening it**, so the image renders for the reader and never enters the context.
+5. **The coordinator only coordinates.** Picks the next cluster, aggregates the returns, decides what needs a human. It does not open the browser.
+
+**When to skip the delegation:** a single screen, already scoped, whose whole cluster is one surface — the setup cost is not worth it. The moment the cluster is more than one screen, delegate. Judging that by "this will be quick" is how the context gets spent, because the audit's whole purpose is finding the parts you did not expect.
+
+Watching it happen costs nothing: the auditor's own browser turns stream to the client and can be expanded in the conversation, while the coordinator never receives them.
+
+---
+
 ## How to Use
+
+Steps 3 to 8 are the auditor's work, per cluster; steps 1, 2, and 9 are the coordinator's.
 
 1. Read **Ground Rules** below — they are what separates an audit from a demo.
 2. **Load the judgment rubric**: invoke the `simplix:frontend` skill now if it is not already loaded this session. Its Non-Negotiable Invariants, Task Router references, and `customize/precedent-check.md` comparison sheet are the standard of "correct" for every judgment below → `references/judgment-lenses.md`.
@@ -35,8 +70,10 @@ It is the **testing** counterpart of the `simplix:frontend` skill — and that s
 5. **Multiple actors are played in sequence, for real.** When a flow needs a second person (a requester and an approver, an operator and a security manager), log in as each — sequentially in one tab, or in a second tab kept side by side. Do not assume the counterpart's screen "probably works".
 6. **Look at every element on the screen.** Each field, column, button, badge, filter, and empty area is asked three questions: does it mean something to this persona, is something missing that they need here, and is something here that should not be. Silence on an element means you did not look at it.
 7. **Never claim from a screenshot alone what an interaction would settle.** Scroll it, click it, submit it, break it on purpose. An accessibility-tree reading that looks wrong is re-checked against a screenshot before it becomes a finding — and vice versa; phantom findings cost more than missed ones.
-8. **A stale build lies.** Before calling anything a defect, be sure the dev server is serving the current source (see `references/browser-driving.md` § Environment). A missing translation or a vanished column is often a failed build, not a bug.
+8. **A stale build lies, so restart rather than reason about it.** The local dev server and its API are yours to start, restart, and stop as the work needs — an audit that has to ask before every restart cannot cover a feature area. Take the commands from the project, read the port from the server's own output, and when the screen disagrees with the source, rebuild or restart and look again *before* writing anything down. A missing translation or a vanished column is more often a failed build than a bug. Details, including which port you may reclaim → `references/browser-driving.md` § Environment.
 9. **Do not commit.** Report; the user commits.
+
+10. **Where the project has a wireframe board, it is the third opinion.** The board says what each screen holds, in which state, and how the user moves between them — so a screen that renders and works can still disagree with the contract it was built against. When one exists, read the frame for each screen in scope (`simplecore:wireframe-boards`) and treat a code ⇄ board disagreement as a finding on whichever side is stale. Reconciling *every* frame of a board is a different, longer job with its own discipline → `simplecore:board-parity-walk`.
 
 ---
 
@@ -77,4 +114,28 @@ The list's search and filters are tested on every list screen, never skipped as 
 
 1. **Cross-sweep by defect type.** Every defect you found is a *type*. Grep the whole codebase for other instances of that type and fix them too — a defect found once and left standing three screens away is a defect you chose to keep. Report the sweep's result per type, including "0 other instances".
 2. **Skill feedback loop — and the automation ratchet.** For each defect type, ask why the `simplix:frontend` skill did not prevent it, and write the answer down where it will be read again: a rule that holds for any simplix-react project belongs in that skill (a new invariant, or a detection recipe in its `references/audit/audit-checklist.md`) — contribute it upstream to the plugin, since an installed plugin is read-only; a rule that holds only for this project belongs in the project's own reference. And the ratchet: **the SECOND time a defect type is found — in any session — prose is no longer an acceptable fix.** If the type is regex-detectable, it becomes a rule in the audit script (`${CLAUDE_PLUGIN_ROOT}/scripts/audit-frontend.mjs`), so every later run catches it; if it is a process violation, it becomes a project hook gate. Documentation grows only for judgment calls; everything mechanically checkable moves into tooling. A defect type that can recur silently is not closed.
-3. **Report honestly.** Group by defect type, each finding tagged with its judgment lens and its anchor (invariant #, precedent file, endpoint, persona failure — `references/judgment-lenses.md`): what was wrong, why it mattered to the persona, what changed, what was verified in the browser. Include the cluster agreement results (`references/cross-screen-consistency.md` § Reporting) and the coverage lists. Anything that turned out to be a misreading (a stale build, an accessibility-tree artifact) is withdrawn explicitly rather than quietly dropped.
+3. **Report honestly, in this shape.** In the conversation, never into a file. Each auditor returns it for its cluster and the coordinator aggregates; a fixed shape is what makes two sessions comparable and what makes an omission visible instead of merely absent.
+
+   ```
+   CLUSTER: <the entity and the surfaces audited>
+   PERSONAS PLAYED: <who, and which surfaces each covered>
+   COVERAGE: <every screen walked, and every state reached per screen>
+   DEFECTS FIXED: <grouped by type; each finding tagged with its lens and its anchor
+                   (invariant # / precedent file / endpoint / persona failure), then what
+                   was wrong, why it mattered to the persona, what changed, what was
+                   verified in the browser>
+   CENSUSES: <the five, each with its result over every screen in scope>
+   AGREEMENT: <the cross-screen census result per surface pair>
+   CROSS-SWEEP: <per defect type, other instances found and fixed, including "0 others">
+   RULES ADDED: <defect type → the audit-script rule or project hook that now catches it>
+   BACKEND CHANGES: <endpoints, DTOs, or messages changed, or "none">
+   BOARD: <frames that disagreed and which side was stale, or "no board" / "agrees">
+   OPEN / PROPOSALS: <unanchored observations and product decisions for a human>
+   WITHDRAWN: <anything that turned out to be a stale build or a tree artifact>
+   VERIFICATION: <each gate and its result>
+   DATA LEDGER: <created and kept, removed and why>
+   CAPTURES: <file paths only — never an image in the report>
+   SERVERS: <what was left running, or "stopped">
+   ```
+
+   A section you cannot fill is an omission, and says so: `CENSUSES` with a screen missing means that screen was not swept, and `WITHDRAWN: none` is a claim that nothing was misread. Anything that turned out to be a misreading is withdrawn explicitly rather than quietly dropped.

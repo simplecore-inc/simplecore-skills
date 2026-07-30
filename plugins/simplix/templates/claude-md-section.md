@@ -8,6 +8,12 @@ Writing either one is what makes the routing durable — the plugin's SessionSta
 announces the same thing, but a hook only fires where the plugin is installed, while an
 instruction file travels with the repository.
 
+A routing block states the gate; it does not enforce it. Enforcement is the other half:
+`<subproject>/.claude/simplix.json` arms the plugin's hooks, so an edit written without the
+handbook is refused and a session that changed screens cannot end without them being opened
+in a browser. `/simplix:init` writes both halves; the project block below documents the
+second so a reader knows the gates exist and why.
+
 ---
 
 ## Project block
@@ -39,8 +45,24 @@ Rules that follow from the gate:
 - **List screens are a fixed full-stack recipe.** Backend paged searchable endpoint first,
   then the CLI-generated list. Details live in the skills.
 - **Before a frontend feature is called complete**, drive its screens in a browser under
-  `simplix:frontend-e2e`. A feature whose screens have never been walked by hand is
-  unverified no matter how green the build is.
+  `simplix:frontend-e2e`, and run the convention audit. A feature whose screens have never
+  been walked by hand is unverified no matter how green the build is. The unit is the
+  cluster — every surface that shows or moves the record — not the one screen that was
+  edited.
+- **The browser pass is delegated.** Anything past a single screen goes to one
+  `simplix:screen-auditor` subagent per cluster, a fresh one after each, returning
+  conclusions only. Screenshots and console logs must not land in the session doing the
+  implementation.
+- **Local development servers are started, restarted, and stopped as the work needs**, with
+  the commands taken from this repository and the port read from the server's own output. A
+  screen served from a stale build looks exactly like a defect, so restart rather than
+  reason about it. Remote hosts are out of scope.
+
+Each subproject's `.claude/simplix.json` arms the gates that enforce the rules above: a
+source edit is refused until the handbook is invoked, and a session that changed screens is
+refused an ending until they have been driven in a browser and the convention audit has run.
+`/simplix:init` writes it. Do not delete it to make a gate stop firing — answer the gate
+instead.
 
 Install: `claude plugin install simplix@simplecore-skills`. Without the plugin these
 skills are unavailable — say so rather than approximating them.

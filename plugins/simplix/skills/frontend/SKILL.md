@@ -17,6 +17,20 @@ Single source of truth for frontend work in a **simplix-react** project — a pa
 3. Review the **Non-Negotiable Invariants** below — especially #29 (backend-sync gate), #51 (precedent-first screens), #9 (framework-first), #22 (registry-first).
 4. Use the **Task Router** → Read referenced files lazily. SCAFFOLD comes first when the backend changed. **The routed Read precedes the first edit of the task — an edit made before the routed reference is read is a violation, not a head start.**
 5. DOCUMENT is cross-cutting (any `*.md` / TSDoc output → also read `docs/*`). AUDIT is mandatory after CUSTOMIZE (`audit/*`).
+6. **A change that touches a screen is not finished until its screens have been driven in a browser** under `simplix:frontend-e2e` — states, empty and error paths, and the screens either side of it. Green typecheck and a correct-reading diff are not evidence a screen works. Plan for that pass when you plan the change, not after you have called it done. Anything past a single screen is delegated to one `simplix:screen-auditor` per cluster, so the browser turns never land in the session doing the implementation.
+7. **Check the project's wiring once per session** (see below) and offer `/simplix:init` when a piece is missing.
+
+### Project wiring — check on load, offer once
+
+Two halves make this handbook hold: the routing block in the project's instruction file, and the gate config in `<subproject>/.claude/simplix.json` that lets the plugin's hooks enforce it. Run `node "${CLAUDE_PLUGIN_ROOT}/scripts/detect-simplix.mjs" --json` and read `routedBy` and each match's `skillGate` / `e2eGate`.
+
+| Missing | What goes unenforced |
+| --- | --- |
+| `routedBy` | a session that starts elsewhere in the repository never learns this handbook binds |
+| `skillGate` | an edit written from memory is not refused, so drift lands before anyone reads a reference |
+| `e2eGate` | a session can change screens and end with none of them opened in a browser |
+
+When anything is missing, say so in one sentence per piece — the user has no reason to know this wiring exists — and offer `/simplix:init`. It shows what it will write and writes nothing without agreement. Offer once per session; if declined, continue and do not raise it again.
 
 ### Handbook-skip red flags (each of these thoughts means: stop and route)
 

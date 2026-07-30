@@ -145,7 +145,75 @@ function projectionProps(relPath) {
  * not one of its users — so the guard that protects the rest of the app cannot apply to it.
  * Add a directory here only when nothing behind it is read on an operator's authority.
  */
-const PUBLIC_ROUTE_DIRS = ["contact-change"];
+/**
+ * Project-declared settings for this plugin, read from `.claude/simplix.json` at the project
+ * root. The `audit` section is this script's; the file's other sections belong to the plugin's
+ * hooks.
+ *
+ * Which route directories are open to anybody is a property of the product, not of the
+ * framework, so the project states it rather than the script guessing from a name.
+ *
+ * @example
+ * { "audit": { "publicRouteDirs": ["checkout", "contact-change"] } }
+ */
+const SETTINGS = (() => {
+  const file = path.join(ROOT, ".claude", "simplix.json");
+  if (!fs.existsSync(file)) return {};
+  try {
+    const parsed = JSON.parse(fs.readFileSync(file, "utf8"));
+    return parsed.audit ?? {};
+  } catch {
+    console.error(`⚠ .claude/simplix.json is not valid JSON — auditing with defaults.`);
+    return {};
+  }
+})();
+
+
+/**
+ * Every enum the generated domain packages publish, by name.
+ *
+ * @remarks
+ * A label lookup takes the enum's name as a string, so a name that no longer matches any model
+ * fails silently — the screen falls back to printing the key. Reading the names off the codegen
+ * output is what lets that be caught mechanically instead of by eye.
+ */
+let generatedEnumCache = null;
+function generatedEnumNames() {
+  if (generatedEnumCache) return generatedEnumCache;
+  const names = new Set();
+  const packagesDir = path.join(ROOT, "packages");
+  if (fs.existsSync(packagesDir)) {
+    for (const pkg of fs.readdirSync(packagesDir)) {
+      const modelDir = path.join(packagesDir, pkg, "src", "generated", "model");
+      if (!fs.existsSync(modelDir)) continue;
+      for (const file of fs.readdirSync(modelDir)) {
+        const src = fs.readFileSync(path.join(modelDir, file), "utf8");
+        for (const m of src.matchAll(/export type (\w+) = \(typeof \1\)\[/g)) names.add(m[1]);
+        for (const m of src.matchAll(/export const (\w+) = \{/g)) names.add(m[1]);
+      }
+    }
+  }
+  generatedEnumCache = names;
+  return names;
+}
+
+const PUBLIC_ROUTE_DIRS = Array.isArray(SETTINGS.publicRouteDirs) ? SETTINGS.publicRouteDirs : [];
+
+/**
+ * Whether the app owning this route already guards every address at its root.
+ *
+ * A root route with a `beforeLoad` redirect admits nobody without a session before a single
+ * screen mounts, which is the stronger form of the same protection — flagging its children for
+ * missing a per-route wrapper would be asking for the check to be written twice.
+ */
+function guardedAtRoot(file) {
+  const marker = `${path.sep}src${path.sep}routes${path.sep}`;
+  const at = file.lastIndexOf(marker);
+  if (at < 0) return false;
+  const root = path.join(file.slice(0, at + marker.length), "__root.tsx");
+  if (!fs.existsSync(root)) return false;
+  return /beforeLoad\s*:/.test(fs.readFileSync(root, "utf8"));
+}
 
 const RULES = [
   {
@@ -155,8 +223,43 @@ const RULES = [
     desc: "Route mounts its screen directly — a typed address or an old bookmark opens a screen the operator's grants do not admit, and the denial only arrives when something is clicked",
     appliesTo: (p) =>
       /\/src\/routes\/[^/]+\/index\.tsx$/.test(p)
-      && !PUBLIC_ROUTE_DIRS.some((dir) => p.includes(`/src/routes/${dir}/`)),
+      && !PUBLIC_ROUTE_DIRS.some((dir) => p.includes(`/src/routes/${dir}/`))
+      && !guardedAtRoot(p),
     check: (c) => lineHits(c, /component:\s*\w+\s*,/, (line) => !line.includes("guarded(")),
+  },
+  {
+    id: "hand-rolled-detail-footer",
+    invariant: "#31 / audit: page chrome",
+    level: "error",
+    desc: "CrudDetail footer built from raw layout instead of CrudDetail.DefaultActions / CrudDetail.ActionFooter — the panel's buttons drift in size, order and spacing from every other panel, and domain actions that should stay visible-but-disabled get hidden instead",
+    appliesTo: isTsx,
+    check: (c) =>
+      blockHits(c, /footer=\{\s*\n\s*<(?!CrudDetail)(?:Stack|Flex|div|Box)\b/g),
+  },
+  {
+    id: "scope-filter-empty-state",
+    invariant: "#32 / audit: empty state",
+    level: "error",
+    desc: "List sets defaultFilters but passes list.emptyReason straight through — a screen-forced scope counts as a filter, so an empty result tells the reader their filters matched nothing when they applied none, and offers to clear a scope the screen is supposed to hold",
+    appliesTo: isTsx,
+    check: (c) =>
+      c.includes("defaultFilters")
+        ? lineHits(c, /emptyReason=\{list\.emptyReason\}|list\.emptyReason\s*!==\s*"no-data"/)
+        : [],
+  },
+  {
+    id: "unknown-enum-name",
+    invariant: "#10 / audit: enum labels",
+    level: "error",
+    desc: "Enum name has no generated model of that name — the label lookup misses and the screen prints the raw `Enum.VALUE` key instead of a translated word",
+    appliesTo: isTsx,
+    check: (c) =>
+      lineHits(c, /(?:enumName=|enumLabel\()\s*"([A-Z]\w+)"/g, (line) => {
+        const known = generatedEnumNames();
+        if (known.size === 0) return false;
+        const names = [...line.matchAll(/(?:enumName=|enumLabel\()\s*"([A-Z]\w+)"/g)].map((m) => m[1]);
+        return names.some((n) => !known.has(n));
+      }),
   },
   {
     id: "unresolved-boot-enum-label",
@@ -446,6 +549,18 @@ const RULES = [
       blockHits(
         c,
         /<FormFields\.TextField(?:(?!\/>)[\s\S]){0,400}?fieldLabel\("(?:note|description|memo|remark|bio)"\)(?:(?!\/>)[\s\S]){0,400}?\/>/g,
+      ),
+  },
+  {
+    id: "empty-slot-returns-nothing",
+    invariant: "#22",
+    level: "error",
+    desc: "A table `empty` slot returning null/undefined for some reasons — the slot REPLACES the framework's empty state, error card and paused card, so those reasons render a blank table. Answer every reason, or pass the slot only for the reason it handles",
+    appliesTo: isTsx,
+    check: (c) =>
+      blockHits(
+        c,
+        /empty:\s*\((?:\{[^}]*\}|\w+)?\)\s*=>(?:(?!\n\s*\}\s*\}|\n\s*\},\s*\n)[\s\S]){0,600}?[:?]\s*(?:null|undefined)\s*[,;)\n]/g,
       ),
   },
   {

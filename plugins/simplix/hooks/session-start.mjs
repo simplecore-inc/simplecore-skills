@@ -39,9 +39,21 @@ function buildContext(report) {
 
   if (report.routedBy) {
     lines.push(`Project routing lives in \`${report.routedBy}\`; follow it where it is more specific than this note.`);
-  } else {
+  }
+
+  if (!report.wired) {
+    const missing = [];
+    if (!report.routedBy) missing.push("no CLAUDE.md or AGENTS.md routes to these skills");
+    for (const m of report.matches) {
+      const where = m.dir === "." ? "this directory" : `\`${m.dir}/\``;
+      if (!m.skillGate) missing.push(`${where} has no skill gate armed, so an edit written from memory is not refused`);
+      if (m.kind === "frontend" && !m.e2eGate) {
+        missing.push(`${where} has no e2e gate armed, so a session can change screens and end without any of them being opened in a browser`);
+      }
+    }
+    lines.push("");
     lines.push(
-      "No CLAUDE.md or AGENTS.md in this project routes to these skills yet. Mention once, early in the session, that `/simplix:init` writes the routing block into the project's instruction file — then continue with the user's task. Do not write it without being asked.",
+      `This project is only partly wired for these skills: ${missing.join("; ")}. Say this once, early in the session, in one sentence per missing piece, and offer \`/simplix:init\` — it writes the routing block and arms the gates. Then continue with the user's task. Do not write anything without being asked, and do not raise it again this session.`,
     );
   }
 
