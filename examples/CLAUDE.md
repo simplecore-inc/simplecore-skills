@@ -11,6 +11,8 @@ Before starting any task, check whether an installed skill matches it. If a skil
 The skills from the `simplecore-skills` marketplace are designed for proactive use — invoke them without waiting for the user to name them:
 
 - **svg-diagrams** — invoke for ANY diagram or visualization request: architecture pictures, flowcharts, sequence/state/class/ER diagrams, pipelines, network and infrastructure layouts, ASCII diagrams, Mermaid. Trigger even when the user only says "draw", "visualize", "show the structure", or uses Korean phrases such as 다이어그램, 구성도, 도식화, 그림 그려. Always run the bundled render audit before delivering an SVG.
+- **wireframe-boards** — invoke before implementing a screen from a board, checking code against one, syncing one after a change, or drawing new frames; propose a board when substantial new UI has none. On a board, screens are addressed by their permanent id (`A-02`), never by the bracketed position beside it.
+- **board-parity-walk** — invoke when reconciling a whole board's frames against the running app across sessions. It applies **only** where a wireframe board already exists; with no board, draw one first.
 - **korean-docs** — when the [Korean Output Environment](#optional-korean-output-environment) chapter below is active, invoke for virtually every task that produces Korean output, including ordinary answers; it is mandatory for document writing, translation, proofreading, review, and glossary work.
 
 ### SimpliX projects
@@ -24,6 +26,21 @@ When a repository is built on the SimpliX stack, its handbook skill is a first-t
 In a monorepo the marker sits in the subproject, so the gate applies per subproject and a cross-subproject task invokes both skills. Neither skill applies to the simplix-react framework repository itself — that one is the framework, not a project using it.
 
 These skills load only where the plugin is installed (`claude plugin install simplecore@simplecore-skills`) or where the plugin directory is linked under `~/.claude/skills/`.
+
+### Local development servers
+
+For a development server on the local machine (`localhost`, `127.0.0.1`, `[::1]`, or the development machine's private IP), start, restart, and stop it directly as the work needs. Do not stop to ask each time — verifying a screen needs a running application, and a session that asks before every restart cannot walk a whole feature area.
+
+- **Take the commands from the project**, never from memory: its package scripts, Gradle tasks, compose file, or the dev-server section of its own instruction files.
+- **Read the port from the server's own output or a readiness probe.** A dev server whose usual port is taken moves silently to another one, and a hardcoded port then verifies the wrong thing.
+- **Restart rather than reason about staleness.** A screen served from a stale build looks exactly like a missing translation or a vanished column; when output disagrees with the source, rebuild or restart before writing anything down as a defect.
+- **Reclaim only a port you own.** When the port is held by a development server from an earlier session of this same project, stop that process and start a fresh one. Never kill a process you cannot identify as this project's development server.
+- **Leave the environment as you found it.** Stop the servers this session started once the work no longer needs them, and say which are still running and why when you leave one up.
+- **Out of scope**: remote hosts of any kind — production, staging, shared development — container orchestrators outside the local machine, and anything serving other people. Ask first.
+
+### Delegate context-hungry verification
+
+Browser-driven screen audits and long parity walks are made of screenshots, accessibility trees, and console logs — the things that fill a context fastest. Run them in a subagent, one per screen cluster, a fresh one after each, returning conclusions rather than contents. Never put an image in a subagent's report: surface the file path instead, so it renders for the reader without entering the coordinating context.
 
 ## Communication & Reporting
 

@@ -15,9 +15,26 @@ General-purpose skills that apply to any repository.
 | ----- | ----------- |
 | `simplecore:korean-docs` | Korean output standards for all deliverables — writing, translation, proofreading, and glossary (GLOSSARY.md) management. Ships a base glossary, a style reference catalog, and an automated glossary audit script. |
 | `simplecore:svg-diagrams` | Create diagrams as SVG or ASCII — flowcharts, sequence/state/class/ER diagrams, system architecture, pipelines, and network layouts. Includes JSON-spec auto-layout, Mermaid conversion, and a render audit script that catches missing arrowheads, text overflow, and clipped content. |
-| `simplecore:wireframe-boards` | Author low-fidelity wireframes as a single self-contained HTML board — fixed-viewport phone and tablet frames, fluid-height desktop frames with a fold marker, a CSS-only narrow ⇄ wide viewport toggle, greybox primitives, flow connectors, and annotation callouts. Ships a board template plus an implementation contract that travels with every board so readers build from the structure instead of copying the greyboxes as a design. |
+| `simplecore:wireframe-boards` | Author low-fidelity wireframes as a single self-contained HTML board — fixed-viewport phone and tablet frames, fluid-height desktop frames with a fold marker, a CSS-only narrow ⇄ wide viewport toggle, greybox primitives, flow connectors, and annotation callouts. Frames wrap into a vertical grid rather than scrolling sideways, and each carries a permanent id plus its current board position. Ships a board template, a build kit for larger boards, and an implementation contract that travels with every board so readers build from the structure instead of copying the greyboxes as a design. |
+| `simplecore:board-parity-walk` | Walk a board's frames against the running app, section by section, across many sessions. Applies only where a board already exists. Carries what a walk that long needs to survive itself: one cluster per subagent with a fresh agent after each, facts shared in one handover file while narrative stays per-agent, judgment lenses so parity is the floor rather than the verdict, a decision nobody can settle parked instead of stopping the walk, and a list that holds only what is left. Ships the walker agent, the two document templates, and the config that turns the write-time checks on. |
 
-It also registers the `/simplecore:glossary-audit` command and a PostToolUse hook that audits Markdown and SVG files as they are written — both belong to `korean-docs` and are documented below.
+It also registers four commands, one agent, and a set of hooks, all documented below:
+
+| Component | Belongs to | What it does |
+| --- | --- | --- |
+| `/simplecore:init` | all | Detects which skills bind here, writes the routing, proposes the global instructions they need |
+| `/simplecore:glossary-audit` | `korean-docs` | Runs the Korean glossary audit and drives it to zero errors |
+| `/simplecore:board-init` | `wireframe-boards` | Wires a project for its board — build kit, folder reading contract, instruction-file pointer |
+| `/simplecore:parity-walk-init` | `board-parity-walk` | Wires a project for a parity walk — config, the two documents, instruction-file pointer |
+| `simplecore:board-walker` agent | `board-parity-walk` | Walks one cluster against the running app and returns conclusions only |
+| SessionStart hook | all | Detects a board, a parity walk, or Korean documents, and reports which wiring is missing |
+| Markdown/SVG audit hook | `korean-docs` | Audits Korean prose and diagram labels as they are written |
+| Parity-walk hook | `board-parity-walk` | Holds the parity list and handover file to their shape at write time |
+| Walk gate | `board-parity-walk` | Refuses to end a session that walked frames off the list without delegating to a subagent |
+| SVG lint hook | `svg-diagrams` | Lints every SVG at write time for unresolved markers, overflow, and clipped content |
+| Board contract hook | `wireframe-boards` | Checks a board's output contract — reading contract, offline rendering, labels, pairing, one accent |
+
+The `*-init` commands exist because these skills depend on wiring the user has no reason to know about. Each skill checks for it on load and offers the command; none writes anything without agreement.
 
 ### `simplix` — the SimpliX development stack
 
@@ -29,7 +46,17 @@ Handbooks for repositories built on SimpliX. Each skill states its own applicabi
 | `simplix:frontend` | simplix-react frontend handbook — 52 non-negotiable invariants, OpenAPI-driven scaffolding, `CrudList` / `CrudForm` / `CrudDetail` customization, filter and column design, a commonization registry, and documentation standards. Ships the convention audit and screen-inventory scripts. |
 | `simplix:frontend-e2e` | Browser-driven usability, lifecycle, and cross-screen consistency audit. Drives the running app as each persona, judges through four lenses anchored to the `simplix:frontend` invariants, and runs five mandatory censuses over every screen in scope. |
 
-It also registers the `/simplix:init` command and a SessionStart hook that detects the stack — both documented below.
+It also registers the `/simplix:init` command, one agent, and three hooks, all documented below:
+
+| Component | What it does |
+| --- | --- |
+| `/simplix:init` | Writes the routing block into the instruction file and arms the gates |
+| `simplix:screen-auditor` agent | Audits one screen cluster in a browser and returns conclusions only |
+| SessionStart hook | Detects the stack, names the binding skills, and reports which wiring is missing |
+| Skill gate | Refuses a source edit until the subproject's handbook has been invoked |
+| Completion gate | Refuses to end a session that changed screens without driving them in a browser and running the convention audit |
+
+Both gates are inactive until the project declares them, and each skill checks for that on load and offers `/simplix:init` when a piece is missing.
 
 ## Requirements
 
@@ -84,6 +111,61 @@ claude plugin update simplix
 
 A restart is required for updates to take effect.
 
+## simplecore: Detection, Commands and Hooks
+
+### Skill detection
+
+The plugin recognizes what a project needs from its markers rather than from configuration you maintain:
+
+| Skill | Markers |
+| --- | --- |
+| `wireframe-boards` | a directory holding the build kit's `build.mjs` beside `src/manifest.mjs`, or an HTML file whose head carries the board class vocabulary |
+| `board-parity-walk` | a `.claude/board-parity-walk.json` **and** a board — the walk reconciles code against frames, so it never binds without one |
+| `korean-docs` | a project glossary, or Hangul in the README / instruction file |
+
+The board scan reads directory entries three levels deep, skips dependency and build output directories, and opens only the head of a bounded number of HTML files, so finding a board never costs a full-tree read.
+
+```bash
+node "${CLAUDE_PLUGIN_ROOT}/scripts/detect-simplecore.mjs"           # human-readable
+node "${CLAUDE_PLUGIN_ROOT}/scripts/detect-simplecore.mjs" --json    # machine-readable
+node "${CLAUDE_PLUGIN_ROOT}/scripts/detect-simplecore.mjs" --root=../other-repo
+```
+
+Exit code 0 means at least one skill binds, 1 means none.
+
+### SessionStart hook
+
+At session start the plugin runs the detector. When it matches, Claude receives a note naming each skill that binds, where the project's own contents live, and — from the detector's `missing` list — every piece of wiring that is absent, in the terms to say them in. A directory matching no marker produces no output at all, and a detector failure is silent.
+
+### `/simplecore:init` command
+
+Writes the routing into an instruction file, so the skills bind in sessions where the plugin is not installed and for anyone else working in the repository. It also proposes the two global instructions a project cannot supply for itself — the Korean style baseline that ordinary answers need, and the authority to start and stop a local development server without asking each time.
+
+```text
+/simplecore:init              # project block into the repository's instruction file
+/simplecore:init --global     # only the global blocks, into ~/.claude/CLAUDE.md
+```
+
+Both blocks live in [`plugins/simplecore/templates/claude-md-section.md`](plugins/simplecore/templates/claude-md-section.md) — copy them by hand if you would rather not run the command. Deeper setup stays with `/simplecore:board-init` and `/simplecore:parity-walk-init`.
+
+### Write-time hooks on the artifacts
+
+Three hooks check an artifact the moment it is written, because each defect they catch is invisible in the source and survives a careful read of the diff:
+
+| Hook | Fires on | Catches |
+| --- | --- | --- |
+| SVG lint | any `.svg` written or edited | unresolved markers, oblique arrows, text overflow, clipped content — the same scan `audit.py lint` runs |
+| Board contract | an HTML file carrying the board class vocabulary | a missing reading contract, an external resource, a second script, unlabelled frames, an unpaired `.narrow`, a second accent colour |
+| Walk gate | a session that removed frames from the parity list | that the walking never went to a subagent |
+
+The first two are on by default; a project turns one off in `.claude/simplecore.json`:
+
+```json
+{ "svgLint": false, "boardCheck": false, "walkGate": false }
+```
+
+Only an explicit `false` disables a check, so a typo never silently turns one off. The SVG lint skips silently without python3, and reports `[review]` findings that need judgment separately from `[error]` findings that fail the write.
+
 ## korean-docs: Command and Hook
 
 ### `/simplecore:glossary-audit` command
@@ -105,7 +187,25 @@ Scope guard: the hook runs only in projects that have a project glossary — `.c
 
 When the hook finds violations, the report is fed back to Claude, which fixes them and continues.
 
-## simplix: Detection, Command and Hook
+### Board-parity walk hook
+
+A board-parity walk runs over many sessions, and two of its rules are the kind an agent talks itself out of at hour six: a walked frame is *deleted* from the parity list rather than marked, and the handover file holds facts rather than one walker's impressions. The `simplecore` plugin registers a `PostToolUse` hook that checks both at write time, plus a third — that the parked-decisions section still exists, since it is what the next session reads first.
+
+Scope guard: nothing runs until a project opts in with `.claude/board-parity-walk.json`, discovered by walking up from the edited file to the git boundary.
+
+```json
+{
+  "parityList": "_plans/SCREEN-PARITY.md",
+  "handoverFile": "_plans/WALK-NOTES.md",
+  "parkedSection": "Parked decisions"
+}
+```
+
+Completion is matched as list *structure* — a checked box, a struck-through item, a tick where the bullet goes — never as vocabulary, because "done" and its translations are ordinary state names on a wireframe frame. Narrative phrases quoted inside quotation marks are skipped, so the handover file can state its own rule.
+
+The skill proposes this wiring, and the two document templates beside it, when a project has none.
+
+## simplix: Detection, Command and Hooks
 
 ### Stack detection
 
@@ -134,6 +234,50 @@ At session start the plugin runs the detector against the working directory. Whe
 
 The note also reports whether any `CLAUDE.md` / `AGENTS.md` in the project already routes to the skills. When none does, Claude offers `/simplix:init` once and then continues with your task.
 
+### Skill-gate hook
+
+The handbooks encode conventions that diverge from the stock framework, so an edit written from memory produces defects a reviewer then has to catch. The instruction file already says "invoke the skill first"; this hook makes it hold when that instruction is skimmed. It denies a write to a source file until one of the gated skills has been invoked in the session.
+
+Scope guard: nothing is gated until a project declares it in `.claude/simplix.json`, discovered by walking up from the edited file. Directory layout is the project's to state, never the hook's to assume.
+
+```json
+{
+  "audit": { "publicRouteDirs": ["checkout"] },
+  "skillGate": {
+    "skills": ["simplix:frontend", "simplix:frontend-e2e"],
+    "sourceDirs": ["modules/", "apps/", "packages/"]
+  }
+}
+```
+
+In a monorepo each subproject carries its own file, so a frontend edit asks for the frontend handbook and a backend edit for the backend one. `SIMPLIX_SKILL_GATE=off` lifts the gate for a mechanical migration driven by a script rather than by hand-editing.
+
+### Completion gate
+
+The skill gate guards the moment of editing. This one guards the moment of claiming done, because that is where verification is actually skipped: the build is green, the diff reads correctly, and nobody opened the page or ran the audit. A `Stop` hook refuses to end a session that changed UI files without `simplix:frontend-e2e` having been invoked, or without the convention audit script having run — naming both omissions in one message so a session is interrupted once rather than twice.
+
+It fires **at most once per session**. The gate exists to make an omission visible, not to trap a session that has a good reason — a refactor with no reachable screen, a user who asked for code only. Claude answers the objection and stops again. `SIMPLIX_E2E_GATE=off` lifts it entirely.
+
+Declared beside the skill gate, and inactive without it:
+
+```json
+{
+  "e2eGate": {
+    "skill": "simplix:frontend-e2e",
+    "uiDirs": ["modules/", "apps/"]
+  }
+}
+```
+
+`uiExtensions` defaults to `[".tsx"]`; a backend subproject declares no `e2eGate` at all, since it serves no screens.
+
+`/simplix:init` writes both gates, and the detector reports which are armed:
+
+```bash
+node "${CLAUDE_PLUGIN_ROOT}/scripts/detect-simplix.mjs"          # per subproject: gate armed / OFF
+node "${CLAUDE_PLUGIN_ROOT}/scripts/detect-simplix.mjs" --json   # `wired` is true when nothing is missing
+```
+
 ### `/simplix:init` command
 
 Writes the routing into an instruction file, so the gate holds in sessions where the plugin is not installed and for anyone else working in the repository.
@@ -154,7 +298,7 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/audit-frontend.mjs"      # machine-checkable
 node "${CLAUDE_PLUGIN_ROOT}/scripts/screen-inventory.mjs"    # every screen classified by shape
 ```
 
-`audit-frontend.mjs` exits 1 when an error-level rule has hits; review-level rules print candidates that need human judgment and never fail the run.
+`audit-frontend.mjs` exits 1 when an error-level rule has hits; review-level rules print candidates that need human judgment and never fail the run. It reads the `audit` section of `.claude/simplix.json` for the handful of policies that are a property of the product rather than of the framework — which route directories are open to anybody, for one — so nothing about a particular repository's layout is baked into the script.
 
 ## Repository Layout
 
@@ -165,16 +309,24 @@ simplecore-skills/
 ├── plugins/
 │   ├── simplecore/
 │   │   ├── .claude-plugin/plugin.json
-│   │   ├── commands/glossary-audit.md
-│   │   ├── hooks/                        # hooks.json + check-md-glossary.mjs
+│   │   ├── agents/                       # board-walker.md
+│   │   ├── commands/                     # init.md + glossary-audit.md + board-init.md + parity-walk-init.md
+│   │   ├── hooks/                        # hooks.json + session-start.mjs + check-md-glossary.mjs
+│   │   │                                 #   + check-parity-walk.mjs + check-svg-render.mjs
+│   │   │                                 #   + check-board.mjs + walk-gate.mjs + shared config/marker modules
+│   │   ├── scripts/                      # detect-simplecore.mjs
+│   │   ├── templates/                    # claude-md-section.md
 │   │   └── skills/
+│   │       ├── board-parity-walk/        # SKILL.md + assets/ (two document templates + config)
 │   │       ├── korean-docs/              # SKILL.md + references/ + scripts/ + templates/
 │   │       ├── svg-diagrams/             # SKILL.md + references/ + scripts/
-│   │       └── wireframe-boards/         # SKILL.md + assets/board-template.html
+│   │       └── wireframe-boards/         # SKILL.md + references/ + assets/ (board-template.html + build-kit/)
 │   └── simplix/
 │       ├── .claude-plugin/plugin.json
+│       ├── agents/                       # screen-auditor.md
 │       ├── commands/init.md
-│       ├── hooks/                        # hooks.json + session-start.mjs
+│       ├── hooks/                        # hooks.json + session-start.mjs + skill-gate.mjs + e2e-gate.mjs
+│       │                                 #   + shared config/marker modules
 │       ├── scripts/                      # detect-simplix.mjs + audit-frontend.mjs + screen-inventory.mjs
 │       ├── templates/                    # claude-md-section.md
 │       └── skills/
@@ -187,7 +339,7 @@ simplecore-skills/
 └── README.md
 ```
 
-Components in the default locations (`skills/`, `commands/`, `hooks/`) are discovered automatically. Every skill registers as `<plugin>:<skill-name>`, and paths inside a plugin resolve through `${CLAUDE_PLUGIN_ROOT}`.
+Components in the default locations (`skills/`, `commands/`, `hooks/`, `agents/`) are discovered automatically. Every skill registers as `<plugin>:<skill-name>` and every agent as `<plugin>:<agent-name>`, and paths inside a plugin resolve through `${CLAUDE_PLUGIN_ROOT}`.
 
 ## Global Instructions Example
 

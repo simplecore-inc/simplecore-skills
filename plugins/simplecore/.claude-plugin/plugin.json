@@ -1,7 +1,7 @@
 {
   "name": "simplecore",
-  "version": "2.2.0",
-  "description": "SimpleCORE's curated skill set — Korean output standards with glossary tooling, SVG and ASCII diagrams, and low-fidelity wireframe boards",
+  "version": "3.0.0",
+  "description": "SimpleCORE's curated skill set — Korean output standards with glossary tooling, SVG and ASCII diagrams, low-fidelity wireframe boards, and the long-running board-parity walk that reconciles them with the running app",
   "author": {
     "name": "SimpleCORE Inc.",
     "email": "dev@simplecore.kr",
@@ -15,6 +15,7 @@
     "glossary",
     "svg",
     "diagram",
-    "wireframe"
+    "wireframe",
+    "parity-walk"
   ]
 }
