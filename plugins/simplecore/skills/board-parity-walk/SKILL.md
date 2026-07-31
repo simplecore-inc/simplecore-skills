@@ -5,8 +5,11 @@ description: >-
   section, over many sessions — the long-running parity audit that follows
   implementation. REQUIRES a project that already has a wireframe board; with no
   board there is nothing to walk against, and the answer is to draw one first
-  (wireframe-boards) rather than to improvise a substitute. Use when reconciling
-  implemented screens with a board,
+  (wireframe-boards) rather than to improvise a substitute. The APPLICATION, by
+  contrast, need not exist yet: a frame no code reaches is built to the board and
+  then judged, which makes this the loop a board-first project builds through from
+  its first screen. Use when reconciling
+  implemented screens with a board, when building screens from a board,
   working through a parity/remaining-screens list, resuming such a walk, or
   setting a project up for one; triggers on 보드 대조 · 화면 대조 · 프레임 대조 ·
   SCREEN-PARITY · 걸을 화면 · 화면을 걷는다 · 남은 화면 대조 · 섹션을 걷는다. It
@@ -24,8 +27,9 @@ description: >-
 # Walking a board against the running app
 
 A board says what each screen holds, in which state, and how the user moves
-between them. Code drifts from it. This is the walk that finds the drift — one
-section at a time, across many sessions, until the parity list is empty.
+between them. Code drifts from it — and, before it drifts, it does not exist. This
+is the walk that closes both gaps: one section at a time, across many sessions,
+until the parity list is empty.
 
 ## Precondition: there is a board, or there is no walk
 
@@ -43,6 +47,15 @@ rather than a contract the code is measured against. Offer
 
 A parity-walk config sitting in a project with no board is the same situation
 wearing a hat: report it as wiring that cannot hold rather than walking anyway.
+
+**The application is the opposite case: it does not have to exist yet.** A board
+drawn before the code is a board with no drift to find and every screen still to
+build, and that is a walk — the frames are the same frames, the list empties the
+same way, and the discipline that keeps a 150-frame walk from decaying is exactly
+what a 150-frame build needs. Never refuse a walk because the routes are not there
+yet, and never wait for somebody to "implement first and reconcile later": that
+produces screens shaped by whatever was easiest, which is the drift this whole
+document exists to prevent. See "A frame no code reaches yet" below.
 
 It is a different job from the three it sits between:
 
@@ -141,7 +154,8 @@ What the wiring is, for the case where it is written by hand:
   "handoverFile": "_plans/WALK-NOTES.md",
   "parkedSection": "Parked decisions",
   "logDir": ".walk-logs",
-  "narrativePhrases": []
+  "narrativePhrases": [],
+  "frameDeliverables": []
 }
 ```
 
@@ -152,10 +166,20 @@ logs, and belongs in the project's ignore file rather than in the repository —
 the walk needs *one* agreed location so somebody can tail it without asking.
 `narrativePhrases` extends the point-of-view phrasing the handover check refuses,
 for a project whose documents are written in neither Korean nor English.
+`frameDeliverables` lists what each frame owes beyond working code, one checkable
+sentence each, and is empty for a project that requires nothing.
 
 The two documents start from `assets/parity-list.md` and `assets/handover.md` in
 this skill; the parity list is then filled from the board, one line per frame that
 has a route, grouped into sections.
+
+## References — read on demand
+
+Paths are relative to this skill's own directory.
+
+| Situation | Read |
+| --- | --- |
+| A project whose frames owe an artefact beyond code — captures, manual pages, snapshots — or deciding what `frameDeliverables` should hold | `references/frame-artefacts.md` |
 
 ## Opening a session
 
@@ -198,7 +222,12 @@ this entirely. There, ask.
 
 ## The unit of work is a cluster, and one agent takes one cluster
 
-**Never walk in the coordinating context.** Screenshots and logs fill it fast;
+**Never walk in the coordinating context.** Including the first frame. Setting a
+project up — the config, the two documents, the scripts a walk depends on — is the
+coordinator's work and belongs here. Taking one frame through end to end to settle
+the format is **not** setup; it is a cluster, and it costs the same context every
+other cluster costs. The pilot is where this rule is broken, because it feels like
+part of the setup it is proving. Screenshots and logs fill it fast;
 a walk run there dries out before a section is done and leaves half-built code
 behind. That failure is the reason this skill exists.
 
@@ -219,10 +248,17 @@ behind. That failure is the reason this skill exists.
    closed, reversed — plus every screen that shows it; just as often it is a flow with
    no record behind it, like a setup wizard, a sign-up, or a family of public links.
    Never a fixed frame count: splitting by count hides the cross-screen disagreements
-   the walk exists to catch, because no single walker sees both sides.
+   the walk exists to catch, because no single walker sees both sides. Where the frames
+   are unbuilt, the same seam rule holds over a smaller cluster — see "A frame no code
+   reaches yet".
 2. **Finish, then replace.** When the cluster is done the agent ends. The next
    cluster gets a **new** agent. Never stack a second cluster on a running one —
    preventing accumulated context is the whole point.
+
+   **Stop a walker once its report is in and verified.** A finished agent that is left
+   alive keeps announcing itself, and a coordinator watching six of those cannot see at
+   a glance which one is actually working — which is the fact the one-walker-at-a-time
+   rule exists to keep obvious. Stopping them is bookkeeping, not cleanup.
 3. **One walker at a time.** A walker fixes code as it goes and drives the dev
    server, so two of them in one working tree collide over the same files and the
    same ports. Run clusters in sequence, or give each walker its own worktree *and*
@@ -233,12 +269,121 @@ behind. That failure is the reason this skill exists.
    no images.
 5. **The coordinator only coordinates.** Picks the next cluster, deletes walked
    frames from the list, records parked decisions, surfaces capture paths without
-   opening them. It does not open the board, drive the browser, or read a log.
+   opening them. It does not open the board, drive the browser, or do the work.
+
+   **It does read the log, and it relays.** That is the one exception, and it is
+   cheap — a few lines, not a transcript. A person watching from outside cannot
+   tell a working agent from a dead one, and asking is a poor substitute for
+   looking. Report which frame the walk is on and what step it is at, unprompted,
+   whenever there is a natural moment; a cluster that runs for an hour in silence
+   is a cluster nobody can supervise.
+
+**A walker's session can end for reasons that have nothing to do with the work** — a
+usage limit, a dropped connection. What survives is what it committed, so the
+one-frame-one-commit rule is also what makes a walker interruptible. When one dies,
+read the tree rather than guessing: commits landed, uncommitted files half-written, a
+frame deleted from the list whose deliverables never appeared. Finish or discard what
+is half-done **before** dispatching the next walker into the same tree; a second walker
+inheriting a half-migration will treat it as the existing state and build on it.
 
 A cluster that runs out of context before it ends is not handed to a second
 agent to continue — the next agent would inherit conclusions without the screens
 behind them. Restart it, split at a seam where the two halves do not need to see
 each other.
+
+## A frame no code reaches yet
+
+Every frame is in one of two conditions when a walker arrives, and the walker
+decides which by trying to reach it — not by asking, and not by reading the
+parity list, which says what is left rather than what exists.
+
+| Condition | What walking it means |
+| --- | --- |
+| **Built** — the route renders something | Compare against the frame, judge, fix what diverges. |
+| **Unbuilt** — no route, or a route that renders nothing the frame describes | Build it to the frame, then compare and judge it exactly as if somebody else had. |
+
+Building is not a different job wearing the walk's clothes. It ends in the same
+place — a frame that matches the board and survives the three lenses — and it is
+subject to every rule above it: fix under the project's own conventions, park what
+you cannot settle, delete the frame from the list, one line in the log.
+
+Three things change, and only three:
+
+1. **The board is the specification, not the reference.** When something a screen
+   needs is not on the frame — a field, a state, an error, a way back — that is not
+   licence to invent it. Small and obvious, build it and **back-fill the frame in
+   the same change** (`simplecore:wireframe-boards`). A real gap in the product's
+   behaviour is a parked line, because deciding it is designing, and designing from
+   inside a build is how a board stops being a contract.
+2. **A cluster gets smaller.** Building a screen costs several times the context of
+   comparing one, so the cluster that one walker can carry to its end is smaller —
+   often a single screen with all its states, where a reconciliation walker would
+   have taken the record's whole life. The seam rule does not change: split where
+   the two halves do not need to see each other.
+3. **The order inside a cluster is fixed.** Build every frame of the cluster, then
+   walk the whole cluster as one. Judging each screen the moment it is written
+   means judging it with nothing to be consistent *with*; the cross-screen
+   findings — the same thing in two places, two solutions to one problem, a state
+   with no exit — only appear once the cluster stands together.
+
+**A section built this way is not "done pending review".** It closes on the same
+gates as any other section, and a walker that built but did not judge has walked
+nothing.
+
+## What a frame owes besides working code
+
+Some projects require an artefact per frame beyond the code — a capture under
+realistic data, a page of the operator's manual, a snapshot test. Where that is so,
+the config names it in `frameDeliverables`, one checkable sentence each, and **a
+frame that owes one is not walked until it exists** — so it is not deleted from the
+list. That is what keeps the artefact from becoming a separate pass that never
+happens.
+
+Two rules make it affordable rather than doubling the work: **the same walker
+produces it, in the same cluster**, and **what generates it must be deterministic**.
+
+Artefacts have their own failure modes, and every one of them is silent — a capture
+that shows part of a screen, sample data that is wrong in every language but one, an
+image that quietly stopped matching the code. → `references/frame-artefacts.md`,
+which also covers the axes an artefact varies along, staleness detection, and why
+some things are cheap to add later and others are not.
+
+## One frame, one commit
+
+A frame that is finished — built, matching the board, owing nothing further, deleted
+from the list — is committed **there**, before the next frame is started. Not at the
+end of the cluster, and not at the end of the session.
+
+Two things this buys, and both matter more on a long walk than they look:
+
+- **The revert unit becomes a screen.** A cluster committed as one blob cannot give
+  back a single screen that turned out wrong.
+- **A walker that runs out of context has still delivered.** Everything it finished
+  is already in; only the frame in its hands is lost. Batching turns a dried-out
+  walker into a session's worth of work nobody can recover.
+
+The message says what changed and nothing else — no self-assessment, no note about
+which pass produced it, no tool signature. What happened belongs to the history;
+the artefact holds only its current state.
+
+## Review scaffolding is not product copy
+
+A board id is how a reviewer names a screen. It is not something the screen says
+about itself, and it must never reach the product — printed as copy it goes to a
+user who has no board, and it goes into every capture the manual keeps, where it is
+the one thing on the page that means nothing to the person reading.
+
+The same applies to everything else that exists for whoever is building: a route
+printed above a title, a "which frame is this" label, a fixture name, development
+chrome the framework floats over the screen. Captures show the product, and only the
+product — a dev-tools bubble sitting over the bottom-right corner covers exactly
+where a list's last row and a screen's primary action are.
+
+This is worth naming because it survives review: it looks deliberate, it is useful
+while the screens are being built, and nobody deletes it because nobody is sure it
+was not meant to be there. It ships. Sweep for it by defect type the moment one
+instance appears — on a board-first project, if one screen carries its frame id,
+they all do.
 
 ## Two kinds of leaving-behind, and only one is shared
 
@@ -284,28 +429,46 @@ stays visible while the coordinating context stays empty:
    for the frame they justify. The coordinator surfaces the path **without
    opening the file** — the image renders for the reader and never enters the
    context.
-3. **Progress goes into the walker's own log, one line per frame — not one
-   summary per cluster.** Somebody watching wants to know where the walk is now,
-   and can tail that file; a summary written after the cluster finishes answers
-   the question too late.
+3. **Progress goes into the walker's own log, one line per STEP.** Somebody
+   watching wants to know where the walk is now, and can tail that file.
+
+   One line per *frame* is the tempting reading and it is not enough: building a
+   frame, judging it across locales and devices, capturing it and writing it up
+   is half an hour of work, so a line at the end of that is a heartbeat every
+   thirty minutes — which from outside is indistinguishable from an agent that
+   has stalled or died. Log when a frame is picked up, when it stands, when it
+   has been judged, when it has been captured, when it is done.
 
 For the tail to be possible, the log needs an agreed place and an agreed shape.
 One file per walker under the config's `logDir`, named for the cluster, and one
 line appended **as each frame is finished**:
 
 ```
-<HH:MM> <frame id> <VERDICT> <what, in one clause>
+<HH:MM> <frame id> <STATE> <what, in one clause>
 ```
 
-`VERDICT` is one of `MATCH` · `FIXED` · `PARKED` · `BLOCKED`, so the file can be
-grepped for what still needs a human without being read. Nothing else goes in a
-log line — no reasoning, no page text, no image paths.
+`STATE` is a step (`START` · `BUILT` · `JUDGED` · `SHOT`) or a verdict (`MATCH` ·
+`FIXED` · `PARKED` · `BLOCKED` · `DONE`), so the file can be grepped for what
+still needs a human without being read. Nothing else goes in a log line — no
+reasoning, no page text, no image paths.
 
 ```
-14:02 B-03 MATCH   list, filters, empty state all as drawn
-14:09 B-04 FIXED   detail title showed the record id; now the person's name
-14:15 B-05 PARKED  board draws a bulk-reverse the API has no endpoint for
+14:02 B-03 START   reconciling the record list
+14:07 B-03 JUDGED  ko/en + pseudo, phone + tablet — nothing diverged
+14:11 B-03 MATCH   list, filters, empty state all as drawn
+14:14 B-04 START   detail
+14:22 B-04 FIXED   title showed the record id; now the person's name
+14:31 B-05 PARKED  board draws a bulk-reverse the API has no endpoint for
 ```
+
+**Append as each step ends, never in a batch.** A log written up afterwards
+answers "where is the walk now" too late to be an answer, and it is the only
+question the log exists for.
+
+When a step takes markedly longer than its neighbours, say so on the line.
+Nobody is timing the walk from outside, so a step that quietly costs twenty
+times what it should will go on costing it — the log is where that becomes
+visible.
 
 **Never put an image in a report.** A few of those and the session is dry.
 
@@ -331,6 +494,84 @@ The board names the rest. A flow with an approver, a kiosk walk-up, or a
 first-time visitor gets that persona too — derive them the way the board's `AUTH:`
 notes already name who may enter a screen.
 
+**A frame is not judged until it has been seen in the longest language it ships
+in.** Text length is not a property of a screen; it is a property of a language,
+and the language a product is designed in is almost always one of its most compact.
+Korean, Chinese and Japanese run short; English runs roughly half again as long;
+German and Finnish longer still. So the source locale is precisely the one that
+hides every overflow — a tile that wraps, a segmented control that breaks into two
+ragged rows, a label clipped at the edge, a button whose text no longer fits its
+box. All of it looks perfect in the language it was written in, and all of it
+reaches whoever reads the product in the other one.
+
+Three rules follow, and the last is the one that lasts:
+
+1. **Look at the frame in every locale it ships in**, longest first. A capture in
+   one language is not evidence about the others.
+2. **Fix it in the component, never in the screen.** A screen that works around a
+   long label has fixed one screen; the next screen with a long label breaks
+   identically. The component is where "this must survive any string" belongs.
+3. **Judge against a generated pseudo-locale, not against the translations you
+   happen to have.** Fixing a layout until the current English fits passes one
+   language and defers the problem: Russian, German and Finnish would break the same
+   component again, and nobody finds out until that language ships. A pseudo-locale
+   — the `en-XA` idea, each string mechanically expanded by half and rendered in
+   accented forms, bracketed so truncation is visible — is generated from the source
+   and therefore covers **every key, forever, at no translation cost and with no file
+   anybody maintains.** It also catches an unrelated defect for free: any text that
+   comes out unaccented was never a key.
+
+   Adding a real long language instead (Russian is the usual suggestion) buys the
+   same coverage for a permanent translation bill and a file that silently falls
+   behind the source. Prefer the generated one, and keep it out of the mirroring
+   check and out of the documented languages — it is an instrument, not a language
+   the product speaks.
+
+**Not overflowing is not the same as being aligned.** A row of repeating units — stat
+tiles, cards, list rows — exists so the eye can compare one value against the next,
+and that comparison dies the moment a wrapped label pushes one value onto a different
+line from its neighbours. Nothing is clipped, nothing is cut off, and the row has
+still stopped doing its job. In the source language every label is one line, so the
+defect does not exist there at all.
+
+The fix is to decide, per repeating unit, **which element is anchored and which
+absorbs the variation** — anchor the value and let the label take whatever height it
+needs, so a one-line and a three-line label leave their values on the same baseline.
+Reserving a fixed height for the label instead is a guess about the longest string,
+and the pseudo-locale breaks it on the first run.
+
+The test to apply is not "does the longest string I have fit". It is **"can any
+string break this"** — a component that reflows gracefully at any length is done; one
+that happens to fit at twelve characters is not. When a component cannot be made
+length-proof by compressing, change its shape rather than its type size: let a row of
+four tiles become two rows of two, or move an icon off the label's line so the label
+gets the full width. Squeezing is what runs out; rearranging does not.
+
+**Some defects no test can fail on, and those are the reason for looking.** A styling
+engine that drops a class it could not see, an asset that falls back to another face, a
+value that formats in the wrong language — each produces a screen that is calmly,
+plausibly wrong while types, lint, tests and every custom checker stay green. There is
+nothing to assert against, because the code says what it should and the toolchain
+silently did something else with it.
+
+That is not an argument against checkers; a defect seen twice still becomes a rule, and
+some of these become one the moment you understand them. It is an argument about what the
+visual pass is **for**: not confirming what the tests already know, but catching the class
+of failure that has no witness except the screen. Treat a walk with no captures looked at
+as a walk that did not happen, however green it was.
+
+Two habits keep this from recurring once it has bitten:
+
+- **The test runner is not the target.** Where tests run on one engine and the product runs
+  on another, every capability the code reads — an API's presence, an option's effect, a
+  font's coverage — is a fact about the target that the test environment will answer
+  differently and confidently. Measure it **on the target**, once, and write the answer
+  where the next person will look before assuming their own runtime's behaviour.
+- **A probe that could not observe has told you nothing, and nothing is not an answer.**
+  Reading an absent result as a value is how a correction gets applied to the case it was
+  never meant for. Where a derived rule cannot be established, the underived default is
+  what ships — it was already right, or it would have been reported long ago.
+
 **Where the project has its own screen-audit skill, that skill is the rubric** —
 in a simplix-react repository, `simplix:frontend-e2e` carries four lenses and five
 censuses, and its judgments are anchored to the frontend handbook's invariants
@@ -354,16 +595,45 @@ code.
 Do not write audit findings into documents. A finding was fixed, became a rule,
 or is a line on the list.
 
-### What you cannot settle does not stop the walk
+### Parking is a last resort, and most things do not qualify
 
-Some divergences turn on a product decision — the board draws something the code
-cannot honour, or the code does something the board never described, and which
-of the two is stale is not yours to settle. Others are blocked by the world: an
-external service the environment cannot reach, data nobody can stand up, a
-screen that needs a role that does not exist yet.
+**The default is to decide.** An open question is answered by designing the
+answer — architecture first, then consistency with what the product already does,
+then stability — and the decision is applied to the code and the board in the same
+change. A walk whose parked section keeps growing is not being careful; it is
+deferring the design work that the walk exists to do, and every deferred decision
+makes the next frame harder to build because it rests on nothing.
 
-**Do not stop, and do not guess.** Add one line to the parked section of the
-parity list and move to the next frame. The line says which frame, what the
+**These are never reasons to park:**
+
+| "I can't decide this because…" | What to do instead |
+| --- | --- |
+| it would add screens or states | Add them. Draw the frames, then build them. Scope is not a reason to leave a product incoherent. |
+| it is complex to implement | Complexity is the work. Design it properly and build it. |
+| there are two reasonable options | Pick the one that is more consistent with the rest of the product, and say why. Two reasonable options is a decision, not a blocker. |
+| the requirement is not written down | Derive it from the spec and the personas the board names. Write down what you derived. |
+| an external system's behaviour is unknown | Design so the answer does not matter — declare the capability, handle both, and reject explicitly what is unsupported. A product that changes shape when a vendor's answer arrives was not designed. |
+
+That last row is the one that hides. An unknown about somebody else's API is
+almost never a reason to stop drawing a screen: it is a reason to put the unknown
+behind a declared capability, so the screen is correct whichever way the answer
+falls. Parking it instead freezes a whole section behind a fact nobody is chasing.
+
+**Two things genuinely qualify**, and both share a property — no amount of design
+makes the answer derivable:
+
+- **A commercial or legal decision that is somebody's to make.** A price, a
+  contractual term, a retention period a regulator sets. Design everything around
+  it so the value is the only thing missing.
+- **A blocker in the world.** An environment that cannot reach a service, hardware
+  nobody has yet. Build and judge everything that does not depend on it, and park
+  only the part that does.
+
+Even then, park the narrowest thing. "The whole M section is blocked" is almost
+always "one decision inside M is blocked, and nobody separated it from the rest".
+
+When something does qualify: **do not stop, and do not guess.** Add one line to
+the parked section of the parity list and move to the next frame. The line says which frame, what the
 choice or the blocker is, and which side looks stale — so whoever reads it next
 does not have to re-derive the context:
 
@@ -407,6 +677,7 @@ so two consecutive sessions are comparable:
 ```
 SECTION: <letter and name> — closed / still open
 CLUSTERS WALKED: <one line each: what it was, frames cleared>
+BUILT: <frames that had no code and now do, or "none — every frame was already built">
 FIXED: <grouped by defect type, one line per instance>
 CROSS-SWEEP: <per defect type, other instances found and fixed, including "0 others">
 RULES ADDED: <defect type → where the detection rule now lives, or "none">
@@ -414,8 +685,16 @@ BOARD SYNCED: <frames back-filled or corrected, or "nothing — the code was wro
 PARKED, STILL OPEN: <one line each, with what decision it needs and from whom>
 VERIFICATION: <each gate and its result>
 LEFT ON THE LIST: <how many frames, in which sections>
+DELIVERABLES: <what each frame owed beyond code and where it landed, or "none declared">
 CAPTURES: <paths only>
 ```
+
+**A walker that returns nothing has not reported.** Going quiet after committing is the
+common failure, and it is expensive in a specific way: the coordinator then has to read
+the repository to find out what happened, which spends the context the subagent existed
+to protect. Ask once. If the answer does not come, **verify the few claims that decisions
+rest on — by running the thing, not by reading the diff** — and move on rather than
+chasing. Which claims those are is usually obvious: the ones a later plan assumes.
 
 `PARKED, STILL OPEN` is the part the user acts on, so it is never folded into a
 sentence about progress. `LEFT ON THE LIST` is read off the list itself, not

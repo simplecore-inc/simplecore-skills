@@ -768,3 +768,37 @@ grep -rEn 'DeliveryRecord|deliveryRecord|delivery_records|[Dd]eliveryMatcher' \
 ```
 
 **Why**: the orphan-key translation tests treat every `entities.*` / `enums.*` key with no backing `@FieldLabel` / enum value as an orphan and fail the build. So a removal that splits the Java change (entity/enum class) from the message-bundle change into separate commits cannot produce a green intermediate — it violates "never commit a broken build". Fold the bundle removal into the same commit as the class deletion; symmetrically, a NEW enum value needs its `enums/*.properties` label in every locale in the same commit that adds the value, or `EnumMessageTranslationTest` fails. For feature removal, a polysemous identifier (a word used by several features) makes a bare `grep -ri` report false positives from siblings; use a symbol-precise `grep -E` (never `-i`), exclude `/build/` `/generated/` and plan docs, and enumerate the homonyms to KEEP before deleting — the only safe basis for judging "fully removed" is a pattern that matches the target and nothing else.
+
+## AP-34: A `@NaturalId` Column the Update Path Still Accepts
+
+```java
+// WRONG — the generated update maps the whole DTO onto the entity, natural id included:
+@Transactional
+public XDetailDTO update(X entity, XUpdateDTO dto) {
+    if (!Objects.equals(entity.getXId(), dto.getXId())) { /* id guard only */ }
+    modelMapper.map(dto, entity);          // rewrites xCode, which is @NaturalId
+    return saveAndGetProjection(entity);
+}
+
+// CORRECT — refuse the change before the mapper, with a key that names the field
+if (dto.getXCode() != null && !Objects.equals(entity.getXCode(), dto.getXCode())) {
+    throw new SimpliXGeneralException(ErrorCode.GEN_CONFLICT, "{error.<domain>.xCodeImmutable}", null);
+}
+```
+
+**Why**: `@NaturalId` defaults to immutable, so Hibernate refuses the write at flush — as a
+`GEN_INTERNAL_SERVER_ERROR` naming no field. The generated CRUD service has no guard for it and
+the generated form renders the column as an ordinary editable text field, so an operator who
+retypes a code gets an internal error with nothing on screen saying which field caused it. Every
+`@NaturalId` column therefore needs three things in the same change: the service guard above, a
+message key in every locale, and the field **disabled on edit** in the form with that reason as
+its `description` (a create form leaves it open and required). The generated happy-path service
+test also has to stop changing the code — it sets a different value by default and will start
+failing the moment the guard lands.
+
+**Detection** (run from the repository root):
+```bash
+# every natural id, and whether its service refuses the change
+grep -rn -A4 "@NaturalId" --include='*.java' packages modules | grep -A3 "private String"
+grep -rn "Immutable}" --include='*Service.java' modules
+```

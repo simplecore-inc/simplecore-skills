@@ -7,6 +7,11 @@
  * are ignored — so diagram labels follow the same orthography and
  * translation-ese rules as the documents they illustrate.
  *
+ * Files matching audit.localeResources are i18n resource files: they are
+ * audited on the values of quoted string literals only. Keys, comments and
+ * surrounding code are ignored, so the strings a user actually reads on screen
+ * are held to the same standard as the documents.
+ *
  * Rule sources, merged before auditing:
  *   1. The base glossary bundled with this skill (../GLOSSARY.base.md) —
  *      project-independent orthography and translation-ese rules.
@@ -26,6 +31,8 @@
  *   audit:
  *     paths: [docs]              # default audit targets, relative to project root
  *     exclude: ["**\/legacy/**"]  # glob patterns removed from any scan
+ *     localeResources: []        # globs of i18n resource files, audited on
+ *                                # quoted string values only
  *     untranslated: false        # true = warn about remaining English prose
  *   ---
  *
@@ -103,7 +110,7 @@ function parseInlineArray(value) {
 }
 
 function parseGlossaryConfig(markdown) {
-  const config = {paths: [], exclude: [], untranslated: false};
+  const config = {paths: [], exclude: [], localeResources: [], untranslated: false};
   const lines = markdown.split(/\r?\n/);
   if (lines[0]?.trim() !== '---') return {config, body: markdown};
   let end = -1;
@@ -123,7 +130,7 @@ function parseGlossaryConfig(markdown) {
       continue;
     }
     if (!inAudit) continue;
-    const kv = line.match(/^\s+(paths|exclude|untranslated)\s*:\s*(.*)$/);
+    const kv = line.match(/^\s+(paths|exclude|localeResources|untranslated)\s*:\s*(.*)$/);
     if (kv) {
       const [, key, rest] = kv;
       const value = rest.trim();
@@ -326,14 +333,19 @@ function mergeGlossaries(base, project) {
 // Target file resolution
 // ---------------------------------------------------------------------------
 
-function walk(dir) {
+/**
+ * Collects auditable files under `dir`. Markdown, MDX and SVG are auditable by
+ * extension; locale resource files are auditable because the project declared
+ * their paths, so `isLocaleResource` decides them regardless of extension.
+ */
+function walk(dir, isLocaleResource = () => false) {
   const found = [];
   for (const entry of readdirSync(dir, {withFileTypes: true})) {
     const full = join(dir, entry.name);
     if (entry.isDirectory()) {
       if (entry.name.startsWith('.') || DEFAULT_EXCLUDE_DIRS.has(entry.name)) continue;
-      found.push(...walk(full));
-    } else if (/\.(md|mdx|svg)$/.test(entry.name)) {
+      found.push(...walk(full, isLocaleResource));
+    } else if (/\.(md|mdx|svg)$/.test(entry.name) || isLocaleResource(full)) {
       found.push(full);
     }
   }
@@ -360,6 +372,21 @@ function makeExcludeMatcher(pattern) {
   return (rel) => rel.split('/').some((seg) => re.test(seg));
 }
 
+/**
+ * Builds the audit.localeResources predicate over absolute paths. Patterns use
+ * the same glob engine and the same relative-to-project-root semantics as
+ * audit.exclude. With no patterns declared, nothing is a locale resource.
+ */
+function makeLocaleResourceMatcher(patterns, root) {
+  if (patterns.length === 0) return () => false;
+  const matchers = patterns.map(makeExcludeMatcher);
+  return (file) => {
+    const rel = relative(root, resolve(file)).split(sep).join('/');
+    if (rel.startsWith('..')) return false;
+    return matchers.some((matches) => matches(rel));
+  };
+}
+
 function findPath(p, root, label) {
   const found = [resolve(p), join(root, p)].find((c) => existsSync(c));
   if (!found) throw new Error(`${label} 경로를 찾을 수 없습니다: ${p}`);
@@ -373,23 +400,23 @@ function findPath(p, root, label) {
  * report "clean" because a glob filtered it out. The glossary file itself is
  * never audited (it lists banned terms by definition).
  */
-function resolveTargets(args, config, root, glossaryPath) {
+function resolveTargets(args, config, root, glossaryPath, isLocaleResource) {
   const direct = [];
   const scanned = [];
   if (args.paths.length > 0) {
     for (const p of args.paths) {
       const found = findPath(p, root, '지정한');
-      if (statSync(found).isDirectory()) scanned.push(...walk(found));
+      if (statSync(found).isDirectory()) scanned.push(...walk(found, isLocaleResource));
       else direct.push(found);
     }
   } else if (!args.all && config.paths.length > 0) {
     for (const p of config.paths) {
       const found = findPath(p, root, 'audit.paths');
-      if (statSync(found).isDirectory()) scanned.push(...walk(found));
+      if (statSync(found).isDirectory()) scanned.push(...walk(found, isLocaleResource));
       else scanned.push(found);
     }
   } else {
-    scanned.push(...walk(root));
+    scanned.push(...walk(root, isLocaleResource));
   }
 
   const excludes = config.exclude.map(makeExcludeMatcher);
@@ -508,6 +535,61 @@ function stripSvgLines(content) {
   return chars.join('').split(/\r?\n/);
 }
 
+/**
+ * Returns lines with every character blanked except the values of quoted
+ * string literals, preserving line numbers and column offsets so findings
+ * report accurate positions. Identifiers, punctuation and comments carry no
+ * screen copy; a literal that a ':' follows is an object key — a message id,
+ * not something anyone reads — and is blanked too. Single, double and template
+ * quotes are all recognised, escapes included, which covers .ts, .js, .json
+ * and .jsonc resource files alike.
+ */
+function stripCodeLinesToStringValues(content) {
+  const chars = content.split('');
+  const blankRange = (start, end) => {
+    for (let i = start; i < end; i++) {
+      if (chars[i] !== '\n' && chars[i] !== '\r') chars[i] = ' ';
+    }
+  };
+  const isKeyAfter = (index) => {
+    for (let i = index; i < content.length; i++) {
+      if (!/\s/.test(content[i])) return content[i] === ':';
+    }
+    return false;
+  };
+
+  let i = 0;
+  let cursor = 0; // start of the not-yet-blanked non-string region
+  while (i < content.length) {
+    const ch = content[i];
+    if (ch === '/' && content[i + 1] === '/') {
+      const end = content.indexOf('\n', i);
+      i = end === -1 ? content.length : end;
+      continue;
+    }
+    if (ch === '/' && content[i + 1] === '*') {
+      const end = content.indexOf('*/', i + 2);
+      i = end === -1 ? content.length : end + 2;
+      continue;
+    }
+    if (ch !== '"' && ch !== "'" && ch !== '`') { i++; continue; }
+    const quote = ch;
+    let j = i + 1;
+    while (j < content.length) {
+      if (content[j] === '\\') { j += 2; continue; }
+      if (content[j] === quote) break;
+      j++;
+    }
+    const valueEnd = Math.min(j, content.length); // closing quote, or EOF
+    blankRange(cursor, i + 1);                    // code before, plus opening quote
+    if (isKeyAfter(valueEnd + 1)) blankRange(i + 1, valueEnd);
+    cursor = valueEnd;
+    i = valueEnd + 1;
+  }
+  blankRange(cursor, content.length);
+  return chars.join('').split(/\r?\n/);
+}
+
 // ---------------------------------------------------------------------------
 // Auditing
 // ---------------------------------------------------------------------------
@@ -521,11 +603,15 @@ function frontMatterRange(rawLines) {
   return null;
 }
 
-function auditFile(filePath, rules, checkUntranslated) {
+function auditFile(filePath, rules, checkUntranslated, isLocaleResource = false) {
   const content = readFileSync(filePath, 'utf8');
-  const isSvg = /\.svg$/i.test(filePath);
-  const lines = isSvg ? stripSvgLines(content) : stripLines(content);
-  const fm = isSvg ? null : frontMatterRange(content.split(/\r?\n/));
+  const isSvg = !isLocaleResource && /\.svg$/i.test(filePath);
+  const isProse = !isSvg && !isLocaleResource;
+  let lines;
+  if (isLocaleResource) lines = stripCodeLinesToStringValues(content);
+  else if (isSvg) lines = stripSvgLines(content);
+  else lines = stripLines(content);
+  const fm = isProse ? frontMatterRange(content.split(/\r?\n/)) : null;
   const errors = [];
   const warnings = [];
 
@@ -546,8 +632,9 @@ function auditFile(filePath, rules, checkUntranslated) {
 
   // Untranslated-content heuristic: flag remaining English prose lines.
   // Markdown-only — the SVG mask leaves isolated short labels that would
-  // misfire this prose detector.
-  if (checkUntranslated && !isSvg) {
+  // misfire this prose detector, and an English locale resource is correct by
+  // definition.
+  if (checkUntranslated && isProse) {
     const englishProse = [];
     lines.forEach((line, idx) => {
       // Inside front matter only title/description hold translatable prose.
@@ -645,7 +732,7 @@ function main() {
   }
 
   let project = null;
-  let config = {paths: [], exclude: [], untranslated: false};
+  let config = {paths: [], exclude: [], localeResources: [], untranslated: false};
   let root = process.cwd();
   if (discovered) {
     const parsed = parseGlossaryConfig(readFileSync(discovered.path, 'utf8'));
@@ -680,7 +767,8 @@ function main() {
   }
   console.log('');
 
-  const {files: targets, excludedCount, glossarySkipped} = resolveTargets(args, config, root, discovered?.path);
+  const isLocaleResource = makeLocaleResourceMatcher(config.localeResources, root);
+  const {files: targets, excludedCount, glossarySkipped} = resolveTargets(args, config, root, discovered?.path, isLocaleResource);
   if (excludedCount > 0) console.log(`audit.exclude 패턴으로 파일 ${excludedCount}개 제외됨`);
   if (glossarySkipped) console.log('용어사전 파일 자체는 감사 대상에서 제외됩니다');
   if (targets.length === 0) {
@@ -694,7 +782,7 @@ function main() {
   for (const file of targets) {
     const rel = relative(root, file);
     const relPath = rel.startsWith('..') ? file : rel;
-    const {errors, warnings} = auditFile(file, rules, checkUntranslated);
+    const {errors, warnings} = auditFile(file, rules, checkUntranslated, isLocaleResource(file));
     errorCount += errors.length;
     warningCount += warnings.length;
     for (const f of errors) console.log(formatFinding(relPath, f, 'error'));

@@ -455,3 +455,42 @@ The `@I18nTrans` + `@JsonIgnore` pair applies to EVERY read-path DTO that copies
 grep -rn -B3 "private String name;" --include="*DTOs.java" src/main/java | grep -v I18nTrans
 ```
 Search/Create/Update DTO `name` fields are write-path input and are exempt.
+
+## Two Paths `@I18nTrans` Never Reaches
+
+The paired-annotation rule above covers DTO fields Jackson serializes from a DTO. Two other read
+paths carry an i18n-backed name and are not DTO fields, so the pattern above never fires on them —
+and the console then shows one record under two different names, depending on which screen the
+reader is on.
+
+**① A reference field serializes the ENTITY, not a DTO.** A DTO that points at another entity with
+`@JsonIncludeProperties({"xId", "xCode", "xName", "xNameI18n"})` ships the entity's own `xName`
+column. Annotating the referencing DTO does nothing — there is no field to annotate. Put
+`@I18nTrans(source = "<field>I18n")` on the **entity's** base field: it is a Jackson field
+annotation (`@JacksonAnnotationsInside` over `@JsonSerialize`), so it is inert for JPA and
+ModelMapper and fixes every reference surface at once.
+
+```java
+@I18nTrans(source = "positionNameI18n")
+@Column(name = "position_name", nullable = false, length = 100)
+private String positionName;
+```
+
+**② A service assembling a String by hand.** Self-service profiles, "who am I" endpoints, export
+rows, and notification payloads set the value with `dto.setName(entity.getName())`. No Jackson
+annotation participates. Resolve through ONE shared helper that reads the locale map by language
+code and falls back to the base value — never a private copy per service, and never the raw column.
+
+```java
+dto.setPositionName(LocalizedNames.pick(p.getPositionNameI18n(), p.getPositionName()));
+```
+
+**Detection** (run from the repository root):
+```bash
+# services reading an i18n-backed base column directly
+grep -rn "get[A-Za-z]*Name()" --include="*Service.java" src modules packages | grep -v I18n
+# entities whose i18n-backed base field carries no @I18nTrans, while some DTO references them
+grep -rln "I18n;" --include="*.java" packages/*/src/main/java | xargs grep -Ln "@I18nTrans"
+```
+Each hit is a judgement call: a write path or an internal comparison is fine; anything whose value
+reaches a screen is a defect.

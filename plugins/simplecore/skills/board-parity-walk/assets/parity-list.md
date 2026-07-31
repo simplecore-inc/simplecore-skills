@@ -1,7 +1,8 @@
 # Screens left to walk
 
-Having a route and matching the state a frame draws are different things. This document holds the
-screens whose states have not been checked against the board yet.
+Having a route and matching the state a frame draws are different things, and a frame with no route
+at all is a third. This document holds every frame that is not yet both built and checked against
+the board.
 
 **This is not an initiative.** It is a list that is edited for as long as the board lives, so it
 carries no date.
@@ -41,3 +42,7 @@ frame can be opened without searching.
 ### A <section name>
 
 - A-01 `<frame file name>` — <screen · state>
+
+A line says nothing about whether the frame exists in the code. Finding that out is the walker's
+first act, and a frame that turns out to need building is walked the same way as one that needs
+correcting.

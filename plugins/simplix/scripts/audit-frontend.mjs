@@ -80,6 +80,39 @@ function blockHits(content, re) {
   return hits;
 }
 
+/**
+ * The card slots of a `CrudList.Table` — everything a reader sees when the table falls back to
+ * cards, which is the whole row for them.
+ *
+ * @param content the widget source
+ * @returns the `cardTitle`/`cardContent` region, or an empty string when the table declares neither
+ */
+function cardSlots(content) {
+  const start = content.search(/card(?:Title|Content)=\{/);
+  if (start < 0) {
+    return "";
+  }
+  const columns = content.indexOf("<CrudList.Column", start);
+  return content.slice(start, columns < 0 ? content.length : columns);
+}
+
+/**
+ * Each `CrudList.Column` block, with the field it is declared over.
+ *
+ * @param content the widget source
+ * @returns one entry per column, in source order
+ */
+function columnBlocks(content) {
+  const blocks = [];
+  for (const m of content.matchAll(/<CrudList\.Column\b[\s\S]*?<\/CrudList\.Column>/g)) {
+    const field = /\bfield="(\w+)"/.exec(m[0])?.[1];
+    if (field) {
+      blocks.push({ field, source: m[0], line: lineOfIndex(content, m.index) });
+    }
+  }
+  return blocks;
+}
+
 // ---------------------------------------------------------------------------
 // Rules — { id, invariant, level: "error"|"review", desc, appliesTo(relPath), check(content, relPath) }
 // ---------------------------------------------------------------------------
@@ -134,6 +167,109 @@ function projectionProps(relPath) {
     for (const p of model) props.add(p);
   }
   return found ? props : null;
+}
+
+/**
+ * The source of every exported function in the project, keyed by name.
+ *
+ * <p>Built on first use. A detail panel routinely hands a whole record to a shared formatter
+ * rather than reading each field itself, so a rule that asks "does the detail render this
+ * field?" has to be able to follow the record into the helper.
+ */
+let exportedFunctionCache = null;
+function exportedFunctionSources() {
+  if (exportedFunctionCache) return exportedFunctionCache;
+  exportedFunctionCache = new Map();
+  const roots = ["packages", "modules", "apps"].map((d) => path.join(ROOT, d));
+  for (const root of roots) {
+    if (!fs.existsSync(root)) continue;
+    for (const file of walk(root, [])) {
+      if (!file.includes(`${path.sep}src${path.sep}`)) continue;
+      const src = fs.readFileSync(file, "utf8");
+      for (const m of src.matchAll(/export (?:async )?function (\w+)|export const (\w+)\s*=/g)) {
+        exportedFunctionCache.set(m[1] ?? m[2], src);
+      }
+    }
+  }
+  return exportedFunctionCache;
+}
+
+/**
+ * The source of every helper a detail panel hands the whole record to.
+ *
+ * <p>Only a call taking the record itself qualifies. `helper(displayData.field)` names the field
+ * at the call site and is already visible in the panel's own source; `helper(displayData)` hides
+ * which fields are consumed, and following it is the difference between catching a value the
+ * operator cannot read back and flagging one the panel renders through a shared formatter.
+ *
+ * @param detailSource the detail widget's own source
+ * @returns the source of each such helper, concatenated; empty when the panel delegates nothing
+ */
+function delegatedDetailSources(detailSource) {
+  const exported = exportedFunctionSources();
+  const seen = new Set();
+  let corpus = "";
+  for (const m of detailSource.matchAll(/\b([A-Za-z_]\w*)\(\s*displayData\s*[,)]/g)) {
+    const name = m[1];
+    if (seen.has(name)) continue;
+    seen.add(name);
+    const src = exported.get(name);
+    if (src) corpus += "\n" + src;
+  }
+  return corpus;
+}
+
+const localeKeyCache = new Map();
+
+/**
+ * @param ns a translation namespace as a call site names it, `<module>/<catalogue>`
+ * @returns every key the namespace's catalogue defines, flattened to dotted paths, or null when
+ *          the catalogue is not one this repository owns — a framework namespace is not ours to
+ *          judge, and treating an absent file as an empty catalogue would flag every call
+ */
+function localeKeys(ns) {
+  if (localeKeyCache.has(ns)) return localeKeyCache.get(ns);
+  let out = null;
+  const [mod, catalogue] = ns.split("/");
+  if (mod && catalogue && !ns.includes("..")) {
+    const file = path.join(ROOT, "modules", mod, "src", "locales", catalogue, "ko.json");
+    if (fs.existsSync(file)) {
+      out = new Set();
+      const walkJson = (obj, prefix) => {
+        for (const [k, v] of Object.entries(obj)) {
+          const at = prefix ? `${prefix}.${k}` : k;
+          if (v && typeof v === "object") walkJson(v, at);
+          else out.add(at);
+        }
+      };
+      try {
+        walkJson(JSON.parse(fs.readFileSync(file, "utf8")), "");
+      } catch {
+        out = null;
+      }
+    }
+  }
+  localeKeyCache.set(ns, out);
+  return out;
+}
+
+/**
+ * @param content a source file
+ * @returns which namespace each translator name in the file reads from
+ *
+ * @remarks
+ * A file may hold several translators (`const { t } = …`, `const { t: tFeatures } = …`), so the
+ * lookup is per name rather than per file: attributing every `t("…")` in such a file to whichever
+ * namespace appeared last reports keys that resolve perfectly well.
+ */
+function translatorBindings(content) {
+  const binds = new Map();
+  for (const m of content.matchAll(
+    /const\s*\{[^}]*\bt\b\s*(?::\s*(\w+))?[^}]*\}\s*=\s*useTranslation\(\s*"([^"]+)"/g,
+  )) {
+    binds.set(m[1] ?? "t", m[2]);
+  }
+  return binds;
 }
 
 /**
@@ -210,7 +346,10 @@ function guardedAtRoot(file) {
   const marker = `${path.sep}src${path.sep}routes${path.sep}`;
   const at = file.lastIndexOf(marker);
   if (at < 0) return false;
-  const root = path.join(file.slice(0, at + marker.length), "__root.tsx");
+  // Resolve against ROOT, not the process's directory: paths reach here relative to the
+  // project root, so a run launched from elsewhere with --root would miss every __root.tsx
+  // and report the whole app as unguarded.
+  const root = path.resolve(ROOT, file.slice(0, at + marker.length), "__root.tsx");
   if (!fs.existsSync(root)) return false;
   return /beforeLoad\s*:/.test(fs.readFileSync(root, "utf8"));
 }
@@ -260,6 +399,57 @@ const RULES = [
         const names = [...line.matchAll(/(?:enumName=|enumLabel\()\s*"([A-Z]\w+)"/g)].map((m) => m[1]);
         return names.some((n) => !known.has(n));
       }),
+  },
+  {
+    id: "missing-translation-key",
+    invariant: "audit: scaffold locale",
+    level: "error",
+    desc: "t() names a key its namespace's catalogue does not define — i18next falls back to printing the key, so the screen shows `product.selfServeHint` where the sentence should be and nothing errors",
+    appliesTo: (p) => inModules(p) && isTsx(p),
+    check: (c) => {
+      const binds = translatorBindings(c);
+      if (binds.size === 0) return [];
+      const hits = [];
+      for (const [alias, ns] of binds) {
+        const keys = localeKeys(ns);
+        if (!keys) continue;
+        const call = new RegExp(`\\b${alias}\\(\\s*"([a-zA-Z0-9_.]+)"`, "g");
+        hits.push(
+          ...lineHits(c, call, (line) => {
+            call.lastIndex = 0;
+            return [...line.matchAll(call)].some((m) => !keys.has(m[1]));
+          }),
+        );
+      }
+      return hits;
+    },
+  },
+  {
+    id: "write-only-form-field",
+    invariant: "#34 / audit: page chrome",
+    level: "review",
+    desc: "Form edits a field its sibling detail never renders — the operator can set the value but has to reopen the form to see what it is, so the read surface stops being an answer to \"how does this record stand?\"",
+    appliesTo: (p) => inModules(p) && /\/widgets\/[^/]+\/form\.tsx$/.test(p),
+    check: (c, rel) => {
+      const detail = path.join(ROOT, path.dirname(rel), "detail.tsx");
+      if (!fs.existsSync(detail)) return [];
+      const ds = fs.readFileSync(detail, "utf8");
+      // A helper handed the whole record names the field against its own parameter, so the
+      // delegated sources are searched for the bare name rather than for `displayData.<field>`.
+      const delegated = delegatedDetailSources(ds);
+      return lineHits(c, /updateField\(\s*"(\w+)"/, (line) => {
+        const m = /updateField\(\s*"(\w+)"/.exec(line);
+        if (!m) return false;
+        // A locale map is edited under its own name and read back under the base field the
+        // server resolves it into, so the detail is searched for the base.
+        const f = m[1].replace(/I18n$/, "");
+        // A credential is write-only on purpose, and a foreign key is the relation the detail
+        // renders by name rather than by id — neither is a missing read.
+        if (/^(password|secret|token|.*Secret|.*Password)$/i.test(f) || /Ids?$/.test(f)) return false;
+        if (new RegExp(`displayData\\.${f}\\b|fieldLabel\\("${f}"\\)`).test(ds)) return false;
+        return !new RegExp(`\\b${f}\\b`).test(delegated);
+      });
+    },
   },
   {
     id: "unresolved-boot-enum-label",
@@ -346,6 +536,43 @@ const RULES = [
     desc: "Ad-hoc p-4 padding in a pages/ file — the app layout owns page padding (inner cards are OK)",
     appliesTo: (p) => inPages(p) && isTsx(p),
     check: (c) => lineHits(c, /className="[^"]*\bp-4\b/, (line) => !line.includes("<Card")),
+  },
+  {
+    id: "capped-embedded-list",
+    invariant: "#32 / audit: embedded list paging",
+    level: "error",
+    desc: "Detail-panel list read with a hardcoded page size and no pager — the rows past the cap are dropped with nothing on screen saying so, and a detail tab is exactly where a reader assumes they are seeing everything that points at the record. Drive the read with useCrudList and render CrudList.Pagination beside the rows",
+    appliesTo: (p) => isTsx(p) && /\/detail(?:-tabs)?\.tsx$/.test(p),
+    check: (c) =>
+      /CrudList\.Pagination/.test(c)
+        ? []
+        : lineHits(c, /\bsize:\s*(\d+)\s*,/g, (line) => {
+            const size = Number(/\bsize:\s*(\d+)/.exec(line)?.[1]);
+            // A read of one row is a count, not a list — the total is what it is after.
+            return Number.isFinite(size) && size > 1;
+          }),
+  },
+  {
+    id: "card-drops-status",
+    invariant: "#21 / audit: card parity",
+    level: "error",
+    desc: "A column renders a status badge the card slots never show — below the card breakpoint, and inside every detail panel that embeds the list, a failed row reads exactly like one that succeeded and a handled row exactly like an untouched one. Repeat the badge in cardTitle or cardContent",
+    appliesTo: isTsx,
+    check: (c) => {
+      const card = cardSlots(c);
+      if (!card) {
+        return [];
+      }
+      return columnBlocks(c)
+        // A badge built from the whole row rather than from this field cannot be looked for by
+        // name in the card, so it is left to the eye.
+        .filter(({ field, source }) => /\w*Badge\b/.test(source) && source.includes(`row.${field}`))
+        .filter(({ field }) => !card.includes(`row.${field}`))
+        .map(({ field, line, source }) => ({
+          line,
+          excerpt: `column "${field}" — ${source.replace(/\s+/g, " ").slice(0, 110)}`,
+        }));
+    },
   },
   {
     id: "hand-typed-id",
@@ -532,6 +759,20 @@ const RULES = [
       /\buseCan\("create"/.test(c) ? [] : lineHits(c, /onClick=\{show(New|Create)\}/),
   },
   {
+    id: "ungated-entity-action",
+    invariant: "#52",
+    level: "review",
+    desc: "Detail action footer fires a mutation and the file never calls useCan — an entity action (settle, charge, cancel, refund) is usually gated harder on the server than the read that opened the panel, so the button renders for an operator the call will refuse",
+    appliesTo: isTsx,
+    // The read that opens a detail panel and the action that leaves it are different permissions
+    // (view vs manage/edit). A file that consults useCan at all has made that distinction and is
+    // exempt; what this catches is a footer of actions with no gate anywhere in the file.
+    check: (c) =>
+      /\buseCan\(/.test(c) || !/\.mutateAsync\(/.test(c)
+        ? []
+        : lineHits(c, /<CrudDetail\.ActionFooter\b/),
+  },
+  {
     id: "lowercase-enum-label",
     invariant: "#10",
     level: "error",
@@ -569,7 +810,18 @@ const RULES = [
     level: "review",
     desc: "id / sortOrder / displayOrder surfaced as a visible field — system fields live in auditData only",
     appliesTo: (p) => inModules(p) && isTsx(p),
-    check: (c) => lineHits(c, /fieldLabel\("(id|sortOrder|displayOrder)"\)/),
+    // A field the entity's own form edits is a decision the operator makes, not a value the
+    // system maintains — an order that ranks a storefront is chosen, and once it is chosen the
+    // read surfaces have to say what it currently is. Flagging those would put this rule in
+    // direct opposition to `write-only-form-field`, which demands exactly that read.
+    check: (c, rel) => {
+      const form = path.join(ROOT, path.dirname(rel), "form.tsx");
+      const edits = fs.existsSync(form) ? fs.readFileSync(form, "utf8") : "";
+      return lineHits(c, /fieldLabel\("(id|sortOrder|displayOrder)"\)/, (line) => {
+        const m = /fieldLabel\("(id|sortOrder|displayOrder)"\)/.exec(line);
+        return !new RegExp(`updateField\\(\\s*"${m[1]}"`).test(edits);
+      });
+    },
   },
   {
     id: "enum-default-unresolved",
@@ -585,12 +837,44 @@ const RULES = [
       ),
   },
   {
+    id: "enum-label-empty-fallback",
+    invariant: "#36",
+    level: "review",
+    desc: "enumLabel(..., resolveBootEnum(x) ?? \"\") — an absent enum resolves to the empty string and the resolver prints the message key itself (\"<Enum>.\"); confirm the field can never be null",
+    appliesTo: isTsx,
+    check: (c) => lineHits(c, /enumLabel\([^)]*resolveBootEnum\([^)]*\)\s*\?\?\s*""/),
+  },
+  {
     id: "full-enum-options",
     invariant: "#38",
     level: "review",
     desc: "Object.values(<Enum>).map as WRITE-surface select options — check whether the server narrows the set per record (filters over the full set are fine)",
     appliesTo: (p) => isTsx(p) && /form|dialog|editor|wizard/.test(p),
     check: (c) => lineHits(c, /Object\.values\([A-Z]\w+\)\.map/),
+  },
+  {
+    id: "unitless-rate-field",
+    invariant: "#36",
+    level: "review",
+    desc: "Rate/percent field rendered or edited with no unit — confirm whether it is a percentage, then mark it (suffix=\"%\" on the input, format=\"percent\" on the read) so a fraction cannot be typed where a percentage is stored",
+    appliesTo: isTsx,
+    check: (c) => {
+      // A percentage with no unit beside it is read as a fraction by half its readers and
+      // written as one by the other half; the mismatch reaches an invoice before anyone sees it.
+      const RATE_FIELD = /\b\w*(?:[Rr]ate|[Pp]ercent|[Pp]ct)\b/;
+      const UNIT_MARKED = /suffix=|format="percent"|unit=|%/;
+      const hits = [];
+      const re = /<(?:FormFields\.NumberField|DetailFields\.DetailNumberField)\b(?:(?!\/>)[\s\S]){0,500}?\/>/g;
+      for (const m of c.matchAll(re)) {
+        const block = m[0];
+        const label = block.match(/label=\{[^}]*\}|label="[^"]*"/)?.[0] ?? "";
+        const value = block.match(/value=\{[\s\S]*?\}\s*\n/)?.[0] ?? "";
+        if (!RATE_FIELD.test(label) && !RATE_FIELD.test(value)) continue;
+        if (UNIT_MARKED.test(block)) continue;
+        hits.push({ line: lineOfIndex(c, m.index), excerpt: block.replace(/\s+/g, " ").slice(0, 140) });
+      }
+      return hits;
+    },
   },
   {
     id: "two-state-branching",
@@ -600,6 +884,154 @@ const RULES = [
     appliesTo: isTsx,
     check: (c) =>
       lineHits(c, /\b(presence|status)\s*===\s*"[A-Z_]+"\s*\?/, (line) => !line.includes("switch")),
+  },
+  {
+    id: "read-failure-reads-as-loading",
+    invariant: "#33",
+    level: "error",
+    desc: "A screen's only not-ready branch is `isLoading || !data` returning a skeleton, with no branch on that read failing — the read fails, `data` stays absent, and the screen holds the skeleton for as long as the reader waits, naming no reason and offering nothing to press",
+    appliesTo: isTsx,
+    check: (c) => {
+      // Only the shape that traps. `isLoading || !data` is correct wherever the falling-through
+      // case terminates in something — the framework's QueryFallback says "not found", an error
+      // state says why. A raw skeleton says neither and never stops saying it.
+      const trapping = [...c.matchAll(
+        /if\s*\([^)]*\bisLoading\b[^)]*\|\|[^)]*\)\s*\{?\s*return\s*\(?\s*<[\s\S]{0,400}?<Skeleton\b/g,
+      )];
+      if (trapping.length === 0) {
+        return [];
+      }
+      // Any settled-failure branch anywhere in the file counts — the point is that the screen
+      // stops drawing a wait it will never end, not which component says so.
+      if (/isError|isLoadingError|QueryFallback|ErrorState|\.error\b/.test(c)) {
+        return [];
+      }
+      return trapping.map((m) => ({
+        line: lineOfIndex(c, m.index),
+        excerpt: m[0].replace(/\s+/g, " ").slice(0, 140),
+      }));
+    },
+  },
+  {
+    id: "read-failure-reads-as-empty",
+    invariant: "#33",
+    level: "review",
+    desc: "Component reads a query's data and draws an emptiness without ever branching on failure — a read that failed renders the empty state, and the reader concludes they own nothing rather than that nothing was fetched",
+    appliesTo: isTsx,
+    check: (c) => {
+      // Only components that actually draw an emptiness. A widget that renders whatever it got
+      // and nothing else says nothing false when it gets nothing.
+      const CLAIMS_EMPTY = /<EmptyState\b|emptyTitle|noOptions|\?\?\s*\[\]|\?\?\s*\{\}/;
+      if (!CLAIMS_EMPTY.test(c)) {
+        return [];
+      }
+      // Only a failure branch counts. A pending branch draws a skeleton and then falls into the
+      // same empty state, so `isPending` protects nothing here — and matching it file-wide let a
+      // mutation's own pending flag silence the rule for every read in the file.
+      const HANDLES = /isError|isLoadingError|\.error\b|QueryFallback|ErrorState/;
+      if (HANDLES.test(c)) {
+        return [];
+      }
+      return lineHits(c, /=\s*use(?:Get|List|Search|Read)[A-Z]\w*\(|=\s*useQuery\(/);
+    },
+  },
+  {
+    id: "form-seeded-from-read-without-error-branch",
+    invariant: "#33",
+    level: "error",
+    desc: "A form copies a query's data into its own state and offers a save, with no branch on that read failing — the read fails, the form stands holding its initial values, and saving writes those over what was stored",
+    appliesTo: isTsx,
+    check: (c) => {
+      // Only a form that seeds itself. An effect that copies a read into local state is the
+      // shape that survives a failed read holding defaults; a field bound straight to
+      // `query.data` renders empty instead, which is the emptiness rule's business.
+      const seeding = [...c.matchAll(/useEffect\(\s*\(\s*\)\s*=>\s*\{[\s\S]{0,700}?\n\s*\}\s*,\s*\[/g)]
+        .filter((m) => /\.data\b/.test(m[0]) && /\bset[A-Z]\w*\(/.test(m[0]));
+      if (seeding.length === 0) {
+        return [];
+      }
+      // Only a form that can write back. A seeded read-only panel says nothing false when it
+      // says nothing at all.
+      if (!/\.mutateAsync\(|\.mutate\(/.test(c)) {
+        return [];
+      }
+      // Any failure branch counts, wherever it stands — the point is that the screen refuses to
+      // draw a form it cannot fill, not which component says so.
+      if (/isError|isLoadingError|ErrorState/.test(c)) {
+        return [];
+      }
+      return seeding.map((m) => ({
+        line: lineOfIndex(c, m.index),
+        excerpt: m[0].replace(/\s+/g, " ").slice(0, 140),
+      }));
+    },
+  },
+  {
+    id: "link-acts-before-it-reads",
+    invariant: "#33",
+    level: "review",
+    desc: "Screen acts on a one-time link token without reading the link first — a spent, expired or unknown link is offered as live, the visitor agrees to something, and the refusal only arrives after the click; the same read is what lets the screen name whose record it is about instead of asking about \"this address\"",
+    appliesTo: isTsx,
+    check: (c) => {
+      // Only a screen whose whole authority is a token that arrived from outside — in the
+      // address or handed down from the route that read it. A token the app itself holds
+      // (a session, a CSRF value) is not a link.
+      const CARRIES_LINK_TOKEN = /\btoken\b\s*[:?]?\s*string|useSearch\(\)[\s\S]{0,80}\btoken\b|search\.token\b/;
+      if (!CARRIES_LINK_TOKEN.test(c)) {
+        return [];
+      }
+      // A route that hands the token to the screen below it is not the screen. Reading the link
+      // is that component's job, and the acting call it finds here is a callback it will be
+      // given rather than a button this file offers.
+      if (/\btoken=\{/.test(c)) {
+        return [];
+      }
+      // Only a screen that offers to spend it. A page that merely displays the token, or one
+      // that redirects, promises nothing it cannot keep.
+      const acting = [...c.matchAll(/\bmutateAsync\(\s*\{\s*data:\s*\{\s*token\b|\bact\(\s*token\s*\)/g)];
+      if (acting.length === 0) {
+        return [];
+      }
+      // Any read of the link before the action counts, whatever it is called. The shape is a
+      // mount effect that asks about the token and parks the answer, which is what a later
+      // branch can gate the button on — a screen that only knows the token is non-empty is the
+      // one that cannot tell a live link from a dead one.
+      const readsFirst = [...c.matchAll(/useEffect\(\s*\(\s*\)\s*=>\s*\{[\s\S]{0,900}?\n\s*\}\s*,\s*\[/g)]
+        .some((m) => /\btoken\b/.test(m[0]) && /\bset[A-Z]\w*\(/.test(m[0]));
+      if (readsFirst) {
+        return [];
+      }
+      return acting.map((m) => ({
+        line: lineOfIndex(c, m.index),
+        excerpt: m[0].replace(/\s+/g, " ").slice(0, 140),
+      }));
+    },
+  },
+  {
+    id: "silent-mutation-outcome",
+    invariant: "#33",
+    level: "review",
+    desc: "Action handler awaits a mutation and only invalidates — nothing tells the operator what happened, and a call that succeeded is not an operation that worked (a gateway charge the card refused returns 200 with false)",
+    appliesTo: isTsx,
+    check: (c) => {
+      // The handler body from the awaited mutation to the end of the arrow function. A handler
+      // that says nothing is indistinguishable, on screen, from a button that did nothing —
+      // which is how an operator retries a charge they have already made.
+      const hits = [];
+      for (const m of c.matchAll(/onClick=\{[\s\S]{0,600}?\}\}/g)) {
+        const body = m[0];
+        if (!/\.mutateAsync\(/.test(body)) {
+          continue;
+        }
+        // Anything that reaches the reader counts: a toast, a dialog closing, a route change,
+        // or any state the handler writes for the surface to render (a saved flag, an error).
+        if (/addToast|toast\(|onSuccess|onDone|onClose|navigate\(|Dialog|\bset[A-Z]\w*\(/.test(body)) {
+          continue;
+        }
+        hits.push({ line: lineOfIndex(c, m.index), excerpt: body.replace(/\s+/g, " ").slice(0, 140) });
+      }
+      return hits;
+    },
   },
   {
     id: "filter-category-order",
@@ -675,6 +1107,133 @@ function localeFindings() {
   return { errors, reviews };
 }
 
+/** Every `ko.json` under a module's or an app's locales directory. */
+function koCatalogues() {
+  const found = [];
+  for (const base of ["modules", "apps"]) {
+    const root = path.join(ROOT, base);
+    if (!fs.existsSync(root)) continue;
+    for (const unit of fs.readdirSync(root)) {
+      const locales = path.join(root, unit, "src", "locales");
+      if (!fs.existsSync(locales)) continue;
+      // Its own descent: the shared `walk` collects TypeScript sources only.
+      const descend = (dir) => {
+        let entries;
+        try {
+          entries = fs.readdirSync(dir, { withFileTypes: true });
+        } catch {
+          return;
+        }
+        for (const e of entries) {
+          if (e.isDirectory()) {
+            if (!EXCLUDE_DIRS.has(e.name)) descend(path.join(dir, e.name));
+          } else if (e.name === "ko.json") {
+            found.push(path.join(dir, e.name));
+          }
+        }
+      };
+      descend(locales);
+    }
+  }
+  return found;
+}
+
+/**
+ * Korean object/subject particles welded to an interpolated value.
+ *
+ * <p>Korean picks 을/를, 이/가, 은/는, 와/과 by whether the preceding syllable ends in a
+ * consonant, so a particle written straight after `{{...}}` is right for some values and wrong
+ * for the rest — "5을", "3.2를". The repair is to let the particle attach to a fixed noun
+ * instead of to the value ("{{allowed}}대 중", "{{release}} 릴리스를"), which also supplies the
+ * counter word a bare number is missing.
+ */
+function koParticleFindings() {
+  const reviews = [];
+  // The `이(가)` hedge spells both forms and is therefore already correct for every value;
+  // only a single committed particle is a finding.
+  const particle = /\}\}\s*[을를이가은는와과](?!\s*\(\s*[을를이가은는와과]\s*\))/;
+  for (const abs of koCatalogues()) {
+    const rel = path.relative(ROOT, abs);
+    const raw = fs.readFileSync(abs, "utf8");
+    const lines = raw.split("\n");
+    let data;
+    try {
+      data = JSON.parse(raw);
+    } catch {
+      continue;
+    }
+    const walkJson = (obj, keyPath) => {
+      if (typeof obj === "string") {
+        if (particle.test(obj)) {
+          const at = lines.findIndex((l) => l.includes(obj.slice(0, 60)));
+          reviews.push({ file: rel, line: at < 0 ? 0 : at + 1, excerpt: `${keyPath} = ${obj.slice(0, 90)}` });
+        }
+      } else if (obj && typeof obj === "object") {
+        for (const [k, v] of Object.entries(obj)) walkJson(v, keyPath ? `${keyPath}.${k}` : k);
+      }
+    };
+    walkJson(data, "");
+  }
+  return reviews;
+}
+
+/**
+ * Scaffold placeholder copy left in a locale catalogue.
+ *
+ * <p>The CRUD scaffold emits a create-panel header it cannot name for you, and every locale gets
+ * a bare "new". It survives translation passes because it IS translated — "신규" is a correct
+ * rendering of a placeholder that should never have reached a screen. What the operator reads at
+ * the top of the panel is then a word that names no entity, while the button that opened it and
+ * the page it sits on both say what is being created.
+ *
+ * <p>The repair is the entity's own noun, the same one the create button uses — "운영자 추가" /
+ * "Add operator".
+ *
+ * <p>Scoped to the create header on purpose. `detailHeader` / `editHeader` carry `{{id}}` from
+ * the same scaffold, but those keys are usually left unreferenced (panels title themselves from
+ * the record), so flagging them buries the live finding under dead catalogue entries; a header
+ * that really does render an id is caught in the code by `header-id-title`.
+ */
+function scaffoldHeaderFindings() {
+  const reviews = [];
+  // The generator's untranslated defaults, in the locales the CLI ships templates for.
+  const placeholderNew = /^(new|신규|新規|新規作成)$/i;
+  const headerKeys = new Set(["newHeader"]);
+  // The scaffold's page subtitle names the entity's table rather than the operator's job.
+  // A screen still wearing it tells its reader nothing they could not read from the title.
+  const placeholderDescription = /(마스터 데이터를 관리|master data|マスターデータを管理)/i;
+  const isDescriptionKey = (key) => /Description$/.test(key);
+  for (const abs of koCatalogues()) {
+    const dir = path.dirname(abs);
+    for (const loc of ["ko", "en", "ja"]) {
+      const file = path.join(dir, `${loc}.json`);
+      if (!fs.existsSync(file)) continue;
+      const rel = path.relative(ROOT, file);
+      const raw = fs.readFileSync(file, "utf8");
+      const lines = raw.split("\n");
+      let data;
+      try {
+        data = JSON.parse(raw);
+      } catch {
+        continue;
+      }
+      const walkJson = (obj, keyPath, key) => {
+        if (typeof obj === "string") {
+          const isPlaceholderHeader = headerKeys.has(key) && placeholderNew.test(obj.trim());
+          const isPlaceholderDescription = isDescriptionKey(key) && placeholderDescription.test(obj);
+          if (!isPlaceholderHeader && !isPlaceholderDescription) return;
+          const at = lines.findIndex((l) => l.includes(`"${key}"`) && l.includes(obj.trim()));
+          reviews.push({ file: rel, line: at < 0 ? 0 : at + 1, excerpt: `${keyPath} = ${obj.slice(0, 90)}` });
+        } else if (obj && typeof obj === "object") {
+          for (const [k, v] of Object.entries(obj)) walkJson(v, keyPath ? `${keyPath}.${k}` : k, k);
+        }
+      };
+      walkJson(data, "", "");
+    }
+  }
+  return reviews;
+}
+
 // ---------------------------------------------------------------------------
 // Runner
 // ---------------------------------------------------------------------------
@@ -684,6 +1243,8 @@ if (args.includes("--list")) {
   for (const r of RULES) console.log(`${r.level.padEnd(6)} ${r.id.padEnd(26)} ${r.invariant.padEnd(22)} ${r.desc}`);
   console.log(`error  locale-missing-sections    audit: scaffold locale   ko/ja locale file or top-level section missing vs en`);
   console.log(`review locale-untranslated        audit: scaffold locale   camelCase English defaults left untranslated in ko/ja`);
+  console.log(`review ko-particle-after-placeholder audit: locale wording  Korean particle welded to {{value}} — right for some values, wrong for the rest`);
+  console.log(`review scaffold-header-placeholder audit: scaffold locale   scaffold placeholder wording left on a screen — bare "new" header, or a "master data" subtitle`);
   process.exit(0);
 }
 const errorsOnly = args.includes("--errors-only");
@@ -712,6 +1273,16 @@ if (!ruleFilter || ruleFilter.some((r) => r.startsWith("locale"))) {
   localeRev = lf.reviews;
 }
 
+let koParticleRev = [];
+if (!ruleFilter || ruleFilter.includes("ko-particle-after-placeholder")) {
+  koParticleRev = koParticleFindings();
+}
+
+let scaffoldHeaderRev = [];
+if (!ruleFilter || ruleFilter.includes("scaffold-header-placeholder")) {
+  scaffoldHeaderRev = scaffoldHeaderFindings();
+}
+
 let errorCount = 0;
 let reviewCount = 0;
 
@@ -734,6 +1305,26 @@ if (localeErr.length) {
 if (localeRev.length) {
   printBucket("locale-untranslated", "review", "audit: scaffold locale", "possible untranslated scaffold defaults", localeRev);
   reviewCount += localeRev.length;
+}
+if (koParticleRev.length) {
+  printBucket(
+    "ko-particle-after-placeholder",
+    "review",
+    "audit: locale wording",
+    "Korean particle written straight after an interpolated value — 을/를 · 이/가 · 은/는 · 와/과 depend on the value's last syllable, so the sentence is wrong for half the values; attach the particle to a fixed noun instead",
+    koParticleRev,
+  );
+  reviewCount += koParticleRev.length;
+}
+if (scaffoldHeaderRev.length) {
+  printBucket(
+    "scaffold-header-placeholder",
+    "review",
+    "audit: scaffold locale",
+    "Screen wording still carries the scaffold's placeholder — a bare \"new\" that names no entity, or a subtitle naming the table (\"master data\") instead of the operator's job",
+    scaffoldHeaderRev,
+  );
+  reviewCount += scaffoldHeaderRev.length;
 }
 
 console.log(`\n${files.length} source files scanned — ${errorCount} error hit(s), ${reviewCount} review candidate(s).`);

@@ -16,10 +16,14 @@ repository.
 1. **Find the project root and confirm there is a board.** Run
    `node "${CLAUDE_PLUGIN_ROOT}/scripts/detect-simplecore.mjs" --json`.
 
-   **`board: null` means stop.** A parity walk reconciles the running app against frames somebody
-   drew; with no board there is nothing to walk against, and wiring the walk anyway leaves two
-   documents nobody can fill. Say so in one sentence and offer `/simplecore:board-init` instead —
+   **`board: null` means stop.** A parity walk measures the app against frames somebody drew; with
+   no board there is nothing to walk against, and wiring the walk anyway leaves two documents
+   nobody can fill. Say so in one sentence and offer `/simplecore:board-init` instead —
    the board comes first, always. Do not write any of the files below.
+
+   **An application with no screens yet is not that case.** A board drawn before the code is the
+   normal starting point for a board-first project: every frame is simply unbuilt, and the walk
+   builds it. Wire it exactly the same way.
 
    Everything else is relative to the project root.
 
@@ -43,7 +47,16 @@ repository.
 
 4. **Write the two documents** when they are missing, from
    `${CLAUDE_PLUGIN_ROOT}/skills/board-parity-walk/assets/parity-list.md` and `.../handover.md`.
-   Write them in the language the project's other documents use. Then fill the parity list from
+   Write them in the language the project's other documents use.
+
+   Where the project already keeps its own list of open questions — an inventory's table of
+   undecided points is the usual place — carry those into the parked section, and **write each
+   line yourself.** A generated third clause ("which side looks stale") comes out identical on
+   every line, and uniform text says nothing: the next session re-derives the context anyway. A
+   question that does not deserve a real third clause probably does not deserve to be parked at
+   all — see the skill's section on what qualifies.
+
+   Then fill the parity list from
    the board: one line per frame that has a route, grouped into sections. Leave the handover file's
    placeholders for the walker to fill on its first session, but fill in anything you can already
    read from the repository — how the servers start, what the verification commands are.
@@ -71,9 +84,11 @@ repository.
 
    When such a section already exists, correct it in place rather than adding a second one.
 
-6. **Report what the project still owes**, if anything: no board, no verification command that can
-   ratchet a repeated defect into a rule, no route-bearing screens to walk yet. Name them; do not
-   invent substitutes.
+6. **Report what the project still owes**, if anything: no board; no verification command that can
+   ratchet a repeated defect into a rule; where `frameDeliverables` names a capture, no way to
+   reach an arbitrary frame in an arbitrary state with the moving parts pinned, without which every
+   re-capture is a change nobody can read. Name them; do not invent substitutes. Having no screens
+   built yet is not a debt — it is the walk's work.
 
 Do not start walking as part of this command. Setup and walking are separate, and the walk belongs
 to a subagent.

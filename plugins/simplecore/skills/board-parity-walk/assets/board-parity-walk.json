@@ -3,5 +3,6 @@
   "handoverFile": "_plans/WALK-NOTES.md",
   "parkedSection": "Parked decisions",
   "logDir": ".walk-logs",
-  "narrativePhrases": []
+  "narrativePhrases": [],
+  "frameDeliverables": []
 }
