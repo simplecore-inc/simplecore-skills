@@ -274,9 +274,19 @@ behind. That failure is the reason this skill exists.
    **It does read the log, and it relays.** That is the one exception, and it is
    cheap — a few lines, not a transcript. A person watching from outside cannot
    tell a working agent from a dead one, and asking is a poor substitute for
-   looking. Report which frame the walk is on and what step it is at, unprompted,
-   whenever there is a natural moment; a cluster that runs for an hour in silence
-   is a cluster nobody can supervise.
+   looking.
+
+   **Arm a watch on the log directory at the moment the walker is dispatched, in
+   the same turn.** Not a note to check later: intending to look is exactly what
+   fails, because the coordinator is busy between events and an hour passes in
+   two turns. Where the environment can stream file changes, point it at
+   `logDir` and filter to the step words, so each appended line arrives on its
+   own and gets relayed as it happens.
+
+   Relay the shape, never the file — which frame, which step, and anything the
+   walker flagged as unexpectedly slow. A cluster that runs for an hour in
+   silence is a cluster nobody can supervise, and the silence is the
+   coordinator's failure rather than the walker's.
 
 **A walker's session can end for reasons that have nothing to do with the work** — a
 usage limit, a dropped connection. What survives is what it committed, so the
@@ -419,16 +429,55 @@ its last frame is gone. An empty list means the board and the code agree.
 
 ## Letting a person watch, without paying for it
 
+**Arm both watches in the same turn the walker is dispatched.** Not afterwards, not
+as an intention: the coordinator is busy between events and two turns is an hour, so
+"I will check the log" is the failure, every time. Two things are worth watching and
+they answer different questions:
+
+| Watch | Answers |
+| --- | --- |
+| the log directory, filtered to the step words | *is it moving, and where is it* |
+| the capture directory, for new image files | *what does the screen actually look like* |
+
+Both cost the coordinator almost nothing, because both deliver a **path** — a line of
+text, or a file forwarded to the reader without ever being opened here. That is the
+whole trick: a walk can show its work precisely because the coordinator never looks
+at it.
+
+Where the environment cannot stream file changes, poll on a slow interval rather than
+dropping the watch. A minute of lag is nothing against an hour of silence.
+
+**A watch that stops is re-armed at once.** They die quietly — a timeout expires, a
+process is killed, a session is resumed without them — and a dead watch is
+indistinguishable from a working one, because both produce nothing. That is the same
+trap as a checker that has stopped checking, and it fails in the same direction: it
+looks like calm.
+
+So treat silence as suspect rather than as reassurance. When events stop arriving
+while a cluster is still running, assume the watch died before assuming the walker
+did, check, and put it back. Re-arm after anything that could have taken it down —
+a resumed session, a timeout, a killed process — without waiting to be asked.
+
 Saving context and hiding the work are different things. Three ways the walk
 stays visible while the coordinating context stays empty:
 
 1. **The agent's own work streams to the client.** What it clicked and captured
    can be expanded in the conversation. The coordinator never receives it, so it
    costs nothing. This is the primary way to follow along, including remotely.
-2. **Captures worth keeping go to files; the report carries paths.** Name them
-   for the frame they justify. The coordinator surfaces the path **without
-   opening the file** — the image renders for the reader and never enters the
-   context.
+2. **Captures go to files; the coordinator forwards them the moment they
+   appear.** Name them for the frame they justify. The coordinator sends the
+   path **without opening the file** — the image renders for the reader and never
+   enters the context, which is the only reason a walk can show its work at all.
+
+   Forward them **as they are shot**, not at the end of the cluster. A person
+   following a walk wants to see the screen while it is still the subject; a
+   batch of images arriving after the frames are committed is a record, not a
+   review. Where captures are deferred as kept artefacts, the throwaway ones a
+   walker takes to judge a frame are exactly the ones to forward — so tell
+   walkers to leave them where they land rather than cleaning up.
+
+   Say which frame and which locale in one line. A pseudo-locale capture in
+   particular looks broken to anybody who does not know it is the stress test.
 3. **Progress goes into the walker's own log, one line per STEP.** Somebody
    watching wants to know where the walk is now, and can tail that file.
 
@@ -660,8 +709,50 @@ saying so:
    type, including "0 others". A type that already became a detection rule is
    swept by the script — run it and report that; the manual search is for the
    types seen only once, which no rule covers yet.
-2. **Run the project's verification gates.** All of them, green.
-3. **Sync the board in the same change** where the code was right and the board
+2. **Audit the section's code, and act on it.** Not optional, and not the same
+   thing as the cross-sweep above: that hunts instances of defects somebody
+   already found, this looks for what nobody found because no single walker could
+   see it.
+
+   A section is built by several walkers in sequence, each replaced by the next,
+   none seeing the others' code. They solve the same problem in different files
+   without knowing the other exists — and every one of those duplicates compiles,
+   passes, and reviews cleanly on its own. It is only visible from above, once,
+   at the moment the section is finished and before the next section copies from
+   whichever variant it happens to open.
+
+   Do it with a **read-only agent while nothing else is running**, so the audit
+   cannot fight a walker for the tree. Ask it for: the same logic in two places,
+   a file whose parts stopped belonging together, one idea under two names, a
+   rule the section obeys by habit that no checker holds, and dead ends. Rank by
+   cost, not by ease.
+
+   Then **act on the findings in the same session**, and every finding leaves as
+   one of exactly two things:
+
+   | The finding is | It becomes |
+   | --- | --- |
+   | Something wrong in the code — a duplicate, a seam, a name | **A refactor.** Done now. |
+   | Something the code happens to get right, with nothing holding it | **A checker.** Written now. |
+
+   There is no third column. "Worth doing later" is where findings go to die: the
+   report is filed, the duplicate is copied by the next section before anybody
+   returns to it, and the audit spent its context for nothing. If a finding is
+   genuinely not worth either — say so and why, and it is closed rather than
+   deferred.
+
+   The second row is the one that pays for the whole exercise, and it is the
+   easiest to miss because nothing is broken. Eight screens doing the right thing
+   because their authors happened to is not a rule; it is eight coincidences, and
+   the ninth screen is written by somebody who never saw the other eight. Ask of
+   every convention the section follows: **what stops the next screen breaking
+   this?** If the answer is "somebody would notice in review", write the checker.
+
+   A checker that cannot be written cheaply is still worth stating — but state it
+   where it will be read before the next screen is built, not in the audit report.
+
+3. **Run the project's verification gates.** All of them, green.
+4. **Sync the board in the same change** where the code was right and the board
    was stale — but only the layer a board contracts (screens, content, states,
    flow, fixed wording). Restyling and i18n catalogue text never touch it.
 
@@ -680,7 +771,12 @@ CLUSTERS WALKED: <one line each: what it was, frames cleared>
 BUILT: <frames that had no code and now do, or "none — every frame was already built">
 FIXED: <grouped by defect type, one line per instance>
 CROSS-SWEEP: <per defect type, other instances found and fixed, including "0 others">
-RULES ADDED: <defect type → where the detection rule now lives, or "none">
+SECTION AUDIT: <what the read-only pass found — then every finding under one of:>
+  REFACTORED: <the code was wrong; what changed>
+  NOW CHECKED: <the code was right by habit; which checker now holds it>
+  CLOSED:     <neither, with the reason — never "later">
+RULES ADDED: <defect type → where the detection rule now lives, or "none" — including any
+              rule the section had been obeying only by habit>
 BOARD SYNCED: <frames back-filled or corrected, or "nothing — the code was wrong every time">
 PARKED, STILL OPEN: <one line each, with what decision it needs and from whom>
 VERIFICATION: <each gate and its result>

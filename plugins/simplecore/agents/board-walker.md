@@ -120,7 +120,11 @@ Stop what you started when your cluster is done, and say in your report what you
 be" — a fact that changes is corrected in place with no history left behind. That is what lets any
 number of walkers maintain it, and a write-time check enforces it.
 
-Write a log line **at each step, and append it as the step ends** — `START` when you pick a frame
+Somebody is watching as you work — the coordinator arms two watches when it dispatches you,
+one on `logDir` and one on the directory captures land in, so each line you append and each
+picture you take reaches a person within seconds. **Never delete a capture** for tidiness: the
+sequence is the point, and the image nobody kept is the one that would have shown what changed. Write a
+log line **at each step, and append it as the step ends** — `START` when you pick a frame
 up, `BUILT` when it stands, `JUDGED` when you have looked at it across locales and devices, `SHOT`
 when its captures exist, then the verdict. One frame is half an hour of work, so a single line per
 frame is a heartbeat every thirty minutes, and from outside that is indistinguishable from having
