@@ -121,6 +121,7 @@ const inModules = (p) => p.startsWith("modules/");
 const inPages = (p) => /\/src\/pages\//.test(p);
 const isListWidget = (p) => /\/widgets\/.*list.*\.tsx$|\/widgets\/[^/]+\/list\.tsx$/.test(p);
 const isTsx = (p) => p.endsWith(".tsx");
+const isSource = (p) => p.endsWith(".ts") || p.endsWith(".tsx");
 
 /**
  * Property names of each generated DTO, keyed by its model file stem (e.g. `operatorScopeDetailDTO`).
@@ -746,6 +747,30 @@ const RULES = [
     // A file input is exempt only when it is hidden behind a trigger the app labels.
     check: (c) =>
       blockHits(c, /<input\b[^>]*type="file"[^>]*>/g).filter((h) => !/className="[^"]*\bhidden\b/.test(h.excerpt)),
+  },
+  {
+    id: "hand-written-endpoint-url",
+    invariant: "#30 / #3",
+    level: "review",
+    desc: "Endpoint path assembled by hand — the codegen emits a get<Op>Url helper, and a hand-written twin drifts silently the next time the route moves",
+    appliesTo: isSource,
+    // Cache-key prefixes are literal by contract (useInvalidateEntity takes the prefix, not a
+    // URL), and a public asset endpoint with no generated operation has no helper to import.
+    // What this catches is a literal path handed to fetch, an <a href>, or a transport.
+    check: (c) =>
+      lineHits(c, /["'`]\/api\/v\d+\/[^"'`]*["'`]/).filter(
+        (h) => !/useInvalidateEntity|invalidateEntity|queryKey/.test(h.excerpt),
+      ),
+  },
+  {
+    id: "silent-clipboard-copy",
+    invariant: "#40 / e2e lens: persona",
+    level: "review",
+    desc: "clipboard.writeText with no failure path — the clipboard is refused outside a secure context and pending while the tab is hidden, so a copy that never happened looks identical to one that did",
+    appliesTo: isSource,
+    // A file that already branches on failure is exempt; what this catches is the bare await.
+    check: (c) =>
+      /catch\s*(\{|\()/.test(c) ? [] : lineHits(c, /navigator\.clipboard\.writeText/),
   },
   {
     id: "ungated-create-button",
