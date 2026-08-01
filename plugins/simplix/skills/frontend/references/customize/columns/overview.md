@@ -142,6 +142,14 @@ This section defines the standard column order and default visibility for data t
 | 12 | **Audit** | Audit fields | `createdAt`, `createdBy`, `updatedAt`, `updatedBy` | ✖ Hidden |
 | 13 | **Actions** | Action buttons | `actions` | ✔ |
 
+**The action column is never a declared `CrudList.Column`.** Row actions reach the table through
+its `actions` prop (`RowActionDef[]`) or, for custom buttons, its `slots.rowActions` render —
+either way the framework emits its own `_actions` column and keeps it out of the column-visibility
+menu. A hand-declared column standing in for it (`<CrudList.Column field="…" header="">`) is
+registered in that menu by its header, so an empty header lands there as a **nameless checkbox
+that silently removes every action on the list**. Size it with `actionColumnWidth`, not `width`.
+The audit script fails on this shape (`row-actions-as-nameless-column`).
+
 ### Intra-Group Sorting Rules
 
 #### Identifier

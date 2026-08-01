@@ -784,6 +784,36 @@ const RULES = [
       /\buseCan\("create"/.test(c) ? [] : lineHits(c, /onClick=\{show(New|Create)\}/),
   },
   {
+    id: "unsubscribed-access-policy-read",
+    invariant: "#52",
+    level: "error",
+    desc: "A render decision reads a field off the object `useAccess()` returns — that object is the policy itself and is handed back unchanged on every render, so a component whose only subscription is `useCan` re-renders when its own answer flips and never when the grants merely arrive; for everyone the answer does not flip for, the field keeps the value it had before the policy resolved and the screen stays on that branch for ever. Subscribe with useSyncExternalStore(policy.subscribe, policy.getSnapshot, policy.getSnapshot) and decide from the snapshot",
+    appliesTo: isTsx,
+    check: (c) => {
+      // A file that subscribes has made the value reactive, whichever way it then reads it.
+      if (/useSyncExternalStore\s*\(/.test(c)) {
+        return [];
+      }
+      // Only a read that DECIDES. Passing `policy.user` on to a child, or printing it, cannot
+      // strand a screen — the branch is what does.
+      const names = [...c.matchAll(/const\s+(\w+)\s*=\s*useAccess\(\)/g)].map((m) => m[1]);
+      if (names.length === 0) {
+        return [];
+      }
+      const reads = names
+        .map((name) => new RegExp(
+          `if\\s*\\(\\s*!?\\s*${name}\\.(user|roles|ability)\\b|` +
+          `${name}\\.(user|roles|ability)\\b[^\\n]*\\?[^\\n]*:`,
+          "g",
+        ))
+        .flatMap((re) => [...c.matchAll(re)]);
+      return reads.map((m) => ({
+        line: lineOfIndex(c, m.index),
+        excerpt: m[0].replace(/\s+/g, " ").slice(0, 140),
+      }));
+    },
+  },
+  {
     id: "ungated-entity-action",
     invariant: "#52",
     level: "review",
@@ -1078,6 +1108,20 @@ const RULES = [
       }
       return hits;
     },
+  },
+  {
+    id: "row-actions-as-nameless-column",
+    invariant: "#31",
+    level: "error",
+    desc: "Row actions declared as a CrudList.Column with an empty header — a nameless entry joins the column-visibility menu, and unchecking it silently removes every action on the list. Render them through the table's rowActions slot (slots={{ ...., rowActions }} + actionColumnWidth) so the framework's own _actions column carries them",
+    appliesTo: isTsx,
+    // The framework registers a declared column in the FilterBar's Columns dropdown by its
+    // header text; an empty header therefore reaches that menu as a blank checkbox. Its own
+    // action column (`_actions`) is excluded from the menu, which is why actions belong there.
+    // The generic argument carries its own ">" (`<CrudList.Column<Row> …`), so the scan runs to
+    // the header attribute rather than to the first ">", stopping at the next column's opening
+    // tag so one nameless column cannot be blamed on its neighbour.
+    check: (c) => lineHits(c, /<CrudList\.Column(?:(?!<CrudList\.Column)[\s\S]){0,300}?\sheader=""/),
   },
 ];
 
