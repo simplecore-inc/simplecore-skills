@@ -43,7 +43,7 @@ Handbooks for repositories built on SimpliX. Each skill states its own applicabi
 | Skill | Description |
 | ----- | ----------- |
 | `simplix:backend` | Spring Boot backend handbook — 19 non-negotiable invariants (response envelope, `@PreAuthorize`, exception and message-key policy, DTO roles, date/time semantic typing), entity design, the YAML-driven `yo simplix` generator workflow, and DTO / security review. |
-| `simplix:frontend` | simplix-react frontend handbook — 52 non-negotiable invariants, OpenAPI-driven scaffolding, `CrudList` / `CrudForm` / `CrudDetail` customization, filter and column design, a commonization registry, and documentation standards. Ships the convention audit and screen-inventory scripts. |
+| `simplix:frontend` | simplix-react frontend handbook — 59 non-negotiable invariants, OpenAPI-driven scaffolding, `CrudList` / `CrudForm` / `CrudDetail` customization, filter and column design, a commonization registry, and documentation standards. Ships the convention audit and screen-inventory scripts. |
 | `simplix:frontend-e2e` | Browser-driven usability, lifecycle, and cross-screen consistency audit. Drives the running app as each persona, judges through four lenses anchored to the `simplix:frontend` invariants, and runs five mandatory censuses over every screen in scope. |
 
 It also registers the `/simplix:init` command, one agent, and three hooks, all documented below:

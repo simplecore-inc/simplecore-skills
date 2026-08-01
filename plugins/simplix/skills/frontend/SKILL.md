@@ -113,7 +113,7 @@ These invariants apply to **every** frontend file you touch. Treat each as invio
 
 8. **No raw HTML layout** — NEVER write `<div className="flex ...">` / `<div className="grid ...">` / `<div className="mx-auto ...">` when framework primitives exist (`Flex`, `Stack`, `Grid`, `Container`, `Section`, `Card`). Framework primitives only.
 9. **Framework components first** — before writing any custom component, check `@simplix-react/ui` and existing module code for an existing component. Propose adding a variant/feature to the framework before creating a project-local custom component.
-10. **Boot enums everywhere** — boot enum fields use `resolveBootEnum()` in list columns, form defaults, detail display, AND DTO assembly — ALL four contexts. A single context missing it produces drift.
+10. **Boot enums everywhere** — boot enum fields use `resolveBootEnum()` in list columns, form defaults, detail display, AND DTO assembly — ALL four contexts. A single context missing it produces drift. A detail row is its own trap, because the badge's tone is looked up by the raw value — invariant #53.
 11. **SelectField async options** — gate rendering on both value AND options loading state. Never render with incomplete options. Mechanism: a Radix-backed select whose options arrive AFTER first render does not refresh its closed trigger — a value with no matching option renders an empty trigger and stays empty even once options load. Gate the whole select on EVERY contributing query (`aQuery.isLoading || bQuery.isLoading ? <Loading /> : …`), and derive a fallback selection from the row's own data rather than an effect-populated map (effect state is empty on the first render).
 12. **Callback prop naming** — `onSuccess`, `onClose`, `onBack`, `onCancel`, `onEdit`, `onDeleted`. No ad-hoc callback names.
 
@@ -215,6 +215,30 @@ These invariants apply to **every** frontend file you touch. Treat each as invio
 
 52. **Every action affordance is gated on the permission its endpoint requires** — a button that leads to a call the server will refuse must not render. Read the group from the module's `src/shared/auth/subjects.ts` (`SUBJECTS.<screenKey>`), mirroring the backend's `hasPermission('<group>', '<action>')`, and gate with `useCan("<action>", SUBJECTS.<screenKey>)` from `@simplix-react/access/react` — never a group literal inline, so a screen's gate and the server's rule move together. Create affordances: the page-header create button on BOTH header variants (page and panel — gating one leaves the other open), a tree's per-row `add-child`, and any create button composed into an action group (drop the button out of the group, not the whole `actions` entry). The scaffold emits the gate and the CLI creates an empty `subjects.ts` when a module has none, so a missing entry is a compile error on the generated page — supply the real group, never a plausible one. The audit script (`${CLAUDE_PLUGIN_ROOT}/scripts/audit-frontend.mjs`) fails on an ungated `showNew`.
 
+53. **A detail row's enum goes through `DetailBadgeField`, with its value resolved before it is passed** — the component looks its tone up by the RAW `value` (`variants[value] ?? "default"`), so handing it the boot-enum object the DTO carries makes every lookup miss: the badge renders `default` however the variant map is written, while `displayValue` still shows the right label. The failure is silent and reads as a broken tone map. Pass `value={resolveBootEnum(x) ?? ""}` beside `displayValue={enumLabel("<EnumType>", resolveBootEnum(x) ?? "")}`; the scaffold emits the unresolved form (`value={displayData.<field>}`), so every generated detail needs this fixed at customization time.
+    - **A nullable enum row uses `DetailBadgeField` too, never a bare badge inside `DetailFieldWrapper`.** Module badge shells (`StatusBadge` / `EnumBadge` wrappers over `resolveBootEnum`) return `null` for an absent value — right in a list cell or an inline flex row, but inside a `DetailFieldWrapper` it leaves a silently blank row while every sibling `DetailFields.*` row shows the shared no-value badge. For a detail or dialog row whose enum can legitimately be absent (a verdict that exists only when something matched), render `DetailBadgeField` with `value={resolveBootEnum(x) || null}` so the empty state goes through the shared fallback. A row whose enum is always present may keep the wrapper-plus-badge shape.
+
+54. **The scaffold emits fields that say nothing — remove them at customization time** — a SimpliX-backed entity carries `deleted` and `deletedTimestamp`, and the scaffold turns both into a list column, a `cardContent` row, and a detail field. They carry no information: a soft-deleted row is filtered out of the list, so the flag always reads false and the stamp always reads `-1`. Strip them from the column set, the `cardContent` block, the detail section, the form, and the filter set, then clean up the imports left unused. Same treatment for the entity PK and the audit quartet (`createdAt` / `createdBy` / `updatedAt` / `updatedBy`) — `CrudDetail`'s `auditData` slot already carries those. The framework has no declarative "hidden by default": `hiddenColumns` is a runtime toggle the operator can open, so hiding means removing from source.
+
+55. **A message that tells the reader to reach a contact is written twice, and one hook picks between them** — deployment-configured addresses (sales, support, an escalation path) are optional fields on a settings read, and the chrome that displays them hides them when they are absent. A single message saying "get in touch" then leaves the reader instructed to do something the page gives them no way to do, worst on a public surface where they have no other channel. Write both variants (`<key>` and `<key>NoContact`), choose between them in ONE shared hook that owns the read (`useContactText(withContact, withoutContact, params)`), and route every such message through it. A codebase that gates one message this way and not the next two has the defect, not the convention. The check when writing any such string: does this page render the address it just told them to use?
+
+56. **A shared catalogue is edited key by key; a whole-file write re-reads inside the same step** — locale catalogues (`modules/<domain>/src/locales/**/*.json`) and codegen output are appended to by many tasks that never otherwise touch the same file. The hazard is not two writers at one moment; it is ONE writer that reads the file early, works for a while, and writes the whole file late. Everything added in between is silently gone: the keys vanish, the widgets naming them stay, and the screens print `<namespace>.<key>` where the sentence should be. Nothing errors, and git shows a plausible small diff because the lost keys were never committed. When a whole-file write is genuinely needed (a scripted bulk edit, a sort, a reformat), re-read the file inside the same step that writes it, never from a copy read earlier in the task. The audit's `missing-translation-key` rule catches the loss afterwards — a sudden crop of that error across files you did not touch is this, not somebody forgetting their keys.
+
+57. **A client-generated idempotency key is scoped to the payload it guards, never to the screen or the record it was reached from** — the key exists so that a repeated submission of the SAME request returns the first answer. A key scoped to something coarser (the plan, the entity, the tab) survives the user going back and CHANGING the form, so the server answers the new basket with the old record and the screen after the submit shows values nobody typed — a cross-screen disagreement no test catches, because both screens are individually correct. Derive the stored key from the submitted values themselves, keep it under a scope string built from them, and release it once the record it wrote can no longer move (paid, closed, cancelled) so a second identical purchase is a second record. The release half is the one that gets written and never wired: a `clearX`-style helper with no importer means the flow does not have it.
+
+58. **`overflow` on one axis silently makes the other `auto` — so a stray scrollbar is measured, and the geometry is fixed where it is wrong** — CSS computes an `overflow-x` of `auto`/`scroll` paired with an `overflow-y` of `visible` as `auto` on BOTH axes. A wrapper that only ever wanted sideways scrolling (a preset row, a tab strip, a toolbar too wide for a narrow panel) therefore paints a vertical scrollbar the moment anything inside it overflows the block direction by one pixel — and the element reporting the overflow is often not the one the reader points at. Locate it before touching anything:
+
+    ```js
+    [...document.querySelectorAll("*")].filter((el) => {
+      const ov = getComputedStyle(el).overflowY;
+      return (ov === "auto" || ov === "scroll") && el.scrollHeight > el.clientHeight;
+    });
+    ```
+
+    The overflow itself usually comes from a **fixed-height track whose padding leaves less room than the child it holds** — `outer height − borders − vertical padding ≥ child height` has to hold, and a bordered `h-<n>` track with symmetric padding often misses it by a pixel or two. `items-center` splits the leftover above and below, so the layout looks right at every width and only the bottom half scrolls; it also means shrinking the vertical padding to make the arithmetic legal re-renders identically, since the centring was already placing the child where the too-large padding claimed to. Prove it with numbers — `clientHeight` / `scrollHeight`, the track's outer height, the child's offset and height, before and after — never by eye. Never reach for `scrollbar-width: none`, `::-webkit-scrollbar { display: none }`, or an `overflow-y: hidden` patch: the content still overflows and is now clipped with no way to reach it. For a framework component, the geometry is wrong in the framework, not in the consumer that merely made the symptom visible.
+
+59. **A preference that outlives a session gets its own namespace, outside any token-store prefix** — `localStorageStore(prefix)` / `sessionStorageStore(prefix)` clear by sweeping every key that starts with `prefix`, and signing out calls that clear. A stay-signed-in preference written to `"<prefix>remember-me"` is therefore erased by the one act it has to outlive: the box comes back unchecked on the sign-in screen the operator was just returned to, and a setting they chose deliberately looks like one that never took. Nothing errors and the token handling is correct throughout — the key is simply inside the blast radius of a prefix sweep. Give any preference that outranks a session its own namespace (`"<app>.prefs:<name>"`), and when reading a store's `clear()`, ask what else lives under that prefix. The same trap catches any non-token value parked beside the tokens for convenience: a last-used tenant, a remembered sign-in address, a "do not show again" flag.
+
 ---
 
 ## Task Router
@@ -229,7 +253,7 @@ Trigger: defining API contracts, deriving hooks, setting up mock workers, config
 2. `defineApi` / `deriveEntityHooks` patterns, query builder, auth, cache → `framework/api-patterns.md`
 3. Complete end-to-end recipes (new contract, new entity, adding operations) → `framework/recipes.md`
 4. `simplix.config.ts`, codegen, mock worker configuration → `framework/configuration.md`
-5. Project-specific learnings (staging) → `framework/learnings.md`
+5. Staged learnings not yet folded into the main body → `framework/learnings.md`
 
 ### 2. SCAFFOLD — Domain packages & UI modules (FIRST when backend changed — see invariant #29)
 
@@ -250,7 +274,7 @@ Trigger: creating any NEW screen or structurally reshaping one (precedent check 
 4. Customization recipes (add column, add action, wire mutation, custom editor) → `customize/recipes.md`
 5. CRUD page consistency checklist (list trim, two-column detail, cards, embedded lists, peek) → `customize/consistency-checklist.md`
 6. Date/time encoding · decoding · display timezone (invariant #42) → `customize/datetime-fields.md`
-7. Project-specific learnings (staging) → `customize/learnings.md`
+7. Staged learnings not yet folded into the main body → `customize/learnings.md`
 
 #### 3a. CUSTOMIZE · Filters (data table filter design)
 
@@ -306,7 +330,7 @@ Trigger: writing or editing README, TSDoc on public exports, tutorials, how-to g
 
 After writing:
 
-- [ ] All 52 Non-Negotiable Invariants hold
+- [ ] All 59 Non-Negotiable Invariants hold
 - [ ] Every action affordance gated on its endpoint's permission (#52) — both header variants, tree `add-child`, and buttons inside action groups; group read from `SUBJECTS`, never inlined
 - [ ] Precedent parity pass done (new / reshaped screens — #51): comparison sheet walked row by row against both precedents, screens compared in the browser
 - [ ] Completion report (in conversation — never recorded in files) names the Task Router references consulted and, for screen work, the shape + both precedent files + justified divergences (#51)
