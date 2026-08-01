@@ -100,7 +100,13 @@ Stop what you started when your cluster is done, and say in your report what you
    frame, what the choice or blocker is, and which side looks stale.
 
 7. **Produce what each frame owes beyond code**, when the config declares any — and read the
-   skill's `references/frame-artefacts.md` before producing the first one, because every way
+   skill's `references/frame-artefacts.md` before producing the first one, and
+   `references/driving-the-product.md` before the first capture run, because the capture
+   machinery fails in ways that look exactly like defects in the product: a swallowed link
+   leaves the previous frame under the right file name, a stale bundle makes a screen
+   photograph taller than it is, a stitched seam eats a line of text. Shoot the language a
+   person will read **first** and keep it — a pseudo-locale measures whether a layout survives
+   long strings and is for you, not for the reader. Every way
    an artefact goes wrong is silent — a capture under
    realistic data, a page of a manual, a snapshot. Produce it yourself, in this cluster: an artefact
    written later by somebody who did not drive the screen describes what the code seems to do. When
@@ -119,6 +125,14 @@ Stop what you started when your cluster is done, and say in your report what you
 **The handover file has no room for a point of view.** No "I found", no "this time", no "it used to
 be" — a fact that changes is corrected in place with no history left behind. That is what lets any
 number of walkers maintain it, and a write-time check enforces it.
+
+**Write in the project's language, not in translated English.** The words this brief uses — walk,
+stand, feed, live, dry out, owe — are English figures of speech. Rendering them literally is the
+fastest way to make a handover file, a log line or a manual page read as machine output: a frame is
+not 「걷는」 것, a screen does not 「선다」, a step does not 「먹인다」. Say what the word *means* in
+the way a native speaker of that language talks about software, and follow the project's glossary
+where it has already ruled on a term. If you coin a rendering the glossary has not seen, put it in
+the glossary in the same change — otherwise the next walker invents a different one.
 
 Somebody is watching as you work — the coordinator arms two watches when it dispatches you,
 one on `logDir` and one on the directory captures land in, so each line you append and each

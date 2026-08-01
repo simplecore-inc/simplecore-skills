@@ -180,6 +180,9 @@ Paths are relative to this skill's own directory.
 | Situation | Read |
 | --- | --- |
 | A project whose frames owe an artefact beyond code — captures, manual pages, snapshots — or deciding what `frameDeliverables` should hold | `references/frame-artefacts.md` |
+| A measurement that surprises you, a check that has never fired, a rule about to be written, or more than one agent in one tree or on one machine | `references/harness.md` |
+| Opening the product to look at it — which browser driver, which simulator or emulator, how a capture route is built, and how pictures reach the person judging them | `references/driving-the-product.md` |
+| Sample data, the story the screens live in, what shape the manual takes and which parts of that only the user may decide, and the logs and costs a walk leaves behind | `references/scenario-and-manual.md` |
 
 ## Opening a session
 
@@ -263,6 +266,15 @@ behind. That failure is the reason this skill exists.
    server, so two of them in one working tree collide over the same files and the
    same ports. Run clusters in sequence, or give each walker its own worktree *and*
    its own ports.
+
+   **This is the rule that gets bent for speed, and the cost is not slower work —
+   it is work you cannot trust.** Two walkers sharing one device produce captures
+   of the wrong screen that look entirely correct; two sharing one tree fold each
+   other's uncommitted changes into their commits. Neither announces itself. When
+   the resource genuinely cannot be duplicated — one simulator, one phone, one
+   browser profile — **the coordinator holds a queue and hands it to one walker at
+   a time**, and gives a lone walker a standing reservation rather than a
+   handshake per run. `references/harness.md` has both failures in full.
 4. **The agent returns conclusions**, in the fixed shape its definition specifies.
    What it fixed, which defect type became a detection rule, what it parked, what it
    left running, whether verification passed. No screen dumps, no running commentary,
@@ -394,6 +406,43 @@ while the screens are being built, and nobody deletes it because nobody is sure 
 was not meant to be there. It ships. Sweep for it by defect type the moment one
 instance appears — on a board-first project, if one screen carries its frame id,
 they all do.
+
+## This document's vocabulary is English metaphor — do not translate it
+
+**Walk. Stand. Feed. Live. Dry out. Owe.** Every load-bearing word in this skill is
+a figure of speech, chosen because it is vivid in English. None of them survives a
+literal translation, and translating them literally is the single most common way
+the documents a walk produces read as machine output.
+
+That matters more here than in most skills, because a walk generates a lot of
+prose — a handover file, a parity list, per-frame logs, manual pages, commit
+messages — and it generates it continuously, in whatever language the project
+writes in. One bad rendering of "walk" propagates through hundreds of lines before
+anybody says it out loud.
+
+**So: in a project that does not write in English, choose the natural term in that
+language for what the word *means*, not for what it says.** "Walk a frame" means to
+take one screen through to done. In Korean that is 처리하다, never 걷다. A screen
+does not 서다 because English screens "stand"; it 있다 or 그려진다. A step does not
+먹이다 a frame; it supplies its data. Code does not 산다 in a file; it 있다 there.
+The same applies to any language: find what a native speaker would say about
+software, and use that.
+
+**Fix it at the level of the project's terminology, not sentence by sentence.**
+Every project that keeps a glossary with a machine check should carry these as
+forbidden renderings with their replacements — the specific literal translations
+that this skill's vocabulary invites — so the next document is caught at write
+time instead of being read and winced at. A wrong term corrected in conversation
+comes back in the next file; a wrong term in the glossary checker does not.
+
+Two things to watch when writing those rules:
+
+- **Aim at the metaphor, not the word.** The ordinary verb is innocent — a person
+  really can 걷다, a rule really is 세우다 in settled Korean. Match the pairing that
+  only the metaphor produces, and put the borderline ones at warning level so a
+  human decides.
+- **Record the exceptions you deliberately allow**, next to the rule. Otherwise the
+  next person removes the rule instead of the exception.
 
 ## Two kinds of leaving-behind, and only one is shared
 
@@ -637,7 +686,25 @@ code.
    with it.
 2. **A type found twice becomes a rule.** The second time a defect type appears,
    it stops being prose and becomes a detection rule in the project's audit
-   script — so the next pass catches it without anybody looking.
+   script — so the next pass catches it without anybody looking. **Prove it fires
+   on the defect and is silent on the fix, scope it to the whole tree rather than
+   to the files the defect happened to be in, and when a candidate rule turns out
+   to fire on healthy code, write down that it was rejected and why** — otherwise
+   the next walker rediscovers it and ships it. `references/harness.md` carries
+   the detail, and the reasons each half of that sentence is there.
+
+   **Ask the question every time, not only on the second sighting: can a machine
+   see this?** Most defects that reach a person are mechanically visible once
+   somebody has described them precisely — a value computed in two places, a
+   string that should exist once, a control with no destination. Describing it
+   well enough to detect is most of understanding it.
+
+   **A new rule is wired into the command the project already runs, and it sweeps
+   the whole tree the moment it exists.** A script that has to be remembered is a
+   script nobody runs; a rule that reports without anybody fixing what it found
+   has moved the defect into a log. Add it to the gate, run it across everything,
+   **fix what it finds**, and report the count — zero proves coverage, non-zero is
+   the rule earning itself immediately.
 3. **Only what needs a human goes to a human**, and it goes to the parked
    section, not into a pause.
 
@@ -648,8 +715,10 @@ or is a line on the list.
 
 **The default is to decide.** An open question is answered by designing the
 answer — architecture first, then consistency with what the product already does,
-then stability — and the decision is applied to the code and the board in the same
-change. A walk whose parked section keeps growing is not being careful; it is
+then stability, then performance — and the decision is applied to the code and the
+board in the same change. Those four are an order, not a list: a fast screen built
+on the wrong shape is a rewrite, and a screen that disagrees with its neighbours
+is a defect no benchmark can see. A walk whose parked section keeps growing is not being careful; it is
 deferring the design work that the walk exists to do, and every deferred decision
 makes the next frame harder to build because it rests on nothing.
 
@@ -674,6 +743,12 @@ makes the answer derivable:
 - **A commercial or legal decision that is somebody's to make.** A price, a
   contractual term, a retention period a regulator sets. Design everything around
   it so the value is the only thing missing.
+- **A decision about who the product's documents are for.** Audience, which
+  languages get written material, whether a page is a screen or a step, when the
+  shipped figures are taken. These are not design questions with a best answer —
+  they commit somebody to writing, and getting one wrong is not corrected by
+  editing pages. Ask them together and early rather than one at a time as each
+  becomes blocking; `references/scenario-and-manual.md` has the list.
 - **A blocker in the world.** An environment that cannot reach a service, hardware
   nobody has yet. Build and judge everything that does not depend on it, and park
   only the part that does.
