@@ -92,6 +92,35 @@ Read the list as the persona: anything that is a record-level action (save, subm
 
 ---
 
+## Judging responsive behaviour — load at each width, never resize what is already mounted
+
+A tab opened by automation is backgrounded: `document.visibilityState` is `"hidden"`, so the browser runs no rendering steps for it. `requestAnimationFrame` never fires, and — the part that costs a session — **`ResizeObserver` never delivers a callback**, not even the initial one that `observe()` normally schedules. `IntersectionObserver` is out for the same reason.
+
+Layout itself still happens: set a width and `getBoundingClientRect` reports the new box. What does NOT happen is everything downstream of an observer. So a tree that is already mounted keeps every width-derived decision it made at mount, and shrinking its container with JavaScript measures a half-updated screen.
+
+**Method**: judge width-dependent behaviour at MOUNT, one load per width. Load the page fresh in a same-origin iframe sized to the target width (or a new tab/window at that size), and read it there. Never form a verdict by mutating the width of a tree that is already on screen.
+
+```js
+// Is this tab frozen? Run once before judging anything width-dependent.
+({
+  visibility: document.visibilityState,
+  raf: await Promise.race([
+    new Promise((r) => requestAnimationFrame(() => r("runs"))),
+    new Promise((r) => setTimeout(() => r("frozen"), 1000)),
+  ]),
+})
+// visibility "hidden" + raf "frozen"  →  observer-driven behaviour will not react to a resize here
+```
+
+**Suspect this BEFORE writing a framework defect.** Two shapes it takes, both of which read as broken components:
+
+1. **A control row that should collapse below a breakpoint does not.** A toolbar that swaps a row of buttons for a single select, a table that hides columns, a nav that folds into a rail — the threshold is crossed and nothing happens, because the observer that watches the container is silent. Load the same page fresh at that width and it collapses correctly.
+2. **A canvas or charting library keeps a stale width.** Libraries that size to their container measure once and re-measure on a resize signal. Frozen, the drawing holds whatever width it had at mount and appears to spill far past its container — a horizontal overflow that exists only in this tab.
+
+Neither is a defect. Reproduce at mount before reporting either, and say in the report which widths were loaded rather than resized.
+
+---
+
 ## Test-data hygiene
 
 The audit runs against a live development database, and every flow you complete leaves records behind. Valid records are an asset; broken ones are noise.

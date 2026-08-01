@@ -257,6 +257,39 @@ private CmsChannel channel;
 - Prevents exposing unnecessary data
 - Avoids lazy loading issues
 
+### A `@Transient` derived getter cannot be whitelisted — carry it flat
+
+Naming a `@Transient` getter in `@JsonIncludeProperties` looks like it works and does not. The
+Hibernate Jackson module treats `@Transient` as "do not serialize" on a managed entity
+(`USE_TRANSIENT_ANNOTATION`, on by default), so the property is dropped wherever the entity is
+**nested** — while the same getter serializes normally through a plain DTO field that ModelMapper
+copied. The two paths therefore disagree, and the nested one fails **silently**: no error, no
+null, the key is simply absent from the JSON, and the screen renders its fallback forever.
+
+```java
+// ✗ silently absent — maskedProductKey is a @Transient getter on the entity
+@JsonIncludeProperties({"licenseId", "productKeyHash", "maskedProductKey", "status"})
+private License license;
+
+// ✔ the derived value travels flat, populated where a real entity is in hand
+@JsonIncludeProperties({"licenseId", "productKeyHash", "status"})
+private License license;
+
+private String maskedProductKey;   // service: dto.setMaskedProductKey(license.getMaskedProductKey())
+```
+
+Review recipe: for every `@JsonIncludeProperties` list, open the referenced entity and confirm each
+named property is a **mapped column or association**. Anything computed — a masked rendering, a
+derived label, a split list — is `@Transient` and belongs on the DTO as its own field.
+
+### The nesting projection carries what every consumer renders
+
+An entity-level `@JsonIncludeProperties` on an association is the default for **every** DTO that
+nests that entity, so a field one screen renders and the projection omits is absent on all of them.
+A reference label that composes more than a name (a period, a code, a status) needs those fields in
+the entity-level list — otherwise the label renders its fallback (`— ~ —`) rather than saying
+anything, and a DTO that re-declares a wider list only fixes its own surface.
+
 ---
 
 ## @JsonIgnoreProperties Pattern
