@@ -23,6 +23,13 @@
  * A project glossary customizes the base rules:
  *   - A "용어 대역표" row whose 영어 key matches a base row replaces it.
  *   - A "금지 표현" row whose 금지 pattern matches a base item replaces it.
+ *   - A "화면 금지 표현" row bans a word ON SCREEN ONLY — it is applied to
+ *     audit.localeResources files and to nothing else. Internal vocabulary is
+ *     the case it exists for: a design document has to say "chunk" to specify
+ *     chunking, and the same word on a screen is a leak of an implementation
+ *     detail the product decided never to show. One table banning it
+ *     everywhere makes the specification unwritable; no table at all leaves
+ *     the ban as prose that no run enforces.
  *   - A "기본 규칙 예외" table disables base rules by 영어 key (whole row)
  *     or by exact pattern text (single rule).
  *
@@ -33,6 +40,9 @@
  *     exclude: ["**\/legacy/**"]  # glob patterns removed from any scan
  *     localeResources: []        # globs of i18n resource files, audited on
  *                                # quoted string values only
+ *     localeAnnotationKeys: []   # keys in those files whose values are notes
+ *                                # to the maintainer rather than screen copy;
+ *                                # exempt from 화면 금지 표현, audited otherwise
  *     untranslated: false        # true = warn about remaining English prose
  *   ---
  *
@@ -110,7 +120,7 @@ function parseInlineArray(value) {
 }
 
 function parseGlossaryConfig(markdown) {
-  const config = {paths: [], exclude: [], localeResources: [], untranslated: false};
+  const config = {paths: [], exclude: [], localeResources: [], localeAnnotationKeys: [], untranslated: false};
   const lines = markdown.split(/\r?\n/);
   if (lines[0]?.trim() !== '---') return {config, body: markdown};
   let end = -1;
@@ -130,7 +140,7 @@ function parseGlossaryConfig(markdown) {
       continue;
     }
     if (!inAudit) continue;
-    const kv = line.match(/^\s+(paths|exclude|localeResources|untranslated)\s*:\s*(.*)$/);
+    const kv = line.match(/^\s+(paths|exclude|localeResources|localeAnnotationKeys|untranslated)\s*:\s*(.*)$/);
     if (kv) {
       const [, key, rest] = kv;
       const value = rest.trim();
@@ -280,6 +290,25 @@ function parseGlossary(body, origin, sourceName) {
     }
   }
 
+  for (const cells of tableRowsUnderHeading(body, '화면 금지 표현') ?? []) {
+    warnExtraColumns(cells, sourceName, '화면 금지 표현');
+    const [banned, replacement = '', levelCell = '', note = ''] = cells;
+    if (!banned || !levelCell) continue;
+    const {level, threshold} = parseLevel(levelCell, sourceName);
+    for (const item of splitItems(banned)) {
+      expressions.set(`screen:${item}`, {
+        pattern: compilePattern(item, sourceName),
+        source: item,
+        suggestion: replacement,
+        label: note || '화면 금지 표현',
+        level,
+        threshold,
+        screenOnly: true,
+        origin,
+      });
+    }
+  }
+
   for (const cells of tableRowsUnderHeading(body, '기본 규칙 예외') ?? []) {
     if (cells[0]) exceptions.push(cells[0].trim());
   }
@@ -300,8 +329,10 @@ function mergeGlossaries(base, project) {
     for (const raw of project.exceptions) {
       const key = raw.toLowerCase();
       terms.delete(key);
-      for (const src of [...expressions.keys()]) {
-        if (src === raw || src.toLowerCase() === key) expressions.delete(src);
+      for (const [src, rule] of [...expressions]) {
+        // Compared on the rule's own pattern text rather than the map key, so an exception
+        // reaches a screen-only rule as well — its key carries a scope prefix.
+        if (rule.source === raw || rule.source.toLowerCase() === key) expressions.delete(src);
       }
       for (const [tKey, term] of terms) {
         const filtered = term.rules.filter((r) => r.source !== raw);
@@ -312,18 +343,21 @@ function mergeGlossaries(base, project) {
     for (const [src, rule] of project.expressions) expressions.set(src, rule);
   }
 
+  // Deduplicated by pattern AND scope, so one word may be a warning everywhere and an error on
+  // screen without either rule swallowing the other.
+  const scoped = (rule) => `${rule.screenOnly ? 'screen:' : ''}${rule.source}`;
   const rules = [];
   const seen = new Set();
   for (const term of terms.values()) {
     for (const r of term.rules) {
-      if (seen.has(r.source)) continue;
-      seen.add(r.source);
+      if (seen.has(scoped(r))) continue;
+      seen.add(scoped(r));
       rules.push(r);
     }
   }
-  for (const [src, rule] of expressions) {
-    if (seen.has(src)) continue;
-    seen.add(src);
+  for (const rule of expressions.values()) {
+    if (seen.has(scoped(rule))) continue;
+    seen.add(scoped(rule));
     rules.push(rule);
   }
   return rules;
@@ -603,7 +637,188 @@ function frontMatterRange(rawLines) {
   return null;
 }
 
-function auditFile(filePath, rules, checkUntranslated, isLocaleResource = false) {
+// ── Korean particle agreement ───────────────────────────────────────────────
+// 이/가 · 을/를 · 과/와 are chosen by whether the preceding syllable ends in a
+// consonant. A wrong one is always a defect and is never a matter of taste, so
+// it belongs in the machine pass. Bulk find-and-replace is what produces these:
+// swapping a noun changes its final consonant and leaves the old particle behind.
+//
+// 은/는 is deliberately NOT checked — it collides with the adnominal ending
+// (있는, 없는, 받는), which would bury the real findings in false positives.
+// `true` means the particle belongs after a syllable that ENDS in a consonant.
+const PARTICLE_NEEDS_FINAL = {이: true, 가: false, 을: true, 를: false, 과: true, 와: false};
+// Verb and adjective stems that take -는/-은/-ㄴ가 endings, plus interrogatives,
+// all of which end in a syllable that looks like a noun+particle but is not.
+const PARTICLE_STEM_SKIP =
+  /(하|되|있|없|않|같|받|모|찾|잡|접|읽|적|맞|묻|닿|주|보|쓰|가|오|넣|만들|생기|나오|바뀌|걸리|남|들|풀|막|열|끊|끝나|늘|줄|물|앉|서|섞|싣|얹|짚|채우|인|누구|언제|누|무엇)$/;
+const PARTICLE_RE = /([가-힣]{2,})(이|가|을|를|과|와)(?=[\s.,·)\]'"]|$)/g;
+// A closing syllable that merely LOOKS like a particle. Two sources: the -ㄴ가
+// interrogative ending (충분한가, 다른가, 언젠가) and loanwords that end in 이 or
+// 가 (트레이, 디스플레이, 효과). Listing them is cheaper than trying to parse
+// Korean morphology, and each entry is a word rather than a domain term.
+const PARTICLE_WORD_SKIP = /(ㄴ가|[간-힣]?[는은른운한ین]가|언젠가|누군가|어딘가|뭔가|무언가|선가)$/;
+// Words that simply END in 이 or 가, where the tail is part of the word rather than a
+// particle. Adverbs are the ones this rule keeps mistaking for a noun: `가까이 모인다` reads
+// as 가까+이 and gets corrected to something that is not Korean.
+const PARTICLE_TAIL_SKIP =
+  /(레이|플레이|어레이|페이|효과|보이|사이|차이|넓이|길이|높이|깊이|먹이|놀이|쓰임새|가까이|같이|굳이|깊숙이|일찍이|나란히|틈틈이|샅샅이|곰곰이|번번이|낱낱이|고이|많이)$/;
+
+function hasFinalConsonant(ch) {
+  const code = ch.codePointAt(0);
+  if (code < 0xac00 || code > 0xd7a3) return null;
+  return (code - 0xac00) % 28 !== 0;
+}
+
+function checkParticles(lines) {
+  const hits = [];
+  lines.forEach((line, idx) => {
+    for (const m of line.matchAll(PARTICLE_RE)) {
+      const [, stem, particle] = m;
+      const whole = stem + particle;
+      if (PARTICLE_STEM_SKIP.test(stem)) continue;
+      if (/[는은던]$/.test(stem)) continue;
+      if (PARTICLE_WORD_SKIP.test(whole) || PARTICLE_TAIL_SKIP.test(whole)) continue;
+      const final = hasFinalConsonant(stem[stem.length - 1]);
+      if (final === null) continue;
+      if (PARTICLE_NEEDS_FINAL[particle] === final) continue;
+      hits.push({line: idx + 1, text: stem + particle});
+    }
+  });
+  return hits;
+}
+
+// ── repeated word ───────────────────────────────────────────────────────────
+// `작업작업`, `정비 정비` — the other thing bulk replacement leaves behind, when
+// a phrase is substituted into text that already contained the replacement.
+const REPEAT_RE = /(?<![가-힣])([가-힣]{2,4}) ?\1(?![가-힣])/g;
+const REPEAT_OK = new Set([
+  '하나하나', '가지가지', '이런저런', '곳곳', '따로따로', '차례차례', '조금조금',
+  '그때그때', '번번이', '가끔가끔', '두고두고', '오래오래', '이것저것', '여기저기',
+  '구석구석', '집집', '나날', '틈틈', '알알', '겹겹', '층층', '줄줄',
+]);
+
+function checkRepeats(lines) {
+  const hits = [];
+  lines.forEach((line, idx) => {
+    for (const m of line.matchAll(REPEAT_RE)) {
+      if (REPEAT_OK.has(m[0].replace(/ /g, ''))) continue;
+      hits.push({line: idx + 1, text: m[0]});
+    }
+  });
+  return hits;
+}
+
+// ── Annotation values inside a locale resource ──────────────────────────────
+// Some resource files mix screen copy with commentary addressed to whoever
+// maintains the file — a wireframe frame carries its design notes beside the
+// labels it draws. Both are string values, so the string-value mask cannot
+// tell them apart, and a screen-only ban would fire on prose that is allowed
+// to name the implementation it documents. audit.localeAnnotationKeys names
+// the keys whose values are commentary; ordinary rules still apply to them,
+// because commentary is still Korean that has to be written correctly.
+
+/** Advances past the string literal opening at `start`, returning the index after its close. */
+function endOfString(content, start) {
+  const quote = content[start];
+  let i = start + 1;
+  while (i < content.length) {
+    if (content[i] === '\\') { i += 2; continue; }
+    if (content[i] === quote) return i + 1;
+    i++;
+  }
+  return content.length;
+}
+
+/**
+ * End of the value expression that begins at `start`, i.e. the first `,` or
+ * `;` reached at bracket depth zero, or the closer of the object holding it.
+ * Strings and comments are skipped whole, so punctuation inside them cannot
+ * end the value early — which is what lets a value built from several
+ * concatenated literals across many lines be treated as one span.
+ */
+function endOfValue(content, start) {
+  let depth = 0;
+  let i = start;
+  while (i < content.length) {
+    const ch = content[i];
+    if (ch === '/' && content[i + 1] === '/') {
+      const nl = content.indexOf('\n', i);
+      i = nl === -1 ? content.length : nl;
+      continue;
+    }
+    if (ch === '/' && content[i + 1] === '*') {
+      const close = content.indexOf('*/', i + 2);
+      i = close === -1 ? content.length : close + 2;
+      continue;
+    }
+    if (ch === '"' || ch === "'" || ch === '`') { i = endOfString(content, i); continue; }
+    if (ch === '(' || ch === '[' || ch === '{') { depth++; i++; continue; }
+    if (ch === ')' || ch === ']' || ch === '}') {
+      if (depth === 0) return i;
+      depth--;
+      i++;
+      continue;
+    }
+    if (depth === 0 && (ch === ',' || ch === ';')) return i;
+    i++;
+  }
+  return content.length;
+}
+
+/** Character ranges covered by the values of `keys`, as `[start, end)` pairs. */
+function annotationRanges(content, keys) {
+  if (keys.size === 0) return [];
+  const ranges = [];
+  const afterSpace = (i) => {
+    let j = i;
+    while (j < content.length && /\s/.test(content[j])) j++;
+    return j;
+  };
+  let i = 0;
+  while (i < content.length) {
+    const ch = content[i];
+    if (ch === '/' && content[i + 1] === '/') {
+      const nl = content.indexOf('\n', i);
+      i = nl === -1 ? content.length : nl;
+      continue;
+    }
+    if (ch === '/' && content[i + 1] === '*') {
+      const close = content.indexOf('*/', i + 2);
+      i = close === -1 ? content.length : close + 2;
+      continue;
+    }
+    // A quoted key ("notes": ...) as well as a bare one — JSON and JS alike.
+    if (ch === '"' || ch === "'" || ch === '`') {
+      const end = endOfString(content, i);
+      const colon = afterSpace(end);
+      if (content[colon] === ':' && keys.has(content.slice(i + 1, end - 1))) {
+        const stop = endOfValue(content, colon + 1);
+        ranges.push([i, stop]);
+        i = stop;
+        continue;
+      }
+      i = end;
+      continue;
+    }
+    if (/[A-Za-z_$]/.test(ch)) {
+      let j = i;
+      while (j < content.length && /[\w$]/.test(content[j])) j++;
+      const colon = afterSpace(j);
+      if (content[colon] === ':' && keys.has(content.slice(i, j))) {
+        const stop = endOfValue(content, colon + 1);
+        ranges.push([i, stop]);
+        i = stop;
+        continue;
+      }
+      i = j;
+      continue;
+    }
+    i++;
+  }
+  return ranges;
+}
+
+function auditFile(filePath, rules, checkUntranslated, isLocaleResource = false, annotationKeys = new Set()) {
   const content = readFileSync(filePath, 'utf8');
   const isSvg = !isLocaleResource && /\.svg$/i.test(filePath);
   const isProse = !isSvg && !isLocaleResource;
@@ -615,11 +830,28 @@ function auditFile(filePath, rules, checkUntranslated, isLocaleResource = false)
   const errors = [];
   const warnings = [];
 
+  const annotations = isLocaleResource ? annotationRanges(content, annotationKeys) : [];
+  const lineStarts = [];
+  for (let i = 0, at = 0; at <= content.length; i++) {
+    lineStarts.push(at);
+    const nl = content.indexOf('\n', at);
+    if (nl === -1) break;
+    at = nl + 1;
+  }
+  const isAnnotation = (lineIdx, column) => {
+    const at = lineStarts[lineIdx] + column;
+    return annotations.some(([start, end]) => at >= start && at < end);
+  };
+
   for (const rule of rules) {
+    // A screen-only rule bans a word where a user reads it and nowhere else. A design document
+    // has to be able to name the thing it specifies, and so does a note written beside a screen.
+    if (rule.screenOnly && !isLocaleResource) continue;
     const hits = [];
     lines.forEach((line, idx) => {
       rule.pattern.lastIndex = 0;
       for (const m of line.matchAll(rule.pattern)) {
+        if (rule.screenOnly && isAnnotation(idx, m.index)) continue;
         hits.push({line: idx + 1, text: m[0]});
       }
     });
@@ -628,6 +860,19 @@ function auditFile(filePath, rules, checkUntranslated, isLocaleResource = false)
     for (const hit of hits) {
       bucket.push({...hit, rule, count: hits.length});
     }
+  }
+
+  for (const hit of checkParticles(lines)) {
+    errors.push({...hit, count: 1, rule: {
+      source: 'particle', label: '조사 어긋남', level: 'error', threshold: 1,
+      suggestion: '앞 글자의 받침에 맞춰 이/가 · 을/를 · 과/와를 고른다',
+    }});
+  }
+  for (const hit of checkRepeats(lines)) {
+    warnings.push({...hit, count: 1, rule: {
+      source: 'repeat', label: '같은 말이 잇달아 나옴', level: 'warn', threshold: 1,
+      suggestion: '치환이 겹쳐 생긴 중복인지 확인한다',
+    }});
   }
 
   // Untranslated-content heuristic: flag remaining English prose lines.
@@ -732,7 +977,7 @@ function main() {
   }
 
   let project = null;
-  let config = {paths: [], exclude: [], localeResources: [], untranslated: false};
+  let config = {paths: [], exclude: [], localeResources: [], localeAnnotationKeys: [], untranslated: false};
   let root = process.cwd();
   if (discovered) {
     const parsed = parseGlossaryConfig(readFileSync(discovered.path, 'utf8'));
@@ -768,6 +1013,7 @@ function main() {
   console.log('');
 
   const isLocaleResource = makeLocaleResourceMatcher(config.localeResources, root);
+  const annotationKeys = new Set(config.localeAnnotationKeys);
   const {files: targets, excludedCount, glossarySkipped} = resolveTargets(args, config, root, discovered?.path, isLocaleResource);
   if (excludedCount > 0) console.log(`audit.exclude 패턴으로 파일 ${excludedCount}개 제외됨`);
   if (glossarySkipped) console.log('용어사전 파일 자체는 감사 대상에서 제외됩니다');
@@ -782,7 +1028,7 @@ function main() {
   for (const file of targets) {
     const rel = relative(root, file);
     const relPath = rel.startsWith('..') ? file : rel;
-    const {errors, warnings} = auditFile(file, rules, checkUntranslated, isLocaleResource(file));
+    const {errors, warnings} = auditFile(file, rules, checkUntranslated, isLocaleResource(file), annotationKeys);
     errorCount += errors.length;
     warningCount += warnings.length;
     for (const f of errors) console.log(formatFinding(relPath, f, 'error'));
