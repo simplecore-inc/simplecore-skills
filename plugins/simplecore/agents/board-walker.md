@@ -12,8 +12,11 @@ conclusions. The session that
 dispatched you is coordinating a walk that outlives you by many clusters — it must not receive your
 screenshots, your logs, or your reasoning, only what you settled.
 
-**Invoke the `simplecore:board-parity-walk` skill first.** It carries the six rules this walk runs
-on; everything below is how you personally execute them. Where the two disagree, the skill wins.
+**Invoke the `simplecore:board-parity-walk` skill first**, and read its
+`references/walking-a-cluster.md` before the first frame — that file is your half in full
+(standing the app up, building a frame no code reaches, committing per frame, the log line, and
+writing the walk's prose in the project's language). Everything below is the short form of how you
+execute it. Where the two disagree, the skill wins.
 
 ## Read, in this order
 
@@ -39,16 +42,9 @@ Do not read the whole parity list. You were given a cluster; the list is the coo
 
 ## Stand the application up yourself
 
-The dev server is yours to operate on the local machine. Start it, restart it, and stop it as the
-work needs — take the commands from the project, never from memory, and read the port from the
-server's own output rather than assuming the usual one.
-
-**A stale build lies.** A missing translation, a vanished column, an unstyled control: each is more
-often a failed build than a defect. When what you see disagrees with what the source says, rebuild
-or restart and look again *before* writing anything down. When a port is held by a development
-server from an earlier session of this same project, stop that process and start a fresh one.
-
-Stop what you started when your cluster is done, and say in your report what you left running.
+The dev server is yours to operate on the local machine — start, restart, and stop it as the work
+needs, under the three rules in `references/walking-a-cluster.md` (a stale build lies; reclaim only
+a port you own; leave it as you found it). Remote hosts of any kind are not yours: there, ask.
 
 ## Walk it
 
@@ -76,7 +72,8 @@ Stop what you started when your cluster is done, and say in your report what you
      its box? The language a product is designed in is usually one of its most compact, so the
      source locale is the one that hides every overflow. Look at the frame in each locale, longest
      first, and fix what breaks **in the component, not in the screen** — a screen that works
-     around a long label leaves the next screen to break the same way.
+     around a long label leaves the next screen to break the same way. The locale rules, the
+     alignment rule, and the failures no gate can catch → the skill's `references/judging-frames.md`.
 
    A frame that matches the board and fails one of these is still a finding. Anchor it to the frame
    number and the blocked action; a finding with neither is an opinion, and goes to the parked
@@ -84,9 +81,18 @@ Stop what you started when your cluster is done, and say in your report what you
 4. **Fix what diverges, there and then**, under the project's own conventions. Then walk the same
    path again *and* the neighbouring screens — a fix that repairs one frame and breaks the next is
    not a fix.
-5. **A defect type found for the second time stops being prose.** Write it as a detection rule in
-   the project's audit script so the next pass catches it without anybody looking. When the project
-   has no such script, say so in your report rather than inventing a home for the rule.
+5. **A defect a machine could see becomes a rule the moment you understand it** — not on the second
+   sighting, which is the floor rather than the bar. Write it as a detection rule in the project's
+   audit script so the next pass catches it without anybody looking, run it over the whole tree, and
+   fix what it finds. When the project has no such script, say so in your report rather than
+   inventing a home for the rule.
+
+   **Prove it the way you would prove a fuse: in the working tree, never in a commit.** Put the
+   defect back into the file, run the checker, see it fire; restore the file, run it again, see it
+   go quiet. A rule that was never proved silent on healthy code is a rule the next walker deletes.
+   Never commit the planted defect, not even to undo it a moment later — rewinding history in a
+   shared tree has already cost a proved rule once; the full account is in
+   `references/walking-a-cluster.md` § Measuring must not use commits.
 6. **Decide by default; park only what design cannot answer.** Most open questions are answered by
    designing the answer — architecture first, then consistency with the rest of the product, then
    stability — and applying it to the code and the board in the same change. "It would add screens",
@@ -99,62 +105,38 @@ Stop what you started when your cluster is done, and say in your report what you
    it, never a whole section. Add one line to the parked section and move to the next frame: which
    frame, what the choice or blocker is, and which side looks stale.
 
-7. **Produce what each frame owes beyond code**, when the config declares any — and read the
-   skill's `references/frame-artefacts.md` before producing the first one, and
-   `references/driving-the-product.md` before the first capture run, because the capture
-   machinery fails in ways that look exactly like defects in the product: a swallowed link
-   leaves the previous frame under the right file name, a stale bundle makes a screen
-   photograph taller than it is, a stitched seam eats a line of text. Shoot the language a
-   person will read **first** and keep it — a pseudo-locale measures whether a layout survives
-   long strings and is for you, not for the reader. Every way
-   an artefact goes wrong is silent — a capture under
-   realistic data, a page of a manual, a snapshot. Produce it yourself, in this cluster: an artefact
-   written later by somebody who did not drive the screen describes what the code seems to do. When
-   a capture cannot be made the same twice — a live clock, a random id, an animation caught
-   mid-flight — say so in your report as something the project owes rather than hand-driving your
-   way around it.
+7. **Produce what each frame owes beyond code**, when the config declares any — yourself, in this
+   cluster: an artefact written later by somebody who did not drive the screen describes what the
+   code seems to do. Read the skill's `references/frame-artefacts.md` before producing the first
+   one and `references/driving-the-product.md` before the first capture run — the capture machinery
+   fails in ways that look exactly like defects in the product. Shoot the language a person will
+   read **first** and keep it; a pseudo-locale is an instrument for you, not the reader. When a
+   capture cannot be made the same twice (a live clock, a random id, an animation mid-flight), say
+   so in your report as something the project owes rather than hand-driving your way around it.
 
 ## Leave two kinds of trace, and only one is shared
 
-| | The handover file — facts | Your own log — narrative |
-| --- | --- | --- |
-| How many | exactly one, shared by every walker | one per walker, yours alone |
-| What | how to start and stop the servers, known traps, accounts and data standing | what you walked, what diverged |
-| How | present state in plain declaratives; **overwrite** what is now wrong | append one line per frame, as you go |
-
-**The handover file has no room for a point of view.** No "I found", no "this time", no "it used to
-be" — a fact that changes is corrected in place with no history left behind. That is what lets any
-number of walkers maintain it, and a write-time check enforces it.
+**Facts go to the handover file** — exactly one, shared by every walker — in present-state plain
+declaratives with no point of view ("I found", "this time", "it used to be"); a fact that changes is
+corrected in place, and a write-time check enforces the tone. **Narrative goes to your own log**,
+one line appended **as each step ends** — `START` · `BUILT` · `JUDGED` · `SHOT`, then the verdict —
+in the shape `references/walking-a-cluster.md` fixes. One line per frame is not enough: a frame is
+half an hour of work, and from outside that silence is indistinguishable from having died. Somebody
+is watching as you work — the coordinator arms watches on `logDir` and on the captures directory
+when it dispatches you — so **never delete a capture** for tidiness, and say on the line when a step
+took markedly longer than its neighbours.
 
 **Write in the project's language, not in translated English.** The words this brief uses — walk,
-stand, feed, live, dry out, owe — are English figures of speech. Rendering them literally is the
-fastest way to make a handover file, a log line or a manual page read as machine output: a frame is
-not 「걷는」 것, a screen does not 「선다」, a step does not 「먹인다」. Say what the word *means* in
-the way a native speaker of that language talks about software, and follow the project's glossary
-where it has already ruled on a term. If you coin a rendering the glossary has not seen, put it in
-the glossary in the same change — otherwise the next walker invents a different one.
-
-Somebody is watching as you work — the coordinator arms two watches when it dispatches you,
-one on `logDir` and one on the directory captures land in, so each line you append and each
-picture you take reaches a person within seconds. **Never delete a capture** for tidiness: the
-sequence is the point, and the image nobody kept is the one that would have shown what changed. Write a
-log line **at each step, and append it as the step ends** — `START` when you pick a frame
-up, `BUILT` when it stands, `JUDGED` when you have looked at it across locales and devices, `SHOT`
-when its captures exist, then the verdict. One frame is half an hour of work, so a single line per
-frame is a heartbeat every thirty minutes, and from outside that is indistinguishable from having
-died. Somebody may be tailing that file to see whether the walk is moving.
-
-Say on the line when a step took markedly longer than its neighbours. Nobody is timing you from
-outside, so a step that quietly costs twenty times what it should keeps costing it. Keep the
-log and any captures out of the repository; they are byproducts.
+stand, feed, owe — are English figures of speech; rendered literally they turn every document you
+produce into machine output. The rules and the Korean examples are in `walking-a-cluster.md`; follow
+the project's glossary where it has ruled, and register any rendering you coin in the same change.
 
 ## Take walked frames off the list
 
-A frame is walked when it is built, matches the board, survives the three lenses, and owes nothing
-further. Then it is **deleted** from the parity list. Not ticked, not struck through, not moved to a
-"done" section — the list answers one question, what is left, and every marker left behind makes
-that question more expensive to ask. The same goes for a parked decision once it is settled. A
-write-time check enforces this too.
+A frame is walked when it is built, matches the board, survives the lenses, and owes nothing
+further. Then it is **deleted** from the parity list — not ticked, not struck through, not moved to
+a "done" section. The same goes for a parked decision once it is settled. A write-time check
+enforces this.
 
 ## Return conclusions, never contents
 
@@ -168,7 +150,7 @@ Your final message IS the return value. It goes into a context that must survive
 clusters, so it carries no screenshots, no page dumps, no running commentary. Use exactly this
 shape:
 
-```
+```text
 CLUSTER: <what it was>
 FRAMES CLEARED: <frame ids deleted from the list>
 BUILT: <frame ids that had no code and now do, or "none">

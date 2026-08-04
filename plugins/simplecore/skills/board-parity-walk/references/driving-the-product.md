@@ -116,10 +116,55 @@ Every item here has been read as a design defect at least once.
 
 Two different jobs, and conflating them costs either context or trust.
 
-**The working record.** Every judging capture goes to an ignored directory whose
-file names begin with a timestamp, and **the walk never deletes them.** Sorting
-the directory is the history; keeping the before is what makes an after legible.
-The person who owns the repository clears it when they are done.
+**The working record.** Every judging capture goes to the ignored directory the
+config names (`capturesDir`), under one name:
+
+```text
+<language>/<YYYYMMDD-HHMM>-<frame-id>[-<variant>].png
+```
+
+**The language is the only folder.** Judging a frame is looking at it in each
+language side by side, and a pile divided by width, by frame or by run scatters
+the three pictures that have to be compared into three places. Everything else
+that tells two pictures of one frame apart — the width, the state it was driven
+into — is a variant on the end of the name, because none of it changes where the
+picture is looked for. Keep the variant to lower case, digits and hyphens.
+
+**The moment is in the name, and the walk never deletes anything.** A frame shot
+again otherwise lands on top of the picture it is being compared with, and then
+nothing on disk says which picture is of when. Sorting the directory is the
+history; keeping the before is what makes an after legible. The person who owns
+the repository clears it when they are done.
+
+**The directory holds frame captures and nothing else.** A picture of something
+the board does not draw — a palette, an index page, a harness screen — has no
+frame to be judged against and no place in the record; it belongs in the
+session's scratch space. Whatever produces the kept figures of a manual is a
+separate scheme with separate names, and the two must not be mixed.
+
+Both the directory name and the languages come from the project; the shape does
+not. **Put the name in one function that every capture site calls, and a check
+over the directory** — a rule passed along in prose is got wrong differently by
+each agent that receives it. Told the rule and left to build the name themselves,
+two of them produced a whole `new Date()` inside a file name, and a `w${width}`
+on a run that had no width, which wrote `wundefined` on nine pictures. The
+function stamps the moment and leaves an absent variant off entirely, so neither
+is expressible.
+
+**Let the checker parse with the same module the writer builds with.** Two copies
+of the pattern both go green while the pile goes wrong, and the test that matters
+is the round trip: every name the writer can produce is one the checker accepts.
+Six silent ways to get it wrong otherwise — a folder that is not a language, a
+folder inside a folder, no moment, no frame id, an id the board does not draw, a
+folder left empty by a rename — each ends with a picture nobody can place, or a
+place with no picture, months after the walker who took it has gone.
+
+**A checker's fixtures never live inside what it guards.** Give the check a
+directory argument and build the deliberately-wrong names somewhere else — the
+session's scratch space. Fixtures written into the real pile survive the run that
+made them, and from then on nobody can tell a fixture left by a dead agent from a
+capture of a screen: both are files, both look shot. It also puts fake pictures
+in front of whoever is watching the walk.
 
 **The pictures a person judges.** The coordinator forwards each new capture to
 the user **as it appears**, without opening it. The path is all that passes
@@ -139,11 +184,19 @@ Pair each send with one line naming the frame and what to look at. "Here is
 H-13" is a file; "here is where the person tells the model no — check both
 answers carry the same weight" is a review.
 
-## One machine, one driver
+## One machine, one driver — and the machine decides which
 
-A device, a simulator, a browser profile: **the coordinator holds the queue and
-hands it to one walker at a time.** Two walkers driving one device produce
-captures of the wrong screen that look entirely correct. Checking whether a
-process is running is not a substitute — two runs can both be between frames at
-the same instant. `references/harness.md` carries the detail and the two failure
-modes that follow.
+A device, a simulator, a browser profile: two walkers driving one produce
+**captures of the wrong screen that look entirely correct.** So one at a time is
+real. But **do not make the coordinator the queue** — that was tried and it stalls
+walkers on permissions they already hold, because every run becomes a message that
+can cross or drop.
+
+**Take a lock in the capture script itself.** Atomically on start, released on exit
+and on signal, cleared when the holder's process is gone so a killed run cannot
+deadlock the next one, and refusing loudly with who holds it and what they are
+shooting. Nobody asks, so nobody waits.
+
+Checking whether a process is running is not a substitute — two runs can both be
+between frames at the same instant. `references/harness.md` carries the full
+account, including how to prove the lock actually refuses.

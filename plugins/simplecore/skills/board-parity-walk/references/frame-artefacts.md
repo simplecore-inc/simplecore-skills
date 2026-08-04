@@ -117,6 +117,23 @@ What a page owes in the meantime is the **figure rather than the file**: the ima
 element at the path the capture will land on, which is the same declaration the final run
 reads. Nothing is lost except the bytes.
 
+### Re-shoot what the change reaches, and one frame either side of it
+
+After a fix, "re-shoot everything" is not thoroughness — it is **not having decided what
+the change reaches.** The set is derivable: a fix to one screen reaches that screen, a fix
+to a shared primitive reaches every frame that renders it, and a fix to the capture
+pipeline reaches every frame the broken part applied to. A bar drawn only on a tab's first
+screen cannot have mis-measured a screen that never had it.
+
+So before re-shooting, name the set and say what puts a frame in it. Then shoot that set,
+plus **one frame known to be outside it** — the regression check that proves the fix did
+not move something it had no business moving. Two frames of evidence beat a hundred
+frames of hope, and the difference is where the simulator hours go.
+
+Where the set is genuinely the whole board — a token, a font, a layout primitive every
+screen sits on — say so, and shoot it all. The rule is not "shoot less". It is that the
+scope is a judgment somebody made, rather than a question nobody asked.
+
 ### One story, kept consistent — not a pile of per-screen fixtures
 
 Sample data invented beside each screen disagrees with itself. The reader on the list

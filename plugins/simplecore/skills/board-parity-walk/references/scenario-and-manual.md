@@ -77,54 +77,12 @@ that registers people changes where the existing people came from — **fix the
 earlier step there and then.** A checker can see that a frame has a step; it
 cannot see that the steps still add up.
 
-# Progress, logs, and what a walk costs
+## Record what a cluster cost, or the number is gone
 
-## One line per step, written as it happens
-
-Each walker appends to its own log, one line per step **as the step finishes** —
-not a summary when the cluster ends, which answers the question too late.
-
-```
-21:40 A-08 START   build the site list
-21:52 A-08 BUILT   list, empty state, current-site marker
-21:58 A-08 JUDGED  both locales, phone and tablet — switcher unreachable on tablet
-22:04 A-08 SHOT    4 captures
-22:09 A-08 DONE    both books written, line deleted from the list
-```
-
-One word of status, one clause of what. No reasoning, no screen copy, no image
-paths — those belong in the report.
-
-**A frame takes something like half an hour, so one line per frame is a pulse
-every thirty minutes, and from outside a slow pulse is indistinguishable from
-none.** That is the whole reason the line is written per step rather than per
-frame.
-
-**Note a step that took far longer than its neighbours, in the line.** Nobody
-outside is timing anything, so a step that is twenty times more expensive than it
-should be stays that way indefinitely — one capture took twenty-five seconds for
-days before anyone said so.
-
-## The coordinator watches, and re-arms
-
-Arm two watches **in the same turn the walker is dispatched**: the log directory
-filtered to the step words, and the capture directory for new files. Both cost
-the coordinator almost nothing, because only paths come back.
-
-**A watch that stops is re-armed immediately.** Watches die quietly — a timeout,
-a killed process, a resumed session — and **a dead watch looks exactly like a
-live one, because both produce nothing.** It is the same trap as a check that
-stopped checking, and it fails in the same direction: silence reads as calm.
-
-So never take silence as reassurance. When events stop while a cluster is
-running, suspect the watch before the walker. Re-arm without asking after a
-handover, a timeout, or a process death.
-
-## Record what it cost, or the number is gone
-
-Duration, tokens, commits, lines, file sizes — none of it can be reconstructed
-afterwards, and all of it is asked for eventually ("how long did this take?",
-"was the rewrite worth it?"). A walk that spans weeks and several sessions is
+The log format and the watches the coordinator arms on it are in the main document; what
+that log does not carry is the price. Duration, tokens, commits, lines, file sizes — none
+of it can be reconstructed afterwards, and all of it is asked for eventually ("how long did
+this take?", "was the rewrite worth it?"). A walk that spans weeks and several sessions is
 exactly the case where nobody remembers.
 
 Append the cheap facts as you go, in a machine-readable file the walk owns:

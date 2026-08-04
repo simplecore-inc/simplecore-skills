@@ -45,6 +45,11 @@ repository.
    This file is what turns the write-time checks on. Without it the walk's rules hold only while
    somebody remembers them.
 
+   `logDir` and `capturesDir` keep their template values unless the project already has somewhere
+   for them. Both are byproducts, so **add both to the project's ignore file in this step** — a
+   walk that has to invent a location writes its logs and pictures somewhere the next session
+   cannot find, and a walk whose byproducts are tracked commits them.
+
 4. **Write the two documents** when they are missing, from
    `${CLAUDE_PLUGIN_ROOT}/skills/board-parity-walk/assets/parity-list.md` and `.../handover.md`.
    Write them in the language the project's other documents use.
