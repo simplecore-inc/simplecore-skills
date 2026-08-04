@@ -16,6 +16,12 @@
  *
  * Rules that need judgment (persona fit, precedent parity, lifecycle reachability)
  * stay in the audit checklist document — do not port them here.
+ *
+ * Scope: a project that CONSUMES simplix-react. Most rules say "reach for the framework
+ * rather than hand-rolling it" (use Flex/Stack/Grid, use the shared component, use the
+ * derived hook), so pointing this at the framework's own repository reports its
+ * implementations as violations — the package that defines Flex cannot import it. A large
+ * hit count from such a run means the wrong repository, not a broken framework.
  */
 
 import fs from "node:fs";
@@ -26,7 +32,12 @@ import path from "node:path";
 const ROOT = path.resolve(
   process.argv.find((a) => a.startsWith("--root="))?.slice("--root=".length) ?? process.cwd(),
 );
-const SRC_ROOTS = ["modules", "apps"];
+// `packages` belongs here as much as the other two: a simplix-react project is package-first, and
+// the conventions actively push shared UI out of `modules`/`apps` and into a package. Leaving it out
+// made the audit blindest exactly where the rules send code — and blind to the framework's own
+// packages when pointed at one. Codegen output is already excluded by name below, so widening the
+// roots does not drag `src/generated` in.
+const SRC_ROOTS = ["modules", "apps", "packages"];
 const EXCLUDE_DIRS = new Set(["node_modules", "dist", "generated", ".turbo", "build"]);
 
 // ---------------------------------------------------------------------------
@@ -80,6 +91,138 @@ function blockHits(content, re) {
   return hits;
 }
 
+// ---------------------------------------------------------------------------
+// JSX shape — a tag scanner for rules that must ask what an element CONTAINS
+// ---------------------------------------------------------------------------
+
+/**
+ * The whole JSX open tag beginning at `start`, up to and including its `>`.
+ *
+ * <p>A regex cannot find that `>`: attribute values carry them routinely — inside a string
+ * (`className="[&>svg]:h-4"`), inside an arrow body (`onClick={() => setOpen(true)}`), and inside a
+ * whole element passed as a prop (`trigger={<button>…</button>}`). The scan therefore tracks quote
+ * state and brace depth and accepts only a `>` that sits outside both.
+ *
+ * @param content the file source
+ * @param start   index of the `<`
+ * @returns the tag text and the index of its closing `>`
+ */
+function jsxOpenTag(content, start) {
+  let i = start + 1;
+  let depth = 0;
+  let quote = null;
+  while (i < content.length) {
+    const ch = content[i];
+    if (quote) {
+      if (ch === quote && content[i - 1] !== "\\") quote = null;
+      i++;
+      continue;
+    }
+    if (ch === '"' || ch === "'" || ch === "`") {
+      quote = ch;
+      i++;
+      continue;
+    }
+    if (ch === "{") depth++;
+    else if (ch === "}") depth--;
+    else if (depth === 0 && ch === ">") break;
+    i++;
+  }
+  return { tag: content.slice(start, i + 1), end: i };
+}
+
+/**
+ * The children of the element named `name` whose open tag ends at `openEnd`, found by matching
+ * close tags while counting same-named elements nested inside.
+ *
+ * @returns the child source, or null when no matching close tag exists in the file
+ */
+function jsxChildren(content, name, openEnd) {
+  const escaped = name.replace(/\./g, "\\.");
+  const openRe = new RegExp(`<${escaped}[\\s>/]`, "g");
+  const closeRe = new RegExp(`</${escaped}\\s*>`, "g");
+  let level = 1;
+  let cursor = openEnd + 1;
+  let guard = 0;
+  while (level > 0 && guard++ < 5000) {
+    openRe.lastIndex = cursor;
+    closeRe.lastIndex = cursor;
+    const open = openRe.exec(content);
+    const close = closeRe.exec(content);
+    if (!close) return null;
+    if (open && open.index < close.index) {
+      if (!/\/>$/.test(jsxOpenTag(content, open.index).tag)) level++;
+      cursor = open.index + 1;
+      continue;
+    }
+    level--;
+    if (level === 0) return content.slice(openEnd + 1, close.index);
+    cursor = close.index + close[0].length;
+  }
+  return null;
+}
+
+/**
+ * The attribute region of an open tag: everything before the first element embedded in a prop.
+ *
+ * <p>`<Popover trigger={<button aria-label="x" />}>` carries an `aria-label` that belongs to the
+ * trigger, not to the Popover. Asking about the Popover's own attributes means stopping at the
+ * embedded element — and only at an element: `disabled={page <= 1}` has a `<` that opens nothing,
+ * and cutting there would hide every attribute written after it.
+ */
+function tagAttrs(tag) {
+  const nested = /<[A-Za-z/]/.exec(tag.slice(1));
+  return nested ? tag.slice(0, nested.index + 1) : tag;
+}
+
+/** Component names that render a mark rather than words. */
+const MARK_COMPONENT = /(?:Icon|Mark|Glyph|Spinner|Loader|Chevron|Caret|Arrow|Grip|Cross|Symbol)$/;
+
+/**
+ * What a control's children give a screen reader to announce.
+ *
+ * @returns `"empty"` when there are no children at all, `"marks"` when every child is a bare mark
+ *          (an `<svg>` or an icon component), `"label"` when the children carry hidden label text,
+ *          and null when they carry anything else — text, a slot, a nested element with content
+ */
+function childContent(children) {
+  if (/\bsr-only\b|VisuallyHidden|ScreenReaderOnly/.test(children)) return "label";
+  const source = children.replace(/\{\/\*[\s\S]*?\*\/\}/g, "");
+  if (source.trim() === "") return "empty";
+  let marks = 0;
+  let rest = "";
+  let i = 0;
+  while (i < source.length) {
+    if (source[i] !== "<") {
+      rest += source[i];
+      i++;
+      continue;
+    }
+    const name = /^<\s*([A-Za-z][\w.]*)/.exec(source.slice(i, i + 60))?.[1];
+    if (!name) {
+      rest += source[i];
+      i++;
+      continue;
+    }
+    const { tag, end } = jsxOpenTag(source, i);
+    const isMark = name === "svg" || MARK_COMPONENT.test(name);
+    if (/\/>$/.test(tag)) {
+      if (isMark) marks++;
+      else rest += "x";
+      i = end + 1;
+      continue;
+    }
+    const inner = jsxChildren(source, name, end);
+    if (inner === null) return null;
+    if (isMark) marks++;
+    else rest += "x";
+    const closeTag = source.indexOf(">", end + 1 + inner.length);
+    i = closeTag < 0 ? source.length : closeTag + 1;
+  }
+  if (rest.trim() !== "") return null;
+  return marks > 0 ? "marks" : "empty";
+}
+
 /**
  * The card slots of a `CrudList.Table` — everything a reader sees when the table falls back to
  * cards, which is the whole row for them.
@@ -118,6 +261,8 @@ function columnBlocks(content) {
 // ---------------------------------------------------------------------------
 
 const inModules = (p) => p.startsWith("modules/");
+const inApps = (p) => p.startsWith("apps/");
+const inPackages = (p) => p.startsWith("packages/");
 const inPages = (p) => /\/src\/pages\//.test(p);
 const isListWidget = (p) => /\/widgets\/.*list.*\.tsx$|\/widgets\/[^/]+\/list\.tsx$/.test(p);
 const isTsx = (p) => p.endsWith(".tsx");
@@ -355,6 +500,57 @@ function guardedAtRoot(file) {
   return /beforeLoad\s*:/.test(fs.readFileSync(root, "utf8"));
 }
 
+/**
+ * A waiting button that keeps its mark.
+ *
+ * `Button` composes the spinner AHEAD of its children and swaps them out only when `loadingText`
+ * is supplied. A button that leads with an icon therefore draws two circles side by side the
+ * moment it is pressed, and the pair is wider than the icon was — so a segmented row-action group
+ * grows under the pointer at the instant of the click, moving its neighbours out from under it.
+ * Handing the label to `loadingText` gives the spinner the mark's own seat and the width holds.
+ *
+ * An icon-size button is exempt: the framework drops the children there, so the spinner already
+ * stands alone.
+ *
+ * @param content the widget source
+ * @returns one hit per `<Button loading …>` that leads with a mark and names no `loadingText`
+ */
+function spinnerBesideMark(content) {
+  const hits = [];
+  for (const m of content.matchAll(/<Button\b/g)) {
+    // Attribute values carry their own braces and ">" (`onClick={() => …}`), so the open tag ends
+    // at the first ">" seen at brace depth zero rather than at the first ">".
+    let depth = 0;
+    let end = -1;
+    for (let i = m.index; i < content.length; i++) {
+      const ch = content[i];
+      if (ch === "{") depth++;
+      else if (ch === "}") depth--;
+      else if (ch === ">" && depth === 0) { end = i; break; }
+    }
+    if (end < 0 || content[end - 1] === "/") continue;
+    const open = content.slice(m.index, end + 1);
+    // `loadingText` also begins with "loading", so the flag is matched up to its delimiter.
+    if (!/\bloading[=\s>]/.test(open) || /\bloadingText\b/.test(open)) continue;
+    if (/size=\{?\s*["']icon/.test(open)) continue;
+    const close = content.indexOf("</Button>", end);
+    if (close < 0) continue;
+    const children = content.slice(end + 1, close);
+    const lead = children.match(/^\s*<([A-Za-z][\w.]*)([^>]*)>?/);
+    if (!lead) continue;
+    // A mark, not prose: an `<svg>`, a component named for one, or one sized by the icon
+    // convention. A leading `<span>` of text is what the spinner is supposed to sit beside.
+    const isMark =
+      lead[1] === "svg" || /Icon\b/.test(lead[1]) || /className="[^"]*\bsize-/.test(lead[2] ?? "");
+    if (!isMark) continue;
+    hits.push({
+      line: lineOfIndex(content, m.index),
+      excerpt: open.replace(/\s+/g, " ").slice(0, 140),
+    });
+  }
+  return hits;
+}
+
 const RULES = [
   {
     id: "unguarded-route",
@@ -400,6 +596,31 @@ const RULES = [
         const names = [...line.matchAll(/(?:enumName=|enumLabel\()\s*"([A-Z]\w+)"/g)].map((m) => m[1]);
         return names.some((n) => !known.has(n));
       }),
+  },
+  {
+    id: "translator-options-arg",
+    invariant: "#44 / audit: scaffold locale",
+    level: "error",
+    desc: "t() is handed translator OPTIONS where it takes interpolation VALUES — the framework translator's second argument is `Record<string, string|number>` and has no options, so `{ defaultValue: x }` matches no placeholder, is dropped, and a missing entry prints the key itself (`auditEvent.entityType.LicenseSeat` on the screen). Look the key up first (`exists(key) ? t(key) : fallback`) or route it through the project's falling-back translator helper",
+    appliesTo: (p) => (inModules(p) || inApps(p) || inPackages(p)) && isTsx(p),
+    check: (c) => {
+      // Only the option names no author would ever use as an interpolation placeholder.
+      // `count`, `name`, `context` and friends are legitimate values and stay unflagged.
+      const OPTIONS = "defaultValue|returnObjects|keySeparator|nsSeparator|fallbackLng|skipInterpolation";
+      const hits = [];
+      for (const alias of translatorBindings(c).keys()) {
+        hits.push(
+          ...blockHits(
+            c,
+            new RegExp(
+              `\\b${alias}\\(\\s*[\`'"][^\`'"]*[\`'"]\\s*,\\s*\\{[^{}]*\\b(?:${OPTIONS})\\b`,
+              "g",
+            ),
+          ),
+        );
+      }
+      return hits;
+    },
   },
   {
     id: "missing-translation-key",
@@ -495,6 +716,93 @@ const RULES = [
         (_line, lines, i) =>
           !lines.slice(Math.max(0, i - 2), i + 1).some((l) => l.includes("raw layout:")),
       ),
+  },
+  {
+    id: "unnamed-icon-button",
+    invariant: "audit: accessible name on icon-only controls",
+    level: "error",
+    desc: "Control with nothing to announce — its children are bare marks, or it has no children at all, and it carries no aria-label, aria-labelledby, title, or sr-only text. Assistive technology reads it as an unlabelled button. A tooltip does not fix this: Radix describes an open tooltip's trigger, it never names it. Add aria-label with the same word the tooltip carries",
+    appliesTo: isTsx,
+    // Structural, not textual: the shape being judged is "what does this control CONTAIN", and the
+    // markup that produces it varies far more than a pattern can enumerate — a raw <svg> instead of
+    // an icon component, a <span role="button"> instead of a <button>, a design-system component
+    // whose only cue is a tooltip, a control with no children at all. Each of those is the same
+    // defect and none of them look alike in source.
+    //
+    // Known gaps, deliberately left uncaught rather than guessed at:
+    //   · children that arrive through an expression — <Button>{icon}</Button>, <Button>{children}</Button>.
+    //     What renders is not in this file.
+    //   · a tag that spreads props ({...props}). The name may arrive from the caller, so a component
+    //     definition is not evidence of a defect at its own definition site.
+    //   · a mark component whose name ends in none of MARK_COMPONENT's words. It is read as content,
+    //     which is the safe direction — a missed defect, never a false accusation.
+    //   · an icon-only control assembled across files, where the wrapper renders <button> and the
+    //     caller passes the mark.
+    check: (c) => {
+      const hits = [];
+      for (const m of c.matchAll(/<([A-Za-z][\w.]*)[\s>]/g)) {
+        const name = m[1];
+        const { tag, end } = jsxOpenTag(c, m.index);
+        const attrs = tagAttrs(tag);
+        // A declared control — its name or its role says a screen reader will announce it as one.
+        const declared =
+          /(?:^|\.)(?:button|\w*Button|\w*Trigger|\w*Toggle|\w*Close)$/.test(name) ||
+          /\brole=(?:"button"|'button'|\{"button"\})/.test(attrs);
+        // A handler alone makes something clickable but says nothing about what it is; an empty one
+        // is as likely an overlay or a canvas as a control, so only a mark-only body counts there.
+        if (!declared && !/\bonClick=/.test(attrs)) continue;
+        if (/\baria-label[=\s]|\baria-labelledby\b|\btitle=/.test(attrs)) continue;
+        // A `label` prop is a name only where something can turn it into one. On a host element it
+        // is inert markup; on a component it is the ordinary way this design system passes the word
+        // an icon-only control announces.
+        if (/^[A-Z]/.test(name) && /\blabel=/.test(attrs)) continue;
+        const children = /\/>$/.test(tag) ? "" : jsxChildren(c, name, end);
+        if (children === null) continue;
+        const content = childContent(children);
+        // Nothing at all inside is evidence only for a host element, and only when nothing arrives
+        // from outside either. `<FieldClearButton label={…} />` is empty here and full on screen —
+        // a component renders its own children — and a forwarder writes `<button {...props} />`
+        // where both the name and the children come from its caller. A body of bare marks is
+        // evidence regardless: no spread turns a mark into a word, and the spreads that reach a
+        // control this way (drag listeners, Radix slot props) carry description, never a name.
+        const bare =
+          content === "empty" && declared && /^[a-z]/.test(name) && !/\{\.\.\./.test(attrs);
+        if (content !== "marks" && !bare) continue;
+        hits.push({
+          line: lineOfIndex(c, m.index),
+          excerpt: `<${name}> ${attrs.replace(/\s+/g, " ").slice(0, 100)}`,
+        });
+      }
+      return hits;
+    },
+  },
+  {
+    id: "jsx-child-line-comment",
+    invariant: "audit: comments in JSX children render as text",
+    level: "error",
+    desc: "A `//` line comment sitting between an opening JSX tag and its children is not a comment — JSX treats it as a text child, so the comment paints on screen and becomes part of the element's accessible content. Move it above the opening tag, or write it as {/* ... */}",
+    appliesTo: isTsx,
+    check: (c) => {
+      const lines = c.split("\n");
+      const hits = [];
+      for (let i = 0; i < lines.length; i++) {
+        if (!/^\s*\/\//.test(lines[i])) continue;
+        // The nearest real code above: an opening JSX tag ends with `>` but is
+        // neither self-closing nor an arrow head.
+        let prev = i - 1;
+        while (prev >= 0 && (lines[prev].trim() === "" || /^\s*\/\//.test(lines[prev]))) prev--;
+        if (prev < 0) continue;
+        const before = lines[prev].trimEnd();
+        if (!/>$/.test(before) || /\/>$/.test(before) || /=>$/.test(before)) continue;
+        // And the nearest real code below opens or closes a tag, so the comment
+        // is genuinely in child position rather than trailing a call argument.
+        let next = i + 1;
+        while (next < lines.length && (lines[next].trim() === "" || /^\s*\/\//.test(lines[next]))) next++;
+        if (next >= lines.length || !/^\s*</.test(lines[next])) continue;
+        hits.push({ line: i + 1, excerpt: lines[i].trim().slice(0, 140) });
+      }
+      return hits;
+    },
   },
   {
     id: "filterbar-maxbadges",
@@ -782,6 +1090,19 @@ const RULES = [
     // file that owns one is exempt; what this catches is the button standing alone.
     check: (c) =>
       /\buseCan\("create"/.test(c) ? [] : lineHits(c, /onClick=\{show(New|Create)\}/),
+  },
+  {
+    id: "inline-permission-group",
+    invariant: "#52",
+    level: "error",
+    desc: "useCan names its permission group as a string literal instead of reading it from the module's SUBJECTS map — the screen's gate and the server's rule then move separately, and a group renamed on the backend leaves this affordance gated on a name nothing grants any more",
+    appliesTo: isTsx,
+    // Only a module's own screens have a SUBJECTS map to read from; an app-level surface
+    // outside `modules/` has no registry and is left to the reviewer.
+    check: (c, file) =>
+      /(^|\/)modules\//.test(file)
+        ? lineHits(c, /\buseCan\(\s*"[a-z]+"\s*,\s*"[A-Z][A-Z_]*"\s*\)/)
+        : [],
   },
   {
     id: "unsubscribed-access-policy-read",
@@ -1122,6 +1443,14 @@ const RULES = [
     // the header attribute rather than to the first ">", stopping at the next column's opening
     // tag so one nameless column cannot be blamed on its neighbour.
     check: (c) => lineHits(c, /<CrudList\.Column(?:(?!<CrudList\.Column)[\s\S]){0,300}?\sheader=""/),
+  },
+  {
+    id: "spinner-beside-mark",
+    invariant: "#9 / audit: framework components",
+    level: "error",
+    desc: "Waiting button leads with an icon and names no loadingText — Button composes the spinner ahead of its children, so pressing it draws a spinner and the icon side by side and widens the button mid-click, shifting a segmented row-action group out from under the pointer. Pass the label as loadingText so the spinner takes the icon's seat",
+    appliesTo: isTsx,
+    check: spinnerBesideMark,
   },
 ];
 

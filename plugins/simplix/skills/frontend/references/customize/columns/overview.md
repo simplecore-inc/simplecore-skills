@@ -574,7 +574,3 @@ See [i18n Reference](i18n.md) for complete i18n guide.
 1. Cell render recipes (Badge, Icon, FK, enum, date, boolean) → `cell-components.md`
 2. Drag-drop reordering with `adaptOrvalOrder` → `drag-drop.md`
 3. Column i18n integration → `i18n.md`
-
-## Learnings from Trial and Error
-
-(All prior entries promoted. Keep this section as staging area for new discoveries.)

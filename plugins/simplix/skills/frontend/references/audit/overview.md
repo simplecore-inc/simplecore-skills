@@ -43,7 +43,3 @@ Tracks and enforces UI / code commonization across the project. Ensures that sha
 See [registry.md](registry.md) — the index of all commonized components; full contracts live in the `registry/` detail files it points to. Scan the index first, then Read only the matching detail file.
 
 See [audit-checklist.md](audit-checklist.md) for automated audit patterns.
-
-## Learnings from Trial and Error
-
-Staging area for new commonization discoveries. Record the **reusable rule** — what pattern to commonize and why — not a dated migration log. Promote stable patterns into `registry.md` as generic entries.

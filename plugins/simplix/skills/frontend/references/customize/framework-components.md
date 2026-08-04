@@ -32,6 +32,37 @@ Complete catalog of `@simplix-react/ui` components, hooks, and utilities availab
 | `padded` | `pt-4 pb-8` | Content area spacing above footer |
 | `wrap` | `flex-wrap` | Allow items to wrap to next line |
 
+### Overflow and scroll geometry (invariant #58)
+
+CSS computes an `overflow-x` of `auto`/`scroll` paired with an `overflow-y` of `visible` as
+`auto` on **both** axes. A wrapper that only ever wanted sideways scrolling — a preset row, a
+tab strip, a toolbar too wide for a narrow panel — therefore paints a vertical scrollbar the
+moment anything inside it overflows the block direction by one pixel.
+
+The element reporting the overflow is often not the one the reader points at, so locate it
+before touching anything:
+
+```js
+[...document.querySelectorAll("*")].filter((el) => {
+  const ov = getComputedStyle(el).overflowY;
+  return (ov === "auto" || ov === "scroll") && el.scrollHeight > el.clientHeight;
+});
+```
+
+The overflow itself usually comes from a **fixed-height track whose padding leaves less room
+than the child it holds** — `outer height − borders − vertical padding ≥ child height` has to
+hold, and a bordered `h-<n>` track with symmetric padding often misses it by a pixel or two.
+`items-center` splits the leftover above and below, so the layout looks right at every width
+and only the bottom half scrolls; it also means shrinking the vertical padding to make the
+arithmetic legal re-renders identically, since the centring was already placing the child
+where the too-large padding claimed to.
+
+Prove it with numbers — `clientHeight` / `scrollHeight`, the track's outer height, the child's
+offset and height, before and after — never by eye. Never reach for `scrollbar-width: none`,
+`::-webkit-scrollbar { display: none }`, or an `overflow-y: hidden` patch: the content still
+overflows and is now clipped with no way to reach it. For a framework component, the geometry
+is wrong in the framework, not in the consumer that merely made the symptom visible.
+
 ---
 
 ## Base UI Components

@@ -59,34 +59,38 @@ yo simplix:generate CmsContentLink --force
 yo simplix:promote CmsContentLink --force
 ```
 
-Expected output:
-```
-ℹ Promoting CmsContentLink...
-ℹ Service:
-  From: .../generated/main/.../service/CmsContentLinkService.java
-  To:   .../src/main/.../service/CmsContentLinkService.java
-  ✔ Promoted successfully
+It reports one `From` / `To` pair per artefact — service, controller, DTOs, service test — and a
+count. Four promoted files is the normal shape for an entity with no optional parts.
 
-ℹ Controller:
-  From: .../generated/main/.../controller/CmsContentLinkRestController.java
-  To:   .../src/main/.../controller/CmsContentLinkRestController.java
-  ✔ Promoted successfully
+## Before generating: the collision check (MANDATORY)
 
-ℹ DTOs:
-  From: .../generated/main/.../dto/CmsContentLinkDTOs.java
-  To:   .../src/main/.../dto/CmsContentLinkDTOs.java
-  ✔ Promoted successfully
+**`yo simplix:promote` OVERWRITES `src/` files silently.** Before generating an entity `X`,
+verify no hand-authored `X{Service,RestController,DTOs}` already exists in the target
+`modulePath` package. `yo simplix:generate X` + `promote` will clobber a same-named
+hand-written `XService` — a lifecycle or action service, say — with a generated CRUD one and
+delete its logic.
 
-ℹ Service Test:
-  From: .../generated/test/.../service/CmsContentLinkServiceTest.java
-  To:   .../src/test/.../service/CmsContentLinkServiceTest.java
-  ✔ Promoted successfully
+On a clash, either **rename the hand-authored class to a role-specific name**
+(`XLifecycleService`, `XQueryService`) before generating, or **do not generate `X`** at all
+because it is managed through its parent aggregate (see the child-entity patterns). After
+every `promote`, re-compile and confirm no pre-existing service was overwritten.
 
-ℹ Summary:
-  ✔ Promoted: 4 files
+## Trimming a generated controller is manual, and verified after each cut
 
-✔ Promotion complete!
-```
+Never bulk-delete endpoint methods with a fragile script: a mis-parse silently eats the
+constructor or leaves a dangling body. Remove one endpoint method at a time — Javadoc,
+annotations and body as a unit — and compile after each.
+
+For an append-only audit or history entity, trim the writes down to a read surface (keep `get`
++ `search`). Re-apply `@RequiresFeature` and a real `@Tag` description after any
+re-generation; regeneration wipes both.
+
+## After generating: the promoted service test goes stale with the service
+
+The promoted `*ServiceTest` references the generated CRUD DTOs and methods. If the service is
+converted to non-CRUD, or generated DTOs are deleted, **delete or rewrite that test in the same
+step** — a stale generated test fails for a reason that has nothing to do with the change
+being made.
 
 ## Post-Promote Verification
 

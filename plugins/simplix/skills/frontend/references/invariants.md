@@ -1,0 +1,369 @@
+# Non-Negotiable Invariants — the full forms
+
+SKILL.md states every invariant's normative claim; this file carries the full mechanism,
+failure story, and code for the ones compressed there, under the **same numbers**. Read an
+invariant's full form here before arguing an exception to it, debugging a violation of it,
+or implementing the pattern it names for the first time. Paths are relative to this
+`references/` directory.
+
+## #2 Boot mutator
+
+API calls go through each domain's `src/mutator.ts`, which uses `getMutator("boot")` (the
+`simplix-boot` profile). The full Boot envelope is `{ type: string; message: string; body:
+T; timestamp: string; errorCode?: string | null; errorDetail?: ErrorDetail | null }` —
+`type` is a **free string** (the success marker is the literal `"SUCCESS"`, NOT a closed
+enum), and the DTO payload lives in `body`. The boot mutator unwraps this envelope (returns
+`.body`) so React Query `data` is the plain DTO directly; `adaptOrvalList` then reads the
+already-unwrapped `.body.content` for list hooks. Any envelope whose `type !== "SUCCESS"`
+throws `ApiResponseError`. Never bypass the mutator or hand-roll fetch — and never re-access
+`data.body` after unwrap (it resolves to `undefined`). See `scaffold/overview.md` Common
+Issues for the one-time `getMutator("boot")` fix.
+
+## #3 Query builder / params
+
+NEVER hand-assemble query strings. In the hand-authored contract path, use the framework's
+`simpleQueryBuilder` (unless custom pagination is required). In the Orval-codegen path (the
+CLI default), list/sort/pagination params are produced by the generated request params —
+`simpleQueryBuilder` is not used (see `framework/overview.md`). Either way, no ad-hoc query
+string assembly. Paged list reads send `page` and `size` TOGETHER — some searchable-params
+parsers reject a lone `{ size }`; confirm the pagination contract from the spec rather than
+assuming `size` is independently optional.
+
+## #11 SelectField async options
+
+Gate rendering on both value AND options loading state. Never render with incomplete
+options. Mechanism: a Radix-backed select whose options arrive AFTER first render does not
+refresh its closed trigger — a value with no matching option renders an empty trigger and
+stays empty even once options load. Gate the whole select on EVERY contributing query
+(`aQuery.isLoading || bQuery.isLoading ? <Loading /> : …`), and derive a fallback selection
+from the row's own data rather than an effect-populated map (effect state is empty on the
+first render).
+
+## #15 Chip filters — the sanctioned cases
+
+`ChipFilter` is for bitmask fields or visual distinction; standard enum / FK uses
+`type: "faceted"`. One more sanctioned chip case: **narrowing WITHIN a server-forced
+scope** — a list locked to `field.in: "A,B"` takes a single-select `CrudList.ChipFilter` on
+`field.equals` (the params AND together: no chip = whole scope, chip = one state inside
+it). Requires the backend `@SearchableField` to allow BOTH `EQUALS` and `IN` on that
+field — with only one allowed, the combination fails disguised as an empty result.
+
+## #18 Column order — the one domain exception
+
+A narrow domain exception to the mandatory column order is allowed only when a hidden
+category IS the entity's primary data — e.g. an audit-log entity whose
+actor/timestamp/field-change columns are the whole point of the list; surface those rather
+than hiding them. The default ordering still applies to every other entity.
+
+## #31 Standard page chrome
+
+Every routed page starts from the crud-page shape (copy an existing scaffolded page and
+strip what does not apply; never author a page from a blank file):
+
+a. Page title/description registered via `usePageHeader({ title, description })` — NEVER a
+   local `Heading` rendered as the page title.
+b. Primary create action ("add X", "new request") lives in `usePageHeader`'s `actions`
+   slot — never a local button row above the list. For tabbed pages, the header action
+   drives the active tab's create dialog through props.
+c. No ad-hoc padding on the page root (`className="p-4"` etc.) — the app layout owns page
+   padding.
+d. Panel-style list-detail pages render the `Stack flex` root directly — an extra
+   `Container` breaks the flex height chain and un-pins the detail footer.
+e. **Whatever `ListDetail.Detail` renders owns the scroll.** `ListDetail.Detail` is
+   `overflow-hidden` by design — it never scrolls its own content. Its child MUST supply
+   the scroll container, and there are exactly two ways to do that:
+   - **Read/edit surfaces → `CrudDetail` / `CrudForm`** (header slot / `overflow-auto` body
+     slot / pinned footer). This is the default for ANY panel showing entity data,
+     including operator consoles and action panels — a panel that runs actions is still a
+     detail surface.
+   - **Custom editors (canvas, bitmap, timeline)** → `Stack fill` root + `Stack flex
+     overflow="auto"` body, reproducing the same chain by hand.
+
+   A panel whose root is a bare `Stack` / `Card` / `Section` (no `fill` + `overflow`) is a
+   DEFECT even when today's data happens to fit: the content is silently clipped at the
+   panel's height with no scrollbar, so actions below the fold become unreachable. It also
+   drifts visually — hand-rolled title rows and close buttons instead of the standard
+   detail chrome.
+
+Exceptions: standalone screens outside the app layout (login), and thin wrapper pages that
+delegate to a view component which itself owns `usePageHeader`. Full detection recipes →
+`audit/audit-checklist.md` § Page Chrome Violations. A page whose header or create button
+looks different from its siblings is a defect.
+
+## #32 List screens are paged searchable
+
+Before building ANY screen that renders a list, judge whether its row count can grow
+(accumulating records, per-user histories, request queues — when in doubt, assume it
+grows). If it can: (1) the backend exposes a standardized template-based paged searchable
+endpoint (self-scoped/aggregated surfaces force scope conditions server-side on the same
+searchable params); (2) the frontend is CLI-generated then customized — `useCrudList` +
+`adaptOrvalList` with `CrudList.Table` / `CrudList.FilterBar` / `CrudList.Pagination`. A
+hand-built table over an unpaged array endpoint is NOT an acceptable list screen; a plain
+`Table` is reserved for provably bounded, small collections.
+
+## #33 A screen that shows a lifecycle must be able to drive it
+
+For every entity-scoped action the backend exposes (`@PostMapping("/{id}/<action>")` and
+friends), the UI must offer a way to reach it, and every state the UI shows must have an
+exit. Before finishing a CUSTOMIZE task, diff the module's action endpoints against the
+hooks the frontend actually calls, and check the states an entity can sit in for one with
+no affordance out of it (a submit-for-approval that only a non-existent portal calls, an
+assigned card whose only release path is a desk that lists today's rows, a settled week
+nothing can resettle). A row that is stuck is a defect even when every screen renders.
+
+## #34 A form writes what the create/update DTO accepts
+
+A DTO field the form never edits is a field the user cannot fill, and if it drives the
+entity's downstream behaviour the record is born broken (a visit whose participant list is
+unwritable can never be checked in). Compare `FormValues` against the generated
+`*CreateDTO` / `*UpdateDTO` and account for every field: edited, deliberately server-owned,
+or deliberately out of scope. Ids the user cannot know (an `attachmentFileId`, an entity
+reference) are never plain text inputs — they come from a picker or the framework file
+field.
+
+## #36 Server values are rendered, never echoed
+
+A boot-enum object (`{type,value,label}`) fed into a `SelectField` renders blank and
+submits an object (`??` never fires — the object is truthy; use
+`resolveBootEnum(x) || "DEFAULT"`). An `Instant` field rendered with the default
+`DetailDateField` / `datePart` silently drops the time an approver needs. A raw id or ISO
+stamp shown to a user is a machine value leaking through. Resolve enums, format instants
+with `format="datetime"`, and title panels with an identifying value (a name), never an id.
+
+## #38 A choice the server constrains is a choice the server must publish
+
+When the backend narrows a set of values per record (a visit type's allowed check-in
+channels, a policy's permitted actions), the read/readiness DTO for that record MUST carry
+the narrowed set, and the UI builds its options from it. Rendering the full enum and
+letting the server reject the pick is a defect: the operator has no way to know which value
+would have worked, and the rejection message is the only feedback. Same rule for a resource
+pool (cards, seats): the picker offers only what is actually assignable, and an auto-pick
+that hits an unusable candidate retries rather than failing at the first one. And a state
+that ends the flow (checked out, cancelled, closed) hides the form that drives it —
+`presence === "X" ? A : B` is a two-state assumption that silently offers a dead action for
+every third state.
+
+## #39 A list filter is the operator's index
+
+The scaffold emits a filter per searchable field, including the entity's UUID and the
+`createdAt` / `updatedAt` audit stamps. No operator searches by those. Prune them, add the
+axis the persona actually searches by (the person's name, not just the owner's), and lay
+the survivors out in 2–3 columns (`popoverColumns` + `columnBreak`) once the form scrolls.
+When the search axis is a field of an internalized child (a participant's name on a visit),
+give the SearchDTO a `@SearchableField` over a read-only association on the parent — and
+NEVER name that association the same as a DTO collection the entity's create/update path
+maps (ModelMapper will bind transient children onto it and the save fails at flush).
+
+## #40 Failure messages are a product surface
+
+A user-facing exception carries a message key (`"{error.<module>.<case>}"`), resolved at
+the HTTP layer, with every locale filled; a literal English string thrown from a service
+reaches the user's dialog verbatim. Enum labels resolve through the enum resolver
+(`LabeledEnum#getLabel` / `EnumMessageResolver`), not the application `MessageSource` — the
+`messages/enums` bundles are not on its basename list. And the dialog leads with the
+server's concrete reason; a generic per-code line is a fallback for a message-less error,
+never a companion to one.
+
+## #41 One search form everywhere
+
+Every screen-level query condition renders through the standard FilterBar: list screens via
+`useCrudList`'s `filters`, and non-CrudList surfaces (aggregation reports, dashboards,
+required-param queries) via the standalone `useFilterBarState` hook with params derived
+from `committedValues`. An inline `FormFields.*` row acting as a report's search conditions
+is a defect. The total badge is the FilterBar `count` prop (it renders the shared
+`ListTotalBadge`) — never a hand-placed badge in `leading`, which is reserved for extra
+summary content (aggregate totals, a pending-count badge). On a page with a status-card
+strip, tab bodies carry no `StatusCard`s of their own — tab aggregates live on this toolbar
+line. Detection recipes → `audit/audit-checklist.md` § 11.
+
+## #43 Badge density parity
+
+Badges on detail/form surfaces render at the SAME size as the list's. `StatusBadge` (and
+domain wrappers built on it) defaults to `size="sm"` (`text-xs`) — omit `size` and the
+three surfaces align; base `Badge` already matches. Explicit `size="xs"` only in genuinely
+denser contexts (legend, live strip, high-density status table). Never enlarge a
+detail/form badge (`size="default"`, `text-sm`/`text-base` classNames).
+
+## #44 The component's real prop contract — recurring traps
+
+`DetailTextField` has no `children` (custom-rendered detail values use
+`DetailFieldWrapper`); `Flex`/`Stack` `wrap` is a boolean (`wrap`, not `wrap="wrap"`);
+`ConfirmDialog` supports neither `children` nor `hideConfirm` (custom-content dialogs
+compose `Dialog`/`DialogContent` directly). A prop you expected but cannot find means read
+the component source — never typecast past it.
+
+## #45 Peek dialogs are host-mounted
+
+A `DetailPeekDialog` kept inside the subtree that triggered it (a list cell, a mapped row,
+a card in a refetching panel) is unmounted the moment that subtree re-renders, so it closes
+itself within seconds of opening; the surfaces that show references are exactly the ones an
+activity stream keeps invalidating. Every `*PeekLabel` dispatches through `usePeekHost()`
+from the project UI package's peek segment, and the `PeekHost` provider wraps the routed
+tree once in the app's provider stack. Labels take no `onPeek` prop and hold no open state.
+
+- **A new peek label follows the same shape**: export the dialog as its own component and
+  have the label's trigger call
+  `peek.open({ render: ({ open, onOpenChange }) => <XPeekDialog … /> })`. The host is
+  kind-agnostic, so a module's own entity needs no registration.
+- Hand-rolled peeks (`usePeekTarget` + `DetailPeekDialog` at a widget root) remain valid
+  for a one-off trigger that is not a reusable reference label — the state is already
+  outside the row. Never place one inside a cell render or a `.map()` callback.
+
+## #46 Delete is cloned, gated, and human-named
+
+Wire deletion by cloning an existing `useCrudDeleteWired` + `adaptOrvalDelete` +
+`{deleteDialog}` page, on EVERY crud-page variant (page AND panel — one-variant wiring
+makes deletability depend on screen shape). A detail's `onDelete` activates only when
+`onDeleted` exists (`onDelete={onDeleted ? del.requestDelete : undefined}` — no dead
+buttons on callback-less renders). The dialog names the record with a human-readable value
+(a resolver or a related entity's name, readable fallback), never a raw id. An irreversible
+purge (anonymization / PII erasure) is a visually distinct action (own icon/tone) with a
+type-the-name confirmation the server re-validates, and its dialog states the
+delete-vs-purge difference and scope. Server-side blocks (referential/legal) surface their
+SPECIFIC message key — what references it and how many — never a generic integrity phrase.
+
+## #47 A widened operator read never crosses the trust boundary
+
+When an operator surface needs the full gate picture (screening, identity verification,
+compliance, capacity), that widened read (e.g. a `readiness`) is NOT shared with
+data-subject-facing surfaces (portal / kiosk / public). Those call a narrow read listing
+only what the subject can act on (approval, agreements, trainings). Sharing the wide read
+leaks internal verdicts (watchlist hits, identity failures) to the subject, inverts
+`ready`-style flags into dead-end loops on conditions the subject cannot fix, and
+multiplies SPI/screening cost per candidate. The backend splits the two reads; each screen
+wires its own.
+
+## #48 Red badges mean "act now"
+
+A red notification badge (`Badge variant="destructive"`, round) counts ONLY a set the
+viewer must act on; informational counts (totals, per-status tab distribution) are muted
+`tabular-nums` spans. Nav, sidebar, and tab badges counting the same set share the same
+query figure and the same red treatment, and demote to muted at 0 (no red zero). The screen
+a badge leads to opens BY DEFAULT on exactly the set the badge counts — a badge of N
+landing on a default view showing 0 rows is a wiring defect. Tab/nav counts read
+`totalElements` from a `size: 1` list query (cache-shared with the list).
+
+## #49 Always-open master-detail boards
+
+An operator board whose detail must never close composes `ListDetail` with a constant
+`activePanel="detail"` + `listWidth` (fixed list column, detail fills the rest), and the
+detail panel component's `onClose` is optional and omitted — with no `onClose`, no close
+affordance renders. Select the first item on entry; when the selected item leaves the list
+(processed), fall back to the new first item, and when the list empties, clear the
+selection and swap to a full-width `EmptyState`. Judge selection survival by item id, never
+by index — index survival silently selects a different record on refetch.
+
+## #50 Reference cards vs workstation cards
+
+A read-only reference card on a detail panel (screening verdicts, declared items, vehicles
+— "read it if present" data) renders nothing when it has no rows; a card holding only a
+"none" line is noise. A card that carries actions (an assignment workstation) always
+renders, holding its empty-state line plus the hint that explains why its action is
+currently unavailable. Custom row-action buttons outside the framework action column match
+the row-action size (`size="xs"`) and join into ONE segmented group (`gap="none"`, `-ml-px`
+neighbor overlap, outer-corner-only rounding, `whitespace-nowrap`) — a run of individual
+`size="sm"` buttons inflates row height and wraps.
+
+## #52 Every action affordance is permission-gated
+
+A button that leads to a call the server will refuse must not render. Read the group from
+the module's `src/shared/auth/subjects.ts` (`SUBJECTS.<screenKey>`), mirroring the
+backend's `hasPermission('<group>', '<action>')`, and gate with
+`useCan("<action>", SUBJECTS.<screenKey>)` from `@simplix-react/access/react` — never a
+group literal inline, so a screen's gate and the server's rule move together. Create
+affordances: the page-header create button on BOTH header variants (page and panel — gating
+one leaves the other open), a tree's per-row `add-child`, and any create button composed
+into an action group (drop the button out of the group, not the whole `actions` entry). The
+scaffold emits the gate and the CLI creates an empty `subjects.ts` when a module has none,
+so a missing entry is a compile error on the generated page — supply the real group, never
+a plausible one. The audit script (`${CLAUDE_PLUGIN_ROOT}/scripts/audit-frontend.mjs`)
+fails on an ungated `showNew`.
+
+## #53 Detail-row enums go through `DetailBadgeField`, resolved first
+
+The component looks its tone up by the RAW `value` (`variants[value] ?? "default"`), so
+handing it the boot-enum object the DTO carries makes every lookup miss: the badge renders
+`default` however the variant map is written, while `displayValue` still shows the right
+label. The failure is silent and reads as a broken tone map. Pass
+`value={resolveBootEnum(x) ?? ""}` beside
+`displayValue={enumLabel("<EnumType>", resolveBootEnum(x) ?? "")}`; the scaffold emits the
+unresolved form (`value={displayData.<field>}`), so every generated detail needs this fixed
+at customization time.
+
+**A nullable enum row uses `DetailBadgeField` too, never a bare badge inside
+`DetailFieldWrapper`.** Module badge shells (`StatusBadge` / `EnumBadge` wrappers over
+`resolveBootEnum`) return `null` for an absent value — right in a list cell or an inline
+flex row, but inside a `DetailFieldWrapper` it leaves a silently blank row while every
+sibling `DetailFields.*` row shows the shared no-value badge. For a detail or dialog row
+whose enum can legitimately be absent (a verdict that exists only when something matched),
+render `DetailBadgeField` with `value={resolveBootEnum(x) || null}` so the empty state goes
+through the shared fallback. A row whose enum is always present may keep the
+wrapper-plus-badge shape.
+
+## #54 The scaffold emits fields that say nothing
+
+A SimpliX-backed entity carries `deleted` and `deletedTimestamp`, and the scaffold turns
+both into a list column, a `cardContent` row, and a detail field. They carry no
+information: a soft-deleted row is filtered out of the list, so the flag always reads false
+and the stamp always reads `-1`. Strip them from the column set, the `cardContent` block,
+the detail section, the form, and the filter set, then clean up the imports left unused.
+Same treatment for the entity PK and the audit quartet (`createdAt` / `createdBy` /
+`updatedAt` / `updatedBy`) — `CrudDetail`'s `auditData` slot already carries those. The
+framework has no declarative "hidden by default": `hiddenColumns` is a runtime toggle the
+operator can open, so hiding means removing from source.
+
+## #55 Contact messages are written twice
+
+Deployment-configured addresses (sales, support, an escalation path) are optional fields on
+a settings read, and the chrome that displays them hides them when they are absent. A
+single message saying "get in touch" then leaves the reader instructed to do something the
+page gives them no way to do, worst on a public surface where they have no other channel.
+Write both variants (`<key>` and `<key>NoContact`), choose between them in ONE shared hook
+that owns the read (`useContactText(withContact, withoutContact, params)`), and route every
+such message through it. A codebase that gates one message this way and not the next two
+has the defect, not the convention. The check when writing any such string: does this page
+render the address it just told them to use?
+
+## #60 A context-owning package resolves to ONE copy
+
+`createContext` at module scope makes one context object per physical copy of the
+package, and pnpm answers two importers with two copies whenever their peer sets
+differ: an app declaring `simplix-react` and a module declaring `@simplix-react/ui` is
+enough. The provider one copy renders is then invisible to the consumer that imported
+the other, and **nothing throws** — the consumer silently takes its default. A page
+served from a `modules/*` package registers its title through `usePageHeader` while the
+shell reads an empty provider, so the screen renders with no heading and no create
+button and every line of the source is correct; the same split produces "No QueryClient
+set", a toast that never appears, and a translation that stays a key.
+
+The list in the project's bundler config (`resolve.dedupe`) must name the FRAMEWORK
+packages — `@simplix-react/ui` first — not only `react` and TanStack, because a
+workspace that consumed the framework through a single local checkout could never hit
+this and the list written under those conditions does not name them.
+
+- **Run `node "${CLAUDE_PLUGIN_ROOT}/scripts/check-duplicate-contexts.mjs"` after ANY
+  change to dependency resolution** — a version bump, a new dependency, switching a
+  local-link profile to the registry, any `pnpm install` that rewrites the lockfile. It
+  reports same-version copies of directly-depended packages whose code creates a context
+  and which the dedupe list does not name; different major versions living side by side
+  are ordinary resolution and are not reported.
+- **Missing chrome has TWO causes, and WHICH pages lost it tells them apart before you
+  touch anything.** Duplication takes out every page past the package boundary — the
+  app's own pages keep their header while every `modules/*` page loses it. When only
+  SOME pages lose it with no boundary in common, the cause is in the hook rather than in
+  resolution: a cleanup that empties the store without forgetting what it installed
+  loses the second publish of React's development remount rehearsal, so only pages whose
+  title and description never change after mount render nothing. Run this audit first
+  because it is one command, then read the installed hook's source and compare against a
+  sibling project on a different framework version. Report neither from reasoning alone —
+  in the DOM, an ABSENT header element means no title ever reached the store, a PRESENT
+  but blank one means it arrived empty.
+- Findings under React Native / Expo names are real duplicates too, but Metro bundles
+  those — the Vite dedupe list does not reach them, so fix them in the RN toolchain.
+- **How the second copy arrived decides the fix.** A peer-hash split of one registry
+  version (what the script reports) is fixed in the dedupe list. A **linked local
+  checkout** answering its own peer imports beside registry copies is fixed in the
+  install — link the whole framework scope or none of it; the diagnosis by loaded
+  resources and the leftover-symlink sweep are in `framework/overview.md` § One physical
+  copy per framework package, together with the framework-side `globalThis` anchoring
+  rule that keeps a duplicate copy from becoming a correctness failure.

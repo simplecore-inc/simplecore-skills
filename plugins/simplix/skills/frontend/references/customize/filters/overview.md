@@ -629,7 +629,3 @@ t("list.totalCount", { count: list.pagination.total })
 3. AUDIT (MANDATORY after completing filter work on existing modules) → `../../audit/overview.md`
 
 ---
-
-## Learnings from Trial and Error
-
-(Keep this section as staging area for new discoveries.)

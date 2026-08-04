@@ -1,4 +1,4 @@
-> **CUSTOMIZE** category reference inside this skill. Loaded via the Task Router when the task modifies scaffolded widgets, composes `CrudList` / `CrudForm` / `CrudDetail`, or adds layout primitives, custom editors, map / tree views. Sibling files: `framework-components.md`, `recipes.md`, `consistency-checklist.md`, `learnings.md`. Specializations: `filters/` and `columns/` subdirectories.
+> **CUSTOMIZE** category reference inside this skill. Loaded via the Task Router when the task modifies scaffolded widgets, composes `CrudList` / `CrudForm` / `CrudDetail`, or adds layout primitives, custom editors, map / tree views. Sibling files: `framework-components.md`, `recipes.md`, `consistency-checklist.md`. Specializations: `filters/` and `columns/` subdirectories.
 
 # Widget Customization Guide (CUSTOMIZE overview)
 
@@ -582,7 +582,3 @@ app → pages → widgets → features → entities → shared
 - App-specific UI components MUST go into the framework, NOT the module.
 
 ---
-
-## Learnings from Trial and Error
-
-(All prior entries promoted to main body (Rule 4, Anti-Patterns table) and references. Keep this section as staging area for new discoveries.)

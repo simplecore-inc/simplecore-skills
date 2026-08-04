@@ -1,4 +1,4 @@
-> **DESIGN** category reference inside this skill. Loaded via the Task Router when the task touches framework contracts, hook derivation, the mock layer, or `simplix.config.ts`. Sibling files in this directory: `api-patterns.md`, `recipes.md`, `configuration.md`, `learnings.md`.
+> **DESIGN** category reference inside this skill. Loaded via the Task Router when the task touches framework contracts, hook derivation, the mock layer, or `simplix.config.ts`. Sibling files in this directory: `api-patterns.md`, `recipes.md`, `configuration.md`.
 
 # simplix-react framework (DESIGN overview)
 
@@ -156,6 +156,66 @@ import { createTestQueryClient, createTestWrapper, createMockClient, waitForQuer
 - **`setFieldMeta` updater**: Don't annotate the param type — let TanStack Form infer `AnyFieldMetaBase`. Writing `(meta: Record<string, unknown>)` causes TS2345.
 - **`mapServerErrorsToForm`**: Duck-types error objects, exploring `error.errorDetail` → `error.data.errorDetail` → `error.data.errors` → `JSON.parse(error.body)` in order. Works with all error classes (`ApiError`, `HttpError`, `ApiResponseError`). No `@simplix-react/contract` import needed.
 
+## One physical copy per framework package — a second copy fails silently
+
+**Symptom.** Framework UI strings (`list.totalCount`, `filter.label`, `list.rows`,
+`common.close` / `delete` / `edit`) render as the raw key on every screen, while app and
+module strings are fine. Nothing is logged and nothing throws.
+
+**Cause.** The bundle holds `@simplix-react/i18n` twice. `useTranslation` ends with
+`if (!i18n) return key;`, so a component subscribing to one copy's React context under a
+provider that filled the other copy's context silently hands the key back. The same split
+loses the catalogue registration: `registerModuleTranslations` writes into one module
+registry and `createI18nConfig` reads the other, so the `simplix/*` namespaces never enter
+the i18next store and the locale chunks sit in the build unrequested.
+
+**How the second copy arrives.** A package manager keeps one physical copy per
+peer-dependency resolution, and a **linked local checkout answers its own peer imports from
+its own workspace**. The worst shape is a partial link: one framework package pointed at a
+checkout while the rest come from the registry. A leftover
+`apps/<app>/node_modules/@simplix-react/<pkg>` symlink does exactly that and survives
+installs — a package manager does not prune a package-level link when the override that
+created it is removed. A build that shells out through another tool can also re-install
+behind you: a packaging task passing its own link-profile environment variable outranks the
+checked-in per-developer config and reverts the tree before building, so pass the profile
+explicitly on that path too.
+
+**Count what the page LOADED, never what sits in `dist/assets`.** A build that does not
+empty its output directory leaves earlier chunks beside the current ones, and those stale
+files count as duplicates nothing ever requests — a false positive that reads exactly like
+the real defect.
+
+```js
+performance.getEntriesByType("resource").map((e) => e.name).filter((n) => n.endsWith(".js"))
+// then fetch each and count those containing:
+//   "createI18nConfig: failed to load module translations"   ← the i18n entry
+// more than one = the module graph really is split
+```
+
+```bash
+# every package-level link, before blaming the bundler
+for d in apps/*/node_modules/@simplix-react modules/*/node_modules/@simplix-react; do
+  [ -d "$d" ] && for l in "$d"/*; do echo "$l -> $(readlink "$l")"; done
+done
+```
+
+**How the copy arrived decides where the fix goes.** A **linked local checkout** answering
+its own peer imports is fixed in the install — link the whole framework scope or none of
+it, and confirm with the loaded-resource count above. A **peer-hash split** of one registry
+version (two `.pnpm` entries, same version, different `_hash` suffixes) is fixed in the
+bundler's `resolve.dedupe` list, which must name the framework packages themselves — and
+`node "${CLAUDE_PLUGIN_ROOT}/scripts/check-duplicate-contexts.mjs"` detects exactly that
+case (invariant #60, full form in `invariants.md`).
+
+**The framework-side rule this implies**, for work inside the framework packages themselves:
+state a package keeps at module level — a registry, a listener set, a `createContext` — is
+anchored on `globalThis` under a versioned `Symbol.for` key, so two copies share one
+instance. Module-level state is what turns a duplicate copy from a bundle-size problem into
+a silent correctness failure. Regression-test it by loading the module twice
+(`vi.resetModules()` between two dynamic imports), registering through one copy and
+asserting the other sees it — including a React render whose provider and consumer come from
+different copies.
+
 ## Project Configuration
 
 All project settings are centralized in `simplix.config.ts` at the project root:
@@ -222,7 +282,3 @@ This is the **DESIGN** category entry point inside this skill. After defining co
 
 1. **SCAFFOLD** — `../scaffold/overview.md` — CLI scaffolding, route wiring, mock registration, API update propagation
 2. **CUSTOMIZE** — `../customize/overview.md` — post-scaffold widget customization, framework component composition, custom editors
-
-## Learnings from Trial and Error
-
-(Universal entries promoted to Code Conventions above. Project-specific entries moved to `learnings.md`. Keep this section as staging area for new discoveries.)
