@@ -81,6 +81,18 @@ that blocks the build you iterate with gets switched off. *Why:* the gap this
 closes is silent by construction, since a frame that draws nothing still renders,
 still counts, and still reads as covered.
 
+## Refuse the build when a value leaked into a frame as text
+
+A template literal does not throw on a missing argument — it coerces and prints
+it, so an omitted parameter reaches the board as the visible word `undefined`
+sitting where a title belongs. The markup around it is perfectly well formed, so
+the structural gates pass, the frame counts, and only a person scrolling past it
+notices. Scan each frame's text for `undefined`, `[object Object]`, and `NaN`,
+and refuse the build naming the frame. *Why:* the fix afterwards is two edits,
+but finding it costs a full read of a board nobody is supposed to read; and a
+component whose argument is genuinely optional should default it (`{ bar = '' }`)
+rather than leave the caller to remember.
+
 ## The LLM reads the manifest plus one screen, never the whole board
 
 *Why:* that is exactly what keeps a large board tractable. To touch a screen it

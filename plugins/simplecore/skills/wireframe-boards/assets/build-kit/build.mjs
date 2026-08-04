@@ -175,6 +175,48 @@ if (hollow.length) {
   );
   if (release) process.exit(1);
 }
+// Structure gate: one unclosed tag inside a component silently swallows everything after it —
+// a status bar lands inside a pane, a fixed height stops applying, panes nest inside each
+// other. The frame still renders, still counts, and still reads as covered, so nothing but a
+// person looking at the board catches it. That is precisely the failure a gate exists for.
+// Checked per frame so the message names the screen; void elements never close, so they are
+// skipped. This refuses every build, not just --release: a board with nested panes is not
+// something to iterate on.
+const VOID = /^(area|base|br|col|embed|hr|img|input|link|meta|param|source|track|wbr)$/i;
+const unbalanced = [];
+for (const [, aid, frameHtml] of html.matchAll(/<article class="frame[^"]*" id="([^"]+)">([\s\S]*?)<\/article>/g)) {
+  const stack = [];
+  for (const [, close, name] of frameHtml.matchAll(/<(\/?)([a-zA-Z][a-zA-Z0-9]*)\b[^>]*?>/g)) {
+    if (VOID.test(name)) continue;
+    if (!close) { stack.push(name); continue; }
+    if (stack[stack.length - 1] === name) stack.pop();
+    else {
+      unbalanced.push(`${aid}: </${name}> closes <${stack[stack.length - 1] ?? 'nothing'}>`);
+      break;
+    }
+  }
+  if (stack.length) unbalanced.push(`${aid}: ${stack.length} tag(s) left open — <${stack.join('>, <')}>`);
+}
+if (unbalanced.length) {
+  console.error(`refusing to build — unbalanced markup:\n  ${unbalanced.join('\n  ')}`);
+  process.exit(1);
+}
+
+// Empty-value gate: a missing argument does not throw in a template literal — it is coerced
+// and printed. `undefined` lands in the frame as visible text, reads as a screen label, and
+// survives every other gate here because the markup around it is perfectly well formed.
+const LEAKED = /\bundefined\b|\[object Object\]|\bNaN\b/;
+const leaked = [];
+for (const [, aid, frameHtml] of html.matchAll(/<article class="frame[^"]*" id="([^"]+)">([\s\S]*?)<\/article>/g)) {
+  const text = frameHtml.replace(/<[^>]*>/g, ' ');
+  const hit = text.match(LEAKED);
+  if (hit) leaked.push(`${aid}: "${hit[0]}" printed as screen text`);
+}
+if (leaked.length) {
+  console.error(`refusing to build — a value leaked into the board:\n  ${leaked.join('\n  ')}`);
+  process.exit(1);
+}
+
 const out = release ? 'board.html' : '_proof.html';
 writeFileSync(join(here, out), html);
 const total = manifest.reduce((n, s) => n + s.screens.length, 0);

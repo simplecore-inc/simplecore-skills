@@ -1,23 +1,17 @@
 ---
 name: wireframe-boards
 description: >-
-  Author low-fidelity PHONE, TABLET, and DESKTOP/WEB wireframes as one
-  self-contained HTML board — device frames, a CSS-only narrow ⇄ wide viewport
-  toggle, greybox content, dashed flow connectors, and annotation callouts, in
-  per-flow sections that scale to dozens of frames. Use for wireframes, screen
-  mockups, lo-fi screens, UI sketches, a screen inventory or flow board derived
-  from a design/spec document, or 와이어프레임 · 화면 목업 · 로파이 · 태블릿 화면 ·
-  웹 화면 · PC 화면 · 데스크톱 화면 · 관리자 화면 — including when the word
-  "wireframe" is absent but the deliverable is screen layouts drawn before any
-  implementation. Use it as the LIVING screen contract too: implementing a screen
-  from a board, checking an implementation against one, or syncing the board when
-  a screen/dialog/state/flow is added or changed. Propose it proactively when a
-  substantial new UI effort has no board yet. It also carries the PERSONA REVIEW
-  of a board — walking each flow as a UI/UX reviewer, as the operator whose work
-  the screens carry, and as the end user the service is for — which is offered
-  whenever a screen is drawn or changed, and which triggers on 페르소나 검토 ·
-  페르소나 리뷰 · 사용자 관점 검토 · 담당자 관점 · UI/UX 관점 · 화면 사용성 검토.
-  NOT for high-fidelity visual design or production React components.
+  Use when drawing or changing low-fidelity PHONE, TABLET, or DESKTOP/WEB
+  wireframes as one self-contained HTML board — wireframes, screen mockups, lo-fi
+  screens, UI sketches, a screen inventory or flow board derived from a design or
+  spec document, 와이어프레임 · 화면 목업 · 로파이 · 태블릿 화면 · 웹 화면 · PC 화면
+  · 데스크톱 화면 · 관리자 화면 — including when the word "wireframe" is absent but
+  the deliverable is screen layouts drawn before implementation. Also use when
+  implementing a screen from a board, checking an implementation against one,
+  syncing a board after a screen / dialog / state / flow changes, or reviewing a
+  board as its personas (페르소나 검토 · 사용자 관점 검토 · 담당자 관점 · UI/UX 관점
+  · 화면 사용성 검토). Propose it when a substantial new UI effort has no board
+  yet. NOT for high-fidelity visual design or production React components.
 ---
 
 # Wireframe Boards
