@@ -50,29 +50,71 @@ public static class EntitySearchDTO {
 }
 ```
 
-### PK Sortable Contract (MANDATORY on every SearchDTO)
+### PK Contract — sortable AND `IN` (MANDATORY on every SearchDTO)
 
-The entity-ID field of EVERY SearchDTO MUST be declared sortable:
+The entity-ID field of EVERY SearchDTO MUST be declared sortable and MUST accept `IN`:
 
 ```java
-@SearchableField(operators = {EQUALS}, sortable = true)
+@SearchableField(operators = {EQUALS, IN}, sortable = true)
 private String entityId;
 ```
 
-This is a cross-subproject contract, not a style choice: the frontend CLI scaffolds
-every list screen with `defaultSort: { field: "<entityId>", direction: "desc" }`
-(UUID v7 IDs are time-ordered, so ID-desc means newest-first), and the framework
-sends it as `sort=<entityId>.desc` on the very first page load. A SearchDTO whose
-PK lacks `sortable = true` fails that initial request with a search error
-("정렬할 수 없습니다") — the scaffolded list screen is broken before any
+Both halves are cross-subproject contracts, not style choices, and the scaffold satisfies
+neither on its own.
+
+**`sortable = true`** — the frontend CLI scaffolds every list screen with
+`defaultSort: { field: "<entityId>", direction: "desc" }` (UUID v7 IDs are time-ordered, so
+ID-desc means newest-first), and the framework sends it as `sort=<entityId>.desc` on the very
+first page load. A SearchDTO whose PK lacks `sortable = true` fails that initial request with
+a search error ("정렬할 수 없습니다") — the scaffolded list screen is broken before any
 customization happens.
 
+**`IN`** — a list filter that picks this entity resolves the labels of what is selected by
+asking its OWN search endpoint for those ids in one read (`<entityId>.in=a,b,c`). Left at
+`{EQUALS}`, the whole request is refused the moment a value is picked
+(`연산자 <entityId>.IN는 허용되지 않습니다`) and the filter is dead on every list that offers
+it — including lists in other modules, since the filter is shared. Note the asymmetry that
+hides this: the SAME id declared as a FOREIGN key on another entity's SearchDTO is routinely
+written `{EQUALS, IN}` and works, so the defect appears only where the entity is filtered on
+its own list, which is the one place the scaffold's `{EQUALS}` survives review.
+
 Checklist when authoring or reviewing a SearchDTO:
-1. PK field: `operators = {EQUALS}, sortable = true` — never omit `sortable`.
+1. PK field: `operators = {EQUALS, IN}, sortable = true` — never omit either.
 2. Every field the frontend renders as a sortable column also needs `sortable = true`.
-3. Verify with the exact request the frontend issues:
-   `GET /{entity}/search?page=0&size=10&sort=<entityId>.desc` → must be `SUCCESS`.
-   (Sort syntax is dot-separated `field.direction`; `field,direction` is rejected.)
+3. Verify with the exact requests the frontend issues:
+   - `GET /{entity}/search?page=0&size=10&sort=<entityId>.desc` → must be `SUCCESS`.
+     (Sort syntax is dot-separated `field.direction`; `field,direction` is rejected.)
+   - `GET /{entity}/search?page=0&size=1&<entityId>.in=<some id>` → must be `SUCCESS`.
+
+Sweep a whole service at once from the published OpenAPI document rather than file by file —
+every `/search` operation that declares `<x>.equals` and no `<x>.in` is a candidate, and the
+ones where `<x>` is that endpoint's own PK are defects:
+
+```bash
+curl -s http://<host>/api-docs/all-apis > /tmp/spec.json
+python3 - <<'PY'
+import json
+spec = json.load(open("/tmp/spec.json"))
+for path, item in spec["paths"].items():
+    op = item.get("get")
+    if not path.endswith("/search") or not op:
+        continue
+    names = {p["name"] for p in op.get("parameters", [])}
+    for n in sorted(names):
+        if n.endswith(".equals") and n[: -len(".equals")] + ".in" not in names:
+            print(f"{n[: -len('.equals')]:<24} {path}")
+PY
+```
+
+**A backend audit script is the place this belongs, and it does not exist yet.** The check above
+is the seed for one; whoever builds it should know why it cannot be a static scan like the
+frontend's. Two of the three facts it needs are not in the Java source: whether a given id is
+that endpoint's OWN primary key (the annotation says only that the field is searchable), and
+whether any list filter actually resolves selections against it (that lives in the frontend's
+facet definitions). The published OpenAPI document answers the first directly, so the audit has
+to run against a **started server** — a different shape from `audit-frontend.mjs`, which reads a
+checkout. A static approximation would flag every FK that omits `IN` for good reason, and an
+audit that cries wolf gets muted, which is worse than not having it.
 
 ---
 
