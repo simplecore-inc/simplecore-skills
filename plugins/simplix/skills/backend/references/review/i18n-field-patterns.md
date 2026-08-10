@@ -225,6 +225,37 @@ private String {baseFieldName};
 
 ---
 
+## Which Value a Surface Writes — the Reader Test
+
+`@I18nTrans` covers serialized DTO fields. Every OTHER place a name reaches an output — a
+service assembling an aggregation DTO by hand, an export writer, a stored record, a signed
+payload — decides for itself, and the two wrong answers fail in opposite directions. Decide by
+asking **who reads this, and when**:
+
+| The output | Which value | Why |
+| --- | --- | --- |
+| A screen, or a DTO a screen renders | **Resolved** to the request locale | It has a reader, present at the moment it is produced. Two screens showing one record under different names are read as two records. |
+| A file the user downloads (CSV/XLSX export, generated report) | **Base column** | It has no reader. It leaves the person who made it, gets shared, compared, and set beside other exports of the same list — and two exports that name one record differently cannot be read against each other. |
+| A stored record (an order line, a ledger row, an audit entry) | **Base column** | It outlives the session that wrote it. Resolved, the receipt, the invoice and the ledger row each keep whichever language happened to be asking. |
+| A signed or hashed payload | **Base column**, always | The bytes are the identity. A payload that reads differently per reader is not the same payload, and a signature over it verifies for one reader and not another. |
+
+The same axis governs timezone (display in the reader's zone, day-boundary arithmetic in the
+deployment's) — it is one rule about who a value is for, applied to two kinds of value.
+
+**Aggregation services are the trap.** A hand-built DTO looks like the list DTO beside it and
+is populated with `entity.getName()`, so the screen it feeds silently prints base values while
+every generated list beside it prints resolved ones. Resolve explicitly there, through whatever
+shared helper the project keeps for it, and **say in a comment why the export next door does
+not** — otherwise the next reader "fixes" the export to match.
+
+**And keep the base column worth searching.** A pattern operator cannot run against a Map, so a
+name search runs on the base column; if that column holds a different language than the map the
+screen renders, an operator types the words on the row and gets nothing back. Fill the base
+column from the map on save, in the service rather than in each client, using the deployment's
+configured language — and backfill the rows written before that rule existed.
+
+---
+
 ## @JsonIgnore on I18n Fields
 
 ### Purpose
