@@ -1654,4 +1654,9 @@ function main() {
   }
 }
 
-process.exit(main());
+// `process.exit` would cut a pipe mid-write: stdout to a pipe is asynchronous, so a
+// long `--json` result is delivered in pieces and the exit discards whatever is still
+// queued. The consumer then gets a prefix that ends inside a string — and the guidance
+// this tool prints tells the reader to pipe that JSON somewhere. Setting the code and
+// letting the event loop drain is the only spelling that keeps the two compatible.
+process.exitCode = main();
