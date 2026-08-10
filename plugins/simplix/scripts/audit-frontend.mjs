@@ -83,6 +83,26 @@ function lineHits(content, re, filter) {
   return hits;
 }
 
+/**
+ * A `lineHits` filter that drops lines which are only a comment.
+ *
+ * Pass it to rules whose pattern is a piece of code that documentation about that code will also
+ * contain — an anti-pattern named in a TSDoc block, a defect explained in the comment above the
+ * fix. Without it those rules fire hardest on the files that took the trouble to explain
+ * themselves, and the explanation is the thing that gets deleted to silence the audit.
+ *
+ * Not applied inside `lineHits` itself: one rule here is ABOUT comments (a `//` line between a
+ * JSX tag and its children paints on screen), and filtering globally would blind it.
+ *
+ * KNOWN LIMIT: this reads the start of the line only. A block comment that wraps onto a second
+ * line whose continuation does not begin with `*` reads as code, so a pattern mentioned there
+ * still counts as a hit. Meeting a false positive on such a line means fixing this, not the rule
+ * that used it — track the open/close of block comments across the file instead.
+ */
+function notCommentLine(line) {
+  return !/^\s*(\/\/|\*|\/\*|\{\/\*)/.test(line);
+}
+
 function blockHits(content, re) {
   const hits = [];
   for (const m of content.matchAll(re)) {
@@ -459,6 +479,53 @@ const SETTINGS = (() => {
  * fails silently — the screen falls back to printing the key. Reading the names off the codegen
  * output is what lets that be caught mechanically instead of by eye.
  */
+/**
+ * The apps whose providers raise a dialog for a mutation nobody handled.
+ *
+ * @remarks
+ * Not every app in a workspace installs one — a public storefront reports its own failures inline
+ * and mounts no such cache — and in those a screen catching its own refusal is the whole of the
+ * reporting rather than half of it. Read from the code instead of asked of the project, because
+ * the file that installs it is the fact and a setting would drift from it.
+ *
+ * @returns the directory names under `apps/` that install one, plus whether any app does
+ */
+let globalDialogCache = null;
+function appsWithGlobalErrorDialog() {
+  if (globalDialogCache) return globalDialogCache;
+  const apps = new Set();
+  const appsDir = path.join(ROOT, "apps");
+  if (fs.existsSync(appsDir)) {
+    for (const app of fs.readdirSync(appsDir)) {
+      const walk = (dir) => {
+        if (!fs.existsSync(dir)) return false;
+        for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+          const full = path.join(dir, entry.name);
+          if (entry.isDirectory()) { if (walk(full)) return true; continue; }
+          if (!/\.(t|j)sx?$/.test(entry.name)) continue;
+          if (/new MutationCache\(/.test(fs.readFileSync(full, "utf8"))) return true;
+        }
+        return false;
+      };
+      if (walk(path.join(appsDir, app, "src"))) apps.add(app);
+    }
+  }
+  globalDialogCache = { apps, any: apps.size > 0 };
+  return globalDialogCache;
+}
+
+/**
+ * @param rel the file's path relative to the project root
+ * @returns whether a mutation in this file can raise the app-level error dialog
+ */
+function underGlobalErrorDialog(rel) {
+  const { apps, any } = appsWithGlobalErrorDialog();
+  const inApp = rel.match(/^apps\/([^/]+)\//);
+  // Shared code is rendered by whichever app imports it, so it is in scope wherever any app has
+  // the dialog. A file inside one app is judged by that app alone.
+  return inApp ? apps.has(inApp[1]) : any;
+}
+
 let generatedEnumCache = null;
 function generatedEnumNames() {
   if (generatedEnumCache) return generatedEnumCache;
@@ -571,6 +638,17 @@ const RULES = [
     appliesTo: isTsx,
     check: (c) =>
       blockHits(c, /footer=\{\s*\n\s*<(?!CrudDetail)(?:Stack|Flex|div|Box)\b/g),
+  },
+  {
+    id: "wrapping-value-in-fixed-row",
+    invariant: "audit: layout",
+    level: "error",
+    desc: "DetailListRow given a trailing value that wraps — the row is a fixed-height line (h-10), so a second line of chips or badges leaves the row's box and crosses the card's border. A set that can wrap is a block: put it under the list with its own label, not in a row",
+    appliesTo: isTsx,
+    // Bounded to ONE element: a lazy span would run past this row's `/>` and pair the first
+    // DetailListRow on the screen with a `wrap` belonging to something else entirely.
+    check: (c) =>
+      blockHits(c, /<DetailListRow\b(?:(?!<DetailListRow|\/>)[^])*?trailing=\{(?:(?!<DetailListRow|\/>)[^])*?\bwrap\b(?:(?!<DetailListRow)[^])*?\/>/g),
   },
   {
     id: "scope-filter-empty-state",
@@ -1071,6 +1149,36 @@ const RULES = [
       ),
   },
   {
+    id: "mock-seed-missing",
+    invariant: "#30",
+    level: "error",
+    desc: "A mock handler names a seed export that seeds.ts does not have — codegen rewrites the handlers but PRESERVES seeds.ts, so an entity added by a later regeneration arrives with a reference to a seed nobody wrote. Nothing in the codegen run says so; the package simply stops building, and with it every app that depends on it. Add the seed by hand after regenerating a domain that gained an entity",
+    appliesTo: (p) => p.endsWith(`${path.sep}src${path.sep}mock${path.sep}index.ts`),
+    check: (c, rel) => {
+      const seedsPath = path.join(ROOT, path.dirname(rel), "seeds.ts");
+      if (!fs.existsSync(seedsPath)) return [];
+      const seeds = fs.readFileSync(seedsPath, "utf8");
+      const declared = new Set(
+        [...seeds.matchAll(/export\s+const\s+(\w+Seeds)\b/g)].map((m) => m[1]),
+      );
+      // Every name on the line, not just the first: one import statement lists several seeds,
+      // and stopping at the first hides a missing one behind a present one beside it.
+      const seen = new Set();
+      const hits = [];
+      const lines = c.split("\n");
+      for (let i = 0; i < lines.length; i++) {
+        if (!notCommentLine(lines[i])) continue;
+        for (const m of lines[i].matchAll(/\b(\w+Seeds)\b/g)) {
+          const name = m[1];
+          if (declared.has(name) || seen.has(name)) continue;
+          seen.add(name);
+          hits.push({ line: i + 1, excerpt: lines[i].trim().slice(0, 140) });
+        }
+      }
+      return hits;
+    },
+  },
+  {
     id: "silent-clipboard-copy",
     invariant: "#40 / e2e lens: persona",
     level: "review",
@@ -1078,7 +1186,9 @@ const RULES = [
     appliesTo: isSource,
     // A file that already branches on failure is exempt; what this catches is the bare await.
     check: (c) =>
-      /catch\s*(\{|\()/.test(c) ? [] : lineHits(c, /navigator\.clipboard\.writeText/),
+      /catch\s*(\{|\()/.test(c)
+        ? []
+        : lineHits(c, /navigator\.clipboard\.writeText/, notCommentLine),
   },
   {
     id: "ungated-create-button",
@@ -1262,6 +1372,48 @@ const RULES = [
       lineHits(c, /\b(presence|status)\s*===\s*"[A-Z_]+"\s*\?/, (line) => !line.includes("switch")),
   },
   {
+    id: "refusal-told-twice",
+    invariant: "#40",
+    level: "review",
+    desc: "A screen catches a mutation's refusal and renders it itself, but its hook does not carry `meta.suppressErrorDialog` — so the app's global error dialog lands on top saying the same thing. The reader dismisses a modal to reach the sentence underneath it, and where the screen's own report IS the content (a bulk run's failed rows), the modal covers exactly what they opened it for",
+    appliesTo: isTsx,
+    check: (c, rel) => {
+      // An app with no such dialog cannot tell anybody twice.
+      if (!underGlobalErrorDialog(rel)) return [];
+      // Only where the file both catches and reports: a `catch` that puts the message on screen.
+      if (!/catch\s*\([\s\S]{0,400}?\bset(?:Error|SubmitError|Failure)\b|failures\.push\(/.test(c)) return [];
+      if (/suppressErrorDialog|handledByForm|handlesConflict/.test(c)) return [];
+      // And only the hook whose result is the one being awaited. Every other zero-argument hook
+      // in the file — a navigator, a clipboard, a read — has nothing to do with this dialog, and
+      // reporting them is how an audit stops being read.
+      const awaited = new Set([...c.matchAll(/\b(\w+)\s*\.\s*mutateAsync\b/g)].map((m) => m[1]));
+      if (awaited.size === 0) return [];
+      const names = [...awaited].join("|");
+      return lineHits(c, new RegExp(`\\bconst\\s+(?:${names})\\s*=\\s*use[A-Z]\\w*\\(\\s*\\)`));
+    },
+  },
+  {
+    id: "one-message-for-several-states",
+    invariant: "#55",
+    level: "review",
+    desc: "One user-facing message serves a branch guarded on several statuses — the sentence names a cause only one of them had, so it is false for the rest (an order the buyer cancelled told 'the deadline passed and the account was withdrawn'). Split the key per cause and pick between them, or write a sentence true of every status in the guard",
+    appliesTo: isTsx,
+    check: (c) => {
+      const hits = [];
+      // A branch entered by two or more statuses whose body never mentions the status again:
+      // every one of them is then handed the same sentence. A body that does look at the status
+      // — a second comparison, a key chosen into a variable — is the fix, so it is not reported.
+      const guard = /if\s*\([^)]*\b(?:status|state|phase)\s*===\s*"[A-Z_]+"[^)]*\|\|[^)]*===\s*"[A-Z_]+"[^)]*\)\s*\{([\s\S]{0,1200}?)\n\s{0,4}\}/g;
+      for (const m of c.matchAll(guard)) {
+        const body = m[1];
+        if (!/\bt\(\s*"/.test(body)) continue;
+        if (/\b(?:status|state|phase)\b/.test(body)) continue;
+        hits.push({ line: lineOfIndex(c, m.index), excerpt: m[0].replace(/\s+/g, " ").slice(0, 140) });
+      }
+      return hits;
+    },
+  },
+  {
     id: "read-failure-reads-as-loading",
     invariant: "#33",
     level: "error",
@@ -1286,6 +1438,46 @@ const RULES = [
         line: lineOfIndex(c, m.index),
         excerpt: m[0].replace(/\s+/g, " ").slice(0, 140),
       }));
+    },
+  },
+  {
+    id: "read-failure-falls-through-loading-guard",
+    invariant: "#33",
+    level: "error",
+    desc: "A screen guards only on ONE query's `isLoading` and never branches on THAT query's failure — the read fails, `isLoading` goes false, and the screen falls straight through into its loaded layout built from undefined, stating as fact whatever absent data spells out",
+    appliesTo: isTsx,
+    check: (c) => {
+      // The single-condition guard specifically. `isLoading || !data` traps in the skeleton and
+      // is the previous rule's business; a bare `isLoading` falls THROUGH, which is worse — the
+      // screen answers confidently out of nothing instead of visibly waiting.
+      const guards = [...c.matchAll(
+        /if\s*\(\s*([A-Za-z_$][\w$]*)\.isLoading\s*\)\s*\{?\s*return\s*\(?\s*<[\s\S]{0,500}?<Skeleton\b/g,
+      )];
+      if (guards.length === 0) {
+        return [];
+      }
+      // Per query, not per file. A file-wide escape lets ONE read's failure branch vouch for
+      // every other read in the file — which is exactly how a screen came to have a careful
+      // "could not be read" line for its quota table and none for the verdict deciding whether
+      // it announced the deployment had no licence at all.
+      const aliases = (base) =>
+        [...c.matchAll(/const\s+([\w$]+)\s*=\s*adaptOrval\w+(?:<[^>]*>)?\(\s*([\w$]+)/g)]
+          .filter((m) => m[2] === base)
+          .map((m) => m[1]);
+      const handled = (name) =>
+        [name, ...aliases(name)].some((n) =>
+          new RegExp(`\\b${n}\\.(?:isError|isLoadingError|error)\\b`).test(c),
+        );
+      // A wrapper that owns the failure branch without naming the query still counts.
+      if (/QueryFallback|ErrorState/.test(c)) {
+        return [];
+      }
+      return guards
+        .filter((m) => !handled(m[1]))
+        .map((m) => ({
+          line: lineOfIndex(c, m.index),
+          excerpt: m[0].replace(/\s+/g, " ").slice(0, 140),
+        }));
     },
   },
   {
@@ -1549,7 +1741,18 @@ function koParticleFindings() {
   const reviews = [];
   // The `이(가)` hedge spells both forms and is therefore already correct for every value;
   // only a single committed particle is a finding.
-  const particle = /\}\}\s*[을를이가은는와과](?!\s*\(\s*[을를이가은는와과]\s*\))/;
+  //
+  // `로` belongs in the set for the same reason as the rest: it is `으로` after a consonant that
+  // is not ㄹ, so a sentence welding `로` to a value is wrong for most of the values it will ever
+  // hold. Its hedge is written `(으)로`, where the bracket falls BEFORE the particle and so never
+  // matches this pattern at all — no lookahead needed for it.
+  //
+  // A closing quote or bracket may sit between the value and the particle — a name is usually
+  // wrapped before it is spoken about (`「{{plan}}」은`, `"{{name}}"이`). The wrapper is silent,
+  // so the particle still has to agree with the VALUE's last syllable and the sentence is wrong
+  // for half the values exactly as before. Skipping one such character is what makes the rule
+  // see the quoted form, which is the form these sentences are actually written in.
+  const particle = /\}\}\s*[」』〉》”’"'\)\]]?\s*(?:[을를이가은는와과](?!\s*\(\s*[을를이가은는와과]\s*\))|로(?![그긴깅]))/;
   for (const abs of koCatalogues()) {
     const rel = path.relative(ROOT, abs);
     const raw = fs.readFileSync(abs, "utf8");
@@ -1709,7 +1912,7 @@ if (koParticleRev.length) {
     "ko-particle-after-placeholder",
     "review",
     "audit: locale wording",
-    "Korean particle written straight after an interpolated value — 을/를 · 이/가 · 은/는 · 와/과 depend on the value's last syllable, so the sentence is wrong for half the values; attach the particle to a fixed noun instead",
+    "Korean particle written straight after an interpolated value — 을/를 · 이/가 · 은/는 · 와/과 · (으)로 depend on the value's last syllable, so the sentence is wrong for half the values; attach the particle to a fixed noun instead, or end the clause on the value with 입니다",
     koParticleRev,
   );
   reviewCount += koParticleRev.length;
