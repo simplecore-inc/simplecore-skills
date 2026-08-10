@@ -30,6 +30,46 @@ Practical rules that save an entire session:
 
 1. **Batch.** Predictable sequences (navigate → wait → click → wait → screenshot) go in one batched call. Coordinates in a batch refer to the screenshot taken *before* the call.
 2. **Locate elements by what they are, not where they were.** Use the find/read-page calls to get a reference, then act on the reference. Coordinates and refs go stale after any navigation, HMR reload, or panel switch — re-locate rather than reusing.
+
+   **A stale reference does not announce itself as one — it arrives wearing the costume of whatever
+   you were about to test.** Fill two fields through refs read before the last navigation and the
+   second fill can land in the first field: the form now holds one 38-character string where a
+   username should be, the server answers "invalid credentials", and everything downstream reads as
+   an authentication problem. Sessions have been spent resetting passwords, restarting servers, and
+   dumping password hashes over exactly this. **Before believing any failure that a form fed, read
+   back what the form actually holds** — one call returning each input's name and value length
+   settles it, and it is cheaper than the first wrong hypothesis:
+
+   ```js
+   [...document.querySelectorAll('input')].map(e => (e.name || e.type) + ':' + (e.value || '').length)
+   ```
+
+   Two field lengths that make sense means the form is fine and the failure is real. One field
+   carrying both means you are testing your own tooling.
+
+   The same check catches a second, quieter version of it. A fill that writes straight to `value`
+   moves the DOM without moving the framework's state, so the screen shows what you typed while the
+   component still holds the old value — and a save then writes the old value back and reports
+   success. That is indistinguishable from a form that silently discards edits, and it has been
+   reported as exactly that. The tell is a **field that reads correctly and a request that does
+   not**; when the two disagree, drive the field the way a keyboard does, or set it through the
+   framework's own setter and dispatch the event it listens for:
+
+   ```js
+   const el = document.querySelector('input[name="licenseServerUrl"]');
+   Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set.call(el, 'text');
+   el.dispatchEvent(new Event('input', { bubbles: true }));
+   ```
+
+   Prove the write landed before calling anything a defect: read the value back from the server, not
+   from the screen that may only be showing your own keystrokes.
+
+   **Clearing a field is the sharpest version of this.** Writing an empty string leaves the input
+   looking empty while the component still holds the old value, so the request carries the value the
+   operator thought they had deleted — and the screen agrees with them, right up until the saved
+   record does not. A field a person emptied and a field a script emptied are different states, and
+   only one of them reaches the code that treats "empty" as "unset". Clear the way a person does:
+   focus the field, select all, press Backspace. Then check the request, not the input.
 3. **Screenshot after every state change** you intend to judge. Judge layout from the screenshot; judge structure from the accessibility tree; when the two disagree, believe the screenshot and re-check.
 4. **Watch the console AND the network while you walk** (`read_console_messages` / `read_network_requests`, filtered), so a failing request behind a spinner does not pass as "works" — and so wire-level defects surface: a query per row (N+1), duplicate fetches on mount, a mutation that triggers no refetch on the dependent surfaces (see `judgment-lenses.md` lens 3).
 5. **Never trigger a native dialog** (`alert`/`confirm`) — it freezes the automation channel. Prefer in-app dialogs; if a control is known to raise a native one, tell the user rather than clicking it.
@@ -42,6 +82,36 @@ Practical rules that save an entire session:
 1. Open the login screen and use the test-account buttons when they exist (hand-typed credentials with special characters are a known source of wasted turns). Never enter real credentials.
 2. To change persona: log out through the UI and log in as the next account. Keep a note of which account is in which tab.
 3. If a needed role has no test account, stop and propose the seed change — do not mint state through the API to work around it.
+4. **A rejected login is a claim about the request, not proof about the password.** Before touching
+   credentials, find out which of the two failed. Server logs distinguish them: a line saying the
+   username could not be extracted means the request carried no username — a form that never filled,
+   a body shaped wrong, a field the client renamed — and the stored password is irrelevant to it.
+   Only once the request is known to have carried both values does a rejection say anything about
+   the credentials themselves.
+5. **When several actors share one account, exactly one of them sets its password.** Everyone else
+   reads it. Two parties who each read a rejection as "the password changed" will each reset it, and
+   each reset invalidates the other's copy — a loop that looks from inside like a system corrupting
+   credentials on its own. Whoever holds that authority says so once, and the others report failures
+   instead of fixing them.
+
+---
+
+## Watching for a message the app raises
+
+A toast is how most apps say a request failed, and it is easy to watch for the half that never
+carries bad news. Frameworks commonly render success and info as `role="status"` and error and
+warning as `role="alert"` — a live region that is polite versus one that interrupts. **Query only
+one and the picture that forms is "successes appear, failures are silent",** which reads exactly
+like a framework that drops error toasts, and is worth an hour before anyone re-reads their own
+selector. Watch both roles, and confirm what the component actually emits before concluding that a
+message was never raised:
+
+```js
+[...document.querySelectorAll('[role=alert],[role=status]')].map(e => e.getAttribute('role') + ': ' + e.innerText)
+```
+
+The same caution applies to any "nothing happened" finding: an absence you observed through one
+selector is a claim about the selector until a second, differently-shaped check agrees.
 
 ---
 
