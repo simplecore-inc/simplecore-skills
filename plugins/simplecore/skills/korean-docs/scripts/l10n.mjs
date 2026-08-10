@@ -142,15 +142,21 @@ function requireKinds() {
  * their own `.git` has no index at the top, and `git ls-files` there returns nothing at
  * all rather than erroring. Without the fallback such a tree scans as empty and reads as
  * "no problems found", which is the most misleading result this tool can produce.
+ *
+ * `-z` is not optional. Without it git quotes any path holding a byte outside ASCII —
+ * a Korean document file name comes back as `"docs/\355\225\234.md"`, quotes and octal
+ * escapes included — and every such file is then opened at a path that does not exist.
+ * A repository that writes its documents in its own language is exactly the one this
+ * tool exists for, so that spelling has to survive the round trip intact.
  */
 function gitFiles(pattern) {
   try {
-    const out = execFileSync("git", ["ls-files", "--", pattern], {
+    const out = execFileSync("git", ["ls-files", "-z", "--", pattern], {
       cwd: ROOT,
       encoding: "utf8",
       maxBuffer: 32 * 1024 * 1024,
     });
-    const files = out.split("\n").filter(Boolean);
+    const files = out.split("\0").filter(Boolean);
     if (files.length) return files;
   } catch {
     /* not a repository — fall through */
