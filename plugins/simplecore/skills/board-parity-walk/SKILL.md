@@ -5,7 +5,7 @@ description: >-
   frame by frame, when building screens from a board no code reaches yet, when
   working through or resuming a parity / remaining-screens list, or when setting
   a project up for such a walk — 보드 대조 · 화면 대조 · 프레임 대조 ·
-  SCREEN-PARITY · 걸을 화면 · 남은 화면 대조 · 섹션을 걷는다. Requires a project
+  SCREEN-PARITY · 처리할 화면 · 남은 화면 대조 · 한 구역을 처리한다. Requires a project
   that already has a wireframe board; the application itself need not exist yet.
   NOT for authoring or syncing a board (simplecore:wireframe-boards), and NOT for
   auditing one feature area in one sitting (the project's own e2e skill).
@@ -99,9 +99,9 @@ them — copy `assets/board-parity-walk.json`, whose fields are:
 | --- | --- |
 | `parityList`, `handoverFile` | the two documents, relative to the project root; they start from `assets/parity-list.md` and `assets/handover.md`, and the list is then filled from the board, one line per frame that has a route |
 | `parkedSection` | the heading parked decisions live under, written exactly as that project's document writes it — the check refuses to let the section vanish |
-| `logDir`, `capturesDir` | one agreed, ignored location each, so a walker never invents a place and a reader never hunts for one. What the capture names look like is fixed and not the project's to choose → `references/driving-the-product.md` |
+| `logDir`, `capturesDir` | one agreed, ignored location each, so a walker never invents a place and a reader never hunts for one. What the capture names look like is fixed and not the project's to choose → `references/driving-the-product.md`. A project may add a `captures` note beside them for what *is* local — which module builds a name, which command reads names back, which languages it ships |
 | `narrativePhrases` | extends the point-of-view phrasing the handover check refuses, for a project writing in neither Korean nor English |
-| `frameDeliverables` | what each frame owes beyond working code, one checkable sentence each; empty for a project that requires nothing |
+| `frameDeliverables` | what each frame owes beyond working code, one sentence each that a walker can check against what the walk produced; empty for a project that requires nothing |
 
 ### Check the wiring every time this skill loads
 
@@ -146,12 +146,12 @@ Paths are relative to this skill's own directory.
 
 | Situation | Read |
 | --- | --- |
-| Inside one cluster — standing the app up, building a frame no code reaches, committing per frame, the log line, writing the walk's prose in the project's language | `references/walking-a-cluster.md` |
+| Inside one cluster — standing the app up, building a frame no code reaches, when to cut a commit, the log line, writing the walk's prose in the project's language | `references/walking-a-cluster.md` |
 | Judging a frame — the three lenses, locale and layout rules, the failures no gate can catch | `references/judging-frames.md` |
 | A measurement that surprises you, a check that has never fired, a rule about to be written, or more than one agent in one tree or on one machine | `references/harness.md` |
 | Opening the product to look at it — which browser driver, which simulator or emulator, how a capture route is built, and how pictures reach the person judging them | `references/driving-the-product.md` |
-| A project whose frames owe an artefact beyond code — captures, manual pages, snapshots — or deciding what `frameDeliverables` should hold | `references/frame-artefacts.md` |
-| Sample data, the story the screens live in, what shape the manual takes and which parts of that only the user may decide, and what a cluster cost | `references/scenario-and-manual.md` |
+| A project whose frames owe an artefact beyond code — captures, snapshots — or deciding what `frameDeliverables` should hold | `references/frame-artefacts.md` |
+| Sample data, the story the screens live in, and what a cluster cost | `references/scenario.md` |
 
 ## Opening a session
 
@@ -203,22 +203,53 @@ That failure is the reason this skill exists.
    report is in and verified**: a finished agent left alive keeps announcing itself,
    and a coordinator watching six of those cannot see at a glance which one is
    actually working.
-3. **One walker at a time.** A walker fixes code as it goes and drives the dev
-   server, so two of them in one working tree collide over the same files and the
-   same ports. Run clusters in sequence, or give each walker its own worktree *and*
-   its own ports.
+3. **One walker at a time, and the test is not about files.** A walker fixes code as
+   it goes and drives the dev server, so two of them collide over the same files and
+   the same ports. Clusters run **in sequence**. There is no arrangement of two.
+
+   **Ask of any two pieces of work: could these ever reach the same thing?** Anything
+   but a flat no means they are one agent's work, done one after the other. Files are
+   the smallest part of what they share — one tree, one index, one dev server, one
+   port, one device, one database, one handover file, one gate command.
+
+   **Two disjoint path lists are not a flat no.** What an agent touches is settled
+   while it works, not when it is briefed — a screen agent decides where a string
+   belongs by building the screen — so a path split is a claim about the future rather
+   than a fact anybody can check. The files that break it are the ones no brief could
+   have named, because every agent eventually arrives at them: a registry, a locale
+   catalogue, a config, a barrel, the handover file. Three agents on paths that
+   genuinely did not overlap, and one commit carried off a translation key another had
+   just added; both reported success independently. Six split the same way produced, in
+   one session, seven commits that swept somebody else's uncommitted work, two agents
+   each hunting through source for a failure that was the other one's test writing to
+   the same hardware, and a checker whose forty-minute run reported a defect that had
+   been fixed while it ran.
+
+   **Two things earn it, and both are facts rather than forecasts:**
+
+   - **The second one never writes** — it reads and plans, or its subject lies outside
+     the repository.
+   - **Every shared thing is genuinely separate**: tree, index, database, port, device.
+     Not just one. **Do not reach for a worktree** — a second checkout duplicates the
+     tree, leaves everything else shared, and then lies about the tree too: standing on
+     an older commit it shows work already in the history as though it were somebody's
+     uncommitted changes, so the next agent either preserves what does not need
+     preserving or sweeps what it cannot see the origin of. Walk on the branch the
+     project actually builds.
+
+   **A file two agents both have to write is not a licence to run them together.** It is
+   a shared document — exactly one owner at a time — and where it cannot be, the blob
+   written straight into the index (`references/harness.md`) keeps one from swallowing
+   the other's line. That is a way to survive the collision, not a way to earn it.
 
    This is the rule that gets bent for speed, and the cost is not slower work — it
    is work you cannot trust. Two walkers sharing one device produce captures of the
    wrong screen that look entirely correct; two sharing one tree fold each other's
-   uncommitted changes into their commits. Neither announces itself. When a resource
-   genuinely cannot be duplicated — one simulator, one phone, one browser profile —
-   **put the arbitration in the tool that uses it**, never in the coordinator's
-   messages.
+   uncommitted changes into their commits. Neither announces itself.
 4. **The agent returns conclusions**, in the fixed shape its definition specifies:
-   what it fixed, which defect type became a detection rule, what it parked, what it
-   left running, whether verification passed. No screen dumps, no running
-   commentary, no images.
+   what it fixed, which defect type became a detection rule, what it parked, which
+   standing sentences it re-read and found still true, what it left running, whether
+   verification passed. No screen dumps, no running commentary, no images.
 
    **The deliverable lands in a file; the report summarises it.** An agent that fixes
    code leaves its work in the tree, so a report that never arrives costs a look at
@@ -227,6 +258,14 @@ That failure is the reason this skill exists.
    before reporting, and agents end for reasons that have nothing to do with the
    work. Dispatch those with a file to write and tell them to **write as they go**, a
    section at a time, with a line at the top saying how far they got.
+
+   **So a read-only agent still needs `Write`.** Reaching for a review or auditor
+   subagent is the right instinct — it cannot edit the tree it is judging — but the
+   ones that ship with a tool list usually drop `Write` along with `Edit`, and then
+   the agent has nowhere to put its judgment except a final message that may never
+   arrive. Read-only means *it does not touch the subject*, not *it produces
+   nothing*. Check the tool list before dispatching, and give it a scratch file
+   outside the tree it is reading.
 5. **A rule nobody tried to break is a rule that says the tree is green.** When a
    check goes in, plant the defect it exists for and watch it fail, then take the
    defect out and watch it go quiet. Both halves: a rule that fires on everything is
@@ -254,21 +293,38 @@ That failure is the reason this skill exists.
    a transcript. When it commits anything of its own while agents are running, it
    stages by path like every one of them.
 
-**Two agents run side by side only when they share nothing at all**, and files are
-the smallest part of that: a development database, a port, the handover file, the
-gate command are each shared even when the two never open the same source file, and
-each fails silently in the other agent's work. So the default is **sequential**, and
-side by side has to be earned — separate worktrees, separate databases, separate
-ports, one owner per shared document. Two agents on one surface is the coordinator's
-mistake, never theirs; the guard is to name, in every brief, **which paths belong to
-this agent and that everything else is somebody's**, and to read each new brief
-against every running one for what it is asked to **produce** rather than only what
-it may touch.
+   **A screen that changed is shown, not described.** "The tab strip is in place and
+   the activity pane fills the rest" is equally true of a screen that works and one
+   that draws its rows in the wrong order, off the edge, or in the wrong language, so
+   a report that only says it looked asks the user to take the walk's word for the one
+   judgment they were meant to make themselves. Send the picture → *Three reasons to
+   photograph a screen*, below.
+
+**Anything only one user can hold at a time arbitrates itself, in the tool that uses
+it.** A simulator, a phone, a browser profile, a development database, a port, a
+capture run — each takes its own lock atomically on start, refuses loudly with who
+holds it, and clears a lock whose holder is gone. **Never make the coordinator the
+queue**: a permission that travels as a message can cross or drop, and the resulting
+stall is invisible from both ends. A shared *document* is the same rule in prose —
+exactly one owner at a time.
+
+Sequential work still needs each brief to say what it owns. **Name in every brief which
+paths belong to this agent and that everything else is somebody's**, and read each new
+brief against the last for what it is asked to **produce** rather than only what it may
+touch — two briefs with disjoint paths can still both build the same checker.
+
+**The brief carries the staging rule itself — never a pointer to it.** Say in every brief:
+stage the paths you touched by name, never `git add -A` or `-A`'s cousins, and read
+`references/harness.md` § Stage your own paths **before it is needed**. An agent that meets
+a shared file without having read that section reaches for the obvious move, and every
+obvious move there costs somebody their work. A rule that lives only in a reference is read
+after the damage, and the tell is an agent that says *nothing of mine was swallowed* — a
+report about who happened to be alone, not about what the discipline held.
 
 **A walker's session can end for reasons that have nothing to do with the work** — a
 usage limit, a dropped connection. What survives is what it committed, which is why
-committing one frame at a time (`references/walking-a-cluster.md`) is also what makes a
-walker interruptible. Three rules cover every such ending:
+committing at every point that stands on its own (`references/walking-a-cluster.md`) is
+also what makes a walker interruptible. Three rules cover every such ending:
 
 - **Read the tree rather than guessing**, and finish or discard what is half-done
   **before** dispatching the next walker into it.
@@ -276,29 +332,60 @@ walker interruptible. Three rules cover every such ending:
   exactly like a death, and a replacement dispatched over a live agent puts two on
   one job.
 - **The moment a cluster is handed to somebody else, stop the agent it was taken
-  from.** Not "note that it died" — stop it. A suspended agent is a scheduled write
-  against a tree that no longer exists.
+  from.** Not "note that it died" — stop it, with the tool that kills it, not with a
+  message asking it to stand down; a message is a request that arrives after its next
+  write. A suspended agent is a scheduled write against a tree that no longer exists.
+- **Only the agent's own "I am finished" ends its hold on the tree.** A commit, a
+  clean status, an idle notification and a report that reads like a conclusion are all
+  things an agent produces *mid-assignment* — it committed a step that stands on its own,
+  exactly as instructed, and went quiet while thinking about the next one. Dispatching
+  into that gap is the coordinator putting two agents on one tree, and it will keep
+  happening as long as a good interim report is read as an ending. **Stop the previous
+  agent before dispatching the next one, every time**, whether or not you believe it is
+  done. Stopping an agent that was genuinely finished costs nothing.
 
 A cluster that runs out of context before it ends is not handed to a second agent to
 continue; the next agent would inherit conclusions without the screens behind them.
 Restart it, split at a seam where the two halves do not need to see each other.
 
-**Everything in this section that fails silently is catalogued** — the lock a shared
-resource takes on itself, the stale index, the duplicate deliverable two briefs both
-asked for, why `git show --stat` is not attribution → `references/harness.md`.
+**Everything in this section that fails silently is catalogued** — how to prove a lock
+actually refuses, the stale index, the duplicate deliverable two briefs both asked for,
+why `git show --stat` is not attribution → `references/harness.md`.
 
 ## What a frame owes besides working code
 
-Some projects require an artefact per frame beyond the code — a capture under realistic
-data, a page of the operator's manual, a snapshot test. Where that is so, the config
+Some projects require something per frame beyond the code — a capture under realistic
+data, a snapshot test, a look taken with somebody's own eyes. Where that is so, the config
 names it in `frameDeliverables`, one checkable sentence each, and **a frame that owes
 one is not walked until it exists** — so it is not deleted from the list. That is what
-keeps the artefact from becoming a separate pass that never happens.
+keeps it from becoming a separate pass that never happens.
 
 Two rules make it affordable rather than doubling the work: **the same walker produces
 it, in the same cluster**, and **what generates it must be deterministic**. Artefacts
 have their own failure modes and every one of them is silent →
 `references/frame-artefacts.md`.
+
+### Three reasons to photograph a screen, and none of them substitutes for another
+
+Every walk takes pictures for three different purposes. They are confused constantly,
+because all three are files ending in `.png`, and each confusion drops a different rule
+on the floor.
+
+| Picture | Why it is taken | What happens to it |
+| --- | --- | --- |
+| **Looking** — the visual pass | the only gate that catches what no test can fail on: a class the styling engine dropped, a font with no glyph, a label cut at an edge | every frame, in every locale and on every device that frame owes; thrown away when the walk is over, never during it |
+| **Showing** — what a change did | prose about a screen is unfalsifiable to the person reading it | the coordinator forwards the path the moment it appears, unopened, in the language a person reads |
+| **Keeping** — figures a document holds onto | kept figures have to be true of **one** version of the product, not of eight months of it | its own naming scheme, outside `capturesDir`, in one run at the end from a finished product |
+
+- **Looking is unconditional.** Not a project's to opt out of, not deferrable, not
+  satisfied by a green gate → `references/judging-frames.md`.
+- **Showing is owed whenever a walk moves what a screen draws** — or moves the frame it
+  is drawn against. It costs the coordinator a path, which is exactly why walkers return
+  paths and never images.
+- **Keeping is nothing the walk asks for.** No frame owes a picture that outlives it. A
+  project that keeps figures for a document of its own runs that as its own scheme, on its
+  own schedule, and a walk neither waits for it nor counts a frame unwalked without it →
+  `references/frame-artefacts.md`.
 
 ## Parity is the floor, not the verdict
 
@@ -374,16 +461,12 @@ That last row is the one that hides. An unknown about somebody else's API is alm
 a reason to stop drawing a screen; parking it freezes a whole section behind a fact nobody
 is chasing.
 
-**Three things genuinely qualify**, and all share a property — no amount of design makes
+**Two things genuinely qualify**, and both share a property — no amount of design makes
 the answer derivable:
 
 - **A commercial or legal decision that is somebody's to make.** A price, a contractual
   term, a retention period a regulator sets. Design everything around it so the value is
   the only thing missing.
-- **A decision about who the product's documents are for.** Audience, which languages get
-  written material, whether a page is a screen or a step, when the shipped figures are
-  taken. These commit somebody to writing, and getting one wrong is not corrected by
-  editing pages. Ask them together and early → `references/scenario-and-manual.md`.
 - **A blocker in the world.** An environment that cannot reach a service, hardware nobody
   has yet. Build and judge everything that does not depend on it, and park only the part
   that does.
@@ -477,6 +560,12 @@ working one, because both produce nothing. So treat silence as suspect rather th
 reassurance: when events stop arriving while a cluster is still running, assume the watch
 died before assuming the walker did, check, and put it back.
 
+**A watch that was never alive is the harder one**, because "events stopped arriving" never
+happens — there was no first event to stop. Its silence is read as *the work has not reached
+that stage yet*, and that reading is available for as long as the walk lasts. So prove every
+watch the moment you arm it, in the same turn: make it fire once, then watch it go quiet →
+`references/harness.md` § A watch is a check.
+
 Saving context and hiding the work are different things. Three ways the walk stays visible
 while the coordinating context stays empty:
 
@@ -541,6 +630,26 @@ A section is done when every one of its frames is gone from the list. Before say
    but only the layer a board contracts (screens, content, states, flow, fixed wording).
    Restyling and i18n catalogue text never touch it.
 
+**A board contracts structure, not the values in its illustration.** Which fields appear, in
+which state, with which wording keys, and how one screen reaches another — those the code owes.
+The counts, names and dates drawn beside them are there to make the picture legible, and asking
+whether they are contractual is a malformed question: it is a wireframe, so of course they are
+illustration. Two failures follow from confusing the two, and both cost a session here:
+
+- **Bending the product to reach a drawn number.** A plan frame said nine works; the fixture,
+  once its own defect was fixed, honestly produced twenty-eight. Chasing the nine would have
+  meant rewriting the population to fit a drawing. The walker who measured it found the drawing
+  had never been derived from the product at all — it was drawn by hand, and one of its rows
+  named a person the app holds no photograph for.
+- **Making the drawing track the fixture.** The mirror error, and the one to guard against while
+  fixing the first: derive the illustration from live data and every fixture change ripples into
+  the board. A wireframe does not owe that coupling.
+
+**What a board's values do owe is agreement with themselves.** A person drawn as *photograph
+replaced* in one frame and *no photograph* in another is the board contradicting itself, and that
+is a defect whatever the product holds. Judge illustration against the rest of the illustration,
+never against the fixture.
+
 A section closes with its parked lines still open if nobody could settle them. Say which
 they are; do not close them by choosing for the user.
 
@@ -563,6 +672,8 @@ SECTION AUDIT: <what the read-only pass found — then every finding under one o
 RULES ADDED: <defect type → where the detection rule now lives, or "none" — including any
               rule the section had been obeying only by habit>
 BOARD SYNCED: <frames back-filled or corrected, or "nothing — the code was wrong every time">
+STILL TRUE: <standing prose a walker read against what it guards and did not have to
+             change — which document, what it stands over, or "none — nothing was re-read">
 PARKED, STILL OPEN: <one line each, with what decision it needs and from whom>
 VERIFICATION: <each gate and its result>
 LEFT ON THE LIST: <how many frames, in which sections>
@@ -570,11 +681,50 @@ DELIVERABLES: <what each frame owed beyond code and where it landed, or "none de
 CAPTURES: <paths only>
 ```
 
+**`STILL TRUE` is how standing prose gets an age.** A handover fact, a parked line, a
+note that names files — each keeps saying what it said after the thing beneath it moved,
+and only somebody who read it against that thing can date it. Such a reading ends with
+nothing to change and so leaves no other trace, which is why it gets a field rather than
+a mention: without one, the walker who looked and the walker who did not are reported
+identically. Read `none — nothing was re-read` as what it is — every standing sentence in
+this project is now exactly as old as it was when the section opened.
+
 **A walker that returns nothing has not reported.** Going quiet after committing is the
 common failure, and it is expensive in a specific way: the coordinator then has to read the
 repository to find out what happened, which spends the context the subagent existed to
 protect. Ask once. If the answer does not come, **verify the few claims that decisions rest
 on — by running the thing, not by reading the diff** — and move on rather than chasing.
+
+**Before asking twice, check how that agent's report was supposed to reach you.** An agent
+launched as a *named teammate* does not return its final message; it has to send one, and an
+agent that wrote a full report as ordinary text believes it has reported while nothing has
+arrived. Two of these in one session cost three rounds of asking each. So the second ask
+names the mechanism rather than repeating the request — *send it, do not write it* — and
+every brief for a named agent says which of the two it is. The instruction belongs in the
+agent's own definition as well as here: an agent reads its definition and never reads this
+file, so a rule that lives only here reaches nobody who could act on it.
+
+**A reading that contradicts a report is a clock before it is a defect.** Measuring rather than
+taking a walker's word earns its keep — but a file read one commit behind the walker who just
+fixed it yields line numbers for a defect already gone, with both sides right. So before
+returning anything a report contradicts, **look for the hashes it named** (walkers put one on
+every claim of a change): absent is work that has not landed, present is a reading taken in
+front of it. Then argue what the file says, never where it says it — a fix that adds a line
+moves every number under it.
+
+**Take the reading out of a commit, never off the working tree.**
+
+```bash
+git show HEAD:<path> | grep <what you are checking for>   # or the hash the report named
+```
+
+While a walker is in the tree, the tree is not any moment at all. Proving a new rule means
+planting the defect back into the file and taking it out again — in the working tree and
+never in a commit, which is what this skill requires of walkers — so a `grep` that lands in
+that window reads a file mid-repair and reports finished work as missing. One session paid
+for exactly that twice, both times as "it did not go in, I measured it", and both times the
+walker answered with a `git show` of a hash its report had already named. A commit holds
+still; disk does not.
 
 `PARKED, STILL OPEN` is the part the user acts on, so it is never folded into a sentence
 about progress. `LEFT ON THE LIST` is read off the list itself, not counted from what was

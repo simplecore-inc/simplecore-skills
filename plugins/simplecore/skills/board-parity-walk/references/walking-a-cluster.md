@@ -75,29 +75,56 @@ the main document. Three things change, and only three:
 **A section built this way is not "done pending review".** It closes on the same gates as
 any other section, and a walker that built but did not judge has walked nothing.
 
-## One frame, one commit
+## Commit at every point that stands on its own
 
-A frame that is finished — built, matching the board, owing nothing further, deleted from
-the list — is committed **there**, before the next frame is started. Not at the end of the
-cluster, and not at the end of the session. Two things this buys, both worth more on a long
-walk than they look:
+**Cut a commit wherever one would make sense to a reader on its own** — a table and its ids
+exist, a migration runs, one endpoint answers and has a test, a screen calls it, a frame has
+been seen with your own eyes. A finished frame — built, matching the board, owing nothing
+further, deleted from the list — is the tightest of these and is committed **there**, before
+the next frame is started; never at the end of the cluster, never at the end of the session.
+A cluster that stands its server up first reaches no frame for hours, and a walker waiting
+for one keeps the letter of that rule while committing nothing — cut on the server's grain
+instead.
 
-- **The revert unit becomes a screen.** A cluster committed as one blob cannot give back a
-  single screen that turned out wrong.
-- **A walker that runs out of context has still delivered.** Everything it finished is
-  already in; only the frame in its hands is lost.
+**A red gate is not a reason to hold a commit.** A server standing without its screens has no
+frontend test yet, and that is the correct state — but **the message has to say which state
+it is**, or "half of it stands" is read as "it stands". The gates go green when the cluster
+closes. Otherwise the message says what changed and nothing else — no self-assessment, no
+note about which pass produced it, no tool signature. What happened belongs to the history;
+the artefact holds only its current state.
 
-The message says what changed and nothing else — no self-assessment, no note about which
-pass produced it, no tool signature. What happened belongs to the history; the artefact
-holds only its current state.
+**Only what is committed survives.** A session ends for reasons that have nothing to do with
+the work — a usage limit, a dropped connection — and whatever was in the tree becomes a
+half-finished tree the next person meets as the state of the project and builds on top of.
+Committing as you go is also what makes the revert unit a screen rather than a cluster, and
+what keeps a shared tree from handing every other agent a broken build they cannot account
+for.
 
-**Stage by path, and commit in the same call.** Files not overlapping is what makes two
-agents safe to run side by side; it is not what makes their commits safe, because a commit
-looks at the tree rather than at the files anybody touched. So stage the paths the brief
-named and nothing else, and run **`git add <paths> && git commit` in one call, after
-verification rather than before** — the index is shared too, so staging early to see what
-you have opens a window for another agent to commit your files under a message that says
-nothing about them.
+**Stage by path, and commit in the same call.** A commit looks at the tree rather than at
+the files anybody touched, so stage the paths the brief named and nothing else, and run
+**`git add <paths> && git commit` in one call, after verification rather than before** —
+the index is shared, so staging early to see what you have opens a window for somebody
+else's commit to carry your files under a message that says nothing about them. Never
+`git add -A`, never `git add .`, and never `git commit -a`.
+
+**When the shared thing is a file rather than a directory, stage a blob instead.** Two
+agents both adding a line to one manifest, barrel or catalogue cannot be separated by path
+— `git add <that file>` takes their line too, and the moves that look obvious (wait for
+them, ask them to commit first, commit both lines) each cost somebody their work or their
+authorship. Build the content you want, put *that* in the index, and leave the working tree
+alone:
+
+```bash
+git show HEAD:<file> > <scratch>/base        # the committed version, without their line
+#  … apply only your own change to <scratch>/base …
+blob=$(git hash-object -w <scratch>/base)
+git update-index --cacheinfo 100644,"$blob",<file>
+git commit -m "…"                            # commits the index, not the tree
+```
+
+Their edit stays in the working tree, unstaged and untouched, and neither of you blocks.
+Know this before the first time it is needed; at the moment it happens every other option
+is already expensive.
 
 An agent that finds foreign changes and decides to skip committing altogether has read the
 situation correctly and reached the wrong answer: its work now survives only as an
@@ -114,7 +141,7 @@ somebody else's work while every file stays on disk and every check stays green.
 
 A board id is how a reviewer names a screen. It is not something the screen says about
 itself, and it must never reach the product — printed as copy it goes to a user who has no
-board, and into every capture the manual keeps, where it is the one thing on the page that
+board, and into every capture anybody keeps, where it is the one thing on the page that
 means nothing to the person reading. The same applies to everything else that exists for
 whoever is building: a route printed above a title, a "which frame is this" label, a
 fixture name, development chrome the framework floats over the screen. Captures show the
@@ -153,7 +180,7 @@ times what it should will go on costing it.
 **Walk. Stand. Feed. Live. Dry out. Owe.** Every load-bearing word in this skill is a figure
 of speech, vivid in English and dead in a literal translation. That matters more here than
 in most skills, because a walk produces prose continuously — a handover file, a parity list,
-per-frame logs, manual pages, commit messages — so one bad rendering of "walk" propagates
+per-frame logs, commit messages — so one bad rendering of "walk" propagates
 through hundreds of lines before anybody says it out loud.
 
 **In a project that does not write in English, choose the natural term for what the word

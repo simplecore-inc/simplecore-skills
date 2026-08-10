@@ -85,6 +85,38 @@ What it buys, all of which the navigation approach loses:
 Drive it by throwing a deep link at an already-running app rather than rebuilding
 or editing files. The app must already be running; launch it first, then link.
 
+## One picture is one screenful, and what is hidden gets its own picture
+
+**Never stitch.** A screen taller than the viewport is photographed as it stands,
+and whatever the viewport does not hold is reached by **scrolling to it and taking
+another picture of the same frame**. Several pictures of one frame is the answer; a
+tall image assembled from bands is not.
+
+The requirement is **leave nothing unseen**, not "one image holds the whole screen" —
+covering a frame is what matters, and several pictures cover it. Say on the inventory
+which parts of a long frame owe one, so a scroll nobody took shows up as a missing
+file rather than as a screen somebody decided was short.
+
+Stitching earns the ban by what it costs when it goes wrong, which is always the
+same thing: **an image with no error in it and no gap in it.** Three defects from
+one board, each of which passed review:
+
+- **The seam ate a line.** Every band boundary swallowed one row, and the row that
+  vanished was the one a person has to press — in every picture, of every screen.
+- **An element pinned to the viewport repeated.** A bar fixed to the bottom was
+  drawn once per band, so one control appeared several times down a single image.
+- **Fixing those two split the band height**, after which the bands overlapped and
+  content appeared twice at different offsets.
+
+None of the three reads as broken, which is the whole problem: a stitched image is
+plausible by construction, so its failures have no witness.
+
+Two things follow for anything that measures a picture. **An image's height is a
+fact about the viewport, not about the screen** — nothing is derived from it, and
+"how many screenfuls" is a property of the device rather than of the design. And
+**the scroll position is part of the name**, like any other variant, so the second
+picture of one frame is never confused with the first picture of another.
+
 ## The capture harness fails in ways that look like the product
 
 Every item here has been read as a design defect at least once.
@@ -95,22 +127,20 @@ Every item here has been read as a design defect at least once.
   block until it is gone — and if it never changes, write no file and say so.
 - **Arriving where you already are looks identical to a link that failed.** Send
   the app somewhere else first, then to the frame you want.
-- **A stale bundle inflates the picture.** After several hot reloads a screen
-  photographs taller than it is, often with the header redrawn in a lower band or
-  a trailing element stretched to fill. **Relaunch the app before every frame**
-  and accept the seconds; without it, any measurement taken from an image is a
-  measurement of the bundle. See `references/harness.md`.
-- **A screen taller than the viewport is stitched from bands**, and the seam eats
-  a line — a button appears to cover the hint under it, a heading appears to be
-  missing. Both are plausible layout defects. **Before writing up anything near a
-  seam, take one unstitched screenshot of that spot.**
+- **A stale bundle redraws the screen wrong.** After several hot reloads a screen
+  photographs with its header repeated further down, or a trailing element
+  stretched to fill. **Relaunch the app before every frame** and accept the
+  seconds; without it, anything read off an image is a fact about the bundle. See
+  `references/harness.md`.
+- **A scrolled picture taken too early shows the scroll mid-flight.** Wait for the
+  offset to settle, not for a duration.
 - **Two frames that render identically on one device can never both be
   photographed there.** That is not a failure to fix; it means one of them owes no
   picture on that device. Say which devices each frame owes, in the inventory,
   and check it before shooting twice.
 - **Status bars belong to the device, not the product.** Hide them: the clock
   moves, and on some devices the date is rendered in the simulator's system
-  language, which puts one language's date into another language's manual.
+  language, which puts one language's date into another language's picture.
 
 ## What to keep, and what to show a person
 
@@ -127,8 +157,9 @@ config names (`capturesDir`), under one name:
 language side by side, and a pile divided by width, by frame or by run scatters
 the three pictures that have to be compared into three places. Everything else
 that tells two pictures of one frame apart — the width, the state it was driven
-into — is a variant on the end of the name, because none of it changes where the
-picture is looked for. Keep the variant to lower case, digits and hyphens.
+into, how far down the frame it was taken — is a variant on the end of the name,
+because none of it changes where the picture is looked for. Keep the variant to
+lower case, digits and hyphens.
 
 **The moment is in the name, and the walk never deletes anything.** A frame shot
 again otherwise lands on top of the picture it is being compared with, and then
@@ -139,8 +170,9 @@ the repository clears it when they are done.
 **The directory holds frame captures and nothing else.** A picture of something
 the board does not draw — a palette, an index page, a harness screen — has no
 frame to be judged against and no place in the record; it belongs in the
-session's scratch space. Whatever produces the kept figures of a manual is a
-separate scheme with separate names, and the two must not be mixed.
+session's scratch space. Whatever produces a project's **kept** figures is a
+separate scheme with separate names, and the two must not be mixed — which of the
+three jobs a picture is doing is settled in the main document.
 
 Both the directory name and the languages come from the project; the shape does
 not. **Put the name in one function that every capture site calls, and a check
@@ -184,19 +216,13 @@ Pair each send with one line naming the frame and what to look at. "Here is
 H-13" is a file; "here is where the person tells the model no — check both
 answers carry the same weight" is a review.
 
-## One machine, one driver — and the machine decides which
+## One machine, one driver
 
-A device, a simulator, a browser profile: two walkers driving one produce
-**captures of the wrong screen that look entirely correct.** So one at a time is
-real. But **do not make the coordinator the queue** — that was tried and it stalls
-walkers on permissions they already hold, because every run becomes a message that
-can cross or drop.
-
-**Take a lock in the capture script itself.** Atomically on start, released on exit
-and on signal, cleared when the holder's process is gone so a killed run cannot
-deadlock the next one, and refusing loudly with who holds it and what they are
-shooting. Nobody asks, so nobody waits.
-
-Checking whether a process is running is not a substitute — two runs can both be
-between frames at the same instant. `references/harness.md` carries the full
-account, including how to prove the lock actually refuses.
+A device, a simulator, a browser profile: two runs driving one produce **captures
+of the wrong screen that look entirely correct.** So **the capture script takes its
+own lock** — atomically on start, released on exit and on signal, cleared when the
+holder's process is gone, and refusing loudly with who holds it and what they are
+shooting. Checking whether a process is running is not a substitute; two runs can
+both be between frames at the same instant. Why the lock never lives in the
+coordinator's messages, and how to prove it actually refuses →
+`references/harness.md`.

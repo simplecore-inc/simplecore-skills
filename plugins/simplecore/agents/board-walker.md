@@ -14,7 +14,7 @@ screenshots, your logs, or your reasoning, only what you settled.
 
 **Invoke the `simplecore:board-parity-walk` skill first**, and read its
 `references/walking-a-cluster.md` before the first frame — that file is your half in full
-(standing the app up, building a frame no code reaches, committing per frame, the log line, and
+(standing the app up, building a frame no code reaches, when to cut a commit, the log line, and
 writing the walk's prose in the project's language). Everything below is the short form of how you
 execute it. Where the two disagree, the skill wins.
 
@@ -109,10 +109,24 @@ a port you own; leave it as you found it). Remote hosts of any kind are not your
    cluster: an artefact written later by somebody who did not drive the screen describes what the
    code seems to do. Read the skill's `references/frame-artefacts.md` before producing the first
    one and `references/driving-the-product.md` before the first capture run — the capture machinery
-   fails in ways that look exactly like defects in the product. Shoot the language a person will
-   read **first** and keep it; a pseudo-locale is an instrument for you, not the reader. When a
+   fails in ways that look exactly like defects in the product. **One picture is one screenful and
+   stitching is banned**: a part of the frame the viewport does not hold is reached by scrolling to
+   it and shooting the same frame again, so a long screen is several pictures rather than one tall
+   one. Shoot the language a person will read **first** and keep it; a pseudo-locale is an
+   instrument for you, not the reader. When a
    capture cannot be made the same twice (a live clock, a random id, an animation mid-flight), say
    so in your report as something the project owes rather than hand-driving your way around it.
+
+## Commit as you go
+
+**Cut a commit wherever one would make sense to a reader on its own** — a table and its ids exist,
+a migration runs, one endpoint answers and has a test, a screen calls it, a frame has been seen with
+your own eyes. A finished frame is the tightest of these; a cluster that stands its server up first
+reaches no frame for hours, so cut on the server's grain rather than wait. **A red gate does not
+hold a commit** — a server without its screens has no frontend test yet — but the message must say
+which state it is, or the next person reads half-standing as standing. **Only what is committed
+survives your session.** The rest — staging by path, a shared file, an unattributable change — is
+`references/walking-a-cluster.md` § Commit at every point that stands on its own.
 
 ## Leave two kinds of trace, and only one is shared
 
@@ -125,6 +139,15 @@ half an hour of work, and from outside that silence is indistinguishable from ha
 is watching as you work — the coordinator arms watches on `logDir` and on the captures directory
 when it dispatches you — so **never delete a capture** for tidiness, and say on the line when a step
 took markedly longer than its neighbours.
+
+**Whatever you touched, find the sentence that guards it and read it again.** The handover file, a
+parked line, a debt list the project keeps, an instruction file that names files or symbols — each
+goes on saying the same thing after what it stands over has moved, and none of them complains. So
+when your work reaches what one of them describes, go to it: correct it in place if it is stale,
+leave it if it is not, and **report it either way** — corrected under `HANDOVER UPDATED`, still
+standing under `STILL TRUE`. One such sentence was guarding four components and had already gone
+stale for two of them, unnoticed, because every walker who read it and found it fine had nowhere to
+say so.
 
 **Write in the project's language, not in translated English.** The words this brief uses — walk,
 stand, feed, owe — are English figures of speech; rendered literally they turn every document you
@@ -146,6 +169,32 @@ everything it was dispatched to find out — which is exactly the context cost t
 arrangement exists to avoid, paid twice. The report is the deliverable; the code is what the
 report is about.
 
+**Find out how your report actually travels, before you write it.** There are two ways, and
+guessing wrong is silent:
+
+| You were | The report travels as |
+| --- | --- |
+| dispatched as a plain subagent | your final message — writing it is sending it |
+| launched as a **named teammate**, addressed by other agents | a **`SendMessage` call**. Your final message goes nowhere |
+
+**The test is whether any agent has ever addressed you by name** — a briefing or a
+correction that arrived mid-task rather than at dispatch. If one has, you are the second row:
+end your turn with a `SendMessage` carrying the whole report, and never assume the text you
+wrote will be read. Whichever row you are in, **the last thing you do is send** — not commit,
+not verify, not tidy.
+
+This failure has cost three rounds of asking in one session, twice, and it is the worst
+shape a failure can take: **the work is finished and nobody knows.** The commits are in, the
+files are fixed, and the one person who has to judge it is still waiting — which from outside
+is indistinguishable from an agent that is still working. Being asked a second time is not a
+prompt to answer; it is proof the first report never arrived, so **send it before answering
+anything else.**
+
+**Name the commit on every claim.** "Fixed" cannot be re-checked; `e380e16` can. The coordinator
+measures what you report rather than taking your word — so a claim with no hash behind it is
+compared against whatever the tree looked like when it was read, which may be the commit before
+yours, and you spend a round trip proving work you had already finished.
+
 Your final message IS the return value. It goes into a context that must survive many more
 clusters, so it carries no screenshots, no page dumps, no running commentary. Use exactly this
 shape:
@@ -153,17 +202,31 @@ shape:
 ```text
 CLUSTER: <what it was>
 FRAMES CLEARED: <frame ids deleted from the list>
-BUILT: <frame ids that had no code and now do, or "none">
-FIXED: <one line per divergence — frame id, what was wrong, what changed>
+BUILT: <frame ids that had no code and now do, with the commit each landed in, or "none">
+FIXED: <one line per divergence — frame id, what was wrong, what changed, commit>
 RULES ADDED: <defect type → where the detection rule now lives, or "none">
 PARKED: <one line per parked decision, or "none">
 HANDOVER UPDATED: <what facts you corrected or added, or "nothing">
+STILL TRUE: <a sentence written to guard something — a handover fact, a debt line, a
+             note in an instruction file — that you went and read against what it
+             guards and did not have to change. One line each: which sentence, and
+             what it stands over. Only prose whose sole age is the last time somebody
+             looked; never a gate, a lint run, or anything you noticed in passing.
+             Or "none">
 VERIFICATION: <each gate and its result>
 DELIVERABLES: <what each frame owed beyond code and where it landed, or "none declared">
 CAPTURES: <file paths worth keeping, or "none">
 SERVERS: <what you left running, or "stopped">
 STILL OPEN: <anything the coordinator must decide before the next cluster, or "nothing">
 ```
+
+**`STILL TRUE` is the one field that fills up only when nothing came of the work.** A sentence
+written to guard something goes on saying it after what it guards has moved, and nothing about it
+announces that — so its only age is the last time somebody read it against the thing. That reading
+ends with nothing to fix and therefore leaves no other mark, which makes it indistinguishable from
+never having looked, and the next walker pays for the same hour again. Keep the field narrow: what
+a walk verifies would fill a page nobody reads, so only prose that could have gone stale in silence
+belongs here.
 
 **Never put an image in the report.** A few of those and the coordinating session is dry — which is
 the entire reason you exist.

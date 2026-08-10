@@ -42,8 +42,7 @@ and each of these was found by somebody looking, after everything was green:
 - **breadcrumb segments** were drawn and were not links. A trail that cannot be
   clicked looks exactly like one that can
 - every capture ran in one **browser locale**, so the Korean pictures carried
-  `mm/dd/yyyy` — and would have carried English server sentences into the Korean
-  manual
+  `mm/dd/yyyy` — and put English server sentences in front of a Korean reader
 - the search term on a "**matched nothing**" frame was a substring of a project in
   the sample data, so every run photographed a screen with one row on it and filed
   it under the empty state's name
@@ -127,6 +126,29 @@ some of these become one the moment you understand them. It is an argument about
 the visual pass is **for**: not confirming what the tests already know, but catching the
 class of failure that has no witness except the screen. **Treat a walk with no captures
 looked at as a walk that did not happen**, however green it was.
+
+### Looking settles the picture, never the button
+
+A picture proves what a screen says. It cannot prove that the thing it offers to do
+happens. So a screen whose only action is dead photographs perfectly — the layout is
+right, the wording is right, and the defect lives entirely on the far side of the
+control. Types and checkers are just as quiet: the route exists, the handler is wired,
+the destination renders.
+
+**Press the actions a frame draws, and follow where they land.** Weight it by how much
+of the screen depends on it:
+
+- **A screen offering exactly one action is a dead end if that action goes nowhere.**
+  This is the case worth hunting first — a refusal state, an empty state, a blocked
+  state. Its whole purpose is to hand somebody a way out, and it is the state nobody
+  reaches while building, so the way out is the least-travelled path in the product.
+- **A promise in the copy is part of the action.** Where the screen says what pressing
+  will do, the press must do that. Text promising a request will be sent, above a row
+  that only navigates, is one defect and not two.
+- **A round trip has to change what sent you.** A screen that sends somebody away to fix
+  a value and shows the same refusal when they return has offered a remedy that cannot
+  be taken. Returning is the moment to re-ask, and that is not the same as a retry
+  control — some refusals must never carry one.
 
 Two habits keep this from recurring once it has bitten:
 

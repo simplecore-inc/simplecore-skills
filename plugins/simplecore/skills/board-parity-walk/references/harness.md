@@ -18,12 +18,16 @@ measured the harness and reported it as a fact about the product.*
 Before sending anybody to fix what a number says, ask what else that number could
 be measuring.
 
-A screen was reported at nineteen screenfuls, then seven, then three, across runs
-of unchanged code. Read as a screen that would not stay fixed, it produced a
-reprimand to the walker who had already fixed it. It was the capture pipeline:
-a reloaded bundle redrew the top of the screen into the lower bands, so the image
+A gate reported one screen as several times longer than it is, and gave a different
+answer on each run of unchanged code. Read as a screen that would not stay fixed, it
+produced a reprimand to the walker who had already fixed it. It was the capture
+pipeline: a reloaded bundle redrew part of the screen a second time, so the picture
 grew while the screen did not. Four of five findings from that gate were the
-instrument, including one screen reported at eight screenfuls that was one.
+instrument rather than the product.
+
+**A length read off a picture is the harness's number, not the screen's** — the
+viewport decides it, the bundle can inflate it, and the device changes it. Judge a
+screen by looking at it, and leave measurement to what can actually be measured.
 
 The tells, none of which require knowing the cause:
 
@@ -31,8 +35,8 @@ The tells, none of which require knowing the cause:
   unchanged code disagree, nothing downstream of that number is knowable yet.
 - **A number moves back on its own.** Improvement that reverses without a change
   is not improvement reversing; it is noise you were reading as signal.
-- **The magnitude is implausible.** A summary screen is not nineteen screenfuls.
-  Surprise is a reason to check the instrument before reporting the finding.
+- **The magnitude is implausible.** Surprise is a reason to check the instrument
+  before reporting the finding.
 
 **Fix the instrument first, then re-measure, then act.** A gate whose readings
 cannot be reproduced must not send anybody anywhere — a checker that sends someone
@@ -59,6 +63,38 @@ looking at it.** Prove it in both directions before trusting it:
 
 A rule that ships unproven is worse than none: it converts *nobody has checked*
 into *something is checking*, and the second is much harder to doubt.
+
+### A watch is a check, and the same proof is owed
+
+The rule above is about checkers. It holds unchanged for the **watches a
+coordinator arms** — the log tail, the capture directory — and that is exactly
+where it gets skipped, because a watch emits nothing while the work is quiet and
+nothing while it is broken. From outside those are the same observation.
+
+**Arm it, then make it fire.** Drop one file, append one line, confirm the event
+arrives — then confirm it goes quiet when nothing happens. Both halves, one
+command each. That is the only thing separating *nobody is capturing* from
+*nobody is watching*.
+
+So read silence as suspect rather than as reassurance. A coordinator whose capture
+watch stayed quiet across two clusters read it as the walkers not having shot
+anything; fourteen captures had landed and the watch had never once worked. The
+walk survived on the walkers reporting their own paths, which is the fallback, not
+the mechanism — the watch existed to get those pictures to a person *while the
+screen was still the subject*.
+
+**The failure was the quiet kind.** The watch matched new files by relative time
+(`find … -newermt '-70 seconds'`), and BSD `find` on macOS does not read relative
+strings the way GNU does. It does not error; it returns an empty answer — which is
+byte for byte what a working watch returns on a quiet minute. Prefer a form with
+no date parsing in it at all: list the directory and emit the difference from the
+previous list.
+
+**Run the watch's own query by hand over two windows of different widths.** That
+is the measurement that exposes this class, and it is cheap. Here the relative
+form found ten files across six hours while an absolute cutoff found fifteen
+across the last fifty minutes — and a window enclosed by another cannot hold more
+than it, so the number was not counting time at all.
 
 ### Scope a rule to the defect, not to where the defect happened to be
 
@@ -118,9 +154,10 @@ follow when it is bent, all of which cost real work in a single session.
 
 Two agents driving one simulator, browser, or device produce **captures of the
 wrong screen that look entirely correct** — a real screen, properly drawn, at the
-right path, under the right name. One came back with another section's dialog
-stitched into five of its six bands. Nothing in the image says it is wrong. So the
-resource genuinely must be used by one agent at a time.
+right path, under the right name. One came back showing another section's dialog,
+because the other agent had opened it between the deep link and the shutter.
+Nothing in the image says it is wrong. So the resource genuinely must be used by
+one agent at a time.
 
 **The test database is one of these, and it lies in a worse way.** Two suites
 running at once collide over rows and report a unique-key violation on an email —
@@ -237,10 +274,16 @@ hunks out of shared files.
 Stage explicit paths. Check what is dirty before committing, and leave alone what
 you did not touch.
 
+**Path-level staging runs out when a file itself is shared** — a manifest, a
+config, a barrel that two agents both add a line to. Staging your own line without
+taking theirs is a blob written straight into the index, and the commands are in
+`references/walking-a-cluster.md` § Commit at every point that stands on its own.
+Learn it before it is needed; by then every obvious move costs somebody their work.
+
 The mirror of it: **uncommitted work in a shared tree is not private.** It is a
 broken build every other agent inherits without being able to see why — a red
-typecheck they must reason past before they can trust their own run. Commit and
-push per frame, not per cluster.
+typecheck they must reason past before they can trust their own run. Commit at every
+point that stands on its own, never once per cluster.
 
 ### Say what you cannot attribute — and do not read attribution off a commit
 

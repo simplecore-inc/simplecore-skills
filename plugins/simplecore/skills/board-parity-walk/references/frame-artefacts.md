@@ -1,24 +1,24 @@
 # What a frame owes besides working code
 
 Read this when a project's `frameDeliverables` is non-empty, or when deciding what
-one should hold. Everything here is about artefacts that outlive the walk —
-captures, manual pages, snapshots — and about the ways they quietly stop
-describing the product.
+one should hold. Everything here is about what outlives the walk — captures,
+snapshots, a story step — and about the ways they quietly stop describing the
+product.
 
-Some projects require an artefact per frame beyond the code — a capture under
-realistic data, a page of the operator's manual, a story, a snapshot test. Where
-that is so, the config names it:
+Some projects require something per frame beyond the code — a capture under
+realistic data, a story step, a snapshot test, a look taken with somebody's own
+eyes. Where that is so, the config names it:
 
 ```json
 "frameDeliverables": [
-  "docs/manual/<section>/<screen>.md covers this frame id",
-  "a capture at docs/manual/<section>/images/<frame-id>.png"
+  "a capture of this frame id in every locale it ships in, under capturesDir",
+  "a snapshot test naming this frame id"
 ]
 ```
 
-Each line is a plain sentence a walker can check against the repository. **A frame
-that owes a deliverable is not walked until the deliverable exists**, and so it is
-not deleted from the list — which is what keeps the artefact from becoming a
+Each line is a plain sentence a walker can check against what the walk produced.
+**A frame that owes a deliverable is not walked until the deliverable exists**, and
+so it is not deleted from the list — which is what keeps it from becoming a
 separate pass that never happens.
 
 Two rules make that affordable rather than doubling the work:
@@ -39,11 +39,13 @@ Two rules make that affordable rather than doubling the work:
   pinned; a walker that finds no such mechanism reports it as owed rather than
   hand-driving 150 screens.
 
-  **A capture shows the whole screen, not the part that fits.** A phone viewport holds a
-  fraction of most screens, so a naive screenshot documents a screen's opening and drops
-  its actions — and it does so silently, looking like a complete image of a short screen.
-  Whatever produces the artefact has to reach the full content height and stay
-  reproducible while doing it.
+  **A frame leaves nothing unseen, and that takes as many pictures as it takes.** A
+  phone viewport holds a fraction of most screens, so one screenshot documents a
+  screen's opening and drops its actions — silently, looking like a complete image of
+  a short screen. The answer is another picture, scrolled to what was hidden, not a
+  taller image built out of several: **one picture is one screenful** and stitching is
+  banned outright → `references/driving-the-product.md`. What produces them decides
+  where the scroll stops, and produces the same stops on every run.
 
   Two details decide whether pinning actually works. The **data and the display must
   be pinned to the same instant** — a frozen clock over sample timestamps taken from
@@ -109,13 +111,9 @@ long as the product is being built.
 
 So a project part-way through its screens can reasonably **look on every frame and keep
 nothing**: judge with throwaway captures, and take the kept ones once, at the end, from
-a finished product in a known state. That also removes a defect nobody names — a book
-whose figures were taken across eight months of versions, each true when it was shot and
-none of them true together.
-
-What a page owes in the meantime is the **figure rather than the file**: the image
-element at the path the capture will land on, which is the same declaration the final run
-reads. Nothing is lost except the bytes.
+a finished product in a known state. That also removes a defect nobody names — a set of
+figures taken across eight months of versions, each true when it was shot and none of
+them true together.
 
 ### Re-shoot what the change reaches, and one frame either side of it
 
@@ -138,29 +136,11 @@ scope is a judgment somebody made, rather than a question nobody asked.
 
 Sample data invented beside each screen disagrees with itself. The reader on the list
 becomes a different reader on the detail page, and no test can see it because each screen
-is internally fine.
-
-The fix is a single document holding the product's sample data **as a narrative** — an
-empty device, then a first site, then readers, then people — with each step naming the
-frames it feeds. That one document then does three jobs at once: it is the source every
-fixture derives from, it is the script the final capture run follows, and, once the steps
-can actually be executed, it is a reproducible integration test. A capture taken at step
-four is a capture of a system that genuinely went through steps one to three.
-
-Two rules keep it from rotting:
-
-- **The step is written before the screen**, and the fixture derived from it. Written
-  afterwards, the story is reverse-engineered from whatever the screens happened to show,
-  which is the disagreement it exists to prevent.
-- **A new frame usually changes a step that is already written**, and that step is
-  corrected in place. Appending only — a new step at the end, the earlier ones untouched —
-  leaves the story contradicting itself, and the contradiction is invisible until somebody
-  puts two screens side by side. Ask both questions per frame: which moment does this show,
-  and which already-written moment does this change?
-
-A checker can hold that every walked frame appears in the document. It cannot hold that
-the document is consistent with itself; that is the walker's judgement, and it is why the
-rule is stated rather than merely enforced.
+is internally fine. The fix is a single document holding the product's sample data **as a
+narrative**, each step naming the frames it feeds, and **the step is written before the
+screen** — written afterwards, the story is reverse-engineered from whatever the screens
+happened to show, which is the disagreement it exists to prevent. The rest of it →
+`references/scenario.md`.
 
 ### Sample data is in every capture, in every language
 
@@ -170,36 +150,24 @@ capture**, so sample data is the one thing on a screen that cannot be right in a
 them at once.
 
 Write it in the language that is least wrong everywhere. In practice that is English:
-English names in a Korean manual read as a foreign example, while Korean names in an
-English manual read as a defect. Whatever a project picks, it picks once and writes
+English names in a Korean document read as a foreign example, while Korean names in an
+English one read as a defect. Whatever a project picks, it picks once and writes
 the reason down, because every fixture anybody adds afterwards inherits it.
 
-### The languages the product speaks are not the languages it is documented in
+### A wider device is cheap to answer early and expensive to answer late
 
-A UI string is translated cheaply and mechanically. A page of a manual is written by
-somebody who understands the product, and reviewed by somebody who understands the
-language. The two costs differ by an order of magnitude, so **a product will normally
-ship in more languages than it is documented in, deliberately and permanently.**
-
-Model them as two independent lists. Do not derive one from the other, and do not
-let a later reader "fix the inconsistency" by generating the manual set from the
-interface set — the inconsistency is the decision. Say so where the lists are
-declared, because it is the kind of thing that looks like an oversight.
-
-A device class works the same way, and has a cheap default worth taking early: where
-the board draws no layout for a wider screen, the screens still render there, so a
-primitive that holds content to a readable column makes every unbuilt frame
+Where the board draws no layout for a wider screen, the screens still render there, so
+a primitive that holds content to a readable column makes every unbuilt frame
 acceptable on the wider device at once. Fixing that per screen later is the whole
-board's worth of work.
+board's worth of work. The rule about judging a frame in its longest language runs on
+the same footing: **every language the interface ships in**, whether or not anything
+else in the product has been written for it.
 
-The rule about judging a frame in its longest language follows the **interface**
-list, not the manual list. A language nobody has written a book for is still a
-language the screens have to survive.
+### Data in a catalogue is worse than a literal
 
-The neighbouring defect is worth naming because the checkers push people into it: a
-screen may not state a literal, so a value with nowhere else to go gets added to the
-translation catalogue and the checker goes quiet. **Data in a catalogue is worse than
-a literal.** It reaches a translator as though it were copy, it makes a count or a
+The checkers push people into this one: a screen may not state a literal, so a value
+with nowhere else to go gets added to the translation catalogue and the checker goes
+quiet. It then reaches a translator as though it were copy, it makes a count or a
 name untranslatable-but-translated, and it hides the fact that the screen has no data
 source. Data belongs in the project's fixtures; a sentence with a value in it stays a
 key, and the value is passed in.
