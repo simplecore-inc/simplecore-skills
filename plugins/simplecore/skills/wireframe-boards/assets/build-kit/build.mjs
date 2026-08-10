@@ -186,8 +186,12 @@ const VOID = /^(area|base|br|col|embed|hr|img|input|link|meta|param|source|track
 const unbalanced = [];
 for (const [, aid, frameHtml] of html.matchAll(/<article class="frame[^"]*" id="([^"]+)">([\s\S]*?)<\/article>/g)) {
   const stack = [];
-  for (const [, close, name] of frameHtml.matchAll(/<(\/?)([a-zA-Z][a-zA-Z0-9]*)\b[^>]*?>/g)) {
+  // The tail is captured so a self-closing tag can be recognised by its slash. SVG is drawn with
+  // them (`<polyline …/>`, `<rect …/>`) and they close nothing, so counting them as opened tags
+  // would refuse a perfectly balanced frame.
+  for (const [, close, name, tail] of frameHtml.matchAll(/<(\/?)([a-zA-Z][a-zA-Z0-9]*)\b([^>]*?)>/g)) {
     if (VOID.test(name)) continue;
+    if (tail.trimEnd().endsWith('/')) continue;
     if (!close) { stack.push(name); continue; }
     if (stack[stack.length - 1] === name) stack.pop();
     else {

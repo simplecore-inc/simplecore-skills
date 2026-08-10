@@ -38,7 +38,9 @@ src/
    `_proof.html` to confirm they render. `partials.mjs` rarely needs changing.
 3. **Edit `src/intro.html`** — replace `{{PRODUCT}}`/`{{AREA}}`, keep reading-contract
    items 1-10 verbatim, add board-specific rules as items 11+. This is what puts the
-   `.readme` contract into every built board; never ship a board without it.
+   `.readme` contract into every built board; never ship a board without it. The viewport
+   toggle starts absent and its label waits in a comment there: restore it in the same change
+   as the board's first `.narrow`/`.wide` pair, not before.
 4. Copy `AGENTS.md` and `CLAUDE.md` into the board folder and replace `{{PRODUCT}}`.
    They keep the next agent reading the source, not the built HTML.
 5. Author product screens: one file in `src/screens/` + one line in `src/manifest.mjs`

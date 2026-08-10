@@ -1,11 +1,17 @@
 <!-- Board intro — shipped with every board so the built HTML always carries the reading
      contract. Adjust the header text and add board-specific rules as items 11+; never
-     delete or trim items 1-10. The view-toggle label pairs with the checkbox build.mjs
-     emits first in <body>; keep it only if your board uses .narrow/.wide pairs. -->
+     delete or trim items 1-10.
+
+     The viewport toggle starts ABSENT, because a new board draws no .narrow/.wide pair yet and
+     a control that changes nothing reads as a broken one. Paste the label below back into the
+     header in the same change as the first pair — it pairs with the checkbox build.mjs emits
+     first in <body>.
+
+       <label class="view-toggle" for="viewport"><span class="opt-narrow">Narrow</span><span class="opt-wide">Wide</span></label>
+-->
 <header class="board-header">
   <h1>{{PRODUCT}} — {{AREA}} Wireframes</h1>
   <span class="tag">WIREFRAME v0.1 · LO-FI</span>
-  <label class="view-toggle" for="viewport"><span class="opt-narrow">Narrow</span><span class="opt-wide">Wide</span></label>
   <span class="dateline">{{date}} · lo-fi</span>
 </header>
 
