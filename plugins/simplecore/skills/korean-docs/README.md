@@ -16,10 +16,13 @@ korean-docs/
 ├── SKILL.md                     # 스킬 본문 — 모드 구분, 워크플로, 감사 도구 사용법
 ├── README.md                    # 이 파일 (사람용 안내)
 ├── GLOSSARY.base.md             # 기본 용어사전 — 프로젝트 무관 표기·번역투 규칙 (감사 시 항상 적용)
+├── RULES.base.json              # 기본 문장 규칙 팩 — hit/miss 예문을 실은 정규식 규칙 (rules 훑기 전용)
 ├── scripts/
-│   └── check-glossary.mjs       # 감사 스크립트 — 기본 + 프로젝트 용어사전 병합 검사
+│   ├── l10n.mjs                 # 통합 CLI — check(문서) · audit(다국어 자원) · rules · suspects · apply
+│   ├── check-glossary.mjs       # 문서 감사의 훅 진입점 — check와 같은 엔진, 같은 판정
+│   └── lib/                     # 공용 엔진 — 용어사전 파싱·병합(glossary.mjs), 문서 감사(doc-audit.mjs)
 ├── templates/
-│   └── GLOSSARY.md              # 프로젝트 용어사전 템플릿 (--init으로 생성)
+│   └── GLOSSARY.md              # 프로젝트 용어사전 템플릿 (check --init으로 생성)
 └── references/
     ├── response-style.md        # 상시 적용 기준 — 문장 원칙·어휘·표기·말투·금융 도메인 (어휘·표기의 원본)
     └── korean-style.md          # 교정·검수용 심각도(S1/S2) 패턴 카탈로그 + 번역 문체·원문 충실도 기준
@@ -57,14 +60,17 @@ korean-docs/
 
 ```bash
 # 1. 프로젝트 용어사전 생성 (권장 위치: .claude/GLOSSARY.md)
-node "${CLAUDE_PLUGIN_ROOT}/skills/korean-docs/scripts/check-glossary.mjs" --init
+node "${CLAUDE_PLUGIN_ROOT}/skills/korean-docs/scripts/l10n.mjs" check --init
 
 # 2. 생성된 파일에서 프로젝트명을 채우고, front matter의 audit.paths에 감사 대상 지정
 #    (예: paths: [docs])
 
 # 3. 작업하면서 용어를 등재하고, 감사 실행
-node "${CLAUDE_PLUGIN_ROOT}/skills/korean-docs/scripts/check-glossary.mjs"            # audit.paths 대상
-node "${CLAUDE_PLUGIN_ROOT}/skills/korean-docs/scripts/check-glossary.mjs" <경로...>  # 특정 파일·폴더
+node "${CLAUDE_PLUGIN_ROOT}/skills/korean-docs/scripts/l10n.mjs" check            # audit.paths 대상
+node "${CLAUDE_PLUGIN_ROOT}/skills/korean-docs/scripts/l10n.mjs" check <경로...>  # 특정 파일·폴더
+
+# 4. (선택) 다국어 자원(i18n·메시지 번들·메일)이 있는 프로젝트는 .claude/l10n.json에
+#    kinds를 선언하면 audit · rules · suspects · apply가 자원 전체를 같은 규칙으로 다룬다
 ```
 
 용어사전이 없어도 스킬은 동작한다 — 기본 용어사전(GLOSSARY.base.md)의 규칙만으로 검사하고, Claude가 문서 작업 중 용어 결정이 쌓이면 생성을 제안한다.
@@ -76,10 +82,10 @@ node "${CLAUDE_PLUGIN_ROOT}/skills/korean-docs/scripts/check-glossary.mjs" <경�
 - **수준**: 금지 표기는 `오류`(감사 실패), 금지 표현은 `오류`/`경고`/`경고(N+)`(파일 내 N회 이상일 때만 보고)로 관리한다.
 - **형식**: 표 항목은 `,`로 구분, `/pattern/`은 정규식. 셀 안 `|` 금지, 정규식 안 `,` 금지. 자세한 형식은 `templates/GLOSSARY.md` 참조.
 
-## 감사 스크립트 요약
+## 감사 도구 요약
 
 ```
-check-glossary.mjs [경로...]   # 파일·폴더 지정. 없으면 audit.paths, 그것도 없으면 프로젝트 전체
+l10n.mjs check [경로...]   # 문서 감사. 지정 없으면 audit.paths, 그것도 없으면 프로젝트 전체
   --all            # audit.paths 무시하고 프로젝트 전체
   --strict         # 경고도 실패 처리
   --untranslated   # 영문 문장 잔존 경고 (번역 프로젝트)
@@ -87,7 +93,14 @@ check-glossary.mjs [경로...]   # 파일·폴더 지정. 없으면 audit.paths,
   --no-base        # 기본 용어사전 제외
   --list-rules     # 병합된 규칙 목록 출력
   --init           # .claude/GLOSSARY.md 템플릿 생성
+l10n.mjs audit             # 다국어 자원 감사 (.claude/l10n.json의 kinds 선언 필요)
+l10n.mjs rules --test      # 규칙 팩(RULES.base.json + 프로젝트 팩) 예문 검증
+l10n.mjs rules · suspects  # 문장 규칙·문체 의심 훑기 (찾기만 한다)
+l10n.mjs apply --patch f   # 문맥을 읽고 다시 쓴 문장을 반영 (--write 전까지 미리보기)
 ```
+
+`check-glossary.mjs [경로...]`는 문서 감사의 훅 진입점으로 `check`와 같은 엔진·같은 플래그를
+쓴다 — 쓰기 시점 훅이 이 경로를 실행하고, 직접 불러도 판정이 같다.
 
 - 명시적으로 지정한 파일은 `audit.exclude`와 무관하게 항상 검사한다. 코드 블록·인라인 코드·링크 경로·URL은 검사에서 제외된다.
 - `.md`·`.mdx`와 함께 `.svg` 파일도 검사한다 — SVG는 `<text>`/`<tspan>` 라벨만 보고 태그·속성·스타일·경로는 무시한다. 문서에 삽입된 SVG도, 저장소에 독립으로 있는 외부 `.svg` 파일도 대상이다.

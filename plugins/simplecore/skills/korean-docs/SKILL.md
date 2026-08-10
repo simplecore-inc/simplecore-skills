@@ -32,8 +32,10 @@ description: Use for virtually EVERY task — all user-facing output in this env
 | 파일 | 용도 |
 | ---- | ---- |
 | `GLOSSARY.base.md` | 기본 용어사전. 프로젝트와 무관한 표기·번역투 규칙. 감사 시 항상 함께 적용 |
-| `scripts/check-glossary.mjs` | 감사 스크립트. 기본 + 프로젝트 용어사전을 병합해 `.md`·`.mdx`·`.svg`(`<text>`/`<tspan>` 라벨)·다국어 자원 파일(문자열 값) 검사 |
-| `templates/GLOSSARY.md` | 프로젝트 용어사전 템플릿 (`--init`으로 생성) |
+| `RULES.base.json` | 기본 문장 규칙 팩. hit/miss 예문을 실은 정규식 규칙이며 `rules` 훑기가 쓴다. `universal` 스코프는 항상, 도메인 스코프(`saas` 등)는 프로젝트가 `.claude/l10n.json`의 `ruleScopes`로 켤 때 적용 |
+| `scripts/l10n.mjs` | 통합 CLI. `check`(문서 감사) · `audit`(다국어 자원 감사) · `rules`(문장 규칙 훑기·`--test` 검증) · `suspects`(문체 의심 문장) · `grep`·`list`·`stats` · `apply`(다시 쓴 문장 반영) |
+| `scripts/check-glossary.mjs` | 문서 감사의 훅 진입점. `l10n.mjs check`와 같은 엔진(`scripts/lib/`)을 쓰므로 판정이 같다 — 쓰기 시점 훅이 이 경로를 실행한다 |
+| `templates/GLOSSARY.md` | 프로젝트 용어사전 템플릿 (`check --init`으로 생성) |
 | `references/response-style.md` | 상시 적용 기준 — 문장 원칙·금지 패턴·어휘 대체 목록·표기법·말투·금융/퀀트 도메인 용어. 어휘·표기의 원본 (전역 CLAUDE.md가 필수 참조) |
 | `references/korean-style.md` | 심각도(S1/S2)별 번역투·AI 문체 패턴 카탈로그 + 번역 문체·원문 충실도 기준 (교정·검수용) |
 
@@ -43,10 +45,11 @@ description: Use for virtually EVERY task — all user-facing output in this env
 2. **찾았으면 처음부터 끝까지 읽는다.** 세션마다 다시 읽는다 — 직전 세션 이후 바뀌었을 수 있다. 어느 위치의 용어사전을 사용하는지 사용자에게 알린다.
 3. **없으면 생성을 제안한다.** 용어사전 없이 여러 문서를 작업하면 같은 용어가 문서마다 다르게 번역된다. 다음을 안내한다:
    ```bash
-   node "${CLAUDE_PLUGIN_ROOT}/skills/korean-docs/scripts/check-glossary.mjs" --init   # .claude/GLOSSARY.md 생성
+   node "${CLAUDE_PLUGIN_ROOT}/skills/korean-docs/scripts/l10n.mjs" check --init   # .claude/GLOSSARY.md 생성
    ```
    사용자가 원하지 않으면 기본 용어사전만으로 진행하되, 작업 중 용어 결정이 쌓이면(3개 이상) 결정 목록과 함께 다시 제안한다.
 4. **기본 용어사전(`GLOSSARY.base.md`)의 규칙도 함께 적용된다.** 프로젝트 규칙이 기본 규칙과 충돌하면 프로젝트 규칙이 우선한다(아래 "기본 규칙 커스터마이징").
+5. **`.claude/l10n.json`이 있는지 함께 확인한다.** 없으면 `rules` · `audit` · `suspects`가 꺼진 채로 작업하게 되고, `check`의 0건을 전체 통과로 읽게 된다. 화면 문구·메시지 번들·매뉴얼처럼 언어별 짝이 있는 파일을 가진 프로젝트라면 **용어사전보다 먼저** 만든다: `node "$T" check --init-l10n`. 선언한 뒤 `list`로 파일이 실제로 잡히는지 눈으로 대조한다 — glob이 빗나가면 오류가 아니라 빈 목록이 나온다.
 
 ## 작업 워크플로
 
@@ -59,10 +62,12 @@ description: Use for virtually EVERY task — all user-facing output in this env
 공통 마무리:
 
 ```bash
-node "${CLAUDE_PLUGIN_ROOT}/skills/korean-docs/scripts/check-glossary.mjs" <작업한 파일...>
+node "${CLAUDE_PLUGIN_ROOT}/skills/korean-docs/scripts/l10n.mjs" check <작업한 파일...>
 ```
 
-오류 0건까지 수정한다. 경고는 하나씩 검토해 수정하거나 유지 근거를 확인한다.
+오류 0건까지 수정한다. 경고는 하나씩 검토해 수정하거나 유지 근거를 확인한다. 다국어 자원
+파일(i18n·메시지 번들·메일 템플릿)을 고친 작업이면 `audit`도 함께 돌린다 — 같은 규칙을 읽으므로
+등재한 용어가 문서와 화면 문구 양쪽에서 걸린다.
 
 ## 용어사전 진화 (쓸수록 좋아진다)
 
@@ -111,19 +116,61 @@ node "${CLAUDE_PLUGIN_ROOT}/skills/korean-docs/scripts/check-glossary.mjs" <작�
 3. 오류를 전부 수정하고, 경고는 검토해 수정하거나 유지 근거를 보고한다.
 4. 오류 0건을 확인한 뒤 결과(파일 수, 수정 건수, 유지한 경고와 근거)를 보고한다.
 
-## 감사 도구
+## 감사 도구 — 도구는 하나, 규칙 원천은 둘
+
+`scripts/l10n.mjs` 하나가 문서와 다국어 자원을 같은 규칙으로 검사한다. 용어사전(기본 + 프로젝트
+병합)이 `check`와 `audit`의 금지 표기를 대고, 규칙 팩(`RULES.base.json` + 프로젝트
+`.claude/l10n-rules.json`)이 `rules` 훑기를 댄다. **용어사전에 등재하면 문서(.md·.svg)와 화면
+문구(i18n·메시지 번들·메일·보드 소스)가 함께 걸린다** — 낱말 금지는 용어사전에, 문장 패턴
+정규식은 hit/miss 예문과 함께 규칙 팩에 등재한다.
 
 ```bash
-node "${CLAUDE_PLUGIN_ROOT}/skills/korean-docs/scripts/check-glossary.mjs"               # audit.paths 설정 대상, 없으면 프로젝트 전체
-node "${CLAUDE_PLUGIN_ROOT}/skills/korean-docs/scripts/check-glossary.mjs" <경로...>     # 특정 파일·디렉터리
-node "${CLAUDE_PLUGIN_ROOT}/skills/korean-docs/scripts/check-glossary.mjs" --all         # 프로젝트 전체 (audit.paths 무시)
+T="${CLAUDE_PLUGIN_ROOT}/skills/korean-docs/scripts/l10n.mjs"
+node "$T" check [경로...]        # 문서 감사 — audit.paths 대상, 없으면 프로젝트 전체 (훅과 같은 판정)
+  --all             # 프로젝트 전체 (audit.paths 무시)
   --strict          # 경고도 실패 처리
   --untranslated    # 영문 문장 잔존 경고 (번역 프로젝트)
   --glossary <p>    # 용어사전 경로 직접 지정 (탐색 생략)
   --no-base         # 기본 용어사전 제외
   --list-rules      # 병합된 규칙 확인 (용어사전 수정 후 등재 결과 대조)
   --init            # .claude/GLOSSARY.md 템플릿 생성
+node "$T" audit [--kind K]       # 자원 감사 — 번역 누락 · 금지 표기 · 조사 · 짝 언어 파일
+node "$T" rules --test           # 규칙 팩이 제 예문(hit/miss)을 통과하는지 검증
+node "$T" rules [--scope S]      # 문장 규칙으로 자원을 훑는다 (고치지 않는다)
+node "$T" suspects [--json]      # 문체가 어색한 문장을 점수순으로 뽑는다
+node "$T" grep <패턴> [--regex]  # 자원의 문구 값에서 찾는다
+node "$T" apply --patch <파일>   # 다시 쓴 문장 목록을 반영한다 (--write 전까지 미리보기)
 ```
+
+`scripts/check-glossary.mjs`는 같은 문서 감사 엔진의 훅 진입점이라 `check`와 판정이 같다 — 직접
+불러도 되고, 쓰기 시점 훅이 부르는 것이 이 경로다.
+
+**자원 감사에는 프로젝트 선언이 필요하다.** 어느 경로가 다국어 자원인지는 프로젝트의
+`.claude/l10n.json`이 `kinds`(경로 glob · 형식 · 언어 · `register`)로 선언한다 — 스킬은 기본 배치를
+갖지 않는다(프로젝트마다 다른 배치를 공용 코드에 박으면 다른 프로젝트에서 조용히 틀린다).
+`register`는 그 부류의 문체를 말한다: `"screen"`(화면 문구, 합니다체) · `"manual"`(독자용
+합니다체 산문) · 생략(-다체 작업 문서). `format`은 `json` · `properties` · `ts`(`'키': '문구'`
+객체 리터럴로 쓴 카탈로그) · `markdown` · `html` · `wireframe` · `text` · `auto`다.
+
+**선언이 없으면 `check`만 돈다 — 그리고 그 0건은 통과가 아니다.** `rules` · `audit` ·
+`suspects` 셋은 `kinds` 없이 시작조차 하지 않는데, `check`는 멀쩡히 「오류 0건」을 찍는다.
+낱말 검사 하나만 돌고 문장 검사 서른한 개가 꺼져 있는 상태가, 넷 다 통과한 것과 화면에서
+구별되지 않는다. **그래서 선언이 없으면 `check`가 무엇이 꺼졌는지 끝에 적는다** — 그 줄을
+보면 먼저 선언부터 만든다.
+
+```bash
+node "$T" check --init-l10n   # .claude/l10n.json + .claude/l10n-rules.json 뼈대
+```
+
+**glob 함정**: `git ls-files`의 `**`는 경로 마디 **하나 이상**이라 `locales/**/ko.json`은
+`locales/ko.json`에 걸리지 않는다. 두 모양이 다 있는 부류는 glob을 둘 적는다 — 빠뜨린 파일은
+오류가 아니라 **침묵**으로 나타나고, 그 침묵이 「문제 없음」으로 읽힌다.
+
+**이 도구는 찾기만 한다 — 일괄 치환 명령은 없고 만들지 않는다.** 규칙은 낱말이 어디 있는지 알
+뿐 그 자리에서 무엇을 가리키는지 모른다. 각자 옳게 걸린 두 규칙이 한 문장을 「라이선스 수량
+라이선스 하나가」로 만든 사고가 치환을 없앤 이유다. 고칠 자리를 `check`·`audit`·`rules`·
+`suspects`로 뽑고, 문맥을 읽고 다시 쓴 문장을 `apply --patch`로 되돌려 넣는다 — 저장된 원문이
+파일과 어긋나면 반영을 거절한다.
 
 - 기본 감사 대상·제외 패턴·다국어 자원 경로·영문 잔존 검사 여부는 프로젝트 용어사전의 front matter(`audit.paths`, `audit.exclude`, `audit.localeResources`, `audit.untranslated`)로 설정한다.
 - **명시적으로 지정한 파일은 `audit.exclude`를 무시하고 항상 검사한다** — 제외 패턴은 디렉터리 지정과 스캔에만 적용된다. 용어사전 파일 자체는 검사하지 않는다(금지 표기가 정의상 들어 있다).
@@ -191,6 +238,8 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/detect-simplecore.mjs" --json   # globalKore
 | "한 번만 나오는 용어라 등재할 필요 없다" | 다음 문서에 다시 나온다. 등재 기준에 맞으면 등재한다. |
 | "경고는 오류가 아니니 넘어간다" | 경고는 검토 의무가 있다. 수정하거나 유지 근거를 남긴다. |
 | "감사 통과했으니 완료다" | 스크립트는 알려진 패턴만 잡는다. korean-style.md 기준 자가 검수를 거쳐야 완료다. |
+| "`check`가 0건이니 이 저장소의 한국어는 깨끗하다" | `check`는 넷 중 하나다. `.claude/l10n.json`이 없으면 문장 규칙 서른한 개가 아예 안 돈다 — 실제로 그 상태에서 0건을 받고 「깨끗하다」고 보고했다가 `rules`를 켜니 102건이 나온 적이 있다. **네 명령을 다 돌린 뒤에 판정한다.** |
+| "이 부류는 glob이 안 잡히는 것 같은데 오류가 없으니 맞겠지" | 빗나간 glob은 오류가 아니라 빈 목록이다. `list`로 파일 수를 눈으로 센다. |
 | "일부만 수정하는 작업이라 용어사전은 불필요하다" | 한 문장을 고쳐도 용어·문체 표준은 적용된다. |
 | "기본 규칙이 안 맞으니 GLOSSARY.base.md를 고친다" | 기본 파일은 전 프로젝트 공유다. 프로젝트 용어사전의 예외 표로 조정한다. |
 | "후보 중 무난한 쪽으로 정해서 등재하면 된다" | 갈리는 용어를 임의로 등재하면 잘못된 표준이 조용히 굳는다. 불확실하면 사용자에게 묻는다. |
