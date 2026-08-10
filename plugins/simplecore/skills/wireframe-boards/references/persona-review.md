@@ -45,8 +45,14 @@ concurrent subagents, one per persona, and let each return findings only.
 
 Give each agent: the persona (its question and what counts as a defect for it), the
 flow sections in scope, and how to read the board — `src/manifest.mjs` then the one
-screen file per frame on a built board, **never the built HTML**. Ask it back for a
-list of `frame id · state · what this person could not do`, and nothing else.
+screen file per frame on a built board, **never the built HTML**. Ask it back for two
+things and nothing else: **which flows it walked**, then a list of `frame id · state ·
+what this person could not do`.
+
+The first is there because a flow this person could finish and a flow the agent never
+reached arrive identically — as no lines. An agent that runs out of room after two flows
+of four returns findings that read as complete, and the flows nobody reviewed are the
+ones nothing will ever say anything about.
 
 Two rules keep this honest:
 
