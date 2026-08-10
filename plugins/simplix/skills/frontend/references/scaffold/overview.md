@@ -123,6 +123,26 @@ This generates into `packages/domain-<domain-name>/src/`:
 
 **Critical**: Never use a local JSON file if the config points to a live API URL. The tag names in the live API may differ from a local snapshot.
 
+**A spec URL that is not the configured one rewrites domains you did not name.** The command maps
+tags to domains through the config, so pointing it at a different server makes it fall back to
+handling the spec generically — and it can rewrite every domain package on its way to failing. When
+the server you need is not the one in the config, change the config for the length of the run and
+change it back, rather than passing a URL past it. In a repository where more than one person or
+session is generating, that window belongs to whoever coordinates: two runs against different specs
+leave a tree where each package was generated from a different backend, and nothing announces it.
+
+**Generated code is restored by regenerating it, never by `git checkout`.** On finding that a run
+overwrote work, the reflex is to revert the folder — but `HEAD` is the last commit, not the state
+before the overwrite, and an uncommitted regeneration somebody else had just made lives between the
+two. Reverting throws that away and the loss surfaces later as a type error naming a field the
+backend clearly serves. Regenerate from the right spec instead: it is idempotent, and it cannot
+destroy anything a commit was holding.
+
+**Before any command that writes broadly, record what was already dirty** — `git status --porcelain
+packages/` costs nothing and is the only thing that answers "was this mine?" afterwards. File
+timestamps do not: they show who wrote last, which is exactly what an overwrite makes true whether
+or not the file was clean beforehand.
+
 ### Step 3: Install & Build Domain Package
 
 ```bash
