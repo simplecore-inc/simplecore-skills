@@ -429,7 +429,7 @@ function endOfValue(content, start) {
 }
 
 /** Character ranges covered by the values of `keys`, as `[start, end)` pairs. */
-function annotationRanges(content, keys) {
+export function annotationRanges(content, keys) {
   if (keys.size === 0) return [];
   const ranges = [];
   const afterSpace = (i) => {

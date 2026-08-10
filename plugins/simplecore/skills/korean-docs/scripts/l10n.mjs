@@ -56,7 +56,7 @@ import { execFileSync } from "node:child_process";
 import { join, dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { discoverGlossary, loadRuleSet, loadRulePacks } from "./lib/glossary.mjs";
-import { initGlossary, initL10n, runDocAudit } from "./lib/doc-audit.mjs";
+import { initGlossary, initL10n, runDocAudit, annotationRanges } from "./lib/doc-audit.mjs";
 
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
 
@@ -598,9 +598,28 @@ const EXTRACTORS = {
   text: segmentsText,
 };
 
+/**
+ * Keys whose values are commentary addressed to whoever maintains the file rather
+ * than copy a user reads — a wireframe frame's design notes beside the labels it
+ * draws. The glossary's front matter names them, and `check` already exempts them
+ * from screen-only bans; `audit` reads the same list so the two agree. Without it a
+ * note that says 청크 because it documents chunking is reported as screen copy, and
+ * the only way to clear it is to make the note say the wrong thing.
+ */
+function annotationKeys() {
+  return new Set(ruleSet().config?.localeAnnotationKeys ?? []);
+}
+
 function readSegments(entry) {
   const src = readFileSync(join(ROOT, entry.file), "utf8");
-  return { src, segments: EXTRACTORS[entry.format](src) };
+  const segments = EXTRACTORS[entry.format](src);
+  const ranges = annotationRanges(src, annotationKeys());
+  if (ranges.length) {
+    for (const seg of segments) {
+      seg.annotation = ranges.some(([start, end]) => seg.start >= start && seg.start < end);
+    }
+  }
+  return { src, segments };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1370,7 +1389,7 @@ function cmdAudit(opts) {
         findings.particles.push({ file: entry.file, key: seg.key, text: seg.text, ...p, line: line() });
       }
       for (const ban of bans) {
-        if (ban.screenOnly && !isScreen) continue;
+        if (ban.screenOnly && (!isScreen || seg.annotation)) continue;
         ban.re.lastIndex = 0;
         if (ban.re.test(seg.text)) {
           if (!perRule.has(ban.term)) perRule.set(ban.term, []);
