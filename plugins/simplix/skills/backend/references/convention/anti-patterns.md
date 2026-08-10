@@ -802,3 +802,49 @@ failing the moment the guard lands.
 grep -rn -A4 "@NaturalId" --include='*.java' packages modules | grep -A3 "private String"
 grep -rn "Immutable}" --include='*Service.java' modules
 ```
+
+## AP-35: An Entity Mapping Only One Database Engine Can Build
+
+```java
+// WRONG — each of these is one engine's SQL, written where the schema tool copies it verbatim:
+@Comment("Why, in the operator's own words")          // the quote ends the SQL literal early
+@Column(columnDefinition = "boolean default false")   // no boolean, no false, on some engines
+@Check(constraints = "active IN (true, false)")       // same literal, and it constrains nothing
+@Lob @Column(name = "search_index")                   // a CLOB cannot be an argument to lower()
+
+// CORRECT — say the intent and let Hibernate write it for whichever engine is under it:
+@Comment("Why, in the words the operator wrote")
+@ColumnDefault("false")
+@DialectOverride.ColumnDefault(dialect = SQLServerDialect.class, override = @ColumnDefault("0"))
+@Column(name = "enabled", nullable = false)
+@Column(name = "search_index", length = 4000)
+```
+
+**Why**: Hibernate knows each engine's types and writes DDL for the one it finds; these four
+annotations bypass that and hand it text to copy. The failures are quiet and late — the schema
+tool logs a warning and carries on, so the server starts against a database missing tables and
+dies on the first query, and `ddl-auto: validate` passes because the columns that do exist have
+the right names. An apostrophe is the sharpest of them: an ordinary English possessive in a
+`@Comment` closes the SQL string it sits inside, and on the engines that carry comments inline
+(MySQL) the whole `CREATE TABLE` around it is refused. This bites a single-engine project too —
+the day it is pointed at a second engine, or the day a comment gains a possessive.
+
+Soft delete is the exception that cannot be fixed this way: `@SQLDelete` takes a compile-time
+constant, so the statement cannot read which engine it is about to run on. Each engine needs its
+own clause, paired with `@DialectOverride.SQLDelete` — and an entity missing one deletes fine
+everywhere but there.
+
+**Detection** (run from the repository root):
+```bash
+# text the schema tool puts inside a SQL literal
+grep -rn "@Comment(\"[^\"]*'" --include='*.java' packages modules
+# one engine's types and literals in the mapping
+grep -rn "columnDefinition" --include='*.java' packages modules
+grep -rn -A2 "@Check(" --include='*.java' packages modules | grep -E "true|false"
+# a soft delete that covers fewer engines than the project supports
+grep -rc "@DialectOverride.SQLDelete" --include='*.java' packages modules | grep ":0$"
+```
+
+A project that supports more than one engine should carry these as a test over its own sources
+rather than a grep anyone has to remember, and one probe per engine that boots, writes, reads and
+**soft-deletes** — booting alone reports an engine as supported while every delete on it dies.
