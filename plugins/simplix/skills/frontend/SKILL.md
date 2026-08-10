@@ -212,6 +212,8 @@ These invariants apply to **every** frontend file you touch. Treat each as invio
 
 60. **A context-owning package resolves to ONE copy — name the framework packages in `resolve.dedupe`, and prove it after every resolution change** — pnpm splits one version into two physical copies whenever two importers' peer sets differ, and a provider rendered from one copy is invisible to a consumer importing the other: chrome vanishes with a clean build and correct-reading source. Run `node "${CLAUDE_PLUGIN_ROOT}/scripts/check-duplicate-contexts.mjs"` after any change to dependency resolution, and run it FIRST when chrome is missing — one command rules out the resolution half of that symptom. Full mechanism, the two-cause missing-chrome triage, the linked-checkout variant, and the RN/Metro caveat → `invariants.md` #60.
 
+61. **Hiding a surface is not the same as not asking for it — the gate belongs beside the request** — a hook runs wherever it is written, so a screen that gates only its JSX still fires the read the server refuses, and the user gets a bare "access denied" dialog over a panel with nothing on it to explain the refusal. Put the condition where the request is (the hook's `enabled`, the shared factory's `useEnabled`), never only at the route or the parent that composes it — a caller that forgets is then impossible rather than merely unlikely. Check the framework for an existing gate channel before inventing one. And drop the affordance too: a filter or picker left standing with an empty option list reads as "failed to load", not as "you did not buy this". Symptom catalogue, the three shapes it takes, and why this is not a script rule → `invariants.md` #61.
+
 ---
 
 ## Task Router
@@ -301,7 +303,7 @@ Trigger: writing or editing README, TSDoc on public exports, tutorials, how-to g
 
 After writing:
 
-- [ ] All 60 Non-Negotiable Invariants hold
+- [ ] All 61 Non-Negotiable Invariants hold
 - [ ] Every action affordance gated on its endpoint's permission (#52) — both header variants, tree `add-child`, and buttons inside action groups; group read from `SUBJECTS`, never inlined
 - [ ] Precedent parity pass done (new / reshaped screens — #51): comparison sheet walked row by row against both precedents, screens compared in the browser
 - [ ] Completion report (in conversation — never recorded in files) names the Task Router references consulted and, for screen work, the shape + both precedent files + justified divergences (#51)

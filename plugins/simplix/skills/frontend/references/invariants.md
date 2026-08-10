@@ -367,3 +367,45 @@ this and the list written under those conditions does not name them.
   resources and the leftover-symlink sweep are in `framework/overview.md` § One physical
   copy per framework package, together with the framework-side `globalThis` anchoring
   rule that keeps a duplicate copy from becoming a correctness failure.
+
+## #61 Hiding a surface is not the same as not asking for it
+
+A hook runs wherever it is written. Gating only what a component *renders* leaves the
+request it makes untouched, so a screen that correctly hides a feature it did not buy
+still calls the endpoint that feature owns — and the server refuses. What the user sees
+is a bare "access denied" dialog over a panel showing nothing that could explain it, on
+a screen that is otherwise entirely theirs to use. The half that did the hiding believes
+it is finished, because from inside that component the affordance really is gone.
+
+**Put the condition where the request is.** The hook's own `enabled`, or the shared
+factory's `useEnabled` — not the route, not the parent that composes the widget. A gate
+at the composing layer is a rule the NEXT caller has to remember; a gate inside the hook
+is one they cannot get wrong. When the same read is offered as several primitives (a
+picker, a facet, a name lookup over one roster), route all of them through one predicate
+so a new primitive inherits the gate rather than reintroducing the hole.
+
+**Check the framework before inventing a channel.** Entity-search and entity-facet
+factories commonly already take a `useEnabled`; query hooks take `enabled`. Reaching for
+those keeps the gate one line and keeps hook order stable, which a conditional call
+would not.
+
+**Drop the affordance as well as the request.** A filter or picker left standing with an
+empty option list reads as "failed to load", not as "your tier does not include this" —
+the reader retries, then reports a bug against a screen that is behaving exactly as
+designed. Remove the control, or replace it with a sentence naming what is missing.
+
+Three shapes this takes, all found in one afternoon on one product:
+
+| Shape | Where it hid | What still fired |
+| --- | --- | --- |
+| Tab bodies gated, list hooks at component top | detail panel with log tabs | both list searches |
+| Composing route gated, draft hook above it | account detail with a scoped section | the scope read, twice |
+| Feature-owned picker on a base-edition screen | customer list filter and form field | the roster search |
+
+**Detecting this mechanically is left undone on purpose.** The shape — "a hook whose
+value is used only inside a conditional" — describes far more legitimate code than
+defective code (loading states, empty states, every optional panel), and the part that
+makes it a defect is that the endpoint is gated, which no static rule can see without
+the project's own gate vocabulary. A rule that fires on the correct cases teaches the
+reader to ignore it. Find these by driving the screens as an account that lacks the
+thing, and watch for a refusal dialog with nothing behind it.
