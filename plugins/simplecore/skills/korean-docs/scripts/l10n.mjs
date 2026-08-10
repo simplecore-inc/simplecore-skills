@@ -1424,6 +1424,15 @@ function cmdAudit(opts) {
 
     /** Reduce a path to a language-independent stem so counterparts line up. */
     const stemOf = (file, lang) => {
+      // A translated document usually gets a translated file name, so the path carries
+      // nothing the two languages share — `01-시작하기.md` and `01-getting-started.md`
+      // are the same page. `stemKey` names the part that does not translate (a step
+      // number, an id) as capture groups; a file the pattern misses keeps its path, so
+      // it surfaces as unpaired instead of vanishing from the comparison.
+      if (spec.stemKey) {
+        const m = new RegExp(spec.stemKey).exec(file);
+        if (m) return m.slice(1).join("/");
+      }
       if (spec.baseLanguage === lang) {
         // A base bundle has no suffix at all; give it the one its siblings carry.
         return file.replace(/(\.[^.]+)$/, `_{lang}$1`);
