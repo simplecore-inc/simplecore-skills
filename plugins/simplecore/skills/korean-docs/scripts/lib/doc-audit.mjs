@@ -326,7 +326,25 @@ const QUOTED_PARTICLE_RE = /([가-힣])[」』](은|는)(?=[\s.,·)\]'"]|$)/g;
 // interrogative ending (충분한가, 다른가, 언젠가) and loanwords that end in 이 or
 // 가 (트레이, 디스플레이, 효과). Listing them is cheaper than trying to parse
 // Korean morphology, and each entry is a word rather than a domain term.
+//
+// **The -ㄴ가 branch is decided by position, not by an enumeration of syllables.** It used
+// to list 는·은·른·운·한·인 and let 아닌가 · 그런가 · 어떤가 through as particle errors — an
+// enumeration standing in for a family, which is the defect this file exists to catch.
+//
+// Widening it to «every ㄴ-final syllable» is NOT the fix: 화면 · 조건 · 시간 · 사건 all end
+// in ㄴ, so 「화면가 열린다」 would go quiet with it. What separates the two is where the
+// token sits. The interrogative -ㄴ가 CLOSES a sentence; 명사 + 가 is a subject and something
+// has to follow it. So the ending is accepted only at the end of a line, before a question
+// mark, or before a closing quote — and a subject in mid-sentence is still judged.
 const PARTICLE_WORD_SKIP = /(ㄴ가|[간-힣]?[는은른운한인]가|언젠가|누군가|어딘가|뭔가|무언가|선가)$/;
+/** Nothing but closing punctuation left on the line — the interrogative -ㄴ가's position. */
+const SENTENCE_CLOSE = /^[\s?!.」』"')\]]*$/;
+/** True for 아닌가 · 그런가 · 어떤가 where they close a sentence, false for 「화면가 열린다」. */
+function isNGaEnding(whole, rest) {
+  if (!whole.endsWith('가') || whole.length < 2 || !SENTENCE_CLOSE.test(rest)) return false;
+  const code = whole.codePointAt(whole.length - 2);
+  return code >= 0xac00 && code <= 0xd7a3 && (code - 0xac00) % 28 === 4;
+}
 // Words that simply END in 이 or 가, where the tail is part of the word rather than a
 // particle. Adverbs are the ones this rule keeps mistaking for a noun: `가까이 모인다` reads
 // as 가까+이 and gets corrected to something that is not Korean.
@@ -348,6 +366,7 @@ function checkParticles(lines) {
       if (PARTICLE_STEM_SKIP.test(stem)) continue;
       if (/[는은던]$/.test(stem)) continue;
       if (PARTICLE_WORD_SKIP.test(whole) || PARTICLE_TAIL_SKIP.test(whole)) continue;
+      if (isNGaEnding(whole, line.slice(m.index + whole.length))) continue;
       const final = hasFinalConsonant(stem[stem.length - 1]);
       if (final === null) continue;
       if (PARTICLE_NEEDS_FINAL[particle] === final) continue;

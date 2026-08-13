@@ -211,8 +211,36 @@ function formatOf(kind, file) {
   return "text";
 }
 
-/** Every resource file, as `{ kind, lang, file, format }`, deduplicated across globs. */
-function discover({ kind, lang } = {}) {
+/**
+ * The document set `check` reads, as discover() entries.
+ *
+ * Without this the sentence sweeps needed a `kinds` declaration that the word check does
+ * not, so the same repository got two different answers to «which files are judged» — and
+ * a project with only documents got `check`'s 0 while thirty sentence rules never ran.
+ * Both `*.md` and `**\/*.md` are listed on purpose: the non-repository fallback treats `**`
+ * as one-or-more segments, so the top-level files drop out of the second form alone.
+ */
+function docEntries() {
+  const found = new Map();
+  for (const ext of ["md", "mdx", "svg"]) {
+    for (const glob of [`*.${ext}`, `**/*.${ext}`]) {
+      for (const file of gitFiles(glob)) {
+        found.set(file, { kind: "docs", lang: CONFIG.defaultLanguage, file, format: formatOf(null, file) });
+      }
+    }
+  }
+  return [...found.values()].sort((a, b) => a.file.localeCompare(b.file));
+}
+
+/**
+ * Every resource file, as `{ kind, lang, file, format }`, deduplicated across globs.
+ *
+ * `docFallback` is for the commands that judge one file at a time — `rules`, `suspects`,
+ * `grep`, `list`. `audit` and `stats` do not take it: both read a kind against its
+ * counterpart language, and there is no counterpart to a document set.
+ */
+function discover({ kind, lang, docFallback = false } = {}) {
+  if (docFallback && !kind && !Object.keys(CONFIG.kinds).length) return docEntries();
   requireKinds();
   const kinds = kind ? [kind] : Object.keys(CONFIG.kinds).filter((k) => !CONFIG.kinds[k].optIn);
   const langs = lang ? [lang] : [CONFIG.defaultLanguage];
@@ -856,7 +884,7 @@ const C = {
 };
 
 function cmdList(opts) {
-  const entries = discover(opts);
+  const entries = discover({ ...opts, docFallback: true });
   if (opts.json) {
     console.log(JSON.stringify(entries, null, 2));
     return 0;
@@ -865,7 +893,8 @@ function cmdList(opts) {
   for (const e of entries) {
     if (e.kind !== current) {
       current = e.kind;
-      console.log(`\n${C.bold(CONFIG.kinds[e.kind].label ?? e.kind)} ${C.dim(`(${e.kind})`)}`);
+      // The synthetic `docs` kind of the no-declaration fallback has no entry to label it.
+      console.log(`\n${C.bold(CONFIG.kinds[e.kind]?.label ?? "문서 (선언 없음)")} ${C.dim(`(${e.kind})`)}`);
     }
     console.log(`  ${e.file}`);
   }
@@ -910,7 +939,7 @@ function buildMatcher(pattern, useRegex) {
 
 function cmdGrep(pattern, opts) {
   const re = buildMatcher(pattern, opts.regex);
-  const entries = discover(opts);
+  const entries = discover({ ...opts, docFallback: true });
   const hits = [];
   for (const entry of entries) {
     const { src, segments } = readSegments(entry);
@@ -955,6 +984,22 @@ function placeholdersIntact(before, after) {
 // Style-rule pack commands — portable Korean copy rules with self-verification
 // ─────────────────────────────────────────────────────────────────────────────
 
+/**
+ * The reading lens, as one matcher — `references/lens.txt`, a single broad alternation.
+ *
+ * Read here so `rules --test` can assert that a rule's family is one the lens can surface.
+ * Missing or unreadable, the assertion is skipped rather than failed: the lens is a reading
+ * aid and a pack must still be testable without it.
+ */
+function readLens() {
+  try {
+    const src = readFileSync(join(dirname(SCRIPT_PATH), "..", "references", "lens.txt"), "utf8").trim();
+    return src ? new RegExp(src, "g") : null;
+  } catch {
+    return null;
+  }
+}
+
 function ruleMatchers(rule) {
   // Pack files may write bare regex source or `/…/` delimiters; both compile to the
   // same matcher, so a rule behaves identically in `rules`, `rules --test` and `audit`.
@@ -962,6 +1007,41 @@ function ruleMatchers(rule) {
     const delimited = p.length > 2 && p.startsWith("/") && p.endsWith("/");
     return new RegExp(delimited ? p.slice(1, -1) : p, "g");
   });
+}
+
+/**
+ * `references/lens.txt` is the regex; `reading-lens.md`'s family tables are what a person
+ * reads. Two places holding one truth drift — widening one and not the other is how the
+ * document came to promise stems the lens did not carry. Compared here so `rules --test`
+ * says which side is short.
+ */
+function lensDrift() {
+  const dir = join(dirname(SCRIPT_PATH), "..", "references");
+  let src, doc;
+  try {
+    src = readFileSync(join(dir, "lens.txt"), "utf8").trim();
+    doc = readFileSync(join(dir, "reading-lens.md"), "utf8");
+  } catch {
+    return null;
+  }
+  const section = doc.split("## 렌즈 — 계열별 어간")[1]?.split("### ")[0];
+  if (!section) return null;
+  const inDoc = new Set();
+  for (const line of section.split("\n")) {
+    const body = line.trim().replace(/^\*\*[^*]+\*\* /, "");
+    if (!body || body.startsWith("**")) continue;
+    for (const term of body.split("·")) if (term.trim()) inDoc.add(term.trim());
+  }
+  // `붙[는들]` in the regex stands for 붙는 and 붙들 in the table.
+  const expand = (alt) => {
+    const m = /^(.*?)\[([^\]]+)\](.*)$/.exec(alt);
+    return m ? [...m[2]].map((c) => m[1] + c + m[3]) : [alt];
+  };
+  const inLens = new Set(src.slice(1, -1).split("|").flatMap(expand).map((x) => x.trim()));
+  return {
+    docOnly: [...inDoc].filter((x) => !inLens.has(x)),
+    lensOnly: [...inLens].filter((x) => !inDoc.has(x)),
+  };
 }
 
 /**
@@ -975,6 +1055,8 @@ function ruleMatchers(rule) {
  */
 function cmdRulesTest(opts) {
   const rules = rulePacks().all;
+  const lens = readLens();
+  const drift = lensDrift();
   let failures = 0;
   for (const rule of rules) {
     const res = ruleMatchers(rule);
@@ -988,6 +1070,26 @@ function cmdRulesTest(opts) {
     }
     if (!(rule.hit ?? []).length) problems.push(["hit 예문이 없음", "규칙이 무엇을 잡는지 증명되지 않는다"]);
     if (!(rule.miss ?? []).length) problems.push(["miss 예문이 없음", "오탐을 막는 근거가 없다"]);
+    // The lens knowing a family HALF is the defect — 「붙는」 stood in it without
+    // 붙이·붙은·붙지·붙어, so the lens reported finding the family while 126 sites walked
+    // past. A rule's examples are all of one family, so a lens that matches some of them
+    // and loses the rest has an incomplete stem, and this says which example it lost.
+    //
+    // Matching NONE is not judged: the lens has no interest in that family, which is the
+    // ordinary case for a rule whose target does not conjugate — spelling, loanwords,
+    // particles, connectives. Putting those stems in the lens would lengthen the reading
+    // list without adding a family it can lose. `lens: false` opts a rule out entirely,
+    // and a domain-scoped rule is never asked: the lens is universal and owes a domain
+    // nothing — 천장 is a metaphor in a billing product and a real ceiling on a site.
+    if (lens && rule.lens !== false && rule.scope === "universal" && (rule.hit ?? []).length > 1) {
+      const unseen = rule.hit.filter((ex) => ((lens.lastIndex = 0), !lens.test(ex)));
+      if (unseen.length && unseen.length < rule.hit.length) {
+        problems.push([
+          "렌즈가 이 계열을 반만 안다",
+          `${unseen[0]} — 이 꼴이 references/lens.txt를 빠져나간다`,
+        ]);
+      }
+    }
 
     if (problems.length) {
       failures += 1;
@@ -996,6 +1098,12 @@ function cmdRulesTest(opts) {
     } else if (opts.verbose) {
       console.log(`${C.green("✔")} ${rule.id} ${C.dim(`(hit ${rule.hit.length} · miss ${rule.miss.length})`)}`);
     }
+  }
+  if (drift && (drift.docOnly.length || drift.lensOnly.length)) {
+    failures += 1;
+    console.log(`\n${C.red("✖")} ${C.bold("렌즈")} ${C.dim("lens.txt ↔ reading-lens.md")}`);
+    if (drift.docOnly.length) console.log(`    표에만 있음: ${C.yellow(drift.docOnly.join(" · "))}`);
+    if (drift.lensOnly.length) console.log(`    lens.txt에만 있음: ${C.yellow(drift.lensOnly.join(" · "))}`);
   }
   console.log(
     `\n검증한 규칙 ${rules.length}개 · ${failures ? C.red(`실패 ${failures}개`) : C.green("전부 통과")}` +
@@ -1009,7 +1117,7 @@ function cmdRulesScan(opts) {
   // An explicit --scope reaches rules the project did not opt into; the default
   // sweep runs universal rules plus the project's declared scopes.
   const active = opts.scope ? rulePacks().all.filter((r) => r.scope === opts.scope) : rulePacks().active;
-  const entries = discover(opts);
+  const entries = discover({ ...opts, docFallback: true });
   const byRule = new Map();
 
   for (const entry of entries) {
@@ -1227,7 +1335,7 @@ function cmdSuspects(opts) {
   // labels (저장됨), settled idioms (막다른 길 · 나가는 길), and -다체 design prose — so a
   // lower threshold trains its reader to skim past the findings that matter.
   const min = Number(opts.min ?? 3);
-  const entries = discover(opts);
+  const entries = discover({ ...opts, docFallback: true });
   const found = [];
   for (const entry of entries) {
     const { src, segments } = readSegments(entry);
