@@ -7,7 +7,7 @@ One file becomes a wall of grey that neither a person nor an LLM can navigate,
 and every chrome edit is a find-replace across the whole board. At that size,
 author the board as a small **source tree that builds into the same
 deliverable** — the output invariant never changes: the build still emits one
-self-contained, offline, no-JS (bar the one scroll-spy exception) HTML file.
+self-contained, offline, no-JS (bar the index navigation aids) HTML file.
 Splitting is a *source* concern, not a *deliverable* one.
 
 A working, copy-ready version of this whole system ships in `assets/build-kit/`
@@ -20,7 +20,9 @@ Copy that folder as the starting point instead of writing the build from scratch
 ## The source shape
 
 - `src/partials.mjs` — `frame()` (the per-screen device shell), `sidebar()` (the
-  table-of-contents), and `page()` (the document).
+  table-of-contents: a fixed head carrying the filter over a scrolling list of
+  `.sb-group` sections), and `page()` (the document, including the two inline
+  index scripts — scroll-spy and filter).
 - `src/components.mjs` — content and chrome primitives as functions (card, table,
   field, chip, badge, and the device chrome: appbar, tabbar, shell, sidebarNav,
   topbar, browserbar) plus a `CATALOG` array every primitive self-registers into.

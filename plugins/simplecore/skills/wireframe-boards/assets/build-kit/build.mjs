@@ -97,6 +97,44 @@ if (idErrors.length) {
 const resolveRefs = (text) => (text || '').replace(/\{\{([a-z0-9-]+)\}\}/g,
   (_, slug) => (idOf(slug) && byId.has(idOf(slug)) ? idOf(slug) : `{{${slug}?}}`));
 
+// Reference integrity. `resolveRefs` reads the NUMBER out of a slug and ignores the tail, so three
+// ways of getting a reference wrong survive it — and all three look right on the built board.
+const refErrors = [];
+{
+  const fileById = new Map(loaded.map((s) => [s.num, s.file]));
+  const byTail = new Map();   // one screen name → the numbers it was referenced by
+  const byNum = new Map();    // one number → the screen names that claimed it
+  for (const s of loaded) {
+    for (const m of String(s.mod.notes ?? '').matchAll(/\{\{([a-z])-(\d{2,}[a-z]?)-([a-z0-9-]+)\}\}/g)) {
+      const [slug, letter, num, tail] = [m[0].slice(2, -2), m[1], m[2], m[3]];
+      const id = `${letter.toUpperCase()}-${num}`;
+      // 1. A slug whose number IS drawn but whose tail names a different screen resolves silently
+      //    and points the reader somewhere else — worse than a visible `{{slug?}}`.
+      if (fileById.has(id) && fileById.get(id) !== slug) {
+        refErrors.push(`${s.file}: {{${slug}}} → ${id}는 ${fileById.get(id)}다`);
+      }
+      const tailKey = `${letter}-${tail}`;
+      if (!byTail.has(tailKey)) byTail.set(tailKey, new Map());
+      byTail.get(tailKey).set(num, s.file);
+      if (!byNum.has(id)) byNum.set(id, new Map());
+      byNum.get(id).set(tail, s.file);
+    }
+  }
+  // 2. One screen name referenced by two numbers, and 3. one number claimed by two screen names.
+  //    Both are forward references that render as an honest-looking `{{slug?}}`, and only one of
+  //    them will be right when that cluster is drawn. Settle it while both notes are in hand.
+  for (const [tail, nums] of byTail) {
+    if (nums.size > 1) refErrors.push(`${tail} — 한 화면을 두 번호로: ${[...nums].map(([n, f]) => `${n} (${f})`).join(' vs ')}`);
+  }
+  for (const [id, tails] of byNum) {
+    if (tails.size > 1) refErrors.push(`${id} — 한 번호를 두 이름으로: ${[...tails].map(([t, f]) => `${t} (${f})`).join(' vs ')}`);
+  }
+}
+if (refErrors.length) {
+  console.error(`refusing to build — 참조가 가리키는 화면이 어긋난다:\n  ${refErrors.join('\n  ')}`);
+  process.exit(1);
+}
+
 for (const sec of sections) {
   const scList = [];
   const frames = [];

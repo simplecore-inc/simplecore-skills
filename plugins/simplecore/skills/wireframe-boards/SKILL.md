@@ -30,12 +30,17 @@ inline in one `<style>` block. These six hold on every board:
 1. **No external resource** — no images, fonts, or stylesheets; system font
    stack only. The file must render identically offline, attached to a doc, or
    as a thumbnail; one missing network resource silently destroys the board.
-2. **No JavaScript, with one narrow exception.** Layout, content, and states are
-   pure HTML/CSS and must render fully with scripts off. The only script
-   permitted is a small **inline** scroll-spy that highlights the table-of-contents
-   entry of the frame in view — progressive, so anchors still work with JS off.
-   No script may create content, drive interactivity a reviewer acts on, or gate
-   what is visible.
+2. **No JavaScript, except to navigate the table of contents.** Layout, content,
+   and states are pure HTML/CSS and must render fully with scripts off. The only
+   scripts permitted are **inline** navigation aids over the sidebar index: a
+   scroll-spy that highlights the entry of the frame in view, and a filter that
+   narrows the index as the reader types. Both are progressive — with JS off the
+   board renders whole, the index lists every screen, and every anchor works — and
+   any control they drive ships `hidden`, unhidden by the script, so a scriptless
+   board carries no dead control. **No script may create content, drive
+   interactivity a reviewer acts on, or hide a frame.** Filtering the INDEX is
+   navigation; filtering the BOARD would let a reviewer be shown a shorter board
+   than the one that exists, and is the line this exception does not cross.
 3. **Greyscale plus exactly ONE accent color**, reserved for connectors,
    annotation pins, stickies, fold lines, and `OPEN:` markers. A second accent
    turns the board into a design and reviewers critique colors instead of flows.
@@ -101,7 +106,11 @@ inline in one `<style>` block. These six hold on every board:
    count. Add a `<nav class="toc">` when the board has more than two sections —
    on a 40-frame board, navigation is the difference between a review tool and a
    wall of grey.
-4. **Compose each frame from the primitives** → `references/primitives.md`.
+4. **Compose each frame from the primitives** → `references/primitives.md`. On a CRUD
+   screen read § List-detail first: the panel's footer is pinned to the floor, so the
+   list-detail region is the last thing on the page and everything else has one of four
+   homes — above it, in the panel, at the tail of the list column, or in the header's
+   action area.
    Frames render at their device-class dimensions so proportions read truthfully
    — if a label or button row overflows at that width, the real screen will too,
    and surfacing that is part of the wireframe's job. Device classes, fixed vs
@@ -125,6 +134,7 @@ All paths are relative to this skill's own directory.
 | --- | --- |
 | Choosing a device class, height behaviour, or authoring a narrow/wide pair | `references/device-frames.md` |
 | Composing frame content, chrome, connectors, annotations; fidelity rules | `references/primitives.md` |
+| Laying out a CRUD screen — what may sit above, beside, inside or under a list-detail | `references/primitives.md` § List-detail |
 | Implementing from a board, reconciling code ⇄ board, syncing after a change, proposing a board, wiring a project to its board | `references/living-contract.md` |
 | Past ~20 frames, or repeated chrome — the component kit, screen files, and build | `references/build-kit.md` |
 | Running the persona review after a screen is drawn or changed | `references/persona-review.md` |
