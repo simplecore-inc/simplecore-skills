@@ -21,7 +21,13 @@ Pass `--root=<path>` when `$ARGUMENTS` names a directory other than the current 
 
 - `needsMigration: false` → say the board is already on contract `boardContractExpected` and stop.
 - `board: null` → there is no board to migrate. Offer `/simplecore:board-init` instead.
-- `board.stamped: false` → the board predates stamping. Treat it as contract 1 and continue.
+- `board.contractFrom` says where that number came from, and the three answers are not the same
+  question. `built` the released board carries the stamp · `kit` nothing is released yet, so the
+  kit's own `BOARD_CONTRACT` stands in — a board still being drawn lands here and is **not** a
+  migration candidate · `null` a released board carries no stamp, which is a genuine contract-1
+  board: treat it as 1 and continue. **A missing `board.html` is not a missing contract** — the
+  build refuses `--release` until every required cluster is drawn, so most of a board's life has no
+  released artifact at all.
 
 ## 2. Measure the drift before proposing anything
 

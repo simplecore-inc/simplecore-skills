@@ -46,12 +46,19 @@ const HTML_HEAD_BYTES = 64 * 1024;
 // either alone is a plausible coincidence in unrelated markup.
 const BOARD_SIGNATURES = ["frame-label", "readme"];
 
-// The board contract this skill currently writes. A board stamped lower than this — or not
-// stamped at all, which is every board authored before stamping existed — needs migrating.
+// The board contract this skill currently writes. A board on a lower contract needs migrating.
 // Kept here as the "what the skill expects now" side; the kit copied into a project carries the
 // "what this board is" side in its own partials.mjs. Two values by necessity, not duplication.
+//
+// **A board with no stamp is not the same thing as a board with no built HTML.** The first is
+// genuinely contract 1 — stamping did not exist when it was made. The second is a kit-built board
+// that has not been released yet, which is most of a board's life, and its contract is whatever
+// its kit writes. Collapsing the two told every board still being drawn to migrate away from the
+// contract it was already on.
 const BOARD_CONTRACT = 2;
 const CONTRACT_META = /<meta\s+name=["']wireframe-board-contract["']\s+content=["'](\d+)["']/i;
+const KIT_CONTRACT_DECL = /BOARD_CONTRACT\s*=\s*(\d+)/;
+const KIT_SOURCE_BYTES = 16 * 1024;
 
 const PARITY_CONFIG = path.join(".claude", "board-parity-walk.json");
 const GLOSSARY_LOCATIONS = [path.join(".claude", "GLOSSARY.md"), "GLOSSARY.md"];
@@ -110,20 +117,56 @@ function findBoard(root) {
    * actually opens, and because a kit-built board's stamp comes from the kit that built it —
    * which is the version the board genuinely conforms to, whatever the sources now say.
    */
+  // `undefined` and `null` mean different things here and the difference is the whole point:
+  // `undefined` no released board exists yet · `null` one exists and carries no stamp, which is a
+  // genuine contract-1 board. Returning one value for both is what made a board mid-authoring
+  // indistinguishable from a board authored before stamping existed.
   const stampIn = (dir) => {
+    let released = false;
     for (const entry of entries(dir)) {
       if (!entry.isFile() || !entry.name.toLowerCase().endsWith(".html")) continue;
       if (entry.name.startsWith("_")) continue; // _proof / _catalog are byproducts, not the board
+      released = true;
       const head = readIfPresent(path.join(dir, entry.name), HTML_HEAD_BYTES) ?? "";
       const m = CONTRACT_META.exec(head);
       if (m) return Number(m[1]);
     }
-    return null;
+    return released ? null : undefined;
+  };
+
+  /**
+   * The contract a kit-built board's own build writes, read from the kit's sources.
+   *
+   * @remarks
+   * The stamp in the built board is the better answer and is tried first. But `board.html` appears
+   * only once the build's coverage gate is satisfied — every required cluster drawn — which is late
+   * in a board's life, and `_proof.html` is a byproduct {@link stampIn} deliberately skips. So a
+   * board that is halfway through being drawn has no stamped artifact at all, and reading its
+   * absence as "unstamped, therefore contract 1" is wrong in the one direction that costs work: it
+   * proposes a migration away from the contract the board is already on.
+   */
+  const kitContractIn = (dir) => {
+    const src = readIfPresent(path.join(dir, "src", "partials.mjs"), KIT_SOURCE_BYTES) ?? "";
+    const m = KIT_CONTRACT_DECL.exec(src);
+    return m ? Number(m[1]) : null;
   };
 
   const visit = (dir, depth) => {
     if (fs.existsSync(path.join(dir, "build.mjs")) && fs.existsSync(path.join(dir, "src", "manifest.mjs"))) {
-      return { dir, kind: "built", file: path.join(dir, "src", "manifest.mjs"), contract: stampIn(dir) };
+      const stamped = stampIn(dir);
+      // A released board answers for itself, whatever the sources now say — it is the artifact
+      // people open. The kit stands in only when there is nothing released to ask.
+      const fromKit = stamped === undefined ? kitContractIn(dir) : null;
+      return {
+        dir,
+        kind: "built",
+        file: path.join(dir, "src", "manifest.mjs"),
+        contract: stamped ?? fromKit,
+        // Where the answer came from, because the three cases are told apart nowhere else:
+        // `built` a released board says so itself · `kit` no release yet, so the kit's own
+        // declaration stands in · `null` neither, which is a genuine contract-1 board.
+        contractFrom: typeof stamped === "number" ? "built" : fromKit != null ? "kit" : null,
+      };
     }
 
     for (const entry of entries(dir)) {
@@ -138,6 +181,9 @@ function findBoard(root) {
           kind: "single-file",
           file: path.join(dir, entry.name),
           contract: m ? Number(m[1]) : null,
+          // A hand-written board has no kit to fall back on: the file in hand IS the board, so an
+          // unstamped one is genuinely contract 1.
+          contractFrom: m ? "built" : null,
         };
       }
     }
@@ -266,7 +312,8 @@ export function analyze(root) {
       }
     : null;
 
-  // An unstamped board is an original-contract board: stamping did not exist when it was made.
+  // A board that answers neither way is an original-contract board: stamping did not exist when it
+  // was made, and it has no kit whose sources could say otherwise.
   const boardOn = board ? (board.contract ?? 1) : null;
   const needsMigration = board !== null && boardOn < BOARD_CONTRACT;
 
@@ -335,7 +382,8 @@ export function analyze(root) {
           kind: board.kind,
           file: rel(board.file),
           contract: boardOn,
-          stamped: board.contract !== null,
+          stamped: board.contractFrom === "built",
+          contractFrom: board.contractFrom,
           ...boardContract,
         }
       : null,
@@ -370,9 +418,10 @@ function main() {
       console.log(`  ${skill.padEnd(32)} routed from ${report.routedBy[skill.split(":")[1]] ?? "nothing yet"}`);
     }
     if (report.board) {
-      const stamp = report.board.stamped
-        ? `contract ${report.board.contract}`
-        : `contract ${report.board.contract} (unstamped)`;
+      const stamp = {
+        built: `contract ${report.board.contract}`,
+        kit: `contract ${report.board.contract} (kit says so — no released board.html yet)`,
+      }[report.board.contractFrom] ?? `contract ${report.board.contract} (unstamped)`;
       console.log(`\nBoard: ${report.board.dir} (${report.board.kind}, ${stamp}) — read ${report.board.file}`);
       if (report.needsMigration) {
         console.log(`  ⚠ needs migration to contract ${report.boardContractExpected} → /simplecore:board-migrate`);
