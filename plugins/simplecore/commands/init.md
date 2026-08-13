@@ -56,6 +56,13 @@ Two halves, and most projects need both:
    - **Korean style baseline** — when `globalKorean.present` is false and this project writes
      Korean. Without it, an ordinary Korean answer is written without the style baseline, and the
      korean-docs skill only fires when a task sounds like document work.
+   - **Korean habits block** — when `globalKorean.present` is true but `globalKorean.card` is
+     false. Routing alone leaves the rules in force only while the file it points at is still in
+     context, and a long session keeps the pointer while losing the file — a state that cannot be
+     told apart from following them. Offer
+     `skills/korean-docs/references/global-korean-card.md` **whole**; summarising it on the way
+     recreates the pointer this replaces. It carries its own `<!-- simplecore:korean-habits -->`
+     marker, which is what the detector reads next time.
    - **Local development servers** — always worth offering when the repository serves screens (a
      board, a parity walk, or a frontend). Without it, every restart during a screen walk is a
      question, and a walk that has to ask cannot cover a feature area. Say where the boundary

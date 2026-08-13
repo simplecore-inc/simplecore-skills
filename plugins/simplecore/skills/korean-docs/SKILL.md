@@ -40,6 +40,7 @@ description: Use for virtually EVERY task — all user-facing output in this env
 | `references/korean-style.md` | 심각도(S1/S2)별 번역투·AI 문체 패턴 카탈로그 + 번역 문체·원문 충실도 기준 (교정·검수용) |
 | `references/ui-copy.md` | 문장 판정 기준 — 비유·의인화·표어형 단정·추상어 압축·질문형 이름·업무 은어의 관점 A~W. **화면 문구와 문서 공통**이며 화면 전용 절에는 그 표시가 붙어 있다 |
 | `references/ui-copy-sweep.md` | 전수 검토 절차 — 읽는 순서, 맥락 2차 검토, 무작위 표본, 완료 판정과 보고 (화면 문구든 문서든 통째로 검토·수정할 때) |
+| `references/global-korean-card.md` | 전역 `~/.claude/CLAUDE.md`에 그대로 붙이는 습관 목록. 의인화·이동 비유·압축·번역투·어시스턴트 버릇·주술 호응·이름 자리·표기 여덟 갈래와 과잉 교정 방지. 탐지기가 `card` 여부를 이 표식으로 판정한다 |
 | `references/reading-lens.md` · `references/lens.txt` | **읽기 렌즈** — 규칙이 좁아 놓치는 것을 사람이 읽을 양으로 줄이는 넓은 패턴. `grep --regex "$(cat …/lens.txt)"`로 쓴다 |
 
 ## 시작 절차 (문서 작업 공통)
@@ -384,7 +385,23 @@ SVG 파일의 `<text>`·`<tspan>` 내용은 렌더된 한국어 산출물이다 
 node "${CLAUDE_PLUGIN_ROOT}/scripts/detect-simplecore.mjs" --json   # globalKorean.present 를 읽는다
 ```
 
-`globalKorean.present`가 false면, 한 문장으로 무엇이 빠졌고 그 문단이 무엇을 막아 주는지 말하고 `/simplecore:init`을 제안한다. 세션당 한 번만 제안하고, 거절하면 그대로 진행하며 다시 꺼내지 않는다. 직접 쓰겠다는 경우 넣을 문단은 다음이다:
+**두 값을 읽는다.** `present`는 길 안내가 있는지, `card`는 습관 목록이 실려 있는지다.
+
+| | 없을 때 | 제안할 것 |
+| --- | --- | --- |
+| `present` false | 스킬이 평범한 질문에서 걸리지 않는다 | 아래 한 문단 |
+| `card` false | 길 안내는 있으나 **가리키는 파일이 맥락에서 사라지면 기준도 사라진다** | [references/global-korean-card.md](references/global-korean-card.md) 전체 |
+
+**둘째가 더 중요하다.** 「읽어라」는 지시는 긴 세션에서 표시만 남고 내용이 사라지는데, 그 상태가
+지키고 있는 것과 구별되지 않는다. 카드는 그 파일에 직접 실려 압축 뒤에도 다시 들어온다.
+
+**제안하고, 승인할 때만 쓴다.** 전역 지침은 사용자의 파일이라 묻지 않고 고치지 않는다 — 무엇이
+빠졌고 그 블록이 무엇을 막아 주는지 한두 문장으로 말하고, 승인하면 `references/global-korean-card.md`를
+**요약하지 말고 통째로** 한국어 기준을 다루는 장 아래에 붙인다(표식 주석까지 함께 — 다음 세션은 그 표식으로
+실려 있음을 안다). `/simplecore:init`도 같은 파일을 쓴다. 세션당 한 번만 제안하고, 거절하면 그대로
+진행하며 다시 꺼내지 않는다.
+
+`present`가 false일 때 넣을 한 문단은 다음이다:
 
 > 세션에서 한국어 답변·산출물을 처음 작성하기 전에 `simplecore:korean-docs` 스킬의 `references/response-style.md`를 반드시 읽고 세션 내내 적용한다.
 

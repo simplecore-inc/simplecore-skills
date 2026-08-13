@@ -275,8 +275,17 @@ function routing(root, extraDirs) {
 function globalKoreanInstruction() {
   const file = path.join(os.homedir(), ".claude", "CLAUDE.md");
   const content = readIfPresent(file);
-  if (!content) return { file, present: false };
-  return { file, present: /korean-docs|response-style\.md/.test(content) };
+  if (!content) return { file, present: false, card: false };
+  // `present` is the routing — a line that names the skill or its style file. `card` is the
+  // habits block itself. The two are different things and the second is the one that works:
+  // a pointer survives a long session while the file it points at does not, so a global
+  // instruction can route correctly and still produce the register it forbids. The marker is
+  // written by the block; the heading is accepted too, for a file that was edited by hand.
+  return {
+    file,
+    present: /korean-docs|response-style\.md/.test(content),
+    card: /simplecore:korean-habits|#### The Korean habits/.test(content),
+  };
 }
 
 /**
@@ -369,6 +378,11 @@ export function analyze(root) {
   if (korean && !globalKorean.present) {
     missing.push(
       "the global instruction file does not load the Korean style baseline, so ordinary answers are written without it",
+    );
+  } else if (korean && !globalKorean.card) {
+    missing.push(
+      "the global instruction file points at the Korean standard but does not carry the habits block, " +
+        "so the rules are only in force while the file it points at is still in context",
     );
   }
 
