@@ -1414,6 +1414,24 @@ const RULES = [
     },
   },
   {
+    id: "long-value-in-a-label-row",
+    invariant: "#36",
+    level: "error",
+    desc: "A label-and-trailing row (DetailListRow / LabeledField) is handed a value that wraps on its own — `break-all`, `whitespace-pre`, or a `font-mono` URL or key. The row gives the width to the trailing slot and truncates the label away, leaving values with nothing saying which is which. Stack the pair instead: a caption for the label, the value under it",
+    appliesTo: isTsx,
+    check: (c) => {
+      const hits = [];
+      // The row element, then its own props — a value that declares it will wrap is a value the
+      // row was never sized for. Bounded so the next element's props are not read as this one's.
+      const row = /<(DetailListRow|LabeledField)\b([\s\S]{0,600}?)\/>/g;
+      for (const m of c.matchAll(row)) {
+        if (!/\b(?:break-all|break-words|whitespace-pre)\b/.test(m[2])) continue;
+        hits.push({ line: lineOfIndex(c, m.index), excerpt: m[0].replace(/\s+/g, " ").slice(0, 140) });
+      }
+      return hits;
+    },
+  },
+  {
     id: "read-failure-reads-as-loading",
     invariant: "#33",
     level: "error",
