@@ -137,6 +137,22 @@ and `checkout --` have no place in a measurement at all — in a shared tree the
 somebody else's work while every file stays on disk and every check stays green.
 `harness.md` carries what each of these costs.
 
+**The temptation is a checker that disagrees with you, not a file you want to read.** Knowing
+whether a complaint is yours or was already there means running the tool over the file *without*
+your edit, and `git stash` is the reflex that produces one: a single word, famously reversible,
+and the work it puts at risk is somebody else's rather than yours — which is exactly why it does
+not feel like the destructive move it is. **Copy the committed version out and run the checker on
+the copy.** Nothing in the tree moves:
+
+```bash
+git show HEAD:<path> > <scratch>/before.<ext>
+<the checker> <scratch>/before.<ext>       # was it complaining before you touched it?
+```
+
+Where the tool insists on the real path — an import beside it, a config that names it — the answer
+is still not `stash`: copy your version aside, put the committed one in place, run, and copy yours
+back.
+
 ## Review scaffolding is not product copy
 
 A board id is how a reviewer names a screen. It is not something the screen says about

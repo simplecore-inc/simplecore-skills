@@ -132,6 +132,38 @@ piped through `tail`, which discards the exit code and showed only the last line
 Read the status, not the tail. A gate whose failure can scroll off the screen is
 a gate nobody is running.
 
+**The pipe is reached for to protect the context, which is why the rule keeps
+breaking.** A gate that takes ten minutes has to run in the background, and its
+log is thousands of lines an agent must not read — so `| tail -25` looks like the
+careful move rather than the careless one, and it is the exact move that throws
+the verdict away. It has now cost a walker a run reported as green that had two
+failing tests in it, and the pass was believed because the *last* twenty-five
+lines were a passing checker.
+
+Redirect and record the status instead — the log stays on disk, unread, and the
+one line that matters is the one written last:
+
+```bash
+<gate> > <scratch>/gate.log 2>&1; echo "EXIT=$?" >> <scratch>/gate.log
+```
+
+Then `grep` for `EXIT=` and for the failure lines. **Never conclude from the tail
+of a log that the run passed**, and never from a background task's own exit code
+either: a task wrapping a pipeline reports the *pipeline's* status, which is the
+last stage's — `tail` always succeeds.
+
+**A semicolon does what the pipe does, and it wears the rule's own clothes.**
+Writing `<gate> > gate.log 2>&1; echo "EXIT=$?"` looks like obeying this section —
+the redirect is there, the status is computed — but the status goes to stdout,
+which for a background task is *the log nobody reads*, and the exit the harness
+then reports is `echo`'s. `echo` always succeeds. The three steps are redirect,
+**append the status into the log**, and **grep the log**; doing two of them is
+doing none, because what the first two produce is a number nobody looks at. A
+coordinator did exactly this and told the user a red gate was green — having
+written the `echo` specifically to avoid that mistake. So: `>> gate.log` on the
+echo, and a second command that greps. If a report says a gate passed, the words
+`EXIT=0` were read out of a file, or the claim is not evidence.
+
 ### A path that exists is not a screen anybody has seen
 
 Refusal copy existed in three locales, was reachable in code, passed every check,

@@ -141,6 +141,15 @@ Every item here has been read as a design defect at least once.
 - **Status bars belong to the device, not the product.** Hide them: the clock
   moves, and on some devices the date is rendered in the simulator's system
   language, which puts one language's date into another language's picture.
+- **A file read while the run is still going is not the artefact.** A capture that
+  paginates writes a tall intermediate first and replaces it with the per-screenful
+  files a moment later, so a frame opened mid-run comes back as one very long image
+  — which then has to be scaled to be looked at, and small copy in a scaled image
+  reads as whatever it resembles. Three "defects" were reported off one such image
+  and all three were misreadings of correct text. **Wait for the run to report its
+  own completion before opening anything it wrote**, and if an image arrives far
+  taller than a screenful, that is the signal it is an intermediate rather than a
+  long screen.
 
 ## What to keep, and what to show a person
 

@@ -30,6 +30,23 @@ neither is an opinion — it goes to the parked section as a proposal, never int
 The rest of this file is what judging actually costs — the failures that pass every
 gate, the languages that hide them, and the two habits that keep them from coming back.
 
+## A defect read off a picture is confirmed in the source before it is called one
+
+An image is evidence that something is on the screen; it is not evidence of which
+words. Scaled to be looked at, small copy reads as whatever it resembles, and the
+resemblance is strongest for exactly the pairs a terminology pass is hunting — the
+banned word and the word that replaced it are near-identical shapes at a third size.
+
+So the order is: see it in the picture, then **find the string in the source**. If
+the source does not contain it, the reading was wrong — not the app. Three findings
+were reported off one over-long capture, each naming a word that turned out to exist
+nowhere in the repository, while the same screen's other frames drew the correct
+word. The grep that would have caught all three took one command.
+
+The rule cuts the other way too, and that half is what makes it worth keeping: a
+defect the source **does** confirm is real whether or not the picture was legible,
+which is what lets a mid-run or low-quality image still be useful.
+
 ## Green is not the same as seen
 
 Every gate can pass on a screen nobody could use. The failures that survive a walk
