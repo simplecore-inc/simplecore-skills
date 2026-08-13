@@ -1362,6 +1362,26 @@ function guessKind(file) {
   return null;
 }
 
+/**
+ * Project exceptions that disabled nothing.
+ *
+ * `## 기본 규칙 예외` names a base rule by its pattern TEXT, so editing that pattern in the base
+ * glossary silently revives the rule in every project that had turned it off — and the finding
+ * returns wearing a slightly different regex, which reads as a new defect rather than as a
+ * broken exception. Naming the dead rows is what makes the two distinguishable.
+ */
+function reportDeadExceptions() {
+  const dead = ruleSet().deadExceptions ?? [];
+  if (dead.length === 0) return;
+  console.log(
+    C.dim(
+      `\n죽은 예외 ${dead.length}개 — 아래 항목이 기본 용어사전의 어느 규칙과도 글자가 맞지 않아 아무것도 끄지 않는다.` +
+        ` 기본 규칙의 정규식이 바뀌면 그 규칙을 끈 예외가 조용히 되살아나므로, 지금 규칙의 글자로 고쳐 적는다.`,
+    ),
+  );
+  for (const row of dead) console.log(C.dim(`  ${row}`));
+}
+
 function cmdAudit(opts) {
   const bans = glossaryBans();
   const findings = { untranslated: [], banned: [], bannedWarn: [], particles: [], missingPair: [] };
@@ -1491,6 +1511,7 @@ function cmdAudit(opts) {
   console.log(
     `\n${errors ? C.red(`오류 ${errors}건`) : C.green("오류 0건")} · 경고 ${findings.bannedWarn.length + findings.missingPair.length}건`,
   );
+  reportDeadExceptions();
   return errors ? 1 : 0;
 }
 

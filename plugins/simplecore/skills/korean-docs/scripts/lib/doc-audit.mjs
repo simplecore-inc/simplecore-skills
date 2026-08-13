@@ -306,8 +306,13 @@ function frontMatterRange(rawLines) {
 // it belongs in the machine pass. Bulk find-and-replace is what produces these:
 // swapping a noun changes its final consonant and leaves the old particle behind.
 //
-// 은/는 is deliberately NOT checked — it collides with the adnominal ending
-// (있는, 없는, 받는), which would bury the real findings in false positives.
+// 은/는 is deliberately NOT checked in running text — it collides with the adnominal
+// ending (있는, 없는, 받는), which would bury the real findings in false positives.
+//
+// It IS checked in one position: directly after a closing quotation mark. An adnominal
+// ending cannot sit there — 「…」 closes a noun phrase, so what follows is a particle and
+// nothing else. That narrow window catches the mistake bulk replacement leaves behind on
+// quoted screen labels (「선택한 구역」는), which is otherwise invisible to every check.
 // `true` means the particle belongs after a syllable that ENDS in a consonant.
 const PARTICLE_NEEDS_FINAL = {이: true, 가: false, 을: true, 를: false, 과: true, 와: false};
 // Verb and adjective stems that take -는/-은/-ㄴ가 endings, plus interrogatives,
@@ -315,6 +320,8 @@ const PARTICLE_NEEDS_FINAL = {이: true, 가: false, 을: true, 를: false, 과:
 const PARTICLE_STEM_SKIP =
   /(하|되|있|없|않|같|받|모|찾|잡|접|읽|적|맞|묻|닿|주|보|쓰|가|오|넣|만들|생기|나오|바뀌|걸리|남|들|풀|막|열|끊|끝나|늘|줄|물|앉|서|섞|싣|얹|짚|채우|인|누구|언제|누|무엇)$/;
 const PARTICLE_RE = /([가-힣]{2,})(이|가|을|를|과|와)(?=[\s.,·)\]'"]|$)/g;
+// After a closing quote there is no adnominal reading to collide with, so 은/는 is safe here.
+const QUOTED_PARTICLE_RE = /([가-힣])[」』](은|는)(?=[\s.,·)\]'"]|$)/g;
 // A closing syllable that merely LOOKS like a particle. Two sources: the -ㄴ가
 // interrogative ending (충분한가, 다른가, 언젠가) and loanwords that end in 이 or
 // 가 (트레이, 디스플레이, 효과). Listing them is cheaper than trying to parse
@@ -345,6 +352,74 @@ function checkParticles(lines) {
       if (final === null) continue;
       if (PARTICLE_NEEDS_FINAL[particle] === final) continue;
       hits.push({line: idx + 1, text: stem + particle});
+    }
+    for (const m of line.matchAll(QUOTED_PARTICLE_RE)) {
+      const [, last, particle] = m;
+      const final = hasFinalConsonant(last);
+      if (final === null) continue;
+      if ((particle === '은') === final) continue;
+      hits.push({line: idx + 1, text: `${last}」${particle}`});
+    }
+  });
+  return hits;
+}
+
+// ── a particle after an interpolation ───────────────────────────────────────
+// `버전 {{version}}이 되었습니다` is correct for version 3 and wrong for version 2, and
+// nothing about the string says which. The value arrives at render time — a number, a
+// name, a count, a word from another language — so its final consonant is unknown when
+// the sentence is written, and 이/가 · 을/를 · 과/와 · 로/으로 all turn on exactly that.
+//
+// The rule above cannot see these: it matches a particle after Korean syllables, and what
+// precedes this one is `}}`. Neither can a translator, a review, or any amount of care —
+// the sentence is right in front of whoever wrote it, for the one value they had in mind.
+//
+// **Every hit is a real alternation and none of them is decided here.** Which values a
+// placeholder can take is the caller's business, so the fix is the caller's too: rewrite
+// the sentence so no particle follows the value (`버전 {{version}}입니다`), put the particle
+// inside the value, or move the value away from the particle. The 「(가)」 written form is
+// a form, not product copy.
+//
+// Interpolation shapes: {{name}} (i18next, Handlebars, Mustache), {name} (ICU, .NET,
+// Python format), %s and %1$s (printf, Android). Listed rather than generalised to 「any
+// punctuation」 — a particle after a closing bracket or quote is somebody quoting a label,
+// which the rule above already decides correctly.
+//
+// **`${…}` is deliberately not among them.** A template literal is code, and what it
+// substitutes is in the same file a few lines up — `${planted()}가` is decidable by
+// reading, and it was right. This rule is about the placeholder a MESSAGE carries, whose
+// value arrives from data the sentence never sees.
+//
+// **Annotations are skipped, and the reason is the premise rather than tidiness.** A note
+// addressed to whoever maintains the file (audit.localeAnnotationKeys) is prose, and the
+// tokens in it are usually cross-references a build resolves to a fixed string — a value
+// that IS known when the sentence is written, which is the one case this rule has nothing
+// to say about. Screen copy is what it is for.
+const INTERPOLATION_PARTICLE_RE =
+  /(?<!\$\{[^{}]{0,80})(\}\}|\}|%[sd]|%\d+\$[sd])(이|가|을|를|은|는|과|와|으로|로|이라|라)(?=[\s.,·)\]'"]|$)/g;
+
+// A single-brace group that ENUMERATES rather than names is prose, not a placeholder. A
+// design document writes the required fields of a form as a set — `{유해·위험요인, 위험성
+// 결정의 내용, 조치의 내용}을 포함해야 한다` — and the particle there is decided by the last
+// word inside the braces, which is right in front of whoever wrote it. A placeholder name
+// never carries a comma or a space (`{count}`, `{userName}`, `{사업장명}`), so those two
+// characters separate the two shapes without needing to guess at the content's language.
+// `{{name}}` is untouched: doubled braces are always interpolation.
+const BRACE_ENUMERATION = /[, ]/;
+
+function checkInterpolatedParticles(lines, isAnnotation = () => false) {
+  const hits = [];
+  lines.forEach((line, idx) => {
+    for (const m of line.matchAll(INTERPOLATION_PARTICLE_RE)) {
+      if (m[1] === '}') {
+        // `${` … `}` and `{` … `}` both end in `}`; requiring an opening brace before the
+        // match on the same line keeps a stray closing brace in prose from firing.
+        const open = line.lastIndexOf('{', m.index);
+        if (open === -1) continue;
+        if (BRACE_ENUMERATION.test(line.slice(open + 1, m.index))) continue;
+      }
+      if (isAnnotation(idx, m.index)) continue;
+      hits.push({line: idx + 1, text: m[0]});
     }
   });
   return hits;
@@ -529,6 +604,12 @@ export function auditFile(filePath, rules, checkUntranslated, isLocaleResource =
     errors.push({...hit, count: 1, rule: {
       source: 'particle', label: '조사 어긋남', level: 'error', threshold: 1,
       suggestion: '앞 글자의 받침에 맞춰 이/가 · 을/를 · 과/와를 고른다',
+    }});
+  }
+  for (const hit of checkInterpolatedParticles(lines, isAnnotation)) {
+    errors.push({...hit, count: 1, rule: {
+      source: 'interpolated-particle', label: '치환값 뒤의 조사', level: 'error', threshold: 1,
+      suggestion: '값의 받침을 알 수 없으므로 조사가 오지 않게 문장을 고친다',
     }});
   }
   for (const hit of checkRepeats(lines)) {

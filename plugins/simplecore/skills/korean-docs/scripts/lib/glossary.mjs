@@ -287,9 +287,16 @@ export function mergeGlossaries(base, project) {
   const terms = new Map(base.terms);
   const expressions = new Map(base.expressions);
 
+  // **An exception is matched by the rule's pattern TEXT, so editing a base pattern silently
+  // kills every project exception keyed to it.** The project reads as if the rule were still
+  // off and the finding comes back under a new name — indistinguishable from a fresh defect.
+  // So an exception that disabled nothing is reported rather than dropped.
+  const deadExceptions = [];
   if (project) {
     for (const raw of project.exceptions) {
       const key = raw.toLowerCase();
+      const before = terms.size + expressions.size;
+      let disabledSomething = terms.has(key);
       terms.delete(key);
       for (const [src, rule] of [...expressions]) {
         // Compared on the rule's own pattern text rather than the map key, so an exception
@@ -298,8 +305,12 @@ export function mergeGlossaries(base, project) {
       }
       for (const [tKey, term] of terms) {
         const filtered = term.rules.filter((r) => r.source !== raw);
-        if (filtered.length !== term.rules.length) terms.set(tKey, {...term, rules: filtered});
+        if (filtered.length !== term.rules.length) {
+          terms.set(tKey, {...term, rules: filtered});
+          disabledSomething = true;
+        }
       }
+      if (!disabledSomething && terms.size + expressions.size === before) deadExceptions.push(raw);
     }
     for (const [key, term] of project.terms) terms.set(key, term);
     for (const [src, rule] of project.expressions) expressions.set(src, rule);
@@ -322,7 +333,7 @@ export function mergeGlossaries(base, project) {
     seen.add(scoped(rule));
     rules.push(rule);
   }
-  return {rules, terms};
+  return {rules, terms, deadExceptions};
 }
 
 // ---------------------------------------------------------------------------
@@ -367,9 +378,9 @@ export function loadRuleSet({glossaryPath = null, noBase = false, startDir = pro
     base = parseGlossary(readFileSync(BASE_GLOSSARY_PATH, 'utf8'), 'base', BASE_GLOSSARY_PATH);
   }
 
-  const {rules, terms} = mergeGlossaries(base, project);
+  const {rules, terms, deadExceptions} = mergeGlossaries(base, project);
   const keepOriginal = [...base.keepOriginal, ...(project?.keepOriginal ?? [])];
-  return {rules, terms, config, root, glossaryPath: discovered?.path ?? null, keepOriginal};
+  return {rules, terms, config, root, glossaryPath: discovered?.path ?? null, keepOriginal, deadExceptions};
 }
 
 // ---------------------------------------------------------------------------
