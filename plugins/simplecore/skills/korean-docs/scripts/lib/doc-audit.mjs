@@ -117,7 +117,10 @@ function resolveTargets(args, config, root, glossaryPath, isLocaleResource) {
   }
 
   const excludes = config.exclude.map(makeExcludeMatcher);
-  const glossaryAbs = glossaryPath ? resolve(glossaryPath) : null;
+  // A glossary is by definition a page of banned spellings, so it is never judged by them. The
+  // project's own was already skipped; the base one sat inside the skill and was not, so a repo
+  // that holds the skill got 163 findings that were every row of the table quoting itself.
+  const glossaries = new Set([glossaryPath, BASE_GLOSSARY_PATH].filter(Boolean).map((p) => resolve(p)));
   const files = [];
   let excludedCount = 0;
   let glossarySkipped = false;
@@ -128,7 +131,7 @@ function resolveTargets(args, config, root, glossaryPath, isLocaleResource) {
   ]) {
     if (seen.has(file)) continue;
     seen.add(file);
-    if (file === glossaryAbs) {
+    if (glossaries.has(file)) {
       glossarySkipped = true;
       continue;
     }
@@ -349,7 +352,7 @@ function isNGaEnding(whole, rest) {
 // particle. Adverbs are the ones this rule keeps mistaking for a noun: `가까이 모인다` reads
 // as 가까+이 and gets corrected to something that is not Korean.
 const PARTICLE_TAIL_SKIP =
-  /(레이|플레이|어레이|웨이|페이|메이|효과|초과|평가|전문가|국가|증가|참가|원가|단가|보이|사이|차이|넓이|길이|높이|깊이|먹이|놀이|쓰임새|가까이|같이|굳이|깊숙이|일찍이|나란히|틈틈이|샅샅이|곰곰이|번번이|낱낱이|고이|많이)$/;
+  /(레이|플레이|어레이|웨이|페이|메이|효과|초과|평가|전문가|국가|증가|참가|원가|단가|보이|사이|차이|넓이|길이|높이|깊이|먹이|놀이|쓰임새|가까이|같이|굳이|깊숙이|일찍이|나란히|틈틈이|샅샅이|곰곰이|번번이|낱낱이|고이|많이|파이)$/;
 
 function hasFinalConsonant(ch) {
   const code = ch.codePointAt(0);

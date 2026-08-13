@@ -55,7 +55,7 @@ import { readFileSync, writeFileSync, existsSync, readdirSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { join, dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { discoverGlossary, loadRuleSet, loadRulePacks } from "./lib/glossary.mjs";
+import { discoverGlossary, loadRuleSet, loadRulePacks, parseGlossaryConfig, BASE_GLOSSARY_PATH } from "./lib/glossary.mjs";
 import { initGlossary, initL10n, runDocAudit, annotationRanges } from "./lib/doc-audit.mjs";
 
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
@@ -221,16 +221,30 @@ function formatOf(kind, file) {
  * as one-or-more segments, so the top-level files drop out of the second form alone.
  */
 function docEntries() {
+  // `audit.exclude` is honoured here for the same reason `check` honours it: the two commands
+  // read one file set, and a file a project excluded from the word check is excluded from the
+  // sentence sweep too. Without this the skill's own catalogues — pages that quote every banned
+  // spelling on purpose — came back as 79 findings from `rules` while `check` passed.
   const found = new Map();
+  const g = discoverGlossary();
+  const patterns = g ? (parseGlossaryConfig(readFileSync(g.path, "utf8")).config?.exclude ?? []) : [];
+  // A glossary is a page of banned spellings and is never judged by them — `check` skips both,
+  // so the sentence sweep skips both too.
+  const glossaries = new Set([g?.path, BASE_GLOSSARY_PATH].filter(Boolean).map((x) => resolve(x)));
+  const excluded = patterns.map((p) => new RegExp(
+    "^" + p.replace(/[.+^${}()|[\]\\]/g, "\\$&").replace(/\*\*/g, "\u0000").replace(/\*/g, "[^/]*").replace(/\u0000/g, ".*") + "$",
+  ));
   for (const ext of ["md", "mdx", "svg"]) {
     for (const glob of [`*.${ext}`, `**/*.${ext}`]) {
       for (const file of gitFiles(glob)) {
+        if (excluded.some((re) => re.test(file)) || glossaries.has(resolve(ROOT, file))) continue;
         found.set(file, { kind: "docs", lang: CONFIG.defaultLanguage, file, format: formatOf(null, file) });
       }
     }
   }
   return [...found.values()].sort((a, b) => a.file.localeCompare(b.file));
 }
+
 
 /**
  * Every resource file, as `{ kind, lang, file, format }`, deduplicated across globs.
@@ -1030,7 +1044,7 @@ function lensDrift() {
   for (const line of section.split("\n")) {
     const body = line.trim().replace(/^\*\*[^*]+\*\* /, "");
     if (!body || body.startsWith("**")) continue;
-    for (const term of body.split("·")) if (term.trim()) inDoc.add(term.trim());
+    for (const term of body.split("·")) if (term.trim()) inDoc.add(term.trim().replace(/`/g, ""));
   }
   // `붙[는들]` in the regex stands for 붙는 and 붙들 in the table.
   const expand = (alt) => {
