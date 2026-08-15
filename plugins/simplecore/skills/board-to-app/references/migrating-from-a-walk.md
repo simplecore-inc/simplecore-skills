@@ -1,5 +1,18 @@
 # Arriving from a board-parity walk
 
+**Reading this page does not authorise executing it.** The move runs only when the user asks for
+it in so many words — naming the move off the walk and onto the chapters, in their own words. A
+request to build the next chapter, to fix a screen, or to set the project up is not that request,
+and neither is finding a repository that would plainly be better off here. Where the situation
+fits, **propose it and stop**: say what the move involves, and wait to be asked.
+
+**Why this one is reserved when almost nothing else here is.** Everywhere else this skill holds
+that the next action is derivable and is taken without asking. A migration is not derivable from
+inside the repository: it rewrites how a team works and discards the documents they have been
+maintaining, and no file in the project says whether they want that. It belongs to the class the
+skill already reserves for a person — a decision that changes what the product is — and the
+autonomous disposition every other page instills is exactly what will talk itself past this one.
+
 A project reconciling its board frame by frame with `simplecore:board-parity-walk` moves here by
 deciding its chapters, declaring one config, and deleting one file. **This is the only page in this
 skill that names that skill** — everywhere else this skill describes building from a board, and a

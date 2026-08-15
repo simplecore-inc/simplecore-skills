@@ -58,7 +58,8 @@ here.** That skill builds a board in dependency order — a chapter at a time, e
 persona tests — and owns the move: `references/migrating-from-a-walk.md` there is the procedure,
 covering what the config carries over, how the chapters are decided, and the order that leaves this
 project working at every step. Nothing here has to be finished first, and a walk keeps running
-until the move is made.
+until the move is made. **The move starts only when the user asks for it in so many words** — a
+project on this walk stays on it, and the most this skill does unasked is say the option exists.
 
 ## The rules the walk runs on
 

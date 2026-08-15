@@ -43,10 +43,26 @@ building anyway.
 drawn before the code has every screen still to build, and that is what this skill
 is for.
 
-**No chapter set, generate one before starting** (below). Building from the board
-directly, chapter by chapter in somebody's head, is the thing this skill exists to
-replace: the order stops being written down, and the second session cannot tell what
-the first one closed.
+**No chapter set and no other build arrangement in place: generate one before
+starting** (below). Building from the board directly, chapter by chapter in
+somebody's head, is the thing this skill exists to replace: the order stops being
+written down, and the second session cannot tell what the first one closed.
+
+**A project already running a different arrangement is the other case, and generating
+a chapter set there is not setup — it is a migration, and a migration starts only when
+the user asks for it in so many words.** The tell is concrete: another build skill's
+config file sits in `.claude/`, where this one's would go. Converting the project on
+the strength of that discovery rewrites how a team works and discards the documents
+they have been maintaining, and nothing readable from inside the repository says
+whether they want it — which is what puts it in the class this skill already reserves
+for a person. So **stop, say what the move would involve, and wait.** The procedure is
+`references/migrating-from-a-walk.md`, and reaching it is not permission to run it.
+
+**Asked in so many words means the request names the move** — off the other
+arrangement and onto the chapters, in the user's own words. A request to build the
+next chapter, to fix a screen, or to set the project up is not that request, and each
+of those is answered by saying which arrangement the project is on and asking whether
+to move it.
 
 ## What the project declares — `.claude/board-to-app.json`
 
@@ -728,9 +744,9 @@ that lets the next session start without asking anything is written the moment i
 handoff composed once the context is nearly spent is the one that does not get written.
 
 **Stop and ask only for these**: a decision that changes what the product is, a term whose
-translation is genuinely undecided, and a value no source can settle — plus anything the
-repository's own rules reserve for the user, committing and pushing among them unless the user has
-said otherwise for this build. **Everything else has a written answer here**, and a session that
+translation is genuinely undecided, a value no source can settle, and **moving a project off
+another build arrangement onto this one** — plus anything the repository's own rules reserve for
+the user, committing and pushing among them unless the user has said otherwise for this build. **Everything else has a written answer here**, and a session that
 opens the ledger, reads the first open chapter and dispatches has already answered "what next".
 
 ### Design the answer; scope is not a reason to take the worse one
