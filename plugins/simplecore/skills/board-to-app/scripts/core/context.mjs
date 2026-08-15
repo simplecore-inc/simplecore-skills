@@ -17,8 +17,9 @@ export const CONFIG_NAME = join('.claude', 'board-to-app.json');
  * <p>`kind` decides both the type check and what existence means:
  * `dir`/`file` must be there already, `outdir` is written on first use so it need not exist,
  * `outfile` is appended to so only its parent must exist, `command` is a shell line rather
- * than a path, `list` is an array, `text` is a non-empty string, and `headings` is the
- * role → heading map.
+ * than a path, `list` is an array, `text` is a non-empty string, `headings` is the
+ * role → heading map, and `deferrals` is the key → { chapter, whenExists } map naming the
+ * optional keys whose subject does not exist yet.
  */
 export const SCHEMA = {
   boardRoot: { kind: 'dir', required: true },
@@ -47,6 +48,7 @@ export const SCHEMA = {
   narrativePhrases: { kind: 'list' },
   projectGates: { kind: 'file' },
   disabledGates: { kind: 'exceptions' },
+  deferredKeys: { kind: 'deferrals' },
 };
 
 /** The roles `chapterHeadings` maps, so nothing in the skill has to know one project's wording. */
@@ -108,11 +110,12 @@ export function loadProject(configPath, options = {}) {
     return value === undefined || value === null || value === '' ? null : value;
   };
 
-  const at = (key) => {
-    const value = declared(key);
-    if (typeof value !== 'string') return null;
+  const inRoot = (value) => {
+    if (typeof value !== 'string' || !value) return null;
     return isAbsolute(value) ? value : join(root, value);
   };
+
+  const at = (key) => inRoot(declared(key));
 
   const read = (path) => {
     if (!path) return null;
@@ -156,6 +159,7 @@ export function loadProject(configPath, options = {}) {
     options,
     declared,
     at,
+    inRoot,
     read,
     list,
     git,

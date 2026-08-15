@@ -94,6 +94,72 @@ export function cases(t) {
     false
   );
 
+  add(
+    'configGate',
+    'a deferral for a key nobody reads',
+    { config: { deferredKeys: { migrationsDir: { chapter: 'W02', whenExists: 'db' } } } },
+    true
+  );
+  add(
+    'configGate',
+    'a required key promised to a chapter',
+    { config: { deferredKeys: { chapterOverview: { chapter: 'W02', whenExists: 'db' } } } },
+    true
+  );
+  add(
+    'configGate',
+    'a deferral that names no path',
+    { config: { deferredKeys: { migrationDir: { chapter: 'W02' } } } },
+    true
+  );
+  add(
+    'configGate',
+    'a key declared and still promised',
+    {
+      config: {
+        migrationDir: 'db',
+        deferredKeys: { migrationDir: { chapter: 'W02', whenExists: 'db' } },
+      },
+      files: { 'db/': '' },
+    },
+    true
+  );
+  add(
+    'configGate',
+    'a promise naming its chapter and the path that makes it due',
+    { config: { deferredKeys: { migrationDir: { chapter: 'W02', whenExists: 'backend/db/migration' } } } },
+    false
+  );
+
+  // deferredKeyGate — the subject exists, so the key is owed now.
+  add(
+    'deferredKeyGate',
+    'the subject is on disk and the key is still absent',
+    {
+      config: { deferredKeys: { migrationDir: { chapter: 'W02', whenExists: 'backend/db/migration' } } },
+      files: { 'backend/db/migration/': '' },
+    },
+    true
+  );
+  add(
+    'deferredKeyGate',
+    'the chapter that creates the subject has not run yet',
+    { config: { deferredKeys: { migrationDir: { chapter: 'W02', whenExists: 'backend/db/migration' } } } },
+    false
+  );
+  add(
+    'deferredKeyGate',
+    'the subject exists and the key was declared with it',
+    {
+      config: {
+        migrationDir: 'backend/db/migration',
+        deferredKeys: { captureRoute: { chapter: 'W04', whenExists: 'frontend/src/routes' } },
+      },
+      files: { 'backend/db/migration/': '' },
+    },
+    false
+  );
+
   // handoverGate — facts, never somebody's account of finding them.
   add(
     'handoverGate',

@@ -87,6 +87,20 @@ array declares none — the table's last column says what each absence costs, an
 build carries on knowing it. A placeholder left in the file is not an absence: it is
 a path that does not exist, and it stops the build like any other.
 
+**An optional key absent because its subject does not exist yet is a promise, not a
+decision.** A project whose application has not been built has no migration directory to
+name, no address that renders one frame, no generated locale. Such a key **is declared in
+the chapter that creates its subject**, and that chapter does not close with the promise
+unkept. Until then it is written down as owed — `deferredKeys` names the chapter and the
+path whose appearance makes the key due.
+
+**Writing it down is the whole point, because the moment it falls due announces
+nothing.** An undeclared key reads identically whether the project decided against it or
+is waiting for it, and the day the subject appears the cost in that key's row starts being
+paid in silence: with `migrationDir` still absent, no wave hands out migration ranges, so
+backends that were meant to run in parallel run one at a time and nothing says why. A
+promise turns that into a fact on disk that `bta.mjs check` reads.
+
 Where an example path appears anywhere in this skill or its references it is written
 as `<boardRoot>/manifest.mjs` — a shape, never a default. Keys the skill does not
 know are ignored, so a project may keep a `"//"` note of its own in the file.
@@ -122,6 +136,7 @@ the last column says what its absence costs · **◐** required once another key
 | `narrativePhrases` | extra point-of-view phrasings the handover file must refuse, for a project writing in neither Korean nor English | ○ | the built-in list stands alone |
 | `projectGates` | a module exporting this project's own gates and their cases | ○ | only the generic gates run; anything true of this project alone is held by nobody |
 | `disabledGates` | `{ id, reason }` per generic gate this project turns off | ○ | every generic gate runs — which is the default, and a gate is never turned off silently |
+| `deferredKeys` | per optional key whose subject does not exist yet, `{ chapter, whenExists }` — the chapter that creates it, and the path whose appearance makes it due | ○ | an absence waiting on a chapter reads exactly like one the project decided against, and the cost in that key's row is paid silently from the day the subject appears |
 
 `chapterHeadings` maps a role to the heading that project's chapter files actually
 write, so nothing in this skill has to know one project's wording:
@@ -803,6 +818,7 @@ node "${CLAUDE_PLUGIN_ROOT}/skills/board-to-app/scripts/bta.mjs" check
 | Rule | The gate |
 | --- | --- |
 | the config is complete, well typed, and every declared path is there | `configGate` |
+| a key promised to a chapter is declared once that chapter has created its subject | `deferredKeyGate` |
 | the handover file states facts, never a point of view | `handoverGate` |
 | a parked line has its heading and its three parts | `openItemsGate` |
 | every chapter is named in the state ledger | `ledgerGate` |
@@ -915,7 +931,12 @@ and the failures are fixed rather than listed. Before saying so:
    `creates` section, and `chapterGenerator` runs before the chapter is called closed.
    **A graph that is not regenerated at the close is a graph that stops learning**, and
    the next wave is assembled from what was true two chapters ago.
-6. **Write the chapter's row in the state ledger**, and say what closed and what the next
+6. **Declare what this chapter brought into existence.** A key `deferredKeys` promised to
+   this chapter — a migration directory, an address that renders a frame, a generated
+   locale — is declared now and its promise deleted in the same change. `bta.mjs check`
+   fails while the subject is on disk and the key is not declared, so this is a step that
+   holds itself; what it cannot do is declare the key for you.
+7. **Write the chapter's row in the state ledger**, and say what closed and what the next
    chapter is. **Do not edit the chapter file to mark it done** — its state is the
    system's state, and a file that says "done" while the system disagrees is worse than
    no file.

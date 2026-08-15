@@ -29,6 +29,7 @@ const TYPE_OF = {
   list: 'an array',
   headings: 'an object of role → heading',
   exceptions: 'an array of { id, reason }',
+  deferrals: 'an object of key → { chapter, whenExists }',
 };
 
 /**
@@ -81,6 +82,36 @@ export const configGate = {
         });
         continue;
       }
+      if (spec.kind === 'deferrals') {
+        if (typeof value !== 'object' || Array.isArray(value)) {
+          findings.push(`${key} must be ${TYPE_OF.deferrals}`);
+          continue;
+        }
+        for (const [name, entry] of Object.entries(value)) {
+          if (!(name in SCHEMA)) {
+            findings.push(`${key}.${name} is not a key this skill reads — a deferral for a key nobody reads is never due`);
+            continue;
+          }
+          if (SCHEMA[name].required) {
+            findings.push(`${key}.${name} is required — a required key is declared before the build starts, never promised to a chapter`);
+            continue;
+          }
+          if (ctx.declared(name) !== null) {
+            findings.push(`${key}.${name} is declared and still listed as deferred — the promise is deleted in the change that keeps it`);
+            continue;
+          }
+          const ok =
+            entry && typeof entry === 'object' && !Array.isArray(entry) &&
+            typeof entry.chapter === 'string' && entry.chapter.trim() &&
+            typeof entry.whenExists === 'string' && entry.whenExists.trim();
+          if (!ok) {
+            findings.push(
+              `${key}.${name} names the chapter that creates its subject and the path whose appearance makes it due — { "chapter": …, "whenExists": … }`
+            );
+          }
+        }
+        continue;
+      }
       if (spec.kind === 'headings') {
         if (typeof value !== 'object' || Array.isArray(value)) {
           findings.push(`${key} must be ${TYPE_OF.headings}`);
@@ -118,6 +149,37 @@ export const configGate = {
     for (const key of Object.keys(ctx.config)) {
       if (key in SCHEMA || key.startsWith('//')) continue;
       findings.push(`${key} is not a key this skill reads — a mistyped key is silent; a note starts with //`);
+    }
+    return findings;
+  },
+};
+
+/**
+ * A key the config promised to a chapter is declared once that chapter has created its subject.
+ *
+ * <p>An optional key left out because there is nothing to point at yet reads exactly like one
+ * the project decided against, and the moment the subject appears is not announced by anything:
+ * the cost in that key's row starts being paid in silence, chapter after chapter. The deferral
+ * names the path whose appearance makes the key due, so the moment is a fact on disk rather
+ * than something somebody has to remember.
+ */
+export const deferredKeyGate = {
+  id: 'deferredKeyGate',
+  title: 'a key whose subject now exists and is still not declared',
+  needs: ['deferredKeys'],
+  run: (ctx) => {
+    const deferrals = ctx.declared('deferredKeys');
+    if (typeof deferrals !== 'object' || Array.isArray(deferrals)) return [];
+    const findings = [];
+    for (const [key, entry] of Object.entries(deferrals)) {
+      // Anything malformed here is configGate's finding, and reporting it twice helps nobody.
+      if (!(key in SCHEMA) || SCHEMA[key].required || ctx.declared(key) !== null) continue;
+      const when = entry && typeof entry === 'object' ? entry.whenExists : null;
+      if (typeof when !== 'string' || !when.trim()) continue;
+      if (!ctx.exists(ctx.inRoot(when))) continue;
+      findings.push(
+        `${key}: ${when} is there, so ${entry.chapter} has created what the key names — declare it now; while it is absent the build runs as though the subject does not exist`
+      );
     }
     return findings;
   },
@@ -282,7 +344,15 @@ export const trailerGate = {
 };
 
 /** The gates that hold on any project that builds from a board. */
-export const CORE_GATES = [configGate, handoverGate, openItemsGate, ledgerGate, capturesGate, trailerGate];
+export const CORE_GATES = [
+  configGate,
+  deferredKeyGate,
+  handoverGate,
+  openItemsGate,
+  ledgerGate,
+  capturesGate,
+  trailerGate,
+];
 
 /**
  * The gates that apply to one project: the core set, minus what it turned off with a reason,

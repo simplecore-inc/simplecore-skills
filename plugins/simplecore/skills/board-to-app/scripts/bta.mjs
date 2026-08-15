@@ -109,9 +109,30 @@ async function doctor() {
   console.log(`config   ${ctx.configPath}`);
   console.log(`root     ${ctx.root}\n`);
 
+  const deferrals = ctx.declared('deferredKeys');
+  const owedBy = (key) => {
+    if (!deferrals || typeof deferrals !== 'object' || Array.isArray(deferrals)) return null;
+    const entry = deferrals[key];
+    if (!entry || typeof entry !== 'object' || Array.isArray(entry)) return null;
+    // A deferral missing either half is configGate's finding; here it is simply not a promise.
+    return typeof entry.chapter === 'string' && typeof entry.whenExists === 'string' ? entry : null;
+  };
+
   for (const [key, spec] of Object.entries(SCHEMA)) {
     const value = ctx.declared(key);
     if (value === null) {
+      const owed = owedBy(key);
+      if (owed && !spec.required) {
+        // An absence somebody promised reads differently from one nobody owes, and an absence
+        // whose subject is already on disk is being paid for right now.
+        const due = typeof owed.whenExists === 'string' && ctx.exists(ctx.inRoot(owed.whenExists));
+        console.log(
+          due
+            ? `● ${key.padEnd(18)} not declared — ${owed.whenExists} is already there, so ${owed.chapter} owes it now`
+            : `◐ ${key.padEnd(18)} not declared — ${owed.chapter} declares it when ${owed.whenExists} exists`
+        );
+        continue;
+      }
       console.log(`${spec.required ? '✖' : '○'} ${key.padEnd(18)} not declared${spec.required ? ' — required' : ''}`);
       continue;
     }

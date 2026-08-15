@@ -1,5 +1,5 @@
 {
-  "//": "Copy to .claude/board-to-app.json at the project root. Replace every <…> placeholder with a path relative to that root, and DELETE the line for anything this project does not have — a placeholder left in place is a path that does not exist, and the skill stops on it rather than guessing. An empty array means the project declares none. The board-to-app skill's config table says, per key, what it names and what its absence costs. Keys the skill does not know are ignored, so notes like this one are safe to keep.",
+  "//": "Copy to .claude/board-to-app.json at the project root. Replace every <…> placeholder with a path relative to that root, and DELETE the line for anything this project does not have — a placeholder left in place is a path that does not exist, and the skill stops on it rather than guessing. An empty array means the project declares none. A key deleted because its subject does not exist yet — no backend, so no migration directory — gets a line in `deferredKeys` instead, naming the chapter that will declare it; an absence nobody promised is read as a decision. The board-to-app skill's config table says, per key, what it names and what its absence costs. Keys the skill does not know are ignored, so notes like this one are safe to keep.",
 
   "boardRoot": "<directory holding the board's frame sources>",
   "boardManifest": "<file listing every frame with its permanent id>",
@@ -40,5 +40,12 @@
 
   "narrativePhrases": [],
   "projectGates": "<module exporting this project's own gates and their cases>",
-  "disabledGates": []
+  "disabledGates": [],
+
+  "deferredKeys": {
+    "<optional key above whose subject does not exist yet>": {
+      "chapter": "<the chapter that creates that subject and declares the key>",
+      "whenExists": "<path whose appearance makes the key due — checked at every gate run>"
+    }
+  }
 }
