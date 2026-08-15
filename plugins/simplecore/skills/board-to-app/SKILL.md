@@ -156,8 +156,9 @@ write, so nothing in this skill has to know one project's wording:
 1. **Dependency order, not board order.** A chapter starts only when every chapter
    in its `prerequisites` section has closed. The board's section letters are a
    subject index, not a build order.
-2. **A chapter closes on its tests, not on its code.** Working screens with no
-   persona run is an open chapter.
+2. **A chapter closes on its tests, not on its code.** Working screens with no persona
+   run is an open chapter, and so is a foundation chapter whose verifications nobody
+   executed.
 3. **Parallel chapters join before they are tested.** Two chapters that reference
    none of each other's frames may be built at once by separate agents — but the
    persona tests wait until both are standing, because the test walks between
@@ -165,9 +166,13 @@ write, so nothing in this skill has to know one project's wording:
 4. **The board is the contract.** A screen that disagrees with its frame is wrong
    even when it looks better. Where the board is wrong, fix the board in the same
    change (`simplecore:wireframe-boards`) and regenerate the chapter.
-5. **Chapters are generated, never hand-edited.** The expectations quote what the
-   board draws; editing them by hand makes the file agree with the code instead of
-   with the contract. Fix the board, regenerate, rebuild.
+5. **Chapters are generated, never hand-edited — except the ones the generator excludes.**
+   The expectations quote what the board draws; editing them by hand makes the file agree
+   with the code instead of with the contract. Fix the board, regenerate, rebuild. **A
+   chapter that places no frames is the exception**: a foundation chapter has no board to
+   fix, so `chapterGenerator` leaves it alone and it is written and corrected by hand.
+   Which chapters those are is read off the generator's own exclusion rather than guessed,
+   and a chapter that places even one frame is never one of them.
 6. **The persona is the tester, not a label.** Each screen names the personas that
    reach it and what each one must and must not be able to do. A run that only
    exercises the full-access role has tested a quarter of the screen.
@@ -480,6 +485,13 @@ Each screen in a chapter carries two kinds of line: what to build, and what each
 persona must find. Build the whole chapter first — a persona test that walks
 between two screens cannot run while one of them is missing.
 
+**A chapter that places no screens carries the same two kinds**, with a machine
+verification where a screen chapter has a persona: a foundation chapter's second line
+says what has to hold once its half is built — the migration that rolls back to the same
+schema, the expired token that is refused — and it is executed rather than reasoned
+about. Everything below is written for the persona run because that is the common case;
+it holds for a verification line word for word.
+
 **Then run the personas, one at a time, as that person.** Sign in with that
 role's account, start where that person would start, and use only what that
 person can reach. A test run as an administrator who then "checks the supervisor's
@@ -758,7 +770,7 @@ has left — there is no gauge, only the growing weight of what it has already r
 that lets the next session start without asking anything is written the moment it changes; a
 handoff composed once the context is nearly spent is the one that does not get written.
 
-**Stop and ask only for these**: a decision that changes what the product is, a term whose
+**Stop and ask only for these four**: a decision that changes what the product is, a term whose
 translation is genuinely undecided, a value no source can settle, and **moving a project off
 another build arrangement onto this one** — plus anything the repository's own rules reserve for
 the user, committing and pushing among them unless the user has said otherwise for this build.
@@ -776,8 +788,8 @@ then the right shape is built. What is never done is quietly taking the smaller 
 reporting it as the choice: a screen built on the wrong shape is a rewrite that arrives three
 chapters later, when it costs everything built on top of it as well.
 
-Where the wide change genuinely belongs to somebody else's decision, that is one of the three
-questions above — ask it as a decision with its cost attached, not as a preference.
+Where the wide change genuinely belongs to somebody else's decision, that is the first of the four
+reserved above — ask it as a decision with its cost attached, not as a preference.
 
 ## The documents, the board and the code say the same thing
 
@@ -1007,6 +1019,13 @@ What a generated chapter carries: the previous chapter and the state it leaves, 
 chapters that must close first and those that may run alongside, the frames it owns as
 board ids, and per screen a build line plus one test line per persona quoting the
 frame's own tabs, counts, messages and primary action.
+
+**A chapter with no frames is outside all of that, and the generator says which.** There
+is nothing to derive for a foundation chapter — no frames, no personas, so no quoted
+expectations — and a generator that wrote one anyway would produce an empty file where a
+hand-written one belongs. So it excludes that chapter by name, and the exclusion is the
+one place the exception is recorded: a chapter the generator skips is edited by hand, and
+every other chapter is regenerated.
 
 Two shapes must survive regeneration because the board's own gates read them: the
 per-chapter placement lines that name each frame once, and the tallies that count them.
