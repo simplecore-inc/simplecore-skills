@@ -9,19 +9,28 @@ exactly like defects in the product.
 For anything running in a browser, in this order, and **stop at the first one
 that works**:
 
-1. **Claude in Chrome** (`mcp__claude-in-chrome__*`) — the default. Call
-   `tabs_context_mcp` first to confirm the extension is connected. **Only ever the
-   local browser**: the agent drives a development server on this machine, and
-   pointing a remote or shared browser at it is neither reproducible nor yours to
-   do.
-2. **Playwright** — when the extension reports "Browser extension is not
-   connected", or when the task genuinely needs scripted determinism (a hundred
-   screenshots, a fixed viewport matrix).
-3. **A browser-driving agent** — last, for a task the first two cannot express.
+1. **agent-browser** — <https://github.com/vercel-labs/agent-browser> — the
+   default for every browser task.
+2. **Playwright** — when agent-browser cannot express the task: scripted
+   determinism over a long matrix, a fixed viewport sweep, a capability only its
+   API reaches.
+3. **Claude in Chrome** (`mcp__claude-in-chrome__*`) — last resort. Call
+   `tabs_context_mcp` first to confirm the extension is connected.
 
-**Say which one you fell back to, and why.** A capture taken through a different
-driver can differ in device pixel ratio, fonts, and scrollbar width; a reader
-comparing two runs needs to know the instrument changed.
+**The order is about where a run spends its time.** The extension errors often
+enough that a pass routed through it works on the extension rather than on the
+product — and a driver failure reads exactly like a defect in the screen, so the
+time is spent twice: once on the tooling, once on the screen that was never
+broken.
+
+Two rules survive the order unchanged:
+
+- **Only ever the local browser.** The agent drives a development server on this
+  machine, and pointing a remote or shared browser at it is neither reproducible
+  nor yours to do.
+- **Say which driver you ended up on, and why.** A capture taken through a
+  different driver can differ in device pixel ratio, fonts, and scrollbar width;
+  a reader comparing two runs needs to know the instrument changed.
 
 ## Choosing a device for a mobile product
 

@@ -38,5 +38,7 @@
   "capturesDir": ".captures",
   "costLog": "<machine-readable file the span and consumption per chapter are appended to>",
 
-  "narrativePhrases": []
+  "narrativePhrases": [],
+  "projectGates": "<module exporting this project's own gates and their cases>",
+  "disabledGates": []
 }

@@ -91,7 +91,7 @@ the last column says what its absence costs · **◐** required once another key
 | `handoverFile` | the facts a builder needs to start: how to stand the system up, known traps, what data is already standing | ● | the build cannot start |
 | `openItemsFile` | where a parked decision is written | ○ | parked lines go in the state ledger |
 | `openItemsHeading` | the heading those lines live under, written exactly as that project writes it | ◐ with `openItemsFile` | the config is incomplete — report it rather than choosing a heading |
-| `gates` | the commands a chapter must pass before it closes, each read by its exit status | ○ | nothing mechanical holds a chapter closed; say so once per session and close on the persona runs alone |
+| `gates` | the commands a chapter must pass before it closes, each read by its exit status — `bta.mjs check` among them | ○ | nothing mechanical holds a chapter closed; say so once per session and close on the persona runs alone |
 | `auditScript` | the script a mechanically visible defect becomes a detection rule in | ○ | the project cannot ratchet — report the rule that should have been written rather than inventing a home for it |
 | `migrationDir` | where numbered migrations live, so number ranges can be handed out per agent | ○ | ranges cannot be handed out, so backend chapters run one at a time |
 | `frameDeliverables` | what each screen owes beyond working code, one checkable sentence each | ○ | a screen owes nothing beyond working code |
@@ -104,6 +104,8 @@ the last column says what its absence costs · **◐** required once another key
 | `capturesDir` | one agreed, ignored directory for judging captures | ○ | captures go to the session's scratch space and are forwarded by path; nothing is kept |
 | `costLog` | a machine-readable file the wall-clock span and consumption are appended to, per chapter | ○ | what a chapter cost cannot be recovered afterwards; only what git holds survives |
 | `narrativePhrases` | extra point-of-view phrasings the handover file must refuse, for a project writing in neither Korean nor English | ○ | the built-in list stands alone |
+| `projectGates` | a module exporting this project's own gates and their cases | ○ | only the generic gates run; anything true of this project alone is held by nobody |
+| `disabledGates` | `{ id, reason }` per generic gate this project turns off | ○ | every generic gate runs — which is the default, and a gate is never turned off silently |
 
 `chapterHeadings` maps a role to the heading that project's chapter files actually
 write, so nothing in this skill has to know one project's wording:
@@ -140,10 +142,9 @@ write, so nothing in this skill has to know one project's wording:
    exercises the full-access role has tested a quarter of the screen.
 7. **A correction becomes an instruction.** A builder that built the wrong thing, an
    agent that returned nothing, a handover the next session could not use — none of
-   those is the agent's failure, and correcting that one agent leaves the next to
-   make the same mistake in the same place. Fix what the agent was told: this skill,
-   the handover file, or the brief every agent of that kind receives — and **say which
-   file changed**, because the instructions live outside the repository being built.
+   those is the agent's failure, and correcting that one agent leaves the next to make
+   the same mistake in the same place. Fix what the agent was told, in the same change
+   → *What is learned goes back into the instructions*, below.
 
 ## Opening a session
 
@@ -171,17 +172,19 @@ Building one screen end to end is **not** setup; it costs the same context every
 other screen costs, and a coordinator that spends it dries out before the chapter
 is done and leaves half-built code behind.
 
-**This holds for every other kind of work in the session, not only for screens.** A
-build almost never happens alone — there is a document to write, a migration to run,
-a catalogue to fix — and the coordinating context dries out on a pipeline stage
-exactly as fast as on a screen. That is the exception everyone makes, because the
-other work feels different: no chapter covers it, and it looks small from here. Then
-a session that was supervising six builders is halfway through a service layer, and
-every judgment it still owes is made on a context with no room left.
+**This holds for every kind of work in the session, not only for screens.** A build
+almost never happens alone — a design document to rewrite, a migration to run, a
+script to author, a catalogue to fix, an edit to this skill — and the coordinating
+context dries out on a document or a script exactly as fast as on a screen. Each of
+those is delegated too. That is the exception everyone makes, because the other work
+feels different: no chapter covers it, it is prose rather than code, and it looks
+small from here. Then a session that was supervising six builders is halfway through
+a service layer, and every judgment it still owes is made on a context with no room
+left.
 
 What the coordinator may touch directly is the coordination itself: the config, the
-ledger, the handover file, and the decision about what a wave is. **It does read the
-log, and it relays** — a few lines rather than a transcript.
+ledger, the handover file, the wave decision, and the barrier work the wave gives it.
+**It does read the log, and it relays** — a few lines rather than a transcript.
 
 1. **One chapter, one subagent — `simplecore:chapter-builder`.** Dispatch that agent
    rather than composing a prompt each time; a builder briefed from scratch builds
@@ -222,6 +225,33 @@ log, and it relays** — a few lines rather than a transcript.
    why, which persona lines failed and what it did about them, what it parked, and
    whether the chapter closed. No screen dumps, no commentary, no images — its work
    is in the tree and in the state ledger, and the report says where to look.
+
+### The dispatch is planned, written down, and then made
+
+Parallel work is not decided one agent at a time. **Before dispatching anybody, write
+the plan for the whole wave**: who its members are, what each one owns, and what
+nobody may touch. Three lines per agent is enough, and it goes in the ledger or the
+handover file rather than only in the coordinator's head — a plan nobody can read is
+one the next session cannot resume and the replacement of a stalled agent cannot
+inherit.
+
+| The plan names | Because |
+| --- | --- |
+| the wave's members | the set is derivable from the prerequisites; writing it down is what makes it reviewable |
+| what each agent owns — paths, tables, migration numbers, shared files | ownership is a fact only the coordinator can see, and two briefs with disjoint paths can still both build the same checker |
+| what nobody touches this wave | an agent told only what it owns reads the silence as permission for anything adjacent — and the registry, the catalogue, the ledger and the generated client are exactly what no brief thinks to name |
+| the resource slot per agent — checkout, database, port | an agent with no slot works alone, and says so |
+
+**The git index is a shared resource like any other.** Two agents committing in one
+checkout sweep each other's staged work into commits neither of them meant to make,
+and nothing announces it. Either every agent gets its own checkout, or **the agents
+stage nothing and the coordinator commits at the barrier** — those are the two
+arrangements; there is no third that survives.
+
+**Every parallel agent is tracked by its artifact.** The plan says which file each
+agent writes and what its progress line looks like, and progress is read from that
+file. An agent's own announcement is not progress → *An agent that ends, and an agent
+that only paused*, below.
 
 ### Judge the overlap before every parallel dispatch — then parallelise
 
@@ -410,25 +440,13 @@ The lenses in full, the locale and alignment rules, and the anchor every finding
 1. **Fix it there.** Then take the same path again, and the neighbouring screens with
    it. Where the board is the stale side, fix the board and regenerate the chapter.
 2. **A defect a machine could see becomes a rule the moment you understand it.** Not
-   on the second sighting — that is the floor, not the bar. If a regex or a walk over
-   the syntax tree can find it, it becomes a detection rule in `auditScript` now, in
-   this change, so the next chapter catches it without anybody looking.
-
-   Ask the question every time: **can a machine see this?** Most defects that reach a
-   person are mechanically visible once somebody has described them precisely — a
-   value computed in two places, a string that should exist once, a control with no
-   destination. Describing it well enough to detect is most of understanding it.
-
-   **A new rule is wired into `gates` and sweeps the whole tree the moment it
-   exists.** A script that has to be remembered is a script nobody runs; a rule that
-   reports without anybody fixing what it found has moved the defect into a log. Add
-   it, run it across everything, **fix what it finds**, and report the count — zero
-   proves coverage, non-zero is the rule earning itself immediately.
-3. **A rule nobody tried to break is a rule that says the tree is green.** When a
-   check goes in, plant the defect it exists for and watch it fail, then take the
-   defect out and watch it go quiet. Both halves; neither announces itself →
-   `references/harness.md`.
-4. **Only what needs a person goes to a person**, and it goes to the open items, not
+   on the second sighting — that is the floor, not the bar. Ask the question every
+   time: **can a machine see this?** Most defects that reach a person are mechanically
+   visible once somebody has described them precisely — a value computed in two
+   places, a string that should exist once, a control with no destination. Describing
+   it well enough to detect is most of understanding it. Where it belongs and how it
+   is proved → *Every rule here is held by a machine or marked as needing eyes*, below.
+3. **Only what needs a person goes to a person**, and it goes to the open items, not
    into a pause.
 
 Do not write audit findings into documents. A finding was fixed, became a rule, or is
@@ -437,13 +455,13 @@ a line in the open items.
 ## Parking is a last resort, and most things do not qualify
 
 **The default is to decide.** An open question is answered by designing the answer —
-architecture first, then consistency with what the product already does, then
-stability, then performance — and the decision is applied to the code and the board in
-the same change. Those four are an order, not a list: a fast screen built on the wrong
-shape is a rewrite, and a screen that disagrees with its neighbours is a defect no
-benchmark can see. A build whose open items keep growing is not being careful; it is
-deferring the design work, and every deferred decision makes the next chapter harder
-because it rests on nothing.
+**architecture first, then consistency with what the product already does, then
+stability, then performance** — and the decision is applied to the code and the board
+in the same change. Those four are an order, not a list: a fast screen built on the
+wrong shape is a rewrite, and a screen that disagrees with its neighbours is a defect
+no benchmark can see. A build whose open items keep growing is not being careful; it
+is deferring the design work, and every deferred decision makes the next chapter
+harder because it rests on nothing.
 
 **These are never reasons to park:**
 
@@ -530,8 +548,25 @@ instruction ends up with a queue nobody is consuming and a build that has not mo
 file, and its first line says how far it got. That line is the only progress report
 that cannot lie.
 
-**The threshold is two.** When the artifact has not changed since the previous check
-*and* the agent has announced idle twice, treat it as stalled. Then, in one turn:
+**A quiet agent is either stalled or inside something long, and the two look
+identical from outside.** Killing the second kind throws away everything it had
+worked out; waiting on the first kind costs the build a chapter. So the difference is
+established rather than guessed, from the three things that move while real work
+happens:
+
+| Read | Working, keep waiting | Stalled, replace it |
+| --- | --- | --- |
+| its log's last line | names a step that plausibly takes this long — a full gate run, a migration over real data, a suite, a capture sweep | names a step that finishes in seconds, or repeats the previous line |
+| the tree and the index | files changing, commits landing, a process of its own still running | nothing has moved since the previous check |
+| what it says it is doing | it can name the command it is inside and what it is waiting for | it announces availability, or restates its assignment |
+
+**All three, not one.** A long gate produces no commits either, so the log line is
+what separates it from a stall — and an agent that cannot say what it is waiting for
+is not waiting.
+
+**The threshold is two.** When all three readings say stalled — the artifact has not
+changed since the previous check *and* the agent has announced idle twice — treat it
+as stalled. Then, in one turn:
 
 1. **Tell it to stop** and to stop writing the artifact. Say why, and ask it to send
    anything unsaved as a message rather than writing it.
@@ -652,9 +687,121 @@ has left — there is no gauge, only the growing weight of what it has already r
 that lets the next session start without asking anything is written the moment it changes; a
 handoff composed once the context is nearly spent is the one that does not get written.
 
-**Stop and ask only for these**: a decision that changes what the product is, a value no source can
-settle, and anything the repository's own rules reserve for the user — committing and pushing among
-them, unless the user has said otherwise for this build.
+**Stop and ask only for these**: a decision that changes what the product is, a term whose
+translation is genuinely undecided, and a value no source can settle — plus anything the
+repository's own rules reserve for the user, committing and pushing among them unless the user has
+said otherwise for this build. **Everything else has a written answer here**, and a session that
+opens the ledger, reads the first open chapter and dispatches has already answered "what next".
+
+### Design the answer; scope is not a reason to take the worse one
+
+An open question is designed rather than asked, in the order *Parking is a last resort* sets
+out — architecture, consistency, stability, performance.
+
+**A wider refactor is not a reason to decline the better structure.** The cost is said out loud —
+which chapters it reaches, which persona lines have to be re-run, what has to be regenerated — and
+then the right shape is built. What is never done is quietly taking the smaller worse option and
+reporting it as the choice: a screen built on the wrong shape is a rewrite that arrives three
+chapters later, when it costs everything built on top of it as well.
+
+Where the wide change genuinely belongs to somebody else's decision, that is one of the three
+questions above — ask it as a decision with its cost attached, not as a preference.
+
+## The documents, the board and the code say the same thing
+
+Three artifacts describe one product: the design documents decide behaviour, the board renders
+that as screens and states and flow, the code implements it. **A change updates all three in the
+same change.** Two out of three is the state that reads as agreement and is not — the reader who
+opens the odd one out has no way to tell it is stale.
+
+| The change starts in | What moves with it |
+| --- | --- |
+| a design document | the frames that draw the behaviour, then the screens built from them |
+| the board | the design document that decided it, then the code — and the chapter is regenerated |
+| the code, because building found the board wrong | the frame first, then the document behind it; never the code alone |
+
+**Where they genuinely cannot agree, the disagreement is written down** — in the open items or the
+project's own tracking document, naming which two disagree, which side is stale, and what has to
+happen for them to meet. An undocumented gap is indistinguishable from an oversight, and the next
+session resolves it by guessing which artifact to believe.
+
+**Never resolve a disagreement by editing whichever is cheapest to edit.** The board is the
+contract for what a screen holds; the documents are the contract for why. Cheapness is not
+authority.
+
+## Every rule here is held by a machine or marked as needing eyes
+
+**There is no third category.** A rule that is neither checked nor marked reads as though
+something is holding it, which is the state in which it decays — everybody assumes the gate
+catches it, nobody looks, and it is broken for a month before a person notices.
+
+So this skill ships the checks for its own mechanical rules, and marks the rest:
+
+```bash
+node "${CLAUDE_PLUGIN_ROOT}/skills/board-to-app/scripts/bta.mjs" check
+```
+
+**Held by a gate** — nobody has to remember these:
+
+| Rule | The gate |
+| --- | --- |
+| the config is complete, well typed, and every declared path is there | `configGate` |
+| the handover file states facts, never a point of view | `handoverGate` |
+| a parked line has its heading and its three parts | `openItemsGate` |
+| every chapter is named in the state ledger | `ledgerGate` |
+| a capture is named the one way, one folder per language | `capturesGate` |
+| every commit says which chapter it belongs to | `trailerGate` |
+| the frames, counts and copy a chapter builds to | the board's own gates (`simplecore:wireframe-boards`) |
+| whatever `frameDeliverables` declares | the project's own gate, one checkable sentence each |
+| the code's own defect types | the project's `auditScript` — every new detection rule goes there |
+
+**Held by eyes** — no machine can judge these, and saying so is the point:
+
+| Rule | Why no gate holds it |
+| --- | --- |
+| a screen matches the frame it was built from | a picture is the only witness → `references/judging-frames.md` |
+| a screen holds up for the person whose work it carries | that is what the persona run is |
+| a prerequisite the derived graph did not name | it surfaces while building; the agent that meets it stops and reports |
+| two chapters may run at once | a resource judgment, made per dispatch against facts that change |
+| the documents, the board and the code agree in meaning | a checker holds that a frame is referenced, never that two sentences say the same thing |
+| an agent is stalled rather than inside something long | the three readings, and they need somebody to take them |
+| a parked decision genuinely qualifies | the default is to decide, and only a person can say the design ran out |
+
+**A rule added to this skill lands in one of those two tables in the same change.** Where it is
+mechanical, the gate is written now — and proved in both directions before it counts, because a
+gate that has never fired is indistinguishable from one that cannot. Where it needs eyes, the
+second table says so, and nobody spends a session hunting for the check that was never there.
+
+**Generic checks live here; project-specific checks live in the project.** A heuristic true only
+of one repository's layout — its document format, its stack's conventions, its own data shapes —
+never enters this skill; it goes in the module the project declares as `projectGates`, and its
+cases go beside it. Where a gate belongs, how to write one, and how a project wires and proves
+its own → `references/checks.md`.
+
+## What is learned goes back into the instructions, in the same change
+
+A defect fixed once and walked past grows back next session, so the finding is worth more than
+the fix. **Never end with only the work corrected.**
+
+| The finding is | Where it goes |
+| --- | --- |
+| a defect type a regex or a tree walk can judge | a detection rule in `auditScript`, run across the whole tree, and what it finds is fixed now |
+| something about how the build is coordinated — a brief that misled, a report that never arrived, a rule with a hole | this skill, or the brief every agent of that kind receives |
+| a convention or trap that needs eyes | this skill or the project's instruction file, with the misreading printed beside the rule |
+| a path, a list, or a policy true only of this project | the project's config or instructions — never this skill |
+
+Three things make it stick, and skipping any one of them means nothing happened:
+
+1. **In the same change as the work**, not deferred to a cleanup that never comes.
+2. **Proved to fire.** A gate is run against the broken form and then the fixed form
+   (`bta.mjs gates` does exactly this); a written rule names the case it now catches. A rule
+   added without that is a claim, and it converts *nobody has checked* into *something is
+   checking* — which is much harder to doubt.
+3. **Said out loud.** These files live outside the repository being built, so name which file
+   changed; otherwise nobody sees the change that was the point.
+
+**"I will be careful next time" is not a fix.** Memory ends with the session, and the same
+misreading grows back. If no sentence and no gate changed, the finding was not recorded.
 
 ## Closing a chapter
 
@@ -700,7 +847,8 @@ and the failures are fixed rather than listed. Before saying so:
    the next screen breaking this?** If the answer is "somebody would notice in review",
    write the checker.
 3. **Run every command in `gates`**, all of them, green, each read by its exit status
-   rather than by the tail of its log → `references/harness.md`.
+   rather than by the tail of its log → `references/harness.md`. `bta.mjs check` is one
+   of them, and `bta.mjs gates` runs whenever a gate was added or changed.
 4. **Sync the board in the same change** where the code was right and the board was
    stale — but only the layer a board contracts, which is structure rather than the
    values in its illustration → `references/judging-frames.md`.
@@ -787,7 +935,7 @@ per-chapter placement lines that name each frame once, and the tallies that coun
 **Keep the generator with the project** — it reads that project's board layout, so it
 does not belong in this skill.
 
-## The five references beside this file
+## The references beside this file
 
 Each of these is long, and only one of them is needed at a time — which is why they sit
 beside this document rather than inside it. Read the one the moment calls for rather than
@@ -795,6 +943,7 @@ rediscovering it:
 
 | When | Read |
 | --- | --- |
+| a rule needs a check, or a project needs its own gates wired in | `references/checks.md` — where a gate belongs, the context it reads, and what makes one trustworthy |
 | a screen disagrees with its frame and you are deciding which is wrong | `references/judging-frames.md` — the three lenses, the locale and layout rules, the anchor every finding needs |
 | a screen owes something besides working code and you are listing what | `references/frame-artefacts.md` — the three reasons to photograph a screen, capture axes, fingerprints, what a stale artefact costs |
 | you are about to drive the product — browser, simulator, device | `references/driving-the-product.md`, which also says where a low-level command beats the tool |
