@@ -154,6 +154,25 @@ export function makeLocaleResourceMatcher(patterns, root) {
   };
 }
 
+/**
+ * Where glossary discovery starts.
+ *
+ * **The glossary belongs to the audited file, not to the shell.** Starting from
+ * cwd means naming a path outside the current directory's project — which every
+ * caller passing an absolute path does — discovers no glossary at all: the
+ * project's own rules fall away to the base set, its locale resources stop
+ * being recognised, and the run still exits 0. Starting from the first target
+ * that exists makes the audit the same whichever directory it is invoked from.
+ */
+function discoveryStart(paths = []) {
+  for (const p of paths) {
+    const abs = resolve(p);
+    if (!existsSync(abs)) continue;
+    return statSync(abs).isDirectory() ? abs : dirname(abs);
+  }
+  return process.cwd();
+}
+
 function findPath(p, root, label) {
   const found = [resolve(p), join(root, p)].find((c) => existsSync(c));
   if (!found) throw new Error(`${label} 경로를 찾을 수 없습니다: ${p}`);
@@ -993,7 +1012,7 @@ export function runDocAudit(args, cliPath) {
     if (!existsSync(p)) throw new Error(`용어사전을 찾을 수 없습니다: ${args.glossary}`);
     discovered = {path: p, root: rootFromGlossaryPath(p)};
   } else {
-    discovered = discoverGlossary();
+    discovered = discoverGlossary(discoveryStart(args.paths));
   }
 
   let project = null;
