@@ -746,8 +746,9 @@ handoff composed once the context is nearly spent is the one that does not get w
 **Stop and ask only for these**: a decision that changes what the product is, a term whose
 translation is genuinely undecided, a value no source can settle, and **moving a project off
 another build arrangement onto this one** — plus anything the repository's own rules reserve for
-the user, committing and pushing among them unless the user has said otherwise for this build. **Everything else has a written answer here**, and a session that
-opens the ledger, reads the first open chapter and dispatches has already answered "what next".
+the user, committing and pushing among them unless the user has said otherwise for this build.
+**Everything else has a written answer here**, and a session that opens the ledger, reads the
+first open chapter and dispatches has already answered "what next".
 
 ### Design the answer; scope is not a reason to take the worse one
 
