@@ -1,11 +1,11 @@
 # Instruments that lie, and trees that are shared
 
-Two ways a walk loses a day to something other than the product: an instrument that
+Two ways a pass over the screens loses a day to something other than the product: an instrument that
 answered plausibly, and a tree that more than one agent was holding.
 
 ## The harness lies, and it lies in the shape of an answer
 
-A walk runs on instruments: a screenshot pipeline, a dev server, a checker, a
+This work runs on instruments: a screenshot pipeline, a dev server, a checker, a
 gate. Each one turns the running product into something a person can judge. When
 one of them is wrong it does not go quiet — **it returns a plausible answer**, and
 plausible answers get acted on.
@@ -20,7 +20,7 @@ be measuring.
 
 A gate reported one screen as several times longer than it is, and gave a different
 answer on each run of unchanged code. Read as a screen that would not stay fixed, it
-produced a reprimand to the walker who had already fixed it. It was the capture
+produced a reprimand to the agent who had already fixed it. It was the capture
 pipeline: a reloaded bundle redrew part of the screen a second time, so the picture
 grew while the screen did not. Four of five findings from that gate were the
 instrument rather than the product.
@@ -43,7 +43,7 @@ cannot be reproduced must not send anybody anywhere — a checker that sends som
 to fix a non-problem is worse than no checker, because they will do it.
 
 When a fix makes the instrument deterministic, **put it in the tool, not in a
-walker's habits.** A discipline that lives in what somebody happened to do is one
+one agent's habits.** A discipline that lives in what somebody happened to do is one
 the next agent will not know about.
 
 ### A guard that never fires is not proof of anything
@@ -77,9 +77,9 @@ command each. That is the only thing separating *nobody is capturing* from
 *nobody is watching*.
 
 So read silence as suspect rather than as reassurance. A coordinator whose capture
-watch stayed quiet across two clusters read it as the walkers not having shot
+watch stayed quiet across two units of work read it as the agents not having shot
 anything; fourteen captures had landed and the watch had never once worked. The
-walk survived on the walkers reporting their own paths, which is the fallback, not
+the run survived on agents reporting their own paths, which is the fallback, not
 the mechanism — the watch existed to get those pictures to a person *while the
 screen was still the subject*.
 
@@ -110,7 +110,7 @@ two source files where a bad call had been found.
   library.
 - **Give it an escape that a reader can see and question** — a marker at the call
   site, not an omission from a list at the top of the file nobody re-reads.
-- **Failing on an empty scan** catches the walk that quietly stopped matching
+- **Failing on an empty scan** catches the scan that quietly stopped matching
   anything.
 
 ### Some rules are correctly rejected, and the rejection is worth as much
@@ -136,7 +136,7 @@ a gate nobody is running.
 breaking.** A gate that takes ten minutes has to run in the background, and its
 log is thousands of lines an agent must not read — so `| tail -25` looks like the
 careful move rather than the careless one, and it is the exact move that throws
-the verdict away. It has now cost a walker a run reported as green that had two
+the verdict away. It has now cost an agent a run reported as green that had two
 failing tests in it, and the pass was believed because the *last* twenty-five
 lines were a passing checker.
 
@@ -168,7 +168,7 @@ echo, and a second command that greps. If a report says a gate passed, the words
 
 Refusal copy existed in three locales, was reachable in code, passed every check,
 and had **never rendered once** — no sample data produced the state it belonged
-to. The walker reported it as working because the code path was right.
+to. The agent reported it as working because the code path was right.
 
 **If a state needs data to exist, that data is part of the frame.** Empty states,
 error states, blocked states and "unavailable" states are exactly the ones no
@@ -179,7 +179,7 @@ settles whether a person meets what you intended.
 
 ## Sharing one working tree, and one machine
 
-The one-walker-at-a-time rule is in the main document. These are the failures that
+The one-agent-at-a-time rule is in the main document. These are the failures that
 follow when it is bent, all of which cost real work in a single session.
 
 ### A shared resource arbitrates itself — a coordinator holding the queue is the bug
@@ -235,7 +235,7 @@ messages**, because the messages are the part that fails.
 
 ### An agent that ends, and an agent that only paused
 
-A walker's session can end for reasons that have nothing to do with the work — a usage
+An agent's session can end for reasons that have nothing to do with the work — a usage
 limit, a dropped connection. Three failures follow, and each has cost a session.
 
 **A half-finished tree is read as the existing state.** When an agent dies, read the tree
@@ -259,14 +259,14 @@ dead agent does nothing. A woken one resumes from the tree it remembers — whic
 dozens of commits stale — and treats that memory as the current state: it writes files that
 have since been split, rebuilds what somebody else already judged, and commits over work it
 cannot see. The wake arrives with no warning and its first act may be a write, so a message
-telling it to stand down can land after the damage. **The moment a cluster is handed to
+telling it to stand down can land after the damage. **The moment a unit of work is handed to
 somebody else, stop the agent it was taken from.** Stopping is the only thing that reaches
 it before it wakes.
 
 ### Two agents on one surface is the coordinator's mistake, never theirs
 
-It happens the same way every time: a walker reports that the API cannot supply what
-a frame draws, the coordinator adds that to the walker's brief, and later dispatches a
+It happens the same way every time: an agent reports that the API cannot supply what
+a frame draws, the coordinator adds that to that agent's brief, and later dispatches a
 server agent for the same area — having forgotten that the first brief reached into it.
 Nobody involved did anything wrong.
 
@@ -309,19 +309,20 @@ you did not touch.
 **Path-level staging runs out when a file itself is shared** — a manifest, a
 config, a barrel that two agents both add a line to. Staging your own line without
 taking theirs is a blob written straight into the index, and the commands are in
-`references/walking-a-cluster.md` § Commit at every point that stands on its own.
+`simplecore:board-parity-walk`'s `references/walking-a-cluster.md` § Commit at every
+point that stands on its own.
 Learn it before it is needed; by then every obvious move costs somebody their work.
 
 The mirror of it: **uncommitted work in a shared tree is not private.** It is a
 broken build every other agent inherits without being able to see why — a red
 typecheck they must reason past before they can trust their own run. Commit at every
-point that stands on its own, never once per cluster.
+point that stands on its own, never once per unit of work.
 
 **Read `git status` for deletions you did not mean, and read it before you believe a
 green gate.** Staging is about what you add; the file you destroyed is not in that
 list. Writing to a path you did not first read, or renaming onto one, removes whatever
 was there — and when what was there is a test file, **the gate goes green because those
-tests are not running.** One walker overwrote a 294-line test file that way and its
+tests are not running.** One agent overwrote a 294-line test file that way and its
 first full-gate run passed with eighteen tests absent; the count in the gate's own
 output was the only witness, and nobody compares counts between runs. A vanished
 suite and a passing suite look identical from the outside, which is why this is a

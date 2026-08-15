@@ -99,7 +99,7 @@ them — copy `assets/board-parity-walk.json`, whose fields are:
 | --- | --- |
 | `parityList`, `handoverFile` | the two documents, relative to the project root; they start from `assets/parity-list.md` and `assets/handover.md`, and the list is then filled from the board, one line per frame that has a route |
 | `parkedSection` | the heading parked decisions live under, written exactly as that project's document writes it — the check refuses to let the section vanish |
-| `logDir`, `capturesDir` | one agreed, ignored location each, so a walker never invents a place and a reader never hunts for one. What the capture names look like is fixed and not the project's to choose → `references/driving-the-product.md`. A project may add a `captures` note beside them for what *is* local — which module builds a name, which command reads names back, which languages it ships |
+| `logDir`, `capturesDir` | one agreed, ignored location each, so a walker never invents a place and a reader never hunts for one. What the capture names look like is fixed and not the project's to choose → `simplecore:board-to-app`'s `references/driving-the-product.md`. A project may add a `captures` note beside them for what *is* local — which module builds a name, which command reads names back, which languages it ships |
 | `narrativePhrases` | extends the point-of-view phrasing the handover check refuses, for a project writing in neither Korean nor English |
 | `frameDeliverables` | what each frame owes beyond working code, one sentence each that a walker can check against what the walk produced; empty for a project that requires nothing |
 
@@ -147,11 +147,11 @@ Paths are relative to this skill's own directory.
 | Situation | Read |
 | --- | --- |
 | Inside one cluster — standing the app up, building a frame no code reaches, when to cut a commit, the log line, writing the walk's prose in the project's language | `references/walking-a-cluster.md` |
-| Judging a frame — the three lenses, locale and layout rules, the failures no gate can catch | `references/judging-frames.md` |
-| A measurement that surprises you, a check that has never fired, a rule about to be written, or more than one agent in one tree or on one machine | `references/harness.md` |
-| Opening the product to look at it — which browser driver, which simulator or emulator, how a capture route is built, and how pictures reach the person judging them | `references/driving-the-product.md` |
-| A project whose frames owe an artefact beyond code — captures, snapshots — or deciding what `frameDeliverables` should hold | `references/frame-artefacts.md` |
-| Sample data, the story the screens live in, and what a cluster cost | `references/scenario.md` |
+| Judging a frame — the three lenses, locale and layout rules, the failures no gate can catch | `simplecore:board-to-app`'s `references/judging-frames.md` |
+| A measurement that surprises you, a check that has never fired, a rule about to be written, or more than one agent in one tree or on one machine | `simplecore:board-to-app`'s `references/harness.md` |
+| Opening the product to look at it — which browser driver, which simulator or emulator, how a capture route is built, and how pictures reach the person judging them | `simplecore:board-to-app`'s `references/driving-the-product.md` |
+| A project whose frames owe an artefact beyond code — captures, snapshots — or deciding what `frameDeliverables` should hold | `simplecore:board-to-app`'s `references/frame-artefacts.md` |
+| Sample data, the story the screens live in, and what a cluster cost | `simplecore:board-to-app`'s `references/scenario.md` |
 
 ## Opening a session
 
@@ -239,7 +239,7 @@ That failure is the reason this skill exists.
 
    **A file two agents both have to write is not a licence to run them together.** It is
    a shared document — exactly one owner at a time — and where it cannot be, the blob
-   written straight into the index (`references/harness.md`) keeps one from swallowing
+   written straight into the index (`simplecore:board-to-app`'s `references/harness.md`) keeps one from swallowing
    the other's line. That is a way to survive the collision, not a way to earn it.
 
    This is the rule that gets bent for speed, and the cost is not slower work — it
@@ -315,7 +315,7 @@ touch — two briefs with disjoint paths can still both build the same checker.
 
 **The brief carries the staging rule itself — never a pointer to it.** Say in every brief:
 stage the paths you touched by name, never `git add -A` or `-A`'s cousins, and read
-`references/harness.md` § Stage your own paths **before it is needed**. An agent that meets
+`simplecore:board-to-app`'s `references/harness.md` § Stage your own paths **before it is needed**. An agent that meets
 a shared file without having read that section reaches for the obvious move, and every
 obvious move there costs somebody their work. A rule that lives only in a reference is read
 after the damage, and the tell is an agent that says *nothing of mine was swallowed* — a
@@ -350,7 +350,7 @@ Restart it, split at a seam where the two halves do not need to see each other.
 
 **Everything in this section that fails silently is catalogued** — how to prove a lock
 actually refuses, the stale index, the duplicate deliverable two briefs both asked for,
-why `git show --stat` is not attribution → `references/harness.md`.
+why `git show --stat` is not attribution → `simplecore:board-to-app`'s `references/harness.md`.
 
 ## What a frame owes besides working code
 
@@ -363,7 +363,7 @@ keeps it from becoming a separate pass that never happens.
 Two rules make it affordable rather than doubling the work: **the same walker produces
 it, in the same cluster**, and **what generates it must be deterministic**. Artefacts
 have their own failure modes and every one of them is silent →
-`references/frame-artefacts.md`.
+`simplecore:board-to-app`'s `references/frame-artefacts.md`.
 
 ### Three reasons to photograph a screen, and none of them substitutes for another
 
@@ -378,14 +378,14 @@ on the floor.
 | **Keeping** — figures a document holds onto | kept figures have to be true of **one** version of the product, not of eight months of it | its own naming scheme, outside `capturesDir`, in one run at the end from a finished product |
 
 - **Looking is unconditional.** Not a project's to opt out of, not deferrable, not
-  satisfied by a green gate → `references/judging-frames.md`.
+  satisfied by a green gate → `simplecore:board-to-app`'s `references/judging-frames.md`.
 - **Showing is owed whenever a walk moves what a screen draws** — or moves the frame it
   is drawn against. It costs the coordinator a path, which is exactly why walkers return
   paths and never images.
 - **Keeping is nothing the walk asks for.** No frame owes a picture that outlives it. A
   project that keeps figures for a document of its own runs that as its own scheme, on its
   own schedule, and a walk neither waits for it nor counts a frame unwalked without it →
-  `references/frame-artefacts.md`.
+  `simplecore:board-to-app`'s `references/frame-artefacts.md`.
 
 ## Parity is the floor, not the verdict
 
@@ -401,7 +401,7 @@ never opened, a checker that has stopped checking.
 
 The lenses in full, the locale and alignment rules, the rubric a project's own
 screen-audit skill supplies instead, and the anchor every finding needs →
-`references/judging-frames.md`.
+`simplecore:board-to-app`'s `references/judging-frames.md`.
 
 ## When a frame diverges
 
@@ -564,7 +564,7 @@ died before assuming the walker did, check, and put it back.
 happens — there was no first event to stop. Its silence is read as *the work has not reached
 that stage yet*, and that reading is available for as long as the walk lasts. So prove every
 watch the moment you arm it, in the same turn: make it fire once, then watch it go quiet →
-`references/harness.md` § A watch is a check.
+`simplecore:board-to-app`'s `references/harness.md` § A watch is a check.
 
 Saving context and hiding the work are different things. Three ways the walk stays visible
 while the coordinating context stays empty:
@@ -577,7 +577,7 @@ while the coordinating context stays empty:
    cluster — a person following a walk wants to see the screen while it is still the
    subject. Say which frame and which locale in one line, and send the language a person
    reads rather than the pseudo-locale, which is an instrument →
-   `references/driving-the-product.md`.
+   `simplecore:board-to-app`'s `references/driving-the-product.md`.
 3. **Progress goes into the walker's own log, one line per step** — a line per *frame* is a
    heartbeat every thirty minutes, which from outside is indistinguishable from an agent
    that has stalled.

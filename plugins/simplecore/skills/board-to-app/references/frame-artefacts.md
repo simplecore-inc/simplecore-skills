@@ -1,7 +1,7 @@
 # What a frame owes besides working code
 
 Read this when a project's `frameDeliverables` is non-empty, or when deciding what
-one should hold. Everything here is about what outlives the walk — captures,
+one should hold. Everything here is about what outlives the pass — captures,
 snapshots, a story step — and about the ways they quietly stop describing the
 product.
 
@@ -16,27 +16,27 @@ eyes. Where that is so, the config names it:
 ]
 ```
 
-Each line is a plain sentence a walker can check against what the walk produced.
-**A frame that owes a deliverable is not walked until the deliverable exists**, and
+Each line is a plain sentence an agent can check against what the pass produced.
+**A frame that owes a deliverable is not covered until the deliverable exists**, and
 so it is not deleted from the list — which is what keeps it from becoming a
 separate pass that never happens.
 
 Two rules make that affordable rather than doubling the work:
 
-- **The same walker produces it, in the same cluster.** An artefact written later,
+- **The same agent produces it, in the same unit of work.** An artefact written later,
   by somebody who did not drive the screen, describes what the code seems to do
   rather than what it does.
 - **Every axis a capture varies along is decided before the first capture, not after.**
   A capture is identified by frame **and** locale **and** device class — and any other
   axis the product actually has. Each one that gets added later means re-capturing
-  every frame walked so far and reworking the scripts that produce them, which is the
-  most avoidable rework a walk can generate. A board that names a tablet frame has a
+  every frame covered so far and reworking the scripts that produce them, which is the
+  most avoidable rework such a pass can generate. A board that names a tablet frame has a
   device axis whether or not the first section uses it.
 - **What generates it must be deterministic.** A capture that differs on every run
   — a live clock, a random id, an animation caught mid-flight, a status bar showing
   the real time — makes every re-capture a change nobody can read. Where a project
   keeps captures, it owes a way to reach any frame in any state with the moving parts
-  pinned; a walker that finds no such mechanism reports it as owed rather than
+  pinned; an agent that finds no such mechanism reports it as owed rather than
   hand-driving 150 screens.
 
   **A frame leaves nothing unseen, and that takes as many pictures as it takes.** A
@@ -72,7 +72,7 @@ Two rules make that affordable rather than doubling the work:
     other language's artefacts.
 
   The same reasoning applies in the other direction: **a board frame edited after it
-  was walked puts that frame back on the parity list.** The contract moved, so the
+  was covered puts that frame back on the list of frames still to reconcile.** The contract moved, so the
   code is no longer known to match it — and this too is read from history rather than
   from somebody's memory of what they changed.
 
@@ -89,13 +89,13 @@ Two rules make that affordable rather than doubling the work:
   have photographed is gone.
 
 - **A regeneratable artefact is cheap to add later; a hand-made one is not.** This is
-  worth stating because it changes product decisions well outside the walk. When
+  worth stating because it changes product decisions well outside this pass. When
   captures are genuinely one command over the whole board, adding a language or a
   device class later costs a command — so there is no reason to add languages early
   "while we are capturing", and every reason not to: copy churns hardest while the
   screens are still being built, and each extra language multiplies that churn.
   When captures are hand-made, the same decision inverts and everything has to be
-  decided up front. A walk should know which of the two it is in, and say so.
+  decided up front. A pass should know which of the two it is in, and say so.
 
 A project that declares no `frameDeliverables` owes nothing beyond the code.
 

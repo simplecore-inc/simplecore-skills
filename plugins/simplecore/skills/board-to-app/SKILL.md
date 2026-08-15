@@ -387,19 +387,24 @@ per-stage placement lines that name each frame once, and the tallies that count
 them. Keep the generator with the project — it reads that project's board layout,
 so it does not belong in this skill.
 
-## What the parity walk still holds, and when to read it
+## The five references beside this file
 
-`simplecore:board-parity-walk` carries judgments this skill does not repeat because they
-did not change when the unit became a chapter. Read the one you need rather than
+Each of these is long, and only one of them is needed at a time — which is why they sit
+beside this document rather than inside it. Read the one the moment calls for rather than
 rediscovering it:
 
 | When | Read |
 | --- | --- |
-| a screen disagrees with its frame and you are deciding which is wrong | its `references/judging-frames.md` — the lenses, the locale rules, the anchor every finding needs |
-| a screen owes something besides working code and you are listing what | its `references/frame-artefacts.md` |
-| you are about to drive the product — browser, simulator, device | its `references/driving-the-product.md`, which also says where a low-level command beats the tool |
-| two agents must write one file and you cannot avoid it | its `references/harness.md` |
-| you are deciding what the seed and the captures tell as one story | its `references/scenario.md` |
+| a screen disagrees with its frame and you are deciding which is wrong | `references/judging-frames.md` — the three lenses, the locale and layout rules, the anchor every finding needs |
+| a screen owes something besides working code and you are listing what | `references/frame-artefacts.md` — capture axes, fingerprints, what a stale artefact costs |
+| you are about to drive the product — browser, simulator, device | `references/driving-the-product.md`, which also says where a low-level command beats the tool |
+| two agents must write one file, or a measurement surprises you, or a check has never fired | `references/harness.md` |
+| you are deciding what the seed and the captures tell as one story | `references/scenario.md` |
+
+**`simplecore:board-parity-walk` reads these same five**, because none of them changed when
+the unit of work became a chapter. What stays there is its own
+`references/walking-a-cluster.md` — the cluster procedure, which a chapter build does not
+use.
 
 ## Where the other skills stand
 

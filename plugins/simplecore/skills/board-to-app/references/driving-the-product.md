@@ -1,6 +1,6 @@
 # Driving the product, and photographing it
 
-A walk is judged on screens, so the walk has to open them and keep pictures of
+This work is judged on screens, so it has to open them and keep pictures of
 them. This is how — and, more importantly, which failures of that machinery look
 exactly like defects in the product.
 
@@ -11,7 +11,7 @@ that works**:
 
 1. **Claude in Chrome** (`mcp__claude-in-chrome__*`) — the default. Call
    `tabs_context_mcp` first to confirm the extension is connected. **Only ever the
-   local browser**: a walk drives a development server on this machine, and
+   local browser**: the agent drives a development server on this machine, and
    pointing a remote or shared browser at it is neither reproducible nor yours to
    do.
 2. **Playwright** — when the extension reports "Browser extension is not
@@ -25,8 +25,8 @@ comparing two runs needs to know the instrument changed.
 
 ## Choosing a device for a mobile product
 
-Both platforms, when the product ships on both. A walk that only ever looks at
-one is a walk that finds one platform's defects.
+Both platforms, when the product ships on both. A pass that only ever looks at
+one finds one platform's defects.
 
 **iOS — simulator.**
 
@@ -170,7 +170,7 @@ into, how far down the frame it was taken — is a variant on the end of the nam
 because none of it changes where the picture is looked for. Keep the variant to
 lower case, digits and hyphens.
 
-**The moment is in the name, and the walk never deletes anything.** A frame shot
+**The moment is in the name, and the pass never deletes anything.** A frame shot
 again otherwise lands on top of the picture it is being compared with, and then
 nothing on disk says which picture is of when. Sorting the directory is the
 history; keeping the before is what makes an after legible. The person who owns
@@ -198,27 +198,27 @@ is the round trip: every name the writer can produce is one the checker accepts.
 Six silent ways to get it wrong otherwise — a folder that is not a language, a
 folder inside a folder, no moment, no frame id, an id the board does not draw, a
 folder left empty by a rename — each ends with a picture nobody can place, or a
-place with no picture, months after the walker who took it has gone.
+place with no picture, months after the agent who took it has gone.
 
 **A checker's fixtures never live inside what it guards.** Give the check a
 directory argument and build the deliberately-wrong names somewhere else — the
 session's scratch space. Fixtures written into the real pile survive the run that
 made them, and from then on nobody can tell a fixture left by a dead agent from a
 capture of a screen: both are files, both look shot. It also puts fake pictures
-in front of whoever is watching the walk.
+in front of whoever is watching the run.
 
 **The pictures a person judges.** The coordinator forwards each new capture to
 the user **as it appears**, without opening it. The path is all that passes
 through the coordinating context; the image renders for the reader and costs
-nothing. Forwarding at the end of a cluster is a record, not a review — by then
+nothing. Forwarding at the end of a unit of work is a record, not a review — by then
 the decisions are made.
 
 **Send the user's own language first.** A pseudo-locale is an instrument: it
-measures whether a layout survives long strings, and it is for the walker. A
+measures whether a layout survives long strings, and it is for the agent. A
 person reading a screen to judge whether it says the right thing learns nothing
 from accented filler. Shoot the source language first, keep it, and send that;
 forward a pseudo-locale only when the point being made *is* the overflow. This
-has to be said explicitly to walkers — several will otherwise shoot only the
+has to be said explicitly to agents — several will otherwise shoot only the
 instrument and report success.
 
 Pair each send with one line naming the frame and what to look at. "Here is

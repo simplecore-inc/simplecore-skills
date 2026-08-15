@@ -86,7 +86,7 @@ export const frameManifestGate = {
     const theirs = {};
     // 「**K. 출입 연동 (D · 40 — 2단계 구역)** — 항목 / 항목 / …」 — the count in the heading is
     // prose that drifts, so what is compared is the ITEMS, which are the list itself.
-    for (const m of doc.text.matchAll(/^\*\*([A-Z])(?:-\d)?\.[^\n]*?\*\*\s*—\s*(.*)$/gm)) {
+    for (const m of doc.text.matchAll(/^\*\*([A-Z])(?:-?\d)?\.[^\n]*?\*\*\s*—\s*(.*)$/gm)) {
       const items = m[2].split(' / ').filter((x) => x.trim()).length;
       theirs[m[1]] = (theirs[m[1]] ?? 0) + items;
     }
@@ -98,7 +98,7 @@ export const frameManifestGate = {
     // The heading's own number — 「(D 75 · T 8 = 83)」 — is not the list, and it drifts alone. Four
     // headings carried a desktop count from before their cluster grew while the total beside it and
     // the items after it had both moved on, so the line disagreed with itself.
-    for (const m of doc.text.matchAll(/^\*\*([A-Z](?:-\d)?)\.[^\n(]*\(([^)]*)\)\*\*\s*—\s*(.*)$/gm)) {
+    for (const m of doc.text.matchAll(/^\*\*([A-Z](?:-?\d)?)\.[^\n(]*\(([^)]*)\)\*\*\s*—\s*(.*)$/gm)) {
       const items = m[3].split(' / ').filter((x) => x.trim()).length;
       const paren = m[2].replace(/\s*—[^—]*$/, '');
       const eq = /=\s*(\d+)\s*$/.exec(paren);
@@ -122,7 +122,7 @@ export const frameManifestGate = {
         if (!r || r[1].startsWith('**합계**')) continue;
         const val = Number(r[2]);
         sum += val;
-        const pairs = [...r[1].matchAll(/([A-Z](?:-\d)?)\s+(\d+)/g)];
+        const pairs = [...r[1].matchAll(/([A-Z](?:-?\d)?)\s+(\d+)/g)];
         if (pairs.length) {
           const s = pairs.reduce((a, p) => a + Number(p[2]), 0);
           if (s !== val) bad.push(`§4.3 「${r[1].slice(0, 18)}」: 괄호 안 합이 ${s}장인데 행은 ${val}장`);
@@ -253,7 +253,7 @@ export const roadmapPlacementGate = {
       perGroup[g[1]] = (perGroup[g[1]] ?? 0) + n;
       perStage[phase] = (perStage[phase] ?? 0) + n;
     }
-    for (const m of doc.text.matchAll(/^\| ([A-Z](?:-\d)?) (\d+) \| (\d+) \| ([^|]*)\|$/gm)) {
+    for (const m of doc.text.matchAll(/^\| ([A-Z](?:-?\d)?) (\d+) \| (\d+) \| ([^|]*)\|$/gm)) {
       const [, grp, named, total, dist] = m;
       if (Number(named) !== Number(total)) bad.push(`배치 검산 ${grp}: 이름은 ${named}장인데 총 열은 ${total}장`);
       if ((perGroup[grp] ?? 0) !== Number(total)) {

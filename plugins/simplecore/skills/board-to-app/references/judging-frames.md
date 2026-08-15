@@ -1,6 +1,6 @@
 # Judging a frame, and why looking is not optional
 
-Parity is the floor. A frame can match the board exactly and still be a screen nobody
+Matching the board is the floor. A frame can match the board exactly and still be a screen nobody
 can work in, because the board contracts structure, content, states and flow — it
 cannot say whether the operator has the value they need to decide, or whether the words
 mean anything to the person reading them.
@@ -49,7 +49,7 @@ which is what lets a mid-run or low-quality image still be useful.
 
 ## Green is not the same as seen
 
-Every gate can pass on a screen nobody could use. The failures that survive a walk
+Every gate can pass on a screen nobody could use. The failures that survive such a pass
 cost nothing to build, break no type, fail no test and read correctly in review —
 and each of these was found by somebody looking, after everything was green:
 
@@ -141,8 +141,8 @@ toolchain silently did something else with it.
 That is not an argument against checkers; a defect seen twice still becomes a rule, and
 some of these become one the moment you understand them. It is an argument about what
 the visual pass is **for**: not confirming what the tests already know, but catching the
-class of failure that has no witness except the screen. **Treat a walk with no captures
-looked at as a walk that did not happen**, however green it was.
+class of failure that has no witness except the screen. **Treat a pass with no captures
+looked at as one that did not happen**, however green it was.
 
 ### Looking settles the picture, never the button
 
