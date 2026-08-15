@@ -327,6 +327,36 @@ export const docLinkGate = {
   },
 };
 
+// A document nobody registered is a document nobody maintains. The registry names every
+// non-code document and what it is for, so the gate's whole job is to keep the two sides equal:
+// a file that reached the tree without a row, and a row whose file is gone.
+export const docRegistryGate = {
+  id: 'docRegistryGate',
+  title: '문서 등기부와 실제 문서가 어긋난다',
+  stage: 'built',
+  run: (ctx) => {
+    const doc = read(ctx, 'registry');
+    if (!doc) return [];                       // 등기부를 선언하지 않은 보드에는 걸리지 않는다
+    const bad = [];
+    const root = ctx.boardDir;
+    const rel = (p) => p.replace(`${root}/`, '').replace(/^(\.\.\/)+/, '');
+    // Every scanned document needs a row. The registry names files by path, in a link or in code.
+    for (const f of scanFiles(ctx)) {
+      const name = f.split('/').pop();
+      if (name === doc.path.split('/').pop()) continue;
+      if (!doc.text.includes(name)) bad.push(`등기부에 없는 문서: ${rel(f)}`);
+    }
+    // And every path the registry names has to exist, or the table is describing a repository
+    // that is no longer there.
+    const seen = new Set(scanFiles(ctx).map((f) => f.split('/').pop()));
+    for (const m of doc.text.matchAll(/`([^`\s]+\.md)`|\]\(([^)\s]+\.md)\)/g)) {
+      const named = (m[1] ?? m[2]).split('/').pop();
+      if (!seen.has(named)) bad.push(`등기부가 부르는 문서가 없다: ${named}`);
+    }
+    return [...new Set(bad)];
+  },
+};
+
 // The visibility matrix is what says who reaches what. A role the board knows and the document
 // does not is a role nobody signed off on.
 export const roleDocGate = {

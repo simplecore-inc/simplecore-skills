@@ -33,7 +33,7 @@ import { idGate, slugGate, refTailGate, refNumGate, pairGate } from './numbering
 import { overlayGate, optionKeyGate, dupKeyGate, deadImportGate, slotGate, classlessGate, structureGate, leakedValueGate } from './markup.mjs';
 import { crudGate, viewSwitchGate, reachabilityGate, controlVocabularyGate, panelVerbGate, backControlGate } from './navigation.mjs';
 import { sectionCoverageGate } from './coverage.mjs';
-import { frameManifestGate, parityListGate, roadmapPlacementGate, docFrameRefGate, docLinkGate, roleDocGate, featureKeyDocGate } from './documents.mjs';
+import { frameManifestGate, parityListGate, roadmapPlacementGate, docFrameRefGate, docLinkGate, docRegistryGate, roleDocGate, featureKeyDocGate } from './documents.mjs';
 
 /**
  * The gates that hold on every board, whatever it draws and whatever pattern it is in.
@@ -64,6 +64,7 @@ export const CORE_GATES = [
   roadmapPlacementGate,
   docFrameRefGate,
   docLinkGate,
+  docRegistryGate,
   roleDocGate,
   featureKeyDocGate,
   // Structural last: they read the rendered HTML, so they are the only two that need the board
