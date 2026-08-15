@@ -239,8 +239,8 @@ An agent's session can end for reasons that have nothing to do with the work —
 limit, a dropped connection. Three failures follow, and each has cost a session.
 
 **A half-finished tree is read as the existing state.** When an agent dies, read the tree
-rather than guessing: commits landed, uncommitted files half-written, a frame deleted from
-the list whose deliverables never appeared. Finish or discard what is half-done **before**
+rather than guessing: commits landed, uncommitted files half-written, a screen reported
+finished whose deliverables never appeared. Finish or discard what is half-done **before**
 dispatching the next agent into it; a successor inheriting a half-migration treats it as
 what was there all along and builds on it.
 
@@ -253,6 +253,21 @@ for an outside reason, check whether the work is still moving — the last commi
 the file it was writing, its log. If it is, wait; that agent still holds everything it had
 worked out, and a replacement starts from nothing. If a replacement is already running when
 the original wakes, stop the replacement rather than the one with the context.
+
+**An agent whose output is a judgment leaves nothing when it ends.** One that edits
+code leaves its work in the tree, so a report that never arrives costs a look at the
+diff and nothing more. One that produces a *judgment* — a contract, an audit, a
+comparison, a decision between two designs — has it only in its head until it speaks,
+and agents end for reasons that have nothing to do with the work. Dispatch those with
+a file to write and tell them to **write as they go**, a section at a time, with a
+line at the top saying how far they got.
+
+**So a read-only agent still needs `Write`.** Reaching for a review or auditor
+subagent is the right instinct — it cannot edit the tree it is judging — but the ones
+that ship with a tool list usually drop `Write` along with `Edit`, and then the agent
+has nowhere to put its judgment except a final message that may never arrive.
+Read-only means *it does not touch the subject*, not *it produces nothing*. Check the
+tool list before dispatching, and give it a scratch file outside the tree it reads.
 
 **When the work has already moved on, a waking agent is more dangerous than a dead one.** A
 dead agent does nothing. A woken one resumes from the tree it remembers — which may be
@@ -306,12 +321,43 @@ hunks out of shared files.
 Stage explicit paths. Check what is dirty before committing, and leave alone what
 you did not touch.
 
-**Path-level staging runs out when a file itself is shared** — a manifest, a
-config, a barrel that two agents both add a line to. Staging your own line without
-taking theirs is a blob written straight into the index, and the commands are in
-`simplecore:board-parity-walk`'s `references/walking-a-cluster.md` § Commit at every
-point that stands on its own.
-Learn it before it is needed; by then every obvious move costs somebody their work.
+**Stage by path, and commit in the same call.** A commit looks at the tree rather
+than at the files anybody touched, so stage the paths the brief named and nothing
+else, and run `git add <paths> && git commit` in one call, **after** verification
+rather than before — the index is shared, so staging early to see what you have
+opens a window for somebody else's commit to carry your files under a message that
+says nothing about them. Never `git add -A`, never `git add .`, never `git commit -a`.
+
+**Path-level staging runs out when the shared thing is a file rather than a
+directory** — a manifest, a config, a barrel that two agents both add a line to.
+`git add <that file>` takes their line too, and the moves that look obvious (wait for
+them, ask them to commit first, commit both lines) each cost somebody their work or
+their authorship. Build the content you want, put *that* in the index, and leave the
+working tree alone:
+
+```bash
+git show HEAD:<file> > <scratch>/base        # the committed version, without their line
+#  … apply only your own change to <scratch>/base …
+blob=$(git hash-object -w <scratch>/base)
+git update-index --cacheinfo 100644,"$blob",<file>
+git commit -m "…"                            # commits the index, not the tree
+```
+
+Their edit stays in the working tree, unstaged and untouched, and neither of you
+blocks. Learn it before it is needed; by then every obvious move costs somebody
+their work.
+
+**An agent that finds foreign changes and decides to skip committing altogether** has
+read the situation correctly and reached the wrong answer: its work now survives only
+as an uncommitted diff that the next agent, or a stray `git checkout`, can take out
+entirely. Stage yours, commit yours, and say in the report what you could not
+attribute.
+
+**Measuring must not use commits.** Plant the probe in the working tree, run the
+check, delete the probe. Nothing needs to be committed for a rule to fire, and
+`reset`, `stash` and `checkout --` have no place in a measurement at all — in a shared
+tree they drop somebody else's work while every file stays on disk and every check
+stays green.
 
 The mirror of it: **uncommitted work in a shared tree is not private.** It is a
 broken build every other agent inherits without being able to see why — a red
@@ -343,3 +389,27 @@ path and another commits in the gap, and the second author's name goes on both. 
 read `git show --stat` as attribution, and do not assign follow-up work from it — ask
 the agents. Getting this wrong sends the next brief to the wrong one, which is how a
 collision outlives the collision.
+
+### A reading that contradicts a report is a clock before it is a defect
+
+Measuring rather than taking an agent's word earns its keep — but a file read one
+commit behind the agent who just fixed it yields line numbers for a defect already
+gone, with both sides right. So before returning anything a report contradicts, **look
+for the hashes it named** (an agent puts one on every claim of a change): absent is
+work that has not landed, present is a reading taken in front of it. Then argue what
+the file says, never where it says it — a fix that adds a line moves every number
+under it.
+
+**Take the reading out of a commit, never off the working tree.**
+
+```bash
+git show HEAD:<path> | grep <what you are checking for>   # or the hash the report named
+```
+
+While an agent is in the tree, the tree is not any moment at all. Proving a new rule
+means planting the defect back into the file and taking it out again — in the working
+tree and never in a commit — so a `grep` that lands in that window reads a file
+mid-repair and reports finished work as missing. One session paid for exactly that
+twice, both times as "it did not go in, I measured it", and both times the agent
+answered with a `git show` of a hash its report had already named. A commit holds
+still; disk does not.

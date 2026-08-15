@@ -25,10 +25,36 @@ anchored to the frontend handbook's invariants rather than to taste. Load it and
 with it; the three above are the floor for a project that has none.
 
 **Anchor every finding to a frame number and the action it blocked.** A finding with
-neither is an opinion — it goes to the parked section as a proposal, never into the code.
+neither is an opinion — it goes to the project's parked items as a proposal, never into
+the code.
 
 The rest of this file is what judging actually costs — the failures that pass every
 gate, the languages that hide them, and the two habits that keep them from coming back.
+
+## A board contracts structure, not the values in its illustration
+
+Which fields appear, in which state, with which wording keys, and how one screen reaches
+another — those the code owes. The counts, names and dates drawn beside them are there to
+make the picture legible, and asking whether they are contractual is a malformed question:
+it is a wireframe, so of course they are illustration. Two failures follow from confusing
+the two, and both cost a session:
+
+- **Bending the product to reach a drawn number.** A frame said nine works; the fixture,
+  once its own defect was fixed, honestly produced twenty-eight. Chasing the nine would
+  have meant rewriting the population to fit a drawing — one drawn by hand, from nothing,
+  with a row naming a person the app holds no photograph for.
+- **Making the drawing track the fixture.** The mirror error, and the one to guard against
+  while fixing the first: derive the illustration from live data and every fixture change
+  ripples into the board. A wireframe does not owe that coupling.
+
+**What a board's values do owe is agreement with themselves.** A person drawn as
+*photograph replaced* in one frame and *no photograph* in another is the board
+contradicting itself, and that is a defect whatever the product holds. Judge illustration
+against the rest of the illustration, never against the fixture.
+
+So when the board is synced because the code was right and the board was stale, only the
+layer a board contracts moves — screens, content, states, flow, fixed wording. Restyling
+and copy-catalogue text never touch it.
 
 ## A defect read off a picture is confirmed in the source before it is called one
 

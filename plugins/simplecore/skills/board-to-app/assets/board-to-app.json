@@ -1,0 +1,42 @@
+{
+  "//": "Copy to .claude/board-to-app.json at the project root. Replace every <…> placeholder with a path relative to that root, and DELETE the line for anything this project does not have — a placeholder left in place is a path that does not exist, and the skill stops on it rather than guessing. An empty array means the project declares none. The board-to-app skill's config table says, per key, what it names and what its absence costs. Keys the skill does not know are ignored, so notes like this one are safe to keep.",
+
+  "boardRoot": "<directory holding the board's frame sources>",
+  "boardManifest": "<file listing every frame with its permanent id>",
+  "boardRoles": "<file mapping personas to the frames they reach>",
+
+  "chapterDir": "<directory holding one file per chapter, in build order>",
+  "chapterOverview": "<the chapter table: order, prerequisites, what may run alongside>",
+  "chapterGenerator": "<command that regenerates the chapter set from the board>",
+  "chapterHeadings": {
+    "prerequisites": "<heading: the chapters that must close before this one>",
+    "parallelWith": "<heading: the chapters that may be built alongside it>",
+    "creates": "<heading: what this chapter brings into existence>",
+    "entities": "<heading: the tables and records it owns>",
+    "usedLater": "<heading: later chapters whose frames point at this chapter's screens>",
+    "promises": "<heading: screens it points at that do not exist yet>",
+    "touchedEarlier": "<heading: the hand-authored section for a change to a closed chapter>"
+  },
+
+  "stateLedger": "<the one file saying which chapter is open, and each persona's development account>",
+  "handoverFile": "<the facts a builder needs to start: how to stand the system up, traps, standing data>",
+  "openItemsFile": "<file a parked decision is written into>",
+  "openItemsHeading": "<the heading those lines live under, exactly as this project writes it>",
+
+  "gates": [],
+  "auditScript": "<script a mechanically visible defect becomes a detection rule in>",
+  "migrationDir": "<directory holding numbered migrations, so number ranges can be handed out>",
+
+  "frameDeliverables": [],
+  "factSources": [],
+  "storyDocument": "<the one document the sample data derives from>",
+
+  "locales": [],
+  "pseudoLocale": "<the generated long-string locale id, e.g. en-XA>",
+  "captureRoute": "<address rendering one frame in one state, e.g. /frame/<id>>",
+  "logDir": ".build-logs",
+  "capturesDir": ".captures",
+  "costLog": "<machine-readable file the span and consumption per chapter are appended to>",
+
+  "narrativePhrases": []
+}

@@ -16,10 +16,10 @@ eyes. Where that is so, the config names it:
 ]
 ```
 
-Each line is a plain sentence an agent can check against what the pass produced.
-**A frame that owes a deliverable is not covered until the deliverable exists**, and
-so it is not deleted from the list — which is what keeps it from becoming a
-separate pass that never happens.
+Each line is a plain sentence an agent can check against what the work produced.
+**A frame that owes a deliverable is not finished until the deliverable exists**, and
+so it is never reported as covered — which is what keeps it from becoming a separate
+pass that never happens.
 
 Two rules make that affordable rather than doubling the work:
 
@@ -72,9 +72,9 @@ Two rules make that affordable rather than doubling the work:
     other language's artefacts.
 
   The same reasoning applies in the other direction: **a board frame edited after it
-  was covered puts that frame back on the list of frames still to reconcile.** The contract moved, so the
-  code is no longer known to match it — and this too is read from history rather than
-  from somebody's memory of what they changed.
+  was covered becomes work again.** The contract moved, so the code is no longer known
+  to match it — and this too is read from history rather than from somebody's memory of
+  what they changed.
 
 - **Regeneratable does not mean deferrable when the source moves.** A capture can be
   remade at any time — from the code **as it stands then**, which is a different screen.
@@ -98,6 +98,28 @@ Two rules make that affordable rather than doubling the work:
   decided up front. A pass should know which of the two it is in, and say so.
 
 A project that declares no `frameDeliverables` owes nothing beyond the code.
+
+### Three reasons to photograph a screen, and none of them substitutes for another
+
+Pictures get taken for three different purposes. They are confused constantly, because
+all three are files ending in `.png`, and each confusion drops a different rule on the
+floor.
+
+| Picture | Why it is taken | What happens to it |
+| --- | --- | --- |
+| **Looking** — the visual pass | the only gate that catches what no test can fail on: a class the styling engine dropped, a font with no glyph, a label cut at an edge | every frame, in every locale and on every device that frame owes; thrown away when the work is over, never during it |
+| **Showing** — what a change did | prose about a screen is unfalsifiable to the person reading it | the coordinator forwards the path the moment it appears, unopened, in the language a person reads |
+| **Keeping** — figures a document holds onto | kept figures have to be true of **one** version of the product, not of eight months of it | its own naming scheme, outside `capturesDir`, in one run at the end from a finished product |
+
+- **Looking is unconditional.** Not a project's to opt out of, not deferrable, not
+  satisfied by a green gate → `references/judging-frames.md`.
+- **Showing is owed whenever the work moves what a screen draws** — or moves the frame
+  it is drawn against. It costs the coordinator a path, which is exactly why agents
+  return paths and never images.
+- **Keeping is nothing this work asks for.** No frame owes a picture that outlives it.
+  A project that keeps figures for a document of its own runs that as its own scheme,
+  on its own schedule, and nothing here waits for it or counts a screen unfinished
+  without it.
 
 ### Looking and keeping are different jobs, and only one is expensive
 
