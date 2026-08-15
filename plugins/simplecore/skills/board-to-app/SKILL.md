@@ -271,6 +271,29 @@ it carries, by the end user the service is for, and by every persona the chapter
 **Looking means pressing**: an overflow that exists only in the language nobody opened
 and a second tab that was never opened both read as a clean screen.
 
+## When an agent stalls, take the work back
+
+An agent that has stopped moving does not say so. It announces that it is idle, which reads like
+availability and is indistinguishable from the announcement of an agent between two bursts of real
+work. A coordinator that answers each of those with another instruction ends up with a queue nobody
+is consuming and a build that has not moved for half an hour.
+
+**Judge by the artifact, never by the signal.** Every dispatched agent writes to a file, and its
+first line says how far it got. That line is the only progress report that cannot lie.
+
+**The threshold is two.** When the artifact has not changed since the previous check *and* the
+agent has announced idle twice, treat it as stalled. Then, in one turn:
+
+1. **Tell it to stop** and to stop writing the artifact. Say why, and ask it to send anything
+   unsaved as a message rather than writing it.
+2. **Dispatch a replacement**, starting from the artifact's progress line. This is what the line is
+   for — a replacement resumes at the sentence the file already wrote rather than at the beginning.
+3. **Never leave both alive over one artifact.** Two writers on one file is the collision this
+   skill spends its length preventing, and a stalled agent that wakes up is still a writer.
+
+**Do not queue more work at a silent agent.** Another instruction to a session that consumed
+neither of the last two is not persistence; it is the coordinator refusing to read the artifact.
+
 ## Where the detail goes, and how the coordinator watches without paying for it
 
 An agent returns conclusions, which leaves a question the walk answered years ago: where
