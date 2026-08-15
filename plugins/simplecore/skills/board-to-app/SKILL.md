@@ -271,14 +271,14 @@ and nothing announces it. Either every agent gets its own checkout, or **the age
 stage nothing and the coordinator commits at the barrier** — those are the two
 arrangements; there is no third that survives.
 
-**Naming the hazard is not enough — two commands cause it.** While another agent may
-commit to the same branch:
+**Naming the hazard is not enough — two commands cause it.** Both are out for as long
+as the build runs, since whether another agent is mid-commit is not observable:
 
 | Rule | Because |
 | --- | --- |
-| **`--amend` and `reset`, in any form, are forbidden** | a commit landing between your commands means `HEAD~1` is not the commit you wrote, so the rewrite folds the other agent's files into yours and replaces their message with yours |
-| **stage by explicit path — `git commit -m <message> -- <paths>`, never `git add -A`** | `-A` sweeps whatever the other agent has left in the tree into your commit, and says nothing; every option goes before the `--`, since everything after it is read as a path |
-| **read `git rev-parse HEAD` before committing and after** | a HEAD that moved is the normal state during a wave, and it is the state in which a rewrite destroys work |
+| **`git reset` and `git commit --amend` are forbidden** | a commit landing between your commands means `HEAD~1` is not the commit you wrote — a reset throws away whatever landed on top, and an amend folds the other agent's work into yours under your message |
+| **stage by explicit path — `git commit --only <paths>`, never `git add -A`** | `-A` sweeps whatever the other agent has left in the tree into your commit, and says nothing |
+| **read `git rev-parse HEAD` before and after each commit** | expect it to have moved — that is the normal state during a wave, and it is the state in which a rewrite destroys work |
 
 **A destroyed commit is in the reflog.** Read it back with `git reflog`, re-commit it
 on its own, and confirm both the diff and the message are byte-identical to the
