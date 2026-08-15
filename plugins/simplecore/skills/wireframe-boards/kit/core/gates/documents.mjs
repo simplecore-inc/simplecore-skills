@@ -332,11 +332,11 @@ export const docLinkGate = {
 // a file that reached the tree without a row, and a row whose file is gone.
 export const docRegistryGate = {
   id: 'docRegistryGate',
-  title: '문서 등기부와 실제 문서가 어긋난다',
+  title: '문서 목록과 실제 문서가 어긋난다',
   stage: 'built',
   run: (ctx) => {
     const doc = read(ctx, 'registry');
-    if (!doc) return [];                       // 등기부를 선언하지 않은 보드에는 걸리지 않는다
+    if (!doc) return [];                       // 문서 목록을 선언하지 않은 보드에는 걸리지 않는다
     const bad = [];
     const root = ctx.boardDir;
     const rel = (p) => p.replace(`${root}/`, '').replace(/^(\.\.\/)+/, '');
@@ -344,7 +344,7 @@ export const docRegistryGate = {
     for (const f of scanFiles(ctx)) {
       const name = f.split('/').pop();
       if (name === doc.path.split('/').pop()) continue;
-      if (!doc.text.includes(name)) bad.push(`등기부에 없는 문서: ${rel(f)}`);
+      if (!doc.text.includes(name)) bad.push(`문서 목록에 없는 문서: ${rel(f)}`);
     }
     // And every path the registry names has to exist, or the table is describing a repository
     // that is no longer there.
@@ -361,7 +361,7 @@ export const docRegistryGate = {
       const bases = [join(doc.path, '..'), root];
       for (let d = root; d !== dirname(d); d = dirname(d)) bases.push(d);
       if (bases.some((base) => existsSync(join(base, path)))) continue;
-      bad.push(`등기부가 부르는 문서가 없다: ${path}`);
+      bad.push(`문서 목록이 부르는 문서가 없다: ${path}`);
     }
     return [...new Set(bad)];
   },

@@ -45,16 +45,16 @@ export function cases(t) {
   add('docFrameRefGate', 'KOSHA P-94는 프레임이 아니다',
     withDocs({ 'rm.md': ROADMAP_OK, 'note.md': 'KOSHA GUIDE P-94 작업허가서.\n' }), false);
 
-  // 등기부를 선언하지 않은 보드에는 걸리지 않는다 — 선언이 곧 이 규율을 받겠다는 뜻이다.
-  add('docRegistryGate', '등기부를 선언하지 않았다',
+  // 문서 목록을 선언하지 않은 보드에는 걸리지 않는다 — 선언이 곧 이 규율을 받겠다는 뜻이다.
+  add('docRegistryGate', '문서 목록을 선언하지 않았다',
     withDocs({ 'a.md': '# a\n', 'b.md': '# b\n' }), false);
-  add('docRegistryGate', '등기부에 없는 문서',
+  add('docRegistryGate', '문서 목록에 없는 문서',
     withDocs({ 'reg.md': '| 문서 | 무엇 |\n| `a.md` | 하나 |\n', 'a.md': '# a\n', 'b.md': '# b\n' },
       { config: { ...config, documents: { scan: ['.'], registry: 'reg.md' } } }), true);
-  add('docRegistryGate', '등기부가 없는 문서를 부른다',
+  add('docRegistryGate', '문서 목록이 없는 문서를 부른다',
     withDocs({ 'reg.md': '| 문서 | 무엇 |\n| `a.md` | 하나 |\n| `gone.md` | 사라진 것 |\n', 'a.md': '# a\n' },
       { config: { ...config, documents: { scan: ['.'], registry: 'reg.md' } } }), true);
-  add('docRegistryGate', '등기부와 문서가 맞는다',
+  add('docRegistryGate', '문서 목록과 문서가 맞는다',
     withDocs({ 'reg.md': '| 문서 | 무엇 |\n| `a.md` | 하나 |\n| `b.md` | 둘 |\n', 'a.md': '# a\n', 'b.md': '# b\n' },
       { config: { ...config, documents: { scan: ['.'], registry: 'reg.md' } } }), false);
 
