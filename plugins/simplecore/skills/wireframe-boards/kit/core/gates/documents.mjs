@@ -348,10 +348,20 @@ export const docRegistryGate = {
     }
     // And every path the registry names has to exist, or the table is describing a repository
     // that is no longer there.
+    // A registry may name a file the scan roots do not cover (an instruction file beside the
+    // board) and may hold a placeholder for documents not written yet. Neither is a dead row:
+    // judge by whether the path resolves, and skip anything carrying a glob.
     const seen = new Set(scanFiles(ctx).map((f) => f.split('/').pop()));
     for (const m of doc.text.matchAll(/`([^`\s]+\.md)`|\]\(([^)\s]+\.md)\)/g)) {
-      const named = (m[1] ?? m[2]).split('/').pop();
-      if (!seen.has(named)) bad.push(`등기부가 부르는 문서가 없다: ${named}`);
+      const path = m[1] ?? m[2];
+      if (/[*{}]/.test(path)) continue;
+      if (seen.has(path.split('/').pop())) continue;
+      // A registry names paths as the repository sees them, and the board sits somewhere inside
+      // that repository — so every ancestor of the board is a candidate base.
+      const bases = [join(doc.path, '..'), root];
+      for (let d = root; d !== dirname(d); d = dirname(d)) bases.push(d);
+      if (bases.some((base) => existsSync(join(base, path)))) continue;
+      bad.push(`등기부가 부르는 문서가 없다: ${path}`);
     }
     return [...new Set(bad)];
   },
