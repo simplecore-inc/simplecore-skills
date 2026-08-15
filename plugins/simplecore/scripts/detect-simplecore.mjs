@@ -55,7 +55,12 @@ const BOARD_SIGNATURES = ["frame-label", "readme"];
 // that has not been released yet, which is most of a board's life, and its contract is whatever
 // its kit writes. Collapsing the two told every board still being drawn to migrate away from the
 // contract it was already on.
-const BOARD_CONTRACT = 2;
+//   3  the kit lives in the skill and the board holds only its own content: a declared pattern
+//      supplies the components, the shells and the styles, and the board's own `tools/` is gone
+//
+// What each contract changed, and the steps to cross it, are the kit's `core/migrations.mjs`.
+// This number only has to say WHICH contract a board is on.
+const BOARD_CONTRACT = 3;
 const CONTRACT_META = /<meta\s+name=["']wireframe-board-contract["']\s+content=["'](\d+)["']/i;
 const KIT_CONTRACT_DECL = /BOARD_CONTRACT\s*=\s*(\d+)/;
 const KIT_SOURCE_BYTES = 16 * 1024;
@@ -100,7 +105,8 @@ function subdirs(dir) {
  * Find the wireframe board in a tree, preferring the built kit over a single file.
  *
  * @remarks
- * Two shapes count. A kit-built board is a directory holding the kit's own `build.mjs` beside
+ * Two shapes count. A kit-built board is a directory holding `wf.mjs` (or, before contract 3,
+ * `build.mjs`) beside
  * `src/manifest.mjs` — that pair is the kit's signature and needs no file read. A hand-written
  * board is one HTML file carrying the board class vocabulary in its head.
  *
@@ -146,13 +152,25 @@ function findBoard(root) {
    * proposes a migration away from the contract the board is already on.
    */
   const kitContractIn = (dir) => {
+    // Contract 3 moved the kit out of the board, so the number is DECLARED there instead of
+    // being read out of a copied source file — which is the better answer anyway: it says what
+    // the board has been brought up to rather than what happens to be sitting beside it.
+    const cfg = readIfPresent(path.join(dir, "board.config.mjs"), KIT_SOURCE_BYTES) ?? "";
+    const declared = /\bcontract:\s*(\d+)/.exec(cfg);
+    if (declared) return Number(declared[1]);
+    // Contract 2 and earlier: the board carried its own `partials.mjs`.
     const src = readIfPresent(path.join(dir, "src", "partials.mjs"), KIT_SOURCE_BYTES) ?? "";
     const m = KIT_CONTRACT_DECL.exec(src);
     return m ? Number(m[1]) : null;
   };
 
   const visit = (dir, depth) => {
-    if (fs.existsSync(path.join(dir, "build.mjs")) && fs.existsSync(path.join(dir, "src", "manifest.mjs"))) {
+    // A kit-built board is a directory holding `src/manifest.mjs` beside the thing that builds
+    // it — which is `wf.mjs` from contract 3 on, and was `build.mjs` before. Both are looked for,
+    // because a board that has not been migrated yet still has to be FOUND in order to be told
+    // that it needs migrating.
+    const buildsHere = fs.existsSync(path.join(dir, "wf.mjs")) || fs.existsSync(path.join(dir, "build.mjs"));
+    if (buildsHere && fs.existsSync(path.join(dir, "src", "manifest.mjs"))) {
       const stamped = stampIn(dir);
       // A released board answers for itself, whatever the sources now say — it is the artifact
       // people open. The kit stands in only when there is nothing released to ask.

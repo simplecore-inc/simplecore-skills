@@ -1,126 +1,119 @@
 ---
-description: Migrate an existing wireframe board to the current board contract — permanent frame ids and a no-sideways-scroll layout
+description: Migrate an existing wireframe board to the current board contract — ask first, then move it wholesale
 argument-hint: "[board directory]"
 ---
 
 # Migrate a wireframe board
 
 Bring a board built against an older contract up to the current one. The board keeps its frames,
-its content, and its flows; what changes is how frames are numbered and how they are laid out.
+its content and its flows; what changes is where the machinery lives and how frames are numbered.
 
 Invoke `simplecore:wireframe-boards` first and follow it. **Nothing here is written without the
-user agreeing to it**, and two of the steps are decisions only they can make.
+user agreeing to it** — and when they do agree, the board is moved **wholesale**, not partially.
+A half-migrated board builds one way in some places and another way in others, and nothing in the
+artifact shows which halves.
 
-## 1. Read what the board is on
-
-```bash
-node "${CLAUDE_PLUGIN_ROOT}/scripts/detect-simplecore.mjs" --json
-```
-
-Pass `--root=<path>` when `$ARGUMENTS` names a directory other than the current one.
-
-- `needsMigration: false` → say the board is already on contract `boardContractExpected` and stop.
-- `board: null` → there is no board to migrate. Offer `/simplecore:board-init` instead.
-- `board.contractFrom` says where that number came from, and the three answers are not the same
-  question. `built` the released board carries the stamp · `kit` nothing is released yet, so the
-  kit's own `BOARD_CONTRACT` stands in — a board still being drawn lands here and is **not** a
-  migration candidate · `null` a released board carries no stamp, which is a genuine contract-1
-  board: treat it as 1 and continue. **A missing `board.html` is not a missing contract** — the
-  build refuses `--release` until every required cluster is drawn, so most of a board's life has no
-  released artifact at all.
-
-## 2. Measure the drift before proposing anything
-
-The migration's cost is not the code change; it is that **frame numbers people have written down
-may move**. Measure it and put the number in front of the user. For a kit-built board:
+## 1. Read what the board is on, and what that costs
 
 ```bash
-node --input-type=module -e '
-const m = (await import("./src/manifest.mjs")).default;
-let total = 0; const drift = [];
-for (const sec of m) sec.screens.forEach((sc, i) => {
-  total++;
-  const shows = `${sec.letter}-${String(i + 1).padStart(2, "0")}`;
-  const mm = /^([a-z])-(\d{2,}[a-z]?)-/.exec(sc.file);
-  const fileId = mm ? `${mm[1].toUpperCase()}-${mm[2]}` : null;
-  if (fileId !== shows) drift.push({ shows, fileId, file: sc.file });
-});
-console.log(`${drift.length} of ${total} screens display a number that differs from their file name`);
-for (const d of drift) console.log(`  board shows ${d.shows}  file says ${d.fileId}  ${d.file}`);
-'
+node "${CLAUDE_PLUGIN_ROOT}/scripts/detect-simplecore.mjs" --json     # --root=<path> when not cwd
+cd <board dir> && node wf.mjs doctor        # when the board already has wf.mjs
+node "${CLAUDE_PLUGIN_ROOT}/skills/wireframe-boards/kit/bin/wfb.mjs" migrations
 ```
 
-Also list what would block the new build outright:
+`migrations` prints every contract, what changed in it, and the steps to cross it — that list is
+the migration, written when each change was made rather than reconstructed from a diff now.
 
-- **duplicate ids** — two screens whose file names start with the same `<letter>-<nn>`
-- **file names carrying no id** — anything not matching `<letter>-<nn>[a-z]-<slug>`
-- **a responsive pair authored as two ids** — a `-narrow` and a `-wide` file on different numbers
+- `needsMigration: false` → say the board is already current and stop.
+- `board: null` → there is nothing to migrate. Offer `/simplecore:board-init`.
+- `board.contractFrom` says where the number came from: `built` the released board carries the
+  stamp · `kit` nothing is released yet, so the kit's own value stands in — **not** a migration
+  candidate · `null` a released board carries no stamp, which is a genuine contract-1 board.
 
-## 3. Ask which numbering becomes permanent — the one decision that matters
+## 2. Ask — and say plainly what changes and what does not
 
-Both answers are defensible and they cost different people different things. Present both with the
-measured numbers, and let the user choose:
+Put it to the user with **AskUserQuestion**, with the measured numbers in hand. Do not start until
+they say yes.
 
-| | What it means | What it costs |
+**What does not change:** every frame, every permanent id, every note, the board's structure, the
+content of `board.html` apart from the intended differences below.
+
+**What changes**, crossing into contract 3:
+
+| | Before | After |
 | --- | --- | --- |
-| **Keep the file-name ids** | `c-01a-product-detail` becomes `C-01a` | no files move, but every drifted frame's *displayed* number changes, so numbers already circulated in tickets, plans, and review notes point at the wrong frame |
-| **Freeze what the board displays today** | the frame showing `C-17` keeps `C-17`, and its file is renamed to `c-17-…` | every number anyone has seen stays correct, but the drifted files are renamed and their `{{slug}}` references rewritten |
+| Where the machinery lives | `tools/` in the board — build, gates, exports, checks | the skill's `kit/`, reached by a 20-line `wf.mjs` |
+| Components, shells, styles | `src/components.mjs`, `src/chrome.mjs`, `src/styles.css` in the board | the declared pattern; the board keeps a one-line shim and its own IA data |
+| The reading contract | one `src/intro.html` holding all of it | three layers — the kit's standing items, the pattern's, then the board's own |
+| Where the contract sits | the top of the board | the **foot** of the board, with a link from the header. The PDF carries none of it |
+| Gates | one list in the board | the kit's, then the pattern's, then `board.gates.mjs` for this repository's own |
+| The PDF | one file beside the board, swept each build | `pdf/<name>-<stamp>.pdf`, kept, git-ignored |
 
-Say plainly which one preserves outside references — usually the second, when the board has been
-reviewed by anyone — and recommend it in that case. Neither is reversible cheaply once the board
-is rebuilt and re-circulated, so do not choose for the user.
+**What it costs:** the board can no longer be built on a machine without the plugin installed.
+Say this out loud — it is the one real trade, and it decides whether a CI job has to change.
 
-## 4. Ask about each blocker found in step 2
+For a **contract-1** board, two further decisions come first; both are irreversible once the board
+is rebuilt and re-circulated, so do not choose for the user. Measure the drift, put the number in
+front of them, and ask which numbering becomes permanent — the file-name ids, or what the board
+displays today. `migrations` spells out the rest of that step.
 
-One question per group, with the file names and what each screen draws:
+## 3. Move it — every step, in one change
 
-- **A duplicate id**: which screen keeps the number, and what the other becomes. Prefer giving the
-  new number to the screen that is *less* likely to have been referenced (added later, a variant,
-  a dialog), and prefer a suffixed neighbour (`D-05a`) over a number from the end of the section.
-- **A pair on two ids**: confirm they are one responsive screen, then collapse them onto the lower
-  id with `variant: 'narrow'` / `'wide'`. The freed id is NOT reused — a gap costs nothing and
-  reusing a number breaks the reference that pointed at it.
+Follow the `steps` the `migrations` output lists for each contract being crossed. For contract 3:
 
-## 5. Apply it
+1. **Snapshot the built board first.** `cp board.html /tmp/board-before.html`. It is the only way
+   to prove afterwards that the frames did not move.
+2. **Read the working tree before deleting anything.** A board in active use has uncommitted
+   edits; `git status` and `git diff` name them, and they are carried across, never overwritten.
+   Copy `tools/`, `src/partials.mjs` and `src/styles.css` to a scratch directory before removing
+   them — those files are the only record of anything the board added.
+3. **Split the board's files three ways.** Whatever is true of any board goes to the kit; whatever
+   is true of any board drawn this way goes to the pattern; whatever knows this repository stays.
+   That last group is usually small: the menu tree, the roles, the CRUD ledger, the gates that
+   parse this project's documents.
+4. **`src/chrome.mjs` keeps the data and loses the shells.** The pattern exports `makeConsole`,
+   `makeWorker`, `makeKiosk`, `makeAuth`, `makeConsolePhone`; the board hands them its tabs, menu,
+   roles and purchase and re-exports the finished shells under the names the screens already
+   import. **No screen file changes.**
+5. **`src/components.mjs` becomes one line** re-exporting the pattern through `.kit`.
+6. **`src/intro.html` keeps only the product's own items**, as bare `<li>`. Anything the pattern
+   already says is deleted, not restated.
+7. **Add `contract: 3` and `pattern:` to `board.config.mjs` LAST.** Raising the number is the
+   final act; doing it first makes the build stop reporting what is still undone.
+8. `.gitignore` gains `.kit` and `pdf/`; existing PDFs move into `pdf/`.
 
-The board's kit is usually a *fork* — the project has added its own chrome, screens, and scripts —
-so patch the fork rather than copying the plugin's kit over it. Compare against
-`${CLAUDE_PLUGIN_ROOT}/skills/wireframe-boards/assets/build-kit/` and carry over exactly these:
+A component or a gate the board added that the pattern lacks goes **into the pattern**, not into a
+local file — that is the whole point of the move, and a board-local copy is a fork by another name.
 
-1. **`build.mjs`** — derive each screen's id from its file name; refuse to build on a missing id,
-   a section-letter mismatch, or a duplicate that is not one screen's two viewport halves; assign
-   the bracketed position per *screen* (a pair counts once); anchor from the id; resolve `{{slug}}`
-   references to ids.
-2. **`src/partials.mjs`** — `frame(s, id, seq, file, anchor)` renders `[02]A-20`; the sidebar shows
-   one entry per screen; `page()` stamps `<meta name="wireframe-board-contract">`.
-3. **`src/styles.css`** — `.row` wraps with `max-width: var(--row-max)` instead of scrolling
-   sideways; the `--frame-zoom` steps; `.scroll-x` keeps the permanent scrollbar; `.fseq` and the
-   sidebar `.seq`. **Re-derive the zoom breakpoints** when the fork's sidebar width or body padding
-   differs from the kit's — they are computed from the width a row needs, not copied.
-4. **`src/intro.html`** — the reading-contract item that explains the id and the position, so a
-   reader who opens the board knows which number to quote.
-5. **File renames**, when step 3 chose to freeze the displayed numbers: rename the screen file,
-   update its `manifest.mjs` entry, and rewrite every `{{old-slug}}` reference across `src/`.
+## 4. Prove the frames did not move
 
-Keep every other local customization untouched. Do not reformat files you are only patching.
+```bash
+node wf.mjs build --no-pdf
+node wf.mjs gates
+node wf.mjs check
+```
 
-## 6. Verify, and prove the numbers held
+Then diff against the snapshot and report the numbers:
 
-1. `node build.mjs` — it must build. A refusal names the id problem; fix that, do not weaken the check.
-2. **Re-run the drift measurement**: it must now report zero, because the id and the displayed
-   number are the same value.
-3. **Confirm the promise in a browser** at a wide window and at a laptop width: nothing scrolls
-   sideways, neither the page nor any row; a phone row holds three frames per line; the labels read
-   `[position] ID route — screen — state`.
-4. `node build.mjs --release`, then check the stamp landed:
-   `grep -o 'wireframe-board-contract[^>]*' board.html`
-5. Re-run the detector — `needsMigration` must be false.
+```bash
+ids() { grep -o 'article class="frame[^"]*" id="[^"]*"' "$1" | sed 's/.*id="//;s/"//'; }
+diff <(ids /tmp/board-before.html) <(ids board.html) | grep -c '^[<>]'    # must be 0
+```
 
-## 7. Report
+**Only three differences are allowed**: the contract stamp, the reading contract moving to the
+foot, and whatever the user asked to change on the way. Anything else is a defect in the
+migration, not a result of it.
 
-- which numbering was chosen, and how many frames' displayed numbers changed as a result
+Where the build refuses, read the finding before touching it: a gate that fires during a migration
+is usually reporting something the old board had and nobody could see. Fix the board, never the
+gate.
+
+## 5. Report
+
+- which contracts were crossed, and what each one changed
 - every id that was reassigned, old → new, so the user can update what they have circulated
-- every pair collapsed, and which id was freed and left unused
-- what the verification showed
+- what moved to the kit, what moved to the pattern, and what stayed in the board — by name
+- what the verification showed, including the id diff count
+- anything left undone, and why
 
 Do not commit. Report; the user commits.

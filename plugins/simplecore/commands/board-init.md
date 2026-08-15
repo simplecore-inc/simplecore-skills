@@ -1,70 +1,121 @@
 ---
-description: Wire this project for a wireframe board — the build kit, the folder reading contract, and the instruction-file pointer
+description: Start a wireframe board here — pick the common pattern, scaffold it, and wire the project to it
 argument-hint: "[board directory]"
 ---
 
-# Wire a wireframe board
+# Start a wireframe board
 
 Set this project up so its board is found and read correctly by a session that has none of this
 conversation. Invoke `simplecore:wireframe-boards` first and follow it; this command is the setup
 it asks for.
 
-Report what already exists before writing anything, then write only what is missing. Show the user
-each file you are about to create and get agreement — these are durable files in their repository.
+**The board holds content and nothing else.** The engine, the gates, the exports, the components
+and the app shells live in this skill under `kit/`, and `wf.mjs` — twenty lines — finds them. Do
+not write a build script, and do not copy one in.
 
-1. **Find the project root** (the nearest ancestor holding `.git`) and the board directory: the
-   argument if given, otherwise an existing board folder, otherwise ask where it should live.
-   A board belongs with the project's planning documents, not at the repository root.
+## 1. Find where it goes, and what is already there
 
-2. **Check what is already there** and tell the user, one line each:
-   - the board directory, and whether it has `src/manifest.mjs` (built from the kit) or a single
-     hand-written HTML file
-   - `AGENTS.md` in the board folder
-   - a folder `CLAUDE.md` pointing at that `AGENTS.md`
-   - a pointer to this skill in the project's `CLAUDE.md` / `AGENTS.md`
+The board directory is `$ARGUMENTS` if given, otherwise an existing board folder, otherwise ask.
+A board belongs with the project's planning documents, not at the repository root.
 
-3. **Install the build kit** when the board has more than roughly twenty frames, or repeats chrome
-   across frames, and no `src/` exists yet. Copy
-   `${CLAUDE_PLUGIN_ROOT}/skills/wireframe-boards/assets/build-kit/` into the board directory and
-   follow its `README.md`. For a smaller board, `assets/board-template.html` is the skeleton
-   instead, and the rest of this command still applies.
+```bash
+node "${CLAUDE_PLUGIN_ROOT}/scripts/detect-simplecore.mjs" --json
+```
 
-4. **Write the folder reading contract** when missing: `AGENTS.md` in the board folder holding the
-   board-reading contract, the source layout, and the build commands; and a folder `CLAUDE.md`
-   that points at it. Both must say, in the imperative, that the built HTML is not to be opened —
-   it is a thousands-of-lines artifact — and that finding a screen means reading `src/manifest.mjs`
-   and then the one screen file. The kit ships both as templates.
+Report in one line each: whether a board directory exists, whether it has `board.config.mjs`
+(kit-built) or a single hand-written HTML file, whether the board folder has `AGENTS.md` and
+`CLAUDE.md`, and whether the project's instruction file points at the skill.
 
-5. **Add the pointer to the project instruction file.** This is the step that matters most: the
-   description trigger alone does not survive a session that starts elsewhere in the repository.
-   Append to the project's `CLAUDE.md` (or `AGENTS.md` when the project uses that), adapting the
-   path and the language:
+- **A kit-built board already here** → this is not the command. Offer `/simplecore:board-migrate`
+  when `needsMigration` is true, and otherwise say the board is already set up.
+- **A single-file board** → it can be migrated rather than restarted; say so and offer
+  `/simplecore:board-migrate`.
 
-   ```markdown
-   ## The wireframe board is the screen contract
+## 2. Ask which common pattern — this is the one question
 
-   Screens are built from the board: the spec decides behavior, the board renders it as
-   screens / states / flow, the code matches the board. Invoke the
-   `simplecore:wireframe-boards` skill before implementing a screen from it, checking code
-   against it, syncing it after a change, or drawing new frames.
+```bash
+node "${CLAUDE_PLUGIN_ROOT}/skills/wireframe-boards/kit/bin/wfb.mjs" patterns
+```
 
-   - `<board path>/src/manifest.mjs` — the table of contents. Find a screen here, then open
-     that one screen file. Never read the built HTML.
-   - `<board path>/AGENTS.md` — the working rules for this board.
+Put the list in front of the user with **AskUserQuestion** and let them choose. A pattern decides
+the components, the app shells, the stylesheet, the reading-contract items and the gates every
+frame is held to, so it is not a default to slip past them — and changing it later means redrawing
+every frame.
 
-   A screen, dialog, state, or flow added during development is back-filled as a frame in the
-   same change. A design decision that changes needs the design owner's sign-off and updates
-   the spec in the same breath.
+Say what each one is for, in one line, from the `patterns` output. `simplix-basic` is the SimpliX
+admin shape: a list-detail console, the phone app its users carry, and the shared terminal, all
+three in one pattern because they are one product.
 
-   The skill comes from the `simplecore` plugin
-   (`claude plugin install simplecore@simplecore-skills`). When it is not in the `Skill` tool
-   list, install it rather than working from memory.
-   ```
+Ask **one more thing in the same call**: whether to keep the pattern's starter frames.
 
-   When such a section already exists, correct it in place rather than adding a second one.
+| | What it means |
+| --- | --- |
+| **Keep them** (recommended) | Nine frames — sign-in, a dashboard, a list-detail with its create and empty states, two phone frames, two terminal frames. Each is an answer to a question the board will be asked on its first day. Draw over them. |
+| **Empty board** | Only the scaffolding. Right when the screens are about to be authored from a specification and nine frames about records would be nine frames to delete. |
 
-6. **Offer the parity walk when the board has frames the code already serves.** Reconciling them
-   is its own long job with its own wiring — say so once and point at
-   `/simplecore:parity-walk-init`.
+## 3. Scaffold it
 
-Do not draw frames as part of this command. Setup and authoring are separate.
+```bash
+node "${CLAUDE_PLUGIN_ROOT}/skills/wireframe-boards/kit/bin/wfb.mjs" init \
+  --board <board dir> --pattern <chosen> --name "<product name>" [--no-examples]
+```
+
+It writes `wf.mjs`, `.gitignore`, `CLAUDE.md`, `AGENTS.md`, `board.config.mjs`, `src/chrome.mjs`,
+`src/components.mjs`, `src/intro.html`, `src/manifest.mjs` and the starter screens. **Nothing
+already there is overwritten** — it reports what it kept.
+
+Then prove it works, and show the user:
+
+```bash
+cd <board dir> && node wf.mjs build --no-pdf && node wf.mjs check
+```
+
+## 4. Make it this product's
+
+The scaffold is generic on purpose. Walk these with the user rather than guessing:
+
+- `board.config.mjs` — `headline`, `boardName`, `pdfName`, and `today` (the day every dated frame
+  is read against). Delete the `phases` entry if nothing is deferred yet.
+- `src/chrome.mjs` — the tabs, the menu tree, which role reaches what. This is the product's
+  information architecture; the placeholder one draws two tabs and three clusters.
+- `AGENTS.md` — the region under the marked line is theirs. Everything above it describes the kit
+  and the pattern and is replaced wholesale on the next migration, so a rule written above the
+  marker is a rule that will be lost.
+
+## 5. Point the project at the board
+
+This is the step that matters most: the description trigger alone does not survive a session that
+starts elsewhere in the repository. Append to the project's `CLAUDE.md` (or `AGENTS.md` where the
+project uses that), adapting the paths:
+
+```markdown
+## The wireframe board is the screen contract
+
+Screens are built from the board: the spec decides behavior, the board renders it as
+screens / states / flow, the code matches the board. Invoke the
+`simplecore:wireframe-boards` skill before implementing a screen from it, checking code
+against it, syncing it after a change, or drawing new frames.
+
+- `<board path>/src/manifest.mjs` — the table of contents. Find a screen here, then open
+  that one screen file. Never read the built HTML.
+- `<board path>/AGENTS.md` — the working rules for this board.
+- The board carries no build script. `node wf.mjs <command>` from the board folder; the kit
+  lives in the skill.
+
+A screen, dialog, state, or flow added during development is back-filled as a frame in the
+same change. A design decision that changes needs the design owner's sign-off and updates
+the spec in the same breath.
+
+The skill comes from the `simplecore` plugin
+(`claude plugin install simplecore@simplecore-skills`). When it is not in the `Skill` tool
+list, install it rather than working from memory.
+```
+
+When such a section already exists, correct it in place rather than adding a second one.
+
+## 6. Offer the parity walk when the code already serves frames
+
+Reconciling them is its own long job with its own wiring — say so once and point at
+`/simplecore:parity-walk-init`.
+
+Do not draw product frames as part of this command. Setup and authoring are separate.

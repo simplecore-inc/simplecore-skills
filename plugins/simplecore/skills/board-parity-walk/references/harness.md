@@ -317,6 +317,17 @@ broken build every other agent inherits without being able to see why — a red
 typecheck they must reason past before they can trust their own run. Commit at every
 point that stands on its own, never once per cluster.
 
+**Read `git status` for deletions you did not mean, and read it before you believe a
+green gate.** Staging is about what you add; the file you destroyed is not in that
+list. Writing to a path you did not first read, or renaming onto one, removes whatever
+was there — and when what was there is a test file, **the gate goes green because those
+tests are not running.** One walker overwrote a 294-line test file that way and its
+first full-gate run passed with eighteen tests absent; the count in the gate's own
+output was the only witness, and nobody compares counts between runs. A vanished
+suite and a passing suite look identical from the outside, which is why this is a
+check rather than a caution: `git status` before the gate, and account for every
+deletion in it.
+
 ### Say what you cannot attribute — and do not read attribution off a commit
 
 With more than one agent in a tree, a gate can be red for somebody else's reason.

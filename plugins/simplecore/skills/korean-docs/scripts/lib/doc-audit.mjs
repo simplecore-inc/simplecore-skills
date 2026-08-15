@@ -412,11 +412,23 @@ function checkParticles(lines) {
 // reading, and it was right. This rule is about the placeholder a MESSAGE carries, whose
 // value arrives from data the sentence never sees.
 //
-// **Annotations are skipped, and the reason is the premise rather than tidiness.** A note
-// addressed to whoever maintains the file (audit.localeAnnotationKeys) is prose, and the
-// tokens in it are usually cross-references a build resolves to a fixed string — a value
-// that IS known when the sentence is written, which is the one case this rule has nothing
-// to say about. Screen copy is what it is for.
+// **That exemption was one member of a family, written down as a single case.** What
+// separates the two is not the punctuation but whether the author can know the final
+// syllable, and a template literal is merely the shape in which that happens most often.
+// A cross-reference is the other shape: `{{b-06-new}}` on a wireframe board resolves at
+// BUILD time to `B-06`, so the author knows the syllable and chooses 이/가 correctly —
+// and firing on those buries the genuine i18n case under a hundred false errors, which is
+// how a checker teaches its reader to skip the output. See RESOLVED_PLACEHOLDERS below:
+// a project declares the shape of its cross-references and how they render, and the
+// particle after one is then JUDGED against the rendered value rather than excused.
+//
+// **Annotations are skipped only where the value is still unknown.** A note addressed to
+// whoever maintains the file (audit.localeAnnotationKeys) is prose whose tokens are usually
+// cross-references a build resolves to a fixed string, and skipping the whole note used to
+// stand in for saying so — the same missing family, wearing a second disguise. Now that a
+// resolved reference is judged rather than excused, the skip applies to the undecidable
+// branch alone: declare the shape and a wrong particle inside a note is reported like any
+// other, which is where most of them are.
 const INTERPOLATION_PARTICLE_RE =
   /(?<!\$\{[^{}]{0,80})(\}\}|\}|%[sd]|%\d+\$[sd])(이|가|을|를|은|는|과|와|으로|로|이라|라)(?=[\s.,·)\]'"]|$)/g;
 
@@ -429,18 +441,129 @@ const INTERPOLATION_PARTICLE_RE =
 // `{{name}}` is untouched: doubled braces are always interpolation.
 const BRACE_ENUMERATION = /[, ]/;
 
-function checkInterpolatedParticles(lines, isAnnotation = () => false) {
+// ── a placeholder the build resolves to a constant ──────────────────────────
+// The family the `${…}` exemption belongs to, named rather than enumerated. A project
+// declares in its glossary front matter which placeholder names are cross-references and
+// what they render as:
+//
+//   audit:
+//     resolvedPlaceholders:
+//       - '^([a-z])-(\d{2})(?:-[a-z0-9-]+)?$ => \U$1-$2'
+//
+// Left of `=>` is a regex over the placeholder's inner text; right of it is a replacement
+// template producing the string the build puts on the page (`$1`…`$9`, and `\U$n` for a
+// group the build uppercases). **Declaring one does not silence the check — it turns it
+// into a real one**: the rendered value is known, so the particle after it is judged like
+// any Korean noun, and `B-25과` is reported with the particle it should have been.
+//
+// The shape belongs in configuration rather than here because a cross-reference's spelling
+// is a property of one project's build. A placeholder matching no declaration keeps the
+// error above; its value is still data the sentence never sees.
+const RESOLVED_RULE_RE = /^(.*?)\s+=>\s+(.*)$/;
+
+export function parseResolvedPlaceholders(declarations) {
+  const parsed = [];
+  for (const decl of declarations ?? []) {
+    const m = String(decl).match(RESOLVED_RULE_RE);
+    if (!m) throw new Error(`audit.resolvedPlaceholders 항목에 " => "가 없습니다: ${decl}`);
+    parsed.push({pattern: new RegExp(m[1]), template: m[2]});
+  }
+  return parsed;
+}
+
+/** Applies a `$n` / `\U$n` replacement template to a regex match. */
+function renderTemplate(template, match) {
+  return template.replace(/\\U\$(\d)|\$(\d)/g, (_, up, plain) =>
+    up ? (match[Number(up)] ?? '').toUpperCase() : (match[Number(plain)] ?? ''));
+}
+
+// Digits and Latin letters are read aloud in Korean, and a particle after one follows that
+// reading rather than the glyph. A NUMBER's reading is settled by its last digit under both
+// the digit-by-digit reading (「이오」) and the sino-Korean one (「이십오」) — 0 is 공·영 and
+// 십·백, all closed, and the other nine agree with themselves — so the last character is
+// enough and no number parsing is needed. `r` is left out on purpose: 아르 and 알 are both
+// current, and a checker that cannot tell which stays silent instead of demanding one.
+const READING_FINAL = {
+  '0': [true, false], '1': [true, true], '2': [false, false], '3': [true, false],
+  '4': [false, false], '5': [false, false], '6': [true, false], '7': [true, true],
+  '8': [true, true], '9': [false, false],
+  a: [false, false], b: [false, false], c: [false, false], d: [false, false],
+  e: [false, false], f: [false, false], g: [false, false], h: [false, false],
+  i: [false, false], j: [false, false], k: [false, false], l: [true, true],
+  m: [true, false], n: [true, false], o: [false, false], p: [false, false],
+  q: [false, false], s: [false, false], t: [false, false], u: [false, false],
+  v: [false, false], w: [false, false], x: [false, false], y: [false, false],
+  z: [false, false],
+};
+
+/** `{final, rieul}` for a rendered value, or null when its reading is not settled. */
+function readingOf(rendered) {
+  const text = rendered.replace(/[\s.,·)\]'"」』]+$/, '');
+  const last = text[text.length - 1];
+  if (!last) return null;
+  const hangul = hasFinalConsonant(last);
+  if (hangul !== null) {
+    const rieul = (last.codePointAt(0) - 0xac00) % 28 === 8;
+    return {final: hangul, rieul};
+  }
+  const reading = READING_FINAL[last.toLowerCase()];
+  return reading ? {final: reading[0], rieul: reading[1]} : null;
+}
+
+/** The particle each of the pair takes, keyed by the one that follows a final consonant. */
+const PARTICLE_PAIRS = [['이', '가'], ['을', '를'], ['은', '는'], ['과', '와'], ['으로', '로'], ['이라', '라']];
+const BY = ['으로', '로'];
+
+/** Whichever of `pair` follows `word`'s reading, or null when that reading is not settled. */
+function particleFor(word, pair) {
+  const reading = readingOf(word);
+  if (!reading) return null;
+  // 으로/로 is the one pair a ㄹ-final does not follow: 서울로, not 서울으로.
+  return reading.final && !(pair[0] === '으로' && reading.rieul) ? pair[0] : pair[1];
+}
+
+/** The particle `rendered` should take in place of `particle`, or null when it is right. */
+function wrongParticle(rendered, particle) {
+  const pair = PARTICLE_PAIRS.find(([c, v]) => c === particle || v === particle);
+  if (!pair) return null;
+  const correct = particleFor(rendered, pair);
+  return correct && correct !== particle ? correct : null;
+}
+
+function checkInterpolatedParticles(lines, isAnnotation = () => false, resolved = []) {
   const hits = [];
   lines.forEach((line, idx) => {
     for (const m of line.matchAll(INTERPOLATION_PARTICLE_RE)) {
-      if (m[1] === '}') {
+      const opener = m[1] === '}}' ? '{{' : m[1] === '}' ? '{' : null;
+      let inner = null;
+      if (opener) {
         // `${` … `}` and `{` … `}` both end in `}`; requiring an opening brace before the
         // match on the same line keeps a stray closing brace in prose from firing.
-        const open = line.lastIndexOf('{', m.index);
-        if (open === -1) continue;
-        if (BRACE_ENUMERATION.test(line.slice(open + 1, m.index))) continue;
+        const open = line.lastIndexOf(opener, m.index);
+        if (open === -1) {
+          if (opener === '{') continue;
+        } else {
+          inner = line.slice(open + opener.length, m.index);
+          if (opener === '{' && BRACE_ENUMERATION.test(inner)) continue;
+        }
       }
-      if (isAnnotation(idx, m.index)) continue;
+      const declaration = inner === null ? undefined : resolved.find((r) => r.pattern.test(inner));
+      if (!declaration && isAnnotation(idx, m.index)) continue;
+      if (declaration) {
+        const rendered = renderTemplate(declaration.template, inner.match(declaration.pattern) ?? []);
+        const correct = wrongParticle(rendered, m[2]);
+        if (correct) {
+          // The message chooses its own particles the same way: a diagnostic that misspells
+          // the thing it is correcting is read as noise.
+          hits.push({
+            line: idx + 1,
+            text: `${opener}${inner}${m[1]}${m[2]}`,
+            suggestion: `참조가 「${rendered}」${particleFor(rendered, BY)} 표시되므로 `
+              + `「${rendered}${correct}」${particleFor(correct, BY)} 고친다`,
+          });
+        }
+        continue;
+      }
       hits.push({line: idx + 1, text: m[0]});
     }
   });
@@ -578,7 +701,7 @@ export function annotationRanges(content, keys) {
   return ranges;
 }
 
-export function auditFile(filePath, rules, checkUntranslated, isLocaleResource = false, annotationKeys = new Set()) {
+export function auditFile(filePath, rules, checkUntranslated, isLocaleResource = false, annotationKeys = new Set(), resolvedPlaceholders = []) {
   const content = readFileSync(filePath, 'utf8');
   const isSvg = !isLocaleResource && /\.svg$/i.test(filePath);
   const isProse = !isSvg && !isLocaleResource;
@@ -628,10 +751,14 @@ export function auditFile(filePath, rules, checkUntranslated, isLocaleResource =
       suggestion: '앞 글자의 받침에 맞춰 이/가 · 을/를 · 과/와를 고른다',
     }});
   }
-  for (const hit of checkInterpolatedParticles(lines, isAnnotation)) {
+  for (const hit of checkInterpolatedParticles(lines, isAnnotation, resolvedPlaceholders)) {
+    // A resolved cross-reference carries its own suggestion: the value IS known there, so
+    // the fix is the right particle rather than a rewrite that avoids one.
+    const resolvedRef = hit.suggestion !== undefined;
     errors.push({...hit, count: 1, rule: {
-      source: 'interpolated-particle', label: '치환값 뒤의 조사', level: 'error', threshold: 1,
-      suggestion: '값의 받침을 알 수 없으므로 조사가 오지 않게 문장을 고친다',
+      source: resolvedRef ? 'reference-particle' : 'interpolated-particle',
+      label: resolvedRef ? '참조 뒤의 조사' : '치환값 뒤의 조사', level: 'error', threshold: 1,
+      suggestion: hit.suggestion ?? '값의 받침을 알 수 없으므로 조사가 오지 않게 문장을 고친다',
     }});
   }
   for (const hit of checkRepeats(lines)) {
@@ -815,7 +942,7 @@ export function runDocAudit(args, cliPath) {
     base = parseGlossary(readFileSync(BASE_GLOSSARY_PATH, 'utf8'), 'base', BASE_GLOSSARY_PATH);
   }
 
-  const {rules} = mergeGlossaries(base, project);
+  const {rules, deadExceptions} = mergeGlossaries(base, project);
 
   if (args.listRules) {
     for (const r of rules) {
@@ -833,12 +960,35 @@ export function runDocAudit(args, cliPath) {
     console.log('프로젝트 용어사전을 만들려면 (기본 위치: .claude/GLOSSARY.md):');
     console.log(`  node ${cliPath} --init`);
   }
+  // **An exception names a base rule by its pattern TEXT, so editing that pattern in the base
+  // glossary silently revives the rule in every project that had turned it off.** The revived
+  // finding then reads as a fresh defect: the exception row is still there, still explains why
+  // the rule is off, and disables nothing. It was reported by `audit` alone, which is not the
+  // command a gate or the write-time hook runs — so the one place the silence mattered was the
+  // one place it stayed silent, and three warnings sat in a repository whose exception row for
+  // them was intact.
+  if (deadExceptions.length > 0) {
+    console.log(
+      `\n죽은 예외 ${deadExceptions.length}개 — 아래 항목이 기본 용어사전의 어느 규칙과도 글자가 맞지 않아 아무것도 끄지 않습니다.` +
+        ` 기본 규칙의 정규식이 바뀌면 그 규칙을 끈 예외가 조용히 되살아나므로, 지금 규칙의 글자로 고쳐 적으세요.`,
+    );
+    for (const row of deadExceptions) console.log(`  ${row}`);
+  }
   console.log('');
 
   const isLocaleResource = makeLocaleResourceMatcher(config.localeResources, root);
   const annotationKeys = new Set(config.localeAnnotationKeys);
+  const resolvedPlaceholders = parseResolvedPlaceholders(config.resolvedPlaceholders);
   const {files: targets, excludedCount, glossarySkipped} = resolveTargets(args, config, root, discovered?.path, isLocaleResource);
   if (excludedCount > 0) console.log(`audit.exclude 패턴으로 파일 ${excludedCount}개 제외됨`);
+  // A declared glob that matches nothing is not an error — it is a shorter run that reports
+  // 「오류 0건」 exactly like a clean one. Saying the count makes a narrowing visible on the
+  // line where it happens, which a total alone never does: a formatter reflowing this project's
+  // declaration cut the scan from 407 files to 86 and the result read as a pass.
+  if (config.localeResources.length > 0) {
+    const matched = targets.filter((f) => isLocaleResource(f)).length;
+    console.log(`audit.localeResources: 자원 파일 ${matched}개${matched === 0 ? ' — glob이 아무것도 잡지 못했습니다' : ''}`);
+  }
   if (glossarySkipped) console.log('용어사전 파일 자체는 감사 대상에서 제외됩니다');
   if (targets.length === 0) {
     console.log('검사 대상 파일이 없습니다.');
@@ -851,7 +1001,7 @@ export function runDocAudit(args, cliPath) {
   for (const file of targets) {
     const rel = relative(root, file);
     const relPath = rel.startsWith('..') ? file : rel;
-    const {errors, warnings} = auditFile(file, rules, checkUntranslated, isLocaleResource(file), annotationKeys);
+    const {errors, warnings} = auditFile(file, rules, checkUntranslated, isLocaleResource(file), annotationKeys, resolvedPlaceholders);
     errorCount += errors.length;
     warningCount += warnings.length;
     for (const f of errors) console.log(formatFinding(relPath, f, 'error'));

@@ -49,6 +49,10 @@
  *     localeAnnotationKeys: []   # keys in those files whose values are notes
  *                                # to the maintainer rather than screen copy;
  *                                # exempt from 화면 금지 표현, audited otherwise
+ *     resolvedPlaceholders: []   # '<regex over the placeholder name> => <render>'
+ *                                # for placeholders a build resolves to a fixed
+ *                                # string; the particle after one is judged
+ *                                # against that string instead of reported
  *     untranslated: false        # true = warn about remaining English prose
  *   ---
  *

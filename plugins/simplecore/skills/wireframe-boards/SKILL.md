@@ -54,6 +54,13 @@ inline in one `<style>` block. These six hold on every board:
    conventions outrank anything the board's shapes imply. Board-specific caveats
    are appended as further numbered items, never substituted for the standing
    ones.
+   **It sits at the FOOT of the board**, after every frame, with a link to it in
+   the header. It is read once, before implementing, and at the top it stands
+   between every later reader and the frames they came for. The PDF does not
+   carry it at all: implementing is done from the HTML board, and the PDF is the
+   copy that gets read, sent, and printed. On a kit-built board the three layers —
+   the kit's standing items, the pattern's, the board's own — are assembled by the
+   build, so no layer can drop another's.
 5. **The board never scrolls sideways.** Rows **wrap**: frames flow left to right
    and continue on the next line, so reading a board is one vertical scroll and no
    frame can hide past the right edge where a reviewer will not find it. `--row-max`
@@ -97,10 +104,13 @@ inline in one `<style>` block. These six hold on every board:
      block, and delete the example sections (and the toggle, when no pairs
      remain). Extend the CSS only for a primitive that does not exist yet.
    - *At or past that size, or once the same nav / titlebar / status bar would be
-     hand-copied into every frame:* copy `assets/build-kit/` and follow
+     hand-copied into every frame:* **do not copy a build in — scaffold the board
+     from the kit** with `/simplecore:board-init`, and follow
      `references/build-kit.md`. The deliverable is identical — every rule here
      still applies — but each frame is authored as a `src/screens/` file composed
-     from components.
+     from a **common pattern**'s components, and the machinery stays in this skill
+     (`kit/`) rather than being forked into the project. The board's only script
+     is a twenty-line `wf.mjs` that finds the kit.
 3. **Organize into flow sections.** One `<section class="flow">` per user flow or
    feature area, with a lettered title (`A. Sign-in`, `B. Checkout`) and a frame
    count. Add a `<nav class="toc">` when the board has more than two sections —
@@ -136,7 +146,8 @@ All paths are relative to this skill's own directory.
 | Composing frame content, chrome, connectors, annotations; fidelity rules | `references/primitives.md` |
 | Laying out a CRUD screen — what may sit above, beside, inside or under a list-detail | `references/primitives.md` § List-detail |
 | Implementing from a board, reconciling code ⇄ board, syncing after a change, proposing a board, wiring a project to its board | `references/living-contract.md` |
-| Past ~20 frames, or repeated chrome — the component kit, screen files, and build | `references/build-kit.md` |
+| Past ~20 frames, or repeated chrome — the kit, the patterns, screen files, and the build | `references/build-kit.md` |
+| Starting a board, choosing its pattern, or migrating one onto the current contract | `/simplecore:board-init` · `/simplecore:board-migrate` |
 | Running the persona review after a screen is drawn or changed | `references/persona-review.md` |
 
 Boards are drawn **downstream of the spec**: the spec decides behavior, the
@@ -163,8 +174,8 @@ list speaking early rather than as a separate gate. Everything below that it
 cannot see — overflow at a given width, reading order, step numbering, whether
 the fold sits under the primary action — is still yours to verify by looking.
 
-- The `.readme` implementation contract is present, complete, and above the
-  first flow section.
+- The `.readme` implementation contract is present and complete, at the **foot**
+  of the board, with the header's link reaching it — and absent from the PDF.
 - Frame inventory ⇄ board: every inventory item (and every brief checklist item)
   has exactly one frame — one pair, for paired items; report the final frame
   count per section.

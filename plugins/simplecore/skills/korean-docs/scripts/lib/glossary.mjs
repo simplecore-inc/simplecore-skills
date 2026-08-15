@@ -69,8 +69,31 @@ function parseInlineArray(value) {
   return inner.split(',').map((s) => unquote(s.trim())).filter(Boolean);
 }
 
+// A flow sequence is one shape however it is wrapped. A formatter reflows a long one across
+// lines the moment it stops fitting — `localeResources: [` then an item per line then `]` — and
+// a parser that only knows the single-line form reads the opening bracket as the whole value.
+//
+// **The result is not an error but a silent narrowing**, which is the worst thing a declaration
+// can do: the audit went on reporting 「오류 0건」 while its file count fell from 407 to 86,
+// and nothing on screen distinguished that from a clean run. Adding a glob you never notice is
+// missing is the same failure the project config warns about, arriving through the formatter.
+//
+// So the value is gathered to its closing bracket, and an unterminated one is refused rather
+// than half-read.
+function gatherFlowSequence(first, lines, from, where) {
+  let value = first;
+  let i = from;
+  while (!value.trimEnd().endsWith(']')) {
+    if (i >= lines.length) {
+      throw new Error(`${where}: '[' 로 연 목록이 닫히지 않았습니다`);
+    }
+    value += ' ' + lines[i++].trim();
+  }
+  return {value, next: i};
+}
+
 export function parseGlossaryConfig(markdown) {
-  const config = {paths: [], exclude: [], localeResources: [], localeAnnotationKeys: [], untranslated: false};
+  const config = {paths: [], exclude: [], localeResources: [], localeAnnotationKeys: [], resolvedPlaceholders: [], untranslated: false};
   const lines = markdown.split(/\r?\n/);
   if (lines[0]?.trim() !== '---') return {config, body: markdown};
   let end = -1;
@@ -81,8 +104,9 @@ export function parseGlossaryConfig(markdown) {
 
   let inAudit = false;
   let listKey = null;
-  for (const raw of lines.slice(1, end)) {
-    const line = raw.replace(/(^|\s)#.*$/, '$1');
+  const fm = lines.slice(1, end);
+  for (let i = 0; i < fm.length; i++) {
+    const line = fm[i].replace(/(^|\s)#.*$/, '$1');
     if (!line.trim()) continue;
     if (!/^\s/.test(line)) {
       inAudit = /^audit:\s*$/.test(line.trim());
@@ -90,15 +114,23 @@ export function parseGlossaryConfig(markdown) {
       continue;
     }
     if (!inAudit) continue;
-    const kv = line.match(/^\s+(paths|exclude|localeResources|localeAnnotationKeys|untranslated)\s*:\s*(.*)$/);
+    const kv = line.match(/^\s+(paths|exclude|localeResources|localeAnnotationKeys|resolvedPlaceholders|untranslated)\s*:\s*(.*)$/);
     if (kv) {
       const [, key, rest] = kv;
-      const value = rest.trim();
+      let value = rest.trim();
       listKey = null;
       if (key === 'untranslated') {
         config.untranslated = value === 'true';
+      } else if (value === '' && fm[i + 1]?.trim().startsWith('[')) {
+        // A formatter may also push the whole sequence onto the following lines, leaving the
+        // key bare — which reads exactly like the block form until the '[' is looked at.
+        const gathered = gatherFlowSequence(fm[i + 1].trim(), fm, i + 2, `audit.${key}`);
+        i = gathered.next - 1;
+        config[key] = parseInlineArray(gathered.value);
       } else if (value.startsWith('[')) {
-        config[key] = parseInlineArray(value);
+        const gathered = gatherFlowSequence(value, fm, i + 1, `audit.${key}`);
+        i = gathered.next - 1;
+        config[key] = parseInlineArray(gathered.value);
       } else if (value === '') {
         listKey = key;
       } else {
