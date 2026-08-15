@@ -360,6 +360,12 @@ and the failures are fixed rather than listed. Then:
 - Say what closed and what the next chapter is.
 - Where a board defect was found, say which frame changed and that the chapter
   was regenerated.
+- **Fold what the chapter learned back into the graph, then regenerate.** A dependency the
+  prerequisite list did not name, an entity that turned out to belong elsewhere, a table the
+  chapter had to create — each goes into the owning chapter's 「엔티티」 or 「이 단계가 만드는 것」
+  section, and the generator runs before the chapter is called closed. **A graph that is not
+  regenerated at the close is a graph that stops learning**, and the next wave is assembled from
+  what was true two chapters ago.
 - **Do not edit the chapter file to mark it done.** Its state is the system's
   state; a file that says 「done」 and a system that disagrees is worse than no
   file.
