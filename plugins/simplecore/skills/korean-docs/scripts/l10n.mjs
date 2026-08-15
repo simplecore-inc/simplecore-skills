@@ -148,15 +148,26 @@ function requireKinds() {
  * escapes included — and every such file is then opened at a path that does not exist.
  * A repository that writes its documents in its own language is exactly the one this
  * tool exists for, so that spelling has to survive the round trip intact.
+ *
+ * `--others --exclude-standard` is not optional either, and for a worse reason. The index
+ * is not the working tree: without them the audit reads what happens to be staged, so a
+ * file written a minute ago — the one most in need of checking — is invisible, and its
+ * absence is reported as `0건`. That zero is indistinguishable from a zero that was
+ * earned, which makes it the most expensive result this tool can produce. `--cached` keeps
+ * the tracked files, `--others` adds what is written but not staged, and
+ * `--exclude-standard` keeps `.gitignore` honoured so build output stays out.
+ *
+ * A path in the index whose file is gone — staged deletion, an interrupted rebase — is
+ * dropped rather than opened, since a file that is not there has no Korean in it.
  */
 function gitFiles(pattern) {
   try {
-    const out = execFileSync("git", ["ls-files", "-z", "--", pattern], {
-      cwd: ROOT,
-      encoding: "utf8",
-      maxBuffer: 32 * 1024 * 1024,
-    });
-    const files = out.split("\0").filter(Boolean);
+    const out = execFileSync(
+      "git",
+      ["ls-files", "-z", "--cached", "--others", "--exclude-standard", "--", pattern],
+      { cwd: ROOT, encoding: "utf8", maxBuffer: 32 * 1024 * 1024 },
+    );
+    const files = [...new Set(out.split("\0").filter(Boolean))].filter((f) => existsSync(join(ROOT, f)));
     if (files.length) return files;
   } catch {
     /* not a repository — fall through */
@@ -481,6 +492,38 @@ function segmentsMarkdown(src) {
 }
 
 /**
+ * Emphasis tags that mark a phrase INSIDE a sentence rather than bounding one.
+ *
+ * Bare only — an attribute means the tag carries something a rewrite must not touch
+ * (`<span class="open">`, a link's href), so those keep bounding a run and stay out of
+ * rewritable text. `<code>` is left out for the same reason: what is inside it is an
+ * identifier, not prose.
+ */
+const INLINE_EMPHASIS = /^<\/?(?:b|strong|i|em|u|s|small|sub|sup)>$/i;
+
+/** The same tags, found in a run of text. */
+const EMPHASIS_IN = /<(\/?)(?:b|strong|i|em|u|s|small|sub|sup)>/gi;
+
+/**
+ * Whether every emphasis tag in this run has its partner in the same run.
+ *
+ * A board writes `<b>고를 수 있는 형태는 <code>x</code> 이 이름을 가진 둘뿐이다</b>`, and
+ * `<code>` bounds a run — so the emphasis straddles two of them. Held whole, each half
+ * would carry a tag with nothing to match, and a rewritten sentence that drops it leaves
+ * the board's markup unbalanced. Those runs go back to splitting at their emphasis, which
+ * is what every run did before.
+ */
+function emphasisBalanced(text) {
+  let depth = 0;
+  EMPHASIS_IN.lastIndex = 0;
+  for (let m = EMPHASIS_IN.exec(text); m; m = EMPHASIS_IN.exec(text)) {
+    depth += m[1] ? -1 : 1;
+    if (depth < 0) return false;
+  }
+  return depth === 0;
+}
+
+/**
  * Wireframe board sources: JavaScript modules whose string literals hold HTML.
  *
  * Three things are interleaved here — JS syntax, HTML markup, and the Korean a reviewer
@@ -488,6 +531,18 @@ function segmentsMarkdown(src) {
  * segment must contain Hangul: a class name, a route, a CSS declaration and an enum-ish
  * option value never do, so they are excluded by construction rather than by a blocklist
  * of things to avoid.
+ *
+ * **An emphasis tag is not a boundary between two texts.** Split at every tag alike,
+ * `…고정하는 것은 <b>무엇에 동의했는가</b>인 범위 셋뿐이다` arrives as three segments and
+ * the middle one reaches the rules as a whole line — so a rule that anchors on a line to
+ * find a heading reads a noun phrase mid-sentence as one, and refuses a sentence that is
+ * correct. Emphasis is therefore carried inside its run, while `<br>` and every tag with
+ * an attribute still bound one.
+ *
+ * The tags stay in the segment rather than being trimmed off its edges, so `<b>…</b>`
+ * arrives balanced and a rewrite cannot leave a closing tag with nothing to close. Line
+ * anchors are unharmed — every one of them opens on `[^|]*` or `.*`, which a tag passes
+ * through — and a line that IS a bolded heading is still read as one, which it is.
  */
 function segmentsWireframe(src) {
   const segments = [];
@@ -544,19 +599,53 @@ function segmentsWireframe(src) {
   for (const [ls, le] of literals) {
     const body = src.slice(ls, le);
     let cursor = 0;
+    const push = (from, to) => {
+      if (!HANGUL.test(body.slice(from, to))) return;
+      // Trim surrounding whitespace so a rewrite cannot swallow layout, and peel an
+      // emphasis pair that wraps the whole run. Emphasis inside a sentence is part of
+      // the sentence, but a run that is nothing BUT emphasis is a bolded line, and every
+      // rule that judges a line anchors on its end — a `</b>` left on the tail puts the
+      // line out of reach of the rule written for exactly that line.
+      let start = from;
+      let end = to;
+      for (;;) {
+        const text = body.slice(start, end);
+        const lead = text.length - text.trimStart().length;
+        const tail = text.length - text.trimEnd().length;
+        if (lead || tail) {
+          start += lead;
+          end -= tail;
+          continue;
+        }
+        const wrap = /^<([a-z]+)>([\s\S]*)<\/\1>$/i.exec(text);
+        if (!wrap || !INLINE_EMPHASIS.test(`<${wrap[1]}>`) || !emphasisBalanced(wrap[2])) break;
+        start += wrap[1].length + 2;
+        end -= wrap[1].length + 3;
+      }
+      if (end <= start) return;
+      segments.push(segment(ls + start, ls + end, body.slice(start, end), "text"));
+    };
+    /** One run between two BOUNDING tags — emphasis inside it is part of the sentence. */
     const emit = (from, to) => {
       const text = body.slice(from, to);
-      if (!HANGUL.test(text)) return;
-      // Trim surrounding whitespace so a rewrite cannot swallow layout.
-      const lead = text.length - text.trimStart().length;
-      const tail = text.length - text.trimEnd().length;
-      const inner = text.slice(lead, text.length - tail);
-      if (!inner) return;
-      segments.push(segment(ls + from + lead, ls + to - tail, inner, "text"));
+      if (emphasisBalanced(text)) {
+        push(from, to);
+        return;
+      }
+      let inner = from;
+      EMPHASIS_IN.lastIndex = 0;
+      for (let m = EMPHASIS_IN.exec(text); m; m = EMPHASIS_IN.exec(text)) {
+        push(inner, from + m.index);
+        inner = from + m.index + m[0].length;
+      }
+      push(inner, to);
     };
     const tag = /<[^<>]*>/g;
     let m;
     while ((m = tag.exec(body))) {
+      // Emphasis stays inside the run: the cursor does not move, so the tag ends up in
+      // whatever segment the surrounding sentence produces.
+      if (INLINE_EMPHASIS.test(m[0])) continue;
       emit(cursor, m.index);
       cursor = m.index + m[0].length;
     }
@@ -1067,11 +1156,106 @@ function lensDrift() {
  * All pack rules are tested, opted-in or not — a broken rule is broken for the
  * next project even when this one does not run it.
  */
+/**
+ * What a rule may assume about the segment it is handed.
+ *
+ * **A wrong boundary is a wrong verdict from a right rule, and it has no symptom of its
+ * own.** A wireframe run split at `<b>` handed `무엇에 동의했는가` to the name-slot rule as
+ * a whole line, so a correct sentence was reported as an error — and everything visible
+ * pointed at the rule, which is the thing that would have been loosened. Two rules and one
+ * board later, the extractor was the fault both times.
+ *
+ * So the boundaries are asserted here, beside the rules, in the command that already runs
+ * before every sweep. Each case states the source and the segments it must yield, in
+ * order; the offsets are checked against the source as well, because a segment that reads
+ * right and points wrong corrupts the file the day somebody applies a rewrite.
+ */
+const EXTRACTOR_CASES = [
+  {
+    what: "와이어프레임: 문장 속 강조는 문장을 자르지 않는다",
+    of: () => segmentsWireframe,
+    src: "const a = '앱이 고정하는 것은 <b>무엇에 동의했는가</b>인 범위 셋뿐이다.<br>' +\n  '<b>범위 셋은 각각 켜고 끈다.</b> 사진을 붙일 수 없다.';",
+    want: [
+      "앱이 고정하는 것은 <b>무엇에 동의했는가</b>인 범위 셋뿐이다.",
+      "<b>범위 셋은 각각 켜고 끈다.</b> 사진을 붙일 수 없다.",
+    ],
+  },
+  {
+    // A rule that judges a line ends its pattern on `$`. Leave the closing tag on the
+    // tail and the bolded heading — the very thing those rules are written for — stops
+    // reaching them, silently and in the direction nobody checks.
+    what: "와이어프레임: 통째로 굵게 쓴 줄은 강조를 벗겨 한 줄로 준다",
+    of: () => segmentsWireframe,
+    src: "const a = '<b>언제 무엇을 잃는가</b><br>' + '남은 날을 적는다.';",
+    want: ["언제 무엇을 잃는가", "남은 날을 적는다."],
+  },
+  {
+    what: "와이어프레임: 강조 안쪽의 공백까지 벗긴다",
+    of: () => segmentsWireframe,
+    src: "const a = '<strong> 어디에 기대는가 </strong><br>' + '조건을 적는다.';",
+    want: ["어디에 기대는가", "조건을 적는다."],
+  },
+  {
+    what: "와이어프레임: 속성이 붙은 태그와 코드는 여전히 경계다",
+    of: () => segmentsWireframe,
+    src: "const a = '<span class=\"open\">OPEN:</span> 보관해야 하는지.<br>' +\n  '<code>refusePhoto</code>를 먼저 묻는다.';",
+    want: ["보관해야 하는지.", "를 먼저 묻는다."],
+  },
+  {
+    what: "와이어프레임: 짝이 밖에 있는 강조는 예전처럼 가른다",
+    of: () => segmentsWireframe,
+    src: "const a = '<b>고를 수 있는 형태는 <code>x</code> 이 이름을 가진 둘뿐이다</b> 끝.';",
+    want: ["고를 수 있는 형태는", "이 이름을 가진 둘뿐이다", "끝."],
+  },
+];
+
+/**
+ * The contexts real text puts around a sentence, for judging a miss example.
+ *
+ * Only punctuation and whitespace: appending a full stop or a closing bracket puts the
+ * example where the pack's own patterns expect to find it (`[.<\s]` · `[.?]` · `[.—]` ·
+ * `[,)]` · `[.,—>]`), and the leading sentence supplies what a pattern needs in front.
+ * **A particle is deliberately absent** — appending 을 or 이 would make a different
+ * sentence, and a rule firing on a sentence nobody wrote is a false alarm, not a finding.
+ */
+const MISS_CONTEXTS = [
+  ...[".", "?", "。", ",", ")", ">", "—", "<", " ", "\n", "'", "`", '"', "”", "」"].map(
+    (tail) => (ex) => `${ex}${tail}`,
+  ),
+  (ex) => `가나다. ${ex}`,
+  (ex) => `가나다. ${ex}.`,
+];
+
+/** Run the extractor cases, returning one line per failure. */
+function extractorProblems() {
+  const problems = [];
+  for (const test of EXTRACTOR_CASES) {
+    const got = test.of()(test.src);
+    const texts = got.map((s) => s.text);
+    if (texts.length !== test.want.length || texts.some((t, i) => t !== test.want[i])) {
+      problems.push([test.what, `기대 ${JSON.stringify(test.want)} · 실제 ${JSON.stringify(texts)}`]);
+      continue;
+    }
+    const slipped = got.find((s) => test.src.slice(s.start, s.end) !== s.text);
+    if (slipped) problems.push([test.what, `자리가 어긋난다: ${JSON.stringify(slipped.text)}`]);
+  }
+  return problems;
+}
+
 function cmdRulesTest(opts) {
   const rules = rulePacks().all;
   const lens = readLens();
   const drift = lensDrift();
   let failures = 0;
+
+  const extractor = extractorProblems();
+  if (extractor.length) {
+    failures += 1;
+    console.log(`\n${C.red("✖")} ${C.bold("추출기")} ${C.dim("규칙이 받는 조각의 경계")}`);
+    for (const [what, detail] of extractor) console.log(`    ${what}: ${C.yellow(detail)}`);
+  } else if (opts.verbose) {
+    console.log(`${C.green("✔")} 추출기 ${C.dim(`(경계 ${EXTRACTOR_CASES.length}건)`)}`);
+  }
   for (const rule of rules) {
     const res = ruleMatchers(rule);
     const problems = [];
@@ -1080,7 +1264,19 @@ function cmdRulesTest(opts) {
     }
     for (const ex of rule.miss ?? []) {
       const caught = res.find((re) => ((re.lastIndex = 0), re.test(ex)));
-      if (caught) problems.push([`잡으면 안 되는데 잡음 (/${caught.source}/)`, ex]);
+      if (caught) {
+        problems.push([`잡으면 안 되는데 잡음 (/${caught.source}/)`, ex]);
+        continue;
+      }
+      // A miss example that passes only because it was cut short proves nothing. A rule
+      // that anchors after a verb ending — `[을를] 갖는다[.<\s]` — cannot reach an example
+      // that stops at 갖는다, so the example is declared legitimate and the same sentence
+      // in a file, with its full stop, is caught. That reads as proof in both directions
+      // and is proof in neither.
+      const late = MISS_CONTEXTS.map((wrap) => wrap(ex)).find((v) =>
+        res.some((re) => ((re.lastIndex = 0), re.test(v))),
+      );
+      if (late) problems.push(["잘려서 통과한 miss 예문 — 문장 안에서는 잡힌다", `${ex}  →  ${late}`]);
     }
     if (!(rule.hit ?? []).length) problems.push(["hit 예문이 없음", "규칙이 무엇을 잡는지 증명되지 않는다"]);
     if (!(rule.miss ?? []).length) problems.push(["miss 예문이 없음", "오탐을 막는 근거가 없다"]);
