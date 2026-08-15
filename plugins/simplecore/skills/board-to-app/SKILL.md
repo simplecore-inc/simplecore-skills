@@ -221,10 +221,33 @@ ledger, the handover file, the wave decision, and the barrier work the wave give
    read-only agent still needs `Write`**: read-only means it does not touch the
    subject, not that it produces nothing. Check the tool list before dispatching, and
    give it a scratch file outside the tree it is reading.
-7. **The agent returns conclusions.** What it built, what it fixed in the board and
-   why, which persona lines failed and what it did about them, what it parked, and
-   whether the chapter closed. No screen dumps, no commentary, no images — its work
-   is in the tree and in the state ledger, and the report says where to look.
+7. **The agent reports at every step it closes, not only at the end.** A step is
+   anything that stands on its own — a screen finished, a gate passing, a commit cut,
+   a decision settled, a blocker hit — and each one is one short message in a fixed
+   shape:
+
+   > **finished** what it was, named concretely · **path** the file it is in ·
+   > **next** what is starting now
+
+   **A report with no path is a signal, and signals are worthless.** "working on it",
+   "continuing" and a percentage are all indistinguishable from an agent that has
+   stopped; a path is something the reader can open. An agent that reports without one
+   has reported nothing, and the coordinator treats it exactly as it treats silence.
+
+   **The coordinator still judges by the artifact, never by the report.** The report
+   says where to look — it is not itself evidence, and a claim it makes is confirmed by
+   opening the file or running the thing. What the step reports buy is that nobody has
+   to poll the file system to know anything, which is what let a stalled agent go
+   unnoticed for half an hour.
+
+   **They also make the stall test decidable**: an agent that stops sending steps *and*
+   whose artifact has not moved is stalled; one that is quiet while its artifact grows
+   is inside something long and is left alone → *An agent that ends, and an agent that
+   only paused*.
+8. **At the end the agent returns conclusions.** What it built, what it fixed in the
+   board and why, which persona lines failed and what it did about them, what it
+   parked, and whether the chapter closed. No screen dumps, no commentary, no images —
+   its work is in the tree and in the state ledger, and the report says where to look.
 
 ### The dispatch is planned, written down, and then made
 
@@ -551,22 +574,25 @@ that cannot lie.
 **A quiet agent is either stalled or inside something long, and the two look
 identical from outside.** Killing the second kind throws away everything it had
 worked out; waiting on the first kind costs the build a chapter. So the difference is
-established rather than guessed, from the three things that move while real work
+established rather than guessed, from the four things that move while real work
 happens:
 
 | Read | Working, keep waiting | Stalled, replace it |
 | --- | --- | --- |
-| its log's last line | names a step that plausibly takes this long — a full gate run, a migration over real data, a suite, a capture sweep | names a step that finishes in seconds, or repeats the previous line |
-| the tree and the index | files changing, commits landing, a process of its own still running | nothing has moved since the previous check |
+| its step reports | still arriving, each naming a path | stopped arriving, or arriving with no path in them |
+| its artifact — the log's last line | growing; the line names a step that plausibly takes this long — a full gate run, a migration over real data, a suite, a capture sweep | unchanged since the previous check, or the line repeats |
+| the tree and the index | files changing, commits landing, a process of its own still running | nothing has moved |
 | what it says it is doing | it can name the command it is inside and what it is waiting for | it announces availability, or restates its assignment |
 
-**All three, not one.** A long gate produces no commits either, so the log line is
-what separates it from a stall — and an agent that cannot say what it is waiting for
-is not waiting.
+**The first two rows together are the test**, and they are why step reports exist:
+quiet **and** a still artifact is a stall, while quiet with a growing artifact is
+something long and is left alone. A long gate produces no commits either, so the
+artifact is what separates it from a stall — and an agent that cannot say what it is
+waiting for is not waiting.
 
-**The threshold is two.** When all three readings say stalled — the artifact has not
-changed since the previous check *and* the agent has announced idle twice — treat it
-as stalled. Then, in one turn:
+**The threshold is two.** When the readings say stalled — no step report and no change
+to the artifact since the previous check, and the agent has announced idle twice —
+treat it as stalled. Then, in one turn:
 
 1. **Tell it to stop** and to stop writing the artifact. Say why, and ask it to send
    anything unsaved as a message rather than writing it.

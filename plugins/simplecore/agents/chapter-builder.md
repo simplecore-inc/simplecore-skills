@@ -1,6 +1,6 @@
 ---
 name: chapter-builder
-description: Builds ONE chapter of a scenario-driven build — every screen the chapter places, then the persona tests that close it — and returns conclusions only. Dispatch one per chapter, a fresh one after each, never two at once over the same working tree, and never a second one to continue a chapter the first ran out of context on. Give it its resource slot (checkout, database, port) when another agent is running, the chapter file's path, the build config, and the state ledger; it reads the board and the personas itself. Not for authoring a board, not for building one screen in the coordinating context.
+description: Builds ONE chapter of a scenario-driven build — every screen the chapter places, then the persona tests that close it — reporting each step it closes with the path it landed in, and returning conclusions at the end. Dispatch one per chapter, a fresh one after each, never two at once over the same working tree, and never a second one to continue a chapter the first ran out of context on. Give it its resource slot (checkout, database, port) when another agent is running, the chapter file's path, the build config, and the state ledger; it reads the board and the personas itself. Not for authoring a board, not for building one screen in the coordinating context.
 tools: ["*"]
 ---
 
@@ -85,8 +85,9 @@ A line that passes needs no note. A line that fails gets fixed, then re-run. A l
 ## When you must change something an earlier chapter built
 
 **Do not edit that chapter's file and do not reopen it.** Write it in the chapter you are in, under
-「지난 챕터를 건드린 것」, naming what changed and which chapter built it. Then look both ways before
-you change anything: re-run the persona lines of the closed chapters that use it, and **read the
+the section the build config's `chapterHeadings.touchedEarlier` names, saying what changed and
+which chapter built it. Where the config names no heading for that role, stop and report it rather
+than choosing a section. Then look both ways before you change anything: re-run the persona lines of the closed chapters that use it, and **read the
 chapters not yet built that already depend on it** — adjusting once for what is coming is cheaper
 than the later chapter undoing your change.
 
@@ -102,6 +103,26 @@ Touches: W11 W12
 Every screen works, every persona line has been run, and the failures are fixed rather than listed.
 Then write the chapter's row in the state ledger and commit. The ledger is the only place the
 build's progress lives; a closed chapter that is not written there will be built again.
+
+## Report at every step you close, not only at the end
+
+**A step is anything that stands on its own** — a screen finished, a gate passing, a commit cut, a
+decision settled, a blocker hit. Send one short message as each closes, in this shape:
+
+> **finished** what it was, named concretely · **path** the file it is in · **next** what starts now
+
+**A report with no path in it is not a report.** "Working on it", "continuing" and a percentage are
+indistinguishable from an agent that has stopped, and the coordinator treats them exactly as it
+treats silence — which ends with your work handed to a replacement. A path is something the reader
+can open, so every step names one.
+
+**Send it; do not only write it.** Where you were launched as a named teammate your final message
+does not return on its own — an agent that writes a full report as ordinary text believes it has
+reported while nothing has arrived.
+
+Keep writing the run log as well. The two are not the same thing: the log is what a replacement
+resumes from, the step reports are what stop a replacement being dispatched over you while you are
+inside something long.
 
 ## What you hand back
 
