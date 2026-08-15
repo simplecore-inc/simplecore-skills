@@ -271,6 +271,20 @@ and nothing announces it. Either every agent gets its own checkout, or **the age
 stage nothing and the coordinator commits at the barrier** — those are the two
 arrangements; there is no third that survives.
 
+**Naming the hazard is not enough — two commands cause it.** While another agent may
+commit to the same branch:
+
+| Rule | Because |
+| --- | --- |
+| **`--amend` and `reset`, in any form, are forbidden** | a commit landing between your commands means `HEAD~1` is not the commit you wrote, so the rewrite folds the other agent's files into yours and replaces their message with yours |
+| **stage by explicit path — `git commit -m <message> -- <paths>`, never `git add -A`** | `-A` sweeps whatever the other agent has left in the tree into your commit, and says nothing; every option goes before the `--`, since everything after it is read as a path |
+| **read `git rev-parse HEAD` before committing and after** | a HEAD that moved is the normal state during a wave, and it is the state in which a rewrite destroys work |
+
+**A destroyed commit is in the reflog.** Read it back with `git reflog`, re-commit it
+on its own, and confirm both the diff and the message are byte-identical to the
+original before calling it restored. The hash does not come back; everything else
+does, and only while the reflog still reaches it.
+
 **Every parallel agent is tracked by its artifact.** The plan says which file each
 agent writes and what its progress line looks like, and progress is read from that
 file. An agent's own announcement is not progress → *An agent that ends, and an agent
