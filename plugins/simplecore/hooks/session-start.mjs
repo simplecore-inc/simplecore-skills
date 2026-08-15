@@ -5,8 +5,8 @@
  *
  * Without this, every one of these skills depends on its description firing — which it does when
  * the user names the work in the right words, and does not when they ask for a screen. A board
- * nobody is routed to goes stale, a parity walk nobody can find is restarted from scratch, and a
- * Korean answer written without the style baseline reads as a translation.
+ * nobody is routed to goes stale, a build or a walk nobody can find is restarted from scratch, and
+ * a Korean answer written without the style baseline reads as a translation.
  *
  * A directory that matches no marker produces no output at all — projects that use none of these
  * skills never see this hook.
@@ -42,6 +42,12 @@ function buildContext(report) {
         : `read \`${report.board.file}\``;
     lines.push(
       `- \`${report.board.dir}/\` holds a wireframe board (${report.board.kind}) → invoke \`simplecore:wireframe-boards\` before implementing a screen from it, checking code against it, syncing it, or drawing frames. To locate a screen, ${how}.`,
+    );
+  }
+  if (binds('board-to-app')) {
+    const docs = [report.build.chapterDir, report.build.stateLedger].filter(Boolean);
+    lines.push(
+      `- that board is built chapter by chapter in dependency order${docs.length ? ` (\`${docs.join('`, `')}\`)` : ''} → invoke \`simplecore:board-to-app\` before building a chapter, running its persona tests, deciding what may run alongside, or resuming. The state ledger says which chapter is open; a chapter runs in a subagent, never in this context.`,
     );
   }
   if (binds('board-parity-walk')) {

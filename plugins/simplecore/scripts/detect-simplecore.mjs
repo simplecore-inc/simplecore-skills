@@ -5,8 +5,8 @@
  *
  * The skills carry discipline; the project carries the contents. Between the two sits wiring
  * the user has no reason to know about: a pointer in an instruction file, a board folder's
- * reading contract, a glossary, the parity-walk config. Without it a session that starts
- * anywhere in the repository never learns any of this exists. This script is what lets a
+ * reading contract, a glossary, the config that says how the board reaches code. Without it a
+ * session that starts anywhere in the repository never learns any of this exists. This script is what lets a
  * session say which half is missing instead of assuming.
  *
  * Detection is marker-based, so nothing has to be configured before it works. Every marker is
@@ -66,6 +66,7 @@ const KIT_CONTRACT_DECL = /BOARD_CONTRACT\s*=\s*(\d+)/;
 const KIT_SOURCE_BYTES = 16 * 1024;
 
 const PARITY_CONFIG = path.join(".claude", "board-parity-walk.json");
+const BUILD_CONFIG = path.join(".claude", "board-to-app.json");
 const GLOSSARY_LOCATIONS = [path.join(".claude", "GLOSSARY.md"), "GLOSSARY.md"];
 const INSTRUCTION_FILES = ["CLAUDE.md", path.join(".claude", "CLAUDE.md"), "AGENTS.md"];
 
@@ -243,6 +244,41 @@ function findParityWalk(root) {
   };
 }
 
+/**
+ * The chapter-build config and whether the two files a session resumes from exist.
+ *
+ * @remarks
+ * A board reaches code one of two ways, and they are alternatives rather than stages: a build in
+ * dependency order, chapter by chapter, or a walk over the frames of a running app. Only the two
+ * files a session needs to answer 「what is open」 are resolved here — the chapter directory and
+ * the state ledger. Every other declared path is the build skill's own gate to check
+ * (`bta.mjs doctor`), and duplicating that here would put the same rule in two places.
+ */
+function findBuild(root) {
+  const configFile = path.join(root, BUILD_CONFIG);
+  const raw = readIfPresent(configFile);
+  if (raw === null) return null;
+
+  let config;
+  try {
+    config = JSON.parse(raw);
+  } catch {
+    return { config: BUILD_CONFIG, valid: false, chapterDir: null, stateLedger: null };
+  }
+
+  const resolve = (key) =>
+    typeof config[key] === "string" && fs.existsSync(path.join(root, config[key])) ? config[key] : null;
+
+  return {
+    config: BUILD_CONFIG,
+    valid: true,
+    chapterDir: resolve("chapterDir"),
+    stateLedger: resolve("stateLedger"),
+    declaredChapterDir: typeof config.chapterDir === "string" ? config.chapterDir : null,
+    declaredStateLedger: typeof config.stateLedger === "string" ? config.stateLedger : null,
+  };
+}
+
 /** The project glossary, at whichever of the two documented locations holds it. */
 function findGlossary(root) {
   return GLOSSARY_LOCATIONS.find((rel) => fs.existsSync(path.join(root, rel))) ?? null;
@@ -275,7 +311,7 @@ function routing(root, extraDirs) {
   for (const file of candidates) {
     const content = readIfPresent(file);
     if (!content) continue;
-    for (const skill of ["wireframe-boards", "board-parity-walk", "korean-docs", "svg-diagrams"]) {
+    for (const skill of ["wireframe-boards", "board-to-app", "board-parity-walk", "korean-docs", "svg-diagrams"]) {
       if (!routed[skill] && content.includes(`simplecore:${skill}`)) routed[skill] = file;
     }
   }
@@ -309,7 +345,7 @@ function globalKoreanInstruction() {
 /**
  * Analyze a directory tree.
  *
- * @returns `{root, board, parityWalk, glossary, korean, routedBy, globalKorean, skills, missing, wired}`
+ * @returns `{root, board, build, parityWalk, glossary, korean, routedBy, globalKorean, skills, missing, wired}`
  * with every path relative to `root`. `missing` holds one plain-language line per piece of
  * wiring that is absent, which is what a session reads out to the user before offering to fix it.
  */
@@ -317,6 +353,7 @@ export function analyze(root) {
   const resolved = path.resolve(root);
   const board = findBoard(resolved);
   const parityWalk = findParityWalk(resolved);
+  const build = findBuild(resolved);
   const glossary = findGlossary(resolved);
   const korean = writesKorean(resolved, glossary);
   const routedBy = routing(resolved, board ? [board.dir] : []);
@@ -324,11 +361,12 @@ export function analyze(root) {
 
   const rel = (p) => (p ? path.relative(resolved, p) || "." : null);
 
-  // A board-parity walk reconciles code against a board, so it binds ONLY where a board exists.
-  // Config alone is not enough: without a board there is nothing to walk, and reporting the
-  // skill as applicable would send a session looking for frames that were never drawn.
+  // Both ways of reaching code from a board bind ONLY where a board exists. Config alone is not
+  // enough: without a board there is nothing to build or walk against, and reporting the skill as
+  // applicable would send a session looking for frames that were never drawn.
   const skills = [];
   if (board) skills.push("simplecore:wireframe-boards");
+  if (board && build) skills.push("simplecore:board-to-app");
   if (board && parityWalk) skills.push("simplecore:board-parity-walk");
   if (korean) skills.push("simplecore:korean-docs");
 
@@ -360,9 +398,42 @@ export function analyze(root) {
       `the board folder has no reading contract, so the next agent opens the built HTML and floods its context`,
     );
   }
-  if (board && !parityWalk) {
+  // A board reaches code one of two ways, and a project picks one. Naming only the walk here told
+  // a project that had picked the other that it was missing wiring, and pointed a fresh session at
+  // a skill that project had deliberately retired.
+  if (board && !parityWalk && !build) {
     missing.push(
-      "the board has no parity walk wired, so reconciling its frames with the running app has nothing to resume from",
+      "the board is wired to nothing that builds it, so neither the order its frames are built in nor which of them still disagree with the code is written anywhere — `simplecore:board-to-app` builds it chapter by chapter in dependency order (a chapter set and `" +
+        BUILD_CONFIG +
+        "`), and `/simplecore:parity-walk-init` walks it frame by frame against a running app",
+    );
+  }
+  if (board && parityWalk && build) {
+    missing.push(
+      `both \`${BUILD_CONFIG}\` and \`${PARITY_CONFIG}\` are declared — a project runs one of the two, and with both in place two documents claim to say what is left. Delete the config of the one this project is leaving`,
+    );
+  }
+  if (!board && build) {
+    missing.push(
+      `a chapter build is configured (\`${BUILD_CONFIG}\`) but this project has no wireframe board — the build renders a board's frames as screens, so it has nothing to build. Draw the board first, or remove the config`,
+    );
+  }
+  if (build && !build.valid) {
+    missing.push(`\`${BUILD_CONFIG}\` is not valid JSON, so nothing routes to the build and its gates are off`);
+  }
+  if (build && build.valid && (!build.chapterDir || !build.stateLedger)) {
+    const absent = [
+      !build.chapterDir ? `the chapter set (\`${build.declaredChapterDir ?? "chapterDir not declared"}\`)` : null,
+      !build.stateLedger ? `the state ledger (\`${build.declaredStateLedger ?? "stateLedger not declared"}\`)` : null,
+    ].filter(Boolean);
+    missing.push(
+      `${absent.join(" and ")} named by \`${BUILD_CONFIG}\` ${absent.length > 1 ? "do" : "does"} not exist, so a session cannot tell which chapter is open — \`bta.mjs doctor\` reports every declared path`,
+    );
+  }
+  // Only asked for where the build actually applies, on the same reasoning as the walk below.
+  if (board && build && !routedBy["board-to-app"]) {
+    missing.push(
+      "no instruction file points at the chapter build, so a session that starts elsewhere builds screens without it",
     );
   }
   if (!board && parityWalk) {
@@ -426,6 +497,7 @@ export function analyze(root) {
           handoverFile: parityWalk.handoverFile,
         }
       : null,
+    build,
     glossary,
     korean,
     routedBy: Object.fromEntries(Object.entries(routedBy).map(([k, v]) => [k, rel(v)])),
@@ -458,6 +530,11 @@ function main() {
       if (report.needsMigration) {
         console.log(`  ⚠ needs migration to contract ${report.boardContractExpected} → /simplecore:board-migrate`);
       }
+    }
+    if (report.build) {
+      console.log(
+        `Chapter build: ${report.build.chapterDir ?? "chapters MISSING"} / ${report.build.stateLedger ?? "ledger MISSING"}`,
+      );
     }
     if (report.parityWalk) {
       console.log(

@@ -11,8 +11,9 @@ repository shows no sign of needing.
 
 Two halves, and most projects need both:
 
-- **the project block** in an instruction file, which routes future sessions to the board, the
-  parity walk, and the glossary. It travels with the repository and works without the plugin.
+- **the project block** in an instruction file, which routes future sessions to the board, to
+  whichever way that board reaches code, and to the glossary. It travels with the repository and
+  works without the plugin.
 - **the global blocks** in `~/.claude/CLAUDE.md`, which carry what no single project can: the
   Korean style baseline that ordinary answers need, and the authority to start and stop a local
   development server without asking each time.
@@ -26,8 +27,13 @@ Two halves, and most projects need both:
    Pass `--root=<path>` when `$ARGUMENTS` names a directory other than the current one.
 
 2. **Report what it found in one short paragraph**: which skills bind and on what evidence (the
-   board and its kind, the parity-walk config and its two documents, the glossary or Korean
-   documents), what `routedBy` already covers, and every line of `missing`.
+   board and its kind, the build config with its chapter set and state ledger, the parity-walk
+   config and its two documents, the glossary or Korean documents), what `routedBy` already
+   covers, and every line of `missing`.
+
+   **A board reaches code one of two ways and a project has picked one** — `build` and
+   `parityWalk` in the report say which. Route to the one it has; never propose the other as
+   something it is missing, and never write both blocks.
 
    - No skills bind → say so and stop. Do not write a routing block into a repository that shows
      no marker; offer instead to re-run against a subdirectory, or to draw a board with
@@ -76,9 +82,21 @@ Two halves, and most projects need both:
 
    - a board with no build kit, no folder reading contract, or no board at all →
      `/simplecore:board-init`
-   - a board with no parity walk, a parity list that does not exist, or a missing handover file →
-     `/simplecore:parity-walk-init`. A parity walk needs a board and is offered only where one
-     exists; a walk configured in a project with no board is wiring to remove, not to complete.
+   - **a board wired to nothing that builds it** → the two ways are alternatives, so say what each
+     buys and let the user pick one rather than writing either. `simplecore:board-to-app` builds
+     the board chapter by chapter in dependency order and closes each chapter on its persona
+     tests, and it needs a chapter set plus `.claude/board-to-app.json` — invoke the skill and
+     follow its precondition. `/simplecore:parity-walk-init` wires a walk that reconciles the
+     frames against a running app. Both need a board and are offered only where one exists.
+   - a chapter set or state ledger the build config names that does not exist →
+     `node "$HOME/.claude/skills/simplecore/skills/board-to-app/scripts/bta.mjs" doctor`, which
+     reports every declared path
+   - a parity list that does not exist, or a missing handover file →
+     `/simplecore:parity-walk-init`. A walk configured in a project with no board is wiring to
+     remove, not to complete.
+   - **both configs declared** → the project is between the two arrangements. Deleting one is the
+     user's decision and is never made here; say which one the rest of the repository points at
+     and ask.
    - no project glossary → `node "${CLAUDE_PLUGIN_ROOT}/skills/korean-docs/scripts/check-glossary.mjs" --init`
 
 7. **Verify** by re-running the detector: every line you fixed must be gone from `missing`, and

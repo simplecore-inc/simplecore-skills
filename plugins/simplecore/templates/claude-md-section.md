@@ -1,7 +1,7 @@
 # Routing blocks for `simplecore` skills
 
-Three blocks. The **project block** names this repository's board, parity walk, and glossary, and
-belongs in the project's own instruction file. The **global Korean block** and the **global
+Three blocks. The **project block** names this repository's board, the way that board reaches code,
+and the glossary, and belongs in the project's own instruction file. The **global Korean block** and the **global
 local-server block** are path-free and belong in `~/.claude/CLAUDE.md`, where they cover every
 project on the machine.
 
@@ -21,6 +21,10 @@ Insert into the project's `CLAUDE.md` (or `.claude/CLAUDE.md`, or `AGENTS.md` wh
 keeps its instructions there). Delete the sections the repository does not have, and replace every
 path with what the detector reported.
 
+**A board reaches code one of two ways and a project runs one of them**, so exactly one of
+「Building the app from the board」 and 「Walking the board against the app」 is written. The
+detector says which: `build` for the first, `parityWalk` for the second.
+
 ```markdown
 ## The wireframe board is the screen contract
 
@@ -36,6 +40,21 @@ or drawing new frames.
 A screen, dialog, state, or flow added during development is back-filled as a frame in the same
 change. A design decision that changes needs the design owner's sign-off and updates the spec in
 the same breath.
+
+## Building the app from the board
+
+Screens are built from the board in dependency order — one chapter at a time, the file order the
+build order, and a chapter closes on its persona tests rather than on its code. Invoke the
+`simplecore:board-to-app` skill before building a chapter, running its persona tests, deciding
+what may run alongside, or resuming a build. This repository supplies the contents:
+
+- `<chapter directory>` — one file per chapter; the file order is the build order
+- `<state ledger path>` — the one place that says which chapter is open, and each persona's
+  development account. Read it first; write to it when a chapter changes state
+- `.claude/board-to-app.json` — every path, command and heading the build reads
+
+Chapter files are generated from the board, never hand-edited: fix the board and regenerate. A
+chapter runs in a subagent, never in the coordinating session.
 
 ## Walking the board against the app
 
