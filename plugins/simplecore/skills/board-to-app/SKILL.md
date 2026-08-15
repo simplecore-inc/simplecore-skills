@@ -989,6 +989,7 @@ rediscovering it:
 | you are about to drive the product — browser, simulator, device | `references/driving-the-product.md`, which also says where a low-level command beats the tool |
 | two agents must write one file, or a measurement surprises you, or a check has never fired | `references/harness.md` |
 | you are deciding what the seed and the captures tell as one story | `references/scenario.md` |
+| the project has been reconciling its board frame by frame and has no chapter set yet | `references/migrating-from-a-walk.md` — what its config carries over, how the chapters are decided, and the order that leaves the project working at every step |
 
 ## Where the other skills stand
 

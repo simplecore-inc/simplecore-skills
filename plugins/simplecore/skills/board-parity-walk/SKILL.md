@@ -53,6 +53,13 @@ It is a different job from the three it sits between:
 | Driving one feature area in the browser and judging it | the project's e2e skill — `simplix:frontend-e2e` in a simplix-react repository |
 | **Walking every frame of a board to empty, over sessions** | **this skill** |
 
+**Moving a project off this walk and onto chapters belongs to `simplecore:board-to-app`, not
+here.** That skill builds a board in dependency order — a chapter at a time, each closing on its
+persona tests — and owns the move: `references/migrating-from-a-walk.md` there is the procedure,
+covering what the config carries over, how the chapters are decided, and the order that leaves this
+project working at every step. Nothing here has to be finished first, and a walk keeps running
+until the move is made.
+
 ## The rules the walk runs on
 
 Everything below is one of these made concrete. A walk that drops one does not
