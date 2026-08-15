@@ -74,6 +74,76 @@ function makeExcludeMatcher(pattern) {
  * the same glob engine and the same relative-to-project-root semantics as
  * audit.exclude. With no patterns declared, nothing is a locale resource.
  */
+/**
+ * The directory a pattern can possibly match under: its leading segments up to
+ * the first one carrying a glob metacharacter. `wireframes/src/*.mjs` can only
+ * match inside `wireframes/src`, so that subtree is the whole search space.
+ */
+function patternBaseDir(pattern) {
+  const segments = pattern.split('/');
+  const literal = [];
+  for (const seg of segments.slice(0, -1)) {
+    if (/[*?]/.test(seg)) break;
+    literal.push(seg);
+  }
+  return literal.join('/');
+}
+
+/** Every file under `dir`, with the same directory exclusions the audit walk uses. */
+function walkAll(dir, out = []) {
+  for (const entry of readdirSync(dir, {withFileTypes: true})) {
+    if (entry.isDirectory()) {
+      if (entry.name.startsWith('.') || DEFAULT_EXCLUDE_DIRS.has(entry.name)) continue;
+      walkAll(join(dir, entry.name), out);
+    } else {
+      out.push(join(dir, entry.name));
+    }
+  }
+  return out;
+}
+
+/**
+ * What each declared audit.localeResources pattern matches **in the repository**,
+ * independent of what this run happens to scan.
+ *
+ * The run's own target list cannot answer this. A run scoped to one Markdown file
+ * scans no resources by definition, so counting resources among its targets reports
+ * zero for a declaration that is perfectly correct — and the write-time hook scopes
+ * every run to one file. Judging the patterns against the tree separates a narrowed
+ * scope from a declaration that reaches nothing, which is the only one of the two
+ * that anybody can act on.
+ *
+ * Only each pattern's base directory is walked, so validating a declaration costs
+ * the subtree it names rather than the repository.
+ */
+export function localeResourceCoverage(patterns, root) {
+  const cache = new Map();
+  const filesUnder = (base) => {
+    if (!cache.has(base)) {
+      const dir = base ? join(root, base) : root;
+      cache.set(base, existsSync(dir) && statSync(dir).isDirectory() ? walkAll(dir) : null);
+    }
+    return cache.get(base);
+  };
+
+  const matched = new Set();
+  const perPattern = patterns.map((pattern) => {
+    const base = patternBaseDir(pattern);
+    const files = filesUnder(base);
+    if (files === null) return {pattern, count: 0, reason: `${base || '.'} 디렉터리가 없습니다`};
+    const matches = makeExcludeMatcher(pattern);
+    let count = 0;
+    for (const file of files) {
+      const rel = relative(root, file).split(sep).join('/');
+      if (!matches(rel)) continue;
+      count++;
+      matched.add(rel);
+    }
+    return {pattern, count, reason: count === 0 ? '이 패턴과 맞는 파일이 없습니다' : null};
+  });
+  return {perPattern, total: matched.size};
+}
+
 export function makeLocaleResourceMatcher(patterns, root) {
   if (patterns.length === 0) return () => false;
   const matchers = patterns.map(makeExcludeMatcher);
@@ -981,18 +1051,40 @@ export function runDocAudit(args, cliPath) {
   const resolvedPlaceholders = parseResolvedPlaceholders(config.resolvedPlaceholders);
   const {files: targets, excludedCount, glossarySkipped} = resolveTargets(args, config, root, discovered?.path, isLocaleResource);
   if (excludedCount > 0) console.log(`audit.exclude 패턴으로 파일 ${excludedCount}개 제외됨`);
-  // A declared glob that matches nothing is not an error — it is a shorter run that reports
-  // 「오류 0건」 exactly like a clean one. Saying the count makes a narrowing visible on the
-  // line where it happens, which a total alone never does: a formatter reflowing this project's
-  // declaration cut the scan from 407 files to 86 and the result read as a pass.
+  // A declared glob that reaches nothing is a shorter run reporting 「오류 0건」 exactly like a
+  // clean one, so the declaration is reported on the line where it is applied. Two numbers,
+  // because they answer different questions and only one of them can be wrong: what the patterns
+  // reach in the repository, and how much of that this run's scope covers. Reporting the second
+  // alone made every single-file run — which is every run the write-time hook makes — accuse
+  // correct globs of matching nothing.
+  let deadPatterns = [];
   if (config.localeResources.length > 0) {
-    const matched = targets.filter((f) => isLocaleResource(f)).length;
-    console.log(`audit.localeResources: 자원 파일 ${matched}개${matched === 0 ? ' — glob이 아무것도 잡지 못했습니다' : ''}`);
+    const {perPattern, total} = localeResourceCoverage(config.localeResources, root);
+    deadPatterns = perPattern.filter((p) => p.count === 0);
+    const inScope = targets.filter((f) => isLocaleResource(f)).length;
+    console.log(`audit.localeResources: 자원 파일 ${total}개 (이번 검사 범위 ${inScope}개)`);
+  }
+  // **A pattern reaching nothing fails the run rather than printing a line.** The declaration is
+  // a promise that a corpus is being checked; when it reaches nothing, every later 「오류 0건」 is
+  // true of the files that were read and says nothing about the files that were not, and no
+  // output distinguishes the two. A line of warning is the shape that already failed here three
+  // times, so this takes the shape the unterminated-list check took: a declaration that cannot do
+  // what it says is refused. It is a configuration error, and it exits with the audit's error
+  // code so a gate and the write-time hook both stop on it.
+  if (deadPatterns.length > 0) {
+    console.log(
+      `\n[오류] audit.localeResources 패턴 ${deadPatterns.length}개가 아무 파일과도 맞지 않습니다 —` +
+        ` 선언한 화면 문구가 검사에서 빠집니다.`,
+    );
+    for (const {pattern, reason} of deadPatterns) console.log(`  ${pattern} — ${reason}`);
+    console.log(`  패턴은 저장소 루트(${root}) 기준입니다.`);
+    console.log('  `*`는 `/`를 포함하지 않습니다 — 하위 디렉터리까지 훑으려면 `**/`를 씁니다.');
+    console.log('  자원 파일이 옮겨졌거나 사라졌다면 선언에서 지우세요.');
   }
   if (glossarySkipped) console.log('용어사전 파일 자체는 감사 대상에서 제외됩니다');
   if (targets.length === 0) {
     console.log('검사 대상 파일이 없습니다.');
-    return 0;
+    return deadPatterns.length > 0 ? 1 : 0;
   }
 
   const checkUntranslated = args.untranslated || config.untranslated;
@@ -1008,9 +1100,12 @@ export function runDocAudit(args, cliPath) {
     for (const f of warnings) console.log(formatFinding(relPath, f, 'warn'));
   }
 
-  console.log(`\n검사 완료: 파일 ${targets.length}개, 오류 ${errorCount}건, 경고 ${warningCount}건`);
+  // The dead-pattern count rides in the total so the closing line can never read 「오류 0건」 while
+  // a declared corpus went unread.
+  const configErrors = deadPatterns.length;
+  console.log(`\n검사 완료: 파일 ${targets.length}개, 오류 ${errorCount + configErrors}건, 경고 ${warningCount}건`);
   reportDarkCommands(root, cliPath);
-  return errorCount > 0 || (args.strict && warningCount > 0) ? 1 : 0;
+  return errorCount + configErrors > 0 || (args.strict && warningCount > 0) ? 1 : 0;
 }
 
 /**

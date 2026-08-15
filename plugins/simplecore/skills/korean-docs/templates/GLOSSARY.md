@@ -3,6 +3,8 @@ audit:
   paths: []          # 기본 감사 대상 경로(이 파일이 있는 프로젝트 루트 기준). 비우면 프로젝트 전체를 검사. 예: [docs]
   exclude: []        # 감사에서 제외할 글롭 패턴. 예: ["**/legacy/**", "CHANGELOG.md"]
   localeResources: [] # 화면 문구가 들어 있는 다국어 자원 파일의 글롭. 지정한 파일은 따옴표 문자열의 값만 검사한다(키·주석 제외). 예: ["packages/i18n/src/resources/*.ts", "locales/*.json"]
+                      # `*`는 `/`를 포함하지 않는다(git pathspec과 다르다) — 하위 디렉터리까지 넣으려면 `**/`를 쓴다.
+                      # 아무 파일과도 맞지 않는 패턴은 오류이며 check가 종료 코드 1로 끝낸다.
   untranslated: false # true면 영문 문장 잔존을 경고한다(번역 프로젝트용)
 ---
 
