@@ -1385,6 +1385,53 @@ export interface AreaDetailDTO {
       }
       return hits;
     },
+    samples: {
+      file: "modules/site/src/widgets/area/list.tsx",
+      broken: `<button type="button" onClick={() => del.requestDelete(row)}>
+  <TrashIcon className="size-4" />
+</button>`,
+      fixed: `<button type="button" aria-label={t("common.delete")} onClick={() => del.requestDelete(row)}>
+  <TrashIcon className="size-4" />
+</button>`,
+      miss: [
+        {
+          note: "hidden label text beside the mark",
+          source: `<button type="button" onClick={() => del.requestDelete(row)}>
+  <TrashIcon className="size-4" />
+  <span className="sr-only">{t("common.delete")}</span>
+</button>`,
+        },
+        {
+          note: "a mark leading a button that also says a word",
+          source: `<Button variant="primary" onClick={onSave}>
+  <SaveIcon className="size-4" />
+  {t("common.save")}
+</Button>`,
+        },
+        {
+          note: "a design-system control handed the word through its own label prop",
+          source: `<IconButton label={t("common.delete")} onClick={() => del.requestDelete(row)}>
+  <TrashIcon className="size-4" />
+</IconButton>`,
+        },
+        {
+          note: "a forwarder — both the name and the children arrive from its caller",
+          source: `const FieldClearButton = forwardRef((props, ref) => <button {...props} ref={ref} />);`,
+        },
+        {
+          note: "a title attribute names it too",
+          source: `<button type="button" title={t("common.delete")} onClick={onDelete}>
+  <TrashIcon className="size-4" />
+</button>`,
+        },
+        {
+          note: "a clickable surface that is not a control and carries its own words",
+          source: `<Card onClick={() => onSelect(row.id)}>
+  <Text>{row.name}</Text>
+</Card>`,
+        },
+      ],
+    },
   },
   {
     id: "jsx-child-line-comment",
@@ -1413,6 +1460,40 @@ export interface AreaDetailDTO {
       }
       return hits;
     },
+    samples: {
+      file: "modules/site/src/widgets/area/detail.tsx",
+      broken: `<Stack gap="sm">
+  // the summary row always leads
+  <SummaryRow record={displayData} />
+</Stack>`,
+      fixed: `// the summary row always leads
+const body = (
+  <Stack gap="sm">
+    {/* and the record's own fields come after it */}
+    <SummaryRow record={displayData} />
+  </Stack>
+);`,
+      miss: [
+        {
+          note: "a comment after a self-closing tag is between siblings, not in child position",
+          source: `<Divider />
+// the lifecycle actions follow the divider
+<ActionRow record={displayData} />`,
+        },
+        {
+          note: "a comment under an arrow head is the function's first line",
+          source: `const cell = (row) =>
+  // the badge tone is looked up by the raw value
+  <StatusBadge value={resolveBootEnum(row.status)} />;`,
+        },
+        {
+          note: "an ordinary comment between two statements",
+          source: `const total = rows.length;
+// the pager needs the total, not the page size
+const pages = Math.ceil(total / size);`,
+        },
+      ],
+    },
   },
   {
     id: "filterbar-maxbadges",
@@ -1423,6 +1504,19 @@ export interface AreaDetailDTO {
     check: (c) => (c.includes("<CrudList.FilterBar") && !c.includes("maxBadges")
       ? lineHits(c, /<CrudList\.FilterBar/)
       : []),
+    samples: {
+      file: "modules/site/src/widgets/area/list.tsx",
+      broken: `<CrudList.FilterBar list={list} filters={filters} count={list.pagination.total} />`,
+      fixed: `<CrudList.FilterBar list={list} filters={filters} count={list.pagination.total} maxBadges={3} />`,
+      miss: [
+        {
+          note: "the standard set passed as one object, with maxBadges inside it",
+          source: `const filterBarProps = { maxBadges: 3, popoverColumns: 2 } as const;
+
+<CrudList.FilterBar {...filterBarProps} list={list} filters={filters} />`,
+        },
+      ],
+    },
   },
   {
     id: "boolean-faceted",
@@ -1431,6 +1525,50 @@ export interface AreaDetailDTO {
     desc: 'Boolean field as faceted filter with true/false options — use type: "toggle"',
     appliesTo: isTsx,
     check: (c) => blockHits(c, /type:\s*"faceted"[\s\S]{0,300}?value:\s*("?(true|false)"?)/g),
+    samples: {
+      file: "modules/site/src/widgets/area/list.tsx",
+      broken: `const filters = [
+  {
+    type: "faceted",
+    field: "active",
+    label: fieldLabel("active"),
+    options: [
+      { label: t("common.yes"), value: true },
+      { label: t("common.no"), value: false },
+    ],
+  },
+];`,
+      fixed: `const filters = [
+  { type: "toggle", field: "active", label: fieldLabel("active") },
+];`,
+      miss: [
+        {
+          note: "a faceted filter over an enum — the sanctioned use",
+          source: `const filters = [
+  {
+    type: "faceted",
+    field: "status",
+    label: fieldLabel("status"),
+    options: [
+      { label: enumLabel("AreaStatus", "ACTIVE"), value: "ACTIVE" },
+      { label: enumLabel("AreaStatus", "CLOSED"), value: "CLOSED" },
+    ],
+  },
+];`,
+        },
+        {
+          note: "a boolean option list living elsewhere in a file whose filters are toggles",
+          source: `const filters = [
+  { type: "toggle", field: "active", label: fieldLabel("active") },
+];
+
+const confirmOptions = [
+  { label: t("common.yes"), value: true },
+  { label: t("common.no"), value: false },
+];`,
+        },
+      ],
+    },
   },
   {
     id: "deleted-toggle-filter",
@@ -1439,6 +1577,30 @@ export interface AreaDetailDTO {
     desc: "Soft-delete implementation flag exposed as an operator filter",
     appliesTo: isTsx,
     check: (c) => blockHits(c, /type:\s*"toggle",\s*field:\s*"deleted"/g),
+    samples: {
+      file: "modules/site/src/widgets/area/list.tsx",
+      broken: `const filters = [
+  { type: "toggle", field: "deleted", label: fieldLabel("deleted") },
+  { type: "text", field: "name", label: fieldLabel("name") },
+];`,
+      fixed: `const filters = [
+  { type: "text", field: "name", label: fieldLabel("name") },
+];`,
+      miss: [
+        {
+          note: "a lifecycle state the operator really does narrow by, which happens to read like a flag",
+          source: `const filters = [
+  { type: "toggle", field: "archived", label: fieldLabel("archived") },
+];`,
+        },
+        {
+          note: "a field whose name merely begins with the flag's",
+          source: `const filters = [
+  { type: "toggle", field: "deletedByOperator", label: fieldLabel("deletedByOperator") },
+];`,
+        },
+      ],
+    },
   },
   {
     id: "local-page-heading",
@@ -1446,7 +1608,61 @@ export interface AreaDetailDTO {
     level: "review",
     desc: "Level 1/2 Heading in a pages/ file — page titles go through usePageHeader (header-slot Headings are OK)",
     appliesTo: (p) => inPages(p) && isTsx(p),
-    check: (c) => lineHits(c, /<Heading level=\{[12]\}/),
+    // The exception the description names, implemented rather than only promised: a Heading handed
+    // to a `header` slot is chrome the framework places, not a page title standing in for
+    // `usePageHeader`. The slot's brace sits on the Heading's own line or on one of the two above
+    // it, so the lookback matches the justification-comment idiom used elsewhere in this file.
+    check: (c) =>
+      lineHits(
+        c,
+        /<Heading level=\{[12]\}/,
+        (_line, lines, i) =>
+          !lines.slice(Math.max(0, i - 2), i + 1).some((l) => /\bheader\s*[=:]/.test(l)),
+      ),
+    samples: {
+      file: "modules/site/src/pages/area-list.tsx",
+      broken: `export function AreaListPage() {
+  return (
+    <Stack gap="md">
+      <Heading level={1}>{t("area.pageTitle")}</Heading>
+      <AreaList />
+    </Stack>
+  );
+}`,
+      fixed: `export function AreaListPage() {
+  usePageHeader({ title: t("area.pageTitle"), description: t("area.pageDescription") });
+
+  return <AreaList />;
+}`,
+      miss: [
+        {
+          note: "a Heading handed to a header slot, which the description already exempts",
+          source: `<CrudDetail
+  header={<Heading level={2}>{displayData.name}</Heading>}
+  onClose={onClose}
+/>`,
+        },
+        {
+          note: "a header slot whose Heading sits on the line below the brace",
+          source: `<CrudDetail
+  header={
+    <Heading level={2}>{displayData.name}</Heading>
+  }
+/>`,
+        },
+        {
+          note: "a section heading below the page title",
+          source: `<CrudDetail.Section title={t("area.section")}>
+  <Heading level={3}>{t("area.subsection")}</Heading>
+</CrudDetail.Section>`,
+        },
+        {
+          note: "a widget is not a page — the page title rule is about routed pages",
+          file: "modules/site/src/widgets/area/detail.tsx",
+          source: `<Heading level={1}>{displayData.name}</Heading>`,
+        },
+      ],
+    },
   },
   {
     id: "page-root-padding",
@@ -1455,6 +1671,29 @@ export interface AreaDetailDTO {
     desc: "Ad-hoc p-4 padding in a pages/ file — the app layout owns page padding (inner cards are OK)",
     appliesTo: (p) => inPages(p) && isTsx(p),
     check: (c) => lineHits(c, /className="[^"]*\bp-4\b/, (line) => !line.includes("<Card")),
+    samples: {
+      file: "modules/site/src/pages/area-list.tsx",
+      broken: `<Stack gap="md" className="p-4">
+  <AreaList />
+</Stack>`,
+      fixed: `<Stack gap="md">
+  <AreaList />
+</Stack>`,
+      miss: [
+        {
+          note: "a card inside the page pads its own content",
+          source: `<Card className="p-4">
+  <AreaSummary />
+</Card>`,
+        },
+        {
+          note: "padding on one axis is not the page-root padding this rule is about",
+          source: `<Stack gap="md" className="px-4 pt-4">
+  <AreaList />
+</Stack>`,
+        },
+      ],
+    },
   },
   {
     id: "capped-embedded-list",
@@ -1470,6 +1709,36 @@ export interface AreaDetailDTO {
             // A read of one row is a count, not a list — the total is what it is after.
             return Number.isFinite(size) && size > 1;
           }),
+    samples: {
+      file: "modules/site/src/widgets/area/detail-tabs.tsx",
+      broken: `const { data } = useListAreaVisits({ areaId, page: 0, size: 20, sort: "startedAt,desc" });
+
+return <Table rows={data?.content ?? []} />;`,
+      fixed: `const list = useCrudList({
+  queryHook: useListAreaVisits,
+  params: { areaId },
+});
+
+return (
+  <Stack gap="sm">
+    <CrudList.Table list={list} />
+    <CrudList.Pagination list={list} />
+  </Stack>
+);`,
+      miss: [
+        {
+          note: "a read of one row is a count, and the total beside it is the answer",
+          source: `const { data } = useListAreaVisits({ areaId, page: 0, size: 1, sort: "startedAt,desc" });
+
+return <Badge>{data?.totalElements ?? 0}</Badge>;`,
+        },
+        {
+          note: "a list screen is paged by its own chrome — this rule is about a panel that embeds one",
+          file: "modules/site/src/widgets/area/list.tsx",
+          source: `const { data } = useListAreaVisits({ areaId, page: 0, size: 20, sort: "startedAt,desc" });`,
+        },
+      ],
+    },
   },
   {
     id: "card-drops-status",
@@ -1491,6 +1760,66 @@ export interface AreaDetailDTO {
           line,
           excerpt: `column "${field}" — ${source.replace(/\s+/g, " ").slice(0, 110)}`,
         }));
+    },
+    samples: {
+      file: "modules/site/src/widgets/area/list.tsx",
+      broken: `<CrudList.Table
+  list={list}
+  cardTitle={(row) => row.name}
+  cardContent={(row) => <Text>{row.code}</Text>}
+>
+  <CrudList.Column field="status">
+    {(row) => <StatusBadge value={resolveBootEnum(row.status)} />}
+  </CrudList.Column>
+</CrudList.Table>`,
+      fixed: `<CrudList.Table
+  list={list}
+  cardTitle={(row) => row.name}
+  cardContent={(row) => (
+    <Stack gap="xs">
+      <Text>{row.code}</Text>
+      <StatusBadge value={resolveBootEnum(row.status)} />
+    </Stack>
+  )}
+>
+  <CrudList.Column field="status">
+    {(row) => <StatusBadge value={resolveBootEnum(row.status)} />}
+  </CrudList.Column>
+</CrudList.Table>`,
+      miss: [
+        {
+          note: "a badge built from the whole row cannot be looked for by field name — left to the eye",
+          source: `<CrudList.Table
+  list={list}
+  cardTitle={(row) => row.name}
+  cardContent={(row) => <Text>{row.code}</Text>}
+>
+  <CrudList.Column field="status">
+    {(row) => <AreaStatusBadge record={row} />}
+  </CrudList.Column>
+</CrudList.Table>`,
+        },
+        {
+          note: "a column of plain text is not a status the card can lose",
+          source: `<CrudList.Table
+  list={list}
+  cardTitle={(row) => row.name}
+  cardContent={(row) => <Text>{row.code}</Text>}
+>
+  <CrudList.Column field="memo">
+    {(row) => <Text>{row.memo}</Text>}
+  </CrudList.Column>
+</CrudList.Table>`,
+        },
+        {
+          note: "a table that declares no card slots never falls back to cards",
+          source: `<CrudList.Table list={list}>
+  <CrudList.Column field="status">
+    {(row) => <StatusBadge value={resolveBootEnum(row.status)} />}
+  </CrudList.Column>
+</CrudList.Table>`,
+        },
+      ],
     },
   },
   {
