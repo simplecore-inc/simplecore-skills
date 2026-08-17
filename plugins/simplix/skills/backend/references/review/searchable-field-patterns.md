@@ -106,15 +106,22 @@ for path, item in spec["paths"].items():
 PY
 ```
 
-**A backend audit script is the place this belongs, and it does not exist yet.** The check above
-is the seed for one; whoever builds it should know why it cannot be a static scan like the
-frontend's. Two of the three facts it needs are not in the Java source: whether a given id is
-that endpoint's OWN primary key (the annotation says only that the field is searchable), and
-whether any list filter actually resolves selections against it (that lives in the frontend's
-facet definitions). The published OpenAPI document answers the first directly, so the audit has
-to run against a **started server** — a different shape from `audit-frontend.mjs`, which reads a
-checkout. A static approximation would flag every FK that omits `IN` for good reason, and an
-audit that cries wolf gets muted, which is worse than not having it.
+**Both halves are now carried by `${CLAUDE_PLUGIN_ROOT}/scripts/audit-backend.mjs`** as the rule
+`searchdto-pk-contract`, which reads a checkout and needs nothing started.
+
+The reason a static scan looked impossible is worth keeping, because it is what makes the rule
+precise rather than noisy. A scan that flagged every searchable id omitting `IN` would report
+every FK that omits it for good reason, and an audit that cries wolf gets muted — worse than not
+having one. What removes the guesswork is that the entity's own primary key IS in the source: the
+audit indexes every `@Entity` class's `@Id` field, matches `{Entity}DTOs` to `{Entity}`, and
+asserts the contract on that one field alone. Foreign keys on the same DTO are never touched.
+
+**One fact still is not in the source, and stays out**: whether a list filter actually resolves
+its selections against this endpoint. That lives in the frontend's facet definitions, and the
+contract is required regardless of whether a filter exists today.
+
+**The two verification requests below are still run by hand** against a started server. A static
+rule proves the annotation says the right thing; only the request proves the server agrees.
 
 ---
 

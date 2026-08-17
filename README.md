@@ -300,6 +300,19 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/screen-inventory.mjs"    # every screen clas
 
 `audit-frontend.mjs` exits 1 when an error-level rule has hits; review-level rules print candidates that need human judgment and never fail the run. It reads the `audit` section of `.claude/simplix.json` for the handful of policies that are a property of the product rather than of the framework — which route directories are open to anybody, for one — so nothing about a particular repository's layout is baked into the script.
 
+### Backend script
+
+The `backend` skill ships one, run the same way — from the backend project root, or with `--root=<dir>`:
+
+```bash
+node "${CLAUDE_PLUGIN_ROOT}/scripts/audit-backend.mjs"            # machine-checkable invariants
+node "${CLAUDE_PLUGIN_ROOT}/scripts/audit-backend.mjs" --selftest # prove every rule both ways
+```
+
+It carries the mechanically visible subset of the handbook's invariants — `@PreAuthorize` and `@Operation` on every endpoint, permission group and action shape, the SearchDTO primary-key contract, scope forcing on both `search` overloads, the date/time and timezone rules, DTO and repository shape. Exit 1 on any error-level hit.
+
+**No rule counts as added until `--selftest` proves it fires on the broken form and stays silent on the fixed one**, so every rule carries both samples and the selftest fails on a rule that omits either. A genuine exception is marked at the line with `// simplix-audit-ignore[<rule-id>]: <reason>`; the reason is required, and each run reports how many lines were suppressed. Nothing about a particular repository — no path, class name or exception list — is baked into the script.
+
 ## Repository Layout
 
 ```text
@@ -327,7 +340,8 @@ simplecore-skills/
 │       ├── commands/init.md
 │       ├── hooks/                        # hooks.json + session-start.mjs + skill-gate.mjs + e2e-gate.mjs
 │       │                                 #   + shared config/marker modules
-│       ├── scripts/                      # detect-simplix.mjs + audit-frontend.mjs + screen-inventory.mjs
+│       ├── scripts/                      # detect-simplix.mjs + audit-frontend.mjs + audit-backend.mjs
+│       │                                 #   + audit-rendered.mjs + screen-inventory.mjs
 │       ├── templates/                    # claude-md-section.md
 │       └── skills/
 │           ├── backend/                  # SKILL.md + references/

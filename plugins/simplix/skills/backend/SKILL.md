@@ -244,9 +244,49 @@ Exhaustive ordering + rationale → `references/convention/annotation-ordering.m
 
 After writing:
 
-- [ ] All 19 Non-Negotiable Invariants hold
+- [ ] `node "${CLAUDE_PLUGIN_ROOT}/scripts/audit-backend.mjs"` clean — 0 error-level hits; review candidates judged against the rule's stated exceptions, not bulk-rewritten
+- [ ] All 19 Non-Negotiable Invariants hold — the audit covers the mechanically visible subset, never all of them
 - [ ] Completion report names the precedent classes cloned from, with justified divergences (#19 — customization / hand-authored surfaces)
 - [ ] Annotation ordering matches `references/convention/annotation-ordering.md`
 - [ ] No anti-patterns from `references/convention/anti-patterns.md`
 - [ ] Build succeeds (`./gradlew compileJava`)
 - [ ] Existing tests pass
+
+---
+
+## The audit script, and what it cannot see
+
+`${CLAUDE_PLUGIN_ROOT}/scripts/audit-backend.mjs` holds the machine-checkable subset of the
+invariants above. Run it from the backend project root, or point it with `--root=<dir>`; it exits
+1 on any error-level hit and prints review candidates without failing.
+
+```bash
+node "${CLAUDE_PLUGIN_ROOT}/scripts/audit-backend.mjs"            # every rule
+node "${CLAUDE_PLUGIN_ROOT}/scripts/audit-backend.mjs" --list     # what it carries
+node "${CLAUDE_PLUGIN_ROOT}/scripts/audit-backend.mjs" --selftest # prove every rule both ways
+```
+
+**A rule enters it only once `--selftest` proves it in both directions.** Each rule carries a
+`broken` and a `fixed` sample and the selftest asserts it fires on the first and stays silent on
+the second — a rule proved one way has not been proved, because a check that can never fire
+reports exactly what a clean tree reports. The selftest also proves the two escape hatches, for
+the same reason.
+
+**Where a genuine exception exists, mark the line rather than widen the rule**:
+
+```java
+// simplix-audit-ignore[repository-not-simplix-base]: schema-step bookkeeping, read only by the
+// runner before the entity stack is usable; it has no list and no search surface.
+```
+
+The reason is required — a marker with an empty reason suppresses nothing, because a bare opt-out
+is how a gate quietly stops holding anything. The marker covers its own line and the whole
+statement after it, and every run prints how many lines were suppressed.
+
+**Three things it deliberately does not do.** It never hardcodes a project's paths, class names or
+exception lists — a rule true only of one repository belongs in that project's own gates, never
+here. It does not judge what needs a person: generator-first (#15①), precedent parity (#19), and
+whether a permission group is the *right* group are read by eyes. And it does not start a server,
+so the two verification requests in `review/searchable-field-patterns.md` § PK Contract are still
+run by hand; what it does recover statically is the entity's own `@Id` field, which makes the PK
+rule exact rather than a guess.
