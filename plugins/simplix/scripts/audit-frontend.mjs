@@ -2715,6 +2715,17 @@ const canManage = useCan("manage", SUBJECTS.area);
     desc: "enumLabel called with a lower-case enum name — the backend registers enums by their PascalCase simple name, so the key never resolves and the raw key renders",
     appliesTo: isTsx,
     check: (c) => lineHits(c, /enumLabel\(\s*"[a-z]/),
+    samples: {
+      file: "modules/site/src/widgets/area/list.tsx",
+      broken: `{enumLabel("areaStatus", resolveBootEnum(row.status))}`,
+      fixed: `{enumLabel("AreaStatus", resolveBootEnum(row.status))}`,
+      miss: [
+        {
+          note: "a name held in a variable is not a literal this rule can read",
+          source: `{enumLabel(enumName, resolveBootEnum(row.status))}`,
+        },
+      ],
+    },
   },
   {
     id: "single-line-free-text",
@@ -2727,6 +2738,30 @@ const canManage = useCan("manage", SUBJECTS.area);
         c,
         /<FormFields\.TextField(?:(?!\/>)[\s\S]){0,400}?fieldLabel\("(?:note|description|memo|remark|bio)"\)(?:(?!\/>)[\s\S]){0,400}?\/>/g,
       ),
+    samples: {
+      file: "modules/site/src/widgets/area/form.tsx",
+      broken: `<FormFields.TextField
+  label={fieldLabel("memo")}
+  value={values.memo ?? ""}
+  onChange={(v) => updateField("memo", v)}
+/>`,
+      fixed: `<FormFields.TextareaField
+  label={fieldLabel("memo")}
+  rows={4}
+  value={values.memo ?? ""}
+  onChange={(v) => updateField("memo", v)}
+/>`,
+      miss: [
+        {
+          note: "a short value belongs on a single line",
+          source: `<FormFields.TextField
+  label={fieldLabel("code")}
+  value={values.code ?? ""}
+  onChange={(v) => updateField("code", v)}
+/>`,
+        },
+      ],
+    },
   },
   {
     id: "empty-slot-returns-nothing",
@@ -2739,6 +2774,32 @@ const canManage = useCan("manage", SUBJECTS.area);
         c,
         /empty:\s*\((?:\{[^}]*\}|\w+)?\)\s*=>(?:(?!\n\s*\}\s*\}|\n\s*\},\s*\n)[\s\S]){0,600}?[:?]\s*(?:null|undefined)\s*[,;)\n]/g,
       ),
+    samples: {
+      file: "modules/site/src/widgets/area/list.tsx",
+      broken: `<CrudList.Table
+  list={list}
+  slots={{
+    empty: ({ reason }) => reason === "no-data" ? <AreaEmptyState onCreate={showNew} /> : null,
+  }}
+/>`,
+      fixed: `<CrudList.Table
+  list={list}
+  slots={{
+    empty: ({ reason }) => reason === "no-data" ? <AreaEmptyState onCreate={showNew} /> : <CrudList.DefaultEmpty reason={reason} />,
+  }}
+/>`,
+      miss: [
+        {
+          note: "the slot handed over only for the reason it answers, which the description offers as the other fix",
+          source: `<CrudList.Table
+  list={list}
+  slots={{
+    empty: list.emptyReason === "no-data" ? () => <AreaEmptyState onCreate={showNew} /> : undefined,
+  }}
+/>`,
+        },
+      ],
+    },
   },
   {
     id: "system-field-exposure",
@@ -2758,6 +2819,30 @@ const canManage = useCan("manage", SUBJECTS.area);
         return !new RegExp(`updateField\\(\\s*"${m[1]}"`).test(edits);
       });
     },
+    samples: {
+      file: "modules/site/src/widgets/area/detail.tsx",
+      broken: {
+        files: {
+          "modules/site/src/widgets/area/form.tsx": `<FormFields.TextField label={fieldLabel("name")} value={values.name} onChange={(v) => updateField("name", v)} />`,
+        },
+        source: `<DetailFields.DetailTextField label={fieldLabel("sortOrder")} value={displayData.sortOrder} />`,
+      },
+      fixed: {
+        files: {
+          "modules/site/src/widgets/area/form.tsx": `<FormFields.TextField label={fieldLabel("name")} value={values.name} onChange={(v) => updateField("name", v)} />`,
+        },
+        source: `<DetailFields.DetailTextField label={fieldLabel("name")} value={displayData.name} />`,
+      },
+      miss: [
+        {
+          note: "an order the operator chooses has to be readable back — flagging it would contradict write-only-form-field",
+          files: {
+            "modules/site/src/widgets/area/form.tsx": `<FormFields.NumberField label={fieldLabel("sortOrder")} value={values.sortOrder} onChange={(v) => updateField("sortOrder", v)} />`,
+          },
+          source: `<DetailFields.DetailTextField label={fieldLabel("sortOrder")} value={displayData.sortOrder} />`,
+        },
+      ],
+    },
   },
   {
     id: "enum-default-unresolved",
@@ -2771,6 +2856,21 @@ const canManage = useCan("manage", SUBJECTS.area);
         /\.(?!is[A-Z])\w+(Status|Type|Kind|Unit|Mode|Channel)\b\s*\?\?/,
         (line) => !line.includes("resolveBootEnum"),
       ),
+    samples: {
+      file: "modules/site/src/widgets/area/form.tsx",
+      broken: `const status = row.areaStatus ?? "ACTIVE";`,
+      fixed: `const status = resolveBootEnum(row.areaStatus) ?? "ACTIVE";`,
+      miss: [
+        {
+          note: "a boolean whose name merely ends in one of the enum words",
+          source: `const locked = row.isStatusLocked ?? false;`,
+        },
+        {
+          note: "a plain string field defaulted the ordinary way",
+          source: `const name = row.name ?? "-";`,
+        },
+      ],
+    },
   },
   {
     id: "enum-label-empty-fallback",
@@ -2779,6 +2879,19 @@ const canManage = useCan("manage", SUBJECTS.area);
     desc: "enumLabel(..., resolveBootEnum(x) ?? \"\") — an absent enum resolves to the empty string and the resolver prints the message key itself (\"<Enum>.\"); confirm the field can never be null",
     appliesTo: isTsx,
     check: (c) => lineHits(c, /enumLabel\([^)]*resolveBootEnum\([^)]*\)\s*\?\?\s*""/),
+    samples: {
+      file: "modules/site/src/widgets/area/detail.tsx",
+      broken: `<Text>{enumLabel("AreaStatus", resolveBootEnum(displayData.status) ?? "")}</Text>`,
+      fixed: `{displayData.status
+  ? <Text>{enumLabel("AreaStatus", resolveBootEnum(displayData.status))}</Text>
+  : <EmptyValueBadge />}`,
+      miss: [
+        {
+          note: "a real default, which resolves to a word rather than to the key itself",
+          source: `<Text>{enumLabel("AreaStatus", resolveBootEnum(displayData.status) ?? "ACTIVE")}</Text>`,
+        },
+      ],
+    },
   },
   {
     id: "full-enum-options",
@@ -2787,6 +2900,24 @@ const canManage = useCan("manage", SUBJECTS.area);
     desc: "Object.values(<Enum>).map as WRITE-surface select options — check whether the server narrows the set per record (filters over the full set are fine)",
     appliesTo: (p) => isTsx(p) && /form|dialog|editor|wizard/.test(p),
     check: (c) => lineHits(c, /Object\.values\([A-Z]\w+\)\.map/),
+    samples: {
+      file: "modules/site/src/widgets/area/form.tsx",
+      broken: `<FormFields.SelectField
+  label={fieldLabel("status")}
+  options={Object.values(AreaStatus).map((v) => ({ value: v, label: enumLabel("AreaStatus", v) }))}
+/>`,
+      fixed: `<FormFields.SelectField
+  label={fieldLabel("status")}
+  options={readiness.allowedStatuses.map((v) => ({ value: v, label: enumLabel("AreaStatus", v) }))}
+/>`,
+      miss: [
+        {
+          note: "a filter over the full set is fine — the server narrows what may be WRITTEN, not what may be searched",
+          file: "modules/site/src/widgets/area/list.tsx",
+          source: `const statusOptions = Object.values(AreaStatus).map((v) => ({ value: v, label: enumLabel("AreaStatus", v) }));`,
+        },
+      ],
+    },
   },
   {
     id: "unitless-rate-field",
@@ -2811,6 +2942,38 @@ const canManage = useCan("manage", SUBJECTS.area);
       }
       return hits;
     },
+    samples: {
+      file: "modules/site/src/widgets/area/form.tsx",
+      broken: `<FormFields.NumberField
+  label={fieldLabel("occupancyRate")}
+  value={values.occupancyRate}
+  onChange={(v) => updateField("occupancyRate", v)}
+/>`,
+      fixed: `<FormFields.NumberField
+  label={fieldLabel("occupancyRate")}
+  suffix="%"
+  value={values.occupancyRate}
+  onChange={(v) => updateField("occupancyRate", v)}
+/>`,
+      miss: [
+        {
+          note: "a count is a number with no unit to state",
+          source: `<FormFields.NumberField
+  label={fieldLabel("capacity")}
+  value={values.capacity}
+  onChange={(v) => updateField("capacity", v)}
+/>`,
+        },
+        {
+          note: "a read surface that already declares the unit",
+          source: `<DetailFields.DetailNumberField
+  label={fieldLabel("occupancyRate")}
+  format="percent"
+  value={displayData.occupancyRate}
+/>`,
+        },
+      ],
+    },
   },
   {
     id: "two-state-branching",
@@ -2820,6 +2983,26 @@ const canManage = useCan("manage", SUBJECTS.area);
     appliesTo: isTsx,
     check: (c) =>
       lineHits(c, /\b(presence|status)\s*===\s*"[A-Z_]+"\s*\?/, (line) => !line.includes("switch")),
+    samples: {
+      file: "modules/site/src/widgets/visit/detail.tsx",
+      broken: `{visit.presence === "CHECKED_IN" ? <CheckOutButton visitId={visit.visitId} /> : <CheckInButton visitId={visit.visitId} />}`,
+      fixed: `{(() => {
+  switch (resolveBootEnum(visit.presence)) {
+    case "CHECKED_IN":
+      return <CheckOutButton visitId={visit.visitId} />;
+    case "EXPECTED":
+      return <CheckInButton visitId={visit.visitId} />;
+    default:
+      return null;
+  }
+})()}`,
+      miss: [
+        {
+          note: "a comparison that names a state rather than branching a flow on two of them",
+          source: `const isCheckedIn = visit.presence === "CHECKED_IN";`,
+        },
+      ],
+    },
   },
   {
     id: "refusal-told-twice",
@@ -2841,6 +3024,89 @@ const canManage = useCan("manage", SUBJECTS.area);
       const names = [...awaited].join("|");
       return lineHits(c, new RegExp(`\\bconst\\s+(?:${names})\\s*=\\s*use[A-Z]\\w*\\(\\s*\\)`));
     },
+    samples: (() => {
+      // An app that installs the cache is what makes a second telling possible; without one the
+      // screen's own sentence is the whole of the reporting.
+      const appWithDialog = {
+        "apps/console/src/app/query-client.ts": `export const queryClient = new QueryClient({
+  mutationCache: new MutationCache({ onError: (error) => openErrorDialog(error) }),
+});
+`,
+      };
+      return {
+        file: "modules/site/src/widgets/area/bulk-settle.tsx",
+        broken: {
+          files: appWithDialog,
+          source: `const settle = useSettleArea();
+
+async function run() {
+  for (const areaId of selected) {
+    try {
+      await settle.mutateAsync({ areaId });
+    } catch (error) {
+      failures.push({ areaId, message: toMessage(error) });
+    }
+  }
+}`,
+        },
+        fixed: {
+          files: appWithDialog,
+          source: `const settle = useSettleArea({ meta: { suppressErrorDialog: true } });
+
+async function run() {
+  for (const areaId of selected) {
+    try {
+      await settle.mutateAsync({ areaId });
+    } catch (error) {
+      failures.push({ areaId, message: toMessage(error) });
+    }
+  }
+}`,
+        },
+        miss: [
+          {
+            note: "an app that mounts no such cache cannot tell anybody twice",
+            source: `const settle = useSettleArea();
+
+async function run() {
+  try {
+    await settle.mutateAsync({ areaId });
+  } catch (error) {
+    failures.push({ areaId, message: toMessage(error) });
+  }
+}`,
+          },
+          {
+            note: "a catch that logs rather than reports leaves the dialog as the only telling",
+            files: appWithDialog,
+            source: `const settle = useSettleArea();
+
+async function run() {
+  try {
+    await settle.mutateAsync({ areaId });
+  } catch (error) {
+    console.error(error);
+  }
+}`,
+          },
+          {
+            note: "the other zero-argument hooks in the file have nothing to do with the dialog",
+            files: appWithDialog,
+            source: `const navigate = useNavigate();
+const copy = useClipboard();
+const settle = useSettleArea({ meta: { suppressErrorDialog: true } });
+
+async function run() {
+  try {
+    await settle.mutateAsync({ areaId });
+  } catch (error) {
+    failures.push({ areaId, message: toMessage(error) });
+  }
+}`,
+          },
+        ],
+      };
+    })(),
   },
   {
     id: "one-message-for-several-states",
@@ -2862,6 +3128,24 @@ const canManage = useCan("manage", SUBJECTS.area);
       }
       return hits;
     },
+    samples: {
+      file: "modules/order/src/widgets/order/detail.tsx",
+      broken: `if (order.status === "CANCELLED" || order.status === "EXPIRED") {
+  return <AlertBanner tone="warning" title={t("order.closedDeadlinePassed")} />;
+}`,
+      fixed: `if (order.status === "CANCELLED" || order.status === "EXPIRED") {
+  const key = order.status === "CANCELLED" ? "order.cancelledByBuyer" : "order.expired";
+  return <AlertBanner tone="warning" title={t(key)} />;
+}`,
+      miss: [
+        {
+          note: "a branch that says nothing to the reader has no sentence to be wrong",
+          source: `if (order.status === "CANCELLED" || order.status === "EXPIRED") {
+  return null;
+}`,
+        },
+      ],
+    },
   },
   {
     id: "long-value-in-a-label-row",
@@ -2879,6 +3163,26 @@ const canManage = useCan("manage", SUBJECTS.area);
         hits.push({ line: lineOfIndex(c, m.index), excerpt: m[0].replace(/\s+/g, " ").slice(0, 140) });
       }
       return hits;
+    },
+    samples: {
+      file: "modules/site/src/widgets/area/detail.tsx",
+      broken: `<DetailListRow
+  primary={fieldLabel("callbackUrl")}
+  trailing={<Text className="font-mono break-all">{displayData.callbackUrl}</Text>}
+/>`,
+      fixed: `<Stack gap="xs">
+  <Text variant="caption" tone="muted">{fieldLabel("callbackUrl")}</Text>
+  <Text className="font-mono break-all">{displayData.callbackUrl}</Text>
+</Stack>`,
+      miss: [
+        {
+          note: "a trailing value the row was sized for",
+          source: `<DetailListRow
+  primary={fieldLabel("status")}
+  trailing={<StatusBadge tone="success" />}
+/>`,
+        },
+      ],
     },
   },
   {
