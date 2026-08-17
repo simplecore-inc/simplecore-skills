@@ -570,6 +570,33 @@ Instead, in the chapter you are in now:
 arrangement cannot survive** — the next agent reads a chapter file that no longer
 describes the code, believes it, and builds on a fiction.
 
+### A frame the board gains later goes at the END of the closed chapter's list
+
+The one thing that cannot follow the rule above. A new frame belongs to whichever chapter
+owns its subject, and that chapter's `creates` section is the only placement declaration
+there is — so a frame added after that chapter closed has to be written into a closed
+chapter's file after all. **Append it; never insert it in subject order.**
+
+`chapterGenerator` numbers the per-frame sections from that list's order, so a frame
+slipped into the middle shifts every section after it by one. Nothing warns, because each
+renumbered section is individually correct — what breaks is everything OUTSIDE the file
+that cites a section number: a result document whose headings carry them, a note saying
+「§9 is the one that failed」, a review comment, a plan. One insertion moved twenty-nine
+headings at once and turned a clean tree red in a way that read as twenty-nine separate
+defects.
+
+Appended, the frame takes the next free number and every earlier section keeps its own.
+**Write the reason on the line as a forward rule** — 「a screen added to a closed chapter is
+written at the end so the earlier sections keep their numbers」 — so the next person does not
+tidy it back into subject order.
+
+**Expect the chapter to stay red on that frame, and say so.** It is placed but not built,
+not verified and not captured, and whatever gate reads a closed chapter's evidence will
+say exactly that. That finding is true and is not the placement's fault: clearing it means
+building the screen, running its lines and capturing it. **An agent that cannot do those —
+no server, no browser, no ledger of its own — reports the finding with its cause rather
+than placing the frame somewhere it does not belong to make a gate quiet.**
+
 ## The dependency tree the history leaves behind
 
 Every commit carries the chapter it belongs to, and every cross-chapter change carries

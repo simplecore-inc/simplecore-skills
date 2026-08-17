@@ -191,6 +191,54 @@ export const landingIsAddressableGate = {
   },
 };
 
+// The landing frame is where the tree puts a reader who has picked nothing yet, so its route must
+// be openable with nothing in hand. A route carrying a path parameter (`/workers/:id/exposure`,
+// `/loto/:permitId`) needs a record chosen first, and pressing the entry then opens a record the
+// reader never picked — usually the seed's first row, which reads as the screen working.
+//
+// **Judging that in general takes eyes**, because a parameter a global control settles is fine:
+// a console with a site selector opens `/sites/:id/areas` for the site already on screen. What a
+// machine CAN settle is the case where the entry's own group already holds a parameter-free route
+// and merely sorts it later — then the list exists, the tree lands past it, and the fix is free.
+// The other shape (no parameter-free frame under the entry at all) is a missing list or a settled
+// singleton, and `references/living-contract.md` carries the four-way judgement for it.
+//
+// This hid behind the page header for as long as the header carried cross-links: a reader arrived
+// at the record page from another screen's button with the record already chosen, so the entry's
+// own landing was never the way anybody got there. Taking those buttons out is what exposed it.
+export const landingIsTheListGate = {
+  id: 'landingIsTheListGate',
+  title: '메뉴 항목이 목록을 두고 레코드 주소에 내려앉는다',
+  stage: 'built',
+  run: (ctx) => {
+    /** A route that cannot be opened without a record already chosen. */
+    const needsRecord = (route) => /\/:[A-Za-z]/.test(route);
+    const groups = new Map();
+    for (const s of ctx.loaded) {
+      let src = ctx.srcOf(s.file);
+      // A state frame spreads its base and has no address of its own; `landingIsAddressableGate`
+      // owns that case, so follow the import here and judge the base's route instead.
+      const from = /from '\.\/([a-z0-9-]+)\.mjs'/.exec(src)?.[1];
+      if (!/current: '/.test(src) && from) src = ctx.srcOf(from);
+      const cur = /current: '([^']*)'/.exec(src)?.[1];
+      if (!cur) continue;
+      const route = /^ {2}route: '([^']+)'/m.exec(src)?.[1] ?? /route: '([^']+)'/.exec(src)?.[1];
+      if (!route) continue;
+      if (!groups.has(cur)) groups.set(cur, []);
+      groups.get(cur).push({ ...s, route });
+    }
+    const out = [];
+    for (const [cur, group] of groups) {
+      if (!needsRecord(group[0].route)) continue;
+      const list = group.find((s) => !needsRecord(s.route));
+      if (!list) continue;
+      out.push(`${group[0].num} — 「${cur}」가 여기 내려앉는데 ${group[0].route}는 레코드를 골라야 열린다. `
+        + `같은 항목 아래 ${list.num}(${list.route})가 목록이므로 매니페스트에서 앞으로 옮긴다`);
+    }
+    return out;
+  },
+};
+
 // Control-vocabulary gates. Three things a button census found, each of which reads as a small
 // inconsistency and costs a reader a guess every time they meet it.
 export const controlVocabularyGate = {

@@ -143,6 +143,21 @@ export function cases(t) {
     screen('x-02-b', "import base, { screenBody } from './x-01-a.mjs';", { notes: '' }),
   ]), false);
 
+  add('landingIsTheListGate', '목록을 두고 레코드 주소에 내려앉는다', ctxWith([
+    screen('x-01-a', "  route: '/checks/:id'\n  current: '점검'", { notes: '' }),
+    screen('x-02-b', "  route: '/checks'\n  current: '점검'", { notes: '' }),
+  ]), true);
+  add('landingIsTheListGate', '목록이 앞에 있다', ctxWith([
+    screen('x-02-b', "  route: '/checks'\n  current: '점검'", { notes: '' }),
+    screen('x-01-a', "  route: '/checks/:id'\n  current: '점검'", { notes: '' }),
+  ]), false);
+  // No parameter-free route under the entry at all — a missing list or a parameter a global
+  // control settles, and neither is this gate's call to make.
+  add('landingIsTheListGate', '항목 아래에 목록이 없다', ctxWith([
+    screen('x-01-a', "  route: '/sites/:id/areas'\n  current: '구역'", { notes: '' }),
+    screen('x-02-b', "  route: '/zones/:id/policy'\n  current: '구역'", { notes: '' }),
+  ]), false);
+
   // ── numbering ─────────────────────────────────────────────────────────────────
   add('slugGate', '슬러그가 그 번호와 다름', ctxWith([
     screen('x-01-a', '', { notes: '{{x-01-wrong-name}}' }),

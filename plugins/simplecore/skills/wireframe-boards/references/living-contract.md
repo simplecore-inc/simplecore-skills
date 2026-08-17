@@ -41,6 +41,41 @@ both ways: every frame's state/dialog exists in the code, and every implemented
 screen, dialog, and state variant has a frame. *Why:* a silent mismatch is the
 drift that later makes every change guess which side is right.
 
+## Every menu entry lands on something a reader can open with nothing in hand
+
+*When the tree gains an entry, when a header's cross-links are removed, or when reconciling an
+area whose screens are all reached from elsewhere.* The tree names one screen per entry and that
+is where pressing it lands — so the landing frame's route has to be openable by somebody who has
+picked no record yet. `/workers/:id/exposure` is not: pressing the entry opens whichever record
+the seed happens to return first, which reads as the screen working.
+
+**This hides for as long as the page header carries cross-links.** A reader reaches the record
+page from another screen's button with the record already chosen, so the entry's own landing is
+never how anybody arrived and nobody meets the empty case. Removing those buttons is what exposes
+it, and the count is usually not one or two — one board had twelve at once.
+
+`landingIsTheListGate` settles the free case: a parameter-free route already sits under the entry
+and merely sorts later, so the manifest moves it forward. **The rest is a four-way judgement:**
+
+| What is true | What to do |
+| --- | --- |
+| A list frame exists under the entry, sorted after the record page | reorder the manifest — ids live in file names, so it costs nothing |
+| No list frame exists at all | **draw one**, and back-fill it into whatever document decides which frames exist |
+| A global control settles the parameter — a site selector, a tenant picker | leave it. `/sites/:id/areas` opens for the site already on screen |
+| The route creates the record it opens on (`/sites/new`, `/permits/new`) | leave it — a wizard needs no record. **Check the entry state is one the wizard draws**, though |
+
+**Two traps in the third row.** A settled prefix settles only its own parameter: on the same
+console `/sites/:id/drawings/:drawingId` still needs a drawing picked, and the second parameter is
+the tell. And a `back` naming a list the reader did not come from is the same defect wearing a
+different hat — once the entry lands on a list, the record page's `back` names *that* list, not
+whichever one it was reached from before.
+
+**Where a fifth answer looks right — a second entry for the same records — it is not.** An
+authoring surface beside its entity's list (「Form designer」 next to 「Templates」) puts one record
+set under two entries, and any list drawn under the second one duplicates a tab the first already
+has. That entry belongs to whoever owns the information architecture, so it is raised rather than
+removed.
+
 ## Sync — back-fill vs design change
 
 - *When a screen, dialog, state, or flow is added during development* →
