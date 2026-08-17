@@ -128,6 +128,36 @@ const peek = usePeekHost();
 
 ---
 
+## 2b. A screen with no list beside it — the width is the whole page
+
+Everything in §2 is written for a panel: `CrudDetail` inside `ListDetail.Detail`, a few hundred
+pixels wide, where one field per line is the failure mode the two-column rule exists to prevent. A
+screen with **no list beside it** — an account settings page, a single-record editor, a preferences
+tab, a wizard step — has no panel to be narrow. Its content gets the page, and that is the trap: at
+1440px a stack of short fields draws each input a thousand pixels wide for a value of twenty
+characters, and the reader's eye travels the whole width to find the next label.
+
+- **Content or a form filling the page width?** → give it columns. Short scalar fields go
+  two-to-a-row (`<Grid columns={2} gapX="lg">`, or `FormFields` inside a two-column grid), exactly
+  as a panel's `layout="two-column"` does. The rule is the same rule; only the container changed.
+- **Which fields pair and which do not** is decided as in §2 — short scalars pair, a long text
+  value, a descriptive block, or a table takes the full width in its own row.
+- **Cap the measure rather than letting it run.** A form that has genuinely one column of content
+  still does not want the whole viewport: constrain it (`Container size="md"`, a `max-w-*`) so a
+  line length stays readable.
+- **The check is the viewport, not the component.** Ask what this content is next to. Nothing to
+  its left or right means the page width is its width, and a single column is a decision rather
+  than a default.
+
+**Judge by the rendered input, never by the component name.** A screen that never imports
+`FormFields`, `TextField` or `SelectField` is still a form when it draws `<Label>` + `<Input>`
+pairs or a bare `<select>`, and a survey that counts framework component names walks straight past
+it — the one screen most likely to be laid out wrong is the one that was written by hand, which is
+the same screen the survey cannot see. Count the input controls themselves: `<input>`, `<select>`,
+`<textarea>`, and the framework fields alike.
+
+---
+
 ## 3. Cards & embedded blocks
 
 - **A card component (`variant="card"`) — is it the right owner?** → the card treatment is for a summary of **another** record referenced by this screen. A record's own primary information stays **flat** (a plain section), never wrapped in a card of itself.
