@@ -225,11 +225,33 @@ ledger, the handover file, the wave decision, and the barrier work the wave give
 
 1. **One chapter, one subagent — `simplecore:chapter-builder`.** Dispatch that agent
    rather than composing a prompt each time; a builder briefed from scratch builds
-   differently from the last one. Hand it four things and nothing more:
+   differently from the last one. Hand it five things and nothing more:
    - the chapter file's path
    - the path to `.claude/board-to-app.json` (it reads the rest itself)
    - the state ledger's path, so it can read which chapters closed before it
    - its resource slot when another agent is running — checkout, database, port
+   - **the design document that decides what this chapter builds, by chapter and section**
+
+   **Naming the folder is not naming the chapter.** 「the design is in the design folder」 hands an
+   agent nothing it can act on — nobody holding one chapter opens twenty design chapters hunting
+   for the one that governs it — so the brief names the chapter and the sections that settle what
+   this work builds. **A hand-written chapter file cites them too**: the generator excludes it, so
+   nothing regenerates it from a source that knows about the design, and each of its numbered
+   sections names the design chapter it implements.
+
+   **This bites hardest where the design says replicate rather than build.** A foundation chapter
+   whose design chapter copies the monorepo, the auth skeleton, the file storage and the audit log
+   from a repository where they already exist reads, in its own file, exactly like one that builds
+   them: 「what this stage creates」 is what every chapter says, and only the design chapter
+   separates the two readings. The agent that never opens it rebuilds a working foundation, and
+   nothing in its own file contradicts it.
+
+   **A value the replication source owns is copied, never decided.** Ports, framework and library
+   versions, module names — the design chapter states them so a reader has them in one place, and
+   the source repository is what settles them. So the design chapter declares **where each value
+   comes from** — the repository, the catalogue file, the key — rather than only the value. A bare
+   copy goes stale the day the source moves and nothing announces it, both documents keep reading
+   as authoritative, and the builder has to guess which one the code should follow.
 2. **Every brief says what this agent owns, in two columns — mine and not mine, each
    named.** A brief that states only what an agent owns reads, to the agent, as
    permission for anything adjacent, and two agents on one surface is the
@@ -274,13 +296,23 @@ ledger, the handover file, the wave decision, and the barrier work the wave give
    account, the driver, the port — and hand that over in the same brief, or withdraw the
    demand and say what stands in its place.
 
+   **What every substitute is blind to is the same thing.** Probing each endpoint, checking each
+   drawn figure against the running server, typecheck, lint and the audits to zero are all real
+   checks, and not one of them sees whether the application composes in a real client. A route
+   answers 200 on every request, logs no console error, and paints the shell with nothing inside
+   it — several routes returning one identical byte length are that shell, measured. Nothing
+   except opening it sees this, which is why withdrawing the browser withdraws the only check that
+   would.
+
    > **Read it this way and it is wrong**: 「the port is somebody else's, so the browser is
    > too」. The restart rule forbids stopping and starting an instance another agent is
    > using; a browser starts nothing, and driving a running server is a read exactly as an
    > endpoint probe is. Collapsed into one rule it withdraws the only check that sees
    > whether the application composes in a real client, and the agent then verifies every
    > layer except the one that is broken — which it reports as done, because each layer it
-   > could reach was genuinely sound.
+   > could reach was genuinely sound. A permission hook answering correctly and a side nav
+   > filtering correctly are what a guarded shell with nothing inside it looks like from
+   > below: the layer that works is the reason nobody suspects the layer that does not.
 3. **The brief carries the staging rule itself, never a pointer to it.** Say in every
    brief: stage the paths you touched by name, never `git add -A` or its cousins, and
    read `references/harness.md` § Stage your own paths **before it is needed**. An
@@ -419,9 +451,19 @@ Walk this list for the two chapters and answer each with a fact, not a forecast:
 **Restarting a backend is the collision that bites hardest.** It looks local and is
 not: an agent that restarts the server another agent is mid-test on produces a
 failure in the other's run that belongs to nobody, and both agents then hunt it in
-their own code. So the rule is flat — **an agent restarts only the instance it
-started, on the port it was given.** An agent that finds no port assigned does not
-guess and does not borrow: it treats its chapter as sequential work and says so.
+their own code. So the rule is flat — **an agent restarts only the instance on the slot it
+holds.** An agent that finds no port assigned does not guess and does not borrow: it treats
+its chapter as sequential work and says so.
+
+**The slot decides that, not who typed the command.** A server outlives the agent that started
+it, so a chapter regularly inherits a process nobody present began — and 「restart only what you
+started」 read literally leaves an instance the slot-holder may not touch and whose author is no
+longer alive to touch it. Whoever holds the row stops and starts it whatever its parentage;
+whoever does not holds off even for a server they started themselves and have since handed on.
+
+**The first boot of a seed belongs in front of whoever wrote it.** A compile and a green suite
+cannot see whether it runs, and a seed that throws during somebody else's first screen is read
+as a defect in their own work.
 
 **That rule is about restarting, not about looking.** Signing in, walking a screen and
 taking a capture are reads over HTTP exactly as an endpoint probe is — they change
@@ -470,7 +512,7 @@ wave n
 **Why it holds.** Backend work is code, migrations and its own tests; nothing in it
 needs a **shared** running server, so the restart collision cannot happen in ①. An
 agent may run its own process on its own port to test against its own database —
-what it must not do is touch an instance it did not start. The one restart lives at
+what it must not do is touch an instance on somebody else's slot. The one restart lives at
 ②, where exactly one actor runs it. By ③ the contract is fixed, so the screens no
 longer move under each other.
 
@@ -771,6 +813,16 @@ left behind. That is what lets any number of authors maintain it. **Do not creat
 shared narrative file** — several agents stacking their stories in one place produces
 exactly the confusion this split prevents.
 
+**A trap named only in a report is one the next agent walks into.** An agent that loses an hour
+to something and works it out has produced two things — the fix, and the knowledge — and the
+knowledge reaches the next chapter only through the handover file, never through the
+coordinator's inbox. **So the coordinator asks where it landed before that agent stands down**,
+and treats 「I told you」 as unwritten. The same hour is otherwise paid twice: a sign-in endpoint
+that takes HTTP Basic rather than a JSON body was reported to one coordinator and written
+nowhere, and the next agent hit it identically a chapter later — then, because a wrong request
+shape and a wrong password answer with the same 401 and the same sentence, concluded the seed
+was broken and built a task on that.
+
 **A log written afterwards is not a log.** Its whole value is answering "where is this
 now" while the answer is still changing; written at the end it answers a question
 nobody still has, and every hour before that was spent looking silent. Silence reads as
@@ -813,7 +865,9 @@ waiting for is not waiting.
 
 **The threshold is two.** When the readings say stalled — no step report and no change
 to the artifact since the previous check, and the agent has announced idle twice —
-treat it as stalled. Then, in one turn:
+treat it as stalled. **Two of the three is not a stall**: an agent replaced on a still
+artifact alone was usually inside something long, and everything it had worked out goes
+with it. Then, in one turn:
 
 1. **Tell it to stop** and to stop writing the artifact. Say why, and ask it to send
    anything unsaved as a message rather than writing it.
@@ -1013,32 +1067,61 @@ node "${CLAUDE_PLUGIN_ROOT}/skills/board-to-app/scripts/bta.mjs" check
 | whatever `frameDeliverables` declares | the project's own gate, one checkable sentence each |
 | the code's own defect types | the project's `auditScript` — every new detection rule goes there, whether that key names one script or the directory a family of them lives in |
 
-**Held by eyes** — no machine can judge these, and saying so is the point:
+**Held by eyes** — no machine can judge these, and saying so is the point. **Each row names
+whose eyes and at which moment**, for the reason the next paragraph gives:
 
-| Rule | Why no gate holds it |
-| --- | --- |
-| a screen matches the frame it was built from | a picture is the only witness → `references/judging-frames.md` |
-| a screen holds up for the person whose work it carries | that is what the persona run is |
-| a prerequisite the derived graph did not name | it surfaces while building; the agent that meets it stops and reports |
-| two chapters may run at once | a resource judgment, made per dispatch against facts that change |
-| what a wave shares outside the repository being built | no diff in this repository shows a plugin checkout, a global setting or a shared script — and the agent one of them blocks is the only agent that can unblock it |
-| a rule that became a checker was reached in this run | four ways it is not, all four reading as a passing run — a checker cannot report on the comparison it never made |
-| how much a red gate command left unmeasured | the exit status is honest and says only that the run stopped; how far a chained command got is read off its log by somebody |
-| which of two commands a step's proof is read off | a report and a gate both exit zero on a healthy project, so only somebody who knows which one can fail can say whether a proof was taken → `references/checks.md` |
-| a contract designed from the documents matches the code that will implement it | two documents agree with each other more easily than either agrees with the branches already in the code, and only reading those branches settles it |
-| the story document covers the frames its steps feed, and its steps still add up | this skill ships no checker for either — the first is one a project can write as a gate of its own, the second nobody can → `references/scenario.md` |
-| an agent renaming a published shape is scoped by surface rather than by a file list | the readers surface while the work happens, so no list written beforehand is complete — and both sides type-check green while one of them draws `undefined` |
-| how many agents may extend the migrations at once | it follows from the project's scheme — a range divides, a parent chain does not — and the scheme is read off `migrationDir` per wave |
-| the documents, the board and the code agree in meaning | a checker holds that a frame is referenced, never that two sentences say the same thing |
-| an agent is stalled rather than inside something long | the three readings, and they need somebody to take them |
-| a parked decision genuinely qualifies | the default is to decide, and only a person can say the design ran out |
-| a path carried over from a retired arrangement still names it | only somebody who knows the project moved can tell a live document from a leftover → `references/migrating-from-a-walk.md` |
-| a document about to be deleted is opened by a program | this skill reads no path that is being retired; what holds it is the project's own gate, run after the deletion rather than before → `references/migrating-from-a-walk.md` |
+| Rule | Whose eyes, and when | Why no gate holds it |
+| --- | --- | --- |
+| a screen matches the frame it was built from, and the capture shows that screen rather than an empty shell of it | **the coordinator**, opening each of the chapter's captures before writing the ledger row that closes it — never the agent that took them | a picture is the only witness, and the party that shot it is the party that cannot see past what it expected → `references/judging-frames.md` |
+| what a verification record says was on the screen is what was on the screen, and it was written out of the run rather than before it | **the coordinator**, at the same moment, reading each sentence against the picture it cites | a sentence written from the DOM, the responses and the builder's memory of its own code is true of the data, false of the screen, and indistinguishable in the file from one written by looking |
+| a screen holds up for the person whose work it carries | **the builder**, in character, during the persona run | that is what the persona run is |
+| a prerequisite the derived graph did not name | **the agent that meets it**, at the moment it blocks | it surfaces while building; the agent that meets it stops and reports |
+| two chapters may run at once | **the coordinator**, before each dispatch | a resource judgment, made per dispatch against facts that change |
+| what a wave shares outside the repository being built | **the agent it blocks**, in the turn it blocks them | no diff in this repository shows a plugin checkout, a global setting or a shared script — and the agent one of them blocks is the only agent that can unblock it |
+| whether a brief carried what its own checks need, and the design chapter that governs the work | **the coordinator**, reading the brief back against itself before sending it | a prompt leaves no artifact, so the only reading of a brief is the one the coordinator takes before sending it — a gate can hold that a chapter file cites a design chapter, never that a brief did |
+| a rule that became a checker was reached in this run | **whoever added the checker**, in the same change | four ways it is not, all four reading as a passing run — a checker cannot report on the comparison it never made |
+| how much a red gate command left unmeasured | **whoever ran it**, off its log, before reporting the result | the exit status is honest and says only that the run stopped; how far a chained command got is read off its log by somebody |
+| which of two commands a step's proof is read off | **whoever writes the step down** | a report and a gate both exit zero on a healthy project, so only somebody who knows which one can fail can say whether a proof was taken → `references/checks.md` |
+| a contract designed from the documents matches the code that will implement it | **whoever designs it**, before the contract is written | two documents agree with each other more easily than either agrees with the branches already in the code, and only reading those branches settles it |
+| the story document covers the frames its steps feed, and its steps still add up | **the coordinator**, whenever a chapter is added or the story moves | this skill ships no checker for either — the first is one a project can write as a gate of its own, the second nobody can → `references/scenario.md` |
+| an agent renaming a published shape is scoped by surface rather than by a file list | **the renaming agent**, after the rename and before it stands down | the readers surface while the work happens, so no list written beforehand is complete — and both sides type-check green while one of them draws `undefined` |
+| how many agents may extend the migrations at once | **the coordinator**, when the wave is planned | it follows from the project's scheme — a range divides, a parent chain does not — and the scheme is read off `migrationDir` per wave |
+| the documents, the board and the code agree in meaning | **whoever moves one of the three**, in the same change | a checker holds that a frame is referenced, never that two sentences say the same thing |
+| an agent is stalled rather than inside something long | **the coordinator**, at each check on a quiet agent | the three readings, and they need somebody to take them |
+| a parked decision genuinely qualifies | **whoever is about to honour the line**, against today's sources | the default is to decide, and only a person can say the design ran out |
+| a path carried over from a retired arrangement still names it | **whoever opens the document** | only somebody who knows the project moved can tell a live document from a leftover → `references/migrating-from-a-walk.md` |
+| a document about to be deleted is opened by a program | **whoever deletes it**, before deleting | this skill reads no path that is being retired; what holds it is the project's own gate, run after the deletion rather than before → `references/migrating-from-a-walk.md` |
 
 **A rule added to this skill lands in one of those two tables in the same change.** Where it is
 mechanical, the gate is written now — and proved in both directions before it counts, because a
 gate that has never fired is indistinguishable from one that cannot. Where it needs eyes, the
 second table says so, and nobody spends a session hunting for the check that was never there.
+
+### A rule marked as needing eyes names whose eyes, and when
+
+**「A person has to judge this」 with nobody named is the third category wearing the second
+category's label.** It reads as covered, it survives every audit of the two tables, and the
+reading it describes is taken by nobody — because a duty addressed to everyone is a duty
+nobody's turn ever arrives for. So the middle column above is not decoration: a row without it
+is not finished.
+
+Two properties make the column worth the space, and both are load-bearing:
+
+1. **A reader who is not the party being checked.** The agent that took a capture is the worst
+   available judge of it — it knows what the screen was supposed to hold, so it reads the
+   picture for confirmation and finds it. Where the rule checks an artifact, the eyes belong to
+   somebody who did not produce that artifact; where no such party exists, that is the finding,
+   and the answer is to arrange one rather than to write the row anyway.
+2. **A moment that something else is waiting on.** 「Before the ledger row is written」 and
+   「before the brief is sent」 are moments a run actually arrives at and cannot pass without.
+   「Regularly」, 「as part of the review」 and 「when closing」 are not moments; nothing stops at
+   them, and a reading with no moment is a reading that happens the first week and then never.
+
+> **The case this now catches**: a chapter's captures declared correct by the agent that shot
+> them, with the rule 「whether the capture shows the frame it is named after stays with eyes」
+> sitting in the project's own documents, naming no reader and no moment. Two screens closed a
+> chapter that way — one drawing a list total of fourteen over no rows at all, one painting two
+> tables into the same rectangle — and every gate the repository had was green over both.
 
 **A rule whose finding is a prompt rather than a defect is still held by a gate** — it declares
 `grade: 'warning'`, prints under `⚠`, and leaves the exit status alone. That is for a rule that is
@@ -1121,12 +1204,35 @@ misreading grows back. If no sentence and no gate changed, the finding was not r
 A chapter closes when every screen in it works, every persona line has been run,
 and the failures are fixed rather than listed. Before saying so:
 
-1. **Cross-sweep by defect type.** Each defect found is a *type*; search the whole
+1. **The coordinator opens the chapter's captures, one by one, and looks at them.** Not the
+   builder that took them — this is the one reading in the arrangement taken by a party that
+   did not produce what it is reading, and that is the whole of its value. It comes first
+   because what it finds feeds the two steps below: a defect nobody has seen yet cannot be
+   cross-swept.
+
+   Three questions per picture, and the third is the one that fails:
+
+   - **Is this the frame it is named after?** A swallowed deep link leaves the previous
+     screen, and the file is then a perfectly good picture under the wrong name.
+   - **Is the screen in it built, or is it the shell?** A route that answers 200, raises no
+     console error and paints the chrome with nothing inside it is what every other check in
+     this skill sees as a pass. Rows, values, content — look for what should be there and is
+     not.
+   - **Does what the chapter wrote down about this screen match the picture?** Where the
+     project keeps a verification record, its sentences are read against the images they
+     cite, one at a time. A sentence written from the responses rather than from the screen
+     is fluent, specific, and about a screen that does not exist →
+     `references/judging-frames.md` § Taking a capture is not reading one.
+
+   **A frame with no capture is this step's finding, not the gate's.** Say which frames were
+   looked at, **by id** — a count is not an answer, because the frames nobody opened are
+   exactly the ones nobody can name afterwards.
+2. **Cross-sweep by defect type.** Each defect found is a *type*; search the whole
    codebase for other instances and fix those too. Report the sweep per type,
    including "0 others". A type that already became a detection rule is swept by what
    `auditScript` names — run it, or the whole family where the key names a directory,
    and report that; the manual search is for the types seen only once.
-2. **Audit the chapter's code, and act on it.** Not optional, and not the same thing as
+3. **Audit the chapter's code, and act on it.** Not optional, and not the same thing as
    the cross-sweep: that hunts instances of defects somebody already found, this looks
    for what nobody found because no single builder could see it. A chapter is built by
    several agents in sequence, none seeing the others' code; they solve the same problem
@@ -1159,7 +1265,7 @@ and the failures are fixed rather than listed. Before saying so:
    never saw the other eight. Ask of every convention the chapter follows: **what stops
    the next screen breaking this?** If the answer is "somebody would notice in review",
    write the checker.
-3. **Run every command in `gates`**, all of them, green, each read by its exit status
+4. **Run every command in `gates`**, all of them, green, each read by its exit status
    rather than by the tail of its log → `references/harness.md`. `bta.mjs check` is one
    of them, and `bta.mjs gates` runs whenever a gate was added or changed.
 
@@ -1170,21 +1276,21 @@ and the failures are fixed rather than listed. Before saying so:
    reached the end and came out green**, never how far the last one got. So say what did not run,
    as a count: 「stopped at checker 12 of 34」 names the twenty-two, and 「`check:ids` failed」 names
    none of them → *The third category comes back as a checker that did not run*.
-4. **Sync the board in the same change** where the code was right and the board was
+5. **Sync the board in the same change** where the code was right and the board was
    stale — but only the layer a board contracts, which is structure rather than the
    values in its illustration → `references/judging-frames.md`.
-5. **Fold what the chapter learned back into the graph, then regenerate.** A dependency
+6. **Fold what the chapter learned back into the graph, then regenerate.** A dependency
    the prerequisite list did not name, an entity that turned out to belong elsewhere, a
    table the chapter had to create — each goes into the owning chapter's `entities` or
    `creates` section, and `chapterGenerator` runs before the chapter is called closed.
    **A graph that is not regenerated at the close is a graph that stops learning**, and
    the next wave is assembled from what was true two chapters ago.
-6. **Declare what this chapter brought into existence.** A key `deferredKeys` promised to
+7. **Declare what this chapter brought into existence.** A key `deferredKeys` promised to
    this chapter — a migration directory, an address that renders a frame, a generated
    locale — is declared now and its promise deleted in the same change. `bta.mjs check`
    fails while the subject is on disk and the key is not declared, so this is a step that
    holds itself; what it cannot do is declare the key for you.
-7. **Write the chapter's row in the state ledger**, and say what closed and what the next
+8. **Write the chapter's row in the state ledger**, and say what closed and what the next
    chapter is. **Do not edit the chapter file to mark it done** — its state is the
    system's state, and a file that says "done" while the system disagrees is worse than
    no file.
@@ -1203,6 +1309,7 @@ consecutive sessions are comparable:
 ```text
 CHAPTER: <id and name> — closed / still open
 BUILT: <one line per screen: frame id, what now exists>
+CAPTURES READ: <frame ids the coordinator opened and looked at / frame ids nobody opened>
 PERSONA RUNS: <per persona: lines run, lines that failed and what was done>
 FIXED: <grouped by defect type, one line per instance>
 CROSS-SWEEP: <per defect type, other instances found and fixed, including "0 others">
@@ -1221,6 +1328,13 @@ LEDGER: <the row written, and the next chapter>
 DELIVERABLES: <what each screen owed beyond code and where it landed, or "none declared">
 CAPTURES: <paths only>
 ```
+
+**`CAPTURES READ` is two lists of frame ids, and the second one is the point.** 「built,
+typechecked, and never opened」 is a different claim from 「done」, and a report that folds them
+together hands the reader a chapter's worth of false confidence. A count cannot do it either —
+the frames nobody opened are exactly the ones nobody can name afterwards, which is why the
+field takes ids on both sides and 「all of them」 is not an answer. An empty second list is a
+strong claim and is written out as `none` rather than left off.
 
 **`STILL TRUE` is how standing prose gets an age.** A handover fact, a parked line, a note that
 names files — each keeps saying what it said after the thing beneath it moved, and only somebody
@@ -1245,6 +1359,25 @@ every brief for a named agent says which of the two it is.
 
 **A reading that contradicts a report is a clock before it is a defect** — take the reading out of a
 commit, never off the working tree → `references/harness.md`.
+
+**A brief owes the same reading, and owes it harder.** Whoever holds a file has been working since
+it was last opened, so an instruction written off an hours-old copy directs work against reasoning
+the file already answers — and it arrives with the authority of an instruction rather than as a
+claim the reader knows to check. Open the file at the moment the brief is written, not at the
+moment you last had a reason to.
+
+**A sentence in a report becomes a sentence in a document, and no gate reads a report.** The
+coordinator writes the ledger and the tracking documents out of what agents send up, so an agent's
+phrasing arrives there unaltered — which makes the report the one surface with no check behind it.
+Two things follow, and both belong to whoever writes the sentence rather than to whoever copies it:
+
+- **Write a defect so its direction survives being copied.** Name what is missing, not the order of
+  two verbs: 「the link is written without being read first」 cannot invert, while 「reads before
+  writing」 can — and inverted it names the correct behaviour instead of the fault, and reads
+  perfectly either way.
+- **A phrase worth quoting is written to the project's prose standard in the report**, not cleaned
+  up later in the file it lands in. Whoever copies a report's sentence into a document owns what it
+  now says, and runs that project's prose checks over the result.
 
 ## Generating and regenerating the chapters
 
