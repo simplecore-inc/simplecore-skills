@@ -3195,8 +3195,12 @@ async function run() {
       // Only the shape that traps. `isLoading || !data` is correct wherever the falling-through
       // case terminates in something — the framework's QueryFallback says "not found", an error
       // state says why. A raw skeleton says neither and never stops saying it.
+      // The `<` is SHARED with the Skeleton rather than demanding one before it: written
+      // `<[\s\S]{0,400}?<Skeleton`, the pattern needed a wrapper element and so could not see
+      // `return <Skeleton />`, which is how the guard is most often written. The return must
+      // still open with JSX, so `return null;` beside a Skeleton elsewhere stays silent.
       const trapping = [...c.matchAll(
-        /if\s*\([^)]*\bisLoading\b[^)]*\|\|[^)]*\)\s*\{?\s*return\s*\(?\s*<[\s\S]{0,400}?<Skeleton\b/g,
+        /if\s*\([^)]*\bisLoading\b[^)]*\|\|[^)]*\)\s*\{?\s*return\s*\(?\s*<(?:[\s\S]{0,400}?<)?Skeleton\b/g,
       )];
       if (trapping.length === 0) {
         return [];
@@ -3211,6 +3215,59 @@ async function run() {
         excerpt: m[0].replace(/\s+/g, " ").slice(0, 140),
       }));
     },
+    samples: {
+      file: "modules/site/src/widgets/area/detail.tsx",
+      broken: `const area = useGetArea(areaId);
+
+if (area.isLoading || !area.data) {
+  return (
+    <Stack gap="sm">
+      <Skeleton className="h-6 w-48" />
+      <Skeleton className="h-4 w-full" />
+    </Stack>
+  );
+}
+
+return <AreaPanel area={area.data} />;`,
+      fixed: `const area = useGetArea(areaId);
+
+if (area.isError) {
+  return <ErrorState title={t("area.readFailed")} onRetry={area.refetch} />;
+}
+
+if (area.isLoading || !area.data) {
+  return (
+    <Stack gap="sm">
+      <Skeleton className="h-6 w-48" />
+      <Skeleton className="h-4 w-full" />
+    </Stack>
+  );
+}
+
+return <AreaPanel area={area.data} />;`,
+      miss: [
+        {
+          note: "the fall-through terminates in the framework's own fallback, which says why",
+          source: `const area = useGetArea(areaId);
+
+if (area.isLoading || !area.data) {
+  return <Skeleton className="h-6 w-48" />;
+}
+
+return <QueryFallback query={area}><AreaPanel area={area.data} /></QueryFallback>;`,
+        },
+        {
+          note: "a single-condition guard falls THROUGH rather than trapping — the next rule's business",
+          source: `const area = useGetArea(areaId);
+
+if (area.isLoading) {
+  return <Skeleton className="h-6 w-48" />;
+}
+
+return <AreaPanel area={area.data} />;`,
+        },
+      ],
+    },
   },
   {
     id: "read-failure-falls-through-loading-guard",
@@ -3223,7 +3280,7 @@ async function run() {
       // is the previous rule's business; a bare `isLoading` falls THROUGH, which is worse — the
       // screen answers confidently out of nothing instead of visibly waiting.
       const guards = [...c.matchAll(
-        /if\s*\(\s*([A-Za-z_$][\w$]*)\.isLoading\s*\)\s*\{?\s*return\s*\(?\s*<[\s\S]{0,500}?<Skeleton\b/g,
+        /if\s*\(\s*([A-Za-z_$][\w$]*)\.isLoading\s*\)\s*\{?\s*return\s*\(?\s*<(?:[\s\S]{0,500}?<)?Skeleton\b/g,
       )];
       if (guards.length === 0) {
         return [];
@@ -3251,6 +3308,77 @@ async function run() {
           excerpt: m[0].replace(/\s+/g, " ").slice(0, 140),
         }));
     },
+    samples: {
+      file: "modules/licence/src/widgets/deployment/verdict.tsx",
+      // One read's careful failure branch standing in for another's is the whole point: the quota
+      // table says it could not be read, and the verdict beside it announces out of undefined
+      // that the deployment has no licence at all.
+      broken: `const verdict = useGetLicenceVerdict(deploymentId);
+const quota = useGetQuota(deploymentId);
+
+if (verdict.isLoading) {
+  return <Skeleton className="h-6 w-48" />;
+}
+
+if (quota.isError) {
+  return <QuotaUnavailable onRetry={quota.refetch} />;
+}
+
+return <VerdictPanel verdict={verdict.data} quota={quota.data} />;`,
+      fixed: `const verdict = useGetLicenceVerdict(deploymentId);
+const quota = useGetQuota(deploymentId);
+
+if (verdict.isLoading) {
+  return <Skeleton className="h-6 w-48" />;
+}
+
+if (verdict.isError) {
+  return <ErrorState title={t("licence.verdictUnreadable")} onRetry={verdict.refetch} />;
+}
+
+return <VerdictPanel verdict={verdict.data} quota={quota.data} />;`,
+      miss: [
+        {
+          note: "the failure is branched on through the adapted alias rather than the raw query",
+          source: `const raw = useGetAreaRaw(areaId);
+const area = adaptOrvalDetail(raw);
+
+if (raw.isLoading) {
+  return <Skeleton className="h-6 w-48" />;
+}
+
+if (area.isError) {
+  return <Text>{t("area.readFailed")}</Text>;
+}
+
+return <AreaPanel area={area.data} />;`,
+        },
+        {
+          note: "a guard that traps in the skeleton is the previous rule's shape, not this one's",
+          source: `const area = useGetArea(areaId);
+
+if (area.isLoading || !area.data) {
+  return <Skeleton className="h-6 w-48" />;
+}
+
+return <AreaPanel area={area.data} />;`,
+        },
+        {
+          note: "a guard that returns nothing is not a guard that draws a wait it cannot end",
+          source: `const area = useGetArea(areaId);
+
+if (area.isLoading) {
+  return null;
+}
+
+return (
+  <Suspense fallback={<Skeleton className="h-6 w-48" />}>
+    <AreaPanel area={area.data} />
+  </Suspense>
+);`,
+        },
+      ],
+    },
   },
   {
     id: "read-failure-reads-as-empty",
@@ -3273,6 +3401,41 @@ async function run() {
         return [];
       }
       return lineHits(c, /=\s*use(?:Get|List|Search|Read)[A-Z]\w*\(|=\s*useQuery\(/);
+    },
+    samples: {
+      file: "modules/site/src/widgets/area/panel.tsx",
+      broken: `const areas = useListAreas({ siteId });
+const rows = areas.data?.content ?? [];
+
+if (rows.length === 0) {
+  return <EmptyState title={t("area.noneYet")} />;
+}
+
+return <AreaRows rows={rows} />;`,
+      fixed: `const areas = useListAreas({ siteId });
+const rows = areas.data?.content ?? [];
+
+if (areas.isError) {
+  return <ErrorState title={t("area.readFailed")} onRetry={areas.refetch} />;
+}
+
+if (rows.length === 0) {
+  return <EmptyState title={t("area.noneYet")} />;
+}
+
+return <AreaRows rows={rows} />;`,
+      miss: [
+        {
+          note: "a widget that draws what it was given and claims no emptiness says nothing false when it gets nothing",
+          source: `const areas = useListAreas({ siteId });
+
+return (
+  <Stack gap="xs">
+    {areas.data?.content.map((area) => <AreaRow key={area.areaId} area={area} />)}
+  </Stack>
+);`,
+        },
+      ],
     },
   },
   {
@@ -3304,6 +3467,66 @@ async function run() {
         line: lineOfIndex(c, m.index),
         excerpt: m[0].replace(/\s+/g, " ").slice(0, 140),
       }));
+    },
+    samples: {
+      file: "modules/site/src/widgets/area/settings-form.tsx",
+      broken: `const area = useGetArea(areaId);
+const update = useUpdateArea();
+const [name, setName] = useState("");
+
+useEffect(() => {
+  if (area.data) {
+    setName(area.data.name ?? "");
+  }
+}, [area.data]);
+
+async function save() {
+  await update.mutateAsync({ areaId, data: { name } });
+}`,
+      fixed: `const area = useGetArea(areaId);
+const update = useUpdateArea();
+const [name, setName] = useState("");
+
+useEffect(() => {
+  if (area.data) {
+    setName(area.data.name ?? "");
+  }
+}, [area.data]);
+
+if (area.isError) {
+  return <ErrorState title={t("area.readFailed")} onRetry={area.refetch} />;
+}
+
+async function save() {
+  await update.mutateAsync({ areaId, data: { name } });
+}`,
+      miss: [
+        {
+          note: "a seeded panel that cannot write back says nothing false when it says nothing",
+          source: `const area = useGetArea(areaId);
+const [name, setName] = useState("");
+
+useEffect(() => {
+  if (area.data) {
+    setName(area.data.name ?? "");
+  }
+}, [area.data]);
+
+return <Text>{name}</Text>;`,
+        },
+        {
+          note: "a field bound straight to the query renders empty rather than holding defaults",
+          source: `const area = useGetArea(areaId);
+const update = useUpdateArea();
+
+return (
+  <FormFields.TextField
+    value={area.data?.name ?? ""}
+    onChange={(v) => update.mutateAsync({ areaId, data: { name: v } })}
+  />
+);`,
+        },
+      ],
     },
   },
   {
@@ -3355,6 +3578,71 @@ async function run() {
         excerpt: m[0].replace(/\s+/g, " ").slice(0, 140),
       }));
     },
+    samples: {
+      file: "modules/account/src/widgets/contact-change/confirm.tsx",
+      broken: `const search = Route.useSearch();
+const token = search.token;
+const confirm = useConfirmContactChange();
+
+return (
+  <Button onClick={() => confirm.mutateAsync({ data: { token } })}>
+    {t("contactChange.confirm")}
+  </Button>
+);`,
+      fixed: `const search = Route.useSearch();
+const token = search.token;
+const link = useContactChangeLink(token);
+const confirm = useConfirmContactChange();
+
+if (link.isError || link.data?.spent) {
+  return <AlertBanner tone="warning" title={t("contactChange.linkNoLongerValid")} />;
+}
+
+return (
+  <Button onClick={() => confirm.mutateAsync({ data: { token } })}>
+    {t("contactChange.confirmFor", { address: link.data?.maskedAddress })}
+  </Button>
+);`,
+      miss: [
+        {
+          note: "a route handing the token down — reading the link is the component below's job",
+          source: `const search = Route.useSearch();
+
+return (
+  <ContactChangeConfirm
+    token={search.token}
+    act={(value) => confirm.mutateAsync({ data: { token: value } })}
+  />
+);`,
+        },
+        {
+          note: "the link read parked by a mount effect, with the button gated on what it parked",
+          source: `const search = Route.useSearch();
+const token = search.token;
+const [link, setLink] = useState(null);
+
+useEffect(() => {
+  readContactChangeLink(token).then((data) => setLink(data));
+}, [token]);
+
+if (!link?.live) {
+  return <AlertBanner tone="warning" title={t("contactChange.linkNoLongerValid")} />;
+}
+
+return (
+  <Button onClick={() => confirm.mutateAsync({ data: { token } })}>
+    {t("contactChange.confirm")}
+  </Button>
+);`,
+        },
+        {
+          note: "a token the app itself holds is not a link",
+          source: `const { accessToken } = useSession();
+
+return <Button onClick={() => refresh.mutateAsync({ data: { accessToken } })}>{t("common.refresh")}</Button>;`,
+        },
+      ],
+    },
   },
   {
     id: "silent-mutation-outcome",
@@ -3381,6 +3669,50 @@ async function run() {
       }
       return hits;
     },
+    samples: {
+      file: "modules/order/src/widgets/order/detail.tsx",
+      broken: `<Button
+  onClick={async () => {
+    await charge.mutateAsync({ orderId });
+    await invalidate();
+  }}
+>
+  {t("order.charge")}
+</Button>`,
+      fixed: `<Button
+  onClick={async () => {
+    await charge.mutateAsync({ orderId });
+    await invalidate();
+    addToast({ title: t("order.charged") });
+  }}
+>
+  {t("order.charge")}
+</Button>`,
+      miss: [
+        {
+          note: "leaving the screen is itself the answer",
+          source: `<Button
+  onClick={async () => {
+    await charge.mutateAsync({ orderId });
+    navigate({ to: "/orders" });
+  }}
+>
+  {t("order.charge")}
+</Button>`,
+        },
+        {
+          note: "state the handler writes for the surface to render",
+          source: `<Button
+  onClick={async () => {
+    const receipt = await charge.mutateAsync({ orderId });
+    setReceipt(receipt);
+  }}
+>
+  {t("order.charge")}
+</Button>`,
+        },
+      ],
+    },
   },
   {
     id: "filter-category-order",
@@ -3402,6 +3734,40 @@ async function run() {
       }
       return hits;
     },
+    samples: {
+      file: "modules/site/src/widgets/area/list.tsx",
+      broken: `<CrudList.FilterBar
+  list={list}
+  maxBadges={3}
+  filters={[
+    { type: "faceted", field: "status", label: fieldLabel("status") },
+    { type: "text", field: "name", label: fieldLabel("name") },
+  ]}
+/>`,
+      fixed: `<CrudList.FilterBar
+  list={list}
+  maxBadges={3}
+  filters={[
+    { type: "text", field: "name", label: fieldLabel("name") },
+    { type: "faceted", field: "status", label: fieldLabel("status") },
+  ]}
+/>`,
+      miss: [
+        {
+          note: "the whole category order, in order",
+          source: `<CrudList.FilterBar
+  list={list}
+  maxBadges={3}
+  filters={[
+    { type: "text", field: "name", label: fieldLabel("name") },
+    { type: "dateRange", field: "openedAt", label: fieldLabel("openedAt") },
+    { type: "number", field: "capacity", label: fieldLabel("capacity") },
+    { type: "toggle", field: "active", label: fieldLabel("active") },
+  ]}
+/>`,
+        },
+      ],
+    },
   },
   {
     id: "row-actions-as-nameless-column",
@@ -3416,6 +3782,25 @@ async function run() {
     // the header attribute rather than to the first ">", stopping at the next column's opening
     // tag so one nameless column cannot be blamed on its neighbour.
     check: (c) => lineHits(c, /<CrudList\.Column(?:(?!<CrudList\.Column)[\s\S]){0,300}?\sheader=""/),
+    samples: {
+      file: "modules/site/src/widgets/area/list.tsx",
+      broken: `<CrudList.Column<AreaRow> field="_rowActions" header="" width={96}>
+  {(row) => <AreaRowActions row={row} />}
+</CrudList.Column>`,
+      fixed: `<CrudList.Table list={list} slots={{ rowActions }} actionColumnWidth={96}>
+  <CrudList.Column<AreaRow> field="name" header={fieldLabel("name")}>
+    {(row) => row.name}
+  </CrudList.Column>
+</CrudList.Table>`,
+      miss: [
+        {
+          note: "a column the visibility menu can name",
+          source: `<CrudList.Column<AreaRow> field="name" header={fieldLabel("name")}>
+  {(row) => row.name}
+</CrudList.Column>`,
+        },
+      ],
+    },
   },
   {
     id: "spinner-beside-mark",
@@ -3424,6 +3809,38 @@ async function run() {
     desc: "Waiting button leads with an icon and names no loadingText — Button composes the spinner ahead of its children, so pressing it draws a spinner and the icon side by side and widens the button mid-click, shifting a segmented row-action group out from under the pointer. Pass the label as loadingText so the spinner takes the icon's seat",
     appliesTo: isTsx,
     check: spinnerBesideMark,
+    samples: {
+      file: "modules/site/src/widgets/area/list.tsx",
+      broken: `<Button size="xs" variant="outline" loading={settle.isPending} onClick={onSettle}>
+  <CheckIcon className="size-3.5" />
+  {t("area.settle")}
+</Button>`,
+      fixed: `<Button size="xs" variant="outline" loading={settle.isPending} loadingText={t("area.settling")} onClick={onSettle}>
+  <CheckIcon className="size-3.5" />
+  {t("area.settle")}
+</Button>`,
+      miss: [
+        {
+          note: "an icon-size button — the framework drops the children, so the spinner already stands alone",
+          source: `<Button size="icon" variant="ghost" loading={del.isPending} onClick={onDelete}>
+  <TrashIcon className="size-4" />
+</Button>`,
+        },
+        {
+          note: "a button leading with prose is what the spinner is supposed to sit beside",
+          source: `<Button loading={save.isPending} onClick={onSave}>
+  {t("common.save")}
+</Button>`,
+        },
+        {
+          note: "a button that never waits draws no spinner",
+          source: `<Button onClick={onSave}>
+  <SaveIcon className="size-4" />
+  {t("common.save")}
+</Button>`,
+        },
+      ],
+    },
   },
 ];
 
