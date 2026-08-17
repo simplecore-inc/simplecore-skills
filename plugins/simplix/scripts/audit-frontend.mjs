@@ -704,6 +704,46 @@ const RULES = [
       && !publicRouteDirs().some((dir) => p.includes(`/src/routes/${dir}/`))
       && !guardedAtRoot(p),
     check: (c) => lineHits(c, /component:\s*\w+\s*,/, (line) => !line.includes("guarded(")),
+    samples: {
+      file: "apps/console/src/routes/areas/index.tsx",
+      broken: `import { createFileRoute } from "@tanstack/react-router";
+import { AreaListPage } from "@acme/site/pages";
+
+export const Route = createFileRoute("/areas/")({
+  component: AreaListPage,
+});`,
+      fixed: `import { createFileRoute } from "@tanstack/react-router";
+import { AreaListPage } from "@acme/site/pages";
+import { SUBJECTS } from "@acme/site/shared/auth/subjects";
+import { guarded } from "~/lib/guarded";
+
+export const Route = createFileRoute("/areas/")({
+  component: guarded(AreaListPage, { action: "view", subject: SUBJECTS.area }),
+});`,
+      miss: [
+        {
+          note: "a route directory the product declares public — no operator, no grants to check",
+          file: "apps/console/src/routes/checkout/index.tsx",
+          source: `export const Route = createFileRoute("/checkout/")({
+  component: CheckoutPage,
+});`,
+          files: { ".claude/simplix.json": `{ "audit": { "publicRouteDirs": ["checkout"] } }` },
+        },
+        {
+          note: "an app whose root route admits nobody without a session — the stronger form of the same guard",
+          source: `export const Route = createFileRoute("/areas/")({
+  component: AreaListPage,
+});`,
+          files: {
+            "apps/console/src/routes/__root.tsx": `export const Route = createRootRoute({
+  beforeLoad: ({ context }) => {
+    if (!context.auth.session) throw redirect({ to: "/sign-in" });
+  },
+});`,
+          },
+        },
+      ],
+    },
   },
   {
     id: "dead-dialog-width",
@@ -722,6 +762,30 @@ const RULES = [
         // that this rule cries wolf.
         (line) => !/\bsm:max-w-/.test(line) && !/^\s*(?:\*|\/\/|\/\*)/.test(line),
       ),
+    samples: {
+      file: "modules/site/src/widgets/area/assign-dialog.tsx",
+      broken: `<DialogContent className="max-w-3xl">
+  <AssignmentTable rows={rows} />
+</DialogContent>`,
+      fixed: `<DialogContent className="sm:max-w-3xl">
+  <AssignmentTable rows={rows} />
+</DialogContent>`,
+      miss: [
+        {
+          note: "a width at or below the component's own sm:max-w-lg resolves to the box the dialog already had",
+          source: `<DialogContent className="max-w-md">
+  <ConfirmBody />
+</DialogContent>`,
+        },
+        {
+          note: "the doc comment that documents the component is not a dialog",
+          source: `/**
+ * <DialogContent className="max-w-3xl"> is the shape this component replaces.
+ */
+export function AssignDialog() { return null; }`,
+        },
+      ],
+    },
   },
   {
     id: "hand-rolled-detail-footer",
@@ -731,6 +795,42 @@ const RULES = [
     appliesTo: isTsx,
     check: (c) =>
       blockHits(c, /footer=\{\s*\n\s*<(?!CrudDetail)(?:Stack|Flex|div|Box)\b/g),
+    samples: {
+      file: "modules/site/src/widgets/area/detail.tsx",
+      broken: `<CrudDetail
+  header={<Heading level={4}>{displayData.name}</Heading>}
+  footer={
+    <Flex gap="sm" justify="end">
+      <Button variant="outline" onClick={onClose}>{t("common.close")}</Button>
+      <Button variant="primary" onClick={onEdit}>{t("common.edit")}</Button>
+    </Flex>
+  }
+>
+  <CrudDetail.Section title={t("area.section")} variant="flat" />
+</CrudDetail>`,
+      fixed: `<CrudDetail
+  header={<Heading level={4}>{displayData.name}</Heading>}
+  footer={
+    <CrudDetail.DefaultActions onClose={onClose} onEdit={onEdit} onDelete={del.requestDelete} isPending={del.isPending} />
+  }
+>
+  <CrudDetail.Section title={t("area.section")} variant="flat" />
+</CrudDetail>`,
+      miss: [
+        {
+          note: "a form's own sanctioned footer component, which is not a CrudDetail one",
+          file: "modules/site/src/widgets/area/form.tsx",
+          source: `<CrudForm
+  onSubmit={handleSubmit}
+  footer={
+    <CrudForm.Actions spread={!!onBack}>
+      <Button type="submit" variant="primary">{t("area.save")}</Button>
+    </CrudForm.Actions>
+  }
+/>`,
+        },
+      ],
+    },
   },
   {
     id: "wrapping-value-in-fixed-row",
@@ -742,6 +842,36 @@ const RULES = [
     // DetailListRow on the screen with a `wrap` belonging to something else entirely.
     check: (c) =>
       blockHits(c, /<DetailListRow\b(?:(?!<DetailListRow|\/>)[^])*?trailing=\{(?:(?!<DetailListRow|\/>)[^])*?\bwrap\b(?:(?!<DetailListRow)[^])*?\/>/g),
+    samples: {
+      file: "modules/site/src/widgets/area/detail.tsx",
+      broken: `<DetailList>
+  <DetailListRow
+    primary={fieldLabel("tags")}
+    trailing={
+      <Flex gap="xs" wrap>
+        {displayData.tags.map((tag) => <Badge key={tag}>{tag}</Badge>)}
+      </Flex>
+    }
+  />
+</DetailList>`,
+      fixed: `<Stack gap="xs">
+  <Text variant="caption" tone="muted">{fieldLabel("tags")}</Text>
+  <Flex gap="xs" wrap>
+    {displayData.tags.map((tag) => <Badge key={tag}>{tag}</Badge>)}
+  </Flex>
+</Stack>`,
+      miss: [
+        {
+          note: "a row whose trailing is one badge, with a wrapping set below it as its own block",
+          source: `<DetailList>
+  <DetailListRow primary={fieldLabel("status")} trailing={<StatusBadge tone="success" />} />
+</DetailList>
+<Flex gap="xs" wrap>
+  {displayData.tags.map((tag) => <Badge key={tag}>{tag}</Badge>)}
+</Flex>`,
+        },
+      ],
+    },
   },
   {
     id: "scope-filter-empty-state",
@@ -753,6 +883,31 @@ const RULES = [
       c.includes("defaultFilters")
         ? lineHits(c, /emptyReason=\{list\.emptyReason\}|list\.emptyReason\s*!==\s*"no-data"/)
         : [],
+    samples: {
+      file: "modules/site/src/widgets/area/list.tsx",
+      broken: `const list = useCrudList({
+  defaultFilters: { siteId },
+});
+
+return <CrudList.Table list={list} emptyReason={list.emptyReason} />;`,
+      fixed: `const list = useCrudList({
+  defaultFilters: { siteId },
+});
+
+// The site is forced by the screen, so an empty result is "no rows here", never
+// "your filters matched nothing" — the reader applied none and can clear none.
+const emptyReason = list.userFilterCount > 0 ? list.emptyReason : "no-data";
+
+return <CrudList.Table list={list} emptyReason={emptyReason} />;`,
+      miss: [
+        {
+          note: "a list with no screen-forced scope — every filter in it is one the reader applied",
+          source: `const list = useCrudList({});
+
+return <CrudList.Table list={list} emptyReason={list.emptyReason} />;`,
+        },
+      ],
+    },
   },
   {
     id: "unknown-enum-name",
@@ -767,6 +922,45 @@ const RULES = [
         const names = [...line.matchAll(/(?:enumName=|enumLabel\()\s*"([A-Z]\w+)"/g)].map((m) => m[1]);
         return names.some((n) => !known.has(n));
       }),
+    samples: (() => {
+      // The generated enum, as Orval writes it — both the const and the type alias, because the
+      // index reads either shape.
+      const codegen = {
+        "packages/domain-site/src/generated/model/areaStatus.ts": `export const AreaStatus = {
+  ACTIVE: "ACTIVE",
+  CLOSED: "CLOSED",
+} as const;
+
+export type AreaStatus = (typeof AreaStatus)[keyof typeof AreaStatus];
+`,
+      };
+      return {
+        file: "modules/site/src/widgets/area/list.tsx",
+        broken: {
+          files: codegen,
+          source: `<CrudList.Column field="status">
+  {(row) => enumLabel("AreaState", resolveBootEnum(row.status))}
+</CrudList.Column>`,
+        },
+        fixed: {
+          files: codegen,
+          source: `<CrudList.Column field="status">
+  {(row) => enumLabel("AreaStatus", resolveBootEnum(row.status))}
+</CrudList.Column>`,
+        },
+        miss: [
+          {
+            note: "the enumName= call shape, spelt with a name the codegen does publish",
+            files: codegen,
+            source: `<DetailEnumField enumName="AreaStatus" value={resolveBootEnum(displayData.status)} />`,
+          },
+          {
+            note: "a project with no codegen output — an unread contract is not evidence of a wrong name",
+            source: `{enumLabel("AreaState", resolveBootEnum(row.status))}`,
+          },
+        ],
+      };
+    })(),
   },
   {
     id: "translator-options-arg",
@@ -792,6 +986,36 @@ const RULES = [
       }
       return hits;
     },
+    samples: {
+      file: "modules/audit/src/widgets/audit-event/list.tsx",
+      broken: `const { t } = useTranslation("audit/widgets");
+
+<CrudList.Column field="entityType">
+  {(row) => t("auditEvent.entityType", { defaultValue: row.entityType })}
+</CrudList.Column>`,
+      fixed: `const { t, i18n } = useTranslation("audit/widgets");
+
+<CrudList.Column field="entityType">
+  {(row) => {
+    const key = "auditEvent.entityType." + row.entityType;
+    return i18n.exists(key) ? t(key) : row.entityType;
+  }}
+</CrudList.Column>`,
+      miss: [
+        {
+          note: "an ordinary interpolation value — the second argument is what it is for",
+          source: `const { t } = useTranslation("audit/widgets");
+
+<Text>{t("auditEvent.total", { count: rows.length })}</Text>`,
+        },
+        {
+          note: "a name whose word happens to be a value the sentence interpolates",
+          source: `const { t } = useTranslation("audit/widgets");
+
+<Text>{t("auditEvent.actedBy", { name: row.actorName, context: row.channel })}</Text>`,
+        },
+      ],
+    },
   },
   {
     id: "missing-translation-key",
@@ -816,6 +1040,56 @@ const RULES = [
       }
       return hits;
     },
+    samples: (() => {
+      const widgets = {
+        "modules/site/src/locales/widgets/ko.json": `{
+  "area": { "title": "구역", "status": "상태" }
+}
+`,
+      };
+      return {
+        file: "modules/site/src/widgets/area/list.tsx",
+        broken: {
+          files: widgets,
+          source: `const { t } = useTranslation("site/widgets");
+
+return <EmptyState title={t("area.selfServeHint")} />;`,
+        },
+        fixed: {
+          files: widgets,
+          source: `const { t } = useTranslation("site/widgets");
+
+return <EmptyState title={t("area.title")} />;`,
+        },
+        miss: [
+          {
+            note: "a namespace this repository does not own — an absent catalogue is not an empty one",
+            source: `const { t } = useTranslation("framework/ui");
+
+return <Button>{t("common.retry")}</Button>;`,
+          },
+          {
+            note: "two translators in one file, each key resolving in its own catalogue",
+            files: {
+              ...widgets,
+              "modules/site/src/locales/features/ko.json": `{
+  "assignment": { "hint": "담당자를 지정하세요" }
+}
+`,
+            },
+            source: `const { t } = useTranslation("site/widgets");
+const { t: tFeatures } = useTranslation("site/features");
+
+return (
+  <Stack>
+    <Heading>{t("area.title")}</Heading>
+    <Text>{tFeatures("assignment.hint")}</Text>
+  </Stack>
+);`,
+          },
+        ],
+      };
+    })(),
   },
   {
     id: "write-only-form-field",
@@ -843,6 +1117,84 @@ const RULES = [
         return !new RegExp(`\\b${f}\\b`).test(delegated);
       });
     },
+    samples: {
+      file: "modules/site/src/widgets/area/form.tsx",
+      broken: {
+        files: {
+          "modules/site/src/widgets/area/detail.tsx": `<DetailFields.DetailTextField label={fieldLabel("name")} value={displayData.name} />`,
+        },
+        source: `<FormFields.TextareaField
+  label={fieldLabel("memo")}
+  value={values.memo ?? ""}
+  onChange={(v) => updateField("memo", v)}
+/>`,
+      },
+      fixed: {
+        files: {
+          "modules/site/src/widgets/area/detail.tsx": `<DetailFields.DetailTextField label={fieldLabel("name")} value={displayData.name} />
+<DetailFields.DetailTextField label={fieldLabel("memo")} value={displayData.memo} />`,
+        },
+        source: `<FormFields.TextareaField
+  label={fieldLabel("memo")}
+  value={values.memo ?? ""}
+  onChange={(v) => updateField("memo", v)}
+/>`,
+      },
+      miss: [
+        {
+          note: "a credential is write-only on purpose",
+          files: {
+            "modules/site/src/widgets/area/detail.tsx": `<DetailFields.DetailTextField label={fieldLabel("name")} value={displayData.name} />`,
+          },
+          source: `<FormFields.PasswordField
+  label={fieldLabel("password")}
+  value={values.password ?? ""}
+  onChange={(v) => updateField("password", v)}
+/>`,
+        },
+        {
+          note: "a foreign key the detail renders by name rather than by id",
+          files: {
+            "modules/site/src/widgets/area/detail.tsx": `<DetailFields.DetailTextField label={fieldLabel("owner")} value={displayData.owner?.name} />`,
+          },
+          source: `<EntityCombobox
+  label={fieldLabel("owner")}
+  value={values.ownerId}
+  onChange={(v) => updateField("ownerId", v)}
+/>`,
+        },
+        {
+          note: "a locale map edited under its own name and read back under the base field",
+          files: {
+            "modules/site/src/widgets/area/detail.tsx": `<DetailFields.DetailTextField label={fieldLabel("name")} value={displayData.name} />`,
+          },
+          source: `<FormFields.I18nTextField
+  label={fieldLabel("name")}
+  value={values.nameI18n}
+  onChange={(v) => updateField("nameI18n", v)}
+/>`,
+        },
+        {
+          note: "a detail that hands the whole record to a shared formatter, which is where the field is read",
+          files: {
+            "modules/site/src/widgets/area/detail.tsx": `import { renderAreaSummary } from "@acme/site-ui";
+
+<DetailFieldWrapper label={fieldLabel("summary")}>
+  <Text>{renderAreaSummary(displayData)}</Text>
+</DetailFieldWrapper>`,
+            "packages/site-ui/src/summary.ts": `export function renderAreaSummary(record: AreaDetailDTO) {
+  return [record.name, record.memo].filter(Boolean).join(" · ");
+}
+`,
+          },
+          source: `<FormFields.TextareaField
+  label={fieldLabel("memo")}
+  value={values.memo ?? ""}
+  onChange={(v) => updateField("memo", v)}
+/>`,
+        },
+      ],
+    },
   },
   {
     id: "unresolved-boot-enum-label",
@@ -860,6 +1212,30 @@ const RULES = [
             (line) => !line.includes("resolveBootEnum"),
           )
         : [],
+    samples: {
+      file: "modules/site/src/widgets/area/list.tsx",
+      broken: `import { useListAreas } from "@acme/domain-site";
+
+<CrudList.Column field="status">
+  {(row) => enumLabel("AreaStatus", row.status)}
+</CrudList.Column>`,
+      fixed: `import { useListAreas } from "@acme/domain-site";
+
+<CrudList.Column field="status">
+  {(row) => enumLabel("AreaStatus", resolveBootEnum(row.status) ?? "")}
+</CrudList.Column>`,
+      miss: [
+        {
+          note: "a static reference table that binds `row` too — no server value can be in scope",
+          source: `const ROWS = [
+  { status: "ACTIVE" },
+  { status: "CLOSED" },
+];
+
+{ROWS.map((row) => enumLabel("AreaStatus", row.status))}`,
+        },
+      ],
+    },
   },
   {
     id: "phantom-projection-read",
@@ -877,6 +1253,41 @@ const RULES = [
         return false;
       });
     },
+    samples: (() => {
+      const projection = {
+        "packages/domain-site/src/generated/model/areaDetailDTO.ts": `import type { SiteRefDTO } from "./siteRefDTO";
+
+export interface AreaDetailDTO {
+  areaId?: string;
+  name?: string;
+  site?: SiteRefDTO;
+}
+`,
+      };
+      return {
+        file: "modules/site/src/widgets/area/detail.tsx",
+        broken: {
+          files: projection,
+          source: `<DetailFields.DetailTextField
+  label={fieldLabel("building")}
+  value={displayData.building?.name ?? displayData.buildingId}
+/>`,
+        },
+        fixed: {
+          files: projection,
+          source: `<DetailFields.DetailTextField
+  label={fieldLabel("site")}
+  value={displayData.site?.name ?? "-"}
+/>`,
+        },
+        miss: [
+          {
+            note: "an entity whose projection this project has not generated — an unknown contract is not a defect",
+            source: `<DetailFields.DetailTextField value={displayData.building?.name ?? displayData.buildingId} />`,
+          },
+        ],
+      };
+    })(),
   },
   {
     id: "raw-layout-div",
@@ -891,6 +1302,30 @@ const RULES = [
         (_line, lines, i) =>
           !lines.slice(Math.max(0, i - 2), i + 1).some((l) => l.includes("raw layout:")),
       ),
+    samples: {
+      file: "modules/site/src/widgets/area/detail.tsx",
+      broken: `<div className="flex items-center gap-2">
+  <StatusBadge tone="success" />
+  <Text>{displayData.name}</Text>
+</div>`,
+      fixed: `<Flex align="center" gap="sm">
+  <StatusBadge tone="success" />
+  <Text>{displayData.name}</Text>
+</Flex>`,
+      miss: [
+        {
+          note: "a justified raw layout — the reason stands on the two lines above it",
+          source: `{/* raw layout: the canvas measures this element's box, so it cannot be a Flex */}
+<div className="flex items-center gap-2" ref={canvasBox}>
+  <Handle />
+</div>`,
+        },
+        {
+          note: "a div carrying no layout utility at all",
+          source: `<div className="text-sm text-muted-foreground">{displayData.name}</div>`,
+        },
+      ],
+    },
   },
   {
     id: "unnamed-icon-button",
@@ -2144,9 +2579,14 @@ function normalizeSample(sample, rule) {
 /**
  * Run one rule against one sample in a throwaway project tree.
  *
- * @returns the hits, and whether the scan's own file collection would have reached the sample —
- *          a rule whose sample sits where `collectSources` never looks is one the audit cannot
- *          fire in a real run, however well its regex matches.
+ * <p>`appliesTo` is asked inside that tree, never outside it: several of them read the project to
+ * answer — the route directories a product declares public, an app that already guards every
+ * address at its root — and asking from the real working directory answers about this repository
+ * instead of about the sample.
+ *
+ * @returns whether the rule applied at all, its hits, and whether the scan's own file collection
+ *          would have reached the sample — a rule whose sample sits where `collectSources` never
+ *          looks is one the audit cannot fire in a real run, however well its regex matches.
  */
 function runSample(rule, sample) {
   const dir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "simplix-audit-")));
@@ -2155,11 +2595,12 @@ function runSample(rule, sample) {
     for (const [rel, body] of Object.entries(sample.files)) writeFixture(dir, rel, body);
     if (sample.source !== undefined) writeFixture(dir, sample.file, sample.source);
     setRoot(dir);
-    if (rule.collect) return { hits: rule.collect(), reachable: true };
+    if (rule.collect) return { applies: true, hits: rule.collect(), reachable: true };
     const reachable = collectSources().some(
       (abs) => path.relative(dir, abs).split(path.sep).join("/") === sample.file,
     );
-    return { hits: rule.check(sample.source, sample.file), reachable };
+    if (!rule.appliesTo(sample.file)) return { applies: false, hits: [], reachable };
+    return { applies: true, hits: rule.check(sample.source, sample.file), reachable };
   } finally {
     setRoot(previousRoot);
     fs.rmSync(dir, { recursive: true, force: true });
@@ -2282,32 +2723,28 @@ function selftest() {
     }
     const broken = normalizeSample(s.broken, rule);
     const fixed = normalizeSample(s.fixed, rule);
-    if (!rule.collect && !rule.appliesTo(broken.file)) {
+    const onBroken = runSample(rule, broken);
+    const onFixed = runSample(rule, fixed);
+    if (!onBroken.applies) {
       problems.push(`appliesTo() rejects ${broken.file} — the rule could never run on the broken form`);
-    } else if (!rule.collect && !rule.appliesTo(fixed.file)) {
+    } else if (!onBroken.hits.length) {
+      problems.push("did NOT fire on the broken form");
+    }
+    if (!onBroken.reachable) {
+      problems.push(`the scan never reaches ${broken.file} — collectSources() hands this file to no rule`);
+    }
+    if (!onFixed.applies) {
       problems.push(`appliesTo() rejects ${fixed.file} — silence on the fixed form would prove nothing`);
-    } else {
-      const onBroken = runSample(rule, broken);
-      const onFixed = runSample(rule, fixed);
-      if (!onBroken.hits.length) problems.push("did NOT fire on the broken form");
-      if (!onBroken.reachable) {
-        problems.push(`the scan never reaches ${broken.file} — collectSources() would not hand this file to any rule`);
-      }
-      if (onFixed.hits.length) {
-        problems.push(`fired on the fixed form (${onFixed.hits.map((h) => h.excerpt).join("; ").slice(0, 140)})`);
-      }
-      for (const raw of s.miss ?? []) {
-        const miss = normalizeSample(raw, rule);
-        if (!rule.collect && !rule.appliesTo(miss.file)) {
-          notes.push(`${miss.note || miss.file}: excluded by appliesTo`);
-          continue;
-        }
-        const hits = runSample(rule, miss).hits;
-        if (hits.length) {
-          problems.push(`fired on a near-neighbour — ${miss.note || miss.file} (${hits[0].excerpt.slice(0, 110)})`);
-        } else {
-          notes.push(miss.note || miss.file);
-        }
+    } else if (onFixed.hits.length) {
+      problems.push(`fired on the fixed form (${onFixed.hits.map((h) => h.excerpt).join("; ").slice(0, 140)})`);
+    }
+    for (const raw of s.miss ?? []) {
+      const miss = normalizeSample(raw, rule);
+      const out = runSample(rule, miss);
+      if (out.hits.length) {
+        problems.push(`fired on a near-neighbour — ${miss.note || miss.file} (${out.hits[0].excerpt.slice(0, 110)})`);
+      } else {
+        notes.push(`${miss.note || miss.file}${out.applies ? "" : " (excluded by appliesTo)"}`);
       }
     }
     if (problems.length) {
