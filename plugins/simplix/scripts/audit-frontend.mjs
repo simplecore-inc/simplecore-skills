@@ -2290,6 +2290,32 @@ return <Badge>{data?.totalElements ?? 0}</Badge>;`,
           !line.includes("options:") &&
           !lines[Math.max(0, i - 1)].includes("operator search axis:"),
       ),
+    samples: {
+      file: "modules/site/src/widgets/area/list.tsx",
+      broken: `const filters = [
+  { type: "text", field: "areaId", label: fieldLabel("areaId") },
+  { type: "dateRange", field: "createdAt", label: fieldLabel("createdAt") },
+];`,
+      fixed: `const filters = [
+  { type: "text", field: "name", label: fieldLabel("name") },
+  { type: "faceted", field: "status", label: fieldLabel("status"), options: statusOptions },
+];`,
+      miss: [
+        {
+          note: "a foreign key offered as a dropdown — the sanctioned entity filter",
+          source: `const filters = [
+  { type: "faceted", field: "ownerId", label: fieldLabel("owner"), options: userOptions },
+];`,
+        },
+        {
+          note: "an id the persona really does search by, with the judgment recorded above it",
+          source: `const filters = [
+  // operator search axis: support reads the ticket id back to the caller on the phone
+  { type: "text", field: "ticketId", label: fieldLabel("ticketId") },
+];`,
+        },
+      ],
+    },
   },
   {
     id: "delete-confirm-id",
@@ -2306,6 +2332,21 @@ return <Badge>{data?.totalElements ?? 0}</Badge>;`,
       }
       return hits;
     },
+    samples: {
+      file: "modules/site/src/widgets/area/list.tsx",
+      broken: `del.requestDelete({ id: row.areaId, name: row.name ?? row.id })`,
+      fixed: `del.requestDelete({ id: row.areaId, name: row.name ?? row.code })`,
+      miss: [
+        {
+          note: "a record named by the value the operator reads on screen",
+          source: `del.requestDelete({ id: row.areaId, name: row.name })`,
+        },
+        {
+          note: "the record's own key passed as the id argument is what deletion needs",
+          source: `del.requestDelete({ id: row.areaId })`,
+        },
+      ],
+    },
   },
   {
     id: "header-id-title",
@@ -2314,6 +2355,17 @@ return <Badge>{data?.totalElements ?? 0}</Badge>;`,
     desc: "detailHeader/editHeader interpolating an id — titles carry a name",
     appliesTo: isTsx,
     check: (c) => lineHits(c, /(detailHeader|editHeader)[^\n]*\bid:/),
+    samples: {
+      file: "modules/site/src/widgets/area/detail.tsx",
+      broken: `<CrudDetail header={t("area.detailHeader", { id: displayData.areaId })} />`,
+      fixed: `<CrudDetail header={t("area.detailHeader", { name: displayData.name })} />`,
+      miss: [
+        {
+          note: "the key named on its own, with nothing interpolated into it",
+          source: `const headerKey = "area.detailHeader";`,
+        },
+      ],
+    },
   },
   {
     id: "description-as-filter",
@@ -2322,6 +2374,23 @@ return <Badge>{data?.totalElements ?? 0}</Badge>;`,
     desc: "A definition row's description offered as a list filter — the persona finds these by name or code, not by their prose (an event's 사유/목적/메모 is a different case and legitimately searchable)",
     appliesTo: (p) => isTsx(p) && /list\.tsx$/.test(p),
     check: (c) => lineHits(c, /type:\s*"text",\s*field:\s*"description"/),
+    samples: {
+      file: "modules/site/src/widgets/area/list.tsx",
+      broken: `const filters = [
+  { type: "text", field: "description", label: fieldLabel("description") },
+];`,
+      fixed: `const filters = [
+  { type: "text", field: "name", label: fieldLabel("name") },
+];`,
+      miss: [
+        {
+          note: "an event's own prose — a reason is what the reader searches such a list by",
+          source: `const filters = [
+  { type: "text", field: "reason", label: fieldLabel("reason") },
+];`,
+        },
+      ],
+    },
   },
   {
     id: "visible-native-file-input",
@@ -2332,6 +2401,20 @@ return <Badge>{data?.totalElements ?? 0}</Badge>;`,
     // A file input is exempt only when it is hidden behind a trigger the app labels.
     check: (c) =>
       blockHits(c, /<input\b[^>]*type="file"[^>]*>/g).filter((h) => !/className="[^"]*\bhidden\b/.test(h.excerpt)),
+    samples: {
+      file: "modules/site/src/widgets/area/attachment-field.tsx",
+      broken: `<input type="file" accept="image/*" onChange={onPick} />`,
+      fixed: `<input type="file" accept="image/*" className="hidden" ref={fileRef} onChange={onPick} />
+<Button variant="outline" onClick={() => fileRef.current?.click()}>
+  {t("area.chooseFile")}
+</Button>`,
+      miss: [
+        {
+          note: "the framework field, which owns its own trigger and its own label",
+          source: `<FormFields.FileField label={fieldLabel("attachment")} value={values.attachmentFileId} onChange={onPick} />`,
+        },
+      ],
+    },
   },
   {
     id: "hand-written-endpoint-url",
@@ -2346,6 +2429,21 @@ return <Badge>{data?.totalElements ?? 0}</Badge>;`,
       lineHits(c, /["'`]\/api\/v\d+\/[^"'`]*["'`]/).filter(
         (h) => !/useInvalidateEntity|invalidateEntity|queryKey/.test(h.excerpt),
       ),
+    samples: {
+      file: "modules/site/src/widgets/area/export.ts",
+      broken: `const response = await fetch("/api/v1/areas/" + areaId + "/export");`,
+      fixed: `const response = await fetch(getExportAreaUrl({ areaId }));`,
+      miss: [
+        {
+          note: "a cache-key prefix is a literal by contract, not a URL a helper could supply",
+          source: `const invalidate = useInvalidateEntity("/api/v1/areas");`,
+        },
+        {
+          note: "the same literal standing in a query key",
+          source: `const options = { queryKey: ["/api/v1/areas", areaId] };`,
+        },
+      ],
+    },
   },
   {
     id: "mock-seed-missing",
@@ -2376,6 +2474,53 @@ return <Badge>{data?.totalElements ?? 0}</Badge>;`,
       }
       return hits;
     },
+    samples: {
+      file: "packages/domain-site/src/mock/index.ts",
+      broken: {
+        files: {
+          "packages/domain-site/src/mock/seeds.ts": `export const areaSeeds = [{ areaId: "a-1", name: "정문" }];
+`,
+        },
+        source: `import { areaSeeds, visitSeeds } from "./seeds";
+
+export const handlers = [
+  ...makeHandlers("area", areaSeeds),
+  ...makeHandlers("visit", visitSeeds),
+];`,
+      },
+      fixed: {
+        files: {
+          "packages/domain-site/src/mock/seeds.ts": `export const areaSeeds = [{ areaId: "a-1", name: "정문" }];
+export const visitSeeds = [{ visitId: "v-1", areaId: "a-1" }];
+`,
+        },
+        source: `import { areaSeeds, visitSeeds } from "./seeds";
+
+export const handlers = [
+  ...makeHandlers("area", areaSeeds),
+  ...makeHandlers("visit", visitSeeds),
+];`,
+      },
+      miss: [
+        {
+          note: "a seed named only in a comment about why it is gone",
+          files: {
+            "packages/domain-site/src/mock/seeds.ts": `export const areaSeeds = [];
+`,
+          },
+          source: `// visitSeeds moved out with the visit entity when it got its own domain package.
+import { areaSeeds } from "./seeds";
+
+export const handlers = [...makeHandlers("area", areaSeeds)];`,
+        },
+        {
+          note: "a domain whose seeds file has not been generated yet — nothing to check against",
+          source: `import { areaSeeds } from "./seeds";
+
+export const handlers = [...makeHandlers("area", areaSeeds)];`,
+        },
+      ],
+    },
   },
   {
     id: "silent-clipboard-copy",
@@ -2388,6 +2533,31 @@ return <Badge>{data?.totalElements ?? 0}</Badge>;`,
       /catch\s*(\{|\()/.test(c)
         ? []
         : lineHits(c, /navigator\.clipboard\.writeText/, notCommentLine),
+    samples: {
+      file: "modules/site/src/widgets/area/copy-code.ts",
+      broken: `export async function copyAreaCode(code: string) {
+  await navigator.clipboard.writeText(code);
+  addToast({ title: t("common.copied") });
+}`,
+      fixed: `export async function copyAreaCode(code: string) {
+  try {
+    await navigator.clipboard.writeText(code);
+    addToast({ title: t("common.copied") });
+  } catch {
+    addToast({ tone: "danger", title: t("common.copyFailed") });
+  }
+}`,
+      miss: [
+        {
+          note: "the call named in a comment explaining why this path exists",
+          source: `// navigator.clipboard.writeText is refused outside a secure context, so kiosk builds
+// reach the code through the print sheet instead.
+export function printAreaCode(code: string) {
+  openPrintSheet(code);
+}`,
+        },
+      ],
+    },
   },
   {
     id: "ungated-create-button",
@@ -2399,6 +2569,25 @@ return <Badge>{data?.totalElements ?? 0}</Badge>;`,
     // file that owns one is exempt; what this catches is the button standing alone.
     check: (c) =>
       /\buseCan\("create"/.test(c) ? [] : lineHits(c, /onClick=\{show(New|Create)\}/),
+    samples: {
+      file: "modules/site/src/pages/area-list.tsx",
+      broken: `usePageHeader({
+  title: t("area.pageTitle"),
+  actions: <Button onClick={showNew}>{t("area.add")}</Button>,
+});`,
+      fixed: `const canCreate = useCan("create", SUBJECTS.area);
+
+usePageHeader({
+  title: t("area.pageTitle"),
+  actions: canCreate ? <Button onClick={showNew}>{t("area.add")}</Button> : undefined,
+});`,
+      miss: [
+        {
+          note: "an edit affordance answers to a different permission and to a different rule",
+          source: `<Button onClick={showEdit}>{t("common.edit")}</Button>`,
+        },
+      ],
+    },
   },
   {
     id: "inline-permission-group",
@@ -2412,6 +2601,18 @@ return <Badge>{data?.totalElements ?? 0}</Badge>;`,
       /(^|\/)modules\//.test(file)
         ? lineHits(c, /\buseCan\(\s*"[a-z]+"\s*,\s*"[A-Z][A-Z_]*"\s*\)/)
         : [],
+    samples: {
+      file: "modules/site/src/widgets/area/list.tsx",
+      broken: `const canCreate = useCan("create", "SAFETY_SITE");`,
+      fixed: `const canCreate = useCan("create", SUBJECTS.area);`,
+      miss: [
+        {
+          note: "an app-level surface has no module registry to read the group from",
+          file: "apps/console/src/pages/dashboard.tsx",
+          source: `const canCreate = useCan("create", "SAFETY_SITE");`,
+        },
+      ],
+    },
   },
   {
     id: "unsubscribed-access-policy-read",
@@ -2442,6 +2643,34 @@ return <Badge>{data?.totalElements ?? 0}</Badge>;`,
         excerpt: m[0].replace(/\s+/g, " ").slice(0, 140),
       }));
     },
+    samples: {
+      file: "modules/site/src/widgets/area/detail.tsx",
+      broken: `const policy = useAccess();
+
+if (!policy.user) {
+  return <SignInPrompt />;
+}`,
+      fixed: `const policy = useAccess();
+const snapshot = useSyncExternalStore(policy.subscribe, policy.getSnapshot, policy.getSnapshot);
+
+if (!snapshot.user) {
+  return <SignInPrompt />;
+}`,
+      miss: [
+        {
+          note: "handing the value to a child decides nothing, so nothing can be stranded",
+          source: `const policy = useAccess();
+
+return <UserMenu user={policy.user} />;`,
+        },
+        {
+          note: "printing it decides nothing either",
+          source: `const policy = useAccess();
+
+return <Text>{policy.user.displayName}</Text>;`,
+        },
+      ],
+    },
   },
   {
     id: "ungated-entity-action",
@@ -2456,6 +2685,28 @@ return <Badge>{data?.totalElements ?? 0}</Badge>;`,
       /\buseCan\(/.test(c) || !/\.mutateAsync\(/.test(c)
         ? []
         : lineHits(c, /<CrudDetail\.ActionFooter\b/),
+    samples: {
+      file: "modules/site/src/widgets/area/detail.tsx",
+      broken: `const settle = useSettleArea();
+
+<CrudDetail.ActionFooter
+  actions={[{ label: t("area.settle"), onClick: () => settle.mutateAsync({ areaId }) }]}
+/>`,
+      fixed: `const settle = useSettleArea();
+const canManage = useCan("manage", SUBJECTS.area);
+
+<CrudDetail.ActionFooter
+  actions={canManage ? [{ label: t("area.settle"), onClick: () => settle.mutateAsync({ areaId }) }] : []}
+/>`,
+      miss: [
+        {
+          note: "a footer that runs no mutation cannot render a button the server will refuse",
+          source: `<CrudDetail.ActionFooter
+  actions={[{ label: t("common.print"), onClick: () => window.print() }]}
+/>`,
+        },
+      ],
+    },
   },
   {
     id: "lowercase-enum-label",
