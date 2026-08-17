@@ -1771,6 +1771,59 @@ const RULES = [
 ];
 
 // ---------------------------------------------------------------------------
+// Package export rules (package.json-based, separate collection)
+// ---------------------------------------------------------------------------
+
+/**
+ * Export entries of a workspace package that carry no `source` condition (invariant #5).
+ *
+ * <p><b>The dev server then serves that subpath from `dist/`, and a source edit reaches nothing.</b>
+ * Vite resolves workspace packages through `resolve.conditions: ["source"]`; an entry without it
+ * falls through to `import`, which is the built output. Nothing errors — the screen renders, HMR
+ * reports a successful update, and the browser keeps showing the code as it was at the last build.
+ * A session can spend an hour re-editing a file, re-reading it to confirm the change is there, and
+ * measuring a page that never received it.
+ *
+ * <p><b>It is written this way by the generator, not by hand.</b> `simplix scaffold` appends the
+ * `./pages` entry after generating a page, and it appends `types` and `import` only — so a module
+ * whose other three entries are correct acquires exactly one that is not, at the moment somebody
+ * adds the first page to it. That is why this is a rule rather than a note: the file it appears in
+ * is one nobody edited.
+ *
+ * @returns one finding per export entry missing the condition
+ */
+function packageExportFindings() {
+  const findings = [];
+  for (const base of ["modules", "packages"]) {
+    const root = path.join(ROOT, base);
+    if (!fs.existsSync(root)) continue;
+    for (const name of fs.readdirSync(root)) {
+      const manifest = path.join(root, name, "package.json");
+      if (!fs.existsSync(manifest)) continue;
+      let parsed;
+      try {
+        parsed = JSON.parse(fs.readFileSync(manifest, "utf8"));
+      } catch {
+        continue;
+      }
+      const exports = parsed.exports;
+      if (!exports || typeof exports !== "object") continue;
+      for (const [subpath, entry] of Object.entries(exports)) {
+        // A string entry names one file for every condition, so there is nothing to fall through
+        // to and nothing to declare. Only a conditional entry can omit the source condition.
+        if (!entry || typeof entry !== "object") continue;
+        if ("source" in entry) continue;
+        findings.push({
+          file: path.relative(ROOT, manifest),
+          excerpt: `"${subpath}" resolves to ${entry.import ?? entry.default ?? "dist"} in dev — add "source"`,
+        });
+      }
+    }
+  }
+  return findings;
+}
+
+// ---------------------------------------------------------------------------
 // Locale rules (JSON-based, separate collection)
 // ---------------------------------------------------------------------------
 
@@ -2003,6 +2056,11 @@ if (!ruleFilter || ruleFilter.includes("ko-particle-after-placeholder")) {
   koParticleRev = koParticleFindings();
 }
 
+let exportErr = [];
+if (!ruleFilter || ruleFilter.includes("package-export-without-source")) {
+  exportErr = packageExportFindings();
+}
+
 let scaffoldHeaderRev = [];
 if (!ruleFilter || ruleFilter.includes("scaffold-header-placeholder")) {
   scaffoldHeaderRev = scaffoldHeaderFindings();
@@ -2040,6 +2098,16 @@ if (koParticleRev.length) {
     koParticleRev,
   );
   reviewCount += koParticleRev.length;
+}
+if (exportErr.length) {
+  printBucket(
+    "package-export-without-source",
+    "error",
+    "#5",
+    "A workspace package's export entry carries no `source` condition, so the dev server serves that subpath from `dist/` — every source edit under it is invisible in the browser while HMR reports success, and the screen shows the code as it was at the last build. `simplix scaffold` writes the `./pages` entry this way",
+    exportErr,
+  );
+  errorCount += exportErr.length;
 }
 if (scaffoldHeaderRev.length) {
   printBucket(
