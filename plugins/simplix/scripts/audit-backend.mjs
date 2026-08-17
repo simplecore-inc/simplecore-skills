@@ -965,6 +965,20 @@ function selftest() {
 
 const args = process.argv.slice(2);
 
+// An unrecognised option stops the run rather than falling through to a scan. A misspelt
+// `--selftest` that scanned instead printed "0 file(s) scanned — 0 error hit(s)", which is
+// what a clean project prints; the two are indistinguishable to whoever reads the tail.
+const FLAGS = ["--list", "--selftest", "--errors-only"];
+const VALUED_FLAGS = ["--root=", "--rule="];
+const unknownArgs = args.filter(
+  (a) => !FLAGS.includes(a) && !VALUED_FLAGS.some((f) => a.startsWith(f)),
+);
+if (unknownArgs.length) {
+  console.error(`\u2716 unrecognised option: ${unknownArgs.join(" ")}`);
+  console.error(`  known options: ${FLAGS.join("  ")}  ${VALUED_FLAGS.map((f) => `${f}<value>`).join("  ")}`);
+  process.exit(2);
+}
+
 if (args.includes("--list")) {
   for (const r of RULES) {
     console.log(`${r.level.padEnd(6)} ${r.id.padEnd(34)} ${r.invariant.padEnd(8)} ${r.desc.slice(0, 90)}`);

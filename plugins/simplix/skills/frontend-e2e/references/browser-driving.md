@@ -134,7 +134,7 @@ are questions about boxes on a painted page. Keeping them apart is what stops a 
 ```bash
 node "${CLAUDE_PLUGIN_ROOT}/scripts/audit-rendered.mjs" --url <address>   # drives agent-browser
 node "${CLAUDE_PLUGIN_ROOT}/scripts/audit-rendered.mjs" --print <id>      # the snippet, for this session's driver
-node "${CLAUDE_PLUGIN_ROOT}/scripts/audit-rendered.mjs" --self-test       # both directions, generated fixtures
+node "${CLAUDE_PLUGIN_ROOT}/scripts/audit-rendered.mjs" --selftest        # both directions, generated fixtures
 node "${CLAUDE_PLUGIN_ROOT}/scripts/audit-rendered.mjs" --list
 ```
 

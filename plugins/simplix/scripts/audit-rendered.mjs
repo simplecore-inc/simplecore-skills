@@ -13,7 +13,11 @@
  *   node audit-rendered.mjs --url <u> --check countedListDrawsNoRows
  *   node audit-rendered.mjs --list                  # the checks and what each catches
  *   node audit-rendered.mjs --print <id>            # the snippet, to paste into any driver
- *   node audit-rendered.mjs --self-test             # both directions, against generated fixtures
+ *   node audit-rendered.mjs --selftest              # both directions, against generated fixtures
+ *
+ * An unrecognised option stops the run. `--selftest` is spelt the same way in all three audit
+ * scripts, and a misspelling that fell through to a normal run reported nothing wrong — which
+ * is what a clean run reports.
  *
  * Exit code 1 when an error-grade check has findings, 2 when the browser could not be driven.
  * **A run that could not reach a browser never exits 0** — a check nobody can prove fired is
@@ -592,7 +596,37 @@ function arg(name) {
   return i >= 0 ? process.argv[i + 1] : undefined;
 }
 
+// Every option this script knows, so an unrecognised one can stop the run instead of falling
+// through to a normal one. A valued option is written either `--name value` or `--name=value`,
+// so the walk has to skip the value that follows the first form.
+const BOOLEAN_FLAGS = ["--list", "--selftest"];
+const VALUED_FLAGS = ["url", "check", "print", "session", "options"];
+
+function unrecognisedArgs() {
+  const argv = process.argv.slice(2);
+  const bad = [];
+  for (let i = 0; i < argv.length; i++) {
+    const a = argv[i];
+    if (BOOLEAN_FLAGS.includes(a)) continue;
+    const named = VALUED_FLAGS.find((n) => a === `--${n}` || a.startsWith(`--${n}=`));
+    if (named) {
+      if (a === `--${named}`) i++;
+      continue;
+    }
+    bad.push(a);
+  }
+  return bad;
+}
+
 function main() {
+  const unknown = unrecognisedArgs();
+  if (unknown.length) {
+    console.error(`\u2716 unrecognised option: ${unknown.join(" ")}`);
+    console.error(
+      `  known options: ${BOOLEAN_FLAGS.join("  ")}  ${VALUED_FLAGS.map((f) => `--${f} <value>`).join("  ")}`,
+    );
+    return 2;
+  }
   const options = { ...DEFAULTS, ...JSON.parse(arg("options") ?? "{}") };
   const only = arg("check");
   const selected = only ? checks.filter((c) => c.id === only) : checks;
@@ -611,7 +645,7 @@ function main() {
     console.log(snippet(c, options));
     return 0;
   }
-  if (process.argv.includes("--self-test")) return selfTest(session, options);
+  if (process.argv.includes("--selftest")) return selfTest(session, options);
 
   const url = arg("url");
   if (!url) {

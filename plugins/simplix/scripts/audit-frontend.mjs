@@ -10,9 +10,23 @@
  *   node "${CLAUDE_PLUGIN_ROOT}/scripts/audit-frontend.mjs" --errors-only
  *   node "${CLAUDE_PLUGIN_ROOT}/scripts/audit-frontend.mjs" --rule=raw-layout-div,filterbar-maxbadges
  *   node "${CLAUDE_PLUGIN_ROOT}/scripts/audit-frontend.mjs" --list      # list rules
+ *   node "${CLAUDE_PLUGIN_ROOT}/scripts/audit-frontend.mjs" --selftest  # prove every rule both ways
+ *
+ * An unrecognised flag stops the run. A misspelt `--selftest` that fell through to a scan
+ * reported `0 files scanned, 0 findings`, which is what a clean tree reports — the one output an
+ * audit must never produce for a reason other than cleanliness.
  *
  * Exit code 1 when any error-level rule has hits. "review"-level rules print
  * candidates that need human judgment and never fail the run.
+ *
+ * **--selftest is the half that keeps this file honest.** Every rule carries a `broken` sample
+ * and a `fixed` sample, and the selftest asserts the rule fires on the first and stays silent on
+ * the second. A rule proved in one direction has not been proved: a check that can never fire is
+ * indistinguishable from a clean tree, and a clean tree is what a green run invites you to read.
+ * Where the invariant states an exception, or the pattern has a legitimate near-neighbour, the
+ * rule also carries `miss` samples — a rule that fires on its own exception is worse than no
+ * rule, because the first reader to meet one learns that this audit cries wolf. Add no rule
+ * without both directions; the selftest fails on a rule that omits either.
  *
  * Rules that need judgment (persona fit, precedent parity, lifecycle reachability)
  * stay in the audit checklist document — do not port them here.
@@ -32,11 +46,17 @@
  */
 
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 
 // Project root: --root=<dir> wins, else the current working directory. The script
 // ships inside a plugin, so it must never resolve the root from its own location.
-const ROOT = path.resolve(
+//
+// Reassignable because the self-test points the whole audit at a fixture tree it writes and
+// throws away — a rule that reads a sibling file, a generated model or a locale catalogue can
+// only be proved against a tree, and a rule proved against a hand-made stub of its own reader
+// is proving the stub.
+let ROOT = path.resolve(
   process.argv.find((a) => a.startsWith("--root="))?.slice("--root=".length) ?? process.cwd(),
 );
 // `packages` belongs here as much as the other two: a simplix-react project is package-first, and
@@ -504,17 +524,23 @@ function translatorBindings(content) {
  * @example
  * { "audit": { "publicRouteDirs": ["checkout", "contact-change"] } }
  */
-const SETTINGS = (() => {
+let settingsCache = null;
+function settings() {
+  if (settingsCache) return settingsCache;
   const file = path.join(ROOT, ".claude", "simplix.json");
-  if (!fs.existsSync(file)) return {};
+  if (!fs.existsSync(file)) {
+    settingsCache = {};
+    return settingsCache;
+  }
   try {
     const parsed = JSON.parse(fs.readFileSync(file, "utf8"));
-    return parsed.audit ?? {};
+    settingsCache = parsed.audit ?? {};
   } catch {
     console.error(`⚠ .claude/simplix.json is not valid JSON — auditing with defaults.`);
-    return {};
+    settingsCache = {};
   }
-})();
+  return settingsCache;
+}
 
 
 /**
@@ -592,7 +618,10 @@ function generatedEnumNames() {
   return names;
 }
 
-const PUBLIC_ROUTE_DIRS = Array.isArray(SETTINGS.publicRouteDirs) ? SETTINGS.publicRouteDirs : [];
+function publicRouteDirs() {
+  const declared = settings().publicRouteDirs;
+  return Array.isArray(declared) ? declared : [];
+}
 
 /**
  * Whether the app owning this route already guards every address at its root.
@@ -672,7 +701,7 @@ const RULES = [
     desc: "Route mounts its screen directly — a typed address or an old bookmark opens a screen the operator's grants do not admit, and the denial only arrives when something is clicked",
     appliesTo: (p) =>
       /\/src\/routes\/[^/]+\/index\.tsx$/.test(p)
-      && !PUBLIC_ROUTE_DIRS.some((dir) => p.includes(`/src/routes/${dir}/`))
+      && !publicRouteDirs().some((dir) => p.includes(`/src/routes/${dir}/`))
       && !guardedAtRoot(p),
     check: (c) => lineHits(c, /component:\s*\w+\s*,/, (line) => !line.includes("guarded(")),
   },
@@ -1827,6 +1856,13 @@ function packageExportFindings() {
 // Locale rules (JSON-based, separate collection)
 // ---------------------------------------------------------------------------
 
+let localeFindingsCache = null;
+/** Both locale rules read the same catalogues, so the walk happens once per root. */
+function localeFindingsMemo() {
+  localeFindingsCache ??= localeFindings();
+  return localeFindingsCache;
+}
+
 function localeFindings() {
   const errors = [];
   const reviews = [];
@@ -2013,18 +2049,311 @@ function scaffoldHeaderFindings() {
 }
 
 // ---------------------------------------------------------------------------
+// Collection rules — the ones that read a tree rather than a file
+//
+// Same shape as RULES minus `appliesTo`/`check`: `collect()` walks the project itself and
+// returns findings. They were once wired straight into the runner, which is how four rules came
+// to have no id anybody could pass to `--rule=` and no way to be proved at all.
+// ---------------------------------------------------------------------------
+
+const COLLECTION_RULES = [
+  {
+    id: "locale-missing-sections",
+    invariant: "audit: scaffold locale",
+    level: "error",
+    desc: "locale file/section missing vs en.json",
+    collect: () => localeFindingsMemo().errors,
+  },
+  {
+    id: "locale-untranslated",
+    invariant: "audit: scaffold locale",
+    level: "review",
+    desc: "possible untranslated scaffold defaults",
+    collect: () => localeFindingsMemo().reviews,
+  },
+  {
+    id: "ko-particle-after-placeholder",
+    invariant: "audit: locale wording",
+    level: "review",
+    desc: "Korean particle written straight after an interpolated value — 을/를 · 이/가 · 은/는 · 와/과 · (으)로 depend on the value's last syllable, so the sentence is wrong for half the values; attach the particle to a fixed noun instead, or end the clause on the value with 입니다",
+    collect: koParticleFindings,
+  },
+  {
+    id: "package-export-without-source",
+    invariant: "#5",
+    level: "error",
+    desc: "A workspace package's export entry carries no `source` condition, so the dev server serves that subpath from `dist/` — every source edit under it is invisible in the browser while HMR reports success, and the screen shows the code as it was at the last build. `simplix scaffold` writes the `./pages` entry this way",
+    collect: packageExportFindings,
+  },
+  {
+    id: "scaffold-header-placeholder",
+    invariant: "audit: scaffold locale",
+    level: "review",
+    desc: "Screen wording still carries the scaffold's placeholder — a bare \"new\" that names no entity, or a subtitle naming the table (\"master data\") instead of the operator's job",
+    collect: scaffoldHeaderFindings,
+  },
+];
+
+const ALL_RULES = [...RULES, ...COLLECTION_RULES];
+
+// ---------------------------------------------------------------------------
+// Self-test — every rule against the broken form, the fixed form, and the near-neighbours it
+// must stay silent on
+// ---------------------------------------------------------------------------
+
+/** Reset every index and cache built from the tree, so the next read sees the new root. */
+function resetCaches() {
+  settingsCache = null;
+  generatedModelIndex = null;
+  exportedFunctionCache = null;
+  generatedEnumCache = null;
+  globalDialogCache = null;
+  localeFindingsCache = null;
+  localeKeyCache.clear();
+}
+
+function setRoot(dir) {
+  ROOT = dir;
+  resetCaches();
+}
+
+function writeFixture(root, rel, body) {
+  const abs = path.join(root, rel);
+  fs.mkdirSync(path.dirname(abs), { recursive: true });
+  fs.writeFileSync(abs, body);
+}
+
+/**
+ * A sample is either a bare source string — the content of `samples.file` — or an object that
+ * also lays down the neighbouring files the rule reads: a sibling `detail.tsx`, a generated
+ * model, a locale catalogue, a `package.json`. A rule that reads a tree can only be proved
+ * against a tree.
+ */
+function normalizeSample(sample, rule) {
+  if (typeof sample === "string") {
+    return { file: rule.samples?.file, source: sample, files: {}, note: "" };
+  }
+  return {
+    file: sample.file ?? rule.samples?.file,
+    source: sample.source,
+    files: sample.files ?? {},
+    note: sample.note ?? "",
+  };
+}
+
+/**
+ * Run one rule against one sample in a throwaway project tree.
+ *
+ * @returns the hits, and whether the scan's own file collection would have reached the sample —
+ *          a rule whose sample sits where `collectSources` never looks is one the audit cannot
+ *          fire in a real run, however well its regex matches.
+ */
+function runSample(rule, sample) {
+  const dir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "simplix-audit-")));
+  const previousRoot = ROOT;
+  try {
+    for (const [rel, body] of Object.entries(sample.files)) writeFixture(dir, rel, body);
+    if (sample.source !== undefined) writeFixture(dir, sample.file, sample.source);
+    setRoot(dir);
+    if (rule.collect) return { hits: rule.collect(), reachable: true };
+    const reachable = collectSources().some(
+      (abs) => path.relative(dir, abs).split(path.sep).join("/") === sample.file,
+    );
+    return { hits: rule.check(sample.source, sample.file), reachable };
+  } finally {
+    setRoot(previousRoot);
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+}
+
+/**
+ * The shared machinery every rule leans on, proved on its own.
+ *
+ * A rule's samples prove the rule; they do not prove the tag scanner underneath it, and a
+ * scanner that quietly mis-reads one shape takes a dozen rules with it in a way no single
+ * rule's failure names.
+ */
+function selftestMechanisms() {
+  const cases = [
+    {
+      name: "jsxOpenTag: a `>` inside an arrow body does not end the tag",
+      pass: () => jsxOpenTag(`<Button onClick={() => setOpen(true)} disabled>x`, 0).tag
+        === `<Button onClick={() => setOpen(true)} disabled>`,
+    },
+    {
+      name: "jsxOpenTag: a `>` inside a class string does not end the tag",
+      pass: () => jsxOpenTag(`<div className="[&>svg]:h-4">x`, 0).tag === `<div className="[&>svg]:h-4">`,
+    },
+    {
+      name: "jsxChildren: a same-named element nested inside is counted, not mistaken for the close",
+      pass: () => {
+        const src = `<Card><Card>inner</Card>outer</Card>`;
+        return jsxChildren(src, "Card", jsxOpenTag(src, 0).end) === `<Card>inner</Card>outer`;
+      },
+    },
+    {
+      name: "tagAttrs: an element passed as a prop takes its own attributes with it",
+      pass: () => !/aria-label/.test(tagAttrs(`<Popover trigger={<button aria-label="x" />} open>`)),
+    },
+    {
+      name: "tagAttrs: a `<` that is a comparison does not cut the attribute list short",
+      pass: () => /aria-label/.test(tagAttrs(`<Pager disabled={page < 1} aria-label="paging">`)),
+    },
+    {
+      name: "childContent: a lone icon component is a mark",
+      pass: () => childContent(`<TrashIcon />`) === "marks",
+    },
+    {
+      name: "childContent: sr-only text is a label",
+      pass: () => childContent(`<TrashIcon /><span className="sr-only">삭제</span>`) === "label",
+    },
+    {
+      name: "childContent: an icon beside words is neither empty nor marks",
+      pass: () => childContent(`<TrashIcon />삭제`) === null,
+    },
+    {
+      name: "childContent: a JSX comment alone is empty",
+      pass: () => childContent(`{/* nothing here */}`) === "empty",
+    },
+    {
+      name: "notCommentLine: a JSX comment line is not code",
+      pass: () => !notCommentLine(`  {/* <div className="flex"> */}`) && notCommentLine(`  <div className="flex">`),
+    },
+    {
+      name: "translatorBindings: two translators in one file keep their own namespaces",
+      pass: () => {
+        const binds = translatorBindings(
+          `const { t } = useTranslation("site/widgets");\nconst { t: tf } = useTranslation("site/features");`,
+        );
+        return binds.get("t") === "site/widgets" && binds.get("tf") === "site/features";
+      },
+    },
+    {
+      name: "columnBlocks: each declared column is found with its field",
+      pass: () => {
+        const blocks = columnBlocks(
+          `<CrudList.Column field="name">{(row) => row.name}</CrudList.Column>\n<CrudList.Column field="status">{(row) => row.status}</CrudList.Column>`,
+        );
+        return blocks.length === 2 && blocks[1].field === "status";
+      },
+    },
+    {
+      name: "cardSlots: the card region stops where the columns begin",
+      pass: () => {
+        const slots = cardSlots(
+          `cardTitle={(row) => row.name}\ncardContent={(row) => row.code}\n<CrudList.Column field="status">{(row) => row.status}</CrudList.Column>`,
+        );
+        return slots.includes("row.code") && !slots.includes("row.status");
+      },
+    },
+    {
+      name: "readsServerData: a domain import puts server data in scope, a bare file does not",
+      pass: () =>
+        readsServerData(`import { useListAreas } from "@acme/domain-site";`)
+        && !readsServerData(`const row = { type: "STATIC" };`),
+    },
+  ];
+  let bad = 0;
+  for (const c of cases) {
+    let ok = false;
+    try {
+      ok = c.pass();
+    } catch {
+      ok = false;
+    }
+    console.log(`${ok ? "✔" : "✖"} ${c.name}`);
+    if (!ok) bad++;
+  }
+  return bad;
+}
+
+function selftest() {
+  let failed = selftestMechanisms();
+  let passed = 0;
+  console.log("");
+  for (const rule of ALL_RULES) {
+    const s = rule.samples;
+    const problems = [];
+    const notes = [];
+    if (!s || s.broken === undefined || s.fixed === undefined) {
+      console.log(`✖ ${rule.id}: no broken/fixed samples — a rule proved in one direction is not proved`);
+      failed++;
+      continue;
+    }
+    const broken = normalizeSample(s.broken, rule);
+    const fixed = normalizeSample(s.fixed, rule);
+    if (!rule.collect && !rule.appliesTo(broken.file)) {
+      problems.push(`appliesTo() rejects ${broken.file} — the rule could never run on the broken form`);
+    } else if (!rule.collect && !rule.appliesTo(fixed.file)) {
+      problems.push(`appliesTo() rejects ${fixed.file} — silence on the fixed form would prove nothing`);
+    } else {
+      const onBroken = runSample(rule, broken);
+      const onFixed = runSample(rule, fixed);
+      if (!onBroken.hits.length) problems.push("did NOT fire on the broken form");
+      if (!onBroken.reachable) {
+        problems.push(`the scan never reaches ${broken.file} — collectSources() would not hand this file to any rule`);
+      }
+      if (onFixed.hits.length) {
+        problems.push(`fired on the fixed form (${onFixed.hits.map((h) => h.excerpt).join("; ").slice(0, 140)})`);
+      }
+      for (const raw of s.miss ?? []) {
+        const miss = normalizeSample(raw, rule);
+        if (!rule.collect && !rule.appliesTo(miss.file)) {
+          notes.push(`${miss.note || miss.file}: excluded by appliesTo`);
+          continue;
+        }
+        const hits = runSample(rule, miss).hits;
+        if (hits.length) {
+          problems.push(`fired on a near-neighbour — ${miss.note || miss.file} (${hits[0].excerpt.slice(0, 110)})`);
+        } else {
+          notes.push(miss.note || miss.file);
+        }
+      }
+    }
+    if (problems.length) {
+      console.log(`✖ ${rule.id}\n    ${problems.join("\n    ")}`);
+      failed++;
+    } else {
+      passed++;
+      const near = notes.length ? `  · silent on ${notes.length} near-neighbour(s)` : "";
+      console.log(`✔ ${rule.id.padEnd(42)} fires on broken, silent on fixed${near}`);
+    }
+  }
+  console.log(`\n${passed} rule(s) proved both ways, ${failed} not proved.`);
+  return failed === 0 ? 0 : 1;
+}
+
+// ---------------------------------------------------------------------------
 // Runner
 // ---------------------------------------------------------------------------
 
 const args = process.argv.slice(2);
+
+// An unrecognised option stops the run rather than falling through to a scan. `--self-test`
+// against a script that only knows `--selftest` scanned nothing and printed
+// "0 source files scanned — 0 error hit(s)", which is exactly what a clean project prints.
+const FLAGS = ["--list", "--selftest", "--errors-only"];
+const VALUED_FLAGS = ["--root=", "--rule="];
+const unknownArgs = args.filter(
+  (a) => !FLAGS.includes(a) && !VALUED_FLAGS.some((f) => a.startsWith(f)),
+);
+if (unknownArgs.length) {
+  console.error(`✖ unrecognised option: ${unknownArgs.join(" ")}`);
+  console.error(`  known options: ${FLAGS.join("  ")}  ${VALUED_FLAGS.map((f) => `${f}<value>`).join("  ")}`);
+  process.exit(2);
+}
+
 if (args.includes("--list")) {
-  for (const r of RULES) console.log(`${r.level.padEnd(6)} ${r.id.padEnd(26)} ${r.invariant.padEnd(22)} ${r.desc}`);
-  console.log(`error  locale-missing-sections    audit: scaffold locale   ko/ja locale file or top-level section missing vs en`);
-  console.log(`review locale-untranslated        audit: scaffold locale   camelCase English defaults left untranslated in ko/ja`);
-  console.log(`review ko-particle-after-placeholder audit: locale wording  Korean particle welded to {{value}} — right for some values, wrong for the rest`);
-  console.log(`review scaffold-header-placeholder audit: scaffold locale   scaffold placeholder wording left on a screen — bare "new" header, or a "master data" subtitle`);
+  for (const r of ALL_RULES) {
+    console.log(`${r.level.padEnd(6)} ${r.id.padEnd(42)} ${r.invariant.padEnd(22)} ${r.desc}`);
+  }
   process.exit(0);
 }
+
+if (args.includes("--selftest")) {
+  process.exit(selftest());
+}
+
 const errorsOnly = args.includes("--errors-only");
 const ruleFilter = args.find((a) => a.startsWith("--rule="))?.slice(7).split(",");
 
@@ -2043,27 +2372,10 @@ for (const rule of RULES) {
   if (bucket.hits.length) results.set(rule.id, bucket);
 }
 
-let localeErr = [];
-let localeRev = [];
-if (!ruleFilter || ruleFilter.some((r) => r.startsWith("locale"))) {
-  const lf = localeFindings();
-  localeErr = lf.errors;
-  localeRev = lf.reviews;
-}
-
-let koParticleRev = [];
-if (!ruleFilter || ruleFilter.includes("ko-particle-after-placeholder")) {
-  koParticleRev = koParticleFindings();
-}
-
-let exportErr = [];
-if (!ruleFilter || ruleFilter.includes("package-export-without-source")) {
-  exportErr = packageExportFindings();
-}
-
-let scaffoldHeaderRev = [];
-if (!ruleFilter || ruleFilter.includes("scaffold-header-placeholder")) {
-  scaffoldHeaderRev = scaffoldHeaderFindings();
+for (const rule of COLLECTION_RULES) {
+  if (ruleFilter && !ruleFilter.includes(rule.id)) continue;
+  const hits = rule.collect();
+  if (hits.length) results.set(rule.id, { rule, hits });
 }
 
 let errorCount = 0;
@@ -2080,44 +2392,6 @@ for (const { rule, hits } of results.values()) {
   printBucket(rule.id, rule.level, rule.invariant, rule.desc, hits);
   if (rule.level === "error") errorCount += hits.length;
   else reviewCount += hits.length;
-}
-if (localeErr.length) {
-  printBucket("locale-missing-sections", "error", "audit: scaffold locale", "locale file/section missing vs en.json", localeErr);
-  errorCount += localeErr.length;
-}
-if (localeRev.length) {
-  printBucket("locale-untranslated", "review", "audit: scaffold locale", "possible untranslated scaffold defaults", localeRev);
-  reviewCount += localeRev.length;
-}
-if (koParticleRev.length) {
-  printBucket(
-    "ko-particle-after-placeholder",
-    "review",
-    "audit: locale wording",
-    "Korean particle written straight after an interpolated value — 을/를 · 이/가 · 은/는 · 와/과 · (으)로 depend on the value's last syllable, so the sentence is wrong for half the values; attach the particle to a fixed noun instead, or end the clause on the value with 입니다",
-    koParticleRev,
-  );
-  reviewCount += koParticleRev.length;
-}
-if (exportErr.length) {
-  printBucket(
-    "package-export-without-source",
-    "error",
-    "#5",
-    "A workspace package's export entry carries no `source` condition, so the dev server serves that subpath from `dist/` — every source edit under it is invisible in the browser while HMR reports success, and the screen shows the code as it was at the last build. `simplix scaffold` writes the `./pages` entry this way",
-    exportErr,
-  );
-  errorCount += exportErr.length;
-}
-if (scaffoldHeaderRev.length) {
-  printBucket(
-    "scaffold-header-placeholder",
-    "review",
-    "audit: scaffold locale",
-    "Screen wording still carries the scaffold's placeholder — a bare \"new\" that names no entity, or a subtitle naming the table (\"master data\") instead of the operator's job",
-    scaffoldHeaderRev,
-  );
-  reviewCount += scaffoldHeaderRev.length;
 }
 
 console.log(`\n${files.length} source files scanned — ${errorCount} error hit(s), ${reviewCount} review candidate(s).`);
