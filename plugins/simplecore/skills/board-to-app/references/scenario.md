@@ -24,9 +24,14 @@ leaves the story contradicting itself, and the contradiction is invisible until
 somebody puts two screens side by side. Ask both questions per frame: which moment
 does this show, and which already-written moment does this change?
 
-A checker can hold that every covered frame appears in the document, and that every
-step names frames that exist. It cannot hold that the steps still add up; that is
-the agent's judgement, which is why the rule is stated rather than merely enforced.
+**This skill ships no checker for any of it, and 「a checker could hold that」 is not one.**
+Coverage — every frame the story feeds appearing in the document, every step naming frames that
+exist — is a check a project can write as a gate of its own, against its own board and its own
+document format; until it writes one, nothing is holding it, and a story document naming no frame
+at all stands there saying nothing. Whether the steps still add up is nobody's check: that is the
+agent's judgement. Both halves are marked in the skill's *Held by eyes* table, because a sentence
+saying what a checker *could* do is read as one somebody already wrote — which is the third
+category this skill spends a section refusing.
 
 ## Record what a unit of work cost, or the number is gone
 

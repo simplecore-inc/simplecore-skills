@@ -2,31 +2,11 @@
 //
 // Both halves for every gate: a rule that fires on everything is as useless as one that fires
 // on nothing, and neither announces itself from a green run.
+import { cleanProject } from './harness.mjs';
 
-/** A project that satisfies every core gate, which each case then breaks in exactly one way. */
-function complete() {
-  return {
-    config: {
-      boardRoot: 'board',
-      boardManifest: 'board/manifest.mjs',
-      chapterDir: 'chapters',
-      chapterOverview: 'chapters/00-overview.md',
-      stateLedger: 'chapters/STATE.md',
-      handoverFile: 'notes/HANDOVER.md',
-    },
-    files: {
-      'board/manifest.mjs': 'export const frames = [];\n',
-      'chapters/00-overview.md': '# Chapters\n',
-      'chapters/w01-foundation.md': '# W01\n',
-      'chapters/STATE.md': '# State\n\n| chapter | state |\n| --- | --- |\n| w01 | closed |\n',
-      'notes/HANDOVER.md': '# Handover\n\nThe server starts with `npm run dev` on port 3000.\n',
-    },
-  };
-}
-
-/** Merge an override into the complete project without mutating it. */
+/** Merge an override into the clean project without mutating it. */
 function variant(over = {}) {
-  const base = complete();
+  const base = cleanProject();
   return {
     config: { ...base.config, ...(over.config ?? {}) },
     files: { ...base.files, ...(over.files ?? {}) },
@@ -92,6 +72,49 @@ export function cases(t) {
       },
     },
     false
+  );
+
+  // A key whose subject is one file in one project and a family of them in the next.
+  add(
+    'configGate',
+    'the detection rules live in a directory of their own',
+    {
+      config: { auditScript: 'tools/checks' },
+      files: { 'tools/checks/check-copy.mjs': '// one of a family\n' },
+    },
+    false
+  );
+  add(
+    'configGate',
+    'the detection rules point at neither a file nor a directory',
+    { config: { auditScript: 'tools/checks' } },
+    true
+  );
+
+  // A key a project can genuinely hold more than one of — a database with several lineages.
+  add(
+    'configGate',
+    'every migration lineage declared, and every one of them there',
+    {
+      config: { migrationDir: ['db/main', 'db/audit', 'db/vault'] },
+      files: { 'db/main/': '', 'db/audit/': '', 'db/vault/': '' },
+    },
+    false
+  );
+  add(
+    'configGate',
+    'one of the declared migration lineages is not there',
+    {
+      config: { migrationDir: ['db/main', 'db/vault'] },
+      files: { 'db/main/': '' },
+    },
+    true
+  );
+  add(
+    'configGate',
+    'a migration lineage that is not a path at all',
+    { config: { migrationDir: ['db/main', 7] }, files: { 'db/main/': '' } },
+    true
   );
 
   add(
@@ -203,6 +226,37 @@ export function cases(t) {
       files: {
         'notes/OPEN.md':
           '# Open\n\n## Parked decisions\n\n- C-07 — board draws a bulk reverse; the API reverses one at a time — board looks stale\n- D-02 — needs a role no environment has — blocked, not stale\n',
+      },
+    },
+    false
+  );
+  // The declaration carries the heading's text, and a fragment of it names no heading anybody
+  // wrote — accepted, it would satisfy the gate while pointing at whichever heading happens to
+  // contain the fragment.
+  add(
+    'openItemsGate',
+    'the declaration is only part of the heading',
+    {
+      config: { openItemsFile: 'notes/OPEN.md', openItemsHeading: 'Parked' },
+      files: {
+        'notes/OPEN.md':
+          '# Open\n\n## Parked decisions\n\n- C-07 — board draws a bulk reverse — board looks stale\n',
+      },
+    },
+    true
+  );
+  // The same rule read from the other side: a document holding two headings, one of which
+  // contains the other. The exact declaration reads the section it named, not the earlier
+  // heading that merely spans it — which is the half `sectionUnder` decides rather than
+  // `hasHeading`.
+  add(
+    'openItemsGate',
+    'an earlier heading that contains the declared one',
+    {
+      ...parked,
+      files: {
+        'notes/OPEN.md':
+          '# Open\n\n## Parked decisions, resolved\n\n- settled last week by the operator\n\n## Parked decisions\n\n- C-07 — board draws a bulk reverse — board looks stale\n',
       },
     },
     false

@@ -13,8 +13,14 @@ node "${CLAUDE_PLUGIN_ROOT}/skills/board-to-app/scripts/bta.mjs" doctor   # what
 ```
 
 The config is found by walking up from the current directory for `.claude/board-to-app.json`;
-`--config <path>` names one directly. `check` exits non-zero on any finding, so it belongs in
-the project's own `gates` list and runs at every chapter close.
+`--config <path>` names one directly. `check` exits non-zero on any **error-grade** finding, so it
+belongs in the project's own `gates` list and runs at every chapter close. Warnings are printed
+under `⚠`, counted on their own line, and ignored by the exit status.
+
+**`check` and `gates` are read by their exit status; `doctor` is read.** A report exits zero on
+anything it prints — only a config it cannot find at all stops it, at 2 — so nothing about a
+project's completeness can be taken off `doctor`'s status, and a step that names it as a proof is
+claiming something the command does not offer. What proves a config is `check`.
 
 `check` **skips** a gate whose keys the project does not declare and says how many it skipped.
 That is the difference between a rule that does not apply here and a rule that silently stopped
@@ -45,6 +51,7 @@ export const exampleGate = {
   id: 'exampleGate',
   title: 'what is wrong when this fires',
   needs: ['chapterDir'],          // config keys it reads; the gate is skipped when one is absent
+  grade: 'error',                 // 'error' (the default, and omitted) or 'warning'
   run: (ctx) => [],               // → one string per finding, each naming the file and what to do
 };
 ```
@@ -76,14 +83,72 @@ object — so a gate that quietly stopped resolving paths cannot pass its own ca
 `commits: ['…']` to make the fixture a git repository, and end a `files` key with `/` to make
 an empty directory.
 
+## Error or warning, and why the grade sits on the gate
+
+A finding is one of two things, and the exit status is the difference:
+
+| `grade` | What a finding of it is | `check` | The write-time hook |
+| --- | --- | --- | --- |
+| `error` — the default, and what a gate declaring nothing is judged at | a defect: something is wrong, and the finding says what to change | `✖`, counted, exits non-zero | blocks the write when the finding names the file just written |
+| `warning` | a prompt: go and re-read what this names, because it may already be settled | `⚠`, counted on its own line, exit status unchanged | shown in full, blocks nothing |
+
+**The grade belongs to the rule, not to the string it returned.** A gate answers one question, so
+the kind of its findings is fixed when it is written: a gate whose findings differ in kind is two
+rules sharing an id, and it is split into two gates that each carry their own pair of cases.
+Grading each returned string would leave the harness nothing to hold — a case is judged per gate,
+so a gate that quietly downgraded one finding among nine would pass both its cases, and no case
+could be written that pins it.
+
+**A warning is for a rule that is right to fire and wrong to fail on.** The case it exists for is a
+finding whose resolution is often 「the line stands」: a parked decision naming the statute article
+nobody could settle names a source that may already answer it, and no gate can tell whether it does
+— only a person re-reading the article can. Failing there trains everybody to ignore the gate, and
+a gate that cries wolf takes the real ones beside it down with it.
+
+**It is not a way to keep a rule that fires wrongly.** A gate whose findings are mostly noise is too
+wide and gets narrowed. The grade says what a *correct* finding is, never how sure the gate is —
+downgrading to quieten a false positive leaves the defect in the rule and buries the evidence of it.
+
+A grade the harness does not read is refused rather than defaulted: `check` and `gates` both fail on
+a gate declaring one, because `grade: 'advisory'` otherwise reads as advisory in the source and is
+counted as an error in the run.
+
+### What `check` prints is a contract, not a layout
+
+A write-time hook does not call the harness — it runs `check` and reads the grades out of the text,
+because that is the only interface a hook process has. Two shapes carry all of it: a gate heading is
+`<marker> <id> — <title>` where the marker is `✖` or `⚠` and the separator is a spaced em dash after
+one unbroken token, and each finding under it is indented by exactly three spaces. **Changing either
+is a breaking change**, and it breaks in the worst available direction: the hook goes blind, decides
+the tree is clean, and stops blocking writes it exists to block — with no error anywhere, because a
+parse that matches nothing looks exactly like a repository with nothing wrong with it.
+
+Nothing in this skill can hold that, because the consumer lives in the project. So a project that
+installs such a hook owes it a proof of its own, run as one of its `gates`: drive the hook over
+fixtures whose gates fire on demand, assert the exit status **and** what the hook actually printed,
+and then run the same cases again against a `check` whose output has been deliberately mangled in
+each of those two ways, requiring the suite to go red. Asserting only the exit status proves far
+less than it appears to — `check` exiting non-zero with nothing parseable behind it is reported as a
+gate that failed, so a blind hook still exits 2 on an error and the status agrees while the report
+has become worthless.
+
 ## What makes a gate trustworthy
 
 - **Both directions, in the same change.** `gates` feeds each one the defect it exists to catch
   and then a clean project, and names every gate that is missing either half. A gate that fires
   on everything and a gate that fires on nothing both pass a single case.
+- **A warning is proved like anything else, and so is the channel.** The two cases are demanded
+  whatever the grade, and `gates` additionally runs `check` over a fixture where a warning fires
+  alone and over one where an error fires beside it, reading the exit status off each. A severity
+  channel nobody has watched part the exit status is one that has probably stopped.
 - **Sweep the whole tree, then report the count.** Zero costs nothing and proves coverage;
   non-zero is the rule earning itself immediately. A checker written against the two files that
   had the bug is a checker for a bug that is already fixed.
+- **A pattern with a placeholder in it is tested for what it matches**, not only for what it
+  finds. A slot that compiles to 「any non-empty string」 makes every comparison pass while the
+  count of comparisons stays perfectly honest, so the two cases go past it untouched: feed it the
+  string it must reject and watch it reject that one. Counting what was compared is a necessary
+  condition for a checker that can be trusted, never a sufficient one.
 - **An escape a reader can see and question.** A project turns a core gate off with
   `disabledGates: [{ "id": "…", "reason": "…" }]` — the reason is required, because an exception
   nobody can question is an omission wearing a config key.

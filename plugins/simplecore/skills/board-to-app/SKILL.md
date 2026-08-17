@@ -97,9 +97,10 @@ path whose appearance makes the key due.
 **Writing it down is the whole point, because the moment it falls due announces
 nothing.** An undeclared key reads identically whether the project decided against it or
 is waiting for it, and the day the subject appears the cost in that key's row starts being
-paid in silence: with `migrationDir` still absent, no wave hands out migration ranges, so
-backends that were meant to run in parallel run one at a time and nothing says why. A
-promise turns that into a fact on disk that `bta.mjs check` reads.
+paid in silence: with `migrationDir` still absent, nothing in the wave says where a migration
+goes or how two agents writing one avoid each other, so backends that were meant to run in
+parallel run one at a time and nothing says why. A promise turns that into a fact on disk that
+`bta.mjs check` reads.
 
 Where an example path appears anywhere in this skill or its references it is written
 as `<boardRoot>/manifest.mjs` — a shape, never a default. Keys the skill does not
@@ -120,10 +121,10 @@ the last column says what its absence costs · **◐** required once another key
 | `stateLedger` | the one file saying which chapter is open, in progress, awaiting its tests or closed — and which development account each persona signs in with | ● | the build cannot start |
 | `handoverFile` | the facts a builder needs to start: how to stand the system up, known traps, what data is already standing | ● | the build cannot start |
 | `openItemsFile` | where a parked decision is written | ○ | parked lines go in the state ledger |
-| `openItemsHeading` | the heading those lines live under, written exactly as that project writes it | ◐ with `openItemsFile` | the config is incomplete — report it rather than choosing a heading |
+| `openItemsHeading` | the heading those lines live under — the heading's **text only**, with no `#` markers on it | ◐ with `openItemsFile` | the config is incomplete — report it rather than choosing a heading |
 | `gates` | the commands a chapter must pass before it closes, each read by its exit status — `bta.mjs check` among them | ○ | nothing mechanical holds a chapter closed; say so once per session and close on the persona runs alone |
-| `auditScript` | the script a mechanically visible defect becomes a detection rule in | ○ | the project cannot ratchet — report the rule that should have been written rather than inventing a home for it |
-| `migrationDir` | where numbered migrations live, so number ranges can be handed out per agent | ○ | ranges cannot be handed out, so backend chapters run one at a time |
+| `auditScript` | where a mechanically visible defect becomes a detection rule — one script, or the directory a family of them lives in | ○ | a new rule has nowhere to land, so the project cannot ratchet — report the rule that should have been written rather than inventing a home for it |
+| `migrationDir` | where migrations live, and with it how two agents adding one at the same time avoid colliding — one directory, or several where the database has more than one lineage | ○ | nothing says where a migration goes or how two of them collide, so backend chapters run one at a time |
 | `frameDeliverables` | what each screen owes beyond working code, one checkable sentence each | ○ | a screen owes nothing beyond working code |
 | `factSources` | the tools a drawn value must be verified through before it is built — a statute server, a price list, a published table | ○ | a value the board draws is built as drawn and left marked, never asserted |
 | `storyDocument` | the one document the sample data derives from and a final capture run follows | ○ | sample data has no single source, and the screens disagree with each other silently → `references/scenario.md` |
@@ -235,6 +236,51 @@ ledger, the handover file, the wave decision, and the barrier work the wave give
    coordinator's mistake rather than theirs. Read each new brief against every
    running one for what it is asked to **produce**, not only what it may touch: two
    briefs with disjoint paths can still both build the same checker.
+
+   **An agent that changes a published shape is scoped by surface, never by a list of
+   paths.** A published shape — an API schema, a shared type, a copy key, an enum a
+   catalogue has a word for, a frame — has readers, and **which files read it is not
+   knowable when the brief is written.** They surface while the work happens, because what
+   is changing is a shape rather than a file. So the brief names the shape and gives a
+   surface — `apps/console/**`, the copy catalogues, the board — and never the files
+   somebody happens to know about. Where the surface cannot be handed to one agent, the
+   change is one agent's whole rather than two agents' halves: split across two briefs it
+   lands in two commits with a tree between them nobody can make green.
+
+   **A split rename is the one collision no gate catches.** Both sides compile: the reader
+   declares its own copy of the shape, so the type check is green on a field that no longer
+   arrives, and the screen draws `undefined` where the value was.
+
+   > **Read it this way and it is wrong**: 「their paths are disjoint, so they cannot
+   > collide」. Give an agent `apps/server/**` and one field renamed there reaches four
+   > readers under `apps/console/` and a frame on the board — none of which any path list
+   > mentioned.
+   >
+   > **This is the reading somebody makes after that correction, and it fails the same
+   > way**: 「then I widen the scope to the places that read it」. A widened scope becomes a
+   > file list, because the places anybody can name are the ones that already collided —
+   > and the next reader is a copy catalogue under a different feature directory that
+   > nothing had pointed at yet. A brief naming four files stops on the fifth exactly as
+   > the directory-scoped brief stopped on the first four. **A longer list is the same
+   > mistake at a larger radius**; only a surface covers what has not surfaced yet.
+
+   **A brief must not demand a verification its own columns forbid.** The 「not mine」
+   column is what forecloses — it takes the server, the device, the profile or the
+   account — and the demand for a check that needs one of those sits in the same brief
+   contradicting it. An agent handed that pair does not stop and ask: it substitutes the
+   nearest thing it can reach and reports in good faith, **and every substitute is a real
+   check that passes.** So read each brief against itself before sending it. For every
+   check it demands, name the thing that makes the check possible — the address, the
+   account, the driver, the port — and hand that over in the same brief, or withdraw the
+   demand and say what stands in its place.
+
+   > **Read it this way and it is wrong**: 「the port is somebody else's, so the browser is
+   > too」. The restart rule forbids stopping and starting an instance another agent is
+   > using; a browser starts nothing, and driving a running server is a read exactly as an
+   > endpoint probe is. Collapsed into one rule it withdraws the only check that sees
+   > whether the application composes in a real client, and the agent then verifies every
+   > layer except the one that is broken — which it reports as done, because each layer it
+   > could reach was genuinely sound.
 3. **The brief carries the staging rule itself, never a pointer to it.** Say in every
    brief: stage the paths you touched by name, never `git add -A` or its cousins, and
    read `references/harness.md` § Stage your own paths **before it is needed**. An
@@ -285,6 +331,14 @@ ledger, the handover file, the wave decision, and the barrier work the wave give
    parked, and whether the chapter closed. No screen dumps, no commentary, no images —
    its work is in the tree and in the state ledger, and the report says where to look.
 
+   **A screen nobody watched render is reported as such, and its completion is
+   provisional.** 「built, typechecked, and never opened」 is a different claim from
+   「done」, and a return that does not separate them hands the coordinator a chapter's
+   worth of false confidence. So the conclusions name the frames that were seen rendering
+   and the frames that were not, **by id**. A count is not an answer — the frames nobody
+   opened are exactly the ones nobody can name afterwards — and the provisional half is
+   what tells the coordinator which screens it still has to open itself.
+
 ### The dispatch is planned, written down, and then made
 
 Parallel work is not decided one agent at a time. **Before dispatching anybody, write
@@ -297,9 +351,27 @@ inherit.
 | The plan names | Because |
 | --- | --- |
 | the wave's members | the set is derivable from the prerequisites; writing it down is what makes it reviewable |
-| what each agent owns — paths, tables, migration numbers, shared files | ownership is a fact only the coordinator can see, and two briefs with disjoint paths can still both build the same checker |
+| what each agent owns — paths, tables, which migrations, shared files, and every published shape it may change, each written as a surface rather than as the files somebody can already name | ownership is a fact only the coordinator can see; two briefs with disjoint paths can still both build the same checker or split one rename between them, and a scope written as a file list omits the reader nobody has met yet |
 | what nobody touches this wave | an agent told only what it owns reads the silence as permission for anything adjacent — and the registry, the catalogue, the ledger and the generated client are exactly what no brief thinks to name |
 | the resource slot per agent — checkout, database, port | an agent with no slot works alone, and says so |
+
+**The 「what nobody touches」 row does not stop at the repository's edge.** Every agent in the wave
+executes the same installed skills, the same global settings and the same shared scripts, and a
+brief framed as 「inside this repository, yours is this」 has no column for any of them. Such a
+checkout is worse than a registry in two ways: the hooks it installs sit on **every** agent's write
+path, so what breaks there does not slow one agent down but stops all of them — and the agent it
+stops has nothing else it can do until it is fixed. **So the plan names it and says who owns it**,
+and 「nobody touches it」 is not one of the answers available.
+
+Where an agent is blocked by it and fixing it is the precondition for its own work, it fixes it and
+**says in its report that it did, and why**. In a checkout outside the tree anybody is reading, a
+change nobody claims and a change nobody made look the same.
+
+> **Read it this way and it is wrong**: 「the two agents are in different repositories, so they
+> cannot collide」. Two of them edited the plugin checkout `~/.claude/skills/` points at — one
+> because it was sent to, one because a hook from that checkout refused its writes until it did —
+> and no brief on either side named the checkout. One of the two changes then stood with nobody
+> able to say who had written it.
 
 **The git index is a shared resource like any other.** Two agents committing in one
 checkout sweep each other's staged work into commits neither of them meant to make,
@@ -338,7 +410,8 @@ Walk this list for the two chapters and answer each with a fact, not a forecast:
 | --- | --- |
 | working tree · git index | separate checkouts, or one agent writes and the other only reads |
 | database · seed data | separate databases; a shared one fails silently when one agent's test rewrites the row the other asserts on |
-| dev server · port | **each agent runs its own instance on its own port** |
+| dev server · port | **each agent runs its own instance on its own port** — or one agent runs it and the rest only drive it, never restarting it |
+| the browser profile · the signed-in session | one profile per agent; two agents in one session overwrite each other's account |
 | background workers · queues | separate, or owned by one agent |
 | file storage · uploads | separate directory per agent |
 | the state ledger, the board, shared catalogues | one writer at a time — the second agent reports what it would have written |
@@ -349,6 +422,14 @@ failure in the other's run that belongs to nobody, and both agents then hunt it 
 their own code. So the rule is flat — **an agent restarts only the instance it
 started, on the port it was given.** An agent that finds no port assigned does not
 guess and does not borrow: it treats its chapter as sequential work and says so.
+
+**That rule is about restarting, not about looking.** Signing in, walking a screen and
+taking a capture are reads over HTTP exactly as an endpoint probe is — they change
+nothing the other agent depends on — so an agent with no port of its own still drives
+the instance somebody else is running, and what it never does is stop, start or restart
+it. **Withholding a port is not a reason to finish without opening a screen**; it is a
+reason to open somebody else's. What such an agent does take for itself is the browser
+profile, which is the resource a second driver actually collides with.
 
 **Any row that cannot be answered with a fact makes the two chapters sequential.**
 Two disjoint file lists are not an answer — what an agent touches is settled while it
@@ -393,6 +474,14 @@ what it must not do is touch an instance it did not start. The one restart lives
 ②, where exactly one actor runs it. By ③ the contract is fixed, so the screens no
 longer move under each other.
 
+**A screen agent's instrument is the browser, not the port.** Where ③ runs in turn
+because there is one server, the agent taking its turn drives that server through a
+browser — taking turns is what stops two agents writing over each other's rows, and it
+is never a reason for any of them to finish without opening a screen. **A screen half
+split among several agents is still ③**: each of them needs the browser, so either they
+take turns at it or they get a profile each, and a split that hands them the building
+while keeping the looking is a split that cannot close.
+
 **The coordinator has three jobs and no others**: dispatch ①, run ② itself, dispatch
 ③. Everything else is the agents'.
 
@@ -400,12 +489,29 @@ longer move under each other.
 
 | Collision | The arrangement |
 | --- | --- |
-| migration numbering — two agents add the next number | each agent is given its number range in the brief, read off `migrationDir` |
+| migrations — two agents extend the same lineage at once | read the project's scheme off `migrationDir`, then give each agent its share in the brief (below) |
 | generated API clients — each regeneration overwrites the last | nobody regenerates in ①; the coordinator regenerates once at ② |
 | registries, barrels, locale catalogues | one owner per file, named in the brief; the others report the line they would have added |
 | the git index — commits sweeping each other | separate checkouts, or agents stage nothing and the coordinator commits at ② |
 | entity order — one chapter's table references another's | the wave is ordered by entity, not only by chapter: an agent whose table references one being created in the same wave waits for that agent's migration and says so |
 | the state ledger — several agents close at once | **in a wave the coordinator writes every row at ②**; the agents report and do not touch it |
+
+**How migrations are shared out depends on how the project orders them, and there are two
+schemes.** Read which one it is off `migrationDir` before the wave is briefed — the directory
+holds the answer, because the file names are the scheme:
+
+| The project's scheme | What the brief hands out |
+| --- | --- |
+| **numbered** — a migration's position is a number in its name | a number range per agent, so two agents cannot claim the same position |
+| **a parent chain** — a migration names its predecessor and the order is the chain (Alembic, and anything shaped like it) | **one agent extends a head at a time.** There is no range to divide: two agents each adding to the same head fork it, and the next agent to run them is refused. The others report the migration they would have written, and it is applied after the barrier |
+
+**Where `migrationDir` names several lineages, the lineage is the unit** — a database with its
+own audit or vault schema is several chains, and one agent per chain extends them at once.
+
+**A parent chain refusing loudly is the arrangement working, not a worse case.** Numbers collide
+silently — two migrations at position 0042 both apply, in whichever order the runner walks them —
+so the range exists to prevent something nothing would report. A forked head stops the runner with
+both heads named, which is why the discipline for it can be as thin as "one at a time".
 
 **A wave is one chapter's backend, or several chapters' backends together** — the
 chapters in a wave are the ones whose `prerequisites` are all already closed. That
@@ -478,6 +584,13 @@ Touches: W11 W12
 Two lines in the commit trailer, and the tree is recoverable with `git log`. Without
 them it is not recoverable at all — a diff shows which files changed, never which
 chapter's contract moved.
+
+**A commit that belongs to no chapter says `Chapter: setup`.** Wiring the project up is real work
+and it is not a chapter — the config, the state ledger, the chapter set, the generator, this
+arrangement itself — so there has to be a word for it, and the gate takes any non-empty one. That
+is why the word is fixed here: a project left to invent its own invents a different one, and then
+telling a chapter's commits from the setup's is a different `git log` incantation in every
+repository, which is the single thing the trailer exists to prevent.
 
 ## Development, then the persona run
 
@@ -574,6 +687,11 @@ open items and move to the next screen — which frame · what the choice or blo
 which side looks stale. A line missing the third part sends the next session back to
 re-derive it, which is the cost parking exists to avoid.
 
+**The first part is one unbroken token** — a frame id, a chapter number, whatever that project
+names the subject with. It is what a reader's eye and the gate both key on, so a phrase there is
+read as the second part having started before the separator arrived. A decision that hangs on a
+chapter rather than on a frame is the case that tempts a phrase, and it is still one token.
+
 ```markdown
 - C-07 — board draws a bulk reverse; the API reverses one record at a time.
   Board looks stale, but the operator does 40 a day. Product decision.
@@ -587,6 +705,25 @@ acknowledges it, and both sides then believe it is recorded. Nothing is. So when
 agent surfaces a parked decision, write it yourself in the same turn or tell the agent
 to — then say which one happened. "Recorded" is a claim about a file, and the file is
 the only place it is true.
+
+### One kind of parked line does hold a chapter, and it is not a park at all
+
+A decision deferred **because a chapter that has not been built yet would settle it** is a
+dependency written in prose, and prose is read by nobody. The case is concrete: a check that
+cannot be made to hold on the current volume, whose only fix destroys accounts the product cannot
+yet remake, because the chapter that builds the addresses for remaking them has not run.
+「we will do it after 04」 is the right decision and is also a sentence with nothing behind it.
+
+So such a line **names the chapter it blocks, on the line itself**, and the project's own gate
+refuses that chapter's close while the line stands. **The marker is opt-in**, because blocking is
+the rare case: a line without one is an ordinary park, and the default stays exactly what it
+already was — a chapter closes with its parked lines still open.
+
+> **Read it this way and it is wrong**: 「it is agreed and it is written down, so it will be
+> honoured」. Written down where? The line sits in the open items, the chapter closes on its tests,
+> and between the sentence and that close there is nothing that reads the two against each other —
+> the only thing that would have noticed is somebody re-opening a document they had no reason to
+> open.
 
 ## Two kinds of leaving-behind, and only one is shared
 
@@ -788,6 +925,14 @@ then the right shape is built. What is never done is quietly taking the smaller 
 reporting it as the choice: a screen built on the wrong shape is a rewrite that arrives three
 chapters later, when it costs everything built on top of it as well.
 
+**Design against the code that will implement it, not against the documents alone.** The board and
+the design document agree with each other far more readily than either agrees with the branches
+already standing in the server, so a contract settled from the two of them is settled from a
+picture of the product rather than from the product. Read what will hold the contract — the
+branches it already takes, the states it distinguishes, what it does when the value is absent —
+and design against that. A contract designed from the documents alone is wrong in exactly one
+place: where the code carries a third case neither document drew.
+
 Where the wide change genuinely belongs to somebody else's decision, that is the first of the four
 reserved above — ask it as a decision with its cost attached, not as a preference.
 
@@ -832,13 +977,14 @@ node "${CLAUDE_PLUGIN_ROOT}/skills/board-to-app/scripts/bta.mjs" check
 | the config is complete, well typed, and every declared path is there | `configGate` |
 | a key promised to a chapter is declared once that chapter has created its subject | `deferredKeyGate` |
 | the handover file states facts, never a point of view | `handoverGate` |
-| a parked line has its heading and its three parts | `openItemsGate` |
+| a parked line sits under the declared heading — matched exactly, never by fragment — and carries its three parts, the first of them one unbroken token | `openItemsGate` |
 | every chapter is named in the state ledger | `ledgerGate` |
 | a capture is named the one way, one folder per language | `capturesGate` |
-| every commit says which chapter it belongs to | `trailerGate` |
+| every commit says which chapter it belongs to, and one that belongs to none says `setup` | `trailerGate` — it takes any word, so which word is fixed here rather than per project |
+| a parked line that says it blocks a chapter does not survive that chapter closing | the project's own gate — the marker is that project's word and so is its ledger's word for a closed chapter, so nothing generic can read either |
 | the frames, counts and copy a chapter builds to | the board's own gates (`simplecore:wireframe-boards`) |
 | whatever `frameDeliverables` declares | the project's own gate, one checkable sentence each |
-| the code's own defect types | the project's `auditScript` — every new detection rule goes there |
+| the code's own defect types | the project's `auditScript` — every new detection rule goes there, whether that key names one script or the directory a family of them lives in |
 
 **Held by eyes** — no machine can judge these, and saying so is the point:
 
@@ -848,20 +994,75 @@ node "${CLAUDE_PLUGIN_ROOT}/skills/board-to-app/scripts/bta.mjs" check
 | a screen holds up for the person whose work it carries | that is what the persona run is |
 | a prerequisite the derived graph did not name | it surfaces while building; the agent that meets it stops and reports |
 | two chapters may run at once | a resource judgment, made per dispatch against facts that change |
+| what a wave shares outside the repository being built | no diff in this repository shows a plugin checkout, a global setting or a shared script — and the agent one of them blocks is the only agent that can unblock it |
+| a rule that became a checker was reached in this run | four ways it is not, all four reading as a passing run — a checker cannot report on the comparison it never made |
+| how much a red gate command left unmeasured | the exit status is honest and says only that the run stopped; how far a chained command got is read off its log by somebody |
+| which of two commands a step's proof is read off | a report and a gate both exit zero on a healthy project, so only somebody who knows which one can fail can say whether a proof was taken → `references/checks.md` |
+| a contract designed from the documents matches the code that will implement it | two documents agree with each other more easily than either agrees with the branches already in the code, and only reading those branches settles it |
+| the story document covers the frames its steps feed, and its steps still add up | this skill ships no checker for either — the first is one a project can write as a gate of its own, the second nobody can → `references/scenario.md` |
+| an agent renaming a published shape is scoped by surface rather than by a file list | the readers surface while the work happens, so no list written beforehand is complete — and both sides type-check green while one of them draws `undefined` |
+| how many agents may extend the migrations at once | it follows from the project's scheme — a range divides, a parent chain does not — and the scheme is read off `migrationDir` per wave |
 | the documents, the board and the code agree in meaning | a checker holds that a frame is referenced, never that two sentences say the same thing |
 | an agent is stalled rather than inside something long | the three readings, and they need somebody to take them |
 | a parked decision genuinely qualifies | the default is to decide, and only a person can say the design ran out |
+| a path carried over from a retired arrangement still names it | only somebody who knows the project moved can tell a live document from a leftover → `references/migrating-from-a-walk.md` |
+| a document about to be deleted is opened by a program | this skill reads no path that is being retired; what holds it is the project's own gate, run after the deletion rather than before → `references/migrating-from-a-walk.md` |
 
 **A rule added to this skill lands in one of those two tables in the same change.** Where it is
 mechanical, the gate is written now — and proved in both directions before it counts, because a
 gate that has never fired is indistinguishable from one that cannot. Where it needs eyes, the
 second table says so, and nobody spends a session hunting for the check that was never there.
 
+**A rule whose finding is a prompt rather than a defect is still held by a gate** — it declares
+`grade: 'warning'`, prints under `⚠`, and leaves the exit status alone. That is for a rule that is
+right to fire and wrong to fail on: a parked decision naming the article nobody could settle names a
+source that may already answer it, and only a person re-reading the article can say. It is never a
+way to keep a rule that fires wrongly, and the grade sits on the gate rather than on the finding —
+both → `references/checks.md`.
+
 **Generic checks live here; project-specific checks live in the project.** A heuristic true only
 of one repository's layout — its document format, its stack's conventions, its own data shapes —
 never enters this skill; it goes in the module the project declares as `projectGates`, and its
 cases go beside it. Where a gate belongs, how to write one, and how a project wires and proves
 its own → `references/checks.md`.
+
+### The third category comes back as a checker that did not run
+
+**A rule is held when the check reached it in this run, not when the check exists.** That is the
+axis the two tables actually turn on, and 「is there a checker?」 is a proxy for it that agrees most
+of the time and fails in one direction only. Four ways a checker exists and does not reach the
+thing — and **all four come out of a run looking like a pass**:
+
+| The shape | What it is |
+| --- | --- |
+| **no command runs it** | the checker is in the repository and in no entry of `gates`. Somebody greps, finds it, and reads the rule as covered |
+| **an earlier failure in the same command hid it** | one `gates` entry is a chain, and the checkers after the one that failed did not run at all → *Closing a chapter* |
+| **its own precondition did not hold** | it compares three things and skips, silently, whatever is missing one of them |
+| **its pattern matches anything** | it runs, compares, and every comparison passes because the pattern it compiled accepts any string |
+
+**The first three are indistinguishable from green; the fourth produces green.** And the first does
+the most damage for a reason that has nothing to do with machines: a checker that exists is read as
+a rule that is held, so nobody has a reason to look. A rule with no checker at all is the honest
+version of the same coverage.
+
+Two things narrow it, and the second is here because the first is not enough:
+
+1. **A checker says how many comparisons it made, not only how many failed.** 「0 findings」 and
+   「paired 186 of 193」 are one line to an exit status and two different sentences to a reader —
+   only the second shows the seven it never reached.
+2. **A pattern with a placeholder in it is tested for what it matches.** The count stays honest
+   while the comparison behind it stops meaning anything: a vocabulary pattern whose slots compiled
+   to 「any non-empty string」 and 「any two words」 read 556 buttons, reported 556, and passed seven
+   that were wrong. One pattern that matches everything voids a whole checker and leaves its
+   statistics untouched — which is why counting is a necessary condition and not a sufficient one.
+
+**Count the repository's checkers against `gates` once, when the project is wired.** How many
+checkers does it have, and how many does some entry of `gates` actually reach? The difference is
+the first shape, and it is a number rather than a judgment.
+
+> **Read it this way and it is wrong**: 「the checker exists, so the rule is held」. A manual
+> checker sat in the repository and in no entry of the `check` chain; measured for the first time
+> it had 232 findings, and not one of them had ever been seen.
 
 ## What is learned goes back into the instructions, in the same change
 
@@ -895,9 +1096,9 @@ and the failures are fixed rather than listed. Before saying so:
 
 1. **Cross-sweep by defect type.** Each defect found is a *type*; search the whole
    codebase for other instances and fix those too. Report the sweep per type,
-   including "0 others". A type that already became a detection rule is swept by
-   `auditScript` — run it and report that; the manual search is for the types seen
-   only once.
+   including "0 others". A type that already became a detection rule is swept by what
+   `auditScript` names — run it, or the whole family where the key names a directory,
+   and report that; the manual search is for the types seen only once.
 2. **Audit the chapter's code, and act on it.** Not optional, and not the same thing as
    the cross-sweep: that hunts instances of defects somebody already found, this looks
    for what nobody found because no single builder could see it. A chapter is built by
@@ -934,6 +1135,14 @@ and the failures are fixed rather than listed. Before saying so:
 3. **Run every command in `gates`**, all of them, green, each read by its exit status
    rather than by the tail of its log → `references/harness.md`. `bta.mjs check` is one
    of them, and `bta.mjs gates` runs whenever a gate was added or changed.
+
+   **Where one entry is itself a chain of checkers, red does not mean 「one of them is wrong」 — it
+   means 「everything after it was not measured」.** The exit status is honest; the reading is what
+   goes wrong, and 「one place is not green」 and 「twenty-two have not been looked at」 are the same
+   picture on the screen and completely different states. What closes a chapter is **one run that
+   reached the end and came out green**, never how far the last one got. So say what did not run,
+   as a count: 「stopped at checker 12 of 34」 names the twenty-two, and 「`check:ids` failed」 names
+   none of them → *The third category comes back as a checker that did not run*.
 4. **Sync the board in the same change** where the code was right and the board was
    stale — but only the layer a board contracts, which is structure rather than the
    values in its illustration → `references/judging-frames.md`.
@@ -954,7 +1163,9 @@ and the failures are fixed rather than listed. Before saying so:
    no file.
 
 A chapter closes with its parked lines still open if nobody could settle them. Say which they
-are; do not close them by choosing for the user.
+are; do not close them by choosing for the user. **A line naming this chapter as the one it blocks
+is the exception** — that one is settled, or explicitly released on the line, before the chapter
+closes → *One kind of parked line does hold a chapter*.
 
 ## What the coordinator reports
 

@@ -58,23 +58,41 @@ export function proseLines(text) {
   return lines.map((line, i) => ({ line, no: i + 1, fenced: fenced.has(i) })).filter((l) => !l.fenced);
 }
 
+/**
+ * Whether a line is a markdown heading whose text is exactly the one declared.
+ *
+ * <p>**Exactly, and never by containment.** A key such as `openItemsHeading` declares the
+ * heading's text, so a declaration that is merely a fragment of a real heading would satisfy
+ * every reader here while naming no heading the project actually wrote. A pattern that accepts
+ * more than it should makes every comparison pass, and the comparisons are still counted — so it
+ * reads as a rule that is held right up to the day a second heading contains the same fragment,
+ * and then it silently reads the wrong section, with nothing having changed.
+ *
+ * <p>The markers and the surrounding space are stripped from both sides first: the declaration
+ * carries the heading's text, not its markdown.
+ */
+function isHeading(line, heading) {
+  if (!/^#{1,6}\s/.test(line)) return false;
+  return line.replace(/^#{1,6}\s*/, '').trim() === String(heading).trim();
+}
+
 /** Whether a markdown heading with this exact text appears in the document. */
 export function hasHeading(text, heading) {
-  return text
-    .split(/\r?\n/)
-    .some((line) => /^#{1,6}\s/.test(line) && line.replace(/^#{1,6}\s*/, '').trim().includes(heading));
+  return text.split(/\r?\n/).some((line) => isHeading(line, heading));
 }
 
 /**
  * The lines under a heading, up to the next heading of any level.
  *
+ * <p>It finds the heading with the same predicate `hasHeading` uses — otherwise a gate locates a
+ * heading by one rule and reads the section under it by another, and the second heading it lands
+ * on is nobody's mistake to find.
+ *
  * @returns the section's lines with their 1-based numbers, or null when the heading is absent
  */
 export function sectionUnder(text, heading) {
   const lines = text.split(/\r?\n/);
-  const start = lines.findIndex(
-    (line) => /^#{1,6}\s/.test(line) && line.replace(/^#{1,6}\s*/, '').trim().includes(heading)
-  );
+  const start = lines.findIndex((line) => isHeading(line, heading));
   if (start < 0) return null;
   const out = [];
   for (let i = start + 1; i < lines.length; i += 1) {

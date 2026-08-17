@@ -15,11 +15,19 @@ export const CONFIG_NAME = join('.claude', 'board-to-app.json');
  * Every key the skill reads, what it names, and what the value has to be.
  *
  * <p>`kind` decides both the type check and what existence means:
- * `dir`/`file` must be there already, `outdir` is written on first use so it need not exist,
- * `outfile` is appended to so only its parent must exist, `command` is a shell line rather
- * than a path, `list` is an array, `text` is a non-empty string, `headings` is the
- * role → heading map, and `deferrals` is the key → { chapter, whenExists } map naming the
- * optional keys whose subject does not exist yet.
+ * `dir`/`file` must be there already, `path` is either of the two and must be there, `outdir`
+ * is written on first use so it need not exist, `outfile` is appended to so only its parent
+ * must exist, `command` is a shell line rather than a path, `list` is an array, `text` is a
+ * non-empty string, `headings` is the role → heading map, and `deferrals` is the
+ * key → { chapter, whenExists } map naming the optional keys whose subject does not exist yet.
+ *
+ * <p>`path` is for a key whose subject is one file in one project and, in the next, the
+ * directory a family of them lives in — the key names where the thing is, and the project
+ * decides whether that is a file or a folder.
+ *
+ * <p>`many` lets a key be declared once or several times: one string, or an array of them,
+ * each held to the same `kind`. It is for a subject a project can genuinely have more than
+ * one of, such as a database with several migration lineages.
  */
 export const SCHEMA = {
   boardRoot: { kind: 'dir', required: true },
@@ -34,8 +42,8 @@ export const SCHEMA = {
   openItemsFile: { kind: 'file' },
   openItemsHeading: { kind: 'text', requiredWith: 'openItemsFile' },
   gates: { kind: 'list' },
-  auditScript: { kind: 'file' },
-  migrationDir: { kind: 'dir' },
+  auditScript: { kind: 'path' },
+  migrationDir: { kind: 'dir', many: true },
   frameDeliverables: { kind: 'list' },
   factSources: { kind: 'list' },
   storyDocument: { kind: 'file' },
@@ -62,7 +70,7 @@ export const HEADING_ROLES = [
   'touchedEarlier',
 ];
 
-const PATH_KINDS = new Set(['dir', 'file', 'outdir', 'outfile']);
+const PATH_KINDS = new Set(['dir', 'file', 'path', 'outdir', 'outfile']);
 
 /** Whether a declared value is a path this project expects to find on disk. */
 export function isPathKey(key) {

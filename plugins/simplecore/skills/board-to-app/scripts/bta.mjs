@@ -10,9 +10,9 @@
 // unless `--config <path>` names one. The directory two levels above the config is the project
 // root, and every declared path is resolved from there.
 import { pathToFileURL } from 'node:url';
-import { CORE_GATES, applies, gatesFor } from './core/gates.mjs';
+import { CORE_GATES, applies, gatesFor, gradeOf } from './core/gates.mjs';
 import { HEADING_ROLES, SCHEMA, findConfig, loadProject } from './core/context.mjs';
-import { makeBuilders, runCases, unproven } from './core/harness.mjs';
+import { makeBuilders, proveSeverity, runCases, ungraded, unproven } from './core/harness.mjs';
 import { cases as coreCases } from './core/cases.mjs';
 
 const argv = process.argv.slice(2);
@@ -40,11 +40,23 @@ function context() {
   return loadProject(path, { range: opt('range') });
 }
 
+/** `1 warning` / `2 warnings`, so a count and its noun never disagree. */
+const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
+
 async function check() {
   const ctx = context();
   const { gates, disabled, projectModule } = await gatesFor(ctx);
 
-  let total = 0;
+  // A grade nobody reads is a finding of its own, and an error one: the gate that declares it is
+  // running in a channel its author did not choose.
+  let errors = 0;
+  for (const { id, finding } of ungraded(gates)) {
+    console.log(`\n✖ ${id} — the gate declares a grade nobody reads`);
+    console.log(`   ${finding}`);
+    errors += 1;
+  }
+
+  let warnings = 0;
   let skipped = 0;
   for (const gate of gates) {
     if (!applies(gate, ctx)) {
@@ -52,21 +64,31 @@ async function check() {
       continue;
     }
     const findings = gate.run(ctx);
-    total += findings.length;
-    if (findings.length) {
-      console.log(`\n✖ ${gate.id} — ${gate.title}`);
-      for (const finding of findings) console.log(`   ${finding}`);
-    }
+    if (!findings.length) continue;
+    // The marker carries the grade, so the two channels are told apart by eye and by anything
+    // parsing this output — the write-time hook reads exactly this line.
+    const advisory = gradeOf(gate) === 'warning';
+    if (advisory) warnings += findings.length;
+    else errors += findings.length;
+    console.log(`\n${advisory ? '⚠' : '✖'} ${gate.id} — ${gate.title}`);
+    for (const finding of findings) console.log(`   ${finding}`);
   }
 
   for (const [id, reason] of disabled) console.log(`⚠ ${id} is off — ${reason}`);
   if (projectModule) console.log(`ℹ project gates from ${ctx.rel(projectModule)}`);
+
+  console.log('');
+  if (warnings) {
+    console.log(
+      `⚠ ${plural(warnings, 'warning')} — a prompt to re-read what ${warnings === 1 ? 'it names' : 'they name'}, not a defect; the exit status ignores ${warnings === 1 ? 'it' : 'them'}`
+    );
+  }
   console.log(
-    total === 0
-      ? `\n✔ ${gates.length - skipped} gates, nothing found${skipped ? ` (${skipped} skipped: the keys they read are not declared)` : ''}`
-      : `\n${total} findings`
+    errors === 0
+      ? `✔ ${gates.length - skipped} gates, ${warnings ? 'no errors' : 'nothing found'}${skipped ? ` (${skipped} skipped: the keys they read are not declared)` : ''}`
+      : `✖ ${plural(errors, 'finding')}`
   );
-  return total === 0;
+  return errors === 0;
 }
 
 async function proveGates() {
@@ -93,6 +115,8 @@ async function proveGates() {
   }
 
   const bad = runCases(collected, gates);
+  const mistyped = ungraded(gates);
+  const severity = proveSeverity(builders.project);
   builders.cleanup();
 
   const missing = unproven(collected, gates);
@@ -100,8 +124,16 @@ async function proveGates() {
     console.log(`\n⚠ ${missing.length} gates are not fully proved — ${missing.join(', ')}`);
     console.log('   A gate lands with the case that fires and the case that stays quiet, in the same change.');
   }
+  for (const { id, finding } of mistyped) {
+    console.log(`\n✖ ${id} — the gate declares a grade nobody reads`);
+    console.log(`   ${finding}`);
+  }
+  for (const line of severity) console.log(`\n✖ severity · ${line}`);
+  if (!severity.length) {
+    console.log('\n✔ severity: a fired warning leaves the exit status zero, a fired error fails the run');
+  }
   console.log(bad ? `\n✖ ${bad} of ${collected.length} cases came out the wrong way` : `\n✔ ${collected.length} cases, both directions`);
-  return bad === 0 && missing.length === 0;
+  return bad === 0 && missing.length === 0 && mistyped.length === 0 && severity.length === 0;
 }
 
 async function doctor() {

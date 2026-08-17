@@ -1,9 +1,18 @@
 // Every gate that holds on any project built from a board, and the resolver that adds a
 // project's own.
 //
-// A gate is `{ id, title, needs, run(ctx) → string[] }`. It finds and describes; it never
+// A gate is `{ id, title, needs, grade, run(ctx) → string[] }`. It finds and describes; it never
 // prints and never exits, so the same gate runs from the command line, from a case in the
 // harness, and from anywhere else that has a context.
+//
+// **`grade` says what a finding of this gate is, and it sits on the gate rather than on the
+// finding.** `error` is a defect and is what a gate that declares nothing is judged at; `warning`
+// is a prompt to re-read something, printed under its own marker and ignored by the exit status.
+// A gate answers one question, so the kind of its findings is a property of the rule: a gate whose
+// findings differ in kind is two rules sharing an id, and it is split into two gates that each
+// carry their own pair of cases. Grading each returned string instead would leave the harness
+// nothing to hold — a case is judged per gate, so a gate that quietly downgraded one finding among
+// nine would pass both its cases and no case could be written that pins it.
 //
 // **Which level a gate belongs to is the design decision, and there are two levels here:**
 //
@@ -19,9 +28,28 @@ import { pathToFileURL } from 'node:url';
 import { HEADING_ROLES, SCHEMA, isPathKey } from './context.mjs';
 import { NARRATIVE_PHRASES, hasHeading, onlyQuoted, proseLines, sectionUnder } from './prose.mjs';
 
+/** What a finding of a gate is: a defect to fix, or a line to go and re-read. */
+export const GRADES = ['error', 'warning'];
+
+/** What a gate that declares no grade is judged at — a rule is a defect unless it says otherwise. */
+export const DEFAULT_GRADE = 'error';
+
+/**
+ * The grade a gate's findings are counted at.
+ *
+ * <p>An unknown grade is returned exactly as declared rather than quietly corrected to the
+ * default: `ungraded` in the harness reports it and the run fails, because a grade nobody reads
+ * would otherwise land in whichever channel the reader happened to assume — and the author of a
+ * gate that says `advisory` reads the word in the source and believes it is advisory.
+ */
+export function gradeOf(gate) {
+  return gate?.grade ?? DEFAULT_GRADE;
+}
+
 const TYPE_OF = {
   dir: 'a path',
   file: 'a path',
+  path: 'a path',
   outdir: 'a path',
   outfile: 'a path',
   command: 'a command line',
@@ -31,6 +59,26 @@ const TYPE_OF = {
   exceptions: 'an array of { id, reason }',
   deferrals: 'an object of key → { chapter, whenExists }',
 };
+
+/**
+ * What is wrong with one declared path, given the kind its key was declared as.
+ *
+ * <p>`label` is what the finding calls it — the key, or the key and the index when the key
+ * was declared several times over. A `path` key is satisfied by a file or a directory: it
+ * names where the thing is, and whether that is one file or the folder its family lives in
+ * is the project's to decide.
+ */
+function pathFindings(label, value, spec, ctx) {
+  const path = ctx.inRoot(value);
+  if (spec.kind === 'dir' && !ctx.isDir(path)) return [`${label} → ${value}: no such directory`];
+  if (spec.kind === 'file' && !ctx.exists(path)) return [`${label} → ${value}: no such file`];
+  if (spec.kind === 'path' && !ctx.exists(path)) return [`${label} → ${value}: no such file or directory`];
+  if (spec.kind === 'outfile') {
+    const parent = path.slice(0, path.lastIndexOf('/'));
+    if (!ctx.isDir(parent)) return [`${label} → ${value}: the directory it is written into does not exist`];
+  }
+  return [];
+}
 
 /**
  * The config is complete, well typed, and every path it declares is there.
@@ -128,22 +176,24 @@ export const configGate = {
         }
         continue;
       }
+      // A `many` key is declared once or several times — a project with more than one
+      // migration lineage names them all under the one key, and each is held to the same kind.
+      if (spec.many && Array.isArray(value)) {
+        value.forEach((entry, i) => {
+          if (typeof entry !== 'string' || !entry.trim()) {
+            findings.push(`${key}[${i}] must be ${TYPE_OF[spec.kind]}`);
+            return;
+          }
+          findings.push(...pathFindings(`${key}[${i}]`, entry, spec, ctx));
+        });
+        continue;
+      }
       if (typeof value !== 'string') {
-        findings.push(`${key} must be ${TYPE_OF[spec.kind]}`);
+        findings.push(`${key} must be ${TYPE_OF[spec.kind]}${spec.many ? ', or an array of them' : ''}`);
         continue;
       }
 
-      if (isPathKey(key)) {
-        const path = ctx.at(key);
-        if (spec.kind === 'dir' && !ctx.isDir(path)) {
-          findings.push(`${key} → ${value}: no such directory`);
-        } else if (spec.kind === 'file' && !ctx.exists(path)) {
-          findings.push(`${key} → ${value}: no such file`);
-        } else if (spec.kind === 'outfile') {
-          const parent = path.slice(0, path.lastIndexOf('/'));
-          if (!ctx.isDir(parent)) findings.push(`${key} → ${value}: the directory it is written into does not exist`);
-        }
-      }
+      if (isPathKey(key)) findings.push(...pathFindings(key, value, spec, ctx));
     }
 
     for (const key of Object.keys(ctx.config)) {
@@ -228,8 +278,15 @@ export const openItemsGate = {
     const heading = ctx.declared('openItemsHeading');
     const text = ctx.read(ctx.at('openItemsFile'));
     if (text === null) return [`openItemsFile → ${file}: cannot be read`];
+    // The finding names the declaration, not the document, because the declaration is the likelier
+    // of the two to be wrong: `openItemsHeading` takes the heading's text, and a value written with
+    // its markdown markers on it (`## …`) matches no heading in any document. A message pointing at
+    // the document sends the reader to a heading that is plainly there, and it reads as the file
+    // being at fault.
     if (!hasHeading(text, heading)) {
-      return [`${file}: the "${heading}" heading is missing — it is where a decision nobody can settle is written`];
+      return [
+        `openItemsHeading → ${JSON.stringify(heading)}: no heading in ${file} matches it — declare the heading's text only, with no "#" markers on it`,
+      ];
     }
     const findings = [];
     for (const { line, no } of sectionUnder(text, heading) ?? []) {

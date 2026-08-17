@@ -21,11 +21,11 @@
   "stateLedger": "<the one file saying which chapter is open, and each persona's development account>",
   "handoverFile": "<the facts a builder needs to start: how to stand the system up, traps, standing data>",
   "openItemsFile": "<file a parked decision is written into>",
-  "openItemsHeading": "<the heading those lines live under, exactly as this project writes it>",
+  "openItemsHeading": "<the heading those lines live under — its text only, with no # markers on it>",
 
   "gates": [],
-  "auditScript": "<script a mechanically visible defect becomes a detection rule in>",
-  "migrationDir": "<directory holding numbered migrations, so number ranges can be handed out>",
+  "auditScript": "<where a new detection rule lands: one script, or the directory a family of them lives in>",
+  "migrationDir": "<where migrations live — one directory, or [\"…\", \"…\"] when the database has several lineages>",
 
   "frameDeliverables": [],
   "factSources": [],
