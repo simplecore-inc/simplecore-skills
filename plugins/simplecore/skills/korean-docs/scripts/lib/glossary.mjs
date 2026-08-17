@@ -36,7 +36,12 @@ export function discoverGlossary(startDir = process.cwd()) {
   while (true) {
     for (const candidate of [join(dir, '.claude', 'GLOSSARY.md'), join(dir, 'GLOSSARY.md')]) {
       if (existsSync(candidate) && statSync(candidate).isFile()) {
-        return {path: candidate, root: dir};
+        // The root comes from where the glossary sits, not from where the walk stopped. A file
+        // being edited inside `.claude/` starts the walk there, and `<repo>/.claude/GLOSSARY.md`
+        // then matches the second candidate with `dir` already inside `.claude` — taking `dir` as
+        // the root resolves every `audit.*` glob against `.claude/`, so the declared screen copy
+        // reports "directory missing" and the write is blocked on a finding about nothing.
+        return {path: candidate, root: rootFromGlossaryPath(candidate)};
       }
     }
     // A .git directory marks the project root, and the home directory is
@@ -314,6 +319,33 @@ export function emptyGlossary() {
   return {terms: new Map(), expressions: new Map(), exceptions: [], keepOriginal: []};
 }
 
+// ---------------------------------------------------------------------------
+// Built-in checks the audit engine runs beside the glossary rules
+// ---------------------------------------------------------------------------
+//
+// A glossary rule is a banned spelling; these are checks written in code because no table
+// can express them. Both are rules a repository lives under, so both answer to the same
+// door — `## 기본 규칙 예외` in the project glossary — rather than to a second mechanism
+// nobody remembers exists.
+//
+// **What separates the two halves is the level, not the subject.** A warning names a line
+// somebody has to judge, and judgement is exactly what a project can settle once for its
+// whole corpus: a rulebook whose headings ARE its rules is not a rulebook with 53 defects.
+// An error names something wrong in every context — a particle disagreeing with the syllable
+// before it is not a house style — so those have no door, and naming one is refused rather
+// than honoured, because an exception that reads as accepted and disables nothing is the
+// failure this file already carries a dead-exception report for.
+export const EXEMPTABLE_CHECKS = new Map([
+  ['heading-form', '제목이 서술문이다'],
+  ['repeat', '같은 말이 잇달아 나옴'],
+  ['untranslated', '번역 미완 가능성'],
+]);
+export const FIXED_CHECKS = new Map([
+  ['particle', '조사 어긋남'],
+  ['interpolated-particle', '치환값 뒤의 조사'],
+  ['reference-particle', '참조 뒤의 조사'],
+]);
+
 /** Merges base and project rules into a flat, deduplicated rule list. */
 export function mergeGlossaries(base, project) {
   const terms = new Map(base.terms);
@@ -324,8 +356,20 @@ export function mergeGlossaries(base, project) {
   // off and the finding comes back under a new name — indistinguishable from a fresh defect.
   // So an exception that disabled nothing is reported rather than dropped.
   const deadExceptions = [];
+  const disabledChecks = new Map();
   if (project) {
     for (const raw of project.exceptions) {
+      if (EXEMPTABLE_CHECKS.has(raw)) {
+        disabledChecks.set(raw, EXEMPTABLE_CHECKS.get(raw));
+        continue;
+      }
+      if (FIXED_CHECKS.has(raw)) {
+        throw new Error(
+          `기본 규칙 예외로 끌 수 없는 검사입니다: ${raw} (${FIXED_CHECKS.get(raw)}) — ` +
+            `오류 수준의 내장 검사는 문맥이 갈리지 않아 예외를 두지 않습니다. ` +
+            `끌 수 있는 것: ${[...EXEMPTABLE_CHECKS.keys()].join(' · ')}`,
+        );
+      }
       const key = raw.toLowerCase();
       const before = terms.size + expressions.size;
       let disabledSomething = terms.has(key);
@@ -365,7 +409,7 @@ export function mergeGlossaries(base, project) {
     seen.add(scoped(rule));
     rules.push(rule);
   }
-  return {rules, terms, deadExceptions};
+  return {rules, terms, deadExceptions, disabledChecks};
 }
 
 // ---------------------------------------------------------------------------
@@ -383,6 +427,7 @@ export function mergeGlossaries(base, project) {
  *   root         — project root (directory holding the glossary, or startDir)
  *   glossaryPath — project glossary path, or null when none was found
  *   keepOriginal — plain-ASCII terms of the merged 원문 유지 용어 tables
+ *   disabledChecks — built-in checks the project turned off (id → label)
  */
 export function loadRuleSet({glossaryPath = null, noBase = false, startDir = process.cwd()} = {}) {
   let discovered = null;
@@ -410,9 +455,9 @@ export function loadRuleSet({glossaryPath = null, noBase = false, startDir = pro
     base = parseGlossary(readFileSync(BASE_GLOSSARY_PATH, 'utf8'), 'base', BASE_GLOSSARY_PATH);
   }
 
-  const {rules, terms, deadExceptions} = mergeGlossaries(base, project);
+  const {rules, terms, deadExceptions, disabledChecks} = mergeGlossaries(base, project);
   const keepOriginal = [...base.keepOriginal, ...(project?.keepOriginal ?? [])];
-  return {rules, terms, config, root, glossaryPath: discovered?.path ?? null, keepOriginal, deadExceptions};
+  return {rules, terms, config, root, glossaryPath: discovered?.path ?? null, keepOriginal, deadExceptions, disabledChecks};
 }
 
 // ---------------------------------------------------------------------------

@@ -113,6 +113,16 @@ Any yes is rewritten, not softened.
 into an answer is the one place with no machine behind it — which is why these sit here rather
 than in a script.
 
+**Relaying a report reproduces its vocabulary, and a report is not a quotation.** A subagent's
+report, a run log, somebody else's note — passing their wording up to the user makes it the
+relayer's sentence, and the standard applies to it exactly as to anything else written. What is
+quoted verbatim is what exists somewhere in those characters: a screen label, an error message, a
+string in a file, a document's title. A summary of what an agent reported is not that.
+**The word most likely to survive is the one that went down in the brief and came back in the
+report** — self-authored, so it never reads as foreign, and it lands in the answer and then in
+whatever files that agent edited. Four places in one session, which makes writing the brief the
+last moment the word can be chosen.
+
 **The most dangerous moment is the one right after an audit passes.** Having just driven a
 repository's files to zero makes the habits feel dealt with, and the reply written in the same
 breath carries every one of them — a session that fixed 829 of these in files then wrote

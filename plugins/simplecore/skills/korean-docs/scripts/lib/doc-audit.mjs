@@ -286,6 +286,145 @@ function stripLines(content) {
   });
 }
 
+// ---------------------------------------------------------------------------
+// Literal values marked up in HTML rather than in backticks
+// ---------------------------------------------------------------------------
+//
+// A code span is already exempt: `ACCESSCORE` in backticks is a value somebody types, not a
+// spelling this standard judges. Screen copy cannot use backticks — they would be drawn on the
+// screen — so a value shown on a screen is marked up instead, with `<code>` or with a class that
+// sets it in a monospace face. Those are the same statement in a different notation, and the
+// exemption follows the statement rather than the notation.
+//
+// **A span is a literal only when there is no Hangul in it.** The same monospace face carries
+// dense Korean metadata lines — 「담당 자격 · 주기 · 기한 · 정원 제약」 — and those are prose
+// whatever face they are set in; blanking them would silence hundreds of checkable sentences to
+// quiet one DSN name. Text outside the span is never touched, so the sentence a value sits in is
+// read in full.
+//
+// What this gives up is a misspelling inside a literal — a `AccessCore` written in a mono span
+// goes unread, exactly as it does inside backticks today. That is the price of the code-span
+// contract and not a new hole.
+
+/** Elements that mean "literal" on their own, and the class names that say so on a generic one. */
+const LITERAL_ELEMENT = /<(code|kbd|samp|tt)\b[^>]*>([^<]*)<\/\1>/gi;
+const LITERAL_CLASS_ELEMENT =
+  /<([a-z]+)\b[^>]*\bclass="[^"]*\b(?:mono|code)\b[^"]*"[^>]*>([^<]*)<\/\1>/gi;
+const HANGUL = /[가-힣ᄀ-ᇿ㄰-㆏]/;
+
+/** Blanks HTML-marked literal values in place, leaving the prose around them readable. */
+export function blankLiteralMarkup(lines) {
+  return lines.map((line) => {
+    if (!line.includes('<')) return line;
+    let l = line;
+    for (const re of [LITERAL_ELEMENT, LITERAL_CLASS_ELEMENT]) {
+      re.lastIndex = 0;
+      l = l.replace(re, (m, _tag, inner) => (HANGUL.test(inner) ? m : blank(m)));
+    }
+    return l;
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Contrast rows (the recommended side is quoted copy, not the author's prose)
+// ---------------------------------------------------------------------------
+//
+// A style catalogue is written as `금지 → 대체` rows, so the phrasings it tells people to write
+// are printed in it as many times as it has rows. A frequency rule counts them as the author
+// repeating a tic and reports the file for saying the very thing it prescribes — one document
+// here drew eleven warnings for 「수 있습니다」 and every one of them sat on the right of an
+// arrow, line 281 being 「조회 가능합니다 → 조회할 수 있습니다」.
+//
+// Exempting that one file would leave the next catalogue somebody writes to hit it again, so
+// the count is what changes: **the recommended side of a contrast row does not feed a frequency
+// count, in any file.** Only a frequency rule is affected — an outright ban matching there is a
+// catalogue teaching a banned form, which is a real finding and still reported.
+//
+// **The recognition is deliberately narrow, because over-suppression is the worse failure.** A
+// rule that stops counting real repetition costs more than the warning it silences, so four
+// things must all hold and a stray arrow in a sentence satisfies none of them:
+//
+//   1. The line is a row — a list item, a blockquote line, or a table row. Ordinary prose is
+//      never masked, which is what keeps 「화면 문구 27,830개 → 2,000자리 안팎. 사람이 …」 and
+//      「문장 원칙 → 금지 패턴 → 어휘 … 순으로 구성한다」 counted in full.
+//   2. Within the row (a table cell, or one `·`-separated pair of a specimen line) there is
+//      exactly one arrow, with text on both sides.
+//   3. Neither side carries a sentence break — no `.` mid-string and none at the end. A
+//      specimen is a fragment; a bullet that continues into prose after the pair is prose.
+//   4. The block holds two or more such pairs. A catalogue comes in rows; a lone arrow inside
+//      one bullet of an ordinary list is not a catalogue.
+//
+// Where these disagree with a real catalogue the mask simply does not apply and the phrase is
+// counted — so the way this rule fails is a warning somebody re-reads, never a silence.
+
+const ROW_MARKER = /^(\s*(?:[-*+]|\d+[.)]|>+)\s+)/;
+const SENTENCE_BREAK = /[.。](\s|$)/;
+
+/** Splits a row into the parts a contrast pair can occupy, each with its column offset. */
+function contrastParts(line) {
+  const parts = [];
+  const pieces = (base, text) => {
+    let at = base;
+    for (const piece of text.split('·')) {
+      parts.push([at, piece]);
+      at += piece.length + 1;
+    }
+  };
+  if (/^\s*\|/.test(line)) {
+    let at = 0;
+    for (const cell of line.split('|')) {
+      pieces(at, cell);
+      at += cell.length + 1;
+    }
+    return parts;
+  }
+  const marker = ROW_MARKER.exec(line);
+  if (!marker) return parts;
+  pieces(marker[1].length, line.slice(marker[1].length));
+  return parts;
+}
+
+function isRowShaped(line) {
+  return /^\s*\|/.test(line) || ROW_MARKER.test(line);
+}
+
+/**
+ * Column ranges holding the recommended side of a contrast row, keyed by line index.
+ * `lines` must already have code spans blanked in place, so offsets stay true to the source.
+ */
+export function contrastRecommendedRanges(lines) {
+  const found = new Map();
+  let block = [];
+  const flush = () => {
+    if (block.length >= 2) {
+      for (const {line, start, end} of block) {
+        if (!found.has(line)) found.set(line, []);
+        found.get(line).push([start, end]);
+      }
+    }
+    block = [];
+  };
+  lines.forEach((line, idx) => {
+    if (!isRowShaped(line)) {
+      flush();
+      return;
+    }
+    for (const [base, piece] of contrastParts(line)) {
+      const arrows = [...piece.matchAll(/→/g)];
+      if (arrows.length !== 1) continue;
+      const at = arrows[0].index;
+      const left = piece.slice(0, at);
+      const right = piece.slice(at + 1);
+      if (!left.trim() || !right.trim()) continue;
+      if (SENTENCE_BREAK.test(left.trim()) || SENTENCE_BREAK.test(right.trim())) continue;
+      if (!/[가-힣]/.test(right)) continue; // only Korean copy can feed a Korean frequency count
+      block.push({line: idx, start: base + at + 1, end: base + piece.length});
+    }
+  });
+  flush();
+  return found;
+}
+
 /**
  * Returns lines with every character blanked except the text content of
  * <text>/<tspan> elements, preserving line numbers and column offsets so
@@ -680,6 +819,70 @@ function checkRepeats(lines) {
   return hits;
 }
 
+// ── a heading written as a sentence ─────────────────────────────────────────
+// A markdown heading is a name slot: a table of contents, a cross-reference and a
+// breadcrumb all quote it as a noun. Ending it in a finite verb reads as a sentence cut
+// short — `## 자료를 넣는다` where `## 자료 넣기` belongs.
+//
+// The style reference calls this hard to judge by machine, and for a sentence anywhere in
+// a document it is: the same 「~한다」 is correct prose one line lower. **A heading is not
+// anywhere** — `^#{1,6} ` is a position the file itself declares, so the ambiguity that
+// made the rule undecidable is gone the moment the check reads the raw line instead of the
+// extracted segment.
+//
+// **The raw line is what it reads, and that is not a detail.** Every other check runs over the
+// masked lines, where inline code, link targets and comments are blanked to spaces; feeding the
+// heading rule the same lines judged `### 반만 아는 계열은 \`rules --test\`가 검출한다` as
+// 「반만 아는 계열은 　　가 검출한다」 and reported that back to the reader, a finding naming a
+// heading nobody can find by searching for it. Worse, the quoting exemption below lists a
+// backtick among the marks that make a heading somebody else's sentence — and a backtick cannot
+// survive the mask, so the branch was dead for the one quoting style Markdown actually uses.
+//
+// What the mask WAS doing for it is refusing lines that only look like headings: `# 값을 넣는다`
+// inside a shell fence is a comment, and a YAML front-matter line beginning `#` is a comment
+// too. Those are positions, not spellings, so they are excluded by position — a line the mask
+// emptied, and the front-matter block — while the text itself is read exactly as written.
+//
+// The ending is decided by jamo arithmetic rather than by a list of verbs. `-ㄴ다`/`-는다`
+// is the productive plain-style finite ending, and every inflection of it puts ㄴ in the
+// jongseong of the syllable before 다 — 한다 · 온다 · 짓는다 · 붙인다 · 않는다 all fall out
+// of one test, where a list of verb forms would have to grow with every new verb.
+const HEADING_RE = /^(#{1,6})\s+(.*\S)\s*$/;
+/** Finite endings that jamo arithmetic does not reach: past, 합니다체, and the adjectives. */
+const HEADING_FINITE_TAIL = /(했다|았다|었다|였다|ㅂ니다|습니다|입니다|아니다|없다|있다|다르다|같다)$/;
+
+/** Whether `ch` is a Hangul syllable whose final jamo is ㄴ — the `-ㄴ다` ending. */
+function endsInNieun(ch) {
+  const code = ch?.codePointAt(0);
+  if (code === undefined || code < 0xac00 || code > 0xd7a3) return false;
+  return (code - 0xac00) % 28 === 4;
+}
+
+function checkHeadingForm(rawLines, strippedLines, fm) {
+  const hits = [];
+  rawLines.forEach((line, idx) => {
+    // A line the mask emptied is not prose — a fence and its contents, a JSX template, an
+    // import. A `#` there is a shell comment or a colour.
+    if (line.trim() !== '' && strippedLines[idx] === '') return;
+    // Front matter is YAML, where a leading `#` opens a comment.
+    if (fm && idx >= fm.start && idx <= fm.end) return;
+    const m = HEADING_RE.exec(line);
+    if (!m) return;
+    const text = m[2];
+    // A heading that is one word is a term being defined, not a sentence — `### 없다`
+    // heads the entry for that word. A sentence needs something to predicate about.
+    if (!/\s/.test(text)) return;
+    // A quoted heading reproduces somebody else's sentence — a rule being cited, a screen
+    // label, the title of another document. Fidelity outranks the name-slot rule there.
+    if (/^([「"'`(\[]).*$/.test(text) && /[」"'`)\]]$/.test(text)) return;
+    const finite =
+      HEADING_FINITE_TAIL.test(text) || (text.endsWith('다') && endsInNieun(text[text.length - 2]));
+    if (!finite) return;
+    hits.push({line: idx + 1, text});
+  });
+  return hits;
+}
+
 // ── Annotation values inside a locale resource ──────────────────────────────
 // Some resource files mix screen copy with commentary addressed to whoever
 // maintains the file — a wireframe frame carries its design notes beside the
@@ -790,15 +993,17 @@ export function annotationRanges(content, keys) {
   return ranges;
 }
 
-export function auditFile(filePath, rules, checkUntranslated, isLocaleResource = false, annotationKeys = new Set(), resolvedPlaceholders = []) {
+export function auditFile(filePath, rules, checkUntranslated, isLocaleResource = false, annotationKeys = new Set(), resolvedPlaceholders = [], disabledChecks = new Map()) {
   const content = readFileSync(filePath, 'utf8');
   const isSvg = !isLocaleResource && /\.svg$/i.test(filePath);
   const isProse = !isSvg && !isLocaleResource;
+  const rawLines = content.split(/\r?\n/);
   let lines;
   if (isLocaleResource) lines = stripCodeLinesToStringValues(content);
   else if (isSvg) lines = stripSvgLines(content);
   else lines = stripLines(content);
-  const fm = isProse ? frontMatterRange(content.split(/\r?\n/)) : null;
+  lines = blankLiteralMarkup(lines);
+  const fm = isProse ? frontMatterRange(rawLines) : null;
   const errors = [];
   const warnings = [];
 
@@ -815,6 +1020,12 @@ export function auditFile(filePath, rules, checkUntranslated, isLocaleResource =
     return annotations.some(([start, end]) => at >= start && at < end);
   };
 
+  // A catalogue's `금지 → 대체` rows are not its author repeating himself, so the copy on the
+  // recommended side is kept out of the per-file counts a frequency rule thresholds on.
+  const contrast = isProse ? contrastRecommendedRanges(lines) : new Map();
+  const isRecommendedCopy = (lineIdx, column) =>
+    (contrast.get(lineIdx) ?? []).some(([start, end]) => column >= start && column < end);
+
   for (const rule of rules) {
     // A screen-only rule bans a word where a user reads it and nowhere else. A design document
     // has to be able to name the thing it specifies, and so does a note written beside a screen.
@@ -824,6 +1035,9 @@ export function auditFile(filePath, rules, checkUntranslated, isLocaleResource =
       rule.pattern.lastIndex = 0;
       for (const m of line.matchAll(rule.pattern)) {
         if (rule.screenOnly && isAnnotation(idx, m.index)) continue;
+        // Only the frequency judgement is corrupted by a catalogue. A threshold-1 ban matching
+        // recommended copy means the catalogue prescribes a banned form — that stays reported.
+        if (rule.threshold > 1 && isRecommendedCopy(idx, m.index)) continue;
         hits.push({line: idx + 1, text: m[0]});
       }
     });
@@ -850,18 +1064,30 @@ export function auditFile(filePath, rules, checkUntranslated, isLocaleResource =
       suggestion: hit.suggestion ?? '값의 받침을 알 수 없으므로 조사가 오지 않게 문장을 고친다',
     }});
   }
-  for (const hit of checkRepeats(lines)) {
-    warnings.push({...hit, count: 1, rule: {
-      source: 'repeat', label: '같은 말이 잇달아 나옴', level: 'warn', threshold: 1,
-      suggestion: '치환이 겹쳐 생긴 중복인지 확인한다',
-    }});
+  if (!disabledChecks.has('repeat')) {
+    for (const hit of checkRepeats(lines)) {
+      warnings.push({...hit, count: 1, rule: {
+        source: 'repeat', label: '같은 말이 잇달아 나옴', level: 'warn', threshold: 1,
+        suggestion: '치환이 겹쳐 생긴 중복인지 확인한다',
+      }});
+    }
+  }
+  // Markdown only: an SVG label and a locale resource value have no heading syntax, and a
+  // `#` there is a colour or a comment.
+  if (isProse && !isSvg && !disabledChecks.has('heading-form')) {
+    for (const hit of checkHeadingForm(rawLines, lines, fm)) {
+      warnings.push({...hit, count: 1, rule: {
+        source: 'heading-form', label: '제목이 서술문이다', level: 'warn', threshold: 1,
+        suggestion: '이름 자리이므로 명사형으로 쓴다 — 「자료를 넣는다」가 아니라 「자료 넣기」',
+      }});
+    }
   }
 
   // Untranslated-content heuristic: flag remaining English prose lines.
   // Markdown-only — the SVG mask leaves isolated short labels that would
   // misfire this prose detector, and an English locale resource is correct by
   // definition.
-  if (checkUntranslated && isProse) {
+  if (checkUntranslated && isProse && !disabledChecks.has('untranslated')) {
     const englishProse = [];
     lines.forEach((line, idx) => {
       // Inside front matter only title/description hold translatable prose.
@@ -1031,7 +1257,7 @@ export function runDocAudit(args, cliPath) {
     base = parseGlossary(readFileSync(BASE_GLOSSARY_PATH, 'utf8'), 'base', BASE_GLOSSARY_PATH);
   }
 
-  const {rules, deadExceptions} = mergeGlossaries(base, project);
+  const {rules, deadExceptions, disabledChecks} = mergeGlossaries(base, project);
 
   if (args.listRules) {
     for (const r of rules) {
@@ -1062,6 +1288,13 @@ export function runDocAudit(args, cliPath) {
         ` 기본 규칙의 정규식이 바뀌면 그 규칙을 끈 예외가 조용히 되살아나므로, 지금 규칙의 글자로 고쳐 적으세요.`,
     );
     for (const row of deadExceptions) console.log(`  ${row}`);
+  }
+  // **A check that was switched off is named on every run.** Silence is what an exception buys,
+  // and silence is indistinguishable from a check that passed — so the one line the reader needs
+  // is which of the built-in checks did not look at this tree.
+  if (disabledChecks.size > 0) {
+    const off = [...disabledChecks].map(([id, label]) => `${id}(${label})`).join(' · ');
+    console.log(`기본 규칙 예외로 끈 내장 검사: ${off}`);
   }
   console.log('');
 
@@ -1112,7 +1345,7 @@ export function runDocAudit(args, cliPath) {
   for (const file of targets) {
     const rel = relative(root, file);
     const relPath = rel.startsWith('..') ? file : rel;
-    const {errors, warnings} = auditFile(file, rules, checkUntranslated, isLocaleResource(file), annotationKeys, resolvedPlaceholders);
+    const {errors, warnings} = auditFile(file, rules, checkUntranslated, isLocaleResource(file), annotationKeys, resolvedPlaceholders, disabledChecks);
     errorCount += errors.length;
     warningCount += warnings.length;
     for (const f of errors) console.log(formatFinding(relPath, f, 'error'));

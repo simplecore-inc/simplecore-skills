@@ -56,7 +56,7 @@ import { execFileSync } from "node:child_process";
 import { join, dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { discoverGlossary, loadRuleSet, loadRulePacks, parseGlossaryConfig, BASE_GLOSSARY_PATH } from "./lib/glossary.mjs";
-import { initGlossary, initL10n, runDocAudit, annotationRanges } from "./lib/doc-audit.mjs";
+import { initGlossary, initL10n, runDocAudit, annotationRanges, contrastRecommendedRanges } from "./lib/doc-audit.mjs";
 
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
 
@@ -444,7 +444,19 @@ function segmentsMarkdown(src) {
   hold(/\]\([^)\s]+\)/g); // link/image target, not the label
   hold(/^ {4,}\S.*$/gm); // indented code
   hold(/<[^>\n]+>/g);
-  hold(/^---$[\s\S]*?^---$/gm); // front matter
+  hold(/^-{3,}[ \t]*$/gm); // thematic break — structure, not prose
+
+  // Front matter is a fence that opens on the file's very FIRST line and closes at the
+  // next `---`. Every later `---` is a horizontal rule in the body.
+  //
+  // Anchored to any line instead — `/^---$[\s\S]*?^---$/gm` — the rules pair off two by
+  // two and each pair swallows the prose between them. It has no symptom: the text is
+  // never handed to a rule, so `rules`, `grep` and `suspects` report nothing and the
+  // silence reads exactly like a clean document. One repository lost 698 lines across 46
+  // files that way. `check` was never affected — doc-audit.mjs and glossary.mjs both
+  // require line 0 — so the two passes disagreed about what the file even contained.
+  const front = /^---[ \t]*\r?\n[\s\S]*?^---[ \t]*$/m.exec(src);
+  if (front && front.index === 0) blocked.push([0, front[0].length]);
 
   blocked.sort((x, y) => x[0] - y[0]);
   let blockIdx = 0;
@@ -1207,6 +1219,36 @@ const EXTRACTOR_CASES = [
     src: "const a = '<b>고를 수 있는 형태는 <code>x</code> 이 이름을 가진 둘뿐이다</b> 끝.';",
     want: ["고를 수 있는 형태는", "이 이름을 가진 둘뿐이다", "끝."],
   },
+  {
+    what: "마크다운: 첫 줄에서 여는 머리말은 빠진다",
+    of: () => segmentsMarkdown,
+    src: "---\ntitle: 안전 점검\n키워드: 작업허가\n---\n\n본문이 여기서 시작한다.\n",
+    want: ["본문이 여기서 시작한다."],
+  },
+  {
+    // The pair-off defect: with three body rules the old pattern held 1↔2 and left 3
+    // alone, so 둘째 문단 vanished while 첫째 · 셋째 stayed. Two of three surviving is
+    // what made it invisible — the file still had text under the rules.
+    what: "마크다운: 본문의 가로줄은 사이 문장을 삼키지 않는다",
+    of: () => segmentsMarkdown,
+    src: "첫째 문단이다.\n\n---\n\n둘째 문단이다.\n\n---\n\n셋째 문단이다.\n\n---\n\n넷째 문단이다.\n",
+    want: ["첫째 문단이다.", "둘째 문단이다.", "셋째 문단이다.", "넷째 문단이다."],
+  },
+  {
+    // Front matter and body rules in one file — the shape every document here has.
+    what: "마크다운: 머리말은 빠지고 그 뒤 가로줄 사이는 남는다",
+    of: () => segmentsMarkdown,
+    src: "---\ntitle: 안전 점검\n---\n\n머리말 뒤 첫 문장이다.\n\n---\n\n가로줄 뒤 문장이다.\n",
+    want: ["머리말 뒤 첫 문장이다.", "가로줄 뒤 문장이다."],
+  },
+  {
+    // A `---` that never closes is not front matter. Holding from it to end of file
+    // would empty the document, which is the same silence in a louder form.
+    what: "마크다운: 닫히지 않는 여는 줄은 머리말이 아니다",
+    of: () => segmentsMarkdown,
+    src: "---\n\n닫는 줄이 없는 문서다.\n",
+    want: ["닫는 줄이 없는 문서다."],
+  },
 ];
 
 /**
@@ -1323,6 +1365,29 @@ function cmdRulesTest(opts) {
 }
 
 /** Report every pack-rule hit across the resources, without changing anything. */
+/**
+ * Absolute offsets of the recommended side of every contrast row in a markdown source. A
+ * catalogue prints the copy it prescribes once per `금지 → 대체` row, and counting those as the
+ * author repeating himself reports the file for saying the thing it teaches — the reasoning and
+ * the four conditions that make a row recognisable are in `contrastRecommendedRanges`.
+ *
+ * Markdown only: a catalogue is a document form. A shipped resource value that happens to hold
+ * an arrow is copy somebody reads, so it stays counted.
+ */
+function contrastOffsets(entry, src) {
+  if (entry.format !== "markdown") return [];
+  const lines = src.split("\n").map((l) => l.replace(/`[^`\n]+`/g, (m) => " ".repeat(m.length)));
+  const perLine = contrastRecommendedRanges(lines);
+  if (!perLine.size) return [];
+  const ranges = [];
+  let at = 0;
+  lines.forEach((line, idx) => {
+    for (const [start, end] of perLine.get(idx) ?? []) ranges.push([at + start, at + end]);
+    at += line.length + 1;
+  });
+  return ranges;
+}
+
 function cmdRulesScan(opts) {
   // An explicit --scope reaches rules the project did not opt into; the default
   // sweep runs universal rules plus the project's declared scopes.
@@ -1332,12 +1397,20 @@ function cmdRulesScan(opts) {
 
   for (const entry of entries) {
     const { src, segments } = readSegments(entry);
+    const contrast = contrastOffsets(entry, src);
     const perFile = new Map();
     for (const seg of segments) {
       for (const rule of active) {
         for (const re of ruleMatchers(rule)) {
           re.lastIndex = 0;
-          if (!re.test(seg.text)) continue;
+          const m = re.exec(seg.text);
+          if (!m) continue;
+          // Only a frequency rule is thresholded on a per-file count, so only a frequency rule
+          // is misled by a catalogue. A rule that fires on the first hit still reports there.
+          if (rule.minPerFile) {
+            const at = seg.start + m.index;
+            if (contrast.some(([start, end]) => at >= start && at < end)) continue;
+          }
           if (!perFile.has(rule.id)) perFile.set(rule.id, []);
           perFile.get(rule.id).push({
             file: entry.file,
