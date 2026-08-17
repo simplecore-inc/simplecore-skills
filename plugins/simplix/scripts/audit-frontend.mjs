@@ -289,6 +289,45 @@ const isTsx = (p) => p.endsWith(".tsx");
 const isSource = (p) => p.endsWith(".ts") || p.endsWith(".tsx");
 
 /**
+ * Identifiers that end in `Id` and name something OUTSIDE this system.
+ *
+ * <p>Every rule that objects to a hand-typed id is objecting to a reference into this system's own
+ * tables — the user cannot know a UUID, so typing one is a guess and the picker exists to prevent
+ * it. An identifier issued somewhere else inverts that: the operator reads `clientId` off the
+ * identity provider's console and `machineId` off the licence, this system holds no set for a
+ * picker to list, and a text box is the only control that can exist. Excluded by name because the
+ * vocabulary is small and stable — OAuth/OIDC registration, tenancy, licensing — where the internal
+ * side grows an entity at a time.
+ */
+const FOREIGN_ID_NAMES =
+  /\b(?:client|tenant|machine|application|external|vendor|device|correlation|request|trace|session|installation)Id\b/;
+
+/**
+ * Whether anything in this file could be holding a value the server sent.
+ *
+ * <p>Several rules here key on a variable NAME — `row`, `values`, `displayData` — as their evidence
+ * that a value came off a DTO, because a regex cannot follow where a binding came from. That
+ * heuristic is right in a widget and wrong in a file with no server data in it at all: a static
+ * reference table rendered as rows binds `row` too, and its `row.type` is a string literal the
+ * author wrote three lines above.
+ *
+ * <p>A generated DTO can only reach a file through a domain package, an Orval adapter, or the boot
+ * envelope readers — so a file that names none of the three has no boot enum to mishandle, whatever
+ * it calls its variables. Checked on the import surface rather than on the call site, which is the
+ * part a rename cannot quietly move.
+ *
+ * @param content the file's source
+ * @returns whether a server-sent value can be in scope anywhere in it
+ */
+function readsServerData(content) {
+  return (
+    /\bfrom\s+["'][^"']*\/?domain-[^"']*["']/.test(content) ||
+    /\badaptOrval\w*\s*\(/.test(content) ||
+    /\bboot(?:Body|Page)\s*[<(]/.test(content)
+  );
+}
+
+/**
  * Property names of each generated DTO, keyed by its model file stem (e.g. `operatorScopeDetailDTO`).
  *
  * <p>Built on first use and kept, because the rule below asks about one entity per widget file and
@@ -758,11 +797,15 @@ const RULES = [
     desc: "enumLabel() called on a DTO field straight from the row — a boot enum arrives as an object, so the key becomes `Enum.[object Object]` and the screen prints the key",
     appliesTo: isTsx,
     check: (c) =>
-      lineHits(
-        c,
-        /enumLabel\(\s*"[^"]+"\s*,\s*(?:String\(\s*)?(?:displayData|row|values)\.\w+/,
-        (line) => !line.includes("resolveBootEnum"),
-      ),
+      // A file with no server data in it cannot be holding a boot enum, however it names its
+      // variables — see `readsServerData`.
+      readsServerData(c)
+        ? lineHits(
+            c,
+            /enumLabel\(\s*"[^"]+"\s*,\s*(?:String\(\s*)?(?:displayData|row|values)\.\w+/,
+            (line) => !line.includes("resolveBootEnum"),
+          )
+        : [],
   },
   {
     id: "phantom-projection-read",
@@ -967,7 +1010,20 @@ const RULES = [
     level: "error",
     desc: "Text input bound to an *Id value — entity references come from a picker, files from the file field",
     appliesTo: isTsx,
-    check: (c) => blockHits(c, /<FormFields\.(TextField|TextareaField)(?:(?!\/>)[\s\S]){0,250}?value=\{[^}]*Id[a-z]*\s*\}/g),
+    // What the invariant is about is an id naming a record in THIS system: the user cannot know a
+    // UUID, so typing one is a guess and the picker exists to stop it. An identifier issued by
+    // somebody else is the opposite case — an operator copies `clientId` out of the provider's
+    // console and `machineId` off the licence, no picker can list them because this system does not
+    // hold the set, and a text box is the only control there is. Excluded by name rather than by
+    // guessing, because the vocabulary is small and stable.
+    //
+    // hits:  value={draft.userId} · value={form.siteId} · value={values.attachmentId}
+    // quiet: value={draft.clientId} · value={draft.tenantId} · value={settings.machineId}
+    check: (c) =>
+      blockHits(
+        c,
+        /<FormFields\.(TextField|TextareaField)(?:(?!\/>)[\s\S]){0,250}?value=\{[^}]*Id[a-z]*\s*\}/g,
+      ).filter((hit) => !FOREIGN_ID_NAMES.test(hit.excerpt)),
   },
   {
     id: "native-time-input",
@@ -985,6 +1041,22 @@ const RULES = [
     appliesTo: isTsx,
     check: (c) =>
       lineHits(c, /function\s+\w*[Ll]ocalTime\s*\(|const\s+(parseLocalTime|formatLocalTime|displayLocalTime)\s*=\s*\(/),
+  },
+  {
+    id: "forced-narrowing-in-transform-filters",
+    invariant: "#32 / #3",
+    level: "error",
+    desc:
+      "Forced narrowing (a tab, a chip row, a scope from the address) merged inside transformFilters — the list state machine only sends a `filters` object once the reader has committed one, so on the first view the transform never runs and the request goes out unnarrowed. Merge into the request params instead",
+    appliesTo: isSource,
+    check: (c) =>
+      // A transform that only rewrites what it was handed (date formats, operator names — the
+      // documented use) spreads its own parameter and nothing else. One that spreads anything
+      // ELSE is carrying a narrowing in, and that narrowing is the half that silently disappears.
+      blockHits(
+        c,
+        /transformFilters:\s*\(\s*(\w+)\s*\)\s*=>\s*\(?\{[\s\S]{0,400}?\.\.\.(?!\1\b)[A-Za-z_$]/g,
+      ),
   },
   {
     id: "callback-prop-names",
