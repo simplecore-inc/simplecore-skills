@@ -115,6 +115,43 @@ selector is a claim about the selector until a second, differently-shaped check 
 
 ---
 
+## The two checks that need the browser, and the script that carries them
+
+Some defects are invisible to every source audit and to every request probe, and visible to
+one `getBoundingClientRect` call. Two of them recur, and both read as a working screen from
+everywhere except the pixels:
+
+| The defect | What every other check sees |
+| --- | --- |
+| a list total says N rows and the column under it draws none | the request answered 200 with N records, the component is imported, the props type-check |
+| two pieces of text painted into one rectangle | every string on the screen is the right string |
+
+They live in `${CLAUDE_PLUGIN_ROOT}/scripts/audit-rendered.mjs`, **not** in
+`audit-frontend.mjs` — that one reads source files and runs with nothing started, and these
+are questions about boxes on a painted page. Keeping them apart is what stops a run reporting
+「audit clean」 with no browser anywhere near it.
+
+```bash
+node "${CLAUDE_PLUGIN_ROOT}/scripts/audit-rendered.mjs" --url <address>   # drives agent-browser
+node "${CLAUDE_PLUGIN_ROOT}/scripts/audit-rendered.mjs" --print <id>      # the snippet, for this session's driver
+node "${CLAUDE_PLUGIN_ROOT}/scripts/audit-rendered.mjs" --self-test       # both directions, generated fixtures
+node "${CLAUDE_PLUGIN_ROOT}/scripts/audit-rendered.mjs" --list
+```
+
+**Run both over every screen the walk opens, while it is open.** The cost is one evaluate
+call per screen and it settles a question no screenshot settles reliably — a reader scanning
+a capture for a missing row is looking for an absence, which is the hardest thing to see.
+
+**It needs a browser and refuses to answer without one.** `--url` with nothing reachable
+exits 2 rather than 0; there is no source-only mode and no degraded mode, because a check
+that passes without seeing anything is worse than no check — it converts *nobody looked* into
+*something is checking*. Where the session is already driving a page through another tool,
+`--print <id>` hands over one self-contained expression to evaluate through it.
+
+Vocabulary — what a total reads like, what counts as a row, what an empty state says — is
+`--options <json>` with documented defaults, so a product that writes its totals differently
+overrides them instead of editing the script.
+
 ## Verdict snippets
 
 Small, safe checks that settle a question the eye cannot. Run them through the tool's JavaScript call, read the result, and move on. (Adapt selectors to the current markup — these are shapes, not incantations.)

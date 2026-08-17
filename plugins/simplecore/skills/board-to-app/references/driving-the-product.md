@@ -222,6 +222,15 @@ through the coordinating context; the image renders for the reader and costs
 nothing. Forwarding at the end of a unit of work is a record, not a review — by then
 the decisions are made.
 
+> **「Without opening it」 governs forwarding and nothing else.** It buys context on a
+> picture already on its way to somebody who will look at it. Read as a standing rule
+> it withdraws the only independent reading the arrangement has — the coordinator is
+> the one party that did not take the capture — and a chapter then closes with every
+> picture forwarded, none opened, and the agent that shot a screen the only party that
+> ever judged it. **The reading before a chapter closes is a separate act with its own
+> moment**, it does open the file, and it is not optional → `../SKILL.md` § Closing a
+> chapter.
+
 **Send the user's own language first.** A pseudo-locale is an instrument: it
 measures whether a layout survives long strings, and it is for the agent. A
 person reading a screen to judge whether it says the right thing learns nothing

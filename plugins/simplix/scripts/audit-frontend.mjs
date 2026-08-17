@@ -17,6 +17,13 @@
  * Rules that need judgment (persona fit, precedent parity, lifecycle reachability)
  * stay in the audit checklist document — do not port them here.
  *
+ * **This audit reads source files and never opens a browser.** A rule about what a page looks
+ * like once it is painted — a list total stating N rows over a column that draws none, two
+ * pieces of text in one rectangle — cannot be written here, however tempting the file's name
+ * makes it: it would either need a runtime this script does not have, or it would answer from
+ * the source and pass on every broken screen. Those rules live in `audit-rendered.mjs` beside
+ * this file, which requires a browser and exits non-zero when it cannot reach one.
+ *
  * Scope: a project that CONSUMES simplix-react. Most rules say "reach for the framework
  * rather than hand-rolling it" (use Flex/Stack/Grid, use the shared component, use the
  * derived hook), so pointing this at the framework's own repository reports its

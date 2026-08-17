@@ -20,7 +20,7 @@ visitor gets that persona too, derived the way the board's `AUTH:` notes already
 who may enter a screen.
 
 **Where the project has its own screen-audit skill, that skill is the rubric** — in a
-simplix-react repository, `simplix:frontend-e2e` carries four lenses and five censuses
+simplix-react repository, `simplix:frontend-e2e` carries four lenses and six censuses
 anchored to the frontend handbook's invariants rather than to taste. Load it and judge
 with it; the three above are the floor for a project that has none.
 
@@ -169,6 +169,43 @@ some of these become one the moment you understand them. It is an argument about
 the visual pass is **for**: not confirming what the tests already know, but catching the
 class of failure that has no witness except the screen. **Treat a pass with no captures
 looked at as one that did not happen**, however green it was.
+
+### Taking a capture is not reading one
+
+The sweep is a script. It navigates, waits, shoots, and writes a file — and none of that
+is looking, because nothing in it decodes the image. So an agent can finish a chapter
+having produced twenty-eight pictures and seen none of them, and the sentence it then
+writes about what was on the screen comes from somewhere else: the DOM it queried, the
+responses it read, and its own memory of what it built. **Every one of those sentences is
+true of the data and says nothing about the picture.**
+
+That is how a screen states 「적용 법령 14개」 in a tile, 「적용 14」 in a tab and
+「전체 14건」 in its toolbar, draws not one row, and is written up as 「법령 열넷」. Fourteen
+statutes are not there; a number reading fourteen is. Nothing in the report is a lie and
+nothing in it was seen.
+
+So wherever the arrangement asks for a sentence about what was on the screen:
+
+1. **Open the image file itself, first.** Before the sentence is written, not after it as a
+   confirmation — a sentence already written is what the eye then goes looking to confirm.
+2. **Write the sentence from the picture, and from the picture only.** A count read off a
+   response, a row known to exist because the query returned it, a state inferred from the
+   code — none of those belong in it. Where the picture cannot settle something the
+   sentence needs, that is a second sentence with its own evidence, not a blend.
+3. **Say what is absent as readily as what is present.** The failure this catches is always
+   an absence — a list with no rows, a panel with no content, a shell with nothing in it —
+   and an absence is the one thing a reader scanning for content does not register.
+4. **Where a scripted check can settle it, run it while the screen is open.** In a
+   simplix-react repository the two that matter are in `simplix:frontend-e2e`
+   (`scripts/audit-rendered.mjs`): a list total stating N rows over a column that draws
+   none, and two pieces of text painted into one rectangle. Both are invisible to a source
+   audit and to a request probe, and the second is what 「the tables are drawn on top of
+   each other」 looks like to a machine.
+
+> **Read it this way and it is wrong**: 「the capture exists, so the screen was seen」. The
+> capture proves a browser was opened and a file was written. Whether anything in it was
+> read leaves no trace at all, which is why it needs a named reader and a moment rather
+> than a habit → `../SKILL.md` § Closing a chapter.
 
 ### Looking settles the picture, never the button
 

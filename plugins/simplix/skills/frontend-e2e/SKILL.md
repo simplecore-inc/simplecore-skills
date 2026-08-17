@@ -31,7 +31,7 @@ What the gate cannot check is scope, and scope is where this pass is usually los
 
 Screenshots, accessibility trees, console dumps, and network logs are what this audit is made of, and they are also what fills a context fastest. Run in the session that is coordinating the work, an audit of any real size dries that context out partway through — and the half it does not reach is indistinguishable from a half that passed. A cluster abandoned at 80% leaves fixes half-applied and a report that reads as complete.
 
-So the browser work is delegated, and `simplix:screen-auditor` ships with this plugin to be delegated to. It carries the whole of this handbook's execution half: how to drive, the personas, the five censuses, the four lenses, the fix rules, and the exact shape of what it returns.
+So the browser work is delegated, and `simplix:screen-auditor` ships with this plugin to be delegated to. It carries the whole of this handbook's execution half: how to drive, the personas, the six censuses, the four lenses, the fix rules, and the exact shape of what it returns.
 
 1. **One cluster, one auditor.** Hand it the cluster (the entity and every surface that shows or moves it), the personas, and the base URLs. It reads this skill, the `simplix:frontend` handbook, and the code itself.
 2. **Finish, then replace.** A new auditor for the next cluster. Never stack a second cluster on a running one.
@@ -77,9 +77,9 @@ Steps 3 to 8 are the auditor's work, per cluster; steps 1, 2, and 9 are the coor
 
 ---
 
-## The Five Mandatory Censuses
+## The Six Mandatory Censuses
 
-These run over EVERY screen in scope, exhaustively — not sampled. The first four have detection recipes in `references/screen-checklist.md`; the fifth runs over the cluster in `references/cross-screen-consistency.md`.
+These run over EVERY screen in scope, exhaustively — not sampled. The first four have detection recipes in `references/screen-checklist.md`; the fifth runs over the cluster in `references/cross-screen-consistency.md`; the sixth is two scripted checks in `references/browser-driving.md`.
 
 1. **Button placement.** Actions live in the footer of the detail/form surface (`CrudDetail.DefaultActions` / `CrudForm.Actions`), and the page's primary create action lives in the page header's action slot. A button floating mid-page, a row of buttons above a list, or an action buried between form sections is a defect unless the action is genuinely scoped to the section it sits in (an "add row" inside a repeatable list, a per-row action in a table). When in doubt, move it to the footer.
 2. **Header / footer standard composition.** Every routed page registers its title through the page-header hook and takes its padding from the app layout; every detail/form panel uses the framework's header/body/footer chrome. A locally rendered heading, an ad-hoc close button, a hand-rolled title row, or a panel whose content is clipped because nothing owns the scroll are all defects.
@@ -87,6 +87,7 @@ These run over EVERY screen in scope, exhaustively — not sampled. The first fo
 3. **Titles that are ids.** A panel, dialog, or header titled with a UUID, a code, or "편집: <id>" is a defect. The title must be the value that identifies the record to a human (a name). This most often comes from the backend's detail projection filling a relation with its id only — the list shows a name, the detail shows a UUID. Fix at the source, not with a frontend lookup, when the projection is the cause.
 4. **Ids typed by hand.** A form field that asks the user to type or paste an identifier of another record (an entity reference, an attachment id, an "owner id") is a defect. Related data is chosen from a picker (combobox / search popover / tree select) that shows names; files come from the framework's file field. A user cannot know a UUID, so a form that demands one cannot be completed.
 5. **Cross-screen agreement.** The same record, state, count, term, badge tone, and affordance agree on every surface that shows them — across personas, dashboards, nav badges, and embedded appearances. A transition performed on one surface is reflected on the others without a manual reload. Recipes → `references/cross-screen-consistency.md`.
+6. **Rendered, not merely served.** While the screen is open, run `audit-rendered.mjs`'s two checks on it: a list total stating N rows over a column that draws none, and two pieces of text painted into one rectangle. Both survive every other census — the strings are right, the requests answered, the components are imported — and both make the screen unusable. A reader scanning a screenshot for a row that is not there is looking for an absence, which is the one thing eyes are worst at; these two settle it in one evaluate call → `references/browser-driving.md` § The two checks that need the browser.
 
 ---
 

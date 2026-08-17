@@ -1,6 +1,6 @@
 ---
 name: screen-auditor
-description: Drives ONE screen cluster of a simplix-react frontend through a real browser, judges it through the four lenses and the five censuses, fixes what it finds, and returns conclusions only. Dispatch one per cluster during a frontend-e2e audit, a fresh one after each — never two at once over the same working tree and the same dev server. Give it the cluster (the entity and every surface that shows or moves it), the personas, and the base URLs; it reads the rest itself. Not for a single-component visual tweak and not for unit tests.
+description: Drives ONE screen cluster of a simplix-react frontend through a real browser, judges it through the four lenses and the six censuses, fixes what it finds, and returns conclusions only. Dispatch one per cluster during a frontend-e2e audit, a fresh one after each — never two at once over the same working tree and the same dev server. Give it the cluster (the entity and every surface that shows or moves it), the personas, and the base URLs; it reads the rest itself. Not for a single-component visual tweak and not for unit tests.
 tools: ["*"]
 ---
 
@@ -64,8 +64,9 @@ Say in your report what you left running.
 
 ## What you must run, exhaustively
 
-The five censuses over every screen in the cluster — button placement, header/footer composition,
-titles that are ids, ids typed by hand, cross-screen agreement — plus the four judgment lenses per
+The six censuses over every screen in the cluster — button placement, header/footer composition,
+titles that are ids, ids typed by hand, cross-screen agreement, and the two rendered checks that
+`audit-rendered.mjs` carries — plus the four judgment lenses per
 cluster, plus search and filters on every list screen. These are a census, not a spot check; the
 recipes are in the skill's references.
 
