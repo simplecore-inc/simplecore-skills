@@ -1675,13 +1675,22 @@ const RULES = [
       if (acting.length === 0) {
         return [];
       }
-      // Any read of the link before the action counts, whatever it is called. The shape is a
-      // mount effect that asks about the token and parks the answer, which is what a later
-      // branch can gate the button on — a screen that only knows the token is non-empty is the
-      // one that cannot tell a live link from a dead one.
-      const readsFirst = [...c.matchAll(/useEffect\(\s*\(\s*\)\s*=>\s*\{[\s\S]{0,900}?\n\s*\}\s*,\s*\[/g)]
+      // Any read of the link before the action counts, whatever it is called. Two shapes do it,
+      // and a rule that knows only the first calls the better one a defect.
+      //
+      // A mount effect that asks about the token and parks the answer is the first: a later
+      // branch gates the button on what it parked, and a screen that only knows the token is
+      // non-empty is the one that cannot tell a live link from a dead one.
+      //
+      // A hook the token is passed to is the second, and it is the shape to prefer — the answer
+      // arrives as query state rather than as a piece of component state an effect has to keep in
+      // step, and React's development double-mount cannot leave it unsettled. `useX(token)` is
+      // unambiguous here because the acting call spends the token inside a `data:` payload, never
+      // as a bare argument.
+      const readsInEffect = [...c.matchAll(/useEffect\(\s*\(\s*\)\s*=>\s*\{[\s\S]{0,900}?\n\s*\}\s*,\s*\[/g)]
         .some((m) => /\btoken\b/.test(m[0]) && /\bset[A-Z]\w*\(/.test(m[0]));
-      if (readsFirst) {
+      const readsThroughHook = /\buse[A-Z]\w*\(\s*token\s*[,)]/.test(c);
+      if (readsInEffect || readsThroughHook) {
         return [];
       }
       return acting.map((m) => ({
