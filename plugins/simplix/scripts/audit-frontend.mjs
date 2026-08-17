@@ -1842,6 +1842,46 @@ return <Badge>{data?.totalElements ?? 0}</Badge>;`,
         c,
         /<FormFields\.(TextField|TextareaField)(?:(?!\/>)[\s\S]){0,250}?value=\{[^}]*Id[a-z]*\s*\}/g,
       ).filter((hit) => !FOREIGN_ID_NAMES.test(hit.excerpt)),
+    samples: {
+      file: "modules/site/src/widgets/area/form.tsx",
+      broken: `<FormFields.TextField
+  label={fieldLabel("owner")}
+  value={draft.userId}
+  onChange={(v) => updateField("userId", v)}
+/>`,
+      fixed: `<EntityCombobox
+  label={fieldLabel("owner")}
+  value={draft.userId}
+  onChange={(v) => updateField("userId", v)}
+  options={userOptions}
+/>`,
+      miss: [
+        {
+          note: "an identifier issued outside this system — the operator reads it off the provider's console",
+          source: `<FormFields.TextField
+  label={fieldLabel("clientId")}
+  value={draft.clientId}
+  onChange={(v) => updateField("clientId", v)}
+/>`,
+        },
+        {
+          note: "a licence's machine identifier, which no picker in this system can list",
+          source: `<FormFields.TextField
+  label={fieldLabel("machineId")}
+  value={settings.machineId}
+  onChange={(v) => updateField("machineId", v)}
+/>`,
+        },
+        {
+          note: "an ordinary text field over a value the user can actually type",
+          source: `<FormFields.TextField
+  label={fieldLabel("name")}
+  value={draft.name}
+  onChange={(v) => updateField("name", v)}
+/>`,
+        },
+      ],
+    },
   },
   {
     id: "native-time-input",
@@ -1850,6 +1890,36 @@ return <Badge>{data?.totalElements ?? 0}</Badge>;`,
     desc: 'Native time input or free-text HH:mm placeholder — use FormFields.TimeField',
     appliesTo: isTsx,
     check: (c) => lineHits(c, /type:\s*"time"|placeholder="HH:mm"/),
+    samples: {
+      file: "modules/site/src/widgets/area/form.tsx",
+      broken: `<FormFields.TextField
+  label={fieldLabel("opensAt")}
+  inputProps={{ type: "time" }}
+  value={values.opensAt}
+  onChange={(v) => updateField("opensAt", v)}
+/>`,
+      fixed: `<FormFields.TimeField
+  label={fieldLabel("opensAt")}
+  value={values.opensAt}
+  onChange={(v) => updateField("opensAt", v)}
+/>`,
+      miss: [
+        {
+          note: "the sanctioned picker, with a placeholder that is a sentence rather than a format",
+          source: `<FormFields.TimeField
+  label={fieldLabel("opensAt")}
+  placeholder={t("area.opensAtHint")}
+  value={values.opensAt}
+/>`,
+        },
+        {
+          note: "a date-range filter is a temporal axis, not a time-of-day input",
+          source: `const filters = [
+  { type: "dateRange", field: "openedAt", label: fieldLabel("openedAt") },
+];`,
+        },
+      ],
+    },
   },
   {
     id: "local-time-helper-copy",
@@ -1859,6 +1929,22 @@ return <Badge>{data?.totalElements ?? 0}</Badge>;`,
     appliesTo: isTsx,
     check: (c) =>
       lineHits(c, /function\s+\w*[Ll]ocalTime\s*\(|const\s+(parseLocalTime|formatLocalTime|displayLocalTime)\s*=\s*\(/),
+    samples: {
+      file: "modules/site/src/widgets/area/form.tsx",
+      broken: `function parseLocalTime(value: string): TimeValue {
+  const [hour, minute] = value.split(":").map(Number);
+  return new Time(hour, minute);
+}`,
+      fixed: `import { formatLocalTime, parseLocalTime } from "@acme/site-ui";`,
+      miss: [
+        {
+          note: "a domain label built from a time, which converts nothing",
+          source: `function areaOpeningLabel(value: TimeValue) {
+  return t("area.opensAtLabel", { time: formatLocalTime(value) });
+}`,
+        },
+      ],
+    },
   },
   {
     id: "forced-narrowing-in-transform-filters",
@@ -1871,10 +1957,64 @@ return <Badge>{data?.totalElements ?? 0}</Badge>;`,
       // A transform that only rewrites what it was handed (date formats, operator names — the
       // documented use) spreads its own parameter and nothing else. One that spreads anything
       // ELSE is carrying a narrowing in, and that narrowing is the half that silently disappears.
+      //
+      // KNOWN GAP: only the SPREAD form. A narrowing written as a plain key — `siteId,` or
+      // `status: TAB_STATUS[tab],` beside the spread of the parameter — disappears on the first
+      // view in exactly the same way and is not reported. Closing it means reading each key's
+      // value and asking whether it mentions the transform's own parameter, which is a wider
+      // change than a pattern: `sort:` and `size:` keys would start being reported too, and
+      // whether that is right is a judgment about this rule's grade rather than about its regex.
       blockHits(
         c,
         /transformFilters:\s*\(\s*(\w+)\s*\)\s*=>\s*\(?\{[\s\S]{0,400}?\.\.\.(?!\1\b)[A-Za-z_$]/g,
       ),
+    samples: {
+      file: "modules/site/src/widgets/area/use-area-list.ts",
+      broken: `export function useAreaList(siteId: string, tab: AreaTab) {
+  const forcedScope = { siteId, status: TAB_STATUS[tab] };
+
+  return useCrudList({
+    queryHook: useListAreas,
+    transformFilters: (filters) => ({
+      ...filters,
+      ...forcedScope,
+    }),
+  });
+}`,
+      fixed: `export function useAreaList(siteId: string) {
+  return useCrudList({
+    queryHook: useListAreas,
+    params: { siteId },
+    transformFilters: (filters) => ({
+      ...filters,
+      openedFrom: filters.openedAt?.from,
+    }),
+  });
+}`,
+      miss: [
+        {
+          note: "the documented use — the transform rewrites what it was handed and adds nothing",
+          source: `export function useAreaList() {
+  return useCrudList({
+    queryHook: useListAreas,
+    transformFilters: (filters) => ({
+      ...filters,
+      status: filters.status?.toUpperCase(),
+    }),
+  });
+}`,
+        },
+        {
+          note: "a transform that spreads nothing at all",
+          source: `export function useAreaList() {
+  return useCrudList({
+    queryHook: useListAreas,
+    transformFilters: (filters) => ({ name: filters.name }),
+  });
+}`,
+        },
+      ],
+    },
   },
   {
     id: "callback-prop-names",
@@ -1883,6 +2023,17 @@ return <Badge>{data?.totalElements ?? 0}</Badge>;`,
     desc: "Ad-hoc save callback name onSaved — use onSuccess",
     appliesTo: isTsx,
     check: (c) => lineHits(c, /\bonSaved\s*[=:{]/),
+    samples: {
+      file: "modules/site/src/widgets/area/list.tsx",
+      broken: `<AreaForm areaId={selected} onSaved={() => list.refetch()} onClose={close} />`,
+      fixed: `<AreaForm areaId={selected} onSuccess={() => list.refetch()} onClose={close} />`,
+      miss: [
+        {
+          note: "the sanctioned callback names, which this rule exists to steer towards",
+          source: `<AreaForm areaId={selected} onSuccess={onSuccess} onDeleted={onDeleted} onCancel={close} />`,
+        },
+      ],
+    },
   },
   {
     id: "callback-done-name",
@@ -1891,6 +2042,14 @@ return <Badge>{data?.totalElements ?? 0}</Badge>;`,
     desc: "onDone callback — use onSuccess for save/submit completion (non-CRUD completions like animation ends are OK)",
     appliesTo: isTsx,
     check: (c) => lineHits(c, /\bonDone\s*[=:{]/),
+    // No `miss` sample: the exception this rule names — a non-CRUD completion such as an
+    // animation end — is not visible in the prop name, which is why the rule is graded review
+    // and hands the reader a candidate rather than a verdict.
+    samples: {
+      file: "modules/site/src/widgets/area/wizard.tsx",
+      broken: `<AreaWizard onDone={() => close()} />`,
+      fixed: `<AreaWizard onSuccess={() => close()} />`,
+    },
   },
   {
     id: "wrap-string-prop",
@@ -1899,6 +2058,21 @@ return <Badge>{data?.totalElements ?? 0}</Badge>;`,
     desc: 'wrap="wrap" on Flex/Stack — wrap is a boolean prop',
     appliesTo: isTsx,
     check: (c) => lineHits(c, /wrap="wrap"/),
+    samples: {
+      file: "modules/site/src/widgets/area/detail.tsx",
+      broken: `<Flex gap="xs" wrap="wrap">
+  {displayData.tags.map((tag) => <Badge key={tag}>{tag}</Badge>)}
+</Flex>`,
+      fixed: `<Flex gap="xs" wrap>
+  {displayData.tags.map((tag) => <Badge key={tag}>{tag}</Badge>)}
+</Flex>`,
+      miss: [
+        {
+          note: "a CSS property whose value really is the string",
+          source: `const chipRow = { display: "flex", flexWrap: "wrap" } as const;`,
+        },
+      ],
+    },
   },
   {
     id: "size-shorthand",
@@ -1907,6 +2081,17 @@ return <Badge>{data?.totalElements ?? 0}</Badge>;`,
     desc: 'className "h-4 w-4" — use "size-4"',
     appliesTo: isTsx,
     check: (c) => lineHits(c, /className="[^"]*\bh-4 w-4\b/),
+    samples: {
+      file: "modules/site/src/widgets/area/list.tsx",
+      broken: `<TrashIcon className="h-4 w-4" />`,
+      fixed: `<TrashIcon className="size-4" />`,
+      miss: [
+        {
+          note: "a box that is not square — the shorthand does not apply",
+          source: `<Sparkline className="h-4 w-40" />`,
+        },
+      ],
+    },
   },
   {
     id: "command-primitives",
@@ -1915,6 +2100,18 @@ return <Badge>{data?.totalElements ?? 0}</Badge>;`,
     desc: "Command primitives imported in a module — use SearchPopover",
     appliesTo: (p) => inModules(p),
     check: (c) => lineHits(c, /import\s+\{[^}]*Command(Input|Item|List)/),
+    samples: {
+      file: "modules/site/src/widgets/area/assign-popover.tsx",
+      broken: `import { Command, CommandInput, CommandItem, CommandList } from "@simplix-react/ui";`,
+      fixed: `import { SearchPopover } from "@simplix-react/ui";`,
+      miss: [
+        {
+          note: "the shared package that BUILDS the popover has to import the primitives",
+          file: "packages/site-ui/src/search-popover.tsx",
+          source: `import { Command, CommandInput, CommandItem, CommandList } from "@simplix-react/ui";`,
+        },
+      ],
+    },
   },
   {
     id: "raw-select-import",
@@ -1923,6 +2120,22 @@ return <Badge>{data?.totalElements ?? 0}</Badge>;`,
     desc: "Raw Select primitives imported in a module — use FormFields.SelectField",
     appliesTo: (p) => inModules(p),
     check: (c) => lineHits(c, /import\s+\{[^}]*Select(Trigger|Content|Item)\b/),
+    samples: {
+      file: "modules/site/src/widgets/area/list.tsx",
+      broken: `import { Select, SelectContent, SelectItem, SelectTrigger } from "@simplix-react/ui";`,
+      fixed: `import { FormFields } from "@simplix-react/ui";`,
+      miss: [
+        {
+          note: "the field component itself is not a raw primitive",
+          source: `import { FormFields, SelectField } from "@simplix-react/ui";`,
+        },
+        {
+          note: "the shared package that wraps the primitives into the compact field",
+          file: "packages/site-ui/src/compact-select.tsx",
+          source: `import { SelectContent, SelectItem, SelectTrigger } from "@simplix-react/ui";`,
+        },
+      ],
+    },
   },
   {
     id: "loader-spinner",
@@ -1931,6 +2144,26 @@ return <Badge>{data?.totalElements ?? 0}</Badge>;`,
     desc: "Manual Loader2 / animate-spin — Button handles its own spinner (standalone overlays are OK)",
     appliesTo: (p) => inModules(p) && isTsx(p),
     check: (c) => lineHits(c, /\bLoader2\b|animate-spin/),
+    // No `miss` for the exception the description names — a standalone overlay spinner looks
+    // exactly like a hand-rolled button spinner in source. That is the judgment the review grade
+    // hands to the reader.
+    samples: {
+      file: "modules/site/src/widgets/area/form.tsx",
+      broken: `<Button disabled={isPending} onClick={onSave}>
+  {isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+  {isPending ? t("common.saving") : t("common.save")}
+</Button>`,
+      fixed: `<Button loading={isPending} loadingText={t("common.saving")} onClick={onSave}>
+  {t("common.save")}
+</Button>`,
+      miss: [
+        {
+          note: "the shared package that owns the spinner",
+          file: "packages/site-ui/src/loading-overlay.tsx",
+          source: `<Loader2 className="size-8 animate-spin" />`,
+        },
+      ],
+    },
   },
   {
     id: "status-map-resurrect",
@@ -1939,6 +2172,25 @@ return <Badge>{data?.totalElements ?? 0}</Badge>;`,
     desc: "Resurrected local status/severity color map — use the shared tone maps + StatusBadge/StatusDot",
     appliesTo: (p) => inModules(p),
     check: (c) => lineHits(c, /\b(STATUS_COLORS|SEVERITY_COLORS|severityConfig)\b/),
+    samples: {
+      file: "modules/site/src/widgets/area/list.tsx",
+      broken: `const STATUS_COLORS: Record<string, string> = {
+  ACTIVE: "bg-green-100 text-green-800",
+  CLOSED: "bg-red-100 text-red-800",
+};`,
+      fixed: `import { areaStatusToTone } from "@acme/site-ui";
+
+<StatusBadge tone={areaStatusToTone[resolveBootEnum(row.status)]} />`,
+      miss: [
+        {
+          note: "a categorical palette, which the registry says stays domain-local",
+          source: `const CATEGORY_COLORS: Record<string, string> = {
+  ENTRANCE: "bg-sky-100",
+  STORAGE: "bg-violet-100",
+};`,
+        },
+      ],
+    },
   },
   {
     id: "inline-dark-tone-map",
@@ -1948,6 +2200,26 @@ return <Badge>{data?.totalElements ?? 0}</Badge>;`,
     appliesTo: (p) => inModules(p) && isTsx(p),
     check: (c) =>
       /Record</.test(c) ? lineHits(c, /dark:bg-(red|green|emerald|amber|blue|orange|slate)-\d/) : [],
+    // No `miss` for the description's categorical-palette exception: what separates a status map
+    // from a category palette is what the keys MEAN, and the words that would tell them apart are
+    // each project's own vocabulary — which is exactly what must not be baked in here. The review
+    // grade is where that judgment lives.
+    samples: {
+      file: "modules/site/src/widgets/area/list.tsx",
+      broken: `const toneClass: Record<AreaStatus, string> = {
+  ACTIVE: "bg-green-100 dark:bg-green-900",
+  CLOSED: "bg-red-100 dark:bg-red-900",
+};`,
+      fixed: `import { areaStatusToTone } from "@acme/site-ui";
+
+<StatusBadge tone={areaStatusToTone[resolveBootEnum(row.status)]} />`,
+      miss: [
+        {
+          note: "a one-off tint on a single element is not a map",
+          source: `<Callout className="bg-amber-50 dark:bg-amber-950">{t("area.hint")}</Callout>`,
+        },
+      ],
+    },
   },
   {
     id: "drag-threshold-copy",
@@ -1956,6 +2228,22 @@ return <Badge>{data?.totalElements ?? 0}</Badge>;`,
     desc: "Local DRAG_THRESHOLD_PX redefinition — import it from the shared UI package",
     appliesTo: (p) => inModules(p),
     check: (c) => lineHits(c, /const DRAG_THRESHOLD_PX/),
+    samples: {
+      file: "modules/site/src/widgets/schedule/bar.tsx",
+      broken: `const DRAG_THRESHOLD_PX = 4;`,
+      fixed: `import { DRAG_THRESHOLD_PX, ResizeHandle } from "@acme/site-ui";`,
+      miss: [
+        {
+          note: "a different threshold, in a different unit, is a different constant",
+          source: `const DRAG_THRESHOLD_MS = 120;`,
+        },
+        {
+          note: "the shared package is where the constant is defined",
+          file: "packages/site-ui/src/resize-handle.tsx",
+          source: `export const DRAG_THRESHOLD_PX = 4;`,
+        },
+      ],
+    },
   },
   {
     id: "cursor-col-resize",
@@ -1964,6 +2252,27 @@ return <Badge>{data?.totalElements ?? 0}</Badge>;`,
     desc: "Inline cursor-col-resize edge grip — use <ResizeHandle /> (canvas vertex handles are OK)",
     appliesTo: (p) => inModules(p) && isTsx(p),
     check: (c) => lineHits(c, /cursor-col-resize/),
+    // No `miss` for the canvas-vertex exception the description names — a vertex handle and an
+    // edge grip carry the same class, and only what they sit on tells them apart.
+    samples: {
+      file: "modules/site/src/widgets/schedule/bar.tsx",
+      broken: `<div
+  className="absolute inset-y-0 right-0 w-2.5 cursor-col-resize hover:bg-white/20"
+  onPointerDown={(e) => handlePointerDown(e, "resize-right")}
+/>`,
+      fixed: `<ResizeHandle side="right" disabled={disabled} onPointerDown={(e) => handlePointerDown(e, "resize-right")} />`,
+      miss: [
+        {
+          note: "a row grip resizes the other axis",
+          source: `<div className="cursor-row-resize" onPointerDown={onGrab} />`,
+        },
+        {
+          note: "the shared package that defines the handle",
+          file: "packages/site-ui/src/resize-handle.tsx",
+          source: `<div className="w-2.5 cursor-col-resize" onPointerDown={onPointerDown} />`,
+        },
+      ],
+    },
   },
   {
     id: "uuid-audit-filters",
