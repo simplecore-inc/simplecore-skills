@@ -1143,7 +1143,9 @@ function lensDrift() {
   if (!section) return null;
   const inDoc = new Set();
   for (const line of section.split("\n")) {
-    const body = line.trim().replace(/^\*\*[^*]+\*\* /, "");
+    // A family may explain itself after an em dash; that prose is not an entry, and read as
+    // one it becomes a phantom the lens can never satisfy.
+    const body = line.trim().replace(/^\*\*[^*]+\*\* /, "").split(" — ")[0];
     if (!body || body.startsWith("**")) continue;
     for (const term of body.split("·")) if (term.trim()) inDoc.add(term.trim().replace(/`/g, ""));
   }
