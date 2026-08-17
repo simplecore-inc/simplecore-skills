@@ -2417,6 +2417,33 @@ return <Badge>{data?.totalElements ?? 0}</Badge>;`,
     },
   },
   {
+    id: "comma-in-sort-token",
+    invariant: "#3",
+    level: "error",
+    desc:
+      "A sort token written `field,direction` — the separator is a dot. The generated client types `sort` as `string[]`, so the comma form typechecks; the server's parser then splits the element on the comma and refuses the request with a sort-format error. The screen shows nothing: the list hook reads the error envelope as an empty page and draws its empty state, and the network tab shows 200 because the envelope carried one",
+    appliesTo: isSource,
+    // Anchored on `sort` so an ordinary array of two strings is not reported. Only the
+    // one-string-two-fields shape is the defect; `sort: ["a.asc", "b.desc"]` is two tokens
+    // and correct.
+    check: (c) => lineHits(c, /\bsort\b\s*[:=]\s*\[?\s*["'`][A-Za-z_$][\w.$]*,\s*(?:asc|desc)\b/i),
+    samples: {
+      file: "modules/site/src/widgets/shift/use-shift-list.ts",
+      broken: `const params = { sort: ["sortOrder,asc"] };`,
+      fixed: `const params = { sort: ["sortOrder.asc"] };`,
+      miss: [
+        {
+          note: "two separate tokens in one array is the correct multi-field form",
+          source: `const params = { sort: ["siteName.asc", "sortOrder.desc"] };`,
+        },
+        {
+          note: "a comma inside an unrelated array of field names",
+          source: `const columns = ["sortOrder", "ascendingLabel"];`,
+        },
+      ],
+    },
+  },
+  {
     id: "hand-written-endpoint-url",
     invariant: "#30 / #3",
     level: "review",

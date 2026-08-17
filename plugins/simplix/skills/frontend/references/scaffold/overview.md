@@ -186,6 +186,20 @@ Creates `modules/<domain-name>/` with FSD layer structure:
 - `src/shared/` — shared utilities
 - `src/locales/` — module-level translations
 
+**Screens are built inside `modules/<name>/`, and what stays in an app's `widgets/` is only
+what that app alone uses** — its shell, its error screens, the layout patterns its pages
+share, its route files. Moving a widget out of an app into a module afterwards does not give
+it what the generator gives a module: the `source` conditions in `package.json`, the
+manifest, the locale wiring, the barrels, and the widget shape the scaffold writes. **Start
+from what `simplix scaffold <entity> --module <name>` produced and edit that**, rather than
+producing something elsewhere and relocating it.
+
+**Which module an entity belongs to is decided by what the screen is about, and the backend
+has usually already decided it** — the module that owns the endpoints owns the screens. Where
+counting imports does not separate two candidates, that question does. **Never put product
+screens in a module copied in unchanged from another repository**: it is neutral only for as
+long as nothing product-specific is in it, and one screen ends that.
+
 ### Step 5: CRUD Widget Scaffolding
 
 Run for **each entity that needs a UI page** (skip sub-entities that are only used within parent entities):
@@ -205,6 +219,56 @@ This generates per entity:
 - `src/pages/<entity-kebab>/index.ts`
 
 Also updates: `widgets/index.ts`, `pages/index.ts`, `src/index.ts`, `locales/`, `tsup.config.ts`, `package.json`.
+
+#### The entity name is the hook file's name, and a wrong one produces a widget instead of an error
+
+`scaffold <entity>` looks the entity up by the file name in the domain package's
+`src/hooks/` — `packages/domain-<name>/src/hooks/userAccount.ts` means
+`simplix scaffold userAccount`. A name that matches nothing (`user-account`, `UserAccount`,
+a table name) **does not fail**: the CLI falls back to a generic skeleton, emits widgets
+carrying mock data, and prints `Fields detected: id, name` with **no `Domain package:` line
+above it**. Those widgets do not compile, and the compile errors point at the widget rather
+than at the command that wrote it.
+
+**Read the two lines the CLI prints before opening any file it wrote.** `Domain package:`
+present and a field list longer than `id, name` is the generated-from-the-contract path;
+either one missing is the fallback, and the answer is to re-run with the hook file's name,
+not to fix the widget.
+
+The **folder** names come from the same string: `roleScopeGrant` writes
+`widgets/role-scope-grant/` and `pages/role-scope-grant/`. When the module already keeps
+that screen under a different folder, move the generated files and delete the new folder —
+the CLI has no way to be told where they belong.
+
+### Scaffolding into a module that already has widgets
+
+`scaffold` is written for an empty module. Run against one that already holds the entity's
+widgets it does two surprising things, and neither is announced.
+
+**Existing widget files are not overwritten.** `list.tsx` / `form.tsx` / `detail.tsx` /
+`index.ts` are printed under `Generated files` and then skipped where a file is already
+there — the widgets do not change by one character, and nothing on screen says so. **To
+start from the generated shape, delete those four first, then run.** For a hierarchical
+entity (`parentId` / `path` / `depth` present) the list file is `tree.tsx`, so that is the
+name to delete instead of `list.tsx`.
+
+**Six things it writes are wrong in a module that already exists**, and each is reverted
+after the run:
+
+| What | Why it is reverted |
+| --- | --- |
+| the `widgets` namespace in `locales/index.ts` | it points at `locales/widgets/{<locales>}.json`, which the CLI does not create, so the import fails |
+| an empty `SUBJECTS = {}` in `shared/auth/subjects.ts` | it shadows the real `SUBJECTS` the screens import from the project UI package, and every `useCan` gate then resolves against nothing |
+| `@simplix-react/ui` / `@simplix-react/i18n` in `package.json` | sibling modules take them through the `simplix-react` meta-package; one module depending directly is exactly the peer-set split that makes a second context copy (invariant #60) |
+| `pages/<entity>/crud-page.tsx` and its `index.ts` | a second page beside the one already routed |
+| the new line in `pages/index.ts` | it exports that second page |
+| the new line in `widgets/index.ts` | it names the CLI's folder, which is the wrong one whenever the module keeps that screen elsewhere |
+
+**A single-record settings entity gets nothing usable from the scaffold.** An entity the
+product exposes as one form over one row (a security policy, a feature toggle set) has no
+list, no detail and no create — the generated three draw a screen that does not exist. Read
+what came out, then throw it away and hand-author the form; say in the commit that the
+generated set was discarded and why, so the next reader does not assume it was never run.
 
 ### Step 6: Install & Build UI Module
 
@@ -228,6 +292,25 @@ pnpm --filter @<prefix>/<domain-name> run build
 ```
 
 Without `"source"`, Vite's `resolve.conditions: ["source"]` cannot resolve to TypeScript source, and HMR will not work for this module.
+
+**`./pages` is the entry that arrives without it.** `scaffold` adds that subpath to
+`package.json` when it puts the module's first page there, and it writes only `types` and
+`import` — the other four entries are correct, so one hand-untouched file has one wrong
+line in it. Vite then serves that subpath out of `dist/`, and the failure has no error in
+it: **the source is edited, the file re-reads as edited, HMR reports success, and the
+browser keeps drawing the last build.** An hour goes into the screen before anybody
+suspects the export map.
+
+**Ask what the route actually loaded before re-reading the code.** One line answers it:
+
+```bash
+curl -sk "<dev-origin>/src/routes/<route>.tsx?tsr-split=component" \
+  | grep -oE 'from "[^"]*modules/[^"]*"'
+```
+
+`…/modules/<name>/src/pages/index.ts` is the source; `…/dist/pages/index.js` is the build
+output and the `source` condition is missing. `audit-frontend.mjs`'s
+`package-export-without-source` catches the family.
 
 ### Step 7: App Integration
 
@@ -523,6 +606,28 @@ curl -s "$API/api-docs/all-apis" | grep -c '<new-field-or-endpoint-symbol>'   # 
 ```
 
 Only after that count is non-zero, run codegen. Use the **headless** form — `npx simplix openapi "$API/api-docs/all-apis" -d <domain> -y -f` — because the package.json `codegen` script may prompt interactively (Y/n) and blocks when its output is redirected. Backend restart is a delegated/authorized step; do not start a second backend on another port (a stale duplicate spec is worse than a restart).
+
+### "No changes detected" has two causes, and the second one blames the screen
+
+The snapshot comparison (`.openapi-snapshot.json`) answers with the same sentence whether
+nothing changed or it failed to see what changed, and the two need opposite responses.
+
+| Cause | What it looks like | Answer |
+| --- | --- | --- |
+| The snapshot genuinely matches the contract | the package is skipped whole, so **a file the run fills in late stays empty** — `src/mock/seeds.ts` is the one that does this, and the index that imports it then names exports that are not there | delete `src/mock/seeds.ts` and re-run with `-f`; the file's own header says it is written once and not overwritten, but it IS rewritten when absent, and there is nothing to lose unless it was hand-edited |
+| The contract moved and the comparison missed it | a DTO that only **gained properties** slips past `-d <domain>`; the widget then typechecks against the stale client and **every error names the widget** | verify against the served spec, then re-run with `-f` |
+
+**The second is the worse one, and the sentence is identical — so read the spec rather than
+the log:**
+
+```bash
+curl -s "<spec-url>" | grep -c '<new-field>'   # > 0 while codegen says "No changes detected" ⇒ second cause
+```
+
+**`-f` regenerates every domain, and that width is part of what it buys** — a package
+nobody regenerated after the contract moved comes along with it. **A package that was not
+regenerated gives no sign of being stale**, so the wide run is the only thing that finds
+one.
 
 ### Codegen printed "Generated ✔" but the hooks vanished (degenerate output)
 

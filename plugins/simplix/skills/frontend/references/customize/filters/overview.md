@@ -93,6 +93,33 @@ The backend SearchDTO field must allow `EQUALS, IN` (faceted serializes to `fiel
 
 For standard enum/FK filtering, use `type: "faceted"` inside `FilterBar`.
 
+**`ChipFilter` has no width of its own.** It lays its chips out on a grid, so dropped into a
+`Flex` beside other controls it takes the narrowest column the row will give it and each
+label breaks one character to a line. Put it in a cell that can grow — a `Stack` with a
+minimum width and `flex-1` — whenever it shares a row; alone on its own line it needs
+nothing.
+
+### ★ A condition the screen forces goes in the request params, never in `transformFilters`
+
+A tab, a chip row, a scope taken from the address — anything the screen decides rather than
+the reader — is merged into the request params. `transformFilters` keeps its documented job:
+reshaping values the reader actually committed.
+
+**The list state machine only sends a `filters` object once the reader has committed a
+condition**, and `transformFilters` runs only when that object exists. So the first view
+requests without the narrowing and the whole set comes back, while the tab above it goes on
+printing its own count. There is no error and no log line — and **committing any filter at
+all makes it start working**, which is why it survives a test pass: whoever is testing
+filters the list.
+
+Two more reasons the params are the right home: the narrowing is in the query key, so
+switching tabs re-requests instead of redrawing the previous answer; and a caller cannot
+reach the condition to remove it.
+
+`audit-frontend.mjs`'s `forced-narrowing-in-transform-filters` reports the spread form. **A
+narrowing written as a plain key inside the same object is the same defect and is not
+reported** — that gap is stated in the rule itself, and it is the shape to look for by eye.
+
 ### ★ Leading Badge: Total Count Only When Data Exists
 
 The `leading` prop shows total count. Only render when data is available:

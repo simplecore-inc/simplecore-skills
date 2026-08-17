@@ -216,6 +216,70 @@ a silent correctness failure. Regression-test it by loading the module twice
 asserting the other sees it — including a React render whose provider and consumer come from
 different copies.
 
+## Running the workspace — four traps with no error message
+
+Each of these ends with a correct tree reading as a broken one.
+
+- **Never typecheck while the dev server is running.** The two share the TypeScript
+  build info, and the run comes back with a flood of `TS7016` (implicit `any` on a package
+  with types) that says nothing about the code. Stop the dev server, then typecheck.
+- **Never build packages one at a time by hand.** Vite's dependency optimizer computes the
+  graph from what is present when it starts, so a partial tree gives it a wrong answer and
+  it fails on a package that is fine. `pnpm build` at the root, once.
+- **The dev server is HTTPS with a self-signed certificate**, so `curl http://<host>:<port>`
+  connects, receives nothing, and returns `000` with exit 52 — **byte for byte what a
+  stopped server returns**. A healthy server has been restarted on that reading. Probe a
+  real route over TLS instead (`curl -sk https://<host>:<port>/<route>`), and take the
+  origin from the `Local:` line the dev server printed rather than from memory. A browser
+  driver needs its ignore-certificate flag on the session's FIRST command — see the
+  `simplecore:board-to-app` skill's `references/driving-the-product.md`.
+- **`add-domain` writes `workspace:*` for the framework's own extension packages.** When
+  those come from the workspace catalogue rather than from `packages/`, `pnpm install`
+  cannot resolve the generated line and refuses; change it to `catalog:`. The rest of the
+  generated `package.json` is correct, so the failure names dependency resolution and not
+  the command that wrote it.
+
+## Working against a local framework checkout
+
+Two arrangements answer `@simplix-react/*`: the published versions the workspace catalogue
+pins, and a checkout of the framework beside the product. **Switching between them changes
+nothing that is committed** — put the switch in a gitignored file, keep a tracked sample
+beside it, and let the repository commit the registry profile as the default. Then no
+revert commit exists to forget, and the switch reaches neither another machine nor CI.
+
+**The catalogue is the registry arrangement's value and never carries the local one.** A
+snapshot version is not published, so pointing the catalogue at it makes `pnpm install`
+resolve nothing. Rewrite the scope instead — a `.pnpmfile.cjs` hook that maps the whole
+`@simplix-react` / `@simplix-react-ext` scope to `link:<path>` follows the framework as it
+gains packages, which a hand-maintained list does not.
+
+**Published is the right default.** What the product compiles against should be a released
+version, so a checkout that happens to sit next to it cannot change the build without
+somebody choosing that.
+
+Four things to do around the switch, in order:
+
+1. **Take the same measurements before and after** — the pass counts from build and
+   typecheck, and the audit script's error count. Anything that moves is a change the
+   framework made between the two, and that is worth knowing before the work that prompted
+   the switch begins.
+2. **Build the framework package after editing its source.** The link gives Vite the
+   source through the `source` condition; `tsc` reads that package's `dist/`. So the
+   typecheck immediately after adding a prop to a framework component **names product files
+   and says the prop does not exist** — and the product is not where it is wrong. Run the
+   framework package's own build, then typecheck again.
+3. **Run `check-duplicate-contexts.mjs` immediately** (invariant #60). Linking IS the
+   resolution change that invariant is about, so it matters more here than at a version
+   bump: a split copy takes the chrome off every page while the build stays green.
+4. **Open a few screens.** A link installs the framework's next version, so the product's
+   stale assumptions surface then and only then — a select that rejected an empty-string
+   value rendered fine on the published version and threw on the linked one. The defect was
+   in the product; the link made it visible. Build and typecheck see none of this class.
+
+**Read what changed between the two.** `git log v<tag>..HEAD` in the framework checkout is
+that list, and it is short enough to read — every entry in it is a behaviour some screen in
+the product may be relying on.
+
 ## Project Configuration
 
 All project settings are centralized in `simplix.config.ts` at the project root:

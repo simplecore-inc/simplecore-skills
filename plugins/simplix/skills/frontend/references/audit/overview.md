@@ -38,6 +38,32 @@ Tracks and enforces UI / code commonization across the project. Ensures that sha
 - When a shared component's API changes, update all entries in the registry and re-audit affected files
 - Shared components live in a shared package and are imported from there — framework-generic patterns in `@simplix-react/ui`, project-/domain-specific shared UI in the project's own shared UI package (e.g. `@<scope>/<ui-package>`) — never re-inlined in `modules/` or `apps/` (parent skill invariant #23)
 
+## Two audit scripts, and only one of them can see a painted page
+
+`${CLAUDE_PLUGIN_ROOT}/scripts/audit-frontend.mjs` reads source and runs with nothing
+started. `${CLAUDE_PLUGIN_ROOT}/scripts/audit-rendered.mjs` asks about boxes and rows on a
+live page, and **the defects it catches are invisible to the source audit** — the component
+is imported, the props typecheck, the request answers 200, and the screen is unusable. Two
+of them today: two text boxes painted into the same rectangle, and a list that prints a
+total and draws no rows.
+
+**Do not point it at a URL with `--url` on a product that needs signing in.** It opens a
+browser session of its own, which lands on the sign-in screen, and a self-signed development
+certificate needs the ignore-certificate flag on that session's first command. Take the
+snippet out instead and evaluate it in the session that is already signed in:
+
+```bash
+A="${CLAUDE_PLUGIN_ROOT}/scripts/audit-rendered.mjs"
+node "$A" --list                       # the checks and what each catches
+node "$A" --print <check-id> > <scratch>/check.js
+# then evaluate <scratch>/check.js in the already-signed-in browser session
+```
+
+Each snippet is one self-contained expression returning `{ compared, findings }`, so any
+driver can run it. **Read `compared` as well as `findings`** — zero findings out of zero
+comparisons is a check that reached nothing, and it prints the same exit status as a clean
+screen.
+
 ## Registered Patterns
 
 See [registry.md](registry.md) — the index of all commonized components; full contracts live in the `registry/` detail files it points to. Scan the index first, then Read only the matching detail file.

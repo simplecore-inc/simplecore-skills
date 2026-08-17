@@ -667,7 +667,14 @@ contracts or call the derivers — it generates clients with **Orval** and route
   boot-unwrapped `useGet*` query so `data` is the plain DTO (`T | undefined`) — it is runtime-safe
   (returns the same query object, only the static type narrows). Companion mutation adapters:
   `adaptOrvalCreate` / `adaptOrvalUpdate` / `adaptOrvalDelete` / `adaptOrvalOrder`.
-- Sort tokens are **dot-separated**: `field.direction` (e.g. `name.asc`), not `field:direction`.
+- Sort tokens are **dot-separated**: `field.direction` (e.g. `name.asc`), not `field:direction`
+  and not `field,direction`. The generated client types `sort` as `string[]`, so a comma form
+  typechecks; the parser then splits the array element on the comma, finds two entries where it
+  expected one, and refuses the whole request with a sort-format error naming only the field.
+  **The screen shows no sign of it**: the list hook reads an error envelope as an empty page, so
+  the panel draws its "nothing registered" empty state, and the network tab shows a 200 because
+  the envelope carried one. Nothing anywhere points at the sort parameter. When a list is
+  unexpectedly empty, read the response **body**, not its status.
 - Paging shape is the Spring-style `PagedResult`:
 
 ```ts
@@ -682,6 +689,49 @@ interface PagedResult<T> {
   empty: boolean;
 }
 ```
+
+### The access-policy read, and what the route guard needs from it
+
+The route guard renders a screen only when the access-policy snapshot holds a **user**, and
+the adapter's default extraction reaches into the nested envelope for the permission map
+alone — the user is left behind. Give the adapter a `transformResponse` that flattens the
+envelope into the four keys the guard reads (`permissions`, `roles`, `isSuperAdmin`, `user`).
+
+**Without it every request is 200, the console is clean, and the shell renders with nothing
+inside it.** The permission map did arrive, so `useCan` answers correctly and the side nav
+filters correctly — the two layers anybody would check are the two that work. Only opening
+the application in a browser shows the empty frame; a route that answers 200 on every probe
+and paints the shell is what this looks like from below.
+
+### A hook that reads a governed endpoint carries its own permission
+
+A shared hook that takes its permission from whatever screen called it asks for whatever
+that screen is allowed — which is the wrong question, because the endpoint's rule is fixed
+and the screen's is not. A change-history hook wired that way put a permission-refused
+dialog over a correctly-rendered record for one role: the screen opened, the record drew,
+and nothing said which request had been turned down.
+
+**Put the condition next to the request** (invariant #61), naming the group the endpoint
+itself requires. A caller then cannot forget it, and the hook stays right when a screen with
+different permissions starts using it.
+
+### Never call a mutation from an effect
+
+React runs effects twice on a development mount, so an effect that opens something with a
+`POST` sends it twice. Where the server has a uniqueness rule one of the two is refused, and
+**the screen receives a success and a failure for the same action** — an error dialog over a
+screen that also worked.
+
+The fix is in two places and both are needed:
+
+- **The server treats the second call as the same call** — catch the constraint violation
+  and return the row that already exists, so the operation is idempotent for any client.
+- **The screen requests once per target**, guarded by a `useRef` keyed on that target.
+
+**Do not add the effect-cleanup cancellation flag here.** The second run makes no request,
+so the first run's cleanup sets a flag that discards the only response there is, and the
+screen sits on its loading state forever. Whether to accept a response is decided by the
+same `ref`, never by a cancellation flag.
 
 ### Mock layer
 

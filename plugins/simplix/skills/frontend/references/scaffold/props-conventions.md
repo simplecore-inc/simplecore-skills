@@ -68,3 +68,7 @@ usePageHeader({ title: t("entity.title"), description: t("entity.description") }
 - Default: `detailWidth={480}` for standard detail/form panels
 - Override `listWidth` only when list needs specific size (e.g., `listWidth={380}` for compact list with wide editor)
 - Do NOT set both unless explicitly needed
+- **`ListDetail` splits the height that is left**, so a page that stacks status cards, a
+  banner and a description table above it hands both panels very little — and opening the
+  detail squashes the two together rather than one of them. Give the component a minimum
+  height on such pages (around `26rem` in practice) so the split has something to divide.

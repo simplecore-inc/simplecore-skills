@@ -64,6 +64,22 @@ looking at it.** Prove it in both directions before trusting it:
 A rule that ships unproven is worse than none: it converts *nobody has checked*
 into *something is checking*, and the second is much harder to doubt.
 
+### A value you re-derived is checked against rows nobody changed
+
+Recovering a value the product generated — reproducing a language's random sequence in
+another language, recomputing a hash, replaying a formula — produces something that **looks
+right on arrival and has no witness**. It goes into rows that are then indistinguishable from
+correct ones, and nobody opens them again.
+
+**Run the derivation over rows you are NOT changing first, and compare.** They already hold
+the answer, so a mismatch is free and immediate. One re-implementation of a random name
+generator was wrong on its first attempt — a signed/unsigned difference in one step — and the
+three untouched rows caught it in a second. Without them the wrong names would have been
+written and never looked at again.
+
+The same holds for any restore, backfill or migration that computes rather than copies: the
+untouched neighbours are the oracle, and they are free.
+
 ### A watch is a check, and the same proof is owed
 
 The rule above is about checkers. It holds unchanged for the **watches a

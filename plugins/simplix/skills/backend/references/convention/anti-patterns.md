@@ -848,3 +848,189 @@ grep -rc "@DialectOverride.SQLDelete" --include='*.java' packages modules | grep
 A project that supports more than one engine should carry these as a test over its own sources
 rather than a grep anyone has to remember, and one probe per engine that boots, writes, reads and
 **soft-deletes** — booting alone reports an engine as supported while every delete on it dies.
+
+---
+
+## AP-36: A New Enum Value Without a Schema Step for Its Check Constraint
+
+```java
+// WRONG — the value is added to the enum and nowhere else:
+public enum OrgType implements LabeledEnum {
+    COMPANY, DEPARTMENT, PARTNER,
+    SITE,          // added; the database still refuses it
+    CONTRACTOR
+}
+
+// CORRECT — the enum change travels with a schema step that widens the constraint:
+//   drop the check constraint, recreate it with the full value set,
+//   do nothing where no constraint exists, and skip engines that write none.
+```
+
+**Why**: `ddl-auto: update` writes a check constraint when it first creates the column and
+**never revisits it**. So the Java enum, the API contract, the generated client and the screen
+all accept the new value while the database alone refuses it. Compilation passes, the
+translation tests pass (the label was added), and the failure is a constraint violation at the
+**first write of that value** — on a development machine that is a seed, on an installed
+customer database it is a user pressing save.
+
+**What makes this one slip past**: adding an enum constant reads as a code change, so nobody
+looks for a migration. Every other schema-affecting change announces itself by needing a column.
+
+The step itself has three requirements, and each is a way it breaks otherwise: **drop and
+recreate** (no engine widens a check constraint in place), **do not fail where the constraint
+is absent** (an installation created before the column carried one), and **skip the engines
+that write no check constraint at all** (SQLite under Hibernate).
+
+**Detection**: for each enum used as a persisted column, compare its constant set against the
+constraint the database holds. There is no source-only form of this check — the answer is in
+the database, which is exactly why it is missed.
+
+---
+
+## AP-37: Two Read Endpoints Under One `@Tag`
+
+```java
+// WRONG — one tag, two reads:
+@Tag(name = "identity.user.Avatar")
+class UserAvatarRestController {
+    @GetMapping("/{id}")          ...   // the full image
+    @GetMapping("/{id}/thumbnail") ...  // the thumbnail
+}
+
+// CORRECT — the second read gets its own tag:
+@Tag(name = "identity.user.Avatar")          class UserAvatarRestController { ... }
+@Tag(name = "identity.user.AvatarThumbnail") class UserAvatarThumbnailRestController { ... }
+```
+
+**Why**: the frontend client generator derives a hook name from the tag's entity, not from the
+operation. Two reads under one tag therefore produce **the same hook name twice** and the
+generated package does not build — in the frontend repository, from a decision made here.
+`operationId` does not help: the name comes from the tag.
+
+**One tag, one read** is the shape that survives generation. A tag may carry writes alongside
+its read; it is the second *read* that collides.
+
+**Detection**:
+```bash
+# tags with more than one @GetMapping under them
+grep -rn -B20 "@GetMapping" --include='*.java' packages modules | grep "@Tag(name" | sort | uniq -c | awk '$1 > 1'
+```
+
+---
+
+## AP-38: A Sortable Boolean `@SearchableField`
+
+```java
+// WRONG:
+@SearchableField(operators = {EQUALS}, sortable = true)
+private Boolean enabled;
+
+// CORRECT — a boolean is filtered, not sorted:
+@SearchableField(operators = {EQUALS})
+private Boolean enabled;
+```
+
+**Why**: the paging query aggregates the sort column as `max(<column>)`, and there is no
+`max(boolean)` on PostgreSQL. The endpoint answers **500** the moment anybody sorts by it — and
+`sortable = true` is what puts the sort arrow in the list header, so the defect ships as a
+control that exists in order to fail. Where that column is also the list's default sort, the
+screen breaks on open.
+
+Nothing catches it before runtime: the annotation compiles, the DTO is valid, and the search
+without a sort works.
+
+**Detection**: `audit-backend.mjs`'s `sortable-boolean-searchable-field`.
+
+---
+
+## AP-39: Replacing a Child Collection by Deleting Then Re-inserting
+
+```java
+// WRONG — clear and refill:
+coverage.deleteAllByZoneId(zoneId);
+coverage.saveAll(submitted);
+
+// CORRECT — write the difference:
+var current = coverage.findAllByZoneId(zoneId);
+coverage.deleteAll(current.stream().filter(c -> !submitted.contains(key(c))).toList());
+coverage.saveAll(submitted.stream().filter(s -> !current.contains(key(s))).toList());
+```
+
+**Why**: the persistence context orders its flush by operation type, not by the order the
+statements were written — **inserts go before deletes**. So a row that was not changed at all is
+deleted and re-inserted in the same transaction, the insert runs first, and it collides with the
+row still sitting there under the unique constraint. Every save on that screen fails, including
+the ones that changed nothing about the colliding row.
+
+Writing the difference also makes the operation say what it means: what left, what arrived, and
+nothing about the rows that stayed.
+
+**Detection**:
+```bash
+# a bulk delete and a saveAll on the same collection in one method
+grep -rn -A10 "deleteAllBy" --include='*.java' packages modules | grep "saveAll"
+```
+
+---
+
+## AP-40: An Inherited `permit-all` Pattern With Nothing Behind It
+
+```yaml
+# WRONG — copied from the source application, whose controller for it was not copied:
+permit-all-patterns:
+  - /api/v1/system/setup/**    # "the framework guards this" — the framework module is not here
+```
+
+**Why**: a foundation lifted from another application brings its security configuration with
+it, and a pattern whose controller belonged to a module that did not come across is now an
+**open path with nothing behind it**. Nothing fails, because nothing answers there: no request
+reaches a handler, no check fires, no log line appears. The next person to put a controller at
+that path is publishing an unauthenticated endpoint and has no way to know it.
+
+The comment beside such a line is the most misleading part — it describes a guard that existed
+in the source application and does not exist here.
+
+**On copying a foundation, resolve every `permit-all` pattern to what answers it**, and delete
+the ones that answer nothing. Before adding a pattern, or adding a controller under an existing
+one, read what that pattern already covers.
+
+**Detection**:
+```bash
+# every permit-all pattern, to be matched by hand against the controllers that answer it
+grep -rn -A20 "permit-all-patterns" --include='application*.yml' apps
+```
+
+---
+
+## AP-41: A Permission Group Treated as Sufficient for a Record
+
+```java
+// WRONG — the group is the whole check:
+@PreAuthorize("hasPermission('SAFETY_HARASSMENT_CASE', 'view')")
+public CaseDTO read(String caseId) {
+    return mapper.map(repository.findById(caseId).orElseThrow(...));
+}
+
+// CORRECT — the group admits the caller; the record's own assignment decides which one:
+@PreAuthorize("hasPermission('SAFETY_HARASSMENT_CASE', 'view')")
+public CaseDTO read(String caseId) {
+    var found = repository.findById(caseId).orElseThrow(...);
+    requireAssigned(found, currentActor.id());   // refuses a case this caller does not hold
+    return mapper.map(found);
+}
+```
+
+**Why**: a permission group is installation-wide. It answers "may this account handle cases at
+all" and **cannot answer "which cases"** — that is a property of the record, not of the account.
+So a second account holding the same role reads a case it was never assigned to, and **every
+check passes**: the permission is genuinely granted, the endpoint is genuinely authorized, and
+no log records a refusal that did not happen.
+
+This is the shape wherever a record names its handler — an investigation, an escalation, a
+grievance, a case with a named owner. Removing the group from a role's wildcard grant restricts
+who can be given it; it does nothing about which record a holder can then read. **The read is
+the only place the second half can live.**
+
+**Detection**: there is no source pattern for it — an endpoint that checks the assignment and one
+that does not are the same shape minus one call. Write the condition as an assertion in the test
+that owns the role catalogue, so what has to be true is stated somewhere a person will read.

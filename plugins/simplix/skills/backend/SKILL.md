@@ -147,6 +147,10 @@ Identify the task, Read the referenced file(s), then work. Do not preload everyt
    - Trigger: new / renamed / removed endpoint, DTO field, enum value, or `@Tag`.
    - **Flag — do not execute — the frontend update.** The frontend subproject derives `packages/domain-*/src/generated/` from this service's OpenAPI spec; stale generated code produces silent UI bugs. When your PR alters the contract, state the delta in the PR description so the frontend session can take its SCAFFOLD Update path (see the `simplix:frontend` skill, invariant #29). No frontend edits from this skill.
 
+7. **RUNTIME** — What the framework does that the code does not show → `framework/runtime-behaviour.md`
+   - Trigger: sign-in / token / session work, an audit-history surface over a generated entity, or a symptom whose cause is not in any file you can read — a 401 on correct credentials, a context that fails to start naming an unrelated bean, a session row that multiplies, a `NoClassDefFoundError` from a running application.
+   - Read it **before** concluding a credential, a seed, or a dependency is wrong: every entry there is a case where the obvious reading was the wrong one.
+
 ---
 
 ## CRUD Layer Stack

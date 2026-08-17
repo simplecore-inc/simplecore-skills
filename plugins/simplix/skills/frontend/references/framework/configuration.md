@@ -167,6 +167,18 @@ openapi: [
 
 When running `simplix openapi`, operations are grouped into domain packages based on these identifiers. See the simplix-react framework documentation for the full `OpenAPISpecConfig` field reference.
 
+## The config has no slot for a UI module
+
+`SimplixConfig` carries seven keys — `plugins` · `api` · `packages` · `http` · `codegen` ·
+`i18n` · `openapi` — and none of them names a module. `openapi[].domains` looks like the
+place and is not: what it points at is `packages/domain-*`, the API side, and a UI module
+under `modules/` is registered somewhere else entirely.
+
+**A UI module is registered in exactly two files**, both outside this config: the workspace
+package list (`pnpm-workspace.yaml`'s `modules/*`) and the consuming app's `package.json`,
+which depends on it with `workspace:*`. Looking for a module entry in `simplix.config.ts`
+finds nothing and the absence reads like something was left out.
+
 ## Config Loading Behavior
 
 1. The CLI looks for `simplix.config.ts` at the project root

@@ -565,6 +565,70 @@ public class AreaRestController {
     },
   },
   {
+    id: "sortable-boolean-searchable-field",
+    invariant: "AP-38",
+    level: "error",
+    desc: "A Boolean SearchDTO field declared `sortable = true` — the paging query aggregates the sort column as max(<column>), and there is no max(boolean) on PostgreSQL, so the endpoint answers 500 the moment anybody sorts by it. `sortable = true` is what puts the sort arrow in the list header, so the defect ships as a control that exists in order to fail; where the column is the list's default sort the screen breaks on open. Filter on a boolean, never sort",
+    appliesTo: isDtoContainer,
+    // Anchored on the annotation, then read forward to the declaration it belongs to, so a
+    // sortable String standing beside a plain Boolean is not reported. Reading forward rather
+    // than matching one line is what makes it work at all: the annotation and the field are
+    // always on separate lines.
+    //
+    // KNOWN GAP: an annotation wrapped across lines is not seen, because the `sortable = true`
+    // may land on a line the anchor does not match. Widening it means joining lines before
+    // scanning, which would also join two fields' annotations into one.
+    check: (c) =>
+      lineHits(
+        stripCommentsAndStrings(c),
+        /@SearchableField\([^)]*sortable\s*=\s*true/,
+        (_line, lines, i) => {
+          for (let j = i + 1; j < lines.length && j < i + 8; j++) {
+            const decl = lines[j].match(/^\s*private\s+([\w<>.]+)\s+\w+\s*;/);
+            if (decl) return decl[1] === "Boolean";
+            if (/^\s*(?:@|$)/.test(lines[j])) continue; // another annotation, or a blank line
+            return false; // anything else means the declaration is not what follows
+          }
+          return false;
+        },
+      ),
+    samples: {
+      file: "modules/site/src/main/java/app/web/site/dto/AreaDTOs.java",
+      broken: `public class AreaDTOs {
+    public static class AreaSearchDTO {
+        @SearchableField(operators = {EQUALS}, sortable = true)
+        private Boolean restricted;
+    }
+}`,
+      fixed: `public class AreaDTOs {
+    public static class AreaSearchDTO {
+        @SearchableField(operators = {EQUALS})
+        private Boolean restricted;
+    }
+}`,
+      miss: [
+        {
+          note: "a sortable String is the ordinary case and stays quiet",
+          source: `public class AreaDTOs {
+    public static class AreaSearchDTO {
+        @SearchableField(operators = {EQUALS, LIKE}, sortable = true)
+        private String areaName;
+    }
+}`,
+        },
+        {
+          note: "a Boolean that is filtered but not sorted",
+          source: `public class AreaDTOs {
+    public static class AreaSearchDTO {
+        @SearchableField(operators = {EQUALS})
+        private Boolean restricted;
+    }
+}`,
+        },
+      ],
+    },
+  },
+  {
     id: "field-injection-in-web",
     invariant: "#8",
     level: "error",

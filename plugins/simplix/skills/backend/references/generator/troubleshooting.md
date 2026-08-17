@@ -64,3 +64,32 @@ private Boolean active;  // → getActive()
 // Wrong
 private boolean active;  // → isActive()  — breaks framework lookups
 ```
+
+## A JSON Column Holding a List of Domain POJOs
+
+Three separate failures come out of one field, all from the same cause: the generator reads
+the declared type and a `List<T>` looks to it like a relation, while the i18n tests read
+`field.getType()` and see `java.util.List`.
+
+```java
+@JdbcTypeCode(SqlTypes.JSON)
+@Column(name = "basis_factors")
+private List<ObligationBasisFactor> basisFactors;   // a value object, not an entity
+```
+
+**① The generator emits a service and a test for a repository that does not exist.** It reads
+`ObligationBasisFactor` as a referenced entity and injects an
+`ObligationBasisFactorService`. Removing the `reference:` block from the yml does not stop it —
+the type is re-inferred from the field. **Delete the injection by hand after promoting**, and
+expect it back after every regeneration.
+
+**② The generated test calls setters for derived i18n columns.** `setTitleSearch` /
+`setTitleSortEn` and their siblings are computed by a listener from the i18n map and have no
+setter on the DTO. Delete those lines after promoting.
+
+**③ The translation tests do not see the POJO's fields at all, and stay silent about it.**
+`field.getType()` returns `java.util.List`, which is outside the domain package, so the POJO's
+fields are never walked: they are left with **no label in any locale and nothing fails** — and
+writing the labels anyway makes them fail as orphan keys, which reads as the opposite problem.
+The fix is in the tests, not in the entity: resolve the generic argument of a
+`@JdbcTypeCode(SqlTypes.JSON)` field and walk the type it names.

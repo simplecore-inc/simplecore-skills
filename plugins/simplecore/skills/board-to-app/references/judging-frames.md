@@ -56,6 +56,39 @@ So when the board is synced because the code was right and the board was stale, 
 layer a board contracts moves — screens, content, states, flow, fixed wording. Restyling
 and copy-catalogue text never touch it.
 
+## A screen's header holds what that screen does, and no way to another screen
+
+Navigation is the menu's job, and the menu is regenerated from the board. A header that also
+offers a way to another screen is **a second entrance to the same place, maintained by hand**,
+and it ages the day that screen moves: the menu follows the board, the header does not, and
+the header is left pointing at where the screen used to be. Nothing fails; the two entrances
+simply disagree, and the one nobody regenerates is the one a reader trusts because it is
+right there on the page.
+
+**A control that leads somewhere a later chapter will build is the same thing.** Drawn
+disabled it still promises a destination the menu is already promising.
+
+**The component name hides this completely.** A purpose-built link component put nine such
+controls on four screens; deleting it left the same nine doing the same job under a different
+component's name, on the same four screens. **So judge the header by the label, not by what
+renders it** — a header action whose label matches a menu entry is a door, whatever component
+drew it.
+
+**Compare a header against its frame whole, never screen by screen.** Unlike a list or a form
+there is nothing to weigh up: the frame's header declaration names that screen's controls
+exhaustively, so the two sets are simply compared. Pair the two directions and grade them
+differently:
+
+- **A control in the code and not in the frame is an error.** It reached the screen without
+  passing through the contract, which is exactly how the nine doors arrived.
+- **A control in the frame and not in the code is a warning** — often enough it is a later
+  chapter's work, and that absence belongs in that chapter's evidence.
+
+Two things stay with eyes. **Tone is invisible to a checker**: a board writes it at the call
+site while code puts it inside a shared button, so the calling code has none to read. And **a
+control whose label changes with state is one control** — matching the one state the frame
+drew is the whole requirement.
+
 ## A defect read off a picture is confirmed in the source before it is called one
 
 An image is evidence that something is on the screen; it is not evidence of which

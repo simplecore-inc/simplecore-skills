@@ -1227,6 +1227,13 @@ and the failures are fixed rather than listed. Before saying so:
    **A frame with no capture is this step's finding, not the gate's.** Say which frames were
    looked at, **by id** — a count is not an answer, because the frames nobody opened are
    exactly the ones nobody can name afterwards.
+
+   **A verification record quoting a generated chapter file goes stale when that file is
+   regenerated.** The chapter's expectations are rewritten from the board, so a sentence
+   quoted into the record weeks ago can be a sentence the chapter no longer contains — and it
+   still reads as a quotation. Re-check the quotations immediately before writing 닫힘, not
+   when they were first written; where a project has a gate that matches the record's
+   quotations against the chapter, that gate is what to run, and re-quote whatever it names.
 2. **Cross-sweep by defect type.** Each defect found is a *type*; search the whole
    codebase for other instances and fix those too. Report the sweep per type,
    including "0 others". A type that already became a detection rule is swept by what

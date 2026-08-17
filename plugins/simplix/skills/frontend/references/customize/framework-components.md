@@ -63,6 +63,29 @@ offset and height, before and after — never by eye. Never reach for `scrollbar
 overflows and is now clipped with no way to reach it. For a framework component, the geometry
 is wrong in the framework, not in the consumer that merely made the symptom visible.
 
+### Tabs inside a height chain
+
+`Tabs` is the component this geometry goes wrong on most, in both directions, and neither
+direction throws.
+
+**A tab strip inside a `flex-1 min-h-0` column needs `shrink-0` on `TabsList`.** Without it
+the strip offers its own height first, so on a page that stacks status cards, a banner and a
+description above the tabs the leftover height squeezes it to **6px** and its
+`overflow-x-auto` clips the triggers that no longer fit. The labels are still in the DOM, so
+reading the page as text finds them all and only a capture shows the strip sliced in half.
+Measure it rather than judging by eye — the last `[role=tablist]`'s
+`getBoundingClientRect().height` reads 36 when it is right and 6 when it is not. Put the
+strip in one shared component and let pages compose that, so no page reaches for `TabsList`
+directly.
+
+**A record page's `Tabs` must NOT take `flex-1 min-h-0`.** That class pair belongs to a
+list-detail screen, where the panel owns the scroll. On a page that scrolls as a page — a
+record view, a settings screen, a matrix — it compresses the tab box to the remaining height
+while the body inside keeps its natural height, and the overflow **draws on top of whatever
+follows the tabs**: a paragraph appears through the middle of another paragraph, with no
+error and no warning. Let the page's `main` own the scroll, and give the constraint to the
+tab body only where that body genuinely scrolls itself (a list panel inside a tab).
+
 ---
 
 ## Base UI Components
@@ -101,6 +124,8 @@ is wrong in the framework, not in the consumer that merely made the symptom visi
 | `SettingSwitch` | `label`, `description`, `checked`, `onCheckedChange` | Label + description + switch |
 | `PanelHeader` | `title`, `description?`, `onClose?`, `thumbnail?`, `trailing?`, `children?`, `borderVariant?` | Panel/sheet header; `trailing` slot renders a control (Badge, Button, ...) after `children` and before the close button |
 | `ConfirmDialog` | `open`, `title`, `description`, `variant`, `onConfirm`, `isPending` | Generic confirmation |
+| `ScrollBox` | `maxHeight?` (default 288px), `children` | A bordered box for reading a long passage through — terms, a log, a change list. **Not a layout scroll**: give it forty items and a third of them show with the rest behind a scrollbar inside a page that had room. A column that should scroll with the page is `<Stack flex overflow="auto">` |
+| `MenuLink` | `href`, `linkTarget?`, `className?`, `children` | Navigation link. **It accepts nothing else** — any other prop is dropped rather than forwarded to the DOM, and **the type checker passes**, so a marker attached to find the element later fails with no error anywhere. Find the current entry by its address instead: `a[href="${pathname}"]` |
 
 ### Dialog & Sheet
 
@@ -119,6 +144,13 @@ is wrong in the framework, not in the consumer that merely made the symptom visi
   </DialogContent>
 </Dialog>
 ```
+
+**A dialog that was open when you edited a shared component keeps the old code.** HMR does
+not re-render an already-mounted dialog, so a width or a layout fixed in
+`@simplix-react/ui` or in a project shared component is still absent when the same address
+is opened again — the fix has to be navigated away from and back to before the new module
+loads. Not knowing this reads the applied fix as one that did not take, and the next move
+is usually to change something that was already right.
 
 ---
 

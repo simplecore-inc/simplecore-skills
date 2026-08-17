@@ -101,6 +101,27 @@ searchable params); (2) the frontend is CLI-generated then customized — `useCr
 hand-built table over an unpaged array endpoint is NOT an acceptable list screen; a plain
 `Table` is reserved for provably bounded, small collections.
 
+**Filtering, sorting and tab counts are the server's too — there is no small-enough
+exception.** Not a fixed set, not a set that fits on one screen, not a condition the server
+has no column for. Where the server cannot express the condition, that is **backend work**,
+and until it is done the tab is disabled with the reason on it — the screen does not stand
+in.
+
+Filtering a page in the browser gets **three things wrong at once**: the row count, the
+total, and the second page. All three are invisible while the whole set fits in one page,
+and all three appear together the moment it does not — by which time the screen has been
+photographed, reviewed and approved.
+
+- **A condition with no column is resolved to identifiers before the query, not filtered
+  after it.** A standing-state or role-membership filter that cannot be compared as a column
+  is expanded into the ids it matches and forced into the search params. "There is no
+  column" is the reason to resolve it early, never the reason to filter in the browser.
+- **The total comes from the server** (`list.pagination.total`). Counting the rows on screen
+  prints a number smaller than the truth and offers one page of a pager.
+- **What this rule is about is rows a person reads as data.** A menu, an enum's options, a
+  tab definition is not a record list; the test is not the size of the collection or the
+  intent behind it.
+
 ## #33 A screen that shows a lifecycle must be able to drive it
 
 For every entity-scoped action the backend exposes (`@PostMapping("/{id}/<action>")` and
@@ -125,7 +146,10 @@ field.
 
 A boot-enum object (`{type,value,label}`) fed into a `SelectField` renders blank and
 submits an object (`??` never fires — the object is truthy; use
-`resolveBootEnum(x) || "DEFAULT"`). An `Instant` field rendered with the default
+`resolveBootEnum(x) || "DEFAULT"`). **`??` fails at the other end of the same call too**:
+`resolveBootEnum` answers an **empty string** for an absent value, which `??` also passes
+through, so the select's value matches no option and the trigger renders blank. One
+operator covers both — `||`, never `??`, on anything that comes out of `resolveBootEnum`. An `Instant` field rendered with the default
 `DetailDateField` / `datePart` silently drops the time an approver needs. A raw id or ISO
 stamp shown to a user is a machine value leaking through. Resolve enums, format instants
 with `format="datetime"`, and title panels with an identifying value (a name), never an id.
@@ -401,6 +425,17 @@ Three shapes this takes, all found in one afternoon on one product:
 | Tab bodies gated, list hooks at component top | detail panel with log tabs | both list searches |
 | Composing route gated, draft hook above it | account detail with a scoped section | the scope read, twice |
 | Feature-owned picker on a base-edition screen | customer list filter and form field | the roster search |
+| Chrome sourcing a list from an admin endpoint | app shell, every role | the administrative search, at sign-in |
+
+**The chrome row is the worst of the four, because it fires for everybody.** A shell reads
+the signed-in account and whatever it needs to draw itself; the moment one of those reads
+comes from an administrative endpoint, **every role without that permission meets a
+refusal dialog on the first screen after signing in** — before touching anything. The rule
+generalizes past hooks: **a surface hidden from a role is not requested on that role's
+behalf either.** Chrome takes its data from reads no role can be refused — the account's
+own permission set, and whatever the shell's own endpoint returns for the caller. Where the
+shell needs a list, the read that serves it returns the caller's own scope rather than the
+administrator's.
 
 **Detecting this mechanically is left undone on purpose.** The shape — "a hook whose
 value is used only inside a conditional" — describes far more legitimate code than

@@ -682,6 +682,22 @@ GET /api/items?tagEntryIds=id1,id2
 GET /api/items?tagEntryIds.in=id1,id2
 ```
 
+### Issue: An `IN` list whose empty element carries meaning loses it
+
+Where a key's **empty string** is itself a value — an installation-wide row keyed by `""`
+beside rows keyed by a site id — the comma list has to be built with that element **first**.
+The parser keeps a leading empty element and discards a trailing one:
+
+```bash
+GET /api/items?siteKey.in=<siteId>,     # asks for the site alone
+GET /api/items?siteKey.in=,<siteId>     # asks for the installation AND the site
+```
+
+**Nothing reports the difference.** There is no error and no sign that anything was filtered
+out — a caller scoped to one site simply stops seeing every installation-wide row, and the
+list looks like a list with fewer rows in it. When a query narrows by two ranges and one of
+them is the wide one, **put the wide one first.**
+
 ### Issue: BETWEEN Not Working
 
 **Diagnosis**:

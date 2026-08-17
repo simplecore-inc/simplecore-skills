@@ -147,6 +147,10 @@ Every item here has been read as a design defect at least once.
   photographed there.** That is not a failure to fix; it means one of them owes no
   picture on that device. Say which devices each frame owes, in the inventory,
   and check it before shooting twice.
+- **An automated browser tab reports itself as hidden**, and anything the product defers
+  while it is — a poll, a refetch on focus, an animation — does not run. The screen then looks
+  as though it stopped updating, which reads as a defect in the data layer rather than as a
+  property of the tab.
 - **Status bars belong to the device, not the product.** Hide them: the clock
   moves, and on some devices the date is rendered in the simulator's system
   language, which puts one language's date into another language's picture.
@@ -159,6 +163,93 @@ Every item here has been read as a design defect at least once.
   own completion before opening anything it wrote**, and if an image arrives far
   taller than a screenful, that is the signal it is an intermediate rather than a
   long screen.
+
+## An address decides the screen and not the state
+
+Where a project keeps a frame-to-address table instead of a `/frame/<id>` route, the address
+opens the screen and leaves the state to whatever the data happens to be. **Every frame whose
+state is not the default therefore has a row that is right and a capture that is wrong** — and
+the capture is wrong in the worst way, because opening the address renders **some other state
+honestly**. There is no blank, no error, nothing that reads as a failed shot.
+
+Four shapes it takes, each of which has produced a filed capture of the wrong thing:
+
+- **A state that needs a particular account** — a challenge screen shows "this account has
+  none" until it is reached as an account that has one.
+- **A state that needs a particular record** — a readiness screen for an unfinished setup is
+  byte-identical to the dashboard until an unfinished one is selected.
+- **A state reached only through a one-time link** — an invitation acceptance has no address
+  at all, and the link is in a log and is spent on first use.
+- **A state a guard closes once the product has been used** — a first-run wizard shuts the
+  moment one account exists, and re-opening it means an instance with none.
+
+**Say beside each row how its state is reached**, not only where. A query parameter invented
+for the purpose is not an answer unless the screen actually reads it — one that does not is
+indistinguishable from one that does, in the capture.
+
+**And a frame with no row at all is skipped in silence.** A sweep that walks the table cannot
+miss what the table does not list: a frame nobody added was passed over twice in two full
+sweeps of the same area, and neither run said so. **A frame that cannot have an address says
+why in the table** — it is a dialog opened from a control, it is another frame at a different
+device width — so that a checker can require every drawn frame to have either an address or a
+stated reason, and name the ones that have neither.
+
+## The instrument's own settings ride along in the picture
+
+Three of these, all of which produce a capture that looks fine.
+
+**The theme is a browser-profile preference, and signing out resets it.** Where the
+unauthenticated default is dark and the capture standard is light, the frames shot **without a
+session** — sign-in, invitation acceptance, first-run setup — are the ones that come back dark:
+shoot a frame light, sign out, shoot the next, and only that one is wrong. A dark capture reads
+as a perfectly good screen, and once it is in the folder its file name says nothing about it.
+**Read the setting out of the page before each shot** rather than trusting the last one:
+
+```bash
+<driver> eval "JSON.stringify({dark:document.documentElement.classList.contains('dark'),w:innerWidth,h:innerHeight})"
+```
+
+**A browser driver's certificate and viewport flags apply when the session's context is
+created, which is the session's FIRST command.** Send anything at all first — even setting the
+viewport — and the context exists without them, after which every navigation fails on a
+self-signed development certificate and no later flag changes it. A daemon already running in
+that state has to be closed **and its process killed** before the options take.
+
+**Filling a form through the driver's own `fill` leaves no state behind it in a React app.**
+The DOM value changes, the framework never hears about it, and the submit button stays
+disabled — which reads as a validation defect in the form. Either press real keys (click,
+clear, type) or set the value through the native setter and dispatch the input event:
+
+```js
+const set = (el, v) => {
+  const s = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value").set;
+  s.call(el, v);
+  el.dispatchEvent(new Event("input", { bubbles: true }));
+};
+```
+
+## A state frame ages with the screen underneath it
+
+A frame drawn as an overlay on another frame — a dialog, a drawer, a confirmation — is a
+picture of **two** screens. Re-shoot the one underneath and the overlay's capture is stale
+while nothing about it changed. **Which base each state frame sits on is already written down**
+in the board: the state frame's source imports it. So **re-shoot a base and every frame that
+imports it, in the same change.**
+
+**Git cannot tell you which ones went stale.** Comparing commit times over nine such pairs
+flagged five, of which two were genuinely old — because the mechanism fails in both
+directions at once:
+
+- **Re-shooting a screen that did not change produces the bytes already committed**, so no
+  commit is recorded and a time comparison can never pass however many times it is re-run.
+- **Re-encoding with a different tool changes every byte of an unchanged screen**, so healthy
+  pairs are flagged.
+
+**Which is why one encoder makes every capture.** Fix the tool and its settings — one quality
+ladder down to the size ceiling, one binary — and byte-identity for an unchanged screen holds.
+Two encoders in one folder produce the same picture at different sizes (the same screen came
+out 18,978 and 19,002 bytes from two of them), and after that nobody can tell a re-encode from
+a re-shoot.
 
 ## What to keep, and what to show a person
 
