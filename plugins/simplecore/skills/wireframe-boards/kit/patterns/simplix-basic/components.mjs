@@ -197,10 +197,13 @@ export const browserbar = (url) => `<div class="browserbar"><span class="dots"><
  * @param groups tab clusters, each `[{label, active, locked}]`; a rule is drawn between clusters
  * @param wrapped the row of tabs did not fit and moved down into {@link menuBar}, so the bar
  *   itself carries only the mark and the reader's own controls
+ * @param sitePick the reader may move between sites. An account granted one site draws the name
+ *   without the caret — a caret is an offer, and one that opens onto a list of one is a boundary
+ *   the account only discovers by pressing it
  */
 export const topNav = ({
   brand = 'SMART SAFETY', groups = [], site = '전체 사업장',
-  unread = 0, admin = true, adminActive = false, wrapped = false, search = '',
+  unread = 0, admin = true, adminActive = false, wrapped = false, search = '', sitePick = true,
 }) =>
   `<div class="topnav">` +
   `<span class="tn-mark">◧</span><span class="tn-rule"></span>` +
@@ -210,7 +213,7 @@ export const topNav = ({
   // A console with a hundred destinations needs a way in that is not the tree. What a reader
   // arrives holding is a name, an article number or a record id — none of which the menu knows.
   (search ? `<span class="tn-find"><span class="ic">⌕</span><span class="ph">${search}</span></span>` : '') +
-  `<span class="chip site">${site} ▼</span>` +
+  `<span class="chip site">${site}${sitePick ? ' ▼' : ''}</span>` +
   `<span class="tn-rule"></span>` +
   `<span class="tn-act bell">알림${unread ? `<span class="dot">${unread}</span>` : ''}</span>` +
   `<span class="tn-act">테마</span><span class="tn-act">언어</span>` +

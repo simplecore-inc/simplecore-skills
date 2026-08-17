@@ -154,6 +154,43 @@ export const reachabilityGate = {
   },
 };
 
+// The tree lands on the FIRST frame under an entry, and a state frame has no address of its own —
+// it is a dialog, a panel form or a role-scoped variant that spreads its base. When one of those
+// sorts first, pressing the entry opens a screen that cannot be opened directly, and on a board
+// where the header no longer carries cross-links the tree is the only way in. Three entries were
+// in this state at once (a panel form, an auditor's read-only variant, a fax dialog) and nothing
+// said so: `reachabilityGate` was satisfied, because every frame in the group was pointed at.
+//
+// The fix is free — the manifest's order is the board's reading order and ids live in file names,
+// so moving the state behind its base changes the brackets and nothing else.
+export const landingIsAddressableGate = {
+  id: 'landingIsAddressableGate',
+  title: '메뉴 항목이 자기 주소가 없는 상태 프레임에 내려앉는다',
+  stage: 'built',
+  run: (ctx) => {
+    const groups = new Map();
+    for (const s of ctx.loaded) {
+      let src = ctx.srcOf(s.file);
+      const from = /from '\.\/([a-z0-9-]+)\.mjs'/.exec(src)?.[1];
+      const state = !/current: '/.test(src) && !!from;
+      if (state) src = ctx.srcOf(from);
+      const cur = /current: '([^']*)'/.exec(src)?.[1];
+      if (!cur) continue;
+      if (!groups.has(cur)) groups.set(cur, []);
+      groups.get(cur).push({ ...s, state });
+    }
+    const out = [];
+    for (const [cur, group] of groups) {
+      if (!group[0].state) continue;
+      const own = group.find((s) => !s.state);
+      if (!own) continue;
+      out.push(`${group[0].num} — 「${cur}」의 첫 프레임인데 자기 주소가 없는 상태 프레임이다. `
+        + `트리가 여기 내려앉으므로 ${own.num}를 매니페스트에서 앞으로 옮긴다`);
+    }
+    return out;
+  },
+};
+
 // Control-vocabulary gates. Three things a button census found, each of which reads as a small
 // inconsistency and costs a reader a guess every time they meet it.
 export const controlVocabularyGate = {

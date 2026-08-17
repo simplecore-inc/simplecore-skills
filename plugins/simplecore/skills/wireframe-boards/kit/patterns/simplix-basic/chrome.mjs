@@ -57,6 +57,28 @@ export function makeConsole({
   const menuLabels = (m) => [...(m.items ?? []), ...(m.packItems ?? [])].flatMap((i) =>
     typeof i === 'string' ? [i] : [i.label, ...(i.children ?? [])]);
   const MENU_LABELS = new Set(Object.values(menu).flatMap(menuLabels));
+  // Which cluster each destination sits in, so a pinned shortcut can be held to the same reach as
+  // the tree under it. A favourite the role cannot reach is a dead entry drawn ABOVE the tree that
+  // refuses it, which reads as the one way in that still works.
+  const LABEL_CLUSTER = new Map();
+  for (const [letter, m] of Object.entries(menu)) {
+    for (const label of menuLabels(m)) if (!LABEL_CLUSTER.has(label)) LABEL_CLUSTER.set(label, letter);
+  }
+
+  /**
+   * The pinned shortcuts this role actually has. A label belonging to no cluster is left alone —
+   * a board may pin something the tree does not carry, and dropping it silently would hide that.
+   */
+  const pinnedFor = (role) => {
+    const seen = reaches[role] ?? reaches[defaultRole] ?? [];
+    return favorites.filter((fv) => {
+      const c = LABEL_CLUSTER.get(fv.label);
+      if (c === undefined) return true;
+      if (!seen.includes(c)) return false;
+      const allowed = itemLimits[role]?.[c];
+      return !allowed || allowed.includes(fv.label);
+    });
+  };
 
   const tabGroups = (tab, role) => {
     const seen = reaches[role] ?? reaches[defaultRole] ?? [];
@@ -145,6 +167,7 @@ export function makeConsole({
     badges = {}, counts = {}, rail = false, flyout = null, wrapped = false,
     ticker: tickerIn = '', segments: segmentsIn = null, health = null,
     powered: poweredIn = powered, agent = null, lockWord = '라이선스',
+    search: searchIn = search, sitePick = true,
   }) => {
     if (!TAB_KEYS.has(tab)) {
       throw new Error(`console_ — 없는 탭 「${tab}」 (쓸 수 있는 탭: ${[...TAB_KEYS].join(' · ')})`);
@@ -154,7 +177,15 @@ export function makeConsole({
     }
     const groups = tabGroups(tab, role);
     return `<div class="console">` +
-      topNav({ groups, site: siteIn, unread, wrapped, search, adminActive: adminTab ? tab === adminTab : false }) +
+      topNav({
+        groups, site: siteIn, unread, wrapped, search: searchIn, sitePick,
+        // The `⋮` is the way into administration and nothing else, so a role that reaches none of
+        // its clusters is drawn no `⋮`. Derived rather than declared: an option would have to be
+        // remembered on every frame, and the one place that already knows the answer is `reaches`.
+        admin: adminTab !== null
+          && (reaches[role] ?? reaches[defaultRole] ?? []).some((c) => adminClusters.includes(c)),
+        adminActive: adminTab ? tab === adminTab : false,
+      }) +
       (wrapped ? menuBar(groups) : '') +
       `<div class="shell">` +
       sectionNav({
@@ -162,12 +193,12 @@ export function makeConsole({
         // A pinned group stands above the tree on every tab. A console with a hundred
         // destinations makes the reader walk the same four or five of them every day, and
         // the tree cannot shorten that walk — it can only be folded.
-        groups: (favorites.length
-          ? [{ label: '즐겨찾기', open: true, items: favorites.map((fv) => ({
+        groups: (((pinned) => pinned.length
+          ? [{ label: '즐겨찾기', open: true, items: pinned.map((fv) => ({
               label: fv.label, active: fv.label === current, badge: badges[fv.label] ?? 0,
               count: counts[fv.label], locked: '',
             })) }]
-          : []).concat(tabGroupsOf(tab, current, role, packs, badges, counts, lockWord)),
+          : [])(pinnedFor(role))).concat(tabGroupsOf(tab, current, role, packs, badges, counts, lockWord)),
         rail,
         flyout,
       }) +

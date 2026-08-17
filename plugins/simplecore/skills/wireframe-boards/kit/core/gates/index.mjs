@@ -31,7 +31,10 @@
 //              componentsSrc · html
 import { idGate, slugGate, refTailGate, refNumGate, pairGate } from './numbering.mjs';
 import { overlayGate, optionKeyGate, dupKeyGate, deadImportGate, slotGate, classlessGate, structureGate, leakedValueGate } from './markup.mjs';
-import { crudGate, viewSwitchGate, reachabilityGate, controlVocabularyGate, panelVerbGate, backControlGate } from './navigation.mjs';
+import {
+  crudGate, viewSwitchGate, reachabilityGate, landingIsAddressableGate,
+  controlVocabularyGate, panelVerbGate, backControlGate,
+} from './navigation.mjs';
 import { sectionCoverageGate } from './coverage.mjs';
 import { frameManifestGate, parityListGate, roadmapPlacementGate, docFrameRefGate, docLinkGate, docRegistryGate, roleDocGate, featureKeyDocGate } from './documents.mjs';
 
@@ -56,6 +59,7 @@ export const CORE_GATES = [
   crudGate,
   viewSwitchGate,
   reachabilityGate,
+  landingIsAddressableGate,
   controlVocabularyGate,
   panelVerbGate,
   backControlGate,

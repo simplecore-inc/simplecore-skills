@@ -134,6 +134,15 @@ export function cases(t) {
     screen('x-02-b', "current: '점검'", { notes: '' }),
   ]), false);
 
+  add('landingIsAddressableGate', '상태 프레임이 항목의 첫 자리에 있다', ctxWith([
+    screen('x-02-b', "import base, { screenBody } from './x-01-a.mjs';", { notes: '' }),
+    screen('x-01-a', "current: '점검'", { notes: '{{x-02-b}}가 딸린다' }),
+  ]), true);
+  add('landingIsAddressableGate', '바탕이 앞에 있다', ctxWith([
+    screen('x-01-a', "current: '점검'", { notes: '{{x-02-b}}가 딸린다' }),
+    screen('x-02-b', "import base, { screenBody } from './x-01-a.mjs';", { notes: '' }),
+  ]), false);
+
   // ── numbering ─────────────────────────────────────────────────────────────────
   add('slugGate', '슬러그가 그 번호와 다름', ctxWith([
     screen('x-01-a', '', { notes: '{{x-01-wrong-name}}' }),
