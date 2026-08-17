@@ -133,7 +133,19 @@ const countedListDrawsNoRows = {
       const s = getComputedStyle(el);
       return s.visibility !== "hidden" && s.display !== "none" && Number(s.opacity) !== 0;
     };
-    const own = (el) => (el.children.length === 0 ? (el.textContent || "").trim() : "");
+    // The text this element owns, rather than everything under it. Counting element children
+    // is the wrong test: a label with an inline icon — 「<svg/>전체 14건」, which is what every
+    // badge and most buttons in a component library look like — has a child and would be read
+    // as owning nothing, so the check walks past the totals it exists to find.
+    const own = (el) => {
+      let text = "";
+      for (const node of el.childNodes) {
+        if (node.nodeType === Node.TEXT_NODE) text += node.nodeValue;
+        else if (node.nodeType === Node.ELEMENT_NODE && node.tagName !== "SVG"
+                 && node.namespaceURI !== "http://www.w3.org/2000/svg") return "";
+      }
+      return text.trim();
+    };
     const where = (el) => {
       const bits = [];
       for (let n = el; n && n !== document.body && bits.length < 4; n = n.parentElement) {
@@ -225,14 +237,21 @@ const textBoxesOverlap = {
   page: (o) => {
     const findings = [];
 
-    const stacked = (el) => {
+    /**
+     * Which raised layer the element sits on, as the element that raises it — `null` for text in
+     * the ordinary flow.
+     *
+     * <p>A boolean is not enough: a sticky header and a modal are both raised and are two
+     * different layers, so a flag makes them one and reports the header behind the dialog.
+     */
+    const layerOf = (el) => {
       for (let n = el; n && n !== document.body; n = n.parentElement) {
         if (n.matches('[role="dialog"], dialog, [role="tooltip"], [popover], [aria-hidden="true"]'))
-          return true;
+          return n;
         const pos = getComputedStyle(n).position;
-        if (pos === "fixed" || pos === "sticky") return true;
+        if (pos === "fixed" || pos === "sticky") return n;
       }
-      return false;
+      return null;
     };
     const visible = (el) => {
       const s = getComputedStyle(el);
@@ -241,16 +260,69 @@ const textBoxesOverlap = {
       const r = el.getBoundingClientRect();
       return r.width > 0 && r.height > 0;
     };
-    const own = (el) => (el.children.length === 0 ? (el.textContent || "").trim() : "");
+    // The text this element owns, rather than everything under it. Counting element children
+    // is the wrong test: a label with an inline icon — 「<svg/>전체 14건」, which is what every
+    // badge and most buttons in a component library look like — has a child and would be read
+    // as owning nothing, so the check walks past the totals it exists to find.
+    const own = (el) => {
+      let text = "";
+      for (const node of el.childNodes) {
+        if (node.nodeType === Node.TEXT_NODE) text += node.nodeValue;
+        else if (node.nodeType === Node.ELEMENT_NODE && node.tagName !== "SVG"
+                 && node.namespaceURI !== "http://www.w3.org/2000/svg") return "";
+      }
+      return text.trim();
+    };
     const clip = (t) => (t.length > 40 ? t.slice(0, 40) + "…" : t);
 
-    let leaves = [...document.querySelectorAll("body *")].filter(
-      (el) => own(el) && visible(el) && !stacked(el),
-    );
+    // What of an element a reader can actually see. `getBoundingClientRect` reports where the
+    // layout put it, not what survives its ancestors' clipping — a table row scrolled past the
+    // bottom of an `overflow: auto` panel still reports a rectangle down there, and two of those
+    // intersect happily while the screen shows neither. Every page with a scrolling list under a
+    // footer reports the same pair, so the check that is meant to find one real collision comes
+    // back with a handful of them on every screen and stops being read.
+    const onScreen = (el) => {
+      const r = el.getBoundingClientRect();
+      let x1 = r.left;
+      let y1 = r.top;
+      let x2 = r.right;
+      let y2 = r.bottom;
+      for (let n = el; n && n !== document.documentElement; n = n.parentElement) {
+        const cs = getComputedStyle(n);
+        if (cs.overflowX === "visible" && cs.overflowY === "visible") continue;
+        const box = n.getBoundingClientRect();
+        if (cs.overflowX !== "visible") {
+          x1 = Math.max(x1, box.left);
+          x2 = Math.min(x2, box.right);
+        }
+        if (cs.overflowY !== "visible") {
+          y1 = Math.max(y1, box.top);
+          y2 = Math.min(y2, box.bottom);
+        }
+        if (x2 <= x1 || y2 <= y1) return null;
+      }
+      x1 = Math.max(x1, 0);
+      y1 = Math.max(y1, 0);
+      x2 = Math.min(x2, window.innerWidth || document.documentElement.clientWidth);
+      y2 = Math.min(y2, window.innerHeight || document.documentElement.clientHeight);
+      if (x2 <= x1 || y2 <= y1) return null;
+      return { left: x1, top: y1, right: x2, bottom: y2, width: x2 - x1, height: y2 - y1 };
+    };
+
+    let leaves = [...document.querySelectorAll("body *")].filter((el) => own(el) && visible(el));
     const sampled = leaves.length > o.maxLeaves;
     if (sampled) leaves = leaves.slice(0, o.maxLeaves);
 
-    const boxes = leaves.map((el) => ({ el, r: el.getBoundingClientRect(), t: own(el) }));
+    const boxes = [];
+    for (const el of leaves) {
+      const r = onScreen(el);
+      // Which layer the text belongs to, rather than whether it is on one. Dropping raised text
+      // altogether was the safe-looking reading and it takes the dialogs with it — and a help
+      // table with a squeezed column is exactly the kind of thing that only shows up inside one.
+      // Comparing within a layer keeps the modal-over-page pair quiet and the two-texts-inside-
+      // one-modal pair loud.
+      if (r) boxes.push({ el, r, t: own(el), layer: layerOf(el) });
+    }
     let compared = 0;
 
     for (let i = 0; i < boxes.length; i += 1) {
@@ -259,6 +331,7 @@ const textBoxesOverlap = {
         const b = boxes[j];
         compared += 1;
         if (a.el.contains(b.el) || b.el.contains(a.el)) continue;
+        if (a.layer !== b.layer) continue;
 
         const w = Math.min(a.r.right, b.r.right) - Math.max(a.r.left, b.r.left);
         const h = Math.min(a.r.bottom, b.r.bottom) - Math.max(a.r.top, b.r.top);
@@ -334,6 +407,16 @@ const FIXTURES = {
       // A list-detail screen: the toolbar says fourteen, the list draws none, and the detail
       // panel on the right holds a table with rows in it. Counting rows anywhere in the page
       // would read that panel's rows as the list's and go quiet on exactly this screen.
+      // The same defect with the total written the way a component library writes it — an inline
+      // icon in front of the words. Reading 「owns text」 as 「has no element children」 walks past
+      // this one, and the check then reports 「compared 0」 on every screen of such a product.
+      "a total of 14 in a badge with a leading icon, over an empty column":
+        `<style>body{margin:0;font:14px sans-serif}.pane{width:620px}
+        .bar{display:flex;gap:12px;padding:8px 16px}
+        .pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px}</style>
+        <div class=pane><div class=bar>
+          <span class=pill><svg width="12" height="12" viewBox="0 0 12 12"><path d="M1 3h10"/></svg>전체 14건</span>
+        </div><div class=list></div></div>`,
       "a total of 14 over an empty column, beside a detail panel that has rows":
         `<style>body{margin:0;font:14px sans-serif}.split{display:flex}.pane{width:620px}
         .bar{display:flex;gap:12px;padding:8px 16px}.pill{padding:4px 10px}.detail{width:560px}</style>
@@ -396,6 +479,12 @@ const FIXTURES = {
             <div class=row>유해화학물질 취급시설 자체점검</div><div class=row>산업안전보건법 제15조</div></div>
         </div>
         <div role=dialog style="position:absolute;top:40px;left:40px;padding:20px">판정 근거</div>`,
+      // Inside a dialog, where a squeezed help table puts one text on top of another.
+      "two texts stacked inside one dialog":
+        `<style>body{margin:0;font:14px sans-serif}</style>
+        <div role=dialog style="position:absolute;top:20px;left:20px;width:400px;height:80px">
+          <span style="position:absolute;left:0;top:0">메뉴 경로</span>
+          <span style="position:absolute;left:0;top:3px">왼쪽 메뉴에 그대로 있는 말입니다</span></div>`,
       "a pagination control drawn inside a table row":
         `<style>body{margin:0;font:14px sans-serif}td{padding:10px 16px}
         .pager{position:absolute;top:52px;left:200px;padding:6px 10px}</style>
@@ -427,6 +516,24 @@ const FIXTURES = {
         table{border-collapse:collapse}</style>
         <table><tbody><tr><td>산업안전보건법</td><td>고용노동부</td></tr>
         <tr><td>중대재해처벌법</td><td>법무부</td></tr></tbody></table>`,
+      // The row is below the panel's bottom edge and clipped away, so nothing is on screen where
+      // the layout says it is. Reading the raw rectangle makes it collide with the footer under
+      // the panel, which is what every list screen with a scroll looks like.
+      // Two texts inside one dialog is the pair the layer rule has to keep loud. Dropping raised
+      // text altogether would go quiet here, and a help table is where a squeezed column hides.
+      "two lines inside one dialog, one under the other":
+        `<style>body{margin:0;font:14px sans-serif}.row{padding:8px 12px}</style>
+        <div class=row>산업안전보건법</div>
+        <div role=dialog style="position:absolute;top:40px;left:40px;width:300px">
+          <div class=row>메뉴 경로</div><div class=row>화면 안의 위치</div></div>`,
+      "a row scrolled past the bottom of a panel, over the footer beneath it":
+        `<style>body{margin:0;font:14px sans-serif}
+        .panel{height:60px;overflow:auto;width:300px}.row{padding:10px 16px}
+        .foot{padding:6px 16px}</style>
+        <div class=panel>
+          <div class=row>산업안전보건법</div><div class=row>중대재해처벌법</div>
+          <div class=row>화학물질관리법</div><div class=row>고압가스안전관리법</div></div>
+        <div class=foot>사업장 시간 GMT+9</div>`,
     },
   },
 };

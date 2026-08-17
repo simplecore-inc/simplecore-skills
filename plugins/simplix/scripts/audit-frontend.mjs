@@ -677,6 +677,24 @@ const RULES = [
     check: (c) => lineHits(c, /component:\s*\w+\s*,/, (line) => !line.includes("guarded(")),
   },
   {
+    id: "dead-dialog-width",
+    invariant: "#8 / audit: dialog width",
+    level: "error",
+    desc: "A dialog asks for a width with a bare `max-w-*` utility — `DialogContent` already carries `sm:max-w-lg`, which wins at every viewport above 640px, so the wider width never takes effect and the dialog stays 512px. A three-column table inside then wraps one syllable to a line and reads as a broken screen while every string in it is right. Write the breakpoint variant (`sm:max-w-3xl`), which is what overrides the component's own",
+    appliesTo: isTsx,
+    // Only widths wider than the component's own default are dead in a way anybody notices;
+    // `max-w-lg` and below resolve to the same box the dialog already had.
+    check: (c) =>
+      lineHits(
+        c,
+        /<(?:Bounded)?DialogContent\b[^>]*className="[^"]*\bmax-w-(?:xl|2xl|3xl|4xl|5xl|6xl|7xl|screen-\w+)\b/,
+        // A doc comment showing the shape is not a dialog. Left in, the rule reports the very
+        // file that documents the component, and the first person to read the report learns
+        // that this rule cries wolf.
+        (line) => !/\bsm:max-w-/.test(line) && !/^\s*(?:\*|\/\/|\/\*)/.test(line),
+      ),
+  },
+  {
     id: "hand-rolled-detail-footer",
     invariant: "#31 / audit: page chrome",
     level: "error",
