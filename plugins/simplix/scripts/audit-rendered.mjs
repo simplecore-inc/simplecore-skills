@@ -100,6 +100,18 @@ const DEFAULTS = {
 
   /** One finding per defect is a report; forty is a wall. */
   maxFindings: 25,
+
+  /**
+   * How long to keep re-measuring while the screen is still arriving.
+   *
+   * <p>A list, a census and a permission read all resolve after the document does, and the state
+   * worth judging is the one they leave behind. Long enough for a local server answering a cold
+   * query; a page that has not settled by then is reported as it stands.
+   */
+  settleMs: 8000,
+
+  /** How long between two readings while waiting for the screen to settle. */
+  settleIntervalMs: 400,
 };
 
 // ---------------------------------------------------------------------------
@@ -381,12 +393,43 @@ function agentBrowser(session, args) {
   });
 }
 
-function evaluate(session, url, check, options) {
-  agentBrowser(session, ["open", url]);
-  const raw = agentBrowser(session, ["eval", snippet(check, options)]);
-  const parsed = JSON.parse(raw);
+/** Waits without a timer, so the driver stays synchronous alongside `execFileSync`. */
+function pause(ms) {
+  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+}
+
+function evaluateOnce(session, check, options) {
+  const parsed = JSON.parse(agentBrowser(session, ["eval", snippet(check, options)]));
   if (!parsed.success) throw new Error(parsed.error || "eval failed");
   return parsed.data.result;
+}
+
+/**
+ * Opens the page and measures it once the screen has stopped arriving.
+ *
+ * <p><b>A list fetches its rows after the document loads, so evaluating at `open` measures the
+ * shell.</b> The total badge is not painted yet, the table body is empty, and every check reports
+ * `compared 0` — which prints beside a `✔` and reads exactly like a screen with nothing wrong. The
+ * defect this file exists to catch lives in the state that arrives a few hundred milliseconds
+ * later, so the measurement waits for it.
+ *
+ * <p><b>Settled means two consecutive readings compared the same number of things</b>, not a fixed
+ * sleep: a slow read costs the whole budget and a fast one costs one interval. The last reading is
+ * the one reported even when nothing ever settles, because a page that never stops changing is a
+ * finding a reader has to see rather than an error that hides it.
+ */
+function evaluate(session, url, check, options) {
+  agentBrowser(session, ["open", url]);
+
+  let previous = null;
+  let result = evaluateOnce(session, check, options);
+  for (let waited = 0; waited < options.settleMs; waited += options.settleIntervalMs) {
+    if (result.compared > 0 && previous !== null && result.compared === previous) break;
+    previous = result.compared;
+    pause(options.settleIntervalMs);
+    result = evaluateOnce(session, check, options);
+  }
+  return result;
 }
 
 // ---------------------------------------------------------------------------
@@ -667,9 +710,21 @@ function main() {
       console.error(`✖ ${check.id} — could not be run: ${e.message}`);
       return 2;
     }
-    const marker = out.findings.length === 0 ? "✔" : check.grade === "error" ? "✖" : "⚠";
+    // A check that compared nothing is not a check that passed. It reaches nothing on a screen
+    // this check has no subject on — a form, a dashboard with no list — and it reaches nothing
+    // just as silently when the screen it was pointed at never finished arriving. Both are the
+    // reader's to judge, and neither is a `✔`.
+    const reachedNothing = out.compared === 0;
+    const marker = reachedNothing
+      ? "○"
+      : out.findings.length === 0
+        ? "✔"
+        : check.grade === "error"
+          ? "✖"
+          : "⚠";
     console.log(
       `${marker} ${check.id} — ${check.title}\n   compared ${out.compared}` +
+        (reachedNothing ? " — reached nothing on this screen, so it proves nothing" : "") +
         (out.sampled ? ` (sampled the first ${options.maxLeaves})` : ""),
     );
     for (const f of out.findings) console.log(`   ${f}`);
