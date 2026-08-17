@@ -214,6 +214,8 @@ These invariants apply to **every** frontend file you touch. Treat each as invio
 
 61. **Hiding a surface is not the same as not asking for it — the gate belongs beside the request** — a hook runs wherever it is written, so a screen that gates only its JSX still fires the read the server refuses, and the user gets a bare "access denied" dialog over a panel with nothing on it to explain the refusal. Put the condition where the request is (the hook's `enabled`, the shared factory's `useEnabled`), never only at the route or the parent that composes it — a caller that forgets is then impossible rather than merely unlikely. Check the framework for an existing gate channel before inventing one. And drop the affordance too: a filter or picker left standing with an empty option list reads as "failed to load", not as "you did not buy this". Symptom catalogue, the three shapes it takes, and why this is not a script rule → `invariants.md` #61.
 
+62. **A screen with no list beside it still lays out in columns** — the two-column rule is written for a `CrudDetail` panel a few hundred pixels wide, and a settings page, a single-record editor, a preferences tab or a wizard step has no panel to be narrow. At 1440px a stack of short fields draws each input a thousand pixels wide for a value of twenty characters. Give the content columns, cap the measure, and **judge by the rendered input rather than by the component name** — a screen that never imports `FormFields` is still a form when it draws `<Label>` + `<Input>` pairs or a bare `<select>`, and a survey counting framework component names walks straight past the one screen most likely to be laid out wrong. Full rule → `customize/consistency-checklist.md` § 2b.
+
 ---
 
 ## Task Router
@@ -240,7 +242,7 @@ Trigger: backend OpenAPI spec changed (new endpoints / renamed fields / new enum
 
 ### 3. CUSTOMIZE — Widget modification & composition
 
-Trigger: creating any NEW screen or structurally reshaping one (precedent check FIRST — invariant #51), modifying generated list/form/detail widgets, building custom editors, composing `CrudList` / `CrudForm` / `CrudDetail`, adding layout primitives, wiring mutations/invalidation/unsaved-changes guards, creating map pages, creating tree views.
+Trigger: creating any NEW screen or structurally reshaping one (precedent check FIRST — invariant #51), building a settings page / single-record editor / preferences tab that has no list beside it (invariant #62), modifying generated list/form/detail widgets, building custom editors, composing `CrudList` / `CrudForm` / `CrudDetail`, adding layout primitives, wiring mutations/invalidation/unsaved-changes guards, creating map pages, creating tree views.
 
 1. Precedent check — MANDATORY before building a new or reshaped screen (invariant #51) → `customize/precedent-check.md`
 2. Overview & framework-first philosophy → `customize/overview.md`
@@ -303,7 +305,7 @@ Trigger: writing or editing README, TSDoc on public exports, tutorials, how-to g
 
 After writing:
 
-- [ ] All 61 Non-Negotiable Invariants hold
+- [ ] All 62 Non-Negotiable Invariants hold
 - [ ] Every action affordance gated on its endpoint's permission (#52) — both header variants, tree `add-child`, and buttons inside action groups; group read from `SUBJECTS`, never inlined
 - [ ] Precedent parity pass done (new / reshaped screens — #51): comparison sheet walked row by row against both precedents, screens compared in the browser
 - [ ] Completion report (in conversation — never recorded in files) names the Task Router references consulted and, for screen work, the shape + both precedent files + justified divergences (#51)
