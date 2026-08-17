@@ -294,11 +294,16 @@ Both blocks live in [`plugins/simplix/templates/claude-md-section.md`](plugins/s
 The `frontend` and `frontend-e2e` skills reference two scripts that ship with the plugin. Run them from the frontend project root, or point them at it with `--root=<dir>`:
 
 ```bash
-node "${CLAUDE_PLUGIN_ROOT}/scripts/audit-frontend.mjs"      # machine-checkable convention rules
-node "${CLAUDE_PLUGIN_ROOT}/scripts/screen-inventory.mjs"    # every screen classified by shape
+node "${CLAUDE_PLUGIN_ROOT}/scripts/audit-frontend.mjs"             # machine-checkable convention rules
+node "${CLAUDE_PLUGIN_ROOT}/scripts/audit-frontend.mjs" --selftest  # prove every rule both ways
+node "${CLAUDE_PLUGIN_ROOT}/scripts/screen-inventory.mjs"           # every screen classified by shape
 ```
 
 `audit-frontend.mjs` exits 1 when an error-level rule has hits; review-level rules print candidates that need human judgment and never fail the run. It reads the `audit` section of `.claude/simplix.json` for the handful of policies that are a property of the product rather than of the framework — which route directories are open to anybody, for one — so nothing about a particular repository's layout is baked into the script.
+
+**No rule counts as added until `--selftest` proves it fires on the broken form and stays silent on the fixed one.** Every rule carries both samples, and the ones whose invariant states an exception carry `miss` samples too — a rule that fires on its own exception teaches the next reader that this audit cries wolf. A rule that reads the tree around a file (a sibling detail panel, a generated model, a locale catalogue, a `package.json`) is proved against a throwaway tree the selftest writes, never against a stub of its own reader. The selftest also refuses a sample the file collection would never reach: a check that cannot fire is indistinguishable from a clean project.
+
+`--selftest` is spelt the same way in all three audit scripts, and each stops on an option it does not know. A misspelling that fell through to a scan reported `0 files scanned, 0 findings`, which is what a clean project reports.
 
 ### Backend script
 

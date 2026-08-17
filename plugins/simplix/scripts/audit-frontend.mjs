@@ -4108,6 +4108,37 @@ const COLLECTION_RULES = [
     level: "error",
     desc: "locale file/section missing vs en.json",
     collect: () => localeFindingsMemo().errors,
+    samples: {
+      broken: {
+        files: {
+          "modules/site/src/locales/widgets/en.json": `{ "area": { "title": "Area" } }`,
+          "modules/site/src/locales/widgets/ko.json": `{ "area": { "title": "구역" } }`,
+        },
+      },
+      fixed: {
+        files: {
+          "modules/site/src/locales/widgets/en.json": `{ "area": { "title": "Area" } }`,
+          "modules/site/src/locales/widgets/ko.json": `{ "area": { "title": "구역" } }`,
+          "modules/site/src/locales/widgets/ja.json": `{ "area": { "title": "エリア" } }`,
+        },
+      },
+      miss: [
+        {
+          note: "a directory with no en.json to compare against is not a catalogue this rule reads",
+          files: {
+            "modules/site/src/locales/widgets/ko.json": `{ "area": { "title": "구역" } }`,
+          },
+        },
+        {
+          note: "a key missing inside a section — top-level sections are what this rule compares, and the keys under them are missing-translation-key's business",
+          files: {
+            "modules/site/src/locales/widgets/en.json": `{ "area": { "title": "Area", "status": "Status" } }`,
+            "modules/site/src/locales/widgets/ko.json": `{ "area": { "title": "구역" } }`,
+            "modules/site/src/locales/widgets/ja.json": `{ "area": { "title": "エリア" } }`,
+          },
+        },
+      ],
+    },
   },
   {
     id: "locale-untranslated",
@@ -4115,6 +4146,32 @@ const COLLECTION_RULES = [
     level: "review",
     desc: "possible untranslated scaffold defaults",
     collect: () => localeFindingsMemo().reviews,
+    samples: {
+      broken: {
+        files: {
+          "modules/site/src/locales/widgets/en.json": `{ "area": { "title": "Area" } }`,
+          "modules/site/src/locales/widgets/ko.json": `{ "area": { "title": "areaTitle" } }`,
+          "modules/site/src/locales/widgets/ja.json": `{ "area": { "title": "エリア" } }`,
+        },
+      },
+      fixed: {
+        files: {
+          "modules/site/src/locales/widgets/en.json": `{ "area": { "title": "Area" } }`,
+          "modules/site/src/locales/widgets/ko.json": `{ "area": { "title": "구역" } }`,
+          "modules/site/src/locales/widgets/ja.json": `{ "area": { "title": "エリア" } }`,
+        },
+      },
+      miss: [
+        {
+          note: "a translated sentence that quotes an identifier is translated",
+          files: {
+            "modules/site/src/locales/widgets/en.json": `{ "area": { "hint": "Enter it as areaCode." } }`,
+            "modules/site/src/locales/widgets/ko.json": `{ "area": { "hint": "areaCode 형식으로 입력합니다." } }`,
+            "modules/site/src/locales/widgets/ja.json": `{ "area": { "hint": "areaCode の形式で入力します。" } }`,
+          },
+        },
+      ],
+    },
   },
   {
     id: "ko-particle-after-placeholder",
@@ -4122,6 +4179,38 @@ const COLLECTION_RULES = [
     level: "review",
     desc: "Korean particle written straight after an interpolated value — 을/를 · 이/가 · 은/는 · 와/과 · (으)로 depend on the value's last syllable, so the sentence is wrong for half the values; attach the particle to a fixed noun instead, or end the clause on the value with 입니다",
     collect: koParticleFindings,
+    samples: {
+      broken: {
+        files: {
+          "modules/site/src/locales/widgets/ko.json": `{ "area": { "overCapacity": "{{allowed}}을 초과했습니다" } }`,
+        },
+      },
+      fixed: {
+        files: {
+          "modules/site/src/locales/widgets/ko.json": `{ "area": { "overCapacity": "{{allowed}}대를 초과했습니다" } }`,
+        },
+      },
+      miss: [
+        {
+          note: "the hedge spells both forms and is right for every value",
+          files: {
+            "modules/site/src/locales/widgets/ko.json": `{ "area": { "registered": "{{name}}이(가) 등록되었습니다" } }`,
+          },
+        },
+        {
+          note: "the bracket of (으)로 falls before the particle, so the value never carries one",
+          files: {
+            "modules/site/src/locales/widgets/ko.json": `{ "area": { "changed": "{{plan}}(으)로 변경되었습니다" } }`,
+          },
+        },
+        {
+          note: "a word that merely begins with the same syllable",
+          files: {
+            "modules/site/src/locales/widgets/ko.json": `{ "area": { "signedIn": "{{user}}로그인 기록" } }`,
+          },
+        },
+      ],
+    },
   },
   {
     id: "package-export-without-source",
@@ -4129,6 +4218,54 @@ const COLLECTION_RULES = [
     level: "error",
     desc: "A workspace package's export entry carries no `source` condition, so the dev server serves that subpath from `dist/` — every source edit under it is invisible in the browser while HMR reports success, and the screen shows the code as it was at the last build. `simplix scaffold` writes the `./pages` entry this way",
     collect: packageExportFindings,
+    samples: {
+      broken: {
+        files: {
+          "modules/site/package.json": `{
+  "name": "@acme/site",
+  "exports": {
+    ".": { "source": "./src/index.ts", "types": "./dist/index.d.ts", "import": "./dist/index.js" },
+    "./pages": { "types": "./dist/pages.d.ts", "import": "./dist/pages.js" }
+  }
+}
+`,
+        },
+      },
+      fixed: {
+        files: {
+          "modules/site/package.json": `{
+  "name": "@acme/site",
+  "exports": {
+    ".": { "source": "./src/index.ts", "types": "./dist/index.d.ts", "import": "./dist/index.js" },
+    "./pages": { "source": "./src/pages.ts", "types": "./dist/pages.d.ts", "import": "./dist/pages.js" }
+  }
+}
+`,
+        },
+      },
+      miss: [
+        {
+          note: "a string entry names one file for every condition — there is nothing to fall through to",
+          files: {
+            "modules/site/package.json": `{
+  "name": "@acme/site",
+  "exports": {
+    ".": { "source": "./src/index.ts", "import": "./dist/index.js" },
+    "./theme.css": "./dist/theme.css"
+  }
+}
+`,
+          },
+        },
+        {
+          note: "a package that declares no exports map at all",
+          files: {
+            "modules/site/package.json": `{ "name": "@acme/site", "main": "./dist/index.js" }
+`,
+          },
+        },
+      ],
+    },
   },
   {
     id: "scaffold-header-placeholder",
@@ -4136,6 +4273,44 @@ const COLLECTION_RULES = [
     level: "review",
     desc: "Screen wording still carries the scaffold's placeholder — a bare \"new\" that names no entity, or a subtitle naming the table (\"master data\") instead of the operator's job",
     collect: scaffoldHeaderFindings,
+    samples: {
+      broken: {
+        files: {
+          "modules/site/src/locales/widgets/ko.json": `{
+  "area": { "newHeader": "신규", "pageDescription": "구역 마스터 데이터를 관리합니다" }
+}
+`,
+        },
+      },
+      fixed: {
+        files: {
+          "modules/site/src/locales/widgets/ko.json": `{
+  "area": { "newHeader": "구역 추가", "pageDescription": "출입 구역을 등록하고 담당자를 지정합니다" }
+}
+`,
+        },
+      },
+      miss: [
+        {
+          note: "the scaffold's detailHeader is usually left unreferenced — an id that really renders is caught in the code by header-id-title",
+          files: {
+            "modules/site/src/locales/widgets/ko.json": `{
+  "area": { "newHeader": "구역 추가", "detailHeader": "{{id}}" }
+}
+`,
+          },
+        },
+        {
+          note: "a description that says what the operator does with the screen",
+          files: {
+            "modules/site/src/locales/widgets/ko.json": `{
+  "area": { "newHeader": "구역 추가", "pageDescription": "구역별 출입 권한을 확인합니다" }
+}
+`,
+          },
+        },
+      ],
+    },
   },
 ];
 
@@ -4326,6 +4501,10 @@ function selftest() {
     const s = rule.samples;
     const problems = [];
     const notes = [];
+    // Kept apart from `notes`: a neighbour the rule never looked at proves the path scoping, and
+    // a neighbour the CHECK stayed quiet on proves the pattern. Counting them together lets the
+    // second kind be quietly replaced by the first, which is a proof of nothing.
+    const excluded = [];
     if (!s || s.broken === undefined || s.fixed === undefined) {
       console.log(`✖ ${rule.id}: no broken/fixed samples — a rule proved in one direction is not proved`);
       failed++;
@@ -4353,8 +4532,10 @@ function selftest() {
       const out = runSample(rule, miss);
       if (out.hits.length) {
         problems.push(`fired on a near-neighbour — ${miss.note || miss.file} (${out.hits[0].excerpt.slice(0, 110)})`);
+      } else if (out.applies) {
+        notes.push(miss.note || miss.file);
       } else {
-        notes.push(`${miss.note || miss.file}${out.applies ? "" : " (excluded by appliesTo)"}`);
+        excluded.push(miss.note || miss.file);
       }
     }
     if (problems.length) {
@@ -4363,7 +4544,8 @@ function selftest() {
     } else {
       passed++;
       const near = notes.length ? `  · silent on ${notes.length} near-neighbour(s)` : "";
-      console.log(`✔ ${rule.id.padEnd(42)} fires on broken, silent on fixed${near}`);
+      const scoped = excluded.length ? `${near ? "," : "  ·"} ${excluded.length} out of scope` : "";
+      console.log(`✔ ${rule.id.padEnd(42)} fires on broken, silent on fixed${near}${scoped}`);
     }
   }
   console.log(`\n${passed} rule(s) proved both ways, ${failed} not proved.`);
