@@ -79,16 +79,43 @@ export function cases(t) {
     },
     false,
   );
+  // Half of the eyes arrangement is a gap that reports as green: the documents are read and the
+  // vocabulary that would find anything in them is not there, so the check matches nothing and
+  // «nothing to find» and «no idea what to look for» come out as the same zero. Declaring neither
+  // is the statement that the project has no such rules.
+  add(
+    'configGate',
+    'the documents that hand checks to eyes, with no vocabulary to read them by',
+    { config: { eyesDocuments: ['docs/OVERVIEW.md'] } },
+    true,
+  );
+  add(
+    'configGate',
+    'the vocabulary with no documents to read',
+    { config: { eyesPhrases: { assigns: ['stays with eyes'], reader: ['the coordinator'], moment: ['before '] } } },
+    true,
+  );
+  add(
+    'configGate',
+    'both of them, together',
+    {
+      config: {
+        eyesDocuments: ['docs/OVERVIEW.md'],
+        eyesPhrases: { assigns: ['stays with eyes'], reader: ['the coordinator'], moment: ['before '] },
+      },
+    },
+    false,
+  );
   add(
     'configGate',
     'a phrase vocabulary with one of its roles empty',
-    { config: { eyesPhrases: { assigns: ['stays with eyes'], reader: [], moment: ['before '] } } },
+    { config: { eyesDocuments: ['docs/OVERVIEW.md'], eyesPhrases: { assigns: ['stays with eyes'], reader: [], moment: ['before '] } } },
     true,
   );
   add(
     'configGate',
     'the same vocabulary with every role filled',
-    { config: { eyesPhrases: { assigns: ['stays with eyes'], reader: ['the coordinator'], moment: ['before '] } } },
+    { config: { eyesDocuments: ['docs/OVERVIEW.md'], eyesPhrases: { assigns: ['stays with eyes'], reader: ['the coordinator'], moment: ['before '] } } },
     false,
   );
   add('configGate', 'everything declared and everything there', {}, false);

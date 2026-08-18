@@ -70,10 +70,9 @@ keep that from becoming a different kind of damage:
   figures are the seed's specification — so a zone the deployment did not choose moves every
   derived date off the contract. Resolve the zone from the installation's own setting, fall
   back explicitly and log the fallback, and pin fixed past dates through the same resolver so
-  the start of that day is the installation's. In a Java project this is the same rule as the
-  `simplix:backend` skill's invariant #18 and AP-28, which its audit script already enforces;
-  what is added here is that seeds are the place it is most often forgotten, because a seed
-  reads like setup rather than like domain logic.
+  the start of that day is the installation's. A stack that already holds this rule for its
+  application code usually does not hold it for its seeds, and that is where it is most often
+  forgotten — a seed reads like setup rather than like domain logic.
 
 ### Some numbers cannot be pinned, and then the seed declares what it does pin
 

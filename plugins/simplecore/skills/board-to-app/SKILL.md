@@ -1460,4 +1460,4 @@ rediscovering it:
 | --- | --- |
 | `simplecore:wireframe-boards` | authoring and syncing the board — the contract itself |
 | `simplecore:board-to-app` | building the product from it, in dependency order, with the persona runs |
-| the project's own screen-audit skill | driving one feature area in the browser and judging it in one sitting — `simplix:frontend-e2e` in a simplix-react repository |
+| the project's own screen-audit skill | driving one feature area in the browser and judging it in one sitting. A stack usually has one; where it does not, this skill's own lenses are the floor |

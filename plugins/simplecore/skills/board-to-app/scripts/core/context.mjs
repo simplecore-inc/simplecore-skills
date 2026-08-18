@@ -126,11 +126,18 @@ export const SCHEMA = {
   locales: { kind: 'list' },
   pseudoLocale: { kind: 'text' },
   captureRoute: { kind: 'text' },
-  // The documents that hand checks to human eyes, and the words they hand them in. Not `closing`:
-  // a project that declares neither closes chapters perfectly well and simply gets no check over
-  // its own eyes rules, which `doctor` shows as two undeclared keys rather than as a green page.
-  eyesDocuments: { kind: 'list' },
-  eyesPhrases: { kind: 'phrases', roles: EYES_PHRASE_ROLES },
+  // The documents that hand checks to human eyes, and the words they hand them in.
+  //
+  // **Not `closing`** — a project that declares NEITHER closes chapters perfectly well and simply
+  // gets no check over its own eyes rules, which `doctor` shows as two undeclared keys.
+  //
+  // **But one without the other is refused.** A repository that names the documents has eyes
+  // rules in them; with no vocabulary the check reads every one of those documents and matches
+  // nothing, and «nothing to find» and «no idea what to look for» come out as the same zero. The
+  // absence of the whole subject is said by declaring neither, which is a statement; half of it
+  // is not a statement, it is a gap that reports as green.
+  eyesDocuments: { kind: 'list', requiredWith: 'eyesPhrases' },
+  eyesPhrases: { kind: 'phrases', roles: EYES_PHRASE_ROLES, requiredWith: 'eyesDocuments' },
   logDir: { kind: 'outdir' },
   capturesDir: { kind: 'outdir' },
   costLog: { kind: 'outfile' },

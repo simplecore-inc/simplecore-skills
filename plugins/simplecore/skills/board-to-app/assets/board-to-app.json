@@ -60,7 +60,7 @@
   "pseudoLocale": "<the generated long-string locale id, e.g. en-XA>",
   "captureRoute": "<address rendering one frame in one state, e.g. /frame/<id>>",
 
-  "//eyes": "The documents that hand a check to human eyes, and the words they hand it in. Declaring neither costs no chapter — it costs the check, and `bta doctor` shows both keys as ○. The phrases are literal, matched case-insensitively inside one statement: `assigns` is how a sentence says no machine judges this, `reader` is who takes the reading, `moment` is when. `reader` is a closed list of actors on purpose, because a pattern accepting any noun is satisfied by every paragraph that mentions anybody.",
+  "//eyes": "The documents that hand a check to human eyes, and the words they hand it in. **Declare both or neither** — declaring neither is a project saying it has no such rules and costs nothing; declaring the documents without the vocabulary reads every one of them and matches nothing, so `nothing to find` and `no idea what to look for` come out as the same zero, and the config gate refuses it. The phrases are literal, matched case-insensitively inside one statement: `assigns` is how a sentence says no machine judges this, `reader` is who takes the reading, `moment` is when. `reader` is a closed list of actors on purpose, because a pattern accepting any noun is satisfied by every paragraph that mentions anybody.",
   "eyesDocuments": ["<the file that hands checks to eyes — the evidence folder's index, the instruction file>"],
   "eyesPhrases": {
     "assigns": ["<phrase saying no machine judges this>"],

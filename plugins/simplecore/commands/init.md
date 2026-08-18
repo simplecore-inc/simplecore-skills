@@ -104,4 +104,6 @@ Two halves, and most projects need both:
    immediately to anyone reading the instruction file while the SessionStart note changes only for
    new sessions.
 
-Do not commit. Report; the user commits.
+**Committing follows the project, not this command.** Where the project states its own rule —
+standing permission to commit, a branch policy, an instruction file that settles it — that rule
+wins. Where it states nothing, report and leave the commit to the user.

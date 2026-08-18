@@ -19,10 +19,10 @@ The board names the rest: a flow with an approver, a kiosk walk-up or a first-ti
 visitor gets that persona too, derived the way the board's `AUTH:` notes already name
 who may enter a screen.
 
-**Where the project has its own screen-audit skill, that skill is the rubric** — in a
-simplix-react repository, `simplix:frontend-e2e` carries four lenses and six censuses
-anchored to the frontend handbook's invariants rather than to taste. Load it and judge
-with it; the three above are the floor for a project that has none.
+**Where the project has its own screen-audit skill, that skill is the rubric.** A stack
+that ships one has it anchored to that stack's own invariants rather than to taste, which
+is stricter than anything general can be. Load it and judge with it; the three above are
+the floor for a project that has none.
 
 **Anchor every finding to a frame number and the action it blocked.** A finding with
 neither is an opinion — it goes to the project's parked items as a proposal, never into
@@ -228,12 +228,15 @@ So wherever the arrangement asks for a sentence about what was on the screen:
 3. **Say what is absent as readily as what is present.** The failure this catches is always
    an absence — a list with no rows, a panel with no content, a shell with nothing in it —
    and an absence is the one thing a reader scanning for content does not register.
-4. **Where a scripted check can settle it, run it while the screen is open.** In a
-   simplix-react repository the two that matter are in `simplix:frontend-e2e`
-   (`scripts/audit-rendered.mjs`): a list total stating N rows over a column that draws
-   none, and two pieces of text painted into one rectangle. Both are invisible to a source
-   audit and to a request probe, and the second is what 「the tables are drawn on top of
-   each other」 looks like to a machine.
+4. **Two defects can only be settled by a script reading the RENDERED page, and it runs
+   while the screen is open.** They are worth naming because a project that has not met
+   them does not know to look: **a list total stating N rows over a column that draws
+   none**, and **two pieces of text painted into one rectangle**. Both are invisible to a
+   source audit and to a request probe — the markup is right, every request answers 200 —
+   and the second is what 「the tables are drawn on top of each other」 looks like to a
+   machine. The command that runs them belongs to the project (`auditScript`, or the entry
+   in `gates` that reaches it) and never to the `gates` list alone: that list runs with no
+   server up, so a rendered check wired into it reports a pass having looked at nothing.
 
 > **Read it this way and it is wrong**: 「the capture exists, so the screen was seen」. The
 > capture proves a browser was opened and a file was written. Whether anything in it was

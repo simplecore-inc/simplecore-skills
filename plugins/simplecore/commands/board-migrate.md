@@ -35,6 +35,23 @@ the migration, written when each change was made rather than reconstructed from 
 Put it to the user with **AskUserQuestion**, with the measured numbers in hand. Do not start until
 they say yes.
 
+**A subagent has nobody to ask, and answering the question itself is not the way out.** A migration
+rewrites a board wholesale, so a run with no reachable user has exactly two honest states, and the
+first is far more common than it looks:
+
+- **Somebody upstream already decided.** The dispatch that sent the agent here said to migrate, or
+  named this command, or handed it the numbers. **That is the answer** — the decision was taken by
+  a person and delegated, and asking again is a round trip that produces nothing. Write the
+  paragraph this step would have shown into the report instead, so what was decided on their behalf
+  is reviewable, and go on.
+- **Nobody did.** The agent reached this command by reading a config, seeing a contract number, or
+  inferring that a migration is due. **Stop and report it as a proposal** — the measured numbers,
+  what changes, what does not — and change nothing. A discovery is not permission, and the cost of
+  guessing wrong here is a board rewritten by nobody's decision.
+
+**The test is whether a person's instruction reaches this run**, not whether a person is reachable
+from it.
+
 **What does not change:** every frame, every permanent id, every note, the board's structure, the
 content of `board.html` apart from the intended differences below.
 
@@ -116,4 +133,11 @@ gate.
 - what the verification showed, including the id diff count
 - anything left undone, and why
 
-Do not commit. Report; the user commits.
+**Committing follows the project, not this command.** Where the project states its own rule —
+standing permission to commit, a branch policy, an instruction file that settles it — that rule
+wins and this line says nothing about it. Where the project states nothing, report and leave the
+commit to the user: a migration touches every frame, and an unasked-for commit of that is not an
+undo away.
+
+Either way the report is owed in full, because a diff of a wholesale rewrite is not readable as a
+decision.

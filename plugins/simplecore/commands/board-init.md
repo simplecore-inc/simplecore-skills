@@ -42,6 +42,11 @@ the components, the app shells, the stylesheet, the reading-contract items and t
 frame is held to, so it is not a default to slip past them — and changing it later means redrawing
 every frame.
 
+**A subagent has nobody to ask.** Where the dispatch that sent it here named the pattern, that is
+the answer and it goes on, writing the choice and its grounds into the report. Where nothing named
+one, it stops with the list and what each pattern is for — scaffolding a board on a guessed pattern
+is the one thing here that cannot be undone cheaply.
+
 Say what each one is for, in one line, from the `patterns` output. `simplix-basic` is the SimpliX
 admin shape: a list-detail console, the phone app its users carry, and the shared terminal, all
 three in one pattern because they are one product.

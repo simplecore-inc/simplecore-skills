@@ -680,8 +680,8 @@ const CHAPTER_TEXT = {
     + '**개발** — 보드의 `a-01-login`을 그대로 만든다.\n'
     + '**테스트 · 시스템 관리자** — 로그인 화면을 연다.\n'
     + '**테스트 · 안전관리자** — 범위 밖 레코드는 주소로 불러도 서버가 막는다.\n\n'
-    + '## 2. P-01 CrudList\n\n'
-    + '**개발** — 보드의 `p-01-crud-list`를 그대로 만든다.\n',
+    + '## 2. P-01 공용 목록 패턴\n\n'
+    + '**개발** — 보드의 `p-01-list-pattern`을 그대로 만든다.\n',
 };
 
 /** The same screen chapter with its one line that opens the screen taken away. */
