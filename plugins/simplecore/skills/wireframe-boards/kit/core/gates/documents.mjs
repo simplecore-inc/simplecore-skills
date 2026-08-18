@@ -64,7 +64,7 @@ const baseIds = (ctx) => new Set(
     .map(idOfFile),
 );
 
-const FRAME_ID = /(?<![A-Za-z0-9-])([A-Z])-(\d{2})(?![0-9-])/g;
+const FRAME_ID = /(?<![A-Za-z0-9-])([A-Z])-(\d{2,})(?![0-9-])/g;
 
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -203,7 +203,7 @@ export const roadmapPlacementGate = {
     const bad = [];
     // A placement is an emphasised id — `**A-01** 로그인` — which is how every phase list writes
     // one. A bare id in prose is a cross-reference, not a placement.
-    const placed = [...doc.text.matchAll(/\*\*([A-Z]-\d{2})\*\*/g)].map((m) => m[1]);
+    const placed = [...doc.text.matchAll(/\*\*([A-Z]-\d{2,})\*\*/g)].map((m) => m[1]);
     const seen = new Set();
     const twice = new Set();
     for (const p of placed) (seen.has(p) ? twice : seen).add(p);
@@ -221,7 +221,7 @@ export const roadmapPlacementGate = {
       if (!h) continue;
       let j = i + 1;
       while (j < lines.length && !/^#{2,3} /.test(lines[j])) j += 1;
-      const n = new Set([...lines.slice(i, j).join('\n').matchAll(/\*\*([A-Z]-\d{2})\*\*/g)].map((m) => m[1])).size;
+      const n = new Set([...lines.slice(i, j).join('\n').matchAll(/\*\*([A-Z]-\d{2,})\*\*/g)].map((m) => m[1])).size;
       if (n !== Number(h[1])) {
         const head = lines.slice(0, i).reverse().find((l) => /^#{2,3} /.test(l)) ?? '?';
         bad.push(`${head.replace(/^#+ /, '').slice(0, 24)}: 「화면 ${h[1]}장」인데 실제 ${n}장`);
@@ -247,7 +247,7 @@ export const roadmapPlacementGate = {
       if (h) { phase = h[1]; continue; }
       const g = /^\s*- \((.+?)\)/.exec(ln);
       if (!g || !phase) continue;
-      const n = new Set([...ln.matchAll(/\*\*([A-Z]-\d{2})\*\*/g)].map((m) => m[1])).size;
+      const n = new Set([...ln.matchAll(/\*\*([A-Z]-\d{2,})\*\*/g)].map((m) => m[1])).size;
       if (!n) continue;
       placedBy[`${g[1]}|${phase}`] = (placedBy[`${g[1]}|${phase}`] ?? 0) + n;
       perGroup[g[1]] = (perGroup[g[1]] ?? 0) + n;

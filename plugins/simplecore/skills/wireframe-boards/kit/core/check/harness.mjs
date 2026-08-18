@@ -18,6 +18,7 @@
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
+import { idOf } from '../ids.mjs';
 
 /**
  * The settings every case is judged against.
@@ -74,7 +75,7 @@ export function makeBuilders(boardConfig = {}) {
     return base({
       screens: files.map((f) => ({ file: f.file, label: f.label ?? '화면' })),
       loaded: files.map((f) => ({
-        num: f.file.slice(0, 4).toUpperCase().replace(/-$/, ''),
+        num: idOf(f.file) ?? f.file,
         file: f.file, label: f.label ?? '화면', mod: f.mod,
       })),
       srcOf: (name) => map.get(name) ?? '',

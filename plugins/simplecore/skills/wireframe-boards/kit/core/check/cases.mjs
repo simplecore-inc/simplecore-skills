@@ -44,6 +44,15 @@ export function cases(t) {
     withDocs({ 'rm.md': ROADMAP_OK, 'note.md': '자세한 것은 X-77을 본다.\n' }), true);
   add('docFrameRefGate', 'KOSHA P-94는 프레임이 아니다',
     withDocs({ 'rm.md': ROADMAP_OK, 'note.md': 'KOSHA GUIDE P-94 작업허가서.\n' }), false);
+  // A cluster that runs past 99 numbers into three digits, and the id reader has to widen with it.
+  // Reading two digits only does not make `X-100` a wrong id — it makes it no id at all, and this
+  // gate then reports zero on a reference nobody resolved.
+  const WIDE = [{ file: 'x-01-a' }, { file: 'x-02-b' }, { file: 'x-100-c' }];
+  add('docFrameRefGate', '세 자리 아이디를 부르는데 보드에 없다',
+    withDocs({ 'rm.md': ROADMAP_OK, 'note.md': '자세한 것은 X-100을 본다.\n' }), true);
+  add('docFrameRefGate', '세 자리 아이디가 보드에 있다',
+    withDocs({ 'rm.md': ROADMAP_OK, 'note.md': '자세한 것은 X-100을 본다.\n' },
+      { manifest: [{ letter: 'X', title: 't', screens: WIDE }], screens: WIDE }), false);
 
   // 문서 목록을 선언하지 않은 보드에는 걸리지 않는다 — 선언이 곧 이 규율을 받겠다는 뜻이다.
   add('docRegistryGate', '문서 목록을 선언하지 않았다',
@@ -117,6 +126,20 @@ export function cases(t) {
   add('slotGate', '패널 폼은 상세 자리가 맞다',
     slotted("import base, { screenBody, form } from './x-01-a.mjs';\nexport default { body: screenBody(form) };",
       "export const form = panelForm({ title: 'x' });\nexport const screenBody = (detail = panel, overlay = '') => ``;"), false);
+  // A state frame drawing one of the base's tabs passes a CALL, not a name. Reading the argument
+  // list with `[^)]*` cut it at the inner paren and the RegExp built from the fragment threw, which
+  // takes the whole build down instead of reporting anything. This case is the crash.
+  add('slotGate', '인자가 호출식이다',
+    slotted("import base, { screenBody, panel } from './x-01-a.mjs';\nexport default { body: screenBody(panel('센서')) };",
+      "export const help = dialog({ title: 'x' });\nexport const screenBody = (detail = panel, overlay = '') => ``;"), false);
+  // The mirror: the same call against a base whose overlay parameter comes first puts the panel in
+  // the overlay, and the frame silently draws the default tab.
+  add('slotGate', '패널이 오버레이 자리로',
+    slotted("import base, { screenBody, panel } from './x-01-a.mjs';\nexport default { body: screenBody(panel('센서')) };",
+      "export const help = dialog({ title: 'x' });\nexport const screenBody = (overlay = '', detail = panel_()) => ``;"), true);
+  add('slotGate', '패널이 상세 자리로 제대로',
+    slotted("import base, { screenBody, panel } from './x-01-a.mjs';\nexport default { body: screenBody('', panel('센서')) };",
+      "export const help = dialog({ title: 'x' });\nexport const screenBody = (overlay = '', detail = panel_()) => ``;"), false);
 
   // ── navigation ────────────────────────────────────────────────────────────────
   add('controlVocabularyGate', '행 첫 액션이 「상세」', ctxWith([screen('x-01-a', "rowActions([ '상세', '편집' ])")]), true);
