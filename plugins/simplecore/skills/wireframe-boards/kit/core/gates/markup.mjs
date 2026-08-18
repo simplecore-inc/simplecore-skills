@@ -297,6 +297,10 @@ export const panelFormStateGate = {
       const sig = /export const screenBody = \(([^)]*)\)/.exec(imp ? ctx.srcOf(imp[1]) : s);
       if (!sig) continue;
       const params = sig[1].split(',').map((x) => x.split('=')[0].trim());
+      // The base and the order it takes, said out loud. The cost this rule leaves behind is
+      // 「open the base and check which argument is which」, and it is paid on every frame written
+      // against a base whose overlay comes first. Saying it in the refusal is what removes it.
+      const order = `${imp ? imp[1] : e.file}는 ${params.join(' · ')} 순서다`;
       const filled = params.some((slot, i) => {
         if (slot === 'overlay') return false;
         const arg = (call.args[i] ?? '').trim();
@@ -304,7 +308,7 @@ export const panelFormStateGate = {
       });
       if (filled) continue;
       const fixed = params.map((pp) => (pp === 'overlay' ? 'undefined' : call.args[0] ?? 'form'));
-      bad.push(`${e.num}: state가 「패널 폼 열림」인데 screenBody(${call.raw.trim()})가 패널 자리에 아무것도 넘기지 않는다 — 다이얼로그로 그려진다. screenBody(${fixed.join(', ')})`);
+      bad.push(`${e.num}: state가 「패널 폼 열림」인데 screenBody(${call.raw.trim()})가 패널 자리에 아무것도 넘기지 않는다 — 다이얼로그로 그려진다. screenBody(${fixed.join(', ')})로 쓴다 (${order})`);
     }
     return bad;
   },
@@ -335,6 +339,7 @@ export const slotGate = {
       const sig = /export const screenBody = \(([^)]*)\)/.exec(baseSrc);
       if (!sig) continue;
       const params = sig[1].split(',').map((x) => x.split('=')[0].trim());
+      const order = `${imp[1]}는 ${params.join(' · ')} 순서다`;
       const args = call.args;
       args.forEach((arg, i) => {
         if (!arg || arg === 'undefined' || arg === "''" || arg === '""') return;
@@ -348,7 +353,7 @@ export const slotGate = {
         // the tab is drawn. Nothing throws and the picture looks like a screen.
         if (slot === 'overlay' && /^[A-Za-z_$][\w$]*\(/.test(arg)) {
           const fixed = params.map((pp) => (pp === 'overlay' ? "''" : arg));
-          bad.push(`${e.num}: screenBody(${arg}) — ${arg}는 상세 패널인데 ${i + 1}번째 인자라 「overlay」 자리로 들어간다. screenBody(${fixed.join(', ')})`);
+          bad.push(`${e.num}: screenBody(${arg}) — ${arg}는 상세 패널인데 ${i + 1}번째 인자라 「overlay」 자리로 들어간다. screenBody(${fixed.join(', ')})로 쓴다 (${order})`);
           return;
         }
         // Only a bare identifier can name an exported dialog. Anything else — a call, a template
@@ -367,14 +372,14 @@ export const slotGate = {
         // takes. 「레이아웃이 깨짐」 is how it was reported, which is all a reader can say.
         if (slot === 'overlay' && kind === 'panelForm') {
           const fixed = params.map((pp) => (pp === 'overlay' ? 'undefined' : arg));
-          bad.push(`${e.num}: screenBody(${call.raw.trim()}) — ${arg}는 패널 폼인데 ${i + 1}번째 인자라 「overlay」 자리로 들어가 기기 위에 겹쳐 그려진다. screenBody(${fixed.join(', ')})`);
+          bad.push(`${e.num}: screenBody(${call.raw.trim()}) — ${arg}는 패널 폼인데 ${i + 1}번째 인자라 「overlay」 자리로 들어가 기기 위에 겹쳐 그려진다. screenBody(${fixed.join(', ')})로 쓴다 (${order})`);
           return;
         }
         const isDialog = kind === 'dialog' || kind === 'viewerDialog';
         if (!isDialog || slot === 'overlay') return;
         const fixed = params.map((pp, j) => (pp === 'overlay' ? arg : j === i ? 'undefined' : 'undefined'));
         while (fixed.length && fixed[fixed.length - 1] === 'undefined') fixed.pop();
-        bad.push(`${e.num}: screenBody(${call.raw.trim()}) — ${arg}는 다이얼로그인데 ${i + 1}번째 인자라 「${slot}」 자리로 들어간다. screenBody(${fixed.join(', ')})`);
+        bad.push(`${e.num}: screenBody(${call.raw.trim()}) — ${arg}는 다이얼로그인데 ${i + 1}번째 인자라 「${slot}」 자리로 들어간다. screenBody(${fixed.join(', ')})로 쓴다 (${order})`);
       });
     }
     return bad;
