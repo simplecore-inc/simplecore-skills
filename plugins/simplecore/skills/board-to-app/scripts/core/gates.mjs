@@ -400,6 +400,186 @@ export const trailerGate = {
   },
 };
 
+/**
+ * The extensions a relative specifier may be resolved to, in the order a bundler tries them.
+ *
+ * <p>The extensionless form is what makes this a resolution rather than a lookup: `./util` is
+ * `util.ts` in one project and `util/index.js` in another, and a rule that demanded the literal
+ * path would report every TypeScript import in the repository.
+ */
+const RESOLVES_TO = ['', '.mjs', '.js', '.cjs', '.ts', '.tsx', '.jsx', '.mts', '.cts', '.json'];
+
+/** Source a relative import can be written in. Everything else here is somebody else's rule. */
+const SOURCE = /\.(?:mjs|cjs|js|jsx|mts|cts|ts|tsx)$/;
+
+/** A relative specifier, in each of the four ways one is written. */
+const RELATIVE_IMPORT = /(?:\bfrom\s*|\bimport\s*\(\s*|\brequire\s*\(\s*)(['"])(\.[^'"]*)\1/g;
+
+/** Every path the tree holds at one commit. */
+function treeAt(ctx, hash) {
+  const { ok, out } = ctx.git(['ls-tree', '-r', '--name-only', hash]);
+  return ok ? new Set(out.split('\n').filter(Boolean)) : null;
+}
+
+/** `a/b/../c` → `a/c`, with no filesystem touched — the commit is not checked out. */
+function resolveFrom(file, specifier) {
+  const parts = file.split('/').slice(0, -1).concat(specifier.split('/'));
+  const out = [];
+  for (const part of parts) {
+    if (part === '' || part === '.') continue;
+    if (part === '..') out.pop();
+    else out.push(part);
+  }
+  return out.join('/');
+}
+
+/** Whether anything the specifier could mean is in the tree. */
+function resolves(tree, base) {
+  return RESOLVES_TO.some((ext) => tree.has(base + ext) || tree.has(`${base}/index${ext}`));
+}
+
+/**
+ * The same source with its comments and its TEMPLATE literals blanked, length preserved.
+ *
+ * <p><b>Backticks and not quotes.</b> The specifier this rule reads sits inside quotes, so blanking
+ * those would erase the very thing it looks for; a template literal is the opposite case, and it is
+ * where a false finding comes from. A file holding specimen source — a gate's own case fixtures, a
+ * scaffold's templates, a documentation example — writes it in backticks, and the import inside
+ * that specimen names a file the repository has no reason to have. Read raw, this rule reports the
+ * file that teaches it, which is the fastest way to teach everybody to scroll past a gate. It
+ * happened on the first run: a case fixture holding `import … from "./detail-body"` came back
+ * beside the five real ones.
+ */
+function withoutTemplatesOrComments(text) {
+  const out = [...text];
+  const blank = (from, to) => {
+    for (let k = from; k < Math.min(out.length, to); k += 1) if (out[k] !== '\n') out[k] = ' ';
+  };
+  let i = 0;
+  while (i < text.length) {
+    const ch = text[i];
+    if (ch === '/' && text[i + 1] === '/') {
+      let j = i + 2;
+      while (j < text.length && text[j] !== '\n') j += 1;
+      blank(i, j);
+      i = j;
+    } else if (ch === '/' && text[i + 1] === '*') {
+      let j = i + 2;
+      while (j < text.length && !(text[j] === '*' && text[j + 1] === '/')) j += 1;
+      blank(i, Math.min(text.length, j + 2));
+      i = Math.min(text.length, j + 2);
+    } else if (ch === '`') {
+      let j = i + 1;
+      while (j < text.length && text[j] !== '`') j += text[j] === '\\' ? 2 : 1;
+      blank(i, Math.min(text.length, j + 1));
+      i = Math.min(text.length, j + 1);
+    } else if (ch === '"' || ch === "'") {
+      let j = i + 1;
+      while (j < text.length && text[j] !== ch && text[j] !== '\n') j += text[j] === '\\' ? 2 : 1;
+      i = j + 1;
+    } else {
+      i += 1;
+    }
+  }
+  return out.join('');
+}
+
+/** Which lines of which file a commit ADDED, read off a diff carrying no context lines. */
+function addedLines(diff) {
+  const byFile = new Map();
+  let file = null;
+  let at = 0;
+  for (const line of diff.split('\n')) {
+    if (line.startsWith('+++ ')) {
+      const path = line.slice(4).trim();
+      file = path === '/dev/null' ? null : path.replace(/^b\//, '');
+      if (file && !byFile.has(file)) byFile.set(file, new Set());
+      continue;
+    }
+    const hunk = /^@@ -\d+(?:,\d+)? \+(\d+)/.exec(line);
+    if (hunk) {
+      at = Number(hunk[1]);
+      continue;
+    }
+    if (!file || !line.startsWith('+') || line.startsWith('+++')) continue;
+    byFile.get(file).add(at);
+    at += 1;
+  }
+  return byFile;
+}
+
+/**
+ * A commit that adds an import of a file the commit does not carry.
+ *
+ * <p><b>This is the one defect that nobody involved caused.</b> Two people edit a registry — a
+ * barrel, an index, a table of modules — because that is what a registry is for. The first writes
+ * its entry and has not yet committed the module it points at; the second commits the registry to
+ * land their own entry, correctly, by explicit path. The commit is now a file importing a module
+ * the repository does not have, and **`--only` cannot prevent it**: what that flag holds back is a
+ * file nobody named, not somebody else's edit inside a file that was named. **Nor does checking
+ * for stray untracked files afterwards find it**, because the missing file belongs to the other
+ * person. Whoever pulls gets a tree that cannot load its own registry.
+ *
+ * <p><b>Only ADDED lines are read.</b> An import that was already there and already resolved is
+ * not this defect, and reading whole files would report a repository's standing state on the first
+ * commit that touched any part of it. That an import can also break because its target was deleted
+ * is a different rule with a different fix, and it is not this one.
+ *
+ * <p><b>The tree is the authority, not the commit's own file list.</b> A module committed an hour
+ * earlier resolves and should; what must not resolve is a path that exists only in somebody's
+ * working directory. `git ls-tree` at the commit answers exactly that.
+ */
+export const importsTravelWithTheirCommit = {
+  id: 'importsTravelWithTheirCommit',
+  title: 'a commit adding an import of a file the repository does not have',
+  needs: [],
+  run: (ctx) => {
+    const range = ctx.options.range ?? null;
+    const listed = ctx.git(['log', '--no-merges', '--format=%H', ...(range ? [range] : ['-n', '1'])]);
+    if (!listed.ok) return [`git log failed — ${listed.out.trim().split('\n')[0]}`];
+
+    const findings = [];
+    for (const hash of listed.out.split('\n').filter(Boolean)) {
+      const short = hash.slice(0, 8);
+      const shown = ctx.git(['show', '--format=', '--unified=0', '--no-renames', '--no-color', hash]);
+      if (!shown.ok) continue;
+      // Only source files are read back, so an ordinary commit costs one `git show` and no more.
+      const touched = [...addedLines(shown.out)].filter(([file]) => SOURCE.test(file));
+      if (!touched.length) continue;
+      const tree = treeAt(ctx, hash);
+      if (!tree) continue;
+
+      for (const [file, lines] of touched) {
+        const source = ctx.git(['show', `${hash}:${file}`]);
+        if (!source.ok) continue;
+        const code = withoutTemplatesOrComments(source.out);
+        let line = 1;
+        for (let i = 0; i < code.length; i += 1) {
+          if (code[i] === '\n') {
+            line += 1;
+            continue;
+          }
+          if (!lines.has(line)) continue;
+          RELATIVE_IMPORT.lastIndex = i;
+          const found = RELATIVE_IMPORT.exec(code);
+          if (!found || found.index !== i) continue;
+          i = RELATIVE_IMPORT.lastIndex - 1;
+          if (resolves(tree, resolveFrom(file, found[2]))) continue;
+          findings.push(
+            `${short}: ${file}:${line} imports \`${found[2]}\` and the commit does not carry it — `
+            + 'whoever pulls this gets a file that cannot load. A registry is edited by everybody, '
+            + 'so the entry somebody else wrote for a module they have not committed yet rides '
+            + 'along on a `--only` of that one path, and looking for untracked files afterwards '
+            + 'finds nothing because the missing file is theirs. Commit the module with the entry, '
+            + 'or leave the entry out of this commit'
+          );
+        }
+      }
+    }
+    return findings;
+  },
+};
+
 /** The gates that hold on any project that builds from a board. */
 export const CORE_GATES = [
   configGate,
@@ -409,6 +589,7 @@ export const CORE_GATES = [
   ledgerGate,
   capturesGate,
   trailerGate,
+  importsTravelWithTheirCommit,
 ];
 
 /**

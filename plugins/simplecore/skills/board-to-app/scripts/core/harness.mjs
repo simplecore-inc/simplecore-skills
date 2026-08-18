@@ -45,8 +45,11 @@ export function cleanProject() {
  * A fixture factory and the cleanup that removes every directory it made.
  *
  * <p>`files` maps a repository-relative path to its contents; a key ending in `/` makes an
- * empty directory. `commits` is a list of commit messages, which turns the fixture into a git
- * repository with one empty commit each.
+ * empty directory. `commits` is a list of commits, which turns the fixture into a git repository:
+ * a plain string is a message and makes an empty commit, and `{ message, files }` writes those
+ * files and commits exactly them. The second form is what a gate reading a commit's CONTENT needs
+ * — a fixture whose history is all empty commits can prove a rule about messages and nothing about
+ * what a commit carried.
  */
 export function makeBuilders() {
   const roots = [];
@@ -72,11 +75,22 @@ export function makeBuilders() {
     if (commits) {
       const git = (args) => execFileSync('git', args, { cwd: root, stdio: 'ignore' });
       git(['-c', 'init.defaultBranch=main', 'init', '-q']);
-      for (const message of commits) {
+      for (const commit of commits) {
+        const { message, files: carried } = typeof commit === 'string' ? { message: commit } : commit;
+        const paths = [];
+        for (const [rel, body] of Object.entries(carried ?? {})) {
+          const target = join(root, rel);
+          mkdirSync(dirname(target), { recursive: true });
+          writeFileSync(target, body ?? '');
+          paths.push(rel);
+        }
+        // Staged by explicit path, so a commit carries what the case said it carries and nothing
+        // the fixture happens to have lying beside it — which is the very distinction under test.
+        if (paths.length) git(['add', '--', ...paths]);
         git([
           '-c', 'user.name=case',
           '-c', 'user.email=case@example.invalid',
-          'commit', '--allow-empty', '-q', '-m', message,
+          'commit', ...(paths.length ? [] : ['--allow-empty']), '-q', '-m', message,
         ]);
       }
     }

@@ -1062,6 +1062,7 @@ node "${CLAUDE_PLUGIN_ROOT}/skills/board-to-app/scripts/bta.mjs" check
 | every chapter is named in the state ledger | `ledgerGate` |
 | a capture is named the one way, one folder per language | `capturesGate` |
 | every commit says which chapter it belongs to, and one that belongs to none says `setup` | `trailerGate` — it takes any word, so which word is fixed here rather than per project |
+| a commit adding an import of a file the repository does not have | `importsTravelWithTheirCommit` — `--only` holds back a file nobody named, not somebody else's edit inside a file that was named |
 | a parked line that says it blocks a chapter does not survive that chapter closing | the project's own gate — the marker is that project's word and so is its ledger's word for a closed chapter, so nothing generic can read either |
 | the frames, counts and copy a chapter builds to | the board's own gates (`simplecore:wireframe-boards`) |
 | whatever `frameDeliverables` declares | the project's own gate, one checkable sentence each |

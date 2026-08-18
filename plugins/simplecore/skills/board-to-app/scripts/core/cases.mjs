@@ -323,4 +323,66 @@ export function cases(t) {
     { commits: ['feat(screens): the roster list\n\nChapter: W15\nTouches: W11 W12'] },
     false
   );
+
+  // importsTravelWithTheirCommit — the registry two people edit, and the module only one of them
+  // committed. The broken form is not hypothetical: it is what a real commit here did, and the
+  // reason a pull could not load the gate set it had just been handed.
+  const REGISTRY = "import * as one from './gates/one.mjs';\nexport const gates = [one];\n";
+  const MODULE = 'export const gates = [];\n';
+  add(
+    'importsTravelWithTheirCommit',
+    'a registry entry whose module the commit leaves behind',
+    { commits: [{ message: 'feat: register the gate\n\nChapter: none', files: { 'gates.mjs': REGISTRY } }] },
+    true
+  );
+  add(
+    'importsTravelWithTheirCommit',
+    'the same entry with its module beside it',
+    {
+      commits: [{
+        message: 'feat: register the gate\n\nChapter: none',
+        files: { 'gates.mjs': REGISTRY, 'gates/one.mjs': MODULE },
+      }],
+    },
+    false
+  );
+  // A module committed earlier is in the tree and resolves — the rule reads the tree at the
+  // commit, never the commit's own list of files.
+  add(
+    'importsTravelWithTheirCommit',
+    'a module an earlier commit already carried',
+    {
+      commits: [
+        { message: 'feat: the gate\n\nChapter: none', files: { 'gates/one.mjs': MODULE } },
+        { message: 'feat: register it\n\nChapter: none', files: { 'gates.mjs': REGISTRY } },
+      ],
+    },
+    false
+  );
+  // A specifier with no extension is a resolution, not a lookup: the same entry written the way a
+  // TypeScript project writes it must not be reported for the extension it leaves off.
+  add(
+    'importsTravelWithTheirCommit',
+    'an extensionless specifier resolving to a file the commit carries',
+    {
+      commits: [{
+        message: 'feat: register the gate\n\nChapter: none',
+        files: { 'gates.ts': "import { one } from './gates/one';\nexport const gates = [one];\n", 'gates/one.ts': MODULE },
+      }],
+    },
+    false
+  );
+  // The file that teaches the rule is the one most likely to trip it: a case fixture holds
+  // specimen source in backticks, and the import inside it names nothing the repository has.
+  add(
+    'importsTravelWithTheirCommit',
+    'a specimen import inside a template literal',
+    {
+      commits: [{
+        message: 'feat: a case for the gate\n\nChapter: none',
+        files: { 'cases.mjs': 'export const BROKEN = `import { x } from "./nowhere";`;\n' },
+      }],
+    },
+    false
+  );
 }
