@@ -514,13 +514,22 @@ is the test:
 | an enum | no | a value, not a record |
 | a count (`21명`) | no | it names no record — it points at the list that does |
 
-**The two shapes, and the place decides which.** `appearance="inline"` — an outline button
-carrying the label and the icon — for a card, a footer action row, and a value that already
-has a label of its own beside it. `appearance="icon"` — icon only, label as tooltip and
-accessible name — for a list column, a detail-list row, and a section header's trailing
-slot, where the same control repeats down the page. Stating only the two shapes and not
-their places leaves the choice to whoever writes the next screen, which is how one product
-comes to have both.
+**The two shapes, and one question decides which: is it inside a card?** A card gets
+`appearance="inline"` — an outline button carrying the label and the icon — because the
+trigger is the only action in its region and has no value beside it to crowd. **Everywhere
+else is `appearance="icon"`**: detail fields, list columns, detail-list rows, section
+headers, footer action rows. The test is deliberately narrow, and widening it is the
+mistake to avoid — 「beside a labelled value」 sounds like the same case and is not. A
+bordered button at the end of a two-column detail row eats the width its own value needs,
+so the name the row exists to show truncates to 「대한건설…」 while the control that opens it
+stays whole; and a row of them leaves the panel with two right edges, one for the fields
+that have a trigger and one for the fields that do not. The default is `"icon"`, so a
+trigger written without thinking about its place is right rather than loud.
+
+**An icon-only trigger names what it opens.** With the label gone, `aria-label` is all a
+screen reader has, and a detail panel or a list column holds several triggers whose label
+is the same word — pass `target` so the name is 「남부현장 보기」 rather than the fourth
+「보기」 on the screen.
 
 **A dialog holds the referenced record's whole detail, tabs included** — not a summary
 somebody chose six fields for. A summary is a second description of the record that drifts
