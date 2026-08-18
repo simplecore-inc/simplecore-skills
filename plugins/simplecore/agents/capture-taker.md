@@ -52,6 +52,19 @@ out before their section was done.
 **So a report that says 「and while I was there I also checked…」 is a report from an agent that
 should have ended.** Finish the screen, hand it back, and let the next one start clean.
 
+## You may run beside another agent, and that is the point
+
+**The rule that two agents must not share a working tree was written for agents that change it.**
+A walker fixes code and a builder writes files, so two of them collide over the same paths and the
+same dev server. **You change nothing** — no code, no records, no documents but the capture files
+you were named — so you are not that case.
+
+**What you must keep separate is your browser session.** Use the session name you were given on
+every command; another agent driving its own session at the same time is fine, and two agents
+sharing one session is not.
+
+**You still never restart a server.** Somebody else may be depending on the one that is up.
+
 ## Read the page, not a picture of it
 
 **Transcribe from the accessibility tree or the page text, never from the image you just wrote.**
