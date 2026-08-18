@@ -1178,9 +1178,24 @@ Two things narrow it, and the second is here because the first is not enough:
    expression by construction. The gap that survives the unit check is the finding; the rest was
    arithmetic on two different things.
 
-**Count the repository's checkers against `gates` once, when the project is wired.** How many
-checkers does it have, and how many does some entry of `gates` actually reach? The difference is
-the first shape, and it is a number rather than a judgment.
+**The census is a gate, not a count somebody remembers to take.** How many checkers the repository
+has and how many an entry of `gates` actually reaches is a number rather than a judgment — which
+makes 「count it once, when the project is wired」 the third category in person form. A count taken
+once is true on the day it is taken and decays from the next commit, and the shape it was meant to
+catch is precisely a checker somebody adds later and wires to nothing.
+
+**A project writes it, because only a project knows what one of its checkers looks like** — the
+naming rule is local (`audit-*.mjs`, `check_*.py`, a `checks/` directory) and belongs in that
+project's config or gate rather than here. **What is not local is how it judges**, and these three
+are the whole of it:
+
+1. **Start from the commands, never from the files.** The set that counts is what `gates` runs.
+   Reading the repository for checker-shaped files and calling them covered inverts the question.
+2. **Follow the import closure of each command.** A checker is reached when the entry point it
+   sits behind reaches it — directly, or through a module that command imports. Matching on the
+   command's own text finds the entry points and misses everything they pull in, which reports a
+   wired checker as orphaned and teaches everybody to ignore the gate.
+3. **Report the orphans by name.** 「7 of 9 reached」 gives nobody anything to do; the two names do.
 
 > **Read it this way and it is wrong**: 「the checker exists, so the rule is held」. A manual
 > checker sat in the repository and in no entry of the `check` chain; measured for the first time

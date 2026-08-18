@@ -36,6 +36,49 @@ export function cases(t) {
   // A vocabulary with an empty role matches nothing, and a check that matches nothing reports the
   // same zero as one with nothing to find — which is why an empty list is a finding rather than a
   // shorter list.
+  // A label carrying its own emphasis is written into the documents with the markers and looked
+  // for with them twice — every check over those documents then finds nothing and says nothing,
+  // which is the silence the whole vocabulary arrangement exists to prevent.
+  add(
+    'configGate',
+    'an evidence label declared with the markdown the checks add themselves',
+    { config: { evidenceLabels: { did: '**What was done**', demanded: 'What was demanded', saw: 'What was seen' } } },
+    true,
+  );
+  add(
+    'configGate',
+    'the same three labels as bare words',
+    { config: { evidenceLabels: { did: 'What was done', demanded: 'What was demanded', saw: 'What was seen' } } },
+    false,
+  );
+  // A project whose board gives every state a frame of its own writes no line listing states. It
+  // says so rather than declaring a line no chapter contains — and it says why, because an
+  // unexplained absence reads the same as one nobody noticed.
+  add(
+    'configGate',
+    'a chapter line declared absent with no reason beside it',
+    {
+      config: {
+        chapterLines: { persona: '**Test · {text}**…', verdict: '**Verdict**…', states: null },
+      },
+    },
+    true,
+  );
+  add(
+    'configGate',
+    'the same role declared absent with the reason beside it',
+    {
+      config: {
+        chapterLines: {
+          persona: '**Test · {text}**…',
+          verdict: '**Verdict**…',
+          states: null,
+          '//states': 'every state is a frame of its own here, so no line lists them',
+        },
+      },
+    },
+    false,
+  );
   add(
     'configGate',
     'a phrase vocabulary with one of its roles empty',
@@ -400,6 +443,26 @@ export function cases(t) {
       commits: [{
         message: 'feat: a case for the gate\n\nChapter: none',
         files: { 'cases.mjs': 'export const BROKEN = `import { x } from "./nowhere";`;\n' },
+      }],
+    },
+    false
+  );
+  // The same specimen in ordinary quotes, which is how a fixture map writes one file per key. The
+  // template-literal form above was already skipped and this one was not, so a project writing its
+  // first case for its own gates met a finding about an import it had not written.
+  add(
+    'importsTravelWithTheirCommit',
+    'a specimen import inside a quoted string',
+    {
+      commits: [{
+        message: 'feat: a case for the gate\n\nChapter: none',
+        files: {
+          'cases.mjs':
+            'export const FIXTURES = {\n'
+            + '  \'src/x.ts\': "import { y } from \'./y\';\\n",\n'
+            + '  \'src/z.ts\': \'import { w } from "./w";\\n\',\n'
+            + '};\n',
+        },
       }],
     },
     false

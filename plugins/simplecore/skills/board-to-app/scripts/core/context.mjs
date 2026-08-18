@@ -44,6 +44,17 @@ export const CONFIG_NAME = join('.claude', 'board-to-app.json');
  * <p>`persona` opens the line a named role has to prove, `verdict` the line a machine proves
  * instead, and `states` the sentence listing the states hanging off a screen. A project writes
  * each in its own words; nothing here may assume them.
+ *
+ * <p><b>Each is the line AS WRITTEN, markup and all</b> — `**Test · {text}**…`, not `Test · `.
+ * The phrase is compiled straight into the reader that scans a chapter file, so anything the line
+ * really starts with belongs in it. This is the opposite of `evidenceLabels` below, and the two
+ * being opposite is why both say so here.
+ *
+ * <p><b>A project that writes no such line declares the role `null`</b>, with the reason in a
+ * `//<role>` entry beside it. `states` is the one that is genuinely absent from some projects — a
+ * board that gives every state a frame of its own has no sentence listing states — and without a
+ * way to say so, the choice is between a config that fails validation and a line declared to
+ * satisfy it that no chapter contains.
  */
 export const CHAPTER_LINE_ROLES = ['persona', 'verdict', 'states'];
 
@@ -53,6 +64,12 @@ export const CHAPTER_LINE_ROLES = ['persona', 'verdict', 'states'];
  * <p>`did` is what was run, `demanded` is the chapter's own sentence copied whole, and `saw` is
  * what was on the screen. `demanded` is the one a check compares against the chapter, so a project
  * that renames it renames what the comparison looks for.
+ *
+ * <p><b>Each is the WORD alone, with no markup on it</b> — `What was done`, never
+ * `**What was done**`. The checks write the emphasis themselves, so a label declared with it
+ * carries the markers twice and matches no line in any document — a silence, not an error, which
+ * is why `configGate` refuses a label carrying markdown. This is the opposite of `chapterLines`
+ * above, and being opposite is the whole reason both say so.
  */
 export const EVIDENCE_LABEL_ROLES = ['did', 'demanded', 'saw'];
 
@@ -83,7 +100,7 @@ export const SCHEMA = {
   // shape of failure the `closing` grade exists to make visible. Undeclared, everything still runs
   // and no chapter closes, and `doctor` says which key is why.
   chapterLines: { kind: 'headings', roles: CHAPTER_LINE_ROLES, closing: true },
-  evidenceLabels: { kind: 'headings', roles: EVIDENCE_LABEL_ROLES, closing: true },
+  evidenceLabels: { kind: 'headings', roles: EVIDENCE_LABEL_ROLES, bare: true, closing: true },
   closedStatus: { kind: 'text', closing: true },
   // The role an evidence heading names where a persona would stand, for a check a machine proves.
   // Its own key rather than `chapterLines.verdict`: that one is a LINE and this is a WORD, and

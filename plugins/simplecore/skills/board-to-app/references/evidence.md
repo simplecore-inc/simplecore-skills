@@ -284,6 +284,29 @@ not whether the sentence did.**
 **All four are one section whose sentences changed.** Where the SET of sections changed, the next
 rule takes it — there the quotes are all fine and a section nobody wrote is being demanded.
 
+### The demands do not move while the verification is running
+
+**A round of verification quotes the chapter, so a chapter that changes mid-round unfinishes the
+sections already written.** Somebody works through a chapter section by section; a fix lands in the
+generator; the sentences those sections quoted are no longer the sentences the chapter carries, and
+`evidenceQuotesTheChapter` reddens work that was correct when it was done. Do it twice and the
+round stops converging — five more sections get written while the next fix invalidates the five
+before them.
+
+**Appending does not prevent this.** The rule that a new demand goes at the END of a line exists so
+that a quote already written stays a contiguous prefix of it; it holds against INSERTING and says
+nothing about SUBSTITUTING. Replacing a phrase inside a line invalidates every section that quoted
+that line, wherever the phrase sat.
+
+**So a fix to what a chapter demands is collected and released between rounds, never during one.**
+Whoever is running the verification says when the round ends; until then, fixes to the generator's
+wording are held. A fix that does not change the sentences a chapter writes — a check, a document,
+the build's own wiring — is not this and runs whenever it is ready.
+
+**The one exception is a demand that cannot be executed at all**, which is worse than a stale
+quote: a section written against it records a check nobody could have made. Release that one
+immediately, say which sections it invalidates, and hand the list to whoever is running the round.
+
 ## When a closed chapter gains a screen
 
 **A frame the board gains later, belonging to a closed chapter, adds lines to that chapter.** The

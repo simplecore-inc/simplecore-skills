@@ -45,7 +45,9 @@ export function cleanProject() {
  * A fixture factory and the cleanup that removes every directory it made.
  *
  * <p>`files` maps a repository-relative path to its contents; a key ending in `/` makes an
- * empty directory. `commits` is a list of commits, which turns the fixture into a git repository:
+ * empty directory, `''` makes an empty file, and **`null` means the file is not there** — the
+ * case for a document that was never written. `undefined` is refused: it is what a renamed
+ * constant leaves behind, and reading it as absence would drop a file nobody meant to drop. `commits` is a list of commits, which turns the fixture into a git repository:
  * a plain string is a message and makes an empty commit, and `{ message, files }` writes those
  * files and commits exactly them. The second form is what a gate reading a commit's CONTENT needs
  * — a fixture whose history is all empty commits can prove a rule about messages and nothing about
@@ -59,13 +61,26 @@ export function makeBuilders() {
     roots.push(root);
 
     for (const [rel, body] of Object.entries(files)) {
+      // `null` is the case saying THIS FILE IS NOT THERE, which half the gates here exist to
+      // find — an absent result document, a capture that was cited and never written. Writing it
+      // as an empty file instead proves a different defect and passes for the wrong reason, so
+      // the natural notation has to mean absence.
+      if (body === null) continue;
+      // `undefined` is a name that did not resolve — a constant renamed, a typo in the key. It
+      // reads as `null` and would silently drop the file, so it stops the run instead.
+      if (body === undefined) {
+        throw new Error(
+          `case fixture ${rel}: the value is undefined, which is a name that resolves to nothing `
+          + 'rather than a decision. Write `null` to say the file is absent, or `\'\'` for an empty file.'
+        );
+      }
       const target = join(root, rel);
       if (rel.endsWith('/')) {
         mkdirSync(target, { recursive: true });
         continue;
       }
       mkdirSync(dirname(target), { recursive: true });
-      writeFileSync(target, body ?? '');
+      writeFileSync(target, body);
     }
 
     const configPath = join(root, CONFIG_NAME);

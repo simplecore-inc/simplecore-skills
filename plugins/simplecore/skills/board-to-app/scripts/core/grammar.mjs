@@ -76,11 +76,18 @@ export function compileLine(phrase, key) {
 /**
  * Every line reader a project declares, compiled.
  *
+ * <p>A role declared `null` is a project stating it writes no such line, and it compiles to
+ * nothing — a reader that is absent rather than one that matches nothing. Every check reads these
+ * with `?.`, so an absent role skips the clause it governs instead of failing every line against
+ * an impossible pattern. A `//<role>` entry alongside carries the reason and is not a role.
+ *
  * @param lines the `chapterLines` map
- * @returns role → RegExp
+ * @returns role → RegExp, with a role declared absent left out
  */
 export function compileLines(lines) {
   return Object.fromEntries(
-    Object.entries(lines ?? {}).map(([role, phrase]) => [role, compileLine(phrase, `chapterLines.${role}`)])
+    Object.entries(lines ?? {})
+      .filter(([role, phrase]) => !role.startsWith('//') && phrase !== null)
+      .map(([role, phrase]) => [role, compileLine(phrase, `chapterLines.${role}`)])
   );
 }

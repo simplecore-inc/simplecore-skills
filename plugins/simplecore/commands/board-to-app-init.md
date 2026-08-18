@@ -42,9 +42,15 @@ repository.
    "${CLAUDE_PLUGIN_ROOT}/skills/board-to-app/scripts/bta.mjs" doctor` and read its grades:
 
    - `✖` — required, and nothing works until it is declared.
-   - `◑` — **every chapter needs it to CLOSE.** Everything runs, nothing finishes. `evidenceDir` is
-     the one projects miss: a build with a page of green that cannot end a chapter is what this
-     grade exists to stop being invisible.
+   - `◑` — **every chapter needs it to CLOSE.** Everything runs, nothing finishes. Five keys carry
+     it, and they are one decision rather than five: `evidenceDir` says where a result document
+     goes, and `chapterLines`, `evidenceLabels`, `closedStatus` and `verdictRole` are the words
+     every check over that document compares. A build with a page of green that cannot end a
+     chapter is what this grade exists to stop being invisible. **The two markup conventions are
+     opposite and the template says so on each key**: a `chapterLines` phrase is the line as
+     written, markup included, and an `evidenceLabels` value is the word alone, because the checks
+     add the emphasis themselves. Declared the wrong way round, they match nothing and report the
+     same zero as a project with nothing wrong.
    - `◐` / `●` — a key some chapter promised in `deferredKeys`; the second says its subject now
      exists, so the promise is due.
    - `○` — the project does not use that.
@@ -54,12 +60,16 @@ repository.
    absence: the absence is reported and the invention is not.
 
 4. **Create the evidence folder and its index.** A chapter closes on evidence, so a project with
-   nowhere to put it closes nothing. Write the folder named by `evidenceDir` and an
-   `00-overview.md` in it that settles, in the project's own language: what one result document
-   holds, what the captures are named, the bound on how many there may be, and who reads what
-   before a chapter is written closed. The skill's evidence reference carries the shape; the
-   examples in it are placeholders and **the project fills them with frames it actually has** —
-   an id from somebody else's board names nothing here.
+   nowhere to put it closes nothing. **Read
+   `${CLAUDE_PLUGIN_ROOT}/skills/board-to-app/references/evidence.md` first** — it is the
+   specification: the shape of a section, the three labels, the capture naming and both ceilings,
+   one picture per content pane, and what to do when a board fix moves what a closed chapter
+   quotes. Write the folder named by `evidenceDir` and an `00-overview.md` in it that carries only
+   what the specification cannot: **the project's own worked examples**, using frames it actually
+   has — an id from somebody else's board names nothing here — the commands it runs while a screen
+   is open, and **the table saying whose eyes take each of the three readings no machine makes, and
+   at which moment.** That table is the project's because it is a staffing decision; everything
+   else is in the reference and is not copied out of it.
 
 5. **Write the four tracking files** when they are missing, in the language the project's other
    documents use. Each answers one question and no other:

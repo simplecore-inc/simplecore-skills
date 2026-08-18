@@ -206,12 +206,37 @@ export const configGate = {
           continue;
         }
         for (const role of spec.roles ?? HEADING_ROLES) {
+          // A role declared `null` is a project saying it writes no such line, which is a
+          // different statement from leaving the role out and has to be readable as one. It costs
+          // a reason: `disabledGates` already settles that an exception a reader cannot question
+          // is an omission wearing a decision's clothes.
+          if (role in value && value[role] === null) {
+            const why = value[`//${role}`];
+            if (typeof why !== 'string' || !why.trim()) {
+              findings.push(
+                `${key}.${role} is declared absent and says nothing about why. A project that `
+                + 'genuinely writes no such line says so here and puts the reason in '
+                + `"//${role}" beside it — an absence nobody explained reads the same as one nobody noticed`
+              );
+            }
+            continue;
+          }
           const heading = value[role];
           if (typeof heading !== 'string' || !heading.trim()) {
             findings.push(`${key}.${role} names no heading — a section named by role that no heading matches stops an agent`);
+          } else if (spec.bare && /[*_`#]/.test(heading)) {
+            // The silence this catches: a label carrying its own emphasis is written `**X**` into
+            // every document and looked for as `****X****`, so every check over those documents
+            // finds nothing and reports nothing.
+            findings.push(
+              `${key}.${role} is 「${heading}」 and carries markdown. This key is the WORD alone — `
+              + 'the checks write the emphasis themselves, so a label declared with it is looked '
+              + 'for with the markers twice over and matches no line in any document'
+            );
           }
         }
         for (const role of Object.keys(value)) {
+          if (role.startsWith('//')) continue;
           if (!(spec.roles ?? HEADING_ROLES).includes(role)) findings.push(`${key}.${role} is not a role this skill knows`);
         }
         continue;
@@ -492,6 +517,7 @@ function resolves(tree, base) {
  */
 function withoutTemplatesOrComments(text) {
   const out = [...text];
+  const strings = [];
   const blank = (from, to) => {
     for (let k = from; k < Math.min(out.length, to); k += 1) if (out[k] !== '\n') out[k] = ' ';
   };
@@ -516,13 +542,33 @@ function withoutTemplatesOrComments(text) {
     } else if (ch === '"' || ch === "'") {
       let j = i + 1;
       while (j < text.length && text[j] !== ch && text[j] !== '\n') j += text[j] === '\\' ? 2 : 1;
+      // Kept rather than blanked: the specifier of a real import IS a quoted string, and blanking
+      // it would leave nothing to resolve. The interior is recorded instead, so a `from` written
+      // INSIDE a string can be told from one written in code — see `quoted` below.
+      strings.push([i + 1, j]);
       i = j + 1;
     } else {
       i += 1;
     }
   }
-  return out.join('');
+  return { code: out.join(''), strings };
 }
+
+/**
+ * Whether an offset falls inside the contents of a quoted string.
+ *
+ * <p><b>What this separates, and why nothing else can.</b> A case fixture is source written as a
+ * string — `'x.ts': "import { y } from './y';"` — and every character of that import is inside a
+ * string literal of the file that carries it. Read as code it is a commit importing a module the
+ * repository does not have, which is exactly this gate's finding and exactly wrong: the fixture
+ * imports nothing, it describes a file that will be written into a temporary directory.
+ *
+ * <p>The keyword is the discriminant. A real import writes `from` · `import(` · `require(` in
+ * code and its specifier in quotes; a fixture writes both inside one string. So a match whose
+ * KEYWORD begins inside a string is not an import — and a real specifier is never mistaken for
+ * one, because the keyword before it is not in a string.
+ */
+const quoted = (strings, at) => strings.some(([from, to]) => at >= from && at < to);
 
 /** Which lines of which file a commit ADDED, read off a diff carrying no context lines. */
 function addedLines(diff) {
@@ -592,7 +638,7 @@ export const importsTravelWithTheirCommit = {
       for (const [file, lines] of touched) {
         const source = ctx.git(['show', `${hash}:${file}`]);
         if (!source.ok) continue;
-        const code = withoutTemplatesOrComments(source.out);
+        const { code, strings } = withoutTemplatesOrComments(source.out);
         let line = 1;
         for (let i = 0; i < code.length; i += 1) {
           if (code[i] === '\n') {
@@ -604,6 +650,8 @@ export const importsTravelWithTheirCommit = {
           const found = RELATIVE_IMPORT.exec(code);
           if (!found || found.index !== i) continue;
           i = RELATIVE_IMPORT.lastIndex - 1;
+          // The keyword, not the specifier: a fixture writes both inside one string literal.
+          if (quoted(strings, found.index)) continue;
           if (resolves(tree, resolveFrom(file, found[2]))) continue;
           findings.push(
             `${short}: ${file}:${line} imports \`${found[2]}\` and the commit does not carry it — `
