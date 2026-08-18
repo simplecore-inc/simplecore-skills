@@ -2921,6 +2921,66 @@ const canManage = useCan("manage", SUBJECTS.area);
     },
   },
   {
+    id: "stringified-boot-enum",
+    invariant: "#36",
+    level: "error",
+    desc: "Enum-looking field turned into text by String() or template interpolation with no resolveBootEnum on the line — a boot enum is an object, so the cell renders `[object Object]`",
+    appliesTo: isTsx,
+    check: (c) =>
+      // A file holding no server data cannot be holding a boot enum, whatever it names its
+      // fields — the same guard `unresolved-boot-enum-label` uses. Without it this fires on
+      // every local literal union called `kind`, and a rule that cries wolf takes the real
+      // ones beside it down.
+      readsServerData(c)
+        ? lineHits(
+            c,
+            // Anchored on the two ways a value becomes text without asking what it is. The
+            // dotted path must start with a bare identifier, which keeps `${t("area.type")}`
+            // out: that key sits inside quotes and never reaches the interpolation as a
+            // property access.
+            /(?:String\(\s*|\$\{\s*)(?:[A-Za-z_$][\w$]*\.)+(?!is[A-Z])\w*(?:[Ss]tatus|[Tt]ype|[Kk]ind|[Mm]ode|[Cc]hannel)\b/,
+            (line) => !line.includes("resolveBootEnum"),
+          )
+        : [],
+    samples: {
+      file: "modules/user-admin/src/widgets/user-account/detail.tsx",
+      broken: `import { useGetUserAccount } from "@acme/domain-user";
+
+<TableCell>{String(grant.status ?? "")}</TableCell>`,
+      fixed: `import { useGetUserAccount } from "@acme/domain-user";
+
+<TableCell>
+  <StatusBadge tone={toneOf(resolveBootEnum(grant.status))} label={enumLabel("ScopeGrantStatus", resolveBootEnum(grant.status))} />
+</TableCell>`,
+      miss: [
+        {
+          note: "a local literal union in a file that reads no server data — no boot enum can be in scope",
+          source: `type ImpactKind = "automatic" | "rejudge" | "retained";
+
+<Badge>{t(\`impact.\${group.kind}\`)}</Badge>`,
+        },
+        {
+          note: "a translation key that merely contains a dot inside its string",
+          source: `import { useGetUserAccount } from "@acme/domain-user";
+
+<Text>{\`\${t("area.type")} — \${name}\`}</Text>`,
+        },
+        {
+          note: "String() over a field that is not an enum",
+          source: `import { useGetUserAccount } from "@acme/domain-user";
+
+<TableRow key={String(grant.roleScopeGrantId)}>`,
+        },
+        {
+          note: "a boolean whose name merely ends in one of the enum words",
+          source: `import { useGetUserAccount } from "@acme/domain-user";
+
+<Text>{String(row.isTypeLocked)}</Text>`,
+        },
+      ],
+    },
+  },
+  {
     id: "full-enum-options",
     invariant: "#38",
     level: "review",
