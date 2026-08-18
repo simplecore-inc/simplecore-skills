@@ -4021,6 +4021,11 @@ function packageExportFindings() {
       }
       const exports = parsed.exports;
       if (!exports || typeof exports !== "object") continue;
+      // A package that declares `bin` is a command-line tool. Node resolves its exports and
+      // Node has no `source` condition, so nothing about a dev server reaches it — the whole
+      // failure this rule describes cannot happen there, and shipping `src` would grow the
+      // tarball to satisfy a reader that never looks.
+      if (parsed.bin) continue;
       // `files` decides what a publish carries. Absent, everything ships and nothing can be
       // missing; present, it is a whitelist and a `source` target outside it exists only in the
       // checkout.
@@ -4399,6 +4404,20 @@ const COLLECTION_RULES = [
         },
       },
       miss: [
+        {
+          note: "a command-line tool, whose exports Node resolves and Node has no source condition",
+          files: {
+            "packages/cli/package.json": `{
+  "name": "@acme/cli",
+  "bin": { "acme": "./dist/bin.js" },
+  "files": ["dist"],
+  "exports": {
+    ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" }
+  }
+}
+`,
+          },
+        },
         {
           note: "a source target inside a published directory",
           files: {
