@@ -299,7 +299,14 @@ These invariants apply to **every** frontend file you touch. Treat each as invio
       not a divergence**, and an audit reporting it as one is reporting the setting.
     - **So a visual check asks three things and not a fourth**: does the detail open from the row,
       is the content in it what the frame draws, does closing it come back to the list unchanged.
-      Panel-or-drawer is the fourth, and it is not the screen's to answer.
+      Panel-or-drawer is the fourth, and it is not the screen's to answer. **Nor is what the drawer
+      covers** — it sits over the list rather than narrowing it, so a row's right-hand columns are
+      under it while it is open. That is the shape, not a defect, and reporting it as one reports
+      the setting.
+    - **Record which presentation the installation is on, as a fact.** 「이 설치는 서랍으로 서 있다」
+      belongs in the report; 「보드와 다르다」 does not. The difference matters: the first tells the
+      next reader what they are looking at, the second sends them to fix something that is not
+      broken.
     - **They give the detail the same room, and where they differ in behaviour that difference is
       the framework's to own — as a decision, not as an accident.** A modal drawer costs two
       presses to move between records where a panel costs one, because the backdrop takes the first
