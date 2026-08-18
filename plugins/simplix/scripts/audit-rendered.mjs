@@ -89,6 +89,17 @@ const DEFAULTS = {
    */
   columnWidthFactor: 3,
 
+  /**
+   * What may not appear inside a `<p>`. Tag names rather than computed display, because
+   * `display: inline` on a `<div>` makes the box behave and leaves the markup invalid all the
+   * same — and because a flex child's computed display says nothing about what it is.
+   */
+  blockTags: [
+    "div", "p", "section", "article", "header", "footer", "aside", "nav", "main",
+    "ul", "ol", "li", "dl", "dt", "dd", "table", "form", "fieldset", "figure",
+    "blockquote", "pre", "hr", "address", "h1", "h2", "h3", "h4", "h5", "h6",
+  ],
+
   /** Two boxes touching by less than this in either axis is a border, not an overlap. */
   minOverlapPx: 4,
 
@@ -369,7 +380,73 @@ const textBoxesOverlap = {
   },
 };
 
-export const checks = [countedListDrawsNoRows, textBoxesOverlap];
+/**
+ * A block element rendered inside a paragraph.
+ *
+ * The defect it exists to catch: a component library's text primitive renders `<p>`, a screen
+ * puts a composed label into its slot — a name, a badge and an icon button laid out with the
+ * library's own row primitive, which renders `<div>` — and the paragraph now contains a block.
+ * The className the primitive wrote on that paragraph (`flex-1`, `truncate`, a weight) stops
+ * governing the content, so the label neither truncates nor shares the row's width, and a long
+ * name pushes the trailing value off the row.
+ *
+ * **Why the DOM has it at all.** Writing `<p><div>` in an HTML file cannot produce this — the
+ * parser closes the paragraph and the block becomes its sibling. A framework that builds the
+ * tree with `createElement`/`appendChild` bypasses the parser, so the invalid nesting is really
+ * there. That is also why the only warning is one line in a development console, next to the
+ * hot-reload noise, and why it survives every other check: the strings are right, the requests
+ * answered, and a screenshot shows a row that merely looks a little wide.
+ *
+ * **Where the fix belongs.** In the component that wraps the slot, not in the screen that filled
+ * it — one element name there fixes every caller, and a screen that routes around it grows a
+ * hand-rolled box the library exists to prevent.
+ */
+const blockInsideParagraph = {
+  id: "blockInsideParagraph",
+  grade: "error",
+  title:
+    "a block element nested inside a paragraph — the paragraph splits, and the width, weight and truncation written on it stop governing the content",
+  page: (o) => {
+    const findings = [];
+    const blocks = o.blockTags.map((t) => t.toUpperCase());
+
+    const where = (el) => {
+      const bits = [];
+      for (let n = el; n && n !== document.body && bits.length < 4; n = n.parentElement) {
+        bits.unshift(
+          n.tagName.toLowerCase() +
+            (n.id ? "#" + n.id : "") +
+            (n.className && typeof n.className === "string"
+              ? "." + n.className.trim().split(/\s+/).slice(0, 2).join(".")
+              : ""),
+        );
+      }
+      return bits.join(" > ");
+    };
+    const clip = (s) => {
+      const t = (s || "").replace(/\s+/g, " ").trim();
+      return t.length > 40 ? t.slice(0, 39) + "…" : t;
+    };
+
+    const paragraphs = [...document.querySelectorAll("p")];
+    let compared = 0;
+    for (const p of paragraphs) {
+      compared += 1;
+      // The nearest offender only. A panel that nests three levels of layout inside one
+      // paragraph is one defect with one fix, and listing every descendant buries the others.
+      const offender = [...p.querySelectorAll("*")].find((el) => blocks.includes(el.tagName));
+      if (!offender) continue;
+      findings.push(
+        `<${offender.tagName.toLowerCase()}> inside <p> — 「${clip(p.textContent)}」 ` +
+          `(${where(offender)})`,
+      );
+      if (findings.length >= o.maxFindings) break;
+    }
+    return { compared, findings };
+  },
+};
+
+export const checks = [countedListDrawsNoRows, textBoxesOverlap, blockInsideParagraph];
 
 /** One self-contained expression, ready for any driver's evaluate call. */
 export function snippet(check, options = {}) {
@@ -581,6 +658,61 @@ const FIXTURES = {
           <div class=row>산업안전보건법</div><div class=row>중대재해처벌법</div>
           <div class=row>화학물질관리법</div><div class=row>고압가스안전관리법</div></div>
         <div class=foot>사업장 시간 GMT+9</div>`,
+    },
+  },
+  blockInsideParagraph: {
+    // Built with script rather than written as markup on purpose: the HTML parser closes a
+    // paragraph in front of a block, so a fixture written the plain way produces siblings and
+    // proves nothing. A framework builds its tree through the DOM API, which is why the invalid
+    // nesting reaches a real screen — and the fixture has to arrive the same way.
+    broken: {
+      "a composed label appended into a paragraph slot":
+        `<style>body{margin:0;font:14px sans-serif}.row{display:flex;gap:12px;padding:8px 16px}
+        .primary{flex:1;font-weight:500;overflow:hidden;text-overflow:ellipsis}</style>
+        <div class=row><p class=primary id=slot></p><span>11명</span></div>
+        <script>
+          const box = document.createElement('div');
+          box.style.display = 'flex';
+          box.textContent = '토목부';
+          const btn = document.createElement('button');
+          btn.setAttribute('aria-label', '토목부 보기');
+          box.appendChild(btn);
+          document.getElementById('slot').appendChild(box);
+        <\/script>`,
+      "a paragraph holding a list":
+        `<style>body{margin:0;font:14px sans-serif}</style>
+        <p id=note>적용 대상</p>
+        <script>
+          const ul = document.createElement('ul');
+          for (const name of ['산업안전보건법', '중대재해처벌법']) {
+            const li = document.createElement('li');
+            li.textContent = name;
+            ul.appendChild(li);
+          }
+          document.getElementById('note').appendChild(ul);
+        <\/script>`,
+    },
+    // Phrasing content inside a paragraph is what a paragraph is for, and a block beside one or
+    // inside another block is ordinary layout. A check that read either as a finding would fire
+    // on every screen and be switched off within a day.
+    quiet: {
+      "a paragraph of inline content — spans, a link, an icon and a button":
+        `<style>body{margin:0;font:14px sans-serif}</style>
+        <p><span>토목부</span> <a href="#">보기</a>
+        <svg width="12" height="12" viewBox="0 0 12 12"><path d="M1 3h10"/></svg>
+        <button aria-label="토목부 보기"><span>↗</span></button></p>`,
+      "a row of blocks, with the paragraph beside them rather than around them":
+        `<style>body{margin:0;font:14px sans-serif}.row{display:flex;gap:12px;padding:8px 16px}
+        .primary{flex:1;font-weight:500}</style>
+        <div class=row><div class=primary><p>토목부</p></div><div><span>11명</span></div></div>`,
+      "a paragraph appended into another paragraph's sibling, built the same way":
+        `<style>body{margin:0;font:14px sans-serif}</style>
+        <p id=first>남부현장</p><div id=host></div>
+        <script>
+          const p = document.createElement('p');
+          p.textContent = '하위 부서를 포함한 활성 계정입니다';
+          document.getElementById('host').appendChild(p);
+        <\/script>`,
     },
   },
 };
