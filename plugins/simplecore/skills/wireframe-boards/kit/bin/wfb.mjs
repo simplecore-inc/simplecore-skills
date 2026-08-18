@@ -50,6 +50,8 @@ const HELP = `wireframe-boards — 보드를 빌드하고 점검하는 명령
   patterns                        쓸 수 있는 공통패턴
   pattern fork [--into <디렉터리>] [--name <이름>]
                                   지금 패턴을 보드 안으로 복사하고 보드가 그것을 쓰게 합니다
+  pattern adopt [--into <디렉터리>] [--name <이름>]
+                                  src/의 컴포넌트·스타일을 이 보드의 패턴으로 승격합니다
   init --pattern <이름> --name <제품>   새 보드를 세웁니다 (킷에서 직접 실행)
 공통: --board <디렉터리> (기본값은 현재 디렉터리)`;
 
@@ -77,9 +79,37 @@ if (cmd === 'patterns') {
 }
 
 if (cmd === 'pattern') {
-  if (positional[0] !== 'fork') die("pattern 뒤에는 fork만 옵니다 — node wf.mjs pattern fork [--into <디렉터리>]");
+  const how = positional[0];
+  if (how !== 'fork' && how !== 'adopt') {
+    die('pattern 뒤에는 fork 또는 adopt가 옵니다.\n'
+      + '  fork   킷이 싣고 다니는 패턴을 보드 안으로 복사합니다 — 이미 그 패턴으로 그려진 보드용\n'
+      + '  adopt  src/가 갖고 있는 컴포넌트·스타일을 이 보드의 패턴으로 승격합니다 — 계약 이전 보드용');
+  }
+  // A refusal here is a sentence somebody has to read — which pattern is already there, which
+  // folder is in the way. A stack trace buries it under twenty lines of node internals.
+  const refuse = (err) => die(err instanceof Error ? err.message : String(err));
+
+  if (how === 'adopt') {
+    const { adoptPattern } = await import('../core/fork-pattern.mjs');
+    let report;
+    try {
+      report = adoptPattern(boardDir, { into: opt('into', 'pattern'), name: opt('name', null) });
+    } catch (err) { refuse(err); }
+    console.log(`src/의 ${report.moved.join(' · ')}을 ${report.into}/로 옮기고 '${report.name}' 패턴으로 만들었습니다.`);
+    for (const f of report.moved) console.log(`  → ${report.into}/${f}`);
+    console.log(`  + ${report.into}/pattern.mjs`);
+    console.log(`  ~ src/components.mjs  재수출 → ../${report.into}/components.mjs`);
+    console.log(report.config
+      ? `  ~ board.config.mjs  pattern: './${report.into}'`
+      : `  ! board.config.mjs가 없습니다 — 만들 때 pattern: './${report.into}'을 적습니다`);
+    console.log('\n다음: node wf.mjs build --no-pdf 로 킷이 이 보드를 지을 수 있는지 봅니다.');
+    process.exit(0);
+  }
   const { forkPattern } = await import('../core/fork-pattern.mjs');
-  const report = forkPattern(boardDir, { into: opt('into', 'pattern'), name: opt('name', null) });
+  let report;
+  try {
+    report = forkPattern(boardDir, { into: opt('into', 'pattern'), name: opt('name', null) });
+  } catch (err) { refuse(err); }
   console.log(`${report.from} 패턴을 ${report.into}/ 로 복사하고 '${report.name}'으로 이름을 바꿨습니다.`);
   for (const f of report.files) console.log(`  + ${report.into}/${f}`);
   console.log(`  ~ board.config.mjs  pattern: './${report.into}'`);

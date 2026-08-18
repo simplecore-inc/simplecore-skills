@@ -89,11 +89,19 @@ pattern: 'simplix-basic'   // the kit's
 pattern: './pattern'       // this board's own, committed beside src/
 ```
 
-**`node wf.mjs pattern fork` is the procedure.** It copies the pattern the board is currently
-drawn in — `pattern.mjs`, `components.mjs`, `styles.css`, `intro.html` and the gates — into the
-board, renames it, re-points `board.config.mjs` and the `src/components.mjs` shim, and rewrites
-what the copied files import from the kit so they reach it through the board's `.kit` link. The
-board builds and its gates run exactly as before; what changed is who owns them.
+**Two procedures, and which one depends on where the board's components are now.**
+
+| The board | Command | What happens |
+| --- | --- | --- |
+| already drawn in a shipped pattern | `node wf.mjs pattern fork` | copies that pattern — `pattern.mjs`, `components.mjs`, `styles.css`, `intro.html`, the gates — into the board, renames it, re-points the config and the shim, and rewrites what the copied files import from the kit so they reach it through the board's `.kit` link |
+| from before the contract, drawing with its own `src/components.mjs` | `node wf.mjs pattern adopt` | moves `components.mjs`, `styles.css` and `intro.html` up out of `src/`, writes a `pattern.mjs` around them, leaves the one-line shim every screen already imports, and points the config at it |
+
+**`adopt` is the one a migration needs**, and forking would be the wrong move there: a board with
+94 primitives of its own would receive a hundred it does not draw and still have its own outside
+the pattern. Nothing is rewritten and nothing is discarded — the files move up one level and a
+`pattern.mjs` is written around them.
+
+Either way the board builds and its gates run; what changed is who owns them.
 
 **The cost, and why this is last rather than first.** A forked pattern stops receiving the kit's
 improvements to the pattern it came from — a component added there, a gate tightened there, a

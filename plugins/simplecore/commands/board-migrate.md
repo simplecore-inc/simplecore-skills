@@ -104,10 +104,18 @@ local file — that is the whole point of the move, and a board-local copy is a 
 
 **Where MOST of what the board draws is absent from every shipped pattern, that instruction has
 nowhere to send anybody**, and the board would otherwise stay outside the contract with no gate
-reaching it. Then fork the pattern into the board and own it — `node wf.mjs pattern fork`, and
-`pattern:` in `board.config.mjs` becomes a path rather than a name. Say in the report that it was
-forked and why, because from then on the kit's improvements to that pattern do not arrive. A
-handful of missing components is not this case; it is components to add to the pattern.
+reaching it. Then the board takes a pattern of its own: **`node wf.mjs pattern adopt`** moves its
+`src/components.mjs`, `src/styles.css` and `src/intro.html` up into a pattern folder, writes a
+`pattern.mjs` around them, and leaves the shim every screen already imports. `pattern:` in
+`board.config.mjs` becomes a path rather than a name.
+
+**Adopt rather than fork, and the difference is not cosmetic.** Forking a shipped pattern hands a
+board a hundred primitives it does not draw and still leaves its own ninety outside; adopting
+promotes exactly what it draws with and changes not one line of any frame.
+
+Say in the report that it was adopted and why, because from then on the kit's improvements to its
+patterns do not arrive here. **A handful of missing components is not this case** — that is
+components to add to the shipped pattern.
 
 ## 4. Prove the frames did not move
 

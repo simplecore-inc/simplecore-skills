@@ -21,7 +21,7 @@
 // there, none of them arrive. The board owns all of it from that moment. **So this is the last
 // resort and not the first** — a component that would be right in a second product drawn the same
 // way still belongs in the shipped pattern, and one or two of those is not a reason to fork.
-import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, realpathSync, statSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, realpathSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join, relative, resolve } from 'node:path';
 import { patternDirFor } from './context.mjs';
 
@@ -161,4 +161,111 @@ export function forkPattern(boardDir, { into = 'pattern', name = null } = {}) {
   const repointed = repoint(fromReal, to, resolve(fromReal, '..', '..'), boardDir);
 
   return { from: declared[1], into, name: forkName, copied, repointed, files: readdirSync(to).sort() };
+}
+
+// ── Promoting what the board already has ────────────────────────────────────
+//
+// **The other direction, and the one a board being migrated actually needs.** `forkPattern` above
+// starts from a pattern the kit ships, which is right for a board already drawn in one. A board
+// coming from before the contract has no shipped pattern behind it at all — its components, its
+// stylesheet and its reading-contract items are sitting in `src/`, written for this product. Told
+// to 「put the component in the pattern」, its author has 94 of them and no pattern to put them in,
+// and forking a shipped one would hand them a hundred primitives they do not draw and still leave
+// their own outside.
+//
+// **So the board's own `src/` becomes the pattern.** Nothing is rewritten and nothing is
+// discarded: the files move up a level, a `pattern.mjs` is written around them, and `src/` keeps
+// the one-line shim every screen already imports. The board is then a contract-3 board drawn in a
+// pattern it owns, and every core gate reaches it.
+
+/** What a board carries in `src/` that belongs to a pattern, and what each becomes. */
+const PROMOTED = ['components.mjs', 'styles.css', 'intro.html'];
+
+/** The smallest `pattern.mjs` the kit will load, written around what was promoted. */
+const PATTERN_MJS = (name, title) => `// ${name} — this board's own pattern, promoted out of \`src/\`.
+//
+// **It is a pattern rather than a folder of files because the kit draws boards from patterns.**
+// The components, the stylesheet and the reading-contract items below are what every frame here is
+// composed from and held to; they were in \`src/\` when this board built itself, and they are here
+// now that the kit builds it.
+//
+// **This board owns all of it.** Nothing arrives from the kit's own patterns, and nothing here
+// reaches another board — which is the trade a board makes by having its own. A component that
+// would be right in a second product drawn this way is better placed in a shipped pattern.
+export default {
+  name: '${name}',
+  title: '${title}',
+  description: '이 보드가 그리는 방식 — 컴포넌트·스타일시트·읽기 계약을 이 보드가 갖는다.',
+
+  /** The device classes this pattern draws. Widen it as the board draws more of them. */
+  devices: { desktop: '${title}' },
+
+  /**
+   * The gates every board in this pattern runs, on top of the kit's core gates.
+   *
+   * <p>Empty to begin with, and that is honest rather than finished: the core gates already hold
+   * the permanent id, balanced markup, reachability and the documents. A rule true of every frame
+   * drawn THIS way — a copy register, a layout discipline, a control vocabulary — belongs here,
+   * and each one added is a defect that cannot come back.
+   */
+  gates: [],
+};
+`;
+
+/**
+ * Turn what the board draws with into a pattern the board owns.
+ *
+ * @param boardDir the board folder
+ * @param options `into` the folder to create (default `pattern`), `name` the pattern's own name
+ * @returns what moved and what was written
+ */
+export function adoptPattern(boardDir, { into = 'pattern', name = null } = {}) {
+  const src = join(boardDir, 'src');
+  if (!existsSync(join(src, 'components.mjs'))) {
+    throw new Error(`${boardDir}/src/components.mjs가 없습니다 — 승격할 것이 없습니다`);
+  }
+  const shimmed = readFileSync(join(src, 'components.mjs'), 'utf8');
+  if (/export \* from '\.\..*components\.mjs';/.test(shimmed) && shimmed.split('\n').filter((l) => l.trim() && !l.trim().startsWith('//')).length <= 1) {
+    throw new Error('src/components.mjs가 이미 심(shim)입니다 — 이 보드는 이미 패턴을 쓰고 있습니다');
+  }
+  const to = join(boardDir, into);
+  if (existsSync(to)) throw new Error(`${into}/가 이미 있습니다 — 덮어쓰지 않습니다`);
+
+  mkdirSync(to, { recursive: true });
+  const moved = [];
+  for (const part of PROMOTED) {
+    const from = join(src, part);
+    if (!existsSync(from)) continue;
+    cpSync(from, join(to, part), { recursive: true });
+    rmSync(from);
+    moved.push(part);
+  }
+
+  const patternName = name ?? basename(boardDir);
+  writeFileSync(join(to, 'pattern.mjs'), PATTERN_MJS(patternName, patternName));
+
+  // The shim every screen already imports. Written last, so a run that stopped earlier leaves the
+  // board drawing from `src/` rather than from a shim pointing at a half-made pattern.
+  writeFileSync(
+    join(src, 'components.mjs'),
+    '// The composition kit, re-exported from the pattern this board owns.\n'
+    + '//\n'
+    + '// **This file is a pointer, not a place to add anything.** Every primitive lives in\n'
+    + `// \`${into}/components.mjs\`; a component added here would reach this one file and nothing else.\n`
+    + '//\n'
+    + '// It exists because the screen files import `../components.mjs`, and an ESM re-export needs a\n'
+    + '// STATIC specifier — it cannot resolve a path at run time.\n'
+    + `export * from '../${into}/components.mjs';\n`
+  );
+
+  const configPath = join(boardDir, CONFIG);
+  const wrote = existsSync(configPath);
+  if (wrote) {
+    const configSrc = readFileSync(configPath, 'utf8');
+    writeFileSync(configPath, /^\s*pattern:/m.test(configSrc)
+      ? configSrc.replace(/^(\s*pattern:\s*)'[^']+'/m, `$1'./${into}'`)
+      : configSrc.replace(/(export default \{\n)/, `$1  pattern: './${into}',\n`));
+  }
+
+  return { into, name: patternName, moved, config: wrote };
 }
