@@ -75,6 +75,8 @@ Steps 3 to 8 are the auditor's work, per cluster; steps 1, 2, and 9 are the coor
 
 10. **Where the project has a wireframe board, it is the third opinion.** The board says what each screen holds, in which state, and how the user moves between them — so a screen that renders and works can still disagree with the contract it was built against. When one exists, read the frame for each screen in scope (`simplecore:wireframe-boards`) and treat a code ⇄ board disagreement as a finding on whichever side is stale. Reconciling *every* frame of a board is a different, longer job with its own discipline → `simplecore:board-parity-walk`.
 
+    **A board draws one shape where the product may render several, and that is not a disagreement.** The clearest case is the detail: a board draws list-detail, and the running product opens that detail beside the list or as a right-edge drawer depending on one installation setting (`simplix:frontend` #69). The frame's claim is that the detail opens from that row, holds that content, and closes back to that list — not that it is a column. **Before writing 「the board draws X and the screen shows Y」, ask whether Y is a setting**: if one line at the app root turns the screen into what the board drew, the board and the code agree and the finding is about neither. What is still a finding is a difference in *behaviour* between the two shapes — a record that takes two presses to open in one and one press in the other — and that belongs to the framework, not to the screen.
+
 ---
 
 ## The Six Mandatory Censuses

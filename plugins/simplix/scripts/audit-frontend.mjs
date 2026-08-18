@@ -990,13 +990,19 @@ export type AreaStatus = (typeof AreaStatus)[keyof typeof AreaStatus];
       // Only the option names no author would ever use as an interpolation placeholder.
       // `count`, `name`, `context` and friends are legitimate values and stay unflagged.
       const OPTIONS = "defaultValue|returnObjects|keySeparator|nsSeparator|fallbackLng|skipInterpolation";
+      // The key is a quoted string OR a template literal, and the template is the half that
+      // matters: the call most tempted by `defaultValue` is the one whose key is built from a
+      // server value, and such a key routinely carries a quoted fallback inside its own
+      // interpolation (`judgement.effect.${input.effect ?? "unknown"}`). A key pattern that
+      // forbade inner quotes let exactly those through, which is every call this rule exists for.
+      const KEY = "`[^`]*`|'[^']*'|\"[^\"]*\"";
       const hits = [];
       for (const alias of translatorBindings(c).keys()) {
         hits.push(
           ...blockHits(
             c,
             new RegExp(
-              `\\b${alias}\\(\\s*[\`'"][^\`'"]*[\`'"]\\s*,\\s*\\{[^{}]*\\b(?:${OPTIONS})\\b`,
+              `\\b${alias}\\(\\s*(?:${KEY})\\s*,\\s*\\{[^{}]*\\b(?:${OPTIONS})\\b`,
               "g",
             ),
           ),
@@ -1006,18 +1012,20 @@ export type AreaStatus = (typeof AreaStatus)[keyof typeof AreaStatus];
     },
     samples: {
       file: "modules/audit/src/widgets/audit-event/list.tsx",
+      // A key built from a server value, carrying a quoted fallback inside its own interpolation.
+      // This is the shape the rule exists for and the shape a key pattern forbidding inner quotes
+      // silently let through, so it is the one the proof is taken on.
       broken: `const { t } = useTranslation("audit/widgets");
 
 <CrudList.Column field="entityType">
-  {(row) => t("auditEvent.entityType", { defaultValue: row.entityType })}
+  {(row) => t(\`auditEvent.entityType.\${row.entityType ?? "unknown"}\`, {
+    defaultValue: row.entityType ?? "",
+  })}
 </CrudList.Column>`,
-      fixed: `const { t, i18n } = useTranslation("audit/widgets");
+      fixed: `const { tOr } = useOptionalTranslation("audit/widgets");
 
 <CrudList.Column field="entityType">
-  {(row) => {
-    const key = "auditEvent.entityType." + row.entityType;
-    return i18n.exists(key) ? t(key) : row.entityType;
-  }}
+  {(row) => tOr(\`auditEvent.entityType.\${row.entityType ?? "unknown"}\`, row.entityType ?? "")}
 </CrudList.Column>`,
       miss: [
         {
@@ -3904,6 +3912,44 @@ return <Button onClick={() => refresh.mutateAsync({ data: { accessToken } })}>{t
           note: "an exception the file states in place, and then owns",
           source: `{/* actionVariant: deliberate — eleven columns, and the labels push the last one off */}
 <AreaList list={list} actionVariant="icon" />`,
+        },
+      ],
+    },
+  },
+  {
+    id: "screen-picks-detail-presentation",
+    invariant: "#31",
+    level: "error",
+    desc: "A screen names ListDetail's `variant` as a literal — whether a record opens in a panel beside the list or in a drawer over it is one decision for the installation, declared once on UIProvider's `defaults.detailPresentation`. A screen that hardcodes it takes the choice away from every installation, and seventeen screens hardcoding it mean the setting does nothing at all",
+    appliesTo: isTsx,
+    // `variant={variant}` is a widget forwarding what it was handed, and `"dialog"` is a real
+    // per-screen decision — a centred modal claims the record is an interruption rather than the
+    // thing being worked on, which no installation-wide switch should be able to turn on.
+    check: (c) =>
+      lineHits(
+        c,
+        /<ListDetail\b[^>]*\bvariant=(?:"(?:panel|drawer)"|\{\s*"(?:panel|drawer)"\s*\})/,
+        (line, lines, i) =>
+          notCommentLine(line, lines, i) &&
+          !/detailPresentation:\s*deliberate/.test(lines.slice(Math.max(0, i - 6), i).join("\n")),
+      ),
+    samples: {
+      file: "apps/console/src/widgets/area/crud-page.tsx",
+      broken: `<ListDetail variant="panel" activePanel={view} onClose={showList}>`,
+      fixed: `<ListDetail activePanel={view} onClose={showList}>`,
+      miss: [
+        {
+          note: "a centred modal, which is the screen's own claim and not an installation setting",
+          source: `<ListDetail variant="dialog" activePanel={view} onClose={showList}>`,
+        },
+        {
+          note: "a widget forwarding the variant it was handed",
+          source: `<ListDetail variant={variant} activePanel={view} onClose={showList}>`,
+        },
+        {
+          note: "an exception the file states in place, and then owns",
+          source: `{/* detailPresentation: deliberate — the map fills the viewport and a drawer would cover it */}
+<ListDetail variant="panel" activePanel={view} onClose={showList}>`,
         },
       ],
     },

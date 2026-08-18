@@ -287,6 +287,27 @@ These invariants apply to **every** frontend file you touch. Treat each as invio
     to sit at, meant to reflow. **Judge it at three widths, with the detail panel open and shut**:
     this is invisible at the width it was written at, which is the width it will be checked at.
 
+69. **How the detail appears is an installation's setting, not a screen's shape — and a board drawn
+    as list-detail does not contradict a drawer** — `ListDetail` opens the record beside the list
+    (`panel`) or slid in from the right edge (`drawer`), and which one is in force is one line at
+    the app root (`UIProvider`'s `defaults.detailPresentation`). A screen passes `variant` only
+    where the shape is genuinely its own, and `"dialog"` is the case that usually is: a centred
+    modal claims the record is an interruption rather than the thing being worked on.
+    - **A wireframe board goes on drawing list-detail whichever is in force.** The board's claim is
+      that the detail opens next to the list, holding that content, reachable from that row — not
+      that it is a column. **A screen rendering a drawer against a board drawn as list-detail is
+      not a divergence**, and an audit reporting it as one is reporting the setting.
+    - **So a visual check asks three things and not a fourth**: does the detail open from the row,
+      is the content in it what the frame draws, does closing it come back to the list unchanged.
+      Panel-or-drawer is the fourth, and it is not the screen's to answer.
+    - **The two have to behave the same, and that is the framework's job rather than the screen's.**
+      A drawer that is modal is a different screen however identical it looks: the list behind it
+      stops taking clicks, and picking the next record costs two presses where the panel costs one.
+      Non-modal is half of it — a dialog primitive will still dismiss itself on a pointer-down
+      outside, which spends that same press. Both are switched off for the drawer here. When a
+      difference in behaviour does turn up between the two, it is a defect in the framework, never
+      a thing for a screen to work around.
+
 ---
 
 ## Task Router
