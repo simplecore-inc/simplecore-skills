@@ -5,7 +5,7 @@
 // gate written here judge any board: it is handed the board rather than importing one.
 import { readFileSync, existsSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
-import { join, basename, dirname } from 'node:path';
+import { join, basename, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const kitCoreDir = dirname(fileURLToPath(import.meta.url));
@@ -40,6 +40,34 @@ const CONFIG_DEFAULTS = {
  *   settings (`doctor`, `pdf` over an already-built board), which is the difference between
  *   reading one file and importing seven hundred
  */
+/**
+ * Where the pattern this board is drawn in lives.
+ *
+ * <p><b>Two kinds, and the difference is a decision rather than a convenience.</b> A NAME is a
+ * pattern the kit ships: it resolves through the board's own `.kit` link rather than from this
+ * file's location, so a board pinned to a checkout by `WIREFRAME_KIT` loads that checkout's
+ * pattern too — one answer to 「which kit」 rather than one for the engine and another for the
+ * components. A PATH beginning with `.` is a pattern the BOARD carries, resolved from the board
+ * folder and committed with it.
+ *
+ * <p><b>A board carries its own only when the shipped ones are the wrong vocabulary.</b> A
+ * component that would be right in a second product drawn the same way belongs in the shipped
+ * pattern, where the second product gets it. A product whose component set is mostly its own has
+ * nothing to share, and without this it is outside the contract altogether — no gate reaches it
+ * and the board cannot be built by the kit at all. The cost is stated where the procedure is: a
+ * board with its own pattern stops receiving the kit's improvements to that pattern, and owns the
+ * gates that came with it.
+ *
+ * @param boardDir the board folder
+ * @param pattern the `pattern` field of `board.config.mjs`
+ * @returns the directory holding `pattern.mjs`, `components.mjs` and `styles.css`
+ */
+export function patternDirFor(boardDir, pattern) {
+  return pattern.startsWith('.')
+    ? resolve(boardDir, pattern)
+    : join(boardDir, '.kit', 'patterns', pattern);
+}
+
 export async function loadBoard(boardDir, { screens = true } = {}) {
   const configPath = join(boardDir, 'board.config.mjs');
   if (!existsSync(configPath)) {
@@ -69,13 +97,14 @@ export async function loadBoard(boardDir, { screens = true } = {}) {
     );
   }
 
-  // The pattern ships the components, the shells, the styles and its own gates. It is resolved
-  // through the board's own `.kit` link rather than from this file's location, so a board pinned
-  // to a checkout by WIREFRAME_KIT loads that checkout's pattern too — one answer to "which kit",
-  // not one for the engine and another for the components.
-  const patternDir = join(boardDir, '.kit', 'patterns', config.pattern);
+  const patternDir = patternDirFor(boardDir, config.pattern);
   if (!existsSync(patternDir)) {
-    throw new Error(`공통패턴 '${config.pattern}'이 킷에 없습니다 (${patternDir})`);
+    throw new Error(
+      `공통패턴 '${config.pattern}'을 찾지 못했습니다 (${patternDir}).\n` +
+      "킷이 싣고 다니는 패턴은 이름으로 적고(pattern: 'simplix-basic'), 이 보드가 가진 패턴은 " +
+      "보드 폴더 기준 경로로 적습니다(pattern: './pattern'). 쓸 수 있는 이름은 " +
+      'node wf.mjs patterns, 보드가 제 패턴을 갖는 절차는 node wf.mjs pattern fork입니다.'
+    );
   }
   const pattern = (await import(pathToFileURL(join(patternDir, 'pattern.mjs')).href)).default;
   const components = await import(pathToFileURL(join(patternDir, 'components.mjs')).href);

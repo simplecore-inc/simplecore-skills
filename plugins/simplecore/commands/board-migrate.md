@@ -102,6 +102,13 @@ Follow the `steps` the `migrations` output lists for each contract being crossed
 A component or a gate the board added that the pattern lacks goes **into the pattern**, not into a
 local file — that is the whole point of the move, and a board-local copy is a fork by another name.
 
+**Where MOST of what the board draws is absent from every shipped pattern, that instruction has
+nowhere to send anybody**, and the board would otherwise stay outside the contract with no gate
+reaching it. Then fork the pattern into the board and own it — `node wf.mjs pattern fork`, and
+`pattern:` in `board.config.mjs` becomes a path rather than a name. Say in the report that it was
+forked and why, because from then on the kit's improvements to that pattern do not arrive. A
+handful of missing components is not this case; it is components to add to the pattern.
+
 ## 4. Prove the frames did not move
 
 ```bash

@@ -69,12 +69,43 @@ it belongs to: a boundary the product itself does not have.
 
 `node <kit>/bin/wfb.mjs patterns` lists what is installed.
 
+### A board may carry its own pattern, and that is the last resort
+
+**A component the pattern does not have goes INTO the pattern, never into a file inside the
+board** — added to the pattern it reaches every board drawn that way, added to a board it reaches
+one. That rule assumes the product and the pattern are the same shape.
+
+**Where they are not, the rule has nowhere to send anybody.** A product whose component vocabulary
+is mostly its own — most of its names in no shipped pattern — cannot put them in a shipped
+pattern, because they would be dead weight in every other board on it. Without a third path such a
+board stays outside the contract, where no gate reaches it and the kit cannot build it at all,
+which is the worst of the three outcomes.
+
+**So `pattern` in `board.config.mjs` takes a PATH as well as a name.** A name is a pattern the kit
+ships; a path beginning with `.` is one the board carries and commits.
+
+```js
+pattern: 'simplix-basic'   // the kit's
+pattern: './pattern'       // this board's own, committed beside src/
+```
+
+**`node wf.mjs pattern fork` is the procedure.** It copies the pattern the board is currently
+drawn in — `pattern.mjs`, `components.mjs`, `styles.css`, `intro.html` and the gates — into the
+board, renames it, re-points `board.config.mjs` and the `src/components.mjs` shim, and rewrites
+what the copied files import from the kit so they reach it through the board's `.kit` link. The
+board builds and its gates run exactly as before; what changed is who owns them.
+
+**The cost, and why this is last rather than first.** A forked pattern stops receiving the kit's
+improvements to the pattern it came from — a component added there, a gate tightened there, a
+stylesheet fix there, none of them arrive. One or two missing components is not a reason to fork;
+it is a reason to add them where the second product drawn that way will get them.
+
 ## Three places a gate can live, and the test that decides
 
 | | Holds | Lives in |
 | --- | --- | --- |
 | **core** | true of any board — the permanent id, balanced markup, a leaked value, reachability, a declared document disagreeing with the board | `kit/core/gates/` |
-| **pattern** | true of any board drawn this way — the copy register, list-detail discipline, the control vocabulary | `kit/patterns/<name>/gates/` |
+| **pattern** | true of any board drawn this way — the copy register, list-detail discipline, the control vocabulary | `kit/patterns/<name>/gates/`, or the board's own pattern folder where it forked one |
 | **board** | true of this repository only — a document format this project chose, a data shape it invented | `<board>/board.gates.mjs` |
 
 **Ask whether it would still be right on somebody else's board.** A gate one level too high fires

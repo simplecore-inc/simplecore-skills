@@ -48,6 +48,8 @@ const HELP = `wireframe-boards — 보드를 빌드하고 점검하는 명령
   shots <디렉터리> [id접두]         프레임마다 PNG 한 장을 저장합니다
   doctor                          이 보드의 계약 버전과 남은 작업
   patterns                        쓸 수 있는 공통패턴
+  pattern fork [--into <디렉터리>] [--name <이름>]
+                                  지금 패턴을 보드 안으로 복사하고 보드가 그것을 쓰게 합니다
   init --pattern <이름> --name <제품>   새 보드를 세웁니다 (킷에서 직접 실행)
 공통: --board <디렉터리> (기본값은 현재 디렉터리)`;
 
@@ -64,6 +66,29 @@ if (cmd === 'patterns') {
     console.log(`${p.name}\n  ${p.title}\n  ${p.description}`);
     for (const [k, v] of Object.entries(p.devices ?? {})) console.log(`    ${k.padEnd(8)} ${v}`);
   }
+  console.log(
+    '\n보드가 제 패턴을 가질 수도 있습니다 — board.config.mjs에 경로로 적습니다'
+    + " (pattern: './pattern').\n  쓰는 컴포넌트가 대부분 위 패턴에 없을 때의 길이고,"
+    + ' node wf.mjs pattern fork 가 지금 패턴을 복사해 그렇게 바꿔 줍니다.\n'
+    + '  하나 둘 모자란 것은 포크할 일이 아니라 패턴에 더할 일입니다 — 포크한 뒤에는'
+    + ' 킷이 그 패턴을 고쳐도 이 보드에 오지 않습니다.'
+  );
+  process.exit(0);
+}
+
+if (cmd === 'pattern') {
+  if (positional[0] !== 'fork') die("pattern 뒤에는 fork만 옵니다 — node wf.mjs pattern fork [--into <디렉터리>]");
+  const { forkPattern } = await import('../core/fork-pattern.mjs');
+  const report = forkPattern(boardDir, { into: opt('into', 'pattern'), name: opt('name', null) });
+  console.log(`${report.from} 패턴을 ${report.into}/ 로 복사하고 '${report.name}'으로 이름을 바꿨습니다.`);
+  for (const f of report.files) console.log(`  + ${report.into}/${f}`);
+  console.log(`  ~ board.config.mjs  pattern: './${report.into}'`);
+  console.log(`  ~ src/components.js 재수출 → ../${report.into}/components.mjs`);
+  console.log(
+    '\n이제 이 보드가 그 패턴의 주인입니다 — 컴포넌트도 게이트도 스타일도 여기서 고칩니다.'
+    + '\n킷이 원래 패턴을 고쳐도 이 복사본에는 오지 않습니다.'
+    + '\n다음: node wf.mjs build --no-pdf 로 그대로 그려지는지 봅니다.'
+  );
   process.exit(0);
 }
 

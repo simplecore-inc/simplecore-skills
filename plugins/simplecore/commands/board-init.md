@@ -51,6 +51,12 @@ Say what each one is for, in one line, from the `patterns` output. `simplix-basi
 admin shape: a list-detail console, the phone app its users carry, and the shared terminal, all
 three in one pattern because they are one product.
 
+**Say the third option too, once, and do not recommend it.** Where none of the installed patterns
+is the product's shape, a board can carry its own — start on the closest one and run
+`node wf.mjs pattern fork` later. It is the last resort rather than a choice at this step: a
+forked pattern stops receiving the kit's improvements, and a product that shares most of its
+component vocabulary with a shipped pattern is better off adding the two or three it lacks.
+
 Ask **one more thing in the same call**: whether to keep the pattern's starter frames.
 
 | | What it means |
