@@ -56,6 +56,15 @@ export const CHAPTER_LINE_ROLES = ['persona', 'verdict', 'states'];
  */
 export const EVIDENCE_LABEL_ROLES = ['did', 'demanded', 'saw'];
 
+/**
+ * The three vocabularies that decide whether a rule handed to eyes says who reads it and when.
+ *
+ * <p>`assigns` is how a sentence says no machine judges this, `reader` is who takes the reading,
+ * and `moment` is when. Each is a list of literal phrases in the project's own language, matched
+ * case-insensitively inside one statement.
+ */
+export const EYES_PHRASE_ROLES = ['assigns', 'reader', 'moment'];
+
 /** The roles `chapterHeadings` maps, so nothing in the skill has to know one project's wording. */
 export const SCHEMA = {
   boardRoot: { kind: 'dir', required: true },
@@ -100,6 +109,11 @@ export const SCHEMA = {
   locales: { kind: 'list' },
   pseudoLocale: { kind: 'text' },
   captureRoute: { kind: 'text' },
+  // The documents that hand checks to human eyes, and the words they hand them in. Not `closing`:
+  // a project that declares neither closes chapters perfectly well and simply gets no check over
+  // its own eyes rules, which `doctor` shows as two undeclared keys rather than as a green page.
+  eyesDocuments: { kind: 'list' },
+  eyesPhrases: { kind: 'phrases', roles: EYES_PHRASE_ROLES },
   logDir: { kind: 'outdir' },
   capturesDir: { kind: 'outdir' },
   costLog: { kind: 'outfile' },

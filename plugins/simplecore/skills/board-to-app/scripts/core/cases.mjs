@@ -4,6 +4,7 @@
 // on nothing, and neither announces itself from a green run.
 import { cleanProject } from './harness.mjs';
 import { cases as evidenceCases } from './evidence.mjs';
+import { cases as eyesCases } from './eyes.mjs';
 
 /** Merge an override into the clean project without mutating it. */
 function variant(over = {}) {
@@ -24,6 +25,7 @@ function variant(over = {}) {
 export function cases(t) {
   const add = (gate, name, spec, shouldFire) => t.add(gate, name, t.project(variant(spec)), shouldFire);
   evidenceCases(t);
+  eyesCases(t);
 
   // configGate — the gate that makes "never guess a path" mechanical.
   add('configGate', 'a required key is not declared', { config: { boardRoot: undefined } }, true);
@@ -31,6 +33,21 @@ export function cases(t) {
   add('configGate', 'a heading map missing a role', { config: { chapterHeadings: { prerequisites: 'Before' } } }, true);
   add('configGate', 'a key nobody reads', { config: { handOverFile: 'notes/HANDOVER.md' } }, true);
   add('configGate', 'an exception with no reason', { config: { disabledGates: [{ id: 'ledgerGate' }] } }, true);
+  // A vocabulary with an empty role matches nothing, and a check that matches nothing reports the
+  // same zero as one with nothing to find — which is why an empty list is a finding rather than a
+  // shorter list.
+  add(
+    'configGate',
+    'a phrase vocabulary with one of its roles empty',
+    { config: { eyesPhrases: { assigns: ['stays with eyes'], reader: [], moment: ['before '] } } },
+    true,
+  );
+  add(
+    'configGate',
+    'the same vocabulary with every role filled',
+    { config: { eyesPhrases: { assigns: ['stays with eyes'], reader: ['the coordinator'], moment: ['before '] } } },
+    false,
+  );
   add('configGate', 'everything declared and everything there', {}, false);
   add(
     'configGate',

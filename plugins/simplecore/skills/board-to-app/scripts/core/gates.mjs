@@ -46,6 +46,7 @@ import { pathToFileURL } from 'node:url';
 import { HEADING_ROLES, SCHEMA, isPathKey } from './context.mjs';
 import { NARRATIVE_PHRASES, hasHeading, onlyQuoted, proseLines, sectionUnder } from './prose.mjs';
 import { EVIDENCE_GATES } from './evidence.mjs';
+import { EYES_GATES } from './eyes.mjs';
 
 /** What a finding of a gate is: a defect to fix, or a line to go and re-read. */
 export const GRADES = ['error', 'warning'];
@@ -75,6 +76,7 @@ const TYPE_OF = {
   text: 'a non-empty string',
   list: 'an array',
   headings: 'an object of role → heading',
+  phrases: 'an object of role → a non-empty array of phrases',
   exceptions: 'an array of { id, reason }',
   deferrals: 'an object of key → { chapter, whenExists }',
 };
@@ -176,6 +178,25 @@ export const configGate = {
               `${key}.${name} names the chapter that creates its subject and the path whose appearance makes it due — { "chapter": …, "whenExists": … }`
             );
           }
+        }
+        continue;
+      }
+      if (spec.kind === 'phrases') {
+        if (typeof value !== 'object' || Array.isArray(value)) {
+          findings.push(`${key} must be ${TYPE_OF.phrases}`);
+          continue;
+        }
+        for (const role of spec.roles ?? []) {
+          const list = value[role];
+          if (!Array.isArray(list) || !list.length || list.some((p) => typeof p !== 'string' || !p.trim())) {
+            findings.push(
+              `${key}.${role} names no phrases — a vocabulary with an empty role matches nothing, and a `
+              + 'check that matches nothing reports the same zero as one with nothing to find'
+            );
+          }
+        }
+        for (const role of Object.keys(value)) {
+          if (!(spec.roles ?? []).includes(role)) findings.push(`${key}.${role} is not a role this skill knows`);
         }
         continue;
       }
@@ -612,6 +633,7 @@ export const CORE_GATES = [
   // What a closed chapter leaves behind. They sit in a module of their own because they are the
   // longest thing here and they read documents rather than configuration.
   ...EVIDENCE_GATES,
+  ...EYES_GATES,
 ];
 
 /**
