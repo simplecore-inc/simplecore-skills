@@ -256,10 +256,21 @@ One frame per tabbed screen rather than one per pane. The base keeps its own dra
 opens stays where it is, and the alternative — rewriting every tabbed screen to take its open pane
 as a parameter — is what this avoids.
 
-**`simplix-basic` carries the two pieces**, so a board on that pattern composes the frame rather
-than inventing it: `regionPh({ label, ref })` for the list column and
+**The companion's layout is the base's layout** — never a fixed shape applied to every base. Read
+the base's body first and match it, because a companion is drawing panes the base already owns a
+place for, not adding a region the product does not have.
+
+| The base draws | The companion draws |
+| --- | --- |
+| `listDetail(list, detail)` | `regionPh` in the list column, a divider, the panes stacked in the detail column |
+| a full-width record screen — `pageHeader` + `tabs`/`recordTabs`, no `listDetail` | the panes at full width, **no placeholder** |
+
+**`simplix-basic` carries the pieces** for the first row, so a board on that pattern composes the
+frame rather than inventing it: `regionPh({ label, ref })` for the list column and
 `tabPanes({ strip, open, ref, panes })` for the detail column, wrapped in the pattern's own
-`listDetail(list, detail)`.
+`listDetail(list, detail)`. The second row is `head + tabPanes({ …, region: '화면' })` and nothing
+else. `companionFollowsBaseLayoutGate` holds both directions — an invented placeholder and a
+missing one.
 
 **A base whose strip is the PAGE's has no list column to stand for, and the companion must not
 claim one.** A settings screen or a record page draws `head + tabStrip() + …` with no

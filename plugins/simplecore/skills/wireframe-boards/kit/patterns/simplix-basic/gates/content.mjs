@@ -1327,6 +1327,43 @@ export const helpShapeGate = {
   },
 };
 
+// A companion frame draws the panes its base's tab strip names and the base does not open, and it
+// draws them WHERE THE BASE PUTS THEM. On a list-detail base the panes belong in the detail column,
+// so the companion stands a `regionPh` in the list column to say the list is the base's to draw. On
+// a full-width record screen — `pageHeader` + `recordTabs`, no list anywhere — that placeholder is
+// a column the product does not have, invented because the two-column shape looks like the house
+// style. Thirteen companions did exactly that before this gate existed.
+//
+// **Both directions are wrong and only one of them looks wrong.** A placeholder over a base with no
+// list reads as a screen that lost its list; a companion of a list-detail base that omits the
+// placeholder reads as a page whose panes run the full width, which is a different layout from the
+// one the base contracts. So the test is agreement with the base, not a fixed number of columns.
+export const companionFollowsBaseLayoutGate = {
+  id: 'companionFollowsBaseLayoutGate',
+  title: '동반 프레임이 바탕과 다른 배치를 그린다',
+  stage: 'built',
+  run: (ctx) => {
+    const bad = [];
+    const files = new Set(ctx.screens.map((sc) => sc.file));
+    for (const sc of ctx.screens) {
+      const src = ctx.srcOf(sc.file);
+      if (!/\btabPanes\s*\(/.test(src)) continue;
+      const imp = /^import\s+\w+[^\n]*from\s+'\.\/([a-z0-9-]+)\.mjs';/m.exec(src);
+      if (!imp || !files.has(imp[1])) continue;
+      const baseSrc = ctx.srcOf(imp[1]);
+      const draws = /\bregionPh\s*\(|\blistDetail\s*\(/.test(src);
+      const baseIsListDetail = /\blistDetail\s*\(/.test(baseSrc);
+      if (draws && !baseIsListDetail) {
+        bad.push(`${sc.file}: 바탕(${imp[1]})에 목록 열이 없는데 목록 플레이스홀더를 그린다 — 칸을 폭 전체로 쌓는다`);
+      }
+      if (!draws && baseIsListDetail) {
+        bad.push(`${sc.file}: 바탕(${imp[1]})이 목록·상세인데 목록 플레이스홀더가 없다 — 왼쪽에 regionPh를 둔다`);
+      }
+    }
+    return bad;
+  },
+};
+
 // board.config.mjs draws the phase band and the feature chip side by side and insists neither can
 // stand in for the other. Two tags spelling the same string make that claim unreadable — the frame
 // prints one word twice and a reader has no way to tell schedule from entitlement.

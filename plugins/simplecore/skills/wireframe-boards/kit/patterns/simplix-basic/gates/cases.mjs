@@ -268,6 +268,24 @@ export function cases(t) {
     ctxWith([screen('x-01-a', "  helpCard({\n    title: '무엇이 남는가',\n    hint: '접수 → 조사 → 종결 · 열람이 남는다',\n  })")]), true);
   add('helpShapeGate', '「마다」로 끝나는 마디는 서술어가 아니다',
     ctxWith([screen('x-01-a', "  helpCard({\n    title: '반기 확인은 무엇까지 보는가',\n    hint: '6개월마다 · 종료 시 · 수시 확인',\n  })")]), false);
+  // A companion is judged against its base, not against a fixed column count. The base's source is
+  // what says which of the two layouts is right, so every case here carries both files.
+  const LD_BASE = screen('x-02-b', "listDetail(list, detail)");
+  const REC_BASE = screen('x-02-b', "pageHeader({ title: 'x' }) + recordTabs([{ label: '개요' }], body)");
+  const WITH_PH = "import base, { head, tabStrip } from './x-02-b.mjs';\nlistDetail(regionPh({ label: 'l', ref: 'r' }), tabPanes({ strip: tabStrip, open: '개요', ref: 'r', panes: [] }))";
+  const NO_PH = "import base, { head, tabStrip } from './x-02-b.mjs';\nhead + tabPanes({ strip: tabStrip, open: '개요', ref: 'r', panes: [], region: '화면' })";
+  add('companionFollowsBaseLayoutGate', '바탕에 목록 열이 없는데 플레이스홀더를 그린다',
+    ctxWith([screen('x-01-a', WITH_PH), REC_BASE]), true);
+  add('companionFollowsBaseLayoutGate', '전면 레코드 바탕은 폭 전체로 쌓는다',
+    ctxWith([screen('x-01-a', NO_PH), REC_BASE]), false);
+  add('companionFollowsBaseLayoutGate', '목록·상세 바탕인데 플레이스홀더가 없다',
+    ctxWith([screen('x-01-a', NO_PH), LD_BASE]), true);
+  add('companionFollowsBaseLayoutGate', '목록·상세 바탕은 왼쪽에 자리를 둔다',
+    ctxWith([screen('x-01-a', WITH_PH), LD_BASE]), false);
+  // Only a companion is judged — an ordinary screen drawing a list-detail imports no base.
+  add('companionFollowsBaseLayoutGate', '동반이 아닌 화면은 대상이 아니다',
+    ctxWith([screen('x-01-a', "listDetail(list, detail)"), LD_BASE]), false);
+
   add('tagCollisionGate', '단계 태그와 기능 태그가 같다',
     ctxWith([], { config: { ...config, phases: { pack: { tag: '건설 팩' } }, features: { PACK_CONSTRUCTION: { tag: '건설 팩' } } } }), true);
   add('tagCollisionGate', '두 축이 다른 낱말을 쓴다',
