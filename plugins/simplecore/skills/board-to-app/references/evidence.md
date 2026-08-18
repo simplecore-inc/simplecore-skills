@@ -328,8 +328,9 @@ round stops converging — five more sections get written while the next fix inv
 before them.
 
 **Appending does not prevent this.** The rule that a new demand goes at the END of a line exists so
-that a quote already written stays a contiguous prefix of it; it holds against INSERTING and says
-nothing about SUBSTITUTING. Replacing a phrase inside a line invalidates every section that quoted
+that a quote already written stays a contiguous prefix of it (`references/demands.md` § *A demand
+that grows is appended, never substituted*); it holds against INSERTING and says nothing about
+SUBSTITUTING. Replacing a phrase inside a line invalidates every section that quoted
 that line, wherever the phrase sat.
 
 **So a fix to what a chapter demands is collected and released between rounds, never during one.**

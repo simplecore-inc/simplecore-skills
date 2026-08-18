@@ -1422,8 +1422,17 @@ command `chapterGenerator` names.
 
 What a generated chapter carries: the previous chapter and the state it leaves, the
 chapters that must close first and those that may run alongside, the frames it owns as
-board ids, and per screen a build line plus one test line per persona quoting the
-frame's own tabs, counts, messages and primary action.
+board ids, and per screen a build line plus one test line per persona.
+
+**What goes ON that test line is the whole value of the arrangement, and it is not
+obvious.** A line quoting the frame's tabs, counts, messages and primary action describes
+a screen being LOOKED AT; every control a person presses — the panes behind the open one,
+the empty state, the search and its filters, the row actions, the header buttons, the
+panel's verbs — is invisible to it, and a screen can satisfy such a line while having
+none of them. Widening one chapter set from the first shape to the second had seven
+screens answer 「that is not there」 which had all passed before. **`references/demands.md`
+is what a demand list has to hold and why**, written for a generator this skill does not
+ship.
 
 **A chapter with no frames is outside all of that, and the generator says which.** There
 is nothing to derive for a foundation chapter — no frames, no personas, so no quoted
@@ -1452,6 +1461,7 @@ rediscovering it:
 | you are about to drive the product — browser, simulator, device | `references/driving-the-product.md`, which also says where a low-level command beats the tool |
 | two agents must write one file, or a measurement surprises you, or a check has never fired | `references/harness.md` |
 | you are deciding what the seed and the captures tell as one story | `references/scenario.md` |
+| you are writing or widening the generator that produces the chapters | `references/demands.md` — what a demand list holds, why a demand is an act rather than an observation, and the three ways an irreversible verb is walked up to |
 | the project has been reconciling its board frame by frame and has no chapter set yet | `references/migrating-from-a-walk.md` — what its config carries over, how the chapters are decided, and the order that leaves the project working at every step |
 
 ## Where the other skills stand
