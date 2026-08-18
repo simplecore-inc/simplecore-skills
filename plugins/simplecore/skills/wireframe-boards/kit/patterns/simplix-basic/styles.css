@@ -564,7 +564,10 @@
                  display: flex; align-items: center; gap: 6px; }
   .stabs .stab.active { background: var(--screen); color: var(--ink); font-weight: 600; border: 1px solid var(--line); }
   .stabs .stab .n { margin-left: auto; font: 10px var(--mono); color: var(--faint); }
-  .rec > .rec-b { flex: 1 1 auto; min-width: 0; }
+  /* The record's own column stacks page-level blocks — a filter bar, a table, a message, a
+     section — so it is spaced the way the content column is. A block that draws its own margin
+     instead drifts out of line with the side tabs beside it. */
+  .rec > .rec-b { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 14px; }
 
   /* A titled group of read-only fields. Two to a row — one value per line runs off-screen
      long before it runs out of fields. */
@@ -650,7 +653,10 @@
   .tp-t { font-size: 12.5px; font-weight: 700; color: var(--ink); }
   .tp-h .n { font: 10px var(--mono); color: var(--faint); }
   .tp-v { display: flex; align-items: center; gap: 6px; flex: 0 0 auto; }
-  .tp-b { padding: 10px 12px; }
+  /* Inside a pane, spaced the way .tabbody is — the pane's border already separates it from
+     what is around it, so its blocks sit closer than the page's do. Without this the table and
+     the message under it are drawn touching, which reads as one block with a line through it. */
+  .tp-b { padding: 10px 12px; display: flex; flex-direction: column; gap: 10px; }
 
   /* A tab whose body is a list rather than a field group. */
   .tabbody { display: flex; flex-direction: column; gap: 10px; }
@@ -778,6 +784,10 @@
   .trow.thead { background: var(--fill); font: 600 11px var(--mono); color: var(--muted); letter-spacing: 0.04em; }
   .trow.tgroup { background: var(--fill); font-weight: 600; color: var(--ink); }
   .td { flex: 1; min-width: 0; }
+  /* A cell holding controls spaces them, the way every other row of controls on the board is
+     spaced. Two buttons written one after the other used to be drawn edge to edge, which reads
+     as one wide control with a line through it — and in a narrow column they wrap and stack. */
+  .td:has(> .btn) { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
   .td.w2 { flex: 2; }
   /* A column that does not share the leftover width. It holds its floor and grows past it
      rather than wrapping what is inside — an action column at a fixed width folds its last
@@ -982,6 +992,8 @@
   .chips .chips-note { margin-left: auto; padding-left: 12px; font-size: 12px; color: var(--muted); }
 
   .card { border: 1px solid var(--line); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+  /* A box that stands in for the page's content rather than sitting among other cards. */
+  .card.p-lg { padding: 24px 20px; gap: 14px; }
   .list-card { border: 1px solid var(--line); border-radius: 8px; padding: 10px; display: flex; gap: 10px; align-items: center; }
   .list-card .thumb { width: 48px; height: 48px; flex: 0 0 auto; min-height: 0; }
   .list-card .lines { flex: 1; display: flex; flex-direction: column; gap: 6px; }

@@ -107,6 +107,52 @@ export async function inspectBoard(boardDir, { framePrefix = '' } = {}) {
         }
       }
 
+      // Two boxes drawn edge to edge fuse into one shape with a line through it. It is a container
+      // that causes it rather than either box — a stack whose parent sets no `gap` and whose blocks
+      // set no margin — so one missing rule empties the space under every table on every frame that
+      // container draws, and nothing errors. It reached 42 places on this board before a person
+      // looked at a screen and said the message under the table was stuck to it.
+      //
+      // **What counts as a box is what the reader sees as one**: a border all the way round, or a
+      // rounded fill. Rows inside a table, a header band above a pane body and a title above its own
+      // subtitle all touch on purpose and draw no such box, which keeps this quiet on them without a
+      // list of exceptions.
+      //
+      // **The boxes are compared to each other rather than as siblings, and that is the whole
+      // check.** Written as «two adjacent children of one parent» it went quiet on the defect it was
+      // built for: the table sits inside a bare flex wrapper and the message beside that wrapper, so
+      // the two elements that touch are not siblings and the wrapper draws no box of its own. What a
+      // reader sees is two borders meeting, wherever the two live in the tree.
+      const boxed = (el) => {
+        const cs = getComputedStyle(el);
+        const round = ['borderTopWidth', 'borderRightWidth', 'borderBottomWidth', 'borderLeftWidth']
+          .every((side) => parseFloat(cs[side]) > 0);
+        const filled = parseFloat(cs.borderTopLeftRadius) > 0
+          && cs.backgroundColor !== 'rgba(0, 0, 0, 0)' && cs.backgroundColor !== 'transparent';
+        return round || filled;
+      };
+      const drawn = [...screen.querySelectorAll('*')]
+        .map((el) => ({ el, r: el.getBoundingClientRect() }))
+        .filter(({ el, r }) => r.height > 0 && r.width > 40 && boxed(el));
+      const named = (el) => String(el.className).split(' ')[0] || el.tagName.toLowerCase();
+      let fused = null;
+      for (const above of drawn) {
+        for (const below of drawn) {
+          if (above === below) continue;
+          // A box inside another shares its edge by construction — a panel's foot sits on the
+          // panel's own border — and that is not two boxes meeting.
+          if (above.el.contains(below.el) || below.el.contains(above.el)) continue;
+          if (Math.abs(below.r.top - above.r.bottom) > 0.6) continue;
+          // Same column and same width: two blocks in one stack. A box that merely happens to end
+          // where a narrower one begins is beside it, not above it.
+          if (Math.abs(below.r.left - above.r.left) > 2 || Math.abs(below.r.width - above.r.width) > 2) continue;
+          fused = `${named(above.el)} | ${named(below.el)}`;
+          break;
+        }
+        if (fused) break;
+      }
+      if (fused) issues.push(`붙음:${fused} — 두 상자가 맞닿아 한 덩어리로 그려진다. 담은 컨테이너에 gap이 없다`);
+
       // A desktop screen may run past its fold — it scrolls — but its primary action may not.
       // The primary action is the emphasised button in the page header; a screen whose main act is
       // destructive has a `danger` there and no `primary` at all. Only when the header carries
