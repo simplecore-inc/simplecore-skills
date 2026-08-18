@@ -116,8 +116,16 @@ list and is really a summary of the page.
 - **What was in the chain goes ABOVE the tabs** — the first of the four homes above. The
   controls then end up next to what they control, and the figures read as the page's own.
 - **A note that depends on WHICH chip is chosen rides the chip row's right end.** A line of
-  its own under the chips is the very block this forbids; a sentence that reads the same
-  whichever chip is picked is a page fact and goes above the tabs, by the test below.
+  its own under the chips is the very block this forbids. **The test is one question: does
+  this sentence change when the chip changes?** Changes — the chip row's right end. Does not
+  — it is a page note and goes above the tabs, beside the help card and the warning band. A
+  sentence saying where a field's values come from, or what the tiles counted, reads the same
+  whichever chip is picked and is one of those.
+- **Which side of that question a sentence falls on needs eyes**, so name whose. A gate can
+  see that something stands between the chip row and the list and no further — a regex reads
+  the sentence the same either way. The reader is somebody who did not draw the frame, at a
+  moment the work cannot pass without; drawing it and judging it in one head produces the
+  answer the author already had.
 - **A list's tabs and a record's content tabs are different things.** The first splits a
   list into kinds somebody works through separately; the second switches what one record
   shows. Only the first is in this rule.

@@ -41,8 +41,13 @@ export const badge = (text, variant = '') => `<span class="${cls('badge', varian
  *
  * `note` is the one sentence that depends on WHICH chip is chosen — 「연동 방식에 따라 준비 사항이
  * 다릅니다」. It rides the right end of the same row, because a line of its own below the chips is
- * the very block this arrangement forbids. Keep it to a clause; anything a reader acts on, or that
- * reads the same whichever chip is picked, is a page fact and belongs above the tabs.
+ * the very block this arrangement forbids. Keep it to a clause.
+ *
+ * <p>**The test is one question: does this sentence change when the chip changes?** If it does not
+ * — a note on where a field's values come from, on what the tiles counted — it is a page fact and
+ * belongs above the tabs, beside the help card and the warning band. That question is answered by
+ * reading the sentence, so it is not one the gate can take: it sees a block standing between the
+ * chip row and the list, and stops there.
  */
 export const chips = (items, { note = '' } = {}) =>
   `<div class="chips">${items.join('')}` +
