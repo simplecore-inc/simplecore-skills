@@ -17,13 +17,17 @@ import { cases as coreCases } from './core/cases.mjs';
 
 const argv = process.argv.slice(2);
 const cmd = argv[0] ?? 'help';
+/** Whether a bare switch was passed. */
+const flag = (name) => argv.includes(`--${name}`);
 const opt = (name, fallback = undefined) => {
   const i = argv.indexOf(`--${name}`);
   return i >= 0 && argv[i + 1] && !argv[i + 1].startsWith('--') ? argv[i + 1] : fallback;
 };
 
 const HELP = `board-to-app — the generic checks a build runs on
-  check [--range <rev-range>]   every gate against this project (trailers: HEAD, or the range)
+  check [--range <rev-range>] [--warnings]
+                                every gate against this project (trailers: HEAD, or the range).
+                                A warning prints as one finding and a count; --warnings prints all
   gates                         every gate against the defect it exists to catch
   doctor                        what this project declares, and what it owes
 common: --config <path> (default: .claude/board-to-app.json, found by walking up)`;
@@ -71,7 +75,19 @@ async function check() {
     if (advisory) warnings += findings.length;
     else errors += findings.length;
     console.log(`\n${advisory ? '⚠' : '✖'} ${gate.id} — ${gate.title}`);
-    for (const finding of findings) console.log(`   ${finding}`);
+    // **An error is printed whole; a warning is printed as one and a count.**
+    //
+    // A warning is a prompt to re-read, so what it needs to convey is which gate fired and roughly
+    // how much — the text of the eightieth one changes nothing about what the reader does next. On
+    // a live repository this block ran to forty-three thousand characters against a run whose
+    // verdict was 「no errors」, and every agent that ran the command paid for all of it, as did
+    // every write that tripped the hook. `--warnings` prints them in full for the pass where
+    // somebody is actually working through them.
+    const shown = advisory && !flag('warnings') ? findings.slice(0, 1) : findings;
+    for (const finding of shown) console.log(`   ${finding}`);
+    if (shown.length < findings.length) {
+      console.log(`   … 외 ${findings.length - shown.length}건 — 전문은 --warnings`);
+    }
   }
 
   for (const [id, reason] of disabled) console.log(`⚠ ${id} is off — ${reason}`);

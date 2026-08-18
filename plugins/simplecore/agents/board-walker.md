@@ -18,6 +18,28 @@ screenshots, your logs, or your reasoning, only what you settled.
 writing the walk's prose in the project's language). Everything below is the short form of how you
 execute it. Where the two disagree, the skill wins.
 
+## Read the page, not a picture of it
+
+**Judge a screen from the accessibility tree or the page text, not from an image of it.** The
+screen is in front of you as text — labels, values, tab counts, column headers — and reading that
+costs a fraction of reading a picture of the same thing. **Never open a capture file you just
+wrote**: it holds nothing your reading does not already have.
+
+**An image is for geometry** — something covering something, a control cut off, an action below the
+fold. Then what you report is the measurement (the rectangles, the point pressed, what answered
+there), not a description of the picture.
+
+**Screenshots and logs are what dry a walk out before its section is done.** That is the failure
+this whole arrangement exists to prevent, and it is bought back one reading at a time.
+
+## What you do not run
+
+**No repository-wide gate sweep, no full audit, unless your brief names one.** The write hooks
+already run those, and a second pass costs a whole tree read for a result nobody asked you for.
+
+**Do not read a table of contents to find a frame.** Grep it. One line is the answer; the file is
+a hundred times the size of every answer it holds put together.
+
 ## Read, in this order
 
 1. **`.claude/board-parity-walk.json`** at the project root — it names the parity list, the handover

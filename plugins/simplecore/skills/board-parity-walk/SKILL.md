@@ -205,6 +205,18 @@ That failure is the reason this skill exists.
    disagreements the walk exists to catch, because no single walker sees both sides.
    A cluster of frames that have to be *built* is smaller than one that only has to
    be compared → `references/walking-a-cluster.md`.
+   **Hand the TEXT of what the walker must act on; hand a PATH only for what it must
+   search.** A board's table of contents runs past a hundred thousand characters and one
+   frame's line in it is about a hundred, so a walker handed the manifest's path to find
+   its frames pays a thousand times what the answer is worth — and pays it again on the
+   next cluster. The coordinator already knows which frames the cluster holds; passing
+   their lines costs one copy. Paths stay right for what the walker genuinely ranges over:
+   the config, the documents it must read whole, the screen files themselves.
+
+   **This is what makes a per-cluster agent affordable.** An agent that loads the
+   instruction files, the manifest and both project documents has spent most of a context
+   before it opens a browser.
+
 2. **Finish, then replace.** When the cluster is done the agent ends, and the next
    cluster gets a **new** agent. Never stack a second cluster on a running one —
    preventing accumulated context is the whole point. **Stop a walker once its
