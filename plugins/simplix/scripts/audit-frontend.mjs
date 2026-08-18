@@ -4021,14 +4021,30 @@ function packageExportFindings() {
       }
       const exports = parsed.exports;
       if (!exports || typeof exports !== "object") continue;
+      // `files` decides what a publish carries. Absent, everything ships and nothing can be
+      // missing; present, it is a whitelist and a `source` target outside it exists only in the
+      // checkout.
+      const published = Array.isArray(parsed.files)
+        ? parsed.files.map((entry) => String(entry).replace(/^\.?\//, "").replace(/\/+$/, ""))
+        : null;
       for (const [subpath, entry] of Object.entries(exports)) {
         // A string entry names one file for every condition, so there is nothing to fall through
         // to and nothing to declare. Only a conditional entry can omit the source condition.
         if (!entry || typeof entry !== "object") continue;
-        if ("source" in entry) continue;
+        if (!("source" in entry)) {
+          findings.push({
+            file: path.relative(ROOT, manifest),
+            excerpt: `"${subpath}" resolves to ${entry.import ?? entry.default ?? "dist"} in dev — add "source"`,
+          });
+          continue;
+        }
+        if (!published || typeof entry.source !== "string") continue;
+        const target = entry.source.replace(/^\.?\//, "");
+        if (published.some((dir) => target === dir || target.startsWith(`${dir}/`))) continue;
         findings.push({
           file: path.relative(ROOT, manifest),
-          excerpt: `"${subpath}" resolves to ${entry.import ?? entry.default ?? "dist"} in dev — add "source"`,
+          excerpt: `"${subpath}" names source ${entry.source}, which "files" does not publish — `
+            + `add "${target.split("/")[0]}" to files`,
         });
       }
     }
@@ -4355,7 +4371,7 @@ const COLLECTION_RULES = [
     id: "package-export-without-source",
     invariant: "#5",
     level: "error",
-    desc: "A workspace package's export entry carries no `source` condition, so the dev server serves that subpath from `dist/` — every source edit under it is invisible in the browser while HMR reports success, and the screen shows the code as it was at the last build. `simplix scaffold` writes the `./pages` entry this way",
+    desc: "A package's export entry carries no `source` condition — the dev server then serves that subpath from `dist/`, every source edit under it is invisible in the browser while HMR reports success, and the screen shows the code as it was at the last build (`simplix scaffold` writes the `./pages` entry this way) — or it names a `source` file that `files` does not publish, which resolves in this checkout and throws ERR_MODULE_NOT_FOUND for anyone who installs the package from a registry",
     collect: packageExportFindings,
     samples: {
       broken: {
@@ -4383,6 +4399,31 @@ const COLLECTION_RULES = [
         },
       },
       miss: [
+        {
+          note: "a source target inside a published directory",
+          files: {
+            "packages/ui/package.json": `{
+  "name": "@acme/ui",
+  "files": ["dist", "src"],
+  "exports": {
+    ".": { "source": "./src/index.ts", "types": "./dist/index.d.ts", "import": "./dist/index.js" }
+  }
+}
+`,
+          },
+        },
+        {
+          note: "no files whitelist, so the publish carries everything the exports name",
+          files: {
+            "packages/ui/package.json": `{
+  "name": "@acme/ui",
+  "exports": {
+    ".": { "source": "./src/index.ts", "types": "./dist/index.d.ts", "import": "./dist/index.js" }
+  }
+}
+`,
+          },
+        },
         {
           note: "a string entry names one file for every condition — there is nothing to fall through to",
           files: {
