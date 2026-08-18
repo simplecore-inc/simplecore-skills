@@ -82,8 +82,16 @@ export const qrBlock = ({ label = 'QR', caption = '', children = '', size = '' }
   `${caption ? `<div class="qb-cap">${caption}</div>` : ''}</div>` +
   `${children ? `<div class="qb-body">${children}</div>` : ''}</div>`;
 
-export function card({ sub, body }) {
-  return `<div class="card">${sub ? tSub(sub) : ''}${body}</div>`;
+/**
+ * A bordered box that stacks what is put in it.
+ *
+ * <p><b>`pad: 'lg'` is for a box that is the page's whole content rather than one card among
+ * several</b> — an empty state, a lock notice, a read-only banner. Frames used to reach for
+ * `<div class="table" style="padding:26px">` to get one, which borrows a table's border, leaves the
+ * blocks inside it touching, and puts a measurement in a frame where the stylesheet cannot move it.
+ */
+export function card({ sub, body, pad = '' }) {
+  return `<div class="card${pad ? ` p-${pad}` : ''}">${sub ? tSub(sub) : ''}${body}</div>`;
 }
 export function listCard({ thumb = true, lines, trail }) {
   return `<div class="list-card">${thumb ? imgPh('thumb') : ''}<div class="lines">${lines}</div>${trail || ''}</div>`;
@@ -703,12 +711,15 @@ export const regionPh = ({ label, ref }) =>
  * @param open the pane the base frame draws, named so a reader knows why it is absent here
  * @param ref the base screen's NAME, never its frame id — see {@link regionPh}
  * @param panes `{ label, count, verbs, body }` in the strip's order, the open one omitted
+ * @param of how many tabs the strip names, when that is more than these panes plus the open one.
+ *   Sibling frames sometimes open panes of their own — a designer whose preview has a frame — so
+ *   the companion carries only what is left, and the note must not shrink the strip to fit it.
  */
-export const tabPanes = ({ open, ref, panes }) =>
+export const tabPanes = ({ open, ref, panes, of = panes.length + 1 }) =>
   `<div class="tpanes"><div class="tp-note">` +
-  `<strong>탭 칸입니다 — 이어지는 한 페이지가 아닙니다.</strong> ${ref} 상세 패널의 탭 ` +
-  `${panes.length + 1}개 가운데 「${open}」을 뺀 나머지를 탭 차례대로 쌓았습니다. 제품에서는 ` +
-  `한 번에 한 칸만 표시하고, 칸을 바꾸면 패널 윗단 동사도 함께 바뀝니다.</div>` +
+  `<strong>탭 칸입니다 — 이어지는 한 페이지가 아닙니다.</strong> ${ref} 상세 패널의 탭 ${of}개 가운데 ` +
+  `${of > panes.length + 1 ? `어느 프레임도 열지 않는 ${panes.length}개를` : `「${open}」을 뺀 나머지를`} ` +
+  `탭 차례대로 쌓았습니다. 제품에서는 한 번에 한 칸만 표시하고, 칸을 바꾸면 패널 윗단 동사도 함께 바뀝니다.</div>` +
   panes.map((p) => `<div class="tp-pane"><div class="tp-h"><span class="tp-t">${p.label}</span>` +
     `${p.count != null ? `<span class="n">${p.count}</span>` : ''}` +
     `${p.verbs ? `<span class="spacer"></span><span class="tp-v">${p.verbs}</span>` : ''}</div>` +

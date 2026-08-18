@@ -263,6 +263,13 @@ stand, so that pane is still drawn; a pattern that names the columns has, so tha
 citation. The same tab label can fall on either side — a record's field-change log is settled by
 the change-history pattern, while a domain event log carries different columns per screen.
 
+**A sibling frame that opens a pane has drawn it, and the companion carries only what is left.**
+Some screens were already split — a form designer whose preview, validation and matrix each earned
+a frame — so most of that strip is drawn and one pane is not. Count coverage across the whole
+screen rather than per frame, or the companion restates four panes that already exist. Tell
+`tabPanes` how many tabs the strip really names (`of`), because a note that infers the strip from
+the panes it was handed will shrink a five-tab strip to two and be wrong on the page.
+
 **Judge every undrawn pane citation-or-drawing BEFORE drawing any of them, and a screen whose
 undrawn panes are all citations gets no companion frame at all** — the citations belong in the
 base's notes, and a companion holding nothing but a title and a placeholder is a blank page with a
