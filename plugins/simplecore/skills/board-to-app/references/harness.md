@@ -3,6 +3,26 @@
 Two ways a pass over the screens loses a day to something other than the product: an instrument that
 answered plausibly, and a tree that more than one agent was holding.
 
+
+## What a fixture map's values mean
+
+`files` maps a repository-relative path to what goes in it, and each value is a different
+statement:
+
+| | |
+| --- | --- |
+| a string | the file, with those contents |
+| `''` | the file, empty |
+| `null` | **the file is not there** |
+| a key ending in `/` | an empty directory |
+
+**`null` is what half the cases here need** — a result document that was never written, a capture
+that was cited and never made. Written as `''` instead, the case proves a different defect and
+passes for the wrong reason, so the natural way to say 「absent」 has to mean absent.
+
+**`undefined` is refused, loudly.** It is what a renamed constant leaves behind, and reading it as
+absence would drop a file nobody meant to drop — a case that then proves whatever is left.
+
 ## The harness lies, and it lies in the shape of an answer
 
 This work runs on instruments: a screenshot pipeline, a dev server, a checker, a

@@ -91,37 +91,28 @@ opened, and the `saw` line written in that state comes from somewhere else: the 
 queried, the response that was read, the code the writer wrote. **That is a sentence about the
 data, not a sentence about the screen.**
 
-The order a section is written in:
+**How a sentence is written from a picture is one rule and it lives in one place** →
+`references/judging-frames.md` § *Taking a capture is not reading one*: open the file first, write
+only what is in it, say what is absent as readily as what is present, and run the two checks only a
+script reading the rendered page can settle. It is written there rather than here because the same
+discipline governs every sentence anybody writes about a screen, not only the `saw` line — and a
+second copy of it here is the copy that would drift.
 
-1. **Open the capture file first.** Before the sentence is written, not afterwards to confirm it —
-   a sentence written first sends its author back to the picture looking only for what the
-   sentence says.
-2. **Write only what was in the capture.** A count read out of a response, a row known to be there
-   because a query returned it, a state known from the code — none of those is `saw`. Where
-   something the capture cannot show is needed, it goes in another sentence with grounds of its
-   own.
-3. **Write what is missing as fully as what is there.** What gets missed is always the absent side
-   — a list with no rows, a panel with no content, a screen drawn as a shell. Reading, people scan
-   what is present; they do not hunt for what is not.
-4. **Never quote a figure that the act of measuring changes.** Some figures in a capture read
-   differently the next time the screen is opened, and quoting one dates the sentence the moment it
-   is written. Two families: **a figure that counts the observer** — the session opened to take the
-   capture joins the count of active sessions, so it rises with every shot — and **a figure a clock
-   moves the window of** — a "today" count restarts at zero at midnight, so a value the seed
-   planted becomes yesterday's after a day. **Write what the figure is made of instead of the
-   figure**: "the active sessions are the 47 the seed planted plus the session that opened this
-   screen". The relation is still true at the next capture.
+**One rule belongs to the result document alone**, because it is about a sentence that has to stay
+true months later rather than about reading a picture accurately today.
 
-   **A tile the board draws is not this.** A tile shows the value of the moment, and the number the
-   board drew is the specification of what the seed plants. That is different from a tab badge,
-   which reads as a set somebody counted.
+**Never quote a figure that the act of measuring changes.** Some figures in a capture read
+differently the next time the screen is opened, and quoting one dates the sentence the moment it
+is written. Two families: **a figure that counts the observer** — the session opened to take the
+capture joins the count of active sessions, so it rises with every shot — and **a figure a clock
+moves the window of** — a "today" count restarts at zero at midnight, so a value the seed
+planted becomes yesterday's after a day. **Write what the figure is made of instead of the
+figure**: "the active sessions are the 47 the seed planted plus the session that opened this
+screen". The relation is still true at the next capture.
 
-5. **Run the two checks a machine makes while the screen is still open.** A list whose total says N
-   with no rows under it, and two runs of text drawn into the same rectangle — a project's own
-   rendered-screen audit judges both, and neither is visible to a source audit or to a check on
-   the requests. Where the project has such a command, its evidence index names it. **It does not
-   belong in the `gates` list**: that list runs with no server up, so a check that cannot open a
-   browser would report a pass having looked at nothing.
+**A tile the board draws is not this.** A tile shows the value of the moment, and the number the
+board drew is the specification of what the seed plants. That is different from a tab badge,
+which reads as a set somebody counted.
 
 ## A content tab is one capture per pane
 
@@ -218,6 +209,15 @@ are the address called and the code that came back, not a picture. Those section
 block. A picture is needed where the screen that role sees genuinely differs, and where it does,
 the board has usually drawn it as a frame of its own.
 
+## Two kinds of capture, and this file is about one of them
+
+**A capture cited by a result document is not a frame artefact.** This file's naming, ceiling and
+format govern the pictures a chapter's evidence SHOWS — one per frame the chapter placed, one per
+further pane, named for the frame, tracked in the repository. A project may also require a capture
+per frame as a standing deliverable, in every locale and device class it ships; that set has its
+own axes and its own folder → `references/frame-artefacts.md`. Neither ceiling applies to the
+other, and a project that keeps both keeps them apart.
+
 ## Captures that are not tracked
 
 Everything else a sweep shot stays in `capturesDir` and is untracked. Only what a document shows
@@ -244,6 +244,18 @@ document.
 closed. Where a later chapter changed the screen, that chapter's own lines are run and written into
 that chapter's document. Where the later chapter has no line that opens the screen, the earlier
 document stands as the grounds.
+
+**Three things are exceptions, and they are the whole list.** Each is named where it arises and
+each edits the quoted line and nothing else — what was DONE and what was SEEN are never rewritten,
+because those are the record and the record did not change:
+
+| | What may be edited |
+| --- | --- |
+| a demand shrank to a subset of itself | the quoted line, down to the chapter's sentence of today |
+| a frame or a screen was renamed | the quoted line, to the new name |
+| a check deferred to a later chapter was settled by that chapter | the deferred line comes out, and what was finally seen goes in its place |
+
+Anything not on that list means the section is run again rather than edited.
 
 ## When a board fix moves what a closed chapter quotes
 
@@ -307,10 +319,10 @@ one. **The chapter it named is the one that cannot close** while that line stand
 is part of that chapter's own run.
 
 **Then, and only then, the earlier document is edited.** An earlier chapter's result document is
-otherwise never touched — it records what was true when that chapter closed. This is the one
-exception, and it is barely one: the document recorded a debt against itself, and paying it is
-what the document asked for. Take the line out, write what was finally seen in its place, in the
-same change that settles it.
+otherwise not touched — it records what was true when that chapter closed — and this is the third
+of the three exceptions listed under *When a later chapter changes the same screen*. It is barely
+one: the document recorded a debt against itself, and paying it is what the document asked for.
+Take the line out, write what was finally seen in its place, in the same change that settles it.
 
 **Declare `deferredLine` the first time this comes up** — the line's shape, with the chapter as
 its `{text}`. Written in prose instead, nothing connects whoever hit the wall to whoever closes
@@ -393,9 +405,11 @@ strips and asking, for each frame a closed chapter opens, whether every pane but
 photographed — and the other direction too: a picture named for a pane the board does not draw, a
 second name for the pane already open, a pane picture on a frame with no strip.
 
-**Three things stay with eyes**, and the project's evidence index names whose eyes and at which
-moment: whether the capture shows the frame it is named after, whether the `saw` line is what was
-actually there, and whether the document was written out of the verification rather than before it.
-**All three are read by somebody who did not produce what is being read** — the agent that took a
-capture knows what the screen was supposed to hold, so it reads the picture for confirmation rather
-than for what is missing.
+**What stays with eyes over a result document is in `../SKILL.md` § *Closing a chapter*,** which is
+the one register of every rule this skill hands to a person — whether the capture shows the frame
+it is named after, whether the `saw` line is what was actually there, whether the document was
+written out of the verification rather than before it. **The project names whose eyes and at which
+moment**, in the index of its own evidence folder, because that is a staffing decision. What
+belongs here rather than in either is the reason the reader is never the party that produced what
+is read: the agent that took a capture knows what the screen was supposed to hold, so it reads the
+picture for confirmation rather than for what is missing.

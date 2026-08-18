@@ -100,7 +100,8 @@ Follow the `steps` the `migrations` output lists for each contract being crossed
 8. `.gitignore` gains `.kit` and `pdf/`; existing PDFs move into `pdf/`.
 
 A component or a gate the board added that the pattern lacks goes **into the pattern**, not into a
-local file — that is the whole point of the move, and a board-local copy is a fork by another name.
+local file — that is the whole point of the move, and one component kept beside the board is a
+fork of the whole pattern by another name, with none of a fork's honesty about it.
 
 **Where MOST of what the board draws is absent from every shipped pattern, that instruction has
 nowhere to send anybody**, and the board would otherwise stay outside the contract with no gate

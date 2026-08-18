@@ -1418,7 +1418,10 @@ Two things follow, and both belong to whoever writes the sentence rather than to
 The chapter set is derived from three things — the placement (which frame belongs to
 which chapter), the board (what each frame draws and which roles reach it), and the
 persona map. **Generate it once, regenerate it whenever the board changes**, with the
-command `chapterGenerator` names.
+command `chapterGenerator` names — **except into a chapter whose verification is running.** A
+round of verification quotes the chapter it is proving, so a sentence that moves mid-round
+unfinishes every section already written; collect the change and release it when the round ends
+→ `references/evidence.md` § *The demands do not move while the verification is running*.
 
 What a generated chapter carries: the previous chapter and the state it leaves, the
 chapters that must close first and those that may run alongside, the frames it owns as
