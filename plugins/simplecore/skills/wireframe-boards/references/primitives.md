@@ -217,28 +217,49 @@ footer — and now **the same list exists in two frames and only one of them get
 divergence the board exists to prevent is the divergence the fix introduces, multiplied by the
 number of panes.
 
-**Draw one companion frame per tabbed screen instead, placed immediately after its base.**
+**Draw one companion frame per tabbed screen instead, placed immediately after its base.** It
+keeps the base's two-column shape, and the panes stack down the detail column:
 
-- **The title area is drawn the same** as the base, and nothing else is. It is there so a reader
-  knows which screen's tabs these are.
-- **Everything the base already draws is a placeholder** — the list, the panel, the region. Draw
-  it once, in the base. A companion frame that redraws the list has reintroduced the problem.
+```
+┌──────────────┬─┬──────────────────────┐
+│              │ │  [tab strip — 센서]    │
+│              │ │  │  센서 pane       │  │
+│  list        │ │  [tab strip — 침묵]    │
+│  placeholder │ │  │  침묵 pane       │  │
+│              │ │  [tab strip — 사건]    │
+│              │ │  │  사건 pane       │  │
+└──────────────┴─┴──────────────────────┘
+```
+
+- **The title area is drawn the same** as the base, and nothing else is.
+- **The left column stands in for the list** the base draws, and the vertical divider is the base's
+  own. A reader arriving from the base sees the same structure and reads the right column as that
+  panel — which is what says "these are its tabs" without a sentence saying so.
+- **Each pane carries the base's real tab strip above it, with that pane open.** Twelve panes means
+  twelve strips. A label over a pane says a tab exists; the strip shows what pressing it gives you.
+- **The strip is the base's own drawing, not a copy.** The base exports
+  `export function tabStrip(open) { return tabs([…]); }` and the companion calls it — the same
+  idiom as `head` and `panel(tab)`. A tab added or relabelled then moves in both places at once.
+- **Do not wrap a pane in a card.** A bordered box around the strip and its body stops the column
+  reading as the panel and starts it reading as a list of cards.
 - **The open pane is not repeated.** The base drew it.
-- **The remaining panes stack vertically inside that one frame, in the strip's order**, each
-  labelled with its tab.
 - **The frame says it is tab panes.** Without that sentence, stacked panes read as one long page
-  and get built as one — a scrolling screen where a tab strip belongs. This annotation is half of
-  what the frame is for.
+  and get built as one. `tabPanes` writes it rather than the author, because an author's note goes
+  missing and the drawing that lost it still looks finished.
+
+**The name says where the tabs live, not that they were undrawn.** `<screen> — 상세 > 탭` when the
+strip is inside the detail panel, `— 목록 > 탭` when it is the page's own. No tab names and no
+count: both go stale the moment a tab moves, and the frame already draws them. The manifest label
+matches the `screen` exactly.
 
 One frame per tabbed screen rather than one per pane. The base keeps its own drawing: the pane it
 opens stays where it is, and the alternative — rewriting every tabbed screen to take its open pane
 as a parameter — is what this avoids.
 
 **`simplix-basic` carries the two pieces**, so a board on that pattern composes the frame rather
-than inventing it: `regionPh({ label, ref })` for the region the base draws, and
-`tabPanes({ open, ref, panes })` for the stack. `tabPanes` writes the「these are tab panes」note
-itself, out of `open` and `ref` — an author's note goes missing and the drawing that lost it still
-looks finished, so the primitive holds the half of the frame that matters most.
+than inventing it: `regionPh({ label, ref })` for the list column and
+`tabPanes({ strip, open, ref, panes })` for the detail column, wrapped in the pattern's own
+`listDetail(list, detail)`.
 
 **`ref` is the base screen's NAME, never its frame id.** Both pieces render inside the device
 frame, so an id there is a frame number reaching the reader — the thing a board never puts in a
@@ -248,13 +269,17 @@ which is where a frame reference belongs and where the build resolves it into a 
 
 **The base does have to export its title area** — one line, `export const head = pageHeader({…})`,
 used by the base's own body and imported by the companion. Copying the title instead is the one
-shortcut that fails silently: two drawings of one title diverge the first time either is edited,
-and nothing reports it.
+shortcut that fails silently: two drawings of one title diverge the first time either is edited.
 
-**A companion frame must not draw a `tabs([…])` strip.** Wherever capture demands are counted off
-the board one per pane, a strip on the companion demands every pane twice — once against the base
-and once against the companion. The stacked pane headings carry the names, which is what a reader
-needs; the strip belongs to the base alone.
+**Export the strip and the header as function DECLARATIONS where a gate reads the file's first
+`export const X = (` as its factory.** An exported arrow above `screenBody` takes that role over
+and the checks that key on the factory's parameters go quiet — they stop reporting rather than
+start failing, which is the worse direction.
+
+**A companion must not declare a `tabs([…])` strip of its own.** Wherever capture demands are
+counted off the board one per pane, a literal strip on the companion demands every pane twice —
+once against the base and once against the companion. Calling the base's `tabStrip` draws the real
+strip and declares nothing, so the census still sees one strip, in the base.
 
 **A pane whose content a pattern frame already fixes cites the pattern instead of being drawn.**
 The line is whether the pattern settles the *content* or only the *shape*: a pattern that says a
@@ -276,6 +301,13 @@ base's notes, and a companion holding nothing but a title and a placeholder is a
 frame id. Counting the tabbed screens gives an upper bound on the companions, never the number of
 them. Taking the panes in the order the strip names them and drawing as you go inverts this: the
 work is done before the screen turns out not to have needed a frame.
+
+**A companion's `screen` must begin with the base's `screen`, exactly.** Where a generator attaches
+a state frame to its base by that prefix, a companion named more helpfully than its base attaches
+to nothing and reads as a frame no chapter builds.
+
+**The base points at the companion.** A frame nothing links to is unreachable, and a whole cluster
+of them fails the same check at once.
 
 ## A preview of a document is a viewer
 
