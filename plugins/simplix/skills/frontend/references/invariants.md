@@ -514,16 +514,23 @@ is the test:
 | an enum | no | a value, not a record |
 | a count (`21명`) | no | it names no record — it points at the list that does |
 
-**The two shapes, and one question decides which: is it inside a card?** A card gets
-`appearance="inline"` — an outline button carrying the label and the icon — because the
-trigger is the only action in its region and has no value beside it to crowd. **Everywhere
-else is `appearance="icon"`**: detail fields, list columns, detail-list rows, section
-headers, footer action rows. The test is deliberately narrow, and widening it is the
-mistake to avoid — 「beside a labelled value」 sounds like the same case and is not. A
-bordered button at the end of a two-column detail row eats the width its own value needs,
-so the name the row exists to show truncates to 「대한건설…」 while the control that opens it
-stays whole; and a row of them leaves the panel with two right edges, one for the fields
-that have a trigger and one for the fields that do not. The default is `"icon"`, so a
+**The two shapes, and one question decides which: does the trigger stand alone in its own
+region, or does it sit at the end of a value?** Standing alone — a card, a footer action
+row — it takes `appearance="inline"`, an outline button carrying the label and the icon,
+because nothing precedes it to say what it opens and nothing beside it for a word to crowd.
+Sitting at the end of a value — a detail field, a list column, a detail-list row, a section
+header's trailing slot — it takes `appearance="icon"`, because the word takes the width the
+value needs: a bordered button at the end of a two-column detail row truncated the name the
+row exists to show to 「대한건설…」 while the control for opening it stayed whole, and a
+column of them left the panel with two right edges.
+
+**The two ways to get this wrong are opposite, and both were made on one screen in one
+day.** Reading the rule as 「the label is for cards」 strips the footer's verbs to identical
+glyphs in an empty band, which a sighted reader cannot tell apart at all. Reading it as
+「the label is for anything with a label beside it」 puts a button at the end of every detail
+row and eats the values. What separates them is neither the component nor the container but
+the question above: is there something in front of this control already saying what it is
+about? The default is `"icon"`, so a
 trigger written without thinking about its place is right rather than loud.
 
 **An icon-only trigger names what it opens.** With the label gone, `aria-label` is all a
