@@ -631,6 +631,27 @@
                    background: var(--screen); }
   .ffield .fhint { font-size: 11px; color: var(--faint); }
 
+  /* A region the base frame draws, on a companion frame. Empty on purpose — the moment it grows
+     content a reader starts reading it as the screen, and the two drawings diverge. */
+  .region-ph { display: flex; align-items: baseline; gap: 10px; margin: 10px 0;
+    padding: 14px 16px; border: 1px dashed var(--line); border-radius: 6px; background: var(--fill); }
+  .rp-l { font-size: 12.5px; color: var(--muted); }
+  .rp-r { margin-left: auto; font: 600 11px var(--mono); color: var(--faint); }
+
+  /* The panes the base does not draw, stacked. The note is the board speaking about the frame, so
+     it carries the accent; the panes are screen content and stay greyscale. */
+  .tpanes { margin-top: 10px; }
+  .tp-note { margin-bottom: 12px; padding: 8px 12px; font-size: 12px; line-height: 1.55;
+    border-left: 3px solid var(--accent); background: var(--accent-tint); }
+  .tp-pane { margin-bottom: 12px; border: 1px solid var(--line); border-radius: 6px; }
+  .tp-pane:last-child { margin-bottom: 0; }
+  .tp-h { display: flex; align-items: center; gap: 6px; padding: 8px 12px;
+    border-bottom: 1px solid var(--line); background: var(--fill); }
+  .tp-t { font-size: 12.5px; font-weight: 700; color: var(--ink); }
+  .tp-h .n { font: 10px var(--mono); color: var(--faint); }
+  .tp-v { display: flex; align-items: center; gap: 6px; flex: 0 0 auto; }
+  .tp-b { padding: 10px 12px; }
+
   /* A tab whose body is a list rather than a field group. */
   .tabbody { display: flex; flex-direction: column; gap: 10px; }
   .nrow { display: flex; flex-direction: column; gap: 4px; padding: 8px 0; border-bottom: 1px solid var(--line); }

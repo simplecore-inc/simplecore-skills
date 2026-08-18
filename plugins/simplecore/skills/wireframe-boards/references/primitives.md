@@ -218,9 +218,25 @@ number of panes.
   and get built as one — a scrolling screen where a tab strip belongs. This annotation is half of
   what the frame is for.
 
-One frame per tabbed screen rather than one per pane, and the base frames are not touched at all,
-which is the larger saving: the alternative rewrites every tabbed screen to take its open pane as
-a parameter.
+One frame per tabbed screen rather than one per pane. The base keeps its own drawing: the pane it
+opens stays where it is, and the alternative — rewriting every tabbed screen to take its open pane
+as a parameter — is what this avoids.
+
+**`simplix-basic` carries the two pieces**, so a board on that pattern composes the frame rather
+than inventing it: `regionPh({ label, ref })` for the region the base draws, and
+`tabPanes({ open, ref, panes })` for the stack. `tabPanes` writes the「these are tab panes」note
+itself, out of `open` and `ref` — an author's note goes missing and the drawing that lost it still
+looks finished, so the primitive holds the half of the frame that matters most.
+
+**The base does have to export its title area** — one line, `export const head = pageHeader({…})`,
+used by the base's own body and imported by the companion. Copying the title instead is the one
+shortcut that fails silently: two drawings of one title diverge the first time either is edited,
+and nothing reports it.
+
+**A companion frame must not draw a `tabs([…])` strip.** Wherever capture demands are counted off
+the board one per pane, a strip on the companion demands every pane twice — once against the base
+and once against the companion. The stacked pane headings carry the names, which is what a reader
+needs; the strip belongs to the base alone.
 
 **A pane whose content a pattern frame already fixes cites the pattern instead of being drawn.**
 The line is whether the pattern settles the *content* or only the *shape*: a pattern that says a
@@ -228,6 +244,13 @@ sub-collection tab is a real list with row actions and pagination has not said w
 stand, so that pane is still drawn; a pattern that names the columns has, so that pane is a
 citation. The same tab label can fall on either side — a record's field-change log is settled by
 the change-history pattern, while a domain event log carries different columns per screen.
+
+**Judge every undrawn pane citation-or-drawing BEFORE drawing any of them, and a screen whose
+undrawn panes are all citations gets no companion frame at all** — the citations belong in the
+base's notes, and a companion holding nothing but a title and a placeholder is a blank page with a
+frame id. Counting the tabbed screens gives an upper bound on the companions, never the number of
+them. Taking the panes in the order the strip names them and drawing as you go inverts this: the
+work is done before the screen turns out not to have needed a frame.
 
 ## A preview of a document is a viewer
 

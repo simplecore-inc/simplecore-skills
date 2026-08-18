@@ -666,6 +666,53 @@ export const recordTabs = (items, children) =>
     `${t.count != null ? `<span class="n">${t.count}</span>` : ''}</span>`).join('')}</div>` +
   `<div class="rec-b">${children}</div></div>`;
 
+/**
+ * A region the base frame already draws, stood in for rather than drawn a second time.
+ *
+ * <p>A companion frame ({@link tabPanes}) exists to carry the panes its base does not draw. The
+ * moment it redraws the list beside them, the same records live in two frames and only one of
+ * them gets corrected — the divergence the board exists to prevent, reintroduced by the fix for a
+ * different one. This is the mark that says the base draws it, and names which frame that is.
+ *
+ * @param label what stands here on the real screen
+ * @param ref the frame that draws it
+ */
+export const regionPh = ({ label, ref }) =>
+  `<div class="region-ph"><span class="rp-l">${label}</span><span class="rp-r">${ref}</span></div>`;
+
+/**
+ * The panes a tabbed screen declares and its base frame does not draw, stacked in strip order.
+ *
+ * <p>A tab strip names its panes and draws only the open one, so every other pane's columns, its
+ * actions and its empty state are unspecified and get invented by whoever builds the screen. One
+ * companion frame per tabbed screen carries all of them; one frame per PANE would have to redraw
+ * the page around each, and then the same list lives in as many frames as the screen has tabs.
+ *
+ * <p>**The note it writes at the top is half of what the frame is for.** Without it, stacked panes
+ * read as one long page and get built as one — a scrolling screen where a tab strip belongs. It is
+ * written here rather than left to the author precisely because an author's note goes missing and
+ * the drawing that loses it looks finished.
+ *
+ * <p>**A companion frame must not draw a tab strip of its own.** {@link tabs} is what a capture
+ * demand is counted from — one photograph per pane the strip names — so a strip here would demand
+ * every pane twice, once against the base and once against the companion. The pane headings below
+ * carry the names, which is what a reader needs.
+ *
+ * @param open the pane the base frame draws, named so a reader knows why it is absent here
+ * @param ref the base frame's id
+ * @param panes `{ label, count, verbs, body }` in the strip's order, the open one omitted
+ */
+export const tabPanes = ({ open, ref, panes }) =>
+  `<div class="tpanes"><div class="tp-note">` +
+  `<strong>탭 칸입니다 — 이어지는 한 페이지가 아닙니다.</strong> ${ref} 상세 패널의 탭 ` +
+  `${panes.length + 1}개 가운데 「${open}」을 뺀 나머지를 탭 차례대로 쌓았습니다. 제품에서는 ` +
+  `한 번에 한 칸만 표시하고, 칸을 바꾸면 패널 윗단 동사도 함께 바뀝니다.</div>` +
+  panes.map((p) => `<div class="tp-pane"><div class="tp-h"><span class="tp-t">${p.label}</span>` +
+    `${p.count != null ? `<span class="n">${p.count}</span>` : ''}` +
+    `${p.verbs ? `<span class="spacer"></span><span class="tp-v">${p.verbs}</span>` : ''}</div>` +
+    `<div class="tp-b">${p.body}</div></div>`).join('') +
+  `</div>`;
+
 /** A titled group of fields inside a panel. Fields sit two to a row. */
 export const section = (title, children) =>
   `<div class="sect">${title ? `<div class="sect-t">${title}</div>` : ''}<div class="fields">${children}</div></div>`;
@@ -1238,6 +1285,7 @@ export const CATALOG = [
   { cat: 'detail panel', name: 'panelVerbs(actions) · panelFoot(actions)', note: '두 단 동작 행 — 윗단은 열린 탭이 요구하는 것, 아랫단은 레코드에 하는 것. 파괴적인 것은 위치가 아니라 색(danger)으로 구분한다', ex: `${panelVerbs(btn('구역 추가') + btn('가져오기') + btn('내보내기'))}${panelFoot(btn('닫기', 'ghost') + '<span class="spacer"></span>' + btn('삭제', 'danger') + btn('편집', 'primary'))}` },
   { cat: 'detail panel', name: 'panelForm({title, mode, children, foot})', note: '패널이 폼이 된 상태 — 엔티티의 등록·편집은 다이얼로그가 아니라 여기서 연다. 목록·필터·스크롤 위치가 그대로 남고, 폼이 모달 폭이 아니라 패널 폭으로 열린다', ex: panelForm({ title: '휴게시설 등록', children: formSection('', fText({ label: '이름', value: 'A동 1층 휴게시설', required: true }) + fSelect({ label: '구역', value: 'A동 1층', required: true })), foot: `${btn('취소', 'ghost')}<span class="spacer"></span>${btn('저장', 'primary')}` }) },
   { cat: 'detail panel', name: 'nestedRow({title, trail, sub})', note: '탭이 든 한 줄과 그 아래 딸린 줄들. sub가 비면 그 사실을 문장으로 적는다', ex: tabList(nestedRow({ title: '배관 용접', trail: badge('화재위험작업', 'outline') + btn('편집', 'ghost'), sub: [['통제조치', '화재감시자 배치 · 소화기 2대'], ['필요 자격', '용접기능사']] }) + nestedRow({ title: '개구부 점검', trail: badge('일반'), sub: '아직 위험요인이 등록되지 않았습니다' })) },
+  { cat: 'detail panel', name: 'regionPh({label, ref}) · tabPanes({open, ref, panes})', note: '탭 줄이 이름만 대고 안 그린 칸을 모아 두는 동반 프레임의 두 조각. 칸마다 프레임을 만들면 페이지를 그때마다 다시 그려야 하고 같은 목록이 여러 프레임에 살아 하나만 고쳐진다 — 화면 하나에 동반 프레임 하나이고, 바탕이 이미 그린 목록·패널 자리에는 regionPh를 둔다. tabPanes가 「탭 칸이지 한 페이지가 아니다」를 스스로 머리에 적는다. 동반 프레임에 tabs()를 두지 않는다 — 캡처 요구가 바탕과 동반 양쪽에서 세어져 칸마다 두 장이 된다', ex: `${regionPh({ label: '지표 타일 · 목록 열 · 상세 패널', ref: 'B-02' })}${tabPanes({ open: '개요', ref: 'B-02', panes: [{ label: '구역', count: 12, verbs: btn('구역 추가'), body: table({ head: [th('구역', { w: 'w2' }), th('종류', { w: 'fix' })], rows: [['<span class="td w2">A동 3층</span>', `<span class="td fix">${badge('안전구역', 'outline')}</span>`]] }) + pagination(['1', '2'], '12') }, { label: '이력', count: 6, body: tSub('레코드 필드의 변경은 P-18이 열까지 정하므로 인용으로 끝난다 — 그런 칸은 그리지 않는다') }] })}` },
   { cat: 'overlay', name: 'peekDialog({title, children})', note: '가리킨 기록을 그 자리에서 읽고, 나가는 길은 하나만 둔다', ex: `<div class="device" style="width:420px;height:210px"><div class="screen">${peekDialog({ title: '김현장 · 배관공', children: section('', dField({ label: '자격', value: badge('유효', 'outline') })) })}</div></div>` },
   { cat: 'layout', name: 'split(list, detail) · shell(sidebar, main)', note: '좌우 두 버전 · 앱 셸', ex: `<div class="device" style="width:360px"><div class="screen"><div class="split"><div class="pane list">${bar('w80')}${bar('w60', true)}</div><div class="pane">${tTitle('상세')}${bar('w40')}</div></div></div></div>` },
   { cat: 'layout', name: 'listDetail(list, detail) · panelHead(title)', note: '콘솔의 기본 — 목록 혼자, 또는 상세 패널 옆으로 좁아진 목록', ex: `<div class="device" style="width:520px"><div class="screen">${listDetail(`${bar('w80')}${bar('w60', true)}${bar('w40', true)}`, `${panelHead('A동 3층')}${bar('w60')}`)}</div></div>` },
