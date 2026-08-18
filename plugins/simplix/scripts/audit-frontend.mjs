@@ -4368,6 +4368,59 @@ function scaffoldHeaderFindings() {
   return reviews;
 }
 
+/**
+ * A locale entry left empty, which does not render as nothing.
+ *
+ * <p>The adapter is configured not to return empty strings, so a key whose value is `""` is treated
+ * as absent and resolved against the fallback locale instead. An English console then reads
+ * 「31대」 — the Korean value, in the middle of an English screen — and nothing errors, because as
+ * far as every check is concerned the key is present in both catalogues.
+ *
+ * <p><b>It is almost always a counter word.</b> A tile handed a figure and a separate unit needs
+ * that unit in every language, and English has none for a machine or a case; the entry is left
+ * empty and falls straight through. The repair is not a space — a space is a translation that says
+ * the value is a space, and it satisfies every missing-translation check while rendering a stray
+ * gap. It is to put the counter word inside the counted string, one per language
+ * (`{{count}}대` · `{{count}}` · `{{count}}台`), so no entry is empty to fall back from.
+ *
+ * <p>Whitespace-only is the same finding and is reported the same way: it is what somebody writes
+ * when the empty string was flagged and the shape was not changed.
+ */
+function emptyLocaleValueFindings() {
+  const findings = [];
+  for (const abs of koCatalogues()) {
+    const dir = path.dirname(abs);
+    for (const file of fs.readdirSync(dir)) {
+      if (!file.endsWith(".json")) continue;
+      const full = path.join(dir, file);
+      const rel = path.relative(ROOT, full);
+      const raw = fs.readFileSync(full, "utf8");
+      const lines = raw.split("\n");
+      let data;
+      try {
+        data = JSON.parse(raw);
+      } catch {
+        continue;
+      }
+      const walkJson = (obj, keyPath, key) => {
+        if (typeof obj === "string") {
+          if (obj !== "" && obj.trim() !== "") return;
+          const at = lines.findIndex((l) => l.includes(`"${key}"`));
+          findings.push({
+            file: rel,
+            line: at < 0 ? 0 : at + 1,
+            excerpt: `${keyPath} = ${JSON.stringify(obj)} — falls through to the fallback locale`,
+          });
+        } else if (obj && typeof obj === "object") {
+          for (const [k, v] of Object.entries(obj)) walkJson(v, keyPath ? `${keyPath}.${k}` : k, k);
+        }
+      };
+      walkJson(data, "", "");
+    }
+  }
+  return findings;
+}
+
 // ---------------------------------------------------------------------------
 // Collection rules — the ones that read a tree rather than a file
 //
@@ -4377,6 +4430,36 @@ function scaffoldHeaderFindings() {
 // ---------------------------------------------------------------------------
 
 const COLLECTION_RULES = [
+  {
+    id: "empty-locale-value",
+    invariant: "audit: locale fallback",
+    level: "error",
+    desc: "A locale entry is an empty string. The adapter does not return empty strings, so the key resolves against the fallback locale and the other language's words render in the middle of this one's screen — with every catalogue reporting the key as present. Put the word inside the counted string, one per language, so no entry is empty to fall back from; a space is not the repair, it satisfies every check and renders a stray gap",
+    collect: emptyLocaleValueFindings,
+    samples: {
+      broken: {
+        files: {
+          "modules/site/src/locales/widgets/ko.json": `{ "unit": { "machine": "대" } }`,
+          "modules/site/src/locales/widgets/en.json": `{ "unit": { "machine": "" } }`,
+        },
+      },
+      fixed: {
+        files: {
+          "modules/site/src/locales/widgets/ko.json": `{ "unit": { "machineCount": "{{count}}대" } }`,
+          "modules/site/src/locales/widgets/en.json": `{ "unit": { "machineCount": "{{count}}" } }`,
+        },
+      },
+      miss: [
+        {
+          note: "a word English does have — nothing falls through, so nothing is reported",
+          files: {
+            "modules/site/src/locales/widgets/ko.json": `{ "unit": { "days": "일" } }`,
+            "modules/site/src/locales/widgets/en.json": `{ "unit": { "days": " days" } }`,
+          },
+        },
+      ],
+    },
+  },
   {
     id: "locale-missing-sections",
     invariant: "audit: scaffold locale",
