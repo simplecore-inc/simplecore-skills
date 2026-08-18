@@ -242,9 +242,18 @@ These invariants apply to **every** frontend file you touch. Treat each as invio
       (`{isLoading ? <Skeleton/> : rows.length === 0 ? <EmptyState/> : <Table/>}`) replace the table
       rather than stand over it.
 
-64. **A chip filter carries a filter icon on every chip** — a chip row and a tab strip are the
-    same shape at a glance, and a reader cannot tell which one narrows. The icon is the same on
-    every chip in the row; it says what pressing does before it is pressed.
+64. **Every chip carries a mark, and the mark says whether this chip is on** — a chip row and a
+    tab strip are the same shape at a glance and a reader cannot tell which one narrows, so the
+    row has to say before it is pressed both that pressing narrows and which option is narrowing
+    now. An empty ring when the chip is off and a check when it is on carries both in one mark;
+    the pill shape (`rounded-full`, muted ground, solid when chosen) is what separates the row
+    from the strip above it. **A chip supplying its own icon gives that up** — a colour dot or a
+    count replaces the mark — so pass one only where the chip's own colour already says whether
+    it is on.
+    - **The chips flow from the left at their label's width and wrap**, never stretched to divide
+      the row evenly. Stretched, an option's width is decided by how many options happen to sit
+      beside it: the same filter is a segmented control on one screen and chips on the next, and a
+      two-option filter draws two half-page buttons.
 
 65. **Actions belong to the panel footer, in two rows when one will not hold them** — a button row
     in the panel body is a region the reader has to find, and the footer is pinned where the eye
