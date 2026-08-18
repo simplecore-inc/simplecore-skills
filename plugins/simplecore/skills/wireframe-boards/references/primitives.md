@@ -192,6 +192,18 @@ full screenful of plan to reach the first row, and the same records are drawn tw
 - Share one drawing of the record between panel and dialog (`const detailBody = …`), the
   same way the closed and open states share one drawing of the page.
 
+### The detail is drawn beside the list, whatever shape it opens in
+
+A frame settles that pressing a row opens the detail, what the detail holds, and that closing it
+returns to that list. **It does not settle that the detail is a column.** A product may open the
+same detail as a drawer sliding from the right edge, decided once by an installation setting
+rather than screen by screen.
+
+**So a screen rendered as a drawer is not a divergence from the board, and the board is not
+redrawn as one.** Redrawing it picks a side: the same frame means both shapes, and drawing one
+makes the other read as wrong. What a reviewer checks is the three the frame settles — it opens,
+it holds that, it closes back — and not the fourth.
+
 ### Every tab is drawn, and one companion frame carries the ones the base does not
 
 A tab strip names its panes and draws only the open one. **The names are not a contract** — a
