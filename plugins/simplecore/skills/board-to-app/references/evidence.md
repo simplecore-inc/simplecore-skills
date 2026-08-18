@@ -238,6 +238,28 @@ moves into `evidenceDir` — a capture left in the folder that no section cites 
 "this time", "running it again" or "originally", and a status column, are not the shape of this
 document.
 
+## Withdrawing a finding takes its citations with it
+
+**A judgement in one section becomes ground the other sections stand on.** A finding written up as
+「these two notations split one fact」 does not stay in its own section: the next section that meets
+a similar screen writes 「this is not the same case as that one」, and now that sentence's meaning
+depends on the first being right. Four sections were resting on one judgement in a chapter where
+nobody had gone looking.
+
+**So a retraction that edits only the section it was written in leaves the retracted judgement
+alive everywhere it was cited**, and the surviving sentences are worse than the original — they
+carry a claim no longer stated anywhere, so a reader cannot even find what they are leaning on.
+
+**Grep before editing, and fix the citations in the same change.** The distinctive phrase of the
+withdrawn finding is what to search for, not the frame id: a citation names the judgement, not the
+screen. Each one is then rewritten to what it was actually trying to say, which is usually a
+narrower and truer sentence than the one that borrowed the false judgement.
+
+**Whoever withdraws the finding does the sweep** — most often the coordinator, since a finding that
+survived one review and fell at the next is a call they made. Handing the sweep to the agent
+holding the chapter splits the retraction across two heads, and the half that knows what was wrong
+is not the half doing the searching.
+
 ## When a later chapter changes the same screen
 
 **The earlier chapter's document is not edited.** It records what was checked when that chapter
