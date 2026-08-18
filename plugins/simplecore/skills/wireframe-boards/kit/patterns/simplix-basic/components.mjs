@@ -716,13 +716,18 @@ export const regionPh = ({ label, ref }) =>
  * @param rail true where the base draws its phases with {@link recordTabs} rather than a top
  *   strip — that primitive takes the pane's body as its second argument and draws it beside the
  *   rail, so the pane is handed over whole instead of being stacked under the strip
+ * @param region where the strip sits — 「상세 패널」 for a strip inside a list-detail's panel,
+ *   「화면」 for a page's own strip on a screen that draws neither a list column nor a panel
  * @param panes `{ label, verbs, body }` in the strip's order, the open one omitted
  */
-export const tabPanes = ({ strip, open, ref, panes, rail = false, of = panes.length + 1 }) =>
+export const tabPanes = ({
+  strip, open, ref, panes, rail = false, of = panes.length + 1, region = '상세 패널',
+}) =>
   `<div class="tpanes"><div class="tp-note">` +
-  `<strong>탭 칸입니다 — 이어지는 한 페이지가 아닙니다.</strong> ${ref} 상세 패널의 탭 ${of}개 가운데 ` +
-  `${of > panes.length + 1 ? `어느 프레임도 열지 않는 ${panes.length}개를` : `「${open}」을 뺀 나머지를`} ` +
-  `탭 차례대로 쌓았습니다. 제품에서는 한 번에 한 칸만 표시하고, 칸을 바꾸면 패널 윗단 동사도 함께 바뀝니다.</div>` +
+  `<strong>탭 칸입니다 — 이어지는 한 페이지가 아닙니다.</strong> ${ref} ${region}의 탭 ${of}개 가운데 ` +
+  `${of > panes.length + 1 ? `${panes.length}개를` : `「${open}」을 뺀 나머지를`} ` +
+  `탭 차례대로 쌓았습니다. 제품에서는 한 번에 한 칸만 표시하고, 칸을 바꾸면 ` +
+  `${region === '상세 패널' ? '패널 윗단 동사도' : '제목 옆 동사도'} 함께 바뀝니다.</div>` +
   panes.map((p) => `<div class="tp-pane">` +
     (rail ? strip(p.label, p.body) : `${strip(p.label)}<div class="tp-b">${p.body}</div>`) +
     `${p.verbs ? panelVerbs(p.verbs) : ''}</div>`).join('') +
