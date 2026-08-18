@@ -701,6 +701,29 @@ export async function gatesFor(ctx) {
     const mod = await import(pathToFileURL(modulePath).href);
     project = Array.isArray(mod.gates) ? mod.gates : [];
   }
+  // A project gate answering to a core gate's id is refused, not merged.
+  //
+  // **Two gates under one id is a gate that has gone quiet without anybody choosing it.** Both run,
+  // so a finding cannot be attributed to either; and every lookup by id — the self-test's above all
+  // — takes the last one written, which is the project's. A project that copied a core gate before
+  // the core owned it therefore proves its own stale copy while reporting the core gate's name, and
+  // the report says the gate passed. Three of them sat like that in one repository, each reporting
+  // ✔ against an implementation the skill had already replaced.
+  //
+  // **Replacing a core gate is allowed and has a door**: turn it off in `disabledGates` with the
+  // reason, and the id is free. That is the same act made visible, which is the whole difference.
+  const shadowed = project
+    .map((g) => g?.id)
+    .filter((id) => CORE_GATES.some((g) => g.id === id) && !off.has(id));
+  if (shadowed.length) {
+    throw new Error(
+      `${modulePath}: ${shadowed.join(' · ')} — 코어 게이트와 같은 아이디입니다.\n`
+      + '  둘이 함께 돌고 아이디로 찾으면 프로젝트 것이 잡히므로, 코어 게이트가 조용해진 것을\n'
+      + '  아무도 알 수 없습니다. 코어 것을 대신하려면 disabledGates에 까닭과 함께 적어\n'
+      + '  아이디를 비우고, 그냥 옛 사본이라면 지웁니다.'
+    );
+  }
+
   return { gates: [...core, ...project], disabled: off, projectModule: modulePath };
 }
 

@@ -240,6 +240,57 @@ const ERROR_GATE = {
  *   every other fixture
  * @returns one string per expectation that came out the wrong way
  */
+/**
+ * A project gate answering to a core gate's id is refused, and saying so is the whole point.
+ *
+ * <p>Two directions, because the door matters as much as the refusal: a project that copied a core
+ * gate before the core owned it must be stopped, and a project that deliberately replaces one —
+ * `disabledGates` naming the core id with a reason — must be let through. Without the second half
+ * the rule would be «a project may never own a gate the skill also has», which is a different rule
+ * and the wrong one.
+ *
+ * @param project the fixture builder
+ * @returns one string per expectation that came out the wrong way
+ */
+export function proveShadowedIds(project) {
+  const CORE_ID = 'trailerGate';
+  /** The words the refusal is recognised by — it fires or it does not, and nothing else says this. */
+  const REFUSAL = '코어 게이트와 같은 아이디';
+  const base = cleanProject();
+  const shadow = gatesModule([{ id: CORE_ID, finding: 'notes/OPEN.md:1: the copy' }]);
+  const out = [];
+  const run = (config) => {
+    const ctx = project({
+      config: { ...base.config, ...config },
+      files: { ...base.files, 'gates/project-gates.mjs': shadow },
+      commits: ['chore(fixture): a project with nothing wrong with it\n\nChapter: none'],
+    });
+    const r = spawnSync(process.execPath, [BTA, 'check', '--config', ctx.configPath], {
+      cwd: ctx.root, encoding: 'utf8',
+    });
+    return { status: r.status, said: `${r.stdout ?? ''}${r.stderr ?? ''}` };
+  };
+
+  // **Assert on the refusal's own words, not on the id.** The fixture gate always fires, so its
+  // finding names the id and `check` exits nonzero whether or not the refusal exists — an assertion
+  // on either of those passes with the rule switched off, which is a proof of nothing. Switching
+  // the rule off is the only way that shows, and it is worth doing to every proof written here.
+  const shadowed = run({ projectGates: 'gates/project-gates.mjs' });
+  if (shadowed.status !== 2 || !shadowed.said.includes(REFUSAL)) {
+    out.push(`a project gate under a core gate's id — \`check\` exited ${shadowed.status} `
+      + `and ${shadowed.said.includes(REFUSAL) ? 'did not stop' : 'never refused it'}`);
+  }
+
+  const declared = run({
+    projectGates: 'gates/project-gates.mjs',
+    disabledGates: [{ id: CORE_ID, reason: 'this project owns it' }],
+  });
+  if (declared.said.includes(REFUSAL)) {
+    out.push('a core gate turned off with a reason — the replacement was still refused, so there is no door');
+  }
+  return out;
+}
+
 export function proveSeverity(project) {
   const cases = [
     {

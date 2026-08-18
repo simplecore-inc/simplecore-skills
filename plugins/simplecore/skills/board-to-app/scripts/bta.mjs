@@ -12,7 +12,7 @@
 import { pathToFileURL } from 'node:url';
 import { CORE_GATES, applies, gatesFor, gradeOf } from './core/gates.mjs';
 import { HEADING_ROLES, SCHEMA, findConfig, loadProject } from './core/context.mjs';
-import { makeBuilders, proveSeverity, runCases, ungraded, unproven } from './core/harness.mjs';
+import { makeBuilders, proveSeverity, proveShadowedIds, runCases, ungraded, unproven } from './core/harness.mjs';
 import { cases as coreCases } from './core/cases.mjs';
 
 const argv = process.argv.slice(2);
@@ -116,7 +116,7 @@ async function proveGates() {
 
   const bad = runCases(collected, gates);
   const mistyped = ungraded(gates);
-  const severity = proveSeverity(builders.project);
+  const severity = [...proveSeverity(builders.project), ...proveShadowedIds(builders.project)];
   builders.cleanup();
 
   const missing = unproven(collected, gates);
@@ -131,6 +131,7 @@ async function proveGates() {
   for (const line of severity) console.log(`\n✖ severity · ${line}`);
   if (!severity.length) {
     console.log('\n✔ severity: a fired warning leaves the exit status zero, a fired error fails the run');
+    console.log('✔ ids: a project gate under a core gate\'s id is refused, unless the core one is turned off');
   }
   console.log(bad ? `\n✖ ${bad} of ${collected.length} cases came out the wrong way` : `\n✔ ${collected.length} cases, both directions`);
   return bad === 0 && missing.length === 0 && mistyped.length === 0 && severity.length === 0;
@@ -212,4 +213,12 @@ if (!RUN[cmd]) {
   console.error(`unknown command: ${cmd}\n\n${HELP}`);
   process.exit(2);
 }
-process.exit((await RUN[cmd]()) ? 0 : 1);
+// A refusal is a sentence somebody has to act on — which gate, which file, what to do instead. A
+// stack trace buries it under twenty lines of node internals and reads as the tool being broken
+// rather than as the tool having something to say.
+try {
+  process.exit((await RUN[cmd]()) ? 0 : 1);
+} catch (err) {
+  console.error(`\n✖ ${err instanceof Error ? err.message : String(err)}`);
+  process.exit(2);
+}
