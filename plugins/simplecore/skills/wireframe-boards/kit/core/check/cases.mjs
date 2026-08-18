@@ -3,9 +3,20 @@
 // A gate that has gone quiet is indistinguishable from a board with nothing wrong with it, which
 // is the whole reason the gates exist. **A gate added to `core/gates/` gets its cases here in the
 // same change** — `node wf.mjs gates` reports any gate that has none.
+import { readFileSync } from 'node:fs';
+
 export function cases(t) {
   const { add, config, base, screen, ctxWith,
     withDocs, DOCS, PARITY_OK, ROADMAP_OK, ROLES_SRC } = t;
+
+  // The kit's own chrome. The broken board is one whose stylesheet carries nothing for it — which
+  // is precisely what `pattern adopt` produces, since a board's own `src/` never held rules for a
+  // sidebar the board never wrote. The passing board is the kit's two layers ALONE: whatever
+  // pattern sits on top of them, the chrome has to work without it.
+  const KIT_CSS = ['overview.css', 'chrome.css']
+    .map((f) => readFileSync(new URL(`../${f}`, import.meta.url), 'utf8')).join('\n');
+  add('chromeStyledGate', '패턴이 킷의 크롬을 스타일하지 않는다', base({ styles: '' }), true);
+  add('chromeStyledGate', '킷의 두 층만으로 크롬이 선다', base({ styles: KIT_CSS }), false);
 
   add('frameManifestGate', '§4.2가 한 장 적게 센다',
     withDocs({ 'fm.md': '**X. 구역 (D · 2)** — 하나\n' }), true);

@@ -36,6 +36,7 @@ import {
   controlVocabularyGate, panelVerbGate, backControlGate,
 } from './navigation.mjs';
 import { sectionCoverageGate } from './coverage.mjs';
+import { chromeStyledGate } from './chrome.mjs';
 import { frameManifestGate, parityListGate, roadmapPlacementGate, docFrameRefGate, docLinkGate, docRegistryGate, roleDocGate, featureKeyDocGate } from './documents.mjs';
 
 /**
@@ -73,6 +74,9 @@ export const CORE_GATES = [
   docRegistryGate,
   roleDocGate,
   featureKeyDocGate,
+  // The kit's own chrome, styled by the kit. Reads the assembled stylesheet rather than a screen,
+  // so it is the one gate whose subject is the board's frame instead of what is inside it.
+  chromeStyledGate,
   // Structural last: they read the rendered HTML, so they are the only two that need the board
   // to have been drawn already, and a finding here is about the drawing rather than the source.
   classlessGate,

@@ -17,6 +17,8 @@
 //   2  permanent ids from the file name + bracketed board position; rows wrap, no sideways scroll
 //   3  the kit lives in the skill and the board holds only its own content: a declared pattern
 //      supplies the components, the shells and the styles, and the board's `tools/` is gone
+import { textFor } from './text.mjs';
+
 export const BOARD_CONTRACT = 3;
 
 /**
@@ -27,7 +29,7 @@ export const BOARD_CONTRACT = 3;
  * @param roles the board's `src/roles.mjs`, or null where the board settles no roles
  * @returns `{ frame, sidebar, page }`
  */
-export function makePartials({ components, roles = null }) {
+export function makePartials({ components, roles = null, lang = 'en' }) {
   const { browserbar } = components;
   const ROLES = roles?.ROLES ?? {};
   const VERDICTS = roles?.VERDICTS ?? {};
@@ -85,7 +87,23 @@ export function makePartials({ components, roles = null }) {
     if (s.variant) classes.push(s.variant);
     if (ph) classes.push('deferred');
     const isDesktop = device === 'desktop';
-    const browser = isDesktop ? `${browserbar(s.url || 'app.example.com')}\n        ` : '';
+    // What kind of window a desktop frame sits in. Three answers and the kit only rules out the
+    // third: `browser` (the default — a page loaded at a URL), `app` (an installed program's own
+    // window, which has a title and no address), `none` (no window at all — a bare desktop, an
+    // installer, a screen that IS the machine). The pattern draws the first two, because a
+    // titlebar is a drawing and the kit does not draw.
+    //
+    // **It is an axis rather than a prefix on the URL.** A board that had to say `app:설치본` in
+    // the address field got its three frames drawn correctly and made every reader of that file
+    // parse a string to find out what kind of window it was — and no gate could see it, because
+    // a URL is free text.
+    const chrome = s.chrome ?? 'browser';
+    if (!['browser', 'app', 'none'].includes(chrome)) {
+      throw new Error(`${id}: chrome은 browser · app · none 중 하나입니다 (받은 값: ${chrome})`);
+    }
+    const browser = isDesktop && chrome !== 'none'
+      ? `${browserbar(s.url || 'app.example.com', { chrome, title: s.appTitle })}\n        `
+      : '';
     const fold = isDesktop ? `\n          <div class="fold"><span>fold · ${s.fold || 'smallest window'}</span></div>` : '';
     // `[02]A-20` — the visual position first, so a reader scanning the board can see where they
     // are, then the permanent id, which is what they were actually given. The file name is NOT
@@ -123,6 +141,7 @@ export function makePartials({ components, roles = null }) {
    *   never hides them: they are not screens and nothing a reader types should make them vanish.
    */
   function sidebar(sections, { boardName = 'board', jumps = [] } = {}) {
+    const text = textFor(lang);
     // Each section carries its screen count and the top carries the board's, because a reader
     // scrolling a table of contents this long has no other way to tell whether the section they
     // are in is four screens or forty — and "how big is this board" is the first question anyone
@@ -148,12 +167,12 @@ export function makePartials({ components, roles = null }) {
     return `<nav class="wf-sidebar">
     <div class="sb-head">
       <h2>${boardName}<span class="sb-total">${total}</span></h2>
-      <div class="sb-sub">[position] permanent id</div>
+      <div class="sb-sub">${text.indexLegend}</div>
       <div class="sb-find" hidden>
         <input type="search" class="sb-input" autocomplete="off" spellcheck="false"
-               placeholder="filter — id or name" aria-label="Filter the table of contents"
-               title="Press / to focus · Enter opens the first match · Esc clears">
-        <button type="button" class="sb-clear" aria-label="Clear the filter">&times;</button>
+               placeholder="${text.filterPlaceholder}" aria-label="${text.filterLabel}"
+               title="${text.filterHint}">
+        <button type="button" class="sb-clear" aria-label="${text.filterClear}">&times;</button>
       </div>
       <div class="sb-count" hidden></div>
     </div>
@@ -182,7 +201,7 @@ ${jumps.map((j) => `      <a href="#${j.href}"><span class="num">${j.tag}</span>
   // links to it, so «reachable» does not depend on scrolling to the end.
   function page({ title, sidebarHtml, headerHtml, overviewHtml = '', sectionsHtml, readmeHtml, styles }) {
     return `<!doctype html>
-<html lang="en">
+<html lang="${textFor(lang).htmlLang}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -193,7 +212,7 @@ ${styles}
 </style>
 </head>
 <body>
-<input type="checkbox" id="viewport" class="view-input" aria-label="Viewport width">
+<input type="checkbox" id="viewport" class="view-input" aria-label="${textFor(lang).viewportLabel}">
 ${sidebarHtml}
 <div class="wf-board">
 ${headerHtml}

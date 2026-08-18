@@ -11,6 +11,7 @@ import { fileURLToPath } from 'node:url';
 const kitCoreDir = dirname(fileURLToPath(import.meta.url));
 import { idOf } from './ids.mjs';
 import { makePartials, BOARD_CONTRACT } from './partials.mjs';
+import { textFor } from './text.mjs';
 import { migrationReport } from './migrations.mjs';
 
 /** Import a board-local module by path, or null when the board does not have that file. */
@@ -135,6 +136,10 @@ export async function loadBoard(boardDir, { screens = true } = {}) {
     // The kit's own — the opening overview, which every board has whatever it is drawn in. It
     // goes FIRST so a pattern can override it without having to restate what it agrees with.
     readFileSync(join(kitCoreDir, 'overview.css'), 'utf8'),
+    // The chrome the kit's own markup needs. Second, and never a pattern's job: a pattern that a
+    // board brought with it has rules for what its screens draw and none for a sidebar it never
+    // wrote, and a board in that state builds green with an index filter that hides nothing.
+    readFileSync(join(kitCoreDir, 'chrome.css'), 'utf8'),
     readFileSync(join(patternDir, 'styles.css'), 'utf8'),
     // A board's own stylesheet is appended rather than substituted, so it overrides the pattern
     // without having to restate it. Most boards will not have one.
@@ -163,7 +168,8 @@ export async function loadBoard(boardDir, { screens = true } = {}) {
     projectGates,
     styles,
     introParts,
-    partials: makePartials({ components, roles }),
+    partials: makePartials({ components, roles, lang: config.boardLang }),
+    text: textFor(config.boardLang),
     manifest: [],
     sections: [],
     screens: [],

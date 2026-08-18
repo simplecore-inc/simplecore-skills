@@ -15,6 +15,8 @@
 // rather than a document is what makes «never trim items 1–13» structural instead of a comment
 // somebody has to obey.
 
+import { textFor } from './text.mjs';
+
 /** The standing items. Numbered in the rendered list; the order here is the order read. */
 const STANDING = [
   '<strong>This is a low-fidelity wireframe, not a design.</strong> It fixes <em>what is on each screen, in which state, and how the user moves between screens</em> — the minimum needed to start building. It says nothing about how the product should look.',
@@ -30,7 +32,7 @@ const STANDING = [
   '<strong>A narrow/wide pair is one responsive screen, not two screens.</strong> The pair records how the layout reflows between the two viewports; implement a single screen that spans them.',
   '<strong>Arrows, numbered steps, stickies, and fold lines are annotations</strong> describing navigation and intent. Never render them as UI.',
   '<strong>Visual detail is deliberately unspecified; screens and states are not.</strong> A screen or state missing from this board has not been specified — ask, do not invent. Where this board and the project\'s frontend conventions disagree about structure or components, the project\'s conventions win.',
-  '<strong>이 보드에는 이모지가 없다.</strong> 아이콘 자리는 빈 사각형으로 두고, 뜻이 필요한 곳은 낱말로 쓴다. 아이콘 모양은 제품의 디자인 시스템이 정한다.',
+  '<strong>This board carries no emoji.</strong> An icon\'s place is left as an empty square, and anywhere a meaning is needed it is written as a word. What the icon looks like is the product\'s design system to decide.',
 ];
 
 /**
@@ -53,10 +55,17 @@ const STANDING = [
  * @returns `{ header, readme }`
  */
 export function renderIntro({ config, patternItems = '', boardItems = '', hasPairs = false }) {
+  const text = textFor(config.boardLang);
   const toggle = hasPairs
-    ? '\n  <label class="view-toggle" for="viewport"><span class="opt-narrow">Narrow</span>' +
-      '<span class="opt-wide">Wide</span></label>'
+    ? `\n  <label class="view-toggle" for="viewport"><span class="opt-narrow">${text.narrow}</span>`
+      + `<span class="opt-wide">${text.wide}</span></label>`
     : '';
+  // The day every frame stands on, said where a reader meets it. `config.today` already existed
+  // and every dated frame was drawn against it; it was simply invisible, so a reader working out
+  // what 「30일 남음」 counts from had to open the config. **It is the board's declared basis and
+  // never the build's clock** — a board rebuilt on Tuesday is not a board redrawn on Tuesday, and a
+  // stamp that moved every build would say the opposite of what it appears to.
+  const dateline = config.today ? `<span class="dateline">${text.asOf(config.today)}</span>` : '';
   // Two rows: the board's name alone on the first, and everything that is ABOUT the board —
   // what kind of drawing it is, the viewport toggle, the way to the reading contract — on the
   // second. On one line the title competed with four controls and read as the first of five
@@ -65,7 +74,7 @@ export function renderIntro({ config, patternItems = '', boardItems = '', hasPai
   <div class="bh-main">
     <h1>${config.headline ?? config.boardName}</h1>
     <div class="bh-meta">
-      <span class="tag">${config.tag ?? 'WIREFRAME · LO-FI'}</span>${toggle}
+      <span class="tag">${config.tag ?? 'WIREFRAME · LO-FI'}</span>${toggle}${dateline}
     </div>
   </div>
   ${config.logoData ? `<img class="board-logo" src="${config.logoData}" alt="">` : ''}

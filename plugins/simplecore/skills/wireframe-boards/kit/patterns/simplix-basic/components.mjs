@@ -204,7 +204,21 @@ export const offlineBar = ({ queued = 0, offline = false, lang = 'ko' }) => {
 // left holds that area's own menu, and the strip along the bottom carries what keeps running
 // while the reader works. Nothing else is window-level chrome — there is no breadcrumb and no
 // global search, because a screen is named by its tab, its menu entry, and its page header.
-export const browserbar = (url) => `<div class="browserbar"><span class="dots"><i></i><i></i><i></i></span><span class="url">${url}</span></div>`;
+/**
+ * The window a desktop frame sits in.
+ *
+ * <p>`chrome: 'browser'` is a page loaded at an address, and the bar shows it. `chrome: 'app'` is
+ * an installed program's own window: it has a title where the address would be, because a program
+ * that was installed is not reached by typing a URL — and drawing an address bar over one tells
+ * every reader it is a web page.
+ *
+ * @param url the address, for a browser window
+ * @param chrome `browser` (default) or `app`. `none` never reaches here — the kit draws no bar
+ * @param title the program's window title, for `app`
+ */
+export const browserbar = (url, { chrome = 'browser', title = '' } = {}) => (chrome === 'app'
+  ? `<div class="browserbar is-app"><span class="dots"><i></i><i></i><i></i></span><span class="wtitle">${title || url}</span></div>`
+  : `<div class="browserbar"><span class="dots"><i></i><i></i><i></i></span><span class="url">${url}</span></div>`);
 
 /**
  * The bar across the top of the console.

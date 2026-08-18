@@ -97,12 +97,11 @@ export async function buildBoard(boardDir, { pdf = true } = {}) {
     });
     const screenCount = seqOf.size;
     const frameCount = sec.entries.length;
-    const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
     const caption =
       sec.count ||
       (screenCount === frameCount
-        ? plural(frameCount, 'frame')
-        : `${plural(screenCount, 'screen')} · ${plural(frameCount, 'frame')}`);
+        ? ctx.text.frames(frameCount)
+        : ctx.text.screensAndFrames(screenCount, frameCount));
     sectionBlocks.push(
       `<section class="flow" id="flow-${sec.letter.toLowerCase()}">
   <div class="flow-title">${sec.letter}. ${sec.title} ` +
@@ -123,9 +122,9 @@ ${frames.join('\n')}
   // Only what was actually drawn: a link to a card the overview did not render is a dead entry,
   // and a board with no role matrix legitimately has no 사용자 구성 card.
   const jumps = [
-    ...(overviewHtml.includes('id="ov-ia"') ? [{ href: 'ov-ia', tag: 'IA', label: '정보 구조' }] : []),
-    ...(overviewHtml.includes('id="ov-user"') ? [{ href: 'ov-user', tag: 'USER', label: '사용자 구성' }] : []),
-    { href: 'readme', tag: 'READ', label: '읽기 규약' },
+    ...(overviewHtml.includes('id="ov-ia"') ? [{ href: 'ov-ia', tag: 'IA', label: ctx.text.jumpIa }] : []),
+    ...(overviewHtml.includes('id="ov-user"') ? [{ href: 'ov-user', tag: 'USER', label: ctx.text.jumpUser }] : []),
+    { href: 'readme', tag: 'READ', label: ctx.text.jumpReadme },
   ];
   ctx.html = page({
     title: config.title,
