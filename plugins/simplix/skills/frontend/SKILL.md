@@ -303,6 +303,11 @@ These invariants apply to **every** frontend file you touch. Treat each as invio
       covers** — it sits over the list rather than narrowing it, so a row's right-hand columns are
       under it while it is open. That is the shape, not a defect, and reporting it as one reports
       the setting.
+    - **Moving between records under a drawer is 「close, then choose」, and writing it as 「two
+      presses」 sends the next reader after a bug.** A press on a row's middle lands on the drawer
+      and does nothing; the reader presses the part of the list still showing, which the backdrop
+      takes as close, and then picks the row. One of those sentences describes an interaction and
+      the other describes a click that fails to register.
     - **Record which presentation the installation is on, as a fact.** 「이 설치는 서랍으로 서 있다」
       belongs in the report; 「보드와 다르다」 does not. The difference matters: the first tells the
       next reader what they are looking at, the second sends them to fix something that is not
