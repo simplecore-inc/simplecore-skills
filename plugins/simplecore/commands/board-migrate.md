@@ -65,6 +65,12 @@ content of `board.html` apart from the intended differences below.
 | Where the contract sits | the top of the board | the **foot** of the board, with a link from the header. The PDF carries none of it |
 | Gates | one list in the board | the kit's, then the pattern's, then `board.gates.mjs` for this repository's own |
 | The PDF | one file beside the board, swept each build | `pdf/<name>-<stamp>.pdf`, kept, git-ignored |
+| A paired screen's opening viewport | whatever the board's own markup set | the kit's default, uniformly |
+
+**Say the viewport default out loud where the board has narrow/wide pairs.** The kit writes the
+toggle and the rule that reads it, so the side a pair opens on is the kit's from now on — and a
+board that used to open wide opening narrow is a change to what every reviewer sees, arriving with
+nothing in the artifact to say it happened.
 
 **What it costs:** the board can no longer be built on a machine without the plugin installed.
 Say this out loud — it is the one real trade, and it decides whether a CI job has to change.
@@ -93,11 +99,30 @@ Follow the `steps` the `migrations` output lists for each contract being crossed
    roles and purchase and re-exports the finished shells under the names the screens already
    import. **No screen file changes.**
 5. **`src/components.mjs` becomes one line** re-exporting the pattern through `.kit`.
-6. **`src/intro.html` keeps only the product's own items**, as bare `<li>`. Anything the pattern
-   already says is deleted, not restated.
-7. **Add `contract: 3` and `pattern:` to `board.config.mjs` LAST.** Raising the number is the
+6. **The reading contract keeps only the product's own items**, as bare `<li>`. Anything the
+   pattern already says is deleted, not restated. **The file to trim is `src/intro.html` on the
+   fork path and `<pattern>/intro.html` on the adopt path** — `adopt` moves the file before
+   anything is trimmed, so `src/intro.html` is gone by then. A board from before the contract
+   usually wrote a whole document there, heading and sections and its own copy of the standing
+   items; promoted unchanged it lands inside the kit's `<ol>` and renders a heading between two
+   list items with no error anywhere. `adopt` says so when it sees it.
+7. **Delete `src/partials.mjs`, or carry what is in it into the pattern.** The kit's
+   `core/partials.mjs` builds the board from here; the board's copy is read by nothing and edited
+   to no effect, with nothing saying why. `adopt` names it.
+8. **Decide the PDF rather than inheriting it.** `pdfName` is what makes `build` render one, and a
+   board that never produced a PDF has no reason to start: declaring it puts a headless browser on
+   every build, which on a repository whose only gate is the build is a new way for the gate to
+   fail. Leave it out and say so in the config; `node wf.mjs pdf` still renders one on demand.
+9. **Add `contract: 3` and `pattern:` to `board.config.mjs` LAST.** Raising the number is the
    final act; doing it first makes the build stop reporting what is still undone.
-8. `.gitignore` gains `.kit` and `pdf/`; existing PDFs move into `pdf/`.
+10. `.gitignore` gains `.kit`, and `pdf/` where the board declares a `pdfName`; existing PDFs move
+    into `pdf/`.
+11. **Sweep the names the move retired.** `tools/`, `build.mjs`, `catalog.mjs`, `src/partials.mjs`
+    and the old artifact name are gone, and every sentence still naming them is now a set of
+    instructions to a file that is not there. Grep for each; a repository that keeps a register of
+    retired names registers them there with their successors. The board's own checkers are part of
+    this — a script reading `src/components.mjs` or `src/styles.css` is reading a path the move
+    emptied, and it will keep passing while reading nothing.
 
 A component or a gate the board added that the pattern lacks goes **into the pattern**, not into a
 local file — that is the whole point of the move, and one component kept beside the board is a
@@ -140,6 +165,14 @@ migration, not a result of it.
 Where the build refuses, read the finding before touching it: a gate that fires during a migration
 is usually reporting something the old board had and nobody could see. Fix the board, never the
 gate.
+
+**`node wf.mjs check` is the one that may finish red, and finishing red is a result.** It is a
+visual sweep — overflow, a box against a box, a primary action under the fold — and what it reports
+is a screen to redraw, which is a change to what the board SAYS and therefore not part of moving
+where the machinery lives. Prove the findings predate the move (the frame markup and the stylesheet
+came across unchanged, so they do), report the count, and leave them. Do not put it in the
+repository's own gate chain on the way past either: a red gate in a chain refuses every unrelated
+change until somebody redraws a screen, and that deadlock costs more than the findings.
 
 ## 5. Report
 

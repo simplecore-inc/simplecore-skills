@@ -36,6 +36,15 @@ desktop sections freely.
 - A phone or tablet frame may also carry a `.fold` when the page is a long scroll
   with no pinned chrome — the line then marks exactly where the device viewport
   ends.
+- **What kind of window a desktop frame sits in is declared, not assumed.** `chrome:
+  'browser'` is the default and shows the address bar; `chrome: 'app'` is an
+  installed program's own window and shows `appTitle` where the address would be;
+  `chrome: 'none'` draws no window at all — a bare desktop, an installer, a screen
+  that IS the machine. Drawing an address bar over a program somebody installed
+  tells every reader it is a web page. Any other value refuses the build rather
+  than falling back, and the kit never smuggles the choice through the URL: a
+  board that wrote `app:<title>` into the address field drew its three frames
+  correctly and made every reader parse a string to find out why.
 
 ## Viewport pairs and the toggle
 

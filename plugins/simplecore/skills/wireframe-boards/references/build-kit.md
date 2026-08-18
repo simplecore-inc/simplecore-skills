@@ -168,6 +168,14 @@ differ only by `variant`.
 Adding a screen is one file under `src/screens/` plus one line in the manifest. A note points at
 another screen by FILE NAME (`{{a-01-sign-in}}`), which the build resolves to that screen's id.
 
+**Within a section, the tail of the file name is unique** — the words after the number. Two screens
+named `k-02-airgap` and `k-13-airgap` are both perfectly good frames, and neither a note nor a
+person can say which one they mean: a note names the tail, and one tail reaching two screens leaves
+the reference ambiguous in a way the build cannot resolve and the reader cannot see. `refTailGate`
+refuses it. **Fix the NAME, never the number** — the id is permanent, so rename the file to what
+that screen actually draws and carry the notes, the imports and anything else naming the tail
+across in the same change. Two screens that genuinely draw the same thing are one screen.
+
 ## What the gates catch that reading would not
 
 - **A component called with a key it does not know draws nothing and says nothing about it.** The

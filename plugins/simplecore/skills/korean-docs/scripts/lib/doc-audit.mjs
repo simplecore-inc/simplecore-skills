@@ -586,8 +586,14 @@ function isNGaEnding(whole, rest) {
 // workers names their cities, so this arrives in ordinary screen copy — 「하노이 공장」 read as
 // 하노+이 turns a factory into a subject particle. Only the bare name is skipped: 「하노이가」 ·
 // 「하노이를」 are still judged, and they are already right, because the name is vowel-final.
+//
+// **`타이` belongs to the same loanword family as `레이` · `웨이` · `페이` · `메이`** — an English
+// `-ie` / `-ay` / `-y` ending transliterated with 이 as its last syllable. It arrives through
+// method names as often as through clothing: 보우타이(Bow-Tie) is a standard risk-assessment
+// technique, so 「보우타이 기법」 reads as 보우타+이 and a correct term is reported as a particle
+// error. 넥타이 · 나비타이 · 타이 are the same word shape.
 const PARTICLE_TAIL_SKIP =
-  /(레이|플레이|어레이|웨이|페이|메이|효과|초과|평가|전문가|국가|증가|참가|원가|단가|보이|사이|차이|넓이|길이|높이|깊이|먹이|놀이|쓰임새|가까이|같이|굳이|깊숙이|일찍이|나란히|틈틈이|샅샅이|곰곰이|번번이|낱낱이|고이|많이|파이|하노이|상하이|뭄바이|두바이|하와이|시드니)$/;
+  /(레이|플레이|어레이|웨이|페이|메이|타이|효과|초과|평가|전문가|국가|증가|참가|원가|단가|보이|사이|차이|넓이|길이|높이|깊이|먹이|놀이|쓰임새|가까이|같이|굳이|깊숙이|일찍이|나란히|틈틈이|샅샅이|곰곰이|번번이|낱낱이|고이|많이|파이|하노이|상하이|뭄바이|두바이|하와이|시드니)$/;
 
 function hasFinalConsonant(ch) {
   const code = ch.codePointAt(0);

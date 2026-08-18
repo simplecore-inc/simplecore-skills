@@ -181,6 +181,39 @@ export function forkPattern(boardDir, { into = 'pattern', name = null } = {}) {
 /** What a board carries in `src/` that belongs to a pattern, and what each becomes. */
 const PROMOTED = ['components.mjs', 'styles.css', 'intro.html'];
 
+/**
+ * What a board carries in `src/` that the kit now owns, and that nothing will read again.
+ *
+ * <p>`src/partials.mjs` is a board's own copy of the frame, the sidebar and the page — the three
+ * the kit writes. After the promotion nothing imports it: the kit's `core/partials.mjs` is what
+ * builds the board, and the copy sits in the repository looking live. **A stale file read as
+ * current is worse than an absent one**, and this one is worse still, because a person editing it
+ * to change the sidebar will see nothing happen and have no way to find out why.
+ *
+ * <p>It is reported rather than deleted. The file is the board's, it may hold something its author
+ * wants to carry into the pattern, and a command that restructures a repository should not also be
+ * the command that throws a file away.
+ */
+const ORPHANED = ['partials.mjs'];
+
+/**
+ * Whether a promoted `intro.html` is a document rather than the list items the kit expects.
+ *
+ * <p>The reading contract is assembled from three layers and each of the two files contributes
+ * bare `<li>` elements into one `<ol>` — which is what makes «never trim the standing items»
+ * structural rather than a comment. A board from before the contract wrote its whole contract into
+ * that file: a heading, sections, and its own copy of the standing items. Promoted unchanged it
+ * lands inside the kit's `<ol>`, and the board renders a heading and a `<section>` between two list
+ * items with no error anywhere.
+ *
+ * <p>The test is what it holds ABOVE list level. Anything block-shaped outside an `<li>` — a
+ * heading, a section, a paragraph, a list of its own — is a document.
+ */
+function looksLikeDocument(html) {
+  const outsideItems = html.replace(/<li\b[\s\S]*?<\/li>/gi, ' ');
+  return /<(h[1-6]|section|article|div|p|ol|ul)\b/i.test(outsideItems);
+}
+
 /** The smallest `pattern.mjs` the kit will load, written around what was promoted. */
 const PATTERN_MJS = (name, title) => `// ${name} — this board's own pattern, promoted out of \`src/\`.
 //
@@ -267,5 +300,9 @@ export function adoptPattern(boardDir, { into = 'pattern', name = null } = {}) {
       : configSrc.replace(/(export default \{\n)/, `$1  pattern: './${into}',\n`));
   }
 
-  return { into, name: patternName, moved, config: wrote };
+  return {
+    into, name: patternName, moved, config: wrote,
+    orphaned: ORPHANED.filter((f) => existsSync(join(src, f))),
+    introIsDocument: moved.includes('intro.html') && looksLikeDocument(readFileSync(join(to, 'intro.html'), 'utf8')),
+  };
 }

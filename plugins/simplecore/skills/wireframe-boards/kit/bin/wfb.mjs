@@ -103,6 +103,18 @@ if (cmd === 'pattern') {
     console.log(report.config
       ? `  ~ board.config.mjs  pattern: './${report.into}'`
       : `  ! board.config.mjs가 없습니다 — 만들 때 pattern: './${report.into}'을 적습니다`);
+    // Two things the promotion cannot do for anybody, said here because this is the only moment
+    // somebody is looking at the board's `src/` and knows why it changed.
+    if (report.introIsDocument) {
+      console.log(`\n  ! ${report.into}/intro.html이 목록 항목이 아니라 문서입니다`
+        + '\n    읽기 계약은 킷의 <ol> 안으로 들어가므로 이 파일에는 <li>만 남깁니다.'
+        + '\n    머리글·절·표준 항목은 킷과 패턴이 이미 그리므로 지웁니다 — 다시 적으면 두 번 나옵니다.');
+    }
+    for (const f of report.orphaned) {
+      console.log(`\n  ! src/${f}을 이제 아무도 읽지 않습니다 — 킷의 core/${f}가 보드를 짓습니다`
+        + `\n    남겨 두면 고쳐도 아무 일이 일어나지 않고, 그것을 알 방법이 없습니다.`
+        + `\n    옮길 것이 있으면 ${report.into}/로 옮기고, 없으면 지웁니다.`);
+    }
     console.log('\n다음: node wf.mjs build --no-pdf 로 킷이 이 보드를 지을 수 있는지 봅니다.');
     process.exit(0);
   }
