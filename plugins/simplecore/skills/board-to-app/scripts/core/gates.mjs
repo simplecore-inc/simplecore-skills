@@ -165,14 +165,14 @@ export const configGate = {
           findings.push(`${key} must be ${TYPE_OF.headings}`);
           continue;
         }
-        for (const role of HEADING_ROLES) {
+        for (const role of spec.roles ?? HEADING_ROLES) {
           const heading = value[role];
           if (typeof heading !== 'string' || !heading.trim()) {
             findings.push(`${key}.${role} names no heading — a section named by role that no heading matches stops an agent`);
           }
         }
         for (const role of Object.keys(value)) {
-          if (!HEADING_ROLES.includes(role)) findings.push(`${key}.${role} is not a role this skill knows`);
+          if (!(spec.roles ?? HEADING_ROLES).includes(role)) findings.push(`${key}.${role} is not a role this skill knows`);
         }
         continue;
       }

@@ -36,6 +36,25 @@ export const CONFIG_NAME = join('.claude', 'board-to-app.json');
  * a choice, and a project that genuinely does not want it says so in `deferredKeys` with the
  * chapter that will declare it.
  */
+/**
+ * The lines a chapter writes that a check has to recognise, by role.
+ *
+ * <p>`persona` opens the line a named role has to prove, `verdict` the line a machine proves
+ * instead, and `states` the sentence listing the states hanging off a screen. A project writes
+ * each in its own words; nothing here may assume them.
+ */
+export const CHAPTER_LINE_ROLES = ['persona', 'verdict', 'states'];
+
+/**
+ * The three labels one evidence section carries, by role.
+ *
+ * <p>`did` is what was run, `demanded` is the chapter's own sentence copied whole, and `saw` is
+ * what was on the screen. `demanded` is the one a check compares against the chapter, so a project
+ * that renames it renames what the comparison looks for.
+ */
+export const EVIDENCE_LABEL_ROLES = ['did', 'demanded', 'saw'];
+
+/** The roles `chapterHeadings` maps, so nothing in the skill has to know one project's wording. */
 export const SCHEMA = {
   boardRoot: { kind: 'dir', required: true },
   boardManifest: { kind: 'file', required: true },
@@ -44,6 +63,17 @@ export const SCHEMA = {
   chapterOverview: { kind: 'file', required: true },
   chapterGenerator: { kind: 'command' },
   chapterHeadings: { kind: 'headings' },
+  // The words a chapter's own lines begin with, and the word its ledger writes for a closed
+  // chapter. Every check over a chapter's evidence has to read these, and reading them from a
+  // constant is what kept those checks in one repository.
+  //
+  // **No default, deliberately.** A default in this skill's own language is silently imposed on a
+  // project working in another — it would run, find nothing, and report nothing, which is the exact
+  // shape of failure the `closing` grade exists to make visible. Undeclared, everything still runs
+  // and no chapter closes, and `doctor` says which key is why.
+  chapterLines: { kind: 'headings', roles: CHAPTER_LINE_ROLES, closing: true },
+  evidenceLabels: { kind: 'headings', roles: EVIDENCE_LABEL_ROLES, closing: true },
+  closedStatus: { kind: 'text', closing: true },
   // Where a chapter's verification result and the captures it cites are written. **Not required to
   // configure and required to close** — a project builds screens without it and cannot finish a
   // chapter, which is the difference `required` alone could not express and `doctor` reported as an
@@ -72,7 +102,6 @@ export const SCHEMA = {
   deferredKeys: { kind: 'deferrals' },
 };
 
-/** The roles `chapterHeadings` maps, so nothing in the skill has to know one project's wording. */
 export const HEADING_ROLES = [
   'prerequisites',
   'parallelWith',
