@@ -398,6 +398,27 @@ the build's own wiring — is not this and runs whenever it is ready.
 quote: a section written against it records a check nobody could have made. Release that one
 immediately, say which sections it invalidates, and hand the list to whoever is running the round.
 
+## When what a chapter demands of a screen grows
+
+**Re-run the demand that was added, not the section that carried it.** A chapter whose lines gain a
+new requirement — a capture per content tab, an empty list, the row actions pressed — does not
+thereby invalidate what its sections already recorded. The tiles counted are still the tiles
+counted; the dialog's wording is still its wording. What is missing is an answer to the new
+sentence, and that is what the run produces.
+
+**So the unit of a re-run is a demand, not a section and never a chapter.** Read the section
+against the line, list the sentences the line asks for that the section does not answer, and go get
+those. A section that answers every line as it now stands is finished and is not opened.
+
+**The exception is a picture that can no longer be trusted**, which is the row the eyes table
+carries: where the code behind that screen moved after the capture was taken, the capture is
+evidence of a build that is gone, and the sentences resting on it go with it. That is a different
+question from the demand growing, and it is asked separately.
+
+**Say which sections were re-run and which were read and left.** A round that reports 「the chapter
+was walked again」 tells nobody whether the untouched sections were judged sufficient or never
+looked at, and those two states are what the next reader most needs told apart.
+
 ## When a closed chapter gains a screen
 
 **A frame the board gains later, belonging to a closed chapter, adds lines to that chapter.** The

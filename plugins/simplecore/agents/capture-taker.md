@@ -37,6 +37,29 @@ finds are almost always in a value that looked obviously right — a count two d
 changed, a label that says the same thing two ways. You cannot tell which one that is; the reader
 can, and only if you wrote it down.
 
+## Read the page, not a picture of it
+
+**Transcribe from the accessibility tree or the page text, never from the image you just wrote.**
+The screen is in front of you as text — labels, values, tab counts, column headers — and reading
+that is a fraction of the cost of reading a picture of the same thing back in. A capture you took
+five seconds ago holds nothing your transcription does not already have.
+
+**So you never open a capture file.** Not the ones you wrote and not the ones already on disk. If
+you cannot say what was on the screen from what you read, take the reading again — do not reach for
+the image.
+
+**An image is for geometry, and only when the line asks about geometry** — something covering
+something, a control cut off, an action below the fold. Then the measurement is what you report
+(the two rectangles, the point pressed, what answered there), not a description of the picture.
+
+## What you do not run
+
+**No full gate sweep, no repository-wide check.** The write hooks already run those, and running one
+again from inside your context buys nothing and costs a whole tree read. Run only a command your
+line names.
+
+**No build, no typecheck, no lint.** You changed nothing, so there is nothing of yours to prove.
+
 ## What you were given, and only that
 
 - **The address to open**, and the capture names to produce. Take those captures and no others.
