@@ -153,6 +153,43 @@ export async function inspectBoard(boardDir, { framePrefix = '' } = {}) {
       }
       if (fused) issues.push(`붙음:${fused} — 두 상자가 맞닿아 한 덩어리로 그려진다. 담은 컨테이너에 gap이 없다`);
 
+      // Something that was never copy, rendered as copy. A frame concatenated its own header
+      // FUNCTION instead of calling it — `head +` where `head() +` was meant — and JavaScript did
+      // what it is asked to: it turned the function into its own source and drew it across the
+      // middle of three frames. Nothing errors on that. It is not a syntax error, the module loads,
+      // every gate passes and the board builds; the only thing wrong with it is what a person sees.
+      // The same shape reaches a screen as `[object Object]`, as `undefined` where a value was
+      // missing, and as a template literal that never ran.
+      //
+      // **A board may draw code on purpose, and it says so in monospace.** That is what separates a
+      // deliberate sample from an accident here — a frame showing a snippet puts it in `<code>` or a
+      // monospace class, and an accident lands in whatever element was being built.
+      //
+      // **A `{{…}}` is NOT read as a defect**: the product may draw merge fields of its own, and a
+      // frame reference the build could not resolve is already marked `{{slug?}}` by the build
+      // itself. Only that marked form is read here.
+      const NOT_COPY = [
+        ['함수 소스', /\b(?:function|const|let|return|=>)\b[^\n]{0,40}[({=][^\n]{0,40}[)};]|=>\s*[`'"({]/],
+        ['객체', /\[object [A-Z]\w+\]/],
+        ['undefined', /(?<![\w-])undefined(?![\w-])/],
+        ['NaN', /(?<![\w-])NaN(?![\w-])/],
+        ['풀리지 않은 프레임 참조', /\{\{[^}]{1,60}\?\}\}/],
+        ['템플릿 리터럴', /\$\{[^}]{1,60}\}/],
+      ];
+      const reading = document.createTreeWalker(screen, NodeFilter.SHOW_TEXT);
+      let notCopy = null;
+      for (let node = reading.nextNode(); node && !notCopy; node = reading.nextNode()) {
+        const said = node.nodeValue ?? '';
+        if (!said.trim()) continue;
+        if (node.parentElement?.closest('code, kbd, samp, tt, [class*="mono"], [class*="code"]')) continue;
+        for (const [what, shape] of NOT_COPY) {
+          if (!shape.test(said)) continue;
+          notCopy = `${what} — ${said.replace(/\s+/g, ' ').trim().slice(0, 60)}`;
+          break;
+        }
+      }
+      if (notCopy) issues.push(`문구가 아님:${notCopy}`);
+
       // A desktop screen may run past its fold — it scrolls — but its primary action may not.
       // The primary action is the emphasised button in the page header; a screen whose main act is
       // destructive has a `danger` there and no `primary` at all. Only when the header carries
