@@ -42,7 +42,7 @@ to search for the parts that matter, and the parts that matter are always the di
 Each one, three lines:
 
 - **어디** — the capture file and the place in it
-- **줄이 말한 것 / 전사가 말한 것** — quoted
+- **줄이 말한 것 / 받아 적은 것** — quoted
 - **사진에 있는 것** — what you see, exactly
 
 **A number is a disagreement even when it is close.** 「48일 남음」 against a picture reading
