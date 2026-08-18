@@ -4,6 +4,27 @@
 
 Full end-to-end process for creating a domain package + UI module from an OpenAPI spec and integrating it into the app.
 
+## Rebuilding a screen that was written by hand
+
+A screen already in the repository that does not come from the scaffold is not moved and not
+transcribed. **Scaffold the entity, read the old screen for what it does, customise the generated
+one, then delete the old.**
+
+**Read it, do not copy it.** The old screen answers *what this screen is for* — its columns, its
+filters, its verdicts, the conditions it narrows on. It does not answer *how any of that is
+written*, because the reason it is being rebuilt is that its shape is wrong. Copying it forward
+carries the shape and the rebuild produces the same file in a new folder.
+
+**The board is the contract, not the old screen.** Where the two disagree the board wins, and the
+old screen's disagreement is one of the things the rebuild is for.
+
+**Delete what you replaced in the same change.** Two files that draw one screen leave the next
+reader to guess which one runs.
+
+**Nothing is finished while the generated widget still holds the scaffold's placeholders** — the
+mock list, the TODO, the emitted filters over identifiers and audit stamps. The scaffold's output
+is a starting shape, not a delivery.
+
 ## When to Trigger This Workflow
 
 This workflow runs in **two situations**, both with BLOCKING priority over any CUSTOMIZE task (see `SKILL.md` invariant #29):

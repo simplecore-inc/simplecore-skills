@@ -115,7 +115,7 @@ These invariants apply to **every** frontend file you touch. Treat each as invio
 
 13. **`maxBadges={3}`** — every `CrudList.FilterBar` you create or touch MUST set `maxBadges={3}` (active-filter badges beyond 3 collapse to `+N`, keeping the badge bar scannable). Prescriptive standard — apply it whenever you add or modify a FilterBar, even if neighbouring lists predate the rule and lack it.
 14. **Boolean → toggle** — boolean fields use `type: "toggle"`, NEVER `type: "faceted"` with true/false options.
-15. **Chip = special cases only** — `ChipFilter` is for bitmask fields, visual distinction, or narrowing WITHIN a server-forced scope; standard enum / FK uses `type: "faceted"`. The forced-scope recipe and its backend `@SearchableField` requirement → `invariants.md` #15.
+15. **Chip = special cases only** — `ChipFilter` is for bitmask fields, visual distinction, narrowing WITHIN a server-forced scope, or a narrowing that also has to reach the tab counts / a census / a sibling list; standard enum / FK uses `type: "faceted"`. A facet reaches the list's request and nothing else, so converting the fourth case silently leaves the counts unnarrowed above narrowed rows. The test — does anything but the list hook read this filter's value? — the forced-scope recipe, and its backend `@SearchableField` requirement → `invariants.md` #15.
 16. **Filter ordering** — category order (String → Date → Number → Attribute), then by table column order. Deterministic, not aesthetic.
 17. **Backend DTO verification** — after filter design is complete, verify the backend DTO supports all filter fields. Missing fields → implement them in the backend under the `simplix:backend` skill (or, when the backend is out of scope for the session, raise the gap with the exact field, operator, and screen it blocks).
 
@@ -215,6 +215,22 @@ These invariants apply to **every** frontend file you touch. Treat each as invio
 61. **Hiding a surface is not the same as not asking for it — the gate belongs beside the request** — a hook runs wherever it is written, so a screen that gates only its JSX still fires the read the server refuses, and the user gets a bare "access denied" dialog over a panel with nothing on it to explain the refusal. Put the condition where the request is (the hook's `enabled`, the shared factory's `useEnabled`), never only at the route or the parent that composes it — a caller that forgets is then impossible rather than merely unlikely. Check the framework for an existing gate channel before inventing one. And drop the affordance too: a filter or picker left standing with an empty option list reads as "failed to load", not as "you did not buy this". Symptom catalogue, the three shapes it takes, and why this is not a script rule → `invariants.md` #61.
 
 62. **A screen with no list beside it still lays out in columns** — the two-column rule is written for a `CrudDetail` panel a few hundred pixels wide, and a settings page, a single-record editor, a preferences tab or a wizard step has no panel to be narrow. At 1440px a stack of short fields draws each input a thousand pixels wide for a value of twenty characters. Give the content columns, cap the measure, and **judge by the rendered input rather than by the component name** — a screen that never imports `FormFields` is still a form when it draws `<Label>` + `<Input>` pairs or a bare `<select>`, and a survey counting framework component names walks straight past the one screen most likely to be laid out wrong. Full rule → `customize/consistency-checklist.md` § 2b.
+63. **Tab strip, chip filter and table sit together, with nothing between them** — a tile row, a
+    banner or a help card belongs above the group, never inside it. A number that counts one set
+    directly above a table showing another reads as counting that table, and the caption written
+    to explain the difference is the layout confessing: a sentence saying why two figures on one
+    screen disagree means the arrangement is wrong, and the fix is to make the figures agree, to
+    label what each counts, or to move the tiles out — never to add the sentence.
+
+64. **A chip filter carries a filter icon on every chip** — a chip row and a tab strip are the
+    same shape at a glance, and a reader cannot tell which one narrows. The icon is the same on
+    every chip in the row; it says what pressing does before it is pressed.
+
+65. **Actions belong to the panel footer, in two rows when one will not hold them** — a button row
+    in the panel body is a region the reader has to find, and the footer is pinned where the eye
+    already ends. Where the count outgrows one row, the second row carries the secondary verbs and
+    the committing verb stays on the last.
+
 
 ---
 

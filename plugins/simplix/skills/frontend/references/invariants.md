@@ -48,6 +48,21 @@ scope** — a list locked to `field.in: "A,B"` takes a single-select `CrudList.C
 it). Requires the backend `@SearchableField` to allow BOTH `EQUALS` and `IN` on that
 field — with only one allowed, the combination fails disguised as an empty result.
 
+**And a fourth: a narrowing that reaches past the list.** A faceted filter lives inside
+`CrudList.FilterBar`, so its value reaches exactly one request — the list's own. Where the
+same narrowing also has to reach the tab counts, a census, a sibling list, or a set of
+tiles above the list, it belongs on its own `useFilterBarState` held by the page and
+rendered as a chip row, because that is the only state both the list and its neighbours can
+read. **Converting one of these to a facet is the defect it looks like a fix for**: the rows
+narrow and the counts above them do not, so a tab reads 228 over four rows and nothing on
+screen says which of the two answers the question. Nothing errors and both halves are
+individually correct.
+
+**The test is one line of code, not a judgement**: does anything other than the list hook
+read this filter's committed value? A page that passes it into a census hook, into a second
+`useCrudList`, or into a `narrowed` flag that withholds the tab counts has answered yes.
+Where the answer is no, it is a plain axis and it becomes a facet.
+
 ## #18 Column order — the one domain exception
 
 A narrow domain exception to the mandatory column order is allowed only when a hidden
