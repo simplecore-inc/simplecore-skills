@@ -579,14 +579,37 @@ function isNGaEnding(whole, rest) {
 // Words that simply END in 이 or 가, where the tail is part of the word rather than a
 // particle. Adverbs are the ones this rule keeps mistaking for a noun: `가까이 모인다` reads
 // as 가까+이 and gets corrected to something that is not Korean.
+//
+// **Transliterated place names are the third source**, and they are a family rather than a
+// coincidence: a foreign name written in Hangul ends wherever the source language ends, and 이
+// is a common one (하노이 · 상하이 · 뭄바이 · 두바이 · 하와이). A product written for foreign
+// workers names their cities, so this arrives in ordinary screen copy — 「하노이 공장」 read as
+// 하노+이 turns a factory into a subject particle. Only the bare name is skipped: 「하노이가」 ·
+// 「하노이를」 are still judged, and they are already right, because the name is vowel-final.
 const PARTICLE_TAIL_SKIP =
-  /(레이|플레이|어레이|웨이|페이|메이|효과|초과|평가|전문가|국가|증가|참가|원가|단가|보이|사이|차이|넓이|길이|높이|깊이|먹이|놀이|쓰임새|가까이|같이|굳이|깊숙이|일찍이|나란히|틈틈이|샅샅이|곰곰이|번번이|낱낱이|고이|많이|파이)$/;
+  /(레이|플레이|어레이|웨이|페이|메이|효과|초과|평가|전문가|국가|증가|참가|원가|단가|보이|사이|차이|넓이|길이|높이|깊이|먹이|놀이|쓰임새|가까이|같이|굳이|깊숙이|일찍이|나란히|틈틈이|샅샅이|곰곰이|번번이|낱낱이|고이|많이|파이|하노이|상하이|뭄바이|두바이|하와이|시드니)$/;
 
 function hasFinalConsonant(ch) {
   const code = ch.codePointAt(0);
   if (code < 0xac00 || code > 0xd7a3) return null;
   return (code - 0xac00) % 28 !== 0;
 }
+
+// 과/와 joins two noun phrases, so it always stands BETWEEN them: a space and another Hangul word
+// follow it. A word whose last syllable simply IS 과 can be followed by anything — a middle dot in
+// a list, a closing paren, the end of the line.
+//
+// **That position is the family test, and it is here because the enumeration was losing.**
+// `PARTICLE_TAIL_SKIP` already carried 효과 · 초과 for this one syllable, and the Sino-Korean -과
+// vocabulary behind them has no end: 결과 · 성과 · 경과 · 통과 · 학과 · 교과 and every medical
+// department (내과 · 외과 · 치과 · 정형외과 · 이비인후과). Adding them one at a time is the defect
+// this file names elsewhere — an enumeration standing in for a family — and each miss is an error
+// on a correct sentence, which is the finding that teaches people to stop reading the output.
+//
+// What is given up is 「내과 진료를」, where a noun does follow. What is kept is the shape bulk
+// replacement actually leaves — 「회사과 협력사」 — and the other direction, 「사업장와」, is judged
+// as before because no Korean word ends in 와 after a consonant.
+const CONJUNCTION_FOLLOWS = /^\s+[가-힣]/;
 
 function checkParticles(lines) {
   const hits = [];
@@ -597,7 +620,9 @@ function checkParticles(lines) {
       if (PARTICLE_STEM_SKIP.test(stem)) continue;
       if (/[는은던]$/.test(stem)) continue;
       if (PARTICLE_WORD_SKIP.test(whole) || PARTICLE_TAIL_SKIP.test(whole)) continue;
-      if (isNGaEnding(whole, line.slice(m.index + whole.length))) continue;
+      const rest = line.slice(m.index + whole.length);
+      if (isNGaEnding(whole, rest)) continue;
+      if (particle === '과' && !CONJUNCTION_FOLLOWS.test(rest)) continue;
       const final = hasFinalConsonant(stem[stem.length - 1]);
       if (final === null) continue;
       if (PARTICLE_NEEDS_FINAL[particle] === final) continue;
