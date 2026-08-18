@@ -121,13 +121,31 @@ function lineHits(content, re, filter) {
  * Not applied inside `lineHits` itself: one rule here is ABOUT comments (a `//` line between a
  * JSX tag and its children paints on screen), and filtering globally would blind it.
  *
- * KNOWN LIMIT: this reads the start of the line only. A block comment that wraps onto a second
- * line whose continuation does not begin with `*` reads as code, so a pattern mentioned there
- * still counts as a hit. Meeting a false positive on such a line means fixing this, not the rule
- * that used it — track the open/close of block comments across the file instead.
+ * <p><b>A block comment is tracked across the file, not guessed from the line.</b> Reading only
+ * the line start misses the continuation of a wrapped block whose next line does not begin with
+ * `*` — a JSX comment explaining a prop, which is exactly where an explained anti-pattern is
+ * written out in full. `lineHits` hands the filter the whole file and the index, so the state is
+ * available; scanning from the top is cheap beside reading the file at all.
+ *
+ * @param line the line under test
+ * @param lines every line of the file, when the caller has them
+ * @param i the index of `line` within `lines`
+ * @returns false when the line is only a comment, or sits inside a block comment
  */
-function notCommentLine(line) {
-  return !/^\s*(\/\/|\*|\/\*|\{\/\*)/.test(line);
+function notCommentLine(line, lines, i) {
+  if (/^\s*(\/\/|\*|\/\*|\{\/\*)/.test(line)) return false;
+  if (!lines || i == null) return true;
+  // Walk from the top counting block-comment openers against closers. A line inside an open
+  // block is comment whatever it starts with.
+  let open = false;
+  for (let n = 0; n < i; n++) {
+    const text = lines[n];
+    for (let k = 0; k < text.length - 1; k++) {
+      if (!open && text[k] === "/" && text[k + 1] === "*") { open = true; k++; }
+      else if (open && text[k] === "*" && text[k + 1] === "/") { open = false; k++; }
+    }
+  }
+  return !open;
 }
 
 function blockHits(content, re) {
@@ -3852,6 +3870,40 @@ return <Button onClick={() => refresh.mutateAsync({ data: { accessToken } })}>{t
     { type: "toggle", field: "active", label: fieldLabel("active") },
   ]}
 />`,
+        },
+      ],
+    },
+  },
+  {
+    id: "screen-picks-action-variant",
+    invariant: "#31",
+    level: "error",
+    desc: "A screen names actionVariant as a literal — how dense a row action reads is one decision for the console, declared once on UIProvider's `defaults`, not repeated per screen where the next screen forgets it",
+    appliesTo: isTsx,
+    // Only a literal is a decision being made here. `actionVariant={actionVariant}` is a widget
+    // forwarding its own prop, which is the escape hatch a list with no width to spare uses.
+    check: (c) =>
+      lineHits(
+        c,
+        /\bactionVariant=(?:"(?:outline|ghost|icon)"|\{\s*"(?:outline|ghost|icon)"\s*\})/,
+        (line, lines, i) =>
+          notCommentLine(line, lines, i) &&
+          // A file may justify its own exception in place, and then it owns the reason.
+          !/actionVariant:\s*deliberate/.test(lines.slice(Math.max(0, i - 6), i).join("\n")),
+      ),
+    samples: {
+      file: "apps/console/src/widgets/area/crud-page.tsx",
+      broken: `<AreaList list={list} actionVariant="ghost" />`,
+      fixed: `<AreaList list={list} />`,
+      miss: [
+        {
+          note: "a widget forwarding the prop it was handed — the escape hatch, not a decision",
+          source: `<CrudList.Table list={list} actions={actions} actionVariant={actionVariant} />`,
+        },
+        {
+          note: "an exception the file states in place, and then owns",
+          source: `{/* actionVariant: deliberate — eleven columns, and the labels push the last one off */}
+<AreaList list={list} actionVariant="icon" />`,
         },
       ],
     },
