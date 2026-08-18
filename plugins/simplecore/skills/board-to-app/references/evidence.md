@@ -83,6 +83,28 @@ GET /api/<entity>/9 → 403 SCOPE_DENIED
 **A foundation chapter has no captures.** A chapter that places no screen writes, per section, the
 command it ran and what came back. Nothing is photographed that does not exist.
 
+## Taking a capture and judging one can be two agents
+
+**The taker and the reader are already different roles; they may also be different runs.** A
+`capture-taker` opens the addresses, presses what the line names, writes down every value that was
+on the screen, and returns without a verdict. The coordinator reads the captures and the
+transcription and decides what any of it means.
+
+**What makes the split safe is that the taker transcribes rather than checks.** 「the tiles match
+the chapter」 and 「287 valid · 6 dated · 2 expiring · 0 unscoped」 are not two ways of saying one
+thing: the first is a verdict nobody can check afterwards and the second is what a reader needs in
+order to reach one. Transcription is reliable work; a judgement made by whoever took the picture is
+what the rest of this file exists to prevent.
+
+**So the taker can run on a cheaper model than the coordinator, and usually should.** Driving a
+browser to named addresses and reading values out is procedure. Deciding whether a value is a
+defect is not. Splitting them puts the cost where the work is mechanical and leaves the judgement
+whole and in one head.
+
+**What does not change is who judges.** Whoever took the pictures, the reading stays with the
+coordinator, and what the taker hands back is a record of what was on the screen rather than a
+section of the result document.
+
 ## Opening the capture before writing what was seen
 
 **A sweep is a script.** It opens an address, waits, shoots, and writes a file — and no step of it
