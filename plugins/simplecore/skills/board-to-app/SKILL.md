@@ -1165,6 +1165,15 @@ Two things narrow it, and the second is here because the first is not enough:
    to 「any non-empty string」 and 「any two words」 read 556 buttons, reported 556, and passed seven
    that were wrong. One pattern that matches everything voids a whole checker and leaves its
    statistics untouched — which is why counting is a necessary condition and not a sufficient one.
+3. **A board figure and a code figure are two different measurements until something says they are
+   not.** Averaging what the board draws and averaging what the code declares produces two numbers
+   that subtract cleanly and mean nothing: a board's header cells include the action column it
+   draws with no name, and the code emits that column from an `actions` prop rather than as a
+   column, so the board's 3.7 and the code's 1.9 are not 「half」 — they are 3.0 against 1.9 once the
+   unit matches. **Write down what each side counts before putting the two in one sentence**, and
+   prefer a code-to-code comparison against the replication source, where both sides are the same
+   expression by construction. The gap that survives the unit check is the finding; the rest was
+   arithmetic on two different things.
 
 **Count the repository's checkers against `gates` once, when the project is wired.** How many
 checkers does it have, and how many does some entry of `gates` actually reach? The difference is
