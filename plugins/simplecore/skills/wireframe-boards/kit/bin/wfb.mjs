@@ -47,6 +47,7 @@ const HELP = `wireframe-boards — 보드를 빌드하고 점검하는 명령
                                   --to를 주면 로고 아래에 만든 시각과 수신자를 적습니다
   shots <디렉터리> [id접두]         프레임마다 PNG 한 장을 저장합니다
   doctor                          이 보드의 계약 버전과 남은 작업
+  migrations                      계약마다 무엇이 바뀌고 무엇을 해야 하는지 (보드 설정 없이도 돕니다)
   patterns                        쓸 수 있는 공통패턴
   pattern fork [--into <디렉터리>] [--name <이름>]
                                   지금 패턴을 보드 안으로 복사하고 보드가 그것을 쓰게 합니다
@@ -133,6 +134,20 @@ if (cmd === 'init') {
   for (const p of report.written) console.log(`  + ${p.slice(boardDir.length + 1)}`);
   for (const p of report.kept) console.log(`  · 그대로 둠 ${p.slice(boardDir.length + 1)}`);
   console.log('\n다음: node wf.mjs build --no-pdf 로 시작 프레임이 그려지는지 봅니다.');
+  process.exit(0);
+}
+
+// What every contract changed, for somebody deciding whether a move is worth making.
+//
+// **Above the config check on purpose.** A board being migrated has no `board.config.mjs` — that
+// file arrives WITH the contract this command describes — so requiring one would refuse the
+// command to exactly the board it is for. It reads nothing off the board and needs nothing from it.
+if (cmd === 'migrations') {
+  for (const m of MIGRATIONS) {
+    console.log(`\n계약 ${m.contract} — ${m.title}${m.breaking ? ' (빌드가 멈춥니다)' : ''}`);
+    for (const c of m.changed) console.log(`  바뀐 것 · ${c}`);
+    for (const s of m.steps) console.log(`  할 일   · ${s}`);
+  }
   process.exit(0);
 }
 
@@ -235,15 +250,6 @@ switch (cmd) {
     if (report) console.log(`\n${report}`);
     else console.log('\n계약은 최신입니다.');
     if (missing.length) process.exit(1);
-    break;
-  }
-  case 'migrations': {
-    // What every version changed, for a person deciding whether a move is worth making.
-    for (const m of MIGRATIONS) {
-      console.log(`\n계약 ${m.contract} — ${m.title}${m.breaking ? ' (빌드가 멈춥니다)' : ''}`);
-      for (const c of m.changed) console.log(`  바뀐 것 · ${c}`);
-      for (const s of m.steps) console.log(`  할 일   · ${s}`);
-    }
     break;
   }
   default:

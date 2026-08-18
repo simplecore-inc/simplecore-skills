@@ -116,6 +116,12 @@ it is a reason to add them where the second product drawn that way will get them
 | **pattern** | true of any board drawn this way — the copy register, list-detail discipline, the control vocabulary | `kit/patterns/<name>/gates/`, or the board's own pattern folder where it forked one |
 | **board** | true of this repository only — a document format this project chose, a data shape it invented | `<board>/board.gates.mjs` |
 
+**`node wf.mjs gates` asks two questions about that set, not one.** A gate with no case is named,
+and so is **a gate no list reaches** — written, greppable, and run by nothing. The second exists
+because `CORE_GATES` is ordered by hand on purpose (cheapest refusals first, the three that read
+the rendered HTML last), and the cost of a hand-written list is a gate that falls off it. Either
+one fails the command.
+
 **Ask whether it would still be right on somebody else's board.** A gate one level too high fires
 on boards it does not describe; one level too low is rewritten by the next project that needs it.
 

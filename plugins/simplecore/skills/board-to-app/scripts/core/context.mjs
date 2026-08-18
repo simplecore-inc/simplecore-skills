@@ -7,7 +7,7 @@
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { execFileSync } from 'node:child_process';
-import { compileLines } from './grammar.mjs';
+import { compileLine, compileLines } from './grammar.mjs';
 import { evidenceReaders } from './evidence.mjs';
 
 /** Where a project declares its build, relative to the project root. */
@@ -107,6 +107,14 @@ export const SCHEMA = {
   // stripping the markup off the line to guess the word is the kind of derivation that reads fine
   // and comes out wrong — it did, putting 「**판정**…」 into a heading a person has to match.
   verdictRole: { kind: 'text', closing: true },
+  // The line an evidence section carries when a check RAN and this installation cannot decide it.
+  // Compiled by the same grammar as `chapterLines`, and its `{text}` is the chapter that repays
+  // the debt. Optional: a project that has never met the case declares nothing and the two checks
+  // over it are skipped. **A project that HAS met it and declares nothing writes the marker in
+  // prose, where the chapter it names closes with the debt still outstanding** — which is the
+  // failure the key exists to stop, and the reason `references/evidence.md` names the key at the
+  // moment the case first comes up rather than in a list of options.
+  deferredLine: { kind: 'text' },
   // Where a chapter's verification result and the captures it cites are written. **Not required to
   // configure and required to close** — a project builds screens without it and cannot finish a
   // chapter, which is the difference `required` alone could not express and `doctor` reported as an
@@ -257,7 +265,12 @@ export function loadProject(configPath, options = {}) {
     // imports the compiler: a project's own gate file cannot reach into the skill by path — the
     // skill is installed somewhere else on every machine — so what a gate needs arrives here.
     get lines() {
-      return compileLines(declared('chapterLines'));
+      const lines = compileLines(declared('chapterLines'));
+      // Compiled by the same grammar and kept beside the chapter's own lines, because a check
+      // reading a document reads all of them together. Absent where the project declares none.
+      const deferred = declared('deferredLine');
+      if (deferred) lines.deferred = compileLine(deferred, 'deferredLine');
+      return lines;
     },
     // The readers over the evidence folder, bound to this repository. A project's own gate over
     // the same documents reaches them here for the same reason it reaches the line grammar here —

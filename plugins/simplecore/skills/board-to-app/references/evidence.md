@@ -284,6 +284,40 @@ not whether the sentence did.**
 **All four are one section whose sentences changed.** Where the SET of sections changed, the next
 rule takes it — there the quotes are all fine and a section nobody wrote is being demanded.
 
+### A check that ran, and this installation cannot decide
+
+**A verification line is run rather than reasoned about, and sometimes running it answers 「not
+here」.** The boundary the line proves is not enforced by THIS installation and no amount of
+running it again will change that: a database whose application connects as a superuser cannot
+demonstrate row ownership, a deployment with no second factor cannot demonstrate a challenge, a
+single-tenant install cannot demonstrate a tenant boundary.
+
+**It is not 「did not happen」 and it is not 「passed」.** Written as the first, it reads as work
+somebody skipped and the chapter cannot close over it. Written as the second, the product carries
+a boundary nobody has ever seen hold — which is the class of defect this whole arrangement exists
+to prevent.
+
+**It is a debt, and a debt names its creditor.** The section is written exactly as any other: the
+command that was run, the demand, and what came back — including the reason it cannot be decided.
+Under them goes one more line, naming **the chapter that will be able to decide it**: the one that
+installs the role, turns on the second factor, brings the second tenant into existence.
+
+**The chapter that met the wall closes.** Its work was done and the answer it got is the honest
+one. **The chapter it named is the one that cannot close** while that line stands, and settling it
+is part of that chapter's own run.
+
+**Then, and only then, the earlier document is edited.** An earlier chapter's result document is
+otherwise never touched — it records what was true when that chapter closed. This is the one
+exception, and it is barely one: the document recorded a debt against itself, and paying it is
+what the document asked for. Take the line out, write what was finally seen in its place, in the
+same change that settles it.
+
+**Declare `deferredLine` the first time this comes up** — the line's shape, with the chapter as
+its `{text}`. Written in prose instead, nothing connects whoever hit the wall to whoever closes
+that chapter three weeks later, and the two checks that hold the debt see nothing:
+`deferredCheckNamesAChapter` refuses a chapter that does not exist and one that names itself, and
+`chapterOwedACheckDoesNotClose` refuses the named chapter's closure while the line stands.
+
 ### The demands do not move while the verification is running
 
 **A round of verification quotes the chapter, so a chapter that changes mid-round unfinishes the

@@ -637,10 +637,124 @@ export const evidenceQuotesTheChapter = {
   },
 };
 
+
+// ── A check that ran, and this installation cannot decide ───────────────────
+//
+// **The third outcome, and it is neither of the two everybody plans for.** A verification line is
+// run rather than reasoned about — that is the whole rule — and sometimes running it answers
+// 「not here」: the boundary the line proves is not enforced by THIS installation, and no amount of
+// running it again will change that. A database whose application connects as a superuser cannot
+// demonstrate row ownership; a deployment with no second factor cannot demonstrate a challenge; a
+// single-tenant install cannot demonstrate a tenant boundary.
+//
+// **It is not 「did not happen」 and it is not 「passed」.** Recorded as the first, it reads as work
+// somebody skipped and the chapter cannot close over it. Recorded as the second, the product
+// carries a boundary nobody has ever seen hold — which is exactly the class of defect the whole
+// evidence arrangement exists to stop.
+//
+// **It is a debt, and a debt names its creditor.** The section records what was run and what came
+// back, exactly as any other section does, and adds one line naming **the chapter that will be
+// able to decide it** — the chapter that installs the role, the second factor, the second tenant.
+// The chapter that met the wall CLOSES: its work was done and the answer it got is the honest one.
+// **The named chapter is the one that cannot close** while the line stands, and settling it is
+// part of that chapter's own run.
+//
+// **Then, and only then, the earlier document is edited.** An earlier chapter's result document is
+// otherwise never touched — it records what was true when that chapter closed. This is the one
+// exception, and it is not really one: the document recorded a debt against itself, and paying it
+// is what the document asked for. Remove the line and write what was finally seen, in the same
+// change that settles it.
+//
+// **Why this needs two checks rather than a habit.** The line is written by whoever hit the wall,
+// and read — if anyone reads it — by whoever closes a chapter three weeks later. Nothing connects
+// those two people but the name in the line, and a name nobody checks is a name that goes stale
+// the first time a chapter is renumbered.
+
+export const deferredCheckNamesAChapter = {
+  id: 'deferredCheckNamesAChapter',
+  title: 'a check deferred to a chapter that does not exist, or to the chapter that deferred it',
+  needs: ['chapterDir', 'evidenceDir', 'deferredLine'],
+  run: (ctx) => {
+    const reader = ctx.lines.deferred;
+    if (!reader) return [];
+    const dir_ = ctx.declared('evidenceDir');
+    const chapters = chapterFiles(ctx);
+    const known = new Set(chapters.keys());
+    const findings = [];
+
+    for (const [chapter, file] of [...chapters].sort()) {
+      const rel = `${dir_}/${file}`;
+      const text = ctx.read(rel);
+      if (text === null) continue;
+      for (const { line, no } of proseLines(text)) {
+        const said = reader.exec(line);
+        if (!said) continue;
+        const owed = said[1].trim().toUpperCase();
+        if (owed === chapter) {
+          findings.push(
+            `${rel}:${no}: this check is deferred to ${chapter}, which is the chapter that deferred `
+            + 'it — a debt naming itself is a chapter that can never close and a check nobody will '
+            + 'ever run. Name the chapter that will be ABLE to decide it: the one that installs the '
+            + 'role, the second factor, the second tenant'
+          );
+          continue;
+        }
+        if (!known.has(owed)) {
+          findings.push(
+            `${rel}:${no}: this check is deferred to 「${said[1].trim()}」, which is no chapter `
+            + `${ctx.declared('chapterDir')} holds. The name is the only thing connecting whoever `
+            + 'hit the wall to whoever closes that chapter later, so a name nothing resolves is a '
+            + 'check that will never be run and will never be reported as missing'
+          );
+        }
+      }
+    }
+    return findings;
+  },
+};
+
+export const chapterOwedACheckDoesNotClose = {
+  id: 'chapterOwedACheckDoesNotClose',
+  title: 'a chapter recorded as closed while an earlier chapter still defers a check to it',
+  needs: ['chapterDir', 'evidenceDir', 'deferredLine', 'closedStatus', 'stateLedger'],
+  run: (ctx) => {
+    const reader = ctx.lines.deferred;
+    if (!reader) return [];
+    const dir_ = ctx.declared('evidenceDir');
+    const closed = closedChapters(ctx);
+    if (!closed.size) return [];
+    const word = ctx.declared('closedStatus');
+
+    const findings = [];
+    for (const [chapter, file] of [...chapterFiles(ctx)].sort()) {
+      const rel = `${dir_}/${file}`;
+      const text = ctx.read(rel);
+      if (text === null) continue;
+      for (const { line, no } of proseLines(text)) {
+        const said = reader.exec(line);
+        if (!said) continue;
+        const owed = said[1].trim().toUpperCase();
+        if (owed === chapter || !closed.has(owed)) continue;
+        findings.push(
+          `${rel}:${no}: ${chapter} deferred a check to ${owed}, and ${owed} reads 「${word}」 in `
+          + `${ctx.declared('stateLedger')} with the line still standing. Either the check was run `
+          + `during ${owed} — in which case this line comes out and what was seen goes in its `
+          + `place, which is the one time an earlier chapter's document is edited — or it was not, `
+          + `and ${owed} is not closed. A debt that survives its own due date is a boundary the `
+          + 'product claims and nobody has ever watched hold'
+        );
+      }
+    }
+    return findings;
+  },
+};
+
 export const EVIDENCE_GATES = [
   closedChapterHasEvidence,
   everyPlacedFrameIsCaptured,
   evidenceQuotesTheChapter,
+  deferredCheckNamesAChapter,
+  chapterOwedACheckDoesNotClose,
 ];
 
 // ── The cases that prove them ───────────────────────────────────────────────
@@ -937,6 +1051,54 @@ export function cases(t) {
     false
   );
 
+
+  // ── A check that ran and this installation cannot decide ──────────────────
+  const deferring = (owed) => W02_SCOPE_SECTION.replace(
+    '**본 것** — 서버가 403으로 답한다.',
+    '**본 것** — 애플리케이션이 슈퍼유저로 붙어 있어 시험 일곱이 xfail로 끝났다.\n'
+    + `**판정 불가 — 막는 챕터 ${owed}**`,
+  );
+  const deferred = (owed, ledger = LEDGER('닫힘', '닫힘')) => t.project({
+    config: { ...WORDS, chapterDir: 'chapters', stateLedger: 'tracking/STATE.md', deferredLine: '**판정 불가 — 막는 챕터 {text}**…' },
+    files: {
+      ...CHAPTER_TEXT,
+      'tracking/STATE.md': ledger,
+      'docs/evidence/w01-foundation.md': W01_EVIDENCE,
+      'docs/evidence/w02-org-shell.md': W02_EVIDENCE(W02_SCREEN_SECTION, deferring(owed)),
+      ...CAPTURE(),
+    },
+  });
+
+  t.add(
+    'deferredCheckNamesAChapter',
+    'a check deferred to a chapter that does not exist',
+    deferred('W09'),
+    true,
+  );
+  t.add(
+    'deferredCheckNamesAChapter',
+    'a check deferred to the chapter that deferred it',
+    deferred('W02'),
+    true,
+  );
+  t.add(
+    'deferredCheckNamesAChapter',
+    'a check deferred to the chapter that will be able to decide it',
+    deferred('W01'),
+    false,
+  );
+  t.add(
+    'chapterOwedACheckDoesNotClose',
+    'the chapter that owes the check recorded as closed with the line still standing',
+    deferred('W01'),
+    true,
+  );
+  t.add(
+    'chapterOwedACheckDoesNotClose',
+    'the same debt while the chapter that owes it is still open',
+    deferred('W01', LEDGER('진행', '닫힘')),
+    false,
+  );
 
   // A project that has not named its labels has named nothing these gates read, so they say
   // nothing rather than reading the documents in this skill's own language and reporting a page of

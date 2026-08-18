@@ -1,5 +1,5 @@
 ---
-description: Wire this project to build its board chapter by chapter — the config, the four tracking files, the evidence folder, and the instruction-file pointer
+description: Wire this project to build its board chapter by chapter — the config, the tracking files, the evidence folder, and the instruction-file pointer
 argument-hint: "[--chapters <dir>] [--evidence <dir>]"
 ---
 
@@ -31,7 +31,7 @@ repository.
 2. **Check what is already there** and tell the user, one line each:
    - `.claude/board-to-app.json`
    - a chapter directory and its overview
-   - the four tracking files — the state ledger, the handover notes, the open items, the numbering
+   - the three tracking files — the state ledger, the handover notes, the open items
    - an evidence folder
    - a pointer to this skill in `CLAUDE.md` / `AGENTS.md`
    - the project's verification commands (build, typecheck, lint, convention audit, the board's own)
@@ -71,12 +71,20 @@ repository.
    at which moment.** That table is the project's because it is a staffing decision; everything
    else is in the reference and is not copied out of it.
 
-5. **Write the four tracking files** when they are missing, in the language the project's other
-   documents use. Each answers one question and no other:
-   the state ledger says which chapter is open and what runs beside it; the handover notes say what
-   an agent working a chapter worked out; the open items say what a person has to decide; the
-   numbering document says which scheme a given `X-N` belongs to. **Progress lives in these and
-   nowhere else** — a design document that carries a status column goes stale silently.
+5. **Write the three tracking files** when they are missing, in the language the project's other
+   documents use. Each answers one question and no other, and each has a key: the state ledger
+   (`stateLedger`) says which chapter is open and what runs beside it; the handover notes
+   (`handoverFile`) say what an agent working a chapter worked out; the open items
+   (`openItemsFile`) say what a person has to decide. **Progress lives in these and nowhere else**
+   — a design document that carries a status column goes stale silently.
+
+   **A fourth is written only where the project needs one, and it has no key.** Where several
+   numbering schemes share one shape — a frame `A-01`, a cluster group `S1`, a statutory code
+   `E-9`, an equipment tag `A-3` — a numbering document says which scheme a given `X-N` belongs
+   to, and the project's own gates enforce it. A project with one scheme has nothing to write down.
+   **No key, because nothing here reads it**: the schemes are the project's and only the project's
+   gates can hold them, so a key would be a promise this skill could never keep. Say which of the
+   two the project is, rather than leaving the fourth file unexplained.
 
 6. **Generate the chapter set** if the project declares a `chapterGenerator`, and otherwise say
    that it owes one. A chapter set written by hand drifts from the board the first time a frame
