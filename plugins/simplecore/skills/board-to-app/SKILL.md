@@ -633,8 +633,9 @@ written at the end so the earlier sections keep their numbers」 — so the next
 tidy it back into subject order.
 
 **Expect the chapter to stay red on that frame, and say so.** It is placed but not built,
-not verified and not captured, and whatever gate reads a closed chapter's evidence will
-say exactly that. That finding is true and is not the placement's fault: clearing it means
+not verified and not captured, and `closedChapterHasEvidence` and `everyPlacedFrameIsCaptured`
+say exactly that — what to do about it is `references/evidence.md` § *When a closed chapter gains
+a screen*, and the answer there is that the chapter is not closed. That finding is true and is not the placement's fault: clearing it means
 building the screen, running its lines and capturing it. **An agent that cannot do those —
 no server, no browser, no ledger of its own — reports the finding with its cause rather
 than placing the frame somewhere it does not belong to make a gate quiet.**
@@ -1432,6 +1433,7 @@ rediscovering it:
 | a rule needs a check, or a project needs its own gates wired in | `references/checks.md` — where a gate belongs, the context it reads, and what makes one trustworthy |
 | a screen disagrees with its frame and you are deciding which is wrong | `references/judging-frames.md` — the three lenses, the locale and layout rules, the anchor every finding needs |
 | a screen owes something besides working code and you are listing what | `references/frame-artefacts.md` — the three reasons to photograph a screen, capture axes, fingerprints, what a stale artefact costs |
+| you are writing the result document a chapter closes on, or a board fix has left a closed chapter quoting a sentence it no longer carries | `references/evidence.md` — the shape of a section, the capture naming and its ceiling, one picture per content pane, and the four paths out of a drifted quote |
 | you are about to drive the product — browser, simulator, device | `references/driving-the-product.md`, which also says where a low-level command beats the tool |
 | two agents must write one file, or a measurement surprises you, or a check has never fired | `references/harness.md` |
 | you are deciding what the seed and the captures tell as one story | `references/scenario.md` |

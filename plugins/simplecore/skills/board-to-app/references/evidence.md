@@ -1,0 +1,343 @@
+# The result document a chapter closes on
+
+**The grounds a chapter closed on live in `evidenceDir`.** One document per chapter, and the
+captures a document shows sit in a folder of the same name beside it.
+
+**A result document is the residue of running the verification, never a deliverable made
+separately.** Writing the document first and then making the screens match it inverts the whole
+arrangement — that document proves nothing, and every sentence in it is true of nothing. Run the
+persona line, look at what is there, write that.
+
+**Where the result is not properly written, a chapter's completion verdict cannot be deferred.** A
+chapter closes because the agent holding it reports that its persona lines passed, and the grounds
+of that report die with the session. The documents in this folder let somebody who was not there
+open one file and read, line by line, what was checked and what was on the screen.
+
+This file is the specification. A project keeps its own worked examples, its own tooling commands,
+and the table naming whose eyes take each reading, in the index of its own evidence folder.
+
+## Why not one of the other three folders
+
+| Not here | Why |
+| --- | --- |
+| `chapterDir` | the generator owns it — a result written there disappears at the next generation |
+| the tracking folder | progress lives there. A result is not progress; it is the grounds for a chapter being in the state it is in, and which chapter is open is written in the state ledger alone |
+| `capturesDir` | untracked. It holds what one session swept and threw away, so nobody can open it once that session ends |
+
+## The file name
+
+The chapter file's own name. The result for `<chapterDir>/<chapter-file>.md` is
+`<evidenceDir>/<chapter-file>.md`, and the captures that document shows sit in
+`<evidenceDir>/<chapter-file>/`. This holds as chapters are added, so a project's document index
+carries one row for the folder rather than one per chapter.
+
+## The shape of the document
+
+**One section per line the chapter demands somebody prove.** In a chapter that places screens that
+is the persona line; in one that places foundation it is the verdict line. The section title is the
+chapter's section number, that section's title, and — after a separator — the role: the persona's
+name, or the project's word for a machine verdict.
+
+Each section carries three labelled lines and the evidence under them.
+
+| Line | What it holds | Shape |
+| --- | --- | --- |
+| the `did` label | what the persona operated. For a machine verdict, the command that was run | **a list** |
+| the `demanded` label | the sentence copied out of the chapter file, unchanged | **one line** |
+| the `saw` label | what was in the capture when it was opened. For a command, what came back | **a list** |
+| the evidence | the frame's capture, or a fenced block holding what was run and what came back | |
+
+**`did` and `saw` are lists.** What one section demands has grown to tabs, an empty state, row
+actions and the buttons in the header, and running those checks together in one paragraph leaves
+**the reader unable to count what was checked and what was skipped.** One item is one check — one
+pane, one condition, one control pressed.
+
+**Only `demanded` stays a single line.** That line is not written; it is **copied out of the
+chapter file**, and `evidenceQuotesTheChapter` compares it as a contiguous fragment once whitespace
+is removed from both. Split into a list, the bullet markers land inside the quote, the quote stops
+being a fragment of the original, and the check reads the whole section as drifted. **The way to
+make a quote readable is not to break it up but to fix the chapter so the line is shorter.**
+
+````markdown
+# <chapter> — <the project's word for a verification result>
+
+## 1. <frame> <screen name> · <role>
+
+**<did>** — <what was operated>
+**<demanded>** — <the sentence copied out of the chapter>
+**<saw>** — <what the capture showed>
+
+![<frame>](<chapter-file>/<frame>.webp)
+
+## 1. <frame> <screen name> · <another role>
+
+**<did>** — <the address called directly>
+**<demanded>** — <the sentence copied out of the chapter>
+**<saw>** — <the answer the server gave>
+
+```
+GET /api/<entity>/9 → 403 SCOPE_DENIED
+```
+````
+
+**A foundation chapter has no captures.** A chapter that places no screen writes, per section, the
+command it ran and what came back. Nothing is photographed that does not exist.
+
+## Opening the capture before writing what was seen
+
+**A sweep is a script.** It opens an address, waits, shoots, and writes a file — and no step of it
+reads a capture. So a chapter can finish with twenty-eight pictures on disk and not one of them
+opened, and the `saw` line written in that state comes from somewhere else: the DOM that was
+queried, the response that was read, the code the writer wrote. **That is a sentence about the
+data, not a sentence about the screen.**
+
+The order a section is written in:
+
+1. **Open the capture file first.** Before the sentence is written, not afterwards to confirm it —
+   a sentence written first sends its author back to the picture looking only for what the
+   sentence says.
+2. **Write only what was in the capture.** A count read out of a response, a row known to be there
+   because a query returned it, a state known from the code — none of those is `saw`. Where
+   something the capture cannot show is needed, it goes in another sentence with grounds of its
+   own.
+3. **Write what is missing as fully as what is there.** What gets missed is always the absent side
+   — a list with no rows, a panel with no content, a screen drawn as a shell. Reading, people scan
+   what is present; they do not hunt for what is not.
+4. **Never quote a figure that the act of measuring changes.** Some figures in a capture read
+   differently the next time the screen is opened, and quoting one dates the sentence the moment it
+   is written. Two families: **a figure that counts the observer** — the session opened to take the
+   capture joins the count of active sessions, so it rises with every shot — and **a figure a clock
+   moves the window of** — a "today" count restarts at zero at midnight, so a value the seed
+   planted becomes yesterday's after a day. **Write what the figure is made of instead of the
+   figure**: 「the active sessions are the 47 the seed planted plus the session that opened this
+   screen」. The relation is still true at the next capture.
+
+   **A tile the board draws is not this.** A tile shows the value of the moment, and the number the
+   board drew is the specification of what the seed plants. That is different from a tab badge,
+   which reads as a set somebody counted.
+
+5. **Run the two checks a machine makes while the screen is still open.** A list whose total says N
+   with no rows under it, and two runs of text drawn into the same rectangle — a project's own
+   rendered-screen audit judges both, and neither is visible to a source audit or to a check on
+   the requests. Where the project has such a command, its evidence index names it. **It does not
+   belong in the `gates` list**: that list runs with no server up, so a check that cannot open a
+   browser would report a pass having looked at nothing.
+
+## A content tab is one capture per pane
+
+**There are two kinds of tab, and a board separates them by component.** One kind narrows a single
+list — all 14 · in use 11 · unused 3 — and every tab shows the same list, so one capture of the
+frame covers it. The other kind puts **different content** in one screen — profile · security ·
+notifications · devices — and the frame draws only one of those panes open.
+
+**So one frame capture is a capture of one pane, and the rest were opened by nobody.** A pane can
+be a provider configuration form of its own, or a component list of its own; neither is the open
+pane narrowed. **Whether such a pane was built cannot be read off the frame's capture.** Empty, it
+answers every request 200 and raises no console error — which is the defect this whole document
+exists for, repeated one layer under the tabs.
+
+**So there is one capture per pane.**
+
+| Which pane | Name |
+| --- | --- |
+| the one the board draws open | `<frame>.webp` — the frame's own name |
+| every other pane | `<frame>-t<n>.webp` |
+
+`<n>` is the pane's position in the board's tab strip, counting from 1. A frame whose second pane
+is the open one holds `<frame>.webp` · `<frame>-t1.webp` · `<frame>-t3.webp` · `<frame>-t4.webp`.
+
+**No natural-language characters in a file name.** macOS decomposes them, so git reads one name as
+two. The name carries the number; which pane it was goes in that section's `saw` line, in words.
+
+**One section, several pictures.** That frame's first persona section shows the pane captures
+together, and its `saw` line says what was in each, naming the pane. The section is not split per
+pane because a pane does not vary by role — what one person presses through in one sitting is one
+section.
+
+**The ceiling is still the board's pane count.** A picture of a pane the board does not draw on
+that frame cannot be named, so a frame holds no more pictures than the board draws panes for it.
+Across the repository the ceiling is the board's frame count plus the panes it leaves unopened.
+
+**A state frame drawn over a base owes one capture of itself and no panes.** A frame that opens a
+dialog reuses the base frame's drawing, tab strip included, and the panes belong to the base. The
+machine test is whether that screen file writes a tab strip of its own.
+
+**A strip that declares no open pane is read as having its first pane open.** Where a frame
+computes the open pane from a parameter, no `active: true` appears in its source. A project that
+has such a frame writes the reason down beside the rule, or the next reader deletes the line as
+useless.
+
+### The companion frame that draws the panes, and why it is photographed by the base
+
+**A board draws the unopened panes on a companion frame.** For each screen with a content strip,
+one frame stands directly behind the base: it draws the title area as the base does, leaves the
+list and the panel as placeholders, and stacks every pane but the open one down the page. **The
+alternative — a frame per pane — makes the page get drawn again**, so one list lives in two frames,
+one of them gets fixed, and the divergence the board exists to prevent comes back through the fix.
+
+**A companion frame has no capture of its own**, because the application has no such screen. It is
+a composition that stands only on the board; in the product those panes are tabs on the base
+screen. **The pictures that prove what a companion frame holds are the base's `-t<n>` files**, and
+they are the whole of it. `<frame>-t3.webp` is the running application with that frame open and its
+third pane pressed, and which frame the board drew that pane on has nothing to do with it.
+
+**So a check that counts frames leaves companion frames out of what must be captured.** Included,
+it would demand a picture nobody can take, and the only way to satisfy the demand would be to put
+the base's picture in the folder a second time under another name.
+
+**Verification does not wait for the companion frame.** The pane names are already on the board,
+which is all it takes to demand that somebody open the screen of that name and write down what is
+there.
+
+## The ceiling on captures
+
+| | |
+| --- | --- |
+| Format | WebP (`.webp`) |
+| Name | the frame id it shows, lowercased — `<frame>.webp`. A further content pane is `<frame>-t<n>.webp`; a list holding nothing is `<frame>-empty.webp` |
+| Per chapter | the frames the chapter places, plus the panes the board draws on those frames beyond the open one, plus the frames that draw a list |
+| Per repository | the board's frame count + the unopened panes + the frames that draw a list. Companion frames are not in this sum — the application has no such screen |
+| Per file | 150KB or under |
+| Width | the device width the board gave that frame, up to 1440px |
+| Theme | light |
+
+**Captures are shot in light.** Most people using the product are in light, so the screen in
+evidence should be the screen they see. Where the browser or the operating system is in dark, it is
+switched before the capture — the same screen is never kept in two themes, because one pane is one
+picture. Captures already taken are left as they are and change theme when their section is next
+run.
+
+**The file name is what holds the ceiling.** Because a name is a frame id and a pane number, the
+same pane cannot appear twice, a frame the chapter does not place cannot appear at all, and neither
+can a pane the board does not draw. However many chapters a build has, the tracked captures never
+exceed the board's frames plus its unopened panes.
+
+**Several roles seeing one screen does not add captures.** What a scope-limited role's line proves
+is the list it is filtered down to and the server refusing an address — and the grounds for that
+are the address called and the code that came back, not a picture. Those sections carry a fenced
+block. A picture is needed where the screen that role sees genuinely differs, and where it does,
+the board has usually drawn it as a frame of its own.
+
+## Captures that are not tracked
+
+Everything else a sweep shot stays in `capturesDir` and is untracked. Only what a document shows
+moves into `evidenceDir` — a capture left in the folder that no section cites is reported by
+`closedChapterHasEvidence`.
+
+## What is not written here
+
+| Not this | Where it goes |
+| --- | --- |
+| which chapter is open and what is left | the state ledger |
+| what a person has to decide before it can proceed | the open-items file |
+| the date a chapter closed | the ledger's own column |
+| how many attempts it took, what was different at first | the commit body |
+| an assessment of the quality of the work | nowhere — it is reported in conversation |
+
+**Present tense, and only what was checked and what was on the screen.** A sentence opening with
+「this time」, 「running it again」 or 「originally」, and a status column, are not the shape of this
+document.
+
+## When a later chapter changes the same screen
+
+**The earlier chapter's document is not edited.** It records what was checked when that chapter
+closed. Where a later chapter changed the screen, that chapter's own lines are run and written into
+that chapter's document. Where the later chapter has no line that opens the screen, the earlier
+document stands as the grounds.
+
+## When a board fix moves what a closed chapter quotes
+
+**The `demanded` line is copied out of the chapter file, and the chapter file is generated from the
+board.** So fixing one rule on the board leaves a closed chapter's section quoting a sentence the
+chapter no longer carries. **That section then reads as a record of somebody verifying a rule that
+is gone, and nothing about it looks wrong to a reader.**
+
+**Where they have drifted, there are two things to do.** Run that section's line again and write
+the section again, or write in the open-items file why it cannot be run. It is never left alone —
+a document and a board saying different things with no mark on either is worse than no document.
+
+**`evidenceQuotesTheChapter` finds the drift.** A section's `demanded` line that is no part of any
+line of the chapter section its title names is an error. Whitespace and line breaks are removed
+from both before comparing, so either file may wrap anywhere; a quote with the head or the tail cut
+off passes, and so does one taken from the board rules the section lists as bullets.
+
+**This is not the same as a later chapter changing the screen.** There, the screen moved and the
+earlier document is still correct as the grounds of its moment. Here **the contract moved**, so a
+rule the earlier chapter recorded as verified has ceased to exist.
+
+**A demand that shrank is a third path.** Where fixing a generator defect drops a demand nobody
+should have had, the new demand is a subset of the old one and **what that section saw already
+covers what is left.** Running it again would check the same thing more narrowly. Bring only the
+`demanded` line down to the chapter's sentence of today and leave `did` and `saw` untouched —
+matching a quote to its source is not editing what was seen. Say in the commit what shrank.
+
+**Only when it is a subset.** A demand that changed into something else has not shrunk, so that
+section's line is run again.
+
+**A rename is a fourth path, handled like the third.** Renaming a frame or a screen removes the
+sentence carrying that name from the chapter, so the check reports a drifted quote while **not one
+pixel of the screen has moved.** Nothing shrank and nothing changed into anything else, so there is
+nothing to run: bring the `demanded` line to the new name, leave `did` and `saw` alone, and leave
+the section's captures where they are. **What separates the paths is whether the screen changed,
+not whether the sentence did.**
+
+**All four are one section whose sentences changed.** Where the SET of sections changed, the next
+rule takes it — there the quotes are all fine and a section nobody wrote is being demanded.
+
+## When a closed chapter gains a screen
+
+**A frame the board gains later, belonging to a closed chapter, adds lines to that chapter.** The
+document is short a section and short a capture. `closedChapterHasEvidence` reports the section and
+`everyPlacedFrameIsCaptured` reports the capture.
+
+**Put the sections the chapter demands beside the sections the document holds, and the difference
+says which case it is.**
+
+| The difference | What changed | What to do |
+| --- | --- | --- |
+| a section only the document has | the demand shrank | delete the section the chapter does not demand |
+| a section only the chapter has | the demand grew | below |
+| both | the demand changed | delete what is gone, and treat what is new as below |
+
+**Where the demand grew there is one answer — that chapter is not closed.** Put its state back to
+open in the ledger and name the newly placed frame among what is left. There is no path where the
+screen is absent and the document is filled in, and it is not an open-items entry either: that file
+holds what waits on a person, and here nothing is waiting — the screen has simply not been built.
+
+**Every other section stays closed.** What grew is the new frame's lines, so those lines are run
+and that section is written. A section already verified is not run again; the screen it verified
+has not moved.
+
+## What the checks judge
+
+`closedChapterHasEvidence` judges: that a chapter the ledger marks closed has a document; that
+there is a section per line the chapter demands; that each section carries the three labels and
+evidence; that each capture a document shows is on disk with a name, format and size the table
+above allows; and that no capture is left in the folder that no section shows.
+
+**It does not tell a capture from a code block.** One capture **or** one fenced block satisfies a
+section, and a fenced block is the right evidence for a line that only proves a boundary. So
+nothing here separates a section written by looking at a screen from one written out of a run log,
+and that reading is assigned to eyes.
+
+**`everyPlacedFrameIsCaptured` judges the other direction.** Among the frames a closed chapter
+places and tells somebody to open, it names by frame id the ones with no capture. **A frame nothing
+photographed is a screen nobody opened** — a build has shipped nine screens drawing the shell and
+nothing else with a green build and every request answering 200, and the only party who would have
+seen it was the party that opened a browser. The ceiling above stops a frame having more than its
+panes; this check makes sure it has at least one.
+
+**A shared pattern is not counted.** A frame drawn inside other screens, with no address of its
+own, is one nobody is told to open and there is no screen to shoot.
+
+**A project's own check repeats that judgment one layer under the tabs**, reading the board's tab
+strips and asking, for each frame a closed chapter opens, whether every pane but the open one was
+photographed — and the other direction too: a picture named for a pane the board does not draw, a
+second name for the pane already open, a pane picture on a frame with no strip.
+
+**Three things stay with eyes**, and the project's evidence index names whose eyes and at which
+moment: whether the capture shows the frame it is named after, whether the `saw` line is what was
+actually there, and whether the document was written out of the verification rather than before it.
+**All three are read by somebody who did not produce what is being read** — the agent that took a
+capture knows what the screen was supposed to hold, so it reads the picture for confirmation rather
+than for what is missing.
