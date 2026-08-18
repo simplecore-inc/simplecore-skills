@@ -500,6 +500,35 @@ has to be remembered at each field is kept the day it is written and broken ever
 after** — so the moment the machinery exists, the rule that every reference goes through
 it needs a detector, not a paragraph.
 
+**Which value gets one is decided by the domain model, not by the label.** A field is a
+reference when it carries a foreign key — when its value identifies a record of another
+entity, or another record of the same entity. The generated DTO types are the evidence,
+because they are what the server actually sends. Three cases decide themselves once that
+is the test:
+
+| The value | Peek? | Why |
+| --- | --- | --- |
+| a foreign key (`parentOrgId`, `siteId`, `grantedBy`) | yes | it names a record somebody can open |
+| the parent of the same entity | yes | a different record, and the reader is walking a tree |
+| a denormalized name snapshot (`actorUsername`, 「그때 그렇게 읽혔다」) | no | it records what was true then; today's record may not match, and opening it would answer a question nobody asked |
+| an enum | no | a value, not a record |
+| a count (`21명`) | no | it names no record — it points at the list that does |
+
+**The two shapes, and the place decides which.** `appearance="inline"` — an outline button
+carrying the label and the icon — for a card, a footer action row, and a value that already
+has a label of its own beside it. `appearance="icon"` — icon only, label as tooltip and
+accessible name — for a list column, a detail-list row, and a section header's trailing
+slot, where the same control repeats down the page. Stating only the two shapes and not
+their places leaves the choice to whoever writes the next screen, which is how one product
+comes to have both.
+
+**A dialog holds the referenced record's whole detail, tabs included** — not a summary
+somebody chose six fields for. A summary is a second description of the record that drifts
+from the first, and the reader who opened it to check one thing usually needs the next
+thing too. This makes each peek cost what that entity's detail component costs: where none
+exists yet, the reference waits for the chapter that builds one rather than getting a
+hand-written card.
+
 **That detector belongs to the project, not to this script.** The shape is mechanically
 plain — a `<Link>`, or a call to the surrounding panel's selector, inside a
 `DetailFieldWrapper` — but the fix names components (`PeekTriggerButton`, `usePeekHost`)
