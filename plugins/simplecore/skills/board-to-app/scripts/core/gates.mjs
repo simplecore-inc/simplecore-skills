@@ -24,9 +24,28 @@
 // A gate put one level too high fires on projects it does not describe; one level too low is
 // rewritten by the next project that needs it. The test is whether it would still be right in
 // somebody else's repository.
+//
+// **A worked example of the test, because the line is easy to draw in the wrong place.** The
+// checks over a chapter's evidence came up together, and only three of the five moved. What a
+// result document has to look like — a section per demanded line, three labels, a picture or what
+// was run, a quote that is part of the chapter's own sentence, one capture per frame a closed
+// chapter placed — is true wherever chapters are built from a board, so `evidence.mjs` holds it
+// and the project declares the words. Two stayed behind:
+//
+//   · one asks whether the frame a picture shows can be pointed at again, and it can only ask
+//     that where the project keeps a table of frames and addresses. A project that reaches its
+//     screens by clicking has no such table and no such question, so a skill carrying the check
+//     would be carrying one console's capture arrangement everywhere.
+//   · one hunts the phrasings that hand a check to human eyes, and those phrasings are one
+//     repository's sentences. It moves when they become a declared list rather than a constant.
+//
+// **The test that separated them was not size and not usefulness** — both are useful anywhere in
+// the abstract. It was whether the check can be RUN in a repository that declares this skill's
+// keys and nothing more. Three can; two need a file the skill has no name for.
 import { pathToFileURL } from 'node:url';
 import { HEADING_ROLES, SCHEMA, isPathKey } from './context.mjs';
 import { NARRATIVE_PHRASES, hasHeading, onlyQuoted, proseLines, sectionUnder } from './prose.mjs';
+import { EVIDENCE_GATES } from './evidence.mjs';
 
 /** What a finding of a gate is: a defect to fix, or a line to go and re-read. */
 export const GRADES = ['error', 'warning'];
@@ -590,6 +609,9 @@ export const CORE_GATES = [
   capturesGate,
   trailerGate,
   importsTravelWithTheirCommit,
+  // What a closed chapter leaves behind. They sit in a module of their own because they are the
+  // longest thing here and they read documents rather than configuration.
+  ...EVIDENCE_GATES,
 ];
 
 /**

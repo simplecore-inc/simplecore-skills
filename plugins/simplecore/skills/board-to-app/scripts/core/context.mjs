@@ -8,6 +8,7 @@ import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { compileLines } from './grammar.mjs';
+import { evidenceReaders } from './evidence.mjs';
 
 /** Where a project declares its build, relative to the project root. */
 export const CONFIG_NAME = join('.claude', 'board-to-app.json');
@@ -220,6 +221,12 @@ export function loadProject(configPath, options = {}) {
     get lines() {
       return compileLines(declared('chapterLines'));
     },
+    // The readers over the evidence folder, bound to this repository. A project's own gate over
+    // the same documents reaches them here for the same reason it reaches the line grammar here —
+    // it cannot import the skill by path, and a second copy of a reader is a copy that drifts.
+    get evidence() {
+      return evidenceReaders(this);
+    },
     at,
     inRoot,
     read,
@@ -227,6 +234,15 @@ export function loadProject(configPath, options = {}) {
     git,
     exists: (path) => Boolean(path) && existsSync(path),
     isDir: (path) => Boolean(path) && existsSync(path) && statSync(path).isDirectory(),
+    // The bytes a file takes. `read` decodes utf8, and the length of that decoding is not the size
+    // of a binary file — a capture measured that way comes out under any ceiling worth setting.
+    size: (path) => {
+      try {
+        return statSync(path).size;
+      } catch {
+        return null;
+      }
+    },
     rel: (path) => (path ? relative(root, path) || '.' : ''),
   };
 }

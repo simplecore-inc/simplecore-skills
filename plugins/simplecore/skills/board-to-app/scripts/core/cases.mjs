@@ -3,6 +3,7 @@
 // Both halves for every gate: a rule that fires on everything is as useless as one that fires
 // on nothing, and neither announces itself from a green run.
 import { cleanProject } from './harness.mjs';
+import { cases as evidenceCases } from './evidence.mjs';
 
 /** Merge an override into the clean project without mutating it. */
 function variant(over = {}) {
@@ -22,6 +23,7 @@ function variant(over = {}) {
  */
 export function cases(t) {
   const add = (gate, name, spec, shouldFire) => t.add(gate, name, t.project(variant(spec)), shouldFire);
+  evidenceCases(t);
 
   // configGate — the gate that makes "never guess a path" mechanical.
   add('configGate', 'a required key is not declared', { config: { boardRoot: undefined } }, true);

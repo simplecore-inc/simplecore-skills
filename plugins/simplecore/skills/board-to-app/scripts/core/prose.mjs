@@ -101,3 +101,10 @@ export function sectionUnder(text, heading) {
   }
   return out;
 }
+
+/** A markdown table row's cells, or null when the line is not one. */
+export function tableCells(line) {
+  const trimmed = line.trim();
+  if (!trimmed.startsWith('|')) return null;
+  return trimmed.replace(/^\|/, '').replace(/\|$/, '').split('|').map((cell) => cell.trim());
+}
