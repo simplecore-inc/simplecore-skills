@@ -30,7 +30,7 @@
 //              intro · partials · manifest · sections · screens · loaded · byId · srcOf(file) ·
 //              componentsSrc · html
 import { idGate, slugGate, refTailGate, refNumGate, pairGate } from './numbering.mjs';
-import { overlayGate, optionKeyGate, dupKeyGate, deadImportGate, slotGate, classlessGate, structureGate, leakedValueGate } from './markup.mjs';
+import { overlayGate, optionKeyGate, dupKeyGate, deadImportGate, slotGate, panelFormStateGate, classlessGate, structureGate, leakedValueGate } from './markup.mjs';
 import {
   crudGate, viewSwitchGate, reachabilityGate, landingIsAddressableGate, landingIsTheListGate,
   controlVocabularyGate, panelVerbGate, backControlGate,
@@ -53,6 +53,7 @@ export const CORE_GATES = [
   pairGate,
   overlayGate,
   slotGate,
+  panelFormStateGate,
   optionKeyGate,
   dupKeyGate,
   deadImportGate,

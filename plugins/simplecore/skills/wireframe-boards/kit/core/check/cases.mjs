@@ -126,6 +126,34 @@ export function cases(t) {
   add('slotGate', '패널 폼은 상세 자리가 맞다',
     slotted("import base, { screenBody, form } from './x-01-a.mjs';\nexport default { body: screenBody(form) };",
       "export const form = panelForm({ title: 'x' });\nexport const screenBody = (detail = panel, overlay = '') => ``;"), false);
+  // The mirror, and the one that reached a person: a panel form handed to an overlay-first base
+  // draws over the whole device. Nothing throws — a string is what that slot takes.
+  add('slotGate', '패널 폼이 오버레이 자리로',
+    slotted("import base, { screenBody } from './x-01-a.mjs';\nexport const form = panelForm({ title: 'x' });\nexport default { body: screenBody(form) };",
+      "export const screenBody = (overlay = '', detail = panel) => ``;"), true);
+  // Declared in the state frame rather than in the base, which is where a form usually lives.
+  add('slotGate', '상태 프레임이 제 폼을 상세 자리에 넘긴다',
+    slotted("import base, { screenBody } from './x-01-a.mjs';\nexport const form = panelForm({ title: 'x' });\nexport default { body: screenBody(undefined, form) };",
+      "export const screenBody = (overlay = '', detail = panel) => ``;"), false);
+
+  // The state the frame declares, read instead of the type it passed. A form written as a dialog
+  // sits correctly in the overlay by every type check there is, and is still the wrong screen.
+  const stated = (state, stateSrc, baseSrc) => ctxWith([
+    screen('x-02-b', stateSrc), screen('x-01-a', baseSrc),
+  ], { loaded: [{ num: 'X-02', file: 'x-02-b', label: 'a', mod: { state } }] });
+  add('panelFormStateGate', '패널 폼 열림인데 다이얼로그로 그린다',
+    stated('패널 폼 열림',
+      "import base, { screenBody } from './x-01-a.mjs';\nexport const form = dialog({ title: 'x' });\nexport default { body: screenBody(form) };",
+      "export const screenBody = (overlay = '', detail = panel) => ``;"), true);
+  add('panelFormStateGate', '패널 폼 열림이 패널 자리를 채운다',
+    stated('패널 폼 열림',
+      "import base, { screenBody } from './x-01-a.mjs';\nexport const form = panelForm({ title: 'x' });\nexport default { body: screenBody(undefined, form) };",
+      "export const screenBody = (overlay = '', detail = panel) => ``;"), false);
+  add('panelFormStateGate', '다이얼로그 열림은 오버레이가 맞다',
+    stated('다이얼로그 열림',
+      "import base, { screenBody } from './x-01-a.mjs';\nexport const form = dialog({ title: 'x' });\nexport default { body: screenBody(form) };",
+      "export const screenBody = (overlay = '', detail = panel) => ``;"), false);
+
   // A state frame drawing one of the base's tabs passes a CALL, not a name. Reading the argument
   // list with `[^)]*` cut it at the inner paren and the RegExp built from the fragment threw, which
   // takes the whole build down instead of reporting anything. This case is the crash.

@@ -229,6 +229,87 @@ export const leakedValueGate = {
 // Found by hand twice; the sweep that followed found four. That gap is why this is a gate: the
 // shape is invisible in a screenshot of the frame alone, because a dialog in a panel still looks
 // like a dialog.
+/**
+ * The argument list of a frame's `body: screenBody(…)`, read with the parens balanced.
+ *
+ * <p>A regex cannot do this: an argument may itself be a call, and `[^)]*` then stops inside it.
+ *
+ * @return the arguments split at top level, or null where the frame has no `screenBody` call or
+ *   passes it nothing
+ */
+function screenBodyArgs(src) {
+  const at = /body:\s*screenBody\(/.exec(src);
+  if (!at) return null;
+  let i = at.index + at[0].length, depth = 1, q = null, esc = false, out = '';
+  for (; i < src.length && depth > 0; i++) {
+    const c = src[i];
+    if (q) {
+      out += c;
+      if (esc) { esc = false; continue; }
+      if (c === '\\') { esc = true; continue; }
+      if (c === q) q = null;
+      continue;
+    }
+    if (c === "'" || c === '"' || c === '`') { q = c; out += c; continue; }
+    if ('([{'.includes(c)) depth++;
+    else if (')]}'.includes(c)) { depth--; if (depth === 0) break; }
+    out += c;
+  }
+  if (depth !== 0 || !out.trim()) return null;
+  const args = [];
+  let cur = '', d = 0, q2 = null, e2 = false;
+  for (const c of out) {
+    if (q2) { cur += c; if (e2) { e2 = false; continue; } if (c === '\\') { e2 = true; continue; } if (c === q2) q2 = null; continue; }
+    if (c === "'" || c === '"' || c === '`') { q2 = c; cur += c; continue; }
+    if ('([{'.includes(c)) d++;
+    if (')]}'.includes(c)) d--;
+    if (c === ',' && d === 0) { args.push(cur); cur = ''; continue; }
+    cur += c;
+  }
+  args.push(cur);
+  return { raw: out, args: args.map((x) => x.trim()) };
+}
+
+/**
+ * A frame that says it draws a panel form and hands nothing to the panel.
+ *
+ * <p><b>The other gate reads what was passed; this one reads what the frame says it is.</b> They
+ * miss different things. N-68 declared its form with `dialog(` and put it in the overlay, which is
+ * where a dialog belongs — every type check passes and the slot check has nothing to object to.
+ * What was wrong was the frame's own `state`: 「패널 폼 열림」, a panel, drawn as a dialog. Only the
+ * declared state says so.
+ *
+ * <p>And the reverse: a frame that hands a panel form to the overlay but calls its state something
+ * else is invisible here and caught by the slot check. Both, or the pair leaks.
+ */
+export const panelFormStateGate = {
+  id: 'panelFormStateGate',
+  title: '「패널 폼 열림」인데 패널 자리가 비어 있다',
+  stage: 'preflight',
+  run: (ctx) => {
+    const bad = [];
+    for (const e of ctx.loaded) {
+      if (e.mod?.state !== '패널 폼 열림') continue;
+      const s = ctx.srcOf(e.file);
+      const call = screenBodyArgs(s);
+      if (!call) continue;
+      const imp = /import\s+base\s*,\s*\{[^}]*\}\s+from\s+'\.\/([a-z0-9-]+)\.mjs'/.exec(s);
+      const sig = /export const screenBody = \(([^)]*)\)/.exec(imp ? ctx.srcOf(imp[1]) : s);
+      if (!sig) continue;
+      const params = sig[1].split(',').map((x) => x.split('=')[0].trim());
+      const filled = params.some((slot, i) => {
+        if (slot === 'overlay') return false;
+        const arg = (call.args[i] ?? '').trim();
+        return arg && arg !== 'undefined' && arg !== "''" && arg !== '""';
+      });
+      if (filled) continue;
+      const fixed = params.map((pp) => (pp === 'overlay' ? 'undefined' : call.args[0] ?? 'form'));
+      bad.push(`${e.num}: state가 「패널 폼 열림」인데 screenBody(${call.raw.trim()})가 패널 자리에 아무것도 넘기지 않는다 — 다이얼로그로 그려진다. screenBody(${fixed.join(', ')})`);
+    }
+    return bad;
+  },
+};
+
 export const slotGate = {
   id: 'slotGate',
   title: '다이얼로그가 상세 패널 자리로 들어간다',
@@ -239,8 +320,12 @@ export const slotGate = {
       const s = ctx.srcOf(e.file);
       const imp = /import\s+base\s*,\s*\{[^}]*\}\s+from\s+'\.\/([a-z0-9-]+)\.mjs'/.exec(s);
       if (!imp) continue;
-      const call = /body:\s*screenBody\(([^)]*)\)/.exec(s);
-      if (!call || !call[1].trim()) continue;
+      // The argument list is read with the parens balanced. `[^)]*` stopped at the first `)`, so a
+      // frame passing a CALL — `screenBody(panel('센서'))`, which is how a base parameterised by its
+      // open tab is spread — handed this gate the fragment `panel('센서'` and the RegExp built from
+      // it threw. A gate that crashes takes the whole build with it and says nothing about why.
+      const call = screenBodyArgs(s);
+      if (!call) continue;
       // Both arguments, not just the first. The gate used to check the first only, and a base
       // whose signature is `(overlay, detail)` swallowed `screenBody(undefined, help)` in silence —
       // the dialog rendered into the panel's slot, so the explanation never opened AND the record's
@@ -250,16 +335,46 @@ export const slotGate = {
       const sig = /export const screenBody = \(([^)]*)\)/.exec(baseSrc);
       if (!sig) continue;
       const params = sig[1].split(',').map((x) => x.split('=')[0].trim());
-      const args = call[1].split(',').map((x) => x.trim());
+      const args = call.args;
       args.forEach((arg, i) => {
-        if (!arg || arg === 'undefined' || arg === "''") return;
+        if (!arg || arg === 'undefined' || arg === "''" || arg === '""') return;
         const slot = params[i];
         if (!slot) return;
-        const isDialog = new RegExp(`export const ${arg}\\s*=\\s*(dialog|viewerDialog)\\(`).test(baseSrc);
+        // The other direction, and it is the invisible one. A base parameterised by its open tab
+        // exports `panel(tab)`, and where the base's overlay parameter comes FIRST — which it does
+        // whenever the detail slot was added to an existing `screenBody(overlay)` — the natural
+        // call `screenBody(panel('센서'))` puts the whole panel into the overlay. The frame then
+        // draws the page with its default panel and the requested tab nowhere, and the board says
+        // the tab is drawn. Nothing throws and the picture looks like a screen.
+        if (slot === 'overlay' && /^[A-Za-z_$][\w$]*\(/.test(arg)) {
+          const fixed = params.map((pp) => (pp === 'overlay' ? "''" : arg));
+          bad.push(`${e.num}: screenBody(${arg}) — ${arg}는 상세 패널인데 ${i + 1}번째 인자라 「overlay」 자리로 들어간다. screenBody(${fixed.join(', ')})`);
+          return;
+        }
+        // Only a bare identifier can name an exported dialog. Anything else — a call, a template
+        // string, a ternary — is not what the check below is about, and interpolating it into a
+        // RegExp is how the crash noted above happened.
+        if (!/^[A-Za-z_$][\w$]*$/.test(arg)) return;
+        // Declared in the frame as often as in the base. A state frame that draws its own form
+        // exports it beside its `body:`, and reading the base alone went quiet on five frames —
+        // four handing a panel form to the overlay and one whose form was a dialog to begin with.
+        const declaredIn = new RegExp(`(?:export )?const ${arg}\\s*=\\s*(\\w+)\\(`);
+        const declares = (text) => declaredIn.exec(text)?.[1];
+        const kind = declares(s) ?? declares(baseSrc);
+        // The mirror of the case below, and the one that reached a person. A panel form handed to
+        // the overlay draws over the whole device — form below the status strip, outside the phone
+        // — and nothing throws, because a string in the overlay slot is exactly what that slot
+        // takes. 「레이아웃이 깨짐」 is how it was reported, which is all a reader can say.
+        if (slot === 'overlay' && kind === 'panelForm') {
+          const fixed = params.map((pp) => (pp === 'overlay' ? 'undefined' : arg));
+          bad.push(`${e.num}: screenBody(${call.raw.trim()}) — ${arg}는 패널 폼인데 ${i + 1}번째 인자라 「overlay」 자리로 들어가 기기 위에 겹쳐 그려진다. screenBody(${fixed.join(', ')})`);
+          return;
+        }
+        const isDialog = kind === 'dialog' || kind === 'viewerDialog';
         if (!isDialog || slot === 'overlay') return;
         const fixed = params.map((pp, j) => (pp === 'overlay' ? arg : j === i ? 'undefined' : 'undefined'));
         while (fixed.length && fixed[fixed.length - 1] === 'undefined') fixed.pop();
-        bad.push(`${e.num}: screenBody(${call[1].trim()}) — ${arg}는 다이얼로그인데 ${i + 1}번째 인자라 「${slot}」 자리로 들어간다. screenBody(${fixed.join(', ')})`);
+        bad.push(`${e.num}: screenBody(${call.raw.trim()}) — ${arg}는 다이얼로그인데 ${i + 1}번째 인자라 「${slot}」 자리로 들어간다. screenBody(${fixed.join(', ')})`);
       });
     }
     return bad;
