@@ -7,6 +7,7 @@
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { execFileSync } from 'node:child_process';
+import { compileLines } from './grammar.mjs';
 
 /** Where a project declares its build, relative to the project root. */
 export const CONFIG_NAME = join('.claude', 'board-to-app.json');
@@ -74,6 +75,11 @@ export const SCHEMA = {
   chapterLines: { kind: 'headings', roles: CHAPTER_LINE_ROLES, closing: true },
   evidenceLabels: { kind: 'headings', roles: EVIDENCE_LABEL_ROLES, closing: true },
   closedStatus: { kind: 'text', closing: true },
+  // The role an evidence heading names where a persona would stand, for a check a machine proves.
+  // Its own key rather than `chapterLines.verdict`: that one is a LINE and this is a WORD, and
+  // stripping the markup off the line to guess the word is the kind of derivation that reads fine
+  // and comes out wrong — it did, putting 「**판정**…」 into a heading a person has to match.
+  verdictRole: { kind: 'text', closing: true },
   // Where a chapter's verification result and the captures it cites are written. **Not required to
   // configure and required to close** — a project builds screens without it and cannot finish a
   // chapter, which is the difference `required` alone could not express and `doctor` reported as an
@@ -208,6 +214,12 @@ export function loadProject(configPath, options = {}) {
     parseError: error,
     options,
     declared,
+    // The project's line grammar, compiled once. A gate reads `ctx.lines.persona` and never
+    // imports the compiler: a project's own gate file cannot reach into the skill by path — the
+    // skill is installed somewhere else on every machine — so what a gate needs arrives here.
+    get lines() {
+      return compileLines(declared('chapterLines'));
+    },
     at,
     inRoot,
     read,
