@@ -9,10 +9,19 @@ Set this project up so its wireframe board can be built chapter by chapter and, 
 so a session holding none of this conversation can pick the next chapter up. Invoke
 `simplecore:board-to-app` first and follow it; this command is the setup it asks for.
 
-**This is for a project that has a board and no chapter set.** Coming off a board-parity walk is a
-different move with different costs, and it is reserved for the user's own words —
-`skills/board-to-app/references/migrating-from-a-walk.md` says why and what it discards. When you
-find a walk here, say so and stop.
+**This is for any project that has a board**, whatever else it already has. A project with no
+chapter set gets everything; a project with thirty-six chapters, three tracking files and a green
+config gets whatever is missing and a report — **and the more that is already there, the shorter
+this command runs.** Step 2 counts what exists and step 3 writes only the rest.
+
+**Do not read a half-wired project as out of scope.** A project that has most of this and cannot
+finish a chapter is exactly the one that needs the pass: everything present reads as done, and the
+one absent piece is invisible precisely because nothing else is. A project whose config was green
+on twenty-nine keys still could not close a chapter, twice.
+
+Coming off a board-parity walk is a different move with different costs, and it is reserved for the
+user's own words — `skills/board-to-app/references/migrating-from-a-walk.md` says why and what it
+discards. When you find a walk here, say so and stop.
 
 Report what already exists before writing anything, then write only what is missing. Show the user
 each file you are about to create and get agreement — these are durable documents in their
@@ -28,11 +37,24 @@ repository.
    **An application with no screens yet is the normal starting point**, not a reason to wait. That
    is what the chapters are for.
 
+   **A board before the current contract is a different matter, and it is the one thing here that
+   is worth stopping for.** Every check the kit holds — permanent ids, balanced markup, reachability,
+   the documents agreeing with the board — reaches a board through the kit, so a board that builds
+   itself is a board none of them has ever read. Chapters cut from it are cut from frames nothing
+   has checked. **Say so, name `/simplecore:board-migrate`, and let the user decide whether to
+   migrate first or wire the build over a board that is not yet held.** Where the board's components
+   are mostly its own, `node wf.mjs pattern adopt` is the step that makes the migration possible at
+   all — `skills/wireframe-boards/references/build-kit.md` § *A board may carry its own pattern*.
+
 2. **Check what is already there** and tell the user, one line each:
    - `.claude/board-to-app.json`
    - a chapter directory and its overview
    - the three tracking files — the state ledger, the handover notes, the open items
    - an evidence folder
+   - **whether the board is built BY THE KIT and at its current contract** — run
+     `node <kit>/bin/wfb.mjs migrations` for the steps and `node wf.mjs doctor` in the board folder
+     for where it stands. **A board with its own `build.mjs` and no `board.config.mjs` is before
+     the contract**, which means no kit gate has ever reached it
    - a pointer to this skill in `CLAUDE.md` / `AGENTS.md`
    - the project's verification commands (build, typecheck, lint, convention audit, the board's own)
 
@@ -114,7 +136,35 @@ repository.
 
    When such a section already exists, correct it in place rather than adding a second one.
 
-8. **Report what the project still owes.** Name each and do not invent a substitute: no way to
+8. **Prove a chapter can close, by watching the refusal.** Everything above can be green and the
+   arrangement still finish nothing — that is precisely what the `◑` grade means, and a report
+   saying 「all keys declared」 is not evidence that the checks behind them work. **So close one
+   chapter on paper and watch the gates say no.**
+
+   Pick a chapter that is genuinely unfinished, write the ledger's closed word into its row, run
+   `bta.mjs check`, and read what comes back. It should name the missing result document, and — if
+   that chapter places frames — the captures nothing shows. **Then put the row back.**
+
+   **Where anything else may be running, do not edit the real ledger at all.** It is the one file
+   every agent reads, and a row that is wrong for ten seconds is a row somebody else can read or
+   commit. Copy it, point a config of your own at the copy, and leave the shared file alone:
+
+   ```bash
+   cp <state ledger> /tmp/prove-STATE.md          # then write the closed word into one row of the copy
+   # a config beside it, identical but for `stateLedger`, with the other paths made absolute
+   node <kit>/bta.mjs check --config /tmp/prove/.claude/board-to-app.json
+   ```
+
+   The gates read the real board, the real chapters and the real evidence folder; only the ledger
+   is yours. **Read only the gate you are proving** — a scratch root makes the git-reading and
+   document-link gates report on a repository that is not there, and those findings are the
+   harness rather than the project.
+
+   **You know the wiring works because it refuses the opposite.** A check that passes proves
+   nothing about itself: silence is what a working check and a check that reads nothing both
+   produce. Report which chapter you tried, what was refused, and that the row was restored.
+
+9. **Report what the project still owes.** Name each and do not invent a substitute: no way to
    reach an arbitrary frame in an arbitrary state with the moving parts pinned (without which every
    re-capture is a change nobody can read); no verification command that can ratchet a repeated
    defect into a rule; no `projectGates` file, so the next mechanically visible defect has nowhere
