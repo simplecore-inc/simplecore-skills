@@ -109,8 +109,8 @@ The order a section is written in:
    capture joins the count of active sessions, so it rises with every shot — and **a figure a clock
    moves the window of** — a "today" count restarts at zero at midnight, so a value the seed
    planted becomes yesterday's after a day. **Write what the figure is made of instead of the
-   figure**: 「the active sessions are the 47 the seed planted plus the session that opened this
-   screen」. The relation is still true at the next capture.
+   figure**: "the active sessions are the 47 the seed planted plus the session that opened this
+   screen". The relation is still true at the next capture.
 
    **A tile the board draws is not this.** A tile shows the value of the moment, and the number the
    board drew is the specification of what the seed plants. That is different from a tab badge,
@@ -235,7 +235,7 @@ moves into `evidenceDir` — a capture left in the folder that no section cites 
 | an assessment of the quality of the work | nowhere — it is reported in conversation |
 
 **Present tense, and only what was checked and what was on the screen.** A sentence opening with
-「this time」, 「running it again」 or 「originally」, and a status column, are not the shape of this
+"this time", "running it again" or "originally", and a status column, are not the shape of this
 document.
 
 ## When a later chapter changes the same screen
