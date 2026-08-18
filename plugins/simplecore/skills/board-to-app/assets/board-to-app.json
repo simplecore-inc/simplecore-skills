@@ -18,6 +18,8 @@
     "touchedEarlier": "<heading: the hand-authored section for a change to a closed chapter>"
   },
 
+  "//evidenceDir": "Where a chapter's verification result and the captures it cites are written. Not required to configure and required to CLOSE — a project builds every screen without it and finishes no chapter, which is the state `bta doctor` reports as ◑. The folder's own index (`00-overview.md`) belongs to no chapter.",
+  "evidenceDir": "docs/evidence",
   "stateLedger": "<the one file saying which chapter is open, and each persona's development account>",
   "handoverFile": "<the facts a builder needs to start: how to stand the system up, traps, standing data>",
   "openItemsFile": "<file a parked decision is written into>",

@@ -28,6 +28,13 @@ export const CONFIG_NAME = join('.claude', 'board-to-app.json');
  * <p>`many` lets a key be declared once or several times: one string, or an array of them,
  * each held to the same `kind`. It is for a subject a project can genuinely have more than
  * one of, such as a database with several migration lineages.
+ *
+ * <p><b>`required` and `closing` are different questions and a key can want either.</b> `required`
+ * is 「nothing here works without it」; `closing` is 「everything works and no chapter can finish」.
+ * Reported as one blank they read the same, and a project reads a page of green while being unable
+ * to end anything — which is what happened. An absence of the second kind is a finding rather than
+ * a choice, and a project that genuinely does not want it says so in `deferredKeys` with the
+ * chapter that will declare it.
  */
 export const SCHEMA = {
   boardRoot: { kind: 'dir', required: true },
@@ -37,11 +44,17 @@ export const SCHEMA = {
   chapterOverview: { kind: 'file', required: true },
   chapterGenerator: { kind: 'command' },
   chapterHeadings: { kind: 'headings' },
+  // Where a chapter's verification result and the captures it cites are written. **Not required to
+  // configure and required to close** — a project builds screens without it and cannot finish a
+  // chapter, which is the difference `required` alone could not express and `doctor` reported as an
+  // ordinary blank. A board-to-app project that had every key green closed one chapter of
+  // thirty-six, on five checks out of six, with no evidence folder at all.
+  evidenceDir: { kind: 'dir', closing: true },
   stateLedger: { kind: 'file', required: true },
   handoverFile: { kind: 'file', required: true },
   openItemsFile: { kind: 'file' },
   openItemsHeading: { kind: 'text', requiredWith: 'openItemsFile' },
-  gates: { kind: 'list' },
+  gates: { kind: 'list', closing: true },
   auditScript: { kind: 'path' },
   migrationDir: { kind: 'dir', many: true },
   frameDeliverables: { kind: 'list' },

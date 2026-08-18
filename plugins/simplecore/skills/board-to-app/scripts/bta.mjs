@@ -150,6 +150,7 @@ async function doctor() {
     return typeof entry.chapter === 'string' && typeof entry.whenExists === 'string' ? entry : null;
   };
 
+  let closing = 0;
   for (const [key, spec] of Object.entries(SCHEMA)) {
     const value = ctx.declared(key);
     if (value === null) {
@@ -165,12 +166,26 @@ async function doctor() {
         );
         continue;
       }
-      console.log(`${spec.required ? '✖' : '○'} ${key.padEnd(18)} not declared${spec.required ? ' — required' : ''}`);
+      // Three kinds of blank, and only one of them is a choice. `required` stops everything;
+      // `closing` lets everything run and lets nothing finish, which is the state a project sits in
+      // while reading a page of green; the rest is a project saying it does not use that.
+      if (spec.required) console.log(`✖ ${key.padEnd(18)} not declared — required`);
+      else if (spec.closing) {
+        closing += 1;
+        console.log(`◑ ${key.padEnd(18)} not declared — a chapter cannot close without it`);
+      } else console.log(`○ ${key.padEnd(18)} not declared`);
       continue;
     }
     const full = typeof value === 'string' ? value : JSON.stringify(value);
     const shown = full.length > 72 ? `${full.slice(0, 69)}…` : full;
     console.log(`✔ ${key.padEnd(18)} ${shown}`);
+  }
+
+  if (closing) {
+    console.log(
+      `\n◑ ${closing} key(s) every chapter needs to CLOSE are not declared. Everything else can run `
+      + 'and nothing can be finished; declare them, or name the chapter that will in `deferredKeys`'
+    );
   }
 
   const headings = ctx.declared('chapterHeadings');
