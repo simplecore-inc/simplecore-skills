@@ -217,6 +217,14 @@ That failure is the reason this skill exists.
    instruction files, the manifest and both project documents has spent most of a context
    before it opens a browser.
 
+   **A cluster is the unit for BUILDING and comparing; it is not the unit for reading
+   captures.** Where a cluster's screens are photographed, the reading of those pictures
+   is one agent per screen and each ends when that screen is done — a checker has no
+   thread between screens the way a builder does, so an agent that reads five screens'
+   captures in one context carries four screens of pictures into the fifth and pays for
+   them on every turn. What each fresh agent loads is a fixed prefix every sibling loads
+   identically, which is the cheapest kind of token there is.
+
 2. **Finish, then replace.** When the cluster is done the agent ends, and the next
    cluster gets a **new** agent. Never stack a second cluster on a running one —
    preventing accumulated context is the whole point. **Stop a walker once its

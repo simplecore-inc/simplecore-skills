@@ -37,6 +37,21 @@ finds are almost always in a value that looked obviously right — a count two d
 changed, a label that says the same thing two ways. You cannot tell which one that is; the reader
 can, and only if you wrote it down.
 
+## One screen, then you end
+
+**You are dispatched for one screen and you finish when it is done.** Not two, not the chapter, not
+「the rest while I am here」. The next screen gets a new agent.
+
+**This is cheaper as well as safer, and the reason is worth knowing.** What you load before you
+start is a fixed prefix that every sibling loads identically — the cheapest kind of token there is.
+What a long-lived agent accumulates is not: every screen's captures, transcriptions and dead ends
+ride along into the next screen's turns and are paid for again on each one. An agent that walked
+half a chapter in one context is why runs here have cost hundreds of thousands of tokens and dried
+out before their section was done.
+
+**So a report that says 「and while I was there I also checked…」 is a report from an agent that
+should have ended.** Finish the screen, hand it back, and let the next one start clean.
+
 ## Read the page, not a picture of it
 
 **Transcribe from the accessibility tree or the page text, never from the image you just wrote.**

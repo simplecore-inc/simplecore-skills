@@ -105,6 +105,23 @@ whole and in one head.
 coordinator, and what the taker hands back is a record of what was on the screen rather than a
 section of the result document.
 
+## The unit of a check is one screen, and each gets a fresh agent
+
+**Building a chapter is one agent's work; checking it is not.** A builder carries a chapter because
+what it makes in section three is what section nine stands on. A check has no such thread — one
+screen's captures tell you nothing about the next — so an agent that checks five screens in one
+context is carrying four screens' worth of pictures and dead ends into the fifth and paying for them
+on every turn.
+
+**A fresh agent per screen costs less, not more.** What each one loads before starting is a fixed
+prefix that every sibling loads identically, which is the cheapest kind of token there is; what a
+long-lived agent accumulates is the other kind. Runs that walked half a chapter in one context have
+cost hundreds of thousands of tokens and dried out before the section was done.
+
+**So: one `capture-taker` per screen, one `capture-judge` per screen, both ending when that screen
+is done.** The coordinator holds the thread between them, which is the one thing that genuinely
+spans screens.
+
 ## Opening the capture before writing what was seen
 
 **A sweep is a script.** It opens an address, waits, shoots, and writes a file — and no step of it
