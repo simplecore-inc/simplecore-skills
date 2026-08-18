@@ -113,6 +113,41 @@ const DEFAULTS = {
   maxFindings: 25,
 
   /**
+   * What counts as something a reader presses.
+   *
+   * <p>Roles as well as tags: a component library draws a button as a `div` carrying
+   * `role="button"` often enough that a tag list alone walks past half of them.
+   */
+  pressableSelector:
+    'button, a[href], input:not([type="hidden"]), select, textarea, summary,'
+    + ' [role="button"], [role="tab"], [role="link"], [role="menuitem"], [role="switch"],'
+    + ' [role="checkbox"], [role="radio"], [role="option"]',
+
+  /** Below this a control is an icon hairline, and its centre probe is noise. */
+  minControlPx: 8,
+
+  /** How far in from a corner the edge probes sit. */
+  probeInsetPx: 4,
+
+  /** With the centre reachable, this many of the five probes is a control a reader can hit. */
+  minProbesReached: 3,
+
+  /**
+   * How much of a control has to survive its ancestors' clipping before it is judged at all.
+   *
+   * <p>A control scrolled out of its panel still reports a rectangle on screen, and the hit test
+   * at that spot answers with whatever is painted there instead — which reads exactly like being
+   * covered. Below this share the control is not on screen to be pressed and is nobody's defect.
+   *
+   * <p><b>Setting this to 0 does not turn the clipping off.</b> A control an ancestor has cut away
+   * entirely fails the empty-rectangle guard before any ratio is taken, so it stays excluded at
+   * every value. Anybody comparing against the behaviour from before clipping was read has to
+   * restore the old measurement, not lower this — the ratio route reports the same count twice and
+   * reads as 「there were never any false positives here」.
+   */
+  minVisibleRatio: 0.5,
+
+  /**
    * How long to keep re-measuring while the screen is still arriving.
    *
    * <p>A list, a census and a permission read all resolve after the document does, and the state
@@ -446,7 +481,166 @@ const blockInsideParagraph = {
   },
 };
 
-export const checks = [countedListDrawsNoRows, textBoxesOverlap, blockInsideParagraph];
+/**
+ * A control a reader cannot press, because something transparent is lying on top of it.
+ *
+ * The defect it exists to catch: a footer's three buttons are painted at their proper place and
+ * an empty spacer in the same column is laid over them, so a press aimed at the middle of a
+ * button lands on the spacer and nothing happens. The buttons take a press only in the few pixels
+ * the spacer does not reach.
+ *
+ * **Why nothing else finds it.** The strings are right, the handlers are wired, the typecheck is
+ * green, and the covering element is transparent — so it leaves no mark on a screenshot and no
+ * mark on the eye. A verification round photographs the panel, reads the footer, and records that
+ * the controls are there, because they are. It is found by pressing, and a round that presses
+ * every control on every screen is not a round anybody runs. **This is the class of defect a
+ * capture-based verification is structurally unable to see**, which is the whole reason it is
+ * worth a check.
+ *
+ * **What the rule asks.** For each control, is the thing at the middle of its own rectangle the
+ * control itself, or something inside it? When it is neither, the press goes elsewhere, and the
+ * check says what caught it.
+ *
+ * **What it deliberately does not report.** A control behind an open dialog is inert on purpose —
+ * that is a modal working. A disabled control is meant not to answer. A control whose coverer sets
+ * `pointer-events: none` never comes up at all, because the browser's own hit test walks past it,
+ * which is the same test a reader's finger takes.
+ */
+const pressableControlsTakeThePress = {
+  id: "pressableControlsTakeThePress",
+  grade: "error",
+  title:
+    "a control something transparent is lying on top of — it is drawn, it is labelled, and a press lands elsewhere",
+  page: (o) => {
+    const findings = [];
+
+    const visible = (el) => {
+      const s = getComputedStyle(el);
+      if (s.visibility === "hidden" || s.display === "none" || Number(s.opacity) === 0)
+        return false;
+      const r = el.getBoundingClientRect();
+      return r.width >= o.minControlPx && r.height >= o.minControlPx;
+    };
+
+    // What of the control a reader can actually see, after every ancestor that scrolls has cut
+    // it down. `getBoundingClientRect` reports where the layout put it, not what survives the
+    // clipping — a row action scrolled past the bottom of an `overflow: auto` panel still reports
+    // a rectangle on screen, and `elementFromPoint` at that spot honestly answers with whatever
+    // IS painted there. Read without this, the check calls every off-screen control covered and
+    // buries the one real finding: a sweep of eight screens returned seventeen, and fourteen were
+    // this. The same measurement `textBoxesOverlap` makes, for the same reason.
+    const onScreen = (el) => {
+      const r = el.getBoundingClientRect();
+      let x1 = r.left;
+      let y1 = r.top;
+      let x2 = r.right;
+      let y2 = r.bottom;
+      for (let n = el; n && n !== document.documentElement; n = n.parentElement) {
+        const cs = getComputedStyle(n);
+        if (cs.overflowX === "visible" && cs.overflowY === "visible") continue;
+        const box = n.getBoundingClientRect();
+        if (cs.overflowX !== "visible") {
+          x1 = Math.max(x1, box.left);
+          x2 = Math.min(x2, box.right);
+        }
+        if (cs.overflowY !== "visible") {
+          y1 = Math.max(y1, box.top);
+          y2 = Math.min(y2, box.bottom);
+        }
+        if (x2 <= x1 || y2 <= y1) return null;
+      }
+      x1 = Math.max(x1, 0);
+      y1 = Math.max(y1, 0);
+      x2 = Math.min(x2, window.innerWidth || document.documentElement.clientWidth);
+      y2 = Math.min(y2, window.innerHeight || document.documentElement.clientHeight);
+      if (x2 <= x1 || y2 <= y1) return null;
+      const area = (x2 - x1) * (y2 - y1);
+      const whole = r.width * r.height;
+      if (!whole || area / whole < o.minVisibleRatio) return null;
+      return { left: x1, top: y1, right: x2, bottom: y2, width: x2 - x1, height: y2 - y1 };
+    };
+
+    // A control the product has switched off, or one a modal has made inert, is not answering by
+    // design. Reporting either teaches that the check does not know the difference.
+    const inert = (el) => {
+      for (let n = el; n && n !== document.body; n = n.parentElement) {
+        if (n.hasAttribute?.("inert")) return true;
+        if (n.getAttribute?.("aria-hidden") === "true") return true;
+        if (n.matches?.("[disabled], [aria-disabled=\"true\"]")) return true;
+      }
+      return false;
+    };
+
+    /** The topmost open modal, if one is open — everything outside it is inert on purpose. */
+    const modal = [...document.querySelectorAll('[role="dialog"], [role="alertdialog"], dialog')]
+      .filter((d) => visible(d) && d.getAttribute("aria-hidden") !== "true")
+      .pop() ?? null;
+
+    const label = (el) => {
+      const t = (el.getAttribute("aria-label") || el.textContent || el.getAttribute("title") || "")
+        .replace(/\s+/g, " ")
+        .trim();
+      return t.length > 40 ? t.slice(0, 40) + "…" : t || `<${el.tagName.toLowerCase()}>`;
+    };
+    const describe = (el) => {
+      const cls = (el.getAttribute?.("class") || "").split(/\s+/).filter(Boolean).slice(0, 3);
+      return `<${el.tagName.toLowerCase()}${cls.length ? ` class="${cls.join(" ")}"` : ""}>`;
+    };
+
+    const controls = [...document.querySelectorAll(o.pressableSelector)]
+      .filter((el) => visible(el) && !inert(el))
+      .filter((el) => !modal || modal.contains(el));
+
+    let compared = 0;
+    for (const el of controls) {
+      const r = onScreen(el);
+      if (r === null) continue;
+      // Five probes rather than one, so the report can say whether the control is wholly buried
+      // or merely clipped along one edge — which is the difference between a control nobody can
+      // press and one that answers if you aim carefully.
+      const inset = Math.max(2, Math.min(o.probeInsetPx, r.width / 4, r.height / 4));
+      const points = [
+        [r.left + r.width / 2, r.top + r.height / 2],
+        [r.left + inset, r.top + inset],
+        [r.right - inset, r.top + inset],
+        [r.left + inset, r.bottom - inset],
+        [r.right - inset, r.bottom - inset],
+      ].filter(([x, y]) => x >= 0 && y >= 0 && x < window.innerWidth && y < window.innerHeight);
+      if (points.length === 0) continue;
+      compared += 1;
+
+      let reached = 0;
+      let blocker = null;
+      for (const [x, y] of points) {
+        const hit = document.elementFromPoint(x, y);
+        if (hit && (hit === el || el.contains(hit) || hit.contains(el))) reached += 1;
+        else if (!blocker && hit) blocker = hit;
+      }
+      if (reached === points.length) continue;
+
+      const centreLost = (() => {
+        const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+        return !(hit && (hit === el || el.contains(hit) || hit.contains(el)));
+      })();
+      // A control whose edges are clipped but whose middle answers is where a reader aims anyway.
+      if (!centreLost && reached >= o.minProbesReached) continue;
+
+      findings.push(
+        `「${label(el)}」 does not take a press` +
+          (centreLost ? " at the middle of itself" : " across most of itself") +
+          ` — ${reached} of ${points.length} points on it reach it, and ` +
+          `${blocker ? describe(blocker) : "something else"} is what catches the press at ` +
+          `(${Math.round(r.left + r.width / 2)}, ${Math.round(r.top + r.height / 2)}). ` +
+          `Nothing shows this: the control is drawn where it belongs and whatever covers it is ` +
+          `transparent, so a screenshot and a reader's eye both report a working footer.`,
+      );
+      if (findings.length >= o.maxFindings) break;
+    }
+    return { compared, findings };
+  },
+};
+
+export const checks = [countedListDrawsNoRows, textBoxesOverlap, blockInsideParagraph, pressableControlsTakeThePress];
 
 /** One self-contained expression, ready for any driver's evaluate call. */
 export function snippet(check, options = {}) {
@@ -713,6 +907,68 @@ const FIXTURES = {
           p.textContent = '하위 부서를 포함한 활성 계정입니다';
           document.getElementById('host').appendChild(p);
         <\/script>`,
+    },
+  },
+  pressableControlsTakeThePress: {
+    broken: {
+      // The defect this was written from: a footer's buttons and an empty spacer share a column,
+      // the spacer is laid over them, and a press aimed at a button's middle lands on nothing.
+      "an empty spacer laid over a footer's buttons":
+        `<style>body{margin:0;font:14px sans-serif}
+        .foot{position:relative;display:flex;gap:8px;padding:12px 16px}
+        button{padding:8px 14px}
+        .spacer{position:absolute;left:0;right:0;top:8px;height:40px}</style>
+        <div class=foot>
+          <button>닫기</button><button>사용자 보기</button><button>회수</button>
+          <div class=spacer></div>
+        </div>`,
+      "a full-width overlay left mounted over the page":
+        `<style>body{margin:0;font:14px sans-serif}
+        .veil{position:fixed;inset:0}</style>
+        <button style="margin:20px;padding:10px 16px">스코프 부여</button>
+        <div class=veil></div>`,
+    },
+    quiet: {
+      "the same footer with the spacer taken out":
+        `<style>body{margin:0;font:14px sans-serif}
+        .foot{display:flex;gap:8px;padding:12px 16px}button{padding:8px 14px}</style>
+        <div class=foot><button>닫기</button><button>사용자 보기</button><button>회수</button></div>`,
+      // A modal makes the page behind it inert on purpose. Reading that as a defect would report
+      // every dialog in the product.
+      "buttons behind an open dialog":
+        `<style>body{margin:0;font:14px sans-serif}
+        .veil{position:fixed;inset:0;background:rgba(0,0,0,.4)}</style>
+        <button style="margin:20px;padding:10px 16px">스코프 부여</button>
+        <div class=veil></div>
+        <div role=dialog style="position:fixed;top:40px;left:40px;padding:20px;background:#fff">
+          <button>취소</button><button>회수</button></div>`,
+      "a disabled control under the same spacer":
+        `<style>body{margin:0;font:14px sans-serif}
+        .foot{position:relative;display:flex;gap:8px;padding:12px 16px}button{padding:8px 14px}
+        .spacer{position:absolute;left:0;right:0;top:8px;height:40px}</style>
+        <div class=foot><button disabled>연결 시험</button><div class=spacer></div></div>`,
+      // The shape that made this check unusable before it read clipping: a row action scrolled
+      // past the bottom of its panel still reports a rectangle on screen, and the hit test at
+      // that spot honestly answers with the footer painted there. Fourteen of seventeen findings
+      // in a sweep of eight screens were this, and the one real defect was buried under them.
+      "a row action scrolled out of its panel, with a footer painted where its rectangle claims to be":
+        `<style>body{margin:0;font:14px sans-serif}
+        .panel{height:80px;overflow:auto;width:400px}.row{padding:12px 16px}
+        .foot{padding:12px 16px}</style>
+        <div class=panel>
+          <div class=row>김안전 <button>보기</button></div>
+          <div class=row>조보건 <button>보기</button></div>
+          <div class=row>최감독 <button>보기</button></div>
+          <div class=row>박총괄 <button>보기</button></div>
+        </div>
+        <div class=foot>전체 4건</div>`,
+      // The coverer declares it is not there for the pointer, so the browser's own hit test walks
+      // past it — which is the same test a reader's finger takes.
+      "a decorative layer that lets the pointer through":
+        `<style>body{margin:0;font:14px sans-serif}
+        .foot{position:relative;display:flex;gap:8px;padding:12px 16px}button{padding:8px 14px}
+        .glow{position:absolute;inset:0;pointer-events:none}</style>
+        <div class=foot><button>저장</button><div class=glow></div></div>`,
     },
   },
 };
