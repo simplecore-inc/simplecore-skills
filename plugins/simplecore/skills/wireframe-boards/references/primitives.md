@@ -240,6 +240,12 @@ than inventing it: `regionPh({ label, ref })` for the region the base draws, and
 itself, out of `open` and `ref` — an author's note goes missing and the drawing that lost it still
 looks finished, so the primitive holds the half of the frame that matters most.
 
+**`ref` is the base screen's NAME, never its frame id.** Both pieces render inside the device
+frame, so an id there is a frame number reaching the reader — the thing a board never puts in a
+drawing. A name is also the more useful pointer: somebody building from the board recognises
+「사업장 상세」 and has to go looking for B-02. The base's notes still cite the companion by slug,
+which is where a frame reference belongs and where the build resolves it into a link.
+
 **The base does have to export its title area** — one line, `export const head = pageHeader({…})`,
 used by the base's own body and imported by the companion. Copying the title instead is the one
 shortcut that fails silently: two drawings of one title diverge the first time either is edited,

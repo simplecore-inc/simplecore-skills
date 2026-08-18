@@ -675,7 +675,9 @@ export const recordTabs = (items, children) =>
  * different one. This is the mark that says the base draws it, and names which frame that is.
  *
  * @param label what stands here on the real screen
- * @param ref the frame that draws it
+ * @param ref the NAME of the screen that draws it — never its frame id. This renders inside the
+ *   device frame, and a frame number that reaches a reader is the one thing a board never puts
+ *   in a drawing; a screen's name is also what somebody building from the board can act on.
  */
 export const regionPh = ({ label, ref }) =>
   `<div class="region-ph"><span class="rp-l">${label}</span><span class="rp-r">${ref}</span></div>`;
@@ -699,7 +701,7 @@ export const regionPh = ({ label, ref }) =>
  * carry the names, which is what a reader needs.
  *
  * @param open the pane the base frame draws, named so a reader knows why it is absent here
- * @param ref the base frame's id
+ * @param ref the base screen's NAME, never its frame id — see {@link regionPh}
  * @param panes `{ label, count, verbs, body }` in the strip's order, the open one omitted
  */
 export const tabPanes = ({ open, ref, panes }) =>
@@ -1285,7 +1287,7 @@ export const CATALOG = [
   { cat: 'detail panel', name: 'panelVerbs(actions) · panelFoot(actions)', note: '두 단 동작 행 — 윗단은 열린 탭이 요구하는 것, 아랫단은 레코드에 하는 것. 파괴적인 것은 위치가 아니라 색(danger)으로 구분한다', ex: `${panelVerbs(btn('구역 추가') + btn('가져오기') + btn('내보내기'))}${panelFoot(btn('닫기', 'ghost') + '<span class="spacer"></span>' + btn('삭제', 'danger') + btn('편집', 'primary'))}` },
   { cat: 'detail panel', name: 'panelForm({title, mode, children, foot})', note: '패널이 폼이 된 상태 — 엔티티의 등록·편집은 다이얼로그가 아니라 여기서 연다. 목록·필터·스크롤 위치가 그대로 남고, 폼이 모달 폭이 아니라 패널 폭으로 열린다', ex: panelForm({ title: '휴게시설 등록', children: formSection('', fText({ label: '이름', value: 'A동 1층 휴게시설', required: true }) + fSelect({ label: '구역', value: 'A동 1층', required: true })), foot: `${btn('취소', 'ghost')}<span class="spacer"></span>${btn('저장', 'primary')}` }) },
   { cat: 'detail panel', name: 'nestedRow({title, trail, sub})', note: '탭이 든 한 줄과 그 아래 딸린 줄들. sub가 비면 그 사실을 문장으로 적는다', ex: tabList(nestedRow({ title: '배관 용접', trail: badge('화재위험작업', 'outline') + btn('편집', 'ghost'), sub: [['통제조치', '화재감시자 배치 · 소화기 2대'], ['필요 자격', '용접기능사']] }) + nestedRow({ title: '개구부 점검', trail: badge('일반'), sub: '아직 위험요인이 등록되지 않았습니다' })) },
-  { cat: 'detail panel', name: 'regionPh({label, ref}) · tabPanes({open, ref, panes})', note: '탭 줄이 이름만 대고 안 그린 칸을 모아 두는 동반 프레임의 두 조각. 칸마다 프레임을 만들면 페이지를 그때마다 다시 그려야 하고 같은 목록이 여러 프레임에 살아 하나만 고쳐진다 — 화면 하나에 동반 프레임 하나이고, 바탕이 이미 그린 목록·패널 자리에는 regionPh를 둔다. tabPanes가 「탭 칸이지 한 페이지가 아니다」를 스스로 머리에 적는다. 동반 프레임에 tabs()를 두지 않는다 — 캡처 요구가 바탕과 동반 양쪽에서 세어져 칸마다 두 장이 된다', ex: `${regionPh({ label: '지표 타일 · 목록 열 · 상세 패널', ref: 'B-02' })}${tabPanes({ open: '개요', ref: 'B-02', panes: [{ label: '구역', count: 12, verbs: btn('구역 추가'), body: table({ head: [th('구역', { w: 'w2' }), th('종류', { w: 'fix' })], rows: [['<span class="td w2">A동 3층</span>', `<span class="td fix">${badge('안전구역', 'outline')}</span>`]] }) + pagination(['1', '2'], '12') }, { label: '이력', count: 6, body: tSub('레코드 필드의 변경은 P-18이 열까지 정하므로 인용으로 끝난다 — 그런 칸은 그리지 않는다') }] })}` },
+  { cat: 'detail panel', name: 'regionPh({label, ref}) · tabPanes({open, ref, panes})', note: '탭 줄이 이름만 대고 안 그린 칸을 모아 두는 동반 프레임의 두 조각. 칸마다 프레임을 만들면 페이지를 그때마다 다시 그려야 하고 같은 목록이 여러 프레임에 살아 하나만 고쳐진다 — 화면 하나에 동반 프레임 하나이고, 바탕이 이미 그린 목록·패널 자리에는 regionPh를 둔다. tabPanes가 「탭 칸이지 한 페이지가 아니다」를 스스로 머리에 적는다. 동반 프레임에 tabs()를 두지 않는다 — 캡처 요구가 바탕과 동반 양쪽에서 세어져 칸마다 두 장이 된다. ref에는 바탕의 프레임 번호가 아니라 화면 이름을 넣는다 — 번호는 그림 안으로 나가면 안 되고, 만드는 사람이 알아보는 것도 이름이다', ex: `${regionPh({ label: '지표 타일 · 목록 열 · 상세 패널', ref: '사업장 상세' })}${tabPanes({ open: '개요', ref: '사업장 상세', panes: [{ label: '구역', count: 12, verbs: btn('구역 추가'), body: table({ head: [th('구역', { w: 'w2' }), th('종류', { w: 'fix' })], rows: [['<span class="td w2">A동 3층</span>', `<span class="td fix">${badge('안전구역', 'outline')}</span>`]] }) + pagination(['1', '2'], '12') }, { label: '이력', count: 6, body: tSub('레코드 필드의 변경은 P-18이 열까지 정하므로 인용으로 끝난다 — 그런 칸은 그리지 않는다') }] })}` },
   { cat: 'overlay', name: 'peekDialog({title, children})', note: '가리킨 기록을 그 자리에서 읽고, 나가는 길은 하나만 둔다', ex: `<div class="device" style="width:420px;height:210px"><div class="screen">${peekDialog({ title: '김현장 · 배관공', children: section('', dField({ label: '자격', value: badge('유효', 'outline') })) })}</div></div>` },
   { cat: 'layout', name: 'split(list, detail) · shell(sidebar, main)', note: '좌우 두 버전 · 앱 셸', ex: `<div class="device" style="width:360px"><div class="screen"><div class="split"><div class="pane list">${bar('w80')}${bar('w60', true)}</div><div class="pane">${tTitle('상세')}${bar('w40')}</div></div></div></div>` },
   { cat: 'layout', name: 'listDetail(list, detail) · panelHead(title)', note: '콘솔의 기본 — 목록 혼자, 또는 상세 패널 옆으로 좁아진 목록', ex: `<div class="device" style="width:520px"><div class="screen">${listDetail(`${bar('w80')}${bar('w60', true)}${bar('w40', true)}`, `${panelHead('A동 3층')}${bar('w60')}`)}</div></div>` },
