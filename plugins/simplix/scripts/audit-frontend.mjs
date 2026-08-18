@@ -2643,6 +2643,75 @@ usePageHeader({
     },
   },
   {
+    id: "audit-strip-identifies-by-uuid",
+    invariant: "#36",
+    level: "review",
+    desc: "A detail's audit strip is handed a UUID as `id` and no `code` — the footer then identifies the record by the last twelve characters of that UUID, which cannot be read aloud, matched against a printed list, or searched for in another system. Pass the code the operator already knows (`code: x.siteCode`); the identifier stays available in full in the tooltip",
+    appliesTo: isTsx,
+    // Anchored on a key whose NAME says it holds an identifier, so a strip already passing a code
+    // through the `id` slot is not reported — it renders the code, because the framework only
+    // shortens a value that parses as a UUID.
+    check: (c) =>
+      blockHits(c, /auditData=\{\{(?:(?!\}\})[\s\S])*?\}\}/g).filter(
+        (h) => /\bid:\s*[\w.?]*(?:Id|Uuid|UUID)\b/.test(h.excerpt) && !/\bcode:/.test(h.excerpt),
+      ),
+    samples: {
+      file: "modules/site/src/widgets/site/detail.tsx",
+      broken: `<CrudDetail.AuditFooter auditData={{ id: site.siteId, createdAt: site.createdAt, updatedAt: site.updatedAt }} />`,
+      fixed: `<CrudDetail.AuditFooter auditData={{ id: site.siteId, code: site.siteCode, createdAt: site.createdAt, updatedAt: site.updatedAt }} />`,
+      miss: [
+        {
+          note: "the code is already what the strip shows, passed through the id slot",
+          file: "modules/site/src/widgets/equipment/detail.tsx",
+          source: `<CrudDetail.AuditFooter auditData={{ id: machine.equipmentCode, createdAt: machine.createdAt }} />`,
+        },
+        {
+          note: "both are given, which is the shape this rule asks for",
+          file: "modules/org/src/widgets/organization/detail-body.tsx",
+          source: `<CrudDetail.AuditFooter auditData={{ id: org.orgId, code: org.orgCode, createdAt: org.createdAt }} />`,
+        },
+      ],
+    },
+  },
+  {
+    id: "permission-blanked-tab",
+    invariant: "#61",
+    level: "review",
+    desc: "A tab's count is blanked by a permission flag while the tab itself still renders — the affordance survives the gate and opens onto a panel that can only say the read was refused, which reads as a screen that failed rather than as a permission this account does not hold. Gate the tab and its panel on the same flag and explain the absence once, where the figure it replaces would have been",
+    appliesTo: isTsx,
+    // Anchored on the tab, not on the ternary: a readout blanking its own value behind the same
+    // flag (a tile drawing an em dash, a column cell left empty) is the right shape — a count
+    // nobody was allowed to take is absent rather than zero. What is wrong here is that the
+    // control leading to it is still pressable.
+    // `blockHits`, not `lineHits`: a tab with three attributes is written over four lines, and the
+    // flag sits on a different line from the tag that makes it a tab. `[^<]*?` cannot cross into
+    // the next element, so the tag name and the count stay bound to one another.
+    check: (c) =>
+      blockHits(
+        c,
+        /<(?:\w*Tab|TabsTrigger)\b[^<]*?\bcount=\{\s*(?:[\w.]*(?:[Rr]eadable|[Aa]llowed|[Vv]isible)|can[A-Z]\w*)[\w.?]*\s*\?/g,
+      ),
+    samples: {
+      file: "modules/org/src/widgets/organization/detail-body.tsx",
+      broken: `<CountedTab value="accounts" label={t("detail.tabAccounts")} count={data.accountsReadable ? held?.total : undefined} />`,
+      fixed: `{data.accountsReadable && (
+  <CountedTab value="accounts" label={t("detail.tabAccounts")} count={held?.total} />
+)}`,
+      miss: [
+        {
+          note: "a readout blanking its own value behind the gate is right — the control is not the thing being kept",
+          file: "modules/org/src/widgets/organization/tiles.tsx",
+          source: `<StatCard label={t("tiles.accounts")} value={census.readable ? census.total : undefined} />`,
+        },
+        {
+          note: "a tab whose count is merely absent when there is nothing to count",
+          file: "modules/org/src/widgets/organization/detail-body.tsx",
+          source: `<CountedTab value="children" label={t("detail.tabChildren")} count={children.length > 0 ? children.length : undefined} />`,
+        },
+      ],
+    },
+  },
+  {
     id: "inline-permission-group",
     invariant: "#52",
     level: "error",
