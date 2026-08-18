@@ -261,6 +261,21 @@ than inventing it: `regionPh({ label, ref })` for the list column and
 `tabPanes({ strip, open, ref, panes })` for the detail column, wrapped in the pattern's own
 `listDetail(list, detail)`.
 
+**A base whose strip is the PAGE's has no list column to stand for, and the companion must not
+claim one.** A settings screen or a record page draws `head + tabStrip() + …` with no
+`listDetail`, so `regionPh` there is a placeholder for a column that does not exist, and the
+`— 목록 > 탭` suffix names a region the reader will look for and not find. Drop both: the
+companion is one column of panes, and its title ends in `— 탭`. Pass `region: '화면'` so the
+note says 화면의 탭 rather than 상세 패널의 탭 and points at the page's own verbs. The suffix is a
+three-way choice, decided by where the strip sits and nothing else — `— 상세 > 탭` inside a
+list-detail's panel, `— 목록 > 탭` for a strip over the list, `— 탭` when the screen has neither.
+
+**The temptation is that the two-column shape looks like the house style**, so a screen with no
+list gets the placeholder anyway and the frame reads as consistent with its neighbours. What it
+actually says is that a column exists in the product and this frame chose not to draw it, which
+is a claim about the base that is false — and a reader who trusts the board goes looking for a
+list nobody built.
+
 **`ref` is the base screen's NAME, never its frame id.** Both pieces render inside the device
 frame, so an id there is a frame number reaching the reader — the thing a board never puts in a
 drawing. A name is also the more useful pointer: somebody building from the board recognises
