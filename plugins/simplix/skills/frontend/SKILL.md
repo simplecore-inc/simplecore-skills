@@ -300,13 +300,17 @@ These invariants apply to **every** frontend file you touch. Treat each as invio
     - **So a visual check asks three things and not a fourth**: does the detail open from the row,
       is the content in it what the frame draws, does closing it come back to the list unchanged.
       Panel-or-drawer is the fourth, and it is not the screen's to answer.
-    - **The two have to behave the same, and that is the framework's job rather than the screen's.**
-      A drawer that is modal is a different screen however identical it looks: the list behind it
-      stops taking clicks, and picking the next record costs two presses where the panel costs one.
-      Non-modal is half of it — a dialog primitive will still dismiss itself on a pointer-down
-      outside, which spends that same press. Both are switched off for the drawer here. When a
-      difference in behaviour does turn up between the two, it is a defect in the framework, never
-      a thing for a screen to work around.
+    - **They give the detail the same room, and where they differ in behaviour that difference is
+      the framework's to own — as a decision, not as an accident.** A modal drawer costs two
+      presses to move between records where a panel costs one, because the backdrop takes the first
+      press; this console chose the modal drawer, wanting the backdrop to block and to close.
+      That is a product's call and it belongs in the framework's comment beside the code, so the
+      next reader knows they are re-opening a decision rather than fixing an oversight. What is
+      never a screen's business either way: a screen must not work around the difference.
+    - **A width that differs between the two IS an accident, and was one.** The panel column, the
+      drawer and the dialog were 600, 576 and 672, so switching the setting changed how much
+      content fitted and an audit reading the narrow one reported a screen defect that was really
+      a setting. One measure for the three.
 
 ---
 
