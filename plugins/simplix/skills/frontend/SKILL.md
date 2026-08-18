@@ -261,6 +261,31 @@ These invariants apply to **every** frontend file you touch. Treat each as invio
     the committing verb stays on the last.
 
 66. **A field that names another record peeks at it, never travels to it** — a detail field, list cell or panel row whose value is another record's NAME renders that name plus the peek trigger, and the trigger opens that record in the host-mounted dialog (#45); the dialog's go-to is the only way out of the screen. Two shapes break it, and the second does not even navigate: a `<Link>` in a field, and a link-styled button wired to the panel's own `onSelect` — which replaces the record under the reader, same panel, same chrome, different subject. A link is right only when the destination is a screen rather than a record, and then it belongs in the action row. Peeks stack. **The failure mode is disuse**: build the machinery, use it once, and every screen written afterwards reaches for a link because nothing fails when it does — so the rule needs a detector in the project's own gate script, never a paragraph. → `invariants.md` #66.
+67. **The shape the scaffold emits is the product's shape, and a census of hand-written screens is
+    not evidence of a convention** — every screen here starts from `simplix scaffold`, so what the
+    generator draws IS the house style and a screen departing from it is the thing that needs a
+    reason. Where a default is genuinely wrong for a product, it is changed once at the app root
+    (`UIProvider`'s `defaults`) and never per screen.
+    - **Counting the existing code is the trap.** 「fifteen of the sixteen literals say `ghost`, so
+      `ghost` is the convention」 is a valid count of an invalid corpus: all sixteen were hand-typed
+      onto screens that never went through the generator, so the census measured the drift and
+      called it the standard. **Before a survey settles anything, ask what produced the things being
+      counted** — if the answer is "somebody typed them", the count says how often a mistake was
+      made, not what is right.
+    - **This is why a survey is the weakest kind of evidence here** and the generator's output is
+      the strongest: one of them is a decision, the other is a residue.
+
+68. **A row that means to sit as two groups has two children** — a wrapping flex row with
+    `justify="between"` or an auto margin says 「these belong at one end and those at the other」,
+    and with three or more flat children the width decides where it breaks instead: one line wide,
+    the last control alone on a second line narrower, all of them stacked narrower still, and a
+    fourth arrangement when a detail panel opens beside it. Put each end in its own element
+    (`<Flex wrap>{lead}<Flex className="ml-auto min-w-0">{rest}</Flex></Flex>`) so there is exactly
+    one place the row can break; another utility class on the row cannot do it, because an auto
+    margin moves children apart on whichever line they land on and says nothing about which line
+    that is. **A row of badges or chips is not the subject** — many items of one kind with no ends
+    to sit at, meant to reflow. **Judge it at three widths, with the detail panel open and shut**:
+    this is invisible at the width it was written at, which is the width it will be checked at.
 
 ---
 

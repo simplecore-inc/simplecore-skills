@@ -3878,7 +3878,7 @@ return <Button onClick={() => refresh.mutateAsync({ data: { accessToken } })}>{t
     id: "screen-picks-action-variant",
     invariant: "#31",
     level: "error",
-    desc: "A screen names actionVariant as a literal — how dense a row action reads is one decision for the console, declared once on UIProvider's `defaults`, not repeated per screen where the next screen forgets it",
+    desc: "A screen names actionVariant as a literal — how dense a row action reads is one decision for the whole product, and it is already made: the shape the scaffold emits. A product that departs from it says so once on UIProvider's `defaults`; neither answer is repeated per screen, where the next screen forgets it",
     appliesTo: isTsx,
     // Only a literal is a decision being made here. `actionVariant={actionVariant}` is a widget
     // forwarding its own prop, which is the escape hatch a list with no width to spare uses.
