@@ -459,3 +459,51 @@ makes it a defect is that the endpoint is gated, which no static rule can see wi
 the project's own gate vocabulary. A rule that fires on the correct cases teaches the
 reader to ignore it. Find these by driving the screens as an account that lacks the
 thing, and watch for a refusal dialog with nothing behind it.
+
+## #66 A field that names another record peeks at it, never travels to it
+
+A detail field, a list cell or a panel row whose value is the NAME of another record
+renders that name plus the peek trigger, and the trigger opens that record's detail in a
+host-mounted dialog (#45). The dialog's go-to action is the only way out of the screen the
+reader is on. A viewer with no grant to read the referenced record keeps the name and
+loses the trigger — never a control that comes back refused.
+
+**What goes wrong is not that the reader cannot get there. It is that they arrive.**
+Somebody reading a record presses the name of a thing it refers to, to check one value,
+and the record they were reading is gone — its tab, its scroll position, its filters, and
+whatever they had half-decided. Nothing errors and the label was correct, so the only
+thing that noticed is the reader's own memory of where they were.
+
+**Two shapes, and the second does not even navigate:**
+
+| Shape | What it does |
+| --- | --- |
+| `<Link>` (or a `variant="link"` button wrapping one) inside a detail field | leaves the screen |
+| a link-styled button wired to the panel's own `onSelect` / `showDetail` | replaces the record under the reader — same panel, same chrome, different subject |
+
+**A link is right when the destination is a screen rather than a record** — a canvas, a
+register, a wizard, a filtered roster. Those belong in the panel's action row, not in a
+field: a field's value is a value, and a control sitting where a value belongs is read as
+that value.
+
+**Peeks stack.** A reference inside a peek dialog is a reference like any other, so the
+host pushes rather than replaces and its close pops one level. Without that, walking two
+steps down a tree and pressing 「close」 drops the reader to the bottom of the pile.
+
+**The failure mode this invariant exists for is disuse, not misuse.** On one product the
+peek host, the trigger button and the dialog were built, reviewed and wired into the app
+root — and then exactly ONE label used them. Every screen written in the months after
+reached for a router link instead, because a link is what a reference looks like
+everywhere else on the web, and nothing failed when they did. By the time anybody counted,
+the wireframe board drew 225 reference fields and the code held one. **A convention that
+has to be remembered at each field is kept the day it is written and broken every day
+after** — so the moment the machinery exists, the rule that every reference goes through
+it needs a detector, not a paragraph.
+
+**That detector belongs to the project, not to this script.** The shape is mechanically
+plain — a `<Link>`, or a call to the surrounding panel's selector, inside a
+`DetailFieldWrapper` — but the fix names components (`PeekTriggerButton`, `usePeekHost`)
+that live in the project's own UI package and are absent from a project that has not built
+them. `audit-frontend.mjs` runs against projects with no peek machinery at all, where the
+finding would name a component that does not exist. Put the rule in the project's own gate
+script, and prove it on the broken form and the fixed form there.

@@ -215,12 +215,32 @@ These invariants apply to **every** frontend file you touch. Treat each as invio
 61. **Hiding a surface is not the same as not asking for it — the gate belongs beside the request** — a hook runs wherever it is written, so a screen that gates only its JSX still fires the read the server refuses, and the user gets a bare "access denied" dialog over a panel with nothing on it to explain the refusal. Put the condition where the request is (the hook's `enabled`, the shared factory's `useEnabled`), never only at the route or the parent that composes it — a caller that forgets is then impossible rather than merely unlikely. Check the framework for an existing gate channel before inventing one. And drop the affordance too: a filter or picker left standing with an empty option list reads as "failed to load", not as "you did not buy this". Symptom catalogue, the three shapes it takes, and why this is not a script rule → `invariants.md` #61.
 
 62. **A screen with no list beside it still lays out in columns** — the two-column rule is written for a `CrudDetail` panel a few hundred pixels wide, and a settings page, a single-record editor, a preferences tab or a wizard step has no panel to be narrow. At 1440px a stack of short fields draws each input a thousand pixels wide for a value of twenty characters. Give the content columns, cap the measure, and **judge by the rendered input rather than by the component name** — a screen that never imports `FormFields` is still a form when it draws `<Label>` + `<Input>` pairs or a bare `<select>`, and a survey counting framework component names walks straight past the one screen most likely to be laid out wrong. Full rule → `customize/consistency-checklist.md` § 2b.
-63. **Tab strip, chip filter and table sit together, with nothing between them** — a tile row, a
-    banner or a help card belongs above the group, never inside it. A number that counts one set
-    directly above a table showing another reads as counting that table, and the caption written
-    to explain the difference is the layout confessing: a sentence saying why two figures on one
-    screen disagree means the arrangement is wrong, and the fix is to make the figures agree, to
-    label what each counts, or to move the tiles out — never to add the sentence.
+63. **Tab strip, chip filter and rows sit together, in that order, with nothing between them** —
+    and **anything** means anything: a tile row, a banner, a help card, a rule, a heading, a
+    caption, a view-mode button. Both controls narrow the same set, so read down the screen they
+    are the two cuts in the order they apply — the tab picks the set, the chips pick inside it —
+    and the rows follow immediately under the last thing that changed which rows they are. Chips
+    drawn *above* the strip are a second strip with nothing saying which of the two the reader is
+    inside.
+    - **A number that counts one set directly above a table showing another reads as counting that
+      table**, and the caption written to explain the difference is the layout confessing: a
+      sentence saying why two figures on one screen disagree means the arrangement is wrong, and
+      the fix is to make the figures agree, to label what each counts, or to move the tiles out —
+      never to add the sentence.
+    - **A message the chip selection needs goes to the right of the chips, on their row** —
+      `<Flex align="center" gap="sm"><ChipFilter …/><Text size="caption" tone="muted">…</Text></Flex>`,
+      never a line of its own under the chips and never a band over the table. The row is one flex
+      line, so whatever else belongs beside the chips (an unbuilt layer, a count) sits there too;
+      that is the one place the rule leaves open, and it is open because a note beside the control
+      it describes is read as belonging to that control.
+    - **A notice true of one tab only goes under that tab's rows**, not over them — a footnote is
+      read after the thing it annotates. A notice true of every tab goes above the strip.
+    - **A heading inside a tab panel repeating the tab's own name is deleted, not moved.** The tab
+      the reader just pressed already said it.
+    - **Sibling tab panels and the list's own states are not "between".** `TabsContent` /
+      `PageTabPanel` siblings are alternatives, and the arms of the conditional that draws the rows
+      (`{isLoading ? <Skeleton/> : rows.length === 0 ? <EmptyState/> : <Table/>}`) replace the table
+      rather than stand over it.
 
 64. **A chip filter carries a filter icon on every chip** — a chip row and a tab strip are the
     same shape at a glance, and a reader cannot tell which one narrows. The icon is the same on
@@ -231,6 +251,7 @@ These invariants apply to **every** frontend file you touch. Treat each as invio
     already ends. Where the count outgrows one row, the second row carries the secondary verbs and
     the committing verb stays on the last.
 
+66. **A field that names another record peeks at it, never travels to it** — a detail field, list cell or panel row whose value is another record's NAME renders that name plus the peek trigger, and the trigger opens that record in the host-mounted dialog (#45); the dialog's go-to is the only way out of the screen. Two shapes break it, and the second does not even navigate: a `<Link>` in a field, and a link-styled button wired to the panel's own `onSelect` — which replaces the record under the reader, same panel, same chrome, different subject. A link is right only when the destination is a screen rather than a record, and then it belongs in the action row. Peeks stack. **The failure mode is disuse**: build the machinery, use it once, and every screen written afterwards reaches for a link because nothing fails when it does — so the rule needs a detector in the project's own gate script, never a paragraph. → `invariants.md` #66.
 
 ---
 
@@ -321,7 +342,7 @@ Trigger: writing or editing README, TSDoc on public exports, tutorials, how-to g
 
 After writing:
 
-- [ ] All 62 Non-Negotiable Invariants hold
+- [ ] All 66 Non-Negotiable Invariants hold
 - [ ] Every action affordance gated on its endpoint's permission (#52) — both header variants, tree `add-child`, and buttons inside action groups; group read from `SUBJECTS`, never inlined
 - [ ] Precedent parity pass done (new / reshaped screens — #51): comparison sheet walked row by row against both precedents, screens compared in the browser
 - [ ] Completion report (in conversation — never recorded in files) names the Task Router references consulted and, for screen work, the shape + both precedent files + justified divergences (#51)
