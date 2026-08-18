@@ -119,6 +119,63 @@ Apply alignment according to [Alignment Guidelines](#alignment-guidelines-mandat
 
 ---
 
+## How Many Columns — Which Fields Earn One (MANDATORY)
+
+The ordering rules below say where a column goes. They do not say whether it exists, and a list
+that never asks that question comes out at the two or three columns a wireframe had room to
+sketch while its DTO offers twenty-six fields and the reader is sent into the detail panel for
+every one of them.
+
+**A wireframe's column count is a floor, never a ceiling.** A board is drawn on a page far
+narrower than a screen: what it draws is what must be there, not all that may be. A list-detail
+page lays no grid at all while the detail is closed, so the list has the whole page — read the
+frame as a ceiling and every list in the product stops at the width of a sketch.
+
+**A field earns a column when all five hold.** Anything failing one waits in the detail panel.
+
+1. **A reader uses it to pick a row or to scan the list** — the name they search by, the status
+   they act on, the date they are chasing. Not a value somebody reads once they have already
+   decided which record to open.
+2. **The value differs across rows.** A tab strip or a forced scope that pins a field makes that
+   field a constant inside the tab; a column of one repeated value is furniture.
+3. **It reads at a glance** — a badge, a bounded number, a date, a short name. A paragraph is a
+   panel field, not a column.
+4. **Most rows have a value.** A field set on three rows in fourteen is an annotation on the
+   identity cell (a badge beside the name), not a column blank eleven times.
+5. **The reader is allowed to see it.** A value behind a different permission group renders as
+   nothing for half the audience — gate the column, or leave it out.
+
+**Always out, whatever the five say**: the UUID primary key, `deleted` / `deletedTimestamp`, the
+audit quartet (`CrudDetail`'s `auditData` already carries it — invariant #54), and raw FK ids
+(render the related name instead).
+
+**Calibrate against sibling lists in the same product, not against the DTO.** A mature console
+runs about five to seven columns a table; one at two has stopped early and one at fifteen has
+copied the DTO. Count the columns on two lists a reviewer already accepted before choosing.
+
+### A list that is sometimes narrow declares two sets, not one
+
+A list-detail screen loses most of its width the moment a row opens. `CrudList.Column`'s
+`minTableWidth` is the framework's answer: below that many pixels **of the table's own width** the
+column is not rendered at all — no header, no cells, no entry in the columns dropdown.
+
+- **Only a value the detail panel also shows may carry one.** A column that disappears takes its
+  value with it and there is no "show anyway"; the arrangement works because the thing that took
+  the width is the panel carrying the value. A value that lives nowhere else stays in the table
+  however narrow it gets.
+- **One threshold for the product, declared once.** A per-list threshold answers per screen a
+  question the reader asks once — "is this list wide enough to read across".
+- **The threshold has three bounds**: above the widest pinned list pane, at or below the narrowest
+  full-page list container the product targets, and **at or above what each wide set actually
+  measures**. Miss the third and the set switches on inside a table that then scrolls sideways
+  with the row actions past the right edge — the failure the prop exists to prevent, caused by the
+  prop. Sum each wide set's declared `width` / `minWidth`, add the cell padding per column and the
+  row-action column, and keep the total under the threshold.
+- **The secondary line under a row's name is the narrow form of those columns.** Where a board
+  stacks 「code · rank · source」 into a caption, those become columns when there is room — and the
+  caption has to drop what the columns took, or every row prints its values twice. Measure the
+  list root (`<CrudList ref={…}>` + `useContainerWidth`) to decide what the caption still carries.
+
 ## Column Order Guidelines
 
 This section defines the standard column order and default visibility for data tables.
@@ -332,6 +389,8 @@ function MyList() {
 | `header` | `string` | Column header text (use `fieldLabel()`) |
 | `sortable` | `boolean` | Enable column sorting |
 | `width` | `number` | Fixed column width in pixels |
+| `minWidth` | `number` | The column's floor rather than its allowance — free text ellipsizes and the table spends leftover width here. Ignored when `width` is set |
+| `minTableWidth` | `number` | The narrowest table worth drawing this column in. Below it the column is not rendered at all. Only for a value the detail panel also shows |
 | `display` | `"badge" \| "boolean"` | Built-in display mode |
 | `format` | `"date" \| "datetime" \| "relative"` | Date formatting mode |
 | `variants` | `Record<string, string>` | Badge variant color map (with `display="badge"`) |
@@ -528,6 +587,16 @@ See [i18n Reference](i18n.md) for complete i18n guide.
 ---
 
 ## Checklist
+
+**For Which Columns Exist (MANDATORY):**
+- [ ] Every field on the row passed the five tests; the ones that failed are named in the panel
+- [ ] The list is not stopped at its wireframe's count — the frame is a floor
+- [ ] Column count is calibrated against two accepted sibling lists, not against the DTO
+- [ ] PK, `deleted`, the audit quartet and raw FK ids are out
+- [ ] Any `minTableWidth` column's value is also in the detail panel, and the wide set's declared
+      widths sum under the threshold
+- [ ] Where columns drop, the row's secondary caption line takes the dropped values back and drops
+      them again when the columns return
 
 **For Column Order (MANDATORY):**
 - [ ] Columns follow group order (Drag > Select > Identifier > Relations > Type > Text > Desc > Attr > Metrics > Schedule > Audit > Actions)
