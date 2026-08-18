@@ -136,9 +136,20 @@ export function makeConsole({
         };
       };
       const allowed = itemLimits[role]?.[c];
-      const within = (it) => !allowed || allowed.includes(typeof it === 'string' ? it : it.label);
+      // A cluster with a third level could not be narrowed at all: the test read the GROUP's label,
+      // so cutting one child meant cutting every sibling with it. Naming the group keeps it whole,
+      // which is what every existing list means; naming children instead keeps the group and cuts
+      // to them. A group nobody named and no child of which is named goes.
+      const narrowed = (it) => {
+        if (!allowed || typeof it === 'string' || allowed.includes(it.label)) return it;
+        const children = (it.children ?? []).filter((ch) => allowed.includes(ch));
+        return children.length ? { ...it, children } : null;
+      };
+      const within = (it) => !allowed
+        || allowed.includes(typeof it === 'string' ? it : it.label)
+        || (typeof it !== 'string' && (it.children ?? []).some((ch) => allowed.includes(ch)));
       const items = [
-        ...m.items.filter(within).map((it) => entry(it, clusterLock)),
+        ...m.items.filter(within).map(narrowed).filter(Boolean).map((it) => entry(it, clusterLock)),
         ...(m.packItems ?? []).map((label) => entry(label, packLock)),
       ];
       // The first group opens when nothing is current — a screen reached without a menu entry
