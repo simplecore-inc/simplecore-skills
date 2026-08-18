@@ -80,6 +80,29 @@ the image.
 something, a control cut off, an action below the fold. Then the measurement is what you report
 (the two rectangles, the point pressed, what answered there), not a description of the picture.
 
+## A blank capture is the one thing you must look at
+
+**Never opening your own capture has a back side: a shot taken before the page painted is a white
+rectangle, and nothing in your reading of the screen says so.** You read the page, the page was
+right, and the file on disk is empty — those are consistent with each other and only the file knows.
+
+**So check the file, and check it by size rather than by opening it.** A capture of a built screen
+runs to tens of thousands of bytes because a screenshot of text and borders does not compress; a
+blank one is a fraction of that. Compare against the other captures in the same folder — an order
+of magnitude below its siblings is a blank picture, not a sparse screen.
+
+**An empty-state screen is not a blank capture.** A list with no rows still draws the shell, the
+header, the tiles and the empty-state wording, and comes out the same size as any other. If an
+「empty」 capture is tiny, it is tiny for the other reason.
+
+**Shoot only after the page has painted.** Read the screen first — the heading, the tiles, a row —
+and take the shot once those are there. Where the file comes out small anyway, take it again; where
+it comes out small twice, say so and stop rather than leaving a white rectangle behind with a
+correct-looking sentence beside it.
+
+**Say how many you re-took.** A run that silently re-shot four captures and a run that got them
+first time look identical in the folder, and the difference is worth knowing.
+
 ## What you do not run
 
 **No full gate sweep, no repository-wide check.** The write hooks already run those, and running one

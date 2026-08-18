@@ -32,6 +32,24 @@ const CAPTURE_SUFFIX = '.webp';
 const CAPTURE_BYTES = 150 * 1024;
 
 /**
+ * Below which a capture is almost certainly a shot taken before the page painted.
+ *
+ * <p><b>A blank capture is consistent with everything except the file.</b> The taker read the
+ * screen, the screen was right, and what landed on disk is a white rectangle — nothing in the run
+ * disagrees with anything else, and the sentence written beside it reads correctly. Only the bytes
+ * know: a screenshot of text and borders does not compress, so a built screen runs to tens of
+ * thousands of bytes and a blank one to a few.
+ *
+ * <p><b>The sparsest legitimate screen sets the number.</b> A sign-in form on a plain background —
+ * about as little as a real screen ever draws — measured around nine kilobytes where a blank shot
+ * of the same viewport measured under six. Seven sits between them with room on both sides, and it
+ * is a warning rather than an error because the judgement is 「open this one」 rather than 「this is
+ * wrong」.
+ */
+const CAPTURE_FLOOR = 7 * 1024;
+
+
+/**
  * A capture's file name: the frame it shows, and — where the frame draws a content tab strip —
  * which pane of that strip, or which of the states navigation cannot reach.
  *
@@ -465,6 +483,14 @@ export const closedChapterHasEvidence = {
               `${image}: ${Math.round(bytes / 1024)}KB, over the ${CAPTURE_BYTES / 1024}KB ceiling — `
               + 'a repository that accumulates every frame of every chapter stops being usable'
             );
+          } else if (bytes < CAPTURE_FLOOR) {
+            findings.push(
+              `${image}: ${Math.round(bytes / 1024)}KB — a screenshot of a built screen does not `
+              + 'compress this small, so this is very likely a shot taken before the page painted: '
+              + 'a white rectangle with a correct-looking sentence beside it. An empty LIST is not '
+              + 'this — it still draws the shell, the header and the empty-state wording and comes '
+              + 'out the usual size. Open it, and take it again if it is blank'
+            );
           }
         }
       }
@@ -808,7 +834,13 @@ const CHAPTER_REFUSED_ONLY = CHAPTER_TEXT['chapters/w02-org-shell.md'].replace(
 const LEDGER = (w01, w02) => `# 챕터 상태\n\n| 챕터 | 상태 |\n| --- | --- |\n| W01 | ${w01} |\n| W02 | ${w02} |\n`;
 
 /** The one capture the screen chapter's document shows, with the bytes it takes. */
-const CAPTURE = (body = 'RIFF····WEBP') => ({ 'docs/evidence/w02-org-shell/a-01.webp': body });
+/**
+ * A capture fixture. The default body is padded past the blank-capture floor on purpose: a
+ * twelve-byte placeholder stands in for a picture in every dimension except the one the floor
+ * measures, so a fixture that looks nothing like a screenshot would make every case here report a
+ * blank capture and the rule would have to be weakened to fit its own fixtures.
+ */
+const CAPTURE = (body = `RIFF····WEBP${'\0'.repeat(9 * 1024)}`) => ({ 'docs/evidence/w02-org-shell/a-01.webp': body });
 
 /** A foundation section: no frame to capture, so it carries the command and what came back. */
 const W01_EVIDENCE =
@@ -940,11 +972,21 @@ export function cases(t) {
   );
   t.add(
     'closedChapterHasEvidence',
+    'a capture too small to be a picture of a built screen',
+    evidence({
+      'tracking/STATE.md': LEDGER('열림', '열림'),
+      'docs/evidence/w02-org-shell.md': W02_EVIDENCE(W02_SCREEN_SECTION),
+      ...CAPTURE('RIFF····WEBP'),
+    }),
+    true
+  );
+  t.add(
+    'closedChapterHasEvidence',
     'a capture of a frame the chapter does not place',
     evidence({
       'tracking/STATE.md': LEDGER('열림', '열림'),
       'docs/evidence/w02-org-shell.md': W02_EVIDENCE(W02_SCREEN_SECTION.replace('a-01.webp', 'z-09.webp')),
-      'docs/evidence/w02-org-shell/z-09.webp': 'RIFF····WEBP',
+      'docs/evidence/w02-org-shell/z-09.webp': `RIFF····WEBP${'\0'.repeat(9 * 1024)}`,
     }),
     true
   );
@@ -955,7 +997,7 @@ export function cases(t) {
       'tracking/STATE.md': LEDGER('열림', '열림'),
       'docs/evidence/w02-org-shell.md': W02_EVIDENCE(W02_SCREEN_SECTION),
       ...CAPTURE(),
-      'docs/evidence/w02-org-shell/a-01-2.webp': 'RIFF····WEBP',
+      'docs/evidence/w02-org-shell/a-01-2.webp': `RIFF····WEBP${'\0'.repeat(9 * 1024)}`,
     }),
     true
   );
