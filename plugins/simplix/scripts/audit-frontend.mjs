@@ -480,16 +480,35 @@ const localeKeyCache = new Map();
 function localeKeys(ns) {
   if (localeKeyCache.has(ns)) return localeKeyCache.get(ns);
   let out = null;
-  const [mod, catalogue] = ns.split("/");
-  if (mod && catalogue && !ns.includes("..")) {
-    const file = path.join(ROOT, "modules", mod, "src", "locales", catalogue, "ko.json");
-    if (fs.existsSync(file)) {
+  if (!ns.includes("..")) {
+    const [mod, catalogue] = ns.split("/");
+    // A namespace is `<module>/<catalogue>` in a module and a bare `<catalogue>` in an app, and
+    // both shapes are in use in one repository. Reading only the first left every app-level
+    // namespace resolving to null, which this rule reads as 「no catalogue, nothing to check」 —
+    // so the screens most likely to be hand-written were the ones it never looked at.
+    const candidates = [];
+    if (mod && catalogue) candidates.push(path.join(ROOT, "modules", mod, "src", "locales", catalogue, "ko.json"));
+    const appsDir = path.join(ROOT, "apps");
+    if (fs.existsSync(appsDir)) {
+      for (const app of fs.readdirSync(appsDir)) {
+        candidates.push(path.join(appsDir, app, "src", "locales", ns, "ko.json"));
+      }
+    }
+    const file = candidates.find((c) => fs.existsSync(c));
+    if (file) {
       out = new Set();
       const walkJson = (obj, prefix) => {
         for (const [k, v] of Object.entries(obj)) {
           const at = prefix ? `${prefix}.${k}` : k;
           if (v && typeof v === "object") walkJson(v, at);
-          else out.add(at);
+          else {
+            out.add(at);
+            // `dutyCount_one` and `dutyCount_other` are one key to a caller, who writes
+            // `t("unit.dutyCount", { count })` and lets i18next pick. Recording only the suffixed
+            // forms would report every plural key in the repository as missing.
+            const base = at.replace(/_(zero|one|two|few|many|other)$/, "");
+            if (base !== at) out.add(base);
+          }
         }
       };
       try {
@@ -1047,7 +1066,7 @@ export type AreaStatus = (typeof AreaStatus)[keyof typeof AreaStatus];
     id: "missing-translation-key",
     invariant: "audit: scaffold locale",
     level: "error",
-    desc: "t() names a key its namespace's catalogue does not define — i18next falls back to printing the key, so the screen shows `product.selfServeHint` where the sentence should be and nothing errors",
+    desc: "A key its namespace's catalogue does not define, whether named in `t(\"…\")` or handed to a helper alongside the translator — i18next falls back to printing the key, so the screen shows `product.selfServeHint` where the sentence should be and nothing errors",
     appliesTo: (p) => inModules(p) && isTsx(p),
     check: (c) => {
       const binds = translatorBindings(c);
@@ -1057,12 +1076,23 @@ export type AreaStatus = (typeof AreaStatus)[keyof typeof AreaStatus];
         const keys = localeKeys(ns);
         if (!keys) continue;
         const call = new RegExp(`\\b${alias}\\(\\s*"([a-zA-Z0-9_.]+)"`, "g");
-        hits.push(
-          ...lineHits(c, call, (line) => {
-            call.lastIndex = 0;
-            return [...line.matchAll(call)].some((m) => !keys.has(m[1]));
-          }),
+        // A key handed to a helper is still a key. `countedFigure(t, value, "unit.accountCount")`
+        // never writes `t("…")`, so a reader watching only for the translator's own call sees
+        // nothing — and that is how a tile came to print `tile.unitAccount` on a screen until a
+        // person noticed. The translator being passed as an argument is what marks the string
+        // arguments beside it: a call that hands `t` to something is handing it keys.
+        const viaHelper = new RegExp(
+          `\\b[A-Za-z_$][\\w$]*\\(\\s*${alias}\\s*,[^)]*?"([a-zA-Z0-9_.]+\\.[a-zA-Z0-9_.]+)"`,
+          "g",
         );
+        for (const pattern of [call, viaHelper]) {
+          hits.push(
+            ...lineHits(c, pattern, (line) => {
+              pattern.lastIndex = 0;
+              return [...line.matchAll(pattern)].some((m) => !keys.has(m[1]));
+            }),
+          );
+        }
       }
       return hits;
     },
