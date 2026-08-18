@@ -145,6 +145,7 @@ All paths are relative to this skill's own directory.
 | Choosing a device class, height behaviour, or authoring a narrow/wide pair | `references/device-frames.md` |
 | Composing frame content, chrome, connectors, annotations; fidelity rules | `references/primitives.md` |
 | Laying out a CRUD screen — what may sit above, beside, inside or under a list-detail | `references/primitives.md` § List-detail |
+| A screen whose tabs are named but not drawn — the companion frame | `references/primitives.md` § Every tab is drawn |
 | Implementing from a board, reconciling code ⇄ board, syncing after a change, proposing a board, wiring a project to its board | `references/living-contract.md` |
 | Past ~20 frames, or repeated chrome — the kit, the patterns, screen files, and the build | `references/build-kit.md` |
 | Starting a board, choosing its pattern, or migrating one onto the current contract | `/simplecore:board-init` · `/simplecore:board-migrate` |

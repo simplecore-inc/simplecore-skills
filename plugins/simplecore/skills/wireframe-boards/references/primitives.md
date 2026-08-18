@@ -192,6 +192,43 @@ full screenful of plan to reach the first row, and the same records are drawn tw
 - Share one drawing of the record between panel and dialog (`const detailBody = …`), the
   same way the closed and open states share one drawing of the page.
 
+### Every tab is drawn, and one companion frame carries the ones the base does not
+
+A tab strip names its panes and draws only the open one. **The names are not a contract** — a
+pane's columns, its actions and its empty state are unspecified, so the screen built from that
+frame is invented by whoever builds it. Boards accumulate this quietly: count the panes a board
+declares against the panes it draws and the gap is usually most of them.
+
+Drawing each pane as its own frame is the obvious fix and the wrong one. The pane is a strip
+inside a page, so a frame for it has to redraw the page — the header, the list beside it, the
+footer — and now **the same list exists in two frames and only one of them gets corrected.** The
+divergence the board exists to prevent is the divergence the fix introduces, multiplied by the
+number of panes.
+
+**Draw one companion frame per tabbed screen instead, placed immediately after its base.**
+
+- **The title area is drawn the same** as the base, and nothing else is. It is there so a reader
+  knows which screen's tabs these are.
+- **Everything the base already draws is a placeholder** — the list, the panel, the region. Draw
+  it once, in the base. A companion frame that redraws the list has reintroduced the problem.
+- **The open pane is not repeated.** The base drew it.
+- **The remaining panes stack vertically inside that one frame, in the strip's order**, each
+  labelled with its tab.
+- **The frame says it is tab panes.** Without that sentence, stacked panes read as one long page
+  and get built as one — a scrolling screen where a tab strip belongs. This annotation is half of
+  what the frame is for.
+
+One frame per tabbed screen rather than one per pane, and the base frames are not touched at all,
+which is the larger saving: the alternative rewrites every tabbed screen to take its open pane as
+a parameter.
+
+**A pane whose content a pattern frame already fixes cites the pattern instead of being drawn.**
+The line is whether the pattern settles the *content* or only the *shape*: a pattern that says a
+sub-collection tab is a real list with row actions and pagination has not said which columns
+stand, so that pane is still drawn; a pattern that names the columns has, so that pane is a
+citation. The same tab label can fall on either side — a record's field-change log is settled by
+the change-history pattern, while a domain event log carries different columns per screen.
+
 ## A preview of a document is a viewer
 
 Wherever a screen's job is to read or print a document — a print preview, a kept render, a
