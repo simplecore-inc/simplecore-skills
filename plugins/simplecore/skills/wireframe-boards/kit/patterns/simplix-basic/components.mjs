@@ -34,7 +34,19 @@ export const qrPh = (label = 'QR') => `<div class="qr-ph"><span>${label}</span><
 export const btn = (text, variant = '') => `<div class="${cls('btn', variant)}">${text}</div>`; // ''·primary·ghost·danger·off(권한 없음)
 export const chip = (text, active = false) => `<span class="chip${active ? ' active' : ''}">${text}</span>`;
 export const badge = (text, variant = '') => `<span class="${cls('badge', variant)}">${text}</span>`; // ''·outline
-export const chips = (items) => `<div class="chips">${items.join('')}</div>`;
+/**
+ * The chip filter over a list. It sits between the list tabs and the list, and NOTHING may come
+ * between the three: a tile row, an explanation card or a message band pushed in there separates
+ * the control from what it controls, and the reader stops reading the three as one act.
+ *
+ * `note` is the one sentence that depends on WHICH chip is chosen — 「연동 방식에 따라 준비 사항이
+ * 다릅니다」. It rides the right end of the same row, because a line of its own below the chips is
+ * the very block this arrangement forbids. Keep it to a clause; anything a reader acts on, or that
+ * reads the same whichever chip is picked, is a page fact and belongs above the tabs.
+ */
+export const chips = (items, { note = '' } = {}) =>
+  `<div class="chips">${items.join('')}` +
+  `${note ? `<span class="chips-note">${note}</span>` : ''}</div>`;
 /** A row of buttons. A btn is a block, so two of them stack unless a row holds them. */
 export const btnRow = (children) => `<div class="btn-row">${children}</div>`;
 export const badges = (items) => `<div class="badges">${items.join('')}</div>`;
@@ -1200,6 +1212,7 @@ export const CATALOG = [
   { cat: 'input', name: 'fI18n({label, value, lang}) · fI18nArea({…})', note: '언어별로 값을 갖는 칸. 라벨 오른쪽이 화면 전체가 함께 움직이는 언어 선택기', ex: fI18n({ label: '위험요인 이름', value: '밀폐공간 산소결핍', lang: '한국어', required: true }) },
   { cat: 'input', name: 'cellInput({value, unit, bad})', note: '표 안에서 바로 고치는 칸. 빈 칸은 점선, 거절된 값은 강조색', ex: `<div class="table"><div class="trow"><span class="td">산소</span><span class="td">${cellInput({ value: '20.9', unit: '%' })}</span><span class="td">${cellInput({})}</span><span class="td">${cellInput({ value: '-1', bad: true })}</span></div></div>` },
   { cat: 'input', name: 'chip(text, active) · badge(text, variant)', note: '필터 칩 · 상태 배지(outline)', ex: `${chips([chip('전체', true), chip('진행'), chip('완료')])}${badges([badge('발급', 'outline'), badge('반납')])}` },
+  { cat: 'input', name: 'chips(items, {note})', note: '칩 줄의 오른쪽 끝에 붙는 한 마디 — 어느 칩을 골랐느냐에 따라 달라지는 안내만 여기 놓는다. 칩 아래 한 줄을 더 쓰면 탭·칩·목록 사이에 블록이 끼는 것이라 그 자리는 없다', ex: `${chips([chip('전체'), chip('내보내기 DB', true), chip('API')], { note: '내보내기 DB는 방화벽을 이쪽에서 엽니다' })}` },
   { cat: 'container', name: 'helpCard({title, hint, open})', note: '엔티티 설명·생애주기가 사는 카드 — 누르면 다이얼로그로 펼친다. 목록 아래·목록·상세 위·상세 탭 머리 가운데 한 곳', ex: helpCard({ title: '위임과 대결은 어떻게 다른가', hint: '넘기는 사람 · 넘어가는 시점 · 기록에 남는 이름' }) },
   { cat: 'container', name: 'card({sub, body})', note: '내용 카드', ex: card({ sub: '오늘 작업', body: bar('w25') }) },
   { cat: 'container', name: 'listCard({thumb, lines, trail})', note: '섬네일이 붙는 목록 행', ex: listCard({ lines: `${bar('w60')}${bar('w40', true)}`, trail: badge('서명 대기', 'outline') }) },

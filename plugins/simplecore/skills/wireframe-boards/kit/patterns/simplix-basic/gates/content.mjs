@@ -1051,6 +1051,94 @@ export const calendarListGate = {
 // either at the tail of the LIST column or inside the PANEL, and choosing between those two is
 // the point: a note about the whole list goes in the list column, a note about the selected
 // record goes in the panel.
+// Filter-chain gate: 목록 탭 → 칩 필터 → 목록 is one act, and the three sit together. A tile row,
+// an explanation card or a warning band pushed between them separates the control from the thing
+// it controls — the reader chooses a tab, crosses a screenful of something else, and meets rows
+// with no visible reason to read them as the answer. The wedge that recurs is the stat tile row:
+// it belongs ABOVE the tabs, where the page's own figures are, rather than inside the chain.
+//
+// Read off the rendered frame rather than the source, because the surface a screen draws is often
+// a branch — `(partner ? listTabs(a) : listTabs(b))`, `(view === '목록' ? listDetail(…) : …)` — and
+// a source sweep sees the condition's variable where the list is.
+//
+// A chip row that is NOT a list filter is the one call a machine cannot make: 「오늘 · 이번 주 ·
+// 이번 달」 over a whole dashboard, 「빈도·강도법 · 체크리스트법 · OPS」 picking which assessment the
+// screen IS, 「A4 세로 · A3」 setting the paper a preview draws on. Those frames declare it in
+// `pageChips`, one sentence naming what the chips pick instead — the same bargain `pageForm` and
+// `pageCalendar` strike, and writing the sentence is the check.
+export const filterChainGate = {
+  id: 'filterChainGate',
+  title: '탭·칩 필터·목록 사이에 다른 것이 있다',
+  stage: 'built',
+  run: (ctx) => {
+    const BODY = new Set(['listdetail', 'table', 'treetable', 'mx', 'cal', 'tree', 'cvs', 'hit']);
+    // The language switch is read out of the sequence altogether. It is a filter of the same
+    // family — 「전체 언어 · 한국어 · Tiếng Việt」 over a result list — so it does not break the
+    // reading of tab → chip → list the way a tile row or an explanation card does; and it is not a
+    // member of the triple either, because a screen may keep it beside a document instead.
+    const rank = (cls) => {
+      const c = cls.split(/\s+/);
+      if (c[0] === 'ltabs') return 1;
+      if (c[0] === 'chips') return 2;
+      if (c[0] === 'filterbar') return 3;
+      return BODY.has(c[0]) ? 4 : 0;
+    };
+    const isLang = (cls) => /(^|\s)ltabs(\s|$)/.test(cls) && /(^|\s)lang(\s|$)/.test(cls);
+    const VOID = new Set(['br', 'hr', 'img', 'input', 'meta', 'link']);
+    // A tree of {cls, children}: enough to read sibling order, and nothing else.
+    const parse = (html) => {
+      const root = { cls: '', children: [] };
+      const stack = [root];
+      for (const m of html.matchAll(/<(\/?)([a-zA-Z][\w-]*)\b([^>]*)>/g)) {
+        const [, slash, tag, attrs] = m;
+        const t = tag.toLowerCase();
+        if (VOID.has(t) || /\/\s*$/.test(attrs)) continue;
+        if (slash) {
+          for (let i = stack.length - 1; i > 0; i--) if (stack[i].tag === t) { stack.length = i; break; }
+          continue;
+        }
+        const node = { tag: t, cls: (/class="([^"]*)"/.exec(attrs) ?? ['', ''])[1], children: [] };
+        stack[stack.length - 1].children.push(node);
+        stack.push(node);
+      }
+      return root;
+    };
+    const found = [];
+    for (const s of ctx.loaded) {
+      const html = s.mod?.body ?? '';
+      if (!html) continue;
+      const declared = typeof s.mod.pageChips === 'string' && s.mod.pageChips.trim() !== '';
+      if (s.mod.pageChips === '') { found.push(`${s.num} — pageChips에 사유가 없다`); continue; }
+      const hits = [];
+      const walk = (node) => {
+        const kids = node.children.filter((c) => !isLang(c.cls))
+          .map((c) => ({ cls: c.cls, rank: rank(c.cls) }));
+        for (let i = 0; i < kids.length; i++) {
+          const r = kids[i].rank;
+          if (r < 1 || r > 3) continue;
+          if (r === 2 && declared) continue;
+          let j = -1;
+          for (let k = i + 1; k < kids.length; k++) if (kids[k].rank >= 1) { j = k; break; }
+          // A chip row with no list under it anywhere is not this chain's business — a set of tags
+          // beside an attachment, a legend. The chain is only a chain once it reaches a list.
+          if (j < 0) continue;
+          if (j !== i + 1) {
+            hits.push(`${kids[i].cls} → ${kids[j].cls} 사이에 ${kids.slice(i + 1, j).map((x) => x.cls).join(' · ')}`);
+          } else if (kids[j].rank <= r) {
+            hits.push(`${kids[i].cls}이 ${kids[j].cls}보다 앞이다 — 순서는 목록 탭 → 칩 필터 → 목록이다`);
+          }
+        }
+        for (const c of node.children) walk(c);
+      };
+      walk(parse(html));
+      if (hits.length) {
+        found.push(`${s.num} (${s.file}) — ${hits[0]}. 목록을 좁히는 것 셋은 붙여 놓고 나머지는 탭 위로 올린다`);
+      }
+    }
+    return found;
+  },
+};
+
 export const panelTailGate = {
   id: 'panelTailGate',
   title: '목록·상세 아래에 무언가가 더 있다',

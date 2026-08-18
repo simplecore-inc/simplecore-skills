@@ -102,6 +102,30 @@ Four destinations, and choosing between them is the design decision:
 | A reference block about the **whole list** that is narrow enough | tail of the **list column** |
 | An always-available cross-link or export | the **page header's action area**, right of the title — not a button row in the flow |
 
+### The tabs, the chip filter and the list stand together
+
+Picking a tab, narrowing it with a chip and reading the rows is ONE act, and **nothing may
+sit between the three** — not a tile row, not a warning band, not an explanation card, not
+a section title. Wedge something in and the reader chooses a tab, crosses a screenful of
+other material, and meets rows with nothing left saying those rows are the answer to what
+they chose. The tile row is the wedge that recurs, because it looks like a summary of the
+list and is really a summary of the page.
+
+- **The order is tabs → chip filter → list**, and the list begins at the bar that counts
+  it. A chip row drawn under that bar narrows a total the reader has not chosen yet.
+- **What was in the chain goes ABOVE the tabs** — the first of the four homes above. The
+  controls then end up next to what they control, and the figures read as the page's own.
+- **A note that depends on WHICH chip is chosen rides the chip row's right end.** A line of
+  its own under the chips is the very block this forbids; a sentence that reads the same
+  whichever chip is picked is a page fact and goes above the tabs, by the test below.
+- **A list's tabs and a record's content tabs are different things.** The first splits a
+  list into kinds somebody works through separately; the second switches what one record
+  shows. Only the first is in this rule.
+- **A chip row that is not a list filter declares itself** — a dashboard's period, the
+  method the screen IS, the paper a preview is drawn on. One sentence naming what the chips
+  pick instead, the same bargain the page-form and page-calendar declarations strike.
+  Writing the sentence is the check, and an empty reason is not one.
+
 **Entity explanation and lifecycle material is a card, not a block.** A legend of the
 states a record moves through, a table of what each grade requires, a "how to read this
 screen" walkthrough — inline, these push the actual work below the fold and are read once

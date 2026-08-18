@@ -362,4 +362,31 @@ export function cases(t) {
     'export default { body: console_({ main: pageHeader({}) + listDetail(list, panel)' + after + ' }) };')]);
   add('panelTailGate', '목록·상세 아래에 블록이 더 있다', tail(" + section('더', 'x')"), true);
   add('panelTailGate', '목록·상세로 끝난다', tail(''), false);
+
+  // 목록 탭 → 칩 필터 → 목록 is one act and the three sit together, so the gate reads the rendered
+  // frame: the surface a screen draws is often a branch, and a source sweep sees the condition.
+  const chain = (inner, mod = {}) => ctxWith([{ ...screen('x-01-a', ''), mod: { body: `<div class="main">${inner}</div>`, ...mod } }]);
+  const TABS = '<div class="ltabs"><span class="ltab active">전체</span></div>';
+  const CHIPS = '<div class="chips"><span class="chip active">전체</span></div>';
+  const TILES = '<div class="grid-4"><div class="tile"></div></div>';
+  const LIST = '<div class="listdetail"></div>';
+  add('filterChainGate', '탭과 목록 사이에 타일이 있다', chain(TABS + TILES + LIST), true);
+  add('filterChainGate', '탭·칩 필터·목록이 붙어 있다', chain(TILES + TABS + CHIPS + LIST), false);
+  // The order is part of the rule: a chip row under the bar that counts what it narrowed reads as
+  // a filter over the total rather than the thing the total is counting.
+  add('filterChainGate', '칩 필터가 목록 바 뒤에 있다',
+    chain(TABS + '<div class="filterbar"></div>' + CHIPS + '<div class="table"></div>'), true);
+  // A chip row that picks what the whole page IS — a dashboard's period, an assessment method, the
+  // paper a preview draws on — is not a list filter, and the frame says so in one sentence.
+  add('filterChainGate', '칩이 목록 필터가 아니라고 밝힌다',
+    chain(CHIPS + TILES + '<div class="table"></div>', { pageChips: '대시보드 전체의 기간이다' }), false);
+  add('filterChainGate', 'pageChips에 사유가 없다',
+    chain(CHIPS + TILES + '<div class="table"></div>', { pageChips: '' }), true);
+  // A chip row with no list under it is a set of tags, not a filter — the chain is only a chain
+  // once it reaches a list.
+  add('filterChainGate', '목록이 없는 칩 줄', chain(CHIPS + '<div class="attach"></div>'), false);
+  // The language switch picks which language a kept field is read in; it narrows no list, so it is
+  // neither a member of the chain nor something wedged into it.
+  add('filterChainGate', '언어 전환은 대상이 아니다',
+    chain(TABS + '<div class="ltabs lang"><span class="ltab">한국어</span></div>' + LIST), false);
 }
