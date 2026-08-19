@@ -96,12 +96,24 @@ thing: the first is a verdict nobody can check afterwards and the second is what
 order to reach one. Transcription is reliable work; a judgement made by whoever took the picture is
 what the rest of this file exists to prevent.
 
-**So the taker can run on a cheaper model than the coordinator, and usually should.** Driving a
+**So the taker can run on a cheaper model than the reader, and usually should.** Driving a
 browser to named addresses and reading values out is procedure. Deciding whether a value is a
 defect is not. Splitting them puts the cost where the work is mechanical and leaves the judgement
 whole and in one head.
 
-**What does not change is who judges.** Whoever took the pictures, the reading stays with the
+**Which model each half runs on is the project's answer**, in `captureTakerModel` and
+`captureJudgeModel`, and the coordinator passes it at dispatch — the value on an agent's own
+definition is only what it falls back to. **Declare both or neither.** Half a split named is a
+project that thought about one side of it: the taker gets the cheap model, the judge inherits
+whatever the harness gives, and the arrangement ends up paying more on exactly the half that was
+supposed to cost less.
+
+**What is not a choice is the split itself.** It exists because whoever shot a picture reads it for
+confirmation of what they expected, not for what is missing — so it holds whatever either half
+costs, and a project that declares neither key runs both halves on the harness's default and gives
+up only the saving.
+
+**And what does not change is who judges.** Whoever took the pictures, the reading stays with the
 coordinator, and what the taker hands back is a record of what was on the screen rather than a
 section of the result document.
 

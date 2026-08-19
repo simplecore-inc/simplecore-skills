@@ -6,24 +6,26 @@ exactly like defects in the product.
 
 ## Choosing what drives the browser
 
-For anything running in a browser, in this order, and **stop at the first one
-that works**:
+**Which drivers exist here is the project's answer, in `browserDrivers`, in the
+order the run takes them** — and **stop at the first one that can express the
+task.** No driver is named in this skill: what is installed differs per machine
+and per user, and a name written here would be a preference imposed on every
+repository that installs the skill.
 
-1. **agent-browser** — <https://github.com/vercel-labs/agent-browser> — the
-   default for every browser task.
-2. **Playwright** — when agent-browser cannot express the task: scripted
-   determinism over a long matrix, a fixed viewport sweep, a capability only its
-   API reaches.
-3. **Claude in Chrome** (`mcp__claude-in-chrome__*`) — last resort. Call
-   `tabs_context_mcp` first to confirm the extension is connected.
+**How that order is decided is the method, and it is one rule: a driver that
+fails often goes last.** A driver failure reads exactly like a defect in the
+screen, so a pass routed through an unreliable one spends its time twice — once
+on the tooling, once on a screen that was never broken. Where a driver needs a
+connection confirmed before it can be trusted (an extension, a daemon, a device
+bridge), confirm it as the first command rather than discovering it mid-sweep.
 
-**The order is about where a run spends its time.** The extension errors often
-enough that a pass routed through it works on the extension rather than on the
-product — and a driver failure reads exactly like a defect in the screen, so the
-time is spent twice: once on the tooling, once on the screen that was never
-broken.
+**Where the project declares no order, the run picks — and then owes the
+record.** An undeclared key is not a default order; it means nobody has settled
+it, so whoever opens a screen chooses, **names the driver in what they hand
+back, and writes it into the handover file** so the next run reaches for the same
+one. Nothing else records the choice: a capture carries no trace of what shot it.
 
-Two rules survive the order unchanged:
+Three rules survive the order unchanged:
 
 - **Only ever the local browser.** The agent drives a development server on this
   machine, and pointing a remote or shared browser at it is neither reproducible
@@ -31,11 +33,31 @@ Two rules survive the order unchanged:
 - **Say which driver you ended up on, and why.** A capture taken through a
   different driver can differ in device pixel ratio, fonts, and scrollbar width;
   a reader comparing two runs needs to know the instrument changed.
+- **One instrument for everything being compared.** Two pictures of one frame
+  shot through two drivers differ in ways that have nothing to do with the
+  screen, and the difference is indistinguishable from the screen having changed
+  → `references/harness.md` § *A measurement of the product is a measurement of
+  the instrument too*.
 
 ## Choosing a device for a mobile product
 
 Both platforms, when the product ships on both. A pass that only ever looks at
 one finds one platform's defects.
+
+**`deviceDrivers` is the same arrangement one layer down**: the project names
+what drives a simulator or a real device, in order, and the run takes the first
+that can express the task and says which. A driver that reads the screen as an
+accessibility tree and points at a control by name is worth reaching for before
+one that computes a coordinate — **a coordinate that lands on the wrong control
+says nothing when it misses**, and that silence is indistinguishable from a
+screen that does not work.
+
+**The commands below are the layer beneath whatever is declared, not an
+alternative to it.** They belong to a repeated machine path — a sweep taking
+hundreds of captures, a polling loop — where a driver's round trip becomes the
+runtime. That is a measurement rather than a preference: **measure it, changing
+one variable**, and go back to the declared driver the moment the work is
+driving a screen by hand rather than sweeping one.
 
 **iOS — simulator.**
 
