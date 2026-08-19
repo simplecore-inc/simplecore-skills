@@ -148,6 +148,7 @@ All paths are relative to this skill's own directory.
 | A screen whose tabs are named but not drawn — the companion frame | `references/primitives.md` § Every tab is drawn |
 | Implementing from a board, reconciling code ⇄ board, syncing after a change, proposing a board, wiring a project to its board | `references/living-contract.md` |
 | Past ~20 frames, or repeated chrome — the kit, the patterns, screen files, and the build | `references/build-kit.md` |
+| **Changing the kit or a pattern** — what may enter it, in what shape, and what stays a board's own | `references/build-kit.md` § What may enter the kit |
 | Starting a board, choosing its pattern, or migrating one onto the current contract | `/simplecore:board-init` · `/simplecore:board-migrate` |
 | Running the persona review after a screen is drawn or changed | `references/persona-review.md` |
 

@@ -108,6 +108,38 @@ improvements to the pattern it came from — a component added there, a gate tig
 stylesheet fix there, none of them arrive. One or two missing components is not a reason to fork;
 it is a reason to add them where the second product drawn that way will get them.
 
+## What may enter the kit, and in the shape it enters
+
+**Everything the kit gains is true of any board, or it does not enter the kit.** The gate table
+below states this for gates; it holds for every other kind of addition — a second output file,
+a piece of page chrome, an export format, a control the reader operates. Three questions, and a
+capability that fails any of them is a board's own or a pattern's, never the kit's.
+
+**① Would another board want the capability?** Not the values — the capability. A product that
+splits its board along some axis of its own is one product; *splitting a board along a declared
+axis* is something any board past a few hundred frames wants. Where the answer is genuinely no,
+it belongs in `<board>/board.gates.mjs` or in a forked pattern, and the cost of forking is the
+section above.
+
+**② Does its shape carry the product's vocabulary?** This is where a general capability still
+lands wrong. The kit learns `splitBy` — a declaration naming a module that answers 「which part
+does this screen belong to」, the parts' order, and each part's label — and it never learns what
+those parts are called in any product. A field named after one product's concept, a default whose
+values are that product's values, an enum of its parts: each of them is the project-specific
+hardcoding rule one level up, and each produces a kit that reads wrong in the second product to
+use it. **Write the capability with placeholders — `<part>`, `<axis>`, `<label>` — and let
+`board.config.mjs` supply every word a reader will see.**
+
+**③ Does a board that declares nothing keep building exactly as before?** Every addition is off
+until a board switches it on. A default that changes an existing board's output is a migration,
+and a migration is a `BOARD_CONTRACT` bump with an entry — not a quiet improvement. The board that
+declares no split still builds one file, with the same name, at the same path.
+
+**The same three questions decide where a value lives.** What the kit holds is the mechanism and
+the interface; what `board.config.mjs` holds is every value a product chose — the axis, the part
+names, which parts go in which volume, what the nav calls them. A value that reaches the kit is a
+value the next project has to fork the kit to change.
+
 ## Three places a gate can live, and the test that decides
 
 | | Holds | Lives in |
