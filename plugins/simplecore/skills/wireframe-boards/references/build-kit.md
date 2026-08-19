@@ -142,6 +142,42 @@ the interface; what `board.config.mjs` holds is every value a product chose — 
 names, which parts go in which volume, what the nav calls them. A value that reaches the kit is a
 value the next project has to fork the kit to change.
 
+### A reader that names helpers by hand cannot see one added later
+
+**A helper added to the kit is invisible to every enumeration outside it.** The kit does not know
+who reads what it draws — a project's generator deriving what each frame owes, a board's own gates,
+a report counting what got drawn. Each of those holds a list of helper names, and a list typed by
+hand is fixed on the day it is typed. The helper arrives, the list does not grow, and the reader
+goes on reporting the number it reported before.
+
+**The number is what makes this quiet.** A reader that says `366 matched` has said nothing about
+the rest, because there is no other side to that count — a frame drawing a helper nobody named is
+not unmatched, it is unseen. A language strip drawn across 38 frames asked no demand of any of
+them, and the report that should have caught it read exactly like a clean one. **A checker that has
+never met its case reports what a clean repository reports.**
+
+**So a reader over kit helpers derives its list from the board's own sources and partitions it,
+rather than matching against names somebody typed.** Enumerate the helper calls the frame sources
+actually make, then split them three ways and print every name:
+
+- **read** — which reader names it, and what it demands;
+- **deliberately not read** — with the reason held as data in the file rather than as a comment, so
+  the report prints it beside the name;
+- **residue** — everything else.
+
+A helper added tomorrow lands in the residue by itself, which is the point: nobody has to remember
+to tell the reader. `366 read · 211 deliberately not read via <helper> · 0 unaccounted` is the
+shape that could not have hidden the language strip; `366 matched` is the shape that did.
+
+**It warns and never fails the build.** Most helpers draw something no demand should ask about, so
+a new one is not a defect. Failing on residue teaches whoever meets it to add an exclusion entry
+without reading it, which is the same silence wearing a different face. What must be impossible is
+a helper going unmentioned.
+
+**The reader lives with whoever holds the demands, never in the kit** — § *Three places a gate can
+live, and the test that decides* settles which of the three. The kit knows what it draws; only the
+reader knows what it meant to ask about.
+
 ## Splitting a board along a declared axis
 
 **A board past a few hundred frames may be written as several files.** The kit knows only that a
