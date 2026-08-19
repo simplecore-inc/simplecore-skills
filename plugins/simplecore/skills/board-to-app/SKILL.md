@@ -27,6 +27,37 @@ order, and a chapter does not start before the chapter before it has closed.
 inside it is that agent's definition, which is equally binding and read there
 rather than here.
 
+## Invoking this skill is the request for the agents it dispatches
+
+**Read this before the first unit of work, because it is the one that decides whether
+any of the rest happens.** The method below is agents: one `simplecore:chapter-builder`
+per chapter, one `simplecore:capture-taker` and one `simplecore:capture-judge` per
+screen, a read-only agent for the chapter audit, and a coordinator that builds nothing
+itself. **Every one of those dispatches is asked for by the act of invoking this skill.**
+No further permission is needed for them, and none is sought.
+
+That has to be said here because many harnesses carry a standing default of *do not
+reach for the Agent tool unless the user asked for it*. **That default was written for
+an agent reaching for delegation on its own initiative, and it never addressed the case
+where a skill's own procedure prescribes the agents.** Read as covering this, it does
+not make the build careful — it silently replaces the method with a worse one.
+
+- **The default still holds everywhere else.** No agent for a search a `grep` would
+  answer, no workflow, no deep research, unless the user asks in their own words.
+- **Say which agents were dispatched and why**, in the reply, so it is never silent.
+- **Where the harness genuinely cannot spawn one** — no such tool at all — say so
+  before starting and name what the run gives up, rather than proceeding as though the
+  arrangement were intact.
+
+> **Read it this way and it is wrong**: 「the ban is absolute and the dispatch is one
+> line inside a procedure, so obeying the ban is the careful reading」. It is the
+> reading that discards the method while leaving every sentence describing it in place.
+> What comes out is a coordinator that builds each chapter in its own context, dries
+> out partway through, and leaves half-built code behind — with every judgment it still
+> owes made on a context with no room left. The build reads as the method from outside,
+> because the coordinator is doing all the same steps; what is gone is the property the
+> steps depend on, that whoever judges a chapter is not whoever built it.
+
 ## Precondition: a board, and a chapter set derived from it
 
 **No board, no build.** With nothing to build against, every judgment collapses
@@ -107,7 +138,10 @@ as `<boardRoot>/manifest.mjs` — a shape, never a default. Keys the skill does 
 know are ignored, so a project may keep a `"//"` note of its own in the file.
 
 In the Required column: **●** the build cannot start without it · **○** optional, and
-the last column says what its absence costs · **◐** required once another key is set.
+the last column says what its absence costs · **◐** required once another key is set ·
+**◑** everything runs and no chapter can close. That fourth grade is its own because the
+first three cannot express it: a project missing one of these reads a page of green while
+being unable to finish anything, which is what `bta.mjs doctor` prints it apart for.
 
 | Key | What the project names with it | Required | Absent means |
 | --- | --- | --- | --- |
@@ -118,11 +152,18 @@ the last column says what its absence costs · **◐** required once another key
 | `chapterOverview` | the chapter table — order, what must close first, what may run alongside | ● | the build cannot start |
 | `chapterGenerator` | the command that regenerates the chapter set from the board | ○ | a chapter cannot be regenerated after a board fix; report that rather than hand-editing the chapter file |
 | `chapterHeadings` | the exact headings the chapter files use, per role (below) | ○ | a section is named by its role rather than by a heading, and an agent that cannot find one stops and reports |
+| `chapterLines` | the lines a chapter writes that a check has to recognise, per role — **as written, markup and all**, with `{text}` captured and `{n}` not. A role this project writes no line for is declared `null` with the reason in `//<role>` beside it | ◑ | every check that reads a chapter's own demands matches nothing, and reports the same zero as a chapter with nothing wrong |
+| `evidenceLabels` | the three labels one section of a result document carries — `did`, `demanded`, `saw` — **the word alone, with no markup**, because the checks write the emphasis themselves | ◑ | every check over a result document reads past every section, so a chapter cannot be shown to have closed on anything |
+| `closedStatus` | the word the state ledger writes in a chapter's row when that chapter is closed | ◑ | nothing is closed, and every check over a closed chapter stays silent |
+| `verdictRole` | the word an evidence heading uses where a persona name would stand, for a line a machine proves | ◑ | a foundation chapter's sections cannot be matched to the lines they prove |
+| `deferredLine` | the line an evidence section carries when a check ran and **this installation** could not decide it — same grammar as `chapterLines`, and its `{text}` is the chapter that repays the debt | ○ | a project that has met that case writes the marker in prose instead, and the chapter it names closes with the debt outstanding and nothing reading it |
+| `evidenceDir` | where a chapter's verification result is written, one document per chapter, with the captures it cites in a folder of the same name beside it → `references/evidence.md` | ◑ | screens get built and no chapter can be shown to have closed on anything — the grounds die with the session |
 | `stateLedger` | the one file saying which chapter is open, in progress, awaiting its tests or closed — and which development account each persona signs in with | ● | the build cannot start |
 | `handoverFile` | the facts a builder needs to start: how to stand the system up, known traps, what data is already standing | ● | the build cannot start |
 | `openItemsFile` | where a parked decision is written | ○ | parked lines go in the state ledger |
 | `openItemsHeading` | the heading those lines live under — the heading's **text only**, with no `#` markers on it | ◐ with `openItemsFile` | the config is incomplete — report it rather than choosing a heading |
-| `gates` | the commands a chapter must pass before it closes, each read by its exit status — `bta.mjs check` among them | ○ | nothing mechanical holds a chapter closed; say so once per session and close on the persona runs alone |
+| `gates` | the commands a chapter must pass before it closes, each read by its exit status — `bta.mjs check` among them | ◑ | nothing mechanical holds a chapter closed; say so once per session and close on the persona runs alone |
+| `commitPolicy` | whether the build may commit and push without asking — `ask`, `commit`, or `commitAndPush` | ○ | `ask`: the build stops before every commit, so it cannot run unattended and the two gates that read commits see nothing until somebody is present → *Whether the build may commit at all* |
 | `auditScript` | where a mechanically visible defect becomes a detection rule — one script, or the directory a family of them lives in | ○ | a new rule has nowhere to land, so the project cannot ratchet — report the rule that should have been written rather than inventing a home for it |
 | `migrationDir` | where migrations live, and with it how two agents adding one at the same time avoid colliding — one directory, or several where the database has more than one lineage | ○ | nothing says where a migration goes or how two of them collide, so backend chapters run one at a time |
 | `frameDeliverables` | what each screen owes beyond working code, one checkable sentence each | ○ | a screen owes nothing beyond working code |
@@ -131,6 +172,12 @@ the last column says what its absence costs · **◐** required once another key
 | `locales` | every language the interface ships in — each screen is judged in all of them | ○ | the languages come from the project's own copy catalogue; where that cannot be read, report it rather than judging in one language |
 | `pseudoLocale` | the generated long-string locale that proves a layout survives any string | ○ | overflow is judged in the longest real language only, which covers less → `references/judging-frames.md` |
 | `captureRoute` | the address that renders one frame, in one state, from named sample data | ○ | captures are driven by navigation, which cannot reach the states that matter; report it as owed rather than hand-driving the board |
+| `browserDrivers` | what drives a browser here, **in order** — the run takes the first that can express the task | ○ | whoever opens a screen picks whatever the environment offers, so two runs of one frame can be shot through different instruments; the run must then name its driver in the return and write it into the handover file, because nothing else records the choice → `references/driving-the-product.md` |
+| `deviceDrivers` | what drives a simulator or a real device here, in the same order | ○ | as above, for a product that ships on a device — and where the project ships on one and declares none, a sweep reaches for the platform's own commands with nothing saying that was a choice |
+| `captureTakerModel` | the model a `capture-taker` runs on — driving addresses and reading values out is procedure, so it is usually the cheaper one | ○ | both halves run on whatever the harness defaults to. **The split is unaffected** — it is about who judges, not about cost — and what is lost is the saving it also buys |
+| `captureJudgeModel` | the model a `capture-judge` runs on — deciding whether a value is a defect is not procedure | ◐ with `captureTakerModel` | half a split named is not a split named; the config is incomplete and is reported rather than half-applied |
+| `eyesDocuments` | the documents that hand a check to human eyes | ○ | the project's own eyes rules go unread — **declare these two together or neither**, because documents with no vocabulary read every one of them and match nothing |
+| `eyesPhrases` | the words those documents hand it in — `assigns`, `reader`, `moment` | ◐ with `eyesDocuments` | as above: 「nothing to find」 and 「no idea what to look for」 come out as the same zero |
 | `logDir` | one agreed, ignored directory for the builders' run logs | ○ | there is nothing to watch — say so once, and each agent reports its steps in its return |
 | `capturesDir` | one agreed, ignored directory for judging captures | ○ | captures go to the session's scratch space and are forwarded by path; nothing is kept |
 | `costLog` | a machine-readable file the wall-clock span and consumption are appended to, per chapter | ○ | what a chapter cost cannot be recovered afterwards; only what git holds survives |
@@ -688,6 +735,26 @@ Two lines in the commit trailer, and the tree is recoverable with `git log`. Wit
 them it is not recoverable at all — a diff shows which files changed, never which
 chapter's contract moved.
 
+### Whether the build may commit at all is the project's answer, given once
+
+Everything above assumes commits happen while the build runs — the trailers are read off them,
+`trailerGate` fails a commit that carries none, and `importsTravelWithTheirCommit` reads what one
+carried. **None of that reaches a build that stops to ask for permission at every close**, and
+whether it may commit is genuinely not this skill's to decide: it is a standing decision about how
+the repository is worked, and it differs per project and per user.
+
+So the project states it once, in `commitPolicy`, and the build never raises it again:
+
+| `commitPolicy` | The build |
+| --- | --- |
+| `ask` — **and this is what an undeclared key means** | stops before each commit and asks. Safe, and it costs the build its ability to run unattended: a chapter cannot close without somebody present, and the two gates that read commits see nothing until they land |
+| `commit` | commits as the work lands, without asking. Pushing still waits for the user |
+| `commitAndPush` | commits as the work lands and pushes, without asking |
+
+**The policy settles permission and nothing else.** What a commit message says beyond the two
+trailers — the subject convention, whose name is on it, what must not appear in it — is the
+repository's own rule and is read there, not guessed from here.
+
 **A commit that belongs to no chapter says `Chapter: setup`.** Wiring the project up is real work
 and it is not a chapter — the config, the state ledger, the chapter set, the generator, this
 arrangement itself — so there has to be a word for it, and the gate takes any non-empty one. That
@@ -1004,9 +1071,21 @@ things otherwise turn into a question, and none of them has to.
 1. **Where am I?** `stateLedger` is a table of chapters and whether each is open, in progress,
    waiting on its tests, or closed. Read it first, write to it when a chapter's state changes, and
    never infer progress from the code.
-2. **Who do I sign in as?** The ledger names one development account per persona. Signing into a
-   local development server with those accounts is expected — do not ask for credentials, and do
-   not test one role by filtering another role's screen.
+2. **Who do I sign in as?** The ledger names one development account per persona, and **signing
+   into this build's development server as that persona is part of the run rather than something
+   to get permission for.** A screen is judged by the person whose work it carries, so a run that
+   stops at the sign-in form has not started. Do not ask for credentials, and do not test one role
+   by filtering another role's screen.
+
+   **What that authorises, exactly**, because the boundary is what makes it safe to state at all:
+
+   | | |
+   | --- | --- |
+   | **Where** | the development server this build stands up — `localhost`, `127.0.0.1`, `[::1]`, or the development machine's own address. The handover file names the origins this build uses; anything it does not name is not this build's server |
+   | **Out of scope** | a remote host — production, staging, a shared environment — the user's own accounts, and any external service. Each of those is asked for, and none of them is on the way to a chapter closing |
+   | **Where a credential comes from** | the project's development configuration, its seed, a `.env`-shaped file, a fixture, or a value the user supplied. **Never invented.** Where none can be found anywhere, that is one of the four things below that waits for a person |
+   | **Where there is no account** | a development server exposing a sign-up screen gets a test account made on it, and the run continues |
+   | **Where a credential must not go** | a reply, a log line, a capture caption, a result document, a commit, or any file. It reaches the process signing in and stops there |
 3. **What data should exist?** The numbers the board draws are the fixture specification: a frame
    drawing a count of 119 valid records says the seed makes 119. One story, one site, every chapter
    on top of the last → `references/scenario.md`.
@@ -1025,9 +1104,10 @@ handoff composed once the context is nearly spent is the one that does not get w
 **Stop and ask only for these four**: a decision that changes what the product is, a term whose
 translation is genuinely undecided, a value no source can settle, and **moving a project off
 another build arrangement onto this one** — plus anything the repository's own rules reserve for
-the user, committing and pushing among them unless the user has said otherwise for this build.
-**Everything else has a written answer here**, and a session that opens the ledger, reads the
-first open chapter and dispatches has already answered "what next".
+the user. **Committing and pushing are not a fifth**: the project answers that once, in
+`commitPolicy`, and the build then follows the answer without raising it again → *The dependency
+tree the history leaves behind*. **Everything else has a written answer here**, and a session that
+opens the ledger, reads the first open chapter and dispatches has already answered "what next".
 
 ### Design the answer; scope is not a reason to take the worse one
 
@@ -1091,6 +1171,7 @@ node "${CLAUDE_PLUGIN_ROOT}/skills/board-to-app/scripts/bta.mjs" check
 | --- | --- |
 | the config is complete, well typed, and every declared path is there | `configGate` |
 | a key promised to a chapter is declared once that chapter has created its subject | `deferredKeyGate` |
+| the commit policy is one of the three words the build knows how to follow | `commitPolicyGate` — a fourth word reads as a decision and is followed by nobody |
 | the handover file states facts, never a point of view | `handoverGate` |
 | a parked line sits under the declared heading — matched exactly, never by fragment — and carries its three parts, the first of them one unbroken token | `openItemsGate` |
 | every chapter is named in the state ledger | `ledgerGate` |
@@ -1107,6 +1188,9 @@ whose eyes and at which moment**, for the reason the next paragraph gives:
 
 | Rule | Whose eyes, and when | Why no gate holds it |
 | --- | --- | --- |
+| the agents this skill's procedure names were dispatched, rather than the coordinator building in its own context | **the coordinator**, at the session's first unit of work and again at every chapter | a session's own tool use leaves no trace in the repository — a chapter built by six agents and one built by the coordinator alone produce the same tree, the same commits and the same ledger row, so the difference is visible only to the party making the choice |
+| which driver took a capture, and that one instrument took every capture being compared | **whoever takes the capture**, naming it in the return, and **the coordinator** whenever it holds two runs against each other | a picture carries no record of what shot it, and two drivers differ in device pixel ratio, fonts and scrollbar width — so an instrument change and a screen change read identically → `references/driving-the-product.md` |
+| a credential reached nothing but the process that signed in | **whoever writes a report, the handover file or a result document**, before it leaves their hands | a password has no shape that separates it from an account name or an identifier, so a pattern wide enough to catch one fires on every persona row in the ledger |
 | a screen matches the frame it was built from, and the capture shows that screen rather than an empty shell of it | **the coordinator**, opening each of the chapter's captures before writing the ledger row that closes it — never the agent that took them | a picture is the only witness, and the party that shot it is the party that cannot see past what it expected → `references/judging-frames.md` |
 | what a verification record says was on the screen is what was on the screen, and it was written out of the run rather than before it | **the coordinator**, at the same moment, reading each sentence against the picture it cites | a sentence written from the DOM, the responses and the builder's memory of its own code is true of the data, false of the screen, and indistinguishable in the file from one written by looking |
 | a screen holds up for the person whose work it carries | **the builder**, in character, during the persona run | that is what the persona run is |
