@@ -19,7 +19,7 @@
 //      supplies the components, the shells and the styles, and the board's `tools/` is gone
 import { textFor } from './text.mjs';
 
-export const BOARD_CONTRACT = 3;
+export const BOARD_CONTRACT = 4;
 
 /**
  * Bind the frame renderers to one board's pattern and role matrix.

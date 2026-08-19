@@ -19,8 +19,21 @@ const cls = (base, variant) => (variant ? `${base} ${variant}` : base);
  * {@link helpCard}) draw a close control, and the page header draws the controls that bring a
  * closed one back. A board switching this on owes the header controls too: a card that closes with
  * no way back has been deleted rather than dismissed, so the two arrive together or neither does.
+ *
+ * <p>`noticeKindMarks` — {@link msg}'s three notice kinds carry a glyph beside their word, so the
+ * grade of a message is read by shape before it is read by letters. Worth switching on wherever the
+ * product is read on cheap screens in daylight; it widens the kind label, so a board with tight
+ * phone frames looks at those before saying yes.
+ *
+ * <p>`chipClearControl` — a {@link chips} filter row draws the control that clears the selection as
+ * soon as a second chip is lit. It is what says the row narrows rather than chooses, and it is the
+ * one control that undoes a selection built up one chip at a time.
  */
-const OPTIONS = { dismissibleNotices: false };
+const OPTIONS = {
+  dismissibleNotices: false,
+  noticeKindMarks: false,
+  chipClearControl: false,
+};
 
 /**
  * Take this board's answers. Called once by the kit, before any screen module is imported.
@@ -92,7 +105,8 @@ export const badge = (text, variant = '') => `<span class="${cls('badge', varian
 export const chips = (items, { note = '', select = 'filter' } = {}) => {
   const lit = items.join('').match(/class="chip active"/g)?.length ?? 0;
   return `<div class="chips">${items.join('')}` +
-    `${select === 'filter' && lit > 1 ? `<span class="chips-clear">${lit}개 선택 · 해제</span>` : ''}` +
+    `${OPTIONS.chipClearControl && select === 'filter' && lit > 1
+      ? `<span class="chips-clear">${lit}개 선택 · 해제</span>` : ''}` +
     `${note ? `<span class="chips-note">${note}</span>` : ''}</div>`;
 };
 /** A row of buttons. A btn is a block, so two of them stack unless a row holds them. */
@@ -1253,7 +1267,9 @@ export const msg = ({
   const label = (MSG_KIND[lang] ?? MSG_KIND.ko)[kind];
   const closes = !status && OPTIONS.dismissibleNotices && (dismiss ?? kind in NOTICE_KINDS);
   return `<div class="msg ${kind}${status ? ' state' : ''}">` +
-    `<span class="mkind">${kind in NOTICE_KINDS ? `<i>${NOTICE_KINDS[kind]}</i>` : ''}${label}</span>` +
+    `<span class="mkind">` +
+    `${OPTIONS.noticeKindMarks && kind in NOTICE_KINDS ? `<i>${NOTICE_KINDS[kind]}</i>` : ''}` +
+    `${label}</span>` +
     `<div class="mbody">${title ? `<div class="mtitle">${title}</div>` : ''}` +
     `${body ? `<div class="mtext">${body}</div>` : ''}</div>` +
     `${actions ? `<div class="mact">${actions}</div>` : ''}` +

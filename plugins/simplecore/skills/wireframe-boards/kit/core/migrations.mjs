@@ -64,6 +64,23 @@ export const MIGRATIONS = [
     ],
     breaking: true,
   },
+  {
+    contract: 4,
+    title: 'A pattern capability is off until a board asks, and two corrections to how simplix-basic draws',
+    changed: [
+      '`board.config.mjs` may carry `patternOptions`, and the kit hands it to the pattern before any screen module is imported. Everything a pattern gains is off until a board names it, so a board that declares nothing draws exactly what it drew before.',
+      '`simplix-basic` declares three: `dismissibleNotices` (a close on the notice cards, and the page header controls that bring a closed one back), `noticeKindMarks` (a glyph beside a message\'s kind word), `chipClearControl` (the control that clears a chip filter once a second chip is lit).',
+      'TWO CHANGES ARE NOT BEHIND A SWITCH, because a board wanting the old behaviour wants a defect. `fNum` takes its width from the digits it holds rather than stretching to the form column — a two-digit field at the width of a sentence stops saying what goes in it. The list column of `listDetail` carries its own bottom gutter, so opening a record no longer adds or removes space beneath the rows and the reader keeps the line they were on.',
+    ],
+    steps: [
+      'Read the two unswitched changes above and look at one form frame and one list-detail frame after building — they are the only places the drawing moves.',
+      'Where a number field must hold more digits than the value it draws, state `digits` on that `fNum`; the default reads the drawn value.',
+      'Decide each `patternOptions` capability and declare the ones you want in `board.config.mjs`. Declaring none is a complete answer and keeps the board as it is.',
+      'A board switching `dismissibleNotices` on owes the header controls with it — `pageHeader({ notices, drop })` — or its cards close with no way back.',
+      'Raise `contract` to 4 in `board.config.mjs`, build, and confirm the board is unchanged apart from those two.',
+    ],
+    breaking: false,
+  },
 ];
 
 /** The contract the newest entry describes. The kit's own `BOARD_CONTRACT` must equal this. */

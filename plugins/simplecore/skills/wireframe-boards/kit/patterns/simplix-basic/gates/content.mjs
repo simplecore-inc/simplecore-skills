@@ -1461,9 +1461,22 @@ export const auditFootFirstTabGate = {
 // of records in the card's own text is the shape that says «this sentence is about what is here
 // right now», and a card carrying one has to say which it is: `status: true` because it is, or
 // `dismiss: false`/`dismiss: true` because the author looked and decided otherwise.
+//
+// **This gate finds about two status cards in five, and its own text says so.** Measured on the
+// board it was written for: 233 cards were status cards and the count test reaches 96 of them. The
+// rest say what is on the site right now without naming a number — 「대형 재고가 없습니다」,
+// 「고시가 2026-07-01에 개정됐습니다」, 「한 곳이 아직 v3을 들고 있습니다」 — and no regex separates
+// those from a standing rule, because both are ordinary sentences and the difference is what they
+// are ABOUT.
+//
+// **So a green result here does not mean the status cards have been found**, and the danger is
+// exactly that it reads as though it does: somebody leans on it once and a live hazard warning
+// becomes dismissible for good. The question that does the work is in the finding's own text, where
+// whoever meets it will read it — **「이 문장을 빈 사업장에서도 쓸 수 있는가」**. Yes and it is a
+// standing fact that closes; nothing to say there and it is a status card that stays.
 export const statusCardDeclaresItselfGate = {
   id: 'statusCardDeclaresItselfGate',
-  title: '건수를 말하는 알림 카드가 상태 카드인지 밝히지 않았다',
+  title: '건수를 말하는 알림 카드가 상태 카드인지 밝히지 않았다 (수를 말하지 않는 상태 카드는 잡지 못한다 — 사람이 본다)',
   stage: 'built',
   run: (ctx) => {
     const NUM = '(?:\\d+|하나|둘|셋|넷|다섯|여섯|일곱|여덟|아홉|열|한|두|세|네)';
@@ -1486,7 +1499,12 @@ export const statusCardDeclaresItselfGate = {
         const title = /title:\s*'([^']*)'/.exec(call)?.[1] ?? '';
         const body = /body:\s*(?:'([^']*)'|`([^`]*)`)/.exec(call);
         if (!COUNT.test(`${title} ${body?.[1] ?? body?.[2] ?? ''}`)) continue;
-        bad.push(`${sc.file}: 「${(title || '').slice(0, 24)}…」 — status나 dismiss를 밝힌다`);
+        bad.push(
+          `${sc.file}: 「${(title || '').slice(0, 24)}…」 — status나 dismiss를 밝힌다. ` +
+          '판정은 「이 문장을 빈 사업장에서도 쓸 수 있는가」로 한다 — 쓸 수 있으면 서 있는 사실이라 닫히고, ' +
+          '빈 사업장에서 할 말이 없으면 상태 카드라 닫히지 않는다. ' +
+          '이 검사는 수를 적은 카드만 보므로 다섯 가운데 둘쯤을 찾는다 — 초록이어도 나머지는 사람이 읽어야 한다'
+        );
         break;
       }
     }
