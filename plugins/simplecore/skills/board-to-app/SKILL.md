@@ -149,6 +149,22 @@ the last column says what its absence costs · **◐** required once another key
 first three cannot express it: a project missing one of these reads a page of green while
 being unable to finish anything, which is what `bta.mjs doctor` prints it apart for.
 
+**Six of these keys are not paths but this project's own words, and a word declared wrongly
+does not fail** — `chapterLines`, `evidenceLabels`, `closedStatus`, `verdictRole`,
+`deferredLine` and `eyesPhrases`. Every check over a chapter file or a result document
+compares against them, so a declaration that matches nothing leaves each of those checks
+reporting the same zero as a repository with nothing wrong. **The two markup conventions are
+opposite on purpose** — a `chapterLines` phrase is the line as written, markup and all, and an
+`evidenceLabels` value is the word alone, because the checks write the emphasis themselves —
+so the commonest way to get this wrong is to declare one of them the way the other is
+declared. `declaredWordsMatchTheDocuments` holds it: it counts what each declared word matched
+in the documents that key governs, and speaks when a declaration matched nothing while
+something independent of it says the documents hold what it names. **A project that has just
+been wired has nothing to match against, and its zeros are correct** — so the gate is silent
+there and says which of the two it established either way. `bta.mjs doctor` prints the whole
+census, matched and unmatched alike, because the count is what shows a comparison reached
+anything at all.
+
 | Key | What the project names with it | Required | Absent means |
 | --- | --- | --- | --- |
 | `boardRoot` | the directory the board's frame sources live in — read the source, never the built HTML | ● | the build cannot start |
@@ -1196,6 +1212,7 @@ node "${CLAUDE_PLUGIN_ROOT}/skills/board-to-app/scripts/bta.mjs" check
 | whatever `frameDeliverables` declares | the project's own gate, one checkable sentence each |
 | the code's own defect types | the project's `auditScript` — every new detection rule goes there, whether that key names one script or the directory a family of them lives in |
 | every key this skill reads has a row in the config table above and a line in the copyable template, and the cost that row states is the sentence `doctor` prints | `bta.mjs gates` — a self-check rather than a gate, because its subject is this skill's own two documents rather than any project's → `references/checks.md` |
+| a word the project declared as its own vocabulary is one its documents actually write | `declaredWordsMatchTheDocuments` — and `bta.mjs doctor` prints what every one of them matched, because the count is worth as much as the finding here |
 
 **Held by eyes** — no machine can judge these, and saying so is the point. **Each row names
 whose eyes and at which moment**, for the reason the next paragraph gives:
@@ -1295,7 +1312,12 @@ Two things narrow it, and the second is here because the first is not enough:
 
 1. **A checker says how many comparisons it made, not only how many failed.** 「0 findings」 and
    「paired 186 of 193」 are one line to an exit status and two different sentences to a reader —
-   only the second shows the seven it never reached.
+   only the second shows the seven it never reached. `bta.mjs doctor` prints that count for the
+   one subject where it is the whole answer: what each declared word matched in the documents it
+   governs, `✔ chapterLines.persona matched 1675 — 35 chapter files, 10286 compared` beside
+   `○ evidenceLabels.did nothing to match against yet — 0 result documents`. The first says the
+   comparison reached something; the second says a project has not written anything for it to
+   reach; and a gate reporting nothing says neither.
 2. **A pattern with a placeholder in it is tested for what it matches.** The count stays honest
    while the comparison behind it stops meaning anything: a vocabulary pattern whose slots compiled
    to 「any non-empty string」 and 「any two words」 read 556 buttons, reported 556, and passed seven

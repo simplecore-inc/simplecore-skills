@@ -18,7 +18,7 @@
     "touchedEarlier": "<heading: the hand-authored section for a change to a closed chapter>"
   },
 
-  "//closing": "The five keys below are what a chapter CLOSES on. None is required to start — a project declares none of them, builds every screen, and finishes no chapter, which is the state `bta doctor` reports as ◑ rather than as a blank. Every check over a chapter's result document compares words, and the words are these; declared wrongly, the checks match nothing and report the same zero as a project with nothing wrong. The specification of the document itself is `references/evidence.md`.",
+  "//closing": "The five keys below are what a chapter CLOSES on. None is required to start — a project declares none of them, builds every screen, and finishes no chapter, which is the state `bta doctor` reports as ◑ rather than as a blank. Every check over a chapter's result document compares words, and the words are these; declared wrongly, the checks match nothing and report the same zero as a project with nothing wrong. `declaredWordsMatchTheDocuments` counts what each of them matched and `bta doctor` prints the census, so a declaration that reaches nothing stops being indistinguishable from a repository with nothing to find — but only once there are documents to match against, which a project being wired does not yet have. The specification of the document itself is `references/evidence.md`.",
 
   "//evidenceDir": "Where a chapter's verification result and the captures it cites are written. The folder's own index — a file starting `00`, `_` or `README` — belongs to no chapter.",
   "evidenceDir": "<directory holding one result document per chapter, and a capture folder per chapter beside it>",

@@ -68,13 +68,21 @@ export const CAPTURE_NAME = /^([a-z])-(\d{2,})(?:-t\d+|-empty|-error)?\.webp$/;
 const FRAME_ID = /\b[A-Z]-\d{2,}\b/g;
 
 /** The heading a chapter writes for each base screen it builds. */
-const BASE_HEADING = /^## \d+\. ([A-Z]-\d{2,})(?: |$)/;
+export const BASE_HEADING = /^## \d+\. ([A-Z]-\d{2,})(?: |$)/;
 
 /** A numbered section of a chapter, as its number and its title. */
-const CHAPTER_SECTION = /^## (\d+)\. (.+?)\s*$/;
+export const CHAPTER_SECTION = /^## (\d+)\. (.+?)\s*$/;
 
 /** A section of an evidence document, as its whole title. */
-const EVIDENCE_HEADING = /^## (.+?)\s*$/;
+export const EVIDENCE_HEADING = /^## (.+?)\s*$/;
+
+/**
+ * What separates a section from the role that proves it, in the heading both documents write.
+ *
+ * <p>Exported because a second reader over the same headings would otherwise carry its own copy of
+ * it, and a separator that agrees today is a separator that disagrees the day one of them changes.
+ */
+export const ROLE_SEPARATOR = ' · ';
 
 /** The opening or closing line of a fenced block. */
 const FENCE = /^\s*(```|~~~)/;
@@ -168,7 +176,7 @@ function demandedHeadings(ctx, rel) {
     const named_ = persona?.exec(line);
     const who = named_ ? named_[1] : (verdict?.test(line) ? role : null);
     if (!who) continue;
-    const heading = `${section} · ${who}`;
+    const heading = `${section}${ROLE_SEPARATOR}${who}`;
     if (seen.has(heading)) continue;
     seen.add(heading);
     headings.push(heading);
@@ -341,7 +349,7 @@ function chapterSections(ctx, rel) {
 
     const said = persona?.exec(line);
     const who = said ? said[1] : (verdict?.test(line) ? verdictRole : null);
-    if (who && !headings.has(`${key} · ${who}`)) headings.set(`${key} · ${who}`, key);
+    if (who && !headings.has(`${key}${ROLE_SEPARATOR}${who}`)) headings.set(`${key}${ROLE_SEPARATOR}${who}`, key);
   }
   flush();
   return { sections, headings };

@@ -14,6 +14,7 @@ import { CORE_GATES, applies, gatesFor, gradeOf } from './core/gates.mjs';
 import { HEADING_ROLES, SCHEMA, findConfig, loadProject } from './core/context.mjs';
 import { makeBuilders, proveKeysAreDocumented, proveSeverity, proveShadowedIds, runCases, ungraded, unproven } from './core/harness.mjs';
 import { cases as coreCases } from './core/cases.mjs';
+import { censusLine, vocabularyCensus } from './core/vocabulary.mjs';
 
 const argv = process.argv.slice(2);
 const cmd = argv[0] ?? 'help';
@@ -225,6 +226,25 @@ async function doctor() {
   const missingRoles = headings ? HEADING_ROLES.filter((r) => !headings[r]) : HEADING_ROLES;
   if (missingRoles.length) {
     console.log(`\nsections named by role only: ${missingRoles.join(', ')} — an agent that cannot find one stops and reports`);
+  }
+
+  // **What each declared word actually matched, whether or not anything is wrong with it.**
+  //
+  // A path is declared right or wrong and `configGate` says which; a WORD is declared right or
+  // wrong and nothing says which, because a word that matches nothing produces the same silence as
+  // a repository with nothing wrong. `declaredWordsMatchTheDocuments` speaks where it can prove the
+  // declaration is broken, and that is less than half of what a person wiring a project needs —
+  // the rest is the count. 「0 findings」 and 「1675 lines matched across 35 chapter files」 are one
+  // line to an exit status and two different sentences to a reader.
+  const census = vocabularyCensus(ctx);
+  if (census.length) {
+    console.log('\nvocabulary — what each declared word matched in the documents it governs');
+    for (const item of census) console.log(censusLine(item));
+    console.log(
+      '   ✔ matched · ✖ matched nothing and something says it should — a finding · '
+      + '⚠ matched nothing and nothing independent says it should, which is what a project that has '
+      + 'not met the case looks like · ○ nothing to match against yet'
+    );
   }
 
   const { gates, disabled } = await gatesFor(ctx);

@@ -73,6 +73,14 @@ repository.
      written, markup included, and an `evidenceLabels` value is the word alone, because the checks
      add the emphasis themselves. Declared the wrong way round, they match nothing and report the
      same zero as a project with nothing wrong.
+
+   **Then read the vocabulary census `doctor` prints under those keys** — one line per declared
+   word saying what it matched and in how many documents. `declaredWordsMatchTheDocuments` fails
+   the run on a declaration it can prove is broken, and on a project being wired it usually cannot:
+   there are no chapter files and no result documents yet, so every count is `○ nothing to match
+   against yet` and every one of those zeros is correct. **That is the line to come back to once
+   the chapter set is generated and the first chapter has been verified** — a `✔ matched 1675` says
+   the declaration reached something, and nothing else in this command's output ever will.
    - `◐` / `●` — a key some chapter promised in `deferredKeys`; the second says its subject now
      exists, so the promise is due.
    - `○` — the project does not use that.

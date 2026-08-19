@@ -162,6 +162,14 @@ has become worthless.
   count of comparisons stays perfectly honest, so the two cases go past it untouched: feed it the
   string it must reject and watch it reject that one. Counting what was compared is a necessary
   condition for a checker that can be trusted, never a sufficient one.
+- **A gate over a project's own words carries the boundary in its cases, both edges.** Zero
+  matches means 「declared wrongly」 in one project and 「nothing written yet」 in the next, and a
+  gate that reads the second as the first reddens every project on the day it is wired while one
+  that reads the first as the second is the silence it was written to break. So the pair is four:
+  the misdeclaration, a word nobody writes, a freshly-wired project, and a project mid-build whose
+  documents of one kind exist and whose documents of the other do not — the last is the one that
+  is easy to leave out and is where the boundary actually sits. `declaredWordsMatchTheDocuments`
+  is the worked example, and it says in each finding which of the two states it established.
 - **An escape a reader can see and question.** A project turns a core gate off with
   `disabledGates: [{ "id": "…", "reason": "…" }]` — the reason is required, because an exception
   nobody can question is an omission wearing a config key.

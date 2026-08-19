@@ -47,6 +47,7 @@ import { HEADING_ROLES, SCHEMA, isPathKey } from './context.mjs';
 import { NARRATIVE_PHRASES, hasHeading, onlyQuoted, proseLines, sectionUnder } from './prose.mjs';
 import { EVIDENCE_GATES } from './evidence.mjs';
 import { EYES_GATES } from './eyes.mjs';
+import { VOCABULARY_GATES } from './vocabulary.mjs';
 
 /** What a finding of a gate is: a defect to fix, or a line to go and re-read. */
 export const GRADES = ['error', 'warning'];
@@ -714,6 +715,9 @@ export const CORE_GATES = [
   // longest thing here and they read documents rather than configuration.
   ...EVIDENCE_GATES,
   ...EYES_GATES,
+  // The words the project declared, against the documents that write them. It sits after the
+  // gates that READ those words, because it is the one that says whether they read anything.
+  ...VOCABULARY_GATES,
 ];
 
 /**
