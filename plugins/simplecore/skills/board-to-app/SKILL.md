@@ -1089,8 +1089,9 @@ things otherwise turn into a question, and none of them has to.
 3. **What data should exist?** The numbers the board draws are the fixture specification: a frame
    drawing a count of 119 valid records says the seed makes 119. One story, one site, every chapter
    on top of the last → `references/scenario.md`.
-4. **An unresolved question in a frame.** A frame carrying `OPEN:` or 「확인 필요」 is built as drawn
-   and does not hold the chapter — the open question travels with the frame, not with the build.
+4. **An unresolved question in a frame.** A frame carrying an open question — `OPEN:`, or whatever
+   marker that board writes for one — is built as drawn and does not hold the chapter: the open
+   question travels with the frame, not with the build.
    Where `factSources` names a tool that settles it — article text, the version in force on a date,
    **the annex forms whose boxes are the record's fields** — verify it there and correct the board.
    Only a question no source can answer waits for a person, and it is left marked rather than
@@ -1182,6 +1183,7 @@ node "${CLAUDE_PLUGIN_ROOT}/skills/board-to-app/scripts/bta.mjs" check
 | the frames, counts and copy a chapter builds to | the board's own gates (`simplecore:wireframe-boards`) |
 | whatever `frameDeliverables` declares | the project's own gate, one checkable sentence each |
 | the code's own defect types | the project's `auditScript` — every new detection rule goes there, whether that key names one script or the directory a family of them lives in |
+| every key this skill reads has a row in the config table above and a line in the copyable template | `bta.mjs gates` — a self-check rather than a gate, because its subject is this skill's own two documents rather than any project's → `references/checks.md` |
 
 **Held by eyes** — no machine can judge these, and saying so is the point. **Each row names
 whose eyes and at which moment**, for the reason the next paragraph gives:
@@ -1190,7 +1192,9 @@ whose eyes and at which moment**, for the reason the next paragraph gives:
 | --- | --- | --- |
 | the agents this skill's procedure names were dispatched, rather than the coordinator building in its own context | **the coordinator**, at the session's first unit of work and again at every chapter | a session's own tool use leaves no trace in the repository — a chapter built by six agents and one built by the coordinator alone produce the same tree, the same commits and the same ledger row, so the difference is visible only to the party making the choice |
 | which driver took a capture, and that one instrument took every capture being compared | **whoever takes the capture**, naming it in the return, and **the coordinator** whenever it holds two runs against each other | a picture carries no record of what shot it, and two drivers differ in device pixel ratio, fonts and scrollbar width — so an instrument change and a screen change read identically → `references/driving-the-product.md` |
+| the server signed into is this build's own development server | **whoever signs in**, reading the address before the first credential is typed | nothing in the repository records which host a run drove, and a capture of a staging screen and a capture of a local one are the same picture |
 | a credential reached nothing but the process that signed in | **whoever writes a report, the handover file or a result document**, before it leaves their hands | a password has no shape that separates it from an account name or an identifier, so a pattern wide enough to catch one fires on every persona row in the ledger |
+| a finding written back into this skill went into a checkout rather than an installed copy | **whoever writes it**, in the change that writes it | an installed copy and a checkout are the same bytes at the same path, and the difference shows only when the next install of the plugin deletes one of them |
 | a screen matches the frame it was built from, and the capture shows that screen rather than an empty shell of it | **the coordinator**, opening each of the chapter's captures before writing the ledger row that closes it — never the agent that took them | a picture is the only witness, and the party that shot it is the party that cannot see past what it expected → `references/judging-frames.md` |
 | what a verification record says was on the screen is what was on the screen, and it was written out of the run rather than before it | **the coordinator**, at the same moment, reading each sentence against the picture it cites | a sentence written from the DOM, the responses and the builder's memory of its own code is true of the data, false of the screen, and indistinguishable in the file from one written by looking |
 | a screen holds up for the person whose work it carries | **the builder**, in character, during the persona run | that is what the persona run is |
@@ -1339,6 +1343,14 @@ Three things make it stick, and skipping any one of them means nothing happened:
    checking* — which is much harder to doubt.
 3. **Said out loud.** These files live outside the repository being built, so name which file
    changed; otherwise nobody sees the change that was the point.
+
+**Write it into the checkout, not into the installed copy.** A skill reached through a plugin
+directory is replaced wholesale by the next install of that plugin, so a finding written there is
+deleted by a command nobody connects to it — and it fails the way this whole section exists to
+prevent, silently and later. Where the skill is installed rather than checked out, **say the
+finding and where it belongs instead of writing it into a copy that will not survive**; nobody can
+be told afterwards what a reinstall removed. Committing in that checkout follows its own rules, not
+`commitPolicy`, which is about the repository being built.
 
 **"I will be careful next time" is not a fix.** Memory ends with the session, and the same
 misreading grows back. If no sentence and no gate changed, the finding was not recorded.

@@ -17,6 +17,15 @@ The config is found by walking up from the current directory for `.claude/board-
 belongs in the project's own `gates` list and runs at every chapter close. Warnings are printed
 under `⚠`, counted on their own line, and ignored by the exit status.
 
+**`gates` also proves three things no case can reach**, because their subject is the harness rather
+than a project: that a fired warning leaves the exit status alone while a fired error does not,
+that a project gate answering to a core gate's id is refused unless the core one is turned off, and
+that **every key `SCHEMA` reads has a row in the config table and a line in the copyable template**.
+The last of those holds a shape both gate tables are blind to: a key added to the schema works
+immediately — `configGate` validates it, `doctor` prints it — and nothing anywhere says it exists,
+so the only people who ever meet it are the ones who read the source. Each of the three is proved
+in both directions the same way a gate is, against a doctored copy and then against the real one.
+
 **`check` and `gates` are read by their exit status; `doctor` is read.** A report exits zero on
 anything it prints — only a config it cannot find at all stops it, at 2 — so nothing about a
 project's completeness can be taken off `doctor`'s status, and a step that names it as a proof is
