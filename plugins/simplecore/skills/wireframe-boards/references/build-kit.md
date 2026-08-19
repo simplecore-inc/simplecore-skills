@@ -184,6 +184,13 @@ reports reach beside membership**: frames whose field came back non-empty over f
 helper, counted only over the frames that draw it, because a reader is not answerable for a frame
 that never called it.
 
+**A reader also has to walk where the helper is drawn.** A helper drawn only on state frames is
+invisible to a walk over base frames, and the reader written the obvious way reaches zero — which
+looks exactly like a reader nobody wrote. That is the same signature as a helper nobody named,
+reached from a third direction, and the count that would distinguish them is the one the reader
+does not print. **Say which frames a reader walks where it is not every frame**, and let its reach
+be counted over the frames that draw the helper rather than over the frames it happened to visit.
+
 **And the module list a census reads from is checked rather than assumed.** A frame taking a named
 import from a fourth module is outside the whole partition, and the count of those is printed even
 when it is zero — a population defined by three modules is a claim about the board, not a fact
