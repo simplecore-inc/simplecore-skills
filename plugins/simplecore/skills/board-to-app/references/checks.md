@@ -185,6 +185,23 @@ has become worthless.
   passed and when it never ran. `declaredWordsMatchTheDocuments` and
   `declaredWordsHaveBeenCompared` are that pair, and neither can speak about an entry the other
   is speaking about, so one defect is never reported twice under two ids.
+- **A defect in one checker is looked for in every checker that reads the same shape, and the
+  noisy one is not the dangerous one.** Two gates over the same document parsed a layer out of a
+  heading with a single-digit pattern. On a heading naming two layers — `3계층과 4계층` — the first
+  reported four findings that were all false and was fixed within the hour; the second matched
+  nothing at all, so a two-layer claim went unjudged and **no run ever said so**. Same defect, one
+  visible. **A checker that fails loudly gets reported by whoever it annoys; a checker that fails
+  silently is reported by nobody**, so finding the first is the only occasion anybody has to look
+  for the second. The fix belongs at the family: one reader that takes *every* layer a piece of
+  prose names, called by both, rather than the same regex corrected twice.
+- **A case cannot vary what the gate imports, and saying so is part of the gate.** Where a gate
+  reads a declaration out of a module — the chapter set, the pack table — a fixture can vary the
+  files but not the declaration: no case can make a pack lose its chapter, because the case builds
+  a project and the declaration is compiled in. That is not a hole to paper over with a case that
+  proves something else; it is a boundary, and the comment says which half the cases reach. A gate
+  that calls the module's own functions rather than restating them then inherits every judgement
+  those functions gain, with no case and no line of its own changing — which is the reason to call
+  them, and the reason the boundary is affordable.
 - **An escape a reader can see and question.** A project turns a core gate off with
   `disabledGates: [{ "id": "…", "reason": "…" }]` — the reason is required, because an exception
   nobody can question is an omission wearing a config key.
