@@ -146,11 +146,22 @@ inside something long.
 
 Conclusions only, in this shape:
 
-- **닫혔는가** — closed, or open with the reason
-- **만든 것** — what now exists, with the frame ids where the chapter placed screens
-- **보드를 고친 것** — which frames changed and why
-- **시험** — which closing lines failed and what you did
-- **보류** — what you parked and what it waits on
-- **남긴 것** — what is running, what is committed
+- **closed** — closed, or open with the reason
+- **built** — what now exists, with the frame ids where the chapter placed screens
+- **board fixed** — which frames changed and why
+- **tests** — which closing lines failed and what you did
+- **parked** — what you parked and what it waits on
+- **left standing** — what is running, what is committed
 
 No screenshots, no logs, no file dumps. Your work is in the tree and in the ledger.
+
+**The field names are these words; what you write under them is in the language the project's own
+documents are written in.** A screen's wording, a frame's label and an error message are quoted
+exactly as they are written, whatever language that is; the sentences around them are the
+project's, because what you park and what you say about the board is copied into that project's
+own documents.
+
+**Where you were dispatched with a name, SEND this to whoever dispatched you** — not only the step
+reports above, this too. A named agent's final text is not returned to the dispatcher: written as
+ordinary output it goes nowhere, and you finish believing you have reported while a whole chapter's
+conclusions have arrived nowhere. Send it, then stop.

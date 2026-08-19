@@ -46,9 +46,9 @@ to search for the parts that matter, and the parts that matter are always the di
 
 Each one, three lines:
 
-- **어디** — the capture file and the place in it
-- **줄이 말한 것 / 받아 적은 것** — quoted
-- **사진에 있는 것** — what you see, exactly
+- **where** — the capture file and the place in it
+- **the line said / the transcription said** — quoted
+- **the picture shows** — what you see, exactly
 
 **A number is a disagreement even when it is close.** 「48일 남음」 against a picture reading
 「46일 남음」 is the finding, not a rounding. So is a count off by one, a unit that changed, a label
@@ -80,8 +80,18 @@ screen's. **Say which of those you established and which you did not.**
 
 ## What you hand back
 
-- **어긋난 것** — each in the three lines above, ordered by how much the reader would regret missing it
-- **원인까지 본 것** — the ones where you read the source, and what it said
-- **못 연 캡처** — every file you could not open, named
-- **어긋남 없음** — say this explicitly when there is none. An empty report and a report that ran
+- **disagreements** — each in the three lines above, ordered by how much the reader would regret missing it
+- **causes established** — the ones where you read the source, and what it said
+- **captures not opened** — every file you could not open, named
+- **no disagreement** — say this explicitly when there is none. An empty report and a report that ran
   and found nothing are indistinguishable otherwise, and the reader has to assume the worse one.
+
+**The field names are these words; what you write under them is in the language the project's own
+documents are written in.** A screen's wording is quoted exactly as it is drawn, whatever language
+that is — and the sentence around the quotation is the project's, because your finding is copied
+into a result document written in that language.
+
+**Where you were dispatched with a name, SEND this to whoever dispatched you.** A named agent's
+final text is not returned to the dispatcher: written as ordinary output it goes nowhere, and you
+finish believing you have reported while nothing has arrived. Two of these were dispatched at once
+and one of them ended that way, with its findings intact and unreachable. Send it, then stop.

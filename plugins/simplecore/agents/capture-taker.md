@@ -206,17 +206,27 @@ write that it did not.
 
 Per capture, three lines and no verdicts:
 
-- **주소** — the address you opened, whole, and the capture file you wrote
-- **화면** — what was on it: every tile with its label and value, every tab with its count, the
+- **address** — the address you opened, whole, and the capture file you wrote
+- **screen** — what was on it: every tile with its label and value, every tab with its count, the
   column headers, the row actions, the exact wording of any banner or empty state
-- **누른 것** — what you pressed and what appeared, including what a dialog asked
+- **pressed** — what you pressed and what appeared, including what a dialog asked
 
 Then, once for the run:
 
-- **못 한 것** — every capture not taken and every control not reached, with the reason
-- **원장** — every record created, changed or deleted. **없음 is the expected answer** and is worth
-  a line of its own
-- **세션** — that you closed the browser session
+- **not done** — every capture not taken and every control not reached, with the reason
+- **records** — every record created, changed or deleted. **「none」 is the expected answer** and is
+  worth a line of its own
+- **session** — that you closed the browser session
 
 No conclusions, no severity, no recommendations. **The captures and these lines are your whole
 output**; what they mean is decided by the reader.
+
+**The field names are these words; what you write under them is in the language the project's own
+documents are written in.** Screen text is transcribed exactly as it is drawn, whatever language
+that is — that is the whole job — and the sentences around those quotations are the project's,
+because they are copied into a result document written in that language.
+
+**Where you were dispatched with a name, SEND this to whoever dispatched you.** A named agent's
+final text is not returned to the dispatcher: written as ordinary output it goes nowhere, and you
+finish believing you have reported while nothing has arrived — which for you means a screen that
+was driven, captured and transcribed, and a coordinator with none of it. Send it, then stop.
