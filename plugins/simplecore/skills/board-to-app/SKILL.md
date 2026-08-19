@@ -1694,6 +1694,23 @@ Two things follow, and both belong to whoever writes the sentence rather than to
   up later in the file it lands in. Whoever copies a report's sentence into a document owns what it
   now says, and runs that project's prose checks over the result.
 
+**The hop that defeats both is a sentence drafted for somebody else's file.** An agent writes a
+paragraph for a document it does not own, the coordinator relays it, a third party pastes it in —
+and **not one of the three is writing a file at the moment they handle it.** The drafter is writing
+a report, the relayer is writing a message, and the party who does write the file did not write the
+words. The rule above addresses two of those hands and the relay hop is where it falls through:
+prose in transit reads as data being passed along rather than as a document being composed.
+
+**So the check belongs to whoever last touches it before it lands** — draft it, relay it, or paste
+it, run the project's prose checks over it. This is not hypothetical: a paragraph drafted in one
+agent's report, relayed verbatim by a coordinator and pasted by a third session broke two rules of
+that project's own standard and turned a gate red that had been green when the work started.
+
+**And a check run somewhere the scanner cannot reach reports the same zero as a pass.** A prose
+checker that enumerates through version control never sees a scratch file outside the repository, so
+「I checked it first」 can be true and worth nothing. Put the draft where the tool actually looks —
+inside the tree, staged if the enumeration needs it — read the count, then remove it.
+
 ## Generating and regenerating the chapters
 
 The chapter set is derived from three things — the placement (which frame belongs to
