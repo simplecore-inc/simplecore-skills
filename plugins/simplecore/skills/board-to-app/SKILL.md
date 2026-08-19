@@ -1631,6 +1631,20 @@ who looked and the agent who did not are reported identically.
 `PARKED, STILL OPEN` is the part the user acts on, so it is never folded into a sentence about
 progress.
 
+**A returned item that nobody but the coordinator holds is written into a file before the next
+agent is dispatched.** A builder's return lands in one place — the coordinator's context — and that
+is the one place in the arrangement guaranteed not to survive: a summary keeps the shape of a
+report and drops its items, and the agent that produced them is gone. So a defect the return names
+in another chapter's ground, a surface it says it could not verify, a fix it deferred — each goes
+to the ledger or the open items **on reading the report**, not at the end of the round. Measured:
+a report naming seven pre-existing defects in other chapters' ground was read, acknowledged, and
+left in context; what survived to the next window was the number seven and not one of the seven,
+and recovering them means running that cluster again.
+
+**A count is what survives, and a count reads as a record while being none.** 「seven defects in
+other chapters' ground」 tells the chapter that owns them nothing it can act on, which is why the
+line to write down is the item and its chapter rather than the tally.
+
 **A builder that returns nothing has not reported.** Going quiet after committing is the common
 failure, and it is expensive in a specific way: the coordinator then has to read the repository to
 find out what happened, which spends the context the subagent existed to protect. Ask once. If the

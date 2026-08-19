@@ -323,6 +323,15 @@ These invariants apply to **every** frontend file you touch. Treat each as invio
       drawer and the dialog were 600, 576 and 672, so switching the setting changed how much
       content fitted and an audit reading the narrow one reported a screen defect that was really
       a setting. One measure for the three.
+70. **A sentence holding a value that can be absent is judged by that value, not by the record
+    that carries it** — `t("k", { site: site?.siteName ?? "" })` typechecks, builds green, and
+    renders a title ending in an em dash with nothing after it, and the first paint of every one of
+    these is the broken one because the value arrives with a fetch. Guard `record?.field`, never
+    `record`, which is already true in the case that ships. Then read what is left once the value
+    is substituted away and take one of two shapes: hold the clause back where the sentence means
+    nothing without it, or give it a paired key with no interpolation (`title` / `titleUnnamed`)
+    where it stands without it. **Sorting the list is the work** — one shape applied to every
+    finding produces a screen nobody designed. → `invariants.md` #70.
 
 ---
 

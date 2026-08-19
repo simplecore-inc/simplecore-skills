@@ -552,3 +552,33 @@ that live in the project's own UI package and are absent from a project that has
 them. `audit-frontend.mjs` runs against projects with no peek machinery at all, where the
 finding would name a component that does not exist. Put the rule in the project's own gate
 script, and prove it on the broken form and the fixed form there.
+
+## #70 A sentence holding a value that can be absent is judged by the value, not by the record
+
+`t("closure.confirmTitle", { site: site?.siteName ?? "" })` against 「사업장 종료 — {{site}}」
+renders an em dash with nothing after it. Nothing throws, the type is satisfied, and the build is
+green — `?? ""` is what makes it typecheck and it is also what makes the hole. **Everybody meets
+it, not only a reader whose scope withholds the value**: the value arrives with a fetch, so the
+first paint of every one of these is the broken one.
+
+**Guard the value, never the record.** `record ? <p>{t(…)}</p> : null` is the wrong test — it is
+already true in the case that ships, where the record loaded and the field came back null. The
+condition names `record?.fieldName`.
+
+**Two shapes, and the sentence decides which.** Read what is left once the value is substituted
+away:
+
+- **The sentence means nothing without it** — 「{{version}} 버전을 설치합니다」. Do not render that
+  clause until the value is there. Narrow the condition to the clause, not to the panel around it.
+- **The sentence stands without it** — 「번역률 {{rate}}%」 still says what it says with a name
+  missing from the front. Give it a paired key with no interpolation (`title` / `titleUnnamed`),
+  and pick between them at the call site.
+
+A paired key goes into every locale that has a catalogue for it, and any generated pseudo-locale is
+rebuilt afterwards.
+
+**Never apply one shape across the whole finding list.** Twenty-five call sites sorted by which of
+the two they are produce twenty-five sentences somebody meant; twenty-five given the same treatment
+produce a screen nobody designed. Where a value has a second-best form — an equipment record with
+no name but a management number, on a confirmation the operator reads to check what is about to be
+destroyed (#46) — the fallback is that value, not the paired key.
