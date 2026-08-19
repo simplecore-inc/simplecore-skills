@@ -1126,11 +1126,17 @@ export const dischargedDemandNamesItsProof = {
 // eight sections closes on nothing. The section is the unit, and this is the only reading that
 // takes it.
 //
-// **A frame no persona reaches is closed by a verdict, never by silence.** A shared pattern is
-// drawn inside other screens and has no address anybody can be sent to, so its contract — every
-// screen that uses this pattern obeys this rule — is held by a checker across the whole console
-// rather than by one person opening one demo page. That is what the verdict line is for, and it
-// is why this gate takes either line rather than demanding a persona.
+// **Which of the two lines closes it is not this gate's question, and the answer is easy to get
+// wrong.** A shared pattern reads as nobody's, so the tempting fix is to label its demands with
+// the verdict word. Read what those demands say first: press the tab, press the row action, open
+// the empty list at its address, leave a capture. Every one of them is a person in a browser, and
+// where the project declares an address that renders one frame, a pattern is opened at its own
+// address like anything else — so it wants the persona the chapter itself names. The verdict word
+// is for a line a MACHINE proves, and labelling browser acts with it makes one word mean two
+// things in the field every check over a chapter's evidence keys on.
+//
+// So this gate takes either line and judges neither. What it refuses is a section with no line at
+// all, which is the only shape that is wrong whichever answer a project reaches.
 
 /**
  * Every numbered section of a chapter carries the line that closes it.
@@ -1174,9 +1180,9 @@ export const everySectionCarriesItsClosingLine = {
           + 'somebody walking it or by a machine holding it, and one with neither is built and never '
           + 'asked for anything — every check over this chapter\'s evidence takes its demands from '
           + 'these lines, so the section contributes no demand, no heading and no capture, and the '
-          + 'whole chapter reports green over it. Give it the persona that reaches the screen, or the '
-          + 'verdict line where no persona can be sent to it because it is a pattern drawn inside '
-          + 'other screens'
+          + 'whole chapter reports green over it. Give it the persona that proves the screen — for a '
+          + 'shared pattern the board settles no actor for, the persona the chapter itself names — or '
+          + 'the verdict line where what proves it is a machine rather than somebody in a browser'
         );
       };
       for (const { line, no } of proseLines(text)) {
@@ -1805,6 +1811,11 @@ export function cases(t) {
     files: { ...CHAPTER_TEXT, 'chapters/w02-org-shell.md': chapter },
   });
 
+  /** The pattern section with one line put under its build line, whichever line that is. */
+  const BUILD = '**개발** — 보드의 `p-01-list-pattern`을 그대로 만든다.\n';
+  const PATTERN_CLOSED_BY = (line) =>
+    CHAPTER_TEXT['chapters/w02-org-shell.md'].replace(BUILD, `${BUILD}${line}\n`);
+
   // The whole file is healthy by every count a reader takes: two persona lines, a build line per
   // section, a foundation chapter proving itself. What is wrong is one section out of two, which
   // is why the reading has to be per section — a per-file or per-chapter count reports this as
@@ -1821,12 +1832,18 @@ export function cases(t) {
   // person opening one demo page — and the verdict line is where that is written down.
   t.add(
     'everySectionCarriesItsClosingLine',
-    'the same section closed by a verdict line, because no persona can be sent to a pattern',
-    closing(CHAPTER_TEXT['chapters/w02-org-shell.md'].replace(
-      '**개발** — 보드의 `p-01-list-pattern`을 그대로 만든다.\n',
-      '**개발** — 보드의 `p-01-list-pattern`을 그대로 만든다.\n'
-      + '**판정** — 목록을 그리는 모든 화면이 이 패턴을 쓴다.\n'
-    )),
+    'the same section closed by the persona the chapter itself names, where the board settles none',
+    closing(PATTERN_CLOSED_BY('**테스트 · 시스템 관리자** — 공용 목록 패턴 화면을 연다.')),
+    false
+  );
+  // The other line satisfies it too, and both are here because the gate deliberately does not
+  // choose between them. Which one a pattern takes is the project's reading of what proves it —
+  // somebody in a browser, or a checker — and a case pinning only one would read as this gate
+  // having an opinion it does not have.
+  t.add(
+    'everySectionCarriesItsClosingLine',
+    'the same section closed by a verdict line, where what proves it is a machine',
+    closing(PATTERN_CLOSED_BY('**판정** — 목록을 그리는 모든 화면이 이 패턴을 쓴다.')),
     false
   );
 

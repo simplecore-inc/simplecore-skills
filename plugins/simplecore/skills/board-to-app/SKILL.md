@@ -1686,15 +1686,25 @@ screens answer 「that is not there」 which had all passed before. **`reference
 is what a demand list has to hold and why**, written for a generator this skill does not
 ship.
 
-**A frame no persona reaches is closed by a verdict line, never by silence.** A shared pattern —
-a list shape, a confirm dialog, a read-only mode — is drawn inside other screens and has no address
-of its own, so the persona map resolves it to nobody and a generator that writes one test line per
-persona writes none at all. What comes out is a section with a build line and nothing under it,
-which is a screen built and never asked for anything. **Emit the same demands under the verdict
-word instead**: the body is the body a persona line would have carried, and only the addressee
-changes. It is the right addressee rather than a fallback — a pattern's contract is 「every screen
-that uses this obeys this rule」, and one person opening one demo page proves it in the single place
-it was demoed while a checker holds it across the whole console.
+**A frame the role map is silent about falls back to the chapter's own persona, never to silence.**
+A shared pattern — a list shape, a confirm dialog, a read-only mode — is drawn inside other screens,
+so the matrix that says which role reaches which screen has no row for it and a generator writing
+one test line per persona writes none at all. What comes out is a section with a build line and
+nothing under it, which is a screen built and never asked for anything. **Emit the same demands
+under the persona the chapter's own header already names**: the body is unchanged and only the
+addressee is filled in, and it comes from the value that header is computed from rather than from a
+role invented for the occasion — a frame demanding of somebody the header does not name is a chapter
+contradicting itself in two adjacent lines.
+
+**Reach for the verdict word here and it is the wrong word, which is worth saying because it is the
+tempting one.** A pattern reads as nobody's, and the verdict line is the skill's other way to close
+a section. Read what the demands actually say before choosing: press the tab, press the row action,
+open the empty list at its address, leave a capture. Those are a person in a browser — and where the
+project declares `captureRoute`, a pattern **is** opened on its own, at its own address, which is
+the sentence that makes the fallback a persona rather than a machine. `verdictRole` is declared as
+the word for a line a machine proves; putting browser acts under it makes one word mean two things
+in the field every check over a chapter's evidence keys on. Keep it for a chapter with no frames at
+all.
 
 > **Read it this way and it is wrong**: 「the chapter has test lines, so its screens are covered」.
 > A count is taken per chapter and the defect is per section, so a chapter reading eight build lines
