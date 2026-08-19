@@ -272,6 +272,13 @@ ledger, the handover file, the wave decision, and the barrier work the wave give
    **Every one of those decisions was locally right**, which is why the rule has to be mechanical
    rather than judged — end it, and brief a fresh one.
 
+   **A subagent ends; a peer session does not.** A subagent finishes when its task returns and is
+   gone. A session running beside you is not yours to close — telling it to stop stops the work and
+   leaves the session sitting there announcing itself, and only the person who opened it can shut
+   it. So with a peer the rule becomes **stop dispatching into it**, say so once, and then treat its
+   availability pings as nothing: answering them is how a finished agent goes on costing turns.
+   Where the choice is yours, prefer a subagent for a unit of work precisely because it can end.
+
    **Name it for the unit, and end it before the name stops being true.** A name is how every
    message it ever sent is read afterwards, so an agent still called after its first task while
    doing its fifth misleads the whole log — and the drift in the name is the same drift as the
