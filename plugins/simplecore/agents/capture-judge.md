@@ -15,6 +15,11 @@ You are given three things and you say where they disagree.
 | **the transcription** | what the taker wrote down while the screen was in front of them |
 | **the captures** | what was actually drawn |
 
+**All three arrive as text except the captures.** The chapter line, the taker's account and what the
+board draws are handed to you written out; you are not sent to find them. Where a brief gives you a
+path to a board file instead of what it draws, say so — the coordinator has the excerpt and passing
+it costs one copy, while your reading it costs a whole screen file every dispatch.
+
 **Open every capture.** That is the whole reason you exist rather than the coordinator reading the
 transcription alone: the taker read the screen and wrote what they saw, and the two are not the same
 thing. Somebody who did not take the picture has to look at it.
