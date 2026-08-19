@@ -1649,6 +1649,21 @@ the file already answers — and it arrives with the authority of an instruction
 claim the reader knows to check. Open the file at the moment the brief is written, not at the
 moment you last had a reason to.
 
+**Brief against the command, never against the reading it produced.** A measurement handed over as
+an expectation — 「that gate is red and it is not yours」, 「the suite has two known failures」, 「the
+server is already up」 — is true when written and silently false afterwards, and it is worse than
+saying nothing: **it disarms the one check the agent would otherwise have made.** An agent told in
+advance that a gate is red reports a genuinely new failure as the known one, in good faith, having
+run the command and read its output correctly. Hand over the command and let the agent take its own
+reading; where a state genuinely has to travel, mark it as a reading with its age on it, and say
+which command re-takes it.
+
+**Withdraw such a sentence the moment it goes stale, in its own message.** A correction folded into
+the next instruction arrives as background and is read as background. This is not hypothetical: one
+brief here named a red gate as somebody else's problem, that session fixed it four minutes later,
+and the agent went on holding a briefing that told it to discount the one signal that would have
+caught its own breakage.
+
 **A sentence in a report becomes a sentence in a document, and no gate reads a report.** The
 coordinator writes the ledger and the tracking documents out of what agents send up, so an agent's
 phrasing arrives there unaltered — which makes the report the one surface with no check behind it.
