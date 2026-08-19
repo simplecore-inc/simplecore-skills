@@ -1283,6 +1283,7 @@ node "${CLAUDE_PLUGIN_ROOT}/skills/board-to-app/scripts/bta.mjs" check
 | a capture was taken through the window the project declared, and is a picture a reader can measure at all | `everyCaptureIsAtADeclaredWidth` — the file's own header states the canvas it was encoded from, which is the one half of the standard a picture still remembers; a whole multiple passes, because a device pixel ratio of two is a right window and a wide file |
 | every commit says which chapter it belongs to, and one that belongs to none says `setup` | `trailerGate` — it takes any word, so which word is fixed here rather than per project |
 | a census counts both sides, and names the sites that do not reach the mechanism | `censusCountsBothSides` — it reads the counts by position and not by word, so a project writes the line in its own language |
+| every numbered section of a chapter carries the line that closes it — a persona's, or a machine's | `everySectionCarriesItsClosingLine` — the section is the unit, because a chapter whose other sections are fine reads as sound while one of them was never asked for anything, and every gate downstream takes its demands from the lines this one holds |
 | a demand naming a capture says why a picture is the only witness for that one | `everyCaptureDemandGivesItsReason` — the words are the project's `captureReasons`, the clause is the unit, and whether the reason is true is the row below → `references/demands.md` |
 | a demand discharged as 「the same component」 names a picture that is on disk and shown | `dischargedDemandNamesItsProof` — a discharge leaning on nothing reads in the file exactly like one that holds |
 | a commit adding an import of a file the repository does not have | `importsTravelWithTheirCommit` — `--only` holds back a file nobody named, not somebody else's edit inside a file that was named |
@@ -1684,6 +1685,23 @@ none of them. Widening one chapter set from the first shape to the second had se
 screens answer 「that is not there」 which had all passed before. **`references/demands.md`
 is what a demand list has to hold and why**, written for a generator this skill does not
 ship.
+
+**A frame no persona reaches is closed by a verdict line, never by silence.** A shared pattern —
+a list shape, a confirm dialog, a read-only mode — is drawn inside other screens and has no address
+of its own, so the persona map resolves it to nobody and a generator that writes one test line per
+persona writes none at all. What comes out is a section with a build line and nothing under it,
+which is a screen built and never asked for anything. **Emit the same demands under the verdict
+word instead**: the body is the body a persona line would have carried, and only the addressee
+changes. It is the right addressee rather than a fallback — a pattern's contract is 「every screen
+that uses this obeys this rule」, and one person opening one demo page proves it in the single place
+it was demoed while a checker holds it across the whole console.
+
+> **Read it this way and it is wrong**: 「the chapter has test lines, so its screens are covered」.
+> A count is taken per chapter and the defect is per section, so a chapter reading eight build lines
+> and twenty-four persona lines looks healthy while one of its eight sections closes on nothing —
+> and the silence is what makes every gate downstream quiet about it, since each of them takes its
+> demands from the lines that section does not carry. `everySectionCarriesItsClosingLine` reads the
+> section rather than the chapter for exactly that reason.
 
 **A chapter with no frames is outside all of that, and the generator says which.** There
 is nothing to derive for a foundation chapter — no frames, no personas, so no quoted

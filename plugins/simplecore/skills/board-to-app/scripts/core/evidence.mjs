@@ -1106,8 +1106,100 @@ export const dischargedDemandNamesItsProof = {
   },
 };
 
+// A chapter section is a unit of work, and what makes it one is that something closes it: a
+// persona proves it by walking the screen, or a machine proves it by holding a rule the whole
+// console has to obey. A section carrying neither has a build line and nothing under it — the
+// screen gets built and the chapter closes on having proved nothing of it.
+//
+// **It reads as a chapter with nothing wrong.** Every gate downstream of this one takes its
+// demands from the persona and verdict lines a section carries, so a section that carries none
+// contributes no demand, no heading and no capture — and `closedChapterHasEvidence`,
+// `everyPlacedFrameIsCaptured` and `evidenceQuotesTheChapter` all come out green over a screen
+// nobody ever asked anything of. The absence is what makes them quiet, which is why nothing
+// already here could find it.
+//
+// **The two cases it separates are a generator's, not a person's.** A chapter set is generated
+// from the board, so a frame the persona map resolves to nobody produces a section with a build
+// line and no line beneath it — 43 of them in one chapter, and four more scattered singly through
+// chapters whose other sections were fine. A per-chapter count sees the first and is blind to the
+// second: a chapter reading 8 build lines and 24 persona lines looks healthy while one of its
+// eight sections closes on nothing. The section is the unit, and this is the only reading that
+// takes it.
+//
+// **A frame no persona reaches is closed by a verdict, never by silence.** A shared pattern is
+// drawn inside other screens and has no address anybody can be sent to, so its contract — every
+// screen that uses this pattern obeys this rule — is held by a checker across the whole console
+// rather than by one person opening one demo page. That is what the verdict line is for, and it
+// is why this gate takes either line rather than demanding a persona.
+
+/**
+ * Every numbered section of a chapter carries the line that closes it.
+ *
+ * <p>Either line satisfies it: a persona line where somebody walks the screen, a verdict line
+ * where a machine holds the rule instead. What it refuses is a section with neither, which is a
+ * unit of work nothing can ever prove.
+ *
+ * <p><b>It keys on the section rather than on a build line</b>, and that is wider on purpose.
+ * There is no declared word for a build line — `chapterLines` names the lines a check has to
+ * recognise, and a build line is read by nobody — so keying on one would mean a new role every
+ * project has to declare. It is also the weaker rule: a numbered section demanding nothing cannot
+ * close whether or not it says what to build, and the header sections a chapter carries are
+ * unnumbered and never reach this.
+ *
+ * <p><b>A project that declares neither line is skipped rather than failed</b>, by `needs` —
+ * a project with no vocabulary for either has nothing here to compare against, and a gate firing
+ * on every section of such a repository would say only that the config is incomplete, which
+ * `configGate` already says better.
+ */
+export const everySectionCarriesItsClosingLine = {
+  id: 'everySectionCarriesItsClosingLine',
+  title: 'a chapter section nothing closes — no persona line and no verdict line under it',
+  needs: ['chapterDir', 'chapterLines'],
+  run: (ctx) => {
+    const { persona, verdict } = ctx.lines;
+    if (!persona && !verdict) return [];
+    const dir = ctx.declared('chapterDir');
+    const findings = [];
+    for (const [, file] of [...chapterFiles(ctx)].sort()) {
+      const rel = `${dir}/${file}`;
+      const text = ctx.read(rel);
+      if (text === null) continue;
+      let section = null;
+      let opened = 0;
+      let closed = false;
+      const judge = () => {
+        if (section === null || closed) return;
+        findings.push(
+          `${rel}:${opened}: 「${section}」 carries no line that closes it. A section is proved by `
+          + 'somebody walking it or by a machine holding it, and one with neither is built and never '
+          + 'asked for anything — every check over this chapter\'s evidence takes its demands from '
+          + 'these lines, so the section contributes no demand, no heading and no capture, and the '
+          + 'whole chapter reports green over it. Give it the persona that reaches the screen, or the '
+          + 'verdict line where no persona can be sent to it because it is a pattern drawn inside '
+          + 'other screens'
+        );
+      };
+      for (const { line, no } of proseLines(text)) {
+        const named = CHAPTER_SECTION.exec(line);
+        if (named) {
+          judge();
+          section = `${named[1]}. ${named[2]}`;
+          opened = no;
+          closed = false;
+          continue;
+        }
+        if (section === null) continue;
+        if (persona?.test(line) || verdict?.test(line)) closed = true;
+      }
+      judge();
+    }
+    return findings;
+  },
+};
+
 export const EVIDENCE_GATES = [
   closedChapterHasEvidence,
+  everySectionCarriesItsClosingLine,
   everyPlacedFrameIsCaptured,
   evidenceQuotesTheChapter,
   deferredCheckNamesAChapter,
@@ -1143,6 +1235,12 @@ const WORDS = {
  * A foundation chapter demanding one machine verification, and a screen chapter demanding two
  * persona lines. The screen chapter also places a shared pattern — a frame drawn inside other
  * screens, with no address of its own and nobody told to open it.
+ *
+ * <p><b>That last section carries a build line and nothing under it on purpose</b>, and it is what
+ * `everySectionCarriesItsClosingLine` fires on. Every other gate here reads past it — a section
+ * with no persona line and no verdict line contributes no demand, no heading and no capture — so
+ * this fixture is the shape of a chapter that reports green while one of its screens was never
+ * asked for anything, and the cases below hold it against the section that closes properly.
  */
 const CHAPTER_TEXT = {
   'chapters/w01-foundation.md':
@@ -1697,6 +1795,38 @@ export function cases(t) {
     'everyCaptureDemandGivesItsReason',
     'a chapter demanding no capture at all',
     demanding(CHAPTER_TEXT['chapters/w02-org-shell.md']),
+    false
+  );
+
+  // ── A section nothing closes, against one a verdict closes ────────────────
+
+  const closing = (chapter) => t.project({
+    config: { ...WORDS, chapterDir: 'chapters' },
+    files: { ...CHAPTER_TEXT, 'chapters/w02-org-shell.md': chapter },
+  });
+
+  // The whole file is healthy by every count a reader takes: two persona lines, a build line per
+  // section, a foundation chapter proving itself. What is wrong is one section out of two, which
+  // is why the reading has to be per section — a per-file or per-chapter count reports this as
+  // sound, and that is how 43 sections in one chapter and four more scattered singly through three
+  // others went unremarked.
+  t.add(
+    'everySectionCarriesItsClosingLine',
+    'a pattern frame placed with a build line and no line under it, in a chapter whose other section is fine',
+    closing(CHAPTER_TEXT['chapters/w02-org-shell.md']),
+    true
+  );
+  // The same section closed the way a frame no persona reaches is closed. A pattern has no address
+  // anybody can be sent to, so what holds it is a checker across the whole console rather than one
+  // person opening one demo page — and the verdict line is where that is written down.
+  t.add(
+    'everySectionCarriesItsClosingLine',
+    'the same section closed by a verdict line, because no persona can be sent to a pattern',
+    closing(CHAPTER_TEXT['chapters/w02-org-shell.md'].replace(
+      '**개발** — 보드의 `p-01-list-pattern`을 그대로 만든다.\n',
+      '**개발** — 보드의 `p-01-list-pattern`을 그대로 만든다.\n'
+      + '**판정** — 목록을 그리는 모든 화면이 이 패턴을 쓴다.\n'
+    )),
     false
   );
 
