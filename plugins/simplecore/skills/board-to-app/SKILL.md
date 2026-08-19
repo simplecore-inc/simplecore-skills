@@ -1666,6 +1666,21 @@ brief here named a red gate as somebody else's problem, that session fixed it fo
 and the agent went on holding a briefing that told it to discount the one signal that would have
 caught its own breakage.
 
+**The same failure has a second half, and it is the one that feels like diligence.** A stale
+measurement is a claim whose verification has expired; **a diagnosis inferred from reading is a
+claim that never had one.** Both travel with the authority of a finding, and the second is easier
+to send because working it out from the source feels like the careful version of guessing. It is
+not — running it is. Where a reading is cheap, take it before the sentence leaves; a gate whose
+message says it could not read the board is one command away from telling you exactly why, and two
+lines of source will hand you a mechanism that is plausible, specific, and wrong.
+
+**Send it anyway when the reading is not yours to take**, and mark which half it is. 「the anchor
+is doubled」 and 「it fails here, and here are the two lines I would look at」 cost the reader very
+differently when the mechanism turns out wrong: the first has to be disproved, the second is
+already an invitation. A diagnosis into somebody else's file is worth sending unverified **and is
+worth labelling as unverified** — what is never worth it is the confident mechanism, because the
+reader spends their first command confirming your story rather than reading their own.
+
 **A sentence in a report becomes a sentence in a document, and no gate reads a report.** The
 coordinator writes the ledger and the tracking documents out of what agents send up, so an agent's
 phrasing arrives there unaltered — which makes the report the one surface with no check behind it.
