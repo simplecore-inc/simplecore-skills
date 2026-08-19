@@ -118,6 +118,23 @@ correct-looking sentence beside it.
 **Say how many you re-took.** A run that silently re-shot four captures and a run that got them
 first time look identical in the folder, and the difference is worth knowing.
 
+## Count the not-built controls once; do not press them one at a time
+
+**When a control you were told to press turns out to be marked as not built, stop pressing that
+family and go read the screen's source for the rest of them.** One screen sent eight presses at
+tabs and buttons that all answered the same way, and every one of them was the same marker in the
+same file — a single read would have listed them.
+
+**Report what you read as a list, with the marker's name.** 「Not built: two content tabs, three
+panel verbs, two header buttons, one banner button — all `UnbuiltAction`/`UnbuiltTab`」 is the whole
+finding, and it is worth more than eight sentences saying nothing happened.
+
+**The marker's absence proves nothing, and this is the half that matters.** A control can be
+missing from the screen altogether, or present and dead with no marker, or present and alive and
+doing nothing — none of those appear in a search for the marker. So the reading replaces PRESSING
+THE ONES YOU ALREADY FOUND MARKED, and it replaces nothing else. **Everything the chapter names
+that you have not accounted for is still pressed.**
+
 ## What you do not run
 
 **No full gate sweep, no repository-wide check.** The write hooks already run those, and running one
