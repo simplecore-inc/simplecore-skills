@@ -1178,6 +1178,15 @@ export function AssignDialog() { return null; }`,
           const above = lines.slice(Math.max(0, i - 15), i).join("\n");
           if (/\bBounded:/.test(above)) return false;
           if (/<CrudDetail\.(Table|List)\b|onPageChange=|<CrudList\b/.test(above)) return false;
+          // A pager can also stand UNDER the table it pages, which is where `CrudList.Pagination`
+          // goes inside a `TableCard` — the frame wraps both, so the paging is a sibling after the
+          // rows rather than a parent around them. Reading only upward called that arrangement
+          // unpaged and asked for a `Bounded:` claim that would have been false.
+          const close = lines.findIndex((l, at) => at > i && /<\/Table>/.test(l));
+          if (close !== -1) {
+            const below = lines.slice(close + 1, close + 11).join("\n");
+            if (/<CrudList\.Pagination\b|onPageChange=/.test(below)) return false;
+          }
           return true;
         },
       ),
@@ -1199,6 +1208,25 @@ export function AssignDialog() { return null; }`,
   );
 }`,
       miss: [
+        {
+          note: "a pager standing under the table it pages is paging",
+          source: `export function HistoryTab({ history }: Props) {
+  return (
+    <TableCard>
+      <Table>
+        <TableBody>{history.rows.map((row) => <TableRow key={row.id} />)}</TableBody>
+      </Table>
+      <CrudList.Pagination
+        page={history.page}
+        pageSize={history.pageSize}
+        total={history.total}
+        totalPages={history.totalPages}
+        onPageChange={history.setPage}
+      />
+    </TableCard>
+  );
+}`,
+        },
         {
           note: "a table the detail frame pages needs no such claim",
           source: `export function HistoryTab({ history }: Props) {
