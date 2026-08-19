@@ -480,6 +480,17 @@ ledger, the handover file, the wave decision, and the barrier work the wave give
    whose artifact has not moved is stalled; one that is quiet while its artifact grows
    is inside something long and is left alone → *An agent that ends, and an agent that
    only paused*.
+
+   **A clean tree is not the stall test, and reading it as one produces two writers on
+   one file.** An agent spends its first many minutes reading, invoking its skills and
+   planning, and writes nothing in all of that — so the tree looks exactly as it looks
+   when the agent never started. Neither does an idle signal settle it: a peer can be
+   reported available and be working, because that signal races the work. **Before
+   reassigning a task, stop the agent holding it or get it to say it has not started**;
+   an artifact that has not moved is evidence only for an agent that was sending steps
+   and stopped. This has happened — a task reassigned on a clean tree and an idle
+   notification put two agents on the same file, and the duplicate had to be killed
+   mid-flight.
 8. **At the end the agent returns conclusions.** What it built, what it fixed in the
    board and why, which persona lines failed and what it did about them, what it
    parked, and whether the chapter closed. No screen dumps, no commentary, no images —
