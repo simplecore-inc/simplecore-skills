@@ -87,13 +87,16 @@ inside it.
 | **presence, placement or wording no response body carries** | a filter-chip row nobody declared, row actions the board draws as text and the screen renders as icons, a column that is not there |
 | **a state that exists only while something is open** | a dialog, a confirmation, a panel form — gone the moment anything else is asked of the screen |
 
-**And it is not the witness in three others:**
+**And it is not the witness in four others:**
 
 | The case | What proves it instead |
 | --- | --- |
 | **an unbuilt placeholder** | one capture per chapter proves the component; the rest are the same component, and the demand is **discharged** rather than skipped → `references/evidence.md` |
 | **a claim the server's response settles** | counts, statuses, permission refusals — a fenced `METHOD /path → status` block, which the role-scoped persona lines already use exclusively |
 | **a screen no commit has touched since its last capture** | the capture already in the folder |
+| **a companion frame — one the board draws to show panes the base frame does not open** | the base frame's own per-pane captures. **The application has no such screen**, so this picture cannot be taken at all rather than being merely redundant |
+
+**That fourth row is here because a generator author reads this table and not the other one.** It was documented only in `references/evidence.md`, which is the file somebody opens while writing a result document — a different moment and often a different agent. One generator, written carefully against this table alone, was about to emit **208 demands for pictures nobody can take**, and every one of them would have read as a chapter owing something. A counter-case named in the wrong file is a counter-case nobody applies.
 
 ### The reason goes in the demand line, and the generator writes it
 
@@ -127,6 +130,22 @@ set, at a moment no verification round is running**, with the quotes in the docu
 written refreshed in the same change — and the earlier the set is in its build, the smaller that
 is. Adding the reason one chapter at a time is the same cost paid once per chapter, plus a set
 where two chapters mean different things by the same demand.
+
+**The same pass almost always does a second thing, and it costs the opposite.** It emits capture
+demands where none existed — and appended at the end of the line those cost **no quotation at
+all**: every quote already written stays a contiguous prefix and no document needs touching. So one
+pass produces two sets of sections, and they are counted apart:
+
+| What happened to the section | What it costs |
+| --- | --- |
+| its quoted clause was **reworded** to carry the reason | the quotation is refreshed and the section stays true — the demand asks for the same act, only the sentence moved |
+| its demand **grew** a capture it did not ask for before | the quotation is left exactly as it was. Refreshing it hands the section a demand it never answered |
+
+**One total hides the row that matters.** And the second row is a debt to be *measured* rather than
+assumed: the pictures a newly-emitted demand names are often already on disk, because a capture
+rule was demanding them before any chapter line said so. On a real set, 67 sections grew and **every
+capture they now named was already there** — a growth of 67 and a debt of none. Assumed, that would
+have been filed as 67 sections owing pictures nobody needed to take.
 
 ## An address a demand names is an address that opens
 
