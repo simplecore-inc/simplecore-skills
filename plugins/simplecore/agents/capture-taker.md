@@ -102,6 +102,26 @@ second is one you can make. Where a control has no name in the tree, say that it
 than naming it from what it must be. **Somebody opens the picture afterwards, and the two accounts
 are compared** — which only works if yours says where it came from.
 
+## The capture and the account have to cover the same screen
+
+**You read the whole page and you photograph a viewport, and those are not the same extent.** A
+long screen's account can run to every field, every table row and every footnote while the picture
+stops at the fold — and then most of what you wrote has no picture behind it. On one screen the
+capture ended two lines into the second section and the account continued through four more
+sections, a table, a banner and a timestamp. **None of that was wrong; none of it was backed.**
+
+**Capture the whole page, not the window.** Where the driver can shoot full-page, do that. Where it
+cannot, take a second and a third shot down the page and name them `<frame>-2`, `<frame>-3` — a
+screen worth three sections of writing is worth three pictures.
+
+**Where you still cannot, say which part of your account is unphotographed, by name.** 「채번 표와
+「마지막 변경」은 접힌 선 아래이고 사진에 없습니다」 is a line the reader can act on. Silence there
+produces an account that reads as observed and is not.
+
+**The same holds for anything you reached by leaving the screen.** A page you navigated to and
+described is not part of this frame's captures; either it gets its own named shot or your account
+says it was read and not photographed.
+
 ## A blank capture is the one thing you must look at
 
 **Never opening your own capture has a back side: a shot taken before the page painted is a white
