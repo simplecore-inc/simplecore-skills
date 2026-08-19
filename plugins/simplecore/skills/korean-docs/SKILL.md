@@ -245,32 +245,30 @@ node "$T" apply --patch <파일>   # 다시 쓴 문장 목록을 반영한다 (-
 **어디에 넣든 검사가 닿는 파일은 같다** — 선언이 없으면 `rules`도 `check`와 같은 문서 집합을
 읽으므로, 이 판단은 커버리지 문제가 아니라 순전히 「기계가 정확히 판정할 수 있는가」의 문제다.
 
-### Never write `|$` into a lookahead — the boundary is the extractor's job
+### lookahead 안에 `|$`를 쓰지 않는다 — 경계는 마디를 자르는 쪽이 진다
 
-A pattern that ends in a negative lookahead — `자바(?!스크립트)`, `그것(?!도)`, `에 있어(?![야도\s])서?`
-— is asking what comes next. **At the end of a string nothing comes next and the lookahead is
-satisfied by default**, so the same pattern that correctly declines `자바스크립트` fires on a
-correct `자바` the moment the text it is handed stops there. One project's merged glossary and
-rule pack held 57 patterns ending that way, and none of their authors can see it from the pattern.
+**부정 lookahead로 끝나는 패턴**(`자바(?!스크립트)` · `그것(?!도)` · `에 있어(?![야도\s])서?`)은
+뒤에 무엇이 오는지를 묻는다. **문자열 끝에서는 뒤에 아무것도 없고 lookahead는 공짜로 만족하므로**,
+`자바스크립트`를 옳게 거절하던 그 패턴이 건네받은 글이 거기서 끊기는 순간 옳은 `자바`를 잡는다. 한
+프로젝트가 읽는 용어사전과 규칙 팩에 그렇게 끝나는 패턴이 쉰일곱 있었고, **패턴만 봐서는 어느 저자도
+이것을 알아볼 수 없다.**
 
-**The repair belongs to the segment, not to the pattern.** `segment()` carries `after` — what
-follows, held-out spans blanked to spaces — and it is filled in exactly when the segment's end is
-NOT the end of what the reader sees: a markdown line cut by a code span, a board run stopped by
-`<code>`. A rule is matched against `text + after`, and a hit is kept only when it starts inside
-`text`. At a real end `after` is empty, `$` anchors hold, and a lookahead reading nothing is
-reading the truth.
+**고칠 자리는 패턴이 아니라 마디다.** `segment()`가 `after`를 함께 싣는다 — 뒤따르는 글이고 빼 둔
+조각은 공백으로 바꾼다 — 그리고 **그 마디의 끝이 읽는 사람이 보는 글의 끝이 아닐 때만** 채운다:
+코드 조각에 끊긴 마크다운 줄, `<code>`에 멈춘 보드의 글줄. 규칙은 `text + after`에 대고 맞추되
+**시작 자리가 `text` 안일 때만** 잡은 것으로 친다. 진짜 끝에서는 `after`가 비고, `$` 앵커가 그대로
+서며, 아무것도 못 읽는 lookahead가 읽는 것이 사실이다.
 
-**Writing `(?!스크립트|$)` instead is the repair that looks equivalent and is not.** It also
-refuses the hit at a real end — a line that genuinely ends in `자바` is a hit somebody wants — so it
-trades a false positive at an artificial boundary for a false negative at a real one, invisibly.
-Only where the lookahead's whole purpose is 「this word continues」 **and** the truncation is
-artificial do the two agree, and the extractor already knows which case it is.
+**대신 `(?!스크립트|$)`로 적는 것은 같아 보이면서 같지 않다.** **그렇게 쓰면 진짜 끝에서도 거절하므로**,
+정말로 `자바`로 끝나는 줄은 잡아야 하는데 잡지 않는다 — 인위적인 경계의 오탐을 진짜 경계의 미탐과
+맞바꾸는 것이고, 쉰일곱 가운데 대부분이 그렇다. lookahead의 뜻이 「이 낱말이 이어진다」이고 **동시에**
+그 끊김이 인위적일 때만 둘이 같아지는데, 어느 경우인지는 마디를 자르는 쪽이 이미 안다.
 
-**A new extractor states its boundaries in `EXTRACTOR_CASES` before its rules are trusted.** The
-cases run inside `rules --test`, and each may assert `want` (the segments), `wantAfter` (the
-context each carries), `silent` (a pattern that must NOT fire through this boundary) and `loud`
-(one that must). A boundary is only proved by a rule read through it — `want` alone passes while a
-vacuous lookahead reports a sentence that has nothing wrong with it.
+**새 추출기는 규칙을 믿기 전에 자기 경계를 `EXTRACTOR_CASES`에 적는다.** 그 사례는 `rules --test`
+안에서 돌고, 각각 `want`(잘린 마디) · `wantAfter`(마디가 싣는 뒷문맥) · `silent`(이 경계를 지나
+발화하면 안 되는 패턴) · `loud`(발화해야 하는 패턴)를 주장할 수 있다. **경계는 그 경계를 지나 읽은
+규칙으로만 증명된다** — `want`만으로는, 공짜로 만족한 lookahead가 아무 문제 없는 문장을 보고하는
+동안에도 통과한다.
 
 **훅은 플러그인이 제공한다 — 프로젝트가 따로 걸지 않는다.** `hooks/hooks.json`이 `Write|Edit|MultiEdit`에
 `hooks/check-md-glossary.mjs`를 걸어 두었고, 그 선언이 이 스크립트를 실행한다. **차단 훅이라 오류가 있으면
@@ -497,7 +495,7 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/detect-simplecore.mjs" --json   # globalKore
 | "렌즈에 그 어간을 넣었으니 그 계열은 담았다" | **활용형까지 적어야 담은 것이다.** 렌즈에 「붙는」만 있고 「붙이·붙은·붙지·붙어」가 없어 126자리가 빠져나갔다. 어간 하나를 적을 때 종결형·관형형·연결형·명사형을 함께 적는다. |
 | "종결형 검사를 만들었으니 문체는 지켜진다" | **마침표에만 앵커를 걸면 절반을 놓친다.** 「…합니다({{ref}}).」와 「…합니다&lt;br&gt;」가 통째로 지나가 111자리 중 36자리가 살아남았다. 절을 닫는 것 전부에 건다: `(?=[.。(<'\`]|\s*$)`. |
 | "화면 문구가 -다체로 새는지 보는 검사가 있으니 문체는 양쪽 다 지켜진다" | **한 방향만 지킨 것이다.** 반대쪽(설명이 합니다체로 새는 것)은 검사가 없어 63개 파일에 쌓였고, 그 상태가 화면에서는 통과와 구별되지 않았다. 목소리가 둘이면 검사도 둘이다. |
-| "the rule fired, so the word it names is really there" | A pattern ending in `(?!…)` asks what comes next, and **at the end of a string nothing does**, so the lookahead passes and a correct word is reported. Read what the segment actually ends with before believing a hit that sits on its last syllable — and repair it in the extractor's `after`, never by adding `\|$` to the lookahead, which silences the same rule at a real end. |
+| "규칙이 잡았으니 그 낱말이 정말 거기 있다" | `(?!…)`로 끝나는 패턴은 뒤에 무엇이 오는지를 묻는데 **문자열 끝에서는 뒤에 아무것도 오지 않으므로** lookahead가 통과하고 옳은 낱말이 보고된다. 마디의 마지막 음절에 걸린 검출을 믿기 전에 **그 마디가 실제로 무엇으로 끝나는지 읽는다.** 고치는 자리는 추출기의 `after`이고, lookahead에 `\|$`를 더하는 것은 같은 규칙을 진짜 끝에서 침묵시킨다. |
 | "고쳐 쓴 문장은 검사할 필요가 없다" | **대신 넣은 말이 그 자체로 금지 표현인 사고가 가장 자주 난다.** `목록에 딸린`으로 고쳐 규칙에 걸렸고, 용어사전의 대체 열 일곱 곳이 그 자체로 비유였다. 고친 파일을 다시 넣기 전에는 끝난 것으로 세지 않는다. |
 | "검출 목록을 보여 주고 고칠지 확인받는 것이 안전하다" | 감사를 시킨 사람이 원한 것은 목록이 아니라 고쳐진 파일이다. **확인은 완료 보고에서 하고 수정은 묻지 않고 끝낸다.** |
 | "건수가 수백이라 한 번 여쭙는 편이 낫다" | 양은 허락을 요구하지 않는다. 계열로 묶으면 수백 건도 한 번의 작업이다. |
