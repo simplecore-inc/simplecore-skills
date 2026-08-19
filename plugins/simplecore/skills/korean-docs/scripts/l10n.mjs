@@ -307,9 +307,56 @@ function discover({ kind, lang, docFallback = false } = {}) {
  * `start`/`end` are byte offsets into the raw file, so a rewrite can be applied to the
  * original source without reserializing it — reserializing a JSON catalogue reorders
  * nothing but reformats everything, and the diff becomes unreadable.
+ *
+ * `after` is what follows the segment when the segment's end is NOT the end of the text
+ * the reader sees — held-out spans blanked to spaces, exactly the view `check` gives the
+ * same line. A rule is matched against `text + after` and a hit is kept only when it
+ * begins inside `text`, so the extra context is read and never reported.
+ *
+ * **A trailing negative lookahead is vacuously satisfied at the end of a string**, so a
+ * segment that stops one character early turns a correct word into a finding: `…W17에
+ * 있어 \`StatutoryReport\`` was cut at 있어 and the ban on 「~에 있어서」 fired, because
+ * the space it declines on had been trimmed off the tail. The pattern was right and the
+ * string it was handed was short. Every rule that ends in `(?!…)` carries the same hole,
+ * and none of their authors can see it from the pattern — one project's merged glossary
+ * and rule pack held 57 of them — which is why it is closed here rather than one
+ * lookahead at a time.
+ *
+ * **`after` is empty at a real end, and that is the whole of the judgement.** A value
+ * that ends, a line that ends, a label that ends: nothing follows, `$` anchors hold, and
+ * a lookahead reading nothing is reading the truth. Writing `(?!스크립트|$)` into the
+ * pattern instead would silence the rule on a line that genuinely ends in 자바, which is
+ * a hit somebody wants.
+ *
+ * **There is deliberately no `before`.** The mirror hole exists — a lookbehind at offset
+ * 0 is vacuous too — but supplying left context moves the `^` anchor as well, and `^` in
+ * these rules means 「the label starts here」: a heading opening with a code span and a
+ * screen line prefixed by an `OPEN:` badge are both still labels, and their question-form
+ * rules must keep firing. No pattern that loads here loses anything to the vacuous
+ * lookbehind: each one asks whether the preceding character is Hangul, and at a boundary
+ * it is markup, which is the answer the vacuous reading gives.
  */
-function segment(start, end, text, key) {
-  return { start, end, text, key };
+function segment(start, end, text, key, after = "") {
+  return { start, end, text, key, after };
+}
+
+/**
+ * `src` with every range blanked to spaces of the same length, newlines kept.
+ *
+ * Length-preserving on purpose: an offset into `src` is the same offset here, so the
+ * masked view can be sliced by the offsets the segmenter already computed.
+ */
+function maskRanges(src, ranges) {
+  if (!ranges.length) return src;
+  let out = "";
+  let at = 0;
+  for (const [a, b] of ranges) {
+    if (b <= at) continue;
+    const from = Math.max(a, at);
+    out += src.slice(at, from) + src.slice(from, b).replace(/[^\n]/g, " ");
+    at = b;
+  }
+  return out + src.slice(at);
 }
 
 /** JSON: string values only, never keys. */
@@ -461,6 +508,11 @@ function segmentsMarkdown(src) {
   blocked.sort((x, y) => x[0] - y[0]);
   let blockIdx = 0;
 
+  // The line as a rule should read it: prose kept, held-out spans turned to spaces. This
+  // is the view `check` builds for the whole line, and reading the right-hand context out
+  // of it is what makes the two engines agree about what follows a code span.
+  const masked = maskRanges(src, blocked);
+
   const segments = [];
   let offset = 0;
   for (const line of src.split("\n")) {
@@ -485,12 +537,21 @@ function segmentsMarkdown(src) {
       for (let k = blockIdx; k < blocked.length && blocked[k][0] < end; k += 1) {
         if (blocked[k][1] > cursor) spans.push(blocked[k]);
       }
+      // What a rule reads past the end of this segment. Whitespace alone means the line
+      // is over and the segment ends where the reader's text ends; anything else means
+      // the prose was interrupted, and a held-out span reads as the word boundary it is.
+      const rightOf = (stop) => {
+        if (!src.slice(stop, end).trim()) return "";
+        return masked.slice(stop, end).trimEnd() || " ";
+      };
       const emit = (from, to) => {
         const text = src.slice(from, to);
         if (!text.trim()) return;
         const lead = text.length - text.trimStart().length;
         const tail = text.length - text.trimEnd().length;
-        segments.push(segment(from + lead, to - tail, text.slice(lead, text.length - tail), `L${segments.length + 1}`));
+        const at = from + lead;
+        const stop = to - tail;
+        segments.push(segment(at, stop, src.slice(at, stop), `L${segments.length + 1}`, rightOf(stop)));
       };
       for (const [a, b] of spans) {
         if (a > cursor) emit(cursor, a);
@@ -515,6 +576,9 @@ const INLINE_EMPHASIS = /^<\/?(?:b|strong|i|em|u|s|small|sub|sup)>$/i;
 
 /** The same tags, found in a run of text. */
 const EMPHASIS_IN = /<(\/?)(?:b|strong|i|em|u|s|small|sub|sup)>/gi;
+
+/** The tag that opens an identifier the sentence runs past rather than ends at. */
+const OPENING_CODE = /^<code\b[^>]*>$/i;
 
 /**
  * Whether every emphasis tag in this run has its partner in the same run.
@@ -611,7 +675,7 @@ function segmentsWireframe(src) {
   for (const [ls, le] of literals) {
     const body = src.slice(ls, le);
     let cursor = 0;
-    const push = (from, to) => {
+    const push = (from, to, after = "") => {
       if (!HANGUL.test(body.slice(from, to))) return;
       // Trim surrounding whitespace so a rewrite cannot swallow layout, and peel an
       // emphasis pair that wraps the whole run. Emphasis inside a sentence is part of
@@ -635,13 +699,13 @@ function segmentsWireframe(src) {
         end -= wrap[1].length + 3;
       }
       if (end <= start) return;
-      segments.push(segment(ls + start, ls + end, body.slice(start, end), "text"));
+      segments.push(segment(ls + start, ls + end, body.slice(start, end), "text", after));
     };
     /** One run between two BOUNDING tags — emphasis inside it is part of the sentence. */
-    const emit = (from, to) => {
+    const emit = (from, to, after = "") => {
       const text = body.slice(from, to);
       if (emphasisBalanced(text)) {
-        push(from, to);
+        push(from, to, after);
         return;
       }
       let inner = from;
@@ -650,7 +714,7 @@ function segmentsWireframe(src) {
         push(inner, from + m.index);
         inner = from + m.index + m[0].length;
       }
-      push(inner, to);
+      push(inner, to, after);
     };
     const tag = /<[^<>]*>/g;
     let m;
@@ -658,7 +722,12 @@ function segmentsWireframe(src) {
       // Emphasis stays inside the run: the cursor does not move, so the tag ends up in
       // whatever segment the surrounding sentence produces.
       if (INLINE_EMPHASIS.test(m[0])) continue;
-      emit(cursor, m.index);
+      // `<code>` is this board's inline code span: an identifier the sentence runs past,
+      // not the end of anything. A run stopped there is stopped mid-sentence, so a rule
+      // reading off its tail gets the word boundary that is really there — the same
+      // context the markdown extractor gives a run stopped by a backtick. Every other
+      // bounding tag ends a line or a cell, and there the run's end IS the reader's.
+      emit(cursor, m.index, OPENING_CODE.test(m[0]) ? " " : "");
       cursor = m.index + m[0].length;
     }
     emit(cursor, body.length);
@@ -751,6 +820,25 @@ const EXTRACTORS = {
  */
 function annotationKeys() {
   return new Set(ruleSet().config?.localeAnnotationKeys ?? []);
+}
+
+/**
+ * The first match that BEGINS inside the segment, read with the segment's right context.
+ *
+ * The context is there to be read and never to be reported: a hit that starts past the
+ * segment's own text belongs to whatever segment comes next, and returning it here would
+ * count the same sentence twice. A hit that starts inside and runs on into the context is
+ * kept — that is one phrase interrupted by a code span, which is what the reader sees.
+ */
+function matchSegment(re, seg) {
+  const text = seg.after ? seg.text + seg.after : seg.text;
+  re.lastIndex = 0;
+  for (let m = re.exec(text); m; m = re.exec(text)) {
+    if (m.index < seg.text.length) return m;
+    if (!re.global) break;
+    if (re.lastIndex === m.index) re.lastIndex += 1;
+  }
+  return null;
 }
 
 function readSegments(entry) {
@@ -1059,8 +1147,7 @@ function cmdGrep(pattern, opts) {
   for (const entry of entries) {
     const { src, segments } = readSegments(entry);
     for (const seg of segments) {
-      re.lastIndex = 0;
-      if (!re.test(seg.text)) continue;
+      if (!matchSegment(re, seg)) continue;
       hits.push({
         file: entry.file,
         kind: entry.kind,
@@ -1214,12 +1301,18 @@ const EXTRACTOR_CASES = [
     of: () => segmentsWireframe,
     src: "const a = '<span class=\"open\">OPEN:</span> 보관해야 하는지.<br>' +\n  '<code>refusePhoto</code>를 먼저 묻는다.';",
     want: ["보관해야 하는지.", "를 먼저 묻는다."],
+    // `<br>` ends a line and the literal ends a value: both runs end where the reader's
+    // text ends, so a rule anchored on that end still reaches it.
+    wantAfter: ["", ""],
   },
   {
     what: "와이어프레임: 짝이 밖에 있는 강조는 예전처럼 가른다",
     of: () => segmentsWireframe,
     src: "const a = '<b>고를 수 있는 형태는 <code>x</code> 이 이름을 가진 둘뿐이다</b> 끝.';",
     want: ["고를 수 있는 형태는", "이 이름을 가진 둘뿐이다", "끝."],
+    // The first run stops at `<code>` in the middle of its own sentence, so it carries
+    // the boundary that is really there rather than looking like the end of a label.
+    wantAfter: [" ", "", ""],
   },
   {
     what: "마크다운: 첫 줄에서 여는 머리말은 빠진다",
@@ -1251,6 +1344,36 @@ const EXTRACTOR_CASES = [
     src: "---\n\n닫는 줄이 없는 문서다.\n",
     want: ["닫는 줄이 없는 문서다."],
   },
+  {
+    // The vacuous-lookahead defect. 「W17에 있어」 is 있다 + the connective -어, and the
+    // ban on 「~에 있어서」 declines on the space that follows — a space the segment used
+    // to trim off its tail, leaving the lookahead nothing to read and nothing to decline
+    // on. Reported as a 번역투 in a sentence that has none.
+    what: "마크다운: 코드 조각에서 끊긴 문장은 뒷문맥을 함께 준다",
+    of: () => segmentsMarkdown,
+    src: "제출 현황(G-14)이 W17에 있어 `StatutoryReport`\n",
+    want: ["제출 현황(G-14)이 W17에 있어"],
+    wantAfter: [" "],
+    silent: ["에 있어(?![야도\\s])서?"],
+  },
+  {
+    what: "마크다운: 코드 조각 뒤로 이어지는 본문이 뒷문맥이다",
+    of: () => segmentsMarkdown,
+    src: "값은 `x` 뒤에 온다.\n",
+    want: ["값은", "뒤에 온다."],
+    wantAfter: ["     뒤에 온다.", ""],
+  },
+  {
+    // The other direction, on the same path: giving a rule its context must not stop it
+    // catching what it is for. A green rule that no longer fires is the failure this
+    // whole harness exists to make visible.
+    what: "마크다운: 진짜 번역투는 그대로 잡힌다",
+    of: () => segmentsMarkdown,
+    src: "이 점에 있어서 두 값이 다르다.\n",
+    want: ["이 점에 있어서 두 값이 다르다."],
+    wantAfter: [""],
+    loud: ["에 있어(?![야도\\s])서?"],
+  },
 ];
 
 /**
@@ -1281,7 +1404,29 @@ function extractorProblems() {
       continue;
     }
     const slipped = got.find((s) => test.src.slice(s.start, s.end) !== s.text);
-    if (slipped) problems.push([test.what, `자리가 어긋난다: ${JSON.stringify(slipped.text)}`]);
+    if (slipped) {
+      problems.push([test.what, `자리가 어긋난다: ${JSON.stringify(slipped.text)}`]);
+      continue;
+    }
+    if (test.wantAfter) {
+      const after = got.map((s) => s.after ?? "");
+      if (after.some((a, i) => a !== test.wantAfter[i])) {
+        problems.push([test.what, `뒷문맥 기대 ${JSON.stringify(test.wantAfter)} · 실제 ${JSON.stringify(after)}`]);
+        continue;
+      }
+    }
+    // A boundary is only proved by a rule read through it. `want` says what the segments
+    // are; these say what a pattern makes of them, which is the thing the extractor is
+    // for and the only place a vacuous lookahead becomes visible.
+    for (const src of test.silent ?? []) {
+      const re = new RegExp(src, "g");
+      const fired = got.find((s) => matchSegment(re, s));
+      if (fired) problems.push([test.what, `잡으면 안 되는데 잡음 (/${src}/): ${fired.text}`]);
+    }
+    for (const src of test.loud ?? []) {
+      const re = new RegExp(src, "g");
+      if (!got.some((s) => matchSegment(re, s))) problems.push([test.what, `잡아야 하는데 놓침 (/${src}/)`]);
+    }
   }
   return problems;
 }
@@ -1404,8 +1549,7 @@ function cmdRulesScan(opts) {
     for (const seg of segments) {
       for (const rule of active) {
         for (const re of ruleMatchers(rule)) {
-          re.lastIndex = 0;
-          const m = re.exec(seg.text);
+          const m = matchSegment(re, seg);
           if (!m) continue;
           // Only a frequency rule is thresholded on a per-file count, so only a frequency rule
           // is misled by a catalogue. A rule that fires on the first hit still reports there.
@@ -1803,8 +1947,7 @@ function cmdAudit(opts) {
       }
       for (const ban of bans) {
         if (ban.screenOnly && (!isScreen || seg.annotation)) continue;
-        ban.re.lastIndex = 0;
-        if (ban.re.test(seg.text)) {
+        if (matchSegment(ban.re, seg)) {
           if (!perRule.has(ban.term)) perRule.set(ban.term, []);
           perRule.get(ban.term).push({
             file: entry.file,
