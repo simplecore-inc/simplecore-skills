@@ -77,6 +77,12 @@ repository.
      exists, so the promise is due.
    - `○` — the project does not use that.
 
+   **Every one of those lines names what the absence costs**, so the decision is on the screen
+   rather than in a table somebody has to go and find: 「a chapter cannot be regenerated after a
+   board fix」, 「nothing says where a migration goes, so backend chapters run one at a time」.
+   **Read the cost before leaving a key out** — an absence is a choice only when somebody has seen
+   the bill for it, and each of these was priced by a project that paid it.
+
    **Leave out a key whose subject does not exist rather than inventing a path**, and where a later
    chapter will create it, name that chapter in `deferredKeys`. An invented path is worse than an
    absence: the absence is reported and the invention is not.

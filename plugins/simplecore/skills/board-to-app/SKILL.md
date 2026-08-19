@@ -118,6 +118,12 @@ array declares none — the table's last column says what each absence costs, an
 build carries on knowing it. A placeholder left in the file is not an absence: it is
 a path that does not exist, and it stops the build like any other.
 
+**That cost is what `bta.mjs doctor` prints beside every key it reports as absent**,
+because 「not declared」 on its own tells a reader the one thing they already knew.
+The sentence lives once, in the schema, and this column carries the same string
+under `bta.mjs gates` — so a cost corrected here reaches the report, which is the
+only way a person meets it.
+
 **An optional key absent because its subject does not exist yet is a promise, not a
 decision.** A project whose application has not been built has no migration directory to
 name, no address that renders one frame, no generated locale. Such a key **is declared in
@@ -173,11 +179,11 @@ being unable to finish anything, which is what `bta.mjs doctor` prints it apart 
 | `pseudoLocale` | the generated long-string locale that proves a layout survives any string | ○ | overflow is judged in the longest real language only, which covers less → `references/judging-frames.md` |
 | `captureRoute` | the address that renders one frame, in one state, from named sample data | ○ | captures are driven by navigation, which cannot reach the states that matter; report it as owed rather than hand-driving the board |
 | `browserDrivers` | what drives a browser here, **in order** — the run takes the first that can express the task | ○ | whoever opens a screen picks whatever the environment offers, so two runs of one frame can be shot through different instruments; the run must then name its driver in the return and write it into the handover file, because nothing else records the choice → `references/driving-the-product.md` |
-| `deviceDrivers` | what drives a simulator or a real device here, in the same order | ○ | as above, for a product that ships on a device — and where the project ships on one and declares none, a sweep reaches for the platform's own commands with nothing saying that was a choice |
+| `deviceDrivers` | what drives a simulator or a real device here, in the same order | ○ | whoever opens a screen on a simulator or a handset picks whatever is installed, so two runs of one screen can be shot through different instruments; and where the project ships on a device and declares none, a sweep reaches for the platform's own commands with nothing saying that was a choice → `references/driving-the-product.md` |
 | `captureTakerModel` | the model a `capture-taker` runs on — driving addresses and reading values out is procedure, so it is usually the cheaper one | ○ | both halves run on whatever the harness defaults to. **The split is unaffected** — it is about who judges, not about cost — and what is lost is the saving it also buys |
 | `captureJudgeModel` | the model a `capture-judge` runs on — deciding whether a value is a defect is not procedure | ◐ with `captureTakerModel` | half a split named is not a split named; the config is incomplete and is reported rather than half-applied |
 | `eyesDocuments` | the documents that hand a check to human eyes | ○ | the project's own eyes rules go unread — **declare these two together or neither**, because documents with no vocabulary read every one of them and match nothing |
-| `eyesPhrases` | the words those documents hand it in — `assigns`, `reader`, `moment` | ◐ with `eyesDocuments` | as above: 「nothing to find」 and 「no idea what to look for」 come out as the same zero |
+| `eyesPhrases` | the words those documents hand it in — `assigns`, `reader`, `moment` | ◐ with `eyesDocuments` | the project's own eyes rules go unread — **declare these two together or neither**, because 「nothing to find」 and 「no idea what to look for」 come out as the same zero |
 | `logDir` | one agreed, ignored directory for the builders' run logs | ○ | there is nothing to watch — say so once, and each agent reports its steps in its return |
 | `capturesDir` | one agreed, ignored directory for judging captures | ○ | captures go to the session's scratch space and are forwarded by path; nothing is kept |
 | `costLog` | a machine-readable file the wall-clock span and consumption are appended to, per chapter | ○ | what a chapter cost cannot be recovered afterwards; only what git holds survives |
@@ -1189,7 +1195,7 @@ node "${CLAUDE_PLUGIN_ROOT}/skills/board-to-app/scripts/bta.mjs" check
 | the frames, counts and copy a chapter builds to | the board's own gates (`simplecore:wireframe-boards`) |
 | whatever `frameDeliverables` declares | the project's own gate, one checkable sentence each |
 | the code's own defect types | the project's `auditScript` — every new detection rule goes there, whether that key names one script or the directory a family of them lives in |
-| every key this skill reads has a row in the config table above and a line in the copyable template | `bta.mjs gates` — a self-check rather than a gate, because its subject is this skill's own two documents rather than any project's → `references/checks.md` |
+| every key this skill reads has a row in the config table above and a line in the copyable template, and the cost that row states is the sentence `doctor` prints | `bta.mjs gates` — a self-check rather than a gate, because its subject is this skill's own two documents rather than any project's → `references/checks.md` |
 
 **Held by eyes** — no machine can judge these, and saying so is the point. **Each row names
 whose eyes and at which moment**, for the reason the next paragraph gives:

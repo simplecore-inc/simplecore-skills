@@ -211,12 +211,21 @@ const TABLE_KEY = /^\|\s*`([A-Za-z][A-Za-z0-9]*)`\s*\|/;
  * Where a key is documented and where it is not — the comparison alone, so it can be run against
  * the real files and against doctored ones.
  *
+ * <p>`costs` maps a key to the sentence the config table's last column gives it, and it is held
+ * against `SCHEMA[key].absent` character for character. **The two are one sentence in two files,
+ * which is a shape that only ever drifts one way**: the table is what a person edits and
+ * `doctor` prints the schema, so a cost corrected in the table reaches nobody and the report goes
+ * on saying the old thing. Neither file can read the other, so the equality is what holds them —
+ * and a key whose schema entry carries no cost at all is the same failure arriving earlier,
+ * because `doctor` would print `undefined` beside it.
+ *
  * @param keys every key the schema reads
  * @param inTable the keys the config table gives a row to
  * @param inTemplate the keys the copyable template declares
+ * @param costs key → the config table's 「Absent means」 cell, or an empty map to skip that half
  * @returns one string per key that is missing from one side or named on a side that does not read it
  */
-export function undocumentedKeys(keys, inTable, inTemplate) {
+export function undocumentedKeys(keys, inTable, inTemplate, costs = null) {
   const out = [];
   for (const key of keys) {
     if (!inTable.has(key)) {
@@ -224,6 +233,20 @@ export function undocumentedKeys(keys, inTable, inTemplate) {
     }
     if (!inTemplate.has(key)) {
       out.push(`${key} is read by the schema and is not in assets/board-to-app.json — a project copying the template never meets it`);
+    }
+    if (!costs) continue;
+    const declared = SCHEMA[key]?.absent;
+    if (typeof declared !== 'string' || !declared.trim()) {
+      out.push(`${key} has no \`absent\` in the schema — \`doctor\` prints that string beside the key, so a reader is told a key is missing and never what it costs`);
+      continue;
+    }
+    const written = costs.get(key);
+    if (written === undefined) continue;
+    if (written !== declared) {
+      out.push(
+        `${key}: the config table's 「Absent means」 cell and the schema's \`absent\` are not the same sentence — `
+        + `the table says 「${written}」 and \`doctor\` prints 「${declared}」. One of them is the correction nobody received`
+      );
     }
   }
   for (const key of inTable) {
@@ -257,19 +280,34 @@ export function proveKeysAreDocumented() {
     return [`SKILL.md no longer carries the config table's header row — the reverse read anchors on it, and without it a stale row is invisible`];
   }
   const inTable = new Set();
+  const costs = new Map();
   for (const line of lines.slice(opens + 1)) {
     if (!line.startsWith('|')) break;
     const found = TABLE_KEY.exec(line);
-    if (found) inTable.add(found[1]);
+    if (!found) continue;
+    inTable.add(found[1]);
+    // `| key | what it names | required | absent means |` splits into six, the empty ends
+    // included. A row that splits into anything else has a cell carrying a pipe of its own, and
+    // reading the fourth field of that row would compare half a sentence — so it is left out of
+    // the cost comparison and reported by the row below instead.
+    const cells = line.split('|');
+    if (cells.length === 6) costs.set(found[1], cells[4].trim());
+  }
+  for (const key of inTable) {
+    if (!costs.has(key)) {
+      return [`SKILL.md: the config table's row for \`${key}\` does not split into four cells — a cell carrying a pipe of its own makes the 「Absent means」 column unreadable, and the sentence \`doctor\` prints could not be held against it`];
+    }
   }
 
   const template = JSON.parse(readFileSync(new URL('../../assets/board-to-app.json', import.meta.url), 'utf8'));
   const inTemplate = new Set(Object.keys(template).filter((k) => !k.startsWith('//')));
 
-  const out = undocumentedKeys(Object.keys(SCHEMA), inTable, inTemplate);
-  // The baseline is taken before the probes, so a probe that fails cannot move the yardstick the
-  // next probe is measured against.
-  const found = out.length;
+  const out = undocumentedKeys(Object.keys(SCHEMA), inTable, inTemplate, costs);
+  // Two baselines rather than one. The presence probes are measured without the cost comparison,
+  // so a sentence that has drifted in the table cannot move the yardstick a probe about a missing
+  // row is read against — one real defect would otherwise report as three.
+  const found = undocumentedKeys(Object.keys(SCHEMA), inTable, inTemplate).length;
+  const costBaseline = out.length;
 
   // The comparison proved against the defect it exists to catch: a key the schema reads that
   // neither document names, and a row left behind by a rename.
@@ -281,11 +319,29 @@ export function proveKeysAreDocumented() {
   if (stale.length !== found + 1) {
     out.push('the documentation comparison did not report a table row the schema no longer reads');
   }
+
+  // The cost half, proved the same way. A sentence edited in the table and not in the schema is
+  // the whole failure mode — the table is what a person corrects and `doctor` prints the schema —
+  // and a key whose schema entry carries no cost at all is that failure arriving one step earlier.
+  const keys = Object.keys(SCHEMA);
+  const drifted = new Map(costs);
+  drifted.set(keys[0], `${costs.get(keys[0])}, edited in the table and nowhere else`);
+  if (undocumentedKeys(keys, inTable, inTemplate, drifted).length !== costBaseline + 1) {
+    out.push('the documentation comparison did not report a cost sentence that says one thing in the table and another in the schema');
+  }
+  const kept = SCHEMA[keys[0]].absent;
+  delete SCHEMA[keys[0]].absent;
+  const stripped = undocumentedKeys(keys, inTable, inTemplate, costs).length;
+  SCHEMA[keys[0]].absent = kept;
+  if (stripped !== costBaseline + 1) {
+    out.push('the documentation comparison did not report a key whose schema entry carries no cost — `doctor` would print `undefined` beside it');
+  }
+
   // …and against the fixed form, on its own sets rather than on the real ones: a probe that
   // borrows the live table inherits whatever is already wrong with it, and then reports the
   // repository's state as a failure of the comparison.
-  const keys = Object.keys(SCHEMA);
-  const clean = undocumentedKeys(keys, new Set(keys), new Set(keys));
+  const agreeing = new Map(keys.map((key) => [key, SCHEMA[key].absent]));
+  const clean = undocumentedKeys(keys, new Set(keys), new Set(keys), agreeing);
   if (clean.length) {
     out.push(`the documentation comparison found ${clean.length} things wrong with a set where every key is documented — it fires on everything`);
   }

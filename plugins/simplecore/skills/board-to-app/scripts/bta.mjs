@@ -183,9 +183,11 @@ async function doctor() {
         // An absence somebody promised reads differently from one nobody owes, and an absence
         // whose subject is already on disk is being paid for right now.
         const due = typeof owed.whenExists === 'string' && ctx.exists(ctx.inRoot(owed.whenExists));
+        // A promise that has fallen due is the one absence being PAID for right now, so it is the
+        // one that most needs the cost printed beside it. A promise not yet due costs nothing yet.
         console.log(
           due
-            ? `● ${key.padEnd(18)} not declared — ${owed.whenExists} is already there, so ${owed.chapter} owes it now`
+            ? `● ${key.padEnd(18)} not declared — ${owed.whenExists} is already there, so ${owed.chapter} owes it now: ${spec.absent}`
             : `◐ ${key.padEnd(18)} not declared — ${owed.chapter} declares it when ${owed.whenExists} exists`
         );
         continue;
@@ -193,11 +195,18 @@ async function doctor() {
       // Three kinds of blank, and only one of them is a choice. `required` stops everything;
       // `closing` lets everything run and lets nothing finish, which is the state a project sits in
       // while reading a page of green; the rest is a project saying it does not use that.
-      if (spec.required) console.log(`✖ ${key.padEnd(18)} not declared — required`);
+      //
+      // **Every one of them says what the absence costs.** 「not declared」 on its own tells the
+      // reader the one thing they already know, and the sentence that decides whether to go and
+      // declare it — 「a chapter cannot be regenerated after a board fix」, 「nothing says where a
+      // migration goes, so backend chapters run one at a time」 — sat in a table in `SKILL.md` that
+      // nobody opens while reading a report. It is `SCHEMA[key].absent` now, and the config table
+      // carries the same string under the same proof.
+      if (spec.required) console.log(`✖ ${key.padEnd(18)} not declared — required: ${spec.absent}`);
       else if (spec.closing) {
         closing += 1;
-        console.log(`◑ ${key.padEnd(18)} not declared — a chapter cannot close without it`);
-      } else console.log(`○ ${key.padEnd(18)} not declared`);
+        console.log(`◑ ${key.padEnd(18)} not declared — a chapter cannot close without it: ${spec.absent}`);
+      } else console.log(`○ ${key.padEnd(18)} not declared — ${spec.absent}`);
       continue;
     }
     const full = typeof value === 'string' ? value : JSON.stringify(value);

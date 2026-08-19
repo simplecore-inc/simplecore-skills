@@ -37,6 +37,18 @@ export const CONFIG_NAME = join('.claude', 'board-to-app.json');
  * to end anything — which is what happened. An absence of the second kind is a finding rather than
  * a choice, and a project that genuinely does not want it says so in `deferredKeys` with the
  * chapter that will declare it.
+ *
+ * <p><b>`absent` is what the project pays for not declaring the key, and it lives here because
+ * `doctor` has to print it.</b> A report that says only 「not declared」 tells a reader what they
+ * already know; what decides whether to go and declare it is the sentence in the config table's
+ * last column, and that sentence used to be reachable only by opening `SKILL.md` and finding the
+ * row. It is one sentence in one place now: `doctor` prints this string, the config table's last
+ * column carries the same string, and `proveKeysAreDocumented` fails the run when the two differ —
+ * because two copies of a sentence is one sentence and one copy nobody is reading.
+ *
+ * <p><b>Each sentence stands alone.</b> `doctor` prints one key at a time, in whatever order the
+ * absences fall, so a cost written as 「as above」 lands under a key whose neighbour is declared and
+ * says nothing at all.
  */
 /**
  * The lines a chapter writes that a check has to recognise, by role.
@@ -84,13 +96,13 @@ export const EYES_PHRASE_ROLES = ['assigns', 'reader', 'moment'];
 
 /** The roles `chapterHeadings` maps, so nothing in the skill has to know one project's wording. */
 export const SCHEMA = {
-  boardRoot: { kind: 'dir', required: true },
-  boardManifest: { kind: 'file', required: true },
-  boardRoles: { kind: 'file' },
-  chapterDir: { kind: 'dir', required: true },
-  chapterOverview: { kind: 'file', required: true },
-  chapterGenerator: { kind: 'command' },
-  chapterHeadings: { kind: 'headings' },
+  boardRoot: { kind: 'dir', required: true, absent: 'the build cannot start' },
+  boardManifest: { kind: 'file', required: true, absent: 'the build cannot start' },
+  boardRoles: { kind: 'file', absent: 'personas come from each frame\'s own access notes; a chapter whose personas cannot be derived that way stops and reports' },
+  chapterDir: { kind: 'dir', required: true, absent: 'the build cannot start' },
+  chapterOverview: { kind: 'file', required: true, absent: 'the build cannot start' },
+  chapterGenerator: { kind: 'command', absent: 'a chapter cannot be regenerated after a board fix; report that rather than hand-editing the chapter file' },
+  chapterHeadings: { kind: 'headings', absent: 'a section is named by its role rather than by a heading, and an agent that cannot find one stops and reports' },
   // The words a chapter's own lines begin with, and the word its ledger writes for a closed
   // chapter. Every check over a chapter's evidence has to read these, and reading them from a
   // constant is what kept those checks in one repository.
@@ -99,14 +111,14 @@ export const SCHEMA = {
   // project working in another — it would run, find nothing, and report nothing, which is the exact
   // shape of failure the `closing` grade exists to make visible. Undeclared, everything still runs
   // and no chapter closes, and `doctor` says which key is why.
-  chapterLines: { kind: 'headings', roles: CHAPTER_LINE_ROLES, closing: true },
-  evidenceLabels: { kind: 'headings', roles: EVIDENCE_LABEL_ROLES, bare: true, closing: true },
-  closedStatus: { kind: 'text', closing: true },
+  chapterLines: { kind: 'headings', roles: CHAPTER_LINE_ROLES, closing: true, absent: 'every check that reads a chapter\'s own demands matches nothing, and reports the same zero as a chapter with nothing wrong' },
+  evidenceLabels: { kind: 'headings', roles: EVIDENCE_LABEL_ROLES, bare: true, closing: true, absent: 'every check over a result document reads past every section, so a chapter cannot be shown to have closed on anything' },
+  closedStatus: { kind: 'text', closing: true, absent: 'nothing is closed, and every check over a closed chapter stays silent' },
   // The role an evidence heading names where a persona would stand, for a check a machine proves.
   // Its own key rather than `chapterLines.verdict`: that one is a LINE and this is a WORD, and
   // stripping the markup off the line to guess the word is the kind of derivation that reads fine
   // and comes out wrong — it did, putting 「**판정**…」 into a heading a person has to match.
-  verdictRole: { kind: 'text', closing: true },
+  verdictRole: { kind: 'text', closing: true, absent: 'a foundation chapter\'s sections cannot be matched to the lines they prove' },
   // The line an evidence section carries when a check RAN and this installation cannot decide it.
   // Compiled by the same grammar as `chapterLines`, and its `{text}` is the chapter that repays
   // the debt. Optional: a project that has never met the case declares nothing and the two checks
@@ -114,33 +126,33 @@ export const SCHEMA = {
   // prose, where the chapter it names closes with the debt still outstanding** — which is the
   // failure the key exists to stop, and the reason `references/evidence.md` names the key at the
   // moment the case first comes up rather than in a list of options.
-  deferredLine: { kind: 'text' },
+  deferredLine: { kind: 'text', absent: 'a project that has met that case writes the marker in prose instead, and the chapter it names closes with the debt outstanding and nothing reading it' },
   // Where a chapter's verification result and the captures it cites are written. **Not required to
   // configure and required to close** — a project builds screens without it and cannot finish a
   // chapter, which is the difference `required` alone could not express and `doctor` reported as an
   // ordinary blank. A board-to-app project that had every key green closed one chapter of
   // thirty-six, on five checks out of six, with no evidence folder at all.
-  evidenceDir: { kind: 'dir', closing: true },
-  stateLedger: { kind: 'file', required: true },
-  handoverFile: { kind: 'file', required: true },
-  openItemsFile: { kind: 'file' },
-  openItemsHeading: { kind: 'text', requiredWith: 'openItemsFile' },
-  gates: { kind: 'list', closing: true },
+  evidenceDir: { kind: 'dir', closing: true, absent: 'screens get built and no chapter can be shown to have closed on anything — the grounds die with the session' },
+  stateLedger: { kind: 'file', required: true, absent: 'the build cannot start' },
+  handoverFile: { kind: 'file', required: true, absent: 'the build cannot start' },
+  openItemsFile: { kind: 'file', absent: 'parked lines go in the state ledger' },
+  openItemsHeading: { kind: 'text', requiredWith: 'openItemsFile', absent: 'the config is incomplete — report it rather than choosing a heading' },
+  gates: { kind: 'list', closing: true, absent: 'nothing mechanical holds a chapter closed; say so once per session and close on the persona runs alone' },
   // Whether the build may commit and push without asking. **No default beyond `ask`**, and `ask`
   // is what an undeclared key means: a skill that assumed permission would take it in every
   // repository that installed it, and the one thing a build must not do on its own initiative is
   // decide how somebody else's history is written. The three words are `commitPolicyGate`'s, not
   // this schema's — a value outside them is a decision the build cannot follow, which is a finding
   // rather than a type error.
-  commitPolicy: { kind: 'text' },
-  auditScript: { kind: 'path' },
-  migrationDir: { kind: 'dir', many: true },
-  frameDeliverables: { kind: 'list' },
-  factSources: { kind: 'list' },
-  storyDocument: { kind: 'file' },
-  locales: { kind: 'list' },
-  pseudoLocale: { kind: 'text' },
-  captureRoute: { kind: 'text' },
+  commitPolicy: { kind: 'text', absent: 'whatever the repository\'s own rules say; with neither, the build asks before every commit, cannot run unattended, and the two gates that read commits see nothing until somebody is present → *Whether the build may commit at all*' },
+  auditScript: { kind: 'path', absent: 'a new rule has nowhere to land, so the project cannot ratchet — report the rule that should have been written rather than inventing a home for it' },
+  migrationDir: { kind: 'dir', many: true, absent: 'nothing says where a migration goes or how two of them collide, so backend chapters run one at a time' },
+  frameDeliverables: { kind: 'list', absent: 'a screen owes nothing beyond working code' },
+  factSources: { kind: 'list', absent: 'a value the board draws is built as drawn and left marked, never asserted' },
+  storyDocument: { kind: 'file', absent: 'sample data has no single source, and the screens disagree with each other silently → `references/scenario.md`' },
+  locales: { kind: 'list', absent: 'the languages come from the project\'s own copy catalogue; where that cannot be read, report it rather than judging in one language' },
+  pseudoLocale: { kind: 'text', absent: 'overflow is judged in the longest real language only, which covers less → `references/judging-frames.md`' },
+  captureRoute: { kind: 'text', absent: 'captures are driven by navigation, which cannot reach the states that matter; report it as owed rather than hand-driving the board' },
   // What drives a browser, and what drives a device, in the order the run takes them. A list
   // rather than one name, because the choice is per task: a driver that cannot express the task is
   // stepped past, and the run says which one it ended up on.
@@ -148,8 +160,8 @@ export const SCHEMA = {
   // **Undeclared is not a default order.** No name belongs in this skill — the tools available
   // differ per machine and per user — so an absence means the run picks and then has to record
   // what it picked, which `references/driving-the-product.md` says how to do.
-  browserDrivers: { kind: 'list' },
-  deviceDrivers: { kind: 'list' },
+  browserDrivers: { kind: 'list', absent: 'whoever opens a screen picks whatever the environment offers, so two runs of one frame can be shot through different instruments; the run must then name its driver in the return and write it into the handover file, because nothing else records the choice → `references/driving-the-product.md`' },
+  deviceDrivers: { kind: 'list', absent: 'whoever opens a screen on a simulator or a handset picks whatever is installed, so two runs of one screen can be shot through different instruments; and where the project ships on a device and declares none, a sweep reaches for the platform\'s own commands with nothing saying that was a choice → `references/driving-the-product.md`' },
   // Which model each half of the capture split runs on. **The split itself is not configurable** —
   // whoever shot a picture cannot judge it — and these two say only where the work is procedure
   // and where it is judgement.
@@ -157,8 +169,8 @@ export const SCHEMA = {
   // Each requires the other: half a split named is a project that has thought about one side, and
   // applying it to one agent while the other inherits whatever the harness gives is the arrangement
   // silently costing more on the half that was supposed to be cheap.
-  captureTakerModel: { kind: 'text', requiredWith: 'captureJudgeModel' },
-  captureJudgeModel: { kind: 'text', requiredWith: 'captureTakerModel' },
+  captureTakerModel: { kind: 'text', requiredWith: 'captureJudgeModel', absent: 'both halves run on whatever the harness defaults to. **The split is unaffected** — it is about who judges, not about cost — and what is lost is the saving it also buys' },
+  captureJudgeModel: { kind: 'text', requiredWith: 'captureTakerModel', absent: 'half a split named is not a split named; the config is incomplete and is reported rather than half-applied' },
   // The documents that hand checks to human eyes, and the words they hand them in.
   //
   // **Not `closing`** — a project that declares NEITHER closes chapters perfectly well and simply
@@ -169,15 +181,15 @@ export const SCHEMA = {
   // nothing, and «nothing to find» and «no idea what to look for» come out as the same zero. The
   // absence of the whole subject is said by declaring neither, which is a statement; half of it
   // is not a statement, it is a gap that reports as green.
-  eyesDocuments: { kind: 'list', requiredWith: 'eyesPhrases' },
-  eyesPhrases: { kind: 'phrases', roles: EYES_PHRASE_ROLES, requiredWith: 'eyesDocuments' },
-  logDir: { kind: 'outdir' },
-  capturesDir: { kind: 'outdir' },
-  costLog: { kind: 'outfile' },
-  narrativePhrases: { kind: 'list' },
-  projectGates: { kind: 'file' },
-  disabledGates: { kind: 'exceptions' },
-  deferredKeys: { kind: 'deferrals' },
+  eyesDocuments: { kind: 'list', requiredWith: 'eyesPhrases', absent: 'the project\'s own eyes rules go unread — **declare these two together or neither**, because documents with no vocabulary read every one of them and match nothing' },
+  eyesPhrases: { kind: 'phrases', roles: EYES_PHRASE_ROLES, requiredWith: 'eyesDocuments', absent: 'the project\'s own eyes rules go unread — **declare these two together or neither**, because 「nothing to find」 and 「no idea what to look for」 come out as the same zero' },
+  logDir: { kind: 'outdir', absent: 'there is nothing to watch — say so once, and each agent reports its steps in its return' },
+  capturesDir: { kind: 'outdir', absent: 'captures go to the session\'s scratch space and are forwarded by path; nothing is kept' },
+  costLog: { kind: 'outfile', absent: 'what a chapter cost cannot be recovered afterwards; only what git holds survives' },
+  narrativePhrases: { kind: 'list', absent: 'the built-in list stands alone' },
+  projectGates: { kind: 'file', absent: 'only the generic gates run; anything true of this project alone is held by nobody' },
+  disabledGates: { kind: 'exceptions', absent: 'every generic gate runs — which is the default, and a gate is never turned off silently' },
+  deferredKeys: { kind: 'deferrals', absent: 'an absence waiting on a chapter reads exactly like one the project decided against, and the cost in that key\'s row is paid silently from the day the subject appears' },
 };
 
 export const HEADING_ROLES = [
