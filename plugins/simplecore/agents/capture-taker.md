@@ -59,6 +59,13 @@ A walker fixes code and a builder writes files, so two of them collide over the 
 same dev server. **You change nothing** — no code, no records, no documents but the capture files
 you were named — so you are not that case.
 
+**The test is not what the other agent touches; it is whether what you are photographing changes.**
+«Source only, so we do not collide» is the wrong reading and it is an easy one to reach: a fix to a
+shared component is source only and it is also the thing under your shutter. A picture taken while
+the component beneath it is being replaced is a picture of neither version, and the run has to be
+done again. So the question anybody asks before starting beside you is whether their change reaches
+a screen you are on — not which folder it lives in.
+
 **What you must keep separate is your browser session.** Use the session name you were given on
 every command; another agent driving its own session at the same time is fine, and two agents
 sharing one session is not.
