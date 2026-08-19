@@ -540,6 +540,7 @@ as the build runs, since whether another agent is mid-commit is not observable:
 | --- | --- |
 | **`git reset` and `git commit --amend` are forbidden** | a commit landing between your commands means `HEAD~1` is not the commit you wrote — a reset throws away whatever landed on top, and an amend folds the other agent's work into yours under your message |
 | **stage by explicit path — `git commit --only <paths>`, never `git add -A`** | `-A` sweeps whatever the other agent has left in the tree into your commit, and says nothing |
+| **`git add` a file you created before committing the path it sits under** | `--only <directory>` carries what git tracks and drops what it does not, silently — so a commit naming the directory lands without the new file in it. One change put twenty files outside the five commits that imported them |
 | **read `git rev-parse HEAD` before and after each commit** | expect it to have moved — that is the normal state during a wave, and it is the state in which a rewrite destroys work |
 
 **A destroyed commit is in the reflog.** Read it back with `git reflog`, re-commit it

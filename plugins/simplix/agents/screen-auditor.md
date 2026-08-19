@@ -39,6 +39,13 @@ project, stop that process and start a fresh one.
 
 Say in your report what you left running.
 
+**Close your own browser sessions by name, never all of them.** A browser driver's
+「close everything」 is not scoped to you: other agents hold sessions on the same daemon, and
+closing theirs takes the signed-in state they were mid-audit in — they cannot tell it from a
+crash, and nothing tells them who did it. This has happened: one sweep ended two other agents'
+sessions in a single command. Name the session you opened; if you genuinely do not know its
+name, leave it and say so in your report rather than reaching for the flag that clears the lot.
+
 ## How you drive
 
 1. **Browser, not API.** Every action a persona could take is taken in the browser with the

@@ -357,6 +357,20 @@ hunks out of shared files.
 Stage explicit paths. Check what is dirty before committing, and leave alone what
 you did not touch.
 
+**`--only <directory>` stages what git already tracks and drops what it does not,
+in silence.** A new file under that directory is untracked, so a commit naming the
+directory does not carry it — the commit lands, the tree is clean-looking, and the
+change is half in history. It bites hardest on exactly the work that creates files:
+a new module, a package being split out, a reader and its fixture. Measured on one
+such change, **five commits imported twenty files that were in none of them**, and
+what found it was a gate reading whether an import's target exists in the commit
+that added it, not anything a person noticed.
+
+So before every commit by path, **read `git status --short` for `??` under the paths
+you are about to name**, and `git add` those first. This is the one case where
+adding before committing is right — the file is yours by construction, since it did
+not exist until you made it.
+
 **Stage by path, and commit in the same call.** A commit looks at the tree rather
 than at the files anybody touched, so stage the paths the brief named and nothing
 else, and run `git add <paths> && git commit` in one call, **after** verification
