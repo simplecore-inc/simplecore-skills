@@ -825,6 +825,64 @@ export function AssignDialog() { return null; }`,
     },
   },
   {
+    id: "chip-filter-equality-field",
+    invariant: "#15 / audit: chip filters",
+    level: "error",
+    desc: "A `ChipFilter`'s field is declared with an equality operator. A chip row narrows to several values at once and writes an ARRAY under that key, so the operator has to be the membership one — `status.in`, never `status.equals`. Under `.equals` the server is handed a comma-joined string it matches nothing against, or refuses outright, and neither side of the mistake can see the other: the caller declares the key as its own string constant and nothing ever compares it with what the component writes, so both halves type-check green while the row silently stops narrowing",
+    appliesTo: isTsx,
+    // Matched at the constant's declaration rather than at `field={...}`, because every call site
+    // passes a constant and the string is nowhere near the tag. The filter is what keeps this from
+    // firing on the many other filter keys a screen declares: only a constant this file actually
+    // hands to a ChipFilter is a chip's field.
+    check: (c) =>
+      lineHits(
+        c,
+        /^\s*const\s+[A-Za-z_$][\w$]*\s*=\s*["'][^"']+\.equals["']\s*;/,
+        (line, lines) => {
+          const name = line.match(/const\s+([A-Za-z_$][\w$]*)/)?.[1];
+          if (!name) return false;
+          const whole = lines.join("\n");
+          return whole.includes("<ChipFilter") && whole.includes(`field={${name}}`);
+        },
+      ),
+    samples: {
+      file: "modules/<domain>/src/pages/<entity>/crud-page.tsx",
+      broken: `const SCOPE_FIELD = "orgScope.equals";
+
+export function Page() {
+  const filters = useFilterBarState();
+  return <ChipFilter field={SCOPE_FIELD} state={filters} options={options} />;
+}`,
+      fixed: `const SCOPE_FIELD = "orgScope.in";
+
+export function Page() {
+  const filters = useFilterBarState();
+  return <ChipFilter field={SCOPE_FIELD} state={filters} options={options} />;
+}`,
+      miss: [
+        {
+          note: "an equality key this file declares for something other than a chip row is right as it is",
+          source: `const SITE_FIELD = "siteId.equals";
+const SCOPE_FIELD = "orgScope.in";
+
+export function Page() {
+  const list = useCrudList(adaptForcedList(useListThings, { [SITE_FIELD]: siteId }));
+  return <ChipFilter field={SCOPE_FIELD} state={list.filters} options={options} />;
+}`,
+        },
+        {
+          note: "a screen with no chip row at all",
+          source: `const SCOPE_FIELD = "orgScope.equals";
+
+export function Page() {
+  const list = useCrudList(adaptForcedList(useListThings, { [SCOPE_FIELD]: scope }));
+  return <CrudList list={list} />;
+}`,
+        },
+      ],
+    },
+  },
+  {
     id: "hand-rolled-detail-footer",
     invariant: "#31 / audit: page chrome",
     level: "error",
