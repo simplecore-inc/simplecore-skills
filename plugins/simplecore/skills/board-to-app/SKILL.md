@@ -804,6 +804,8 @@ Touches: W11 W12 W17
 Census: the shared confirm dialog — 26 through, 2 outside: DocumentPurgeDialog PermitRevokeDialog
 ```
 
+**The whole line is one line.** The gate reads the trailer line by line and takes the names after the colon from the same line as the second count, so a list wrapped onto the next line reads as no names at all and the commit is refused for a census that is in fact complete. Two agents met this from different directions on one afternoon: the fix each reached for was to shorten the census, and what was wrong was the wrapping. Write the names on the count's line however long it runs.
+
 `censusCountsBothSides` reads that line wherever one appears. Whether a change owed a census at
 all, and whether the sample was drawn from the right place, are readings — the second table below
 names whose and when.

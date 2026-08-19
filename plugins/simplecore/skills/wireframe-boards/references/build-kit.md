@@ -174,6 +174,21 @@ a new one is not a defect. Failing on residue teaches whoever meets it to add an
 without reading it, which is the same silence wearing a different face. What must be impossible is
 a helper going unmentioned.
 
+**A reader that exists and does not reach is the same silence as one that is absent.** The
+partition above says whether a helper is read; it says nothing about whether the reader that names
+it ever comes back with anything. A reader keyed to three of a helper's four kinds runs on every
+frame, matches the helper by name, returns empty on the fourth, and is counted as a reader the
+whole time — 544 frames of 654 reached, and the 110 that drew a message whose title nothing
+demanded look exactly like the 544 in every count that does not compare the two. **So the census
+reports reach beside membership**: frames whose field came back non-empty over frames that draw the
+helper, counted only over the frames that draw it, because a reader is not answerable for a frame
+that never called it.
+
+**And the module list a census reads from is checked rather than assumed.** A frame taking a named
+import from a fourth module is outside the whole partition, and the count of those is printed even
+when it is zero — a population defined by three modules is a claim about the board, not a fact
+about it.
+
 **The reader lives with whoever holds the demands, never in the kit** — § *Three places a gate can
 live, and the test that decides* settles which of the three. The kit knows what it draws; only the
 reader knows what it meant to ask about.
