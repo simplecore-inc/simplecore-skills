@@ -53,7 +53,7 @@
 
   "gates": [],
 
-  "//commitPolicy": "Whether this build may commit and push without asking, answered once so it is never asked again: `ask` stops before each commit, `commit` commits as the work lands and leaves pushing to the user, `commitAndPush` does both. Delete the line and the build asks — which is safe and costs it the ability to run unattended, since the two gates that read commits see nothing until somebody is present. This settles PERMISSION only; what a commit message says beyond the two trailers is this repository's own rule.",
+  "//commitPolicy": "Whether this build may commit and push without asking, answered once so it is never asked again: `commit` commits as the work lands and leaves pushing to the user, `commitAndPush` does both, `ask` stops before each commit. It does NOT override a repository whose own rules already answer this — it is for the repository that says nothing, and for a project that would rather have the answer in one machine-readable place. Delete the line and, with the repository silent too, the build asks: safe, and it costs the build the ability to run unattended, since the two gates that read commits see nothing until somebody is present. This settles PERMISSION only; what a commit message says beyond the two trailers is this repository's own rule.",
   "commitPolicy": "ask",
 
   "auditScript": "<where a new detection rule lands: one script, or the directory a family of them lives in>",

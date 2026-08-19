@@ -163,7 +163,7 @@ being unable to finish anything, which is what `bta.mjs doctor` prints it apart 
 | `openItemsFile` | where a parked decision is written | ○ | parked lines go in the state ledger |
 | `openItemsHeading` | the heading those lines live under — the heading's **text only**, with no `#` markers on it | ◐ with `openItemsFile` | the config is incomplete — report it rather than choosing a heading |
 | `gates` | the commands a chapter must pass before it closes, each read by its exit status — `bta.mjs check` among them | ◑ | nothing mechanical holds a chapter closed; say so once per session and close on the persona runs alone |
-| `commitPolicy` | whether the build may commit and push without asking — `ask`, `commit`, or `commitAndPush` | ○ | `ask`: the build stops before every commit, so it cannot run unattended and the two gates that read commits see nothing until somebody is present → *Whether the build may commit at all* |
+| `commitPolicy` | whether the build may commit and push without asking — `commit`, `commitAndPush`, or `ask`. It does not override a repository whose own rules already say | ○ | whatever the repository's own rules say; with neither, the build asks before every commit, cannot run unattended, and the two gates that read commits see nothing until somebody is present → *Whether the build may commit at all* |
 | `auditScript` | where a mechanically visible defect becomes a detection rule — one script, or the directory a family of them lives in | ○ | a new rule has nowhere to land, so the project cannot ratchet — report the rule that should have been written rather than inventing a home for it |
 | `migrationDir` | where migrations live, and with it how two agents adding one at the same time avoid colliding — one directory, or several where the database has more than one lineage | ○ | nothing says where a migration goes or how two of them collide, so backend chapters run one at a time |
 | `frameDeliverables` | what each screen owes beyond working code, one checkable sentence each | ○ | a screen owes nothing beyond working code |
@@ -743,13 +743,19 @@ carried. **None of that reaches a build that stops to ask for permission at ever
 whether it may commit is genuinely not this skill's to decide: it is a standing decision about how
 the repository is worked, and it differs per project and per user.
 
-So the project states it once, in `commitPolicy`, and the build never raises it again:
+So it is settled once and the build never raises it again:
 
 | `commitPolicy` | The build |
 | --- | --- |
-| `ask` — **and this is what an undeclared key means** | stops before each commit and asks. Safe, and it costs the build its ability to run unattended: a chapter cannot close without somebody present, and the two gates that read commits see nothing until they land |
 | `commit` | commits as the work lands, without asking. Pushing still waits for the user |
 | `commitAndPush` | commits as the work lands and pushes, without asking |
+| `ask` | stops before each commit and asks. Safe, and it costs the build its ability to run unattended: a chapter cannot close without somebody present, and the two gates that read commits see nothing until they land |
+
+**A repository whose own rules already answer this has answered it**, and the key does not override
+them — it is for the repository that says nothing, and for a project that would rather have the
+answer in one machine-readable place than in a paragraph somebody has to find. **With neither, the
+build asks**, because a skill installed in somebody else's repository must not take a standing
+permission nobody granted.
 
 **The policy settles permission and nothing else.** What a commit message says beyond the two
 trailers — the subject convention, whose name is on it, what must not appear in it — is the
@@ -1105,9 +1111,9 @@ handoff composed once the context is nearly spent is the one that does not get w
 **Stop and ask only for these four**: a decision that changes what the product is, a term whose
 translation is genuinely undecided, a value no source can settle, and **moving a project off
 another build arrangement onto this one** — plus anything the repository's own rules reserve for
-the user. **Committing and pushing are not a fifth**: the project answers that once, in
-`commitPolicy`, and the build then follows the answer without raising it again → *The dependency
-tree the history leaves behind*. **Everything else has a written answer here**, and a session that
+the user. **Committing and pushing are not a fifth**: it is answered once — by the repository's own
+rules where they say, and by `commitPolicy` where they do not — and the build follows the answer
+without raising it again → *The dependency tree the history leaves behind*. **Everything else has a written answer here**, and a session that
 opens the ledger, reads the first open chapter and dispatches has already answered "what next".
 
 ### Design the answer; scope is not a reason to take the worse one
