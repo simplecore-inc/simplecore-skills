@@ -108,10 +108,16 @@ export function makePartials({ components, roles = null, lang = 'en' }) {
     // `[02]A-20` — the visual position first, so a reader scanning the board can see where they
     // are, then the permanent id, which is what they were actually given. The file name is NOT
     // shown: the id IS the number in the file name, so `A-20` already locates `a-20-*.mjs`.
+    // A third axis, where the board declares one: what the split's module knows about this frame
+    // beyond which file it went in. It is not what the board is arranged by, so it appears only
+    // here, beside the id — and beside the id is where it has to be, because the reader it is for
+    // meets a frame one at a time.
+    const ax = s.axisTag ?? null;
     const label =
       `<span class="fseq">[${seq}]</span><span class="fnum">${id}</span>` +
       `${ph ? `<span class="fph">${ph.tag}</span>` : ''}` +
       `${ft ? `<span class="fft" title="${ft.key} — ${ft.why}">${ft.tag}</span>` : ''}` +
+      `${ax ? `<span class="fax" title="${ax.label}">${ax.mark}</span>` : ''}` +
       `${s.route ? s.route + ' — ' : ''}${s.screen}${s.state ? ' — ' + s.state : ''}`;
     return `${arrow}    <article class="${classes.join(' ')}" id="${anchor}">${band}
       <div class="device">
@@ -164,8 +170,14 @@ export function makePartials({ components, roles = null, lang = 'en' }) {
       `${sec.featureTag ? `<span class="sb-ft">${sec.featureTag}</span>` : ''}` +
       `<span class="sb-n">${sec.screens.length}</span></div>\n` +
       sec.screens.map((sc) =>
+        // The third axis rides the id line rather than the label line: it belongs to the frame's
+        // identity rather than to what the frame is, and it is short. It is inside the entry's
+        // text, so the filter reaches it — typing the mark narrows the index to that axis, which
+        // is the only way a reader can see one of its values gathered on a board arranged by
+        // something else.
         `      <a href="${href(sc.doc, sc.anchor)}" title="${sc.id} · ${sc.label}">` +
-        `<span class="num"><span class="seq">[${sc.seq}]</span>${sc.id}</span>` +
+        `<span class="num"><span class="seq">[${sc.seq}]</span>${sc.id}`
+        + `${sc.axisTag ? `<span class="sb-ax" title="${sc.axisTag.label}">${sc.axisTag.mark}</span>` : ''}</span>` +
         `<span class="lbl">${sc.phaseTag ? `<span class="sb-ph">${sc.phaseTag}</span>` : ''}`
         + `${sc.featureTag ? `<span class="sb-ft">${sc.featureTag}</span>` : ''}${sc.label}</span></a>`
       ).join('\n') +

@@ -13,6 +13,7 @@
 //     module: '../scripts/<placer>.mjs',   // the kit imports it; no placement is restated here
 //     part:  { call: '<export>' },                       // frame id → a part key
 //     group: { call: '<export>', key: '…', label: '…' }, // frame id → the group inside one file
+//     tag:   { call: '<export>', mark: '…', label: '…' },// frame id → a chip on the frame itself
 //     parts: [{ key: <key>, file: '<name>.html', nav: '<what a reader calls it>' }, …],
 //     volumes: [{ parts: [<key>, …], name: '<file-name marker>', title: '<cover>' }, …],
 //   }
@@ -81,6 +82,7 @@ export async function loadSplit(boardDir, decl) {
 
   const partFn = callable(mod, decl.part, 'part', decl.module);
   const groupFn = decl.group ? callable(mod, decl.group, 'group', decl.module) : null;
+  const tagFn = decl.tag ? callable(mod, decl.tag, 'tag', decl.module) : null;
 
   const entry = { file: decl.entry?.file ?? DEFAULT_ENTRY, nav: decl.entry?.nav ?? null };
   const parts = decl.parts.map((p) => {
@@ -143,6 +145,32 @@ export async function loadSplit(boardDir, decl) {
           // sitting first reads as a mistake in the board rather than as an ordering it never
           // claimed.
           order: decl.group.order ? String(got[decl.group.order] ?? '') : null,
+        };
+      }
+      : null,
+    /**
+     * A chip the frame itself carries, or null.
+     *
+     * <p><b>An axis a reader does not navigate by is still an axis somebody needs.</b> Splitting
+     * the files by one answer and grouping inside them by another leaves a third — the one the
+     * placing module knows and neither of the two shows — with nowhere to appear, and the reader
+     * who needs it is the one building the screen rather than the one looking for it. A chip on
+     * the frame is where it goes: beside the id, in the index and on the frame label both, the
+     * way every other per-frame axis already rides.
+     *
+     * <p>`mark` is the chip's text and `label` is what a reader gets on hover — short enough to
+     * sit beside an id, and named enough to mean something when it does not.
+     */
+    tagOf: tagFn
+      ? (frameId) => {
+        const got = tagFn(frameId);
+        if (got === null || got === undefined) return null;
+        if (typeof got !== 'object') return { mark: String(got), label: String(got) };
+        const mark = decl.tag.mark ? got[decl.tag.mark] : got;
+        if (mark === null || mark === undefined) return null;
+        return {
+          mark: String(mark),
+          label: String(decl.tag.label ? got[decl.tag.label] ?? mark : mark),
         };
       }
       : null,

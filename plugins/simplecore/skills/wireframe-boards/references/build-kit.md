@@ -154,6 +154,7 @@ split: {
   module: '../scripts/<placer>.mjs',       // the kit imports it; no placement is restated here
   part:  { call: '<export>' },             // frame id → a part key
   group: { call: '<export>', key: '<field>', label: '<field>', mark: '<field>', order: '<field>' },
+  tag:   { call: '<export>', mark: '<field>', label: '<field>' },
   entry: { file: 'board.html', nav: '<what a reader calls the whole board>' },
   parts: [{ key: <key>, file: '<name>.html', nav: '<what a reader calls this part>' }, …],
   volumes: [{ parts: [<key>, …], name: '<marker in the PDF file name>', title: '<cover>' }, …],
@@ -164,12 +165,20 @@ split: {
   part has to hold something — `splitPlacementGate` refuses a build where either fails, because
   an unplaced frame lands somewhere by fallback and an empty part ships a file promising screens
   that are not in it.
-- **`group` decides the sections INSIDE one file**, and is optional. The board's own lettered
-  clusters fragment once the frames are split across files — a cluster's title then names a
-  cluster the file holds only part of — so a split board groups by whatever comes away together
-  instead. With no `group`, the clusters are kept and filtered. The page and the index are built
-  from one ordered list, so they can never disagree; `order` names the field that sorts the
-  groups, and without it they stand in the order their first frame is drawn.
+- **`group` decides the sections INSIDE one file**, and is optional — most boards want the
+  default. **A reader navigates by what a screen is ABOUT**, and the board's own lettered clusters
+  already are that axis, so with no `group` they are kept, filtered, and left in the manifest's
+  order. What a split does to them is cut some in two, and the answer to that is the count: a
+  section holding part of its whole says so beside its title, so nobody takes a fragment for the
+  lot. Declare `group` only where a board's clusters are genuinely not what a reader looks by;
+  the page and the index are built from one ordered list either way, so they can never disagree,
+  and `order` names the field that sorts them.
+- **`tag` puts an axis on the frame instead of arranging anything by it**, and is optional. A
+  board splitting by one answer and grouping by another leaves a third that the placing module
+  knows and neither shows — often the one a BUILDER needs rather than a reader. It rides beside
+  the id, in the index and on the frame label both, the way the phase and feature chips already
+  do; the index filter reaches it, so typing its mark gathers that axis's frames on a board
+  arranged by something else.
 - **The entry page draws no frame.** It carries the nav row, the opening overview, a card per
   part, and — as its sidebar, where the filter is — the index of every frame on the board, each
   row linking `<file>#<anchor>`. That is what keeps 「one search finds any frame」 true.

@@ -38,6 +38,8 @@ const en = {
   /** A section's caption. Frames and screens differ only where a responsive pair exists. */
   frames: (n) => `${n} frame${n === 1 ? '' : 's'}`,
   screensAndFrames: (s, f) => `${s} screen${s === 1 ? '' : 's'} · ${f} frame${f === 1 ? '' : 's'}`,
+  /** A section a split has cut: what is in this file, and what the section holds in all. */
+  framesOfWhole: (n, whole) => `${n} of ${whole} frames`,
   /** The day every dated frame is drawn against — `config.today`, said in the header. */
   asOf: (day) => `as of ${day}`,
   /** The three places outside the frame list a reader goes to. */
@@ -67,6 +69,7 @@ const ko = {
   asOf: (day) => `기준일 ${day}`,
   frames: (n) => `프레임 ${n}개`,
   screensAndFrames: (s, f) => `화면 ${s}개 · 프레임 ${f}개`,
+  framesOfWhole: (n, whole) => `프레임 ${n}개 · 전체 ${whole}개 가운데`,
   jumpIa: '정보 구조',
   jumpUser: '사용자 구성',
   jumpReadme: '읽기 규약',

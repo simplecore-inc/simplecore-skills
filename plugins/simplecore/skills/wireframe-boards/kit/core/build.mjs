@@ -94,6 +94,9 @@ export async function assembleBoard(boardDir) {
         // the group heading already carries what the group declared.
         phaseTag: e.phase ? config.phases[e.phase].tag : '',
         featureTag: e.feature ? config.features[e.feature].tag : '',
+        // A third axis the split's module knows, shown per frame rather than used to arrange
+        // anything. Null on a board that declares no `tag`.
+        axisTag: split?.tagOf ? split.tagOf(e.id) : null,
       });
     }
   }
@@ -117,7 +120,7 @@ export async function assembleBoard(boardDir) {
     for (const e of g.entries) {
       const seq = seqOf.get(e.id);
       frames.push(frame(
-        { ...e.mod, notes: resolveRefs(e.mod.notes), phase: e.phase, feature: e.feature },
+        { ...e.mod, notes: resolveRefs(e.mod.notes), phase: e.phase, feature: e.feature, axisTag: e.axisTag },
         e.id, seq, e.file, e.anchor,
       ));
       // One sidebar entry per screen: a reader looking up T-01 wants the screen, not each half.
@@ -125,16 +128,22 @@ export async function assembleBoard(boardDir) {
         seen.add(e.id);
         scList.push({
           id: e.id, seq, label: e.label, file: e.file, anchor: e.anchor,
-          phaseTag: e.phaseTag, featureTag: e.featureTag,
+          phaseTag: e.phaseTag, featureTag: e.featureTag, axisTag: e.axisTag,
         });
       }
     }
     const screenCount = seqOf.size;
     const frameCount = g.entries.length;
+    // A section a split has cut in two is still a section, and its heading is still the honest
+    // name of what is under it — but the count beside that heading would read as the section's
+    // size when it is the size of the part in view. Naming the whole is what stops a reader
+    // taking a fragment for the lot; nothing else about the section changes.
     const caption = g.count
-      || (screenCount === frameCount
-        ? ctx.text.frames(frameCount)
-        : ctx.text.screensAndFrames(screenCount, frameCount));
+      || (g.whole && g.whole > frameCount
+        ? ctx.text.framesOfWhole(frameCount, g.whole)
+        : screenCount === frameCount
+          ? ctx.text.frames(frameCount)
+          : ctx.text.screensAndFrames(screenCount, frameCount));
     const block =
       `<section class="flow" id="flow-${g.id}">
   <div class="flow-title">${g.letter ? `${g.letter}. ` : ''}${g.title} ` +
@@ -162,6 +171,8 @@ ${frames.join('\n')}
       out.push({
         letter: sec.letter, title: sec.title, id: sec.letter.toLowerCase(), entries: mine,
         count: sec.count,
+        // What the section holds on the whole board, so a file holding part of it can say so.
+        whole: sec.entries.length,
         phaseTag: sec.phase ? config.phases[sec.phase].tag : '',
         featureTag: sec.feature ? config.features[sec.feature].tag : '',
       });
