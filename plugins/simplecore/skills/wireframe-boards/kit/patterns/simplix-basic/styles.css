@@ -244,8 +244,41 @@
   .ph-title.sm { font-size: 15px; font-weight: 600; color: var(--muted); }
   .ph-desc { font-size: 12px; color: var(--muted); margin-top: 2px; }
   .ph-center { margin: 0 auto; }
-  .pagehead .actions { margin-left: auto; display: flex; gap: 8px; }
+  .pagehead .actions { margin-left: auto; display: flex; gap: 8px; align-items: center; }
   .pagehead .btn { padding: 7px 12px; font-size: 13px; }
+
+  /* The way back to a notice card the reader closed. It leads the action area and stays there
+     whether or not the cards are showing, because nothing else on the page reaches them. */
+  .pagehead { position: relative; }
+  .noticons { display: flex; gap: 4px; margin-right: 4px; }
+  .noticons .nic { display: flex; align-items: center; gap: 3px; height: 26px; padding: 0 7px;
+                   border: 1px solid var(--line); border-radius: 6px; background: var(--screen);
+                   font-size: 11px; color: var(--muted); }
+  .noticons .nic i { font-style: normal; font: 700 11px/1 var(--mono); }
+  .noticons .nic .n { font-family: var(--mono); }
+  .noticons .nic.warn { border-color: var(--accent); color: var(--accent); }
+  .noticons .nic.open { background: var(--fill-deep); border-color: var(--line-strong); }
+  /* A dot rather than a second number: what is hidden is a fact about the control, not a count
+     the reader acts on. */
+  .noticons .nic.hidden-some::after { content: ""; width: 5px; height: 5px; border-radius: 50%;
+                                      background: var(--accent); }
+  .noticedrop { position: absolute; right: 0; top: 100%; z-index: 6; width: 380px;
+                border: 1px solid var(--line-strong); border-radius: 8px; background: var(--screen);
+                box-shadow: 0 6px 18px rgba(0,0,0,.10); }
+  .noticedrop .nd-head { padding: 9px 12px; border-bottom: 1px solid var(--line);
+                         font-size: 12px; font-weight: 700; color: var(--ink); }
+  .noticedrop .nd-item { display: flex; align-items: center; gap: 10px; padding: 9px 12px;
+                         border-bottom: 1px solid var(--line); }
+  .noticedrop .nd-item:last-child { border-bottom: 0; }
+  .noticedrop .nd-item.off .nd-title { color: var(--muted); }
+  .noticedrop .nd-body { flex: 1; min-width: 0; }
+  .noticedrop .nd-title { font-size: 12.5px; color: var(--ink); }
+  .noticedrop .nd-hint { font-size: 11px; color: var(--muted); }
+  .noticedrop .nd-act { flex: none; display: flex; gap: 6px; align-items: center; }
+  .noticedrop .nd-act .btn { padding: 4px 9px; font-size: 11px; }
+  /* A status card is listed so the count adds up, and marked so nobody looks for its close. */
+  .noticedrop .nd-fixed { padding: 3px 7px; border: 1px solid var(--line); border-radius: 4px;
+                          font-size: 10px; color: var(--muted); }
 
 
 
@@ -312,7 +345,12 @@
   /* The console default: the list alone, or the list beside the record's panel. The two are
      separated by a divider the reader drags, so the panel width below is a starting point. */
   .listdetail { flex: 1; display: flex; min-height: 0; padding: 0; gap: 0; }
-  .ld-list { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 14px; padding-top: 0; }
+  /* The gutter under the list is the SAME whether or not the panel is open. Opening a record
+     must not add or remove space beneath the rows: the list then reads as having moved, and the
+     reader goes hunting for the line they were on. So the gutter belongs to the list column and
+     is stated once, rather than being whatever the taller of the two columns happens to leave. */
+  .ld-list { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 14px;
+             padding-top: 0; padding-bottom: 16px; }
   .ld-divider { flex: 0 0 17px; align-self: stretch; position: relative; }
   .ld-divider::before { content: ""; position: absolute; left: 8px; top: 12px; bottom: 0; border-left: 1px solid var(--line); }
   .ld-divider::after { content: ""; position: absolute; left: 5px; top: 50%; width: 7px; height: 34px;
@@ -412,7 +450,10 @@
                    border: 1px solid var(--line); border-radius: 6px; background: var(--screen);
                    font-size: 12px; color: var(--faint); }
   .ffield .input.sel .car { margin-left: auto; font-size: 8px; color: var(--muted); }
-  .ffield .input.num { justify-content: flex-start; }
+  /* The box is as wide as the digits it takes. Stretched to the column, a two-digit field stops
+     saying what goes in it — the label above keeps the column's width instead. */
+  .ffield .input.num { justify-content: flex-start; width: max-content; max-width: 100%; }
+  .ffield .input.num .nval { display: inline-block; min-width: calc(var(--nd, 4) * 1ch); text-align: right; }
   .ffield .input.num .unit { margin-left: 6px; color: var(--muted); }
   .ffield .input.num .spin { margin-left: auto; display: flex; flex-direction: column;
                              border-left: 1px solid var(--line); height: 100%; }
@@ -775,6 +816,10 @@
   .badge.outline { background: transparent; border: 1px solid var(--line-strong); }
   .chips, .badges { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
   .chips .chips-note { margin-left: auto; padding-left: 12px; font-size: 12px; color: var(--muted); }
+  /* Appears as soon as a second chip is lit, which is what says the row narrows rather than
+     chooses — and is the one control that undoes a selection built up one chip at a time. */
+  .chips .chips-clear { margin-left: 4px; padding: 3px 9px; border: 1px dashed var(--line-strong);
+                        border-radius: 999px; font-size: 11px; color: var(--muted); }
 
   .card { border: 1px solid var(--line); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
   /* A box that stands in for the page's content rather than sitting among other cards. */
@@ -893,15 +938,27 @@
   .helpcard .hc-hint { font-size: 12px; color: var(--muted); }
   .helpcard .hc-open { margin-left: auto; flex: none; }
   .helpcard .hc-open .btn { padding: 5px 10px; font-size: 12px; }
+  .helpcard .n-close { margin-left: 2px; }
+
+  /* A notice card takes a row of the page for as long as the page exists, so every one of the
+     three notice kinds closes. The control is the same mark everywhere it appears, at the card's
+     own right edge — after the card's actions, because leaving the card is not one of them. */
+  .n-close { flex: none; align-self: flex-start; margin-left: 8px; padding: 0 4px;
+             font: 11px/18px var(--mono); color: var(--muted); }
+  /* A status card says what is true right now, so it has no close and no way to be missed. */
+  .msg.state { border-left-style: double; border-left-width: 4px; }
   .msg { display: flex; gap: 10px; align-items: flex-start; padding: 9px 12px; border-radius: 6px;
          border: 1px solid var(--line); border-left: 3px solid var(--line-strong);
          background: var(--fill); font-size: 12px; line-height: 1.6; }
   .msg .mkind { flex: none; min-width: 30px; padding: 1px 6px; border-radius: 3px;
                 border: 1px solid var(--line-strong); background: var(--screen);
                 font: 700 10px/16px var(--mono); text-align: center; }
-  .msg .mbody { min-width: 0; }
+  /* The kind is read by its mark before its word — a message met in daylight on a cheap screen
+     is sorted by shape, and the three notice kinds are the three shapes. */
+  .msg .mkind i { font-style: normal; margin-right: 3px; opacity: .75; }
+  .msg .mbody { min-width: 0; flex: 1; }
   /* The way out of the message, not part of what it says — right, on one line. */
-  .msg .mact { margin-left: auto; align-self: center; display: flex; gap: 8px; flex: none; }
+  .msg .mact { align-self: center; display: flex; gap: 8px; flex: none; }
   .msg .mact .btn { padding: 5px 10px; font-size: 12px; }
   .msg .mtitle { font-weight: 700; color: var(--ink); }
   .msg .mtext { color: var(--muted); }

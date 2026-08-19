@@ -1385,3 +1385,111 @@ export const tagCollisionGate = {
     return bad;
   },
 };
+
+// Closing the detail panel is the one way back out of the screen, so its control cannot be the
+// quietest thing in the footer. `ghost` is the variant for a secondary act — 취소 beside 저장,
+// 인쇄 beside 발급 — and leaving is not secondary. A reader who has to scan the footer's left edge
+// for the way out is a reader the layout has trapped. 취소 in a form panel keeps ghost: that IS
+// the secondary act, and 저장 is the one the reader came for.
+export const panelCloseIsPlainGate = {
+  id: 'panelCloseIsPlainGate',
+  title: '상세 패널의 닫기가 ghost다',
+  stage: 'built',
+  run: (ctx) => {
+    const bad = [];
+    for (const sc of ctx.screens) {
+      const src = ctx.srcOf(sc.file);
+      for (const m of src.matchAll(/\bpanelFoot\s*\(|\bpanelForm\s*\(\{/g)) {
+        const open = m[0].endsWith('{') ? '{' : '(';
+        const close = open === '{' ? '}' : ')';
+        let i = m.index + m[0].length - 1, depth = 0, j = i;
+        for (; j < src.length; j++) {
+          const c = src[j];
+          if (c === open) depth++;
+          else if (c === close) { depth--; if (!depth) break; }
+        }
+        if (/btn\('닫기',\s*'ghost'\)/.test(src.slice(i, j + 1))) {
+          bad.push(`${sc.file}: 패널의 닫기는 일반 버튼이다 — btn('닫기')`);
+          break;
+        }
+      }
+    }
+    return bad;
+  },
+};
+
+// The strip carries the RECORD's identifier and times, and it sits at the foot of the panel. Under
+// a tab holding a rule table or an equipment list it therefore reads as belonging to what that tab
+// is showing, and the reader takes `ID sub_48112` for the identifier of the row they were reading.
+// The first tab is the record itself; there the strip says what it means. Companion frames stack
+// the panes the base does not open, so every pane in one is a later tab and none of them draws it.
+export const auditFootFirstTabGate = {
+  id: 'auditFootFirstTabGate',
+  title: '감사 줄이 첫 칸이 아닌 탭에 있다',
+  stage: 'built',
+  run: (ctx) => {
+    const bad = [];
+    for (const sc of ctx.screens) {
+      const src = ctx.srcOf(sc.file);
+      if (!/\bauditFoot\s*\(/.test(src)) continue;
+      if (/\btabPanes\s*\(/.test(src)) {
+        bad.push(`${sc.file}: 동반 프레임의 칸은 전부 첫 칸이 아니다 — 감사 줄을 뺀다`);
+        continue;
+      }
+      for (const m of src.matchAll(/(?<![A-Za-z])(?:tabs|recordTabs)\s*\(\[/g)) {
+        let i = m.index + m[0].length - 1, depth = 0, j = i;
+        for (; j < src.length; j++) {
+          const c = src[j];
+          if (c === '[') depth++;
+          else if (c === ']') { depth--; if (!depth) break; }
+        }
+        const items = src.slice(i, j + 1).split(/\},\s*\{/);
+        const at = items.findIndex((x) => /active:\s*true/.test(x));
+        if (at > 0) {
+          bad.push(`${sc.file}: ${at + 1}번째 칸이 열린 채로 감사 줄을 그린다 — 첫 칸에서만 표시한다`);
+          break;
+        }
+      }
+    }
+    return bad;
+  },
+};
+
+// Dismissal is remembered per person and for good, while what a status card describes changes with
+// the site — so whoever closed 「정책이 없는 안전구역이 1개 있습니다」 today is never shown tomorrow's
+// zone losing its policy. The server cannot tell the two apart, so the screen declares it. A count
+// of records in the card's own text is the shape that says «this sentence is about what is here
+// right now», and a card carrying one has to say which it is: `status: true` because it is, or
+// `dismiss: false`/`dismiss: true` because the author looked and decided otherwise.
+export const statusCardDeclaresItselfGate = {
+  id: 'statusCardDeclaresItselfGate',
+  title: '건수를 말하는 알림 카드가 상태 카드인지 밝히지 않았다',
+  stage: 'built',
+  run: (ctx) => {
+    const NUM = '(?:\\d+|하나|둘|셋|넷|다섯|여섯|일곱|여덟|아홉|열|한|두|세|네)';
+    const UNIT = '(?:건|개(?!월)|명|곳|대(?!한)|장(?!소)|척|쌍|줄|가지|종(?!료)|군데|점|매|회차|자리|쪽)';
+    const COUNT = new RegExp(`${NUM}\\s*${UNIT}(?![가-힣])|\\d+%`);
+    const bad = [];
+    for (const sc of ctx.screens) {
+      const src = ctx.srcOf(sc.file);
+      for (const m of src.matchAll(/\bmsg\s*\(\{/g)) {
+        let i = m.index + m[0].length - 1, depth = 0, j = i;
+        for (; j < src.length; j++) {
+          const c = src[j];
+          if (c === '{') depth++;
+          else if (c === '}') { depth--; if (!depth) break; }
+        }
+        const call = src.slice(i, j + 1);
+        const kind = /kind:\s*'([a-z]+)'/.exec(call)?.[1] ?? 'info';
+        if (!['help', 'info', 'warn'].includes(kind)) continue;
+        if (/\b(?:status|dismiss):/.test(call)) continue;
+        const title = /title:\s*'([^']*)'/.exec(call)?.[1] ?? '';
+        const body = /body:\s*(?:'([^']*)'|`([^`]*)`)/.exec(call);
+        if (!COUNT.test(`${title} ${body?.[1] ?? body?.[2] ?? ''}`)) continue;
+        bad.push(`${sc.file}: 「${(title || '').slice(0, 24)}…」 — status나 dismiss를 밝힌다`);
+        break;
+      }
+    }
+    return bad;
+  },
+};

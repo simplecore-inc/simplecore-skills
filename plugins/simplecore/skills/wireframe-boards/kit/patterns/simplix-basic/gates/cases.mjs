@@ -407,4 +407,38 @@ export function cases(t) {
   // neither a member of the chain nor something wedged into it.
   add('filterChainGate', '언어 전환은 대상이 아니다',
     chain(TABS + '<div class="ltabs lang"><span class="ltab">한국어</span></div>' + LIST), false);
+
+  // ── the presentation rules a page carries ────────────────────────────────────
+  add('panelCloseIsPlainGate', '패널의 닫기가 ghost다',
+    ctxWith([screen('x-01-a', "panelFoot(btn('닫기', 'ghost') + btn('편집', 'primary'))")]), true);
+  add('panelCloseIsPlainGate', '패널의 닫기가 일반 버튼이다',
+    ctxWith([screen('x-01-a', "panelFoot(btn('닫기') + btn('편집', 'primary'))")]), false);
+  // 취소 IS the secondary act beside 저장, so a form panel keeps it ghost.
+  add('panelCloseIsPlainGate', '폼 패널의 취소는 그대로다',
+    ctxWith([screen('x-01-a', "panelForm({ title: 'x', children: '', foot: btn('취소', 'ghost') + btn('저장', 'primary') })")]), false);
+  // A dialog closes over a dimmed page and carries its own ✖ — the rule is about the panel.
+  add('panelCloseIsPlainGate', '다이얼로그의 닫기는 대상이 아니다',
+    ctxWith([screen('x-01-a', "dialog({ title: 'x', children: '', foot: btn('닫기', 'ghost') })")]), false);
+
+  add('auditFootFirstTabGate', '두 번째 칸이 열린 채로 감사 줄을 그린다',
+    ctxWith([screen('x-01-a', "tabs([{ label: '개요' }, { label: '서명', active: true }])\nauditFoot({ id: 'a1', at: '2026-01-01' }, null)")]), true);
+  add('auditFootFirstTabGate', '첫 칸에서 감사 줄을 그린다',
+    ctxWith([screen('x-01-a', "tabs([{ label: '개요', active: true }, { label: '서명' }])\nauditFoot({ id: 'a1', at: '2026-01-01' }, null)")]), false);
+  add('auditFootFirstTabGate', '동반 프레임이 감사 줄을 그린다',
+    ctxWith([screen('x-01-a', "tabPanes({ strip, open: '개요', ref: 'x', panes: [] })\nauditFoot({ id: 'a1', at: '2026-01-01' }, null)")]), true);
+  add('auditFootFirstTabGate', '탭이 없는 패널은 대상이 아니다',
+    ctxWith([screen('x-01-a', "auditFoot({ id: 'a1', at: '2026-01-01' }, null)")]), false);
+
+  add('statusCardDeclaresItselfGate', '건수를 말하는 카드가 밝히지 않았다',
+    ctxWith([screen('x-01-a', "msg({ kind: 'warn', title: '정책이 없는 안전구역이 1개 있습니다' })")]), true);
+  add('statusCardDeclaresItselfGate', '상태 카드라고 밝혔다',
+    ctxWith([screen('x-01-a', "msg({ kind: 'warn', status: true, title: '정책이 없는 안전구역이 1개 있습니다' })")]), false);
+  // A standing fact that happens to name a number is the author's call, and `dismiss` records it.
+  add('statusCardDeclaresItselfGate', '닫히는 카드라고 밝혔다',
+    ctxWith([screen('x-01-a', "msg({ kind: 'info', dismiss: true, title: '한 조문이 요구를 여럿 만듭니다', body: '2건까지 나옵니다' })")]), false);
+  // 오류·예시·근거 are not notice cards and never close, so nothing to declare.
+  add('statusCardDeclaresItselfGate', '오류는 대상이 아니다',
+    ctxWith([screen('x-01-a', "msg({ kind: 'error', title: '필수 항목 3개가 비어 있습니다' })")]), false);
+  add('statusCardDeclaresItselfGate', '수를 말하지 않는 카드',
+    ctxWith([screen('x-01-a', "msg({ kind: 'help', title: '이 화면에서 하는 일' })")]), false);
 }

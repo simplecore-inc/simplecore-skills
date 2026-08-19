@@ -48,10 +48,27 @@ export const badge = (text, variant = '') => `<span class="${cls('badge', varian
  * belongs above the tabs, beside the help card and the warning band. That question is answered by
  * reading the sentence, so it is not one the gate can take: it sees a block standing between the
  * chip row and the list, and stops there.
+ *
+ * <p>**A chip FILTER narrows; it does not choose.** Several are lit at once, and the row says so as
+ * soon as a second one is: it counts its own lit chips and draws the control that clears them. A
+ * filter row where exactly one chip may ever be lit is a tab strip wearing a costume — draw
+ * {@link listTabs} instead, or make the request carry the set. **That rule reaches `filter` rows
+ * only**: a period picker on a dashboard is single-valued because a week and a month are not one
+ * period, and marking it `select: 'value'` is what says so rather than leaving it to look like a filter that
+ * forgot how to take two.
+ *
+ * @param select `filter` narrows a list below it and gets the clear control. `value` is a row whose
+ *   lit chips ARE a value rather than a narrowing of something — the chips inside a
+ *   {@link fMulti}, or a row that picks what the page itself draws. There each chip carries its own
+ *   removal, clearing them all means «print nothing» rather than «show everything», and a count
+ *   beside 「＋ 추가」 says nothing the row is not already showing
  */
-export const chips = (items, { note = '' } = {}) =>
-  `<div class="chips">${items.join('')}` +
-  `${note ? `<span class="chips-note">${note}</span>` : ''}</div>`;
+export const chips = (items, { note = '', select = 'filter' } = {}) => {
+  const lit = items.join('').match(/class="chip active"/g)?.length ?? 0;
+  return `<div class="chips">${items.join('')}` +
+    `${select === 'filter' && lit > 1 ? `<span class="chips-clear">${lit}개 선택 · 해제</span>` : ''}` +
+    `${note ? `<span class="chips-note">${note}</span>` : ''}</div>`;
+};
 /** A row of buttons. A btn is a block, so two of them stack unless a row holds them. */
 export const btnRow = (children) => `<div class="btn-row">${children}</div>`;
 export const badges = (items) => `<div class="badges">${items.join('')}</div>`;
@@ -396,14 +413,22 @@ export const bottomPanel = (statusBarHtml, pane = '') =>
  *
  * <p>It names the list — 「사업장 목록」, not 「뒤로」. Back-in-history is the browser's control and
  * says nothing about where it lands; a named list is a promise the page can keep.
+ *
+ * <p>`notices` is the action area's leading group — {@link noticeIcons} — and it leads because a
+ * card the reader closed is reached from nowhere else. `drop` is the {@link noticeDrop} one of
+ * them has open; the header positions it, so a frame drawing the open state passes it here rather
+ * than placing a panel of its own under the header.
  */
-export const pageHeader = ({ title, description = '', actions = '', center = '', back = '' }) =>
+export const pageHeader = ({
+  title, description = '', actions = '', center = '', back = '', notices = null, drop = '',
+}) =>
   `<div class="pagehead">` +
   `${back ? `<a class="ph-back">← ${back}</a>` : ''}` +
   `<div class="ph-text"><div class="ph-title">${title}</div>` +
   `${description ? `<div class="ph-desc">${description}</div>` : ''}</div>` +
   `${center ? `<div class="ph-center">${center}</div>` : ''}` +
-  `${actions ? `<div class="actions">${actions}</div>` : ''}</div>`;
+  `${notices || actions ? `<div class="actions">${notices ? noticeIcons(notices) : ''}${actions}</div>` : ''}` +
+  `${drop}</div>`;
 
 /**
  * The actions a list row offers. Icons rather than words — a row is read by its data, not by
@@ -495,11 +520,27 @@ export const fSelect = ({ label, value = '', hint = '', wide = false, required =
   `<div class="ffield${wide ? ' wide' : ''}"><span class="label">${label}${req(required, lang)}</span>` +
   `<span class="input sel">${value}<span class="car">▼</span></span>${hint ? `<span class="fhint">${hint}</span>` : ''}</div>`;
 
-/** A number, with the stepper a number input carries. */
-export const fNum = ({ label, value = '', hint = '', unit = '', wide = false, required = false, lang = 'ko' }) =>
-  `<div class="ffield${wide ? ' wide' : ''}"><span class="label">${label}${req(required, lang)}</span>` +
-  `<span class="input num">${value}${unit ? `<span class="unit">${unit}</span>` : ''}` +
+/**
+ * A number, with the stepper a number input carries.
+ *
+ * <p>**The box is as wide as the value it takes, never as wide as the column.** A field taking two
+ * digits, stretched to the width a sentence needs, stops saying what goes in it — the reader meets
+ * 400px of empty box and has to read the label to find out it wants 「3」. So the box is sized from
+ * the digits and the label above it keeps the column's width.
+ *
+ * @param digits how many digits the value may run to. Read off `value` when it is not given, which
+ *   is right wherever the drawn value is a realistic one; state it where the drawn value is
+ *   shorter than what the field accepts — a percentage showing 「8」 still has to hold 「100」
+ */
+export const fNum = ({
+  label, value = '', hint = '', unit = '', wide = false, required = false, lang = 'ko', digits = 0,
+}) => {
+  const n = digits || Math.max(2, String(value).replace(/[^0-9]/g, '').length || 4);
+  return `<div class="ffield${wide ? ' wide' : ''}"><span class="label">${label}${req(required, lang)}</span>` +
+  `<span class="input num" style="--nd:${n}"><span class="nval">${value}</span>` +
+  `${unit ? `<span class="unit">${unit}</span>` : ''}` +
   `<span class="spin"><i>↑</i><i>↓</i></span></span>${hint ? `<span class="fhint">${hint}</span>` : ''}</div>`;
+};
 
 /** Text that runs long. Always the full width, and normally a section of its own. */
 export const fArea = ({ label, value = '', hint = '', rows = 3, required = false, lang = 'ko' }) =>
@@ -624,6 +665,11 @@ export const split = (listHtml, detailHtml) => `<div class="split"><div class="p
  * The console's default page layout. The list fills the page on its own; opening a row puts
  * the record in a panel on the right, with a divider the reader can drag between the two.
  * Pass no detail for the closed state.
+ *
+ * <p>**The two states differ in the panel and in nothing else.** The gutter under the list is the
+ * same open or closed — a list that gains or loses space beneath its rows reads as having moved,
+ * and the reader who was half way down goes looking for the line they were on. The list column
+ * carries that gutter itself rather than inheriting whatever the taller column leaves over.
  */
 export const listDetail = (listHtml, detailHtml = '') =>
   `<div class="listdetail"><div class="ld-list">${listHtml}</div>` +
@@ -634,7 +680,14 @@ export const listDetail = (listHtml, detailHtml = '') =>
 export const panelHead = (title) =>
   `<div class="ld-head"><span class="ph-title sm">${title}</span><span class="ld-close">✖</span></div>`;
 
-/** The panel's footer — the record's own actions. Delete keeps one fixed place. */
+/**
+ * The panel's footer — the record's own actions. Delete keeps one fixed place.
+ *
+ * <p>**닫기 is a plain button here, never a ghost one.** Closing the panel is the one way back out
+ * of this screen, and a control the reader has to hunt for along the footer's left edge is a way
+ * out that is not obviously there. Ghost is for a secondary act; leaving is not one. A form panel
+ * ends in 취소 rather than 닫기, and 취소 IS secondary — it stays ghost beside 저장.
+ */
 export const panelFoot = (actions) => `<div class="ld-foot">${actions}</div>`;
 
 /**
@@ -782,6 +835,12 @@ export const dField = ({ label, value, peek = false, wide = false, top = false }
  * record — a signature certificate, an evidence package, an export — 「수정」 beside 「생성」 says
  * the thing changed after it was fixed, which is exactly what the screen elsewhere promises never
  * happens. Pass `updated` as `null` and the strip prints 「고칠 수 없음」 in its place.
+ *
+ * <p>**It is drawn under the FIRST tab and hidden under the others.** The strip sits at the foot of
+ * the panel, so under a tab holding a rule table or an equipment list it reads as belonging to what
+ * that tab is showing — the reader takes `ID sub_48112` for the identifier of the rule they were
+ * reading rather than of the record the panel is about. The first tab is the record itself, and
+ * there the strip says what it means.
  */
 export const auditFoot = (created, updated) =>
   `<div class="audit"><span class="mono">ID ${created.id}</span>` +
@@ -1012,8 +1071,85 @@ export const sourceBadge = (source, basis = '') =>
  * because their reason is fixed: {@link lockNote} for a retention hold, {@link envBadge} for a
  * capability the environment cannot reach.
  *
+ * <p>**The three notice kinds close, and `status` is what stops one closing.** help · warn · info
+ * are the kinds {@link NOTICE_KINDS} names, so they draw the close control and the page header
+ * draws the icon that brings them back. **The question that decides `status` is whether the
+ * card's CONTENT changes with what is on the site right now.** If it does, the card stays:
+ * dismissal is remembered per person and for good, while the state it describes changes daily, so
+ * whoever closed 「정책이 없는 안전구역이 1개 있습니다」 today is not shown tomorrow's zone losing
+ * its policy. A standing fact — how the screen is used, what the rule is, what may not be edited —
+ * is the same sentence every day and closes.
+ *
+ * <p>Read the two apart by trying to write the sentence for an empty site. 「배정 기록에서 매일
+ * 자동으로 계산됩니다」 survives; 「기록이 없는 시간대가 있습니다」 has nothing to say. The second
+ * is a status card.
+ *
  * @param kind help · info · warn · error · example · legal
+ * @param status the card's content depends on the site's current state, so it does not close
+ * @param dismiss overrides the kind's own answer — `false` where the page has no notice header to
+ *   bring the card back from, which is every screen outside the console
  */
+/**
+ * The three kinds of notice card a page carries, each with the glyph that names it.
+ *
+ * <p>A notice card takes a row of the page for as long as the page exists, so every one of them
+ * closes — and the header keeps the way back. The set is CLOSED at three because the header
+ * draws one control per kind: a fourth would be a fourth control nobody can name.
+ *
+ * <p>`error` is not among them and never closes. A message saying the reader is blocked right now
+ * is the screen's current state, and a state that can be dismissed is a state the reader stops
+ * being told about. `example` and `legal` are reference beside a field rather than notices about
+ * the page, and they do not close either.
+ */
+export const NOTICE_KINDS = { help: '?', warn: '!', info: 'i' };
+
+/** The control that closes a notice card. Its twin is the header icon that brings the card back. */
+export const noticeClose = () => `<span class="n-close" title="닫기">✕</span>`;
+
+/**
+ * The notice controls in a page header's action area — one per kind of card the page carries.
+ *
+ * <p>**A control stays whether or not its cards are showing.** It is the only way back to a card
+ * the reader closed, and dismissal is remembered per person, so a control drawn only while a card
+ * is open would vanish exactly when it is needed. The count on it is how many of that kind the
+ * page has; the mark says some of them are closed right now.
+ *
+ * <p>Pressing one opens {@link noticeDrop} below the header. What a card offers — 「설명 보기」 and
+ * the like — is pressed from there, so closing a card never puts its dialog out of reach.
+ *
+ * @param kinds `[{ kind, n, hidden }]` in the order help · warn · info, kinds the page has only
+ */
+export const noticeIcons = (kinds) =>
+  `<span class="noticons">${kinds.map(({ kind, n = 0, hidden = 0, open = false }) =>
+    `<span class="nic ${kind}${open ? ' open' : ''}${hidden ? ' hidden-some' : ''}">` +
+    `<i>${NOTICE_KINDS[kind] ?? '?'}</i>` +
+    `${n ? `<span class="n">${n}</span>` : ''}</span>`).join('')}</span>`;
+
+/**
+ * The panel a notice control opens: every card of that kind this page carries, showing and
+ * closed alike, each with the way to put it back and whatever the card itself offers.
+ *
+ * <p>It hangs under the header's action area and covers nothing the reader was working in.
+ *
+ * <p>**It lists every card of that kind, status cards included.** The control beside it carries a
+ * count of what the page has, so a panel listing fewer than that count leaves the reader working
+ * out which one is missing and why. A status card is listed with the word that says it stays
+ * rather than with a close it does not have.
+ *
+ * @param title what the reader pressed — 「주의 2건」
+ * @param items `[{ title, hint, hidden, fixed, action }]`; `hidden` marks a card the reader closed,
+ *   `fixed` a status card, which neither closes nor comes back
+ */
+export const noticeDrop = ({ title, items }) =>
+  `<div class="noticedrop"><div class="nd-head">${title}</div>` +
+  items.map((it) => `<div class="nd-item${it.hidden ? ' off' : ''}">` +
+    `<div class="nd-body"><div class="nd-title">${it.title}</div>` +
+    `${it.hint ? `<div class="nd-hint">${it.hint}</div>` : ''}</div>` +
+    `<span class="nd-act">${it.action ?? ''}` +
+    `${it.fixed ? '<span class="nd-fixed">상태 카드</span>' : btn(it.hidden ? '다시 보이기' : '닫기', 'ghost')}` +
+    `</span></div>`).join('') +
+  `</div>`;
+
 /**
  * The card an entity's explanation lives behind.
  *
@@ -1023,12 +1159,17 @@ export const sourceBadge = (source, basis = '') =>
  * So the page keeps a one-line card that says what the explanation answers, and pressing it
  * opens the explanation as a dialog. The card goes where reference belongs — under the list,
  * over the list-detail, or at the top of a detail tab — and the work stays where it was.
+ *
+ * <p>It is a 도움말 notice card, so it closes like one and the header's `?` brings it back. Pass
+ * `dismiss: false` where the card is not on a page with that header — a wizard step, a dialog —
+ * and closing it would put the explanation out of reach.
  */
-export const helpCard = ({ title, hint = '', open = '펼쳐 보기' }) =>
+export const helpCard = ({ title, hint = '', open = '펼쳐 보기', dismiss = true }) =>
   `<div class="helpcard"><span class="hc-mark">?</span>` +
   `<div class="hc-body"><div class="hc-title">${title}</div>` +
   `${hint ? `<div class="hc-hint">${hint}</div>` : ''}</div>` +
-  `<span class="hc-open">${btn(open, 'ghost')}</span></div>`;
+  `<span class="hc-open">${btn(open, 'ghost')}</span>` +
+  `${dismiss ? noticeClose() : ''}</div>`;
 
 /**
  * The six kind words, in the four languages a site runs.
@@ -1064,12 +1205,18 @@ export const emptyState = ({ title, body = '', action = '' }) =>
   `${body ? `<div class="empty-b t-body">${body}</div>` : ''}` +
   `${action ? `<div class="empty-a">${action}</div>` : ''}</div>`;
 
-export const msg = ({ kind = 'info', title = '', body = '', actions = '', lang = 'ko' }) => {
+export const msg = ({
+  kind = 'info', title = '', body = '', actions = '', lang = 'ko',
+  status = false, dismiss = null,
+}) => {
   const label = (MSG_KIND[lang] ?? MSG_KIND.ko)[kind];
-  return `<div class="msg ${kind}"><span class="mkind">${label}</span>` +
+  const closes = status ? false : (dismiss ?? kind in NOTICE_KINDS);
+  return `<div class="msg ${kind}${status ? ' state' : ''}">` +
+    `<span class="mkind">${kind in NOTICE_KINDS ? `<i>${NOTICE_KINDS[kind]}</i>` : ''}${label}</span>` +
     `<div class="mbody">${title ? `<div class="mtitle">${title}</div>` : ''}` +
     `${body ? `<div class="mtext">${body}</div>` : ''}</div>` +
-    `${actions ? `<div class="mact">${actions}</div>` : ''}</div>`;
+    `${actions ? `<div class="mact">${actions}</div>` : ''}` +
+    `${closes ? noticeClose() : ''}</div>`;
 };
 
 /**
@@ -1299,7 +1446,9 @@ export const CATALOG = [
   { cat: 'input', name: 'cellInput({value, unit, bad})', note: '표 안에서 바로 고치는 칸. 빈 칸은 점선, 거절된 값은 강조색', ex: `<div class="table"><div class="trow"><span class="td">산소</span><span class="td">${cellInput({ value: '20.9', unit: '%' })}</span><span class="td">${cellInput({})}</span><span class="td">${cellInput({ value: '-1', bad: true })}</span></div></div>` },
   { cat: 'input', name: 'chip(text, active) · badge(text, variant)', note: '필터 칩 · 상태 배지(outline)', ex: `${chips([chip('전체', true), chip('진행'), chip('완료')])}${badges([badge('발급', 'outline'), badge('반납')])}` },
   { cat: 'input', name: 'chips(items, {note})', note: '칩 줄의 오른쪽 끝에 붙는 한 마디 — 어느 칩을 골랐느냐에 따라 달라지는 안내만 여기 놓는다. 칩 아래 한 줄을 더 쓰면 탭·칩·목록 사이에 블록이 끼는 것이라 그 자리는 없다', ex: `${chips([chip('전체'), chip('내보내기 DB', true), chip('API')], { note: '내보내기 DB는 방화벽을 이쪽에서 엽니다' })}` },
-  { cat: 'container', name: 'helpCard({title, hint, open})', note: '엔티티 설명·생애주기가 사는 카드 — 누르면 다이얼로그로 펼친다. 목록 아래·목록·상세 위·상세 탭 머리 가운데 한 곳', ex: helpCard({ title: '위임과 대결은 어떻게 다른가', hint: '넘기는 사람 · 넘어가는 시점 · 기록에 남는 이름' }) },
+  { cat: 'container', name: 'helpCard({title, hint, open, dismiss})', note: '엔티티 설명·생애주기가 사는 카드 — 누르면 다이얼로그로 펼친다. 목록 아래·목록·상세 위·상세 탭 머리 가운데 한 곳. 도움말 갈래의 알림 카드라 닫히고, 머리의 「?」가 다시 연다', ex: helpCard({ title: '위임과 대결은 어떻게 다른가', hint: '넘기는 사람 · 넘어가는 시점 · 기록에 남는 이름' }) },
+  { cat: 'common state', name: 'msg({kind, title, body, status, dismiss})', note: '도움말 · 경고 · 알림 셋은 갈래마다 표식이 붙고 닫힌다. 닫음은 사람에게 영구히 남으므로, 내용이 지금의 사업장 상태에 따라 달라지는 카드는 status로 두어 닫히지 않게 한다 — 빈 사업장에서도 같은 문장인지가 가른다', ex: `${msg({ kind: 'help', title: '이 화면에서 하는 일', body: '주기와 기한을 정합니다.' })}${msg({ kind: 'warn', title: '보호구 지급 기록이 없는 배정이 남아 있습니다', body: '오늘 기준으로 셉니다.', status: true })}${msg({ kind: 'error', title: '저장할 수 없습니다', body: '필수 항목이 비어 있습니다.' })}` },
+  { cat: 'common state', name: 'noticeIcons(kinds) · noticeDrop({title, items})', note: '머리의 동작 영역에 갈래마다 하나. 카드가 보이든 닫혔든 자리를 지킨다 — 닫은 카드로 돌아가는 길이 이것뿐이다. 누르면 머리 아래로 드롭다운이 열리고, 카드가 가진 「설명 보기」도 거기서 누른다', ex: `${pageHeader({ title: '보호구 지급', description: '지급과 반납을 기록합니다.', notices: [{ kind: 'help', n: 1 }, { kind: 'warn', n: 2, hidden: 1, open: true }, { kind: 'info', n: 1 }], actions: btn('지급 등록', 'primary'), drop: noticeDrop({ title: '경고 2건', items: [{ title: '유효기간이 지난 보호구가 3점 있습니다', hidden: false }, { title: '지급 기록이 없는 배정이 1건 있습니다', hint: '닫아 둔 카드입니다', hidden: true, action: btn('설명 보기', 'ghost') }] }) })}` },
   { cat: 'container', name: 'card({sub, body, pad})', note: "내용 카드. `pad: 'lg'`는 카드 여럿 가운데 하나가 아니라 그 자리의 내용 전체를 담는 상자 — 빈 상태·잠금 안내·읽기 전용 띠. 테두리 있는 상자가 필요할 때 표를 빌려 쓰지 않는다", ex: card({ sub: '오늘 작업', body: bar('w25') }) + card({ pad: 'lg', body: tTitle('아직 등록된 항목이 없습니다') + tSub('시작하는 방법이 셋입니다.') }) },
   { cat: 'container', name: 'listCard({thumb, lines, trail})', note: '섬네일이 붙는 목록 행', ex: listCard({ lines: `${bar('w60')}${bar('w40', true)}`, trail: badge('서명 대기', 'outline') }) },
   { cat: 'container', name: 'grid(n, children)', note: '카드 격자 — 2 · 3 · 4단', ex: grid(2, [card({ sub: '위험성평가', body: bar('w25') }), card({ sub: 'TBM', body: bar('w25') })]) },
