@@ -472,54 +472,53 @@ function delegatedDetailSources(detailSource) {
 const localeKeyCache = new Map();
 
 /**
- * @param ns a translation namespace as a call site names it, `<module>/<catalogue>`
- * @returns every key the namespace's catalogue defines, flattened to dotted paths, or null when
- *          the catalogue is not one this repository owns — a framework namespace is not ours to
- *          judge, and treating an absent file as an empty catalogue would flag every call
+ * @param ns   a translation namespace as a call site names it
+ * @param file the calling file, repository-relative — several deployables ship a catalogue under
+ *             the same bare namespace, so the namespace alone does not say which one governs
+ * @returns every key the governing catalogues define in any language, flattened to dotted paths,
+ *          or null when the catalogue is not one this repository owns — a framework namespace is
+ *          not ours to judge, and treating an absent file as an empty catalogue would flag every
+ *          call
+ *
+ * @remarks
+ * <b>Which catalogue answers is decided by the calling file, not by directory order.</b> Resolving
+ * a bare namespace by taking the first app that happens to own one answers every app with whichever
+ * sorts first: three deployables each ship a `common`, and the alphabetically first one had every
+ * key, so the other two were reported clean while their screens printed raw keys. The resolution is
+ * shared with `dropped-interpolation` so the two rules cannot disagree about which entry a call
+ * site reads.
+ *
+ * <b>A key defined in any language counts as defined.</b> The defect this answers is i18next
+ * printing the key itself, which happens when no catalogue carries it at all; where one language
+ * has it and another does not, the locale fallback prints that language's sentence. Reading one
+ * chosen language would also bake a source locale into a script that ships to projects that do not
+ * share it.
  */
-function localeKeys(ns) {
-  if (localeKeyCache.has(ns)) return localeKeyCache.get(ns);
-  let out = null;
-  if (!ns.includes("..")) {
-    const [mod, catalogue] = ns.split("/");
-    // A namespace is `<module>/<catalogue>` in a module and a bare `<catalogue>` in an app, and
-    // both shapes are in use in one repository. Reading only the first left every app-level
-    // namespace resolving to null, which this rule reads as 「no catalogue, nothing to check」 —
-    // so the screens most likely to be hand-written were the ones it never looked at.
-    const candidates = [];
-    if (mod && catalogue) candidates.push(path.join(ROOT, "modules", mod, "src", "locales", catalogue, "ko.json"));
-    const appsDir = path.join(ROOT, "apps");
-    if (fs.existsSync(appsDir)) {
-      for (const app of fs.readdirSync(appsDir)) {
-        candidates.push(path.join(appsDir, app, "src", "locales", ns, "ko.json"));
-      }
-    }
-    const file = candidates.find((c) => fs.existsSync(c));
-    if (file) {
-      out = new Set();
-      const walkJson = (obj, prefix) => {
-        for (const [k, v] of Object.entries(obj)) {
-          const at = prefix ? `${prefix}.${k}` : k;
-          if (v && typeof v === "object") walkJson(v, at);
-          else {
-            out.add(at);
-            // `dutyCount_one` and `dutyCount_other` are one key to a caller, who writes
-            // `t("unit.dutyCount", { count })` and lets i18next pick. Recording only the suffixed
-            // forms would report every plural key in the repository as missing.
-            const base = at.replace(/_(zero|one|two|few|many|other)$/, "");
-            if (base !== at) out.add(base);
-          }
-        }
-      };
-      try {
-        walkJson(JSON.parse(fs.readFileSync(file, "utf8")), "");
-      } catch {
-        out = null;
+function localeKeys(ns, file = "") {
+  const dirs = catalogueDirsFor(ns, file);
+  if (!dirs.length) return null;
+  const cacheKey = dirs.join("|");
+  if (localeKeyCache.has(cacheKey)) return localeKeyCache.get(cacheKey);
+  const out = new Set();
+  let read = false;
+  for (const dir of dirs) {
+    for (const entries of catalogueLanguages(dir).values()) {
+      read = true;
+      for (const key of entries.keys()) {
+        out.add(key);
+        // `dutyCount_one` and `dutyCount_other` are one key to a caller, who writes
+        // `t("unit.dutyCount", { count })` and lets i18next pick. Recording only the suffixed
+        // forms would report every plural key in the repository as missing.
+        const base = key.replace(/_(zero|one|two|few|many|other)$/, "");
+        if (base !== key) out.add(base);
       }
     }
   }
-  localeKeyCache.set(ns, out);
-  return out;
+  // A directory whose every language file failed to parse is unreadable, not empty — reporting it
+  // as empty would name every key in the file that reads it.
+  const result = read ? out : null;
+  localeKeyCache.set(cacheKey, result);
+  return result;
 }
 
 /**
@@ -706,7 +705,12 @@ function localeCatalogues() {
         seek(at);
         continue;
       }
-      const prefix = declaredNamespace(at);
+      // Where nothing declares a namespace, the directory convention supplies one: a module's
+      // catalogues are `<module>/<component>` and an app's are the bare `<component>`. Both shapes
+      // are in use in one repository, and a package that declares its own overrides either.
+      const segments = path.relative(ROOT, at).split(path.sep);
+      const byConvention = segments[0] === "modules" && segments.length > 1 ? segments[1] : null;
+      const prefix = declaredNamespace(at) ?? byConvention;
       for (const sub of fs.readdirSync(at, { withFileTypes: true })) {
         if (!sub.isDirectory()) continue;
         const componentDir = path.join(at, sub.name);
@@ -1519,13 +1523,17 @@ export type AreaStatus = (typeof AreaStatus)[keyof typeof AreaStatus];
     invariant: "audit: scaffold locale",
     level: "error",
     desc: "A key its namespace's catalogue does not define, whether named in `t(\"…\")` or handed to a helper alongside the translator — i18next falls back to printing the key, so the screen shows `product.selfServeHint` where the sentence should be and nothing errors",
-    appliesTo: (p) => inModules(p) && isTsx(p),
-    check: (c) => {
+    // An app's own screens are checked as well as a module's. Scoping this to `modules/` left every
+    // hand-written app screen unread, and a deployable's error and empty-state pages are exactly
+    // the screens written by hand and seen least often: two apps were printing ten raw `error.*`
+    // keys apiece on their access-denied page, the same message a third app had already fixed.
+    appliesTo: (p) => (inModules(p) || inApps(p)) && isTsx(p),
+    check: (c, file) => {
       const binds = translatorBindings(c);
       if (binds.size === 0) return [];
       const hits = [];
       for (const [alias, ns] of binds) {
-        const keys = localeKeys(ns);
+        const keys = localeKeys(ns, file);
         if (!keys) continue;
         const call = new RegExp(`\\b${alias}\\(\\s*"([a-zA-Z0-9_.]+)"`, "g");
         // A key handed to a helper is still a key. `countedFigure(t, value, "unit.accountCount")`
@@ -1555,13 +1563,29 @@ export type AreaStatus = (typeof AreaStatus)[keyof typeof AreaStatus];
 }
 `,
       };
+      // Two deployables each shipping a `common`, the one that sorts FIRST carrying the key and the
+      // one under test lacking it. Resolving a bare namespace by directory order answers the second
+      // app with the first app's catalogue and calls it clean, which is how two apps came to print
+      // ten raw `error.*` keys each while the audit was green. The broken sample is built this way
+      // so that a resolution which reads the wrong app cannot pass it.
+      const twoApps = (secondHasKey) => ({
+        "apps/a-first/src/locales/common/ko.json": `{
+  "error": { "accessDenied": "권한이 없습니다", "goHome": "홈으로" }
+}
+`,
+        "apps/z-second/src/locales/common/ko.json": `{
+  "error": ${secondHasKey ? `{ "accessDenied": "권한이 없습니다", "goHome": "홈으로" }` : `{ "accessDenied": "권한이 없습니다" }`}
+}
+`,
+      });
       return {
         file: "modules/site/src/widgets/area/list.tsx",
         broken: {
-          files: widgets,
-          source: `const { t } = useTranslation("site/widgets");
+          file: "apps/z-second/src/widgets/error/error-pages.tsx",
+          files: twoApps(false),
+          source: `const { t } = useTranslation("common");
 
-return <EmptyState title={t("area.selfServeHint")} />;`,
+return <ErrorPageLayout action={t("error.goHome")} />;`,
         },
         fixed: {
           files: widgets,
@@ -1570,6 +1594,23 @@ return <EmptyState title={t("area.selfServeHint")} />;`,
 return <EmptyState title={t("area.title")} />;`,
         },
         miss: [
+          {
+            note: "the app under test owns the key while the app that sorts first does not — the owning catalogue answers, not the one directory order reaches",
+            file: "apps/z-second/src/widgets/error/error-pages.tsx",
+            files: {
+              "apps/a-first/src/locales/common/ko.json": `{
+  "error": { "accessDenied": "권한이 없습니다" }
+}
+`,
+              "apps/z-second/src/locales/common/ko.json": `{
+  "error": { "accessDenied": "권한이 없습니다", "goHome": "홈으로" }
+}
+`,
+            },
+            source: `const { t } = useTranslation("common");
+
+return <ErrorPageLayout action={t("error.goHome")} />;`,
+          },
           {
             note: "a namespace this repository does not own — an absent catalogue is not an empty one",
             source: `const { t } = useTranslation("framework/ui");
