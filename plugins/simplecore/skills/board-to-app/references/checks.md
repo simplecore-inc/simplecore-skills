@@ -78,7 +78,13 @@ export const exampleGate = {
 | `read(path)` · `list(dir)` | the file's text or null · every file under a directory, or null |
 | `exists(p)` · `isDir(p)` · `rel(p)` | presence, kind, and the path as the repository sees it |
 | `git(args)` | git in the project root — `{ ok, out }` |
+| `lines` | the project's chapter lines, compiled from its phrases — `ctx.lines.persona` is a RegExp, and a role the project declared absent is simply not there |
+| `evidence` | the readers over the evidence folder — the chapter files, the closed chapters, the frames a chapter places and demands, a result document's sections |
 | `options` | what the command line passed, such as `range` |
+
+The last two are on `ctx` for the same reason everything else is: **a project's own gate cannot
+import this skill by path**, because the skill is installed somewhere different on every machine.
+A second copy of a reader is a copy that drifts, so what a gate needs arrives through the context.
 
 A project's module exports the same shape:
 
