@@ -94,6 +94,24 @@ export const EVIDENCE_LABEL_ROLES = ['did', 'demanded', 'saw'];
  */
 export const EYES_PHRASE_ROLES = ['assigns', 'reader', 'moment'];
 
+/**
+ * What one entry of `captureStandard` names: the window a capture is taken in, and the scheme.
+ *
+ * <p>`width` and `height` are CSS pixels, so a run reads them back out of the page with
+ * `innerWidth`/`innerHeight` rather than off the file. The file's own width is `width` times the
+ * device pixel ratio, which is why `everyCaptureIsAtADeclaredWidth` accepts a whole multiple.
+ */
+export const STANDARD_FIELDS = ['width', 'height', 'colorScheme'];
+
+/**
+ * The schemes a capture standard may name.
+ *
+ * <p>Two, and no `no-preference`: that is a browser saying it has not been told, which is the
+ * state the key exists to end. A project that genuinely does not care declares no standard, and
+ * pays the cost its row states.
+ */
+export const COLOR_SCHEMES = ['light', 'dark'];
+
 /** The roles `chapterHeadings` maps, so nothing in the skill has to know one project's wording. */
 export const SCHEMA = {
   boardRoot: { kind: 'dir', required: true, absent: 'the build cannot start' },
@@ -153,6 +171,21 @@ export const SCHEMA = {
   locales: { kind: 'list', absent: 'the languages come from the project\'s own copy catalogue; where that cannot be read, report it rather than judging in one language' },
   pseudoLocale: { kind: 'text', absent: 'overflow is judged in the longest real language only, which covers less → `references/judging-frames.md`' },
   captureRoute: { kind: 'text', absent: 'captures are driven by navigation, which cannot reach the states that matter; report it as owed rather than hand-driving the board' },
+  // The size and colour scheme every capture is taken at. **Declared rather than left to the
+  // driver**, because neither is recoverable from the picture afterwards and both are wrong in a
+  // way that reads as a correct run: a window that came back narrow files a frame with its lower
+  // half missing, and a console in the wrong scheme files a screen nobody can hold against a
+  // sibling. Six captures were taken at 1280 wide in dark mode where the board measures at 1440
+  // in light, and the run reported nothing — the files were written, the sizes were plausible,
+  // the transcription was complete, and every finding of the judging that followed was 「no
+  // capture covers this」.
+  //
+  // **One standard, or an array of them where the board genuinely draws at more than one device
+  // width.** The array is not a convenience: `everyCaptureIsAtADeclaredWidth` refuses a width it
+  // was not given, so a board with tablet frames declares that width here or the gate reddens on
+  // frames that are exactly right. It is the same statement `migrationDir` makes with `many` —
+  // a subject a project can honestly have several of.
+  captureStandard: { kind: 'standard', absent: 'every capture is taken at whatever size and colour scheme the driver happened to open with, and a picture records neither — so a run whose window came back narrow or dark files pictures with the frame\'s lower half missing and nothing in the run reports a problem' },
   // What drives a browser, and what drives a device, in the order the run takes them. A list
   // rather than one name, because the choice is per task: a driver that cannot express the task is
   // stepped past, and the run says which one it ended up on.
@@ -327,6 +360,17 @@ export function loadProject(configPath, options = {}) {
     size: (path) => {
       try {
         return statSync(path).size;
+      } catch {
+        return null;
+      }
+    },
+    // The first `n` bytes of a file, undecoded. `read` decodes utf8 and `size` counts — neither
+    // answers what a picture's header says, and an image's own width is the one fact about a
+    // capture that survives the run that took it.
+    bytes: (path, n) => {
+      try {
+        const buf = readFileSync(path);
+        return n === undefined || buf.length <= n ? buf : buf.subarray(0, n);
       } catch {
         return null;
       }

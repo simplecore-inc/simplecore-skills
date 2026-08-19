@@ -120,6 +120,50 @@ export function cases(t) {
     { config: { eyesDocuments: ['docs/OVERVIEW.md'], eyesPhrases: { assigns: ['stays with eyes'], reader: ['the coordinator'], moment: ['before '] } } },
     false,
   );
+  // The capture standard. The template ships its three fields as `<…>` placeholders on purpose:
+  // a number left in place would become somebody's standard in silence, where a string is refused
+  // here and named. A third colour scheme is refused for the same reason a fourth commit policy
+  // is — it reads as a decision and nothing can be set to it or read back as it.
+  add(
+    'configGate',
+    'the capture standard with its template placeholders still in it',
+    { config: { captureStandard: { width: '<CSS pixels the board is drawn at>', height: '<CSS pixels>', colorScheme: '<light or dark>' } } },
+    true,
+  );
+  add(
+    'configGate',
+    'the same standard filled in',
+    { config: { captureStandard: { width: 1440, height: 1200, colorScheme: 'light' } } },
+    false,
+  );
+  add(
+    'configGate',
+    'a colour scheme that is neither of the two',
+    { config: { captureStandard: { width: 1440, height: 1200, colorScheme: 'no-preference' } } },
+    true,
+  );
+  add(
+    'configGate',
+    'a second device width beside the first',
+    {
+      config: {
+        captureStandard: [
+          { width: 1440, height: 1200, colorScheme: 'light' },
+          { width: 768, height: 1024, colorScheme: 'light' },
+        ],
+      },
+    },
+    false,
+  );
+  // An empty array is not «this project has no standard» — that is said by leaving the key out,
+  // and the difference is a cost stated in a row against a cost paid in silence.
+  add('configGate', 'the standard declared as an empty array', { config: { captureStandard: [] } }, true);
+  add(
+    'configGate',
+    'a field of the standard nobody reads',
+    { config: { captureStandard: { width: 1440, height: 1200, colorScheme: 'light', scale: 2 } } },
+    true,
+  );
   // Half a capture split named is a project that thought about one side of it. The taker runs on
   // the cheap model and the judge inherits whatever the harness gives, which is the arrangement
   // paying more on exactly the half that was supposed to cost less.

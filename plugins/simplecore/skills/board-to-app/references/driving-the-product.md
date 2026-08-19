@@ -220,6 +220,20 @@ stated reason, and name the ones that have neither.
 
 Three of these, all of which produce a capture that looks fine.
 
+**What the settings are held against is `captureStandard`, and the run goes and reads it.** The
+key names the width, the height and the colour scheme every capture is taken through, and the
+handover file says how this project reaches them — which files decide the theme, what the driver
+needs sent first. **A number carried in from memory is the whole defect with an extra step**: 1440
+is one board's measure, not every board's. Where the key is absent, its row says what that costs,
+and the readings a run takes are then the only record that the window was ever right.
+
+**The width is the one half a file remembers.** A WebP header states the canvas it was encoded
+from, so `everyCaptureIsAtADeclaredWidth` reads every capture on disk and refuses a width the
+project did not declare — a whole multiple passes, because a device pixel ratio of two is a right
+window and a wide file. **The scheme leaves nothing behind at all**, which is why it is a reading
+somebody takes at the time and a picture somebody else opens afterwards, and why both sit in the
+skill's eyes table with a reader and a moment.
+
 **The theme is a browser-profile preference, and signing out resets it.** Where the
 unauthenticated default is dark and the capture standard is light, the frames shot **without a
 session** — sign-in, invitation acceptance, first-run setup — are the ones that come back dark:

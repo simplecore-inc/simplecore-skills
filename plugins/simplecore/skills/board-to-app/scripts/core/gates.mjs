@@ -43,7 +43,7 @@
 // the abstract. It was whether the check can be RUN in a repository that declares this skill's
 // keys and nothing more. Three can; two need a file the skill has no name for.
 import { pathToFileURL } from 'node:url';
-import { HEADING_ROLES, SCHEMA, isPathKey } from './context.mjs';
+import { COLOR_SCHEMES, HEADING_ROLES, SCHEMA, STANDARD_FIELDS, isPathKey } from './context.mjs';
 import { NARRATIVE_PHRASES, hasHeading, onlyQuoted, proseLines, sectionUnder } from './prose.mjs';
 import { EVIDENCE_GATES } from './evidence.mjs';
 import { EYES_GATES } from './eyes.mjs';
@@ -80,6 +80,7 @@ const TYPE_OF = {
   phrases: 'an object of role → a non-empty array of phrases',
   exceptions: 'an array of { id, reason }',
   deferrals: 'an object of key → { chapter, whenExists }',
+  standard: `an object of { ${STANDARD_FIELDS.join(', ')} }, or an array of them where the board draws at several device widths`,
 };
 
 /**
@@ -240,6 +241,43 @@ export const configGate = {
           if (role.startsWith('//')) continue;
           if (!(spec.roles ?? HEADING_ROLES).includes(role)) findings.push(`${key}.${role} is not a role this skill knows`);
         }
+        continue;
+      }
+      if (spec.kind === 'standard') {
+        const many = Array.isArray(value);
+        if (many && !value.length) {
+          findings.push(
+            `${key} is an empty array, which declares nothing while looking like a decision — `
+            + 'delete the key and pay the cost its row states, or name the standard'
+          );
+          continue;
+        }
+        (many ? value : [value]).forEach((entry, i) => {
+          const label = many ? `${key}[${i}]` : key;
+          if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
+            findings.push(`${label} must be ${TYPE_OF.standard}`);
+            return;
+          }
+          for (const side of ['width', 'height']) {
+            if (!Number.isInteger(entry[side]) || entry[side] <= 0) {
+              findings.push(
+                `${label}.${side} is ${JSON.stringify(entry[side] ?? null)} and must be a whole number of CSS `
+                + 'pixels — a run reads it back with innerWidth/innerHeight, which never answer in anything else'
+              );
+            }
+          }
+          if (!COLOR_SCHEMES.includes(entry.colorScheme)) {
+            findings.push(
+              `${label}.colorScheme is ${JSON.stringify(entry.colorScheme ?? null)} and must be `
+              + `${COLOR_SCHEMES.join(' or ')}. A third word is a scheme nothing can be set to and `
+              + 'nothing can be read back as, so every capture would confirm against a value no browser reports'
+            );
+          }
+          for (const field of Object.keys(entry)) {
+            if (field.startsWith('//') || STANDARD_FIELDS.includes(field)) continue;
+            findings.push(`${label}.${field} is not a field this skill reads — a mistyped field is silent`);
+          }
+        });
         continue;
       }
       // A `many` key is declared once or several times — a project with more than one

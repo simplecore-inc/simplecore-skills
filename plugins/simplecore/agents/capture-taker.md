@@ -72,6 +72,44 @@ sharing one session is not.
 
 **You still never restart a server.** Somebody else may be depending on the one that is up.
 
+## Before the first capture, take the reading
+
+**The size the window opened at and the scheme it is painting in are not recoverable from the
+picture, and they are wrong often enough to cost the whole run.** Six captures came back at 1280
+wide in dark mode where the board is measured at 1440 in light. The files were written, their
+sizes were plausible, the transcription was complete — and a tree's first data row, four of nine
+table rows and an entire panel form were below the fold and in none of the pictures. **Nothing in
+that run reported a problem.** The judging that followed reported it six times over, as 「no
+capture covers this」, and every capture had to be taken again.
+
+**So the first thing you do at the browser is take a reading, and a reading is a number you hand
+back.** 「I set the window to the right size」 is the left column of *Transcribe. Do not check*
+wearing different clothes: it cannot be checked by anybody afterwards, and when it is wrong
+nothing in it says so.
+
+- **The standard is declared and you go and get it.** `captureStandard` in the project's
+  `board-to-app` config names the width, the height and the colour scheme, and the handover file
+  says how this project reaches them — which files decide the theme, what the driver needs first.
+  **Never carry a number of your own into this**: 1440 is one board's measure and not every
+  board's, and a window sized from memory is the same defect with an extra step. Where the config
+  declares no standard, say so in your return and take the readings anyway — the numbers are then
+  the only record that exists.
+- **Read it back off the page, through the driver the project declares**, before the first shot:
+
+  ```bash
+  <driver> --session <session> eval "JSON.stringify({dark:document.documentElement.classList.contains('dark'),w:innerWidth,h:innerHeight})"
+  ```
+
+- **A reading that disagrees with the standard is fixed and read again.** Set the window, set the
+  scheme, take the reading a second time, and shoot only once it agrees. **Never photograph around
+  it** — scrolling a row into a window that is too narrow, or adding one more picture to cover what
+  the fold ate, produces a set that cannot be held against the frame or against its siblings, and
+  the whole run is spent again.
+- **Take the reading again before the last capture.** A driver can be re-created mid-run — a
+  session that timed out, a context rebuilt after a navigation failed — and it comes back at
+  whatever it defaults to. Everything shot after that moment is what nothing has ever checked.
+- **Both readings go in your return**, as the values they came back as.
+
 ## Read the page, not a picture of it
 
 **Transcribe from the accessibility tree or the page text, never from the image you just wrote.**
@@ -96,11 +134,31 @@ one of them from the gap between the two: a column header written 「사업장�
 shows only the name, a pager written 「1쪽」 where it draws 「1」, three row actions written as words
 where they are drawn as an eye, a pencil and a bin.
 
-**So write what the tree says and mark it as the tree's.** 「목록 위 바 — 「전체 4건」」 is a claim
-about the screen; 「트리에서 읽은 열 머리: 사업장명 50」 is a claim about the reading, and only the
-second is one you can make. Where a control has no name in the tree, say that it has none rather
-than naming it from what it must be. **Somebody opens the picture afterwards, and the two accounts
-are compared** — which only works if yours says where it came from.
+**So every sentence you write says where it came from, and there are exactly three places:**
+
+| Mark | What it claims | How you tell |
+| --- | --- | --- |
+| **drawn** | the screen paints these characters | it is the element's own text — a text node, not an attribute |
+| **named** | only the tree carries this word | it is `aria-label`, `title`, `alt` or a `<label>` elsewhere, and the element's own text is empty |
+| **read** | it came from the source, a response or a route, not from the rendered page | you did not get it off the page at all |
+
+**The one that has actually gone wrong is `named` written as `drawn`.** A run transcribed a row's
+two actions as text labels reading 「보기」 and 「정책 편집」. They are icons; those words exist only
+in `title` attributes. **That transcription is true of the DOM and false of the picture, and it
+reads exactly like a good one** — nothing in the run disagreed with it, and it was caught only
+because somebody opened the file afterwards.
+
+**So a control whose word is only `named` is written as the icon it is, with the name beside it**
+— 「눈 모양 아이콘 하나 — 트리 이름 `보기` (title)」, never 「보기」. The same for a header, a tab or a
+badge whose text you found in an attribute. Where you cannot tell which of the two it is, **say
+that you could not tell**: the reader opens the picture and settles it, and you cannot.
+
+**Where a control has no name at all, say it has none** rather than naming it from what it must be.
+「이름 없는 단추 셋이 오른쪽 끝에 있다」 is a fact; naming them from the actions the chapter mentions
+is a guess wearing an observation's clothes.
+
+**Somebody opens the picture afterwards and compares the two accounts** — which only works if
+yours says, sentence by sentence, where it came from.
 
 ## The capture and the account have to cover the same screen
 
@@ -204,11 +262,21 @@ write that it did not.
 
 ## What you hand back
 
-Per capture, three lines and no verdicts:
+First, before anything else, so a coordinator meets it without opening a file:
+
+- **window** — the two readings as they came back, and the standard you took them against:
+  `1440×1200 dark:false (declared 1440×1200 light) · re-read before the last capture: same`. Say
+  it plainly where one had to be fixed — 「first reading came back 1280×633 dark:true; set and
+  re-read as 1440×1200 dark:false before any capture」 — and say it plainly where the standard was
+  not declared anywhere
+
+Then per capture, three lines and no verdicts:
 
 - **address** — the address you opened, whole, and the capture file you wrote
 - **screen** — what was on it: every tile with its label and value, every tab with its count, the
-  column headers, the row actions, the exact wording of any banner or empty state
+  column headers, the row actions, the exact wording of any banner or empty state. **Each sentence
+  carries its mark — drawn, named or read** — and a control whose word is only `named` is written
+  as an icon with that name beside it
 - **pressed** — what you pressed and what appeared, including what a dialog asked
 
 Then, once for the run:

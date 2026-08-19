@@ -117,6 +117,15 @@ up only the saving.
 coordinator, and what the taker hands back is a record of what was on the screen rather than a
 section of the result document.
 
+**A taker's return opens with the window it shot through**, before any screen: the size and colour
+scheme it read back off the page, against the `captureStandard` it read them from, once before the
+first capture and once before the last. **Read that line before reading anything under it** — a set
+shot through the wrong window has to be taken again whatever it shows, so judging its contents is a
+round spent twice. Six captures came back at 1280 wide in dark mode against a board measured at
+1440 in light, with a tree's first data row, four of nine table rows and a whole panel form below
+the fold; the run reported nothing, the files were a plausible size, and the judging that followed
+spent every finding it had on 「no capture covers this」.
+
 ## The tree is not the screen, which is why the judge is not optional
 
 **Reading the accessibility tree is the cheap way to write down a screen and it is a different
@@ -510,6 +519,17 @@ panes; this check makes sure it has at least one.
 
 **A shared pattern is not counted.** A frame drawn inside other screens, with no address of its
 own, is one nobody is told to open and there is no screen to shoot.
+
+**`everyCaptureIsAtADeclaredWidth` judges the picture rather than the document.** Every capture in
+the folder is opened as bytes, its stated canvas is read out of the header, and a width the project
+did not declare in `captureStandard` is a finding — as is a file whose header will not open at all.
+**Nothing else here reads a byte of a capture**: the name check reads a name, the ceiling and the
+blank floor read a length, so a driver's own screenshot filed under the capture suffix without ever
+being encoded passes all three. Nine such files sat in one project's evidence folder, and the same
+run's real defect — every capture shot through a window 160 pixels too narrow, with a tree's first
+row and an entire panel form below the fold — was invisible in exactly the same way. **The width is
+all a file remembers**; the colour scheme and whether the fold ate anything stay with eyes, and
+`../SKILL.md`'s second table names whose.
 
 **A project's own check repeats that judgment one layer under the tabs**, reading the board's tab
 strips and asking, for each frame a closed chapter opens, whether every pane but the open one was

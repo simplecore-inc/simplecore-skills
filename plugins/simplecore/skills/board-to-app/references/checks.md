@@ -77,6 +77,7 @@ export const exampleGate = {
 | `at(key)` | the absolute path a declared key resolves to, or null |
 | `read(path)` · `list(dir)` | the file's text or null · every file under a directory, or null |
 | `exists(p)` · `isDir(p)` · `rel(p)` | presence, kind, and the path as the repository sees it |
+| `size(p)` · `bytes(p, n)` | a file's length · its first `n` bytes undecoded — the two questions `read` cannot answer about a picture, since the length of a binary file's utf8 decoding is not its size and its header is not text |
 | `git(args)` | git in the project root — `{ ok, out }` |
 | `lines` | the project's chapter lines, compiled from its phrases — `ctx.lines.persona` is a RegExp, and a role the project declared absent is simply not there |
 | `evidence` | the readers over the evidence folder — the chapter files, the closed chapters, the frames a chapter places and demands, a result document's sections |

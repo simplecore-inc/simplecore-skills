@@ -58,6 +58,40 @@ that says the same thing two ways.
 no such tab — that is three accounts disagreeing and it is the easiest one to miss, because nothing
 in any of them is wrong on its own.
 
+### The window the picture was taken through is your first look, before any content
+
+**A capture carries no record of the scheme it was painted in or the width it was shot at, and you
+are the first party to see either.** The taker hands you the readings it took; the picture is what
+says whether they hold.
+
+So before you compare a single value: **is this picture in the scheme the project declared, and
+does it hold as much of the screen as the frame draws?** Six captures once came back dark at 1280
+wide against a board measured at 1440 in light, and the whole run's findings were 「no capture
+covers this」 — one per screen, none of them about the product.
+
+**Report that first and say so plainly**, because every finding under it has to be taken again
+anyway and a list of content disagreements read off a wrong-sized picture wastes the round twice.
+
+### The transcription says where each sentence came from, and that is what you check it as
+
+A taker marks every sentence **drawn** (the screen paints these characters), **named** (only the
+accessibility tree carries the word — `aria-label`, `title`, `alt`) or **read** (it came from the
+source or a response, not from the rendered page). **The mark changes what the picture has to show
+for the two to agree**, so read it before comparing:
+
+| Mark | Agreement looks like |
+| --- | --- |
+| **drawn** | the characters are in the picture |
+| **named** | the picture shows a control with no text — an icon, a bare glyph — where the word was reported |
+| **read** | the picture says nothing about it either way, and you say the sentence has no picture behind it |
+
+**A `named` sentence read as `drawn` is the failure this exists to catch.** Row actions transcribed
+as text labels 「보기」 and 「정책 편집」 are icons whose words live in `title` attributes: the
+transcription is true of the DOM, false of the picture, and reads exactly like a correct one.
+
+**An unmarked sentence is itself a disagreement.** Report it as one — you cannot tell which of the
+three it was, so nobody can, and a sentence whose source is unknown is a sentence nothing backs.
+
 ## A disagreement is not a verdict
 
 **You do not decide whether the product is defective.** You say the three accounts differ. Whether

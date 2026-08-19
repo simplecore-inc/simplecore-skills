@@ -783,12 +783,135 @@ export const chapterOwedACheckDoesNotClose = {
   },
 };
 
+// ── The window the picture was taken through ────────────────────────────────
+//
+// A capture carries no record of the window it was shot in, and that is the whole difficulty: a
+// run whose browser came back at 1280 where the board measures at 1440 writes files of a plausible
+// size, transcribes the page correctly, and reports nothing — while a tree's first data row, four
+// of nine table rows and an entire panel form sit below the fold in none of the pictures. The
+// judging that follows spends its findings on 「no capture covers this」, one per screen, and the
+// run has to be taken again from the start.
+//
+// **The one fact that does survive is inside the file.** A WebP header states the canvas it was
+// encoded from, so the width a run actually used is readable afterwards even though nobody wrote
+// it down. That is what this gate reads, and it is the only half of the standard that leaves a
+// trace: the colour scheme does not, which is why the eyes table carries it instead.
+
+/**
+ * The pixel canvas a WebP states in its own header, or null when the bytes do not say.
+ *
+ * <p>Three encodings and all three appear in practice — `VP8 ` from a plain lossy encode, `VP8L`
+ * from a lossless one, `VP8X` the moment alpha or metadata is present — so a reader that knew only
+ * the first would go quiet on whichever half of a project's captures carried transparency.
+ */
+function webpCanvas(buf) {
+  if (!buf || buf.length < 30) return null;
+  if (buf.toString('latin1', 0, 4) !== 'RIFF' || buf.toString('latin1', 8, 12) !== 'WEBP') return null;
+  const fourcc = buf.toString('latin1', 12, 16);
+  if (fourcc === 'VP8 ') {
+    if (buf[23] !== 0x9d || buf[24] !== 0x01 || buf[25] !== 0x2a) return null;
+    return { width: buf.readUInt16LE(26) & 0x3fff, height: buf.readUInt16LE(28) & 0x3fff };
+  }
+  if (fourcc === 'VP8L') {
+    if (buf[20] !== 0x2f) return null;
+    const bits = buf.readUInt32LE(21);
+    return { width: (bits & 0x3fff) + 1, height: ((bits >>> 14) & 0x3fff) + 1 };
+  }
+  if (fourcc === 'VP8X') {
+    return {
+      width: (buf[24] | (buf[25] << 8) | (buf[26] << 16)) + 1,
+      height: (buf[27] | (buf[28] << 8) | (buf[29] << 16)) + 1,
+    };
+  }
+  return null;
+}
+
+/**
+ * What a file's first bytes say it actually is, where that is not the one format.
+ *
+ * <p>Named rather than merely refused, because the commonest way a capture becomes unmeasurable is
+ * a driver's own screenshot filed under the capture name without being encoded: nine files in one
+ * project's evidence folder opened as PNG under a `.webp` name, passing the name check, the size
+ * ceiling and the blank floor, with nothing in any of them reading a byte. 「Not a WebP」 sends the
+ * reader looking for corruption; 「this is a PNG」 says what to run.
+ */
+function looksLike(buf) {
+  if (!buf || buf.length < 12) return null;
+  const head = buf.toString('latin1', 0, 12);
+  if (head.startsWith('\x89PNG\r\n\x1a\n')) return 'PNG';
+  if (buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff) return 'JPEG';
+  if (head.startsWith('GIF8')) return 'GIF';
+  if (head.startsWith('<svg') || head.startsWith('<?xml')) return 'SVG';
+  return null;
+}
+
+/** Every declared standard, whether the project declared one or several. */
+function standardsOf(ctx) {
+  const declared = ctx.declared('captureStandard');
+  if (!declared) return [];
+  return (Array.isArray(declared) ? declared : [declared]).filter(
+    (entry) => entry && typeof entry === 'object' && Number.isInteger(entry.width) && entry.width > 0
+  );
+}
+
+/**
+ * Every capture on disk was taken at a width the project declared.
+ *
+ * <p>A whole multiple of a declared width passes, because a run at a device pixel ratio of two
+ * writes a file twice as wide from a window that was exactly right — the CSS pixels are the
+ * standard and the file records the device ones.
+ *
+ * <p><b>「I could not tell」 is a finding rather than a silence.</b> A capture whose header does not
+ * parse is one this gate has said nothing about, and a gate that goes quiet on what it could not
+ * read is indistinguishable from one that read everything and found it sound — which is the exact
+ * shape of the failure it exists to end.
+ */
+export const everyCaptureIsAtADeclaredWidth = {
+  id: 'everyCaptureIsAtADeclaredWidth',
+  title: 'a capture taken through a window nobody declared',
+  needs: ['evidenceDir', 'captureStandard'],
+  run: (ctx) => {
+    const widths = [...new Set(standardsOf(ctx).map((entry) => entry.width))].sort((a, b) => a - b);
+    if (!widths.length) return [];
+    const dir_ = ctx.declared('evidenceDir');
+    const named = widths.join(' or ');
+
+    const findings = [];
+    for (const entry of ctx.list(ctx.at('evidenceDir')) ?? []) {
+      if (!entry.endsWith(CAPTURE_SUFFIX)) continue;
+      const rel = `${dir_}/${entry}`;
+      const head = ctx.bytes(ctx.inRoot(rel), 64);
+      const canvas = webpCanvas(head);
+      if (canvas === null) {
+        const really = looksLike(head);
+        findings.push(
+          `${rel}: ${really ? `the bytes open as ${really}, under a ${CAPTURE_SUFFIX} name` : `the bytes do not open as ${CAPTURE_SUFFIX}`}`
+          + ' — so nothing here says what window this was shot through, and a capture nobody can '
+          + 'measure passes the name check, the ceiling and the blank floor by not being read. '
+          + `${really ? 'Encode it' : 'Take it again'} through the declared driver`
+        );
+        continue;
+      }
+      if (widths.some((w) => canvas.width % w === 0)) continue;
+      findings.push(
+        `${rel}: ${canvas.width}×${canvas.height}, and the declared standard is ${named} wide. `
+        + 'A narrow window puts whatever the board draws below its fold into no picture at all, '
+        + 'and the run that took it reports nothing — so this is re-taken rather than judged. '
+        + `Where the board genuinely draws this frame at ${canvas.width}, that width belongs in `
+        + 'captureStandard beside the others'
+      );
+    }
+    return findings;
+  },
+};
+
 export const EVIDENCE_GATES = [
   closedChapterHasEvidence,
   everyPlacedFrameIsCaptured,
   evidenceQuotesTheChapter,
   deferredCheckNamesAChapter,
   chapterOwedACheckDoesNotClose,
+  everyCaptureIsAtADeclaredWidth,
 ];
 
 // ── The cases that prove them ───────────────────────────────────────────────
@@ -849,6 +972,41 @@ const LEDGER = (w01, w02) => `# 챕터 상태\n\n| 챕터 | 상태 |\n| --- | --
  * blank capture and the rule would have to be weakened to fit its own fixtures.
  */
 const CAPTURE = (body = `RIFF····WEBP${'\0'.repeat(9 * 1024)}`) => ({ 'docs/evidence/w02-org-shell/a-01.webp': body });
+
+/**
+ * A capture whose header really does state the canvas given, padded past the blank floor.
+ *
+ * <p><b>The bytes are the real layout rather than a stand-in</b>, because the thing under test is
+ * a reader of those bytes: a fixture that agreed with the reader by construction would pass
+ * whatever the reader did with an actual file. `lossy` writes the `VP8 ` header a plain encode
+ * produces, and the `VP8X` form is what appears the moment alpha or metadata is present — both
+ * are met in a real evidence folder, and a reader that knew one would go silent on the other.
+ */
+function webpOf(width, height, { form = 'lossy', bytes = 9 * 1024 } = {}) {
+  const buf = Buffer.alloc(Math.max(bytes, 32), 0);
+  buf.write('RIFF', 0, 'latin1');
+  buf.writeUInt32LE(buf.length - 8, 4);
+  buf.write('WEBP', 8, 'latin1');
+  if (form === 'lossy') {
+    buf.write('VP8 ', 12, 'latin1');
+    buf.writeUInt32LE(buf.length - 20, 16);
+    buf[23] = 0x9d; buf[24] = 0x01; buf[25] = 0x2a;
+    buf.writeUInt16LE(width, 26);
+    buf.writeUInt16LE(height, 28);
+    return buf;
+  }
+  buf.write('VP8X', 12, 'latin1');
+  buf.writeUInt32LE(10, 16);
+  buf[24] = (width - 1) & 0xff; buf[25] = ((width - 1) >> 8) & 0xff; buf[26] = ((width - 1) >> 16) & 0xff;
+  buf[27] = (height - 1) & 0xff; buf[28] = ((height - 1) >> 8) & 0xff; buf[29] = ((height - 1) >> 16) & 0xff;
+  return buf;
+}
+
+/** The standard the width cases are judged against: one desktop width, and a tablet beside it. */
+const STANDARD = [
+  { width: 1440, height: 1200, colorScheme: 'light' },
+  { width: 768, height: 1024, colorScheme: 'light' },
+];
 
 /** A foundation section: no frame to capture, so it carries the command and what came back. */
 const W01_EVIDENCE =
@@ -1160,6 +1318,86 @@ export function cases(t) {
       config: { ...WORDS, evidenceLabels: undefined, chapterDir: 'chapters', stateLedger: 'tracking/STATE.md' },
       files: { ...CHAPTER_TEXT, 'tracking/STATE.md': LEDGER('닫힘', '열림') },
     }),
+    false,
+  );
+
+  // everyCaptureIsAtADeclaredWidth — the one half of the capture standard a file still remembers.
+  const shot = (files, standard = STANDARD) =>
+    t.project({ config: { ...WORDS, captureStandard: standard }, files });
+
+  t.add(
+    'everyCaptureIsAtADeclaredWidth',
+    'the window came back at the browser default and the run said nothing',
+    shot({ 'docs/evidence/w02-org-shell/a-01.webp': webpOf(1280, 633) }),
+    true,
+  );
+  t.add(
+    'everyCaptureIsAtADeclaredWidth',
+    'the same frame shot at the declared width',
+    shot({ 'docs/evidence/w02-org-shell/a-01.webp': webpOf(1440, 1200) }),
+    false,
+  );
+  // A run at a device pixel ratio of two writes a file twice as wide out of a window that was
+  // exactly right. Reddening it would push a project into shooting at one ratio to satisfy a gate.
+  t.add(
+    'everyCaptureIsAtADeclaredWidth',
+    'the declared width at a device pixel ratio of two',
+    shot({ 'docs/evidence/w02-org-shell/a-01.webp': webpOf(2880, 2400) }),
+    false,
+  );
+  // The board draws some frames at another device width, and the project says so rather than
+  // having the gate redden on frames that are exactly right.
+  t.add(
+    'everyCaptureIsAtADeclaredWidth',
+    'a tablet frame at the second declared width',
+    shot({ 'docs/evidence/w02-org-shell/a-08.webp': webpOf(768, 1024) }),
+    false,
+  );
+  t.add(
+    'everyCaptureIsAtADeclaredWidth',
+    'that same tablet width with only the desktop standard declared',
+    shot({ 'docs/evidence/w02-org-shell/a-08.webp': webpOf(768, 1024) }, STANDARD[0]),
+    true,
+  );
+  // Alpha or metadata moves the canvas into a `VP8X` chunk. A reader that knew only the plain
+  // lossy header would report every such capture as unmeasurable — or, worse, measure none of them.
+  t.add(
+    'everyCaptureIsAtADeclaredWidth',
+    'a capture carrying alpha, whose canvas sits in the extended chunk',
+    shot({ 'docs/evidence/w02-org-shell/a-01.webp': webpOf(1440, 1200, { form: 'extended' }) }),
+    false,
+  );
+  t.add(
+    'everyCaptureIsAtADeclaredWidth',
+    'the same extended form at a width nobody declared',
+    shot({ 'docs/evidence/w02-org-shell/a-01.webp': webpOf(1280, 633, { form: 'extended' }) }),
+    true,
+  );
+  // 「I could not tell」 is the finding this gate would otherwise hide behind. A file it cannot
+  // measure has had nothing said about it, and silence there reads as a capture found sound.
+  t.add(
+    'everyCaptureIsAtADeclaredWidth',
+    'a capture whose bytes do not open as an image at all',
+    shot({ 'docs/evidence/w02-org-shell/a-01.webp': `RIFF····WEBP${'\0'.repeat(9 * 1024)}` }),
+    true,
+  );
+  // The driver's own screenshot, filed under the capture name without ever being encoded. It
+  // passes the name check, the ceiling and the blank floor, because none of those opens a byte.
+  t.add(
+    'everyCaptureIsAtADeclaredWidth',
+    'a PNG wearing the capture suffix',
+    shot({
+      'docs/evidence/w02-org-shell/a-01.webp': Buffer.concat([
+        Buffer.from('\x89PNG\r\n\x1a\n\0\0\0\rIHDR', 'latin1'),
+        Buffer.alloc(9 * 1024, 0),
+      ]),
+    }),
+    true,
+  );
+  t.add(
+    'everyCaptureIsAtADeclaredWidth',
+    'an evidence folder holding documents and no captures yet',
+    shot({ 'docs/evidence/w02-org-shell.md': W02_EVIDENCE(W02_SCREEN_SECTION) }),
     false,
   );
 }
