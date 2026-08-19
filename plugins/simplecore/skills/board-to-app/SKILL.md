@@ -265,6 +265,19 @@ ledger, the handover file, the wave decision, and the barrier work the wave give
    context before it opens a browser, and the work it was dispatched for is a few thousand
    characters of that. Brief it with those few thousand.
 
+   **An agent ends when its unit ends, and the useful ones are the hard part.** The rule reads as
+   housekeeping and is not: a coordinator keeps an agent alive because it has the context and the
+   next thing looks small, and then the next, and an agent briefed for one chapter has walked
+   eleven sections, built four checks, fixed a layout and written up four findings in one context.
+   **Every one of those decisions was locally right**, which is why the rule has to be mechanical
+   rather than judged — end it, and brief a fresh one.
+
+   **Name it for the unit, and end it before the name stops being true.** A name is how every
+   message it ever sent is read afterwards, so an agent still called after its first task while
+   doing its fifth misleads the whole log — and the drift in the name is the same drift as the
+   context. When you notice the name has gone wrong, that is the signal the agent should have ended
+   some time ago.
+
 2. **Every brief says what this agent owns, in two columns — mine and not mine, each
    named.** A brief that states only what an agent owns reads, to the agent, as
    permission for anything adjacent, and two agents on one surface is the
