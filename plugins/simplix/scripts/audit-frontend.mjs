@@ -542,6 +542,338 @@ function translatorBindings(content) {
 }
 
 /**
+ * The top-level property names of the object literal whose `{` sits at `open`.
+ *
+ * <p><b>Why this cannot be a regex.</b> The obvious pattern — an identifier followed by a colon —
+ * reads the middle of a ternary as a property: in `{ permission: ok ? a : b }` the run ` a :`
+ * matches it exactly as well as `permission:` does, so a scanner built that way invents a value
+ * named `a` and reports a placeholder nobody passed. The same pattern is defeated by a colon
+ * inside a string (`{ hint: "note: x" }`) and by a nested object's own keys.
+ *
+ * <p>So the object is split the way a parser splits it: walk the text tracking quote, template and
+ * nesting state, cut at commas that sit at the object's own depth, and read a name only where a
+ * property can begin — at the start of a segment. A ternary then lives inside a segment and is
+ * never mistaken for one.
+ *
+ * <p><b>A spread is reported rather than ignored.</b> `{ ...rest }` hides names this function
+ * cannot know, so callers that need a complete list must treat `dynamic` as "do not judge this
+ * call" rather than as "no further names".
+ *
+ * @param content the file source
+ * @param open    index of the object literal's `{`
+ * @returns the property names, whether anything hid names from the scan, and the index of the `}`
+ */
+function objectLiteralProperties(content, open) {
+  const names = [];
+  let dynamic = false;
+  let i = open + 1;
+  let depth = 1;
+  let segStart = i;
+  const segments = [];
+  while (i < content.length && depth > 0) {
+    const ch = content[i];
+    if (ch === '"' || ch === "'") {
+      const quote = ch;
+      i++;
+      while (i < content.length && content[i] !== quote) {
+        if (content[i] === "\\") i++;
+        i++;
+      }
+      i++;
+      continue;
+    }
+    if (ch === "`") {
+      // A template's `${…}` holds ordinary code, braces and all, so it is tracked rather than
+      // skipped to the next backtick — a nested object inside one would otherwise close the scan.
+      i++;
+      let inner = 0;
+      while (i < content.length) {
+        if (content[i] === "\\") {
+          i += 2;
+          continue;
+        }
+        if (inner === 0 && content[i] === "`") break;
+        if (content[i] === "$" && content[i + 1] === "{") {
+          inner++;
+          i += 2;
+          continue;
+        }
+        if (inner > 0 && content[i] === "{") inner++;
+        else if (inner > 0 && content[i] === "}") inner--;
+        i++;
+      }
+      i++;
+      continue;
+    }
+    if (ch === "/" && content[i + 1] === "/") {
+      while (i < content.length && content[i] !== "\n") i++;
+      continue;
+    }
+    if (ch === "/" && content[i + 1] === "*") {
+      i += 2;
+      while (i < content.length && !(content[i] === "*" && content[i + 1] === "/")) i++;
+      i += 2;
+      continue;
+    }
+    if (ch === "{" || ch === "[" || ch === "(") depth++;
+    else if (ch === "}" || ch === "]" || ch === ")") {
+      depth--;
+      if (depth === 0) {
+        segments.push(content.slice(segStart, i));
+        break;
+      }
+    } else if (ch === "," && depth === 1) {
+      segments.push(content.slice(segStart, i));
+      segStart = i + 1;
+    }
+    i++;
+  }
+  // An unbalanced literal means the scan ran off the end of the file. Reporting the names found
+  // so far would be reporting half an object, so the call is marked unjudgeable instead.
+  if (depth > 0) return { names: [], dynamic: true, end: content.length };
+  for (let segment of segments) {
+    const seg = segment
+      .replace(/\/\*[\s\S]*?\*\//g, " ")
+      .replace(/^\s*\/\/.*$/gm, " ")
+      .trim();
+    if (!seg) continue;
+    if (seg.startsWith("...") || seg.startsWith("[")) {
+      dynamic = true;
+      continue;
+    }
+    const quoted = seg.match(/^(["'])((?:\\.|(?!\1).)*)\1\s*:/);
+    if (quoted) {
+      names.push(quoted[2]);
+      continue;
+    }
+    // `name:` and the shorthand `name` alike — the shorthand is how most values are passed.
+    const plain = seg.match(/^([A-Za-z_$][\w$]*)\s*(?::|$)/);
+    if (plain) {
+      names.push(plain[1]);
+      continue;
+    }
+    dynamic = true;
+  }
+  return { names, dynamic, end: i };
+}
+
+let catalogueIndexCache = null;
+
+/**
+ * Every translation catalogue in the project, indexed by the namespace a call site names.
+ *
+ * <p>A namespace is resolved from the framework's own registration rather than guessed from the
+ * directory name: a `locales/index.ts` that declares one (`buildModuleTranslations({ namespace })`,
+ * conventionally through an exported constant) makes its sibling component directories
+ * `<namespace>/<component>`, and a `locales/` with no such file — the shape an app uses — makes
+ * them bare `<component>`. Both are in use in one repository, and a package's namespace is
+ * frequently nothing like its folder.
+ *
+ * @returns namespace → the catalogue directories registered under it, which is more than one
+ *          whenever several deployables ship their own copy of a shared namespace
+ */
+function localeCatalogues() {
+  if (catalogueIndexCache) return catalogueIndexCache;
+  const index = new Map();
+  const add = (ns, dir) => {
+    if (!index.has(ns)) index.set(ns, []);
+    index.get(ns).push(dir);
+  };
+  const declaredNamespace = (dir) => {
+    for (const name of ["index.ts", "index.tsx"]) {
+      const file = path.join(dir, name);
+      if (!fs.existsSync(file)) continue;
+      const src = fs.readFileSync(file, "utf8");
+      const direct = src.match(/\bnamespace\s*:\s*"([^"]+)"/);
+      if (direct) return direct[1];
+      // `namespace: PACKAGE_NAMESPACE` is the usual shape, so the constant beside it is read.
+      const viaConst = src.match(/\bconst\s+[A-Z][A-Z0-9_]*\s*(?::[^=]+)?=\s*"([^"]+)"/);
+      if (viaConst) return viaConst[1];
+    }
+    return null;
+  };
+  const seek = (dir) => {
+    let entries;
+    try {
+      entries = fs.readdirSync(dir, { withFileTypes: true });
+    } catch {
+      return;
+    }
+    for (const e of entries) {
+      if (!e.isDirectory() || EXCLUDE_DIRS.has(e.name)) continue;
+      const at = path.join(dir, e.name);
+      if (e.name !== "locales") {
+        seek(at);
+        continue;
+      }
+      const prefix = declaredNamespace(at);
+      for (const sub of fs.readdirSync(at, { withFileTypes: true })) {
+        if (!sub.isDirectory()) continue;
+        const componentDir = path.join(at, sub.name);
+        if (!fs.readdirSync(componentDir).some((f) => f.endsWith(".json"))) continue;
+        add(prefix ? `${prefix}/${sub.name}` : sub.name, componentDir);
+      }
+      // A catalogue whose language files sit directly in `locales/` is the namespace itself.
+      if (prefix && fs.readdirSync(at).some((f) => f.endsWith(".json"))) add(prefix, at);
+    }
+  };
+  for (const root of SRC_ROOTS) seek(path.join(ROOT, root));
+  catalogueIndexCache = index;
+  return index;
+}
+
+const catalogueLangCache = new Map();
+
+/**
+ * @param dir a catalogue directory
+ * @returns language → every key it defines, flattened to dotted paths, with the text as written
+ */
+function catalogueLanguages(dir) {
+  if (catalogueLangCache.has(dir)) return catalogueLangCache.get(dir);
+  const langs = new Map();
+  for (const file of fs.readdirSync(dir)) {
+    if (!file.endsWith(".json")) continue;
+    const flat = new Map();
+    const flatten = (obj, prefix) => {
+      for (const [k, v] of Object.entries(obj)) {
+        const at = prefix ? `${prefix}.${k}` : k;
+        if (v && typeof v === "object" && !Array.isArray(v)) flatten(v, at);
+        else flat.set(at, Array.isArray(v) ? v.join(" ") : String(v));
+      }
+    };
+    try {
+      flatten(JSON.parse(fs.readFileSync(path.join(dir, file), "utf8")), "");
+    } catch {
+      continue;
+    }
+    langs.set(file.replace(/\.json$/, ""), flat);
+  }
+  catalogueLangCache.set(dir, langs);
+  return langs;
+}
+
+/**
+ * The catalogue directories that govern a namespace as one file names it.
+ *
+ * <p>Several deployables ship a `common`, so a namespace alone does not say which catalogue a call
+ * site reads. The one that shares the longest path with the calling file does: a screen inside an
+ * app is answered by that app's copy, and only shared code — which shares no path with any of them
+ * — is answered by all of them, because shared code really does render under each.
+ *
+ * @param ns   the namespace a translator is bound to
+ * @param file the calling file, repository-relative
+ */
+function catalogueDirsFor(ns, file) {
+  const all = localeCatalogues().get(ns);
+  if (!all || !all.length) return [];
+  const fileSegments = file.split("/");
+  const shared = (dir) => {
+    const segments = path.relative(ROOT, dir).split(path.sep);
+    let n = 0;
+    while (n < segments.length && n < fileSegments.length && segments[n] === fileSegments[n]) n++;
+    return n;
+  };
+  const best = Math.max(...all.map(shared));
+  return all.filter((dir) => shared(dir) === best);
+}
+
+/**
+ * Which namespace each translator name in a file reads from, including the namespaces a package
+ * composes rather than writes out.
+ *
+ * <p>{@link translatorBindings} reads a literal argument. A package that publishes its own
+ * catalogue names it once as a constant and writes `useTranslation(PACKAGE_NAMESPACE + "/features")`
+ * at every call site, which is not a literal — so a rule built on the literal form alone is blind
+ * to whole shared packages, and shared packages are where one dropped value reaches every screen
+ * that mounts the component.
+ *
+ * @param content the file source
+ * @param file    the file's repository-relative path, used to follow a relative import
+ */
+function translatorNamespaces(content, file) {
+  const binds = translatorBindings(content);
+  const constValue = (ident) => {
+    const inline = content.match(
+      new RegExp(`\\b(?:export\\s+)?const\\s+${ident}\\s*(?::[^=]+)?=\\s*"([^"]+)"`),
+    );
+    if (inline) return inline[1];
+    const imported = content.match(
+      new RegExp(`import\\s*\\{[^}]*\\b${ident}\\b[^}]*\\}\\s*from\\s*"([^"]+)"`),
+    );
+    if (!imported || !imported[1].startsWith(".")) return null;
+    const base = path.resolve(path.dirname(path.join(ROOT, file)), imported[1]);
+    for (const candidate of [`${base}.ts`, `${base}.tsx`, path.join(base, "index.ts"), path.join(base, "index.tsx")]) {
+      if (!fs.existsSync(candidate)) continue;
+      const declared = fs
+        .readFileSync(candidate, "utf8")
+        .match(new RegExp(`export\\s+const\\s+${ident}\\s*(?::[^=]+)?=\\s*"([^"]+)"`));
+      if (declared) return declared[1];
+    }
+    return null;
+  };
+  for (const m of content.matchAll(
+    /const\s*\{[^}]*\bt\b\s*(?::\s*(\w+))?[^}]*\}\s*=\s*useTranslation\(\s*([^)]+?)\s*\)/g,
+  )) {
+    const alias = m[1] ?? "t";
+    if (binds.has(alias)) continue;
+    const expr = m[2].trim();
+    const composed = expr.match(/^([A-Za-z_$][\w$]*)\s*\+\s*"([^"]+)"$/);
+    if (composed) {
+      const head = constValue(composed[1]);
+      if (head) binds.set(alias, head + composed[2]);
+      continue;
+    }
+    const bare = expr.match(/^([A-Za-z_$][\w$]*)$/);
+    if (bare) {
+      const value = constValue(bare[1]);
+      if (value) binds.set(alias, value);
+    }
+  }
+  return binds;
+}
+
+/**
+ * The names i18next reads as instructions rather than substituting into the sentence.
+ *
+ * <p>The framework's translator declares its second argument as plain values
+ * (`Record<string, string | number | boolean>`), but it hands that object straight to i18next, so
+ * i18next's own option names keep their meaning at runtime and are legitimately absent from the
+ * text. `count` is the one that matters in practice: it selects `key_one` against `key_other`, and
+ * a sentence that pluralises without printing the number is correct.
+ *
+ * <p>Six of these are separately an error under `translator-options-arg`, which exists to say that
+ * this translator takes no options at all. They stay listed here so one defect is reported by one
+ * rule rather than by two under different names.
+ */
+const I18NEXT_RESERVED = new Set([
+  "count",
+  "context",
+  "ordinal",
+  "lng",
+  "lngs",
+  "ns",
+  "keySeparator",
+  "nsSeparator",
+  "defaultValue",
+  "defaultVariables",
+  "replace",
+  "interpolation",
+  "skipInterpolation",
+  "returnObjects",
+  "returnDetails",
+  "returnedObjectHandler",
+  "joinArrays",
+  "postProcess",
+  "fallbackLng",
+]);
+
+/** Whether a name is i18next's rather than a value the sentence is meant to substitute. */
+function isReservedTranslationOption(name) {
+  // `defaultValue_one`, `defaultValue_other` — a default per plural form is still a default.
+  return I18NEXT_RESERVED.has(name) || /^defaultValue_/.test(name);
+}
+
+/**
  * Route directories whose screens are reached without an account.
  *
  * A back-office screen declares the permission its server-side surface enforces, so a typed
@@ -1262,6 +1594,129 @@ return (
     <Text>{tFeatures("assignment.hint")}</Text>
   </Stack>
 );`,
+          },
+        ],
+      };
+    })(),
+  },
+  {
+    id: "dropped-interpolation",
+    invariant: "audit: scaffold locale",
+    level: "error",
+    desc: "t() passes a value the catalogue entry has no `{{placeholder}}` for — i18next drops it in silence, so the sentence reaches the screen with the word missing and reads as finished. Nothing errors: no console warning, no type error, a green build. Either add the placeholder to the entry in every language, or drop the value the sentence does not want",
+    appliesTo: (p) => (inModules(p) || inApps(p) || inPackages(p)) && /\.tsx?$/.test(p),
+    check: (c, file) => {
+      const binds = translatorNamespaces(c, file);
+      if (binds.size === 0) return [];
+      const hits = [];
+      for (const [alias, ns] of binds) {
+        const dirs = catalogueDirsFor(ns, file);
+        if (!dirs.length) continue;
+        // A quoted key only. A key built in a template literal cannot be resolved without running
+        // the component, and guessing at one would report calls whose entry is perfectly correct.
+        const call = new RegExp(`\\b${alias}\\(\\s*"([a-zA-Z0-9_.\\-]+)"\\s*,\\s*\\{`, "g");
+        for (const m of c.matchAll(call)) {
+          const key = m[1];
+          const { names } = objectLiteralProperties(c, m.index + m[0].length - 1);
+          const values = [...new Set(names.filter((n) => !isReservedTranslationOption(n)))];
+          if (!values.length) continue;
+          let defined = false;
+          const missing = new Map();
+          for (const dir of dirs) {
+            for (const [lang, entries] of catalogueLanguages(dir)) {
+              const text = entries.get(key);
+              // A language whose catalogue does not carry the key at all is a different defect and
+              // `missing-translation-key` owns it. Reporting it here would name every untranslated
+              // language on a call whose own language is right.
+              if (text === undefined) continue;
+              defined = true;
+              for (const value of values) {
+                if (new RegExp(`\\{\\{\\s*${value}\\b`).test(text)) continue;
+                if (!missing.has(value)) missing.set(value, []);
+                missing.get(value).push(`${path.relative(ROOT, dir).split(path.sep).join("/")}/${lang}`);
+              }
+            }
+          }
+          if (!defined) continue;
+          for (const value of values) {
+            if (!missing.has(value)) continue;
+            hits.push({
+              line: lineOfIndex(c, m.index),
+              excerpt: `t("${key}", { ${value} }) — no {{${value}}} in ${missing.get(value).join(", ")}`,
+            });
+          }
+        }
+      }
+      return hits;
+    },
+    samples: (() => {
+      // Two languages, because a value carried in one and dropped in the other is the same defect
+      // and is the half a single-language check calls clean.
+      const catalogue = (koHasPlaceholder, enHasPlaceholder) => ({
+        "modules/site/src/locales/index.ts": `export const PACKAGE_NAMESPACE = "site";\n`,
+        "modules/site/src/locales/widgets/ko.json": `{
+  "area": {
+    "moved": ${JSON.stringify(koHasPlaceholder ? "{{name}} 구역을 옮겼습니다." : "구역을 옮겼습니다.")},
+    "total": "구역 {{count}}개"
+  }
+}
+`,
+        "modules/site/src/locales/widgets/en.json": `{
+  "area": {
+    "moved": ${JSON.stringify(enHasPlaceholder ? "Moved {{name}}." : "Area moved.")},
+    "total": "{{count}} areas"
+  }
+}
+`,
+      });
+      return {
+        file: "modules/site/src/widgets/area/detail.tsx",
+        broken: {
+          files: catalogue(false, false),
+          source: `const { t } = useTranslation("site/widgets");
+
+addToast({ message: t("area.moved", { name }) });`,
+        },
+        fixed: {
+          files: catalogue(true, true),
+          source: `const { t } = useTranslation("site/widgets");
+
+addToast({ message: t("area.moved", { name }) });`,
+        },
+        miss: [
+          {
+            note: "count selects a plural form and is legitimately absent from the sentence",
+            files: catalogue(true, true),
+            source: `const { t } = useTranslation("site/widgets");
+
+<Text>{t("area.total", { count: rows.length })}</Text>`,
+          },
+          {
+            note: "a ternary value — the old scanner read ` fallback :` as a second property name",
+            files: catalogue(true, true),
+            source: `const { t } = useTranslation("site/widgets");
+
+addToast({ message: t("area.moved", { name: row.name ? row.name : fallback }) });`,
+          },
+          {
+            note: "a namespace this repository does not own — an absent catalogue is not an empty one",
+            source: `const { t } = useTranslation("framework/ui");
+
+<Button>{t("common.retry", { label })}</Button>;`,
+          },
+          {
+            note: "a key no catalogue defines — missing-translation-key owns that, and reporting it here would name it twice",
+            files: catalogue(true, true),
+            source: `const { t } = useTranslation("site/widgets");
+
+<Text>{t("area.selfServeHint", { name })}</Text>;`,
+          },
+          {
+            note: "a key built in a template literal cannot be resolved without running the component",
+            files: catalogue(false, false),
+            source: `const { t } = useTranslation("site/widgets");
+
+<Text>{t(\`area.\${row.state}\`, { name })}</Text>;`,
           },
         ],
       };
@@ -4877,6 +5332,8 @@ function resetCaches() {
   globalDialogCache = null;
   localeFindingsCache = null;
   localeKeyCache.clear();
+  catalogueIndexCache = null;
+  catalogueLangCache.clear();
 }
 
 function setRoot(dir) {
@@ -4999,6 +5456,36 @@ function selftestMechanisms() {
           `const { t } = useTranslation("site/widgets");\nconst { t: tf } = useTranslation("site/features");`,
         );
         return binds.get("t") === "site/widgets" && binds.get("tf") === "site/features";
+      },
+    },
+    {
+      name: "objectLiteralProperties: a ternary value is not read as a second property",
+      pass: () => {
+        const src = `t("k", { permission: ok ? allowed : denied })`;
+        const { names } = objectLiteralProperties(src, src.indexOf("{", 5));
+        return names.length === 1 && names[0] === "permission";
+      },
+    },
+    {
+      name: "objectLiteralProperties: a colon inside a string is not a property",
+      pass: () => {
+        const src = `t("k", { hint: "note: one, two", name })`;
+        const { names } = objectLiteralProperties(src, src.indexOf("{", 5));
+        return names.join(",") === "hint,name";
+      },
+    },
+    {
+      name: "objectLiteralProperties: a nested object's own keys stay nested",
+      pass: () => {
+        const src = `t("k", { a: { b: 1 }, c: 2 })`;
+        return objectLiteralProperties(src, src.indexOf("{", 5)).names.join(",") === "a,c";
+      },
+    },
+    {
+      name: "objectLiteralProperties: a spread marks the call unjudgeable",
+      pass: () => {
+        const src = `t("k", { ...rest, a: 1 })`;
+        return objectLiteralProperties(src, src.indexOf("{", 5)).dynamic === true;
       },
     },
     {
