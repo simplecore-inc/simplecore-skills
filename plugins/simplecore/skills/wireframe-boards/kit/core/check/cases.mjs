@@ -278,6 +278,27 @@ export function cases(t) {
       manifest: [{ letter: 'X', title: 't', screens: [] }] }), false);
   add('sectionCoverageGate', 'manifest가 비었다', base({ manifest: [] }), true);
 
+  // The declared split. The fixture stands in for `core/split.mjs`'s loader rather than calling
+  // it, because what the gate judges is the ANSWER — a placer that leaves a frame unplaced, and a
+  // declared part nothing answers with. Building a real module on disk to say `null` would test
+  // the loader.
+  const splitOf = (answers, parts = [{ key: '1', file: 'one.html' }, { key: '2', file: 'two.html' }]) => ({
+    parts,
+    partOf: (id) => answers[id] ?? null,
+    partFor: (key) => parts.find((p) => p.key === key) ?? null,
+  });
+  const twoFrames = [{ letter: 'X', title: 't', entries: [ent('x-01-a', 'X-01'), ent('x-02-b', 'X-02')] }];
+  add('splitPlacementGate', '축을 선언하지 않은 보드는 걸리지 않는다',
+    base({ sections: twoFrames }), false);
+  add('splitPlacementGate', '어느 부분에도 놓이지 않은 프레임',
+    base({ sections: twoFrames, split: splitOf({ 'X-01': '1' }) }), true);
+  add('splitPlacementGate', '선언되지 않은 부분에 놓였다',
+    base({ sections: twoFrames, split: splitOf({ 'X-01': '1', 'X-02': '9' }) }), true);
+  add('splitPlacementGate', '빈 채로 나가는 부분이 있다',
+    base({ sections: twoFrames, split: splitOf({ 'X-01': '1', 'X-02': '1' }) }), true);
+  add('splitPlacementGate', '프레임이 전부 놓이고 빈 부분이 없다',
+    base({ sections: twoFrames, split: splitOf({ 'X-01': '1', 'X-02': '2' }) }), false);
+
   // The CRUD census, the panel's main verb and the back control all read the board's ledger.
   const LEDGER = { 기록: { list: 'X-01', create: 'generic', read: 'X-02', update: 'generic',
     remove: { waived: '법정 기록이라 지우지 않는다' } } };

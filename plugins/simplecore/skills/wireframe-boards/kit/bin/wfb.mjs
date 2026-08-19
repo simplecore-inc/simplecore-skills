@@ -197,8 +197,7 @@ switch (cmd) {
   case 'pdf': {
     const { renderPdf, pdfPathFor, stampWatermark } = await import('../core/export/pdf.mjs');
     const { loadBoard } = await import('../core/context.mjs');
-    const { config } = await loadBoard(boardDir, { screens: false });
-    const htmlPath = resolve(boardDir, opt('in', 'board.html'));
+    const { config, split } = await loadBoard(boardDir, { screens: false });
     // `--mask` takes `40%` or `0.4`; a bare `40` is refused rather than guessed at — the two
     // readings differ by a factor of a hundred and one of them hands over the whole board.
     const maskRaw = opt('mask');
@@ -210,25 +209,45 @@ switch (cmd) {
     }
     const suffix = maskRatio ? `-share${Math.round(maskRatio * 100)}` : '';
     const outArg = opt('out');
-    const pdfPath = outArg
-      ? resolve(boardDir, outArg)
-      : pdfPathFor({ ...config, pdfName: `${config.pdfName}${suffix}` }, boardDir);
-    await renderPdf({ htmlPath, pdfPath, config, maskRatio, maskSeed: opt('mask-seed', '') });
-    if (flag('watermark')) {
+    // A logo stamped onto whatever was just written, never over it: a copy stamped for one
+    // recipient must not become the only copy the folder holds.
+    const stamp = (pdfPath) => {
+      if (!flag('watermark')) return;
       const logo = opt('watermark') ?? config.watermark?.logo;
       if (!logo) die('--watermark: 로고 경로를 지정하거나 board.config.mjs의 watermark.logo를 채웁니다');
-      // Written beside the plain PDF, never over it: a copy stamped for one recipient must not
-      // become the only copy the folder holds.
-      const stamped = pdfPath.replace(/\.pdf$/, '-watermarked.pdf');
       stampWatermark({
         src: pdfPath,
-        out: stamped,
+        out: pdfPath.replace(/\.pdf$/, '-watermarked.pdf'),
         logo: isAbsolute(logo) ? logo : join(boardDir, logo),
         opacity: config.watermark?.opacity,
         widthRatio: config.watermark?.widthRatio,
         to: opt('to', ''),
       });
+    };
+
+    // A board that declares volumes has no single file to render: a volume gathers several of the
+    // files the split wrote, so the pages are assembled the way the build assembled them. `--in`
+    // is still the explicit override — one named file in, one named file out — because that is
+    // what somebody rendering a page by hand asked for.
+    if (split?.volumes.length && !opt('in')) {
+      if (outArg) die('--out은 파일 하나를 지정합니다 — 부가 여럿인 보드에서는 --in과 함께 씁니다');
+      const { assembleBoard } = await import('../core/build.mjs');
+      const { renderVolumes } = await import('../core/export/volume.mjs');
+      const { volumeDocs } = await assembleBoard(boardDir);
+      const written = await renderVolumes({
+        config, boardDir, volumeDocs, suffix,
+        pdfOptions: { maskRatio, maskSeed: opt('mask-seed', '') },
+      });
+      written.forEach(stamp);
+      break;
     }
+
+    const htmlPath = resolve(boardDir, opt('in', split?.entry.file ?? 'board.html'));
+    const pdfPath = outArg
+      ? resolve(boardDir, outArg)
+      : pdfPathFor({ ...config, pdfName: `${config.pdfName}${suffix}` }, boardDir);
+    await renderPdf({ htmlPath, pdfPath, config, maskRatio, maskSeed: opt('mask-seed', '') });
+    stamp(pdfPath);
     break;
   }
   case 'shots': {

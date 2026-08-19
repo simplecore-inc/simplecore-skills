@@ -13,6 +13,7 @@ import { idOf } from './ids.mjs';
 import { makePartials, BOARD_CONTRACT } from './partials.mjs';
 import { textFor } from './text.mjs';
 import { migrationReport } from './migrations.mjs';
+import { loadSplit } from './split.mjs';
 
 /** Import a board-local module by path, or null when the board does not have that file. */
 const optional = async (path) =>
@@ -168,10 +169,17 @@ export async function loadBoard(boardDir, { screens = true } = {}) {
       ? readFileSync(join(boardDir, 'src/intro.html'), 'utf8') : '',
   };
 
+  // The axis this board's output is split along, or null. Loaded HERE rather than in the build
+  // because every command that reads a built board has to know how many files there are — the
+  // visual sweep, the screenshots and the PDF all ask, and a second answer computed in each of
+  // them is a second answer that can disagree.
+  const split = await loadSplit(boardDir, config.split);
+
   const ctx = {
     boardDir,
     patternDir,
     config,
+    split,
     pattern,
     components,
     roles,

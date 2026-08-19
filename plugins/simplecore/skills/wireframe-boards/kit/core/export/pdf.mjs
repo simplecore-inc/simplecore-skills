@@ -115,7 +115,7 @@ function paginate(opt) {
     :root { --frame-zoom: 1 !important; }
     html, body { background: #fff !important; background-image: none !important; }
     body { padding: 0 !important; margin: 0 !important; }
-    .wf-sidebar, .board-header, .view-input, .toc { display: none !important; }
+    .wf-sidebar, .board-header, .board-nav, .view-input, .toc { display: none !important; }
     .wf-board { margin-left: 0 !important; }
     /* On paper there is no viewport toggle, so both halves of a responsive pair print. */
     .view-input ~ * .frame.narrow, .view-input ~ * .frame.wide,

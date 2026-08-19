@@ -251,7 +251,10 @@
   /* A fixed head over a scrolling list, rather than one scrolling column: the filter and the
      board's total have to stay put, or a reader four hundred entries down has to scroll back
      to the top to narrow the list — which is the moment they stop using the filter. */
-  .wf-sidebar { position: fixed; top: 0; left: 0; width: 214px; height: 100vh;
+  /* `--sb-w` is the reading tool's width, and 214px is what it stands at with scripts off. The
+     handle at the sidebar's edge sets it on the root element; nothing on the board is drawn
+     from it, so a wider index changes what a reader can read and not what the board says. */
+  .wf-sidebar { position: fixed; top: 0; left: 0; width: var(--sb-w, 214px); height: 100vh;
     display: flex; flex-direction: column; overflow: hidden;
     background: var(--screen); border-right: 2px solid var(--line-strong); padding: 14px 0 0; z-index: 50; }
   .wf-sidebar .sb-head { flex: 0 0 auto; padding: 0 12px 9px; border-bottom: 1px solid var(--line); }
@@ -297,7 +300,47 @@
   .wf-sidebar .sb-count { font: 10px var(--mono); color: var(--muted); margin-top: 5px; }
   .wf-sidebar .sb-count.none { color: var(--accent); }
   .wf-sidebar [hidden], .wf-sidebar .is-off { display: none; }
-  .wf-board { margin-left: 214px; }
+  /* ── the index's width handle ──
+     A dimension of the reading tool, the same kind of thing as the filter above it. It ships
+     `hidden` and the script unhides it, so a scriptless board stands at the default width with
+     no dead control; it draws nothing on the board and changes nothing that is drawn. */
+  .wf-sidebar .sb-resize { position: absolute; top: 0; right: -3px; width: 7px; height: 100%;
+    cursor: col-resize; z-index: 51; background: transparent; }
+  .wf-sidebar .sb-resize:hover, .wf-sidebar .sb-resize:focus-visible,
+  .wf-sidebar .sb-resize.is-dragging { background: var(--accent); opacity: .55; outline: none; }
+  /* While dragging, the pointer belongs to the handle — without this the drag selects the
+     index's text and the reader ends up with a highlighted table of contents. */
+  body.is-resizing { cursor: col-resize; user-select: none; }
+  .wf-board { margin-left: var(--sb-w, 214px); }
+  /* ── the row between the files of one split board ──
+     Drawn only where a board declares an axis to split along. It is chrome rather than content:
+     it names the files, marks the one being read, and is hidden in the PDF along with the rest
+     of the chrome, because a volume is one document and has nowhere to go. */
+  .board-nav { position: sticky; top: 0; z-index: 45; display: flex; flex-wrap: wrap; gap: 4px;
+    align-items: center; padding: 8px 0 9px; margin-bottom: 2px;
+    background: var(--paper); border-bottom: 1px solid var(--line); }
+  .board-nav .bn { display: inline-flex; align-items: baseline; gap: 6px; text-decoration: none;
+    font: 600 11px var(--mono); color: var(--muted);
+    padding: 5px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--screen); }
+  .board-nav .bn:hover { border-color: var(--line-strong); color: var(--ink); }
+  .board-nav .bn.is-here { border-color: var(--accent); color: var(--ink); background: var(--fill); }
+  .board-nav .bn .bn-name { white-space: nowrap; }
+  .board-nav .bn .bn-n { font: 400 10px var(--mono); color: var(--faint); }
+  .board-nav .bn.is-here .bn-n { color: var(--muted); }
+  /* ── the entry page's own content ──
+     It draws no frame, so it says what the set is and hands the reader into each file of it. */
+  .entry { margin: 18px 0 26px; }
+  .entry .entry-note { font: 12px var(--sans); color: var(--muted); line-height: 1.6; margin-bottom: 14px; }
+  .entry .entry-parts { display: flex; flex-wrap: wrap; gap: 10px; }
+  .entry .ep { display: block; flex: 1 1 260px; max-width: 420px; text-decoration: none;
+    border: 1px solid var(--line); border-radius: 8px; padding: 12px 13px; background: var(--screen); }
+  .entry .ep:hover { border-color: var(--accent); }
+  .entry .ep .ep-name { display: flex; align-items: baseline; gap: 8px;
+    font: 700 12.5px var(--sans); color: var(--ink); }
+  .entry .ep .ep-n { margin-left: auto; font: 600 10px var(--mono); color: var(--muted); }
+  .entry .ep .ep-file { display: block; font: 10px var(--mono); color: var(--accent); margin-top: 3px; }
+  .entry .ep .ep-groups { display: block; font: 10.5px var(--sans); color: var(--faint);
+    line-height: 1.5; margin-top: 7px; }
   /* section title sticks to the top so a selected frame never hides which section it is in */
   .flow-title { position: sticky; top: 0; z-index: 40; background: var(--paper); padding-top: 10px; }
   /* keep an anchor-jumped frame below the sticky title */

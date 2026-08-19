@@ -139,8 +139,16 @@ export function makePartials({ components, roles = null, lang = 'en' }) {
    *   the reading contract. They ride the fixed HEAD rather than the scrolling list so they are
    *   reachable from anywhere in a table of contents hundreds of entries long, and so the filter
    *   never hides them: they are not screens and nothing a reader types should make them vanish.
+   * @param file the document this sidebar is being written into. An entry or a jump carrying a
+   *   `doc` that is not this file is linked as `<file>#<anchor>` rather than as a bare anchor —
+   *   which is the whole of what a split board needs from the index, and what an unsplit board
+   *   never triggers because nothing it lists carries a `doc` at all
    */
-  function sidebar(sections, { boardName = 'board', jumps = [] } = {}) {
+  function sidebar(sections, { boardName = 'board', jumps = [], file = '' } = {}) {
+    // `#anchor` while the target is in this file, `<file>#anchor` while it is not. A bare anchor
+    // is kept rather than always writing the file name, because that is the link that survives
+    // the page being opened from a different path — an attachment, a copy, a served folder.
+    const href = (doc, anchor) => `${doc && doc !== file ? doc : ''}#${anchor}`;
     const text = textFor(lang);
     // Each section carries its screen count and the top carries the board's, because a reader
     // scrolling a table of contents this long has no other way to tell whether the section they
@@ -149,12 +157,14 @@ export function makePartials({ components, roles = null, lang = 'en' }) {
     const total = sections.reduce((n, sec) => n + sec.screens.length, 0);
     const body = sections.map((sec) =>
       `<div class="sb-group">\n` +
-      `      <div class="sb-sec">${sec.letter}. ${sec.title}` +
+      // A section with no letter is a group formed by a declared axis rather than by the board's
+      // own lettering, and there is nothing to put in front of its name.
+      `      <div class="sb-sec">${sec.letter ? `${sec.letter}. ` : ''}${sec.title}` +
       `${sec.phaseTag ? `<span class="sb-ph">${sec.phaseTag}</span>` : ''}` +
       `${sec.featureTag ? `<span class="sb-ft">${sec.featureTag}</span>` : ''}` +
       `<span class="sb-n">${sec.screens.length}</span></div>\n` +
       sec.screens.map((sc) =>
-        `      <a href="#${sc.anchor}" title="${sc.id} · ${sc.label}">` +
+        `      <a href="${href(sc.doc, sc.anchor)}" title="${sc.id} · ${sc.label}">` +
         `<span class="num"><span class="seq">[${sc.seq}]</span>${sc.id}</span>` +
         `<span class="lbl">${sc.phaseTag ? `<span class="sb-ph">${sc.phaseTag}</span>` : ''}`
         + `${sc.featureTag ? `<span class="sb-ft">${sc.featureTag}</span>` : ''}${sc.label}</span></a>`
@@ -178,12 +188,56 @@ export function makePartials({ components, roles = null, lang = 'en' }) {
     </div>
     <div class="sb-list">
 ${jumps.length ? `    <div class="sb-group sb-fixed">
-${jumps.map((j) => `      <a href="#${j.href}"><span class="num">${j.tag}</span>` +
+${jumps.map((j) => `      <a href="${href(j.doc, j.href)}"><span class="num">${j.tag}</span>` +
       `<span class="lbl">${j.label}</span></a>`).join('\n')}
     </div>
 ` : ''}    ${body}
     </div>
+    <div class="sb-resize" role="separator" aria-orientation="vertical"
+         aria-label="${text.widthLabel}" title="${text.widthHint}" hidden></div>
   </nav>`;
+  }
+
+  /**
+   * The row that moves a reader between the files one split board is written into.
+   *
+   * <p>Drawn only on a split board — an unsplit one has nowhere to go and a row of one entry
+   * reads as a broken control. The current file is marked rather than unlinked, so the row is
+   * the same shape on every file and a reader can see where they are without counting.
+   *
+   * @param items `{ file, label, count }`, entry page first
+   * @param file the document being written — the item naming it is the one marked
+   */
+  function nav(items, file) {
+    if (!items.length) return '';
+    return `<nav class="board-nav">
+${items.map((it) => `  <a class="bn${it.file === file ? ' is-here' : ''}" href="${it.file}">` +
+      `<span class="bn-name">${it.label}</span>` +
+      `${it.count === undefined ? '' : `<span class="bn-n">${it.count}</span>`}</a>`).join('\n')}
+</nav>`;
+  }
+
+  /**
+   * The entry page's own content: what the set is, and the way into each file of it.
+   *
+   * <p>The page draws no frame, so what it owes a reader is the two things a frame list cannot
+   * give them — that these files are one board, and which file holds what. The index of every
+   * frame is the sidebar beside it, where the filter is.
+   *
+   * @param note the sentence saying the files are one set
+   * @param parts `{ file, label, count, groups }` — one card each
+   */
+  function entry(note, parts) {
+    return `<section class="entry" id="entry">
+  <p class="entry-note">${note}</p>
+  <div class="entry-parts">
+${parts.map((p) => `    <a class="ep" href="${p.file}">
+      <span class="ep-name">${p.label}<span class="ep-n">${p.count}</span></span>
+      <span class="ep-file">${p.file}</span>
+      ${p.groups ? `<span class="ep-groups">${p.groups}</span>` : ''}
+    </a>`).join('\n')}
+  </div>
+</section>`;
   }
 
   // page({title, sidebarHtml, headerHtml, sectionsHtml, readmeHtml, styles}): the whole document.
@@ -199,7 +253,7 @@ ${jumps.map((j) => `      <a href="#${j.href}"><span class="num">${j.tag}</span>
   // implementing, and at the top it would stand between every later reader and the frames they
   // came for — on a board hundreds of frames long that is a toll paid on every visit. The header
   // links to it, so «reachable» does not depend on scrolling to the end.
-  function page({ title, sidebarHtml, headerHtml, overviewHtml = '', sectionsHtml, readmeHtml, styles }) {
+  function page({ title, sidebarHtml, navHtml = '', headerHtml, overviewHtml = '', sectionsHtml, readmeHtml, styles }) {
     return `<!doctype html>
 <html lang="${textFor(lang).htmlLang}">
 <head>
@@ -215,6 +269,7 @@ ${styles}
 <input type="checkbox" id="viewport" class="view-input" aria-label="${textFor(lang).viewportLabel}">
 ${sidebarHtml}
 <div class="wf-board">
+${navHtml}
 ${headerHtml}
 ${overviewHtml}
 ${sectionsHtml}
@@ -393,10 +448,71 @@ ${readmeHtml}
     input.select();
   });
 })();
+(function () {
+  // The index's width. A dimension of the READING TOOL, the same kind of thing as the filter
+  // above it: a table of contents hundreds of entries long truncates every label at 214px, and
+  // the reader who needs the whole label needs it for a minute rather than for good.
+  //
+  // It draws nothing and changes nothing on the board. The handle ships \`hidden\` and is unhidden
+  // here, so a scriptless board stands at the default width with no dead control; the width is
+  // remembered per reader so it survives moving between the files of one board, which is exactly
+  // where losing it would be felt.
+  var bar = document.querySelector('.wf-sidebar');
+  var grip = document.querySelector('.wf-sidebar .sb-resize');
+  if (!bar || !grip) return;
+  var MIN = 150, MAX = 560, KEY = 'wf-sidebar-width';
+  var root = document.documentElement;
+
+  function apply(px) { root.style.setProperty('--sb-w', Math.round(px) + 'px'); }
+  try {
+    var saved = parseFloat(window.localStorage.getItem(KEY));
+    if (saved >= MIN && saved <= MAX) apply(saved);
+  } catch (e) { /* storage refused — the default width is the right answer */ }
+
+  var dragging = false;
+  function move(e) {
+    if (!dragging) return;
+    var x = Math.min(MAX, Math.max(MIN, e.clientX));
+    apply(x);
+    e.preventDefault();
+  }
+  function stop() {
+    if (!dragging) return;
+    dragging = false;
+    grip.classList.remove('is-dragging');
+    document.body.classList.remove('is-resizing');
+    try { window.localStorage.setItem(KEY, parseFloat(root.style.getPropertyValue('--sb-w'))); } catch (e) { /* nothing to remember it with */ }
+  }
+  grip.addEventListener('pointerdown', function (e) {
+    dragging = true;
+    grip.classList.add('is-dragging');
+    document.body.classList.add('is-resizing');
+    e.preventDefault();
+  });
+  window.addEventListener('pointermove', move);
+  window.addEventListener('pointerup', stop);
+  window.addEventListener('pointercancel', stop);
+  // Reachable without a pointer, and a double click puts it back where it started.
+  grip.setAttribute('tabindex', '0');
+  grip.addEventListener('keydown', function (e) {
+    var step = e.shiftKey ? 40 : 12;
+    var now = parseFloat(getComputedStyle(bar).width);
+    if (e.key === 'ArrowLeft') apply(Math.max(MIN, now - step));
+    else if (e.key === 'ArrowRight') apply(Math.min(MAX, now + step));
+    else return;
+    e.preventDefault();
+    try { window.localStorage.setItem(KEY, parseFloat(root.style.getPropertyValue('--sb-w'))); } catch (err) { /* nothing to remember it with */ }
+  });
+  grip.addEventListener('dblclick', function () {
+    root.style.removeProperty('--sb-w');
+    try { window.localStorage.removeItem(KEY); } catch (e) { /* nothing to forget it from */ }
+  });
+  grip.hidden = false;
+})();
 </script>
 </body>
 </html>`;
   }
 
-  return { frame, sidebar, page };
+  return { frame, sidebar, nav, entry, page };
 }

@@ -52,9 +52,14 @@ const STANDING = [
  * @param boardItems `<li>` elements the board contributes
  * @param hasPairs whether any frame is half of a narrow/wide pair. The viewport toggle is drawn
  *   only then: a control that changes nothing reads as a broken one
+ * @param split the axis this board's output is written along, or null. A split board's contract
+ *   gains one standing item, on every file including the entry page: a reader who was handed one
+ *   file has to be told the others exist, and that item is the only thing in the artifact that
+ *   tells them. It is a STANDING item rather than one the board contributes, because the thing
+ *   it explains is the kit's doing
  * @returns `{ header, readme }`
  */
-export function renderIntro({ config, patternItems = '', boardItems = '', hasPairs = false }) {
+export function renderIntro({ config, patternItems = '', boardItems = '', hasPairs = false, split = null }) {
   const text = textFor(config.boardLang);
   const toggle = hasPairs
     ? `\n  <label class="view-toggle" for="viewport"><span class="opt-narrow">${text.narrow}</span>`
@@ -81,10 +86,21 @@ export function renderIntro({ config, patternItems = '', boardItems = '', hasPai
 </header>`;
   // `id="readme"` so anything that wants to send somebody here has an anchor to name, even
   // though the header no longer carries a link of its own.
+  // Written from the split rather than from a board's own words: what a reader needs here is the
+  // number of files, their names and where the index is, and all three are facts about the
+  // arrangement the kit produced.
+  const splitItem = split
+    ? [`<strong>This board is delivered as ${split.files.length} files, and they are one board.</strong> `
+      + 'The row at the top of every file moves between them, and the entry page '
+      + `(<code>${split.entry.file}</code>) carries the index of every frame on the board and the `
+      + 'map at the front. Each file still renders on its own with no external resource; what one '
+      + 'file alone is not is the whole board, so a frame named in a note may live in another of '
+      + 'them and a link that crosses is written <code>&lt;file&gt;#&lt;anchor&gt;</code>.']
+    : [];
   const readme = `<section class="readme" id="readme">
   <h2>HOW TO READ THIS BOARD — REQUIRED BEFORE IMPLEMENTING</h2>
   <ol>
-${STANDING.map((li) => `    <li>${li}</li>`).join('\n')}
+${[...STANDING, ...splitItem].map((li) => `    <li>${li}</li>`).join('\n')}
 ${patternItems.trim()}
 ${boardItems.trim()}
   </ol>

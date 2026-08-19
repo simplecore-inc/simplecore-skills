@@ -44,6 +44,13 @@ const en = {
   jumpIa: 'Information architecture',
   jumpUser: 'Users and roles',
   jumpReadme: 'Reading contract',
+  /** The index's width handle — a dimension of the reading tool, not of the board. */
+  widthLabel: 'Index width',
+  widthHint: 'Drag to resize · arrow keys adjust · double-click resets',
+  /** A board written into several files: the way back to the entry page, and what it says. */
+  navEntry: 'Whole board',
+  oneSet: (n) => `This board is one set of ${n} files. Open another from the row above; `
+    + 'find a single frame in the index on the left.',
 };
 
 /** Korean. */
@@ -63,6 +70,11 @@ const ko = {
   jumpIa: '정보 구조',
   jumpUser: '사용자 구성',
   jumpReadme: '읽기 규약',
+  widthLabel: '색인 너비',
+  widthHint: '끌어서 조절 · 화살표로 조금씩 · 두 번 누르면 기본값',
+  navEntry: '보드 전체',
+  oneSet: (n) => `이 보드는 파일 ${n}개가 한 벌입니다. 다른 파일은 위의 이동 줄에서 열고, `
+    + '프레임 하나는 왼쪽 색인에서 찾습니다.',
 };
 
 export const LANGS = { en, ko };

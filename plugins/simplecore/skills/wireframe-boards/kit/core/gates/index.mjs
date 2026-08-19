@@ -36,6 +36,7 @@ import {
   controlVocabularyGate, panelVerbGate, backControlGate,
 } from './navigation.mjs';
 import { sectionCoverageGate } from './coverage.mjs';
+import { splitPlacementGate } from './split.mjs';
 import { chromeStyledGate } from './chrome.mjs';
 import { frameManifestGate, parityListGate, roadmapPlacementGate, docFrameRefGate, docLinkGate, docRegistryGate, roleDocGate, featureKeyDocGate } from './documents.mjs';
 
@@ -48,6 +49,7 @@ import { frameManifestGate, parityListGate, roadmapPlacementGate, docFrameRefGat
 export const CORE_GATES = [
   idGate,
   sectionCoverageGate,
+  splitPlacementGate,
   slugGate,
   refTailGate,
   refNumGate,

@@ -27,27 +27,41 @@ stay clean greyboxes; only connectors and annotations are loose and informal.
 One self-contained `.html` file, `<!doctype html>` through `</html>`, all CSS
 inline in one `<style>` block. These six hold on every board:
 
+**Past a few hundred frames a board may be split**, and only then: it declares an
+axis in `board.config.mjs` and the build writes one file per part plus an entry
+page carrying the index of every frame (`references/build-kit.md` § Splitting a
+board). What survives is every clause below, **each file answering for itself** —
+it renders offline, alone, with no external resource. What does not survive is
+*one file is the whole board*: a reader handed one part has the frames of that
+part, so the entry page states that the files are one set, the reading contract
+gains an item saying so on every one of them, and a link that crosses is written
+`<file>#<anchor>`. A board that declares no axis writes one file, as before, and
+nothing here changes for it.
+
 1. **No external resource** — no images, fonts, or stylesheets; system font
    stack only. The file must render identically offline, attached to a doc, or
    as a thumbnail; one missing network resource silently destroys the board.
-2. **No JavaScript, except to navigate the table of contents.** Layout, content,
-   and states are pure HTML/CSS and must render fully with scripts off. The only
-   scripts permitted are **inline** navigation aids over the sidebar index: a
-   scroll-spy that highlights the entry of the frame in view, and a filter that
-   narrows the index as the reader types. Both are progressive — with JS off the
-   board renders whole, the index lists every screen, and every anchor works — and
-   any control they drive ships `hidden`, unhidden by the script, so a scriptless
+2. **No JavaScript, except to navigate the table of contents and size it.**
+   Layout, content, and states are pure HTML/CSS and must render fully with
+   scripts off. The only scripts permitted are **inline** aids over the sidebar
+   index: a scroll-spy that highlights the entry of the frame in view, a filter
+   that narrows the index as the reader types, and a handle that sets the index's
+   own width. All are progressive — with JS off the board renders whole at the
+   default width, the index lists every screen, and every anchor works — and any
+   control they drive ships `hidden`, unhidden by the script, so a scriptless
    board carries no dead control. **No script may create content, drive
    interactivity a reviewer acts on, or hide a frame.** Filtering the INDEX is
-   navigation; filtering the BOARD would let a reviewer be shown a shorter board
-   than the one that exists, and is the line this exception does not cross.
+   navigation and its width is a dimension of the reading tool: **nothing drawn on
+   the board may change, and no board content may depend on either.** Filtering the
+   BOARD would let a reviewer be shown a shorter board than the one that exists,
+   and is the line this exception does not cross.
 3. **Greyscale plus exactly ONE accent color**, reserved for connectors,
    annotation pins, stickies, fold lines, and `OPEN:` markers. A second accent
    turns the board into a design and reviewers critique colors instead of flows.
-4. **The `.readme` implementation contract ships on every board** and is never
-   deleted or trimmed — a board reaches its reader stripped of the conversation
-   that produced it, and both people and LLMs otherwise reproduce the greyboxes
-   as a design. It states what the board specifies (screens, content, states,
+4. **The `.readme` implementation contract ships on every board, and on every
+   file of a split one**, and is never deleted or trimmed — a board reaches its
+   reader stripped of the conversation that produced it, and both people and LLMs
+   otherwise reproduce the greyboxes as a design. It states what the board specifies (screens, content, states,
    flow, wording) and what it deliberately does not (color, type, spacing,
    components, motion), how to read `AUTH:` / `DATA:` / `OPEN:`, that a
    narrow/wide pair is one responsive screen, and that the project's own frontend

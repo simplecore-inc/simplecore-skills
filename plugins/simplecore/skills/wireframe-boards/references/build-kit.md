@@ -5,9 +5,11 @@ hand-copied into every frame.
 
 One file becomes a wall of grey that neither a person nor an LLM can navigate, and every chrome
 edit is a find-replace across the whole board. At that size, the board is authored as a small
-**source tree that builds into the same deliverable** — the output invariant never changes: one
-self-contained, offline, no-JS (bar the index navigation aids) HTML file. Splitting is a *source*
-concern, not a *deliverable* one.
+**source tree that builds into the same deliverable** — every file it writes is self-contained,
+offline, and no-JS bar the index's navigation aids and its width handle. Splitting the SOURCE
+changes nothing a reader receives. Splitting the OUTPUT is a separate decision a board makes for
+itself, several hundred frames later, and § Splitting a board along a declared axis is where it is
+made.
 
 ## The board writes no tools
 
@@ -122,7 +124,7 @@ it belongs in `<board>/board.gates.mjs` or in a forked pattern, and the cost of 
 section above.
 
 **② Does its shape carry the product's vocabulary?** This is where a general capability still
-lands wrong. The kit learns `splitBy` — a declaration naming a module that answers 「which part
+lands wrong. The kit learns `split` — a declaration naming a module that answers 「which part
 does this screen belong to」, the parts' order, and each part's label — and it never learns what
 those parts are called in any product. A field named after one product's concept, a default whose
 values are that product's values, an enum of its parts: each of them is the project-specific
@@ -139,6 +141,45 @@ declares no split still builds one file, with the same name, at the same path.
 the interface; what `board.config.mjs` holds is every value a product chose — the axis, the part
 names, which parts go in which volume, what the nav calls them. A value that reaches the kit is a
 value the next project has to fork the kit to change.
+
+## Splitting a board along a declared axis
+
+**A board past a few hundred frames may be written as several files.** The kit knows only that a
+board may name a module answering 「which part does this screen belong to」; what the parts are,
+what they are called and which of them share a volume are the board's words, declared in
+`board.config.mjs`. A board that declares nothing writes `board.html` and nothing else.
+
+```js
+split: {
+  module: '../scripts/<placer>.mjs',       // the kit imports it; no placement is restated here
+  part:  { call: '<export>' },             // frame id → a part key
+  group: { call: '<export>', key: '<field>', label: '<field>', mark: '<field>', order: '<field>' },
+  entry: { file: 'board.html', nav: '<what a reader calls the whole board>' },
+  parts: [{ key: <key>, file: '<name>.html', nav: '<what a reader calls this part>' }, …],
+  volumes: [{ parts: [<key>, …], name: '<marker in the PDF file name>', title: '<cover>' }, …],
+}
+```
+
+- **`part` decides the file.** Every frame the board draws has to be placed and every declared
+  part has to hold something — `splitPlacementGate` refuses a build where either fails, because
+  an unplaced frame lands somewhere by fallback and an empty part ships a file promising screens
+  that are not in it.
+- **`group` decides the sections INSIDE one file**, and is optional. The board's own lettered
+  clusters fragment once the frames are split across files — a cluster's title then names a
+  cluster the file holds only part of — so a split board groups by whatever comes away together
+  instead. With no `group`, the clusters are kept and filtered. The page and the index are built
+  from one ordered list, so they can never disagree; `order` names the field that sorts the
+  groups, and without it they stand in the order their first frame is drawn.
+- **The entry page draws no frame.** It carries the nav row, the opening overview, a card per
+  part, and — as its sidebar, where the filter is — the index of every frame on the board, each
+  row linking `<file>#<anchor>`. That is what keeps 「one search finds any frame」 true.
+- **`volumes` decide the PDFs**, one per volume rather than one per file: a volume gathers several
+  parts, so its pages are assembled from the same documents the build assembled and rendered from
+  a scratch file. With no `volumes`, one PDF is rendered from the entry page.
+- **The reading contract ships on every file**, entry page included, and gains one item naming how
+  many files there are and where the index is. A reader handed one file is the whole reason.
+- **`wf.mjs check` and `wf.mjs shots` open every file and report once.** A sweep that stopped at
+  the first would go quiet on the rest, which reads exactly like a clean board.
 
 ## Three places a gate can live, and the test that decides
 
