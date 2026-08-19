@@ -1694,22 +1694,36 @@ Two things follow, and both belong to whoever writes the sentence rather than to
   up later in the file it lands in. Whoever copies a report's sentence into a document owns what it
   now says, and runs that project's prose checks over the result.
 
-**The hop that defeats both is a sentence drafted for somebody else's file.** An agent writes a
-paragraph for a document it does not own, the coordinator relays it, a third party pastes it in —
-and **not one of the three is writing a file at the moment they handle it.** The drafter is writing
-a report, the relayer is writing a message, and the party who does write the file did not write the
-words. The rule above addresses two of those hands and the relay hop is where it falls through:
-prose in transit reads as data being passed along rather than as a document being composed.
+**The hop that defeats both is a sentence drafted for somebody else's file**, and it has three
+hands rather than two. An agent writes a paragraph for a document it does not own, a coordinator
+relays it, a third party pastes it in — and **not one of them is writing a file at the moment they
+handle it.** The rule above addresses the first and the last; the relay is where it falls through.
 
-**So the check belongs to whoever last touches it before it lands** — draft it, relay it, or paste
-it, run the project's prose checks over it. This is not hypothetical: a paragraph drafted in one
-agent's report, relayed verbatim by a coordinator and pasted by a third session broke two rules of
-that project's own standard and turned a gate red that had been green when the work started.
+**The rule that closes all three is that the check belongs to the WRITE, not to the authorship.**
+Whoever's edit puts the prose into a file runs the project's checks over it, whatever its
+provenance. Say it that way rather than by naming roles, because the temptation is different at
+each hand and each one feels like a reason:
 
-**And a check run somewhere the scanner cannot reach reports the same zero as a pass.** A prose
-checker that enumerates through version control never sees a scratch file outside the repository, so
-「I checked it first」 can be true and worth nothing. Put the draft where the tool actually looks —
-inside the tree, staged if the enumeration needs it — read the count, then remove it.
+| Hand | What it tells itself |
+| --- | --- |
+| the drafter | it is going into somebody else's file, so it is a proposal rather than a document |
+| the relayer | it is text in a message, and a message is not a file |
+| **the writer** | **it arrived looking reviewed, from a careful source, so it read as already checked** |
+
+**The third is the one to put in front of people**, because it is the only hand where somebody
+actually ran a command and was reassured by it — a document checker came back clean while the
+sentence rule that would have refused the paragraph was never run. **A pass is only a pass for the
+question it asked.**
+
+This is not hypothetical: a paragraph drafted in one agent's report, relayed verbatim, and pasted
+by a third session broke two rules of that project's prose standard and turned a gate red that had
+been green when the work started.
+
+**And verifying the fix has its own version of the same trap.** A prose checker that enumerates
+through version control never sees a scratch file outside the repository, so it returns zero for a
+draft it never opened — **the same character as a pass**, and 「I checked it first」 becomes true
+and worthless. The procedure, not the anecdote: put the draft inside the tree, `git add -N` so the
+enumeration reaches it, run the check, read the count, remove it.
 
 ## Generating and regenerating the chapters
 
