@@ -301,7 +301,11 @@ export const docFrameRefGate = {
         const id = `${m[1]}-${m[2]}`;
         if (!ids.has(id) && !NOT_A_FRAME.has(id)) miss.add(id);
       }
-      if (miss.size) bad.push(`${f.split('/').slice(-2).join('/')}: ${[...miss].sort().join(' ')}`);
+      // The fix travels with the finding. A document asserting that an id is ABSENT trips this
+      // gate identically to one citing it — the scan reads the id and cannot read the polarity of
+      // the sentence around it — and the person who meets the refusal has no way to know that from
+      // the message alone. Saying it here beats a rule in a file they have to already know about.
+      if (miss.size) bad.push(`${f.split('/').slice(-2).join('/')}: ${[...miss].sort().join(' ')} — 없는 번호를 가리키는 문장이면 아이디 대신 양옆의 번호로 적는다`);
     }
     return bad;
   },
