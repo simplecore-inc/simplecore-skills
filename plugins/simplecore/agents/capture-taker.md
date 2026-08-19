@@ -80,6 +80,21 @@ the image.
 something, a control cut off, an action below the fold. Then the measurement is what you report
 (the two rectangles, the point pressed, what answered there), not a description of the picture.
 
+**But say it as the tree gives it, and never smooth it into what a reader would see.** The
+accessibility tree is not the screen: it carries names a sighted reader never meets — a resize
+handle's value, a paging control's spoken label, a cell's full text where the screen shows two
+lines — and it omits what has no name, an icon-only button most of all. A first run of this
+arrangement produced nine places where the written-down account and the picture disagreed, every
+one of them from the gap between the two: a column header written 「사업장명 50」 where the screen
+shows only the name, a pager written 「1쪽」 where it draws 「1」, three row actions written as words
+where they are drawn as an eye, a pencil and a bin.
+
+**So write what the tree says and mark it as the tree's.** 「목록 위 바 — 「전체 4건」」 is a claim
+about the screen; 「트리에서 읽은 열 머리: 사업장명 50」 is a claim about the reading, and only the
+second is one you can make. Where a control has no name in the tree, say that it has none rather
+than naming it from what it must be. **Somebody opens the picture afterwards, and the two accounts
+are compared** — which only works if yours says where it came from.
+
 ## A blank capture is the one thing you must look at
 
 **Never opening your own capture has a back side: a shot taken before the page painted is a white

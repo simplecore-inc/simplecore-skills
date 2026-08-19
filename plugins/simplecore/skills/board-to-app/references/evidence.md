@@ -105,6 +105,23 @@ whole and in one head.
 coordinator, and what the taker hands back is a record of what was on the screen rather than a
 section of the result document.
 
+## The tree is not the screen, which is why the judge is not optional
+
+**Reading the accessibility tree is the cheap way to write down a screen and it is a different
+account from the picture.** The tree carries names nobody sees — a resize handle's value, a pager's
+spoken label, a cell's whole text where the screen breaks it over two lines — and it is silent
+where nothing has a name, which is every icon-only control.
+
+**Measured on the first run of this arrangement: nine of a screen's written-down facts disagreed
+with its captures**, and every one came from that gap rather than from carelessness. A column
+header written as the name plus a slider's number. A pager written in words it does not draw. Three
+row actions written as labels where the screen draws an eye, a pencil and a bin. A panel's three
+footer buttons absent from the account entirely, because the reader's eye had gone to the open tab.
+
+**So the split is not a saving that happens to be safe — the second reading is what makes the first
+usable.** A transcription alone would have put nine wrong sentences into a result document with a
+correct-looking capture beside each one, and nothing in the run would have disagreed with itself.
+
 ## The unit of a check is one screen, and each gets a fresh agent
 
 **Building a chapter is one agent's work; checking it is not.** A builder carries a chapter because
