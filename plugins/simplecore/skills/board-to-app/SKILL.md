@@ -124,6 +124,15 @@ The sentence lives once, in the schema, and this column carries the same string
 under `bta.mjs gates` — so a cost corrected here reaches the report, which is the
 only way a person meets it.
 
+**So a cell in this column never says 「as above」, and the reason is worth more
+than the rule.** A table is read top to bottom, so a row may lean on the row
+before it and be perfectly clear; a per-item report prints one key at a time, in
+whatever order the absences happen to fall, and the same words then land alone
+under a key whose neighbour was declared. **That is a property of moving prose out
+of a table and into a report, not a slip in the two cells it was found in** — the
+next row added here will reach for 「as above」 for exactly the reason the last two
+did, and it holds for any column this skill ever prints one item at a time.
+
 **An optional key absent because its subject does not exist yet is a promise, not a
 decision.** A project whose application has not been built has no migration directory to
 name, no address that renders one frame, no generated locale. Such a key **is declared in
@@ -157,13 +166,21 @@ reporting the same zero as a repository with nothing wrong. **The two markup con
 opposite on purpose** — a `chapterLines` phrase is the line as written, markup and all, and an
 `evidenceLabels` value is the word alone, because the checks write the emphasis themselves —
 so the commonest way to get this wrong is to declare one of them the way the other is
-declared. `declaredWordsMatchTheDocuments` holds it: it counts what each declared word matched
-in the documents that key governs, and speaks when a declaration matched nothing while
-something independent of it says the documents hold what it names. **A project that has just
-been wired has nothing to match against, and its zeros are correct** — so the gate is silent
-there and says which of the two it established either way. `bta.mjs doctor` prints the whole
-census, matched and unmatched alike, because the count is what shows a comparison reached
-anything at all.
+declared. Two gates hold it, and they are two because the zero has two meanings:
+
+- `declaredWordsMatchTheDocuments` (**error**) counts what each declared word matched in the
+  documents that key governs and speaks when a declaration matched nothing **while something
+  independent of it says the documents hold what it names** — the same declaration with its
+  markdown ignored finding the line, a chapter file placing a frame, a result document written
+  in bolded lead-ins. Each finding names the count and which of those established it.
+- `declaredWordsHaveBeenCompared` (**warning**) speaks when there was nothing to compare against
+  at all. A project that has just been wired has no chapter files and no result documents, and
+  its zeros are correct — but a run that says nothing about them says only that nothing was read,
+  which is indistinguishable from a run that read them and found them sound.
+
+**Between the two, silence means compared and matched**, and that is the whole reason the second
+one exists. `bta.mjs doctor` prints the census behind both, matched and unmatched alike, because
+the count is what shows a comparison reached anything at all.
 
 | Key | What the project names with it | Required | Absent means |
 | --- | --- | --- | --- |
@@ -1213,6 +1230,7 @@ node "${CLAUDE_PLUGIN_ROOT}/skills/board-to-app/scripts/bta.mjs" check
 | the code's own defect types | the project's `auditScript` — every new detection rule goes there, whether that key names one script or the directory a family of them lives in |
 | every key this skill reads has a row in the config table above and a line in the copyable template, and the cost that row states is the sentence `doctor` prints | `bta.mjs gates` — a self-check rather than a gate, because its subject is this skill's own two documents rather than any project's → `references/checks.md` |
 | a word the project declared as its own vocabulary is one its documents actually write | `declaredWordsMatchTheDocuments` — and `bta.mjs doctor` prints what every one of them matched, because the count is worth as much as the finding here |
+| a declared vocabulary has been compared against something at all | `declaredWordsHaveBeenCompared` — a warning, because an empty corpus is a project that has not written the documents yet rather than a defect; it is the sentence that stops 「nothing to read」 and 「read it and it was sound」 arriving as the same silence |
 
 **Held by eyes** — no machine can judge these, and saying so is the point. **Each row names
 whose eyes and at which moment**, for the reason the next paragraph gives:

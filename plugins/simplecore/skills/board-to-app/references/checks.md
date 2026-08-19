@@ -176,6 +176,14 @@ has become worthless.
   documents of one kind exist and whose documents of the other do not — the last is the one that
   is easy to leave out and is where the boundary actually sits. `declaredWordsMatchTheDocuments`
   is the worked example, and it says in each finding which of the two states it established.
+- **Where a zero has two meanings, the second one is a warning rather than a widened error.**
+  「I compared and nothing matched」 is a defect; 「there was nothing to compare against」 is a
+  project that has not written the documents yet, and a gate covering both fails every repository
+  on the day it is wired. They are two gates because a gate answers one question — and the pair is
+  what makes silence mean something: with only the error, a run says nothing both when the check
+  passed and when it never ran. `declaredWordsMatchTheDocuments` and
+  `declaredWordsHaveBeenCompared` are that pair, and neither can speak about an entry the other
+  is speaking about, so one defect is never reported twice under two ids.
 - **An escape a reader can see and question.** A project turns a core gate off with
   `disabledGates: [{ "id": "…", "reason": "…" }]` — the reason is required, because an exception
   nobody can question is an omission wearing a config key.

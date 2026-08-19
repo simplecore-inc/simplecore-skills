@@ -406,7 +406,47 @@ export const declaredWordsMatchTheDocuments = {
   },
 };
 
-export const VOCABULARY_GATES = [declaredWordsMatchTheDocuments];
+/**
+ * A declaration nothing has been compared against yet.
+ *
+ * <p><b>This is the other half of the same zero, and it is a separate gate because it is a
+ * separate KIND of finding.</b> 「I compared and nothing matched」 is a defect and reddens the run;
+ * 「there was nothing to compare against」 is a project that has not written the documents yet, and
+ * failing on it would redden every repository on the day it is wired. Graded on one gate they
+ * could not be told apart — a gate answers one question — so they are two gates, and between them
+ * the third state is the only one left silent: compared, and it matched.
+ *
+ * <p><b>Without this, `check` says nothing in two very different situations</b>, which is the exact
+ * shape 「the third category comes back as a checker that did not run」 describes: a declaration
+ * whose corpus is empty has never been tested by anything, and a run reporting no findings over it
+ * reads identically to a run that tested it and found it sound. The warning is what parts them.
+ *
+ * <p>The two gates cannot both speak about one entry: this one takes `compared === 0` and the
+ * other skips it, so a single misdeclaration is never reported twice under two ids.
+ */
+export const declaredWordsHaveBeenCompared = {
+  id: 'declaredWordsHaveBeenCompared',
+  title: 'a declared vocabulary nothing has been compared against yet, so no check over it has ever run',
+  needs: [],
+  grade: 'warning',
+  run: (ctx) => {
+    const findings = [];
+    for (const item of vocabularyCensus(ctx)) {
+      if (item.compared > 0) continue;
+      findings.push(
+        `${item.label} is declared 「${item.declared}」 and has been compared against nothing: `
+        + `${item.documents} ${item.corpus}, 0 comparisons. This is not 「compared and matched `
+        + 'nothing」 — it is a corpus that is not there yet, which is what a project between being '
+        + 'wired and its first written document correctly looks like. Nothing has tested this '
+        + 'declaration, so a green run over it says only that there was nothing to read; come back '
+        + `once the ${item.corpus} exist and read the census in \`bta.mjs doctor\``
+      );
+    }
+    return findings;
+  },
+};
+
+export const VOCABULARY_GATES = [declaredWordsMatchTheDocuments, declaredWordsHaveBeenCompared];
 
 // ── The cases ──────────────────────────────────────────────────────────────
 //
@@ -521,6 +561,34 @@ export function cases(t) {
     'declaredWordsMatchTheDocuments',
     'a project mid-build, whose chapters exist and whose result documents do not',
     project({}, { ...CHAPTERS, 'docs/evidence/': '', 'tracking/STATE.md': LEDGER('열림') }),
+    false
+  );
+
+  // ── The other half of the same zero ──────────────────────────────────────
+  //
+  // The two projects the gate above must stay quiet on are the two this one must speak on, and
+  // that pairing is the whole point: between them, `check` printing nothing about a vocabulary
+  // means it was compared and it matched, rather than meaning nothing was ever read.
+  t.add(
+    'declaredWordsHaveBeenCompared',
+    'a project just wired, where nothing has been compared against anything',
+    project({}, {
+      'chapters/00-overview.md': '# 챕터\n',
+      'docs/evidence/': '',
+      'tracking/STATE.md': '# 챕터 상태\n\n| 챕터 | 상태 |\n| --- | --- |\n',
+    }),
+    true
+  );
+  t.add(
+    'declaredWordsHaveBeenCompared',
+    'a project whose chapters have been compared and whose result documents do not exist',
+    project({}, { ...CHAPTERS, 'docs/evidence/': '', 'tracking/STATE.md': LEDGER('열림') }),
+    true
+  );
+  t.add(
+    'declaredWordsHaveBeenCompared',
+    'a project where every declared word has a corpus to be read against',
+    project({}, whole),
     false
   );
 }
