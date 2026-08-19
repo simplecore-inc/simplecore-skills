@@ -7,6 +7,32 @@
 
 const cls = (base, variant) => (variant ? `${base} ${variant}` : base);
 
+/**
+ * What this board switched on, from `board.config.mjs`'s `patternOptions`.
+ *
+ * <p>**Every entry is off, and a board that declares nothing draws what it drew before.** A
+ * capability turned on by default is a migration wearing the clothes of an improvement: it moves
+ * the output of boards nobody looked at, in a repository where the board is the contract a screen
+ * is built from.
+ *
+ * <p>`dismissibleNotices` — the notice cards ({@link msg}'s help · warn · info, and
+ * {@link helpCard}) draw a close control, and the page header draws the controls that bring a
+ * closed one back. A board switching this on owes the header controls too: a card that closes with
+ * no way back has been deleted rather than dismissed, so the two arrive together or neither does.
+ */
+const OPTIONS = { dismissibleNotices: false };
+
+/**
+ * Take this board's answers. Called once by the kit, before any screen module is imported.
+ *
+ * <p>An unknown key is kept rather than refused — the pattern a board carries may be ahead of or
+ * behind the kit reading this file, and a declaration for a capability that is not here yet is a
+ * board that upgraded first, not a board that is wrong.
+ */
+export function configure(options = {}) {
+  Object.assign(OPTIONS, options);
+}
+
 // ── content primitives ─────────────────────────────────────────────────────
 export const tTitle = (t) => `<div class="t-title">${t}</div>`;
 export const tSub = (t) => `<div class="t-sub">${t}</div>`;
@@ -1087,7 +1113,9 @@ export const sourceBadge = (source, basis = '') =>
  * @param kind help · info · warn · error · example · legal
  * @param status the card's content depends on the site's current state, so it does not close
  * @param dismiss overrides the kind's own answer — `false` where the page has no notice header to
- *   bring the card back from, which is every screen outside the console
+ *   bring the card back from, which is every screen outside the console. It cannot override the
+ *   board: where `dismissibleNotices` is off no card closes, because a close with no header behind
+ *   it deletes the card rather than dismissing it
  */
 /**
  * The three kinds of notice card a page carries, each with the glyph that names it.
@@ -1136,18 +1164,29 @@ export const noticeIcons = (kinds) =>
  * out which one is missing and why. A status card is listed with the word that says it stays
  * rather than with a close it does not have.
  *
+ * <p>**What it lists are the cards, drawn as cards.** Each row is the same {@link msg} the page
+ * draws — its kind's mark and colour, its background, border, corners and padding — because what
+ * the reader came here for is a card they saw and hid, and a menu row of the same words does not
+ * look like the thing they are looking for. Its own buttons come with it: 「설명 보기」 is pressed
+ * from here, or closing a card would put its explanation out of reach. The control that puts the
+ * card back is the panel's and stands beside it rather than inside it.
+ *
+ * <p>**The panel is as wide as the cards need**, not as wide as a menu — the title and the body's
+ * first line do not fold. Squeezed to a menu's width a one-line notice becomes three, and a
+ * dropdown harder to read than the card it stands for is one nobody opens twice.
+ *
  * @param title what the reader pressed — 「주의 2건」
- * @param items `[{ title, hint, hidden, fixed, action }]`; `hidden` marks a card the reader closed,
- *   `fixed` a status card, which neither closes nor comes back
+ * @param items `[{ kind, title, body, hint, hidden, fixed, action }]`; `hidden` marks a card the
+ *   reader closed, `fixed` a status card, which neither closes nor comes back
  */
 export const noticeDrop = ({ title, items }) =>
   `<div class="noticedrop"><div class="nd-head">${title}</div>` +
   items.map((it) => `<div class="nd-item${it.hidden ? ' off' : ''}">` +
-    `<div class="nd-body"><div class="nd-title">${it.title}</div>` +
-    `${it.hint ? `<div class="nd-hint">${it.hint}</div>` : ''}</div>` +
-    `<span class="nd-act">${it.action ?? ''}` +
+    msg({ kind: it.kind ?? 'info', title: it.title, body: it.body ?? '', actions: it.action ?? '', dismiss: false }) +
+    `<span class="nd-act">` +
     `${it.fixed ? '<span class="nd-fixed">상태 카드</span>' : btn(it.hidden ? '다시 보이기' : '닫기', 'ghost')}` +
-    `</span></div>`).join('') +
+    `</span>` +
+    `${it.hint ? `<div class="nd-hint">${it.hint}</div>` : ''}</div>`).join('') +
   `</div>`;
 
 /**
@@ -1164,12 +1203,14 @@ export const noticeDrop = ({ title, items }) =>
  * `dismiss: false` where the card is not on a page with that header — a wizard step, a dialog —
  * and closing it would put the explanation out of reach.
  */
-export const helpCard = ({ title, hint = '', open = '펼쳐 보기', dismiss = true }) =>
-  `<div class="helpcard"><span class="hc-mark">?</span>` +
+export const helpCard = ({ title, hint = '', open = '펼쳐 보기', dismiss = null }) => {
+  const closes = OPTIONS.dismissibleNotices && (dismiss ?? true);
+  return `<div class="helpcard"><span class="hc-mark">?</span>` +
   `<div class="hc-body"><div class="hc-title">${title}</div>` +
   `${hint ? `<div class="hc-hint">${hint}</div>` : ''}</div>` +
   `<span class="hc-open">${btn(open, 'ghost')}</span>` +
-  `${dismiss ? noticeClose() : ''}</div>`;
+  `${closes ? noticeClose() : ''}</div>`;
+};
 
 /**
  * The six kind words, in the four languages a site runs.
@@ -1210,7 +1251,7 @@ export const msg = ({
   status = false, dismiss = null,
 }) => {
   const label = (MSG_KIND[lang] ?? MSG_KIND.ko)[kind];
-  const closes = status ? false : (dismiss ?? kind in NOTICE_KINDS);
+  const closes = !status && OPTIONS.dismissibleNotices && (dismiss ?? kind in NOTICE_KINDS);
   return `<div class="msg ${kind}${status ? ' state' : ''}">` +
     `<span class="mkind">${kind in NOTICE_KINDS ? `<i>${NOTICE_KINDS[kind]}</i>` : ''}${label}</span>` +
     `<div class="mbody">${title ? `<div class="mtitle">${title}</div>` : ''}` +

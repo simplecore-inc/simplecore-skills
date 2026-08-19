@@ -31,6 +31,10 @@ const CONFIG_DEFAULTS = {
   phases: {},
   features: {},
   requiredSections: [],
+  // What this board switches on in the pattern it is drawn in. Empty is the answer for a board
+  // that has declared nothing, and that board draws exactly what it drew before — a capability
+  // the pattern gains is off until a board asks for it by name.
+  patternOptions: {},
 };
 
 /**
@@ -109,6 +113,14 @@ export async function loadBoard(boardDir, { screens = true } = {}) {
   }
   const pattern = (await import(pathToFileURL(join(patternDir, 'pattern.mjs')).href)).default;
   const components = await import(pathToFileURL(join(patternDir, 'components.mjs')).href);
+  // A capability the pattern draws only when a board asks for it. This runs BEFORE any screen
+  // module is imported — a screen's body is built at import time, so a switch thrown afterwards
+  // would reach the gates and not the drawing. Every command comes through here, so `catalog`,
+  // `check` and `shots` see the same board `build` does.
+  //
+  // **The pattern names the capability; the board answers yes or no.** The kit holds neither —
+  // it knows only that a pattern may take a declaration and where that declaration lives.
+  components.configure?.(config.patternOptions ?? {});
 
   // What the board itself settles. Each is optional, and each absence means something specific:
   // no roles means the board draws no visibility strip, no crud means the CRUD census is not run,

@@ -262,20 +262,28 @@
      the reader acts on. */
   .noticons .nic.hidden-some::after { content: ""; width: 5px; height: 5px; border-radius: 50%;
                                       background: var(--accent); }
-  .noticedrop { position: absolute; right: 0; top: 100%; z-index: 6; width: 380px;
+  /* Wide enough that a card's title and its body's first line do not fold — a menu's width turns
+     a one-line notice into three and makes the panel harder to read than the card it stands for.
+     `max-content` takes its width from the longest card rather than from a number nobody re-checks
+     when the copy changes, and the cap is where the page itself starts to lose the panel's edge. */
+  .noticedrop { position: absolute; right: 0; top: 100%; z-index: 6;
+                width: max-content; min-width: 420px; max-width: 640px;
                 border: 1px solid var(--line-strong); border-radius: 8px; background: var(--screen);
                 box-shadow: 0 6px 18px rgba(0,0,0,.10); }
   .noticedrop .nd-head { padding: 9px 12px; border-bottom: 1px solid var(--line);
                          font-size: 12px; font-weight: 700; color: var(--ink); }
-  .noticedrop .nd-item { display: flex; align-items: center; gap: 10px; padding: 9px 12px;
-                         border-bottom: 1px solid var(--line); }
+  /* The row holds the page's own card and the control that puts it back. The card is NOT restyled
+     here — same background, border, corners and padding as on the page, because the reader is
+     looking for a thing they saw. What the row adds is around it. */
+  .noticedrop .nd-item { display: flex; align-items: center; flex-wrap: wrap; gap: 8px;
+                         padding: 10px 12px; border-bottom: 1px solid var(--line); }
   .noticedrop .nd-item:last-child { border-bottom: 0; }
-  .noticedrop .nd-item.off .nd-title { color: var(--muted); }
-  .noticedrop .nd-body { flex: 1; min-width: 0; }
-  .noticedrop .nd-title { font-size: 12.5px; color: var(--ink); }
-  .noticedrop .nd-hint { font-size: 11px; color: var(--muted); }
+  .noticedrop .nd-item .msg { flex: 1; min-width: 0; }
+  /* A card that is not on the page right now. The mark is on the ROW, never on the card. */
+  .noticedrop .nd-item.off { background: var(--bg2); }
   .noticedrop .nd-act { flex: none; display: flex; gap: 6px; align-items: center; }
   .noticedrop .nd-act .btn { padding: 4px 9px; font-size: 11px; }
+  .noticedrop .nd-hint { flex: 0 0 100%; font-size: 11px; color: var(--muted); }
   /* A status card is listed so the count adds up, and marked so nobody looks for its close. */
   .noticedrop .nd-fixed { padding: 3px 7px; border: 1px solid var(--line); border-radius: 4px;
                           font-size: 10px; color: var(--muted); }
