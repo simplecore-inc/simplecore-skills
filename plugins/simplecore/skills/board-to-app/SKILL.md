@@ -158,9 +158,9 @@ the last column says what its absence costs · **◐** required once another key
 first three cannot express it: a project missing one of these reads a page of green while
 being unable to finish anything, which is what `bta.mjs doctor` prints it apart for.
 
-**Six of these keys are not paths but this project's own words, and a word declared wrongly
+**Eight of these keys are not paths but this project's own words, and a word declared wrongly
 does not fail** — `chapterLines`, `evidenceLabels`, `closedStatus`, `verdictRole`,
-`deferredLine` and `eyesPhrases`. Every check over a chapter file or a result document
+`deferredLine`, `placeholderLine`, `captureReasons` and `eyesPhrases`. Every check over a chapter file or a result document
 compares against them, so a declaration that matches nothing leaves each of those checks
 reporting the same zero as a repository with nothing wrong. **The two markup conventions are
 opposite on purpose** — a `chapterLines` phrase is the line as written, markup and all, and an
@@ -196,6 +196,7 @@ the count is what shows a comparison reached anything at all.
 | `closedStatus` | the word the state ledger writes in a chapter's row when that chapter is closed | ◑ | nothing is closed, and every check over a closed chapter stays silent |
 | `verdictRole` | the word an evidence heading uses where a persona name would stand, for a line a machine proves | ◑ | a foundation chapter's sections cannot be matched to the lines they prove |
 | `deferredLine` | the line an evidence section carries when a check ran and **this installation** could not decide it — same grammar as `chapterLines`, and its `{text}` is the chapter that repays the debt | ○ | a project that has met that case writes the marker in prose instead, and the chapter it names closes with the debt outstanding and nothing reading it |
+| `placeholderLine` | the line an evidence section carries **in place of a picture**, where the demand asked for one and a picture is not the witness for it — same grammar as `chapterLines`, and its `{text}` is the capture that already proves that component | ○ | a demand a picture cannot answer is met by silence, and afterwards a pane nobody opened and a pane correctly proved by the capture above it read exactly the same |
 | `evidenceDir` | where a chapter's verification result is written, one document per chapter, with the captures it cites in a folder of the same name beside it → `references/evidence.md` | ◑ | screens get built and no chapter can be shown to have closed on anything — the grounds die with the session |
 | `stateLedger` | the one file saying which chapter is open, in progress, awaiting its tests or closed — and which development account each persona signs in with | ● | the build cannot start |
 | `handoverFile` | the facts a builder needs to start: how to stand the system up, known traps, what data is already standing | ● | the build cannot start |
@@ -211,6 +212,7 @@ the count is what shows a comparison reached anything at all.
 | `locales` | every language the interface ships in — each screen is judged in all of them | ○ | the languages come from the project's own copy catalogue; where that cannot be read, report it rather than judging in one language |
 | `pseudoLocale` | the generated long-string locale that proves a layout survives any string | ○ | overflow is judged in the longest real language only, which covers less → `references/judging-frames.md` |
 | `captureRoute` | the address that renders one frame, in one state, from named sample data | ○ | captures are driven by navigation, which cannot reach the states that matter; report it as owed rather than hand-driving the board |
+| `captureReasons` | the words this project's demands say **why a picture is the only witness** in — `firstSight`, `presence`, `transient`, matched inside one clause of a demand line → `references/demands.md` | ○ | a demand naming a capture is never asked to say why a picture is the witness for it, so a picture somebody judged to be the only witness and one a generator emitted per pane read exactly the same |
 | `captureStandard` | the window every capture is taken through and the scheme it is taken in — `{ width, height, colorScheme }`, or an array of them where the board draws at several device widths | ○ | every capture is taken at whatever size and colour scheme the driver happened to open with, and a picture records neither — so a run whose window came back narrow or dark files pictures with the frame's lower half missing and nothing in the run reports a problem |
 | `browserDrivers` | what drives a browser here, **in order** — the run takes the first that can express the task | ○ | whoever opens a screen picks whatever the environment offers, so two runs of one frame can be shot through different instruments; the run must then name its driver in the return and write it into the handover file, because nothing else records the choice → `references/driving-the-product.md` |
 | `deviceDrivers` | what drives a simulator or a real device here, in the same order | ○ | whoever opens a screen on a simulator or a handset picks whatever is installed, so two runs of one screen can be shot through different instruments; and where the project ships on a device and declares none, a sweep reaches for the platform's own commands with nothing saying that was a choice → `references/driving-the-product.md` |
@@ -760,6 +762,52 @@ building the screen, running its lines and capturing it. **An agent that cannot 
 no server, no browser, no ledger of its own — reports the finding with its cause rather
 than placing the frame somewhere it does not belong to make a gate quiet.**
 
+### A change that reaches many screens is verified by a sample and a census
+
+A shared component gains a prop, a dialog's close button gets a label, a date is formatted one way
+everywhere. **Walking forty-five screens in a browser to watch one mechanism work forty-five times
+is not verification, it is the same measurement repeated** — and it costs so much that the honest
+outcome is that nobody takes it. So the change is verified in two halves, and the second half is
+the one that is new:
+
+1. **The sample.** Every screen the change is directly about, in full — and **one** of the rest.
+   Then the remaining affected screens are done.
+2. **The census.** Count the sites that reach the mechanism and the sites that do not, **by name**.
+
+**The sample half holds because a global change has one mechanism.** If it works on one instance it
+works on all of them; they are the same code path. What varies per screen is context, and the
+screens the change is directly about are where the context differences live — which is why they are
+the ones walked in full and the further one is drawn from the rest.
+
+**What a sample cannot prove is that every site goes through the mechanism.** A dialog that
+hand-rolls its own close button is untouched by a fix to the shared dialog component: the mechanism
+is sound, that site still says the wrong thing, and no amount of sampling finds it reliably —
+sampling looks at instances of the mechanism and this is a site that has none.
+
+**The census is a search, not a browser, and it is cheap.** Run on a real change it read 26 files
+through the framework component, zero hand-rolled and zero bypassing, after which one browser check
+settled 45 call sites. **How it is searched is the project's** — the import graph, the component
+name, the helper — so it is written wherever the project keeps `auditScript`, not here.
+
+**What is here is that a census reports both sides.** 「26 reach it」 and 「26 reach it, 0 do not」
+are two different sentences, and only the second says the search looked for the negative — the same
+thing *The third category comes back as a checker that did not run* says of every count in this
+skill. And where the second number is not zero, **the names are the finding**: 「3 do not reach it」
+gives nobody anything to do.
+
+So it goes in the commit, beside the two trailers that are already there, in that order — the count
+that reaches the mechanism first, the count that does not second, and its names after them:
+
+```
+Chapter: W22
+Touches: W11 W12 W17
+Census: the shared confirm dialog — 26 through, 2 outside: DocumentPurgeDialog PermitRevokeDialog
+```
+
+`censusCountsBothSides` reads that line wherever one appears. Whether a change owed a census at
+all, and whether the sample was drawn from the right place, are readings — the second table below
+names whose and when.
+
 ## The dependency tree the history leaves behind
 
 Every commit carries the chapter it belongs to, and every cross-chapter change carries
@@ -1234,6 +1282,9 @@ node "${CLAUDE_PLUGIN_ROOT}/skills/board-to-app/scripts/bta.mjs" check
 | a capture is named the one way, one folder per language | `capturesGate` |
 | a capture was taken through the window the project declared, and is a picture a reader can measure at all | `everyCaptureIsAtADeclaredWidth` — the file's own header states the canvas it was encoded from, which is the one half of the standard a picture still remembers; a whole multiple passes, because a device pixel ratio of two is a right window and a wide file |
 | every commit says which chapter it belongs to, and one that belongs to none says `setup` | `trailerGate` — it takes any word, so which word is fixed here rather than per project |
+| a census counts both sides, and names the sites that do not reach the mechanism | `censusCountsBothSides` — it reads the counts by position and not by word, so a project writes the line in its own language |
+| a demand naming a capture says why a picture is the only witness for that one | `everyCaptureDemandGivesItsReason` — the words are the project's `captureReasons`, the clause is the unit, and whether the reason is true is the row below → `references/demands.md` |
+| a demand discharged as 「the same component」 names a picture that is on disk and shown | `dischargedDemandNamesItsProof` — a discharge leaning on nothing reads in the file exactly like one that holds |
 | a commit adding an import of a file the repository does not have | `importsTravelWithTheirCommit` — `--only` holds back a file nobody named, not somebody else's edit inside a file that was named |
 | a parked line that says it blocks a chapter does not survive that chapter closing | the project's own gate — the marker is that project's word and so is its ledger's word for a closed chapter, so nothing generic can read either |
 | the frames, counts and copy a chapter builds to | the board's own gates (`simplecore:wireframe-boards`) |
@@ -1256,6 +1307,9 @@ whose eyes and at which moment**, for the reason the next paragraph gives:
 | a finding written back into this skill went into a checkout rather than an installed copy | **whoever writes it**, in the change that writes it | an installed copy and a checkout are the same bytes at the same path, and the difference shows only when the next install of the plugin deletes one of them |
 | a screen matches the frame it was built from, and the capture shows that screen rather than an empty shell of it | **the coordinator**, opening each of the chapter's captures before writing the ledger row that closes it — never the agent that took them | a picture is the only witness, and the party that shot it is the party that cannot see past what it expected → `references/judging-frames.md` |
 | what a verification record says was on the screen is what was on the screen, and it was written out of the run rather than before it | **the coordinator**, at the same moment, reading each sentence against the picture it cites | a sentence written from the DOM, the responses and the builder's memory of its own code is true of the data, false of the screen, and indistinguishable in the file from one written by looking |
+| the reason a demand gives for a capture is true of that capture — that a picture really is the only witness for it | **the `capture-judge`**, holding the quoted demand against the picture for that screen, before it returns its disagreements | the gate sees that a reason was given and that it is one of the project's three; whether a pane's content is genuinely on no response body is a claim about the running application, which no chapter file carries. A wrong reason and a right one are the same string to a reader of the chapter |
+| a discharge is still true — the component it called an unbuilt placeholder has not since been built | **the coordinator**, at the close of the chapter that builds that component, re-opening the sections that discharged against it | nothing in the repository records that a placeholder became a screen: the discharge line, the capture it names and every byte around them are unchanged on the day the component ships, so the file goes on reading as a correct discharge of a demand that is now answerable |
+| a global change owed a census, and the sample was drawn from the rest rather than from the same context as the screens walked in full | **the coordinator**, before the commit that lands the change is written | which screens carry the context differences is a reading of what the change means; the census counts sites through a mechanism and cannot say which of them differ, and a sample drawn from the directly-related screens measures the mechanism twice and the rest never |
 | a word a transcription reports is one the screen draws rather than one only the accessibility tree carries | **the `capture-judge`**, before it returns its disagreements, opening the picture for every sentence the taker marked `named` — never the taker, which read the tree | a `title` attribute and a text node are the same string in the tree, so 「보기」 over an eye icon and 「보기」 on a labelled button are one sentence in the transcription and two different screens in the picture |
 | a screen holds up for the person whose work it carries | **the builder**, in character, during the persona run | that is what the persona run is |
 | a prerequisite the derived graph did not name | **the agent that meets it**, at the moment it blocks | it surfaces while building; the agent that meets it stops and reports |

@@ -65,6 +65,69 @@ one word covering both hands the reader two different things under one name — 
 records filtered, the other is a pane that may be an empty shell behind a screen that otherwise
 looks finished.
 
+**Every row above that asks for a capture also says why a picture is the witness for it**, in the
+clause that names the file — the next section is that rule, and a generator that emits the names
+off this table without it has written the habit rather than the demand.
+
+## A capture is owed where a picture is the only witness
+
+**Read this before trimming anything, because it is not 「ask for less」.** The two largest findings
+of one week's building both came out of pictures, and a judge with nothing to hold a transcription
+against cannot work at all — it spends every finding on 「no capture covers this」. What comes off
+the list is a demand nobody can give a reason for, and the census the second half of this rule adds
+is a check sampling never had. **A rule read as a licence to skip produces exactly the screens this
+whole arrangement exists to catch**: a route answering 200 with the shell painted and nothing
+inside it.
+
+**A picture is the only witness in three cases, and one of these is what a demand names:**
+
+| The case | What only a picture answers |
+| --- | --- |
+| **the first sight of a screen** | a route that answers 200, raises no console error and paints the chrome with nothing inside it is a pass to every other check there is |
+| **presence, placement or wording no response body carries** | a filter-chip row nobody declared, row actions the board draws as text and the screen renders as icons, a column that is not there |
+| **a state that exists only while something is open** | a dialog, a confirmation, a panel form — gone the moment anything else is asked of the screen |
+
+**And it is not the witness in three others:**
+
+| The case | What proves it instead |
+| --- | --- |
+| **an unbuilt placeholder** | one capture per chapter proves the component; the rest are the same component, and the demand is **discharged** rather than skipped → `references/evidence.md` |
+| **a claim the server's response settles** | counts, statuses, permission refusals — a fenced `METHOD /path → status` block, which the role-scoped persona lines already use exclusively |
+| **a screen no commit has touched since its last capture** | the capture already in the folder |
+
+### The reason goes in the demand line, and the generator writes it
+
+**A demand that names a capture says, in the same clause, why a picture is the witness for that
+one.** A capture name with no reason is the habit rather than a judgment, and the habit is emitted
+by the thousand — a generator writing one file name per pane per frame produces a chapter demanding
+1040 pictures and saying of not one of them why it is owed. Two things follow from that and both
+have been seen: a frame whose three panes were unbuilt placeholders demanded three captures **none
+of which could be produced**, and a taker that correctly shot one and left the other two was right
+while the chapter went on reading as though it owed three.
+
+**In the demand line, not on the board and not in a table somewhere else.** The reason follows from
+*what on the board produced the demand* — a pane's content is not on the base picture, on every
+board, for every pane — so it is a property of the clause that emitted the name rather than of the
+frame. Put on the board it becomes one of three sentences hand-written hundreds of times, drifting
+from what actually emitted the demand; put in a lookup table it is a reason nobody reads, because
+the reader meets the demand in the line. **In the line it also travels**: the quoted demand is what
+a result document copies whole, so the judge holding a capture against the demand has the reason in
+hand and can say that this picture does not answer it.
+
+**`captureReasons` is what a machine reads it by** — three lists of phrases in the project's own
+language, one per case, and `everyCaptureDemandGivesItsReason` requires one of them inside the
+clause that names the capture. Per clause rather than per line, because a line whose empty-list
+clause gives a reason and whose pane clause does not is precisely the habit. **Whether the reason
+is TRUE stays with eyes**, and `../SKILL.md`'s second table names whose and when.
+
+**Adding a reason to a clause that already exists is a rewording, not an append.** It therefore
+does what *A demand that grows is appended, never substituted* below says it does: it invalidates
+every evidence section that quoted that clause. So it is done in **one pass over the whole chapter
+set, at a moment no verification round is running**, with the quotes in the documents already
+written refreshed in the same change — and the earlier the set is in its build, the smaller that
+is. Adding the reason one chapter at a time is the same cost paid once per chapter, plus a set
+where two chapters mean different things by the same demand.
+
 ## An address a demand names is an address that opens
 
 **Write the whole address, never the fragment.** A demand that says 「open it with `<parameter>`」

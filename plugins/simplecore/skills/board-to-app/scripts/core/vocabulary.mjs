@@ -307,6 +307,75 @@ function deferredLineEntry(ctx, lines) {
 }
 
 /**
+ * The line an evidence section carries in place of a picture.
+ *
+ * <p>Same shape as the deferral above and the same absence of a witness: a project declares it
+ * because it expects to meet unbuilt placeholders behind a tab strip, and one that declares it and
+ * never meets them is a project with nothing wrong. The markup-blind count is the whole of what
+ * can be said — a declaration written the way `evidenceLabels` is written matches nothing, and the
+ * relaxed reading finding the line is what shows that.
+ */
+function placeholderLineEntry(ctx, lines) {
+  const phrase = ctx.declared('placeholderLine');
+  if (phrase === null || ctx.declared('evidenceDir') === null) return [];
+  let loose = null;
+  try {
+    loose = compileLine(bare(phrase), 'placeholderLine');
+  } catch {
+    return [];
+  }
+  const docs = corpus(ctx, 'result');
+  return [entry(
+    'placeholderLine', phrase, CONVENTIONS.line, 'result documents',
+    docs.length, lineCount(docs), countLines(docs, lines.placeholder), countBare(docs, loose), false,
+    'a project whose panes are all built discharges nothing, which is a project with nothing wrong'
+  )];
+}
+
+/**
+ * The words a demand says why a picture is the only witness in.
+ *
+ * <p><b>No boundary is claimed, and the reason is that a hole here cannot be silent.</b> A
+ * `transient` list that matches nothing means either that this project's demands never reach a
+ * dialog — possible, and a project with nothing wrong — or that the phrases were written
+ * differently from the way the generator writes them. The second is not the quiet failure it is
+ * everywhere else: `everyCaptureDemandGivesItsReason` reads the same lists and fires once per
+ * clause that names a capture, so a vocabulary that misses the generator's wording is the loudest
+ * thing in the run rather than a zero nobody meets. It is the argument `eyesPhrases` makes about
+ * its second and third lists, arriving through a different gate.
+ *
+ * <p>So what is left to say is the count, and it is worth saying: a chapter set regenerated before
+ * the key was declared holds no reasons at all, and `0 matched` there is a set waiting to be
+ * regenerated rather than a declaration that is wrong.
+ */
+function captureReasonEntries(ctx) {
+  const declared = ctx.declared('captureReasons');
+  if (!declared || typeof declared !== 'object' || Array.isArray(declared)) return [];
+  const docs = corpus(ctx, 'chapter');
+  const lines = docs.flatMap((doc) => doc.lines);
+
+  const out = [];
+  for (const [role, phrases] of Object.entries(declared)) {
+    if (role.startsWith('//') || !Array.isArray(phrases) || !phrases.length) continue;
+    const lower = phrases.filter((p) => typeof p === 'string' && p).map((p) => p.toLowerCase());
+    let matched = 0;
+    let relaxed = 0;
+    for (const line of lines) {
+      const text = line.toLowerCase();
+      if (lower.some((p) => text.includes(p))) matched += 1;
+      if (lower.some((p) => bare(text).includes(bare(p)))) relaxed += 1;
+    }
+    out.push(entry(
+      `captureReasons.${role}`, `${lower.length} phrase(s)`, CONVENTIONS.word, 'chapter files',
+      docs.length, lines.length, matched, relaxed, false,
+      'a project whose demands never reach this case writes no such reason, and a chapter set that '
+      + 'has not been regenerated since the key was declared holds none of them yet'
+    ));
+  }
+  return out;
+}
+
+/**
  * The phrasings that hand a check to human eyes.
  *
  * <p>Only `assigns` is judged. `reader` and `moment` are consulted inside a block `assigns` has
@@ -369,6 +438,8 @@ export function vocabularyCensus(ctx) {
     ...closedStatusEntry(ctx),
     ...verdictRoleEntry(ctx, lines),
     ...deferredLineEntry(ctx, lines),
+    ...placeholderLineEntry(ctx, lines),
+    ...captureReasonEntries(ctx),
     ...eyesPhraseEntries(ctx),
   ];
 }

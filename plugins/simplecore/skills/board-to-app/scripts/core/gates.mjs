@@ -536,6 +536,82 @@ export const trailerGate = {
 };
 
 /**
+ * A whole number anywhere in a line, with where it sits — the census is read by position.
+ *
+ * <p><b>By position rather than by word</b>, because the words are the project's. A gate that
+ * anchored on 「through」 and 「outside」 would read every English census and nothing else, and a
+ * project writing its commits in another language would get a run that compared nothing and
+ * reported the same zero as a repository whose every census counted both sides.
+ */
+const WHOLE_NUMBER = /\d+/g;
+
+/**
+ * A census that counted both sides, and named the sites that fall outside the mechanism.
+ *
+ * <p>A change reaching many screens is verified by a sample plus a census — the sample because a
+ * global change has one mechanism, and the census because <b>a sample cannot prove that every site
+ * goes through that mechanism</b>. A dialog that hand-rolls its own close button is untouched by a
+ * fix to the shared dialog component: the mechanism is sound, the site still says the wrong thing,
+ * and sampling looks at instances of a mechanism this site has none of.
+ *
+ * <p><b>So a census that reports one number is not a census.</b> 「26 reach it」 and 「26 reach it,
+ * 2 do not」 are one line to an exit status and two different sentences to a reader — only the
+ * second says the search looked for the negative, which is the whole reason the census was worth
+ * taking. And where the second is not zero the names are the finding: 「2 do not reach it」 gives
+ * nobody anything to do.
+ *
+ * <p><b>Whether a change owed a census stays with eyes</b>, because nothing in a diff says a
+ * change was verified by sample rather than screen by screen. This holds the shape of the answer
+ * where one was given, which is what a machine can see.
+ */
+export const censusCountsBothSides = {
+  id: 'censusCountsBothSides',
+  title: 'a census that counted only the sites it expected to find',
+  needs: [],
+  run: (ctx) => {
+    const range = ctx.options.range ?? null;
+    const args = ['log', '--no-merges', '--format=%H%x1e%B%x1f', ...(range ? [range] : ['-n', '1'])];
+    const { ok, out } = ctx.git(args);
+    if (!ok) return [`git log failed — ${out.trim().split('\n')[0]}`];
+    const findings = [];
+    for (const record of out.split('\u001f')) {
+      const [hash, body] = record.split('\u001e');
+      if (!hash || !hash.trim()) continue;
+      const short = hash.trim().slice(0, 8);
+      for (const line of (body ?? '').split(/\r?\n/)) {
+        if (!/^Census:/.test(line)) continue;
+        const stated = line.slice('Census:'.length).trim();
+        if (!stated) {
+          findings.push(`${short}: "Census:" states the mechanism and both counts — an empty one claims a search nobody made`);
+          continue;
+        }
+        const counts = [...stated.matchAll(WHOLE_NUMBER)];
+        if (counts.length < 2) {
+          findings.push(
+            `${short}: "Census: ${stated}" carries ${counts.length === 1 ? 'one count' : 'no count'} — a census states `
+            + 'how many sites reach the mechanism AND how many do not, in that order. One number is a search that '
+            + 'only looked for what it expected to find, and the sites with no instance of the mechanism are exactly '
+            + 'the ones a sample can never reach'
+          );
+          continue;
+        }
+        const outside = Number(counts[1][0]);
+        if (outside === 0) continue;
+        const after = stated.slice(counts[1].index + counts[1][0].length);
+        const named = after.includes(':') && after.slice(after.indexOf(':') + 1).trim();
+        if (!named) {
+          findings.push(
+            `${short}: "Census: ${stated}" says ${outside} site(s) do not reach the mechanism and names none of them. `
+            + '「2 do not reach it」 gives nobody anything to do; the two names do. Write them after a colon'
+          );
+        }
+      }
+    }
+    return findings;
+  },
+};
+
+/**
  * The extensions a relative specifier may be resolved to, in the order a bundler tries them.
  *
  * <p>The extensionless form is what makes this a resolution rather than a lookup: `./util` is
@@ -748,6 +824,7 @@ export const CORE_GATES = [
   ledgerGate,
   capturesGate,
   trailerGate,
+  censusCountsBothSides,
   importsTravelWithTheirCommit,
   // What a closed chapter leaves behind. They sit in a module of their own because they are the
   // longest thing here and they read documents rather than configuration.

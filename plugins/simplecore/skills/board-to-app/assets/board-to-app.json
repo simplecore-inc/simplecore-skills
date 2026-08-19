@@ -67,6 +67,16 @@
   "pseudoLocale": "<the generated long-string locale id, e.g. en-XA>",
   "captureRoute": "<address rendering one frame in one state, e.g. /frame/<id>>",
 
+  "//captureReasons": "The words this project's demands use to say WHY a picture is the only witness for the capture they name. Three roles, fixed because the cases are: `firstSight` is a screen nobody has opened, `presence` is a claim about what is drawn, where and in what words that no response body carries, `transient` is a state that exists only while something is open. Anything else a demand asks for is settled by what the server answered, and a fenced block is the evidence for it. Written in the project's own language and matched case-insensitively inside ONE clause of a demand line, so a line whose empty-list clause gives a reason and whose pane clause does not is a finding rather than a pass. Whether the reason is TRUE stays with eyes; that one was given is what this lets a machine see. Delete it and a generator goes on emitting one file name per pane per frame with nothing anywhere saying why any of them is owed.",
+  "captureReasons": {
+    "firstSight": ["<how this project says 「nobody has opened this screen」>"],
+    "presence": ["<how it says 「no response body carries this」>"],
+    "transient": ["<how it says 「this exists only while something is open」>"]
+  },
+
+  "//placeholderLine": "The line an evidence section carries IN PLACE OF a picture, where the demand asked for one and a picture is not the witness for it — the pane behind the tab is the same unbuilt placeholder the section above already photographed. Same grammar as `chapterLines`, and its `{text}` is the capture that proves the component. Delete the line where the project has never met the case. A project that HAS met it and declares nothing leaves the section showing nothing, which is afterwards indistinguishable from a pane nobody opened — the taker was right and left no way to say so.",
+  "placeholderLine": "<the line a section carries in place of a picture, e.g. **Same component as {text}**…>",
+
   "//captureStandard": "The window every capture is taken through and the scheme it is taken in. Declared rather than left to the driver, because neither survives in the picture and both are wrong in a way that reads as a correct run: a window that came back narrow files the frame with its lower half in no picture at all, and the run reports nothing. `width` and `height` are CSS pixels, so a run reads them back with innerWidth/innerHeight and never off the file — the file is that many device pixels, which is why a whole multiple of a declared width passes. Write an ARRAY of these where the board genuinely draws at several device widths: `everyCaptureIsAtADeclaredWidth` refuses a width it was not given, so a board with tablet frames names that width here or the gate reddens on frames that are exactly right. The colour scheme leaves no trace in the file; the taker reads it back off the page and reports it, and the skill's eyes table says who checks that.",
   "captureStandard": { "width": "<CSS pixels the board is drawn at>", "height": "<CSS pixels>", "colorScheme": "<light or dark>" },
 

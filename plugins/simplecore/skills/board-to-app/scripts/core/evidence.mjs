@@ -64,6 +64,29 @@ const CAPTURE_FLOOR = 7 * 1024;
  */
 export const CAPTURE_NAME = /^([a-z])-(\d{2,})(?:-t\d+|-empty|-error)?\.webp$/;
 
+/**
+ * The same name found inside a sentence rather than measured whole.
+ *
+ * <p>A demand names its captures in running prose, usually in backticks, several to a clause. The
+ * anchored form above answers 「is this string a capture name」 and this one answers 「which capture
+ * names does this line contain」 — two questions, and deriving the second by stripping the anchors
+ * off the first is how a reader ends up matching `a-01.webp` inside `data-01.webp`.
+ */
+const CAPTURE_IN_TEXT = /\b[a-z]-\d{2,}(?:-t\d+|-empty|-error)?\.webp\b/g;
+
+/**
+ * One demand line's clauses.
+ *
+ * <p><b>The clause is the unit, not the line.</b> A demand line is a run of clauses joined by
+ * 「. 」 — open the screen, press the panes, check the empty list, press the row actions — and a
+ * line whose empty-list clause gives its reason while its pane clause gives none is precisely the
+ * habit the reason exists to break. Read line-wide, that line passes on its neighbour's sentence.
+ *
+ * <p>A capture name carries a `.` of its own and is never followed by a space at it, so the split
+ * cannot fall inside one.
+ */
+const clauses = (line) => line.split(/(?<=[.。])\s+/);
+
 /** A frame id as a heading writes it. */
 const FRAME_ID = /\b[A-Z]-\d{2,}\b/g;
 
@@ -268,7 +291,7 @@ function capturedFrames(text, stem) {
  * places — so a reader that stopped at the newline would hand the quote check half a sentence and
  * call the other half missing.
  */
-function evidenceSections(text, labels) {
+function evidenceSections(text, labels, placeholder = null) {
   const quoted = new RegExp(String.raw`^\*\*${labels.demanded}\*\*\s*—\s*(.*)$`);
   const sections = [];
   let current = null;
@@ -285,11 +308,16 @@ function evidenceSections(text, labels) {
     const heading = EVIDENCE_HEADING.exec(line);
     if (heading) {
       quoting = false;
-      current = { title: heading[1], no: i + 1, labels: new Set(), images: [], fenced: false, quote: null };
+      current = { title: heading[1], no: i + 1, labels: new Set(), images: [], fenced: false, quote: null, discharged: [] };
       sections.push(current);
       return;
     }
     if (!current) return;
+    // A demand met by 「the same component as this picture」 rather than by a picture of its own.
+    // Collected here rather than in a reader of its own, because a section's evidence is one
+    // question — what does this section show — and three answers to it read together.
+    const stood = placeholder?.exec(line);
+    if (stood) current.discharged.push({ proof: (stood[1] ?? '').trim(), no: i + 1 });
     const said = quoted.exec(line);
     if (said) {
       current.quote = { text: said[1], no: i + 1 };
@@ -374,6 +402,22 @@ function byteSize(ctx, rel) {
 }
 
 /**
+ * The reader for a demand discharged as 「the same component as this picture」, or null.
+ *
+ * <p>A grammar that will not compile is `configGate`'s finding, not this file's — here it simply
+ * means no such line can be recognised, and every check over one is skipped rather than run
+ * against a pattern nobody can trust.
+ */
+function placeholderOf(ctx) {
+  if (ctx.declared('placeholderLine') === null) return null;
+  try {
+    return ctx.lines.placeholder ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * What a project's own gates read out of the evidence folder, bound to one repository.
  *
  * <p>A project keeps gates of its own over the same documents — whether the frame a capture shows
@@ -394,7 +438,7 @@ export function evidenceReaders(ctx) {
     framesPlaced: (rel) => framesPlaced(ctx, rel),
     sections: (text) => {
       const labels = labelsOf(ctx);
-      return labels === null ? [] : evidenceSections(text, labels);
+      return labels === null ? [] : evidenceSections(text, labels, placeholderOf(ctx));
     },
   };
 }
@@ -434,7 +478,7 @@ export const closedChapterHasEvidence = {
 
       const demanded = demandedHeadings(ctx, `${dir}/${file}`);
       const placed = framesPlaced(ctx, `${dir}/${file}`);
-      const sections = evidenceSections(text, labels);
+      const sections = evidenceSections(text, labels, placeholderOf(ctx));
       const written = new Set(sections.map((s) => s.title));
 
       if (closed.has(chapter)) {
@@ -460,10 +504,16 @@ export const closedChapterHasEvidence = {
             findings.push(`${rel}:${section.no}: 「${section.title}」 carries no 「${label}」 line`);
           }
         }
-        if (!section.images.length && !section.fenced) {
+        // Three things count as showing something, and the third is what a correct skip leaves
+        // behind: a pane that is the same unbuilt placeholder the section already photographed is
+        // discharged against that picture rather than shot again under another name. Without it
+        // the taker that was right left two sections showing nothing, which afterwards reads as
+        // two panes nobody opened.
+        if (!section.images.length && !section.fenced && !section.discharged.length) {
           findings.push(
             `${rel}:${section.no}: 「${section.title}」 shows nothing — a section carries the capture `
-            + 'of the frame, or what was run and what came back'
+            + 'of the frame, what was run and what came back, or the picture that already proves '
+            + 'the same component'
           );
         }
         for (const { target, no } of section.images) {
@@ -905,6 +955,157 @@ export const everyCaptureIsAtADeclaredWidth = {
   },
 };
 
+// ── A capture demanded out of habit, and one demanded for a reason ──────────
+//
+// A chapter's per-screen half is generated, so the capture names in it are emitted by a rule
+// rather than judged one at a time. That is right for the names — the board says which panes a
+// frame draws — and it produces a demand list nobody can give a reason for: one chapter set asked
+// for 1040 pictures and said of not one of them why a picture was the witness.
+//
+// **Two things follow, and both were met in one week.** A frame whose three panes were unbuilt
+// placeholders had three captures demanded and not one of them could be produced: the tab triggers
+// are disabled and no content is registered behind them. And a taker that correctly shot one of
+// those and left the other two was right, while the chapter went on reading as though it owed
+// three.
+//
+// **The reason is what separates the two.** `references/demands.md` names three cases in which a
+// picture is the only witness and three in which it is not, and a demand that asks for a capture
+// says which of the three it is asking for, in the clause that names the file. **Whether the
+// reason is true stays with eyes** — a claim about the running application is not in the chapter
+// file — and that it was given is what this sees.
+
+/**
+ * Every demand that names a capture says why a picture is the witness for that one.
+ *
+ * <p><b>The clause is the unit.</b> A demand line is a run of clauses joined by 「. 」, and a line
+ * whose empty-list clause carries a reason while its pane clause carries none passes any
+ * line-wide reading on its neighbour's sentence — which is the exact shape the habit takes, since
+ * one clause was written by hand and the other by a loop.
+ *
+ * <p>Every prose line of a chapter file is read rather than only the ones matching
+ * `chapterLines.persona`. A capture named anywhere in a chapter is a capture somebody is being
+ * asked for, and narrowing to one declared line would make the check quiet on a project whose
+ * generator puts them somewhere else — quiet in the direction that reads as a pass.
+ */
+export const everyCaptureDemandGivesItsReason = {
+  id: 'everyCaptureDemandGivesItsReason',
+  title: 'a demand naming a capture without saying why a picture is the only witness for it',
+  needs: ['chapterDir', 'captureReasons'],
+  run: (ctx) => {
+    const declared = ctx.declared('captureReasons');
+    if (!declared || typeof declared !== 'object' || Array.isArray(declared)) return [];
+    const phrases = Object.entries(declared)
+      .filter(([role]) => !role.startsWith('//'))
+      .flatMap(([, list]) => (Array.isArray(list) ? list : []))
+      .filter((p) => typeof p === 'string' && p.trim())
+      .map((p) => p.toLowerCase());
+    if (!phrases.length) return [];
+
+    const dir = ctx.declared('chapterDir');
+    const findings = [];
+    for (const [, file] of [...chapterFiles(ctx)].sort()) {
+      const rel = `${dir}/${file}`;
+      const text = ctx.read(rel);
+      if (text === null) continue;
+      for (const { line, no } of proseLines(text)) {
+        for (const clause of clauses(line)) {
+          const named = [...clause.matchAll(CAPTURE_IN_TEXT)].map((m) => m[0]);
+          if (!named.length) continue;
+          const lowered = clause.toLowerCase();
+          if (phrases.some((phrase) => lowered.includes(phrase))) continue;
+          findings.push(
+            `${rel}:${no}: 「${named.join(' · ')}」 ${named.length === 1 ? 'is' : 'are'} demanded and the `
+            + 'clause says nothing about why a picture is the witness. A capture name with no reason is '
+            + 'a habit rather than a judgment, and it is emitted by the thousand: one clause per pane per '
+            + 'frame, including panes nobody can photograph. Say which of the three cases this is — the '
+            + 'first sight of a screen, a claim about presence, placement or wording that no response body '
+            + 'carries, or a state that exists only while something is open — in the words `captureReasons` '
+            + 'declares. A demand that is none of the three is proved by what the server answered, and its '
+            + 'evidence is a fenced block rather than a picture'
+          );
+        }
+      }
+    }
+    return findings;
+  },
+};
+
+/**
+ * A demand discharged as 「the same component」 names a picture that proves it.
+ *
+ * <p>An unbuilt placeholder behind three tabs is one component photographed three times, so one
+ * capture per chapter proves it and the rest are discharged against that one. <b>Discharged, never
+ * skipped</b>: the taker that shot one and left two was right, and with nothing to write it left
+ * two sections showing nothing — which afterwards is indistinguishable from two panes nobody
+ * opened.
+ *
+ * <p>So the line is held to the one thing that makes it auditable rather than convenient: it names
+ * a capture, that capture is on disk in this chapter's own folder, and this document shows it. A
+ * discharge leaning on a picture nobody can open reads in the file exactly like one that holds.
+ *
+ * <p><b>Whether the component is still unbuilt is not in the bytes.</b> The day it is built the
+ * line is false and nothing here changes, so that reading is in `../SKILL.md`'s second table with
+ * its reader and its moment.
+ */
+export const dischargedDemandNamesItsProof = {
+  id: 'dischargedDemandNamesItsProof',
+  title: 'a demand discharged as already proved, naming no picture that proves it',
+  needs: ['evidenceDir', 'chapterDir', 'evidenceLabels', 'placeholderLine'],
+  run: (ctx) => {
+    const labels = labelsOf(ctx);
+    const placeholder = placeholderOf(ctx);
+    if (labels === null || placeholder === null) return [];
+    const dir_ = ctx.declared('evidenceDir');
+
+    const findings = [];
+    for (const [, file] of [...chapterFiles(ctx)].sort()) {
+      const rel = `${dir_}/${file}`;
+      const text = ctx.read(rel);
+      if (text === null) continue;
+      const stem = file.slice(0, -'.md'.length);
+      const sections = evidenceSections(text, labels, placeholder);
+      const shown = new Set();
+      for (const section of sections) {
+        for (const { target } of section.images) {
+          if (target.startsWith(`${stem}/`)) shown.add(target.slice(`${stem}/`.length));
+        }
+      }
+
+      for (const section of sections) {
+        for (const { proof, no } of section.discharged) {
+          // The bare file name, resolved against this document's own folder. A discharge that
+          // reached into another chapter's folder would lean on a component that chapter may since
+          // have built, and 「one capture per chapter proves the component」 is what makes the
+          // discharge safe in the first place.
+          const name = proof.replace(/^[`'"《「]+|[`'"》」.,]+$/g, '').replace(`${stem}/`, '');
+          if (!CAPTURE_NAME.test(name)) {
+            findings.push(
+              `${rel}:${no}: 「${section.title}」 discharges its demand against 「${proof || '(nothing)'}」, `
+              + `which is not a capture name. A discharge names the picture that already proves that `
+              + `component — <frame>${CAPTURE_SUFFIX}, <frame>-t<pane>${CAPTURE_SUFFIX} or `
+              + `<frame>-empty${CAPTURE_SUFFIX} — because a discharge leaning on nothing reads exactly `
+              + 'like one that holds'
+            );
+            continue;
+          }
+          if (!shown.has(name)) {
+            findings.push(
+              `${rel}:${no}: 「${section.title}」 discharges its demand against ${name}, which no section `
+              + `of ${rel} shows. The picture a discharge leans on is one a reader of this document `
+              + 'meets — otherwise the section says a component was proved somewhere nobody can open'
+            );
+            continue;
+          }
+          if (byteSize(ctx, `${dir_}/${stem}/${name}`) === null) {
+            findings.push(`${rel}:${no}: 「${section.title}」 discharges its demand against ${name}, which is not on disk`);
+          }
+        }
+      }
+    }
+    return findings;
+  },
+};
+
 export const EVIDENCE_GATES = [
   closedChapterHasEvidence,
   everyPlacedFrameIsCaptured,
@@ -912,6 +1113,8 @@ export const EVIDENCE_GATES = [
   deferredCheckNamesAChapter,
   chapterOwedACheckDoesNotClose,
   everyCaptureIsAtADeclaredWidth,
+  everyCaptureDemandGivesItsReason,
+  dischargedDemandNamesItsProof,
 ];
 
 // ── The cases that prove them ───────────────────────────────────────────────
@@ -1095,6 +1298,67 @@ const QUOTED_EVIDENCE =
   + `**챕터가 정한 것** — 잠금 상태에는 남은 시간을 표시한다.\n`
   + '**본 것** — 「10분 뒤에 다시 시도할 수 있습니다」가 표시된다.\n\n'
   + '```\nPOST /auth/login × 6 → 423 ACCOUNT_LOCKED  retryAfter=600\n```\n';
+
+// ── A capture demanded for a reason, and one demanded out of habit ──────────
+
+/** One project's three reason vocabularies, declared as a project declares them. */
+const REASONS = {
+  firstSight: ['아무도 열어 본 적이 없어'],
+  presence: ['응답 본문에 없는 것이라'],
+  transient: ['열려 있는 동안에만 있는 상태라'],
+};
+
+/** A chapter demanding two pane captures and saying nothing about why either is owed. */
+const PANES_UNREASONED =
+  '# W02. 조직·계정\n\n## 1. A-01 로그인\n\n'
+  + '**개발** — 보드의 `a-01-login`을 그대로 만든다.\n'
+  + '**테스트 · 시스템 관리자** — 로그인 화면을 연다. 나머지 두 칸을 눌러 칸마다 캡처를 남긴다 — `a-01-t2.webp` · `a-01-t3.webp`.\n'
+  + '**테스트 · 안전관리자** — 범위 밖 레코드는 주소로 불러도 서버가 막는다.\n';
+
+/**
+ * The reason on the clause BESIDE the one that names the files.
+ *
+ * <p>The shape a line-wide reading passes on its neighbour's sentence, and the shape a generator
+ * produces the day one clause is written by hand and the next by a loop over the board's panes.
+ */
+const PANES_REASON_NEXT_DOOR =
+  '# W02. 조직·계정\n\n## 1. A-01 로그인\n\n'
+  + '**개발** — 보드의 `a-01-login`을 그대로 만든다.\n'
+  + '**테스트 · 시스템 관리자** — 아무도 열어 본 적이 없어 화면을 먼저 연다. 나머지 두 칸을 눌러 칸마다 캡처를 남긴다 — `a-01-t2.webp` · `a-01-t3.webp`.\n'
+  + '**테스트 · 안전관리자** — 범위 밖 레코드는 주소로 불러도 서버가 막는다.\n';
+
+/** The same demand, with the reason in the clause that names the files. */
+const PANES_REASONED =
+  '# W02. 조직·계정\n\n## 1. A-01 로그인\n\n'
+  + '**개발** — 보드의 `a-01-login`을 그대로 만든다.\n'
+  + '**테스트 · 시스템 관리자** — 로그인 화면을 연다. 칸마다 든 것이 응답 본문에 없는 것이라 나머지 두 칸을 눌러 캡처를 남긴다 — `a-01-t2.webp` · `a-01-t3.webp`.\n'
+  + '**테스트 · 안전관리자** — 범위 밖 레코드는 주소로 불러도 서버가 막는다.\n';
+
+/** The line this project discharges a demand with, and what its `{text}` carries. */
+const PLACEHOLDER_LINE = '**같은 컴포넌트** — {text}';
+
+/** A section showing a pane capture of its own, so a discharge has something to lean on. */
+const W02_PANE_SECTION =
+  '## 1. A-01 로그인 · 보건관리자\n\n'
+  + '**한 일** — 두 번째 칸을 누른다.\n'
+  + '**챕터가 정한 것** — 칸마다 무엇이 있는지 적는다.\n'
+  + '**본 것** — 아직 자리표시자다.\n\n'
+  + '![A-01 두 번째 칸](w02-org-shell/a-01-t2.webp)\n\n';
+
+/** A section that discharges its demand against the picture named. */
+const W02_DISCHARGE = (proof) =>
+  '## 1. A-01 로그인 · 안전관리자\n\n'
+  + '**한 일** — 세 번째 칸을 누른다.\n'
+  + '**챕터가 정한 것** — 칸마다 무엇이 있는지 적는다.\n'
+  + '**본 것** — 두 번째 칸과 같은 자리표시자 컴포넌트다.\n\n'
+  + `**같은 컴포넌트** — ${proof}\n\n`;
+
+/** A section carrying every label and showing nothing — no picture, no block, no discharge. */
+const W02_SILENT_SECTION =
+  '## 1. A-01 로그인 · 안전관리자\n\n'
+  + '**한 일** — 범위 밖 사업장의 주소를 직접 부른다.\n'
+  + '**챕터가 정한 것** — 범위 밖 레코드는 주소로 불러도 서버가 막는다.\n'
+  + '**본 것** — 서버가 막는다.\n\n';
 
 export function cases(t) {
   const evidence = (files) =>
@@ -1399,5 +1663,109 @@ export function cases(t) {
     'an evidence folder holding documents and no captures yet',
     shot({ 'docs/evidence/w02-org-shell.md': W02_EVIDENCE(W02_SCREEN_SECTION) }),
     false,
+  );
+
+  // ── A capture demanded out of habit, and one demanded for a reason ────────
+
+  const demanding = (chapter) => t.project({
+    config: { ...WORDS, chapterDir: 'chapters', stateLedger: 'tracking/STATE.md', captureReasons: REASONS },
+    files: { ...CHAPTER_TEXT, 'chapters/w02-org-shell.md': chapter },
+  });
+
+  t.add(
+    'everyCaptureDemandGivesItsReason',
+    'a pane capture demanded with nothing said about why a picture is the witness',
+    demanding(PANES_UNREASONED),
+    true
+  );
+  // The shape a line-wide reading walks straight through: the reason on the clause beside the one
+  // that names the file. It is what a generator produces the day one clause is written by hand and
+  // the next by a loop over the board's panes.
+  t.add(
+    'everyCaptureDemandGivesItsReason',
+    'a line whose empty-list clause gives its reason and whose pane clause does not',
+    demanding(PANES_REASON_NEXT_DOOR),
+    true
+  );
+  t.add(
+    'everyCaptureDemandGivesItsReason',
+    'every clause that names a capture saying which of the three cases it is',
+    demanding(PANES_REASONED),
+    false
+  );
+  t.add(
+    'everyCaptureDemandGivesItsReason',
+    'a chapter demanding no capture at all',
+    demanding(CHAPTER_TEXT['chapters/w02-org-shell.md']),
+    false
+  );
+
+  // ── A demand discharged as 「the same component」 ───────────────────────────
+
+  const discharging = (document, extra = {}) => t.project({
+    config: {
+      ...WORDS, chapterDir: 'chapters', stateLedger: 'tracking/STATE.md', placeholderLine: PLACEHOLDER_LINE,
+    },
+    files: {
+      ...CHAPTER_TEXT,
+      'tracking/STATE.md': LEDGER('열림', '닫힘'),
+      'docs/evidence/w02-org-shell.md': document,
+      ...CAPTURE(),
+      ...extra,
+    },
+  });
+
+  t.add(
+    'dischargedDemandNamesItsProof',
+    'a discharge naming the component in words rather than naming a picture',
+    discharging(W02_EVIDENCE(W02_SCREEN_SECTION, W02_DISCHARGE('자리표시자 컴포넌트'))),
+    true
+  );
+  t.add(
+    'dischargedDemandNamesItsProof',
+    'a discharge naming a picture no section of the document shows',
+    discharging(W02_EVIDENCE(W02_SCREEN_SECTION, W02_DISCHARGE('`a-01-t4.webp`'))),
+    true
+  );
+  // Cited in this document and absent from the folder. `closedChapterHasEvidence` reports an image
+  // that is cited and missing; a discharge is not an image, so nothing else would look for this.
+  t.add(
+    'dischargedDemandNamesItsProof',
+    'a discharge naming a picture the document shows and the folder does not hold',
+    discharging(
+      W02_EVIDENCE(W02_SCREEN_SECTION, W02_PANE_SECTION, W02_DISCHARGE('`a-01-t2.webp`'))
+    ),
+    true
+  );
+  t.add(
+    'dischargedDemandNamesItsProof',
+    'a discharge naming the pane capture the section above it shows',
+    discharging(
+      W02_EVIDENCE(W02_SCREEN_SECTION, W02_PANE_SECTION, W02_DISCHARGE('`a-01-t2.webp`')),
+      { 'docs/evidence/w02-org-shell/a-01-t2.webp': `RIFF····WEBP${'\0'.repeat(9 * 1024)}` }
+    ),
+    false
+  );
+  t.add(
+    'dischargedDemandNamesItsProof',
+    'a document that discharges nothing',
+    discharging(W02_EVIDENCE(W02_SCREEN_SECTION)),
+    false
+  );
+
+  // A section showing neither a picture nor a fenced block is a section that shows nothing —
+  // unless it discharges its demand against the picture that already proves that component. Both
+  // directions here, because the third answer was added to a gate that had two.
+  t.add(
+    'closedChapterHasEvidence',
+    'a section that shows nothing at all',
+    discharging(W02_EVIDENCE(W02_SCREEN_SECTION, W02_SILENT_SECTION)),
+    true
+  );
+  t.add(
+    'closedChapterHasEvidence',
+    'a section carrying a discharge in place of a picture',
+    discharging(W02_EVIDENCE(W02_SCREEN_SECTION, W02_DISCHARGE('`a-01.webp`'))),
+    false
   );
 }

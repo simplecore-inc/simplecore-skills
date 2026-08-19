@@ -257,6 +257,48 @@ the base's picture in the folder a second time under another name.
 which is all it takes to demand that somebody open the screen of that name and write down what is
 there.
 
+### A demand a picture cannot answer is discharged, never skipped
+
+**Three panes of unbuilt placeholder are one component photographed three times.** The tab triggers
+are disabled, no content is registered behind them, and the second and third pictures are the first
+picture with a different file name. `references/demands.md` § *A capture is owed where a picture is
+the only witness* is why: an unbuilt placeholder is one of the three cases a picture does not
+witness, because **one capture per chapter proves the component and the rest are the same
+component**.
+
+**The generator could not have known that.** Whether a pane is built is a fact about the running
+application, and a chapter is written from the board — so the demand is correct when it is emitted
+and stops being answerable when somebody opens the screen. **That is not a demand to withhold; it
+is a demand the run discharges.**
+
+**A discharge is a line, not a silence.** The section carries `placeholderLine` in place of the
+picture, and its `{text}` is the capture in this document that does prove that component:
+
+```
+## 7. N-33 구성 관리 · 시스템 관리자
+
+**한 일** — 내용 탭 네 칸을 차례로 누른다.
+**챕터가 정한 것** — …칸마다 캡처를 남긴다 — `n-33-t2.webp`(구성 요소) · `n-33-t3.webp`(연동) …
+**본 것** — 「구성 요소」는 자리표시자다. 「연동」·「이력」도 같은 자리표시자 컴포넌트다.
+
+![N-33 구성 요소](w14-config/n-33-t2.webp)
+
+**같은 컴포넌트** — `n-33-t2.webp`
+```
+
+**The taker that shot one and left two was right, and with nothing to write it left two sections
+showing nothing** — which afterwards is indistinguishable from two panes nobody opened. The line is
+the whole difference, and it is what makes the discharge auditable: it names a picture, and the
+picture is on disk and is one the document shows. `dischargedDemandNamesItsProof` holds all three.
+
+**A discharge is a claim that expires.** The day the component is built the line is false and the
+bytes have not changed, so nothing mechanical can see it — the reader and the moment are in
+`../SKILL.md`'s second table.
+
+**The first sight of a screen is never discharged.** A frame's own capture is the one picture no
+other picture stands in for, and `everyPlacedFrameIsCaptured` goes on demanding it whatever the
+panes behind it hold.
+
 ## The ceiling on captures
 
 | | |
@@ -505,10 +547,22 @@ there is a section per line the chapter demands; that each section carries the t
 evidence; that each capture a document shows is on disk with a name, format and size the table
 above allows; and that no capture is left in the folder that no section shows.
 
-**It does not tell a capture from a code block.** One capture **or** one fenced block satisfies a
-section, and a fenced block is the right evidence for a line that only proves a boundary. So
-nothing here separates a section written by looking at a screen from one written out of a run log,
-and that reading is assigned to eyes.
+**It does not tell a capture from a code block.** One capture, one fenced block **or** one
+discharge satisfies a section: a fenced block is the right evidence for a line that only proves a
+boundary, and a discharge is the right evidence for a pane that is the component the section above
+already photographed. So nothing here separates a section written by looking at a screen from one
+written out of a run log, and that reading is assigned to eyes.
+
+**`dischargedDemandNamesItsProof` judges the discharge itself.** The line names a capture, that
+capture is on disk in this chapter's folder, and this document shows it — a discharge leaning on a
+picture nobody can open is a skip wearing a rule's clothes, and it reads in the file exactly like
+one that holds. Whether the component is still unbuilt is not in the bytes and stays with eyes.
+
+**`everyCaptureDemandGivesItsReason` judges the chapter rather than the document**, one layer
+earlier than everything else here: a clause of a demand line that names a capture and gives no
+reason why a picture is the witness for it. It reads `captureReasons` for the words → the reason
+itself, and why it belongs in the line, are `references/demands.md` § *A capture is owed where a
+picture is the only witness*.
 
 **`everyPlacedFrameIsCaptured` judges the other direction.** Among the frames a closed chapter
 places and tells somebody to open, it names by frame id the ones with no capture. **A frame nothing

@@ -488,6 +488,54 @@ export function cases(t) {
     false
   );
 
+  // censusCountsBothSides — a global change is verified by a sample plus a census, and a census
+  // that counted only the sites it expected to find is the half that never happened. The sample
+  // proves the mechanism; only the census reaches a site that has no instance of the mechanism at
+  // all, which is exactly the site a hand-rolled dialog is.
+  add(
+    'censusCountsBothSides',
+    'a census stating how many sites reach the mechanism and not how many do not',
+    { commits: ['fix(ui): label the dialog close button\n\nChapter: W22\nCensus: the shared confirm dialog — 26 through'] },
+    true
+  );
+  add(
+    'censusCountsBothSides',
+    'a census that found sites outside the mechanism and named none of them',
+    { commits: ['fix(ui): label the dialog close button\n\nChapter: W22\nCensus: the shared confirm dialog — 26 through, 2 outside'] },
+    true
+  );
+  add(
+    'censusCountsBothSides',
+    'a census with nothing after the colon',
+    { commits: ['fix(ui): label the dialog close button\n\nChapter: W22\nCensus:'] },
+    true
+  );
+  add(
+    'censusCountsBothSides',
+    'both counts, with the sites outside the mechanism named',
+    {
+      commits: [
+        'fix(ui): label the dialog close button\n\nChapter: W22\n'
+        + 'Census: the shared confirm dialog — 26 through, 2 outside: DocumentPurgeDialog PermitRevokeDialog',
+      ],
+    },
+    false
+  );
+  // Nothing outside the mechanism is a census that is finished at the second number. Requiring
+  // names there would make the commonest correct answer the one shape nobody can write.
+  add(
+    'censusCountsBothSides',
+    'both counts, with nothing outside the mechanism to name',
+    { commits: ['fix(ui): label the dialog close button\n\nChapter: W22\nCensus: the shared confirm dialog — 26 through, 0 outside'] },
+    false
+  );
+  add(
+    'censusCountsBothSides',
+    'a commit that claims no census',
+    { commits: ['feat(screens): the roster list\n\nChapter: W15'] },
+    false
+  );
+
   // importsTravelWithTheirCommit — the registry two people edit, and the module only one of them
   // committed. The broken form is not hypothetical: it is what a real commit here did, and the
   // reason a pull could not load the gate set it had just been handed.

@@ -95,6 +95,22 @@ export const EVIDENCE_LABEL_ROLES = ['did', 'demanded', 'saw'];
 export const EYES_PHRASE_ROLES = ['assigns', 'reader', 'moment'];
 
 /**
+ * The three cases in which a picture is the only witness, as a project words each of them.
+ *
+ * <p><b>The roles are fixed because the cases are.</b> `firstSight` is a screen nobody has opened —
+ * a route answering 200 with the chrome painted and nothing inside it passes every other check
+ * there is. `presence` is a claim about what is drawn, where, and in what words that no response
+ * body carries. `transient` is a state that exists only while something is open. Everything else a
+ * demand can ask for is settled by what the server answered, and a fenced block is the evidence
+ * for it.
+ *
+ * <p>Each is a list of literal phrases in the project's own language, matched case-insensitively
+ * inside one clause of a demand line — the same arrangement as `eyesPhrases`, and for the same
+ * reason: what the reason SAYS is the project's, and that one is given is the skill's.
+ */
+export const CAPTURE_REASON_ROLES = ['firstSight', 'presence', 'transient'];
+
+/**
  * What one entry of `captureStandard` names: the window a capture is taken in, and the scheme.
  *
  * <p>`width` and `height` are CSS pixels, so a run reads them back out of the page with
@@ -145,6 +161,16 @@ export const SCHEMA = {
   // failure the key exists to stop, and the reason `references/evidence.md` names the key at the
   // moment the case first comes up rather than in a list of options.
   deferredLine: { kind: 'text', absent: 'a project that has met that case writes the marker in prose instead, and the chapter it names closes with the debt outstanding and nothing reading it' },
+  // The line an evidence section carries in place of a picture, when the demand asked for one and
+  // a picture is not the witness for it — the pane behind the tab is the same unbuilt placeholder
+  // the section above already photographed. Its `{text}` is the capture that proves the component.
+  //
+  // **A demand a picture cannot answer is DISCHARGED, never skipped**, and this key is what makes
+  // the difference visible. A taker that correctly shot one placeholder and left the other two is
+  // right, and with nothing to write it leaves two sections showing nothing — which afterwards is
+  // indistinguishable from two panes nobody opened. Compiled by the same grammar as `deferredLine`
+  // and kept beside it, because a check reading a result document reads all of them together.
+  placeholderLine: { kind: 'text', absent: 'a demand a picture cannot answer is met by silence, and afterwards a pane nobody opened and a pane correctly proved by the capture above it read exactly the same' },
   // Where a chapter's verification result and the captures it cites are written. **Not required to
   // configure and required to close** — a project builds screens without it and cannot finish a
   // chapter, which is the difference `required` alone could not express and `doctor` reported as an
@@ -171,6 +197,15 @@ export const SCHEMA = {
   locales: { kind: 'list', absent: 'the languages come from the project\'s own copy catalogue; where that cannot be read, report it rather than judging in one language' },
   pseudoLocale: { kind: 'text', absent: 'overflow is judged in the longest real language only, which covers less → `references/judging-frames.md`' },
   captureRoute: { kind: 'text', absent: 'captures are driven by navigation, which cannot reach the states that matter; report it as owed rather than hand-driving the board' },
+  // The words a demand uses to say why a picture is the only witness for the capture it names.
+  //
+  // **A capture demanded with no reason is a habit rather than a judgment**, and it is emitted by
+  // the thousand: a generator that writes one file name per pane per frame produces a chapter
+  // demanding pictures nobody can give a reason for, and — where the panes are unbuilt
+  // placeholders — pictures nobody can take at all. One chapter set asked for 1040 of them and
+  // said of no single one why a picture was owed. Whether the reason is TRUE stays with eyes; that
+  // one was given is what this key lets a machine see.
+  captureReasons: { kind: 'phrases', roles: CAPTURE_REASON_ROLES, absent: 'a demand naming a capture is never asked to say why a picture is the witness for it, so a picture somebody judged to be the only witness and one a generator emitted per pane read exactly the same' },
   // The size and colour scheme every capture is taken at. **Declared rather than left to the
   // driver**, because neither is recoverable from the picture afterwards and both are wrong in a
   // way that reads as a correct run: a window that came back narrow files a frame with its lower
@@ -340,6 +375,8 @@ export function loadProject(configPath, options = {}) {
       // reading a document reads all of them together. Absent where the project declares none.
       const deferred = declared('deferredLine');
       if (deferred) lines.deferred = compileLine(deferred, 'deferredLine');
+      const placeholder = declared('placeholderLine');
+      if (placeholder) lines.placeholder = compileLine(placeholder, 'placeholderLine');
       return lines;
     },
     // The readers over the evidence folder, bound to this repository. A project's own gate over
