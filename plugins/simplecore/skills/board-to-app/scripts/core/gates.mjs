@@ -300,6 +300,37 @@ export const deferredKeyGate = {
   },
 };
 
+/** The three answers a build knows how to follow, and what each one lets it do. */
+export const COMMIT_POLICIES = new Map([
+  ['ask', 'stop before each commit and ask'],
+  ['commit', 'commit as the work lands; pushing still waits for the user'],
+  ['commitAndPush', 'commit as the work lands and push'],
+]);
+
+/**
+ * The commit policy is one of the words the build knows how to act on.
+ *
+ * <p>A project answers "may this build commit?" once, and a word outside the three is worse than
+ * an undeclared key: `commitPolicy: "yes"` reads to every person who opens the config as a
+ * decision that was made, while the build falls back to asking and nobody finds out why it keeps
+ * stopping. An undeclared key at least reads as undeclared.
+ */
+export const commitPolicyGate = {
+  id: 'commitPolicyGate',
+  title: 'the commit policy is a word the build cannot follow',
+  needs: ['commitPolicy'],
+  run: (ctx) => {
+    const declared = ctx.declared('commitPolicy');
+    if (typeof declared !== 'string') return [];
+    if (COMMIT_POLICIES.has(declared)) return [];
+    return [
+      `commitPolicy is 「${declared}」, which is not one of ${[...COMMIT_POLICIES.keys()].join(' · ')} — `
+      + 'a word outside those reads as a decision and is followed by nobody, so the build goes on '
+      + 'asking before every commit while the config says it was settled',
+    ];
+  },
+};
+
 /**
  * The handover file states facts, not somebody's account of finding them.
  *
@@ -672,6 +703,7 @@ export const importsTravelWithTheirCommit = {
 export const CORE_GATES = [
   configGate,
   deferredKeyGate,
+  commitPolicyGate,
   handoverGate,
   openItemsGate,
   ledgerGate,

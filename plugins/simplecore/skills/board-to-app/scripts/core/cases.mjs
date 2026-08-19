@@ -118,7 +118,36 @@ export function cases(t) {
     { config: { eyesDocuments: ['docs/OVERVIEW.md'], eyesPhrases: { assigns: ['stays with eyes'], reader: ['the coordinator'], moment: ['before '] } } },
     false,
   );
+  // Half a capture split named is a project that thought about one side of it. The taker runs on
+  // the cheap model and the judge inherits whatever the harness gives, which is the arrangement
+  // paying more on exactly the half that was supposed to cost less.
+  add('configGate', 'the taker\'s model named and the judge\'s left out', { config: { captureTakerModel: 'sonnet' } }, true);
+  add('configGate', 'the judge\'s model named and the taker\'s left out', { config: { captureJudgeModel: 'opus' } }, true);
+  add(
+    'configGate',
+    'both halves of the capture split named',
+    { config: { captureTakerModel: 'sonnet', captureJudgeModel: 'opus' } },
+    false,
+  );
+  // What drives a browser is an ORDER, so it is a list — one name declared as a bare string is a
+  // project that has named a driver and said nothing about what happens when it cannot express
+  // the task, which is the whole reason the key is ordered.
+  add('configGate', 'a driver order declared as one name rather than a list', { config: { browserDrivers: 'agent-browser' } }, true);
+  add(
+    'configGate',
+    'the drivers declared in the order the run takes them',
+    { config: { browserDrivers: ['agent-browser', 'playwright'], deviceDrivers: ['agent-device'] } },
+    false,
+  );
   add('configGate', 'everything declared and everything there', {}, false);
+
+  // commitPolicyGate — whether the build may commit is the project's answer, and a word outside
+  // the three reads as an answer while being followed by nobody.
+  add('commitPolicyGate', 'a policy word the build cannot act on', { config: { commitPolicy: 'yes' } }, true);
+  add('commitPolicyGate', 'a policy that only differs in case', { config: { commitPolicy: 'Commit' } }, true);
+  add('commitPolicyGate', 'the build may commit as the work lands', { config: { commitPolicy: 'commit' } }, false);
+  add('commitPolicyGate', 'the build stops and asks', { config: { commitPolicy: 'ask' } }, false);
+  add('commitPolicyGate', 'the build commits and pushes', { config: { commitPolicy: 'commitAndPush' } }, false);
   add(
     'configGate',
     'every optional key declared, and well formed',

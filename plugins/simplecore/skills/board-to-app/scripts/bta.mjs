@@ -12,7 +12,7 @@
 import { pathToFileURL } from 'node:url';
 import { CORE_GATES, applies, gatesFor, gradeOf } from './core/gates.mjs';
 import { HEADING_ROLES, SCHEMA, findConfig, loadProject } from './core/context.mjs';
-import { makeBuilders, proveSeverity, proveShadowedIds, runCases, ungraded, unproven } from './core/harness.mjs';
+import { makeBuilders, proveKeysAreDocumented, proveSeverity, proveShadowedIds, runCases, ungraded, unproven } from './core/harness.mjs';
 import { cases as coreCases } from './core/cases.mjs';
 
 const argv = process.argv.slice(2);
@@ -149,8 +149,15 @@ async function proveGates() {
     console.log('\n✔ severity: a fired warning leaves the exit status zero, a fired error fails the run');
     console.log('✔ ids: a project gate under a core gate\'s id is refused, unless the core one is turned off');
   }
+  // A key nobody documented works perfectly and is met by nobody, which is a shape no gate over a
+  // project can see — the subject is this skill's own two documents.
+  const undocumented = proveKeysAreDocumented();
+  for (const line of undocumented) console.log(`\n✖ keys · ${line}`);
+  if (!undocumented.length) {
+    console.log(`✔ keys: every key the schema reads has a row in the config table and a line in the template`);
+  }
   console.log(bad ? `\n✖ ${bad} of ${collected.length} cases came out the wrong way` : `\n✔ ${collected.length} cases, both directions`);
-  return bad === 0 && missing.length === 0 && mistyped.length === 0 && severity.length === 0;
+  return bad === 0 && missing.length === 0 && mistyped.length === 0 && severity.length === 0 && undocumented.length === 0;
 }
 
 async function doctor() {

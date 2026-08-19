@@ -126,6 +126,13 @@ export const SCHEMA = {
   openItemsFile: { kind: 'file' },
   openItemsHeading: { kind: 'text', requiredWith: 'openItemsFile' },
   gates: { kind: 'list', closing: true },
+  // Whether the build may commit and push without asking. **No default beyond `ask`**, and `ask`
+  // is what an undeclared key means: a skill that assumed permission would take it in every
+  // repository that installed it, and the one thing a build must not do on its own initiative is
+  // decide how somebody else's history is written. The three words are `commitPolicyGate`'s, not
+  // this schema's — a value outside them is a decision the build cannot follow, which is a finding
+  // rather than a type error.
+  commitPolicy: { kind: 'text' },
   auditScript: { kind: 'path' },
   migrationDir: { kind: 'dir', many: true },
   frameDeliverables: { kind: 'list' },
@@ -134,6 +141,24 @@ export const SCHEMA = {
   locales: { kind: 'list' },
   pseudoLocale: { kind: 'text' },
   captureRoute: { kind: 'text' },
+  // What drives a browser, and what drives a device, in the order the run takes them. A list
+  // rather than one name, because the choice is per task: a driver that cannot express the task is
+  // stepped past, and the run says which one it ended up on.
+  //
+  // **Undeclared is not a default order.** No name belongs in this skill — the tools available
+  // differ per machine and per user — so an absence means the run picks and then has to record
+  // what it picked, which `references/driving-the-product.md` says how to do.
+  browserDrivers: { kind: 'list' },
+  deviceDrivers: { kind: 'list' },
+  // Which model each half of the capture split runs on. **The split itself is not configurable** —
+  // whoever shot a picture cannot judge it — and these two say only where the work is procedure
+  // and where it is judgement.
+  //
+  // Each requires the other: half a split named is a project that has thought about one side, and
+  // applying it to one agent while the other inherits whatever the harness gives is the arrangement
+  // silently costing more on the half that was supposed to be cheap.
+  captureTakerModel: { kind: 'text', requiredWith: 'captureJudgeModel' },
+  captureJudgeModel: { kind: 'text', requiredWith: 'captureTakerModel' },
   // The documents that hand checks to human eyes, and the words they hand them in.
   //
   // **Not `closing`** — a project that declares NEITHER closes chapters perfectly well and simply

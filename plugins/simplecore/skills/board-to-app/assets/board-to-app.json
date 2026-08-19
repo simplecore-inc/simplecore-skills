@@ -30,6 +30,9 @@
     "states": "<the sentence listing the states hanging off a screen, or null with a //states reason>"
   },
 
+  "//deferredLine": "The line an evidence section carries when a check RAN and this installation could not decide it — same grammar as `chapterLines`, and its `{text}` is the chapter that repays the debt. Delete the line where the project has never met that case. A project that HAS met it and declares nothing writes the marker in prose instead, and the chapter it names closes with the debt outstanding and nothing reading it.",
+  "deferredLine": "<the line a section carries for a check this installation could not decide, e.g. **Deferred to {text}**…>",
+
   "//evidenceLabels": "The three labels one section of a result document carries — the WORD alone, with no markup on it. The checks write the emphasis themselves, so a label declared with it is looked for with the markers twice over and matches no line in any document. `demanded` is the one compared against the chapter file.",
   "evidenceLabels": {
     "did": "<label: what was operated, or the command that was run>",
@@ -49,6 +52,10 @@
   "openItemsHeading": "<the heading those lines live under — its text only, with no # markers on it>",
 
   "gates": [],
+
+  "//commitPolicy": "Whether this build may commit and push without asking, answered once so it is never asked again: `ask` stops before each commit, `commit` commits as the work lands and leaves pushing to the user, `commitAndPush` does both. Delete the line and the build asks — which is safe and costs it the ability to run unattended, since the two gates that read commits see nothing until somebody is present. This settles PERMISSION only; what a commit message says beyond the two trailers is this repository's own rule.",
+  "commitPolicy": "ask",
+
   "auditScript": "<where a new detection rule lands: one script, or the directory a family of them lives in>",
   "migrationDir": "<where migrations live — one directory, or [\"…\", \"…\"] when the database has several lineages>",
 
@@ -59,6 +66,14 @@
   "locales": [],
   "pseudoLocale": "<the generated long-string locale id, e.g. en-XA>",
   "captureRoute": "<address rendering one frame in one state, e.g. /frame/<id>>",
+
+  "//drivers": "What opens a screen here, IN ORDER — the run takes the first that can express the task and says which one it ended up on. No name is built into the skill, because what is installed differs per machine; delete either line and whoever opens a screen picks, and then has to name the driver in the return and write it into the handover file, since a capture carries no record of what shot it. Put a driver that fails often LAST: a driver failure reads exactly like a defect in the screen, so a run routed through it spends its time twice. `deviceDrivers` is for a product that ships on a simulator or a real device.",
+  "browserDrivers": ["<driver>", "<driver behind it>"],
+  "deviceDrivers": ["<driver>"],
+
+  "//captureModels": "Which model each half of the capture split runs on. The SPLIT is not a choice — whoever shot a picture cannot judge it — and these two say only where the work is procedure and where it is judgement: driving named addresses and reading values out is the first, deciding whether a value is a defect is the second. Declare both or neither; half a split named is the arrangement paying more on exactly the half that was meant to be cheap. Delete both and each agent runs on its own definition's default.",
+  "captureTakerModel": "<the cheaper model, for driving and transcribing>",
+  "captureJudgeModel": "<the stronger model, for judging>",
 
   "//eyes": "The documents that hand a check to human eyes, and the words they hand it in. **Declare both or neither** — declaring neither is a project saying it has no such rules and costs nothing; declaring the documents without the vocabulary reads every one of them and matches nothing, so `nothing to find` and `no idea what to look for` come out as the same zero, and the config gate refuses it. The phrases are literal, matched case-insensitively inside one statement: `assigns` is how a sentence says no machine judges this, `reader` is who takes the reading, `moment` is when. `reader` is a closed list of actors on purpose, because a pattern accepting any noun is satisfied by every paragraph that mentions anybody.",
   "eyesDocuments": ["<the file that hands checks to eyes — the evidence folder's index, the instruction file>"],

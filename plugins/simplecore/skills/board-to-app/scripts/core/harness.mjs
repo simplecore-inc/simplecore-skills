@@ -4,11 +4,11 @@
 // config in it — never a hand-made context object — so a gate is proved against the same
 // reader it uses in a repository, and a gate that quietly stopped resolving paths cannot pass.
 import { execFileSync, spawnSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { CONFIG_NAME, loadProject } from './context.mjs';
+import { CONFIG_NAME, SCHEMA, loadProject } from './context.mjs';
 import { GRADES } from './gates.mjs';
 
 /** The command line whose exit status the severity proof reads. */
@@ -197,6 +197,97 @@ export function ungraded(gates) {
         `grade ${JSON.stringify(gate.grade)} is not one of ${GRADES.join(', ')} — a grade nobody `
         + 'reads is counted in whichever channel the reader assumed, so it is refused rather than defaulted',
     });
+  }
+  return out;
+}
+
+/** The header row that opens the config table in `SKILL.md`, and the anchor the reverse read uses. */
+const CONFIG_TABLE_HEADER = '| Key | What the project names with it | Required | Absent means |';
+
+/** A key's own row in a `| \`key\` | … |` table. */
+const TABLE_KEY = /^\|\s*`([A-Za-z][A-Za-z0-9]*)`\s*\|/;
+
+/**
+ * Where a key is documented and where it is not — the comparison alone, so it can be run against
+ * the real files and against doctored ones.
+ *
+ * @param keys every key the schema reads
+ * @param inTable the keys the config table gives a row to
+ * @param inTemplate the keys the copyable template declares
+ * @returns one string per key that is missing from one side or named on a side that does not read it
+ */
+export function undocumentedKeys(keys, inTable, inTemplate) {
+  const out = [];
+  for (const key of keys) {
+    if (!inTable.has(key)) {
+      out.push(`${key} is read by the schema and has no row in the config table — a key with no row is one nobody can decide about`);
+    }
+    if (!inTemplate.has(key)) {
+      out.push(`${key} is read by the schema and is not in assets/board-to-app.json — a project copying the template never meets it`);
+    }
+  }
+  for (const key of inTable) {
+    if (!(key in SCHEMA)) out.push(`the config table has a row for ${key}, which the schema does not read — a renamed key leaves its old row behind, and the row is what everybody reads`);
+  }
+  return out;
+}
+
+/**
+ * Every key the skill reads is documented where a project would look for it.
+ *
+ * <p>This is the shape the two tables cannot hold: a key added to `SCHEMA` works immediately,
+ * `configGate` validates it, `doctor` prints it — and nothing anywhere says it exists, so the only
+ * readers who ever meet it are the ones who go through the source. Eight keys reached that state
+ * before this ran.
+ *
+ * <p><b>Both directions are proved here rather than in a case</b>, because the subject is this
+ * skill's own files rather than a project: the comparison is run once against them and twice
+ * against a doctored copy, and a comparison that stays quiet on a key nobody documented is a
+ * comparison that would stay quiet on all of them.
+ *
+ * @returns one string per expectation that came out the wrong way
+ */
+export function proveKeysAreDocumented() {
+  const skill = readFileSync(new URL('../../SKILL.md', import.meta.url), 'utf8');
+  const lines = skill.split('\n');
+  const opens = lines.indexOf(CONFIG_TABLE_HEADER);
+  // A header that moved is itself the finding: the reverse read has nothing to anchor on, and
+  // silently reading every table in the file would report the heading-role rows as stale keys.
+  if (opens < 0) {
+    return [`SKILL.md no longer carries the config table's header row — the reverse read anchors on it, and without it a stale row is invisible`];
+  }
+  const inTable = new Set();
+  for (const line of lines.slice(opens + 1)) {
+    if (!line.startsWith('|')) break;
+    const found = TABLE_KEY.exec(line);
+    if (found) inTable.add(found[1]);
+  }
+
+  const template = JSON.parse(readFileSync(new URL('../../assets/board-to-app.json', import.meta.url), 'utf8'));
+  const inTemplate = new Set(Object.keys(template).filter((k) => !k.startsWith('//')));
+
+  const out = undocumentedKeys(Object.keys(SCHEMA), inTable, inTemplate);
+  // The baseline is taken before the probes, so a probe that fails cannot move the yardstick the
+  // next probe is measured against.
+  const found = out.length;
+
+  // The comparison proved against the defect it exists to catch: a key the schema reads that
+  // neither document names, and a row left behind by a rename.
+  const missed = undocumentedKeys([...Object.keys(SCHEMA), 'keyNobodyDocumented'], inTable, inTemplate);
+  if (missed.length !== found + 2) {
+    out.push('the documentation comparison did not report an undocumented key — it would stay quiet on every key');
+  }
+  const stale = undocumentedKeys(Object.keys(SCHEMA), new Set([...inTable, 'keyThatWasRenamedAway']), inTemplate);
+  if (stale.length !== found + 1) {
+    out.push('the documentation comparison did not report a table row the schema no longer reads');
+  }
+  // …and against the fixed form, on its own sets rather than on the real ones: a probe that
+  // borrows the live table inherits whatever is already wrong with it, and then reports the
+  // repository's state as a failure of the comparison.
+  const keys = Object.keys(SCHEMA);
+  const clean = undocumentedKeys(keys, new Set(keys), new Set(keys));
+  if (clean.length) {
+    out.push(`the documentation comparison found ${clean.length} things wrong with a set where every key is documented — it fires on everything`);
   }
   return out;
 }
