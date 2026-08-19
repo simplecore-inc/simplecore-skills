@@ -825,6 +825,68 @@ export function AssignDialog() { return null; }`,
     },
   },
   {
+    id: "unpaged-table-without-reason",
+    invariant: "#32 / audit: tables are lists",
+    level: "error",
+    desc: "A table draws rows with no paging under it and nothing saying why it needs none. A table that pages is a list wherever it sits and carries all four — a count, filters, sorting, paging; a table that does NOT page is the bounded kind, and bounded is a claim about the data that only a person can make. The component cannot tell a catalogue of eleven from a history of eleven-so-far, so the claim is written where the table is: a comment opening `Bounded:` and saying what fixes the count. A missing paged endpoint on the server is not a reason — building it is the work",
+    appliesTo: isTsx,
+    // Judged per table rather than per file: a screen with a bounded catalogue beside a growing
+    // collection is the ordinary case here, and a file-level test would let the second one pass on
+    // the first one's paging.
+    check: (c) =>
+      lineHits(
+        c,
+        /<Table[\s>]/,
+        (line, lines, i) => {
+          // The frame that pages this table, or the claim that it needs none, stands just above it.
+          const above = lines.slice(Math.max(0, i - 15), i).join("\n");
+          if (/\bBounded:/.test(above)) return false;
+          if (/<CrudDetail\.(Table|List)\b|onPageChange=|<CrudList\b/.test(above)) return false;
+          return true;
+        },
+      ),
+    samples: {
+      file: "modules/<domain>/src/widgets/<entity>/history-tab.tsx",
+      broken: `export function HistoryTab({ rows }: Props) {
+  return (
+    <Table>
+      <TableBody>{rows.map((row) => <TableRow key={row.id} />)}</TableBody>
+    </Table>
+  );
+}`,
+      fixed: `export function HistoryTab({ rows }: Props) {
+  return (
+    // Bounded: the eleven states a record moves through, which is every row it will ever have.
+    <Table>
+      <TableBody>{rows.map((row) => <TableRow key={row.id} />)}</TableBody>
+    </Table>
+  );
+}`,
+      miss: [
+        {
+          note: "a table the detail frame pages needs no such claim",
+          source: `export function HistoryTab({ history }: Props) {
+  return (
+    <CrudDetail.Table page={history.page} total={history.total} onPageChange={history.setPage}>
+      <Table>
+        <TableBody>{history.rows.map((row) => <TableRow key={row.id} />)}</TableBody>
+      </Table>
+    </CrudDetail.Table>
+  );
+}`,
+        },
+        {
+          note: "the header, body, row and cell elements are not the table",
+          source: `// Bounded: the four sharing modes, which the enum fixes.
+<Table>
+  <TableHeader><TableRow><TableHead>Mode</TableHead></TableRow></TableHeader>
+  <TableBody><TableRow><TableCell>Open</TableCell></TableRow></TableBody>
+</Table>`,
+        },
+      ],
+    },
+  },
+  {
     id: "chip-filter-equality-field",
     invariant: "#15 / audit: chip filters",
     level: "error",
