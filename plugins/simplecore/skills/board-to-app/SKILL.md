@@ -199,7 +199,7 @@ the count is what shows a comparison reached anything at all.
 | `placeholderLine` | the line an evidence section carries **in place of a picture**, where the demand asked for one and a picture is not the witness for it — same grammar as `chapterLines`, and its `{text}` is the capture that already proves that component | ○ | a demand a picture cannot answer is met by silence, and afterwards a pane nobody opened and a pane correctly proved by the capture above it read exactly the same |
 | `evidenceDir` | where a chapter's verification result is written, one document per chapter, with the captures it cites in a folder of the same name beside it → `references/evidence.md` | ◑ | screens get built and no chapter can be shown to have closed on anything — the grounds die with the session |
 | `stateLedger` | the one file saying which chapter is open, in progress, awaiting its tests or closed — and which development account each persona signs in with | ● | the build cannot start |
-| `handoverFile` | the facts a builder needs to start: how to stand the system up, known traps, what data is already standing | ● | the build cannot start |
+| `handoverFile` | the facts a builder needs to start: how to stand the system up, known traps, what data is already standing. **It may be one document or an index that routes to them** → *A handover file grows, and the answer is not another trim* | ● | the build cannot start |
 | `openItemsFile` | where a parked decision is written | ○ | parked lines go in the state ledger |
 | `openItemsHeading` | the heading those lines live under — the heading's **text only**, with no `#` markers on it | ◐ with `openItemsFile` | the config is incomplete — report it rather than choosing a heading |
 | `gates` | the commands a chapter must pass before it closes, each read by its exit status — `bta.mjs check` among them | ◑ | nothing mechanical holds a chapter closed; say so once per session and close on the persona runs alone |
@@ -1047,6 +1047,41 @@ agent that **dispatches** sub-work rather than building screens itself: its own 
 stays empty because it is not the one touching screens, and it is the only file anybody
 watching can read. An agent that hands out work still writes one line per step it takes
 — briefed, judged, committed — under its own name.
+
+## A handover file grows, and the answer is not another trim
+
+**Every chapter has a reason to add to it and none has a reason to take anything away.** That is
+what the file is for — an agent holding a chapter must not work out again what the last one worked
+out — so it grows by design, and it passes the size where anybody reads it whole without anything
+announcing that it did. **A fact nobody reads is worth what an absent one is worth, with the
+difference that it still looks like coverage.**
+
+**Trimming buys one round and then it grows back.** By the time the file is long, most of what is
+in it is true and cited; what is left to cut is the part that was already dead, and cutting that
+leaves the shape untouched. The shape is the problem: **one file read by every chapter means every
+agent pays for every other chapter's facts** — a chapter's backend map is dead weight to the six
+chapters that load it and never open it.
+
+**So a handover file is allowed to be an index that routes.** `handoverFile` may name a document
+holding the facts, or a **skill's `SKILL.md` whose `references/` hold them by subject** — the
+index says which file answers which question and restates none of it. A project splits when the
+reading, not the writing, is what costs: the test is whether an agent opening it reads past the
+part it needs.
+
+**Two things have to move with the split, or it is worse than not splitting.**
+
+- **The index restates nothing.** A fact in both the index and a reference is the duplication this
+  arrangement bans everywhere else, and the copy that drifts is indistinguishable from the one that
+  did not.
+- **Whatever reads the handover file has to follow the routing.** A check that reads
+  `handoverFile` as one document now reads a table of contents: it goes quiet on every fact in the
+  references and reports the same clean result it reported when it was reading facts. **That
+  silence is the failure mode**, so a gate over the handover file reads the index *and* what it
+  routes to.
+
+**Grouping is by who asks and when, never by where the fact came from.** 「what the migration
+found」 is an origin; 「how a screen reaches its address」 is a question somebody has. Origin
+groupings read fine to whoever wrote them and send everybody else through three files.
 
 ## An agent that ends, and an agent that only paused
 
