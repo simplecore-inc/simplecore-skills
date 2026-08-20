@@ -206,6 +206,19 @@ exists for, repeated one layer under the tabs.
 
 **So there is one capture per pane.**
 
+**And every capture carries its own sentence, directly above it.** A section holding several
+pictures with nothing between them hands the reader a strip of screenshots and the job of working
+out which is which — the alt text is not that sentence, because a reader looking at the page never
+sees it. **The sentence says what to look at in that picture**: which pane it is, what it draws,
+what is present or absent in it. It is written the way 「본 것」 is written — out of the picture,
+after opening it — and a second picture with no sentence of its own is a picture nobody accounted
+for.
+
+So a section reads: the three labelled lines, then the frame's own capture under the sentence that
+describes it, then for each further pane its sentence and its picture, in that order. **Never two
+images with nothing but a blank line between them.**
+
+
 | Which pane | Name |
 | --- | --- |
 | the one the board draws open | `<frame>.webp` — the frame's own name |
