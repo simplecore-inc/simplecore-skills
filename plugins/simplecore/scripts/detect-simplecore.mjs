@@ -47,23 +47,52 @@ const HTML_HEAD_BYTES = 64 * 1024;
 const BOARD_SIGNATURES = ["frame-label", "readme"];
 
 // The board contract this skill currently writes. A board on a lower contract needs migrating.
-// Kept here as the "what the skill expects now" side; the kit copied into a project carries the
-// "what this board is" side in its own partials.mjs. Two values by necessity, not duplication.
+//
+// **Read out of the kit rather than written down here.** Before contract 3 the kit was copied
+// into each project, so the skill's "what I expect now" and a board's "what I am on" really were
+// two values; since the kit moved into this plugin they are one fact with one owner, and a second
+// copy of it can only ever be right until the day the kit moves. It went wrong exactly that way:
+// the kit reached 4, this line still said 3, and the detector answered `needsMigration: false`
+// over a board whose build was refusing to run. **A stale copy here does not fail** — it reports
+// a project as current, which is indistinguishable from a project that is.
 //
 // **A board with no stamp is not the same thing as a board with no built HTML.** The first is
 // genuinely contract 1 — stamping did not exist when it was made. The second is a kit-built board
 // that has not been released yet, which is most of a board's life, and its contract is whatever
 // its kit writes. Collapsing the two told every board still being drawn to migrate away from the
 // contract it was already on.
-//   3  the kit lives in the skill and the board holds only its own content: a declared pattern
-//      supplies the components, the shells and the styles, and the board's own `tools/` is gone
 //
 // What each contract changed, and the steps to cross it, are the kit's `core/migrations.mjs`.
 // This number only has to say WHICH contract a board is on.
-const BOARD_CONTRACT = 3;
 const CONTRACT_META = /<meta\s+name=["']wireframe-board-contract["']\s+content=["'](\d+)["']/i;
 const KIT_CONTRACT_DECL = /BOARD_CONTRACT\s*=\s*(\d+)/;
 const KIT_SOURCE_BYTES = 16 * 1024;
+
+/** Where this plugin's own kit declares the contract it writes. */
+const KIT_PARTIALS = path.join(
+  import.meta.dirname, "..", "skills", "wireframe-boards", "kit", "core", "partials.mjs"
+);
+
+const BOARD_CONTRACT = (() => {
+  let src;
+  try {
+    src = fs.readFileSync(KIT_PARTIALS, "utf8").slice(0, KIT_SOURCE_BYTES);
+  } catch {
+    throw new Error(
+      `detect-simplecore: cannot read the kit's own contract at ${KIT_PARTIALS} — this plugin's `
+      + 'kit is missing or has moved, and guessing the number here is how a project gets told it '
+      + 'is current while its board build refuses'
+    );
+  }
+  const declared = KIT_CONTRACT_DECL.exec(src);
+  if (!declared) {
+    throw new Error(
+      `detect-simplecore: ${KIT_PARTIALS} declares no BOARD_CONTRACT — the one place that number `
+      + 'lives has been renamed, and every migration prompt this script writes depends on it'
+    );
+  }
+  return Number(declared[1]);
+})();
 
 const PARITY_CONFIG = path.join(".claude", "board-parity-walk.json");
 const BUILD_CONFIG = path.join(".claude", "board-to-app.json");

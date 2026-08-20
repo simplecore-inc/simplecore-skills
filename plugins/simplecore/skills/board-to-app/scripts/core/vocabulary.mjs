@@ -230,9 +230,14 @@ function closedStatusEntry(ctx) {
   for (const { line } of proseLines(text)) {
     const cells = tableCells(line);
     if (!cells || cells.length < 2 || !known.has(cells[0].toUpperCase())) continue;
+    // The state's column is the project's — a name or what is left to do may sit between the
+    // chapter and its state — so the row is read whole, exactly as `closedChapters` reads it. A
+    // census taken on a fixed column reports a zero that belongs to this reader and prints it as
+    // though it belonged to the ledger.
+    const rest = cells.slice(1);
     compared += 1;
-    if (cells[1] === word) matched += 1;
-    if (bare(cells[1]) === bare(word)) relaxed += 1;
+    if (rest.includes(word)) matched += 1;
+    if (rest.some((cell) => bare(cell) === bare(word))) relaxed += 1;
   }
   return [entry(
     'closedStatus', word, CONVENTIONS.word, 'state ledger', 1, compared, matched, relaxed, false,

@@ -628,7 +628,7 @@ curl -s "$API/api-docs/all-apis" | grep -c '<new-field-or-endpoint-symbol>'   # 
 
 Only after that count is non-zero, run codegen. Use the **headless** form — `npx simplix openapi "$API/api-docs/all-apis" -d <domain> -y -f` — because the package.json `codegen` script may prompt interactively (Y/n) and blocks when its output is redirected. Backend restart is a delegated/authorized step; do not start a second backend on another port (a stale duplicate spec is worse than a restart).
 
-### "No changes detected" has two causes, and the second one blames the screen
+### "No changes detected" has three causes, and two of them blame the screen
 
 The snapshot comparison (`.openapi-snapshot.json`) answers with the same sentence whether
 nothing changed or it failed to see what changed, and the two need opposite responses.
@@ -637,6 +637,7 @@ nothing changed or it failed to see what changed, and the two need opposite resp
 | --- | --- | --- |
 | The snapshot genuinely matches the contract | the package is skipped whole, so **a file the run fills in late stays empty** — `src/mock/seeds.ts` is the one that does this, and the index that imports it then names exports that are not there | delete `src/mock/seeds.ts` and re-run with `-f`; the file's own header says it is written once and not overwritten, but it IS rewritten when absent, and there is nothing to lose unless it was hand-edited |
 | The contract moved and the comparison missed it | a DTO that only **gained properties** slips past `-d <domain>`; the widget then typechecks against the stale client and **every error names the widget** | verify against the served spec, then re-run with `-f` |
+| Only a **search operator** moved | `@SearchableField(operators = …)` gained one and nothing else changed. The snapshot compares an entity's **properties**, not the operators on them, so a spec that already serves the new operator is read as unchanged — and the widget goes on sending one the server does not accept | `-d <domain> -f`, which regenerates that domain whatever the snapshot thinks |
 
 **The second is the worse one, and the sentence is identical — so read the spec rather than
 the log:**

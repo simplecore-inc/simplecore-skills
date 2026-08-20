@@ -481,6 +481,12 @@ ledger, the handover file, the wave decision, and the barrier work the wave give
    is inside something long and is left alone → *An agent that ends, and an agent that
    only paused*.
 
+   **Give the artifact time to move before reading it as stalled.** A build, a rebuild of a
+   workspace package, a long typecheck — each leaves the tree untouched for many minutes
+   while the agent is working hard, so a reading taken a minute after the last step reports
+   every busy agent as stopped. **Twenty minutes without the artifact moving is the point
+   worth checking**, and checking means asking rather than reassigning.
+
    **A clean tree is not the stall test, and reading it as one produces two writers on
    one file.** An agent spends its first many minutes reading, invoking its skills and
    planning, and writes nothing in all of that — so the tree looks exactly as it looks
