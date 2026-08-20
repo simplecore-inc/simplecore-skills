@@ -1468,6 +1468,69 @@ export function AssignDialog() { return null; }`,
     },
   },
   {
+    id: "per-screen-enum-badge",
+    invariant: "#22 / #23 / audit: registry first",
+    level: "error",
+    desc: "A screen declares its own component to draw an enum as a badge — resolve the boot enum, look the label up, pick a tone. The framework already has that component twice over (`StatusBadge` takes a tone map keyed by the raw value, `EnumBadge` takes one tone for a categorical kind), and every screen that writes its own arrives at a slightly different answer for the absent value, the tone of the default case, and the size of the pill. Six of them in one module is six pills that do not match, and nothing compares them. Pass the module's variant map to the shared component instead",
+    appliesTo: isTsx,
+    check: (c) => {
+      const lines = c.split("\n");
+      const hits = [];
+      for (let i = 0; i < lines.length; i += 1) {
+        // A component declared in the screen, not exported and not the shared one being defined.
+        if (!/^\s*function\s+[A-Z][\w$]*\s*\(/.test(lines[i])) continue;
+        const body = lines.slice(i, i + 14).join("\n");
+        if (!/<Badge\b/.test(body)) continue;
+        if (!/\bresolveBootEnum\s*\(/.test(body)) continue;
+        // A badge whose label comes from the enum catalogue is the shared component's whole job.
+        if (!/\benumLabel\s*\(/.test(body)) continue;
+        hits.push({ line: i + 1, excerpt: lines[i].trim().slice(0, 140) });
+      }
+      return hits;
+    },
+    samples: {
+      file: "modules/<domain>/src/widgets/<entity>/list.tsx",
+      broken: `function KindBadge({ row }: { readonly row: ThingListDTO }) {
+  const { enumLabel } = useEntityTranslation("thing");
+  const kind = resolveBootEnum(row.kind);
+  return <Badge variant="warning">{kind ? enumLabel("ThingKind", kind) : "—"}</Badge>;
+}`,
+      fixed: `const KIND_VARIANTS: Record<string, StatusVariant> = { URGENT: "warning", ROUTINE: "outline" };
+
+export function ThingList() {
+  const { enumLabel } = useEntityTranslation("thing");
+  return (
+    <CrudList.Column<ThingListDTO> field="kind" header={fieldLabel("kind")}>
+      {({ row }) => (
+        <StatusBadge
+          enumName="ThingKind"
+          value={row.kind}
+          enumLabel={enumLabel}
+          variantMap={KIND_VARIANTS}
+        />
+      )}
+    </CrudList.Column>
+  );
+}`,
+      miss: [
+        {
+          note: "the shared component itself, which is where the resolving belongs",
+          source: `export function StatusBadge({ enumName, value, enumLabel, variantMap }: StatusBadgeProps) {
+  const resolved = resolveBootEnum(value);
+  if (!resolved) return null;
+  return <Badge variant={statusVariant(variantMap, resolved)}>{enumLabel(enumName, resolved)}</Badge>;
+}`,
+        },
+        {
+          note: "a component drawing a badge from a value that is not an enum",
+          source: `function CountBadge({ row }: { readonly row: ThingListDTO }) {
+  return <Badge variant="outline">{row.total ?? 0}</Badge>;
+}`,
+        },
+      ],
+    },
+  },
+  {
     id: "chip-filter-equality-field",
     invariant: "#15 / audit: chip filters",
     level: "error",
