@@ -289,6 +289,14 @@
   /* A third axis, where the board declares one — the one the files are not arranged by. It sits
      on the id line because it belongs to the frame's identity rather than to what the frame is,
      and it is inside the entry's text so the index filter reaches it. */
+  /* The axis picker sits under the search box, full width, because its values are the one thing
+     on this board a reader cannot guess — a text filter needs the mark already known. */
+  .wf-sidebar .sb-axis-pick { padding: 0 12px 8px; }
+  .wf-sidebar .sb-axis {
+    width: 100%; font: 400 11px var(--mono); color: var(--muted);
+    background: transparent; border: 1px solid var(--line); border-radius: 4px;
+    padding: 3px 5px;
+  }
   .wf-sidebar a .num .sb-ax { margin-left: 5px; font-weight: 400; color: var(--faint);
     border: 1px solid var(--line); border-radius: 3px; padding: 0 3px; }
   .wf-sidebar a .num .seq { color: var(--muted); font-weight: 400; margin-right: 2px; }

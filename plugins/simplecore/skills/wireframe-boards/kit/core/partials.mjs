@@ -161,6 +161,19 @@ export function makePartials({ components, roles = null, lang = 'en' }) {
     // are in is four screens or forty — and "how big is this board" is the first question anyone
     // asks of it.
     const total = sections.reduce((n, sec) => n + sec.screens.length, 0);
+    // The declared axis, gathered into a picker. The text filter already reaches the mark, but
+    // only a reader who knows the marks can type one — and the whole reason the axis is on the
+    // board is that it groups frames by something the board is NOT arranged by. A list of its
+    // values is how that grouping becomes reachable by somebody meeting the board for the first
+    // time. Sorted by mark so the order is the axis's own, not the order frames happen to fall in.
+    const axisValues = [];
+    const axisSeen = new Set();
+    sections.forEach((sec) => sec.screens.forEach((sc) => {
+      if (!sc.axisTag || axisSeen.has(sc.axisTag.mark)) return;
+      axisSeen.add(sc.axisTag.mark);
+      axisValues.push(sc.axisTag);
+    }));
+    axisValues.sort((a, b) => String(a.mark).localeCompare(String(b.mark)));
     const body = sections.map((sec) =>
       `<div class="sb-group">\n` +
       // A section with no letter is a group formed by a declared axis rather than by the board's
@@ -196,6 +209,13 @@ export function makePartials({ components, roles = null, lang = 'en' }) {
                title="${text.filterHint}">
         <button type="button" class="sb-clear" aria-label="${text.filterClear}">&times;</button>
       </div>
+${axisValues.length ? `      <div class="sb-axis-pick" hidden>
+        <select class="sb-axis" aria-label="${text.axisLabel}" title="${text.axisHint}">
+          <option value="">${text.axisAll}</option>
+${axisValues.map((a) => `          <option value="${a.mark}">${a.mark}${a.label ? ` · ${a.label}` : ''}</option>`).join('\n')}
+        </select>
+      </div>
+` : ''}
       <div class="sb-count" hidden></div>
     </div>
     <div class="sb-list">
@@ -350,6 +370,11 @@ ${readmeHtml}
   var input = box.querySelector('.sb-input');
   var clear = box.querySelector('.sb-clear');
   if (!input || !clear) return;
+  // The axis picker, where the board declares an axis. It narrows by an exact value rather than
+  // by substring, so \`W05\` never drags in \`W050\`, and it ANDs with the typed tokens — a reader
+  // picks the chapter and then types the screen, which is the pair of questions they actually have.
+  var pickBox = document.querySelector('.wf-sidebar .sb-axis-pick');
+  var axisSel = pickBox ? pickBox.querySelector('.sb-axis') : null;
 
   // 사업장 → ㅅㅇㅈ. Lets \`ㅅㅇㅈ\` find it, and lets the half-composed \`사업ㅈ\` an IME shows
   // between keystrokes find it too — without that the list empties on the way to every word.
@@ -375,8 +400,9 @@ ${readmeHtml}
     var secText = sec && sec.firstChild ? sec.firstChild.nodeValue || '' : '';
     var items = Array.prototype.map.call(g.querySelectorAll('a[href^="#"]'), function (a) {
       var num = a.querySelector('.num'), lbl = a.querySelector('.lbl');
+      var ax = a.querySelector('.num .sb-ax');
       var hay = norm(secText + ' ' + (num ? num.textContent : '') + ' ' + (lbl ? lbl.textContent : ''));
-      return { el: a, hay: hay, cho: initials(hay), hit: true };
+      return { el: a, hay: hay, cho: initials(hay), ax: ax ? ax.textContent.trim() : '', hit: true };
     });
     total += items.length;
     // The section's screen count has to follow the filter. Left at 57 above five visible
@@ -391,12 +417,13 @@ ${readmeHtml}
   function mark(tokens, useCho) {
     var n = 0;
     var needles = useCho ? tokens.map(initials) : tokens;
+    var want = axisSel ? axisSel.value : '';
     groups.forEach(function (g) {
       var any = false;
       var shown = 0;
       g.items.forEach(function (it) {
-        var hay = useCho ? it.cho : it.hay, ok = true;
-        for (var i = 0; i < needles.length; i++) {
+        var hay = useCho ? it.cho : it.hay, ok = want ? it.ax === want : true;
+        for (var i = 0; ok && i < needles.length; i++) {
           if (hay.indexOf(needles[i]) < 0) { ok = false; break; }
         }
         it.hit = ok;
@@ -418,7 +445,7 @@ ${readmeHtml}
   function run() {
     var tokens = norm(input.value).split(' ').filter(Boolean);
     box.classList.toggle('has-q', tokens.length > 0);
-    if (!tokens.length) {
+    if (!tokens.length && !(axisSel && axisSel.value)) {
       groups.forEach(function (g) { g.hit = true; g.items.forEach(function (it) { it.hit = true; }); });
       paint(false);
       count.hidden = true;
@@ -427,7 +454,7 @@ ${readmeHtml}
     // Initials are the FALLBACK, never the first pass: matching them eagerly would let
     // \`점검\` drag in 정기 · 증거 · 직급, and a filter that answers with noise is not one.
     var n = mark(tokens, false), mode = '';
-    if (n === 0 && tokens.join('').length >= 2) {
+    if (n === 0 && tokens.length && tokens.join('').length >= 2) {
       n = mark(tokens, true);
       if (n) mode = ' · ㄱㄴㄷ';
     }
@@ -439,6 +466,12 @@ ${readmeHtml}
   }
 
   box.hidden = false;
+  // Unhidden by the script for the same reason the search row is: with scripts off there is no
+  // control promising a narrowing that cannot happen.
+  if (pickBox && axisSel) {
+    pickBox.hidden = false;
+    axisSel.addEventListener('change', run);
+  }
   input.addEventListener('input', run);
   input.addEventListener('keydown', function (e) {
     if (e.isComposing || e.keyCode === 229) return;   // the IME owns Enter while composing
@@ -450,7 +483,12 @@ ${readmeHtml}
       run();
     }
   });
-  clear.addEventListener('click', function () { input.value = ''; run(); input.focus(); });
+  clear.addEventListener('click', function () {
+    input.value = '';
+    if (axisSel) axisSel.value = '';
+    run();
+    input.focus();
+  });
   document.addEventListener('keydown', function (e) {
     if (e.key !== '/' || e.metaKey || e.ctrlKey || e.altKey) return;
     var el = document.activeElement;
