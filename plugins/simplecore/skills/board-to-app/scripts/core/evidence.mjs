@@ -119,8 +119,27 @@ const BLOCK_START = /^\s*(?:\*\*|[-*+]\s|\d+\.\s|\||>|#)/;
 /** What a quote may end with and the chapter line may not, once the quote is cut short. */
 const QUOTE_TAIL = /[.·…—]+$/;
 
-/** The names a folder's own index takes, which belong to no chapter on either side. */
+/**
+ * The names an EVIDENCE folder's own index takes, which belong to no chapter.
+ *
+ * <p>`00-` is one of them because an evidence folder's index is conventionally `00-overview.md`,
+ * and it is safe on this side: a result document is named after its chapter file, so the sweep
+ * exempts it by name before it ever reaches this pattern.
+ */
 const INDEX_NAME = /^(00|_|README)/i;
+
+/**
+ * The names a CHAPTER folder's own index takes.
+ *
+ * <p>**`00-` is deliberately not one of them.** A project is free to number its first chapter 00 —
+ * a foundation chapter that places no frames is exactly the thing a project numbers 00 — and
+ * reserving that prefix on this side does not fail, it goes silent: the chapter is read as the
+ * folder's index, its demands are counted by nobody, its result document is opened by nobody, and
+ * every gate over it reports the same zero as a chapter with nothing wrong. One project ran that
+ * way with its only closed chapter invisible to all nine evidence gates while `check` printed
+ * green over it.
+ */
+const CHAPTER_INDEX_NAME = /^(_|README)/i;
 
 /** Every space and line break taken out, which is what makes two wrappings of one sentence equal. */
 const folded = (text) => text.replace(/\s+/g, '');
@@ -135,7 +154,7 @@ const folded = (text) => text.replace(/\s+/g, '');
  */
 function chapterOf(file) {
   if (!file.endsWith('.md') || file.includes('/')) return null;
-  if (INDEX_NAME.test(file)) return null;
+  if (CHAPTER_INDEX_NAME.test(file)) return null;
   return file.replace(/\.md$/, '').split('-')[0].toUpperCase();
 }
 
@@ -145,7 +164,16 @@ const isIndex = (name) => name.endsWith('.md') && INDEX_NAME.test(name);
 /** Every chapter the chapter folder holds, by the id its file name carries. */
 function chapterFiles(ctx) {
   const out = new Map();
+  // The chapter folder's own index is not a chapter, and `00-` cannot say so on this side — a
+  // project is free to number its first chapter 00. What settles it is that the project DECLARED
+  // that file as its chapter overview, so it is excluded by identity rather than by its name.
+  // Without this, a project whose index is `00-overview.md` grows a chapter called `00`, and the
+  // evidence folder's own index — conventionally the same name — becomes that chapter's result
+  // document and is asked to prove lines the index never demands.
+  const overview = ctx.at('chapterOverview');
+  const indexName = overview ? String(overview).split('/').pop() : null;
   for (const file of [...(ctx.list(ctx.at('chapterDir')) ?? [])].sort()) {
+    if (indexName && file === indexName) continue;
     const chapter = chapterOf(file);
     if (chapter) out.set(chapter, file);
   }
@@ -155,9 +183,16 @@ function chapterFiles(ctx) {
 /**
  * The chapters the state ledger records as closed.
  *
- * <p>A row whose first cell is a chapter this folder holds and whose second is the project's word
- * for closed. The word is declared; without it nothing is closed, every gate here goes quiet, and
- * `doctor` says which key is why — which is the whole point of grading that key `closing`.
+ * <p>A row whose first cell is a chapter this folder holds and one of whose later cells is the
+ * project's word for closed. The word is declared; without it nothing is closed, every gate here
+ * goes quiet, and `doctor` says which key is why — which is the whole point of grading that key
+ * `closing`.
+ *
+ * <p>**Which column carries the state is the project's, not this reader's.** A ledger that writes
+ * the chapter's name beside its number, or what is left to do beside its state, is an ordinary
+ * shape and a legible one — and a reader anchored on the second cell does not fail on it, it goes
+ * silent, which is the state every gate downstream inherits. The comparison is against a whole
+ * cell, so a row whose prose happens to contain the word is not read as a closed chapter.
  */
 function closedChapters(ctx) {
   const closed = new Set();
@@ -168,7 +203,8 @@ function closedChapters(ctx) {
   for (const { line } of proseLines(text)) {
     const cells = tableCells(line);
     if (!cells || cells.length < 2) continue;
-    if (known.has(cells[0].toUpperCase()) && cells[1] === word) closed.add(cells[0].toUpperCase());
+    const chapter = cells[0].toUpperCase();
+    if (known.has(chapter) && cells.slice(1).includes(word)) closed.add(chapter);
   }
   return closed;
 }
@@ -216,9 +252,14 @@ function framesPlaced(ctx, rel) {
   for (const { line } of proseLines(text)) {
     const heading = BASE_HEADING.exec(line);
     if (heading) placed.add(heading[1]);
-    const hanging = states?.exec(line);
-    if (!hanging) continue;
-    for (const [id] of hanging[1].matchAll(FRAME_ID)) placed.add(id);
+    // `{text}` is what a states line hands over, and a project may declare that line without one:
+    // a board that draws every state as a frame of its own writes no sentence listing a screen's
+    // states, so its line has nothing to capture and there is nothing hanging off it. Reading
+    // group 1 unguarded turns that declaration into a TypeError, which reaches a person as the
+    // tool being broken rather than as anything they can act on.
+    const hanging = states?.exec(line)?.[1];
+    if (hanging === undefined) continue;
+    for (const [id] of hanging.matchAll(FRAME_ID)) placed.add(id);
   }
   return placed;
 }
@@ -252,8 +293,9 @@ function demandedFrames(ctx, rel) {
       continue;
     }
     if (!open) continue;
-    const hanging = states?.exec(line);
-    if (hanging) for (const [id] of hanging[1].matchAll(FRAME_ID)) open.frames.add(id);
+    // Same guard as `framesPlaced`: a states line declared without `{text}` captures nothing.
+    const hanging = states?.exec(line)?.[1];
+    if (hanging !== undefined) for (const [id] of hanging.matchAll(FRAME_ID)) open.frames.add(id);
     if (persona?.test(line)) open.proved = true;
   }
   close();
@@ -1271,6 +1313,18 @@ const CHAPTER_REFUSED_ONLY = CHAPTER_TEXT['chapters/w02-org-shell.md'].replace(
 /** The state ledger, with each of those two chapters in the state given. */
 const LEDGER = (w01, w02) => `# 챕터 상태\n\n| 챕터 | 상태 |\n| --- | --- |\n| W01 | ${w01} |\n| W02 | ${w02} |\n`;
 
+/**
+ * The same ledger writing each chapter's name between its number and its state, and a note after
+ * it — the shape a project reaches for the moment its table is meant to be read by a person.
+ *
+ * <p>The note deliberately contains the closed word inside a sentence, so the reader is held to a
+ * whole cell rather than to the row containing the word somewhere.
+ */
+const LEDGER_NAMED = (w01, w02) =>
+  '# 챕터 상태\n\n| 챕터 | 이름 | 상태 | 남은 것 |\n| --- | --- | --- | --- |\n'
+  + `| W01 | 개발 기반 | ${w01} | 「닫힘」이라 적기 전에 결과 문서를 쓴다 |\n`
+  + `| W02 | 조직·계정 | ${w02} | |\n`;
+
 /** The one capture the screen chapter's document shows, with the bytes it takes. */
 /**
  * A capture fixture. The default body is padded past the blank-capture floor on purpose: a
@@ -1469,6 +1523,54 @@ export function cases(t) {
     t.project({ config: { ...WORDS, chapterDir: 'chapters', stateLedger: 'tracking/STATE.md' }, files: { ...CHAPTER_TEXT, ...files } });
 
   t.add('closedChapterHasEvidence', 'a closed chapter that left no result document', evidence({ 'tracking/STATE.md': LEDGER('닫힘', '열림') }), true);
+  t.add(
+    'closedChapterHasEvidence',
+    'a closed chapter in a ledger that writes the name between the chapter and its state',
+    evidence({ 'tracking/STATE.md': LEDGER_NAMED('닫힘', '열림') }),
+    true
+  );
+  t.add(
+    'closedChapterHasEvidence',
+    'an open chapter whose note quotes the closed word in a sentence',
+    evidence({
+      'tracking/STATE.md': LEDGER_NAMED('열림', '열림'),
+      'docs/evidence/w02-org-shell.md': W02_EVIDENCE(W02_SCREEN_SECTION),
+      ...CAPTURE(),
+    }),
+    false
+  );
+  // A board drawing every state as a frame of its own writes no sentence listing a screen's
+  // states, so its states line has nothing to capture. The declaration is legitimate and the
+  // reader used to die on it — with the death arriving as a TypeError from a gate, which reads as
+  // the tool being broken rather than as a project having declared something.
+  t.add(
+    'closedChapterHasEvidence',
+    'a states line declared with no {text} to capture',
+    t.project({
+      config: {
+        ...WORDS,
+        chapterLines: { ...WORDS.chapterLines, states: '**개발**…' },
+        chapterDir: 'chapters',
+        stateLedger: 'tracking/STATE.md',
+      },
+      files: {
+        ...CHAPTER_TEXT,
+        'tracking/STATE.md': LEDGER('열림', '닫힘'),
+        'docs/evidence/w02-org-shell.md': W02_EVIDENCE(W02_SCREEN_SECTION),
+        ...CAPTURE(),
+      },
+    }),
+    true
+  );
+  t.add(
+    'closedChapterHasEvidence',
+    'a chapter numbered 00, closed, that left no result document',
+    evidence({
+      'chapters/00-foundation.md': CHAPTER_TEXT['chapters/w01-foundation.md'],
+      'tracking/STATE.md': '# 챕터 상태\n\n| 챕터 | 상태 |\n| --- | --- |\n| 00 | 닫힘 |\n| W01 | 열림 |\n| W02 | 열림 |\n',
+    }),
+    true
+  );
   t.add(
     'closedChapterHasEvidence',
     'a closed chapter whose document proves one of its two persona lines',
