@@ -1083,6 +1083,37 @@ part it needs.
 found」 is an origin; 「how a screen reaches its address」 is a question somebody has. Origin
 groupings read fine to whoever wrote them and send everybody else through three files.
 
+### Splitting one, in order
+
+**Group from the file's own section list, not from a template.** Read the headings and ask what
+question each answers; the groups a project needs are its own, and a borrowed set of topic names
+puts a section in the file whose name is closest rather than the file its reader opens.
+
+1. **Move the prose, do not rewrite it.** Each section keeps its own words; what changes is which
+   file it sits in. A split that rewrites is a split nobody can check.
+2. **Count in and count out, and check it by machine.** Re-split both sides, normalise whitespace,
+   and compare every section body — 「61 in, 61 out」 is only worth saying when something compared
+   them. A section that quietly went nowhere leaves no mark afterwards, which is the whole reason
+   this repository counts items before deleting a file.
+3. **The index states no fact.** It says which file answers which question, and nothing a reference
+   also says.
+4. **Point `handoverFile` at the index.** That one line is what makes the build use it — the
+   builder is already told to read the handover file, so nothing new has to be written to route it.
+5. **Repoint everything that linked into the old file**, and change the project's own document
+   index and instruction file in the same commit. The old file's deletion and the new files land
+   together, so anything dropped shows in the diff.
+6. **Widen every check that read the handover file** — the skill's own point-of-view sweep does
+   this already; a project's gates over that file are the project's to widen.
+7. **Bring the new tree inside the checks that scope by path.** A locale audit, a glossary check, a
+   prose linter — each reads a declared set of paths, and a tree that has just been created is in
+   none of them. **The references would stand there checked by nothing**, reporting the same clean
+   result as a tree that passes. Declare the new path, then plant a violation and confirm it is
+   reported before removing it.
+
+**Step 7 is the one that gets skipped**, because everything else fails loudly and this fails
+silently: the split lands, every gate is green, and the checks that used to hold the file now hold
+nothing.
+
 ## An agent that ends, and an agent that only paused
 
 An agent that has stopped moving does not say so. It announces that it is idle, which
