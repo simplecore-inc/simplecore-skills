@@ -110,6 +110,14 @@ export const ROLE_SEPARATOR = ' · ';
 /** The opening or closing line of a fenced block. */
 const FENCE = /^\s*(```|~~~)/;
 
+/**
+ * One item of an ordered list.
+ *
+ * <p>A chapter whose demands are numbered is quoted item by item, so a section that has gone
+ * stale names the one demand that moved rather than dragging the whole paragraph with it.
+ */
+const ORDERED_ITEM = /^\s*\d+\.\s+(.*\S)\s*$/;
+
 /** `![alt](target)`, with an optional quoted title after the target. */
 const MARKDOWN_IMAGE = /!\[[^\]]*\]\(\s*<?([^)<>\s]+)>?(?:\s+"[^"]*")?\s*\)/g;
 
@@ -336,13 +344,16 @@ function capturedFrames(text, stem) {
 function evidenceSections(text, labels, placeholder = null) {
   const quoted = new RegExp(String.raw`^\*\*${labels.demanded}\*\*\s*—\s*(.*)$`);
   const sections = [];
+  const opensList = new RegExp(String.raw`^\*\*${labels.demanded}\*\*\s*$`);
   let current = null;
   let fenced = false;
   let quoting = false;
+  let listing = false;
   text.split(/\r?\n/).forEach((line, i) => {
     if (FENCE.test(line)) {
       fenced = !fenced;
       quoting = false;
+      listing = false;
       if (current) current.fenced = true;
       return;
     }
@@ -350,7 +361,8 @@ function evidenceSections(text, labels, placeholder = null) {
     const heading = EVIDENCE_HEADING.exec(line);
     if (heading) {
       quoting = false;
-      current = { title: heading[1], no: i + 1, labels: new Set(), images: [], fenced: false, quote: null, discharged: [] };
+      current = { title: heading[1], no: i + 1, labels: new Set(), images: [], fenced: false, quotes: [], discharged: [] };
+      listing = false;
       sections.push(current);
       return;
     }
@@ -361,13 +373,26 @@ function evidenceSections(text, labels, placeholder = null) {
     const stood = placeholder?.exec(line);
     if (stood) current.discharged.push({ proof: (stood[1] ?? '').trim(), no: i + 1 });
     const said = quoted.exec(line);
+    const listed = listing && ORDERED_ITEM.exec(line);
     if (said) {
-      current.quote = { text: said[1], no: i + 1 };
+      current.quotes.push({ text: said[1], no: i + 1 });
       quoting = true;
-    } else if (quoting && line.trim() && !/^\s*(?:\*\*|#|!\[)/.test(line)) {
-      current.quote.text += ` ${line}`;
+      listing = false;
+    } else if (quoting && line.trim() && !/^\s*(?:\*\*|#|!\[|\d+\.\s)/.test(line)) {
+      current.quotes[current.quotes.length - 1].text += ` ${line}`;
+    } else if (opensList.test(line)) {
+      // The other shape the label takes: a heading of its own with the demands numbered under it.
+      // A chapter that writes its demands as a list is quoted item by item, and one item that has
+      // gone stale is then named on its own rather than dragging the whole paragraph with it.
+      quoting = false;
+      listing = true;
+    } else if (listed) {
+      current.quotes.push({ text: listed[1], no: i + 1 });
     } else {
       quoting = false;
+      // A blank line inside a list does not end it — an ordered list with a blank between items
+      // is one list, and the markdown renderer reads it that way too.
+      if (line.trim()) listing = false;
     }
     for (const label of Object.values(labels)) {
       if (line.startsWith(`**${label}**`)) current.labels.add(label);
@@ -735,21 +760,22 @@ export const evidenceQuotesTheChapter = {
 
       const { sections, headings } = chapterSections(ctx, `${dir}/${file}`);
       for (const section of evidenceSections(text, labels)) {
-        if (!section.quote) continue;
+        if (section.quotes.length === 0) continue;
         const key = headings.get(section.title);
         if (key === undefined) continue;
 
-        const quote = folded(section.quote.text).replace(QUOTE_TAIL, '');
+        for (const said of section.quotes) {
+        const quote = folded(said.text).replace(QUOTE_TAIL, '');
         if (!quote) {
           findings.push(
-            `${rel}:${section.quote.no}: 「${labels.demanded}」 quotes nothing — the line carries the `
+            `${rel}:${said.no}: 「${labels.demanded}」 quotes nothing — the line carries the `
             + `sentence ${dir}/${file} demands, copied out of it`
           );
           continue;
         }
         if ((sections.get(key) ?? []).some((line) => line.includes(quote))) continue;
         findings.push(
-          `${rel}:${section.quote.no}: 「${section.quote.text.trim()}」 is no part of any line ${dir}/${file} `
+          `${rel}:${said.no}: 「${said.text.trim()}」 is no part of any line ${dir}/${file} `
           + `writes under 「${key}」. 「${labels.demanded}」 is copied out of the chapter file and the `
           + 'chapter file is generated from the board, so a board fix leaves this section quoting a '
           + 'rule the chapter no longer carries — and the section then reads as a record of somebody '
@@ -757,6 +783,7 @@ export const evidenceQuotesTheChapter = {
           + 'line against what the chapter demands now and write the section again, or say in '
           + `${ctx.declared('openItemsFile') ?? 'the open-items file'} why it cannot be run`
         );
+        }
       }
     }
     return findings;
@@ -1457,6 +1484,31 @@ const QUOTED_EVIDENCE =
   + '**본 것** — 「10분 뒤에 다시 시도할 수 있습니다」가 표시된다.\n\n'
   + '```\nPOST /auth/login × 6 → 423 ACCOUNT_LOCKED  retryAfter=600\n```\n';
 
+/**
+ * The same section with the chapter's demands numbered and the result document quoting them item
+ * by item — the shape a chapter takes once its walk outgrows one sentence.
+ */
+const LISTED_CHAPTER =
+  '# W02. 조직·계정\n\n## 1. A-01 로그인\n\n'
+  + '`a-01-login` · 데스크톱 · `/login`\n\n'
+  + '**개발** — 보드의 `a-01-login`을 그대로 만든다.\n\n'
+  + '**테스트 · 시스템 관리자**\n\n'
+  + '1. 로그인 화면을 연다.\n'
+  + `2. ${TAIL}\n\n`;
+
+/** The result document that section leaves behind, quoting each demand on its own line. */
+const LISTED_EVIDENCE = (second) =>
+  '# W02. 조직·계정 — 검증 결과\n\n'
+  + '## 1. A-01 로그인 · 시스템 관리자\n\n'
+  + '**한 일**\n\n'
+  + '1. 로그인 화면을 열고 틀린 비밀번호로 로그인한다.\n\n'
+  + '**챕터가 정한 것**\n\n'
+  + '1. 로그인 화면을 연다.\n'
+  + `2. ${second}\n\n`
+  + '**본 것**\n\n'
+  + '1. 그 한 줄만 표시되고 어느 쪽이 틀렸는지는 없다.\n\n'
+  + '![A-01 로그인](w02-org-shell/a-01.webp)\n';
+
 // ── A capture demanded for a reason, and one demanded out of habit ──────────
 
 /** One project's three reason vocabularies, declared as a project declares them. */
@@ -1715,6 +1767,34 @@ export function cases(t) {
       'docs/evidence/w02-org-shell.md': QUOTED_EVIDENCE,
     }),
     false
+  );
+
+  // The other shape a chapter's demands take. A walk of thirty clauses joined into one sentence is
+  // a paragraph nobody can hold a place in, so a chapter may number them — and then the result
+  // document quotes them item by item, which is what lets one stale item be named on its own.
+  t.add(
+    'evidenceQuotesTheChapter',
+    'a numbered demand quoted item by item, every item still in the chapter',
+    t.project({
+      config: { ...WORDS, chapterDir: 'chapters', openItemsFile: 'tracking/OPEN.md' },
+      files: {
+        'chapters/w02-org-shell.md': LISTED_CHAPTER,
+        'docs/evidence/w02-org-shell.md': LISTED_EVIDENCE(TAIL),
+      },
+    }),
+    false
+  );
+  t.add(
+    'evidenceQuotesTheChapter',
+    'one item of a numbered demand reworded on the board, the rest still standing',
+    t.project({
+      config: { ...WORDS, chapterDir: 'chapters', openItemsFile: 'tracking/OPEN.md' },
+      files: {
+        'chapters/w02-org-shell.md': LISTED_CHAPTER,
+        'docs/evidence/w02-org-shell.md': LISTED_EVIDENCE('「로그인하지 못했습니다」가 표시된다.'),
+      },
+    }),
+    true
   );
 
   t.add(

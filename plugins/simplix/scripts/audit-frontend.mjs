@@ -1251,6 +1251,223 @@ export function AssignDialog() { return null; }`,
     },
   },
   {
+    id: "paged-panel-collection-is-not-a-list",
+    invariant: "#71 / audit: a tab's collection is a list",
+    level: "error",
+    desc: "A collection inside a detail panel or a tab is paged, and paging is the proof that it grows — yet it is drawn with `CrudDetail.List` / `CrudDetail.Table` and nothing else, so the reader gets pages and none of the three things they reach for when there are more rows than a page: the total, a way to search, a way to sort. A collection that grows is a list wherever it sits, and a list is `CrudList` — the same compound the list screen uses, bound to the parent record with a forced request parameter rather than a filter the reader can type away. What the two paged frames are for is the other half of the split: a set that does NOT grow, drawn as a bordered card with no pager at all",
+    appliesTo: isTsx,
+    // Judged per file rather than per tag: the chrome a paged collection is missing (the total,
+    // the search box, the sortable header) is not written next to the pager, so a tag-local test
+    // would have to guess how far to read. One tab body is one file here or one component in one,
+    // and either way `CrudList` appearing anywhere in it is the shape being asked for.
+    check: (c) => {
+      // The list compound anywhere in the file means the shape is already what this asks for.
+      if (/<CrudList\b/.test(c)) return [];
+      const lines = c.split("\n");
+      const hits = [];
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        // A pager on a panel frame, or the hook that computes one. `onPageChange` alone is not
+        // enough — a bounded `CrudDetail.Table` takes none, and that is the case this rule leaves
+        // alone.
+        const framed = /<CrudDetail\.(?:List|Table)\b/.test(line);
+        const paged = framed
+          ? /onPageChange=|\{\s*\.\.\.\w*[Pp]ager/.test(lines.slice(i, i + 8).join("\n"))
+          : /\b(?:usePanelPage|panelPager)\s*\(/.test(line);
+        if (!framed && !/\b(?:usePanelPage|panelPager)\s*\(/.test(line)) continue;
+        if (!paged) continue;
+        hits.push({ line: i + 1, excerpt: line.trim().slice(0, 140) });
+        break;
+      }
+      return hits;
+    },
+    samples: {
+      file: "modules/<domain>/src/widgets/<entity>/holders-tab.tsx",
+      broken: `export function HoldersTab({ positionId }: Props) {
+  const page = usePanelPage();
+  const holders = useListAccounts({ positionId, page: page.index });
+  return (
+    <CrudDetail.List {...page.pagerFor(20, holders.data)}>
+      {rows.map((row) => <DetailListRow key={row.userId} primary={row.name} />)}
+    </CrudDetail.List>
+  );
+}`,
+      fixed: `export function HoldersTab({ positionId }: Props) {
+  const list = useCrudList<AccountRow>({
+    listHook: adaptForcedList(useListAccounts, { "positionId.equals": positionId }),
+  });
+  return (
+    <CrudList>
+      <CrudList.Toolbar>
+        <CrudList.Search value={list.search} onChange={list.setSearch} />
+        <CrudList.FilterBar filters={FILTERS} state={list.filters} maxBadges={3} count={list.total} />
+      </CrudList.Toolbar>
+      <CrudList.TableCard>
+        <CrudList.Table rows={list.rows} sort={list.sort}>
+          <CrudList.Column<AccountRow> field="name" header={fieldLabel("name")} sortable />
+        </CrudList.Table>
+      </CrudList.TableCard>
+      <CrudList.Pagination {...list.pagination} />
+    </CrudList>
+  );
+}`,
+      miss: [
+        {
+          note: "a bounded set takes no pager, and this rule leaves it alone",
+          source: `export function ModesTab() {
+  return (
+    // Bounded: the four sharing modes, which the enum fixes.
+    <CrudDetail.Table>
+      <Table><TableBody>{MODES.map((m) => <TableRow key={m} />)}</TableBody></Table>
+    </CrudDetail.Table>
+  );
+}`,
+        },
+        {
+          note: "the collection already renders as a list",
+          source: `export function HoldersTab({ positionId }: Props) {
+  const page = usePanelPage();
+  return (
+    <CrudList>
+      <CrudList.TableCard><CrudList.Table rows={rows} /></CrudList.TableCard>
+      <CrudList.Pagination {...page.pagerFor(20, holders.data)} />
+    </CrudList>
+  );
+}`,
+        },
+      ],
+    },
+  },
+  {
+    id: "audit-strip-outside-the-first-tab",
+    invariant: "#72 / audit: where the audit strip sits",
+    level: "error",
+    desc: "A record's audit strip — its identifier and its created / updated stamps — is drawn somewhere other than the first tab of the panel. On the `CrudDetail` root it stands under every tab, so the stamps of the RECORD sit beneath a tab listing other records and read as the stamps of those rows; in a later tab it is the same claim made once more in a place nobody looks for it. The strip belongs to the record, the first tab is where the record itself is, and one strip is all a panel has",
+    appliesTo: isTsx,
+    check: (c) => {
+      const lines = c.split("\n");
+      const panels = [];
+      lines.forEach((line, i) => {
+        if (/<(?:TabsContent|PageTabPanel)\b/.test(line)) panels.push(i);
+      });
+      // One panel is not a tabbed detail — there is no other tab for the strip to be under.
+      if (panels.length < 2) return [];
+      const hits = [];
+      lines.forEach((line, i) => {
+        if (!/\bauditData\s*=/.test(line)) return;
+        // Before the first panel opens the strip is on the detail's own root, which draws it
+        // under every tab; after the second opens it is in a tab that is not the first.
+        if (i < panels[0] || i > panels[1]) {
+          hits.push({ line: i + 1, excerpt: line.trim().slice(0, 140) });
+        }
+      });
+      return hits;
+    },
+    samples: {
+      file: "modules/<domain>/src/widgets/<entity>/detail.tsx",
+      broken: `<CrudDetail auditData={{ id: row.code, createdAt: row.createdAt, updatedAt: row.updatedAt }}>
+  <Tabs defaultValue="overview">
+    <TabsContent value="overview"><Overview /></TabsContent>
+    <TabsContent value="holders"><Holders /></TabsContent>
+  </Tabs>
+</CrudDetail>`,
+      fixed: `<CrudDetail>
+  <Tabs defaultValue="overview">
+    <TabsContent value="overview">
+      <Overview />
+      <CrudDetail.AuditFooter
+        auditData={{ id: row.code, createdAt: row.createdAt, updatedAt: row.updatedAt }}
+      />
+    </TabsContent>
+    <TabsContent value="holders"><Holders /></TabsContent>
+  </Tabs>
+</CrudDetail>`,
+      miss: [
+        {
+          note: "a panel with one tab has nowhere else for the strip to be",
+          source: `<CrudDetail auditData={{ id: row.code, createdAt: row.createdAt, updatedAt: row.updatedAt }}>
+  <Tabs defaultValue="overview">
+    <TabsContent value="overview"><Overview /></TabsContent>
+  </Tabs>
+</CrudDetail>`,
+        },
+        {
+          note: "a panel with no tabs at all",
+          source: `<CrudDetail auditData={{ id: row.code, createdAt: row.createdAt, updatedAt: row.updatedAt }}>
+  <Overview />
+</CrudDetail>`,
+        },
+      ],
+    },
+  },
+  {
+    id: "tab-panel-repeats-its-tab-name",
+    invariant: "#63 / audit: a tab said its name once",
+    level: "error",
+    desc: "A section inside a tab panel is titled with the same string the tab itself carries, so the reader who just pressed 「이력」 is told 「이력」 again at the top of what they opened. It costs a heading's height on a panel where the rows are what the tab was pressed for, and it says nothing the press did not. Delete the heading rather than move it — the tab is the title",
+    appliesTo: isTsx,
+    check: (c) => {
+      const keysOf = (re) => {
+        const found = new Set();
+        for (const m of c.matchAll(re)) found.add(m[1]);
+        return found;
+      };
+      const tabKeys = keysOf(/\blabel=\{t\("([^"]+)"\)\}/g);
+      if (tabKeys.size === 0) return [];
+      const hits = [];
+      const lines = c.split("\n");
+      // Only a SECTION's title, never any prop spelt `title` — a button's tooltip is `title` too,
+      // and a header control called 「도움말」 beside a tab called 「도움말」 is two right answers.
+      const SECTION = /<(?:\w+\.)?Section(?:Shell)?\b/;
+      lines.forEach((line, i) => {
+        const m = line.match(/\btitle=\{t\("([^"]+)"\)\}/);
+        if (!m || !tabKeys.has(m[1])) return;
+        const opening = lines.slice(Math.max(0, i - 4), i + 1).join("\n");
+        if (!SECTION.test(opening)) return;
+        hits.push({ line: i + 1, excerpt: line.trim().slice(0, 140) });
+      });
+      return hits;
+    },
+    samples: {
+      file: "modules/<domain>/src/widgets/<entity>/detail.tsx",
+      broken: `<TabsList>
+  <CountedTab value="history" label={t("detail.tabHistory")} />
+</TabsList>
+<TabsContent value="history">
+  <CrudDetail.Section title={t("detail.tabHistory")} variant="flat">
+    <HistoryTable />
+  </CrudDetail.Section>
+</TabsContent>`,
+      fixed: `<TabsList>
+  <CountedTab value="history" label={t("detail.tabHistory")} />
+</TabsList>
+<TabsContent value="history">
+  <HistoryTable />
+</TabsContent>`,
+      miss: [
+        {
+          note: "a section whose title is its own, not the tab's",
+          source: `<TabsList>
+  <CountedTab value="overview" label={t("detail.tabOverview")} />
+</TabsList>
+<TabsContent value="overview">
+  <CrudDetail.Section title={t("detail.sectionPosition")} variant="flat" />
+</TabsContent>`,
+        },
+        {
+          note: "a button's tooltip is spelt `title` and is not a heading",
+          source: `<TabsList>
+  <CountedTab value="help" label={t("shell.help")} />
+</TabsList>
+<Button
+  variant="ghost"
+  title={t("shell.help")}
+/>`,
+        },
+      ],
+    },
+  },
+  {
     id: "chip-filter-equality-field",
     invariant: "#15 / audit: chip filters",
     level: "error",

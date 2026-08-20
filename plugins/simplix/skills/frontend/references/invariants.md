@@ -582,3 +582,92 @@ the two they are produce twenty-five sentences somebody meant; twenty-five given
 produce a screen nobody designed. Where a value has a second-best form — an equipment record with
 no name but a management number, on a confirmation the operator reads to check what is about to be
 destroyed (#46) — the fallback is that value, not the paired key.
+
+## #71 A collection inside a panel or a tab is one of two shapes, and paging decides which
+
+**One question separates them: do the rows grow?**
+
+| The set | What it renders as | What it must NOT have |
+| --- | --- | --- |
+| Fixed — a catalogue, an enum, a matrix, the four sharing modes | a bordered card table (`CrudDetail.Table` with no pager, or the project's zero-argument `TableCard`) | a pager, which promises a second page that does not exist |
+| Growing — a history, the accounts holding a role, sessions, grants, anything a person adds to | `CrudList`, the same compound the list screen uses | nothing; it carries the total, the search, the filters, sortable headers and the pager |
+
+**A pager under a bordered row list is the shape this rule exists to remove.** `CrudDetail.List`
+and `CrudDetail.Table` hand a growing collection its pages and nothing else — so a reader who can
+see there are 240 rows has no way to find one. They reach for the search box the list screen has,
+the column header they sorted by there, and the total that told them how many; a tab gives them
+page 7 of 12 and a scroll.
+
+**Bind it to the parent with a forced request parameter, never with a filter.** `adaptForcedList`
+(or the same merge by hand) puts the parent id into the request itself, so it is in the query key
+and outside the state machine's filter gate. `transformFilters` looks like the place for it and is
+not: the list only puts a `filters` object into the request once the reader has committed one, so
+on first view the request goes out unnarrowed, the whole register comes back, and the tab's count
+and its rows disagree. Nothing errors.
+
+```tsx
+const list = useCrudList<HolderRow>({
+  listHook: adaptForcedList(useListAccounts, { "positionId.equals": positionId }),
+});
+```
+
+**The tab's count and the list's total are the same number** — read the total off the list rather
+than firing a second count, or the two disagree the moment a filter is committed.
+
+**What the panel's width costs, and what it does not.** A `CrudList` in a 560px panel draws fewer
+columns than the same list on a page, and choosing them is design work. It is not a reason to fall
+back: the four things the reader reaches for do not become optional because the panel is narrow.
+
+Detected by `paged-panel-collection-is-not-a-list` in `audit-frontend.mjs`.
+
+## #72 The audit strip belongs to the record, so it sits in the first tab and nowhere else
+
+A record's identifier and its created / updated stamps describe **the record**. On the
+`CrudDetail` root they render under every tab, so beneath a tab listing other records the
+record's stamps read as those rows'; in a later tab they are the same claim made again where
+nobody looks for it.
+
+Put `CrudDetail.AuditFooter` at the end of the FIRST tab's panel, and give the panel one strip.
+A detail with no tabs keeps `auditData` on the root, which is what the scaffold emits and what is
+right there.
+
+Detected by `audit-strip-outside-the-first-tab` in `audit-frontend.mjs`.
+
+## #73 What stands on the screen is the state; what explains the screen stands behind an icon
+
+**Two kinds of message look identical and behave oppositely.**
+
+| | An explanation | A state |
+| --- | --- | --- |
+| Its words change with the data | never | that is what it is |
+| Example | 「계정과 근로자는 따로입니다」 | 「정책이 없는 안전구역이 1개 있습니다」 |
+| Where it lives | behind a header control, one per kind | on the screen, for as long as it is true |
+
+An explanation is true of every row and every day, so it goes on taking the same space after the
+reader has learned it — and what it pushes below the fold is the rows they came for. So it is
+drawn with the notice component rather than a bare banner, which gives it two things a banner
+does not have: the reader can put it away, remembered for them across sessions, and the way back
+is a header control that is in the same place on every route. There is one control per kind
+(help · warning · info), each with **its own glyph AND its own tint** — colour alone does not
+reach a reader who cannot separate the two tints, and a glyph alone does not reach one scanning
+the page without reading it. The card's own button (「설명 보기」) is drawn inside that control
+too, so the explanation it opens stays one press away after the card has been put away.
+
+A **state** never goes through that component. Its words are true today and not tomorrow, so an
+operator who put it away on a day it read 1 would not be shown it tomorrow when it reads 3 — and
+a dismissal the server remembers is exactly the wrong memory to have of it.
+
+**The test before writing either**: do this card's own words change with the data? If they do it
+is a state and it stays on the screen. If they do not, it is an explanation and it does not.
+
+## #74 One value's state is changed in one place, on every screen that shows it
+
+A record's active / suspended / closed state is moved by an **action** — a row action on the list,
+a button in the detail panel's footer — with the confirmation and the reason prompt that belong to
+it. It is not also a switch inside the edit form: two ways to make the same change are two audit
+trails, two confirmation behaviours and two answers to 「어디서 끄나요」, and the form's switch is
+the one that skips the reason.
+
+So a create/update form does not carry the state field, and the DTO's value for it comes from the
+record being edited. Where the state genuinely has to be set at creation time, the create form may
+carry it and the edit form still may not.

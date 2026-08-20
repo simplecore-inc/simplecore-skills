@@ -333,6 +333,14 @@ These invariants apply to **every** frontend file you touch. Treat each as invio
     where it stands without it. **Sorting the list is the work** — one shape applied to every
     finding produces a screen nobody designed. → `invariants.md` #70.
 
+71. **A collection inside a panel or a tab is one of two shapes, and paging decides which** — a set that does NOT grow is a bordered card table with no pager (`CrudDetail.Table` unpaged, or the project's `TableCard`); a set that DOES grow is a list wherever it sits, so it is `CrudList` with the total, the search, the filters, sortable headers and the pager — never `CrudDetail.List` / `CrudDetail.Table` handed a pager and nothing else. Bind it to the parent record with a forced request parameter (`adaptForcedList`), never with `transformFilters`, which narrows nothing until the reader commits a filter. → `invariants.md` #71.
+
+72. **The audit strip belongs to the record, so it sits in the FIRST tab and nowhere else** — on the `CrudDetail` root it renders under every tab, and the record's stamps read as the stamps of whatever rows that tab is listing. A detail with no tabs keeps it on the root. → `invariants.md` #72.
+
+73. **What stands on the screen is the state; what explains the screen stands behind an icon** — a card whose own words change with the data is a state, drawn as a bare `AlertBanner` and left where it is; a card true of every row and every day is an explanation, and it goes through the notice component so the reader can put it away and find it again on the header control for its kind — one per kind, each with its own glyph AND its own tint, the card's own 「설명 보기」 drawn inside it too. → `invariants.md` #73.
+
+74. **One value's state is changed in one place, on every screen that shows it** — a record's active / suspended / closed state moves through an action with its confirmation and its reason (a row action, a footer button), never also through a switch in the edit form. So the edit form does not carry the state field. → `invariants.md` #74.
+
 ---
 
 ## Task Router
@@ -422,7 +430,7 @@ Trigger: writing or editing README, TSDoc on public exports, tutorials, how-to g
 
 After writing:
 
-- [ ] All 66 Non-Negotiable Invariants hold
+- [ ] Every Non-Negotiable Invariant above holds
 - [ ] Every action affordance gated on its endpoint's permission (#52) — both header variants, tree `add-child`, and buttons inside action groups; group read from `SUBJECTS`, never inlined
 - [ ] Precedent parity pass done (new / reshaped screens — #51): comparison sheet walked row by row against both precedents, screens compared in the browser
 - [ ] Completion report (in conversation — never recorded in files) names the Task Router references consulted and, for screen work, the shape + both precedent files + justified divergences (#51)
