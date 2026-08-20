@@ -381,15 +381,34 @@ export const handoverGate = {
   title: 'the handover file carries a point of view',
   needs: ['handoverFile'],
   run: (ctx) => {
+    const declared = ctx.declared('handoverFile');
     const text = ctx.read(ctx.at('handoverFile'));
-    if (text === null) return [`handoverFile → ${ctx.declared('handoverFile')}: cannot be read`];
+    if (text === null) return [`handoverFile → ${declared}: cannot be read`];
     const extra = Array.isArray(ctx.declared('narrativePhrases')) ? ctx.declared('narrativePhrases') : [];
     const phrases = [...NARRATIVE_PHRASES, ...extra.filter((p) => typeof p === 'string' && p)];
+
+    // **The handover file may be an index that routes**, and then the facts this rule was written
+    // for are not in it — they are in `references/` beside it. Reading the declared file alone
+    // there covers a table of contents and reports the same clean result it reported while it was
+    // reading facts, which is the one failure mode a split introduces → *A handover file grows,
+    // and the answer is not another trim*. So the sweep follows the routing where there is any.
+    const dir = declared.includes('/') ? declared.slice(0, declared.lastIndexOf('/')) : '';
+    const beside = (ctx.list(`${dir}/references`) ?? [])
+      .filter((name) => name.endsWith('.md'))
+      .map((name) => `${dir}/references/${name}`);
+    const documents = [[declared, text]];
+    for (const rel of beside) {
+      const body = ctx.read(rel);
+      if (body !== null) documents.push([rel, body]);
+    }
+
     const findings = [];
-    for (const { line, no } of proseLines(text)) {
-      for (const phrase of phrases) {
-        if (line.includes(phrase) && !onlyQuoted(line, phrase)) {
-          findings.push(`${ctx.declared('handoverFile')}:${no}: "${phrase}" — state the fact, and correct it in place when it changes`);
+    for (const [where, body] of documents) {
+      for (const { line, no } of proseLines(body)) {
+        for (const phrase of phrases) {
+          if (line.includes(phrase) && !onlyQuoted(line, phrase)) {
+            findings.push(`${where}:${no}: "${phrase}" — state the fact, and correct it in place when it changes`);
+          }
         }
       }
     }
