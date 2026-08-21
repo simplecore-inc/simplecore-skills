@@ -486,10 +486,29 @@ export const ledgerGate = {
 const CAPTURE_NAME = /^\d{8}-\d{4}-[A-Za-z]{1,4}-\d{1,3}(-[a-z0-9-]+)?\.png$/;
 
 /**
- * Captures are named the one way, in one folder per language.
+ * Captures are placed the one way: one folder per language, and a name a reader can parse.
  *
- * <p>The shape is not the project's to choose: a picture nobody can place, or a place with no
- * picture, is discovered months after the agent who took it has gone.
+ * <p>The shape is not the project's to choose: a picture nobody can place is discovered months
+ * after the agent who took it has gone.
+ *
+ * <p><b>This holds where a picture sits and the SHAPE of its name. It holds nothing about what
+ * the parts of that name mean.</b> The variant is 「lower case, digits and hyphens」 and that is
+ * the whole of it, so every word a project layers on top of it — a theme, a width, a state —
+ * passes here whatever it says. That boundary is real and it is also the way this gate gets
+ * misread: its title promises placeability and a reader takes it for the naming rule entire.
+ *
+ * <p>The case that made it worth writing down: a project declared 「a picture with no theme in its
+ * name is the console's own scheme and one ending `-light` is the other」, and a run wrote
+ * `-dark-` into a name. Three spellings for two states, the document describing it wrong, and this
+ * gate green over both — because `dark` is lower case, digits and hyphens. **A convention that
+ * names a project's own vocabulary is the project's checker to hold**, and one whose default can
+ * change has to be read off the product rather than written down, or a flipped default leaves
+ * every picture named for the state it is not with nothing disagreeing.
+ *
+ * <p>What IS held here beyond the shape: the folder is one of the languages the project declared.
+ * Those are already in the config, so a picture under a folder that is not a language — a width, a
+ * frame, a date — is placeable-looking and unfindable, and no project should have to write that
+ * check itself.
  */
 export const capturesGate = {
   id: 'capturesGate',
@@ -499,6 +518,13 @@ export const capturesGate = {
     const dir = ctx.at('capturesDir');
     const entries = ctx.list(dir);
     if (entries === null) return [];
+    // Read rather than required: a project that declares no languages still gets the shape held,
+    // and adding them to `needs` would skip the whole gate for it.
+    const spoken = ctx.declared('locales');
+    const pseudo = ctx.declared('pseudoLocale');
+    const languages = Array.isArray(spoken)
+      ? new Set([...spoken, ...(pseudo ? [pseudo] : [])])
+      : null;
     const findings = [];
     for (const entry of entries) {
       const parts = entry.split('/');
@@ -510,7 +536,11 @@ export const capturesGate = {
         findings.push(`${entry}: one folder deep — everything else that tells two pictures apart is a variant on the name`);
         continue;
       }
-      const [, name] = parts;
+      const [folder, name] = parts;
+      if (languages !== null && !languages.has(folder)) {
+        findings.push(`${entry}: '${folder}' is not one of the declared languages (${[...languages].join(' · ')}) — the folder is the language and nothing else`);
+        continue;
+      }
       if (!CAPTURE_NAME.test(name)) {
         findings.push(`${entry}: the name is <YYYYMMDD-HHMM>-<frame-id>[-<variant>].png`);
       }

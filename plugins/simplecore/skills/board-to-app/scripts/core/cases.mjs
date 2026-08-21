@@ -440,8 +440,28 @@ export function cases(t) {
     false
   );
 
-  // capturesGate — the name is not the project's to choose.
+  // capturesGate — where a picture sits and the shape of its name. Not what the name SAYS: the
+  // variant's words are the project's own vocabulary and its own checker's to hold.
   const shots = { config: { capturesDir: 'shots' } };
+  const spoken = { config: { capturesDir: 'shots', locales: ['ko', 'en'], pseudoLocale: 'en-XA' } };
+  add(
+    'capturesGate',
+    'a folder that is not one of the declared languages',
+    { ...spoken, files: { 'shots/wide/20260815-1130-A-01.png': '' } },
+    true
+  );
+  add(
+    'capturesGate',
+    'the pseudo locale is a language',
+    { ...spoken, files: { 'shots/en-XA/20260815-1130-A-01.png': '' } },
+    false
+  );
+  add(
+    'capturesGate',
+    'a variant naming anything at all passes — the words are the project\'s',
+    { ...spoken, files: { 'shots/ko/20260815-1130-A-01-dark-scrolled-700.png': '' } },
+    false
+  );
   add(
     'capturesGate',
     'a picture with no language folder',
