@@ -1531,6 +1531,206 @@ export function ThingList() {
     },
   },
   {
+    id: "unfrozen-now-in-a-request",
+    invariant: "#3 / #32",
+    level: "error",
+    desc: "「now」 read during render and put into a request parameter. The value differs on every pass, so the query key differs on every pass: the read never settles, the screen holds its loading rows for as long as it is open, and anything watching the parameters — a page reset, an invalidation — fires forever. Hold the instant in `useState(() => …)` or a `useMemo(…, [])`, which is what the window a reader asked about actually means: the moment they opened the screen",
+    appliesTo: (path) => isTsx(path) || /\.ts$/.test(path),
+    check: (c) => {
+      const lines = c.split("\n");
+      const hits = [];
+      for (let i = 0; i < lines.length; i += 1) {
+        if (!/new Date\(\)|Date\.now\(\)/.test(lines[i])) continue;
+        // Held in state, a memo or a ref — the frozen forms. The opener may be a line or two above.
+        const opener = lines.slice(Math.max(0, i - 2), i + 1).join("\n");
+        if (/useState\(|useMemo\(|useRef\(|useCallback\(/.test(opener)) continue;
+        const block = lines.slice(Math.max(0, i - 8), i + 9).join("\n");
+        // A server filter key: what makes this a request parameter rather than a value.
+        if (!/\.(equals|between|greaterThan|lessThan|greaterThanOrEqualTo|lessThanOrEqualTo)"\s*:/.test(block)) continue;
+        // A READ built during render is what goes stale. The same parameter assembled inside a
+        // callback — a save, a submit — is read once when the press happens, and a callback is
+        // where a genuine 「지금」 belongs. The read path names the hook that will carry it.
+        if (!/\badaptForcedList\b|\buseList\w+\s*\(|\buseCrudList\b/.test(block)) continue;
+        hits.push({ line: i + 1, excerpt: lines[i].trim().slice(0, 120) });
+      }
+      return hits;
+    },
+    samples: {
+      file: "modules/<domain>/src/widgets/<entity>/audit.ts",
+      broken: `export function useWindowedAudit(record: RecordDTO | undefined) {
+  const to = new Date().toISOString();
+  const forced = { "actorId.equals": record?.holderId, "occurredAt.between": \`\${from},\${to}\` };
+  return useCrudList<AuditEventListDTO>(adaptForcedList(useListAuditEvents, forced), {
+    stateMode: "server",
+  });
+}`,
+      fixed: `export function useWindowedAudit(record: RecordDTO | undefined) {
+  const [openedAt] = useState(() => new Date().toISOString());
+  const forced = { "actorId.equals": record?.holderId, "occurredAt.between": \`\${from},\${openedAt}\` };
+  return useCrudList<AuditEventListDTO>(adaptForcedList(useListAuditEvents, forced), {
+    stateMode: "server",
+  });
+}`,
+      miss: [
+        {
+          note: "a window already frozen in a memo, with the call on its own line",
+          source: `const since = useMemo(
+  () => new Date(Date.now() - WINDOW_DAYS * DAY_MS).toISOString(),
+  [],
+);
+const all = useListUserAccessLogs({ "loginAt.greaterThan": since, page: 0, size: 1 });`,
+        },
+        {
+          note: "now read when a press happens rather than during render",
+          source: `const submit = () => {
+  save({ "closedAt.equals": new Date().toISOString() });
+};`,
+        },
+      ],
+    },
+  },
+  {
+    id: "bounded-table-without-its-border",
+    invariant: "#71",
+    level: "error",
+    desc: "A bounded collection in a panel or a tab — the shapes invariant #71 sends to a bordered card — drawn as a bare `<Table>` standing on the page. The two shapes are how a reader tells a set that is finished from one that accrues: a bordered card says these are all of them, a list with a pager says there are more. A bare table is neither, so the reader cannot tell which they are looking at, and the same kind of content reads differently on adjacent screens. Wrap it in `TableCard`. A table inside a help dialog or a peek is already inside a border and is not this",
+    appliesTo: isTsx,
+    check: (c) => {
+      // Anything drawn inside a dialog already has its border from the dialog.
+      if (/<(HelpCard|BoundedDialogContent|DialogContent|PopoverContent|DetailPeekDialog)\b/.test(c)) return [];
+      const lines = c.split("\n");
+      const hits = [];
+      for (let i = 0; i < lines.length; i += 1) {
+        if (!/^\s*<Table>\s*$/.test(lines[i])) continue;
+        const above = lines.slice(Math.max(0, i - 6), i).join("\n");
+        if (/<(TableCard|Card)\b/.test(above)) continue;
+        hits.push({ line: i + 1, excerpt: "<Table> with no border of its own" });
+      }
+      return hits;
+    },
+    samples: {
+      file: "modules/<domain>/src/pages/<entity>/crud-page.tsx",
+      broken: `<PageTabPanel value="shifts">
+  <Stack gap="md">
+    {/* Bounded: a workplace's shift definitions. */}
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>{t("column.shift")}</TableHead>
+        </TableRow>
+      </TableHeader>
+    </Table>
+  </Stack>
+</PageTabPanel>`,
+      fixed: `<PageTabPanel value="shifts">
+  <Stack gap="md">
+    {/* Bounded: a workplace's shift definitions. */}
+    <TableCard>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>{t("column.shift")}</TableHead>
+          </TableRow>
+        </TableHeader>
+      </Table>
+    </TableCard>
+  </Stack>
+</PageTabPanel>`,
+      miss: [
+        {
+          note: "a reference table inside a help dialog, which is already a border",
+          source: `export function ScopeReference({ open, onOpenChange }: ScopeReferenceProps) {
+  return (
+    <HelpCard noticeKey="org.list.scopeReference" open={open} onOpenChange={onOpenChange}>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>{t("help.type")}</TableHead>
+          </TableRow>
+        </TableHeader>
+      </Table>
+    </HelpCard>
+  );
+}`,
+        },
+        {
+          note: "a bounded table that already carries its card",
+          source: `<TableCard>
+  <Table>
+    <TableHeader>
+      <TableRow>
+        <TableHead>{t("column.shift")}</TableHead>
+      </TableRow>
+    </TableHeader>
+  </Table>
+</TableCard>`,
+        },
+      ],
+    },
+  },
+  {
+    id: "forced-list-keeps-a-stale-page",
+    invariant: "#32 / #76",
+    level: "error",
+    desc: "A list narrowed from outside — a tab, a chip row, a parent record — whose page index survives the narrowing. The page is state the list keeps and the narrowing changes how many pages there are without touching it, so a reader on page 5 of 활성 who presses 정지 asks the server for page 5 of three rows and is handed nothing. The total in the toolbar comes from the same response and is right, so the screen states 「전체 3건」 over an empty table — which reads as a broken list rather than as an empty one, and nothing on the screen contradicts it. Pass `scopeKey` alongside the forced parameters",
+    appliesTo: (path) => isTsx(path) || /\.ts$/.test(path),
+    check: (c) => {
+      if (!/\badaptForcedList\s*\(/.test(c)) return [];
+      const hits = [];
+      for (const m of c.matchAll(/\badaptForcedList\s*\(/g)) {
+        // The options object of the `useCrudList` this feeds — the narrowing and the page state
+        // are declared in one call, so the whole thing is inside a few hundred characters.
+        const window = c.slice(Math.max(0, m.index - 300), m.index + 900);
+        if (/\bscopeKey\b/.test(window)) continue;
+        // Not every forced list is paged: one feeding a combobox or an options list has no page
+        // to go stale, and those never ask for a `stateMode`.
+        if (!/\bstateMode\b/.test(window)) continue;
+        hits.push({
+          line: c.slice(0, m.index).split("\n").length,
+          excerpt: "adaptForcedList feeding a paged list with no scopeKey",
+        });
+      }
+      return hits;
+    },
+    samples: {
+      file: "modules/<domain>/src/widgets/<entity>/list.tsx",
+      broken: `export function useThingList(forced: Record<string, unknown>) {
+  return useCrudList<ThingListDTO>(adaptForcedList(useListThings, forced), {
+    stateMode: "server",
+    defaultPageSize: 20,
+    filterMode: "deferred",
+  });
+}`,
+      fixed: `export function useThingList(forced: Record<string, unknown>) {
+  return useCrudList<ThingListDTO>(adaptForcedList(useListThings, forced), {
+    scopeKey: forcedScope(forced),
+    stateMode: "server",
+    defaultPageSize: 20,
+    filterMode: "deferred",
+  });
+}`,
+      miss: [
+        {
+          note: "a forced read with no page to go stale — a combobox's options",
+          source: `export function useThingOptions(ownerId: string) {
+  const query = adaptForcedList(useListThings, { "ownerId.equals": ownerId });
+  return query({ pagination: { type: "offset", page: 1, limit: 200 } });
+}`,
+        },
+        {
+          note: "a paged forced list that already carries its scope",
+          source: `export function useThingList(forced: Record<string, unknown>) {
+  return useCrudList<ThingListDTO>(adaptForcedList(useListThings, forced), {
+    scopeKey: forcedScope(forced),
+    stateMode: "server",
+    filterMode: "deferred",
+  });
+}`,
+        },
+      ],
+    },
+  },
+  {
     id: "optional-select-cannot-be-emptied",
     invariant: "#34 / #75",
     level: "error",
