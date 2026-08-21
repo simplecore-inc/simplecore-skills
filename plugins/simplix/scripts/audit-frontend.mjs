@@ -3948,37 +3948,6 @@ usePageHeader({
     },
   },
   {
-    id: "audit-strip-identifies-by-uuid",
-    invariant: "#36",
-    level: "review",
-    desc: "A detail's audit strip is handed a UUID as `id` and no `code` — the footer then identifies the record by the last twelve characters of that UUID, which cannot be read aloud, matched against a printed list, or searched for in another system. Pass the code the operator already knows (`code: x.siteCode`); the identifier stays available in full in the tooltip",
-    appliesTo: isTsx,
-    // Anchored on a key whose NAME says it holds an identifier, so a strip already passing a code
-    // through the `id` slot is not reported — it renders the code, because the framework only
-    // shortens a value that parses as a UUID.
-    check: (c) =>
-      blockHits(c, /auditData=\{\{(?:(?!\}\})[\s\S])*?\}\}/g).filter(
-        (h) => /\bid:\s*[\w.?]*(?:Id|Uuid|UUID)\b/.test(h.excerpt) && !/\bcode:/.test(h.excerpt),
-      ),
-    samples: {
-      file: "modules/site/src/widgets/site/detail.tsx",
-      broken: `<CrudDetail.AuditFooter auditData={{ id: site.siteId, createdAt: site.createdAt, updatedAt: site.updatedAt }} />`,
-      fixed: `<CrudDetail.AuditFooter auditData={{ id: site.siteId, code: site.siteCode, createdAt: site.createdAt, updatedAt: site.updatedAt }} />`,
-      miss: [
-        {
-          note: "the code is already what the strip shows, passed through the id slot",
-          file: "modules/site/src/widgets/equipment/detail.tsx",
-          source: `<CrudDetail.AuditFooter auditData={{ id: machine.equipmentCode, createdAt: machine.createdAt }} />`,
-        },
-        {
-          note: "both are given, which is the shape this rule asks for",
-          file: "modules/org/src/widgets/organization/detail-body.tsx",
-          source: `<CrudDetail.AuditFooter auditData={{ id: org.orgId, code: org.orgCode, createdAt: org.createdAt }} />`,
-        },
-      ],
-    },
-  },
-  {
     id: "permission-blanked-tab",
     invariant: "#61",
     level: "review",

@@ -169,6 +169,20 @@ operator covers both — `||`, never `??`, on anything that comes out of `resolv
 stamp shown to a user is a machine value leaking through. Resolve enums, format instants
 with `format="datetime"`, and title panels with an identifying value (a name), never an id.
 
+**The audit strip at the foot of a detail is the one place a raw identifier belongs, and it is not
+an exception somebody keeps finding.** `CrudDetail.AuditFooter` shortens a UUID, offers the whole
+of it in the tooltip and copies the whole of it on a press: the short form, the tooltip and the
+copy all point at one thing, and the control exists precisely so a reader raising a support ticket
+can pick the identifier up. Everything a person recognises the record by — its name, its code — is
+already above, in the title and the fields.
+
+**It has now been replaced with a human-readable code three times**, each time by somebody applying
+「a raw id is not drawn on a screen」 to this line without asking what the line was for; the third
+was an audit rule written to enforce it, asking for a `code` prop the component does not have. The
+framework's own source carries the warning at that line. Read it before changing it, and do not
+write a rule that fires on it.
+
+
 ## #38 A choice the server constrains is a choice the server must publish
 
 When the backend narrows a set of values per record (a visit type's allowed check-in
