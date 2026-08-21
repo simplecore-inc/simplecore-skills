@@ -671,3 +671,28 @@ the one that skips the reason.
 So a create/update form does not carry the state field, and the DTO's value for it comes from the
 record being edited. Where the state genuinely has to be set at creation time, the create form may
 carry it and the edit form still may not.
+
+## #75 A field the DTO accepts as absent can be returned to absent
+
+A select moves from one option to another and nothing else, so an optional field becomes permanent
+the moment somebody picks a value. The rank set on the wrong account, the parent chosen for a node
+that belongs at the top level, the zone type applied to an area that turned out not to be one —
+each can be changed and none can be taken off, and the route back is a database column the screen
+does not offer.
+
+**The form itself says which fields these are.** A submit path writing `X: values.X || undefined`
+has declared the empty string legal; a control that cannot produce the empty string contradicts it
+in the same file. That pairing is what `optional-select-cannot-be-emptied` reads.
+
+Pass `clearable` on those selects. It puts an entry at the top of the list — the framework's word
+for an empty choice, or `clearLabel` where the absence has a name of its own (`사업장 바로 아래`
+for a node with no parent) — and hands `""` back through `onChange`. A sentinel carries it inside
+the component because Radix refuses an item valued at the empty string, which is also why a
+hand-rolled `{ value: "", label: … }` option does not work: it throws when the list opens.
+
+`required` withholds the entry however the caller asked, since a required field has no empty state
+to return to.
+
+The same question is asked of every other control an optional field can use — a combobox, a tree
+select, a date field — and the answer is the same: what the DTO accepts as absent, the screen can
+set to absent.

@@ -341,6 +341,8 @@ These invariants apply to **every** frontend file you touch. Treat each as invio
 
 74. **One value's state is changed in one place, on every screen that shows it** — a record's active / suspended / closed state moves through an action with its confirmation and its reason (a row action, a footer button), never also through a switch in the edit form. So the edit form does not carry the state field. → `invariants.md` #74.
 
+75. **A field the DTO accepts as absent can be returned to absent** — a select moves between options and nothing else, so an optional field becomes permanent the moment somebody picks a value. Where the submit path writes `X: values.X || undefined`, the control carries `clearable` (with `clearLabel` where the absence has a name of its own). A hand-rolled `{ value: "", … }` option is not the fix — Radix throws on it. → `invariants.md` #75.
+
 ---
 
 ## Task Router

@@ -1531,6 +1531,89 @@ export function ThingList() {
     },
   },
   {
+    id: "optional-select-cannot-be-emptied",
+    invariant: "#34 / #75",
+    level: "error",
+    desc: "A select offers only its options, so a field the form itself declares optional — submitted as `X || undefined` — becomes permanent the moment somebody picks a value. The rank set on the wrong account, the parent chosen for a node that belongs at the top level, the zone type applied to an area that turned out not to be one: each can be changed to another value and never taken off, and the only route back is a column the screen does not offer. The DTO accepts absence and the control cannot produce it. Pass `clearable`, which puts an entry at the top of the list that hands `\"\"` back",
+    appliesTo: isTsx,
+    check: (c) => {
+      // What the submit path declares optional: `X: values.X || undefined`, `X: X || undefined`.
+      const optional = new Set();
+      for (const m of c.matchAll(/(\w+):\s*(?:[\w.]+\.)?(\w+)\s*\|\|\s*undefined/g)) {
+        optional.add(m[1]);
+        optional.add(m[2]);
+      }
+      if (optional.size === 0) return [];
+      const hits = [];
+      for (const m of c.matchAll(/<(?:FormFields\.)?SelectField\b((?:[^<>]|\{[^{}]*\})*?)\/>/gs)) {
+        const el = m[1];
+        if (/\brequired\b/.test(el) || /\bclearable\b/.test(el)) continue;
+        const value = /value=\{([\w.]+)\}/.exec(el);
+        if (!value) continue;
+        const field = value[1].split(".").pop();
+        if (!optional.has(field)) continue;
+        hits.push({
+          line: c.slice(0, m.index).split("\n").length,
+          excerpt: `SelectField value={${value[1]}} — the submit writes ${field} || undefined`,
+        });
+      }
+      return hits;
+    },
+    samples: {
+      file: "modules/<domain>/src/widgets/<entity>/form.tsx",
+      broken: `const submit = () => save({ positionId: values.positionId || undefined });
+
+return (
+  <FormFields.SelectField
+    label={t("field.position")}
+    value={values.positionId}
+    onChange={(value) => setField("positionId", value)}
+    options={positions}
+  />
+);`,
+      fixed: `const submit = () => save({ positionId: values.positionId || undefined });
+
+return (
+  <FormFields.SelectField
+    label={t("field.position")}
+    clearable
+    value={values.positionId}
+    onChange={(value) => setField("positionId", value)}
+    options={positions}
+  />
+);`,
+      miss: [
+        {
+          note: "a required select, which has no empty state to return to",
+          source: `const submit = () => save({ roleId: values.roleId || undefined });
+
+return (
+  <FormFields.SelectField
+    label={t("field.role")}
+    value={values.roleId}
+    onChange={(value) => setField("roleId", value)}
+    options={roles}
+    required
+  />
+);`,
+        },
+        {
+          note: "a select whose value the submit path always sends",
+          source: `const submit = () => save({ locale: values.locale });
+
+return (
+  <FormFields.SelectField
+    label={t("field.locale")}
+    value={values.locale}
+    onChange={(value) => setField("locale", value)}
+    options={locales}
+  />
+);`,
+        },
+      ],
+    },
+  },
+  {
     id: "chip-filter-equality-field",
     invariant: "#15 / audit: chip filters",
     level: "error",
