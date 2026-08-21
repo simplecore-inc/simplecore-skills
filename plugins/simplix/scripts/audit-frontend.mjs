@@ -1590,6 +1590,74 @@ const all = useListUserAccessLogs({ "loginAt.greaterThan": since, page: 0, size:
     },
   },
   {
+    id: "row-action-that-reads-as-text",
+    invariant: "#20 / #77",
+    level: "error",
+    desc: "An action inside a table cell drawn as a ghost button carrying words. With no border and no glyph it reads as a sentence rather than as something to press, and where two sit side by side — one available and one not — nothing but the tone tells them apart. A row action carries a border and its own glyph; ghost is for an icon-only control, where the glyph is the whole button",
+    appliesTo: isTsx,
+    check: (c) => {
+      const lines = c.split("\n");
+      const hits = [];
+      for (let i = 0; i < lines.length; i += 1) {
+        if (!/variant="ghost"/.test(lines[i])) continue;
+        // Inside a table cell rather than in a footer or a toolbar.
+        if (!/<TableCell\b/.test(lines.slice(Math.max(0, i - 12), i).join("\n"))) continue;
+        const block = lines.slice(Math.max(0, i - 3), i + 7).join("\n");
+        // An icon-only control is the case ghost is for.
+        if (/size="icon/.test(block)) continue;
+        // Words rather than a glyph alone: a translated label, or Korean written straight in.
+        if (!/\{t\("[^"]+"\)\}|label=\{|>\s*[가-힣]/.test(block)) continue;
+        hits.push({ line: i + 1, excerpt: "ghost row action carrying words" });
+      }
+      return hits;
+    },
+    samples: {
+      file: "modules/<domain>/src/widgets/<entity>/table.tsx",
+      broken: `<TableCell>
+  <Button
+    variant="ghost"
+    size="xs"
+    onClick={() => onView(row.key)}
+  >
+    {t("row.view")}
+  </Button>
+</TableCell>`,
+      fixed: `<TableCell>
+  <Button
+    variant="outline"
+    size="xs"
+    onClick={() => onView(row.key)}
+  >
+    <Icon name="eye" className="size-3.5" />
+    {t("row.view")}
+  </Button>
+</TableCell>`,
+      miss: [
+        {
+          note: "an icon-only control, which is what ghost is for",
+          source: `<TableCell>
+  <Button
+    variant="ghost"
+    size="icon-xs"
+    aria-label={t("row.view")}
+    onClick={() => onView(row.key)}
+  >
+    <Icon name="eye" />
+  </Button>
+</TableCell>`,
+        },
+        {
+          note: "a ghost button in a footer, where the surface itself is the border",
+          source: `<CrudForm.Actions>
+  <Button variant="ghost" size="sm" onClick={onCancel}>
+    {t("common.cancel")}
+  </Button>
+</CrudForm.Actions>`,
+        },
+      ],
+    },
+  },
+  {
     id: "bounded-table-without-its-border",
     invariant: "#71",
     level: "error",
