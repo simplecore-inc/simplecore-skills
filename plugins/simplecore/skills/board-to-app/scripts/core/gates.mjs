@@ -510,6 +510,14 @@ const CAPTURE_NAME = /^\d{8}-\d{4}-[A-Za-z]{1,4}-\d{1,3}(-[a-z0-9-]+)?\.png$/;
  * frame, a date — is placeable-looking and unfindable, and no project should have to write that
  * check itself.
  */
+/**
+ * A chapter, with whatever a sweep of it was narrowed to.
+ *
+ * <p>`w02`, and `w02-n` where one sweep covered the N cluster of it — the suffix says which part,
+ * the same way a capture's own name carries a variant.
+ */
+const CHAPTER_FOLDER = /^[a-z]\d{2}(?:-[a-z0-9-]+)?$/;
+
 export const capturesGate = {
   id: 'capturesGate',
   title: 'a capture nobody can place',
@@ -537,8 +545,17 @@ export const capturesGate = {
         continue;
       }
       const [folder, name] = parts;
-      if (languages !== null && !languages.has(folder)) {
-        findings.push(`${entry}: '${folder}' is not one of the declared languages (${[...languages].join(' · ')}) — the folder is the language and nothing else`);
+      // A language OR a chapter — the two things a capture is grouped by, and the two the config
+      // already knows. `capturesDir` is a generic key: a project sweeping one screen in ten
+      // languages groups by language, and one sweeping a chapter's frames groups by chapter, and
+      // both are placeable. Holding it to languages alone reported every capture in a repository
+      // whose own handover reference says `.captures/<chapter>/`, which is a rule failing correct
+      // work rather than finding anything.
+      const placeable =
+        (languages !== null && languages.has(folder))
+        || CHAPTER_FOLDER.test(folder);
+      if (languages !== null && !placeable) {
+        findings.push(`${entry}: '${folder}' is neither one of the declared languages (${[...languages].join(' · ')}) nor a chapter — a capture is grouped by one of the two, and anything else is placeable-looking and unfindable`);
         continue;
       }
       if (!CAPTURE_NAME.test(name)) {

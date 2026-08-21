@@ -452,6 +452,18 @@ export function cases(t) {
   );
   add(
     'capturesGate',
+    'a chapter is the other thing a capture is grouped by',
+    { ...spoken, files: { 'shots/w02/20260815-1130-A-01.png': '' } },
+    false
+  );
+  add(
+    'capturesGate',
+    'a chapter narrowed to one part of a sweep',
+    { ...spoken, files: { 'shots/w02-n/20260815-1130-A-01.png': '' } },
+    false
+  );
+  add(
+    'capturesGate',
     'the pseudo locale is a language',
     { ...spoken, files: { 'shots/en-XA/20260815-1130-A-01.png': '' } },
     false
