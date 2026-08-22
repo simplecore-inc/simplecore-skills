@@ -682,6 +682,23 @@ their own code. So the rule is flat — **an agent restarts only the instance on
 holds.** An agent that finds no port assigned does not guess and does not borrow: it treats
 its chapter as sequential work and says so.
 
+**An agent that asks permission to restart has usually already restarted, and the answer arrives
+one command too late.** Asking is the right instinct and it is also slow: a message reaches an agent
+after its next act, so between 「may I restart?」 and 「no, wait」 the restart has happened. This is not
+the agent being careless — it is the same latency that makes stopping the only thing that preempts.
+
+**So the coordinator's answer is never only 「no」.** It says what to do with what already happened:
+whether the port is up or down right now, who else was mid-flight, and — the part that decides
+whether anything was lost — **that a reading taken across the gap is discarded rather than filed.**
+A probe that met a connection refused, or met a server carrying somebody else's half-applied change,
+is a measurement whose subject no longer exists; left in a report it reads as a boundary result.
+
+**And the agent that restarted says so at once rather than repairing it quietly.** Restoring the
+port is the smaller half; the larger half is that a second agent may have already read the gap. One
+run here restarted 8082, was told to hold, killed the server, and reported it in the same message —
+which is what let the other agent be told 「the refusal you just saw is not your code」 before it had
+finished writing the finding down.
+
 **The slot decides that, not who typed the command.** A server outlives the agent that started
 it, so a chapter regularly inherits a process nobody present began — and 「restart only what you
 started」 read literally leaves an instance the slot-holder may not touch and whose author is no
