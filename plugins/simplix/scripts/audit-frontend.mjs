@@ -5301,20 +5301,40 @@ return <Button onClick={() => refresh.mutateAsync({ data: { accessToken } })}>{t
       // is not on hand is an unknown contract, and an unknown contract is not evidence of a
       // defect — a body that names every field the DTO declares is complete and is left alone.
       const index = modelIndex();
-      let dto = null;
-      let stored = null;
-      for (const m of c.matchAll(/\buse[Uu]pdate([A-Z]\w*)\s*\(/g)) {
-        const entity = m[1].charAt(0).toLowerCase() + m[1].slice(1);
-        if (!index.has(entity + "UpdateDTO")) continue;
-        dto = index.get(entity + "UpdateDTO");
+      // The contract of ONE update hook, or null where this repository has no DTO of that name.
+      const contractOf = (hookEntity) => {
+        const entity = hookEntity.charAt(0).toLowerCase() + hookEntity.slice(1);
+        if (!index.has(entity + "UpdateDTO")) return null;
+        const shape = index.get(entity + "UpdateDTO");
         // What the endpoint's own read answers with. A field the write accepts and the read never
         // returns is written per save and stored nowhere — a reason, an idempotency key — so
         // leaving it out blanks nothing and is not this defect.
-        stored =
+        const held =
           index.get(entity + "UpdateFormDTO")
           ?? index.get(entity + "DetailDTO")
           ?? index.get(entity + "DTO")
           ?? null;
+        if (!shape || shape.size === 0 || !held) return null;
+        return { dto: shape, stored: held };
+      };
+      // Which contract each `mutateAsync` receiver is bound to. One file routinely holds several
+      // update endpoints over one record — a settings save, a security-sensitive save, a child
+      // collection's save — and each takes a DTO of its own. Resolved file-wide, every body in
+      // such a file is measured against whichever DTO happened to be found first, and a body that
+      // is complete for its own endpoint is reported as blanking fields that endpoint never took.
+      const byReceiver = new Map();
+      for (const m of c.matchAll(
+        /\b(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*use[Uu]pdate([A-Z]\w*)\s*\(/g,
+      )) {
+        byReceiver.set(m[1], contractOf(m[2]));
+      }
+      let dto = null;
+      let stored = null;
+      for (const m of c.matchAll(/\buse[Uu]pdate([A-Z]\w*)\s*\(/g)) {
+        const contract = contractOf(m[1]);
+        if (!contract) continue;
+        dto = contract.dto;
+        stored = contract.stored;
         break;
       }
       if (!dto || dto.size === 0 || !stored) return [];
@@ -5384,16 +5404,18 @@ return <Button onClick={() => refresh.mutateAsync({ data: { accessToken } })}>{t
         );
       const hits = [];
       const seen = new Set();
-      const consider = (start, line) => {
+      const consider = (start, line, contract) => {
         if (seen.has(start)) return;
         seen.add(start);
+        const shape = contract?.dto ?? dto;
+        const held = contract?.stored ?? stored;
         const body = objectAt(start);
         const members = topLevelMembers(body);
-        if (members.length >= dto.size) return;
+        if (members.length >= shape.size) return;
         if (spreadsTheRecord(body)) return;
         const named = memberNames(members);
         // Only a field the read also carries is a field this save blanks.
-        const dropped = [...dto].filter((field) => !named.has(field) && stored.has(field));
+        const dropped = [...shape].filter((field) => !named.has(field) && held.has(field));
         if (dropped.length === 0) return;
         // A body that also spreads form state carries fields this scan cannot see, so the report
         // names the ones the file never mentions at all — those are certainly gone, and a list
@@ -5406,7 +5428,12 @@ return <Button onClick={() => refresh.mutateAsync({ data: { accessToken } })}>{t
           excerpt: `drops ${named4.join(", ")}${rest > 0 ? ` and ${rest} more` : ""}`,
         });
       };
-      for (const m of c.matchAll(/\b\w*[Uu]pdate\w*\.mutateAsync\s*\(/g)) {
+      for (const m of c.matchAll(/\b(\w*[Uu]pdate\w*)\.mutateAsync\s*\(/g)) {
+        // The receiver's own contract where this file bound it to a hook, and the file-wide one
+        // where it did not. A receiver bound to a hook whose DTO is not on hand is an unknown
+        // contract, which the rule leaves alone rather than measuring against somebody else's.
+        const contract = byReceiver.has(m[1]) ? byReceiver.get(m[1]) : undefined;
+        if (contract === null) continue;
         // The call's OWN arguments, read to the balanced close paren. A fixed window runs past
         // `data: body` into whatever call comes next — the create branch beside it — and the rule
         // then reports the create's literal as an update body.
@@ -5422,7 +5449,9 @@ return <Button onClick={() => refresh.mutateAsync({ data: { accessToken } })}>{t
         }
         const args = c.slice(open, end + 1);
         const data = /data:\s*\{/.exec(args);
-        if (data) consider(open + data.index + data[0].length - 1, lineOfIndex(c, m.index));
+        if (data) {
+          consider(open + data.index + data[0].length - 1, lineOfIndex(c, m.index), contract);
+        }
       }
       // `useCrudFormSubmit` hands ONE body to both the create and the update, so an enumerated
       // body there is the same defect wearing the form helper's name.
@@ -5549,6 +5578,33 @@ const setActive = async (active: boolean) => {
       email: org.email,
       isActive: active,
     },
+  });
+};`,
+        },
+        {
+          note: "a second update endpoint over the same record, whose own DTO is not on hand — the body is complete for the endpoint it is sent to, and measuring it against the neighbour's DTO reports a defect that is not there",
+          files: {
+            "packages/domain-org/src/generated/model/organizationUpdateDTO.ts": `export interface OrganizationUpdateDTO {
+  orgId: string;
+  orgCode: string;
+  orgName: string;
+  isActive: boolean;
+}`,
+            "packages/domain-org/src/generated/model/organizationUpdateFormDTO.ts": `export interface OrganizationUpdateFormDTO {
+  orgId: string;
+  orgCode: string;
+  orgName: string;
+  isActive: boolean;
+  updatedAt?: string;
+}`,
+          },
+          source: `const update = useUpdateOrganization();
+const updateContacts = useUpdateContactsOrganization();
+
+const saveContacts = async (contacts: ContactItemDTO[]) => {
+  await updateContacts.mutateAsync({
+    orgId,
+    data: { orgId, contacts },
   });
 };`,
         },
