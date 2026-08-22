@@ -115,16 +115,24 @@ selector is a claim about the selector until a second, differently-shaped check 
 
 ---
 
-## The two checks that need the browser, and the script that carries them
+## The checks that need the browser, and the script that carries them
 
 Some defects are invisible to every source audit and to every request probe, and visible to
-one `getBoundingClientRect` call. Two of them recur, and both read as a working screen from
+one `getBoundingClientRect` call. These recur, and all of them read as a working screen from
 everywhere except the pixels:
 
 | The defect | What every other check sees |
 | --- | --- |
 | a list total says N rows and the column under it draws none | the request answered 200 with N records, the component is imported, the props type-check |
 | two pieces of text painted into one rectangle | every string on the screen is the right string |
+| an open pane painting nothing — the reader pressed a tab and got a blank rectangle | a `return null` that is correct in a dozen other places, and a build with nothing wrong in it |
+
+**The pane check only sees the defect in the state that produces it**, which is almost never
+the state a walk lands on: the record the pane renders exists in the seeded database, so the
+screen has to be opened with the reads emptied (a `?data=empty`-style harness, a fresh
+installation, a record nobody created) before the check has anything to report. Run it in
+those states as well as the populated one — `compared 0` on a screen with tabs means the run
+never reached a pane and proves nothing.
 
 They live in `${CLAUDE_PLUGIN_ROOT}/scripts/audit-rendered.mjs`, **not** in
 `audit-frontend.mjs` — that one reads source files and runs with nothing started, and these
@@ -138,7 +146,7 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/audit-rendered.mjs" --selftest        # both
 node "${CLAUDE_PLUGIN_ROOT}/scripts/audit-rendered.mjs" --list
 ```
 
-**Run both over every screen the walk opens, while it is open.** The cost is one evaluate
+**Run all of them over every screen the walk opens, while it is open.** The cost is one evaluate
 call per screen and it settles a question no screenshot settles reliably — a reader scanning
 a capture for a missing row is looking for an absence, which is the hardest thing to see.
 

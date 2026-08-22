@@ -710,3 +710,51 @@ to return to.
 The same question is asked of every other control an optional field can use — a combobox, a tree
 select, a date field — and the answer is the same: what the DTO accepts as absent, the screen can
 set to absent.
+
+## #76 A pane a reader reached by pressing something owes them words in every state it can reach
+
+`return null` is right in a dozen places — a cell with no value, a badge whose enum resolved to
+nothing, a banner nobody armed, a reference card with no rows. What separates those from a defect
+is not the statement, it is **where the statement runs**. A tab strip is a promise the reader can
+see being made: pressing this shows what is behind it. A pane that answers a press with nothing has
+broken that promise, and the reader is left in front of a rectangle with no way to tell an empty
+installation from a screen that failed.
+
+The shape it takes in a settings screen is always the same. The pane renders a record, the record
+is absent, and the component ends:
+
+```tsx
+const draft = policy.draft;
+if (!draft) {
+  return null;          // ✖ the whole area under the tab strip is 16px of its own padding
+}
+```
+
+Everything else on the screen is correct — the header, the tiles, the banner saying the record is
+missing, the four tabs with their counts — so the screen reads as populated right up to the strip
+and then stops. `document.body.innerText` ends at the last tab's label.
+
+**A spinner is the same defect wearing a different face, and the harder one to see.** A pane held
+on a lookup renders a loading fallback, and the condition is usually `!id`:
+
+```tsx
+const roleId = catalogue.idOfCode(AUDITOR_ROLE);   // undefined WHILE READING, and also
+{roleId ? <List forced={{ "roleIds.in": roleId }} /> : <QueryFallback isLoading />}
+```
+
+`undefined` there is two different facts — the catalogue has not answered yet, and the catalogue
+answered and holds no such role — and only the first is a wait. Written as one condition the second
+spins for ever. Read the lookup's own `isLoading` to separate them; a lookup that does not expose
+one is the thing to fix.
+
+**What the pane owes.** A title and a sentence saying what this pane holds and what makes it
+appear, through the project's shared empty-state component (registry: `EmptyState`, and whatever
+panel wrapper the project keeps around it). Not the banner's sentence again — a banner above the
+strip has already said the record is absent, and what the reader still cannot tell is what they
+would have been looking at.
+
+**Where the check lives.** `openPaneDrawsNothing` in `audit-rendered.mjs` decides it from the
+painted page, because that is the only place it is decidable: a source rule cannot tell this
+`return null` from the twelve correct ones. It needs the screen open in the state that produces it
+(`?data=empty`, a fresh installation, a record nobody created), which is why the browser pass is
+the gate and a green build is not.

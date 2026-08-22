@@ -343,6 +343,8 @@ These invariants apply to **every** frontend file you touch. Treat each as invio
 
 75. **A field the DTO accepts as absent can be returned to absent** — a select moves between options and nothing else, so an optional field becomes permanent the moment somebody picks a value. Where the submit path writes `X: values.X || undefined`, the control carries `clearable` (with `clearLabel` where the absence has a name of its own). A hand-rolled `{ value: "", … }` option is not the fix — Radix throws on it. → `invariants.md` #75.
 
+76. **A pane a reader reached by pressing something owes them words in every state it can reach** — `return null` is right in a dozen places, and what separates those from a defect is not the statement but where it runs: a tab strip promises that pressing shows what is behind it, so a pane answering the press with nothing has broken a promise the reader watched being made. The two shapes are `if (!record) return null` in a settings pane and a spinner held on `!id` — where `undefined` means both 「the lookup has not answered」 and 「the lookup answered and there is no such row」, and only the first is a wait. Give the pane a title and a sentence saying what it holds and what makes it appear, never the banner's sentence again. `openPaneDrawsNothing` in `audit-rendered.mjs` decides it from the painted page, which is the only place it is decidable. → `invariants.md` #76.
+
 ---
 
 ## Task Router

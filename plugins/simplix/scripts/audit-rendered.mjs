@@ -158,6 +158,42 @@ const DEFAULTS = {
 
   /** How long between two readings while waiting for the screen to settle. */
   settleIntervalMs: 400,
+
+  /**
+   * What counts as a pane — a region a reader reached by pressing something, which therefore
+   * owes them content.
+   *
+   * <p>`tabpanel` is the whole of the default on purpose. It is the one region whose contract
+   * is unambiguous: a tab strip promises that pressing a tab shows what is behind it, so a
+   * panel that paints nothing has broken a promise the reader can see being made. A card, a
+   * section or a sidebar may legitimately render nothing — a reference card with no rows is
+   * supposed to disappear — and a check that read those as panes would fire on every screen
+   * that hides an empty card correctly.
+   *
+   * <p>A product with its own pane primitive adds its selector here rather than editing the
+   * check.
+   */
+  paneSelector: '[role="tabpanel"]',
+
+  /**
+   * What a pane may draw instead of words and still count as having drawn something.
+   *
+   * <p>A pane holding one chart, one map or one signature canvas has no text in it and is not
+   * blank. Read as blank it would be the check's first false positive, and the report would
+   * then be the thing nobody trusts.
+   */
+  wordlessContentSelector:
+    'img, svg, canvas, video, iframe, object, embed, [role="img"], [role="progressbar"], input, select, textarea',
+
+  /**
+   * How wide a pane has to be laid out before its emptiness is judged.
+   *
+   * <p><b>Width and never height.</b> A blank pane's height IS the symptom — the one this check
+   * was written from painted 16px of its own `pt-4` and nothing else — so a height floor would
+   * skip exactly the defect. Width says something different: a pane the layout never gave a
+   * column to has not been asked to draw anything yet.
+   */
+  minPaneWidthPx: 40,
 };
 
 // ---------------------------------------------------------------------------
@@ -640,7 +676,106 @@ const pressableControlsTakeThePress = {
   },
 };
 
-export const checks = [countedListDrawsNoRows, textBoxesOverlap, blockInsideParagraph, pressableControlsTakeThePress];
+/**
+ * An open pane that paints nothing — the reader pressed a tab and got a blank rectangle.
+ *
+ * The defect it exists to catch: a settings screen draws its header, its tiles, a notice and a
+ * four-tab strip, and below the strip there is only the page footer. The pane's own component
+ * ends in `if (!record) return null;`, so the one state where the reader most needs a sentence
+ * is the state that renders nothing at all. Every string on the screen is correct, every
+ * request answered, the build is green — and the tab the reader pressed answers with a gap.
+ *
+ * **Why it survives every other check.** `countedListDrawsNoRows` needs a total to compare
+ * against and a blank pane states none; `textBoxesOverlap` needs two boxes and there is one;
+ * a source audit sees a `return null` that is correct in a dozen other places — a cell with no
+ * value, a badge with no enum, a banner nobody armed. What separates those from this is not the
+ * statement, it is where the statement runs: **a region a reader reached by pressing something
+ * owes them content, and nothing else does.** That is a fact about the painted page, so it is
+ * only decidable here.
+ *
+ * **Read as blank means blank to a reader**, not merely textless: a pane holding one chart, one
+ * map or one canvas is a pane that drew something. Hidden panes are already out — a tab set
+ * hides the panes behind the tabs nobody pressed, and those are supposed to be empty.
+ */
+const openPaneDrawsNothing = {
+  id: "openPaneDrawsNothing",
+  grade: "error",
+  title:
+    "an open pane painting nothing — the reader pressed a tab and the region under it is a blank rectangle",
+  page: (o) => {
+    const findings = [];
+
+    // Shown rather than merely present. A tab set keeps every pane in the tree and hides all but
+    // one, so reading presence would report every screen's unopened tabs as blank — which is what
+    // they are supposed to be.
+    const shown = (el) => {
+      if (el.hasAttribute("hidden")) return false;
+      const s = getComputedStyle(el);
+      if (s.display === "none" || s.visibility === "hidden") return false;
+      if (el.getAttribute("aria-hidden") === "true") return false;
+      return el.getBoundingClientRect().width >= o.minPaneWidthPx;
+    };
+
+    const where = (el) => {
+      const bits = [];
+      for (let n = el; n && n !== document.body && bits.length < 4; n = n.parentElement) {
+        bits.unshift(
+          n.tagName.toLowerCase() +
+            (n.id ? "#" + n.id : "") +
+            (n.className && typeof n.className === "string"
+              ? "." + n.className.trim().split(/\s+/).slice(0, 2).join(".")
+              : ""),
+        );
+      }
+      return bits.join(" > ");
+    };
+
+    // What the tab said, so the report names the pane the way the reader reached it rather than
+    // by a generated id nobody can look up. Radix and every library modelled on it point the
+    // panel at its tab through `aria-labelledby`; a tab set that does not is named by its id.
+    const openedBy = (el) => {
+      const id = el.getAttribute("aria-labelledby");
+      const tab = id ? document.getElementById(id) : null;
+      const label = tab ? (tab.innerText || tab.textContent || "").replace(/\s+/g, " ").trim() : "";
+      return label || el.getAttribute("data-value") || el.id || "(unnamed)";
+    };
+
+    const panes = [...document.querySelectorAll(o.paneSelector)].filter(shown);
+    let compared = 0;
+
+    for (const pane of panes) {
+      compared += 1;
+      if ((pane.innerText || "").trim().length > 0) continue;
+      // A pane can be wordless and still full — one chart, one map, one signature canvas. Judged
+      // on text alone those would be this check's first false positive, and a rendered audit that
+      // cries once is a rendered audit nobody reads again.
+      const drawn = [...pane.querySelectorAll(o.wordlessContentSelector)].some((el) => {
+        const r = el.getBoundingClientRect();
+        return r.width > 0 && r.height > 0;
+      });
+      if (drawn) continue;
+
+      const r = pane.getBoundingClientRect();
+      findings.push(
+        `the pane behind 「${openedBy(pane)}」 is open and paints nothing — ` +
+          `${Math.round(r.width)}×${Math.round(r.height)}px of its own padding, no text and no ` +
+          `content of any other kind. Whatever renders it answers this state with nothing, so the ` +
+          `reader pressed a tab and got a gap; the pane owes a title and a sentence saying what it ` +
+          `holds and what makes it appear (${where(pane)})`,
+      );
+      if (findings.length >= o.maxFindings) break;
+    }
+    return { compared, findings };
+  },
+};
+
+export const checks = [
+  countedListDrawsNoRows,
+  textBoxesOverlap,
+  blockInsideParagraph,
+  pressableControlsTakeThePress,
+  openPaneDrawsNothing,
+];
 
 /** One self-contained expression, ready for any driver's evaluate call. */
 export function snippet(check, options = {}) {
@@ -969,6 +1104,67 @@ const FIXTURES = {
         .foot{position:relative;display:flex;gap:8px;padding:12px 16px}button{padding:8px 14px}
         .glow{position:absolute;inset:0;pointer-events:none}</style>
         <div class=foot><button>저장</button><div class=glow></div></div>`,
+    },
+  },
+  openPaneDrawsNothing: {
+    broken: {
+      // The screen this check was written from: four tabs, and the one that is open renders its
+      // own `pt-4` and nothing else because the record behind it is absent and the pane answers
+      // that with `return null`.
+      "an open tab whose pane renders only its own padding":
+        `<style>body{margin:0;font:14px sans-serif}.strip{display:flex;gap:16px;padding:8px 16px}
+        .pane{padding-top:16px;width:900px}</style>
+        <div class=strip role=tablist>
+          <button role=tab id=t1 aria-selected=true>정책</button>
+          <button role=tab id=t2>세션</button>
+        </div>
+        <div role=tabpanel aria-labelledby=t1 class=pane></div>
+        <div role=tabpanel aria-labelledby=t2 class=pane hidden>전체 0건 · 열려 있는 세션이 없습니다</div>`,
+      // The same gap with the pane's children present but every one of them rendering nothing —
+      // a wrapper `Stack` around a conditional that took the branch with no arm.
+      "an open pane whose children are all empty wrappers":
+        `<style>body{margin:0;font:14px sans-serif}.pane{padding:16px;width:900px}</style>
+        <div role=tablist><button role=tab id=h1 aria-selected=true>변경 이력</button></div>
+        <div role=tabpanel aria-labelledby=h1 class=pane><div></div><div><span></span></div></div>`,
+    },
+    quiet: {
+      "the same tab set with the open pane saying why it is empty":
+        `<style>body{margin:0;font:14px sans-serif}.strip{display:flex;gap:16px;padding:8px 16px}
+        .pane{padding-top:16px;width:900px}.card{padding:40px;text-align:center}</style>
+        <div class=strip role=tablist>
+          <button role=tab id=q1 aria-selected=true>정책</button>
+          <button role=tab id=q2>세션</button>
+        </div>
+        <div role=tabpanel aria-labelledby=q1 class=pane>
+          <div class=card><div>정책 값이 없습니다</div>
+          <div>보안 정책 레코드가 만들어지면 여기에 편집할 수 있는 값이 표시됩니다.</div></div>
+        </div>
+        <div role=tabpanel aria-labelledby=q2 class=pane hidden></div>`,
+      // A pane holding one chart and no words at all. Judged on text alone this is the check's
+      // first false positive, and a rendered audit that cries once is one nobody runs again.
+      "an open pane holding a chart and no text":
+        `<style>body{margin:0;font:14px sans-serif}.pane{padding:16px;width:900px}</style>
+        <div role=tablist><button role=tab id=c1 aria-selected=true>추이</button></div>
+        <div role=tabpanel aria-labelledby=c1 class=pane>
+          <svg width="640" height="220"><path d="M0 200 L120 140 L240 160 L360 60" /></svg>
+        </div>`,
+      // Every pane behind a tab nobody pressed. They are empty because they are hidden, which is
+      // how a tab set works — a check reading presence rather than paint fires on every screen.
+      "a tab set whose unopened panes are empty":
+        `<style>body{margin:0;font:14px sans-serif}.pane{padding:16px;width:900px}</style>
+        <div role=tablist>
+          <button role=tab id=z1 aria-selected=true>정책</button>
+          <button role=tab id=z2>세션</button>
+          <button role=tab id=z3>잠긴 계정</button>
+        </div>
+        <div role=tabpanel aria-labelledby=z1 class=pane>비밀번호 최소 길이 · 잠금 시간</div>
+        <div role=tabpanel aria-labelledby=z2 class=pane hidden></div>
+        <div role=tabpanel aria-labelledby=z3 class=pane style="display:none"></div>`,
+      // A screen with no tabs at all. Nothing here is a pane, and the check has to say it
+      // compared nothing rather than invent a region out of the page body.
+      "a plain page with no panes on it":
+        `<style>body{margin:0;font:14px sans-serif}</style>
+        <div><h1>보안 정책</h1><p>로그인·세션 정책을 확인합니다.</p></div>`,
     },
   },
 };
