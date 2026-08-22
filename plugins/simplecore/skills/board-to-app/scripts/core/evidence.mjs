@@ -28,7 +28,7 @@
 // regex.
 import { execFileSync } from 'node:child_process';
 
-import { proseLines, tableCells } from './prose.mjs';
+import { ROUND_PHRASES, onlyQuoted, proseLines, tableCells } from './prose.mjs';
 
 /** The only image format a result document cites, and the bytes one of them may take. */
 const CAPTURE_SUFFIX = '.webp';
@@ -1515,8 +1515,53 @@ export const everySectionCarriesItsClosingLine = {
   },
 };
 
+/**
+ * A result document says what was on the screen, never which run put it there.
+ *
+ * <p>The document is the residue of running the verification, so its subject is the product and
+ * its tense is the present. 「이 줄은 이 회차에 생겼다」 is about the build instead — it says
+ * nothing a reader of the screen needs, it is false the day the next round runs, and the sentence
+ * it is attached to almost always already carries the fact.
+ *
+ * <p><b>The temptation is that it reads as diligence.</b> A round that repaired seventeen things
+ * has a true and interesting story, and writing it beside each repair feels like showing the work
+ * — which is exactly why one chapter's document carried seventeen of these and every gate over it
+ * was green.
+ *
+ * <p><b>Quoted spans are stripped first, and that is what makes the rule safe.</b> A round is a
+ * real thing on some screens — a measurement round, an inspection round — so `「이번 회차 측정값」`
+ * is a field name and `이 회차에 만든` is a trace, in the same repository. → `ROUND_PHRASES`.
+ */
+export const evidenceStatesWhatWasSeen = {
+  id: 'evidenceStatesWhatWasSeen',
+  title: 'a result document naming the run that produced a fact instead of stating the fact',
+  needs: ['evidenceDir', 'chapterDir'],
+  run: (ctx) => {
+    const dir_ = ctx.declared('evidenceDir');
+    const findings = [];
+    for (const [, file] of [...chapterFiles(ctx)].sort()) {
+      const rel = `${dir_}/${file}`;
+      const text = ctx.read(rel);
+      if (text === null) continue;
+      for (const { line, no } of proseLines(text)) {
+        for (const phrase of ROUND_PHRASES) {
+          if (!line.includes(phrase) || onlyQuoted(line, phrase)) continue;
+          findings.push(
+            `${rel}:${no}: 「${phrase}」 — this names the run rather than what was on the screen. A `
+            + 'result document records the product in the present tense; which round repaired it is '
+            + 'in the commit. Keep whatever fact the clause carries and drop the round'
+          );
+          break;
+        }
+      }
+    }
+    return findings;
+  },
+};
+
 export const EVIDENCE_GATES = [
   closedChapterHasEvidence,
+  evidenceStatesWhatWasSeen,
   everySectionCarriesItsClosingLine,
   everyPlacedFrameIsCaptured,
   evidenceQuotesTheChapter,
@@ -2227,6 +2272,42 @@ export function cases(t) {
     'everyCaptureIsInTheDeclaredScheme',
     'the console came back in dark mode and every other gate over the folder stayed green',
     shot({ 'docs/evidence/w02-org-shell/a-01.webp': DARK_SHOT }),
+    true,
+  );
+
+  // evidenceStatesWhatWasSeen — the story of the round, written beside the thing the round fixed.
+  const told = (saw) =>
+    evidence({
+      'docs/evidence/w01-foundation.md': W01_EVIDENCE,
+      'docs/evidence/w02-org-shell.md': W02_EVIDENCE(
+        W02_SCREEN_SECTION.replace('**본 것** — 「아이디 또는 비밀번호가 올바르지 않습니다」만 표시된다.', `**본 것** — ${saw}`)
+      ),
+    });
+
+  t.add(
+    'evidenceStatesWhatWasSeen',
+    'a repaired line carrying the round that repaired it',
+    told('쪽 안내가 탭 줄 위에 있다. **이 줄은 이 회차에 생겼다** — 프레임이 그리는데 화면에 없었다.'),
+    true,
+  );
+  t.add(
+    'evidenceStatesWhatWasSeen',
+    'the same line with the fact kept and the round dropped',
+    told('쪽 안내가 탭 줄 위에 있고 문장이 챕터가 정한 그대로다.'),
+    false,
+  );
+  // A round is a real thing on some screens. Quoted spans are stripped before matching, which is
+  // the whole reason the demonstrative family is safe to ban at all.
+  t.add(
+    'evidenceStatesWhatWasSeen',
+    'a screen whose own field is named after a measurement round',
+    told('상세 필드 「이번 회차 측정값」(88.4 dB)과 「노출기준」(90 dB)이 있다.'),
+    false,
+  );
+  t.add(
+    'evidenceStatesWhatWasSeen',
+    'the English shape of the same trace',
+    told('The page note sits above the tab strip. It was added this round.'),
     true,
   );
   t.add(

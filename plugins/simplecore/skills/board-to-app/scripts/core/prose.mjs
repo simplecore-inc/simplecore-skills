@@ -23,6 +23,36 @@ export const NARRATIVE_PHRASES = [
   'used to be',
 ];
 
+/**
+ * Naming the run that produced a fact, which dates the document to a session nobody can recover.
+ *
+ * <p><b>Separate from `NARRATIVE_PHRASES` because it governs a different set of files.</b> Those
+ * turn a facts file into a diary and are checked in the handover; these turn a record of what was
+ * on a screen into a record of what a round changed, and belong to every result document — 「this
+ * line appeared in this round」 says nothing a reader of the screen needs, and it is false the day
+ * the next round runs.
+ *
+ * <p><b>Every entry carries a demonstrative on purpose.</b> A round is a real thing in some
+ * domains — a workplace-measurement round, an inspection round — so the bare word is a screen
+ * label rather than a trace. `이번 회차 측정값` is a field on a real screen in one project and
+ * `이 회차에 만든` is a session trace in the same repository; only the demonstrative-plus-round
+ * pairing separates them, and quoted spans are stripped before matching so the label survives
+ * even when it takes this exact shape.
+ */
+export const ROUND_PHRASES = [
+  '이 회차',
+  '이번 회차',
+  '앞 회차',
+  '지난 회차',
+  '이번 라운드',
+  '앞 라운드',
+  '지난 라운드',
+  'this round',
+  'this pass',
+  'last round',
+  'the previous round',
+];
+
 /** Line indexes that sit inside a fenced code block, so examples are never audited. */
 export function fencedLines(lines) {
   const fenced = new Set();

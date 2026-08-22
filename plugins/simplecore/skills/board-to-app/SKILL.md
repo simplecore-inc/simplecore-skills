@@ -222,7 +222,7 @@ the count is what shows a comparison reached anything at all.
 | `eyesPhrases` | the words those documents hand it in — `assigns`, `reader`, `moment` | ◐ with `eyesDocuments` | the project's own eyes rules go unread — **declare these two together or neither**, because 「nothing to find」 and 「no idea what to look for」 come out as the same zero |
 | `logDir` | one agreed, ignored directory for the builders' run logs | ○ | there is nothing to watch — say so once, and each agent reports its steps in its return |
 | `capturesDir` | one agreed, ignored directory for judging captures | ○ | captures go to the session's scratch space and are forwarded by path; nothing is kept |
-| `costLog` | a machine-readable file the wall-clock span and consumption are appended to, per chapter | ○ | what a chapter cost cannot be recovered afterwards; only what git holds survives |
+| `costLog` | a machine-readable file the wall-clock span and consumption are appended to, per chapter | ○ | what a chapter cost cannot be recovered afterwards; only what git holds survives — and with nowhere to stamp a start at the moment of dispatch, the span is gone by the close rather than merely unwritten |
 | `narrativePhrases` | extra point-of-view phrasings the handover file must refuse, for a project writing in neither Korean nor English | ○ | the built-in list stands alone |
 | `projectGates` | a module exporting this project's own gates and their cases | ○ | only the generic gates run; anything true of this project alone is held by nobody |
 | `disabledGates` | `{ id, reason }` per generic gate this project turns off | ○ | every generic gate runs — which is the default, and a gate is never turned off silently |
@@ -502,6 +502,36 @@ ledger, the handover file, the wave decision, and the barrier work the wave give
    parked, and whether the chapter closed. No screen dumps, no commentary, no images —
    its work is in the tree and in the state ledger, and the report says where to look.
 
+   **Whether that return arrives at all is decided by how the agent was launched, and the brief
+   says which.** A subagent's final message comes back to whoever dispatched it; a **named**
+   agent's does not — it has to send one, and nothing about writing a full report as ordinary
+   output tells it that nothing arrived. So a brief for a named agent carries the mechanism in the
+   words that agent will need it in — *send it, do not write it*, and who to send it to. Written at
+   dispatch it costs one line; discovered afterwards it costs the coordinator a reading of the
+   repository to find out what happened, which is the context the subagent existed to protect.
+
+   > **Read it this way and it is wrong**: 「it wrote the report, so it has reported」. Three agents
+   > in one build wrote full reports as ordinary output and then announced idle, each believing it
+   > had reported and none of them having sent anything — and from the coordinator's side all three
+   > read as agents that went quiet after committing.
+   >
+   > **The fourth was the brief that asked for this rule to be written down**, which set out the
+   > subject at length and named the mechanism nowhere. That is where it is easiest to lose: the
+   > coordinator's attention is on the content it is handing over, and beside that the mechanism
+   > reads as housekeeping. It goes into the brief on the same pass as the subject, never as a
+   > check afterwards.
+
+   **The inverse costs the same and is easier to write by accident: an UNNAMED subagent has no
+   channel at all.** A brief that tells one to 「report at every step you close」 is asking for
+   messages it cannot send — everything it writes as ordinary output waits until it returns, so
+   the coordinator arms itself to read step reports that physically cannot arrive, and the agent
+   believes it is reporting. **So whatever the brief asks the agent to report, it says through
+   what.** For an unnamed subagent that is the run log, and the brief says it in those words —
+   *this log is your step report and it is the only channel you have* — which is also what makes
+   the stall test decidable, since the log is the artifact the coordinator was going to watch
+   anyway. A brief carrying the step-report shape and no channel is one whose arrangement works
+   only if it happens to have asked for a log as well.
+
    **A screen nobody watched render is reported as such, and its completion is
    provisional.** 「built, typechecked, and never opened」 is a different claim from
    「done」, and a return that does not separate them hands the coordinator a chapter's
@@ -544,6 +574,31 @@ change nobody claims and a change nobody made look the same.
 > and no brief on either side named the checkout. One of the two changes then stood with nobody
 > able to say who had written it.
 
+**Stamp the chapter's start into `costLog` in the turn its first agent goes out.** The file
+records a wall-clock span, and a span is measurable only where somebody wrote down when the clock
+started — which nothing but the dispatch itself can do, because a dispatch changes no file and
+lands no commit. By the close that moment is gone: what is left is a builder's log where one
+exists and a guess where it does not — and a guessed span is worse than an empty one, because
+nothing on the line says which of the two it is.
+
+**Consumption is the half that may be unmeasurable, and a null there is honest.** A coordinating
+context often cannot count what its subagents spent, because nothing reports it back — and a
+project that leaves that field empty still records the span, which is the half nothing else in
+the arrangement remembers. What is never honest is skipping the line: a chapter with no entry
+reads as a chapter that cost nothing.
+
+> **Read it this way and it is wrong**: 「it is written down in the file, so the next session will
+> read it」. A chapter's own entry carried a note asking the next session to stamp the start at
+> dispatch, and nobody read it — `costLog` is data, and nothing in *Opening a session* sends
+> anybody to it. **An instruction living in a file nothing tells anybody to open is the third
+> category wearing a data file's clothes**: it reads as recorded, and the reading it asks for is
+> taken by nobody.
+
+**A project that wants a mechanical floor under this writes it in `projectGates`** — that every
+chapter its ledger calls closed has an entry in the cost log — because the record's shape is that
+project's and no generic gate can read it. The reading is still owed on top of such a gate: a
+start invented at the close satisfies it exactly as a start that was observed does.
+
 **The git index is a shared resource like any other.** Two agents committing in one
 checkout sweep each other's staged work into commits neither of them meant to make,
 and nothing announces it. Either every agent gets its own checkout, or **the agents
@@ -570,6 +625,37 @@ agent writes and what its progress line looks like, and progress is read from th
 file. An agent's own announcement is not progress → *An agent that ends, and an agent
 that only paused*, below.
 
+### Two coordinating positions on one checkout, and how the plan is what shows it
+
+Everything above guards a coordinator against the agents it sent. **The case it does not
+address is two coordinating positions over one repository**, neither dispatched by the other,
+each writing a ledger the other is reading. It is not exotic — a user opens a second session
+because the first went quiet, or hands the same repository to a colleague's session — and from
+inside either one it looks exactly like working alone.
+
+**The plan section is what makes it legible, which is a second thing it buys.** Above, the plan
+is written down so the next session can resume and a stalled agent's replacement can inherit its
+place. It also carries the names of agents somebody dispatched — so a coordinator reading the
+ledger and finding agents it did not send has the collision in front of it. `git log` does not
+give that: commits from another position read as 「somebody committed」, which is ordinary. **So
+the plan is written even by a session certain it is alone**, because certainty is the state this
+is discovered from.
+
+**Whoever notices stops rather than pressing on**, and that is not the obvious move — its own
+work is sound and its own agents are finishing normally. Then one position holds it, and the
+other stops dispatching. Four things settle the handover, and none of them is answered by the
+repository:
+
+| The holder asks | Because |
+| --- | --- |
+| are your agents finished | a finished agent and a working one leave the same tree; the other position can run its own stop and read *no task found*, and nobody else can |
+| what processes do you hold | a server outlives the agent that started it, so a port is regularly held by a process nobody present began → *Judge the overlap*, the restart row |
+| **anything you hold that is not on disk, send it now, in one message** | a coordinator's context is the one place in the arrangement guaranteed not to survive, and a second coordinator's context is that place twice. One such message carried five defects that existed nowhere else, including a quotation that no longer matched the resource it quoted |
+| nothing — and it is said rather than asked | **the holder cannot close the other session.** Only the person who opened it can, and saying so to them beats leaving a second position quietly alive |
+
+**A stopped peer still announces itself as available, and answering that is how a finished
+position goes on costing turns** → *An agent that ends, and an agent that only paused*.
+
 ### Judge the overlap before every parallel dispatch — then parallelise
 
 The chapter's `parallelWith` section says the two need nothing from each other's
@@ -581,12 +667,13 @@ Walk this list for the two chapters and answer each with a fact, not a forecast:
 | Shared thing | Parallel only if |
 | --- | --- |
 | working tree · git index | separate checkouts, or one agent writes and the other only reads |
-| database · seed data | separate databases; a shared one fails silently when one agent's test rewrites the row the other asserts on |
+| database · seed data | separate databases; a shared one fails silently when one agent's test rewrites the row the other asserts on. **The coordinator is a party to this row**, not just the agents it dispatched — its closing gate run is a full suite against the same database → *Closing a chapter* |
 | dev server · port | **each agent runs its own instance on its own port** — or one agent runs it and the rest only drive it, never restarting it |
 | the browser profile · the signed-in session | one profile per agent; two agents in one session overwrite each other's account |
 | background workers · queues | separate, or owned by one agent |
 | file storage · uploads | separate directory per agent |
 | the state ledger, the board, shared catalogues | one writer at a time — the second agent reports what it would have written |
+| a pile of files one agent deletes and another reads — captures, logs, generated output | **never at once.** The deletion and the read are sequenced, and the coordinator sequences them, because it is the only party holding both instructions |
 
 **Restarting a backend is the collision that bites hardest.** It looks local and is
 not: an agent that restarts the server another agent is mid-test on produces a
@@ -612,6 +699,35 @@ the instance somebody else is running, and what it never does is stop, start or 
 it. **Withholding a port is not a reason to finish without opening a screen**; it is a
 reason to open somebody else's. What such an agent does take for itself is the browser
 profile, which is the resource a second driver actually collides with.
+
+**The last row is a different shape from every other one, which is why it is answered 「never」.**
+The rest of the table guards two writers; this is an instruction to delete meeting a reader
+already inside the files, and it is the coordinator's to cause, because it is the only party
+holding both instructions. So the two are **sequenced, never overlapped** — the reader finishes
+and says so before the deletion goes out, or the deletion lands and the reader is dispatched
+afterwards against what survived.
+
+Two properties make it worse than an ordinary collision, and both are about what is left
+afterwards:
+
+- **An ignored directory has no reflog.** Captures, logs and generated output are kept out of
+  version control on purpose, so what a deletion takes from one of them is gone in a way a tracked
+  file never is — there is nothing to read it back out of.
+- **The reader's citations die silently while its findings still read as sound.** An agent whose
+  files vanish mid-read does not stop. It reports on what it managed to open and fills the rest
+  from whatever it can still reach, and what comes back is fluent, specific and anchored to files
+  that no longer exist, with nothing in it saying which half is which.
+
+**And a suspension that races an instruction is not a suspension.** A message sent once the
+deletion has been ordered arrives after the deletion has happened; the only thing that reaches an
+agent before its next act is stopping it → *An agent that ends, and an agent that only paused*.
+
+> **Read it this way and it is wrong**: 「one of them writes and the other only reads, so they can
+> run at once」 — the table's first row, read across. A builder was told to clear superseded
+> generations of captures while a judging agent was mid-read on paths inside that pile. The judge
+> came back having read five of its eighteen target files as pixels and having filled the rest from
+> a later shoot it had to mark as a different generation; the suspension sent afterwards arrived
+> after the deletion; and the capture directory being ignored, none of it was recoverable.
 
 **Any row that cannot be answered with a fact makes the two chapters sequential.**
 Two disjoint file lists are not an answer — what an agent touches is settled while it
@@ -822,7 +938,9 @@ Touches: W11 W12 W17
 Census: the shared confirm dialog — 26 through, 2 outside: DocumentPurgeDialog PermitRevokeDialog
 ```
 
-**The whole line is one line.** The gate reads the trailer line by line and takes the names after the colon from the same line as the second count, so a list wrapped onto the next line reads as no names at all and the commit is refused for a census that is in fact complete. Two agents met this from different directions on one afternoon: the fix each reached for was to shorten the census, and what was wrong was the wrapping. Write the names on the count's line however long it runs.
+**The whole line is one line, and the cost of wrapping it is not the census.** The census gate reads the trailer line by line and takes the names after the colon from the same line as the second count, so a list wrapped onto the next line reads as no names at all and the commit is refused for a census that is in fact complete. Two agents met this from different directions on one afternoon: the fix each reached for was to shorten the census, and what was wrong was the wrapping. Write the names on the count's line however long it runs.
+
+**What it really costs is the chapter.** git reads a trailer block only where it is the message's last paragraph and consists entirely of trailers and lines indented under one, so **one line wrapped at column 0 makes git discard the whole block** — `Chapter:` included. `git log --format='%(trailers:key=Chapter)'` then comes back empty for a commit whose `Chapter:` line any person can read, which is the single thing the trailer exists to provide. `trailerGate` takes its answer from `%(trailers)` for that reason rather than matching `^Chapter:` itself; a line-by-line reader is green over exactly the commit whose trailer answers nobody. Two commits in one repository sat that way with every gate green, and two more had a blank line between `Chapter:` and `Touches:` — which puts `Chapter:` in a paragraph of its own, above the block, so the history kept the edges and lost the node. **Where a line genuinely has to wrap, indent what it wrapped onto**: git folds an indented continuation back onto its trailer and the block parses.
 
 `censusCountsBothSides` reads that line wherever one appears. Whether a change owed a census at
 all, and whether the sample was drawn from the right place, are readings — the second table below
@@ -1194,13 +1312,15 @@ can open one, and neither pays for it by default.
 | `capturesDir`, for new image files | *what does the screen actually look like* |
 
 **`costLog` is the third of those files and answers a different question — what the arrangement
-cost** — with the wall-clock span and the consumption of each chapter appended as it closes. **What
-earns the file is that it separates a run that bought something from one that bought nothing.** A
-capture run taken through the wrong window is spend like any other and is taken again from the
-start; a record that carries only the second makes the arrangement's cost look like the sum of its
-useful work, and the waste leaves no trace in any total. One such run cost 157,540 tokens and
-produced not one usable picture, which is a figure nothing that omitted it could ever have shown —
-and it is the figure that argues for the pre-flight the `capture-taker` now runs.
+cost** — with the wall-clock span and the consumption of each chapter appended as it closes,
+measured against a start stamped when that chapter's first agent went out → *The dispatch is
+planned, written down, and then made*. **What earns the file is that it separates a run that
+bought something from one that bought nothing.** A capture run taken through the wrong window is
+spend like any other and is taken again from the start; a record that carries only the second
+makes the arrangement's cost look like the sum of its useful work, and the waste leaves no trace
+in any total. One such run cost 157,540 tokens and produced not one usable picture, which is a
+figure nothing that omitted it could ever have shown — and it is the figure that argues for the
+pre-flight the `capture-taker` now runs.
 
 **Arm both watches in the same turn the agent is dispatched**, not afterwards. A
 coordinator is busy between events and two turns is an hour, so "I will check the log"
@@ -1367,7 +1487,10 @@ node "${CLAUDE_PLUGIN_ROOT}/skills/board-to-app/scripts/bta.mjs" check
 | every chapter is named in the state ledger | `ledgerGate` |
 | a capture sits under a declared language and its name parses | `capturesGate` — it holds the PLACE and the SHAPE. The variant is 「lower case, digits and hyphens」 and nothing more, so every word a project layers into it — a theme, a width, a state — passes here whatever it says. **A convention naming a project's own vocabulary is that project's checker to hold**, and one whose default can change is read off the product rather than written down: a project declaring 「bare means the default scheme」 had a run write `-dark-` into a name, and this gate was green over both spellings |
 | a capture was taken through the window the project declared, and is a picture a reader can measure at all | `everyCaptureIsAtADeclaredWidth` — the file's own header states the canvas it was encoded from, which is the one half of the standard a picture still remembers; a whole multiple passes, because a device pixel ratio of two is a right window and a wide file |
-| every commit says which chapter it belongs to, and one that belongs to none says `setup` | `trailerGate` — it takes any word, so which word is fixed here rather than per project |
+| a capture was taken in the colour scheme the project declared | `everyCaptureIsInTheDeclaredScheme` — **a warning while a backlog stands**, promoted in the change that drives it to zero. The scheme is in the pixels and nowhere else, so it decodes each capture small and reads its luma; a scheme is not settled with certainty that way and does not have to be, because what separates the two in an application UI is the whole range rather than a margin. A decoder it cannot run is reported rather than passed |
+| a result document says what was on the screen, not which run put it there | `evidenceStatesWhatWasSeen` — quoted spans are stripped first, which is what makes the family safe: a round is a real thing on some screens, so `「이번 회차 측정값」` is a field name and `이 회차에 만든` is a trace, in one repository → `ROUND_PHRASES` |
+| a capture holds more than an empty canvas of its size would | `everyCaptureIsDenserThanAnEmptyCanvas` — **a warning**, because what it raises is 「open this one」, and the reading it narrows the pile for is the coordinator's row in the table below. It measures bytes against the canvas rather than bytes, since quality and device pixel ratio are both undeclared and an absolute count reads a blank 2×-ratio shot as a fuller screen; an empty canvas costs about 1,900 bytes per megapixel at any quality and any size, and the sparsest real screen 3,900. Failing on it would leave one way to green a correct picture — re-encode it larger — which silences the check for the next one that really is blank |
+| every commit says which chapter it belongs to, and one that belongs to none says `setup` | `trailerGate` — it takes any word, so which word is fixed here rather than per project, and it takes its answer from `%(trailers)` rather than from the look of the message, because a block git discarded reads exactly like one it parsed |
 | a census counts both sides, and names the sites that do not reach the mechanism | `censusCountsBothSides` — it reads the counts by position and not by word, so a project writes the line in its own language |
 | every numbered section of a chapter carries the line that closes it — a persona's, or a machine's | `everySectionCarriesItsClosingLine` — the section is the unit, because a chapter whose other sections are fine reads as sound while one of them was never asked for anything, and every gate downstream takes its demands from the lines this one holds |
 | a demand naming a capture says why a picture is the only witness for that one | `everyCaptureDemandGivesItsReason` — the words are the project's `captureReasons`, the clause is the unit, and whether the reason is true is the row below → `references/demands.md` |
@@ -1400,9 +1523,12 @@ whose eyes and at which moment**, for the reason the next paragraph gives:
 | a word a transcription reports is one the screen draws rather than one only the accessibility tree carries | **the `capture-judge`**, before it returns its disagreements, opening the picture for every sentence the taker marked `named` — never the taker, which read the tree | a `title` attribute and a text node are the same string in the tree, so 「보기」 over an eye icon and 「보기」 on a labelled button are one sentence in the transcription and two different screens in the picture |
 | a screen holds up for the person whose work it carries | **the builder**, in character, during the persona run | that is what the persona run is |
 | a prerequisite the derived graph did not name | **the agent that meets it**, at the moment it blocks | it surfaces while building; the agent that meets it stops and reports |
+| a chapter's start was stamped as its first agent went out, rather than reconstructed at the close | **the coordinator**, in the turn that chapter's first agent is dispatched | a dispatch changes no file and lands no commit, so there is nothing in the repository for a gate to date — and by the close the start is recoverable from a builder's log at best and from nobody at worst |
+| a deletion and a read over the same pile of files were sequenced rather than overlapped | **the coordinator**, before either instruction is sent — it is the only party holding both | the two are prompts, and neither leaves an artifact to hold against the other; an ignored directory has no reflog, so what the deletion took is unrecoverable and the reader returns findings that read as sound over files nobody can open |
 | two chapters may run at once | **the coordinator**, before each dispatch | a resource judgment, made per dispatch against facts that change |
 | what a wave shares outside the repository being built | **the agent it blocks**, in the turn it blocks them | no diff in this repository shows a plugin checkout, a global setting or a shared script — and the agent one of them blocks is the only agent that can unblock it |
-| whether a brief carried what its own checks need, and the design chapter that governs the work | **the coordinator**, reading the brief back against itself before sending it | a prompt leaves no artifact, so the only reading of a brief is the one the coordinator takes before sending it — a gate can hold that a chapter file cites a design chapter, never that a brief did |
+| whether a brief carried what its own checks need, the design chapter that governs the work, and **through which channel each thing it asks for is to reach you** — a named agent sends its report, an unnamed subagent has only its run log | **the coordinator**, reading the brief back against itself before sending it | a prompt leaves no artifact, so the only reading of a brief is the one the coordinator takes before sending it — a gate can hold that a chapter file cites a design chapter, never that a brief did. Both ways of getting the channel wrong read as an agent that went quiet: one wrote its report into the void, the other was asked for step reports it had no way to send |
+| a second coordinating position is on this checkout | **whoever opens a session**, reading the ledger's plan section at step 2 of *Opening a session* — the same reading that says which chapter is open | commits from another position read as 「somebody committed」, which is ordinary; what is not ordinary is a plan naming agents you did not dispatch, and only somebody who knows what they sent can see it |
 | a rule that became a checker was reached in this run | **whoever added the checker**, in the same change | four ways it is not, all four reading as a passing run — a checker cannot report on the comparison it never made |
 | how much a red gate command left unmeasured | **whoever ran it**, off its log, before reporting the result | the exit status is honest and says only that the run stopped; how far a chained command got is read off its log by somebody |
 | which of two commands a step's proof is read off | **whoever writes the step down** | a report and a gate both exit zero on a healthy project, so only somebody who knows which one can fail can say whether a proof was taken → `references/checks.md` |
@@ -1638,6 +1764,22 @@ and the failures are fixed rather than listed. Before saying so:
    rather than by the tail of its log → `references/harness.md`. `bta.mjs check` is one
    of them, and `bta.mjs gates` runs whenever a gate was added or changed.
 
+   **This run happens AFTER the builder has returned, never beside it.** The builder runs the same
+   gate before it stands down, so a coordinator that starts its own while the builder is finishing
+   puts two full runs on one database — the collision *Judge the overlap* already names, with the
+   coordinator as a party to it rather than a second chapter. Both sides pay: one run is killed
+   mid-suite and the other's last checker blocks for ten minutes on locks the dead one never
+   released. Until the builder returns, the coordinator judges by artifact — the captures, the
+   result document, `git log` — none of which touches the database.
+
+   **And a killed run is a third state that the exit status cannot tell you apart from a failure.**
+   `143` is not red and not green; it is a reading that does not exist, and anything checking only
+   for zero files it as a defect in the code. Say which it was — 「terminated during checker 50 of
+   50」 rather than 「the gate failed」 — and re-run from clean rather than reasoning about the
+   fragment. **The residue is the part that bites next**: processes from an interrupted run keep
+   whatever locks they held, so the following run fails somewhere that has nothing to do with the
+   work. Clear them, and say in the report that you did.
+
    **Where one entry is itself a chain of checkers, red does not mean 「one of them is wrong」 — it
    means 「everything after it was not measured」.** The exit status is honest; the reading is what
    goes wrong, and 「one place is not green」 and 「twenty-two have not been looked at」 are the same
@@ -1734,11 +1876,9 @@ find out what happened, which spends the context the subagent existed to protect
 answer does not come, **verify the few claims that decisions rest on — by running the thing, not by
 reading the diff** — and move on rather than chasing.
 
-**Before asking twice, check how that agent's report was supposed to reach you.** An agent launched
-as a *named teammate* does not return its final message; it has to send one, and an agent that
-wrote a full report as ordinary text believes it has reported while nothing has arrived. So the
-second ask names the mechanism rather than repeating the request — *send it, do not write it* — and
-every brief for a named agent says which of the two it is.
+**Before asking twice, check how that agent's report was supposed to reach you**, and let the
+second ask name the mechanism rather than repeat the request → *The unit of work is a chapter, and
+one agent takes one chapter* § 8, where the brief that settles it is written.
 
 **A reading that contradicts a report is a clock before it is a defect** — take the reading out of a
 commit, never off the working tree → `references/harness.md`.
