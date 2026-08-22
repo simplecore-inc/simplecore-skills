@@ -22,9 +22,12 @@
 // closed chapter, what a chapter's persona line looks like, what the three labels under a section
 // are called — all declared, all read through `ctx`. What is fixed here is what a project does not
 // get to vary without the checks becoming unreadable: one image format, one capture-name grammar,
-// one ceiling on the bytes. A second format would mean a second reader for every name and a
-// ceiling that means something different on each side of it; the day a project genuinely needs
-// one, it becomes a schema key rather than a second regex.
+// one ceiling on the bytes and one floor under how much of a canvas they cover. A second format
+// would mean a second reader for every name and a ceiling that means something different on each
+// side of it; the day a project genuinely needs one, it becomes a schema key rather than a second
+// regex.
+import { execFileSync } from 'node:child_process';
+
 import { proseLines, tableCells } from './prose.mjs';
 
 /** The only image format a result document cites, and the bytes one of them may take. */
@@ -32,21 +35,33 @@ const CAPTURE_SUFFIX = '.webp';
 const CAPTURE_BYTES = 150 * 1024;
 
 /**
- * Below which a capture is almost certainly a shot taken before the page painted.
+ * The bytes per megapixel below which a capture holds no more than an empty canvas.
  *
  * <p><b>A blank capture is consistent with everything except the file.</b> The taker read the
  * screen, the screen was right, and what landed on disk is a white rectangle — nothing in the run
  * disagrees with anything else, and the sentence written beside it reads correctly. Only the bytes
- * know: a screenshot of text and borders does not compress, so a built screen runs to tens of
- * thousands of bytes and a blank one to a few.
+ * know: a screenshot of text and borders does not compress, and an empty one has nothing to
+ * compress.
  *
- * <p><b>The sparsest legitimate screen sets the number.</b> A sign-in form on a plain background —
- * about as little as a real screen ever draws — measured around nine kilobytes where a blank shot
- * of the same viewport measured under six. Seven sits between them with room on both sides, and it
- * is a warning rather than an error because the judgement is 「open this one」 rather than 「this is
- * wrong」.
+ * <p><b>The measure is bytes against the canvas, because bytes alone measure the window and the
+ * encoder as much as the screen.</b> Two things vary that nobody declares. Encoding quality moves
+ * the same pixels by a third — one sign-in frame runs 5,048 bytes at q40 and 7,848 at q95 — and
+ * the canvas moves them by the area, so a blank shot at a device pixel ratio of two costs four
+ * times a blank shot at one. Against an absolute count both read as a fuller screen, and the
+ * second passes a blank 2880×1800 capture outright at 9,320 bytes.
+ *
+ * <p><b>Density is flat across both, which is what makes it the right measure.</b> An empty canvas
+ * costs a near-fixed number of bytes per macroblock, so it lands at 1,800 to 2,000 bytes per
+ * megapixel at every quality and every canvas — 2,394 bytes at q95 and 2,398 at q40 for the same
+ * white 1440×900, 1,798 per megapixel for the same page at twice the ratio, 2,017 on a phone
+ * canvas. The sparsest legitimate screen sits well above: a sign-in form on a plain ground, about
+ * as little as a real screen ever draws, measures 3,895 at q40 and 6,056 at q95, and the console
+ * screens beside it 4,660 and 5,452 at that same floor quality. This number is the geometric
+ * middle of that gap — 39% above the highest blank reading and 28% under the lowest real one — so
+ * a project encoding anywhere in the usual range has room on both sides, and re-encoding a
+ * picture larger buys nothing.
  */
-const CAPTURE_FLOOR = 7 * 1024;
+const CAPTURE_FLOOR_PER_MPX = 2800;
 
 
 /**
@@ -330,6 +345,51 @@ function capturedFrames(text, stem) {
 }
 
 /**
+ * Which frame each frame is drawn on top of, as the board's own source records it.
+ *
+ * <p>A board draws a state, a dialog or a companion pane-set by importing the frame it sits on —
+ * `import base, { head } from './b-02-site-detail.mjs'` — and that import is the only place the
+ * relationship is written down. It is the same kind of board knowledge this file already carries
+ * in `CAPTURE_NAME`, which spells a pane as `<frame>-t<pane>`.
+ *
+ * <p><b>Why an evidence gate needs it.</b> A companion frame has no screen of its own: opening it
+ * navigates to its base's address and draws its base's panes. So the picture that proves it is the
+ * base's, and a gate holding out for a file bearing the companion's own id is asking for either a
+ * byte-for-byte copy of a sibling or a second shot of the same pane. One project filed exactly
+ * that copy, and it read in the folder like a second observation.
+ */
+function drawnOn(ctx) {
+  // Its own pattern rather than `FRAME_ID`: board sources name a frame in lower case, and that
+  // constant is both upper-case-only and global — an `exec` against a global regex carries its
+  // `lastIndex` into the next call, so reusing it here would read every other file correctly.
+  const STEM = /^([a-z]-\d{2,})(?:-[a-z0-9-]+)?$/;
+  const declared = ctx.declared('boardRoot');
+  const base = new Map();
+  for (const entry of ctx.list(ctx.at('boardRoot')) ?? []) {
+    if (!entry.endsWith('.mjs')) continue;
+    const stem = STEM.exec(entry.slice(entry.lastIndexOf('/') + 1, -'.mjs'.length));
+    if (!stem) continue;
+    const source = ctx.read(`${declared}/${entry}`);
+    const from = source && /^import\s+base\b[^;]*?from\s+'\.\/([a-z]-\d{2,}[a-z0-9-]*)\.mjs'/m.exec(source);
+    if (!from) continue;
+    const parent = STEM.exec(from[1]);
+    if (parent) base.set(stem[1].toUpperCase(), parent[1].toUpperCase());
+  }
+  return base;
+}
+
+/** Every frame a capture of this one also stands for — itself, what it is drawn on, and so on up. */
+function upFrom(id, base) {
+  const chain = [id];
+  const seen = new Set(chain);
+  for (let at = base.get(id); at && !seen.has(at); at = base.get(at)) {
+    chain.push(at);
+    seen.add(at);
+  }
+  return chain;
+}
+
+/**
  * One evidence document read as its sections.
  *
  * <p>`proseLines` is not enough here. A section that proves a machine verification carries the
@@ -608,14 +668,6 @@ export const closedChapterHasEvidence = {
               `${image}: ${Math.round(bytes / 1024)}KB, over the ${CAPTURE_BYTES / 1024}KB ceiling — `
               + 'a repository that accumulates every frame of every chapter stops being usable'
             );
-          } else if (bytes < CAPTURE_FLOOR) {
-            findings.push(
-              `${image}: ${Math.round(bytes / 1024)}KB — a screenshot of a built screen does not `
-              + 'compress this small, so this is very likely a shot taken before the page painted: '
-              + 'a white rectangle with a correct-looking sentence beside it. An empty LIST is not '
-              + 'this — it still draws the shell, the header and the empty-state wording and comes '
-              + 'out the usual size. Open it, and take it again if it is blank'
-            );
           }
         }
       }
@@ -678,7 +730,7 @@ export const closedChapterHasEvidence = {
 export const everyPlacedFrameIsCaptured = {
   id: 'everyPlacedFrameIsCaptured',
   title: 'a closed chapter showing no capture of a frame it built, so the screen was never opened',
-  needs: ['chapterDir', 'stateLedger', 'evidenceDir', 'closedStatus'],
+  needs: ['chapterDir', 'stateLedger', 'evidenceDir', 'closedStatus', 'boardRoot'],
   run: (ctx) => {
     const dir_ = ctx.declared('evidenceDir');
     const closed = closedChapters(ctx);
@@ -686,6 +738,7 @@ export const everyPlacedFrameIsCaptured = {
 
     const dir = ctx.declared('chapterDir');
     const closedWord = ctx.declared('closedStatus');
+    const base = drawnOn(ctx);
     const findings = [];
     for (const [chapter, file] of [...chapterFiles(ctx)].sort()) {
       if (!closed.has(chapter)) continue;
@@ -696,7 +749,9 @@ export const everyPlacedFrameIsCaptured = {
       const shown = capturedFrames(text, stem);
 
       for (const id of [...demandedFrames(ctx, `${dir}/${file}`)].sort()) {
-        if (shown.has(id)) continue;
+        // A frame the board draws on top of another has no screen of its own — opening it lands on
+        // the base's address and draws the base's panes — so the base's picture is its picture.
+        if (upFrom(id, base).some((at) => shown.has(at))) continue;
         findings.push(
           `${rel}: ${chapter} is ${closedWord} and shows no ${stem}/${id.toLowerCase()}${CAPTURE_SUFFIX} — `
           + `${dir}/${file} builds ${id} and tells somebody to open it, and a frame nothing `
@@ -950,9 +1005,9 @@ function webpCanvas(buf) {
  *
  * <p>Named rather than merely refused, because the commonest way a capture becomes unmeasurable is
  * a driver's own screenshot filed under the capture name without being encoded: nine files in one
- * project's evidence folder opened as PNG under a `.webp` name, passing the name check, the size
- * ceiling and the blank floor, with nothing in any of them reading a byte. 「Not a WebP」 sends the
- * reader looking for corruption; 「this is a PNG」 says what to run.
+ * project's evidence folder opened as PNG under a `.webp` name, passing the name check and the size
+ * ceiling — neither of which opens a byte — and telling the two gates that do open one nothing at
+ * all. 「Not a WebP」 sends the reader looking for corruption; 「this is a PNG」 says what to run.
  */
 function looksLike(buf) {
   if (!buf || buf.length < 12) return null;
@@ -1006,7 +1061,7 @@ export const everyCaptureIsAtADeclaredWidth = {
         findings.push(
           `${rel}: ${really ? `the bytes open as ${really}, under a ${CAPTURE_SUFFIX} name` : `the bytes do not open as ${CAPTURE_SUFFIX}`}`
           + ' — so nothing here says what window this was shot through, and a capture nobody can '
-          + 'measure passes the name check, the ceiling and the blank floor by not being read. '
+          + 'measure passes the name check and the ceiling by never being opened. '
           + `${really ? 'Encode it' : 'Take it again'} through the declared driver`
         );
         continue;
@@ -1018,6 +1073,194 @@ export const everyCaptureIsAtADeclaredWidth = {
         + 'and the run that took it reports nothing — so this is re-taken rather than judged. '
         + `Where the board genuinely draws this frame at ${canvas.width}, that width belongs in `
         + 'captureStandard beside the others'
+      );
+    }
+    return findings;
+  },
+};
+
+// ── The other half of the standard ─────────────────────────────────────────
+//
+// **The header records the window and says nothing about the scheme, so this one reads the
+// pixels.** That is a real cost — a decoder has to run — and it buys the half of `captureStandard`
+// that was declared, described in the config as the thing that goes wrong, and held by nobody: six
+// captures in one project were taken in dark mode where the board measures in light, and the run
+// reported nothing. Two more reached a chapter's evidence folder five days after the console they
+// showed had changed, and every gate over that folder stayed green.
+//
+// **A scheme is not recoverable from a picture with certainty, and it does not have to be.** What
+// separates the two cases in an application UI is the whole range: one console's captures measure
+// 12–14 in dark and 248 in light. The band below is set far wider than that gap on both sides, so
+// what fires is a screen shot in the wrong scheme rather than a screen with a lot of dark content
+// in it — and a frame that genuinely sits between the two says nothing, which is the right answer
+// for a picture whose scheme its own pixels do not settle.
+
+/** Where a capture stops being merely dark-ish and starts contradicting a declared scheme. */
+const LIGHT_FLOOR = 96;
+const DARK_CEILING = 160;
+
+/** Rec. 601 luma, averaged over a decode small enough that the cost is the process rather than the pixels. */
+function captureLuma(path) {
+  const ppm = execFileSync('dwebp', ['-quiet', '-scale', '8', '8', '-ppm', path, '-o', '-'], {
+    encoding: 'buffer',
+    stdio: ['ignore', 'pipe', 'ignore'],
+    maxBuffer: 1 << 20,
+  });
+  const head = ppm.subarray(0, 32).toString('latin1');
+  const at = head.indexOf('255\n');
+  if (!head.startsWith('P6') || at < 0) return null;
+  const px = ppm.subarray(at + 4);
+  if (px.length < 3) return null;
+  let sum = 0;
+  let n = 0;
+  for (let i = 0; i + 2 < px.length; i += 3, n += 1) {
+    sum += (px[i] * 299 + px[i + 1] * 587 + px[i + 2] * 114) / 1000;
+  }
+  return n ? Math.round(sum / n) : null;
+}
+
+/**
+ * Every capture on disk is in the colour scheme the project declared.
+ *
+ * <p><b>It judges only where the project said one thing.</b> Standards that name different schemes,
+ * or a scheme of `no-preference`, leave nothing to hold against — a board that is genuinely drawn
+ * both ways has declared exactly that, and a gate that picked one of them would redden on frames
+ * that are right.
+ *
+ * <p><b>A decoder it cannot run is a finding rather than a silence.</b> `dwebp` ships beside the
+ * `cwebp` that wrote these files, so its absence means the captures were encoded somewhere this
+ * check has never run — and a gate that goes quiet there is indistinguishable from one that read
+ * every picture and found them sound.
+ *
+ * <p><b>Why it is a warning.</b> A rule written after captures already exist finds a backlog, and
+ * the backlog belongs to whichever chapters took those pictures rather than to the chapter that
+ * happens to be closing. Reddening the tree would hold that chapter hostage to somebody else's
+ * debt. **It is promoted to `error` in the change that drives the count to zero** — which arrives
+ * on its own, because an open chapter re-takes its captures when it runs.
+ */
+export const everyCaptureIsInTheDeclaredScheme = {
+  id: 'everyCaptureIsInTheDeclaredScheme',
+  title: 'a capture shot in a colour scheme the project did not declare',
+  grade: 'warning',
+  needs: ['evidenceDir', 'captureStandard'],
+  run: (ctx) => {
+    const schemes = [...new Set(standardsOf(ctx).map((entry) => entry.colorScheme))];
+    if (schemes.length !== 1) return [];
+    const want = schemes[0];
+    if (want !== 'light' && want !== 'dark') return [];
+
+    const dir_ = ctx.declared('evidenceDir');
+    const shots = (ctx.list(ctx.at('evidenceDir')) ?? []).filter((e) => e.endsWith(CAPTURE_SUFFIX));
+    if (!shots.length) return [];
+
+    const findings = [];
+    for (const entry of shots) {
+      const rel = `${dir_}/${entry}`;
+      let luma;
+      try {
+        luma = captureLuma(ctx.inRoot(rel));
+      } catch (error) {
+        return [
+          `${dir_}: the colour scheme of ${shots.length} capture${shots.length === 1 ? '' : 's'} `
+          + `could not be read — \`dwebp\` did not run (${error.code ?? error.message}). It ships `
+          + 'beside the `cwebp` that encodes these files, so this run cannot tell a folder shot in '
+          + `the declared ${want} scheme from one shot in the other, and says so rather than passing`,
+        ];
+      }
+      if (luma === null) continue; // the width gate already speaks about bytes that will not open
+      if (want === 'light' && luma >= LIGHT_FLOOR) continue;
+      if (want === 'dark' && luma <= DARK_CEILING) continue;
+      findings.push(
+        `${rel}: mean luma ${luma}, and the declared scheme is ${want}. A capture in the other `
+        + 'scheme cannot be held against its siblings or against the board, and it reads as a '
+        + 'correct run — the name parses, the width is right and the transcription beside it is '
+        + 'complete. Re-take it with the console in the declared scheme'
+      );
+    }
+    return findings;
+  },
+};
+
+// ── The picture with nothing on it ─────────────────────────────────────────
+//
+// A shot taken before the page painted is the one defect in an evidence folder that agrees with
+// every other artifact in the run: the taker read the screen and read it correctly, the sentence
+// beside the picture describes what was there, the name parses, the width is right, and the file
+// is a white rectangle. Nothing disagrees with anything, which is why only the bytes can raise it.
+//
+// **What it raises is 「open this one」, and that is a warning rather than an error.** The reading
+// it points at — is the screen in this picture built, or is it the shell — is one this skill has
+// already given to a person by name, and the byte count neither takes that reading nor stands in
+// for it. What it does is narrow the pile that reading starts from. A rule that is right to fire
+// and wrong to fail on is what the warning grade is for, and failing here has a specific cost
+// beyond the usual one: the only way to green a correct picture that lands under the number is to
+// re-encode it larger, which is a change to the file that silences the check for the next capture
+// that really is blank.
+//
+// **The grade sits on the gate, so the floor is a gate of its own.** It travels with the captures
+// a result document shows, and the gate it used to travel inside answers a different question —
+// whether a closed chapter's document has the sections, labels, evidence and files it owes — and
+// answers it in defects. Two kinds of finding under one id would be two rules sharing an id, and
+// no case could be written that pinned either.
+
+/**
+ * Every capture holds more than an empty canvas of its size would.
+ *
+ * <p><b>The unit is bytes per megapixel rather than bytes</b>, because the window and the encoder
+ * are both free variables that no project declares and an absolute count measures all three at
+ * once → `CAPTURE_FLOOR_PER_MPX`.
+ *
+ * <p><b>What it does not claim.</b> A capture of a built shell with nothing inside it passes here
+ * and always will — a shell draws a header, a sidebar and their text, and that is a picture with
+ * something on it. Whether the screen in the picture is built is the coordinator's reading before
+ * the ledger row is written, and `../SKILL.md`'s second table names it.
+ *
+ * <p><b>The shape that answers 「the picture is right」 is a long one.</b> A full-page capture whose
+ * lower two thirds are legitimately empty dilutes exactly the way a blank one does, and only
+ * somebody opening it can part those — which is the same reason the grade is a warning rather than
+ * a reason to widen the number until nothing fires.
+ *
+ * <p><b>「I could not measure it」 is a finding rather than a silence.</b> A file whose header will
+ * not open is one this has said nothing about, and a gate that goes quiet on what it could not
+ * read is indistinguishable from one that read everything and found it sound.
+ * `everyCaptureIsAtADeclaredWidth` speaks about that same file from the other side and as a
+ * defect, naming what the bytes really are; this one speaks where the project declared no
+ * `captureStandard` and that gate does not run at all.
+ */
+export const everyCaptureIsDenserThanAnEmptyCanvas = {
+  id: 'everyCaptureIsDenserThanAnEmptyCanvas',
+  title: 'a capture holding no more than an empty canvas of its size, so very likely a shot taken before the page painted',
+  needs: ['evidenceDir'],
+  grade: 'warning',
+  run: (ctx) => {
+    const dir_ = ctx.declared('evidenceDir');
+    const findings = [];
+    for (const entry of ctx.list(ctx.at('evidenceDir')) ?? []) {
+      if (!entry.endsWith(CAPTURE_SUFFIX)) continue;
+      const rel = `${dir_}/${entry}`;
+      const path = ctx.inRoot(rel);
+      const bytes = ctx.size(path);
+      const canvas = webpCanvas(ctx.bytes(path, 64));
+      if (bytes === null || canvas === null) {
+        findings.push(
+          `${rel}: nothing here says what canvas this was encoded from, so how much of it holds `
+          + 'anything went unmeasured — and a capture nobody measured passes the name check and '
+          + 'the ceiling by not being read at all'
+        );
+        continue;
+      }
+      const density = Math.round(bytes / ((canvas.width * canvas.height) / 1e6));
+      if (density >= CAPTURE_FLOOR_PER_MPX) continue;
+      findings.push(
+        `${rel}: ${density} bytes per megapixel over ${canvas.width}×${canvas.height}, under the `
+        + `${CAPTURE_FLOOR_PER_MPX} a screen with anything drawn on it reaches — an empty canvas `
+        + 'costs about 1,900 at any quality. Open it: a shot taken before the page painted is a '
+        + 'white rectangle with a correct-looking sentence beside it, and is taken again. Two '
+        + 'pictures land here and are right — an empty LIST, which still draws the shell, the '
+        + 'header and the empty-state wording, and a long full-page capture whose lower half is '
+        + 'genuinely empty — and both are answered by saying so. Re-encoding at a higher quality '
+        + 'answers none of the three: quality moves a real screen and leaves a blank one where it '
+        + 'is, so a larger file only hides the next capture that really is blank'
       );
     }
     return findings;
@@ -1280,6 +1523,8 @@ export const EVIDENCE_GATES = [
   deferredCheckNamesAChapter,
   chapterOwedACheckDoesNotClose,
   everyCaptureIsAtADeclaredWidth,
+  everyCaptureIsInTheDeclaredScheme,
+  everyCaptureIsDenserThanAnEmptyCanvas,
   everyCaptureDemandGivesItsReason,
   dischargedDemandNamesItsProof,
 ];
@@ -1352,17 +1597,18 @@ const LEDGER_NAMED = (w01, w02) =>
   + `| W01 | 개발 기반 | ${w01} | 「닫힘」이라 적기 전에 결과 문서를 쓴다 |\n`
   + `| W02 | 조직·계정 | ${w02} | |\n`;
 
-/** The one capture the screen chapter's document shows, with the bytes it takes. */
 /**
- * A capture fixture. The default body is padded past the blank-capture floor on purpose: a
- * twelve-byte placeholder stands in for a picture in every dimension except the one the floor
- * measures, so a fixture that looks nothing like a screenshot would make every case here report a
- * blank capture and the rule would have to be weakened to fit its own fixtures.
+ * The one capture the screen chapter's document shows.
+ *
+ * <p>The body stands in for a picture in the two dimensions the gates over a result document
+ * read — it is on disk under a name that parses, and it sits under the size ceiling. It states no
+ * canvas, so it is not a fixture for anything that opens a picture: the gates that do are proved
+ * against `webpOf`, whose bytes are the real header layout.
  */
 const CAPTURE = (body = `RIFF····WEBP${'\0'.repeat(9 * 1024)}`) => ({ 'docs/evidence/w02-org-shell/a-01.webp': body });
 
 /**
- * A capture whose header really does state the canvas given, padded past the blank floor.
+ * A capture whose header really does state the canvas given, at the byte length given.
  *
  * <p><b>The bytes are the real layout rather than a stand-in</b>, because the thing under test is
  * a reader of those bytes: a fixture that agreed with the reader by construction would pass
@@ -1660,16 +1906,6 @@ export function cases(t) {
   );
   t.add(
     'closedChapterHasEvidence',
-    'a capture too small to be a picture of a built screen',
-    evidence({
-      'tracking/STATE.md': LEDGER('열림', '열림'),
-      'docs/evidence/w02-org-shell.md': W02_EVIDENCE(W02_SCREEN_SECTION),
-      ...CAPTURE('RIFF····WEBP'),
-    }),
-    true
-  );
-  t.add(
-    'closedChapterHasEvidence',
     'a capture of a frame the chapter does not place',
     evidence({
       'tracking/STATE.md': LEDGER('열림', '열림'),
@@ -1737,6 +1973,68 @@ export function cases(t) {
       'docs/evidence/w02-org-shell.md': W02_EVIDENCE(W02_PROBE_SECTION, W02_SCOPE_SECTION),
     }),
     false
+  );
+
+  // A companion frame — the panes a base's strip names and its own frame does not draw. Opening it
+  // lands on the base's address and draws the base's panes, so the base's picture is its picture.
+  // Holding out for a file under its own id buys a byte-for-byte copy of a sibling; one project
+  // filed exactly that, and in the folder it read like a second observation.
+  const COMPANION_CHAPTER =
+    '# W02. 조직·계정\n\n## 1. A-01 로그인\n\n'
+    + '**개발** — 보드의 `a-01-login`을 그대로 만든다. 이 화면에는 상태 1장이 딸린다 — A-02.\n'
+    + '**테스트 · 시스템 관리자** — 로그인 화면을 연다. 딸린 칸까지 연다.\n';
+  const DERIVED = { 'board/a-02-login-tabs.mjs': "import base, { head } from './a-01-login.mjs';\n" };
+  const OWN_SCREEN = { 'board/a-02-login-tabs.mjs': "import { console_ } from '../chrome.mjs';\n" };
+  const onBoard = (files) =>
+    t.project({
+      config: { ...WORDS, chapterDir: 'chapters', stateLedger: 'tracking/STATE.md', boardRoot: 'board' },
+      files: { ...CHAPTER_TEXT, ...files },
+    });
+  const companion = (files) =>
+    onBoard({
+      'chapters/w02-org-shell.md': COMPANION_CHAPTER,
+      'tracking/STATE.md': LEDGER('닫힘', '닫힘'),
+      'docs/evidence/w01-foundation.md': W01_EVIDENCE,
+      'docs/evidence/w02-org-shell.md': W02_EVIDENCE(W02_SCREEN_SECTION),
+      ...files,
+    });
+
+  t.add(
+    'everyPlacedFrameIsCaptured',
+    'a companion frame whose base is photographed',
+    companion(DERIVED),
+    false,
+  );
+  // The board says this one is a screen in its own right, so nobody has opened it.
+  t.add(
+    'everyPlacedFrameIsCaptured',
+    'a frame of its own that the document never photographs',
+    companion(OWN_SCREEN),
+    true,
+  );
+  t.add(
+    'everyPlacedFrameIsCaptured',
+    'a companion frame whose base is not photographed either',
+    onBoard({
+      'chapters/w02-org-shell.md': COMPANION_CHAPTER,
+      'tracking/STATE.md': LEDGER('닫힘', '닫힘'),
+      'docs/evidence/w01-foundation.md': W01_EVIDENCE,
+      'docs/evidence/w02-org-shell.md': W02_EVIDENCE(W02_SCOPE_SECTION),
+      ...DERIVED,
+    }),
+    true,
+  );
+  // A dialog drawn on a companion, which is drawn on the base. The chain is walked to the top —
+  // stopping at one step would redden the second storey of a board that stacks them.
+  t.add(
+    'everyPlacedFrameIsCaptured',
+    'a frame two storeys above the one that was photographed',
+    companion({
+      'chapters/w02-org-shell.md': COMPANION_CHAPTER.replace('— A-02.', '— A-03.'),
+      ...DERIVED,
+      'board/a-03-login-dialog.mjs': "import base from './a-02-login-tabs.mjs';\n",
+    }),
+    false,
   );
   const quoted = (files) =>
     t.project({
@@ -1917,6 +2215,53 @@ export function cases(t) {
     shot({ 'docs/evidence/w02-org-shell/a-01.webp': webpOf(1440, 1200, { form: 'extended' }) }),
     false,
   );
+
+  // everyCaptureIsInTheDeclaredScheme — the half no header carries, so these fixtures are real
+  // encoded pixels rather than a hand-built header. A synthetic one would decode to nothing and
+  // the gate would go quiet on every case, which is the state it exists to end.
+  const DARK_SHOT = Buffer.from('UklGRhoAAABXRUJQVlA4TA4AAAAvB8ABAAcQEf0PRET/Aw==', 'base64');
+  const LIGHT_SHOT = Buffer.from('UklGRh4AAABXRUJQVlA4TBEAAAAvB8ABAAfQ//73v/+BiOh/AAA=', 'base64');
+  const DARK_STANDARD = [{ width: 1440, height: 1200, colorScheme: 'dark' }];
+
+  t.add(
+    'everyCaptureIsInTheDeclaredScheme',
+    'the console came back in dark mode and every other gate over the folder stayed green',
+    shot({ 'docs/evidence/w02-org-shell/a-01.webp': DARK_SHOT }),
+    true,
+  );
+  t.add(
+    'everyCaptureIsInTheDeclaredScheme',
+    'the same frame re-taken in the declared scheme',
+    shot({ 'docs/evidence/w02-org-shell/a-01.webp': LIGHT_SHOT }),
+    false,
+  );
+  // The mirror. A gate that had 「light」 written into it rather than read from the config would
+  // pass this, and a project whose board is drawn dark would be held to somebody else's scheme.
+  t.add(
+    'everyCaptureIsInTheDeclaredScheme',
+    'a light capture where the project declared dark',
+    shot({ 'docs/evidence/w02-org-shell/a-01.webp': LIGHT_SHOT }, DARK_STANDARD),
+    true,
+  );
+  // Two standards that name different schemes is a board genuinely drawn both ways. Picking one
+  // of them would redden frames that are exactly right, so there is nothing here to hold against.
+  t.add(
+    'everyCaptureIsInTheDeclaredScheme',
+    'a dark capture where the project declared both schemes',
+    shot({ 'docs/evidence/w02-org-shell/a-01.webp': DARK_SHOT }, [
+      { width: 1440, height: 1200, colorScheme: 'light' },
+      { width: 768, height: 1024, colorScheme: 'dark' },
+    ]),
+    false,
+  );
+  t.add(
+    'everyCaptureIsInTheDeclaredScheme',
+    'a dark capture where the project declared no preference',
+    shot({ 'docs/evidence/w02-org-shell/a-01.webp': DARK_SHOT }, [
+      { width: 1440, height: 1200, colorScheme: 'no-preference' },
+    ]),
+    false,
+  );
   t.add(
     'everyCaptureIsAtADeclaredWidth',
     'the same extended form at a width nobody declared',
@@ -1932,7 +2277,7 @@ export function cases(t) {
     true,
   );
   // The driver's own screenshot, filed under the capture name without ever being encoded. It
-  // passes the name check, the ceiling and the blank floor, because none of those opens a byte.
+  // passes the name check and the ceiling, because neither of those opens a byte.
   t.add(
     'everyCaptureIsAtADeclaredWidth',
     'a PNG wearing the capture suffix',
@@ -1948,6 +2293,73 @@ export function cases(t) {
     'everyCaptureIsAtADeclaredWidth',
     'an evidence folder holding documents and no captures yet',
     shot({ 'docs/evidence/w02-org-shell.md': W02_EVIDENCE(W02_SCREEN_SECTION) }),
+    false,
+  );
+
+  // ── The picture with nothing on it ───────────────────────────────────────
+  //
+  // **Both edges of this one are measured rather than argued**, because the gap between them is
+  // narrow and every number in it belongs to a real encode: `blank` is a white 1440×900 canvas at
+  // q80 and `sparse` is the sparsest real screen a board draws, a sign-in form on a plain ground,
+  // taken through the same window and the same encoder. The second is the edge that matters — a
+  // floor set anywhere above it turns a correct picture red, and the only way to green one is to
+  // re-encode it larger, which is a change to the file that silences the check for the next one
+  // that really is blank.
+  const painted = (files) => t.project({ config: { ...WORDS }, files });
+  const blank = (w, h, bytes) => ({ 'docs/evidence/w02-org-shell/a-01.webp': webpOf(w, h, { bytes }) });
+
+  t.add(
+    'everyCaptureIsDenserThanAnEmptyCanvas',
+    'a shot of the viewport taken before the page painted',
+    painted(blank(1440, 900, 2396)),
+    true,
+  );
+  t.add(
+    'everyCaptureIsDenserThanAnEmptyCanvas',
+    'the sparsest screen a board draws, taken at the quality that made it smallest',
+    painted(blank(1440, 900, 5048)),
+    false,
+  );
+  // The same picture through a higher-quality encoder. Both readings are of one screen, and a
+  // measure that passed one and failed the other would be measuring the encoder.
+  t.add(
+    'everyCaptureIsDenserThanAnEmptyCanvas',
+    'that same screen re-encoded at the top of the quality range',
+    painted(blank(1440, 900, 7848)),
+    false,
+  );
+  // A blank page at a device pixel ratio of two costs four times a blank page at one, so its
+  // bytes clear any absolute count set for a single-ratio run while its density does not move.
+  t.add(
+    'everyCaptureIsDenserThanAnEmptyCanvas',
+    'the same blank viewport shot at a device pixel ratio of two',
+    painted(blank(2880, 1800, 9320)),
+    true,
+  );
+  // A phone canvas pays the fixed header cost over a fifth of the pixels, which lifts an empty
+  // canvas nearer the floor than a desktop one — the direction that narrows the margin.
+  t.add(
+    'everyCaptureIsDenserThanAnEmptyCanvas',
+    'a blank phone canvas, where the fixed cost is the largest share of the file',
+    painted(blank(390, 844, 664)),
+    true,
+  );
+  t.add(
+    'everyCaptureIsDenserThanAnEmptyCanvas',
+    'a real screen on that same phone canvas',
+    painted(blank(390, 844, 2010)),
+    false,
+  );
+  t.add(
+    'everyCaptureIsDenserThanAnEmptyCanvas',
+    'a capture whose bytes say nothing about the canvas they cover',
+    painted({ 'docs/evidence/w02-org-shell/a-01.webp': `RIFF····WEBP${'\0'.repeat(9 * 1024)}` }),
+    true,
+  );
+  t.add(
+    'everyCaptureIsDenserThanAnEmptyCanvas',
+    'an evidence folder holding documents and no captures yet',
+    painted({ 'docs/evidence/w02-org-shell.md': W02_EVIDENCE(W02_SCREEN_SECTION) }),
     false,
   );
 

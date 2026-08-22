@@ -207,13 +207,18 @@ export const SCHEMA = {
   // one was given is what this key lets a machine see.
   captureReasons: { kind: 'phrases', roles: CAPTURE_REASON_ROLES, absent: 'a demand naming a capture is never asked to say why a picture is the witness for it, so a picture somebody judged to be the only witness and one a generator emitted per pane read exactly the same' },
   // The size and colour scheme every capture is taken at. **Declared rather than left to the
-  // driver**, because neither is recoverable from the picture afterwards and both are wrong in a
-  // way that reads as a correct run: a window that came back narrow files a frame with its lower
-  // half missing, and a console in the wrong scheme files a screen nobody can hold against a
-  // sibling. Six captures were taken at 1280 wide in dark mode where the board measures at 1440
-  // in light, and the run reported nothing — the files were written, the sizes were plausible,
-  // the transcription was complete, and every finding of the judging that followed was 「no
-  // capture covers this」.
+  // driver**, because both are wrong in a way that reads as a correct run: a window that came back
+  // narrow files a frame with its lower half missing, and a console in the wrong scheme files a
+  // screen nobody can hold against a sibling. Six captures were taken at 1280 wide in dark mode
+  // where the board measures at 1440 in light, and the run reported nothing — the files were
+  // written, the sizes were plausible, the transcription was complete, and every finding of the
+  // judging that followed was 「no capture covers this」.
+  //
+  // **Both halves are checked, and they are checked differently.** The width is in the header, so
+  // `everyCaptureIsAtADeclaredWidth` reads 64 bytes. The scheme is in the pixels and nowhere else,
+  // so `everyCaptureIsInTheDeclaredScheme` decodes each capture small and reads its luma — which
+  // does not settle a scheme with certainty and does not have to, because what separates the two
+  // in an application UI is the whole range rather than a margin.
   //
   // **One standard, or an array of them where the board genuinely draws at more than one device
   // width.** The array is not a convenience: `everyCaptureIsAtADeclaredWidth` refuses a width it
@@ -253,7 +258,7 @@ export const SCHEMA = {
   eyesPhrases: { kind: 'phrases', roles: EYES_PHRASE_ROLES, requiredWith: 'eyesDocuments', absent: 'the project\'s own eyes rules go unread — **declare these two together or neither**, because 「nothing to find」 and 「no idea what to look for」 come out as the same zero' },
   logDir: { kind: 'outdir', absent: 'there is nothing to watch — say so once, and each agent reports its steps in its return' },
   capturesDir: { kind: 'outdir', absent: 'captures go to the session\'s scratch space and are forwarded by path; nothing is kept' },
-  costLog: { kind: 'outfile', absent: 'what a chapter cost cannot be recovered afterwards; only what git holds survives' },
+  costLog: { kind: 'outfile', absent: 'what a chapter cost cannot be recovered afterwards; only what git holds survives — and with nowhere to stamp a start at the moment of dispatch, the span is gone by the close rather than merely unwritten' },
   narrativePhrases: { kind: 'list', absent: 'the built-in list stands alone' },
   projectGates: { kind: 'file', absent: 'only the generic gates run; anything true of this project alone is held by nobody' },
   disabledGates: { kind: 'exceptions', absent: 'every generic gate runs — which is the default, and a gate is never turned off silently' },
