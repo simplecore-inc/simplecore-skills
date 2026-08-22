@@ -5171,6 +5171,480 @@ return <Button onClick={() => refresh.mutateAsync({ data: { accessToken } })}>{t
     },
   },
   {
+    id: "create-and-update-share-one-body",
+    invariant: "#34",
+    level: "error",
+    desc: "One payload object is handed to both the create and the update, and it carries a create-time constant — a status, an order, an `active: true`. Editing an existing record therefore writes that constant over what the record had: the operator changes a name and the row silently goes back to its opening state. Nothing fails, and the damage is only visible in the database",
+    appliesTo: isSource,
+    check: (c) => {
+      // Every identifier the `data:` of one call is built out of: a bare `data: body`, or each
+      // `...body` spread inside the object. A create branch and an update branch that share the
+      // fields a person typed are right; what is wrong is sharing the object that also holds what
+      // creation decides.
+      const sourcesOf = (text) => {
+        const out = new Set();
+        const bare = /data:\s*([A-Za-z_$][\w$]*)\s*[,)}]/.exec(text);
+        if (bare) out.add(bare[1]);
+        const brace = /data:\s*\{/.exec(text);
+        if (brace) {
+          for (const s of text.slice(brace.index).matchAll(/\.\.\.\s*([A-Za-z_$][\w$]*)/g)) {
+            out.add(s[1]);
+          }
+        }
+        return out;
+      };
+      // The call's own argument text, read to its balanced close paren — a fixed slice runs into
+      // the next call and reports the two branches as one.
+      const argsAt = (from) => {
+        let depth = 0;
+        for (let i = from; i < c.length && i < from + 4000; i++) {
+          if (c[i] === "(") depth++;
+          else if (c[i] === ")") {
+            depth--;
+            if (depth === 0) return c.slice(from, i + 1);
+          }
+        }
+        return c.slice(from, from + 4000);
+      };
+      const grab = (re) => {
+        const out = new Map();
+        for (const m of c.matchAll(re)) {
+          const open = c.indexOf("(", m.index + m[0].length - 1);
+          for (const id of sourcesOf(argsAt(open))) {
+            if (!out.has(id)) out.set(id, lineOfIndex(c, m.index));
+          }
+        }
+        return out;
+      };
+      const creates = grab(/\b\w*[Cc]reate\w*\.mutateAsync\s*\(/g);
+      const updates = grab(/\b\w*[Uu]pdate\w*\.mutateAsync\s*\(/g);
+      const hits = [];
+      for (const [id, line] of updates) {
+        if (!creates.has(id)) continue;
+        // The shared object is only a defect when creation's own answers are inside it. A literal
+        // constant is what that looks like: an enum member, a boolean, a number.
+        const decl = new RegExp(`\\b${id}\\s*=\\s*\\{`).exec(c);
+        if (!decl) continue;
+        // The declaration's own braces, not a slice — a fixed window runs past the object into
+        // the create branch below it, where the create-time constants correctly are, and the rule
+        // then fires on the very shape it exists to accept.
+        const open = c.indexOf("{", decl.index);
+        let depth = 0;
+        let body = "";
+        for (let i = open; i < c.length && i < open + 4000; i++) {
+          if (c[i] === "{") depth++;
+          else if (c[i] === "}") {
+            depth--;
+            if (depth === 0) { body = c.slice(open, i + 1); break; }
+          }
+        }
+        if (!/\w+:\s*(?:true|false|-?\d+(?:\.\d+)?|[A-Z][\w$]*\.[A-Z][\w$]*)\s*[,\n}]/.test(body)) {
+          continue;
+        }
+        hits.push({ line, excerpt: `\`${id}\` is the whole body of the create and of the update` });
+      }
+      return hits;
+    },
+    samples: {
+      file: "modules/site/src/widgets/area/dialog.tsx",
+      broken: `const commit = () => {
+  const body = {
+    siteId,
+    areaName: areaName.trim(),
+    sortOrder: 0,
+    status: AreaStatus.ACTIVE,
+  };
+  const write = creating
+    ? create.mutateAsync({ data: body })
+    : update.mutateAsync({ areaId, data: { ...body, areaId } });
+  return write;
+};`,
+      fixed: `const commit = () => {
+  const edited = { areaName: areaName.trim() };
+  const write = creating
+    ? create.mutateAsync({ data: { siteId, ...edited, sortOrder: 0, status: AreaStatus.ACTIVE } })
+    : update.mutateAsync({ areaId, data: { ...updateBody(loaded), areaId, siteId, ...edited } });
+  return write;
+};`,
+      miss: [
+        {
+          note: "the create-time answers sit inside the create branch, where they belong",
+          source: `const commit = () => {
+  const edited = { areaName: areaName.trim() };
+  const write = creating
+    ? create.mutateAsync({ data: { ...edited, active: true, priority: 100 } })
+    : update.mutateAsync({ areaId, data: { ...loaded, areaId, ...edited } });
+  return write;
+};`,
+        },
+        {
+          note: "a shared object of what the person typed, with no constant of creation's own in it",
+          source: `const commit = () => {
+  const edited = { areaName: areaName.trim(), note: note.trim() || undefined };
+  const write = creating
+    ? create.mutateAsync({ data: { siteId, ...edited } })
+    : update.mutateAsync({ areaId, data: { ...loaded, areaId, ...edited } });
+  return write;
+};`,
+        },
+      ],
+    },
+  },
+  {
+    id: "update-body-enumerated",
+    invariant: "#34",
+    level: "error",
+    desc: "An update body names fewer fields than the endpoint's own DTO declares and never spreads the record the edit read answered with — spreading the form's own values is not the same thing, because those are the fields the screen shows and the missing ones are exactly the fields it does not — the endpoint takes the whole record, so every field the body leaves out is absent from the request and the server writes it away. A hand-kept list always falls behind the DTO, and what falls off first is the translations, which no screen displays. Spread the record the edit read answered with and put the edited fields on top of it",
+    appliesTo: isSource,
+    check: (c) => {
+      // The contract, read from the generated model the update hook names. An endpoint whose DTO
+      // is not on hand is an unknown contract, and an unknown contract is not evidence of a
+      // defect — a body that names every field the DTO declares is complete and is left alone.
+      const index = modelIndex();
+      let dto = null;
+      let stored = null;
+      for (const m of c.matchAll(/\buse[Uu]pdate([A-Z]\w*)\s*\(/g)) {
+        const entity = m[1].charAt(0).toLowerCase() + m[1].slice(1);
+        if (!index.has(entity + "UpdateDTO")) continue;
+        dto = index.get(entity + "UpdateDTO");
+        // What the endpoint's own read answers with. A field the write accepts and the read never
+        // returns is written per save and stored nowhere — a reason, an idempotency key — so
+        // leaving it out blanks nothing and is not this defect.
+        stored =
+          index.get(entity + "UpdateFormDTO")
+          ?? index.get(entity + "DetailDTO")
+          ?? index.get(entity + "DTO")
+          ?? null;
+        break;
+      }
+      if (!dto || dto.size === 0 || !stored) return [];
+      // The object literal that starts at `from`, read to its balanced close brace.
+      const objectAt = (from) => {
+        let depth = 0;
+        for (let i = from; i < c.length && i < from + 4000; i++) {
+          if (c[i] === "{") depth++;
+          else if (c[i] === "}") {
+            depth--;
+            if (depth === 0) return c.slice(from, i + 1);
+          }
+        }
+        return c.slice(from, from + 4000);
+      };
+      // The body's own members, counted by the commas that separate them — a nested object's keys
+      // are that value's business, and a shorthand property (`orgId,`) is a member with no colon
+      // to count. Counting colons instead reads a complete body as one field short and fires on it.
+      const topLevelMembers = (text) => {
+        const inner = text.slice(1, -1);
+        const members = [];
+        let depth = 0;
+        let quote = null;
+        let current = "";
+        for (let i = 0; i < inner.length; i++) {
+          const ch = inner[i];
+          if (quote) {
+            current += ch;
+            if (ch === quote && inner[i - 1] !== "\\") quote = null;
+            continue;
+          }
+          if (ch === '"' || ch === "'" || ch === "`") { quote = ch; current += ch; continue; }
+          if (ch === "{" || ch === "(" || ch === "[") depth++;
+          else if (ch === "}" || ch === ")" || ch === "]") depth--;
+          if (depth === 0 && ch === ",") { members.push(current); current = ""; continue; }
+          current += ch;
+        }
+        members.push(current);
+        return members
+          .map((m) => m.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*$/gm, "").trim())
+          .filter((m) => m.length > 0);
+      };
+      /** The name each member writes, so the fields the body leaves out can be named. */
+      const memberNames = (members) =>
+        new Set(
+          members
+            .map((m) => /^([A-Za-z_$][\w$]*)\s*[:,]?/.exec(m)?.[1])
+            .filter((name) => name !== undefined),
+        );
+      // What the edit read answered with, by the names this file bound it to. A body that spreads
+      // form state (`...values`) spreads what the person typed, which is exactly the set that
+      // leaves the rest of the record out — so the test is not "is there a spread" but "is the
+      // RECORD spread".
+      const recordNames = new Set();
+      for (const m of c.matchAll(/^[^\n]*UpdateFormDTO[^\n]*$/gm)) {
+        const line = m[0];
+        const bound = /\bdata:\s*([A-Za-z_$][\w$]*)/.exec(line);
+        if (bound) recordNames.add(bound[1]);
+        const assigned = /\b(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=/.exec(line);
+        if (assigned) recordNames.add(assigned[1]);
+        const prop = /\breadonly\s+([A-Za-z_$][\w$]*)\??\s*:/.exec(line);
+        if (prop) recordNames.add(prop[1]);
+      }
+      const spreadsTheRecord = (body) =>
+        [...body.matchAll(/\.\.\.\s*([^,}\n]+)/g)].some((m) =>
+          [...recordNames].some((name) => new RegExp(`\\b${name}\\b`).test(m[1])),
+        );
+      const hits = [];
+      const seen = new Set();
+      const consider = (start, line) => {
+        if (seen.has(start)) return;
+        seen.add(start);
+        const body = objectAt(start);
+        const members = topLevelMembers(body);
+        if (members.length >= dto.size) return;
+        if (spreadsTheRecord(body)) return;
+        const named = memberNames(members);
+        // Only a field the read also carries is a field this save blanks.
+        const dropped = [...dto].filter((field) => !named.has(field) && stored.has(field));
+        if (dropped.length === 0) return;
+        // A body that also spreads form state carries fields this scan cannot see, so the report
+        // names the ones the file never mentions at all — those are certainly gone, and a list
+        // that includes a field the reader can point at in the same file reads as a false alarm.
+        const certain = dropped.filter((field) => !new RegExp(`\\b${field}\\b`).test(c));
+        const named4 = (certain.length ? certain : dropped).slice(0, 4);
+        const rest = (certain.length ? certain : dropped).length - named4.length;
+        hits.push({
+          line,
+          excerpt: `drops ${named4.join(", ")}${rest > 0 ? ` and ${rest} more` : ""}`,
+        });
+      };
+      for (const m of c.matchAll(/\b\w*[Uu]pdate\w*\.mutateAsync\s*\(/g)) {
+        // The call's OWN arguments, read to the balanced close paren. A fixed window runs past
+        // `data: body` into whatever call comes next — the create branch beside it — and the rule
+        // then reports the create's literal as an update body.
+        const open = c.indexOf("(", m.index + m[0].length - 1);
+        let depth = 0;
+        let end = open;
+        for (let i = open; i < c.length && i < open + 4000; i++) {
+          if (c[i] === "(") depth++;
+          else if (c[i] === ")") {
+            depth--;
+            if (depth === 0) { end = i; break; }
+          }
+        }
+        const args = c.slice(open, end + 1);
+        const data = /data:\s*\{/.exec(args);
+        if (data) consider(open + data.index + data[0].length - 1, lineOfIndex(c, m.index));
+      }
+      // `useCrudFormSubmit` hands ONE body to both the create and the update, so an enumerated
+      // body there is the same defect wearing the form helper's name.
+      if (/adaptOrvalUpdate/.test(c)) {
+        for (const m of c.matchAll(/handleSubmit\s*\(\s*\{/g)) {
+          consider(m.index + m[0].length - 1, lineOfIndex(c, m.index));
+        }
+      }
+      return hits;
+    },
+    samples: {
+      file: "modules/org/src/widgets/organization/detail.tsx",
+      broken: {
+        files: {
+          "packages/domain-org/src/generated/model/organizationUpdateDTO.ts": `export interface OrganizationUpdateDTO {
+  orgId: string;
+  orgCode: string;
+  orgName: string;
+  orgNameI18n?: StringMap;
+  description?: string;
+  phone?: string;
+  email?: string;
+  isActive: boolean;
+}`,
+          "packages/domain-org/src/generated/model/organizationUpdateFormDTO.ts": `export interface OrganizationUpdateFormDTO {
+  orgId: string;
+  orgCode: string;
+  orgName: string;
+  orgNameI18n?: StringMap;
+  description?: string;
+  phone?: string;
+  email?: string;
+  isActive: boolean;
+  updatedAt?: string;
+}`,
+        },
+        source: `const setActive = async (active: boolean) => {
+  const update = useUpdateOrganization();
+  await update.mutateAsync({
+    orgId,
+    data: {
+      orgId,
+      orgCode: org.orgCode ?? "",
+      orgName: org.orgName ?? "",
+      description: org.description,
+      phone: org.phone,
+      isActive: active,
+    },
+  });
+};`,
+      },
+      fixed: {
+        files: {
+          "packages/domain-org/src/generated/model/organizationUpdateDTO.ts": `export interface OrganizationUpdateDTO {
+  orgId: string;
+  orgCode: string;
+  orgName: string;
+  orgNameI18n?: StringMap;
+  description?: string;
+  phone?: string;
+  email?: string;
+  isActive: boolean;
+}`,
+          "packages/domain-org/src/generated/model/organizationUpdateFormDTO.ts": `export interface OrganizationUpdateFormDTO {
+  orgId: string;
+  orgCode: string;
+  orgName: string;
+  orgNameI18n?: StringMap;
+  description?: string;
+  phone?: string;
+  email?: string;
+  isActive: boolean;
+  updatedAt?: string;
+}`,
+        },
+        source: `const { data: editable } = adaptOrvalGet<OrganizationUpdateFormDTO, typeof editQuery>(editQuery);
+
+const setActive = async (active: boolean) => {
+  const update = useUpdateOrganization();
+  if (!editable) return;
+  await update.mutateAsync({
+    orgId,
+    data: { ...updateBody(editable), orgId, isActive: active },
+  });
+};`,
+      },
+      miss: [
+        {
+          note: "a body that names every field the DTO declares is complete, however long the list",
+        files: {
+          "packages/domain-org/src/generated/model/organizationUpdateDTO.ts": `export interface OrganizationUpdateDTO {
+  orgId: string;
+  orgCode: string;
+  orgName: string;
+  orgNameI18n?: StringMap;
+  description?: string;
+  phone?: string;
+  email?: string;
+  isActive: boolean;
+}`,
+          "packages/domain-org/src/generated/model/organizationUpdateFormDTO.ts": `export interface OrganizationUpdateFormDTO {
+  orgId: string;
+  orgCode: string;
+  orgName: string;
+  orgNameI18n?: StringMap;
+  description?: string;
+  phone?: string;
+  email?: string;
+  isActive: boolean;
+  updatedAt?: string;
+}`,
+        },
+          source: `const setActive = async (active: boolean) => {
+  const update = useUpdateOrganization();
+  await update.mutateAsync({
+    orgId,
+    data: {
+      orgId,
+      orgCode: org.orgCode ?? "",
+      orgName: org.orgName ?? "",
+      orgNameI18n: org.orgNameI18n,
+      description: org.description,
+      phone: org.phone,
+      email: org.email,
+      isActive: active,
+    },
+  });
+};`,
+        },
+        {
+          note: "an endpoint whose DTO is not on hand — an unknown contract is not evidence of a defect",
+        files: {
+          "packages/domain-org/src/generated/model/organizationUpdateDTO.ts": `export interface OrganizationUpdateDTO {
+  orgId: string;
+  orgCode: string;
+  orgName: string;
+  orgNameI18n?: StringMap;
+  description?: string;
+  phone?: string;
+  email?: string;
+  isActive: boolean;
+}`,
+          "packages/domain-org/src/generated/model/organizationUpdateFormDTO.ts": `export interface OrganizationUpdateFormDTO {
+  orgId: string;
+  orgCode: string;
+  orgName: string;
+  orgNameI18n?: StringMap;
+  description?: string;
+  phone?: string;
+  email?: string;
+  isActive: boolean;
+  updatedAt?: string;
+}`,
+        },
+          source: `const setActive = async (active: boolean) => {
+  const update = useUpdateFederationGateway();
+  await update.mutateAsync({ gatewayId, data: { gatewayId, enabled: active } });
+};`,
+        },
+      ],
+    },
+  },
+  {
+    id: "panel-record-from-list-page",
+    invariant: "#36",
+    level: "review",
+    desc: "A panel's value is looked up in the rows the list happens to have loaded — a record opened by address, or one on another page, is not among them, so the field renders empty, the dialog names a UUID, or the lookup falls through to the first row on the page and the panel describes a different record. Resolve it from the record the panel itself fetched",
+    appliesTo: isTsx,
+    check: (c) => {
+      if (!/renderDetail|ListDetail/.test(c)) return [];
+      const hits = [];
+      for (const m of c.matchAll(/\b\w+\.data\??\.find\s*\(/g)) {
+        hits.push({ line: lineOfIndex(c, m.index), excerpt: c.slice(m.index, m.index + 120).replace(/\s+/g, " ") });
+      }
+      // The same lookup moved into a helper — the page hands its loaded rows across.
+      for (const m of c.matchAll(/\w+\(\s*\w*[Ll]ist\.data\s*,/g)) {
+        hits.push({ line: lineOfIndex(c, m.index), excerpt: m[0].replace(/\s+/g, " ") });
+      }
+      return hits;
+    },
+    samples: {
+      file: "modules/user-admin/src/pages/job-position/crud-page.tsx",
+      broken: `<ListDetail.ViewSwitch
+  state={state}
+  renderDetail={(id) => (
+    <JobPositionDetail
+      positionId={id}
+      onDelete={() =>
+        requestDelete({
+          id,
+          name: list.data.find((row) => String(row.positionId) === id)?.positionName ?? id,
+        })
+      }
+    />
+  )}
+/>`,
+      fixed: `<ListDetail.ViewSwitch
+  state={state}
+  renderDetail={(id) => (
+    <JobPositionDetail positionId={id} onRequestDelete={requestDelete} />
+  )}
+/>`,
+      miss: [
+        {
+          note: "a row action already holds its row — the lookup is not over the loaded page",
+          source: `<ListDetail.ViewSwitch
+  state={state}
+  renderDetail={(id) => <JobPositionDetail positionId={id} onRequestDelete={requestDelete} />}
+/>`,
+        },
+        {
+          note: "a screen with no panel over a list has no record to resolve from",
+          source: `export function Report() {
+  const rows = useRows();
+  const top = rows.data.find((row) => row.rank === 1);
+  return <Text>{top?.label ?? ""}</Text>;
+}`,
+        },
+      ],
+    },
+  },
+  {
     id: "filter-category-order",
     invariant: "#16",
     level: "review",
