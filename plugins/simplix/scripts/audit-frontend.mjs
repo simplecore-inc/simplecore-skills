@@ -5730,6 +5730,11 @@ return <Button onClick={() => refresh.mutateAsync({ data: { accessToken } })}>{t
       // leaves the rest of the record out — so the test is not "is there a spread" but "is the
       // RECORD spread".
       const recordNames = new Set();
+      // A window rather than the line, because a formatter breaks the binding away from the type
+      // it names: `adaptOrvalGet<\n  XUpdateFormDTO,\n  typeof q\n>(q)` puts `data: loaded` three
+      // lines above `UpdateFormDTO`, and read a line at a time the record's name is never found —
+      // so a body that DOES spread the record is reported as enumerating it. The window reaches
+      // backwards only: the destructuring always precedes the type argument.
       for (const m of c.matchAll(/^[^\n]*UpdateFormDTO[^\n]*$/gm)) {
         const line = m[0];
         const bound = /\bdata:\s*([A-Za-z_$][\w$]*)/.exec(line);
@@ -5738,6 +5743,17 @@ return <Button onClick={() => refresh.mutateAsync({ data: { accessToken } })}>{t
         if (assigned) recordNames.add(assigned[1]);
         const prop = /\breadonly\s+([A-Za-z_$][\w$]*)\??\s*:/.exec(line);
         if (prop) recordNames.add(prop[1]);
+      }
+      // The binding a formatter has broken away from the type it names. A wrapped generic —
+      // `adaptOrvalGet<\n  XUpdateFormDTO,\n  typeof q\n>(q)` — puts `data: loaded` three lines
+      // above `UpdateFormDTO`, and read a line at a time the record's name is never found, so a
+      // body that DOES spread it is reported as enumerating it. Anchored on the binding and
+      // reaching forward to the type, with no `;` allowed between them so it cannot cross into
+      // the next statement and name somebody else's variable as the record.
+      for (const m of c.matchAll(
+        /\b(?:const|let|var)\s+(?:\{[^{};]*\bdata:\s*)?([A-Za-z_$][\w$]*)[^;]{0,240}?UpdateFormDTO/g,
+      )) {
+        recordNames.add(m[1]);
       }
       const spreadsTheRecord = (body) =>
         [...body.matchAll(/\.\.\.\s*([^,}\n]+)/g)].some((m) =>
