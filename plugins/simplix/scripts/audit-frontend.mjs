@@ -1743,6 +1743,100 @@ return key ? <AlertBanner title={t(key)} /> : null;`,
     },
   },
   {
+    id: "session-token-read-from-the-query-string",
+    invariant: "#77",
+    level: "error",
+    desc: "An access, refresh, or ID token pulled out of `location.search`. A query string is part of the GET, so the credential is already in the server's access log, in every proxy in front of it, and in `Referer` on the page's next resource request — before any client-side code exists. `history.replaceState` cleans the address bar and reaches none of those. The carrier for a token handed to a browser is the fragment, which is never transmitted; read `location.hash` instead, and have whatever redirects here write it there. What legitimately stays in the query string is everything that is not a credential — an error code, a tab, a page — and an OAuth `code` and `state`, which the provider must send that way",
+    appliesTo: (path) => isTsx(path) || /\.ts$/.test(path),
+    check: (c) => {
+      // Named narrowly on purpose. These three have no shape in which a query string is the right
+      // carrier, so the rule needs no exception list; a one-time invitation or reset token is a
+      // different family with its own delivery argument and is not judged here.
+      const TOKEN = "accessToken|access_token|refreshToken|refresh_token|idToken|id_token";
+      // Which half of the address a set of params was built over. Naming `location.search`
+      // somewhere in the file is NOT the test — the correct shape reads the fragment and then
+      // preserves the search while cleaning the address, so a file-wide test reports the fix.
+      const QUERY = /\blocation\s*\.\s*(?:search|href)\b/;
+      const hits = [];
+      const lines = c.split("\n");
+      const at = (index) => {
+        const line = c.slice(0, index).split("\n").length;
+        return { line, excerpt: (lines[line - 1] ?? "").trim() };
+      };
+
+      // Params built over the query and bound to a name, so a `.get` on that name is judged.
+      const queryBacked = new Set();
+      const bound = /(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*new\s+URLSearchParams\s*\(([^)]*)\)/g;
+      let b;
+      while ((b = bound.exec(c)) !== null) {
+        if (QUERY.test(b[2])) queryBacked.add(b[1]);
+      }
+
+      if (queryBacked.size) {
+        const names = [...queryBacked].join("|");
+        const named = new RegExp(
+          "\\b(" + names + ")\\s*\\.\\s*get\\s*\\(\\s*[\"'`](?:" + TOKEN + ")[\"'`]\\s*\\)",
+          "g"
+        );
+        let m;
+        while ((m = named.exec(c)) !== null) hits.push(at(m.index));
+      }
+
+      // The same thing written in one expression, which binds no name to look up.
+      const chained = new RegExp(
+        "new\\s+URLSearchParams\\s*\\([^)]*location\\s*\\.\\s*(?:search|href)[^)]*\\)"
+          + "\\s*\\.\\s*get\\s*\\(\\s*[\"'`](?:" + TOKEN + ")[\"'`]\\s*\\)",
+        "g"
+      );
+      let d;
+      while ((d = chained.exec(c)) !== null) hits.push(at(d.index));
+
+      return hits;
+    },
+    samples: {
+      file: "apps/<app>/src/routes/login.complete.tsx",
+      broken: `export function Complete() {
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const accessToken = params.get("accessToken");
+    window.history.replaceState(null, "", window.location.pathname);
+    if (accessToken) login({ accessToken });
+  }, []);
+  return null;
+}`,
+      fixed: `export function Complete({ takeTokens }: { takeTokens: () => TokenPair | null }) {
+  useEffect(() => {
+    const tokens = takeTokens();
+    if (tokens) login(tokens);
+  }, [takeTokens]);
+  return null;
+}`,
+      miss: [
+        {
+          note: "a refusal code, which is not a credential and cannot be replayed",
+          source: `const reason = new URLSearchParams(window.location.search).get("error");`,
+        },
+        {
+          note: "an OAuth code and state, which the provider must deliver in the query",
+          source: `const params = new URLSearchParams(window.location.search);
+const code = params.get("code");
+const state = params.get("state");`,
+        },
+        {
+          note: "the fragment, which is the fix and is never sent to a server",
+          source: `const params = new URLSearchParams(window.location.hash.slice(1));
+const accessToken = params.get("accessToken");`,
+        },
+        {
+          note: "the fix in full \u2014 it reads the fragment and names the search only to preserve it while cleaning the address, which a file-wide test reports as the very defect it removed",
+          source: `const params = new URLSearchParams(window.location.hash.slice(1));
+const accessToken = params.get("accessToken");
+window.history.replaceState(null, "", window.location.pathname + window.location.search);`,
+        },
+      ],
+    },
+  },
+  {
     id: "row-action-that-reads-as-text",
     invariant: "#20 / #77",
     level: "error",
