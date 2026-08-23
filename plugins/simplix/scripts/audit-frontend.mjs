@@ -1161,6 +1161,92 @@ export function AssignDialog() { return null; }`,
     },
   },
   {
+    id: "unbounded-overlay-panel",
+    invariant: "#58 / audit: dialog geometry",
+    level: "error",
+    desc: "A component draws its own centred overlay panel with a width and no height ceiling. Pinned at `top-1/2` and translated back by half its own height, such a panel grows in BOTH directions at once: the title leaves the top of the window and the confirm button leaves the bottom, and because nothing in the chain scrolls there is no way to reach either — Escape is the only exit, guessed. Whether it happens is decided by the data, not by the code, so it passes review on the day it is written. Give the panel `max-h-[calc(100dvh-2rem)]`, make it a flex column, and let the body scroll (`min-h-0 overflow-y-auto`) with the title and the footer `shrink-0`",
+    appliesTo: isTsx,
+    check: (c) => {
+      const lines = c.split("\n");
+      const hits = [];
+      for (const m of c.matchAll(/<[A-Za-z][\w.]*/g)) {
+        const { tag } = jsxOpenTag(c, m.index);
+        if (!/\bfixed\b/.test(tag)) continue;
+        if (!/\btop-1\/2\b|\btop-\[50%\]/.test(tag)) continue;
+        if (!/-translate-y-1\/2\b|translate-y-\[-50%\]/.test(tag)) continue;
+        // A panel has a width. Without this the rule also reports a centred spinner or a
+        // decorative mark, neither of which has content that can outgrow the window.
+        if (!/\bmax-w-|\bw-full\b/.test(tag)) continue;
+        // The ceiling, wherever in the tag it is written — a literal class, a `cn(…)` argument,
+        // or a template the wrapper interpolates. Any of the three bounds the panel.
+        if (/\bmax-h-/.test(tag)) continue;
+        const line = lineOfIndex(c, m.index);
+        if (!notCommentLine(lines[line - 1] ?? "", lines, line - 1)) continue;
+        hits.push({ line, excerpt: tag.replace(/\s+/g, " ").slice(0, 140) });
+      }
+      return hits;
+    },
+    samples: {
+      file: "packages/ui/src/crud/shared/confirm-dialog.tsx",
+      broken: `<AlertDialog.Content
+  className={cn(
+    "fixed left-1/2 top-1/2 z-50 w-full max-w-lg -translate-x-1/2 -translate-y-1/2",
+    "rounded-lg border bg-background p-6 shadow-lg",
+  )}
+>
+  <AlertDialog.Title className="text-lg font-semibold">{title}</AlertDialog.Title>
+  <AlertDialog.Description className="mt-2 text-sm">{description}</AlertDialog.Description>
+  <footer className="mt-6 flex w-full justify-end gap-2">{actions}</footer>
+</AlertDialog.Content>`,
+      fixed: `<AlertDialog.Content
+  className={cn(
+    "fixed left-1/2 top-1/2 z-50 w-full max-w-lg -translate-x-1/2 -translate-y-1/2",
+    "flex max-h-[calc(100dvh-2rem)] flex-col",
+    "rounded-lg border bg-background p-6 shadow-lg",
+  )}
+>
+  <AlertDialog.Title className="shrink-0 text-lg font-semibold">{title}</AlertDialog.Title>
+  <div className="-mx-6 mt-2 min-h-0 overflow-y-auto px-6">
+    <AlertDialog.Description className="text-sm">{description}</AlertDialog.Description>
+  </div>
+  <footer className="mt-6 flex w-full shrink-0 justify-end gap-2">{actions}</footer>
+</AlertDialog.Content>`,
+      miss: [
+        {
+          note: "a wrapper that passes the ceiling down through the class it interpolates",
+          source: `export function BoundedDialogContent({ className, ...props }) {
+  return (
+    <DialogPrimitive.Content
+      className={\`fixed left-1/2 top-1/2 z-50 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 max-h-[calc(100dvh-2rem)] overflow-y-auto \${className ?? ""}\`}
+      {...props}
+    />
+  );
+}`,
+        },
+        {
+          note: "a centred mark with no width, which has no content that can outgrow the window",
+          source: `<div className="fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2">
+  <Spinner />
+</div>`,
+        },
+        {
+          note: "an edge-anchored sheet, which is not centred and takes its height from the window already",
+          source: `<DialogPrimitive.Content className="fixed inset-y-0 right-0 z-50 w-full max-w-lg border-l">
+  {children}
+</DialogPrimitive.Content>`,
+        },
+        {
+          note: "the doc comment that shows the shape being replaced is not a panel",
+          source: `/**
+ * <AlertDialog.Content className="fixed left-1/2 top-1/2 w-full max-w-lg -translate-y-1/2">
+ * is the unbounded shape this component replaces.
+ */
+export function AlertPanel() { return null; }`,
+        },
+      ],
+    },
+  },
+  {
     id: "unpaged-table-without-reason",
     invariant: "#32 / audit: tables are lists",
     level: "error",
