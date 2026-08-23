@@ -278,7 +278,50 @@ function entityIdIndex(files) {
   _entityIdIndex = map;
   return map;
 }
-function resetIndexes() { _entityIdIndex = null; }
+let _i18nIndex = null;
+/**
+ * Which field names carry a `<name>I18n` translation map, and which DTO classes declare one.
+ *
+ * <p>A value edited through its own screen lives in a locale map while the plain column keeps
+ * whatever it was seeded with. A DTO that declares the map is serialized through the framework's
+ * `@I18nTrans` and needs nothing; one assembled by hand has to resolve the map itself, and reading
+ * the column instead answers every caller in the seed's language.
+ *
+ * @param files every Java source in the project
+ * @returns `entityBases` — entity class simple name to the base names IT declares the map for,
+ *          kept per class because two entities sharing a field name do not share its translation;
+ *          `dtoCarries` — DTO class simple name to the base names that class declares the map for
+ */
+function i18nIndex(files) {
+  if (_i18nIndex) return _i18nIndex;
+  const entityBases = new Map();
+  const dtoCarries = new Map();
+  const FIELD = /private\s+Map<\s*String\s*,\s*String\s*>\s+(\w+)I18n\s*;/g;
+  for (const abs of files) {
+    let src;
+    try { src = fs.readFileSync(abs, "utf8"); } catch { continue; }
+    if (!src.includes("I18n")) continue;
+    const clean = stripCommentsAndStrings(src);
+    if (/@Entity\b/.test(clean)) {
+      const bases = new Set([...clean.matchAll(FIELD)].map((m) => m[1]));
+      if (bases.size) entityBases.set(path.basename(abs, ".java"), bases);
+      continue;
+    }
+    // Split the container into its nested classes, so one DTO declaring the map does not exempt
+    // its neighbours in the same file.
+    const parts = clean.split(/\bclass\s+(\w+)/);
+    for (let i = 1; i < parts.length; i += 2) {
+      const name = parts[i];
+      const body = parts[i + 1] ?? "";
+      const bases = new Set([...body.matchAll(FIELD)].map((m) => m[1]));
+      if (bases.size) dtoCarries.set(name, bases);
+    }
+  }
+  _i18nIndex = { entityBases, dtoCarries };
+  return _i18nIndex;
+}
+
+function resetIndexes() { _entityIdIndex = null; _i18nIndex = null; }
 
 // ---------------------------------------------------------------------------
 // Rules
@@ -290,6 +333,66 @@ function resetIndexes() { _entityIdIndex = null; }
 // ---------------------------------------------------------------------------
 
 const RULES = [
+  {
+    id: "i18n-label-read-from-column",
+    invariant: "#36",
+    level: "error",
+    desc: "A hand-assembled DTO takes its name from the plain column while the entity carries a `<name>I18n` map — the caller is answered in the language the record was seeded in, whatever language they asked for. Resolve the map (the project's `LocalizedNames.pick`-style helper), or declare the map on the DTO and let `@I18nTrans` serialize it",
+    appliesTo: (p) => /\.java$/.test(p) && !isDtoContainer(p),
+    check: (c, _rel, ctx) => {
+      const index = ctx?.i18n;
+      if (!index || !index.entityBases.size) return [];
+      const clean = stripCommentsAndStrings(c);
+      // What each local was constructed as, so the target's own type decides the exemption.
+      const declared = new Map();
+      for (const m of clean.matchAll(/\b(\w+DTO)\s+(\w+)\s*=\s*new\s+\1\s*\(/g)) declared.set(m[2], m[1]);
+      if (!declared.size) return [];
+      // The SOURCE's own type decides whether that field is translated at all — two entities can
+      // share a field name while only one of them keeps a map for it, and a rule keyed on the name
+      // alone rewrites the other into a call that does not compile.
+      const typeOf = (name) => {
+        const d = clean.match(new RegExp(`\\b([A-Z]\\w*)(?:<[^>]*>)?\\s+${name}\\s*(?:=|:|\\)|,)`));
+        return d?.[1];
+      };
+      const hits = [];
+      for (const m of clean.matchAll(/\b(\w+)\.set(\w+)\(\s*(\w+)\.get(\w+)\(\)\s*\)/g)) {
+        const [, target, setter, source, getter] = m;
+        const type = declared.get(target);
+        if (!type) continue;
+        const sourceType = typeOf(source);
+        const sourceBase = getter[0].toLowerCase() + getter.slice(1);
+        if (!sourceType || !index.entityBases.get(sourceType)?.has(sourceBase)) continue;
+        const targetBase = setter[0].toLowerCase() + setter.slice(1);
+        if (index.dtoCarries.get(type)?.has(targetBase)) continue;
+        hits.push({
+          line: clean.slice(0, m.index).split("\n").length,
+          excerpt: `${target}.set${setter}(${source}.get${getter}()) — ${type} does not declare ${targetBase}I18n, and ${sourceType} keeps ${sourceBase}I18n`,
+        });
+      }
+      return hits;
+    },
+    ctxSample: {
+      entityBases: new Map([["OrgType", new Set(["label"])]]),
+      dtoCarries: new Map([["CarryingDTO", new Set(["label"])]]),
+    },
+    samples: {
+      file: "modules/org/src/main/java/app/web/org/service/OrgTypeReadService.java",
+      broken: `public class OrgTypeReadService {
+    public OrgTypeDTO one(OrgType type) {
+        OrgTypeDTO dto = new OrgTypeDTO();
+        dto.setLabel(type.getLabel());
+        return dto;
+    }
+}`,
+      fixed: `public class OrgTypeReadService {
+    public OrgTypeDTO one(OrgType type) {
+        OrgTypeDTO dto = new OrgTypeDTO();
+        dto.setLabel(LocalizedNames.pick(type.getLabelI18n(), type.getLabel()));
+        return dto;
+    }
+}`,
+    },
+  },
   {
     id: "endpoint-without-preauthorize",
     invariant: "#2",
@@ -1006,8 +1109,9 @@ function selftest() {
     if (!rule.appliesTo(s.file)) {
       problems.push(`appliesTo() rejects the sample path ${s.file} — the rule could never run on it`);
     } else {
-      const onBroken = rule.check(s.broken, s.file, s.ctx);
-      const onFixed = rule.check(s.fixed, s.file, s.ctx);
+      const sampleCtx = rule.ctxSample ? { ...(s.ctx ?? {}), i18n: rule.ctxSample } : s.ctx;
+      const onBroken = rule.check(s.broken, s.file, sampleCtx);
+      const onFixed = rule.check(s.fixed, s.file, sampleCtx);
       if (!onBroken.length) problems.push("did NOT fire on the broken form");
       if (onFixed.length) problems.push(`fired on the fixed form (${onFixed.map((h) => h.excerpt).join("; ").slice(0, 120)})`);
     }
@@ -1059,7 +1163,7 @@ const errorsOnly = args.includes("--errors-only");
 const ruleFilter = args.find((a) => a.startsWith("--rule="))?.slice(7).split(",");
 
 const files = collectSources();
-const ctx = { entityIds: entityIdIndex(files) };
+const ctx = { entityIds: entityIdIndex(files), i18n: i18nIndex(files) };
 const results = new Map();
 let suppressedCount = 0;
 

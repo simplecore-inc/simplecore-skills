@@ -2661,8 +2661,18 @@ addToast({ message: t("area.moved", { name: row.name ? row.name : fallback }) })
     desc: "Widget reads a nested object its entity's generated projection does not carry — every row falls through to the `??` branch, so the screen shows a raw id and nobody sees an error",
     appliesTo: (p) => inModules(p) && /\/widgets\/[^/]+\/(detail|list|form)\.tsx$/.test(p),
     check: (c, rel) => {
-      const props = projectionProps(rel);
-      if (!props) return [];
+      const own = projectionProps(rel);
+      if (!own) return [];
+      // A panel routinely embeds a list of ANOTHER entity — a grant table inside an account's
+      // detail — and inside that column's render `row` is the other entity's row. So every DTO
+      // this file names as a generic argument contributes its own projection; a property that is
+      // on none of them is still phantom, and one that is on the embedded entity is not.
+      const props = new Set(own);
+      const index = modelIndex();
+      for (const m of c.matchAll(/<\s*(\w+DTO)\s*>/g)) {
+        const model = index.get(m[1][0].toLowerCase() + m[1].slice(1));
+        if (model) for (const prop of model) props.add(prop);
+      }
       return lineHits(c, /(?:displayData|row)\.(\w+)\?\./, (line) => {
         for (const m of line.matchAll(/(?:displayData|row)\.(\w+)\?\./g)) {
           if (!props.has(m[1])) return true;
