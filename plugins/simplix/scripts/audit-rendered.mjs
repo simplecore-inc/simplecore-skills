@@ -60,13 +60,23 @@ const DEFAULTS = {
     "^\\s*([\\d,]+)\\s*(?:results?|items?|rows?|entries)\\s*$",
   ],
 
-  /** What a drawn row looks like. A header row is excluded by the selectors themselves. */
+  /**
+   * What a drawn row looks like. A header row is excluded by the selectors themselves.
+   *
+   * A row stops being a `<tr>` below a list's card breakpoint: the same list draws each record as
+   * a card, and every selector above it is written for a table. Left at those five, the check
+   * reports 「states N rows and its column draws none」 on every list narrow enough to have gone to
+   * cards — the one reading where the rows are most certainly there, because a card is what the
+   * list drew on purpose. The framework marks both shapes with the same testid, so the last
+   * selector is what makes this check mean the same thing at both widths.
+   */
   rowSelectors: [
     "tbody tr",
     '[role="row"]',
     '[role="listitem"]',
     "[data-row]",
     "[data-row-id]",
+    '[data-testid^="list-row-"]',
   ],
 
   /** What a screen says when it has nothing to draw. */
@@ -885,6 +895,14 @@ const FIXTURES = {
         `<style>body{margin:0;font:14px sans-serif}.bar{padding:8px 16px}.empty{padding:40px}</style>
         <div style="width:620px"><div class=bar><span>전체 14건</span></div>
           <div class=empty>표시할 법령이 없습니다</div></div>`,
+      // The narrow shape of the same defect. Below its card breakpoint the list draws cards
+      // rather than a table, so a check looking only for table rows has to keep finding the
+      // absence here too — otherwise it goes quiet on every phone-width list.
+      "a total of 14 in card layout, over a column that draws no cards":
+        `<style>body{margin:0;font:14px sans-serif}.pane{width:400px}
+        .bar{padding:8px 16px}.cards{display:flex;flex-direction:column;gap:8px;padding:8px}</style>
+        <div class=pane><div class=bar><span>전체 14건</span></div>
+          <div class=cards></div></div>`,
     },
     quiet: {
       "the same screen with its rows drawn":
@@ -899,6 +917,18 @@ const FIXTURES = {
             <tbody><tr><td>안전보건관리책임자 선임</td></tr></tbody></table>
           </div>
         </div>`,
+      // The same list below its card breakpoint, drawing its records as cards. The rows are
+      // there and not one of them is a `<tr>`; a check that fired here would fire on every list
+      // a reader opens on a phone.
+      "the same total in card layout, with its cards drawn":
+        `<style>body{margin:0;font:14px sans-serif}.pane{width:400px}
+        .bar{padding:8px 16px}.cards{display:flex;flex-direction:column;gap:8px;padding:8px}
+        .card{border:1px solid #ddd;border-radius:8px;padding:12px}</style>
+        <div class=pane><div class=bar><span>전체 14건</span></div>
+          <div class=cards>
+            <div class=card data-testid="list-row-a1"><div>대표이사</div><div>코드 EXEC-01</div></div>
+            <div class=card data-testid="list-row-a2"><div>이사</div><div>코드 EXEC-02</div></div>
+          </div></div>`,
       // Every tile on this page is a number with a unit. None of them is claiming rows are
       // about to be drawn, and a check that read them as totals would fire on every dashboard
       // in the product.

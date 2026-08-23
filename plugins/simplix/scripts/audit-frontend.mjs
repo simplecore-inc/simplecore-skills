@@ -2339,7 +2339,22 @@ export type AreaStatus = (typeof AreaStatus)[keyof typeof AreaStatus];
     // hand-written app screen unread, and a deployable's error and empty-state pages are exactly
     // the screens written by hand and seen least often: two apps were printing ten raw `error.*`
     // keys apiece on their access-denied page, the same message a third app had already fixed.
-    appliesTo: (p) => (inModules(p) || inApps(p)) && isTsx(p),
+    //
+    // **And a shared package's screens too — the same hole one root further out.** A package that
+    // publishes its own catalogue is covered by namespace whatever the scope, so the roots looked
+    // complete; what they missed is a shared component reading the CONSUMING app's namespace
+    // (`useTranslation("common")` inside `packages/`), which is every piece of chrome a package
+    // draws over somebody else's screen. A help panel mounted on every screen of a console printed
+    // eight raw `manual.*` keys to operators with this rule green, because the file it lived in was
+    // in none of the two roots named here. The lesson is the one the paragraph above already
+    // records: name the family — anything that renders a screen — rather than the roots that
+    // happened to hold one.
+    //
+    // A package cannot know which deployable mounts it, so a bare namespace resolves to the union
+    // of every catalogue that publishes it: a key defined in no app at all is reported, and one
+    // defined in some but not others is not. That is the honest limit of what a file can be asked
+    // here, and it is the half that catches the defect this widening exists for.
+    appliesTo: (p) => (inModules(p) || inApps(p) || inPackages(p)) && isTsx(p),
     check: (c, file) => {
       const binds = translatorBindings(c);
       if (binds.size === 0) return [];
@@ -2428,6 +2443,19 @@ return <ErrorPageLayout action={t("error.goHome")} />;`,
             source: `const { t } = useTranslation("framework/ui");
 
 return <Button>{t("common.retry")}</Button>;`,
+          },
+          {
+            note: "a shared package reading the consuming app's namespace, with the key defined there — the package is in scope, and a key an app publishes answers it",
+            file: "packages/console-ui/src/manual/manual-panel.tsx",
+            files: {
+              "apps/a-first/src/locales/common/ko.json": `{
+  "manual": { "title": "도움말", "close": "닫기" }
+}
+`,
+            },
+            source: `const { t } = useTranslation("common");
+
+return <aside aria-label={t("manual.title")}>{t("manual.close")}</aside>;`,
           },
           {
             note: "two translators in one file, each key resolving in its own catalogue",
@@ -4534,6 +4562,62 @@ const canManage = useCan("manage", SUBJECTS.area);
           note: "a filter over the full set is fine — the server narrows what may be WRITTEN, not what may be searched",
           file: "modules/site/src/widgets/area/list.tsx",
           source: `const statusOptions = Object.values(AreaStatus).map((v) => ({ value: v, label: enumLabel("AreaStatus", v) }));`,
+        },
+      ],
+    },
+  },
+  {
+    id: "row-action-type-fixed-under-a-varying-label",
+    invariant: "#36",
+    level: "review",
+    desc: "A row action whose `type` is a literal while its `label` comes from the row — the icon is looked up by `type`, so every row wears one verb's glyph while the words say another",
+    appliesTo: isTsx,
+    check: (c) => {
+      // `RowActionCell` resolves the glyph as `action.icon ?? ACTION_ICONS[action.type]`, so a
+      // fixed `type` beside a per-row label paints one verb's icon over all of them: a dashboard
+      // panel drew 「명부 올리기」 and 「선임 등록」 wearing 「보기」's eye, which tells the reader
+      // the press will show something rather than start an upload. Give the action an `icon` of
+      // its own, or derive the `type` from the same field the label comes from.
+      const STATIC_LABEL = /^\s*(?:["'`]|t\(|tOr\(|\w*[Ll]abel\(|\w*[Tt]ranslate)/;
+      const hits = [];
+      const re = /\{\s*type:\s*"[a-z-]+"[\s\S]{0,400}?\}/g;
+      for (const m of c.matchAll(re)) {
+        const block = m[0];
+        if (!/\bonClick\s*:/.test(block)) continue;
+        // An action that carries its own `icon` has already answered this: the glyph no longer
+        // comes from `type`, so the label is free to vary.
+        if (/\bicon\s*:/.test(block)) continue;
+        const label = block.match(/\blabel:\s*([^,\n]+)/)?.[1];
+        if (!label || STATIC_LABEL.test(label)) continue;
+        // A property read off the row is what varies; a bare identifier is usually a constant
+        // the file computed once, and reporting those buries the shape this rule exists for.
+        if (!/^\s*\w+\s*[.?]/.test(label)) continue;
+        hits.push({ line: lineOfIndex(c, m.index), excerpt: block.replace(/\s+/g, " ").slice(0, 140) });
+      }
+      return hits;
+    },
+    samples: {
+      file: "modules/dashboard/src/widgets/dashboard/dashboard-panel.tsx",
+      broken: `<RowActionCell
+  row={row}
+  actions={[{ type: "view", label: row.actionLabel, onClick: () => undefined }]}
+/>`,
+      fixed: `<RowActionCell
+  row={row}
+  actions={[
+    {
+      type: "view",
+      label: row.actionLabel,
+      onClick: () => undefined,
+      icon: row.done ? undefined : <Icon name="arrow-right" />,
+    },
+  ]}
+/>`,
+      miss: [
+        {
+          note: "a label that is a literal or a translation names one verb, and the type's own icon is that verb's",
+          file: "modules/site/src/widgets/area/list.tsx",
+          source: `<RowActionCell row={row} actions={[{ type: "view", label: t("action.view"), onClick: open }]} />`,
         },
       ],
     },
