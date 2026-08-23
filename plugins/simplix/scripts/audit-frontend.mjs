@@ -1676,6 +1676,73 @@ const all = useListUserAccessLogs({ "loginAt.greaterThan": since, page: 0, size:
     },
   },
   {
+    id: "translation-frozen-at-mount",
+    invariant: "#70",
+    level: "review",
+    desc: "A translated sentence resolved once at mount and kept — `useState(t(…))`, `useRef(t(…))`, `useMemo(() => t(…), [])`. `t` answers with the KEY until that namespace's resources have landed, and the first render of a screen is reliably that moment: the stored value stays the literal `<namespace>.<key>` for as long as the screen stands, while every other line on it reads correctly. Keep the KEY in state and call `t` where the sentence is drawn. The one legitimate shape is a seed value for a field the reader then edits",
+    appliesTo: (path) => isTsx(path) || /\.ts$/.test(path),
+    check: (c) => {
+      const hits = [];
+      // The compute-once hooks. `useMemo` counts only with an empty dependency list — a memo that
+      // re-runs when its inputs move re-runs when the catalogue arrives too, because the render
+      // that follows reads it again.
+      const opener = /\b(useState|useRef|useMemo)\s*(?:<[^(]*?>)?\s*\(/g;
+      let m;
+      while ((m = opener.exec(c)) !== null) {
+        // The hook's own argument list, read to its matching bracket rather than over a fixed
+        // window — a `t(…)` three lines below an unrelated `useState(…)` is a different statement.
+        let depth = 1;
+        let end = m.index + m[0].length;
+        while (end < c.length && depth > 0) {
+          if (c[end] === "(") depth += 1;
+          else if (c[end] === ")") depth -= 1;
+          end += 1;
+        }
+        if (depth !== 0) continue;
+        const args = c.slice(m.index + m[0].length, end - 1);
+        if (m[1] === "useMemo" && !/,\s*\[\s*\]\s*$/.test(args.trimEnd())) continue;
+        // A translation call, by any of the names this stack binds it to.
+        if (!/(^|[^\w.$])(t|tc|tNav|tOr|translate)\s*\(/.test(args)) continue;
+        hits.push({
+          line: c.slice(0, m.index).split("\n").length,
+          excerpt: c.slice(m.index, m.index + 120).split("\n")[0].trim(),
+        });
+      }
+      return hits;
+    },
+    samples: {
+      file: "modules/<domain>/src/widgets/sign-in/panel.tsx",
+      broken: `export function Panel() {
+  const { t } = useTranslation("<domain>/<namespace>");
+  const [arrival] = useState<string | null>(() => refusalKey(window.location.search));
+  const [banner, setBanner] = useState<string | null>(arrival ? t(arrival) : null);
+  return banner ? <AlertBanner tone="danger" title={banner} /> : null;
+}`,
+      fixed: `export function Panel() {
+  const { t } = useTranslation("<domain>/<namespace>");
+  const [arrival] = useState<string | null>(() => refusalKey(window.location.search));
+  const [cleared, setCleared] = useState(false);
+  const banner = !cleared && arrival ? t(arrival) : null;
+  return banner ? <AlertBanner tone="danger" title={banner} /> : null;
+}`,
+      miss: [
+        {
+          note: "a memo that re-runs when its inputs move, which the render after the catalogue lands does",
+          source: `const label = useMemo(() => t(\`status.\${row.state}\`), [t, row.state]);`,
+        },
+        {
+          note: "the sentence drawn where it is read",
+          source: `const [key] = useState(() => refusalKey(window.location.search));
+return key ? <AlertBanner title={t(key)} /> : null;`,
+        },
+        {
+          note: "an instant frozen at mount, which carries no translation",
+          source: `const [openedAt] = useState(() => new Date().toISOString());`,
+        },
+      ],
+    },
+  },
+  {
     id: "row-action-that-reads-as-text",
     invariant: "#20 / #77",
     level: "error",
