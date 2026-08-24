@@ -904,12 +904,14 @@ export const auditFoot = (created, updated) =>
  * @param wide `true` widens it for a reference table; `'viewer'` widens it further and lets its
  *   body run the dialog's own height, for a {@link docViewer} that has to draw a page of paper
  */
-export const dialog = ({ title, children, foot, wide = false }) =>
+export const dialog = ({ title, children, foot = null, wide = false }) =>
   `<div class="dim"></div><div class="modal peek${wide ? ' wide' : ''}` +
   `${wide === 'viewer' ? ' viewer' : ''}">` +
   `<div class="pk-head"><span class="ph-title sm">${title}</span><span class="ld-close">✖</span></div>` +
   `<div class="pk-body">${children}</div>` +
-  `<div class="pk-foot">${foot}</div></div>`;
+  // A dialog that carries no action has no footer, rather than a footer holding the word
+  // `undefined`. The ✖ in the head is the way out, so an explanation needs nothing down here.
+  `${foot ? `<div class="pk-foot">${foot}</div>` : ''}</div>`;
 
 /**
  * The dialog a peek control opens: the referenced record's own detail, read where the
@@ -1216,8 +1218,13 @@ export const noticeDrop = ({ title, items }) =>
  * <p>It is a 도움말 notice card, so it closes like one and the header's `?` brings it back. Pass
  * `dismiss: false` where the card is not on a page with that header — a wizard step, a dialog —
  * and closing it would put the explanation out of reach.
+ *
+ * <p><b>The control says 「설명 보기」 rather than 「펼쳐 보기」.</b> What it opens is a dialog, and
+ * 「펼쳐」 promises the opposite — that the material unfolds where the card stands, which is the very
+ * shape this component exists to replace. A board drawing the other word contradicts its own screens
+ * one label at a time, and the chapter generator copies that word into every demand it writes.
  */
-export const helpCard = ({ title, hint = '', open = '펼쳐 보기', dismiss = null }) => {
+export const helpCard = ({ title, hint = '', open = '설명 보기', dismiss = null }) => {
   const closes = OPTIONS.dismissibleNotices && (dismiss ?? true);
   return `<div class="helpcard"><span class="hc-mark">?</span>` +
   `<div class="hc-body"><div class="hc-title">${title}</div>` +
