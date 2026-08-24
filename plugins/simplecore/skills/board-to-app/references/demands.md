@@ -147,6 +147,38 @@ rule was demanding them before any chapter line said so. On a real set, 67 secti
 capture they now named was already there** — a growth of 67 and a debt of none. Assumed, that would
 have been filed as 67 sections owing pictures nobody needed to take.
 
+## A chapter owns tables, and the per-screen half does not reach all of them
+
+**Everything above is about screens, and a chapter owns more than screens.** Its `entities`
+section names the tables its migrations create, and the demand list is derived from its FRAMES —
+so a table this chapter owns that none of its screens is about ends up demanded by nobody. Nobody
+is asked to open it, the result document has no section to record it in, and every gate over the
+chapter is green: the screens all have their lines, the lines all have their sections, and the
+table is simply not part of the arrangement.
+
+**It is not a rare shape.** A value that decides what a LATER chapter's screen draws is owned here
+because the code that reads it is here — a sign-in policy read on every sign-in whose editing
+screen belongs twenty chapters on, a policy row created as a side effect of creating a project
+whose screen belongs to the chapter that detects what it governs. In one repository `sign_in_policy`
+sat that way with four tests holding it and not one line demanding any of them.
+
+**So the generator emits a section per owned table nothing reaches**, closed by the verdict line
+rather than by a persona — what proves a table is a command and what came back, not somebody in a
+browser. Three things decide whether it works:
+
+| | |
+| --- | --- |
+| **which tables** | a project cannot derive 「this screen is about that table」 from a board, so it is DECLARED — per table, the frame of this chapter whose screen writes or shows it. **A table left out of the declaration gets a section**, so forgetting produces a demand somebody must answer and only a written claim takes one away |
+| **what the section demands** | the half a generator can derive is the table itself — that it stands as its migration declares it, and that the code reading and writing it runs. **What the value DECIDES is the half only a person can write**, so the section carries a hand-authored region the generator preserves exactly as it preserves the chapter's other hand-authored sections |
+| **where the section goes** | at the END, after every screen section. Section numbers are the chapter file's running count and result documents carry them in their headings → *A demand that grows is appended, never substituted* |
+
+**A seeded section is a demand nobody can fail until somebody writes into it**, which is the shape
+this whole file warns about — so the seed is held by a gate: a chapter the ledger calls closed may
+not still carry it. And the rule the gate reads is about DEMAND LINES rather than about what the
+generator emitted, because a foundation chapter written by hand has no generated section and never
+will. Keyed on the seed, such a chapter's tables are outside the rule by construction, and an
+unwritten table there and a written one produce the same silence.
+
 ## An address a demand names is an address that opens
 
 **Write the whole address, never the fragment.** A demand that says 「open it with `<parameter>`」
@@ -181,6 +213,45 @@ indistinguishable, afterwards, from a test nobody ran.
 **A verb that only reads — open, view, print, download, export — is pressed like any other.**
 Nothing is left behind by pressing one, and sending a reader to a confirmation screen that does not
 exist is a demand they cannot satisfy.
+
+### The table above sorts by what a verb does to a RECORD, and misses what it does to a COUNT
+
+**A verb can leave every record where it was and still move a figure another demand is asked to
+read.** A test send creates a dispatch nobody wants to delete — that is the point of it — and the
+day's total goes up by one. Marking everything read consumes the unread state and nothing puts it
+back. Neither is irreversible in the table's sense: no record was destroyed, nothing needs undoing,
+and the third row's confirmation walk does not apply because the verb is not dangerous. **Both are
+still writes, and the demands that count are downstream of them.**
+
+**This is invisible inside one section and invisible inside one screen.** The write is demand 10 of
+one screen and the count is demand 2 of another, often built by different agents on different days,
+and each line is correct on its own. What fails is the pair. Measured on one chapter: 「시험 발송」
+on the rules screen put the history screen's five tab figures two above what its own chapter
+demanded, and 「모두 읽음」 on the notification centre consumed the only unread row the phone screen
+was asked to show a reader — so two screens reported failures that were the verification's own
+doing, and one of them had to be shot again.
+
+**So a chapter's demands are ordered by what they touch, not only by screen.** Two rules, and the
+second is the one a generator can hold:
+
+- **Within a chapter, every demand that COUNTS is read before any demand that WRITES to the same
+  set.** The figures come off the seed, and the seed is the specification — so they are read while
+  the data is still the data the seed made.
+- **A demand that writes says what it moves.** 「시험 발송」 moves the day's total and the history's
+  tabs; 「모두 읽음」 moves the unread census. The generator knows this the moment it knows which
+  aggregate a screen's tiles and tabs are computed from, which it already reads off the frame to
+  write the count demands in the first place.
+
+**Where the order cannot be arranged — the write is on screen three and the count on screen one —
+the count demand carries the value it expects AND the reading is taken first.** What is never
+right is the shape this was found in: a run that presses everything in section order, then reads a
+tally, then reports the tally as a defect.
+
+> **Read it this way and it is wrong**: 「the seed is insert-only, so a persona run cannot damage
+> it」. Insert-only protects what the seed WROTE; it says nothing about what a run ADDS beside it,
+> and a seed that will not converge a figure back down is exactly the one that cannot repair this.
+> The two dispatches a run created had to be deleted by hand, out of the database, before the
+> screen's own chapter figures were true again.
 
 ## A demand that grows is appended, never substituted
 

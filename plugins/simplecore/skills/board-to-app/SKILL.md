@@ -532,6 +532,27 @@ ledger, the handover file, the wave decision, and the barrier work the wave give
    anyway. A brief carrying the step-report shape and no channel is one whose arrangement works
    only if it happens to have asked for a log as well.
 
+   **A third shape costs more than either, because it comes back looking like success: an unnamed
+   subagent that sends its report to somebody else.** Its return reaches whoever dispatched it —
+   but nothing stops it also calling the message tool, and a brief that says 「return this to me」
+   without naming *me* leaves it to resolve 「me」 on its own. What it reaches for is a name it can
+   see: the chapter's name, the repository's name, the main conversation. The dispatcher then
+   receives a two-paragraph summary of a report that went somewhere else, and the summary reads
+   like a completed hand-off — the work was done, the files are on disk, the headline findings are
+   there. What is gone is the body, and the body is the part nothing else can reconstruct.
+
+   **So a brief names the channel by name, or forbids the tool.** For an unnamed subagent the
+   sentence is *return this as your final message; do not send it to anybody* — one clause, and it
+   removes the choice rather than relying on the agent to resolve a pronoun. Where the dispatcher
+   does have a name worth using, it writes that name out.
+
+   > **Read it this way and it is wrong**: 「it is a subagent, so its report comes back to me」.
+   > Twice in one chapter a capture-taker's full transcription — a numbered reading of thirty
+   > demands against a screen, the only record of what that screen showed — was addressed to the
+   > chapter's own agent name, and both times the dispatcher was left holding a summary and a
+   > folder of pictures nobody had described. Neither agent could be resumed afterwards, so one
+   > screen had to be shot again from nothing.
+
    **A screen nobody watched render is reported as such, and its completion is
    provisional.** 「built, typechecked, and never opened」 is a different claim from
    「done」, and a return that does not separate them hands the coordinator a chapter's
