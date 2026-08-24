@@ -160,6 +160,30 @@ cost hundreds of thousands of tokens and dried out before the section was done.
 is done.** The coordinator holds the thread between them, which is the one thing that genuinely
 spans screens.
 
+## Fixing while a cluster is still being shot ages the pictures behind you
+
+**Shoot the cluster, judge it, collect the fixes, and only then fix — then re-shoot only what the
+fixes touched.** A fix that lands after a capture makes that capture a picture of a product nobody
+built, and **nothing in the system can see it**: the picture cannot say it is stale, the gates read
+the file rather than its date, and the document's sentences go on citing it. Only somebody holding
+both facts — this fix, that capture — ever knows, and there is one moment when anybody holds both.
+
+**The reason it has to be written down is that fixing as you go feels like the diligent choice.**
+You have just found something, the fix is small, and photographing more of a screen you know is
+broken feels like negligence. It is the opposite. Leaving a defect standing for another twenty
+minutes costs nothing that is not already lost; taking a picture that will be false in four minutes
+costs the grounds the chapter closes on, and costs them invisibly.
+
+**One chapter paid this three times in a single round** — an emergency-contact fix three minutes
+after its seven captures, a preview fix an hour after two, and a seed rebuild that changed every
+dispatch identifier and cost four screens at once. Each time the answer was the same: re-shoot. A
+sentence in the document explaining why a picture looks wrong is not a substitute for taking it
+again, because the reader who needs that sentence is the one who did not read it.
+
+**The seed rebuild is the case worth keeping separate.** Re-seeding is not a fix to a screen and it
+ages every capture in the chapter at once, including screens nobody touched. So it happens before
+the shooting starts, or it costs the whole round.
+
 ## Opening the capture before writing what was seen
 
 **A sweep is a script.** It opens an address, waits, shoots, and writes a file — and no step of it
@@ -320,7 +344,7 @@ panes behind it hold.
 | Name | the frame id it shows, lowercased — `<frame>.webp`. A further content pane is `<frame>-t<n>.webp`; a list holding nothing is `<frame>-empty.webp` |
 | Per chapter | the frames the chapter places, plus the panes the board draws on those frames beyond the open one, plus the frames that draw a list |
 | Per repository | the board's frame count + the unopened panes + the frames that draw a list. Companion frames are not in this sum — the application has no such screen |
-| Per file | 150KB or under |
+| Per file | 150KB or under, and above 2,800 bytes per megapixel of its own canvas — an empty canvas costs about 1,900 at any quality, the sparsest real screen 3,900 |
 | Width | the device width the board gave that frame, up to 1440px |
 | Theme | light |
 
@@ -558,7 +582,9 @@ has not moved.
 `closedChapterHasEvidence` judges: that a chapter the ledger marks closed has a document; that
 there is a section per line the chapter demands; that each section carries the three labels and
 evidence; that each capture a document shows is on disk with a name, format and size the table
-above allows; and that no capture is left in the folder that no section shows.
+above allows; and that no capture is left in the folder that no section shows. **Every finding of
+it is a defect**, which is why the floor under a capture's density is not one of them — that
+question is answered 「go and look」 rather than 「this is wrong」, and a gate answers one question.
 
 **It does not tell a capture from a code block.** One capture, one fenced block **or** one
 discharge satisfies a section: a fenced block is the right evidence for a line that only proves a
@@ -590,13 +616,31 @@ own, is one nobody is told to open and there is no screen to shoot.
 **`everyCaptureIsAtADeclaredWidth` judges the picture rather than the document.** Every capture in
 the folder is opened as bytes, its stated canvas is read out of the header, and a width the project
 did not declare in `captureStandard` is a finding — as is a file whose header will not open at all.
-**Nothing else here reads a byte of a capture**: the name check reads a name, the ceiling and the
-blank floor read a length, so a driver's own screenshot filed under the capture suffix without ever
-being encoded passes all three. Nine such files sat in one project's evidence folder, and the same
-run's real defect — every capture shot through a window 160 pixels too narrow, with a tree's first
-row and an entire panel form below the fold — was invisible in exactly the same way. **The width is
-all a file remembers**; the colour scheme and whether the fold ate anything stay with eyes, and
-`../SKILL.md`'s second table names whose.
+**Two of the checks here read a byte of a capture and the rest read around it**: the name check
+reads a name and the ceiling reads a length, so a driver's own screenshot filed under the capture
+suffix without ever being encoded passes both. Nine such files sat in one project's evidence
+folder, and the same run's real defect — every capture shot through a window 160 pixels too narrow,
+with a tree's first row and an entire panel form below the fold — was invisible in exactly the same
+way. **The width is all a file remembers**; the colour scheme and whether the fold ate anything stay
+with eyes, and `../SKILL.md`'s second table names whose.
+
+**`everyCaptureIsDenserThanAnEmptyCanvas` is the second, and it is a warning.** It holds a capture's
+bytes against the canvas the same header states, because a shot taken before the page painted is
+the one defect in an evidence folder that agrees with every other artifact in the run — the name
+parses, the width is right, the taker's sentence describes what was on the screen, and the file is
+a white rectangle. **Bytes alone cannot ask that question**: encoding quality moves one screen by a
+third and a device pixel ratio of two moves it by four, so an absolute count reads a blank 2×-ratio
+capture as a fuller screen than a real 1× one. Density does not move — an empty canvas costs about
+1,900 bytes per megapixel at any quality and any size, where the sparsest real screen a board draws
+costs 3,900 — and the floor sits in the middle of that gap.
+
+**It raises 「open this one」 and claims nothing more.** A capture of a built shell with nothing
+inside it passes it and always will; so does a long full-page capture whose lower half is
+legitimately empty, and both are answered by a person saying so rather than by widening the number.
+**The one answer that is never right is re-encoding the picture larger** — quality moves a real
+screen and leaves a blank one where it is, so a bigger file clears the floor for this capture and
+hides the next one that really is blank. That is also why the grade is a warning: an error would
+leave that as the only route to green.
 
 **A project's own check repeats that judgment one layer under the tabs**, reading the board's tab
 strips and asking, for each frame a closed chapter opens, whether every pane but the open one was
