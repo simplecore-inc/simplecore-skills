@@ -691,6 +691,65 @@ export const closedChapterHasEvidence = {
   },
 };
 
+// ── The document that has not started while the pictures pile up ────────────
+//
+// **`closedChapterHasEvidence` reads a chapter's status, so nothing watches a chapter that is
+// still open.** A chapter can run for hours, fill its capture folder, and have no result document
+// at all, and every check in this skill stays green — because each of them asks whether a document
+// that exists is complete, and none of them asks whether one exists yet.
+//
+// That silence is where the inversion the result-document rule exists to prevent actually begins.
+// The rule says the document is the residue of running the verification: a section is written when
+// its line has been run and while what was on the screen is still in front of whoever ran it. What
+// takes its place is pictures first and sentences fitted to them afterwards, and the sentences
+// that come out of that are true of nothing — a description of a product somebody then built to
+// match. Nothing downstream catches it: the captures are all there, the sections cite them, and
+// the one property the arrangement depends on is quietly gone.
+//
+// **Two frames is the floor and not an arbitrary one.** Shooting a frame and then writing its
+// section is the correct order, so a single frame with no document is that window and not a
+// finding. A second frame shot with still no document says the first one's section was never
+// written, and that is a state with no legitimate reading.
+//
+// A warning rather than an error, because the gate cannot see a document about to land — what it
+// can do is put the question in front of whoever is holding the chapter, at the point where the
+// answer is still cheap.
+
+export const evidenceKeepsPaceWithItsCaptures = {
+  id: 'evidenceKeepsPaceWithItsCaptures',
+  title: 'captures for several frames with no result document to write them into',
+  grade: 'warning',
+  needs: ['chapterDir', 'evidenceDir'],
+  run: (ctx) => {
+    const dir_ = ctx.declared('evidenceDir');
+    const chapters = chapterFiles(ctx);
+    if (!chapters.size) return [];
+    const findings = [];
+    for (const [chapter, file] of [...chapters].sort()) {
+      // A chapter whose document exists is `closedChapterHasEvidence`'s from here on.
+      if (ctx.read(`${dir_}/${file}`) !== null) continue;
+      const stem = file.slice(0, -'.md'.length);
+      const frames = new Set();
+      for (const image of ctx.list(ctx.inRoot(`${dir_}/${stem}`)) ?? []) {
+        const shot = CAPTURE_NAME.exec(image.split('/').pop() ?? '');
+        if (shot) frames.add(`${shot[1].toUpperCase()}-${shot[2]}`);
+      }
+      if (frames.size < 2) continue;
+      findings.push(
+        `${dir_}/${stem}/: ${chapter} has captures of ${frames.size} frames `
+        + `(${[...frames].sort().join(' · ')}) and ${dir_}/${file} does not exist. A result `
+        + 'document is what running the verification leaves behind — a section written when its '
+        + 'line has been run, while the screen is still in front of whoever ran it. Two frames '
+        + 'shot with nothing written says the first one\'s section never was, and a section '
+        + 'written afterwards from a cold capture is a description somebody fits the screens to '
+        + 'rather than a record of what was there. Write the sections for what has been shot '
+        + 'before shooting anything else'
+      );
+    }
+    return findings;
+  },
+};
+
 // ── The screen that was built and never opened ──────────────────────────────
 //
 // A chapter can pass every check a machine has — typecheck, lint, the frontend audit, the language
@@ -1561,6 +1620,7 @@ export const evidenceStatesWhatWasSeen = {
 
 export const EVIDENCE_GATES = [
   closedChapterHasEvidence,
+  evidenceKeepsPaceWithItsCaptures,
   evidenceStatesWhatWasSeen,
   everySectionCarriesItsClosingLine,
   everyPlacedFrameIsCaptured,
@@ -2536,6 +2596,51 @@ export function cases(t) {
       ...extra,
     },
   });
+
+  // Nothing watched an open chapter before this: every other check here asks whether a document
+  // that exists is complete. The floor is two frames because shooting one and then writing its
+  // section is the right order — the second frame is what says the first section never happened.
+  const shooting = (files) => t.project({
+    config: { ...WORDS, chapterDir: 'chapters', stateLedger: 'tracking/STATE.md' },
+    files: { ...CHAPTER_TEXT, 'tracking/STATE.md': LEDGER('열림', '열림'), ...files },
+  });
+  const SHOT = `RIFF····WEBP${'\0'.repeat(9 * 1024)}`;
+
+  t.add(
+    'evidenceKeepsPaceWithItsCaptures',
+    'two frames shot into a folder whose result document does not exist',
+    shooting({
+      'docs/evidence/w02-org-shell/a-01.webp': SHOT,
+      'docs/evidence/w02-org-shell/a-02.webp': SHOT,
+    }),
+    true
+  );
+  t.add(
+    'evidenceKeepsPaceWithItsCaptures',
+    'one frame shot and nothing written yet, which is the order the rule asks for',
+    shooting({ 'docs/evidence/w02-org-shell/a-01.webp': SHOT }),
+    false
+  );
+  t.add(
+    'evidenceKeepsPaceWithItsCaptures',
+    'two frames shot with the document already carrying sections',
+    shooting({
+      'docs/evidence/w02-org-shell.md': W02_EVIDENCE(W02_SCREEN_SECTION),
+      'docs/evidence/w02-org-shell/a-01.webp': SHOT,
+      'docs/evidence/w02-org-shell/a-02.webp': SHOT,
+    }),
+    false
+  );
+  t.add(
+    'evidenceKeepsPaceWithItsCaptures',
+    'several states of one frame, which is still one frame',
+    shooting({
+      'docs/evidence/w02-org-shell/a-01.webp': SHOT,
+      'docs/evidence/w02-org-shell/a-01-t2.webp': SHOT,
+      'docs/evidence/w02-org-shell/a-01-empty.webp': SHOT,
+    }),
+    false
+  );
 
   t.add(
     'dischargedDemandNamesItsProof',
