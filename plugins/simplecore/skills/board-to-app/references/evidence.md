@@ -435,6 +435,27 @@ because those are the record and the record did not change:
 
 Anything not on that list means the section is run again rather than edited.
 
+## A capture older than the code it shows is a candidate, not a verdict
+
+**Comparing when each capture was taken against when the surfaces it draws last changed is the
+coordinator's own check, and it is worth running** — it found six captures in one chapter that
+predated a fix to the very control they photograph, one of them showing a defect that had been
+gone for twenty-three minutes.
+
+**It reports candidates.** A screen changes in one state and not in another: a fix to a detail
+panel and its locale leaves the empty list untouched, so the picture of the empty state is the same
+today as it was before the change. Re-shot, it came back **byte for byte identical** — same
+encoder, same window, same pixels, no diff at all.
+
+**So the check ends at the picture rather than at the timestamp.** Re-take the candidate and
+compare; where the bytes are unchanged, nothing was stale and the finding closes there. What it
+must never become is a rule that every capture older than its code is re-shot on sight — the
+chapters carry hundreds, most states are untouched by most changes, and a re-shoot that produces a
+different picture of an unchanged screen is a new risk rather than a repair.
+
+**And a candidate that comes back identical is worth saying out loud.** 「Re-shot and unchanged」 is
+a fact about the screen; silence afterwards reads as a re-shoot nobody did.
+
 ## When a board fix moves what a closed chapter quotes
 
 **The `demanded` line is copied out of the chapter file, and the chapter file is generated from the
