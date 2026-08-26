@@ -674,6 +674,31 @@ a dismissal the server remembers is exactly the wrong memory to have of it.
 **The test before writing either**: do this card's own words change with the data? If they do it
 is a state and it stays on the screen. If they do not, it is an explanation and it does not.
 
+**The rule is read in one direction far more often than the other, and the direction that gets
+skipped is the explanation's.** A state wearing a card is visible — somebody presses the ✕ and
+meets the wrong behaviour. An explanation drawn as a loose caption is invisible, because a muted
+sentence under the page header looks like every other muted sentence on the screen and nothing
+about it says it was supposed to be something else. So it accumulates: a `PageNote`-style
+component, a bare `<Text size="caption" tone="muted">{t("page.note")}</Text>` above the tab strip,
+a sub-caption the board drew as a caption. Each is an explanation — true of every row and every
+day — that the reader can never put away, sitting exactly where the rows they came for should be.
+
+**A component whose whole job is to draw a standing sentence is the shape to look for.** It reads
+as a deliberate primitive because it is one, and its own documentation will argue that the
+sentence is short enough not to be worth hiding. That argument is the rule's other direction being
+re-derived from scratch, one component at a time; the answer to it is that the header control
+costs one press and the sentence costs the same room every day forever.
+
+**The board does not settle it by which primitive it drew.** A board can carry three vocabularies
+for a standing sentence — a page note, a sub-caption, a message — and only the message records
+whether it closes. Where the board drew a caption and the sentence is an explanation, the board is
+the thing that moves.
+
+**Detecting it**: the population is small and mechanically findable. A page-level muted `Text`
+whose whole body is one translated string, and any component that renders one, are the two shapes;
+restrict the sweep to a page's own file and to a direct child of its root stack, or a detail
+pane's field hints and a table's captions drown the result.
+
 ## #74 One value's state is changed in one place, on every screen that shows it
 
 A record's active / suspended / closed state is moved by an **action** — a row action on the list,
