@@ -48,6 +48,63 @@ import path from "node:path";
 
 const DEFAULTS = {
   /**
+   * How wide a clipping element has to be before it counts as a region. Narrower than this it is
+   * a control, an icon well or a rule, and none of those is holding a screen the reader lost.
+   */
+  minRegionWidthPx: 240,
+
+  /**
+   * The height under which an open region is a sliver. A region that genuinely scrolls its own
+   * content is hundreds of pixels tall; this is the band where a reader cannot work at all.
+   */
+  minRegionHeightPx: 64,
+
+  /**
+   * How much content has to be held before the clipping matters. A toolbar overflowing sideways
+   * holds exactly its own height and is not this.
+   */
+  crushedContentPx: 240,
+
+  /**
+   * How many times over the content has to exceed what is shown. Below this the region is merely
+   * tight, and a check that reports tight regions is one nobody runs twice.
+   */
+  crushedRatio: 4,
+
+  /**
+   * How far a region has to overflow before it counts as scrolling rather than as a box a
+   * scrollbar shortened. A region scrolling sideways has its own horizontal bar taking height
+   * off `clientHeight`, and on a platform that draws that bar inside the box the vertical
+   * overflow it invents is about fifteen pixels — under this, and never near a real one.
+   */
+  strandedScrollSlackPx: 8,
+
+  /** The same floor for a region that also scrolls sideways, where the bar is the likelier cause. */
+  strandedSidewaysSlackPx: 24,
+
+  /**
+   * How tall a region has to be before the page's inability to move is the reader's problem. Under
+   * this it is a panel inside a screen \u2014 a note, a picker, a log tail \u2014 and scrolling it
+   * where it stands is what the reader expects. This is a floor and its neighbour
+   * `minRegionHeightPx` is a ceiling; they measure the same dimension for opposite questions.
+   */
+  minStrandedRegionHeightPx: 120,
+
+  /**
+   * How tall something above the region has to be before it counts as chrome standing still. A
+   * hairline rule and a 4px spacer are above it too, and neither is what the reader notices not
+   * moving.
+   */
+  frozenChromeMinHeightPx: 24,
+
+  /**
+   * How much of a region's height something has to share before it counts as standing beside it.
+   * A column half the height of its neighbour is still the neighbour; a strip crossing its top
+   * edge is a toolbar.
+   */
+  besideOverlapRatio: 0.5,
+
+  /**
    * What a list's own row total reads like. This is deliberately narrower than 「any number
    * on the page」: a stat tile drawing 「14」 under the label 「적용 법령」 is not claiming that
    * fourteen rows are about to be drawn, and a check that reads it as one fires on every
@@ -271,7 +328,35 @@ const countedListDrawsNoRows = {
     const leaves = [...document.querySelectorAll("body *")].filter(
       (el) => own(el) && visible(el),
     );
-    const rows = [...document.querySelectorAll(o.rowSelectors.join(","))].filter(visible);
+    // A row painted where nothing can reach it is not a drawn row.
+    //
+    // An ancestor that CLIPS — `overflow: hidden` or `clip`, which no gesture undoes — and whose
+    // box the row's rectangle falls entirely outside of hides that row from the reader as
+    // completely as a row that never rendered: the rectangles are real, `visible()` says yes, and
+    // the screen under the total is blank. That is how a list screen whose tiles, banners and
+    // help cards outgrow the fold arrives — the framework hands the tab body the leftover height,
+    // the leftover is thirty pixels, and forty-two rows lay themselves out below the clip.
+    //
+    // A SCROLLABLE ancestor is the opposite case and is left alone. Rows below the fold of an
+    // `auto`/`scroll` box are one gesture away, which is what a long list is; reading them as
+    // undrawn would fire on every list anybody has scrolled.
+    const reachable = (el) => {
+      const r = el.getBoundingClientRect();
+      for (let p = el.parentElement; p && p !== document.documentElement; p = p.parentElement) {
+        const s = getComputedStyle(p);
+        const clipsY = s.overflowY === "hidden" || s.overflowY === "clip";
+        const clipsX = s.overflowX === "hidden" || s.overflowX === "clip";
+        if (!clipsY && !clipsX) continue;
+        const b = p.getBoundingClientRect();
+        if (clipsY && Math.min(r.bottom, b.bottom) - Math.max(r.top, b.top) <= 0) return false;
+        if (clipsX && Math.min(r.right, b.right) - Math.max(r.left, b.left) <= 0) return false;
+      }
+      return true;
+    };
+
+    const rows = [...document.querySelectorAll(o.rowSelectors.join(","))]
+      .filter(visible)
+      .filter(reachable);
     let compared = 0;
 
     for (const el of leaves) {
@@ -779,12 +864,256 @@ const openPaneDrawsNothing = {
   },
 };
 
+/**
+ * A region crushed to a sliver of what it holds.
+ *
+ * <p><b>The list is there, the requests answered, every string right — and the reader sees
+ * twenty-one pixels of it.</b> A page laid out as one column that must fit the fold hands its
+ * flexible child whatever the fixed content above it left over, and `min-h-0` lets that be
+ * almost nothing. Nothing errors, nothing is missing, and the page cannot be scrolled to reveal
+ * the rest because nothing overflows — the child shrank instead.
+ *
+ * <p><b>It is invisible to every other check.</b> The rows are in the accessibility tree, so a
+ * tree reading finds them all; the total says 31 and the column draws 31; the pane paints
+ * plenty. Only the geometry says the reader can reach none of it.
+ *
+ * <p><b>Judged on the ratio and the height together.</b> A healthy internal scroller is hundreds
+ * of pixels tall and holds two or three times that; a collapsed accordion is zero and is
+ * collapsed on purpose; a toolbar that scrolls sideways holds exactly its own height. What is
+ * left is a region that clips nearly everything it holds while still claiming to be open.
+ */
+const regionCrushedToASliver = {
+  id: "regionCrushedToASliver",
+  grade: "error",
+  title:
+    "a region painted as a sliver of what it holds — the content is there and the reader can reach almost none of it",
+  page: (o) => {
+    const findings = [];
+    const seen = [];
+    let compared = 0;
+
+    for (const el of document.querySelectorAll("*")) {
+      const style = getComputedStyle(el);
+      if (style.display === "none" || style.visibility === "hidden") continue;
+      // Only a region that clips can hide what it holds. An `overflow: visible` element paints
+      // its content past its own box, so the reader sees it whatever the box measures.
+      if (style.overflowY === "visible") continue;
+
+      const rect = el.getBoundingClientRect();
+      // A region, not a control or a rule: something wide enough to have been holding a screen.
+      if (rect.width < o.minRegionWidthPx) continue;
+
+      const shown = el.clientHeight;
+      const held = el.scrollHeight;
+      // Zero is a region deliberately closed — an accordion, a collapsed panel — and only when it
+      // clips. A region that SCROLLS carries a promise the reader can reach what is in it, so zero
+      // there is the worst crush this check exists to catch rather than an exemption from it: a
+      // detail body measuring 0px over 1927px of a panel somebody just opened reported nothing,
+      // because the one branch meant for a closed accordion swallowed it.
+      const scrolls = style.overflowY === "auto" || style.overflowY === "scroll";
+      if (shown < 0 || (shown === 0 && !scrolls)) continue;
+      if (shown >= o.minRegionHeightPx) continue;
+      if (held < o.crushedContentPx) continue;
+      if (held < shown * o.crushedRatio) continue;
+
+      // The outermost one only. A crushed region crushes everything inside it, and reporting the
+      // whole chain buries the one element whose height decided it.
+      if (seen.some((other) => other.contains(el))) continue;
+      seen.push(el);
+      compared += 1;
+
+      const name = el.tagName.toLowerCase()
+        + (el.id ? "#" + el.id : "")
+        + (typeof el.className === "string" && el.className
+          ? "." + el.className.trim().split(/\s+/).slice(0, 3).join(".")
+          : "");
+      findings.push(
+        `${name} is ${Math.round(rect.width)}\u00d7${Math.round(shown)}px and holds ` +
+          `${Math.round(held)}px, so the reader reaches about ` +
+          `${Math.round((shown / held) * 100)}% of what is in it and no scrollbar says so — ` +
+          `the region did not overflow, it shrank. A column told to fit the fold hands its ` +
+          `flexible child whatever the fixed content above it left over, and \`min-h-0\` lets ` +
+          `that be almost nothing: let the page own the scroll, or give the region a floor`,
+      );
+      if (findings.length >= o.maxFindings) break;
+    }
+
+    return { compared, findings };
+  },
+};
+
+/**
+ * A page that cannot move with a strip inside it that can.
+ *
+ * <p>A list panel is given `overflow-auto` so that a long list stays inside its column while a
+ * detail stands beside it. **Beside an open detail that is right, and on its own it is the
+ * defect** — the reader works down a 1769px list through a 690px window while the tiles, the tab
+ * strip and the page's own header stand still around it, and nothing on the screen says the rest
+ * of the page is not what is moving.
+ *
+ * <p><b>It is invisible to a source audit, and it is invisible to a screenshot.</b> The class is
+ * on a framework component that every list in the console shares, so no screen file carries a
+ * mark; and a picture of a scrolling list looks exactly like a picture of a scrolling page. What
+ * separates them is one comparison — which box's `scrollHeight` exceeds its `clientHeight` — and
+ * that is a question only the live page answers.
+ *
+ * <p><b>What makes it decidable is what stands beside the region, not what the region is called.</b>
+ * A column with a wide neighbour sharing its vertical band is one track of a two-track layout and
+ * scrolls in its own track by design. A region with nothing beside it is the page's content, and
+ * the page is what should be scrolling it.
+ *
+ * <p>Quiet wherever the reader can still move something: a document that scrolls, an ancestor
+ * that scrolls, anything inside a dialog, a drawer or a menu, and any form control that scrolls
+ * its own value.
+ */
+const pageFrozenAroundAScrollingRegion = {
+  id: "pageFrozenAroundAScrollingRegion",
+  grade: "error",
+  title:
+    "a region scrolling its own content while the page around it cannot move \u2014 the reader works a strip inside a frozen screen",
+  page: (o) => {
+    const findings = [];
+    let compared = 0;
+
+    const canScroll = (el) => {
+      const oy = getComputedStyle(el).overflowY;
+      return oy === "auto" || oy === "scroll";
+    };
+    const overflows = (el) => {
+      const over = el.scrollHeight - el.clientHeight;
+      // A region that also scrolls sideways carries its own horizontal bar, and on a platform
+      // that draws that bar inside the box it takes height off `clientHeight` and invents a
+      // vertical overflow that was never content.
+      const sideways = el.scrollWidth - el.clientWidth > 0;
+      return over > (sideways ? o.strandedSidewaysSlackPx : o.strandedScrollSlackPx);
+    };
+
+    const de = document.documentElement;
+    const pageMoves = de.scrollHeight - de.clientHeight > o.strandedScrollSlackPx;
+
+    const OVERLAY = '[role="dialog"], [role="alertdialog"], [role="menu"], [role="listbox"], [role="tooltip"], [aria-modal="true"]';
+
+    for (const el of document.querySelectorAll("*")) {
+      const style = getComputedStyle(el);
+      if (style.display === "none" || style.visibility === "hidden") continue;
+      if (style.overflowY !== "auto" && style.overflowY !== "scroll") continue;
+      if (!overflows(el)) continue;
+
+      const rect = el.getBoundingClientRect();
+      // A region, not a control: something wide and tall enough to have been holding the screen.
+      if (rect.width < o.minRegionWidthPx) continue;
+      if (rect.height < o.minStrandedRegionHeightPx) continue;
+
+      // A control that scrolls its own value, and a block that scrolls its own listing. Both are
+      // the reader's to scroll and neither is the page's content.
+      if (el.matches("textarea, select, pre, code, [contenteditable], [contenteditable] *")) continue;
+
+      // Anything the reader opened over the page. A dialog, a drawer and a menu scroll their own
+      // content by design, and the page behind them is meant to hold still.
+      if (el.closest(OVERLAY)) continue;
+
+      compared += 1;
+      if (pageMoves) continue;
+
+      // Something standing beside it makes this one track of a two-track layout, and a track
+      // scrolls in its own box. Beside means sharing the vertical band and sitting clear of it
+      // horizontally \u2014 a toolbar crossing the top edge is above, not beside.
+      const parent = el.parentElement;
+      const beside = parent
+        ? Array.from(parent.children).some((sib) => {
+            if (sib === el) return false;
+            const r = sib.getBoundingClientRect();
+            if (r.width < o.minRegionWidthPx) return false;
+            const shared = Math.min(rect.bottom, r.bottom) - Math.max(rect.top, r.top);
+            if (shared < rect.height * o.besideOverlapRatio) return false;
+            return r.right <= rect.left + 1 || r.left >= rect.right - 1;
+          })
+        : false;
+      if (beside) continue;
+
+      // **The box that was supposed to scroll.** Walking out, the first ancestor that CAN scroll is
+      // either already scrolling \u2014 in which case the page moves after all, one box further out,
+      // and the reader is not stuck \u2014 or it is not, in which case that is the box the region was
+      // fitted into and the box a fix changes.
+      //
+      // <b>Quiet when no ancestor could ever have scrolled.</b> A shell clipping with
+      // `overflow: hidden` all the way out leaves nothing to hand the scroll to, and the region's
+      // own overflow is the only thing keeping the rows reachable at all. That is a shell to
+      // change rather than a region, and this check does not pretend to have decided it.
+      let port = null;
+      let held = false;
+      let up = el.parentElement;
+      while (up && up !== de) {
+        if (canScroll(up)) {
+          if (overflows(up)) { held = true; break; }
+          if (!port) port = up;
+        }
+        up = up.parentElement;
+      }
+      if (held) continue;
+      if (!port) continue;
+
+      // **Something has to be standing still for the reader to be stuck.** A region that fills its
+      // scrollport with nothing above it is the page scrolling, whatever element the scrollbar
+      // happens to hang off \u2014 and an app shell whose content area owns the scroll looks exactly
+      // like this. What makes the defect is chrome INSIDE the same scrollport that the region's
+      // scroll leaves behind: the page's own header, its tiles, its tab strip. Nothing above the
+      // region is not a milder version of the defect, it is a different screen.
+      //
+      // It is looked for inside that box and nowhere else, which is what keeps a top bar and a
+      // side navigation out of it \u2014 they sit outside the scroller and are meant to stay.
+      let frozen = null;
+      for (const other of port.querySelectorAll("*")) {
+        if (other === el || el.contains(other) || other.contains(el)) continue;
+        const cs = getComputedStyle(other);
+        if (cs.display === "none" || cs.visibility === "hidden") continue;
+        const r = other.getBoundingClientRect();
+        if (r.height < o.frozenChromeMinHeightPx) continue;
+        // Entirely above it, and over the same columns \u2014 a strip off to one side is beside the
+        // region rather than over it, and stays in view either way.
+        if (r.bottom > rect.top + 1) continue;
+        if (r.right <= rect.left || r.left >= rect.right) continue;
+        frozen = other;
+        break;
+      }
+      // Nothing above it: the region IS the page's content, and its scrollbar is the page's.
+      if (!frozen) continue;
+
+      const frozenName = frozen.tagName.toLowerCase()
+        + (typeof frozen.className === "string" && frozen.className
+          ? "." + frozen.className.trim().split(/\s+/).slice(0, 2).join(".")
+          : "");
+
+      const name = el.tagName.toLowerCase()
+        + (el.id ? "#" + el.id : "")
+        + (typeof el.className === "string" && el.className
+          ? "." + el.className.trim().split(/\s+/).slice(0, 3).join(".")
+          : "");
+      findings.push(
+        `${name} is ${Math.round(rect.width)}\u00d7${Math.round(rect.height)}px, holds `
+          + `${Math.round(el.scrollHeight)}px and is the only thing on this page that moves. `
+          + `The document does not scroll, no ancestor of it scrolls, and nothing stands beside it \u2014 `
+          + `while ${frozenName} sits above it inside the same scrollport and stays where it is. `
+          + `So the reader works down a strip through a frozen screen, and no scrollbar anywhere `
+          + `says the rest of the page was never the part that was stuck. A region with nothing beside it is the page's content: let the `
+          + `page scroll it, and keep the region's own \`overflow\` for the state where a second `
+          + `column stands next to it`,
+      );
+      if (findings.length >= o.maxFindings) break;
+    }
+
+    return { compared, findings };
+  },
+};
+
 export const checks = [
   countedListDrawsNoRows,
   textBoxesOverlap,
   blockInsideParagraph,
   pressableControlsTakeThePress,
   openPaneDrawsNothing,
+  regionCrushedToASliver,
+  pageFrozenAroundAScrollingRegion,
 ];
 
 /** One self-contained expression, ready for any driver's evaluate call. */
@@ -865,6 +1194,100 @@ function evaluate(session, url, check, options) {
  * across content.
  */
 const FIXTURES = {
+  pageFrozenAroundAScrollingRegion: {
+    broken: {
+      // The shape this check was written from: a console page whose shell is the height of the
+      // window, a strip of page chrome above the list, and the list given the leftovers with
+      // `overflow-auto`. Nothing on the page moves except the rows.
+      "a list scrolling itself under page chrome that cannot move":
+        `<style>html,body{margin:0;height:100%;overflow:hidden;font:14px sans-serif}
+        .page{display:flex;flex-direction:column;height:600px;width:1100px;overflow:auto}
+        .chrome{flex:none;padding:12px;background:#f4f4f5}
+        .list{flex:1;min-height:0;overflow:auto}
+        table{width:100%;border-collapse:collapse}td{padding:12px;border-bottom:1px solid #ddd}</style>
+        <div class=page><div class=chrome>전체 20건 · 비상 연락처</div>
+        <div class=list><table><tbody><tr><td>119 종합상황실</td><td>02-000-1000</td></tr><tr><td>관할 소방서</td><td>02-000-1001</td></tr><tr><td>관할 경찰서</td><td>02-000-1002</td></tr><tr><td>협력 병원</td><td>02-000-1003</td></tr><tr><td>환경청 상황실</td><td>02-000-1004</td></tr><tr><td>안전보건공단</td><td>02-000-1005</td></tr><tr><td>한국가스안전공사</td><td>02-000-1006</td></tr><tr><td>한국전기안전공사</td><td>02-000-1007</td></tr><tr><td>관할 지방고용노동관서</td><td>02-000-1008</td></tr><tr><td>야간 당직 안전담당</td><td>02-000-1009</td></tr><tr><td>사업장 안전보건관리책임자</td><td>02-000-1010</td></tr><tr><td>협력사 현장대리인</td><td>02-000-1011</td></tr><tr><td>가스 공급사 비상연락</td><td>02-000-1012</td></tr><tr><td>전기 수전실 당직</td><td>02-000-1013</td></tr><tr><td>폐수처리 위탁사</td><td>02-000-1014</td></tr><tr><td>산업보건의</td><td>02-000-1015</td></tr><tr><td>보건관리자</td><td>02-000-1016</td></tr><tr><td>소방안전관리자</td><td>02-000-1017</td></tr><tr><td>방재실</td><td>02-000-1018</td></tr><tr><td>정문 경비</td><td>02-000-1019</td></tr></tbody></table></div></div>`,
+      // The same defect in the layout a list-detail screen actually uses: one grid in both states,
+      // with the detail's track at zero while it is closed. A neighbour test that counts elements
+      // rather than the width they occupy reads that empty track as a column and goes quiet here.
+      "a list scrolling beside a detail track collapsed to nothing":
+        `<style>html,body{margin:0;height:100%;overflow:hidden;font:14px sans-serif}
+        .page{display:flex;flex-direction:column;height:600px;width:1100px;overflow:auto}
+        .chrome{flex:none;padding:12px;background:#f4f4f5}
+        .split{flex:1;min-height:0;display:grid;grid-template-columns:1fr 0px 0px;overflow:hidden}
+        .list{min-height:0;overflow:auto}
+        .divider{width:0}.detail{width:0;overflow:hidden}
+        table{width:100%;border-collapse:collapse}td{padding:12px;border-bottom:1px solid #ddd}</style>
+        <div class=page><div class=chrome>전체 20건 · 비상 연락처</div>
+        <div class=split><div class=list><table><tbody><tr><td>119 종합상황실</td><td>02-000-1000</td></tr><tr><td>관할 소방서</td><td>02-000-1001</td></tr><tr><td>관할 경찰서</td><td>02-000-1002</td></tr><tr><td>협력 병원</td><td>02-000-1003</td></tr><tr><td>환경청 상황실</td><td>02-000-1004</td></tr><tr><td>안전보건공단</td><td>02-000-1005</td></tr><tr><td>한국가스안전공사</td><td>02-000-1006</td></tr><tr><td>한국전기안전공사</td><td>02-000-1007</td></tr><tr><td>관할 지방고용노동관서</td><td>02-000-1008</td></tr><tr><td>야간 당직 안전담당</td><td>02-000-1009</td></tr><tr><td>사업장 안전보건관리책임자</td><td>02-000-1010</td></tr><tr><td>협력사 현장대리인</td><td>02-000-1011</td></tr><tr><td>가스 공급사 비상연락</td><td>02-000-1012</td></tr><tr><td>전기 수전실 당직</td><td>02-000-1013</td></tr><tr><td>폐수처리 위탁사</td><td>02-000-1014</td></tr><tr><td>산업보건의</td><td>02-000-1015</td></tr><tr><td>보건관리자</td><td>02-000-1016</td></tr><tr><td>소방안전관리자</td><td>02-000-1017</td></tr><tr><td>방재실</td><td>02-000-1018</td></tr><tr><td>정문 경비</td><td>02-000-1019</td></tr></tbody></table></div>
+        <div class=divider></div><div class=detail></div></div></div>`,
+    },
+    quiet: {
+      // The state the region's own overflow exists for: a detail stands beside the list, the page
+      // must hold still or the detail would slide away with it, and each column scrolls in its
+      // own track. Both columns scroll here and neither may be reported.
+      "a list and a detail each scrolling in their own track":
+        `<style>html,body{margin:0;height:100%;overflow:hidden;font:14px sans-serif}
+        .page{display:flex;flex-direction:column;height:600px;width:1100px;overflow:auto}
+        .chrome{flex:none;padding:12px;background:#f4f4f5}
+        .split{flex:1;min-height:0;display:grid;grid-template-columns:560px 17px 1fr;overflow:hidden}
+        .list,.detail{min-height:0;overflow:auto}
+        .divider{background:#ddd}
+        table{width:100%;border-collapse:collapse}td{padding:12px;border-bottom:1px solid #ddd}
+        p{margin:0;padding:10px;border-bottom:1px solid #eee}</style>
+        <div class=page><div class=chrome>전체 20건 · 비상 연락처</div>
+        <div class=split><div class=list><table><tbody><tr><td>119 종합상황실</td><td>02-000-1000</td></tr><tr><td>관할 소방서</td><td>02-000-1001</td></tr><tr><td>관할 경찰서</td><td>02-000-1002</td></tr><tr><td>협력 병원</td><td>02-000-1003</td></tr><tr><td>환경청 상황실</td><td>02-000-1004</td></tr><tr><td>안전보건공단</td><td>02-000-1005</td></tr><tr><td>한국가스안전공사</td><td>02-000-1006</td></tr><tr><td>한국전기안전공사</td><td>02-000-1007</td></tr><tr><td>관할 지방고용노동관서</td><td>02-000-1008</td></tr><tr><td>야간 당직 안전담당</td><td>02-000-1009</td></tr><tr><td>사업장 안전보건관리책임자</td><td>02-000-1010</td></tr><tr><td>협력사 현장대리인</td><td>02-000-1011</td></tr><tr><td>가스 공급사 비상연락</td><td>02-000-1012</td></tr><tr><td>전기 수전실 당직</td><td>02-000-1013</td></tr><tr><td>폐수처리 위탁사</td><td>02-000-1014</td></tr><tr><td>산업보건의</td><td>02-000-1015</td></tr><tr><td>보건관리자</td><td>02-000-1016</td></tr><tr><td>소방안전관리자</td><td>02-000-1017</td></tr><tr><td>방재실</td><td>02-000-1018</td></tr><tr><td>정문 경비</td><td>02-000-1019</td></tr></tbody></table></div>
+        <div class=divider></div><div class=detail><h2>관할 소방서</h2><p>01. 야간 당직 인수인계 사항</p><p>02. 야간 당직 인수인계 사항</p><p>03. 야간 당직 인수인계 사항</p><p>04. 야간 당직 인수인계 사항</p><p>05. 야간 당직 인수인계 사항</p><p>06. 야간 당직 인수인계 사항</p><p>07. 야간 당직 인수인계 사항</p><p>08. 야간 당직 인수인계 사항</p><p>09. 야간 당직 인수인계 사항</p><p>10. 야간 당직 인수인계 사항</p><p>11. 야간 당직 인수인계 사항</p><p>12. 야간 당직 인수인계 사항</p><p>13. 야간 당직 인수인계 사항</p><p>14. 야간 당직 인수인계 사항</p><p>15. 야간 당직 인수인계 사항</p><p>16. 야간 당직 인수인계 사항</p><p>17. 야간 당직 인수인계 사항</p><p>18. 야간 당직 인수인계 사항</p><p>19. 야간 당직 인수인계 사항</p><p>20. 야간 당직 인수인계 사항</p><p>21. 야간 당직 인수인계 사항</p><p>22. 야간 당직 인수인계 사항</p><p>23. 야간 당직 인수인계 사항</p><p>24. 야간 당직 인수인계 사항</p><p>25. 야간 당직 인수인계 사항</p><p>26. 야간 당직 인수인계 사항</p><p>27. 야간 당직 인수인계 사항</p><p>28. 야간 당직 인수인계 사항</p><p>29. 야간 당직 인수인계 사항</p><p>30. 야간 당직 인수인계 사항</p><p>31. 야간 당직 인수인계 사항</p><p>32. 야간 당직 인수인계 사항</p><p>33. 야간 당직 인수인계 사항</p><p>34. 야간 당직 인수인계 사항</p><p>35. 야간 당직 인수인계 사항</p><p>36. 야간 당직 인수인계 사항</p><p>37. 야간 당직 인수인계 사항</p><p>38. 야간 당직 인수인계 사항</p><p>39. 야간 당직 인수인계 사항</p><p>40. 야간 당직 인수인계 사항</p></div></div></div>`,
+      // A region that scrolls on a page that also scrolls. Two bars is a layout to tidy; it is not
+      // a reader stuck in a strip, because the page moves under them.
+      "a region scrolling on a page that scrolls as well":
+        `<style>html,body{margin:0;font:14px sans-serif}
+        .list{width:900px;height:300px;overflow:auto}
+        .rest{height:2400px}
+        table{width:100%;border-collapse:collapse}td{padding:12px;border-bottom:1px solid #ddd}</style>
+        <div class=list><table><tbody><tr><td>119 종합상황실</td><td>02-000-1000</td></tr><tr><td>관할 소방서</td><td>02-000-1001</td></tr><tr><td>관할 경찰서</td><td>02-000-1002</td></tr><tr><td>협력 병원</td><td>02-000-1003</td></tr><tr><td>환경청 상황실</td><td>02-000-1004</td></tr><tr><td>안전보건공단</td><td>02-000-1005</td></tr><tr><td>한국가스안전공사</td><td>02-000-1006</td></tr><tr><td>한국전기안전공사</td><td>02-000-1007</td></tr><tr><td>관할 지방고용노동관서</td><td>02-000-1008</td></tr><tr><td>야간 당직 안전담당</td><td>02-000-1009</td></tr><tr><td>사업장 안전보건관리책임자</td><td>02-000-1010</td></tr><tr><td>협력사 현장대리인</td><td>02-000-1011</td></tr><tr><td>가스 공급사 비상연락</td><td>02-000-1012</td></tr><tr><td>전기 수전실 당직</td><td>02-000-1013</td></tr><tr><td>폐수처리 위탁사</td><td>02-000-1014</td></tr><tr><td>산업보건의</td><td>02-000-1015</td></tr><tr><td>보건관리자</td><td>02-000-1016</td></tr><tr><td>소방안전관리자</td><td>02-000-1017</td></tr><tr><td>방재실</td><td>02-000-1018</td></tr><tr><td>정문 경비</td><td>02-000-1019</td></tr></tbody></table></div>
+        <div class=rest>이 아래로 페이지가 이어집니다.</div>`,
+      // What the reader opened over the page. The page behind a dialog is meant to hold still, and
+      // the dialog's own body is what they scroll.
+      "a dialog body scrolling over a page that holds still":
+        `<style>html,body{margin:0;height:100%;overflow:hidden;font:14px sans-serif}
+        .dlg{width:600px;margin:40px auto;border:1px solid #ccc}
+        .body{height:300px;overflow:auto}
+        p{margin:0;padding:10px;border-bottom:1px solid #eee}</style>
+        <div role=dialog aria-modal=true class=dlg><h2>야간 당직 인수인계</h2>
+        <div class=body><p>01. 야간 당직 인수인계 사항</p><p>02. 야간 당직 인수인계 사항</p><p>03. 야간 당직 인수인계 사항</p><p>04. 야간 당직 인수인계 사항</p><p>05. 야간 당직 인수인계 사항</p><p>06. 야간 당직 인수인계 사항</p><p>07. 야간 당직 인수인계 사항</p><p>08. 야간 당직 인수인계 사항</p><p>09. 야간 당직 인수인계 사항</p><p>10. 야간 당직 인수인계 사항</p><p>11. 야간 당직 인수인계 사항</p><p>12. 야간 당직 인수인계 사항</p><p>13. 야간 당직 인수인계 사항</p><p>14. 야간 당직 인수인계 사항</p><p>15. 야간 당직 인수인계 사항</p><p>16. 야간 당직 인수인계 사항</p><p>17. 야간 당직 인수인계 사항</p><p>18. 야간 당직 인수인계 사항</p><p>19. 야간 당직 인수인계 사항</p><p>20. 야간 당직 인수인계 사항</p><p>21. 야간 당직 인수인계 사항</p><p>22. 야간 당직 인수인계 사항</p><p>23. 야간 당직 인수인계 사항</p><p>24. 야간 당직 인수인계 사항</p><p>25. 야간 당직 인수인계 사항</p><p>26. 야간 당직 인수인계 사항</p><p>27. 야간 당직 인수인계 사항</p><p>28. 야간 당직 인수인계 사항</p><p>29. 야간 당직 인수인계 사항</p><p>30. 야간 당직 인수인계 사항</p><p>31. 야간 당직 인수인계 사항</p><p>32. 야간 당직 인수인계 사항</p><p>33. 야간 당직 인수인계 사항</p><p>34. 야간 당직 인수인계 사항</p><p>35. 야간 당직 인수인계 사항</p><p>36. 야간 당직 인수인계 사항</p><p>37. 야간 당직 인수인계 사항</p><p>38. 야간 당직 인수인계 사항</p><p>39. 야간 당직 인수인계 사항</p><p>40. 야간 당직 인수인계 사항</p></div></div>`,
+      // A navigation column. It is narrow, it is tall and it scrolls its own entries — and the
+      // content area standing beside it is what says the reader is not stuck.
+      "a navigation column scrolling beside the content":
+        `<style>html,body{margin:0;height:100%;overflow:hidden;font:14px sans-serif}
+        .shell{display:flex;height:600px;width:1100px}
+        .nav{width:260px;overflow:auto;border-right:1px solid #ddd}
+        .content{flex:1;padding:16px}
+        p{margin:0;padding:10px}</style>
+        <div class=shell><div class=nav><p>01. 야간 당직 인수인계 사항</p><p>02. 야간 당직 인수인계 사항</p><p>03. 야간 당직 인수인계 사항</p><p>04. 야간 당직 인수인계 사항</p><p>05. 야간 당직 인수인계 사항</p><p>06. 야간 당직 인수인계 사항</p><p>07. 야간 당직 인수인계 사항</p><p>08. 야간 당직 인수인계 사항</p><p>09. 야간 당직 인수인계 사항</p><p>10. 야간 당직 인수인계 사항</p><p>11. 야간 당직 인수인계 사항</p><p>12. 야간 당직 인수인계 사항</p><p>13. 야간 당직 인수인계 사항</p><p>14. 야간 당직 인수인계 사항</p><p>15. 야간 당직 인수인계 사항</p><p>16. 야간 당직 인수인계 사항</p><p>17. 야간 당직 인수인계 사항</p><p>18. 야간 당직 인수인계 사항</p><p>19. 야간 당직 인수인계 사항</p><p>20. 야간 당직 인수인계 사항</p><p>21. 야간 당직 인수인계 사항</p><p>22. 야간 당직 인수인계 사항</p><p>23. 야간 당직 인수인계 사항</p><p>24. 야간 당직 인수인계 사항</p><p>25. 야간 당직 인수인계 사항</p><p>26. 야간 당직 인수인계 사항</p><p>27. 야간 당직 인수인계 사항</p><p>28. 야간 당직 인수인계 사항</p><p>29. 야간 당직 인수인계 사항</p><p>30. 야간 당직 인수인계 사항</p><p>31. 야간 당직 인수인계 사항</p><p>32. 야간 당직 인수인계 사항</p><p>33. 야간 당직 인수인계 사항</p><p>34. 야간 당직 인수인계 사항</p><p>35. 야간 당직 인수인계 사항</p><p>36. 야간 당직 인수인계 사항</p><p>37. 야간 당직 인수인계 사항</p><p>38. 야간 당직 인수인계 사항</p><p>39. 야간 당직 인수인계 사항</p><p>40. 야간 당직 인수인계 사항</p></div>
+        <div class=content>전체 20건 · 비상 연락처</div></div>`,
+      // The shape any app shell has, and the shape the fix produces: the content area owns the
+      // scroll, the top bar and the navigation outside it stay put because that is what chrome is
+      // for, and nothing inside the scrollport is left behind. A check counting the top bar as
+      // frozen chrome reports every screen of every console.
+      "a content area owning the scroll under a fixed top bar":
+        `<style>html,body{margin:0;height:100%;overflow:hidden;font:14px sans-serif}
+        .shell{display:flex;flex-direction:column;height:600px;width:1100px}
+        .top{flex:none;height:48px;background:#f4f4f5;padding:12px}
+        .row{flex:1;min-height:0;display:flex;overflow:hidden}
+        .nav{width:64px;background:#fafafa}
+        main{flex:1;min-height:0;overflow:auto;padding:0 16px}
+        table{width:100%;border-collapse:collapse}td{padding:12px;border-bottom:1px solid #ddd}</style>
+        <div class=shell><div class=top>스마트 안전</div>
+        <div class=row><div class=nav></div>
+        <main><h1>비상 연락처</h1><table><tbody><tr><td>119 종합상황실</td><td>02-000-1000</td></tr><tr><td>관할 소방서</td><td>02-000-1001</td></tr><tr><td>관할 경찰서</td><td>02-000-1002</td></tr><tr><td>협력 병원</td><td>02-000-1003</td></tr><tr><td>환경청 상황실</td><td>02-000-1004</td></tr><tr><td>안전보건공단</td><td>02-000-1005</td></tr><tr><td>한국가스안전공사</td><td>02-000-1006</td></tr><tr><td>한국전기안전공사</td><td>02-000-1007</td></tr><tr><td>관할 지방고용노동관서</td><td>02-000-1008</td></tr><tr><td>야간 당직 안전담당</td><td>02-000-1009</td></tr><tr><td>사업장 안전보건관리책임자</td><td>02-000-1010</td></tr><tr><td>협력사 현장대리인</td><td>02-000-1011</td></tr><tr><td>가스 공급사 비상연락</td><td>02-000-1012</td></tr><tr><td>전기 수전실 당직</td><td>02-000-1013</td></tr><tr><td>폐수처리 위탁사</td><td>02-000-1014</td></tr><tr><td>산업보건의</td><td>02-000-1015</td></tr><tr><td>보건관리자</td><td>02-000-1016</td></tr><tr><td>소방안전관리자</td><td>02-000-1017</td></tr><tr><td>방재실</td><td>02-000-1018</td></tr><tr><td>정문 경비</td><td>02-000-1019</td></tr></tbody></table></main></div></div>`,
+      // A control that scrolls its own value. It is wide, it is tall, and the page around it is
+      // frozen — every test but the one that matters says this is the defect.
+      "a long note in a text box the reader scrolls":
+        `<style>html,body{margin:0;height:100%;overflow:hidden;font:14px sans-serif}</style>
+        <textarea style="width:600px;height:300px">01. 야간 당직 인수인계 사항\n02. 야간 당직 인수인계 사항\n03. 야간 당직 인수인계 사항\n04. 야간 당직 인수인계 사항\n05. 야간 당직 인수인계 사항\n06. 야간 당직 인수인계 사항\n07. 야간 당직 인수인계 사항\n08. 야간 당직 인수인계 사항\n09. 야간 당직 인수인계 사항\n10. 야간 당직 인수인계 사항\n11. 야간 당직 인수인계 사항\n12. 야간 당직 인수인계 사항\n13. 야간 당직 인수인계 사항\n14. 야간 당직 인수인계 사항\n15. 야간 당직 인수인계 사항\n16. 야간 당직 인수인계 사항\n17. 야간 당직 인수인계 사항\n18. 야간 당직 인수인계 사항\n19. 야간 당직 인수인계 사항\n20. 야간 당직 인수인계 사항\n21. 야간 당직 인수인계 사항\n22. 야간 당직 인수인계 사항\n23. 야간 당직 인수인계 사항\n24. 야간 당직 인수인계 사항\n25. 야간 당직 인수인계 사항\n26. 야간 당직 인수인계 사항\n27. 야간 당직 인수인계 사항\n28. 야간 당직 인수인계 사항\n29. 야간 당직 인수인계 사항\n30. 야간 당직 인수인계 사항\n31. 야간 당직 인수인계 사항\n32. 야간 당직 인수인계 사항\n33. 야간 당직 인수인계 사항\n34. 야간 당직 인수인계 사항\n35. 야간 당직 인수인계 사항\n36. 야간 당직 인수인계 사항\n37. 야간 당직 인수인계 사항\n38. 야간 당직 인수인계 사항\n39. 야간 당직 인수인계 사항\n40. 야간 당직 인수인계 사항</textarea>`,
+    },
+  },
   countedListDrawsNoRows: {
     broken: {
       // A list-detail screen: the toolbar says fourteen, the list draws none, and the detail
@@ -903,8 +1326,44 @@ const FIXTURES = {
         .bar{padding:8px 16px}.cards{display:flex;flex-direction:column;gap:8px;padding:8px}</style>
         <div class=pane><div class=bar><span>전체 14건</span></div>
           <div class=cards></div></div>`,
+      // The rows are all there and the reader can see none of them: the region that holds them is
+      // squeezed to the height its siblings left over and clips what does not fit, with nothing in
+      // the chain that scrolls. Every string is right, the request answered, the rectangles are
+      // real — and the screen under 「전체 42건」 is a filter bar and white space.
+      "a list clipped to nothing by a region that cannot scroll":
+        `<style>body{margin:0;font:14px sans-serif}
+        .page{height:120px;display:flex;flex-direction:column}
+        .head{height:80px}.region{flex:1;min-height:0;overflow:hidden}
+        .bar{padding:8px 16px}</style>
+        <div class=page>
+          <div class=head>타일과 배너가 여기를 차지합니다</div>
+          <div class=region>
+            <div class=bar><span>전체 42건</span></div>
+            <table><thead><tr><th>규칙</th></tr></thead>
+            <tbody><tr><td>중대재해 호출</td></tr><tr><td>작업중지 발령</td></tr>
+            <tr><td>가스 임계 초과</td></tr></tbody></table>
+          </div>
+        </div>`,
     },
     quiet: {
+      // The same squeeze, with the region allowed to scroll. The rows below the fold are one
+      // gesture away, which is what every long list on every screen looks like — a check that
+      // fired here would fire on all of them.
+      "a list taller than its region, in a region that scrolls":
+        `<style>body{margin:0;font:14px sans-serif}
+        .page{height:120px;display:flex;flex-direction:column}
+        .head{height:40px}.region{flex:1;min-height:0;overflow:auto}
+        .bar{padding:8px 16px}</style>
+        <div class=page>
+          <div class=head>타일</div>
+          <div class=region>
+            <div class=bar><span>전체 42건</span></div>
+            <table><thead><tr><th>규칙</th></tr></thead>
+            <tbody><tr><td>중대재해 호출</td></tr><tr><td>작업중지 발령</td></tr>
+            <tr><td>가스 임계 초과</td></tr><tr><td>법정 클록 신고 기한</td></tr>
+            <tr><td>시정·예방조치 기한 임박</td></tr><tr><td>자격 만료 임박</td></tr></tbody></table>
+          </div>
+        </div>`,
       "the same screen with its rows drawn":
         `<style>body{margin:0;font:14px sans-serif}.split{display:flex}.pane{width:620px}
         .bar{display:flex;gap:12px;padding:8px 16px}.pill{padding:4px 10px}.detail{width:560px}</style>
@@ -1136,6 +1595,84 @@ const FIXTURES = {
         <div class=foot><button>저장</button><div class=glow></div></div>`,
     },
   },
+  regionCrushedToASliver: {
+    broken: {
+      // The screen this check was written from: tiles, a banner, a reference table and a page note
+      // above a list, all inside a column told to fit the fold. The list is the only child that can
+      // give, so it gives everything — twenty-one pixels of a thirty-one-row list, and no scrollbar
+      // anywhere, because nothing overflowed.
+      "a list region left twenty-one pixels of six hundred":
+        `<style>body{margin:0;font:14px sans-serif}
+        .page{display:flex;flex-direction:column;height:400px;width:900px}
+        .chrome{flex:none;height:379px;background:#f4f4f5}
+        .list{flex:1;min-height:0;overflow:hidden}
+        table{width:100%;border-collapse:collapse}td{padding:10px;border-bottom:1px solid #ddd}</style>
+        <div class=page><div class=chrome>타일과 안내</div>
+        <div class=list><table><tbody>
+        <tr><td>119</td></tr><tr><td>관할 소방서</td></tr><tr><td>관할 경찰서</td></tr>
+        <tr><td>협력 병원</td></tr><tr><td>환경청 상황실</td></tr><tr><td>안전보건공단</td></tr>
+        <tr><td>한국가스안전공사</td></tr><tr><td>한국전기안전공사</td></tr>
+        <tr><td>관할 지방고용노동관서</td></tr><tr><td>야간 당직 안전담당</td></tr>
+        </tbody></table></div></div>`,
+      // The same crush taken all the way. The panel's scrolling body is handed nothing at all, so
+      // it measures zero over nineteen hundred pixels — and a scrolling region at zero is not a
+      // closed accordion, it is the reader pressing a row and being shown a title and two buttons.
+      "a scrolling panel body left nothing of nineteen hundred":
+        `<style>body{margin:0;font:14px sans-serif}
+        .panel{display:flex;flex-direction:column;height:127px;width:412px}
+        .head{flex:none;height:37px;border-bottom:1px solid #ddd}
+        .foot{flex:none;height:90px;border-top:1px solid #ddd}
+        .body{flex:1;min-height:0;overflow:auto}
+        p{margin:0;padding:10px;border-bottom:1px solid #eee}</style>
+        <div class=panel><div class=head>작업중지 발령</div>
+        <div class=body><p>전송 시점 · 작업중지 발령 즉시</p><p>수신 대상 · 해당 구역 재실자 전원</p>
+        <p>등급 · 긴급</p><p>수신거부 · 해당 없음</p><p>카카오 알림톡 · 한국어</p><p>카카오 알림톡 · 영어</p>
+        <p>앱 푸시 · 한국어</p><p>앱 푸시 · 영어</p><p>LINE · 한국어</p><p>LINE · 영어</p>
+        <p>SMS · 한국어</p><p>SMS · 영어</p><p>등록 2026-02-11</p><p>수정 2026-07-14</p></div>
+        <div class=foot><button>문안 편집</button><button>편집</button></div></div>`,
+    },
+    quiet: {
+      // A panel that scrolls its own content, which is the shape this check must never report:
+      // the reader can reach every row by scrolling the panel they are already looking at.
+      "a panel scrolling six hundred pixels through four hundred":
+        `<style>body{margin:0;font:14px sans-serif}
+        .panel{height:400px;width:900px;overflow:auto}
+        table{width:100%;border-collapse:collapse}td{padding:10px;border-bottom:1px solid #ddd}</style>
+        <div class=panel><table><tbody>
+        <tr><td>119</td></tr><tr><td>관할 소방서</td></tr><tr><td>관할 경찰서</td></tr>
+        <tr><td>협력 병원</td></tr><tr><td>환경청 상황실</td></tr><tr><td>안전보건공단</td></tr>
+        <tr><td>한국가스안전공사</td></tr><tr><td>한국전기안전공사</td></tr>
+        <tr><td>관할 지방고용노동관서</td></tr><tr><td>야간 당직 안전담당</td></tr>
+        </tbody></table></div>`,
+      // A region closed on purpose. It measures nothing because the reader closed it, and it says
+      // so — the control above it is the way back.
+      "a collapsed accordion holding its content at zero":
+        `<style>body{margin:0;font:14px sans-serif}
+        .fold{height:0;width:900px;overflow:hidden}p{margin:0;padding:10px}</style>
+        <button>연속 당직 안내 펼치기</button>
+        <div class=fold><p>사흘 이상 이어진 당직이 둘 있습니다.</p><p>휴일이 끼어 있어 실제 부담은 더 큽니다.</p>
+        <p>한도를 넘지는 않았습니다.</p><p>사업장 설정이 정합니다.</p><p>박관리 · 한설비</p>
+        <p>금·토·일</p><p>이레 내내</p><p>연속 당직 한도 3일</p><p>토요일 야간</p><p>보건 당직</p></div>`,
+      // A chip row that scrolls sideways. It is short because chips are short, and it holds
+      // exactly its own height — the overflow is on the other axis.
+      "a chip row scrolling sideways at its own height":
+        `<style>body{margin:0;font:14px sans-serif}
+        .chips{width:900px;height:36px;overflow-x:auto;overflow-y:hidden;white-space:nowrap}
+        .chip{display:inline-block;padding:6px 14px;margin:2px;border:1px solid #ccc;border-radius:999px}</style>
+        <div class=chips><span class=chip>전체</span><span class=chip>안전</span><span class=chip>보건</span>
+        <span class=chip>설비</span><span class=chip>휴일</span><span class=chip>야간</span></div>`,
+      // A region tight rather than crushed. The reader loses a row or two, which is a layout to
+      // tidy and not a screen they cannot use.
+      "a region showing most of what it holds":
+        `<style>body{margin:0;font:14px sans-serif}
+        .tight{width:900px;height:200px;overflow:hidden}
+        table{width:100%;border-collapse:collapse}td{padding:10px;border-bottom:1px solid #ddd}</style>
+        <div class=tight><table><tbody>
+        <tr><td>119</td></tr><tr><td>관할 소방서</td></tr><tr><td>관할 경찰서</td></tr>
+        <tr><td>협력 병원</td></tr><tr><td>환경청 상황실</td></tr><tr><td>안전보건공단</td></tr>
+        </tbody></table></div>`,
+    },
+  },
   openPaneDrawsNothing: {
     broken: {
       // The screen this check was written from: four tabs, and the one that is open renders its
@@ -1199,11 +1736,18 @@ const FIXTURES = {
   },
 };
 
-function selfTest(session, options) {
+/**
+ * Both directions, against generated fixtures.
+ *
+ * <p>`selected` narrows to `--check <id>`, because iterating on one check should not mean sitting
+ * through every other check's pages — and because a flag the run accepts and then ignores is the
+ * thing this file refuses an unrecognised option in order to avoid.
+ */
+function selfTest(session, options, selected = checks) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "audit-rendered-"));
   const rows = [];
   try {
-    for (const check of checks) {
+    for (const check of selected) {
       const pages = FIXTURES[check.id];
       if (!pages?.broken || !pages?.quiet) {
         rows.push([check.id, "—", "no fixture pair — a check proved in one direction has not been added", false]);
@@ -1236,7 +1780,7 @@ function selfTest(session, options) {
   }
   console.log(
     failed === 0
-      ? `\n✔ ${checks.length} checks, ${rows.length} pages, both directions`
+      ? `\n✔ ${selected.length} checks, ${rows.length} pages, both directions`
       : `\n✖ ${failed} of ${rows.length} pages came out wrong — a check proved in one direction has not been added`,
   );
   return failed === 0 ? 0 : 1;
@@ -1302,7 +1846,7 @@ function main() {
     console.log(snippet(c, options));
     return 0;
   }
-  if (process.argv.includes("--selftest")) return selfTest(session, options);
+  if (process.argv.includes("--selftest")) return selfTest(session, options, selected);
 
   const url = arg("url");
   if (!url) {

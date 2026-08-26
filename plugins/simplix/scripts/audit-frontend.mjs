@@ -1068,6 +1068,67 @@ function spinnerBesideMark(content) {
 
 const RULES = [
   {
+    id: "list-adapter-spreads-a-filters-property-that-is-not-there",
+    invariant: "#3 / #32",
+    level: "error",
+    desc: "A hand-written `adaptOrvalList` callback that picks `params.page` / `params.size` / `params.sort` off the request and then spreads `params.filters`. What the adapter hands the callback is ALREADY the flat request the server takes — `buildSearchableParams` has folded every committed filter into it as its own key (`title.contains`, `sentAt.between`) — so there is no `filters` property, spreading `undefined` contributes nothing, and every filter the reader commits is dropped on the floor. Nothing errors and nothing is logged: the badge appears over the toolbar, a counts strip built from the same state narrows, and only the rows stay as they were. Pass the generated hook to `adaptForcedList(hook, forced)` (or spread `...params` whole) so the request keeps what the caller did not think to name",
+    appliesTo: isTsx,
+    check: (c) => {
+      const lines = c.split("\n");
+      const hits = [];
+      // The callback form only: `adaptOrvalList(useX)` passes the hook straight through and is
+      // correct, and a `params.filters` somewhere else in a file is not this defect.
+      const opened = /adaptOrvalList\s*(?:<[^>]*>)?\s*\(\s*\(/;
+      for (let i = 0; i < lines.length; i += 1) {
+        if (!opened.test(lines[i])) continue;
+        const block = lines.slice(i, i + 24).join("\n");
+        const spread = /\.\.\.\s*\(?\s*params\s*\.\s*filters\b/.exec(block);
+        if (!spread) continue;
+        const line = i + 1 + block.slice(0, spread.index).split("\n").length - 1;
+        hits.push({ line, excerpt: (lines[line - 1] ?? "").trim() });
+      }
+      return hits;
+    },
+    samples: {
+      file: "modules/<domain>/src/widgets/<entity>/list.tsx",
+      broken: `export function useThingList(forced: Record<string, unknown> = {}) {
+  return useCrudList<ThingListDTO>(
+    adaptOrvalList<ThingListDTO>((params, options) =>
+      useListThings(
+        { page: params.page, size: params.size, sort: params.sort, ...params.filters, ...forced },
+        { query: { enabled: options?.query?.enabled !== false } },
+      ),
+    ),
+    { scopeKey: JSON.stringify(forced), stateMode: "server" },
+  );
+}`,
+      fixed: `export function useThingList(forced: Record<string, unknown> = {}) {
+  return useCrudList<ThingListDTO>(
+    adaptForcedList<ThingListDTO>(useListThings, forced),
+    { scopeKey: forcedScope(forced), stateMode: "server" },
+  );
+}`,
+      miss: [
+        {
+          note: "the hook passed straight through, which keeps the whole request",
+          source: `const list = useCrudList<ThingListDTO>(adaptOrvalList<ThingListDTO>(useListThings), {
+  stateMode: "server",
+});`,
+        },
+        {
+          note: "the callback form spreading the request whole, which also keeps the filters",
+          source: `adaptOrvalList<ThingListDTO>((params, options) =>
+  useListThings({ ...params, ...forced }, { query: { enabled: options?.query?.enabled !== false } }),
+);`,
+        },
+        {
+          note: "a `filters` property of something that is not the adapter's params",
+          source: `const applied = { ...state.filters, ...forced };`,
+        },
+      ],
+    },
+  },
+  {
     id: "unguarded-route",
     invariant: "audit: route permission",
     level: "error",
@@ -1114,6 +1175,51 @@ export const Route = createFileRoute("/areas/")({
   },
 });`,
           },
+        },
+      ],
+    },
+  },
+  {
+    id: "internal-address-as-a-bare-anchor",
+    invariant: "audit: routed navigation",
+    level: "error",
+    desc: "An in-app address reached through a bare `<a href=\"/...\">`. The browser treats it as a document request, so the whole application is torn down and rebuilt: every cached read is refetched, whatever the reader had typed is gone, and the panel or tab they were on resets — a screen that works and feels broken, and nothing errors. Route it through the router's link component (`<Link to=\"/...\">`), which changes the address in place. What legitimately stays an anchor is an address that leaves the application — an absolute URL, a `mailto:`/`tel:`, a download, or anything carrying `target=\"_blank\"` or `download`",
+    appliesTo: isTsx,
+    check: (c) =>
+      lineHits(
+        c,
+        // A leading slash and no scheme is this application's own address. `//host` is
+        // protocol-relative and leaves, so the second character must not be a slash.
+        /<a\s[^>]*\bhref=(?:"\/(?!\/)|'\/(?!\/)|\{`\/(?!\/))/,
+        (line) =>
+          !/\btarget=/.test(line)
+          && !/\bdownload\b/.test(line)
+          && !/^\s*(?:\*|\/\/|\/\*)/.test(line),
+      ),
+    samples: {
+      file: "modules/notification/src/pages/duty-roster/crud-page.tsx",
+      broken: `<Button variant="outline" size="sm" asChild>
+  <a href="/emergency-contacts">{t("banner.toContacts")}</a>
+</Button>`,
+      fixed: `<Button variant="outline" size="sm" asChild>
+  <Link to="/emergency-contacts">{t("banner.toContacts")}</Link>
+</Button>`,
+      miss: [
+        {
+          note: "an address that leaves the application, which is a document request by intent",
+          source: `<a href="https://www.law.go.kr/">{t("law.source")}</a>`,
+        },
+        {
+          note: "a new tab, where nothing in this application is torn down",
+          source: `<a href="/reports/monthly.pdf" target="_blank" rel="noreferrer">{t("report.open")}</a>`,
+        },
+        {
+          note: "a download, which never navigates",
+          source: `<a href="/exports/roster.csv" download>{t("roster.export")}</a>`,
+        },
+        {
+          note: "the fix",
+          source: `<Link to="/emergency-contacts">{t("banner.toContacts")}</Link>`,
         },
       ],
     },
@@ -1612,6 +1718,43 @@ export function ThingList() {
           source: `function CountBadge({ row }: { readonly row: ThingListDTO }) {
   return <Badge variant="outline">{row.total ?? 0}</Badge>;
 }`,
+        },
+      ],
+    },
+  },
+  {
+    id: "instant-formatted-by-hand",
+    invariant: "#36",
+    level: "error",
+    desc: "An instant put on the screen through `new Date(value).toLocale*String()` instead of `<InstantText value={value} format=\"datetime\" />`. The hand-built string is formatted in the BROWSER's zone and the browser's locale, so the same record reads as a different moment to a reader abroad and as a different language to a reader whose console is Korean but whose laptop is not — and it disagrees, on the same panel, with every neighbouring field the framework drew. Nothing about it looks wrong in a screenshot taken on the developer's machine, which is why it survives review",
+    appliesTo: (path) => isTsx(path),
+    check: (c) => {
+      const lines = c.split("\n");
+      const hits = [];
+      for (let i = 0; i < lines.length; i += 1) {
+        // The Date constructor is what separates an instant from a number: `metres.toLocaleString`
+        // is a thousands separator and belongs where it is.
+        if (!/new Date\([^)]*\)\s*\.toLocale(String|DateString|TimeString)\s*\(/.test(lines[i])) continue;
+        hits.push({ line: i + 1, excerpt: lines[i].trim().slice(0, 120) });
+      }
+      return hits;
+    },
+    samples: {
+      file: "modules/<domain>/src/widgets/<entity>/detail.tsx",
+      broken: `<DetailFieldWrapper label={t("detail.field.raisedAt")} layout="inline">
+  <span>{new Date(record.requestedAt).toLocaleString()}</span>
+</DetailFieldWrapper>`,
+      fixed: `<DetailFieldWrapper label={t("detail.field.raisedAt")} layout="inline">
+  <InstantText value={record.requestedAt} format="datetime" />
+</DetailFieldWrapper>`,
+      miss: [
+        {
+          note: "a number's thousands separator, which is not an instant",
+          source: `<Text>{t("list.totalLength", { metres: row.totalLengthM.toLocaleString("ko-KR") })}</Text>`,
+        },
+        {
+          note: "the framework's own component, which resolves the display zone",
+          source: `<InstantText value={row.occurredAt} format="datetime" />`,
         },
       ],
     },
@@ -4210,8 +4353,19 @@ export function printAreaCode(code: string) {
     appliesTo: isTsx,
     // The gate is a `useCan("create", …)` result the file reads on or around the button, so a
     // file that owns one is exempt; what this catches is the button standing alone.
+    //
+    // <p><b>A create no permission gates is exempt, and has to say so.</b> The rule's premise is
+    // that the server would refuse — 「a user without create … gets a 403」 — and on a surface
+    // every signed-in account may write to there is no such user and no group to name. A screen
+    // forced to invent one gates the button on a permission that is not the one the endpoint
+    // checks, which is worse than not gating it: the affordance then disappears for readers the
+    // server would have answered. So the exemption is a sentence rather than a flag — the file
+    // says which endpoint is open and why — and a file that merely forgot the gate cannot claim
+    // it by accident.
     check: (c) =>
-      /\buseCan\("create"/.test(c) ? [] : lineHits(c, /onClick=\{show(New|Create)\}/),
+      /\buseCan\("create"/.test(c) || /no permission gates this create:\s*\S/.test(c)
+        ? []
+        : lineHits(c, /onClick=\{show(New|Create)\}/),
     samples: {
       file: "modules/site/src/pages/area-list.tsx",
       broken: `usePageHeader({
@@ -4228,6 +4382,12 @@ usePageHeader({
         {
           note: "an edit affordance answers to a different permission and to a different rule",
           source: `<Button onClick={showEdit}>{t("common.edit")}</Button>`,
+        },
+        {
+          note: "a create every signed-in account may make names no group, and says which endpoint is open",
+          source: `// no permission gates this create: every signed-in account sets its own
+// delegation, and the server forces the caller as the delegator.
+<Button onClick={showNew}>{t("page.new")}</Button>`,
         },
       ],
     },
@@ -6180,6 +6340,178 @@ const saveContacts = async (contacts: ContactItemDTO[]) => {
           note: "an exception the file states in place, and then owns",
           source: `{/* detailPresentation: deliberate — the map fills the viewport and a drawer would cover it */}
 <ListDetail variant="panel" activePanel={view} onClose={showList}>`,
+        },
+      ],
+    },
+  },
+  {
+    id: "gated-callback-wrapped-in-an-always-truthy-arrow",
+    invariant: "#52",
+    level: "error",
+    desc: "An optional callback handed to a prop as `() => onX?.(…)` — the arrow is a value whether or not the callback behind it is one, so the component that decides by presence always renders the affordance, and a reader who may not act presses a live-looking button and nothing happens. Build the arrow only when the callback is there: `onX ? () => onX(record) : undefined`",
+    appliesTo: isTsx,
+    // The prop is the component's own switch: CrudDetail.ActionFooter draws 삭제 when `onDelete`
+    // is defined, a verb row draws a button when its handler is. Optional chaining inside a
+    // wrapper reads as safety and is the opposite — it swallows the absence the caller was using
+    // to say 「this reader may not do this」, which is how a gate applied at the page arrives at
+    // the panel as a button that looks live and does nothing.
+    // A lifecycle notification is exempt: `onSuccess`, `onError` and their kin name a moment
+    // that has already happened, and nothing renders or fails to render because one is absent.
+    // Every other `on…` prop either draws an affordance or is the affordance's own press, and
+    // both of those are decided by whether the callback is there.
+    check: (c) =>
+      lineHits(
+        c,
+        /\bon[A-Z]\w*=\{\s*\(\s*\)\s*=>\s*on[A-Z]\w*\?\./,
+        (line, lines, i) =>
+          notCommentLine(line, lines, i) &&
+          !/\bon(?:Success|Error|Settled|Done|Complete|Completed|Finish|Finished|Load|Loaded|Mount|Unmount)=\{\s*\(\s*\)\s*=>/.test(
+            line,
+          ),
+      ),
+    samples: {
+      file: "modules/area/src/widgets/area/detail.tsx",
+      broken: `<CrudDetail.ActionFooter onDelete={() => onDelete?.(area)} deleteLabel={t("detail.delete")} />`,
+      fixed: `<CrudDetail.ActionFooter onDelete={onDelete ? () => onDelete(area) : undefined} deleteLabel={t("detail.delete")} />`,
+      miss: [
+        {
+          note: "the arrow is built only where the callback is, so the footer decides correctly",
+          source: `<CrudDetail.ActionFooter onDelete={onDelete ? () => onDelete(area) : undefined} />`,
+        },
+        {
+          note: "a required callback needs no optional chain",
+          source: `<CrudDetail.ActionFooter onDelete={() => onDelete(area)} />`,
+        },
+        {
+          note: "a lifecycle notification — nothing on screen is decided by whether anyone listens",
+          source: `const save = adaptOrvalUpdate(update, "areaId", { onSuccess: () => onSaved?.() });`,
+        },
+        {
+          note: "a handler that takes the change it is reporting, which is not this shape",
+          source: `<Dialog onOpenChange={(next) => !next && onClose?.()}>`,
+        },
+      ],
+    },
+  },
+  {
+    id: "list-detail-page-root-hands-down-no-height",
+    invariant: "#31",
+    level: "error",
+    desc: "A page whose root is a `Stack` without `flex`, holding a `ListDetail`. `flex` is `flex-1 min-h-0`, and it is the only thing that caps the screen at the viewport \u2014 without it the page is content-sized all the way down, the detail panel takes its own natural height, and its footer lands below the fold. Reaching the buttons then means scrolling the page, which carries the list and the tabs away with it. The list state looks perfect either way, so this is only ever found by opening a record on a screen with tall chrome above it. Add `flex`; the list is not capped by it, because `ListDetail` drops the cap from its own section while the detail is closed",
+    appliesTo: isTsx,
+    // The root only. A `Stack` further in is laying out a section, and a page that caps its chain
+    // some other way \u2014 a fragment whose children are the shell's own flex items, a div carrying
+    // `flex-1 min-h-0` \u2014 never reaches this rule, which is correct: the rule is about a `Stack`
+    // that was asked to be the page and was not told to fill it.
+    check: (c) => {
+      const hits = [];
+      const re = /<Stack\b/g;
+      let found;
+      while ((found = re.exec(c))) {
+        const before = c.slice(0, found.index).replace(/\s+$/, "");
+        if (!before.endsWith("return (")) continue;
+        const { tag, end } = jsxOpenTag(c, found.index);
+        if (/\/>$/.test(tag)) continue;
+        const attrs = tagAttrs(tag);
+        // The prop, bare or conditional. A page whose chrome would crush the list while it is
+        // alone caps only while a record is open \u2014 `flex={view !== "list"}` \u2014 and that is the
+        // same answer written more precisely, not a page missing the cap.
+        if (/(?:^|\s)flex\s*=\s*\{\s*false\s*\}/.test(attrs)) {
+          hits.push({ line: lineOfIndex(c, found.index), excerpt: tagAttrs(tag).trim() });
+          continue;
+        }
+        if (/(?:^|\s)flex(?:\s|=|\/|>)/.test(attrs)) continue;
+        if (/\bflex-1\b/.test(attrs) && /\bmin-h-0\b/.test(attrs)) continue;
+        const children = jsxChildren(c, "Stack", end);
+        if (!children || !/<ListDetail[\s>]/.test(children)) continue;
+        hits.push({ line: lineOfIndex(c, found.index), excerpt: tag.split("\n")[0].trim() });
+      }
+      return hits;
+    },
+    samples: {
+      file: "modules/<domain>/src/pages/<entity>/crud-page.tsx",
+      broken: `export function ThingCrudPage() {
+  return (
+    <Stack gap="md">
+      <SettingsTiles tiles={tiles} />
+      <ListDetail activePanel={view === "list" ? "list" : "detail"} listWidth={LIST_WIDTH}>
+        <ListDetail.List>{list}</ListDetail.List>
+        <ListDetail.Detail>{detail}</ListDetail.Detail>
+      </ListDetail>
+    </Stack>
+  );
+}`,
+      fixed: `export function ThingCrudPage() {
+  return (
+    <Stack flex gap="md">
+      <SettingsTiles tiles={tiles} />
+      <ListDetail activePanel={view === "list" ? "list" : "detail"} listWidth={LIST_WIDTH}>
+        <ListDetail.List>{list}</ListDetail.List>
+        <ListDetail.Detail>{detail}</ListDetail.Detail>
+      </ListDetail>
+    </Stack>
+  );
+}`,
+      miss: [
+        {
+          note: "a page that caps its chain and holds a list-detail",
+          source: `return (
+    <Stack flex gap="md">
+      <ListDetail><ListDetail.List>{list}</ListDetail.List></ListDetail>
+    </Stack>
+  );`,
+        },
+        {
+          note: "the same two utilities written by hand rather than through the prop",
+          source: `return (
+    <Stack gap="md" className="flex-1 min-h-0">
+      <ListDetail><ListDetail.List>{list}</ListDetail.List></ListDetail>
+    </Stack>
+  );`,
+        },
+        {
+          note: "a page root with no list-detail under it, which needs no cap",
+          source: `return (
+    <Stack gap="md">
+      <SettingsTiles tiles={tiles} />
+      <HelpCard />
+    </Stack>
+  );`,
+        },
+        {
+          note: "the cap applied only while a record is open, which is the same answer written more precisely",
+          source: `return (
+    <Stack flex={view !== "list"} gap="md">
+      <SettingsTiles tiles={tiles} />
+      <ListDetail activePanel={view === "list" ? "list" : "detail"}>
+        <ListDetail.List>{list}</ListDetail.List>
+      </ListDetail>
+    </Stack>
+  );`,
+        },
+        {
+          note: "a Stack laying out a section INSIDE the list, which is not the page root",
+          source: `return (
+    <Stack flex gap="md">
+      <ListDetail>
+        <ListDetail.List>
+          <Stack gap="md">{filters}{table}</Stack>
+        </ListDetail.List>
+      </ListDetail>
+    </Stack>
+  );`,
+        },
+        {
+          note: "an early branch whose Stack is not what the return opens",
+          source: `if (!canView) {
+    return (
+      <EmptyState>
+        <Stack gap="md">
+          <ListDetail><ListDetail.List>{list}</ListDetail.List></ListDetail>
+        </Stack>
+      </EmptyState>
+    );
+  }`,
         },
       ],
     },

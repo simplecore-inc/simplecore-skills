@@ -126,6 +126,12 @@ everywhere except the pixels:
 | a list total says N rows and the column under it draws none | the request answered 200 with N records, the component is imported, the props type-check |
 | two pieces of text painted into one rectangle | every string on the screen is the right string |
 | an open pane painting nothing — the reader pressed a tab and got a blank rectangle | a `return null` that is correct in a dozen other places, and a build with nothing wrong in it |
+| a list scrolling inside itself while the page around it cannot move | the rows are all there, the layout classes read correctly, and a screenshot of it is a screenshot of a scrolling list |
+
+**That table is what the defects feel like, and `--list` is what the script actually runs.** Three
+of these were written down when three existed; enumerating them in prose is how a reader ends up
+running a subset and reporting the rest as clean. Read `--list` before a walk and run every id it
+prints.
 
 **The pane check only sees the defect in the state that produces it**, which is almost never
 the state a walk lands on: the record the pane renders exists in the seeded database, so the
@@ -159,6 +165,26 @@ that passes without seeing anything is worse than no check — it converts *nobo
 Vocabulary — what a total reads like, what counts as a row, what an empty state says — is
 `--options <json>` with documented defaults, so a product that writes its totals differently
 overrides them instead of editing the script.
+
+## A page's `innerText` is not what the page says
+
+**Reading a screen by dumping `innerText` picks up text no reader can see, and the loudest of
+those is a closed select's own mirror.** A Radix `Select` renders an `aria-hidden`, clipped native
+`<select>` beside its trigger so a form can submit the value, and that mirror is built from the
+option labels **as they stood when the items first mounted**. On a screen whose catalogue arrives
+after the first paint — every lazily loaded locale namespace — the mirror keeps the untranslated
+keys for the life of the page. The real dropdown, opened, reads correctly.
+
+That failure wears the exact costume of the bug you are hunting: a session fixing a select's
+labels read `MailTransportSecurity.NONE` out of `innerText` after the fix, concluded the fix had
+not taken, and spent a detour on the i18n registry before opening the list and finding 「없음」.
+
+- **A closed select is settled by opening it**, never by reading the page's text:
+  `document.querySelectorAll('[role=option]')` after a press on the trigger.
+- **Anything `aria-hidden` is out of scope for what the screen says.** When a text dump is the
+  quickest read, strip them first, or scope the read to a region that holds none.
+- The same holds for any offscreen mirror a component keeps for measurement — the `compact`
+  select's width-measuring `<select>` is one.
 
 ## Verdict snippets
 
