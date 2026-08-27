@@ -70,10 +70,13 @@ the next agent will not know about.
 
 **A call site written before its import compiles for nobody**, and in a tree several agents share
 that window is not private: whoever runs a build during it gets a failure naming a file they have
-never opened and a symbol they have never used. Three times in one session, from one agent, same
-shape — `StatusBadge` and a tone table referenced a few seconds before the import line landed.
+never opened and a symbol they have never used. Four times in one session, from three different agents, the same
+shape — a component or a tone table referenced a few seconds before its import line landed. **The
+third peer is what settles it**: this is not one agent's habit, it is what an arrangement of several
+agents editing one tree produces, and the count is the only thing that could have told the two
+apart.
 
-**None of them was a break and all three cost somebody the same minutes**: read the failure, doubt
+**None of them was a break and every one cost somebody the same minutes**: read the failure, doubt
 your own work, check whether the file is yours, discover it is not. The third was handled the way
 they all should be — reported rather than re-run, with the two files checked as uncommitted rather
 than committed broken, and the reporter's own packages typechecked in isolation first to prove the
