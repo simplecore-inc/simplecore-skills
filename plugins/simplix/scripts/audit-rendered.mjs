@@ -261,6 +261,94 @@ const DEFAULTS = {
    * column to has not been asked to draw anything yet.
    */
   minPaneWidthPx: 40,
+
+  /**
+   * What an element says it is when it is a message.
+   *
+   * <p><b>Roles rather than component names, and the difference is the whole point.</b> Every
+   * source rule about these messages was keyed to the component that drew one, and each went
+   * blind the moment a message was drawn some other way. A role is what the element publishes
+   * to anything reading the page — it is what the message DRAWS, in the only tree that is not
+   * an implementation detail. `status` is here because a live region is a message too; what
+   * keeps a toast out is that it floats rather than standing in the column.
+   */
+  messageRoles: ["alert", "note", "status"],
+
+  /**
+   * Surfaces the reader opened, whose content is not taking the page.
+   *
+   * <p>A message inside a dialog, a menu or a popover is what the reader asked for, and the
+   * header control's own drop draws every hidden card again inside a `menu` — reading those as
+   * cards on the page reports each hidden card as a card with no close.
+   */
+  openedSurfaceSelector:
+    '[role="dialog"], [role="alertdialog"], [role="menu"], [role="listbox"],'
+    + ' [role="tooltip"], [aria-modal="true"]',
+
+  /**
+   * How far into the trailing edge of a message a control has to sit to be its close.
+   *
+   * <p>Geometry rather than a label, because a label is a translated string and this has to hold
+   * in every locale the console ships. A message's own action — 「설명 보기」, a legal badge —
+   * carries words; the close is the wordless control at the end of the band.
+   */
+  closeTrailingRatio: 0.25,
+
+  /** What a message draws to reach a reader who cannot separate two tints. */
+  messageGlyphSelector: 'svg, img, [role="img"]',
+
+  /**
+   * How tall a tinted band may be and still be a message.
+   *
+   * <p>A message is a sentence and a title; a card that holds content is taller. This is the
+   * ceiling that separates them for the second recogniser, which reads an un-roled band.
+   */
+  messageMaxHeightPx: 160,
+
+  /**
+   * How much of the page's own column a band has to span before it is a message.
+   *
+   * <p>The column and not the parent: a badge's flex box shrink-wraps it, so a ratio taken
+   * against the parent is 1.0 for every pill in the console.
+   */
+  messageBandWidthRatio: 0.7,
+
+  /**
+   * What is never a message, however it is painted.
+   *
+   * <p>A control carries a tint and a corner and says a few words, and so does a message. What
+   * separates them is that one of them is pressed.
+   */
+  notAMessageSelector: 'button, [role="button"], a[href], input, select, textarea',
+
+  /** How much prose a band has to hold before it is saying something rather than labelling it. */
+  messageProseChars: 8,
+
+  /**
+   * What a message does not contain.
+   *
+   * <p>A card holding content holds structure — a heading, fields, a table, a list. A message
+   * holds a sentence. This is what stops the un-roled recogniser reporting every `Card` on a
+   * settings screen.
+   */
+  messageStructureSelector:
+    'h1, h2, h3, h4, h5, h6, [role="heading"], input, select, textarea, table,'
+    + ' ul, ol, [role="table"], [role="grid"], [role="list"], [role="tablist"]',
+
+  /** How short a box can be and still be a figure rather than a line of a table. */
+  minFigureTileHeightPx: 56,
+
+  /** …and how tall before it is a column of the screen rather than a figure in a row. */
+  maxFigureTileHeightPx: 200,
+
+  /** How narrow a box can be and still be a figure. */
+  minFigureTileWidthPx: 80,
+
+  /** How many equal boxes standing side by side make a row of figures. */
+  minFiguresInARow: 2,
+
+  /** How far two boxes' tops may differ and still be on one line. */
+  figureRowTopSlackPx: 6,
 };
 
 // ---------------------------------------------------------------------------
@@ -1125,8 +1213,337 @@ const pageFrozenAroundAScrollingRegion = {
   },
 };
 
+/**
+ * A standing message the reader cannot put away, or cannot see the kind of.
+ *
+ * The defect it exists to catch: a screen draws two cards with closes, then its figures, then
+ * 「원본 파일이 없는 회차가 2건 있습니다」 in red with no close at all — a sentence that is true
+ * every day, taking the same band of the page on every visit, with nothing the reader can do
+ * about it. Both source rules were green on that screen.
+ *
+ * **Why this reads the painted page.** Every rule about these messages that read the source
+ * carried a model of the code, and the model is what went stale: one never read the dismissal
+ * values, one wrote its exemption from a shape rather than from the rule, one read the first
+ * message on a page and went quiet about the third. Each was right about the case that prompted
+ * it. A message with no close cannot hide from the page it is painted on.
+ *
+ * **What makes a close owed.** The `main` landmark, which is the console shell. A sign-in panel,
+ * a kiosk body and a phone screen draw none — and on those there is no header control to bring a
+ * closed message back, so a close would delete it rather than move it. The same question the
+ * board's own gate asks of its frames, and for the same reason; nothing here needs to know which
+ * screens those are, because the page says so itself.
+ *
+ * **It reads a page nobody has acted on, and that is what makes the question answerable.** A
+ * transient failure — a submit the server refused, a field rejecting what is being typed — is the
+ * answer to a press, so it is not on a page that has only been loaded. Drive the screen past a
+ * submit first and this check will report the refusal, correctly by its own lights and wrongly by
+ * the rule: the exemption lives in when it is run, not in what it can see.
+ */
+const standingMessageDrawsNoClose = {
+  id: "standingMessageDrawsNoClose",
+  grade: "error",
+  title:
+    "a standing message in the page's own column with no way to put it away, or with no glyph to say what kind it is",
+  page: (o) => {
+    const findings = [];
+    // The console shell. Without it there is no header control for a closed message to retreat
+    // into, so a close would lose the message rather than move it, and nothing is owed.
+    const main = document.querySelector("main, [role=main]");
+    if (!main) return { compared: 0, findings };
+
+    const clear = (c) => c === "transparent" || c === "rgba(0, 0, 0, 0)" || /\/\s*0(?:\.0+)?\s*\)\s*$/.test(c);
+    const visible = (el) => {
+      const r = el.getBoundingClientRect();
+      if (r.width <= 0 || r.height <= 0) return false;
+      const s = getComputedStyle(el);
+      return s.visibility !== "hidden" && s.display !== "none" && Number(s.opacity) !== 0;
+    };
+    // The nearest background anything actually paints behind this element.
+    const painted = (el) => {
+      for (let n = el; n; n = n.parentElement) {
+        const c = getComputedStyle(n).backgroundColor;
+        if (!clear(c)) return c;
+      }
+      return "none";
+    };
+    // A toast floats over the page and goes on its own; a message stands in the column. Position
+    // is what separates them, and it is the same test the overlap check uses for a raised layer.
+    const floating = (el) => {
+      for (let n = el; n && n !== document.body; n = n.parentElement) {
+        const p = getComputedStyle(n).position;
+        if (p === "fixed" || p === "sticky") return true;
+      }
+      return false;
+    };
+    // What the message says, with its controls' own words taken out — a band whose only text is
+    // on a button is a toolbar.
+    const prose = (el) => {
+      let text = "";
+      // The element itself as well as its descendants: a message whose sentence is a direct text
+      // node of the band — which is what a plain tinted div looks like — owns text that a walk
+      // over `querySelectorAll("*")` never visits, so the band is read as holding no prose and
+      // the finding quotes an empty string.
+      for (const node of [el, ...el.querySelectorAll("*")]) {
+        if (node !== el && node.closest("button, a[href], [role=button]")) continue;
+        for (const child of node.childNodes) {
+          if (child.nodeType === Node.TEXT_NODE) text += child.nodeValue + " ";
+        }
+      }
+      return text.trim();
+    };
+    const where = (el) => {
+      const bits = [];
+      for (let n = el; n && n !== document.body && bits.length < 4; n = n.parentElement) {
+        bits.unshift(
+          n.tagName.toLowerCase() +
+            (n.id ? "#" + n.id : "") +
+            (n.className && typeof n.className === "string"
+              ? "." + n.className.trim().split(/\s+/).slice(0, 2).join(".")
+              : ""),
+        );
+      }
+      return bits.join(" > ");
+    };
+
+    const eligible = (el) =>
+      visible(el) && !floating(el) && !el.closest(o.openedSurfaceSelector);
+
+    // **Two recognisers, and the second is the answer to the first one's blindness.** A role is
+    // what the element publishes to anything reading the page, and every message component worth
+    // the name sets one — but a tinted band with no role reaches neither this check nor a screen
+    // reader, so it is found by its shape instead: a band the width of its column, rounded and
+    // tinted apart from the ground behind it, holding a sentence and no structure. A card that
+    // holds content holds a heading, fields, a table; a message holds a sentence.
+    const messages = [];
+    const add = (el, how) => {
+      if (messages.some((m) => m.el === el || m.el.contains(el) || el.contains(m.el))) return;
+      messages.push({ el, how });
+    };
+    const column = main.getBoundingClientRect();
+    for (const el of main.querySelectorAll(o.messageRoles.map((r) => `[role="${r}"]`).join(","))) {
+      if (eligible(el)) add(el, "role");
+    }
+    for (const el of main.querySelectorAll("*")) {
+      if (!eligible(el)) continue;
+      // A control is not a message, whatever it is painted like.
+      if (el.matches(o.notAMessageSelector)) continue;
+      // Nor is a value in a cell: that is one row's answer, drawn once per row.
+      if (el.closest('table, [role="table"], [role="grid"]')) continue;
+      const s = getComputedStyle(el);
+      if (clear(s.backgroundColor)) continue;
+      if (el.parentElement && painted(el.parentElement) === s.backgroundColor) continue;
+      if (Number.parseFloat(s.borderTopLeftRadius) <= 0) continue;
+      const r = el.getBoundingClientRect();
+      if (r.height > o.messageMaxHeightPx) continue;
+      // **Measured across the column, never against the parent, and that is what keeps a badge
+      // out.** A pill is tinted, rounded and holds a sentence, and the flex box around it
+      // shrink-wraps it — so a width test against the parent passes every badge in the console,
+      // and a rendered audit that cries once is one nobody runs again. What the reader reads
+      // across is the column, so that is what a band has to span.
+      if (column.width <= 0 || r.width < o.messageBandWidthRatio * column.width) continue;
+      if (el.querySelector(o.messageStructureSelector)) continue;
+      if (prose(el).length < o.messageProseChars) continue;
+      add(el, "shape");
+    }
+
+    let compared = 0;
+    for (const { el, how } of messages) {
+      compared += 1;
+      const r = el.getBoundingClientRect();
+      const trailing = r.right - o.closeTrailingRatio * r.width;
+      // The close is the wordless control at the end of the band. A message's own action carries
+      // words — 「설명 보기」, a destination — and a label would tie this to one locale.
+      const close = [...el.querySelectorAll('button, [role="button"]')].find((b) => {
+        if (b.textContent.trim()) return false;
+        const q = b.getBoundingClientRect();
+        return q.width > 0 && q.left + q.width / 2 >= trailing;
+      });
+      const glyph = [...el.querySelectorAll(o.messageGlyphSelector)].some(
+        (g) => !g.closest('button, [role="button"], a[href]'),
+      );
+      if (close && glyph) continue;
+      const said = prose(el).replace(/\s+/g, " ").slice(0, 40);
+      findings.push(
+        `「${said}」 — `
+          + (close
+            ? "this message draws no glyph of its own, so which kind it is reaches only a reader who "
+              + "can separate the two tints. A message carried by colour alone has reached half of them"
+            : "this message has no close. It is standing in the page's own column on a screen whose "
+              + "header brings a closed message back, so putting it away MOVES it rather than losing "
+              + "it — the control for its kind is tinted and pulses while one of that kind is hidden. "
+              + "What does not close is the answer to something the reader just did, and that is gone "
+              + "before a page anybody merely opened is read")
+          + (glyph ? "" : close ? "" : ", and it draws no glyph either")
+          + ` (found by ${how === "role" ? "the role it publishes" : "the band it draws"}, ${where(el)})`,
+      );
+      if (findings.length >= o.maxFindings) break;
+    }
+    return { compared, findings };
+  },
+};
+
+/**
+ * A standing message drawn below the figures.
+ *
+ * The defect it exists to catch: a screen leads with its tile row, and the sentence saying what
+ * the reader has to deal with today sits under it — or, on a drawing sheet, a thousand pixels
+ * down at the foot of the page under the canvas. A tile shows a number and does not say what to
+ * do about it, so above the message it takes the line the reader looks at first and the two get
+ * read in the wrong order.
+ *
+ * **Read off the painted page rather than off the JSX**, which is what makes a message at the
+ * foot of a long page as visible to this as one three lines from the top: the source rule reads
+ * a return statement's text and a message far down it looks exactly like a message just below
+ * the tiles.
+ *
+ * **A figure row is what it looks like**: two or more boxes of one height standing side by side,
+ * each carrying a number, none of them a line of a table. No component name enters it, so a row
+ * of figures drawn some other way is still a row of figures.
+ *
+ * **What belongs to a tab is not the page's.** A message inside a `tabpanel` is that tab's
+ * footnote, drawn under the rows it annotates, and hoisting it would put it over three tabs it
+ * is not true of.
+ */
+const standingMessageBelowTheFigures = {
+  id: "standingMessageBelowTheFigures",
+  grade: "error",
+  title:
+    "a standing message drawn below a row of figures — the number the reader meets first is the one that says nothing to do",
+  page: (o) => {
+    const findings = [];
+    const main = document.querySelector("main, [role=main]");
+    if (!main) return { compared: 0, findings };
+
+    const clear = (c) => c === "transparent" || c === "rgba(0, 0, 0, 0)" || /\/\s*0(?:\.0+)?\s*\)\s*$/.test(c);
+    const visible = (el) => {
+      const r = el.getBoundingClientRect();
+      if (r.width <= 0 || r.height <= 0) return false;
+      const s = getComputedStyle(el);
+      return s.visibility !== "hidden" && s.display !== "none" && Number(s.opacity) !== 0;
+    };
+    const painted = (el) => {
+      for (let n = el; n; n = n.parentElement) {
+        const c = getComputedStyle(n).backgroundColor;
+        if (!clear(c)) return c;
+      }
+      return "none";
+    };
+    const floating = (el) => {
+      for (let n = el; n && n !== document.body; n = n.parentElement) {
+        const p = getComputedStyle(n).position;
+        if (p === "fixed" || p === "sticky") return true;
+      }
+      return false;
+    };
+    const prose = (el) => {
+      let text = "";
+      // The element itself as well as its descendants: a message whose sentence is a direct text
+      // node of the band — which is what a plain tinted div looks like — owns text that a walk
+      // over `querySelectorAll("*")` never visits, so the band is read as holding no prose and
+      // the finding quotes an empty string.
+      for (const node of [el, ...el.querySelectorAll("*")]) {
+        if (node !== el && node.closest("button, a[href], [role=button]")) continue;
+        for (const child of node.childNodes) {
+          if (child.nodeType === Node.TEXT_NODE) text += child.nodeValue + " ";
+        }
+      }
+      return text.trim();
+    };
+
+    const eligible = (el) =>
+      visible(el)
+      && !floating(el)
+      && !el.closest(o.openedSurfaceSelector)
+      // A tab's own footnote, which belongs under the rows it annotates.
+      && !el.closest('[role="tabpanel"]');
+
+    const messages = [];
+    const add = (el) => {
+      if (messages.some((m) => m === el || m.contains(el) || el.contains(m))) return;
+      messages.push(el);
+    };
+    const column = main.getBoundingClientRect();
+    for (const el of main.querySelectorAll(o.messageRoles.map((r) => `[role="${r}"]`).join(","))) {
+      if (eligible(el)) add(el);
+    }
+    for (const el of main.querySelectorAll("*")) {
+      if (!eligible(el)) continue;
+      // A control is not a message, whatever it is painted like.
+      if (el.matches(o.notAMessageSelector)) continue;
+      // Nor is a value in a cell: that is one row's answer, drawn once per row.
+      if (el.closest('table, [role="table"], [role="grid"]')) continue;
+      const s = getComputedStyle(el);
+      if (clear(s.backgroundColor)) continue;
+      if (el.parentElement && painted(el.parentElement) === s.backgroundColor) continue;
+      if (Number.parseFloat(s.borderTopLeftRadius) <= 0) continue;
+      const r = el.getBoundingClientRect();
+      if (r.height > o.messageMaxHeightPx) continue;
+      // **Measured across the column, never against the parent, and that is what keeps a badge
+      // out.** A pill is tinted, rounded and holds a sentence, and the flex box around it
+      // shrink-wraps it — so a width test against the parent passes every badge in the console,
+      // and a rendered audit that cries once is one nobody runs again. What the reader reads
+      // across is the column, so that is what a band has to span.
+      if (column.width <= 0 || r.width < o.messageBandWidthRatio * column.width) continue;
+      if (el.querySelector(o.messageStructureSelector)) continue;
+      if (prose(el).length < o.messageProseChars) continue;
+      add(el);
+    }
+
+    // A row of figures: siblings of one height, side by side, each carrying a number. A line of a
+    // table matches every one of those tests, so a table is out by containment rather than by
+    // size — its cells are the same shape as tiles and only the table says which they are.
+    const rows = [];
+    for (const parent of main.querySelectorAll("*")) {
+      if (parent.closest('table, [role="table"], [role="grid"], [role="rowgroup"]')) continue;
+      const boxes = [...parent.children].filter((k) => {
+        if (!visible(k) || !/\d/.test(k.textContent)) return false;
+        const q = k.getBoundingClientRect();
+        return q.width >= o.minFigureTileWidthPx
+          && q.height >= o.minFigureTileHeightPx
+          && q.height <= o.maxFigureTileHeightPx;
+      });
+      if (boxes.length < o.minFiguresInARow) continue;
+      const first = boxes[0].getBoundingClientRect();
+      const line = boxes.filter((k) => {
+        const q = k.getBoundingClientRect();
+        return Math.abs(q.top - first.top) <= o.figureRowTopSlackPx
+          && Math.abs(q.height - first.height) <= o.figureRowTopSlackPx;
+      });
+      if (line.length < o.minFiguresInARow) continue;
+      rows.push({
+        el: parent,
+        count: line.length,
+        bottom: Math.max(...line.map((k) => k.getBoundingClientRect().bottom)),
+        top: Math.min(...line.map((k) => k.getBoundingClientRect().top)),
+      });
+    }
+
+    let compared = 0;
+    for (const el of messages) {
+      compared += 1;
+      const r = el.getBoundingClientRect();
+      const above = rows.find((row) => row.bottom <= r.top + 1 && !row.el.contains(el));
+      if (!above) continue;
+      const said = prose(el).replace(/\s+/g, " ").slice(0, 40);
+      findings.push(
+        `「${said}」 is drawn ${Math.round(r.top - above.bottom)}px below a row of `
+          + `${above.count} figures. The card region is the top of the screen — state cards, then `
+          + "explanation cards, then everything else — so whoever has something to deal with today "
+          + "meets it on the first line, and whoever arrived for the first time meets the explanation "
+          + "directly under it. A tile shows a number and does not say what to do about it. Move the "
+          + "message above the figures; a screen with no message leads with its figures and this "
+          + "never reads it",
+      );
+      if (findings.length >= o.maxFindings) break;
+    }
+    return { compared, findings };
+  },
+};
+
 export const checks = [
   countedListDrawsNoRows,
+  standingMessageDrawsNoClose,
+  standingMessageBelowTheFigures,
   textBoxesOverlap,
   blockInsideParagraph,
   pressableControlsTakeThePress,
@@ -1247,6 +1664,185 @@ function evaluate(session, url, check, options) {
  * across content.
  */
 const FIXTURES = {
+  standingMessageDrawsNoClose: {
+    broken: {
+      // The screen this was written from: two messages that close, the figures, then a red one
+      // with no close at all. Both source rules were green on it — one read the first message and
+      // asked what stood in front of it, the other exempted the red one as a ternary arm.
+      "a red message with no close, under two that have one":
+        `<style>body{margin:0;font:14px sans-serif}main{padding:16px;width:1000px}
+        .msg{border:1px solid #ccc;border-radius:6px;padding:8px 12px;background:#eff6ff;display:flex;gap:8px;align-items:center;margin-bottom:8px}
+        .msg .body{flex:1}.x{width:24px;height:24px;border:0;background:none}
+        .figs{display:flex;gap:16px}.fig{width:220px;height:90px;border:1px solid #ddd;border-radius:6px;padding:12px}</style>
+        <main>
+        <div role=note class=msg><svg width=16 height=16><circle cx=8 cy=8 r=7/></svg><span class=body>이력은 회차마다 남습니다</span><button class=x><svg width=12 height=12><path d="M1 1 L11 11"/></svg></button></div>
+        <div role=note class=msg><svg width=16 height=16><circle cx=8 cy=8 r=7/></svg><span class=body>되돌리기는 마지막 회차만 가능합니다</span><button class=x><svg width=12 height=12><path d="M1 1 L11 11"/></svg></button></div>
+        <div class=figs><div class=fig>가져온 회차<br>34건</div><div class=fig>실패<br>2건</div></div>
+        <div role=alert class=msg style="background:#fef2f2"><svg width=16 height=16><path d="M8 1 L15 14 H1 Z"/></svg><span class=body>원본 파일이 없는 회차가 2건 있습니다</span></div>
+        </main>`,
+      // The message drawn as a plain tinted band with no role at all — invisible to a rule keyed
+      // on a role, and to a screen reader. Found by the band it draws.
+      "a tinted band holding a sentence, with no role and no close":
+        `<style>body{margin:0;font:14px sans-serif}main{padding:16px;width:1000px}
+        .band{border:1px solid #fde68a;border-radius:6px;padding:8px 12px;background:#fffbeb;display:flex;gap:8px;align-items:center}</style>
+        <main><div class=band><svg width=16 height=16><path d="M8 1 L15 14 H1 Z"/></svg>
+        <span>정책이 없는 안전구역이 1곳 있습니다</span></div></main>`,
+      // A message that closes and says nothing about which kind it is. Colour alone reaches only
+      // the readers who can separate the two tints.
+      "a message with a close and no glyph":
+        `<style>body{margin:0;font:14px sans-serif}main{padding:16px;width:1000px}
+        .msg{border:1px solid #fecaca;border-radius:6px;padding:8px 12px;background:#fef2f2;display:flex;gap:8px;align-items:center}
+        .msg .body{flex:1}.x{width:24px;height:24px;border:0;background:none}</style>
+        <main><div role=alert class=msg><span class=body>수신하지 못한 사람이 2명 있습니다</span>
+        <button class=x><svg width=12 height=12><path d="M1 1 L11 11"/></svg></button></div></main>`,
+    },
+    quiet: {
+      // The same screen written correctly. Every message closes and every one draws its glyph.
+      "three messages, each with its close and its glyph":
+        `<style>body{margin:0;font:14px sans-serif}main{padding:16px;width:1000px}
+        .msg{border:1px solid #ccc;border-radius:6px;padding:8px 12px;background:#eff6ff;display:flex;gap:8px;align-items:center;margin-bottom:8px}
+        .msg .body{flex:1}.x{width:24px;height:24px;border:0;background:none}</style>
+        <main>
+        <div role=alert class=msg style="background:#fef2f2"><svg width=16 height=16><path d="M8 1 L15 14 H1 Z"/></svg><span class=body>원본 파일이 없는 회차가 2건 있습니다</span><button class=x><svg width=12 height=12><path d="M1 1 L11 11"/></svg></button></div>
+        <div role=note class=msg><svg width=16 height=16><circle cx=8 cy=8 r=7/></svg><span class=body>이력은 회차마다 남습니다</span><button class=x><svg width=12 height=12><path d="M1 1 L11 11"/></svg></button></div>
+        </main>`,
+      // A sign-in panel. It has a message with no close and it is right: there is no shell around
+      // it, so nothing would bring a closed message back and closing would delete it. The `main`
+      // landmark is what says so, and the panel draws none.
+      "a sign-in panel whose message has no close":
+        `<style>body{margin:0;font:14px sans-serif;display:flex;justify-content:center;padding-top:80px}
+        .card{width:380px;border:1px solid #ddd;border-radius:8px;padding:24px}
+        .msg{border:1px solid #fecaca;border-radius:6px;padding:8px 12px;background:#fef2f2}</style>
+        <div class=card><h2>로그인</h2>
+        <div role=alert class=msg><svg width=16 height=16><path d="M8 1 L15 14 H1 Z"/></svg> 계정 없는 연결</div>
+        <input placeholder="아이디"><input type=password></div>`,
+      // A toast. It floats over the page, it goes on its own, and it is not standing in the column.
+      "a toast floating over the page":
+        `<style>body{margin:0;font:14px sans-serif}main{padding:16px;width:1000px}
+        .toast{position:fixed;right:16px;bottom:16px;width:320px;border:1px solid #bbf7d0;border-radius:6px;padding:8px 12px;background:#f0fdf4}</style>
+        <main><h1>설비</h1><p>등록된 설비를 확인합니다.</p></main>
+        <div role=status class=toast><svg width=16 height=16><path d="M2 8 L6 12 L14 3"/></svg> 저장했습니다</div>`,
+      // The header control's own drop, which draws every hidden message again with 「다시 보이기」
+      // beside it rather than a close. Read as cards on the page, each hidden message is reported
+      // as a message with no close — which is the one outcome this whole mechanism exists to stop.
+      "the header control's drop, holding the messages that were put away":
+        `<style>body{margin:0;font:14px sans-serif}main{padding:16px;width:1000px}
+        .drop{position:absolute;right:16px;top:40px;width:420px;border:1px solid #ddd;border-radius:8px;padding:12px;background:#fff}
+        .msg{border:1px solid #ccc;border-radius:6px;padding:8px 12px;background:#eff6ff}</style>
+        <main><h1>가져오기 이력</h1>
+        <div role=menu class=drop>
+          <div role=alert class=msg><svg width=16 height=16><circle cx=8 cy=8 r=7/></svg> 원본 파일이 없는 회차가 2건 있습니다
+            <button>다시 보이기</button></div>
+        </div></main>`,
+      // A settings card. It is tinted, rounded and the width of its column, and it is not a
+      // message — a card that holds content holds structure, and this one holds a heading and
+      // fields. A shape rule without that test reports every settings screen.
+      "a settings card the width of its column":
+        `<style>body{margin:0;font:14px sans-serif}main{padding:16px;width:1000px}
+        .card{border:1px solid #e5e7eb;border-radius:8px;padding:16px;background:#fafafa}</style>
+        <main><div class=card><h3>알림 정책</h3>
+        <label>재시도 횟수 <input value="3"></label></div></main>`,
+      // Badges in a list, and a date-range pill in a toolbar. Every one of them is tinted,
+      // rounded and holds a sentence, and the flex box around each shrink-wraps it — so a width
+      // measured against the parent reads all of them as bands the width of their column. This is
+      // not hypothetical: the first run of this check over the console reported eighteen of them,
+      // 「가져올 수 없음」 · 「법정 최소 기준 미달」 · 「도달 확인 필요」 four rows at a time.
+      "a list of badges and a date-range pill":
+        `<style>body{margin:0;font:14px sans-serif}main{padding:16px;width:1000px}
+        .bar{display:flex;gap:8px;padding:8px 0}
+        .pill{display:inline-flex;align-items:center;border:1px solid #e5e7eb;border-radius:12px;padding:2px 10px;background:#f4f4f5}
+        table{width:100%;border-collapse:collapse}td{padding:10px;border-bottom:1px solid #eee}
+        .badge{display:inline-flex;align-items:center;border:1px solid #fecaca;border-radius:10px;padding:2px 8px;background:#fef2f2}</style>
+        <main><div class=bar><span class=pill>2026. 08. 01. 00:00 — 2026. 09. 01. 00:00</span></div>
+        <table><tbody>
+        <tr><td>2026-08-01 반입</td><td><span class=badge>가져올 수 없음</span></td></tr>
+        <tr><td>2026-08-02 반입</td><td><span class=badge>가져올 수 없음</span></td></tr>
+        <tr><td>2026-08-03 반입</td><td><span class=badge>도달 확인 필요</span></td></tr>
+        </tbody></table></main>`,
+      // A pressed control painted like a message — tinted, rounded, a few words. What separates
+      // the two is that one of them is pressed, and the console draws one on its retention screen.
+      "a tinted button the width of its own box":
+        `<style>body{margin:0;font:14px sans-serif}main{padding:16px;width:1000px}
+        button{display:inline-flex;align-items:center;border:1px solid #e5e7eb;border-radius:6px;padding:6px 12px;background:#f4f4f5}</style>
+        <main><div><button>보존 정책 편집</button></div></main>`,
+      // A row of figures and nothing else. Nothing on this page is a message, and the check has to
+      // say it compared nothing rather than read a tile as one.
+      "a page of figures with no message on it":
+        `<style>body{margin:0;font:14px sans-serif}main{padding:16px;width:1000px}
+        .figs{display:flex;gap:16px}.fig{width:220px;height:90px;border:1px solid #ddd;border-radius:6px;padding:12px;background:#fff}</style>
+        <main><h1>설비</h1><div class=figs>
+        <div class=fig>안전검사 대상<br>31대</div><div class=fig>기한 지남<br>2대</div></div></main>`,
+    },
+  },
+  standingMessageBelowTheFigures: {
+    broken: {
+      // The tile row first and the sentence saying what to deal with today under it.
+      "a message under the tile row":
+        `<style>body{margin:0;font:14px sans-serif}main{padding:16px;width:1000px}
+        .figs{display:flex;gap:16px;margin-bottom:12px}
+        .fig{width:220px;height:90px;border:1px solid #ddd;border-radius:6px;padding:12px;background:#fff}
+        .msg{border:1px solid #fecaca;border-radius:6px;padding:8px 12px;background:#fef2f2}</style>
+        <main><div class=figs><div class=fig>안전검사 대상<br>31대</div><div class=fig>기한 지남<br>2대</div>
+        <div class=fig>30일 안 검사<br>9대</div></div>
+        <div role=alert class=msg><svg width=16 height=16><path d="M8 1 L15 14 H1 Z"/></svg> 기한이 지난 설비 2대가 있습니다
+        <button><svg width=12 height=12><path d="M1 1 L11 11"/></svg></button></div></main>`,
+      // The same defect a thousand pixels down: the messages sit at the foot of the page under
+      // the canvas. Read off the source this looks exactly like a message just under the tiles,
+      // which is why the placement rule was green on it.
+      "messages at the foot of a long page, under the sheet":
+        `<style>body{margin:0;font:14px sans-serif}main{padding:16px;width:1000px}
+        .figs{display:flex;gap:16px}.fig{width:220px;height:90px;border:1px solid #ddd;border-radius:6px;padding:12px;background:#fff}
+        .sheet{height:700px;border:1px solid #ddd;margin:12px 0;background:#fcfcfc}
+        .msg{border:1px solid #bfdbfe;border-radius:6px;padding:8px 12px;background:#eff6ff}</style>
+        <main><div class=figs><div class=fig>배치한 표시<br>18개</div><div class=fig>배치 안 함<br>4개</div></div>
+        <div class=sheet></div>
+        <div role=note class=msg><svg width=16 height=16><circle cx=8 cy=8 r=7/></svg> 표시는 도면 회차마다 남습니다
+        <button><svg width=12 height=12><path d="M1 1 L11 11"/></svg></button></div></main>`,
+    },
+    quiet: {
+      // The order the rule asks for: the message first, the figures under it.
+      "a message above the tile row":
+        `<style>body{margin:0;font:14px sans-serif}main{padding:16px;width:1000px}
+        .figs{display:flex;gap:16px}.fig{width:220px;height:90px;border:1px solid #ddd;border-radius:6px;padding:12px;background:#fff}
+        .msg{border:1px solid #fecaca;border-radius:6px;padding:8px 12px;background:#fef2f2;margin-bottom:12px}</style>
+        <main><div role=alert class=msg><svg width=16 height=16><path d="M8 1 L15 14 H1 Z"/></svg> 기한이 지난 설비 2대가 있습니다
+        <button><svg width=12 height=12><path d="M1 1 L11 11"/></svg></button></div>
+        <div class=figs><div class=fig>안전검사 대상<br>31대</div><div class=fig>기한 지남<br>2대</div></div></main>`,
+      // A tab's own footnote, drawn under the rows it annotates. Hoisting it would put it over
+      // three tabs it is not true of, which is the shape a rule reading position alone reports.
+      "a footnote inside a tab panel, under that tab's rows":
+        `<style>body{margin:0;font:14px sans-serif}main{padding:16px;width:1000px}
+        .figs{display:flex;gap:16px}.fig{width:220px;height:90px;border:1px solid #ddd;border-radius:6px;padding:12px;background:#fff}
+        table{width:100%;border-collapse:collapse;margin:12px 0}td{padding:8px;border-bottom:1px solid #eee}
+        .msg{border:1px solid #bfdbfe;border-radius:6px;padding:8px 12px;background:#eff6ff}</style>
+        <main><div class=figs><div class=fig>운영 중인 교대<br>3개</div><div class=fig>자정을 넘김<br>1개</div></div>
+        <div role=tablist><button role=tab aria-selected=true>교대</button><button role=tab>달력</button></div>
+        <div role=tabpanel>
+          <table><tbody><tr><td>주간</td><td>08:00</td></tr><tr><td>야간</td><td>20:00</td></tr></tbody></table>
+          <div role=note class=msg><svg width=16 height=16><circle cx=8 cy=8 r=7/></svg> 야간 근무는 시작한 날의 영업일로 셉니다
+          <button><svg width=12 height=12><path d="M1 1 L11 11"/></svg></button></div>
+        </div></main>`,
+      // A table under the message. Its rows are the same shape as a tile row — siblings of one
+      // height, side by side, each carrying a number — and only the table says which they are, so
+      // a rule reading size alone reads every list as a row of figures and reports the message
+      // above it.
+      "a message above a table whose cells look like figures":
+        `<style>body{margin:0;font:14px sans-serif}main{padding:16px;width:1000px}
+        .msg{border:1px solid #bfdbfe;border-radius:6px;padding:8px 12px;background:#eff6ff;margin-bottom:12px}
+        table{width:100%;border-collapse:collapse}td{padding:24px 8px;border-bottom:1px solid #eee}</style>
+        <main><div role=note class=msg><svg width=16 height=16><circle cx=8 cy=8 r=7/></svg> 퇴사해도 기록은 남습니다
+        <button><svg width=12 height=12><path d="M1 1 L11 11"/></svg></button></div>
+        <table><tbody>
+        <tr><td>박근로</td><td>2024-03-01</td><td>148</td></tr>
+        <tr><td>김작업</td><td>2024-05-11</td><td>149</td></tr></tbody></table></main>`,
+      // Figures and no message at all. The rule says nothing about a screen that leads with them.
+      "a page of figures with no message on it":
+        `<style>body{margin:0;font:14px sans-serif}main{padding:16px;width:1000px}
+        .figs{display:flex;gap:16px}.fig{width:220px;height:90px;border:1px solid #ddd;border-radius:6px;padding:12px;background:#fff}</style>
+        <main><h1>설비</h1><div class=figs>
+        <div class=fig>안전검사 대상<br>31대</div><div class=fig>기한 지남<br>2대</div></div></main>`,
+    },
+  },
   pageFrozenAroundAScrollingRegion: {
     broken: {
       // The shape this check was written from: a console page whose shell is the height of the
