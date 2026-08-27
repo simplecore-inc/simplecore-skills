@@ -25,11 +25,29 @@ it, so whoever opens a screen chooses, **names the driver in what they hand
 back, and writes it into the handover file** so the next run reaches for the same
 one. Nothing else records the choice: a capture carries no trace of what shot it.
 
-Three rules survive the order unchanged:
+Four rules survive the order unchanged:
 
 - **Only ever the local browser.** The agent drives a development server on this
   machine, and pointing a remote or shared browser at it is neither reproducible
   nor yours to do.
+- **Whoever opens a named session closes it.** Every driver worth using keeps a
+  browser alive between commands — that is what makes the second command fast —
+  and none of them end it when the command, the shell, or the agent ends. A pass
+  that opens one session per frame and closes none leaves one full browser per
+  frame resident, which reads as a slow machine rather than as a leak because it
+  costs memory and not CPU. Close by the session's own name on every path out,
+  including the failing one; **never the driver's 「close everything」**, which is
+  not scoped to you and takes every other agent's session with it.
+- **A process you kill is named by its session, never by its command.** A check
+  that hangs has told you nothing and killing it is right — but `pkill -f
+  audit-rendered` on a machine running a build kills every agent's run of it,
+  and the ones you did not start fail inside somebody else's pass, where they
+  read as a defect in that agent's own work. Match on the session name the
+  dispatch gave you (`pgrep -f "audit-rendered.*<your-session>"`) and kill only
+  what that names; where it names nothing, yours has already exited and there is
+  nothing to kill. **The same applies to a brief**: 「kill the hung process」
+  handed to an agent is an instruction to kill whatever it finds, so the brief
+  names the session too.
 - **Say which driver you ended up on, and why.** A capture taken through a
   different driver can differ in device pixel ratio, fonts, and scrollbar width;
   a reader comparing two runs needs to know the instrument changed.
