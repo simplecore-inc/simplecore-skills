@@ -157,6 +157,24 @@ where the tool stops being able to help.
 **The danger is proportional to how well the script reads.** A careful helper used carefully all
 session builds exactly the confidence that lets an ad-hoc one through unexamined at the end of it.
 
+### A fixture written from the rule cannot test the rule's contact with the product
+
+**A rule has a boundary the fixtures never touch if the fixtures were written from the rule.** One
+check had to decide what counts as a region — too wide and it asks a form's three sections to be
+reordered, too narrow and it finds nothing at all, because the component wraps each card in a box of
+its own to scroll a restored one into view. **Every fixture passed either way**, and 「compared 0」 on
+a four-card page reads exactly like a clean one.
+
+They passed because they were written flat, from the rule's statement rather than from what the
+product actually renders. The rule was correct in the abstract and had never met the product.
+
+- **Write at least one fixture from a real screen's shape**, wrappers and all, not from the sentence
+  the rule states. It is the only one that can fail for the right reason.
+- **When a boundary has two ways to be wrong, one of them is usually silent.** Too wide is loud and
+  gets fixed; too narrow reports zero and gets believed.
+- **A `compared` count is what separates them**, and only if somebody reads it against what they
+  expected the page to hold.
+
 ### A check's silence covers what it reached, and what it reached is how it was run
 
 **A rule can be correct, exempt nothing it should not, and still say nothing about half its
@@ -171,6 +189,13 @@ not reach it」, and saying so is worth more than the three findings.
 
 - **Name the population in the same breath as the count.** Bare routes, no row selected, signed in
   as one account, one viewport — each of those is a boundary of the claim.
+- **The account is the axis that gets left out, and it is the one a source rule does not have.** A
+  rule reading files reads every screen regardless of who could open one; a rendered check reads
+  what its persona is allowed to see, and a route the persona is refused returns a permission panel
+  that reports 「reached nothing」. A sweep run as one role reported 「all sixteen closed」 and 「the
+  two instruments agree」 — true over what that role could open, and the routes it could not were
+  exactly where the source rule's last findings were. **Sweep for refusals first, then re-run as
+  whatever role each refusal names.**
 - **A finding you cannot see is not a finding you cleared.** Adding an exclusion for a shape the run
   never met changes nothing today and is still right, because it is correct for the day somebody
   drives that shape open.
