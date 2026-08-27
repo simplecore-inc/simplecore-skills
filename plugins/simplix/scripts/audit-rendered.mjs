@@ -344,6 +344,30 @@ const DEFAULTS = {
   /** How narrow a box can be and still be a figure. */
   minFigureTileWidthPx: 80,
 
+  /**
+   * This product's message kinds, loudest first, and what each one draws.
+   *
+   * <p><b>The rank is the position in this list</b>, so reordering it reorders the rule. The order
+   * a card region reads in is the order the header control lists its kinds, and that is a product's
+   * decision rather than this rule's.
+   *
+   * <p><b>`glyph` is matched against what the message's own icon draws</b> — its class and its path
+   * data, either one — because a component library changes a class before it changes the shape, and
+   * a check keyed on the component's NAME goes blind the day a message is drawn by something else.
+   *
+   * <p><b>`role` is there because a glyph does not always separate two kinds, and sometimes must
+   * not.</b> Where 「something is wrong」 is meant to separate from 「this is an explanation」 by shape,
+   * the two wrong kinds share one glyph on purpose — so the louder of the pair is told from the
+   * quieter by whether the message announces itself as an interruption. An entry with no `role`
+   * matches whatever role the message carries.
+   */
+  noticeKinds: [
+    { name: "danger", glyph: ["triangle-alert", "m21.73 18"], role: "note" },
+    { name: "warning", glyph: ["triangle-alert", "m21.73 18"], role: "alert" },
+    { name: "info", glyph: ["lucide-info", "M12 16v-4"] },
+    { name: "help", glyph: ["circle-question", "M9.09 9"] },
+  ],
+
   /** How many equal boxes standing side by side make a row of figures. */
   minFiguresInARow: 2,
 
@@ -1569,10 +1593,201 @@ const standingMessageBelowTheFigures = {
   },
 };
 
+/**
+ * A card region that does not read loudest first.
+ *
+ * The defect it exists to catch: a screen draws 「들어가지 못한 행이 112행 남아 있습니다」 in amber
+ * above 「원본 파일이 없는 회차가 2건 있습니다」 in red, so the first thing the reader meets is the
+ * second thing they have to deal with. The region's order is the header control's — 위험 · 경고 ·
+ * 알림 · 도움말 — and a reader who works down the page top to bottom is working down it in the
+ * wrong order.
+ *
+ * **Why this cannot be read from the source.** A card's kind is an expression as often as it is a
+ * literal: `kind={outstanding > 0 ? "warning" : "info"}` decides at the tag, `kind={isSubject ?
+ * "warning" : undetermined ? "help" : "info"}` decides three ways, and a card drawn inside a `.map`
+ * paints several kinds from one tag at once. A source rule reads the loudest arm of the ternary
+ * because that is the one a reader meets on the day it matters — **only the page knows which one
+ * is drawn today.**
+ *
+ * **What it keys on, and the wrinkle.** The glyph, because it is per-kind rather than per-theme and
+ * a component library changes a class before it changes what it draws. But this product's kinds are
+ * three glyphs for four kinds **on purpose** — `danger` and `warning` share the triangle, so that
+ * 「something is wrong」 separates from 「this is an explanation」 by SHAPE, and red from amber inside
+ * that pair by colour. So the glyph cannot split that one pair, and the split is read off the role
+ * instead: a message that announces itself as an interruption is the warning. Both live in
+ * `o.noticeKinds`, loudest first, because they are this product's vocabulary rather than this
+ * rule's.
+ */
+const theCardRegionReadsLoudestFirst = {
+  id: "theCardRegionReadsLoudestFirst",
+  grade: "error",
+  title:
+    "a card region that does not read loudest first — the reader meets the second thing to deal with before the first",
+  page: (o) => {
+    const findings = [];
+    const main = document.querySelector("main, [role=main]");
+    if (!main) return { compared: 0, findings };
+
+    const clear = (c) => c === "transparent" || c === "rgba(0, 0, 0, 0)" || /\/\s*0(?:\.0+)?\s*\)\s*$/.test(c);
+    const visible = (el) => {
+      const r = el.getBoundingClientRect();
+      if (r.width <= 0 || r.height <= 0) return false;
+      const s = getComputedStyle(el);
+      return s.visibility !== "hidden" && s.display !== "none" && Number(s.opacity) !== 0;
+    };
+    const painted = (el) => {
+      for (let n = el; n; n = n.parentElement) {
+        const c = getComputedStyle(n).backgroundColor;
+        if (!clear(c)) return c;
+      }
+      return "none";
+    };
+    const floating = (el) => {
+      for (let n = el; n && n !== document.body; n = n.parentElement) {
+        const p = getComputedStyle(n).position;
+        if (p === "fixed" || p === "sticky") return true;
+      }
+      return false;
+    };
+    const prose = (el) => {
+      let text = "";
+      for (const node of [el, ...el.querySelectorAll("*")]) {
+        if (node !== el && node.closest("button, a[href], [role=button]")) continue;
+        for (const child of node.childNodes) {
+          if (child.nodeType === Node.TEXT_NODE) text += child.nodeValue + " ";
+        }
+      }
+      return text.trim();
+    };
+    // **A card region is a run of cards drawn together, and this rule GROUPS by it rather than
+    // excluding anything.** The placement rule is about the page's own region, so a tab's footnote
+    // and a panel's message are not its business. Order is a different question: whatever a pane
+    // draws, the reader still works down it top to bottom, so a pane whose explanation stands
+    // above its warning has the same defect as a page that does.
+    //
+    // **The run is the first ancestor holding more than one thing**, and both halves of that are
+    // load-bearing. Anything wider makes this rule reorder things nobody meant to compare: a form
+    // with three sections, each drawing a card about its own fields, has three runs of one, and
+    // grouping by the pane they share would ask for the SECTIONS to be reordered.
+    //
+    // **Anything narrower finds no run at all**, which is the quiet half. A message component may
+    // wrap its own banner in a box of its own — to scroll it into view, to measure it, to animate
+    // it — so the element carrying the role has a parent nobody wrote and no siblings. Taking the
+    // parent as the region then puts every card in a region of one, the rule compares nothing, and
+    // 「compared 0」 on a screen with four cards on it reads exactly like a screen with none.
+    const regionOf = (el) => {
+      let n = el;
+      while (n.parentElement && n.parentElement !== document.body && n.parentElement.children.length === 1) {
+        n = n.parentElement;
+      }
+      return n.parentElement ?? main;
+    };
+    const eligible = (el) =>
+      visible(el)
+      && !floating(el)
+      // The header control's own drop draws every hidden card again, already in kind order, with
+      // 「다시 보이기」 beside each. Those are copies of cards rather than cards on a screen.
+      && !el.closest(o.openedSurfaceSelector);
+
+    const column = main.getBoundingClientRect();
+    const messages = [];
+    const add = (el) => {
+      if (messages.some((m) => m === el || m.contains(el) || el.contains(m))) return;
+      messages.push(el);
+    };
+    for (const el of main.querySelectorAll(o.messageRoles.map((r) => `[role="${r}"]`).join(","))) {
+      if (eligible(el)) add(el);
+    }
+    for (const el of main.querySelectorAll("*")) {
+      if (!eligible(el)) continue;
+      if (el.matches(o.notAMessageSelector)) continue;
+      if (el.closest('table, [role="table"], [role="grid"]')) continue;
+      const s = getComputedStyle(el);
+      if (clear(s.backgroundColor)) continue;
+      if (el.parentElement && painted(el.parentElement) === s.backgroundColor) continue;
+      if (Number.parseFloat(s.borderTopLeftRadius) <= 0) continue;
+      const r = el.getBoundingClientRect();
+      if (r.height > o.messageMaxHeightPx) continue;
+      if (column.width <= 0 || r.width < o.messageBandWidthRatio * column.width) continue;
+      if (el.querySelector(o.messageStructureSelector)) continue;
+      if (prose(el).length < o.messageProseChars) continue;
+      add(el);
+    }
+
+    // What the message draws, as the two things that separate one kind from another: the glyph it
+    // leads with, and whether it announces itself as an interruption.
+    const kindOf = (el) => {
+      const g = [...el.querySelectorAll("svg, [role=img]")].find(
+        (s) => !s.closest('button, [role="button"], a[href]'),
+      );
+      if (!g) return null;
+      const drawn = String(g.getAttribute("class") || "")
+        + " "
+        + [...g.querySelectorAll("path, circle, line, rect, polygon")]
+          .map((p) => p.getAttribute("d") || p.tagName)
+          .join(" ");
+      const role = el.getAttribute("role");
+      for (let rank = 0; rank < o.noticeKinds.length; rank += 1) {
+        const kind = o.noticeKinds[rank];
+        if (!kind.glyph.some((sig) => drawn.includes(sig))) continue;
+        if (kind.role && role !== kind.role) continue;
+        return { name: kind.name, rank };
+      }
+      return null;
+    };
+
+    const ordered = messages
+      .map((el) => ({ el, rect: el.getBoundingClientRect(), kind: kindOf(el), region: regionOf(el) }))
+      .sort((a, b) => a.rect.top - b.rect.top);
+    // Said out loud rather than left as a smaller number: a message whose glyph this vocabulary
+    // does not carry is one the rule did not judge, and a count that quietly excluded it reads
+    // exactly like a count that judged it and passed.
+    const unread = ordered.filter((m) => !m.kind).length;
+
+    const regions = new Map();
+    for (const m of ordered) {
+      if (!m.kind) continue;
+      if (!regions.has(m.region)) regions.set(m.region, []);
+      regions.get(m.region).push(m);
+    }
+
+    let compared = 0;
+    const pairs = [];
+    for (const inRegion of regions.values()) {
+      for (let i = 1; i < inRegion.length; i += 1) pairs.push([inRegion[i - 1], inRegion[i]]);
+    }
+    for (const [above, here] of pairs) {
+      compared += 1;
+      if (here.kind.rank >= above.kind.rank) continue;
+      findings.push(
+        `「${prose(here.el).replace(/\s+/g, " ").slice(0, 34)}」 is a ${here.kind.name} message drawn `
+          + `${Math.round(here.rect.top - above.rect.bottom)}px BELOW a ${above.kind.name} one `
+          + `(「${prose(above.el).replace(/\s+/g, " ").slice(0, 26)}」). The card region reads in the `
+          + "order the header control lists its kinds — 위험 · 경고 · 알림 · 도움말 — so whoever has "
+          + "something to deal with today meets the loudest of it on the first line. Read down this "
+          + "page the reader meets the second thing before the first"
+          + (unread ? `. ${unread} message(s) on this page draw a glyph this vocabulary does not carry, and were not judged` : ""),
+      );
+      if (findings.length >= o.maxFindings) break;
+    }
+    if (!findings.length && unread) {
+      // Nothing wrong among what was read, and something was not read. Both are true and only one
+      // of them survives a count.
+      findings.push(
+        `${unread} of ${ordered.length} message(s) on this page draw a glyph 「noticeKinds」 does not `
+          + "carry, so their place in the order was not judged. A vocabulary that does not reach a "
+          + "message reports the same clean page as one that judged it",
+      );
+    }
+    return { compared, findings };
+  },
+};
+
 export const checks = [
   countedListDrawsNoRows,
   standingMessageDrawsNoClose,
   standingMessageBelowTheFigures,
+  theCardRegionReadsLoudestFirst,
   textBoxesOverlap,
   blockInsideParagraph,
   pressableControlsTakeThePress,
@@ -1693,6 +1908,157 @@ function evaluate(session, url, check, options) {
  * across content.
  */
 const FIXTURES = {
+  theCardRegionReadsLoudestFirst: {
+    broken: {
+      // **The shape the product actually paints, and the one a fixture written from the rule's
+      // imagination leaves out.** The card component wraps its own banner in a box of its own — to
+      // scroll a restored card into view — so the element carrying the role has a parent nobody
+      // wrote and no siblings. A rule taking that parent as the region puts every card in a region
+      // of one and compares nothing, and 「compared 0」 on a page with three cards reads exactly
+      // like a page with none. Written flat, every other fixture here passes either way.
+      "a warning above a danger, each inside the card component's own wrapper":
+        `<style>body{margin:0;font:14px sans-serif}main{padding:16px;width:1000px}
+        .msg{border:1px solid #ccc;border-radius:6px;padding:8px 12px;display:flex;gap:8px;align-items:center}
+        .msg span{flex:1}.wrap{margin-bottom:8px}.danger{background:#fef2f2}.warn{background:#fffbeb}</style>
+        <main>
+        <div class=wrap><div role=alert class="msg warn"><svg class="lucide lucide-triangle-alert" width=16 height=16><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg><span>들어가지 못한 행이 112행 남아 있습니다</span><button><svg width=12 height=12><path d="M1 1 L11 11"/></svg></button></div></div>
+        <div class=wrap><div role=note class="msg danger"><svg class="lucide lucide-triangle-alert" width=16 height=16><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg><span>원본 파일이 없는 회차가 2건 있습니다</span><button><svg width=12 height=12><path d="M1 1 L11 11"/></svg></button></div></div>
+        </main>`,
+      // A tab pane whose explanation stands above its warning. The pane's cards are not the
+      // page's — the placement rule leaves them alone for that reason — but the reader works down
+      // this column exactly as they work down the page, so the order is judged inside the pane.
+      "cards inside a tab pane, out of order":
+        `<style>body{margin:0;font:14px sans-serif}main{padding:16px;width:1000px}
+        .msg{border:1px solid #ccc;border-radius:6px;padding:8px 12px;display:flex;gap:8px;align-items:center;margin-bottom:8px}
+        .msg span{flex:1}.danger{background:#fef2f2}.warn{background:#fffbeb}.info{background:#eff6ff}.help{background:#f8fafc}</style>
+        <main>
+        <div role=note class="msg danger"><svg class="lucide lucide-triangle-alert" width=16 height=16><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg><span>정책이 없는 안전구역이 1곳 있습니다</span><button><svg width=12 height=12><path d="M1 1 L11 11"/></svg></button></div>
+        <div role=tablist><button role=tab aria-selected=true>교대</button></div>
+        <div role=tabpanel>
+          <div role=note class="msg info"><svg class="lucide lucide-info" width=16 height=16><circle cx=12 cy=12 r=10/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg><span>야간 근무는 시작한 날의 영업일로 셉니다</span><button><svg width=12 height=12><path d="M1 1 L11 11"/></svg></button></div>
+          <div role=alert class="msg warn"><svg class="lucide lucide-triangle-alert" width=16 height=16><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg><span>자정을 넘기는 교대가 1개 있습니다</span><button><svg width=12 height=12><path d="M1 1 L11 11"/></svg></button></div>
+        </div></main>`,
+      // The same inside a detail panel. It belongs to the record open in the panel and it is
+      // still read top to bottom, so its own cards are ordered against each other — never against
+      // the page's, which is what grouping by region buys.
+      "cards inside a detail panel that owns its scroll":
+        `<style>html,body{margin:0;height:100%;font:14px sans-serif}
+        main{height:100%;overflow-y:auto;padding:16px;width:1000px;box-sizing:border-box}
+        .msg{border:1px solid #ccc;border-radius:6px;padding:8px 12px;display:flex;gap:8px;align-items:center;margin-bottom:8px}
+        .msg span{flex:1}.danger{background:#fef2f2}.warn{background:#fffbeb}.info{background:#eff6ff}
+        .panel{width:520px;height:280px;overflow-y:auto;border:1px solid #ddd;border-radius:8px;padding:12px}</style>
+        <main>
+        <div role=note class="msg danger"><svg class="lucide lucide-triangle-alert" width=16 height=16><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg><span>법정 최소 기준에 미달하는 정책이 2건 있습니다</span><button><svg width=12 height=12><path d="M1 1 L11 11"/></svg></button></div>
+        <div class=panel>
+          <div role=note class="msg info"><svg class="lucide lucide-info" width=16 height=16><circle cx=12 cy=12 r=10/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg><span>이 정책의 근거 조문을 표시합니다</span><button><svg width=12 height=12><path d="M1 1 L11 11"/></svg></button></div>
+          <div role=alert class="msg warn"><svg class="lucide lucide-triangle-alert" width=16 height=16><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg><span>되돌려도 남는 기록이 있습니다</span><button><svg width=12 height=12><path d="M1 1 L11 11"/></svg></button></div>
+        </div></main>`,
+      // The screen this was written from: amber above red, so the first thing the reader meets is
+      // the second thing they have to deal with.
+      "a warning drawn above a danger":
+        `<style>body{margin:0;font:14px sans-serif}main{padding:16px;width:1000px}
+        .msg{border:1px solid #ccc;border-radius:6px;padding:8px 12px;display:flex;gap:8px;align-items:center;margin-bottom:8px}
+        .msg span{flex:1}.danger{background:#fef2f2}.warn{background:#fffbeb}.info{background:#eff6ff}.help{background:#f8fafc}</style>
+        <main>
+        <div role=alert class="msg warn"><svg class="lucide lucide-triangle-alert" width=16 height=16><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg><span>들어가지 못한 행이 112행 남아 있습니다</span><button><svg width=12 height=12><path d="M1 1 L11 11"/></svg></button></div>
+        <div role=note class="msg danger"><svg class="lucide lucide-triangle-alert" width=16 height=16><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg><span>원본 파일이 없는 회차가 2건 있습니다</span><button><svg width=12 height=12><path d="M1 1 L11 11"/></svg></button></div>
+        </main>`,
+      // The two wrong kinds share a glyph on purpose, so this pair is the one a check keyed on the
+      // shape alone cannot see at all — it is the role that separates them.
+      "an explanation above both of the kinds that name something wrong":
+        `<style>body{margin:0;font:14px sans-serif}main{padding:16px;width:1000px}
+        .msg{border:1px solid #ccc;border-radius:6px;padding:8px 12px;display:flex;gap:8px;align-items:center;margin-bottom:8px}
+        .msg span{flex:1}.danger{background:#fef2f2}.warn{background:#fffbeb}.info{background:#eff6ff}.help{background:#f8fafc}</style>
+        <main>
+        <div role=note class="msg info"><svg class="lucide lucide-info" width=16 height=16><circle cx=12 cy=12 r=10/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg><span>퇴사해도 기록은 남습니다</span><button><svg width=12 height=12><path d="M1 1 L11 11"/></svg></button></div>
+        <div role=note class="msg danger"><svg class="lucide lucide-triangle-alert" width=16 height=16><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg><span>기한이 지난 설비 2대가 있습니다</span><button><svg width=12 height=12><path d="M1 1 L11 11"/></svg></button></div>
+        <div role=alert class="msg warn"><svg class="lucide lucide-triangle-alert" width=16 height=16><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg><span>30일 안에 검사가 필요한 설비가 9대 있습니다</span><button><svg width=12 height=12><path d="M1 1 L11 11"/></svg></button></div>
+        </main>`,
+      // Help above info: the quietest kind first, which is the same defect one step down.
+      "a help card above an info card":
+        `<style>body{margin:0;font:14px sans-serif}main{padding:16px;width:1000px}
+        .msg{border:1px solid #ccc;border-radius:6px;padding:8px 12px;display:flex;gap:8px;align-items:center;margin-bottom:8px}
+        .msg span{flex:1}.danger{background:#fef2f2}.warn{background:#fffbeb}.info{background:#eff6ff}.help{background:#f8fafc}</style>
+        <main>
+        <div role=note class="msg help"><svg class="lucide lucide-circle-question-mark" width=16 height=16><circle cx=12 cy=12 r=10/><path d="M9.09 9a3 3 0 0 1 5.83 1"/><path d="M12 17h.01"/></svg><span>되돌리기 조건과 범위를 설명합니다</span><button><svg width=12 height=12><path d="M1 1 L11 11"/></svg></button></div>
+        <div role=note class="msg info"><svg class="lucide lucide-info" width=16 height=16><circle cx=12 cy=12 r=10/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg><span>가동을 중지해도 검사 유효기간은 그대로입니다</span><button><svg width=12 height=12><path d="M1 1 L11 11"/></svg></button></div>
+        </main>`,
+      // Nothing out of order among what was read, and one message the vocabulary could not reach.
+      // A count that quietly dropped it reports the same clean page as one that judged it.
+      "a message whose glyph the vocabulary does not carry":
+        `<style>body{margin:0;font:14px sans-serif}main{padding:16px;width:1000px}
+        .msg{border:1px solid #ccc;border-radius:6px;padding:8px 12px;display:flex;gap:8px;align-items:center;margin-bottom:8px}
+        .msg span{flex:1}.danger{background:#fef2f2}.warn{background:#fffbeb}.info{background:#eff6ff}.help{background:#f8fafc}</style>
+        <main>
+        <div role=note class="msg danger"><svg class="lucide lucide-triangle-alert" width=16 height=16><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg><span>기한이 지난 설비 2대가 있습니다</span><button><svg width=12 height=12><path d="M1 1 L11 11"/></svg></button></div>
+        <div role=note class="msg info"><svg class="lucide lucide-bell" width=16 height=16><path d="M6 8a6 6 0 0 1 12 0"/></svg><span>새 공지가 등록되었습니다</span><button><svg width=12 height=12><path d="M1 1 L11 11"/></svg></button></div>
+        </main>`,
+    },
+    quiet: {
+      // The order the header control lists them in.
+      "danger, warning, info, help in that order":
+        `<style>body{margin:0;font:14px sans-serif}main{padding:16px;width:1000px}
+        .msg{border:1px solid #ccc;border-radius:6px;padding:8px 12px;display:flex;gap:8px;align-items:center;margin-bottom:8px}
+        .msg span{flex:1}.danger{background:#fef2f2}.warn{background:#fffbeb}.info{background:#eff6ff}.help{background:#f8fafc}</style>
+        <main>
+        <div role=note class="msg danger"><svg class="lucide lucide-triangle-alert" width=16 height=16><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg><span>원본 파일이 없는 회차가 2건 있습니다</span><button><svg width=12 height=12><path d="M1 1 L11 11"/></svg></button></div>
+        <div role=alert class="msg warn"><svg class="lucide lucide-triangle-alert" width=16 height=16><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg><span>들어가지 못한 행이 112행 남아 있습니다</span><button><svg width=12 height=12><path d="M1 1 L11 11"/></svg></button></div>
+        <div role=note class="msg info"><svg class="lucide lucide-info" width=16 height=16><circle cx=12 cy=12 r=10/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg><span>등록은 배정이 아닙니다</span><button><svg width=12 height=12><path d="M1 1 L11 11"/></svg></button></div>
+        <div role=note class="msg help"><svg class="lucide lucide-circle-question-mark" width=16 height=16><circle cx=12 cy=12 r=10/><path d="M9.09 9a3 3 0 0 1 5.83 1"/><path d="M12 17h.01"/></svg><span>되돌리기 조건과 범위를 설명합니다</span><button><svg width=12 height=12><path d="M1 1 L11 11"/></svg></button></div>
+        </main>`,
+      // Two of one kind. Equal ranks are not a descent, and a rule reading 「strictly louder」 would
+      // report every page that draws two warnings.
+      "two warnings in a row":
+        `<style>body{margin:0;font:14px sans-serif}main{padding:16px;width:1000px}
+        .msg{border:1px solid #ccc;border-radius:6px;padding:8px 12px;display:flex;gap:8px;align-items:center;margin-bottom:8px}
+        .msg span{flex:1}.danger{background:#fef2f2}.warn{background:#fffbeb}.info{background:#eff6ff}.help{background:#f8fafc}</style>
+        <main>
+        <div role=alert class="msg warn"><svg class="lucide lucide-triangle-alert" width=16 height=16><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg><span>자정을 넘기는 교대가 1개 있습니다</span><button><svg width=12 height=12><path d="M1 1 L11 11"/></svg></button></div>
+        <div role=alert class="msg warn"><svg class="lucide lucide-triangle-alert" width=16 height=16><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg><span>인수인계 시간이 없는 교대가 2개 있습니다</span><button><svg width=12 height=12><path d="M1 1 L11 11"/></svg></button></div>
+        </main>`,
+      // One card. There is no order to be wrong about, and the check has to say it compared nothing
+      // rather than pass a page it never read.
+      "a single card":
+        `<style>body{margin:0;font:14px sans-serif}main{padding:16px;width:1000px}
+        .msg{border:1px solid #ccc;border-radius:6px;padding:8px 12px;display:flex;gap:8px;align-items:center;margin-bottom:8px}
+        .msg span{flex:1}.danger{background:#fef2f2}.warn{background:#fffbeb}.info{background:#eff6ff}.help{background:#f8fafc}</style><main><div role=note class="msg info"><svg class="lucide lucide-info" width=16 height=16><circle cx=12 cy=12 r=10/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg><span>퇴사해도 기록은 남습니다</span><button><svg width=12 height=12><path d="M1 1 L11 11"/></svg></button></div></main>`,
+      // A quiet card in one region below a loud card in another. Read as one sequence this is a
+      // help card under a danger card and a finding; read by region it is two regions of one card
+      // each, and there is no order to be wrong about. Ungrouped, this fires on every screen that
+      // draws a card above a tab set.
+      "a help card in a tab pane, under a danger card on the page":
+        `<style>body{margin:0;font:14px sans-serif}main{padding:16px;width:1000px}
+        .msg{border:1px solid #ccc;border-radius:6px;padding:8px 12px;display:flex;gap:8px;align-items:center;margin-bottom:8px}
+        .msg span{flex:1}.danger{background:#fef2f2}.help{background:#f8fafc}</style>
+        <main>
+        <div role=note class="msg danger"><svg class="lucide lucide-triangle-alert" width=16 height=16><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg><span>정책이 없는 안전구역이 1곳 있습니다</span><button><svg width=12 height=12><path d="M1 1 L11 11"/></svg></button></div>
+        <div role=tablist><button role=tab aria-selected=true>교대</button></div>
+        <div role=tabpanel>
+          <div role=note class="msg help"><svg class="lucide lucide-circle-question-mark" width=16 height=16><circle cx=12 cy=12 r=10/><path d="M9.09 9a3 3 0 0 1 5.83 1"/><path d="M12 17h.01"/></svg><span>야간 근무는 시작한 날의 영업일로 셉니다</span><button><svg width=12 height=12><path d="M1 1 L11 11"/></svg></button></div>
+        </div></main>`,
+      // A form whose sections each draw a card about their own fields. Read as one run this is a
+      // help card above an info card and a finding; read as the runs they are, it is three runs of
+      // one. Grouping any wider than the siblings makes this rule ask for the SECTIONS to be
+      // reordered, which is the shape it would be wrong about most often.
+      "a form whose sections each carry their own card":
+        `<style>body{margin:0;font:14px sans-serif}main{padding:16px;width:1000px}
+        section{border:1px solid #eee;border-radius:8px;padding:12px;margin-bottom:12px}
+        .msg{border:1px solid #ccc;border-radius:6px;padding:8px 12px;display:flex;gap:8px;align-items:center}
+        .msg span{flex:1}.help{background:#f8fafc}.info{background:#eff6ff}</style>
+        <main>
+        <section><h3>안전검사 대상 판정 항목</h3>
+          <div role=note class="msg help"><svg class="lucide lucide-circle-question-mark" width=16 height=16><circle cx=12 cy=12 r=10/><path d="M9.09 9a3 3 0 0 1 5.83 1"/><path d="M12 17h.01"/></svg><span>판정에 필요한 값이 아직 없습니다</span><button><svg width=12 height=12><path d="M1 1 L11 11"/></svg></button></div>
+        </section>
+        <section><h3>판정 재정의</h3>
+          <div role=note class="msg info"><svg class="lucide lucide-info" width=16 height=16><circle cx=12 cy=12 r=10/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg><span>판정은 사람이 변경할 수 있습니다</span><button><svg width=12 height=12><path d="M1 1 L11 11"/></svg></button></div>
+        </section></main>`,
+      // A page with no messages at all.
+      "a page with no cards on it":
+        `<style>body{margin:0;font:14px sans-serif}main{padding:16px;width:1000px}
+        .msg{border:1px solid #ccc;border-radius:6px;padding:8px 12px;display:flex;gap:8px;align-items:center;margin-bottom:8px}
+        .msg span{flex:1}.danger{background:#fef2f2}.warn{background:#fffbeb}.info{background:#eff6ff}.help{background:#f8fafc}</style><main><h1>설비</h1><p>등록된 설비를 확인합니다.</p></main>`,
+    },
+  },
   standingMessageDrawsNoClose: {
     broken: {
       // The screen this was written from: two messages that close, the figures, then a red one
