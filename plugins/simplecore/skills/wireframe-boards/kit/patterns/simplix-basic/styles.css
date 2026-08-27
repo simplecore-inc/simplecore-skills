@@ -974,6 +974,11 @@
   .msg.info { background: var(--fill); }
   .msg.warn { border-left-color: var(--accent); }
   .msg.warn .mkind { border-color: var(--accent); color: var(--accent); }
+  /* A standing hazard, and the one kind that shares `warn`'s mark: the shape says something is
+     wrong and the border weight says how loudly. `error` is the same words about something the
+     reader just did, so it is drawn like this and does not close. */
+  .msg.danger { border-left-color: var(--accent); border-left-width: 4px; }
+  .msg.danger .mkind { border-color: var(--accent); background: var(--accent); color: #fff; }
   .msg.error { border-color: var(--accent); border-left-width: 4px; border-left-color: var(--accent);
                background: var(--accent-tint); }
   .msg.error .mkind { border-color: var(--accent); background: var(--accent); color: #fff; }

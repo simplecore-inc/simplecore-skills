@@ -1134,18 +1134,37 @@ export const sourceBadge = (source, basis = '') =>
  *   it deletes the card rather than dismissing it
  */
 /**
- * The three kinds of notice card a page carries, each with the glyph that names it.
+ * The kinds of notice card a page carries — the ones that close.
  *
  * <p>A notice card takes a row of the page for as long as the page exists, so every one of them
- * closes — and the header keeps the way back. The set is CLOSED at three because the header
- * draws one control per kind: a fourth would be a fourth control nobody can name.
+ * closes, and the header keeps the way back with one control per kind. **The bound on the set is
+ * that each kind has to be nameable as a control**, which is a bound on what a product's own
+ * vocabulary can carry rather than a number: a kind a reader cannot name in the header is a kind
+ * they cannot find a closed card under.
  *
- * <p>`error` is not among them and never closes. A message saying the reader is blocked right now
- * is the screen's current state, and a state that can be dismissed is a state the reader stops
- * being told about. `example` and `legal` are reference beside a field rather than notices about
- * the page, and they do not close either.
+ * <p>`error` is not among them. A message saying the reader is blocked right now is the answer to
+ * something they just did, gone on the next attempt, and it survives nothing — the test is whether
+ * it is still there a minute later with the reader doing nothing. A standing hazard is a different
+ * message and is `danger`, which closes like the rest. `example` and `legal` are reference beside a
+ * field rather than notices about the page, and they do not close either.
  */
-export const NOTICE_KINDS = { help: '?', warn: '!', info: 'i' };
+export const NOTICE_KINDS = { help: '?', warn: '!', info: 'i', danger: '!' };
+
+/**
+ * The mark beside every kind's word — including the kinds that do not close.
+ *
+ * <p><b>Which kinds close and which kinds are marked are two questions, and one table answering
+ * both is how the second one gets lost.</b> A mark looked up in {@link NOTICE_KINDS} draws nothing
+ * beside 오류 · 예시 · 근거, so the three kinds a reader most needs to tell apart at a glance are
+ * separated by colour alone — and colour alone does not reach a reader who cannot separate two
+ * tints, which is the thing the marks exist for. **A message that does not close still has to say
+ * what kind of message it is.**
+ *
+ * <p><b>`danger` and `warn` share a mark deliberately.</b> The split a reader needs first is
+ * 「무언가 잘못됐다」 against 「설명이다」, and that one is carried by shape; which of the two it is
+ * comes after, and the border colour carries it.
+ */
+export const NOTICE_MARKS = { ...NOTICE_KINDS, error: '!', example: '▷', legal: '§' };
 
 /** The control that closes a notice card. Its twin is the header icon that brings the card back. */
 export const noticeClose = () => `<span class="n-close" title="닫기">✕</span>`;
@@ -1243,10 +1262,10 @@ export const helpCard = ({ title, hint = '', open = '설명 보기', dismiss = n
  * head is the third thing always on that screen.
  */
 const MSG_KIND = {
-  ko: { help: '지침', info: '알림', warn: '주의', error: '오류', example: '예시', legal: '근거' },
-  vi: { help: 'Hướng dẫn', info: 'Thông báo', warn: 'Chú ý', error: 'Lỗi', example: 'Ví dụ', legal: 'Căn cứ' },
-  en: { help: 'Guide', info: 'Notice', warn: 'Caution', error: 'Error', example: 'Example', legal: 'Basis' },
-  km: { help: 'ការណែនាំ', info: 'ការជូនដំណឹង', warn: 'ប្រយ័ត្ន', error: 'កំហុស', example: 'ឧទាហរណ៍', legal: 'មូលដ្ឋាន' },
+  ko: { help: '지침', info: '알림', warn: '주의', danger: '위험', error: '오류', example: '예시', legal: '근거' },
+  vi: { help: 'Hướng dẫn', info: 'Thông báo', warn: 'Chú ý', danger: 'Nguy hiểm', error: 'Lỗi', example: 'Ví dụ', legal: 'Căn cứ' },
+  en: { help: 'Guide', info: 'Notice', warn: 'Caution', danger: 'Danger', error: 'Error', example: 'Example', legal: 'Basis' },
+  km: { help: 'ការណែនាំ', info: 'ការជូនដំណឹង', warn: 'ប្រយ័ត្ន', danger: 'គ្រោះថ្នាក់', error: 'កំហុស', example: 'ឧទាហរណ៍', legal: 'មូលដ្ឋាន' },
 };
 
 /**
@@ -1275,7 +1294,7 @@ export const msg = ({
   const closes = !status && OPTIONS.dismissibleNotices && (dismiss ?? kind in NOTICE_KINDS);
   return `<div class="msg ${kind}${status ? ' state' : ''}">` +
     `<span class="mkind">` +
-    `${OPTIONS.noticeKindMarks && kind in NOTICE_KINDS ? `<i>${NOTICE_KINDS[kind]}</i>` : ''}` +
+    `${OPTIONS.noticeKindMarks && kind in NOTICE_MARKS ? `<i>${NOTICE_MARKS[kind]}</i>` : ''}` +
     `${label}</span>` +
     `<div class="mbody">${title ? `<div class="mtitle">${title}</div>` : ''}` +
     `${body ? `<div class="mtext">${body}</div>` : ''}</div>` +

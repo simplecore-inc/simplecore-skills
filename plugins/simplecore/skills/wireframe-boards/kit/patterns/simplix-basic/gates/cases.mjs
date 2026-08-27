@@ -429,16 +429,30 @@ export function cases(t) {
   add('auditFootFirstTabGate', '탭이 없는 패널은 대상이 아니다',
     ctxWith([screen('x-01-a', "auditFoot({ id: 'a1', at: '2026-01-01' }, null)")]), false);
 
-  add('statusCardDeclaresItselfGate', '건수를 말하는 카드가 밝히지 않았다',
-    ctxWith([screen('x-01-a', "msg({ kind: 'warn', title: '정책이 없는 안전구역이 1개 있습니다' })")]), true);
-  add('statusCardDeclaresItselfGate', '상태 카드라고 밝혔다',
-    ctxWith([screen('x-01-a', "msg({ kind: 'warn', status: true, title: '정책이 없는 안전구역이 1개 있습니다' })")]), false);
+  // The gate asks a different question of each kind of board, so both kinds are proved — and both
+  // are stated rather than inherited, because a case that leans on the harness's default proves
+  // whichever way that default happens to fall rather than the mode it is named after.
+  const on = { config: { ...config, patternOptions: { dismissibleNotices: true } } };
+  const off = { config: { ...config, patternOptions: { dismissibleNotices: false } } };
+
+  // Recoverable: withholding the close is the defect, and a count in the title is not a reason.
+  add('aStandingCardClosesWhenItCanGate', '되돌릴 수 있는데 status로 닫기를 뺏었다',
+    ctxWith([screen('x-01-a', "msg({ kind: 'warn', status: true, title: '정책이 없는 안전구역이 1개 있습니다' })")], on), true);
+  add('aStandingCardClosesWhenItCanGate', '되돌릴 수 있고 닫힌다',
+    ctxWith([screen('x-01-a', "msg({ kind: 'warn', title: '정책이 없는 안전구역이 1개 있습니다' })")], on), false);
+
+  // Not recoverable: a dismissal is a deletion, so a card about what is on the site must declare.
+  add('aStandingCardClosesWhenItCanGate', '되돌릴 수 없는데 밝히지 않았다',
+    ctxWith([screen('x-01-a', "msg({ kind: 'warn', title: '정책이 없는 안전구역이 1개 있습니다' })")], off), true);
+  add('aStandingCardClosesWhenItCanGate', '되돌릴 수 없어서 상태 카드라고 밝혔다',
+    ctxWith([screen('x-01-a', "msg({ kind: 'warn', status: true, title: '정책이 없는 안전구역이 1개 있습니다' })")], off), false);
   // A standing fact that happens to name a number is the author's call, and `dismiss` records it.
-  add('statusCardDeclaresItselfGate', '닫히는 카드라고 밝혔다',
-    ctxWith([screen('x-01-a', "msg({ kind: 'info', dismiss: true, title: '한 조문이 요구를 여럿 만듭니다', body: '2건까지 나옵니다' })")]), false);
-  // 오류·예시·근거 are not notice cards and never close, so nothing to declare.
-  add('statusCardDeclaresItselfGate', '오류는 대상이 아니다',
-    ctxWith([screen('x-01-a', "msg({ kind: 'error', title: '필수 항목 3개가 비어 있습니다' })")]), false);
-  add('statusCardDeclaresItselfGate', '수를 말하지 않는 카드',
-    ctxWith([screen('x-01-a', "msg({ kind: 'help', title: '이 화면에서 하는 일' })")]), false);
+  add('aStandingCardClosesWhenItCanGate', '되돌릴 수 없지만 닫히는 카드라고 밝혔다',
+    ctxWith([screen('x-01-a', "msg({ kind: 'info', dismiss: true, title: '한 조문이 요구를 여럿 만듭니다', body: '2건까지 나옵니다' })")], off), false);
+
+  // 오류·예시·근거 are not notice cards, so neither question is asked of them.
+  add('aStandingCardClosesWhenItCanGate', '오류는 대상이 아니다',
+    ctxWith([screen('x-01-a', "msg({ kind: 'error', title: '필수 항목 3개가 비어 있습니다' })")], on), false);
+  add('aStandingCardClosesWhenItCanGate', '수를 말하지 않는 카드',
+    ctxWith([screen('x-01-a', "msg({ kind: 'help', status: true, title: '이 화면에서 하는 일' })")], on), false);
 }

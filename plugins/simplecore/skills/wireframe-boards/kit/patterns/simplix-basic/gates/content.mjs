@@ -725,8 +725,8 @@ export const dotSpacingGate = {
     const compound = (ctx.config?.compoundTerms ?? []).filter((t) => t.includes('·'));
     // Masking keeps a compound term whole through the split and puts it back before the report,
     // so what the reader is shown is the text they wrote.
-    const mask = (t) => compound.reduce((acc, term, i) => acc.split(term).join(` ${i} `), t);
-    const unmask = (t) => compound.reduce((acc, term, i) => acc.split(` ${i} `).join(term), t);
+    const mask = (t) => compound.reduce((acc, term, i) => acc.split(term).join(`\u0000${i}\u0000`), t);
+    const unmask = (t) => compound.reduce((acc, term, i) => acc.split(`\u0000${i}\u0000`).join(term), t);
     const judge = (where, rawText) => {
       const text = mask(rawText);
       for (const chunk of text.split(/ — |[()]/)) {
@@ -1455,30 +1455,42 @@ export const auditFootFirstTabGate = {
   },
 };
 
-// Dismissal is remembered per person and for good, while what a status card describes changes with
-// the site — so whoever closed 「정책이 없는 안전구역이 1개 있습니다」 today is never shown tomorrow's
-// zone losing its policy. The server cannot tell the two apart, so the screen declares it. A count
-// of records in the card's own text is the shape that says «this sentence is about what is here
-// right now», and a card carrying one has to say which it is: `status: true` because it is, or
-// `dismiss: false`/`dismiss: true` because the author looked and decided otherwise.
+// **Whether a standing card may be closed turns on whether a closed one can be found again**, and
+// that is what `dismissibleNotices` declares — the kit ties the close and the header controls that
+// bring one back into one capability, so a board cannot have the first without the second. This
+// gate therefore asks a different question of each kind of board, and both questions are the same
+// question underneath: is a reader who puts this message away losing it?
 //
-// **This gate finds about two status cards in five, and its own text says so.** Measured on the
-// board it was written for: 233 cards were status cards and the count test reaches 96 of them. The
-// rest say what is on the site right now without naming a number — 「대형 재고가 없습니다」,
-// 「고시가 2026-07-01에 개정됐습니다」, 「한 곳이 아직 v3을 들고 있습니다」 — and no regex separates
-// those from a standing rule, because both are ordinary sentences and the difference is what they
-// are ABOUT.
+// **Where the option is off, a dismissal is a deletion**, and a card whose words describe what is
+// on the site right now must not offer one — whoever closed 「정책이 없는 안전구역이 1개 있습니다」
+// today would never be shown tomorrow's zone losing its policy. The server cannot tell a standing
+// fact from a live one, so the screen declares it: `status: true` because it is, or `dismiss`
+// because the author looked and decided otherwise.
 //
-// **So a green result here does not mean the status cards have been found**, and the danger is
-// exactly that it reads as though it does: somebody leans on it once and a live hazard warning
-// becomes dismissible for good. The question that does the work is in the finding's own text, where
-// whoever meets it will read it — **「이 문장을 빈 사업장에서도 쓸 수 있는가」**. Yes and it is a
-// standing fact that closes; nothing to say there and it is a status card that stays.
-export const statusCardDeclaresItselfGate = {
-  id: 'statusCardDeclaresItselfGate',
-  title: '건수를 말하는 알림 카드가 상태 카드인지 밝히지 않았다 (수를 말하지 않는 상태 카드는 잡지 못한다 — 사람이 본다)',
+// **Where the option is on, that reason is gone and `status: true` is the defect.** The header
+// control for a kind is marked while one of its cards is hidden, so putting one away moves the
+// message rather than losing it, and withholding the close buys nothing while costing the reader
+// a screen they cannot quieten. A live count in the title is no exception — it is the shape that
+// used to justify `status`, and under a recoverable dismissal it justifies nothing.
+//
+// **What never closes in either kind of board is a transient failure** — the answer to something
+// the reader just did, gone on the next attempt. The test is whether the message survives the
+// reader doing nothing: still there a minute later, it stands. `error` is that kind and is not a
+// notice card, which is why it is skipped rather than judged.
+//
+// **This gate reads the cards that name a number, which is about two status cards in five.**
+// Measured on the board it was written for: 233 cards were status cards and the count test reached
+// 96 of them. The rest say what is on the site without naming a number — 「대형 재고가 없습니다」,
+// 「한 곳이 아직 v3을 들고 있습니다」 — and no regex separates those from a standing rule, because
+// both are ordinary sentences and the difference is what they are ABOUT. **So a green result here
+// does not mean the cards have been judged**, and the danger is that it reads as though it does.
+export const aStandingCardClosesWhenItCanGate = {
+  id: 'aStandingCardClosesWhenItCanGate',
+  title: '서 있는 카드가 닫힐 수 있는데 닫히지 않는다 (수를 말하지 않는 카드는 잡지 못한다 — 사람이 본다)',
   stage: 'built',
   run: (ctx) => {
+    // One capability, declared by the board: the close and the header control that undoes it.
+    const recoverable = ctx.config?.patternOptions?.dismissibleNotices === true;
     const NUM = '(?:\\d+|하나|둘|셋|넷|다섯|여섯|일곱|여덟|아홉|열|한|두|세|네)';
     const UNIT = '(?:건|개(?!월)|명|곳|대(?!한)|장(?!소)|척|쌍|줄|가지|종(?!료)|군데|점|매|회차|자리|쪽)';
     const COUNT = new RegExp(`${NUM}\\s*${UNIT}(?![가-힣])|\\d+%`);
@@ -1495,15 +1507,22 @@ export const statusCardDeclaresItselfGate = {
         const call = src.slice(i, j + 1);
         const kind = /kind:\s*'([a-z]+)'/.exec(call)?.[1] ?? 'info';
         if (!['help', 'info', 'warn'].includes(kind)) continue;
-        if (/\b(?:status|dismiss):/.test(call)) continue;
+        const declaresStatus = /\bstatus:\s*true/.test(call);
+        // Off: an undeclared count-bearing card is the finding. On: a declared one is.
+        if (recoverable ? !declaresStatus : /\b(?:status|dismiss):/.test(call)) continue;
         const title = /title:\s*'([^']*)'/.exec(call)?.[1] ?? '';
         const body = /body:\s*(?:'([^']*)'|`([^`]*)`)/.exec(call);
         if (!COUNT.test(`${title} ${body?.[1] ?? body?.[2] ?? ''}`)) continue;
         bad.push(
-          `${sc.file}: 「${(title || '').slice(0, 24)}…」 — status나 dismiss를 밝힌다. ` +
-          '판정은 「이 문장을 빈 사업장에서도 쓸 수 있는가」로 한다 — 쓸 수 있으면 서 있는 사실이라 닫히고, ' +
-          '빈 사업장에서 할 말이 없으면 상태 카드라 닫히지 않는다. ' +
-          '이 검사는 수를 적은 카드만 보므로 다섯 가운데 둘쯤을 찾는다 — 초록이어도 나머지는 사람이 읽어야 한다'
+          `${sc.file}: 「${(title || '').slice(0, 24)}…」 — ` +
+          (recoverable
+            ? 'status를 뗀다. 이 보드는 닫은 카드를 머리 제어로 되돌리므로 닫기를 뺏을 근거가 없다 — '
+              + '치우면 그 사람에게만, 그 갈래의 제어에 표시가 남은 채로 옮겨진다. '
+              + '제목에 건수가 실린 것은 예외가 아니라 예전에 status를 정당화하던 바로 그 모양이다. '
+              + '닫히지 않는 것은 방금 누른 것에 대한 답 하나뿐이고, 그것은 error라 이 검사가 보지 않는다'
+            : 'status나 dismiss를 밝힌다. 이 보드는 닫은 카드를 되돌릴 길이 없으므로 닫기가 삭제와 같다 — '
+              + '판정은 「이 문장을 빈 사업장에서도 쓸 수 있는가」로 한다') +
+          '. 이 검사는 수를 적은 카드만 보므로 다섯 가운데 둘쯤을 찾는다 — 초록이어도 나머지는 사람이 읽어야 한다'
         );
         break;
       }
