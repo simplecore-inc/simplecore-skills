@@ -1012,6 +1012,13 @@ const pageFrozenAroundAScrollingRegion = {
       // content by design, and the page behind them is meant to hold still.
       if (el.closest(OVERLAY)) continue;
 
+      // **The page behind one, too.** A modal freezes the document and marks everything under it
+      // `aria-hidden` or `inert`, so the screen's own regions become the only things that move and
+      // every one of them reads as a strip in a frozen page — on a screen that passes this check
+      // the moment the dialog closes. The reader cannot reach any of it, which is the point of a
+      // modal and is why this is not a finding about the screen.
+      if (el.closest('[aria-hidden="true"], [inert]')) continue;
+
       compared += 1;
       if (pageMoves) continue;
 
@@ -1223,6 +1230,21 @@ const FIXTURES = {
         <div class=divider></div><div class=detail></div></div></div>`,
     },
     quiet: {
+      // A modal over the page this check was written from. The document is frozen and the app
+      // root is `aria-hidden`, so the page's own list becomes the only thing that moves — and it
+      // is a region behind a modal, which the reader cannot reach at all. The same screen with
+      // the modal closed is the `broken` page above, so a check that fires here is answering
+      // 「is a dialog open」 rather than 「is this screen stuck」.
+      "a frozen page behind an open modal, with its own list still scrolling":
+        `<style>html,body{margin:0;height:100%;overflow:hidden;font:14px sans-serif}
+        .page{display:flex;flex-direction:column;height:600px;width:1100px;overflow:auto}
+        .chrome{flex:none;padding:12px;background:#f4f4f5}
+        .list{flex:1;min-height:0;overflow:auto}
+        table{width:100%;border-collapse:collapse}td{padding:12px;border-bottom:1px solid #ddd}
+        .modal{position:fixed;top:60px;left:300px;width:420px;padding:20px;background:#fff;border:1px solid #ccc}</style>
+        <div aria-hidden="true"><div class=page><div class=chrome>전체 20건 · 비상 연락처</div>
+        <div class=list><table><tbody><tr><td>119 종합상황실</td><td>02-000-1000</td></tr><tr><td>관할 소방서</td><td>02-000-1001</td></tr><tr><td>관할 경찰서</td><td>02-000-1002</td></tr><tr><td>협력 병원</td><td>02-000-1003</td></tr><tr><td>환경청 상황실</td><td>02-000-1004</td></tr><tr><td>안전보건공단</td><td>02-000-1005</td></tr><tr><td>한국가스안전공사</td><td>02-000-1006</td></tr><tr><td>한국전기안전공사</td><td>02-000-1007</td></tr><tr><td>관할 지방고용노동관서</td><td>02-000-1008</td></tr><tr><td>야간 당직 안전담당</td><td>02-000-1009</td></tr><tr><td>사업장 안전보건관리책임자</td><td>02-000-1010</td></tr><tr><td>협력사 현장대리인</td><td>02-000-1011</td></tr><tr><td>가스 공급사 비상연락</td><td>02-000-1012</td></tr><tr><td>전기 수전실 당직</td><td>02-000-1013</td></tr><tr><td>폐수처리 위탁사</td><td>02-000-1014</td></tr><tr><td>산업보건의</td><td>02-000-1015</td></tr><tr><td>보건관리자</td><td>02-000-1016</td></tr><tr><td>소방안전관리자</td><td>02-000-1017</td></tr><tr><td>방재실</td><td>02-000-1018</td></tr><tr><td>정문 경비</td><td>02-000-1019</td></tr></tbody></table></div></div></div>
+        <div class=modal role=dialog aria-modal=true>되돌리기 근거를 적습니다</div>`,
       // The state the region's own overflow exists for: a detail stands beside the list, the page
       // must hold still or the detail would slide away with it, and each column scrolls in its
       // own track. Both columns scroll here and neither may be reported.
