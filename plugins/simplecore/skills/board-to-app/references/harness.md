@@ -66,6 +66,28 @@ When a fix makes the instrument deterministic, **put it in the tool, not in a
 one agent's habits.** A discipline that lives in what somebody happened to do is one
 the next agent will not know about.
 
+### In a shared tree, an edit is atomic or it is a red build for everybody
+
+**A call site written before its import compiles for nobody**, and in a tree several agents share
+that window is not private: whoever runs a build during it gets a failure naming a file they have
+never opened and a symbol they have never used. Three times in one session, from one agent, same
+shape — `StatusBadge` and a tone table referenced a few seconds before the import line landed.
+
+**None of them was a break and all three cost somebody the same minutes**: read the failure, doubt
+your own work, check whether the file is yours, discover it is not. The third was handled the way
+they all should be — reported rather than re-run, with the two files checked as uncommitted rather
+than committed broken, and the reporter's own packages typechecked in isolation first to prove the
+cause was elsewhere.
+
+- **Write the import and the call site in one edit.** Two writes are two states of the tree and the
+  first one is broken.
+- **A red build naming a file you have not opened is a race until proved otherwise.** Check whether
+  the file is modified-uncommitted before debugging anything; a committed break and somebody's
+  half-finished edit look identical in a compiler's output.
+- **Report it rather than re-running it away.** A tree that fails for a reason nobody records is
+  how a real break gets attributed to a race — and the count is what turned this from noise into a
+  shape specific enough to name.
+
 ### A script that edits by anchor asserts the anchor is unique
 
 **An edit script's 「ok」 is a claim that it wrote something, never a claim that it wrote it where you
