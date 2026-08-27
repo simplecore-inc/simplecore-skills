@@ -262,6 +262,55 @@ Neither is a defect. Reproduce at mount before reporting either, and say in the 
 
 ---
 
+## A charting library's defaults read as a broken component
+
+A chart legend that draws and does nothing, a slice that will not hide, a series that will not
+toggle — the adapter is almost never what is wrong. **Measure the library's own state before
+writing a framework defect**, and say in the report which of these it was.
+
+**First: is the thing you clicked on screen at all?** A legend under a tall chart, or inside a
+scrolling dialog, sits far below the fold. `document.elementFromPoint(cx, cy)` returning `null`
+for the element's own centre means it is outside the viewport — synthetic pointer events at those
+coordinates land nowhere, and a text-locator click lands on whatever ELSE on the page carries the
+same words, which for a chart is nearly always a table row naming the same category. Scroll it
+into view and re-read `elementFromPoint`; only then is a negative result about the chart.
+
+```js
+// Before concluding anything about a chart control:
+[...document.querySelectorAll(".apexcharts-legend-series")].map((i) => {
+  const r = i.getBoundingClientRect();
+  const top = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+  return { text: i.textContent, onScreen: i.contains(top) };
+});
+```
+
+**Then: the two ApexCharts defaults that read as a dead control.**
+
+1. **A single-series axis chart draws no legend at all.** `legend.showForSingleSeries` defaults to
+   `false`, so a line/bar/area chart given one series renders an EMPTY `.apexcharts-legend` div:
+   the box is in the DOM, no `.apexcharts-legend-series` item is. Nothing renders, so nothing can
+   be clicked, and no amount of synthesised clicking will change that. The series name is not
+   lost — it is in the tooltip. Count the items before judging: zero means there is no control,
+   not a broken one.
+2. **A pie/donut legend click SELECTS the slice; it does not collapse the series.** Non-axis
+   charts route the click to slice selection: the slice path gets `selected="true"` and an active
+   `filter`, while the legend item keeps its classes. It never sets `data:collapsed`, never adds
+   `apexcharts-inactive-legend`, and the other slices keep their geometry — so "the percentages
+   did not change and no inactive class appeared" is the library working, checked against the
+   wrong signal. Collapse-on-click is the AXIS-chart behaviour, and it needs two or more series.
+
+So the check that separates a defect from a default reads BOTH signals before and after one real
+click — the legend item's `class` and `data:collapsed`, and the slice path's `selected` and
+`filter`. A run that watched only `apexcharts-inactive-legend` answers "broken" on every pie and
+every one-series chart in the product.
+
+**The trap is that it fails identically on two screens**, which reads as proof that the shared
+adapter is at fault. Two screens drawing the same KIND of chart share the library's default, not a
+bug. Confirm on a chart of a different kind — a multi-series axis chart — before naming the
+adapter.
+
+---
+
 ## Test-data hygiene
 
 The audit runs against a live development database, and every flow you complete leaves records behind. Valid records are an asset; broken ones are noise.
