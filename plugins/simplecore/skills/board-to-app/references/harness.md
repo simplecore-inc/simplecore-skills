@@ -289,6 +289,24 @@ other arrives as a report.
 - **The reading is still worth having.** What it is not is current, and saying which commit it is
   current for costs one line.
 
+### An agent that stops without reporting is indistinguishable from one that found nothing
+
+**A wave's idle notice says an agent stopped; it never says whether it finished.** Three judges in
+one round went idle having returned nothing, and each time the coordinator had to ask — because a
+missing report and a clean report look identical from where the work is dispatched. **The chapter
+simply stands still**, and nothing about that state announces itself.
+
+- **Ask rather than wait, and ask for the partial.** 「Which captures did you open, what did you
+  find, what had you not reached」 recovers a report that was nearly complete; waiting recovers
+  nothing.
+- **Say in the brief that being stopped is a reportable outcome.** 「I could not open that file」 is
+  an answer; a briefed agent that believes only findings are worth sending will send nothing when
+  it has none.
+- **Re-send the brief with the ask.** A long run pushes the original out of the agent's context, so
+  the agent that went quiet may no longer know what it was to return.
+- **This is the same failure the round is usually about, one level up**: an unexercised demand and a
+  passed one leave the same mark, and so do an unfinished agent and a finished one.
+
 ### A check's silence covers what it reached, and what it reached is how it was run
 
 **A rule can be correct, exempt nothing it should not, and still say nothing about half its
