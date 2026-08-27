@@ -1238,6 +1238,15 @@ const pageFrozenAroundAScrollingRegion = {
  * answer to a press, so it is not on a page that has only been loaded. Drive the screen past a
  * submit first and this check will report the refusal, correctly by its own lights and wrongly by
  * the rule: the exemption lives in when it is run, not in what it can see.
+ *
+ * **And a message that closes may draw nothing at all for a moment, which reads exactly like a
+ * screen that has none.** Where the dismissals are remembered per operator on the server, the
+ * component holding one draws nothing until that read has answered — so a page caught during the
+ * refetch has no messages on it, and a check reading once reports a clean pass over a screen it
+ * never read. Nothing distinguishes that from a screen that is genuinely clean. The settle loop
+ * around this file is what handles it: `compared` counts the messages found, so the run keeps
+ * reading until that number stops moving. **Anybody reading these screens by hand has no such
+ * loop** — read twice, and believe the count only once it repeats.
  */
 const standingMessageDrawsNoClose = {
   id: "standingMessageDrawsNoClose",
