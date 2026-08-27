@@ -197,6 +197,25 @@ where the tool stops being able to help.
 **The danger is proportional to how well the script reads.** A careful helper used carefully all
 session builds exactly the confidence that lets an ad-hoc one through unexamined at the end of it.
 
+### A specimen weakens when somebody opens it, and that is the direction to expect
+
+**A case described from a distance is always stronger than the code.** 「A `.map` painting several
+cards whose kinds differ」 became an IIFE returning one card with a four-way kind; the replacement
+specimen became one producer with a hardcoded kind. Three descriptions, each weaker than the last,
+each corrected by whoever opened the file — **and none of the corrections went the other way.**
+
+That asymmetry is the rule. A description is built from what the reader expected to find, so it
+carries the shape the rule wants; the file carries only what somebody wrote. **So a specimen cited
+without being opened is an argument, and a rule justified by one is justified by nothing.**
+
+- **Cite the file and the line, and open it before repeating it.** Repeating somebody's description
+  as a fact about the code is the same failure as claiming who wrote a commit.
+- **When the strongest case for a rule keeps shrinking, the rule may be answering a shape the
+  product does not have.** That is worth knowing before more is built on it.
+- **A rule whose only justification is an unexercised case is still allowed** — but say so, and say
+  which real case does justify it. A structural argument, one the other instrument cannot have at
+  all, is worth more than a vivid case nobody has met.
+
 ### A fixture written from the rule cannot test the rule's contact with the product
 
 **A rule has a boundary the fixtures never touch if the fixtures were written from the rule.** One
