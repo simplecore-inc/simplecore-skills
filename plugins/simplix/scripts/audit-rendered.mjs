@@ -1416,18 +1416,23 @@ const standingMessageDrawsNoClose = {
 };
 
 /**
- * A standing message drawn below the figures.
+ * A standing message drawn above the figure row.
  *
- * The defect it exists to catch: a screen leads with its tile row, and the sentence saying what
- * the reader has to deal with today sits under it — or, on a drawing sheet, a thousand pixels
- * down at the foot of the page under the canvas. A tile shows a number and does not say what to
- * do about it, so above the message it takes the line the reader looks at first and the two get
- * read in the wrong order.
+ * The defect it exists to catch: a screen puts a card between its page header and its figure row.
+ * **The row and the header's rule have to be adjacent, and that is a mechanism rather than a
+ * preference**: the figure row collapses into a strip that reads as sitting behind the header's
+ * rule, so anything wedged between the two severs the fold from the thing it folds behind. The
+ * cards come directly under the row, and the period strip and the tab strip under them.
  *
- * **Read off the painted page rather than off the JSX**, which is what makes a message at the
- * foot of a long page as visible to this as one three lines from the top: the source rule reads
- * a return statement's text and a message far down it looks exactly like a message just below
- * the tiles.
+ * **This rule was written the other way round first, and the reversal is why it says all that.**
+ * A rule that inverts does not merely stop finding the defect — it reports every page that obeys
+ * the new reading and stays silent on every page that breaks it, so a check nobody has re-read
+ * against the document it enforces is a check that certifies what it was built to catch. What
+ * settled it was somebody looking at a folded strip, which no rule here could have seen.
+ *
+ * **Read off the painted page rather than off the JSX**, which is what makes a card a thousand
+ * pixels from the row as visible to this as one three lines above it: the source rule reads a
+ * return statement's text, and a card far up it looks exactly like one immediately over the row.
  *
  * **A figure row is what it looks like**: two or more boxes of one height standing side by side,
  * each carrying a number, none of them a line of a table. No component name enters it, so a row
@@ -1437,11 +1442,11 @@ const standingMessageDrawsNoClose = {
  * footnote, drawn under the rows it annotates, and hoisting it would put it over three tabs it
  * is not true of.
  */
-const standingMessageBelowTheFigures = {
-  id: "standingMessageBelowTheFigures",
+const theFigureRowSitsAgainstTheHeader = {
+  id: "theFigureRowSitsAgainstTheHeader",
   grade: "error",
   title:
-    "a standing message drawn below a row of figures — the number the reader meets first is the one that says nothing to do",
+    "a standing message drawn above a row of figures — the row folds behind the header's rule, and a card between them severs the fold",
   page: (o) => {
     const findings = [];
     const main = document.querySelector("main, [role=main]");
@@ -1575,17 +1580,18 @@ const standingMessageBelowTheFigures = {
     for (const el of messages) {
       compared += 1;
       const r = el.getBoundingClientRect();
-      const above = rows.find((row) => row.bottom <= r.top + 1 && !row.el.contains(el));
-      if (!above) continue;
+      const below = rows.find((row) => row.top >= r.bottom - 1 && !row.el.contains(el));
+      if (!below) continue;
       const said = prose(el).replace(/\s+/g, " ").slice(0, 40);
       findings.push(
-        `「${said}」 is drawn ${Math.round(r.top - above.bottom)}px below a row of `
-          + `${above.count} figures. The card region is the top of the screen — state cards, then `
-          + "explanation cards, then everything else — so whoever has something to deal with today "
-          + "meets it on the first line, and whoever arrived for the first time meets the explanation "
-          + "directly under it. A tile shows a number and does not say what to do about it. Move the "
-          + "message above the figures; a screen with no message leads with its figures and this "
-          + "never reads it",
+        `「${said}」 is drawn ${Math.round(below.top - r.bottom)}px ABOVE a row of `
+          + `${below.count} figures. The 상태카드 sits against the page header because that is where `
+          + "it folds — the row collapses into a strip that reads as sitting behind the header's "
+          + "rule, and anything wedged between the two severs the fold from the thing it folds "
+          + "behind. This is a mechanism rather than a preference: the row and the rule have to be "
+          + "adjacent for the fold to land anywhere. Move the message under the row; the period "
+          + "strip and the tab strip go under it in turn, and a screen with no figure row is not "
+          + "this rule's subject",
       );
       if (findings.length >= o.maxFindings) break;
     }
@@ -1786,7 +1792,7 @@ const theCardRegionReadsLoudestFirst = {
 export const checks = [
   countedListDrawsNoRows,
   standingMessageDrawsNoClose,
-  standingMessageBelowTheFigures,
+  theFigureRowSitsAgainstTheHeader,
   theCardRegionReadsLoudestFirst,
   textBoxesOverlap,
   blockInsideParagraph,
@@ -2169,19 +2175,43 @@ const FIXTURES = {
         <div class=fig>안전검사 대상<br>31대</div><div class=fig>기한 지남<br>2대</div></div></main>`,
     },
   },
-  standingMessageBelowTheFigures: {
+  theFigureRowSitsAgainstTheHeader: {
     broken: {
-      // The page's own scrollport is every message's ancestor, so a climb that counted `main`
-      // would exempt every message on every screen and the rule would report nothing for ever.
-      "a message in the page's own column, under figures, with main scrolling":
+      // The same defect inside a scrolling page. The page's own scrollport is every message's
+      // ancestor, so the region exemption must not reach it — a climb that counted `main` would
+      // exempt every card on every screen and this rule would report nothing for ever.
+      "a card between the header and the row, with main scrolling":
         `<style>html,body{margin:0;height:100%;font:14px sans-serif}
         main{height:100%;overflow-y:auto;padding:16px;width:1000px;box-sizing:border-box}
+        .figs{display:flex;gap:16px;margin-top:12px}.fig{width:220px;height:90px;border:1px solid #ddd;border-radius:6px;padding:12px;background:#fff}
+        .msg{border:1px solid #fecaca;border-radius:6px;padding:8px 12px;background:#fef2f2}</style>
+        <main><div role=alert class=msg><svg width=16 height=16><path d="M8 1 L15 14 H1 Z"/></svg> 법정 최소 기준에 미달하는 정책이 2건 있습니다
+        <button><svg width=12 height=12><path d="M1 1 L11 11"/></svg></button></div>
+        <div class=figs><div class=fig>보존 정책<br>12건</div><div class=fig>법정 미달<br>2건</div></div></main>`,
+      // Two cards between the header and the row. Both are findings — a rule reporting only the
+      // one nearest the row would leave the other in place and read as having cleared the page.
+      "two cards between the header and the row":
+        `<style>body{margin:0;font:14px sans-serif}main{padding:16px;width:1000px}
         .figs{display:flex;gap:16px}.fig{width:220px;height:90px;border:1px solid #ddd;border-radius:6px;padding:12px;background:#fff}
-        .msg{border:1px solid #fecaca;border-radius:6px;padding:8px 12px;background:#fef2f2;margin-top:12px}</style>
-        <main><div class=figs><div class=fig>보존 정책<br>12건</div><div class=fig>법정 미달<br>2건</div></div>
-        <div role=alert class=msg><svg width=16 height=16><path d="M8 1 L15 14 H1 Z"/></svg> 법정 최소 기준에 미달하는 정책이 2건 있습니다
-        <button><svg width=12 height=12><path d="M1 1 L11 11"/></svg></button></div></main>`,
-      // The tile row first and the sentence saying what to deal with today under it.
+        .msg{border:1px solid #ccc;border-radius:6px;padding:8px 12px;background:#eff6ff;margin-bottom:8px}</style>
+        <main>
+        <div role=alert class=msg><svg width=16 height=16><path d="M8 1 L15 14 H1 Z"/></svg> 기한이 지난 설비 2대가 있습니다<button><svg width=12 height=12><path d="M1 1 L11 11"/></svg></button></div>
+        <div role=note class=msg><svg width=16 height=16><circle cx=8 cy=8 r=7/></svg> 가동을 중지해도 검사 유효기간은 그대로입니다<button><svg width=12 height=12><path d="M1 1 L11 11"/></svg></button></div>
+        <div class=figs><div class=fig>안전검사 대상<br>31대</div><div class=fig>기한 지남<br>2대</div></div></main>`,
+      // The shape this rule exists to catch: a card wedged between the page header and the
+      // figure row. The row folds behind the header's rule, so the card severs the fold from the
+      // thing it folds behind — and this was the CORRECT arrangement under the rule's first
+      // reading, which is why it sits here as the broken one rather than being deleted.
+      "a message above the tile row":
+        `<style>body{margin:0;font:14px sans-serif}main{padding:16px;width:1000px}
+        .figs{display:flex;gap:16px}.fig{width:220px;height:90px;border:1px solid #ddd;border-radius:6px;padding:12px;background:#fff}
+        .msg{border:1px solid #fecaca;border-radius:6px;padding:8px 12px;background:#fef2f2;margin-bottom:12px}</style>
+        <main><div role=alert class=msg><svg width=16 height=16><path d="M8 1 L15 14 H1 Z"/></svg> 기한이 지난 설비 2대가 있습니다
+        <button><svg width=12 height=12><path d="M1 1 L11 11"/></svg></button></div>
+        <div class=figs><div class=fig>안전검사 대상<br>31대</div><div class=fig>기한 지남<br>2대</div></div></main>`,
+    },
+    quiet: {
+      // The order the rule asks for: the row against the header, the cards directly under it.
       "a message under the tile row":
         `<style>body{margin:0;font:14px sans-serif}main{padding:16px;width:1000px}
         .figs{display:flex;gap:16px;margin-bottom:12px}
@@ -2191,9 +2221,9 @@ const FIXTURES = {
         <div class=fig>30일 안 검사<br>9대</div></div>
         <div role=alert class=msg><svg width=16 height=16><path d="M8 1 L15 14 H1 Z"/></svg> 기한이 지난 설비 2대가 있습니다
         <button><svg width=12 height=12><path d="M1 1 L11 11"/></svg></button></div></main>`,
-      // The same defect a thousand pixels down: the messages sit at the foot of the page under
-      // the canvas. Read off the source this looks exactly like a message just under the tiles,
-      // which is why the placement rule was green on it.
+      // Cards a long way down the page, under a sheet, with the row still against the header.
+      // Distance below the row is not the subject — only what stands between the row and the
+      // header is.
       "messages at the foot of a long page, under the sheet":
         `<style>body{margin:0;font:14px sans-serif}main{padding:16px;width:1000px}
         .figs{display:flex;gap:16px}.fig{width:220px;height:90px;border:1px solid #ddd;border-radius:6px;padding:12px;background:#fff}
@@ -2203,16 +2233,17 @@ const FIXTURES = {
         <div class=sheet></div>
         <div role=note class=msg><svg width=16 height=16><circle cx=8 cy=8 r=7/></svg> 표시는 도면 회차마다 남습니다
         <button><svg width=12 height=12><path d="M1 1 L11 11"/></svg></button></div></main>`,
-    },
-    quiet: {
-      // The order the rule asks for: the message first, the figures under it.
-      "a message above the tile row":
-        `<style>body{margin:0;font:14px sans-serif}main{padding:16px;width:1000px}
+      // The page's own scrollport is every message's ancestor, so a climb that counted `main`
+      // would exempt every message on every screen. Here the card is under the row, which is
+      // right, and the exemption must not be what makes it quiet.
+      "a message in the page's own column, under figures, with main scrolling":
+        `<style>html,body{margin:0;height:100%;font:14px sans-serif}
+        main{height:100%;overflow-y:auto;padding:16px;width:1000px;box-sizing:border-box}
         .figs{display:flex;gap:16px}.fig{width:220px;height:90px;border:1px solid #ddd;border-radius:6px;padding:12px;background:#fff}
-        .msg{border:1px solid #fecaca;border-radius:6px;padding:8px 12px;background:#fef2f2;margin-bottom:12px}</style>
-        <main><div role=alert class=msg><svg width=16 height=16><path d="M8 1 L15 14 H1 Z"/></svg> 기한이 지난 설비 2대가 있습니다
-        <button><svg width=12 height=12><path d="M1 1 L11 11"/></svg></button></div>
-        <div class=figs><div class=fig>안전검사 대상<br>31대</div><div class=fig>기한 지남<br>2대</div></div></main>`,
+        .msg{border:1px solid #fecaca;border-radius:6px;padding:8px 12px;background:#fef2f2;margin-top:12px}</style>
+        <main><div class=figs><div class=fig>보존 정책<br>12건</div><div class=fig>법정 미달<br>2건</div></div>
+        <div role=alert class=msg><svg width=16 height=16><path d="M8 1 L15 14 H1 Z"/></svg> 법정 최소 기준에 미달하는 정책이 2건 있습니다
+        <button><svg width=12 height=12><path d="M1 1 L11 11"/></svg></button></div></main>`,
       // A tab's own footnote, drawn under the rows it annotates. Hoisting it would put it over
       // three tabs it is not true of, which is the shape a rule reading position alone reports.
       "a footnote inside a tab panel, under that tab's rows":
