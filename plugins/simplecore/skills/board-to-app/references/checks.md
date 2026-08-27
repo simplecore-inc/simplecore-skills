@@ -125,9 +125,21 @@ nobody could settle names a source that may already answer it, and no gate can t
 — only a person re-reading the article can. Failing there trains everybody to ignore the gate, and
 a gate that cries wolf takes the real ones beside it down with it.
 
+**The second case is a gate that measures a proxy, where the only route to green is to change the
+artifact.** A picture's bytes stand in for whether anything is drawn on it, and the two are not the
+same thing — so a correct picture can land under the number, and the one move that clears it is to
+re-encode the picture larger, which disables the check for the next capture that really is blank.
+**Ask of any threshold: what does somebody do when it fires on something right?** Where the answer
+is 「edit the artifact until the number moves」, an error grade is a rule that teaches people to
+defeat it, and the finding belongs in the channel that says 「go and look」.
+`everyCaptureIsDenserThanAnEmptyCanvas` is that shape.
+
 **It is not a way to keep a rule that fires wrongly.** A gate whose findings are mostly noise is too
 wide and gets narrowed. The grade says what a *correct* finding is, never how sure the gate is —
 downgrading to quieten a false positive leaves the defect in the rule and buries the evidence of it.
+**Nor does the grade excuse a threshold nobody measured.** A number is calibrated against both
+edges before it is written down — the artifact the rule exists to catch and the sparsest legitimate
+one — and where the two are close, the case for each edge carries the measurement that set it.
 
 A grade the harness does not read is refused rather than defaulted: `check` and `gates` both fail on
 a gate declaring one, because `grade: 'advisory'` otherwise reads as advisory in the source and is
@@ -194,6 +206,20 @@ has become worthless.
   silently is reported by nobody**, so finding the first is the only occasion anybody has to look
   for the second. The fix belongs at the family: one reader that takes *every* layer a piece of
   prose names, called by both, rather than the same regex corrected twice.
+- **A gate that blanks a source file before reading it is judged on the file that breaks the
+  blanking, not on the file it was written for.** Comments and string bodies have to go — a
+  `trail:` inside a comment explaining why there is none counts as one, and a brace inside a string
+  unbalances every region after it — so any gate that matches structure starts by masking. The
+  masker is then the part that fails, and it fails **silently**: what comes out is a syntactically
+  plausible file in which the thing being looked for is simply not there, so the gate reports
+  「could not find it」 or nothing at all, and both read as a file with nothing wrong with it. The
+  shape that breaks it is a template literal with **two** substitutions: drop the literal's frame
+  on the first `${…}`'s closing brace and the second one never matches, the literal's own closing
+  backtick then reads as the start of another literal, and several hundred lines are blanked with
+  their braces. One entry per open literal, dropped by the backtick and never by a substitution.
+  **Put that file in the cases** — a clean subject sitting below a two-substitution literal, which
+  must stay silent — because a masker is exercised by every file in the repository and proved by
+  none of them.
 - **A case cannot vary what the gate imports, and saying so is part of the gate.** Where a gate
   reads a declaration out of a module — the chapter set, the pack table — a fixture can vary the
   files but not the declaration: no case can make a pack lose its chapter, because the case builds
