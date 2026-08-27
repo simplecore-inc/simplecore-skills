@@ -296,6 +296,12 @@ one round went idle having returned nothing, and each time the coordinator had t
 missing report and a clean report look identical from where the work is dispatched. **The chapter
 simply stands still**, and nothing about that state announces itself.
 
+- **The commonest cause is that the agent DID report, into prose the coordinator never sees.** An
+  agent whose brief does not say how to return will write its findings as its final text, which
+  reaches nobody — and from the dispatching side that is identical to having found nothing. Five
+  agents in one session did exactly this, each having finished the work. **So the brief says how to
+  return, not only what**: 「send it with the message tool, not as your final text」 costs one line
+  and is the difference between a report and a transcript.
 - **Ask rather than wait, and ask for the partial.** 「Which captures did you open, what did you
   find, what had you not reached」 recovers a report that was nearly complete; waiting recovers
   nothing.
