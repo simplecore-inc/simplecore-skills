@@ -647,57 +647,83 @@ right there.
 
 Detected by `audit-strip-outside-the-first-tab` in `audit-frontend.mjs`.
 
-## #73 What stands on the screen is the state; what explains the screen stands behind an icon
+## #73 Every standing message is a card; only a transient failure stays a banner
 
-**Two kinds of message look identical and behave oppositely.**
+**Two kinds of message look identical and behave oppositely — and the line between them is not
+what the message says, it is whether it survives the reader doing nothing.**
 
-| | An explanation | A state |
+| | A standing message | A transient failure |
 | --- | --- | --- |
-| Its words change with the data | never | that is what it is |
-| Example | 「계정과 근로자는 따로입니다」 | 「정책이 없는 안전구역이 1개 있습니다」 |
-| Where it lives | behind a header control, one per kind | on the screen, for as long as it is true |
+| Still there a minute later, untouched | yes | no — it answers something the reader just did |
+| Example | 「계정과 근로자는 따로입니다」 · 「정책이 없는 안전구역이 1개 있습니다」 | 「코드가 틀렸습니다」 on a sign-in panel · 「연결하지 못했습니다」 after a test button |
+| Drawn with | the notice card, closable, on the header control for its kind | a bare `AlertBanner`, left where it is |
 
-An explanation is true of every row and every day, so it goes on taking the same space after the
-reader has learned it — and what it pushes below the fold is the rows they came for. So it is
-drawn with the notice component rather than a bare banner, which gives it two things a banner
-does not have: the reader can put it away, remembered for them across sessions, and the way back
-is a header control that is in the same place on every route. There is one control per kind
-(help · warning · info), each with **its own glyph AND its own tint** — colour alone does not
-reach a reader who cannot separate the two tints, and a glyph alone does not reach one scanning
-the page without reading it. The card's own button (「설명 보기」) is drawn inside that control
-too, so the explanation it opens stays one press away after the card has been put away.
+A standing message goes on taking the same space after the reader has read it, and what it pushes
+below the fold is the rows they came for. So it is drawn with the notice component rather than a
+bare banner, which gives it two things a banner does not have: the reader can put it away,
+remembered for them across sessions, and the way back is a header control that is in the same
+place on every route. There is one control per kind (help · warning · info · danger), each with
+**its own glyph AND its own tint** — colour alone does not reach a reader who cannot separate the
+two tints, and a glyph alone does not reach one scanning the page without reading it. The card's
+own button (「설명 보기」) is drawn inside that control too, so the explanation it opens stays one
+press away after the card has been put away.
 
-A **state** never goes through that component. Its words are true today and not tomorrow, so an
-operator who put it away on a day it read 1 would not be shown it tomorrow when it reads 3 — and
-a dismissal the server remembers is exactly the wrong memory to have of it.
+**Every kind closes, and a live count in the title changes nothing.** The older reading of this
+invariant kept a message whose words move with the data on the screen for ever, reasoning that an
+operator who dismissed 「미확인 2건」 on a day it read 2 would not be shown it on the day it reads
+40. That reasoning was sound while putting a message away meant losing it, and the header control
+is what changed the footing: a kind with a hidden card is tinted and pulses, so a dismissed
+warning is a message MOVED rather than a message lost, and the reader can see from any route that
+one of that kind is standing. That is the argument the notice kinds already make for `danger`, and
+it is true of all four.
 
-**The test before writing either**: do this card's own words change with the data? If they do it
-is a state and it stays on the screen. If they do not, it is an explanation and it does not.
+**The test before writing either**: does this message survive the reader doing nothing? If it is
+still there a minute later, it stands, and it closes. If it is the answer to a press — a read that
+failed, a submit the server refused, a field rejecting the value being typed — it is transient and
+it stays a banner.
+
+**Two shapes sit next to the transient one and are not it.** A banner that is the ONLY thing its
+pane renders in that state — a pane's empty state, the other arm of the ternary that draws the
+table — is the pane's content rather than a message standing over content, and putting it away
+would leave the reader a blank pane, which #76 forbids. A banner drawn once per row of a
+collection is a data row wearing a banner, and a per-row dismissal key is a key that moves. Both
+stay banners; neither is an excuse for a message that genuinely stands beside content.
+
+**Every message passes `icon`, card or banner.** `AlertBanner` draws no glyph unless the caller
+gives it one, and half the banners in a console reach only the readers who can separate the two
+tints — the rule about a glyph AND a tint is about every message, not only about cards. A card
+takes its glyph from `kind`, so converting a banner to a card fixes it by construction; a banner
+that stays needs the glyph passed by hand, mapped from its tone (danger · warning → the triangle,
+info · neutral → the info circle, success → the check).
 
 **The rule is read in one direction far more often than the other, and the direction that gets
-skipped is the explanation's.** A state wearing a card is visible — somebody presses the ✕ and
-meets the wrong behaviour. An explanation drawn as a loose caption is invisible, because a muted
-sentence under the page header looks like every other muted sentence on the screen and nothing
-about it says it was supposed to be something else. So it accumulates: a `PageNote`-style
-component, a bare `<Text size="caption" tone="muted">{t("page.note")}</Text>` above the tab strip,
-a sub-caption the board drew as a caption. Each is an explanation — true of every row and every
-day — that the reader can never put away, sitting exactly where the rows they came for should be.
+skipped is the standing message's.** A transient failure wearing a card is visible — somebody
+presses the ✕ and meets the wrong behaviour. A standing sentence drawn as a loose caption is
+invisible, because a muted sentence under the page header looks like every other muted sentence on
+the screen and nothing about it says it was supposed to be something else. So it accumulates: a
+`PageNote`-style component, a bare `<Text size="caption" tone="muted">{t("page.note")}</Text>`
+above the tab strip, a sub-caption the board drew as a caption. Each is a message the reader can
+never put away, sitting exactly where the rows they came for should be.
 
 **A component whose whole job is to draw a standing sentence is the shape to look for.** It reads
 as a deliberate primitive because it is one, and its own documentation will argue that the
 sentence is short enough not to be worth hiding. That argument is the rule's other direction being
 re-derived from scratch, one component at a time; the answer to it is that the header control
-costs one press and the sentence costs the same room every day forever.
+costs one press and the sentence costs the same room every day forever. Such a component takes its
+`noticeKey` from the caller rather than fixing one, because the card belongs to the screen it
+stands on and the header control lists that screen's cards.
 
 **The board does not settle it by which primitive it drew.** A board can carry three vocabularies
 for a standing sentence — a page note, a sub-caption, a message — and only the message records
-whether it closes. Where the board drew a caption and the sentence is an explanation, the board is
-the thing that moves.
+whether it closes. Where the board drew a caption, or marked a message as drawing no close
+control, and the message stands, the board is the thing that moves.
 
-**Detecting it**: the population is small and mechanically findable. A page-level muted `Text`
-whose whole body is one translated string, and any component that renders one, are the two shapes;
-restrict the sweep to a page's own file and to a direct child of its root stack, or a detail
-pane's field hints and a table's captions drown the result.
+**Detecting it**: a banner standing where nothing guards it is mechanically decidable and belongs
+in a gate — walk the JSX, skip any banner contained in a dialog / sheet / help card / notice card
+or in a file that is a sign-in surface end to end, and report the rest. A banner drawn under a
+condition is NOT decidable that way: a state and a transient failure have the same shape, so the
+gate holds the unconditional half and the conditional half is read by whoever writes the screen.
+Say so where the gate is declared rather than leaving the silence to read as coverage.
 
 ## #74 One value's state is changed in one place, on every screen that shows it
 
