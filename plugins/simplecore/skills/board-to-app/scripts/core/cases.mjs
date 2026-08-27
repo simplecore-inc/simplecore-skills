@@ -502,6 +502,29 @@ export function cases(t) {
     { ...shots, files: { 'shots/A-01.png': '' } },
     true
   );
+  // The container is the project's, not this gate's. A project encoding to fit a size bound writes
+  // `webp`, and `evidence.mjs` accepts `webp` for the very same pictures once they are curated —
+  // so naming one format here made one skill demand two names for one file.
+  add(
+    'capturesGate',
+    'the same name in the container a size-bounded project encodes to',
+    { ...spoken, files: { 'shots/w02/20260815-1130-A-01.webp': '' } },
+    false
+  );
+  add(
+    'capturesGate',
+    'a container nobody encodes a capture to',
+    { ...spoken, files: { 'shots/w02/20260815-1130-A-01.tiff': '' } },
+    true
+  );
+  // The shape still holds whatever the container is: a picture named for its frame alone cannot say
+  // which round took it, and a round taken before a fix looks exactly like one taken after.
+  add(
+    'capturesGate',
+    'a frame id with no timestamp, in an accepted container',
+    { ...spoken, files: { 'shots/w02/a-01-empty.webp': '' } },
+    true
+  );
   add(
     'capturesGate',
     'a name with no moment in it',

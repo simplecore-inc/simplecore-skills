@@ -495,7 +495,16 @@ export const ledgerGate = {
   },
 };
 
-const CAPTURE_NAME = /^\d{8}-\d{4}-[A-Za-z]{1,4}-\d{1,3}(-[a-z0-9-]+)?\.png$/;
+/**
+ * `<YYYYMMDD-HHMM>-<frame>[-<variant>]` in whatever container the project's encoder writes.
+ *
+ * <p><b>The shape of the name is this gate's to hold; the format is not.</b> A project that fits
+ * its pictures under a size bound encodes to `webp`, and naming one container refuses the pictures
+ * of every project that chose another — reporting a whole round as unplaceable over the three
+ * letters after the dot. `evidence.mjs` accepts `.webp` for the same pictures once they are
+ * curated, so a single container here made one skill demand two names for one file.
+ */
+const CAPTURE_NAME = /^\d{8}-\d{4}-[A-Za-z]{1,4}-\d{1,3}(-[a-z0-9-]+)?\.(?:png|webp|jpe?g|avif)$/;
 
 /**
  * Captures are placed the one way: one folder per language, and a name a reader can parse.
