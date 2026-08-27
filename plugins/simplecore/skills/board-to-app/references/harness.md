@@ -66,6 +66,27 @@ When a fix makes the instrument deterministic, **put it in the tool, not in a
 one agent's habits.** A discipline that lives in what somebody happened to do is one
 the next agent will not know about.
 
+### Git cannot tell two agents apart, so a commit that carried somebody's work says so or nothing does
+
+**Every agent in a wave commits as the same author.** The trailers name a chapter, not a hand — so
+`git log` can say what changed and when, and never who. **That is fine until a commit carries work
+that arrived in one of its files while it was being written**, and then the history is not merely
+silent: it is wrong, and confidently.
+
+There is no way to correct it in place. A reset or an amend takes whatever landed on top, which in
+a shared tree is somebody else's commit — so the record has to be made **forward**:
+
+- **A commit that says what it carried, named as its own change.** What rode in, what it does, and
+  who caused it. That is a fact on disk, which a message between two agents is not.
+- **And a message to the agent whose work it was**, because they are the only one who can say
+  whether the content is right — the commit's author saw a diff and thought it correct, which is a
+  weaker claim than it looks.
+- **Never a reset to tidy it.** The instruction against rewriting exists for exactly this tree, and
+  the receiving agent reporting the sweep rather than fixing it is the behaviour to expect.
+
+**The temptation is to leave it**, because nothing is lost and the code is right. What is lost is
+the next reader's ability to ask why a rule changed, of the person who changed it.
+
 ### In a shared tree, an edit is atomic or it is a red build for everybody
 
 **A call site written before its import compiles for nobody**, and in a tree several agents share
