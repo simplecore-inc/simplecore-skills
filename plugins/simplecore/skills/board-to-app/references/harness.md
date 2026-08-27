@@ -196,6 +196,40 @@ product actually renders. The rule was correct in the abstract and had never met
 - **A `compared` count is what separates them**, and only if somebody reads it against what they
   expected the page to hold.
 
+### A check that inverts certifies the defect
+
+**A rule that has been reversed is not merely wrong; it vouches for the broken state.** It reports
+every page that obeys the new rule and stays silent on every page that breaks it — so the tree reads
+as covered, the count reads as progress, and the pages somebody has to fix are the ones it calls
+clean. **A check nobody wrote is safer than a check pointing the other way**, because the first
+leaves the question open and the second answers it wrongly with authority.
+
+So a rule change is a change to every instrument that asserts it, in the same breath:
+
+- **Turn the check round with the rule, and rewrite its fixtures.** A fixture set that still passes
+  after the rule inverted is a fixture set proving the old rule under the new rule's name.
+- **The exemptions usually survive and the assertion does not.** A tab pane's cards, a panel's, a
+  table's cells — those are about what a region is, and a reversal of the order does not touch them.
+- **Say which instruments assert the rule before changing it.** Two source gates and a rendered
+  check asserted this one, and only one of them was inverted on the day the rule turned round.
+
+### Reading the diff is a point in time, and the write is after it
+
+**「Name the path, read `git diff`, then commit」 is the discipline and it does not cover the window
+it opens.** The diff you read was true when you read it; a peer's write lands between the reading
+and the commit, and the file goes in whole. It happened twice in one session between two agents,
+once in each direction, and **both times every rule was followed.**
+
+It cannot be closed by reading harder. What is left is to make the window small and the record
+honest:
+
+- **Read and commit as one motion**, with nothing between them — no second verification pass, no
+  re-run of a gate, no message written in between.
+- **When it happens, record it forward and tell the other agent.** Neither of them can correct it in
+  place, and the commit that swept it is the only place the fact can live.
+- **Expect it rather than resolving to avoid it.** Several sessions writing to one tree makes this
+  a rate, not a mistake.
+
 ### A check's silence covers what it reached, and what it reached is how it was run
 
 **A rule can be correct, exempt nothing it should not, and still say nothing about half its
