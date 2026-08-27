@@ -66,6 +66,29 @@ When a fix makes the instrument deterministic, **put it in the tool, not in a
 one agent's habits.** A discipline that lives in what somebody happened to do is one
 the next agent will not know about.
 
+### A script that edits by anchor asserts the anchor is unique
+
+**An edit script's 「ok」 is a claim that it wrote something, never a claim that it wrote it where you
+meant.** `replace(old, new)` with a count of one takes the FIRST match, and an anchor like
+`      )}\n\n` occurs everywhere in a React screen — so a script that lifts four blocks and
+re-inserts them at that anchor lands them somewhere else, reports success, and the blocks it lifted
+are simply gone. That happened twice in one session: once to a coordinator whose regex sweep
+stripped trailing commas from 694 files, and once to an agent moving three cards out of a screen
+that then had none.
+
+**Both were caught by reading the result and neither by the tool.** A diff, a re-read, a count of
+what changed — the check is always the same and it is always after the write, because the write is
+where the tool stops being able to help.
+
+- **Assert the anchor before writing**: it appears exactly once, or the script stops. A helper that
+  asserts and an ad-hoc `replace(…, 1)` look identical in a transcript, and only one of them is safe.
+- **Count what you changed against what you meant to change.** 「96 files」 when you named 96 is a
+  check; 「694 files」 when you named 96 is the sweep having found a second meaning for your pattern.
+- **Read the diff, not the summary.** The summary is written by the thing that got it wrong.
+
+**The danger is proportional to how well the script reads.** A careful helper used carefully all
+session builds exactly the confidence that lets an ad-hoc one through unexamined at the end of it.
+
 ### A guard that never fires is not proof of anything
 
 A capture guard was written to catch pictures whose screen moved mid-shot. It
@@ -83,6 +106,30 @@ looking at it.** Prove it in both directions before trusting it:
 
 A rule that ships unproven is worse than none: it converts *nobody has checked*
 into *something is checking*, and the second is much harder to doubt.
+
+### Both directions proved is not the same as both directions right
+
+**The harness refuses a gate with only one direction proved, and that refusal is what makes the
+second failure invisible.** A case set with a hit and a miss reads as complete: the tooling is
+satisfied, the count goes up, and nobody looks again. What nothing checks is whether the case
+asserts the right answer — and a case written from the same misreading that produced the gate
+asserts it confidently in the direction the misreading requires.
+
+It is not hypothetical. A rule enforcing an invariant carried a case saying
+`{clash ? <Table/> : <Banner/>}` must be reported, while the invariant it enforced exempted that
+exact shape in so many words — 「the other arm of the ternary that draws the table」. Both directions
+were proved. The gate then fired on four screens written exactly as the invariant says to write
+them, and the only route to a green tree was to break a second invariant.
+
+**So a case set is held against the sentence it claims to enforce, by somebody reading both.**
+The check is not 「is there a hit and a miss」 but 「does the hit describe something the rule's own
+source forbids」. Where a gate implements a written invariant, quote the invariant's sentence beside
+the case that decides the boundary; a case with no such sentence beside it is asserting a boundary
+its author invented.
+
+**The tell that this has happened is a gate firing on code somebody wrote carefully.** A finding
+whose fix would break a different rule is never a finding — it is the gate disagreeing with the
+rulebook, and the rulebook wins until somebody changes it deliberately.
 
 ### A value you re-derived is checked against rows nobody changed
 
