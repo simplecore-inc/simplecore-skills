@@ -66,6 +66,28 @@ When a fix makes the instrument deterministic, **put it in the tool, not in a
 one agent's habits.** A discipline that lives in what somebody happened to do is one
 the next agent will not know about.
 
+### A claim about WHO did something is the one claim with nothing to check it against
+
+**Every other claim in a wave can be verified before it is sent.** Counts, findings, whether a file
+is clean, whether a gate fires — each is a command away, and that is why the checks catch things.
+**「Which agent did this」 is not**: the repository cannot answer it. Every agent commits as the same
+author, `git blame` names the human on every line, and the trailers carry a chapter rather than a
+hand. The only record is who said so in a message.
+
+**So a misread message is the whole distance between a fact and its opposite, with nothing standing
+in the way.** One agent read 「the gate moved twice UNDER me」 as 「BY me」, turned the reporter into
+the author, and asserted it back to them — with their 「I never touched that file」 in the same
+paragraph. Of everything that agent claimed that day it was the only claim it could not have
+checked, and the only one it got wrong.
+
+- **State it as attribution, not as fact.** 「Your message named `abc1234`」 is true and checkable;
+  「your `abc1234`」 is a claim about a hand and it is a guess. The phrasing costs nothing and is the
+  whole fix.
+- **A correction about authorship goes to both parties**, because the one who was misnamed cannot
+  see the message that misnamed them.
+- **Where a project wants it answerable, that is a trailer naming the agent** — a decision for
+  whoever owns the commit conventions, not for a wave to adopt on its own.
+
 ### Git cannot tell two agents apart, so a commit that carried somebody's work says so or nothing does
 
 **Every agent in a wave commits as the same author.** The trailers name a chapter, not a hand — so
