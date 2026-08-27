@@ -225,7 +225,7 @@ the count is what shows a comparison reached anything at all.
 | `costLog` | a machine-readable file the wall-clock span and consumption are appended to, per chapter | ○ | what a chapter cost cannot be recovered afterwards; only what git holds survives — and with nowhere to stamp a start at the moment of dispatch, the span is gone by the close rather than merely unwritten |
 | `narrativePhrases` | extra point-of-view phrasings the handover file must refuse, for a project writing in neither Korean nor English | ○ | the built-in list stands alone |
 | `projectGates` | a module exporting this project's own gates and their cases | ○ | only the generic gates run; anything true of this project alone is held by nobody |
-| `projectVocabulary` | the words this project's **own** gates judge by, as role → list — the roles are the project's to name, and this skill knows none of them | ○ | a gate that judges by a list of words carries the list in its source, so widening it is an edit to a gate rather than a row in a config — and a list that goes empty there reports the same zero as a repository with nothing to find |
+| `projectVocabulary` | the words this project's **own** gates judge by, as role → list — the roles are the project's to name, and this skill knows none of them | ○ | a project gate that judges by a list of words carries that list in its own source, so a word the project stops using and a word it never had read the same — and widening it is an edit to a gate rather than a row in a config |
 | `disabledGates` | `{ id, reason }` per generic gate this project turns off | ○ | every generic gate runs — which is the default, and a gate is never turned off silently |
 | `deferredKeys` | per optional key whose subject does not exist yet, `{ chapter, whenExists }` — the chapter that creates it, and the path whose appearance makes it due | ○ | an absence waiting on a chapter reads exactly like one the project decided against, and the cost in that key's row is paid silently from the day the subject appears |
 
@@ -561,6 +561,32 @@ ledger, the handover file, the wave decision, and the barrier work the wave give
    and the frames that were not, **by id**. A count is not an answer — the frames nobody
    opened are exactly the ones nobody can name afterwards — and the provisional half is
    what tells the coordinator which screens it still has to open itself.
+
+### A rule written for your own commands has a hole on the side facing briefs
+
+**Every shared-resource rule here is phrased as something the coordinator must not do** — do not
+`pkill` a pattern, do not use the driver's close-everything, do not restart a server another agent
+is using. Each is right, and each leaves the same gap: **an agent acts on the words it was given,
+and a brief is a command issued through somebody else.** 「Kill the hung process」 handed to an agent
+is an instruction to kill whatever it finds.
+
+It is not hypothetical and it is not rare. One brief said 「kill whatever background `audit-rendered`
+process is still holding」; the process holding was another agent's run against the same dev server,
+inside their verification pass. Had the agent obeyed, that run would have died and they would have
+hunted the failure in their own code, where nothing could have explained it. Earlier in the same
+chapter a brief pointing at a folder rebuilt a foundation that already existed. **Both rules
+existed. Both were written about the coordinator's own hands.**
+
+**So a brief names the instance, never the kind.** The session, the port, the path, the branch —
+whatever makes the thing addressable — and it says what to do when the name matches nothing, because
+「it is already gone」 and 「I am looking at the wrong thing」 are the same silence:
+
+> Kill only what `--session w10-i09c` names. If that matches nothing, the run has already exited —
+> do not widen the match.
+
+**The test before sending a brief**: if the agent reads this sentence with no memory of the wave and
+no way to see the other agents, what is the widest thing it could do and still be obeying? That is
+what it will do on the run where the narrow reading does not fit.
 
 ### The dispatch is planned, written down, and then made
 
