@@ -155,6 +155,25 @@ cause was elsewhere.
   how a real break gets attributed to a race — and the count is what turned this from noise into a
   shape specific enough to name.
 
+### A check that nothing was lost is not a check that the right thing moved
+
+**The two are different claims and only one of them is easy.** Comparing a file's sorted lines
+before and after proves a bulk move was lossless — nothing dropped, nothing rewritten. It says
+nothing about whether the lines went where they were meant to, and a move that puts a card in the
+wrong region passes it cleanly.
+
+An agent writing a JSX splitter for a 27-page reordering fixed it three times: indentation cut a
+child at the `)}` closing it, a tag stack fixed that and then a `trailing={<Thing />}` prop closed
+the outer tag on the inner one's `/>`, and fixing that made a `=>` inside a prop read as the end of
+the element. **Each fix passed the file it was tested on and broke a different one.** They stopped,
+and moved line ranges they had read themselves.
+
+- **A tool you cannot trust is worse than the hand edits it saves**, because its output looks like
+  the same work done faster.
+- **The third fix always feels like the last one.** That is the moment to count how many there have
+  been rather than to make another.
+- **Say which claim your check makes.** 「Purity verified」 reads as 「correct」 and is not.
+
 ### A script that edits by anchor asserts the anchor is unique
 
 **An edit script's 「ok」 is a claim that it wrote something, never a claim that it wrote it where you
