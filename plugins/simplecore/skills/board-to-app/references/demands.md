@@ -69,6 +69,25 @@ looks finished.
 clause that names the file — the next section is that rule, and a generator that emits the names
 off this table without it has written the habit rather than the demand.
 
+## A capture brief states the floor for pictures and the ceiling for what to exercise, and they are different lines
+
+**「One capture per state the `개발` line names」 is a floor for how many pictures to take.** Read as
+the scope of the run it becomes a ceiling on what to do, and the persona lines — which is most of
+what a chapter has to prove — go unexercised. One brief phrased that way produced four correct
+captures of a chapter carrying **46 persona demands against 8 `개발` lines**, with none of the 46 run.
+
+**What makes it expensive is that nothing shows.** A row action nobody pressed and a row action that
+works are the same picture; an unexercised demand leaves the mark of one that passed, which is none.
+The return reads as complete because every capture the brief asked for is there.
+
+- **Say both lines in the brief.** The captures are the floor; **the persona lines are what to
+  exercise**, and a state reached while exercising them that the chapter demands is captured too.
+- **A step that cannot be run is a finding in those words** — a control disabled, a state the seed
+  will not produce, an action absent under the name the chapter uses. That list does as much work as
+  the captures.
+- **The wording that causes this is the coordinator's**, not the taker's. 「Per state that line
+  names」 reads as a complete instruction and is half of one.
+
 ## A capture is owed where a picture is the only witness
 
 **Read this before trimming anything, because it is not 「ask for less」.** The two largest findings
