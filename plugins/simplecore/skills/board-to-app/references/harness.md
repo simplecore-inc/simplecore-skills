@@ -268,6 +268,27 @@ honest:
 - **Expect it rather than resolving to avoid it.** Several sessions writing to one tree makes this
   a rate, not a mistake.
 
+### A long sweep does not measure a tree; it measures a smear of trees
+
+**A run that takes twenty minutes across a tree several agents are writing to reads its last route
+against a different codebase from its first.** The number it prints is right about what it read and
+wrong about what exists, and **nothing in the output says which** — the findings look identical
+whether the file still says that or was fixed while the sweep was passing another route.
+
+It is the intermediate-state reading at a different scale. A gate reading a file mid-edit produces a
+true finding about a state that lived for a minute; a sweep produces a page of them about states
+that lived for a run. **The scale is what makes it dangerous**: one is obviously suspect and the
+other arrives as a report.
+
+- **Record the commit the sweep started from**, in the output rather than in somebody's memory.
+- **Re-measure anything it finds before acting on it**, and re-measure the whole thing before
+  quoting its count as the state.
+- **This applies to every long reading, not only to checks** — a capture run, a persona walk, an
+  audit across a hundred screens. Whatever the run is doing, it is doing it to a tree that moved
+  underneath it.
+- **The reading is still worth having.** What it is not is current, and saying which commit it is
+  current for costs one line.
+
 ### A check's silence covers what it reached, and what it reached is how it was run
 
 **A rule can be correct, exempt nothing it should not, and still say nothing about half its
