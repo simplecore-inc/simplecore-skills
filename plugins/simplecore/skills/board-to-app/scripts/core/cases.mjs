@@ -120,6 +120,28 @@ export function cases(t) {
     { config: { eyesDocuments: ['docs/OVERVIEW.md'], eyesPhrases: { assigns: ['stays with eyes'], reader: ['the coordinator'], moment: ['before '] } } },
     false,
   );
+  // An open vocabulary — the roles are the project's, so no name is refused, and the emptiness
+  // checks still hold. Without the first of these a project's own words are refused one by one
+  // as roles the skill does not know, which is what sent them to a file the config gate never read.
+  add(
+    'configGate',
+    'a project names its own vocabulary roles',
+    { config: { projectVocabulary: { failureWords: ['isError', 'refused'] } } },
+    false,
+  );
+  add(
+    'configGate',
+    'an open vocabulary with an empty role',
+    { config: { projectVocabulary: { failureWords: [] } } },
+    true,
+  );
+  add(
+    'configGate',
+    'an open vocabulary that names no roles at all',
+    { config: { projectVocabulary: {} } },
+    true,
+  );
+
   // The capture standard. The template ships its three fields as `<…>` placeholders on purpose:
   // a number left in place would become somebody's standard in silence, where a string is refused
   // here and named. A third colour scheme is refused for the same reason a fourth commit policy
@@ -518,6 +540,74 @@ export function cases(t) {
     'both trailers well formed',
     { commits: ['feat(screens): the roster list\n\nChapter: W15\nTouches: W11 W12'] },
     false
+  );
+  // The defect a line-by-line reader is green over: a census whose names ran past the margin and
+  // wrapped at column 0. git discards the WHOLE block, so `%(trailers:key=Chapter)` is empty for a
+  // commit whose `Chapter:` line any person can read — and the trailer's one job is to answer that
+  // query. Two commits in one repository sat this way with every gate green over both.
+  add(
+    'trailerGate',
+    'a census wrapped onto a second line, which makes git discard the whole block',
+    {
+      commits: [
+        'fix(copy): the sign-in identifier is a mail address\n\nChapter: W15\nTouches: W11\n'
+        + 'Census: 4 board frames, 22 sites in 8 files outside them — the console catalogue and its\n'
+        + 'tests, the server catalogue, the manual, the overview',
+      ],
+    },
+    true
+  );
+  // The same census, wrapped under an indent — git folds it back onto its trailer, so the block
+  // parses and the chapter is readable. Without this case the fix reads as 「refuse long censuses」,
+  // which is the wrong lesson and the one both agents who met this reached for first.
+  add(
+    'trailerGate',
+    'the same census folded under an indent, which git reads',
+    {
+      commits: [
+        'fix(copy): the sign-in identifier is a mail address\n\nChapter: W15\nTouches: W11\n'
+        + 'Census: 4 board frames, 22 sites in 8 files outside them — the console catalogue and its\n'
+        + '  tests, the server catalogue, the manual, the overview',
+      ],
+    },
+    false
+  );
+  // A line whose key carries a space is not a trailer either, and it ends the block exactly as a
+  // column-0 wrap does — same defect, different-looking message.
+  add(
+    'trailerGate',
+    'a measurement line whose key has spaces in it',
+    {
+      commits: [
+        'fix(identity): a step-up refusal pays what a wrong password pays\n\nChapter: W15\n'
+        + 'Measured and clean: invitation token 1.78ms, API key 7.92ms',
+      ],
+    },
+    true
+  );
+  // The trailers below a closing paragraph: git reads the LAST paragraph, so they are outside the
+  // block altogether. A line-by-line reader finds `Chapter:` and reports nothing.
+  add(
+    'trailerGate',
+    'trailers written above the message\'s last paragraph',
+    {
+      commits: [
+        'feat(screens): the roster list\n\nChapter: W15\nTouches: W11\n\nOne more thing worth saying.',
+      ],
+    },
+    true
+  );
+  // A `Touches:` that fell outside the block while the `Chapter:` is fine — the node keeps its
+  // place in the tree and loses its edges, which is the half a reader would otherwise not be told.
+  add(
+    'trailerGate',
+    'a Touches line git reads no chapters out of',
+    {
+      commits: [
+        'feat(screens): the roster list\n\nChapter: W15\n\nTouches: W11 W12\nand a wrapped tail',
+      ],
+    },
+    true
   );
 
   // censusCountsBothSides — a global change is verified by a sample plus a census, and a census

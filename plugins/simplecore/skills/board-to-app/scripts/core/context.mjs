@@ -261,6 +261,12 @@ export const SCHEMA = {
   costLog: { kind: 'outfile', absent: 'what a chapter cost cannot be recovered afterwards; only what git holds survives — and with nowhere to stamp a start at the moment of dispatch, the span is gone by the close rather than merely unwritten' },
   narrativePhrases: { kind: 'list', absent: 'the built-in list stands alone' },
   projectGates: { kind: 'file', absent: 'only the generic gates run; anything true of this project alone is held by nobody' },
+  // The words a project's OWN gates judge by. Its roles are the project's to name — this skill
+  // cannot know them, which is precisely why a vocabulary like this had nowhere to live: every
+  // other `phrases` key belongs to a generic gate and names roles from a fixed list, so a project
+  // that needed one kept it in a file beside its gates where `configGate` never looked. A word
+  // list nobody validates is a word list that can go empty without anybody hearing.
+  projectVocabulary: { kind: 'phrases', roles: null, absent: 'a project gate that judges by a list of words carries that list in its own source, so a word the project stops using and a word it never had read the same — and widening it is an edit to a gate rather than a row in a config' },
   disabledGates: { kind: 'exceptions', absent: 'every generic gate runs — which is the default, and a gate is never turned off silently' },
   deferredKeys: { kind: 'deferrals', absent: 'an absence waiting on a chapter reads exactly like one the project decided against, and the cost in that key\'s row is paid silently from the day the subject appears' },
 };

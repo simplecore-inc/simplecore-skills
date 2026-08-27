@@ -188,7 +188,12 @@ export const configGate = {
           findings.push(`${key} must be ${TYPE_OF.phrases}`);
           continue;
         }
-        for (const role of spec.roles ?? []) {
+        // `roles: null` says the roles are the PROJECT's to name. A vocabulary a project's own
+        // gate reads has no role this skill could know — it is the reason such a vocabulary was
+        // homeless, and a schema that can only describe its own roles pushes every project into
+        // keeping one somewhere the config gate never reads.
+        const open = spec.roles === null;
+        for (const role of open ? Object.keys(value) : spec.roles ?? []) {
           const list = value[role];
           if (!Array.isArray(list) || !list.length || list.some((p) => typeof p !== 'string' || !p.trim())) {
             findings.push(
@@ -197,8 +202,15 @@ export const configGate = {
             );
           }
         }
-        for (const role of Object.keys(value)) {
-          if (!(spec.roles ?? []).includes(role)) findings.push(`${key}.${role} is not a role this skill knows`);
+        // An open vocabulary still has to name something: an empty object is a declaration that
+        // reads as made and matches nothing, which is the failure this whole kind exists to stop.
+        if (open && !Object.keys(value).length) {
+          findings.push(`${key} names no roles at all — declare the vocabulary or leave the key out`);
+        }
+        if (!open) {
+          for (const role of Object.keys(value)) {
+            if (!(spec.roles ?? []).includes(role)) findings.push(`${key}.${role} is not a role this skill knows`);
+          }
         }
         continue;
       }
@@ -567,34 +579,126 @@ export const capturesGate = {
 };
 
 /**
+ * A trailer line as git recognises one — a token with no whitespace in it, then the separator.
+ *
+ * <p>Used to SAY WHY git rejected a block, never to decide whether it did. The decision is git's,
+ * taken from `%(trailers)` in the same `log` call; a second implementation of the rule here would
+ * agree with git right up until the day one of them changed, and on that day the gate would be
+ * reporting about a parse nothing else performs.
+ */
+const TRAILER_LINE = /^[^\s:]+:(\s|$)/;
+
+/**
+ * The one thing git reads past inside a trailer block: a line that begins with whitespace.
+ *
+ * <p>Which is the whole of the defect. A census, a list of names, a measurement — anything long
+ * enough to wrap — is written on one line or folded under an indent, and folded at column 0 it ends
+ * the block for git while looking, to a person and to any line-by-line pattern, exactly like a
+ * trailer block that parses.
+ */
+const CONTINUATION = /^\s/;
+
+/**
+ * Why git reads no trailer out of a message that plainly carries one.
+ *
+ * <p>Both answers name a line, because 「git cannot read it」 with nothing to act on sends the
+ * reader off to re-derive git's rules from the documentation. The block is the message's LAST
+ * paragraph — a `Chapter:` line above one is outside the block altogether, which is the other way
+ * this fails and is indistinguishable from the first by any line-by-line search.
+ */
+function whyGitReadsNoTrailers(body, key) {
+  const lines = String(body ?? '').replace(/\s+$/, '').split(/\r?\n/);
+  let from = 0;
+  for (let i = lines.length - 1; i >= 0; i -= 1) {
+    if (lines[i].trim() === '') {
+      from = i + 1;
+      break;
+    }
+  }
+  const block = lines.slice(from);
+  const named = new RegExp(`^${key}:\\s*\\S`);
+  if (!block.some((line) => named.test(line))) {
+    return `the "${key}:" line is above the message's last paragraph, so it is outside the trailer block`;
+  }
+  for (const [at, line] of block.entries()) {
+    if (at > 0 && CONTINUATION.test(line)) continue;
+    if (TRAILER_LINE.test(line)) continue;
+    return (
+      `"${line.trim()}" is inside the trailer block and is neither a trailer nor an indented `
+      + 'continuation of the one above it, and ONE such line makes git discard the whole block. '
+      + 'Write that line on one line however long it runs, or indent what it wrapped onto'
+    );
+  }
+  return 'git reads no trailer block out of this message';
+}
+
+/**
  * Every commit says which chapter it belongs to, and a cross-chapter change says which
  * chapters it reached.
  *
  * <p>Without the trailers the history is a flat list: a diff shows which files changed, never
  * which chapter's contract moved.
+ *
+ * <p><b>Read the way git reads, not the way the message looks.</b> The trailer exists so that
+ * `git log --format='%(trailers:key=Chapter)'` answers, and git reads a trailer block only where it
+ * is the message's last paragraph and consists entirely of trailers and indented continuations. One
+ * line wrapped at column 0 — a census whose names ran past the margin, a measurement folded onto a
+ * second line — makes git discard <b>the whole block</b>, silently. A gate matching `^Chapter:`
+ * line by line is green over exactly that commit, which is the one commit whose trailer answers
+ * nobody: two in one repository carried a `Chapter:` line any person could read while
+ * `%(trailers:key=Chapter)` came back empty for both, and every gate in that repository was green.
  */
 export const trailerGate = {
   id: 'trailerGate',
-  title: 'a commit that does not say which chapter it belongs to',
+  title: 'a commit git reads no chapter out of',
   needs: [],
   run: (ctx) => {
     const range = ctx.options.range ?? null;
-    const args = ['log', '--no-merges', '--format=%H%x1e%B%x1f', ...(range ? [range] : ['-n', '1'])];
+    // git parses; this reads what git made of it. `unfold` joins an indented continuation back onto
+    // its trailer, so a legitimately folded `Touches:` reaches the shape check as one line.
+    // `only=true` for Touches keeps the KEY in the output, which is the one way to tell 「git read
+    // the trailer and its value is empty」 from 「git read no trailer block at all」 — two different
+    // defects that `valueonly` returns the same empty string for.
+    const format =
+      '--format=%H%x1e%B%x1e%(trailers:key=Chapter,valueonly=true,unfold=true)'
+      + '%x1e%(trailers:key=Touches,only=true,unfold=true)%x1f';
+    const args = ['log', '--no-merges', format, ...(range ? [range] : ['-n', '1'])];
     const { ok, out } = ctx.git(args);
-    if (!ok) return [`git log failed — ${out.trim().split('\n')[0]}`];
+    if (!ok) return [`git log failed \u2014 ${out.trim().split('\n')[0]}`];
     const findings = [];
     for (const record of out.split('\u001f')) {
-      const [hash, body] = record.split('\u001e');
+      const [hash, body, chapterRead, touchesRead] = record.split('\u001e');
       if (!hash || !hash.trim()) continue;
       const short = hash.trim().slice(0, 8);
       const lines = (body ?? '').split(/\r?\n/);
-      const chapter = lines.find((l) => /^Chapter:\s*\S/.test(l));
+      const chapter = (chapterRead ?? '').trim();
       if (!chapter) {
-        findings.push(`${short}: no "Chapter:" trailer — the build's history is read as a tree or not at all`);
+        // The two states a line-by-line reader cannot tell apart: no trailer was written at all,
+        // and one was written that git cannot see. Only the second needs a diagnosis, and it is the
+        // one whose author believes the job is done.
+        const written = lines.find((l) => /^Chapter:\s*\S/.test(l));
+        findings.push(
+          written
+            ? `${short}: "${written.trim()}" is in the message and git reads no chapter out of it \u2014 `
+              + `${whyGitReadsNoTrailers(body, 'Chapter')}. \`git log --format='%(trailers:key=Chapter)'\` `
+              + 'comes back empty, which is the one thing the trailer exists to answer'
+            : `${short}: no "Chapter:" trailer \u2014 the build's history is read as a tree or not at all`
+        );
       }
-      const touches = lines.find((l) => /^Touches:/.test(l));
-      if (touches && !/^Touches:\s*\S+( \S+)*$/.test(touches.trim())) {
+      // A `Touches:` git DID read, judged on its shape — including the empty one, which claims an
+      // edge and names none. A `Touches:` git could NOT read is the wrapping defect above and is
+      // named separately: a commit whose `Chapter:` is fine and whose `Touches:` fell outside the
+      // block keeps its node in the tree and loses its edges.
+      const readTouches = (touchesRead ?? '').trim() !== '';
+      const touches = (touchesRead ?? '').replace(/^\s*Touches:/, '').trim();
+      if (readTouches && !/^\S+( \S+)*$/.test(touches)) {
         findings.push(`${short}: "Touches:" names the chapters this change reached, separated by spaces`);
+      }
+      if (!readTouches && lines.some((l) => /^Touches:\s*\S/.test(l))) {
+        findings.push(
+          `${short}: a "Touches:" line is in the message and git reads no chapters out of it \u2014 `
+          + `${whyGitReadsNoTrailers(body, 'Touches')}`
+        );
       }
     }
     return findings;

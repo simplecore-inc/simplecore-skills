@@ -101,6 +101,9 @@
 
   "narrativePhrases": [],
   "projectGates": "<module exporting this project's own gates and their cases>",
+
+  "//projectVocabulary": "The words this project's OWN gates judge by, as role -> list. The roles are yours to name — this skill knows none of them. A gate that carries its word list in its source cannot be widened without editing the gate, and a list that goes empty there reports the same zero as a repository with nothing to find.",
+  "projectVocabulary": { "<role your gates read>": ["<word>", "<word>"] },
   "disabledGates": [],
 
   "deferredKeys": {
