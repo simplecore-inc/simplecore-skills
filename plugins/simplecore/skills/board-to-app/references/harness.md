@@ -111,6 +111,26 @@ where the tool stops being able to help.
 **The danger is proportional to how well the script reads.** A careful helper used carefully all
 session builds exactly the confidence that lets an ad-hoc one through unexamined at the end of it.
 
+### A check's silence covers what it reached, and what it reached is how it was run
+
+**A rule can be correct, exempt nothing it should not, and still say nothing about half its
+subject** — because the run never met that half. A sweep that loads each route bare never mounts a
+detail panel, so the cards inside one were not exempted; they were **never seen**. The output is
+identical either way and reads as a verdict.
+
+**So a check reports what it compared, and whoever reads it says what that number covers.** 「86
+messages compared, 3 findings」 is a result; 「3 findings」 is an assertion about a population nobody
+named. When somebody asks whether a class of thing is clean, the honest answer is often 「my run did
+not reach it」, and saying so is worth more than the three findings.
+
+- **Name the population in the same breath as the count.** Bare routes, no row selected, signed in
+  as one account, one viewport — each of those is a boundary of the claim.
+- **A finding you cannot see is not a finding you cleared.** Adding an exclusion for a shape the run
+  never met changes nothing today and is still right, because it is correct for the day somebody
+  drives that shape open.
+- **Never let another agent read your silence as coverage.** The one who asked was about to act on
+  a list that could not contain what they were asking about.
+
 ### A guard that never fires is not proof of anything
 
 A capture guard was written to catch pictures whose screen moved mid-shot. It
