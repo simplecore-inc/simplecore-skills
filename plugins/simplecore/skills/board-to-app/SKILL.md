@@ -562,6 +562,30 @@ ledger, the handover file, the wave decision, and the barrier work the wave give
    opened are exactly the ones nobody can name afterwards — and the provisional half is
    what tells the coordinator which screens it still has to open itself.
 
+### An assignment is a hypothesis; the agent about to write is the one who knows
+
+**With several agents in one tree, the coordinator's picture of who holds what is always minutes
+old, and the agent about to write is the only one holding current information.** 「That module is
+free」 is a claim about a moment that has passed by the time it is read. Four times in one session
+it was wrong — a chapter's ground handed out while its builder still held it, a module named free
+while a peer was mid-edit in it, a file said to need freeing that its owner had already left, a page
+assigned to one agent that another was inside.
+
+**Every one was caught by the agent and none by the coordinator**, and the cost of catching it was
+one `git status`.
+
+- **Say who else is near, not just what is yours.** An assignment that names the neighbours lets
+  the agent recognise a collision instead of discovering one.
+- **The agent checks before it writes and again before it stages**, and stages by explicit path
+  after reading `git diff -- <file>`. That is what turns a collision into a message.
+- **A file that carries changes which are not yours is left, and the owner is told.** Not staged
+  around, not committed with, not tidied.
+- **When the tree contradicts the assignment, the tree is right.** Report it; do not reconcile it
+  by acting.
+
+**The coordinator's part is to make that cheap rather than to be right.** Naming the wave's members
+and what each holds costs three lines and turns a check from a suspicion into a lookup.
+
 ### A rule written for your own commands has a hole on the side facing briefs
 
 **Every shared-resource rule here is phrased as something the coordinator must not do** — do not
