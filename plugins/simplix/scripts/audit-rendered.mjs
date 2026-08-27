@@ -1459,12 +1459,32 @@ const standingMessageBelowTheFigures = {
       return text.trim();
     };
 
+    // **A message belongs to whatever opened the region it is in.** A tab's footnote sits under
+    // the rows it annotates, and a detail panel's message is about the record open in the panel —
+    // neither is the page's, and hoisting either to the top of the screen would put it over
+    // content it is not true of.
+    //
+    // **The panel is found by the scroll it owns, and that is a reading only a painted page
+    // affords.** A list-detail panel owns its own scroll — that is what keeps its actions off the
+    // fold — so an ancestor between the message and `main` with `overflow-y: auto | scroll` is a
+    // region showing something the reader opened. `main` itself is excluded because the page's own
+    // scrollport is every message's ancestor, and a climb that counted it would empty the rule.
+    const insideAnOpenedRegion = (el) => {
+      const main = document.querySelector("main, [role=main]");
+      for (let n = el.parentElement; n && n !== main && n !== document.body; n = n.parentElement) {
+        const s = getComputedStyle(n);
+        if (s.overflowY === "auto" || s.overflowY === "scroll") return true;
+      }
+      return false;
+    };
+
     const eligible = (el) =>
       visible(el)
       && !floating(el)
       && !el.closest(o.openedSurfaceSelector)
       // A tab's own footnote, which belongs under the rows it annotates.
-      && !el.closest('[role="tabpanel"]');
+      && !el.closest('[role="tabpanel"]')
+      && !insideAnOpenedRegion(el);
 
     const messages = [];
     const add = (el) => {
@@ -1785,6 +1805,16 @@ const FIXTURES = {
   },
   standingMessageBelowTheFigures: {
     broken: {
+      // The page's own scrollport is every message's ancestor, so a climb that counted `main`
+      // would exempt every message on every screen and the rule would report nothing for ever.
+      "a message in the page's own column, under figures, with main scrolling":
+        `<style>html,body{margin:0;height:100%;font:14px sans-serif}
+        main{height:100%;overflow-y:auto;padding:16px;width:1000px;box-sizing:border-box}
+        .figs{display:flex;gap:16px}.fig{width:220px;height:90px;border:1px solid #ddd;border-radius:6px;padding:12px;background:#fff}
+        .msg{border:1px solid #fecaca;border-radius:6px;padding:8px 12px;background:#fef2f2;margin-top:12px}</style>
+        <main><div class=figs><div class=fig>보존 정책<br>12건</div><div class=fig>법정 미달<br>2건</div></div>
+        <div role=alert class=msg><svg width=16 height=16><path d="M8 1 L15 14 H1 Z"/></svg> 법정 최소 기준에 미달하는 정책이 2건 있습니다
+        <button><svg width=12 height=12><path d="M1 1 L11 11"/></svg></button></div></main>`,
       // The tile row first and the sentence saying what to deal with today under it.
       "a message under the tile row":
         `<style>body{margin:0;font:14px sans-serif}main{padding:16px;width:1000px}
@@ -1844,6 +1874,23 @@ const FIXTURES = {
         <table><tbody>
         <tr><td>박근로</td><td>2024-03-01</td><td>148</td></tr>
         <tr><td>김작업</td><td>2024-05-11</td><td>149</td></tr></tbody></table></main>`,
+      // A detail panel's own message, about the record open in the panel. It sits several hundred
+      // pixels below the figures on the painted page and it is not the page's to hoist — putting it
+      // at the top of the screen would say it is true of every row, when it is true of one. The
+      // panel is found by the scroll it owns, which no source rule can read.
+      "a message inside a detail panel that owns its scroll":
+        `<style>html,body{margin:0;height:100%;font:14px sans-serif}
+        main{height:100%;overflow-y:auto;padding:16px;width:1000px;box-sizing:border-box}
+        .figs{display:flex;gap:16px}.fig{width:220px;height:90px;border:1px solid #ddd;border-radius:6px;padding:12px;background:#fff}
+        .split{display:flex;gap:16px;margin-top:12px}
+        .list{width:420px}.panel{width:520px;height:300px;overflow-y:auto;border:1px solid #ddd;border-radius:8px;padding:12px}
+        .msg{border:1px solid #fde68a;border-radius:6px;padding:8px 12px;background:#fffbeb}</style>
+        <main><div class=figs><div class=fig>보존 정책<br>12건</div><div class=fig>법정 미달<br>2건</div></div>
+        <div class=split><div class=list>목록</div>
+          <div class=panel><h3>인사기록</h3>
+            <div role=note class=msg><svg width=16 height=16><circle cx=8 cy=8 r=7/></svg> 이 기록의 법정 최소 보존기간은 3년입니다
+            <button><svg width=12 height=12><path d="M1 1 L11 11"/></svg></button></div>
+          </div></div></main>`,
       // Figures and no message at all. The rule says nothing about a screen that leads with them.
       "a page of figures with no message on it":
         `<style>body{margin:0;font:14px sans-serif}main{padding:16px;width:1000px}
