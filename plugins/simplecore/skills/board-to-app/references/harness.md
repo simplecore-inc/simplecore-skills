@@ -88,6 +88,27 @@ checked, and the only one it got wrong.
 - **Where a project wants it answerable, that is a trailer naming the agent** — a decision for
   whoever owns the commit conventions, not for a wave to adopt on its own.
 
+### A path list you generated is a directory in disguise, and the list gets long exactly when you stop reading it
+
+**「Stage by explicit path」 is two disciplines and only one of them survives a long list.** The first
+is checking the tree is clean before staging, which is what finds a collision. The second is
+**naming the paths**, and it is the one that goes: the moment the list is inconvenient to type,
+somebody builds it from `git status --porcelain -- <dir>` and passes that to `--only`. That is a
+directory query wearing a list's clothes, and `--only` then takes each named file's whole working
+tree, including whatever arrived while the work was being done.
+
+It happened to an agent who had avoided the same collision three times that day by checking. **The
+check was not what failed** — it had been running all along. What failed was reading the list, on
+the twenty-fifth file of a change where the first twenty-four had made typing them feel like
+ceremony.
+
+- **Type the paths, or derive them from what you edited rather than from what is dirty.** A list
+  built from the tree's state answers 「what changed here」; the question is 「what did I change」.
+- **The signal is the list becoming tedious.** That is when the shortcut arrives, and it arrives
+  looking like the rule being followed.
+- **`git diff -- <file>` on each one before committing** is what turns the remaining case into a
+  message rather than a sweep.
+
 ### Git cannot tell two agents apart, so a commit that carried somebody's work says so or nothing does
 
 **Every agent in a wave commits as the same author.** The trailers name a chapter, not a hand — so
