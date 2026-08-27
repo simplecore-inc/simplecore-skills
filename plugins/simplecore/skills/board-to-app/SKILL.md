@@ -602,6 +602,11 @@ one `git status`.
 
 - **Say who else is near, not just what is yours.** An assignment that names the neighbours lets
   the agent recognise a collision instead of discovering one.
+- **Re-run the check that produced the list, before opening the first file.** This is the cheap
+  one and it is not `git status`: an assignment is a hypothesis about the past by the time it is
+  read, so the question is not 「is this file dirty」 but 「is this still a finding」. It caught an
+  assignment of five pages that a peer had fixed in the minutes between the sending and the
+  reading — two commands instead of five pages of reasoning about why correct code looked done.
 - **The agent checks before it writes and again before it stages**, and stages by explicit path
   after reading `git diff -- <file>`. That is what turns a collision into a message.
 - **A file that carries changes which are not yours is left, and the owner is told.** Not staged
@@ -610,7 +615,15 @@ one `git status`.
   by acting.
 
 **The coordinator's part is to make that cheap rather than to be right.** Naming the wave's members
-and what each holds costs three lines and turns a check from a suspicion into a lookup.
+and what each holds costs three lines and turns a check from a suspicion into a lookup. **Name the
+command that produced the list too** — an assignment a reader can re-derive is one they can date.
+
+**A stale finding, an in-flight fix and a fresh assignment look identical from outside.** An agent
+opened a page named in a live report, found it exactly as described, and two commands later found
+it already corrected and dirty in the tree. What kept them out of a half-finished file was going
+after an unrelated question first, which put four minutes between reading and wanting to write —
+**luck in the shape of curiosity rather than a check anybody ran on purpose.** That is the argument
+for re-running the check rather than trusting a reading, however recent.
 
 ### A rule written for your own commands has a hole on the side facing briefs
 
