@@ -455,4 +455,27 @@ export function cases(t) {
     ctxWith([screen('x-01-a', "msg({ kind: 'error', title: '필수 항목 3개가 비어 있습니다' })")], on), false);
   add('aStandingCardClosesWhenItCanGate', '수를 말하지 않는 카드',
     ctxWith([screen('x-01-a', "msg({ kind: 'help', status: true, title: '이 화면에서 하는 일' })")], on), false);
+  // **The built page rather than the source.** Every source rule about these cards has been
+  // narrower than the rule — one never read the `dismiss` values, one wrote its exemption from a
+  // shape, one read only the first card on a page. This one asks what the reader is shown.
+  const withHeader = '<span class="noticons"><span class="nic warn"></span></span>';
+  const card = (extra = '') =>
+    `<div class="msg warn"><span class="mkind"><i>!</i>주의</span>` +
+    `<div class="mbody"><div class="mtitle">정책이 없는 안전구역이 1개 있습니다</div></div>${extra}</div>`;
+  const frame = (inner) => ({ html: `<article class="frame" id="X-01">${inner}</article>` });
+
+  add('everyStandingCardDrawsItsCloseGate', '되돌릴 제어가 있는데 닫기가 없다',
+    ctxWith([], frame(withHeader + card())), true);
+  add('everyStandingCardDrawsItsCloseGate', '같은 화면에서 닫기를 그린다',
+    ctxWith([], frame(withHeader + card('<span class="n-close" title="닫기">✕</span>'))), false);
+  // A sign-in panel and a phone body draw no header control, so a close there deletes the message.
+  add('everyStandingCardDrawsItsCloseGate', '되돌릴 제어가 없는 화면은 묻지 않는다',
+    ctxWith([], frame(card())), false);
+  // The drop draws each hidden card again with 「다시 보이기」 beside it rather than a close.
+  add('everyStandingCardDrawsItsCloseGate', '드롭 안의 사본은 페이지의 카드가 아니다',
+    ctxWith([], frame(`${withHeader}<div class="noticedrop"><div class="nd-item">${card()}</div></div>`)), false);
+  // 오류 is the one kind that answers what the reader just pressed, and it never closes.
+  add('everyStandingCardDrawsItsCloseGate', '오류는 대상이 아니다',
+    ctxWith([], frame(`${withHeader}<div class="msg error"><span class="mkind"><i>!</i>오류</span><div class="mbody"><div class="mtitle">저장할 수 없습니다</div></div></div>`)), false);
+
 }

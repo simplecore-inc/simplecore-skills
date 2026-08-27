@@ -1530,3 +1530,59 @@ export const aStandingCardClosesWhenItCanGate = {
     return bad;
   },
 };
+
+// What the reader is actually shown, counted in the built page rather than reasoned about in the
+// source.
+//
+// **Every rule about these cards that read the source has been narrower than the rule itself.** One
+// never read the `dismiss` values at all; one wrote its exemption from a shape rather than from the
+// rule and let `{cond ? <card/> : nothing}` through; one read the first card on a page and went
+// quiet about the third. Each was correct about the case that prompted it and blind to the next
+// one, because a source rule carries a model of the code and the model is what goes stale.
+//
+// **This one carries no model.** It opens the built page, finds the messages, and asks whether the
+// close control is there — which is the same question the reader answers by looking. A screen whose
+// header draws the controls that bring a closed card back is a screen where every closing kind
+// closes; a sign-in panel and a phone body draw no such header, and on those a close would delete
+// the message rather than move it, so they are not asked. Nothing here needs to know which screens
+// those are: the header says so itself.
+//
+// **The copies inside the drop are not cards on the page.** `noticeDrop` draws each hidden card
+// again inside the control, with its own 「다시 보이기」 beside it rather than a close.
+export const everyStandingCardDrawsItsCloseGate = {
+  id: 'everyStandingCardDrawsItsCloseGate',
+  title: '되돌릴 머리 제어가 있는 화면인데 닫기 없는 카드가 그려졌다',
+  stage: 'built',
+  run: (ctx) => {
+    const CLOSES = ['help', 'warn', 'info', 'danger'];
+    const bad = [];
+    for (const [, id, html] of ctx.html.matchAll(/<article class="frame[^"]*" id="([^"]+)">([\s\S]*?)<\/article>/g)) {
+      if (!html.includes('class="noticons"')) continue;
+      const drops = [];
+      for (const d of html.matchAll(/<div class="noticedrop"/g)) drops.push([d.index, blockEnd(html, d.index)]);
+      for (const m of html.matchAll(/<div class="msg ([a-z]+)"/g)) {
+        if (!CLOSES.includes(m[1])) continue;
+        if (drops.some(([a, b]) => m.index > a && m.index < b)) continue;
+        const block = html.slice(m.index, blockEnd(html, m.index));
+        if (block.includes('n-close')) continue;
+        const title = /<div class="mtitle">([^<]{0,40})/.exec(block)?.[1] ?? '';
+        bad.push(
+          `${id}: 「${title}」 — ${m[1]} 카드에 닫기가 없다. `
+          + '이 화면의 머리는 치운 카드를 되돌리는 제어를 그리므로 닫음은 잃는 것이 아니라 옮기는 것이고, '
+          + '닫히지 않아도 되는 것은 방금 누른 것에 대한 답 하나뿐이다 — 그것은 오류 갈래라 여기에 없다'
+        );
+      }
+    }
+    return bad;
+  },
+};
+
+/** Where a `<div>` that starts at `from` closes, counting nested opens. */
+function blockEnd(html, from) {
+  let d = 0;
+  for (const m of html.slice(from).matchAll(/<\/?div\b/g)) {
+    d += m[0] === '</div' ? -1 : 1;
+    if (d === 0) return from + m.index + 6;
+  }
+  return html.length;
+}
