@@ -1025,17 +1025,29 @@ const pageFrozenAroundAScrollingRegion = {
       // Something standing beside it makes this one track of a two-track layout, and a track
       // scrolls in its own box. Beside means sharing the vertical band and sitting clear of it
       // horizontally \u2014 a toolbar crossing the top edge is above, not beside.
-      const parent = el.parentElement;
-      const beside = parent
-        ? Array.from(parent.children).some((sib) => {
-            if (sib === el) return false;
-            const r = sib.getBoundingClientRect();
-            if (r.width < o.minRegionWidthPx) return false;
-            const shared = Math.min(rect.bottom, r.bottom) - Math.max(rect.top, r.top);
-            if (shared < rect.height * o.besideOverlapRatio) return false;
-            return r.right <= rect.left + 1 || r.left >= rect.right - 1;
-          })
-        : false;
+      //
+      // <b>The column it is in counts, not only the box it is in.</b> A detail panel is a strip of
+      // chrome, a scrolling body and a footer, and the body's own siblings are that chrome \u2014 so
+      // a test that stops at the parent finds nothing beside it and reports the panel, on every
+      // list-and-detail screen the moment the detail is long enough to scroll. The list standing
+      // next to that panel is four boxes further out, and it is what makes the body a track.
+      const standsBeside = (box) => {
+        const parent = box.parentElement;
+        if (!parent) return false;
+        const own = box.getBoundingClientRect();
+        return Array.from(parent.children).some((sib) => {
+          if (sib === box) return false;
+          const r = sib.getBoundingClientRect();
+          if (r.width < o.minRegionWidthPx) return false;
+          const shared = Math.min(own.bottom, r.bottom) - Math.max(own.top, r.top);
+          if (shared < own.height * o.besideOverlapRatio) return false;
+          return r.right <= own.left + 1 || r.left >= own.right - 1;
+        });
+      };
+      let beside = false;
+      for (let box = el; box && box !== de && !beside; box = box.parentElement) {
+        beside = standsBeside(box);
+      }
       if (beside) continue;
 
       // **The box that was supposed to scroll.** Walking out, the first ancestor that CAN scroll is
@@ -1150,6 +1162,40 @@ function pause(ms) {
   Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
 }
 
+/**
+ * Whether a daemon is already serving this session name.
+ *
+ * <p>A named session holds a full browser between commands and ends only when something closes
+ * it — not when this process exits. So the run has to know whether it opened the session or
+ * joined one, because closing a session the caller is mid-audit in takes their signed-in state
+ * with it, and leaving one this run opened leaves a browser resident with nobody to reclaim it.
+ */
+function sessionIsRunning(session) {
+  try {
+    const pid = Number(fs.readFileSync(path.join(os.homedir(), ".agent-browser", `${session}.pid`), "utf8").trim());
+    if (!Number.isInteger(pid) || pid <= 0) return false;
+    process.kill(pid, 0);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Closes one session by name.
+ *
+ * <p>Never `close --all`: the daemon is shared, so that flag ends every other agent's session
+ * too. Failure here is reported and not thrown — a browser left open is worth a line on stderr
+ * and never worth losing the audit's own result over.
+ */
+function closeSession(session) {
+  try {
+    agentBrowser(session, ["close"]);
+  } catch (e) {
+    console.error(`⚠ could not close browser session ${session}: ${e.message}`);
+  }
+}
+
 function evaluateOnce(session, check, options) {
   const parsed = JSON.parse(agentBrowser(session, ["eval", snippet(check, options)]));
   if (!parsed.success) throw new Error(parsed.error || "eval failed");
@@ -1230,6 +1276,29 @@ const FIXTURES = {
         <div class=divider></div><div class=detail></div></div></div>`,
     },
     quiet: {
+      // The shape every list-and-detail screen takes once the detail is long enough to scroll: a
+      // panel of tab strip, scrolling body and footer, standing beside the list. The body's own
+      // siblings are that chrome, so a beside-test that stops at the parent finds nothing next to
+      // it and reports the panel \u2014 while the list making it one track of two is four boxes out.
+      "a detail panel's body scrolling between its tab strip and its footer, beside a list":
+        `<style>html,body{margin:0;height:100%;overflow:hidden;font:14px sans-serif}
+        .page{display:flex;flex-direction:column;height:600px;width:1100px;overflow:hidden}
+        .chrome{flex:none;padding:12px;background:#f4f4f5}
+        .split{flex:1;min-height:0;display:grid;grid-template-columns:520px 16px 1fr}
+        .list{min-height:0;overflow:auto}
+        .divider{background:#ddd}
+        .panel{min-height:0;display:flex;flex-direction:column}
+        .tabs{flex:none;padding:10px 12px;border-bottom:1px solid #eee}
+        .panelbody{flex:1;min-height:0;overflow:auto}
+        .panelfoot{flex:none;padding:10px 12px;border-top:1px solid #eee}
+        table{width:100%;border-collapse:collapse}td{padding:12px;border-bottom:1px solid #ddd}
+        p{margin:0;padding:10px;border-bottom:1px solid #eee}</style>
+        <div class=page><div class=chrome>전체 20건 · 비상 연락처</div>
+        <div class=split><div class=list><table><tbody><tr><td>119 종합상황실</td><td>02-000-1000</td></tr><tr><td>관할 소방서</td><td>02-000-1001</td></tr><tr><td>관할 경찰서</td><td>02-000-1002</td></tr><tr><td>협력 병원</td><td>02-000-1003</td></tr><tr><td>환경청 상황실</td><td>02-000-1004</td></tr><tr><td>안전보건공단</td><td>02-000-1005</td></tr><tr><td>한국가스안전공사</td><td>02-000-1006</td></tr><tr><td>한국전기안전공사</td><td>02-000-1007</td></tr><tr><td>관할 지방고용노동관서</td><td>02-000-1008</td></tr><tr><td>야간 당직 안전담당</td><td>02-000-1009</td></tr><tr><td>사업장 안전보건관리책임자</td><td>02-000-1010</td></tr><tr><td>협력사 현장대리인</td><td>02-000-1011</td></tr></tbody></table></div>
+        <div class=divider></div>
+        <div class=panel><div class=tabs>개요 · 반영 · 남은 오류 · 매핑</div>
+        <div class=panelbody><p>01. 야간 당직 인수인계 사항</p><p>02. 야간 당직 인수인계 사항</p><p>03. 야간 당직 인수인계 사항</p><p>04. 야간 당직 인수인계 사항</p><p>05. 야간 당직 인수인계 사항</p><p>06. 야간 당직 인수인계 사항</p><p>07. 야간 당직 인수인계 사항</p><p>08. 야간 당직 인수인계 사항</p><p>09. 야간 당직 인수인계 사항</p><p>10. 야간 당직 인수인계 사항</p><p>11. 야간 당직 인수인계 사항</p><p>12. 야간 당직 인수인계 사항</p><p>13. 야간 당직 인수인계 사항</p><p>14. 야간 당직 인수인계 사항</p></div>
+        <div class=panelfoot>닫기 · 되돌리기</div></div></div></div>`,
       // A modal over the page this check was written from. The document is frozen and the app
       // root is `aria-hidden`, so the page's own list becomes the only thing that moves — and it
       // is a region behind a modal, which the reader cannot reach at all. The same screen with
@@ -1822,7 +1891,7 @@ function arg(name) {
 // Every option this script knows, so an unrecognised one can stop the run instead of falling
 // through to a normal one. A valued option is written either `--name value` or `--name=value`,
 // so the walk has to skip the value that follows the first form.
-const BOOLEAN_FLAGS = ["--list", "--selftest"];
+const BOOLEAN_FLAGS = ["--list", "--selftest", "--keep-session"];
 const VALUED_FLAGS = ["url", "check", "print", "session", "options"];
 
 function unrecognisedArgs() {
@@ -1868,6 +1937,21 @@ function main() {
     console.log(snippet(c, options));
     return 0;
   }
+  // Everything below here drives a browser. A session this run opens is this run's to close, on
+  // every path out including a thrown one; a session that was already serving belongs to whoever
+  // opened it and is left exactly as found. `--keep-session` holds one open on purpose — for a
+  // caller that runs this script several times against the same screen and pays the browser
+  // start-up once.
+  const keepSession = process.argv.includes("--keep-session");
+  const startedHere = !keepSession && !sessionIsRunning(session);
+  try {
+    return run(session, options, selected);
+  } finally {
+    if (startedHere) closeSession(session);
+  }
+}
+
+function run(session, options, selected) {
   if (process.argv.includes("--selftest")) return selfTest(session, options, selected);
 
   const url = arg("url");
