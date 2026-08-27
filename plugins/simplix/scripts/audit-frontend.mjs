@@ -156,6 +156,102 @@ function blockHits(content, re) {
   return hits;
 }
 
+/**
+ * The bracket-balanced body of every row-action array in a file.
+ *
+ * <p>`actions={[…]}` on a list table and `actions: […]` inside a props object are the two shapes,
+ * and the closing `]` cannot be found by a regex: an action carries arrow bodies, object literals,
+ * template strings and JSX of its own, any of which may hold a bracket. So the scan tracks depth
+ * and skips string and comment state.
+ *
+ * @param content the file source
+ * @returns one entry per array, with its source and the index the body starts at
+ */
+function rowActionArrays(content) {
+  const out = [];
+  for (const m of content.matchAll(/\bactions\s*(?:=\{|:)\s*\[/g)) {
+    const start = m.index + m[0].length;
+    let depth = 0;
+    let i = start;
+    let quote = null;
+    while (i < content.length) {
+      const ch = content[i];
+      const next = content[i + 1];
+      if (quote) {
+        if (ch === "\\") i += 1;
+        else if (ch === quote) quote = null;
+      } else if (ch === '"' || ch === "'" || ch === "`") {
+        quote = ch;
+      } else if (ch === "/" && next === "/") {
+        i = content.indexOf("\n", i);
+        if (i < 0) break;
+      } else if (ch === "/" && next === "*") {
+        const end = content.indexOf("*/", i + 2);
+        if (end < 0) break;
+        i = end + 1;
+      } else if (ch === "[" || ch === "(" || ch === "{") {
+        depth += 1;
+      } else if (ch === ")" || ch === "}") {
+        depth -= 1;
+      } else if (ch === "]") {
+        if (depth === 0) {
+          out.push({ start, source: content.slice(start, i) });
+          break;
+        }
+        depth -= 1;
+      }
+      i += 1;
+    }
+  }
+  return out;
+}
+
+/**
+ * Every `when` predicate in one row-action array that reads the row it is handed.
+ *
+ * <p>`when: () => canEdit` is asked once for the whole table and takes its action off every row at
+ * once, which is a permission and not this. What this finds is a predicate whose parameter appears
+ * in its body — the shape whose answer differs line to line.
+ *
+ * @param body the array's source
+ * @returns one entry per row-reading predicate, with its offset inside `body`
+ */
+function rowReadingWhens(body) {
+  const found = [];
+  for (const m of body.matchAll(/\bwhen\s*:\s*\(/g)) {
+    const open = m.index + m[0].length - 1;
+    let depth = 0;
+    let i = open;
+    for (; i < body.length; i += 1) {
+      if (body[i] === "(") depth += 1;
+      else if (body[i] === ")") {
+        depth -= 1;
+        if (depth === 0) break;
+      }
+    }
+    const params = body.slice(open + 1, i);
+    const name = /^\s*([A-Za-z_$][\w$]*)/.exec(params)?.[1];
+    if (!name) continue;
+    const arrow = body.indexOf("=>", i);
+    if (arrow < 0) continue;
+    // The body up to the property's own comma, which is the first one outside every bracket it
+    // opened — an object literal or a call in the predicate carries commas of its own.
+    let d = 0;
+    let j = arrow + 2;
+    for (; j < body.length; j += 1) {
+      const ch = body[j];
+      if (ch === "(" || ch === "[" || ch === "{") d += 1;
+      else if (ch === ")" || ch === "]" || ch === "}") d -= 1;
+      else if (ch === "," && d === 0) break;
+      if (d < 0) break;
+    }
+    const expr = body.slice(arrow + 2, j);
+    if (!new RegExp(`\\b${name}\\b`).test(expr)) continue;
+    found.push({ offset: m.index, excerpt: `when: (${params.trim()}) =>${expr}`.replace(/\s+/g, " ").slice(0, 140) });
+  }
+  return found;
+}
+
 // ---------------------------------------------------------------------------
 // JSX shape — a tag scanner for rules that must ask what an element CONTAINS
 // ---------------------------------------------------------------------------
@@ -1124,6 +1220,100 @@ const RULES = [
         {
           note: "a `filters` property of something that is not the adapter's params",
           source: `const applied = { ...state.filters, ...forced };`,
+        },
+      ],
+    },
+  },
+  {
+    id: "row-action-that-only-some-rows-draw",
+    invariant: "#50 / board kit `rowActions`",
+    level: "error",
+    desc: "A row action whose `when` reads the row, with no other conditional action beside it to take its place. `when` REMOVES the control, so the action column carries three glyphs on one line and two on the next and changes width as the reader scans it — and a row with fewer reads as a row missing something rather than as one where the verb does not apply. Every row draws every action, in the same place and the same number of them: `disabled` with a `disabledReason` saying which of the states this row is in, never `when`. Two shapes are not this and the check leaves both alone — a predicate that does not read the row (`when: () => canEdit`) is a permission and takes the action off the whole table at once, and two or more conditional actions in one array are a choice BETWEEN verbs (끄기 / 켜기, 내리기 / 되살리기) whose count stays constant. Whether such a group really partitions every row is the one part of this a machine cannot see, and it is checked by eyes at one moment: whoever adds the SECOND conditional action to an array says which rows each predicate is false for, and the group is right only when no row falls outside all of them. `usage.holdersOf(row.x) > 0` beside `!erp.has(row) && usage.holdersOf(row.x) === 0` is the shape that fails it — an ERP-owned rank with no holders draws neither, so that condition belongs in `disabled` where pressability lives rather than in `when` where presence does",
+    appliesTo: isTsx,
+    check: (c) => {
+      const hits = [];
+      for (const array of rowActionArrays(c)) {
+        const conditional = rowReadingWhens(array.source);
+        // A lone conditional action can be balanced by nothing: the rows it is absent from draw
+        // one fewer, provably. Where two or more sit together the author is expressing a choice
+        // between them, and this abstains.
+        if (conditional.length !== 1) continue;
+        hits.push({
+          line: lineOfIndex(c, array.start + conditional[0].offset),
+          excerpt: conditional[0].excerpt,
+        });
+      }
+      return hits;
+    },
+    samples: {
+      file: "modules/<domain>/src/pages/<entity>/crud-page.tsx",
+      broken: `<ThingList
+  actions={[
+    { type: "view", label: t("row.view"), onClick: (row: ThingListDTO) => showDetail(row.thingId) },
+    {
+      type: "edit" as const,
+      label: t("row.revert"),
+      when: (row: ThingListDTO) => !row.revertedAt && Boolean(row.revertibleUntil),
+      onClick: (row: ThingListDTO) => askRevert(row),
+    },
+  ]}
+/>`,
+      fixed: `<ThingList
+  actions={[
+    { type: "view", label: t("row.view"), onClick: (row: ThingListDTO) => showDetail(row.thingId) },
+    {
+      type: "edit" as const,
+      label: t("row.revert"),
+      disabled: (row: ThingListDTO) => Boolean(revertBlock(row)),
+      disabledReason: (row: ThingListDTO) => t(\`row.\${revertBlock(row) ?? "deadlinePassed"}\`),
+      onClick: (row: ThingListDTO) => askRevert(row),
+    },
+  ]}
+/>`,
+      miss: [
+        {
+          note: "a predicate that does not read the row — a permission, off every row at once",
+          source: `<ThingList
+  actions={[
+    { type: "view", label: t("row.view"), onClick: (row: ThingListDTO) => showDetail(row.thingId) },
+    { type: "edit" as const, label: t("row.revert"), when: () => canEdit, onClick: onRevert },
+  ]}
+/>`,
+        },
+        {
+          note: "two conditional actions in one array — a choice between verbs, constant count",
+          source: `<ThingList
+  actions={[
+    { type: "view", label: t("row.view"), onClick: (row: ThingListDTO) => showDetail(row.thingId) },
+    {
+      type: "delete" as const,
+      label: t("row.disable"),
+      when: (row: { enabled?: boolean }) => row.enabled !== false,
+      onClick: onSwitch,
+    },
+    {
+      type: "duplicate" as const,
+      label: t("row.enable"),
+      when: (row: { enabled?: boolean }) => row.enabled === false,
+      onClick: onSwitch,
+    },
+  ]}
+/>`,
+        },
+        {
+          note: "the state read off the row through `disabled`, which keeps the control drawn",
+          source: `<ThingList
+  actions={[
+    { type: "view", label: t("row.view"), onClick: (row: ThingListDTO) => showDetail(row.thingId) },
+    {
+      type: "edit" as const,
+      label: t("row.revert"),
+      disabled: (row: ThingListDTO) => Boolean(row.revertedAt),
+      disabledReason: () => t("row.alreadyReverted"),
+      onClick: (row: ThingListDTO) => askRevert(row),
+    },
+  ]}
+/>`,
         },
       ],
     },
@@ -4157,13 +4347,20 @@ return <Badge>{data?.totalElements ?? 0}</Badge>;`,
     level: "error",
     desc: "Visible native file input — its label follows the browser's locale, not the app's; hide it and drive it from an app-owned button",
     appliesTo: isTsx,
-    // A file input is exempt only when it is hidden behind a trigger the app labels.
+    // A file input is exempt only when it is hidden behind a trigger the app labels — by the
+    // platform's own `hidden` attribute or by a utility class. **Both, because a project may
+    // forbid one of them.** Written to accept only the class, this rule and a project rule that
+    // refuses a raw `className` on a screen cannot both be satisfied, and the agent caught between
+    // them has to break one gate to pass the other. What the rule is actually about is whether the
+    // control the browser labels is on the screen, and `hidden` answers that at least as well.
     check: (c) =>
-      blockHits(c, /<input\b[^>]*type="file"[^>]*>/g).filter((h) => !/className="[^"]*\bhidden\b/.test(h.excerpt)),
+      blockHits(c, /<input\b[^>]*type="file"[^>]*>/g).filter(
+        (h) => !/className="[^"]*\bhidden\b|\bhidden\b(?=[\s/>=])/.test(h.excerpt),
+      ),
     samples: {
       file: "modules/site/src/widgets/area/attachment-field.tsx",
       broken: `<input type="file" accept="image/*" onChange={onPick} />`,
-      fixed: `<input type="file" accept="image/*" className="hidden" ref={fileRef} onChange={onPick} />
+      fixed: `<input type="file" accept="image/*" hidden ref={fileRef} onChange={onPick} />
 <Button variant="outline" onClick={() => fileRef.current?.click()}>
   {t("area.chooseFile")}
 </Button>`,
