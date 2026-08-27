@@ -492,7 +492,45 @@ nothing to run: bring the `demanded` line to the new name, leave `did` and `saw`
 the section's captures where they are. **What separates the paths is whether the screen changed,
 not whether the sentence did.**
 
-**All four are one section whose sentences changed.** Where the SET of sections changed, the next
+**A demand that vanished outright is a fifth path, and reaching for the third one here is the
+mistake.** Where a generator fix decides a demand was never this screen's — a companion dialog's
+table, a message a companion draws — nothing narrowed and nothing was renamed: the line is gone
+whole, and there is no sentence of today to bring it down to. Reading it as a subset re-points the
+section at whichever demand the drifted quote most resembles, which is a neighbouring demand the
+section never answered. **Delete the numbered item and renumber the list**, which puts the
+`demanded` numbering back alongside the chapter's, and **delete the observation that answered it**.
+Say in the commit which demands went and why they were never that screen's.
+
+**The observation goes because half an item is worse than none.** A `saw` entry answering a demand
+that has ceased to exist is a record of somebody verifying a rule that is gone — the thing this
+whole section exists to prevent — and it reads as sound, because the sentence is true of the
+companion it describes. Its content belongs to the companion's own section, which is where the
+generator fix put the demand.
+
+**Pair it by what it says, never by its number.** The two lists drift apart long before anybody
+notices, and a document whose sections were written by hand over months will not be in step: in one
+repository 194 of 366 sections had the two lists the same length, and in one of them the answer to
+the sixteenth demand sat at the eighteenth observation. **Where no observation can be tied to the
+removed demand by content, leave that section and say so** — a guessed pairing deletes a record
+that was answering something else, and nothing afterwards can tell that it did.
+
+**A demand whose new question the section already answered is a sixth path.** Rewording sometimes
+changes what a demand asks rather than how it reads — the same screen passes under one wording and
+fails under the other — which by *Only when it is a subset* sends that section back to be run. It
+does not when **the answer to the new question is already in the section, in words somebody wrote
+after running the line.** Bring the `demanded` line to today's sentence and leave `did` and `saw`
+alone.
+
+**The guard is the whole of it: present in words already written, never a reader judging it close
+enough.** 「치울 수 있으며 머리의 안내 단추가 다시 표시한다」, against a demand now asking whether a
+notice can be removed and comes back from the header button, is not near the answer — it is the
+answer, and quoting it is how this path is claimed. A section recording only *where* the notice
+sits has not answered it, and several such sections said outright that it is **not** in the header
+button; a quote brought down there makes the section assert an answer to a question nobody put.
+**So every section taking this path quotes its answering sentence in the commit**, and a claim of
+coverage that cannot be quoted is the abuse the guard exists to block.
+
+**All six are one section whose sentences changed.** Where the SET of sections changed, the next
 rule takes it — there the quotes are all fine and a section nobody wrote is being demanded.
 
 ### A check that ran, and this installation cannot decide
