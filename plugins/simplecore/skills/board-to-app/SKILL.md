@@ -562,6 +562,32 @@ ledger, the handover file, the wave decision, and the barrier work the wave give
    opened are exactly the ones nobody can name afterwards — and the provisional half is
    what tells the coordinator which screens it still has to open itself.
 
+### A gate that contradicts the board is a claim; the board is evidence
+
+**The board is the screen contract, so a rule that disagrees with it is wrong until somebody proves
+otherwise — and the proof is a person reading the frames, not the gate passing its own cases.** A
+gate proved in both directions is proved against what its author believed; it says nothing about
+whether that belief matches the contract.
+
+It is not hypothetical. A placement rule was written from a misread sentence, and **371 frames drew
+the opposite order**. The gate then reported 38 pages, agents moved every one of them, and the
+artifact that had been right from the beginning was the one treated as needing to be brought into
+line. Nobody asked why every frame disagreed, because a gate reads as the settled thing and a frame
+reads as a drawing.
+
+- **Before a gate that reorders or removes anything, count the frames that already do it the other
+  way.** A handful is a defect the rule exists to catch; every frame in the board is the rule being
+  wrong.
+- **A rule derived from a sentence somebody said is a reading of that sentence.** Where the board
+  can confirm it, confirming costs one grep and settles it; where the board contradicts it, the
+  reading is what changes.
+- **The frames are evidence even when they are old.** They were drawn by whoever decided the
+  behaviour, from the design documents, before anybody was converting anything.
+
+**The tell that this has happened is a sweep where every page in the tree needs the same change.**
+A convention nobody follows anywhere is usually not a convention the product broke; it is one the
+product never had.
+
 ### An assignment is a hypothesis; the agent about to write is the one who knows
 
 **With several agents in one tree, the coordinator's picture of who holds what is always minutes
