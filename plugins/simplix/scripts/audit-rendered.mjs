@@ -180,6 +180,38 @@ const DEFAULTS = {
   maxFindings: 25,
 
   /**
+   * How long a piece of text can be and still be a lookup key.
+   *
+   * <p>A translation key is a handful of segments; a sentence that happens to hold a dot is not
+   * one. Nothing in this product's catalogues is near this long.
+   */
+  keyTextMaxLength: 80,
+
+  /**
+   * Where an identifier on the screen is the point rather than a defect.
+   *
+   * <p>Code, a shell line, a file name a reader is meant to type — all of them are ASCII
+   * identifiers on purpose, and a screen that shows one is not a screen that failed to translate.
+   * `data-allow-identifier` is the escape hatch for a value the product genuinely displays raw.
+   */
+  keyTextIgnoreSelector:
+    "code, pre, kbd, samp, tt, [class*='mono'], [class*='code'], [data-allow-identifier]",
+
+  /**
+   * The last segments that make a dotted string a file rather than a key.
+   *
+   * <p>A download named `evidence.pdf` and a config called `nginx.conf` have the shape of a key
+   * and none of the meaning.
+   */
+  keyTextFileSuffixes: [
+    "pdf", "png", "jpg", "jpeg", "gif", "webp", "svg", "csv", "xlsx", "xls", "doc", "docx",
+    "ppt", "pptx", "zip", "json", "yml", "yaml", "xml", "txt", "md", "log", "conf", "cfg",
+    "ini", "env", "sql", "js", "ts", "tsx", "mjs", "cjs", "css", "html", "htm", "java", "kt",
+    "py", "sh", "properties", "lock", "map",
+  ],
+
+
+  /**
    * What counts as something a reader presses.
    *
    * <p>Roles as well as tags: a component library draws a button as a `div` carrying
@@ -1789,6 +1821,96 @@ const theCardRegionReadsLoudestFirst = {
   },
 };
 
+/**
+ * A translation key painted where a sentence belongs.
+ *
+ * <p><b>i18next answers a key it cannot find with the key itself</b>, so a lookup that misses
+ * renders `form.originalApproverName` at the reader and nothing anywhere reports it: the request
+ * succeeded, the component rendered, the build was green. The reader is handed an internal field
+ * path and can do nothing with it.
+ *
+ * <p><b>Its source-reading sibling covers only the keys written as literals.</b>
+ * `missing-translation-key` in `audit-frontend.mjs` reads `t("a.b")` out of the file and compares
+ * it against the catalogue, which is most keys and not the dangerous ones — a key BUILT at runtime
+ * (`` t(`form.${field}`) ``, `t(`tab.${key}`)`) has no literal to read, and the set of values it can
+ * take is decided by a server response or by a list somewhere else. That is exactly the case where
+ * the catalogue is incomplete, and it is invisible to any file reader.
+ *
+ * <p><b>So it is decided from the painted page, where the answer is unambiguous.</b> Whatever the
+ * key was built from, what reached the screen is either a sentence or an identifier.
+ *
+ * <p><b>What is deliberately an identifier stays quiet.</b> Code, a file name, a host, a version —
+ * each has the shape and none of the meaning, and a rendered audit that cries once is one nobody
+ * runs again. The test that separates them: a key's last segment is a word rather than an
+ * extension or a TLD, or it carries an inner capital, or it has three segments.
+ */
+const unresolvedKeyOnTheScreen = {
+  id: "unresolvedKeyOnTheScreen",
+  grade: "error",
+  title:
+    "a translation key painted where a sentence belongs — the lookup missed and i18next rendered the key at the reader",
+  page: (o) => {
+    const findings = [];
+    let compared = 0;
+
+    const suffixes = new Set(o.keyTextFileSuffixes);
+    const where = (el) => {
+      const bits = [];
+      for (let n = el; n && n !== document.body && bits.length < 4; n = n.parentElement) {
+        bits.unshift(
+          n.tagName.toLowerCase() +
+            (n.id ? "#" + n.id : "") +
+            (n.className && typeof n.className === "string"
+              ? "." + n.className.trim().split(/\s+/).slice(0, 2).join(".")
+              : ""),
+        );
+      }
+      return bits.join(" > ");
+    };
+
+    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+    const seen = new Set();
+    for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+      const text = (node.nodeValue || "").trim();
+      if (!text || text.length > o.keyTextMaxLength) continue;
+      const el = node.parentElement;
+      if (!el) continue;
+
+      // Painted, not merely present. A hidden pane's keys are somebody else's finding.
+      const style = getComputedStyle(el);
+      if (style.display === "none" || style.visibility === "hidden") continue;
+      const box = el.getBoundingClientRect();
+      if (box.width === 0 || box.height === 0) continue;
+      if (el.closest(o.keyTextIgnoreSelector)) continue;
+
+      compared += 1;
+
+      // A dotted ASCII identifier and nothing else: no space, no slash, no `@`, and it is the
+      // WHOLE of what this node says. A sentence that quotes a key is a sentence.
+      if (!/^[a-z][A-Za-z0-9_]*(\.[A-Za-z0-9_]+)+$/.test(text)) continue;
+
+      const parts = text.split(".");
+      const last = parts[parts.length - 1];
+      if (suffixes.has(last.toLowerCase())) continue;
+      // A host, an address, a two-part name whose tail is too short to be a word. `example.test`
+      // and `a.co` land here; `form.status` and `page.description` do not.
+      const wordy = last.length >= 5 || /[A-Z]/.test(last);
+      if (parts.length < 3 && !wordy) continue;
+
+      if (seen.has(text)) continue;
+      seen.add(text);
+
+      findings.push(
+        `「${text}」 is painted as the whole of a text node, and it is a lookup key rather than a ` +
+          `sentence — whatever asked for it got no entry back and i18next returned the key. The ` +
+          `reader has an internal path where a name or a message belongs (${where(el)})`,
+      );
+      if (findings.length >= o.maxFindings) break;
+    }
+    return { compared, findings };
+  },
+};
+
 export const checks = [
   countedListDrawsNoRows,
   standingMessageDrawsNoClose,
@@ -1800,6 +1922,7 @@ export const checks = [
   openPaneDrawsNothing,
   regionCrushedToASliver,
   pageFrozenAroundAScrollingRegion,
+  unresolvedKeyOnTheScreen,
 ];
 
 /** One self-contained expression, ready for any driver's evaluate call. */
@@ -2811,6 +2934,52 @@ const FIXTURES = {
         <tr><td>119</td></tr><tr><td>관할 소방서</td></tr><tr><td>관할 경찰서</td></tr>
         <tr><td>협력 병원</td></tr><tr><td>환경청 상황실</td></tr><tr><td>안전보건공단</td></tr>
         </tbody></table></div>`,
+    },
+  },
+  unresolvedKeyOnTheScreen: {
+    broken: {
+      // The screen this check was written from: a refused form naming the fields the server
+      // would not accept, resolved out of a catalogue that has no entry for any of them.
+      "a validation summary naming fields by their lookup keys":
+        `<style>body{margin:0;font:14px sans-serif}.box{padding:12px;width:520px}</style>
+        <div class=box>
+          <p>4곳을 고쳐야 저장됩니다</p>
+          <p><span>form.delegationStatus</span> · <span>form.originalApproverId</span></p>
+        </div>`,
+      // The same failure in a tab strip whose keys are built from a list of tab ids.
+      "a tab whose label resolved to its own key":
+        `<style>body{margin:0;font:14px sans-serif}.strip{display:flex;gap:16px;padding:8px}</style>
+        <div class=strip>
+          <button>활성</button><button>tab.preEffective</button><button>비활성</button>
+        </div>`,
+    },
+    quiet: {
+      "the same summary once the catalogue answers":
+        `<style>body{margin:0;font:14px sans-serif}.box{padding:12px;width:520px}</style>
+        <div class=box>
+          <p>3곳을 고쳐야 저장됩니다</p>
+          <p><span>상태</span> · <span>원 결재자</span> · <span>받는 사람</span></p>
+        </div>`,
+      // A file name, a host and a version all have the shape and none of the meaning.
+      "identifiers the screen means to show":
+        `<style>body{margin:0;font:14px sans-serif}.box{padding:12px;width:520px}</style>
+        <div class=box>
+          <p>evidence.pdf</p><p>sys@example.test</p><p>example.test</p><p>nginx.conf</p>
+        </div>`,
+      // A key quoted INSIDE a sentence is a sentence, and one drawn in a code face is on purpose.
+      "a key named in prose and a key shown as code":
+        `<style>body{margin:0;font:14px sans-serif}.box{padding:12px;width:520px}
+        .mono{font-family:monospace}</style>
+        <div class=box>
+          <p>번역 키 form.originalApproverName 을 카탈로그에 등록하세요.</p>
+          <p class=mono>gate.form.graceUnit</p>
+          <code>t("gate.form.notify")</code>
+        </div>`,
+      // A page with no text nodes of that shape at all — the check has to say it compared plenty
+      // and found none, rather than inventing a finding out of the chrome.
+      "an ordinary screen":
+        `<style>body{margin:0;font:14px sans-serif}</style>
+        <div><h1>작업 제한 정책</h1><p>근로자별 작업 배정 가능 여부를 판정하는 규칙을 설정합니다.</p></div>`,
     },
   },
   openPaneDrawsNothing: {
