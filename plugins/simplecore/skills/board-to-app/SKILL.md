@@ -106,6 +106,19 @@ all of them in `.claude/board-to-app.json` at its root. Copy
 to resume. It costs one read, and a build started on half-wiring is one nobody can
 pick up later.
 
+**Edit it as text, and never through a JSON encoder.** The file is hand-formatted per
+key — some arrays on one line, some one entry per line, a `//` note above the key it
+explains — and every one of those is a decision somebody made. A `load` / `dump`
+round-trip overwrites all of them silently while changing no value, so a two-line
+edit comes back as a two-hundred-line diff. **The damage is not the diff; it is what
+the diff then hides.** Several sessions edit this file at once, and once a reformat
+has tangled everybody's work into one unreadable change, the careful-looking recovery
+— restore the original text, re-apply my own edits as targeted replacements — drops
+whatever the other sessions had put there, leaving no mark at all. It happened here:
+a session widening one key restored the file and took another session's whole key
+with it, having written down neither that it existed nor that it was gone. Insert and
+replace by string, and parse afterwards only to check the result is still valid JSON.
+
 **A required key that is absent is an error the skill reports — never a path it
 guesses.** Name the key, say what it names and what it buys, and offer to fill it
 in; do not proceed with a substitute. A declared path that does not exist is the
