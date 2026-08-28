@@ -530,6 +530,30 @@ button; a quote brought down there makes the section assert an answer to a quest
 **So every section taking this path quotes its answering sentence in the commit**, and a claim of
 coverage that cannot be quoted is the abuse the guard exists to block.
 
+**A section that took the sixth path can be un-answered by the next board fix, with nothing in it
+changing.** A demand that gets *more specific* narrows what counts as an answer, and an observation
+that satisfied the looser sentence may name nothing that satisfies the tighter one. The section did
+not move; the target did. It was the sixth path one round and is 「run it again」 the next, and
+**standing still is how it got there.**
+
+**The case, because the shape leaves no mark.** A notice demand asking whether the card comes back
+from 「머리의 안내 단추」 gained 「화면 제목 옆의 안내 단추 … 셸 위쪽의 종 아이콘이 아니다」. Three
+sections had named their button — 「알림 안내 카드 보기」, 「도움말 안내 카드 보기」 — and kept the
+path, because a labelled per-kind button is not a bell. A fourth read 「머리의 안내 단추로 닫고 다시
+찾을 수 있다」, which separates nothing, and lost it. **The diff shows the demand changing and never
+the section it has just invalidated**, so nothing anywhere reports that a correct section stopped
+being one.
+
+**So every quote is re-derived each round and never inherited from the last round's sort.** A
+section that passed is not evidence that it still passes: that verdict was about a sentence which
+has since been replaced, and re-running the comparison is the only thing that ever tests it.
+
+**What makes the wrong move tempting is that the last sort was right.** It is written down, it was
+correct when it was written, and re-deriving it reads as distrusting your own work — which is
+exactly what it is, and exactly what has to happen. The cost of re-deriving is one comparison per
+quote; the cost of inheriting is a section that reads as verified against a demand it no longer
+answers, in a document whose whole purpose is that it cannot.
+
 **All six are one section whose sentences changed.** Where the SET of sections changed, the next
 rule takes it — there the quotes are all fine and a section nobody wrote is being demanded.
 
