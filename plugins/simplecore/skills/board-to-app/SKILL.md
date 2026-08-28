@@ -535,6 +535,13 @@ ledger, the handover file, the wave decision, and the barrier work the wave give
    > coordinator's attention is on the content it is handing over, and beside that the mechanism
    > reads as housekeeping. It goes into the brief on the same pass as the subject, never as a
    > check afterwards.
+   >
+   > **A brief ending in 「Return: …」 is where it hides after the rule is known.** That line names
+   > everything the report must contain and nothing about how it travels, and it reads as the
+   > return having been specified — so the one paragraph that would have carried the mechanism is
+   > the paragraph that feels already written. Five briefs in one build ended that way, each
+   > carefully listing what to report, and every agent that read one wrote the list into nothing.
+   > **The test is not whether the brief says what to return; it is whether it names the verb.**
 
    **The inverse costs the same and is easier to write by accident: an UNNAMED subagent has no
    channel at all.** A brief that tells one to 「report at every step you close」 is asking for
