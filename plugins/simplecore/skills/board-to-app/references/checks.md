@@ -193,6 +193,22 @@ has become worthless.
   the same agent, in the same paragraph, without the question that sentence answers being asked of
   the screen beside it. So the guard is not 「look harder」: it is to treat any explanation offered
   for why a count is strange as a hypothesis about the gate, and to open one of the files.
+- **A census of source constructs is not a census of what the screen draws.** The three bullets
+  above name the symptom; this names the mechanism, and it produced every one of them. A component
+  **rendered N times**, a label **computed from a key**, and a form **imported from elsewhere** all
+  read as absent to a reader of source text — so the count a gate takes is of constructs written,
+  never of controls drawn. One `NumberField` is ten: a policy form declaring a local
+  `` const number = (field, label, unit, hint) => `` and calling it ten times has one occurrence
+  and ten controls. One page folder is not the screen: the form is declared in a widget the page
+  renders, from a folder with another name. One sweep for `t("…")` is not the vocabulary: the label
+  is `` t(`field.${label}`) `` and no static key exists to find. **A gate that counts has to say
+  which of the two it counted**, and where it cannot resolve the second it belongs on the
+  permissive side, because the expensive direction is a false 「missing」.
+- **The guard is one line of context above the number being read.** 「Nine numeric inputs cannot
+  hide under other names」 is a true sentence, and it was half-written about a screen holding ten of
+  them. Nothing about the count said so; the line directly above it did. So a count that is about
+  to become a finding is read **with its neighbourhood**, not on its own — the same discipline as
+  opening the accused file, applied one screenful earlier.
 - **A reach fix is judged by what it does NOT move.** After the fix that screen went from eleven
   to one and the other sixteen findings stood exactly where they were — which is what establishes
   that the sixteen were never reach, and is worth more than the eleven. A fix that moves everything
