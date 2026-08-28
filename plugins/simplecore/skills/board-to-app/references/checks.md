@@ -176,6 +176,27 @@ has become worthless.
 - **Sweep the whole tree, then report the count.** Zero costs nothing and proves coverage;
   non-zero is the rule earning itself immediately. A checker written against the two files that
   had the bug is a checker for a bug that is already fixed.
+- **The first sweep is evidence about the gate, not only about the tree — and the distribution
+  says more than the count.** The bullet above catches an implausible *total*: a number so large
+  it sends you to measure the rule against writing that had nothing to do with it. **Nothing
+  catches an implausible finding hiding inside a total that looks right**, and that is the shape
+  that survives to a report. Seventeen findings is a believable number; one of them naming eleven
+  missing fields where its neighbours name one to five is a claim about the gate until somebody
+  opens the screen. It was: the gate read a page and the widget folder sharing its name, that
+  page's form was declared in a different entity's folder, and the screen it called 「the worst
+  finding on the list」 had been driven end to end by an operator that same evening. **A finding
+  four times the size of its neighbours is read as the most serious thing found, when it is the
+  least believable thing found.**
+- **Noticing an anomaly and explaining it away is what walking past it looks like from inside.**
+  The report that carried that finding also carried the tell — another screen listed as 「zero
+  form components but thirteen bundle labels, so its controls are drawn another way」 — written by
+  the same agent, in the same paragraph, without the question that sentence answers being asked of
+  the screen beside it. So the guard is not 「look harder」: it is to treat any explanation offered
+  for why a count is strange as a hypothesis about the gate, and to open one of the files.
+- **A reach fix is judged by what it does NOT move.** After the fix that screen went from eleven
+  to one and the other sixteen findings stood exactly where they were — which is what establishes
+  that the sixteen were never reach, and is worth more than the eleven. A fix that moves everything
+  has told you nothing about which findings were real.
 - **A pattern with a placeholder in it is tested for what it matches**, not only for what it
   finds. A slot that compiles to 「any non-empty string」 makes every comparison pass while the
   count of comparisons stays perfectly honest, so the two cases go past it untouched: feed it the
