@@ -78,7 +78,7 @@ be drunk.
 the count in the subject and the meaning in the predicate, and the two are different kinds of
 thing: `「천장」 12곳은 전부 상한이고` — a place cannot be a limit. The compression feels like
 concision because both halves are true; what fell out is the verb that joined them. Say what
-the places **point at**: 「천장」이 쓰인 12곳은 전부 상한을 뜻하고. The same slip hides in
+the places **point at**: 「천장」이 쓰인 12곳은 전부 상한을 뜻한다. The same slip hides in
 `8곳 중 7곳은 정상` and `46곳은 화면이다` — a site is normal or is a screen only by ellipsis,
 and an audit report is made almost entirely of these sentences.
 
@@ -98,7 +98,45 @@ in this field and stay: 어댑터 · 콜백 · 매핑 · 슬롯 · 스냅샷 · 
 네임스페이스. A word is only replaced when a plainer Korean word means the same thing — never to
 make a sentence look more Korean.
 
-**Six questions before a Korean sentence leaves.**
+**9. Particles and endings are not the fat to trim.** Told to be brief, Korean loses its
+particles first, then its predicate, and the reader restores both by guessing. Write the relation
+out (`~가 압축되기 전에` · `~를 추론하는`), name the component that was dropped, and close the
+sentence with a predicate and a final ending — never with a noun phrase, an adverbial phrase, or
+a connective ending. **A name slot is the exception and takes no full stop**: a heading, a table
+header cell, a menu entry, a field label. A full stop is the claim that this is a sentence.
+
+> `컨텍스트 압축 전 신중 반영한다` → 컨텍스트가 압축되기 전에 신중하게 반영합니다 ·
+> `지출 비용 추론 용도의 함수의 오류 상황에서` → 지출한 비용을 추론하는 함수에 오류가 발생하면 ·
+> `승인 요청이 반려됨.` → 승인 요청을 반려했습니다 · `값을 확인하고.` → 값을 확인하고 넘어갑니다 ·
+> `그러면 경고가 붙습니다` → 그러면 편집 중인 파일에도 경고가 표시됩니다 ·
+> `사본의 문구는 작업의 상황을` → 사본에 기재된 문구는 작업이 진행되는 상황을
+
+**A chain of `~의` is how a component goes missing.** The particle joins two nouns and says
+nothing about how they relate, so each one it links is a predicate that never got written.
+
+**10. A word nobody says is not the plain word.** A standard-Korean word with an unambiguous
+meaning still costs the reader a stop if the field does not use it, and 문어체 reads as precision
+while being the opposite. The test is not whether a dictionary has it but whether people in this
+field write it.
+
+> `견주다` → 비교하다 · `갈무리하다` → 저장하다 · `일컫다` → 부르다 · `여쭈다`(기계 동작에) → 조회하다
+
+**Plaining a word down until the meaning goes is the same mistake facing the other way.**
+`쓴 비용을 구하는 함수` lost 지출 and 추론 and is not simpler for it — 지출한 비용을 추론하는 함수 is
+the sentence. Swap a word only when a commoner one carries the same meaning.
+
+**11. An em dash hands the reader the relation to guess.** Where the clause after it stands in a
+causal, adversative or conditional relation to what precedes, write the connective — `기본값을
+그대로 두었다 — 검증이 건너뛰어진다` is 기본값을 그대로 두면 검증을 건너뜁니다. **A dash that
+restates, itemises or names is not this**, and stays. The test: if the dash can be rewritten as a
+connective, that relation was hidden. **On a screen the dash never stands** — one line, no
+re-reading.
+
+**Never mirror the user's register.** Whatever tone the question arrives in — 반말, clipped,
+angry — the answer keeps the one register this card describes. Matching theirs hands the standard
+to the other side, and quality then varies question by question.
+
+**Eight questions before a Korean sentence leaves.**
 
 1. Does anything without a body act in it?
 2. Does anything move, or get handled like an object, that cannot?
@@ -106,6 +144,8 @@ make a sentence look more Korean.
 4. Can the sentence be read back as English word for word?
 5. Is the subject the thing the predicate is actually about — for every subject it covers?
 6. Is a hedge standing where a confirmed fact belongs, or a tic standing where nothing belongs?
+7. Is a particle, an ending or a component missing — and does the sentence close on a predicate?
+8. Is a word here that this field does not actually write, or a dash carrying a relation?
 
 Any yes is rewritten, not softened.
 
