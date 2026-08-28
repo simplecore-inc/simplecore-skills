@@ -275,6 +275,27 @@ and walked to the one under test. The frame route stays what it is: the address 
 state is taken at. Where a project declares both, the demand says which of the two it is asked at,
 because the two render the same screen and only one of them has a journey in it.
 
+**That address is `journeyRoute`, and writing it into the demand is what makes this a check.** The
+paragraph above says the demand names which route it is asked at; declared as a key, the name is
+also the thing a machine recognises a journey by — no vocabulary to maintain, no phrase list to go
+stale, and a journey demand written in any language is still the one carrying that address.
+`aJourneyIsWalkedInTheRunningApplication` then holds the section answering it to two things: its
+「what was operated」 line names that address, and it names no frame address. **The second half is
+the one with teeth** — a run driven at `?frame=<id>` and one walked through the product write down
+the same destination, and the address is the only place they differ.
+
+**A sentence in this file describing the discipline is not the discipline.** The demand that was
+answered at a frame address was written by a generator that had this paragraph available to it,
+and the run that answered it left a record indistinguishable from a correct one. So the rule lands
+in three places at once — the address in the config, the address inside the demand the generator
+emits, and the gate over the section that answers it — and a project declaring the key and never
+putting it in a demand gets the same silence as one that declared nothing.
+
+**Where the journey lands stays with eyes.** A product whose screens live in one window has no
+second address to cite, so 「it landed on the list」 is a claim about the running application that
+no bytes carry. The gate settles where the run was DRIVEN, which is what was silently wrong; what
+it landed on is read by whoever reads the result document → `../SKILL.md`'s second table.
+
 **And where a control leads is a different question from whether anybody can find it.** A detail
 screen with no visible way back to its list, whose one control was a chevron nobody sees, passed a
 build in which the route-level destinations had just been unified and tested — the destination was

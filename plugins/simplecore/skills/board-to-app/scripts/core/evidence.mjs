@@ -409,11 +409,13 @@ function evidenceSections(text, labels, placeholder = null) {
   let fenced = false;
   let quoting = false;
   let listing = false;
+  let operating = false;
   text.split(/\r?\n/).forEach((line, i) => {
     if (FENCE.test(line)) {
       fenced = !fenced;
       quoting = false;
       listing = false;
+      operating = false;
       if (current) current.fenced = true;
       return;
     }
@@ -421,8 +423,9 @@ function evidenceSections(text, labels, placeholder = null) {
     const heading = EVIDENCE_HEADING.exec(line);
     if (heading) {
       quoting = false;
-      current = { title: heading[1], no: i + 1, labels: new Set(), images: [], fenced: false, quotes: [], discharged: [] };
+      current = { title: heading[1], no: i + 1, labels: new Set(), images: [], fenced: false, quotes: [], discharged: [], did: [] };
       listing = false;
+      operating = false;
       sections.push(current);
       return;
     }
@@ -456,6 +459,22 @@ function evidenceSections(text, labels, placeholder = null) {
     }
     for (const label of Object.values(labels)) {
       if (line.startsWith(`**${label}**`)) current.labels.add(label);
+    }
+    // What was operated, kept as its own text. A section's addresses are written here and
+    // nowhere else — 「본 것」 says what was on the screen and the quote is the chapter's own
+    // sentence — so a gate asking WHERE a run was driven reads this and not the section.
+    //
+    // **Both shapes the label takes.** It is either a sentence on the label's own line or a
+    // heading with the steps bulleted under it, and in the second the addresses are in the
+    // bullets — so a reader that takes the label line alone comes back with the word 「조작」 and
+    // nothing else, which is indistinguishable from a section that named no address.
+    if (line.startsWith(`**${labels.did}**`)) {
+      current.did.push({ text: line, no: i + 1 });
+      operating = true;
+    } else if (operating && (BLOCK_START.test(line) ? /^\s*[-*+]\s|^\s*\d+\.\s/.test(line) : line.trim())) {
+      current.did[current.did.length - 1].text += ` ${line.trim()}`;
+    } else if (line.trim()) {
+      operating = false;
     }
     for (const [, target] of line.matchAll(MARKDOWN_IMAGE)) current.images.push({ target, no: i + 1 });
   });
@@ -1618,7 +1637,94 @@ export const evidenceStatesWhatWasSeen = {
   },
 };
 
+/**
+ * A section answering a demand about a JOURNEY, driven at the running application rather than at
+ * a frame address.
+ *
+ * <p><b>The frame route answers a journey demand without anybody navigating, and nothing errors.</b>
+ * Every screen opens at its own address there, so 「press the way back and say which screen it
+ * lands on」 is met by opening the destination: the control is pressed, the page does what a frame
+ * route does, and the name written down is the frame that was already open. Two real defects passed
+ * eight gates that way — a detail screen with no way back to its list, and a way back whose one
+ * control was a chevron nobody sees.
+ *
+ * <p><b>The two are told apart by the address, which needs no new vocabulary.</b> A journey demand
+ * carries `journeyRoute` in its own words, so the demand says which of the two routes it is asked
+ * at → `references/demands.md` § <i>A demand that presses a way BETWEEN screens is not answered at
+ * a per-frame address</i>. The section answering it is then held to two things: it names that
+ * address, and its 「what was operated」 line names no frame address — because a run driven at
+ * `?frame=<id>` and one driven through the product leave the same words otherwise.
+ *
+ * <p><b>The 「what was operated」 line and not the whole section.</b> A section may legitimately
+ * mention a frame route while saying what it could not answer there; where the run was driven is
+ * written on one line, and reading the rest turns a precise gate into one that fires on prose.
+ *
+ * <p><b>Where the journey lands stays with eyes.</b> A product whose screens live in one window
+ * has no second address to cite, so 「it landed on the list」 is a claim about the running
+ * application that no bytes carry — `../SKILL.md`'s second table names its reader and its moment.
+ */
+export const aJourneyIsWalkedInTheRunningApplication = {
+  id: 'aJourneyIsWalkedInTheRunningApplication',
+  title: 'a section answering a journey demand at a per-frame address, where nothing was navigated',
+  needs: ['evidenceDir', 'chapterDir', 'evidenceLabels', 'journeyRoute'],
+  run: (ctx) => {
+    const labels = labelsOf(ctx);
+    const journey = ctx.declared('journeyRoute');
+    if (labels === null || typeof journey !== 'string' || !journey.trim()) return [];
+
+    // The frame route with its placeholder opened out, so an address in a document matches it the
+    // way the generator wrote it. Undeclared, only the positive half of this gate runs — which is
+    // the right silence: a project with no frame route has no second way to answer a journey.
+    const route = ctx.declared('captureRoute');
+    const framed = typeof route === 'string' && route.includes('<')
+      ? new RegExp(route.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/<[^>]*>/g, '[A-Za-z0-9_-]+'), 'g')
+      : null;
+
+    // **A frame address usually CONTAINS the journey address.** `…:1420/?frame=a-04` is
+    // `…:1420/` with a query on the end, so a reader looking for the journey route inside a demand
+    // finds it in every capture line of every section — and this gate, read that way, reports the
+    // whole repository. So a frame address is taken out of the text first and what is left is
+    // asked the question; a demand that names only the frame route then names no journey, and a
+    // 「what was operated」 line that names only the frame route has not been driven at the product.
+    const withoutFrames = (text) => (framed === null ? text : text.replace(framed, ' '));
+
+    const dir_ = ctx.declared('evidenceDir');
+    const findings = [];
+    for (const [, file] of [...chapterFiles(ctx)].sort()) {
+      const rel = `${dir_}/${file}`;
+      const text = ctx.read(rel);
+      if (text === null) continue;
+      for (const section of evidenceSections(text, labels)) {
+        if (!section.quotes.some(({ text: quote }) => withoutFrames(quote).includes(journey))) continue;
+        const did = section.did.map(({ text: line }) => line).join(' ');
+        if (!section.did.length || !withoutFrames(did).includes(journey)) {
+          findings.push(
+            `${rel}:${section.no}: 「${section.title}」 answers a demand that names 「${journey}」 and its `
+            + `「${labels.did}」 line does not say the run was driven there. A journey has two screens `
+            + 'in it and the frame route has one, so a demand about pressing a way BETWEEN screens is '
+            + 'taken in the running application, opened at the screen the journey starts from and '
+            + 'walked to the one under test'
+          );
+          continue;
+        }
+        const at = did.match(framed ?? /(?!)/)?.[0];
+        if (at !== undefined) {
+          findings.push(
+            `${rel}:${section.no}: 「${section.title}」 answers a journey demand and was driven at `
+            + `「${at}」, which renders one frame in one state. A control whose destination is `
+            + 'another screen has nowhere to go there: it is pressed, the page does what a frame route '
+            + 'does, and the frame that was already open is written down as the screen it landed on. '
+            + 'Nothing errors, which is why this is a gate rather than something a run notices'
+          );
+        }
+      }
+    }
+    return findings;
+  },
+};
+
 export const EVIDENCE_GATES = [
+  aJourneyIsWalkedInTheRunningApplication,
   closedChapterHasEvidence,
   evidenceKeepsPaceWithItsCaptures,
   evidenceStatesWhatWasSeen,
@@ -2693,6 +2799,99 @@ export function cases(t) {
     'closedChapterHasEvidence',
     'a section carrying a discharge in place of a picture',
     discharging(W02_EVIDENCE(W02_SCREEN_SECTION, W02_DISCHARGE('`a-01.webp`'))),
+    false
+  );
+
+  // ── A journey walked in the product, and one answered at a frame address ──
+  //
+  // The two sections below differ in one line each and are otherwise identical: every label is
+  // there, something was pressed, a picture is shown, and the quoted demand is the chapter's own
+  // sentence. That is the whole difficulty — a run driven at `?frame=a-02` and one driven through
+  // the product write down the same destination, and only the address says which happened.
+
+  const JOURNEY = 'http://localhost:5173/';
+  const FRAME = 'http://localhost:5173/?frame=<id>';
+
+  /** One section answering the journey demand, with the line saying where it was driven given. */
+  const WALKED = (did) =>
+    '## 1. A-01 로그인 · 시스템 관리자\n\n'
+    + `**한 일** — ${did}\n`
+    + `**챕터가 정한 것** — 돌아가는 길을 누르고 어느 화면으로 돌아오는지 적는다. ${JOURNEY}에서 확인한다.\n`
+    + '**본 것** — 목록 화면으로 돌아온다.\n\n'
+    + '![A-01 로그인](w02-org-shell/a-01.webp)\n\n';
+
+  const journeying = (document) => t.project({
+    config: {
+      ...WORDS,
+      chapterDir: 'chapters',
+      stateLedger: 'tracking/STATE.md',
+      journeyRoute: JOURNEY,
+      captureRoute: FRAME,
+    },
+    files: { ...CHAPTER_TEXT, 'docs/evidence/w02-org-shell.md': document },
+  });
+
+  t.add(
+    'aJourneyIsWalkedInTheRunningApplication',
+    'a journey demand answered at the address that renders one frame',
+    journeying(W02_EVIDENCE(WALKED('`http://localhost:5173/?frame=a-02`에서 열고 돌아가는 길을 누른다.'))),
+    true
+  );
+  t.add(
+    'aJourneyIsWalkedInTheRunningApplication',
+    'a journey demand whose section never says where the run was driven',
+    journeying(W02_EVIDENCE(WALKED('돌아가는 길을 누른다.'))),
+    true
+  );
+  t.add(
+    'aJourneyIsWalkedInTheRunningApplication',
+    'a journey walked from the screen it starts on, in the running application',
+    journeying(W02_EVIDENCE(WALKED(`${JOURNEY}을 열어 로그인 화면까지 간 뒤 돌아가는 길을 누른다.`))),
+    false
+  );
+  t.add(
+    'aJourneyIsWalkedInTheRunningApplication',
+    'a section whose demand has no journey in it, shot at its own frame address',
+    journeying(W02_EVIDENCE(W02_SCREEN_SECTION)),
+    false
+  );
+
+  // **A frame address contains the journey address**, because one is the other with a query on
+  // the end. Read without taking the frame addresses out first, every ordinary capture demand in
+  // the repository names the journey route and this gate reports the whole set — which is how it
+  // read on its first run against a real project: five sections, none of them journeys.
+  const CAPTURING =
+    '## 1. A-01 로그인 · 시스템 관리자\n\n'
+    + '**한 일**\n\n'
+    + `- \`${JOURNEY}?frame=a-01\`을 열고 그림을 남겼다\n`
+    + '- 밝은 외양과 어두운 외양에서 각각 열었다\n\n'
+    + `**챕터가 정한 것** — \`${JOURNEY}?frame=a-01\`에서 열고 \`a-01.webp\`를 남긴다.\n`
+    + '**본 것** — 로그인 화면이 그려진다.\n\n'
+    + '![A-01 로그인](w02-org-shell/a-01.webp)\n\n';
+
+  t.add(
+    'aJourneyIsWalkedInTheRunningApplication',
+    'an ordinary capture demand whose frame address begins with the journey address',
+    journeying(W02_EVIDENCE(CAPTURING)),
+    false
+  );
+
+  // The label as a heading with the steps bulleted under it, which is where a real document keeps
+  // its addresses. Read as the label line alone, this section names no address at all — and a
+  // walked journey then reads exactly like one nobody drove.
+  const WALKED_IN_BULLETS =
+    '## 1. A-01 로그인 · 시스템 관리자\n\n'
+    + '**한 일**\n\n'
+    + `- \`${JOURNEY}\`을 열어 목록에서 첫 행을 눌렀다\n`
+    + '- 상세 화면에서 돌아가는 길을 눌렀다\n\n'
+    + `**챕터가 정한 것** — 돌아가는 길을 누르고 어느 화면으로 돌아오는지 적는다. ${JOURNEY}에서 확인한다.\n`
+    + '**본 것** — 목록 화면으로 돌아온다.\n\n'
+    + '![A-01 로그인](w02-org-shell/a-01.webp)\n\n';
+
+  t.add(
+    'aJourneyIsWalkedInTheRunningApplication',
+    'a journey whose steps are bulleted under the label rather than written on it',
+    journeying(W02_EVIDENCE(WALKED_IN_BULLETS)),
     false
   );
 }

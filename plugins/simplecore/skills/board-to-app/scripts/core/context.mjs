@@ -220,6 +220,21 @@ export const SCHEMA = {
   locales: { kind: 'list', absent: 'the languages come from the project\'s own copy catalogue; where that cannot be read, report it rather than judging in one language' },
   pseudoLocale: { kind: 'text', absent: 'overflow is judged in the longest real language only, which covers less → `references/judging-frames.md`' },
   captureRoute: { kind: 'text', absent: 'captures are driven by navigation, which cannot reach the states that matter; report it as owed rather than hand-driving the board' },
+  // Where the running application itself opens — the address a demand with a JOURNEY in it is
+  // answered at, as against `captureRoute`, which renders one frame in one state.
+  //
+  // **The two render the same screen and only one of them has a journey in it.** At the frame
+  // route every screen opens at its own address, so 「press the way back and say which screen it
+  // lands on」 is answered without anything being navigated: the control is pressed, the page does
+  // what a frame route does, and the name written down is the frame that was already open. Nothing
+  // errors. A demand of that shape was answered that way while the way back it asked about was not
+  // drawn on the screen at all.
+  //
+  // **Declared so a machine can tell the two apart.** A journey demand carries this address in its
+  // own words, which makes it recognisable without any new vocabulary, and
+  // `aJourneyIsWalkedInTheRunningApplication` then holds the section that answers it to having
+  // been driven here rather than at a frame address.
+  journeyRoute: { kind: 'text', absent: 'a demand about pressing a way BETWEEN screens is answered wherever the run happens to be, and the frame route answers it without anybody navigating — so a control that leads nowhere and one that leads home leave the same record → `references/demands.md`' },
   // The words a demand uses to say why a picture is the only witness for the capture it names.
   //
   // **A capture demanded with no reason is a habit rather than a judgment**, and it is emitted by
