@@ -14,7 +14,7 @@ Single source of truth for backend Java work in a SimpliX project. SimpliX is a 
 2. **Before writing ANY controller/service/DTO, run the generator-first gate (invariant #15).** It is the top-priority decision: any REST surface backed by a single entity MUST be scaffolded via `yo simplix:generate` → `promote` → customize — never hand-written from scratch. Only entity-less/aggregation surfaces may be hand-authored. This check comes FIRST, before you consider annotations, DTOs, or anything else.
 3. **Past the generator (customizing, or a permitted hand-authored surface), run the precedent gate (invariant #19)** — locate two same-shape precedent surfaces and read them end to end before writing.
 4. Then review the rest of the **Non-Negotiable Invariants** — especially #2 (`@PreAuthorize`), #8 (constructor).
-5. After writing, verify all 19 invariants hold per the **After Writing** checklist.
+5. After writing, verify all 20 invariants hold per the **After Writing** checklist.
 6. **Check the project's wiring once per session** (see below) and offer `/simplix:init` when a piece is missing.
 
 ### Project wiring — check on load, offer once
@@ -91,6 +91,14 @@ Apply and enforce these on every controller, service, repository, and DTO you to
 18. **Date/time semantic typing** — every temporal field belongs to exactly one semantic kind, and the kind fixes the Java type: absolute instant → `Instant`, calendar date → `LocalDate`, wall-clock time → `LocalTime`, calendar period → fixed-width `yyyy-MM` String (validated). NEVER a String column carrying an offset/RFC 3339 datetime, and never `LocalDateTime`/`OffsetDateTime`/`ZonedDateTime` entity fields (SimpliX's auto-applied converters UTC-normalize them). SearchDTOs use the same temporal types — range operators and `sortable` on a String date column are forbidden (VARCHAR comparison is lexicographic, not chronological). Wire/SDK date strings are produced at the transmission boundary (SU mappers, site timezone), never stored. Timezone-dependent logic never reads the JVM default zone (argless `LocalDate.now()`, `ZoneId.systemDefault()`, …) — resolve a `ZoneId` explicitly in this order: site (`Site.timezone`, IANA ID) → domain operation-policy default zone → app timezone (configured; never a hardcoded zone literal). This zone rule applies to ALL Java code including schedulers/infra. Field patterns and the full zone-resolution rules: `entity/field-types.md` § Date/Time Fields; violations catalogued as AP-27/AP-28.
 
 19. **Precedent-first for everything past the generator — customization and hand-authored surfaces are cloned from the newest same-shape precedent, never designed from memory.** The generator fixes the CRUD shape (#15/#17); this invariant fixes everything the generator does not: trimming a generated controller into an action/read surface, adding lifecycle endpoints, a self-scoped searchable, a readiness/preview endpoint, an aggregation/report controller, an approval-flow integration, an SSE/activity channel. Before writing one, locate TWO precedent surfaces of the same shape in this codebase (grep the pattern: `@SimpliXStandardApi` non-CRUD controllers, forced-scope `search(params)` overrides, existing `/{id}/<action>` groups), prefer the most recently modified, read them end to end (controller + service + DTOs + messages), and clone their structure — naming, error keys, permission mapping, DTO roles, test shape. Divergence is justified only by a domain difference; a precedent that violates an invariant is fixed or flagged, never copied. The completion report names both precedent classes and every justified divergence. This mirrors the frontend skill's invariant #51 — the two ends of one contract must drift-proof the same way.
+
+20. **A read that takes a workplace, organisation, or tenant identifier FROM THE CALLER is judged against the caller's own grants before the first query — and where a helper does the judging, the helper is named in the method's javadoc.** A `@PreAuthorize` is not this check: it asks whether the account may perform the action at all, never whether this particular scope value is one the account was granted. The two questions look identical at the call site and are not, so an endpoint carrying `hasPermission('GROUP','view')` and taking `@RequestParam String siteId` has answered only the first.
+
+    **The second half is the half that pays.** This defect is an ABSENCE — a guard line missing where nothing marks its place — so it is invisible to any audit script, and its neighbours make it worse rather than better: a guarded method and an unguarded one over the same subject are identical in signature, annotations, and repository calls, differing only in a line that is not there. Naming the guard in the javadoc (`the workplace is judged by {@code requireVisible} before anything is read`, or `scoped through {@code range()}`) is what makes a reviewer able to see the absence, and it costs one line. Where the method is deliberately installation-wide, say so in the same place with the reason — a bare absence and a considered exemption must not read the same.
+
+    **Verify it with a request, not a rule.** The guard is usually one or two frames down a private helper, so a regex over the method body has a false-positive rate that makes it useless, and following the calls is a call-graph analysis with the same floor. But the ENUMERATOR is exact where the guard is not: `@RequestParam … String <scopeField>` on a controller method is lexically obvious and mechanically complete. So list the endpoints mechanically and ask each one with real requests from a scoped account — the answer is unambiguous in a way no source read is. **Assert both directions**: an out-of-scope value is refused AND an in-scope value is answered, because a suite proving only the refusal passes a build whose guard refuses everybody, and the next person "fixes" that by deleting the check. Where a surface narrows within an already-bounded set instead of refusing, assert that its answer for an out-of-scope value is identical to its answer for a value that does not exist — and that an in-scope value differs from it, or the assertion is also satisfied by an endpoint that ignores the parameter.
+
+    **A count leaks as much as a record.** Judge by what the answer tells the caller, not by whether entities cross the boundary: 「220 people are registered at that workplace」 is information about a workplace the caller was not granted, and no list-scoping test on any screen will ever see it. The figure that hides longest is the one on a tile whose neighbours are all correctly narrowed — a number right in five places and wrong in the sixth reads as a scoped screen.
 
 ---
 
@@ -245,11 +253,12 @@ Exhaustive ordering + rationale → `references/convention/annotation-ordering.m
 - [ ] Generator Path — does the entity exist? do i18n messages exist in every locale? do domain tests pass?
 - [ ] Manual Path — confirmed the case falls under a valid exception (see Task Router → WRITE)
 - [ ] Customization / hand-authored surface — TWO same-shape precedent surfaces located and read end to end (#19)
+- [ ] Any read taking a caller-supplied scope identifier judges it before the first query, and says in its javadoc which helper does (#20)
 
 After writing:
 
 - [ ] `node "${CLAUDE_PLUGIN_ROOT}/scripts/audit-backend.mjs"` clean — 0 error-level hits; review candidates judged against the rule's stated exceptions, not bulk-rewritten
-- [ ] All 19 Non-Negotiable Invariants hold — the audit covers the mechanically visible subset, never all of them
+- [ ] All 20 Non-Negotiable Invariants hold — the audit covers the mechanically visible subset, never all of them
 - [ ] Completion report names the precedent classes cloned from, with justified divergences (#19 — customization / hand-authored surfaces)
 - [ ] Annotation ordering matches `references/convention/annotation-ordering.md`
 - [ ] No anti-patterns from `references/convention/anti-patterns.md`
@@ -289,7 +298,9 @@ statement after it, and every run prints how many lines were suppressed.
 
 **Three things it deliberately does not do.** It never hardcodes a project's paths, class names or
 exception lists — a rule true only of one repository belongs in that project's own gates, never
-here. It does not judge what needs a person: generator-first (#15①), precedent parity (#19), and
+here. It does not judge what needs a person: generator-first (#15①), precedent parity (#19), scope
+guarding (#20 — the guard is usually a helper call one or two frames down, so a body regex is all
+false positives; verify it with a request instead), and
 whether a permission group is the *right* group are read by eyes. And it does not start a server,
 so the two verification requests in `review/searchable-field-patterns.md` § PK Contract are still
 run by hand; what it does recover statically is the entity's own `@Id` field, which makes the PK
