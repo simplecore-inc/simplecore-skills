@@ -452,9 +452,52 @@ const actions: RowActionDef<Entity>[] = [
   { type: "edit", onClick: (row) => nav.openEdit(row.id) },
   { type: "delete", onClick: (row) => handleDelete(row.id) },
   { type: "view", onClick: (row) => nav.openDetail(row.id) },
-  { type: "custom", label: "Duplicate", icon: <CopyIcon />, onClick: (row) => handleDuplicate(row) },
+  { type: "duplicate", label: "Duplicate", icon: <CopyIcon />, onClick: (row) => handleDuplicate(row) },
 ];
 ```
+
+`type` is one of `view` · `edit` · `delete` · `duplicate` · `locate` · `add-child` · `reorder` ·
+`move` · `unlink` · `select`. Each carries a default label and a default glyph, so `label` and
+`icon` are overrides rather than requirements.
+
+### A hand-built table declares its actions too
+
+`RowActionCell` is exported for exactly this: a table assembled out of `Table` / `TableRow` /
+`TableCell` rather than `CrudList` hands it the same `RowActionDef[]` the list would, and gets the
+same cluster.
+
+```tsx
+<TableCell>
+  <RowActionCell row={row} actions={actions} variant="outline" size="xs" />
+</TableCell>
+```
+
+**Buttons put into the cell by hand are the defect this replaces.** Written row by row, a row that
+cannot take an action leaves it out, so the column's contents differ down the table and the reader
+has to read each row before they know where to press. Declared, `disabled` draws it dead and
+`disabledReason` puts the sentence on the control they pressed. Size the head with
+`getActionColumnWidth(actions, variant)` — the count is what the table declares, including actions
+some rows disable, or the column changes width down the table.
+
+### An action's glyph is a static import, never `<Icon name="…">`
+
+`Icon` renders **nothing** until two async hops land: it is a `Suspense` with `fallback={null}`
+around `lazy(() => import("lucide-react/dynamic"))`, and lucide's `DynamicIcon` then resolves the
+name in an effect through a second dynamic import, returning `null` while `iconNode` is unset. A
+name the build cannot resolve stays `null` forever, reported only to `console.error`.
+
+That is fine where a label carries the meaning and the glyph decorates it. It is not fine where the
+**glyph is the whole control** — the `icon` variant of a row-action cluster, an icons-only button —
+because "not painted yet", "name did not resolve" and "this control has no icon" are one picture.
+Import the component (`import { Undo2Icon } from "lucide-react"`) and the glyph is in the first
+paint.
+
+`<Icon name={value}>` with a **variable** name is the component's real purpose — an icon chosen by
+stored data, an icon-picker value — and stays.
+
+**A screenshot is where this surfaces.** A capture taken the moment a screen settles can catch an
+icons-only cluster mid-hop and show empty rectangles, which reads as a screen that drew no icons.
+Confirm a glyph is painted before shooting, whatever the source of the icon.
 
 ---
 

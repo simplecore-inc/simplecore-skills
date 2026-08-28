@@ -46,6 +46,12 @@ crash, and nothing tells them who did it. This has happened: one sweep ended two
 sessions in a single command. Name the session you opened; if you genuinely do not know its
 name, leave it and say so in your report rather than reaching for the flag that clears the lot.
 
+**Close on the way out of a run that failed, too.** A page that never loaded, a control you could
+not reach, a cluster you ran out of context in — each is a reason to report and stop, and none is
+a reason to leave a browser open. The session holds a full Chrome between commands and ends only
+when closed by name, so **one session for the whole cluster** rather than one per screen, closed
+before you report. Say in the report that you closed it.
+
 ## How you drive
 
 1. **Browser, not API.** Every action a persona could take is taken in the browser with the
