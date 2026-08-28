@@ -1834,7 +1834,9 @@ const theCardRegionReadsLoudestFirst = {
  * it against the catalogue, which is most keys and not the dangerous ones — a key BUILT at runtime
  * (`` t(`form.${field}`) ``, `t(`tab.${key}`)`) has no literal to read, and the set of values it can
  * take is decided by a server response or by a list somewhere else. That is exactly the case where
- * the catalogue is incomplete, and it is invisible to any file reader.
+ * the catalogue is incomplete, and it is invisible to any file reader — one console carries 305 of
+ * those call sites, which is the size of what the source rule cannot see. The two rules read as
+ * though they overlap and they do not: deleting either leaves half the family uncovered.
  *
  * <p><b>So it is decided from the painted page, where the answer is unambiguous.</b> Whatever the
  * key was built from, what reached the screen is either a sentence or an identifier.

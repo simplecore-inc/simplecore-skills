@@ -1164,6 +1164,99 @@ function spinnerBesideMark(content) {
 
 const RULES = [
   {
+    id: "a-form-reports-a-refusal-as-a-toast",
+    invariant: "#40 / #34",
+    level: "review",
+    desc: "A form that submits through a raw `mutateAsync` and reports the failure with a toast. The server answers a refused write with a per-field detail — which field, why, and what it is called in the reader's language — and a toast can carry only the envelope's one top-level sentence, so 「유효성 검사에 실패했습니다」 reaches the reader and names nothing. The detail was on the wire the whole time. `useCrudFormSubmit` is the framework's channel for it: it puts the refusal on the field that caused it and hands a summary the names to list. A dialog that is really an ACTION with an input or two is the legitimate shape here — a record-level refusal has no field to land on — so this names the site and a person decides which of the two it is",
+    appliesTo: (p) => (inModules(p) || inApps(p) || inPackages(p)) && isTsx(p),
+    check: (c) => {
+      // A form rather than an action: it draws the framework's form shell or several of its
+      // fields. One field beside a confirm button is a dialog, and this rule is not about those.
+      const isForm = /\bCrudForm\b/.test(c) || (c.match(/\bFormFields\.\w+/g) ?? []).length >= 2;
+      if (!isForm) return [];
+      // The framework's own submit path carries the detail, so a form using it is done.
+      if (/\buseCrudFormSubmit\b/.test(c)) return [];
+      if (!/\.mutateAsync\s*\(/.test(c)) return [];
+      const hits = [];
+      // The toast in the failure arm. `addToast` with an error type is the shape; a success toast
+      // beside it says nothing about how a refusal is reported.
+      const toast = /addToast\s*\(\s*\{[^}]*type\s*:\s*"error"/g;
+      let m;
+      while ((m = toast.exec(c)) !== null) {
+        const line = c.slice(0, m.index).split("\n").length;
+        hits.push({
+          line,
+          excerpt: "a form reporting a refused write through a toast, so the server's per-field detail is discarded",
+        });
+        break;
+      }
+      return hits;
+    },
+    samples: {
+      file: "modules/<domain>/src/widgets/<entity>/form.tsx",
+      broken: `export function ThingForm({ thingId }: Props) {
+  const save = useUpdateThing();
+  const submit = () => {
+    void save.mutateAsync({ thingId, data: values })
+      .then(() => onSuccess?.())
+      .catch((error: unknown) => {
+        addToast({ type: "error", message: serverMessage(error) ?? t("form.saveFailed") });
+      });
+  };
+  return (
+    <CrudForm onSubmit={submit}>
+      <FormFields.TextField label={t("form.label")} value={values.label} onChange={setLabel} />
+    </CrudForm>
+  );
+}`,
+      fixed: `export function ThingForm({ thingId }: Props) {
+  const { handleSubmit, fieldErrors, fieldLabels, isPending } = useCrudFormSubmit<FormValues>({
+    entityId: thingId,
+    create: adaptOrvalCreate(create),
+    update: adaptOrvalUpdate(update, "thingId"),
+    onSuccess,
+  });
+  return (
+    <CrudForm onSubmit={(e) => { e.preventDefault(); handleSubmit(values); }} isSubmitting={isPending}>
+      <FormErrorSummary fieldErrors={fieldErrors} label={(f) => t(\`form.\${f}\`)} serverLabels={fieldLabels} />
+      <FormFields.TextField label={t("form.label")} value={values.label} onChange={setLabel} error={fieldErrors?.label} />
+    </CrudForm>
+  );
+}`,
+      miss: [
+        {
+          note: "an action with one input, whose refusal is about the record rather than a field",
+          source: `export function CloseSiteDialog({ siteId }: Props) {
+  const close = useCloseSite();
+  const run = () => {
+    void close.mutateAsync({ siteId, data: { reason } })
+      .catch((error: unknown) => {
+        addToast({ type: "error", message: serverMessage(error) ?? t("close.failed") });
+      });
+  };
+  return <ConfirmDialog onConfirm={run}><FormFields.TextareaField label={t("close.reason")} value={reason} onChange={setReason} /></ConfirmDialog>;
+}`,
+        },
+        {
+          note: "a form already on the framework's submit path",
+          source: `export function ThingForm() {
+  const { handleSubmit, fieldErrors } = useCrudFormSubmit<FormValues>({ create, onSuccess });
+  const retry = () => { void other.mutateAsync({}).catch(() => addToast({ type: "error", message: "x" })); };
+  return <CrudForm onSubmit={() => handleSubmit(values)}><FormFields.TextField error={fieldErrors?.a} /><FormFields.TextField error={fieldErrors?.b} /></CrudForm>;
+}`,
+        },
+        {
+          note: "a form whose only toast is the success one",
+          source: `export function ThingForm() {
+  const save = useUpdateThing();
+  const submit = () => { void save.mutateAsync({}).then(() => addToast({ type: "success", message: t("saved") })); };
+  return <CrudForm onSubmit={submit}><FormFields.TextField /><FormFields.NumberField /></CrudForm>;
+}`,
+        },
+      ],
+    },
+  },
+  {
     id: "list-adapter-spreads-a-filters-property-that-is-not-there",
     invariant: "#3 / #32",
     level: "error",
@@ -3172,6 +3265,72 @@ addToast({ message: t("area.moved", { name: row.name ? row.name : fallback }) })
 ];
 
 {ROWS.map((row) => enumLabel("AreaStatus", row.status))}`,
+        },
+      ],
+    },
+  },
+  {
+    id: "second-viewport-ceiling-inside-a-dialog",
+    invariant: "#58",
+    level: "error",
+    desc: "A region inside a dialog capped at its own fraction of the viewport — the panel already has a ceiling on that axis, so the tighter inner one decides, and the dialog stands short in an empty window while its content scrolls",
+    appliesTo: isTsx,
+    check: (c) =>
+      /<\w*DialogContent\b/.test(c)
+        ? lineHits(c, /max-h-\[\d+d?vh\]/, notCommentLine)
+        : [],
+    samples: {
+      file: "packages/ui-kit/src/manual/help-card.tsx",
+      broken: `<BoundedDialogContent width="xl">
+  <DialogHeader><DialogTitle>{title}</DialogTitle></DialogHeader>
+  <Stack className="max-h-[60dvh] min-h-0 overflow-y-auto">{children}</Stack>
+  <DialogFooter>{close}</DialogFooter>
+</BoundedDialogContent>`,
+      fixed: `<BoundedDialogContent width="xl" className="flex flex-col">
+  <DialogHeader><DialogTitle>{title}</DialogTitle></DialogHeader>
+  <Stack className="min-h-0 flex-1 overflow-y-auto">{children}</Stack>
+  <DialogFooter>{close}</DialogFooter>
+</BoundedDialogContent>`,
+      miss: [
+        {
+          note: "a viewport cap on a region that is not inside a dialog — a popover list, a page section — where nothing else is capping that axis",
+          source: `<PopoverContent>
+  <Stack className="max-h-[40vh] overflow-y-auto">{options}</Stack>
+</PopoverContent>`,
+        },
+        {
+          note: "the dialog's own ceiling, which is the one that is supposed to be there",
+          source: `<DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto">
+  {children}
+</DialogContent>`,
+        },
+      ],
+    },
+  },
+  {
+    id: "boot-enum-read-through-a-cast",
+    invariant: "#10 / #36 / #44",
+    level: "error",
+    desc: "A boot enum read by casting the field to the envelope's shape — `as unknown as { value }` is `resolveBootEnum` written so nothing can check it, and the day the envelope gains a field or the DTO stops wrapping one, the comparison is silently false on every row",
+    appliesTo: isTsx,
+    // `notCommentLine`, because the comment that explains this defect beside its fix contains
+    // the defect — and a rule without it fires hardest on the files that took the trouble to say
+    // why, which is the sentence that then gets deleted to quieten the audit.
+    check: (c) => lineHits(c, /as\s+unknown\s+as\s*\{[^}]*\bvalue\b/, notCommentLine),
+    samples: {
+      file: "modules/data-io/src/pages/export-ledger/crud-page.tsx",
+      broken: `when: (row: ExportLedgerListDTO) =>
+  (row.status as unknown as { value?: string })?.value === "READY",`,
+      fixed: `when: (row: ExportLedgerListDTO) =>
+  (resolveBootEnum(row.status) ?? "") === "READY",`,
+      miss: [
+        {
+          note: "a cast to a shape that has nothing to do with the boot envelope",
+          source: `const handle = ref as unknown as { focus: () => void };`,
+        },
+        {
+          note: "the resolver, which is what this rule is asking for",
+          source: `const status = resolveBootEnum(row.status) ?? "";`,
         },
       ],
     },
