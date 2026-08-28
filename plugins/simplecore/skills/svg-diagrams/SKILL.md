@@ -128,10 +128,58 @@ Loop: **lint → render → hotspots → fix → repeat** until lint is clean *a
 
 **Two placement rules prevent most of the checks above at generation time:** place edge labels in open space above or below the arrow rather than in a narrow gap between boxes, and route connectors around any box that is neither their source nor their target — including a frame's own title chip, which counts as a box. Every check's detection rule and fix is in `references/render-audit.md`.
 
+## Pick the visual type first
+
+There are thirty-nine of them and the choice is not cosmetic: it decides what
+the reader can take away. `references/visual-types.md` maps the question a
+reader is asking to the type that answers it.
+
+Twenty builders cover the types whose geometry primitives cannot express —
+`swimlane` `quadrant` `pyramid` `venn` `loop` `bar` `radar` `sequence`
+`entity` `relate` `linechart` `scatter` `polar` `state` `treemap` `sankey`
+`fishbone` `wardley` `journey` `itstate`, all `Canvas` methods. The rest are
+assembled from primitives that already carry their grammar: `frame` for a
+boundary, `flow` for an ordered row, `matrix` for a grid, `gantt` for a
+schedule. Each builder carries its type's complexity budget and **raises past
+it** rather than drawing a figure nobody can read — an over-budget call is a
+message naming the rule, not a silently unreadable picture.
+
+Reach for it before choosing a canvas size. Picking "architecture" for
+something that is really a sequence costs a redraw, and the wrong type is the
+one defect no lint reports.
+
+### Compose registers when one type answers only half the question
+
+**Always weigh a composed design before settling for one register.** A page's
+real question is often layered — "how does the number come about, does it
+clear the bar, and what is the verdict" is a derivation, a comparison, and a
+judgement in one figure. Compose them as storeys on one board: a flow of
+nodes feeding a threshold, a bullet chart under it, one accented verdict band
+at the foot. Three rules keep a composition honest:
+
+- **Geometry carries the claim.** A margin is a filled zone past a threshold
+  line, a budget is a bar length, a share is an area — the reader takes the
+  point from proportion before reading a single number. A figure whose boxes
+  merely restate a table's cells is the table drawn slower; keep the table.
+- **Bridge the storeys.** A dashed drop from one register's result onto the
+  next register's threshold or axis makes the eye follow the argument.
+  Unconnected storeys read as small diagrams sharing a canvas.
+- **State the verdict.** Where the figure exists to prove something, end with
+  one accented band that says the judgement in words, caveat in muted type.
+  A picture that proves a claim but never states it hands the conclusion back
+  to the reader.
+
+**The temptation is the architecture register**: boxes and arrows never look
+wrong, so every question gets drawn as "what talks to what" — which is the
+only question that register answers. Before laying out boxes, ask what the
+reader must come away convinced of; when that is a quantity, a margin, or a
+pass/fail, reach for the quantitative registers and compose.
+
 ## References (read on demand)
 
 | File | Contents | When to Read |
 |------|----------|--------------|
 | `references/render-audit.md` | Render/crop/lint workflow, defect catalog with fixes, generation-time prevention rules | Before delivering ANY SVG; debugging arrowheads, overflow, spacing |
 | `references/svg-templates.md` | SVG header, node/edge/subgroup XML templates, palette, layout rules | Hand-crafting SVG by XML, or fixing layout |
+| `references/visual-types.md` | The 39 visual types, what each is for, which have a dedicated builder, and the budget each one enforces | Choosing what kind of picture this is — read BEFORE laying anything out |
 | `references/domain-templates.md` | 8 domain layouts (architecture, pipeline, microservice, CI/CD, network, state machine, infra, sequence) with canvas sizes and color assignments | Choosing a layout pattern / canvas size |

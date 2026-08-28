@@ -6,6 +6,7 @@ overflows. Pick a theme per canvas: Canvas(w, h, theme="nord"). Chrome colors
 colors via c.blue / c.green / ... so a diagram re-themes by changing one arg.
 """
 import math
+import re
 
 # --- Themes: each is role -> hex (18 roles) --------------------------------
 THEMES = {
@@ -16,6 +17,7 @@ THEMES = {
         "fg_dim": "#a9b1d6", "blue": "#7aa2f7", "cyan": "#7dcfff",
         "teal": "#73daca", "green": "#9ece6a", "purple": "#bb9af7",
         "red": "#f7768e", "orange": "#ff9e64", "yellow": "#e0af68",
+        "shadow": "#0c0c14", "shadow_op": "0.55",
     },
     "nord": {
         "bg": "#2e3440", "bg_deep": "#272c36", "panel": "#2f3645",
@@ -24,6 +26,7 @@ THEMES = {
         "fg_dim": "#d8dee9", "blue": "#81a1c1", "cyan": "#88c0d0",
         "teal": "#8fbcbb", "green": "#a3be8c", "purple": "#b48ead",
         "red": "#bf616a", "orange": "#d08770", "yellow": "#ebcb8b",
+        "shadow": "#0c0c14", "shadow_op": "0.55",
     },
     "catppuccin": {
         "bg": "#1e1e2e", "bg_deep": "#181825", "panel": "#232634",
@@ -32,6 +35,7 @@ THEMES = {
         "fg_dim": "#bac2de", "blue": "#89b4fa", "cyan": "#89dceb",
         "teal": "#94e2d5", "green": "#a6e3a1", "purple": "#cba6f7",
         "red": "#f38ba8", "orange": "#fab387", "yellow": "#f9e2af",
+        "shadow": "#0c0c14", "shadow_op": "0.55",
     },
     "gruvbox": {
         "bg": "#282828", "bg_deep": "#1d2021", "panel": "#32302f",
@@ -40,6 +44,7 @@ THEMES = {
         "fg_dim": "#d5c4a1", "blue": "#83a598", "cyan": "#8ec07c",
         "teal": "#689d6a", "green": "#b8bb26", "purple": "#d3869b",
         "red": "#fb4934", "orange": "#fe8019", "yellow": "#fabd2f",
+        "shadow": "#0c0c14", "shadow_op": "0.55",
     },
     "one-dark": {
         "bg": "#282c34", "bg_deep": "#21252b", "panel": "#2c313a",
@@ -48,6 +53,20 @@ THEMES = {
         "fg_dim": "#9da5b4", "blue": "#61afef", "cyan": "#56b6c2",
         "teal": "#48b0a0", "green": "#98c379", "purple": "#c678dd",
         "red": "#e06c75", "orange": "#d19a66", "yellow": "#e5c07b",
+        "shadow": "#0c0c14", "shadow_op": "0.55",
+    },
+    "paper": {
+        # For figures placed on a white page. Backgrounds are the paper
+        # itself, so a figure has no panel edge to fight the page; the
+        # accents are deepened to keep 4.5:1 against white, which the
+        # pastel accents of the dark themes do not reach.
+        "bg": "#ffffff", "bg_deep": "#ffffff", "panel": "#f6f7f9",
+        "box": "#ffffff", "box_hi": "#f2f4f7", "line": "#c7cdd7",
+        "grid": "#e8ebf0", "muted": "#79808f", "fg": "#14161c",
+        "fg_dim": "#454b59", "blue": "#1b4a9c", "cyan": "#0f6f96",
+        "teal": "#0b6a5a", "green": "#3f7a2e", "purple": "#5b46a8",
+        "red": "#a8382a", "orange": "#a8560c", "yellow": "#856310",
+        "shadow": "#25304a", "shadow_op": "0.10",
     },
 }
 DEFAULT_THEME = "tokyo-night"
@@ -68,8 +87,17 @@ BLUE, CYAN, TEAL = _T["blue"], _T["cyan"], _T["teal"]
 GREEN, PURPLE, RED = _T["green"], _T["purple"], _T["red"]
 ORANGE, YELLOW = _T["orange"], _T["yellow"]
 
-SANS = "'Inter','SF Pro Display',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif"
-MONO = "'JetBrains Mono','SF Mono',ui-monospace,Menlo,'DejaVu Sans Mono',monospace"
+# Korean families follow the Latin ones so Latin glyphs still come from Inter
+# where it is installed, while Hangul resolves to a real Korean face instead of
+# whatever the viewer's default happens to be. This matters wherever the SVG is
+# handed to a renderer that does its own font resolution — a browser, or an
+# <asvg:svgBlip> embedded in a .pptx — because none of the Latin families above
+# carry Hangul, and the fallback then differs per machine.
+SANS = ("'Inter','SF Pro Display',system-ui,-apple-system,'Segoe UI',Roboto,"
+        "'Pretendard','Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',"
+        "sans-serif")
+MONO = ("'JetBrains Mono','SF Mono',ui-monospace,Menlo,'DejaVu Sans Mono',"
+        "'D2Coding','Noto Sans Mono CJK KR',monospace")
 
 _DEF = object()  # sentinel: "resolve from the canvas theme"
 
@@ -111,6 +139,51 @@ def tw(s, size, mono=True):
     return ((len(s) - wide) * k + wide * 1.03) * size
 
 
+
+def path_points(d):
+    """The real (x, y) points of an absolute path, command by command.
+
+    A flat scan for number pairs is wrong the moment a path holds an arc:
+    `A rx ry rot large sweep x y` has seven arguments and only the last two
+    are a position, so the radii and the two flags get read as coordinates
+    near the origin — which silently drags any bounding box computed that way
+    to (0, 0). Relative commands are skipped rather than guessed at; nothing
+    in this kit emits them.
+    """
+    arity = {"M": 2, "L": 2, "T": 2, "Q": 4, "S": 4, "C": 6,
+             "H": 1, "V": 1, "A": 7, "Z": 0}
+    toks = re.findall(r'[MLHVQCSTAZmlhvqcstaz]|-?[\d.]+', d)
+    pts, i, cmd, cur = [], 0, "M", (0.0, 0.0)
+    while i < len(toks):
+        if re.match(r'[A-Za-z]', toks[i]):
+            cmd = toks[i]
+            i += 1
+            if cmd.upper() == "Z":
+                continue
+        n = arity.get(cmd.upper(), 2)
+        if n == 0 or i + n > len(toks):
+            break
+        try:
+            args = [float(v) for v in toks[i:i + n]]
+        except ValueError:
+            break
+        i += n
+        if cmd.islower():
+            continue
+        if cmd == "H":
+            cur = (args[0], cur[1])
+        elif cmd == "V":
+            cur = (cur[0], args[0])
+        elif cmd == "A":
+            cur = (args[5], args[6])
+        else:
+            for k in range(0, n, 2):
+                pts.append((args[k], args[k + 1]))
+            cur = (args[n - 2], args[n - 1])
+        pts.append(cur)
+    return pts
+
+
 def row_positions(left, right, n, gap):
     """Evenly spaced column x-positions across [left, right] for n boxes.
 
@@ -143,7 +216,14 @@ def edge_pt(box, side, f=0.5):
 
 
 class Canvas:
-    def __init__(self, w, h, theme=DEFAULT_THEME, bg=None):
+    # Drop shadows are drawn with an SVG `<filter>`, and PowerPoint's SVG
+    # import drops every element that references one — the shape vanishes
+    # while its labels stay, so a diagram embedded in a .pptx loses all its
+    # cards and nothing reports it. A board destined for Office sets this to
+    # False; the picture reads the same on paper without it.
+    SHADOW = True
+
+    def __init__(self, w, h, theme=DEFAULT_THEME, bg=None, shadow=None):
         if theme not in THEMES:
             raise ValueError(
                 f"unknown theme '{theme}'; choose from {sorted(THEMES)}")
@@ -154,6 +234,7 @@ class Canvas:
         for role in _ACCENTS:
             setattr(self, role, self.t[role])
         self.bg = bg or self.t["bg"]
+        self.shadow = self.SHADOW if shadow is None else shadow
         self.body = []
         # underlay layer: (area, markup) entries rendered BEFORE body and
         # sorted by area descending, so group frames land behind nodes and
@@ -189,7 +270,7 @@ class Canvas:
             a.append(f'stroke-dasharray="{dash}"')
         if opacity is not None:
             a.append(f'opacity="{opacity}"')
-        if shadow:
+        if shadow and self.shadow:
             a.append('filter="url(#soft)"')
         self.add(" ".join(a) + "/>")
 
@@ -555,15 +636,191 @@ class Canvas:
                 f'<marker id="arr-{name}" viewBox="0 0 10 10" refX="8.5" refY="5" '
                 f'markerWidth="7" markerHeight="7" orient="auto-start-reverse">'
                 f'<path d="M0.5 1 L9 5 L0.5 9 z" fill="{col}"/></marker>')
+        soft = ''
+        if self.shadow:
+            soft = (
+                '<filter id="soft" x="-30%" y="-30%" width="160%" height="160%">'
+                '<feDropShadow dx="0" dy="3" stdDeviation="5" '
+                f'flood-color="{self.t["shadow"]}" '
+                f'flood-opacity="{self.t["shadow_op"]}"/></filter>')
         return (
-            '<defs>'
-            '<filter id="soft" x="-30%" y="-30%" width="160%" height="160%">'
-            '<feDropShadow dx="0" dy="3" stdDeviation="5" '
-            f'flood-color="#0c0c14" flood-opacity="0.55"/></filter>'
+            '<defs>' + soft +
             '<linearGradient id="bgwash" x1="0" y1="0" x2="0" y2="1">'
             f'<stop offset="0" stop-color="{self.t["bg"]}"/>'
             f'<stop offset="1" stop-color="{self.t["bg_deep"]}"/></linearGradient>'
             + "".join(markers) + '</defs>')
+
+    def ink_box(self):
+        """Bounding box of everything drawn, as (x0, y0, x1, y1).
+
+        Reads the emitted markup rather than tracking geometry as it is
+        drawn, so it also sees whatever a caller added with raw add(). The
+        <defs> block is not part of the body, so marker artwork — whose
+        coordinates sit a few pixels from the origin and mean nothing on the
+        canvas — cannot drag the box to (0, 0).
+        """
+        body = "".join(s for _, s in self.under) + "".join(self.body)
+        xs, ys = [], []
+        for m in re.finditer(r'<rect\b([^>]*)/?>', body):
+            a = m.group(1)
+            g = lambda k: (lambda mm: float(mm.group(1)) if mm else None)(
+                re.search(rf'\b{k}="([\-\d.]+)"', a))
+            x, y, w, h = g("x"), g("y"), g("width"), g("height")
+            if None in (x, y, w, h):
+                continue
+            xs += [x, x + w]
+            ys += [y, y + h]
+        for m in re.finditer(r'<text\b([^>]*)>(.*?)</text>', body, re.S):
+            a, inner = m.group(1), m.group(2)
+            g = lambda k, d=None: (lambda mm: float(mm.group(1)) if mm else d)(
+                re.search(rf'\b{k}="([\-\d.]+)"', a))
+            x, y, size = g("x"), g("y"), g("font-size", 13)
+            if x is None or y is None:
+                continue
+            txt = re.sub(r'<[^>]+>', '', inner)
+            anchor = (re.search(r'text-anchor="(\w+)"', a) or [None, "start"])[1]
+            w = tw(txt, size)
+            xs += ([x - w / 2, x + w / 2] if anchor == "middle"
+                   else [x - w, x] if anchor == "end" else [x, x + w])
+            ys += [y - size * 0.78, y + size * 0.24]
+        for m in re.finditer(r'<(?:line|path|circle|polygon)\b([^>]*)/?>', body):
+            a = m.group(1)
+            for k in ("x1", "x2", "cx"):
+                mm = re.search(rf'\b{k}="([\-\d.]+)"', a)
+                if mm:
+                    xs.append(float(mm.group(1)))
+            for k in ("y1", "y2", "cy"):
+                mm = re.search(rf'\b{k}="([\-\d.]+)"', a)
+                if mm:
+                    ys.append(float(mm.group(1)))
+            dm = re.search(r'\bd="([^"]+)"', a)
+            if dm:
+                for px, py in path_points(dm.group(1)):
+                    xs.append(px)
+                    ys.append(py)
+            pm = re.search(r'\bpoints="([^"]+)"', a)
+            if pm:
+                for px, py in re.findall(r'(-?[\d.]+)[ ,](-?[\d.]+)', pm.group(1)):
+                    xs.append(float(px))
+                    ys.append(float(py))
+        if not xs or not ys:
+            return (0.0, 0.0, self.w, self.h)
+        return (min(xs), min(ys), max(xs), max(ys))
+
+    _SHIFT_X = ("x", "x1", "x2", "cx")
+    _SHIFT_Y = ("y", "y1", "y2", "cy")
+
+    # Which numbers in a path command are coordinates. -1 marks "the last
+    # two are the point"; everything before them (radii, rotation, the two
+    # arc flags) is not a position and must not move.
+    _PATH_ARITY = {"M": 2, "L": 2, "T": 2, "Q": 4, "S": 4, "C": 6,
+                   "H": 1, "V": 1, "A": 7, "Z": 0}
+
+    def _shift_path(self, d, dx, dy):
+        """Shift a path's coordinates, respecting each command's argument shape.
+
+        Treating a `d` as a flat run of (x, y) pairs works only while the
+        generator emits M, L and Q. The first arc turns the radii and the two
+        flags of an `A` into coordinates, and the path silently stops drawing
+        — the arrowhead still lands, so the damage reads as a missing line
+        rather than as corruption.
+        """
+        toks = re.findall(r'[MLHVQCSTAZmlhvqcstaz]|-?[\d.]+', d)
+        out = []
+        i = 0
+        cmd = "M"
+        while i < len(toks):
+            t = toks[i]
+            if re.match(r'[A-Za-z]', t):
+                cmd = t
+                out.append(t)
+                i += 1
+                if cmd.upper() == "Z":
+                    continue
+            n = self._PATH_ARITY.get(cmd.upper(), 2)
+            if n == 0 or i + n > len(toks):
+                out.extend(toks[i:])
+                break
+            args = [float(v) for v in toks[i:i + n]]
+            i += n
+            if cmd.islower():                 # relative: shift nothing
+                pass
+            elif cmd == "H":
+                args[0] += dx
+            elif cmd == "V":
+                args[0] += dy
+            elif cmd == "A":
+                args[5] += dx
+                args[6] += dy
+            else:
+                for k in range(0, n, 2):
+                    args[k] += dx
+                    args[k + 1] += dy
+            # The two arc flags are single characters in the grammar, not
+            # numbers: a strict parser rejects `1.0` where it wants `1`, and
+            # the path stops drawing. Emitting integers whole keeps every
+            # renderer happy and the file shorter.
+            def _fmt(v):
+                r = round(v, 2)
+                return str(int(r)) if r == int(r) else str(r)
+            out.extend(_fmt(v) for v in args)
+        return " ".join(out)
+
+    def _shift_markup(self, s, dx, dy):
+        """Move every canvas coordinate in one emitted element by (dx, dy).
+
+        Only the attributes that name a position are touched — width, height,
+        r, rx, stroke-width, font-size and stroke-dasharray are lengths and
+        must not move.
+        """
+        def attr(m):
+            k, v = m.group(1), float(m.group(2))
+            d = dx if k in self._SHIFT_X else dy
+            return f'{k}="{round(v + d, 2)}"'
+        keys = "|".join(self._SHIFT_X + self._SHIFT_Y)
+        s = re.sub(rf'\b({keys})="([\-\d.]+)"', attr, s)
+        return re.sub(r'\b(d)="([^"]+)"',
+                      lambda m: f'd="{self._shift_path(m.group(2), dx, dy)}"',
+                      s)
+
+    def trim(self, margin=24, min_w=None, max_w=None):
+        """Fit the board to what was actually drawn, leaving `margin` around it.
+
+        A board is declared before its content is laid out, so its size is a
+        guess, and both ways of being wrong cost something. Too large reserves
+        a band of page the figure never draws on — the figure is placed at a
+        fixed width, so nothing in the drawing grows to fill it. Too tight has
+        the viewBox halve a stroke, and what survives lands in the page margin.
+
+        The content is moved rather than the viewBox origin, so the board
+        still reads `viewBox="0 0 W H"` — several checks and build steps match
+        that exact form and an offset origin would defeat them silently.
+        Idempotent: trimming an already-fitted board moves nothing.
+
+        `min_w` / `max_w` clamp the finished width. Some destinations decide
+        the on-page type size from the board width — a figure placed at a
+        fixed column width is scaled by column/board, so the board width sets
+        how small the labels print. Where that band exists, the horizontal
+        margin gives way to it and pads or tightens symmetrically; a drawing
+        too wide to fit even at an 8px margin keeps its size and is left for
+        the linter to report, because the fix there is fewer boxes.
+        """
+        x0, y0, x1, y1 = self.ink_box()
+        mx = margin
+        if min_w or max_w:
+            span = x1 - x0
+            if max_w and span + margin * 2 > max_w:
+                mx = max((max_w - span) / 2, 8)
+            elif min_w and span + margin * 2 < min_w:
+                mx = (min_w - span) / 2
+        dx, dy = mx - x0, margin - y0
+        if abs(dx) > 0.01 or abs(dy) > 0.01:
+            self.body = [self._shift_markup(s, dx, dy) for s in self.body]
+            self.under = [(a, self._shift_markup(s, dx, dy))
+                          for a, s in self.under]
+        self.w = round(x1 - x0 + mx * 2, 2)
+        self.h = round(y1 - y0 + margin * 2, 2)
+        return self
 
     def render(self):
         head = (f'<svg xmlns="http://www.w3.org/2000/svg" width="{self.w}" '
@@ -578,3 +835,21 @@ class Canvas:
     def save(self, path):
         with open(path, "w") as f:
             f.write(self.render())
+
+
+# Visual-type builders live in viztypes so this file stays about primitives.
+# They are bound here rather than imported there-and-back so that anyone who
+# imports svgkit gets the full vocabulary: `import viztypes` on its own would
+# leave a caller with a Canvas that silently lacks half its methods. The
+# import sits at the bottom on purpose — svgkit is already in sys.modules by
+# then, so viztypes can import the helpers it needs from it.
+def _bind_viztypes():
+    try:
+        from viztypes import BUILDERS
+    except ImportError:                      # pragma: no cover
+        return                               # primitives still work alone
+    for _name, _fn in BUILDERS.items():
+        setattr(Canvas, _name, _fn)
+
+
+_bind_viztypes()
