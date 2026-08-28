@@ -59,6 +59,7 @@
   "auditScript": "<where a new detection rule lands: one script, or the directory a family of them lives in>",
   "migrationDir": "<where migrations live — one directory, or [\"…\", \"…\"] when the database has several lineages>",
 
+  "//frameDeliverables": "What each screen owes beyond working code, one checkable sentence each. It is also where a defect the RUNNING PRODUCT showed lands when no frame can draw it — a value derived wrongly from what the system reports, a demand that cannot be answered at the address it is answered at — so the list GROWS as such defects are found rather than each being fixed once on the screen it turned up on. `chapterGenerator` emits each sentence per frame, which is what makes it a check: a sentence in this file is read once by whoever wrote it, and the same sentence on every screen section of every chapter is re-asked by every persona run that comes after. `everyFrameDeliverableReachesAChapter` holds that join and compares VERBATIM, so the sentence declared here is the sentence the generator emits. Declared and never emitted, the key reads as coverage and holds nothing: no gate compares it, no chapter carries it, and the run is as green as one where every screen answered it. Leave it empty where a screen genuinely owes nothing beyond the code — a defect no frame can draw then has nowhere to land and is met again on every screen built afterwards.",
   "frameDeliverables": [],
   "factSources": [],
   "storyDocument": "<the one document the sample data derives from>",

@@ -1,10 +1,10 @@
 // A word a project declares as its own, held against the documents that are supposed to write it.
 //
-// Six keys are not paths but this project's own words and markup — `chapterLines`,
-// `evidenceLabels`, `closedStatus`, `verdictRole`, `deferredLine` and `eyesPhrases` — and every
-// check over a chapter file or a result document compares against them. **A word declared wrongly
-// does not fail; it matches nothing, and matching nothing is what a repository with nothing wrong
-// also does.** The two markup conventions are opposite on purpose — a `chapterLines` phrase is the
+// Eight keys are not paths but this project's own words and markup — `chapterLines`,
+// `evidenceLabels`, `closedStatus`, `verdictRole`, `deferredLine`, `placeholderLine`,
+// `captureReasons` and `eyesPhrases` — and every check over a chapter file or a result document
+// compares against them. **A word declared wrongly does not fail; it matches nothing, and matching
+// nothing is what a repository with nothing wrong also does.** The two markup conventions are opposite on purpose — a `chapterLines` phrase is the
 // line as written, markup and all, and an `evidenceLabels` value is the word alone, because the
 // checks add the emphasis themselves — so the commonest way to get this wrong is to declare one
 // of them the way the other is declared, and the run stays green either way.
@@ -12,6 +12,15 @@
 // That was held by a sentence in a setup command, which is the third category `SKILL.md` says does
 // not exist: not a gate, not marked as needing eyes, and reading as though something were holding
 // it. This is the gate.
+//
+// **A ninth key is here for the same reason and fails one step earlier.** `frameDeliverables` is
+// not a word a check compares by — it is the sentences a screen owes beyond working code, and what
+// holds them is that a chapter file demands each one of every screen it places. Declared and never
+// emitted, the key reads as coverage and holds nothing: no gate compares it, no chapter carries it,
+// and the run over that chapter set is as green as one where every screen answered it.
+// `everyFrameDeliverableReachesAChapter` is the join, and it sits in this module because the
+// question is this module's — a declaration held against the documents that are supposed to write
+// it.
 //
 // **The whole difficulty is the boundary, and getting it wrong makes the gate worthless in both
 // directions.** A project that has just been wired has no result documents, so zero matches there
@@ -522,7 +531,92 @@ export const declaredWordsHaveBeenCompared = {
   },
 };
 
-export const VOCABULARY_GATES = [declaredWordsMatchTheDocuments, declaredWordsHaveBeenCompared];
+/**
+ * A screen deliverable this project declares, held against the chapters that are supposed to demand it.
+ *
+ * <p><b>`frameDeliverables` is where a defect the running product showed lands when no frame can
+ * draw it</b> — a name derived wrongly from what the system reported, a demand that cannot be
+ * answered at the address it is answered at. The list is the project's own sentences and it grows
+ * as such defects are found, so what makes it a check rather than a note is that the generator
+ * emits each sentence per frame and every later chapter re-asks it → `references/demands.md`.
+ *
+ * <p><b>The failure is a declaration nothing ever read.</b> A project declared three sentences; no
+ * generator emitted them, no gate compared them, and no chapter file contained any of the three.
+ * Every gate over that chapter set was green, the chapter closed, and the three defects the
+ * sentences describe were found afterwards by a person using the product. A config key that reads
+ * as coverage and holds nothing is `../SKILL.md` § *The third category comes back as a checker
+ * that did not run* one level up — not a checker that did not run, but one nobody ever wrote.
+ *
+ * <p><b>An error rather than a warning.</b> What it names is 「this sentence is asked of nobody」,
+ * which has a definite fix — emit it per frame from `chapterGenerator`, or take it out of the
+ * config — rather than 「go and re-read this」. A warning would print into a report whose exit
+ * status closed the chapter anyway, which is the state this was found in. A project that holds a
+ * deliverable some other way turns the gate off in `disabledGates` with the reason, which is the
+ * visible door every core gate has.
+ *
+ * <p><b>The witness is a chapter file that places a frame.</b> A deliverable is what a SCREEN owes,
+ * so a chapter set with no screen in it owes none, and a freshly-wired project whose only chapter
+ * is its foundation has nothing to match against rather than a broken declaration. Without that,
+ * the gate reddens every repository on the day it is wired — the failure that makes a gate over a
+ * project's own words worthless in the other direction → `references/checks.md`.
+ *
+ * <p><b>What it does NOT hold, said here so nobody reads it as stronger than it is.</b> One
+ * chapter writing the sentence satisfies it, so a set half-regenerated after the list grew reads
+ * as green. That is deliberate: 「every frame-placing chapter carries every sentence」 fires on a
+ * project in the middle of the regeneration the finding above asked for, which is a rule that
+ * reddens the tree for doing what it was told. What this answers is the one question with no
+ * legitimate other side — whether the declaration reached the chapters at all.
+ */
+export const everyFrameDeliverableReachesAChapter = {
+  id: 'everyFrameDeliverableReachesAChapter',
+  title: 'a screen deliverable this project declares that no chapter file demands of any screen',
+  needs: ['chapterDir', 'frameDeliverables'],
+  run: (ctx) => {
+    const declared = ctx.declared('frameDeliverables');
+    if (!Array.isArray(declared)) return [];
+    const sentences = declared.filter((s) => typeof s === 'string' && s.trim());
+    if (!sentences.length) return [];
+
+    const docs = corpus(ctx, 'chapter');
+    const placing = docs.filter((doc) => doc.lines.some((line) => BASE_HEADING.test(line))).length;
+    if (!placing) return [];
+    const compared = lineCount(docs);
+
+    const findings = [];
+    for (const sentence of sentences) {
+      let matched = 0;
+      let relaxed = 0;
+      for (const doc of docs) {
+        for (const line of doc.lines) {
+          if (line.includes(sentence)) matched += 1;
+          if (bare(line).includes(bare(sentence))) relaxed += 1;
+        }
+      }
+      if (matched > 0) continue;
+      findings.push(
+        `frameDeliverables 「${sentence}」 is declared and no chapter file writes it. `
+        + `${placing} chapter file(s) place a frame and ${compared} lines of prose were compared, `
+        + 'so there are screens here to owe it and no demand asks any of them for it. '
+        + (relaxed > 0
+          ? `The same sentence with its markdown ignored appears on ${relaxed} of those lines, so the `
+            + 'words are in the chapters and the markup is not: declare the sentence exactly as the '
+            + 'generator emits it, because the comparison is verbatim. '
+          : '')
+        + 'A deliverable that reaches no chapter is not half-held — it is a sentence in the config '
+        + 'that every gate over the chapter set is silent about, and the defect it describes is met '
+        + 'again on every screen built afterwards. Emit it per frame from `chapterGenerator` and '
+        + 'regenerate, or take it out of the config'
+      );
+    }
+    return findings;
+  },
+};
+
+export const VOCABULARY_GATES = [
+  declaredWordsMatchTheDocuments,
+  declaredWordsHaveBeenCompared,
+  everyFrameDeliverableReachesAChapter,
+];
 
 // ── The cases ──────────────────────────────────────────────────────────────
 //
@@ -576,6 +670,19 @@ const RESULTS = {
     + '**챕터가 정한 것** — 로그인 화면을 연다.\n'
     + '**본 것** — 화면이 열린다.\n\n'
     + '![A-01 로그인](w02-org-shell/a-01.webp)\n',
+};
+
+/** One sentence a screen owes beyond working code, in the shape a project actually declares. */
+const DELIVERABLE = '이 화면이 쓰는 문구 키가 en과 ko 자원 파일에 둘 다 있다';
+
+/** The same chapter set with the deliverable emitted into the demand line of the screen it places. */
+const CHAPTERS_DEMANDING = {
+  ...CHAPTERS,
+  'chapters/w02-org-shell.md':
+    '# W02. 조직·계정\n\n## 1. A-01 로그인\n\n'
+    + `**개발** — 보드의 \`a-01-login\`을 그대로 만든다. 상태 1장이 딸린다 — A-02 잠김. ${DELIVERABLE}.\n`
+    + '**테스트 · 시스템 관리자** — 로그인 화면을 연다.\n'
+    + '**테스트 · 안전관리자** — 범위 밖 레코드는 주소로 불러도 서버가 막는다.\n',
 };
 
 /** The ledger, with the foundation chapter closed in the declared word. */
@@ -665,6 +772,76 @@ export function cases(t) {
     'declaredWordsHaveBeenCompared',
     'a project where every declared word has a corpus to be read against',
     project({}, whole),
+    false
+  );
+
+  // ── A deliverable held against the chapters that are supposed to demand it ──
+  //
+  // The defect established from a real build: three sentences declared, no generator emitting
+  // them, no chapter file containing any of them, and every gate over that chapter set green.
+  // The boundary is the same one the four cases above pin — a chapter set with no screen in it
+  // owes no deliverable, so the witness is a chapter file that places a frame and not merely a
+  // chapter folder that has something in it.
+  t.add(
+    'everyFrameDeliverableReachesAChapter',
+    'a deliverable declared in the config that no chapter file demands',
+    project({ frameDeliverables: [DELIVERABLE] }, whole),
+    true
+  );
+  // Not a missing demand at all: the sentence is in the chapter and the declaration carries
+  // emphasis the generator does not emit. The comparison is verbatim, so it fires — and says
+  // which of the two it established, because the fix is the declaration rather than the generator.
+  t.add(
+    'everyFrameDeliverableReachesAChapter',
+    'a deliverable declared with markup the chapters do not write',
+    project({ frameDeliverables: [`**${DELIVERABLE}**`] }, CHAPTERS_DEMANDING),
+    true
+  );
+  // One of two declared reaching the chapters is one held and one asked of nobody, and a gate
+  // reading the list as a whole would call that a pass.
+  t.add(
+    'everyFrameDeliverableReachesAChapter',
+    'one deliverable of two reaching the chapters',
+    project({ frameDeliverables: [DELIVERABLE, '팝오버 폭 360px에서 가로로 넘치지 않는다'] }, CHAPTERS_DEMANDING),
+    true
+  );
+
+  t.add(
+    'everyFrameDeliverableReachesAChapter',
+    'a deliverable the chapter demands of the screen it places',
+    project({ frameDeliverables: [DELIVERABLE] }, CHAPTERS_DEMANDING),
+    false
+  );
+  // The edge the gate exists to respect, in the two forms it takes. A project just wired has no
+  // chapter files at all; a project whose whole chapter set is its foundation has chapter files
+  // and no screen — and a deliverable is what a SCREEN owes, so neither is a declaration that has
+  // stopped reaching anything. A gate that read either as the defect would redden the repository
+  // on the day the key is declared.
+  t.add(
+    'everyFrameDeliverableReachesAChapter',
+    'a project just wired, with the deliverable declared and no chapters written',
+    project({ frameDeliverables: [DELIVERABLE] }, {
+      'chapters/00-overview.md': '# 챕터\n',
+      'tracking/STATE.md': '# 챕터 상태\n\n| 챕터 | 상태 |\n| --- | --- |\n',
+    }),
+    false
+  );
+  t.add(
+    'everyFrameDeliverableReachesAChapter',
+    'a chapter set whose only chapter places no screen',
+    project({ frameDeliverables: [DELIVERABLE] }, {
+      'chapters/00-overview.md': '# 챕터\n',
+      'chapters/w01-foundation.md': CHAPTERS['chapters/w01-foundation.md'],
+      'tracking/STATE.md': LEDGER('열림'),
+    }),
+    false
+  );
+  // A key declared as the template ships it. It is not 「no deliverables reached the chapters」 —
+  // it is a project that owes nothing beyond working code, and the two must not read the same.
+  t.add(
+    'everyFrameDeliverableReachesAChapter',
+    'a project declaring an empty deliverable list',
+    project({ frameDeliverables: [] }, whole),
     false
   );
 }

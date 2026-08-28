@@ -35,6 +35,54 @@ checks pass, and the rule that fell off the end is the rule nobody misses. Whate
 deliberately does not take is named in the run's own report, not left to be discovered by reading
 the regex.
 
+## A defect the running product showed, that no frame can draw, is a standing check
+
+**The rule above covers everything a frame can express, and there is a family it cannot.** A name
+the screen derived wrongly from what the system reported is not something a board can draw — the
+frame draws 「the program's name」, and what the code put there was `2.1.239`, in a product one of
+whose screens is about a name not being enough. Neither is 「this demand cannot be answered at the
+address it is answered at」. Both were found by a person using the built product, after eight gates
+went green and a chapter closed, and neither has a frame to be drawn as: the frames were already
+there and already right.
+
+**So the family has a place of its own, and it is `frameDeliverables`** — what a screen owes beyond
+working code, one checkable sentence each, declared in the project's config →
+`references/frame-artefacts.md`. Two things make it a check rather than a note:
+
+- **The generator emits them per frame.** A sentence in a config is read once, by whoever wrote it;
+  the same sentence on every screen section of every chapter is re-asked by every persona run that
+  comes after. Declared once, it is a demand on every screen the board draws, and the chapters
+  built months later carry it without anybody remembering it exists.
+- **The list GROWS as defects are found.** A defect met in the running product is fixed, and then
+  its shape is added here — otherwise it is fixed once, on the screen it was found on, and met
+  again on every surface built afterwards. A project that ratchets is one whose list is longer
+  than it was.
+
+### A standing check was observed; an invented expectation never was
+
+The two are written in the same words, and the wording is not the separator. 「the row is named by
+what a person calls the program, never by a version string」 is a standing check when somebody read
+`2.1.239` off a screen, and an invention when somebody thought it would be a good property. The
+sentence alone does not say which, and read as the second it does exactly what the section above
+bans — sends a builder to satisfy something nobody contracted.
+
+**So a standing check carries the pointer to where it was seen**: the screen, the state it was in,
+and what was on it. One that cannot name that is an invention wearing the right clothes, and it
+goes back to being a frame question — draw it, and the demand follows from the drawing.
+
+> **Read it this way and it is wrong**: 「a deliverable is about the product rather than about one
+> frame, so the board cannot rule on it and anything plausible may go in」. The board does not rule
+> on it and the sighting does. A frame is the contract for what a screen DRAWS; this list is the
+> record of what the product was CAUGHT doing, and a record with nothing behind it is not a record.
+
+**Declaring the list is half of it, and the other half is the one that fails silently.** A project
+declared three of these sentences; no generator emitted them, no gate compared them, and no chapter
+file contained any of the three — a config key that reads as coverage and holds nothing. That is
+`../SKILL.md` § *The third category comes back as a checker that did not run* one level up: not a
+checker that did not run, but a declaration nothing ever read.
+`everyFrameDeliverableReachesAChapter` holds the join, and it is an error rather than a warning
+because what it names is 「asked of nobody」 rather than 「go and re-read this」.
+
 ## What a frame has on it, and what each thing owes
 
 A frame's own drawing answers all of this. **The list below is what a demand list is short of when
@@ -209,6 +257,42 @@ hundreds of lines is a demand nobody can tell they failed.
 
 Where a project has a route that renders one frame in one state, that route's address is the whole
 answer and the generator has the frame in hand: build the address, do not describe it.
+
+## A demand that presses a way BETWEEN screens is not answered at a per-frame address
+
+**`captureRoute` renders one frame, in one state, from named sample data — and that is exactly why
+it cannot answer a journey.** No navigation to arrange, no seed to walk through, the state is the
+address: everything that makes the route worth having is the absence of the thing a journey demand
+is about. Each screen opens at its own address there, so 「press the way back and say which screen
+it lands on」 is answered without anything being navigated. Nothing errors — the control is
+pressed, the page does what a frame route does, and the name written down is the frame that was
+already open. A demand of that shape was answered that way while the way back it asked about was
+not drawn on the screen at all.
+
+**So a demand with a journey in it is taken in the running application, at the application's own
+address** — the real shell, the real navigation stack, opened at the screen the journey starts from
+and walked to the one under test. The frame route stays what it is: the address a picture of one
+state is taken at. Where a project declares both, the demand says which of the two it is asked at,
+because the two render the same screen and only one of them has a journey in it.
+
+**And where a control leads is a different question from whether anybody can find it.** A detail
+screen with no visible way back to its list, whose one control was a chevron nobody sees, passed a
+build in which the route-level destinations had just been unified and tested — the destination was
+right, and the way to it was invisible to the person the screen is for. So the demand is split:
+
+| The question | Where it is answered |
+| --- | --- |
+| where the control lands | the running application, walked — a journey has two screens in it and a frame route has one |
+| whether a person can see the control at all | a picture of the screen as it opens, with the demand naming the control by its label and where on the screen it sits |
+
+**A tested destination is why this survives rather than a reason it cannot happen.** A run proving
+every route resolves has proved the half a machine can see, and it reads as the whole of
+navigation — which is what leaves the other half asked by nobody.
+
+> **Read it this way and it is wrong**: 「the frame route renders the real screen, so pressing a
+> control on it is pressing it in the product」. It renders one frame; a control whose destination
+> is another frame has nowhere to go, and a run that presses it records the screen it was already
+> on as the screen it landed on.
 
 ## An irreversible action is walked up to, never skipped
 

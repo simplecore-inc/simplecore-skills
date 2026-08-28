@@ -21,6 +21,24 @@ Each line is a plain sentence an agent can check against what the work produced.
 so it is never reported as covered — which is what keeps it from becoming a separate
 pass that never happens.
 
+**The list is also where a defect the running product showed lands when no frame can
+draw it**, and that half is easy to miss while reading the examples above — they are
+all artefacts. A name the screen derived wrongly from what the system reported, a
+demand that cannot be answered at the address it is answered at: neither is something
+a board can draw, and both were found by a person using the built product. So the list
+**grows** as such defects are found, rather than each being fixed once on the screen it
+turned up on, and the sentence carries the pointer to where it was seen — a check
+that cannot name a sighting is an invented expectation, which costs what
+`references/demands.md` § *Everything on the list comes off the board, and nothing
+else* says it costs. The test that separates the two, and the rest of it →
+`references/demands.md`.
+
+**And the sentence has to reach the chapters, which is a separate thing from being
+declared.** `chapterGenerator` emits each one per frame, so every later chapter
+re-asks it; declared and never emitted, the key reads as coverage while every gate
+over the chapter set stays green. `everyFrameDeliverableReachesAChapter` holds that
+join, and it compares the sentence verbatim.
+
 Two rules make that affordable rather than doubling the work:
 
 - **The same agent produces it, in the same unit of work.** An artefact written later,
@@ -97,7 +115,9 @@ Two rules make that affordable rather than doubling the work:
   When captures are hand-made, the same decision inverts and everything has to be
   decided up front. A pass should know which of the two it is in, and say so.
 
-A project that declares no `frameDeliverables` owes nothing beyond the code.
+A project that declares no `frameDeliverables` owes nothing beyond the code — and a
+defect no frame can draw then has nowhere to land, so it is fixed once on the screen
+it was found on and met again on every screen built afterwards.
 
 ### Three reasons to photograph a screen, and none of them substitutes for another
 

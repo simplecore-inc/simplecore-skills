@@ -206,7 +206,7 @@ the count is what shows a comparison reached anything at all.
 | `commitPolicy` | whether the build may commit and push without asking — `commit`, `commitAndPush`, or `ask`. It does not override a repository whose own rules already say | ○ | whatever the repository's own rules say; with neither, the build asks before every commit, cannot run unattended, and the two gates that read commits see nothing until somebody is present → *Whether the build may commit at all* |
 | `auditScript` | where a mechanically visible defect becomes a detection rule — one script, or the directory a family of them lives in | ○ | a new rule has nowhere to land, so the project cannot ratchet — report the rule that should have been written rather than inventing a home for it |
 | `migrationDir` | where migrations live, and with it how two agents adding one at the same time avoid colliding — one directory, or several where the database has more than one lineage | ○ | nothing says where a migration goes or how two of them collide, so backend chapters run one at a time |
-| `frameDeliverables` | what each screen owes beyond working code, one checkable sentence each | ○ | a screen owes nothing beyond working code |
+| `frameDeliverables` | what each screen owes beyond working code, one checkable sentence each — and where a defect the running product showed that no frame can draw becomes a standing check, the list growing as such defects are found → `references/demands.md` | ○ | a screen owes nothing beyond working code, so a defect no frame can draw is fixed once on the screen it was found on and met again on every screen built afterwards |
 | `factSources` | the tools a drawn value must be verified through before it is built — a statute server, a price list, a published table | ○ | a value the board draws is built as drawn and left marked, never asserted |
 | `storyDocument` | the one document the sample data derives from and a final capture run follows | ○ | sample data has no single source, and the screens disagree with each other silently → `references/scenario.md` |
 | `locales` | every language the interface ships in — each screen is judged in all of them | ○ | the languages come from the project's own copy catalogue; where that cannot be read, report it rather than judging in one language |
@@ -1500,6 +1500,12 @@ Whatever `frameDeliverables` declares is part of the chapter's close, one checka
 sentence at a time — and **a screen that owes one is not finished until it exists** →
 `references/frame-artefacts.md`.
 
+**That list is also where a defect the running product showed lands when no frame can draw it** —
+a value derived wrongly from what the system reports, a demand that cannot be answered at the
+address it is answered at. It grows as such defects are found, and the generator emits each
+sentence per frame so every later chapter re-asks it rather than the defect being fixed once →
+`references/demands.md`.
+
 ## Running without stopping to ask
 
 The build is meant to continue on its own while the dependencies hold and the tests pass. Four
@@ -1626,7 +1632,8 @@ node "${CLAUDE_PLUGIN_ROOT}/skills/board-to-app/scripts/bta.mjs" check
 | a commit adding an import of a file the repository does not have | `importsTravelWithTheirCommit` — `--only` holds back a file nobody named, not somebody else's edit inside a file that was named |
 | a parked line that says it blocks a chapter does not survive that chapter closing | the project's own gate — the marker is that project's word and so is its ledger's word for a closed chapter, so nothing generic can read either |
 | the frames, counts and copy a chapter builds to | the board's own gates (`simplecore:wireframe-boards`) |
-| whatever `frameDeliverables` declares | the project's own gate, one checkable sentence each |
+| a screen deliverable the project declares is one its chapter files actually demand | `everyFrameDeliverableReachesAChapter` — an **error**, because what it names is 「this sentence is asked of nobody」 rather than 「go and re-read this」. A declaration nothing emitted reads as coverage while every gate over the chapter set stays green: three sentences sat that way through eight green gates and a closed chapter, and the defects they describe were found afterwards by a person using the product. The comparison is verbatim against the project's own sentences, and it speaks only where a chapter file places a frame — a chapter set with no screen in it owes no deliverable |
+| whatever `frameDeliverables` declares is TRUE of the screen | the project's own gate, one checkable sentence each — that the sentence reached a chapter at all is the row above, and a project that holds a deliverable some other way turns that one off in `disabledGates` with the reason |
 | the code's own defect types | the project's `auditScript` — every new detection rule goes there, whether that key names one script or the directory a family of them lives in |
 | every key this skill reads has a row in the config table above and a line in the copyable template, and the cost that row states is the sentence `doctor` prints | `bta.mjs gates` — a self-check rather than a gate, because its subject is this skill's own two documents rather than any project's → `references/checks.md` |
 | a word the project declared as its own vocabulary is one its documents actually write | `declaredWordsMatchTheDocuments` — and `bta.mjs doctor` prints what every one of them matched, because the count is worth as much as the finding here |

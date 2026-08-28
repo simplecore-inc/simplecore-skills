@@ -191,7 +191,13 @@ export const SCHEMA = {
   commitPolicy: { kind: 'text', absent: 'whatever the repository\'s own rules say; with neither, the build asks before every commit, cannot run unattended, and the two gates that read commits see nothing until somebody is present → *Whether the build may commit at all*' },
   auditScript: { kind: 'path', absent: 'a new rule has nowhere to land, so the project cannot ratchet — report the rule that should have been written rather than inventing a home for it' },
   migrationDir: { kind: 'dir', many: true, absent: 'nothing says where a migration goes or how two of them collide, so backend chapters run one at a time' },
-  frameDeliverables: { kind: 'list', absent: 'a screen owes nothing beyond working code' },
+  // What a screen owes beyond working code, and — the half a reader meets late — where a defect the
+  // RUNNING PRODUCT showed lands when no frame can draw it: a value derived wrongly from what the
+  // system reports, a demand that cannot be answered at the address it is answered at. The list grows
+  // as such defects are found, and `chapterGenerator` emits each sentence per frame so every later
+  // chapter re-asks it. Declared and never emitted, the key reads as coverage and holds nothing —
+  // which is what `everyFrameDeliverableReachesAChapter` exists to say.
+  frameDeliverables: { kind: 'list', absent: 'a screen owes nothing beyond working code, so a defect no frame can draw is fixed once on the screen it was found on and met again on every screen built afterwards' },
   factSources: { kind: 'list', absent: 'a value the board draws is built as drawn and left marked, never asserted' },
   storyDocument: { kind: 'file', absent: 'sample data has no single source, and the screens disagree with each other silently → `references/scenario.md`' },
   locales: { kind: 'list', absent: 'the languages come from the project\'s own copy catalogue; where that cannot be read, report it rather than judging in one language' },
