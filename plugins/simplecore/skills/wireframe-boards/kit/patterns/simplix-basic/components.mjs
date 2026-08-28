@@ -191,10 +191,15 @@ export const grid = (n, children) => `<div class="grid-${n}">${children.join('')
  * <p>`fix` keeps its 110px floor and grows to the widest cell IN THAT COLUMN, across every row.
  */
 const columnTemplate = (head) => head.map((h) => {
-  const cls = /class="([^"]*)"/.exec(h)?.[1] ?? '';
-  if (/\bw2\b/.test(cls)) return '2fr';
-  if (/\bfix\b/.test(cls)) return 'minmax(110px, max-content)';
-  if (/\btight\b/.test(cls)) return 'max-content';
+  // **Whole class tokens, never a word boundary.** A hyphen ends a word, so `\bfix\b` matches
+  // inside `fix-s` and any other name built on a known one — the stylesheet has no rule for that
+  // class and skips it, while this reads it as the column it is not. The two then disagree about
+  // a width, and the only mark is a column squeezed to nothing in a narrow frame: the header
+  // still draws its own text, and no check above this sees anything.
+  const classes = new Set((/class="([^"]*)"/.exec(h)?.[1] ?? '').split(/\s+/));
+  if (classes.has('w2')) return '2fr';
+  if (classes.has('fix')) return 'minmax(110px, max-content)';
+  if (classes.has('tight')) return 'max-content';
   return '1fr';
 }).join(' ');
 

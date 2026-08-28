@@ -352,3 +352,45 @@ is to open the big HTML, which floods context and bypasses the contract.
 marker describes the kit and the pattern and is replaced wholesale on the next migration; a rule
 written above it is a rule that will be lost. A rule a regex could enforce belongs in
 `board.gates.mjs` instead — a rule a person has to remember is a rule that comes back next month.
+
+## Photographing one frame off the built board
+
+**Opening `board.html` in a browser is the one legitimate reason to touch the artifact**, and it
+is not reading — a downstream skill that asks for a picture of a changed frame (board-to-app's
+`frameDeliverables` is the case that keeps arriving) needs the frame as it actually renders, which
+the source cannot give. Every frame carries an anchor named after its permanent id: `#s-a-01` for
+`A-01`.
+
+**A selector screenshot of that anchor comes back blank, and the blank is the size of a real
+file.** `kit/core/chrome.css` sets `scroll-behavior: smooth` on the board, so a driver that scrolls
+to the element and clips in one step photographs the frame mid-flight — agent-browser returns
+about 2.8KB of empty canvas where the frame runs 80KB. Nothing errors, and a 2.8KB PNG in a
+directory listing is indistinguishable from a small screen.
+
+So: turn the smooth scroll off first, scroll the anchor into view, then take a **plain viewport**
+shot rather than a selector one.
+
+```bash
+agent-browser --session <name> open "file://$PWD/<board>/board.html"
+agent-browser --session <name> eval "(()=>{const s=document.createElement('style');\
+s.textContent='*{scroll-behavior:auto !important}';document.head.appendChild(s);return 'ok';})()"
+# then, per frame:
+agent-browser --session <name> eval "(()=>{document.querySelector('#s-a-01')\
+.scrollIntoView({block:'center'});return 'ok';})()"
+agent-browser --session <name> screenshot ./board-a-01-after.png
+# once every frame is shot — the session holds a full browser until this runs:
+agent-browser --session <name> close
+```
+
+**That last line is not tidiness.** The session survives the command, the shell and the agent
+that opened it, so a board shot without it leaves one whole Chrome resident with nobody to
+reclaim it — and the cost is memory rather than CPU, so it surfaces as a slow machine long after
+anyone connects it to a screenshot run. Shoot every frame through **one** session and close it by
+name at the end, including when the run stops early. **Never `close --all`**: the daemon is
+shared, so it ends every other agent's session too.
+
+**Measure the frame's rectangle against the viewport before believing the shot.** A frame taller
+than the window is cut, and a cut frame reads as a frame that ends there — `getBoundingClientRect()`
+returning a `top` at or above 0 and a `bottom` at or below `innerHeight` is the check, and it has to
+run in a call **after** the scroll, never the same one: the rect read in the scrolling call is the
+pre-scroll layout.

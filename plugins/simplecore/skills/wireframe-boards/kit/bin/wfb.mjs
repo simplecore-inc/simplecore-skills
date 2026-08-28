@@ -8,7 +8,7 @@
 //   node wf.mjs gates                   every gate against the defect it exists to catch
 //   node wf.mjs coverage                board ⇄ code — the frames no route reaches
 //   node wf.mjs pdf [--mask 40%] [--watermark [logo]] [--to "<recipient>"] [--in f] [--out f]
-//   node wf.mjs shots <outDir> [idPfx]  one PNG per frame
+//   node wf.mjs shots <outDir> [idPfx] [--no-notes]  one PNG per frame
 //   node wf.mjs doctor                  what this board is on, and what it owes
 //
 // One subcommand runs from the KIT rather than from a board, because it is what creates one:
@@ -45,7 +45,9 @@ const HELP = `wireframe-boards — 보드를 빌드하고 점검하는 명령
   coverage                        보드 ⇄ 코드 — 라우트가 없는 프레임
   pdf [--mask 40%] [--watermark [로고]] [--to <수신자>] [--in f] [--out f]
                                   --to를 주면 로고 아래에 만든 시각과 수신자를 적습니다
-  shots <디렉터리> [id접두]         프레임마다 PNG 한 장을 저장합니다
+  shots <디렉터리> [id접두] [--no-notes]
+                                  프레임마다 PNG 한 장을 저장합니다 —
+                                  --no-notes는 프레임의 주석 블록을 빼고 찍습니다
   doctor                          이 보드의 계약 버전과 남은 작업
   migrations                      계약마다 무엇이 바뀌고 무엇을 해야 하는지 (보드 설정 없이도 돕니다)
   patterns                        쓸 수 있는 공통패턴
@@ -254,7 +256,7 @@ switch (cmd) {
     const outDir = positional[0];
     if (!outDir) die('shots: 내보낼 디렉터리를 지정합니다 — node wf.mjs shots _shots [id접두]');
     const { shootFrames } = await import('../core/export/shot.mjs');
-    await shootFrames(boardDir, resolve(boardDir, outDir), positional[1]);
+    await shootFrames(boardDir, resolve(boardDir, outDir), positional[1], { notes: !flag('no-notes') });
     break;
   }
   case 'doctor': {

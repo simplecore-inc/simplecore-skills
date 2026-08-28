@@ -1,7 +1,13 @@
 // One PNG per frame of a built board, for looking at the work and for sending it on.
 //
-//   node wf.mjs shots _shots        every frame
-//   node wf.mjs shots _shots p-     only the P cluster
+//   node wf.mjs shots _shots            every frame
+//   node wf.mjs shots _shots p-         only the P cluster
+//   node wf.mjs shots _shots --no-notes without each frame's annotation block
+//
+// `--no-notes` is for a capture that goes into a document which carries its own write-up. The
+// annotations are written for a reader looking at the board, and at a document's placed width
+// they are too small to read while still being large enough to look like the description — so
+// the page ends up carrying two descriptions, one of them illegible.
 //
 // **Every file the board writes is opened, and the count is one.** A board that declares an axis
 // to split along writes several; stopping at the first would leave three quarters of the frames
@@ -36,8 +42,9 @@ const frameRects = (pre) => {
  * @param boardDir the board folder — every file its settings say it writes is read from it
  * @param outDir where the PNGs go
  * @param prefix capture only the frames whose anchor contains this (`p-` for one cluster)
+ * @param opts `notes: false` drops each frame's annotation block from the capture
  */
-export async function shootFrames(boardDir, outDir, prefix = '') {
+export async function shootFrames(boardDir, outDir, prefix = '', { notes = true } = {}) {
   const { config } = await loadBoard(boardDir, { screens: false });
   const files = process.env.BOARD
     ? [process.env.BOARD]
@@ -57,7 +64,8 @@ export async function shootFrames(boardDir, outDir, prefix = '') {
       // where it would sit over a per-frame capture.
       await page.addStyle(
         ':root { --frame-zoom: 1 !important; } ' +
-        '.wf-sidebar, .flow-title, .readme, .board-header, .board-nav { display: none !important; }'
+        '.wf-sidebar, .flow-title, .readme, .board-header, .board-nav { display: none !important; }' +
+        (notes ? '' : ' .frame-notes { display: none !important; }')
       );
 
       // Rects are read in one pass: measuring between captures re-lays out the whole page.
