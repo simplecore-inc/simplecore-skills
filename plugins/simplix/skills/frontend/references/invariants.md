@@ -713,6 +713,21 @@ costs one press and the sentence costs the same room every day forever. Such a c
 `noticeKey` from the caller rather than fixing one, because the card belongs to the screen it
 stands on and the header control lists that screen's cards.
 
+**One key per message, never one per branch.** A screen that draws the same sentence two ways — a
+phone body and a desktop panel, two arms of a layout switch — is one message in two places, and it
+takes one `noticeKey`. Splitting it feels safe, because each branch then owns its own dismissal and
+nothing leaks between them; what it actually does is make the operator put the card down twice. The
+dismissal is kept per operator on the server **so that it follows them between devices**, which is
+the whole reason it is not in the browser, and a key per width throws exactly that away: they
+dismiss it at their desk and meet it again on the phone.
+
+**Watch what that reason is not.** 「A phone-only key would be restorable from nowhere, because the
+header lists only the keys the current screen registers」 is a true sentence about a header that
+draws no control on that width, and it stops being true the moment the header is fixed — which is a
+one-line change somebody will make. A reason that rests on a defect expires when the defect is
+repaired, and it expires silently, still written down and still being copied. The durable reason is
+the one above, which never depended on the header at all.
+
 **The board does not settle it by which primitive it drew.** A board can carry three vocabularies
 for a standing sentence — a page note, a sub-caption, a message — and only the message records
 whether it closes. Where the board drew a caption, or marked a message as drawing no close
@@ -809,3 +824,68 @@ painted page, because that is the only place it is decidable: a source rule cann
 `return null` from the twelve correct ones. It needs the screen open in the state that produces it
 (`?data=empty`, a fresh installation, a record nobody created), which is why the browser pass is
 the gate and a green build is not.
+
+## #78 A read that decides whether a field is required is never gated on that field
+
+A screen that previews before it commits usually grows one request builder, because the preview and
+the submit send the same DTO. The builder refuses to produce anything until every required field is
+filled, which is right for the submit and is the whole defect for the preview — as soon as one of
+those fields is required *because of what the preview says*, the gate and the answer that justifies
+it close a cycle.
+
+```tsx
+// ✖ one builder, two callers, and `recipientId` is required because of what the preview answers
+export function exportRequestOf(values: Values): RequestDTO | undefined {
+  if (!values.periodFrom || !values.periodTo || !values.recipientId) return undefined;
+  return { ...everything };
+}
+const preview = usePreview(exportRequestOf(values));   // never fires
+const canSubmit = Boolean(exportRequestOf(values));    // correct
+```
+
+**Nothing throws, and every screen inside the cycle is individually correct.** The tiles draw an
+em-dash over 「조건을 채우면 계산합니다」, which is true — nobody counted. The column preview says
+「목적과 대상과 기간을 채우면 …」, which is the hint it was written with. The journey rail shows the
+first step live, which is what an uncounted scope means. Each of those sentences is honest about a
+measurement nobody took, and together they describe a screen that cannot count fields it is looking
+at. **That is what makes this class hard to see: the bug is not in any of the parts, it is in the
+edge between two of them**, and a reviewer reading either half finds nothing wrong.
+
+**Split the builder by what each call actually reads.** The preview builder takes the fields the
+server reads for the preview and nothing else; the submit builder composes that with the rest:
+
+```tsx
+export function exportScopeOf(values: Values): ScopeDTO | undefined {
+  if (!values.periodFrom || !values.periodTo) return undefined;   // ✔ what the preview reads
+  return { ...scopeFields };
+}
+export function exportRequestOf(values: Values): RequestDTO | undefined {
+  const scope = exportScopeOf(values);
+  if (!scope || !values.recipientId) return undefined;
+  return { ...scope, recipientId: values.recipientId };
+}
+```
+
+**The server splits with it, or the fix is only half made.** A preview endpoint typed to the full
+request DTO still validates the field it never reads, so the narrowed client call comes back 400 and
+the screen is as blank as before. Give the preview its own DTO carrying the scope, and let the
+request DTO extend it with what only a submit needs — the same shape the backend handbook's
+`UpdateDTO extends CreateDTO` already uses. See `simplix:backend` #19.
+
+**The tell, when you are looking for it rather than at it: a required field whose requirement is
+stated by a sentence the screen has not been able to render yet.** 「개인정보가 포함되므로 받는
+사람을 반드시 지정합니다」 is a warning the preview produces, and 받는 사람 was the gate on the
+preview — the rule stood behind the field it makes mandatory. Any time a form explains why a field
+is required, ask where that explanation comes from, and whether the field gates it.
+
+**No script rule.** A builder returning `undefined` and feeding two callers is the ordinary shape of
+every preview-then-submit screen, so a check over it is almost all false positives, and what
+separates the defect from the pattern is a semantic fact — that one gated field's requirement is
+decided downstream. It is caught by asking the question of a gated read, which is why it lives here
+and not in `audit-frontend.mjs`.
+
+**Generalise past the preview.** The same cycle appears wherever a gate's condition is produced by
+the thing it gates: a filter list whose options come from a read the filter narrows, a tab whose
+count is fetched by a query enabled only when that tab is open, a permission check reading a field
+the refused call would have returned. Ask of every gated read: **does anything the gate demands
+depend on this read's answer?**
