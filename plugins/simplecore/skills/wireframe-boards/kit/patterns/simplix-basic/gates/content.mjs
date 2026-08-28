@@ -360,6 +360,27 @@ export const notesRegisterGate = {
   },
 };
 
+/**
+ * The same source with its comments taken out.
+ *
+ * <p><b>A comment is not screen copy, and a check that reads one refuses a build over a sentence no
+ * user will ever see.</b> A frame's comments talk about the board, and the vocabulary they talk
+ * about it in is frame references — which is exactly what this gate exists to keep out of the
+ * product's own words. Read together, the two make the gate refuse the frames that documented
+ * themselves best.
+ *
+ * <p>A line comment is recognised only where it opens the line, so a scheme-and-slashes inside a
+ * drawn string is left alone; anything wider would eat copy to catch a comment.
+ *
+ * @param src a screen file
+ * @returns the same text with block comments and whole-line comments blanked
+ */
+function withoutComments(src) {
+  return src
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/^[ \t]*\/\/.*$/gm, '');
+}
+
 export const refLeakGate = {
   id: 'refLeakGate',
   title: '보드 참조가 화면 문구에 없다',
@@ -374,7 +395,9 @@ export const refLeakGate = {
       // Cut the notes block: from `notes:` to the next top-level key.
       // The notes block runs from `notes:` to the next top-level key, or to the end of the object
       // when notes is last. Both shapes exist on the board.
-      const body = src.replace(/(^|\n) {2}notes:[\s\S]*?(?=\n {2}\w+:|\n\};|$)/g, '\n');
+      const body = withoutComments(
+        src.replace(/(^|\n) {2}notes:[\s\S]*?(?=\n {2}\w+:|\n\};|$)/g, '\n'),
+      );
       for (const m of body.matchAll(/\{\{([a-z0-9-]+)\}\}/g)) {
         bad.push(`${sc.file}: 화면 문구에 {{${m[1]}}} — 프레임 번호가 사용자에게 나간다`);
       }

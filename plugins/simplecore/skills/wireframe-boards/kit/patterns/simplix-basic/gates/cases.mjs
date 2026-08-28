@@ -137,6 +137,10 @@ export function cases(t) {
 
   add('refLeakGate', '화면 문구에 프레임 참조',
     ctxWith([screen('x-01-a', "  body: tSub('변경은 {{p-18-change-history}}에 남습니다'),")]), true);
+  add('refLeakGate', '주석 안의 참조는 정상 — 화면에 그려지지 않는다',
+    ctxWith([screen('x-01-a', "  // {{p-18-change-history}}\n  body: tSub('변경은 변경 이력에 남습니다'),")]), false);
+  add('refLeakGate', '블록 주석 안의 참조도 정상',
+    ctxWith([screen('x-01-a', "  /* {{p-18-change-history}} */\n  body: tSub('변경은 변경 이력에 남습니다'),")]), false);
   add('refLeakGate', 'notes 안의 참조는 정상',
     ctxWith([screen('x-01-a', "  notes: 'AUTH: x<br>여기서 여는 화면 — {{p-18-change-history}}',\n  body: tSub('변경은 변경 이력에 남습니다'),")]), false);
 
