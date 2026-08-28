@@ -458,6 +458,14 @@ export const handoverGate = {
 };
 
 /**
+ * A parked item that begins after something else on the same line.
+ *
+ * <p>The stray marker alone is not enough — a hyphen inside prose is one. What makes it an item is
+ * the shape that follows it: a token, a dash, and text.
+ */
+const MID_LINE_ITEM = /\S\s*[-*+]\s+\S+\s+[—-]{1,2}\s+\S/;
+
+/**
  * A parked decision is on the list, under the heading the project named, in the shape the
  * next session can act on.
  *
@@ -485,6 +493,16 @@ export const openItemsGate = {
     }
     const findings = [];
     for (const { line, no } of sectionUnder(text, heading) ?? []) {
+      // An item that does not begin its own line is on no list. Checking the shape of the lines
+      // that start with a bullet says nothing about an item fused onto the tail of the one before
+      // it — which is what a file appended to without a closing newline produces, and it leaves no
+      // mark: the gate stays quiet and the item is gone. So the item shape is looked for mid-line
+      // too, and found there it is a finding rather than a pass. The shape is demanded after the
+      // stray marker so that a hyphen inside prose, a date, or a kebab-case identifier is not one.
+      if (MID_LINE_ITEM.test(line)) {
+        findings.push(`${file}:${no}: a parked item starts in the middle of a line — it is on no list. Break it onto its own line, and end the file with a newline so the next one appended does not fuse too`);
+        continue;
+      }
       if (!/^\s*[-*+]\s+\S/.test(line)) continue;
       const body = line.replace(/^\s*[-*+]\s+/, '');
       if (!/^\S+\s+[—-]{1,2}\s+\S/.test(body)) {

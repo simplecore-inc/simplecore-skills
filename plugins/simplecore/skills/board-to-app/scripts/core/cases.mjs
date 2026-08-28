@@ -444,6 +444,35 @@ export function cases(t) {
     },
     false
   );
+  // A file appended to without a closing newline fuses the new item onto the tail of the last
+  // line. Every line that starts with a bullet still has its shape, so the shape check passes and
+  // the item is simply not there.
+  add(
+    'openItemsGate',
+    'an item fused onto the end of the line before it',
+    {
+      ...parked,
+      files: {
+        'notes/OPEN.md':
+          '# Open\n\n## Parked decisions\n\n- C-07 — the API reverses one at a time — board looks stale- D-02 — needs a role no environment has — blocked, not stale\n',
+      },
+    },
+    true
+  );
+  // A hyphen inside a parked line's own prose is not a stray item: what follows it is not a token,
+  // a dash and text. Refusing this one would make the check unusable on the lines it guards.
+  add(
+    'openItemsGate',
+    'a hyphen in the prose of a well-placed item',
+    {
+      ...parked,
+      files: {
+        'notes/OPEN.md':
+          '# Open\n\n## Parked decisions\n\n- C-07 — the 2026-08-27 run and its no-tty-long-running rule — board looks stale\n',
+      },
+    },
+    false
+  );
   // The declaration carries the heading's text, and a fragment of it names no heading anybody
   // wrote — accepted, it would satisfy the gate while pointing at whichever heading happens to
   // contain the fragment.
