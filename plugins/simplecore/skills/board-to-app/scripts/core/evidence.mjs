@@ -468,11 +468,18 @@ function evidenceSections(text, labels, placeholder = null) {
     // heading with the steps bulleted under it, and in the second the addresses are in the
     // bullets — so a reader that takes the label line alone comes back with the word 「조작」 and
     // nothing else, which is indistinguishable from a section that named no address.
+    //
+    // **`steps` keeps what `text` folds away.** The joined text answers 「did this section name an
+    // address anywhere」, which is what most readers want; it cannot answer 「is the address on the
+    // step that walked the journey」, because one section pays several demands and the folded
+    // string makes every step's address look like every other step's.
     if (line.startsWith(`**${labels.did}**`)) {
-      current.did.push({ text: line, no: i + 1 });
+      current.did.push({ text: line, no: i + 1, steps: [line] });
       operating = true;
     } else if (operating && (BLOCK_START.test(line) ? /^\s*[-*+]\s|^\s*\d+\.\s/.test(line) : line.trim())) {
-      current.did[current.did.length - 1].text += ` ${line.trim()}`;
+      const last = current.did[current.did.length - 1];
+      last.text += ` ${line.trim()}`;
+      last.steps.push(line.trim());
     } else if (line.trim()) {
       operating = false;
     }
@@ -1707,7 +1714,21 @@ export const aJourneyIsWalkedInTheRunningApplication = {
           );
           continue;
         }
-        const at = did.match(framed ?? /(?!)/)?.[0];
+        // **Judged line by line, because one section pays several demands.** A section that
+        // answers twenty-four demands at frame addresses and one in the product names both kinds
+        // of address in its 「what was operated」 block, and reading the block as one string calls
+        // that section driven at a frame address. What must not name a frame address is the line
+        // that says the journey was walked — so the journey line is found first, and only it is
+        // asked. Read as a block, this gate pushed a document into writing the frame address as
+        // prose to get past it, which loses the reader the address they would have copied.
+        // Every step that claims the journey is asked, not the first one: a section that opens the
+        // product on one step and then presses the way back at a frame address on the next has
+        // one honest step in front of the defect, and stopping at the first would read it as clean.
+        const at = section.did
+          .flatMap(({ steps, text: line }) => steps ?? [line])
+          .filter((line) => withoutFrames(line).includes(journey))
+          .map((line) => line.match(framed ?? /(?!)/)?.[0])
+          .find((match) => match !== undefined);
         if (at !== undefined) {
           findings.push(
             `${rel}:${section.no}: 「${section.title}」 answers a journey demand and was driven at `
@@ -2893,5 +2914,44 @@ export function cases(t) {
     'a journey whose steps are bulleted under the label rather than written on it',
     journeying(W02_EVIDENCE(WALKED_IN_BULLETS)),
     false
+  );
+
+  // **One section pays several demands, and only one of them is the journey.** A screen section
+  // opens its own frame address to compare two locales, takes its pictures there, and then opens
+  // the product to press the way back. Read as one string, the block names a frame address and the
+  // section is called driven at a frame route — which pushed a real document into writing that
+  // address as prose to get past the gate, losing the reader the address they would have copied.
+  const WALKED_BESIDE_FRAME_WORK =
+    '## 1. A-01 로그인 · 시스템 관리자\n\n'
+    + '**한 일**\n\n'
+    + `- \`${JOURNEY}?frame=a-01\`을 \`&lang=en\`과 \`&lang=ko\`로 각각 열어 문구를 대조했다\n`
+    + `- \`${JOURNEY}\`을 열어 목록에서 첫 행을 누르고, 상세에서 돌아가는 길을 눌렀다\n\n`
+    + `**챕터가 정한 것** — 돌아가는 길을 누르고 어느 화면으로 돌아오는지 적는다. ${JOURNEY}에서 확인한다.\n`
+    + '**본 것** — 목록 화면으로 돌아온다.\n\n'
+    + '![A-01 로그인](w02-org-shell/a-01.webp)\n\n';
+
+  t.add(
+    'aJourneyIsWalkedInTheRunningApplication',
+    'a journey walked in the product beside frame-address work in the same section',
+    journeying(W02_EVIDENCE(WALKED_BESIDE_FRAME_WORK)),
+    false
+  );
+
+  // The other side of the same line: the frame address is on the journey line itself, so the way
+  // back was pressed where a control has nowhere to go. Opening the product first does not undo it.
+  const WALKED_AT_A_FRAME_AFTER_OPENING_THE_PRODUCT =
+    '## 1. A-01 로그인 · 시스템 관리자\n\n'
+    + '**한 일**\n\n'
+    + `- \`${JOURNEY}\`을 열어 목록을 봤다\n`
+    + `- \`${JOURNEY}?frame=a-01\`에서 돌아가는 길을 눌렀다. ${JOURNEY}에서 확인한 셈이다\n\n`
+    + `**챕터가 정한 것** — 돌아가는 길을 누르고 어느 화면으로 돌아오는지 적는다. ${JOURNEY}에서 확인한다.\n`
+    + '**본 것** — 목록 화면으로 돌아온다.\n\n'
+    + '![A-01 로그인](w02-org-shell/a-01.webp)\n\n';
+
+  t.add(
+    'aJourneyIsWalkedInTheRunningApplication',
+    'the way back pressed at a frame address, on a line that also names the product',
+    journeying(W02_EVIDENCE(WALKED_AT_A_FRAME_AFTER_OPENING_THE_PRODUCT)),
+    true
   );
 }
