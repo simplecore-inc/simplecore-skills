@@ -79,6 +79,7 @@ const TYPE_OF = {
   headings: 'an object of role → heading',
   phrases: 'an object of role → a non-empty array of phrases',
   exceptions: 'an array of { id, reason }',
+  artefacts: 'an array of { path, by }, each carrying `neverCommitted` with its reason where the artefact must not be committed',
   deferrals: 'an object of key → { chapter, whenExists }',
   standard: `an object of { ${STANDARD_FIELDS.join(', ')} }, or an array of them where the board draws at several device widths`,
 };
@@ -149,6 +150,34 @@ export const configGate = {
         value.forEach((entry, i) => {
           if (!entry || typeof entry !== 'object' || typeof entry.id !== 'string' || typeof entry.reason !== 'string' || !entry.reason.trim()) {
             findings.push(`${key}[${i}] must name an id and the reason it is off — an exception a reader cannot question is an omission`);
+          }
+        });
+        continue;
+      }
+      if (spec.kind === 'artefacts') {
+        if (!Array.isArray(value)) {
+          findings.push(`${key} must be ${TYPE_OF.artefacts}`);
+          continue;
+        }
+        value.forEach((entry, i) => {
+          const named =
+            entry && typeof entry === 'object' && !Array.isArray(entry) &&
+            typeof entry.path === 'string' && entry.path.trim() &&
+            typeof entry.by === 'string' && entry.by.trim();
+          if (!named) {
+            findings.push(
+              `${key}[${i}] must name the path and the command that writes it — an entry with no `
+              + 'producing command is a file a person edits, and this census is of the ones nobody does'
+            );
+            return;
+          }
+          // The escape carries its reason for the same cause `disabledGates` does, and the cause is
+          // sharper here: a lock file rewritten by a local-link step is the entry somebody adds, and
+          // with the reason missing the next reader deletes the row and commits the file.
+          if ('neverCommitted' in entry && (typeof entry.neverCommitted !== 'string' || !entry.neverCommitted.trim())) {
+            findings.push(
+              `${key}[${i}] → ${entry.path}: exempted with no reason — an exception nobody can question is an omission`
+            );
           }
         });
         continue;
@@ -993,6 +1022,115 @@ export const importsTravelWithTheirCommit = {
   },
 };
 
+/**
+ * One `git status --porcelain=v1 -z` record per path, with a rename's source folded away.
+ *
+ * <p>`-z` rather than the quoted form: a path with a space or a non-ASCII byte in it comes back
+ * wrapped in quotes and C-escaped otherwise, and every catalogue this gate is pointed at is full
+ * of both. A rename writes the path it came from as a record of its own, which is one dirty file
+ * rather than two.
+ */
+function porcelain(out) {
+  const records = out.split('\0');
+  const entries = [];
+  for (let i = 0; i < records.length; i += 1) {
+    // `XY p` is the shortest a record can be, and the split's last element is the empty string
+    // after the trailing NUL.
+    if (records[i].length < 4) continue;
+    const code = records[i].slice(0, 2);
+    entries.push({ code, file: records[i].slice(3) });
+    if (code.includes('R') || code.includes('C')) i += 1;
+  }
+  return entries;
+}
+
+/**
+ * A generated artefact the working tree holds and HEAD does not.
+ *
+ * <p><b>Every gate a chapter closes on reads the working tree, and the close is about the
+ * commit.</b> Those are different questions and nothing in a gate's output tells them apart —
+ * which is what makes this invisible rather than merely unchecked. A pseudo-locale catalogue was
+ * regenerated, `pseudo:locale:check` answered 「every catalogue is current」, and the regenerated
+ * file was never committed; a board build passed because `wf.mjs build` rebuilds before it checks,
+ * over a built board no commit carried; twenty generated client files sat modified for a day,
+ * stale from a run against an older backend, ready to ride into whatever commit next named a
+ * directory. In all three the gate was right, its answer was honest, and the reader had no way to
+ * see the difference.
+ *
+ * <p><b>The subject is what a command writes, never every dirty file.</b> A tree with uncommitted
+ * work in it is what an agent mid-task always has, so a gate over all of it fires on ordinary work
+ * — and under a write-time hook that fails a write when an error names the file just written, it
+ * would fail every write the moment it happened. `generatedArtefacts` is therefore a census a
+ * project keeps by hand: nothing on disk says which files a command wrote.
+ *
+ * <p><b>It runs at every gate run rather than at a close, because a close is not a moment a gate
+ * can see.</b> The ledger's closed word is a standing set and not an event, so conditioning on it
+ * would fire from the first closed chapter onward — every bit as often — while staying silent on a
+ * project that has closed nothing, which is exactly the project forming the habit. And the state
+ * is unrecoverable afterwards: what a tree held at a past commit leaves no trace anywhere, which
+ * is the whole reason nobody has ever caught this in review.
+ */
+export const generatedArtefactsMatchHead = {
+  id: 'generatedArtefactsMatchHead',
+  title: 'a generated artefact the working tree holds and HEAD does not',
+  needs: ['generatedArtefacts'],
+  run: (ctx) => {
+    const declared = ctx.declared('generatedArtefacts');
+    if (!Array.isArray(declared)) return [];
+
+    const findings = [];
+    for (const entry of declared) {
+      // Shape is `configGate`'s question. Reading past what it would refuse rather than restating
+      // it keeps one mistyped entry from being reported twice under two ids.
+      const named =
+        entry && typeof entry === 'object' && !Array.isArray(entry) &&
+        typeof entry.path === 'string' && entry.path.trim() &&
+        typeof entry.by === 'string' && entry.by.trim();
+      if (!named) continue;
+      if (typeof entry.neverCommitted === 'string' && entry.neverCommitted.trim()) continue;
+      const { path, by } = entry;
+
+      // The pathspec goes to git rather than being matched here. A second implementation of
+      // wildmatch would agree with git right up until the day one of them changed, and on that day
+      // the gate would go quiet rather than wrong.
+      const status = ctx.git(['status', '--porcelain=v1', '-z', '--', path]);
+      if (!status.ok) return [`git status failed — ${status.out.trim().split('\n')[0]}`];
+
+      const dirty = porcelain(status.out);
+      if (!dirty.length) {
+        // Silence has two meanings and git says them the same way: the artefact is committed and
+        // current, or the pathspec matches nothing git has ever carried — a typo, a generator that
+        // writes somewhere else now, or output that is ignored and never travels in a commit. The
+        // second is a row that reads as coverage and holds nothing, which is the state this whole
+        // key exists to end, so it is separated here rather than inherited as a pass.
+        const tracked = ctx.git(['ls-files', '-z', '--', path]);
+        if (tracked.ok && !tracked.out.replace(/\0/g, '')) {
+          findings.push(
+            `${path}: no file git tracks matches it and nothing under it is dirty — the row reads as `
+            + `coverage and holds nothing. Either \`${by}\` writes somewhere else now, or its output `
+            + 'is ignored and never travels in a commit, in which case the row comes out'
+          );
+        }
+        continue;
+      }
+
+      for (const { code, file } of dirty) {
+        const what = code.includes('?')
+          ? 'is in the working tree and in no commit'
+          : code.includes('D')
+            ? 'is in HEAD and not in the working tree'
+            : 'differs from what HEAD carries';
+        findings.push(
+          `${file}: ${what} — \`${by}\` writes it, so every gate that reads it is answering about `
+          + 'this tree while the chapter closes on the commit. Commit it, or regenerate from a '
+          + 'clean tree and commit that'
+        );
+      }
+    }
+    return findings;
+  },
+};
+
 /** The gates that hold on any project that builds from a board. */
 export const CORE_GATES = [
   configGate,
@@ -1005,6 +1143,7 @@ export const CORE_GATES = [
   trailerGate,
   censusCountsBothSides,
   importsTravelWithTheirCommit,
+  generatedArtefactsMatchHead,
   // What a closed chapter leaves behind. They sit in a module of their own because they are the
   // longest thing here and they read documents rather than configuration.
   ...EVIDENCE_GATES,

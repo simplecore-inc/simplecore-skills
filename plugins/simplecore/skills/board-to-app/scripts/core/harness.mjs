@@ -52,11 +52,18 @@ export function cleanProject() {
  * files and commits exactly them. The second form is what a gate reading a commit's CONTENT needs
  * — a fixture whose history is all empty commits can prove a rule about messages and nothing about
  * what a commit carried.
+ *
+ * <p>`dirty` is written AFTER the commits and committed by nothing, which is the one state `files`
+ * cannot produce: `files` is written first and any commit naming the same path overwrites it, so a
+ * fixture built from those two alone always ends with a tree matching HEAD. A gate comparing the
+ * working tree against the commit has nothing to see there — it would pass its 「fires」 case for
+ * the wrong reason or not at all — so the difference between the two is spelled rather than
+ * arranged.
  */
 export function makeBuilders() {
   const roots = [];
 
-  const project = ({ config = {}, files = {}, commits = null, options = {} } = {}) => {
+  const project = ({ config = {}, files = {}, commits = null, dirty = null, options = {} } = {}) => {
     const root = mkdtempSync(join(tmpdir(), 'board-to-app-case-'));
     roots.push(root);
 
@@ -108,6 +115,18 @@ export function makeBuilders() {
           'commit', ...(paths.length ? [] : ['--allow-empty']), '-q', '-m', message,
         ]);
       }
+    }
+
+    // After the commits, so the tree and HEAD genuinely disagree. `null` deletes the path instead,
+    // which is the other half of that disagreement — a committed artefact the tree no longer has.
+    for (const [rel, body] of Object.entries(dirty ?? {})) {
+      const target = join(root, rel);
+      if (body === null) {
+        rmSync(target, { force: true });
+        continue;
+      }
+      mkdirSync(dirname(target), { recursive: true });
+      writeFileSync(target, body);
     }
 
     return loadProject(configPath, options);

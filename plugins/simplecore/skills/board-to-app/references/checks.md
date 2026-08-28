@@ -145,6 +145,44 @@ A grade the harness does not read is refused rather than defaulted: `check` and 
 a gate declaring one, because `grade: 'advisory'` otherwise reads as advisory in the source and is
 counted as an error in the run.
 
+### A gate reads the tree; a chapter closes on the commit
+
+Every gate in a project's `gates` list answers a question about the **working tree**, and a chapter
+closes on what they said — which is a claim about the **commit**. Those are different questions, and
+a run's output does not distinguish them, so a generated artifact can be right here and absent or
+stale in what anybody would clone, with every gate green over it. Three sightings in one afternoon,
+all the same shape: a pseudo-locale catalogue was regenerated and `pseudo:locale:check` answered
+「every catalogue is current」 about a file no commit carried; a board build passed because
+`wf.mjs build` rebuilds before it checks, over a built board that had been left out of the commit
+carrying its eight source fixes; twenty generated client files sat modified for a day, stale from a
+run against an older backend, waiting to ride into whatever commit next named a directory.
+
+**What makes this invisible is that the gate is right.** It is not a broken check and its answer is
+not wrong — it answered the question it was asked, about the tree in front of it. The person reading
+the output has no way to see the difference, and **the fix is what produces the green**: somebody
+regenerates, the gate goes green, and regenerating is exactly the step that leaves the artifact
+uncommitted. So the ordinary loop of noticing something stale and putting it right *is* the loop
+that hides this, which is why nobody catches it in review and why it leaves no trace afterwards —
+what a tree held at a past commit is unrecoverable from anywhere.
+
+`generatedArtefactsMatchHead` holds it, and two things about its shape are the rule rather than the
+implementation:
+
+- **The subject is what a command writes, never every dirty file.** An agent mid-task has
+  uncommitted work by construction, so a rule over the whole tree fires on ordinary work — and
+  under a write-time hook that fails a write when an error names the file just written, it would
+  fail every write at the moment it happened. `generatedArtefacts` is a census a project keeps by
+  hand for the same reason: nothing on disk says which files a command wrote.
+- **It runs at every gate run rather than at a close, because a close is not a moment a gate can
+  see.** A ledger's closed word is a standing set and not an event, so conditioning on it would
+  fire from the first closed chapter onward — every bit as often — while staying silent on a
+  project that has closed nothing, which is precisely the project forming the habit.
+
+A row that matches nothing git has ever carried is itself a finding. A census entry is only worth
+what it checks, and one whose pathspec has gone stale — the generator writes elsewhere now, or its
+output is ignored and never travels in a commit — reads as coverage while holding nothing, which is
+the state the whole key exists to end.
+
 ### What `check` prints is a contract, not a layout
 
 A write-time hook does not call the harness — it runs `check` and reads the grades out of the text,

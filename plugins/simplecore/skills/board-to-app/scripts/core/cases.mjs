@@ -14,6 +14,7 @@ function variant(over = {}) {
     config: { ...base.config, ...(over.config ?? {}) },
     files: { ...base.files, ...(over.files ?? {}) },
     commits: over.commits ?? null,
+    dirty: over.dirty ?? null,
     options: over.options ?? {},
   };
 }
@@ -35,6 +36,33 @@ export function cases(t) {
   add('configGate', 'a heading map missing a role', { config: { chapterHeadings: { prerequisites: 'Before' } } }, true);
   add('configGate', 'a key nobody reads', { config: { handOverFile: 'notes/HANDOVER.md' } }, true);
   add('configGate', 'an exception with no reason', { config: { disabledGates: [{ id: 'ledgerGate' }] } }, true);
+  // A census entry naming no producing command is a file a person edits, and the whole reason the
+  // subject is narrow is that such a file is dirty for ordinary reasons all day.
+  add(
+    'configGate',
+    'a generated artefact with no command that writes it',
+    { config: { generatedArtefacts: [{ path: 'build/board.html' }] } },
+    true,
+  );
+  add(
+    'configGate',
+    'an artefact exempted from being committed with no reason given',
+    { config: { generatedArtefacts: [{ path: 'pnpm-lock.yaml', by: 'pnpm install', neverCommitted: '' }] } },
+    true,
+  );
+  add(
+    'configGate',
+    'a census naming each artefact and what writes it',
+    {
+      config: {
+        generatedArtefacts: [
+          { path: 'build/board.html', by: 'npm run build' },
+          { path: 'pnpm-lock.yaml', by: 'pnpm install', neverCommitted: 'the local-link step rewrites it with absolute paths' },
+        ],
+      },
+    },
+    false,
+  );
   // A vocabulary with an empty role matches nothing, and a check that matches nothing reports the
   // same zero as one with nothing to find — which is why an empty list is a finding rather than a
   // shorter list.
@@ -761,5 +789,98 @@ export function cases(t) {
       }],
     },
     false
+  );
+  // generatedArtefactsMatchHead — every gate reads the working tree, and a chapter closes on the
+  // commit. The census is the subject, so the pair below is really two pairs: the artefact, and
+  // the boundary that keeps the rule off every file a person is in the middle of editing.
+  const ARTEFACT = [{ path: 'build/board.html', by: 'npm run build' }];
+  const BUILT = 'feat: the built board\n\nChapter: none';
+  // The pseudo-locale sighting, and the codegen one: somebody regenerated, the gate that reads the
+  // output went green, and the output never reached a commit.
+  add(
+    'generatedArtefactsMatchHead',
+    'an artefact regenerated in the tree and left out of the commit',
+    {
+      config: { generatedArtefacts: ARTEFACT },
+      commits: [{ message: BUILT, files: { 'build/board.html': '<board>one</board>\n' } }],
+      dirty: { 'build/board.html': '<board>two</board>\n' },
+    },
+    true,
+  );
+  add(
+    'generatedArtefactsMatchHead',
+    'an artefact the tree holds and no commit carries',
+    {
+      config: { generatedArtefacts: ARTEFACT },
+      commits: [{ message: 'feat: the source\n\nChapter: none', files: { 'src/board.mjs': 'export const frames = [];\n' } }],
+      dirty: { 'build/board.html': '<board/>\n' },
+    },
+    true,
+  );
+  add(
+    'generatedArtefactsMatchHead',
+    'an artefact HEAD carries and the tree no longer has',
+    {
+      config: { generatedArtefacts: ARTEFACT },
+      commits: [{ message: BUILT, files: { 'build/board.html': '<board/>\n' } }],
+      dirty: { 'build/board.html': null },
+    },
+    true,
+  );
+  // A row that matches nothing git has ever carried reads as coverage and holds nothing, which is
+  // the state the whole key exists to end — so it is a finding rather than an inherited pass.
+  add(
+    'generatedArtefactsMatchHead',
+    'a row naming a path git has never carried',
+    {
+      config: { generatedArtefacts: [{ path: 'build/moved-away.html', by: 'npm run build' }] },
+      commits: [{ message: BUILT, files: { 'build/board.html': '<board/>\n' } }],
+    },
+    true,
+  );
+  add(
+    'generatedArtefactsMatchHead',
+    'the artefact committed and current',
+    {
+      config: { generatedArtefacts: ARTEFACT },
+      commits: [{ message: BUILT, files: { 'build/board.html': '<board/>\n' } }],
+    },
+    false,
+  );
+  // The escape, exercised while the file is genuinely dirty — a lock file a local-link step
+  // rewrites is dirty on every machine that ran it, and a gate with no way to say so is one
+  // somebody turns off within a day.
+  add(
+    'generatedArtefactsMatchHead',
+    'a dirty artefact the project says is never committed',
+    {
+      config: {
+        generatedArtefacts: [{
+          path: 'pnpm-lock.yaml',
+          by: 'pnpm install',
+          neverCommitted: 'the local-link step rewrites it with absolute paths under one machine home directory',
+        }],
+      },
+      commits: [{ message: 'chore: the lock file\n\nChapter: none', files: { 'pnpm-lock.yaml': 'lockfileVersion: 9\n' } }],
+      dirty: { 'pnpm-lock.yaml': 'lockfileVersion: 9\nlinked: true\n' },
+    },
+    false,
+  );
+  // The boundary, and the case that makes the gate affordable at all: an agent mid-task has
+  // uncommitted work by construction. A rule over every dirty file would fire on all of it — and
+  // under a write-time hook that fails a write when an error names the file just written, it would
+  // fail every write the moment it happened.
+  add(
+    'generatedArtefactsMatchHead',
+    'a source file being edited, which no command writes',
+    {
+      config: { generatedArtefacts: ARTEFACT },
+      commits: [{
+        message: BUILT,
+        files: { 'build/board.html': '<board/>\n', 'src/board.mjs': 'export const frames = [];\n' },
+      }],
+      dirty: { 'src/board.mjs': "export const frames = ['a-01'];\n" },
+    },
+    false,
   );
 }

@@ -53,6 +53,11 @@
 
   "gates": [],
 
+  "//generatedArtefacts": "The census of files no person writes, and the command that writes each. Every gate above reads the WORKING TREE and a chapter closes on the COMMIT — so a generator runs, the gate that reads its output goes green, the output is never committed, and nothing in the report can show it, because the gate is not broken and its answer is not wrong. `path` is a git pathspec, handed to git rather than matched here. `by` is required and is what keeps this off every file a person is in the middle of editing: an entry with no producing command is a file somebody edits, and such a file is dirty for ordinary reasons all day. Add `neverCommitted` with the reason for an artefact that must never be committed — a lock file a local-link step rewrites is dirty on every machine that ran it, and a gate with no way to say so is one somebody turns off within a day. Nothing on disk says which files a command wrote, so this cannot be derived.",
+  "generatedArtefacts": [
+    { "path": "<git pathspec for what a command writes>", "by": "<the command that writes it>" }
+  ],
+
   "//commitPolicy": "Whether this build may commit and push without asking, answered once so it is never asked again: `commit` commits as the work lands and leaves pushing to the user, `commitAndPush` does both, `ask` stops before each commit. It does NOT override a repository whose own rules already answer this — it is for the repository that says nothing, and for a project that would rather have the answer in one machine-readable place. Delete the line and, with the repository silent too, the build asks: safe, and it costs the build the ability to run unattended, since the two gates that read commits see nothing until somebody is present. This settles PERMISSION only; what a commit message says beyond the two trailers is this repository's own rule.",
   "commitPolicy": "ask",
 

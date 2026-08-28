@@ -182,6 +182,23 @@ export const SCHEMA = {
   openItemsFile: { kind: 'file', absent: 'parked lines go in the state ledger' },
   openItemsHeading: { kind: 'text', requiredWith: 'openItemsFile', absent: 'the config is incomplete — report it rather than choosing a heading' },
   gates: { kind: 'list', closing: true, absent: 'nothing mechanical holds a chapter closed; say so once per session and close on the persona runs alone' },
+  // The census of files no person writes — a build output, a generated client, a derived
+  // catalogue — with the command that writes each one, and the reason where one must never be
+  // committed.
+  //
+  // **Every gate above reads the working tree, and a chapter closes on what they said.** The
+  // difference between those two sentences is this key's whole subject: a generator runs, the gate
+  // that reads its output goes green, and the output is never committed — so the verdict a chapter
+  // closed on is about a tree that exists on one machine. Nothing in the report can show it,
+  // because the gate is not broken and its answer is not wrong; it answered the question it was
+  // asked.
+  //
+  // **A census rather than a filter, which is why `by` is required.** An entry with no producing
+  // command is a file somebody edits, and a file somebody edits is dirty for ordinary reasons all
+  // day. Restricting the subject to what a command writes is what keeps this from firing on every
+  // agent mid-task, and it is the reason the key cannot be derived — nothing on disk says which
+  // files a command wrote.
+  generatedArtefacts: { kind: 'artefacts', absent: 'a generator\'s output is judged in the working tree and nowhere else, so an artefact a gate rebuilt and passed can be one no commit carries — and the regeneration that made the gate green is what hides it' },
   // Whether the build may commit and push without asking. **No default beyond `ask`**, and `ask`
   // is what an undeclared key means: a skill that assumed permission would take it in every
   // repository that installed it, and the one thing a build must not do on its own initiative is
