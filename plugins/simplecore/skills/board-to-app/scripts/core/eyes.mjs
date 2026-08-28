@@ -66,6 +66,36 @@ const says = (list, text) => list.some((phrase) => text.toLowerCase().includes(p
 const said = (list, text) => list.find((phrase) => text.toLowerCase().includes(phrase));
 
 /**
+ * The same words appear in three grammatical forms and only one of them hands anything to
+ * anybody. 「사람이 판정할 수 없는 아이디」 says a person CANNOT read it, which is the opposite of
+ * an assignment; 「사람이 읽다가 나왔다」 recounts a reading somebody already did; and only
+ * 「사람이 판정한다」 asks for one. A substring test cannot separate them, so it reported two
+ * paragraphs that assign nothing — and a gate that fires on the negation of its own subject
+ * teaches the people reading it that the gate is noise, which costs more than the two findings
+ * were worth.
+ *
+ * The marker has to sit in the same clause as the phrase, which is why the window stops at
+ * sentence punctuation: a following sentence recounting something in the past says nothing
+ * about whether this one assigns a reading.
+ *
+ * `기계가 판정하지 못` is itself a phrase on the assigning list and is unaffected — the negation
+ * there is part of the phrase rather than something following it, and what follows it is 「한다」.
+ */
+const NOT_ASSIGNING = /^[^.。\n]{0,6}?(수\s*없|지\s*못|지\s*않|다가|았다|었다|였다|나왔)/;
+
+const assigned = (list, text) => {
+  const low = text.toLowerCase();
+  return list.find((phrase) => {
+    for (let from = 0; ; ) {
+      const at = low.indexOf(phrase, from);
+      if (at < 0) return false;
+      if (!NOT_ASSIGNING.test(low.slice(at + phrase.length))) return true;
+      from = at + phrase.length;
+    }
+  });
+};
+
+/**
  * One statement, as the unit both vocabularies have to be satisfied inside.
  *
  * **Window-wide matching is what a loose pattern walks through.** Asked only whether a reader
@@ -142,7 +172,7 @@ export const eyesRuleNamesItsReader = {
       parts.forEach((block, index) => {
         if (HEADING_ONLY(block)) return;
         const body = block.lines.filter((line) => !/^\s*#/.test(line)).join('\n');
-        const assigning = said(words.assigns, body);
+        const assigning = assigned(words.assigns, body);
         if (!assigning) return;
 
         const window = [
@@ -282,6 +312,24 @@ const CLAUDE_NAMED = `# 프로젝트
 written 닫힘, never by the agent that took the captures.
 `;
 
+/** A person is named as UNABLE to read the value — the opposite of handing them a reading. */
+const EYES_NEGATED = `# 검증 결과
+
+## 축이 가리키는 것의 이름
+
+**이름을 찾지 못하면 아이디 대신 축 자신의 라벨을 적는다** — \`01a00b79…\`는 사람이 판정할 수 없는
+데다 어느 축의 값인지도 알려 주지 않는다.
+`;
+
+/** A reading that already happened, recounted — not one being assigned to anybody. */
+const EYES_RECOUNTED = `# 검증 결과
+
+## 프롭으로 다니는 번역 키
+
+키 열여덟이 세 언어 모두에 정의되지 않은 채 원시 키로 찍히고 있었고, **규칙이 아니라 규칙이 가리킨
+파일을 사람이 읽다가 나왔다.**
+`;
+
 export function cases(t) {
   const project = (files) => t.project({
     config: { eyesDocuments: ['docs/evidence/00-overview.md', '.claude/CLAUDE.md'], eyesPhrases: PHRASES },
@@ -321,6 +369,18 @@ export function cases(t) {
     'eyesRuleNamesItsReader',
     'a paragraph teaching the rule, with its specimen in backticks rather than in 「」',
     project({ 'docs/evidence/00-overview.md': EYES_SPECIMEN }),
+    false
+  );
+  t.add(
+    'eyesRuleNamesItsReader',
+    'a person named as unable to read a value, which assigns nobody anything',
+    project({ 'docs/evidence/00-overview.md': EYES_NEGATED }),
+    false
+  );
+  t.add(
+    'eyesRuleNamesItsReader',
+    'a reading recounted in the past rather than assigned to anybody',
+    project({ 'docs/evidence/00-overview.md': EYES_RECOUNTED }),
     false
   );
   t.add(
