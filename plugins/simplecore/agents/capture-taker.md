@@ -186,10 +186,21 @@ says it was read and not photographed.
 rectangle, and nothing in your reading of the screen says so.** You read the page, the page was
 right, and the file on disk is empty — those are consistent with each other and only the file knows.
 
-**So check the file, and check it by size rather than by opening it.** A capture of a built screen
-runs to tens of thousands of bytes because a screenshot of text and borders does not compress; a
-blank one is a fraction of that. Compare against the other captures in the same folder — an order
-of magnitude below its siblings is a blank picture, not a sparse screen.
+**So check the file, and check it by size rather than by opening it.** A screenshot of text and
+borders does not compress and an empty canvas has nothing to compress, so the two part company by
+about a factor of two and a half — a plain white 1440×900 lands near 2,400 bytes where the
+sparsest real screen a board draws, a sign-in form on a plain ground, lands near 6,500.
+
+**Two things change that number and neither is the screen**, which is why the comparison is
+against siblings rather than against a figure you remember. Encoding quality moves the same pixels
+by a third, and a device pixel ratio of two moves them by four — so a blank capture at twice the
+ratio outweighs a real capture at one. **Compare like with like**: the other captures in the same
+folder, taken through the same window by the same driver. Roughly half what its siblings weigh, at
+the same canvas, is a blank picture rather than a sparse screen.
+
+**Never make a file larger to settle the question.** Re-encoding at a higher quality moves a real
+screen and leaves a blank one where it is, so it clears the number without answering anything —
+and the gate that reads this afterwards is a warning precisely so that nobody has a reason to.
 
 **An empty-state screen is not a blank capture.** A list with no rows still draws the shell, the
 header, the tiles and the empty-state wording, and comes out the same size as any other. If an
@@ -231,7 +242,13 @@ line names.
 ## What you were given, and only that
 
 - **The address to open**, and the capture names to produce. Take those captures and no others.
-- **The browser session name.** Use it on every command and close it at the end.
+- **The browser session name.** Use it on every command, and **close it by name before you report**
+  — `close` on that name, never the driver's 「close everything」, which is not scoped to you and
+  ends every other agent's session. The session holds a full browser between commands and outlives
+  your last command, so one left open is one browser resident until something else reclaims it.
+  **Close it on the way out of a run that failed too**: a page that would not load, a control you
+  could not reach, a capture you could not take are all reasons to report and stop, and none of
+  them is a reason to leave the browser open.
 - **The sign-in account.** The password comes from the project's development configuration and never
   appears in your reply, your log, or a capture caption.
 - **The server is already running.** Never restart it. If a page will not load, say so and stop.

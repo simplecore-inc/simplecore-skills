@@ -2069,6 +2069,14 @@ not — running it is. Where a reading is cheap, take it before the sentence lea
 message says it could not read the board is one command away from telling you exactly why, and two
 lines of source will hand you a mechanism that is plausible, specific, and wrong.
 
+**A file-name search answers which files contain a word, never which files do the thing.** `grep -l`
+and its cousins match a comment that denies the behaviour exactly as they match the behaviour, so a
+brief built from a hit list states as fact what the file may say the opposite of — 「that component
+already draws on canvas」, from a file whose comment reads *drawn on a canvas-free grid of spans*.
+It is the cheapest possible mistake to make and it arrives with an instruction's authority: the
+agent builds on it, and the correction costs a round trip. **Open the hit before writing it into a
+brief**, or hand over the search and let the agent read it.
+
 **Send it anyway when the reading is not yours to take**, and mark which half it is. 「the anchor
 is doubled」 and 「it fails here, and here are the two lines I would look at」 cost the reader very
 differently when the mechanism turns out wrong: the first has to be disproved, the second is

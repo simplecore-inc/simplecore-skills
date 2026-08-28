@@ -279,6 +279,25 @@ That failure is the reason this skill exists.
    standing sentences it re-read and found still true, what it left running, whether
    verification passed. No screen dumps, no running commentary, no images.
 
+   **Whether that return arrives at all is decided by how the walker was launched, and
+   the brief says which.** A subagent's final message comes back to whoever dispatched
+   it; a **named** agent's does not — it has to send one, and nothing about writing a
+   full report as ordinary text tells it that nothing arrived. So a brief for a named
+   walker carries the mechanism in the words that walker will need it in — *send it, do
+   not write it*, and who to send it to. **It belongs in the walker's own definition as
+   well as in the brief**: a walker reads its definition and never reads this file, so a
+   rule living only here reaches nobody who could act on it.
+
+   **The brief most likely to leave it out is the one whose subject is the mechanism.**
+   The coordinator's attention is on the cluster it is handing over, and beside that the
+   mechanism reads as housekeeping — so it goes in on the same pass as the cluster, never
+   as a check afterwards.
+
+   > **Read it this way and it is wrong**: 「it wrote the report, so it has reported」. Two
+   > named walkers in one session each cost three rounds of asking, both believing they
+   > had reported and neither having sent anything — and from the coordinator's side both
+   > read as agents that went quiet after committing.
+
    **The deliverable lands in a file; the report summarises it.** An agent that fixes
    code leaves its work in the tree, so a report that never arrives costs a look at
    the diff and nothing more. An agent whose output is a *judgment* — a contract, an
@@ -723,14 +742,9 @@ repository to find out what happened, which spends the context the subagent exis
 protect. Ask once. If the answer does not come, **verify the few claims that decisions rest
 on — by running the thing, not by reading the diff** — and move on rather than chasing.
 
-**Before asking twice, check how that agent's report was supposed to reach you.** An agent
-launched as a *named teammate* does not return its final message; it has to send one, and an
-agent that wrote a full report as ordinary text believes it has reported while nothing has
-arrived. Two of these in one session cost three rounds of asking each. So the second ask
-names the mechanism rather than repeating the request — *send it, do not write it* — and
-every brief for a named agent says which of the two it is. The instruction belongs in the
-agent's own definition as well as here: an agent reads its definition and never reads this
-file, so a rule that lives only here reaches nobody who could act on it.
+**Before asking twice, check how that agent's report was supposed to reach you**, and let the
+second ask name the mechanism rather than repeat the request → *The unit of work is a cluster,
+and one agent takes one cluster* § 4, where the brief that settles it is written.
 
 **A reading that contradicts a report is a clock before it is a defect.** Measuring rather than
 taking a walker's word earns its keep — but a file read one commit behind the walker who just

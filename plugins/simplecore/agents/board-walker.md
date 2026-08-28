@@ -68,6 +68,13 @@ The dev server is yours to operate on the local machine — start, restart, and 
 needs, under the three rules in `references/walking-a-cluster.md` (a stale build lies; reclaim only
 a port you own; leave it as you found it). Remote hosts of any kind are not yours: there, ask.
 
+**The browser session is the same kind of resource, and it is the one that gets left behind.** A
+named session holds a full browser between commands and ends only when something closes it — not
+when your last command returns, and not when you do. **Open one session for the whole cluster
+rather than one per frame**, close it by name before you report, and say in the report that you
+closed it. **Never the driver's 「close everything」**: the daemon is shared, so that command ends
+every other agent's session too. Where you cannot name yours, leave it and say so.
+
 ## Walk it
 
 1. **Find out which frames exist.** Try to reach each one. A frame whose route renders nothing the

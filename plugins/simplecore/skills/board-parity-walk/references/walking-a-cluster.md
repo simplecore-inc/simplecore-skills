@@ -20,6 +20,13 @@ start and the stop commands precisely so no walker works them out twice.
    identified as this project's development server is left alone.
 3. **Leave it as you found it.** Servers this session started are stopped when the work
    no longer needs them, and a walker says in its report what it left up.
+4. **A browser session is left the same way, and it is the one that gets forgotten.** A
+   named session holds a full browser between commands and ends only when something
+   closes it by that name — not when the command returns, and not when the walker does.
+   **One session for the cluster, not one per frame**, closed on every path out including
+   the failing one. **Never the driver's 「close everything」**: the daemon is shared, so
+   that ends every other agent's session. Where the name is unknown, leave it and report
+   that rather than reaching for the flag that clears the lot.
 
 Remote hosts of any kind — production, staging, shared development — are outside this
 entirely. There, ask.

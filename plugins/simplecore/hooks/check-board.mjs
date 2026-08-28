@@ -234,8 +234,15 @@ function main() {
     return 0;
   }
 
-  // A board, not just any HTML: the frame vocabulary is the signature.
-  if (!/class="[^"]*\bframe\b/.test(html)) return 0;
+  // A board, not just any HTML: the signature is the SAME shape the audit
+  // reads — an <article> carrying the frame class. A bare `class="frame"` on
+  // any element is not it: page templates use `frame` for the outer wrapper
+  // (diagram-design's does), and gating on the looser pattern reported the
+  // whole board contract against a file with no frames in it at all. Keep this
+  // test and FRAME_OPEN in step; a gate looser than what it gates is the bug.
+  FRAME_OPEN.lastIndex = 0;
+  if (!FRAME_OPEN.test(html)) return 0;
+  FRAME_OPEN.lastIndex = 0;
   if (!gateEnabled(dirname(abs), 'boardCheck')) return 0;
 
   const {errors, reviews} = audit(html);

@@ -127,11 +127,26 @@ and each of these was found by somebody looking, after everything was green:
   meant to hide stayed in plain sight
 - a **fixture** answered where the server had since started answering differently,
   so two contracts on one address disagreed and nothing failed
+- a frame that **declares what data it needs** rendered nothing at all on an
+  installation where that data was still empty: the query it waited on was disabled
+  rather than answered, a disabled query never resolves, and the wait therefore never
+  ended. The route answered 200, raised no console error and painted the chrome —
+  which is what every other check in the arrangement reads as a pass. **The frame it
+  hit hardest was the one about an empty project**, because that frame is the only one
+  whose whole subject is the state that triggers it, and 125 frames declared the same
+  dependency
 
 The shape repeats: **absence costs nothing to build, trips no check, and reads
 clean.** So judgment is looking, and looking means pressing — open the tabs behind
 the first one, click the trail, run the real detector over the real data, and delete
-the fixture to see what the screen draws without it. A rule that can be written for
+the fixture to see what the screen draws without it.
+
+**And open the frame on the state it is about, not only on a full installation.** An
+empty-state frame photographed against seeded data is the one case where the sample
+that makes every other frame legible is the sample that hides the defect: the screen
+works because the data it was waiting for happens to be there. Whatever a frame's
+subject is — nothing uploaded yet, nobody invited yet, the first run — the
+installation has to actually be in that state while somebody looks. A rule that can be written for
 any of these is worth more than the fix, because the next instance is already being
 built.
 

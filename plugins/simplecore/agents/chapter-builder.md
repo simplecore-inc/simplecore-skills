@@ -36,6 +36,11 @@ Your brief names the port, the database and the checkout you work in. **Use thos
 - **The state ledger has one writer.** Working alone, write your chapter's row when it closes. **In
   a wave, do not touch it at all** — the coordinator writes every row at the barrier. If you find a
   row half-written, report that rather than repairing it.
+- **A browser session is a resource too, and the only one that survives you.** A named session
+  holds a full browser between commands and ends when something closes it, not when your last
+  command returns. Open one for the whole chapter rather than one per persona line, close it by
+  name before you report, and say that you did. **Never the driver's 「close everything」** — the
+  daemon is shared and that command ends every other agent's session.
 - **No port, no database, no checkout in your brief?** Then you are the only agent running. Say so
   in your report and work on the project's default instance — do not guess a second port and do not
   borrow one that answers.
