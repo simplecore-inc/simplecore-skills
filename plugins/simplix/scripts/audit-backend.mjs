@@ -278,6 +278,191 @@ function entityIdIndex(files) {
   _entityIdIndex = map;
   return map;
 }
+let _fieldIndex = null;
+/**
+ * Which fields each class in this repository declares, by its simple name.
+ *
+ * <p>Nested classes are indexed under their own simple name rather than `Outer.Inner`, because that
+ * is how a mapper writes them — a DTO container's inner class is imported and used bare. Two
+ * classes sharing a simple name merge, which widens what a rule reading this considers "declared on
+ * both sides" and never narrows it; the rules built on it fire only when a name is on both sides
+ * and skipped, so a merge can hide a defect and cannot invent one.
+ *
+ * @param files every Java source in the repository
+ * @returns simple class name → the fields it declares
+ */
+function fieldIndex(files) {
+  if (_fieldIndex) return _fieldIndex;
+  const map = new Map();
+  for (const abs of files) {
+    let src;
+    try { src = fs.readFileSync(abs, "utf8"); } catch { continue; }
+    const clean = stripCommentsAndStrings(src);
+    for (const cls of clean.matchAll(/\b(?:public |protected |private )?(?:static |final |abstract )*class\s+(\w+)/g)) {
+      const body = braceBody(clean, cls.index + cls[0].length);
+      if (!body) continue;
+      const held = map.get(cls[1]) ?? new Set();
+      // Only this class's own fields: a nested class's are indexed under its own name, and the
+      // brace walk hands back the whole body including them, so the depth is checked by counting
+      // the braces before each match.
+      for (const f of body.matchAll(/(?:^|\n)\s{4,8}private\s+(?:final\s+)?[\w<>,\s[\]]+?\s+(\w+)\s*;/g)) {
+        held.add(f[1]);
+      }
+      if (held.size) map.set(cls[1], held);
+    }
+  }
+  _fieldIndex = map;
+  return map;
+}
+/**
+ * The `entity.setX(...)` calls a method body makes at its own statement level.
+ *
+ * <p>Only the top level: a set inside `if (dto.getX() != null)` is a guarded write, which is what a
+ * batch endpoint does and is not an overwrite. The argument text travels with each one so a caller
+ * can ask where the value came from.
+ *
+ * @param body a brace-balanced method body, braces included
+ * @returns one entry per set — the field name with its first letter lowered, and the argument text
+ */
+function topLevelSets(body) {
+  const out = [];
+  let depth = 0;
+  for (let i = 0; i < body.length; i += 1) {
+    const ch = body[i];
+    if (ch === "{") { depth += 1; continue; }
+    if (ch === "}") { depth -= 1; continue; }
+    if (depth !== 1) continue;
+    const m = /^\w+\.set([A-Z]\w*)\s*\(/.exec(body.slice(i, i + 80));
+    if (!m) continue;
+    let j = i + m[0].length;
+    let paren = 1;
+    for (; j < body.length && paren > 0; j += 1) {
+      if (body[j] === "(") paren += 1;
+      else if (body[j] === ")") paren -= 1;
+    }
+    out.push({
+      field: m[1][0].toLowerCase() + m[1].slice(1),
+      arg: body.slice(i + m[0].length, Math.max(i + m[0].length, j - 1)),
+    });
+    i = j - 1;
+  }
+  return out;
+}
+
+/**
+ * The methods a body calls at its own statement level, handing the entity to them.
+ *
+ * @param body a brace-balanced method body
+ * @returns the called method names
+ */
+function topLevelEntityHelpers(body) {
+  const out = new Set();
+  let depth = 0;
+  for (let i = 0; i < body.length; i += 1) {
+    const ch = body[i];
+    if (ch === "{") { depth += 1; continue; }
+    if (ch === "}") { depth -= 1; continue; }
+    if (depth !== 1) continue;
+    const m = /^(?:this\.)?(\w+)\s*\(\s*entity\s*[,)]/.exec(body.slice(i, i + 60));
+    if (m) out.add(m[1]);
+  }
+  return out;
+}
+
+let _emptyDefaultIndex = null;
+/**
+ * Which of each entity's String fields hold the empty string as a real value.
+ *
+ * <p>A column declared `nullable = false` and initialised to `""` is one where empty MEANS
+ * something — 「every workplace」 for a scope key, 「no pack raised it」 for a provenance id. The
+ * field is not optional and it is not blank-forbidding; it is neither, and only the entity says so.
+ *
+ * @param files every Java source in the project
+ * @returns entity simple name → the field names it initialises to the empty string
+ */
+function emptyDefaultIndex(files) {
+  if (_emptyDefaultIndex) return _emptyDefaultIndex;
+  const map = new Map();
+  for (const abs of files) {
+    let src;
+    try { src = fs.readFileSync(abs, "utf8"); } catch { continue; }
+    if (!src.includes('""')) continue;
+    // The stripper blanks a literal's CONTENTS and keeps its quotes, so `= ""` survives as
+    // itself while `= "x"` becomes `= " "` — the match below therefore reads the empty default
+    // and nothing that merely looks like one.
+    const clean = stripCommentsAndStrings(src);
+    if (!/@Entity\b/.test(clean)) continue;
+    const held = new Set();
+    for (const m of clean.matchAll(/private\s+String\s+(\w+)\s*=\s*""\s*;/g)) held.add(m[1]);
+    if (held.size) map.set(path.basename(abs, ".java"), held);
+  }
+  _emptyDefaultIndex = map;
+  return map;
+}
+
+let _overwriteIndex = null;
+/**
+ * Which fields each entity's service writes over whatever the request sent.
+ *
+ * <p><b>Read from the service, because that is where the decision lives.</b> A field the service
+ * fills in itself — a caller forced onto the record, a state read off two dates, a name looked up
+ * from an account — is one the form has no control for and no way to grow one. Nothing in the DTO
+ * says so, which is exactly why the constraint on it survives review.
+ *
+ * <p>A set whose argument reads the field's OWN value is a normalization rather than an overwrite
+ * (`entity.setCode(dto.getCode().toUpperCase())`), so the submitted value still matters and the
+ * field may be required. Guarded sets are skipped for the same reason: a batch endpoint writes
+ * only what the request carried.
+ *
+ * <p>One level of private helper is followed, because `applyDerived(entity)` at the end of a
+ * `create` is where half of these actually live.
+ *
+ * @param files every Java source in the project
+ * <p>Kept per method rather than merged. A field the CREATE path forces (the account named in the
+ * path, not in the body) can still be a field the UPDATE path reads and compares — merging the two
+ * reports that one as unrequirable, and it is the shape a scaffolded `UpdateDTO` takes.
+ *
+ * @returns entity simple name → `{ create, update, hasUpdate }` — the fields each write path
+ *          overwrites, and whether the service has an update path at all
+ */
+function serviceOverwriteIndex(files) {
+  if (_overwriteIndex) return _overwriteIndex;
+  const map = new Map();
+  for (const abs of files) {
+    const base = path.basename(abs, ".java");
+    if (!base.endsWith("Service") || /src\/test\//.test(abs)) continue;
+    let src;
+    try { src = fs.readFileSync(abs, "utf8"); } catch { continue; }
+    const clean = stripCommentsAndStrings(src);
+    const entity = base.slice(0, -"Service".length);
+    const written = { create: new Set(), update: new Set(), hasUpdate: false };
+    for (const method of ["create", "update"]) {
+      const sig = new RegExp(`\\b(?:public|protected)\\s+[\\w<>,\\s.\\[\\]]+\\s${method}\\s*\\(`, "g");
+      let m;
+      while ((m = sig.exec(clean)) !== null) {
+        const body = braceBody(clean, m.index + m[0].length);
+        if (!body) continue;
+        if (method === "update") written.hasUpdate = true;
+        const bodies = [body];
+        for (const helper of topLevelEntityHelpers(body)) {
+          const decl = new RegExp(`\\bprivate\\s+[\\w<>,\\s.\\[\\]]+\\s${helper}\\s*\\(`).exec(clean);
+          if (decl) bodies.push(braceBody(clean, decl.index + decl[0].length));
+        }
+        for (const b of bodies) {
+          for (const set of topLevelSets(b)) {
+            const own = new RegExp(`\\bget${set.field[0].toUpperCase()}${set.field.slice(1)}\\s*\\(`);
+            if (own.test(set.arg)) continue;
+            written[method].add(set.field);
+          }
+        }
+      }
+    }
+    if (written.create.size || written.update.size) map.set(entity, written);
+  }
+  _overwriteIndex = map;
+  return map;
+}
+
 let _i18nIndex = null;
 /**
  * Which field names carry a `<name>I18n` translation map, and which DTO classes declare one.
@@ -333,6 +518,294 @@ function resetIndexes() { _entityIdIndex = null; _i18nIndex = null; }
 // ---------------------------------------------------------------------------
 
 const RULES = [
+  {
+    id: "not-blank-on-a-meaningfully-empty-field",
+    invariant: "#5 / frontend #34",
+    level: "error",
+    desc: "A create/update DTO field carrying `@NotBlank` whose entity counterpart is a non-null column initialised to `\"\"` — the empty string is one of that field's values, not the absence of one. A scope key whose empty case means 「the whole installation」 is the shape this takes, and the constraint then refuses every write of exactly those records while every workplace-scoped one saves: the screen works on some rows and not others, and the refusal names a field no form draws. `@NotNull` is the constraint that was meant — the column still refuses null",
+    appliesTo: (p) => /DTOs?\.java$/.test(p) && !/src\/test\//.test(p),
+    check: (c, file, ctx) => {
+      const defaults = ctx?.emptyDefaults;
+      if (!defaults || defaults.size === 0) return [];
+      const clean = stripCommentsAndStrings(c);
+      const hits = [];
+      for (const cls of clean.matchAll(/\bclass\s+(\w+?)(Create|Update|BatchUpdate)DTO\b/g)) {
+        const empties = defaults.get(cls[1]);
+        if (!empties) continue;
+        const body = braceBody(clean, cls.index + cls[0].length);
+        if (!body) continue;
+        for (const f of body.matchAll(/@NotBlank\b([\s\S]{0,300}?)private\s+String\s+(\w+)\s*;/g)) {
+          if (/\bprivate\b/.test(f[1])) continue;
+          if (!empties.has(f[2])) continue;
+          const at = clean.indexOf(f[0], cls.index);
+          const line = clean.slice(0, at < 0 ? cls.index : at).split("\n").length;
+          hits.push({
+            line,
+            excerpt: `${cls[1]}${cls[2]}DTO.${f[2]} is @NotBlank and ${cls[1]}.${f[2]} defaults to ""`,
+          });
+        }
+      }
+      return hits;
+    },
+    samples: {
+      file: "modules/<module>/src/main/java/<pkg>/web/<feature>/dto/ThingDTOs.java",
+      ctx: { emptyDefaults: new Map([["Thing", new Set(["siteKey"])]]) },
+      broken: `public class ThingDTOs {
+
+    @Data
+    public static class ThingCreateDTO {
+
+        @Schema(description = "The workplace, empty for the whole installation")
+        @FieldLabel("{entities.Thing.siteKey}")
+        @NotBlank
+        @Length(max = 36)
+        private String siteKey;
+    }
+}`,
+      fixed: `public class ThingDTOs {
+
+    @Data
+    public static class ThingCreateDTO {
+
+        @Schema(description = "The workplace, empty for the whole installation")
+        @FieldLabel("{entities.Thing.siteKey}")
+        @NotNull
+        @Length(max = 36)
+        private String siteKey;
+    }
+}`,
+      miss: [
+        {
+          note: "a required field whose entity has no empty default — blank really is absent there",
+          ctx: { emptyDefaults: new Map([["Thing", new Set(["siteKey"])]]) },
+          source: `public class ThingDTOs {
+
+    @Data
+    public static class ThingCreateDTO {
+
+        @NotBlank
+        private String label;
+    }
+}`,
+        },
+        {
+          note: "a search DTO, which bean validation never refuses",
+          ctx: { emptyDefaults: new Map([["Thing", new Set(["siteKey"])]]) },
+          source: `public class ThingDTOs {
+
+    @Getter
+    @Setter
+    public static class ThingSearchDTO {
+
+        @NotBlank
+        private String siteKey;
+    }
+}`,
+        },
+      ],
+    },
+  },
+  {
+    id: "required-field-the-service-overwrites",
+    invariant: "#5 / frontend #34",
+    level: "error",
+    desc: "A create/update DTO field carrying `@NotNull` or `@NotBlank` that the entity's own service writes over whatever the request sent — the caller forced onto the record, a state read off the dates, a name looked up from an account. Bean validation runs BEFORE the service is entered, so the constraint refuses every request the form can send while the field it names has no control on the screen and cannot grow one: the reader is told to correct something that is not there. It typechecks, it passes the service's own unit tests (they call the service directly and never meet validation), and the save can never succeed. Drop the constraint — the field stays, tolerated and ignored, and the service's tests keep proving it is overwritten",
+    appliesTo: (p) => /DTOs?\.java$/.test(p) && !/src\/test\//.test(p),
+    check: (c, file, ctx) => {
+      const overwrites = ctx?.overwrites;
+      if (!overwrites || overwrites.size === 0) return [];
+      const clean = stripCommentsAndStrings(c);
+      const hits = [];
+      for (const cls of clean.matchAll(/\bclass\s+(\w+?)(Create|Update)DTO\b/g)) {
+        const paths = overwrites.get(cls[1]);
+        if (!paths) continue;
+        // A field declared on the CREATE DTO is inherited by the update body, so it is only
+        // unrequirable when BOTH write paths overwrite it — one that create forces and update
+        // reads is a field the request still decides.
+        const written = cls[2] === "Update"
+          ? paths.update
+          : paths.hasUpdate
+            ? new Set([...paths.create].filter((f) => paths.update.has(f)))
+            : paths.create;
+        if (written.size === 0) continue;
+        const body = braceBody(clean, cls.index + cls[0].length);
+        if (!body) continue;
+        // The annotation and the field it sits above, with whatever else stands between them.
+        for (const f of body.matchAll(/@(NotNull|NotBlank)\b([\s\S]{0,300}?)private\s+[\w<>,\s[\]]+?\s+(\w+)\s*;/g)) {
+          // Only the field directly under the annotation: anything with its own `private` in
+          // between belongs to a later field the annotation does not reach.
+          if (/\bprivate\b/.test(f[2])) continue;
+          if (!written.has(f[3])) continue;
+          const at = clean.indexOf(f[0], cls.index);
+          const line = clean.slice(0, at < 0 ? cls.index : at).split("\n").length;
+          hits.push({
+            line,
+            excerpt: `${cls[1]}${cls[2]}DTO.${f[3]} is @${f[1]} and ${cls[1]}Service writes over it`,
+          });
+        }
+      }
+      return hits;
+    },
+    ctxSample: undefined,
+    samples: {
+      file: "modules/<module>/src/main/java/<pkg>/web/<feature>/dto/ThingDTOs.java",
+      ctx: { overwrites: new Map([["Thing", { create: new Set(["ownerId", "thingStatus"]), update: new Set(["ownerId", "thingStatus"]), hasUpdate: true }]]) },
+      broken: `public class ThingDTOs {
+
+    @Data
+    public static class ThingCreateDTO {
+
+        @Schema(description = "Whose it is")
+        @FieldLabel("{entities.Thing.ownerId}")
+        @NotBlank
+        @Length(max = 36)
+        private String ownerId;
+
+        @Schema(description = "What it is called")
+        @FieldLabel("{entities.Thing.label}")
+        @NotBlank
+        @Length(max = 200)
+        private String label;
+    }
+}`,
+      fixed: `public class ThingDTOs {
+
+    @Data
+    public static class ThingCreateDTO {
+
+        // Server-owned: forced to the caller, so a value sent here is ignored.
+        @Schema(description = "Whose it is")
+        @FieldLabel("{entities.Thing.ownerId}")
+        @Length(max = 36)
+        private String ownerId;
+
+        @Schema(description = "What it is called")
+        @FieldLabel("{entities.Thing.label}")
+        @NotBlank
+        @Length(max = 200)
+        private String label;
+    }
+}`,
+      miss: [
+        {
+          note: "a required field the service normalizes from its own submitted value",
+          ctx: { overwrites: new Map([["Thing", { create: new Set(["label"]), update: new Set(["label"]), hasUpdate: true }]]) },
+          source: `public class ThingDTOs {
+
+    @Data
+    public static class ThingCreateDTO {
+
+        @NotBlank
+        private String otherField;
+    }
+}`,
+        },
+        {
+          note: "an entity whose service overwrites nothing",
+          ctx: { overwrites: new Map() },
+          source: `public class ThingDTOs {
+
+    @Data
+    public static class ThingCreateDTO {
+
+        @NotBlank
+        private String ownerId;
+    }
+}`,
+        },
+        {
+          note: "an id the CREATE path takes from the URL and the UPDATE path reads and compares — found as a false positive in a real repository, which is why the index keeps the two write paths apart",
+          ctx: { overwrites: new Map([["Thing", { create: new Set(["ownerId"]), update: new Set(), hasUpdate: true }]]) },
+          source: `public class ThingDTOs {
+
+    @Data
+    @EqualsAndHashCode(callSuper = true)
+    public static class ThingUpdateDTO extends ThingCreateDTO {
+
+        @NotBlank(message = "ID is required")
+        private String ownerId;
+    }
+}`,
+        },
+        {
+          note: "a search DTO, which bean validation never refuses",
+          ctx: { overwrites: new Map([["Thing", { create: new Set(["ownerId"]), update: new Set(["ownerId"]), hasUpdate: true }]]) },
+          source: `public class ThingDTOs {
+
+    @Getter
+    @Setter
+    public static class ThingSearchDTO {
+
+        @NotBlank
+        private String ownerId;
+    }
+}`,
+        },
+      ],
+    },
+  },
+  {
+    id: "empty-page-with-no-pageable",
+    invariant: "#1 / #15\u2462",
+    level: "error",
+    desc: "`new PageImpl<>(List.of())` \u2014 a Page built with no `Pageable`. The one-argument constructor fills in `Pageable.unpaged()`, whose `getPageNumber()` and `getPageSize()` THROW `UnsupportedOperationException`, so Jackson cannot serialize the response and the caller gets a 500 where the screen was expecting an empty list. The branch that builds it is the early return for 「this caller has nothing」, which is exactly the path nobody exercises while developing against seeded data and every new account takes on its first request. Pass the request being answered \u2014 `new PageImpl<>(List.of(), pageRequest, 0)`",
+    appliesTo: (p) => /\.java$/.test(p) && !/src\/test\//.test(p),
+    check: (c) => {
+      const clean = stripCommentsAndStrings(c);
+      const hits = [];
+      // One argument only. `new PageImpl<>(rows, request, total)` is the correct shape and the
+      // two-argument form carries a Pageable too, so both stay silent.
+      const call = /\bnew\s+PageImpl\s*<[^>]*>\s*\(/g;
+      let m;
+      while ((m = call.exec(clean)) !== null) {
+        let depth = 1;
+        let i = m.index + m[0].length;
+        let commas = 0;
+        for (; i < clean.length && depth > 0; i += 1) {
+          const ch = clean[i];
+          if (ch === "(" || ch === "[" || ch === "{" || ch === "<") depth += 1;
+          else if (ch === ")" || ch === "]" || ch === "}" || ch === ">") depth -= 1;
+          else if (ch === "," && depth === 1) commas += 1;
+        }
+        if (commas > 0) continue;
+        const line = clean.slice(0, m.index).split("\n").length;
+        hits.push({ line, excerpt: (c.split("\n")[line - 1] ?? "").trim() });
+      }
+      return hits;
+    },
+    samples: {
+      file: "modules/<module>/src/main/java/<pkg>/web/<feature>/ThingService.java",
+      broken: `public Page<ThingListDTO> search(Map<String, String> params) {
+    List<String> mine = things.findIdsFor(currentUserId());
+    if (mine.isEmpty()) {
+        return new PageImpl<>(List.of());
+    }
+    return findAllWithSearch(parse(params), ThingListDTO.class);
+}`,
+      fixed: `public Page<ThingListDTO> search(Map<String, String> params) {
+    SearchCondition<ThingSearchDTO> condition = parse(params);
+    List<String> mine = things.findIdsFor(currentUserId());
+    if (mine.isEmpty()) {
+        return new PageImpl<>(List.of(), PageRequest.of(condition.getPage(), condition.getSize()), 0);
+    }
+    return findAllWithSearch(condition, ThingListDTO.class);
+}`,
+      miss: [
+        {
+          note: "the three-argument form, which carries the request it answers",
+          source: `return new PageImpl<>(read.rows(), request, read.totalRows());`,
+        },
+        {
+          note: "an empty page that still carries its request",
+          source: `return new PageImpl<>(List.of(), request, request.getOffset());`,
+        },
+        {
+          note: "a generic argument holding a comma, which is not a second constructor argument",
+          source: `return new PageImpl<Map<String, String>>(rows, PageRequest.of(0, 10), 1);`,
+        },
+      ],
+    },
+  },
   {
     id: "i18n-label-read-from-column",
     invariant: "#36",
@@ -887,6 +1360,136 @@ public class AreaService extends SimpliXBaseService<Area, String> {
     },
   },
   {
+    id: "hand-written-row-drops-a-field",
+    invariant: "#17",
+    level: "review",
+    desc: "A hand-written mapper that skips a field BOTH sides declare — the source has it, the DTO has it, and the method that carries one into the other does not mention it. Nothing fails: the column is written, the DTO serializes, and the field is simply absent from the answer, so the screen draws a value that is there as a value that is not. This is where a field added to an entity goes missing, because the mapper is the one place the addition does not reach and the compiler has nothing to say about it",
+    appliesTo: isService,
+    check: (c, _file, ctx) => {
+      const known = ctx?.fields;
+      if (!known) return [];
+      const clean = stripCommentsAndStrings(c);
+      const out = [];
+      // `Dto row = new Dto(); row.setX(src.getX()); … return row;` — the shape a promoted service
+      // reaches for when a projection cannot express the row.
+      const re = /(\w+)\s+(\w+)\s*=\s*new\s+\1\s*\(\s*\)\s*;/g;
+      let m;
+      while ((m = re.exec(clean))) {
+        const [dto, held] = [m[1], m[2]];
+        const tail = clean.slice(m.index, m.index + 2000);
+        const stop = tail.indexOf(`return ${held};`);
+        if (stop < 0) continue;
+        const body = tail.slice(0, stop);
+        const sets = new Set([...body.matchAll(new RegExp(`\\b${held}\\.set(\\w+)\\s*\\(`, "g"))].map((x) => x[1].toLowerCase()));
+        if (sets.size < 2) continue;
+        // The one thing every setter reads from, which is the source type this row copies.
+        const froms = [...body.matchAll(/\b(\w+)\.get\w+\s*\(\s*\)/g)].map((x) => x[1]).filter((n) => n !== held);
+        if (!froms.length) continue;
+        const source = froms[0];
+        const decl = clean.match(new RegExp(`\\(\\s*(?:final\\s+)?(\\w+)\\s+${source}\\s*\\)`));
+        if (!decl) continue;
+        const onSource = known.get(decl[1]);
+        const onDto = known.get(dto);
+        if (!onSource || !onDto) continue;
+        const missed = [...onDto].filter((f) => onSource.has(f) && !sets.has(f.toLowerCase()));
+        if (missed.length) {
+          out.push({
+            line: clean.slice(0, m.index).split("\n").length,
+            excerpt: `${decl[1]} → ${dto} carries neither ${missed.map((f) => `\`${f}\``).join(" nor ")}, which both declare`,
+          });
+        }
+      }
+      return out;
+    },
+    samples: {
+      file: "modules/approval/src/main/java/app/web/approval/service/ApprovalInboxService.java",
+      // The index the repository run builds from every source, written out for the sample: the
+      // rule reads only what both sides declare, so the sample must declare both.
+      ctx: {
+        fields: new Map([
+          ["ApprovalSnapshotField", new Set(["fieldLabel", "fieldValue", "referenceId", "referenceKind"])],
+          ["ApprovalSnapshotFieldDTO", new Set(["fieldLabel", "fieldValue", "referenceId", "referenceKind"])],
+        ]),
+      },
+      broken: `public class ApprovalSnapshotField {
+    private String fieldLabel;
+    private String fieldValue;
+    private String referenceId;
+    private String referenceKind;
+}
+
+public class ApprovalSnapshotFieldDTO {
+    private String fieldLabel;
+    private String fieldValue;
+    private String referenceId;
+    private String referenceKind;
+}
+
+public class ApprovalInboxService {
+    private ApprovalSnapshotFieldDTO snapshotRow(ApprovalSnapshotField field) {
+        ApprovalSnapshotFieldDTO row = new ApprovalSnapshotFieldDTO();
+        row.setFieldLabel(field.getFieldLabel());
+        row.setFieldValue(field.getFieldValue());
+        row.setReferenceId(field.getReferenceId());
+        return row;
+    }
+}`,
+      fixed: `public class ApprovalSnapshotField {
+    private String fieldLabel;
+    private String fieldValue;
+    private String referenceId;
+    private String referenceKind;
+}
+
+public class ApprovalSnapshotFieldDTO {
+    private String fieldLabel;
+    private String fieldValue;
+    private String referenceId;
+    private String referenceKind;
+}
+
+public class ApprovalInboxService {
+    private ApprovalSnapshotFieldDTO snapshotRow(ApprovalSnapshotField field) {
+        ApprovalSnapshotFieldDTO row = new ApprovalSnapshotFieldDTO();
+        row.setFieldLabel(field.getFieldLabel());
+        row.setFieldValue(field.getFieldValue());
+        row.setReferenceId(field.getReferenceId());
+        row.setReferenceKind(field.getReferenceKind());
+        return row;
+    }
+}`,
+      miss: [
+        {
+          note: "a field the DTO does not declare, which the row is right not to carry",
+          ctx: {
+            fields: new Map([
+              ["ApprovalAttachment", new Set(["attachmentLabel", "attachmentRef"])],
+              ["ApprovalAttachmentDTO", new Set(["attachmentLabel", "attachmentMeta"])],
+            ]),
+          },
+          source: `public class ApprovalAttachment {
+    private String attachmentLabel;
+    private String attachmentRef;
+}
+
+public class ApprovalAttachmentDTO {
+    private String attachmentLabel;
+    private String attachmentMeta;
+}
+
+public class ApprovalInboxService {
+    private ApprovalAttachmentDTO attachmentRow(ApprovalAttachment attachment) {
+        ApprovalAttachmentDTO row = new ApprovalAttachmentDTO();
+        row.setAttachmentLabel(attachment.getAttachmentLabel());
+        row.setAttachmentMeta(attachment.getAttachmentMeta());
+        return row;
+    }
+}`,
+        },
+      ],
+    },
+  },
+  {
     id: "unforced-searchcondition-overload",
     invariant: "#15③",
     level: "error",
@@ -895,6 +1498,12 @@ public class AreaService extends SimpliXBaseService<Area, String> {
     check: (c) => {
       const clean = stripCommentsAndStrings(c);
       const FORCE = /\bforce\w*\(|ScopedSearchParams|requireVisible|forceVisible/;
+      // Handing the whole call to the overload that IS narrowed is the third way to be narrowed,
+      // and it is the shape a service reaches for when the two doors answer the same question —
+      // `return search(Map.of());`. Read as a body with no marker in it, it fails a service that
+      // cannot return an unscoped row, and the fix a reader then applies is to copy the narrowing
+      // into the second overload, where it is a second copy of one rule.
+      const DELEGATES = /\breturn\s+search\s*\(\s*(Map\.|new\s+(Linked)?HashMap|params\b|forced\b)/;
       const found = {};
       const re = /public\s+Page<[\w<>,\s]+>\s+search\s*\(([\s\S]{0,200}?)\)\s*\{/g;
       let m;
@@ -902,8 +1511,9 @@ public class AreaService extends SimpliXBaseService<Area, String> {
         const arg = m[1].replace(/\s+/g, " ");
         const kind = arg.includes("Map<") ? "map" : arg.includes("SearchCondition") ? "cond" : null;
         if (!kind) continue;
+        const body = braceBody(clean, m.index + m[0].length - 1);
         found[kind] = {
-          forced: FORCE.test(braceBody(clean, m.index + m[0].length - 1)),
+          forced: FORCE.test(body) || (kind === "cond" && DELEGATES.test(body)),
           line: clean.slice(0, m.index).split("\n").length,
         };
       }
@@ -938,6 +1548,22 @@ public class AreaService extends SimpliXBaseService<Area, String> {
                 .orElseGet(() -> userAccountScope.emptyPage(searchCondition));
     }
 }`,
+      miss: [
+        {
+          note: "the SearchCondition overload handing the whole call to the narrowed one",
+          source: `public class UserNoteService {
+    public Page<UserNoteListDTO> search(Map<String, String> params) {
+        return userAccountScope.forceVisible(params, "userId")
+                .map(scoped -> findAllWithSearch(scoped, UserNoteListDTO.class))
+                .orElseGet(() -> ScopedSearchParams.emptyPage(params));
+    }
+
+    public Page<UserNoteListDTO> search(SearchCondition<UserNoteSearchDTO> searchCondition) {
+        return search(Map.of());
+    }
+}`,
+        },
+      ],
     },
   },
   {
@@ -1097,6 +1723,7 @@ function selftestMechanisms() {
 function selftest() {
   let failed = selftestMechanisms();
   let passed = 0;
+  let nearby = 0;
   console.log("");
   for (const rule of RULES) {
     const s = rule.samples;
@@ -1114,16 +1741,34 @@ function selftest() {
       const onFixed = rule.check(s.fixed, s.file, sampleCtx);
       if (!onBroken.length) problems.push("did NOT fire on the broken form");
       if (onFixed.length) problems.push(`fired on the fixed form (${onFixed.map((h) => h.excerpt).join("; ").slice(0, 120)})`);
+      // The legitimate shapes that look like the defect. A rule proved on one broken form and one
+      // fixed form is proved in the two directions it was written for and in no other: widening it
+      // to accept a second legitimate shape leaves nothing behind that would catch the widening
+      // going too far, and the next reader has only the description to go on.
+      for (const near of s.miss ?? []) {
+        const hits = rule.check(near.source, near.file ?? s.file, near.ctx ?? sampleCtx);
+        if (hits.length) {
+          problems.push(`fired on a near-neighbour that is not the defect — ${near.note}`);
+        }
+      }
+      nearby += (s.miss ?? []).length;
     }
     if (problems.length) {
       console.log(`✖ ${rule.id}\n    ${problems.join("\n    ")}`);
       failed++;
     } else {
       passed++;
-      console.log(`✔ ${rule.id.padEnd(34)} fires on broken, silent on fixed`);
+      const misses = (rule.samples.miss ?? []).length;
+      console.log(
+        `✔ ${rule.id.padEnd(34)} fires on broken, silent on fixed`
+          + (misses ? `  · silent on ${misses} near-neighbour(s)` : ""),
+      );
     }
   }
-  console.log(`\n${passed} rule(s) proved both ways, ${failed} not proved.`);
+  console.log(
+    `\n${passed} rule(s) proved both ways, ${failed} not proved`
+      + (nearby ? `, ${nearby} near-neighbour(s) left silent.` : "."),
+  );
   return failed === 0 ? 0 : 1;
 }
 
@@ -1163,7 +1808,7 @@ const errorsOnly = args.includes("--errors-only");
 const ruleFilter = args.find((a) => a.startsWith("--rule="))?.slice(7).split(",");
 
 const files = collectSources();
-const ctx = { entityIds: entityIdIndex(files), i18n: i18nIndex(files) };
+const ctx = { entityIds: entityIdIndex(files), fields: fieldIndex(files), i18n: i18nIndex(files), overwrites: serviceOverwriteIndex(files), emptyDefaults: emptyDefaultIndex(files) };
 const results = new Map();
 let suppressedCount = 0;
 
