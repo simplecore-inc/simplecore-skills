@@ -219,6 +219,7 @@ function formatOf(kind, file) {
   if (file.endsWith(".properties")) return "properties";
   if (file.endsWith(".md")) return "markdown";
   if (file.endsWith(".html") || file.endsWith(".htm")) return "html";
+  if (file.endsWith(".svg")) return "svg";
   return "text";
 }
 
@@ -264,10 +265,41 @@ function docEntries() {
  * `grep`, `list`. `audit` and `stats` do not take it: both read a kind against its
  * counterpart language, and there is no counterpart to a document set.
  */
-function discover({ kind, lang, docFallback = false } = {}) {
+/**
+ * Whether a kind stays out of one command's default sweep.
+ *
+ * <p><b>`true` keeps it out of every one; a list keeps it out of the ones it names.</b> The two
+ * are different needs and one flag could only serve the first. A kind whose files a generator
+ * rewrites cannot be held to a translation gate — an English label nobody may edit would fail
+ * every chapter — and the sentence rules have nothing to do with that: they read what a Korean
+ * sentence does, which is the same question on a generated file as on a hand-written one.
+ *
+ * <p><b>Left as one flag the exclusion is silent and total.</b> A project that opts a kind out of
+ * `audit` also loses it from `rules`, `suspects`, `grep` and `list`, and the count those report
+ * then reads as covering a tree they never opened.
+ *
+ * @param optIn the kind's declaration — true, or the commands it opts out of
+ * @param command which command is asking, or undefined where the caller names none
+ * @returns whether this kind is left out of that command's default set
+ */
+function optedOut(optIn, command) {
+  if (optIn === true) return true;
+  if (!Array.isArray(optIn)) return false;
+  return command === undefined || optIn.includes(command);
+}
+
+/**
+ * @param command which command is asking
+ * @returns the kinds that command sweeps when nobody names one
+ */
+function defaultKinds(command) {
+  return Object.keys(CONFIG.kinds).filter((k) => !optedOut(CONFIG.kinds[k].optIn, command));
+}
+
+function discover({ kind, lang, docFallback = false, command } = {}) {
   if (docFallback && !kind && !Object.keys(CONFIG.kinds).length) return docEntries();
   requireKinds();
-  const kinds = kind ? [kind] : Object.keys(CONFIG.kinds).filter((k) => !CONFIG.kinds[k].optIn);
+  const kinds = kind ? [kind] : defaultKinds(command);
   const langs = lang ? [lang] : [CONFIG.defaultLanguage];
   const found = new Map();
   for (const k of kinds) {
@@ -492,6 +524,12 @@ function segmentsMarkdown(src) {
   hold(/^ {4,}\S.*$/gm); // indented code
   hold(/<[^>\n]+>/g);
   hold(/^-{3,}[ \t]*$/gm); // thematic break — structure, not prose
+  // Verbatim quotation of somebody else's document, marked by the author. `check` skips the
+  // same region in doc-audit.mjs — the two engines have to agree about what the file contains,
+  // or a clause excused by one is reported by the other and nobody can tell which is right.
+  // An unclosed region reaches the end of the file here too; `check` reports that as an error,
+  // and the sweeps stay quiet over the same span rather than disagreeing with it.
+  hold(/^[ \t]*<!--[ \t]*l10n:quote\b[\s\S]*?(?:^[ \t]*<!--[ \t]*l10n:\/quote[ \t]*-->[ \t]*$|$(?![\s\S]))/gm);
 
   // Front matter is a fence that opens on the file's very FIRST line and closes at the
   // next `---`. Every later `---` is a horizontal rule in the body.
@@ -790,6 +828,52 @@ function segmentsTsObject(src) {
   return segments;
 }
 
+/**
+ * SVG: the drawn labels only — the content of `<text>` and `<tspan>`, one segment each.
+ *
+ * Without this an `.svg` fell through `formatOf` to `text`, whose segment is a whole line —
+ * and a rendered diagram is one very long line, so the entire file arrived as a single
+ * segment of attribute soup wrapped around the labels. **The failure was silent in the
+ * direction nobody checks**: `suspects` scored `font-family` lists as prose, and every rule
+ * anchored on `$` could never reach a label, because no label is at the end of that line.
+ * `check` read the same files correctly through `stripSvgLines`, so the two engines
+ * disagreed about what a diagram even contained and only one of them said so.
+ *
+ * The element set matches `stripSvgLines` exactly — that agreement is the point.
+ */
+function segmentsSvg(src) {
+  const segments = [];
+  const tagRe = /<[^>]*>/g;
+  let depth = 0; // open <text>/<tspan> elements
+  let cursor = 0;
+  let m;
+  const emit = (from, to) => {
+    const text = src.slice(from, to);
+    if (!text.trim()) return;
+    const lead = text.length - text.trimStart().length;
+    const tail = text.length - text.trimEnd().length;
+    segments.push(
+      segment(from + lead, to - tail, src.slice(from + lead, to - tail), `T${segments.length + 1}`),
+    );
+  };
+  while ((m = tagRe.exec(src)) !== null) {
+    const tag = m[0];
+    if (depth > 0) emit(cursor, m.index);
+    if (/^<[!?]/.test(tag)) {
+      // declarations, comments, CDATA — no element nesting
+    } else if (/^<\//.test(tag)) {
+      const name = tag.match(/^<\/\s*([A-Za-z0-9:_-]+)/);
+      if (name && (name[1] === "text" || name[1] === "tspan")) depth = Math.max(0, depth - 1);
+    } else if (!/\/>\s*$/.test(tag)) {
+      const name = tag.match(/^<\s*([A-Za-z0-9:_-]+)/);
+      if (name && (name[1] === "text" || name[1] === "tspan")) depth += 1;
+    }
+    cursor = tagRe.lastIndex;
+  }
+  if (depth > 0) emit(cursor, src.length);
+  return segments;
+}
+
 function segmentsText(src) {
   const segments = [];
   let offset = 0;
@@ -805,6 +889,7 @@ const EXTRACTORS = {
   properties: segmentsProperties,
   ts: segmentsTsObject,
   html: segmentsHtml,
+  svg: segmentsSvg,
   markdown: segmentsMarkdown,
   wireframe: segmentsWireframe,
   text: segmentsText,
@@ -907,6 +992,11 @@ function rulePacks() {
  * register is "screen" — a design document has to be able to name the thing it
  * specifies.
  */
+/** Built-in checks the project glossary switched off, shared with `check`. */
+function disabledChecks() {
+  return ruleSet().disabledChecks ?? new Map();
+}
+
 function glossaryBans() {
   return ruleSet().rules.map((r) => ({
     re: r.pattern,
@@ -1087,7 +1177,7 @@ const C = {
 };
 
 function cmdList(opts) {
-  const entries = discover({ ...opts, docFallback: true });
+  const entries = discover({ ...opts, docFallback: true, command: "list" });
   if (opts.json) {
     console.log(JSON.stringify(entries, null, 2));
     return 0;
@@ -1142,7 +1232,7 @@ function buildMatcher(pattern, useRegex) {
 
 function cmdGrep(pattern, opts) {
   const re = buildMatcher(pattern, opts.regex);
-  const entries = discover({ ...opts, docFallback: true });
+  const entries = discover({ ...opts, docFallback: true, command: "grep" });
   const hits = [];
   for (const entry of entries) {
     const { src, segments } = readSegments(entry);
@@ -1374,6 +1464,54 @@ const EXTRACTOR_CASES = [
     wantAfter: [""],
     loud: ["에 있어(?![야도\\s])서?"],
   },
+  {
+    // The region has to be invisible to a sweep and the prose around it has to stay
+    // visible, or the marker trades one silence for a bigger one. `silent`/`loud` prove
+    // both directions with the same pattern — the clause inside is not reported and the
+    // author's own sentence after the close still is.
+    what: "마크다운: 인용 구간은 훑기에서 빠지고 뒤 본문은 그대로 남는다",
+    of: () => segmentsMarkdown,
+    src:
+      "앞 문단이 있다.\n" +
+      "<!-- l10n:quote 제안요청서 원문 -->\n" +
+      "이 점에 있어서 원문이 그렇게 적었다.\n" +
+      "<!-- l10n:/quote -->\n" +
+      "이 점에 있어서 우리가 쓴 문장이다.\n",
+    want: ["앞 문단이 있다.", "이 점에 있어서 우리가 쓴 문장이다."],
+    loud: ["우리가 쓴"],
+    silent: ["원문이 그렇게"],
+  },
+  {
+    // The whole point of the SVG extractor: a rule anchored on `$` has to be able to reach a
+    // label. Read as one line of markup — which is what a rendered diagram is — no label sits
+    // at the end of anything, so every such rule reported 0 over 35 files and the 0 read as
+    // clean. `loud` proves the anchor lands; `silent` proves the attribute soup is not prose.
+    what: "SVG: 그려지는 라벨만 조각이 되고 마크업은 조각이 아니다",
+    of: () => segmentsSvg,
+    src:
+      '<svg xmlns="http://www.w3.org/2000/svg" font-family="\'Inter\',system-ui,sans-serif">' +
+      '<rect x="4" y="4"/><text x="40" y="52">갱신이 지나는 길</text>' +
+      '<text x="40" y="80"><tspan>적재 큐 · 유입 조절</tspan></text></svg>',
+    want: ["갱신이 지나는 길", "적재 큐 · 유입 조절"],
+    loud: ["[가-힣]+[이가]\\s*(지나는|바뀌는)\\s*길$"],
+    silent: ["font-family", "sans-serif"],
+  },
+  {
+    // Closing the region must hand the rest of the file back. A greedy match would run to
+    // the last close in the document and swallow every commentary paragraph between two
+    // quotations — silently, which is the failure mode this marker exists to avoid.
+    what: "마크다운: 인용 구간 둘 사이의 본문은 살아남는다",
+    of: () => segmentsMarkdown,
+    src:
+      "<!-- l10n:quote 첫 인용 -->\n" +
+      "첫 원문이다.\n" +
+      "<!-- l10n:/quote -->\n" +
+      "가운데 검토 의견이다.\n" +
+      "<!-- l10n:quote 둘째 인용 -->\n" +
+      "둘째 원문이다.\n" +
+      "<!-- l10n:/quote -->\n",
+    want: ["가운데 검토 의견이다."],
+  },
 ];
 
 /**
@@ -1539,7 +1677,7 @@ function cmdRulesScan(opts) {
   // An explicit --scope reaches rules the project did not opt into; the default
   // sweep runs universal rules plus the project's declared scopes.
   const active = opts.scope ? rulePacks().all.filter((r) => r.scope === opts.scope) : rulePacks().active;
-  const entries = discover({ ...opts, docFallback: true });
+  const entries = discover({ ...opts, docFallback: true, command: "rules" });
   const byRule = new Map();
 
   for (const entry of entries) {
@@ -1764,7 +1902,7 @@ function cmdSuspects(opts) {
   // labels (저장됨), settled idioms (막다른 길 · 나가는 길), and -다체 design prose — so a
   // lower threshold trains its reader to skim past the findings that matter.
   const min = Number(opts.min ?? 3);
-  const entries = discover({ ...opts, docFallback: true });
+  const entries = discover({ ...opts, docFallback: true, command: "suspects" });
   const found = [];
   for (const entry of entries) {
     const { src, segments } = readSegments(entry);
@@ -1921,9 +2059,10 @@ function reportDeadExceptions() {
 
 function cmdAudit(opts) {
   const bans = glossaryBans();
+  const DISABLED_CHECKS = disabledChecks();
   const findings = { untranslated: [], banned: [], bannedWarn: [], particles: [], missingPair: [] };
 
-  const koEntries = discover({ ...opts, lang: "ko" });
+  const koEntries = discover({ ...opts, lang: "ko", command: "audit" });
   for (const entry of koEntries) {
     const { src, segments } = readSegments(entry);
     const isScreen = CONFIG.kinds[entry.kind]?.register === "screen";
@@ -1936,7 +2075,13 @@ function cmdAudit(opts) {
       // English identifiers, table cells, link text and code, and every one of them
       // reads as a missing translation. Reporting them buries the findings that matter
       // — 132 such hits once drowned the real ones in `_plans`.
+      // The glossary's `## 기본 규칙 예외` table switches built-in checks off, and `check`
+      // honours it. `audit` reading its own list meant one repository turned `untranslated`
+      // off, watched `check` fall silent, and still got 114 hits here — URLs, routes, device
+      // labels and protocol names in a single-language tree, which buried the two real
+      // particle errors in the same output. One list, both commands.
       const skipUntranslated =
+        DISABLED_CHECKS.has("untranslated") ||
         CONFIG.kinds[entry.kind]?.format === "markdown" ||
         (CONFIG.untranslatedExclude ?? []).some((p) => entry.file === p || entry.file.startsWith(p));
       if (!skipUntranslated && looksUntranslated(seg.text)) {
@@ -1973,7 +2118,7 @@ function cmdAudit(opts) {
   // that language hits as a raw key on screen. Only the languages a kind actually ships
   // are compared — a board may be Korean-only and a manual a two-language pair, so
   // checking those against the full language list reports gaps that do not exist.
-  for (const kind of opts.kind ? [opts.kind] : Object.keys(CONFIG.kinds).filter((k) => !CONFIG.kinds[k].optIn)) {
+  for (const kind of opts.kind ? [opts.kind] : defaultKinds("audit")) {
     const spec = CONFIG.kinds[kind];
     const langs = spec.languages ?? CONFIG.languages;
     if (langs.length < 2) continue;
@@ -2001,7 +2146,9 @@ function cmdAudit(opts) {
 
     const byLang = {};
     for (const lang of langs) {
-      byLang[lang] = new Set(discover({ kind, lang }).map((e) => stemOf(e.file, lang)));
+      byLang[lang] = new Set(
+        discover({ kind, lang, command: "audit" }).map((e) => stemOf(e.file, lang)),
+      );
     }
     for (const stem of byLang[CONFIG.defaultLanguage] ?? []) {
       for (const lang of langs) {

@@ -245,13 +245,73 @@ function blank(match) {
   return ' '.repeat(match.length);
 }
 
-/** Returns lines with unmatchable regions blanked out, preserving line numbers and offsets. */
+// ---------------------------------------------------------------------------
+// Verbatim quotation of somebody else's document
+// ---------------------------------------------------------------------------
+//
+// A document that reproduces another organisation's prose — a tender's requirement clauses
+// beside the bidder's assessment of each one, a standard's wording quoted before the
+// commentary, a statute's article next to how it is met — carries two layers with opposite
+// rules. The commentary is this repository's writing and every rule applies to it; the quoted
+// clause belongs to whoever wrote it and reproducing it faithfully is the whole point, so
+// "correcting" its spelling is a defect rather than a fix.
+//
+// Nothing in the notation says which layer a paragraph is in. Backticks mark a term being
+// quoted, and a blockquote is used for callouts as often as for quotations, so neither can
+// carry the meaning. The marker below says it explicitly and takes a reason, because a region
+// that buys silence has to say who it is quoting.
+//
+//     <!-- l10n:quote 제안요청서 SFR-003 원문 -->
+//     ... 원문 그대로 ...
+//     <!-- l10n:/quote -->
+//
+// **An unclosed region fails the run.** Left to swallow the rest of the file it would report
+// 「오류 0건」 over text nobody read, and that output is identical to a clean document. The
+// same reasoning makes `check` name the skipped line count on every run: silence is what the
+// marker buys, and silence is indistinguishable from a check that passed.
+const QUOTE_OPEN = /^\s*<!--\s*l10n:quote\b(.*?)-->\s*$/;
+const QUOTE_CLOSE = /^\s*<!--\s*l10n:\/quote\s*-->\s*$/;
+
+/**
+ * Locates the verbatim-quotation regions in a document.
+ *
+ * Returns the 0-based line indexes to skip (markers included), the reason each region gave,
+ * and the line the last region opened on when it was never closed.
+ */
+export function quotedRegions(lines) {
+  const skip = new Set();
+  const reasons = [];
+  let openAt = null;
+  lines.forEach((line, idx) => {
+    if (openAt === null) {
+      const open = QUOTE_OPEN.exec(line);
+      if (open) {
+        openAt = idx;
+        reasons.push(open[1].trim());
+        skip.add(idx);
+      }
+      return;
+    }
+    skip.add(idx);
+    if (QUOTE_CLOSE.test(line)) openAt = null;
+  });
+  return {skip, reasons, unclosedAt: openAt === null ? null : openAt + 1};
+}
+
+/**
+ * Returns lines with unmatchable regions blanked out, preserving line numbers and offsets.
+ *
+ * `quoted` carries what the verbatim-quotation markers took out, so the caller can report it
+ * rather than let the skipped lines pass for checked ones.
+ */
 function stripLines(content) {
   const lines = content.split(/\r?\n/);
+  const quoted = quotedRegions(lines);
   let inFence = false;
   let inJsxTemplate = false;
   let inJsxComment = false;
-  return lines.map((line) => {
+  const stripped = lines.map((line, idx) => {
+    if (quoted.skip.has(idx)) return '';
     if (/^\s*(```|~~~)/.test(line)) {
       inFence = !inFence;
       return '';
@@ -284,6 +344,7 @@ function stripLines(content) {
     l = l.replace(/https?:\/\/\S+/g, blank); // bare URLs
     return l;
   });
+  return {lines: stripped, quoted};
 }
 
 // ---------------------------------------------------------------------------
@@ -550,6 +611,16 @@ const PARTICLE_NEEDS_FINAL = {이: true, 가: false, 을: true, 를: false, 과:
 // all of which end in a syllable that looks like a noun+particle but is not.
 const PARTICLE_STEM_SKIP =
   /(하|되|있|없|않|같|받|모|찾|잡|접|읽|적|맞|묻|닿|주|보|쓰|가|오|넣|만들|생기|나오|바뀌|걸리|남|들|풀|막|열|끊|끝나|늘|줄|물|앉|서|섞|싣|얹|짚|채우|인|누구|언제|누|무엇)$/;
+// **The ㅅ-irregular adnominal.** 짓다 · 붓다 · 잇다 · 낫다 · 긋다 · 젓다 drop their ㅅ
+// before a vowel ending, so 짝짓+을 surfaces as 짝지을 — a vowel-final syllable followed by
+// 을, which reads as a noun that took the wrong object particle. It is not an enumeration
+// standing in for a family: Korean has about a dozen ㅅ-irregular verbs and the list is
+// closed, unlike the -ㄴ가 case above where enumerating syllables was the defect.
+//
+// The test is the surface stem, not the dictionary form: what appears before 을 is the
+// verb with its ㅅ already gone (지 · 부 · 이 · 나 · 그 · 저), and the capture is two
+// syllables or more, so a compound like 짝지 · 덧이 is what actually has to match.
+const PARTICLE_S_IRREGULAR = /(지|부|이|나|그|저)(?=을$)/;
 const PARTICLE_RE = /([가-힣]{2,})(이|가|을|를|과|와)(?=[\s.,·)\]'"]|$)/g;
 // After a closing quote there is no adnominal reading to collide with, so 은/는 is safe here.
 const QUOTED_PARTICLE_RE = /([가-힣])[」』](은|는)(?=[\s.,·)\]'"]|$)/g;
@@ -626,6 +697,7 @@ function checkParticles(lines) {
       if (PARTICLE_STEM_SKIP.test(stem)) continue;
       if (/[는은던]$/.test(stem)) continue;
       if (PARTICLE_WORD_SKIP.test(whole) || PARTICLE_TAIL_SKIP.test(whole)) continue;
+      if (PARTICLE_S_IRREGULAR.test(whole)) continue;
       const rest = line.slice(m.index + whole.length);
       if (isNGaEnding(whole, rest)) continue;
       if (particle === '과' && !CONJUNCTION_FOLLOWS.test(rest)) continue;
@@ -837,6 +909,11 @@ const REPEAT_OK = new Set([
   '하나하나', '가지가지', '이런저런', '곳곳', '따로따로', '차례차례', '조금조금',
   '그때그때', '번번이', '가끔가끔', '두고두고', '오래오래', '이것저것', '여기저기',
   '구석구석', '집집', '나날', '틈틈', '알알', '겹겹', '층층', '줄줄',
+  // Reduplicated adverbs of spacing and density. They describe how often
+  // something occurs, so technical prose reaches for them whenever it says a
+  // stream is sparse or a series is uneven — 「프레임은 드문드문 나온다」 is the
+  // ordinary way to say an event-driven protocol is quiet.
+  '드문드문', '띄엄띄엄', '듬성듬성', '군데군데',
 ]);
 
 function checkRepeats(lines) {
@@ -1030,9 +1107,10 @@ export function auditFile(filePath, rules, checkUntranslated, isLocaleResource =
   const isProse = !isSvg && !isLocaleResource;
   const rawLines = content.split(/\r?\n/);
   let lines;
+  let quoted = {skip: new Set(), reasons: [], unclosedAt: null};
   if (isLocaleResource) lines = stripCodeLinesToStringValues(content);
   else if (isSvg) lines = stripSvgLines(content);
-  else lines = stripLines(content);
+  else ({lines, quoted} = stripLines(content));
   lines = blankLiteralMarkup(lines);
   const fm = isProse ? frontMatterRange(rawLines) : null;
   const errors = [];
@@ -1148,7 +1226,25 @@ export function auditFile(filePath, rules, checkUntranslated, isLocaleResource =
     }
   }
 
-  return {errors, warnings};
+  // An unclosed quotation region takes the rest of the file out of the audit, and the run then
+  // reports 「오류 0건」 over text nobody read. It is a defect in the document, so it is reported
+  // as one rather than left to the closing count.
+  if (quoted.unclosedAt !== null) {
+    errors.push({
+      line: quoted.unclosedAt,
+      text: '<!-- l10n:quote -->',
+      rule: {
+        source: 'quote-region',
+        suggestion: '`<!-- l10n:/quote -->`로 닫으세요 — 닫지 않으면 이 줄부터 파일 끝까지 검사에서 빠집니다',
+        label: '인용 구간이 닫히지 않음',
+        level: 'error',
+        threshold: 1,
+      },
+      count: 1,
+    });
+  }
+
+  return {errors, warnings, quotedLines: quoted.skip.size, quotedRegions: quoted.reasons.length};
 }
 
 function formatFinding(relPath, f, kind) {
@@ -1373,14 +1469,31 @@ export function runDocAudit(args, cliPath) {
   const checkUntranslated = args.untranslated || config.untranslated;
   let errorCount = 0;
   let warningCount = 0;
+  let quotedLines = 0;
+  let quotedRegions = 0;
+  let quotedFiles = 0;
   for (const file of targets) {
     const rel = relative(root, file);
     const relPath = rel.startsWith('..') ? file : rel;
-    const {errors, warnings} = auditFile(file, rules, checkUntranslated, isLocaleResource(file), annotationKeys, resolvedPlaceholders, disabledChecks);
+    const res = auditFile(file, rules, checkUntranslated, isLocaleResource(file), annotationKeys, resolvedPlaceholders, disabledChecks);
+    const {errors, warnings} = res;
     errorCount += errors.length;
     warningCount += warnings.length;
+    if (res.quotedRegions > 0) {
+      quotedFiles += 1;
+      quotedRegions += res.quotedRegions;
+      quotedLines += res.quotedLines;
+    }
     for (const f of errors) console.log(formatFinding(relPath, f, 'error'));
     for (const f of warnings) console.log(formatFinding(relPath, f, 'warn'));
+  }
+  // What a `l10n:quote` region buys is silence over somebody else's prose, and silence reads
+  // the same as a clean pass. Naming the size of it keeps the closing count honest.
+  if (quotedRegions > 0) {
+    console.log(
+      `\n인용 구간으로 건너뛴 줄: 파일 ${quotedFiles}개 · 구간 ${quotedRegions}개 · ${quotedLines}줄` +
+        ` (원문 그대로 두는 남의 글 — 이 줄들은 검사하지 않았습니다)`,
+    );
   }
 
   // The dead-pattern count rides in the total so the closing line can never read 「오류 0건」 while
