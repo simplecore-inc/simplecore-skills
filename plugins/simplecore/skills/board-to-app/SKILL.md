@@ -304,6 +304,43 @@ write, so nothing in this skill has to know one project's wording:
 
 Then say which chapter is being built and which are running alongside it.
 
+## The chapter's scenario is re-reviewed at its start, never merely read
+
+Step 5 above says to read the chapter file whole. **Reading it is not reviewing it**, and that
+difference is the whole of this section: a generated chapter reads as derived and therefore
+correct, and it was correct — on the day it was generated. Everything it quotes has been moving
+since. **So before a chapter's first agent goes out, regenerate the chapter and then hold it
+against the sources it was computed from.** The review is the coordinator's, it costs a handful of
+commands, and what it finds is otherwise found by an agent halfway through building the wrong
+thing.
+
+**Regenerate first.** A chapter still carrying a board fix from three chapters ago states
+expectations that quote a frame no longer saying that. Where `chapterGenerator` is absent, say so
+and read the frames directly rather than trusting the file.
+
+Then six readings, each against a different source:
+
+| Read the chapter's | Against | Because |
+| --- | --- | --- |
+| `prerequisites` | the entities its screens actually need, and whose `creates` names each | the list is derived from frame cross-references, so it carries what the screens say about each other rather than what their tables need. A tile whose stated basis is another chapter's entity is a dependency no cross-reference could have produced |
+| persona lines | that entity's own scope column in the design | the lines come from the role matrix, which is per cluster and knows nothing about whether the record has an axis to be scoped on. 「only their own scope appears in the list」 asked of an installation-global entity is a demand nothing can satisfy, and an agent handed it builds a filter to satisfy it |
+| every statutory or policy value it quotes | `factSources`, now | the chapter naming a value is not the value having been verified — the chapter quotes the frame, and the frame quotes whoever drew it. Read the article's own text against the sentence, and check that the cited paragraph is the one placing the duty the sentence states |
+| a design line it calls stale | that design chapter today | 「the dictionary's line is stale」 is a claim somebody made at generation time, and the commonest reason it is now wrong is that the line was corrected afterwards |
+| what its seed owes | `storyDocument` | a chapter in neither the story's step table nor its exclusion table has a seed nobody has placed in the story — and the cross-chapter facts a seed needs, such as two people whose correlation must fail, are settled here or nowhere |
+| the parked lines naming it | `openItemsFile` | one of them may hold the chapter, and meeting that at the close is meeting it too late |
+
+**What makes this skippable is that nothing about the file looks stale.** It is regenerated prose
+in the project's own voice, every number in it came from the board, and the sections are uniform —
+so the reading that would catch a wrong demand feels like re-reading a document just produced.
+**The tell is that the chapter was generated once and everything it cites has been edited since**,
+which is true of every chapter after the first.
+
+**What the review finds is fixed where it came from, before the dispatch** — the board where the
+board is stale, the design chapter where the design is, `creates` and `entities` where the graph
+is — and the chapter is regenerated after each. A finding that travels into a brief as a warning is
+one the agent has to re-derive; a finding fixed in the source is one the regenerated chapter states
+by itself.
+
 ## The unit of work is a chapter, and one agent takes one chapter
 
 **Never build in the coordinating context.** Not the first chapter, not one screen
@@ -1679,6 +1716,7 @@ whose eyes and at which moment**, for the reason the next paragraph gives:
 | a global change owed a census, and the sample was drawn from the rest rather than from the same context as the screens walked in full | **the coordinator**, before the commit that lands the change is written | which screens carry the context differences is a reading of what the change means; the census counts sites through a mechanism and cannot say which of them differ, and a sample drawn from the directly-related screens measures the mechanism twice and the rest never |
 | a word a transcription reports is one the screen draws rather than one only the accessibility tree carries | **the `capture-judge`**, before it returns its disagreements, opening the picture for every sentence the taker marked `named` — never the taker, which read the tree | a `title` attribute and a text node are the same string in the tree, so 「보기」 over an eye icon and 「보기」 on a labelled button are one sentence in the transcription and two different screens in the picture |
 | a screen holds up for the person whose work it carries | **the builder**, in character, during the persona run | that is what the persona run is |
+| a chapter's scenario was re-reviewed against the sources it was generated from, rather than only read | **the coordinator**, before that chapter's first agent is dispatched | every source a chapter quotes — the board, the design chapters, the entity dictionary, the story, the parked lines — moves after the chapter is generated, and nothing in the regenerated file marks which of its sentences are quotations of something that has since changed |
 | a prerequisite the derived graph did not name | **the agent that meets it**, at the moment it blocks | it surfaces while building; the agent that meets it stops and reports |
 | a chapter's start was stamped as its first agent went out, rather than reconstructed at the close | **the coordinator**, in the turn that chapter's first agent is dispatched | a dispatch changes no file and lands no commit, so there is nothing in the repository for a gate to date — and by the close the start is recoverable from a builder's log at best and from nobody at worst |
 | a deletion and a read over the same pile of files were sequenced rather than overlapped | **the coordinator**, before either instruction is sent — it is the only party holding both | the two are prompts, and neither leaves an artifact to hold against the other; an ignored directory has no reflog, so what the deletion took is unrecoverable and the reader returns findings that read as sound over files nobody can open |
