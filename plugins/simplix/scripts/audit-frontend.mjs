@@ -625,11 +625,20 @@ function localeKeys(ns, file = "") {
  * A file may hold several translators (`const { t } = …`, `const { t: tFeatures } = …`), so the
  * lookup is per name rather than per file: attributing every `t("…")` in such a file to whichever
  * namespace appeared last reports keys that resolve perfectly well.
+ *
+ * @remarks
+ * <b>A project's own wrapper round the hook is still the hook.</b> A console that needs a falling
+ * back lookup writes one (`useOptionalTranslation("<domain>/<catalogue>")`) and every screen binds
+ * through it, so a scan anchored on the framework's exact name reads none of those files — and
+ * the anchor fails silently, because a file with no binding is skipped rather than reported. In
+ * one console that left seventeen bindings across sixteen screens unchecked while the rule stood
+ * green. Any hook whose name ends in `Translation` and takes a namespace string is one, which is
+ * the shape rather than the name.
  */
 function translatorBindings(content) {
   const binds = new Map();
   for (const m of content.matchAll(
-    /const\s*\{[^}]*\bt\b\s*(?::\s*(\w+))?[^}]*\}\s*=\s*useTranslation\(\s*"([^"]+)"/g,
+    /const\s*\{[^}]*\bt\b\s*(?::\s*(\w+))?[^}]*\}\s*=\s*\w*[Tt]ranslation\(\s*"([^"]+)"/g,
   )) {
     binds.set(m[1] ?? "t", m[2]);
   }
@@ -912,7 +921,7 @@ function translatorNamespaces(content, file) {
     return null;
   };
   for (const m of content.matchAll(
-    /const\s*\{[^}]*\bt\b\s*(?::\s*(\w+))?[^}]*\}\s*=\s*useTranslation\(\s*([^)]+?)\s*\)/g,
+    /const\s*\{[^}]*\bt\b\s*(?::\s*(\w+))?[^}]*\}\s*=\s*\w*[Tt]ranslation\(\s*([^)]+?)\s*\)/g,
   )) {
     const alias = m[1] ?? "t";
     if (binds.has(alias)) continue;
@@ -3118,6 +3127,113 @@ addToast({ message: t("area.moved", { name: row.name ? row.name : fallback }) })
             source: `const { t } = useTranslation("site/widgets");
 
 <Text>{t(\`area.\${row.state}\`, { name })}</Text>;`,
+          },
+        ],
+      };
+    })(),
+  },
+  {
+    id: "translation-key-prefix-table-has-a-dead-entry",
+    invariant: "audit: scaffold locale",
+    level: "error",
+    desc: "A lookup table of catalogue prefixes with an entry that names none. A screen choosing its vocabulary per field writes the prefixes as data (`{ recordKinds: \"form.recordKind\", sourceKey: \"form.source\" }`) and builds the key at the call site — so the key is a template with nothing static in front of it, `missing-translation-key` has no literal to judge, and a prefix that resolves to nothing is invisible until a record carries that field. Then the falling-back lookup prints the stored value and a machine word reaches the reader under a human column header (`dataIo.importJob` under 「대상」). The table's other entries are what settle it: where most of them name a catalogue subtree and one does not, that one is a typo in a prefix rather than a string that was never a key",
+    // Judged against every namespace the file binds, because the table is usually declared beside
+    // the pane that reads it and a file may hold several translators.
+    appliesTo: (p) => (inModules(p) || inApps(p) || inPackages(p)) && isTsx(p),
+    check: (c, file) => {
+      const keys = new Set();
+      for (const ns of new Set(translatorNamespaces(c, file).values())) {
+        for (const k of localeKeys(ns, file) ?? []) keys.add(k);
+      }
+      if (!keys.size) return [];
+      const names = (prefix) => [...keys].some((k) => k.startsWith(`${prefix}.`));
+      const hits = [];
+      // No nested braces: a table of prefixes is one level deep, and `[^{}]*` keeps the scan off
+      // every options object and style map in the file.
+      for (const m of c.matchAll(/const\s+(\w+)\s*(?::[^=]+)?=\s*\{([^{}]*)\}/g)) {
+        const values = [...m[2].matchAll(/:\s*"([A-Za-z0-9_.]+)"/g)].map((e) => e[1]);
+        // **Three entries and two of them naming a subtree is the corroboration, and it is the
+        // whole rule.** Without it this fires on every `Record<string, string>` in the repository
+        // whose values happen to collide with a catalogue's top-level names — a table of tones, a
+        // map of icon names. With it, the table has to look like prefixes before one of them is
+        // called dead.
+        if (values.length < 3) continue;
+        const good = values.filter(names);
+        if (good.length < 2) continue;
+        const dead = values.filter((v) => !names(v));
+        if (!dead.length) continue;
+        hits.push({
+          line: lineOfIndex(c, m.index),
+          excerpt: `${m[1]}: ${dead.map((d) => `"${d}"`).join(", ")} names no entry, beside ${good.length} that do`,
+        });
+      }
+      return hits;
+    },
+    samples: (() => {
+      const catalogue = {
+        "modules/site/src/locales/index.ts": `export const PACKAGE_NAMESPACE = "site";\n`,
+        "modules/site/src/locales/widgets/ko.json": `{
+  "areaKind": { "ZONE": "구역", "GATE": "출입구" },
+  "source": { "site.area": "구역 대장", "site.gate": "출입구 대장" },
+  "state": { "OPEN": "열림", "SHUT": "닫힘" }
+}
+`,
+      };
+      const pane = (sourcePrefix) => `const VALUE_CATALOGUE: Readonly<Record<string, string>> = {
+  kind: "areaKind",
+  sourceKey: ${JSON.stringify(sourcePrefix)},
+  state: "state",
+};
+
+export function ScopePane({ line }: Props) {
+  const { t, tOr } = useOptionalTranslation("site/widgets");
+  const catalogue = VALUE_CATALOGUE[line.conditionKey];
+  return <Text>{catalogue ? tOr(\`\${catalogue}.\${line.value}\`, line.value) : line.value}</Text>;
+}`;
+      return {
+        file: "modules/site/src/widgets/area/panes.tsx",
+        broken: { files: catalogue, source: pane("widgets.source") },
+        fixed: { files: catalogue, source: pane("source") },
+        miss: [
+          {
+            note: "a table of tones — none of its values is a prefix, so there is nothing to corroborate",
+            files: catalogue,
+            source: `const TONE_BY_STATE: Readonly<Record<string, string>> = {
+  OPEN: "success",
+  SHUT: "muted",
+  HELD: "warning",
+};
+
+export function StatePill({ state }: Props) {
+  const { t } = useOptionalTranslation("site/widgets");
+  return <Badge tone={TONE_BY_STATE[state]}>{t(\`state.\${state}\`)}</Badge>;
+}`,
+          },
+          {
+            note: "two entries is below the corroboration floor — one prefix beside one string proves nothing",
+            files: catalogue,
+            source: `const VALUE_CATALOGUE: Readonly<Record<string, string>> = {
+  kind: "areaKind",
+  sourceKey: "widgets.source",
+};
+
+export function ScopePane({ line }: Props) {
+  const { t } = useOptionalTranslation("site/widgets");
+  return <Text>{t(\`\${VALUE_CATALOGUE[line.conditionKey]}.\${line.value}\`)}</Text>;
+}`,
+          },
+          {
+            note: "a namespace this repository does not publish — an absent catalogue is not an empty one",
+            source: `const VALUE_CATALOGUE: Readonly<Record<string, string>> = {
+  kind: "areaKind",
+  sourceKey: "widgets.source",
+  state: "state",
+};
+
+export function ScopePane({ line }: Props) {
+  const { t } = useOptionalTranslation("framework/ui");
+  return <Text>{t(\`\${VALUE_CATALOGUE[line.conditionKey]}.\${line.value}\`)}</Text>;
+}`,
           },
         ],
       };
