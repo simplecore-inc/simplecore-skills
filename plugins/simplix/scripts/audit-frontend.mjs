@@ -2282,8 +2282,14 @@ window.history.replaceState(null, "", window.location.pathname + window.location
       const hits = [];
       for (let i = 0; i < lines.length; i += 1) {
         if (!/variant="ghost"/.test(lines[i])) continue;
-        // Inside a table cell rather than in a footer or a toolbar.
-        if (!/<TableCell\b/.test(lines.slice(Math.max(0, i - 12), i).join("\n"))) continue;
+        // Inside a table cell rather than in a footer or a toolbar. The window alone is not enough:
+        // a short table puts its dialog's own footer within twelve lines of the last cell, and a
+        // `닫기` there is not a row action. So the nearest opening cell has to still be open — a
+        // closing tag between it and the button means this control is somewhere else entirely.
+        const before = lines.slice(Math.max(0, i - 12), i).join("\n");
+        const opened = before.lastIndexOf("<TableCell");
+        if (opened < 0) continue;
+        if (/<\/TableCell>|<\/TableBody>|<\/Table>/.test(before.slice(opened))) continue;
         const block = lines.slice(Math.max(0, i - 3), i + 7).join("\n");
         // An icon-only control is the case ghost is for.
         if (/size="icon/.test(block)) continue;
@@ -2315,6 +2321,21 @@ window.history.replaceState(null, "", window.location.pathname + window.location
   </Button>
 </TableCell>`,
       miss: [
+        {
+          note: "a dialog's own footer, which a short table puts within twelve lines of its last cell",
+          source: `<TableBody>
+  <TableRow>
+    <TableCell>{row.fieldLabel}</TableCell>
+    <TableCell>{row.applied ?? 0}</TableCell>
+  </TableRow>
+</TableBody>
+</Table>
+<DialogFooter>
+  <Button variant="ghost" size="sm" onClick={() => onOpenChange(false)}>
+    {t("figures.close")}
+  </Button>
+</DialogFooter>`,
+        },
         {
           note: "an icon-only control, which is what ghost is for",
           source: `<TableCell>
