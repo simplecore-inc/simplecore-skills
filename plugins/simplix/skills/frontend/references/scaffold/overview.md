@@ -125,6 +125,10 @@ Creates `packages/domain-<domain-name>/` with the full package skeleton.
 
 Use the **exact spec URL** from `simplix.config.ts`:
 
+> **On a project whose `codegen` is `meta`, this command is `npx simplix meta -d <domain>`** —
+> no spec argument, and the output lands in `src/generated-meta/`. Read the mode from the
+> detector rather than assuming; the handbook's Scaffolding table carries both rows.
+
 ```bash
 npx simplix openapi <spec-url-from-config> -d <domain-name> -y
 ```
@@ -434,6 +438,10 @@ pnpm --filter @<prefix>/domain-<domain-name> run codegen
 
 Or specify it directly:
 
+> **On a project whose `codegen` is `meta`, this command is `npx simplix meta -d <domain>`** —
+> no spec argument, and the output lands in `src/generated-meta/`. Read the mode from the
+> detector rather than assuming; the handbook's Scaffolding table carries both rows.
+
 ```bash
 npx simplix openapi <spec-url-from-config> -d <domain-name> -y
 ```
@@ -626,7 +634,7 @@ When a full-stack change modifies the backend contract (a new field, endpoint, e
 curl -s "$API/api-docs/all-apis" | grep -c '<new-field-or-endpoint-symbol>'   # must be > 0
 ```
 
-Only after that count is non-zero, run codegen. Use the **headless** form — `npx simplix openapi "$API/api-docs/all-apis" -d <domain> -y -f` — because the package.json `codegen` script may prompt interactively (Y/n) and blocks when its output is redirected. Backend restart is a delegated/authorized step; do not start a second backend on another port (a stale duplicate spec is worse than a restart).
+Only after that count is non-zero, run codegen. Use the **headless** form — `npx simplix openapi "$API/api-docs/all-apis" -d <domain> -y -f`, or `npx simplix meta -d <domain> -f` where the project's `codegen` is `meta` — because the package.json `codegen` script may prompt interactively (Y/n) and blocks when its output is redirected. Backend restart is a delegated/authorized step; do not start a second backend on another port (a stale duplicate spec is worse than a restart).
 
 ### "No changes detected" has three causes, and two of them blame the screen
 

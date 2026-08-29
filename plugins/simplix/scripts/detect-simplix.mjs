@@ -109,6 +109,84 @@ function frontendMarkers(dir) {
   return found;
 }
 
+/**
+ * Which code generator a frontend subproject runs, read from its `simplix.config.ts`.
+ *
+ * `meta`  — the config declares an `openapi[].meta` block. The project generates from SimpliX
+ *           Meta: `simplix meta`, output in `src/generated-meta/`.
+ * `orval` — it declares an `openapi` entry with a `spec` and no `meta` block. `simplix openapi`,
+ *           output in `src/generated/`.
+ * `both`  — it declares both, which is what a migration in progress looks like.
+ * `none`  — no `openapi` entry at all; the domains are hand-written.
+ *
+ * Read as text rather than imported: the config is TypeScript and importing it would need the
+ * project's own resolution. The two markers are unambiguous enough for a mode, and every command
+ * this decides is one a person can check.
+ */
+function codegenMode(dir) {
+  const config = FRONTEND_CONFIGS.map((name) => path.join(dir, name)).find((f) =>
+    fs.existsSync(f),
+  );
+  if (!config) return "none";
+  const raw = readIfPresent(config);
+  if (!raw) return "none";
+
+  const withoutComments = raw
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/(^|[^:])\/\/[^\n]*/g, "$1");
+
+  const hasOpenapi = /\bopenapi\s*:\s*\[/.test(withoutComments);
+  if (!hasOpenapi) return "none";
+
+  const hasMeta = /\bmeta\s*:\s*\{/.test(withoutComments);
+  const hasSpec = /\bspec\s*:\s*["'`]/.test(withoutComments);
+
+  if (hasMeta && hasSpec) return "both";
+  if (hasMeta) return "meta";
+  return "orval";
+}
+
+/**
+ * What is left of the OpenAPI half in a project that generates from SimpliX Meta.
+ *
+ * Each of these keeps the old path alive after the switch, and each one fails quietly: a package
+ * that still declares `orval` reinstalls it on the next lockfile change, a `src/generated/`
+ * directory goes on being imported by whatever has not been repointed, and a `codegen` script
+ * naming `simplix openapi` regenerates the half the project meant to leave.
+ *
+ * Reported, never acted on. Whether to finish the migration is the project's decision.
+ */
+function orvalLeftovers(dir) {
+  const found = [];
+
+  const packages = path.join(dir, "packages");
+  for (const pkgDir of subdirs(packages)) {
+    const name = path.basename(pkgDir);
+    if (fs.existsSync(path.join(pkgDir, "src", "generated"))) {
+      found.push(`packages/${name}/src/generated/`);
+    }
+    const pkg = readJson(path.join(pkgDir, "package.json"));
+    if (!pkg) continue;
+    const deps = { ...pkg.dependencies, ...pkg.devDependencies };
+    if (deps.orval) found.push(`packages/${name}/package.json declares orval`);
+    const codegen = pkg.scripts?.codegen;
+    if (typeof codegen === "string" && codegen.includes("simplix openapi")) {
+      found.push(`packages/${name} codegen runs \`simplix openapi\``);
+    }
+  }
+
+  const root = readJson(path.join(dir, "package.json"));
+  const rootDeps = { ...root?.dependencies, ...root?.devDependencies };
+  if (rootDeps.orval) found.push("package.json declares orval");
+
+  const workspace = readIfPresent(path.join(dir, "pnpm-workspace.yaml"));
+  if (workspace && /^\s*orval\s*:/m.test(workspace)) {
+    found.push("pnpm-workspace.yaml catalogues orval");
+  }
+
+  return found;
+}
+
 /** True when the tree IS simplix-react rather than a project consuming it. */
 function isFrameworkRepo(root) {
   for (const dir of [root, ...subdirs(root)]) {
@@ -201,11 +279,17 @@ export function analyze(root) {
   const skills = [...new Set(matches.map((m) => `simplix:${m.kind}`))];
   if (skills.includes("simplix:frontend")) skills.push("simplix:frontend-e2e");
 
-  const reported = matches.map((m) => ({
-    ...m,
-    dir: path.relative(resolved, m.dir) || ".",
-    ...gatesOf(m.dir),
-  }));
+  const reported = matches.map((m) => {
+    const mode = m.kind === "frontend" ? codegenMode(m.dir) : undefined;
+    return {
+      ...m,
+      dir: path.relative(resolved, m.dir) || ".",
+      ...gatesOf(m.dir),
+      ...(mode ? { codegen: mode } : {}),
+      // Only where the project has switched: in the other modes the OpenAPI half is the point.
+      ...(mode === "meta" ? { orvalLeftovers: orvalLeftovers(m.dir) } : {}),
+    };
+  });
 
   // The e2e gate is a frontend concern; a backend subproject is fully wired without it.
   const wired =
@@ -238,7 +322,21 @@ function main() {
   } else {
     console.log(`SimpliX subprojects under ${report.root}:`);
     for (const m of report.matches) {
-      console.log(`  ${m.kind.padEnd(8)} ${m.dir.padEnd(28)} ${m.markers.join("; ")}`);
+      const mode = m.codegen ? `  [codegen: ${m.codegen}]` : "";
+      console.log(`  ${m.kind.padEnd(8)} ${m.dir.padEnd(28)} ${m.markers.join("; ")}${mode}`);
+    }
+
+    for (const m of report.matches) {
+      if (!m.orvalLeftovers?.length) continue;
+      console.log(
+        `\n${m.dir} generates from SimpliX Meta and still carries the OpenAPI half in ` +
+          `${m.orvalLeftovers.length} place(s):`,
+      );
+      for (const one of m.orvalLeftovers) console.log(`  · ${one}`);
+      console.log(
+        "  Each one keeps the old path alive without saying so. Finishing the move is the " +
+          "project's call — nothing here requires it.",
+      );
     }
     console.log(`\nSkills that apply: ${report.skills.join(", ")}`);
     for (const m of report.matches) {

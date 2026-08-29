@@ -182,6 +182,10 @@ Note: there is no `contract.ts` and no flat `hooks.ts` on the OpenAPI/Orval path
 
 ## CLI Command Reference
 
+> **On a project whose `codegen` is `meta`, this command is `npx simplix meta -d <domain>`** —
+> no spec argument, and the output lands in `src/generated-meta/`. Read the mode from the
+> detector rather than assuming; the handbook's Scaffolding table carries both rows.
+
 ```bash
 # 1. Create domain package skeleton
 npx simplix add-domain <domain-name> -y

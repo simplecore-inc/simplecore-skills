@@ -165,7 +165,7 @@ openapi: [
 ];
 ```
 
-When running `simplix openapi`, operations are grouped into domain packages based on these identifiers. See the simplix-react framework documentation for the full `OpenAPISpecConfig` field reference.
+When running `simplix openapi` or `simplix meta`, operations are grouped into domain packages based on these identifiers — the two read the same `domains` map. See the simplix-react framework documentation for the full `OpenAPISpecConfig` field reference.
 
 ## The config has no slot for a UI module
 
@@ -207,6 +207,7 @@ It simply returns the config object as-is. Its only purpose is TypeScript type i
 | `simplix init` | Generates the config file |
 | `simplix add-domain` | `api.baseUrl` for basePath computation |
 | `simplix openapi` | `api.baseUrl`, `openapi[].spec`, `openapi[].domains`, `openapi[].profile`, `codegen.header` |
+| `simplix meta` | `api.baseUrl`, `openapi[].meta`, `openapi[].domains`, `openapi[].profile`, `codegen.header` — no `spec` |
 | `simplix validate` | Validates against config constraints |
 
 ## Common Patterns

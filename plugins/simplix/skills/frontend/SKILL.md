@@ -20,6 +20,57 @@ Single source of truth for frontend work in a **simplix-react** project — a pa
 6. **A change that touches a screen is not finished until its screens have been driven in a browser** under `simplix:frontend-e2e` — states, empty and error paths, and the screens either side of it. Green typecheck and a correct-reading diff are not evidence a screen works. Plan for that pass when you plan the change, not after you have called it done. Anything past a single screen is delegated to one `simplix:screen-auditor` per cluster, so the browser turns never land in the session doing the implementation.
 7. **Check the project's wiring once per session** (see below) and offer `/simplix:init` when a piece is missing.
 
+### Which generator this project runs — read it, never assume
+
+The same detector reports `codegen` on each frontend match: `meta`, `orval`, `both` or `none`. It
+decides which command generates a domain (see Scaffolding below) and it is read once per session,
+from the project, rather than carried over from whatever the last project used.
+
+**The two modes are equally supported.** `orval` is not a legacy state to be corrected, and a
+project sitting in `both` is not half-finished — it is the shape a migration takes, and how long it
+stays there is the project's business.
+
+#### Where `codegen` is `meta`, report what is left of the OpenAPI half
+
+The detector lists them as `orvalLeftovers`. Each one keeps the old path alive after the switch and
+each fails quietly:
+
+| Leftover | What it does when nobody is looking |
+| --- | --- |
+| `packages/<d>/src/generated/` | goes on being imported by whatever was not repointed, and the enum filter that reads it keeps working until it is deleted |
+| a package declaring `orval` | reinstalls on the next lockfile change |
+| a `codegen` script naming `simplix openapi` | regenerates the half the project meant to leave |
+| `pnpm-workspace.yaml` cataloguing `orval` | holds the version that makes the other three resolve |
+
+**Say what is there and stop.** One short list, once per session, and only when the detector found
+something:
+
+> This project generates from SimpliX Meta and still carries the OpenAPI half in N places: …
+> Removing them is a separate piece of work — say the word and I will, or leave it as is.
+
+**Never open that work unasked, and never press.** Do not raise it a second time in the same
+session, do not attach it to an unrelated change as a prerequisite, and do not describe the project
+as broken, stale or incomplete for having them: a project that runs both halves on purpose is a
+supported configuration, and one that has not got round to the cleanup is not failing at anything.
+If the user says no, the answer holds for the session.
+
+**When the user does ask, the move is these steps and nothing more:**
+
+1. `meta.export` lists every configured domain, or the config drops `spec` and names `meta.source`
+   outright — either one puts every domain on SimpliX Meta.
+2. `simplix meta` regenerates them all.
+3. Delete `packages/*/src/generated/`, then run codegen once more and diff `src/locales/*.json` —
+   the enum filter reads that directory, and without the check a silently unfiltered run writes
+   every server enum into the locale file, where nothing prunes it.
+4. Drop `orval` from every `package.json` and from the workspace catalogue; point each `codegen`
+   script at `simplix meta -d <name>`.
+5. `pnpm install`, then typecheck and build. Module code that imported an OpenAPI-only name — a
+   `…200Body`, an invented `DashboardPanel` — is what surfaces here, and each one has a SimpliX
+   Meta equivalent.
+
+**Going the other way is one line**: remove the `meta` block, or take a domain out of
+`meta.export`, and `simplix openapi` owns it again.
+
 ### Project wiring — check on load, offer once
 
 Two halves make this handbook hold: the routing block in the project's instruction file, and the gate config in `<subproject>/.claude/simplix.json` that lets the plugin's hooks enforce it. Run `node "${CLAUDE_PLUGIN_ROOT}/scripts/detect-simplix.mjs" --json` and read `routedBy` and each match's `skillGate` / `e2eGate`.
@@ -71,11 +122,11 @@ Out of scope (handled elsewhere):
 
 These invariants apply to **every** frontend file you touch. Treat each as inviolate unless the invariant itself names an exception. Compressed invariants keep their number in `references/invariants.md`, which carries the full mechanism, failure story, and code for each — **read the full form before debugging a violation, arguing an exception, or implementing that pattern for the first time.**
 
-> **When the backend OpenAPI spec has changed since the last codegen, jump to invariant #29 (Backend Sync) FIRST — it supersedes every invariant below it.** A CUSTOMIZE task on stale generated/ code produces silent bugs that compile cleanly.
+> **When the backend OpenAPI spec has changed since the last codegen, jump to invariant #29 (Backend Sync) FIRST — it supersedes every invariant below it.** A CUSTOMIZE task on stale generated code — `src/generated/` or `src/generated-meta/`, whichever this project writes — produces silent bugs that compile cleanly.
 
 ### Framework & Contracts
 
-1. **Contract-first** — every domain has ONE API contract; on the codegen path hooks are generated by **Orval** and re-exported from a single hooks file (`src/hooks/`) per domain package (Orval output lives in `src/generated/`). When the framework's own deriver is referenced it is `deriveEntityHooks` (NOT `deriveHooks`) — see the simplix-react framework documentation for those mechanics. Never hand-write hooks alongside the generated ones.
+1. **Contract-first** — every domain has ONE API contract, generated by whichever half the project runs. On the `orval` path hooks come from **Orval** into `src/generated/` and are re-exported from a single hooks file (`src/hooks/`) per domain package; on the `meta` path they come from **SimpliX Meta** into `src/generated-meta/hooks/`, which the package barrel exports directly and where no `src/hooks/` stub layer exists. When the framework's own deriver is referenced it is `deriveEntityHooks` (NOT `deriveHooks`) — see the simplix-react framework documentation for those mechanics. Never hand-write hooks alongside the generated ones.
 2. **Boot mutator** — API calls go through each domain's `src/mutator.ts` with `getMutator("boot")`, which unwraps the Boot envelope so React Query `data` IS the plain DTO. Never bypass the mutator, never hand-roll fetch, and never re-access `data.body` after unwrap (it is `undefined`). Envelope shape and the one-time fix → `framework/overview.md` § Mutator, `invariants.md` #2.
 3. **Query builder / params** — NEVER hand-assemble query strings: the generated request params produce them on the codegen path, `simpleQueryBuilder` on the hand-authored path. Paged list reads send `page` and `size` TOGETHER. → `invariants.md` #3.
 4. **Type-name conflicts** — when `schemas.ts` and derived types collide, export **only Zod constants** from `schemas.ts`.
@@ -84,12 +135,31 @@ These invariants apply to **every** frontend file you touch. Treat each as invio
 
 > **Scaffold-first — generate, don't hand-create (CLI + OpenAPI before anything).** Creating a new domain package, UI module, or CRUD widget set is ALWAYS done with the `simplix` CLI (and OpenAPI codegen when a spec exists) — never by authoring the skeleton, contract, or list/form/detail widgets by hand. This is the FIRST action when adding any new package, module, or page; hand-creating them forks the structure codegen and the validators expect.
 >
+> **Which command generates a domain depends on the project, and the detector reads it.** Run
+> `node "/Users/taehwan/.claude/skills/simplix/scripts/detect-simplix.mjs" --json` and take
+> `codegen` off the frontend match — never assume, and never hand a project the other mode's
+> command:
+>
+> | `codegen` | The config declares | Generate a domain with | Output lands in |
+> | --- | --- | --- | --- |
+> | `meta` | `openapi[].meta`, no `spec` | `simplix meta -d <name>` | `src/generated-meta/` |
+> | `orval` | `openapi[].spec`, no `meta` | `simplix openapi <spec> -d <name> -y` | `src/generated/` |
+> | `both` | both — a migration in progress | `simplix openapi <spec> -y` writes both halves; `meta.export` decides which one each domain's barrel carries | both |
+> | `none` | no `openapi` entry | `simplix add-domain <name> -y`, then fill `operations` | hand-authored |
+>
 > | To create… | Run (CLI-first) | NOT |
 > | --- | --- | --- |
-> | A domain from an OpenAPI spec (preferred) | `simplix openapi <spec> -d <name> -y` | hand-write the contract or `src/generated/` |
-> | A domain with no spec | `simplix add-domain <name> -y`, then fill `operations` | hand-create the package folder |
+> | A domain, on the codegen path | the row above for this project's `codegen` | hand-write the contract, `src/generated/` or `src/generated-meta/` |
+> | A domain with no spec at all | `simplix add-domain <name> -y`, then fill `operations` | hand-create the package folder |
 > | A UI module | `simplix add-module <name> -y` | hand-create `modules/<name>/` |
 > | CRUD UI for an entity | `simplix scaffold <entity> --module <name>` | hand-build list/form/detail |
+>
+> **`simplix add-domain` reads the mode itself** — a config with a `meta` block gets a package with
+> no `orval` dependency, a `codegen` script of `simplix meta -d <name>` and a barrel pointing at
+> `./generated-meta`. Nothing extra to pass.
+>
+> **`simplix scaffold` and `simplix add-module` are the same in both modes.** The scaffolder reads
+> whichever output the domain has.
 >
 > Full Initial path (Steps 0–8) + Update path → `scaffold/overview.md`. Generated artifacts then obey #30 (no manual DTO/hook/mock); use the live spec over stale JSON (#7). For CLI mechanics/flags see the simplix-react framework CLI documentation.
 >
@@ -142,13 +212,13 @@ These invariants apply to **every** frontend file you touch. Treat each as invio
 ### Backend Sync (applies FIRST when backend changed — overrides category order)
 
 29. **Backend-change gate** — when the backend OpenAPI spec has changed since the last codegen, the SCAFFOLD Update path MUST run **before** any CUSTOMIZE work. Even "just a column change" is blocked.
-    - **Detect**: `pnpm --filter @<prefix>/domain-<name> run codegen` → non-empty `git status packages/domain-<name>/src/generated/` means backend moved. Alternate recipes (tag-list diff, field snapshot) → `scaffold/overview.md` §"Detection recipes".
+    - **Detect**: `pnpm --filter @<prefix>/domain-<name> run codegen` → non-empty `git status` on the domain's generated directory means the backend moved — `src/generated/` on the `orval` path, `src/generated-meta/` on the `meta` path. On `meta` the change gate is sharper: it compares the fetched document against the committed `meta.snapshot`, so a constraint or an access rule that never moved the OpenAPI document still registers as a change. Alternate recipes (tag-list diff, field snapshot) → `scaffold/overview.md` §"Detection recipes".
     - **Update path** (existing domain) → `scaffold/overview.md` §"Updating an Existing Domain" Update Steps 1~7.
     - **Initial path** (new domain, `packages/domain-<name>/` absent) → `scaffold/overview.md` §"Workflow Steps" Step 0~8, starting with `simplix.config.ts` registration.
 
-30. **No manual DTO / hook / mock** — generated TypeScript DTO types, React Query hooks, and MSW mock handlers MUST come from the `openapi` CLI. Hand-writing any of these creates drift the next codegen silently overwrites.
+30. **No manual DTO / hook / mock** — generated TypeScript DTO types, React Query hooks, and MSW mock handlers MUST come from the CLI: `simplix openapi` or `simplix meta`, whichever this project runs. Hand-writing any of these creates drift the next codegen silently overwrites.
     - **Allowed hand-written**: Zustand stores, FSD `entities/` state, widget composition, custom editors, SSE glue, local helper types that do NOT shadow a generated DTO.
-    - **Allowed manual edits to codegen output**: `src/mutator.ts` (one-time `getMutator("boot")` fix — see `scaffold/overview.md` Common Issues) and `src/mock/seeds.ts` (preserved across regenerations). Nothing else.
+    - **Allowed manual edits to codegen output**: `src/mutator.ts` (one-time `getMutator("boot")` fix — see `scaffold/overview.md` Common Issues) and `src/mock/seeds.ts` (preserved across regenerations; on the `meta` path a regeneration adds the arrays a new entity needs and leaves the rows already there alone). Nothing else.
 
 ### Page & List Standards (apply to EVERY routed page, generated or hand-authored)
 
