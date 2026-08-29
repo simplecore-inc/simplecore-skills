@@ -4835,7 +4835,12 @@ export function printAreaCode(code: string) {
     // says which endpoint is open and why — and a file that merely forgot the gate cannot claim
     // it by accident.
     check: (c) =>
-      /\buseCan\("create"/.test(c) || /no permission gates this create:\s*\S/.test(c)
+      // Case-insensitive on purpose: the exemption is a sentence, so it is written at the start
+      // of a comment and every writer capitalises it there. An anchor spelled in the one form the
+      // sentence never takes reads as a rule with an exemption and is a rule with none — a screen
+      // that wrote the sentence, and then had a later edit capitalise it, silently lost its
+      // exemption and was reported as a permission hole.
+      /\buseCan\("create"/.test(c) || /no permission gates this create:\s*\S/i.test(c)
         ? []
         : lineHits(c, /onClick=\{show(New|Create)\}/),
     samples: {
@@ -4859,6 +4864,12 @@ usePageHeader({
           note: "a create every signed-in account may make names no group, and says which endpoint is open",
           source: `// no permission gates this create: every signed-in account sets its own
 // delegation, and the server forces the caller as the delegator.
+<Button onClick={showNew}>{t("page.new")}</Button>`,
+        },
+        {
+          note: "the same sentence where it is actually written — at the start of a comment, capitalised",
+          source: `{/* No permission gates this create: every signed-in account sets its own
+    delegation, and the server forces the caller as the delegator. */}
 <Button onClick={showNew}>{t("page.new")}</Button>`,
         },
       ],
