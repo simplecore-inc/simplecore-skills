@@ -7000,6 +7000,55 @@ const saveContacts = async (contacts: ContactItemDTO[]) => {
     },
   },
   {
+    id: "split-row-without-a-width",
+    invariant: "#68",
+    level: "review",
+    desc: "A row asked to sit as two groups — `justify=\"between\"` or `\"around\"` — with `fill` and no width. `fill` on a Stack/Flex is `h-full`, never `w-full`, so the row is only as wide as its children and the split has nothing to divide: both ends land together at whichever end the parent aligns to. It reads as a deliberate group of three, and it is invisible to everything except the pixels — the source says `between`, the props type-check, and the screenshot shows a plausible button row. Give the row a width (`className=\"w-full\"`), or drop the `justify` if the ends were never meant to separate",
+    appliesTo: isTsx,
+    check: (c) =>
+      blockHits(c, /<(?:Flex|Stack)\b[^>]*>/g).filter(
+        (hit) =>
+          /justify=\{?["']?(?:between|around)/.test(hit.excerpt) &&
+          /(?<![-\w])fill(?![-\w:=])/.test(hit.excerpt) &&
+          !/\bw-full\b|\bw-\[|\bsize-full\b|\bflex-1\b|\bgrow\b/.test(hit.excerpt),
+      ),
+    samples: {
+      file: "modules/<domain>/src/pages/<entity>/crud-page.tsx",
+      broken: `<DialogFooter>
+  <Flex align="center" justify="between" gap="sm" fill>
+    <Button variant="outline">{t("dialog.showBlocking")}</Button>
+    <Flex gap="sm">
+      <Button variant="outline">{tUi("common.cancel")}</Button>
+      <Button variant="destructive">{t("dialog.confirm")}</Button>
+    </Flex>
+  </Flex>
+</DialogFooter>`,
+      fixed: `<DialogFooter>
+  <Flex align="center" justify="between" gap="sm" className="w-full">
+    <Button variant="outline">{t("dialog.showBlocking")}</Button>
+    <Flex gap="sm">
+      <Button variant="outline">{tUi("common.cancel")}</Button>
+      <Button variant="destructive">{t("dialog.confirm")}</Button>
+    </Flex>
+  </Flex>
+</DialogFooter>`,
+      miss: [
+        {
+          note: "`fill` on a column, where filling the cross axis is what the prop actually does",
+          source: `<Stack fill gap="md"><Detail /></Stack>`,
+        },
+        {
+          note: "a split row that carries its own width",
+          source: `<Flex justify="between" className="w-full"><Left /><Right /></Flex>`,
+        },
+        {
+          note: "a split row inside a parent that already stretches it",
+          source: `<Flex justify="between" flex-1><Left /><Right /></Flex>`,
+        },
+      ],
+    },
+  },
+  {
     id: "row-actions-as-nameless-column",
     invariant: "#31",
     level: "error",
