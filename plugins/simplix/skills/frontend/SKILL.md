@@ -163,7 +163,7 @@ These invariants apply to **every** frontend file you touch. Treat each as invio
 >
 > Full Initial path (Steps 0–8) + Update path → `scaffold/overview.md`. Generated artifacts then obey #30 (no manual DTO/hook/mock); use the live spec over stale JSON (#7). For CLI mechanics/flags see the simplix-react framework CLI documentation.
 >
-> **Page scaffolding** — every routed page starts from the crud-page shape; page chrome rules are invariant #31.
+> **Page scaffolding** — every routed page starts from the crud-page shape; page chrome rules are invariant #31. Where the project keeps `.simplix/templates/*.hbs`, those ARE the shapes the scaffolder emits — read them before judging generated output, and put a new page shape there rather than in a screen (#67).
 >
 > **List screens** — paged searchable first; the mandatory backend-then-CLI recipe is invariant #32.
 >
@@ -344,6 +344,24 @@ These invariants apply to **every** frontend file you touch. Treat each as invio
       made, not what is right.
     - **This is why a survey is the weakest kind of evidence here** and the generator's output is
       the strongest: one of them is a decision, the other is a residue.
+    - **A shape the generator does not emit is added to the project's template, never to one
+      screen.** The CLI reads `.simplix/templates/<name>.hbs` before its own bundled template and
+      falls through per name, so a project takes over the page shapes it cares about and leaves the
+      rest — `crud-page`, `tree-crud-page`, `hub-page` and `page-index` are the page-side names.
+      That directory is the seam between what the CLI knows (the entity's operations) and what only
+      the product knows (its chrome, its tiles, its notice cards, its tab strip), which is why
+      shipping the chrome in the CLI is not the alternative.
+      - **So "this screen needs a different shape" is a template task, not a hand-written page.**
+        Write the template, scaffold through it, and the next screen that needs the same shape gets
+        it for free. Hand-write it instead and the shape exists nowhere anybody can find: the next
+        author re-invents it, and the two screens end up similar and not the same.
+      - **The tell is length.** A generated page runs to a stable size for a given project; a page
+        several times longer is either carrying content genuinely its own, or carrying structure
+        every screen needs. **For the second, the file to change is the template.** Compare against
+        a sibling the generator wrote before concluding either way.
+      - **Changing a template changes every screen it emitted, and that is the point.** Re-scaffold
+        those screens after the edit and read the diff. The template is tracked, so the change is
+        visible in the commit — a per-screen fix is not.
 
 68. **A row that means to sit as two groups has two children** — a wrapping flex row with
     `justify="between"` or an auto margin says 「these belong at one end and those at the other」,
