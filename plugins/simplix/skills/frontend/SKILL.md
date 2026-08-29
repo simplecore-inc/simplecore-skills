@@ -344,6 +344,22 @@ These invariants apply to **every** frontend file you touch. Treat each as invio
       made, not what is right.
     - **This is why a survey is the weakest kind of evidence here** and the generator's output is
       the strongest: one of them is a decision, the other is a residue.
+    - **A departure is written down where it departs, or it is a defect.** "The base form needs no
+      reason and a deviation does" is only enforceable if the reason is somewhere a reader lands —
+      so it goes in the code at the point of departure, as a comment saying what the generated
+      shape was and why this screen is not it. **Without that, a considered exception and a
+      forgotten line are the same bytes**, and the only way anyone finds out is a person opening
+      the product.
+      - **The count is what makes it obvious, and only afterwards.** One list missing the standard
+        filter bar reads as a screen with a reason; eight of eight missing it while every other
+        module's list has one is not a set of exceptions, it is the base form never having been
+        applied. **So compare against the siblings before writing the reason** — if you cannot say
+        what makes this screen different from the ones that kept it, there is no reason to write
+        and the answer is to restore the base form.
+      - **A missing standard component is invisible to every check that is not looking for it.**
+        It type-checks, it builds, it renders, and the screen looks deliberate. Where a component
+        is standard across a project, its absence is one grep and belongs in that project's gate
+        script — firing on the screens that lack it and silent on the ones that have it.
     - **A shape the generator does not emit is added to the project's template, never to one
       screen.** The CLI reads `.simplix/templates/<name>.hbs` before its own bundled template and
       falls through per name, so a project takes over the page shapes it cares about and leaves the
