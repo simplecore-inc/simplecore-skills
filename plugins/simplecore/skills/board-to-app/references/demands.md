@@ -377,6 +377,34 @@ tally, then reports the tally as a defect.
 > The two dispatches a run created had to be deleted by hand, out of the database, before the
 > screen's own chapter figures were true again.
 
+## A fixture that answers a shape the server never answers photographs nothing
+
+**A capture route's empty-data fixture is a claim about the product, and a wrong one is invisible.**
+It exists to reach the states navigation cannot — a list with nothing in it, a screen answering a
+failure — and a round photographs whatever it produces. So a fixture that answers in a shape the
+server has no way to answer in **files a picture of a state the product cannot be in**, and every
+finding read off that picture is about the fixture.
+
+**The failure has no error in it.** One found here classified an intercepted read as either a page
+or a record, and answered a record with `null`. An aggregate address — a count endpoint, a census,
+a figures read — is neither: no `page`, no `size`, no `/search`, so it fell to "record" and came
+back `{ body: null }` at status 200. Nothing threw, nothing was logged, the query reported success,
+and six tiles drew an em-dash because the unwrapped body was `undefined`. **On a real empty
+installation every one of those counts is a `count()` that cannot be null and every tile would have
+drawn `0`.** Three screens' empty states were judged against that, across two rounds, before
+anybody read the fixture.
+
+**So the fixture is written from what the server actually answers, not from what is convenient to
+return.** Read the service: a count is never null, an average over nothing is, a name of the next
+expiring record is. The em-dash belongs to the values that answer 「which one」 and the zero to the
+values that answer 「how many」, and a fixture that gives every value the same answer has decided
+that question wrongly for half of them.
+
+**And check the fixture before believing an empty-state finding.** The tell is that EVERY figure on
+the screen is absent at once. A real empty installation draws zeros and keeps the lines that are
+rules; a fixture that has stopped answering draws nothing anywhere, which reads as a screen doing
+something deliberate.
+
 ## A drawn figure illustrates; demand the relation, not the value
 
 **A wireframe's number is not a specification.** Somebody typed 1,358 into a tile to show what a
