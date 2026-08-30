@@ -461,6 +461,21 @@ ledger, the handover file, the wave decision, and the barrier work the wave give
    > the directory-scoped brief stopped on the first four. **A longer list is the same
    > mistake at a larger radius**; only a surface covers what has not surfaced yet.
 
+   **Ask an agent to prove a set complete, not to name its exceptions.** The two questions
+   look interchangeable and produce different answers. 「Which ones were also generated?」
+   returns the ones that differed — a short, true, useless list, because a file that was
+   edited and happens to match what the generator writes is not an exception to anything and
+   nobody thinks to mention it. 「Was that the whole set, and how do you know?」 returns the
+   census, and the census is where the finding is: fifty files hand-edited rather than two,
+   and forty-eight more inside the same glob that were spared only because they happened to
+   hold nothing the sweep was looking for. **The second half is never volunteered**, because
+   it is a list of things that did not happen — and it is the half that says whether the
+   protection was the design or the corpus.
+
+   > This holds for a report as much as for a brief. **A number an agent reports is the
+   > number its question asked for**, so 「how many did you fix」 and 「how many did you look
+   > at」 come back as the same figure unless both are asked. Ask for the denominator by name.
+
    **A brief must not demand a verification its own columns forbid.** The 「not mine」
    column is what forecloses — it takes the server, the device, the profile or the
    account — and the demand for a check that needs one of those sits in the same brief
