@@ -1421,6 +1421,42 @@ const RULES = [
     },
   },
   {
+    id: "mutator-does-not-unwrap-the-boot-envelope",
+    invariant: "#2 / audit: api layer",
+    level: "error",
+    desc: "A domain package's mutator calls `getMutator()` with no profile, so nothing unwraps the Boot envelope — React Query's `data` is the envelope rather than the DTO, every field on every screen of that domain reads `undefined`, and the screens render as though the server sent nothing. Nothing errors and nothing warns: the requests are correct, the responses are correct, the tiles draw an em-dash and the lists draw their empty state. `mutator.ts` is one of the two codegen outputs that are hand-edited after a scaffold, and this is that edit — `getMutator(\"boot\")`",
+    appliesTo: (p) => /\/src\/mutator\.ts$/.test(p),
+    check: (c) => lineHits(c, /getMutator\(\s*\)/),
+    samples: {
+      file: "packages/domain-area/src/mutator.ts",
+      broken: `import { getMutator } from "@simplix-react/api";
+
+export async function customFetch<T>(url: string, options: RequestInit): Promise<T> {
+  return getMutator()<T>(url, options);
+}`,
+      fixed: `import { getMutator } from "@simplix-react/api";
+
+export async function customFetch<T>(url: string, options: RequestInit): Promise<T> {
+  return getMutator("boot")<T>(url, options);
+}`,
+      miss: [
+        {
+          note: "a profile named explicitly — the rule asks for a profile, not for one particular word",
+          source: `export async function customFetch<T>(url: string, options: RequestInit): Promise<T> {
+  return getMutator("raw")<T>(url, options);
+}`,
+        },
+        {
+          note: "the framework's own factory, which takes the profile from its argument and is not a package mutator",
+          file: "packages/api/src/get-mutator.ts",
+          source: `export function getMutator(profile?: string) {
+  return mutators[profile ?? "default"];
+}`,
+        },
+      ],
+    },
+  },
+  {
     id: "unguarded-route",
     invariant: "audit: route permission",
     level: "error",
@@ -3468,6 +3504,71 @@ export function ScopePane({ line }: Props) {
         {
           note: "the resolver, which is what this rule is asking for",
           source: `const status = resolveBootEnum(row.status) ?? "";`,
+        },
+      ],
+    },
+  },
+  {
+    id: "boot-enum-stringified-with-a-nullish-default",
+    invariant: "#10 / #36",
+    level: "error",
+    desc: "A boot enum wrapped in `String()` and defaulted with `??` — the server sends `{type,value,label}`, which is neither null nor undefined, so the fallback never fires and `String()` answers the literal `[object Object]`. The control then matches no option and draws blank, and the save comes back 400 on a field the operator can see is filled. It shows only on EDIT: on create the value really is absent, the default really does fire, and the same line is correct — which is why the create form works and its edit form does not",
+    appliesTo: isTsx,
+    // Scanned with balanced parens rather than a line regex, because the wrapped form —
+    // `String(\n  loaded.x ?? Enum.MEMBER,\n)` — is what prettier writes as soon as the enum
+    // member is long, and a line rule goes quiet on exactly the longest-named enums.
+    check: (c) => {
+      const hits = [];
+      const lines = c.split("\n");
+      let at = 0;
+      while ((at = c.indexOf("String(", at)) !== -1) {
+        if (/[A-Za-z0-9_$.]/.test(c[at - 1] ?? " ")) {
+          at += 7;
+          continue;
+        }
+        let depth = 1;
+        let i = at + 7;
+        while (i < c.length && depth > 0) {
+          if (c[i] === "(") depth++;
+          else if (c[i] === ")") depth--;
+          i++;
+        }
+        const arg = c.slice(at + 7, i - 1);
+        const line = lineOfIndex(c, at);
+        // The fallback naming an enum member is what says the value on the left is an enum
+        // rather than the number or the id `String()` is legitimately wrapped around.
+        if (
+          /\?\?\s*[A-Z][A-Za-z0-9]*\.[A-Z][A-Z0-9_]+/.test(arg) &&
+          notCommentLine(lines[line - 1], lines, line - 1)
+        ) {
+          hits.push({ line, excerpt: `String(${arg.replace(/\s+/g, " ").trim()})`.slice(0, 140) });
+        }
+        at = i;
+      }
+      return hits;
+    },
+    samples: {
+      file: "modules/<domain>/src/widgets/<entity>/form.tsx",
+      broken: `    authMethod: String(defaults?.authMethod ?? ApiClientAuthMethod.OAUTH2_CLIENT_CREDENTIALS),
+    signatureAlgorithm: String(
+      defaults?.signatureAlgorithm ?? WebhookSignatureAlgorithm.HMAC_SHA256,
+    ),`,
+      fixed: `    authMethod:
+      resolveBootEnum(defaults?.authMethod) || ApiClientAuthMethod.OAUTH2_CLIENT_CREDENTIALS,
+    signatureAlgorithm:
+      resolveBootEnum(defaults?.signatureAlgorithm) || WebhookSignatureAlgorithm.HMAC_SHA256,`,
+      miss: [
+        {
+          note: "`String()` over an id for a row key, which is what it is for",
+          source: `        rowId={(row) => String(row.apiClientId)}`,
+        },
+        {
+          note: "a plain-string field defaulted with `??` — nothing is wrapped, and `??` fires",
+          source: `  const tab = search.tab ?? IdentityProviderType.OIDC;`,
+        },
+        {
+          note: "the resolver with `||`, which is what this rule is asking for",
+          source: `    syncMethod: resolveBootEnum(loaded.syncMethod) || SyncMethod.REST_INCREMENTAL,`,
         },
       ],
     },
