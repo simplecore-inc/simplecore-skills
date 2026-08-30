@@ -567,7 +567,22 @@ what kind of thing it is:
 | --- | --- |
 | Specific to this project (its packages, its domains, its policy decisions) | an entry in the project's own reference under its `.claude/` — this skill ships read-only from the plugin install, so a project fact does not belong in it |
 | True of any simplix-react project, and mechanically detectable | a rule in `${CLAUDE_PLUGIN_ROOT}/scripts/audit-frontend.mjs`, proved to fire on the defect and stay silent on the fix |
+| True of any simplix-react project, mechanically detectable, **and it turns on what a value's TYPE is** | a standalone type-aware check beside `check-duplicate-contexts.mjs`, resolving typescript from the project under audit — a rule in the audit script reads source text and cannot see a type |
 | True of any simplix-react project, and a judgment call | a new **invariant** here when it binds every task, otherwise a section in the reference that owns the topic — `framework/*` for contracts and the install, `customize/*` for widget work, `audit/*` for commonization, `docs/*` for documentation |
+
+**That third row is not a refinement of the second, and the difference is measurable.** One family
+— a catalogue placeholder asking for a number format while its caller hands over words, which
+renders `NaN` on the screen and type-checks, builds and ships — had twelve instances in one
+repository. **A regex rule written for it caught four. A careful hand scan of the same files caught
+two more. A type checker caught all twelve.** The six neither found were a call passing a local
+whose name says nothing about its return type, and no pattern over source text can reach that:
+the value's type never appears in the text the rule is reading.
+
+So before writing a rule into the audit script, ask what the defect actually turns on. **A shape**
+— a missing prop, a forbidden import, a hand-rolled fetch, a raw `className` — is text, and a rule
+is right. **A type, a resolution, or a value that arrives from somewhere else** is not text, and a
+rule written for it will pass its own selftest, report a plausible number, and leave most of the
+family standing. Report the count it reaches, not the count it finds.
 
 Write it with placeholders (`<scope>`, `<domain>`, `<entity>`) and neutral example
 vocabulary. Where the plugin is a checkout rather than an install, edit it in place and say
