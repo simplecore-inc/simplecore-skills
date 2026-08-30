@@ -377,6 +377,46 @@ tally, then reports the tally as a defect.
 > The two dispatches a run created had to be deleted by hand, out of the database, before the
 > screen's own chapter figures were true again.
 
+## A drawn figure illustrates; demand the relation, not the value
+
+**A wireframe's number is not a specification.** Somebody typed 1,358 into a tile to show what a
+tile looks like with a large number in it. A demand that copies that figure out of the frame makes
+the seed answer to a sketch — and a seed bent to satisfy a sketch is a seed that has stopped being
+a description of the product.
+
+**Demand the relation instead.** These are the ones a generator reads off a frame without knowing
+any value, and each is checkable on the screen with no number known in advance:
+
+| The frame draws | The demand |
+| --- | --- |
+| a tile with a `basis` naming its parts | the parts account for the value |
+| a tab strip with counts over panes | each tab's count is its own pane's total |
+| `pagination(pages, total, rows)` | the page count is the total over the rows, rounded up |
+| a filter bar total above a table | the total is the set the table beneath it is showing |
+| two panes drawing the same record | they answer the same question the same way |
+
+**Each of these catches what a value comparison cannot: a screen whose own figures contradict each
+other.** A value comparison catches only that the screen differs from a drawing.
+
+**A literal value is demanded only where the value is a RULE, and a rule never lives only in a
+wireframe.** A limit comes from the entitlement; a threshold from the entity's own default or a
+design chapter; a period, a date or a retention span from a statute. So **a demand that needs a
+literal figure cites the source that fixes it**, and a figure with no such source outside the board
+is an illustration — demand the relation and let the seed say what it says.
+
+**The evidence, because this reverses what a project will have written down.** One chapter's
+judging round produced about a hundred disagreements across six screens. Every genuine defect among
+the figures was a relation: a tile's basis that summed to less than its tile, a tile counting what
+its own column drew as absent, a record registered after the delivery it describes was sent, a mean
+that included the timeouts it claimed to exclude. **Exactly one was a pure value mismatch** — a
+tile reading 4시간 전 where the frame drew 32분 전 — and satisfying it meant rewriting four hundred
+rows on every boot so that a figure a wireframe author had typed would appear.
+
+> **Read it this way and it is wrong**: 「then the figures do not matter and a screen may draw
+> anything」. The relations are stricter than the values, not looser: a screen may draw any total
+> it likes and must still make its parts sum to it, its tabs agree with their panes, and its pager
+> agree with both. What is given up is only the claim that a sketch fixes the data.
+
 ## A demand that grows is appended, never substituted
 
 **A new demand goes at the END of the line.** A verification quotes the chapter, so a quote already
