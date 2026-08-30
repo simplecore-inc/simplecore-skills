@@ -3190,6 +3190,158 @@ addToast({ message: t("area.moved", { name: row.name ? row.name : fallback }) })
     })(),
   },
   {
+    id: "counted-string-without-number-format",
+    invariant: "audit: scaffold locale",
+    level: "error",
+    desc: "A catalogue entry filled through i18next's `count` whose placeholder carries no format — `\"{{count}}건\"` renders 「1358건」 where the design says 「1,358건」, in every language at once. Nothing errors and nothing looks wrong in the source: the value is a number, the sentence is complete, the build is green, and the separator is simply never applied. Write the entry as `{{count, number}}` and i18next runs the value through `Intl.NumberFormat` for the resolved language (built in since v21, no configuration). The number stays a number, so `_one` / `_other` selection is untouched — which is why the fix belongs in the string and never at the call site: handing `count` a pre-formatted string groups the digits and silently breaks the plural in every language that has one",
+    // Only `count` is judged, and that is the whole of what a catalogue can decide. i18next reserves
+    // `count` for plural selection, so a value arriving under that name is a number by the library's
+    // own contract — no type information needed. Every other placeholder would need one: `{{days}}`
+    // holds a duration and `{{year}}` holds a year, and the two are the same characters in the same
+    // position of the same sentence. A rule that guessed at them would put a comma in 2026.
+    appliesTo: (p) => (inModules(p) || inApps(p) || inPackages(p)) && /\.tsx?$/.test(p),
+    check: (c, file) => {
+      const binds = translatorNamespaces(c, file);
+      if (binds.size === 0) return [];
+      const plural = /_(zero|one|two|few|many|other)$/;
+      const hits = [];
+      for (const [alias, ns] of binds) {
+        const dirs = catalogueDirsFor(ns, file);
+        if (!dirs.length) continue;
+        // Two ways a key is filled with a count. The translator's own call carries `count` in its
+        // options object; a helper (`countedFigure(t, figure, "unit.itemCount")`) writes the name
+        // itself and hands over only the key, which is how the majority of a console's counted
+        // strings are reached — a rule watching for `count:` alone sees none of them.
+        const called = new Map();
+        const call = new RegExp(`\\b${alias}\\(\\s*"([a-zA-Z0-9_.\\-]+)"\\s*,\\s*\\{`, "g");
+        for (const m of c.matchAll(call)) {
+          const { names } = objectLiteralProperties(c, m.index + m[0].length - 1);
+          if (!names.includes("count")) continue;
+          if (!called.has(m[1])) called.set(m[1], m.index);
+        }
+        const viaHelper = new RegExp(
+          `\\b[A-Za-z_$][\\w$]*\\(\\s*${alias}\\s*,[^)]*?"([a-zA-Z0-9_.\\-]+\\.[a-zA-Z0-9_.\\-]+)"`,
+          "g",
+        );
+        for (const m of c.matchAll(viaHelper)) if (!called.has(m[1])) called.set(m[1], m.index);
+
+        for (const [key, index] of called) {
+          const bare = [];
+          for (const dir of dirs) {
+            for (const [lang, entries] of catalogueLanguages(dir)) {
+              for (const [entryKey, text] of entries) {
+                // A plural catalogue writes `unit.dutyCount_one` and the call site names
+                // `unit.dutyCount`, so an exact lookup reads none of the plural languages — which
+                // are precisely the ones where the format has to be right in two forms.
+                if (entryKey !== key && entryKey.replace(plural, "") !== key) continue;
+                // A sentence that pluralises without printing the number is correct and has no
+                // placeholder to format.
+                if (!/\{\{\s*count\b/.test(text)) continue;
+                // Already formatted — with `number`, or with whatever formatter the project named.
+                if (/\{\{\s*count\s*,/.test(text)) continue;
+                // A percentage is never grouped, and a helper that hardcodes `count` is how one
+                // arrives under this name. Decidable from the string, so it is a miss rather than
+                // a waiver somebody has to write.
+                if (/%\s*\{\{\s*count\s*\}\}|\{\{\s*count\s*\}\}\s*%/.test(text)) continue;
+                bare.push(`${path.relative(ROOT, dir).split(path.sep).join("/")}/${lang}`);
+              }
+            }
+          }
+          if (!bare.length) continue;
+          hits.push({
+            line: lineOfIndex(c, index),
+            excerpt: `${key} — {{count}} without a format in ${[...new Set(bare)].join(", ")}`,
+          });
+        }
+      }
+      return hits;
+    },
+    samples: (() => {
+      // Two languages and a plural pair, because the format has to reach `_one` as well as
+      // `_other`: a catalogue formatted in one plural form and not the other reads correct at
+      // every count but one.
+      const catalogue = (formatted) => {
+        const n = formatted ? "{{count, number}}" : "{{count}}";
+        return {
+          "modules/site/src/locales/index.ts": `export const PACKAGE_NAMESPACE = "site";\n`,
+          "modules/site/src/locales/widgets/ko.json": `{
+  "unit": { "areaCount": ${JSON.stringify(`${n}개`)} },
+  "tile": { "readShare": ${JSON.stringify(`어제 {{count}}%`)} },
+  "form": { "year": "{{year}}년" }
+}
+`,
+          "modules/site/src/locales/widgets/en.json": `{
+  "unit": {
+    "areaCount_one": ${JSON.stringify(`${n} area`)},
+    "areaCount_other": ${JSON.stringify(`${n} areas`)}
+  },
+  "tile": { "readShare": "{{count}}% yesterday" },
+  "form": { "year": "{{year}}" }
+}
+`,
+        };
+      };
+      return {
+        file: "modules/site/src/widgets/area/detail.tsx",
+        broken: {
+          files: catalogue(false),
+          source: `const { t } = useTranslation("site/widgets");
+
+<Text>{t("unit.areaCount", { count: rows.length })}</Text>`,
+        },
+        fixed: {
+          files: catalogue(true),
+          source: `const { t } = useTranslation("site/widgets");
+
+<Text>{t("unit.areaCount", { count: rows.length })}</Text>`,
+        },
+        miss: [
+          {
+            note: "a percentage — never grouped, and a helper that hardcodes `count` is how one arrives under that name",
+            files: catalogue(true),
+            source: `const { t } = useTranslation("site/widgets");
+
+<Text>{t("tile.readShare", { count: census.readPercent })}</Text>`,
+          },
+          {
+            note: "a year, which must never become 2,026 — the rule judges `count` and nothing else, so no other placeholder is guessed at",
+            files: catalogue(true),
+            source: `const { t } = useTranslation("site/widgets");
+
+<Heading>{t("form.year", { year: today.getFullYear() })}</Heading>`,
+          },
+          {
+            note: "reached through a helper that writes `count` itself — the key is judged, and here it is already formatted",
+            files: catalogue(true),
+            source: `const { t } = useTranslation("site/widgets");
+
+<Text>{countedFigure(t, rows.length, "unit.areaCount")}</Text>`,
+          },
+          {
+            note: "a namespace this repository does not own — an absent catalogue is not an unformatted one",
+            source: `const { t } = useTranslation("framework/ui");
+
+<Text>{t("common.selected", { count: rows.length })}</Text>`,
+          },
+          {
+            note: "a key no catalogue defines — missing-translation-key owns that",
+            files: catalogue(true),
+            source: `const { t } = useTranslation("site/widgets");
+
+<Text>{t("unit.zoneCount", { count: rows.length })}</Text>`,
+          },
+          {
+            note: "an interpolation that carries no count at all",
+            files: catalogue(true),
+            source: `const { t } = useTranslation("site/widgets");
+
+<Text>{t("form.year", { year })}</Text>`,
+          },
+        ],
+      };
+    })(),
+  },
+  {
     id: "translation-key-prefix-table-has-a-dead-entry",
     invariant: "audit: scaffold locale",
     level: "error",
