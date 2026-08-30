@@ -420,6 +420,17 @@ this and the list written under those conditions does not name them.
   resources and the leftover-symlink sweep are in `framework/overview.md` § One physical
   copy per framework package, together with the framework-side `globalThis` anchoring
   rule that keeps a duplicate copy from becoming a correctness failure.
+- **The same split has a type-level twin, and it surfaces on a ref prop.** A linked
+  checkout resolves its own `@types/react`, so `Ref<T>` written in the consuming package
+  is a different declaration from the `Ref<T>` the framework component's props were
+  declared against. An OBJECT ref crosses that boundary because it is structural
+  (`{ current: T | null }`); a CALLBACK ref does not, because its return type reaches
+  `VoidOrUndefinedOnly`, which is nominal — so `tsc` refuses the assignment with "Two
+  different types with this name exist, but they are unrelated" naming a type the author
+  never wrote. **A shared component that forwards a ref to a framework primitive declares
+  that prop as `RefObject<T | null>`, not `Ref<T>`**: it is what a caller reading the
+  element holds anyway, and it is the half of `Ref` that is assignable across the two
+  copies. Widening it back to `Ref<T>` to "be more permissive" is what re-breaks it.
 
 ## #61 Hiding a surface is not the same as not asking for it
 
