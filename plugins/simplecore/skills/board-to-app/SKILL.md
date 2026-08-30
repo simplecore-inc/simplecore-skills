@@ -2022,6 +2022,60 @@ are; do not close them by choosing for the user. **A line naming this chapter as
 is the exception** — that one is settled, or explicitly released on the line, before the chapter
 closes → *One kind of parked line does hold a chapter*.
 
+## Waste does not announce itself — the check that passed is the one to suspect
+
+**Almost every hour this arrangement wastes is spent on a proxy.** Something was checked, the check
+passed, and what the check was for was never looked at. Nobody notices, because a passing check and
+a sound thing are the same green.
+
+**The test, and it takes one sentence: what would have to be true for this check to pass while the
+thing it protects is broken?** If the answer comes easily, the check is a proxy. One chapter's
+round produced ten of these and every one answers instantly:
+
+| The check | Passes while |
+| --- | --- |
+| the seed produces the figure the board draws | the figure is one a wireframe author typed and describes nothing |
+| the empty-data fixture returned a response | it returned a shape the server has no way to return |
+| the generated package typechecks | every module importing it is broken |
+| the capture came out at a width | it is not the declared width, and the chapter now holds two instruments |
+| no findings in this file | three sit under a per-file threshold |
+| the rule's examples pass | its stated boundary is in the prose and not in the pattern |
+| the judge read the board | it read one of the two frames that draw the screen |
+| the picture is named for its frame | it is the sign-in screen at the right width in the right container |
+
+**The proxy is never obviously wrong when it is written.** Each of those was a reasonable thing to
+check; what makes it a proxy is that something else — a sketch, a fixture, a package, a threshold —
+stands between the check and the subject, and the check cannot see past it.
+
+### The question a chapter closes with
+
+**Before the ledger row is written, ask what this round did twice.**
+
+> Which work was undone, redone, or withdrawn — and what would have had to be different for it
+> never to have been done at all?
+
+The answer names a proxy nearly every time, and it is the cheapest finding available because the
+evidence is already in the round's own messages. **A round that redid nothing has not proved it
+wastes nothing** — it has usually not looked.
+
+**Three answers are not proxies and should not be recorded as waste.** Work redone because the
+product genuinely changed underneath it; a finding withdrawn because a judge read the evidence and
+was right to; and an investigation that came back empty on a real question. Those are the
+arrangement working.
+
+**What is waste, and each of these happened**: a lane sent to a screen a second lane was already
+shooting. An observation about a file another lane was mid-edit in, relayed as a fact and dated
+nowhere. A brief that named one artifact where two govern. A demand asking for a picture the
+existing captures already contain. **The common half is that the coordinator held both sides and
+compared neither.**
+
+### Fix the mechanism, not the instance
+
+**A waste found and fixed once is a waste that returns next chapter.** So the finding lands where
+the proxy lives — the check's own definition, the brief's template, the script that inherited what
+it should have set — and the report says which of the three it was. A round that lists what it
+wasted and changes nothing has produced a confession rather than a repair.
+
 ## What the coordinator reports
 
 To the user, in the conversation, never into a file — the ledger and the open items hold what is
