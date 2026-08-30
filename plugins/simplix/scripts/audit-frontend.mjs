@@ -665,10 +665,13 @@ function translatorBindings(content) {
  *
  * @param content the file source
  * @param open    index of the object literal's `{`
- * @returns the property names, whether anything hid names from the scan, and the index of the `}`
+ * @returns the property names, the value text beside each one (index-aligned with `names`, so a
+ *          rule can judge what a property is handed as well as that it is passed), whether
+ *          anything hid names from the scan, and the index of the `}`
  */
 function objectLiteralProperties(content, open) {
   const names = [];
+  const values = [];
   let dynamic = false;
   let i = open + 1;
   let depth = 1;
@@ -734,7 +737,7 @@ function objectLiteralProperties(content, open) {
   }
   // An unbalanced literal means the scan ran off the end of the file. Reporting the names found
   // so far would be reporting half an object, so the call is marked unjudgeable instead.
-  if (depth > 0) return { names: [], dynamic: true, end: content.length };
+  if (depth > 0) return { names: [], values: [], dynamic: true, end: content.length };
   for (let segment of segments) {
     const seg = segment
       .replace(/\/\*[\s\S]*?\*\//g, " ")
@@ -748,17 +751,20 @@ function objectLiteralProperties(content, open) {
     const quoted = seg.match(/^(["'])((?:\\.|(?!\1).)*)\1\s*:/);
     if (quoted) {
       names.push(quoted[2]);
+      values.push(seg.slice(quoted[0].length).trim());
       continue;
     }
     // `name:` and the shorthand `name` alike — the shorthand is how most values are passed.
     const plain = seg.match(/^([A-Za-z_$][\w$]*)\s*(?::|$)/);
     if (plain) {
       names.push(plain[1]);
+      // A shorthand's value is the name itself, which is what a reader of the call sees.
+      values.push(seg.includes(":") ? seg.slice(seg.indexOf(":") + 1).trim() : plain[1]);
       continue;
     }
     dynamic = true;
   }
-  return { names, dynamic, end: i };
+  return { names, values, dynamic, end: i };
 }
 
 let catalogueIndexCache = null;
@@ -3336,6 +3342,129 @@ addToast({ message: t("area.moved", { name: row.name ? row.name : fallback }) })
             source: `const { t } = useTranslation("site/widgets");
 
 <Text>{t("form.year", { year })}</Text>`,
+          },
+        ],
+      };
+    })(),
+  },
+  {
+    id: "number-format-on-a-value-that-is-not-a-number",
+    invariant: "audit: scaffold locale",
+    level: "error",
+    desc: "A catalogue placeholder written `{{x, number}}` whose call site hands it something that is not a number. `Intl.NumberFormat` coerces, so the screen reads `법정 NaN` — and it renders, type-checks and builds green, because the value's type never leaves the options object. The two shapes that produce it are a value already turned into words somewhere else (a translator call, `toLocaleString`, a `join`, a `toFixed`, a byte-size helper) and an absent-value fallback to a placeholder string (`?? \"—\"`), which is worse because the defect only shows on the empty record. Decide which one the sentence wants: where the caller is the thing that formats, the placeholder goes back to `{{x}}`; where the catalogue should format, hand it the raw number and delete the caller's formatting — never both",
+    // This is the far side of `counted-string-without-number-format`. That rule reads a catalogue
+    // that forgot to format; this one reads a call site that formatted twice. They share nothing:
+    // one is decided by the entry alone, the other only by holding the entry against its caller.
+    appliesTo: (p) => (inModules(p) || inApps(p) || inPackages(p)) && /\.tsx?$/.test(p),
+    check: (c, file) => {
+      const binds = translatorNamespaces(c, file);
+      if (binds.size === 0) return [];
+      const plural = /_(zero|one|two|few|many|other)$/;
+      // Every shape that cannot be a number. Each is a value that has already been turned into
+      // words, or a stand-in for a value that is not there.
+      const NOT_A_NUMBER = [
+        [/(^|[^\w.$])t[A-Za-z]*\s*\(/, "a translator call — the value arrives as a rendered sentence"],
+        [/\.toLocaleString\s*\(/, "already grouped by the caller"],
+        [/\.toFixed\s*\(/, "toFixed returns a string, and the format would drop its trailing zero"],
+        [/\.join\s*\(/, "a joined list"],
+        [/\?\?\s*["'`]/, "a fallback to a string — the defect shows only where the value is absent"],
+        [/^\s*["'`]/, "a string literal"],
+        [/\bString\s*\(/, "String() — a string"],
+      ];
+      const hits = [];
+      for (const [alias, ns] of binds) {
+        const dirs = catalogueDirsFor(ns, file);
+        if (!dirs.length) continue;
+        const call = new RegExp(`\\b${alias}\\(\\s*"([a-zA-Z0-9_.\\-]+)"\\s*,\\s*\\{`, "g");
+        for (const m of c.matchAll(call)) {
+          const key = m[1];
+          const open = m.index + m[0].length - 1;
+          const { names, values } = objectLiteralProperties(c, open);
+          for (let n = 0; n < names.length; n++) {
+            const name = names[n];
+            const expr = (values[n] ?? "").replace(/\s+/g, " ").trim();
+            if (!expr) continue;
+            const why = NOT_A_NUMBER.find(([re]) => re.test(expr));
+            if (!why) continue;
+            // Only where a catalogue actually asks for the format. A bare placeholder handed a
+            // rendered string is exactly right and is most of what a screen does.
+            let formattedIn = null;
+            for (const dir of dirs) {
+              for (const [lang, entries] of catalogueLanguages(dir)) {
+                for (const [entryKey, text] of entries) {
+                  if (entryKey !== key && entryKey.replace(plural, "") !== key) continue;
+                  if (!new RegExp(`\\{\\{\\s*${name}\\s*,`).test(text)) continue;
+                  formattedIn = `${path.relative(ROOT, dir).split(path.sep).join("/")}/${lang}`;
+                }
+              }
+            }
+            if (!formattedIn) continue;
+            hits.push({
+              line: lineOfIndex(c, m.index),
+              excerpt: `${key} — {{${name}, number}} in ${formattedIn} is handed \`${expr.slice(0, 60)}\` (${why[1]})`,
+            });
+          }
+        }
+      }
+      return hits;
+    },
+    samples: (() => {
+      const catalogue = {
+        "modules/site/src/locales/index.ts": `export const PACKAGE_NAMESPACE = "site";\n`,
+        "modules/site/src/locales/widgets/ko.json": `{
+  "unit": { "years": "{{count, number}}년" },
+  "retention": { "term": "법정 {{years, number}}", "anchor": "기산 {{anchor}}" },
+  "asset": { "length": "총연장 {{metres, number}}m" }
+}
+`,
+        "modules/site/src/locales/widgets/en.json": `{
+  "unit": { "years_one": "{{count, number}} year", "years_other": "{{count, number}} years" },
+  "retention": { "term": "Statutory {{years, number}}", "anchor": "From {{anchor}}" },
+  "asset": { "length": "{{metres, number}} m" }
+}
+`,
+      };
+      return {
+        file: "modules/site/src/widgets/area/detail.tsx",
+        broken: {
+          files: catalogue,
+          source: `const { t } = useTranslation("site/widgets");
+
+<Text>{t("retention.term", { years: t("unit.years", { count: row.statutoryYears }) })}</Text>`,
+        },
+        fixed: {
+          files: catalogue,
+          source: `const { t } = useTranslation("site/widgets");
+
+<Text>{t("retention.term", { years: row.statutoryYears })}</Text>`,
+        },
+        miss: [
+          {
+            note: "a rendered string handed to a placeholder that asks for no format — most of what a screen does",
+            files: catalogue,
+            source: `const { t } = useTranslation("site/widgets");
+
+<Text>{t("retention.anchor", { anchor: t(\`anchor.\${row.anchorKind}\`) })}</Text>`,
+          },
+          {
+            note: "the caller stopped formatting and hands the raw metres over, which is the other way to fix it",
+            files: catalogue,
+            source: `const { t } = useTranslation("site/widgets");
+
+<Text>{t("asset.length", { metres: row.totalLengthM })}</Text>`,
+          },
+          {
+            note: "an arithmetic expression that merely mentions a quoted key elsewhere in the call",
+            files: catalogue,
+            source: `const { t } = useTranslation("site/widgets");
+
+<Text>{t("asset.length", { metres: (row.endM ?? 0) - (row.startM ?? 0) })}</Text>`,
+          },
+          {
+            note: "a namespace this repository does not own — an absent catalogue asks for no format",
+            source: `const { t } = useTranslation("framework/ui");
+
+<Text>{t("common.span", { metres: value.toLocaleString("ko-KR") })}</Text>`,
           },
         ],
       };
