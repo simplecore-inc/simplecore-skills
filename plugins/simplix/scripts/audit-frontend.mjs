@@ -948,6 +948,29 @@ function translatorNamespaces(content, file) {
 }
 
 /**
+ * Identifiers a file declares as one-line wrappers around its translator.
+ *
+ * <p>A screen that composes a sentence out of a counted one writes
+ * `const counted = (n: number) => t(countKey, { count: n })` and passes `counted(x)` into the
+ * outer key. The value is a rendered string, and nothing about the name says so — which is why a
+ * rule reading only the expression text calls it numeric while a rule reading only the catalogue
+ * calls the outer entry unformatted. Both are wrong about the same call, in opposite directions,
+ * and both fired that way on four correct entries before this existed.
+ *
+ * @param content the file source
+ * @returns the names whose call returns a translated string
+ */
+function translatorWrappers(content) {
+  const names = new Set();
+  for (const m of content.matchAll(
+    /\bconst\s+([A-Za-z_$][\w$]*)\s*=\s*(?:\([^)]*\)|[A-Za-z_$][\w$]*)\s*=>\s*\{?\s*(?:return\s+)?([A-Za-z_$][\w$]*)\(/g,
+  )) {
+    if (/^t[A-Za-z]*$/.test(m[2])) names.add(m[1]);
+  }
+  return names;
+}
+
+/**
  * The names i18next reads as instructions rather than substituting into the sentence.
  *
  * <p>The framework's translator declares its second argument as plain values
@@ -3219,10 +3242,18 @@ addToast({ message: t("area.moved", { name: row.name ? row.name : fallback }) })
         // itself and hands over only the key, which is how the majority of a console's counted
         // strings are reached — a rule watching for `count:` alone sees none of them.
         const called = new Map();
+        const wrappers = translatorWrappers(c);
         const call = new RegExp(`\\b${alias}\\(\\s*"([a-zA-Z0-9_.\\-]+)"\\s*,\\s*\\{`, "g");
         for (const m of c.matchAll(call)) {
-          const { names } = objectLiteralProperties(c, m.index + m[0].length - 1);
-          if (!names.includes("count")) continue;
+          const { names, values } = objectLiteralProperties(c, m.index + m[0].length - 1);
+          const at = names.indexOf("count");
+          if (at === -1) continue;
+          // A `count` filled with an already-rendered sentence is not an unformatted count, and
+          // saying so sends the reader to add a format that draws NaN. The inner key groups the
+          // figure; the outer one is receiving words.
+          const value = (values[at] ?? "").trim();
+          if (/(^|[^\w.$])t[A-Za-z]*\s*\(/.test(value)) continue;
+          if ([...wrappers].some((w) => new RegExp(`(^|[^\\w.$])${w}\\s*\\(`).test(value))) continue;
           if (!called.has(m[1])) called.set(m[1], m.index);
         }
         const viaHelper = new RegExp(
@@ -3273,6 +3304,7 @@ addToast({ message: t("area.moved", { name: row.name ? row.name : fallback }) })
           "modules/site/src/locales/widgets/ko.json": `{
   "unit": { "areaCount": ${JSON.stringify(`${n}개`)} },
   "tile": { "readShare": ${JSON.stringify(`어제 {{count}}%`)} },
+  "bulk": { "blockedOf": "차단 {{count}} 내보내기" },
   "form": { "year": "{{year}}년" }
 }
 `,
@@ -3282,6 +3314,7 @@ addToast({ message: t("area.moved", { name: row.name ? row.name : fallback }) })
     "areaCount_other": ${JSON.stringify(`${n} areas`)}
   },
   "tile": { "readShare": "{{count}}% yesterday" },
+  "bulk": { "blockedOf": "Export {{count}} blocked" },
   "form": { "year": "{{year}}" }
 }
 `,
@@ -3324,6 +3357,18 @@ addToast({ message: t("area.moved", { name: row.name ? row.name : fallback }) })
 <Text>{countedFigure(t, rows.length, "unit.areaCount")}</Text>`,
           },
           {
+            // The boundary this rule shipped without, and it fired on four correct entries before
+            // the sample existed. An outer sentence composed from a counted one receives a rendered
+            // string under `count`; telling its author to add a format would draw NaN, and
+            // `number-format-on-a-value-that-is-not-a-number` is what judges that call instead.
+            note: "`count` filled from a local wrapper round the translator — a rendered sentence, so the outer entry is right to be bare",
+            files: catalogue(true),
+            source: `const { t } = useTranslation("site/widgets");
+const counted = (n: number) => t("unit.areaCount", { count: n });
+
+<Text>{t("bulk.blockedOf", { count: counted(blocked) })}</Text>`,
+          },
+          {
             note: "a namespace this repository does not own — an absent catalogue is not an unformatted one",
             source: `const { t } = useTranslation("framework/ui");
 
@@ -3362,8 +3407,13 @@ addToast({ message: t("area.moved", { name: row.name ? row.name : fallback }) })
       const plural = /_(zero|one|two|few|many|other)$/;
       // Every shape that cannot be a number. Each is a value that has already been turned into
       // words, or a stand-in for a value that is not there.
+      const wrappers = translatorWrappers(c);
       const NOT_A_NUMBER = [
         [/(^|[^\w.$])t[A-Za-z]*\s*\(/, "a translator call — the value arrives as a rendered sentence"],
+        ...[...wrappers].map((w) => [
+          new RegExp(`(^|[^\\w.$])${w}\\s*\\(`),
+          `\`${w}()\` is declared in this file as a wrapper round the translator, so it returns a rendered sentence`,
+        ]),
         [/\.toLocaleString\s*\(/, "already grouped by the caller"],
         [/\.toFixed\s*\(/, "toFixed returns a string, and the format would drop its trailing zero"],
         [/\.join\s*\(/, "a joined list"],
