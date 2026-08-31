@@ -28,7 +28,7 @@
 // regex.
 import { execFileSync } from 'node:child_process';
 
-import { ROUND_PHRASES, onlyQuoted, proseLines, tableCells } from './prose.mjs';
+import { ROUND_PHRASES, onlyQuoted, proseLines, sectionUnder, tableCells } from './prose.mjs';
 
 /** The only image format a result document cites, and the bytes one of them may take. */
 const CAPTURE_SUFFIX = '.webp';
@@ -910,6 +910,55 @@ export const everyPlacedFrameIsCaptured = {
 // It judges every result document rather than only a closed chapter's — a wrong quote is wrong
 // while the walk is still running, and the sooner the write-time hook says so the cheaper it is.
 
+/**
+ * The chapter tokens and frame ids each parked item names, one entry per item.
+ *
+ * <p><b>An item is a bullet and the lines under it</b>, because a park is written as a sentence
+ * that wraps — the chapter it belongs to is on the first line and the frames it names are usually
+ * on the next. Read line by line, a park would only ever match on whichever half happened to
+ * carry both.
+ */
+function parkedItems(ctx) {
+  const file = ctx.declared('openItemsFile');
+  if (typeof file !== 'string' || !file) return [];
+  const heading = ctx.declared('openItemsHeading');
+  const text = ctx.read(ctx.at('openItemsFile'));
+  if (text === null || typeof heading !== 'string') return [];
+
+  const items = [];
+  for (const { line } of sectionUnder(text, heading) ?? []) {
+    if (/^\s*[-*+]\s+\S/.test(line)) items.push(line);
+    else if (items.length > 0 && line.trim()) items[items.length - 1] += ` ${line.trim()}`;
+  }
+  return items.map((item) => item.toLowerCase());
+}
+
+/**
+ * Whether a park says out loud that this section cannot be run yet.
+ *
+ * <p><b>The gate's own message offers this and the gate has to honour it.</b> A board changes the
+ * contract of a screen a closed chapter already built, the chapter that rebuilds it is named and
+ * queued, and until it runs there is no product to run the demand against — so the section cannot
+ * be rewritten and the finding cannot be cleared. Telling somebody to write that down and then
+ * reporting them anyway teaches that writing it down is worthless.
+ *
+ * <p><b>It takes both names, in one item.</b> The chapter the document belongs to and the frame
+ * the section is about: a park that says only 「W03」 would silence every section of that chapter,
+ * and one that says only 「a-04」 would silence that frame everywhere. Both together name one
+ * section, and a person writing the park has to have looked at it.
+ */
+function parkedFor(items, chapter, frame) {
+  if (chapter === null || frame === null) return false;
+  const one = chapter.toLowerCase();
+  const other = frame.toLowerCase();
+  return items.some((item) => item.includes(one) && item.includes(other));
+}
+
+/** The frame a section is about, from its heading — 「1. A-04 · Activity …」 is `A-04`. */
+function frameOf(title) {
+  return /\b([A-Za-z]{1,4}-\d{1,3})\b/.exec(title)?.[1] ?? null;
+}
+
 export const evidenceQuotesTheChapter = {
   id: 'evidenceQuotesTheChapter',
   title:
@@ -921,14 +970,17 @@ export const evidenceQuotesTheChapter = {
     if (labels === null) return [];
     const dir_ = ctx.declared('evidenceDir');
     const dir = ctx.declared('chapterDir');
+    const parked = parkedItems(ctx);
     const findings = [];
     for (const [, file] of [...chapterFiles(ctx)].sort()) {
       const rel = `${dir_}/${file}`;
       const text = ctx.read(rel);
       if (text === null) continue;
+      const chapter = chapterOf(file);
 
       const { sections, headings } = chapterSections(ctx, `${dir}/${file}`);
       for (const section of evidenceSections(text, labels)) {
+        if (parkedFor(parked, chapter, frameOf(section.title))) continue;
         if (section.quotes.length === 0) continue;
         const key = headings.get(section.title);
         if (key === undefined) continue;
@@ -2299,7 +2351,12 @@ export function cases(t) {
   );
   const quoted = (files) =>
     t.project({
-      config: { ...WORDS, chapterDir: 'chapters', openItemsFile: 'tracking/OPEN.md' },
+      config: {
+        ...WORDS,
+        chapterDir: 'chapters',
+        openItemsFile: 'tracking/OPEN.md',
+        openItemsHeading: '열린 항목',
+      },
       files: { 'chapters/w02-org-shell.md': QUOTED_CHAPTER(REWORDED), ...files },
     });
 
@@ -2326,6 +2383,32 @@ export function cases(t) {
       'docs/evidence/w02-org-shell.md': QUOTED_EVIDENCE,
     }),
     false
+  );
+
+  // **The escape this gate's message offers, honoured.** A board fix reworded the rule ahead of
+  // the chapter that rebuilds the screen, so the demand cannot be run and the section cannot be
+  // written again until it does. Telling somebody to say that in the open items and then
+  // reporting them anyway teaches that saying it is worthless.
+  const parked = (item) =>
+    quoted({
+      'docs/evidence/w02-org-shell.md': QUOTED_EVIDENCE,
+      'tracking/OPEN.md': `# 사람이 정할 항목\n\n## 열린 항목\n\n${item}\n`,
+    });
+
+  t.add(
+    'evidenceQuotesTheChapter',
+    'a park naming this chapter and this frame says why the section cannot be run yet',
+    parked('- W02 — A-01의 절이 인용한 요구를 제품에서 다시 돌릴 수 없다 — 그 화면을 다시 짓는 챕터가\n  아직 돌지 않았다. 빌드 배치 결정.'),
+    false
+  );
+  // **It takes both names, in one item.** A park that says only the chapter would silence every
+  // section of it, and one that says only the frame would silence that frame in every chapter —
+  // so a park about a different screen leaves this one reported.
+  t.add(
+    'evidenceQuotesTheChapter',
+    'a park about another frame of the same chapter leaves this section reported',
+    parked('- W02 — A-09의 절이 인용한 요구를 제품에서 다시 돌릴 수 없다. 빌드 배치 결정.'),
+    true
   );
 
   // The other shape a chapter's demands take. A walk of thirty clauses joined into one sentence is
