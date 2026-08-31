@@ -155,6 +155,11 @@ export const SCHEMA = {
   chapterLines: { kind: 'headings', roles: CHAPTER_LINE_ROLES, closing: true, absent: 'every check that reads a chapter\'s own demands matches nothing, and reports the same zero as a chapter with nothing wrong' },
   evidenceLabels: { kind: 'headings', roles: EVIDENCE_LABEL_ROLES, bare: true, closing: true, absent: 'every check over a result document reads past every section, so a chapter cannot be shown to have closed on anything' },
   closedStatus: { kind: 'text', closing: true, absent: 'nothing is closed, and every check over a closed chapter stays silent' },
+  // The word for a chapter the product's owner closed rather than the verification. A person may
+  // decide a chapter is done and the build has no standing to refuse — what it must not do is let
+  // that look like a chapter closed on evidence afterwards, so the ledger says which it was and
+  // the evidence checks skip the decided ones rather than reporting their absent verification.
+  decidedStatus: { kind: 'text', absent: 'a chapter can only be closed by its verification, so a person who ends one has to either fake the evidence or leave the ledger saying it is still open' },
   // The role an evidence heading names where a persona would stand, for a check a machine proves.
   // Its own key rather than `chapterLines.verdict`: that one is a LINE and this is a WORD, and
   // stripping the markup off the line to guess the word is the kind of derivation that reads fine

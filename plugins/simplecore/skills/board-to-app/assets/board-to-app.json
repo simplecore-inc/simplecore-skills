@@ -44,6 +44,8 @@
     "saw": "<label: what was in the capture when it was opened>"
   },
 
+  "//decidedStatus": "The word the ledger writes for a chapter the product's owner ended rather than the verification. Declared, the evidence checks skip those chapters and the ledger still says plainly which kind each close was.",
+  "decidedStatus": "",
   "//closedStatus": "The word the state ledger writes in a chapter's row when that chapter is closed. Nothing is closed until this is declared, and every check over a closed chapter stays silent.",
   "closedStatus": "<the ledger's word for a closed chapter>",
 

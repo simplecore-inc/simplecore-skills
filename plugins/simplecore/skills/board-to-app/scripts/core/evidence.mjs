@@ -218,18 +218,47 @@ function chapterFiles(ctx) {
  * cell, so a row whose prose happens to contain the word is not read as a closed chapter.
  */
 function closedChapters(ctx) {
-  const closed = new Set();
+  return closedRows(ctx).onEvidence;
+}
+
+/**
+ * The chapters the ledger records as closed, split by what closed them.
+ *
+ * <p><b>A person can close a chapter, and that is a different fact from a chapter closing on its
+ * evidence.</b> Whoever owns the product may decide a chapter is done — the screens are good
+ * enough, the round has cost more than it is worth, the work has moved on — and the build has no
+ * standing to refuse that. What it does have is a duty not to let the two look alike afterwards: a
+ * chapter closed by decision has no verification behind it, and every check that reads a closed
+ * chapter's evidence would otherwise report its absence as a defect, which teaches whoever meets
+ * that report to disable the check.
+ *
+ * <p>So the ledger writes a different word, `decidedStatus`, and the evidence checks skip those
+ * chapters while the ledger goes on saying plainly which kind each one was. **Undeclared, nothing
+ * changes**: a project that has never closed a chapter this way reads exactly as before.
+ *
+ * @param ctx the project
+ * @returns `onEvidence` — closed with verification behind it — and `onDecision`
+ */
+function closedRows(ctx) {
+  const onEvidence = new Set();
+  const onDecision = new Set();
   const word = ctx.declared('closedStatus');
+  const decided = ctx.declared('decidedStatus');
   const text = ctx.read(ctx.at('stateLedger'));
-  if (word === null || text === null) return closed;
+  if (word === null || text === null) return { onEvidence, onDecision };
   const known = new Set(chapterFiles(ctx).keys());
   for (const { line } of proseLines(text)) {
     const cells = tableCells(line);
     if (!cells || cells.length < 2) continue;
     const chapter = cells[0].toUpperCase();
-    if (known.has(chapter) && cells.slice(1).includes(word)) closed.add(chapter);
+    if (!known.has(chapter)) continue;
+    const rest = cells.slice(1);
+    // Decision first: a project may write its decided word as the closed word plus a mark, and
+    // reading the closed word out of it would put the chapter in both sets.
+    if (decided !== null && rest.includes(decided)) onDecision.add(chapter);
+    else if (rest.includes(word)) onEvidence.add(chapter);
   }
-  return closed;
+  return { onEvidence, onDecision };
 }
 
 /**

@@ -990,6 +990,37 @@ misreading grows back. If no sentence and no gate changed, the finding was not r
 
 ## Closing a chapter
 
+### The product's owner can end a chapter, and the ledger says that is what happened
+
+**Whoever owns the product may decide a chapter is done, and the build has no standing to refuse.**
+The screens are good enough, the round has cost more than it is worth, the work has moved on —
+none of those are the build's call, and a skill that answers 「the evidence is not finished」 to the
+person the evidence is for has mistaken who it works for.
+
+**What the build does owe is that the two kinds of close never look alike afterwards.** A chapter
+closed on its verification has captures somebody who did not take them read against the board; a
+chapter closed by decision has whatever happened to be true when the decision was made. Written
+with the same word, the second is indistinguishable from the first six months later — and every
+check that reads a closed chapter's evidence reports its absence as a defect, which teaches the
+next reader to turn the check off.
+
+So the ledger writes a different word, `decidedStatus`. The evidence checks skip those chapters,
+and the row goes on saying plainly which kind it was.
+
+**Three things go in the row with it**, because a decision nobody can weigh later is worse than an
+open chapter:
+
+| | |
+| --- | --- |
+| who decided | not the build, and not an agent — name the person |
+| what was true when they decided | what had been verified and what had not, in the state it was left |
+| what is owed if it is reopened | the run that was not finished, so a later round starts from a fact rather than a guess |
+
+**Never close a chapter on the build's own judgment.** The build closes a chapter on evidence or it
+leaves it open; the other word is the owner's to spend, and an agent writing it because a round got
+long has forged the one signature in the ledger that is not its own.
+
+
 A chapter closes when every screen in it works, every persona line has been run,
 and the failures are fixed rather than listed. Before saying so:
 
