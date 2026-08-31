@@ -425,11 +425,29 @@ def lint(svg_path):
     # Without this a mask reads as a node, and every check that asks "does a
     # connector cross a box" answers wrongly about the label of that very
     # connector.
+    # corner radius per rect: svgkit pills are rx=6, nodes rx>=10 — height
+    # alone cannot separate a one-line node (h 24) from a pill, and a node
+    # misread as a mask silently leaves node_rects, so arrows pass through
+    # it unreported.
+    _rect_rx = {}
+    for _m in re.finditer(r'<rect\b([^>]*)/?>', svg):
+        _a = _m.group(1)
+        _vals = {}
+        for _k in ("x", "y", "width", "height", "rx"):
+            _mm = re.search(_k + r'="([\-\d.]+)"', _a)
+            _vals[_k] = float(_mm.group(1)) if _mm else None
+        if None not in (_vals["x"], _vals["y"], _vals["width"], _vals["height"]):
+            _key = (round(_vals["x"]), round(_vals["y"]),
+                    round(_vals["width"]), round(_vals["height"]))
+            _rect_rx[_key] = _vals["rx"] or 0.0
+
     label_masks = []
     for _r in rmeta:
         _x, _y, _w, _h, _ = _r
         if _h > 28 or _w < 12:
             continue
+        if _rect_rx.get((round(_x), round(_y), round(_w), round(_h)), 0.0) >= 8:
+            continue                      # node-round corners: a box, not a pill
         if not any(_x <= tx <= _x + _w and _y - 2 <= ty <= _y + _h + 2
                    for (tx, ty, _t) in texts_xy):
             continue
@@ -1193,6 +1211,7 @@ def lint(svg_path):
 
     for m in label_masks:
         vert_hit = None
+        head_hit = None
         touching = set()
         for k, (cid, kind, p, q) in enumerate(segs):
             if _seg_in_rect(p, q, (m[0], m[1], m[2], m[3]), inset=0) > 1:
@@ -1201,6 +1220,19 @@ def lint(svg_path):
                 # q is a bend when the route turns there and the arrowhead
                 # when nothing follows; both are load-bearing.
                 vert_hit = vert_hit or q
+            # The arrowhead is not the endpoint alone: the marker triangle
+            # runs ~10px back along the final segment, so a pill that spares
+            # the tip can still swallow the body — the head then reads as a
+            # bare line ending under the label. Probe the marker body's
+            # midpoint; the tip-covered case is already the corner check's.
+            if (kind == "line" and not _pt_in(m, q)
+                    and (k + 1 >= len(segs) or segs[k + 1][0] != cid)):
+                seg_len = math.hypot(q[0] - p[0], q[1] - p[1])
+                if seg_len > 0.5:
+                    body = (q[0] - (q[0] - p[0]) / seg_len * 10.0,
+                            q[1] - (q[1] - p[1]) / seg_len * 10.0)
+                    if _pt_in(m, body):
+                        head_hit = head_hit or q
         # A mask may erase the run of stroke behind its own glyphs — that is
         # what it is for. It may not erase the connector. Where the gap
         # between two boxes is narrower than the label, the mask swallows the
@@ -1221,6 +1253,14 @@ def lint(svg_path):
                                f'left; move the label off the line into the '
                                f'open band beside it'))
                 continue
+        if not vert_hit and head_hit:
+            issues.append(("LABEL-HIDES-ARROWHEAD",
+                           f'label mask [{m[0]:.0f},{m[1]:.0f}] covers the '
+                           f'arrowhead body at ({head_hit[0]:.0f},'
+                           f'{head_hit[1]:.0f}) — the head renders clipped '
+                           f'or vanishes; slide the label 10px+ away from '
+                           f'the endpoint along the run'))
+            continue
         if vert_hit:
             issues.append(("LABEL-MASKS-CORNER",
                            f'label mask [{m[0]:.0f},{m[1]:.0f}] covers a '
