@@ -48,6 +48,7 @@ import { NARRATIVE_PHRASES, hasHeading, onlyQuoted, proseLines, sectionUnder } f
 import { EVIDENCE_GATES } from './evidence.mjs';
 import { EYES_GATES } from './eyes.mjs';
 import { VOCABULARY_GATES } from './vocabulary.mjs';
+import { BUDGET_GATES } from './budget.mjs';
 
 /** What a finding of a gate is: a defect to fix, or a line to go and re-read. */
 export const GRADES = ['error', 'warning'];
@@ -140,6 +141,23 @@ export const configGate = {
 
       if (spec.kind === 'list') {
         if (!Array.isArray(value)) findings.push(`${key} must be ${TYPE_OF.list}`);
+        continue;
+      }
+      if (spec.kind === 'budget') {
+        if (!value || typeof value !== 'object' || Array.isArray(value)) {
+          findings.push(`${key} must be an object of file path to a whole number of characters`);
+          continue;
+        }
+        for (const [path, ceiling] of Object.entries(value)) {
+          if (path.startsWith('//')) continue;
+          if (!Number.isInteger(ceiling) || ceiling <= 0) {
+            findings.push(
+              `${key}["${path}"] is ${JSON.stringify(ceiling)} — a ceiling is a whole number of `
+              + 'characters, and one that cannot be read holds nothing while reporting the same '
+              + 'silence as a file comfortably inside its budget'
+            );
+          }
+        }
         continue;
       }
       if (spec.kind === 'exceptions') {
@@ -1169,6 +1187,9 @@ export const CORE_GATES = [
   // The words the project declared, against the documents that write them. It sits after the
   // gates that READ those words, because it is the one that says whether they read anything.
   ...VOCABULARY_GATES,
+  // What keeps the instructions readable: a ceiling per file, a rule taught in one place, a result
+  // document that says where its pictures came from, and no instruction written twice.
+  ...BUDGET_GATES,
 ];
 
 /**

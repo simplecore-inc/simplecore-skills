@@ -220,7 +220,12 @@ export function ungraded(gates) {
   return out;
 }
 
-/** The header row that opens the config table in `SKILL.md`, and the anchor the reverse read uses. */
+/**
+ * The header row that opens the config table, and the anchor the reverse read uses.
+ *
+ * <p>The table lives in `references/config.md` — split out of `SKILL.md` so a session loads it only
+ * when a key is in question. The reverse read follows it there rather than keeping a copy.
+ */
 const CONFIG_TABLE_HEADER = '| Key | What the project names with it | Required | Absent means |';
 
 /** A key's own row in a `| \`key\` | … |` table. */
@@ -290,13 +295,13 @@ export function undocumentedKeys(keys, inTable, inTemplate, costs = null) {
  * @returns one string per expectation that came out the wrong way
  */
 export function proveKeysAreDocumented() {
-  const skill = readFileSync(new URL('../../SKILL.md', import.meta.url), 'utf8');
+  const skill = readFileSync(new URL('../../references/config.md', import.meta.url), 'utf8');
   const lines = skill.split('\n');
   const opens = lines.indexOf(CONFIG_TABLE_HEADER);
   // A header that moved is itself the finding: the reverse read has nothing to anchor on, and
   // silently reading every table in the file would report the heading-role rows as stale keys.
   if (opens < 0) {
-    return [`SKILL.md no longer carries the config table's header row — the reverse read anchors on it, and without it a stale row is invisible`];
+    return [`references/config.md no longer carries the config table's header row — the reverse read anchors on it, and without it a stale row is invisible`];
   }
   const inTable = new Set();
   const costs = new Map();
@@ -314,7 +319,7 @@ export function proveKeysAreDocumented() {
   }
   for (const key of inTable) {
     if (!costs.has(key)) {
-      return [`SKILL.md: the config table's row for \`${key}\` does not split into four cells — a cell carrying a pipe of its own makes the 「Absent means」 column unreadable, and the sentence \`doctor\` prints could not be held against it`];
+      return [`references/config.md: the config table's row for \`${key}\` does not split into four cells — a cell carrying a pipe of its own makes the 「Absent means」 column unreadable, and the sentence \`doctor\` prints could not be held against it`];
     }
   }
 

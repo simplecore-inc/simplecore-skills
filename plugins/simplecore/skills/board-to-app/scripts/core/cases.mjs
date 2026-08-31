@@ -6,6 +6,7 @@ import { cleanProject } from './harness.mjs';
 import { cases as evidenceCases } from './evidence.mjs';
 import { cases as eyesCases } from './eyes.mjs';
 import { cases as vocabularyCases } from './vocabulary.mjs';
+import { cases as budgetCases } from './budget.mjs';
 
 /** Merge an override into the clean project without mutating it. */
 function variant(over = {}) {
@@ -29,6 +30,7 @@ export function cases(t) {
   evidenceCases(t);
   eyesCases(t);
   vocabularyCases(t);
+  budgetCases(t);
 
   // configGate — the gate that makes "never guess a path" mechanical.
   add('configGate', 'a required key is not declared', { config: { boardRoot: undefined } }, true);

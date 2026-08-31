@@ -8,6 +8,10 @@
   "chapterDir": "<directory holding one file per chapter, in build order>",
   "chapterOverview": "<the chapter table: order, prerequisites, what may run alongside>",
   "chapterGenerator": "<command that regenerates the chapter set from the board>",
+  "//instructionBudget": "A ceiling in characters per instruction file. Set each at what the file measures the day you declare it: nothing is red on arrival and the next append is the one that fails, so a rule enters only when one leaves.",
+  "instructionBudget": {},
+  "//evidenceProvenance": "The labels a result document's provenance line carries — which build, which boot, which data.",
+  "evidenceProvenance": [],
   "chapterHeadings": {
     "prerequisites": "<heading: the chapters that must close before this one>",
     "parallelWith": "<heading: the chapters that may be built alongside it>",

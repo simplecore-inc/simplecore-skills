@@ -136,6 +136,13 @@ export const SCHEMA = {
   chapterDir: { kind: 'dir', required: true, absent: 'the build cannot start' },
   chapterOverview: { kind: 'file', required: true, absent: 'the build cannot start' },
   chapterGenerator: { kind: 'command', absent: 'a chapter cannot be regenerated after a board fix; report that rather than hand-editing the chapter file' },
+  // What keeps the instruction surface readable. A ceiling per file, declared at what the file
+  // measures on the day it is declared — so nothing is red on arrival and the next append is the
+  // one that fails. Adding a rule then means removing one, or raising the number deliberately and
+  // saying in the commit what was tried for removal and why it stayed.
+  instructionBudget: { kind: 'budget', absent: 'nothing bounds how large the instructions grow, so they grow past what any agent can hold and every rule in them is one nobody read' },
+  // The labels a result document's provenance line carries — which build, which boot, which data.
+  evidenceProvenance: { kind: 'list', absent: 'a result document says nothing about where its pictures came from, so a reading taken off a stale build, an empty fixture or one zoom level is indistinguishable from one that is right' },
   chapterHeadings: { kind: 'headings', absent: 'a section is named by its role rather than by a heading, and an agent that cannot find one stops and reports' },
   // The words a chapter's own lines begin with, and the word its ledger writes for a closed
   // chapter. Every check over a chapter's evidence has to read these, and reading them from a
