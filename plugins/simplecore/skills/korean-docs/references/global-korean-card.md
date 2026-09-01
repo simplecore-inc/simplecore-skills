@@ -35,7 +35,7 @@ and a real door stay literal**; the test is whether anything physical is actuall
 
 > `알림이 갑니다` → 알림을 보냅니다 · `제약만 갑니다` → 제약만 전달됩니다 ·
 > `대장으로 흘러듭니다` → 대장에 모입니다 · `담당과 기한을 붙인다` → 지정한다 ·
-> `상위 대책을 걸다` → 적용하다 · `두 값이 부딪힌다` → 충돌한다 · `사업장이 손댄 것` → 고친 것
+> `상위 대책을 걸다` → 적용하다 · `두 값이 부딪힌다` → 충돌한다 · `사업장이 손댄 것` → `고친 것`
 
 **3. A metaphor squeezed into a noun, an adverb standing in for the change it hides.**
 `자리` · `몫` · `바닥` · `천장` · `함정` · `유령` · `출발점` · `관문` · `사다리` · `연료` as names
