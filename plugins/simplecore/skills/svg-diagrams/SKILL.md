@@ -1,6 +1,6 @@
 ---
 name: svg-diagrams
-description: Create diagrams as SVG (also ASCII) — flowcharts, sequence/state/class/ER, system and architecture diagrams, pipelines, network and infrastructure layouts. Use when asked to draw, render, or diagram a system, flow, or structure. Covers hand-crafted SVG and JSON-spec auto-layout for precise architecture pictures, Mermaid auto-layout for structured diagrams from text, and SVG checks that catch missing or oblique arrowheads, text overflow, and clipped content before delivery. Triggers on "draw diagram", "create flowchart", "show architecture", "system diagram", "visualize flow", "SVG diagram", "ASCII diagram", "mermaid", "다이어그램", "아키텍처 그림", "도식화", "구성도", "그림 그려".
+description: Create diagrams as SVG (also ASCII) — flowcharts, sequence/state/class/ER, system and architecture diagrams, pipelines, network and infrastructure layouts. Use when asked to draw, render, or diagram a system, flow, or structure. Covers hand-crafted SVG and JSON-spec auto-layout for precise architecture pictures, Mermaid auto-layout for structured diagrams from text, and SVG checks that catch missing or oblique arrowheads, text overflow, and clipped content before delivery. Also covers figures embedded in a document — one canvas width and one type scale across the whole set, with the generator versioned in the project rather than written to a scratch directory. Triggers on "draw diagram", "create flowchart", "show architecture", "system diagram", "visualize flow", "SVG diagram", "ASCII diagram", "mermaid", "다이어그램", "아키텍처 그림", "도식화", "구성도", "그림 그려", "문서에 넣을 그림", "그림 규격 통일".
 ---
 
 # SVG Diagrams
@@ -8,6 +8,32 @@ description: Create diagrams as SVG (also ASCII) — flowcharts, sequence/state/
 Produce a diagram as SVG (or ASCII). Pick the technique by what you are drawing, then verify any SVG before delivering. (For screen layouts — wireframes, mockups, a screen inventory — defer to the `simplecore:wireframe-boards` skill; this skill is architecture/flow/system pictures.)
 
 **Paths.** All files live under this skill's base directory — the `Base directory for this skill: …` path shown when the skill loads. Below, `<skill>` stands for that directory; substitute the real path at use time. Never hardcode an absolute or `~/…` path (it differs per user and platform).
+
+## Figures for a document (the usual case)
+
+Almost every diagram ends up inside something — a proposal, a design document, a
+manual, a README. **Assume that unless the request says otherwise**, and two
+decisions follow before any layout:
+
+**One width for the whole set.** Every figure is placed at the same percentage
+of the same text column, so every figure carries the same final canvas width and
+only the height varies. A figure drawn narrower and centred prints its body text
+smaller than the figure on the facing page, and the reader reads that as
+carelessness. Do not compensate with smaller type, do not pad a narrow drawing
+out to the width, and never `transform="scale(…)"` a finished picture onto it —
+re-lay out the primitives. One type scale governs the set the same way.
+
+**The generator lives in the project, not in a scratch directory.** A figure is
+redrawn whenever its chapter changes, so the drawing code is versioned beside
+the document. Copy `assets/document-figures/` into the project as
+`tools/diagrams/`, set the four constants at the top of `common.py`, and build
+with `python3 tools/diagrams/build.py`. Writing a one-off script under `/tmp`
+produces an SVG nobody can regenerate — the next person hand-edits it, and the
+next build silently discards the edit.
+
+Full discipline — width arithmetic, the type ladder, height economy, composition
+variety, redraw rules: `references/document-figures.md`. Read it before laying
+out the first figure of a set.
 
 ## Pick the technique
 
@@ -182,4 +208,6 @@ pass/fail, reach for the quantitative registers and compose.
 | `references/render-audit.md` | Render/crop/lint workflow, defect catalog with fixes, generation-time prevention rules | Before delivering ANY SVG; debugging arrowheads, overflow, spacing |
 | `references/svg-templates.md` | SVG header, node/edge/subgroup XML templates, palette, layout rules | Hand-crafting SVG by XML, or fixing layout |
 | `references/visual-types.md` | The 39 visual types, what each is for, which have a dedicated builder, and the budget each one enforces | Choosing what kind of picture this is — read BEFORE laying anything out |
+| `references/document-figures.md` | Uniform width across a figure set, the type ladder, height economy, composition variety, redraw rules | Before the first figure of anything that goes in a document |
+| `assets/document-figures/` | Project scaffold — `common.py` · `build.py` · `verify.py` · an example module, plus a README on wiring it in | Setting a project up to draw its own figures |
 | `references/domain-templates.md` | 8 domain layouts (architecture, pipeline, microservice, CI/CD, network, state machine, infra, sequence) with canvas sizes and color assignments | Choosing a layout pattern / canvas size |

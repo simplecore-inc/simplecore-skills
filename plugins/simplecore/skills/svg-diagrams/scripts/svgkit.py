@@ -274,6 +274,31 @@ class Canvas:
             a.append('filter="url(#soft)"')
         self.add(" ".join(a) + "/>")
 
+    def band(self, x, y, w, h, rx, color, opacity=0.14, side="top"):
+        """A tinted band on the edge of a card: outer corners round, inner square.
+
+        Drawing a card's header as a rounded rectangle rounds its bottom corners
+        too, and the card's straight body butts against them — the header then
+        reads as a separate chip resting on the card rather than as its top.
+        Only the corners that follow the card's own outline are rounded.
+
+        `side` names the edge the band sits on: "top" for a header above a card
+        body, "left" for a label band at the start of a row. `rx` is the card's
+        own corner radius, so the two outlines meet without a step.
+        """
+        if side == "top":
+            d = (f"M {x:.1f} {y + rx:.1f} A {rx} {rx} 0 0 1 {x + rx:.1f} {y:.1f} "
+                 f"H {x + w - rx:.1f} A {rx} {rx} 0 0 1 {x + w:.1f} {y + rx:.1f} "
+                 f"V {y + h:.1f} H {x:.1f} Z")
+        elif side == "left":
+            d = (f"M {x + w:.1f} {y:.1f} H {x + rx:.1f} "
+                 f"A {rx} {rx} 0 0 0 {x:.1f} {y + rx:.1f} "
+                 f"V {y + h - rx:.1f} A {rx} {rx} 0 0 0 {x + rx:.1f} {y + h:.1f} "
+                 f"H {x + w:.1f} Z")
+        else:
+            raise ValueError(f"side must be 'top' or 'left', not {side!r}")
+        self.add(f'<path d="{d}" fill="{color}" opacity="{opacity}"/>')
+
     def text(self, x, y, s, size=14, color=_DEF, family=MONO, weight=400,
              anchor="start", spacing=None, opacity=None):
         color = self.t["fg"] if color is _DEF else color
