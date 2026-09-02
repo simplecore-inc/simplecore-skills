@@ -212,10 +212,28 @@ turns into decoration.
 
 - **One icon per card at most**, and only where the card's kind is worth marking.
   A set where every card carries an icon says nothing, because nothing stands out.
-- **A diagram whose subject includes an AI component marks that component with an
-  icon** — `brain-circuit`, `cpu`, `sparkles`, `bot`. Which part of a pipeline a
-  model drives is the first thing a reader wants to know and the hardest thing to
-  read out of a box label.
+### The AI pass — run it on every figure
+
+**Before saving any figure, go through its elements and ask which of them a
+model does.** This is a pass, like the height pass: it runs on every figure,
+not only on the ones whose subject is obviously AI. A figure about data zones, a
+figure about a roadmap, a figure about who decides what — each of them usually
+contains model work somewhere, and a reader cannot tell which part unless the
+figure says so.
+
+**Then make that part prominent and mark it with an icon** — `brain-circuit`,
+`cpu`, `sparkles`, `bot`. Which part of a picture a model drives is the first
+thing a reader wants to know and the hardest thing to read out of a box label,
+so the mark carries an accent with it: an icon beside the label for a card, a
+tinted pill behind the label for a step. An icon alone in the body colour is
+easy to miss; the point is that the reader sees it before reading.
+
+**The AI is sometimes the transition, not the box.** In a lineage figure the
+boxes are the data — original text, extracted statements, a candidate agenda —
+and what the model does is the arrow between them: the decomposition, the
+clustering. Marking the boxes there says the *data* is AI, which is wrong and
+reads as careless. Ask what the element **is** before marking it: a thing a
+model produced, or the act of producing it. Mark the act.
 - **Decide it by what the component does, never by whether its label says "AI".**
   Go through the figure's items one at a time and ask *does a model do this work*.
   Classification, ranking, retrieval and re-ranking, extraction, clustering,
