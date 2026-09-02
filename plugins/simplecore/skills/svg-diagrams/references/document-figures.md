@@ -81,20 +81,42 @@ Snap the emitted sizes at save time rather than trusting every call site — the
 scaffold's `save()` does this, so layout code may keep its working numbers while
 the artifact carries only scale values.
 
-## Height is the scarce axis
+## Height is the scarce axis — minimise it, every figure, every time
 
-Width is fixed, so height is the only thing that grows, and a tall figure gets
-scaled down by the page. Prefer horizontal composition, compact grids and side
-annotations over tall stacks. Target 720 units or less on a 1200-unit canvas and
-review anything over 840.
+Width is fixed, so height is the only thing that grows, and the page scales a
+tall figure down: every extra unit of height shrinks the printed type of that
+figure against its neighbours. **Minimising height is not a target to clear
+once; it is a pass to make on every figure before saving it**, including a
+figure that already fits. 720 units on a 1200-unit canvas is the number to stay
+under and 840 is a failure — but a figure that lands at 700 and could have
+landed at 520 is still wrong.
 
-These are recommendations. When a figure holds two independently
-understandable structures, split it into two. When splitting would break an ER
-model, a lineage, a state machine or another inseparable relationship, keep one
-figure and let it be tall — **never drop a relationship to hit a number.**
+Make the pass in this order, and re-measure after each:
 
-Remove diagram-internal prose that only repeats the surrounding paragraph. The
-document says it once already.
+1. **Squeeze the repeating unit first.** A row, a card, a station repeats N
+   times, so 20 units off it is 20N off the figure. Cut the row height to the
+   text plus even padding, close the gap between rows, and tighten line spacing
+   to the type size rather than to a round number.
+2. **Delete rows that only hold a label.** An axis name, a legend, a closing
+   sentence — put each one on a line that already exists (the header row, the
+   end of the axis, beside the first card) instead of giving it a band of its
+   own. Two label rows removed is often 60 units.
+3. **Turn a tall stack on its side.** Five items stacked cost five row heights;
+   the same five across the width cost one. Where the labels then overflow the
+   narrower columns, that is the trade to weigh — not a reason to abandon the
+   move.
+4. **Cut the prose inside the picture.** Any sentence that repeats the
+   surrounding paragraph is height the document already spent.
+
+**What may never be traded for height**: legibility (the type scale is fixed),
+a relationship the figure exists to show, and the padding that keeps text off
+its own box — the lint's TIGHT-BOTTOM and TEXT-OVERFLOW mark the floor, and a
+figure that trips them was compressed past the point of being readable.
+
+When a figure holds two independently understandable structures, split it in
+two. When splitting would break an ER model, a lineage, a state machine or
+another inseparable relationship, keep one figure and let it be tall —
+**never drop a relationship to hit a number.**
 
 ## The caption belongs to the document
 

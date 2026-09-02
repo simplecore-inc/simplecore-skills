@@ -37,7 +37,14 @@ that a list cannot say, and build that relation out of the primitives already
 here — a figure that turns six list items into six equal cards repeats the
 paragraph above it. This judgement is made for every figure, not once per set.
 
-Full discipline — width arithmetic, the type ladder, height economy, claim-led
+**Minimise height on every figure, not only on the ones that overflow.** Width
+is fixed, so the page scales a tall figure down and its type prints smaller
+than its neighbours'. Before saving, squeeze the repeating unit, fold
+label-only rows into rows that already exist, and consider turning a tall
+stack sideways — stopping short of the padding and type size the lint
+protects.
+
+Full discipline — width arithmetic, the type ladder, the height pass, claim-led
 composition, redraw rules: `references/document-figures.md`. Read it before
 laying out the first figure of a set.
 
