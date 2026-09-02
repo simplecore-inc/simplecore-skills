@@ -216,6 +216,24 @@ turns into decoration.
   icon** — `brain-circuit`, `cpu`, `sparkles`, `bot`. Which part of a pipeline a
   model drives is the first thing a reader wants to know and the hardest thing to
   read out of a box label.
+- **Decide it by what the component does, never by whether its label says "AI".**
+  Go through the figure's items one at a time and ask *does a model do this work*.
+  Classification, ranking, retrieval and re-ranking, extraction, clustering,
+  generation, evaluation of any of those, and the registry and deployment of the
+  models themselves are all yes — whatever the box is called. Storage, access
+  control, forms, routing, scheduling and human decisions are no.
+- **`if "AI" in label` is the trap, and it fails silently.** It marks only the
+  boxes that happened to be named after the technology and leaves every other
+  model-driven box unmarked, and the figure then looks finished: nothing
+  overflows, nothing overlaps, the lint passes, and the reader is told that three
+  of the six areas are not AI when four of them are. It fails in the safe-looking
+  direction, so nobody catches it but the person who knows the content. Put the
+  decision in the data — an explicit flag beside each item — so it is made once,
+  by hand, and can be read back.
+- **When every item is model work, or none is, the mark distinguishes nothing.**
+  Mark the one element that names the AI subject so the reader still sees what
+  the figure is about, or leave the figure unmarked and say why in the module.
+  A set where the mark is on most items has stopped carrying information.
 - **One size and one stroke across the set.** `size=20, sw=1.6` sits with 17-unit
   body text on a 1200-unit canvas; a header icon beside 18-unit type takes
   `size=22`. Changing either per figure reproduces the mismatch that the shared
