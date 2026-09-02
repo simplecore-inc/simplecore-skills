@@ -126,6 +126,104 @@ def _is_wide(ch):
             or 0x20000 <= o <= 0x3FFFD)  # CJK ext B+ (astral ideographs)
 
 
+
+# Which parameters of each path command are x, which are y, and which are
+# neither. An arc's radii scale with the drawing; its rotation does not, and
+# its two flags are single digits that may be written with no separator at all
+# — `a2 2 0 0022 17` is rx=2 ry=2 rot=0 large-arc=0 sweep=0 x=22 y=17. Reading
+# those flags with a number scanner swallows `0022` as one value, drops a
+# parameter, and turns a rounded corner into a stray loop.
+_PATH_ARGS = {
+    "M": ("xy",), "L": ("xy",), "T": ("xy",),
+    "H": ("x",), "V": ("y",),
+    "C": ("xy", "xy", "xy"), "S": ("xy", "xy"), "Q": ("xy", "xy"),
+    "A": ("r", "r", "n", "f", "f", "x", "y"),
+    "Z": (),
+}
+_NUMBER = re.compile(r"[-+]?(?:\d*\.\d+|\d+\.?)(?:[eE][-+]?\d+)?")
+_SEP = " ,\t\r\n"
+
+
+def _scale_path(d, ox, oy, k):
+    """Translate and uniformly scale a path, absolute and relative alike.
+
+    A relative segment carries a displacement, so it scales but is not
+    translated; an absolute one is both. Getting that backwards moves every
+    curve after the first relative command.
+    """
+    out, i, n, cmd = [], 0, len(d), None
+    first = True
+
+    def skip():
+        nonlocal i
+        while i < n and d[i] in _SEP:
+            i += 1
+
+    def number():
+        nonlocal i
+        skip()
+        m = _NUMBER.match(d, i)
+        if not m:
+            raise ValueError(f"expected a number at {i} in {d[:48]!r}")
+        i = m.end()
+        return float(m.group())
+
+    def flag():
+        nonlocal i
+        skip()
+        if i >= n or d[i] not in "01":
+            raise ValueError(f"expected an arc flag at {i} in {d[:48]!r}")
+        i += 1
+        return d[i - 1]
+
+    while True:
+        skip()
+        if i >= n:
+            break
+        if d[i].isalpha():
+            cmd = d[i]
+            i += 1
+        elif cmd is None:
+            raise ValueError(f"path starts with a number: {d[:48]!r}")
+        upper = cmd.upper()
+        absolute = cmd.isupper()
+        # A path whose first command is a relative moveto starts from (0,0),
+        # so SVG reads that one moveto as absolute — but only the moveto. The
+        # pairs that follow it are still relative linetos, and promoting them
+        # too scatters the rest of the icon across the canvas.
+        was_relative = cmd.islower()
+        if first and upper == "M":
+            cmd, absolute = "M", True
+        first = False
+        if upper == "Z":
+            out.append(cmd)
+            continue
+        out.append(cmd)
+        for kind in _PATH_ARGS[upper]:
+            if kind == "xy":
+                px, py = number(), number()
+                out.append(f"{ox + px * k if absolute else px * k:.2f}")
+                out.append(f"{oy + py * k if absolute else py * k:.2f}")
+            elif kind == "x":
+                v = number()
+                out.append(f"{ox + v * k if absolute else v * k:.2f}")
+            elif kind == "y":
+                v = number()
+                out.append(f"{oy + v * k if absolute else v * k:.2f}")
+            elif kind == "r":
+                out.append(f"{number() * k:.2f}")
+            elif kind == "f":
+                out.append(flag())
+            else:
+                out.append(f"{number():g}")
+        # An implicit repeat after a moveto continues as a lineto, keeping the
+        # case the author wrote rather than the one this function forced.
+        if upper == "M":
+            cmd = "l" if was_relative else "L"
+
+    return " ".join(out)
+
+
 def tw(s, size, mono=True):
     """Estimated text width in px, CJK-aware.
 
@@ -273,6 +371,66 @@ class Canvas:
         if shadow and self.shadow:
             a.append('filter="url(#soft)"')
         self.add(" ".join(a) + "/>")
+
+    def icon(self, name, x, y, size=20, color=_DEF, sw=1.6):
+        """A Lucide line icon centred at (x, y).
+
+        Lucide draws on a 24x24 grid with a round stroke, so an icon takes the
+        accent colour of whatever it marks and prints at the weight of the rest
+        of the drawing. The elements are emitted as plain rect/circle/line/path
+        rather than wrapped in a `<g transform>`, because `trim` and `ink_box`
+        read coordinates off the markup and a transform would be invisible to
+        both — the figure would then trim to the wrong box.
+
+        Every Lucide icon is bundled; `Canvas.icons("keyword")` searches the
+        names, and https://lucide.dev browses them.
+        """
+        from lucide import ICONS as _LUCIDE
+        if name not in _LUCIDE:
+            near = [n for n in sorted(_LUCIDE) if name.split("-")[0] in n][:8]
+            raise KeyError(
+                f"no Lucide icon {name!r}"
+                + (f" — did you mean {', '.join(near)}?" if near else "")
+                + " Search with Canvas.icons(<keyword>).")
+        color = self.t["fg_dim"] if color is _DEF else color
+        k = size / 24.0
+        ox, oy = x - size / 2, y - size / 2
+        fx = lambda u: ox + u * k          # noqa: E731
+        fy = lambda v: oy + v * k          # noqa: E731
+        common = (f'fill="none" stroke="{color}" stroke-width="{sw}" '
+                  'stroke-linecap="round" stroke-linejoin="round"')
+
+        for tag, a in _LUCIDE[name]:
+            if tag == "path":
+                self.add(f'<path d="{_scale_path(a["d"], ox, oy, k)}" {common}/>')
+            elif tag == "circle":
+                self.add(f'<circle cx="{fx(a["cx"]):.2f}" cy="{fy(a["cy"]):.2f}" '
+                         f'r="{a["r"] * k:.2f}" {common}/>')
+            elif tag == "ellipse":
+                self.add(f'<ellipse cx="{fx(a["cx"]):.2f}" cy="{fy(a["cy"]):.2f}" '
+                         f'rx="{a["rx"] * k:.2f}" ry="{a["ry"] * k:.2f}" '
+                         f'{common}/>')
+            elif tag == "rect":
+                r = a.get("rx", 0) * k
+                self.add(f'<rect x="{fx(a["x"]):.2f}" y="{fy(a["y"]):.2f}" '
+                         f'width="{a["width"] * k:.2f}" '
+                         f'height="{a["height"] * k:.2f}" rx="{r:.2f}" '
+                         f'{common}/>')
+            elif tag == "line":
+                self.add(f'<line x1="{fx(a["x1"]):.2f}" y1="{fy(a["y1"]):.2f}" '
+                         f'x2="{fx(a["x2"]):.2f}" y2="{fy(a["y2"]):.2f}" '
+                         f'{common}/>')
+            else:  # polyline / polygon
+                nums = [float(t) for t in a["points"].replace(",", " ").split()]
+                pts = " ".join(f"{fx(nums[i]):.2f},{fy(nums[i + 1]):.2f}"
+                               for i in range(0, len(nums) - 1, 2))
+                self.add(f'<{tag} points="{pts}" {common}/>')
+
+    @staticmethod
+    def icons(keyword=""):
+        """Bundled icon names containing `keyword` — 2,000+ of them, so search."""
+        from lucide import ICONS as _LUCIDE
+        return sorted(n for n in _LUCIDE if keyword in n)
 
     def band(self, x, y, w, h, rx, color, opacity=0.14, side="top"):
         """A tinted band on the edge of a card: outer corners round, inner square.

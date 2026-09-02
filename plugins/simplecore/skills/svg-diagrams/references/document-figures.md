@@ -106,6 +106,45 @@ scaffold's `canvas()` disables `title()` so no figure module has to remember.
 The prose must stand without the picture. A reader whose images failed to load
 still has to follow the argument; the figure supplements it.
 
+## The composition comes from the claim, not from the list
+
+**Before laying anything out, write down the one sentence the surrounding prose
+is making.** Not the topic — the claim. 「여섯 성과가 있다」 is a topic; 「1~4를
+개발·검증해서 5·6을 남긴다」 is a claim, and only the second one can be drawn.
+
+A figure built from the topic reproduces the list that is already on the page:
+six items become six equal cards, and the reader learns nothing the paragraph
+above did not already say. A figure built from the claim shows the **relation**
+between the items — which ones are inputs, which are results, what has to
+happen first, what converges, what is excluded — and that relation is the part
+prose is worst at carrying.
+
+Work in this order, every time:
+
+1. **State the claim in one sentence.** If you cannot, read the section again;
+   a figure drawn before the claim is known will be a row of boxes.
+2. **Name what the reader must see that a list cannot say** — order, dependency,
+   convergence, containment, exclusion, scale, a loop.
+3. **Choose the form that carries exactly that**, then build it out of the
+   primitives already here — `band` tabs, numbered badges, `group_frame`
+   panels, a junction `dot`, `ortho` fan-in, a matrix, an axis. **Invent the
+   composition, not the visual language**; a new kind of connector or a new
+   label style makes the figure look unlike its neighbours for no gain.
+4. **Tie the figure back to the prose.** If the paragraph numbers its items,
+   the cards carry the same numbers; if it names the stages, the tabs use the
+   same words. A reader moving between the two must never have to translate.
+
+**Check the figure against the text before calling it done** — the caption, the
+numbering and the terms in the picture all have to match the section it sits
+in. A figure that was right for an earlier draft and now illustrates a claim
+the text no longer makes is the most expensive defect in a document set,
+because it reads as authoritative.
+
+**The test is to cover the labels.** With every word hidden, the shape alone
+should still say the claim: four things feeding one point that opens into two.
+If the covered figure says nothing, the labels were doing all the work and the
+composition is decoration.
+
 ## Vary the composition across a set
 
 Preserve each figure's semantic grammar. Use boundaries or strata for zones, a
@@ -140,3 +179,33 @@ on the card rather than as its top. Use `Canvas.band(x, y, w, h, rx, color)`,
 which rounds only the corners that follow the card's own outline
 (`side="left"` for a label band at the start of a row). Pass the card's own
 `rx` so the two outlines meet without a step.
+
+## Icons carry meaning or they are noise
+
+`Canvas.icon(name, x, y, size, color, sw)` draws one Lucide glyph, and every
+Lucide icon is bundled — `Canvas.icons("shield")` searches the names without a
+network. Icons repay themselves when they let a label go away or let a reader
+sort card kinds without reading; they cost when every card gets one and the row
+turns into decoration.
+
+- **One icon per card at most**, and only where the card's kind is worth marking.
+  A set where every card carries an icon says nothing, because nothing stands out.
+- **A diagram whose subject includes an AI component marks that component with an
+  icon** — `brain-circuit`, `cpu`, `sparkles`, `bot`. Which part of a pipeline a
+  model drives is the first thing a reader wants to know and the hardest thing to
+  read out of a box label.
+- **One size and one stroke across the set.** `size=20, sw=1.6` sits with 17-unit
+  body text on a 1200-unit canvas; a header icon beside 18-unit type takes
+  `size=22`. Changing either per figure reproduces the mismatch that the shared
+  width and type ladder exist to prevent.
+- **Take the icon's colour from what it marks** — the card's accent, or
+  `t["fg_dim"]` for a neutral mark. An icon in its own colour reads as a third
+  signal the figure never defined.
+- **An icon is ink.** It is emitted as plain shapes rather than a `<g transform>`
+  so `trim` and `ink_box` see it, which means an icon placed outside its card
+  widens the figure and an icon crowding a label fails the overflow lint. Leave
+  the icon's half-size plus 8 units between it and the text it precedes.
+
+Icon names change between Lucide releases. `scripts/fetch_icons.py` regenerates
+`scripts/lucide.py` from `lucide-static`; a name that disappears upstream raises
+at draw time with the near-matches listed, so a stale name never renders blank.

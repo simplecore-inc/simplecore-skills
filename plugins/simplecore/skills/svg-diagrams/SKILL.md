@@ -1,6 +1,6 @@
 ---
 name: svg-diagrams
-description: Create diagrams as SVG (also ASCII) — flowcharts, sequence/state/class/ER, system and architecture diagrams, pipelines, network and infrastructure layouts. Use when asked to draw, render, or diagram a system, flow, or structure. Covers hand-crafted SVG and JSON-spec auto-layout for precise architecture pictures, Mermaid auto-layout for structured diagrams from text, and SVG checks that catch missing or oblique arrowheads, text overflow, and clipped content before delivery. Also covers figures embedded in a document — one canvas width and one type scale across the whole set, with the generator versioned in the project rather than written to a scratch directory. Triggers on "draw diagram", "create flowchart", "show architecture", "system diagram", "visualize flow", "SVG diagram", "ASCII diagram", "mermaid", "다이어그램", "아키텍처 그림", "도식화", "구성도", "그림 그려", "문서에 넣을 그림", "그림 규격 통일".
+description: Create diagrams as SVG (also ASCII) — flowcharts, sequence/state/class/ER, system and architecture diagrams, pipelines, network and infrastructure layouts. Use when asked to draw, render, or diagram a system, flow, or structure. Covers hand-crafted SVG and JSON-spec auto-layout for precise architecture pictures, Mermaid auto-layout for structured diagrams from text, and SVG checks that catch missing or oblique arrowheads, text overflow, and clipped content before delivery. Also covers figures embedded in a document — one canvas width and one type scale across the whole set, with the generator versioned in the project rather than written to a scratch directory, and bundles the full Lucide icon set for marking a component inside a figure (an AI part especially). Triggers on "draw diagram", "create flowchart", "show architecture", "system diagram", "visualize flow", "SVG diagram", "ASCII diagram", "mermaid", "다이어그램", "아키텍처 그림", "도식화", "구성도", "그림 그려", "문서에 넣을 그림", "그림 규격 통일", "아이콘 넣어", "AI 아이콘".
 ---
 
 # SVG Diagrams
@@ -31,9 +31,15 @@ with `python3 tools/diagrams/build.py`. Writing a one-off script under `/tmp`
 produces an SVG nobody can regenerate — the next person hand-edits it, and the
 next build silently discards the edit.
 
-Full discipline — width arithmetic, the type ladder, height economy, composition
-variety, redraw rules: `references/document-figures.md`. Read it before laying
-out the first figure of a set.
+**The composition comes from the claim the prose makes, not from the list of
+items.** Write that claim as one sentence first, name what the reader must see
+that a list cannot say, and build that relation out of the primitives already
+here — a figure that turns six list items into six equal cards repeats the
+paragraph above it. This judgement is made for every figure, not once per set.
+
+Full discipline — width arithmetic, the type ladder, height economy, claim-led
+composition, redraw rules: `references/document-figures.md`. Read it before
+laying out the first figure of a set.
 
 ## Pick the technique
 
@@ -69,7 +75,7 @@ c.save("pipeline.svg")
 
 **Theme** with `Canvas(w, h, theme=…)`: `tokyo-night` (default), `nord`, `catppuccin`, `gruvbox`, `one-dark`. Reference accents as `c.blue c.cyan c.teal c.green c.purple c.red c.orange c.yellow` and chrome as `c.t["muted"|"line"|"bg"|…]` — passing these (not literal hex) lets a diagram re-theme by changing one arg. Chrome (bg/box/line/muted/fg) resolves from the theme automatically. (Module constants `BLUE`, `MUTED`, … remain for Tokyo-Night-only code.)
 
-Helpers: `rrect · text · line · path · ortho · elbow · bez · dot · chip · card · spec_card · node · edge_label · group_frame · title · legend · matrix · row_positions · tw · edge_pt`.
+Helpers: `rrect · text · line · path · ortho · elbow · bez · dot · chip · card · spec_card · node · edge_label · group_frame · title · legend · matrix · band · icon · row_positions · tw · edge_pt`.
 
 Composite patterns (reusable across diagrams):
 - `title(text, sub)` — diagram heading (bold title + muted subtitle).
@@ -81,6 +87,15 @@ Composite patterns (reusable across diagrams):
 - `group_frame(x,y,w,h, label, accent, sub=)` — dashed boundary panel with a legend chip (e.g. Edge/Center zones). Draws on the **underlay layer**, so it stays behind nodes regardless of call order (`underlay=False` to force on top).
 - `legend(x,y, [(color, dash, label), …])` — line-style key (dash=None for solid).
 - `matrix(x,y, rows, cols, marks, …)` — dependency/coverage/RACI grid: `rows` are `name` or `(id, name)`, `cols` are `(label, color)` header chips, `marks` are `(r, c[, color])` filled cells. An empty column reads as "no dependency". Returns `(w, h)` to size the canvas. See domain-templates.md §9.
+
+**Icons.** `c.icon(name, x, y, size=20, color=…, sw=1.6)` draws a Lucide line icon
+centred on `(x, y)`; the whole set is bundled, so `Canvas.icons("brain")` searches
+the 2,050 names offline and https://lucide.dev browses them. An icon is ink like
+any other primitive — it counts toward `trim` and the overflow lint, so place it
+inside the box that owns it. **A diagram that has an AI component marks it with
+an icon** (`brain-circuit` · `cpu` · `sparkles` · `bot`), so a reader can tell at
+a glance which part of the picture a model drives. Sizing and set discipline:
+`references/document-figures.md`.
 
 Sub-route: programmatic / most diagrams → import `svgkit.py`; quick copy-paste one-off → `references/svg-templates.md` XML. **Pick ONE convention per file** — do not mix svgkit markers (`arr-<name>`) and template markers (`ah`) in the same SVG; lint checks markers per file and will not catch a mixed file.
 
