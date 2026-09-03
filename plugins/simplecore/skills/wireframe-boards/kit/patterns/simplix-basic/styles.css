@@ -1046,8 +1046,13 @@
   .chart { border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; background: var(--screen);
            display: flex; flex-direction: column; gap: 8px; min-width: 0; }
   .ch-title { font-size: 12px; font-weight: 600; }
-  .ch-plot { position: relative; border-bottom: 1px solid var(--line);
+  .ch-plot { position: relative; border-bottom: 1px solid var(--line); border-left: 1px solid var(--line);
              border-left: 1px solid var(--line); }
+  /* The axes. A plot with neither name is a shape — the reader can see a rise and cannot say a
+     rise in what, over what. The vertical name sits above the plot's left edge rather than rotated
+     down it: turned text at this size is read twice, and a wireframe is read once. */
+  .ch-y { font-size: 10px; color: var(--muted); margin-bottom: 2px; }
+  .ch-x { font-size: 10px; color: var(--muted); text-align: center; margin-top: 3px; }
   .ch-note { font-size: 10px; color: var(--ink-3); }
   .ch-legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 11px; color: var(--muted); }
   .ch-legend .lg { display: inline-flex; align-items: center; gap: 5px; }

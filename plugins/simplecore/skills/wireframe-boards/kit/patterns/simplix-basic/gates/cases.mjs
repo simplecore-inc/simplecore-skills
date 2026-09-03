@@ -363,6 +363,16 @@ export function cases(t) {
   };
   const roled = (loaded, manifest = [{ letter: 'N', title: 'n', screens: [] }]) =>
     base({ roles: ROLE_MATRIX, manifest, loaded });
+  const chartSrc = (src) => t.ctxWith([{ file: 'x-01a-a', src }]);
+  add('chartAxisGate', '축 이름이 둘 다 없다',
+    chartSrc("chartPh({ kind: 'bar', title: '월별 비용' })"), true);
+  add('chartAxisGate', '한쪽만 있다',
+    chartSrc("chartPh({ kind: 'bar', title: '월별 비용', y: '비용(천 원)' })"), true);
+  add('chartAxisGate', '둘 다 있다',
+    chartSrc("chartPh({ kind: 'bar', title: '월별 비용', y: '비용(천 원)', x: '월' })"), false);
+  add('chartAxisGate', 'progress는 축을 읽는 그림이 아니다',
+    chartSrc("chartPh({ kind: 'progress', title: '준수율', goal: '목표 95%' })"), false);
+
   add('consoleBrandGate', '자리표시자가 그려졌다',
     base({ html: '<div class="topnav"><span class="tn-brand">PRODUCT</span></div>' }), true);
   add('consoleBrandGate', '제품 이름이 그려졌다',

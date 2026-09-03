@@ -1666,15 +1666,21 @@ export const sparkline = (kind = 'line') =>
 /** `progress` draws ONE bar against a target. A legend of several series beside a single mark
  *  says the picture shows something it does not — comparing categories is `bar`, and parts of one
  *  whole is `stack`. The mismatch is invisible in a greybox, so the component refuses it. */
-export const chartPh = ({ kind = 'line', title = '', legend = [], note = '', height = 132, goal = '목표 80%' }) => {
+export const chartPh = ({
+  kind = 'line', title = '', legend = [], note = '', height = 132, goal = '목표 80%', x = '', y = '',
+}) => {
   if (kind === 'progress' && legend.length > 1) {
     throw new Error(`chartPh 「${title}」 — progress는 막대 하나인데 범례가 ${legend.length}개다 ` +
       `(항목 비교는 kind: 'bar', 한 전체의 부분은 kind: 'stack')`);
   }
-  return chartBody({ kind, title, legend, note, height, goal });
+  return chartBody({ kind, title, legend, note, height, goal, x, y });
 };
 
-const chartBody = ({ kind, title, legend, note, height, goal }) => {
+/**
+ * @param x what the horizontal axis runs over — 「2026-08 · 사업소」, 「최근 12개월」
+ * @param y what the height means, with its unit — 「사용 수량(개)」, 「잔량(%)」
+ */
+const chartBody = ({ kind, title, legend, note, height, goal, x = '', y = '' }) => {
   const body = {
     line: `<svg viewBox="0 0 300 100" preserveAspectRatio="none" class="cv">` +
       `<polyline points="0,78 40,66 80,70 120,48 160,52 200,32 240,38 300,20"/>` +
@@ -1687,7 +1693,9 @@ const chartBody = ({ kind, title, legend, note, height, goal }) => {
   }[kind];
   return `<div class="chart">` +
     `${title ? `<div class="ch-title">${title}</div>` : ''}` +
+    `${y ? `<div class="ch-y">${y}</div>` : ''}` +
     `<div class="ch-plot" style="height:${height}px">${body}</div>` +
+    `${x ? `<div class="ch-x">${x}</div>` : ''}` +
     `${legend.length ? `<div class="ch-legend">${legend.map((l, i) =>
       `<span class="lg"><i class="k${i}"></i>${l}</span>`).join('')}</div>` : ''}` +
     `${note ? `<div class="ch-note">${note}</div>` : ''}</div>`;

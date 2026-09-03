@@ -1288,6 +1288,38 @@ export const phaseGate = {
  * declare a `boardName` for the index and hand the console a different display brand, and only the
  * second one reaches the frame.
  */
+/**
+ * A chart names both of its axes.
+ *
+ * <p>Without them the plot is a shape: the reader sees a rise and cannot say a rise in what, over
+ * what — and the implementer builds the axis they assumed. The title does not stand in for it,
+ * because a title names the picture and an axis names the scale: 「월별 비용 추이」 leaves open
+ * whether the height is 원, 천 원 or 건.
+ *
+ * <p>`progress` is exempt: it is one bar against a goal, and neither direction is a scale a reader
+ * reads a value off.
+ */
+export const chartAxisGate = {
+  id: 'chartAxisGate',
+  title: '차트가 축의 이름을 말하지 않는다',
+  stage: 'built',
+  run: (ctx) => {
+    const bad = [];
+    for (const sc of ctx.screens) {
+      const src = ctx.srcOf(sc.file);
+      for (const m of src.matchAll(/chartPh\(\{([^}]*(?:\}[^}]*)*?)\}\)/g)) {
+        const opts = m[1];
+        if (/kind:\s*'progress'/.test(opts)) continue;
+        const missing = ['x', 'y'].filter((k) => !new RegExp(`\\b${k}:\\s*'[^']+'`).test(opts));
+        if (!missing.length) continue;
+        const title = /title:\s*'([^']*)'/.exec(opts)?.[1] ?? '';
+        bad.push(`${sc.file}: chartPh 「${title}」에 ${missing.join(' · ')}축의 이름이 없다 — 무엇을 무엇에 대해 세는지 적는다`);
+      }
+    }
+    return bad;
+  },
+};
+
 export const consoleBrandGate = {
   id: 'consoleBrandGate',
   title: '콘솔이 제품 이름 대신 자리표시자를 그린다',
