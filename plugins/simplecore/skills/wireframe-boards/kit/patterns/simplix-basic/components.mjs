@@ -303,7 +303,7 @@ export const browserbar = (url, { chrome = 'browser', title = '' } = {}) => (chr
  *   the account only discovers by pressing it
  */
 export const topNav = ({
-  brand = 'SMART SAFETY', groups = [], site = '전체 사업장',
+  brand = 'PRODUCT', groups = [], site = '전체',
   unread = 0, admin = true, adminActive = false, wrapped = false, search = '', sitePick = true,
 }) =>
   `<div class="topnav">` +

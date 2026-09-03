@@ -385,11 +385,15 @@
      line between them is what says the lower row did not move. */
   .ld-verbs + .ld-foot { margin-top: 8px; padding-top: 8px; }
 
-  /* Tabs across the panel: the record's own surfaces, counts riding the labels. */
-  .tabs { display: flex; gap: 0; margin: 0; border: 1px solid var(--line); border-radius: 8px;
-          background: var(--fill); padding: 3px; }
-  .tabs .tab { flex: 1; text-align: center; padding: 5px 10px; font-size: 12px; color: var(--muted); border-radius: 6px; }
-  .tabs .tab.active { background: var(--screen); color: var(--ink); font-weight: 600; border: 1px solid var(--line); }
+  /* Tabs across the panel: the record's own surfaces, counts riding the labels.
+
+     **Underlined, not boxed.** These are navigation inside the record — the same record seen from
+     another side — and a boxed segmented row reads as a control that changes a value. The boxed
+     shape belongs over a LIST, where the tabs really do switch which rows are being counted. */
+  .tabs { display: flex; gap: 2px; margin: 0; border-bottom: 1px solid var(--line); }
+  .tabs .tab { flex: none; text-align: left; padding: 7px 12px; font-size: 12px; color: var(--muted);
+               border-bottom: 2px solid transparent; margin-bottom: -1px; }
+  .tabs .tab.active { color: var(--ink); font-weight: 600; border-bottom-color: var(--ink); }
   .tabs .tab .n { margin-left: 5px; font: 10px var(--mono); color: var(--faint); }
 
   /* A record page's own phases, standing down the left. Six phases across one line truncate
@@ -900,18 +904,27 @@
      this server's first administrator should see whose server is asking. */
   .setup-brand { text-align: center; margin-bottom: 6px; }
 
-  /* Tabs over a list: the kinds an operator works through separately. */
-  .ltabs { display: flex; gap: 2px; border-bottom: 1px solid var(--line); }
-  /* A row of tabs stretches every tab to the height of the tallest, and this board runs scripts of
+  /* Tabs over a list: the kinds an operator works through separately.
+
+     **Boxed, not underlined.** Each one is a different count over the same table, so the row is a
+     switch between filters rather than navigation — and a segmented control says that. The
+     underline belongs inside a record, where the tabs move between one record's surfaces. */
+  .ltabs { display: flex; gap: 0; margin: 0; border: 1px solid var(--line); border-radius: 8px;
+           background: var(--fill); padding: 3px; }
+  /* A row of tabs stretches every tab to the height of the tallest, and a board may run scripts of
      very different line heights — ភាសាខ្មែរ sets the row's height and 한국어 beside it then sat at
      the top of its box with the difference below, which reads as a stray gap inside the control.
      Centring costs nothing where the scripts match and is the whole fix where they do not. */
-  .ltab { display: inline-flex; align-items: center; padding: 7px 12px; font-size: 12px;
-          color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: -1px; }
-  .ltab.active { color: var(--ink); font-weight: 600; border-bottom-color: var(--ink); }
+  .ltab { display: inline-flex; align-items: center; justify-content: center; flex: 1;
+          text-align: center; padding: 5px 10px; font-size: 12px; color: var(--muted);
+          border-radius: 6px; }
+  .ltab.active { background: var(--screen); color: var(--ink); font-weight: 600; border: 1px solid var(--line); }
   .ltab .n { margin-left: 5px; font: 10px var(--mono); color: var(--faint); }
 
-  .ltabs.lang { border-bottom: 0; gap: 0; margin-bottom: 6px; }
+  /* The language picker is its own shape and predates the boxed list tabs above it, so it
+     resets the box rather than inheriting it — its buttons carry their own joined border. */
+  .ltabs.lang { border: 0; border-radius: 0; background: none; padding: 0; gap: 0; margin-bottom: 6px; }
+  .ltabs.lang .ltab { flex: none; border-radius: 0; }
   .ltabs.lang .ltab { padding: 3px 9px; font-size: 11px; border: 1px solid var(--line); border-right: 0;
                       border-bottom: 1px solid var(--line); background: var(--fill); }
   .ltabs.lang .ltab:first-child { border-radius: 5px 0 0 5px; }

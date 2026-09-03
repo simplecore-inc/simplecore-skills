@@ -372,6 +372,24 @@ export function cases(t) {
   // A cluster with neither a verdict nor a 「대상 아님」 reason has fallen out of the matrix.
   add('roleGate', '매트릭스에 없는 구역',
     roled([], [{ letter: 'Y', title: 'y', screens: [] }]), true);
+  // The names are the board's, so a board with its own keys is judged by its own vocabulary
+  // rather than by a table in the pattern — which used to report every frame and name the role
+  // `undefined`.
+  const OWN = {
+    ROLES: { admin: '시스템 관리자', branch: '본부 담당자' },
+    CLUSTER_ROLES: { N: { admin: 'full' } },
+    NOT_COVERED: {},
+    rolesOf: (letter, over) => (OWN.CLUSTER_ROLES[letter] ? { ...OWN.CLUSTER_ROLES[letter], ...over } : null),
+  };
+  const owned = (notes) => base({ roles: OWN, manifest: [{ letter: 'N', title: 'n', screens: [] }],
+    loaded: [{ num: 'N-02', file: 'n-02-a', mod: { notes } }] });
+  add('roleGate', '보드 자신의 역할 이름으로 판정한다', owned('AUTH: 본부 담당자<br>'), true);
+  add('roleGate', '보드 자신의 이름이 판정에 있으면 조용하다', owned('AUTH: 시스템 관리자<br>'), false);
+  // An alias the board declares is searched beside the name; one it does not declare is not.
+  const ALIASED = { ...OWN, ROLE_ALIASES: { branch: ['사업소 담당'] } };
+  add('roleGate', '보드가 선언한 별칭도 부른 것으로 친다',
+    base({ roles: ALIASED, manifest: [{ letter: 'N', title: 'n', screens: [] }],
+      loaded: [{ num: 'N-02', file: 'n-02-a', mod: { notes: 'AUTH: 사업소 담당<br>' } }] }), true);
 
   // The list-detail region is the LAST thing on the page: the panel is a full-height column whose
   // footer is pinned to the floor, so a block appended after the two columns lands under a panel

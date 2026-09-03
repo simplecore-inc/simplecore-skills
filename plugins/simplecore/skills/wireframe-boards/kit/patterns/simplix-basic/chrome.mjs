@@ -189,7 +189,9 @@ export function makeConsole({
     const groups = tabGroups(tab, role);
     return `<div class="console">` +
       topNav({
-        groups, site: siteIn, unread, wrapped, search: searchIn, sitePick,
+        // `brand` was accepted here and never forwarded, so `topNav`'s default won on every board
+        // and every console said the same name whatever its own chrome declared.
+        brand, groups, site: siteIn, unread, wrapped, search: searchIn, sitePick,
         // The `⋮` is the way into administration and nothing else, so a role that reaches none of
         // its clusters is drawn no `⋮`. Derived rather than declared: an option would have to be
         // remembered on every frame, and the one place that already knows the answer is `reaches`.

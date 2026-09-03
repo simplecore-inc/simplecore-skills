@@ -1285,7 +1285,7 @@ export const roleGate = {
     // would tie this gate to one folder layout and would re-import the file on every run. A
     // board that settles no roles simply has no matrix to disagree with.
     if (!ctx.roles) return [];
-    const { ROLES, CLUSTER_ROLES, NOT_COVERED } = ctx.roles;
+    const { ROLES, CLUSTER_ROLES, NOT_COVERED, ROLE_ALIASES: ALIASES = {} } = ctx.roles;
     const bad = [];
     // Every cluster the board draws is either in the matrix or declared out of it, with a reason.
     for (const sec of ctx.manifest) {
@@ -1294,10 +1294,17 @@ export const roleGate = {
         bad.push(`${sec.letter} — roles.mjs에 판정도 없고 「대상 아님」 사유도 없다`);
       }
     }
-    // 「경비」 alone would match 「경비실」; the auditor is written both ways on this board.
-    const NAMED = { sys: ['시스템 관리자'], exec: ['경영책임자'], safety: ['안전관리자'],
-      health: ['보건관리자'], super: ['관리감독자'], partner: ['협력사'],
-      guard: ['경비/PACS', 'PACS 운영자'], auditor: ['감사자', '감사관'] };
+    // **The names come from the board's own `ROLES`, never from a table in here.** A list of role
+    // names written into the pattern is one product's vocabulary in shared code: it matches
+    // nothing on the next board — whose keys are its own — and the failure is not silent but
+    // wrong, reporting every frame while naming the role `undefined`.
+    //
+    // A role's own name is normally unambiguous enough to search for. Where it is not, or where a
+    // board writes a role two ways, the board declares the extra spellings in `ROLE_ALIASES`
+    // (`{ <key>: [<word>, …] }`) and they are searched alongside the name — 「경비」 on its own
+    // would match 「경비실」, so a short alias is the board's call rather than the pattern's.
+    const NAMED = Object.fromEntries(Object.entries(ROLES).map(
+      ([key, name]) => [key, [name, ...(ALIASES[key] ?? [])]]));
     for (const e of ctx.loaded) {
       const L = (e.num ?? '').split('-')[0];
       const verdicts = CLUSTER_ROLES[L];
