@@ -479,10 +479,13 @@
      saying what goes in it — the label above keeps the column's width instead. */
   .ffield .input.num { justify-content: flex-start; width: max-content; max-width: 100%; }
   .ffield .input.num .nval { display: inline-block; min-width: calc(var(--nd, 4) * 1ch); text-align: right; }
-  .ffield .input.num .unit { margin-left: 6px; color: var(--muted); }
+  /* The unit keeps its distance from the stepper's border. The box is `max-content`, so
+     `margin-left: auto` on the stepper has no free space to push into and the two sat against
+     each other — 「년」 and the arrows overlapped at the field's own font size. */
+  .ffield .input.num .unit { margin-left: 6px; margin-right: 12px; color: var(--muted); }
   .ffield .input.num .spin { margin-left: auto; display: flex; flex-direction: column;
                              border-left: 1px solid var(--line); height: 100%; }
-  .ffield .input.num .spin i { flex: 1; display: flex; align-items: center; padding: 0 6px;
+  .ffield .input.num .spin i { flex: 1; display: flex; align-items: center; padding: 0 4px;
                                font-style: normal; font-size: 7px; color: var(--muted); }
   .ffield .input.num .spin i + i { border-top: 1px solid var(--line); }
   .ffield .area { display: block; padding: 8px 9px; border: 1px solid var(--line); border-radius: 6px;
