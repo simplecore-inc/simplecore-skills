@@ -114,6 +114,78 @@ three have run, **in this order**:
 **Stage new screen files before auditing.** The resource sweep enumerates through `git ls-files`,
 so a cluster written and not yet staged is skipped in silence and the audit reports zero.
 
+## A responsive pair brings the toggle back
+
+A new board ships **no viewport toggle**, because it draws no `.narrow`/`.wide` pair yet and a
+control that changes nothing reads as a broken one. Nothing has to be restored by hand: the build
+draws the toggle the moment a frame declares `variant: 'narrow'` or `'wide'`.
+
+A pair is one screen at two widths, sharing one id. A separate phone frame is a different thing —
+the console at phone width is another layout rather than a reflow of the desktop one, so it is a
+frame of its own with an id of its own.
+
+## A frame that spreads another frame's module inherits whatever was mis-read out of it
+
+**A checker that reads a frame's source by pattern is a reader the frame cannot see**, and a frame
+built from `...base` inherits that reader's mistake along with the body. So a finding can name a
+file whose source does not contain the thing the finding is about.
+
+It happened: a component option named `role` collided with a frame's own `role:`, and three of the
+eight frames reported had no `role` in their source at all — they spread the module of a frame that
+did. **The three were only found because the check is an error rather than a warning**; scrolled
+past, they would have stayed.
+
+**So when a pattern-reading check fires, look past the named files to what spreads them**, and when
+naming a component option, check it against the keys a frame declares — the collision is invisible
+from inside the kit.
+
+## A frame id in prose is a citation, whatever the sentence around it says
+
+This applies wherever `documents.scan` is declared, and it is a property of the check rather than a
+preference about wording — a reader who takes it for style works around it and the build stops
+again.
+
+**The document scan reads an id and cannot read the sentence's polarity.** It has no way to tell
+「X-NN draws the roster」 from 「X-NN is not on the board」, so both come back as a document calling a
+frame the board does not draw, and the build refuses.
+
+**So absence is written as the numbers on either side.** 「N-24와 N-26 사이의 번호는 보드에 없다」
+carries the same point — a skipped number is not a typo — and gives the scan nothing to catch on.
+
+**A range is the same mistake with more surface, and it hides things.** A frame id is a permanent
+number; it carries no relation to any ordering a document happens to be arguing about. So
+`N-22~N-29` in prose asserts something nobody checked, and it quietly covers a number that is not
+there at all — a range like that is exactly where the missing number hides. Write the ids the
+sentence means, or name the set some other way.
+
+## Korean is audited at every step, not at the end
+
+Run all four commands, because they check different things and three of them stay silent when the
+resource declaration is missing:
+
+```bash
+T="$HOME/.claude/skills/simplecore/skills/korean-docs/scripts/l10n.mjs"
+node "$T" check && node "$T" rules && node "$T" audit && node "$T" suspects
+```
+
+Declare the board's sources as a resource kind in `.claude/l10n.json` and in the project
+glossary's `audit.localeResources`, so a frame's fixed wording is held to the same standard as
+screen copy — which it is, since that wording ships to the screen unchanged.
+
+**The script finds only what a regex can see.** On top of it, READ what was written: a frame's
+`notes` are prose a person will read, and the labels, buttons, empty states and messages are the
+product's own words. What the script cannot judge — a sentence whose subject and verb disagree, a
+term this domain uses differently, a statutory phrase paraphrased into something that no longer
+names the same duty — is found by reading, and reading is not optional because the frames are
+where those words are decided.
+
+**A correction the user makes goes into the glossary in the same change**
+(`.claude/GLOSSARY.md`), never only into the frame — otherwise the same correction is needed again
+in the next cluster.
+
+**After drawing or changing a screen, ask the user whether to run a persona review.** Ask; do not
+run it unasked and do not skip it.
+
 ## Living contract — build from it, reconcile, sync
 
 - **Build from it:** implement every state / flow / fixed string a frame draws; match content,
