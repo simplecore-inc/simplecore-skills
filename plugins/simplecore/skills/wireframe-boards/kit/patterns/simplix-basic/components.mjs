@@ -72,6 +72,24 @@ export const mediaPh = ({ label, size = 'md', note = '' }) =>
 export const qrPh = (label = 'QR') => `<div class="qr-ph"><span>${label}</span></div>`;
 export const btn = (text, variant = '') => `<div class="${cls('btn', variant)}">${text}</div>`; // ''·primary·ghost·danger·off(권한 없음)
 export const chip = (text, active = false) => `<span class="chip${active ? ' active' : ''}">${text}</span>`;
+/**
+ * A person: the mark that stands for their photo, and their name beside it.
+ *
+ * <p>**The two are one component so they cannot be drawn apart.** A name written as bare text in
+ * one list and with a mark in the next reads as two different kinds of thing, and the reader stops
+ * scanning the column for a face. Wrapping the pair removes the choice from every call site.
+ *
+ * <p>The mark carries the name's first character rather than a photo — that is what the product
+ * renders when there is no picture, and a wireframe that drew an empty circle everywhere would say
+ * that every account has no photo. It is a placeholder for the picture, not a design for it.
+ *
+ * @param name the person's name, as the product would show it
+ * @param sub the mono aside that rides after the name — the role, the account, the organisation
+ */
+export const person = (name, sub = '') =>
+  `<span class="person"><span class="p-av">${name.slice(0, 1)}</span><span>${name}</span>` +
+  (sub ? `<span class="mono faint">${sub}</span>` : '') + '</span>';
+
 export const badge = (text, variant = '') => `<span class="${cls('badge', variant)}">${text}</span>`; // ''·outline
 /**
  * The chip filter over a list. It sits between the list tabs and the list, and NOTHING may come
@@ -846,6 +864,16 @@ export const tabPanes = ({
   `</div>`;
 
 /** A titled group of fields inside a panel. Fields sit two to a row. */
+/**
+ * A block inside a detail section that takes the whole width rather than one field column.
+ *
+ * <p>`.fields` is two columns because a detail is mostly label-and-value pairs, and a `dField` can
+ * already span both with `wide`. What had no way to say it is a block that is not a field at all —
+ * a tree, a table, a chart — which lands in column one and is read as the left half of a pair that
+ * has no right half.
+ */
+export const full = (children) => `<div class="d-full">${children}</div>`;
+
 export const section = (title, children) =>
   `<div class="sect">${title ? `<div class="sect-t">${title}</div>` : ''}<div class="fields">${children}</div></div>`;
 
@@ -1532,6 +1560,7 @@ export const CATALOG = [
   { cat: 'input', name: 'field({label, value, hint, select})', note: '라벨 + 입력칸. select는 ▾를 보인다', ex: field({ label: '작업 구역', value: 'A동 3층 배관실', select: true }) },
   { cat: 'input', name: 'fI18n({label, value, lang}) · fI18nArea({…})', note: '언어별로 값을 갖는 칸. 라벨 오른쪽이 화면 전체가 함께 움직이는 언어 선택기', ex: fI18n({ label: '위험요인 이름', value: '밀폐공간 산소결핍', lang: '한국어', required: true }) },
   { cat: 'input', name: 'cellInput({value, unit, bad})', note: '표 안에서 바로 고치는 칸. 빈 칸은 점선, 거절된 값은 강조색', ex: `<div class="table"><div class="trow"><span class="td">산소</span><span class="td">${cellInput({ value: '20.9', unit: '%' })}</span><span class="td">${cellInput({})}</span><span class="td">${cellInput({ value: '-1', bad: true })}</span></div></div>` },
+  { cat: 'inline', name: 'person(name, sub)', note: '사람 이름은 언제나 마크와 함께 그린다 — 목록 · 상세 · 머리 어디서나 같은 짝이고, 이름만 쓴 자리는 게이트가 잡는다', ex: `${person('김본사', '본사 담당자 · hq.kim')}` },
   { cat: 'input', name: 'chip(text, active) · badge(text, variant)', note: '필터 칩 · 상태 배지(outline)', ex: `${chips([chip('전체', true), chip('진행'), chip('완료')])}${badges([badge('발급', 'outline'), badge('반납')])}` },
   { cat: 'input', name: 'chips(items, {note})', note: '칩 줄의 오른쪽 끝에 붙는 한 마디 — 어느 칩을 골랐느냐에 따라 달라지는 안내만 여기 놓는다. 칩 아래 한 줄을 더 쓰면 탭·칩·목록 사이에 블록이 끼는 것이라 그 자리는 없다', ex: `${chips([chip('전체'), chip('내보내기 DB', true), chip('API')], { note: '내보내기 DB는 방화벽을 이쪽에서 엽니다' })}` },
   { cat: 'container', name: 'helpCard({title, hint, open, dismiss})', note: '엔티티 설명·생애주기가 사는 카드 — 누르면 다이얼로그로 펼친다. 목록 아래·목록·상세 위·상세 탭 머리 가운데 한 곳. 도움말 갈래의 알림 카드라 닫히고, 머리의 「?」가 다시 연다', ex: helpCard({ title: '위임과 대결은 어떻게 다른가', hint: '넘기는 사람 · 넘어가는 시점 · 기록에 남는 이름' }) },
