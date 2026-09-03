@@ -53,17 +53,32 @@ desktop sections freely.
   suffixed with the human name (`· portrait` / `· landscape`, `· 1024 breakpoint`
   / `· 1440`). The pair counts as ONE inventory item and describes ONE responsive
   screen.
-- The board-level toggle (a checkbox as the FIRST element of `<body>` plus the
-  `.view-toggle` label in the header — both in the template) shows exactly one
-  frame of each pair. Connectors sit between pairs, so the flow reads correctly
-  in both views without duplicate arrows.
+- **`board.config.mjs` `viewportPairs` decides what the board does with a pair**, and the choice
+  is about how much of the board is paired.
+  - `narrow-first` (the default) · `wide-first` — one member on screen, the header's toggle (a
+    checkbox as the FIRST element of `<body>` plus the `.view-toggle` label) switching between
+    them. Connectors sit between pairs, so the flow reads correctly in both views without duplicate
+    arrows. Which one opens is the board's PRIMARY width, not a preference: get it wrong on a board
+    that is mostly one width and the other member of every pair is hidden on arrival, and a reader
+    who follows an index entry to a frame that is not on the page reports it as **missing**, not as
+    hidden, because nothing there says a toggle is why.
+  - `stacked` — both members on the page, the narrow one directly under its wide twin, and no
+    toggle emitted at all. Right wherever pairs are the exception rather than the rule: the reader
+    meets the two widths of one screen together, which is what a pair is for, and there is no
+    control to discover before the board is complete. A desktop frame fills its row, so the narrow
+    twin lands on the next line by itself — the stacking is the row wrap, not a special case.
 - **Only frames tagged `.narrow` / `.wide` participate.** A screen authored at a
   single viewport carries no tag and stays visible in both toggle states — that is
   how orientation-locked products (kiosk mounts, vehicle docks) and single-width
   admin consoles are drawn. A board with no pairs at all deletes the toggle input
   and label; a control that does nothing erodes trust in the ones that do.
-- Narrow is the default view — it is what thumbnails and prints show. Add
-  `checked` to the checkbox for a wide-first product.
+- **The board opens on its PRIMARY width, and that is a decision, not a preference.**
+  `board.config.mjs` `defaultViewport` takes `'narrow'` (the default) or `'wide'`, and the build
+  stamps the checkbox accordingly. Get it wrong on a board that is mostly one width and the wide
+  member of every pair is hidden on arrival — a reader who follows an index entry to a frame that
+  is not on the page reports it as **missing**, not as hidden, because nothing on the page says a
+  toggle is why. A console of a hundred desktop screens with one phone pair sets `'wide'`; a
+  product drawn phone-first leaves it alone.
 - **Wide is a reflow, not a stretch.** A single phone-shaped column at 1024px is
   itself a wireframe finding: use `.split` master-detail panes, `.grid-2` /
   `.grid-3` / `.grid-4` card grids, a full `.sidebar` where the narrow view showed

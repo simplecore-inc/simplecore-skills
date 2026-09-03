@@ -356,6 +356,7 @@ ${frames.join('\n')}
     sectionsHtml: doc.sectionsHtml,
     readmeHtml: readme,
     styles: ctx.styles,
+    viewportPairs: ctx.config.viewportPairs ?? 'narrow-first',
   });
   for (const doc of documents) doc.html = html(doc);
   for (const doc of volumeDocs) doc.html = html(doc);

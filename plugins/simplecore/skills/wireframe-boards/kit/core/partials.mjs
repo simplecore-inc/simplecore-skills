@@ -29,8 +29,8 @@ export const BOARD_CONTRACT = 4;
  * @param roles the board's `src/roles.mjs`, or null where the board settles no roles
  * @returns `{ frame, sidebar, page }`
  */
-export function makePartials({ components, roles = null, lang = 'en' }) {
-  const { browserbar } = components;
+export function makePartials({ components, roles = null, lang = 'en', reqsById = {} }) {
+  const { browserbar, frameSpec } = components;
   const ROLES = roles?.ROLES ?? {};
   const VERDICTS = roles?.VERDICTS ?? {};
   const rolesOf = roles?.rolesOf ?? (() => null);
@@ -70,6 +70,17 @@ export function makePartials({ components, roles = null, lang = 'en' }) {
         + (ft ? `<span class="ft-tag">${ft.tag}</span><em class="ft-why">${ft.key}` +
           `${ft.why ? ` — ${ft.why}` : ''}</em>` : '') + s.notes
       : s.notes;
+    // The four things a reader wants before anybody's judgment: what the screen is for, what
+    // stands on it, what it does and which state this is, and which requirement it answers. The
+    // pattern derives them from the frame itself — written beside the frame instead, they would be
+    // right the day they were typed and wrong at the next edit.
+    const spec = frameSpec ? frameSpec(s, { reqs: reqsById[id.replace(/[a-z]$/, '')] ?? [] }) : null;
+    const specRows = spec
+      ? Object.entries(spec).filter(([, v]) => v && String(v).trim())
+        .map(([k, v]) => `<div class="fs-row"><span class="fs-k">${k}</span><span class="fs-v">${v}</span></div>`)
+        .join('')
+      : '';
+    const specBlock = specRows ? `\n      <div class="frame-spec">${specRows}</div>` : '';
     const notes = noteBody ? `\n      <div class="frame-notes">\n        ${noteBody}\n      </div>` : '';
     // Who reaches this frame. The cluster decides it and the frame overrides only where it
     // departs — an override is drawn emphasised, because a departure is the thing worth reading.
@@ -125,7 +136,7 @@ export function makePartials({ components, roles = null, lang = 'en' }) {
           ${s.body}${fold}
         </div>
       </div>
-      <div class="frame-label">${label}</div>${roleStrip}${notes}
+      <div class="frame-label">${label}</div>${roleStrip}${specBlock}${notes}
     </article>`;
   }
 
@@ -285,7 +296,20 @@ ${parts.map((p) => `    <a class="ep" href="${p.file}">
   // implementing, and at the top it would stand between every later reader and the frames they
   // came for — on a board hundreds of frames long that is a toll paid on every visit. The header
   // links to it, so «reachable» does not depend on scrolling to the end.
-  function page({ title, sidebarHtml, navHtml = '', headerHtml, overviewHtml = '', sectionsHtml, readmeHtml, styles }) {
+  // `viewportPairs` decides what the board does with a narrow/wide pair.
+  //
+  // `narrow-first` · `wide-first` — one member on screen, the header's toggle switching between
+  // them. Which one opens is the board's PRIMARY width, not a preference: a board of a hundred
+  // desktop screens and one phone pair that opens narrow hides two desktop frames, and the
+  // reader reports them as MISSING rather than as hidden, because nothing on the page says a
+  // toggle is why.
+  //
+  // `stacked` — both members on the page, the narrow one directly under its wide twin, and no
+  // toggle at all. Right wherever the pair is the exception rather than the rule: the reader
+  // sees the two widths of one screen together, which is what a pair is for, and never has to
+  // discover a control to find a frame the index promised.
+  function page({ title, sidebarHtml, navHtml = '', headerHtml, overviewHtml = '', sectionsHtml, readmeHtml, styles,
+    viewportPairs = 'narrow-first' }) {
     return `<!doctype html>
 <html lang="${textFor(lang).htmlLang}">
 <head>
@@ -298,7 +322,7 @@ ${styles}
 </style>
 </head>
 <body>
-<input type="checkbox" id="viewport" class="view-input" aria-label="${textFor(lang).viewportLabel}">
+${viewportPairs === 'stacked' ? '' : `<input type="checkbox" id="viewport" class="view-input"${viewportPairs === 'wide-first' ? ' checked' : ''} aria-label="${textFor(lang).viewportLabel}">`}
 ${sidebarHtml}
 <div class="wf-board">
 ${navHtml}

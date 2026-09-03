@@ -180,8 +180,14 @@ export function makeConsole({
     powered: poweredIn = powered, agent = null, lockWord = '라이선스',
     search: searchIn = search, sitePick = true,
   }) => {
-    if (!TAB_KEYS.has(tab)) {
-      throw new Error(`console_ — 없는 탭 「${tab}」 (쓸 수 있는 탭: ${[...TAB_KEYS].join(' · ')})`);
+    // `tab: null` — no tab is the one the reader is on. Some screens hang off the account chip
+    // rather than off the tab row (내 정보, 알림함), and for a role that does not reach the tab
+    // holding their cluster there is no honest tab to name: lighting one says this account can
+    // open an area it cannot. A missing tab is different from `null` and still refused, because
+    // that is a screen whose author forgot to say where it lives.
+    if (tab !== null && !TAB_KEYS.has(tab)) {
+      throw new Error(`console_ — 없는 탭 「${tab}」 (쓸 수 있는 탭: ${[...TAB_KEYS].join(' · ')}), `
+        + '어느 탭에도 속하지 않는 화면이면 tab: null');
     }
     if (current && !MENU_LABELS.has(current)) {
       throw new Error(`console_ — 어느 메뉴에도 없는 「${current}」 — 보드의 chrome.mjs MENU에 있는 이름이어야 한다`);

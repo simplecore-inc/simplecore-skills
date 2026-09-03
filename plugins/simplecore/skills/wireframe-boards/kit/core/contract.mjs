@@ -61,7 +61,9 @@ const STANDING = [
  */
 export function renderIntro({ config, patternItems = '', boardItems = '', hasPairs = false, split = null }) {
   const text = textFor(config.boardLang);
-  const toggle = hasPairs
+  // No toggle in `stacked` mode: both members of every pair are on the page, so there is nothing
+  // to switch and a control that switches nothing is worse than no control.
+  const toggle = hasPairs && (config.viewportPairs ?? 'narrow-first') !== 'stacked'
     ? `\n  <label class="view-toggle" for="viewport"><span class="opt-narrow">${text.narrow}</span>`
       + `<span class="opt-wide">${text.wide}</span></label>`
     : '';

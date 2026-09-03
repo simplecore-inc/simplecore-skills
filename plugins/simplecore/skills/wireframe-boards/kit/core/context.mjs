@@ -3,7 +3,7 @@
 // Everything downstream — the build, the gates, the catalog, the checks, the exports — reads the
 // context this file produces and never reaches into the board folder itself. That is what lets a
 // gate written here judge any board: it is handed the board rather than importing one.
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync, statSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import { join, basename, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -72,6 +72,46 @@ export function patternDirFor(boardDir, pattern) {
   return pattern.startsWith('.')
     ? resolve(boardDir, pattern)
     : join(boardDir, '.kit', 'patterns', pattern);
+}
+
+/**
+ * Which requirement each SCREEN answers, read from the board's own frame inventory.
+ *
+ * <p>A frame's notes cite requirements as it argues about them, and a state frame that rewrites its
+ * notes loses the citations its base carried — so the notes are not where 「이 화면이 답하는 요구
+ * 사항」 lives. The inventory's trace table is: one row per requirement naming the screens that
+ * answer it, maintained because the proposal is scored against it.
+ *
+ * <p>Keyed by SCREEN id (`B-01`), so every state of a screen inherits the same answer, which is
+ * what a trace table means.
+ */
+function reqTrace(boardDir, config) {
+  const rel = config.documents?.frameInventory;
+  if (!rel) return {};
+  const p = join(boardDir, rel);
+  if (!existsSync(p) || statSync(p).isDirectory()) return {};
+  const out = {};
+  for (const m of readFileSync(p, 'utf8')
+    .matchAll(/^\|\s*((?:[A-Z]{3}-\d{3}[^|]*?))\s*\|\s*([^|]*)\|/gm)) {
+    const req = (m[1].match(/[A-Z]{3}-\d{3}/g) ?? []);
+    if (!req.length) continue;
+    for (const id of m[2].matchAll(/\b([A-Z])-(\d{2,})\b/g)) {
+      const key = `${id[1]}-${id[2]}`;
+      (out[key] ??= []).push(...req);
+    }
+  }
+  for (const k of Object.keys(out)) out[k] = [...new Set(out[k])];
+  // A screen the board adds BEYOND the requirements has no row in the trace, and a blank line
+  // there reads as an oversight rather than as the decision it is. The inventory says which those
+  // are in its own section; naming them turns the blank into an answer.
+  const beyond = /##\s*\d+\.\s*요구사항 밖[\s\S]*/.exec(readFileSync(p, 'utf8'));
+  if (beyond) {
+    for (const m of beyond[0].matchAll(/^\|\s*([A-Z])-(\d{2,})\b/gm)) {
+      const key = `${m[1]}-${m[2]}`;
+      if (!out[key]) out[key] = ['요구사항 밖'];
+    }
+  }
+  return out;
 }
 
 export async function loadBoard(boardDir, { screens = true } = {}) {
@@ -188,7 +228,7 @@ export async function loadBoard(boardDir, { screens = true } = {}) {
     projectGates,
     styles,
     introParts,
-    partials: makePartials({ components, roles, lang: config.boardLang }),
+    partials: makePartials({ components, roles, lang: config.boardLang, reqsById: reqTrace(boardDir, config) }),
     text: textFor(config.boardLang),
     manifest: [],
     sections: [],

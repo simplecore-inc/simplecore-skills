@@ -28,11 +28,18 @@ const cls = (base, variant) => (variant ? `${base} ${variant}` : base);
  * <p>`chipClearControl` — a {@link chips} filter row draws the control that clears the selection as
  * soon as a second chip is lit. It is what says the row narrows rather than chooses, and it is the
  * one control that undoes a selection built up one chip at a time.
+ *
+ * <p>`listViewToggle` — a {@link filterBar} draws the 목록 · 격자 switch. **Off unless a board
+ * actually draws a grid**: a control that appears on every list and changes nothing on any of them
+ * teaches the reader that the board's controls are decoration, and a reviewer who presses it and
+ * gets the same list has been told the product does something it does not. A board with a genuine
+ * card or tile view switches it on and draws that view as its own frame.
  */
 const OPTIONS = {
   dismissibleNotices: false,
   noticeKindMarks: false,
   chipClearControl: false,
+  listViewToggle: false,
 };
 
 /**
@@ -1038,7 +1045,8 @@ export const filterBar = ({ total, applied = [], hidden = 0, columns = true,
   // A list somebody arrives at holding a query — an article number, a record id — needs the box
   // in its own bar. Sending them to the global search loses the filters they came in with.
   (search ? `<span class="fb-find"><span class="ph">${search}</span></span>` : '') +
-  `<span class="seg">${views.map((v) => `<span${v === view ? ' class="active"' : ''}>${v}</span>`).join('')}</span>` +
+  (OPTIONS.listViewToggle && views.length
+    ? `<span class="seg">${views.map((v) => `<span${v === view ? ' class="active"' : ''}>${v}</span>`).join('')}</span>` : '') +
   applied.map((f) => `<span class="fbadge"><span class="k">${f.k}</span><span class="op">${f.op || '='}</span>${f.v}<span class="x">✖</span></span>`).join('') +
   (hidden ? `<span class="fbadge more">외 ${hidden}개</span>` : '') +
   `<span class="spacer"></span><span class="seg"><span>필터${applied.length ? `<span class="n">${applied.length}</span>` : ''}</span>` +
@@ -1822,6 +1830,53 @@ export const approvalFlow = (steps) =>
     `${s.at ? `<span class="af-at">${s.at}</span>` : ''}</span></div>`).join('')}</div>`;
 
 /**
+ * The Korean approval block — the stamp grid that sits at the top right of a document.
+ *
+ * <p>Every approval form in this country carries it and every reader looks there first: one column
+ * per position in the line, the position named across the top, and the cell beneath it holding the
+ * signature. Empty means it has not been signed yet, which is the whole point — the shape says at a
+ * glance how far the document has got without anybody reading a word of it.
+ *
+ * <p>**It goes at the top right, always.** Placed in document order it is met after the thing it
+ * qualifies, and the reader has already read the form before learning who has to sign it. On a page
+ * with a detail panel the panel is already the right column, so the box stands at the head of that
+ * panel. On a page with no panel it goes in a row with whatever else the page puts on its top line
+ * — a steps rail, a filter — and hugs the right edge from there.
+ *
+ * <p>**Not floated.** A float only pushes INLINE content aside; the bordered blocks this pattern is
+ * made of draw straight through it, so the page ends up either overlapping the box or clearing
+ * below it, and both look like a mistake. A row is what actually puts two things on one line.
+ *
+ * <p>{@link approvalFlow} answers a different question — 「what happens next and who is it waiting
+ * on」 — and belongs in the body of a record that is still moving. This one answers 「who has
+ * signed」. A screen that needs both draws this at the top and that below; most need only this.
+ *
+ * @param steps `[{label, who, at, state}]` — the same shape {@link approvalFlow} takes.
+ *   `state`: done · now · wait · reject
+ */
+export const signBox = (steps) => {
+  // The header carries the state, not the signature cell. A reader checks this box to answer 「어디
+  //까지 왔나」, and that answer belongs beside the position's name — put it in the cell below and it
+  // reads as part of the signature, which is a different claim.
+  const MARK = { done: '✔', reject: '✖', now: '대기', wait: '' };
+  return `<div class="signbox">` +
+    `<div class="sb-row sb-head">${steps.map((s) => {
+      const state = s.state || 'wait';
+      return `<span class="sb-cell sb-h ${state}"><span class="sb-label">${s.label}</span>` +
+        `${MARK[state] ? `<span class="sb-state">${MARK[state]}</span>` : ''}</span>`;
+    }).join('')}</div>` +
+    `<div class="sb-row">${steps.map((s) => {
+      const state = s.state || 'wait';
+      return `<span class="sb-cell sb-sign ${state}">` +
+        // The name stands in every cell, signed or not. A paper form leaves the unsigned cell blank
+        // because the reader is holding the paper and knows whose desk it is on; on a screen the one
+        // question this box is opened for is 「누구를 기다리는가」, and a blank cell does not answer it.
+        `<span class="sb-who">${s.who}</span>` +
+        `${state === 'done' && s.at ? `<span class="sb-at">${s.at}</span>` : ''}</span>`;
+    }).join('')}</div></div>`;
+};
+
+/**
  * The rail of a multi-step setup, and the only place its shape is written.
  *
  * <p>A row of separate pills reads as a set of choices, and a wizard is not one — it is an order.
@@ -1853,12 +1908,20 @@ export const tree = (nodes) =>
  *
  * @param items `[{kind, label, meta, failed}]` — photo · file · sign
  */
-export const attachGrid = (items) =>
+/**
+ * @param add what adding one is called, as the slot that does it — 「사진 찍기」 on a screen filled
+ *   in beside the machine, 「파일 첨부」 at a desk. **The affordance belongs in the grid**: a button
+ *   row under it is a fifth region the reader has to find, and on a phone it lands past the fold.
+ *   Omit it where the evidence arrives from somewhere else and this screen only reads it.
+ */
+export const attachGrid = (items, { add = '' } = {}) =>
   `<div class="attach">${items.map((it) =>
     `<div class="at-item${it.failed ? ' failed' : ''}">` +
     (it.kind === 'sign' ? `<div class="at-sign">서명</div>` : `<div class="at-thumb"></div>`) +
     `<div class="at-body"><div class="at-label">${it.label}</div>` +
-    `<div class="at-meta">${it.meta}</div></div></div>`).join('')}</div>`;
+    `<div class="at-meta">${it.meta}</div></div></div>`).join('')}` +
+  (add ? `<div class="at-item at-add"><div class="at-plus">＋</div>` +
+    `<div class="at-body"><div class="at-label">${add}</div></div></div>` : '') + `</div>`;
 
 /** One search hit: where it was found, the words around it, and what it belongs to. */
 export const hit = ({ title, snippet, meta }) =>
@@ -1985,3 +2048,92 @@ export const manualPanel = ({ title, toc = [], active = 0, fallback = '', childr
     `<span class="man-ti${i === active ? ' active' : ''}">${s}</span>`).join('')}</div>` +
   (fallback ? `<div class="man-fb">${fallback}</div>` : '') +
   `<div class="man-body">${children}</div></div>`;
+
+// ── the four things every frame's notes answer ───────────────────────────────
+
+/**
+ * What a reader wants from a frame before reading anybody's judgment about it: what it is for,
+ * what stands on it, what it does, and which requirement it answers.
+ *
+ * <p>**Derived from the frame, never written beside it.** Four lines authored per screen would be
+ * right on the day they were typed and wrong at the next edit — the composition is what the frame
+ * actually draws, and only the frame knows it. So 화면구성 is read out of the rendered body, 동작
+ * out of the buttons on it, 상태 out of the frame's own `state`, and 대응 요구사항 out of the
+ * citations the notes already carry. A frame overrides any of them by declaring `spec`.
+ *
+ * <p>`용도` is the exception and comes from the page header's own description — the sentence the
+ * screen already says about itself to its reader. Where a frame has no header (a signed-out card,
+ * a phone shell) it declares `spec.용도`.
+ */
+const REGION_NAMES = [
+  ['pagehead', '화면 머리'],
+  ['wizard', '단계 레일'],
+  ['signbox', '결재란'],
+  ['grid-4', '상태카드'],
+  ['grid-3', '상태카드'],
+  ['grid-2', '상태카드'],
+  ['helpcard', '도움말'],
+  ['msg ', '알림 카드'],
+  ['ltabs', '목록 탭'],
+  ['chips', '칩 필터'],
+  ['filterbar', '조건 줄'],
+  ['listdetail', '목록–상세'],
+  ['tpanes', '탭 칸'],
+  ['sect', '입력 구역'],
+  ['fgrid', '입력 구역'],
+  ['table', '표'],
+  ['mx', '표'],
+  ['chart', '차트'],
+  ['attach', '증빙'],
+  ['printsheet', '인쇄 미리 보기'],
+  ['empty', '빈 상태'],
+  ['modal', '대화상자'],
+];
+
+/** Requirement citations this product's documents use, in the order a reader expects them. */
+const REQ = /\b(?:SFR|PER|SER|DAR|COR|QUR|TER|SIR|UIR|PMR|PSR)-\d{3}\b/g;
+
+export function frameSpec(screen, { reqs = [] } = {}) {
+  const own = screen.spec ?? {};
+  const body = screen.body ?? '';
+  const notes = screen.notes ?? '';
+
+  const 용도 = own['용도']
+    ?? (/<div class="ph-desc">([^<]*)<\/div>/.exec(body)?.[1] ?? '').trim();
+
+  // The regions, in the order they stand on the page. Counted rather than listed twice: three
+  // 입력 구역 in a row is one fact about the page, not three.
+  const seen = [];
+  for (const m of body.matchAll(/class="([a-z][a-z0-9 -]*)"/g)) {
+    const cls = ` ${m[1]} `;
+    const hit = REGION_NAMES.find(([k]) => cls.includes(` ${k.trim()} `) || cls.includes(` ${k.trim()}-`));
+    if (!hit) continue;
+    // A stat-tile row is a grid that HOLDS stats; a plain grid is a layout and says nothing.
+    if (hit[1] === '상태카드' && !body.slice(m.index, m.index + 400).includes('class="stat')) continue;
+    if (seen[seen.length - 1] === hit[1]) continue;
+    seen.push(hit[1]);
+  }
+  const 화면구성 = own['화면구성'] ?? seen.join(' · ');
+
+  // What the reader can do here, and which state this frame is.
+  const verbs = [...new Set([...body.matchAll(/class="btn(?: [a-z]+)?">([^<]{1,20})</g)].map((m) => m[1].trim()))]
+    .filter((v) => v && !['닫기', '취소', '이전'].includes(v));
+  const 동작 = own['동작'] ?? verbs.slice(0, 6).join(' · ');
+  const 동작과상태 = own['동작과 상태']
+    ?? [screen.state ? `이 프레임의 상태 — ${screen.state}` : '', 동작 ? `동작 — ${동작}` : '']
+      .filter(Boolean).join(' / ');
+
+  // The trace table decides which requirement a SCREEN answers; the notes' own citations are the
+  // frame arguing about one and belong to the sentence, not to this line. Where the board declares
+  // no inventory, the citations are all there is.
+  const cited = [...new Set(notes.match(REQ) ?? [])];
+  const answered = reqs.length ? reqs : cited;
+  // Stop at the number. `\S*` swallowed the markup that follows a citation — 「화면 목록 5.2」
+  // came back as `화면 목록 5.2)</strong>`, and an unclosed tag in a derived line breaks the frame
+  // it was meant to describe.
+  const docs = [...new Set([...notes.matchAll(/(?:화면 목록|메뉴 구조|알림 연계 가이드|SSO 가이드)\s?[\d.]+(?:장|절)?/g)]
+    .map((m) => m[0].replace(/[.]$/, '')))];
+  const 요구사항 = own['대응 요구사항'] ?? [...answered, ...docs].join(' · ');
+
+  return { 용도, 화면구성, '동작과 상태': 동작과상태, '대응 요구사항': 요구사항 };
+}

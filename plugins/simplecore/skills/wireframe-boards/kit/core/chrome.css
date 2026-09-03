@@ -153,6 +153,13 @@
   /* Who reaches this frame. Greyscale like the phase chip: this is a decided fact, not an open
      question, and the accent is for what is unresolved. A role the cluster does not admit is not
      drawn at all — an empty slot would read as a verdict nobody made. */
+  /* The four derived lines under a frame's label — 용도 · 화면구성 · 동작과 상태 · 대응 요구사항.
+     A definition list rather than prose: a reader comparing two frames runs down the same four
+     keys in the same order on both, which is the whole reason they are separate from the notes. */
+  .frame-spec { margin-top: 6px; display: grid; gap: 3px; font-size: 11px; line-height: 1.5; }
+  .frame-spec .fs-row { display: flex; gap: 8px; align-items: baseline; }
+  .frame-spec .fs-k { flex: none; width: 78px; color: var(--muted); font-weight: 600; }
+  .frame-spec .fs-v { color: var(--ink); }
   .frame-roles { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
   .frame-roles .fr { display: inline-flex; align-items: center; gap: 4px; padding: 1px 6px;
     border: 1px solid var(--line); border-radius: 4px; background: var(--fill);
