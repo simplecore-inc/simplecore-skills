@@ -3,6 +3,7 @@
 // flag means the same thing whichever one it is asked for, and a board adds no script of its own.
 //
 //   node wf.mjs build [--no-pdf]        the board, and the PDF beside it
+//   node wf.mjs serve [--port 4173]     build, serve over HTTP, rebuild and reload on every change
 //   node wf.mjs catalog                 the component storybook → _catalog.html
 //   node wf.mjs check [--frames <pfx>]  visual sweep of the built board
 //   node wf.mjs gates                   every gate against the defect it exists to catch
@@ -39,6 +40,9 @@ const die = (msg) => { console.error(msg); process.exit(1); };
 
 const HELP = `wireframe-boards — 보드를 빌드하고 점검하는 명령
   build [--no-pdf]                보드와 PDF를 함께 만듭니다
+  serve [--port 4173] [--host 127.0.0.1] [--open] [--no-watch] [--pdf]
+                                  한 번 빌드해 웹으로 열어 두고, 소스가 바뀌면 다시 빌드해
+                                  브라우저를 새로 고칩니다
   catalog                         컴포넌트 스토리북 → _catalog.html
   check [--frames <접두>]          빌드된 보드의 레이아웃 점검 — 넘침·가로 스크롤·폴드
   gates                           게이트가 제 결함을 잡는지 검증합니다
@@ -173,6 +177,19 @@ switch (cmd) {
   case 'build': {
     const { buildBoard } = await import('../core/build.mjs');
     await buildBoard(boardDir, { pdf: !flag('no-pdf') });
+    break;
+  }
+  case 'serve': {
+    const { serveBoard } = await import('../core/serve.mjs');
+    const port = Number(opt('port', 4173));
+    if (!Number.isInteger(port) || port < 1 || port > 65535) die(`--port 값이 포트 번호가 아닙니다 (받은 값: ${opt('port')})`);
+    await serveBoard(boardDir, {
+      port,
+      host: opt('host', '127.0.0.1'),
+      open: flag('open'),
+      watchSources: !flag('no-watch'),
+      pdf: flag('pdf'),
+    });
     break;
   }
   case 'catalog': {

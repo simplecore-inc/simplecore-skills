@@ -18,6 +18,9 @@ const kitDir = dirname(dirname(fileURLToPath(import.meta.url)));
 /** The board's only script — a copy of the kit's bootstrap, with nothing board-specific in it. */
 const BOOTSTRAP = join(kitDir, 'templates/wf.mjs');
 
+/** The one-line wrapper that starts the development server, so the loop is `./dev.sh` and no more. */
+const DEV_SCRIPT = join(kitDir, 'templates/dev.sh');
+
 const GITIGNORE = `# Build output that is regenerated rather than reviewed in a diff. \`board.html\` IS tracked —
 # it is the artifact people open — and everything here is a by-product of building it.
 _catalog.html
@@ -46,7 +49,8 @@ contract, where the frames come from, the source layout, and how to build.
   never changes — the bracketed number beside it on the board (\`[02]B-04\`) is only the frame's
   current position and moves on every reorder, so never cite it on its own. A new screen = one
   file in \`src/screens/\` + one line in \`manifest.mjs\`. Build with \`node wf.mjs build\`
-  (add \`--no-pdf\` to skip the PDF while iterating).
+  (add \`--no-pdf\` to skip the PDF while iterating), or run \`./dev.sh\` and draw with the board
+  open in a browser — it rebuilds and reloads on every save.
 - **There is no build script here.** The engine, the gates, the exports, the components and the
   app shells live in the \`simplecore:wireframe-boards\` skill; \`wf.mjs\` finds them. A change to
   how boards are built belongs in the skill, where every board gets it at once.
@@ -75,10 +79,10 @@ function onContract(text) {
  *
  * @returns 'written' | 'kept'
  */
-function put(path, body, report) {
+function put(path, body, report, { mode } = {}) {
   if (existsSync(path)) { report.kept.push(path); return 'kept'; }
   mkdirSync(dirname(path), { recursive: true });
-  writeFileSync(path, body);
+  writeFileSync(path, body, mode === undefined ? undefined : { mode });
   report.written.push(path);
   return 'written';
 }
@@ -103,7 +107,10 @@ export function initBoard(boardDir, { pattern = 'simplix-basic', name = '<PRODUC
 
   mkdirSync(join(boardDir, 'src/screens'), { recursive: true });
 
-  put(join(boardDir, 'wf.mjs'), readFileSync(BOOTSTRAP, 'utf8'), report);
+  // Both carry a shebang and both are written executable, so the board is driven as `./dev.sh`
+  // and `./wf.mjs <command>` rather than by spelling out the interpreter every time.
+  put(join(boardDir, 'wf.mjs'), readFileSync(BOOTSTRAP, 'utf8'), report, { mode: 0o755 });
+  put(join(boardDir, 'dev.sh'), readFileSync(DEV_SCRIPT, 'utf8'), report, { mode: 0o755 });
   put(join(boardDir, '.gitignore'), GITIGNORE, report);
   put(join(boardDir, 'CLAUDE.md'), CLAUDE_MD(name), report);
   put(join(boardDir, 'AGENTS.md'), fill(readFileSync(join(kitDir, 'templates/AGENTS.md'), 'utf8')), report);

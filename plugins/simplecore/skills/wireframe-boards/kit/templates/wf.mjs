@@ -4,6 +4,7 @@
 //
 //   node wf.mjs build          the board and its PDF        node wf.mjs check     시각 훑기
 //   node wf.mjs build --no-pdf HTML only, while iterating    node wf.mjs gates     게이트 자기 시험
+//   node wf.mjs serve          build · watch · serve — `./dev.sh` is the same thing, spelled short
 //   node wf.mjs catalog        컴포넌트 스토리북             node wf.mjs shots <디렉터리>
 //   node wf.mjs pdf --mask 40% --watermark   부분공개본      node wf.mjs doctor    계약 버전과 남은 작업
 //

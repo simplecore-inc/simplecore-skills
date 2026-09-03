@@ -38,9 +38,12 @@ are built belongs in the skill, where every board gets it at once.
 | `src/intro.html` | The reading-contract items that are this product's own. Bare `<li>` only. |
 | `board.config.mjs` | What belongs to THIS board: the pattern, the contract, the PDF name, the phases and feature keys, the documents the board must agree with. |
 | `board.gates.mjs` | Gates true of this repository only, with their cases. |
+| `dev.sh` | The development loop: build, watch, serve. A wrapper around `wf.mjs serve` and nothing else. |
 | `.kit` | Machine-local pointer at the skill. Git-ignored; `wf.mjs` re-points it every run. |
 
 ```bash
+./dev.sh                     # build, then rebuild and reload the browser on every change
+./dev.sh --port 5000 --open  # another port, and open the browser too
 node wf.mjs build            # board.html + pdf/<name>-<stamp>.pdf
 node wf.mjs build --no-pdf   # HTML only, while iterating on a screen
 node wf.mjs catalog          # _catalog.html — the component storybook
@@ -50,6 +53,13 @@ node wf.mjs doctor           # which contract this board is on, and what it owes
 node wf.mjs shots _shots     # one PNG per frame
 node wf.mjs pdf --mask 40% --watermark   # the share copy
 ```
+
+**`./dev.sh` is the loop to work in.** It builds once, serves the board at
+`http://127.0.0.1:4173/`, and rebuilds whenever a screen file, `board.config.mjs`,
+`board.gates.mjs` or the pattern changes — the open page reloads itself and keeps its scroll
+position, and a failed build reaches the browser as the build's own error rather than as a stale
+frame. **The live-reload client is spliced into the HTTP response and into no file**, so
+`board.html` on disk stays the script-free single file the reading contract requires.
 
 ## A permanent id, and a position that moves
 

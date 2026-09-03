@@ -30,7 +30,8 @@ kit/
     gates/                the gates true of ANY board
     check/                inspect · the gate self-tests and their cases
     export/               pdf · shot · watermark
-    templates/            wf.mjs and AGENTS.md, as a new board receives them
+    serve.mjs             build · watch · serve, for drawing with the board open in a browser
+    templates/            wf.mjs, dev.sh and AGENTS.md, as a new board receives them
   patterns/<name>/
     pattern.mjs           what the pattern is, what it requires, which gates it adds
     components.mjs        the composition kit + CATALOG
@@ -47,6 +48,7 @@ A board, in full:
 board.config.mjs   the pattern, the contract, the PDF name, phases, feature keys, documents
 board.gates.mjs    gates true of this repository only, with their cases          (optional)
 wf.mjs             twenty lines that find the kit and hand over
+dev.sh             one line onto `wf.mjs serve` — the loop a board is drawn in
 src/manifest.mjs   the table of contents and build order
 src/screens/       one file per screen
 src/chrome.mjs     THIS product's tabs, menu tree, roles, purchase → the shell factories
@@ -56,6 +58,32 @@ src/roles.mjs      who reaches which cluster                                    
 src/intro.html     the reading-contract items that are this product's own        (optional)
 src/styles.css     what this board adds to the pattern's stylesheet              (optional)
 ```
+
+## Drawing with the board open: `./dev.sh`
+
+`./dev.sh` (that is `node wf.mjs serve`) builds the board once, serves it at
+`http://127.0.0.1:4173/`, and rebuilds it whenever `src/`, `board.config.mjs`, `board.gates.mjs`
+or the pattern changes. The open page reloads itself and comes back to the scroll position it was
+at, which on a several-hundred-frame board is the difference between iterating on a frame and
+hunting for it again after every save. `--port` · `--host` · `--open` · `--no-watch` · `--pdf`
+adjust it; the PDF is off by default because nothing the browser shows comes from it.
+
+**Two properties are what make this safe to leave running.**
+
+- **The live-reload client is spliced into the HTTP RESPONSE and written to no file.** `board.html`
+  on disk stays the single self-contained file with no script beyond the index aids — open it from
+  the file system, attach it to a mail, and it is exactly what the build wrote. A dev server that
+  wrote its client into the artifact would put an external dependency into the one file that must
+  not have one, and nothing in the board would show it.
+- **Every rebuild is a child process.** A screen file is an ES module and Node caches modules by
+  URL for the life of a process, so rebuilding in the server's own process would go on drawing
+  whatever was on disk when it started — reporting the same screen count and the same success
+  while showing yesterday's frame. That failure is invisible from the browser, which is why the
+  spawn is worth more than the milliseconds it costs.
+
+A build that fails reaches the browser as the build's own output — the gate that refused, the
+screen file that would not parse — and the last good `board.html` stays on disk, so the reader is
+never shown a stale frame as though it were current.
 
 ## A common pattern is what a new board chooses
 
