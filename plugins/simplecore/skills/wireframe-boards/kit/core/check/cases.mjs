@@ -65,6 +65,26 @@ export function cases(t) {
     withDocs({ 'rm.md': ROADMAP_OK, 'note.md': '자세한 것은 X-100을 본다.\n' },
       { manifest: [{ letter: 'X', title: 't', screens: WIDE }], screens: WIDE }), false);
 
+  // A board that numbers frames with a state letter: `B-01a` is the frame, `B-01` is the screen
+  // it is a state of, and documents name both. Reading the id without its letter made every
+  // correct citation on such a board look like a reference to a frame that does not exist.
+  const SUFFIXED = [{ file: 'x-01a-a' }, { file: 'x-01b-b' }, { file: 'x-02a-c' }];
+  const suffixed = (note) => withDocs({ 'rm.md': ROADMAP_OK, 'note.md': note },
+    { manifest: [{ letter: 'X', title: 't', screens: SUFFIXED }], screens: SUFFIXED });
+  add('docFrameRefGate', '접미가 붙은 아이디를 그대로 부른다', suffixed('자세한 것은 X-01b를 본다.\n'), false);
+  add('docFrameRefGate', '접미를 뗀 화면 번호를 부른다', suffixed('X-01 화면은 상태가 둘이다.\n'), false);
+  add('docFrameRefGate', '없는 상태 letter를 부른다', suffixed('자세한 것은 X-01c를 본다.\n'), true);
+  // A document numbering its own tables `B-02 PrinterModel` collides with the frame id shape, and
+  // no per-id list stays right as that model grows — so the board names the file.
+  const OTHER = (docs) => withDocs({ 'rm.md': ROADMAP_OK, ...docs },
+    { config: { ...config, documents: { scan: ['.'], otherIdScheme: ['model.md'] } } });
+  add('docFrameRefGate', '다른 번호 체계를 쓰는 문서를 선언하지 않았다',
+    withDocs({ 'rm.md': ROADMAP_OK, 'model.md': '#### B-02 PrinterModel\n' }), true);
+  add('docFrameRefGate', '다른 번호 체계를 쓰는 문서를 선언했다',
+    OTHER({ 'model.md': '#### B-02 PrinterModel\n' }), false);
+  add('docFrameRefGate', '선언하지 않은 문서는 그대로 검사한다',
+    OTHER({ 'model.md': '#### B-02 PrinterModel\n', 'note.md': '자세한 것은 X-77을 본다.\n' }), true);
+
   // 문서 목록을 선언하지 않은 보드에는 걸리지 않는다 — 선언이 곧 이 규율을 받겠다는 뜻이다.
   add('docRegistryGate', '문서 목록을 선언하지 않았다',
     withDocs({ 'a.md': '# a\n', 'b.md': '# b\n' }), false);

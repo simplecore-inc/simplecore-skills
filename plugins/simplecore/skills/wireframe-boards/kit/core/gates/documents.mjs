@@ -53,6 +53,20 @@ const idOfFile = (f) => {
 
 const boardIds = (ctx) => new Set(ctx.manifest.flatMap((s) => s.screens.map((e) => idOfFile(e.file))));
 
+/**
+ * The SCREEN ids behind those frames — a frame id with its state letter taken off.
+ *
+ * <p>A board may number its frames `B-01a` · `B-01b` · `B-01c`, in which case `B-01` is not a
+ * frame but the screen those three are states of, and the documents name it constantly: the
+ * inventory's own section headings, the menu tree's 화면 column, a requirement citing the screen
+ * rather than one of its states. Every one of those is a live reference to something the board
+ * draws, so a gate that only knows frame ids refuses a build over the document being right.
+ *
+ * <p>On a board that numbers frames `A-07` with no suffix this set equals {@link boardIds}, so
+ * nothing changes for it.
+ */
+const boardScreenIds = (ctx) => new Set([...boardIds(ctx)].map((id) => id.replace(/[a-z]$/, '')));
+
 // A state frame spreads its base or imports the base's drawing. It rides in the base's phase, so
 // the roadmap places base screens only — counting states there would demand 310 more entries that
 // say nothing about build order.
@@ -64,7 +78,10 @@ const baseIds = (ctx) => new Set(
     .map(idOfFile),
 );
 
-const FRAME_ID = /(?<![A-Za-z0-9-])([A-Z])-(\d{2,})(?![0-9-])/g;
+// The state letter is part of the id and has to be READ as part of it. Stopping at the digits
+// turns every `B-01a` in a document into a citation of `B-01`, which on a suffixed board is not a
+// frame — so the gate reports the document as wrong for writing the id correctly.
+const FRAME_ID = /(?<![A-Za-z0-9-])([A-Z])-(\d{2,}[a-z]?)(?![0-9A-Za-z-])/g;
 
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -290,16 +307,28 @@ export const docFrameRefGate = {
   stage: 'built',
   run: (ctx) => {
     const ids = boardIds(ctx);
+    const screens = boardScreenIds(ctx);
     const bad = [];
     // Two shapes read like a frame id and are not: a KOSHA guide number (`P-94`) and the E-9
     // 체류자격. Both are followed or preceded by their own context, so they are named rather than
     // pattern-matched — a pattern loose enough to exclude them would also excuse a real defect.
-    const NOT_A_FRAME = new Set(['P-94', 'E-9']);
+    // A board adds its own with `documents.notFrames`.
+    const NOT_A_FRAME = new Set(['P-94', 'E-9', ...(ctx.config.documents?.notFrames ?? [])]);
+    // A WHOLE document may number things in a scheme that collides with this one — an entity model
+    // whose tables are `B-02 PrinterModel` · `E-08 ReplaceStatusHistory`. Listing its ids one by
+    // one is a list that grows with the model and goes stale silently, so the board names the file
+    // instead: everything in it belongs to the other scheme, and every OTHER document gate still
+    // reads it.
+    const otherScheme = ctx.config.documents?.otherIdScheme ?? [];
     for (const f of scanFiles(ctx)) {
+      if (otherScheme.some((p) => f.endsWith(p))) continue;
       const miss = new Set();
       for (const m of readFileSync(f, 'utf8').matchAll(FRAME_ID)) {
         const id = `${m[1]}-${m[2]}`;
-        if (!ids.has(id) && !NOT_A_FRAME.has(id)) miss.add(id);
+        // A citation with no state letter names the SCREEN, and a screen the board draws states
+        // of is a live reference. One that carries a letter has to be that exact frame.
+        const known = ids.has(id) || (!/[a-z]$/.test(id) && screens.has(id));
+        if (!known && !NOT_A_FRAME.has(id)) miss.add(id);
       }
       // The fix travels with the finding. A document asserting that an id is ABSENT trips this
       // gate identically to one citing it — the scan reads the id and cannot read the polarity of

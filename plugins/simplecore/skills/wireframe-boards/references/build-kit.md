@@ -334,6 +334,19 @@ across in the same change. Two screens that genuinely draw the same thing are on
   `board.config.mjs` `documents`, and they are paths rather than globs on purpose — a glob that
   stops matching reports nothing, and nothing looks exactly like a pass.
 
+  `documents.scan` names the directories every `.md` under which is read for stale frame ids. Two
+  keys beside it say what is NOT a frame id, because the shape `X-nn` belongs to other numbering
+  schemes as well: `notFrames` lists individual ids (a guide number, a visa class), and
+  `otherIdScheme` lists whole FILES whose own numbering collides — an entity model with tables
+  `B-02 PrinterModel` · `E-08 ReplaceStatusHistory`. Name the file rather than its ids: a per-id
+  list goes stale as that model grows, and it goes stale silently. Every other document gate still
+  reads the file.
+
+  **A citation without a state letter names the screen, not a frame.** On a board numbering frames
+  `B-01a` · `B-01b`, `B-01` is the screen those are states of, and the inventory's headings and the
+  menu tree cite it that way — the gate accepts it as long as the board draws at least one of its
+  states. A citation that carries a letter has to be that exact frame.
+
 ## The LLM reads the manifest plus one screen, never the whole board
 
 That is exactly what keeps a large board tractable. To touch a screen it opens `src/manifest.mjs`
