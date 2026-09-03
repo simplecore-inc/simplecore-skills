@@ -149,17 +149,32 @@
   .frame.desktop .device { border-radius: 10px; }
   .screen { position: relative; min-height: var(--vh); display: flex; flex-direction: column; }
   .frame-label { font: 600 12px var(--mono); margin-top: 10px; }
-  .frame-notes { font: 11px var(--mono); color: var(--muted); margin-top: 4px; line-height: 1.6; }
+  .frame-notes { font: 11px var(--mono); color: var(--muted); margin-top: 10px; line-height: 1.6; }
   /* Who reaches this frame. Greyscale like the phase chip: this is a decided fact, not an open
      question, and the accent is for what is unresolved. A role the cluster does not admit is not
      drawn at all — an empty slot would read as a verdict nobody made. */
-  /* The four derived lines under a frame's label — 용도 · 화면구성 · 동작과 상태 · 대응 요구사항.
-     A definition list rather than prose: a reader comparing two frames runs down the same four
-     keys in the same order on both, which is the whole reason they are separate from the notes. */
-  .frame-spec { margin-top: 6px; display: grid; gap: 3px; font-size: 11px; line-height: 1.5; }
-  .frame-spec .fs-row { display: flex; gap: 8px; align-items: baseline; }
-  .frame-spec .fs-k { flex: none; width: 78px; color: var(--muted); font-weight: 600; }
-  .frame-spec .fs-v { color: var(--ink); }
+  /* What a frame IS — 용도 · 화면구성 · 동작과 상태 · 대응 요구사항 · 권한 · 자료 — set apart from
+     the notes, which are what somebody THINKS about it. The two ran together while both were grey
+     11px prose under the same label, and a reader could not see where the list of facts ended.
+
+     So the facts get a panel and a key column, the prose keeps the bare margin it always had, and
+     the two never touch. A hairline between rows because the values run long enough to wrap, and a
+     wrapped value with no rule under it reads as the next row's. */
+  .frame-spec { margin-top: 8px; border: 1px solid var(--line); border-radius: 4px;
+                background: var(--paper); overflow: hidden; }
+  .frame-spec .fs-row { display: flex; gap: 10px; align-items: baseline; padding: 4px 9px;
+                        border-top: 1px solid var(--fill); }
+  .frame-spec .fs-row:first-child { border-top: 0; }
+  /* The key names a fact and never runs long, so it is the column that stays put. Right-aligned:
+     the values are what the eye runs down, and a ragged left edge on those is what makes six
+     rows read as six rather than as a paragraph. */
+  .frame-spec .fs-k { flex: none; width: 72px; text-align: right; font-size: 10px;
+                      font-weight: 700; color: var(--muted); letter-spacing: 0.01em; }
+  .frame-spec .fs-v { font-size: 11px; line-height: 1.5; color: var(--ink); }
+  /* 권한 and 자료 are the machine's own facts rather than the screen's, so they read as the
+     footnote they are. */
+  .frame-spec .fs-row.fs-meta .fs-v { font: 10.5px var(--mono); color: var(--muted); }
+
   .frame-roles { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
   .frame-roles .fr { display: inline-flex; align-items: center; gap: 4px; padding: 1px 6px;
     border: 1px solid var(--line); border-radius: 4px; background: var(--fill);

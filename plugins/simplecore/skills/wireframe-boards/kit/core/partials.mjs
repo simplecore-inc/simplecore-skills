@@ -30,7 +30,7 @@ export const BOARD_CONTRACT = 4;
  * @returns `{ frame, sidebar, page }`
  */
 export function makePartials({ components, roles = null, lang = 'en', reqsById = {} }) {
-  const { browserbar, frameSpec } = components;
+  const { browserbar, frameSpec, frameNotesBody } = components;
   const ROLES = roles?.ROLES ?? {};
   const VERDICTS = roles?.VERDICTS ?? {};
   const rolesOf = roles?.rolesOf ?? (() => null);
@@ -70,6 +70,7 @@ export function makePartials({ components, roles = null, lang = 'en', reqsById =
         + (ft ? `<span class="ft-tag">${ft.tag}</span><em class="ft-why">${ft.key}` +
           `${ft.why ? ` — ${ft.why}` : ''}</em>` : '') + s.notes
       : s.notes;
+    const prose = frameNotesBody ? frameNotesBody(noteBody) : noteBody;
     // The four things a reader wants before anybody's judgment: what the screen is for, what
     // stands on it, what it does and which state this is, and which requirement it answers. The
     // pattern derives them from the frame itself — written beside the frame instead, they would be
@@ -77,11 +78,12 @@ export function makePartials({ components, roles = null, lang = 'en', reqsById =
     const spec = frameSpec ? frameSpec(s, { reqs: reqsById[id.replace(/[a-z]$/, '')] ?? [] }) : null;
     const specRows = spec
       ? Object.entries(spec).filter(([, v]) => v && String(v).trim())
-        .map(([k, v]) => `<div class="fs-row"><span class="fs-k">${k}</span><span class="fs-v">${v}</span></div>`)
+        .map(([k, v]) => `<div class="fs-row${['권한', '자료'].includes(k) ? ' fs-meta' : ''}">`
+          + `<span class="fs-k">${k}</span><span class="fs-v">${v}</span></div>`)
         .join('')
       : '';
     const specBlock = specRows ? `\n      <div class="frame-spec">${specRows}</div>` : '';
-    const notes = noteBody ? `\n      <div class="frame-notes">\n        ${noteBody}\n      </div>` : '';
+    const notes = prose ? `\n      <div class="frame-notes">\n        ${prose}\n      </div>` : '';
     // Who reaches this frame. The cluster decides it and the frame overrides only where it
     // departs — an override is drawn emphasised, because a departure is the thing worth reading.
     const verdicts = rolesOf(id.split('-')[0], s.roles);

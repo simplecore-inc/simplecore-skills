@@ -2119,9 +2119,11 @@ export function frameSpec(screen, { reqs = [] } = {}) {
   const verbs = [...new Set([...body.matchAll(/class="btn(?: [a-z]+)?">([^<]{1,20})</g)].map((m) => m[1].trim()))]
     .filter((v) => v && !['닫기', '취소', '이전'].includes(v));
   const 동작 = own['동작'] ?? verbs.slice(0, 6).join(' · ');
+  // The row is already about this frame, so 「이 프레임의」 was words the reader skipped. Two
+  // labelled halves, same separator as everywhere else on the board.
   const 동작과상태 = own['동작과 상태']
-    ?? [screen.state ? `이 프레임의 상태 — ${screen.state}` : '', 동작 ? `동작 — ${동작}` : '']
-      .filter(Boolean).join(' / ');
+    ?? [screen.state ? `상태 ${screen.state}` : '', 동작 ? `동작 ${동작}` : '']
+      .filter(Boolean).join(' · ');
 
   // The trace table decides which requirement a SCREEN answers; the notes' own citations are the
   // frame arguing about one and belong to the sentence, not to this line. Where the board declares
@@ -2135,5 +2137,23 @@ export function frameSpec(screen, { reqs = [] } = {}) {
     .map((m) => m[0].replace(/[.]$/, '')))];
   const 요구사항 = own['대응 요구사항'] ?? [...answered, ...docs].join(' · ');
 
-  return { 용도, 화면구성, '동작과 상태': 동작과상태, '대응 요구사항': 요구사항 };
+  // `AUTH:` and `DATA:` are the same kind of line as the four — a fact about the frame, not an
+  // argument about it — and while they sat at the head of the notes the reader met six lines of
+  // one shape in two different blocks and could not tell where the list ended.
+  const 권한 = own['권한'] ?? (/AUTH:\s*([^<]*)/.exec(notes)?.[1] ?? '').trim();
+  const 자료 = own['자료'] ?? (/DATA:\s*([^<]*)/.exec(notes)?.[1] ?? '').trim();
+
+  return {
+    용도,
+    화면구성,
+    '동작과 상태': 동작과상태,
+    '대응 요구사항': 요구사항,
+    권한,
+    자료,
+  };
+}
+
+/** What the notes are once the two facts above have been lifted out of them. */
+export function frameNotesBody(notes = '') {
+  return notes.replace(/^\s*(?:AUTH:[^<]*<br>\s*)?(?:DATA:[^<]*<br>\s*)?/, '');
 }
