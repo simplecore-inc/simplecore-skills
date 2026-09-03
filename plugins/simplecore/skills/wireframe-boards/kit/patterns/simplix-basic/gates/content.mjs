@@ -1276,6 +1276,30 @@ export const phaseGate = {
 // fixing: the matrix is wrong for that cluster, or the frame is a departure that never declared
 // itself. Neither is visible without this check — sixteen J frames were written for an outside
 // auditor while §9 had no column for one at all.
+/**
+ * The console says this product's name, not the placeholder.
+ *
+ * <p>`topNav` has to default its brand to something, and whatever that something is will be drawn
+ * on every board that forgets to pass one. The failure is silent and total — the name is in the
+ * top left of every desktop frame, so a board can be built, exported and sent with another
+ * product's name on all of it, and nothing about the drawing looks wrong.
+ *
+ * <p>It reads the shell rather than the config because the shell is what draws it: a board can
+ * declare a `boardName` for the index and hand the console a different display brand, and only the
+ * second one reaches the frame.
+ */
+export const consoleBrandGate = {
+  id: 'consoleBrandGate',
+  title: '콘솔이 제품 이름 대신 자리표시자를 그린다',
+  stage: 'built',
+  run: (ctx) => {
+    if (!/<div class="topnav">/.test(ctx.html ?? '')) return [];
+    const drawn = [...(ctx.html ?? '').matchAll(/<span class="tn-brand">([^<]*)<\/span>/g)].map((m) => m[1]);
+    const bad = [...new Set(drawn.filter((b) => !b || b === 'PRODUCT' || b === '<PRODUCT>'))];
+    return bad.map((b) => `콘솔의 브랜드가 「${b || '빈 값'}」이다 — src/chrome.mjs의 makeConsole에 brand를 넘긴다`);
+  },
+};
+
 export const roleGate = {
   id: 'roleGate',
   title: '역할 판정과 AUTH 줄이 어긋난다',

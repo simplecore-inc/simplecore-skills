@@ -438,6 +438,10 @@
   .dfield.top .dvalue { justify-content: flex-start; text-align: left; }
   .peek { font-size: 11px; color: var(--muted); border: 1px solid var(--line); border-radius: 4px;
           padding: 0 4px; line-height: 15px; background: var(--screen); }
+  /* The arrow form: a square slot rather than a word, so a panel of references reads as a column
+     of controls instead of a column of the same label repeated. */
+  .peek.out { display: inline-flex; align-items: center; justify-content: center; flex: none;
+              width: 17px; padding: 0; font-size: 10px; }
 
 
   /* Row actions: compact icon slots, only the ones a surface actually grants. */

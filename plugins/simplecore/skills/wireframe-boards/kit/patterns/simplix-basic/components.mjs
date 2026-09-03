@@ -894,7 +894,11 @@ export const sectHead = (title) => `<div class="sect-t sect-head">${title}</div>
  */
 export const dField = ({ label, value, peek = false, wide = false, top = false }) =>
   `<div class="dfield${wide ? ' wide' : ''}${top ? ' top' : ''}"><span class="dlabel">${label}</span>` +
-  `<span class="dvalue">${value}${peek ? '<span class="peek">보기</span>' : ''}</span></div>`;
+  // The control is an arrow, not a word. It stands after a value on every reference in a detail,
+  // so a label repeated down a panel becomes a column of the same word read as text; the arrow is
+  // read as a control at a glance and says which way the reader is about to go — out and up, into
+  // the referenced record. What it opens is the dialog the reading contract describes.
+  `<span class="dvalue">${value}${peek ? '<span class="peek out">↗</span>' : ''}</span></div>`;
 
 /** The strip under a panel's body: the record's id, and when it was written. */
 /**

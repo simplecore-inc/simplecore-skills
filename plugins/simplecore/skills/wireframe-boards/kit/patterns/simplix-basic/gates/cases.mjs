@@ -363,6 +363,12 @@ export function cases(t) {
   };
   const roled = (loaded, manifest = [{ letter: 'N', title: 'n', screens: [] }]) =>
     base({ roles: ROLE_MATRIX, manifest, loaded });
+  add('consoleBrandGate', '자리표시자가 그려졌다',
+    base({ html: '<div class="topnav"><span class="tn-brand">PRODUCT</span></div>' }), true);
+  add('consoleBrandGate', '제품 이름이 그려졌다',
+    base({ html: '<div class="topnav"><span class="tn-brand">OA 소모품 관리시스템</span></div>' }), false);
+  add('consoleBrandGate', '콘솔을 그리지 않는 보드는 묻지 않는다', base({ html: '<div class="auth"></div>' }), false);
+
   add('roleGate', 'AUTH가 부르는 역할이 판정에 없음',
     roled([{ num: 'N-02', file: 'n-02-a', mod: { notes: 'AUTH: safety-admin 세션 · 시스템 관리자 (협력사 관리자는 자사 인력 초대만)<br>' } }]), true);
   add('roleGate', '그 프레임이 roles로 선언함',
