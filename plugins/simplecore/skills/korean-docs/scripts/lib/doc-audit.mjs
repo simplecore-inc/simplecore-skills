@@ -639,8 +639,18 @@ const QUOTED_PARTICLE_RE = /([가-힣])[」』](은|는)(?=[\s.,·)\]'"]|$)/g;
 // has to follow it. So the ending is accepted only at the end of a line, before a question
 // mark, or before a closing quote — and a subject in mid-sentence is still judged.
 const PARTICLE_WORD_SKIP = /(ㄴ가|[간-힣]?[는은른운한인]가|언젠가|누군가|어딘가|뭔가|무언가|선가)$/;
-/** Nothing but closing punctuation left on the line — the interrogative -ㄴ가's position. */
-const SENTENCE_CLOSE = /^[\s?!.」』"')\]]*$/;
+/**
+ * Nothing but closing punctuation left on the line — the interrogative -ㄴ가's position.
+ *
+ * <p>**A table cell's edge closes a clause exactly as the end of a line does**, so `|` counts.
+ * A checklist written as a table puts the question in a cell — 「파일 크기가 0이 아닌가 |」 —
+ * and without the pipe the ending is read as 아닌 + 가 and a correct question is reported as a
+ * particle error. What is given up is a ㄴ-final noun that takes 가 and is followed by nothing
+ * but the cell edge (「사건가 |」), which is a sentence fragment rather than the shape bulk
+ * replacement leaves; the mid-sentence subject is still judged, and a quoted label keeps its own
+ * check.
+ */
+const SENTENCE_CLOSE = /^[\s?!.」』"')\]|]*$/;
 /** True for 아닌가 · 그런가 · 어떤가 where they close a sentence, false for 「화면가 열린다」. */
 function isNGaEnding(whole, rest) {
   if (!whole.endsWith('가') || whole.length < 2 || !SENTENCE_CLOSE.test(rest)) return false;
@@ -664,7 +674,7 @@ function isNGaEnding(whole, rest) {
 // technique, so 「보우타이 기법」 reads as 보우타+이 and a correct term is reported as a particle
 // error. 넥타이 · 나비타이 · 타이 are the same word shape.
 const PARTICLE_TAIL_SKIP =
-  /(레이|플레이|어레이|웨이|페이|메이|타이|효과|초과|평가|전문가|국가|증가|참가|원가|단가|보이|사이|차이|넓이|길이|높이|깊이|먹이|놀이|쓰임새|가까이|같이|굳이|깊숙이|일찍이|나란히|틈틈이|샅샅이|곰곰이|번번이|낱낱이|고이|많이|파이|하노이|상하이|뭄바이|두바이|하와이|시드니)$/;
+  /(레이|플레이|어레이|웨이|페이|메이|타이|효과|초과|평가|전문가|국가|증가|참가|원가|단가|추가|물가|저가|대가|불가|보이|사이|차이|넓이|길이|높이|깊이|먹이|놀이|쓰임새|가까이|같이|굳이|깊숙이|일찍이|나란히|틈틈이|샅샅이|곰곰이|번번이|낱낱이|고이|많이|파이|하노이|상하이|뭄바이|두바이|하와이|시드니)$/;
 
 function hasFinalConsonant(ch) {
   const code = ch.codePointAt(0);
