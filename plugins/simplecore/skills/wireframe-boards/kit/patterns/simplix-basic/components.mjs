@@ -874,6 +874,23 @@ export const tabPanes = ({
  */
 export const full = (children) => `<div class="d-full">${children}</div>`;
 
+/**
+ * The picture on the left, the values that identify the record on the right.
+ *
+ * <p>A detail whose subject is a physical thing opens with the thing. Stacking the photo above a
+ * two-column field grid pushes the values that answer 「is this the one」 below the fold, and a
+ * photo alone answers nothing — the pair is what the reader checks against what they are holding.
+ *
+ * <p>It spans the section's full width, so the fields beside the picture are a column of their own
+ * rather than half of the outer grid.
+ *
+ * @param media a `mediaPh` — `size: 'lg'` unless the panel is unusually narrow
+ * @param fields the `dField`s that identify the record. The rest of the record stays in the
+ *   sections below; this is the answer to 「which one is this」, not a summary of everything
+ */
+export const mediaSide = (media, fields) =>
+  `<div class="media-side"><div class="ms-pic">${media}</div><div class="ms-fields">${fields}</div></div>`;
+
 export const section = (title, children) =>
   `<div class="sect">${title ? `<div class="sect-t">${title}</div>` : ''}<div class="fields">${children}</div></div>`;
 
@@ -1682,9 +1699,22 @@ export const chartPh = ({
  */
 const chartBody = ({ kind, title, legend, note, height, goal, x = '', y = '' }) => {
   const body = {
-    line: `<svg viewBox="0 0 300 100" preserveAspectRatio="none" class="cv">` +
-      `<polyline points="0,78 40,66 80,70 120,48 160,52 200,32 240,38 300,20"/>` +
-      `<polyline class="dim" points="0,88 40,84 80,86 120,74 160,78 200,66 240,70 300,58"/></svg>`,
+    // One line per named series, so a chart of four slots does not draw two. The legend is the
+    // count: a placeholder showing fewer lines than the legend names is read as a chart that lost
+    // some, and the reader cannot tell which. Four paths is the cap — beyond that a line chart is
+    // the wrong picture and the board should say so rather than draw a thicket.
+    line: (() => {
+      const paths = [
+        '0,78 40,66 80,70 120,48 160,52 200,32 240,38 300,20',
+        '0,88 40,84 80,86 120,74 160,78 200,66 240,70 300,58',
+        '0,54 40,58 80,44 120,50 160,34 200,40 240,26 300,30',
+        '0,32 40,40 80,28 120,36 160,22 200,30 240,18 300,24',
+      ];
+      const n = Math.min(Math.max(legend.length || 2, 2), paths.length);
+      return `<svg viewBox="0 0 300 100" preserveAspectRatio="none" class="cv">` +
+        paths.slice(0, n).map((p, i) => `<polyline class="s${i}" points="${p}"/>`).join('') +
+        `</svg>`;
+    })(),
     bar: `<div class="cbars">${[58, 74, 46, 88, 62, 70, 40].map((h) => `<i style="height:${h}%"></i>`).join('')}</div>`,
     stack: `<div class="cbars stack">${[[40, 34], [52, 26], [30, 44], [62, 22], [46, 30]]
       .map(([a, b]) => `<i style="height:${a}%"><b style="height:${b}%"></b></i>`).join('')}</div>`,
