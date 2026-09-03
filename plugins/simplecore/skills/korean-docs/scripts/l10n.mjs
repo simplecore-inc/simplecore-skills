@@ -926,6 +926,27 @@ function matchSegment(re, seg) {
   return null;
 }
 
+/**
+ * Whether a project exception releases a hit.
+ *
+ * <p>The exception has to COVER the match — the same segment is not enough. `PER-001 어플리케이션
+ * 응답시간` is a requirement title quoted from a client's document and keeps that document's
+ * spelling; a second, genuine 어플리케이션 later in the same cell is still a defect.
+ */
+function releasedBy(rule, seg, m) {
+  if (!rule.except?.length) return false;
+  const text = seg.after ? seg.text + seg.after : seg.text;
+  for (const ex of rule.except) {
+    ex.re.lastIndex = 0;
+    for (let e = ex.re.exec(text); e; e = ex.re.exec(text)) {
+      if (e.index <= m.index && m.index < e.index + e[0].length) return true;
+      if (!ex.re.global) break;
+      if (ex.re.lastIndex === e.index) ex.re.lastIndex += 1;
+    }
+  }
+  return false;
+}
+
 function readSegments(entry) {
   const src = readFileSync(join(ROOT, entry.file), "utf8");
   const segments = EXTRACTORS[entry.format](src);
@@ -1605,6 +1626,21 @@ function cmdRulesTest(opts) {
       );
       if (late) problems.push(["잘려서 통과한 miss 예문 — 문장 안에서는 잡힌다", `${ex}  →  ${late}`]);
     }
+    // An exception is a hole, and a hole nobody proved is a rule quietly switched off. The
+    // sample has to be a sentence THIS rule catches and this exception releases — an exception
+    // whose regex never covers its own sample passes every other check while releasing nothing,
+    // or releasing something else entirely.
+    for (const ex of rule.except ?? []) {
+      const caught = res.map((re) => ((re.lastIndex = 0), re.exec(ex.sample))).find(Boolean);
+      if (!caught) {
+        problems.push(["예외의 sample을 이 규칙이 잡지 않는다", `${ex.sample} — 놓아 줄 것이 없는 예외다`]);
+        continue;
+      }
+      ex.re.lastIndex = 0;
+      const covers = [...ex.sample.matchAll(ex.re)]
+        .some((e) => e.index <= caught.index && caught.index < e.index + e[0].length);
+      if (!covers) problems.push([`예외가 sample의 검출 자리를 덮지 않는다 (/${ex.re.source}/)`, ex.sample]);
+    }
     if (!(rule.hit ?? []).length) problems.push(["hit 예문이 없음", "규칙이 무엇을 잡는지 증명되지 않는다"]);
     if (!(rule.miss ?? []).length) problems.push(["miss 예문이 없음", "오탐을 막는 근거가 없다"]);
     // The lens knowing a family HALF is the defect — 「붙는」 stood in it without
@@ -1695,6 +1731,10 @@ function cmdRulesScan(opts) {
             const at = seg.start + m.index;
             if (contrast.some(([start, end]) => at >= start && at < end)) continue;
           }
+          // A project exception releases this hit only when its match covers the place the
+          // rule fired. Matching elsewhere in the same segment would excuse a real defect
+          // for standing next to a quotation.
+          if (releasedBy(rule, seg, m)) continue;
           if (!perFile.has(rule.id)) perFile.set(rule.id, []);
           perFile.get(rule.id).push({
             file: entry.file,
@@ -1738,6 +1778,15 @@ function cmdRulesScan(opts) {
   if (off?.size) {
     console.log(C.dim(`끈 규칙 ${off.size}개 — .claude/l10n-rules.json의 disable`));
     for (const [id, why] of off) console.log(C.dim(`  ${id} — ${why}`));
+  }
+  // A narrowing is a hole in a rule that still reports, so it is named for the same reason a
+  // disabled rule is: nobody can tell a hole from a clean file by looking at the count.
+  const narrowed = rulePacks().except;
+  if (narrowed?.size) {
+    console.log(C.dim(`좁힌 규칙 ${narrowed.size}개 — .claude/l10n-rules.json의 except`));
+    for (const [id, list] of narrowed) {
+      for (const ex of list) console.log(C.dim(`  ${id} /${ex.re.source}/ — ${ex.why}`));
+    }
   }
   return total ? 1 : 0;
 }

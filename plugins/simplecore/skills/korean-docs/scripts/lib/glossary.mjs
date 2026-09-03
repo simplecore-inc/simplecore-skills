@@ -503,12 +503,45 @@ export function loadRulePacks({root = process.cwd(), scopes = []} = {}) {
   for (const id of disabled.keys()) {
     if (!known.has(id)) throw new Error(`알 수 없는 규칙을 끄려 한다: ${id}`);
   }
+  // Killing a rule is not the only thing a project needs. A base rule can be right about
+  // sixteen words and wrong about one PLACE — a requirement title quoted from a client's
+  // document keeps that document's spelling, and correcting it makes it no longer a
+  // quotation. `disable` there would drop the other sixteen spellings with it, which is how
+  // a project ends up choosing between a permanent false positive and a check that stopped
+  // looking. So a project may also NARROW a base rule:
+  //
+  //   "except": { "<rule-id>": [{ "find": "/…/", "why": "…", "sample": "…" }] }
+  //
+  // A hit is released when an exception's match COVERS the place the rule fired — not merely
+  // appears in the same segment, which would excuse a real defect standing next to a quotation.
+  // `why` and `sample` are both required, and `rules --test` proves each one: the rule has to
+  // catch the sample and the exception has to release it. An exception that proves nothing is
+  // a rule switched off in a shape that reads as switched on.
+  const except = new Map();
+  for (const pack of packs) {
+    if (pack.origin !== 'project') continue;
+    for (const [id, list] of Object.entries(pack.except ?? {})) {
+      if (!known.has(id)) throw new Error(`알 수 없는 규칙에 예외를 걸려 한다: ${id}`);
+      const items = (Array.isArray(list) ? list : [list]).map((it) => {
+        for (const field of ['find', 'why', 'sample']) {
+          if (!String(it?.[field] ?? '').trim()) {
+            throw new Error(`${pack.path}: except["${id}"]의 ${field}가 비었다 — ` +
+              'find(무엇을 놓아 주는가) · why(왜) · sample(그 예외가 실제로 놓아 주는 문장)이 다 있어야 한다.');
+          }
+        }
+        const raw = it.find;
+        const delimited = raw.length > 2 && raw.startsWith('/') && raw.endsWith('/');
+        return {...it, re: new RegExp(delimited ? raw.slice(1, -1) : raw, 'g')};
+      });
+      except.set(id, [...(except.get(id) ?? []), ...items]);
+    }
+  }
 
   const active = [];
   const all = [];
   for (const pack of packs) {
     for (const rule of pack.rules ?? []) {
-      const tagged = {...rule, origin: pack.origin, disabledWhy: disabled.get(rule.id)};
+      const tagged = {...rule, origin: pack.origin, disabledWhy: disabled.get(rule.id), except: except.get(rule.id)};
       all.push(tagged);
       if (disabled.has(rule.id)) continue;
       // A project pack is opted in by existing; its scopes are the project's own.
@@ -517,5 +550,5 @@ export function loadRulePacks({root = process.cwd(), scopes = []} = {}) {
       }
     }
   }
-  return {active, all, disabled};
+  return {active, all, disabled, except};
 }
