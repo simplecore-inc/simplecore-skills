@@ -8,9 +8,10 @@
 //
 // **Nothing is overwritten.** A file that is already there is left alone and reported, so running
 // init twice is safe and running it over a half-set-up board fills in only the gaps.
-import { existsSync, mkdirSync, readFileSync, writeFileSync, cpSync, readdirSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync, readdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { BOARD_CONTRACT } from './partials.mjs';
 
 const kitDir = dirname(dirname(fileURLToPath(import.meta.url)));
 
@@ -54,6 +55,22 @@ contract, where the frames come from, the source layout, and how to build.
 `;
 
 /**
+ * The starter config, stamped with the contract this kit writes.
+ *
+ * <p>A board created now is on the current contract by definition — there is no step between it
+ * and the kit for a migration to carry out. The example file states a number like any other
+ * board's config does, so without this it states whatever contract was current the day it was
+ * last edited, and every bump of `BOARD_CONTRACT` leaves `init` producing a board that refuses to
+ * build until somebody migrates a board that has never been drawn on. The stamp belongs to the
+ * writing, not to the example.
+ */
+function onContract(text) {
+  const line = /^(\s*)contract:\s*\d+\s*,\s*$/m;
+  if (!line.test(text)) throw new Error('시작 board.config.mjs에 contract 줄이 없습니다');
+  return text.replace(line, `$1contract: ${BOARD_CONTRACT},`);
+}
+
+/**
  * Write a file unless it is already there.
  *
  * @returns 'written' | 'kept'
@@ -94,21 +111,24 @@ export function initBoard(boardDir, { pattern = 'simplix-basic', name = '<PRODUC
   const ex = join(patternDir, 'examples');
   if (!existsSync(ex)) throw new Error(`패턴 '${pattern}'에 시작 프레임(examples/)이 없습니다`);
 
-  put(join(boardDir, 'board.config.mjs'), fill(readFileSync(join(ex, 'board.config.mjs'), 'utf8')), report);
+  put(join(boardDir, 'board.config.mjs'), onContract(fill(readFileSync(join(ex, 'board.config.mjs'), 'utf8'))), report);
+  // An empty board still has to build, so it gets an empty manifest rather than the starter one
+  // pointing at screens that were not copied. It is chosen HERE, before the write, so that a
+  // manifest already in the folder is kept like every other file and reported once — writing the
+  // empty one afterwards overwrote a board's own table of contents and said `manifest.mjs` twice.
+  const EMPTY_MANIFEST =
+    '// The table of contents and the build order. One entry per screen, in board order.\n' +
+    'export default [];\n';
   for (const f of ['chrome.mjs', 'components.mjs', 'intro.html', 'manifest.mjs']) {
-    put(join(boardDir, 'src', f), fill(readFileSync(join(ex, 'src', f), 'utf8')), report);
+    const body = f === 'manifest.mjs' && !examples
+      ? EMPTY_MANIFEST
+      : fill(readFileSync(join(ex, 'src', f), 'utf8'));
+    put(join(boardDir, 'src', f), body, report);
   }
   if (examples) {
     for (const f of readdirSync(join(ex, 'src/screens'))) {
       put(join(boardDir, 'src/screens', f), fill(readFileSync(join(ex, 'src/screens', f), 'utf8')), report);
     }
-  } else {
-    // An empty manifest still has to build, so the starter one is replaced rather than left
-    // pointing at screens that were not copied.
-    writeFileSync(join(boardDir, 'src/manifest.mjs'),
-      '// The table of contents and the build order. One entry per screen, in board order.\n' +
-      'export default [];\n');
-    report.written.push(join(boardDir, 'src/manifest.mjs'));
   }
   return report;
 }

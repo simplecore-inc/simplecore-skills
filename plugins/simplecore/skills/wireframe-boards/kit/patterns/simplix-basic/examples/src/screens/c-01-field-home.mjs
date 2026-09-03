@@ -14,7 +14,7 @@ export default {
   body: worker_({
     title: '오늘', tab: '오늘', queued: 2, offline: true,
     body:
-      msg({ kind: 'warn', title: '기기에만 저장된 기록이 2건 있습니다', body: '통신이 닿으면 자동으로 올라갑니다.' }) +
+      msg({ kind: 'warn', status: true, title: '기기에만 저장된 기록이 2건 있습니다', body: '통신이 닿으면 자동으로 올라갑니다.' }) +
       tTitle('오늘 할 일') +
       tSub('3건') +
       listCard({ lines: `${bar('w80')}${bar('w40', true)}`, trail: badge('대기') }) +

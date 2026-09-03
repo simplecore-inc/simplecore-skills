@@ -20,7 +20,7 @@ export default {
         statTile({ label: '이번 주 완료', value: '48', unit: '건', trend: '+6', spark: '1' }),
         statTile({ label: '담당 없음', value: '2', unit: '건' }),
       ]) +
-      msg({ kind: 'warn', title: '기한이 지난 기록이 3건 있습니다', body: '담당자가 지정되지 않은 2건이 그중 하나입니다.',
+      msg({ kind: 'warn', status: true, title: '기한이 지난 기록이 3건 있습니다', body: '담당자가 지정되지 않은 2건이 그중 하나입니다.',
         actions: btn('그 3건 보기') }) +
       section('최근 움직임',
         table({

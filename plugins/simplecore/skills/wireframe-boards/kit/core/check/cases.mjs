@@ -276,7 +276,11 @@ export function cases(t) {
   add('sectionCoverageGate', '요구한 클러스터를 다 그렸다',
     base({ config: { ...config, requiredSections: ['X'] },
       manifest: [{ letter: 'X', title: 't', screens: [] }] }), false);
-  add('sectionCoverageGate', 'manifest가 비었다', base({ manifest: [] }), true);
+  add('sectionCoverageGate', '요구한 클러스터가 있는데 manifest가 비었다',
+    base({ config: { ...config, requiredSections: ['X'] }, manifest: [] }), true);
+  // The scaffolded board: nothing required yet, nothing drawn yet. It has to build.
+  add('sectionCoverageGate', '요구한 클러스터가 없으면 빈 manifest도 통과한다',
+    base({ config: { ...config, requiredSections: [] }, manifest: [] }), false);
 
   // The declared split. The fixture stands in for `core/split.mjs`'s loader rather than calling
   // it, because what the gate judges is the ANSWER — a placer that leaves a frame unplaced, and a

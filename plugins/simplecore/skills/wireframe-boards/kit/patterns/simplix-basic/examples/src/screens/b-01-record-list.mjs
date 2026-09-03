@@ -43,7 +43,7 @@ export const detail =
   // Upper tier: what the open tab asks for. Lower tier: what is done to the record. Switching
   // tabs changes the first and leaves the second alone, and the rule between them says so.
   panelVerbs(btn('이력 보기') + btn('복제')) +
-  panelFoot(btn('닫기', 'ghost') + '<span class="spacer"></span>' + btn('삭제', 'danger') + btn('편집', 'primary'));
+  panelFoot(btn('닫기') + '<span class="spacer"></span>' + btn('삭제', 'danger') + btn('편집', 'primary'));
 
 /**
  * The page, with whatever is in the detail region.
