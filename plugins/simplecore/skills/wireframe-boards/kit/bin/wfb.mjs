@@ -41,8 +41,8 @@ const die = (msg) => { console.error(msg); process.exit(1); };
 const HELP = `wireframe-boards — 보드를 빌드하고 점검하는 명령
   build [--no-pdf]                보드와 PDF를 함께 만듭니다
   serve [--port 4173] [--host 127.0.0.1] [--open] [--no-watch] [--pdf]
-                                  한 번 빌드해 웹으로 열어 두고, 소스가 바뀌면 다시 빌드해
-                                  브라우저를 새로 고칩니다
+                                  보드를 빌드해 HTTP로 제공하고, 소스가 바뀌면 다시 빌드해
+                                  열려 있는 브라우저를 새로 고칩니다
   catalog                         컴포넌트 스토리북 → _catalog.html
   check [--frames <접두>]          빌드된 보드의 레이아웃 점검 — 넘침·가로 스크롤·폴드
   gates                           게이트가 제 결함을 잡는지 검증합니다

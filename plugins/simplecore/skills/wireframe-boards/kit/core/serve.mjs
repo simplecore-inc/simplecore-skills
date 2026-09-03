@@ -103,9 +103,9 @@ const DEV_CLIENT = `
   es.addEventListener('failed', function (e) {
     var payload = {};
     try { payload = JSON.parse(e.data); } catch (err) {}
-    say('빌드 실패 — 고치면 이 화면이 다시 그려집니다\\n\\n' + (payload.message || ''));
+    say('빌드에 실패했습니다. 고치면 다시 빌드해 화면을 새로 고칩니다.\\n\\n' + (payload.message || ''));
   });
-  es.onerror = function () { down = true; say('서버와 연결이 끊겼습니다 — 다시 연결하는 중…'); };
+  es.onerror = function () { down = true; say('서버와 연결이 끊겼습니다. 다시 연결하는 중…'); };
 })();
 </script>
 `;
@@ -243,7 +243,7 @@ export async function serveBoard(boardDir, {
       // see as the build error it is, on a page that reloads itself once the build goes green.
       res.end(missingEntry
         ? injectDevClient(statusPage({
-          title: lastError ? '빌드가 실패해 보드가 없습니다' : '보드를 빌드하는 중입니다',
+          title: lastError ? '빌드에 실패해 아직 보드가 없습니다' : '보드를 빌드하는 중입니다',
           detail: lastError,
         }))
         : statusPage({ title: `${rel} 파일이 없습니다`, detail: null }));
