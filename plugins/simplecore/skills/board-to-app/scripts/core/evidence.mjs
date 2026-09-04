@@ -76,8 +76,17 @@ const CAPTURE_FLOOR_PER_MPX = 2800;
  *
  * <p>Which panes a given frame owes needs the board, and nothing here reads one: a project gate
  * that does asks that question, and these gates know only the grammar.
+ *
+ * <p><b>The frame id carries its state letter, and it belongs to the id rather than to the
+ * variant.</b> A board drawn with `simplecore:wireframe-boards` gives every state of a screen its
+ * own frame and its own permanent id — `n-02a` is the overview pane, `n-02k` the one with no
+ * vendor profile — so a pattern that stopped at the digits read `n-02a.webp` as no capture name at
+ * all. That is the quiet direction: the gate demanding a reason for every capture then found no
+ * capture to demand one for, and a board whose every frame carries a letter got a clean run out of
+ * a check that had read nothing. The letter goes inside the second group so a caller composing
+ * `${g1}-${g2}` still gets the whole id.
  */
-export const CAPTURE_NAME = /^([a-z])-(\d{2,})(?:-t\d+|-empty|-error)?\.webp$/;
+export const CAPTURE_NAME = /^([a-z])-(\d{2,}[a-z]?)(?:-t\d+|-empty|-error)?\.webp$/;
 
 /**
  * The same name found inside a sentence rather than measured whole.
@@ -87,7 +96,7 @@ export const CAPTURE_NAME = /^([a-z])-(\d{2,})(?:-t\d+|-empty|-error)?\.webp$/;
  * names does this line contain」 — two questions, and deriving the second by stripping the anchors
  * off the first is how a reader ends up matching `a-01.webp` inside `data-01.webp`.
  */
-const CAPTURE_IN_TEXT = /\b[a-z]-\d{2,}(?:-t\d+|-empty|-error)?\.webp\b/g;
+const CAPTURE_IN_TEXT = /\b[a-z]-\d{2,}[a-z]?(?:-t\d+|-empty|-error)?\.webp\b/g;
 
 /**
  * One demand line's clauses.
@@ -2106,6 +2115,20 @@ const PANES_REASON_NEXT_DOOR =
   + '**테스트 · 시스템 관리자** — 아무도 열어 본 적이 없어 화면을 먼저 연다. 나머지 두 칸을 눌러 칸마다 캡처를 남긴다 — `a-01-t2.webp` · `a-01-t3.webp`.\n'
   + '**테스트 · 안전관리자** — 범위 밖 레코드는 주소로 불러도 서버가 막는다.\n';
 
+/**
+ * The same unreasoned demand on a frame whose id carries its state letter.
+ *
+ * <p>A board gives every state of a screen its own frame and its own permanent id, so `a-01k` is
+ * as ordinary a frame as `a-01`. A capture pattern that stops at the digits reads this line as
+ * naming no capture, and the gate then demands a reason for nothing — going quiet on a whole board
+ * in the one direction that reads as a pass.
+ */
+const PANES_UNREASONED_STATE_LETTER =
+  '# W02. 조직·계정\n\n## 1. A-01k 로그인 — 사업장 없음 (상태)\n\n'
+  + '**개발** — 보드의 `a-01k-login-no-site`를 그대로 만든다.\n'
+  + '**테스트 · 시스템 관리자** — 로그인 화면을 연다. 캡처를 `a-01k.webp`로 남긴다.\n'
+  + '**테스트 · 안전관리자** — 범위 밖 레코드는 주소로 불러도 서버가 막는다.\n';
+
 /** The same demand, with the reason in the clause that names the files. */
 const PANES_REASONED =
   '# W02. 조직·계정\n\n## 1. A-01 로그인\n\n'
@@ -2811,6 +2834,14 @@ export function cases(t) {
     'a chapter demanding no capture at all',
     demanding(CHAPTER_TEXT['chapters/w02-org-shell.md']),
     false
+  );
+  // The frame id carries its state letter. Every frame of one real board did, so a pattern that
+  // stopped at the digits found no capture demanded anywhere in 82 frames and reported nothing.
+  t.add(
+    'everyCaptureDemandGivesItsReason',
+    'an unreasoned capture on a frame whose id carries its state letter',
+    demanding(PANES_UNREASONED_STATE_LETTER),
+    true
   );
 
   // ── A section nothing closes, against one a verdict closes ────────────────

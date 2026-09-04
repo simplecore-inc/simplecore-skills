@@ -643,8 +643,12 @@ export const ledgerGate = {
  * of every project that chose another — reporting a whole round as unplaceable over the three
  * letters after the dot. `evidence.mjs` accepts `.webp` for the same pictures once they are
  * curated, so a single container here made one skill demand two names for one file.
+ *
+ * <p><b>The frame id may carry a state letter after its digits</b> — `N-02a`, `N-02k` — because a
+ * board gives every state of a screen its own frame. Without it the artefact of such a frame is
+ * refused as unplaceable, which is the same defect `evidence.mjs` carried in the other direction.
  */
-const CAPTURE_NAME = /^\d{8}-\d{4}-[A-Za-z]{1,4}-\d{1,3}(-[a-z0-9-]+)?\.(?:png|webp|jpe?g|avif)$/;
+const CAPTURE_NAME = /^\d{8}-\d{4}-[A-Za-z]{1,4}-\d{1,3}[a-z]?(-[a-z0-9-]+)?\.(?:png|webp|jpe?g|avif)$/;
 
 /**
  * Captures are placed the one way: one folder per language, and a name a reader can parse.
