@@ -21,7 +21,11 @@ export const bar = (w = 'w60', light = false) =>
   `<div class="bar${light ? ' light' : ''} ${w}"></div>`
 export const imgPh = (extra = '') => `<div class="img-ph${extra ? ' ' + extra : ''}"></div>`
 export const qrPh = (label = 'QR') => `<div class="qr-ph"><span>${label}</span></div>`
-export const btn = (text, variant = '') => `<div class="${cls('btn', variant)}">${text}</div>` // ''·primary·ghost
+// ''·primary·ghost·off — `off` is a control the reader may not press yet. It exists because the
+// bare variant is the ordinary FILLED button: a frame writing `btn('다음', '')` for a blocked step
+// draws it heavier than the enabled ghost beside it, and the board then shows the one control that
+// does nothing as the one the eye lands on.
+export const btn = (text, variant = '') => `<div class="${cls('btn', variant)}">${text}</div>`
 export const chip = (text, active = false) =>
   `<span class="chip${active ? ' active' : ''}">${text}</span>`
 export const badge = (text, variant = '') => `<span class="${cls('badge', variant)}">${text}</span>` // ''·outline
@@ -385,6 +389,19 @@ export const suggest = (items) =>
 export const hrow = (children) => `<div class="hrow">${children}</div>`
 
 /**
+ * A row of form fields, side by side.
+ *
+ * **`hrow` centres its children and a form row must not.** A row mixing a one-line input with a
+ * multi-line one centres the short field against the tall one, so the labels no longer sit on a
+ * line and the row reads as two unrelated groups. This aligns to the top, gives every field an
+ * equal share of the width, and lets a field that needs the whole row take it (`wide`).
+ *
+ * A field whose value carries newlines is drawn as the several lines it is, so it belongs on a row
+ * of its own — put it in `frow(field(…), 'wide')` or leave it outside a row entirely.
+ */
+export const frow = (children, extra = '') => `<div class="${cls('frow', extra)}">${children}</div>`
+
+/**
  * A labelled set of choices, shown as chips rather than a dropdown. Used where every
  * option has to be visible at once — a scope the reader is about to search under is
  * not something to discover by opening a menu.
@@ -551,8 +568,14 @@ export const CATALOG = [
   {
     cat: 'input',
     name: 'btn(text, variant)',
-    note: "'' · primary · ghost",
-    ex: `${btn('Sign in', 'primary')}${btn('Create an account', 'ghost')}`,
+    note: "'' · primary · ghost · off (blocked)",
+    ex: `${btn('Sign in', 'primary')}${btn('Create an account', 'ghost')}${btn('Next', 'off')}`,
+  },
+  {
+    cat: 'input',
+    name: 'frow(children, extra) · hrow(children)',
+    note: 'frow: 폼 필드 한 줄 (위 정렬 · 균등 너비) · hrow: 버튼 줄 (가운데 정렬)',
+    ex: frow(field({ label: 'Interval', value: 'PT30S' }) + field({ label: 'Targets', value: '10.0.5.0/24\n10.0.6.0/24' })),
   },
   {
     cat: 'input',

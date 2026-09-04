@@ -23,6 +23,15 @@ const cnt = (n) => `<span class="badge cnt">${n}</span>`;
  * @param status    the status bar a screen gets when it passes none — `{ left: [{ t, alert }], right }`
  * @param activity  the sample events the inspector's activity pane draws when a frame passes none —
  *                  `[{ when, text }]`
+ * @param notifications  draw the notification mark. `false` for a product that raises none.
+ * @param account   draw the account mark. `false` for a product nobody signs in to.
+ *
+ * <p>**The last two default to drawn and are turned off per product, never per frame.** A mark in
+ * the title bar is a promise on every screen at once — an account mark says there is a sign-in, a
+ * notification mark says something arrives here — and a single-operator tool that has neither
+ * spends its whole board offering two controls that open nothing. The default stays on because a
+ * product that has them and forgets to say so loses a control somebody can see is missing, while
+ * the other way round the board promises something nobody will find.
  */
 export function makeChrome({
   brand = 'PRODUCT',
@@ -33,12 +42,16 @@ export function makeChrome({
   ask = {},
   status = {},
   activity = [],
+  notifications = true,
+  account = true,
 } = {}) {
   const paletteLabel = palette.label ?? '명령 팔레트';
   const paletteAsk = palette.ask ?? '무엇이든 물어보세요';
   const paletteQuery = palette.query ?? '명령';
   const askBack = ask.back ?? '콘솔';
   const askHistory = ask.history ?? '지난 질문';
+  const bellMark = (unread) => (notifications ? bell(unread) : '');
+  const accountMark = account ? '<span class="avatar"></span>' : '';
   const statusDefault = {
     left: status.left ?? [{ t: '<span class="dot"></span>연결됨' }],
     right: status.right ?? '갱신 방금',
@@ -115,7 +128,7 @@ export function makeChrome({
     return `<div class="titlebar"${back}>
       <div class="tb-l"><span class="mark"></span><span class="brand">${brand}</span><span class="vsep"></span><span class="crumbs">${crumbs}</span></div>
       <div class="cmdk"><span>${paletteLabel}</span><span>⌘K</span></div>
-      <div class="tb-r"><span class="tb-btn${l}">◧</span><span class="tb-btn${r}">◨</span>${bell(tb.unread)}<span class="tb-chip">${lang} ▾</span><span class="avatar"></span></div>
+      <div class="tb-r"><span class="tb-btn${l}">◧</span><span class="tb-btn${r}">◨</span>${bellMark(tb.unread)}<span class="tb-chip">${lang} ▾</span>${accountMark}</div>
     </div>`;
   }
 
@@ -130,7 +143,7 @@ export function makeChrome({
     return `<div class="titlebar">
       <div class="tb-l"><span class="mark"></span><span class="brand">${brand}</span><span class="vsep"></span><span class="tb-chip">${projectName} ▾</span></div>
       <div class="cmdk"><span>${paletteAsk}</span><span>⌘K</span></div>
-      <div class="tb-r">${back}<span class="tb-chip">${askHistory}</span>${bell(unread)}<span class="tb-chip">${lang} ▾</span><span class="avatar"></span></div>
+      <div class="tb-r">${back}<span class="tb-chip">${askHistory}</span>${bellMark(unread)}<span class="tb-chip">${lang} ▾</span>${accountMark}</div>
     </div>`;
   }
 

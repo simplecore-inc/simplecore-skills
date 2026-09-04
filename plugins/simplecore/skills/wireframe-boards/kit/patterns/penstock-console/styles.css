@@ -244,6 +244,12 @@
   }
   .btn.primary { background: var(--fill-deep); }
   .btn.ghost { border-style: dashed; color: var(--muted); }
+  /* A blocked step. Without it a board writes `btn('다음', '')` and gets the ordinary filled
+     button — heavier than the enabled ghost beside it — so the one control the reader may NOT
+     press is the one their eye lands on. Drawn as the palest fill with a hollow mark, which
+     reads as unavailable at a glance and still reads in one accent colour. */
+  .btn.off { background: none; border-style: dotted; color: var(--faint); }
+  .btn.off::before { content: '○ '; }
 
   .field { display: flex; flex-direction: column; gap: 4px; }
   .label { font-size: 12px; color: var(--muted); font-weight: 600; }
@@ -702,6 +708,11 @@
   /* NOT `.row` — that class belongs to the board's own frame rows and carries
      `zoom: var(--frame-zoom)`, which would scale a frame's contents a second time. */
   .hrow { display: flex; align-items: center; gap: 8px; }
+  /* A form row. Top-aligned because a one-line input beside a multi-line one is centred by
+     `.hrow`, which drops the short field's label off the line the row is read on. */
+  .frow { display: flex; align-items: flex-start; gap: 10px; }
+  .frow > .field { flex: 1 1 0; min-width: 0; }
+  .frow.wide > .field { flex: 1 1 100%; }
   .hrow .grow { flex: 1; }
 
   /* The kit ships grid-2/3/4. Quality measurement reports five numbers that are read
