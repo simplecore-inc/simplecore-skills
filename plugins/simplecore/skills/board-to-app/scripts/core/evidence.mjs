@@ -102,11 +102,21 @@ const CAPTURE_IN_TEXT = /\b[a-z]-\d{2,}(?:-t\d+|-empty|-error)?\.webp\b/g;
  */
 const clauses = (line) => line.split(/(?<=[.。])\s+/);
 
-/** A frame id as a heading writes it. */
-const FRAME_ID = /\b[A-Z]-\d{2,}\b/g;
+/**
+ * A frame id as a heading writes it.
+ *
+ * <p><b>The trailing letter is part of the id, not a suffix on it.</b> A board drawn with
+ * `simplecore:wireframe-boards` gives every state of a screen its own frame and its own permanent
+ * id — `N-02a` is the overview tab and `N-02k` the one with no vendor profile — so a pattern
+ * stopping at the digits reads `N-02` out of `N-02k` and then fails the boundary that follows it.
+ * What that costs is silence: the chapter places a frame, the check reads no frame placed, and the
+ * gate that would have demanded a capture of it reports the same nothing as a chapter with no
+ * screens. It is bounded rather than open — one lowercase letter, and `N-02abc` matches nothing.
+ */
+const FRAME_ID = /\b[A-Z]-\d{2,}[a-z]?\b/g;
 
 /** The heading a chapter writes for each base screen it builds. */
-export const BASE_HEADING = /^## \d+\. ([A-Z]-\d{2,})(?: |$)/;
+export const BASE_HEADING = /^## \d+\. ([A-Z]-\d{2,}[a-z]?)(?: |$)/;
 
 /** A numbered section of a chapter, as its number and its title. */
 export const CHAPTER_SECTION = /^## (\d+)\. (.+?)\s*$/;
@@ -2134,6 +2144,31 @@ export function cases(t) {
     t.project({ config: { ...WORDS, chapterDir: 'chapters', stateLedger: 'tracking/STATE.md' }, files: { ...CHAPTER_TEXT, ...files } });
 
   t.add('closedChapterHasEvidence', 'a closed chapter that left no result document', evidence({ 'tracking/STATE.md': LEDGER('닫힘', '열림') }), true);
+  // A board that gives every state of a screen its own frame writes ids with a state letter on
+  // them, which is what `simplecore:wireframe-boards` draws. A pattern stopping at the digits reads
+  // no frame out of such a heading, and this gate then demands nothing — the same silence as a
+  // chapter with no screens.
+  t.add(
+    'everyPlacedFrameIsCaptured',
+    'a chapter placing a state-lettered frame whose capture is missing',
+    t.project({
+      config: { ...WORDS, chapterDir: 'chapters', stateLedger: 'tracking/STATE.md', boardRoot: 'board/src' },
+      files: {
+        'board/src/manifest.mjs': 'export default [];\n',
+        'chapters/00-overview.md': '# 챕터\n',
+        'chapters/w03-devices.md':
+          '# W03. 장치\n\n## 1. N-02k 장치 상세 · 벤더 · 프로파일 없음\n\n'
+          + '**테스트 · 담당자** 프로파일이 없는 장치를 열면 그렇다고 표시한다.\n',
+        'tracking/STATE.md': '| 챕터 | 상태 |\n| --- | --- |\n| W03 | 닫힘 |\n',
+        'docs/evidence/w03-devices.md':
+          '# W03 — 검증 결과\n\n## 1. N-02k 장치 상세 · 벤더 · 프로파일 없음 · 담당자\n\n'
+          + '**한 일** — 프로파일이 없는 장치를 열었다.\n'
+          + '**챕터가 정한 것** — 프로파일이 없는 장치를 열면 그렇다고 표시한다.\n'
+          + '**본 것** — 「프로파일 없음」이 보였다.\n\n',
+      },
+    }),
+    true
+  );
   t.add(
     'closedChapterHasEvidence',
     'a closed chapter in a ledger that writes the name between the chapter and its state',

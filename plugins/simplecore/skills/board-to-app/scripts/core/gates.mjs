@@ -363,7 +363,9 @@ export const configGate = {
     }
 
     for (const key of Object.keys(ctx.config)) {
-      if (key in SCHEMA || key.startsWith('//')) continue;
+      // `boards` is the container a project with two products declares them under, and it is not a
+      // schema key because it holds schema keys. `boardsGate` is what checks its shape.
+      if (key in SCHEMA || key === BOARDS_KEY || key.startsWith('//')) continue;
       findings.push(`${key} is not a key this skill reads — a mistyped key is silent; a note starts with //`);
     }
     return findings;
@@ -434,6 +436,16 @@ export const boardsGate = {
       if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
         findings.push(`${BOARDS_KEY}.${name} must be an object of the keys that board declares`);
         continue;
+      }
+      // A mistyped key inside a board is the same silence one level down, and worse: the board
+      // resolves to the shared value for it and the build runs on somebody else's path.
+      for (const key of Object.keys(entry)) {
+        if (key in SCHEMA || key.startsWith('//')) continue;
+        findings.push(
+          `${BOARDS_KEY}.${name}.${key} is not a key this skill reads — a mistyped key inside a `
+          + 'board is silent AND falls through to the shared value, so the build runs on the other '
+          + 'board\'s path; a note starts with //'
+        );
       }
       const own = BOARD_OWN_KEYS.filter((key) => typeof entry[key] === 'string' && entry[key].trim());
       if (!own.length) {

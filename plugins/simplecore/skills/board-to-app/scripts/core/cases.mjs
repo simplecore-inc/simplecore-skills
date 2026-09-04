@@ -425,6 +425,32 @@ export function cases(t) {
     false
   );
   add('boardsGate', 'a project with one board and no map', { config: { boardRoot: 'wireframes/src' } }, false);
+  add(
+    'boardsGate',
+    'a board declares a key the skill does not read',
+    {
+      config: {
+        boards: {
+          console: { boardRoot: 'wireframes/console/src', stateLedger: 'docs/build/console/STATE.md', chapterDirectory: 'nope' },
+        },
+      },
+      options: { board: 'console' },
+    },
+    true
+  );
+  add(
+    'configGate',
+    'the boards container is not reported as an unknown key',
+    {
+      config: {
+        boards: { console: { boardRoot: 'wireframes/console/src', stateLedger: 'docs/build/console/STATE.md' } },
+        boardManifest: 'm.mjs', chapterDir: 'c', chapterOverview: 'c/o.md', handoverFile: 'h.md',
+      },
+      files: { 'wireframes/console/src/': '', 'm.mjs': '', 'c/': '', 'c/o.md': '', 'h.md': '', 'docs/build/console/STATE.md': '' },
+      options: { board: 'console' },
+    },
+    false
+  );
 
   // deferredKeyGate — the subject exists, so the key is owed now.
   add(
