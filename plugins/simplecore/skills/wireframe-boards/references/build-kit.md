@@ -97,6 +97,16 @@ users carry, and the shared terminal are one product, sharing components, copy r
 vocabulary and CRUD discipline. Splitting them would mean deciding, per gate, which of the three
 it belongs to: a boundary the product itself does not have.
 
+`penstock-console` draws an **application window** rather than a page: a fixed 1440×900 window
+whose panes scroll inside themselves, with the penstock console's shell — title bar, navigator, work
+pane, inspector (selection above, activity below), status bar — and the installed program's own
+window (`url: 'app:<title>'`) and tray menu (`url: 'none:'`) in the same pattern. It was promoted out
+of the RAG Studio board, where it was drawn first; every product-bound piece (brand, navigation tree,
+palette, status bar, sample activity) comes from the board's `src/chrome.mjs` through `makeChrome`,
+and the board's `src/components.mjs` re-exports the pattern's primitives and that bound chrome so a
+screen imports both from one place. Pick it for a desktop tool or a browser app that behaves as one;
+pick `simplix-basic` for a page-scrolling console with a phone app and a terminal beside it.
+
 `node <kit>/bin/wfb.mjs patterns` lists what is installed.
 
 ### A board may carry its own pattern, and that is the last resort

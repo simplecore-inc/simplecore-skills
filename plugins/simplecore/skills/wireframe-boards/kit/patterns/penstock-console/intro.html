@@ -1,0 +1,9 @@
+<!-- The reading-contract items true of every board drawn in this pattern. Bare <li> elements only:
+     the kit renders the standing items above them and each board's own items after them, so an
+     item the standing contract already carries is not restated here. -->
+<li><strong>창은 앱형으로 고정된다.</strong> 이 패턴의 제품은 페이지가 아니라 <em>앱</em>이므로 창을 1440×900 기준으로 고정해 표시한다. <strong>페이지는 스크롤하지 않고</strong> 각 패널이 자기 안에서 스크롤한다. 파선 <em>fold</em> 선이 곧 창 바닥이며 그 아래에는 아무것도 표시하지 않는다. 내용이 창에 안 들어가면 잘리고, 잘리는 것이 곧 화면을 다시 짜라는 신호다.</li>
+<li><strong>창 크롬은 penstock 콘솔의 셸이다.</strong> 상단 <em>타이틀바</em>(브랜드 · 경로 · 명령 팔레트 ⌘K · 패널 토글 ◧◨ · 언어 · 계정)와 하단 <em>상태바</em>는 항상 표시하며, 작업 영역은 <em>탐색 · 작업 · 검사</em> 세 패널로 구성한다. 검사 패널은 위아래 두 영역으로 나눈다. 위에는 선택한 대상의 탭을 표시하고, 아래에는 <em>활동</em>을 시간순으로 표시한다. 정보 구조와 시간 순서가 다르므로 활동은 탭에 포함하지 않는다. 패널을 접으면 세로 손잡이(rail)를 남겨 다시 펼칠 수 있게 한다.</li>
+<li><strong>창의 종류는 주소가 말한다.</strong> 브라우저 탭은 여느 주소 그대로이고, 설치된 프로그램의 자기 창은 <code>app:&lt;제목&gt;</code>(주소줄 없음), 창이 없는 트레이 메뉴는 <code>none:</code>이다.</li>
+<li><strong>플레이스홀더 클래스는 자리이지 모양이 아니다</strong> — <code>.bar</code>, <code>.img-ph</code>, <code>.graphview</code>, <code>.pdfpage</code>, <code>.chart-ph</code>(막대 · 추이 · 히스토그램), <code>.levels</code>(잔량 막대). 실제 데이터가 들어갈 자리이지 제품에 회색 사각형이 있다는 뜻이 아니다. 차트는 종류와 이름만 정하고 값은 제품이 그린다.</li>
+<li><strong>등급과 상태를 색으로 그리지 않는다.</strong> 보드는 강조색을 하나만 쓰므로 명도 · 테두리 형태 · 글자로 구분한다. 제품에서는 디자인 시스템의 상태 색 토큰을 쓰되 <strong>글자 표기를 함께 유지한다</strong> — 색만으로는 구분하지 못하는 사용자가 있다.</li>
+<li><strong>구현에 쓰는 디자인 시스템은 각 보드가 제 읽기 계약에 적는다.</strong> penstock 콘솔의 셸을 그대로 쓰는 제품은 그 토큰(색 · 타이포 · 간격 · 그림자 · 모션)을 따르고, 이 보드의 회색 채움과 고정폭 표기는 그 자리에 아무것도 대신하지 않는다.</li>

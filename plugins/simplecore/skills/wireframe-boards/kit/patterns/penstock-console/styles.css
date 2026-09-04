@@ -1,0 +1,832 @@
+  :root {
+    --ink: #1f2430;         /* primary text */
+    --muted: #5a6270;       /* secondary text, notes */
+    --faint: #8b93a1;       /* placeholder input text, status bar */
+    --line: #a9b1bd;        /* block borders */
+    --line-strong: #3a4150; /* device + emphasized borders */
+    --fill: #e8ebef;        /* light greybox fill */
+    --fill-deep: #d5dae1;   /* deep greybox fill */
+    --paper: #f7f8fa;       /* board background */
+    --screen: #ffffff;
+    --accent: #e05d38;      /* the ONE accent: arrows, pins, stickies, folds, OPEN */
+    --accent-tint: #fdeee7;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    --sans: system-ui, -apple-system, "Segoe UI", "Helvetica Neue", sans-serif;
+    --row-max: 1464px;      /* widest device frame (1440) + one gap — fixes where a row wraps */
+    --frame-zoom: 1;        /* display scale only; stepped down by the media queries below */
+  }
+
+
+
+  /* ── Board chrome ─────────────────────────────────────────────── */
+  .board-header { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; }
+
+
+
+
+
+
+
+  /* ── Implementation contract (never delete) ───────────────────── */
+  .readme {
+    max-width: 1180px; margin-bottom: 30px; padding: 16px 20px;
+    background: var(--screen); border: 1.5px solid var(--line-strong);
+    border-left: 5px solid var(--accent);
+    font-size: 13px; line-height: 1.75;
+  }
+
+
+
+
+
+
+
+  .flow-title {
+    display: flex; align-items: baseline; gap: 10px;
+    font-size: 15px; font-weight: 800; letter-spacing: 0.02em;
+    border-bottom: 2px solid var(--ink); padding-bottom: 6px; margin-bottom: 16px;
+  }
+
+
+
+  /* Display scale only — the design basis stays at true device pixels, so a label that
+     overflows at 390px still overflows here. Stepped down as the window narrows, which is what
+     keeps the no-sideways-scroll promise on a laptop as well as on a wide monitor.
+     Each step is derived, not guessed: a row needs `--row-max × zoom + 254px` (the sidebar and
+     the body padding), so the zoom that takes over at a breakpoint is the one that still fits
+     the NARROWEST window in its range. Change --row-max or the sidebar width and these move. */
+  @media (max-width: 1720px) { :root { --frame-zoom: .85; } }
+  @media (max-width: 1500px) { :root { --frame-zoom: .70; } }
+  @media (max-width: 1280px) { :root { --frame-zoom: .57; } }
+  @media (max-width: 1100px) { :root { --frame-zoom: .45; } }
+  @media (max-width:  920px) { :root { --frame-zoom: .35; } }
+  @media (max-width:  780px) { :root { --frame-zoom: .27; } }
+  @media (max-width:  660px) { :root { --frame-zoom: .20; } }
+
+
+
+
+
+
+
+  /* ── Device frames ────────────────────────────────────────────── */
+  /* --vh is the reference viewport height: a hard device height on phone and
+     tablet, the smallest supported window height on desktop. .screen never
+     shrinks below it, and grows when the page is longer. */
+  .frame { width: 390px; --vh: 844px; flex: 0 0 auto; }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  /* Label sits ABOVE the line so it stays inside the frame when the page is
+     shorter than --vh and the fold lands on the bottom edge. */
+  .fold span {
+    position: absolute; right: 10px; bottom: 5px;
+    background: var(--screen); border: 1px solid var(--accent); color: var(--accent);
+    font: 600 10px var(--mono); padding: 1px 6px; border-radius: 3px;
+  }
+
+
+
+
+  /* WIDE is what the board opens on, which is the reverse of the checkbox's own default state.
+     Every other frame here is drawn at 1440, so a pair opening on its 1024 half reads as one
+     screen mysteriously smaller than its neighbours rather than as a viewport a reader can
+     switch. The checkbox ships unchecked, so the unchecked rules are the wide ones. */
+  .view-toggle .opt-wide { background: var(--fill-deep); color: var(--ink); }
+  .view-input ~ * .frame.narrow { display: none; }
+  .view-input:checked ~ * .frame.narrow { display: block; }
+  .view-input:checked ~ * .frame.wide { display: none; }
+  .view-input:checked ~ * .opt-wide { background: transparent; color: var(--muted); }
+  .view-input:checked ~ * .opt-narrow { background: var(--fill-deep); color: var(--ink); }
+
+  /* ── Phone / tablet chrome ────────────────────────────────────── */
+  .statusbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 7px 16px 5px; font: 11px var(--mono); color: var(--faint);
+    position: relative;
+  }
+  .statusbar::after {
+    content: ""; position: absolute; left: 50%; top: 6px; transform: translateX(-50%);
+    width: 84px; height: 10px; border-radius: 999px; background: var(--fill-deep);
+  }
+  .frame.tablet .statusbar::after { display: none; } /* tablets have no notch */
+  .appbar {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 14px; border-bottom: 1px solid var(--fill-deep);
+    font-size: 15px; font-weight: 700;
+  }
+  .appbar .back { color: var(--muted); font-weight: 400; }
+  .appbar .trail { margin-left: auto; }
+  .body { flex: 1; display: flex; flex-direction: column; gap: 10px; padding: 14px; }
+  .cta { padding: 12px 14px; border-top: 1px dashed var(--line); display: flex; flex-direction: column; gap: 8px; }
+  .tabbar { display: flex; border-top: 1.5px solid var(--line-strong); margin-top: auto; }
+  .tab { flex: 1; text-align: center; padding: 8px 0 10px; font-size: 11px; color: var(--muted); }
+  .tab .ic { width: 18px; height: 18px; border: 1.5px solid currentColor; border-radius: 5px; margin: 0 auto 3px; }
+  .tab.active { color: var(--ink); font-weight: 700; }
+
+  /* ── Desktop chrome ───────────────────────────────────────────── */
+  /* .browserbar sits OUTSIDE .screen so the fold measures the page viewport,
+     not the browser window. */
+  .browserbar {
+    display: flex; align-items: center; gap: 10px; padding: 8px 12px;
+    border-bottom: 1px solid var(--line); background: var(--fill);
+    font: 11px var(--mono); color: var(--muted);
+  }
+  .browserbar .dots { display: flex; gap: 5px; }
+  .browserbar .dots i { width: 9px; height: 9px; border-radius: 50%; background: var(--fill-deep); border: 1px solid var(--line); }
+  .browserbar .url { flex: 1; background: var(--screen); border: 1px solid var(--line); border-radius: 999px; padding: 4px 12px; }
+  .shell { flex: 1; display: flex; min-height: 0; }
+  .sidebar {
+    flex: 0 0 220px; display: flex; flex-direction: column; gap: 2px;
+    padding: 12px 10px; border-right: 1px solid var(--fill-deep); background: var(--paper);
+  }
+  .sidebar .brand { font-size: 13px; font-weight: 800; padding: 4px 8px 10px; }
+  /* A heading, not a caption: the tree opens with every group shut, so on a navigator nobody has
+     touched these five lines are the whole of it — set below the rows they open onto, they read as
+     a footnote to an empty pane. The twisty and the mark lead, and the rows below indent to sit
+     under the mark. */
+  .nav-group { display: flex; align-items: center; gap: 6px; font: 12px var(--mono); color: var(--faint); letter-spacing: 0.04em; padding: 12px 8px 4px; }
+  .nav-group .tw { flex: 0 0 auto; font-size: 10px; }
+  .nav-group .ic { width: 14px; height: 14px; flex: 0 0 auto; border: 1.5px solid currentColor; border-radius: 4px; }
+  .nav-item { display: flex; align-items: center; gap: 8px; padding: 7px 8px; border-radius: 6px; font-size: 13px; color: var(--muted); }
+  .nav-item .ic { width: 14px; height: 14px; flex: 0 0 auto; border: 1.5px solid currentColor; border-radius: 4px; }
+  .nav-item.active { background: var(--fill-deep); color: var(--ink); font-weight: 700; }
+  .sidebar.rail { flex-basis: 60px; align-items: center; } /* collapsed at the narrow breakpoint */
+  .sidebar.rail .nav-item { justify-content: center; }
+  /* :not(.ic) keeps the glyph — the icon is a span too */
+  .sidebar.rail .brand, .sidebar.rail .nav-group, .sidebar.rail .nav-item span:not(.ic) { display: none; }
+  .main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .topbar { display: flex; align-items: center; gap: 12px; padding: 10px 16px; border-bottom: 1px solid var(--fill-deep); }
+  .topbar .search { flex: 0 1 320px; }
+  .topbar .spacer { flex: 1; }
+  .topbar .avatar { width: 26px; height: 26px; border-radius: 50%; background: var(--fill-deep); border: 1px solid var(--line); }
+  .crumb { font: 11px var(--mono); color: var(--faint); padding: 12px 16px 0; }
+  .toolbar { display: flex; align-items: center; gap: 10px; padding: 8px 16px 0; }
+  .toolbar .actions { margin-left: auto; display: flex; gap: 8px; }
+  .toolbar .btn { padding: 7px 12px; font-size: 13px; }
+  .frame.desktop .body { padding: 14px 16px 18px; gap: 12px; }
+
+  /* ── Layout primitives (master-detail, card grids, tables) ────── */
+  .split { flex: 1; display: flex; min-height: 0; }
+  .pane { flex: 1; display: flex; flex-direction: column; gap: 10px; padding: 14px; min-width: 0; }
+  .pane.list { flex: 0 0 280px; border-right: 1px solid var(--fill-deep); }
+  .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .table { border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  .trow { display: flex; align-items: center; gap: 12px; padding: 9px 12px; border-top: 1px solid var(--fill-deep); }
+  .trow:first-child { border-top: 0; }
+  .trow.thead { background: var(--fill); font: 600 11px var(--mono); color: var(--muted); letter-spacing: 0.04em; }
+  /* `overflow-wrap` is what stops a cell painting over its neighbour. A flex column with
+     `min-width: 0` shrinks below its content, and a word with nowhere to break — a host name, a
+     key, an identifier — then draws straight across the column beside it. Nothing overflows the
+     BOX, so no scrollbar appears and nothing is clipped; two facts simply occupy the same pixels.
+     `anywhere` also lets the column report a smaller minimum, which is what keeps the rest of the
+     row where it belongs. */
+  .td { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+  .td.w2 { flex: 2; }
+  .td.fix { flex: 0 0 110px; }
+  .td.right { text-align: right; }
+  /* A cell holding a proper noun. `.td` breaks anywhere so a long value cannot escape its column,
+     which turns 「OpenDataLoader PDF 2.5.0」 into 「OpenDataLoade / r PDF 2.5.0」 — a name split
+     mid-word reads as a rendering fault rather than as a name. Wraps at spaces instead. */
+  .td.name { overflow-wrap: normal; }
+  .pagination { display: flex; align-items: center; gap: 6px; padding: 2px; font: 11px var(--mono); color: var(--muted); }
+  .pagination .pg { border: 1px solid var(--line); border-radius: 5px; padding: 3px 8px; background: var(--screen); }
+  .pagination .pg.active { background: var(--fill-deep); border-color: var(--line-strong); color: var(--ink); font-weight: 700; }
+
+  /* ── Greybox primitives ───────────────────────────────────────── */
+  .img-ph {
+    min-height: 120px; background: var(--fill); border: 1px solid var(--line);
+    background-image:
+      linear-gradient(to top right, transparent calc(50% - 0.5px), var(--line) calc(50% - 0.5px), var(--line) calc(50% + 0.5px), transparent calc(50% + 0.5px)),
+      linear-gradient(to bottom right, transparent calc(50% - 0.5px), var(--line) calc(50% - 0.5px), var(--line) calc(50% + 0.5px), transparent calc(50% + 0.5px));
+  }
+  .qr-ph {
+    width: 150px; height: 150px; margin: 8px auto; border: 1px solid var(--line-strong);
+    background: conic-gradient(var(--fill-deep) 90deg, transparent 90deg 180deg, var(--fill-deep) 180deg 270deg, transparent 270deg) 0 0 / 20px 20px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .qr-ph span { background: var(--screen); font: 11px var(--mono); color: var(--muted); padding: 2px 6px; border: 1px solid var(--line); }
+  /* display:block so a .bar also renders inside inline hosts such as a .td */
+  .bar { display: block; height: 10px; border-radius: 3px; background: var(--fill-deep); }
+  .bar.light { background: var(--fill); }
+  .w25 { width: 25%; } .w40 { width: 40%; } .w60 { width: 60%; } .w80 { width: 80%; } .w100 { width: 100%; }
+  .t-title { font-size: 16px; font-weight: 700; }
+  .t-sub { font-size: 13px; color: var(--muted); }
+  .t-body { font-size: 13px; line-height: 1.5; }
+  .mono { font: 11px var(--mono); }
+  .muted { color: var(--muted); }
+  .faint { color: var(--faint); }
+  .divider { border: 0; border-top: 1px solid var(--fill-deep); margin: 2px 0; }
+
+  .btn {
+    border: 1.5px solid var(--line-strong); border-radius: 8px;
+    padding: 11px; text-align: center; font-size: 14px; font-weight: 600;
+    background: var(--screen);
+  }
+  .btn.primary { background: var(--fill-deep); }
+  .btn.ghost { border-style: dashed; color: var(--muted); }
+
+  .field { display: flex; flex-direction: column; gap: 4px; }
+  .label { font-size: 12px; color: var(--muted); font-weight: 600; }
+  .input {
+    border: 1px solid var(--line); border-radius: 6px; background: var(--screen);
+    padding: 10px 12px; font-size: 13px; color: var(--faint);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .topbar .input { padding: 6px 10px; font-size: 12px; }
+  /* The example standing in an empty box, told apart from a value somebody chose. */
+  .input .ph { opacity: .62; font-style: italic; }
+
+  .chip {
+    display: inline-block; border: 1px solid var(--line); border-radius: 999px;
+    padding: 4px 12px; font-size: 12px; background: var(--screen);
+  }
+  .chip.active { background: var(--fill-deep); border-color: var(--line-strong); font-weight: 600; }
+  .badge {
+    display: inline-block; border-radius: 4px; padding: 2px 8px;
+    font-size: 11px; font-weight: 600; background: var(--fill-deep);
+  }
+  .badge.outline { background: transparent; border: 1px solid var(--line-strong); }
+  .chips, .badges { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+
+  .card { border: 1px solid var(--line); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+  .list-card { border: 1px solid var(--line); border-radius: 8px; padding: 10px; display: flex; gap: 10px; align-items: center; }
+  .list-card .thumb { width: 48px; height: 48px; flex: 0 0 auto; min-height: 0; }
+  .list-card .lines { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+
+  /* ── Overlay states (bottom sheet on touch, centered modal on desktop) ─── */
+  .dim { position: absolute; inset: 0; background: rgba(31, 36, 48, 0.35); z-index: 1; }
+  .sheet {
+    position: absolute; left: 14px; right: 14px; bottom: 14px; z-index: 1;
+    background: var(--screen); border: 1.5px solid var(--line-strong); border-radius: 12px;
+    padding: 16px; display: flex; flex-direction: column; gap: 10px;
+  }
+  .modal {
+    position: absolute; left: 50%; top: 110px; transform: translateX(-50%); z-index: 1;
+    width: 460px; background: var(--screen); border: 1.5px solid var(--line-strong);
+    border-radius: 12px; padding: 18px; display: flex; flex-direction: column; gap: 12px;
+    box-shadow: 4px 6px 0 rgba(31, 36, 48, 0.12);
+  }
+  .modal.wide { width: 720px; }
+
+  /* ── Connectors & annotations ─────────────────────────────────── */
+  .arrow {
+    flex: 0 0 auto; align-self: center; width: 120px; margin: 0 4px;
+    border-top: 2px dashed var(--accent); position: relative;
+  }
+  .arrow::after {
+    content: ""; position: absolute; right: -2px; top: -6px;
+    border: 5px solid transparent; border-left: 8px solid var(--accent);
+  }
+  .arrow .step {
+    position: absolute; left: 50%; transform: translateX(-50%); bottom: 6px;
+    white-space: nowrap; font: 600 11px var(--mono); color: var(--accent);
+    background: var(--paper); padding: 1px 4px; border-radius: 3px;
+  }
+  .sticky {
+    flex: 0 0 auto; align-self: flex-start; width: 190px; margin: 24px 8px 0;
+    background: var(--accent-tint); border: 1px solid var(--accent);
+    padding: 12px; font-size: 12px; line-height: 1.5;
+    transform: rotate(-2deg); box-shadow: 2px 3px 0 rgba(31, 36, 48, 0.1);
+  }
+
+
+  .wf-sidebar { position: fixed; top: 0; left: 0; width: 214px; height: 100vh; overflow-y: auto;
+    background: var(--screen); border-right: 2px solid var(--line-strong); padding: 14px 12px 40px; z-index: 50; }
+  .wf-sidebar h2 { font: 800 13px var(--sans); letter-spacing: -.01em; }
+
+
+
+
+
+
+
+
+
+
+  /* keep an anchor-jumped frame below the sticky title */
+  .frame { scroll-margin: 64px 24px; }
+
+  .frame:target > .device { outline: 3px solid var(--accent); outline-offset: 4px; }
+
+
+
+
+  /* ══ Product primitives ═══════════════════════════════════════════
+     Confidence grades, source tiers, and health states are encoded by
+     LIGHTNESS, BORDER STYLE, and WORDS — never by hue. The board keeps
+     exactly one accent, reserved for connectors, stickies, folds, and
+     OPEN notes, so a reviewer argues about flow rather than color. */
+
+  /* ── app shell ────────────────────────────────────────────────────
+     This product is an app in a browser, not a scrolling page: the window
+     height is fixed and every pane scrolls inside itself. Three panes at
+     once — answer/source/evidence, or list/detail/activity — only work that
+     way; a page scroll would carry the answer off screen the moment the
+     reader reached for its evidence. The fold therefore lands exactly on
+     the window bottom and nothing is drawn below it. */
+  .frame.desktop .screen { height: var(--vh); }
+
+  .titlebar { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px;
+    height: 38px; padding: 0 10px; border-bottom: 1px solid var(--line); background: var(--fill); flex: 0 0 auto; }
+  .tb-l { display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .tb-r { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
+  .mark { width: 12px; height: 12px; border: 2px solid var(--ink); border-radius: 2px; transform: rotate(45deg); flex: 0 0 auto; }
+  .brand { font-size: 12px; font-weight: 800; letter-spacing: -.01em; white-space: nowrap; }
+  .vsep { width: 1px; height: 14px; background: var(--line); flex: 0 0 auto; }
+  /* The way out, at the head of the work pane's strip and against the title it leaves. Drawn in
+     the reading colour rather than the dim one: it is the only control on the screen for leaving,
+     and a dim mark beside a bold title is one the eye sorts as decoration. */
+  .tb-back { font-size: 15px; line-height: 1; color: var(--ink); white-space: nowrap; flex: 0 0 auto;
+    margin-right: -2px; }
+  .crumbs { font: 11px var(--mono); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .crumbs b { color: var(--ink); font-weight: 700; }
+  .cmdk { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 320px;
+    border: 1px solid var(--line); border-radius: 6px; background: var(--screen);
+    padding: 4px 9px; font: 11px var(--mono); color: var(--faint); }
+  .tb-chip { border: 1px solid var(--line); border-radius: 5px; padding: 3px 8px; font: 10px var(--mono);
+    color: var(--muted); background: var(--screen); white-space: nowrap; }
+  .tb-btn.on { background: var(--fill-deep); border-color: var(--line-strong); color: var(--ink); }
+  /* The unread count sits INSIDE the chip. A badge hung outside the box overflows it,
+     and on this board an overflow is a finding — a decoration must not raise one. */
+  .tb-chip.bell.on { background: var(--fill-deep); border-color: var(--line-strong); color: var(--ink); font-weight: 700; }
+
+  /* work area: navigation · work · inspection */
+  .ws { flex: 1; display: flex; min-height: 0; }
+  .ws .pane { display: flex; flex-direction: column; min-width: 0; min-height: 0; gap: 0; padding: 0; }
+  .ws .pane.nav { flex: 0 0 214px; border-right: 1px solid var(--line); background: var(--paper); }
+  .ws .pane.work { flex: 1; }
+  .ws .pane.insp { flex: 0 0 340px; border-left: 1px solid var(--line); background: var(--paper); }
+  .ws .pane.insp.lg { flex-basis: 430px; }
+  /* collapsed pane — a rail keeps the toggle discoverable instead of hiding it */
+  .prail { flex: 0 0 34px; border-right: 1px solid var(--line); background: var(--paper);
+    display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 8px 0; }
+  .prail.right { border-right: 0; border-left: 1px solid var(--line); }
+  .prail .ic { width: 15px; height: 15px; border: 1.5px solid var(--line-strong); border-radius: 4px; flex: 0 0 auto; }
+  .prail .vlabel { writing-mode: vertical-rl; font: 10px var(--mono); color: var(--faint); letter-spacing: .1em; }
+  /* an inner scrollbar mark: this pane scrolls in itself, the page never does */
+  .scrolls { position: relative; overflow: hidden; }
+  .scrolls::after { content: ""; position: absolute; right: 3px; top: 10px; width: 5px; height: 36%;
+    border-radius: 99px; background: var(--line); opacity: .5; }
+
+  .nav-search { border: 1px solid var(--line); border-radius: 6px; padding: 4px 8px;
+    font: 11px var(--mono); color: var(--faint); background: var(--screen); margin-bottom: 4px; }
+  .ws .nav-group { font-size: 11px; padding: 5px 6px 2px; }
+  .ws .nav-group .ic { width: 12px; height: 12px; }
+  /* 25 items in five groups have to fit a 900px window without clipping — the navigator
+     is the one pane whose content cannot scroll out of sight, since it is how every other
+     screen is reached. Density is the lever; dropping items is not. */
+  .ws .nav-item { padding: 2px 6px; font-size: 12px; }
+  /* The guide runs under the heading's mark and the rows sit inside it — a column of rows level
+     with the thing that opens them says nothing about belonging to it. */
+  .ws .nav-rows { margin-left: 22px; padding-left: 6px; border-left: 1px solid var(--line); }
+  .ws .nav-group { padding: 5px 6px 1px; }
+  .ws .nav-item .ic { width: 12px; height: 12px; }
+  .ws .nav-item .cnt { margin-left: auto; }
+
+  .vtitle { font-size: 13px; font-weight: 700; white-space: nowrap; }
+  .vcount { font: 10px var(--mono); color: var(--faint); white-space: nowrap; }
+  .ws .toolbar { padding: 7px 10px; flex: 0 0 auto; border-bottom: 1px solid var(--line); background: var(--screen); }
+  .ws .toolbar .btn { padding: 4px 9px; font-size: 11px; }
+
+  /* inspector: what is selected (tabs) above, what has happened (activity) below */
+  .ws .pane.insp .activity { flex: 0 0 auto; display: flex; flex-direction: column;
+    max-height: 40%; min-height: 92px; border-top: 1px solid var(--line); }
+  .ws .pane.insp .activity.collapsed { max-height: none; min-height: 0; }
+  .activity-head { display: flex; align-items: center; gap: 6px; flex: 0 0 auto; height: 24px; padding: 0 8px; font-size: 11px; }
+  .activity-title { font-weight: 600; }
+  .activity-body { flex: 1; min-height: 0; overflow: hidden; padding: 2px 8px 8px; display: flex; flex-direction: column; gap: 5px; }
+  .activity.collapsed .activity-body { display: none; }
+  .ev { display: flex; gap: 8px; align-items: baseline; font-size: 11px; }
+  .ev .when { flex: 0 0 52px; font: 10px var(--mono); color: var(--faint); }
+  .ev .txt { flex: 1; min-width: 0; color: var(--muted); }
+
+  .appstatus { display: flex; align-items: center; gap: 10px; height: 24px; flex: 0 0 auto;
+    padding: 0 10px; border-top: 1px solid var(--line); background: var(--fill); font: 10px var(--mono); color: var(--muted); }
+  .appstatus .sbl, .appstatus .sbr { display: flex; align-items: center; gap: 12px; }
+  .appstatus .sbr { margin-left: auto; }
+  /* The board's fold badge sits over the bottom-right corner of every desktop frame. The
+     status bar stops short of it so board annotation never covers product content — a
+     collision here reads as a truncated status message, which is a defect that is not there. */
+  .frame.desktop .appstatus .sbr { padding-right: 128px; }
+  .appstatus .seg { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+  .appstatus .seg.alert { font-weight: 700; color: var(--ink); }
+  .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--ink); flex: 0 0 auto; }
+  .dot.off { background: transparent; border: 1.5px solid var(--line); }
+
+  /* command palette — 62 screens are not findable through a menu alone */
+  .palette { position: absolute; left: 50%; top: 74px; transform: translateX(-50%); z-index: 2; width: 520px;
+    background: var(--screen); border: 1.5px solid var(--line-strong); border-radius: 10px; overflow: hidden;
+    box-shadow: 4px 6px 0 rgba(31,36,48,.12); }
+  .palette .pq { padding: 10px 12px; border-bottom: 1px solid var(--line); font-size: 13px; }
+  .palette .pr { display: flex; align-items: center; gap: 8px; padding: 7px 12px; font-size: 12px; border-top: 1px solid var(--fill-deep); }
+  .palette .pr.on { background: var(--fill-deep); font-weight: 700; }
+  .palette .pk { margin-left: auto; font: 10px var(--mono); color: var(--faint); }
+
+  /* ── signals ──────────────────────────────────────────────────── */
+  .hdot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; border: 1.5px solid var(--line-strong); vertical-align: -1px; }
+  .hdot.ok { background: var(--line-strong); }
+  .hdot.warn { background: linear-gradient(to right, var(--line-strong) 50%, transparent 50%); }
+  .hdot.bad { background: var(--screen); border-width: 3px; }
+  .hdot.off { background: var(--screen); border-style: dotted; }
+  .stat { border: 1px solid var(--line); border-radius: 8px; padding: 9px 11px; display: flex; flex-direction: column; gap: 2px; }
+  .stat .k { font: 10px var(--mono); color: var(--muted); letter-spacing: .04em; }
+  .stat .v { font-size: 19px; font-weight: 800; }
+  .stat .hint { font-size: 11px; color: var(--faint); }
+  .banner { display: flex; align-items: center; gap: 8px; border: 1px solid var(--line); border-left: 4px solid var(--line-strong);
+    border-radius: 6px; padding: 8px 11px; background: var(--fill); font-size: 12px; }
+  .banner .dot { width: 8px; height: 8px; flex: 0 0 auto; border-radius: 50%; background: var(--line-strong); }
+  .banner .dot.warn { border-radius: 2px; transform: rotate(45deg); }
+  /* Stronger than warn: something is wrong now rather than worth knowing. Hollow with a thick
+     ring, the same mark `.hdot.bad` uses, so one severity reads the same wherever it appears. */
+  .banner .dot.bad { background: var(--screen); border: 3px solid var(--line-strong); }
+  /* Nothing is wrong. Hollow and thin, so a settled banner does not draw the eye like an alarm. */
+  .banner .dot.ok { background: transparent; border: 1.5px solid var(--line-strong); }
+  .banner .actions { margin-left: auto; display: flex; gap: 6px; }
+  .banner .btn { padding: 4px 9px; font-size: 11px; }
+  .kv { display: flex; flex-direction: column; }
+  .kv .r { display: flex; gap: 10px; padding: 5px 0; border-top: 1px solid var(--fill-deep); font-size: 12px; }
+  .kv .r:first-child { border-top: 0; }
+  .kv .k { flex: 0 0 108px; color: var(--muted); }
+  .kv .v { flex: 1; min-width: 0; }
+  .hint { font-size: 11px; color: var(--faint); line-height: 1.5; }
+  .grow { flex: 1; }
+  .tb-btn { border: 1px solid var(--line); border-radius: 4px; padding: 0 5px; font: 11px var(--mono); color: var(--muted); }
+  .input.search { color: var(--faint); }
+
+  /* ── answer sentences: grade by border style + word, not hue ──── */
+  .sent { display: flex; align-items: flex-start; gap: 8px; padding: 8px 10px; margin-bottom: 6px;
+    border: 1px solid var(--fill-deep); border-left-width: 4px; border-radius: 6px; font-size: 13px; line-height: 1.55; }
+  .sent .gr { flex: 0 0 auto; font: 700 9.5px var(--mono); letter-spacing: .03em; padding: 2px 6px; border-radius: 3px; margin-top: 1px; }
+  .sent .tx { flex: 1; min-width: 0; }
+  .sent .ref { flex: 0 0 auto; font: 700 9.5px var(--mono); border: 1px solid var(--line-strong); border-radius: 3px; padding: 1px 5px; margin-top: 1px; }
+  .sent.ok { border-left-color: var(--line-strong); border-left-style: solid; }
+  .sent.ok .gr { background: var(--fill-deep); }
+  .sent.part { border-left-color: var(--line); border-left-style: dashed; background: var(--fill); }
+  .sent.part .gr { background: var(--screen); border: 1px solid var(--line-strong); }
+  .sent.none { border-left-color: var(--line-strong); border-left-style: dotted; background: var(--fill-deep); }
+  .sent.none .gr { background: var(--ink); color: var(--screen); }
+  .sent.active { outline: 2px solid var(--line-strong); outline-offset: 1px; }
+
+  /* ── evidence cards + source tier ─────────────────────────────── */
+  .ev-card { border: 1px solid var(--line); border-radius: 7px; padding: 9px 10px; display: flex; flex-direction: column; gap: 5px; }
+  .ev-card.active { border-color: var(--line-strong); border-width: 2px; padding: 8px 9px; background: var(--fill); }
+  .ev-top { display: flex; align-items: center; gap: 6px; }
+  .ev-n { font: 700 10px var(--mono); background: var(--ink); color: var(--screen); border-radius: 3px; padding: 1px 6px; }
+  .ev-title { font-size: 12.5px; font-weight: 600; }
+  .ev-meta { font: 10.5px var(--mono); color: var(--muted); }
+  .tier { font: 700 9.5px var(--mono); border-radius: 3px; padding: 1px 6px; letter-spacing: .02em; }
+  .tier.doc { background: var(--fill-deep); }                              /* fully traceable */
+  .tier.data { background: var(--screen); border: 1px solid var(--line-strong); }  /* query + result */
+  .tier.tool { background: var(--screen); border: 1px dashed var(--line-strong); color: var(--muted); } /* outside */
+  .tier.sum { background: var(--fill); border: 1px solid var(--line); color: var(--muted); }      /* one unfold from source */
+  .tier.page { background: var(--fill); border: 1px dotted var(--line-strong); color: var(--muted); } /* no text to compare */
+  .scorebar { display: inline-block; width: 46px; height: 6px; border-radius: 3px; background: var(--fill); border: 1px solid var(--line); overflow: hidden; vertical-align: 0; }
+  .scorebar .fill { display: block; height: 100%; background: var(--line-strong); }
+  .scorenum { font: 700 10px var(--mono); color: var(--muted); }
+
+  /* ── source viewer: markdown and PDF over one block model ─────── */
+  .vswitch { display: inline-flex; border: 1px solid var(--line-strong); border-radius: 6px; overflow: hidden; font: 600 10.5px var(--mono); }
+  .vswitch .opt { padding: 3px 9px; color: var(--muted); }
+  .vswitch .opt.on { background: var(--fill-deep); color: var(--ink); }
+  .mdview { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+  .mdb { border: 1px solid var(--fill-deep); border-radius: 5px; padding: 7px 9px; display: flex; flex-direction: column; gap: 5px; position: relative; }
+  .mdb .bk { position: absolute; right: 6px; top: 5px; font: 9px var(--mono); color: var(--faint); }
+  .mdb.active { border-color: var(--line-strong); border-width: 2px; background: var(--fill); padding: 6px 8px; }
+  .mdb.masked { background: repeating-linear-gradient(45deg, var(--fill) 0 6px, var(--fill-deep) 6px 12px); }
+  .pdfview { flex: 0 0 230px; display: flex; flex-direction: column; gap: 5px; }
+  .pdfpage { position: relative; flex: 1; min-height: 250px; border: 1px solid var(--line-strong); background: var(--screen);
+    background-image: repeating-linear-gradient(var(--fill) 0 1px, transparent 1px 9px); }
+  .pdfpage .hl { position: absolute; border: 1.5px solid var(--line); background: rgba(31,36,48,.06); border-radius: 2px; }
+  .pdfpage .hl.active { border: 2px solid var(--line-strong); background: rgba(31,36,48,.14); }
+  .pdfpage .hl.mask { background: var(--ink); border-color: var(--ink); }
+  .pdfbar { display: flex; align-items: center; gap: 6px; font: 10px var(--mono); color: var(--muted); }
+
+  /* ── search rounds ────────────────────────────────────────────── */
+  .round { border: 1px solid var(--line); border-left-width: 4px; border-radius: 6px; padding: 8px 10px; display: flex; flex-direction: column; gap: 4px; }
+  .round.ok { border-left-style: solid; border-left-color: var(--line-strong); }
+  .round.part { border-left-style: dashed; }
+  .round.none { border-left-style: dotted; background: var(--fill); }
+  .rd-top { display: flex; align-items: center; gap: 8px; }
+  .rd-n { font: 700 10px var(--mono); background: var(--fill-deep); border-radius: 3px; padding: 1px 6px; }
+  .rd-v { font: 10px var(--mono); color: var(--muted); }
+  .rd-q { font-size: 12.5px; }
+  .rd-f { font: 10.5px var(--mono); color: var(--muted); }
+
+  /* ── graph canvas · sensitive values · progress ───────────────── */
+  .graphview { min-height: 200px; border: 1px solid var(--line); border-radius: 8px; background: var(--fill);
+    background-image: radial-gradient(var(--line) 1.5px, transparent 1.5px); background-size: 34px 34px;
+    display: flex; align-items: center; justify-content: center; }
+  .gnote { background: var(--screen); border: 1px solid var(--line); font: 10.5px var(--mono); color: var(--muted); padding: 3px 9px; border-radius: 4px; }
+  .masked { font: 700 9.5px var(--mono); border: 1px dashed var(--line-strong); border-radius: 3px; padding: 1px 5px; color: var(--muted); }
+  .maskval { font: 11px var(--mono); background: var(--ink); color: var(--screen); border-radius: 3px; padding: 2px 7px; }
+  .stages { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font: 10.5px var(--mono); }
+  .stg { display: inline-flex; align-items: center; gap: 5px; border: 1px solid var(--line); border-radius: 999px; padding: 3px 9px; }
+  .stg .sdot { width: 7px; height: 7px; border-radius: 50%; border: 1.5px solid var(--line-strong); }
+  .stg.done { background: var(--fill-deep); }
+  .stg.done .sdot { background: var(--line-strong); }
+  .stg.run { border-color: var(--line-strong); border-width: 2px; padding: 2px 8px; font-weight: 700; }
+  .stg.run .sdot { background: linear-gradient(to right, var(--line-strong) 50%, transparent 50%); }
+  .stg.wait { color: var(--faint); border-style: dashed; }
+  .stg.wait .sdot { border-color: var(--faint); }
+  .stg.fail { border-width: 2px; border-style: dotted; font-weight: 700; }
+  /* Held: stopped at this step with nothing wrong with it — a quarantined document, a queue an
+     allowance stopped. Solid and bold like `run` so it reads as a step something is sitting at,
+     with the dot half-empty rather than sweeping, which is what tells the two apart. */
+  .stg.hold { border-color: var(--line-strong); border-width: 2px; padding: 2px 8px; font-weight: 700; }
+  .stg.hold .sdot { background: linear-gradient(to bottom, var(--line-strong) 50%, transparent 50%); }
+  .sarr { color: var(--faint); }
+  .stages.v { flex-direction: column; align-items: stretch; gap: 3px; }
+  .stages.v .stg { justify-content: flex-start; border-radius: 5px; }
+  .prog { display: block; height: 7px; border-radius: 4px; background: var(--fill); border: 1px solid var(--line); overflow: hidden; }
+  .prog .fill { display: block; height: 100%; background: var(--line-strong); }
+
+  /* ── three-pane workspace: answer · source · evidence ─────────── */
+  .tri { flex: 1; display: flex; min-height: 0; }
+  .tri .tp { display: flex; flex-direction: column; min-width: 0; border-right: 1px solid var(--fill-deep); }
+  .tri .tp:last-child { border-right: 0; }
+  .tri .answer { flex: 1.1; }
+  .tri .source { flex: 1.25; }
+  .tri .evid { flex: 0 0 300px; }
+  .pane-head { display: flex; align-items: center; gap: 8px; padding: 8px 12px;
+    border-bottom: 1px solid var(--fill-deep); background: var(--fill); font: 700 11px var(--mono); letter-spacing: .03em; }
+  .pane-body { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 8px; padding: 12px; }
+  .pane-body.row2 { flex-direction: row; gap: 10px; }
+  .pane-body.tight { padding: 8px 6px; gap: 0; }
+  .pane-body.flush { padding: 0; gap: 0; }
+  .badge.cnt { margin-left: auto; font-size: 10px; padding: 1px 6px; }
+  .avatar { width: 22px; height: 22px; border-radius: 50%; background: var(--fill-deep); border: 1px solid var(--line); flex: 0 0 auto; }
+  /* two panes at 1024: the evidence pane folds into a tab beside the source */
+  .tri .tp.source:last-child { flex: 1.5; }
+  .tabs { display: flex; gap: 4px; }
+  .tabs .tb { font: 600 10.5px var(--mono); color: var(--muted); border: 1px solid var(--line); border-bottom: 0;
+    border-radius: 5px 5px 0 0; padding: 3px 9px; background: var(--fill); }
+  .tabs .tb.on { background: var(--screen); color: var(--ink); border-color: var(--line-strong); }
+  /* the ask surface has no left nav — a slim brand bar carries project + account */
+  .askbar { display: flex; align-items: center; gap: 10px; padding: 9px 16px; border-bottom: 1px solid var(--fill-deep); }
+  .askbar .mark { width: 18px; height: 18px; border: 1.5px solid var(--line-strong); border-radius: 5px; }
+  .askbar .brand { font-size: 13px; font-weight: 800; }
+  .askbar .proj { font-size: 12px; border: 1px solid var(--line); border-radius: 6px; padding: 3px 10px; }
+  .askbar .avatar { width: 24px; height: 24px; border-radius: 50%; background: var(--fill-deep); border: 1px solid var(--line); }
+  .qbar { display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-bottom: 1px solid var(--fill-deep); background: var(--fill); }
+  .qbar .q { flex: 1; min-width: 0; font-size: 14px; font-weight: 600; }
+
+  /* ── entry surfaces: one centred column, no panes ──────────────────
+     Signing in and choosing a project happen before there is a project to
+     put in panes. The window still has a fixed height, so the column
+     centres in it and the fold stays the window bottom. */
+  .centerpage { flex: 1; min-height: 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 18px; padding: 32px; overflow: hidden; }
+  .centerpage.top { justify-content: flex-start; }
+  .cwrap { display: flex; flex-direction: column; gap: 14px; width: 100%; }
+  .cwrap.sm { max-width: 380px; }
+  .cwrap.md { max-width: 660px; }
+  .cwrap.lg { max-width: 940px; }
+  .cmark { display: flex; align-items: center; gap: 9px; }
+  .cmark .mark { width: 20px; height: 20px; border: 2px solid var(--ink); border-radius: 3px; transform: rotate(45deg); }
+  .cmark .brand { font-size: 17px; font-weight: 800; letter-spacing: -.01em; }
+
+  /* an inline field error: the message sits with the field it belongs to,
+     never in a toast that is gone before the reader looks up */
+  .field.bad .input { border-color: var(--line-strong); border-width: 2px; padding: 6px 9px; }
+  .fielderr { font-size: 11.5px; font-weight: 600; }
+
+  /* ── empty states ─────────────────────────────────────────────────
+     A dashed box says "nothing here yet" without dressing the absence up
+     as content. What it is FOR is the first line and the action. */
+  .empty { border: 1.5px dashed var(--line); border-radius: 10px; padding: 26px 22px;
+    display: flex; flex-direction: column; align-items: center; gap: 9px; text-align: center; background: var(--fill); }
+  .empty .t-title { font-size: 15px; }
+  .empty .actions { display: flex; gap: 8px; margin-top: 3px; }
+
+  /* Two columns INSIDE one pane — a tree beside its list, a form beside its preview.
+     Not `.pane` again: panes are the window's own division and carry their own borders. */
+  .psplit { flex: 1; min-height: 0; display: flex; gap: 12px; }
+  .psplit > .pl { flex: 0 0 224px; min-width: 0; overflow: hidden; display: flex; flex-direction: column; gap: 6px; }
+  .psplit > .pl.wide { flex-basis: 320px; }
+  .psplit > .pr { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; overflow: hidden; }
+
+  /* ── folder tree ──────────────────────────────────────────────────
+     Depth is drawn with indent rather than nesting, so a node's row height
+     never depends on how deep it sits. */
+  .tree { display: flex; flex-direction: column; }
+  .tnode { display: flex; align-items: center; gap: 7px; padding: 4px 6px;
+    border-radius: 5px; font-size: 12.5px; color: var(--muted); }
+  .tnode .tw { width: 10px; flex: 0 0 auto; font: 9px var(--mono); color: var(--faint); }
+  .tnode .ic { width: 13px; height: 13px; flex: 0 0 auto; border: 1.5px solid currentColor; border-radius: 3px; }
+  .tnode .cnt { margin-left: auto; font: 10px var(--mono); color: var(--faint); }
+  .tnode.on { background: var(--fill-deep); color: var(--ink); font-weight: 700; }
+
+  /* a suggested question — a row the reader can take as written */
+  .suggest { display: flex; align-items: center; gap: 9px; border: 1px solid var(--line);
+    border-radius: 8px; padding: 9px 11px; font-size: 13px; background: var(--screen); }
+  .suggest .qm { font: 700 10px var(--mono); color: var(--muted); border: 1px solid var(--line);
+    border-radius: 4px; padding: 1px 6px; flex: 0 0 auto; }
+  /* What a proposal was read out of, under the proposal itself (설계 17.3). Its own line rather
+     than inside the box: the box is what somebody presses, and a citation inside it would be
+     pressed along with the question. */
+  .suggest-from { font-size: 11px; color: var(--muted); padding: 3px 2px 1px 11px; }
+
+  /* the big question box on an empty ask surface */
+  .askbox { border: 1.5px solid var(--line-strong); border-radius: 10px; background: var(--screen);
+    padding: 13px 14px; display: flex; flex-direction: column; gap: 11px; }
+  .askbox .ph { font-size: 14px; color: var(--faint); }
+  /* NOT `.row` — that class belongs to the board's own frame rows and carries
+     `zoom: var(--frame-zoom)`, which would scale a frame's contents a second time. */
+  .hrow { display: flex; align-items: center; gap: 8px; }
+  .hrow .grow { flex: 1; }
+
+  /* The kit ships grid-2/3/4. Quality measurement reports five numbers that are read
+     against each other, so they need one row of five — without this rule `grid(5, …)`
+     silently stacks and the comparison it exists for is lost. */
+  .grid-5 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+
+  /* Content in a pane keeps its natural height and the pane overflows. Without this the
+     flex column SHRINKS its children, and a table — which clips inside its own
+     `overflow: hidden` for the rounded corner — loses rows with no scrollbar and no sign
+     that anything is missing. Overflow is a finding on this board; silent shrinkage is not. */
+  .pane-body > * { flex-shrink: 0; }
+  .pane-body > .mdview, .pane-body > .psplit, .pane-body > .graphview { flex-shrink: 1; }
+
+  /* Table bodies carry real values on this board — query results, rate tables — and at
+     the body's default size they tower over the 11px mono header and the surrounding
+     key-value rows. Sized here rather than in the base table rules, which stay as the kit
+     writes them. */
+  .table .trow { font-size: 12.5px; }
+
+  /* ── AI assistance mark ───────────────────────────────────────────
+     Every place the product proposes something rather than knowing it carries this
+     mark, so a reader can tell a fact from a suggestion at a glance. Distinguished by
+     DOTTED BORDER and the glyph, never by colour — the board keeps one accent and it
+     is reserved for connectors, pins, folds and OPEN notes. */
+  .ai { display: inline-flex; align-items: center; gap: 4px; vertical-align: 1px;
+    border: 1px dotted var(--line-strong); border-radius: 4px; padding: 1px 6px;
+    font: 700 9.5px var(--mono); color: var(--muted); background: var(--screen);
+    letter-spacing: .02em; white-space: nowrap; }
+  .ai .gl { font-size: 10px; line-height: 1; }
+  /* a whole block whose content is a proposal */
+  .aibox { border: 1px dotted var(--line-strong); border-radius: 7px; padding: 9px 11px;
+    display: flex; flex-direction: column; gap: 6px; background: var(--fill); }
+  .aibox > .ai { align-self: flex-start; }
+
+  /* A sentence in somebody's file that speaks TO the model. It shows up in the same
+     places as the AI mark, so it is SOLID where that one is dotted — a reader must never
+     confuse the product proposing something with an outside file giving orders. */
+  /* ── installed program: window chrome and tray ─────────────────────
+     The desktop build is a program, not a tab. It has a title bar and no address bar,
+     and when its window is closed it stays in the tray — so the tray menu is drawn
+     against the desktop rather than inside a window. */
+  .appwindow { display: flex; align-items: center; gap: 10px; padding: 7px 12px;
+    border-bottom: 1px solid var(--line); background: var(--fill); }
+  .appwindow .dots { display: inline-flex; gap: 5px; }
+  .appwindow .dots i { width: 9px; height: 9px; border-radius: 50%; border: 1px solid var(--line-strong); display: block; }
+  .appwindow .wt { font: 600 11.5px var(--mono); color: var(--muted); }
+  .traywrap { flex: 1; display: flex; justify-content: flex-end; align-items: flex-start;
+    padding: 12px 16px; background: var(--fill-deep); }
+  .traymenu { width: 290px; background: var(--screen); border: 1px solid var(--line-strong);
+    border-radius: 8px; padding: 8px 0; box-shadow: 2px 3px 0 rgba(31, 36, 48, .1); }
+  .tm-t { font: 700 11.5px var(--mono); padding: 4px 12px 8px; border-bottom: 1px solid var(--line); }
+  .tm-r { display: flex; gap: 8px; padding: 4px 12px; font-size: 11.5px; }
+  .tm-r .v { margin-left: auto; color: var(--muted); font-family: var(--mono); font-size: 10.5px; }
+  .tm-sep { border-top: 1px solid var(--line); margin: 6px 0; }
+  .tm-a { padding: 5px 12px; font-size: 12px; }
+
+  .planted { display: inline-flex; align-items: center; gap: 4px; vertical-align: 1px;
+    border: 1px solid var(--ink); border-radius: 4px; padding: 1px 6px;
+    font: 700 9.5px var(--mono); color: var(--screen); background: var(--ink);
+    letter-spacing: .02em; white-space: nowrap; }
+  .planted .gl { font-size: 10px; line-height: 1; }
+
+  /* ── validity periods ──────────────────────────────────────────────
+     A value that changed reads as a contradiction in a list and as a revision on a
+     track. The track is what keeps the diagnosis from calling a normal amendment a defect. */
+  .tline { display: flex; flex-direction: column; gap: 5px; }
+  .tl-row { display: flex; align-items: center; gap: 8px; font-size: 11.5px; }
+  .tl-row.on { font-weight: 700; }
+  .tl-lb { width: 92px; flex-shrink: 0; }
+  .tl-tr { flex: 1; min-width: 0; position: relative; height: 12px; border-radius: 3px;
+    background: var(--fill); border: 1px solid var(--line); }
+  .tl-sp { position: absolute; top: -1px; bottom: -1px; border-radius: 3px;
+    background: var(--fill-deep); border: 1px solid var(--line-strong); }
+  .tl-row.on .tl-sp { background: var(--line-strong); }
+  .tl-sp.open { border-right-style: dashed; }
+  .tl-pd { width: 150px; flex-shrink: 0; text-align: right; font: 10.5px var(--mono); color: var(--muted); }
+
+  /* ── verbatim text: a sent query, a raw response, a SQL statement ──
+     Evidence from a query or an outside tool is only traceable if what was
+     SENT and what came BACK are shown as they were, not summarised. */
+  .snippet { border: 1px solid var(--line); border-radius: 6px; background: var(--fill);
+    padding: 8px 10px; font: 11px var(--mono); color: var(--ink); line-height: 1.6; white-space: pre-wrap; }
+  .snippet.out { background: var(--screen); border-style: dashed; color: var(--muted); }
+
+  /* ── a conversation's earlier turns ───────────────────────────────
+     Collapsed to one line each: the thread is context for the question
+     being asked now, not something to re-read in full. */
+  /* One turn's question inside a thread view. The question bar stays at the top of
+     the ask surface — this is for reading a whole conversation back, where each turn
+     needs its own question above the answer it produced. */
+  .uturn { align-self: flex-start; max-width: 92%; background: var(--fill-deep);
+    border: 1px solid var(--line); border-radius: 10px 10px 10px 3px;
+    padding: 8px 12px; font-size: 13.5px; font-weight: 600; }
+  .turnmeta { font: 10.5px var(--mono); color: var(--faint); }
+
+  .qturn { border-left: 2px solid var(--line); padding: 2px 0 2px 10px; display: flex; flex-direction: column; gap: 3px; }
+  .qturn .qq { font-size: 12.5px; font-weight: 600; }
+  .qturn .qa { font-size: 11.5px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .qturn .qm { font: 10px var(--mono); color: var(--faint); }
+  /* what a follow-up inherited, stated rather than implied */
+  .carry { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; font: 10.5px var(--mono); color: var(--muted); }
+
+  /* a round still running — the fourth state of .round */
+  .round.run { border-left-color: var(--line-strong); border-left-style: solid; border-left-width: 4px; background: var(--fill); }
+  .round.run .rd-n { background: var(--ink); color: var(--screen); }
+
+  /* a step-up authentication that has been granted: it expires, and the
+     remaining time is the point — an unmask is not a mode you stay in */
+  .grant { display: flex; align-items: center; gap: 8px; border: 1px solid var(--line-strong);
+    border-radius: 6px; padding: 6px 10px; font: 10.5px var(--mono); background: var(--fill); }
+  .grant .left { margin-left: auto; font-weight: 700; }
+
+  /* ══ Kit chrome ═══════════════════════════════════════════════════
+     What the kit's own document markup needs, which this stylesheet predates. The kit renders
+     the header, the table of contents and the reading contract; the pattern styles them. Rules
+     for markup this board never emits — the phase band, the feature chip, the role strip — are
+     left out on purpose: the build refuses a phase or feature key that is not in
+     board.config.mjs, so none of it can appear without somebody declaring it first. */
+
+  /* The header is two rows: the board's name alone, then everything ABOUT the board. On one
+     line the title competed with the tag and the toggle and read as the first of three labels. */
+  .board-header { align-items: flex-start; }
+  .bh-main { display: flex; flex-direction: column; gap: 10px; }
+  .bh-meta { display: flex; align-items: center; gap: 16px; }
+
+  /* A fixed head over a scrolling list, so the filter stays reachable from anywhere in an index
+     168 entries long — a search box that scrolls away with its results is one nobody uses twice. */
+  .wf-sidebar { display: flex; flex-direction: column; overflow: hidden; }
+  .wf-sidebar .sb-head { flex: 0 0 auto; }
+  .wf-sidebar .sb-list { flex: 1 1 auto; overflow-y: auto; margin: 0 -12px; padding: 0 12px; }
+  .wf-sidebar .sb-group { margin-bottom: 2px; }
+  /* The overview and the reading contract are not screens, so nothing a reader types may hide
+     them; they ride the fixed head's side of the rule and keep a divider under them. */
+  .wf-sidebar .sb-fixed { padding-bottom: 8px; border-bottom: 1px solid var(--line); }
+  .wf-sidebar .sb-total { font: 700 10px var(--mono); color: var(--muted); margin-left: 6px; }
+  .wf-sidebar .sb-sec { display: flex; align-items: baseline; gap: 6px; }
+  .wf-sidebar .sb-sec .sb-n { margin-left: auto; font-weight: 400; color: var(--faint); }
+
+  .wf-sidebar .sb-find { display: flex; gap: 4px; margin: 0 0 10px; }
+  .wf-sidebar .sb-find .sb-input {
+    flex: 1 1 auto; min-width: 0; font: 11px var(--mono); color: var(--ink);
+    background: var(--screen); border: 1px solid var(--line); border-radius: 5px; padding: 4px 7px;
+  }
+  .wf-sidebar .sb-find .sb-input::placeholder { color: var(--faint); }
+  .wf-sidebar .sb-find .sb-clear {
+    flex: 0 0 auto; font: 12px var(--mono); color: var(--muted); cursor: pointer;
+    background: var(--fill); border: 1px solid var(--line); border-radius: 5px; padding: 0 7px;
+  }
+  /* The clear button is only a control while there is something to clear. */
+  .wf-sidebar .sb-find:not(.has-q) .sb-clear { visibility: hidden; }
+  .wf-sidebar .sb-count { font: 10px var(--mono); color: var(--muted); margin: -6px 0 10px; }
+
+  /* The filter hides index entries and nothing else — the board itself is never narrowed, so no
+     reviewer can be shown a shorter board than the one that exists. */
+  .wf-sidebar .is-off { display: none; }
+
+  /* The frame a reader picked, from the index or by clicking it. `:target` alone only ever fires
+     from the address bar, so a click on the frame itself left the board silent. */
+  .frame.is-picked > .device { outline: 3px solid var(--accent); outline-offset: 4px; }
+
+/* ── measurement placeholders — chart, level bars, countdown ──────────────── */
+.chart-ph { position: relative; border: 1px dashed #b9bdc4; border-radius: 6px; background: #f7f8fa;
+  display: flex; align-items: flex-end; justify-content: center; overflow: hidden; }
+.chart-ph .lbl { position: absolute; top: 6px; left: 8px; font-size: 11px; color: #5f6672; }
+.chart-ph .glyph { display: block; width: 84%; height: 60%; margin-bottom: 10px; opacity: .55; }
+.chart-ph.bar .glyph { background: repeating-linear-gradient(90deg, #c9cdd3 0 14px, transparent 14px 22px);
+  mask-image: linear-gradient(0deg, #000 30%, transparent 30%, transparent 45%, #000 45%, #000 70%, transparent 70%);
+  -webkit-mask-image: linear-gradient(0deg, #000 30%, transparent 30%, transparent 45%, #000 45%, #000 70%, transparent 70%); }
+.chart-ph.line .glyph { background: linear-gradient(170deg, transparent 49%, #b9bdc4 49% 51%, transparent 51%),
+  linear-gradient(10deg, transparent 49%, #c9cdd3 49% 51%, transparent 51%); }
+.chart-ph.hist .glyph { background: repeating-linear-gradient(90deg, #c9cdd3 0 10px, transparent 10px 12px);
+  mask-image: linear-gradient(0deg, #000 20%, transparent 20%, transparent 40%, #000 40%, #000 90%, transparent 90%);
+  -webkit-mask-image: linear-gradient(0deg, #000 20%, transparent 20%, transparent 40%, #000 40%, #000 90%, transparent 90%); }
+.levels { display: flex; flex-direction: column; gap: 4px; }
+.lv { display: grid; grid-template-columns: 44px 1fr 40px; align-items: center; gap: 6px; font-size: 11px; }
+.lv-k { color: #3d434c; }
+.lv-bar { height: 8px; border: 1px solid #9aa0a8; border-radius: 4px; overflow: hidden; background: #fff; }
+.lv-bar .fill { display: block; height: 100%; background: #6b7280; }
+.lv.low .lv-bar .fill { background: transparent; border-right: 2px solid #3d434c; }
+.lv-v { text-align: right; font-variant-numeric: tabular-nums; color: #3d434c; }
+.countdown { font-variant-numeric: tabular-nums; color: #3d434c; }
+.countdown.late { font-weight: 700; color: #111; }
