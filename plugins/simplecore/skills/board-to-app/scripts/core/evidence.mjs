@@ -1412,6 +1412,62 @@ export const everyCaptureIsInTheDeclaredScheme = {
  * defect, naming what the bytes really are; this one speaks where the project declared no
  * `captureStandard` and that gate does not run at all.
  */
+/**
+ * Two captures under two names that are byte-for-byte the same picture.
+ *
+ * <p>A board draws every state of a screen as its own frame, so a chapter's folder holds the base and
+ * each state beside it. When the run opens a state by its address and the screen does not enter that
+ * state — the flag it reads was never set, the action that produces it was never taken — what comes
+ * back is the base screen, shot and filed under the state's name.
+ *
+ * <p><b>Nothing else in this file can see it.</b> The size is right, the density is fine, the name
+ * matches a frame the chapter places, the file is on disk and the document cites it. Every check
+ * passes because each picture is examined alone, and the defect exists only BETWEEN two of them.
+ * One real chapter shipped a base screen under 「등록 키트 생성 완료」 that way, and it was noticed
+ * because two byte counts happened to print identically — which is not a way of noticing anything.
+ *
+ * <p>Identical bytes are never legitimate. Two frames drawing the same screen still differ somewhere
+ * — a marked tab, an open dialog, a banner — or the board would not draw them twice; and a state a
+ * frame draws over a base that is genuinely indistinguishable is a frame the board should not have.
+ */
+export const noTwoCapturesAreTheSamePicture = {
+  id: 'noTwoCapturesAreTheSamePicture',
+  title: 'two captures of two frames that are byte-for-byte the same picture, so one state never reached the screen',
+  needs: ['evidenceDir'],
+  run: (ctx) => {
+    const dir_ = ctx.declared('evidenceDir');
+    const findings = [];
+    const byFolder = new Map();
+    for (const entry of ctx.list(ctx.at('evidenceDir')) ?? []) {
+      if (!entry.endsWith(CAPTURE_SUFFIX)) continue;
+      const cut = entry.lastIndexOf('/');
+      const folder = cut < 0 ? '' : entry.slice(0, cut);
+      if (!byFolder.has(folder)) byFolder.set(folder, []);
+      byFolder.get(folder).push(entry);
+    }
+    for (const [folder, entries] of [...byFolder].sort()) {
+      const seen = new Map();
+      for (const entry of entries.sort()) {
+        const bytes = ctx.bytes(ctx.inRoot(`${dir_}/${entry}`));
+        if (!bytes || !bytes.length) continue;
+        const key = `${bytes.length}:${Buffer.from(bytes).toString('base64')}`;
+        if (!seen.has(key)) {
+          seen.set(key, entry);
+          continue;
+        }
+        findings.push(
+          `${dir_}/${entry} is byte-for-byte ${dir_}/${seen.get(key)} — two frames, one picture, so the `
+          + 'state the second one exists to show never reached the screen and the run shot the base '
+          + 'again under its name. Everything else about it is right, which is why nothing else here '
+          + 'reports it: the size, the density, the name and the citation all hold. Open the frame, '
+          + 'find what puts the screen into that state, and take the capture from there'
+        );
+      }
+    }
+    return findings;
+  },
+};
+
 export const everyCaptureIsDenserThanAnEmptyCanvas = {
   id: 'everyCaptureIsDenserThanAnEmptyCanvas',
   title: 'a capture holding no more than an empty canvas of its size, so very likely a shot taken before the page painted',
@@ -1857,6 +1913,7 @@ export const EVIDENCE_GATES = [
   everyCaptureIsAtADeclaredWidth,
   everyCaptureIsInTheDeclaredScheme,
   everyCaptureIsDenserThanAnEmptyCanvas,
+  noTwoCapturesAreTheSamePicture,
   everyCaptureDemandGivesItsReason,
   dischargedDemandNamesItsProof,
 ];
@@ -2798,6 +2855,42 @@ export function cases(t) {
     'everyCaptureIsDenserThanAnEmptyCanvas',
     'an evidence folder holding documents and no captures yet',
     painted({ 'docs/evidence/w02-org-shell.md': W02_EVIDENCE(W02_SCREEN_SECTION) }),
+    false,
+  );
+
+  // ── Two frames, one picture ──────────────────────────────────────────────
+  //
+  // The state a frame exists to show did not reach the screen, so the run shot the base again under
+  // the state's name. Everything about the file is right; only the pair says anything.
+  const REAL = `RIFF····WEBP${'x'.repeat(40 * 1024)}`;
+  const OTHER = `RIFF····WEBP${'y'.repeat(41 * 1024)}`;
+  t.add(
+    'noTwoCapturesAreTheSamePicture',
+    'a state capture that is byte-for-byte its base',
+    painted({
+      'docs/evidence/w02-org-shell/a-01.webp': REAL,
+      'docs/evidence/w02-org-shell/a-01b.webp': REAL,
+    }),
+    true,
+  );
+  t.add(
+    'noTwoCapturesAreTheSamePicture',
+    'a base and a state that differ',
+    painted({
+      'docs/evidence/w02-org-shell/a-01.webp': REAL,
+      'docs/evidence/w02-org-shell/a-01b.webp': OTHER,
+    }),
+    false,
+  );
+  // Two chapters photographing the same unbuilt placeholder are two folders, and a folder is where a
+  // frame's siblings live — so the comparison stays inside one.
+  t.add(
+    'noTwoCapturesAreTheSamePicture',
+    'identical pictures in two different chapters',
+    painted({
+      'docs/evidence/w02-org-shell/a-01.webp': REAL,
+      'docs/evidence/w01-foundation/b-01.webp': REAL,
+    }),
     false,
   );
 
