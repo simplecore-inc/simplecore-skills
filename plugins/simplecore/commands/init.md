@@ -35,6 +35,13 @@ Two halves, and most projects need both:
    `parityWalk` in the report say which. Route to the one it has; never propose the other as
    something it is missing, and never write both blocks.
 
+   **`boards` with more than one entry is a repository drawing two products, and the routing block
+   names both.** Each board gets its own line — where its manifest is, where its working rules are,
+   and which product it draws — because a session that reads one line goes to that board and writes
+   the other product's screens from nothing. `board` in the report is the first of them and is
+   there for callers that predate the second; **read `boards`**, and where a `missing` line names a
+   board directory, that line is about that board alone.
+
    - No skills bind → say so and stop. Do not write a routing block into a repository that shows
      no marker; offer instead to re-run against a subdirectory, or to draw a board with
      `/simplecore:board-init` if that is what the user is after.

@@ -247,6 +247,32 @@ function findBoard(root) {
   return visit(root, 0);
 }
 
+/**
+ * Every board in a tree, not just the first.
+ *
+ * @remarks
+ * A repository can draw two products — a desktop application and a web console — and reporting one
+ * of them is worse than reporting neither: the routing note, the migration prompt and the 「wired to
+ * nothing」 line all name a board, and naming the first one silently says the second is fine. A
+ * board never contains another board, so a directory that IS one is not descended into.
+ *
+ * @returns every board found, in directory order; empty where there is none.
+ */
+function findBoards(root) {
+  const found = [];
+  const visit = (dir, depth) => {
+    const here = findBoard(dir);
+    if (here && here.dir === dir) {
+      found.push(here);
+      return;
+    }
+    if (depth >= MAX_DEPTH) return;
+    for (const child of subdirs(dir)) visit(child, depth + 1);
+  };
+  visit(root, 0);
+  return found;
+}
+
 /** The parity-walk config and whether the two documents it names exist. */
 function findParityWalk(root) {
   const configFile = path.join(root, PARITY_CONFIG);
@@ -348,6 +374,25 @@ function routing(root, extraDirs) {
 }
 
 /**
+ * Whether any instruction file names this board's own directory.
+ *
+ * @remarks
+ * Naming the SKILL is one fact about a repository; naming a BOARD is one fact per board, and with
+ * two of them the difference is the whole question. An instruction file that routes to the skill
+ * and then walks a session to one of the two boards leaves the other reachable only by somebody who
+ * already knew it was there — and the routing check, which asks only about the skill, reads green.
+ */
+function routesToDir(root, dir) {
+  const wanted = path.relative(root, dir);
+  if (!wanted || wanted.startsWith("..")) return true;
+  for (const rel of INSTRUCTION_FILES) {
+    const content = readIfPresent(path.join(root, rel));
+    if (content && content.includes(wanted)) return true;
+  }
+  return false;
+}
+
+/**
  * Whether the user's global instruction file already carries the Korean style baseline.
  *
  * @remarks
@@ -380,12 +425,15 @@ function globalKoreanInstruction() {
  */
 export function analyze(root) {
   const resolved = path.resolve(root);
-  const board = findBoard(resolved);
+  const boards = findBoards(resolved);
+  // The first board keeps the singular name every caller already reads. `boards` is what a project
+  // drawing two products is described by, and every per-board line below walks it.
+  const board = boards[0] ?? null;
   const parityWalk = findParityWalk(resolved);
   const build = findBuild(resolved);
   const glossary = findGlossary(resolved);
   const korean = writesKorean(resolved, glossary);
-  const routedBy = routing(resolved, board ? [board.dir] : []);
+  const routedBy = routing(resolved, boards.map((one) => one.dir));
   const globalKorean = globalKoreanInstruction();
 
   const rel = (p) => (p ? path.relative(resolved, p) || "." : null);
@@ -409,22 +457,40 @@ export function analyze(root) {
   // A board that answers neither way is an original-contract board: stamping did not exist when it
   // was made, and it has no kit whose sources could say otherwise.
   const boardOn = board ? (board.contract ?? 1) : null;
-  const needsMigration = board !== null && boardOn < BOARD_CONTRACT;
+  const contractOf = (one) => one.contract ?? 1;
+  // Any board below the current contract needs the migration, not merely the first one found.
+  const needsMigration = boards.some((one) => contractOf(one) < BOARD_CONTRACT);
 
   const missing = [];
-  if (needsMigration) {
-    missing.push(
-      `the board at \`${rel(board.dir)}\` was built against board contract ${boardOn} and this skill now writes ${BOARD_CONTRACT} — its frame numbers are derived from position, so they change under anyone who writes one down, and its rows scroll sideways where frames hide past the edge. \`/simplecore:board-migrate\` walks the upgrade`,
-    );
+  // Every line here names ONE board, so each is asked of every board. Asking only the first says
+  // nothing about the second while reading exactly like a clean report — which is the whole reason
+  // a repository drawing two products was described by one of them.
+  for (const one of boards) {
+    const on = contractOf(one);
+    if (on < BOARD_CONTRACT) {
+      missing.push(
+        `the board at \`${rel(one.dir)}\` was built against board contract ${on} and this skill now writes ${BOARD_CONTRACT} — its frame numbers are derived from position, so they change under anyone who writes one down, and its rows scroll sideways where frames hide past the edge. \`/simplecore:board-migrate\` walks the upgrade`,
+      );
+    }
+    if (routedBy["wireframe-boards"] && !routesToDir(resolved, one.dir)) {
+      missing.push(
+        `the instruction files name the board skill but never the board at \`${rel(one.dir)}\`, so a session that starts elsewhere reaches the other board and writes this product's UI without one`,
+      );
+    }
+    if (
+      one.kind === "built"
+      && !(fs.existsSync(path.join(one.dir, "AGENTS.md")) && fs.existsSync(path.join(one.dir, "CLAUDE.md")))
+    ) {
+      missing.push(
+        `the board folder \`${rel(one.dir)}\` has no reading contract, so the next agent opens the built HTML and floods its context`,
+      );
+    }
   }
-  if (board && !routedBy["wireframe-boards"]) {
+  if (boards.length && !routedBy["wireframe-boards"]) {
     missing.push(
-      `no instruction file points at the board at \`${rel(board.dir)}\`, so a session that starts elsewhere writes UI without it`,
-    );
-  }
-  if (board && board.kind === "built" && !(boardContract.agentsMd && boardContract.folderClaudeMd)) {
-    missing.push(
-      `the board folder has no reading contract, so the next agent opens the built HTML and floods its context`,
+      boards.length === 1
+        ? `no instruction file points at the board at \`${rel(boards[0].dir)}\`, so a session that starts elsewhere writes UI without it`
+        : `no instruction file points at either board (${boards.map((one) => `\`${rel(one.dir)}\``).join(", ")}), so a session that starts elsewhere writes UI without them`,
     );
   }
   // A board reaches code one of two ways, and a project picks one. Naming only the walk here told
@@ -508,6 +574,23 @@ export function analyze(root) {
     root: resolved,
     boardContractExpected: BOARD_CONTRACT,
     needsMigration,
+    /**
+     * Every board in the repository.
+     *
+     * A project drawing two products has two, and which one a build or a walk is about is that
+     * command's to name — `board` below is the first of these and is kept for every caller that
+     * predates the second one.
+     */
+    boards: boards.map((one) => ({
+      dir: rel(one.dir),
+      kind: one.kind,
+      file: rel(one.file),
+      contract: contractOf(one),
+      stamped: one.contractFrom === "built",
+      contractFrom: one.contractFrom,
+      agentsMd: fs.existsSync(path.join(one.dir, "AGENTS.md")),
+      folderClaudeMd: fs.existsSync(path.join(one.dir, "CLAUDE.md")),
+    })),
     board: board
       ? {
           dir: rel(board.dir),

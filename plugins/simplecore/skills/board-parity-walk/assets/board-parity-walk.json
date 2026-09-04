@@ -1,4 +1,6 @@
 {
+  "//boards": "ONE BOARD IS THE ORDINARY CASE AND NEEDS NOTHING HERE. A repository drawing two products declares each board's own documents under `boards` and keeps the rest shared: \"boards\": { \"console\": { \"parityList\": \"_plans/console/SCREEN-PARITY.md\", \"handoverFile\": \"_plans/console/WALK-NOTES.md\" }, \"workbench\": { … } }. `parityList` and `handoverFile` must be each board's own — a walk writes what is left into the list it was given, and two boards sharing one list leave a reader unable to say which product a remaining frame belongs to. Every walk names its board before it starts.",
+
   "parityList": "_plans/SCREEN-PARITY.md",
   "handoverFile": "_plans/WALK-NOTES.md",
   "parkedSection": "Parked decisions",

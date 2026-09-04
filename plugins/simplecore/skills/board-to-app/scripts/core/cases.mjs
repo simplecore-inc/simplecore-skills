@@ -370,6 +370,62 @@ export function cases(t) {
     false
   );
 
+  // boardsGate — two boards, one build. The pair a project with several boards stands or falls on.
+  add(
+    'boardsGate',
+    'two boards write their progress into one ledger',
+    {
+      config: {
+        boards: {
+          console: { boardRoot: 'wireframes/console/src', stateLedger: 'docs/build/STATE.md' },
+          workbench: { boardRoot: 'wireframes/workbench/src', stateLedger: 'docs/build/STATE.md' },
+        },
+      },
+      options: { board: 'console' },
+    },
+    true
+  );
+  add(
+    'boardsGate',
+    'a board under the map declares nothing of its own',
+    {
+      config: {
+        boards: {
+          console: { boardRoot: 'wireframes/console/src', stateLedger: 'docs/build/console/STATE.md' },
+          workbench: { locales: ['ko'] },
+        },
+      },
+      options: { board: 'console' },
+    },
+    true
+  );
+  add(
+    'boardsGate',
+    'each board carries its own sources and its own progress',
+    {
+      config: {
+        boards: {
+          console: {
+            boardRoot: 'wireframes/console/src',
+            chapterDir: 'docs/build/console/chapters',
+            stateLedger: 'docs/build/console/STATE.md',
+            evidenceDir: 'docs/build/console/evidence',
+          },
+          workbench: {
+            boardRoot: 'wireframes/workbench/src',
+            chapterDir: 'docs/build/workbench/chapters',
+            stateLedger: 'docs/build/workbench/STATE.md',
+            evidenceDir: 'docs/build/workbench/evidence',
+          },
+        },
+        locales: ['ko', 'en', 'ja'],
+      },
+      options: { board: 'console' },
+    },
+    false
+  );
+  add('boardsGate', 'a project with one board and no map', { config: { boardRoot: 'wireframes/src' } }, false);
+
   // deferredKeyGate — the subject exists, so the key is owed now.
   add(
     'deferredKeyGate',

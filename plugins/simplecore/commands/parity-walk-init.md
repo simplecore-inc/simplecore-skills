@@ -25,6 +25,11 @@ repository.
    normal starting point for a board-first project: every frame is simply unbuilt, and the walk
    builds it. Wire it exactly the same way.
 
+   **`boards` holding more than one entry means two products, and each walks apart.** Give each
+   board its own `parityList` and `handoverFile` under `boards` and wire both in this one pass. One
+   list carrying two products' frames cannot say which product a remaining line belongs to, and the
+   next session picks up whichever it reads first.
+
    Everything else is relative to the project root.
 
 2. **Check what is already there** and tell the user, one line each:

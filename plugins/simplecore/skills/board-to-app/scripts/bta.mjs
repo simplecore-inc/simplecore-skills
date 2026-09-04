@@ -9,6 +9,11 @@
 // The config is found by walking up from the current directory for `.claude/board-to-app.json`,
 // unless `--config <path>` names one. The directory two levels above the config is the project
 // root, and every declared path is resolved from there.
+//
+// A project drawing two products declares both under `boards`, and every command is about ONE of
+// them: `--board <name>`, or the board whose folder the command was run inside. Declaring several
+// and naming none is refused rather than defaulted — a build that picks writes chapters, ledger
+// rows and evidence into whichever board it guessed.
 import { pathToFileURL } from 'node:url';
 import { CORE_GATES, applies, gatesFor, gradeOf } from './core/gates.mjs';
 import { HEADING_ROLES, SCHEMA, findConfig, loadProject } from './core/context.mjs';
@@ -31,7 +36,8 @@ const HELP = `board-to-app — the generic checks a build runs on
                                 A warning prints as one finding and a count; --warnings prints all
   gates                         every gate against the defect it exists to catch
   doctor                        what this project declares, and what it owes
-common: --config <path> (default: .claude/board-to-app.json, found by walking up)`;
+common: --config <path> (default: .claude/board-to-app.json, found by walking up)
+        --board <name>  which board this is about, on a project that declares several`;
 
 function context() {
   const declared = opt('config');
@@ -42,7 +48,15 @@ function context() {
     );
     process.exit(2);
   }
-  return loadProject(path, { range: opt('range') });
+  const ctx = loadProject(path, { range: opt('range'), board: opt('board') });
+  // A refusal, not a default. Everything this command writes — a chapter, a ledger row, a result
+  // document — lands under one board, and a guess puts all of it somewhere somebody has to find
+  // again to undo.
+  if (ctx.boardError) {
+    console.error(ctx.boardError);
+    process.exit(2);
+  }
+  return ctx;
 }
 
 /** `1 warning` / `2 warnings`, so a count and its noun never disagree. */
@@ -164,7 +178,12 @@ async function proveGates() {
 async function doctor() {
   const ctx = context();
   console.log(`config   ${ctx.configPath}`);
-  console.log(`root     ${ctx.root}\n`);
+  console.log(`root     ${ctx.root}`);
+  // Which board every line below is about. On a project with one board this says nothing and is
+  // left out; on a project with two, a report that does not name its subject is a report about a
+  // build somebody has to guess at.
+  if (ctx.board) console.log(`board    ${ctx.board}   (of ${ctx.boards.join(', ')})`);
+  console.log('');
 
   const deferrals = ctx.declared('deferredKeys');
   const owedBy = (key) => {

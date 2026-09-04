@@ -14,6 +14,125 @@ import { evidenceReaders } from './evidence.mjs';
 export const CONFIG_NAME = join('.claude', 'board-to-app.json');
 
 /**
+ * The key a project declares its boards under, when it has more than one.
+ *
+ * <p><b>One board is the ordinary case and stays flat.</b> A project with a single board declares
+ * every key at the top level, exactly as before, and nothing here applies to it — this key is
+ * absent and the resolution below is a no-op.
+ *
+ * <p><b>A project with two products drawn on two boards is a different arrangement, not a bigger
+ * one.</b> A desktop application and a web console share a repository, a glossary and a set of
+ * gates, and share nothing about where either one is in its build: each has its own chapters, its
+ * own state ledger, its own evidence. Collapsing them onto one ledger is what makes 「어느 챕터까지
+ * 갔는가」 unanswerable for either.
+ *
+ * <p>So the shared keys stay where they are and a board declares what is its own:
+ *
+ * <pre>
+ * { "boards": { "console": { "boardRoot": …, "stateLedger": … },
+ *               "workbench": { "boardRoot": …, "stateLedger": … } },
+ *   "locales": ["ko"], "gates": [ … ] }
+ * </pre>
+ *
+ * A board's value wins over the shared one for the same key, which is what lets two boards share
+ * a locale list and differ on the address their application opens at.
+ */
+export const BOARDS_KEY = 'boards';
+
+/**
+ * The keys a board must not share with another board.
+ *
+ * <p>These are the ones that carry PROGRESS. Two boards pointing at one state ledger, one chapter
+ * directory or one evidence folder do not have two builds running side by side; they have one
+ * build whose rows are about whichever board wrote last, and nothing on disk says which. The
+ * board sources are here for the same reason in reverse: two boards resolving to one `boardRoot`
+ * is a copy-paste that reads as a second board and builds the first one twice.
+ */
+export const BOARD_OWN_KEYS = [
+  'boardRoot',
+  'boardManifest',
+  'chapterDir',
+  'chapterOverview',
+  'stateLedger',
+  'handoverFile',
+  'evidenceDir',
+];
+
+/** The boards a config declares, in the order it declares them. `//` entries are notes. */
+export function boardNames(config) {
+  const boards = config?.[BOARDS_KEY];
+  if (!boards || typeof boards !== 'object' || Array.isArray(boards)) return [];
+  return Object.keys(boards).filter((name) => !name.startsWith('//'));
+}
+
+/**
+ * Which board a run is about, and why.
+ *
+ * <p>Three answers, in this order: the one the command named, the one whose sources the command
+ * was run inside, and — where the project declares exactly one — that one. **A project declaring
+ * several and a command naming none is refused rather than defaulted**: a build that picks a board
+ * on the reader's behalf writes chapters, ledger rows and evidence into whichever one it guessed,
+ * and every one of those is a file somebody has to find again to undo.
+ *
+ * @returns `{ board, names, error }` — `board` is null for a flat config and for a refusal
+ */
+export function resolveBoard(config, { board = null, cwd = process.cwd(), root } = {}) {
+  const names = boardNames(config);
+  if (!names.length) {
+    return {
+      board: null,
+      names,
+      error: board
+        ? `--board ${board} was given and this project declares no boards — a single-board project puts its keys at the top level`
+        : null,
+    };
+  }
+  if (board) {
+    return names.includes(board)
+      ? { board, names, error: null }
+      : { board: null, names, error: `no board named ${board} — this project declares ${names.join(', ')}` };
+  }
+  const here = boardContaining(config, names, cwd, root);
+  if (here) return { board: here, names, error: null };
+  if (names.length === 1) return { board: names[0], names, error: null };
+  return {
+    board: null,
+    names,
+    error:
+      `this project declares ${names.length} boards (${names.join(', ')}) and nothing said which one this is about — `
+      + 'name it with --board, or run the command from inside that board\'s own directory',
+  };
+}
+
+/**
+ * The board whose sources the working directory sits inside, if any.
+ *
+ * <p>Matched against the board's own folder rather than its source directory: `wf.mjs`, `dev.sh`
+ * and the board config sit one level above `src/`, and that folder is where somebody drawing the
+ * board actually stands. The longest match wins, so a board nested inside another's tree still
+ * resolves to itself.
+ */
+function boardContaining(config, names, cwd, root) {
+  const here = resolve(cwd);
+  let best = null;
+  let bestLength = -1;
+  for (const name of names) {
+    const declared = config[BOARDS_KEY][name]?.boardRoot;
+    if (typeof declared !== 'string' || !declared) continue;
+    const sources = isAbsolute(declared) ? declared : join(root, declared);
+    for (const candidate of [sources, dirname(sources)]) {
+      if (candidate === root) continue;
+      if (here !== candidate && !here.startsWith(`${candidate}/`)) continue;
+      if (candidate.length > bestLength) {
+        best = name;
+        bestLength = candidate.length;
+      }
+    }
+  }
+  return best;
+}
+
+/**
  * Every key the skill reads, what it names, and what the value has to be.
  *
  * <p>`kind` decides both the type check and what existence means:
@@ -374,8 +493,28 @@ export function loadProject(configPath, options = {}) {
   const root = dirname(dirname(abs));
   const { config, error } = readJson(abs);
 
+  // Which of the project's boards this run is about. A single-board project resolves to null and
+  // every lookup below falls through to the top level, which is what it did before boards existed.
+  const { board, names: boards, error: boardError } = resolveBoard(config, {
+    board: options.board ?? null,
+    cwd: options.cwd ?? process.cwd(),
+    root,
+  });
+
+  /**
+   * The value as the project wrote it, before an empty one is read as an absence.
+   *
+   * <p>A board's own value wins over the shared one for the same key. `configGate` needs the
+   * undecided form as well — `""` declared is a key that declares nothing, which is a finding, and
+   * an absent key is not — so the two readers are one function and one collapse.
+   */
+  const raw = (key) => {
+    const scoped = board ? config?.[BOARDS_KEY]?.[board]?.[key] : undefined;
+    return scoped !== undefined ? scoped : config?.[key];
+  };
+
   const declared = (key) => {
-    const value = config?.[key];
+    const value = raw(key);
     return value === undefined || value === null || value === '' ? null : value;
   };
 
@@ -426,7 +565,14 @@ export function loadProject(configPath, options = {}) {
     config,
     parseError: error,
     options,
+    /** The board this run is about, or null where the project declares one board and no map. */
+    board,
+    /** Every board the project declares, in declaration order; empty for a flat config. */
+    boards,
+    /** Why no board could be chosen, where several are declared and nothing said which. */
+    boardError,
     declared,
+    raw,
     // The project's line grammar, compiled once. A gate reads `ctx.lines.persona` and never
     // imports the compiler: a project's own gate file cannot reach into the skill by path — the
     // skill is installed somewhere else on every machine — so what a gate needs arrives here.

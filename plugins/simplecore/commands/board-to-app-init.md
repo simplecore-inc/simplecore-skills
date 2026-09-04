@@ -37,6 +37,15 @@ repository.
    **An application with no screens yet is the normal starting point**, not a reason to wait. That
    is what the chapters are for.
 
+   **`boards` holding more than one entry means this repository draws two products, and each of
+   them gets its own build.** Wire both in this one pass — one `boards` entry per board, each with
+   its own `chapterDir`, `chapterOverview`, `stateLedger`, `handoverFile` and `evidenceDir`, and
+   everything the two share left at the top level. Wiring one and leaving the other is the failure
+   worth naming out loud: the config is then valid, `doctor` is green, and the second product has
+   no build at all while nothing on disk says so. `references/config.md` § *A repository that draws
+   two products declares two boards* has the shape, and `boardsGate` refuses two boards that share
+   a progress file.
+
    **A board before the current contract is a different matter, and it is the one thing here that
    is worth stopping for.** Every check the kit holds — permanent ids, balanced markup, reachability,
    the documents agreeing with the board — reaches a board through the kit, so a board that builds
@@ -61,7 +70,9 @@ repository.
 3. **Write `.claude/board-to-app.json`** from
    `${CLAUDE_PLUGIN_ROOT}/skills/board-to-app/assets/board-to-app.json`, setting each path to where
    the thing actually is. Then run `node
-   "${CLAUDE_PLUGIN_ROOT}/skills/board-to-app/scripts/bta.mjs" doctor` and read its grades:
+   "${CLAUDE_PLUGIN_ROOT}/skills/board-to-app/scripts/bta.mjs" doctor` — **once per board, with
+   `--board <name>`, where the project declares several**; a report that does not name its board is
+   about a build somebody has to guess at. Read its grades:
 
    - `✖` — required, and nothing works until it is declared.
    - `◑` — **every chapter needs it to CLOSE.** Everything runs, nothing finishes. Five keys carry

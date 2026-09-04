@@ -43,7 +43,7 @@
 // the abstract. It was whether the check can be RUN in a repository that declares this skill's
 // keys and nothing more. Three can; two need a file the skill has no name for.
 import { pathToFileURL } from 'node:url';
-import { COLOR_SCHEMES, HEADING_ROLES, SCHEMA, STANDARD_FIELDS, isPathKey } from './context.mjs';
+import { BOARDS_KEY, BOARD_OWN_KEYS, COLOR_SCHEMES, HEADING_ROLES, SCHEMA, STANDARD_FIELDS, boardNames, isPathKey } from './context.mjs';
 import { NARRATIVE_PHRASES, hasHeading, onlyQuoted, proseLines, sectionUnder } from './prose.mjs';
 import { EVIDENCE_GATES } from './evidence.mjs';
 import { EYES_GATES } from './eyes.mjs';
@@ -124,7 +124,10 @@ export const configGate = {
 
     const findings = [];
     for (const [key, spec] of Object.entries(SCHEMA)) {
-      const raw = ctx.config[key];
+      // Through the board, not past it: on a project with several boards the value lives under
+      // the board this run is about, and reading the top level would report every one of that
+      // board's keys as undeclared while the build ran on them.
+      const raw = ctx.raw(key);
       const value = ctx.declared(key);
 
       if (value === null) {
@@ -393,6 +396,66 @@ export const deferredKeyGate = {
       findings.push(
         `${key}: ${when} is there, so ${entry.chapter} has created what the key names — declare it now; while it is absent the build runs as though the subject does not exist`
       );
+    }
+    return findings;
+  },
+};
+
+/**
+ * Two boards in one repository can be built and reported apart.
+ *
+ * <p>A project drawing two products declares them under `boards`, and the whole point of doing so
+ * is that each one has its own chapters, its own ledger and its own evidence. **A key that carries
+ * progress and is shared between two boards does not give one build twice; it gives one set of
+ * rows about whichever board wrote last**, and nothing on disk says which — so 「어느 챕터까지
+ * 갔는가」 has no answer for either product, which is the one question the ledger exists to answer.
+ *
+ * <p>It also refuses a board that declares nothing of its own. An entry under `boards` with no
+ * board sources and no progress files is a name that resolves to the shared config, so naming it
+ * builds the other board a second time under a second ledger row.
+ */
+export const boardsGate = {
+  id: 'boardsGate',
+  title: 'a project declaring several boards has boards that cannot progress apart',
+  needs: [],
+  run: (ctx) => {
+    const boards = ctx.config?.[BOARDS_KEY];
+    if (boards === undefined) return [];
+    if (!boards || typeof boards !== 'object' || Array.isArray(boards)) {
+      return [`${BOARDS_KEY} must be an object of board name to the keys that board declares`];
+    }
+    const names = boardNames(ctx.config);
+    if (!names.length) return [`${BOARDS_KEY} is declared and names no board — a project with one board puts its keys at the top level`];
+
+    const findings = [];
+    const claimed = new Map();
+    for (const name of names) {
+      const entry = boards[name];
+      if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
+        findings.push(`${BOARDS_KEY}.${name} must be an object of the keys that board declares`);
+        continue;
+      }
+      const own = BOARD_OWN_KEYS.filter((key) => typeof entry[key] === 'string' && entry[key].trim());
+      if (!own.length) {
+        findings.push(
+          `${BOARDS_KEY}.${name} declares nothing of its own — a board with no sources and no `
+          + `progress files of its own resolves to the shared config, so building it builds the `
+          + `other board again under a second row. Declare at least one of ${BOARD_OWN_KEYS.join(', ')}`
+        );
+      }
+      for (const key of own) {
+        const where = `${key} → ${entry[key]}`;
+        const other = claimed.get(where);
+        if (other) {
+          findings.push(
+            `${BOARDS_KEY}.${name} and ${BOARDS_KEY}.${other} both declare ${where} — two boards `
+            + 'sharing this do not run two builds, they run one whose rows are about whichever '
+            + 'board wrote last, and nothing says which'
+          );
+        } else {
+          claimed.set(where, name);
+        }
+      }
     }
     return findings;
   },
@@ -1170,6 +1233,7 @@ export const generatedArtefactsMatchHead = {
 /** The gates that hold on any project that builds from a board. */
 export const CORE_GATES = [
   configGate,
+  boardsGate,
   deferredKeyGate,
   commitPolicyGate,
   handoverGate,

@@ -111,6 +111,34 @@ them — copy `assets/board-parity-walk.json`, whose fields are:
 | `narrativePhrases` | extends the point-of-view phrasing the handover check refuses, for a project writing in neither Korean nor English |
 | `frameDeliverables` | what each frame owes beyond working code, one sentence each that a walker can check against what the walk produced; empty for a project that requires nothing |
 
+### A repository with two boards walks them apart
+
+**One board is the ordinary case and nothing here applies to it.** Where a repository draws two
+products, each board declares its own `parityList` and `handoverFile` under `boards`, and the rest
+of the config stays shared:
+
+```json
+{
+  "boards": {
+    "console":   { "parityList": "_plans/console/SCREEN-PARITY.md",   "handoverFile": "_plans/console/WALK-NOTES.md" },
+    "workbench": { "parityList": "_plans/workbench/SCREEN-PARITY.md", "handoverFile": "_plans/workbench/WALK-NOTES.md" }
+  },
+  "parkedSection": "Parked decisions",
+  "logDir": ".walk-logs",
+  "capturesDir": ".captures"
+}
+```
+
+**The two documents are never shared.** The list holds what is LEFT, and a walk crosses a frame off
+it as the frame lands; one list carrying two products' frames cannot say which product a remaining
+line belongs to, and the next session picks up whichever it reads first. The handover is the same
+in the other direction — how to stand up a desktop application and how to stand up a web console
+are different facts, and a walker handed both has to work out which half is theirs.
+
+**Say the board in the first line of every return and every dispatch.** Both boards number their
+sections from the beginning, so 「B 구역을 처리했다」 names two different sets of screens and neither
+of them alone.
+
 ### Check the wiring every time this skill loads
 
 **Run this before anything else, on every invocation** — including a session that

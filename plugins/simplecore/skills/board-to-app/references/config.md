@@ -67,6 +67,46 @@ goes or how two agents writing one avoid each other, so backends that were meant
 parallel run one at a time and nothing says why. A promise turns that into a fact on disk that
 `bta.mjs check` reads.
 
+## A repository that draws two products declares two boards
+
+**One board is the ordinary case and nothing here applies to it.** A project with a single board
+declares every key at the top level, exactly as the table below lists them, and never writes a
+`boards` key.
+
+**Two products drawn on two boards is a different arrangement, not a bigger one.** A desktop
+application and a web console can share a repository, a glossary, a locale list and a set of gates
+and share nothing at all about where either one is in its build. So the shared keys stay where they
+are and each board declares what is its own:
+
+```json
+{
+  "boards": {
+    "console":   { "boardRoot": "wireframes/console/src",   "stateLedger": "docs/build/console/STATE.md" },
+    "workbench": { "boardRoot": "wireframes/workbench/src", "stateLedger": "docs/build/workbench/STATE.md" }
+  },
+  "locales": ["ko", "en", "ja"]
+}
+```
+
+A board's value wins over the shared one for the same key. That is what lets two boards share a
+locale list and differ on the address their application opens at, and it means a key moves down
+into a board only when the two products genuinely disagree about it.
+
+**Seven keys must be a board's own and may never be shared** — `boardRoot`, `boardManifest`,
+`chapterDir`, `chapterOverview`, `stateLedger`, `handoverFile`, `evidenceDir`. Every one of them
+carries PROGRESS. Two boards pointing at one state ledger do not have two builds running side by
+side; they have one ledger whose rows are about whichever board wrote last, and nothing on disk
+says which — so 「어느 챕터까지 갔는가」 has no answer for either product, which is the one question
+the ledger exists to answer. `boardsGate` refuses it, and refuses a board that declares nothing of
+its own for the same reason in reverse: a name resolving entirely to the shared config builds the
+other board a second time under a second row.
+
+**Every command is about ONE board, and it never picks for itself.** In order: the board
+`--board <name>` names, the board whose folder the command was run inside, and — where the project
+declares exactly one — that one. A project declaring several while nothing says which is **refused**,
+because everything a run writes (a chapter, a ledger row, a result document, a capture folder) lands
+under one board, and each of those is a file somebody has to find again to undo.
+
 Where an example path appears anywhere in this skill or its references it is written
 as `<boardRoot>/manifest.mjs` — a shape, never a default. Keys the skill does not
 know are ignored, so a project may keep a `"//"` note of its own in the file.

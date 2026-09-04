@@ -99,6 +99,30 @@ to move it.
 
 **Moved to `references/config.md`, read when you are wiring a project, or a key you need is not declared.** It holds every key, what it buys, what its absence costs, and the rules for editing the file as text rather than through an encoder.
 
+## One repository, two boards — every run names which one
+
+**A session is about ONE board, and it says which before it does anything.** A repository drawing
+two products declares both under `boards` and gives each its own chapters, ledger, handover and
+evidence; what they share is the glossary, the gates, the locales and the repository itself. Nothing
+about one board's progress is readable from the other's, which is the whole reason they are declared
+apart.
+
+- **Name it on every command**: `node bta.mjs check --board <name>`, or run the command from inside
+  that board's own folder and it resolves itself. A project declaring several while nothing says
+  which is refused — everything a run writes lands under one board, and a guess puts a chapter, a
+  ledger row and a folder of captures somewhere somebody has to find again to undo.
+- **Say it in the first line of the report**, beside the chapter: 「workbench 보드 · O 챕터」. A
+  coordinator's return that names a chapter and not its board is one nobody can act on, because both
+  boards number their chapters from the beginning.
+- **Two boards are two builds and may run at once** — they touch different screens and different
+  ledgers. What they must not do is share a working tree at the same moment for the same reason two
+  chapters must not: `git` is one tree, and two agents writing it are one agent's work lost.
+- **A chapter of one board never depends on a chapter of the other.** Where the two products do share
+  something — a schema, a protocol, a module — that shared thing is a chapter of the board whose
+  product owns it, and the other board's chapter names it in its handover rather than in its
+  prerequisites. A prerequisite that crosses boards puts one build's progress inside the other's
+  ledger, which is the arrangement `boardsGate` exists to keep off disk.
+
 ## The rules the build runs on
 
 1. **Dependency order, not board order.** A chapter starts only when every chapter
@@ -133,7 +157,8 @@ to move it.
 ## Opening a session
 
 1. **The config**, read against the table above — a missing required key is reported
-   before anything else happens.
+   before anything else happens. **On a project declaring several boards, which board this
+   session is about is settled here and named in every line afterwards.**
 2. **The chapter table and the state ledger.** The open chapter is the first one whose
    tests have not all passed — not the first with missing code.
 3. **The open items.** What the last session parked is read before anything is
