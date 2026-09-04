@@ -33,6 +33,67 @@ agent's judgement. Both halves are marked in the skill's *Held by eyes* table, b
 saying what a checker *could* do is read as one somebody already wrote — which is the third
 category this skill spends a section refusing.
 
+## A value a capture shows is produced by the path the product uses
+
+**Typing a value into a fixture so the screen matches the board is never allowed.** Not as a
+shortcut, not for one state nobody can otherwise reach, not while the real path is being built.
+This is the rule the rest of this file assumes, and it is stated first because breaking it costs
+more than every other mistake here combined.
+
+**Why it is absolute.** A capture exists to show what the product does. A capture of a screen fed
+hand-written values shows what somebody wrote down, arranged to look like what the board drew — and
+it is indistinguishable from the real thing in every check, in the result document, and to whoever
+opens it a year later. It does not merely fail to prove the product works. **It produces evidence
+that the product works when nothing has been shown to**, and that evidence outlives the session
+that made it.
+
+**And every check stays green while it happens**, which is what makes this the most expensive proxy
+in the set: the seed makes the numbers the board draws, and the numbers came from the same hand that
+drew the board. 「the seed produces the figure the board draws」 passes while the figure describes
+nothing → `../SKILL.md` § *Waste does not announce itself*.
+
+### Where the fake is allowed to sit
+
+**At the wire it is a test instrument. Past the decoder it is a forged reading.** That single line
+decides every case, and it is the only judgment this rule needs:
+
+| | What it is | Allowed |
+| --- | --- | --- |
+| a recorded or edited response from the device or service the product reads — an SNMP walk, an HTTP fixture, a message on a queue | a test double for the world | ✔ |
+| a row written straight into the store, or a domain object composed and handed to the layer above the collector | a forged reading | ✖ |
+
+**The product's own decoding, mapping, arithmetic and parsing must run.** They are usually most of
+what the screen displays: a device detail page is that decoding, rendered. Bypass them and the
+capture shows values nobody has shown the product could produce.
+
+### The three ways a state is legitimately produced
+
+Every device, record and state in a fleet is one of these, and a result document says which:
+
+1. **A replayed capture of the real thing** — a recorded walk, a saved response, a captured payload,
+   decoded by the product's own path. Deterministic, because the recording is fixed.
+2. **An edited capture** — the same recording with the value that state needs changed **at the
+   source**: the OID that carries the supply level, the field in the saved response. Still a test
+   instrument; the product still decodes it.
+3. **An action taken on collected data** — excluding a device, letting a walk time out, stopping an
+   agent. The state is produced by doing the thing, never by writing the row the thing would have
+   produced.
+
+**A state that fits none of the three is reported as unproduced**, and its demand is answered by
+saying so. That is a smaller loss than it sounds and an honest one: a fleet recorded as 「17 replayed,
+2 edited, 1 by exclusion」 is worth more than 20 composed silently, because a reader can weigh it.
+
+### When the real path is awkward to reach
+
+**Make it reachable.** Move the fixtures, add a shared test module, invert the dependency that is
+backwards. Report the cost if it is large — that is a real finding and somebody may decide
+differently — but **do not route around it**, because routing around it produces exactly the
+evidence this rule exists to prevent, and produces it silently.
+
+**Most projects already have the path and are not using it.** The recorded responses were captured
+for the collector's own tests, the replay harness exists in another module, and nobody connected
+them to the screens. Look before concluding it has to be built.
+
 ## A seed that only inserts stops being true, and says nothing about it
 
 **The seed that skips a row it already finds is the default shape, and it has one property

@@ -865,6 +865,15 @@ things otherwise turn into a question, and none of them has to.
 3. **What data should exist?** The numbers the board draws are the fixture specification: a frame
    drawing a count of 119 valid records says the seed makes 119. One story, one site, every chapter
    on top of the last → `references/scenario.md`.
+
+   **And it is produced by the path the product uses.** Typing a value into a fixture so the screen
+   matches the board is never allowed — a capture of a screen fed hand-written values is
+   indistinguishable from a real one in every check and to every later reader, so it does not fail
+   to prove the product works, it **produces evidence that it works when nothing has been shown
+   to**. The fake belongs at the wire — a recorded or edited response from whatever the product
+   reads — never past the decoder, because the decoding is most of what the screen displays. Where
+   the real path is awkward to reach, make it reachable and report the cost; routing around it is
+   the one move that is not available → `references/scenario.md` § *A value a capture shows*.
 4. **An unresolved question in a frame.** A frame carrying an open question — `OPEN:`, or whatever
    marker that board writes for one — is built as drawn and does not hold the chapter: the open
    question travels with the frame, not with the build.
@@ -1462,7 +1471,7 @@ rediscovering it:
 | you are writing the result document a chapter closes on, or a board fix has left a closed chapter quoting a sentence it no longer carries | `references/evidence.md` — the shape of a section, the capture naming and its ceiling, one picture per content pane, and the four paths out of a drifted quote |
 | you are about to drive the product — browser, simulator, device | `references/driving-the-product.md`, which also says where a low-level command beats the tool |
 | two agents must write one file, or a measurement surprises you, or a check has never fired | `references/harness.md` |
-| you are deciding what the seed and the captures tell as one story | `references/scenario.md` |
+| you are deciding what the seed and the captures tell as one story, or where a fixture's values are allowed to come from | `references/scenario.md` — the provenance rule first, then the story |
 | you are writing or widening the generator that produces the chapters | `references/demands.md` — what a demand list holds, why a demand is an act rather than an observation, and the three ways an irreversible verb is walked up to |
 | the project has been reconciling its board frame by frame and has no chapter set yet | `references/migrating-from-a-walk.md` — what its config carries over, how the chapters are decided, and the order that leaves the project working at every step |
 
