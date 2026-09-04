@@ -615,6 +615,18 @@ the build's own wiring — is not this and runs whenever it is ready.
 quote: a section written against it records a check nobody could have made. Release that one
 immediately, say which sections it invalidates, and hand the list to whoever is running the round.
 
+**What a held fix will move is measured before it is released, in a copy.** A change to the
+generator, a placement file or the build config is read against every board it reaches by
+generating into a throwaway `git worktree` at the commit the chapters were last generated from:
+copy the changed files in, link the board's `.kit`, generate, `git diff --stat` that board's
+chapters against the commit, remove the worktree. No tree anybody is working in is touched, and
+the diff is the reconciliation the release will cost, section by section. Generate twice to
+separate the fix's share from board drift — once with the committed generator, which shows the
+lines the board moved on its own since the chapters were written, and once with the changed one;
+what differs between the two runs is the fix. A line that moved on its own is a reconciliation
+item whichever fix is released, and it is found here rather than as a red gate after regenerating,
+when the first minutes go to blaming the fix for it.
+
 ## When what a chapter demands of a screen grows
 
 **Re-run the demand that was added, not the section that carried it.** A chapter whose lines gain a
