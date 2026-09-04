@@ -35,9 +35,11 @@ export const badges = (items) => `<div class="badges">${items.join('')}</div>`
 // contract nobody can build to — a wizard's address box is empty when its step opens, because the
 // address is the thing being asked for.
 export function field({ label, value, hint, select = false, error, placeholder }) {
+  // A value carrying newlines is drawn as the several lines it is — see `.input.multi`.
+  const multi = typeof value === 'string' && value.includes('\n') ? ' multi' : ''
   const input =
     value != null
-      ? `<span class="input">${value}${select ? ' <span>▾</span>' : ''}</span>`
+      ? `<span class="input${multi}">${value}${select ? ' <span>▾</span>' : ''}</span>`
       : placeholder != null
         ? `<span class="input"><span class="ph">${placeholder}</span>${select ? ' <span>▾</span>' : ''}</span>`
         : `<span class="input">input</span>`

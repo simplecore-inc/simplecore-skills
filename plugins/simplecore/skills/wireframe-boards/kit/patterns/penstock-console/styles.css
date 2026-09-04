@@ -235,6 +235,12 @@
     border: 1.5px solid var(--line-strong); border-radius: 8px;
     padding: 11px; text-align: center; font-size: 14px; font-weight: 600;
     background: var(--screen);
+    /* A label breaks between words and never inside one. The cell around a button may set
+       `overflow-wrap: anywhere` so a long value cannot escape its column, and a button inheriting
+       that splits 「SNMP 접근」 into 「SNMP 접」 and 「근」. `nowrap` would fix the split and cost the
+       break a narrow cell needs, so the two are separated: keep-all forbids the break inside a
+       word, and the space between words still breaks. */
+    overflow-wrap: normal; word-break: keep-all;
   }
   .btn.primary { background: var(--fill-deep); }
   .btn.ghost { border-style: dashed; color: var(--muted); }
@@ -400,7 +406,14 @@
   .vtitle { font-size: 13px; font-weight: 700; white-space: nowrap; }
   .vcount { font: 10px var(--mono); color: var(--faint); white-space: nowrap; }
   .ws .toolbar { padding: 7px 10px; flex: 0 0 auto; border-bottom: 1px solid var(--line); background: var(--screen); }
-  .ws .toolbar .btn { padding: 4px 9px; font-size: 11px; }
+  .ws .toolbar .actions { align-items: center; gap: 6px; }
+
+  /* One control scale for the whole window — see the block under 「데스크톱 창의 컨트롤 크기」. */
+
+  /* A strip at the head of a pane body spans the pane and carries the boundary itself. */
+  .ws .pane-body > .tabs { margin: -12px -12px 0; padding: 8px 12px 0; background: var(--fill);
+    border-bottom: 1px solid var(--line); }
+  .ws .pane-body > .tabs .tb.on { margin-bottom: -1px; border-bottom: 1px solid var(--screen); }
 
   /* inspector: what is selected (tabs) above, what has happened (activity) below */
   .ws .pane.insp .activity { flex: 0 0 auto; display: flex; flex-direction: column;
@@ -562,7 +575,15 @@
   .tri .source { flex: 1.25; }
   .tri .evid { flex: 0 0 300px; }
   .pane-head { display: flex; align-items: center; gap: 8px; padding: 8px 12px;
-    border-bottom: 1px solid var(--fill-deep); background: var(--fill); font: 700 11px var(--mono); letter-spacing: .03em; }
+    border-bottom: 1px solid var(--line); background: var(--fill); font: 700 11px var(--mono); letter-spacing: .03em; }
+  /* A head that carries tabs gives up its bottom padding: the tabs stand on the head's own border
+     and the active one covers it, so the body below starts where the tab ends. */
+  .pane-head.tabbed { align-items: flex-end; padding-bottom: 0; }
+  .pane-head.tabbed .tabs { margin-bottom: -1px; }
+  .pane-head.tabbed .tabs .tb.on { border-bottom: 1px solid var(--screen); }
+  /* The head's own controls keep the middle. Aligned to the foot with the tabs they sit ON the
+     boundary, which reads as a control belonging to the content below rather than to the head. */
+  .pane-head.tabbed > *:not(.tabs) { align-self: center; }
   .pane-body { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 8px; padding: 12px; }
   .pane-body.row2 { flex-direction: row; gap: 10px; }
   .pane-body.tight { padding: 8px 6px; gap: 0; }
@@ -571,10 +592,14 @@
   .avatar { width: 22px; height: 22px; border-radius: 50%; background: var(--fill-deep); border: 1px solid var(--line); flex: 0 0 auto; }
   /* two panes at 1024: the evidence pane folds into a tab beside the source */
   .tri .tp.source:last-child { flex: 1.5; }
-  .tabs { display: flex; gap: 4px; }
-  .tabs .tb { font: 600 10.5px var(--mono); color: var(--muted); border: 1px solid var(--line); border-bottom: 0;
-    border-radius: 5px 5px 0 0; padding: 3px 9px; background: var(--fill); }
-  .tabs .tb.on { background: var(--screen); color: var(--ink); border-color: var(--line-strong); }
+  /* A tab row names the area under it, so it sits ON that area's boundary: the strip carries the
+     line, the active tab notches out of it, and nothing stands between the strip and the content.
+     A gap there reads as two unrelated things stacked, and a strip with no line under it reads as
+     a row of buttons. */
+  .tabs { display: flex; gap: 2px; align-items: flex-end; }
+  .tabs .tb { font: 600 10.5px var(--mono); color: var(--muted); border: 1px solid transparent; border-bottom: 0;
+    border-radius: 5px 5px 0 0; padding: 4px 10px; background: transparent; white-space: nowrap; }
+  .tabs .tb.on { background: var(--screen); color: var(--ink); border-color: var(--line); }
   /* the ask surface has no left nav — a slim brand bar carries project + account */
   .askbar { display: flex; align-items: center; gap: 10px; padding: 9px 16px; border-bottom: 1px solid var(--fill-deep); }
   .askbar .mark { width: 18px; height: 18px; border: 1.5px solid var(--line-strong); border-radius: 5px; }
@@ -588,6 +613,36 @@
      Signing in and choosing a project happen before there is a project to
      put in panes. The window still has a fixed height, so the column
      centres in it and the fold stays the window bottom. */
+  /* ── 데스크톱 창의 컨트롤 크기 ──────────────────────────────────────────────
+     The touch-sized defaults belong to a phone and to the entry surfaces (signing in, activating),
+     where a control is the only thing on screen. Inside an application window the same button sits
+     in a toolbar, a card, a table cell and a dialog, and three heights in one row read as three
+     different kinds of control — which is why this is scoped to the FRAME rather than to the work
+     area: a dialog is an overlay outside `.ws`, and scoping it there left every dialog at the
+     touch scale beside a window drawn at the window scale. */
+  .frame.desktop .btn { border-width: 1px; border-radius: 6px; padding: 4px 10px; font-size: 11px; }
+  .frame.desktop .btn.sm { padding: 2px 7px; font-size: 10.5px; }
+  .frame.desktop .input { padding: 4px 8px; font-size: 11.5px; border-radius: 6px; }
+  .frame.desktop .label { font-size: 11px; }
+  .frame.desktop .chip { padding: 2px 9px; font-size: 11px; }
+  .frame.desktop .field { gap: 3px; }
+  /* The line under a field explains the box above it, so it is smaller than the label — at body
+     size it reads as a paragraph the form is making rather than as a note about one box. */
+  .frame.desktop .field .t-sub, .frame.desktop .modal .hint { font-size: 10.5px; line-height: 1.45; }
+  .frame.desktop .modal { padding: 14px; gap: 9px; border-radius: 10px; }
+  .frame.desktop .modal .t-title { font-size: 13px; }
+
+  /* A value with several lines in it is several lines in the box. Collapsed to one line the frame
+     says the field holds one subnet when it holds two, which is a contract nobody can build to.
+     `field()` marks the box rather than the stylesheet marking every box: a value that merely
+     wraps is one line of text and must keep wrapping the way its neighbours do. */
+  .input.multi { white-space: pre-line; display: block; }
+
+  /* The entry surfaces keep the touch scale: one column, one decision, nothing else on screen. */
+  .centerpage .btn { border-width: 1.5px; border-radius: 8px; padding: 9px 12px; font-size: 13px; }
+  .centerpage .input { padding: 8px 10px; font-size: 12.5px; }
+  .centerpage .label { font-size: 12px; }
+
   .centerpage { flex: 1; min-height: 0; display: flex; flex-direction: column;
     align-items: center; justify-content: center; gap: 18px; padding: 32px; overflow: hidden; }
   .centerpage.top { justify-content: flex-start; }

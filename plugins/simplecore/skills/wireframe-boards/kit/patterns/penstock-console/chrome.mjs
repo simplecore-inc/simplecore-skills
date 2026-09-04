@@ -154,7 +154,7 @@ export function makeChrome({
    * for what has happened. The two are different axes, so activity is never a tab.
    */
   const inspPane = ({ tabs: tabRow, body, activity: events, collapsed = false, lg = false }) =>
-    `<div class="pane insp${lg ? ' lg' : ''}">${tabRow ? `<div class="pane-head">${tabRow}</div>` : ''}` +
+    `<div class="pane insp${lg ? ' lg' : ''}">${tabRow ? `<div class="pane-head tabbed">${tabRow}</div>` : ''}` +
     `<div class="pane-body scrolls">${body}</div>${activityPane({ events, collapsed })}</div>`;
 
   /** appShell: titlebar + work area + status bar. `panes` is already-composed pane HTML.
