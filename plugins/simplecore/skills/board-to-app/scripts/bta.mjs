@@ -129,20 +129,41 @@ async function proveGates() {
     project: builders.project,
     add: (gate, name, ctx, shouldFire) => collected.push({ gate, name, ctx, shouldFire }),
   };
+  const modules = new Set();
 
   coreCases(registrar);
 
   // A project's own gates are proved by the project's own cases, in the same module.
+  //
+  // **Every board's module, not the one this run happened to resolve to.** A project that declares
+  // several boards has a project gate module per board, and a load with no board named resolves to
+  // none of them — so the command proved the core cases alone and reported 「both directions」, which
+  // is a green run over rules nobody ran. That is the same silence this command exists to break.
   const declaredConfig = opt('config') ?? findConfig();
   let gates = CORE_GATES;
   if (declaredConfig) {
-    const ctx = loadProject(declaredConfig, {});
-    const resolved = await gatesFor(ctx);
-    gates = resolved.gates;
-    if (resolved.projectModule && ctx.exists(resolved.projectModule)) {
-      const mod = await import(pathToFileURL(resolved.projectModule).href);
+    const named = opt('board');
+    const first = loadProject(declaredConfig, { board: named });
+    const boards = named ? [named] : first.boards.length ? first.boards : [null];
+    const seen = new Set();
+    const project = [];
+    for (const board of boards) {
+      const ctx = board === null || board === named ? first : loadProject(declaredConfig, { board });
+      const resolved = await gatesFor(ctx);
+      for (const gate of resolved.gates) {
+        if (CORE_GATES.includes(gate) || seen.has(gate.id)) continue;
+        seen.add(gate.id);
+        project.push(gate);
+      }
+      if (!resolved.projectModule || !ctx.exists(resolved.projectModule)) continue;
+      const href = pathToFileURL(resolved.projectModule).href;
+      // Two boards may name one module; its cases are registered once or every case runs twice.
+      if (modules.has(href)) continue;
+      modules.add(href);
+      const mod = await import(href);
       if (typeof mod.cases === 'function') mod.cases(registrar);
     }
+    gates = [...CORE_GATES, ...project];
   }
 
   const bad = runCases(collected, gates);
