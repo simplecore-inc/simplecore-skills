@@ -273,7 +273,10 @@ export const noInstructionIsWrittenTwice = {
 /** Sentences long enough to be an instruction rather than a heading or a table cell. */
 function sentencesOf(text) {
   const out = [];
-  const lines = text.split('\n');
+  // A comment is provenance a tool wrote — 「written by /simplecore:board-init in its routed form」 —
+  // and every routed board carries the same one by template. It is not an instruction and does not
+  // drift, so it is taken out before the sentences are compared.
+  const lines = text.replace(/<!--[\s\S]*?-->/g, (block) => block.replace(/[^\n]/g, '')).split('\n');
   let fenced = false;
   lines.forEach((line, i) => {
     if (/^\s*```/.test(line)) { fenced = !fenced; return; }

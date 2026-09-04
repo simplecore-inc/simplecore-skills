@@ -1508,7 +1508,9 @@ export const journeyTestsDriveTheApplication = {
   run: (ctx) => {
     const route = String(ctx.declared('captureRoute') ?? '');
     const stem = route.includes('<') ? route.slice(0, route.indexOf('<')) : route;
-    if (!stem.trim()) return [];
+    // A frame route that is not an address — a test's name on a desktop product — renders nothing a
+    // journey could be driven at, so there is nothing to read the tests for.
+    if (!stem.trim() || !/^(?:https?:\/\/|\/)/.test(stem.trim())) return [];
     const journey = ctx.declared('journeyRoute');
     if (journey && String(journey).includes(stem)) return [];
     const dir = ctx.declared('journeyTestsDir');
@@ -1869,6 +1871,8 @@ export function cases(t) {
   });
   t.add('journeyTestsDriveTheApplication', 'a journey test that opens the frame route', tests("await page.goto('http://localhost:1420/?frame=a-01');\nawait page.click('text=등록');\n"), true);
   t.add('journeyTestsDriveTheApplication', 'a journey test that opens the application', tests("await page.goto('http://localhost:1420/');\nawait page.click('text=조직');\n"), false);
+  t.add('journeyTestsDriveTheApplication', 'a frame route that is a test name rather than an address, named by a journey test',
+    t.project({ config: { ...WORDS, chapterDir: 'chapters', journeyTestsDir: 'tests/journeys', captureRoute: 'FrameCaptureTest' }, files: { 'chapters/00-overview.md': '# 챕터\n', 'tests/journeys/w02.spec.kt': 'class SettingsJourneyTest : FrameCaptureTest()\n' } }), false);
 
   // A board that gives every state of a screen its own frame writes ids with a state letter on
   // them, which is what `simplecore:wireframe-boards` draws. A pattern stopping at the digits reads
