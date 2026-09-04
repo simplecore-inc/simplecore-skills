@@ -124,6 +124,19 @@ export function cases(t) {
     base({ loaded: [{ num: 'X-01', file: 'x-01-a', label: 'a', mod: { overlay: '<div class="modal">x</div>', body: '<main></main>' } }] }), true);
   add('overlayGate', 'overlay를 넘김',
     base({ loaded: [{ num: 'X-01', file: 'x-01-a', label: 'a', mod: { overlay: '<div class="modal">x</div>', body: '<main><div class="modal">x</div></main>' } }] }), false);
+  // A target is read by whoever derives flow from the board; one naming a frame that is not there
+  // falls back silently to a guess from the label, so the gate has to speak where the reader does not.
+  // The harness numbers a screen `X-02` from `x-02-a` (no state letter), so the targets here are
+  // written in that shape; a built board's numbers carry the letter and the gate reads both.
+  const TARGETED = (t) => ({ body: `<div class="btn primary" data-target="${t}">다음</div>` });
+  add('targetGate', '없는 프레임을 가리키는 행선지',
+    ctxWith([screen('x-01-a', '', TARGETED('X-02 둘'))]), true);
+  add('targetGate', 'id처럼 시작하지만 id의 모양이 아니다',
+    ctxWith([screen('x-01-a', '', TARGETED('X-2a 둘')), screen('x-02-a', '')]), true);
+  add('targetGate', '있는 프레임을 가리킨다',
+    ctxWith([screen('x-01-a', '', TARGETED('X-02 둘')), screen('x-02-a', '')]), false);
+  add('targetGate', 'id가 아닌 글자 행선지는 패턴의 몫이다',
+    ctxWith([screen('x-01-a', '', TARGETED('공급 조건 등록'))]), false);
   add('dupKeyGate', '한 호출에 같은 키 두 번', ctxWith([screen('x-01-a', "console_({ overlay: a, tab: 'x', overlay: b })")]), true);
   add('dupKeyGate', '키가 하나씩', ctxWith([screen('x-01-a', "console_({ overlay: a, tab: 'x' })")]), false);
   add('optionKeyGate', '모르는 키로 호출',

@@ -154,6 +154,49 @@ export const reachabilityGate = {
   },
 };
 
+// A button that names where it leads names a frame that exists. The target is read by whatever
+// derives flow from the built board — a chapter generator walking a persona through the screens —
+// and a reader that meets an id no frame carries does not error: it falls back to guessing from
+// the label, and the walk it produces reads exactly like one derived from a correct target. So a
+// typo in `btn('탐지', 'primary', 'P-4b 탐지')` is a silent defect, and silent is the whole reason
+// this is a gate. A target that does not begin with an id is the pattern's own text link and is
+// left alone; a target that begins like an id and is not one is reported by shape.
+const ID_HEAD = /^([A-Z]-\d{2}[a-z]?)(?=\s|$)/;
+const ID_LIKE = /^[A-Za-z]-\d/;
+
+/** Every string a loaded screen module renders, to the depth its toolbar and panes nest. */
+function renderedStrings(value, depth = 0, out = []) {
+  if (typeof value === 'string') out.push(value);
+  else if (value && typeof value === 'object' && depth < 4) {
+    for (const v of Object.values(value)) renderedStrings(v, depth + 1, out);
+  }
+  return out;
+}
+
+export const targetGate = {
+  id: 'targetGate',
+  title: '행선지가 없는 프레임을 가리킨다',
+  stage: 'built',
+  run: (ctx) => {
+    const errors = [];
+    const ids = new Set(ctx.loaded.map((s) => s.num));
+    for (const s of ctx.loaded) {
+      for (const html of renderedStrings(s.mod)) {
+        for (const m of html.matchAll(/data-target="([^"]*)"/g)) {
+          const target = m[1].trim();
+          const id = ID_HEAD.exec(target)?.[1];
+          if (id) {
+            if (!ids.has(id)) errors.push(`${s.num} — 행선지 「${target}」의 ${id}는 이 보드에 없는 프레임이다`);
+          } else if (ID_LIKE.test(target)) {
+            errors.push(`${s.num} — 행선지 「${target}」는 프레임 id로 시작하는 것처럼 보이나 id의 모양(\`A-01a\`)이 아니다`);
+          }
+        }
+      }
+    }
+    return errors;
+  },
+};
+
 // The tree lands on the FIRST frame under an entry, and a state frame has no address of its own —
 // it is a dialog, a panel form or a role-scoped variant that spreads its base. When one of those
 // sorts first, pressing the entry opens a screen that cannot be opened directly, and on a board

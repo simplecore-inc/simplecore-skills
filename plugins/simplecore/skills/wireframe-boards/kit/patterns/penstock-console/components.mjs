@@ -25,7 +25,11 @@ export const qrPh = (label = 'QR') => `<div class="qr-ph"><span>${label}</span><
 // bare variant is the ordinary FILLED button: a frame writing `btn('다음', '')` for a blocked step
 // draws it heavier than the enabled ghost beside it, and the board then shows the one control that
 // does nothing as the one the eye lands on.
-export const btn = (text, variant = '') => `<div class="${cls('btn', variant)}">${text}</div>`
+// `target` names the frame a button leads to — `'<id> <title>'`, the id first — so a reader of the
+// built board (a chapter generator deriving a walk, a gate) can follow the flow without guessing
+// from the label. A button that stays on its screen names nothing, and nothing is drawn for it.
+export const btn = (text, variant = '', target = '') =>
+  `<div class="${cls('btn', variant)}"${target ? ` data-target="${target}"` : ''}>${text}</div>`
 export const chip = (text, active = false) =>
   `<span class="chip${active ? ' active' : ''}">${text}</span>`
 export const badge = (text, variant = '') => `<span class="${cls('badge', variant)}">${text}</span>` // ''·outline
