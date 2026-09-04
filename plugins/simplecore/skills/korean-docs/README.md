@@ -28,7 +28,7 @@ korean-docs/
     ├── global-korean-card.md    # 전역 CLAUDE.md에 그대로 붙이는 블록 (요약 뒤에도 남는 습관 목록)
     ├── audit-tooling.md         # 감사 도구 참조 — 훅 · 선언 파일 · 규칙 작성 · 검출 확인 (감사할 때 읽는다)
     ├── korean-style.md          # 교정·검수용 심각도(S1/S2) 패턴 카탈로그 + 번역 문체·원문 충실도 기준
-    ├── ui-copy.md               # 화면 문구 판정 기준 (관점 A~W)
+    ├── ui-copy.md               # 화면 문구 판정 기준 (관점 A~Z)
     ├── ui-copy-sweep.md         # 전수 검토 절차
     ├── reading-lens.md · lens.txt  # 규칙이 놓치는 것을 사람이 읽을 후보로 뽑는 렌즈
     └── domain-finance.md        # 금융·퀀트·트레이딩 도메인 용어 (그 분야 작업에서만)
@@ -71,7 +71,7 @@ node "${CLAUDE_PLUGIN_ROOT}/skills/korean-docs/scripts/l10n.mjs" check <경로..
 #    kinds를 선언하면 audit · rules · suspects · apply가 자원 전체를 같은 규칙으로 다룬다
 ```
 
-용어사전이 없어도 스킬은 동작한다 — 기본 용어사전(GLOSSARY.base.md)의 규칙만으로 검사하고, Claude가 문서 작업 중 용어 결정이 쌓이면 생성을 제안한다.
+용어사전이 없어도 스킬은 동작한다 — 기본 용어사전(GLOSSARY.base.md)의 규칙만으로 검사하고, 만들라고 먼저 제안하지 않는다. 사용자가 요청하면 `check --init`으로 만든다.
 
 ## 용어사전 시스템
 
