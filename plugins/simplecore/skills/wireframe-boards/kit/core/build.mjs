@@ -94,6 +94,7 @@ export async function assembleBoard(boardDir) {
         // the group heading already carries what the group declared.
         phaseTag: e.phase ? config.phases[e.phase].tag : '',
         featureTag: e.feature ? config.features[e.feature].tag : '',
+        reviewTags: Array.isArray(e.badges) ? e.badges.map(String) : [],
         // A third axis the split's module knows, shown per frame rather than used to arrange
         // anything. Null on a board that declares no `tag`.
         axisTag: split?.tagOf ? split.tagOf(e.id) : null,
@@ -128,7 +129,8 @@ export async function assembleBoard(boardDir) {
         seen.add(e.id);
         scList.push({
           id: e.id, seq, label: e.label, file: e.file, anchor: e.anchor,
-          phaseTag: e.phaseTag, featureTag: e.featureTag, axisTag: e.axisTag,
+          phaseTag: e.phaseTag, featureTag: e.featureTag, reviewTags: e.reviewTags,
+          axisTag: e.axisTag,
         });
       }
     }

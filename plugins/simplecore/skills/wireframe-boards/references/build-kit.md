@@ -59,6 +59,12 @@ src/intro.html     the reading-contract items that are this product's own       
 src/styles.css     what this board adds to the pattern's stylesheet              (optional)
 ```
 
+One manifest entry may declare `badges: ['mark', …]` for short review-only classifications that
+belong in the screen-list sidebar but not in the product frame — for example, an RFP-external
+proposal or an AI-assisted calculation. These marks do not mean `phase` (when it is built) or
+`feature` (what must be bought), never appear inside the device, and must be derived from a named
+project document rather than used as free-form decoration.
+
 ## Drawing with the board open: `./dev.sh`
 
 `./dev.sh` (that is `node wf.mjs serve`) builds the board once, serves it at

@@ -205,7 +205,9 @@ export function makePartials({ components, roles = null, lang = 'en', reqsById =
         `<span class="num"><span class="seq">[${sc.seq}]</span>${sc.id}`
         + `${sc.axisTag ? ` <span class="sb-ax" title="${sc.axisTag.label}">${sc.axisTag.mark}</span>` : ''}</span>` +
         `<span class="lbl">${sc.phaseTag ? `<span class="sb-ph">${sc.phaseTag}</span>` : ''}`
-        + `${sc.featureTag ? `<span class="sb-ft">${sc.featureTag}</span>` : ''}${sc.label}</span></a>`
+        + `${sc.featureTag ? `<span class="sb-ft">${sc.featureTag}</span>` : ''}`
+        + `${(sc.reviewTags ?? []).map((tag) => `<span class="sb-ft">${tag}</span>`).join('')}`
+        + `${sc.label}</span></a>`
       ).join('\n') +
       `\n    </div>`
     ).join('\n    ');
