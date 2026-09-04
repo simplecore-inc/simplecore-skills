@@ -1,21 +1,121 @@
-# What a chapter demands of a screen
+<!-- Split out of SKILL.md so a session loads it only when its subject comes up. The skill's own
+     section of this name is a routing stub pointing here. -->
 
-A chapter's per-screen half is the demand list a screen is built against and verified against. This
-file is what belongs on that list and why. **The generator that writes it is the project's** —
-`chapterGenerator` is a config key because a board's components, frame shapes and role names are
-one product's — but what it has to produce is not, and a generator written without this produces
-a chapter that reads complete and demands almost nothing.
+# What the generator writes — the structural line, the journeys, the seed relations
 
-## A demand is something somebody can do, not something they can see
+**A chapter is derived from the board, and it holds four things: one structural line per frame,
+the journeys that prove the chapter, the relations the seed must make true, and — for a chapter
+that places foundation — the verdict lines.** Nothing in it is written by hand, and nothing in it
+quotes a value, a count, a sample row or an exact message. What a chapter says is what a journey
+test can assert with no number known in advance.
 
-「the strip has four tabs」 is an observation. Nobody fails it: the screen renders, the tabs are
-there, and the reader moves on. **「press each of the four, write down what is in each, leave a
-capture of each」** is a demand — it can be met, half-met, or skipped, and which of the three
-happened is visible afterwards.
+**A journey is something somebody does, not something they see.** 「the tile reads 119」 describes a
+screen being looked at; 「the tile counts what the list holds」 is a relation a test asserts on any
+data. The first passes for a product that shows nothing of the kind once somebody types 119 into a
+fixture; the second cannot be passed that way.
 
-Every line on the list is written in that shape. The test is whether a person could come back
-tomorrow and say **which parts were done**. A list of observations has no answer to that question,
-which is why a screen can pass one while being a shell.
+## The structural line names kinds and counts, and labels only as guidance
+
+One line per frame, read off the frame's own drawing:
+
+> `F-01a` 재고 현황 · `/stock` · 목록 (행 동작 3: 보기 · 조정 · 발주 요청) · 필터 · 목록 탭 4 · 타일 4 ·
+> 상세 패널 · 빈 상태 · AUTH: 시스템 관리자 · 본사 담당자 · 본부 담당자(담당 사업소)
+
+| It names | Because |
+| --- | --- |
+| the address | an address a chapter names is one that opens → below |
+| each **kind** of control and how many — a list, its row actions, a filter, tabs, tiles, a detail panel and its verbs, an empty state, a dialog and its primary action | that is what the board contracts: a screen missing one of these is wrong, whatever it looks like |
+| the labels, in parentheses | as the default wording — a product that words a control differently syncs the board and is not wrong |
+| the roles that reach it, with their scope | the personas the journeys are written for, and the ones the negative journey refuses |
+
+**What it does not name is anything the seed decides.** No row contents, no counts, no dates, no
+sample names. A structural line that reads 「행 동작 3」 is met by any three row actions of those
+kinds on any row; one that reads 「TN-3600M 빨강 행의 보기」 is met only by a database that holds
+that row, which is a database written to satisfy a sketch.
+
+**An empty state is structure.** A list either has one or it does not; which words it uses is the
+product's. A board that draws one representative empty frame and says the rest follow its rule has
+declared every list's structure, and the generator writes 「빈 상태」 on every frame that draws a
+list.
+
+## A journey is one persona finishing one piece of work
+
+**One journey per persona the chapter's screens admit, and one negative journey per persona they
+refuse.** The generator derives each from three things it already reads:
+
+| From | It writes |
+| --- | --- |
+| the role map | which persona the journey is for, and the account it signs in with |
+| the frames' cross-references — a row action's target, a button's target, a `{{frame}}` in a note | the way between screens, as the controls pressed in order |
+| each frame's primary action | the piece of work the journey finishes |
+
+A journey reads as a numbered path — the screen it starts on, what it presses, where that lands,
+what it finishes, and what must then be true — and every 「must then be true」 is a relation:
+
+> 1. `/stock`을 연다 — 목록과 타일이 있다
+> 2. 한 행의 「조정」을 누른다 — 재고 조정 대화상자가 열리고, 대상은 그 행의 품목이다
+> 3. 수량과 사유를 넣고 「저장」을 누른다 — 대화상자가 닫히고, 그 행의 수량이 넣은 값이며, 입출고 이력에
+>    같은 식별자의 조정 기록이 하나 늘었다
+> 4. 본부 담당자로 다른 사업소의 `/stock?view=…`에 직접 접근한다 — 서버가 거부한다
+
+**Every journey is an automated test.** It lives under `journeyTestsDir`, in the project's own
+framework, signs in as its persona, drives `journeyRoute`, and takes one capture per screen-state it
+visits. `journeyCommand` runs them all and writes the chapter's run record → `evidence.md`.
+
+**A journey that cannot be finished because a later chapter's screen is missing stops at the
+promise.** The chapter's `promises` section already names the destination; the test asserts the
+control exists and that pressing it lands on the promised address, and no further.
+
+## What a journey asserts, and what it never asserts
+
+**A wireframe's number is not a specification.** Somebody typed 1,358 into a tile to show what a
+tile looks like with a large number in it. A demand that copies that figure out of the frame makes
+the seed answer to a sketch — and a seed bent to satisfy a sketch is a seed that has stopped being
+a description of the product.
+
+**Assert the relation instead.** These are the ones a generator reads off a frame without knowing
+any value, and each is something a journey test asserts with no number known in advance:
+
+| The frame draws | What the journey asserts |
+| --- | --- |
+| a tile with a `basis` naming its parts | the parts account for the value |
+| a tab strip with counts over panes | each tab's count is its own pane's total |
+| `pagination(pages, total, rows)` | the page count is the total over the rows, rounded up |
+| a filter bar total above a table | the total is the set the table beneath it is showing |
+| two panes drawing the same record | they answer the same question the same way |
+
+**Each of these catches what a value comparison cannot: a screen whose own figures contradict each
+other.** A value comparison catches only that the screen differs from a drawing.
+
+**A literal value is demanded only where the value is a RULE, and a rule never lives only in a
+wireframe.** A limit comes from the entitlement; a threshold from the entity's own default or a
+design chapter; a period, a date or a retention span from a statute. So **a demand that needs a
+literal figure cites the source that fixes it**, and a figure with no such source outside the board
+is an illustration — assert the relation and let the seed say what it says.
+
+**The evidence, because this reverses what a project will have written down.** One chapter's
+judging round produced about a hundred disagreements across six screens. Every genuine defect among
+the figures was a relation: a tile's basis that summed to less than its tile, a tile counting what
+its own column drew as absent, a record registered after the delivery it describes was sent, a mean
+that included the timeouts it claimed to exclude. **Exactly one was a pure value mismatch** — a
+tile reading 4시간 전 where the frame drew 32분 전 — and satisfying it meant rewriting four hundred
+rows on every boot so that a figure a wireframe author had typed would appear.
+
+> **Read it this way and it is wrong**: 「then the figures do not matter and a screen may draw
+> anything」. The relations are stricter than the values, not looser: a screen may draw any total
+> it likes and must still make its parts sum to it, its tabs agree with their panes, and its pager
+> agree with both. What is given up is only the claim that a sketch fixes the data.
+
+
+## The seed relations say what the story must make true
+
+The generator lists, per chapter, what the journeys need to exist before they can run: the
+entities the chapter creates or reads, connected as the entity model says, in the states the frames
+draw — a printer in each state the status tile counts, a request awaiting the approver the journey
+signs in as, a site outside the scoped persona's reach so the negative journey has something to be
+refused. **It lists relations and states, never quantities or names.** How many and called what is
+the story's → `scenario.md`, and a value comes into existence only by the path the product uses →
+`scenario.md` § *A value a capture shows is produced by the path the product uses*.
 
 ## Everything on the list comes off the board, and nothing else
 
@@ -49,14 +149,14 @@ there and already right.
 working code, one checkable sentence each, declared in the project's config →
 `references/frame-artefacts.md`. Two things make it a check rather than a note:
 
-- **The generator emits them per frame.** A sentence in a config is read once, by whoever wrote it;
-  the same sentence on every screen section of every chapter is re-asked by every persona run that
-  comes after. Declared once, it is a demand on every screen the board draws, and the chapters
-  built months later carry it without anybody remembering it exists.
+- **Each entry names the mechanism that holds it** — a rule in `auditScript`, or a helper every
+  journey test calls. A sentence a person would have to re-read per screen is a note, not a check,
+  and it is not declared: the whole point of the family is that the defect is caught on every
+  screen built afterwards without anybody remembering the sentence exists.
 - **The list GROWS as defects are found.** A defect met in the running product is fixed, and then
-  its shape is added here — otherwise it is fixed once, on the screen it was found on, and met
-  again on every surface built afterwards. A project that ratchets is one whose list is longer
-  than it was.
+  its shape is added here with the check that catches it — otherwise it is fixed once, on the
+  screen it was found on, and met again on every surface built afterwards. A project that ratchets
+  is one whose list is longer than it was.
 
 ### A standing check was observed; an invented expectation never was
 
@@ -75,180 +175,9 @@ goes back to being a frame question — draw it, and the demand follows from the
 > on it and the sighting does. A frame is the contract for what a screen DRAWS; this list is the
 > record of what the product was CAUGHT doing, and a record with nothing behind it is not a record.
 
-**Declaring the list is half of it, and the other half is the one that fails silently.** A project
-declared three of these sentences; no generator emitted them, no gate compared them, and no chapter
-file contained any of the three — a config key that reads as coverage and holds nothing. That is
-`../SKILL.md` § *The third category comes back as a checker that did not run* one level up: not a
-checker that did not run, but a declaration nothing ever read.
-`everyFrameDeliverableReachesAChapter` holds the join, and it is an error rather than a warning
-because what it names is 「asked of nobody」 rather than 「go and re-read this」.
+## An address a journey names is an address that opens
 
-## What a frame has on it, and what each thing owes
-
-A frame's own drawing answers all of this. **The list below is what a demand list is short of when
-it only says what is on the screen** — every row of it is a control somebody presses, and every one
-was invisible to a chapter set that quoted tabs, counts and messages alone.
-
-| On the frame | What the chapter demands |
-| --- | --- |
-| the screen itself | open it, at the address the board gives it |
-| a tab strip that narrows one list | name the tabs; one capture covers them, because every tab shows the same list |
-| a tab strip whose panes hold **different content** | press each pane but the open one, write what is in each, capture each — `<frame>-t<n>` |
-| a tile row | say what each tile counts, and check the count against what the list holds |
-| a message the frame draws (a warning, an error, a legal note) | that it is on the screen, quoted by its own words |
-| a primary action | the thing the screen exists to finish, done |
-| a state the board drew as its own frame | reached, and captured as that frame |
-| a list | the empty state, opened at an address that reaches it and captured |
-| a search box, and the filters standing on it | type in it and watch the list narrow; check each applied filter shows as a badge; clear it and watch the original count come back |
-| row actions | press each one in a single row and write what opens |
-| header buttons beyond the primary | press each and write what opens |
-| a detail panel's upper verbs | open a record and press each |
-| a detail panel's footer verbs | one row below, because what they do to a record is not one rule |
-
-**Quote the labels.** 「press the row action」 sends a reader hunting; 「press 「<label>」」 does not,
-and a label that has since changed shows up as a demand that cannot be met rather than as silence.
-
-**Both kinds of tab are on that list under different rows on purpose.** A frame can carry both, and
-one word covering both hands the reader two different things under one name — one is the same
-records filtered, the other is a pane that may be an empty shell behind a screen that otherwise
-looks finished.
-
-**Every row above that asks for a capture also says why a picture is the witness for it**, in the
-clause that names the file — the next section is that rule, and a generator that emits the names
-off this table without it has written the habit rather than the demand.
-
-## A capture brief states the floor for pictures and the ceiling for what to exercise, and they are different lines
-
-**「One capture per state the `개발` line names」 is a floor for how many pictures to take.** Read as
-the scope of the run it becomes a ceiling on what to do, and the persona lines — which is most of
-what a chapter has to prove — go unexercised. One brief phrased that way produced four correct
-captures of a chapter carrying **46 persona demands against 8 `개발` lines**, with none of the 46 run.
-
-**What makes it expensive is that nothing shows.** A row action nobody pressed and a row action that
-works are the same picture; an unexercised demand leaves the mark of one that passed, which is none.
-The return reads as complete because every capture the brief asked for is there.
-
-- **Say both lines in the brief.** The captures are the floor; **the persona lines are what to
-  exercise**, and a state reached while exercising them that the chapter demands is captured too.
-- **A step that cannot be run is a finding in those words** — a control disabled, a state the seed
-  will not produce, an action absent under the name the chapter uses. That list does as much work as
-  the captures.
-- **The wording that causes this is the coordinator's**, not the taker's. 「Per state that line
-  names」 reads as a complete instruction and is half of one.
-
-## A capture is owed where a picture is the only witness
-
-**Read this before trimming anything, because it is not 「ask for less」.** The two largest findings
-of one week's building both came out of pictures, and a judge with nothing to hold a transcription
-against cannot work at all — it spends every finding on 「no capture covers this」. What comes off
-the list is a demand nobody can give a reason for, and the census the second half of this rule adds
-is a check sampling never had. **A rule read as a licence to skip produces exactly the screens this
-whole arrangement exists to catch**: a route answering 200 with the shell painted and nothing
-inside it.
-
-**A picture is the only witness in three cases, and one of these is what a demand names:**
-
-| The case | What only a picture answers |
-| --- | --- |
-| **the first sight of a screen** | a route that answers 200, raises no console error and paints the chrome with nothing inside it is a pass to every other check there is |
-| **presence, placement or wording no response body carries** | a filter-chip row nobody declared, row actions the board draws as text and the screen renders as icons, a column that is not there |
-| **a state that exists only while something is open** | a dialog, a confirmation, a panel form — gone the moment anything else is asked of the screen |
-
-**And it is not the witness in four others:**
-
-| The case | What proves it instead |
-| --- | --- |
-| **an unbuilt placeholder** | one capture per chapter proves the component; the rest are the same component, and the demand is **discharged** rather than skipped → `references/evidence.md` |
-| **a claim the server's response settles** | counts, statuses, permission refusals — a fenced `METHOD /path → status` block, which the role-scoped persona lines already use exclusively |
-| **a screen no commit has touched since its last capture** | the capture already in the folder |
-| **a companion frame — one the board draws to show panes the base frame does not open** | the base frame's own per-pane captures. **The application has no such screen**, so this picture cannot be taken at all rather than being merely redundant |
-
-**That fourth row is here because a generator author reads this table and not the other one.** It was documented only in `references/evidence.md`, which is the file somebody opens while writing a result document — a different moment and often a different agent. One generator, written carefully against this table alone, was about to emit **208 demands for pictures nobody can take**, and every one of them would have read as a chapter owing something. A counter-case named in the wrong file is a counter-case nobody applies.
-
-### The reason goes in the demand line, and the generator writes it
-
-**A demand that names a capture says, in the same clause, why a picture is the witness for that
-one.** A capture name with no reason is the habit rather than a judgment, and the habit is emitted
-by the thousand — a generator writing one file name per pane per frame produces a chapter demanding
-1040 pictures and saying of not one of them why it is owed. Two things follow from that and both
-have been seen: a frame whose three panes were unbuilt placeholders demanded three captures **none
-of which could be produced**, and a taker that correctly shot one and left the other two was right
-while the chapter went on reading as though it owed three.
-
-**In the demand line, not on the board and not in a table somewhere else.** The reason follows from
-*what on the board produced the demand* — a pane's content is not on the base picture, on every
-board, for every pane — so it is a property of the clause that emitted the name rather than of the
-frame. Put on the board it becomes one of three sentences hand-written hundreds of times, drifting
-from what actually emitted the demand; put in a lookup table it is a reason nobody reads, because
-the reader meets the demand in the line. **In the line it also travels**: the quoted demand is what
-a result document copies whole, so the judge holding a capture against the demand has the reason in
-hand and can say that this picture does not answer it.
-
-**`captureReasons` is what a machine reads it by** — three lists of phrases in the project's own
-language, one per case, and `everyCaptureDemandGivesItsReason` requires one of them inside the
-clause that names the capture. Per clause rather than per line, because a line whose empty-list
-clause gives a reason and whose pane clause does not is precisely the habit. **Whether the reason
-is TRUE stays with eyes**, and `../SKILL.md`'s second table names whose and when.
-
-**Adding a reason to a clause that already exists is a rewording, not an append.** It therefore
-does what *A demand that grows is appended, never substituted* below says it does: it invalidates
-every evidence section that quoted that clause. So it is done in **one pass over the whole chapter
-set, at a moment no verification round is running**, with the quotes in the documents already
-written refreshed in the same change — and the earlier the set is in its build, the smaller that
-is. Adding the reason one chapter at a time is the same cost paid once per chapter, plus a set
-where two chapters mean different things by the same demand.
-
-**The same pass almost always does a second thing, and it costs the opposite.** It emits capture
-demands where none existed — and appended at the end of the line those cost **no quotation at
-all**: every quote already written stays a contiguous prefix and no document needs touching. So one
-pass produces two sets of sections, and they are counted apart:
-
-| What happened to the section | What it costs |
-| --- | --- |
-| its quoted clause was **reworded** to carry the reason | the quotation is refreshed and the section stays true — the demand asks for the same act, only the sentence moved |
-| its demand **grew** a capture it did not ask for before | the quotation is left exactly as it was. Refreshing it hands the section a demand it never answered |
-
-**One total hides the row that matters.** And the second row is a debt to be *measured* rather than
-assumed: the pictures a newly-emitted demand names are often already on disk, because a capture
-rule was demanding them before any chapter line said so. On a real set, 67 sections grew and **every
-capture they now named was already there** — a growth of 67 and a debt of none. Assumed, that would
-have been filed as 67 sections owing pictures nobody needed to take.
-
-## A chapter owns tables, and the per-screen half does not reach all of them
-
-**Everything above is about screens, and a chapter owns more than screens.** Its `entities`
-section names the tables its migrations create, and the demand list is derived from its FRAMES —
-so a table this chapter owns that none of its screens is about ends up demanded by nobody. Nobody
-is asked to open it, the result document has no section to record it in, and every gate over the
-chapter is green: the screens all have their lines, the lines all have their sections, and the
-table is simply not part of the arrangement.
-
-**It is not a rare shape.** A value that decides what a LATER chapter's screen draws is owned here
-because the code that reads it is here — a sign-in policy read on every sign-in whose editing
-screen belongs twenty chapters on, a policy row created as a side effect of creating a project
-whose screen belongs to the chapter that detects what it governs. In one repository `sign_in_policy`
-sat that way with four tests holding it and not one line demanding any of them.
-
-**So the generator emits a section per owned table nothing reaches**, closed by the verdict line
-rather than by a persona — what proves a table is a command and what came back, not somebody in a
-browser. Three things decide whether it works:
-
-| | |
-| --- | --- |
-| **which tables** | a project cannot derive 「this screen is about that table」 from a board, so it is DECLARED — per table, the frame of this chapter whose screen writes or shows it. **A table left out of the declaration gets a section**, so forgetting produces a demand somebody must answer and only a written claim takes one away |
-| **what the section demands** | the half a generator can derive is the table itself — that it stands as its migration declares it, and that the code reading and writing it runs. **What the value DECIDES is the half only a person can write**, so the section carries a hand-authored region the generator preserves exactly as it preserves the chapter's other hand-authored sections |
-| **where the section goes** | at the END, after every screen section. Section numbers are the chapter file's running count and result documents carry them in their headings → *A demand that grows is appended, never substituted* |
-
-**A seeded section is a demand nobody can fail until somebody writes into it**, which is the shape
-this whole file warns about — so the seed is held by a gate: a chapter the ledger calls closed may
-not still carry it. And the rule the gate reads is about DEMAND LINES rather than about what the
-generator emitted, because a foundation chapter written by hand has no generated section and never
-will. Keyed on the seed, such a chapter's tables are outside the rule by construction, and an
-unwritten table there and a written one produce the same silence.
-
-## An address a demand names is an address that opens
-
-**Write the whole address, never the fragment.** A demand that says 「open it with `<parameter>`」
+**Write the whole address, never the fragment.** A journey that says 「open it with `<parameter>`」
 leaves the reader to decide what to hang it on, and the natural guess is the screen they are
 already on. Where that screen does not read the parameter, nothing errors: the page answers with
 exactly what it always answers, and the reader records the ordinary screen as the state they were
@@ -258,7 +187,7 @@ hundreds of lines is a demand nobody can tell they failed.
 Where a project has a route that renders one frame in one state, that route's address is the whole
 answer and the generator has the frame in hand: build the address, do not describe it.
 
-## A demand that presses a way BETWEEN screens is not answered at a per-frame address
+## A journey is walked in the running application, never at a frame address
 
 **`captureRoute` renders one frame, in one state, from named sample data — and that is exactly why
 it cannot answer a journey.** No navigation to arrange, no seed to walk through, the state is the
@@ -275,45 +204,13 @@ and walked to the one under test. The frame route stays what it is: the address 
 state is taken at. Where a project declares both, the demand says which of the two it is asked at,
 because the two render the same screen and only one of them has a journey in it.
 
-**That address is `journeyRoute`, and writing it into the demand is what makes this a check.** The
-paragraph above says the demand names which route it is asked at; declared as a key, the name is
-also the thing a machine recognises a journey by — no vocabulary to maintain, no phrase list to go
-stale, and a journey demand written in any language is still the one carrying that address.
-`aJourneyIsWalkedInTheRunningApplication` then holds the section answering it to two things: its
-「what was operated」 line names that address, and it names no frame address. **The second half is
-the one with teeth** — a run driven at `?frame=<id>` and one walked through the product write down
-the same destination, and the address is the only place they differ.
-
-**A sentence in this file describing the discipline is not the discipline.** The demand that was
-answered at a frame address was written by a generator that had this paragraph available to it,
-and the run that answered it left a record indistinguishable from a correct one. So the rule lands
-in three places at once — the address in the config, the address inside the demand the generator
-emits, and the gate over the section that answers it — and a project declaring the key and never
-putting it in a demand gets the same silence as one that declared nothing.
-
-**Where the journey lands stays with eyes.** A product whose screens live in one window has no
-second address to cite, so 「it landed on the list」 is a claim about the running application that
-no bytes carry. The gate settles where the run was DRIVEN, which is what was silently wrong; what
-it landed on is read by whoever reads the result document → `../SKILL.md`'s second table.
-
-**And where a control leads is a different question from whether anybody can find it.** A detail
-screen with no visible way back to its list, whose one control was a chevron nobody sees, passed a
-build in which the route-level destinations had just been unified and tested — the destination was
-right, and the way to it was invisible to the person the screen is for. So the demand is split:
-
-| The question | Where it is answered |
-| --- | --- |
-| where the control lands | the running application, walked — a journey has two screens in it and a frame route has one |
-| whether a person can see the control at all | a picture of the screen as it opens, with the demand naming the control by its label and where on the screen it sits |
-
-**A tested destination is why this survives rather than a reason it cannot happen.** A run proving
-every route resolves has proved the half a machine can see, and it reads as the whole of
-navigation — which is what leaves the other half asked by nobody.
-
-> **Read it this way and it is wrong**: 「the frame route renders the real screen, so pressing a
-> control on it is pressing it in the product」. It renders one frame; a control whose destination
-> is another frame has nowhere to go, and a run that presses it records the screen it was already
-> on as the screen it landed on.
+**So a journey test drives `journeyRoute` and never `captureRoute`.** The frame route is the address
+a picture of one state is taken at, and a test that navigates by it presses controls that have
+nowhere to go; `journeyTestsDriveTheApplication` reads the journey tests for the frame route and
+reports one that uses it. **And where a control leads is a different question from whether anybody
+can find it**: a way back whose one control was a chevron nobody sees passed a build in which every
+destination resolved. The destination is the journey's to prove; whether a person can see the
+control is the look's → `../SKILL.md` § *Matching the structure is the floor*.
 
 ## An irreversible action is walked up to, never skipped
 
@@ -404,60 +301,6 @@ that question wrongly for half of them.
 the screen is absent at once. A real empty installation draws zeros and keeps the lines that are
 rules; a fixture that has stopped answering draws nothing anywhere, which reads as a screen doing
 something deliberate.
-
-## A drawn figure illustrates; demand the relation, not the value
-
-**A wireframe's number is not a specification.** Somebody typed 1,358 into a tile to show what a
-tile looks like with a large number in it. A demand that copies that figure out of the frame makes
-the seed answer to a sketch — and a seed bent to satisfy a sketch is a seed that has stopped being
-a description of the product.
-
-**Demand the relation instead.** These are the ones a generator reads off a frame without knowing
-any value, and each is checkable on the screen with no number known in advance:
-
-| The frame draws | The demand |
-| --- | --- |
-| a tile with a `basis` naming its parts | the parts account for the value |
-| a tab strip with counts over panes | each tab's count is its own pane's total |
-| `pagination(pages, total, rows)` | the page count is the total over the rows, rounded up |
-| a filter bar total above a table | the total is the set the table beneath it is showing |
-| two panes drawing the same record | they answer the same question the same way |
-
-**Each of these catches what a value comparison cannot: a screen whose own figures contradict each
-other.** A value comparison catches only that the screen differs from a drawing.
-
-**A literal value is demanded only where the value is a RULE, and a rule never lives only in a
-wireframe.** A limit comes from the entitlement; a threshold from the entity's own default or a
-design chapter; a period, a date or a retention span from a statute. So **a demand that needs a
-literal figure cites the source that fixes it**, and a figure with no such source outside the board
-is an illustration — demand the relation and let the seed say what it says.
-
-**The evidence, because this reverses what a project will have written down.** One chapter's
-judging round produced about a hundred disagreements across six screens. Every genuine defect among
-the figures was a relation: a tile's basis that summed to less than its tile, a tile counting what
-its own column drew as absent, a record registered after the delivery it describes was sent, a mean
-that included the timeouts it claimed to exclude. **Exactly one was a pure value mismatch** — a
-tile reading 4시간 전 where the frame drew 32분 전 — and satisfying it meant rewriting four hundred
-rows on every boot so that a figure a wireframe author had typed would appear.
-
-> **Read it this way and it is wrong**: 「then the figures do not matter and a screen may draw
-> anything」. The relations are stricter than the values, not looser: a screen may draw any total
-> it likes and must still make its parts sum to it, its tabs agree with their panes, and its pager
-> agree with both. What is given up is only the claim that a sketch fixes the data.
-
-## A demand that grows is appended, never substituted
-
-**A new demand goes at the END of the line.** A verification quotes the chapter, so a quote already
-written stays a contiguous part of a line that grew at its end and stops being one the moment
-anything inside the line changes.
-
-That is a rule about the LINE, not about the file. Appending a section is a different rule
-elsewhere; here the point is that **replacing a phrase inside a demand invalidates every evidence
-section that quoted that demand**, wherever in the line the phrase sat. A generator that reorders
-its own clauses, or rewords one, does this to every closed chapter at once.
-
-**And demands do not move at all while a verification round is running** →
-`references/evidence.md` § *The demands do not move while the verification is running*.
 
 ## Written in the project's own words
 

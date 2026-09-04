@@ -65,52 +65,6 @@ export function cases(t) {
     },
     false,
   );
-  // A vocabulary with an empty role matches nothing, and a check that matches nothing reports the
-  // same zero as one with nothing to find — which is why an empty list is a finding rather than a
-  // shorter list.
-  // A label carrying its own emphasis is written into the documents with the markers and looked
-  // for with them twice — every check over those documents then finds nothing and says nothing,
-  // which is the silence the whole vocabulary arrangement exists to prevent.
-  add(
-    'configGate',
-    'an evidence label declared with the markdown the checks add themselves',
-    { config: { evidenceLabels: { did: '**What was done**', demanded: 'What was demanded', saw: 'What was seen' } } },
-    true,
-  );
-  add(
-    'configGate',
-    'the same three labels as bare words',
-    { config: { evidenceLabels: { did: 'What was done', demanded: 'What was demanded', saw: 'What was seen' } } },
-    false,
-  );
-  // A project whose board gives every state a frame of its own writes no line listing states. It
-  // says so rather than declaring a line no chapter contains — and it says why, because an
-  // unexplained absence reads the same as one nobody noticed.
-  add(
-    'configGate',
-    'a chapter line declared absent with no reason beside it',
-    {
-      config: {
-        chapterLines: { persona: '**Test · {text}**…', verdict: '**Verdict**…', states: null },
-      },
-    },
-    true,
-  );
-  add(
-    'configGate',
-    'the same role declared absent with the reason beside it',
-    {
-      config: {
-        chapterLines: {
-          persona: '**Test · {text}**…',
-          verdict: '**Verdict**…',
-          states: null,
-          '//states': 'every state is a frame of its own here, so no line lists them',
-        },
-      },
-    },
-    false,
-  );
   // Half of the eyes arrangement is a gap that reports as green: the documents are read and the
   // vocabulary that would find anything in them is not there, so the check matches nothing and
   // «nothing to find» and «no idea what to look for» come out as the same zero. Declaring neither
@@ -215,17 +169,6 @@ export function cases(t) {
     'a field of the standard nobody reads',
     { config: { captureStandard: { width: 1440, height: 1200, colorScheme: 'light', scale: 2 } } },
     true,
-  );
-  // Half a capture split named is a project that thought about one side of it. The taker runs on
-  // the cheap model and the judge inherits whatever the harness gives, which is the arrangement
-  // paying more on exactly the half that was supposed to cost less.
-  add('configGate', 'the taker\'s model named and the judge\'s left out', { config: { captureTakerModel: 'sonnet' } }, true);
-  add('configGate', 'the judge\'s model named and the taker\'s left out', { config: { captureJudgeModel: 'opus' } }, true);
-  add(
-    'configGate',
-    'both halves of the capture split named',
-    { config: { captureTakerModel: 'sonnet', captureJudgeModel: 'opus' } },
-    false,
   );
   // What drives a browser is an ORDER, so it is a list — one name declared as a bare string is a
   // project that has named a driver and said nothing about what happens when it cannot express

@@ -1,123 +1,52 @@
 # What a frame owes besides working code
 
-Read this when a project's `frameDeliverables` is non-empty, or when deciding what
-one should hold. Everything here is about what outlives the pass — captures,
-snapshots, a story step — and about the ways they quietly stop describing the
-product.
+Read this when a project's `frameDeliverables` is non-empty, or when deciding what one should
+hold, or when deciding what to do with the captures a journey run leaves behind.
 
-Some projects require something per frame beyond the code — a capture under
-realistic data, a story step, a snapshot test, a look taken with somebody's own
-eyes. Where that is so, the config names it:
+## A standing check is held by code, and the list names what holds it
+
+Some projects require something of every screen beyond working code — a rendered check nothing
+can assert from source, a snapshot test, a rule about how a value is derived. Where that is so,
+the config names it, **and every sentence names the mechanism that holds it**:
 
 ```json
 "frameDeliverables": [
-  "a capture of this frame id in every locale it ships in, under capturesDir",
-  "a snapshot test naming this frame id"
+  "every list total states the rows its column draws — auditScript: rendered/list-total",
+  "a control's destination resolves — journeys: helper assertDestination()"
 ]
 ```
 
-Each line is a plain sentence an agent can check against what the work produced.
-**A frame that owes a deliverable is not finished until the deliverable exists**, and
-so it is never reported as covered — which is what keeps it from becoming a separate
-pass that never happens.
+A sentence a person would have to re-read per screen is a note and is not declared. The point of
+the family is that a defect met once in the running product is caught on every screen built
+afterwards without anybody remembering the sentence: a rule in `auditScript` runs across the tree,
+a helper the journey tests call runs on every journey.
 
-**The list is also where a defect the running product showed lands when no frame can
-draw it**, and that half is easy to miss while reading the examples above — they are
-all artefacts. A name the screen derived wrongly from what the system reported, a
-demand that cannot be answered at the address it is answered at: neither is something
-a board can draw, and both were found by a person using the built product. So the list
-**grows** as such defects are found, rather than each being fixed once on the screen it
-turned up on, and the sentence carries the pointer to where it was seen — a check
-that cannot name a sighting is an invented expectation, which costs what
-`references/demands.md` § *Everything on the list comes off the board, and nothing
-else* says it costs. The test that separates the two, and the rest of it →
-`references/demands.md`.
+**The list is also where a defect the running product showed lands when no frame can draw it.** A
+name the screen derived wrongly from what the system reported, a control whose destination is
+nowhere: neither is something a board can draw, and both were found by a person using the built
+product. So the list **grows** as such defects are found, each entry with the check that catches
+it, and the sentence carries the pointer to where it was seen — an entry that cannot name a
+sighting is an invented expectation → `references/demands.md` § *A defect the running product
+showed, that no frame can draw, is a standing check*.
 
-**And the sentence has to reach the chapters, which is a separate thing from being
-declared.** `chapterGenerator` emits each one per frame, so every later chapter
-re-asks it; declared and never emitted, the key reads as coverage while every gate
-over the chapter set stays green. `everyFrameDeliverableReachesAChapter` holds that
-join, and it compares the sentence verbatim.
+## A capture is the run's by-product, taken every run and kept only as the record's picture
 
-Two rules make that affordable rather than doubling the work:
+A journey test takes one capture per screen-state it visits, into the chapter's folder under
+`evidenceDir`, and the next run takes them again. Nothing has to detect a stale picture, because
+no picture outlives the run that took it; nothing has to decide what a change reaches, because
+the run reaches everything the journeys reach. What a capture owes is only this:
 
-- **The same agent produces it, in the same unit of work.** An artefact written later,
-  by somebody who did not drive the screen, describes what the code seems to do
-  rather than what it does.
-- **Every axis a capture varies along is decided before the first capture, not after.**
-  A capture is identified by frame **and** locale **and** device class — and any other
-  axis the product actually has. Each one that gets added later means re-capturing
-  every frame covered so far and reworking the scripts that produce them, which is the
-  most avoidable rework such a pass can generate. A board that names a tablet frame has a
-  device axis whether or not the first section uses it.
-- **What generates it must be deterministic.** A capture that differs on every run
-  — a live clock, a random id, an animation caught mid-flight, a status bar showing
-  the real time — makes every re-capture a change nobody can read. Where a project
-  keeps captures, it owes a way to reach any frame in any state with the moving parts
-  pinned; an agent that finds no such mechanism reports it as owed rather than
-  hand-driving 150 screens.
+- **One picture is one screenful.** A viewport holds a fraction of most screens, so a screen whose
+  actions sit below the fold gets a second picture scrolled to them, never a taller image stitched
+  out of several → `references/driving-the-product.md`.
+- **The data and the display are pinned to the same instant** where the screen draws a time — a
+  frozen clock over timestamps taken from the real one gives a number that is stable and wrong.
+- **It is taken through the window the project declared**, at the width and in the scheme the
+  capture gates read → `references/config.md`.
 
-  **A frame leaves nothing unseen, and that takes as many pictures as it takes.** A
-  phone viewport holds a fraction of most screens, so one screenshot documents a
-  screen's opening and drops its actions — silently, looking like a complete image of
-  a short screen. The answer is another picture, scrolled to what was hidden, not a
-  taller image built out of several: **one picture is one screenful** and stitching is
-  banned outright → `references/driving-the-product.md`. What produces them decides
-  where the scroll stops, and produces the same stops on every run.
-
-  Two details decide whether pinning actually works. The **data and the display must
-  be pinned to the same instant** — a frozen clock over sample timestamps taken from
-  the real one gives a number that is stable and wrong. And a **rerun over unchanged
-  frames must produce byte-identical files**, because that is the only thing that
-  makes a board-wide re-capture reviewable.
-
-- **A stale artefact must be detectable, not remembered.** This is where kept
-  captures usually die. A screen changes in month three, and nobody can say which of
-  the images taken in month one are now lying — so either everything is retaken (and
-  the diff is unreviewable, so nobody reads it) or nothing is (and the artefacts
-  quietly stop describing the product). Both outcomes look identical in review.
-
-  The answer is a fingerprint per artefact, over **exactly** what determined it: the
-  screen's module and its transitive import closure, the copy values for the keys that
-  closure uses *in that locale*, the sample data it reads, and the generated theme.
-  Then a check names the stale ones and the command that refreshes them. Two
-  properties make or break it:
-
-  - **Granularity.** Fingerprinting whole packages means one shared-component tweak
-    invalidates every frame, which is the "retake everything" failure wearing a
-    tool's clothes. Follow the import graph.
-  - **Per-locale inputs.** A wording change in one language must not invalidate the
-    other language's artefacts.
-
-  The same reasoning applies in the other direction: **a board frame edited after it
-  was covered becomes work again.** The contract moved, so the code is no longer known
-  to match it — and this too is read from history rather than from somebody's memory of
-  what they changed.
-
-- **Regeneratable does not mean deferrable when the source moves.** A capture can be
-  remade at any time — from the code **as it stands then**, which is a different screen.
-  So an artefact whose input keeps changing is captured while the input is in front of
-  you, even for an output nobody consumes yet: a wider device with no edition written
-  for it, a state no page references. Later that edition becomes substitution rather
-  than a second pass over the board.
-
-  This cuts against the previous point rather than restating it, and the line between
-  them is whether the *input* is stable. A language is cheap to add later because the
-  screens do not change when it arrives. A device is not, because the screen it would
-  have photographed is gone.
-
-- **A regeneratable artefact is cheap to add later; a hand-made one is not.** This is
-  worth stating because it changes product decisions well outside this pass. When
-  captures are genuinely one command over the whole board, adding a language or a
-  device class later costs a command — so there is no reason to add languages early
-  "while we are capturing", and every reason not to: copy churns hardest while the
-  screens are still being built, and each extra language multiplies that churn.
-  When captures are hand-made, the same decision inverts and everything has to be
-  decided up front. A pass should know which of the two it is in, and say so.
-
-A project that declares no `frameDeliverables` owes nothing beyond the code — and a
-defect no frame can draw then has nowhere to land, so it is fixed once on the screen
-it was found on and met again on every screen built afterwards.
+A project that declares no `frameDeliverables` owes nothing beyond the code and its journeys — and
+a defect no frame can draw then has nowhere to land, so it is fixed once on the screen it was found
+on and met again on every screen built afterwards.
 
 ### Three reasons to photograph a screen, and none of them substitutes for another
 
@@ -151,11 +80,10 @@ grows with the board — four and a half minutes across thirteen frames, an hour
 hundred and fifty, paid every time anybody touches a common primitive. They will, for as
 long as the product is being built.
 
-So a project part-way through its screens can reasonably **look on every frame and keep
-nothing**: judge with throwaway captures, and take the kept ones once, at the end, from
-a finished product in a known state. That also removes a defect nobody names — a set of
-figures taken across eight months of versions, each true when it was shot and none of
-them true together.
+The journey run pays that price every time it runs, by machine, which is what makes keeping
+nothing the right default: the pictures in a chapter's folder are the last run's, they are looked
+at once at the close, and a document that wants a figure to keep takes it from a finished product
+in a known state → *Three reasons to photograph a screen*.
 
 ### Re-shoot what the change reaches, and one frame either side of it
 

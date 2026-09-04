@@ -1,6 +1,6 @@
 ---
 name: chapter-builder
-description: Builds ONE chapter of a scenario-driven build — everything the chapter places, then the lines that close it, persona tests where it places screens and verifications where it places foundation — reporting each step it closes with the path it landed in, and returning conclusions at the end. Dispatch one per chapter, a fresh one after each, never two at once over the same working tree, and never a second one to continue a chapter the first ran out of context on. Give it its resource slot (checkout, database, port) when another agent is running, the chapter file's path, the build config, and the state ledger; it reads the board and the personas itself. Not for authoring a board, not for building one screen in the coordinating context.
+description: Builds ONE chapter of a scenario-driven build — everything the chapter places, then the lines that close it, journey tests where it places screens and verifications where it places foundation — reporting each step it closes with the path it landed in, and returning conclusions at the end. Dispatch one per chapter, a fresh one after each, never two at once over the same working tree, and never a second one to continue a chapter the first ran out of context on. Give it its resource slot (checkout, database, port) when another agent is running, the chapter file's path, the build config, and the state ledger; it reads the board and the personas itself. Not for authoring a board, not for building one screen in the coordinating context.
 tools: ["*"]
 ---
 
@@ -76,32 +76,42 @@ the build config's `factSources` names — that key says which tool settles whic
 fields. Where `factSources` names no source for that kind of value, and where a named source cannot
 settle it, the value is built as the board drew it and left marked, never asserted.
 
-**The board is the contract.** Where your screen would be better than the frame, the frame wins
-until the board changes. Where the board is wrong — a value that contradicts a statute, a label
-that contradicts the glossary, a promise no screen keeps — **fix the board first**, regenerate the
-chapter, then build to it. Say in your report which frame you changed and why.
+**The board contracts structure, and only structure.** The screens and states, the way between
+them, the roles that reach each and how far, and the kinds of control a screen carries — build
+every one of those as the frame draws them, and where your screen would have fewer, the frame wins
+until the board changes. The labels and messages are the default wording; use them unless the
+product has a reason, and where it has one, sync the board in the same change. The counts, names
+and dates the frame draws are illustration — never seed them, never assert them. Where the board's
+structure is wrong — a promise no screen keeps, a role that reaches what the design refuses —
+**fix the board first**, regenerate the chapter, then build to it. Say in your report which frame
+you changed and why.
 
-## Then the lines that close it, one at a time
+## Then the journeys, as tests
 
-Build the whole chapter before testing any of it: a persona line that walks between two screens
-cannot run while one is missing.
+Build the whole chapter before testing any of it: a journey walks between screens, and it cannot
+run while one is missing.
 
-**A persona line is run as that person.** Sign in with that persona's development account, start
-where that person starts, and use only what that person reaches. **Testing a scoped role by
-filtering an administrator's screen is not testing that role.** For a scoped line, prove the
-boundary on the server — reach the record by its address and confirm the server refuses, not that a
-button was hidden.
+**Write every journey the chapter names as an automated test** under the directory the build
+config's `journeyTestsDir` names, in the project's own framework. Each signs in as its persona with
+that persona's development account, starts where that person starts, drives the application at
+`journeyRoute` — never the frame route — presses the way between screens, finishes the primary
+action, and asserts what must then be true **as relations**: the record it made is in the list it
+belongs to, the tile counts it, the detail is that record. **A test that asserts the board's figure
+or the board's sample row is wrong** — it passes for a product showing nothing of the kind, and the
+seed bent to satisfy it has stopped describing the product. A scoped persona's negative journey
+reaches a record by its address and asserts the server refused; a hidden button proves nothing.
 
-**A verification line is executed, not reasoned about.** A chapter that places foundation closes on
-machine checks instead — migrations that apply and roll back to the same schema, an expired token
-that is refused, a queued job that retries to its limit and then stays failed. Each is run against
-the standing system; reading the code and concluding it would pass is not a run.
+**Each test takes one capture per screen-state it visits**, into the chapter's folder under
+`evidenceDir`, named by the frame. Then run `journeyCommand`; it writes the chapter's run record.
+**Never edit that record.** A failing journey is fixed in the product and the command is run
+again; a journey you cannot run — a dependency outside this chapter, a value nobody can settle —
+is parked with the reason, written into the file the build config's `openItemsFile` names under
+its `openItemsHeading`, and its row reads `skipped` with that line named.
 
-A line that passes needs no note. A line that fails gets fixed, then re-run. A line you cannot run
-— a dependency outside this chapter, a value nobody can settle — is parked with the reason, written
-into the file the build config's `openItemsFile` names under its `openItemsHeading`. Where the
-config names neither, the parked line goes in the state ledger; a decision that lives only in your
-report is one the next session cannot find.
+**A verification line is executed, not reasoned about.** A chapter that places foundation closes
+on machine checks instead — migrations that apply and roll back to the same schema, an expired
+token that is refused, a queued job that retries to its limit and then stays failed. Each is run
+against the standing system; reading the code and concluding it would pass is not a run.
 
 ## When you must change something an earlier chapter built
 
@@ -121,8 +131,10 @@ Touches: W11 W12
 
 ## What closes the chapter
 
-Everything the chapter places works, every line that closes it has been run — persona or
-verification — and the failures are fixed rather than listed. A key the build config promised to
+Everything the chapter places works, every journey passes in the run record `journeyCommand`
+wrote — or every verification line ran, for a chapter that places foundation — and the failures
+are fixed rather than listed. The coordinator's look at the captures comes after you return;
+leave every capture the tests took where they took it. A key the build config promised to
 this chapter under `deferredKeys` is declared now, with its promise deleted in the same change.
 Then write the chapter's row in the state ledger and commit. The ledger is the only place the
 build's progress lives; a closed chapter that is not written there will be built again.
@@ -154,7 +166,7 @@ Conclusions only, in this shape:
 - **closed** — closed, or open with the reason
 - **built** — what now exists, with the frame ids where the chapter placed screens
 - **board fixed** — which frames changed and why
-- **tests** — which closing lines failed and what you did
+- **journeys** — which journeys failed and what you did, and the path of the run record
 - **parked** — what you parked and what it waits on
 - **left standing** — what is running, what is committed
 

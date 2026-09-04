@@ -76,14 +76,11 @@ repository.
 
    - `✖` — required, and nothing works until it is declared.
    - `◑` — **every chapter needs it to CLOSE.** Everything runs, nothing finishes. Five keys carry
-     it, and they are one decision rather than five: `evidenceDir` says where a result document
-     goes, and `chapterLines`, `evidenceLabels`, `closedStatus` and `verdictRole` are the words
-     every check over that document compares. A build with a page of green that cannot end a
-     chapter is what this grade exists to stop being invisible. **The two markup conventions are
-     opposite and the template says so on each key**: a `chapterLines` phrase is the line as
-     written, markup included, and an `evidenceLabels` value is the word alone, because the checks
-     add the emphasis themselves. Declared the wrong way round, they match nothing and report the
-     same zero as a project with nothing wrong.
+     it, and they are one decision rather than five: `journeyTestsDir` says where the journeys live
+     as tests, `journeyCommand` runs them and writes the run record, `evidenceDir` says where that
+     record goes, and `closedStatus` and `verdictRole` are the two words the checks over the ledger
+     and a foundation chapter compare. A build with a page of green that cannot end a chapter is
+     what this grade exists to stop being invisible.
    - `◐` / `●` — a key some chapter promised in `deferredKeys`; the second says its subject now
      exists, so the promise is due.
    - `○` — the project does not use that.
@@ -94,32 +91,25 @@ repository.
    **Read the cost before leaving a key out** — an absence is a choice only when somebody has seen
    the bill for it, and each of these was priced by a project that paid it.
 
-   **Then read the vocabulary census `doctor` prints under those keys** — one line per declared
-   word saying what it matched and in how many documents. `declaredWordsMatchTheDocuments` fails
-   the run on a declaration it can prove is broken, and on a project being wired it cannot: there
-   are no chapter files and no result documents yet, so every count is `○ nothing to match against
-   yet` and every one of those zeros is correct. **`declaredWordsHaveBeenCompared` warns on exactly
-   that state**, which is what a freshly-wired project should expect to see and what it should
-   expect to stop seeing — the warning goes quiet key by key as the documents appear, and it never
-   fails a run. **Come back to the census once the chapter set is generated and the first chapter
-   has been verified**: a `✔ matched 1675` says the declaration reached something, and nothing else
-   in this command's output ever will.
+   **Then read the vocabulary census `doctor` prints** — one line per declared word saying what it
+   matched and in how many documents. On a project being wired every count is `○ nothing to match
+   against yet`, and every one of those zeros is correct; come back to it once the first chapter
+   has closed and the words have documents to match.
 
    **Leave out a key whose subject does not exist rather than inventing a path**, and where a later
    chapter will create it, name that chapter in `deferredKeys`. An invented path is worse than an
    absence: the absence is reported and the invention is not.
 
-4. **Create the evidence folder and its index.** A chapter closes on evidence, so a project with
-   nowhere to put it closes nothing. **Read
+4. **Create the evidence folder and its index.** A chapter closes on its run record, so a project
+   with nowhere to put it closes nothing. **Read
    `${CLAUDE_PLUGIN_ROOT}/skills/board-to-app/references/evidence.md` first** — it is the
-   specification: the shape of a section, the three labels, the capture naming and both ceilings,
-   one picture per content pane, and what to do when a board fix moves what a closed chapter
-   quotes. Write the folder named by `evidenceDir` and an `00-overview.md` in it that carries only
-   what the specification cannot: **the project's own worked examples**, using frames it actually
-   has — an id from somebody else's board names nothing here — the commands it runs while a screen
-   is open, and **the table saying whose eyes take each of the three readings no machine makes, and
-   at which moment.** That table is the project's because it is a staffing decision; everything
-   else is in the reference and is not copied out of it.
+   specification: the shape of the record, the result words, the captures it shows, and the one
+   look a person takes at the close. Write the folder named by `evidenceDir` and an
+   `00-overview.md` in it that carries only what the specification cannot: **the project's own
+   worked example** of a run record, using frames it actually has, the command that runs the
+   journeys, and **the table saying whose eyes take the readings no machine makes, and at which
+   moment.** That table is the project's because it is a staffing decision; everything else is in
+   the reference and is not copied out of it.
 
 5. **Write the three tracking files** when they are missing, in the language the project's other
    documents use. Each answers one question and no other, and each has a key: the state ledger

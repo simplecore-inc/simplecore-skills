@@ -48,9 +48,12 @@ that the product works when nothing has been shown to**, and that evidence outli
 that made it.
 
 **And every check stays green while it happens**, which is what makes this the most expensive proxy
-in the set: the seed makes the numbers the board draws, and the numbers came from the same hand that
-drew the board. 「the seed produces the figure the board draws」 passes while the figure describes
-nothing → `../SKILL.md` § *Waste does not announce itself*.
+in the set: a seed made to produce the figure a frame draws answers to a number that came from the
+same hand that drew the frame, and 「the screen shows the figure」 passes while the figure describes
+nothing → `../SKILL.md` § *Waste does not announce itself*. **The seed pins nothing to the board.**
+It makes the story's relations true — the records the journeys need, connected as the entity model
+says, in the states the frames draw — and its values are its own; a screen whose total is not the
+drawing's is the seed saying what it says.
 
 ### Where the fake is allowed to sit
 
@@ -134,38 +137,6 @@ keep that from becoming a different kind of damage:
   the start of that day is the installation's. A stack that already holds this rule for its
   application code usually does not hold it for its seeds, and that is where it is most often
   forgotten — a seed reads like setup rather than like domain logic.
-
-### Some numbers cannot be pinned, and then the seed declares what it does pin
-
-**A figure the product appends to cannot be held at the board's number.** Sign-in history is
-the clean case: every sign-in writes a real row, that row is nobody's to delete, and the
-count only grows. Three shapes come out of that, and telling them apart is the whole
-difficulty.
-
-| The product's rows are | The seed | What the board draws |
-| --- | --- | --- |
-| its own to remove (a session ends) | converges to the drawn number, deleting **abandoned real rows first and its own last** | the number, as a badge |
-| not its to remove (an append-only log) | pins the **ratio** the screen is about and lets the total grow | the ratio; **no badge for the total** |
-| not its to remove, and nothing observes the total | plants the initial rows and stops | nothing |
-
-**The deletion order in the first row matters and is easy to get backwards.** The seed's own
-rows carry the distribution the screens draw ("38 users"), so removing those first leaves the
-count right and the composition wrong.
-
-**A machine cannot tell the second shape from a defect.** A seed that pins a total and a seed
-that pins a ratio are the same code — a target constant and a convergence that deletes what it
-planted. What separates them is **which number the screen exists to show**, and that answer is
-in the frame. All a checker can see is that a target constant exists, and from there the
-correct case and the broken one look identical.
-
-Two consequences worth stating outright, because both get argued the other way:
-
-- **A screen showing an unpinned total disagreeing with the board is not a defect.** It is the
-  declaration working. 「the tab draws 1,204 and the screen shows 3,113」 is the expected
-  reading of an append-only record on a machine that has been signed into many times.
-- **Evidence writes a pinned number and explains an unpinned one.** 「1,317 sign-ins in the
-  last 30 days」 is stale the moment it is written; 「the ratio is fixed and the total grows
-  with this machine's sign-ins」 never is.
 
 ## Record what a unit of work cost, or the number is gone
 

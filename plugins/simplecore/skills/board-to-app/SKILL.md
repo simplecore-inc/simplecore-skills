@@ -2,7 +2,7 @@
 name: board-to-app
 description: >-
   Use when building an application from a wireframe board in dependency order —
-  chapter by chapter, foundation first — and when running the persona tests that
+  chapter by chapter, foundation first — and when running the persona journeys that
   close each chapter. Also for resuming a build across sessions, deciding which
   chapters may run in parallel, and generating or regenerating the chapter set
   from the board — 시나리오 개발 · 챕터 개발 · 단계별 개발 · 개발 순서 · 페르소나 시험 ·
@@ -18,7 +18,7 @@ A board says what every screen holds. It does not say what has to exist before a
 screen can work, and a pass that takes the board section by section will build a
 list screen whose records nothing can create. **This skill builds in dependency
 order**: the foundation first, then each chapter on top of the one before it,
-each closing with the persona tests that prove it works.
+each closing with the persona journeys, run as tests, that prove it works.
 
 **The chapter is the unit.** One chapter is one file, the file order is the build
 order, and a chapter does not start before the chapter before it has closed.
@@ -31,9 +31,8 @@ rather than here.
 
 **Read this before the first unit of work, because it is the one that decides whether
 any of the rest happens.** The method below is agents: one `simplecore:chapter-builder`
-per chapter, one `simplecore:capture-taker` and one `simplecore:capture-judge` per
-screen, a read-only agent for the chapter audit, and a coordinator that builds nothing
-itself. **Every one of those dispatches is asked for by the act of invoking this skill.**
+per chapter, a read-only agent for the chapter audit, and a coordinator that builds nothing
+itself and looks at every screen once before a chapter closes. **Every one of those dispatches is asked for by the act of invoking this skill.**
 No further permission is needed for them, and none is sought.
 
 That has to be said here because many harnesses carry a standing default of *do not
@@ -128,26 +127,32 @@ apart.
 1. **Dependency order, not board order.** A chapter starts only when every chapter
    in its `prerequisites` section has closed. The board's section letters are a
    subject index, not a build order.
-2. **A chapter closes on its tests, not on its code.** Working screens with no persona
+2. **A chapter closes on its journeys, not on its code.** Working screens with no journey
    run is an open chapter, and so is a foundation chapter whose verifications nobody
    executed.
 3. **Parallel chapters join before they are tested.** Two chapters that reference
    none of each other's frames may be built at once by separate agents — but the
    persona tests wait until both are standing, because the test walks between
    screens that live on both sides.
-4. **The board is the contract.** A screen that disagrees with its frame is wrong
-   even when it looks better. Where the board is wrong, fix the board in the same
-   change (`simplecore:wireframe-boards`) and regenerate the chapter.
+4. **The board contracts structure, and only structure.** Which screens and states exist, how
+   one reaches another, which roles reach each and how far their data goes, and which KINDS of
+   control a screen carries — a list with row actions, a filter, tabs, a detail panel with these
+   verbs, an empty state, a dialog with a primary action. A screen missing any of that is wrong
+   even when it looks better. Everything else the board draws is guidance: a label or a message
+   is the default wording, and a count, a name, a date or a sample row is illustration. Where
+   the product's wording deliberately differs, sync the board (`simplecore:wireframe-boards`);
+   where its data differs, nothing is owed → *What data should exist*, below.
 5. **Chapters are generated, never hand-edited — except the ones the generator excludes.**
-   The expectations quote what the board draws; editing them by hand makes the file agree
-   with the code instead of with the contract. Fix the board, regenerate, rebuild. **A
+   Its structural requirements and its journeys are derived from the board; editing them by
+   hand makes the file agree with the code instead of with the board. Fix the board, regenerate,
+   rebuild. **A
    chapter that places no frames is the exception**: a foundation chapter has no board to
    fix, so `chapterGenerator` leaves it alone and it is written and corrected by hand.
    Which chapters those are is read off the generator's own exclusion rather than guessed,
    and a chapter that places even one frame is never one of them.
 6. **The persona is the tester, not a label.** Each screen names the personas that
-   reach it and what each one must and must not be able to do. A run that only
-   exercises the full-access role has tested a quarter of the screen.
+   reach it and what each one must and must not be able to do, and each persona has its own
+   journey. A run that only exercises the full-access role has tested a quarter of the screen.
 7. **A correction becomes an instruction.** A builder that built the wrong thing, an
    agent that returned nothing, a handover the next session could not use — none of
    those is the agent's failure, and correcting that one agent leaves the next to make
@@ -191,7 +196,7 @@ Then six readings, each against a different source:
 | Read the chapter's | Against | Because |
 | --- | --- | --- |
 | `prerequisites` | the entities its screens actually need, and whose `creates` names each | the list is derived from frame cross-references, so it carries what the screens say about each other rather than what their tables need. A tile whose stated basis is another chapter's entity is a dependency no cross-reference could have produced |
-| persona lines | that entity's own scope column in the design | the lines come from the role matrix, which is per cluster and knows nothing about whether the record has an axis to be scoped on. 「only their own scope appears in the list」 asked of an installation-global entity is a demand nothing can satisfy, and an agent handed it builds a filter to satisfy it |
+| the journeys | that entity's own scope column in the design | the lines come from the role matrix, which is per cluster and knows nothing about whether the record has an axis to be scoped on. 「only their own scope appears in the list」 asked of an installation-global entity is a demand nothing can satisfy, and an agent handed it builds a filter to satisfy it |
 | every statutory or policy value it quotes | `factSources`, now | the chapter naming a value is not the value having been verified — the chapter quotes the frame, and the frame quotes whoever drew it. Read the article's own text against the sentence, and check that the cited paragraph is the one placing the duty the sentence states |
 | a design line it calls stale | that design chapter today | 「the dictionary's line is stale」 is a claim somebody made at generation time, and the commonest reason it is now wrong is that the line was corrected afterwards |
 | what its seed owes | `storyDocument` | a chapter in neither the story's step table nor its exclusion table has a seed nobody has placed in the story — and the cross-chapter facts a seed needs, such as two people whose correlation must fail, are settled here or nowhere |
@@ -350,7 +355,7 @@ written at the end so the earlier sections keep their numbers」 — so the next
 tidy it back into subject order.
 
 **Expect the chapter to stay red on that frame, and say so.** It is placed but not built,
-not verified and not captured, and `closedChapterHasEvidence` and `everyPlacedFrameIsCaptured`
+not verified and not captured, and `closedChapterHasAJourneyRun` and `everyPlacedFrameIsCaptured`
 say exactly that — what to do about it is `references/evidence.md` § *When a closed chapter gains
 a screen*, and the answer there is that the chapter is not closed. That finding is true and is not the placement's fault: clearing it means
 building the screen, running its lines and capturing it. **An agent that cannot do those —
@@ -455,58 +460,72 @@ is why the word is fixed here: a project left to invent its own invents a differ
 telling a chapter's commits from the setup's is a different `git log` incantation in every
 repository, which is the single thing the trailer exists to prevent.
 
-## Development, then the persona run
+## Development, then the journeys
 
-Each screen in a chapter carries two kinds of line: what to build, and what each
-persona must find. Build the whole chapter first — a persona test that walks
-between two screens cannot run while one of them is missing.
+A chapter carries two kinds of line: what to build, and the journeys that prove it. Build the
+whole chapter first — a journey walks between screens, and it cannot run while one of them is
+missing.
 
-**A chapter that places no screens carries the same two kinds**, with a machine
-verification where a screen chapter has a persona: a foundation chapter's second line
-says what has to hold once its half is built — the migration that rolls back to the same
-schema, the expired token that is refused — and it is executed rather than reasoned
-about. Everything below is written for the persona run because that is the common case;
-it holds for a verification line word for word.
+**A journey is one persona finishing one piece of work across the chapter's screens.** It starts
+where that person starts, presses the way from screen to screen through the running application,
+finishes the primary action, and states what must then be true — as relations, never as values:
+the record it made appears in the list it belongs to, the tile above the list counts it, the
+detail it opens is that record, the persona it refuses is refused at the address. A negative
+journey is one journey too: a persona the chapter's screens do not admit reaches the address and
+is denied on the server.
 
-**Then run the personas, one at a time, as that person.** Sign in with that
-role's account, start where that person would start, and use only what that
-person can reach. A test run as an administrator who then "checks the supervisor's
-view" by switching a filter has not tested the supervisor.
+**Every journey is written as an automated test and kept with the product**, under the directory
+`journeyTestsDir` names, in the project's own test framework, and it is run by `journeyCommand`.
+**The passing run is the evidence.** The command writes one run record per chapter into
+`evidenceDir` — one row per journey with its persona, its test and its result, and one capture per
+screen-state the journey visited — and nothing about the verification is written by hand.
 
-**Record what the run found, not that it ran.** A persona line that passed needs
-no note. A line that failed names the screen, the expectation, and what happened
-instead.
+**A chapter that places no screens carries a machine verification where a screen chapter carries
+a journey** — the migration that rolls back to the same schema, the expired token that is refused —
+and it is executed rather than reasoned about. Everything below is written for the journey because
+that is the common case; it holds for a verification line word for word.
 
-## Matching the board is the floor, not the verdict
+**Run each journey as that person.** The test signs in with that role's account and reaches only
+what that person reaches. A test that signs in as an administrator and then narrows a filter has
+not tested the supervisor, and a scoped role's boundary is proved on the server — the record
+reached by its address and refused — never by a hidden button.
 
-A screen can match its frame exactly and still be one nobody can work in. The board
-settles what is on the screen; it does not settle whether the screen holds up when a
-real person opens it in the longest language it ships in and presses everything.
+**A journey asserts relations and structure, never the board's values.** A tile equals the count of
+what its list holds; a detail shows the record the row named; a new record is in the list and the
+count grew by one; the empty list shows guidance and a next action. A test that asserts 「the tile
+reads 119」 or 「the first row is TN-3600M」 has copied the illustration into the fixture, and it
+passes for a product that shows nothing of the kind → `references/scenario.md`.
 
-So each screen is **judged as well as built**, in character — by the operator whose work
-it carries, by the end user the service is for, and by every persona the chapter names.
-**Looking means pressing**: an overflow that exists only in the language nobody opened
-and a second tab that was never opened both read as a clean screen.
+## Matching the structure is the floor, not the verdict
 
-The lenses in full, the locale and alignment rules, and the anchor every finding needs
-→ `references/judging-frames.md`.
+A screen can carry every control its frame draws and still be one nobody can work in. The board
+settles what is on the screen; it does not settle whether the screen holds up when a real person
+opens it in the longest language it ships in and presses everything.
+
+So each screen is **looked at once, in character**, at the chapter's close — by the coordinator,
+opening the captures the journey run left, as the operator whose work the screen carries. Looking
+is for what no test can fail on: a label cut at an edge, a font with no glyph, a control nobody
+can see, a state frame that came back as its base. **One look per screen-state, and the findings
+of that look are fixed in one round** → *Closing a chapter*. The lenses, the locale and alignment
+rules, and the anchor every finding needs → `references/judging-frames.md`.
 
 ## When a screen and its frame disagree
 
-1. **Fix it there.** Then take the same path again, and the neighbouring screens with
-   it. Where the board is the stale side, fix the board and regenerate the chapter.
-2. **A defect a machine could see becomes a rule the moment you understand it.** Not
-   on the second sighting — that is the floor, not the bar. Ask the question every
-   time: **can a machine see this?** Most defects that reach a person are mechanically
-   visible once somebody has described them precisely — a value computed in two
-   places, a string that should exist once, a control with no destination. Describing
-   it well enough to detect is most of understanding it. Where it belongs and how it
-   is proved → `references/checks-and-eyes.md`.
-3. **Only what needs a person goes to a person**, and it goes to the open items, not
-   into a pause.
+1. **Decide which layer disagrees, because only one of them is a defect.** A missing state, a
+   control of the wrong kind, a way between screens that is not there, a role that reaches what
+   it must not — that is structure, and it is fixed in the product, then the journey is run again.
+   A label worded differently, a count that is not the drawing's, a sample row that is not on the
+   screen — that is guidance and illustration; where the product's wording is the deliberate one,
+   sync the board, and where it is data, nothing moves.
+2. **A structural defect a machine could see becomes a check the moment you understand it**, in
+   `auditScript` or as a helper every journey test calls — never as a sentence a person re-verifies
+   per frame. Most defects that reach a person are mechanically visible once somebody has
+   described them precisely: a control with no destination, a route with no server-side guard, a
+   list with no empty state. Where it belongs and how it is proved → `references/checks-and-eyes.md`.
+3. **Only what needs a person goes to a person**, and it goes to the open items, not into a pause.
 
-Do not write audit findings into documents. A finding was fixed, became a rule, or is
-a line in the open items.
+Do not write audit findings into documents. A finding was fixed, became a check, or is a line in
+the open items.
 
 ## Parking is a last resort, and most things do not qualify
 
@@ -781,7 +800,7 @@ spend like any other and is taken again from the start; a record that carries on
 makes the arrangement's cost look like the sum of its useful work, and the waste leaves no trace
 in any total. One such run cost 157,540 tokens and produced not one usable picture, which is a
 figure nothing that omitted it could ever have shown — and it is the figure that argues for the
-pre-flight the `capture-taker` now runs.
+pre-flight a capture run makes before its first picture.
 
 **Arm both watches in the same turn the agent is dispatched**, not afterwards. A
 coordinator is busy between events and two turns is an hour, so "I will check the log"
@@ -821,22 +840,23 @@ different reasons a screen gets photographed, and why none substitutes for anoth
 
 Working screens are the floor. A chapter also owes, for every screen in it:
 
-- **The states the board draws** — the dialogs, panel forms and empty states are
-  part of the screen, not a later polish pass.
-- **The role boundary, enforced on the server.** A hidden button is not a
-  boundary; the persona test for a scoped role must fail if the record can be
-  reached by its address.
-- **The screen copy the board wrote**, in the board's own words rather than the
-  developer's paraphrase.
+- **The states the board draws** — the dialogs, panel forms and empty states are part of the
+  screen's structure, not a later polish pass. An empty list shows guidance and a next action;
+  which words is the product's.
+- **The role boundary, enforced on the server.** A hidden button is not a boundary; the negative
+  journey for a scoped role must be refused when the record is reached by its address.
+- **The board's wording as the default.** Use the labels and messages the board wrote unless the
+  product has a reason not to, and where it has one, sync the board in the same change. A
+  paraphrase is never a defect and never fails a gate.
 
-Whatever `frameDeliverables` declares is part of the chapter's close, one checkable
-sentence at a time — and **a screen that owes one is not finished until it exists** →
-`references/frame-artefacts.md`.
+Whatever `frameDeliverables` declares is a standing check every screen must satisfy, and **each
+sentence names the mechanism that holds it** — a rule in `auditScript` or a helper the journey
+tests call. A sentence nothing holds is a note, and it is not declared → `references/frame-artefacts.md`.
 
 **That list is also where a defect the running product showed lands when no frame can draw it** —
-a value derived wrongly from what the system reports, a demand that cannot be answered at the
-address it is answered at. It grows as such defects are found, and the generator emits each
-sentence per frame so every later chapter re-asks it rather than the defect being fixed once →
+a value derived wrongly from what the system reports, a control whose destination is nowhere. It
+grows as such defects are found, and every entry grows with the check that catches it, so the
+defect is caught on every screen built afterwards without anybody re-reading a sentence →
 `references/demands.md`.
 
 ## Running without stopping to ask
@@ -862,12 +882,15 @@ things otherwise turn into a question, and none of them has to.
    | **Where a credential comes from** | the project's development configuration, its seed, a `.env`-shaped file, a fixture, or a value the user supplied. **Never invented.** Where none can be found anywhere, that is one of the four things below that waits for a person |
    | **Where there is no account** | a development server exposing a sign-up screen gets a test account made on it, and the run continues |
    | **Where a credential must not go** | a reply, a log line, a capture caption, a result document, a commit, or any file. It reaches the process signing in and stops there |
-3. **What data should exist?** The numbers the board draws are the fixture specification: a frame
-   drawing a count of 119 valid records says the seed makes 119. One story, one site, every chapter
-   on top of the last → `references/scenario.md`.
+3. **What data should exist?** The seed makes the story's relations true against the schema:
+   every record the chapter's screens need exists, connected as the entity model says, in every
+   state the board draws, for every persona the journeys name. **Its values are its own.** The
+   counts, names and dates the board draws are illustration, and a screen whose numbers differ
+   from the drawing is not a defect; a screen whose own figures disagree with each other is. One
+   story, one site, every chapter on top of the last → `references/scenario.md`.
 
    **And it is produced by the path the product uses.** Typing a value into a fixture so the screen
-   matches the board is never allowed — a capture of a screen fed hand-written values is
+   shows a wanted figure is never allowed — a capture of a screen fed hand-written values is
    indistinguishable from a real one in every check and to every later reader, so it does not fail
    to prove the product works, it **produces evidence that it works when nothing has been shown
    to**. The fake belongs at the wire — a recorded or edited response from whatever the product
@@ -1055,126 +1078,57 @@ leaves it open; the other word is the owner's to spend, and an agent writing it 
 long has forged the one signature in the ledger that is not its own.
 
 
-A chapter closes when every screen in it works, every persona line has been run,
-and the failures are fixed rather than listed. Before saying so:
+A chapter closes when every screen in it works, every journey passes, and the findings of one
+look are fixed rather than listed. Before saying so:
 
-1. **The coordinator opens the chapter's captures, one by one, and looks at them.** Not the
-   builder that took them — this is the one reading in the arrangement taken by a party that
-   did not produce what it is reading, and that is the whole of its value. It comes first
-   because what it finds feeds the two steps below: a defect nobody has seen yet cannot be
-   cross-swept.
+1. **Run `journeyCommand` and read the run record it wrote.** Every journey the chapter names has
+   a row, every row reads pass, and a capture stands for every frame the chapter placed — a frame
+   no journey visited is a screen nobody opened, and `everyPlacedFrameIsCaptured` says so. A
+   failing journey is fixed in the product and the command is run again; the record is never
+   edited by hand.
+2. **Look at every capture once, as the persona.** Three questions per picture, and the third is
+   the one that fails:
 
-   Three questions per picture, and the third is the one that fails:
+   - **Is this the frame it is named after?** A swallowed deep link leaves the previous screen,
+     and `noTwoCapturesAreTheSamePicture` reports a state frame that came back as its base.
+   - **Is the screen in it built, or is it the shell?** Rows, values, content — look for what
+     should be there and is not.
+   - **Does it hold up as a screen?** A label cut at an edge, a control nobody can see, a font with
+     no glyph, the longest language overflowing.
 
-   - **Is this the frame it is named after?** A swallowed deep link leaves the previous
-     screen, and the file is then a perfectly good picture under the wrong name.
-   - **Is the screen in it built, or is it the shell?** A route that answers 200, raises no
-     console error and paints the chrome with nothing inside it is what every other check in
-     this skill sees as a pass. Rows, values, content — look for what should be there and is
-     not.
-   - **Does what the chapter wrote down about this screen match the picture?** Where the
-     project keeps a verification record, its sentences are read against the images they
-     cite, one at a time. A sentence written from the responses rather than from the screen
-     is fluent, specific, and about a screen that does not exist →
-     `references/judging-frames.md` § Taking a capture is not reading one.
+   **What the look finds is fixed in one round.** Fix, re-run the journeys, look again at the
+   screens the fixes reached and one screen they did not. What is still open after that round
+   goes to the open items with the frame id and what it needs — a third round is a new chapter's
+   work, or the owner's decision to end this one → *The product's owner can end a chapter*.
+3. **Sweep each defect type across the chapter's code once**, by search, and fix what it finds;
+   report the sweep per type, including 「0 others」. A type a machine can see becomes a rule in
+   `auditScript` in the same change, run across the whole tree.
+4. **Audit the chapter's code with a read-only agent while nothing else is running**, and act on
+   every finding in the same session: the same logic in two places, a file whose parts stopped
+   belonging together, one idea under two names, a convention nothing holds. Each finding leaves as
+   a refactor done now or a check written now — a check is code in `auditScript` or a helper the
+   journey tests call, never a sentence somebody re-reads — and a finding worth neither is closed
+   with its reason rather than deferred.
+5. **Run every command in `gates`**, all of them, green, each read by its exit status rather than by
+   the tail of its log → `references/harness.md`. `bta.mjs check` is one of them, and `bta.mjs
+   gates` runs whenever a gate was added or changed. **This run happens after the builder has
+   returned, never beside it**; a killed run (`143`) is neither red nor green and is run again from
+   clean, with the residue cleared and said so.
+6. **Sync the board in the same change** where the product was right and the board was stale —
+   the structural layer only, and the wording the product deliberately chose →
+   `references/judging-frames.md`.
+7. **Fold what the chapter learned back into the graph, then regenerate.** A dependency the
+   prerequisite list did not name, an entity that turned out to belong elsewhere, a table the
+   chapter had to create — each goes into the owning chapter's `entities` or `creates` section, and
+   `chapterGenerator` runs before the chapter is called closed.
+8. **Declare what this chapter brought into existence.** A key `deferredKeys` promised to this
+   chapter is declared now and its promise deleted in the same change.
+9. **Write the chapter's row in the state ledger**, and say what closed and what the next chapter
+   is. **Do not edit the chapter file to mark it done** — its state is the system's state.
 
-   **A frame with no capture is this step's finding, not the gate's.** Say which frames were
-   looked at, **by id** — a count is not an answer, because the frames nobody opened are
-   exactly the ones nobody can name afterwards.
-
-   **A verification record quoting a generated chapter file goes stale when that file is
-   regenerated.** The chapter's expectations are rewritten from the board, so a sentence
-   quoted into the record weeks ago can be a sentence the chapter no longer contains — and it
-   still reads as a quotation. Re-check the quotations immediately before writing 닫힘, not
-   when they were first written; where a project has a gate that matches the record's
-   quotations against the chapter, that gate is what to run, and re-quote whatever it names.
-2. **Cross-sweep by defect type.** Each defect found is a *type*; search the whole
-   codebase for other instances and fix those too. Report the sweep per type,
-   including "0 others". A type that already became a detection rule is swept by what
-   `auditScript` names — run it, or the whole family where the key names a directory,
-   and report that; the manual search is for the types seen only once.
-3. **Audit the chapter's code, and act on it.** Not optional, and not the same thing as
-   the cross-sweep: that hunts instances of defects somebody already found, this looks
-   for what nobody found because no single builder could see it. A chapter is built by
-   several agents in sequence, none seeing the others' code; they solve the same problem
-   in different files without knowing the other exists, and every one of those
-   duplicates compiles, passes and reviews cleanly on its own. It is only visible from
-   above, once, at the moment the chapter is finished and before the next chapter copies
-   from whichever variant it happens to open.
-
-   Do it with a **read-only agent while nothing else is running**, so the audit cannot
-   fight a builder for the tree. Ask it for: the same logic in two places, a file whose
-   parts stopped belonging together, one idea under two names, a rule the chapter obeys
-   by habit that no checker holds, and dead ends. Rank by cost, not by ease.
-
-   Then **act on the findings in the same session**, and every finding leaves as one of
-   exactly two things:
-
-   | The finding is | It becomes |
-   | --- | --- |
-   | Something wrong in the code — a duplicate, a seam, a name | **A refactor.** Done now. |
-   | Something the code happens to get right, with nothing holding it | **A checker.** Written now. |
-
-   There is no third column. "Worth doing later" is where findings go to die: the report
-   is filed, the duplicate is copied by the next chapter before anybody returns to it,
-   and the audit spent its context for nothing. If a finding is genuinely not worth
-   either — say so and why, and it is closed rather than deferred.
-
-   The second row pays for the whole exercise and is the easiest to miss because nothing
-   is broken. Eight screens doing the right thing because their authors happened to is
-   not a rule; it is eight coincidences, and the ninth screen is written by somebody who
-   never saw the other eight. Ask of every convention the chapter follows: **what stops
-   the next screen breaking this?** If the answer is "somebody would notice in review",
-   write the checker.
-4. **Run every command in `gates`**, all of them, green, each read by its exit status
-   rather than by the tail of its log → `references/harness.md`. `bta.mjs check` is one
-   of them, and `bta.mjs gates` runs whenever a gate was added or changed.
-
-   **This run happens AFTER the builder has returned, never beside it.** The builder runs the same
-   gate before it stands down, so a coordinator that starts its own while the builder is finishing
-   puts two full runs on one database — the collision *Judge the overlap* already names, with the
-   coordinator as a party to it rather than a second chapter. Both sides pay: one run is killed
-   mid-suite and the other's last checker blocks for ten minutes on locks the dead one never
-   released. Until the builder returns, the coordinator judges by artifact — the captures, the
-   result document, `git log` — none of which touches the database.
-
-   **And a killed run is a third state that the exit status cannot tell you apart from a failure.**
-   `143` is not red and not green; it is a reading that does not exist, and anything checking only
-   for zero files it as a defect in the code. Say which it was — 「terminated during checker 50 of
-   50」 rather than 「the gate failed」 — and re-run from clean rather than reasoning about the
-   fragment. **The residue is the part that bites next**: processes from an interrupted run keep
-   whatever locks they held, so the following run fails somewhere that has nothing to do with the
-   work. Clear them, and say in the report that you did.
-
-   **Where one entry is itself a chain of checkers, red does not mean 「one of them is wrong」 — it
-   means 「everything after it was not measured」.** The exit status is honest; the reading is what
-   goes wrong, and 「one place is not green」 and 「twenty-two have not been looked at」 are the same
-   picture on the screen and completely different states. What closes a chapter is **one run that
-   reached the end and came out green**, never how far the last one got. So say what did not run,
-   as a count: 「stopped at checker 12 of 34」 names the twenty-two, and 「`check:ids` failed」 names
-   none of them → *The third category comes back as a checker that did not run*.
-5. **Sync the board in the same change** where the code was right and the board was
-   stale — but only the layer a board contracts, which is structure rather than the
-   values in its illustration → `references/judging-frames.md`.
-6. **Fold what the chapter learned back into the graph, then regenerate.** A dependency
-   the prerequisite list did not name, an entity that turned out to belong elsewhere, a
-   table the chapter had to create — each goes into the owning chapter's `entities` or
-   `creates` section, and `chapterGenerator` runs before the chapter is called closed.
-   **A graph that is not regenerated at the close is a graph that stops learning**, and
-   the next wave is assembled from what was true two chapters ago.
-7. **Declare what this chapter brought into existence.** A key `deferredKeys` promised to
-   this chapter — a migration directory, an address that renders a frame, a generated
-   locale — is declared now and its promise deleted in the same change. `bta.mjs check`
-   fails while the subject is on disk and the key is not declared, so this is a step that
-   holds itself; what it cannot do is declare the key for you.
-8. **Write the chapter's row in the state ledger**, and say what closed and what the next
-   chapter is. **Do not edit the chapter file to mark it done** — its state is the
-   system's state, and a file that says "done" while the system disagrees is worse than
-   no file.
-
-A chapter closes with its parked lines still open if nobody could settle them. Say which they
-are; do not close them by choosing for the user. **A line naming this chapter as the one it blocks
-is the exception** — that one is settled, or explicitly released on the line, before the chapter
+A chapter closes with its parked lines still open if nobody could settle them. Say which they are;
+do not close them by choosing for the user. **A line naming this chapter as the one it blocks is
+the exception** — that one is settled, or explicitly released on the line, before the chapter
 closes → *One kind of parked line does hold a chapter*.
 
 ## Waste does not announce itself — the check that passed is the one to suspect
@@ -1240,13 +1194,13 @@ consecutive sessions are comparable:
 ```text
 CHAPTER: <id and name> — closed / still open
 BUILT: <one line per screen: frame id, what now exists>
-CAPTURES READ: <frame ids the coordinator opened and looked at / frame ids nobody opened>
-PERSONA RUNS: <per persona: lines run, lines that failed and what was done>
-FIXED: <grouped by defect type, one line per instance>
+JOURNEYS: <per persona: journeys run, journeys that failed and what was done>
+LOOKED AT: <frame ids the coordinator opened and looked at / frame ids nobody opened>
+FIXED: <grouped by defect type, one line per instance, and which round found it>
 CROSS-SWEEP: <per defect type, other instances found and fixed, including "0 others">
 CHAPTER AUDIT: <what the read-only pass found — then every finding under one of:>
   REFACTORED: <the code was wrong; what changed>
-  NOW CHECKED: <the code was right by habit; which checker now holds it>
+  NOW CHECKED: <the code was right by habit; which check now holds it>
   CLOSED:     <neither, with the reason — never "later">
 RULES ADDED: <defect type → where the detection rule now lives, or "none">
 BOARD SYNCED: <frames corrected and the chapter regenerated, or "nothing — the code was wrong every time">
@@ -1256,16 +1210,15 @@ STILL TRUE: <standing prose an agent read against what it guards and did not hav
 PARKED, STILL OPEN: <one line each, with what decision it needs and from whom>
 VERIFICATION: <each gate and its result>
 LEDGER: <the row written, and the next chapter>
-DELIVERABLES: <what each screen owed beyond code and where it landed, or "none declared">
-CAPTURES: <paths only>
+RUN RECORD: <path of the run record and its captures>
 ```
 
-**`CAPTURES READ` is two lists of frame ids, and the second one is the point.** 「built,
-typechecked, and never opened」 is a different claim from 「done」, and a report that folds them
-together hands the reader a chapter's worth of false confidence. A count cannot do it either —
-the frames nobody opened are exactly the ones nobody can name afterwards, which is why the
-field takes ids on both sides and 「all of them」 is not an answer. An empty second list is a
-strong claim and is written out as `none` rather than left off.
+**`LOOKED AT` is two lists of frame ids, and the second one is the point.** 「built, green, and
+never opened」 is a different claim from 「done」, and a report that folds them together hands the
+reader a chapter's worth of false confidence. A count cannot do it either — the frames nobody
+opened are exactly the ones nobody can name afterwards, which is why the field takes ids on both
+sides and 「all of them」 is not an answer. An empty second list is a strong claim and is written
+out as `none` rather than left off.
 
 **`STILL TRUE` is how standing prose gets an age.** A handover fact, a parked line, a note that
 names files — each keeps saying what it said after the thing beneath it moved, and only somebody
@@ -1393,66 +1346,41 @@ enumeration reaches it, run the check, read the count, remove it.
 
 ## Generating and regenerating the chapters
 
-The chapter set is derived from three things — the placement (which frame belongs to
-which chapter), the board (what each frame draws and which roles reach it), and the
-persona map. **Generate it once, regenerate it whenever the board changes**, with the
-command `chapterGenerator` names — **except into a chapter whose verification is running.** A
-round of verification quotes the chapter it is proving, so a sentence that moves mid-round
-unfinishes every section already written; collect the change and release it when the round ends
-→ `references/evidence.md` § *The demands do not move while the verification is running*.
+The chapter set is derived from three things — the placement (which frame belongs to which
+chapter), the board (what each frame draws and which roles reach it), and the persona map.
+**Generate it once, regenerate it whenever the board changes**, with the command
+`chapterGenerator` names — at a chapter's open, before its first agent goes out, and again at its
+close after the graph has learned. Regenerating mid-chapter changes what the builder is building
+to; hold a board fix until the chapter closes unless the fix is the reason it cannot close.
 
-What a generated chapter carries: the previous chapter and the state it leaves, the
-chapters that must close first and those that may run alongside, the frames it owns as
-board ids, and per screen a build line plus one test line per persona.
+What a generated chapter carries, and nothing else:
 
-**What goes ON that test line is the whole value of the arrangement, and it is not
-obvious.** A line quoting the frame's tabs, counts, messages and primary action describes
-a screen being LOOKED AT; every control a person presses — the panes behind the open one,
-the empty state, the search and its filters, the row actions, the header buttons, the
-panel's verbs — is invisible to it, and a screen can satisfy such a line while having
-none of them. Widening one chapter set from the first shape to the second had seven
-screens answer 「that is not there」 which had all passed before. **`references/demands.md`
-is what a demand list has to hold and why**, written for a generator this skill does not
-ship.
+| Part | What it holds | Derived from |
+| --- | --- | --- |
+| the header | the previous chapter and the state it leaves, the chapters that must close first and those that may run alongside, the entities it creates, the frames it owns | the placement |
+| **one structural line per frame** | the address, the kinds of control the frame carries and how many of each — a list with N row actions, a filter, N tabs, tiles, a detail panel with N verbs, an empty state, a dialog with a primary action — and the roles that reach it with their scope. Labels are named in parentheses as the default wording | the frame's own drawing |
+| **the journeys** | one per persona the chapter's screens admit, and one negative journey per persona they refuse: the screen it starts on, the way it presses between screens, the primary action it finishes, and what must then be true, as relations | the roles, the frames' cross-references, each frame's primary action |
+| **the seed relations** | what the story must make true for these journeys to run — records connected as the entity model says, in the states the frames draw | the frames' tiles, tabs and entities |
+| the verdict lines | for a chapter that places foundation: the machine verification that closes it | the placement |
+
+**No line of it quotes a value, a count, a sample row or an exact message.** A demand that copies
+a figure out of a frame makes the seed answer to a sketch, and a test written from it passes for a
+product showing nothing of the kind. Every sentence the generator writes is one a journey test
+can assert with no number known in advance → `references/demands.md`.
 
 **A frame the role map is silent about falls back to the chapter's own persona, never to silence.**
-A shared pattern — a list shape, a confirm dialog, a read-only mode — is drawn inside other screens,
-so the matrix that says which role reaches which screen has no row for it and a generator writing
-one test line per persona writes none at all. What comes out is a section with a build line and
-nothing under it, which is a screen built and never asked for anything. **Emit the same demands
-under the persona the chapter's own header already names**: the body is unchanged and only the
-addressee is filled in, and it comes from the value that header is computed from rather than from a
-role invented for the occasion — a frame demanding of somebody the header does not name is a chapter
-contradicting itself in two adjacent lines.
+A shared pattern — a list shape, a confirm dialog — is drawn inside other screens, so the matrix
+has no row for it. Its structural line is written under the persona the chapter's header names,
+and the journey that opens the screen it lives in covers it.
 
-**Reach for the verdict word here and it is the wrong word, which is worth saying because it is the
-tempting one.** A pattern reads as nobody's, and the verdict line is the skill's other way to close
-a section. Read what the demands actually say before choosing: press the tab, press the row action,
-open the empty list at its address, leave a capture. Those are a person in a browser — and where the
-project declares `captureRoute`, a pattern **is** opened on its own, at its own address, which is
-the sentence that makes the fallback a persona rather than a machine. `verdictRole` is declared as
-the word for a line a machine proves; putting browser acts under it makes one word mean two things
-in the field every check over a chapter's evidence keys on. Keep it for a chapter with no frames at
-all.
-
-> **Read it this way and it is wrong**: 「the chapter has test lines, so its screens are covered」.
-> A count is taken per chapter and the defect is per section, so a chapter reading eight build lines
-> and twenty-four persona lines looks healthy while one of its eight sections closes on nothing —
-> and the silence is what makes every gate downstream quiet about it, since each of them takes its
-> demands from the lines that section does not carry. `everySectionCarriesItsClosingLine` reads the
-> section rather than the chapter for exactly that reason.
-
-**A chapter with no frames is outside all of that, and the generator says which.** There
-is nothing to derive for a foundation chapter — no frames, no personas, so no quoted
-expectations — and a generator that wrote one anyway would produce an empty file where a
-hand-written one belongs. So it excludes that chapter by name, and the exclusion is the
-one place the exception is recorded: a chapter the generator skips is edited by hand, and
+**A chapter with no frames is outside all of that, and the generator says which.** There is
+nothing to derive for a foundation chapter, so it excludes that chapter by name, and the exclusion
+is the one place the exception is recorded: a chapter the generator skips is edited by hand, and
 every other chapter is regenerated.
 
-Two shapes must survive regeneration because the board's own gates read them: the
-per-chapter placement lines that name each frame once, and the tallies that count them.
-**Keep the generator with the project** — it reads that project's board layout, so it
-does not belong in this skill.
+Two shapes must survive regeneration because the board's own gates read them: the per-chapter
+placement lines that name each frame once, and the tallies that count them. **Keep the generator
+with the project** — it reads that project's board layout, so it does not belong in this skill.
 
 ## The references beside this file
 
@@ -1468,11 +1396,11 @@ rediscovering it:
 | a rule needs a check, or a project needs its own gates wired in | `references/checks.md` — where a gate belongs, the context it reads, and what makes one trustworthy |
 | a screen disagrees with its frame and you are deciding which is wrong | `references/judging-frames.md` — the three lenses, the locale and layout rules, the anchor every finding needs |
 | a screen owes something besides working code and you are listing what | `references/frame-artefacts.md` — the three reasons to photograph a screen, capture axes, fingerprints, what a stale artefact costs |
-| you are writing the result document a chapter closes on, or a board fix has left a closed chapter quoting a sentence it no longer carries | `references/evidence.md` — the shape of a section, the capture naming and its ceiling, one picture per content pane, and the four paths out of a drifted quote |
+| you are reading a chapter's run record, deciding what a journey test may assert, or a closed chapter gained a screen | `references/evidence.md` — the run record, the captures it shows, the one look, and what happens when a closed chapter gains a frame |
 | you are about to drive the product — browser, simulator, device | `references/driving-the-product.md`, which also says where a low-level command beats the tool |
 | two agents must write one file, or a measurement surprises you, or a check has never fired | `references/harness.md` |
 | you are deciding what the seed and the captures tell as one story, or where a fixture's values are allowed to come from | `references/scenario.md` — the provenance rule first, then the story |
-| you are writing or widening the generator that produces the chapters | `references/demands.md` — what a demand list holds, why a demand is an act rather than an observation, and the three ways an irreversible verb is walked up to |
+| you are writing or widening the generator that produces the chapters | `references/demands.md` — the structural line, how journeys are derived from a board, what a journey asserts and never asserts, and the three ways an irreversible verb is walked up to |
 | the project has been reconciling its board frame by frame and has no chapter set yet | `references/migrating-from-a-walk.md` — what its config carries over, how the chapters are decided, and the order that leaves the project working at every step |
 
 ## Where the other skills stand

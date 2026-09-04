@@ -1,12 +1,9 @@
 {
   "//": "Copy to .claude/board-to-app.json at the project root. Replace every <…> placeholder with a path relative to that root, and DELETE the line for anything this project does not have — a placeholder left in place is a path that does not exist, and the skill stops on it rather than guessing. An empty array means the project declares none. A key deleted because its subject does not exist yet — no backend, so no migration directory — gets a line in `deferredKeys` instead, naming the chapter that will declare it; an absence nobody promised is read as a decision. The board-to-app skill's config table says, per key, what it names and what its absence costs. Keys the skill does not know are ignored, so notes like this one are safe to keep.",
-
   "//boards": "ONE BOARD IS THE ORDINARY CASE AND NEEDS NOTHING HERE — leave this note and read on only if this repository draws two products. A project with two boards declares each one's own keys under `boards`, keeps everything shared at the top level, and every command names which board it is about (`--board <name>`, or run it from inside that board's folder). What must be a board's own, never shared: boardRoot, boardManifest, chapterDir, chapterOverview, stateLedger, handoverFile, evidenceDir — these carry PROGRESS, and two boards pointing at one of them do not give two builds, they give one whose rows are about whichever board wrote last. `boardsGate` refuses that. Shape: \"boards\": { \"console\": { \"boardRoot\": \"wireframes/console/src\", \"stateLedger\": \"docs/build/console/STATE.md\", … }, \"workbench\": { … } }. A board's value wins over the shared one for the same key, which is what lets two boards share a locale list and differ on the address their application opens at.",
-
   "boardRoot": "<directory holding the board's frame sources>",
   "boardManifest": "<file listing every frame with its permanent id>",
   "boardRoles": "<file mapping personas to the frames they reach>",
-
   "chapterDir": "<directory holding one file per chapter, in build order>",
   "chapterOverview": "<the chapter table: order, prerequisites, what may run alongside>",
   "chapterGenerator": "<command that regenerates the chapter set from the board>",
@@ -23,106 +20,90 @@
     "promises": "<heading: screens it points at that do not exist yet>",
     "touchedEarlier": "<heading: the hand-authored section for a change to a closed chapter>"
   },
-
-  "//closing": "The five keys below are what a chapter CLOSES on. None is required to start — a project declares none of them, builds every screen, and finishes no chapter, which is the state `bta doctor` reports as ◑ rather than as a blank. Every check over a chapter's result document compares words, and the words are these; declared wrongly, the checks match nothing and report the same zero as a project with nothing wrong. `declaredWordsMatchTheDocuments` counts what each of them matched and `bta doctor` prints the census, so a declaration that reaches nothing stops being indistinguishable from a repository with nothing to find — but only once there are documents to match against, which a project being wired does not yet have. The specification of the document itself is `references/evidence.md`.",
-
-  "//evidenceDir": "Where a chapter's verification result and the captures it cites are written. The folder's own index — a file starting `00`, `_` or `README` — belongs to no chapter.",
+  "//closing": "The five keys below are what a chapter CLOSES on. None is required to start — a project declares none of them, builds every screen, and finishes nothing; `doctor` says which key is why. `evidenceDir` is where the run record goes; `journeyTestsDir` and `journeyCommand` are the journeys as tests and the command that runs them; `closedStatus` and `verdictRole` are the ledger's word for a closed chapter and the heading's word for a machine verdict.",
+  "//evidenceDir": "Where `journeyCommand` writes a chapter's run record, and where the journey tests put the captures they take, in a folder per chapter beside it. The folder's own index — a file starting `00`, `_` or `README` — is the project's worked examples and is read by no check.",
   "evidenceDir": "<directory holding one result document per chapter, and a capture folder per chapter beside it>",
-
-  "//chapterLines": "The lines a chapter writes that a check has to recognise, AS WRITTEN — markup and all, because the phrase is compiled straight into the reader that scans a chapter file. Two placeholders and nothing else: `{text}` is captured and `{n}` is a number that is not; `…` at the front or the back leaves that end open. A role this project writes no line for is declared `null` with the reason in `//<role>` beside it — a config that fails validation and a line declared to satisfy it that no chapter contains are both worse.",
-  "chapterLines": {
-    "persona": "<the line a named role has to prove, e.g. **Test · {text}**…>",
-    "verdict": "<the line a machine proves instead, e.g. **Verdict**…>",
-    "states": "<the sentence listing the states hanging off a screen, or null with a //states reason>"
-  },
-
+  "//journeyTestsDir": "Where a chapter's journeys live as automated tests, in the project's own framework. One test per journey the chapter names; each signs in as its persona, drives `journeyRoute`, asserts relations, and takes one capture per screen-state it visits.",
+  "journeyTestsDir": "<directory holding the journey tests, e.g. tests/journeys>",
+  "//journeyCommand": "The command that runs the journey tests for one chapter and writes that chapter's run record into `evidenceDir` — a table with one row per journey (journey, persona, test, result) and the captures the tests took.",
+  "journeyCommand": "<command that runs the journeys and writes the run record, e.g. npm run journeys -->",
   "//deferredLine": "The line an evidence section carries when a check RAN and this installation could not decide it — same grammar as `chapterLines`, and its `{text}` is the chapter that repays the debt. Delete the line where the project has never met that case. A project that HAS met it and declares nothing writes the marker in prose instead, and the chapter it names closes with the debt outstanding and nothing reading it.",
   "deferredLine": "<the line a section carries for a check this installation could not decide, e.g. **Deferred to {text}**…>",
-
-  "//evidenceLabels": "The three labels one section of a result document carries — the WORD alone, with no markup on it. The checks write the emphasis themselves, so a label declared with it is looked for with the markers twice over and matches no line in any document. `demanded` is the one compared against the chapter file.",
-  "evidenceLabels": {
-    "did": "<label: what was operated, or the command that was run>",
-    "demanded": "<label: the chapter's own sentence, copied whole>",
-    "saw": "<label: what was in the capture when it was opened>"
-  },
-
   "//decidedStatus": "The word the ledger writes for a chapter the product's owner ended rather than the verification. Declared, the evidence checks skip those chapters and the ledger still says plainly which kind each close was.",
   "decidedStatus": "",
   "//closedStatus": "The word the state ledger writes in a chapter's row when that chapter is closed. Nothing is closed until this is declared, and every check over a closed chapter stays silent.",
   "closedStatus": "<the ledger's word for a closed chapter>",
-
   "//verdictRole": "The role an evidence heading names where a persona would stand, for a line a machine proves. Its own key rather than a re-reading of `chapterLines.verdict`: that one is a LINE and this is a WORD, and deriving the word by stripping markup off the line reads fine and comes out wrong.",
   "verdictRole": "<the word a heading uses in place of a persona name>",
-
   "stateLedger": "<the one file saying which chapter is open, and each persona's development account>",
   "handoverFile": "<the facts a builder needs to start: how to stand the system up, traps, standing data>",
   "openItemsFile": "<file a parked decision is written into>",
   "openItemsHeading": "<the heading those lines live under — its text only, with no # markers on it>",
-
   "gates": [],
-
   "//generatedArtefacts": "The census of files no person writes, and the command that writes each. Every gate above reads the WORKING TREE and a chapter closes on the COMMIT — so a generator runs, the gate that reads its output goes green, the output is never committed, and nothing in the report can show it, because the gate is not broken and its answer is not wrong. `path` is a git pathspec, handed to git rather than matched here. `by` is required and is what keeps this off every file a person is in the middle of editing: an entry with no producing command is a file somebody edits, and such a file is dirty for ordinary reasons all day. Add `neverCommitted` with the reason for an artefact that must never be committed — a lock file a local-link step rewrites is dirty on every machine that ran it, and a gate with no way to say so is one somebody turns off within a day. Nothing on disk says which files a command wrote, so this cannot be derived.",
   "generatedArtefacts": [
-    { "path": "<git pathspec for what a command writes>", "by": "<the command that writes it>" }
+    {
+      "path": "<git pathspec for what a command writes>",
+      "by": "<the command that writes it>"
+    }
   ],
-
   "//commitPolicy": "Whether this build may commit and push without asking, answered once so it is never asked again: `commit` commits as the work lands and leaves pushing to the user, `commitAndPush` does both, `ask` stops before each commit. It does NOT override a repository whose own rules already answer this — it is for the repository that says nothing, and for a project that would rather have the answer in one machine-readable place. Delete the line and, with the repository silent too, the build asks: safe, and it costs the build the ability to run unattended, since the two gates that read commits see nothing until somebody is present. This settles PERMISSION only; what a commit message says beyond the two trailers is this repository's own rule.",
   "commitPolicy": "ask",
-
   "auditScript": "<where a new detection rule lands: one script, or the directory a family of them lives in>",
   "migrationDir": "<where migrations live — one directory, or [\"…\", \"…\"] when the database has several lineages>",
-
-  "//frameDeliverables": "What each screen owes beyond working code, one checkable sentence each. It is also where a defect the RUNNING PRODUCT showed lands when no frame can draw it — a value derived wrongly from what the system reports, a demand that cannot be answered at the address it is answered at — so the list GROWS as such defects are found rather than each being fixed once on the screen it turned up on. `chapterGenerator` emits each sentence per frame, which is what makes it a check: a sentence in this file is read once by whoever wrote it, and the same sentence on every screen section of every chapter is re-asked by every persona run that comes after. `everyFrameDeliverableReachesAChapter` holds that join and compares VERBATIM, so the sentence declared here is the sentence the generator emits. Declared and never emitted, the key reads as coverage and holds nothing: no gate compares it, no chapter carries it, and the run is as green as one where every screen answered it. Leave it empty where a screen genuinely owes nothing beyond the code — a defect no frame can draw then has nowhere to land and is met again on every screen built afterwards.",
+  "//frameDeliverables": "The standing checks every screen owes beyond working code, one sentence each, EACH NAMING THE MECHANISM THAT HOLDS IT — a rule in auditScript, or a helper the journey tests call. It is also where a defect the RUNNING PRODUCT showed lands when no frame can draw it, with the check that now catches it. A sentence nothing holds is a note and is not declared.",
   "frameDeliverables": [],
   "factSources": [],
   "storyDocument": "<the one document the sample data derives from>",
-
   "locales": [],
   "pseudoLocale": "<the generated long-string locale id, e.g. en-XA>",
   "captureRoute": "<address rendering one frame in one state, e.g. /frame/<id>>",
-
-  "//journeyRoute": "Where the RUNNING APPLICATION opens, as against `captureRoute`, which renders one frame in one state. A demand that presses a way BETWEEN screens — 「press the way back and say which screen it lands on」 — is answered here and nowhere else: at the frame route every screen opens at its own address, so that demand is met by opening the destination, nothing errors, and the frame that was already open is written down as the screen it landed on. Two real defects passed eight gates that way. Write it into the demand itself, which is what lets `aJourneyIsWalkedInTheRunningApplication` recognise a journey with no new vocabulary and hold the section answering it to having been driven here. Delete the line where the product has no such address; the gate then reads nothing and a journey is answered wherever the run happens to be.",
+  "//journeyRoute": "Where the RUNNING APPLICATION opens, as against `captureRoute`, which renders one frame in one state. Every journey test drives this address; one driven at the frame route presses controls that have nowhere to go, and nothing errors.",
   "journeyRoute": "<the address the running application itself opens at, e.g. http://localhost:5173/>",
-
-  "//captureReasons": "The words this project's demands use to say WHY a picture is the only witness for the capture they name. Three roles, fixed because the cases are: `firstSight` is a screen nobody has opened, `presence` is a claim about what is drawn, where and in what words that no response body carries, `transient` is a state that exists only while something is open. Anything else a demand asks for is settled by what the server answered, and a fenced block is the evidence for it. Written in the project's own language and matched case-insensitively inside ONE clause of a demand line, so a line whose empty-list clause gives a reason and whose pane clause does not is a finding rather than a pass. Whether the reason is TRUE stays with eyes; that one was given is what this lets a machine see. Delete it and a generator goes on emitting one file name per pane per frame with nothing anywhere saying why any of them is owed.",
-  "captureReasons": {
-    "firstSight": ["<how this project says 「nobody has opened this screen」>"],
-    "presence": ["<how it says 「no response body carries this」>"],
-    "transient": ["<how it says 「this exists only while something is open」>"]
-  },
-
   "//placeholderLine": "The line an evidence section carries IN PLACE OF a picture, where the demand asked for one and a picture is not the witness for it — the pane behind the tab is the same unbuilt placeholder the section above already photographed. Same grammar as `chapterLines`, and its `{text}` is the capture that proves the component. Delete the line where the project has never met the case. A project that HAS met it and declares nothing leaves the section showing nothing, which is afterwards indistinguishable from a pane nobody opened — the taker was right and left no way to say so.",
   "placeholderLine": "<the line a section carries in place of a picture, e.g. **Same component as {text}**…>",
-
   "//captureStandard": "The window every capture is taken through and the scheme it is taken in. Declared rather than left to the driver, because neither survives in the picture and both are wrong in a way that reads as a correct run: a window that came back narrow files the frame with its lower half in no picture at all, and the run reports nothing. `width` and `height` are CSS pixels, so a run reads them back with innerWidth/innerHeight and never off the file — the file is that many device pixels, which is why a whole multiple of a declared width passes. Write an ARRAY of these where the board genuinely draws at several device widths: `everyCaptureIsAtADeclaredWidth` refuses a width it was not given, so a board with tablet frames names that width here or the gate reddens on frames that are exactly right. The colour scheme leaves no trace in the file; the taker reads it back off the page and reports it, and the skill's eyes table says who checks that.",
-  "captureStandard": { "width": "<CSS pixels the board is drawn at>", "height": "<CSS pixels>", "colorScheme": "<light or dark>" },
-
+  "captureStandard": {
+    "width": "<CSS pixels the board is drawn at>",
+    "height": "<CSS pixels>",
+    "colorScheme": "<light or dark>"
+  },
   "//drivers": "What opens a screen here, IN ORDER — the run takes the first that can express the task and says which one it ended up on. No name is built into the skill, because what is installed differs per machine; delete either line and whoever opens a screen picks, and then has to name the driver in the return and write it into the handover file, since a capture carries no record of what shot it. Put a driver that fails often LAST: a driver failure reads exactly like a defect in the screen, so a run routed through it spends its time twice. `deviceDrivers` is for a product that ships on a simulator or a real device.",
-  "browserDrivers": ["<driver>", "<driver behind it>"],
-  "deviceDrivers": ["<driver>"],
-
-  "//captureModels": "Which model each half of the capture split runs on. The SPLIT is not a choice — whoever shot a picture cannot judge it — and these two say only where the work is procedure and where it is judgement: driving named addresses and reading values out is the first, deciding whether a value is a defect is the second. Declare both or neither; half a split named is the arrangement paying more on exactly the half that was meant to be cheap. Delete both and each agent runs on its own definition's default.",
-  "captureTakerModel": "<the cheaper model, for driving and transcribing>",
-  "captureJudgeModel": "<the stronger model, for judging>",
-
+  "browserDrivers": [
+    "<driver>",
+    "<driver behind it>"
+  ],
+  "deviceDrivers": [
+    "<driver>"
+  ],
   "//eyes": "The documents that hand a check to human eyes, and the words they hand it in. **Declare both or neither** — declaring neither is a project saying it has no such rules and costs nothing; declaring the documents without the vocabulary reads every one of them and matches nothing, so `nothing to find` and `no idea what to look for` come out as the same zero, and the config gate refuses it. The phrases are literal, matched case-insensitively inside one statement: `assigns` is how a sentence says no machine judges this, `reader` is who takes the reading, `moment` is when. `reader` is a closed list of actors on purpose, because a pattern accepting any noun is satisfied by every paragraph that mentions anybody.",
-  "eyesDocuments": ["<the file that hands checks to eyes — the evidence folder's index, the instruction file>"],
+  "eyesDocuments": [
+    "<the file that hands checks to eyes — the evidence folder's index, the instruction file>"
+  ],
   "eyesPhrases": {
-    "assigns": ["<phrase saying no machine judges this>"],
-    "reader": ["<the name of somebody who can take a reading>"],
-    "moment": ["<phrase naming a moment the run cannot pass without>"]
+    "assigns": [
+      "<phrase saying no machine judges this>"
+    ],
+    "reader": [
+      "<the name of somebody who can take a reading>"
+    ],
+    "moment": [
+      "<phrase naming a moment the run cannot pass without>"
+    ]
   },
   "logDir": ".build-logs",
   "capturesDir": ".captures",
   "costLog": "<machine-readable file the span and consumption per chapter are appended to>",
-
   "narrativePhrases": [],
   "projectGates": "<module exporting this project's own gates and their cases>",
-
   "//projectVocabulary": "The words this project's OWN gates judge by, as role -> list. The roles are yours to name — this skill knows none of them. A gate that carries its word list in its source cannot be widened without editing the gate, and a list that goes empty there reports the same zero as a repository with nothing to find.",
-  "projectVocabulary": { "<role your gates read>": ["<word>", "<word>"] },
+  "projectVocabulary": {
+    "<role your gates read>": [
+      "<word>",
+      "<word>"
+    ]
+  },
   "disabledGates": [],
-
   "deferredKeys": {
     "<optional key above whose subject does not exist yet>": {
       "chapter": "<the chapter that creates that subject and declares the key>",

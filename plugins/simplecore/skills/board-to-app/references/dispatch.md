@@ -281,7 +281,7 @@ ledger, the handover file, the wave decision, and the barrier work the wave give
    does have a name worth using, it writes that name out.
 
    > **Read it this way and it is wrong**: 「it is a subagent, so its report comes back to me」.
-   > Twice in one chapter a capture-taker's full transcription — a numbered reading of thirty
+   > Twice in one chapter a capture agent's full transcription — a numbered reading of thirty
    > demands against a screen, the only record of what that screen showed — was addressed to the
    > chapter's own agent name, and both times the dispatcher was left holding a summary and a
    > folder of pictures nobody had described. Neither agent could be resumed afterwards, so one

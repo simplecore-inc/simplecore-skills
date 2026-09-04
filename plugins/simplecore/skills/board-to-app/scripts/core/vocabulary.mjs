@@ -457,13 +457,10 @@ export function vocabularyCensus(ctx) {
     lines = {};
   }
   return [
-    ...chapterLineEntries(ctx, lines),
-    ...evidenceLabelEntries(ctx),
     ...closedStatusEntry(ctx),
     ...verdictRoleEntry(ctx, lines),
     ...deferredLineEntry(ctx, lines),
     ...placeholderLineEntry(ctx, lines),
-    ...captureReasonEntries(ctx),
     ...eyesPhraseEntries(ctx),
   ];
 }
@@ -477,156 +474,14 @@ export function censusLine(item) {
   return `${item.expects ? '✖' : '⚠'} ${item.label.padEnd(24)} matched nothing${blind} — ${where}`;
 }
 
-export const declaredWordsMatchTheDocuments = {
-  id: 'declaredWordsMatchTheDocuments',
-  title: 'a word this project declares as its own vocabulary is one none of its documents writes',
-  needs: [],
-  run: (ctx) => {
-    const findings = [];
-    for (const item of vocabularyCensus(ctx)) {
-      if (item.matched > 0 || item.compared === 0) continue;
-      const blind = item.relaxed > 0;
-      if (!blind && !item.expects) continue;
-      const where = `${item.documents} ${item.corpus} holding ${item.compared} comparisons`;
-      findings.push(
-        `${item.label} is declared 「${item.declared}」 and matched nothing in ${where}. `
-        + (blind
-          ? `The same declaration with its markdown ignored matches ${item.relaxed} of them, so the words are in the documents and the markup is not: this key takes ${item.convention}. `
-          : `${item.because}, so there is something here to match and the declaration reaches none of it. `)
-        + 'A vocabulary that matches nothing does not fail — every check that reads it reports the '
-        + 'same zero as a project with nothing wrong, which is why the count is the finding'
-      );
-    }
-    return findings;
-  },
-};
 
-/**
- * A declaration nothing has been compared against yet.
- *
- * <p><b>This is the other half of the same zero, and it is a separate gate because it is a
- * separate KIND of finding.</b> 「I compared and nothing matched」 is a defect and reddens the run;
- * 「there was nothing to compare against」 is a project that has not written the documents yet, and
- * failing on it would redden every repository on the day it is wired. Graded on one gate they
- * could not be told apart — a gate answers one question — so they are two gates, and between them
- * the third state is the only one left silent: compared, and it matched.
- *
- * <p><b>Without this, `check` says nothing in two very different situations</b>, which is the exact
- * shape 「the third category comes back as a checker that did not run」 describes: a declaration
- * whose corpus is empty has never been tested by anything, and a run reporting no findings over it
- * reads identically to a run that tested it and found it sound. The warning is what parts them.
- *
- * <p>The two gates cannot both speak about one entry: this one takes `compared === 0` and the
- * other skips it, so a single misdeclaration is never reported twice under two ids.
- */
-export const declaredWordsHaveBeenCompared = {
-  id: 'declaredWordsHaveBeenCompared',
-  title: 'a declared vocabulary nothing has been compared against yet, so no check over it has ever run',
-  needs: [],
-  grade: 'warning',
-  run: (ctx) => {
-    const findings = [];
-    for (const item of vocabularyCensus(ctx)) {
-      if (item.compared > 0) continue;
-      findings.push(
-        `${item.label} is declared 「${item.declared}」 and has been compared against nothing: `
-        + `${item.documents} ${item.corpus}, 0 comparisons. This is not 「compared and matched `
-        + 'nothing」 — it is a corpus that is not there yet, which is what a project between being '
-        + 'wired and its first written document correctly looks like. Nothing has tested this '
-        + 'declaration, so a green run over it says only that there was nothing to read; come back '
-        + `once the ${item.corpus} exist and read the census in \`bta.mjs doctor\``
-      );
-    }
-    return findings;
-  },
-};
 
-/**
- * A screen deliverable this project declares, held against the chapters that are supposed to demand it.
- *
- * <p><b>`frameDeliverables` is where a defect the running product showed lands when no frame can
- * draw it</b> — a name derived wrongly from what the system reported, a demand that cannot be
- * answered at the address it is answered at. The list is the project's own sentences and it grows
- * as such defects are found, so what makes it a check rather than a note is that the generator
- * emits each sentence per frame and every later chapter re-asks it → `references/demands.md`.
- *
- * <p><b>The failure is a declaration nothing ever read.</b> A project declared three sentences; no
- * generator emitted them, no gate compared them, and no chapter file contained any of the three.
- * Every gate over that chapter set was green, the chapter closed, and the three defects the
- * sentences describe were found afterwards by a person using the product. A config key that reads
- * as coverage and holds nothing is `../SKILL.md` § *The third category comes back as a checker
- * that did not run* one level up — not a checker that did not run, but one nobody ever wrote.
- *
- * <p><b>An error rather than a warning.</b> What it names is 「this sentence is asked of nobody」,
- * which has a definite fix — emit it per frame from `chapterGenerator`, or take it out of the
- * config — rather than 「go and re-read this」. A warning would print into a report whose exit
- * status closed the chapter anyway, which is the state this was found in. A project that holds a
- * deliverable some other way turns the gate off in `disabledGates` with the reason, which is the
- * visible door every core gate has.
- *
- * <p><b>The witness is a chapter file that places a frame.</b> A deliverable is what a SCREEN owes,
- * so a chapter set with no screen in it owes none, and a freshly-wired project whose only chapter
- * is its foundation has nothing to match against rather than a broken declaration. Without that,
- * the gate reddens every repository on the day it is wired — the failure that makes a gate over a
- * project's own words worthless in the other direction → `references/checks.md`.
- *
- * <p><b>What it does NOT hold, said here so nobody reads it as stronger than it is.</b> One
- * chapter writing the sentence satisfies it, so a set half-regenerated after the list grew reads
- * as green. That is deliberate: 「every frame-placing chapter carries every sentence」 fires on a
- * project in the middle of the regeneration the finding above asked for, which is a rule that
- * reddens the tree for doing what it was told. What this answers is the one question with no
- * legitimate other side — whether the declaration reached the chapters at all.
- */
-export const everyFrameDeliverableReachesAChapter = {
-  id: 'everyFrameDeliverableReachesAChapter',
-  title: 'a screen deliverable this project declares that no chapter file demands of any screen',
-  needs: ['chapterDir', 'frameDeliverables'],
-  run: (ctx) => {
-    const declared = ctx.declared('frameDeliverables');
-    if (!Array.isArray(declared)) return [];
-    const sentences = declared.filter((s) => typeof s === 'string' && s.trim());
-    if (!sentences.length) return [];
 
-    const docs = corpus(ctx, 'chapter');
-    const placing = docs.filter((doc) => doc.lines.some((line) => BASE_HEADING.test(line))).length;
-    if (!placing) return [];
-    const compared = lineCount(docs);
-
-    const findings = [];
-    for (const sentence of sentences) {
-      let matched = 0;
-      let relaxed = 0;
-      for (const doc of docs) {
-        for (const line of doc.lines) {
-          if (line.includes(sentence)) matched += 1;
-          if (bare(line).includes(bare(sentence))) relaxed += 1;
-        }
-      }
-      if (matched > 0) continue;
-      findings.push(
-        `frameDeliverables 「${sentence}」 is declared and no chapter file writes it. `
-        + `${placing} chapter file(s) place a frame and ${compared} lines of prose were compared, `
-        + 'so there are screens here to owe it and no demand asks any of them for it. '
-        + (relaxed > 0
-          ? `The same sentence with its markdown ignored appears on ${relaxed} of those lines, so the `
-            + 'words are in the chapters and the markup is not: declare the sentence exactly as the '
-            + 'generator emits it, because the comparison is verbatim. '
-          : '')
-        + 'A deliverable that reaches no chapter is not half-held — it is a sentence in the config '
-        + 'that every gate over the chapter set is silent about, and the defect it describes is met '
-        + 'again on every screen built afterwards. Emit it per frame from `chapterGenerator` and '
-        + 'regenerate, or take it out of the config'
-      );
-    }
-    return findings;
-  },
-};
-
-export const VOCABULARY_GATES = [
-  declaredWordsMatchTheDocuments,
-  declaredWordsHaveBeenCompared,
-  everyFrameDeliverableReachesAChapter,
-];
+// The gates that read a declared vocabulary against result documents are retired with the
+// documents: a chapter's grounds are a run record the journey command writes, and its words are
+// the skill's rather than the project's. The census `doctor` prints still covers the words that
+// survive — the ledger's, the verdict's, the deferred and placeholder lines, the eyes'.
+export const VOCABULARY_GATES = [];
 
 // ── The cases ──────────────────────────────────────────────────────────────
 //
@@ -642,12 +497,6 @@ const DECLARED = {
   chapterDir: 'chapters',
   evidenceDir: 'docs/evidence',
   stateLedger: 'tracking/STATE.md',
-  chapterLines: {
-    persona: '**테스트 · {text}**…',
-    verdict: '**판정**…',
-    states: '…상태 {n}장이 딸린다 — {text}.',
-  },
-  evidenceLabels: { did: '한 일', demanded: '챕터가 정한 것', saw: '본 것' },
   closedStatus: '닫힘',
   verdictRole: '판정',
 };
@@ -704,154 +553,10 @@ export function cases(t) {
 
   // ── Fires ────────────────────────────────────────────────────────────────
 
-  // The inversion `configGate` cannot see. It refuses an `evidenceLabels` value carrying markdown,
-  // because that key is the word alone and markdown in it is wrong by inspection. The opposite
-  // direction has no such tell: a `chapterLines` phrase written without the emphasis its chapters
-  // carry is a perfectly ordinary-looking phrase, and only the documents say it matches nothing.
-  t.add(
-    'declaredWordsMatchTheDocuments',
-    'a chapter line declared without the markup its chapters write',
-    project({ chapterLines: { ...DECLARED.chapterLines, persona: '테스트 · {text}…' } }, whole),
-    true
-  );
-  t.add(
-    'declaredWordsMatchTheDocuments',
-    'the ledger word declared with emphasis the ledger does not write',
-    project({ closedStatus: '**닫힘**' }, whole),
-    true
-  );
-  // Not a markup question at all: the word is simply not the one the documents use, so the
-  // markup-blind reader finds nothing either and the witness is what speaks — the result documents
-  // are written in bolded lead-ins, and none of them is this one.
-  t.add(
-    'declaredWordsMatchTheDocuments',
-    'a label declared as a word that appears nowhere',
-    project({ evidenceLabels: { ...DECLARED.evidenceLabels, saw: '관찰한 것' } }, whole),
-    true
-  );
 
   // ── Stays quiet ──────────────────────────────────────────────────────────
 
-  t.add('declaredWordsMatchTheDocuments', 'a project whose words are the ones its documents write', project({}, whole), false);
-  // The edge the gate exists to respect. Everything is declared and nothing has been written yet,
-  // which is what `/simplecore:board-to-app-init` leaves behind — every count is zero and every
-  // one of them is correct.
-  t.add(
-    'declaredWordsMatchTheDocuments',
-    'a project just wired, with no chapters and no result documents',
-    project({}, {
-      'chapters/00-overview.md': '# 챕터\n',
-      'docs/evidence/': '',
-      'tracking/STATE.md': '# 챕터 상태\n\n| 챕터 | 상태 |\n| --- | --- |\n',
-    }),
-    false
-  );
-  // The same edge one step in: the chapters are generated and not one has been verified. The
-  // chapter lines match and the evidence labels have nothing to match against, and a gate that
-  // read the second as a defect would fire on every project between wiring and its first closed
-  // chapter.
-  t.add(
-    'declaredWordsMatchTheDocuments',
-    'a project mid-build, whose chapters exist and whose result documents do not',
-    project({}, { ...CHAPTERS, 'docs/evidence/': '', 'tracking/STATE.md': LEDGER('열림') }),
-    false
-  );
 
-  // ── The other half of the same zero ──────────────────────────────────────
-  //
-  // The two projects the gate above must stay quiet on are the two this one must speak on, and
-  // that pairing is the whole point: between them, `check` printing nothing about a vocabulary
-  // means it was compared and it matched, rather than meaning nothing was ever read.
-  t.add(
-    'declaredWordsHaveBeenCompared',
-    'a project just wired, where nothing has been compared against anything',
-    project({}, {
-      'chapters/00-overview.md': '# 챕터\n',
-      'docs/evidence/': '',
-      'tracking/STATE.md': '# 챕터 상태\n\n| 챕터 | 상태 |\n| --- | --- |\n',
-    }),
-    true
-  );
-  t.add(
-    'declaredWordsHaveBeenCompared',
-    'a project whose chapters have been compared and whose result documents do not exist',
-    project({}, { ...CHAPTERS, 'docs/evidence/': '', 'tracking/STATE.md': LEDGER('열림') }),
-    true
-  );
-  t.add(
-    'declaredWordsHaveBeenCompared',
-    'a project where every declared word has a corpus to be read against',
-    project({}, whole),
-    false
-  );
 
-  // ── A deliverable held against the chapters that are supposed to demand it ──
-  //
-  // The defect established from a real build: three sentences declared, no generator emitting
-  // them, no chapter file containing any of them, and every gate over that chapter set green.
-  // The boundary is the same one the four cases above pin — a chapter set with no screen in it
-  // owes no deliverable, so the witness is a chapter file that places a frame and not merely a
-  // chapter folder that has something in it.
-  t.add(
-    'everyFrameDeliverableReachesAChapter',
-    'a deliverable declared in the config that no chapter file demands',
-    project({ frameDeliverables: [DELIVERABLE] }, whole),
-    true
-  );
-  // Not a missing demand at all: the sentence is in the chapter and the declaration carries
-  // emphasis the generator does not emit. The comparison is verbatim, so it fires — and says
-  // which of the two it established, because the fix is the declaration rather than the generator.
-  t.add(
-    'everyFrameDeliverableReachesAChapter',
-    'a deliverable declared with markup the chapters do not write',
-    project({ frameDeliverables: [`**${DELIVERABLE}**`] }, CHAPTERS_DEMANDING),
-    true
-  );
-  // One of two declared reaching the chapters is one held and one asked of nobody, and a gate
-  // reading the list as a whole would call that a pass.
-  t.add(
-    'everyFrameDeliverableReachesAChapter',
-    'one deliverable of two reaching the chapters',
-    project({ frameDeliverables: [DELIVERABLE, '팝오버 폭 360px에서 가로로 넘치지 않는다'] }, CHAPTERS_DEMANDING),
-    true
-  );
 
-  t.add(
-    'everyFrameDeliverableReachesAChapter',
-    'a deliverable the chapter demands of the screen it places',
-    project({ frameDeliverables: [DELIVERABLE] }, CHAPTERS_DEMANDING),
-    false
-  );
-  // The edge the gate exists to respect, in the two forms it takes. A project just wired has no
-  // chapter files at all; a project whose whole chapter set is its foundation has chapter files
-  // and no screen — and a deliverable is what a SCREEN owes, so neither is a declaration that has
-  // stopped reaching anything. A gate that read either as the defect would redden the repository
-  // on the day the key is declared.
-  t.add(
-    'everyFrameDeliverableReachesAChapter',
-    'a project just wired, with the deliverable declared and no chapters written',
-    project({ frameDeliverables: [DELIVERABLE] }, {
-      'chapters/00-overview.md': '# 챕터\n',
-      'tracking/STATE.md': '# 챕터 상태\n\n| 챕터 | 상태 |\n| --- | --- |\n',
-    }),
-    false
-  );
-  t.add(
-    'everyFrameDeliverableReachesAChapter',
-    'a chapter set whose only chapter places no screen',
-    project({ frameDeliverables: [DELIVERABLE] }, {
-      'chapters/00-overview.md': '# 챕터\n',
-      'chapters/w01-foundation.md': CHAPTERS['chapters/w01-foundation.md'],
-      'tracking/STATE.md': LEDGER('열림'),
-    }),
-    false
-  );
-  // A key declared as the template ships it. It is not 「no deliverables reached the chapters」 —
-  // it is a project that owes nothing beyond working code, and the two must not read the same.
-  t.add(
-    'everyFrameDeliverableReachesAChapter',
-    'a project declaring an empty deliverable list',
-    project({ frameDeliverables: [] }, whole),
-    false
-  );
 }

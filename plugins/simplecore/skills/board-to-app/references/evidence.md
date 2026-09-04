@@ -1,20 +1,19 @@
-# The result document a chapter closes on
+# The run record a chapter closes on
 
-**The grounds a chapter closed on live in `evidenceDir`.** One document per chapter, and the
-captures a document shows sit in a folder of the same name beside it.
+**The grounds a chapter closed on live in `evidenceDir`, and `journeyCommand` writes them.** One
+record per chapter, and the captures the record shows sit in a folder of the same name beside it.
+The record is the residue of running the chapter's journeys — one row per journey with its
+persona, its test and its result, one capture per screen-state a journey visited — and **nothing
+in it is written by hand.** A record written first and then made true inverts the whole
+arrangement; a record edited afterwards records a run that did not happen.
 
-**A result document is the residue of running the verification, never a deliverable made
-separately.** Writing the document first and then making the screens match it inverts the whole
-arrangement — that document proves nothing, and every sentence in it is true of nothing. Run the
-persona line, look at what is there, write that.
+**A chapter closes because its journeys pass, and the record lets somebody who was not there open
+one file and read which persona finished which piece of work, and look at the screens as they
+were.** The reading that stays with a person is the look — one per screen-state, at the close →
+below.
 
-**Where the result is not properly written, a chapter's completion verdict cannot be deferred.** A
-chapter closes because the agent holding it reports that its persona lines passed, and the grounds
-of that report die with the session. The documents in this folder let somebody who was not there
-open one file and read, line by line, what was checked and what was on the screen.
-
-This file is the specification. A project keeps its own worked examples, its own tooling commands,
-and the table naming whose eyes take each reading, in the index of its own evidence folder.
+This file is the specification. A project keeps its own worked examples and its own tooling
+commands in the index of its own evidence folder.
 
 ## Why not one of the other three folders
 
@@ -26,359 +25,61 @@ and the table naming whose eyes take each reading, in the index of its own evide
 
 ## The file name
 
-The chapter file's own name. The result for `<chapterDir>/<chapter-file>.md` is
-`<evidenceDir>/<chapter-file>.md`, and the captures that document shows sit in
+The chapter file's own name. The run record for `<chapterDir>/<chapter-file>.md` is
+`<evidenceDir>/<chapter-file>.md`, and the captures that record shows sit in
 `<evidenceDir>/<chapter-file>/`. This holds as chapters are added, so a project's document index
 carries one row for the folder rather than one per chapter.
 
-## The shape of the document
 
-**One section per line the chapter demands somebody prove.** In a chapter that places screens that
-is the persona line; in one that places foundation it is the verdict line. The section title is the
-chapter's section number, that section's title, and — after a separator — the role: the persona's
-name, or the project's word for a machine verdict.
-
-Each section carries three labelled lines and the evidence under them.
-
-| Line | What it holds | Shape |
-| --- | --- | --- |
-| the `did` label | what the persona operated. For a machine verdict, the command that was run | **a list** |
-| the `demanded` label | the sentence copied out of the chapter file, unchanged | **one line** |
-| the `saw` label | what was in the capture when it was opened. For a command, what came back | **a list** |
-| the evidence | the frame's capture, or a fenced block holding what was run and what came back | |
-
-**`did` and `saw` are lists.** What one section demands has grown to tabs, an empty state, row
-actions and the buttons in the header, and running those checks together in one paragraph leaves
-**the reader unable to count what was checked and what was skipped.** One item is one check — one
-pane, one condition, one control pressed.
-
-**Only `demanded` stays a single line.** That line is not written; it is **copied out of the
-chapter file**, and `evidenceQuotesTheChapter` compares it as a contiguous fragment once whitespace
-is removed from both. Split into a list, the bullet markers land inside the quote, the quote stops
-being a fragment of the original, and the check reads the whole section as drifted. **The way to
-make a quote readable is not to break it up but to fix the chapter so the line is shorter.**
+## The shape of the record
 
 ````markdown
-# <chapter> — <the project's word for a verification result>
+# <chapter> — <the project's word for a run record>
 
-## 1. <frame> <screen name> · <role>
+<the provenance line the project declares: which build, which boot, which data>
 
-**<did>** — <what was operated>
-**<demanded>** — <the sentence copied out of the chapter>
-**<saw>** — <what the capture showed>
+| journey | persona | test | result |
+| --- | --- | --- | --- |
+| 1 | 본사 담당자 | journeys/13-inventory-base.spec.ts › 재고 조정 | pass |
+| 2 | 본부 담당자 | journeys/13-inventory-base.spec.ts › 담당 사업소 밖 거부 | pass |
 
-![<frame>](<chapter-file>/<frame>.webp)
-
-## 1. <frame> <screen name> · <another role>
-
-**<did>** — <the address called directly>
-**<demanded>** — <the sentence copied out of the chapter>
-**<saw>** — <the answer the server gave>
-
-```
-GET /api/<entity>/9 → 403 SCOPE_DENIED
-```
+![F-01a](13-inventory-base/f-01a.webp)
+![F-01c](13-inventory-base/f-01c.webp)
 ````
 
-**A foundation chapter has no captures.** A chapter that places no screen writes, per section, the
-command it ran and what came back. Nothing is photographed that does not exist.
-
-## Taking a capture and judging one can be two agents
-
-**The taker and the reader are already different roles; they may also be different runs.** A
-`capture-taker` opens the addresses, presses what the line names, writes down every value that was
-on the screen, and returns without a verdict. The coordinator reads the captures and the
-transcription and decides what any of it means.
-
-**What makes the split safe is that the taker transcribes rather than checks.** 「the tiles match
-the chapter」 and 「287 valid · 6 dated · 2 expiring · 0 unscoped」 are not two ways of saying one
-thing: the first is a verdict nobody can check afterwards and the second is what a reader needs in
-order to reach one. Transcription is reliable work; a judgement made by whoever took the picture is
-what the rest of this file exists to prevent.
-
-**So the taker can run on a cheaper model than the reader, and usually should.** Driving a
-browser to named addresses and reading values out is procedure. Deciding whether a value is a
-defect is not. Splitting them puts the cost where the work is mechanical and leaves the judgement
-whole and in one head.
-
-**Which model each half runs on is the project's answer**, in `captureTakerModel` and
-`captureJudgeModel`, and the coordinator passes it at dispatch — the value on an agent's own
-definition is only what it falls back to. **Declare both or neither.** Half a split named is a
-project that thought about one side of it: the taker gets the cheap model, the judge inherits
-whatever the harness gives, and the arrangement ends up paying more on exactly the half that was
-supposed to cost less.
-
-**What is not a choice is the split itself.** It exists because whoever shot a picture reads it for
-confirmation of what they expected, not for what is missing — so it holds whatever either half
-costs, and a project that declares neither key runs both halves on the harness's default and gives
-up only the saving.
-
-**And what does not change is who judges.** Whoever took the pictures, the reading stays with the
-coordinator, and what the taker hands back is a record of what was on the screen rather than a
-section of the result document.
-
-**A taker's return opens with the window it shot through**, before any screen: the size and colour
-scheme it read back off the page, against the `captureStandard` it read them from, once before the
-first capture and once before the last. **Read that line before reading anything under it** — a set
-shot through the wrong window has to be taken again whatever it shows, so judging its contents is a
-round spent twice. Six captures came back at 1280 wide in dark mode against a board measured at
-1440 in light, with a tree's first data row, four of nine table rows and a whole panel form below
-the fold; the run reported nothing, the files were a plausible size, and the judging that followed
-spent every finding it had on 「no capture covers this」.
-
-## The tree is not the screen, which is why the judge is not optional
-
-**Reading the accessibility tree is the cheap way to write down a screen and it is a different
-account from the picture.** The tree carries names nobody sees — a resize handle's value, a pager's
-spoken label, a cell's whole text where the screen breaks it over two lines — and it is silent
-where nothing has a name, which is every icon-only control.
-
-**Measured on the first run of this arrangement: nine of a screen's written-down facts disagreed
-with its captures**, and every one came from that gap rather than from carelessness. A column
-header written as the name plus a slider's number. A pager written in words it does not draw. Three
-row actions written as labels where the screen draws an eye, a pencil and a bin. A panel's three
-footer buttons absent from the account entirely, because the reader's eye had gone to the open tab.
-
-**So the split is not a saving that happens to be safe — the second reading is what makes the first
-usable.** A transcription alone would have put nine wrong sentences into a result document with a
-correct-looking capture beside each one, and nothing in the run would have disagreed with itself.
-
-## The unit of a check is one screen, and each gets a fresh agent
-
-**Building a chapter is one agent's work; checking it is not.** A builder carries a chapter because
-what it makes in section three is what section nine stands on. A check has no such thread — one
-screen's captures tell you nothing about the next — so an agent that checks five screens in one
-context is carrying four screens' worth of pictures and dead ends into the fifth and paying for them
-on every turn.
-
-**A fresh agent per screen costs less, not more.** What each one loads before starting is a fixed
-prefix that every sibling loads identically, which is the cheapest kind of token there is; what a
-long-lived agent accumulates is the other kind. Runs that walked half a chapter in one context have
-cost hundreds of thousands of tokens and dried out before the section was done.
-
-**So: one `capture-taker` per screen, one `capture-judge` per screen, both ending when that screen
-is done.** The coordinator holds the thread between them, which is the one thing that genuinely
-spans screens.
-
-## Fixing while a cluster is still being shot ages the pictures behind you
-
-**Shoot the cluster, judge it, collect the fixes, and only then fix — then re-shoot only what the
-fixes touched.** A fix that lands after a capture makes that capture a picture of a product nobody
-built, and **nothing in the system can see it**: the picture cannot say it is stale, the gates read
-the file rather than its date, and the document's sentences go on citing it. Only somebody holding
-both facts — this fix, that capture — ever knows, and there is one moment when anybody holds both.
-
-**The reason it has to be written down is that fixing as you go feels like the diligent choice.**
-You have just found something, the fix is small, and photographing more of a screen you know is
-broken feels like negligence. It is the opposite. Leaving a defect standing for another twenty
-minutes costs nothing that is not already lost; taking a picture that will be false in four minutes
-costs the grounds the chapter closes on, and costs them invisibly.
-
-**One chapter paid this three times in a single round** — an emergency-contact fix three minutes
-after its seven captures, a preview fix an hour after two, and a seed rebuild that changed every
-dispatch identifier and cost four screens at once. Each time the answer was the same: re-shoot. A
-sentence in the document explaining why a picture looks wrong is not a substitute for taking it
-again, because the reader who needs that sentence is the one who did not read it.
-
-**The seed rebuild is the case worth keeping separate.** Re-seeding is not a fix to a screen and it
-ages every capture in the chapter at once, including screens nobody touched. So it happens before
-the shooting starts, or it costs the whole round.
-
-## Opening the capture before writing what was seen
-
-**A sweep is a script.** It opens an address, waits, shoots, and writes a file — and no step of it
-reads a capture. So a chapter can finish with twenty-eight pictures on disk and not one of them
-opened, and the `saw` line written in that state comes from somewhere else: the DOM that was
-queried, the response that was read, the code the writer wrote. **That is a sentence about the
-data, not a sentence about the screen.**
-
-**How a sentence is written from a picture is one rule and it lives in one place** →
-`references/judging-frames.md` § *Taking a capture is not reading one*: open the file first, write
-only what is in it, say what is absent as readily as what is present, and run the two checks only a
-script reading the rendered page can settle. It is written there rather than here because the same
-discipline governs every sentence anybody writes about a screen, not only the `saw` line — and a
-second copy of it here is the copy that would drift.
-
-**One rule belongs to the result document alone**, because it is about a sentence that has to stay
-true months later rather than about reading a picture accurately today.
-
-**Never quote a figure that the act of measuring changes.** Some figures in a capture read
-differently the next time the screen is opened, and quoting one dates the sentence the moment it
-is written. Two families: **a figure that counts the observer** — the session opened to take the
-capture joins the count of active sessions, so it rises with every shot — and **a figure a clock
-moves the window of** — a "today" count restarts at zero at midnight, so a value the seed
-planted becomes yesterday's after a day. **Write what the figure is made of instead of the
-figure**: "the active sessions are the 47 the seed planted plus the session that opened this
-screen". The relation is still true at the next capture.
-
-**A tile the board draws is not this.** A tile shows the value of the moment, and the number the
-board drew is the specification of what the seed plants. That is different from a tab badge,
-which reads as a set somebody counted.
-
-## A content tab is one capture per pane
-
-**There are two kinds of tab, and a board separates them by component.** One kind narrows a single
-list — all 14 · in use 11 · unused 3 — and every tab shows the same list, so one capture of the
-frame covers it. The other kind puts **different content** in one screen — profile · security ·
-notifications · devices — and the frame draws only one of those panes open.
-
-**So one frame capture is a capture of one pane, and the rest were opened by nobody.** A pane can
-be a provider configuration form of its own, or a component list of its own; neither is the open
-pane narrowed. **Whether such a pane was built cannot be read off the frame's capture.** Empty, it
-answers every request 200 and raises no console error — which is the defect this whole document
-exists for, repeated one layer under the tabs.
-
-**So there is one capture per pane.**
-
-**And every capture carries its own sentence, directly above it.** A section holding several
-pictures with nothing between them hands the reader a strip of screenshots and the job of working
-out which is which — the alt text is not that sentence, because a reader looking at the page never
-sees it. **The sentence says what to look at in that picture**: which pane it is, what it draws,
-what is present or absent in it. It is written the way 「본 것」 is written — out of the picture,
-after opening it — and a second picture with no sentence of its own is a picture nobody accounted
-for.
-
-So a section reads: the three labelled lines, then the frame's own capture under the sentence that
-describes it, then for each further pane its sentence and its picture, in that order. **Never two
-images with nothing but a blank line between them.**
-
-
-| Which pane | Name |
-| --- | --- |
-| the one the board draws open | `<frame>.webp` — the frame's own name |
-| every other pane | `<frame>-t<n>.webp` |
-
-`<n>` is the pane's position in the board's tab strip, counting from 1. A frame whose second pane
-is the open one holds `<frame>.webp` · `<frame>-t1.webp` · `<frame>-t3.webp` · `<frame>-t4.webp`.
-
-**No natural-language characters in a file name.** macOS decomposes them, so git reads one name as
-two. The name carries the number; which pane it was goes in that section's `saw` line, in words.
-
-**One section, several pictures.** That frame's first persona section shows the pane captures
-together, and its `saw` line says what was in each, naming the pane. The section is not split per
-pane because a pane does not vary by role — what one person presses through in one sitting is one
-section.
-
-**The ceiling is still the board's pane count.** A picture of a pane the board does not draw on
-that frame cannot be named, so a frame holds no more pictures than the board draws panes for it.
-Across the repository the ceiling is the board's frame count plus the panes it leaves unopened.
-
-**A state frame drawn over a base owes one capture of itself and no panes.** A frame that opens a
-dialog reuses the base frame's drawing, tab strip included, and the panes belong to the base. The
-machine test is whether that screen file writes a tab strip of its own.
-
-**A strip that declares no open pane is read as having its first pane open.** Where a frame
-computes the open pane from a parameter, no `active: true` appears in its source. A project that
-has such a frame writes the reason down beside the rule, or the next reader deletes the line as
-useless.
-
-### The companion frame that draws the panes, and why it is photographed by the base
-
-**A board draws the unopened panes on a companion frame.** For each screen with a content strip,
-one frame stands directly behind the base: it draws the title area as the base does, leaves the
-list and the panel as placeholders, and stacks every pane but the open one down the page. **The
-alternative — a frame per pane — makes the page get drawn again**, so one list lives in two frames,
-one of them gets fixed, and the divergence the board exists to prevent comes back through the fix.
-
-**A companion frame has no capture of its own**, because the application has no such screen. It is
-a composition that stands only on the board; in the product those panes are tabs on the base
-screen. **The pictures that prove what a companion frame holds are the base's `-t<n>` files**, and
-they are the whole of it. `<frame>-t3.webp` is the running application with that frame open and its
-third pane pressed, and which frame the board drew that pane on has nothing to do with it.
-
-**So a check that counts frames leaves companion frames out of what must be captured.** Included,
-it would demand a picture nobody can take, and the only way to satisfy the demand would be to put
-the base's picture in the folder a second time under another name.
-
-**Verification does not wait for the companion frame.** The pane names are already on the board,
-which is all it takes to demand that somebody open the screen of that name and write down what is
-there.
-
-### A demand a picture cannot answer is discharged, never skipped
-
-**Three panes of unbuilt placeholder are one component photographed three times.** The tab triggers
-are disabled, no content is registered behind them, and the second and third pictures are the first
-picture with a different file name. `references/demands.md` § *A capture is owed where a picture is
-the only witness* is why: an unbuilt placeholder is one of the three cases a picture does not
-witness, because **one capture per chapter proves the component and the rest are the same
-component**.
-
-**The generator could not have known that.** Whether a pane is built is a fact about the running
-application, and a chapter is written from the board — so the demand is correct when it is emitted
-and stops being answerable when somebody opens the screen. **That is not a demand to withhold; it
-is a demand the run discharges.**
-
-**A discharge is a line, not a silence.** The section carries `placeholderLine` in place of the
-picture, and its `{text}` is the capture in this document that does prove that component:
-
-```
-## 7. N-33 구성 관리 · 시스템 관리자
-
-**한 일** — 내용 탭 네 칸을 차례로 누른다.
-**챕터가 정한 것** — …칸마다 캡처를 남긴다 — `n-33-t2.webp`(구성 요소) · `n-33-t3.webp`(연동) …
-**본 것** — 「구성 요소」는 자리표시자다. 「연동」·「이력」도 같은 자리표시자 컴포넌트다.
-
-![N-33 구성 요소](w14-config/n-33-t2.webp)
-
-**같은 컴포넌트** — `n-33-t2.webp`
-```
-
-**The taker that shot one and left two was right, and with nothing to write it left two sections
-showing nothing** — which afterwards is indistinguishable from two panes nobody opened. The line is
-the whole difference, and it is what makes the discharge auditable: it names a picture, and the
-picture is on disk and is one the document shows. `dischargedDemandNamesItsProof` holds all three.
-
-**A discharge is a claim that expires.** The day the component is built the line is false and the
-bytes have not changed, so nothing mechanical can see it — the reader and the moment are in
-`../SKILL.md`'s second table.
-
-**The first sight of a screen is never discharged.** A frame's own capture is the one picture no
-other picture stands in for, and `everyPlacedFrameIsCaptured` goes on demanding it whatever the
-panes behind it hold.
-
-## The ceiling on captures
-
-| | |
-| --- | --- |
-| Format | WebP (`.webp`) |
-| Name | the frame id it shows, lowercased — `<frame>.webp`. A further content pane is `<frame>-t<n>.webp`; a list holding nothing is `<frame>-empty.webp` |
-| Per chapter | the frames the chapter places, plus the panes the board draws on those frames beyond the open one, plus the frames that draw a list |
-| Per repository | the board's frame count + the unopened panes + the frames that draw a list. Companion frames are not in this sum — the application has no such screen |
-| Per file | 150KB or under, and above 2,800 bytes per megapixel of its own canvas — an empty canvas costs about 1,900 at any quality, the sparsest real screen 3,900 |
-| Width | the device width the board gave that frame, up to 1440px |
-| Theme | light |
-
-**Captures are shot in light.** Most people using the product are in light, so the screen in
-evidence should be the screen they see. Where the browser or the operating system is in dark, it is
-switched before the capture — the same screen is never kept in two themes, because one pane is one
-picture. Captures already taken are left as they are and change theme when their section is next
-run.
-
-**The file name is what holds the ceiling.** Because a name is a frame id and a pane number, the
-same pane cannot appear twice, a frame the chapter does not place cannot appear at all, and neither
-can a pane the board does not draw. However many chapters a build has, the tracked captures never
-exceed the board's frames plus its unopened panes.
-
-**Several roles seeing one screen does not add captures.** What a scope-limited role's line proves
-is the list it is filtered down to and the server refusing an address — and the grounds for that
-are the address called and the code that came back, not a picture. Those sections carry a fenced
-block. A picture is needed where the screen that role sees genuinely differs, and where it does,
-the board has usually drawn it as a frame of its own.
-
-## Two kinds of capture, and this file is about one of them
-
-**A capture cited by a result document is not a frame artefact.** This file's naming, ceiling and
-format govern the pictures a chapter's evidence SHOWS — one per frame the chapter placed, one per
-further pane, named for the frame, tracked in the repository. A project may also require a capture
-per frame as a standing deliverable, in every locale and device class it ships; that set has its
-own axes and its own folder → `references/frame-artefacts.md`. Neither ceiling applies to the
-other, and a project that keeps both keeps them apart.
+**The table is what the checks read.** `closedChapterHasAJourneyRun` holds a closed chapter to a
+record whose rows cover every journey the chapter names, each reading `pass`; `everyPlacedFrameIsCaptured`
+holds it to a capture for every frame the chapter placed; `noTwoCapturesAreTheSamePicture` holds
+two captures apart, so a state frame that came back as its base is reported rather than looked
+past; `evidenceSaysWhereItCameFrom` holds the provenance line. The capture-shape gates — width,
+scheme, density — read the pictures as they always have.
+
+**The result words are `pass`, `fail` and `skipped`, written by the command.** A `fail` row is a
+chapter that is not closed; a `skipped` row names, after the word, the parked line that releases
+it, and a skip naming nothing is a fail.
+
+## One look per screen-state, and one round
+
+**The record proves the journeys; it cannot prove the screen holds up.** So the coordinator opens
+every capture once at the close, as the persona whose work the screen carries, and asks three
+questions — is this the frame it is named after, is the screen in it built or the shell, does it
+hold up as a screen a person works in → `../SKILL.md` § *Closing a chapter*. Its findings are
+fixed in one round: fix, run `journeyCommand` again, look again at the screens the fixes reached
+and one they did not. What is still open after that round is written to the open items with the
+frame id and what it needs; a third round is a new chapter's work or the owner's decision to end
+this one.
+
+**Data is never a reason to look again.** A seed that changed, a count that moved, a name that is
+different — the journeys assert relations, so a re-run answers all of that, and the capture it
+leaves is the one to look at. A structural change is a reason: a state added, a control moved, a
+way between screens redrawn — and the journey that reaches it is what changed, so the run reaches
+it too.
 
 ## Captures that are not tracked
 
 Everything else a sweep shot stays in `capturesDir` and is untracked. Only what a document shows
 moves into `evidenceDir` — a capture left in the folder that no section cites is reported by
-`closedChapterHasEvidence`.
+`closedChapterHasAJourneyRun`.
 
 ## What is not written here
 
@@ -394,238 +95,63 @@ moves into `evidenceDir` — a capture left in the folder that no section cites 
 "this time", "running it again" or "originally", and a status column, are not the shape of this
 document.
 
-## Withdrawing a finding takes its citations with it
+## When a closed chapter gains a screen
 
-**A judgement in one section becomes ground the other sections stand on.** A finding written up as
-「these two notations split one fact」 does not stay in its own section: the next section that meets
-a similar screen writes 「this is not the same case as that one」, and now that sentence's meaning
-depends on the first being right. Four sections were resting on one judgement in a chapter where
-nobody had gone looking.
+**A frame the board gains later, belonging to a closed chapter, adds lines to that chapter.** The
+record is short a journey and short a capture. `closedChapterHasAJourneyRun` reports the journey and
+`everyPlacedFrameIsCaptured` reports the capture.
 
-**So a retraction that edits only the section it was written in leaves the retracted judgement
-alive everywhere it was cited**, and the surviving sentences are worse than the original — they
-carry a claim no longer stated anywhere, so a reader cannot even find what they are leaning on.
+**Put the journeys the chapter names beside the rows the record holds, and the difference says
+which case it is.**
 
-**Grep before editing, and fix the citations in the same change.** The distinctive phrase of the
-withdrawn finding is what to search for, not the frame id: a citation names the judgement, not the
-screen. Each one is then rewritten to what it was actually trying to say, which is usually a
-narrower and truer sentence than the one that borrowed the false judgement.
+| The difference | What changed | What to do |
+| --- | --- | --- |
+| a row only the record has | a journey went | the next run drops it |
+| a journey only the chapter has | a journey was added | below |
+| both | a journey changed | the next run answers the new one |
 
-**Whoever withdraws the finding does the sweep** — most often the coordinator, since a finding that
-survived one review and fell at the next is a call they made. Handing the sweep to the agent
-holding the chapter splits the retraction across two heads, and the half that knows what was wrong
-is not the half doing the searching.
+**Where a journey was added there is one answer — that chapter is not closed.** Put its state back to
+open in the ledger and name the newly placed frame among what is left. There is no path where the
+screen is absent and the document is filled in, and it is not an open-items entry either: that file
+holds what waits on a person, and here nothing is waiting — the screen has simply not been built.
 
-## When a later chapter changes the same screen
+**Every other journey stays green.** What grew is the new frame's journey, so that test is written
+and the command runs — and running it runs the others too, which costs nothing and proves nothing
+moved under them.
 
-**The earlier chapter's document is not edited.** It records what was checked when that chapter
-closed. Where a later chapter changed the screen, that chapter's own lines are run and written into
-that chapter's document. Where the later chapter has no line that opens the screen, the earlier
-document stands as the grounds.
 
-**Three things are exceptions, and they are the whole list.** Each is named where it arises and
-each edits the quoted line and nothing else — what was DONE and what was SEEN are never rewritten,
-because those are the record and the record did not change:
+## What the checks judge
 
-| | What may be edited |
-| --- | --- |
-| a demand shrank to a subset of itself | the quoted line, down to the chapter's sentence of today |
-| a frame or a screen was renamed | the quoted line, to the new name |
-| a check deferred to a later chapter was settled by that chapter | the deferred line comes out, and what was finally seen goes in its place |
+`closedChapterHasAJourneyRun` judges: that a chapter the ledger marks closed has a record; that
+the record carries a row for every journey the chapter names — matched by number and persona —
+and that every row reads `pass`, or `skipped` with the parked line that releases it. **Every
+finding of it is a defect.**
 
-Anything not on that list means the section is run again rather than edited.
+`everyPlacedFrameIsCaptured` judges that the record shows a capture for every frame the chapter
+placed; a frame drawn on top of another is covered by its base's picture. A frame no journey
+visited is a screen nobody opened, and the answer is a journey that reaches it, never a picture
+taken outside one.
 
-## A capture older than the code it shows is a candidate, not a verdict
+`journeyTestsDriveTheApplication` judges the tests rather than the record: a journey test that
+names the frame route is driving pictures, not the product → `demands.md` § *A journey is walked
+in the running application*.
 
-**Comparing when each capture was taken against when the surfaces it draws last changed is the
-coordinator's own check, and it is worth running** — it found six captures in one chapter that
-predated a fix to the very control they photograph, one of them showing a defect that had been
-gone for twenty-three minutes.
+**What stays with eyes** is whether the screen in the capture holds up, and whether the seed the
+journeys ran on came into being by the product's own path → `../SKILL.md`'s second table.
 
-**It reports candidates.** A screen changes in one state and not in another: a fix to a detail
-panel and its locale leaves the empty list untouched, so the picture of the empty state is the same
-today as it was before the change. Re-shot, it came back **byte for byte identical** — same
-encoder, same window, same pixels, no diff at all.
+## Measuring what a generator change moves on another board
 
-**So the check ends at the picture rather than at the timestamp.** Re-take the candidate and
-compare; where the bytes are unchanged, nothing was stale and the finding closes there. What it
-must never become is a rule that every capture older than its code is re-shot on sight — the
-chapters carry hundreds, most states are untouched by most changes, and a re-shoot that produces a
-different picture of an unchanged screen is a new risk rather than a repair.
-
-**And a candidate that comes back identical is worth saying out loud.** 「Re-shot and unchanged」 is
-a fact about the screen; silence afterwards reads as a re-shoot nobody did.
-
-## When a board fix moves what a closed chapter quotes
-
-**The `demanded` line is copied out of the chapter file, and the chapter file is generated from the
-board.** So fixing one rule on the board leaves a closed chapter's section quoting a sentence the
-chapter no longer carries. **That section then reads as a record of somebody verifying a rule that
-is gone, and nothing about it looks wrong to a reader.**
-
-**Where they have drifted, there are two things to do.** Run that section's line again and write
-the section again, or write in the open-items file why it cannot be run. It is never left alone —
-a document and a board saying different things with no mark on either is worse than no document.
-
-**`evidenceQuotesTheChapter` finds the drift.** A section's `demanded` line that is no part of any
-line of the chapter section its title names is an error. Whitespace and line breaks are removed
-from both before comparing, so either file may wrap anywhere; a quote with the head or the tail cut
-off passes, and so does one taken from the board rules the section lists as bullets.
-
-**This is not the same as a later chapter changing the screen.** There, the screen moved and the
-earlier document is still correct as the grounds of its moment. Here **the contract moved**, so a
-rule the earlier chapter recorded as verified has ceased to exist.
-
-**A demand that shrank is a third path.** Where fixing a generator defect drops a demand nobody
-should have had, the new demand is a subset of the old one and **what that section saw already
-covers what is left.** Running it again would check the same thing more narrowly. Bring only the
-`demanded` line down to the chapter's sentence of today and leave `did` and `saw` untouched —
-matching a quote to its source is not editing what was seen. Say in the commit what shrank.
-
-**Only when it is a subset.** A demand that changed into something else has not shrunk, so that
-section's line is run again.
-
-**A rename is a fourth path, handled like the third.** Renaming a frame or a screen removes the
-sentence carrying that name from the chapter, so the check reports a drifted quote while **not one
-pixel of the screen has moved.** Nothing shrank and nothing changed into anything else, so there is
-nothing to run: bring the `demanded` line to the new name, leave `did` and `saw` alone, and leave
-the section's captures where they are. **What separates the paths is whether the screen changed,
-not whether the sentence did.**
-
-**A demand that vanished outright is a fifth path, and reaching for the third one here is the
-mistake.** Where a generator fix decides a demand was never this screen's — a companion dialog's
-table, a message a companion draws — nothing narrowed and nothing was renamed: the line is gone
-whole, and there is no sentence of today to bring it down to. Reading it as a subset re-points the
-section at whichever demand the drifted quote most resembles, which is a neighbouring demand the
-section never answered. **Delete the numbered item and renumber the list**, which puts the
-`demanded` numbering back alongside the chapter's, and **delete the observation that answered it**.
-Say in the commit which demands went and why they were never that screen's.
-
-**The observation goes because half an item is worse than none.** A `saw` entry answering a demand
-that has ceased to exist is a record of somebody verifying a rule that is gone — the thing this
-whole section exists to prevent — and it reads as sound, because the sentence is true of the
-companion it describes. Its content belongs to the companion's own section, which is where the
-generator fix put the demand.
-
-**Pair it by what it says, never by its number.** The two lists drift apart long before anybody
-notices, and a document whose sections were written by hand over months will not be in step: in one
-repository 194 of 366 sections had the two lists the same length, and in one of them the answer to
-the sixteenth demand sat at the eighteenth observation. **Where no observation can be tied to the
-removed demand by content, leave that section and say so** — a guessed pairing deletes a record
-that was answering something else, and nothing afterwards can tell that it did.
-
-**A demand whose new question the section already answered is a sixth path.** Rewording sometimes
-changes what a demand asks rather than how it reads — the same screen passes under one wording and
-fails under the other — which by *Only when it is a subset* sends that section back to be run. It
-does not when **the answer to the new question is already in the section, in words somebody wrote
-after running the line.** Bring the `demanded` line to today's sentence and leave `did` and `saw`
-alone.
-
-**The guard is the whole of it: present in words already written, never a reader judging it close
-enough.** 「치울 수 있으며 머리의 안내 단추가 다시 표시한다」, against a demand now asking whether a
-notice can be removed and comes back from the header button, is not near the answer — it is the
-answer, and quoting it is how this path is claimed. A section recording only *where* the notice
-sits has not answered it, and several such sections said outright that it is **not** in the header
-button; a quote brought down there makes the section assert an answer to a question nobody put.
-**So every section taking this path quotes its answering sentence in the commit**, and a claim of
-coverage that cannot be quoted is the abuse the guard exists to block.
-
-**A section that took the sixth path can be un-answered by the next board fix, with nothing in it
-changing.** A demand that gets *more specific* narrows what counts as an answer, and an observation
-that satisfied the looser sentence may name nothing that satisfies the tighter one. The section did
-not move; the target did. It was the sixth path one round and is 「run it again」 the next, and
-**standing still is how it got there.**
-
-**The case, because the shape leaves no mark.** A notice demand asking whether the card comes back
-from 「머리의 안내 단추」 gained 「화면 제목 옆의 안내 단추 … 셸 위쪽의 종 아이콘이 아니다」. Three
-sections had named their button — 「알림 안내 카드 보기」, 「도움말 안내 카드 보기」 — and kept the
-path, because a labelled per-kind button is not a bell. A fourth read 「머리의 안내 단추로 닫고 다시
-찾을 수 있다」, which separates nothing, and lost it. **The diff shows the demand changing and never
-the section it has just invalidated**, so nothing anywhere reports that a correct section stopped
-being one.
-
-**So every quote is re-derived each round and never inherited from the last round's sort.** A
-section that passed is not evidence that it still passes: that verdict was about a sentence which
-has since been replaced, and re-running the comparison is the only thing that ever tests it.
-
-**What makes the wrong move tempting is that the last sort was right.** It is written down, it was
-correct when it was written, and re-deriving it reads as distrusting your own work — which is
-exactly what it is, and exactly what has to happen. The cost of re-deriving is one comparison per
-quote; the cost of inheriting is a section that reads as verified against a demand it no longer
-answers, in a document whose whole purpose is that it cannot.
-
-**All six are one section whose sentences changed.** Where the SET of sections changed, the next
-rule takes it — there the quotes are all fine and a section nobody wrote is being demanded.
-
-### A check that ran, and this installation cannot decide
-
-**A verification line is run rather than reasoned about, and sometimes running it answers 「not
-here」.** The boundary the line proves is not enforced by THIS installation and no amount of
-running it again will change that: a database whose application connects as a superuser cannot
-demonstrate row ownership, a deployment with no second factor cannot demonstrate a challenge, a
-single-tenant install cannot demonstrate a tenant boundary.
-
-**It is not 「did not happen」 and it is not 「passed」.** Written as the first, it reads as work
-somebody skipped and the chapter cannot close over it. Written as the second, the product carries
-a boundary nobody has ever seen hold — which is the class of defect this whole arrangement exists
-to prevent.
-
-**It is a debt, and a debt names its creditor.** The section is written exactly as any other: the
-command that was run, the demand, and what came back — including the reason it cannot be decided.
-Under them goes one more line, naming **the chapter that will be able to decide it**: the one that
-installs the role, turns on the second factor, brings the second tenant into existence.
-
-**The chapter that met the wall closes.** Its work was done and the answer it got is the honest
-one. **The chapter it named is the one that cannot close** while that line stands, and settling it
-is part of that chapter's own run.
-
-**Then, and only then, the earlier document is edited.** An earlier chapter's result document is
-otherwise not touched — it records what was true when that chapter closed — and this is the third
-of the three exceptions listed under *When a later chapter changes the same screen*. It is barely
-one: the document recorded a debt against itself, and paying it is what the document asked for.
-Take the line out, write what was finally seen in its place, in the same change that settles it.
-
-**Declare `deferredLine` the first time this comes up** — the line's shape, with the chapter as
-its `{text}`. Written in prose instead, nothing connects whoever hit the wall to whoever closes
-that chapter three weeks later, and the two checks that hold the debt see nothing:
-`deferredCheckNamesAChapter` refuses a chapter that does not exist and one that names itself, and
-`chapterOwedACheckDoesNotClose` refuses the named chapter's closure while the line stands.
-
-### The demands do not move while the verification is running
-
-**A round of verification quotes the chapter, so a chapter that changes mid-round unfinishes the
-sections already written.** Somebody works through a chapter section by section; a fix lands in the
-generator; the sentences those sections quoted are no longer the sentences the chapter carries, and
-`evidenceQuotesTheChapter` reddens work that was correct when it was done. Do it twice and the
-round stops converging — five more sections get written while the next fix invalidates the five
-before them.
-
-**Appending does not prevent this.** The rule that a new demand goes at the END of a line exists so
-that a quote already written stays a contiguous prefix of it (`references/demands.md` § *A demand
-that grows is appended, never substituted*); it holds against INSERTING and says nothing about
-SUBSTITUTING. Replacing a phrase inside a line invalidates every section that quoted
-that line, wherever the phrase sat.
-
-**So a fix to what a chapter demands is collected and released between rounds, never during one.**
-Whoever is running the verification says when the round ends; until then, fixes to the generator's
-wording are held. A fix that does not change the sentences a chapter writes — a check, a document,
-the build's own wiring — is not this and runs whenever it is ready.
-
-**The one exception is a demand that cannot be executed at all**, which is worse than a stale
-quote: a section written against it records a check nobody could have made. Release that one
-immediately, say which sections it invalidates, and hand the list to whoever is running the round.
-
-**What a held fix will move is measured before it is released, in a copy.** A change to the
+**What a generator change will move on another board is measured before it lands, in a copy.** A change to the
 generator, a placement file or the build config is read against every board it reaches by
 generating into a throwaway `git worktree` at the commit the chapters were last generated from:
 copy the changed files in, link the board's `.kit`, generate, `git diff --stat` that board's
 chapters against the commit, remove the worktree. No tree anybody is working in is touched, and
-the diff is the reconciliation the release will cost, section by section. Generate twice to
+the diff is what the other board's next regeneration will change, journey by journey. Generate twice to
 separate the fix's share from board drift — once with the committed generator, which shows the
 lines the board moved on its own since the chapters were written, and once with the changed one;
-what differs between the two runs is the fix. A line that moved on its own is a reconciliation
-item whichever fix is released, and it is found here rather than as a red gate after regenerating,
-when the first minutes go to blaming the fix for it.
+what differs between the two runs is the fix. A line that moved on its own is the board's
+change whichever fix lands, and it is found here rather than after regenerating, when the first
+minutes go to blaming the fix for it.
 
 ## When what a chapter demands of a screen grows
 
@@ -651,7 +177,7 @@ looked at, and those two states are what the next reader most needs told apart.
 ## When a closed chapter gains a screen
 
 **A frame the board gains later, belonging to a closed chapter, adds lines to that chapter.** The
-document is short a section and short a capture. `closedChapterHasEvidence` reports the section and
+document is short a section and short a capture. `closedChapterHasAJourneyRun` reports the section and
 `everyPlacedFrameIsCaptured` reports the capture.
 
 **Put the sections the chapter demands beside the sections the document holds, and the difference
@@ -674,7 +200,7 @@ has not moved.
 
 ## What the checks judge
 
-`closedChapterHasEvidence` judges: that a chapter the ledger marks closed has a document; that
+`closedChapterHasAJourneyRun` judges: that a chapter the ledger marks closed has a document; that
 there is a section per line the chapter demands; that each section carries the three labels and
 evidence; that each capture a document shows is on disk with a name, format and size the table
 above allows; and that no capture is left in the folder that no section shows. **Every finding of

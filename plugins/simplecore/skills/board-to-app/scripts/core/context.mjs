@@ -271,8 +271,6 @@ export const SCHEMA = {
   // project working in another — it would run, find nothing, and report nothing, which is the exact
   // shape of failure the `closing` grade exists to make visible. Undeclared, everything still runs
   // and no chapter closes, and `doctor` says which key is why.
-  chapterLines: { kind: 'headings', roles: CHAPTER_LINE_ROLES, closing: true, absent: 'every check that reads a chapter\'s own demands matches nothing, and reports the same zero as a chapter with nothing wrong' },
-  evidenceLabels: { kind: 'headings', roles: EVIDENCE_LABEL_ROLES, bare: true, closing: true, absent: 'every check over a result document reads past every section, so a chapter cannot be shown to have closed on anything' },
   closedStatus: { kind: 'text', closing: true, absent: 'nothing is closed, and every check over a closed chapter stays silent' },
   // The word for a chapter the product's owner closed rather than the verification. A person may
   // decide a chapter is done and the build has no standing to refuse — what it must not do is let
@@ -308,6 +306,11 @@ export const SCHEMA = {
   // ordinary blank. A board-to-app project that had every key green closed one chapter of
   // thirty-six, on five checks out of six, with no evidence folder at all.
   evidenceDir: { kind: 'dir', closing: true, absent: 'screens get built and no chapter can be shown to have closed on anything — the grounds die with the session' },
+  // The journeys a chapter closes on, as tests, and the command that runs them and writes the
+  // chapter's run record into `evidenceDir`. Both `closing`: a project declares neither, builds
+  // every screen, and closes nothing — which `doctor` says, key by key.
+  journeyTestsDir: { kind: 'dir', closing: true, absent: 'the journeys have nowhere to live as tests, so a chapter closes on a claim rather than on a run' },
+  journeyCommand: { kind: 'command', closing: true, absent: 'nothing runs the journeys and writes the run record, so no chapter can be shown to have closed on anything' },
   stateLedger: { kind: 'file', required: true, absent: 'the build cannot start' },
   handoverFile: { kind: 'file', required: true, absent: 'the build cannot start' },
   openItemsFile: { kind: 'file', absent: 'parked lines go in the state ledger' },
@@ -345,7 +348,7 @@ export const SCHEMA = {
   // as such defects are found, and `chapterGenerator` emits each sentence per frame so every later
   // chapter re-asks it. Declared and never emitted, the key reads as coverage and holds nothing —
   // which is what `everyFrameDeliverableReachesAChapter` exists to say.
-  frameDeliverables: { kind: 'list', absent: 'a screen owes nothing beyond working code, so a defect no frame can draw is fixed once on the screen it was found on and met again on every screen built afterwards' },
+  frameDeliverables: { kind: 'list', absent: 'a screen owes nothing beyond the code and its journeys, so a defect no frame can draw is fixed once on the screen it was found on and met again on every screen built afterwards' },
   factSources: { kind: 'list', absent: 'a value the board draws is built as drawn and left marked, never asserted' },
   storyDocument: { kind: 'file', absent: 'sample data has no single source, and the screens disagree with each other silently → `references/scenario.md`' },
   locales: { kind: 'list', absent: 'the languages come from the project\'s own copy catalogue; where that cannot be read, report it rather than judging in one language' },
@@ -365,7 +368,7 @@ export const SCHEMA = {
   // own words, which makes it recognisable without any new vocabulary, and
   // `aJourneyIsWalkedInTheRunningApplication` then holds the section that answers it to having
   // been driven here rather than at a frame address.
-  journeyRoute: { kind: 'text', absent: 'a demand about pressing a way BETWEEN screens is answered wherever the run happens to be, and the frame route answers it without anybody navigating — so a control that leads nowhere and one that leads home leave the same record → `references/demands.md`' },
+  journeyRoute: { kind: 'text', absent: 'a journey test is driven wherever the run happens to be, and one driven at the frame route presses controls that have nowhere to go without anything erroring' },
   // The words a demand uses to say why a picture is the only witness for the capture it names.
   //
   // **A capture demanded with no reason is a habit rather than a judgment**, and it is emitted by
@@ -374,7 +377,6 @@ export const SCHEMA = {
   // placeholders — pictures nobody can take at all. One chapter set asked for 1040 of them and
   // said of no single one why a picture was owed. Whether the reason is TRUE stays with eyes; that
   // one was given is what this key lets a machine see.
-  captureReasons: { kind: 'phrases', roles: CAPTURE_REASON_ROLES, absent: 'a demand naming a capture is never asked to say why a picture is the witness for it, so a picture somebody judged to be the only witness and one a generator emitted per pane read exactly the same' },
   // The size and colour scheme every capture is taken at. **Declared rather than left to the
   // driver**, because both are wrong in a way that reads as a correct run: a window that came back
   // narrow files a frame with its lower half missing, and a console in the wrong scheme files a
@@ -411,8 +413,6 @@ export const SCHEMA = {
   // Each requires the other: half a split named is a project that has thought about one side, and
   // applying it to one agent while the other inherits whatever the harness gives is the arrangement
   // silently costing more on the half that was supposed to be cheap.
-  captureTakerModel: { kind: 'text', requiredWith: 'captureJudgeModel', absent: 'both halves run on whatever the harness defaults to. **The split is unaffected** — it is about who judges, not about cost — and what is lost is the saving it also buys' },
-  captureJudgeModel: { kind: 'text', requiredWith: 'captureTakerModel', absent: 'half a split named is not a split named; the config is incomplete and is reported rather than half-applied' },
   // The documents that hand checks to human eyes, and the words they hand them in.
   //
   // **Not `closing`** — a project that declares NEITHER closes chapters perfectly well and simply
@@ -577,7 +577,9 @@ export function loadProject(configPath, options = {}) {
     // imports the compiler: a project's own gate file cannot reach into the skill by path — the
     // skill is installed somewhere else on every machine — so what a gate needs arrives here.
     get lines() {
-      const lines = compileLines(declared('chapterLines'));
+      // Only the two document lines are compiled now: a chapter's own lines are its structural lines
+      // and its journeys, which the checks read by heading rather than by a declared phrase.
+      const lines = {};
       // Compiled by the same grammar and kept beside the chapter's own lines, because a check
       // reading a document reads all of them together. Absent where the project declares none.
       const deferred = declared('deferredLine');
