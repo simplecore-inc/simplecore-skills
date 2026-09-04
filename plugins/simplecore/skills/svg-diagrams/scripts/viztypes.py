@@ -562,8 +562,10 @@ def entity(c, x, y, w, name, sections, sub=None, accent=None, row_h=22,
     h = head_h + sum(len(sec) * row_h for sec in sections) + 10 * len(sections)
     c.rrect(x, y, w, h, rx=8, fill=c.t["box"], stroke=col, sw=1.4)
     c.rrect(x, y, w, head_h, rx=8, fill=col, stroke="none", sw=0, opacity=0.10)
-    c.text(x + 14, y + (head_h / 2 + 1 if not sub else head_h / 2 - 3), name,
-           size=13.5, color=c.t["fg"], family=SANS, weight=700)
+    # 이름과 부제는 머리 칸의 같은 줄에 좌우로 놓인다. 기준선을 다르게 잡으면
+    # 이름만 위로 밀려 머리 칸이 위쪽으로 치우쳐 보인다.
+    c.text(x + 14, y + head_h / 2 + 5, name, size=13.5, color=c.t["fg"],
+           family=SANS, weight=700)
     if sub:
         c.text(x + w - 14, y + head_h / 2 + 4, sub, size=11,
                color=c.t["muted"], family=SANS, anchor="end")
