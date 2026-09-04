@@ -361,6 +361,16 @@ function placeholderLineEntry(ctx, lines) {
  * <p>So what is left to say is the count, and it is worth saying: a chapter set regenerated before
  * the key was declared holds no reasons at all, and `0 matched` there is a set waiting to be
  * regenerated rather than a declaration that is wrong.
+ *
+ * <p><b>That loudness is borrowed, and it is worth naming what it is borrowed from.</b> The gate
+ * is loud only over clauses it recognises as naming a capture, so its noise rests on the capture
+ * pattern reading this board's file names. Where that pattern is the narrow side — it stopped at
+ * the digits while every frame of the board carried a state letter — the two holes compose into
+ * silence: no clause is seen to name a capture, no reason is demanded, and the census then reports
+ * `0 matched` under a paragraph promising that zero cannot be quiet. It happened, on 82 frames of
+ * 82. So read a zero here against whether the chapters demand captures at all rather than against
+ * this reasoning, and where they do and the gate is still green, suspect the pattern before the
+ * declaration.
  */
 function captureReasonEntries(ctx) {
   const declared = ctx.declared('captureReasons');
