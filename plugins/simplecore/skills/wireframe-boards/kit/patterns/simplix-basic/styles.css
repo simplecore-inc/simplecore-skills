@@ -41,6 +41,7 @@
      as this record's picture. `sm` is the exception: beside a row it is just the mark. */
   .media-ph { display: inline-flex; flex-direction: column; gap: 4px; align-items: flex-start;
     text-align: left; min-width: 0; }
+  .media-ph.center { display: flex; align-items: center; text-align: center; }
   .media-ph.s-sm { flex: 0 0 auto; }
   .media-ph .mp-box { border: 1px solid var(--line); background: var(--fill);
     background-image: repeating-linear-gradient(45deg, transparent 0 5px, var(--paper) 5px 10px); }
@@ -162,7 +163,7 @@
   .menubar .tn-tab { height: 38px; }
 
   /* The area's own menu. One column, entries two deep, and a count only where work waits. */
-  .secnav { flex: 0 0 216px; display: flex; flex-direction: column;
+  .secnav { flex: 0 0 196px; display: flex; flex-direction: column;
             border-right: 1px solid var(--line); background: var(--fill); }
   .sn-head { display: flex; align-items: center; height: 42px; padding: 0 10px 0 14px; flex: none;
              border-bottom: 1px solid var(--line); }
@@ -193,6 +194,7 @@
   .sn-item .car { width: 11px; flex: none; font-size: 10px; text-align: center; opacity: .7; }
   .sn-item .ic { width: 14px; height: 14px; flex: 0 0 auto; border: 1.5px solid currentColor; border-radius: 4px; }
   .sn-item .sn-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .sn-item .sn-ai { flex: none; margin-left: 0; font-size: 8px; line-height: 11px; }
   .sn-item.active { background: var(--fill-deep); color: var(--ink); font-weight: 600; }
   /* How many records are there — plain, because it is not asking for anything. */
   .sn-count { margin-left: auto; font: 500 10px var(--mono); color: var(--ink-3); }
@@ -360,32 +362,65 @@
   /* The console default: the list alone, or the list beside the record's panel. The two are
      separated by a divider the reader drags, so the panel width below is a starting point. */
   .listdetail { flex: 1; display: flex; min-height: 0; padding: 0; gap: 0; }
+  .page-detail { width: min(100%, 1120px); margin: 0 auto; flex: 1 1 auto; min-height: 0;
+                 display: flex; flex-direction: column; gap: 14px; }
+  .page-cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+  .page-detail > .ld-foot { flex: 0 0 auto; margin-top: auto; position: sticky; bottom: 0; z-index: 2;
+                            background: var(--screen); padding-bottom: 2px; }
   /* The gutter under the list is the SAME whether or not the panel is open. Opening a record
      must not add or remove space beneath the rows: the list then reads as having moved, and the
      reader goes hunting for the line they were on. So the gutter belongs to the list column and
      is stated once, rather than being whatever the taller of the two columns happens to leave. */
   .ld-list { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 14px;
              padding-top: 0; padding-bottom: 16px; }
-  .ld-divider { flex: 0 0 17px; align-self: stretch; position: relative; }
-  .ld-divider::before { content: ""; position: absolute; left: 8px; top: 12px; bottom: 0; border-left: 1px solid var(--line); }
-  .ld-divider::after { content: ""; position: absolute; left: 5px; top: 50%; width: 7px; height: 34px;
+  .ld-divider { flex: 0 0 25px; align-self: stretch; position: relative; }
+  .ld-divider::before { content: ""; position: absolute; left: 12px; top: 12px; bottom: 0; border-left: 1px solid var(--line); }
+  .ld-divider::after { content: ""; position: absolute; left: 9px; top: 50%; width: 7px; height: 34px;
                        margin-top: -17px; border: 1px solid var(--line); border-radius: 4px; background: var(--fill); }
-  .ld-detail { flex: 0 0 760px; display: flex; flex-direction: column; min-width: 0;
+  .ld-detail { flex: 0 0 680px; display: flex; flex-direction: column; min-width: 0;
                padding-top: 12px; gap: 10px; }
+  .ld-list .trow { padding-right: 6px; }
   .ld-head { display: flex; align-items: center; gap: 8px; padding-bottom: 8px; border-bottom: 1px solid var(--line); }
-  .ld-close { margin-left: auto; font: 12px var(--mono); color: var(--muted); }
+  .ld-close { margin-left: auto; width: 20px; height: 20px; display: inline-flex; align-items: center;
+              justify-content: center; color: var(--muted); }
+  .ld-close svg { width: 15px; height: 15px; display: block; }
+  .panel-state { margin-left: auto; }
+  .panel-state + .ld-close { margin-left: 0; }
+  .ld-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(104px, 1fr)); gap: 6px; }
+  .ld-stat { position: relative; min-width: 0; padding: 7px 9px; border: 1px solid var(--line); border-radius: 6px;
+             background: var(--fill); display: flex; flex-direction: column; gap: 2px; }
+  .ld-stat-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+                   font: 10px/1.2 var(--mono); color: var(--muted); }
+  .ld-stat-value { font-size: 17px; line-height: 1.15; font-weight: 700; color: var(--ink); }
+  .ld-stat-value small { margin-left: 2px; font: 10px/1 var(--mono); color: var(--muted); }
+  .ld-stat-peek { position: absolute; top: 4px; right: 5px; width: 14px; height: 14px;
+                  display: inline-flex; align-items: center; justify-content: center; color: var(--muted); }
+  .ld-stat-peek svg { width: 12px; height: 12px; display: block; }
+  .ld-stat:has(.ld-stat-peek) .ld-stat-label { padding-right: 15px; }
+  .ld-stat.warn { border-color: var(--accent); }
+  .ld-stat.warn .ld-stat-value { color: var(--accent); }
   .ld-foot { display: flex; align-items: center; gap: 8px; margin-top: 2px; padding-top: 10px; border-top: 1px solid var(--line); }
   .ld-foot .spacer { flex: 1; }
   .ld-foot .btn { padding: 6px 12px; font-size: 12px; }
 
-  /* The panel while it is a form. It scrolls with the panel and keeps the field groups apart;
-     the fields themselves are the same .fgrid the page forms use, two to a row, which is what
-     the 760px panel was sized to hold. */
-  .ld-formbody { display: flex; flex-direction: column; gap: 10px; min-height: 0; }
+  /* Detail and full-page form actions occupy one predictable footer at the bottom of their
+     working region. A short record must not pull its actions up into the content, and a long
+     record must scroll behind neither the footer nor the primary action. */
+  .ld-detail > .ld-foot { flex: 0 0 auto; margin-top: auto; position: sticky; bottom: 0; z-index: 2;
+                          background: var(--screen); padding-bottom: 2px; }
+  .ld-detail > .ld-verbs { margin-top: auto; }
+  .main > .ld-foot { flex: 0 0 auto; margin-top: auto; position: sticky; bottom: 0; z-index: 2;
+                     background: var(--screen); padding-bottom: 2px; }
+
+  /* A form uses the same anchored action footer as a detail panel. Its fields take and scroll in
+     the available middle region; save/cancel never drift upward just because the form is short. */
+  .ld-formbody { display: flex; flex: 1 1 auto; flex-direction: column; gap: 10px;
+                 min-height: 0; overflow-y: auto; padding-bottom: 10px; }
+  .ld-formfoot { flex: 0 0 auto; margin-top: auto; }
 
   /* The record's own verbs, on the row above the standard actions. They divide the width
      between them so what a record can be done to is read without opening anything. */
-  .ld-verbs { display: flex; gap: 8px; margin-top: 2px; padding-top: 10px; border-top: 1px solid var(--line); }
+  .ld-verbs { display: flex; gap: 8px; margin-top: auto; padding-top: 10px; border-top: 1px solid var(--line); }
   .ld-verbs .btn { flex: 1; padding: 6px 12px; font-size: 12px; }
   /* Each tier keeps its own rule. The two rows answer different questions — what this tab asks
      for, and what is done to the record — and switching tabs changes only the upper one, so a
@@ -422,6 +457,11 @@
   .sect { margin-bottom: 6px; }
   .sect:last-of-type { margin-bottom: 0; }
   .sect-t { font: 600 11px var(--mono); color: var(--muted); letter-spacing: .04em; margin-bottom: 8px; }
+  .sect .filterbar { margin-top: 4px; }
+  .filterbar + .table { margin-top: 8px; }
+  /* Category chips are the continuation of the filter bar, not a new content section. Offset the
+     list column's generic block gap so the two controls read as one compact filter cluster. */
+  .filterbar + .table:has(> .table-group-filters) { margin-top: -3px; }
   /* A rail or a grid gets the same section heading as a field group, with the gap a
      block needs above it — dropped straight after fields it reads as their last row. */
   .sect-t.sect-head { margin-top: 14px; }
@@ -449,29 +489,46 @@
   /* The arrow form: a square slot rather than a word, so a panel of references reads as a column
      of controls instead of a column of the same label repeated. */
   .peek.out { display: inline-flex; align-items: center; justify-content: center; flex: none;
-              width: 17px; padding: 0; font-size: 10px; }
+              width: 18px; height: 18px; padding: 0; border: 0; border-radius: 0;
+              background: transparent; }
+  .peek.out svg { width: 13px; height: 13px; display: block; }
 
 
   /* Row actions: compact icon slots, only the ones a surface actually grants. */
-  .rowact { display: inline-flex; align-items: center; gap: 4px; justify-content: flex-end;
-            flex-wrap: nowrap; }
-  .ract { width: 22px; height: 22px; flex: none; border: 1px solid var(--line); border-radius: 5px;
-          display: inline-flex; align-items: center; justify-content: center; background: var(--screen); }
-  .ract .ic { width: 11px; height: 11px; border: 1.5px solid var(--muted); border-radius: 3px; }
-  .ract.more { width: auto; padding: 0 7px; font-size: 11px; color: var(--muted); white-space: nowrap; }
+  .rowact { display: inline-flex; align-items: stretch; gap: 0; justify-content: flex-end;
+            margin-left: auto; justify-self: end;
+            flex-wrap: nowrap; overflow: hidden; border: 1px solid var(--line); border-radius: 6px;
+            background: var(--screen); }
+  .ract { width: 20px; height: 22px; flex: none; border: 0; border-left: 1px solid var(--line);
+          border-radius: 0; display: inline-flex; align-items: center; justify-content: center;
+          background: transparent; color: var(--ink); }
+  .ract:first-child { border-left: 0; }
+  .ract .ic { width: 14px; height: 14px; border: 0; border-radius: 0; display: inline-flex; }
+  .ract .ic svg { width: 14px; height: 14px; display: block; }
+  .ract.more { width: auto; padding: 0 6px; font-size: 10px; color: var(--muted); white-space: nowrap; }
   /* Unavailable on this row, and drawn anyway — the column has the same buttons in the same
      places on every line, so it can be run down with the eye. Dashed as well as faded, because
      fading alone would not survive the greyscale the board is drawn in. */
-  .ract.off { background: var(--fill); border-style: dashed; }
-  .ract.off .ic { border-color: var(--faint); border-style: dashed; }
+  .ract.off { background: transparent; color: var(--faint); }
+  .ract.off .ic { color: inherit; opacity: .45; }
 
   /* Buttons inside a table or a list row are the small size. */
   .table .btn, .trow .btn { padding: 3px 8px; font-size: 11px; }
+  .btn.peek-link { display: inline-flex; align-items: center; }
+  .btn-peek { width: 13px; height: 13px; display: inline-flex; flex: none; margin-left: 8px; }
+  .btn-peek svg { width: 13px; height: 13px; display: block; }
 
   /* Forms: two fields to a row, with a rule between the columns. A field that holds long
      text or many values takes the whole width and normally sits in a section of its own. */
   .fgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 28px; }
   .fone { display: flex; flex-direction: column; gap: 14px; }
+  .avatar-editor { grid-column: 1 / -1; display: flex; align-items: center; gap: 16px; min-width: 0; }
+  .avatar-preview { width: 72px; height: 72px; flex: none; border: 1px solid var(--line); border-radius: 50%; background: var(--fill); display: grid; place-items: center; font-size: 22px; font-weight: 650; color: var(--muted); }
+  .avatar-copy { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+  .avatar-name { font-size: 13px; font-weight: 600; }
+  .avatar-note { font-size: 11px; color: var(--muted); }
+  .avatar-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+  .avatar-portrait { display: flex; flex-direction: column; align-items: center; gap: 6px; width: 112px; text-align: center; }
   .ffield { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
   .ffield.wide { grid-column: 1 / -1; }
   .ffield .label { font-size: 12px; color: var(--muted); }
@@ -533,13 +590,17 @@
   .audit { display: flex; align-items: center; gap: 14px; margin-top: auto; padding: 8px 10px;
            border-radius: 6px; background: var(--fill); font: 10px var(--mono); color: var(--muted); }
   .audit .spacer { flex: 1; }
+  /* Once audit information starts the panel's bottom cluster, later action rows must not claim a
+     second auto margin. They follow the audit strip directly: audit → related actions → footer. */
+  .ld-detail > .audit ~ .ld-verbs,
+  .ld-detail > .audit ~ .ld-foot { margin-top: 8px; }
   /* An outsider transcribing this into a report needs the whole id, so it is copyable rather
      than elided — a record nobody can name is a record nobody can cite. */
   .audit .au-copy { border: 1px solid var(--line); border-radius: 4px; padding: 0 5px;
                     color: var(--muted); font: 9px var(--mono); }
 
   /* The peek dialog: a referenced record read in place, with one way out to its own page. */
-  .modal.peek { width: 700px; padding: 0; display: flex; flex-direction: column;
+  .modal.peek { width: 680px; padding: 0; display: flex; flex-direction: column;
                max-height: calc(var(--vh) - 130px); }
   /* Two widths past the default, both capped against the frame: a dialog that overflows its own
      screen is a defect the board would show as a design decision. `wide` is for a reference
@@ -591,6 +652,13 @@
                     padding: 0 8px; min-height: 22px; font-size: 11px; line-height: 1;
                     color: var(--muted); }
   .filterbar .seg > span.active, .dv-bar .seg > span.active { background: var(--fill-deep); color: var(--ink); }
+  .filterbar .seg.icon-controls { overflow: visible; }
+  .filterbar .seg.icon-controls > .control-icon { position: relative; min-width: 28px; padding: 0 6px;
+                                                   justify-content: center; }
+  .filterbar .seg.icon-controls svg { width: 14px; height: 14px; display: block; }
+  .filterbar .seg.icon-controls .n { position: absolute; z-index: 1; top: -6px; right: -4px; margin-left: 0;
+                                     min-width: 11px; text-align: center; padding: 0 2px;
+                                     font-size: 8px; line-height: 11px; }
   .filterbar .seg .n { margin-left: 5px; background: var(--ink); color: #fff; border-radius: 999px;
                        font: 600 9px/13px var(--mono); padding: 0 5px; display: inline-block; }
   .fb-find { display: inline-flex; align-items: center; min-width: 120px; min-height: 24px;
@@ -601,7 +669,9 @@
             border-radius: 6px; padding: 3px 6px; font-size: 11px; background: var(--screen); }
   .fbadge .k { color: var(--muted); }
   .fbadge .op { font: 10px var(--mono); color: var(--faint); }
-  .fbadge .x { color: var(--faint); font-size: 9px; }
+  .fbadge .x { width: 13px; height: 13px; display: inline-flex; align-items: center;
+               justify-content: center; color: var(--faint); }
+  .fbadge .x svg { width: 11px; height: 11px; display: block; }
   .fbadge.more { color: var(--muted); background: var(--fill); }
   .trow.thead .td { display: flex; align-items: center; gap: 4px; overflow: hidden; }
   .trow.thead .td.right { justify-content: flex-end; }
@@ -618,9 +688,12 @@
   /* `overflow: hidden` here exists only so the first and last rows follow the rounded corner.
      It also silently cut the last row of any table that ran a few pixels long, so the corner is
      clipped by the rows themselves and the box stops hiding anything. */
-  .table { border: 1px solid var(--line); border-radius: 8px; }
-  .table > *:first-child { border-top-left-radius: 7px; border-top-right-radius: 7px; }
-  .table > *:last-child { border-bottom-left-radius: 7px; border-bottom-right-radius: 7px; }
+  /* Record lists continue beyond the rows drawn in a wireframe, so their sides stay open like the
+     main CRUD list. A deliberately finite specification opts into the closed box. */
+  .table { border-block: 1px solid var(--line); border-inline: 0; border-radius: 0; }
+  .table.bounded { border: 1px solid var(--line); border-radius: 8px; }
+  .table.bounded > *:first-child { border-top-left-radius: 7px; border-top-right-radius: 7px; }
+  .table.bounded > *:last-child { border-bottom-left-radius: 7px; border-bottom-right-radius: 7px; }
   /* A row reads at the same size as a menu entry and a field label. Left to inherit the body
      size it came out larger than everything around it, which made the list shout. */
   /* One grid for the whole table, so a column is the same width on every row. `subgrid` is what
@@ -650,18 +723,27 @@
      spaced. Two buttons written one after the other used to be drawn edge to edge, which reads
      as one wide control with a line through it — and in a narrow column they wrap and stack. */
   .td:has(> .btn) { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+  .td:has(> .rowact) { display: flex; align-items: center; justify-content: flex-end; }
   .td.w2 { flex: 2; }
-  /* A column that does not share the leftover width. It holds its floor and grows past it
-     rather than wrapping what is inside — an action column at a fixed width folds its last
-     button onto a second line, which is exactly the ragged column the row-button rule exists
-     to prevent. Columns still line up, because every row carries the same buttons. */
-  .td.fix { flex: 0 0 auto; min-width: 110px; }
+  /* The joined icon group now owns the action column's width. Reserving room for former text
+     buttons leaves a conspicuous blank strip between record content and the right-aligned group. */
+  .td.fix { flex: 0 0 auto; min-width: 0; }
   .td.right { text-align: right; }
-  /* A column that takes exactly what it holds. `.fix` reserves 110px so an action column cannot
-     fold its last button onto a second line — right for a list at full width, wrong beside a
-     760px panel, where two buttons and a badge were each given a third of what the name needed.
-     The name is what a reader scans; a column of empty padding is not. */
+  /* A column that takes exactly what it holds. Beside a 680px panel, record content keeps the
+     width that once became empty action-column padding. */
   .td.tight { flex: 0 0 auto; min-width: 72px; }
+  .level-gauge { display: inline-grid; grid-template-columns: 76px 34px; align-items: center; gap: 7px;
+    min-width: 117px; color: var(--ink); }
+  .level-track { position: relative; height: 8px; overflow: hidden; border: 1px solid var(--line);
+    border-radius: 999px; background: var(--screen); }
+  .level-track i { display: block; height: 100%; border-radius: inherit; background: var(--muted); opacity: .62; }
+  .level-gauge.warn .level-track i { background: repeating-linear-gradient(135deg, var(--accent-tint) 0 4px, var(--accent) 4px 6px); opacity: 1; }
+  .level-gauge.danger .level-track { border-color: var(--accent); }
+  .level-gauge.danger .level-track i { background: var(--accent); opacity: 1; }
+  .level-gauge strong { font: 600 11px var(--mono); text-align: right; }
+  .wf-ai { display: inline-block; margin-left: 4px; padding: 0 3px; border: 1px dashed var(--accent);
+    border-radius: 3px; color: var(--accent); background: transparent; font: 700 9px/14px var(--mono);
+    vertical-align: 1px; letter-spacing: 0; }
   /* The first column of a tree list: the indent, the caret and the label sit on one line, and the
      spacer is what makes depth readable at a glance rather than something to count. */
   .td.tt-first { display: flex; align-items: center; gap: 6px; }
@@ -850,7 +932,20 @@
     font-size: 11px; font-weight: 600; background: var(--fill-deep);
   }
   .badge.outline { background: transparent; border: 1px solid var(--line-strong); }
-  .chips, .badges { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .chips, .table-group-filters, .badges { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .table-group-filters { grid-column: 1 / -1; padding: 4px 0; }
+  .chip-filter-groups { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 8px; padding: 2px 0 4px; }
+  .chip-filter-group {
+    display: flex; align-items: center; gap: 6px; min-width: 0;
+    border: 1px solid var(--line); border-radius: 8px; padding: 4px 6px 4px 9px;
+    background: var(--screen);
+  }
+  .chip-filter-label {
+    flex: 0 0 auto; padding-right: 8px; border-right: 1px solid var(--line);
+    font: 600 10px var(--mono); color: var(--muted);
+  }
+  .chip-filter-group .chips { flex-wrap: nowrap; gap: 4px; }
+  .chip-filter-group .chip { padding: 3px 10px; }
   .chips .chips-note { margin-left: auto; padding-left: 12px; font-size: 12px; color: var(--muted); }
   /* Appears as soon as a second chip is lit, which is what says the row narrows rather than
      chooses — and is the one control that undoes a selection built up one chip at a time. */
@@ -865,14 +960,16 @@
   .list-card .lines { flex: 1; display: flex; flex-direction: column; gap: 6px; }
 
   /* ── Overlay states (bottom sheet on touch, centered modal on desktop) ─── */
-  .dim { position: absolute; inset: 0; background: rgba(31, 36, 48, 0.35); z-index: 1; }
+  /* Overlays sit above every sticky page control. Detail and page footers use z-index: 2;
+     keeping the backdrop at 1 allowed those footers to remain bright and look active. */
+  .dim { position: absolute; inset: 0; background: rgba(31, 36, 48, 0.35); z-index: 20; }
   .sheet {
-    position: absolute; left: 14px; right: 14px; bottom: 14px; z-index: 1;
+    position: absolute; left: 14px; right: 14px; bottom: 14px; z-index: 21;
     background: var(--screen); border: 1.5px solid var(--line-strong); border-radius: 12px;
     padding: 16px; display: flex; flex-direction: column; gap: 10px;
   }
   .modal {
-    position: absolute; left: 50%; top: 110px; transform: translateX(-50%); z-index: 1;
+    position: absolute; left: 50%; top: 110px; transform: translateX(-50%); z-index: 21;
     width: 460px; background: var(--screen); border: 1.5px solid var(--line-strong);
     border-radius: 12px; padding: 18px; display: flex; flex-direction: column; gap: 12px;
     box-shadow: 4px 6px 0 rgba(31, 36, 48, 0.12);
@@ -905,17 +1002,14 @@
   /* The steps are joined by a line: a row of separate pills reads as a set of choices, and a
      wizard is not one — it is an order. The line before a step that is done or current is drawn
      solid, the rest dashed, so how far along the reader is can be seen without counting. */
-  .setup-steps { display: flex; align-items: center; gap: 0; margin-bottom: 4px; }
+  .setup-steps { display: flex; align-items: center; gap: 0; width: 100%; flex: none;
+                 margin-bottom: 4px; }
+  .lrow > .setup-steps { width: auto; flex: 1 1 0; }
   .sstep { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--faint);
            padding: 5px 10px; border: 1px solid var(--line); border-radius: 999px;
-           background: var(--screen); flex: none; }
-  .sstep + .sstep::before { content: ''; display: block; width: 22px; height: 0;
-                            border-top: 1px dashed var(--line); margin: 0 -10px 0 -10px;
-                            order: -1; }
-  .sstep + .sstep { margin-left: 22px; position: relative; }
-  .sstep + .sstep::before { position: absolute; left: -22px; margin: 0; }
-  .sstep.done + .sstep::before, .sstep.now + .sstep::before,
-  .sstep.done::before { border-top-style: solid; border-top-color: var(--line-strong); }
+           background: var(--screen); flex: 0 0 auto; white-space: nowrap; justify-content: center; }
+  .sline { flex: 1 1 22px; min-width: 22px; height: 0; border-top: 1px dashed var(--line); }
+  .sline.reached { border-top-style: solid; border-top-color: var(--line-strong); }
   .sstep .sno { width: 16px; height: 16px; border-radius: 50%; background: var(--fill-deep);
                 color: var(--muted); font: 600 10px/16px var(--mono); text-align: center; }
   .sstep.now { color: var(--ink); font-weight: 600; border-color: var(--line-strong); }
@@ -959,6 +1053,7 @@
   .frame.desktop.narrow .ld-list { display: none; }
   .frame.desktop.narrow .ld-divider { display: none; }
   .frame.desktop.narrow .ld-detail { flex: 1 1 auto; }
+  .frame.desktop.narrow .page-cols { grid-template-columns: 1fr; }
 
   /* ── An icon's PLACE is filled, not outlined ──────────────────────
      An empty outlined square is exactly what a checkbox looks like, and readers have read these
@@ -967,7 +1062,9 @@
   .ic { background: var(--fill-deep); }
   .sn-item.active .ic, .tn-tab.active .ic, .sn-group.open .ic { background: var(--line); }
   .sn-item.locked .ic, .sn-group.locked .ic, .tn-tab.locked .ic { background: transparent; }
-  .ract.off .ic { background: transparent; }
+  /* Lucide glyphs in the joined row-action control stay unfilled. The surrounding group already
+     supplies the control surface; a fill behind each glyph reads as uneven button shading. */
+  .ract .ic { background: transparent; }
 
   /* ── In-page messages ─────────────────────────────────────────────
      The kind is a word and a shape, never a hue alone: the board is greyscale, and the product
@@ -990,6 +1087,7 @@
      own right edge — after the card's actions, because leaving the card is not one of them. */
   .n-close { flex: none; align-self: flex-start; margin-left: 8px; padding: 0 4px;
              font: 11px/18px var(--mono); color: var(--muted); }
+  .n-close svg { width: 13px; height: 13px; display: block; }
   /* A status card says what is true right now, so it has no close and no way to be missed. */
   .msg.state { border-left-style: double; border-left-width: 4px; }
   .msg { display: flex; gap: 10px; align-items: flex-start; padding: 9px 12px; border-radius: 6px;
@@ -1163,6 +1261,10 @@
   .mx-cell.warn { background: var(--accent-tint); color: var(--accent); font-weight: 700; }
   .mx-cell.ok { background: var(--fill); }
   .mx-cell.on { background: var(--fill-deep); font-weight: 700; }
+  .permission-toggle { display: inline-grid; grid-template-columns: 1fr 1fr; align-items: stretch; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; background: var(--screen); vertical-align: middle; }
+  .permission-toggle > span { min-width: 44px; min-height: 24px; padding: 4px 8px; border-left: 1px solid var(--line); color: var(--muted); font-size: 10px; font-weight: 500; line-height: 14px; }
+  .permission-toggle > span:first-child { border-left: 0; }
+  .permission-toggle > span.active { background: var(--ink); color: var(--screen); font-weight: 700; }
 
   .aflow { display: flex; gap: 0; }
   .af-step { flex: 1; display: flex; align-items: flex-start; gap: 8px; padding: 10px 12px;
@@ -1286,7 +1388,7 @@
   .ed-div { width: 1px; align-self: stretch; margin: 2px 5px; background: var(--line); }
   .ed-trail { font: 10px var(--mono); color: var(--ink-3); white-space: nowrap; }
   /* The page under the bar joins it — two rounded boxes stacked read as two separate things. */
-  .edbar + .table { border-radius: 0 0 8px 8px; }
+  .edbar + .table.bounded { border-radius: 0 0 8px 8px; }
 
   /* ── A canvas that is worked on ───────────────────────────────────── */
   .cvs { border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--screen); }

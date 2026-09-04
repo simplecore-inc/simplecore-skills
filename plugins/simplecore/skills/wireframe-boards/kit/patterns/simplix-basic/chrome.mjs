@@ -43,6 +43,7 @@ import {
  */
 export function makeConsole({
   tabs, menu, reaches, itemLimits = {}, clusterPack = {}, bought = {},
+  utilityMenu = {},
   adminTab = null, adminClusters = [], defaultRole,
   brand = 'PRODUCT', powered = '', ticker = '', segments = null, site = 'Site', search = '',
   favorites = [],
@@ -51,12 +52,14 @@ export function makeConsole({
   // frame still renders, still passes every structural check, and only a person looking at the
   // picture notices the chrome went blank. Naming them is a typo away from silent, so the shell
   // refuses instead.
-  const TAB_KEYS = new Set(tabs.map((t) => t.key).concat(adminTab ? [adminTab] : []));
+  const TAB_KEYS = new Set(tabs.map((t) => t.key)
+    .concat(adminTab ? [adminTab] : [], Object.keys(utilityMenu)));
   // Pack items are menu entries too. Leaving them out means a screen in a pack cluster names a
   // destination the shell insists does not exist, and the build stops on a screen that is right.
   const menuLabels = (m) => [...(m.items ?? []), ...(m.packItems ?? [])].flatMap((i) =>
     typeof i === 'string' ? [i] : [i.label, ...(i.children ?? [])]);
-  const MENU_LABELS = new Set(Object.values(menu).flatMap(menuLabels));
+  const MENU_LABELS = new Set(Object.values(menu).flatMap(menuLabels)
+    .concat(Object.values(utilityMenu).flatMap(menuLabels)));
   // Which cluster each destination sits in, so a pinned shortcut can be held to the same reach as
   // the tree under it. A favourite the role cannot reach is a dead entry drawn ABOVE the tree that
   // refuses it, which reads as the one way in that still works.
@@ -105,6 +108,17 @@ export function makeConsole({
    * group and its entries, marked with the lock word.
    */
   const tabGroupsOf = (tab, current, role, packsIn, badges, counts, lockWord) => {
+    if (utilityMenu[tab]) {
+      const m = utilityMenu[tab];
+      return [{
+        label: m.title ?? tab,
+        open: true,
+        locked: '',
+        items: (m.items ?? []).map((label) => ({
+          label, active: label === current, badge: badges[label] ?? 0, count: counts[label], locked: '',
+        })),
+      }];
+    }
     const packs = { ...bought, ...packsIn };
     const seen = reaches[role] ?? reaches[defaultRole] ?? [];
     const clusters = adminTab && tab === adminTab
@@ -114,18 +128,20 @@ export function makeConsole({
       const m = menu[c];
       const clusterLock = clusterPack[c] && !packs[clusterPack[c]] ? lockWord : '';
       const packLock = m.packKey && packs[m.packKey] ? '' : (m.packItems ? lockWord : '');
-      const leaf = (label, locked) => ({
+      const leaf = (label, locked, meta = {}) => ({
         label,
         active: label === current,
         badge: badges[label] ?? 0,
         count: counts[label],
         locked,
+        ai: meta.ai === true,
       });
       // An entry is either a destination or, where a cluster holds more than a column can show, a
       // parent of destinations. A parent is never a screen itself: it carries no count of its
       // own, and it opens only when what is current is inside it.
       const entry = (spec, locked = '') => {
         if (typeof spec === 'string') return leaf(spec, locked);
+        if (!spec.children) return leaf(spec.label, locked, spec);
         const children = spec.children.map((label) => leaf(label, locked));
         return {
           label: spec.label,
@@ -180,14 +196,9 @@ export function makeConsole({
     powered: poweredIn = powered, agent = null, lockWord = '라이선스',
     search: searchIn = search, sitePick = true,
   }) => {
-    // `tab: null` — no tab is the one the reader is on. Some screens hang off the account chip
-    // rather than off the tab row (내 정보, 알림함), and for a role that does not reach the tab
-    // holding their cluster there is no honest tab to name: lighting one says this account can
-    // open an area it cannot. A missing tab is different from `null` and still refused, because
-    // that is a screen whose author forgot to say where it lives.
-    if (tab !== null && !TAB_KEYS.has(tab)) {
+    if (!TAB_KEYS.has(tab)) {
       throw new Error(`console_ — 없는 탭 「${tab}」 (쓸 수 있는 탭: ${[...TAB_KEYS].join(' · ')}), `
-        + '어느 탭에도 속하지 않는 화면이면 tab: null');
+        + '상단 메뉴와 사이드바 맥락을 지정해야 한다');
     }
     if (current && !MENU_LABELS.has(current)) {
       throw new Error(`console_ — 어느 메뉴에도 없는 「${current}」 — 보드의 chrome.mjs MENU에 있는 이름이어야 한다`);

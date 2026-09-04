@@ -34,12 +34,18 @@ const cls = (base, variant) => (variant ? `${base} ${variant}` : base);
  * teaches the reader that the board's controls are decoration, and a reviewer who presses it and
  * gets the same list has been told the product does something it does not. A board with a genuine
  * card or tile view switches it on and draws that view as its own frame.
+ *
+ * <p>`tableGroupsAsFilters` — legacy {@link groupRow} bands are normalized into a `분류` column
+ * and a chip filter before the table. The band label is record data, so repeating it as a full-width
+ * row wastes vertical scanning space and makes sorting ambiguous. Kept opt-in because it changes
+ * both the table schema and its height on every screen that used grouped rows.
  */
 const OPTIONS = {
   dismissibleNotices: false,
   noticeKindMarks: false,
   chipClearControl: false,
   listViewToggle: false,
+  tableGroupsAsFilters: false,
 };
 
 /**
@@ -70,14 +76,26 @@ export const imgPh = (extra = '') => `<div class="img-ph${extra ? ' ' + extra : 
  *
  * @param size sm (a thumbnail beside a row) · md (a preview in a panel) · lg (the picture is the
  *   screen — a literacy-support screen leads with it)
+ * @param center center the picture and its caption inside a comparison cell
  */
-export const mediaPh = ({ label, size = 'md', note = '' }) =>
-  `<div class="media-ph s-${size}"><div class="mp-box"></div>` +
+export const mediaPh = ({ label, size = 'md', note = '', center = false }) =>
+  `<div class="media-ph s-${size}${center ? ' center' : ''}"><div class="mp-box"></div>` +
   `<div class="mp-label">${label}</div>` +
   `${note ? `<div class="mp-note">${note}</div>` : ''}</div>`;
 
 export const qrPh = (label = 'QR') => `<div class="qr-ph"><span>${label}</span></div>`;
-export const btn = (text, variant = '') => `<div class="${cls('btn', variant)}">${text}</div>`; // ''·primary·ghost·danger·off(권한 없음)
+const looksLikeScreenLink = (text) =>
+  /(?:이력|기록|현황|목록|보고서|설정|관리|보기|열기|이동|선정|다시 고르기|초대|추가|작성|일괄 처리|수신 설정|로그|현황판|추이|출력량|수집 결과|접근 차단 기록|적용된 문서|요청한 문서|발주의 입고|기종의 장비|기종의 장치|모델의 장비|대역의 장치|품목을 쓰는 장비|생성 파일|지난 일괄 작업)$/.test(String(text).replace(/<[^>]+>/g, '').trim())
+  || /^(?:프린터|모델|프로파일|통보|임계치|규칙|서식|예약|위임|조직 권한|수동 중도 교체) 등록$/.test(String(text).replace(/<[^>]+>/g, '').trim());
+
+/** A cross-screen button opens a peek first. `target` makes the destination explicit. */
+export const btn = (text, variant = '', target = '') => {
+  const linked = Boolean(target) || looksLikeScreenLink(text);
+  const targetName = target || String(text).replace(/<[^>]+>/g, '').trim();
+  return `<div class="${cls('btn', variant, linked ? 'peek-link' : '')}"` +
+    `${linked ? ` data-target="${targetName}" title="${targetName} 미리 보기"` : ''}>${text}` +
+    `${linked ? `<span class="btn-peek">${ROW_ICONS.external}</span>` : ''}</div>`;
+}; // ''·primary·ghost·danger·off(권한 없음)
 export const chip = (text, active = false) => `<span class="chip${active ? ' active' : ''}">${text}</span>`;
 /**
  * A person: the mark that stands for their photo, and their name beside it.
@@ -97,7 +115,30 @@ export const person = (name, sub = '') =>
   `<span class="person"><span class="p-av">${name.slice(0, 1)}</span><span>${name}</span>` +
   (sub ? `<span class="mono faint">${sub}</span>` : '') + '</span>';
 
+/** A person's editable profile image, with the no-photo fallback and its direct actions. */
+export const avatarEditor = ({ mark = '사진', note = '' }) =>
+  `<div class="avatar-editor"><div class="avatar-preview">${mark}</div>` +
+  `<div class="avatar-copy"><div class="avatar-name">프로필 사진</div>` +
+  `${note ? `<div class="avatar-note">${note}</div>` : ''}` +
+  `<div class="avatar-actions">${btn('사진 선택')}${btn('사진 삭제', 'ghost')}</div></div></div>`;
+
+/** A read-only large profile image in a user detail. */
+export const avatarView = ({ mark = '사진', note = '' }) =>
+  `<div class="avatar-editor"><div class="avatar-preview">${mark}</div>` +
+  `<div class="avatar-copy"><div class="avatar-name">프로필 사진</div>` +
+  `${note ? `<div class="avatar-note">${note}</div>` : ''}</div></div>`;
+
+/** A large read-only portrait for the picture column of mediaSide(). */
+export const avatarPortrait = ({ mark = '사진', note = '' }) =>
+  `<div class="avatar-portrait"><div class="avatar-preview">${mark}</div>` +
+  `${note ? `<div class="avatar-note">${note}</div>` : ''}</div>`;
+
 export const badge = (text, variant = '') => `<span class="${cls('badge', variant)}">${text}</span>`; // ''·outline
+
+/** A compact allow/block control for an editable permission. */
+export const permissionToggle = (allowed = true) =>
+  `<span class="permission-toggle"><span${allowed ? ' class="active"' : ''}>허용</span>` +
+  `<span${allowed ? '' : ' class="active"'}>차단</span></span>`;
 /**
  * The chip filter over a list. It sits between the list tabs and the list, and NOTHING may come
  * between the three: a tile row, an explanation card or a message band pushed in there separates
@@ -134,6 +175,14 @@ export const chips = (items, { note = '', select = 'filter' } = {}) => {
       ? `<span class="chips-clear">${lit}개 선택 · 해제</span>` : ''}` +
     `${note ? `<span class="chips-note">${note}</span>` : ''}</div>`;
 };
+/** Compact category filters attached to a table, after its total/detail-filter controls. */
+export const tableFilters = (items) =>
+  `<div class="table-group-filters">${items.join('')}</div>`;
+/** Several independent chip-filter axes, named and grouped while sharing one compact row. */
+export const chipFilterGroups = (groups) =>
+  `<div class="chip-filter-groups">${groups.map((group) =>
+    `<div class="chip-filter-group"><span class="chip-filter-label">${group.label}</span>` +
+    `<div class="chips">${group.items.join('')}</div></div>`).join('')}</div>`;
 /** A row of buttons. A btn is a block, so two of them stack unless a row holds them. */
 export const btnRow = (children) => `<div class="btn-row">${children}</div>`;
 export const badges = (items) => `<div class="badges">${items.join('')}</div>`;
@@ -223,18 +272,54 @@ const columnTemplate = (head) => head.map((h) => {
   // still draws its own text, and no check above this sees anything.
   const classes = new Set((/class="([^"]*)"/.exec(h)?.[1] ?? '').split(/\s+/));
   if (classes.has('w2')) return '2fr';
-  if (classes.has('fix')) return 'minmax(110px, max-content)';
+  if (classes.has('fix')) return 'max-content';
   if (classes.has('tight')) return 'max-content';
   return '1fr';
 }).join(' ');
 
-export function table({ head, rows }) {
-  const th = `<div class="trow thead">${head.map((h) => (h.startsWith('<span') ? h : `<span class="td">${h}</span>`)).join('')}</div>`;
+/**
+ * A record list is open at the left and right edges by default. Use `bounded: true` only when the
+ * complete, finite set of rows is known in advance (a compact specification or fixed comparison).
+ */
+export function table({ head, rows, bounded = false, filters = [], groupColumn = '분류' }) {
+  let tableHead = head;
+  let tableRows = rows;
+  let groupFilters = filters.length ? tableFilters(filters) : '';
+  if (OPTIONS.tableGroupsAsFilters) {
+    const marker = /^<div class="trow tgroup"><span class="td">([\s\S]*)<\/span><\/div>$/;
+    let current = '';
+    const counts = new Map();
+    const normalized = [];
+    let sawGroup = false;
+    for (const row of rows) {
+      const match = typeof row === 'string' ? marker.exec(row) : null;
+      if (match) {
+        current = match[1];
+        sawGroup = true;
+        if (!counts.has(current)) counts.set(current, 0);
+      } else if (Array.isArray(row) && current) {
+        counts.set(current, counts.get(current) + 1);
+        normalized.push([`<span class="td">${current}</span>`, ...row]);
+      } else {
+        normalized.push(row);
+      }
+    }
+    if (sawGroup) {
+      tableHead = [`<span class="td">${groupColumn}</span>`, ...head];
+      tableRows = normalized;
+      const total = [...counts.values()].reduce((sum, count) => sum + count, 0);
+      groupFilters = tableFilters([
+        chip(`전체 ${total}`, true),
+        ...[...counts].map(([label, count]) => chip(`${label} ${count}`)),
+      ]);
+    }
+  }
+  const th = `<div class="trow thead">${tableHead.map((h) => (h.startsWith('<span') ? h : `<span class="td">${h}</span>`)).join('')}</div>`;
   // A row given as a string is emitted verbatim, which is how groupRow() puts a heading between
   // bands of rows without the table having to know what it groups by.
-  const body = rows.map((r) => (typeof r === 'string' ? r
+  const body = tableRows.map((r) => (typeof r === 'string' ? r
     : `<div class="trow">${r.map((c) => (c.startsWith('<span') ? c : `<span class="td">${c}</span>`)).join('')}</div>`)).join('');
-  return `<div class="table" style="--tc:${columnTemplate(head)}">${th}${body}</div>`;
+  return `<div class="table${bounded ? ' bounded' : ''}" style="--tc:${columnTemplate(tableHead)}">${groupFilters}${th}${body}</div>`;
 }
 /** A heading band inside a table: the thing the rows beneath it all belong to. */
 export const groupRow = (label) => `<div class="trow tgroup"><span class="td">${label}</span></div>`;
@@ -399,6 +484,7 @@ export const sectionNav = ({ title, groups = [], rail = false, flyout = null }) 
     `<div class="sn-item${sub ? ' sub' : ''}${it.active ? ' active' : ''}${it.locked ? ' locked' : ''}">` +
     (sub ? '' : `<span class="car">${it.children ? (it.open ? '⌄' : '›') : ''}</span>`) +
     `<span class="ic"></span><span class="sn-label">${it.label}</span>` +
+    `${it.ai ? '<span class="wf-ai sn-ai" title="와이어프레임 식별용 · 실제 UI 요소 아님" aria-hidden="true">[AI]</span>' : ''}` +
     `${it.locked ? `<span class="lk">${it.locked}</span>`
       : it.badge ? `<span class="dot">${it.badge}</span>`
         : it.count != null ? `<span class="sn-count">${it.count}</span>` : ''}</div>` +
@@ -517,14 +603,63 @@ export const pageHeader = ({
  * @param actions `[{label, disabled}]`, or a bare label for one always available
  * @param more collapses the rest behind 더보기; it too is drawn on every row
  */
+const lucide = (body) => `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"` +
+  ` fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${body}</svg>`;
+const ROW_ICONS = {
+  eye: lucide('<path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/>'),
+  pencil: lucide('<path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/>'),
+  plus: lucide('<path d="M5 12h14"/><path d="M12 5v14"/>'),
+  trash: lucide('<path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>'),
+  lock: lucide('<rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>'),
+  unlock: lucide('<rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/>'),
+  check: lucide('<path d="M20 6 9 17l-5-5"/>'),
+  undo: lucide('<path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11"/>'),
+  reset: lucide('<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>'),
+  refresh: lucide('<path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/>'),
+  play: lucide('<path d="M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z"/>'),
+  download: lucide('<path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/>'),
+  logout: lucide('<path d="m16 17 5-5-5-5"/><path d="M21 12H9"/><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>'),
+  phone: lucide('<path d="M13.832 16.568a1 1 0 0 0 1.213-.303l.355-.465A2 2 0 0 1 17 15h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2A18 18 0 0 1 2 4a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-.8 1.6l-.468.351a1 1 0 0 0-.292 1.233 14 14 0 0 0 6.392 6.384"/>'),
+  link: lucide('<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>'),
+  external: lucide('<path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>'),
+  filter: lucide('<path d="M10 5H3"/><path d="M12 19H3"/><path d="M14 3v4"/><path d="M16 17v4"/><path d="M21 12h-9"/><path d="M21 19h-5"/><path d="M21 5h-7"/><path d="M8 10v4"/><path d="M8 12H3"/>'),
+  columns: lucide('<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/><path d="M15 3v18"/>'),
+  close: lucide('<path d="M18 6 6 18"/><path d="m6 6 12 12"/>'),
+  more: lucide('<circle cx="5" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1" fill="currentColor" stroke="none"/>'),
+};
+const rowActionIcon = (label) => {
+  if (/삭제/.test(label)) return ROW_ICONS.trash;
+  if (/잠금/.test(label)) return ROW_ICONS.lock;
+  if (/해제/.test(label)) return ROW_ICONS.unlock;
+  if (/승인|확정/.test(label)) return ROW_ICONS.check;
+  if (/반려|회신/.test(label)) return ROW_ICONS.undo;
+  if (/초기화|되돌리기/.test(label)) return ROW_ICONS.reset;
+  if (/재실행|재처리|복원/.test(label)) return ROW_ICONS.refresh;
+  if (/실행|배포/.test(label)) return ROW_ICONS.play;
+  if (/부여|등록|추가/.test(label)) return ROW_ICONS.plus;
+  if (/수정|편집|입력|변경|지정/.test(label)) return ROW_ICONS.pencil;
+  if (/연결/.test(label)) return ROW_ICONS.link;
+  if (/내려받기|다운로드/.test(label)) return ROW_ICONS.download;
+  if (/로그아웃|종료|중지/.test(label)) return ROW_ICONS.logout;
+  if (/전화/.test(label)) return ROW_ICONS.phone;
+  if (/보기|현황|내역|확인|미리 보기/.test(label)) return ROW_ICONS.eye;
+  return ROW_ICONS.more;
+};
+
 export const rowActions = (actions, more = false) =>
   `<span class="rowact">` +
   actions.map((a) => {
     const it = typeof a === 'string' ? { label: a } : a;
-    return `<span class="ract${it.disabled ? ' off' : ''}" data-a="${it.label}" title="${it.label}">` +
-      `<span class="ic"></span></span>`;
+    // Row actions that inspect or edit another record follow the same peek-first route as
+    // text buttons. Immediate commands (delete, approve, execute, download…) stay direct.
+    const linked = Boolean(it.target) ||
+      !/(?:삭제|잠금|해제|승인|확정|반려|회신|초기화|되돌리기|재실행|재처리|복원|실행|배포|내려받기|다운로드|로그아웃|종료|중지|전화)/.test(it.label);
+    const targetName = it.target || it.label;
+    return `<span class="ract${it.disabled ? ' off' : ''}${linked ? ' peek-link' : ''}" data-a="${it.label}"` +
+      `${linked ? ` data-target="${targetName}" title="${targetName} 미리 보기"` : ` title="${it.label}"`}>` +
+      `<span class="ic">${rowActionIcon(it.label)}</span></span>`;
   }).join('') +
-  (more ? `<span class="ract more">더보기</span>` : '') + `</span>`;
+  (more ? `<span class="ract more" title="더보기"><span class="ic">${ROW_ICONS.more}</span></span>` : '') + `</span>`;
 
 /**
  * Tabs over a list. A list gets these when its rows split into kinds somebody works through
@@ -746,9 +881,37 @@ export const listDetail = (listHtml, detailHtml = '') =>
   (detailHtml ? `<div class="ld-divider"></div><aside class="ld-detail">${detailHtml}</aside>` : '') +
   `</div>`;
 
-/** The panel's header — the record's own name, and the control that closes the panel. */
-export const panelHead = (title) =>
-  `<div class="ld-head"><span class="ph-title sm">${title}</span><span class="ld-close">✖</span></div>`;
+/**
+ * A list-free record or settings page. The shell stays wide, but readable content stops growing
+ * after 1120px. This is never nested in listDetail: a record opened from a list uses a peek dialog.
+ */
+export const pageDetail = (children) => `<div class="page-detail">${children}</div>`;
+
+/** Short peer sections on a wide dedicated page; tables and timelines stay outside at full width. */
+export const pageColumns = (items) => `<div class="page-cols">${items.join('')}</div>`;
+
+/** The panel's header — the record's own name, optional availability state, and close. */
+export const panelHead = (title, state = '') =>
+  `<div class="ld-head"><span class="ph-title sm">${title}</span>` +
+  `${state ? `<span class="badge outline panel-state">${state}</span>` : ''}<span class="ld-close" title="닫기">${ROW_ICONS.close}</span></div>`;
+
+/** Compact current-state facts placed immediately below a detail panel's heading. */
+export const detailStats = (items) =>
+  `<div class="ld-stats">${items.map(({ label, value, unit = '', tone = '', peek = false }) =>
+    `<div class="ld-stat${tone ? ` ${tone}` : ''}"><span class="ld-stat-label">${label}</span>` +
+    `${peek ? `<span class="ld-stat-peek" title="${label} 미리 보기">${ROW_ICONS.external}</span>` : ''}` +
+    `<span class="ld-stat-value">${value}${unit ? `<small>${unit}</small>` : ''}</span></div>`).join('')}</div>`;
+
+/** Compact percentage gauge for a table cell. The number remains visible so tone is not the only cue. */
+export const levelGauge = (value, { tone = '' } = {}) => {
+  const amount = Math.max(0, Math.min(100, Number(value) || 0));
+  return `<span class="level-gauge${tone ? ` ${tone}` : ''}" title="잔량 ${amount}%">` +
+    `<span class="level-track"><i style="width:${amount}%"></i></span>` +
+    `<strong>${amount}%</strong></span>`;
+};
+
+/** Board-only marker for AI-assisted or predictive behavior. It is not part of the product UI. */
+export const aiMark = () => `<span class="wf-ai" title="와이어프레임 식별용 · 실제 UI 요소 아님" aria-hidden="true">[AI]</span>`;
 
 /**
  * The panel's footer — the record's own actions. Delete keeps one fixed place.
@@ -785,10 +948,10 @@ export const panelVerbs = (actions) => `<div class="ld-verbs">${actions}</div>`;
  *   are otherwise told apart only by whether the fields happen to have values
  */
 export const panelForm = ({ title, mode = '새로 만들기', children, foot }) =>
-  `<div class="ld-head"><span class="ph-title sm">${title}</span>` +
-  `<span class="badge outline">${mode}</span><span class="ld-close">✖</span></div>` +
+  `<div class="ld-head ld-formhead"><span class="ph-title sm">${title}</span>` +
+  `<span class="badge outline">${mode}</span><span class="ld-close" title="닫기">${ROW_ICONS.close}</span></div>` +
   `<div class="ld-formbody">${children}</div>` +
-  `<div class="ld-foot">${foot}</div>`;
+  `<div class="ld-foot ld-formfoot">${foot}</div>`;
 
 /** Tabs across the top of a panel. Counts ride the label, as the implementation writes them. */
 export const tabs = (items) =>
@@ -922,7 +1085,7 @@ export const dField = ({ label, value, peek = false, wide = false, top = false }
   // so a label repeated down a panel becomes a column of the same word read as text; the arrow is
   // read as a control at a glance and says which way the reader is about to go — out and up, into
   // the referenced record. What it opens is the dialog the reading contract describes.
-  `<span class="dvalue">${value}${peek ? '<span class="peek out">↗</span>' : ''}</span></div>`;
+  `<span class="dvalue">${value}${peek ? `<span class="peek out" title="미리 보기">${ROW_ICONS.external}</span>` : ''}</span></div>`;
 
 /** The strip under a panel's body: the record's id, and when it was written. */
 /**
@@ -965,10 +1128,11 @@ export const auditFoot = (created, updated) =>
  * @param wide `true` widens it for a reference table; `'viewer'` widens it further and lets its
  *   body run the dialog's own height, for a {@link docViewer} that has to draw a page of paper
  */
-export const dialog = ({ title, children, foot = null, wide = false }) =>
+export const dialog = ({ title, state = '', children, foot = null, wide = false }) =>
   `<div class="dim"></div><div class="modal peek${wide ? ' wide' : ''}` +
   `${wide === 'viewer' ? ' viewer' : ''}">` +
-  `<div class="pk-head"><span class="ph-title sm">${title}</span><span class="ld-close">✖</span></div>` +
+  `<div class="pk-head"><span class="ph-title sm">${title}</span>` +
+  `${state ? `<span class="badge outline panel-state">${state}</span>` : ''}<span class="ld-close" title="닫기">${ROW_ICONS.close}</span></div>` +
   `<div class="pk-body">${children}</div>` +
   // A dialog that carries no action has no footer, rather than a footer holding the word
   // `undefined`. The ✖ in the head is the way out, so an explanation needs nothing down here.
@@ -978,8 +1142,8 @@ export const dialog = ({ title, children, foot = null, wide = false }) =>
  * The dialog a peek control opens: the referenced record's own detail, read where the
  * question was asked, with one explicit way out to that record's page.
  */
-export const peekDialog = ({ title, children }) =>
-  dialog({ title, children, foot: `<span class="spacer"></span>${btn('닫기', 'ghost')}${btn('페이지로 이동', 'primary')}` });
+export const peekDialog = ({ title, state = '', children }) =>
+  dialog({ title, state, children, foot: `<span class="spacer"></span>${btn('닫기', 'ghost')}${btn('페이지로 이동', 'primary')}` });
 
 /**
  * The window a history list is read over, as a track rather than a set of choices.
@@ -1047,10 +1211,10 @@ export const filterBar = ({ total, applied = [], hidden = 0, columns = true,
   (search ? `<span class="fb-find"><span class="ph">${search}</span></span>` : '') +
   (OPTIONS.listViewToggle && views.length
     ? `<span class="seg">${views.map((v) => `<span${v === view ? ' class="active"' : ''}>${v}</span>`).join('')}</span>` : '') +
-  applied.map((f) => `<span class="fbadge"><span class="k">${f.k}</span><span class="op">${f.op || '='}</span>${f.v}<span class="x">✖</span></span>`).join('') +
+  applied.map((f) => `<span class="fbadge"><span class="k">${f.k}</span><span class="op">${f.op || '='}</span>${f.v}<span class="x" title="필터 해제">${ROW_ICONS.close}</span></span>`).join('') +
   (hidden ? `<span class="fbadge more">외 ${hidden}개</span>` : '') +
-  `<span class="spacer"></span><span class="seg"><span>필터${applied.length ? `<span class="n">${applied.length}</span>` : ''}</span>` +
-  (columns ? `<span>열</span>` : '') + `</span></div>`;
+  `<span class="spacer"></span><span class="seg icon-controls"><span class="control-icon" title="필터">${ROW_ICONS.filter}${applied.length ? `<span class="n">${applied.length}</span>` : ''}</span>` +
+  (columns ? `<span class="control-icon" title="열 설정">${ROW_ICONS.columns}</span>` : '') + `</span></div>`;
 
 /**
  * A column heading. Every column of a searchable list can be sorted, so the wireframe marks
@@ -1072,12 +1236,12 @@ export const th = (label, { w = '', dir = '' } = {}) =>
  * page and neither reads as the list.
  *
  * <p>What the hierarchy costs is width, because the first column spends it on indentation. Beside
- * a 760px panel that leaves room for two further columns, so everything else about the selected
+ * a 720px panel that leaves room for two further columns, so everything else about the selected
  * node goes into the panel where it belongs.
  *
  * <p>The further columns and the action column are `.td.tight` — they take what they hold and no
- * more. `.fix` reserves 110px so a full-width list's action column cannot fold a button onto a
- * second line; beside a panel that reservation is spent on padding, and the name column pays it.
+ * more. `.fix` takes the width of the joined icon group, so the action column stays against the
+ * list edge and the name column keeps the width that would otherwise be empty padding.
  *
  * @param rows `[{label, depth, open, leaf, active, badge, count, cells, actions}]` — `cells` are
  *   pre-classed `.td` strings for the further columns, `actions` becomes the trailing column
@@ -1110,10 +1274,10 @@ export const treeBar = ({ total, expanded = true, applied = [], hidden = 0, sear
   (search ? `<span class="fb-find"><span class="ph">${search}</span></span>` : '') +
   `<span class="seg"><span${expanded ? ' class="active"' : ''}>모두 펼치기</span>` +
   `<span${expanded ? '' : ' class="active"'}>모두 접기</span></span>` +
-  applied.map((f) => `<span class="fbadge"><span class="k">${f.k}</span><span class="op">${f.op || '='}</span>${f.v}<span class="x">✖</span></span>`).join('') +
+  applied.map((f) => `<span class="fbadge"><span class="k">${f.k}</span><span class="op">${f.op || '='}</span>${f.v}<span class="x" title="필터 해제">${ROW_ICONS.close}</span></span>`).join('') +
   (hidden ? `<span class="fbadge more">외 ${hidden}개</span>` : '') +
-  `<span class="spacer"></span><span class="seg"><span>필터${applied.length ? `<span class="n">${applied.length}</span>` : ''}</span>` +
-  `<span>열</span></span></div>`;
+  `<span class="spacer"></span><span class="seg icon-controls"><span class="control-icon" title="필터">${ROW_ICONS.filter}${applied.length ? `<span class="n">${applied.length}</span>` : ''}</span>` +
+  `<span class="control-icon" title="열 설정">${ROW_ICONS.columns}</span></span></div>`;
 
 /**
  * One value a reader types straight into the table.
@@ -1229,7 +1393,7 @@ export const NOTICE_KINDS = { help: '?', warn: '!', info: 'i', danger: '!' };
 export const NOTICE_MARKS = { ...NOTICE_KINDS, error: '!', example: '▷', legal: '§' };
 
 /** The control that closes a notice card. Its twin is the header icon that brings the card back. */
-export const noticeClose = () => `<span class="n-close" title="닫기">✕</span>`;
+export const noticeClose = () => `<span class="n-close" title="닫기">${ROW_ICONS.close}</span>`;
 
 /**
  * The notice controls in a page header's action area — one per kind of card the page carries.
@@ -1591,6 +1755,7 @@ export const CATALOG = [
   { cat: 'input', name: 'cellInput({value, unit, bad})', note: '표 안에서 바로 고치는 칸. 빈 칸은 점선, 거절된 값은 강조색', ex: `<div class="table"><div class="trow"><span class="td">산소</span><span class="td">${cellInput({ value: '20.9', unit: '%' })}</span><span class="td">${cellInput({})}</span><span class="td">${cellInput({ value: '-1', bad: true })}</span></div></div>` },
   { cat: 'inline', name: 'person(name, sub)', note: '사람 이름은 언제나 마크와 함께 그린다 — 목록 · 상세 · 머리 어디서나 같은 짝이고, 이름만 쓴 자리는 게이트가 잡는다', ex: `${person('김본사', '본사 담당자 · hq.kim')}` },
   { cat: 'input', name: 'chip(text, active) · badge(text, variant)', note: '필터 칩 · 상태 배지(outline)', ex: `${chips([chip('전체', true), chip('진행'), chip('완료')])}${badges([badge('발급', 'outline'), badge('반납')])}` },
+  { cat: 'annotation', name: 'aiMark()', note: 'AI·예측 기능을 찾기 위한 와이어프레임 전용 [AI] 표식. 실제 제품 UI 요소가 아니다', ex: `소진 예상일 ${aiMark()}` },
   { cat: 'input', name: 'chips(items, {note})', note: '칩 줄의 오른쪽 끝에 붙는 한 마디 — 어느 칩을 골랐느냐에 따라 달라지는 안내만 여기 놓는다. 칩 아래 한 줄을 더 쓰면 탭·칩·목록 사이에 블록이 끼는 것이라 그 자리는 없다', ex: `${chips([chip('전체'), chip('내보내기 DB', true), chip('API')], { note: '내보내기 DB는 방화벽을 이쪽에서 엽니다' })}` },
   { cat: 'container', name: 'helpCard({title, hint, open, dismiss})', note: '엔티티 설명·생애주기가 사는 카드 — 누르면 다이얼로그로 펼친다. 목록 아래·목록·상세 위·상세 탭 머리 가운데 한 곳. 도움말 갈래의 알림 카드라 닫히고, 머리의 「?」가 다시 연다', ex: helpCard({ title: '위임과 대결은 어떻게 다른가', hint: '넘기는 사람 · 넘어가는 시점 · 기록에 남는 이름' }) },
   { cat: 'common state', name: 'msg({kind, title, body, status, dismiss})', note: '도움말 · 경고 · 알림 셋은 갈래마다 표식이 붙고 닫힌다. 닫음은 사람에게 영구히 남으므로, 내용이 지금의 사업장 상태에 따라 달라지는 카드는 status로 두어 닫히지 않게 한다 — 빈 사업장에서도 같은 문장인지가 가른다', ex: `${msg({ kind: 'help', title: '이 화면에서 하는 일', body: '주기와 기한을 정합니다.' })}${msg({ kind: 'warn', title: '보호구 지급 기록이 없는 배정이 남아 있습니다', body: '오늘 기준으로 셉니다.', status: true })}${msg({ kind: 'error', title: '저장할 수 없습니다', body: '필수 항목이 비어 있습니다.' })}` },
@@ -1609,6 +1774,7 @@ export const CATALOG = [
   { cat: 'desktop chrome', name: 'statusBar({powered, ticker, segments, health}) · menuBar(groups)', note: '어느 화면에도 속하지 않는 정보 · 탭이 폭에 안 맞을 때 통째로 내려가는 줄', ex: `${statusBar({ powered: 'Powered by SimpleCORE Inc.', ticker: '작업중지 발령 · A동 3층 배관', segments: [{ label: '사업장 시간 KST · 주간조' }, { label: '제출 동기화 4건 대기', tone: 'warn' }, { label: '단말 3/4' }], health: { label: 'Smart Safety', tone: 'ok' } })}${menuBar([[{ label: '대시보드', active: true }], [{ label: '기준·서식' }, { label: '안전 운영' }]])}` },
   { cat: 'data', name: 'filterBar({total, applied, hidden, views, view}) · th(label, {dir})', note: '목록 위의 바 · 정렬 중인 열 머리글. 날짜에 놓이는 기록은 세그먼트가 목록·달력을 가르고, 걸린 필터는 보기를 바꿔도 그대로 남는다 — 그래서 전환이 페이지 머리가 아니라 이 바에 있다', ex: `${filterBar({ total: '31', applied: [{ k: '공종', op: '=', v: '배관' }], hidden: 2 })}${filterBar({ total: '84건', views: ['목록', '달력'], view: '달력', applied: [{ k: '월', op: '=', v: '2026-08' }] })}${table({ head: [th('작업', { w: 'w2' }), th('상태', { dir: 'desc' })], rows: [['<span class="td w2">' + bar('w80') + '</span>', '<span class="td">' + badge('진행', 'outline') + '</span>']] })}` },
   { cat: 'data', name: 'rowActions(actions, more)', note: '모든 줄에 전부·같은 자리·같은 개수. 못 쓰는 버튼은 지우지 않고 비활성으로 둔다 — 줄마다 달라지면 열을 눈으로 훑을 수 없다', ex: table({ head: [th('작업허가', { w: 'w2' }), th('상태', { w: 'fix' }), th('', { w: 'fix' })], rows: [['<span class="td w2">배관 용접</span>', `<span class="td fix">${badge('발급', 'outline')}</span>`, `<span class="td fix">${rowActions(['보기', '연장', '반납'], true)}</span>`], ['<span class="td w2">밀폐공간 청소</span>', `<span class="td fix">${badge('반납')}</span>`, `<span class="td fix">${rowActions(['보기', { label: '연장', disabled: true }, { label: '반납', disabled: true }], true)}</span>`]] }) },
+  { cat: 'detail panel', name: 'detailStats(items)', note: '상세 제목 바로 아래에서 현재 규모나 상태를 먼저 읽는 소형 카드. 연결된 목록이나 기록이 있으면 카드에 peek를 두고, 같은 정보를 여는 하단 동작은 반복하지 않는다', ex: detailStats([{ label: '하위 조직', value: '12', unit: '곳' }, { label: '소속 장비', value: '412', unit: '대', peek: true }, { label: '권한 사용자', value: '3', unit: '명', peek: true }]) },
   { cat: 'detail panel', name: 'tabs · section · dField · auditFoot · panelFoot', note: '패널의 탭 줄, 2단 필드 묶음, 필드 하나(peek는 다른 기록을 가리킨다), 감사줄, 동작 행', ex: `${tabs([{ label: '개요', active: true }, { label: '구역', count: 3 }])}${section('사업장', dField({ label: '상태', value: badge('운영 중', 'outline') }) + dField({ label: '사업장 코드', value: 'SITE-01' }) + dField({ label: '업종', value: '건설업', peek: true }) + dField({ label: '주소', value: bar('w80'), wide: true, top: true }))}${auditFoot({ id: 'a1b2…9z', at: '2026-01-04' }, '2026-07-12')}` },
   { cat: 'detail panel', name: 'sectHead(title)', note: '필드가 아닌 블록의 절 제목 — 레일·첨부·차트가 앞 절의 마지막 줄로 읽히지 않게 구분한다', ex: `${section('알림', dField({ label: '도달', value: '승격 2회 뒤 응답' }))}${sectHead('승격 내역')}${bar('w80')}${bar('w60', true)}` },
   { cat: 'detail panel', name: 'panelVerbs(actions) · panelFoot(actions)', note: '두 단 동작 행 — 윗단은 열린 탭이 요구하는 것, 아랫단은 레코드에 하는 것. 파괴적인 것은 위치가 아니라 색(danger)으로 구분한다', ex: `${panelVerbs(btn('구역 추가') + btn('가져오기') + btn('내보내기'))}${panelFoot(btn('닫기', 'ghost') + '<span class="spacer"></span>' + btn('삭제', 'danger') + btn('편집', 'primary'))}` },
@@ -1618,6 +1784,7 @@ export const CATALOG = [
   { cat: 'overlay', name: 'peekDialog({title, children})', note: '가리킨 기록을 그 자리에서 읽고, 나가는 길은 하나만 둔다', ex: `<div class="device" style="width:420px;height:210px"><div class="screen">${peekDialog({ title: '김현장 · 배관공', children: section('', dField({ label: '자격', value: badge('유효', 'outline') })) })}</div></div>` },
   { cat: 'layout', name: 'split(list, detail) · shell(sidebar, main)', note: '좌우 두 버전 · 앱 셸', ex: `<div class="device" style="width:360px"><div class="screen"><div class="split"><div class="pane list">${bar('w80')}${bar('w60', true)}</div><div class="pane">${tTitle('상세')}${bar('w40')}</div></div></div></div>` },
   { cat: 'layout', name: 'listDetail(list, detail) · panelHead(title)', note: '콘솔의 기본 — 목록 혼자, 또는 상세 패널 옆으로 좁아진 목록', ex: `<div class="device" style="width:520px"><div class="screen">${listDetail(`${bar('w80')}${bar('w60', true)}${bar('w40', true)}`, `${panelHead('A동 3층')}${bar('w60')}`)}</div></div>` },
+  { cat: 'layout', name: 'pageDetail(children) · pageColumns(items)', note: '목록 없는 전용 조회·설정 페이지. 셸은 넓게 유지하고 콘텐츠만 최대 1120px로 제한한다. 짧은 절만 2단으로 묶고 표·차트·이력은 전체 폭을 쓴다. listDetail 안에는 넣지 않으며 목록에서 연 기록은 peek 다이얼로그로 먼저 연다', ex: pageDetail(pageHeader({ title: '내 정보' }) + pageColumns([formSection('프로필', bar('w60')), formSection('연락처', bar('w80'))]) + table({ head: [th('기기')], rows: [['<span class="td">이 브라우저</span>']] })) },
   { cat: 'layout', name: 'pageNote(text)', note: '페이지 머리글 아래 한 줄. 다른 화면으로 건너가는 길을 안내한다', ex: pageNote('주기와 기한을 정하는 곳은 「보존 정책 설정」 화면입니다.<span class="peek">보존 정책으로</span>') },
   { cat: 'common state', name: 'sourceBadge(source, basis)', note: '적용값 옆에 붙어 무엇이 그 값을 정했는지 나타낸다 — 주기·기한·횟수·보존 기간이 나오는 모든 화면', ex: `<div class="table"><div class="trow"><span class="td">위험성평가 주기</span><span class="td">1년 ${sourceBadge('법정 기본', '고시 제2024-76호 제15조')}</span></div><div class="trow"><span class="td">TBM 주기</span><span class="td">매 작업일 ${sourceBadge('사업장 설정', '법정 기본 없음')}</span></div></div>` },
   { cat: 'common state', name: 'lockNote(basis, until)', note: '왜 못 고치는지와 언제까지인지. 잠긴 컨트롤만으로는 권한 문제인지 법인지 가려지지 않는다', ex: lockNote('산업안전보건법 제164조 ① — 3년 보존', '2029-03-14까지') },
@@ -1887,7 +2054,8 @@ export const steps = (labels, now) =>
   `<div class="setup-steps">${labels.map((label, i) => {
     const n = i + 1;
     const mark = n < now ? ' done' : n === now ? ' now' : '';
-    return `<span class="sstep${mark}"><span class="sno">${n < now ? '✔' : n}</span>${label}</span>`;
+    const line = i ? `<span class="sline${n <= now ? ' reached' : ''}"></span>` : '';
+    return `${line}<span class="sstep${mark}"><span class="sno">${n < now ? '✔' : n}</span>${label}</span>`;
   }).join('')}</div>`;
 
 /** A tree the reader edits: areas inside a site, tasks under a work type. */
@@ -2043,7 +2211,7 @@ export const canvasPh = ({ tools = [], palette = [], marks = [], selected = '', 
  */
 export const manualPanel = ({ title, toc = [], active = 0, fallback = '', children }) =>
   `<div class="man"><div class="man-head"><span class="ph-title sm">${title}</span>` +
-  `<span class="ld-close">✖</span></div>` +
+  `<span class="ld-close" title="닫기">${ROW_ICONS.close}</span></div>` +
   `<div class="man-toc">${toc.map((s, i) =>
     `<span class="man-ti${i === active ? ' active' : ''}">${s}</span>`).join('')}</div>` +
   (fallback ? `<div class="man-fb">${fallback}</div>` : '') +
@@ -2124,6 +2292,8 @@ export function frameSpec(screen, { reqs = [] } = {}) {
   const 동작과상태 = own['동작과 상태']
     ?? [screen.state ? `상태 ${screen.state}` : '', 동작 ? `동작 ${동작}` : '']
       .filter(Boolean).join(' · ');
+  const 화면이동 = own['화면 이동'] ?? [...body.matchAll(/class="[^"]*peek-link[^"]*"[^>]*data-target="([^"]+)"/g)]
+    .map((m) => `${m[1]} 미리보기 → 해당 화면으로 이동`).filter((v, i, a) => a.indexOf(v) === i).join(' · ');
 
   // The trace table decides which requirement a SCREEN answers; the notes' own citations are the
   // frame arguing about one and belong to the sentence, not to this line. Where the board declares
@@ -2147,6 +2317,7 @@ export function frameSpec(screen, { reqs = [] } = {}) {
     용도,
     화면구성,
     '동작과 상태': 동작과상태,
+    ...(화면이동 ? { '화면 이동': 화면이동 } : {}),
     '대응 요구사항': 요구사항,
     권한,
     자료,
