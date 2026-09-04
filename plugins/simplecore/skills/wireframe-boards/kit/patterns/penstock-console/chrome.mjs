@@ -47,10 +47,12 @@ export function makeChrome({
   /**
    * navPane(active, badges): the left navigator. `badges` maps an item name to a count.
    *
-   * **A group heading opens and shuts, and it carries its own mark.** A tree nobody has touched
-   * opens with every group shut, so those headings are the whole navigator until somebody presses
-   * one — a heading drawn as a caption with no mark would be a word where every row beneath it has
-   * a picture.
+   * **A group heading opens and shuts, and its mark sits at the trailing edge.** A tree nobody has
+   * touched opens with every group shut, so those headings are the whole navigator until somebody
+   * presses one — a heading drawn as a caption with no mark would be a word where every row beneath
+   * it has a picture. The mark goes at the trailing edge rather than in front: the rows below start
+   * with an icon, and a caret ahead of the heading's own icon puts two glyphs where the eye looks
+   * for one, so the heading stops reading as a word.
    *
    * **The board draws them all open anyway**, and that is not a disagreement with the product: what
    * a frame's navigator is FOR here is saying where the screen lives, and a board of shut trees says
@@ -64,7 +66,7 @@ export function makeChrome({
     const rows = nav
       .map(
         ({ group, items }) =>
-          `<div class="nav-group"><span class="tw">⌄</span><span class="ic"></span><span>${group}</span></div>` +
+          `<div class="nav-group"><span class="ic"></span><span>${group}</span><span class="grow"></span><span class="tw">⌄</span></div>` +
           `<div class="nav-rows">` +
           items
             .map(

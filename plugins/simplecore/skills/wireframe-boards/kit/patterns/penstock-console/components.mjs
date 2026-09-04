@@ -474,12 +474,31 @@ export const grant = ({ text, left }) =>
 // ── measurement placeholders (charts, level bars, countdowns) ───────────────
 /**
  * A chart stands in for data the product draws from a series: a bar chart of counts, a line of a
- * value over time, a histogram of levels. The board says WHICH chart and WHAT it plots — the glyph
+ * value over time, a histogram of levels. The board says WHICH chart and WHAT it plots — the shape
  * and the label — and never the numbers, so a reviewer judges whether the chart belongs and what it
- * is called, not its shape. `kind` is bar · line · hist.
+ * is called, not its values. `kind` is bar · line · hist.
+ *
+ * **Drawn as a shape rather than as a hatch.** A placeholder has to be recognisable as the chart it
+ * stands for: a crossed box reads as a picture that failed to load, and a reviewer cannot tell a
+ * trend that belongs on the screen from one that does not. The geometry is inline SVG — no file, no
+ * font, nothing fetched — and the values in it are arbitrary on purpose.
  */
+const CHART_SHAPE = {
+  bar: '<g fill="currentColor" opacity=".5">' +
+    [12, 30, 20, 38, 26, 16, 33, 22].map((h, i) => `<rect x="${3 + i * 12}" y="${40 - h}" width="8" height="${h}" rx="1"/>`).join('') +
+    '</g>',
+  line: '<polyline fill="none" stroke="currentColor" stroke-width="1.6" opacity=".55" stroke-linejoin="round" ' +
+    'points="2,30 14,22 26,26 38,14 50,18 62,9 74,16 86,7 98,12"/>' +
+    '<polyline fill="none" stroke="currentColor" stroke-width="1.2" opacity=".28" stroke-dasharray="3 3" ' +
+    'points="2,36 14,33 26,35 38,28 50,31 62,24 74,29 86,23 98,26"/>',
+  hist: '<g fill="currentColor" opacity=".45">' +
+    [6, 11, 18, 27, 34, 38, 31, 22, 14, 8].map((h, i) => `<rect x="${2 + i * 10}" y="${40 - h}" width="7" height="${h}"/>`).join('') +
+    '</g>',
+};
+
 export const chartPh = ({ kind = 'bar', label = '', h = 120 }) =>
-  `<div class="chart-ph ${kind}" style="height:${h}px"><span class="glyph"></span><span class="lbl">${label}</span></div>`
+  `<div class="chart-ph ${kind}" style="height:${h}px">${label ? `<span class="lbl">${label}</span>` : ''}` +
+  `<svg class="glyph" viewBox="0 0 100 40" preserveAspectRatio="none" aria-hidden="true">${CHART_SHAPE[kind] ?? CHART_SHAPE.bar}</svg></div>`
 
 /**
  * Level bars: one row per named quantity with how full it is. A toner set, a tray, a buffer —
