@@ -79,6 +79,31 @@ function onContract(text) {
  *
  * @returns 'written' | 'kept'
  */
+/**
+ * The board's AGENTS.md in its routed form: the heading, one paragraph pointing at the shared
+ * rules file, and everything from the board-specific marker down. The kit rules between them are
+ * the part the shared file holds, so they are not written a second time.
+ */
+function routedAgents(template) {
+  const marker = template.indexOf('<!-- ═══');
+  if (marker < 0) throw new Error('templates/AGENTS.md carries no board-specific marker');
+  const heading = template.match(/^# .*$/m)?.[0] ?? '# <PRODUCT> wireframe board — working rules';
+  const routing = [
+    '<!-- Written by /simplecore:board-init in its routed form: the rules every board in this repository',
+    '     shares live once in ../AGENTS.md, and this file carries only what is true of this board. -->',
+    '',
+    heading,
+    '',
+    'The rules every board in this repository shares — what the board holds and what the kit holds, ids',
+    'and positions, pointing at another screen, the reading contract, gates, finishing a step, responsive',
+    'pairs, spread modules, ids in prose, the Korean audit, the living contract — are written once in',
+    '[`../AGENTS.md`](../AGENTS.md). Read that file first; nothing in it is repeated here. Below the marker',
+    'is what is true of this board and nowhere else.',
+    '',
+  ].join('\n');
+  return routing + template.slice(marker);
+}
+
 function put(path, body, report, { mode } = {}) {
   if (existsSync(path)) { report.kept.push(path); return 'kept'; }
   mkdirSync(dirname(path), { recursive: true });
@@ -113,7 +138,13 @@ export function initBoard(boardDir, { pattern = 'simplix-basic', name = '<PRODUC
   put(join(boardDir, 'dev.sh'), readFileSync(DEV_SCRIPT, 'utf8'), report, { mode: 0o755 });
   put(join(boardDir, '.gitignore'), GITIGNORE, report);
   put(join(boardDir, 'CLAUDE.md'), CLAUDE_MD(name), report);
-  put(join(boardDir, 'AGENTS.md'), fill(readFileSync(join(kitDir, 'templates/AGENTS.md'), 'utf8')), report);
+  // A repository that draws several boards keeps the kit rules once, in an `AGENTS.md` beside the
+  // board folders, and each board's own file routes to it above the marker. The shared file
+  // existing is the whole signal: a single board keeps the full copy, and nothing here creates
+  // the shared file, because choosing that layout is the repository's decision.
+  const agentsTemplate = readFileSync(join(kitDir, 'templates/AGENTS.md'), 'utf8');
+  const sharedRules = join(boardDir, '..', 'AGENTS.md');
+  put(join(boardDir, 'AGENTS.md'), fill(existsSync(sharedRules) ? routedAgents(agentsTemplate) : agentsTemplate), report);
 
   const ex = join(patternDir, 'examples');
   if (!existsSync(ex)) throw new Error(`패턴 '${pattern}'에 시작 프레임(examples/)이 없습니다`);

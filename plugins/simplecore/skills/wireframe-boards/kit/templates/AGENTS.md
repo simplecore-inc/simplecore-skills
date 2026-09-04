@@ -1,11 +1,11 @@
-<!-- Written by /simplecore:board-init. Replace PRODUCT and fill the marked region at the end.
+<!-- Written by /simplecore:board-init. Replace <PRODUCT> and fill the marked region at the end.
      Everything above that marker describes the kit and the pattern, which live in the
      `simplecore:wireframe-boards` skill — a change belongs there, not in this copy, or the next
      board starts from a version of this file that is already wrong. -->
 
-# PRODUCT wireframe board — working rules
+# <PRODUCT> wireframe board — working rules
 
-This folder is the **screen contract** for PRODUCT. The design documents decide behavior, this
+This folder is the **screen contract** for <PRODUCT>. The design documents decide behavior, this
 board renders them as screens / states / flow, and the UI is built to match the board. The
 rendered `board.html` is the artifact humans review; **what you edit is the content under `src/`**.
 

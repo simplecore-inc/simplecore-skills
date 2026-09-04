@@ -410,6 +410,8 @@ marker describes the kit and the pattern and is replaced wholesale on the next m
 written above it is a rule that will be lost. A rule a regex could enforce belongs in
 `board.gates.mjs` instead — a rule a person has to remember is a rule that comes back next month.
 
+**A repository drawing several boards keeps the kit rules once.** Put the rules above the marker in an `AGENTS.md` beside the board folders, and each board's own `AGENTS.md` carries a routing paragraph in their place and its marked region below; `/simplecore:board-init` writes that routed form by itself whenever the shared file already exists. Two boards each holding the full copy report every shared sentence as an instruction written twice, and the copy that drifts reads exactly like the one that did not.
+
 ## Photographing one frame off the built board
 
 **Opening `board.html` in a browser is the one legitimate reason to touch the artifact**, and it
