@@ -962,9 +962,22 @@ class Canvas:
             return f'{k}="{round(v + d, 2)}"'
         keys = "|".join(self._SHIFT_X + self._SHIFT_Y)
         s = re.sub(rf'\b({keys})="([\-\d.]+)"', attr, s)
-        return re.sub(r'\b(d)="([^"]+)"',
-                      lambda m: f'd="{self._shift_path(m.group(2), dx, dy)}"',
+        s = re.sub(r'\b(d)="([^"]+)"',
+                   lambda m: f'd="{self._shift_path(m.group(2), dx, dy)}"', s)
+        # A polyline/polygon carries its coordinates in `points`, which none of
+        # the attribute names above matches. `ink_box` already reads them, so
+        # leaving them here moved the board out from under those shapes: an
+        # icon whose glyph includes a polyline (package, git-branch, and ~200
+        # more) had that part stay behind while the rest of the figure shifted.
+        return re.sub(r'\bpoints="([^"]+)"',
+                      lambda m: f'points="{self._shift_points(m.group(1), dx, dy)}"',
                       s)
+
+    @staticmethod
+    def _shift_points(pts, dx, dy):
+        nums = [float(t) for t in pts.replace(",", " ").split()]
+        return " ".join(f"{nums[i] + dx:.2f},{nums[i + 1] + dy:.2f}"
+                        for i in range(0, len(nums) - 1, 2))
 
     def trim(self, margin=24, min_w=None, max_w=None):
         """Fit the board to what was actually drawn, leaving `margin` around it.
