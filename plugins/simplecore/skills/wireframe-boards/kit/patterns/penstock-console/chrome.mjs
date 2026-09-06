@@ -25,8 +25,13 @@ const cnt = (n) => `<span class="badge cnt">${n}</span>`;
  *                  `[{ when, text }]`
  * @param notifications  draw the notification mark. `false` for a product that raises none.
  * @param account   draw the account mark. `false` for a product nobody signs in to.
+ * @param paneToggles  draw the two pane-fold controls in the title bar. `false` for a product whose
+ *                  panes fold from their own headers, where the bar's pair would be the same control
+ *                  twice.
+ * @param language  draw the language chip. `false` for a product that changes its language on a
+ *                  settings screen, where a chip on every frame is a second place for one setting.
  *
- * <p>**The last two default to drawn and are turned off per product, never per frame.** A mark in
+ * <p>**The last four default to drawn and are turned off per product, never per frame.** A mark in
  * the title bar is a promise on every screen at once — an account mark says there is a sign-in, a
  * notification mark says something arrives here — and a single-operator tool that has neither
  * spends its whole board offering two controls that open nothing. The default stays on because a
@@ -44,6 +49,8 @@ export function makeChrome({
   activity = [],
   notifications = true,
   account = true,
+  paneToggles = true,
+  language = true,
 } = {}) {
   const paletteLabel = palette.label ?? '명령 팔레트';
   const paletteAsk = palette.ask ?? '무엇이든 물어보세요';
@@ -52,6 +59,9 @@ export function makeChrome({
   const askHistory = ask.history ?? '지난 질문';
   const bellMark = (unread) => (notifications ? bell(unread) : '');
   const accountMark = account ? '<span class="avatar"></span>' : '';
+  const langChip = language ? `<span class="tb-chip">${lang} ▾</span>` : '';
+  const toggles = (left, right) =>
+    paneToggles ? `<span class="tb-btn${left}">◧</span><span class="tb-btn${right}">◨</span>` : '';
   const statusDefault = {
     left: status.left ?? [{ t: '<span class="dot"></span>연결됨' }],
     right: status.right ?? '갱신 방금',
@@ -128,7 +138,7 @@ export function makeChrome({
     return `<div class="titlebar"${back}>
       <div class="tb-l"><span class="mark"></span><span class="brand">${brand}</span><span class="vsep"></span><span class="crumbs">${crumbs}</span></div>
       <div class="cmdk"><span>${paletteLabel}</span><span>⌘K</span></div>
-      <div class="tb-r"><span class="tb-btn${l}">◧</span><span class="tb-btn${r}">◨</span>${bellMark(tb.unread)}<span class="tb-chip">${lang} ▾</span>${accountMark}</div>
+      <div class="tb-r">${toggles(l, r)}${bellMark(tb.unread)}${langChip}${accountMark}</div>
     </div>`;
   }
 
@@ -143,7 +153,7 @@ export function makeChrome({
     return `<div class="titlebar">
       <div class="tb-l"><span class="mark"></span><span class="brand">${brand}</span><span class="vsep"></span><span class="tb-chip">${projectName} ▾</span></div>
       <div class="cmdk"><span>${paletteAsk}</span><span>⌘K</span></div>
-      <div class="tb-r">${back}<span class="tb-chip">${askHistory}</span>${bellMark(unread)}<span class="tb-chip">${lang} ▾</span>${accountMark}</div>
+      <div class="tb-r">${back}<span class="tb-chip">${askHistory}</span>${bellMark(unread)}${langChip}${accountMark}</div>
     </div>`;
   }
 
