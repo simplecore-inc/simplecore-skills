@@ -17,7 +17,7 @@
 import { pathToFileURL } from 'node:url';
 import { CORE_GATES, applies, gatesFor, gradeOf } from './core/gates.mjs';
 import { HEADING_ROLES, SCHEMA, findConfig, loadProject } from './core/context.mjs';
-import { makeBuilders, proveKeysAreDocumented, proveSeverity, proveShadowedIds, runCases, ungraded, unproven } from './core/harness.mjs';
+import { makeBuilders, misdeclared, proveKeysAreDocumented, proveMisdeclaredNeeds, proveSeverity, proveShadowedIds, runCases, ungraded, unproven } from './core/harness.mjs';
 import { cases as coreCases } from './core/cases.mjs';
 import { censusLine, vocabularyCensus } from './core/vocabulary.mjs';
 
@@ -74,10 +74,20 @@ async function check() {
     console.log(`   ${finding}`);
     errors += 1;
   }
+  // A need that is not a key is refused by name: skipped by `applies` it would count as a project
+  // choice, and a gate that can never run is not one.
+  const misnamed = new Set();
+  for (const { id, finding } of misdeclared(gates)) {
+    console.log(`\n✖ ${id} — the gate names a need that is not a config key`);
+    console.log(`   ${finding}`);
+    errors += 1;
+    misnamed.add(id);
+  }
 
   let warnings = 0;
   let skipped = 0;
   for (const gate of gates) {
+    if (misnamed.has(gate.id)) continue;
     if (!applies(gate, ctx)) {
       skipped += 1;
       continue;
@@ -167,8 +177,10 @@ async function proveGates() {
   }
 
   const bad = runCases(collected, gates);
-  const mistyped = ungraded(gates);
-  const severity = [...proveSeverity(builders.project), ...proveShadowedIds(builders.project)];
+  const mistyped = [...ungraded(gates), ...misdeclared(gates)];
+  const severity = [
+    ...proveSeverity(builders.project), ...proveShadowedIds(builders.project), ...proveMisdeclaredNeeds(builders.project),
+  ];
   builders.cleanup();
 
   const missing = unproven(collected, gates);
@@ -177,13 +189,14 @@ async function proveGates() {
     console.log('   A gate lands with the case that fires and the case that stays quiet, in the same change.');
   }
   for (const { id, finding } of mistyped) {
-    console.log(`\n✖ ${id} — the gate declares a grade nobody reads`);
+    console.log(`\n✖ ${id} — the gate declares something the runner cannot read`);
     console.log(`   ${finding}`);
   }
   for (const line of severity) console.log(`\n✖ severity · ${line}`);
   if (!severity.length) {
     console.log('\n✔ severity: a fired warning leaves the exit status zero, a fired error fails the run');
     console.log('✔ ids: a project gate under a core gate\'s id is refused, unless the core one is turned off');
+    console.log('✔ needs: a gate whose needs names a non-key is refused by name, not counted as skipped');
   }
   // A key nobody documented works perfectly and is met by nobody, which is a shape no gate over a
   // project can see — the subject is this skill's own two documents.

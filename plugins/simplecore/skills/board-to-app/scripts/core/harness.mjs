@@ -221,6 +221,65 @@ export function ungraded(gates) {
 }
 
 /**
+ * The gates whose `needs` name something that is not a config key.
+ *
+ * <p>`applies` skips a gate when a key it needs is not declared, which is right for a key the
+ * project chose not to declare. A gate that lists a file path or an invented name there is
+ * skipped by the same test and never runs at all — and the summary counts it among 「the keys they
+ * read are not declared」, where it reads as a project choice rather than a gate that can never
+ * fire. Six project gates sat that way for a build, each proving nothing. So a need that is not a
+ * key of the schema is refused by name, not folded into the skipped count.
+ *
+ * @returns one `{ id, finding }` per gate whose `needs` holds a non-key
+ */
+export function misdeclared(gates) {
+  const out = [];
+  for (const gate of gates) {
+    const needs = Array.isArray(gate?.needs) ? gate.needs : [];
+    const bogus = needs.filter((key) => typeof key !== 'string' || !(key in SCHEMA));
+    if (!bogus.length) continue;
+    out.push({
+      id: typeof gate?.id === 'string' && gate.id ? gate.id : '(a gate with no id)',
+      finding:
+        `needs ${bogus.map((k) => JSON.stringify(k)).join(', ')} — not a config key, so the gate is skipped on `
+        + 'every project and never runs; name the key it reads, or `[]` when it reads fixed files and answers for their absence itself',
+    });
+  }
+  return out;
+}
+
+/**
+ * That a gate naming a non-key in `needs` is refused by name rather than counted as skipped.
+ *
+ * <p>Asserted on the refusal's own words, and also on their absence from a clean run, so a rule
+ * switched off shows here rather than passing by accident.
+ */
+export function proveMisdeclaredNeeds(project) {
+  const base = cleanProject();
+  const REFUSAL = 'not a config key';
+  const run = (entries) => {
+    const ctx = project({
+      config: { ...base.config, projectGates: 'gates/project-gates.mjs' },
+      files: { ...base.files, 'gates/project-gates.mjs': gatesModule(entries) },
+      commits: ['chore(fixture): a project with nothing wrong with it\n\nChapter: none'],
+    });
+    const r = spawnSync(process.execPath, [BTA, 'check', '--config', ctx.configPath], {
+      cwd: ctx.root, encoding: 'utf8',
+    });
+    return { status: r.status, said: `${r.stdout ?? ''}${r.stderr ?? ''}` };
+  };
+  const out = [];
+  const bad = run([{ id: 'fixtureNeedsAPath', finding: 'never runs', needs: ['SAMPLE_FLEET'] }]);
+  if (!bad.said.includes(REFUSAL) || !bad.said.includes('fixtureNeedsAPath')) {
+    out.push('a gate whose needs names a non-key was not refused by name');
+  }
+  if (bad.status === 0) out.push('a misdeclared gate left the exit status zero');
+  const good = run([{ id: 'fixtureNeedsNothing', finding: 'notes/OPEN.md:1: the copy', needs: [] }]);
+  if (good.said.includes(REFUSAL)) out.push('a gate with needs: [] was refused as misdeclared');
+  return out;
+}
+
+/**
  * The header row that opens the config table, and the anchor the reverse read uses.
  *
  * <p>The table lives in `references/config.md` — split out of `SKILL.md` so a session loads it only
@@ -376,11 +435,11 @@ export function proveKeysAreDocumented() {
 function gatesModule(entries) {
   const body = entries
     .map(
-      ({ id, grade, finding }) =>
+      ({ id, grade, finding, needs = [] }) =>
         `  {\n`
         + `    id: ${JSON.stringify(id)},\n`
         + `    title: ${JSON.stringify(`the fixture gate ${id}, which always fires`)},\n`
-        + `    needs: [],\n`
+        + `    needs: ${JSON.stringify(needs)},\n`
         + (grade === undefined ? '' : `    grade: ${JSON.stringify(grade)},\n`)
         + `    run: () => [${JSON.stringify(finding)}],\n`
         + `  },`
