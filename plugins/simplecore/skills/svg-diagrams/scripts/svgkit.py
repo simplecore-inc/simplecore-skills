@@ -224,17 +224,46 @@ def _scale_path(d, ox, oy, k):
     return " ".join(out)
 
 
+# Glyphs a proportional face sets at about a third of an em — the space, the
+# middle dot that Korean copy uses as a list separator, and the thin
+# punctuation. Counting them at Latin width overstates a label by a tenth
+# and the box drawn around it by the same; the lint's proximity checks then
+# see labels touching that the reader sees apart.
+_NARROW = set(" \u00b7.,:;|'`!\u2019\u2018\u02c8")
+_CAPS = set("ABCDEFGHJKLMNOPQRSTUVWXYZ")
+
+
 def tw(s, size, mono=True):
     """Estimated text width in px, CJK-aware.
 
-    Latin glyphs are ~0.55-0.60 em; CJK/fullwidth glyphs render ~1 em wide.
-    Undercounting CJK is the classic cause of Korean/Japanese text overflowing
-    its box or chip, so wide glyphs are measured at ~1.03 em regardless of the
-    mono flag.
+    The proportional table is measured, not guessed: `calibrate_tw.py`
+    renders sample runs through Chrome and reads the ink back. On the fonts
+    the SANS stack resolves to (Inter · Apple SD Gothic Neo · Pretendard)
+    Hangul sets at ~0.86 em, lowercase ~0.47, capitals ~0.64, digits ~0.57,
+    the space and thin punctuation ~0.25 — the numbers here sit a few
+    percent above each so a box sized from them never clips, without the
+    quarter-width slack the old flat 1.03 / 0.55 table left, which made
+    every label look wider than it printed. A mono face sets every glyph at
+    0.6 em and CJK at ~1 em. audit.py carries the same table — generator and
+    lint must measure identically. Re-run the calibration on a machine whose
+    fonts differ and move both tables together.
     """
-    k = 0.60 if mono else 0.535
-    wide = sum(1 for ch in s if _is_wide(ch))
-    return ((len(s) - wide) * k + wide * 1.03) * size
+    if mono:
+        wide = sum(1 for ch in s if _is_wide(ch))
+        return ((len(s) - wide) * 0.60 + wide * 1.03) * size
+    w = 0.0
+    for ch in s:
+        if _is_wide(ch):
+            w += 0.92
+        elif ch in _NARROW:
+            w += 0.28
+        elif ch in _CAPS:
+            w += 0.66
+        elif ch.isdigit():
+            w += 0.58
+        else:
+            w += 0.52
+    return w * size
 
 
 
@@ -357,7 +386,11 @@ class Canvas:
 
     # -- primitives ---------------------------------------------------------
     def rrect(self, x, y, w, h, rx=10, fill=_DEF, stroke=_DEF, sw=1.5,
-              shadow=False, dash=None, opacity=None):
+              shadow=False, dash=None, opacity=None, measure=None):
+        """A rectangle. `measure` names the dimension that carries a value —
+        "width" for a bar or a proportional strip, "height" for a column —
+        so the lint's row and stack checks leave it out: a bar that differs
+        from its neighbour is the content, not a slip."""
         fill = self.t["box"] if fill is _DEF else fill
         stroke = self.t["line"] if stroke is _DEF else stroke
         a = [f'<rect x="{x:.1f}" y="{y:.1f}" width="{w:.1f}" height="{h:.1f}"',
@@ -370,6 +403,11 @@ class Canvas:
             a.append(f'opacity="{opacity}"')
         if shadow and self.shadow:
             a.append('filter="url(#soft)"')
+        if measure:
+            if measure not in ("width", "height", "both"):
+                raise ValueError(
+                    f"measure must be 'width', 'height' or 'both', not {measure!r}")
+            a.append(f'data-measure="{measure}"')
         self.add(" ".join(a) + "/>")
 
     def icon(self, name, x, y, size=20, color=_DEF, sw=1.6):
@@ -432,34 +470,76 @@ class Canvas:
         from lucide import ICONS as _LUCIDE
         return sorted(n for n in _LUCIDE if keyword in n)
 
-    def band(self, x, y, w, h, rx, color, opacity=0.14, side="top"):
+    def band(self, x, y, w, h, rx, color, opacity=0.14, side="top",
+             stroke=None, sw=1.0, measure=None):
         """A tinted band on the edge of a card: outer corners round, inner square.
 
         Drawing a card's header as a rounded rectangle rounds its bottom corners
         too, and the card's straight body butts against them — the header then
         reads as a separate chip resting on the card rather than as its top.
-        Only the corners that follow the card's own outline are rounded.
+        Only the corners that follow the card's own outline are rounded, and
+        the lint reports a rounded `rect` on a box edge as BAND-CORNERS.
 
         `side` names the edge the band sits on: "top" for a header above a card
-        body, "left" for a label band at the start of a row. `rx` is the card's
-        own corner radius, so the two outlines meet without a step.
+        body, "left" for a label band at the start of a row, "right" and
+        "bottom" for their mirrors. `rx` is the card's own corner radius, so
+        the two outlines meet without a step. `(x, y, w, h)` is the band's own
+        box — the same corner of the card for "top" and "left"; for "right"
+        the band's x is the card's right edge minus w, for "bottom" its y is
+        the card's bottom minus h.
         """
+        r = min(rx, w / 2, h / 2)
         if side == "top":
-            d = (f"M {x:.1f} {y + rx:.1f} A {rx} {rx} 0 0 1 {x + rx:.1f} {y:.1f} "
-                 f"H {x + w - rx:.1f} A {rx} {rx} 0 0 1 {x + w:.1f} {y + rx:.1f} "
+            d = (f"M {x:.1f} {y + r:.1f} A {r} {r} 0 0 1 {x + r:.1f} {y:.1f} "
+                 f"H {x + w - r:.1f} A {r} {r} 0 0 1 {x + w:.1f} {y + r:.1f} "
                  f"V {y + h:.1f} H {x:.1f} Z")
+        elif side == "bottom":
+            d = (f"M {x:.1f} {y:.1f} H {x + w:.1f} V {y + h - r:.1f} "
+                 f"A {r} {r} 0 0 1 {x + w - r:.1f} {y + h:.1f} "
+                 f"H {x + r:.1f} A {r} {r} 0 0 1 {x:.1f} {y + h - r:.1f} Z")
         elif side == "left":
-            d = (f"M {x + w:.1f} {y:.1f} H {x + rx:.1f} "
-                 f"A {rx} {rx} 0 0 0 {x:.1f} {y + rx:.1f} "
-                 f"V {y + h - rx:.1f} A {rx} {rx} 0 0 0 {x + rx:.1f} {y + h:.1f} "
+            d = (f"M {x + w:.1f} {y:.1f} H {x + r:.1f} "
+                 f"A {r} {r} 0 0 0 {x:.1f} {y + r:.1f} "
+                 f"V {y + h - r:.1f} A {r} {r} 0 0 0 {x + r:.1f} {y + h:.1f} "
                  f"H {x + w:.1f} Z")
+        elif side == "right":
+            d = (f"M {x:.1f} {y:.1f} H {x + w - r:.1f} "
+                 f"A {r} {r} 0 0 1 {x + w:.1f} {y + r:.1f} "
+                 f"V {y + h - r:.1f} A {r} {r} 0 0 1 {x + w - r:.1f} {y + h:.1f} "
+                 f"H {x:.1f} Z")
         else:
-            raise ValueError(f"side must be 'top' or 'left', not {side!r}")
-        self.add(f'<path d="{d}" fill="{color}" opacity="{opacity}"/>')
+            raise ValueError(
+                f"side must be 'top', 'bottom', 'left' or 'right', not {side!r}")
+        a = [f'<path d="{d}" fill="{color}" opacity="{opacity}"']
+        if stroke:
+            a.append(f'stroke="{stroke}" stroke-width="{sw}"')
+        if measure:
+            # the end segment of a proportional strip: its width is the
+            # quantity, so the lint measures nothing against it
+            if measure not in ("width", "height", "both"):
+                raise ValueError(
+                    f"measure must be 'width', 'height' or 'both', not {measure!r}")
+            a.append(f'data-measure="{measure}"')
+        self.add(" ".join(a) + "/>")
 
     def text(self, x, y, s, size=14, color=_DEF, family=MONO, weight=400,
-             anchor="start", spacing=None, opacity=None):
+             anchor="start", spacing=None, opacity=None, mask=False,
+             mask_pad=3):
+        """One line of text. `mask=True` paints a paper-coloured rect behind
+        the glyphs first, sized from tw(), so a label that has to sit on a
+        line — a boundary's name on its border, a value on an axis — reads
+        with the line broken behind it instead of cutting through the
+        letters. The lint reports the unmasked case as TEXT-ON-LINE and
+        recognises this mask as the fix."""
         color = self.t["fg"] if color is _DEF else color
+        if mask:
+            mono = family == MONO
+            w = tw(s, size, mono) + mask_pad * 2
+            mx = (x - w / 2 if anchor == "middle"
+                  else x - w + mask_pad if anchor == "end" else x - mask_pad)
+            self.add(f'<rect x="{mx:.1f}" y="{y - size * 0.82:.1f}" '
+                     f'width="{w:.1f}" height="{size * 1.12:.1f}" rx="2" '
+                     f'fill="{self.bg}"/>')
         a = [f'<text x="{x:.1f}" y="{y:.1f}" font-family="{family}"',
              f'font-size="{size}" fill="{color}" font-weight="{weight}"',
              f'text-anchor="{anchor}"']
@@ -468,6 +548,85 @@ class Canvas:
         if opacity is not None:
             a.append(f'opacity="{opacity}"')
         self.add(" ".join(a) + f'>{esc(s)}</text>')
+
+    # -- content-first sizing -------------------------------------------------
+    def capture(self, draw):
+        """Run `draw()` with the body redirected, and return what it emitted
+        together with its ink box — (markup, (x0, y0, x1, y1)) — without
+        adding anything to the canvas. Underlay entries made inside `draw`
+        are kept on the canvas (a frame has to stay behind everything)."""
+        saved, self.body = self.body, []
+        try:
+            draw()
+            markup = self.body
+        finally:
+            self.body = saved
+        probe = Canvas.__new__(Canvas)
+        probe.body, probe.under = markup, []
+        probe.w, probe.h = self.w, self.h
+        return markup, probe.ink_box()
+
+    def fit_box(self, x, y, w, draw, pad=16, pad_top=None, pad_bottom=None,
+                min_h=0, **rrect_kw):
+        """A box sized from what is drawn inside it.
+
+        `draw(cx, cy, cw)` receives the content origin — the box's top-left
+        moved in by the padding — and the content width, draws the content
+        there, and returns nothing. The box is then emitted *under* the
+        content with a height of `pad_top + content height + pad_bottom`,
+        so the air above and below the content is equal by construction
+        (the lint reports the alternative as BOX-PADDING-UNEVEN) and the
+        box is never taller than its text needs. `rrect_kw` is passed to
+        rrect(). Returns (x, y, w, h).
+        """
+        pt = pad if pad_top is None else pad_top
+        pb = pad if pad_bottom is None else pad_bottom
+        markup, (_x0, y0, _x1, y1) = self.capture(
+            lambda: draw(x + pad, y + pt, w - 2 * pad))
+        h = max(min_h, (y1 - y) + pb) if markup else max(min_h, pt + pb)
+        self.rrect(x, y, w, h, **rrect_kw)
+        self.body.extend(markup)
+        return (x, y, w, h)
+
+    def fit_row(self, xs, y, w, draws, pad=16, pad_top=None, pad_bottom=None,
+                min_h=0, **rrect_kw):
+        """A row of boxes at one height — the height of the tallest content.
+
+        `xs` are the column x-positions (row_positions() gives them), `draws`
+        one callback per column with the same signature as fit_box's. Every
+        box gets the same height and the same padding, which is what a row of
+        equals has to have (ROW-HEIGHT-MISMATCH · ROW-PADDING-UNEVEN);
+        `rrect_kw` may hold per-column lists for `stroke` and `fill`.
+        Returns the list of (x, y, w, h) boxes.
+        """
+        pt = pad if pad_top is None else pad_top
+        pb = pad if pad_bottom is None else pad_bottom
+        captured = []
+        for x, draw in zip(xs, draws):
+            markup, (_x0, y0, _x1, y1) = self.capture(
+                lambda x=x, draw=draw: draw(x + pad, y + pt, w - 2 * pad))
+            captured.append((markup, y1))
+        h = max([min_h, pt + pb] + [(y1 - y) + pb for m, y1 in captured if m])
+        boxes = []
+        for i, (x, (markup, _y1)) in enumerate(zip(xs, captured)):
+            kw = {k: (v[i] if isinstance(v, (list, tuple)) else v)
+                  for k, v in rrect_kw.items()}
+            self.rrect(x, y, w, h, **kw)
+            self.body.extend(markup)
+            boxes.append((x, y, w, h))
+        return boxes
+
+    @staticmethod
+    def frame_around(boxes, pad=16, pad_top=None):
+        """The (x, y, w, h) of a frame that holds every box in `boxes` with
+        one inset on all four sides — `pad_top` widens only the top, for the
+        room a title chip on the border needs. Boxes are (x, y, w, h)."""
+        x0 = min(b[0] for b in boxes)
+        y0 = min(b[1] for b in boxes)
+        x1 = max(b[0] + b[2] for b in boxes)
+        y1 = max(b[1] + b[3] for b in boxes)
+        pt = pad if pad_top is None else pad_top
+        return (x0 - pad, y0 - pt, x1 - x0 + 2 * pad, y1 - y0 + pt + pad)
 
     def line(self, x1, y1, x2, y2, color=_DEF, sw=2, dash=None, marker="muted"):
         color = self.t["muted"] if color is _DEF else color
@@ -862,7 +1021,13 @@ class Canvas:
                 continue
             txt = re.sub(r'<[^>]+>', '', inner)
             anchor = (re.search(r'text-anchor="(\w+)"', a) or [None, "start"])[1]
-            w = tw(txt, size)
+            # measure with the face the text is set in — a proportional label
+            # measured as mono comes out a tenth wider, and the board then
+            # trims to ink that is not there
+            fam = (re.search(r'font-family="([^"]*)"', a) or [None, ""])[1]
+            mono = ("Mono" in fam or "Menlo" in fam or "monospace" in fam
+                    or "JetBrains" in fam)
+            w = tw(txt, size, mono)
             xs += ([x - w / 2, x + w / 2] if anchor == "middle"
                    else [x - w, x] if anchor == "end" else [x, x + w])
             ys += [y - size * 0.78, y + size * 0.24]

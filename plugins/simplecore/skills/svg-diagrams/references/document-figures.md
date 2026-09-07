@@ -193,14 +193,78 @@ different from its neighbours.
 A figure is finished only when it independently passes width, height,
 typography, overflow, connector and balance review.
 
+## Size every box from its content
+
+A box is as tall as the text inside it plus even padding, and a row is as tall
+as its tallest box. Nothing else decides a height. A fixed height is how a row
+of cards ends with a band of paper under every label, how the one card with
+three lines spills past its edge, how a note sits high in its band — and each
+of those is a defect the lint now reports (`ROW-PADDING-UNEVEN`,
+`BOX-PADDING-UNEVEN`, `WRAP-SLACK`, `TIGHT-BOTTOM`).
+
+The scaffold's `common.py` carries the layer that makes the rule automatic:
+
+| Helper | What it sizes |
+|---|---|
+| `card(c, x, y, w, accent, title, lines, …)` | a titled card from its wrapped lines; `h=` forces a taller box and `valign="middle"` keeps the padding even; `band=True` for a header band, `icon=` / `tag=` for the title line, `wash=` for a tint under the outline |
+| `cards_row(c, xs, y, w, items, accents)` | a row of cards at one height, the tallest content's |
+| `pill(…)` / `pill_h(size, pad_y)` | a one-line box and the height it needs |
+| `note(c, x, y, w, text, accent)` | a tinted band sized to its one or two lines |
+| `zone(c, x, y, w, h, accent, label, tag)` | a boundary panel with its name in a chip on the top border; returns where content starts so the inset under the chip equals the sides |
+| `step_row(c, xs, cw, y, items, accent, sep=)` | numbered step cards at one height joined by arrows or chevrons |
+| `segment_bar(…)` | a proportional strip whose narrow segments are named together under one bracket |
+| `heading(c, x, y, text)` → first box top | a section heading that keeps `HEAD_GAP` to its section and `SECTION_GAP` (`next_section`) from the block above |
+
+The glyph model behind them matches the lint's: a line of text at `size`
+occupies `0.78·size` above its baseline and `0.24·size` below;
+`baseline_for_top`, `centered_baseline`, `glyph_bottom` and `lines_h` do the
+arithmetic. `tw()` measures a run with a calibrated per-class table — Hangul
+0.92 em, lowercase 0.52, capitals 0.66, digits 0.58 — so a wrap computed with
+it lands where the browser breaks the line.
+
+## Rows and stacks are uniform
+
+One gap per row and per stack, one width per row, one height per row.
+`row_positions()` gives the columns; the lint (`ROW-WIDTH-MISMATCH`,
+`ROW-GAP-UNEVEN`, `STACK-GAP-UNEVEN`, `ROW-HEIGHT-MISMATCH`) reads any box at the
+same y with the same fill and container as a peer. A box of another kind that
+legitimately differs — a lead label beside a ladder of steps, a summary card
+beside a row of terms — takes another fill (a tint), or a gap of 60px or more,
+so it is read as its own group. A rect whose width or height *is* a quantity —
+a bar, a strip segment — declares it with `measure=` and is never a peer.
+
+A vertical figure in a column obeys the same rule the other way: its panels
+are as tall as their lines and the gaps between them are one number. Height
+there is what the column trades width for, never a page-fill target.
+
+## A label belongs to one thing
+
+A reader cannot tell which box a label names when it sits nearly as close to
+another. Put the label inside the box, or keep it twice as far from everything
+else as from its owner (`LABEL-GROUPING`). A zone whose chip straddles its top
+border rises `CHIP_RISE` above the border, so a zone under a heading starts
+`heading() + CHIP_RISE`: the chip, not the border, keeps the heading gap.
+
+## Text never crosses a line unmasked
+
+A label a line runs through is unreadable at print size. Either move the label
+into open space or draw it last on a paper plate — `text(..., mask=True)` —
+after the line it has to pass behind (`TEXT-ON-LINE`). Document order is paint
+order: a plate drawn before the line hides nothing. `heading(..., mask=True)`
+does the same for a section heading that a leader drops past; compute the
+section's top with `section_top()` first, draw the leaders, then the heading.
+
 ## Card headers meet the card
 
 A tinted header drawn as a rounded rectangle rounds its bottom corners too, and
 the card's straight body butts against them — the header reads as a chip resting
-on the card rather than as its top. Use `Canvas.band(x, y, w, h, rx, color)`,
-which rounds only the corners that follow the card's own outline
-(`side="left"` for a label band at the start of a row). Pass the card's own
-`rx` so the two outlines meet without a step.
+on the card rather than as its top. Use `Canvas.band(x, y, w, h, rx, color,
+side=)`, which rounds only the corners that follow the card's own outline
+(`side="left"` for a label band at the start of a row, `"right"` and
+`"bottom"` for their mirrors). Pass the card's own `rx` so the two outlines
+meet without a step; the lint reports a rounded rect on a box edge as
+`BAND-CORNERS`. The same rule holds for the end segments of a proportional
+strip inside a rounded outline.
 
 ## Icons carry meaning or they are noise
 

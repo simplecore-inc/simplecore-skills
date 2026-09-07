@@ -74,6 +74,18 @@ details that the downscaled overview hides.
 | `OFFCANVAS-TEXT` / `OFFCANVAS-RECT` | element clipped at the picture edge | a coordinate falls outside the root `viewBox` | grow the canvas or reposition |
 | `MARKER-NO-ORIENT` | arrowhead points the wrong way | a `<marker>` has no `orient="auto"` | add `orient="auto-start-reverse"` |
 | `WIDE-CANVAS` | long single row, shrinks when embedded | aspect ratio > 4.5:1 and width > 1200 | wrap the nodes onto two rows |
+| `ROW-PADDING-UNEVEN` | every card in a row has a band of paper under its text | the boxes of one row (same y and height) all leave more air below their content than above, by more than 6px | size the row from its tallest content with even padding (`cards_row`, `card(valign="middle")`) |
+| `BOX-PADDING-UNEVEN` | one box has its text pushed up or down | a single box's content sits more than 6px nearer one horizontal edge than the other; a header band counts as chrome, so the inset is measured from under it | `card()` computes the height; for a forced height pass `valign="middle"` |
+| `WRAP-SLACK` | a line breaks into two although both halves fit | two consecutive lines of one paragraph (same anchor, x, size, colour and weight) would fit in one at 16px side padding and 93% of the width | wrap to the box's inner width (`w - 2*pad`), not to a narrower guess |
+| `ROW-HEIGHT-MISMATCH` | cards in a row end at different heights | boxes at one y with the same fill and container, separated by less than the split gap, differ in height by more than 2px | draw the row with one height — the tallest content's |
+| `ROW-WIDTH-MISMATCH` | columns of unequal width | the same peers differ in width; a quantity rect (`data-measure`) and a band-carrying label card are exempt | `row_positions()` / `row()` for the columns; give a different kind of box a different fill or a gap of 60px+ |
+| `ROW-GAP-UNEVEN` | irregular gaps between columns | the gaps of one row differ by more than 3px | one gap per row |
+| `STACK-GAP-UNEVEN` | irregular gaps between stacked boxes | boxes stacked at one x with one width have gaps that differ, and the wider gaps hold nothing | one gap per stack, or something in the wider gap |
+| `FRAME-PADDING-UNEVEN` / `FRAME-PADDING-LOOSE` | a group frame with lopsided or wide insets | a container's content sits at different distances from its four sides (a chip straddling the top border moves the top inset to the chip's bottom), or every inset is over 32px | `frame_around(boxes, pad)`; a zone after a heading starts `CHIP_RISE` below the heading's return value |
+| `BAND-CORNERS` | a header band whose bottom corners poke past the card body | a rect sharing a full edge with a rounded box has rounded corners of its own | `Canvas.band(..., side=)` — round on the outline, square against the body |
+| `TEXT-ON-LINE` | a line runs through letters | a stroke — a line, a stroked path segment, a visible rect edge — crosses a glyph box with no opaque rect drawn after it under the letters | move the label off the line, or `text(..., mask=True)`; draw the line before the label, never after |
+| `LABEL-GROUPING` | a label that could belong to either of two things | a free text sits within 20px of its nearest shape or line and less than twice that distance from another shape or label in its line of sight | put the label inside its box, or keep twice the distance to everything else |
+| `EMPTY-STACK-GAP` | a hand's width of blank paper between two stacked boxes | over 96px between vertically stacked boxes with nothing in the band but a plain vertical drop; a heading crossing the band counts as content | close the gap, or put the routing and its labels there |
 
 Decorative rects (a `stroke-dasharray` frame, or a low-`opacity` wash) are
 excluded from the spacing/overlap checks, so a legend chip that intentionally
@@ -127,6 +139,31 @@ bakes them in:
   visible shaft) and ≥ 8px between a box's content and its edges.
 - **Split, don't sprawl.** If a row of nodes makes the canvas too wide, wrap
   onto two rows with a connector from the end of row 1 into the top of row 2.
+- **Size every box from its content.** A fixed height is how a row ends up
+  with a band of paper under its text and how the one card with three lines
+  spills past its edge. Compute the height from the wrapped lines with even
+  padding — the scaffold's `card()`, `cards_row()`, `pill()`, `note()`,
+  `zone()` and `step_row()` do — and give a whole row the tallest content's
+  height. The glyph model the lint uses is `0.78·size` above the baseline and
+  `0.24·size` below.
+- **One gap per row and per stack; one width per row.** Columns come from
+  `row_positions()`; a box of another kind in the same row (a lead label
+  beside a ladder of steps) takes another fill or a gap of 60px+, so the lint
+  reads it as a separate group rather than an uneven column.
+- **A label belongs to one thing.** Put it inside the box it names, or keep
+  it twice as far from everything else as from its owner. A heading followed
+  by a zone starts the zone `CHIP_RISE` lower, so the chip on the border, not
+  the border, keeps the heading gap.
+- **Text never crosses a line unmasked.** Draw the line first and the label
+  last on a paper plate (`text(..., mask=True)`), or move the label into open
+  space. A mask drawn before the line does nothing — document order is paint
+  order.
+- **Bands round with the outline.** A header or side band inside a rounded box
+  is `Canvas.band(..., side=)`: round on the box's edge, square against its
+  body. A rounded rect on the edge reads as a chip resting on the card.
+- **Declare quantities.** A rect whose width or height is the value — a bar, a
+  strip segment, a treemap cell — carries `measure="width"|"height"|"both"`
+  (`data-measure`), so the row and frame checks measure nothing against it.
 
 ## Tokyo Night palette (svgkit values)
 

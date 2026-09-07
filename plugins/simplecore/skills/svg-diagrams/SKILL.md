@@ -37,6 +37,14 @@ that a list cannot say, and build that relation out of the primitives already
 here — a figure that turns six list items into six equal cards repeats the
 paragraph above it. This judgement is made for every figure, not once per set.
 
+**Every box is sized from its content.** The scaffold's `common.py` carries a
+content-first layer — `heading` · `card` · `cards_row` · `pill` · `note` ·
+`zone` · `step_row` · `segment_bar` — that computes each box's height from
+its wrapped text with even padding and gives a row its tallest content's
+height. Draw with those rather than with a number: a fixed height is what
+leaves a band of paper under a row's text, and the lint's box-geometry checks
+report exactly that.
+
 **Minimise height on every figure, not only on the ones that overflow.** Width
 is fixed, so the page scales a tall figure down and its type prints smaller
 than its neighbours'. Before saving, squeeze the repeating unit, fold
@@ -82,7 +90,7 @@ c.save("pipeline.svg")
 
 **Theme** with `Canvas(w, h, theme=…)`: `tokyo-night` (default), `nord`, `catppuccin`, `gruvbox`, `one-dark`. Reference accents as `c.blue c.cyan c.teal c.green c.purple c.red c.orange c.yellow` and chrome as `c.t["muted"|"line"|"bg"|…]` — passing these (not literal hex) lets a diagram re-theme by changing one arg. Chrome (bg/box/line/muted/fg) resolves from the theme automatically. (Module constants `BLUE`, `MUTED`, … remain for Tokyo-Night-only code.)
 
-Helpers: `rrect · text · line · path · ortho · elbow · bez · dot · chip · card · spec_card · node · edge_label · group_frame · title · legend · matrix · band · icon · row_positions · tw · edge_pt`.
+Helpers: `rrect · text · line · path · ortho · elbow · bez · dot · chip · card · spec_card · node · edge_label · group_frame · title · legend · matrix · band · icon · row_positions · tw · edge_pt · capture · fit_box · fit_row · frame_around`. `text(..., mask=True)` paints a paper plate under a label that a line has to pass behind; `band(..., side="top"|"left"|…)` rounds only the corners on the box's outline; `rrect(..., measure="width")` marks a rect whose size is a quantity so the row and frame checks leave it alone; `fit_box`/`fit_row` size a box from a drawing callback with even padding.
 
 Composite patterns (reusable across diagrams):
 - `title(text, sub)` — diagram heading (bold title + muted subtitle).
@@ -168,7 +176,7 @@ python3 <skill>/scripts/audit.py hotspots diagram.svg crops/ 4   # zoom-crop EVE
 python3 <skill>/scripts/audit.py crop     diagram.svg X Y W H z.png 5   # zoom one spot
 ```
 
-Loop: **lint → render → hotspots → fix → repeat** until lint is clean *and* the endpoint crops look right. A full render viewed downscaled hides sub-10px defects (an arrowhead landing on a chip, a label kissing a box) — `hotspots` turns "eyeball the overview" into a systematic pass over exactly the places those defects live. Lint is a screen, not the verdict. Checks: `UNRESOLVED-MARKER`, `OBLIQUE-ARROW`, `SHORT-ARROW`, `TEXT-OVERFLOW`, `TEXT-COLLISION`, `TIGHT-BOTTOM`, `OVERLAP`, `LABEL-OCCLUSION`, `ARROW-THROUGH-BOX`, `ARROWHEAD-IN-BOX`, `LINE-THROUGH-BOX`, `FRAME-OVER-NODE`, `OFFCANVAS-TEXT`, `OFFCANVAS-RECT`, `MARKER-NO-ORIENT`, `WIDE-CANVAS`. Full catalog, fixes, prevention rules: `references/render-audit.md`.
+Loop: **lint → render → hotspots → fix → repeat** until lint is clean *and* the endpoint crops look right. A full render viewed downscaled hides sub-10px defects (an arrowhead landing on a chip, a label kissing a box) — `hotspots` turns "eyeball the overview" into a systematic pass over exactly the places those defects live. Lint is a screen, not the verdict. Checks: `UNRESOLVED-MARKER`, `OBLIQUE-ARROW`, `SHORT-ARROW`, `TEXT-OVERFLOW`, `TEXT-COLLISION`, `TIGHT-BOTTOM`, `OVERLAP`, `LABEL-OCCLUSION`, `ARROW-THROUGH-BOX`, `ARROWHEAD-IN-BOX`, `LINE-THROUGH-BOX`, `FRAME-OVER-NODE`, `OFFCANVAS-TEXT`, `OFFCANVAS-RECT`, `MARKER-NO-ORIENT`, `WIDE-CANVAS`, and the box-geometry set — `ROW-PADDING-UNEVEN`, `BOX-PADDING-UNEVEN`, `WRAP-SLACK`, `ROW-HEIGHT-MISMATCH`, `ROW-WIDTH-MISMATCH`, `ROW-GAP-UNEVEN`, `STACK-GAP-UNEVEN`, `FRAME-PADDING-UNEVEN`, `BAND-CORNERS`, `TEXT-ON-LINE`, `LABEL-GROUPING`, `EMPTY-STACK-GAP`. Full catalog, fixes, prevention rules: `references/render-audit.md`.
 
 **CJK / non-Latin text:** width estimation is CJK-aware across the toolchain (`svgkit.tw`, `layout.js`, and the lint all count Hangul/Kana/CJK glyphs at ~1 em, Latin at ~0.55 em). A box or chip auto-sized for Latin will overflow Korean/Japanese if you hardcode a width — size boxes from `tw()`, not by eye. The Mermaid `--svg` path (beautiful-mermaid) sizes its own boxes and can clip CJK labels; lint its output and prefer svgkit/layout.js when labels are CJK-heavy.
 

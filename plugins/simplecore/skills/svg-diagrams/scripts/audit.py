@@ -56,11 +56,32 @@ def _is_wide(ch):
             or 0xFF00 <= o <= 0xFFEF or 0x20000 <= o <= 0x3FFFD)
 
 
+_NARROW = set(" \u00b7.,:;|'`!\u2019\u2018\u02c8")
+_CAPS = set("ABCDEFGHJKLMNOPQRSTUVWXYZ")
+
+
 def _text_w(txt, size, mono):
-    """CJK-aware estimated text width (mirrors svgkit.tw)."""
-    k = 0.60 if mono else 0.55
-    wide = sum(1 for ch in txt if _is_wide(ch))
-    return ((len(txt) - wide) * k + wide * 1.03) * size
+    """CJK-aware estimated text width (mirrors svgkit.tw — keep the two
+    tables identical, or the generator sizes a box the lint then measures
+    differently). The proportional numbers come from `calibrate_tw.py`:
+    Hangul 0.92 em, lowercase 0.52, capitals 0.66, digits 0.58, the space
+    and thin punctuation 0.28; a mono face sets everything at 0.6."""
+    if mono:
+        wide = sum(1 for ch in txt if _is_wide(ch))
+        return ((len(txt) - wide) * 0.60 + wide * 1.03) * size
+    w = 0.0
+    for ch in txt:
+        if _is_wide(ch):
+            w += 0.92
+        elif ch in _NARROW:
+            w += 0.28
+        elif ch in _CAPS:
+            w += 0.66
+        elif ch.isdigit():
+            w += 0.58
+        else:
+            w += 0.52
+    return w * size
 
 
 def _iter_texts(svg):
@@ -124,6 +145,33 @@ def _path_points(d):
             cur = (args[n - 2], args[n - 1])
         pts.append(cur)
     return pts
+
+
+def _clip_len(p, q, r, inset=5):
+    """Length of segment p→q that lies inside rect r=(x, y, w, h), shrunk by
+    `inset` on every side. Zero when the segment misses the rect."""
+    rx0, ry0 = r[0] + inset, r[1] + inset
+    rx1, ry1 = r[0] + r[2] - inset, r[1] + r[3] - inset
+    if rx1 <= rx0 or ry1 <= ry0:
+        return 0.0
+    dx, dy = q[0] - p[0], q[1] - p[1]
+    t0, t1 = 0.0, 1.0
+    for pp, qq in ((-dx, p[0] - rx0), (dx, rx1 - p[0]),
+                   (-dy, p[1] - ry0), (dy, ry1 - p[1])):
+        if pp == 0:
+            if qq < 0:
+                return 0.0
+        else:
+            t = qq / pp
+            if pp < 0:
+                if t > t1:
+                    return 0.0
+                t0 = max(t0, t)
+            else:
+                if t < t0:
+                    return 0.0
+                t1 = min(t1, t)
+    return math.hypot(dx, dy) * (t1 - t0) if t1 > t0 else 0.0
 
 
 def _root_dims(svg):
@@ -397,10 +445,16 @@ def lint(svg_path):
     #     a card that contains only its own badge/footer chips classified as
     #     a node, while a frame around even a single node is a container.
     def _has_substantial_child(r):
+        # a rect on the same footprint is the node's own mask or outline,
+        # not something it contains — two rects drawn for one box must not
+        # turn that box into a frame
         ra = r[2] * r[3]
-        return any(o is not r and contains(r, o)
-                   and o[3] >= 34 and o[2] * o[3] >= 0.05 * ra
-                   for o in solids)
+        inner = [o for o in solids if o is not r and not same_rect(r, o)
+                 and contains(r, o) and o[3] >= 26]
+        # one node-sized child, or a row of small ones that together fill
+        # the box — a wide zone over five short pills is a container too
+        return (any(o[2] * o[3] >= 0.05 * ra for o in inner)
+                or sum(o[2] * o[3] for o in inner) >= 0.15 * ra)
     # A plot area is a container too, though it holds no rects: a quadrant's
     # panel, a Wardley map's field, a chart's frame. Its marks are dots, lines
     # and labels, so the substantial-child test cannot see it — but it covers
@@ -457,11 +511,25 @@ def lint(svg_path):
         label_masks.append((_x, _y, _w, _h))
     mask_keys = {(round(m[0]), round(m[1]), round(m[2]), round(m[3]))
                  for m in label_masks}
+    def _inner_ring(x, y, w, h):
+        """True when (x, y, w, h) is itself the second, inset edge of a
+        larger box — judged as part of that box, never on its own."""
+        for (ox, oy, ow, oh, _) in solids:
+            if (ox, oy, ow, oh) == (x, y, w, h) or ow < w or oh < h:
+                continue
+            insets = (x - ox, y - oy, ox + ow - x - w, oy + oh - y - h)
+            if min(insets) >= 1.5 and max(insets) - min(insets) <= 1.5 \
+                    and max(insets) <= 10:
+                return True
+        return False
+
     for (x, y, w, h, _) in solids:
         if w < 90 or h < 50:
             continue
         if w >= 0.88 * W and h >= 0.88 * H:
             continue  # canvas background, not a content box
+        if _inner_ring(x, y, w, h):
+            continue
         bottom = y + h
         maxcb = None
         for (cx, cy, cw, ch, _) in solids:
@@ -1304,7 +1372,10 @@ def lint(svg_path):
             continue
         b = min(below, key=lambda r: r[1])
         gap = b[1] - (a[1] + a[3])
-        if gap <= 96:
+        # The band that counts as empty scales with the board: 96px on a
+        # 1200-unit canvas, 48 on a 520-unit column figure, where the same
+        # 96px is a fifth of the width.
+        if gap <= max(48.0, 0.08 * W):
             continue
         bx0, bx1 = max(a[0], b[0]), min(a[0] + a[2], b[0] + b[2])
         by0, by1 = a[1] + a[3], b[1]
@@ -1313,6 +1384,18 @@ def lint(svg_path):
             return bx0 - pad <= x <= bx1 + pad and by0 <= y <= by1
 
         busy = any(_in_band(tx, ty) for (tx, ty, _t) in texts_xy)
+        if not busy:
+            # a section heading crossing the band is a row of the figure,
+            # not blank paper, wherever its letters start
+            busy = any(by0 <= ty <= by1 and (y1 - y0) / 1.02 >= 19
+                       for (_tx, ty, _x0, y0, _x1, y1, _t) in texts_full)
+        if not busy:
+            # a box of the same size that ends inside the band is the same
+            # row set at another height — a stair, a ladder — so the air
+            # under the higher step is the stair's shape, not a gap
+            busy = any(o is not a and abs(o[2] - a[2]) <= 2
+                       and abs(o[3] - a[3]) <= 2
+                       and by0 < o[1] + o[3] <= by1 for o in _stack)
         if not busy:
             for r in rmeta:
                 if (min(r[0] + r[2], bx1) - max(r[0], bx0) > 8
@@ -1345,6 +1428,17 @@ def lint(svg_path):
                        f'[{a[0]:.0f},{a[1]:.0f}] and [{b[0]:.0f},{b[1]:.0f}] '
                        f'— nothing is drawn in it; close the gap or put the '
                        f'routing and its labels there'))
+
+    # 11) interior geometry — the checks above ask whether the picture is
+    #     well-formed; these ask whether it is tight and whether its parts
+    #     group the way the reader will group them. Every one names something
+    #     a reader takes as carelessness before reading a single label: a row
+    #     of cards leaving a hand's width of paper under their text, a header
+    #     drawn as a chip resting on its card, a label sitting on a line, two
+    #     labels that read as one heading.
+    issues.extend(_interior_checks(svg, W, H, rmeta, solids, containers,
+                                   node_rects, mask_keys, texts_full,
+                                   texts_xy, contains, same_rect))
 
     # 10) margins on all four sides. The board's dimensions decide how much
     #     page the figure reserves once it is placed at a fixed width, so a
@@ -1427,6 +1521,870 @@ def lint(svg_path):
     for kind, msg in issues:
         print(f"  ✖ {kind}: {msg}")
     return issues
+
+
+def _interior_checks(svg, W, H, rmeta, solids, containers, node_rects,
+                     mask_keys, texts_full, texts_xy, contains, same_rect):
+    """Padding, row and stack uniformity, frame padding, band corners, labels
+    lying on lines, and label grouping — the defects of a picture that is
+    well-formed but loose. Returns (kind, message) pairs.
+
+    Everything here reads geometry the generator already emitted, so a
+    finding is a measurement and its message carries the number to cut.
+    Tolerances are in canvas units on a 1200-unit board; a reader cannot see
+    a 3px difference in row height but sees 10px of extra air at once.
+    """
+    out = []
+    TOL = 1.5                        # "coincides with" for edges
+    PAD_UNEVEN = 12                  # air above vs below content
+    FRAME_UNEVEN = 10                # a frame's four insets
+    FRAME_LOOSE = 28                 # smallest inset a frame may have
+    SIDE_PAD = 16                    # the standard inner side padding
+    WRAP_ALLOW = 0.93                # estimator allowance a wrap width keeps
+
+    # -- every rect with its style, in document order -----------------------
+    rinfo = []
+    for m in re.finditer(r'<rect\b([^>]*)/?>', svg):
+        a = m.group(1)
+
+        def _v(k, a=a):
+            mm = re.search(rf'\b{k}="([\-\d.]+)"', a)
+            return float(mm.group(1)) if mm else None
+        x, y, w, h = _v("x"), _v("y"), _v("width"), _v("height")
+        if None in (x, y, w, h) or w <= 0 or h <= 0:
+            continue
+        fill = (re.search(r'\bfill="([^"]+)"', a) or [None, "none"])[1]
+        stroke = (re.search(r'\bstroke="([^"]+)"', a) or [None, "none"])[1]
+        op = _v("opacity")
+        rinfo.append({"pos": m.start(), "x": x, "y": y, "w": w, "h": h,
+                      "rx": _v("rx") or 0.0, "fill": fill.lower(),
+                      "stroke": stroke.lower(),
+                      "op": 1.0 if op is None else op,
+                      "dashed": "stroke-dasharray" in a,
+                      "canvas": w >= 0.95 * W and h >= 0.95 * H})
+    bg_m = re.search(r'<stop\b[^>]*offset="0"[^>]*stop-color="([^"]+)"', svg)
+    bg_colors = {bg_m.group(1).lower()} if bg_m else set()
+    for r in rinfo:
+        if r["canvas"] and not r["fill"].startswith("url("):
+            bg_colors.add(r["fill"])
+
+    def _key(r):
+        return (round(r["x"]), round(r["y"]), round(r["w"]), round(r["h"]))
+
+    container_keys = {(round(r[0]), round(r[1]), round(r[2]), round(r[3]))
+                      for r in solids if id(r) in containers}
+
+    def _box(r):
+        return (r["x"], r["y"], r["w"], r["h"])
+
+    def _visible(r):
+        return (r["stroke"] != "none"
+                or (r["fill"] not in ("none", "transparent")
+                    and not r["fill"].startswith("url(")
+                    and r["fill"] not in bg_colors))
+
+    # -- closed paths that trace an axis-aligned rectangle ------------------
+    #    A boundary drawn as a path (so the connectors inside it are not read
+    #    as crossing a box) and a header band are both rectangles to the
+    #    reader, so the frame and band checks have to see them.
+    rpaths = []
+    for m in re.finditer(r'<path\b([^>]*)/?>', svg):
+        a = m.group(1)
+        dm = re.search(r'\bd="([^"]+)"', a)
+        if not dm or "marker" in a:
+            continue
+        d = dm.group(1)
+        letters = set(re.findall(r'[A-Za-z]', d))
+        if "Z" not in letters or not letters <= set("MLHVAZ"):
+            continue
+        pts = _path_points(d)
+        if len(pts) < 4:
+            continue
+        xs, ys = [p[0] for p in pts], [p[1] for p in pts]
+        x0, x1, y0, y1 = min(xs), max(xs), min(ys), max(ys)
+        if x1 - x0 < 4 or y1 - y0 < 4:
+            continue                      # a 6px stripe is still a band
+        if not all(min(abs(px - x0), abs(px - x1)) <= 0.5
+                   or min(abs(py - y0), abs(py - y1)) <= 0.5
+                   for px, py in pts):
+            continue
+        fill = (re.search(r'\bfill="([^"]+)"', a) or [None, "none"])[1]
+        stroke = (re.search(r'\bstroke="([^"]+)"', a) or [None, "none"])[1]
+        op = re.search(r'\bopacity="([\d.]+)"', a)
+        rpaths.append({"pos": m.start(), "x": x0, "y": y0, "w": x1 - x0,
+                       "h": y1 - y0, "rx": 0.0, "fill": fill.lower(),
+                       "stroke": stroke.lower(),
+                       "op": float(op.group(1)) if op else 1.0,
+                       "dashed": "stroke-dasharray" in a, "canvas": False,
+                       "measured": "data-measure=" in a})
+
+    # -- texts as records ---------------------------------------------------
+    T = []
+    texts_style = []                      # (fill, weight), one per texts_full
+    for a, _txt in _iter_texts(svg):
+        if not (re.search(r'\bx="([\-\d.]+)"', a)
+                and re.search(r'\by="([\-\d.]+)"', a)):
+            continue                      # texts_full skipped it too
+        texts_style.append((
+            (re.search(r'\bfill="([^"]+)"', a) or [None, ""])[1].lower(),
+            (re.search(r'font-weight="(\w+)"', a) or [None, "400"])[1]))
+    for (tx, ty, x0, y0, x1, y1, txt), (fill, weight) in zip(texts_full,
+                                                            texts_style):
+        size = (y1 - y0) / 1.02
+        anchor = ("middle" if abs((x0 + x1) / 2 - tx) < 0.6
+                  else "end" if abs(x1 - tx) < 0.6 else "start")
+        T.append({"x": tx, "y": ty, "x0": x0, "y0": y0, "x1": x1, "y1": y1,
+                  "txt": txt, "size": size, "anchor": anchor, "fill": fill,
+                  "weight": weight})
+
+    # -- small ink: dots, icons, polylines --------------------------------
+    small = []
+    for m in re.finditer(r'<circle\b([^>]*)/?>', svg):
+        a = m.group(1)
+
+        def _cv(k, a=a):
+            mm = re.search(rf'\b{k}="([\-\d.]+)"', a)
+            return float(mm.group(1)) if mm else None
+        cx, cy, cr = _cv("cx"), _cv("cy"), _cv("r")
+        if None in (cx, cy, cr) or cr > 14:
+            continue
+        small.append((cx - cr, cy - cr, cx + cr, cy + cr))
+    for m in re.finditer(r'<(?:path|polyline|polygon)\b([^>]*)/?>', svg):
+        a = m.group(1)
+        if "marker" in a or 'stroke="none"' in a or "stroke=" not in a:
+            continue
+        pts = []
+        dm = re.search(r'\bd="([^"]+)"', a)
+        if dm:
+            if set(re.findall(r'[A-Za-z]', dm.group(1))) & set(
+                    "mlhvqcsta"):
+                continue                  # relative commands: not measurable
+            pts = _path_points(dm.group(1))
+        pm = re.search(r'\bpoints="([^"]+)"', a)
+        if pm:
+            pts = [(float(px), float(py)) for px, py in
+                   re.findall(r'(-?[\d.]+)[ ,](-?[\d.]+)', pm.group(1))]
+        if len(pts) < 2:
+            continue
+        xs, ys = [p[0] for p in pts], [p[1] for p in pts]
+        if max(xs) - min(xs) <= 34 and max(ys) - min(ys) <= 34:
+            small.append((min(xs), min(ys), max(xs), max(ys)))
+
+    def _inside(bb, box, tol=1.0):
+        x, y, w, h = box
+        return (bb[0] >= x - tol and bb[1] >= y - tol
+                and bb[2] <= x + w + tol and bb[3] <= y + h + tol)
+
+    def _touches_edge(r, box, tol=TOL):
+        x, y, w, h = box
+        return (abs(r["x"] - x) <= tol or abs(r["y"] - y) <= tol
+                or abs(r["x"] + r["w"] - x - w) <= tol
+                or abs(r["y"] + r["h"] - y - h) <= tol)
+
+    def _contents(box, own_pos=None):
+        """Bounding boxes of what sits inside `box`: texts anchored in it,
+        rects fully inside that are content rather than a band or a second
+        edge, dots and icons. Connectors are not content — they start and
+        end on the edges."""
+        x, y, w, h = box
+        cont = []
+        for t in T:
+            if x <= t["x"] <= x + w and y <= t["y"] <= y + h \
+                    and _inside((t["x0"], t["y0"], t["x1"], t["y1"]), box, 3):
+                cont.append((t["x0"], t["y0"], t["x1"], t["y1"]))
+        for r in rinfo + rpaths:
+            if r["canvas"] or r["pos"] == own_pos:
+                continue
+            rb = (r["x"], r["y"], r["x"] + r["w"], r["y"] + r["h"])
+            if not _inside(rb, box, TOL):
+                continue
+            if all(abs(v) <= 3 for v in (r["x"] - x, r["y"] - y,
+                                         r["w"] - w, r["h"] - h)):
+                continue                  # the box's own mask or wash
+            if _touches_edge(r, box):
+                continue                  # a band, a tab, a stripe
+            cont.append(rb)
+        for bb in small:
+            if _inside(bb, box, 0.5):
+                cont.append(bb)
+        return cont
+
+    def _band_bottom(box, own_pos=None):
+        """The lower edge of a header band on the box's top edge, if any: a
+        rect or rect-like path that starts on the top edge, spans the box's
+        width and stops well above its bottom. The title inside a band is
+        the band's content, so the box's own top inset is measured from
+        under the band."""
+        x, y, w, h = box
+        best = None
+        for r in rinfo + rpaths:
+            if r["canvas"] or r["pos"] == own_pos:
+                continue
+            if (abs(r["y"] - y) <= 1.5 and abs(r["x"] - x) <= 1.5
+                    and abs(r["w"] - w) <= 3 and 8 < r["h"] < h * 0.6):
+                best = max(best or 0, r["y"] + r["h"])
+        return best
+
+    def _pads(box, cont, own_pos=None):
+        x, y, w, h = box
+        band = _band_bottom(box, own_pos)
+        top = y
+        below = [c for c in cont if band is None or c[1] >= band - 1]
+        if band is not None and below:
+            top, cont_top = band, below
+        else:
+            cont_top = cont
+        return (min(c[0] for c in cont) - x,
+                x + w - max(c[2] for c in cont),
+                min(c[1] for c in cont_top) - top,
+                y + h - max(c[3] for c in cont))
+
+    # -- the boxes whose interior is judged --------------------------------
+    node_keys = {(round(r[0]), round(r[1]), round(r[2]), round(r[3]))
+                 for r in node_rects}
+
+    def _is_ring(r):
+        """A rect inset by one even margin inside another rect is that box's
+        second outline — a terminal state, an emphasised card — and is judged
+        as part of it, never as a box of its own."""
+        for o in rinfo:
+            if o is r or o["canvas"]:
+                continue
+            d = r["x"] - o["x"]
+            if 1.5 <= d <= 10 and abs((r["y"] - o["y"]) - d) <= 1 \
+                    and abs((o["w"] - r["w"]) - 2 * d) <= 1.5 \
+                    and abs((o["h"] - r["h"]) - 2 * d) <= 1.5:
+                return True
+        return False
+
+    ring_keys = {_key(r) for r in rinfo if not r["canvas"] and _is_ring(r)}
+    pad_boxes, seen_fp = [], set()
+    for r in rinfo:
+        if r["canvas"] or r["dashed"] or r["h"] < 30 or r["w"] < 60:
+            continue
+        k = _key(r)
+        if k in mask_keys or k in container_keys or k in seen_fp \
+                or k in ring_keys:
+            continue
+        if k not in node_keys:
+            # a tinted band or wash: judged only when it carries text of its
+            # own and is not the paper under an outlined box
+            if not any(r["x"] <= t["x"] <= r["x"] + r["w"]
+                       and r["y"] <= t["y"] <= r["y"] + r["h"] for t in T):
+                continue
+            if any(_key(o) == k and o is not r for o in rinfo):
+                continue
+        seen_fp.add(k)
+        pad_boxes.append(r)
+
+    # 11a) air above versus below the content. A box is sized once and its
+    #      text ends where it ends; when every card in a row ends 30px above
+    #      its bottom edge the row is 30px too tall, and the page below it
+    #      is 30px shorter for nothing.
+    rows = []
+    for r in pad_boxes:
+        for grp in rows:
+            g = grp[0]
+            if (abs(g["y"] - r["y"]) <= 2 and abs(g["h"] - r["h"]) <= 2
+                    and all(r["x"] >= o["x"] + o["w"] - 1
+                            or r["x"] + r["w"] <= o["x"] + 1 for o in grp)):
+                grp.append(r)
+                break
+        else:
+            rows.append([r])
+    for grp in rows:
+        measured = []
+        for r in grp:
+            cont = _contents(_box(r), r["pos"])
+            if cont:
+                measured.append((r, _pads(_box(r), cont, r["pos"])))
+        if not measured:
+            continue
+        if len(measured) >= 2:
+            excess = [b - t for _r, (_l, _rr, t, b) in measured]
+            lo, hi = min(excess), max(excess)
+            r0 = measured[0][0]
+            if lo > PAD_UNEVEN:
+                out.append(("ROW-PADDING-UNEVEN",
+                            f'every box in the row at y={r0["y"]:.0f} '
+                            f'(h={r0["h"]:.0f}, {len(measured)} boxes) has '
+                            f'{lo:.0f}px+ more air below its content than '
+                            f'above — cut {lo:.0f}px from the row height'))
+            elif hi < -PAD_UNEVEN:
+                out.append(("ROW-PADDING-UNEVEN",
+                            f'every box in the row at y={r0["y"]:.0f} has '
+                            f'{-hi:.0f}px+ more air above its content than '
+                            f'below — move the content up or cut the height'))
+            continue
+        r, (_l, _rr, t, b) = measured[0]
+        if abs(b - t) > PAD_UNEVEN:
+            side = "below" if b > t else "above"
+            out.append(("BOX-PADDING-UNEVEN",
+                        f'box [{r["x"]:.0f},{r["y"]:.0f},{r["w"]:.0f},'
+                        f'{r["h"]:.0f}] leaves {max(t, b):.0f}px {side} its '
+                        f'content and {min(t, b):.0f}px on the other side — '
+                        f'size the box from the content with even padding'))
+
+    # 11b) a wrap forced by side padding. Two consecutive lines of one text
+    #      block that would fit on one line at the standard 16px side
+    #      padding were wrapped by a narrower wrap width — the box is one
+    #      line taller than its text needs.
+    for r in pad_boxes:
+        box = _box(r)
+        inside = [t for t in T if box[0] <= t["x"] <= box[0] + box[2]
+                  and box[1] <= t["y"] <= box[1] + box[3]]
+        # two lines are one paragraph only in the same ink: a bold line
+        # over a muted line is a title and its detail, not a wrap
+        groups = {}
+        for t in inside:
+            groups.setdefault((t["anchor"], round(t["x"]), round(t["size"]),
+                               t["fill"], t["weight"]), []).append(t)
+        hit = None
+        for g in groups.values():
+            g.sort(key=lambda t: t["y"])
+            for a, b in zip(g, g[1:]):
+                if b["y"] - a["y"] > a["size"] * 1.3:
+                    continue              # separate items, not a wrap
+                avail = box[2] - 2 * SIDE_PAD
+                wa, wb = a["x1"] - a["x0"], b["x1"] - b["x0"]
+                if wa < 0.55 * avail:
+                    continue              # a short first line is a list
+                if wa + 0.3 * a["size"] + wb <= WRAP_ALLOW * avail:
+                    hit = (a, b, wa + 0.3 * a["size"] + wb, avail)
+                    break
+            if hit:
+                break
+        if hit:
+            a, b, joined, avail = hit
+            out.append(("WRAP-SLACK",
+                        f'"{a["txt"][:16]}" / "{b["txt"][:16]}" in box '
+                        f'[{r["x"]:.0f},{r["y"]:.0f}] would fit one line '
+                        f'({joined:.0f}px ≤ {WRAP_ALLOW * avail:.0f}px at '
+                        f'{SIDE_PAD}px side padding) — the wrap width is '
+                        f'narrower than the box allows; widen it'))
+
+    # 11c) peers in a row. Boxes drawn at one y with one corner radius and
+    #      one fill are read as a row of equals; a height or width that
+    #      differs by a few pixels, or an uneven gap between them, reads as a
+    #      slip rather than a distinction. A real distinction is larger than
+    #      the tolerances here — a 2:1 span, a label column beside a value
+    #      column — and is not reported.
+    # A rect whose width or height carries a quantity — a bar, a treemap
+    # cell, a proportional strip — declares it with data-measure, and is
+    # not a peer of anything: its size is the content.
+    measured = {}
+    for m in re.finditer(r'<rect\b([^>]*)/?>', svg):
+        a = m.group(1)
+        dm = re.search(r'\bdata-measure="([^"]+)"', a)
+        if dm:
+            measured[m.start()] = dm.group(1)
+
+    def _has_stripe(r):
+        """A box carrying a band on one of its edges is a label card, and
+        its width is a design choice rather than a slip."""
+        return any(o is not r and not o["canvas"] and _key(o) != _key(r)
+                   and contains(_box(r), _box(o), TOL)
+                   and _touches_edge(o, _box(r)) for o in rinfo + rpaths)
+
+    peers = []
+    for r in rinfo:
+        if r["canvas"] or r["w"] < 40 or r["h"] < 22:
+            continue
+        k = _key(r)
+        if k in mask_keys or k in container_keys or r["pos"] in measured \
+                or k in ring_keys:
+            continue
+        if any(o is not r and not o["canvas"]
+               and contains(_box(o), _box(r), TOL) and _key(o) != k
+               and _touches_edge(r, _box(o)) for o in rinfo):
+            continue                      # a band on somebody's edge
+        peers.append(r)
+
+    def _components(items, related):
+        comps = []
+        for r in items:
+            joined = [c for c in comps if any(related(r, o) for o in c)]
+            merged = [r]
+            for c in joined:
+                merged.extend(c)
+                comps.remove(c)
+            comps.append(merged)
+        return comps
+
+    def _split_groups(sorted_items, gap_of):
+        """Cut a run of peers where a gap is a separator — at least 1.8× the
+        smallest gap and 8px wider, or 60px and more outright. The wider gap
+        is the distance between two groups, and sizes need agree only within
+        a group."""
+        gaps = [gap_of(a, b) for a, b in zip(sorted_items, sorted_items[1:])]
+        if not gaps:
+            return [sorted_items]
+        floor = min(gaps)
+        groups, cur = [], [sorted_items[0]]
+        for g, item in zip(gaps, sorted_items[1:]):
+            if (g >= 1.8 * floor and g >= floor + 8) or g >= 60:
+                groups.append(cur)
+                cur = [item]
+            else:
+                cur.append(item)
+        groups.append(cur)
+        return groups
+
+    # A row lives inside one container: cards in two different frames are
+    # two rows that happen to share a y, not one row with a slip in it.
+    frame_boxes = [_box(r) for r in rinfo if _key(r) in container_keys
+                   or (r["dashed"] and r["h"] > 44)] + \
+        [_box(p) for p in rpaths if p["stroke"] != "none"]
+
+    def _parent(r):
+        holders = [f for f in frame_boxes
+                   if contains(f, _box(r), TOL) and not same_rect(f, _box(r))]
+        if not holders:
+            return None
+        f = min(holders, key=lambda f: f[2] * f[3])
+        return (round(f[0]), round(f[1]), round(f[2]), round(f[3]))
+
+    parent_of = {id(r): _parent(r) for r in peers}
+
+    def _row_peer(a, b):
+        return (abs(a["y"] - b["y"]) <= 2 and abs(a["rx"] - b["rx"]) <= 1
+                and a["fill"] == b["fill"] and abs(a["op"] - b["op"]) <= .02
+                and parent_of[id(a)] == parent_of[id(b)]
+                and (a["x"] >= b["x"] + b["w"] - 1
+                     or a["x"] + a["w"] <= b["x"] + 1))
+
+    for comp in _components(peers, _row_peer):
+        if len(comp) < 2:
+            continue
+        comp.sort(key=lambda r: r["x"])
+        y0 = comp[0]["y"]
+        for grp in _split_groups(comp, lambda a, b: b["x"] - (a["x"] + a["w"])):
+            if len(grp) < 2:
+                continue
+            hs = [r["h"] for r in grp]
+            if max(hs) - min(hs) > 3 and max(hs) <= 1.7 * min(hs):
+                out.append(("ROW-HEIGHT-MISMATCH",
+                            f'{len(grp)} boxes in the row at y={y0:.0f} have '
+                            f'heights {", ".join(f"{h:.0f}" for h in hs)} — '
+                            f'size the row from its tallest content and give '
+                            f'every box that height'))
+            plain = [r for r in grp if not _has_stripe(r)]
+            ws = [r["w"] for r in plain]
+            ghs = [r["h"] for r in plain]
+            if (len(plain) >= 2 and max(ghs) - min(ghs) <= 3 and min(ghs) >= 34
+                    and max(ws) - min(ws) > 3 and max(ws) <= 1.5 * min(ws)):
+                out.append(("ROW-WIDTH-MISMATCH",
+                            f'{len(plain)} boxes in the row at y={y0:.0f} '
+                            f'have widths {", ".join(f"{w:.0f}" for w in ws)} '
+                            f'— lay the row out with row_positions() so the '
+                            f'columns are equal'))
+            if len(grp) >= 3:
+                gaps = [b["x"] - (a["x"] + a["w"]) for a, b in zip(grp, grp[1:])]
+                if max(gaps) - min(gaps) > 4:
+                    out.append(("ROW-GAP-UNEVEN",
+                                f'gaps between the {len(grp)} boxes in the '
+                                f'row at y={y0:.0f} are '
+                                f'{", ".join(f"{g:.0f}" for g in gaps)}px — '
+                                f'space the columns evenly'))
+
+    # 11d) peers in a stack. Same test down the page: boxes of one width at
+    #      one x with gaps that differ, where the larger gap holds nothing.
+    def _stack_peer(a, b):
+        return (abs(a["x"] - b["x"]) <= 2 and abs(a["w"] - b["w"]) <= 2
+                and abs(a["rx"] - b["rx"]) <= 1 and a["fill"] == b["fill"]
+                and (a["y"] >= b["y"] + b["h"] - 1
+                     or a["y"] + a["h"] <= b["y"] + 1))
+
+    def _band_busy(x0, x1, y0, y1):
+        if any(x0 <= t["x"] <= x1 and y0 <= t["y"] <= y1 for t in T):
+            return True
+        return any(min(r["x"] + r["w"], x1) - max(r["x"], x0) > 8
+                   and min(r["y"] + r["h"], y1) - max(r["y"], y0) > 8
+                   for r in rinfo if not r["canvas"])
+
+    for comp in _components(peers, _stack_peer):
+        comp.sort(key=lambda r: r["y"])
+        for grp in _split_groups(comp, lambda a, b: b["y"] - (a["y"] + a["h"])):
+            if len(grp) < 3:
+                continue
+            gaps = [(b["y"] - (a["y"] + a["h"]), a, b)
+                    for a, b in zip(grp, grp[1:])]
+            sizes = [g for g, _a, _b in gaps]
+            if max(sizes) - min(sizes) <= 4:
+                continue
+            odd = [(g, a, b) for g, a, b in gaps if g > min(sizes) + 4]
+            if all(not _band_busy(a["x"], a["x"] + a["w"], a["y"] + a["h"],
+                                  b["y"]) for _g, a, b in odd):
+                out.append(("STACK-GAP-UNEVEN",
+                            f'{len(grp)} boxes stacked at x={grp[0]["x"]:.0f} '
+                            f'are {", ".join(f"{s:.0f}" for s in sizes)}px '
+                            f'apart and the wider gaps hold nothing — space '
+                            f'them evenly'))
+
+    # 11e) a frame's inset. A boundary drawn around a group is read as the
+    #      group's edge; when its content sits 40px below the top and 16px
+    #      above the bottom the group looks like it slid down, and when
+    #      every inset is 40px the frame is a border around blank paper.
+    frames = []
+    for r in rinfo:
+        if r["canvas"]:
+            continue
+        k = _key(r)
+        if k in container_keys:
+            frames.append(r)
+        elif r["dashed"] and r["h"] > 44 and any(
+                not same_rect(_box(r), o) and contains(_box(r), o)
+                and o[2] >= 40 and o[3] >= 30      # a box, not an icon or a badge
+                for o in solids):
+            frames.append(r)
+    # a strip's end segment is a quantity, not a frame around its label
+    frames += [p for p in rpaths if p["stroke"] != "none" and not p["measured"]]
+    seen_frame = set()
+    for f in frames:
+        k = _key(f)
+        if k in seen_frame or f["rx"] >= min(f["w"], f["h"]) / 2 - 1:
+            continue                      # a circle has no inset to measure
+        seen_frame.add(k)
+        cont = _contents(_box(f), f["pos"])
+        if not cont:
+            continue
+        left, right, top, bottom = _pads(_box(f), cont)
+        # A title chip that straddles the top border is the frame's own
+        # heading: the inset above the content is measured from the chip's
+        # lower edge, not from the border it sits on.
+        fx, fy, fw, fh = _box(f)
+        chip_bottom = fy
+        for r in rinfo + rpaths:
+            if r["canvas"] or r["pos"] == f["pos"]:
+                continue
+            if (r["y"] < fy - 2 and fy < r["y"] + r["h"] < fy + 40
+                    and fx - 2 <= r["x"] and r["x"] + r["w"] <= fx + fw + 2):
+                chip_bottom = max(chip_bottom, r["y"] + r["h"])
+        for t in T:
+            if (t["y0"] < fy - 2 and fy < t["y1"] < fy + 40
+                    and fx <= t["x"] <= fx + fw):
+                chip_bottom = max(chip_bottom, t["y1"])
+        top -= chip_bottom - fy
+        pads = (left, right, top, bottom)
+        if (left <= 3 and right <= 3) or (top <= 3 and bottom <= 3):
+            continue                      # a table row or column, not a frame
+        where = (f'[{f["x"]:.0f},{f["y"]:.0f},{f["w"]:.0f},{f["h"]:.0f}]')
+        if max(pads) - min(pads) > FRAME_UNEVEN:
+            out.append(("FRAME-PADDING-UNEVEN",
+                        f'frame {where} insets its content by left {left:.0f} '
+                        f'· right {right:.0f} · top {top:.0f} · bottom '
+                        f'{bottom:.0f} — give the four sides one inset'))
+        elif min(pads) > FRAME_LOOSE:
+            out.append(("FRAME-PADDING-LOOSE",
+                        f'frame {where} keeps {min(pads):.0f}px of blank '
+                        f'paper on every side of its content — draw it '
+                        f'{min(pads) - 16:.0f}px closer'))
+
+    # 11f) a band drawn as a rounded rect. A header or a side label that
+    #      shares a whole edge with its box follows the box's outline on
+    #      that edge and meets the box's body square on the other; a rect
+    #      rounds all four corners, so the band reads as a chip resting on
+    #      the box. The mirror case — a square band on a rounded box — pokes
+    #      its corners past the outline.
+    for A in rinfo:
+        if A["canvas"] or _key(A) in mask_keys:
+            continue
+        for B in rinfo:
+            if B is A or B["canvas"] or not _visible(B):
+                continue
+            if not contains(_box(B), _box(A), TOL) or _key(B) == _key(A):
+                continue
+            if A["w"] >= B["w"] - 4 and A["h"] >= B["h"] - 4:
+                continue
+            if A["pos"] < B["pos"] and B["fill"] not in ("none",) \
+                    and B["op"] >= 0.99:
+                continue                  # hidden under the box's fill
+            ax1, ay1 = A["x"] + A["w"], A["y"] + A["h"]
+            bx1, by1 = B["x"] + B["w"], B["y"] + B["h"]
+            spans_h = abs(A["y"] - B["y"]) <= TOL and abs(ay1 - by1) <= TOL
+            spans_w = abs(A["x"] - B["x"]) <= TOL and abs(ax1 - bx1) <= TOL
+            edge = None
+            if spans_h and abs(A["x"] - B["x"]) <= TOL:
+                edge = "left"
+            elif spans_h and abs(ax1 - bx1) <= TOL:
+                edge = "right"
+            elif spans_w and abs(A["y"] - B["y"]) <= TOL:
+                edge = "top"
+            elif spans_w and abs(ay1 - by1) <= TOL:
+                edge = "bottom"
+            if edge is None:
+                continue
+            if A["rx"] > 1:
+                out.append(("BAND-CORNERS",
+                            f'rect [{A["x"]:.0f},{A["y"]:.0f},{A["w"]:.0f},'
+                            f'{A["h"]:.0f}] is a band on the {edge} edge of '
+                            f'box [{B["x"]:.0f},{B["y"]:.0f}] drawn with all '
+                            f'four corners rounded — the corners facing the '
+                            f'box body must be square; draw it with '
+                            f'band(side="{edge}")'))
+            elif B["rx"] > 1:
+                out.append(("BAND-CORNERS",
+                            f'square band [{A["x"]:.0f},{A["y"]:.0f},'
+                            f'{A["w"]:.0f},{A["h"]:.0f}] sits on the {edge} '
+                            f'edge of rounded box [{B["x"]:.0f},{B["y"]:.0f}] '
+                            f'— its corners poke past the outline; draw it '
+                            f'with band(side="{edge}")'))
+            break
+
+    # 11g) a label with a line through it. Every stroke in the drawing —
+    #      connectors, dividers, a box outline, a boundary — cuts the
+    #      letters it passes under unless a paper mask sits between them.
+    #      The lint sees the mask as an opaque rect drawn after the stroke
+    #      that covers the glyph box; without one the label is unreadable.
+    strokes = []                          # (pos, p, q, owner_rect_or_None)
+    for m in re.finditer(r'<line\b([^>]*)/?>', svg):
+        a = m.group(1)
+
+        def _lv(k, a=a):
+            mm = re.search(rf'\b{k}="([\-\d.]+)"', a)
+            return float(mm.group(1)) if mm else None
+        p, q = (_lv("x1"), _lv("y1")), (_lv("x2"), _lv("y2"))
+        if None not in p + q:
+            strokes.append((m.start(), p, q, None))
+    for m in re.finditer(r'<path\b([^>]*)/?>', svg):
+        a = m.group(1)
+        if 'stroke="none"' in a or "stroke=" not in a:
+            continue
+        dm = re.search(r'\bd="([^"]+)"', a)
+        if not dm:
+            continue
+        toks = re.findall(r'[MLHVQCSTAZ]|-?[\d.]+', dm.group(1))
+        i, cur = 0, (0.0, 0.0)
+        while i < len(toks):
+            c = toks[i]
+            i += 1
+            try:
+                if c == "M":
+                    cur = (float(toks[i]), float(toks[i + 1]))
+                    i += 2
+                    continue
+                if c == "L":
+                    nxt = (float(toks[i]), float(toks[i + 1]))
+                    i += 2
+                elif c == "H":
+                    nxt = (float(toks[i]), cur[1])
+                    i += 1
+                elif c == "V":
+                    nxt = (cur[0], float(toks[i]))
+                    i += 1
+                elif c == "Q":
+                    nxt = (float(toks[i + 2]), float(toks[i + 3]))
+                    i += 4
+                elif c == "C":
+                    nxt = (float(toks[i + 4]), float(toks[i + 5]))
+                    i += 6
+                elif c == "A":
+                    nxt = (float(toks[i + 5]), float(toks[i + 6]))
+                    i += 7
+                elif c == "Z":
+                    continue
+                else:
+                    break
+            except (IndexError, ValueError):
+                break
+            strokes.append((m.start(), cur, nxt, None))
+            cur = nxt
+    for r in rinfo:
+        if r["canvas"] or _key(r) in mask_keys or not _visible(r):
+            continue
+        rx = min(r["rx"], r["w"] / 2, r["h"] / 2)
+        x, y, w, h = _box(r)
+        strokes.append((r["pos"], (x + rx, y), (x + w - rx, y), r))
+        strokes.append((r["pos"], (x + rx, y + h), (x + w - rx, y + h), r))
+        strokes.append((r["pos"], (x, y + rx), (x, y + h - rx), r))
+        strokes.append((r["pos"], (x + w, y + rx), (x + w, y + h - rx), r))
+
+    opaque = [r for r in rinfo + rpaths
+              if r["fill"] not in ("none", "transparent")
+              and not r["fill"].startswith("url(") and r["op"] >= 0.9
+              and not r["canvas"]]
+
+    def _seg_len_in(p, q, box):
+        """Length of segment p→q inside box=(x0,y0,x1,y1)."""
+        return _clip_len(p, q, (box[0], box[1], box[2] - box[0],
+                                box[3] - box[1]), inset=0)
+
+    hits = 0
+    for t in T:
+        if hits >= 12:
+            break
+        gb = (t["x0"] + 2, t["y0"] + 2, t["x1"] - 2, t["y1"] - 2)
+        if gb[2] - gb[0] < 4 or gb[3] - gb[1] < 4:
+            continue
+        for pos, p, q, owner in strokes:
+            if owner is not None:
+                ox, oy, ow, oh = _box(owner)
+                if ox - 1 <= t["x"] <= ox + ow + 1 and oy - 1 <= t["y"] <= oy + oh + 1:
+                    # the label's own box: a left/right crossing is
+                    # TEXT-OVERFLOW's finding, a top/bottom one is a label
+                    # that has slid onto the edge — report the latter only
+                    if abs(p[0] - q[0]) <= 0.01:
+                        continue
+            if _seg_len_in(p, q, gb) <= 1.0:
+                continue
+            masked = any(o["pos"] > pos
+                         and _inside((t["x0"], t["y0"], t["x1"], t["y1"]),
+                                     _box(o), 2)
+                         for o in opaque)
+            if masked:
+                continue
+            hits += 1
+            what = ("the outline of box "
+                    f'[{owner["x"]:.0f},{owner["y"]:.0f}]' if owner
+                    else f'a line ({p[0]:.0f},{p[1]:.0f})→({q[0]:.0f},{q[1]:.0f})')
+            out.append(("TEXT-ON-LINE",
+                        f'"{t["txt"][:22]}" has {what} running through its '
+                        f'letters with nothing behind them — move the label '
+                        f'off the line, or draw a paper-coloured mask under '
+                        f'it (text(..., mask=True))'))
+            break
+
+    # 11h) which box a label belongs to. A label outside every box is read
+    #      as belonging to the nearest thing; when a neighbouring box or a
+    #      foreign label sits about as close as its own box, the reader
+    #      groups it wrongly or not at all. The label keeps at least twice
+    #      the distance to anything else that it keeps to its own element.
+    shapes = [r for r in rinfo + rpaths if not r["canvas"]
+              and _key(r) not in ring_keys
+              and _key(r) not in mask_keys]
+
+    def _dist_box(bb, box):
+        x, y, w, h = box
+        dx = max(x - bb[2], bb[0] - (x + w), 0)
+        dy = max(y - bb[3], bb[1] - (y + h), 0)
+        return math.hypot(dx, dy)
+
+    def _dist_seg(bb, p, q):
+        # distance from a glyph box to a segment: sample the segment
+        best = None
+        for k in range(0, 11):
+            sx = p[0] + (q[0] - p[0]) * k / 10
+            sy = p[1] + (q[1] - p[1]) * k / 10
+            dx = max(bb[0] - sx, sx - bb[2], 0)
+            dy = max(bb[1] - sy, sy - bb[3], 0)
+            d = math.hypot(dx, dy)
+            best = d if best is None or d < best else best
+        return best
+
+    # a text inside any rect — a box, a pill, a badge plate — is that
+    # shape's label, and so is a text level with a rect just beside it (a
+    # row's name left of its bar, a value right of it); only a text on bare
+    # paper is free
+    all_shapes = [r for r in rinfo + rpaths if not r["canvas"]]
+
+    def _attached(t):
+        for r in all_shapes:
+            if r["x"] - 1 <= t["x"] <= r["x"] + r["w"] + 1 \
+                    and r["y"] - 1 <= t["y"] <= r["y"] + r["h"] + 1:
+                return True
+            if r["y"] <= t["y"] <= r["y"] + r["h"] and (
+                    0 <= r["x"] - t["x1"] <= 24
+                    or 0 <= t["x0"] - (r["x"] + r["w"]) <= 24):
+                return True
+        return False
+
+    free = [t for t in T if not _attached(t)]
+    # a label and its sub-line are one block
+    free.sort(key=lambda t: (t["anchor"], round(t["x"]), t["y"]))
+    blocks = []
+    for t in free:
+        for b in blocks:
+            last = b[-1]
+            # a label and its sub-line share an anchor and an x; a heading
+            # over a list does too, so a line of another size is a new block
+            # unless it sits tight under the last one
+            same_size = abs(last["size"] - t["size"]) < 0.5
+            reach = last["size"] * (2.0 if same_size else 1.4)
+            if (last["anchor"] == t["anchor"] and abs(last["x"] - t["x"]) <= 1
+                    and 0 < t["y"] - last["y"] <= reach):
+                b.append(t)
+                break
+        else:
+            blocks.append([t])
+    def _in_small(pt):
+        return any(s[0] - 1 <= pt[0] <= s[2] + 1 and s[1] - 1 <= pt[1] <= s[3] + 1
+                   for s in small)
+
+    lines_only = [(p, q) for _pos, p, q, owner in strokes
+                  if owner is None and not (_in_small(p) and _in_small(q))]
+
+    def _bbox_of(block):
+        return (min(t["x0"] for t in block), min(t["y0"] for t in block),
+                max(t["x1"] for t in block), max(t["y1"] for t in block))
+
+    def _overlap_x(bb, ob):
+        return min(bb[2], ob[2]) - max(bb[0], ob[0]) > 0
+
+    def _overlap_y(bb, ob):
+        return min(bb[3], ob[3]) - max(bb[1], ob[1]) > 0
+
+    grouped = 0
+    for b in blocks:
+        if grouped >= 6:
+            break
+        bb = _bbox_of(b)
+        cands = [(_dist_box(bb, _box(r)), r) for r in shapes]
+        cands += [(_dist_seg(bb, p, q), (p, q)) for p, q in lines_only]
+        if not cands:
+            continue
+        d_own, owner = min(cands, key=lambda c: c[0])
+        if d_own > 20:
+            continue                      # a heading, not a box label
+        own_bb = (_box(owner)[0], _box(owner)[1],
+                  _box(owner)[0] + _box(owner)[2],
+                  _box(owner)[1] + _box(owner)[3]) if isinstance(owner, dict) \
+            else (min(owner[0][0], owner[1][0]), min(owner[0][1], owner[1][1]),
+                  max(owner[0][0], owner[1][0]), max(owner[0][1], owner[1][1]))
+        # A label beside its element competes with what is beside it; a
+        # label above or below competes with what is above or below. What
+        # sits diagonally is not in the reader's line of sight.
+        beside = _overlap_y(bb, own_bb) and not _overlap_x(bb, own_bb)
+        same_line = _overlap_y if beside else _overlap_x
+        foreign = []
+        for d, r in cands:
+            if not isinstance(r, dict) or r is owner:
+                continue
+            if abs(d - d_own) <= 3:
+                continue                  # a heading over a row owns the row
+            rb = (r["x"], r["y"], r["x"] + r["w"], r["y"] + r["h"])
+            if isinstance(owner, dict):
+                ob = _box(owner)
+                if contains(ob, _box(r), TOL) or contains(_box(r), ob, TOL):
+                    continue              # the owner's own parts, or its frame
+                if (min(ob[0] + ob[2], rb[2]) - max(ob[0], rb[0]) > -1
+                        and min(ob[1] + ob[3], rb[3]) - max(ob[1], rb[1]) > -1):
+                    continue              # a marker on the owner's track
+            if not same_line(bb, rb):
+                continue
+            foreign.append((d, f'box [{r["x"]:.0f},{r["y"]:.0f}]'))
+        for ob in blocks:
+            if ob is b:
+                continue
+            obb = _bbox_of(ob)
+            if not same_line(bb, obb):
+                continue
+            dx = max(bb[0] - obb[2], obb[0] - bb[2], 0)
+            dy = max(bb[1] - obb[3], obb[1] - bb[3], 0)
+            foreign.append((math.hypot(dx, dy),
+                            f'label "{ob[0]["txt"][:14]}" at '
+                            f'({obb[0]:.0f},{obb[1]:.0f})'))
+        if not foreign:
+            continue
+        d_for, what = min(foreign, key=lambda f: f[0])
+        if d_for < max(12.0, 2.0 * d_own):
+            grouped += 1
+            out.append(("LABEL-GROUPING",
+                        f'"{b[0]["txt"][:22]}" sits {d_own:.0f}px from the '
+                        f'element it labels and {d_for:.0f}px from {what} — '
+                        f'the reader cannot tell which it belongs to; put it '
+                        f'inside its box, or keep twice the distance to '
+                        f'everything else'))
+    return out
 
 
 def hotspots(svg_path, outdir, scale=4):

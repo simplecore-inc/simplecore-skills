@@ -323,6 +323,7 @@ def bar(c, x, y, w, h, items, unit="", horizontal=True, focal=(),
             sw_ = span * v / budget
             col = c.t["orange"] if label in focal else c.t[roles[i % 6]]
             c.rrect(bx, y, sw_, bh, rx=4, fill=col, opacity=0.16, stroke=col,
+                    measure="width",
                     sw=1.5)
             c.text(bx + sw_ / 2, y + bh * 0.66, f"{label} {v:g}{unit}",
                    size=12.5, color=col, anchor="middle", weight=600,
@@ -357,7 +358,7 @@ def bar(c, x, y, w, h, items, unit="", horizontal=True, focal=(),
             bw = max(track * v / top, 2)
             role = "orange" if label in focal else "blue"
             c.rrect(x + label_w, by, bw, bh, rx=4, fill=c.t[role],
-                    stroke="none", sw=0)
+                    stroke="none", sw=0, measure="width")
             c.text(x + label_w + track + 10, by + bh / 2 + 4,
                    f"{v:,}{unit}", size=12, color=c.t["fg_dim"], family=MONO)
     else:
@@ -369,7 +370,7 @@ def bar(c, x, y, w, h, items, unit="", horizontal=True, focal=(),
             bhh = max(track * v / top, 2)
             role = "orange" if label in focal else "blue"
             c.rrect(bx, y + track - bhh, bw, bhh, rx=4, fill=c.t[role],
-                    stroke="none", sw=0)
+                    stroke="none", sw=0, measure="height")
             c.text(bx + bw / 2, y + track - bhh - 8, f"{v:,}{unit}", size=12,
                    color=c.t["fg_dim"], family=MONO, anchor="middle")
             c.text(bx + bw / 2, y + track + 20, label, size=12.5,
@@ -561,7 +562,8 @@ def entity(c, x, y, w, name, sections, sub=None, accent=None, row_h=22,
     rows = [r for sec in sections for r in sec]
     h = head_h + sum(len(sec) * row_h for sec in sections) + 10 * len(sections)
     c.rrect(x, y, w, h, rx=8, fill=c.t["box"], stroke=col, sw=1.4)
-    c.rrect(x, y, w, head_h, rx=8, fill=col, stroke="none", sw=0, opacity=0.10)
+    # the header follows the box's own top corners and meets the body square
+    c.band(x, y, w, head_h, 8, col, opacity=0.10, side="top")
     # 이름과 부제는 머리 칸의 같은 줄에 좌우로 놓인다. 기준선을 다르게 잡으면
     # 이름만 위로 밀려 머리 칸이 위쪽으로 치우쳐 보인다.
     c.text(x + 14, y + head_h / 2 + 5, name, size=13.5, color=c.t["fg"],
@@ -1074,7 +1076,7 @@ def treemap(c, x, y, w, h, items, focal=(), unit=""):
     for i, (cx0, cy0, cw, ch, label, v) in enumerate(cells):
         hot = label in focal
         col = c.t["orange"] if hot else c.t[roles[i % len(roles)]]
-        c.rrect(cx0 + 1, cy0 + 1, cw - 2, ch - 2, rx=6, fill=col,
+        c.rrect(cx0 + 1, cy0 + 1, cw - 2, ch - 2, rx=6, fill=col, measure="both",
                 stroke="none", sw=0, opacity=0.16)
         c.rrect(cx0 + 1, cy0 + 1, cw - 2, ch - 2, rx=6, fill="none",
                 stroke=col, sw=1.4)
@@ -1130,7 +1132,7 @@ def sankey(c, x, y, w, h, stages, flows, node_w=18, gap=14, unit=""):
             bh = max(thru[nm] * scale, 6)
             col = c.t[roles[ri % len(roles)]]
             ri += 1
-            c.rrect(col_x[si], cy, node_w, bh, rx=4, fill=col, stroke="none",
+            c.rrect(col_x[si], cy, node_w, bh, rx=4, fill=col, stroke="none", measure="height",
                     sw=0)
             box[nm] = [col_x[si], cy, node_w, bh, cy, cy, col]
             labels.append([si, cy + bh / 2, nm, thru[nm]])

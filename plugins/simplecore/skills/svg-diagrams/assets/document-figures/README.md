@@ -39,3 +39,10 @@ build, and the edit is lost without a trace.
 
 The sizing discipline these files enforce — one width, one type scale, height
 economy, composition variety — is in `references/document-figures.md`.
+
+`common.py` also carries the content-first layer: `heading`, `card`,
+`cards_row`, `pill`, `note`, `zone`, `step_row`, `segment_bar` and the glyph
+arithmetic under them. Every box they draw is sized from its wrapped text with
+even padding, so a figure written with them passes the lint's box-geometry
+checks without a second pass. Draw with them; reach for a raw `rrect` only for a
+shape none of them expresses.
