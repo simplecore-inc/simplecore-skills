@@ -69,6 +69,7 @@ details that the downscaled overview hides.
 | `LABEL-OCCLUSION` | a free/edge label bleeds onto a neighbouring box | a `<text>` whose anchor is outside a box, or a label background pill, overlaps a box it does not own | move the label to open space (above/below the arrow); do not rely on the pill to "cover" a box |
 | `ARROW-THROUGH-BOX` | a connector crosses a box it is not going to | an arrow segment passes through a node interior that is neither its source nor its target (a group-frame **title chip** counts as a box) | reroute the connector around the box; enter a framed group away from its title chip |
 | `ARROWHEAD-IN-BOX` | arrowhead/tail buried inside an element | a connector endpoint lies strictly INSIDE a node box — endpoints must land ON an edge (classic: an arrow into a frame top landing on the frame's title chip) | move the endpoint to clear edge; shorten the chip or shift the arrow x past it |
+| `ARROWHEAD-AT-BEND` | a route arrives two or three times before it gets anywhere — heads sitting on its own corners | an arrowhead whose tip is the endpoint of another `<line>` that carries on in a different direction, and which touches no box edge | draw the head on the final segment only and pass `marker=None` on every segment before it |
 | `LINE-THROUGH-BOX` | a separator line strikes through content | a markerless line PARTIALLY crosses a node box (fully-inside divider/legend lines are fine) | split the line into segments around the box, or move it |
 | `FRAME-OVER-NODE` | nodes vanish behind a frame/panel | a frame-sized decorative rect (height > 44px) appears in the document **after** a solid rect it overlaps — document order is z-order in SVG | emit frames before nodes; in svgkit, `group_frame` auto-underlays regardless of call order |
 | `OFFCANVAS-TEXT` / `OFFCANVAS-RECT` | element clipped at the picture edge | a coordinate falls outside the root `viewBox` | grow the canvas or reposition |
@@ -111,6 +112,14 @@ bakes them in:
   edge. `svgkit.ortho(x1,y1,x2,y2, exit, entry, lane=…)` guarantees this and
   gives each connector its own lane so parallel arrows never overlap. Reserve
   curves for edge-to-edge links that already arrive axis-aligned.
+- **A route drawn as several calls says `marker` on every one of them.**
+  `line()` and `path()` draw an arrowhead by default, so a collector built the
+  usual way — a drop from each box, a rail joining them, a branch off the rail —
+  grows a head on every corner, and the source looks right because the word
+  `marker` never appears in it. Pass `marker=None` on each segment and the
+  accent on the one that arrives. `ortho()` and `elbow()` emit the whole route
+  as one path and are the better answer whenever the shape is a single
+  connector rather than a comb.
 - **Glyph-width box sizing.** Compute box width from the text
   (`svgkit.tw(text, size, mono)`), never eyeball it — this makes overflow
   structurally impossible even though you cannot see the render while coding.

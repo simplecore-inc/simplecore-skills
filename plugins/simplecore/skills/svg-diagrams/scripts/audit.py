@@ -1213,6 +1213,93 @@ def lint(svg_path):
                            f'touches no box edge — snap it to the edge it '
                            f'leaves from or arrives at'))
 
+    # 9b-3) an arrowhead says a route ARRIVES here. A route drawn as several
+    #     elements — a drop, a rail, a branch — puts a head on every one of
+    #     them unless each segment is told not to draw one, and `line()` and
+    #     `path()` draw one by default. The reader then follows a connector
+    #     that arrives three times before it gets anywhere, and the source
+    #     looks right because nobody wrote the word "marker" at all. The tell
+    #     is geometric: a head whose tip is the endpoint of another connector
+    #     that carries on from it in a different direction. Only <line>
+    #     endpoints count as the continuation, so an arrow landing on a
+    #     lifeline, an axis or a rail — which it crosses rather than ends at —
+    #     is not this defect.
+    def _path_end(d):
+        """The point a path finishes at, tracking H and V properly."""
+        toks = re.findall(r'[MLHVQCSTAZ]|-?[\d.]+', d)
+        cur, i = None, 0
+        while i < len(toks):
+            c = toks[i]; i += 1
+            try:
+                if c in "ML":
+                    cur = (float(toks[i]), float(toks[i + 1])); i += 2
+                elif c == "H":
+                    cur = (float(toks[i]), cur[1] if cur else 0.0); i += 1
+                elif c == "V":
+                    cur = (cur[0] if cur else 0.0, float(toks[i])); i += 1
+                elif c == "Q":
+                    cur = (float(toks[i + 2]), float(toks[i + 3])); i += 4
+                elif c == "C":
+                    cur = (float(toks[i + 4]), float(toks[i + 5])); i += 6
+                elif c == "A":
+                    cur = (float(toks[i + 5]), float(toks[i + 6])); i += 7
+                else:
+                    break
+            except (IndexError, ValueError, TypeError):
+                return None
+        return cur
+
+    _heads = []
+    for tag in re.finditer(r'<path\b([^>]*)/?>', svg):
+        a = tag.group(1)
+        if "marker-end" not in a:
+            continue
+        dm = re.search(r'\bd="([^"]+)"', a)
+        if not dm:
+            continue
+        end_, t_ = _path_end(dm.group(1)), last_tangent(dm.group(1))
+        if end_ and t_:
+            _heads.append((end_, t_))
+
+    _seg_ends = []
+    for tag in re.finditer(r'<line\b([^>]*)/?>', svg):
+        a = tag.group(1)
+
+        def _lp(k, a=a):
+            mm = re.search(rf'\b{k}="([\-\d.]+)"', a)
+            return float(mm.group(1)) if mm else None
+        p_, q_ = (_lp("x1"), _lp("y1")), (_lp("x2"), _lp("y2"))
+        if None in p_ + q_:
+            continue
+        _seg_ends.append((p_, (q_[0] - p_[0], q_[1] - p_[1])))
+        _seg_ends.append((q_, (p_[0] - q_[0], p_[1] - q_[1])))
+        if "marker-end" in a:
+            _heads.append((q_, (q_[0] - p_[0], q_[1] - p_[1])))
+
+    _bend = set()
+    for tip, d in _heads:
+        dn = math.hypot(*d)
+        if dn < 1 or any(_on_edge(tip, r) for r in _all_rects):
+            continue
+        for end, u in _seg_ends:
+            if math.hypot(end[0] - tip[0], end[1] - tip[1]) > 2.5:
+                continue
+            un = math.hypot(*u)
+            # The arrowed line's own far end doubles straight back along
+            # itself; anything else leaving this point carries the route on.
+            if un < 1 or (d[0] * u[0] + d[1] * u[1]) / (dn * un) < -0.9:
+                continue
+            key = (round(tip[0]), round(tip[1]))
+            if key in _bend:
+                break
+            _bend.add(key)
+            issues.append(("ARROWHEAD-AT-BEND",
+                           f'arrowhead at ({tip[0]:.0f},{tip[1]:.0f}) sits on '
+                           f'a corner the route carries on from — draw the '
+                           f'head on the final segment only and pass '
+                           f'marker=None on the rest'))
+            break
+
     # 9c) rule 3 — no two connectors run on top of each other. Parallel and
     #     close reads as one thick line, and the reader cannot follow either
     #     to its end. Only runs that actually overlap along their shared axis
