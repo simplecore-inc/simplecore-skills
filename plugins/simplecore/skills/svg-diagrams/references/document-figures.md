@@ -55,6 +55,17 @@ raising the margin.
 A genuinely symmetric concept — a Venn, a radial — may need more air. Say so in
 the figure module rather than inflating the drawing to hit the number.
 
+**A rail of right-aligned labels puts the figure's left edge at the mercy of its
+longest word.** Lane names, row headers and axis labels set flush to the inner
+edge of their column all start at `column_right − label_width`, so the leftmost
+ink is whatever the longest label happens to be. Across a set drawn from one
+generator that is invisible while the labels are long and fires the moment one
+figure's labels are short — the same layout passes on four drawings and reports
+`DEAD-MARGIN` on the fifth, and lengthening a label to satisfy a lint is not a
+fix. Set such a rail flush to the **canvas** edge instead: every figure then
+starts its ink at the same x, a long name has the whole column to run into, and
+one that still does not fit is folded onto two lines rather than abbreviated.
+
 **Width utilisation is not enlargement.** Keep the principal drawing at the
 smallest size that stays legible and spend the remaining width on things that
 would otherwise add height: side-by-side stages, branches, a legend, conditions,
