@@ -10,7 +10,10 @@
 // the page ends up carrying two descriptions, one of them illegible. Everything the board draws
 // under a frame goes with the flag — the label line, the role strip, the derived spec block and
 // the notes — because each of them is a description, and a capture that drops the prose while
-// keeping the spec rows still hands the document a second, illegible write-up.
+// keeping the spec rows still hands the document a second, illegible write-up. The desktop
+// frame's fold line goes with them: the contract lists fold lines among the annotations, and a
+// dashed red line with a 「fold · 1440×900」 tag across a placed capture reads as part of the
+// screen to a reader who never saw the board.
 //
 // **Every file the board writes is opened, and the count is one.** A board that declares an axis
 // to split along writes several; stopping at the first would leave three quarters of the frames
@@ -68,7 +71,7 @@ export async function shootFrames(boardDir, outDir, prefix = '', { notes = true 
       await page.addStyle(
         ':root { --frame-zoom: 1 !important; } ' +
         '.wf-sidebar, .flow-title, .readme, .board-header, .board-nav { display: none !important; }' +
-        (notes ? '' : ' .frame-label, .frame-roles, .frame-spec, .frame-notes { display: none !important; }')
+        (notes ? '' : ' .frame-label, .frame-roles, .frame-spec, .frame-notes, .fold { display: none !important; }')
       );
 
       // Rects are read in one pass: measuring between captures re-lays out the whole page.
