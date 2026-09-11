@@ -76,7 +76,10 @@ form written down and misses every other ending.
 - Front matter settings: `audit.paths` · `audit.exclude` · `audit.localeResources` ·
   `audit.untranslated` · `audit.resolvedPlaceholders`.
 - An explicitly named file is checked even if `audit.exclude` covers it. The glossary file itself is
-  never checked.
+  never checked. **The exclusion reaches a declared kind too**: a kind glob is a git pathspec, and
+  git's `*` crosses `/`, so a `docs/*.md` kind takes every document under `docs` — including the
+  review records a project excluded because they quote each round's sentences verbatim. `discover()`
+  drops those before any command reads them.
 - Code blocks, inline code, link targets, and URLs are excluded from checking. **Put a specimen of
   banned copy in inline code.** Text inside 「」 is read as ordinary prose, so a document explaining a
   rule with its specimens in 「」 trips its own rule. Use 「」 for names: a screen label, a term, a
@@ -315,6 +318,11 @@ documents in -다체), the check runs in both directions.
 - The body of `<text>` · `<tspan>` in an `.svg` is checked as a document. Tags, attributes, and path
   data are ignored. After changing text, re-render with the `svg-diagrams` skill and check for
   overflow and clipping. A mermaid code block inside a document is preserved as is.
+- **`audit`'s untranslated check reads catalogues only.** A file the plain-line fallback reads — a
+  typesetting XML, a Python figure module, a build script — is source: every line without Hangul is
+  code, so those files are never judged untranslated, the way markdown never is. Inside a catalogue a
+  hex colour (`1B4A9C`) and a value made only of placeholders and separators (`%1$s ~ %2$s`, Android's
+  positional `%s`) are not translations either and pass.
 - A resource file listed in `audit.localeResources` is read for the values of its quoted strings
   only. Keys and comments are not checked, and `--untranslated` does not apply. The glossary is
   found by walking up from the file being checked, so the same rules apply from whatever directory

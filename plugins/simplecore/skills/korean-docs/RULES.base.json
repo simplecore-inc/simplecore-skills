@@ -228,7 +228,8 @@
         "서버에 닿은",
         "자료에 닿",
         "기록에 닿",
-        "화면에 닿"
+        "화면에 닿",
+        "(청구|준공|결재|승인|완료|배포|운영)에 닿"
       ],
       "replace": null,
       "hit": [
@@ -241,7 +242,8 @@
         "서버에 닿은 뒤 도달 시각이 기록된다",
         "상한에 닿지 않는다",
         "한도에 닿았다",
-        "임계에 닿기 전에는 알리지 않는다"
+        "임계에 닿기 전에는 알리지 않는다",
+        "수집 데이터가 교체 판단을 거쳐 준공 · 청구에 닿고 운영자가 근거를 확인한다"
       ],
       "miss": [
         "손이 벽에 닿는다",
@@ -249,7 +251,8 @@
         "두 껍데기가 맞닿는 자리는 테두리가 구분한다",
         "한도에 도달한다",
         "손이 천장에 닿는다",
-        "수용 인원이 정원에 도달했습니다"
+        "수용 인원이 정원에 도달했습니다",
+        "손이 청구서에 닿는다"
       ]
     },
     {
@@ -2323,7 +2326,7 @@
       "id": "catch-for-set",
       "scope": "universal",
       "severity": "error",
-      "reason": "Replacing setting, booking, or judging with 「잡다」. Which action it is disappears — 「짧게 설정한다」 rather than 「유효 시간을 짧게 잡는다」, 「일정을 배정하지 않는다」 rather than 「일정을 잡지 않는다」, 「두 가지로 판정한다」 rather than 「겹침을 둘 다로 잡는다」, 「검출한다」 rather than 「검사가 결함을 잡는다」. **Holding an object in your hand and taking a seat are legitimate, so it is narrowed by the object**",
+      "reason": "Replacing setting, booking, or judging with 「잡다」. Which action it is disappears — 「짧게 설정한다」 rather than 「유효 시간을 짧게 잡는다」, 「일정을 배정하지 않는다」 rather than 「일정을 잡지 않는다」, 「두 가지로 판정한다」 rather than 「겹침을 둘 다로 잡는다」, 「검출한다」 rather than 「검사가 결함을 잡는다」. **Holding an object in your hand and taking a seat are legitimate, so it is narrowed by the object** A count with its unit before 「로 잡았다」 (「최대 500대로 잡았고」) is an assumption being set, so the unit counters are enumerated in front of the past and connective endings the older forms did not cover.",
       "find": [
         "짧게 잡",
         "길게 잡",
@@ -2337,20 +2340,23 @@
         "로 잡는다",
         "가 잡습니다",
         "가 잡는다",
-        "결함을 잡"
+        "결함을 잡",
+        "/[0-9][대명개건회%초분일주]로 잡(았|는다|습니다|고|아|으면)/"
       ],
       "replace": null,
       "hit": [
         "유효 시간은 짧게 잡는다",
         "휴일에는 일정을 잡지 않습니다",
         "외부 기관 회차를 잡는다",
-        "겹침은 구역과 구간 둘 다로 잡는다"
+        "겹침은 구역과 구간 둘 다로 잡는다",
+        "사업소당 평균 200대와 최대 500대로 잡았고"
       ],
       "miss": [
         "손잡이를 잡는다",
         "자리를 잡는다",
         "균형을 잡는다",
-        "방향을 잡는다"
+        "방향을 잡는다",
+        "난간을 두 손으로 잡았다"
       ]
     },
     {
@@ -3485,6 +3491,57 @@
       ],
       "lens": false,
       "lensReason": "The target is a fixed ending, not a stem that conjugates into forms the lens could lose"
+    },
+    {
+      "id": "open-item-calque",
+      "scope": "universal",
+      "severity": "error",
+      "reason": "A literal English `open` — an open issue, an open item, an open question written as 「열린 이슈」·「열린 항목」·「열린 질문」. 「열린」 says a door or a file is open; what the register means is that the item is not yet settled, and Korean names that state directly: 미결 항목 · 미결 이슈 · 미해결 결함 · 미정 질문. Things that really open — a window, a file, a structure described as open — are left alone by the object list.",
+      "find": [
+        "/열린 (항목|이슈|위험|건|결함|과제|질문|문제|요청|사안)/"
+      ],
+      "replace": "미결 항목 · 미결 이슈 · 미해결 결함 · 미정 질문",
+      "hit": [
+        "위험 · 이슈 대장의 열린 항목",
+        "열린 이슈가 세 건 남았다",
+        "열린 질문은 다음 회의로 넘긴다",
+        "열린 결함을 먼저 처리한다"
+      ],
+      "miss": [
+        "열린 창을 닫는다",
+        "열린 파일은 저장한 뒤 닫는다",
+        "열린 구조로 설계한다",
+        "문이 열린 상태로 둔다"
+      ]
+    },
+    {
+      "id": "close-for-complete",
+      "scope": "universal",
+      "severity": "error",
+      "reason": "A literal English `close` — finishing a work unit, a stage or a register entry written as 「닫는다」. 「닫다」 is the verb for a door, a window, a file or a connection; a stage is 종료한다, a unit is 완료 판정한다, a risk entry is 종결한다, and 「자동시험으로 닫는다」 hides which of those it means. Two shapes are caught: a work noun as the object (단위 · 단계 · 분석 · 기준선 · 결함 …) and 「~(으)로 닫다」 with a means in front (시험 · 식별자 · 인수 · 증빙 · 승인 …), which is never how a door closes. 「회차를 닫는다」 and 「이슈를 닫는다」 are left to the lens: a product that gives a collection run an open/closed state and an issue tracker whose own button says 「닫기」 share the letters with the calque, and a rule cannot tell them apart. The words between the object and 「닫다」 may not carry a full stop or a tag, so a dialog closed in the next sentence is not read as the stage before it being closed.",
+      "find": [
+        "/(단위|항목|단계|결함|사업|기준선|분석|설계|구현|과제|시험|위험 대장)[을를] ([^ .。<>]+ ){0,3}닫(는다|습니다|는|아|고|으면|음|힌다|힙니다)/",
+        "/(시험|테스트|식별자|인수|증빙|판정|승인|보고|검토|시연|배포|결재)[으]?로 닫(는다|습니다|는|아|고|으면|음|힌다|힙니다)/"
+      ],
+      "replace": "완료 판정한다 · 종료한다 · 종결한다 · 마친다",
+      "hit": [
+        "승인된 화면 단위를 구현·자동시험·시나리오 테스트로 닫아 재작업을 줄인다",
+        "위험은 이슈 번호를 붙여 같은 식별자로 닫습니다",
+        "12주차에 완료 보고와 인수로 닫습니다",
+        "종료 증빙으로 닫음",
+        "분석을 닫는 품질점검보고서",
+        "단계를 자동시험으로 닫는다"
+      ],
+      "miss": [
+        "창을 닫는다",
+        "대화상자가 자동으로 닫힙니다",
+        "파일을 닫고 저장한다",
+        "회차를 닫을 때 스냅샷을 쓴다",
+        "이슈를 닫고 결과를 코드에 반영한다",
+        "연결을 닫는다",
+        "밸브를 손으로 닫는다",
+        "위자드의 검증 단계를 이어간다. 닫으면 작성 중인 작업은 임시 저장한다"
+      ]
     }
   ]
 }

@@ -365,6 +365,12 @@ function discover({ kind, lang, docFallback = false, command } = {}) {
   const kinds = kind ? [kind] : defaultKinds(command);
   const langs = lang ? [lang] : [CONFIG.defaultLanguage];
   const found = new Map();
+  // The glossary's `audit.exclude` reaches a declared kind too. A kind glob is a git pathspec,
+  // and git's `*` crosses `/`, so `docs/*.md` takes every document under docs — including the
+  // review records a project excluded because they quote each round's sentences verbatim. One
+  // repository's 278 such files came back as the sentence sweep's largest source of findings,
+  // and every one of them was a file nobody may edit.
+  const skip = projectExclusions();
   for (const k of kinds) {
     const spec = CONFIG.kinds[k];
     if (!spec) throw new Error(`Unknown kind: ${k}`);
@@ -384,6 +390,7 @@ function discover({ kind, lang, docFallback = false, command } = {}) {
         for (const file of gitFiles(glob.replaceAll("{lang}", l))) {
           if (suffixed?.has(file)) continue;
           if ((spec.exclude ?? []).some((p) => file.startsWith(p))) continue;
+          if (skip.excluded(file) || skip.isGlossary(file)) continue;
           found.set(`${k}:${l}:${file}`, { kind: k, lang: l, file, format: formatOf(k, file) });
         }
       }
@@ -1052,7 +1059,9 @@ function escapeRegex(s) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 const HANGUL = /[가-힣]/;
-const PLACEHOLDER = /\{\{[^}]+\}\}|\{[0-9A-Za-z_.]+\}|\$\{[^}]+\}|%[sd]/g;
+// `%1$s` is Android's positional form of `%s`; a strings.xml value made only of those and a
+// separator (`%1$s ~ %2$s`) is a template, not an untranslated string.
+const PLACEHOLDER = /\{\{[^}]+\}\}|\{[0-9A-Za-z_.]+\}|\$\{[^}]+\}|%(\d+\$)?[sd]/g;
 
 let RULE_SET = null;
 
@@ -1187,6 +1196,9 @@ function looksUntranslated(text) {
   let bare = decoded.replace(PLACEHOLDER, "").trim();
   for (const noun of properNouns()) bare = bare.replaceAll(noun, "");
   bare = bare.replace(/©\s*\d{4}/g, "").trim();
+  // A hex colour is a value nobody translates; a deck's palette table is a `ts` catalogue as
+  // far as the extractor can tell, and its eleven part colours read as eleven untranslated words.
+  if (/^#?[0-9A-Fa-f]{6}([0-9A-Fa-f]{2})?$/.test(bare)) return false;
   if (!bare) return false;
   if (!/[A-Za-z]/.test(bare)) return false;
   if (bare.length < 2) return false;
@@ -2390,9 +2402,14 @@ function cmdAudit(opts) {
       // off, watched `check` fall silent, and still got 114 hits here — URLs, routes, device
       // labels and protocol names in a single-language tree, which buried the two real
       // particle errors in the same output. One list, both commands.
+      // A file the plain-line fallback reads (a typesetting XML, a Python figure module, a
+      // build script) is source, not a catalogue: every line without Hangul is code, and one
+      // deck's 47 chapter files reported 12,833 of them while its real findings sat in the
+      // sentence sweep. The same reasoning as markdown, one extractor further down.
       const skipUntranslated =
         DISABLED_CHECKS.has("untranslated") ||
         CONFIG.kinds[entry.kind]?.format === "markdown" ||
+        formatOf(entry.kind, entry.file) === "text" ||
         (CONFIG.untranslatedExclude ?? []).some((p) => entry.file === p || entry.file.startsWith(p));
       if (!skipUntranslated && looksUntranslated(seg.text)) {
         findings.untranslated.push({ file: entry.file, key: seg.key, text: seg.text, line: line() });
