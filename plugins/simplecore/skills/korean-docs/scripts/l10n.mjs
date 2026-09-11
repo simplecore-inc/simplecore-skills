@@ -100,6 +100,9 @@ const DEFAULT_CONFIG = {
   samplePatterns: [],
   /** Files whose English is deliberate, so the missing-translation check skips them. */
   untranslatedExclude: [],
+  /** Regexes over a catalogue key or value; a match is a value nobody translates — a unit,
+   *  a language name shown in its own language, a file list, a formula of identifiers. */
+  untranslatedAllow: [],
   /** Domain scopes of RULES.base.json the project opts into (universal always applies). */
   ruleScopes: [],
   /** Names the domain in the suspects guidance, e.g. "라이선스·구독·결제". */
@@ -564,9 +567,13 @@ function segmentsHtml(src) {
     if (!text.trim()) continue;
     if (isBlocked(m.index)) continue;
     const start = m.index + m[0].indexOf(text);
-    // The nearest preceding tag name gives the reader a hint about where this sits.
+    // The nearest preceding tag names the segment — and when that tag carries a `name`
+    // attribute (an Android `<string name="unit_micrometers">`), the name is the key a
+    // project's allow list can address; the bare tag name is the same for every value.
     const before = src.slice(Math.max(0, m.index - 200), m.index + 1);
-    const tag = [...before.matchAll(/<([a-zA-Z][\w-]*)/g)].pop()?.[1] ?? "text";
+    const open = [...before.matchAll(/<([a-zA-Z][\w-]*)([^<>]*)>/g)].pop();
+    const named = open && /\bname="([^"]+)"/.exec(open[2]);
+    const tag = named ? named[1] : open?.[1] ?? "text";
     segments.push(segment(start, start + text.length, text, tag));
   }
 
@@ -2410,7 +2417,11 @@ function cmdAudit(opts) {
         DISABLED_CHECKS.has("untranslated") ||
         CONFIG.kinds[entry.kind]?.format === "markdown" ||
         formatOf(entry.kind, entry.file) === "text" ||
-        (CONFIG.untranslatedExclude ?? []).some((p) => entry.file === p || entry.file.startsWith(p));
+        (CONFIG.untranslatedExclude ?? []).some((p) => entry.file === p || entry.file.startsWith(p)) ||
+        // A unit (`μm`), a language name in its own language (`English`), a file list, a
+        // formula of identifiers — each is a value with no Korean form, and only the project
+        // knows which keys hold one. The list is the project's, matched on key or value.
+        (CONFIG.untranslatedAllow ?? []).some((p) => new RegExp(p).test(seg.key ?? "") || new RegExp(p).test(seg.text));
       if (!skipUntranslated && looksUntranslated(seg.text)) {
         findings.untranslated.push({ file: entry.file, key: seg.key, text: seg.text, line: line() });
       }

@@ -200,6 +200,11 @@ layout.
   `suspects` · `grep` · `list`, and that zero is indistinguishable from a pass.
 - `stemKey`: pairs up files in a kind whose filenames are translated too. Write a regex capturing
   the part that is not translated, for example `"^docs/manual/[^/]+/(\\d+)-"`.
+- `untranslatedExclude`: paths (a file or a directory prefix) whose English is deliberate, so the
+  missing-translation check skips them whole. `untranslatedAllow`: regexes matched against a
+  catalogue key or value; a match is a value that has no Korean form — a unit (`μm`), a language
+  name shown in its own language (`English`), a file list, a formula of identifiers. Both lists
+  are the project's; the skill ships neither.
 - With no declaration at all, `rules` · `suspects` · `grep` · `list` still run over the document set
   `check` reads (`.md` · `.mdx` · `.svg`). Only `audit` requires the declaration.
 - **`.claude/l10n.json` is only consulted when an audit was requested.** When it is missing, say in
