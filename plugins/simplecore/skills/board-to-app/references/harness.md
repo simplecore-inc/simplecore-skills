@@ -358,6 +358,31 @@ looking at it.** Prove it in both directions before trusting it:
 A rule that ships unproven is worse than none: it converts *nobody has checked*
 into *something is checking*, and the second is much harder to doubt.
 
+### A wait that was already true before the press measures nothing
+
+**A window writes off its own thread, so pressing 저장 starts the write rather than finishing it.** A
+journey that waits for what the write produced is doing the right thing — until the same key is
+written a second time. The key is in the store before the press, the wait returns before the write
+does, and the step after it runs against the value being replaced.
+
+A field-trip journey saved one credential twice on purpose: a wrong community to reach the 「nothing
+answered」 screen, then the right one. Both times it waited with 「the store holds this name」. The
+first wait was real. The second returned at once, the sweep went out with the wrong community still
+stored, and the screen it then asserted against — no responders — **is exactly the screen the
+previous step had deliberately produced.** The failure read as 「the printers did not answer」, which
+is a sentence about the network, and the defect was in the wait.
+
+**It fails only under load, which is the worst schedule there is**: run alone, the write lands
+inside the press and the test passes every time somebody checks it by itself. It fails in the full
+suite, where it is one red line among many and reads as flake.
+
+- **Wait for the value, not for the key.** 「the store holds `site-v2c`」 and 「`site-v2c` carries the
+  community I just typed」 are different claims, and only the second survives a rewrite.
+- **Ask of every wait: was this already true one line above?** If it was, it is not a wait. This is
+  the same question as the guard above, asked about time instead of about the condition.
+- **Where a helper can only check existence, say so where it is defined.** The next journey to write
+  a key twice will reach for it by name, and the name will not warn it.
+
 ### Both directions proved is not the same as both directions right
 
 **The harness refuses a gate with only one direction proved, and that refusal is what makes the

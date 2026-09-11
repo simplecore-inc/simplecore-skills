@@ -218,6 +218,31 @@ the visual pass is **for**: not confirming what the tests already know, but catc
 class of failure that has no witness except the screen. **Treat a pass with no captures
 looked at as one that did not happen**, however green it was.
 
+### A box that opens filled hands back what was typed, not what was stored
+
+A form that opens holding what was last saved does it for one reason: an empty box usually means
+「leave what is there」, so a reader who opens the form to change one value and presses send would
+otherwise post every other box as an emptiness that clears it. **That only works while the value
+coming back is the value that went in.**
+
+Storage normalises. A record fills an omitted port list with the default port, an empty collection
+with a default collection, a missing flag with its default — normalisation written for the consumers
+of the value, which never had a reader in mind. A screen that prints the stored value straight back
+then shows somebody text they did not type: `10.30.1.0/24` typed, `10.30.1.0/24:161` returned.
+
+**Nothing breaks, and that is why it survives.** The default means what the omission meant, the next
+save is equivalent, every test about behaviour passes. What is lost is the round trip the filled box
+was for.
+
+- **Read every filled box as the person who typed it.** 「Did somebody put these characters here?」
+  is the whole question, and it is answerable from the frame alone.
+- **A display branch that cannot be reached is the same defect stated in code.** `if (ports.isEmpty())`
+  under a record that never leaves the list empty says the author meant to hide the default and the
+  normalisation took the condition away. Dead branches in a formatter are worth a second look for
+  exactly this.
+- **The fix belongs on the display side.** The normalisation is right for consumers; name the default
+  where it is filled in so the formatter can recognise the value it has to leave out.
+
 ### Taking a capture is not reading one
 
 The sweep is a script. It navigates, waits, shoots, and writes a file — and none of that
