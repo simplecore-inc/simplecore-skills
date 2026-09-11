@@ -1,5 +1,5 @@
 {
-  "description": "Session-start detection of a wireframe board, a board-parity walk, or Korean documents, plus write-time gates on the artifacts these skills produce. Detection is silent where no marker matches. The Korean glossary audit runs in projects that have a project glossary (.claude/GLOSSARY.md or GLOSSARY.md); the parity-walk document checks and the walk delegation gate run in projects that have .claude/board-parity-walk.json; the SVG lint and board contract checks run on the files themselves and are turned off per project in .claude/simplecore.json.",
+  "description": "Session-start detection of a wireframe board, a board-parity walk, or Korean documents, plus write-time gates on the artifacts these skills produce. Detection is silent where no marker matches. The Korean audit — the glossary word check and the sentence-rule pack — runs on each written file in projects that have a project glossary (.claude/GLOSSARY.md or GLOSSARY.md); the parity-walk document checks and the walk delegation gate run in projects that have .claude/board-parity-walk.json; the SVG lint and board contract checks run on the files themselves and are turned off per project in .claude/simplecore.json.",
   "hooks": {
     "SessionStart": [
       {

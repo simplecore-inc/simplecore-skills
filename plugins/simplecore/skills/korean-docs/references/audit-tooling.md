@@ -12,10 +12,12 @@ One script, `scripts/l10n.mjs`, checks documents and locale resources with the s
 | --- | --- | --- | --- |
 | Glossary | `GLOSSARY.base.md` + the project's `.claude/GLOSSARY.md` | spelling · transliteration · proper nouns · banned words (word level) | `check` · `audit` · the write-time hook |
 | Rule pack | `RULES.base.json` + the project's `.claude/l10n-rules.json` | sentence patterns (regex, hit/miss examples required) | `rules` |
-| Lens | `references/lens.txt` | widens what narrow rules miss into candidates for a person to read | `grep --regex` |
+| Lens | `references/lens.txt` | widens what narrow rules miss into candidates for a person to read | `lens` |
 
 ```bash
 T="$HOME/.claude/skills/simplecore/skills/korean-docs/scripts/l10n.mjs"
+node "$T" sweep [paths...]       # check · rules · suspects · audit (when declared) · lens count, then what reached what
+  --all --strict --explain --untranslated   # passed through to the commands that take them
 node "$T" check [paths...]       # document audit — audit.paths, or the whole project (same judgement as the hook)
   --all             # ignore audit.paths and take the whole project
   --strict          # treat warnings as failures
@@ -27,8 +29,9 @@ node "$T" check [paths...]       # document audit — audit.paths, or the whole 
   --init-l10n       # create the .claude/l10n.json + .claude/l10n-rules.json skeleton
 node "$T" audit [--kind K]       # resource audit — missing translations · banned spellings · particles · paired language files
 node "$T" rules --test           # verify the rule pack against its own hit/miss examples
-node "$T" rules [--scope S]      # sweep resources with the sentence rules (changes nothing)
-node "$T" suspects [--json]      # rank the sentences that read as translated
+node "$T" rules [paths...] [--scope S] [--explain] [--strict]  # sentence-rule sweep (changes nothing); errors set the exit code, --strict adds warnings
+node "$T" suspects [paths...] [--json]  # rank the sentences that read as translated
+node "$T" lens [paths...] [--count] [--json]  # the reading lens over the same files, or over a draft outside the project
 node "$T" grep <pattern> [--regex]  # search the copy values of the resources
 node "$T" list                   # the files the declaration actually catches
 node "$T" apply --patch <file>   # apply a list of rewritten sentences (a preview until --write)
@@ -38,8 +41,8 @@ node "$T" apply --patch <file>   # apply a list of rewritten sentences (a previe
 `check` does.
 
 **There is no bulk-substitution command and there will not be one.** A rule knows where a word is,
-not what it means there. Find the places with the four commands, read the context, and feed the
-rewritten sentences back through `apply --patch`. If the stored original no longer matches the file,
+not what it means there. Find the places with `sweep`, read the context, and feed the rewritten
+sentences back through `apply --patch`. If the stored original no longer matches the file,
 the patch is refused.
 
 ## Glossary or rule pack
@@ -155,6 +158,15 @@ audit:
 - The plugin's `hooks/hooks.json` binds `hooks/check-md-glossary.mjs` to `Write|Edit|MultiEdit`.
   Nothing in the global or project `settings.json` declares it, and that is normal. It is a blocking
   hook: an error stops at that point rather than reverting the edit.
+- **It makes two runs on the written file**: `check` for the glossary words, then `rules` for the
+  sentence pack. The two answer different questions — a document can be clean of every banned
+  spelling and full of personification and AI tells — and both reports come back together under
+  `[glossary]` and `[sentence rules]`. A file the project lists in `audit.exclude` is skipped by
+  the second run and named as skipped, so an edit to a catalogue that quotes the banned sentences
+  on purpose is never blocked by the sentences it quotes.
+- An error-level rule blocks; a warning-level rule reports and lets the edit stand. A false
+  positive is narrowed with `except` in `.claude/l10n-rules.json` (below), never by switching the
+  hook off.
 - It checks only in a project that has a glossary (`.claude/GLOSSARY.md` or `GLOSSARY.md`). No
   glossary means write-time checking is off entirely.
 - A document changed through `Bash` — `node` · `python` · `sed` · a heredoc — never passes the hook.
@@ -262,8 +274,10 @@ add one stem, add its final, adnominal, connective, and nominal forms with it. T
 [reading-lens.md](reading-lens.md).
 
 ```bash
-K="$HOME/.claude/skills/simplecore/skills/korean-docs"
-node "$K/scripts/l10n.mjs" grep --regex "$(cat "$K/references/lens.txt")"
+T="$HOME/.claude/skills/simplecore/skills/korean-docs/scripts/l10n.mjs"
+node "$T" lens                   # the document set, or the declared resources
+node "$T" lens docs/manual       # one directory
+node "$T" lens /tmp/draft.md     # a draft outside the project — a reply before it is sent
 ```
 
 ### Anchor an ending check on everything that closes a clause
@@ -280,7 +294,7 @@ documents in -다체), the check runs in both directions.
 ## Confirming a finding somebody else reported
 
 - Word bans come from `check` and sentence patterns from `rules`. A report carries only the rule
-  name, so **run all four**. A zero from another command is not evidence.
+  name, so **run `sweep`**, which runs every command. A zero from another command is not evidence.
 - Sweeping the report itself does not reproduce anything: a specimen in backticks is skipped by the
   checker. The reporting side writes the raw finding line, the sentence it avoided, the file holding
   that sentence, and the command that was run. The confirming side checks that file, and when the

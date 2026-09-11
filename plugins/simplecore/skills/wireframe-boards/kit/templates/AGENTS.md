@@ -170,12 +170,13 @@ sentence means, or name the set some other way.
 
 ## Korean is audited at every step, not at the end
 
-Run all four commands, because they check different things and three of them stay silent when the
-resource declaration is missing:
+Run the sweep — it runs every check (glossary words, sentence rules, style smells, the resource
+audit when the declaration exists, the lens count) and closes with what reached what, so a check
+that stayed silent is named instead of read as a pass:
 
 ```bash
 T="$HOME/.claude/skills/simplecore/skills/korean-docs/scripts/l10n.mjs"
-node "$T" check && node "$T" rules && node "$T" audit && node "$T" suspects
+node "$T" sweep
 ```
 
 Declare the board's sources as a resource kind in `.claude/l10n.json` and in the project

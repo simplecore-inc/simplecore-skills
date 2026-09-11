@@ -1510,26 +1510,27 @@ export function runDocAudit(args, cliPath) {
   // a declared corpus went unread.
   const configErrors = deadPatterns.length;
   console.log(`\nChecked ${targets.length} files: ${errorCount + configErrors} errors, ${warningCount} warnings`);
-  reportDarkCommands(root, cliPath);
+  if (!args.noFooter) reportDarkCommands(root, cliPath);
   return errorCount + configErrors > 0 || (args.strict && warningCount > 0) ? 1 : 0;
 }
 
 /**
- * `check` reads the glossary alone. The sentence-rule sweep, the resource audit and the
- * suspects list all need `.claude/l10n.json`, and without it they refuse to start — so a
- * project that never declared its kinds gets a clean `check` and three silent commands.
- *
- * A count of zero is the most convincing output this tool produces, and it is exactly what
- * a project with no declaration gets. Saying which commands did NOT run is the difference
- * between "nothing is wrong" and "one of four checks looked".
+ * `check` reads the glossary alone — the word rules. The sentence rules, the suspects and the
+ * lens read the same document set without any declaration, and only the resource audit and the
+ * declared resource kinds need `.claude/l10n.json`. So a zero from `check` is one check's zero,
+ * and the line that says so is the difference between "nothing is wrong" and "one of five
+ * checks looked". An earlier version of this footer said the sentence commands were off too,
+ * which taught readers not to run them — the footer is now checked against what actually runs.
  */
 function reportDarkCommands(root, cliPath) {
-  if (existsSync(join(root, '.claude', 'l10n.json'))) return;
+  const declared = existsSync(join(root, '.claude', 'l10n.json'));
   console.log('');
-  console.log('⚠ With no .claude/l10n.json, only check runs in this repository.');
-  console.log('  Off: rules (the sentence-rule sweep) · audit (locale pairs and particles) · suspects (style smells)');
-  console.log('  This zero is a zero from the glossary word check, not a pass on the sentence checks.');
-  console.log(`  To create the declaration: node ${l10nCommand(cliPath)} --init-l10n`);
+  console.log('This is the glossary word check alone. The sentence rules, the suspects and the lens have not run —');
+  console.log(`  run \`node ${l10nCommand(cliPath).replace(/ check$/, '')} sweep\` for every check in one pass.`);
+  if (!declared) {
+    console.log('  With no .claude/l10n.json the sweep reads documents only (.md · .mdx · .svg); the resource audit');
+    console.log(`  and any declared resource kind stay off until \`${l10nCommand(cliPath)} --init-l10n\` declares them.`);
+  }
 }
 
 /**

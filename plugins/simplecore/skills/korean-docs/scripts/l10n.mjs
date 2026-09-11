@@ -51,9 +51,9 @@
  * assumption baked into shared code.
  */
 
-import { readFileSync, writeFileSync, existsSync, readdirSync } from "node:fs";
+import { readFileSync, writeFileSync, existsSync, readdirSync, statSync } from "node:fs";
 import { execFileSync } from "node:child_process";
-import { join, dirname, resolve } from "node:path";
+import { join, dirname, resolve, relative, isAbsolute } from "node:path";
 import { fileURLToPath } from "node:url";
 import { discoverGlossary, loadRuleSet, loadRulePacks, parseGlossaryConfig, BASE_GLOSSARY_PATH } from "./lib/glossary.mjs";
 import { initGlossary, initL10n, runDocAudit, annotationRanges, contrastRecommendedRanges } from "./lib/doc-audit.mjs";
@@ -232,29 +232,87 @@ function formatOf(kind, file) {
  * Both `*.md` and `**\/*.md` are listed on purpose: the non-repository fallback treats `**`
  * as one-or-more segments, so the top-level files drop out of the second form alone.
  */
-function docEntries() {
-  // `audit.exclude` is honoured here for the same reason `check` honours it: the two commands
-  // read one file set, and a file a project excluded from the word check is excluded from the
-  // sentence sweep too. Without this the skill's own catalogues — pages that quote every banned
-  // spelling on purpose — came back as 79 findings from `rules` while `check` passed.
-  const found = new Map();
+/**
+ * What the project keeps out of every sweep: its `audit.exclude` globs, and the glossary files.
+ *
+ * `audit.exclude` is honoured by the sentence commands for the same reason `check` honours it:
+ * the commands read one file set, and a file a project excluded from the word check is excluded
+ * from the sentence sweep too. Without this the skill's own catalogues — pages that quote every
+ * banned spelling on purpose — came back as 79 findings from `rules` while `check` passed.
+ * A glossary is a page of banned spellings and is never judged by them — `check` skips both, so
+ * the sentence sweep skips both too.
+ */
+function projectExclusions() {
   const g = discoverGlossary();
   const patterns = g ? (parseGlossaryConfig(readFileSync(g.path, "utf8")).config?.exclude ?? []) : [];
-  // A glossary is a page of banned spellings and is never judged by them — `check` skips both,
-  // so the sentence sweep skips both too.
   const glossaries = new Set([g?.path, BASE_GLOSSARY_PATH].filter(Boolean).map((x) => resolve(x)));
   const excluded = patterns.map((p) => new RegExp(
     "^" + p.replace(/[.+^${}()|[\]\\]/g, "\\$&").replace(/\*\*/g, "\u0000").replace(/\*/g, "[^/]*").replace(/\u0000/g, ".*") + "$",
   ));
+  return {
+    excluded: (file) => excluded.some((re) => re.test(file)),
+    isGlossary: (file) => glossaries.has(isAbsolute(file) ? file : resolve(ROOT, file)),
+  };
+}
+
+function docEntries() {
+  const found = new Map();
+  const skip = projectExclusions();
   for (const ext of ["md", "mdx", "svg"]) {
     for (const glob of [`*.${ext}`, `**/*.${ext}`]) {
       for (const file of gitFiles(glob)) {
-        if (excluded.some((re) => re.test(file)) || glossaries.has(resolve(ROOT, file))) continue;
+        if (skip.excluded(file) || skip.isGlossary(file)) continue;
         found.set(file, { kind: "docs", lang: CONFIG.defaultLanguage, file, format: formatOf(null, file) });
       }
     }
   }
   return [...found.values()].sort((a, b) => a.file.localeCompare(b.file));
+}
+
+/**
+ * Entries for the paths named on the command line — a file, or a directory expanded to the
+ * document set beneath it.
+ *
+ * This is what lets the write-time hook run the sentence rules on the one file it just wrote,
+ * and what lets a draft outside the repository — a reply written to a scratch file — be read by
+ * the lens before it goes out. A file under the project keeps its project-relative name, so a
+ * declared resource kind still decides its format and register; a file outside keeps its
+ * absolute path and is read as a document.
+ *
+ * `audit.exclude` is honoured here, unlike in `check`, and on purpose: `check` reads a named
+ * catalogue clean because its specimens sit in code spans, but the sentence rules match the
+ * recommended prose a catalogue has to print in the open. A hook that blocked every edit to
+ * the skill's own references would be a hook somebody switches off. The skipped names are
+ * returned so the caller can say they were skipped rather than let them read as clean.
+ */
+function pathEntries(paths) {
+  const skip = projectExclusions();
+  const entries = new Map();
+  const skipped = [];
+  const add = (file) => {
+    if (skip.isGlossary(file)) return;
+    if (skip.excluded(file)) {
+      skipped.push(file);
+      return;
+    }
+    const kind = isAbsolute(file) ? null : guessKind(file);
+    entries.set(file, { kind: kind ?? "docs", lang: CONFIG.defaultLanguage, file, format: formatOf(kind, file) });
+  };
+  for (const p of paths) {
+    const abs = resolve(START, p);
+    if (!existsSync(abs)) throw new Error(`No such file: ${p}`);
+    const rel = relative(ROOT, abs);
+    const inside = rel !== "" && !rel.startsWith("..") && !isAbsolute(rel);
+    if (statSync(abs).isDirectory()) {
+      if (!inside) throw new Error(`A directory has to be inside the project: ${p}`);
+      for (const ext of ["md", "mdx", "svg"]) {
+        for (const glob of [`${rel}/*.${ext}`, `${rel}/**/*.${ext}`]) for (const f of gitFiles(glob)) add(f);
+      }
+    } else {
+      add(inside ? rel : abs);
+    }
+  }
+  return { entries: [...entries.values()].sort((a, b) => a.file.localeCompare(b.file)), skipped };
 }
 
 
@@ -948,7 +1006,7 @@ function releasedBy(rule, seg, m) {
 }
 
 function readSegments(entry) {
-  const src = readFileSync(join(ROOT, entry.file), "utf8");
+  const src = readFileSync(isAbsolute(entry.file) ? entry.file : join(ROOT, entry.file), "utf8");
   const segments = EXTRACTORS[entry.format](src);
   const ranges = annotationRanges(src, annotationKeys());
   if (ranges.length) {
@@ -1188,13 +1246,18 @@ function particleErrors(text) {
 // Commands
 // ─────────────────────────────────────────────────────────────────────────────
 
+// Colour only where a person is looking. Through a pipe — the write-time hook, a `$(…)`, a log —
+// the escapes are noise in the report that reaches the reader, and the reader is then an agent
+// parsing `[error]` out of `\x1b[31m`.
+const COLOR = Boolean(process.stdout.isTTY) && !process.env.NO_COLOR;
+const paint = (code) => (s) => (COLOR ? `\x1b[${code}m${s}\x1b[0m` : String(s));
 const C = {
-  dim: (s) => `\x1b[2m${s}\x1b[0m`,
-  bold: (s) => `\x1b[1m${s}\x1b[0m`,
-  red: (s) => `\x1b[31m${s}\x1b[0m`,
-  green: (s) => `\x1b[32m${s}\x1b[0m`,
-  yellow: (s) => `\x1b[33m${s}\x1b[0m`,
-  cyan: (s) => `\x1b[36m${s}\x1b[0m`,
+  dim: paint(2),
+  bold: paint(1),
+  red: paint(31),
+  green: paint(32),
+  yellow: paint(33),
+  cyan: paint(36),
 };
 
 function cmdList(opts) {
@@ -1709,11 +1772,34 @@ function contrastOffsets(entry, src) {
   return ranges;
 }
 
+/** `error` or `warn` — the pack writes the level as a word; the per-file threshold is `minPerFile`. */
+function severityOf(rule) {
+  return String(rule.severity ?? "error").startsWith("warn") ? "warn" : "error";
+}
+
+/**
+ * The opening sentences of a reason — enough to say what the rule is and what to write instead.
+ *
+ * The full reason is an essay on the rule's boundaries: right when writing the rule, wrong when
+ * forty hits print it forty times and the file names drown between paragraphs. The sweep prints
+ * this, and `--explain` prints the whole text for the rule somebody is about to argue with.
+ */
+function shortReason(reason) {
+  const plain = String(reason).replace(/\*\*/g, "");
+  let out = "";
+  for (const sentence of plain.split(/(?<=\.)\s+(?=[A-Z「`(])/)) {
+    if (out && out.length >= 140) break;
+    out += (out ? " " : "") + sentence;
+  }
+  return out.length > 260 ? `${out.slice(0, 257).replace(/\s+\S*$/, "")}…` : out;
+}
+
 function cmdRulesScan(opts) {
   // An explicit --scope reaches rules the project did not opt into; the default
   // sweep runs universal rules plus the project's declared scopes.
   const active = opts.scope ? rulePacks().all.filter((r) => r.scope === opts.scope) : rulePacks().active;
-  const entries = discover({ ...opts, docFallback: true, command: "rules" });
+  const named = opts.paths?.length ? pathEntries(opts.paths) : null;
+  const entries = named ? named.entries : discover({ ...opts, docFallback: true, command: "rules" });
   const byRule = new Map();
 
   for (const entry of entries) {
@@ -1756,22 +1842,41 @@ function cmdRulesScan(opts) {
     }
   }
 
+  // A warning rule names a place to read, an error rule names a defect. The exit code follows
+  // the errors, as `check`'s does, so a hook or a gate stops on a defect and not on a place to
+  // read — `--strict` makes the warnings stop it too.
+  let errors = 0;
+  let warnings = 0;
+  for (const rule of active) {
+    const n = byRule.get(rule.id)?.length ?? 0;
+    if (severityOf(rule) === "warn") warnings += n;
+    else errors += n;
+  }
+  const failed = errors > 0 || (opts.strict && warnings > 0);
+
   if (opts.json) {
     console.log(JSON.stringify(Object.fromEntries(byRule), null, 2));
-    return byRule.size ? 1 : 0;
+    return failed ? 1 : 0;
   }
-  let total = 0;
   for (const rule of active) {
     const hits = byRule.get(rule.id) ?? [];
     if (!hits.length) continue;
-    total += hits.length;
-    console.log(`\n${C.bold(rule.id)} ${C.dim(`${rule.scope} · ${hits.length} hits`)} — ${rule.reason}`);
+    const level = severityOf(rule);
+    const tag = level === "warn" ? C.yellow("warn") : C.red("error");
+    console.log(
+      `\n${C.bold(rule.id)} ${C.dim(`${rule.scope} ·`)} ${tag} ${C.dim(`· ${hits.length} hits`)} — ${opts.explain ? rule.reason : shortReason(rule.reason)}`,
+    );
     for (const h of hits.slice(0, opts.all ? hits.length : 5)) {
       console.log(`  ${C.cyan(h.file.split("/").pop())}${C.dim(":" + h.line)} ${C.bold(h.key)}  ${h.text.slice(0, 76)}`);
     }
     if (!opts.all && hits.length > 5) console.log(`  ${C.dim(`… and ${hits.length - 5} more (--all for every one)`)}`);
   }
-  console.log(`\n${total ? C.yellow(`${total} hits`) : C.green("0 hits")} · ${active.length} rules applied`);
+  console.log(
+    `\n${errors ? C.red(`${errors} errors`) : C.green("0 errors")} · ${warnings ? C.yellow(`${warnings} warnings`) : "0 warnings"}` +
+      ` · ${active.length} rules applied · ${entries.length} files`,
+  );
+  if (named?.skipped.length) console.log(C.dim(`skipped by audit.exclude: ${named.skipped.join(" · ")}`));
+  if (!opts.explain && errors + warnings > 0) console.log(C.dim("--explain prints each rule's full reasoning"));
   // A rule the project turned off has to be named. Silently short a sweep and the zero it
   // prints is indistinguishable from a zero that was earned.
   const off = rulePacks().disabled;
@@ -1788,7 +1893,7 @@ function cmdRulesScan(opts) {
       for (const ex of list) console.log(C.dim(`  ${id} /${ex.re.source}/ — ${ex.why}`));
     }
   }
-  return total ? 1 : 0;
+  return failed ? 1 : 0;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1951,7 +2056,8 @@ function cmdSuspects(opts) {
   // labels (저장됨), settled idioms (막다른 길 · 나가는 길), and -다체 design prose — so a
   // lower threshold trains its reader to skim past the findings that matter.
   const min = Number(opts.min ?? 3);
-  const entries = discover({ ...opts, docFallback: true, command: "suspects" });
+  const named = opts.paths?.length ? pathEntries(opts.paths) : null;
+  const entries = named ? named.entries : discover({ ...opts, docFallback: true, command: "suspects" });
   const found = [];
   for (const entry of entries) {
     const { src, segments } = readSegments(entry);
@@ -2014,6 +2120,129 @@ function cmdSuspects(opts) {
   console.log(C.bold("For whoever rewrites these"));
   for (const line of guidance) console.log(`  ${line}`);
   return 0;
+}
+
+/**
+ * The reading lens over the document set, or over the files named — `references/lens.txt` as one
+ * matcher, reported and never judged.
+ *
+ * It reads segments rather than raw lines, so a specimen in a code span and a key in a resource
+ * file never surface: what surfaces is what a reader would read. A draft written to a scratch
+ * file outside the repository is a valid argument — a chat reply is read by nobody before it is
+ * sent, and the habits the lens exists to catch survive there long after the repository is clean.
+ * Each hit is a stem the lens has learned to suspect; whether the sentence is wrong is the
+ * reader's call, and `references/reading-lens.md` says what each family is about.
+ */
+function cmdLens(opts) {
+  const lens = readLens();
+  if (!lens) throw new Error("references/lens.txt is missing or empty — the lens has nothing to match");
+  const named = opts.paths?.length ? pathEntries(opts.paths) : null;
+  const entries = named ? named.entries : discover({ ...opts, docFallback: true, command: "lens" });
+  const hits = [];
+  for (const entry of entries) {
+    const { src, segments } = readSegments(entry);
+    for (const seg of segments) {
+      if (!HANGUL.test(seg.text)) continue;
+      const stems = [...new Set([...seg.text.matchAll(lens)].map((m) => m[0]))];
+      if (!stems.length) continue;
+      hits.push({
+        file: entry.file,
+        key: seg.key,
+        line: src.slice(0, seg.start).split("\n").length,
+        stems,
+        text: seg.text,
+      });
+    }
+  }
+  const files = new Set(hits.map((h) => h.file)).size;
+  if (opts.json) {
+    console.log(JSON.stringify({ count: hits.length, files, candidates: hits }, null, 2));
+    return 0;
+  }
+  if (!opts.count) {
+    let current = null;
+    for (const h of hits) {
+      if (h.file !== current) {
+        current = h.file;
+        console.log(`\n${C.cyan(h.file)}`);
+      }
+      console.log(`  ${C.dim(`${h.line}:`)} ${C.yellow(h.stems.join(" · "))}  ${h.text.slice(0, 100)}`);
+    }
+  }
+  console.log(
+    `\n${hits.length ? C.yellow(`${hits.length} candidates`) : C.green("0 candidates")} in ${files} of ${entries.length} files` +
+      ` — a signal, not a verdict. ${hits.length ? "Read each sentence" : "The lens knows only its own stems, so read in order"} (references/reading-lens.md).`,
+  );
+  if (named?.skipped.length) console.log(C.dim(`skipped by audit.exclude: ${named.skipped.join(" · ")}`));
+  return 0;
+}
+
+/**
+ * Every check in one run — check · rules · suspects · audit (when kinds are declared) · lens —
+ * closed by a line saying what reached what.
+ *
+ * Four commands, each with its own zero, is how a zero gets read as a pass: the command that
+ * would have found the defect is the one that was not run, and nothing in the output of the
+ * three that ran says so. One command that runs them all removes the forgetting, and the
+ * closing summary is the deliberate-violation test in another form — it names the file count,
+ * the rule counts and the lens, so a zero over zero files or zero rules cannot pass as clean.
+ * It does not remove the reading: the lens candidates and the in-order pass stay with the person.
+ */
+function cmdSweep(opts) {
+  const paths = opts.paths ?? [];
+  const banner = (name) => console.log(`\n${C.bold(`── ${name} ${"─".repeat(Math.max(0, 66 - name.length))}`)}`);
+  const steps = [];
+  const run = (name, fn) => {
+    banner(name);
+    let code;
+    try {
+      code = fn();
+    } catch (err) {
+      console.error(C.red(`✖ ${err.message}`));
+      code = 2;
+    }
+    steps.push([name, code]);
+  };
+
+  run("check", () => {
+    const args = [...paths];
+    if (opts.all) args.push("--all");
+    if (opts.strict) args.push("--strict");
+    if (opts.untranslated) args.push("--untranslated");
+    return cmdCheck(args, { noFooter: true });
+  });
+  run("rules", () => cmdRulesScan({ ...opts, json: false }));
+  run("suspects", () => {
+    cmdSuspects({ ...opts, json: false, limit: opts.limit ?? 20 });
+    return 0;
+  });
+  if (Object.keys(CONFIG.kinds).length) {
+    run("audit", () => cmdAudit({ ...opts, json: false }));
+  } else {
+    banner("audit");
+    console.log(C.dim("skipped — no resource kinds declared in .claude/l10n.json (check --init-l10n declares them)"));
+    steps.push(["audit", null]);
+  }
+  run("lens", () => cmdLens({ ...opts, json: false, count: true }));
+
+  banner("sweep");
+  const entries = paths.length ? pathEntries(paths).entries : discover({ docFallback: true, command: "rules" });
+  console.log(
+    `files in the sentence sweep: ${entries.length} · glossary rules: ${ruleSet().rules.length}` +
+      ` · sentence rules: ${rulePacks().active.length} · lens: ${readLens() ? "loaded" : "missing"}`,
+  );
+  for (const [name, code] of steps) {
+    const mark =
+      code === null ? C.dim("– skipped") : code === 0 ? C.green("✔ clean") : code === 1 ? C.red("✖ findings") : C.red("✖ did not run");
+    console.log(`  ${name.padEnd(9)} ${mark}`);
+  }
+  const worst = Math.max(0, ...steps.map(([, code]) => code ?? 0));
+  console.log(
+    worst
+      ? C.red("\nNot clean — fix the findings above, re-check the sentences you rewrote, then sweep again.")
+      : C.green("\nClean on every check that ran. The lens candidates and the in-order reading are still the reader's."),
+  );
+  return worst;
 }
 
 /**
@@ -2251,7 +2480,7 @@ function cmdAudit(opts) {
 // Document audit (the same engine the hook runs)
 // ─────────────────────────────────────────────────────────────────────────────
 
-function cmdCheck(rest) {
+function cmdCheck(rest, extra = {}) {
   const args = { all: false, strict: false, untranslated: false, noBase: false, listRules: false, init: false, initL10n: false, glossary: null, paths: [] };
   for (let i = 0; i < rest.length; i++) {
     const a = rest[i];
@@ -2268,6 +2497,7 @@ function cmdCheck(rest) {
     } else if (a.startsWith("--")) throw new Error(`Unknown flag: ${a}`);
     else args.paths.push(a);
   }
+  args.noFooter = Boolean(extra.noFooter);
   const cliHint = `${SCRIPT_PATH} check`;
   if (args.init) {
     initGlossary(cliHint);
@@ -2287,15 +2517,17 @@ function cmdCheck(rest) {
 const USAGE = `
 ${C.bold("l10n.mjs")} — checks a project's Korean under one set of rules, documents and resources alike
 
-  ${C.bold("check")}    [paths...] [--all] [--strict]            audit documents (the hook's engine and judgement)
+  ${C.bold("sweep")}    [paths...] [--all] [--strict] [--explain]  every check below in one run, closed by what reached what
+  ${C.bold("check")}    [paths...] [--all] [--strict]            glossary audit of documents (the hook's engine and judgement)
            [--untranslated] [--list-rules] [--init]
+  ${C.bold("rules")}    [paths...] [--scope S] [--all] [--json]  sentence-rule sweep; --explain prints full reasons, --strict fails on warnings
+  ${C.bold("rules")}    --test [--verbose]                       verify the rule pack against its own examples
+  ${C.bold("suspects")} [paths...] [--min N] [--limit N] [--json] rank the sentences that read as translated
+  ${C.bold("lens")}     [paths...] [--count] [--json]            the reading lens: candidates for a person, never verdicts
+  ${C.bold("audit")}    [--kind K] [--json]                      resources: missing translations, banned spellings, paired languages
   ${C.bold("list")}     [--kind K] [--lang L] [--json]           list the resource files
   ${C.bold("stats")}    [--json]                                 count strings by kind and language
   ${C.bold("grep")}     <pattern> [--regex] [--kind K] [--lang L] search the copy values
-  ${C.bold("audit")}    [--kind K] [--json]                      check resources for missing translations, banned spellings, paired languages
-  ${C.bold("rules")}    --test [--verbose]                       verify the rule pack against its own examples
-  ${C.bold("rules")}    [--scope S] [--all] [--kind K] [--json]  sweep with the rule pack (changes nothing)
-  ${C.bold("suspects")} [--min N] [--limit N] [--kind K] [--json] rank the sentences that read as translated
   ${C.bold("apply")}    --patch <file> [--write]                 apply a list of rewritten sentences
 
 ${C.bold("There is one source of rules.")} The glossary (the skill's GLOSSARY.base.md plus the project's
@@ -2309,11 +2541,16 @@ line and the ceiling of a limit item on another, and one sentence where two rule
 correctly can end up reading 「라이선스 수량 라이선스 하나가」. No regex can tell those apart.
 
   1. ${C.bold("rules --test")}      confirm the rules produce no false positives first
-  2. ${C.bold("check")} · ${C.bold("audit")}    pull the places to fix — this is as far as the tool goes
-  3. ${C.bold("rules")} · ${C.bold("suspects --json")}   pull the translation-ese and the awkward sentences too
-  4. ${C.bold("read the context and rewrite")} — swapping words alone loses the meaning quietly
-  5. ${C.bold("apply --patch")}     feed the rewrites back (refused when the original does not match)
-  6. ${C.bold("check")} · ${C.bold("audit")} · ${C.bold("suspects")} sweep again — see whether the fixes created new awkwardness
+  2. ${C.bold("sweep")}             pull every place to fix in one run — this is as far as the tool goes
+  3. ${C.bold("read the context and rewrite")} — swapping words alone loses the meaning quietly
+  4. ${C.bold("apply --patch")}     feed the rewrites back (refused when the original does not match)
+  5. ${C.bold("sweep")} again       see whether the fixes created new findings — a replacement is often a banned phrase itself
+  6. ${C.bold("lens")} · in-order reading   what no rule knows; the reader's part, not the tool's
+
+${C.bold("Paths.")} rules · suspects · lens take files or directories. A file under the project keeps its
+declared kind; a file outside it — a draft in a scratch directory — is read as a document. audit.exclude
+is honoured and the skipped names are printed. The write-time hook runs check and rules on the file
+it just wrote, so every sentence rule bites at the moment of writing.
 
 ${C.bold("apply options")}
   --write        actually write to the files (a preview without it)
@@ -2338,6 +2575,10 @@ function parseArgs(argv) {
     else if (a === "--test") opts.test = true;
     else if (a === "--all") opts.all = true;
     else if (a === "--verbose") opts.verbose = true;
+    else if (a === "--explain") opts.explain = true;
+    else if (a === "--strict") opts.strict = true;
+    else if (a === "--untranslated") opts.untranslated = true;
+    else if (a === "--count") opts.count = true;
     else if (a === "--scope") opts.scope = argv[++i];
     else if (a.startsWith("--scope=")) opts.scope = a.slice(8);
     else if (a === "--root") opts.root = argv[++i];
@@ -2392,9 +2633,13 @@ function main() {
         return cmdAudit(opts);
       case "rules":
         if (opts.test) return cmdRulesTest(opts);
-        return cmdRulesScan(opts);
+        return cmdRulesScan({ ...opts, paths: rest });
       case "suspects":
-        return cmdSuspects(opts);
+        return cmdSuspects({ ...opts, paths: rest });
+      case "lens":
+        return cmdLens({ ...opts, paths: rest });
+      case "sweep":
+        return cmdSweep({ ...opts, paths: rest });
       case "apply":
         if (!opts.patch) throw new Error("--patch <file> must name the list of rewrites");
         return cmdApply(opts);

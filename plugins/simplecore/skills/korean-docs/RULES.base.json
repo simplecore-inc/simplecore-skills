@@ -1092,7 +1092,7 @@
       ]
     },
     {
-      "severity": "error(3+)",
+      "severity": "error",
       "id": "for-purpose",
       "scope": "universal",
       "minPerFile": 3,
@@ -1662,7 +1662,7 @@
     {
       "id": "screen-speaks-repeat",
       "scope": "universal",
-      "severity": "warn(3+)",
+      "severity": "warn",
       "reason": "「말한다」 more than three times in one file is a habit. Split by what the screen, the table, or the badge actually does: 표시한다 · 안내한다 · 기록한다 · 설명한다. **Changing it to 「밝힌다」·「보인다」 is not a fix** — a screen revealing a fact is personification too, and 「보이다」 hides whether the system displays or the user looks. Sentences screen-says already reports as errors are counted here as well — that rule is about one sentence's defect and this one about a file's habit, so removing the overlap would stop the habit being counted",
       "find": [
         "/말한다/"

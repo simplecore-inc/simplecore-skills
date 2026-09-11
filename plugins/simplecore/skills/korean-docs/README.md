@@ -30,8 +30,8 @@ korean-docs/
 ├── GLOSSARY.base.md             # the base glossary — project-independent spelling and translation-ese rules (always applied)
 ├── RULES.base.json              # the base sentence rule pack — regex rules with hit/miss examples (used by `rules`)
 ├── scripts/
-│   ├── l10n.mjs                 # the one CLI — check (documents) · audit (locale resources) · rules · suspects · apply
-│   ├── check-glossary.mjs       # the hook entry point into the document audit — same engine, same judgement as `check`
+│   ├── l10n.mjs                 # the one CLI — sweep · check · rules · suspects · lens · audit · apply
+│   ├── check-glossary.mjs       # the hook's first run — the glossary audit, same engine and judgement as `check`
 │   └── lib/                     # the shared engine — glossary parsing and merging (glossary.mjs), document audit (doc-audit.mjs)
 ├── templates/
 │   └── GLOSSARY.md              # the project glossary template (created by check --init)
@@ -122,6 +122,7 @@ does not offer to create one. When the user asks, create it with `check --init`.
 ## The audit tool at a glance
 
 ```
+l10n.mjs sweep [paths...]  # every check in one run — check · rules · suspects · audit (when declared) · lens count — closed by what reached what
 l10n.mjs check [paths...]  # document audit. With no paths: audit.paths, else the whole project
   --all            # ignore audit.paths and take the whole project
   --strict         # treat warnings as failures
@@ -132,13 +133,15 @@ l10n.mjs check [paths...]  # document audit. With no paths: audit.paths, else th
   --init           # create the .claude/GLOSSARY.md template
 l10n.mjs audit             # locale-resource audit (needs the kinds declaration in .claude/l10n.json)
 l10n.mjs rules --test      # verify the rule pack (RULES.base.json + the project pack) against its examples
-l10n.mjs rules · suspects  # sweep with the sentence rules and the style smells (finds only)
+l10n.mjs rules [paths...]  # the sentence rules alone; --explain prints full reasons, --strict fails on warnings
+l10n.mjs suspects · lens   # the style smells, and the reading lens (a draft outside the project is a valid path)
 l10n.mjs apply --patch f   # apply sentences rewritten after reading the context (a preview until --write)
 ```
 
-`check-glossary.mjs [paths...]` is the hook entry point into the document audit and uses the same
-engine and flags as `check` — the write-time hook runs this path, and calling it directly gives the
-same judgement.
+The write-time hook makes two runs on every file written in a project that has a glossary:
+`check-glossary.mjs <file>` (the glossary words — the same engine and flags as `check`) and
+`l10n.mjs rules <file>` (the sentence pack). Calling either directly gives the same judgement the
+hook gives.
 
 - An explicitly named file is always checked, regardless of `audit.exclude`. Code blocks, inline
   code, link targets, and URLs are excluded from checking.

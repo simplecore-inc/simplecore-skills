@@ -4,7 +4,7 @@
 no false positives, so it is narrow, so it leaks. The lens **selects candidates for a person to
 read**, so it may be broad, and it has to be broad to stop leaking.
 
-| | Rule (`rules`) | Lens (`grep --regex`) |
+| | Rule (`rules`) | Lens (`lens`) |
 | --- | --- | --- |
 | Who judges | the machine | a person |
 | False positives | not allowed | allowed |
@@ -20,11 +20,17 @@ of which any rule had caught** — `결재가 올라갑니다` is caught while `
 
 ```bash
 T="$HOME/.claude/skills/simplecore/skills/korean-docs/scripts/l10n.mjs"
-node "$T" grep --regex "$(cat "$(dirname "$T")/../references/lens.txt")"
+node "$T" lens                   # the document set, or the declared resources
+node "$T" lens docs/manual       # a directory, or a file
+node "$T" lens /tmp/draft.md     # a draft outside the project
+node "$T" lens --json            # sorted by file — the input for an in-order read
 ```
 
-Or pass the lens directly (join the list below with `|` and wrap it in parentheses). Take it as
-`--json` and sort by filename to get the input for an in-order read.
+`lens` reads segments, not raw lines, so a specimen inside a code span and a key in a resource file
+never surface: what surfaces is what a reader would read. **A reply is a valid argument.** A chat
+reply passes through no check at all, and the habits the lens exists to catch survive there long
+after the repository is clean — write the draft to the scratch directory and point the lens at it
+before it goes out. `sweep` prints the count only; the list is this command's.
 
 **How much it narrows**: 27,830 pieces of screen copy → **around two thousand**. That is an amount a
 person can read cluster by cluster, and reading those candidates to find the real violations is what

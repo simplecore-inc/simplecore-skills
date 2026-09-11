@@ -45,8 +45,10 @@ instruction is English, including the ones surrounding a Korean quotation.
 
 ## The audit
 
-**The standard always applies; the audit scripts run only when asked.** There has to be an
-instruction to check — 「감사해 줘」 · 「용어사전으로 검사해 줘」 · 「전체 재감사」 · 「문구 검토」. A
+**The standard always applies; the repository sweep runs only when asked.** The write-time hook
+already runs the glossary check and the sentence-rule pack on every file written in a project that
+has a glossary, so a single document is judged as it is written. A sweep of the whole repository
+takes an instruction — 「감사해 줘」 · 「용어사전으로 검사해 줘」 · 「전체 재감사」 · 「문구 검토」. A
 project instruction file (`AGENTS.md` · `CLAUDE.md`) requiring the audit as the closing step of some
 stage is also a request. Editing one document is not a reason to sweep the repository. When the
 audit environment (`.claude/l10n.json`) is missing, say in one line what cannot be checked and do
@@ -54,9 +56,11 @@ not offer to create it.
 
 **An audit that was asked for is finished in one go.** 「감사해 줘」 means 「find it and fix it」.
 
-- Run all four commands: `check` · `rules` · `audit` · `suspects`. One of them at zero says nothing
-  about the other three. Before reading zero as a pass, insert a deliberate violation, confirm the
-  check reaches it, and delete it.
+- Run `sweep`. It runs every check — `check` · `rules` · `suspects` · `audit` when resource kinds
+  are declared · the lens count — and closes with what reached what: the file count, the glossary
+  and sentence rule counts, and whether the lens loaded. Read that line before reading any zero as
+  a pass; a zero over zero files is not a pass. When running one command on its own, insert a
+  deliberate violation, confirm the check reaches it, and delete it.
 - Fix each finding when it is found, then report. Do not stop because the count is large, because
   the types are varied, because a new rule has to be registered, or because the skill repository
   has to be edited. Do not end a turn with 「진행할까요」 · 「어느 쪽으로 할까요」.
@@ -74,11 +78,17 @@ There is one tool.
 
 ```bash
 T="$HOME/.claude/skills/simplecore/skills/korean-docs/scripts/l10n.mjs"
-node "$T" check [paths...]   # document audit (the same judgement as the write-time hook)
-node "$T" rules              # sentence-rule sweep; --test verifies the rule pack
+node "$T" sweep [paths...]   # every check in one run, closed by what reached what
+node "$T" check [paths...]   # glossary audit alone (the write-time hook's first run)
+node "$T" rules [paths...]   # sentence-rule sweep alone (the hook's second run); --test verifies the pack
+node "$T" suspects [paths...]  # sentences that read as translated, ranked
+node "$T" lens [paths...]    # the reading lens: candidates for a person, never verdicts
 node "$T" audit              # locale-resource audit (needs .claude/l10n.json)
-node "$T" suspects           # sentences that read as translated, ranked
 ```
+
+`rules` · `suspects` · `lens` take a file or a directory, and a file outside the project — a reply
+drafted in the scratch directory — is read as a document, which is how a reply gets a machine's eyes
+before it goes out.
 
 Flags, the hook, the declaration files, how to write a rule, and how to confirm somebody else's
 finding are in [references/audit-tooling.md](references/audit-tooling.md). Read it when running the
@@ -139,10 +149,10 @@ fix that cause, then register, and say in the report which of the three it was.
 
 | The thought | What is true |
 | --- | --- |
-| "I edited a document, so let me just run the check as a closing step" | The user did not ask for an audit. The standard applies while writing; the script runs when instructed. |
+| "I edited a document, so let me just run the sweep as a closing step" | The user did not ask for an audit, and the hook already judged the file as it was written. The standard applies while writing; the repository sweep runs when instructed. |
 | "It would be helpful to mention there is no glossary" | Raising the setup at all is unasked work. Write with the base glossary. |
 | "I read the glossary last time and remember it" | It changes between sessions. Read it again every time. |
-| "`check` is at zero, so it is clean" | `check` is one of four. Judge after running all four, and read in order even at zero. |
+| "`check` is at zero, so it is clean" | `check` is the word check alone. Judge after `sweep`, read its reach line, and read in order even at zero. |
 | "Listing the findings and confirming before fixing is safer" | Whoever asked for the audit wanted fixed files. Fix without asking and confirm in the completion report. |
 | "Writing a new rule edits the skill, so I need permission" | The global instructions already made that edit part of the same change. Register it and report what went in. |
 | "I will register the safer-looking candidate" | Registering a contested term on your own freezes the wrong standard. Apply it provisionally, then ask. |
