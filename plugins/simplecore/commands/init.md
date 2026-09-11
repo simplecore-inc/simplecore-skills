@@ -76,6 +76,10 @@ Two halves, and most projects need both:
      `skills/korean-docs/references/global-korean-card.md` **whole**; summarising it on the way
      recreates the pointer this replaces. It carries its own `<!-- simplecore:korean-habits -->`
      marker, which is what the detector reads next time.
+   - **Korean habits block, stale** — when `globalKorean.cardStale` is true. The card grows as the
+     skill learns, and the pasted copy keeps the habits of the day it was pasted. Replace the block
+     from the marker to the next heading with the file, whole — the same offer as above, shown as
+     a diff of the two blocks so the user sees what changed.
    - **Local development servers** — always worth offering when the repository serves screens (a
      board, a parity walk, or a frontend). Without it, every restart during a screen walk is a
      question, and a walk that has to ask cannot cover a feature area. Say where the boundary

@@ -16,7 +16,7 @@ One script, `scripts/l10n.mjs`, checks documents and locale resources with the s
 
 ```bash
 T="$HOME/.claude/skills/simplecore/skills/korean-docs/scripts/l10n.mjs"
-node "$T" sweep [paths...]       # check · rules · suspects · audit (when declared) · lens count, then what reached what
+node "$T" sweep [paths...]       # rules --test, then check · rules · suspects · audit (when declared) · lens count, then what reached what
   --all --strict --explain --untranslated   # passed through to the commands that take them
 node "$T" check [paths...]       # document audit — audit.paths, or the whole project (same judgement as the hook)
   --all             # ignore audit.paths and take the whole project
@@ -167,6 +167,10 @@ audit:
 - An error-level rule blocks; a warning-level rule reports and lets the edit stand. A false
   positive is narrowed with `except` in `.claude/l10n-rules.json` (below), never by switching the
   hook off.
+- Which files count: documents (`.md` · `.mdx` · `.svg`) and the resources the glossary's
+  `audit.localeResources` declares get both runs; a file declared only as a kind in
+  `.claude/l10n.json` gets the sentence-rule run alone, read by that kind's format and register,
+  because the word check would read its keys as prose.
 - It checks only in a project that has a glossary (`.claude/GLOSSARY.md` or `GLOSSARY.md`). No
   glossary means write-time checking is off entirely.
 - A document changed through `Bash` — `node` · `python` · `sed` · a heredoc — never passes the hook.
@@ -216,7 +220,11 @@ layout.
 
 Every rule carries `id` · `scope` · `severity` · `reason` · `find` · `replace` · `hit` · `miss`, and
 is verified with `rules --test`. The `universal` scope always applies; a domain scope (`saas` and
-the like) applies when the project opts in through `ruleScopes` in `.claude/l10n.json`. A rule true
+the like) applies when the project opts in through `ruleScopes` in `.claude/l10n.json`. A rule
+written for one register names it in `registers` (`screen` · `manual` · `plain`; a document with no
+declared kind is `plain`) and is skipped elsewhere — 「~할 수 있습니다」 replacing an instruction is
+a defect on a screen and the ordinary capability sentence of a reference manual, and a rule that
+cannot tell the two apart by letters tells them apart by register. A rule true
 beyond this repository goes into `RULES.base.json`; a rule true only in one project goes into that
 project's `.claude/l10n-rules.json`.
 

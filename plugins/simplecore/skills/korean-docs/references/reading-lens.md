@@ -80,7 +80,6 @@ the lens is for.
 `여부\.` · `으로\.` · `의 \S+의` — a sentence ended on a noun phrase, an adverbial phrase, or a connective ending with no predicate, or 「의」 used twice in a row. A full stop claims the thing is a sentence, so a final ending has to stand there. **Most of the candidates are nouns that merely share those syllables.** Leave 사물함 · 책임 · 믿음 · 처음 · 최종 보고 alone and fix only what reads as a sentence with no predicate. A table cell, a bold lead-in, and a list item are name slots rather than sentences, so delete the full stop there.
 
 **Planting · seeds** 씨앗 · 심는 · 심은 · 심어 · 심을 · 심기 — `seed` rendered as 「씨앗」 and loading sample data rendered as 「심는다」. A random-number seed is 「시드」 too. 「중심은」 · 「핵심은」 coming along for the ride is reading material
-**수 있습니다 · 수 있어요** 수 있습니다 · 수 있어요 — a possibility standing in for an instruction or a fact in 합니다체 guidance (`can-instead-of-does`). Rewrite as 「~하려면 ~하세요」 · 「~합니다」 or as something to verify; the adnominal 「할 수 있는」 and the negative 「할 수 없습니다」 are not caught
 
 **Counting with native numerals** `(?<!모)두(?= )` · `(?<!미)(?<!상)(?<!자)(?<!정)(?<!실)세(?= )` · `(?<!하)네(?= )` · `다섯(?= )` · `여섯(?= )` · `일곱(?= )` · `여덟(?= )` · `아홉(?= )` — a place where the name is already written beside it and a number covers it (「탐지 네 판정」 · 「사본 두 벌」). With a name present, delete the number; where it is a value to check, write it in digits. 「둘」 · 「셋」 · 「넷」 are left out because of 「둘 다」 and the verb 「두다」
 

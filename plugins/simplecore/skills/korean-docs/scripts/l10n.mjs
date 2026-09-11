@@ -51,7 +51,7 @@
  * assumption baked into shared code.
  */
 
-import { readFileSync, writeFileSync, existsSync, readdirSync, statSync } from "node:fs";
+import { readFileSync, writeFileSync, existsSync, readdirSync, statSync, realpathSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { join, dirname, resolve, relative, isAbsolute } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -299,8 +299,13 @@ function pathEntries(paths) {
     entries.set(file, { kind: kind ?? "docs", lang: CONFIG.defaultLanguage, file, format: formatOf(kind, file) });
   };
   for (const p of paths) {
-    const abs = resolve(START, p);
-    if (!existsSync(abs)) throw new Error(`No such file: ${p}`);
+    const given = resolve(START, p);
+    if (!existsSync(given)) throw new Error(`No such file: ${p}`);
+    // Canonical on both sides. `process.cwd()` is the physical path — on macOS `/tmp` is
+    // `/private/tmp` — while an argument keeps the spelling it was typed with, and `relative()`
+    // between the two begins with `..`: the file is read as outside the project, loses its kind,
+    // its register and its format, and a screen rule stays silent on screen copy.
+    const abs = realpathSync(given);
     const rel = relative(ROOT, abs);
     const inside = rel !== "" && !rel.startsWith("..") && !isAbsolute(rel);
     if (statSync(abs).isDirectory()) {
@@ -1705,6 +1710,9 @@ function cmdRulesTest(opts) {
       if (!covers) problems.push([`the exception does not cover the hit position in its sample (/${ex.re.source}/)`, ex.sample]);
     }
     if (!(rule.hit ?? []).length) problems.push(["no hit example", "nothing proves what this rule catches"]);
+    for (const reg of rule.registers ?? []) {
+      if (!["screen", "manual", "plain"].includes(reg)) problems.push(["unknown register in registers", `${reg} — screen · manual · plain`]);
+    }
     if (!(rule.miss ?? []).length) problems.push(["no miss example", "nothing guards against false positives"]);
     // The lens knowing a family HALF is the defect — 「붙는」 stood in it without
     // 붙이·붙은·붙지·붙어, so the lens reported finding the family while 126 sites walked
@@ -1806,8 +1814,15 @@ function cmdRulesScan(opts) {
     const { src, segments } = readSegments(entry);
     const contrast = contrastOffsets(entry, src);
     const perFile = new Map();
+    // A rule may name the registers it is written for. 「~할 수 있습니다」 standing in for an
+    // instruction is a defect on a screen, where guidance has to say do or does, and the ordinary
+    // way a reference manual states a capability — one such rule fired 467 times on a 119-file
+    // manual, every hit a capability sentence. The register comes from the declared kind; a
+    // document with no kind is "plain".
+    const register = CONFIG.kinds[entry.kind]?.register ?? "plain";
+    const applicable = active.filter((r) => !r.registers || r.registers.includes(register));
     for (const seg of segments) {
-      for (const rule of active) {
+      for (const rule of applicable) {
         for (const re of ruleMatchers(rule)) {
           const m = matchSegment(re, seg);
           if (!m) continue;
@@ -2204,11 +2219,24 @@ function cmdSweep(opts) {
     steps.push([name, code]);
   };
 
+  // The pack first: a rule that no longer catches its own example, or a lens that lost half a
+  // family, would make every zero below a zero from a broken instrument.
+  run("pack", () => cmdRulesTest({}));
   run("check", () => {
     const args = [...paths];
     if (opts.all) args.push("--all");
     if (opts.strict) args.push("--strict");
     if (opts.untranslated) args.push("--untranslated");
+    // A draft outside the project is still this project's Korean. `check` discovers its glossary
+    // from the file's own directory, so a scratch file would be judged by the base glossary alone
+    // unless the project's is named.
+    const outside = paths.some((p) => {
+      const given = resolve(START, p);
+      const rel = relative(ROOT, existsSync(given) ? realpathSync(given) : given);
+      return rel.startsWith("..") || isAbsolute(rel);
+    });
+    const g = outside ? discoverGlossary(ROOT) : null;
+    if (g?.path) args.push("--glossary", g.path);
     return cmdCheck(args, { noFooter: true });
   });
   run("rules", () => cmdRulesScan({ ...opts, json: false }));
@@ -2309,7 +2337,11 @@ function cmdApply(opts) {
 function guessKind(file) {
   for (const [k, spec] of Object.entries(CONFIG.kinds)) {
     if ((spec.exclude ?? []).some((p) => file.startsWith(p))) continue;
-    const roots = spec.patterns.map((p) => p.split("*")[0]);
+    // `{lang}` is a wildcard too: `ui/{lang}.json` has no `*` before it, and taking the prefix
+    // before the first `*` alone made that pattern's root the whole pattern — no file starts with
+    // a literal `{lang}`, so every screen file named on the command line lost its kind, and with
+    // it its register and its format.
+    const roots = [...(spec.patterns ?? []), ...(spec.basePatterns ?? [])].map((p) => p.replaceAll("{lang}", "*").split("*")[0]);
     if (roots.some((r) => file.startsWith(r))) return k;
   }
   return null;
@@ -2517,7 +2549,7 @@ function cmdCheck(rest, extra = {}) {
 const USAGE = `
 ${C.bold("l10n.mjs")} — checks a project's Korean under one set of rules, documents and resources alike
 
-  ${C.bold("sweep")}    [paths...] [--all] [--strict] [--explain]  every check below in one run, closed by what reached what
+  ${C.bold("sweep")}    [paths...] [--all] [--strict] [--explain]  the pack test, then every check below in one run, closed by what reached what
   ${C.bold("check")}    [paths...] [--all] [--strict]            glossary audit of documents (the hook's engine and judgement)
            [--untranslated] [--list-rules] [--init]
   ${C.bold("rules")}    [paths...] [--scope S] [--all] [--json]  sentence-rule sweep; --explain prints full reasons, --strict fails on warnings

@@ -86,9 +86,9 @@ node "${CLAUDE_PLUGIN_ROOT}/skills/korean-docs/scripts/l10n.mjs" check --init
 # 2. Fill in the project name and set audit.paths in the front matter
 #    (for example: paths: [docs])
 
-# 3. Register terms as you work, and run the audit
-node "${CLAUDE_PLUGIN_ROOT}/skills/korean-docs/scripts/l10n.mjs" check            # audit.paths
-node "${CLAUDE_PLUGIN_ROOT}/skills/korean-docs/scripts/l10n.mjs" check <paths...> # specific files or folders
+# 3. Register terms as you work, and run the sweep when an audit is asked for
+node "${CLAUDE_PLUGIN_ROOT}/skills/korean-docs/scripts/l10n.mjs" sweep            # audit.paths, every check
+node "${CLAUDE_PLUGIN_ROOT}/skills/korean-docs/scripts/l10n.mjs" sweep <paths...> # specific files or folders
 
 # 4. (optional) A project with locale resources (i18n, message bundles, mail) declares
 #    kinds in .claude/l10n.json, and audit · rules · suspects · apply then treat every

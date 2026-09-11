@@ -25,7 +25,7 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { pathToFileURL } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const SKIP_DIRS = new Set([
   "node_modules", "dist", "build", "out", "target", "coverage", "vendor",
@@ -400,19 +400,51 @@ function routesToDir(root, dir) {
  * has to survive a session that never mentions documents — which is what a line in the global
  * instruction file buys. Checked read-only, and absence is reported rather than acted on.
  */
+const KOREAN_CARD_MARKER = "<!-- simplecore:korean-habits -->";
+const KOREAN_CARD_FILE = path.join(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "..",
+  "skills",
+  "korean-docs",
+  "references",
+  "global-korean-card.md",
+);
+
+/**
+ * The habits block as one comparable string: from the marker to the next heading of level one
+ * to three (the block's own heading is level four), whitespace collapsed. Null where there is
+ * no marker.
+ */
+function koreanCardBlock(text) {
+  const start = text.indexOf(KOREAN_CARD_MARKER);
+  if (start < 0) return null;
+  const rest = text.slice(start);
+  const next = /\n#{1,3} (?!#)/.exec(rest);
+  return rest.slice(0, next ? next.index : rest.length).replace(/\s+/g, " ").trim();
+}
+
 function globalKoreanInstruction() {
   const file = path.join(os.homedir(), ".claude", "CLAUDE.md");
   const content = readIfPresent(file);
-  if (!content) return { file, present: false, card: false };
+  if (!content) return { file, present: false, card: false, cardStale: false };
   // `present` is the routing — a line that names the skill or its style file. `card` is the
   // habits block itself. The two are different things and the second is the one that works:
   // a pointer survives a long session while the file it points at does not, so a global
   // instruction can route correctly and still produce the register it forbids. The marker is
   // written by the block; the heading is accepted too, for a file that was edited by hand.
+  //
+  // `cardStale` compares the block with the skill's copy. The card grows as the skill learns,
+  // and a pasted copy keeps the habits of the day it was pasted — with nothing else reporting
+  // it, the global file drifts from the skill and the drift reads as compliance.
+  const card = /simplecore:korean-habits|#### The Korean habits/.test(content);
+  const skillCard = readIfPresent(KOREAN_CARD_FILE);
+  const pasted = koreanCardBlock(content);
+  const current = skillCard ? koreanCardBlock(skillCard) : null;
   return {
     file,
     present: /korean-docs|response-style\.md/.test(content),
-    card: /simplecore:korean-habits|#### The Korean habits/.test(content),
+    card,
+    cardStale: Boolean(card && pasted && current && pasted !== current),
   };
 }
 
@@ -567,6 +599,12 @@ export function analyze(root) {
     missing.push(
       "the global instruction file points at the Korean standard but does not carry the habits block, " +
         "so the rules are only in force while the file it points at is still in context",
+    );
+  } else if (korean && globalKorean.cardStale) {
+    missing.push(
+      "the habits block in the global instruction file is behind the skill's copy " +
+        "(skills/korean-docs/references/global-korean-card.md), so replies follow habits the skill has since revised — " +
+        "replace the block from its marker to the next heading with the file, whole",
     );
   }
 

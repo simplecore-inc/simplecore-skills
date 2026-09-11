@@ -73,6 +73,11 @@ agent is 「에이전트」 or 「읽는 쪽」. A process is not alive or dead:
 `살아 있는 컨테이너` → 실행 중인 컨테이너. A thing has no hands or eyes: `서버가 쥔 키` → 서버의
 키, `커밋이 물고 갔다` → 커밋에 함께 들어갔다.
 
+**A report goes through the machine first.** A completion report, a review result, anything
+longer than a screen is written to the scratch directory and run through
+`l10n.mjs sweep <that file>` before it is sent — a tenth of a second for the sentence rules, the
+smells and the lens — and what it finds is fixed in the draft. A one-line answer needs no pass.
+
 **A brief and a report.** A metaphor in an English brief comes back as Korean in the answer
 (`furniture` → `세간`, `ladder` → `사다리`); write the real name in the brief. A subagent's report
 relayed to the user is the relayer's sentence and gets the same standard. Only a screen label, an

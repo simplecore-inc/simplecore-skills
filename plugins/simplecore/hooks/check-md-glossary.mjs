@@ -31,7 +31,7 @@
  *             2 = findings reported on stderr, fed back to Claude.
  */
 import {spawnSync} from 'node:child_process';
-import {existsSync, readFileSync} from 'node:fs';
+import {existsSync, readFileSync, realpathSync} from 'node:fs';
 import {homedir} from 'node:os';
 import {basename, dirname, extname, join, resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
@@ -56,6 +56,32 @@ function isDeclaredResource(glossaryPath, abs) {
   }
   if (config.localeResources.length === 0) return false;
   return makeLocaleResourceMatcher(config.localeResources, rootFromGlossaryPath(glossaryPath))(abs);
+}
+
+/**
+ * Whether `.claude/l10n.json` at the glossary root declares this file as a resource kind.
+ *
+ * The sentence rules read a kind's files by that kind's format and register, and a project that
+ * declared its kinds there — and not in the glossary's `audit.localeResources` — had no
+ * write-time run of the sentence rules on any of them. The two declarations answer different
+ * commands (`check` reads the first, `rules` the second), so the hook reads both. `{lang}` is a
+ * wildcard here as it is there.
+ */
+function isDeclaredKind(glossaryPath, abs) {
+  const root = rootFromGlossaryPath(glossaryPath);
+  const layout = join(root, '.claude', 'l10n.json');
+  if (!existsSync(layout)) return false;
+  let config;
+  try {
+    config = JSON.parse(readFileSync(layout, 'utf8'));
+  } catch {
+    return false;
+  }
+  const patterns = Object.values(config?.kinds ?? {})
+    .flatMap((kind) => [...(kind.patterns ?? []), ...(kind.basePatterns ?? [])])
+    .map((p) => p.replaceAll('{lang}', '*'));
+  if (patterns.length === 0) return false;
+  return makeLocaleResourceMatcher(patterns, root)(abs);
 }
 
 /** Mirrors the glossary discovery in check-glossary.mjs: walk up from
@@ -85,21 +111,28 @@ function main() {
   const filePath = payload?.tool_input?.file_path;
   if (typeof filePath !== 'string' || filePath.length === 0) return 0;
 
-  const abs = resolve(payload.cwd || process.cwd(), filePath);
-  if (!existsSync(abs)) return 0;
+  const given = resolve(payload.cwd || process.cwd(), filePath);
+  if (!existsSync(given)) return 0;
+  // Canonical, because the two runs decide "inside the project" with relative() against a
+  // physical cwd — a logical spelling through a symlink (/tmp on macOS, a linked workspace)
+  // reads as outside, and a screen file loses the kind that gives it its register.
+  const abs = realpathSync(given);
 
   const glossary = findProjectGlossary(dirname(abs));
   if (!glossary) return 0;
   // The glossary itself contains banned forms by definition; never audit it.
   if (resolve(glossary) === abs || basename(abs) === 'GLOSSARY.md') return 0;
-  if (!AUDIT_EXTENSIONS.has(extname(abs).toLowerCase()) && !isDeclaredResource(glossary, abs)) return 0;
+  // The glossary check reads documents and the resources the glossary declares; the sentence
+  // rules read those and every kind `.claude/l10n.json` declares. A resource file known only to
+  // the second gets the second run alone — the word check would read its keys as prose.
+  const auditable = AUDIT_EXTENSIONS.has(extname(abs).toLowerCase()) || isDeclaredResource(glossary, abs);
+  if (!auditable && !isDeclaredKind(glossary, abs)) return 0;
 
   // Run both from the file's directory so each discovers the same project
   // glossary. process.execPath avoids PATH/.cmd-shim issues on Windows.
-  const runs = [
-    ['glossary', [AUDIT_SCRIPT, abs]],
-    ['sentence rules', [L10N_SCRIPT, 'rules', abs]],
-  ];
+  const runs = [];
+  if (auditable) runs.push(['glossary', [AUDIT_SCRIPT, abs]]);
+  runs.push(['sentence rules', [L10N_SCRIPT, 'rules', abs]]);
   const reports = [];
   for (const [name, argv] of runs) {
     const result = spawnSync(process.execPath, argv, {

@@ -24,7 +24,11 @@ instruction is English, including the ones surrounding a Korean quotation.
    moment, it has not been read, and the same holds after a summary.
 2. If the project keeps a glossary (`.claude/GLOSSARY.md` or a root `GLOSSARY.md`), its standard
    translations and banned spellings apply to replies too.
-3. Do not run the audit scripts, and do not offer to create a glossary.
+3. Do not sweep the repository, and do not offer to create a glossary. **A report goes through
+   the machine before it is sent**: a completion report, a review result, anything longer than a
+   screen is written to the scratch directory first and run through `sweep <that file>` — the
+   sentence rules, the smells, and the lens read it in about a tenth of a second — and what it
+   finds is fixed before the reply leaves. A one-line answer needs no such pass.
 
 **Document mode** — writing, translating, proofreading, reviewing, sweeping, glossary work.
 
@@ -56,8 +60,8 @@ not offer to create it.
 
 **An audit that was asked for is finished in one go.** 「감사해 줘」 means 「find it and fix it」.
 
-- Run `sweep`. It runs every check — `check` · `rules` · `suspects` · `audit` when resource kinds
-  are declared · the lens count — and closes with what reached what: the file count, the glossary
+- Run `sweep`. It verifies the rule pack, then runs every check — `check` · `rules` · `suspects` ·
+  `audit` when resource kinds are declared · the lens count — and closes with what reached what: the file count, the glossary
   and sentence rule counts, and whether the lens loaded. Read that line before reading any zero as
   a pass; a zero over zero files is not a pass. When running one command on its own, insert a
   deliberate violation, confirm the check reaches it, and delete it.

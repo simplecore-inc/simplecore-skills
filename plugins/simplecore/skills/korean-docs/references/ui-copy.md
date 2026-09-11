@@ -379,8 +379,9 @@ what happens, and only the possibility is left. A screen and a manual write one 
 possibility after a condition is 「~하려면 ~하세요」, a possibility that is a fact is 「~합니다」, and a
 guess at a cause becomes something to verify. The adnominal 「~할 수 있는」 and the negative
 「~할 수 없습니다」 state ability and prohibition and stay, and so do the sentences that really are
-about a difference in permission. The rule `can-instead-of-does` catches 합니다체 sentences — it does
-not catch 「~할 수 있다」 in a -다체 design document.
+about a difference in permission. The rule `can-instead-of-does` runs on the screen register only:
+a reference manual states capabilities in exactly this shape (「와일드카드를 사용할 수 있습니다」),
+and there the question is density, which the glossary counts at 경고(10+).
 
 - `입력을 고쳐야 다음 단계로 진행할 수 있습니다` → 다음 단계로 진행하려면 입력을 고치세요
 - `원본 값 탭에서 확인할 수 있습니다` → 조회 결과는 원본 값 탭에서 확인합니다

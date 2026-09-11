@@ -3106,7 +3106,7 @@
       "id": "can-instead-of-does",
       "scope": "universal",
       "severity": "error",
-      "reason": "「~할 수 있습니다」 standing in for an instruction or a fact in 합니다체 guidance. A screen and a manual write what happens and what to do — a possibility after a condition is 「~하려면 ~하세요」, a possibility that is a fact is 「~합니다」, and a guess at a cause (「막고 있을 수 있습니다」) becomes something to verify. The adnominal 「~할 수 있는」 and the negative 「~할 수 없습니다」 state ability and prohibition and stay; a sentence that really is about a difference in permission (「관리자만 바꿀 수 있습니다」) is released by the project's except",
+      "reason": "「~할 수 있습니다」 standing in for an instruction or a fact in screen copy. Guidance on a screen says what happens and what to do — a possibility after a condition is 「~하려면 ~하세요」, a possibility that is a fact is 「~합니다」, and a guess at a cause (「막고 있을 수 있습니다」) becomes something to verify. The adnominal 「~할 수 있는」 and the negative 「~할 수 없습니다」 state ability and prohibition and stay; a sentence that really is about a difference in permission (「관리자만 바꿀 수 있습니다」) is released by the project's except. **Screen register only.** A reference manual states capabilities — 「데이터를 직접 스트리밍할 수 있습니다」·「와일드카드를 사용할 수 있습니다」 — and the same sentence there is the ordinary way to say what a product does: on a 119-file manual this rule fired 467 times, every hit a capability. Overuse in a document is a density question, which the glossary's `수 있습니다` row counts at 경고(10+), and the S2 row of korean-style.md covers it in review.",
       "find": [
         "/[가-힣]\\s?수 있(?:습니다|어요)/"
       ],
@@ -3126,7 +3126,12 @@
         "이 컴퓨터의 사이트는 삭제할 수 없습니다",
         "배치 하나에는 장치 한 대 이상의 스냅샷을 포함합니다",
         "값을 저장한 뒤 화면을 다시 읽는다"
-      ]
+      ],
+      "registers": [
+        "screen"
+      ],
+      "lens": false,
+      "lensReason": "A screen-register rule; in a document every capability sentence would be a candidate, and a 119-file manual gave 467 of them — a wall, not reading material. Overuse in a document is a density question and the glossary counts it at 경고(10+)"
     },
     {
       "id": "inanimate-namgida",
