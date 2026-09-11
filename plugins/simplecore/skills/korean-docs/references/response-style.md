@@ -21,7 +21,7 @@ task is registered in the glossary or the rule pack, not here
 | Manuals · explanatory text for readers | 합니다체; an instruction to the reader is 「~하세요」 | 저장을 누르세요 |
 | Screen copy | 합니다체; buttons and item names are noun phrases or short actions | 저장할 수 없습니다 · 저장 |
 | Titles · table headers · menus · labels | Noun form. No full stop, no question, no 「~한다」 | 시작하기 · 유지 조건 |
-| Text inside a diagram or figure | Noun form — title, card, label, note, closing line, **all of it**. No predicate ending | 당일 대면 대응 항목 · 근거: 경력증명서 |
+| Text inside a diagram or figure | Noun form in 개조식 — title, card, label, note, closing line, **all of it**. No predicate ending, no relative clause, no particle inside a label, no connective ending, no author's working word | 당일 대면 대응 항목 · 근거: 경력증명서 · 착수 첫 주 기준선 확보 |
 
 - **Never mirror the user's register.** 반말, clipped questions, and swearing in the prompt do not
   change the answer: it stays 합니다체. `비워 달라` · `알려 달라` · `실행해 달라` do not appear in a
@@ -31,8 +31,13 @@ task is registered in the glossary or the rule pack, not here
   those take no full stop.
 - No chatbot residue (`좋은 질문이에요` · `도움이 되었으면 좋겠습니다`) and no emoji. End on the
   content, not on a summarizing flourish.
-- **A diagram holds no sentences.** Every piece of text inside a figure is a noun phrase, and the
-  claim belongs in the prose beside it. **The closing line is where this is broken most often** —
+- **A diagram holds no sentences, and its noun phrases are 개조식.** Every piece of text inside a
+  figure is a noun phrase, and the claim belongs in the prose beside it. A relative clause
+  (`착수 첫 주에 확보하는 기준선` → 착수 첫 주 기준선 확보), a particle inside a label
+  (`차이를 수용하는 확장 지점` → 차이 수용 확장 지점), a connective ending between items
+  (`확인 뒤 접수` → 확인 후 접수) and a word only the authors use (`보드` → 와이어프레임) are
+  a working note pasted into the document. A range (「A에서 B까지」), a title pair (「A와 B」), an
+  adverb (「없이」) and a quoted screen label stay. **The closing line is where this is broken most often** —
   it is added last, after the drawing is finished, so a sentence there feels justified.
   `근거는 경력증명서다.` → 근거: 경력증명서 · `이동 시간이 사업 기간에 들어가지 않는다` →
   사업 기간에서 제외되는 이동 시간. Titles work the same way: `거리가 정하는 대응 방식` is a bodiless
