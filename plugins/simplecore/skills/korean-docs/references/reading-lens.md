@@ -40,14 +40,14 @@ the lens is for.
 
 **Movement** `간다` · `갑니다` · `가는가` · `온다` · `옵니다` · `나간다` · `나갑니다` · `넘어가` · `넘어와` · `넘어간` · `넘어갑` · `넘어갔` · `넘어갈` · `넘어온` · `넘어옵` · `넘어왔` · `넘기는` · `넘기지` · `넘기고` · `넘기를` · `넘길` · `넘긴` · `넘겨` · `넘겼` · `올라가` ·
 `올라간` · `올라갔` · `올라온` · `내려가` · `내려온` · `내리기` · `내리는` · `내립` · `옮겨` · `옮기` · `옮긴` · `옮길` ·
-`흐른` · `흐릅` · `흘러` · `던지` · `던진` · `들고`
+`흐른` · `흐릅` · `흘러` · `던지` · `던진` · `(?<!만)들고`
 
 **Opening · closing · blocking** `연다` · `여는` · `열린` · `열립` · `닫힌` · `닫힙` · `닫는다` · `닫는` · `닫아` · `닫음` · `닫을` · `닫습` · `막는` · `막고` · `막힌` ·
 `막힙` · `풀린` · `풀립` · `드러나` · `드러난`
 
-**Hands** `쥐고` · `쥐는` · `품고` · `품는` · `품은` · `품지` · `싣` · `실어` · `잡는` · `잡고` · `잡습` · `잡지` · `잡았` · `잡아` · `갖는다` · `가진다` · `갖습니다` · `가집니다` · `갖는` · `가진` ·
+**Hands** `쥐고` · `쥐는` · `(?<!제)품고` · `(?<!제)품는` · `(?<!제)품은` · `(?<!제)품지` · `싣` · `실어` · `잡는` · `잡고` · `잡습` · `잡지` · `잡았` · `잡아` · `갖는다` · `가진다` · `갖습니다` · `가집니다` · `갖는` · `가진` ·
 `얹` · `박아` · `박은` · `손대` · `손댄` · `손댈` · `손댑` · `손댔` · `씌우` · `씌운` · `조임` · `조인다` · `넣습` · `넣는다` · `쌓이` · `쌓인` ·
-`쌓였` · `앉는다` · `앉은` · `앉습` · `내려앉` · `세운다` · `세웁` · `세우는` · `선다` · `서고` · `서며` · `서므로` · `서는지` · `섰다` · `섰고` · `섰습` · `섭니다` · `서 있` · `들고,` · `들고)` · `(?<!만)들지` · `(?<!만)든다` · `(?<!만)듭니다`
+`쌓였` · `앉는다` · `앉은` · `앉습` · `내려앉` · `세운다` · `세웁` · `세우는` · `선다` · `서고` · `서며` · `서므로` · `서는지` · `섰다` · `섰고` · `섰습` · `섭니다` · `서 있` · `(?<!만)들고,` · `(?<!만)들고)` · `(?<!만)들지` · `(?<!만)든다` · `(?<!만)듭니다`
 
 **Absorbing a difference** `차이 수용` · `차이를 수용` · `차이는 수용` · `로 수용` · `에서 수용` ·
 `없이 수용` · `설정 수용` · `변경 수용` · `흡수`
@@ -58,7 +58,7 @@ the lens is for.
 `붙는` · `붙들` · `붙이` · `붙은` · `붙지` · `붙어` · `붙음` · `붙인` · `붙일` · `붙습` · `잇기` · `잇는` · `잇고` · `물고 있`
 
 **Personification** `말한다` · `말합` · `말을 한` · `말을 합` · `밝힌` · `밝힙` · `답한다` · `답합` · `물어봅` · `물어본` ·
-`보여 준` · `기억한` · `기억합` · `기다린` · `기다립` · `스스로` · `대신하` · `대신합` · `불려` · `불러 낸` · `따라온` ·
+`보여 준` · `보여 줍` · `기억한` · `기억합` · `기다린` · `기다립` · `스스로` · `대신하` · `대신합` · `불려` · `불러 낸` · `따라온` ·
 `따라와` · `이끌` · `이끈다` · `이끄는` · `이끕`
 
 **Household metaphors** `세간(?!의)` · `가재도구` · `살림` — code, files, and modules called somebody's household goods. 「세간의 관심」 is 世間 and a different word.
@@ -68,23 +68,23 @@ the lens is for.
 **Queues** `큐` — a product's own waiting list called 「큐」. 「이벤트 큐」·「로컬 큐」 are data structures and 「렌더 큐」·「처리 큐」 are screen names, and the preceding word does not separate them. So the machine side catches it by enumerating screen names in the glossary, and whatever escapes the enumeration is what this lens shows a person.
 
 **Shape · state** `펼치` · `펼쳐` · `무너지` · `살아나` · `살아났` · `되살` · `살아 있` · `생사` · `죽는` · `죽은` · `죽었` · `죽어` ·
-`죽이` · `죽으` · `죽음` · `산다` · `삽니다` · `살고 있` · `사는(?! *사람)` · `흔들리` ·
+`죽이` · `죽으` · `죽음` · `산다` · `삽니다` · `살고 있` · `(?<!안)사는(?! *사람)` · `(?<!주)사는(?! *사람)` · `(?<!조)사는(?! *사람)` · `(?<!회)사는(?! *사람)` · `(?<!검)사는(?! *사람)` · `흔들리` ·
 `흔들립` · `벌어집` · `벌어진` · `얼어붙` · `돕니다` · `돈다` · `도는` · `새어` · `가른다` · `가르는` · `가르지` · `가르세` ·
 `가르면` · `가릅` · `갈린` · `물린` · `물리` · `맞물` · `부딪` · `늙는` · `늙은` · `깨진`
 
-**Metaphors settled as names** `몫` · `자리` · `축` · `시계` · `주인` · `걸음` · `연료` · `얽힘` · `사다리` · `뼈대` · `골격` · `는 길` · `관문` ·
+**Metaphors settled as names** `몫` · `자리` · `(?<!구)축(?![소적약])` · `(?<!단)축(?![소적약])` · `(?<!압)축(?![소적약])` · `(?<!감)축(?![소적약])` · `시계(?!열)` · `주인` · `걸음` · `연료` · `얽힘` · `사다리` · `뼈대` · `골격` · `는 길` · `관문` ·
 `함정` · `유령` · `천장` · `바닥` · `출발점` · `구실` · `거울` · `판박이` · `데칼코마니` · `동전의` · `쌍둥이` · `판본` · `싼 쪽` · `싼 편` · `이 싸다` · `싸다\.` · `비싸` · `가벼운` · `무거운` ·
 `표면` · `발밑` · `걷는` · `걷는다` · `걷고` · `걷기` · `걸어서` · `걸었` · `걷지` · `어깨너머` · `등 뒤` · `눈앞` · `손아귀` · `(?<!유)(?<!급)가족(?!관계)(?!돌봄)` · `형제(?! *노드)` · `자매` · `혈통` · `족보`
 
 **Compression · flat assertion** `통째로` · `조용히` · `일 뿐` · `이 아니라` · `가 아니라` · `핵심` · `곧` · `유일한` · `최악` · `하나의` · `그 이상`
 
 **Dropped endings · headline style** `며\.` · `하고\.` · `되고\.` · `이고\.` · `지고\.` · `같고\.` · `지만\.` · `는데\.` · `인데\.` · `해서\.` ·
-`어서\.` · `아서\.` · `나서\.` · `함\.` · `됨\.` · `임\.` · `음\.` · `예정\.` · `필요\.` · `불가\.` · `가능\.` · `무관\.` ·
+`어서\.` · `아서\.` · `나서\.` · `함\.` · `됨\.` · `임\.(?!md)` · `음\.` · `예정\.` · `필요\.` · `불가\.` · `가능\.` · `무관\.` ·
 `여부\.` · `으로\.` · `의 \S+의` — a sentence ended on a noun phrase, an adverbial phrase, or a connective ending with no predicate, or 「의」 used twice in a row. A full stop claims the thing is a sentence, so a final ending has to stand there. **Most of the candidates are nouns that merely share those syllables.** Leave 사물함 · 책임 · 믿음 · 처음 · 최종 보고 alone and fix only what reads as a sentence with no predicate. A table cell, a bold lead-in, and a list item are name slots rather than sentences, so delete the full stop there.
 
 **Planting · seeds** 씨앗 · 심는 · 심은 · 심어 · 심을 · 심기 — `seed` rendered as 「씨앗」 and loading sample data rendered as 「심는다」. A random-number seed is 「시드」 too. 「중심은」 · 「핵심은」 coming along for the ride is reading material
 
-**Counting with native numerals** `(?<!모)두(?= )` · `(?<!미)(?<!상)(?<!자)(?<!정)(?<!실)세(?= )` · `(?<!하)네(?= )` · `다섯(?= )` · `여섯(?= )` · `일곱(?= )` · `여덟(?= )` · `아홉(?= )` — a place where the name is already written beside it and a number covers it (「탐지 네 판정」 · 「사본 두 벌」). With a name present, delete the number; where it is a value to check, write it in digits. 「둘」 · 「셋」 · 「넷」 are left out because of 「둘 다」 and the verb 「두다」
+**Counting with native numerals** `(?<!모)(?<!구)두(?= )` · `(?<!미)(?<!상)(?<!자)(?<!정)(?<!실)(?<!추)(?<!시)(?<!형)세(?= )` · `(?<!하)네(?= )` · `다섯(?= )` · `여섯(?= )` · `일곱(?= )` · `여덟(?= )` · `아홉(?= )` — a place where the name is already written beside it and a number covers it (「탐지 네 판정」 · 「사본 두 벌」). With a name present, delete the number; where it is a value to check, write it in digits. 「둘」 · 「셋」 · 「넷」 are left out because of 「둘 다」 and the verb 「두다」
 
 
 **Empty relations · avoiding the plain verb** `관련되어 있` · `연관되어 있` · `연계되어 있` · `역할을 한` · `역할을 합` · `역할을 하는` · `기능한다` · `기능합니다` · `기능하는` · `갖추고 있` · `보유하고 있` — how two things connect is covered by 「관련」 instead of named, or a slot for 「이다 · 있다」 is filled with a longer phrase (ai-tells.md §14 · §18). A place where a role really is defined (「관리자 역할을 한 명 지정한다」) is legitimate, which is why this is a lens family and not a rule.

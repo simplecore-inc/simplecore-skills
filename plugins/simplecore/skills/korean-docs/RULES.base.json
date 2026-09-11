@@ -2363,7 +2363,7 @@
       "id": "inanimate-have",
       "scope": "universal",
       "severity": "error",
-      "reason": "Writing that a thing 「갖는다·가진다」 something. A literal English have: a screen, a list, or a record does not own anything — something is displayed or set there. 「첫 열에 이름을 표시한다」 rather than 「첫 열이 이름을 갖는다」, 「받은 이수에도 만료일을 설정한다」 rather than 「받은 이수도 만료를 갖는다」, 「선택지 순서가 판단에 영향을 준다」 rather than 「순서가 뜻을 가진다」. **The base glossary catches only 「가지고 있」**, so the final forms 「갖는다」·「가진다」 escaped wholesale, and suspects found twelve sites. **A person or an organization as the subject is legitimate** — 「한 사람이 여러 자격을 갖는다」·「키를 쥔 쪽이 가진 권한」. **A person subject is excluded with a variable-length lookbehind** — in 「한 사람이 여러 자격을 갖는다」 the subject is at the head of the sentence rather than immediately before the object particle, so up to twelve characters are allowed between the person noun and the particle (`(?<!(사람|…)[이가][^.<]{0,12})`). Excluding the full stop and 「<」 from that window keeps a person noun in the previous sentence out of the condition, and a subject further than twelve characters away is caught and judged by a person in context. **This lookbehind is something the miss examples actually prove, not the kind that still passes when deleted** — an example with no closing punctuation is never reached by 「[을를] 갖는다[.<\\s]」, so passing would prove nothing, and every miss example in this family therefore ends as a sentence. **The adnominal is the same family** — 「그룹을 직접 갖는 리더」 is not caught by the list of final forms and escapes wholesale. But 「자격을 가진 근로자」 is legitimate, so the stem alone cannot widen it, and only a following noun that is a thing is matched. **There is a separate form with no object particle** — 「읽는 순서는 그 문서가 갖는다」·「보존 근거는 필드가 갖습니다」 front the topic and leave only the subject as 「~가」, avoiding the 「[을를] 갖는다」 family entirely. So the 「[이가] 갖는다」 shape is matched separately, with the person nouns that often stand there (사람 · 담당자 · 관리자 · 근로자 · 승인자 · 작성자 · 감독자 · 사용자 · 본인 · 누구) excluded by a lookbehind — 「이 권한은 관리자가 갖는다」 is legitimate. A slot that could be a person or a thing and is not in the list, such as 「그쪽이 갖는다」, is caught and judged by a person in context. **A legal sentence's settled object is excluded on the object side** — 「권리를 가진다」·「의무를 갖는다」·「권한을 가집니다」·「자격을 갖습니다」·「책임을 갖는다」 are the fixed form of statutes and contracts, and 권리 · 의무 · 권한 · 자격 · 책임 are by definition borne only by a person or a legal entity, so an inanimate subject cannot stand before these objects. The subject-side lookbehind does not reach them — in 「정보주체는 …(a hundred characters)… 해당 결정을 거부할 수 있는 권리를 가진다」 the subject is outside the twelve-character window, and widening the window that far lets a person noun in the previous sentence hide a real defect. A quoted statute has to be carried over character for character, so there is no way to fix the document, and disabling the whole rule would also remove the real defects caught in the same run. **An organization is a group of people and is legitimate too** — 조직 · 부서 · 팀 · 파트 · 위원회 · 기관 · 법인 · 회사 holding a permission or a responsibility is not an inanimate subject and goes into the lookbehind with the rest. **Closing only on a full stop, an angle bracket, or whitespace lets a closing asterisk escape** — in 「**이름을 갖는다**(챕터 02)」 an asterisk follows the verb directly, so it does not read as the end of a segment, and a bold subheading is exactly that shape, which silences the most conspicuous slot. An asterisk, a backtick, a closing parenthesis, a closing bracket, a middle dot, and a comma are all in the closing set, so everything that closes a clause is matched.",
+      "reason": "Writing that a thing 「갖는다·가진다」 something. A literal English have: a screen, a list, or a record does not own anything — something is displayed or set there. 「첫 열에 이름을 표시한다」 rather than 「첫 열이 이름을 갖는다」, 「받은 이수에도 만료일을 설정한다」 rather than 「받은 이수도 만료를 갖는다」, 「선택지 순서가 판단에 영향을 준다」 rather than 「순서가 뜻을 가진다」. **The base glossary catches only 「가지고 있」**, so the final forms 「갖는다」·「가진다」 escaped wholesale, and suspects found twelve sites. **A person or an organization as the subject is legitimate** — 「한 사람이 여러 자격을 갖는다」·「키를 쥔 쪽이 가진 권한」. **A person subject is excluded with a variable-length lookbehind** — in 「한 사람이 여러 자격을 갖는다」 the subject is at the head of the sentence rather than immediately before the object particle, so up to twelve characters are allowed between the person noun and the particle (`(?<!(사람|…)[이가][^.<]{0,12})`). Excluding the full stop and 「<」 from that window keeps a person noun in the previous sentence out of the condition, and a subject further than twelve characters away is caught and judged by a person in context. **This lookbehind is something the miss examples actually prove, not the kind that still passes when deleted** — an example with no closing punctuation is never reached by 「[을를] 갖는다[.<\\s]」, so passing would prove nothing, and every miss example in this family therefore ends as a sentence. **The adnominal is the same family** — 「그룹을 직접 갖는 리더」 is not caught by the list of final forms and escapes wholesale. But 「자격을 가진 근로자」 is legitimate, so the stem alone cannot widen it, and only a following noun that is a thing is matched. **There is a separate form with no object particle** — 「읽는 순서는 그 문서가 갖는다」·「보존 근거는 필드가 갖습니다」 front the topic and leave only the subject as 「~가」, avoiding the 「[을를] 갖는다」 family entirely. So the 「[이가] 갖는다」 shape is matched separately, with the person nouns that often stand there (사람 · 담당자 · 관리자 · 근로자 · 승인자 · 작성자 · 감독자 · 사용자 · 본인 · 누구) excluded by a lookbehind — 「이 권한은 관리자가 갖는다」 is legitimate. A slot that could be a person or a thing and is not in the list, such as 「그쪽이 갖는다」, is caught and judged by a person in context. **A legal sentence's settled object is excluded on the object side** — 「권리를 가진다」·「의무를 갖는다」·「권한을 가집니다」·「자격을 갖습니다」·「책임을 갖는다」 are the fixed form of statutes and contracts, and 권리 · 의무 · 권한 · 자격 · 책임 are by definition borne only by a person or a legal entity, so an inanimate subject cannot stand before these objects. The subject-side lookbehind does not reach them — in 「정보주체는 …(a hundred characters)… 해당 결정을 거부할 수 있는 권리를 가진다」 the subject is outside the twelve-character window, and widening the window that far lets a person noun in the previous sentence hide a real defect. A quoted statute has to be carried over character for character, so there is no way to fix the document, and disabling the whole rule would also remove the real defects caught in the same run. **An organization is a group of people and is legitimate too** — 조직 · 부서 · 팀 · 파트 · 위원회 · 기관 · 법인 · 회사 holding a permission or a responsibility is not an inanimate subject and goes into the lookbehind with the rest. **Closing only on a full stop, an angle bracket, or whitespace lets a closing asterisk escape** — in 「**이름을 갖는다**(챕터 02)」 an asterisk follows the verb directly, so it does not read as the end of a segment, and a bold subheading is exactly that shape, which silences the most conspicuous slot. An asterisk, a backtick, a closing parenthesis, a closing bracket, a middle dot, and a comma are all in the closing set, so everything that closes a clause is matched. **The attributive form hides the same calque** — 「유효기간을 가진 규칙」 is `a rule that has a validity period`; Korean says 유효기간이 있는 규칙. A person may 가지다 a right, a qualification or experience, so those nouns are excluded.",
       "find": [
         "(?<!(사람|담당자|관리자|근로자|승인자|작성자|감독자|사용자|본인|누구|조직|부서|팀|파트|위원회|기관|법인|회사)[이가][^.<]{0,12})(?<!(권리|의무|권한|자격|책임)[*`」’”]{0,3})[을를] 갖는다[.<\\s*`)）」』·,]",
         "(?<!(사람|담당자|관리자|근로자|승인자|작성자|감독자|사용자|본인|누구|조직|부서|팀|파트|위원회|기관|법인|회사)[이가][^.<]{0,12})(?<!(권리|의무|권한|자격|책임)[*`」’”]{0,3})[을를] 가진다[.<\\s*`)）」』·,]",
@@ -2376,7 +2376,8 @@
         "보기를 갖",
         "화면을 갖",
         "[을를] ([가-힣]+ )?(갖는|가진) (화면|목록|기록|표|서버|기기|시스템|파일|항목|칸)",
-        "(?<!사람|담당자|관리자|근로자|승인자|작성자|감독자|사용자|본인|누구|조직|부서|팀|파트|위원회|기관|법인|회사)[이가] (갖는다|가진다|갖습니다|가집니다)"
+        "(?<!사람|담당자|관리자|근로자|승인자|작성자|감독자|사용자|본인|누구|조직|부서|팀|파트|위원회|기관|법인|회사)[이가] (갖는다|가진다|갖습니다|가집니다)",
+        "(?<!(?:권한|자격|경험|책임|의무|권리|면허|지분)[*`」’”]{0,3})[을를] 가진 "
       ],
       "replace": null,
       "hit": [
@@ -2391,7 +2392,10 @@
         "실적은 목표 관리 화면이 갖습니다",
         "담당자가 정한다. 목록은 전용 화면을 갖는다.",
         "사용자가 고른 뒤 그 목록은 자기 정렬 순서를 갖는다.",
-        "**표 안의 조작 버튼은 어느 행의 것인지 이름을 갖는다**(챕터 02의 N-02i)"
+        "**표 안의 조작 버튼은 어느 행의 것인지 이름을 갖는다**(챕터 02의 N-02i)",
+        "유효기간을 가진 규칙으로 결정한다",
+        "승인된 예외 사유를 가진 건의 비율",
+        "적용 시작일을 가진 새 이력으로 관리한다"
       ],
       "miss": [
         "이 권한은 관리자가 갖는다.",
@@ -2412,7 +2416,10 @@
         "「의무」를 갖는다고 조문이 적는다.",
         "관문 승인 권한은 품질·보안 조직이 갖는다.",
         "최종 판정 권한은 평가위원회가 갖는다.",
-        "산출물 검토 책임은 품질 조직이 가집니다."
+        "산출물 검토 책임은 품질 조직이 가집니다.",
+        "권한을 가진 사용자가 조회한다",
+        "경험을 가진 인력을 배치한다",
+        "자격을 가진 검토자"
       ]
     },
     {
@@ -3581,6 +3588,53 @@
         "충격 흡수 장치",
         "기종 차이는 프로파일로 변환하고 외부 규격은 어댑터에서 변환한다",
         "제품 · 규격 차이 처리 위치 — 프로파일 · 어댑터 · SPI"
+      ]
+    },
+    {
+      "id": "show-for-display",
+      "scope": "universal",
+      "severity": "error",
+      "reason": "A literal `shows`. A screen, a list, a tool, a report or a figure written as the subject of 「보여 준다」 acts like a person handing something over; the document register writes what is displayed or presented — 재처리 화면은 … 예상 영향을 표시한다 · 그림은 … 순서를 제시한다. A person can 보여 주다 (강사가 화면을 보여 준다), so the pattern anchors on a thing-subject within the clause.",
+      "find": [
+        "(?:화면|목록|도구|그림|도식|보고서|리포트|시스템|대시보드|패널|표|차트|메뉴)[은는이가] [^.。\\n]{0,40}보여 (?:준|줍|주는|주고|주며|줘)",
+        "[을를] [^.。\\n]{0,12}(?:결재자|승인자|담당자|관리자|사용자|운영자)에게 보여 (?:준|줍|주는)"
+      ],
+      "replace": null,
+      "hit": [
+        "재처리 화면은 원 작업, 실패 원인과 예상 영향을 보여 준다",
+        "목록은 검색 조건과 전체 건수를 먼저 보여 준다",
+        "그림은 접속 전환 순서를 보여 준다",
+        "보완 자료를 결재자에게 보여 준다",
+        "화면은 전송 상태를 보여 줍니다"
+      ],
+      "miss": [
+        "강사가 실제 화면을 보여 준다",
+        "담당자가 증빙을 보여 주고 설명한다",
+        "재처리 화면은 예상 영향을 표시한다",
+        "그림은 전환 순서를 제시한다"
+      ]
+    },
+    {
+      "id": "figure-climbs",
+      "scope": "universal",
+      "severity": "error",
+      "reason": "A quantity written as moving up or down a slope — 「잔량이 다시 올라가면」 · 「안전재고 아래로 내려가면」. A value does not walk; it 증가한다 · 감소한다, and a threshold is crossed as 이하가 된다 · 미만이 된다 · 초과한다. A person or a vehicle really goes up and down, and a mode or a level that is stepped is another rule (mode-up-down), so the pattern anchors on a quantity noun or on a threshold adverbial.",
+      "find": [
+        "(?:잔량|수치|값|비율|수량|재고|온도|매출|비용|건수|점수|사용량|출력량)[이가] (?:다시 |계속 |점점 )?(?:올라가|내려가)",
+        "(?:아래로|이하로|미만으로|위로|이상으로) (?:내려가|올라가)"
+      ],
+      "replace": null,
+      "hit": [
+        "잔량이 다시 올라가면 교체 여부를 재판정한다",
+        "가용 수량이 안전재고 아래로 내려가면 경고한다",
+        "비율이 계속 내려가는 구간",
+        "온도가 이상으로 올라가면 경보한다"
+      ],
+      "miss": [
+        "작업자가 계단을 내려가 장비를 확인한다",
+        "승강기로 올라가 점검한다",
+        "잔량이 다시 증가하면 재판정한다",
+        "가용 수량이 안전재고 미만이 되면 경고한다"
       ]
     }
   ]
