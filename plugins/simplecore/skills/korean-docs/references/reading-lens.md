@@ -1,109 +1,120 @@
-# 읽기 렌즈 — 규칙이 못 잡는 것을 사람이 읽을 양으로 줄인다
+# The reading lens — cutting what rules miss down to what a person can read
 
-**규칙과 렌즈는 정규식을 쓰는 목적이 다르다.** 규칙은 오류로 보고하므로 오탐이 없어야 하고, 그래서
-좁고, 그래서 샌다. 렌즈는 **사람이 읽을 후보를 뽑는 것**이라 넓어도 되고, 넓어야 새지 않는다.
+**A rule and the lens use a regex for opposite purposes.** A rule reports an error, so it must have
+no false positives, so it is narrow, so it leaks. The lens **selects candidates for a person to
+read**, so it may be broad, and it has to be broad to stop leaking.
 
-| | 규칙(`rules`) | 렌즈(`grep --regex`) |
+| | Rule (`rules`) | Lens (`grep --regex`) |
 | --- | --- | --- |
-| 판정자 | 기계 | 사람 |
-| 오탐 | 있으면 안 된다 | 있어도 된다 |
-| 넓이 | 목적어·활용형을 열거 | 어간과 계열로 넓게 |
-| 결과 | 「고쳐라」 | 「읽어라」 |
-| 놓치는 것 | 열거 밖의 모든 형태 | 거의 없다 |
+| Who judges | the machine | a person |
+| False positives | not allowed | allowed |
+| Breadth | enumerated objects and endings | stems and whole families |
+| Output | 「fix this」 | 「read this」 |
+| What it misses | every form outside the enumeration | almost nothing |
 
-**스킬은 오래도록 규칙뿐이었다.** 그래서 규칙 일흔둘이 0건을 낸 보드를 사람이 파일명
-순서로 읽자 한 구역에서만 열넷이 나왔고, **그중 규칙에 걸린 것은 하나도 없었다** —
-`결재가 올라갑니다`는 잡히는데 `알림이 갑니다`는 잡히지 않는 식이었다.
+**The skill had rules and nothing else for a long time.** Seventy-two rules returned zero on a
+board, and when a person read it in filename order one cluster alone gave fourteen findings, **none
+of which any rule had caught** — `결재가 올라갑니다` is caught while `알림이 갑니다` is not.
 
-## 쓰는 법
+## How to run it
 
 ```bash
 T="$HOME/.claude/skills/simplecore/skills/korean-docs/scripts/l10n.mjs"
 node "$T" grep --regex "$(cat "$(dirname "$T")/../references/lens.txt")"
 ```
 
-또는 렌즈를 직접 넘긴다(아래 목록을 `|`로 이어 괄호로 묶는다). `--json`으로 받아 파일명 순서로
-정렬하면 순차 읽기의 입력이 된다.
+Or pass the lens directly (join the list below with `|` and wrap it in parentheses). Take it as
+`--json` and sort by filename to get the input for an in-order read.
 
-**좁혀지는 정도**: 화면 문구 27,830개 → **2,000자리 안팎**. 사람이 구역별로 나눠 읽을 수 있는
-양이고, 그 후보를 읽어 실제 위반을 가려내는 것이 이 렌즈의 목적이다.
+**How much it narrows**: 27,830 pieces of screen copy → **around two thousand**. That is an amount a
+person can read cluster by cluster, and reading those candidates to find the real violations is what
+the lens is for.
 
-## 렌즈 — 계열별 어간
+## The lens — stems by family
 
-**이동** `간다` · `갑니다` · `가는가` · `온다` · `옵니다` · `나간다` · `나갑니다` · `넘어가` · `넘어와` · `넘어간` · `넘어갑` · `넘어갔` · `넘어갈` · `넘어온` · `넘어옵` · `넘어왔` · `넘기는` · `넘기지` · `넘기고` · `넘기를` · `넘길` · `넘긴` · `넘겨` · `넘겼` · `올라가` ·
+**Movement** `간다` · `갑니다` · `가는가` · `온다` · `옵니다` · `나간다` · `나갑니다` · `넘어가` · `넘어와` · `넘어간` · `넘어갑` · `넘어갔` · `넘어갈` · `넘어온` · `넘어옵` · `넘어왔` · `넘기는` · `넘기지` · `넘기고` · `넘기를` · `넘길` · `넘긴` · `넘겨` · `넘겼` · `올라가` ·
 `올라간` · `올라갔` · `올라온` · `내려가` · `내려온` · `내리기` · `내리는` · `내립` · `옮겨` · `옮기` · `옮긴` · `옮길` ·
 `흐른` · `흐릅` · `흘러` · `던지` · `던진` · `들고`
 
-**열림·닫힘·막힘** `연다` · `여는` · `열린` · `열립` · `닫힌` · `닫힙` · `닫는다` · `닫습` · `막는` · `막고` · `막힌` ·
+**Opening · closing · blocking** `연다` · `여는` · `열린` · `열립` · `닫힌` · `닫힙` · `닫는다` · `닫습` · `막는` · `막고` · `막힌` ·
 `막힙` · `풀린` · `풀립` · `드러나` · `드러난`
 
-**손** `쥐고` · `쥐는` · `품고` · `품는` · `품은` · `품지` · `싣` · `실어` · `잡는` · `잡고` · `잡습` · `잡지` · `갖는다` · `가진다` · `갖습니다` · `가집니다` · `갖는` · `가진` ·
+**Hands** `쥐고` · `쥐는` · `품고` · `품는` · `품은` · `품지` · `싣` · `실어` · `잡는` · `잡고` · `잡습` · `잡지` · `갖는다` · `가진다` · `갖습니다` · `가집니다` · `갖는` · `가진` ·
 `얹` · `박아` · `박은` · `손대` · `손댄` · `손댈` · `손댑` · `손댔` · `씌우` · `씌운` · `조임` · `조인다` · `넣습` · `넣는다` · `쌓이` · `쌓인` ·
 `쌓였` · `앉는다` · `앉은` · `앉습` · `내려앉` · `세운다` · `세웁` · `세우는` · `선다` · `서고` · `서며` · `서므로` · `서는지` · `섰다` · `섰고` · `섰습` · `섭니다` · `서 있` · `들고,` · `들고)` · `(?<!만)들지` · `(?<!만)든다` · `(?<!만)듭니다`
 
-**접촉·연결** `닿` · `기대는` · `기대고` · `기대지` · `기대면` · `기대며` · `기대야` · `기댄` · `기댑` · `기댈` · `기댔` ·
+**Contact · connection** `닿` · `기대는` · `기대고` · `기대지` · `기대면` · `기대며` · `기대야` · `기댄` · `기댑` · `기댈` · `기댔` ·
 `딸리` · `딸린` · `딸립` · `딸려` · `딸릴` · `딸렸` · `걸린` · `걸리` ·
 `걸려` · `걸어` · `걸고` · `걸지` ·
 `붙는` · `붙들` · `붙이` · `붙은` · `붙지` · `붙어` · `붙음` · `붙인` · `붙일` · `붙습` · `잇기` · `잇는` · `잇고` · `물고 있`
 
-**의인화** `말한다` · `말합` · `말을 한` · `말을 합` · `밝힌` · `밝힙` · `답한다` · `답합` · `물어봅` · `물어본` ·
+**Personification** `말한다` · `말합` · `말을 한` · `말을 합` · `밝힌` · `밝힙` · `답한다` · `답합` · `물어봅` · `물어본` ·
 `보여 준` · `기억한` · `기억합` · `기다린` · `기다립` · `스스로` · `대신하` · `대신합` · `불려` · `불러 낸` · `따라온` ·
 `따라와` · `이끌` · `이끈다` · `이끄는` · `이끕`
 
-**살림 비유** `세간(?!의)` · `가재도구` · `살림` — 코드·파일·모듈을 `살림살이`로 부른 것. 「세간의 관심」은 世間이라 다르다.
+**Household metaphors** `세간(?!의)` · `가재도구` · `살림` — code, files, and modules called somebody's household goods. 「세간의 관심」 is 世間 and a different word.
 
-**구조가 근거를 대신함** `구조로 보장` · `구조로 지키` · `구조로 지킨` · `구조로 지켜` · `구조로 막` · `구조로 충족` · `구조로 방지` · `구조로 배제` · `구조적 충족` · `구조적으로` — 무엇이 어떻게 그렇게 되는지를 「구조」 한 낱말이 덮은 것. 읽는 쪽에 남는 확인 수단이 없으므로 시험 항목과 합격 기준, 또는 수치를 적는다. 「계층 구조」·「저장 구조」·「구조 변경」처럼 실제 구성을 가리키는 쓰임은 정상이라, 구분하는 기준은 낱말이 아니라 그 문장이 근거를 요구하는가이다.
+**Structure standing in for evidence** `구조로 보장` · `구조로 지키` · `구조로 지킨` · `구조로 지켜` · `구조로 막` · `구조로 충족` · `구조로 방지` · `구조로 배제` · `구조적 충족` · `구조적으로` — one word, 「구조」, covering what does the thing and how. The reader is left with nothing to verify, so write the test item and its pass criterion, or the number. Uses that name a real arrangement — 「계층 구조」·「저장 구조」·「구조 변경」 — are legitimate, so what separates them is not the word but whether the sentence is making a claim that needs evidence.
 
-**대기열** `큐` — 제품이 가진 대기열을 「큐」로 부른 것. 「이벤트 큐」·「로컬 큐」는 자료구조이고 「렌더 큐」·「처리 큐」는 화면 이름인데, 앞말의 모양으로는 둘이 갈리지 않는다. 그래서 기계 쪽은 용어사전이 화면 이름을 열거해 잡고, 열거를 빠져나간 낱말은 이 렌즈가 사람에게 보여 준다.
+**Queues** `큐` — a product's own waiting list called 「큐」. 「이벤트 큐」·「로컬 큐」 are data structures and 「렌더 큐」·「처리 큐」 are screen names, and the preceding word does not separate them. So the machine side catches it by enumerating screen names in the glossary, and whatever escapes the enumeration is what this lens shows a person.
 
-**형태·상태** `펼치` · `펼쳐` · `무너지` · `살아나` · `살아났` · `되살` · `살아 있` · `생사` · `죽는` · `죽은` · `죽었` · `죽어` ·
+**Shape · state** `펼치` · `펼쳐` · `무너지` · `살아나` · `살아났` · `되살` · `살아 있` · `생사` · `죽는` · `죽은` · `죽었` · `죽어` ·
 `죽이` · `죽으` · `죽음` · `산다` · `삽니다` · `살고 있` · `사는(?! *사람)` · `흔들리` ·
 `흔들립` · `벌어집` · `벌어진` · `얼어붙` · `돕니다` · `돈다` · `도는` · `새어` · `가른다` · `가르는` · `가르지` · `가르세` ·
 `가르면` · `가릅` · `갈린` · `물린` · `물리` · `맞물` · `부딪` · `늙는` · `늙은` · `깨진`
 
-**이름으로 굳은 비유** `몫` · `자리` · `축` · `시계` · `주인` · `걸음` · `연료` · `얽힘` · `사다리` · `는 길` · `관문` ·
+**Metaphors settled as names** `몫` · `자리` · `축` · `시계` · `주인` · `걸음` · `연료` · `얽힘` · `사다리` · `는 길` · `관문` ·
 `함정` · `유령` · `천장` · `바닥` · `출발점` · `구실` · `거울` · `판박이` · `데칼코마니` · `동전의` · `쌍둥이` · `판본` · `싼 쪽` · `싼 편` · `이 싸다` · `싸다\.` · `비싸` · `가벼운` · `무거운` ·
 `표면` · `발밑` · `걷는` · `걷는다` · `걷고` · `걷기` · `걸어서` · `걸었` · `걷지` · `어깨너머` · `등 뒤` · `눈앞` · `손아귀` · `(?<!유)(?<!급)가족(?!관계)(?!돌봄)` · `형제(?! *노드)` · `자매` · `혈통` · `족보`
 
-**압축·단정** `통째로` · `조용히` · `일 뿐` · `이 아니라` · `가 아니라` · `핵심` · `곧` · `유일한` · `최악` · `하나의`
+**Compression · flat assertion** `통째로` · `조용히` · `일 뿐` · `이 아니라` · `가 아니라` · `핵심` · `곧` · `유일한` · `최악` · `하나의` · `그 이상`
 
-**생략·개조식** `며\.` · `하고\.` · `되고\.` · `이고\.` · `지고\.` · `같고\.` · `지만\.` · `는데\.` · `인데\.` · `해서\.` ·
+**Dropped endings · headline style** `며\.` · `하고\.` · `되고\.` · `이고\.` · `지고\.` · `같고\.` · `지만\.` · `는데\.` · `인데\.` · `해서\.` ·
 `어서\.` · `아서\.` · `나서\.` · `함\.` · `됨\.` · `임\.` · `음\.` · `예정\.` · `필요\.` · `불가\.` · `가능\.` · `무관\.` ·
-`여부\.` · `으로\.` · `의 \S+의` — 서술어와 종결어미 없이 명사구·부사구·연결어미로 문장을 끝냈거나, 관형격 조사 「의」를 잇달아 썼다. 마침표를 찍었으면 문장이라고 주장한 것이므로 종결어미가 서야 한다. **명사와 글자가 겹칠 뿐인 것이 후보의 대부분이다.** 사물함·책임·믿음·처음·최종 보고는 그대로 두고, 문장으로 읽히는데 서술어가 없는 것만 고친다. 표의 셀, 굵은 머리말, 목록 항목처럼 이름을 적는 곳은 문장이 아니므로 마침표를 지운다.
+`여부\.` · `으로\.` · `의 \S+의` — a sentence ended on a noun phrase, an adverbial phrase, or a connective ending with no predicate, or 「의」 used twice in a row. A full stop claims the thing is a sentence, so a final ending has to stand there. **Most of the candidates are nouns that merely share those syllables.** Leave 사물함 · 책임 · 믿음 · 처음 · 최종 보고 alone and fix only what reads as a sentence with no predicate. A table cell, a bold lead-in, and a list item are name slots rather than sentences, so delete the full stop there.
 
-**심다 · 씨앗** 씨앗 · 심는 · 심은 · 심어 · 심을 · 심기 — seed를 「씨앗」으로, 표본 데이터를 넣는 일을 「심는다」로 옮긴 자리. 난수의 시드도 「시드」다. 「중심은」 · 「핵심은」이 함께 걸리는 것은 읽을 거리다
-**수 있습니다 · 수 있어요** 수 있습니다 · 수 있어요 — 합니다체 안내문에서 가능 표현이 지시나 사실을 대신한 것(`can-instead-of-does`). 「~하려면 ~하세요」 · 「~합니다」 · 확인할 것으로 바꾼다; 관형형 「할 수 있는」과 부정 「할 수 없습니다」는 잡지 않는다
+**Planting · seeds** 씨앗 · 심는 · 심은 · 심어 · 심을 · 심기 — `seed` rendered as 「씨앗」 and loading sample data rendered as 「심는다」. A random-number seed is 「시드」 too. 「중심은」 · 「핵심은」 coming along for the ride is reading material
+**수 있습니다 · 수 있어요** 수 있습니다 · 수 있어요 — a possibility standing in for an instruction or a fact in 합니다체 guidance (`can-instead-of-does`). Rewrite as 「~하려면 ~하세요」 · 「~합니다」 or as something to verify; the adnominal 「할 수 있는」 and the negative 「할 수 없습니다」 are not caught
 
-**한글 수사로 세기** `(?<!모)두(?= )` · `(?<!미)(?<!상)(?<!자)(?<!정)(?<!실)세(?= )` · `(?<!하)네(?= )` · `다섯(?= )` · `여섯(?= )` · `일곱(?= )` · `여덟(?= )` · `아홉(?= )` — 옆에 이름이 이미 적혀 있는데 수로 덮은 자리(「탐지 네 판정」 · 「사본 두 벌」). 이름이 있으면 수를 지우고, 확인할 값이면 아라비아 숫자로 적는다. 「둘」 · 「셋」 · 「넷」은 「둘 다」와 동사 「두다」가 있어 넣지 않는다
+**Counting with native numerals** `(?<!모)두(?= )` · `(?<!미)(?<!상)(?<!자)(?<!정)(?<!실)세(?= )` · `(?<!하)네(?= )` · `다섯(?= )` · `여섯(?= )` · `일곱(?= )` · `여덟(?= )` · `아홉(?= )` — a place where the name is already written beside it and a number covers it (「탐지 네 판정」 · 「사본 두 벌」). With a name present, delete the number; where it is a value to check, write it in digits. 「둘」 · 「셋」 · 「넷」 are left out because of 「둘 다」 and the verb 「두다」
 
-### 어간은 활용형까지 적는다
 
-**렌즈에 `붙는`만 있고 `붙이` · `붙은` · `붙지` · `붙어`가 없어서 126곳이 후보에 오르지 않았다.** 어간을
-하나 적을 때 그 계열의 활용형을 함께 적는다 — 종결형(-는다·-습니다), 관형형(-은·-는·-을),
-연결형(-어·-지·-며), 명사형(-음·-기). 어간 하나를 적고 「계열을 담았다」고 판단하는 것이 렌즈에서
-가장 흔한 구멍이다.
+**Empty relations · avoiding the plain verb** `관련되어 있` · `연관되어 있` · `연계되어 있` · `역할을 한` · `역할을 합` · `역할을 하는` · `기능한다` · `기능합니다` · `기능하는` · `갖추고 있` · `보유하고 있` — how two things connect is covered by 「관련」 instead of named, or a slot for 「이다 · 있다」 is filled with a longer phrase (ai-tells.md §14 · §18). A place where a role really is defined (「관리자 역할을 한 명 지정한다」) is legitimate, which is why this is a lens family and not a rule.
 
-## 렌즈는 늘어난다
+### Write the conjugations, not just the stem
 
-**읽다가 규칙에도 렌즈에도 없는 비유를 만나면 그 어간을 여기 더한다.** 규칙으로 만들 수 있으면
-규칙에도 올리되, **규칙이 좁아 못 담는 것이 렌즈의 몫이다** — 「자리」는 자릿수와 좌석을 끌어오고
-「연다」는 파일과 창을 끌어오지만, 렌즈에서는 그 오탐이 비용이 아니라 읽을 거리다.
+**The lens held `붙는` without `붙이` · `붙은` · `붙지` · `붙어`, and 126 sites never reached the
+candidate list.** When you add a stem, add that family's conjugations with it — the final forms
+(-는다 · -습니다), the adnominal forms (-은 · -는 · -을), the connective forms (-어 · -지 · -며), and
+the nominal forms (-음 · -기). Writing one stem and concluding 「the family is covered」 is the most
+common hole in the lens.
 
-### 반만 아는 계열은 `rules --test`가 검출한다
+## The lens grows
 
-**계열을 아예 모르는 것보다 반만 아는 것이 나쁘다** — 렌즈에 `붙는`만 있으면 그 계열을
-찾았다고 보고하면서 `붙이` · `붙은` · `붙지` · `붙어`를 지나친다. 그래서 규칙의 hit 예문 가운데
-**일부만 렌즈에 걸리면** 검증이 실패하고, 빠져나간 형태를 이름으로 알려 준다.
+**When a reading turns up a metaphor that is in neither the rules nor the lens, add its stem here.**
+Put it in the rules too if a rule can hold it, but **what a narrow rule cannot hold is the lens's
+job** — 「자리」 drags in digits and seats and 「연다」 drags in files and windows, and in the lens
+those false positives are not a cost but reading material.
 
-- **하나도 안 걸리는 것은 판정하지 않는다.** 그 계열에 렌즈가 관심이 없다는 뜻이고, 표기·음차·
-  조사·접속어처럼 활용하지 않는 규칙이 정상적으로 그렇다.
-- **도메인 스코프 규칙은 묻지 않는다.** 렌즈는 universal이고 도메인에 빚진 것이 없다 — 「천장」은
-  과금 제품에서 비유이고 현장에서는 실제 천장이다.
-- **`"lens": false`로 뺀다** — 빠진 형태가 일상어여서 넣으면 읽을 거리만 늘거나(「것」·「켜는」),
-  계열이 아니라 규칙이 통째로 열거한 닫힌 낱말 목록일 때. 뺄 때는 `lensReason`에 이유를 적는다.
+### `rules --test` catches a family the lens only half knows
 
-**낱말을 하나씩 좇지 않는다.** 규칙이 열거한 목록을 렌즈가 따라 적으면 렌즈가 규칙의 사본이 되고,
-계열로 넓게 잡는다는 렌즈의 유일한 값이 사라진다. 좇을 것은 낱말이 아니라 **어간의 활용형**이다.
+**Half-knowing a family is worse than not knowing it** — with only `붙는` in the lens, it reports
+having found the family while walking past `붙이` · `붙은` · `붙지` · `붙어`. So when **only some of
+a rule's hit examples** match the lens, verification fails and names the form that escaped.
 
-**렌즈에 걸린 것을 고친 뒤 규칙이 0건이라고 끝내지 않는다.** 렌즈도 어간 목록이라 계열 자체를
-모르면 못 잡는다 — 마지막 그물은 순차 읽기이고, 렌즈는 그 읽기를 감당할 양으로 줄이는 도구다.
+- **Matching none is not judged.** It means the lens has no interest in that family, which is the
+  ordinary case for rules about spelling, transliteration, particles, and connectives — things that
+  do not conjugate.
+- **Domain-scoped rules are never asked.** The lens is universal and owes a domain nothing —
+  「천장」 is a metaphor in a billing product and a real ceiling on a construction site.
+- **Opt out with `"lens": false`** when the missing form is an everyday word that would only add
+  reading (「것」·「켜는」), or when the target is a closed list the rule enumerates rather than a
+  family. Write why in `lensReason`.
+
+**Do not chase words one at a time.** A lens that copies a rule's enumeration becomes a duplicate of
+that rule, and the lens's only value — catching a family broadly — is gone. What to chase is not a
+word but **a stem's conjugations**.
+
+**Do not stop at zero findings from the rules after fixing what the lens showed.** The lens is a
+stem list too, so a family it does not know is a family it cannot catch — the last net is reading in
+order, and the lens exists to cut that reading down to a manageable size.

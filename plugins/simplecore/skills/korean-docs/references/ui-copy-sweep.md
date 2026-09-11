@@ -1,181 +1,217 @@
-# 전수 검토 절차
+# The full-sweep procedure
 
-화면 문구나 문서를 통째로 검토하고 고치는 절차. 무엇이 어색한지를 판정하는 기준은
-[ui-copy.md](ui-copy.md)와 [response-style.md](response-style.md)에 있고, 이 파일은 그 기준을 어떤
-순서로 적용하는지를 정한다. 단위는 화면 문구는 화면 하나, 문서는 문서 하나다. 문서에서는 8단계의
-화면 맥락 항목을 문서의 것(제목과 첫 문단, 절 제목과 내용, 표 머리글과 값, 문서 전체의 용어)으로 바꿔
-읽는다.
+The procedure for reviewing and fixing a whole surface of screen copy or a whole document. What
+counts as wrong is decided by [ui-copy.md](ui-copy.md) and
+[response-style.md](response-style.md); this file decides the order in which those standards are
+applied. The unit is one screen for copy and one document for prose. In a document, read step 8's
+screen-context items as their document equivalents (title and opening paragraph, section heading and
+body, table header and values, terminology across the whole document).
 
-**이 절차는 한 턴에 끝난다.** 0단계부터 9단계 사이에서 사용자에게 되묻지 않는다. 검출이 수백 건이든
-새 규칙을 등재해야 하든 판단하고 고치고 완료 보고에 적는다. 멈추는 곳은 갈리는 용어 결정 하나이고,
-그것도 잠정 표기로 끝까지 간 뒤 모아서 묻는다.
+**This procedure finishes in one turn.** Between step 0 and step 9 there is no going back to the
+user. Hundreds of findings, or a new rule to register, do not change that: judge, fix, and write it
+in the completion report. The one place to stop is a term decision that could go either way, and
+even that goes to the end under a provisional spelling and is asked in a batch.
 
-## 0. 검색으로 시작하지 않는다
+## 0. Do not start with a search
 
-검색은 눈으로 읽어 발견한 패턴을 넓힐 때 쓰는 보조 수단이다. 검색 결과만 고치면 목록에 없던 같은
-종류가 남고, 고쳐진 문장 사이에서 정상으로 읽힌다. 모든 파일과 모든 문장을 파일 이름순으로 읽는다.
+Search is the follow-up tool for widening a pattern you found by reading. Fixing only what a search
+returned leaves the same type of defect in places the search never listed, and it reads as correct
+among the sentences around it. Read every file and every sentence in filename order.
 
-## 1. 프로젝트 규칙과 용어를 먼저 확인한다
+## 1. Check the project's rules and terms first
 
-1. 현재 경로와 상위 경로의 지시 파일(`AGENTS.md` · `CLAUDE.md`)
-2. 프로젝트 용어사전(`.claude/GLOSSARY.md`)과 규칙 팩(`.claude/l10n-rules.json`)
-3. 프로젝트가 정한 빌드 · 검사 명령
-4. 이미 수정된 파일과 사용자가 작업 중인 변경 사항. 되돌리거나 덮어쓰지 않는다.
+1. Instruction files on the current path and above it (`AGENTS.md` · `CLAUDE.md`).
+2. The project glossary (`.claude/GLOSSARY.md`) and rule pack (`.claude/l10n-rules.json`).
+3. The build and check commands the project defines.
+4. Files already fixed, and changes the user is working on. Do not revert or overwrite them.
 
-법정 용어 · 기술 용어가 의심스러우면 임의로 바꾸지 말고 용어사전과 같은 화면군의 사용례를 먼저
-확인한다.
+When a legal or technical term looks wrong, do not change it on your own: check the glossary and how
+the same family of screens uses it first.
 
-## 2. 검토 대상 목록을 확정한다
+## 2. Fix the list of what is under review
 
-파일을 이름순으로 정렬하고 전체 개수를 센다. 끝에서 누락을 확인하려면 시작 전에 전체 수를 알아야 한다.
+Sort the files by name and count them. Confirming at the end that nothing was missed requires
+knowing the total before starting.
 
-## 3. 모든 표시 문구를 순차 검토한다
+## 3. Read every displayed string in order
 
-화면 제목과 부제 · 메뉴 · 탭 · 경로 표시 · 구역 제목 · 필드 라벨 · 단위 · 선택 항목 · 버튼과 행 작업 · 안내문 ·
-도움말 · 툴팁 · 확인 창과 경고 · 빈 상태 · 오류 상태 · 로딩 상태 · 표 머리글 · 배지 · 요약 카드 · 예시 데이터 ·
-접근성 라벨 · 화면 설명으로 노출되는 메모. 코드 식별자 · CSS 클래스명은 대상이 아니다. 화면 문자열을
-식별자로도 쓰는 구조라면 참조 관계를 함께 고친다.
+Screen titles and subtitles · menus · tabs · breadcrumbs · section titles · field labels · units ·
+option items · buttons and row actions · guidance text · help · tooltips · confirmation dialogs and
+warnings · empty states · error states · loading states · table headers · badges · summary cards ·
+sample data · accessibility labels · notes exposed as screen descriptions. Code identifiers and CSS
+class names are out of scope. Where a screen string doubles as an identifier, fix the references
+along with it.
 
-양이 많으면 렌즈([reading-lens.md](reading-lens.md))로 후보를 뽑아 파일명 순서로 먼저 읽고, 그다음에
-렌즈에 걸리지 않은 것을 훑는다. 렌즈는 어간 목록이라 검사가 아니고, 마지막에는 전부 읽는다.
+When the volume is large, pull candidates with the lens ([reading-lens.md](reading-lens.md)), read
+those in filename order first, then sweep what the lens did not catch. The lens is a stem list, not
+a check, so everything gets read in the end.
 
-문장마다 열 가지로 판정한다.
+Judge each sentence on ten questions.
 
-1. 처음 읽는 사람이 한 번에 뜻을 아는가
-2. 업무용 소프트웨어에서 실제로 쓰는 표현인가
-3. 영어 원문을 떠올려야 이해되는 문장은 아닌가
-4. 사물이나 화면이 사람처럼 행동하고 있지 않은가
-5. 비유형 동사를 더 정확한 기능 동사로 바꿀 수 있는가
-6. 주체 · 대상 · 조건 · 결과가 분명한가
-7. 법적 · 기술적 의미가 원문과 같은가
-8. 같은 개념을 다른 화면에서도 같은 용어로 쓰는가
-9. 조사 · 어순 · 서술어 호응이 자연스러운가
-10. 제목과 설명이 같은 사실을 말하는가
+1. Does a first-time reader get the meaning in one pass?
+2. Is this what business software actually says?
+3. Does understanding it require recalling the English original?
+4. Is an object or a screen behaving like a person?
+5. Can a metaphorical verb be replaced with a more precise functional verb?
+6. Are the actor, the target, the condition, and the result clear?
+7. Does it carry the same legal and technical meaning as the source?
+8. Do other screens use the same term for the same concept?
+9. Do the particles, word order, and predicate agreement read naturally?
+10. Do the title and the description state the same fact?
 
-## 4. 문장 단위로 다시 쓴다
+## 4. Rewrite by the sentence
 
-단어 하나만 치환하지 않는다. 원문이 전달하려는 사실을 한 문장으로 정리하고, 실제 행위 주체와 동작을
-확인하고, 비유와 추상 명사를 지우고, 사용자가 알아야 하는 조건이나 결과를 앞에 두고, 가장 구체적인
-서술어를 고르고, 그 화면의 문체와 높임 수준에 맞춘다. 짧게 만드는 것은 목표가 아니다. 고쳐 쓴 문장은
-`check`와 `rules`에 다시 넣는다. 대신 넣은 말이 금지 표현인 경우가 이 작업에서 가장 흔하다.
+Do not substitute a single word. State in one sentence the fact the original is conveying, confirm
+who actually acts and what the action is, delete the metaphors and the abstract nouns, put the
+condition or result the user needs to know first, choose the most specific predicate, and match the
+screen's register and level of politeness. Making it shorter is not the goal. Put every rewritten
+sentence back through `check` and `rules` — the replacement being itself a banned expression is the
+most common outcome of this work.
 
-## 5. 반복 패턴을 넓혀 다시 찾는다
+## 5. Widen the repeating pattern and search again
 
-순차 검토를 마친 뒤에 전체 검색을 보조로 쓴다. 한 문장에서 발견한 어간의 활용형을 넓게 검색한다
-(기대다 · 기댄다 · 기대는 · 기대지). 검색된 표현이 실제 물리 동작인지, 정식 기술 용어인지, 비유인지
-문맥마다 판단한다. 일괄 치환을 썼다면 바뀐 문장을 전부 다시 읽어 조사와 의미를 확인한다.
+Use a full-text search as a follow-up only after the in-order reading. Search the conjugations of a
+stem found in one sentence, broadly (기대다 · 기댄다 · 기대는 · 기대지). Judge each result in
+context: a real physical action, a formal technical term, or a metaphor. If you used a bulk
+substitution, read every changed sentence again to confirm the particles and the meaning.
 
-## 6. 화면군끼리 용어를 통일한다
+## 6. Unify terms across a family of screens
 
-같은 기능의 목록 · 상세 · 등록 · 도움말 · 모바일 · 태블릿 화면을 함께 놓고 비교한다. 같은 상태에 다른
-이름 · 목록의 열 이름과 상세의 필드명 · 도움말 제목과 화면 제목 · 데스크톱과 태블릿의 작업명 · 법적 의무의
-명칭과 순서 · 적용 · 등록 · 배정 · 지정 · 선임처럼 뜻이 다른 동사의 혼용.
+Put the list, detail, registration, help, mobile, and tablet screens of one feature side by side.
+Look for: one state with two names · a list column name against the detail field name · a help title
+against the screen title · a desktop action name against the tablet one · the name and order of a
+legal obligation · verbs with different meanings used interchangeably (적용 · 등록 · 배정 · 지정 ·
+선임).
 
-**한 동작에 이름이 둘이면 읽기가 아니라 세기로 찾는다.** 동작 하나를 정하고 후보 이름을 모두 세어
-가장 많이 쓰인 것으로 통일한다.
+**When one action has two names, counting finds it, not reading.** Fix on one action, count every
+candidate name, and unify on the most used one.
 
 ```bash
-for w in 연결 잇기 붙이기 매핑; do printf '%-8s %s\n' "$w" "$(grep -ro "$w" <대상> | wc -l)"; done
+for w in 연결 잇기 붙이기 매핑; do printf '%-8s %s\n' "$w" "$(grep -ro "$w" <target> | wc -l)"; done
 ```
 
-세어야 드러나는 것이 셋 더 있다. 카드 제목과 그 카드가 여는 다이얼로그 제목 · 본문의 수와 지표의 수
-(「다섯 부처」와 타일의 「6개 부처」) · 한 술어가 덮는 주어가 둘일 때(ui-copy.md X절).
+Three more things only counting reveals: a card title against the title of the dialog it opens · a
+count in the body against a count in a metric (「다섯 부처」 against a tile's 「6개 부처」) · one
+predicate covering two subjects (ui-copy.md, the subject-agreement section).
 
-## 7. 문법을 전체 범위에서 다시 검사한다
+## 7. Re-check the grammar across the whole scope
 
-수정한 파일만이 아니라 검토 대상 전체를 다시 훑는다. 조사 · 관형절 · 주어와 서술어 불일치 · 중복 단어 ·
-불필요한 피동과 이중 부정 · 두 칸 이상의 공백 · 종결 방식 불일치 · 제목과 본문의 명칭 불일치 · 치환이
-남긴 문장 조각 · 높임말과 해라체 혼용 · 「할 수 있습니다」와 「가능합니다」의 중복 · 괄호와 숫자 · 단위의
-띄어쓰기. 조사 어긋남과 같은 말의 연속은 감사 스크립트가 검출하고 사람은 나머지를 본다.
+Sweep the entire review scope again, not only the files you changed: particles · adnominal clauses ·
+subject-predicate disagreement · duplicated words · unnecessary passives and double negatives · two
+or more consecutive spaces · inconsistent sentence endings · a title disagreeing with the body ·
+sentence fragments left by a substitution · honorific and plain forms mixed · `할 수 있습니다`
+duplicated with `가능합니다` · spacing around parentheses, numbers, and units. Particle disagreement
+and a word repeated twice are caught by the audit script; a person reads the rest.
 
-## 8. 화면 맥락 2차 검토
+## 8. The second pass, in screen context
 
-문장 단위 검토를 마친 뒤 각 화면의 문구를 표시 순서와 기능 관계에 따라 다시 읽는다. 소스에 선언된
-제목 · 설명 · 상태 · 경고 · 필드 · 버튼 · 패널 · 도움말을 순서대로 대조한다. 처음 적용할 때는 역할 · 기기 ·
-구조가 다른 대표 화면(목록과 상세 패널 · 폼 · 결재 화면 · 경고와 차단 상태 · 모바일 · 태블릿 현장 입력 ·
-관리자 설정 · 법정 의무와 증빙)에 먼저 시범 적용한다.
+After the sentence-level pass, read each screen's copy again in display order and by functional
+relation. Compare the title, description, states, warnings, fields, buttons, panels, and help as
+they are declared in the source, in order. The first time this is applied, try it on representative
+screens that differ in role, device, and structure (a list with a detail panel · a form · an
+approval screen · a warning or blocked state · mobile · tablet field entry · administrator settings
+· a legal obligation with its evidence).
 
-- **제목부터 작업 버튼까지 한 흐름으로 읽는다.** 화면명과 설명이 같은 기능을 말하는가 · 상태명과 요약
-  수치가 화면의 핵심 대상을 집계하는가 · 경고가 이 화면에 실제로 있는 문제를 설명하는가 · 경고가 요구한
-  조치를 수행할 버튼이나 경로가 있는가 · 버튼명이 안내문의 동작명과 같은가. 경고 「교육 과정을
-  개설하세요」와 버튼 「회차 열기」는 둘 다 「교육 과정 개설」이다.
-- **경고와 확인 문구의 정보 구조.** 경고는 문제 → 원인 → 영향 → 조치 순서로 쓰되 화면에서 이미 분명한
-  것은 반복하지 않는다. 제한 사실만 말하고 해결 방법을 빼거나, 조치만 말하고 원인을 감추지 않는다.
-  확인 창은 실행할 동작의 이름 · 영향받는 대상과 개수 · 유지되는 것과 바뀌는 것 · 되돌릴 수 있는지 ·
-  되돌리는 단위를 확인한다.
-- **목록과 상세 패널의 대상 일치.** 고른 대상과 패널의 주어 · 열 이름과 필드명 · 목록의 상태와 패널의
-  설명 · 패널의 버튼이 고른 대상에 하는 동작인지 · 빈 상태에 특정 레코드를 가리키는 문장이 남아 있지
-  않은지.
-- **화면 간 절차와 용어 일치.** 앞 화면의 버튼명과 다음 화면의 제목 · 요청 화면의 동작명과 이력 화면의
-  사건명 · 정책 화면과 판정 화면의 상태명 · 데스크톱과 모바일의 작업명. 화면 전환을 이동 비유로
-  설명하지 않는다. `여기서 연다` → 상세 화면으로 이동한다. 버튼은 누른 뒤 실제로 하는 일을 쓴다.
-  `검사 일정 잡기` → 검사 신청 · `증빙 올리기` → 증빙 등록. 화면 이동 버튼은 목적지 이름, 처리 버튼은
-  수행 동작을 쓴다.
-- **역할별 정보 우선순위.** 실무자는 지금 할 일 · 기한 · 제한 사유, 관리자는 판정 근거 · 미충족 요건 · 영향
-  대상, 승인자는 승인 조건 · 미확인 항목, 시스템 관리자는 설정값 · 적용 범위 · 복구 방법, 외부 조직
-  사용자는 직접 처리할 수 있는 작업과 요청해야 하는 작업을 먼저 준다. 현재 역할이 수행할 수 없는
-  작업을 명령형으로 안내하지 않는다(`교육 회차를 개설하세요` → 상위 조직에 교육 과정 개설을 요청하세요).
-- **한 문장에 핵심 관계 하나.** 주체가 바뀌는 곳 · 시간 조건이 바뀌는 곳 · 상태 설명에서 조치로 넘어가는
-  곳에서 나눈다.
-- **비시각적 길이 · 중복 검사.** 버튼 하나에 원인과 결과를 함께 넣지 않았는지 · 탭과 배지가 문장으로
-  길어지지 않았는지 · 같은 경고가 제목 · 본문 · 도움말에 세 번 반복되지 않는지. 실제 잘림과 밀도는 렌더링
-  결과를 보지 않고 확정하지 않는다.
+- **Read from the title through to the action button as one flow.** Does the screen name say the
+  same feature as the description · do the state names and summary figures count this screen's main
+  subject · does the warning describe a problem that actually exists on this screen · is there a
+  button or a path for the action the warning demands · does the button name match the action name
+  in the guidance text. The warning 「교육 과정을 개설하세요」 and the button 「회차 열기」 are both
+  「교육 과정 개설」.
+- **The information structure of warnings and confirmations.** A warning is written problem → cause
+  → impact → action, without repeating what the screen already makes obvious. Do not state the
+  restriction and omit the remedy, and do not state the action while hiding the cause. A
+  confirmation dialog states the name of the action, the affected objects and how many, what is kept
+  and what changes, whether it can be undone, and at what granularity.
+- **The list and the detail panel must be about the same thing.** The selected object against the
+  panel's subject · column names against field names · the list's state against the panel's
+  description · whether the panel's button acts on the selected object · whether an empty state
+  still carries a sentence pointing at a specific record.
+- **Procedure and terminology across screens.** The previous screen's button name against this
+  screen's title · the action name on a request screen against the event name in the history screen
+  · state names in the policy screen against the judgement screen · desktop against mobile action
+  names. Do not describe a screen transition as movement: `여기서 연다` → 상세 화면으로 이동한다. A
+  button says what it actually does once pressed: `검사 일정 잡기` → 검사 신청 · `증빙 올리기` →
+  증빙 등록. A navigation button takes the destination's name; an action button takes the action.
+- **Information priority by role.** A field worker needs what to do now, the deadline, and why they
+  are blocked; an administrator needs the basis for a judgement, the unmet requirements, and who is
+  affected; an approver needs the approval conditions and what is unverified; a system administrator
+  needs the setting, its scope, and how to recover; an external-organization user needs what they
+  can do themselves and what they must request. Do not write an imperative for an action the current
+  role cannot perform (`교육 회차를 개설하세요` → 상위 조직에 교육 과정 개설을 요청하세요).
+- **One key relation per sentence.** Split where the actor changes, where the time condition
+  changes, and where a description of state turns into an instruction.
+- **Non-visual length and duplication checks.** Whether one button carries both a cause and a result
+  · whether a tab or a badge has grown into a sentence · whether the same warning repeats three
+  times across the title, the body, and the help. Actual truncation and density are not settled
+  without looking at the rendered result.
 
-**맥락 검토 완료 판정**: 설명만 읽어도 화면의 목적을 안다 · 현재 상태와 제한 사유가 구분된다 · 다음에
-할 수 있는 작업을 안다 · 안내문과 버튼이 같은 동작명을 쓴다 · 목록 · 상세 · 확인 창 · 이력이 같은 대상명을
-쓴다 · 현재 역할에 없는 권한을 수행하라고 안내하지 않는다 · 고친 결과가 장황해지지 않았다.
+**Done for the context pass**: the description alone tells the reader what the screen is for · the
+current state is distinguishable from the reason for a restriction · the next possible action is
+clear · the guidance and the button use the same action name · the list, detail, confirmation, and
+history use the same object name · no instruction demands a permission the current role lacks · the
+result of the fixes did not become verbose.
 
-### 무작위 표본으로 누락을 확인한다
+### A random sample confirms nothing was missed
 
-전수 검토와 반복 패턴 검색을 마친 뒤 전체 파일에서 15~20개를 무작위로 골라 처음 검토하는 파일처럼
-읽는다. 표본에는 다이얼로그 · 도움말만 정의하는 짧은 래퍼 파일, 기본 화면을 가져와 이름 · 상태 · 메모만
-덮어쓰는 파일, 태블릿 · 모바일 화면, 오류 · 빈 상태 · 권한 제한 상태, 법정 용어와 기술 용어가 함께 쓰인
-화면이 들어가게 한다. 래퍼 파일은 짧다는 이유로 빼지 않는다.
+After the full read and the repeat-pattern search, pick 15 to 20 files at random from the whole set
+and read them as if for the first time. Make sure the sample includes short wrapper files that
+define only a dialog or a help text, files that import a base screen and override only the name,
+state, and note, tablet and mobile screens, error, empty, and permission-restricted states, and
+screens where legal and technical terms sit together. Do not exclude a wrapper file for being short.
 
-표본에서 새 문제가 나오면 그 문장을 고치고, 같은 어간과 구조를 전체에서 다시 검색하고, 기존 규칙으로
-설명되지 않으면 판정 기준과 규칙 팩에 더하고, 이미 검토한 파일에도 적용하고, 다른 표본을 새로 뽑는다.
-**새 문제가 하나도 나오지 않는 표본이 나올 때까지 되풀이한다.** 회차마다 앞 회차와 겹치지 않게 뽑고
-회차별 검출 수를 세어 둔다.
+When the sample turns up something new, fix that sentence, search the whole scope again for the same
+stem and structure, add the judgement test and the rule to the rule pack when no existing rule
+explains it, apply it to the files already reviewed, and draw a new sample. **Repeat until a sample
+comes back with nothing new.** Draw each round without overlapping the previous one, and record the
+count per round.
 
-**세 회차 넘게 계속 새 문제가 나오면 뽑기를 멈춘다.** 회차마다 다른 비유 유형이 하나씩 나오는 것은
-표본이 부족해서가 아니라 그 유형을 전수로 훑지 않아서다. 그때까지 표본이 찾아낸 비유 단어를 한
-목록으로 모아 저장소 전체를 한 번에 훑고(단어마다 정상 쓰임을 제외 패턴으로 함께 적는다), 후보를
-문맥으로 판정해 고친 뒤에 표본을 다시 뽑는다. 찾은 유형은 규칙 팩과 판정 기준에 올린다.
+**Stop drawing samples when new problems keep appearing past the third round.** One new metaphor
+type per round does not mean the sample is too small; it means that type was never swept across the
+whole scope. Collect every metaphor the samples found into one list, sweep the whole repository once
+with it (writing each word's legitimate use as an exclusion pattern beside it), judge the candidates
+in context and fix them, then sample again. Add the types you found to the rule pack and the
+judgement standard.
 
-## 9. 검사와 빌드
+## 9. Checks and build
 
-1. 변경한 파일의 문법 검사(모듈 파싱 · 타입 검사 등 그 프로젝트의 방식)
-2. 프로젝트의 게이트 검사
-3. 산출물 재생성(보드 · 번들)
-4. 변경분의 공백 · 충돌 표식 검사
-5. 감사 스크립트 네 명령(`check` · `rules` · `audit` · `suspects`). 새로 만든 파일은 감사 전에
-   스테이징한다. `check` 하나만 0건인 것은 통과가 아니다.
+1. Syntax checks on the changed files (module parsing, type checking, whatever the project uses).
+2. The project's gate checks.
+3. Regenerating the artifacts (boards, bundles).
+4. Whitespace and conflict-marker checks on the diff.
+5. All four audit commands (`check` · `rules` · `audit` · `suspects`). Stage new files before
+   auditing. `check` alone at zero is not a pass.
 
-시각 검토를 제외하도록 요청받았으면 브라우저를 실행하지 않고 최종 보고에 그 사실을 적는다.
+If you were asked to skip the visual review, do not launch a browser and say so in the final report.
 
-## 새 패턴은 발견한 즉시 규칙으로 만든다
+## A new pattern becomes a rule the moment it is found
 
-기존 항목으로 설명되지 않는 문장 구조를 만나면 원문을 고치는 것과 같은 변경에서 ui-copy.md에 항목을
-더한다. 문제가 되는 구조와 활용형 · 어색한 이유 · 유형(비유 · 직역 · 의인화 · 모호성) · 실제 기능을 확인할
-때 물을 질문 · 수정 전후 예 · 정상 쓰임을 지키는 예외 · 다시 찾을 검색 관점을 담는다. 기계로 판정되는
-것은 규칙 팩에 hit/miss 예문과 함께, 단어 금지는 용어사전에 넣고, 규칙을 더한 뒤 이미 검토한 파일을
-그 패턴으로 다시 훑는다.
+When a sentence structure appears that no existing entry explains, add an entry to ui-copy.md in the
+same change that fixes the sentence. It carries the problematic structure and its conjugations, why
+it is wrong, its type (metaphor · literal translation · personification · ambiguity), the question
+to ask when confirming what the feature actually does, a before-and-after example, the exception
+that protects legitimate use, and the search angle for finding it again. What a machine can judge
+goes into the rule pack with hit/miss examples, a banned word goes into the glossary, and after
+adding the rule the already-reviewed files are swept again with that pattern.
 
-## 완료 판정
+## Done
 
-1. 검토 대상의 모든 파일을 이름순으로 읽었다
-2. 모든 사용자 표시 문구를 검토했다
-3. 영어식 비유 · 의인화 · 무생물 주어 · 직역체를 제거하고 실제 기능과 관계를 나타내는 표현을 썼다
-4. 법정 용어와 기술 용어의 의미를 유지했다
-5. 같은 개념의 명칭을 관련 화면 전체에서 통일했다
-6. 조사 · 어순 · 호응 · 띄어쓰기를 다시 검사했다
-7. 반복 패턴 전체 검색에서 남은 후보를 문맥마다 확인했다
-8. 무작위 표본이 0건으로 끝났다
-9. 문법 검사와 프로젝트 게이트 검사를 통과하고 산출물을 다시 생성했다
-10. 화면명 · 상태 · 경고 · 버튼 · 상세 패널의 용어와 동작 흐름을 화면마다 확인했다
+1. Every file in scope was read in filename order.
+2. Every user-facing string was reviewed.
+3. English metaphors, personification, inanimate subjects, and literal translation were removed in
+   favour of expressions that name the actual function and relation.
+4. Legal and technical terms kept their meaning.
+5. One concept has one name across every related screen.
+6. Particles, word order, agreement, and spacing were re-checked.
+7. Every remaining candidate from the repeat-pattern search was judged in context.
+8. A random sample came back at zero.
+9. Syntax checks and the project's gate checks pass, and the artifacts were regenerated.
+10. Screen names, states, warnings, buttons, and detail panels were verified screen by screen for
+    terminology and action flow.
 
-## 완료 보고
+## The completion report
 
-검토한 파일 수와 화면 수 · 수정한 문제 유형 · 대표적인 수정 전후 예 · 법정 용어와 기술 용어를 보존한
-방식 · 실행한 검사와 결과 · 실행하지 못한 검사와 이유 · 수정한 주요 경로 · 용어 결정 절(등재한 용어 ·
-확인 대기 항목). 「자연스럽게 수정했습니다」로 끝내지 않는다.
+Files and screens reviewed · the types of problems fixed · representative before-and-after examples
+· how legal and technical terms were preserved · checks run and their results · checks not run and
+why · the main paths changed · the term-decision section (what was registered, what is waiting on
+the user). Do not end with 「자연스럽게 수정했습니다」.

@@ -90,7 +90,7 @@ function gatherFlowSequence(first, lines, from, where) {
   let i = from;
   while (!value.trimEnd().endsWith(']')) {
     if (i >= lines.length) {
-      throw new Error(`${where}: '[' 로 연 목록이 닫히지 않았습니다`);
+      throw new Error(`${where}: a list opened with '[' is never closed`);
     }
     value += ' ' + lines[i++].trim();
   }
@@ -203,7 +203,7 @@ export function compilePattern(item, sourceName) {
   try {
     return m ? new RegExp(m[1], 'g') : new RegExp(escapeRegExp(item), 'g');
   } catch (err) {
-    throw new Error(`${sourceName}: 잘못된 패턴 "${item}": ${err.message}`);
+    throw new Error(`${sourceName}: invalid pattern "${item}": ${err.message}`);
   }
 }
 
@@ -220,7 +220,7 @@ function parseLevel(cell, sourceName) {
   if (cell === '경고') return {level: 'warn', threshold: 1};
   const m = cell.match(/^경고\((\d+)\+\)$/);
   if (m) return {level: 'warn', threshold: Number(m[1])};
-  throw new Error(`${sourceName}: 알 수 없는 수준 "${cell}" (오류 | 경고 | 경고(N+))`);
+  throw new Error(`${sourceName}: unknown level "${cell}" (오류 | 경고 | 경고(N+))`);
 }
 
 /**
@@ -253,7 +253,7 @@ export function parseGlossary(body, origin, sourceName) {
       pattern: compilePattern(item, sourceName),
       source: item,
       suggestion: korean,
-      label: `용어: ${english}`,
+      label: `term: ${english}`,
       level: 'error',
       threshold: 1,
       origin,
@@ -271,7 +271,7 @@ export function parseGlossary(body, origin, sourceName) {
         pattern: compilePattern(item, sourceName),
         source: item,
         suggestion: replacement,
-        label: note || '금지 표현',
+        label: note || 'banned expression',
         level,
         threshold,
         origin,
@@ -289,7 +289,7 @@ export function parseGlossary(body, origin, sourceName) {
         pattern: compilePattern(item, sourceName),
         source: item,
         suggestion: replacement,
-        label: note || '화면 금지 표현',
+        label: note || 'banned in screen copy',
         level,
         threshold,
         screenOnly: true,
@@ -336,14 +336,14 @@ export function emptyGlossary() {
 // than honoured, because an exception that reads as accepted and disables nothing is the
 // failure this file already carries a dead-exception report for.
 export const EXEMPTABLE_CHECKS = new Map([
-  ['heading-form', '제목이 서술문이다'],
-  ['repeat', '같은 말이 잇달아 나옴'],
-  ['untranslated', '번역 미완 가능성'],
+  ['heading-form', 'the heading is a sentence'],
+  ['repeat', 'the same word twice in a row'],
+  ['untranslated', 'possibly untranslated'],
 ]);
 export const FIXED_CHECKS = new Map([
-  ['particle', '조사 어긋남'],
-  ['interpolated-particle', '치환값 뒤의 조사'],
-  ['reference-particle', '참조 뒤의 조사'],
+  ['particle', 'particle disagreement'],
+  ['interpolated-particle', 'particle after a placeholder'],
+  ['reference-particle', 'particle after a reference'],
 ]);
 
 /** Merges base and project rules into a flat, deduplicated rule list. */
@@ -365,9 +365,9 @@ export function mergeGlossaries(base, project) {
       }
       if (FIXED_CHECKS.has(raw)) {
         throw new Error(
-          `기본 규칙 예외로 끌 수 없는 검사입니다: ${raw} (${FIXED_CHECKS.get(raw)}) — ` +
-            `오류 수준의 내장 검사는 문맥이 갈리지 않아 예외를 두지 않습니다. ` +
-            `끌 수 있는 것: ${[...EXEMPTABLE_CHECKS.keys()].join(' · ')}`,
+          `This check cannot be disabled through 기본 규칙 예외: ${raw} (${FIXED_CHECKS.get(raw)}) — ` +
+            `an error-level built-in check does not split by context, so it takes no exception. ` +
+            `What can be disabled: ${[...EXEMPTABLE_CHECKS.keys()].join(' · ')}`,
         );
       }
       const key = raw.toLowerCase();
@@ -433,7 +433,7 @@ export function loadRuleSet({glossaryPath = null, noBase = false, startDir = pro
   let discovered = null;
   if (glossaryPath) {
     const p = resolve(glossaryPath);
-    if (!existsSync(p)) throw new Error(`용어사전을 찾을 수 없습니다: ${glossaryPath}`);
+    if (!existsSync(p)) throw new Error(`Glossary not found: ${glossaryPath}`);
     discovered = {path: p, root: rootFromGlossaryPath(p)};
   } else {
     discovered = discoverGlossary(startDir);
@@ -451,7 +451,7 @@ export function loadRuleSet({glossaryPath = null, noBase = false, startDir = pro
 
   let base = emptyGlossary();
   if (!noBase) {
-    if (!existsSync(BASE_GLOSSARY_PATH)) throw new Error(`기본 용어사전이 없습니다: ${BASE_GLOSSARY_PATH}`);
+    if (!existsSync(BASE_GLOSSARY_PATH)) throw new Error(`The base glossary is missing: ${BASE_GLOSSARY_PATH}`);
     base = parseGlossary(readFileSync(BASE_GLOSSARY_PATH, 'utf8'), 'base', BASE_GLOSSARY_PATH);
   }
 
@@ -494,14 +494,14 @@ export function loadRulePacks({root = process.cwd(), scopes = []} = {}) {
     if (pack.origin !== 'project') continue;
     for (const [id, why] of Object.entries(pack.disable ?? {})) {
       if (!String(why ?? '').trim()) {
-        throw new Error(`${pack.path}: disable["${id}"]에 끄는 까닭을 적어야 한다 — 까닭 없는 예외는 다음 사람이 되살릴 수 없다.`);
+        throw new Error(`${pack.path}: disable["${id}"] needs a reason — an exception with no reason cannot be revived by the next person.`);
       }
       disabled.set(id, why);
     }
   }
   const known = new Set(packs.flatMap((p) => (p.rules ?? []).map((r) => r.id)));
   for (const id of disabled.keys()) {
-    if (!known.has(id)) throw new Error(`알 수 없는 규칙을 끄려 한다: ${id}`);
+    if (!known.has(id)) throw new Error(`Trying to disable an unknown rule: ${id}`);
   }
   // Killing a rule is not the only thing a project needs. A base rule can be right about
   // sixteen words and wrong about one PLACE — a requirement title quoted from a client's
@@ -521,12 +521,12 @@ export function loadRulePacks({root = process.cwd(), scopes = []} = {}) {
   for (const pack of packs) {
     if (pack.origin !== 'project') continue;
     for (const [id, list] of Object.entries(pack.except ?? {})) {
-      if (!known.has(id)) throw new Error(`알 수 없는 규칙에 예외를 걸려 한다: ${id}`);
+      if (!known.has(id)) throw new Error(`Trying to add an exception to an unknown rule: ${id}`);
       const items = (Array.isArray(list) ? list : [list]).map((it) => {
         for (const field of ['find', 'why', 'sample']) {
           if (!String(it?.[field] ?? '').trim()) {
-            throw new Error(`${pack.path}: except["${id}"]의 ${field}가 비었다 — ` +
-              'find(무엇을 놓아 주는가) · why(왜) · sample(그 예외가 실제로 놓아 주는 문장)이 다 있어야 한다.');
+            throw new Error(`${pack.path}: except["${id}"] has an empty ${field} — ` +
+              'find (what it releases) · why (the reason) · sample (a sentence the exception actually releases) are all required.');
           }
         }
         const raw = it.find;

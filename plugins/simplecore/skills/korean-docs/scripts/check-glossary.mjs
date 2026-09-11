@@ -88,8 +88,8 @@ function parseArgs(argv) {
     else if (a === '--init') args.init = true;
     else if (a === '--glossary') {
       args.glossary = argv[++i];
-      if (!args.glossary) throw new Error('--glossary 뒤에 경로가 필요합니다');
-    } else if (a.startsWith('--')) throw new Error(`알 수 없는 플래그: ${a}`);
+      if (!args.glossary) throw new Error('--glossary needs a path after it');
+    } else if (a.startsWith('--')) throw new Error(`Unknown flag: ${a}`);
     else args.paths.push(a);
   }
   return args;

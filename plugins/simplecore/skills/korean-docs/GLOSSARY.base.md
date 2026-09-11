@@ -1,178 +1,200 @@
-# 기본 용어사전
+# The base glossary
 
-korean-docs 스킬이 모든 프로젝트에 공통으로 적용하는 용어·표기 규칙. 감사 스크립트(`scripts/check-glossary.mjs`)가 프로젝트 용어사전과 병합해 함께 검사한다.
+The terminology and spelling rules the korean-docs skill applies in every project. The audit script
+(`scripts/check-glossary.mjs`) merges them with the project glossary and checks both together.
 
-- 프로젝트 용어사전이 같은 `영어` 키의 행을 정의하면 그 행이 이 파일의 행을 **통째로 대체**한다(금지 표기 목록은 합쳐지지 않는다 — 유지할 표기는 프로젝트 행에 옮겨 적는다). 같은 `금지` 패턴의 금지 표현 행도 마찬가지로 대체된다.
-- 프로젝트에 맞지 않는 규칙은 프로젝트 용어사전의 `## 기본 규칙 예외` 표로 비활성화한다(예: 금융 문서의 "레버리지").
-- 표 형식 규칙: 항목은 `,`로 구분한다. `/pattern/` 형태는 정규식(lookahead/lookbehind 사용 가능), 그 외는 리터럴이다. 셀 안에 `|`를 쓰지 않고(alternation 대신 항목 분리), 정규식 안에 `,`를 쓰지 않는다(항목 구분자와 충돌).
-- 여기에는 프로젝트·도메인과 무관하게 널리 합의된 규칙만 둔다. 도메인 개념어는 각 프로젝트 용어사전에 등재한다.
-- **제품 고유명은 도메인 개념어와 달리 여기에 둔다.** 한 제품의 이름은 그 제품의 저장소에만 나오지 않는다 — 설계서·회의록·다른 제품의 연동 문서가 모두 그 이름을 적고, 음차나 대소문자를 틀린 표기는 어느 프로젝트에서도 올바르지 않다. 소문자로 쓰는 패키지·디렉터리·파일 이름은 올바른 표기이므로 각 행의 비고가 그 경계를 적는다. 표기를 지시하는 글은 `references/response-style.md`의 `## 고유명` 절이다.
+**Written in English, with Korean only where it is data.** The section headings, the column headers,
+the level names (`오류` · `경고` · `경고(N+)`), the terms themselves, and the category descriptions in
+the keep-original table are parsed or matched, so they stay exactly as they are. The note column is
+guidance and is English.
+
+- A project glossary defining a row with the same `영어` key **replaces this file's row entirely**
+  (banned-spelling lists are not merged — carry over the spellings you want to keep). A banned
+  expression with the same `금지` pattern is replaced the same way.
+- A rule that does not fit a project is disabled through the `## 기본 규칙 예외` table in that
+  project's glossary (for example "레버리지" in a financial document).
+- Table format: items are separated by `,`. A `/pattern/` item is a regex (lookahead and lookbehind
+  allowed); anything else is a literal. Do not write `|` inside a cell (separate items instead of
+  using alternation) and do not write `,` inside a regex (it collides with the item separator).
+- Only rules agreed on regardless of project and domain live here. Domain concepts are registered in
+  each project's glossary.
+- **Unlike a domain concept, a product's proper name lives here.** A product's name does not appear
+  only in that product's repository — design documents, meeting notes, and another product's
+  integration documents all write it, and a transliteration or a wrong capitalization is wrong in
+  every project. A lowercase package, directory, or file name is correct, and each row's note draws
+  that boundary. The instruction on spelling is section 3 of `references/response-style.md`.
 
 ## 용어 대역표
 
-외래어 표기법과 보편적 기술 용어의 표준 표기.
+Standard spellings from the loanword orthography and for widely shared technical terms.
 
 | 영어 | 한국어 | 금지 표기 | 비고 |
 | ---- | ------ | --------- | ---- |
-| directory | 디렉터리 | 디렉토리 | 외래어 표기법 |
-| license | 라이선스 | 라이센스 | 외래어 표기법 |
-| release | 릴리스 | 릴리즈 | 외래어 표기법 |
-| message | 메시지 | 메세지 | 외래어 표기법 |
-| application | 애플리케이션 | 어플리케이션 | 외래어 표기법 |
-| architecture | 아키텍처 | 아키텍쳐 | 외래어 표기법 |
-| transaction | 트랜잭션 | 트랜젝션 | 외래어 표기법 |
-| cache | 캐시 | 캐쉬 | 외래어 표기법 |
-| data | 데이터 | 데이타 | 외래어 표기법 |
-| content | 콘텐츠 | 컨텐츠 | 외래어 표기법 |
-| business | 비즈니스 | 비지니스 | 외래어 표기법 |
-| controller | 컨트롤러 | 콘트롤러 | 외래어 표기법 |
-| method | 메서드 | 메소드 | 국립국어원 표준 표기 |
-| algorithm | 알고리즘 | 알고리듬 | 외래어 표기법 |
-| template | 템플릿 | 템플레이트, 탬플릿 | 외래어 표기법 |
-| interface | 인터페이스 | 인터훼이스 | 외래어 표기법 |
-| snapshot | 스냅샷 | 스넵샷, 스냅숏 | 외래어 표기법 |
-| timestamp | 타임스탬프 | 타임스템프 | 외래어 표기법 |
-| thread | 스레드 | 쓰레드 | 외래어 표기법 |
-| navigation | 내비게이션 | 네비게이션 | 외래어 표기법 |
-| collection | 컬렉션 | 콜렉션 | 외래어 표기법 |
-| metric | 메트릭 | /매트릭(?!스)/ | 오표기. "매트릭스"(matrix)는 별개 단어라 lookahead로 오탐을 막는다. 프로젝트에 따라 "지표"로 옮기는 것은 허용 |
-| repository | 저장소 | 리포지토리, 레포지토리 | git 저장소, Repository 디자인 패턴 공통 |
-| operating system | 운영 체제 | 운영체제 | 표준 띄어쓰기 |
-| among them | 그중 | /그 중(?!복)(?!요)(?!간)(?!계)(?!단)(?!력)(?!심)(?!립)(?!재)(?!지)(?!점)/ | 「그중」은 붙여 쓰는 한 낱말이다. 「그 중복」·「그 중요한」처럼 뒷말이 이어지는 자리는 뒷글자로 걸러낸다 |
-| annotation | 애노테이션 | 어노테이션, 애너테이션 | Java 등의 코드 애노테이션. `@Table` 등 코드상 이름은 원문 유지 |
-| capture | 캡처 | 캡쳐 | 외래어 표기 |
-| webhook | 웹훅 | 웹후크, 웹 훅 | 외래어 표기 |
-| vendor | 벤더 | 밴더 | 외래어 표기 |
+| directory | 디렉터리 | 디렉토리 | loanword spelling |
+| license | 라이선스 | 라이센스 | loanword spelling |
+| release | 릴리스 | 릴리즈 | loanword spelling |
+| message | 메시지 | 메세지 | loanword spelling |
+| application | 애플리케이션 | 어플리케이션 | loanword spelling |
+| architecture | 아키텍처 | 아키텍쳐 | loanword spelling |
+| transaction | 트랜잭션 | 트랜젝션 | loanword spelling |
+| cache | 캐시 | 캐쉬 | loanword spelling |
+| data | 데이터 | 데이타 | loanword spelling |
+| content | 콘텐츠 | 컨텐츠 | loanword spelling |
+| business | 비즈니스 | 비지니스 | loanword spelling |
+| controller | 컨트롤러 | 콘트롤러 | loanword spelling |
+| method | 메서드 | 메소드 | the National Institute of Korean Language's standard spelling |
+| algorithm | 알고리즘 | 알고리듬 | loanword spelling |
+| template | 템플릿 | 템플레이트, 탬플릿 | loanword spelling |
+| interface | 인터페이스 | 인터훼이스 | loanword spelling |
+| snapshot | 스냅샷 | 스넵샷, 스냅숏 | loanword spelling |
+| timestamp | 타임스탬프 | 타임스템프 | loanword spelling |
+| thread | 스레드 | 쓰레드 | loanword spelling |
+| navigation | 내비게이션 | 네비게이션 | loanword spelling |
+| collection | 컬렉션 | 콜렉션 | loanword spelling |
+| metric | 메트릭 | /매트릭(?!스)/ | a misspelling. 「매트릭스」 (matrix) is a different word, so a lookahead keeps it out. A project may translate it as 「지표」 |
+| repository | 저장소 | 리포지토리, 레포지토리 | shared by the git repository and the Repository design pattern |
+| operating system | 운영 체제 | 운영체제 | standard spacing |
+| among them | 그중 | /그 중(?!복)(?!요)(?!간)(?!계)(?!단)(?!력)(?!심)(?!립)(?!재)(?!지)(?!점)/ | 「그중」 is one word, written closed up. Places where another word follows — 「그 중복」·「그 중요한」 — are filtered out by the following syllable |
+| annotation | 애노테이션 | 어노테이션, 애너테이션 | a code annotation in Java and the like. A name in code (`@Table`) keeps its own spelling |
+| capture | 캡처 | 캡쳐 | loanword spelling |
+| webhook | 웹훅 | 웹후크, 웹 훅 | loanword spelling |
+| vendor | 벤더 | 밴더 | loanword spelling |
 | enum | 열거형 | 이넘 | |
 | endpoint | 엔드포인트 | 종단점, 엔드 포인트 | |
 | credential | 자격 증명 | 크리덴셜 | |
-| parameter | 매개변수 | /(?<!하이퍼)파라미터/ | "하이퍼파라미터"(ML 정착어)는 예외. "파라미터"가 관례인 프로젝트는 기본 규칙 예외로 비활성화 |
+| parameter | 매개변수 | /(?<!하이퍼)파라미터/ | 「하이퍼파라미터」 (settled in ML) is the exception. A project where 「파라미터」 is the convention disables this with a base-rule exception |
 | best practices | 모범 사례 | 베스트 프랙티스 | |
-| default | 기본값, 기본 | | "디폴트" 음차는 금지 표현 표에서 잡는다 |
-| frontend (UI 계층 지칭) | 프론트엔드 | 프런트엔드, 프런트 | 국립국어원 외래어 표기법의 표준은 "프런트"이나(호텔 프런트 데스크 등), 소프트웨어 개발 도메인에서는 "프론트엔드"가 압도적으로 정착된 관용 표기다. "프런트"만 단독으로 줄여 쓰지 않는다 |
-| delivery (메시징·동기화 전달 단위) | 전송 | 배송 | 메시징·동기화 파이프라인에서 대상별로 전개된 전달 단위를 가리키는 delivery는 "전송"으로 옮긴다. 물류·택배처럼 실제 배송을 가리키는 delivery는 "배송"이 맞으므로 이 규칙과 무관하다(해당 도메인은 프로젝트 용어사전의 기본 규칙 예외로 비활성화). 엔티티·필드명 등 코드 식별자에 쓰인 delivery는 번역하지 않고 코드 그대로 표기한다 |
-| stuck | 정체 | 고착 | 상태 전이가 멈춰 진행되지 않는 것을 가리킨다(정체된 작업, 정체 복구 등). "정체된 X"처럼 대상 명사를 직접 수식할 때는 "정체된 X", 복구·판정 같은 일반 명사를 수식할 때는 "정체 X"로 쓴다 |
-| drop | 드롭 | 드랍 | 외래어 표기법 |
-| gateway | 게이트웨이 | 게이트웨어 | 외래어 표기법 |
-| backpressure | 백프레셔 | 역압 | 스트리밍·비동기 시스템의 흐름 제어 개념은 음차가 정착 표기다. 기계·유체 도메인의 back pressure는 "배압"이 올바르므로 해당 프로젝트는 기본 규칙 예외로 비활성화 |
-| timezone | 시간대 | 타임존 | IANA 식별자 기준. 코드 식별자(`timezone`·`timeZone` 필드명)와 설정 키는 원문 표기 |
-| secure context | 보안 컨텍스트 | 시큐어 컨텍스트 | 브라우저가 WebAuthn·클립보드 등 강력 API를 노출하는 조건(https 또는 localhost)을 가리키는 W3C 표준 용어 |
-| passkey | 패스키 | 패스 키 | WebAuthn/FIDO 자격 증명의 사용자 대면 명칭. 음차가 정착 표기다. 코드 식별자는 원문 표기 |
-| presigned URL | 사전 서명 URL | 프리사인드 URL, 프리사인 URL | 만료 시한이 있는 서명 파라미터를 붙여 발급하는 객체 스토리지 URL. 용도를 앞에 붙여 좁혀 쓰는 프로젝트는 같은 `presigned URL` 키로 행을 정의해 이 행을 대체한다 |
-| AccessCORE | AccessCORE | AccessCore, Accesscore, ACCESSCORE, 액세스코어 | 제품명. 뒤 네 글자만 대문자로 쓴다. **소문자 식별자는 올바른 표기라 잡지 않는다** — 패키지 `dev.accesscore`, 디렉터리 `accesscore-license-admin`, 파일 `accesscore-logo.tsx`가 그렇고, 규칙이 대소문자를 구분하므로 소문자 `accesscore`는 네 패턴 어디에도 걸리지 않는다. 상수·환경 변수처럼 전부 대문자로 쓰는 코드 이름은 코드 스팬 안에 적는다 — 코드 스팬은 검사 대상이 아니므로 `ACCESSCORE` 패턴에 걸리지 않는다. **화면 문구는 백틱을 쓸 수 없으므로 그 자리는 `<code>`나 `mono` 클래스로 표시한다** — 한글이 없는 그 안쪽은 인라인 코드와 같이 검사에서 빠지고(SKILL.md), 그래서 이 행에 프로젝트별 예외를 다시 적을 필요가 없다 |
-| SimpliX | SimpliX | 심플릭스 | 제품명. 음차하지 않는다. **소문자 `simplix`는 올바른 표기라 잡지 않는다** — 패키지 이름 `simplix-react`, 설정 파일 `simplix.config.ts`, 스킬 이름 `simplix:frontend`가 그렇고, 이 행은 한글 음차만 본다 |
-| PACS Studio | PACS Studio | 팩스 스튜디오 | 제품명. **「팩스」만으로는 잡지 않는다** — 문서를 보내는 팩스는 다른 낱말이므로, 두 낱말이 이어진 `팩스 스튜디오`만 본다 |
-| NICEPAY | 나이스페이 | 나이스페이먼츠, NICE페이 | 결제대행사 이름. **`NICE`·`nice`·「나이스」만으로는 이 회사가 아니라 잡지 않는다** — 영문 문장의 nice, 신용평가사 나이스, 등급 표기 NICE는 모두 다른 말이고, 회사 이름을 이룬 `나이스페이먼츠`·`NICE페이`만 본다 |
+| default | 기본값, 기본 | | the transliteration "디폴트" is caught by the banned-expression table |
+| frontend (UI 계층 지칭) | 프론트엔드 | 프런트엔드, 프런트 | The National Institute of Korean Language's standard is 「프런트」 (as in a hotel front desk), but 「프론트엔드」 is the overwhelmingly settled usage in software. Do not shorten it to 「프런트」 on its own |
+| delivery (메시징·동기화 전달 단위) | 전송 | 배송 | delivery as a per-target unit in a messaging or synchronization pipeline is 「전송」. A delivery that really is a parcel is 「배송」 and this rule does not apply to it (that domain disables the rule through the project glossary). A `delivery` in a code identifier is not translated |
+| stuck | 정체 | 고착 | a state transition that has stopped making progress (정체된 작업, 정체 복구). Before a concrete noun write 「정체된 X」; before a general noun such as 복구 or 판정 write 「정체 X」 |
+| drop | 드롭 | 드랍 | loanword spelling |
+| gateway | 게이트웨이 | 게이트웨어 | loanword spelling |
+| backpressure | 백프레셔 | 역압 | the transliteration is the settled spelling for flow control in streaming and asynchronous systems. In mechanical and fluid domains back pressure is 「배압」, so those projects disable this with a base-rule exception |
+| timezone | 시간대 | 타임존 | per the IANA identifiers. Code identifiers (`timezone`·`timeZone` field names) and configuration keys keep their own spelling |
+| secure context | 보안 컨텍스트 | 시큐어 컨텍스트 | the W3C term for the condition (https or localhost) under which a browser exposes powerful APIs such as WebAuthn and the clipboard |
+| passkey | 패스키 | 패스 키 | the user-facing name of a WebAuthn/FIDO credential; the transliteration is the settled spelling. Code identifiers keep their own |
+| presigned URL | 사전 서명 URL | 프리사인드 URL, 프리사인 URL | an object-storage URL issued with an expiring signature parameter. A project that narrows it with a purpose prefix replaces this row by defining its own with the same `presigned URL` key |
+| AccessCORE | AccessCORE | AccessCore, Accesscore, ACCESSCORE, 액세스코어 | a product name; only the last four letters are capitalized. **A lowercase identifier is correct and is not caught** — the package `dev.accesscore`, the directory `accesscore-license-admin`, the file `accesscore-logo.tsx`. The rule is case-sensitive, so lowercase `accesscore` matches none of the four patterns. Write an all-caps code name (a constant, an environment variable) inside a code span, which is excluded from checking and so never matches `ACCESSCORE`. **Screen copy cannot use backticks, so mark that place with `<code>` or a `mono` class** — its inside, holding no Hangul, is excluded like inline code (SKILL.md), which is why no project-level exception is needed here |
+| SimpliX | SimpliX | 심플릭스 | a product name; do not transliterate. **Lowercase `simplix` is correct and is not caught** — the package `simplix-react`, the config file `simplix.config.ts`, the skill name `simplix:frontend`. This row looks only for the Hangul transliteration |
+| PACS Studio | PACS Studio | 팩스 스튜디오 | a product name. **「팩스」 on its own is not caught** — the fax that sends documents is a different word, so only the two-word `팩스 스튜디오` is matched |
+| NICEPAY | 나이스페이 | 나이스페이먼츠, NICE페이 | the name of a payment gateway. **`NICE`·`nice`·「나이스」 alone are not this company and are not caught** — the English word nice, the credit-rating agency 나이스, and the grade NICE are all different things, so only `나이스페이먼츠`·`NICE페이` are matched |
 
 ## 원문 유지 용어
 
-번역·음차하지 않고 원문 그대로 두는 범주. 감사 대상이 아닌 참고 표다(대표적인 음차 오류는 아래 금지 표현 표가 잡는다).
+Categories kept in the original rather than translated or transliterated. A reference table, not an
+audit target (the common transliteration errors are caught by the banned-expression table below).
+**The first column stays Korean on purpose**: an item carrying Hangul or parentheses is read as a
+category description, and only a plain-ASCII item is taken as a proper noun for the untranslated
+check.
 
 | 용어 | 비고 |
 | ---- | ---- |
-| 제품명·서비스명 (Docker, Kubernetes, GitHub 등) | 음차("도커") 금지 |
-| 언어·프레임워크명 (Java, Python, Spring 등) | 음차("자바") 금지 |
-| 약어 (API, SQL, HTTP, CLI, JVM, GC 등) | 원문 유지 |
-| 코드 식별자·설정 키·CLI 명령·SQL 키워드 | 코드로 표기되는 모든 것 |
+| 제품명·서비스명 (Docker, Kubernetes, GitHub 등) | do not transliterate ("도커") |
+| 언어·프레임워크명 (Java, Python, Spring 등) | do not transliterate ("자바") |
+| 약어 (API, SQL, HTTP, CLI, JVM, GC 등) | keep the original |
+| 코드 식별자·설정 키·CLI 명령·SQL 키워드 | everything written as code |
 
 ## 금지 표현
 
-번역투·음차·AI 문체 패턴. 문장 패턴의 배경 원칙은 `references/korean-style.md`, 어휘·표기 기준은 `references/response-style.md` 참조.
+Translation-ese, transliteration, and AI style patterns. The reasoning behind the sentence patterns
+is in `references/korean-style.md` and `references/ai-tells.md`; the vocabulary and spelling
+standard is in `references/response-style.md`.
 
 | 금지 | 대체 | 수준 | 비고 |
 | ---- | ---- | ---- | ---- |
-| /것을 허용/ | ~할 수 있습니다 | 오류 | "allows you to" 직역 |
-| /(?<![가-힣])꼴(?![찌불사])/ | 형태 · 경우 · 표현 · 방식 · 문장 | 오류 | 「모양」을 뜻하는 구어 명사라 기술 문서에서 낮은 말로 읽힌다. **대체어가 하나가 아니라 문맥이 정한다** — 「등재된 꼴만 본다」는 **형태**, 「~가 앞에 오는 꼴만 본다」는 **경우**, 「그 꼴을 허락한다」는 **표현**, 「새는 꼴 하나」는 **예문**이다. **앞에 한글이 붙은 합성어는 정상이라 잡지 않는다** — 글꼴·사다리꼴·세모꼴·네모꼴·마름모꼴이고, 한 저장소에 「글꼴」만 서른아홉 자리가 있었다. 「꼴찌·꼴불견·꼴사납다」도 다른 낱말이다 |
-| /(?<![가-힣])산문/ | 글 · 본문 · 설명문 · 서술 | 오류 | `prose` 직역. 한국어 「산문」은 운문(시)의 반대말인 문학 용어라 「코드가 아닌 글」을 가리키면 어긋난다. **대체어는 문맥이 정한다** — 「커밋 인접 산문」은 **커밋 메시지 주변의 글**, 「합니다체 산문」은 **설명문**, 「설명 산문」은 **설명하는 문장**, 「문서의 산문」은 **본문**이다. **앞에 한글이 붙은 합성어는 잡지 않는다** — 「등산문화」의 「산문」은 다른 낱말이다. 문학을 다뤄 운문과 짝지어 쓰는 프로젝트는 용어사전의 `## 기본 규칙 예외`로 끈다 |
-| /것을 가능하게/ | ~할 수 있게 합니다 | 오류 | "enables" 직역 |
-| 할 수 있게 해줍니다 | ~할 수 있습니다 | 오류 | "lets you" 직역 |
-| 에 대한 지원을 제공 | ~를 지원합니다 | 오류 | "provides support for" 직역 |
-| /되어[지집진질]/ | ~됩니다, ~될 | 오류 | 이중 피동("되어진다", "되어집니다"). 활용이 음절 블록을 바꾸므로 「되어진·되어질」까지 종성 문자 클래스로 잡는다 — 「되어지」만 걸면 「되어진다」가 빠져나간다 |
-| /보여[지집]/ | 표시됩니다, 나타납니다 | 오류 | 이중 피동. 「보입니다」로만 고치면 이중 피동은 사라져도 시스템이 표시하는 것인지 사용자가 조회하는 것인지가 남지 않는다 — 화면 문구는 「표시됩니다」다 |
-| 당신 | (생략 또는 문장 재구성) | 오류 | "you" 직역 |
-| /빚지/, /빚는다/, /빚습니다/, /빚어야/ | 요구한다, 필요하다, 함께 내야 한다 | 오류 | "owe" 직역. 활용형 전부를 잡는다 — 빚진다·빚지고·빚질·빚지지 |
-| /[의는] 빚[을이가도는]/, /빚을 [진지]/ | 남은 항목, 요구하는 것 | 오류 | "owe"의 명사형 직역("프레임의 빚"). 실제 부채를 다루는 금융 문서는 기본 규칙 예외로 비활성화 |
-| 여러분 | (생략) | 오류 | "you" 직역 |
-| 우리는, 우리가, 저희 | (생략 또는 문장 재구성) | 오류 | "we" 직역 |
-| 디폴트 | 기본값, 기본 | 오류 | "default" 음차 |
-| 레버리지 | 활용 | 오류 | "leverage" 음차. 금융 문서는 정착 용어이므로 기본 규칙 예외로 비활성화 |
-| 하니스, 하네스 | 실행 환경 | 오류 | "harness" 음차. 맥락에 따라 런타임, 제어 계층, 테스트 실행 환경, 평가 파이프라인. 물리 장비(안전 하네스)를 다루는 문서는 기본 규칙 예외로 비활성화 |
-| /소비(?!자)/ | 사용, 사용량 | 오류 | "consume" 직역. **「소비자」는 여기서 빼되 허용한다는 뜻이 아니다** — 뜻이 둘로 갈려 낱말 규칙이 판정할 수 없을 뿐이고, API·이벤트의 consumer를 「소비자」라 부르는 쪽은 규칙 팩의 `software-consumer`가 잡는다(소비자물가·소비자 보호처럼 경제학의 소비자는 정상어라 그대로 둔다). 메시징 도메인에서 정착 표현이면 예외로 비활성화 |
-| /이벤트[를을] ?방출/, /이벤트 방출/, /값[을를] ?방출/, /신호[를을] ?방출/, /스트림[을를] ?방출/, /방출하는 이벤트/ | 내보내기, 발생 | 오류 | "emit" 직역. **낱말만으로는 갈리지 않아 앞말과 함께 등재한다** — 「압력 방출」·「폭연방출구」·「방출량」·「방출밸브」·「방사선 방출」·「대기 방출」·「열 방출」은 산업안전·화공·환경·물리의 정식 용어이고, 낱말 하나를 걸면 그 분야 문서가 통째로 오류가 된다. 앞말이 없는 자리는 사람이 문맥으로 판정한다 |
-| /커밋[을를] 세[운우워웠]/, /빌드[을를] 세[운우워웠]/, /서버[을를] 세[운우워웠]/, /컨테이너[을를] 세[운우워웠]/, /이미지[을를] 세[운우워웠]/ | 커밋한다, 빌드한다, 띄운다, 만든다 | 오류 | "build"·"stand up" 직역. 「계획을 세운다」·「규칙을 세운다」는 정상이라 넓게 잡지 않고, 정상 쓰임이 없는 대상만 건다. **활용형은 음절 블록이 바뀌므로 어간 `세우`만으로는 `세운다`·`세워`가 잡히지 않는다** — 받침이 붙거나 축약되는 용언은 종성까지 문자 클래스로 연다. 세로줄 문자는 escape해도 표의 열을 가르므로 정규식 교대(alternation) 대신 항목을 쉼표로 나눠 적는다 |
-| /[이가로] 선다/, /[이가로] 섰/, /[이가] 서 있/, /[이가로] 서는 (?!곳)/, /[이가로] 설 것/ | 있다, 표시된다, 배치된다, 만들어졌다 | 경고 | "stand" 직역. 화면·규칙·값이 「선다」로 쓰이면 번역투다. 사람·차·건물이 실제로 서는 것은 예외이므로 오류가 아닌 경고로 둔다. **활용형이 음절 블록을 바꾼다** — `선다`만 걸면 `섰다`·`섰습니다`·`서 있다`·`서는`이 전부 빠져나가고, 조사도 `이`·`가`뿐 아니라 `로`(「영어로 선다」)로 온다 |
-| /구워 ?넣/, /구워져/, /구워 있/, /구워진/, /구워집/, /구워 ?내보내/, /구워 ?낸/, /구운 파일/ | 이미지에 넣기, 빌드에 들어 있음, 새겨 넣기, 적용해 저장하기, 포함 | 경고 | "baked into"·"burned in" 직역. 이미지·빌드에 값을 박아 넣는 것도, 가림이나 자막을 파일에 새겨 넣는 것도 굽는다고 쓰지 않는다. **활용형이 음절 블록을 바꾼다** — `구워져`만 걸면 `구워진 파일`·`구워집니다`·`구워 내보낸다`가 전부 빠져나간다. 「CD를 굽는다」는 정착 표현이고 조리도 정상이므로 어간 `굽`으로 넓히지 않는다. 조리를 다루는 문서는 기본 규칙 예외로 비활성화 |
-| 본질적으로 | (삭제 또는 구체 서술) | 오류 | "essentially" 직역 |
-| 표면 | 문맥에 맞게: 엔드포인트, 조회 주소, 맡은 범위, 영역, 구성 | 오류 | "surface" 직역. 대체어는 무엇을 가리키느냐로 갈린다 — API가 여는 주소 묶음은 "엔드포인트", 목록·상세를 답하는 한 주소는 "조회 주소", 에이전트나 팀이 맡는 몫("서버 표면"·"화면 표면"·"작업 표면")은 "맡은 범위"·"서버 쪽"·"건드리는 곳", 문서의 갈래와 위치는 "문서 구성"이다. **화면이 그려지는 창**(팝오버 · 별도 창 · 전체 화면)은 "창"이며, 위의 "화면 표면"과 헷갈리기 쉽다 — 가르는 물음은 그것에 픽셀 크기가 있느냐다. 크기가 있으면 창이고, 없으면 누가 무엇을 맡는가라서 "맡은 범위"다. 물리적 표면(배관 표면 온도·도장 표면·표면 처리)을 다루는 문서는 프로젝트 용어사전의 `## 기본 규칙 예외`로 비활성화한다 — **그 예외는 저장소를 통째로 끄므로 소프트웨어 표면까지 함께 조용해진다.** 물리 표면과 소프트웨어 표면이 한 저장소에 있는 배치에서는 규칙 팩의 `software-surface`가 소프트웨어 쪽을 계속 잡는다 |
-| 배선 | 조립(부트 구성)·등록·연결(경로에 꽂기) | 경고 | "wiring" 직역("재배선" 포함 검출). "연동"(런타임 연계)·"통합"(integration)은 별개 개념이라 대체어로 쓰지 않는다. 물리 전기 배선은 올바른 용어이므로 해당 사용은 유지하고, 물리 배선 중심 문서는 예외로 비활성화 |
-| 와이어링 | 조립, 등록, 연결 | 오류 | "wiring" 음차 |
-| /전선에서 [빼걷]/, /전선에 [싣실]/, /전선이 [나실]/, /전선을 [타탄]/ | 응답에서 뺀다, 응답에 포함한다, 응답이 전달한다 | 오류 | "on the wire" 직역. 한국어 전선은 전깃줄이다. 실제 전깃줄·배전을 다루는 문서는 기본 규칙 예외로 비활성화 |
-| /커밋[을를] ?밀/, /브랜치[을를] ?밀/, /메인[을를] ?밀/, /원격[에으]?로 ?밀/, /저장소[에로] ?밀/ | 푸시한다 | 오류 | "push" 우리말 옮김. **커밋과 짝이다** — 이 도구의 동작 이름은 커밋·머지·리베이스처럼 그대로 쓰고 푸시만 옮기지 않는다. 한쪽만 옮기는 것이 불일치다. **낱말 「밀다」는 막지 않는다** — 지게차가 포크를 밀어 넣고 불도저가 흙을 밀어내는 것은 이 분야의 실제 동작이고 산업안전 문서에 그런 문장이 실제로 있다. 가르는 것은 목적어다: 커밋·브랜치·원격은 물리적으로 밀리지 않는다. **정착한 외래어를 우리말로 옮기려는 충동이 원인이고, 과잉 교정은 안전한 쪽이 아니라 쌍둥이 실패다** |
-| /인구 ?조사/ | 전수 조사, 전수 확인, 전부 세기 | 오류 | "census" 직역. **인구는 사람의 수다** — 파일·호출 자리·검사기·프레임을 세는 것은 인구가 아니고, 「전수 조사」가 같은 뜻을 사람 비유 없이 낸다. **사람이 주제인 제품에서 특히 나쁘다**: 상시 근로자 수·재적 인원처럼 실제로 사람을 세는 자리와 한 문서에서 부딪히고, 읽는 쪽은 어느 쪽인지 한 번 더 생각해야 한다(「죽은」·「살아 있는」을 가른 것과 같은 까닭이다). 실제로 사람을 세는 것은 그 자체의 이름이 있으므로(「상시 근로자 수」·「재적 인원」·「출역 인원」) 예외가 필요 없다 |
-| /생활권/ | 도보 N분 거리, 인접, 같은 지역, 같은 단지 | 오류 | 도시계획 · 지역개발의 정식 용어(「생활권 계획」 · 「중생활권」 · 「생활권 공원」)를 가깝다는 뜻으로 데려온 것이다. **가르는 것은 확인할 수 있는 값이 있느냐다** — 「같은 생활권에 있다」는 읽는 쪽이 범위를 짐작해야 하고, 「도보 10분 거리에 있다」는 대조할 수 있는 사실이다. 걸리는 예: 「발주자 본사와 같은 생활권에 있다」 → 「발주자 본사에서 도보 10분 거리에 있다」. 걸리지 않아야 하는 예: 도시계획 · 지역개발 · 부동산 문서의 「1생활권 상업용지」 · 「생활권 계획 수립」은 정식 용어이므로 프로젝트 용어사전의 `## 기본 규칙 예외`로 비활성화한다 |
-| /에 산다/, /에 삽니다/, /에 사는[지 ]/, /에 살고/, /에 살아 있/, 사는 곳 | ~에 있다, ~에 둔다, ~에 남는다, 위치 | 경고 | "lives" 직역. 파일·코드·설정이 어디에 「사는지」로 쓰지 않는다. **활용형이 음절 블록을 바꾼다** — `산다`만 걸면 `사는지`·`살고`·`삽니다`가 전부 빠져나간다. 사람이 실제로 거주하는 것(「서울에 산다」)은 정상이고 글자만으로는 갈리지 않아 오류가 아닌 경고로 둔다. 인물이 자주 나오는 문서는 기본 규칙 예외로 비활성화 |
-| /같은 나무/, /한 나무에/, /그 나무에/, /나무에서 [일작커]/, /나무를 [나공쓰]/, /마이그레이션 나무/, /디렉터리 나무/, /폴더 나무/ | 작업 트리, 저장소, 계보, 디렉터리 구조 | 경고 | "working tree"·"tree" 직역. 화면의 폴더 트리는 「트리」가 맞다. 실제 나무를 다루는 문서는 기본 규칙 예외로 비활성화 |
-| /에 있어(?![야도\s])서?/ | ~에서, ~할 때 | 경고 | "in terms of" 직역. **존재를 말하는 활용형은 뒷글자로 뺀다** — 「목록에 있어야 합니다」의 「있어야」, 「범위 밖에 있어도」의 「있어도」, 그리고 **뒤에 절이 이어지는 연결형**(「낱말이 한 자리에 있어 고치면」)은 이 번역투가 아니다. 셋을 다 열거해야 하는 까닭은 어미마다 음절이 달라 어간 「있어」만으로는 갈리지 않기 때문이다. 번역투 쪽은 「~에 있어서」와 쉼표가 뒤따르는 「~에 있어,」로 나타나므로 「서」와 문장부호는 그대로 잡는다 |
-| /가지고 있/ | ~가 있습니다, ~를 제공합니다 | 경고 | "have" 직역 |
-| /그것(?!도)/ | (생략 또는 명사 반복) | 경고 | "it" 직역. 「그것도」(= 게다가, 그마저)는 정상 관용구라 제외한다 |
-| 에서의, 으로의, 에의 | 절·구로 풀어쓰기 | 경고 | 이중 조사 |
-| /(?<!야 )할 것입니다/ | ~합니다 | 경고 | "will" 직역. 사실 서술은 현재형. 의무·당위의 「~해야 할 것입니다」는 미래 단정이 아니므로 lookbehind로 제외한다 — 「곧 처리해야 할 것입니다」가 걸리면 오탐이다 |
-| 결론적으로 | (내용으로 마무리) | 경고 | 결산 피벗 버릇 |
-| /도커(?!파일)/ | Docker | 오류 | 제품명 음차 금지("도커파일"도 Dockerfile로 표기) |
-| 쿠버네티스 | Kubernetes | 오류 | 제품명 음차 금지 |
-| 깃허브 | GitHub | 오류 | 제품명 음차 금지 |
-| /자바(?!스크립트)/ | Java | 오류 | 언어명 음차 금지 |
-| 자바스크립트 | JavaScript | 오류 | 언어명 음차 금지 |
-| 파이썬 | Python | 오류 | 언어명 음차 금지 |
-| 리눅스 | Linux | 오류 | 제품명 원문 유지 |
-| 윈도우즈 | Windows | 오류 | 제품명 원문 유지 |
-| /리액트(?! 네이티브)/ | React | 오류 | 라이브러리명 음차 금지 |
-| 리액트 네이티브 | React Native | 오류 | 프레임워크명 음차 금지 |
-| 웹뷰 | WebView | 오류 | 플랫폼 API 명칭 음차 금지 |
-| 엑스포 | Expo | 오류 | 제품명 음차 금지 |
-| 아이폰 | iPhone | 오류 | 제품명 음차 금지 |
-| 아이패드 | iPad | 오류 | 제품명 음차 금지 |
-| 파일들, 사용자들, 개발자들, 서버들, 클라이언트들, 함수들, 객체들, 변수들, 노드들, 테이블들, 컬럼들, 엔티티들, 클러스터들 | 단수형으로(맥락이 복수를 표현) | 경고 | 복수 접미사 "-들" 남발 |
-| /[를을] 통해/ | ~로, ~해서 | 경고(4+) | "via/through" 직역 남발 |
-| /에 대[해한]/ | 목적격 조사로 직결 | 경고(6+) | "about/for" 직역 남발 |
-| 에 의해 | 행위자를 주어로 | 경고(3+) | 피동 직역 남발 |
-| 또한 | (삭제 또는 문장 재구성) | 경고(4+) | "also/additionally" 남발 |
-| 강력한 | 구체적 특성 서술 | 경고(3+) | "powerful" 직역 남발 |
-| 수 있습니다 | 단언 가능하면 "~합니다" | 경고(10+) | "can" 남발. 기능 설명 자체는 허용 |
-| 역위상 | 의존성 역순 | 오류 | topological sort의 역순. "역위상"은 신호 역위상(anti-phase)으로 오독되어 어색하다. 자식 → 부모 방향 |
-| 위상 순서 | 의존성 순서 | 오류 | topological order. 의존성 그래프를 정렬한 결과의 실행 순서. 부모 → 자식 방향 |
-| 위상 정렬 | 의존성 정렬 | 오류 | topological sort. 의존성 그래프를 정렬하는 알고리즘 |
-| 위상 그래프 | 그래프 구조 | 오류 | topology 직역. **낱말 「위상」은 등재하지 않는다** — 신호의 위상(phase)·수학의 위상수학·「국제적 위상」이 모두 정상어라 글자만으로 갈리지 않는다. 소프트웨어에서 갈라지는 것은 합성어뿐이므로 위 세 행과 이 행까지 넷만 기계가 잡고, 나머지 「위상」은 사람이 문맥에서 판단한다 |
-| /(?<!표현의 )(?<!표현 )충실성/ | 원문 충실도 | 오류 | "fidelity" 직역. 회계 개념체계의 「표현의 충실성」(faithful representation)은 정식 용어라 앞 글자로 뺀다. 그 용어를 되풀이해 쓰는 회계 문서는 기본 규칙 예외로 비활성화 |
-| 거버너 | 감시기, 품질 감시기 | 오류 | "governor" 음차. 기계의 속도 조절기도 「거버너」로 음차하지 않고 「조속기」로 쓴다. 「거버넌스」는 음절이 달라(넌 ≠ 너) 걸리지 않는다 |
-| /(?<!논리적 )(?<![가-힣])함의(?![하한할함해])/ | 뒷받침, 담고 있음 | 오류 | "implication" 직역. **논리학의 함의는 서술어로 쓰이므로 뒤 글자로 뺀다** — 「p가 q를 함의한다」·「함의하는」·「함의할」·「함의함」은 정상이고 「논리적 함의」는 lookbehind로 뺀다. **앞 글자가 한글이면 낱말이 아니라 「…함」에 조사 「의」가 붙은 것이다** — 결함의·포함의·정함의가 전부 그 꼴이라, 앞을 빼지 않으면 결함을 다루는 문서마다 걸린다. 남는 것이 명사로 쓴 「정책적 함의」·「함의를 담다」다. 금융의 implied는 「내재」로 쓴다(내재 변동성) |
-| /동치(?![관류])/ | 일치 | 오류 | "equivalent" 직역. 수학·논리의 「동치관계」·「동치류」는 정식 용어라 뒤 글자로 뺀다. 명제의 동치를 다루는 수학 문서는 기본 규칙 예외로 비활성화 |
-| /휴리스틱(?! 평가)/ | 경험 규칙 | 오류 | "heuristic" 음차. HCI의 「휴리스틱 평가」(Nielsen)는 정착 용어라 lookahead로 뺀다 |
-| 정련 | 정제 | 오류 | "refine" 직역. 금속의 제련·정련과 섬유의 정련은 정식 공정 용어이므로 해당 도메인 문서는 기본 규칙 예외로 비활성화 |
-| /다치 술어/, /다중값 술어/ | 다중값 조건 | 오류 | "multi-valued predicate" 직역. **질의를 좁히는 predicate는 「조건」이다** — 「술어」·「서술어」는 문법 용어이고, 목록을 거르는 자리에서 그렇게 부르는 사람은 없다. 이 줄이 한때 「다치」만 고치고 「술어」를 남겨 두어 그 오역을 승인했다. **문법을 이야기하는 「서술어」는 그대로 쓴다** — 주어와 서술어의 호응은 이 스킬이 계속 다루는 주제다. **낱말 「다치」만으로는 걸지 않는다** — 「다치다」와 글자가 겹친다 |
-| /가역(?!\s?[반과])/ | 되돌릴 수 있는, 되돌릴 수 없는 | 오류 | "reversible" 직역. 화학·열역학의 「가역 반응」·「가역과정」은 정식 용어라 뒤 글자로 뺀다. 남는 것이 「가역 작업」·「비가역적 변경」처럼 소프트웨어에서 쓴 자리다. 「가역 기관」·「가역 단열」까지 쓰는 열역학 문서는 기본 규칙 예외로 비활성화 |
-| 독립확증 | 독립 출처 확인 | 오류 | 조어. 「독립」과 「확증」을 붙여 만든 말이라 사전에 없다 |
-| /(?<![이꾸])미지(?![수급불지원정근명])(?!\s*[않말못])/ | 낯선, 처음 보는 | 오류 | "unknown" 직역. **글자가 겹치는 별개 낱말을 앞뒤 글자로 전부 뺀다** — 뒤로는 미지수·미지급·미지불·미지지(未支持)·미지원·미지정·미지근·**미지명**(이름이 아직 정해지지 않음), 앞으로는 **이미지**. 앞을 빼지 않으면 사진·빌드를 다루는 문서가 「이미지」마다 걸리고, 그 소음이 진짜 검출을 덮는다. **용언의 활용형이 따로 걸린다** — 「꾸미지 않게」는 어간 「꾸미」에 연결어미 「지」가 붙은 것이라 「미지」가 낱말이 아니다. 어간이 「미」로 끝나는 용언은 「꾸미다」가 사실상 전부라 앞 글자로 빼고, 뒤에 부정 보조용언(않·말·못)이 오는 자리를 함께 빼 다른 어간까지 담는다. 띄어 쓴 「이 미지의 값」은 앞 글자가 공백이라 그대로 걸린다. 남는 것이 「미지의 값」·「미지 영역」이다 |
-| /자기 지지(?![대체])/ | 자기 근거 | 오류 | "self-supporting" 직역. 구조물의 「자기 지지대」·「자기 지지체」는 뒤 글자로 뺀다 |
-| /전치(?![사증태])/ | 행·열 뒤바뀜 | 오류 | "transpose" 직역. 전치사·전치증폭기·전치태반은 별개 낱말이라 뒤 글자로 뺀다. 「전치행렬」이 정식 용어인 선형대수 문서는 기본 규칙 예외로 비활성화 |
-| 비싼 작업, 비싼 신호, /(?<!비)싼 신호/ | 비용이 큰 …, 비용이 적은 … | 오류 | "expensive"·"cheap" 직역. 값이 비싼 것이 아니라 비용이 큰 것이다. **「싼 신호」는 「비싼 신호」의 뒷부분이라 lookbehind로 갈라야 한 자리가 두 번 보고되지 않는다.** 실제 가격을 말하는 「싼 요금제」는 정상이므로 뒤 명사를 함께 적어 좁힌다 |
-| 나쁜 정보 | 잘못된 정보 | 오류 | "bad information" 직역. 정보에 선악이 없다 |
-| /답변에 ?안? ?떠오르/ | 답변에 나오지 않게 | 오류 | "surface in the answer" 직역. 답변에 무엇이 나오고 나오지 않는지를 그대로 적는다 |
-| 전제 위에 | 전제를 바탕으로 | 오류 | "build on the premise" 직역. 전제는 근거이지 구조물의 밑면이 아니다 |
-| 붙는 위치, 붙이는 위치 | 적용 위치, 연결 지점 | 오류 | "where it hooks" 직역. 무엇이 어디에 적용되는지, 무엇과 무엇을 잇는지를 적는다 |
-| 정밀도와 회수율, 회수율과 정밀도 | 재현율 | 오류 | recall 직역. **낱말 「회수율」은 등재하지 않는다** — 채권 회수율·설문 회수율·자원 회수율이 정식 용어라 글자만으로 갈리지 않는다. precision과 짝지어 쓴 자리만 잡는다 |
-| 프로레이션 | 일할 계산 | 오류 | "proration" 음차 |
-| 캐리오버 | 이월 | 오류 | "carryover" 음차 |
-| /더닝(?!.?크루거)/ | 재청구 | 오류 | "dunning" 음차. 「더닝 크루거」·「더닝-크루거」·「더닝크루거」는 인명이라 뺀다 |
-| 리펀드 | 환불 | 오류 | "refund" 음차 |
-| 서브스크립션 | 구독 | 오류 | "subscription" 음차 |
-| /오더(?![라니군냐])/ | 주문 | 오류 | "order" 음차. 「워크오더」·「오더링」도 같은 계열이다. **「오다」의 연결형은 뒤 글자로 뺀다** — 오더라도·오더라·오더니·오더군·오더냐는 음차가 아니라 동사다 |
-| 브레드스 | 시장 폭 | 오류 | "breadth" 음차 |
-| 험프 | 정점 | 오류 | "hump" 음차. 유동성 깊이의 정점. 도로의 「험프형 과속방지턱」을 다루는 문서는 기본 규칙 예외로 비활성화 |
-| 레짐 | 국면 | 오류 | "regime" 음차. 시장 국면·급락 국면·국면 단절·국면 게이트 |
-| 드로다운 | 낙폭, 급락 | 오류 | "drawdown" 음차 |
-| 체결 프린트 | 체결값, 체결 기록 | 오류 | "print"(체결 기록) 직역. **낱말 「프린트」는 등재하지 않는다** — 인쇄를 뜻하는 「프린트」가 정상어라 글자만으로 갈리지 않는다. 체결과 붙은 자리만 잡는다 |
-| 비중 틸트, 가치 틸트, 팩터 틸트, 모멘텀 틸트 | 비중 기울임, 비중 확대 | 오류 | "tilt" 음차. **낱말 「틸트」는 등재하지 않는다** — 카메라의 「팬·틸트」가 정착 용어다 |
-| 리더 종목 | 주도주 | 오류 | "leading stocks" 직역. **낱말 「리더」는 등재하지 않는다** — 팀 리더·카드 리더가 정상어다 |
-| 헤드라인 수치, 헤드라인 지표 | 대표 수치, 전체 | 오류 | "headline number" 직역. **낱말 「헤드라인」은 등재하지 않는다** — 기사 헤드라인이 정상어다 |
-| 분석 오버레이 | 보조분석 | 오류 | "analysis overlay" 직역. **낱말 「오버레이」는 등재하지 않는다** — 화면·그래픽의 오버레이가 정착 용어다 |
+| /것을 허용/ | ~할 수 있습니다 | 오류 | a literal "allows you to" |
+| /(?<![가-힣])꼴(?![찌불사])/ | 형태 · 경우 · 표현 · 방식 · 문장 | 오류 | a colloquial noun meaning 「모양」, which reads as low register in technical writing. **The replacement is decided by context, not fixed** — 「등재된 꼴만 본다」 is **형태**, 「~가 앞에 오는 꼴만 본다」 is **경우**, 「그 꼴을 허락한다」 is **표현**, 「새는 꼴 하나」 is **예문**. **A compound with Hangul in front of it is legitimate and is not caught** — 글꼴·사다리꼴·세모꼴·네모꼴·마름모꼴, and one repository held thirty-nine occurrences of 「글꼴」 alone. 「꼴찌·꼴불견·꼴사납다」 are different words too |
+| /(?<![가-힣])산문/ | 글 · 본문 · 설명문 · 서술 | 오류 | a literal `prose`. Korean 「산문」 is a literary term, the opposite of verse, so it misses when it is meant as 「writing that is not code」. **The replacement is decided by context** — 「커밋 인접 산문」 is **커밋 메시지 주변의 글**, 「합니다체 산문」 is **설명문**, 「설명 산문」 is **설명하는 문장**, 「문서의 산문」 is **본문**. **A compound with Hangul in front is not caught** — the 「산문」 of 「등산문화」 is a different word. A project that discusses literature and pairs it with verse turns this off through `## 기본 규칙 예외` |
+| /것을 가능하게/ | ~할 수 있게 합니다 | 오류 | a literal "enables" |
+| 할 수 있게 해줍니다 | ~할 수 있습니다 | 오류 | a literal "lets you" |
+| 에 대한 지원을 제공 | ~를 지원합니다 | 오류 | a literal "provides support for" |
+| /되어[지집진질]/ | ~됩니다, ~될 | 오류 | a double passive ("되어진다", "되어집니다"). The conjugation changes the syllable block, so the final consonants are opened up to catch 「되어진·되어질」 — matching only 「되어지」 lets 「되어진다」 through |
+| /보여[지집]/ | 표시됩니다, 나타납니다 | 오류 | a double passive. Fixing it to 「보입니다」 alone removes the double passive but leaves it unclear whether the system displays or the user looks — screen copy says 「표시됩니다」 |
+| 당신 | (생략 또는 문장 재구성) | 오류 | a literal "you" |
+| /빚지/, /빚는다/, /빚습니다/, /빚어야/ | 요구한다, 필요하다, 함께 내야 한다 | 오류 | a literal "owe". Every conjugation is caught — 빚진다·빚지고·빚질·빚지지 |
+| /[의는] 빚[을이가도는]/, /빚을 [진지]/ | 남은 항목, 요구하는 것 | 오류 | the nominal form of a literal "owe" (「프레임의 빚」). A financial document dealing with real debt disables this with a base-rule exception |
+| 여러분 | (생략) | 오류 | a literal "you" |
+| 우리는, 우리가, 저희 | (생략 또는 문장 재구성) | 오류 | a literal "we" |
+| 디폴트 | 기본값, 기본 | 오류 | a transliterated "default" |
+| 레버리지 | 활용 | 오류 | a transliterated "leverage". In finance it is the settled term, so those documents disable it with a base-rule exception |
+| 하니스, 하네스 | 실행 환경 | 오류 | a transliterated "harness". Depending on context: 런타임, 제어 계층, 테스트 실행 환경, 평가 파이프라인. A document about physical equipment (a safety harness) disables it with a base-rule exception |
+| /소비(?!자)/ | 사용, 사용량 | 오류 | a literal "consume". **Excluding 「소비자」 here does not mean it is allowed** — the word splits into two meanings that a word-level rule cannot judge, and the rule pack's `software-consumer` catches calling an API or event consumer a 「소비자」 (the economics 소비자 of 소비자물가 · 소비자 보호 is legitimate and stays). A messaging domain where it is settled disables this with an exception |
+| /이벤트[를을] ?방출/, /이벤트 방출/, /값[을를] ?방출/, /신호[를을] ?방출/, /스트림[을를] ?방출/, /방출하는 이벤트/ | 내보내기, 발생 | 오류 | a literal "emit". **The word alone does not separate them, so it is registered with the preceding word** — 「압력 방출」·「폭연방출구」·「방출량」·「방출밸브」·「방사선 방출」·「대기 방출」·「열 방출」 are formal terms in industrial safety, chemical engineering, environment, and physics, and banning the bare word turns every document in those fields into errors. A place with no preceding word is judged by a person |
+| /커밋[을를] 세[운우워웠]/, /빌드[을를] 세[운우워웠]/, /서버[을를] 세[운우워웠]/, /컨테이너[을를] 세[운우워웠]/, /이미지[을를] 세[운우워웠]/ | 커밋한다, 빌드한다, 띄운다, 만든다 | 오류 | a literal "build"·"stand up". 「계획을 세운다」·「규칙을 세운다」 are legitimate, so the pattern is not widened: only objects with no legitimate use are named. **Conjugation changes the syllable block, so the stem 「세우」 alone catches neither `세운다` nor `세워`** — open the final consonant for a verb that takes one or contracts. A vertical bar splits the table column even when escaped, so the items are separated by commas instead of regex alternation |
+| /[이가로] 선다/, /[이가로] 섰/, /[이가] 서 있/, /[이가로] 서는 (?!곳)/, /[이가로] 설 것/ | 있다, 표시된다, 배치된다, 만들어졌다 | 경고 | a literal "stand". A screen, a rule, or a value that 「선다」 is translation-ese. A person, a car, or a building really does stand, so this is a warning rather than an error. **Conjugation changes the syllable block** — matching only `선다` lets `섰다`·`섰습니다`·`서 있다`·`서는` through, and the particle arrives as `로` (「영어로 선다」) as well as `이`·`가` |
+| /구워 ?넣/, /구워져/, /구워 있/, /구워진/, /구워집/, /구워 ?내보내/, /구워 ?낸/, /구운 파일/ | 이미지에 넣기, 빌드에 들어 있음, 새겨 넣기, 적용해 저장하기, 포함 | 경고 | a literal "baked into"·"burned in". Neither writing a value into an image or a build nor burning a mask or subtitles into a file is 「굽는다」. **Conjugation changes the syllable block** — matching only `구워져` lets `구워진 파일`·`구워집니다`·`구워 내보낸다` through. 「CD를 굽는다」 is settled and cooking is legitimate, so the stem is not widened to 「굽」. A document about cooking disables this with a base-rule exception |
+| 본질적으로 | (삭제 또는 구체 서술) | 오류 | a literal "essentially" |
+| 표면 | 문맥에 맞게: 엔드포인트, 조회 주소, 맡은 범위, 영역, 구성 | 오류 | a literal "surface". The replacement depends on what is meant — the set of addresses an API opens is "엔드포인트", one address answering a list or a detail is "조회 주소", the share an agent or a team takes on ("서버 표면"·"화면 표면"·"작업 표면") is "맡은 범위"·"서버 쪽"·"건드리는 곳", and the kinds and placement of documents is "문서 구성". **A window a screen is drawn in** (a popover, a separate window, full screen) is "창", easily confused with "화면 표면" above — the question that separates them is whether it has pixel dimensions. With dimensions it is a window; without, it is about who takes on what, and therefore "맡은 범위". A document about physical surfaces (pipe surface temperature, coating, surface treatment) disables this through `## 기본 규칙 예외` — **that exception switches off the whole repository, quieting the software sense too.** Where both senses live in one repository, the rule pack's `software-surface` keeps catching the software one |
+| 배선 | 조립(부트 구성)·등록·연결(경로에 꽂기) | 경고 | a literal "wiring" (including 「재배선」). "연동" (runtime linkage) and "통합" (integration) are separate concepts and are not replacements. Physical electrical wiring is the correct term, so keep such uses and disable the rule in a document centred on it |
+| 와이어링 | 조립, 등록, 연결 | 오류 | a transliterated "wiring" |
+| /전선에서 [빼걷]/, /전선에 [싣실]/, /전선이 [나실]/, /전선을 [타탄]/ | 응답에서 뺀다, 응답에 포함한다, 응답이 전달한다 | 오류 | a literal "on the wire". A Korean 전선 is an electrical cable. A document about actual cables and power distribution disables this with a base-rule exception |
+| /커밋[을를] ?밀/, /브랜치[을를] ?밀/, /메인[을를] ?밀/, /원격[에으]?로 ?밀/, /저장소[에로] ?밀/ | 푸시한다 | 오류 | "push" rendered into Korean. **It is the pair of 커밋** — this tool's operation names (커밋·머지·리베이스) are used as they are, and translating only 푸시 is the inconsistency. **The word 「밀다」 itself is not blocked** — a forklift pushing its forks and a bulldozer pushing earth are real actions in that field and appear in industrial-safety documents. What separates them is the object: a commit, a branch, and a remote cannot be physically pushed. **The cause is the urge to render a settled loanword into Korean, and over-correction is not the safe side but the twin failure** |
+| /인구 ?조사/ | 전수 조사, 전수 확인, 전부 세기 | 오류 | a literal "census". **인구 is a count of people** — counting files, call sites, checkers, or frames is not a population, and 「전수 조사」 says the same thing without the human metaphor. **It is worst in a product about people**: it collides in one document with places that really do count people (상시 근로자 수 · 재적 인원), and the reader has to think twice about which is meant (the same reason 「죽은」·「살아 있는」 were separated). Counting people really has its own names (「상시 근로자 수」·「재적 인원」·「출역 인원」), so no exception is needed |
+| /생활권/ | 도보 N분 거리, 인접, 같은 지역, 같은 단지 | 오류 | a formal term of urban planning and regional development (「생활권 계획」·「중생활권」·「생활권 공원」) borrowed to mean 「nearby」. **What separates them is whether there is a value that can be checked** — 「같은 생활권에 있다」 makes the reader guess the range, while 「도보 10분 거리에 있다」 is a fact that can be compared. Caught: 「발주자 본사와 같은 생활권에 있다」 → 「발주자 본사에서 도보 10분 거리에 있다」. Not to be caught: 「1생활권 상업용지」·「생활권 계획 수립」 in urban-planning, regional-development, and real-estate documents are formal terms, so those projects disable it through `## 기본 규칙 예외` |
+| /에 산다/, /에 삽니다/, /에 사는[지 ]/, /에 살고/, /에 살아 있/, 사는 곳 | ~에 있다, ~에 둔다, ~에 남는다, 위치 | 경고 | a literal "lives". Do not write where a file, some code, or a setting 「산다」. **Conjugation changes the syllable block** — matching only `산다` lets `사는지`·`살고`·`삽니다` through. A person really living somewhere (「서울에 산다」) is legitimate and letters alone do not separate them, so this is a warning rather than an error. A document full of people disables it with a base-rule exception |
+| /같은 나무/, /한 나무에/, /그 나무에/, /나무에서 [일작커]/, /나무를 [나공쓰]/, /마이그레이션 나무/, /디렉터리 나무/, /폴더 나무/ | 작업 트리, 저장소, 계보, 디렉터리 구조 | 경고 | a literal "working tree"·"tree". A folder tree on a screen is 「트리」. A document about actual trees disables this with a base-rule exception |
+| /에 있어(?![야도\s])서?/ | ~에서, ~할 때 | 경고 | a literal "in terms of". **Conjugations that state existence are excluded by the following syllable** — the 「있어야」 of 「목록에 있어야 합니다」, the 「있어도」 of 「범위 밖에 있어도」, and **the connective form followed by a clause** (「낱말이 한 자리에 있어 고치면」) are not this translation-ese. All three have to be enumerated because the ending changes the syllable, so the stem 「있어」 cannot separate them. The translation-ese side appears as 「~에 있어서」 and as 「~에 있어,」 with a comma, so 「서」 and the punctuation are caught as they are |
+| /가지고 있/ | ~가 있습니다, ~를 제공합니다 | 경고 | a literal "have" |
+| /그것(?!도)/ | (생략 또는 명사 반복) | 경고 | a literal "it". 「그것도」 (= besides, even that) is a legitimate idiom and is excluded |
+| 에서의, 으로의, 에의 | 절·구로 풀어쓰기 | 경고 | double particles |
+| /(?<!야 )할 것입니다/ | ~합니다 | 경고 | a literal "will". A statement of fact is present tense. Obligation — 「~해야 할 것입니다」 — is not a future assertion and is excluded by a lookbehind: catching 「곧 처리해야 할 것입니다」 would be a false positive |
+| 결론적으로 | (내용으로 마무리) | 경고 | the summarizing-pivot habit |
+| /도커(?!파일)/ | Docker | 오류 | a product name; do not transliterate ("도커파일" is also written Dockerfile) |
+| 쿠버네티스 | Kubernetes | 오류 | a product name; do not transliterate |
+| 깃허브 | GitHub | 오류 | a product name; do not transliterate |
+| /자바(?!스크립트)/ | Java | 오류 | a language name; do not transliterate |
+| 자바스크립트 | JavaScript | 오류 | a language name; do not transliterate |
+| 파이썬 | Python | 오류 | a language name; do not transliterate |
+| 리눅스 | Linux | 오류 | a product name; keep the original |
+| 윈도우즈 | Windows | 오류 | a product name; keep the original |
+| /리액트(?! 네이티브)/ | React | 오류 | a library name; do not transliterate |
+| 리액트 네이티브 | React Native | 오류 | a framework name; do not transliterate |
+| 웹뷰 | WebView | 오류 | a platform API name; do not transliterate |
+| 엑스포 | Expo | 오류 | a product name; do not transliterate |
+| 아이폰 | iPhone | 오류 | a product name; do not transliterate |
+| 아이패드 | iPad | 오류 | a product name; do not transliterate |
+| 파일들, 사용자들, 개발자들, 서버들, 클라이언트들, 함수들, 객체들, 변수들, 노드들, 테이블들, 컬럼들, 엔티티들, 클러스터들 | 단수형으로(맥락이 복수를 표현) | 경고 | the plural suffix "-들" everywhere |
+| /[를을] 통해/ | ~로, ~해서 | 경고(4+) | a literal "via/through" everywhere |
+| /에 대[해한]/ | 목적격 조사로 직결 | 경고(6+) | a literal "about/for" everywhere |
+| 에 의해 | 행위자를 주어로 | 경고(3+) | literal passives everywhere |
+| 또한 | (삭제 또는 문장 재구성) | 경고(4+) | a literal "also/additionally" everywhere |
+| 강력한 | 구체적 특성 서술 | 경고(3+) | a literal "powerful" everywhere |
+| 수 있습니다 | 단언 가능하면 "~합니다" | 경고(10+) | "can" everywhere. Describing a capability is fine |
+| 역위상 | 의존성 역순 | 오류 | the reverse of a topological sort. "역위상" is misread as signal anti-phase and reads oddly. Child → parent direction |
+| 위상 순서 | 의존성 순서 | 오류 | topological order — the execution order of a sorted dependency graph. Parent → child direction |
+| 위상 정렬 | 의존성 정렬 | 오류 | topological sort — the algorithm that orders a dependency graph |
+| 위상 그래프 | 그래프 구조 | 오류 | a literal "topology". **The bare word 「위상」 is not registered** — a signal's phase, mathematical topology, and 「국제적 위상」 are all legitimate, and letters alone do not separate them. Only the compounds diverge in software, so the machine catches these four rows and a person judges the remaining 「위상」 in context |
+| /(?<!표현의 )(?<!표현 )충실성/ | 원문 충실도 | 오류 | a literal "fidelity". Accounting's 「표현의 충실성」 (faithful representation) is a formal term and is excluded by the preceding words. An accounting document that repeats it disables the rule with a base-rule exception |
+| 거버너 | 감시기, 품질 감시기 | 오류 | a transliterated "governor". A mechanical speed governor is not transliterated either — it is 「조속기」. 「거버넌스」 differs by a syllable (넌 ≠ 너) and is not caught |
+| /(?<!논리적 )(?<![가-힣])함의(?![하한할함해])/ | 뒷받침, 담고 있음 | 오류 | a literal "implication". **Logic's 함의 is used as a predicate, so it is excluded by the following syllable** — 「p가 q를 함의한다」·「함의하는」·「함의할」·「함의함」 are legitimate and 「논리적 함의」 is excluded by a lookbehind. **When the preceding character is Hangul it is not the word but 「…함」 plus the particle 「의」** — 결함의·포함의·정함의 are all that shape, and without excluding them every document about defects is caught. What is left is the noun use, 「정책적 함의」·「함의를 담다」. Finance's implied is 「내재」 (내재 변동성) |
+| /동치(?![관류])/ | 일치 | 오류 | a literal "equivalent". Mathematics and logic have the formal 「동치관계」·「동치류」, excluded by the following syllable. A mathematics document about equivalent propositions disables it with a base-rule exception |
+| /휴리스틱(?! 평가)/ | 경험 규칙 | 오류 | a transliterated "heuristic". HCI's 「휴리스틱 평가」 (Nielsen) is settled and is excluded by a lookahead |
+| 정련 | 정제 | 오류 | a literal "refine". Metallurgical and textile 정련 are formal process terms, so those documents disable it with a base-rule exception |
+| /다치 술어/, /다중값 술어/ | 다중값 조건 | 오류 | a literal "multi-valued predicate". **A predicate that narrows a query is 「조건」** — 「술어」·「서술어」 are grammar terms, and nobody calls a list filter that. This row once fixed 「다치」 while leaving 「술어」, which endorsed the mistranslation. **The 「서술어」 of grammar stays** — subject-predicate agreement is a subject this skill returns to constantly. **The bare 「다치」 is not caught** — it overlaps with 「다치다」 |
+| /가역(?!\s?[반과])/ | 되돌릴 수 있는, 되돌릴 수 없는 | 오류 | a literal "reversible". Chemistry and thermodynamics have the formal 「가역 반응」·「가역과정」, excluded by the following syllable. What is left is software use such as 「가역 작업」·「비가역적 변경」. A thermodynamics document that also writes 「가역 기관」·「가역 단열」 disables it with a base-rule exception |
+| 독립확증 | 독립 출처 확인 | 오류 | a coinage: 「독립」 and 「확증」 stuck together, absent from the dictionary |
+| /(?<![이꾸])미지(?![수급불지원정근명])(?!\s*[않말못])/ | 낯선, 처음 보는 | 오류 | a literal "unknown". **Words that merely share the syllables are excluded on both sides** — after it 미지수·미지급·미지불·미지지(未支持)·미지원·미지정·미지근·**미지명** (not yet named), and before it **이미지**. Without excluding the front, a document about photographs or builds is caught at every 「이미지」, and that noise buries the real findings. **A verb's conjugation is caught separately** — 「꾸미지 않게」 is the stem 「꾸미」 plus the connective 「지」, not the word 미지. 「꾸미다」 is practically the only stem ending in 「미」, so the front is excluded, and a following negative auxiliary (않·말·못) is excluded with it to cover other stems. The spaced 「이 미지의 값」 has whitespace in front and is still caught. What is left is 「미지의 값」·「미지 영역」 |
+| /자기 지지(?![대체])/ | 자기 근거 | 오류 | a literal "self-supporting". A structure's 「자기 지지대」·「자기 지지체」 are excluded by the following syllable |
+| /전치(?![사증태])/ | 행·열 뒤바뀜 | 오류 | a literal "transpose". 전치사·전치증폭기·전치태반 are different words, excluded by the following syllable. A linear-algebra document where 「전치행렬」 is the formal term disables it with a base-rule exception |
+| 비싼 작업, 비싼 신호, /(?<!비)싼 신호/ | 비용이 큰 …, 비용이 적은 … | 오류 | a literal "expensive"·"cheap". The cost is high, not the price. **「싼 신호」 is the tail of 「비싼 신호」, so a lookbehind keeps one place from being reported twice.** 「싼 요금제」 about a real price is legitimate, so the following noun is written in to narrow it |
+| 나쁜 정보 | 잘못된 정보 | 오류 | a literal "bad information". Information is not morally good or bad |
+| /답변에 ?안? ?떠오르/ | 답변에 나오지 않게 | 오류 | a literal "surface in the answer". Write plainly what does and does not appear in the answer |
+| 전제 위에 | 전제를 바탕으로 | 오류 | a literal "build on the premise". A premise is a ground, not the base of a structure |
+| 붙는 위치, 붙이는 위치 | 적용 위치, 연결 지점 | 오류 | a literal "where it hooks". Write what applies where, and what is connected to what |
+| 정밀도와 회수율, 회수율과 정밀도 | 재현율 | 오류 | a literal "recall". **The bare 「회수율」 is not registered** — 채권 회수율 · 설문 회수율 · 자원 회수율 are formal terms and letters alone do not separate them. Only its pairing with precision is caught |
+| 프로레이션 | 일할 계산 | 오류 | a transliterated "proration" |
+| 캐리오버 | 이월 | 오류 | a transliterated "carryover" |
+| /더닝(?!.?크루거)/ | 재청구 | 오류 | a transliterated "dunning". 「더닝 크루거」·「더닝-크루거」·「더닝크루거」 are a personal name and are excluded |
+| 리펀드 | 환불 | 오류 | a transliterated "refund" |
+| 서브스크립션 | 구독 | 오류 | a transliterated "subscription" |
+| /오더(?![라니군냐])/ | 주문 | 오류 | a transliterated "order". 「워크오더」·「오더링」 are the same family. **The connective forms of 「오다」 are excluded by the following syllable** — 오더라도·오더라·오더니·오더군·오더냐 are the verb, not a transliteration |
+| 브레드스 | 시장 폭 | 오류 | a transliterated "breadth" |
+| 험프 | 정점 | 오류 | a transliterated "hump" — the peak of liquidity depth. A document about road humps (「험프형 과속방지턱」) disables it with a base-rule exception |
+| 레짐 | 국면 | 오류 | a transliterated "regime" — 시장 국면 · 급락 국면 · 국면 단절 · 국면 게이트 |
+| 드로다운 | 낙폭, 급락 | 오류 | a transliterated "drawdown" |
+| 체결 프린트 | 체결값, 체결 기록 | 오류 | a literal "print" (a trade record). **The bare 「프린트」 is not registered** — printing is a legitimate sense and letters alone do not separate them. Only its pairing with 체결 is caught |
+| 비중 틸트, 가치 틸트, 팩터 틸트, 모멘텀 틸트 | 비중 기울임, 비중 확대 | 오류 | a transliterated "tilt". **The bare 「틸트」 is not registered** — a camera's 「팬·틸트」 is settled |
+| 리더 종목 | 주도주 | 오류 | a literal "leading stocks". **The bare 「리더」 is not registered** — a team leader and a card reader are legitimate |
+| 헤드라인 수치, 헤드라인 지표 | 대표 수치, 전체 | 오류 | a literal "headline number". **The bare 「헤드라인」 is not registered** — a news headline is legitimate |
+| 분석 오버레이 | 보조분석 | 오류 | a literal "analysis overlay". **The bare 「오버레이」 is not registered** — a screen or graphics overlay is settled |

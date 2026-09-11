@@ -13,7 +13,7 @@ a pointer is what this exists to replace.
 
 A pointer to a file is not a standard once the file has left the context. This block is re-loaded
 whole after every summary, so it holds what a reply needs at the moment a Korean sentence is
-written. Every specimen on the banned side is in backticks; it is a quotation, not prose.
+written. Every Korean specimen, banned or recommended, is in backticks; it is a quotation, not prose.
 
 **Register.** Chat replies, explanations and reports are 합니다체. A request to the user is
 「~해 주세요」, never `~해 달라` or `~하라`. Design and development documents are -다체 unless the
@@ -32,12 +32,12 @@ as much right after an audit came back clean.
    `규칙이 스스로 구분합니다` → 규칙으로 자동 판정합니다 · `기록이 오래 산다` → 기록이 오래 남는다
 2. Does something move, or get handled like an object, that cannot? `알림이 갑니다` → 알림을
    보냅니다 · `서버로 올라간다` → 서버로 전송한다 · `담당과 기한을 붙인다` → 지정한다 ·
-   `두 값이 부딪힌다` → 충돌한다 · `사업장이 손댄 것` → 고친 것
+   `두 값이 부딪힌다` → 충돌한다 · `사업장이 손댄 것` → `고친 것`
 3. Is a real name replaced by a metaphor, or a change by an adverb? `관문을 연다` → 요건을
    충족하면 진행할 수 있다 · `통째로 바뀝니다` → say which items change and how. Nouns that do
    this: `자리` · `몫` · `천장` · `바닥` · `함정` · `관문` · `사다리` · `갈래` · `길`.
 4. Can it be read back as English word for word? `되어진다` → 된다 · `~하는 것을 가능하게 합니다`
-   → ~할 수 있습니다 · `~를 가지고 있다` → ~가 있다 · `~에 대해 설명` → ~를 설명 · `~할 것입니다`
+   → `~할 수 있습니다` · `~를 가지고 있다` → ~가 있다 · `~에 대해 설명` → ~를 설명 · `~할 것입니다`
    for a fact → ~합니다 · drop `당신` · `우리는` · `그것은` · `-들`
 5. Is the subject what the predicate is about, for every subject it covers?
    `낱말은 아이디만 오고 화면이 꺼낸다` → 서버는 아이디만 보내고 낱말은 화면이 꺼낸다 ·
@@ -55,6 +55,15 @@ as much right after an audit came back clean.
    `갈무리하다` → 저장하다 · `일컫다` → 부르다 · `기본값을 두었다 — 검증이 건너뛰어진다` →
    기본값을 그대로 두면 검증을 건너뜁니다. A dash that restates or itemises stays.
 
+**AI tells.** A sentence can pass every check above and still read as machine-written, because
+the draft was English first and each tell arrives as the 번역투 it turns into. Five survive a
+rewrite most often: `단순히 ~가 아니라` staging a claim (`not just X but Y`); a closing line that only
+repeats the paragraph (`이것이 진짜 이점입니다`); a 줄표 carrying cause or contrast; three of
+everything; a bold label on every list item. Four more: a run-up before the point
+(`지금부터 자세히 살펴보겠습니다`), inflated significance (`중요한 이정표` · `자리매김` ·
+`시사하는 바가 크다`), borrowed authority (`전문가들은` · `업계에서는`), and chat residue
+(`좋은 질문입니다` · `도움이 되었으면 좋겠습니다`). State the fact and end on it.
+
 **Vocabulary.** Settled loanwords stay: 어댑터 · 콜백 · 매핑 · 슬롯 · 캐시 · 핸들러 · 메타데이터.
 Product and language names keep their own spelling: Docker · Kubernetes · Java. A word is replaced
 only when a plainer word means the same; `쓴 비용을 구하는 함수` lost 지출 and 추론 and is not
@@ -65,7 +74,7 @@ agent is 「에이전트」 or 「읽는 쪽」. A process is not alive or dead:
 키, `커밋이 물고 갔다` → 커밋에 함께 들어갔다.
 
 **A brief and a report.** A metaphor in an English brief comes back as Korean in the answer
-(`furniture` → 세간, `ladder` → 사다리); write the real name in the brief. A subagent's report
+(`furniture` → `세간`, `ladder` → `사다리`); write the real name in the brief. A subagent's report
 relayed to the user is the relayer's sentence and gets the same standard. Only a screen label, an
 error message, a string in a file or a document title is a quotation.
 

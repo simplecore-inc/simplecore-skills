@@ -1,78 +1,90 @@
-# 한국어 번역투·AI 문체 패턴 카탈로그
+# Translation-ese catalogue
 
-문서 작성·번역·교정·검수에서 문장 품질을 판단하는 정밀 기준. 패턴마다 심각도와 처방을 매긴 카탈로그이며, 교정·검수 작업 전에 읽는다.
+The sentence-level tests used when writing, translating, proofreading, and reviewing: each pattern
+carries a severity and a prescription. Read it before proofreading or review work.
 
-역할 구분:
+How it divides with its neighbours:
 
-- **어휘·표기 기준**(직역·음차 금지 어휘, 한자어 대체 목록, 외래어 표기법, 정착 용어 판단, 금융·퀀트 도메인 용어)은 [response-style.md](response-style.md)가 원본이다. 상시 적용 문서이므로 이 카탈로그와 항상 함께 적용한다.
-- **기계 검사가 가능한 패턴**은 기본 용어사전(`GLOSSARY.base.md`)과 프로젝트 용어사전에 등록되어 감사 스크립트가 잡는다. 이 카탈로그는 감사가 못 잡는 문장 수준의 판단을 다룬다.
-- **화면에 나가는 문구**(i18n 자원·메시지 번들·와이어프레임 보드 소스)는 [ui-copy.md](ui-copy.md)를 함께 적용한다. 문서 기준을 통과한 문장이 화면에서는 통과하지 못한다 — 「업무용 소프트웨어에서 실제로 쓰는 말인가」가 판정에 하나 더 붙는다.
+- **Vocabulary and spelling** (banned literal translations and transliterations, Sino-Korean
+  replacements, loanword spelling, what counts as settled, finance and quant terms) live in
+  [response-style.md](response-style.md), the file that applies at all times. Apply it alongside
+  this catalogue, always.
+- **Structural AI habits** — staging a claim instead of stating it, a closing line that repeats,
+  three of everything, inflated significance, borrowed authority, chat residue — live in
+  [ai-tells.md](ai-tells.md). They carry no banned word, so the audit stays silent on them and the
+  reader is the only check.
+- **Machine-checkable patterns** are registered in the base glossary (`GLOSSARY.base.md`) and the
+  project glossary, where the audit script catches them. This catalogue holds the sentence-level
+  judgement the audit cannot make.
+- **Copy that goes on a screen** (i18n resources, message bundles, wireframe board sources) adds
+  [ui-copy.md](ui-copy.md). A sentence that passes the document standard can still fail on a screen
+  — one more test applies there: 「does business software actually say this?」
 
-## 핵심 원칙
+## The principle
 
-영어 문장 구조를 한국어 단어로 치환하지 않는다. 의미를 이해한 뒤 한국어로 다시 쓴다.
-주어(you/we/it)는 생략하고, 피동보다 능동, 미래 단정(`~할 것입니다`)보다 현재형 단언(「~합니다」)을 쓴다.
+Do not substitute Korean words into an English sentence structure. Understand the meaning, then
+write it again in Korean. Drop the subject (you/we/it), prefer active over passive, and prefer a
+present-tense assertion (「~합니다」) over a future one (`~할 것입니다`).
 
-심각도: **S1** = 한 번만 나와도 고친다. **S2** = 반복되면(대략 3회+) 고친다.
+Severity: **S1** = fix on one sighting. **S2** = fix when it repeats (roughly three times or more).
 
-## A. 번역투 (Translation-ese)
+## A. Translation-ese
 
-| 패턴 | 심각도 | 처방 |
+| Pattern | Severity | Prescription |
 | ---- | ---- | ---- |
-| `~에 대해(서)`·`~에 대한` 남발 | S2 | 목적격 조사로 직결: `X에 대해 설명` → 「X를 설명」 |
-| `~를 통해`·`~를 통하여` 남발 | S2 | 「~로」, 「~해서」, 「~함으로써」로 분산 |
+| `~에 대해(서)` · `~에 대한` everywhere | S2 | Attach the object particle directly: `X에 대해 설명` → 「X를 설명」 |
+| `~를 통해` · `~를 통하여` everywhere | S2 | Spread across 「~로」, 「~해서」, 「~함으로써」 |
 | `~에 있어(서)` | S1 | 「~에서」, 「~할 때」 |
-| `~와 관련하여`·`~와 관련된` 남발 | S2 | 「~에」, 「~의」 |
-| 명사화 과잉 `~에 기반하여`·`~를 바탕으로` | S2 | 동사로 환원: `성능의 향상` → 「성능을 높이려면」 |
-| `가지고 있다` (have 직역) | S1 | 「~가 있다」, 「~를 제공한다」: `경쟁력을 가지고 있다` → 「경쟁력이 강하다」 |
-| 이중 피동 `되어진다`·`보여진다` | S1 | 능동 또는 단일 피동: `판단되어진다` → 「판단된다」 |
-| `~에 의해` 피동 남발 | S2 | 행위자를 주어로: `노드에 의해 처리` → 「노드가 처리」 |
-| `~하는 것을 허용한다`·`~하는 것을 가능하게 한다` | S1 | 「~할 수 있다」 |
-| `~을 위해` 목적절 남발 | S2 | 「~하려면」, 「~용」 |
-| 대명사 직역 `그`·`그것`·`그들` 반복 | S1 | 생략(한국어는 무주어가 자연스럽다) 또는 명사 반복 |
-| 복수 접미사 `-들` 남발 | S2 | 삭제: `개발자들이` → 「개발자가」 (맥락이 복수를 표현) |
-| 명사 앞 3어절+ 관형절 좌향 수식 | S2 | 문장 분리: `지난주에 출시된 새로운 버전의 클라이언트를` → 「클라이언트 새 버전이 지난주에 나왔는데, 이를」 |
-| 이중 조사 `~에서의`·`~으로의`·`~에의` | S2 | 절·구로 풀어쓰기 |
-| `~할 것입니다` (will 직역) | S2 | 사실 서술은 현재형 「~합니다」 |
-| `~할 수 있습니다` (can) 남발 | S2 | 단언 가능하면 「~합니다」. 기능 설명 자체는 허용 |
-| 음차 남발: `디폴트`, `레버리지`, `이슈`(문제 의미), `릴리즈 노트`의 `노트` | S1 | 기본값, 활용, 문제, 참고 |
-| 어색한 한자어: `함의`, `동치`, `정련`, `가역`, `미지의` | S2 | 뒷받침, 일치, 정제, 되돌릴 수 있는, 낯선 (전체 대체 목록: response-style.md) |
+| `~와 관련하여` · `~와 관련된` everywhere | S2 | 「~에」, 「~의」 |
+| Over-nominalization `~에 기반하여` · `~를 바탕으로` | S2 | Back to a verb: `성능의 향상` → 「성능을 높이려면」 |
+| `가지고 있다` (literal *have*) | S1 | 「~가 있다」, 「~를 제공한다」: `경쟁력을 가지고 있다` → 「경쟁력이 강하다」 |
+| Double passive `되어진다` · `보여진다` | S1 | Active, or a single passive: `판단되어진다` → 「판단된다」 |
+| `~에 의해` passive everywhere | S2 | Put the actor in the subject: `노드에 의해 처리` → 「노드가 처리」 |
+| `~하는 것을 허용한다` · `~하는 것을 가능하게 한다` | S1 | 「~할 수 있다」 |
+| `~을 위해` purpose clauses everywhere | S2 | 「~하려면」, 「~용」 |
+| Literal pronouns `그` · `그것` · `그들` repeated | S1 | Drop them (Korean is comfortable without a subject) or repeat the noun |
+| Plural suffix `-들` everywhere | S2 | Delete: `개발자들이` → 「개발자가」 (the context carries the plural) |
+| A three-phrase modifier stacked before a noun | S2 | Split the sentence: `지난주에 출시된 새로운 버전의 클라이언트를` → 「클라이언트 새 버전이 지난주에 나왔는데, 이를」 |
+| Double particles `~에서의` · `~으로의` · `~에의` | S2 | Unfold into a clause or a phrase |
+| `~할 것입니다` (literal *will*) | S2 | A statement of fact is present tense, 「~합니다」 |
+| `~할 수 있습니다` (*can*) everywhere | S2 | Assert where you can: 「~합니다」. Describing a capability is fine |
+| Transliteration everywhere: `디폴트`, `레버리지`, `이슈` (meaning a problem), the `노트` of `릴리즈 노트` | S1 | 기본값, 활용, 문제, 참고 |
+| Awkward Sino-Korean: `함의`, `동치`, `정련`, `가역`, `미지의` | S2 | 뒷받침, 일치, 정제, 되돌릴 수 있는, 낯선 (the full replacement list is in response-style.md) |
 
-## B. 영어 병기·용어
+## B. Bilingual notation and terms
 
-| 패턴 | 심각도 | 처방 |
+| Pattern | Severity | Prescription |
 | ---- | ---- | ---- |
-| 한글 + 괄호 영어를 매번 병기 | S2 | 문서당 첫 등장만 병기, 이후 한국어만 |
-| 직역 가능한 영어를 그대로 노출 | S2 | 한국어로 옮기되 업계 표준 약어(API, LLM 등)는 유지 |
-| 제품명·언어명 음차 (`도커`, `쿠버네티스`, `자바`) | S1 | 원문 유지 (Docker, Kubernetes, Java) |
-| 영어 관용구·비유 부분 직역 (`단일 소스`, `아군으로 만들기`) | S1 | 맥락에 맞는 평범한 한국어로: 「한 곳에서 관리」, 「강점으로」 |
-| 영어 단어 + `-하다`·`-되다` 조어 (`인라인하다`, `resolve되다`) | S1 | 「직접 작성하다」, 「~를 가리키다」 등 한국어 동사로 |
+| The English in parentheses after every occurrence | S2 | Gloss it on first use in a document, Korean only afterwards |
+| Translatable English left as English | S2 | Translate it, but keep industry-standard abbreviations (API, LLM) |
+| Transliterated product and language names (`도커`, `쿠버네티스`, `자바`) | S1 | Keep the original (Docker, Kubernetes, Java) |
+| A half-translated English idiom (`단일 소스`, `아군으로 만들기`) | S1 | Plain Korean for the context: 「한 곳에서 관리」, 「강점으로」 |
+| An English word plus `-하다` · `-되다` (`인라인하다`, `resolve되다`) | S1 | A Korean verb: 「직접 작성하다」, 「~를 가리키다」 |
 
-## C. AI 특유의 버릇
+## C. AI habits
 
-| 패턴 | 심각도 | 처방 |
-| ---- | ---- | ---- |
-| `본질적으로`·`핵심적으로` | S1 | 삭제 |
-| 결산 피벗 `결론적으로`·`요약하면`·`이를 통해 ~할 수 있습니다` 반복 | S1 | 내용으로 끝낸다 |
-| `시사하는 바가 크다`·`주목할 만하다` | S1 | 삭제 또는 구체 결론 |
-| hype 어휘 남발 (`강력한`, `획기적`, `압도적`, `완벽한`) | S2 | 구체 수치·사실로 |
-| 문두 접속사 `또한`·`따라서`·`즉`·`나아가` 문단마다 반복 | S1 | 대량 제거, 문장 흐름으로 연결 |
-| 메타 진입 `이는 ~라는 점에서` 반복 | S2 | 본문에 녹이거나 삭제 |
-| `~인 것이다`·`~한 것이다` 결말 | S2 | 평서형 |
-| 균형 잡기 헤징 `장점도 있지만 신중하게` 반복 | S2 | 확인한 사실은 단언 |
-| 챗봇 응대 잔재 (`좋은 질문이에요!`, `도움이 되었으면`) | S1 | 통째로 삭제 |
-| 이모지 남발 | S1 | 기술 산출물에서는 제거 |
+They live in [ai-tells.md](ai-tells.md), catalogued by strength with the Korean form each English
+pattern turns into. The five that most often survive a rewrite are `단순히 ~가 아니라`, a closing
+line that repeats, a 줄표, a three-item series, and a bold label.
 
-## 문체 (문서·번역)
+## Register (documents and translations)
 
-- 산출물별 문체는 [response-style.md](response-style.md) 1절의 표를 따른다. 매뉴얼과 독자용 설명문은 합니다체에 독자 지시 「~하세요」, 설계·개발 문서는 -다체다. (프로젝트 용어사전에 다른 기준이 있으면 그쪽을 따른다)
-- 원문이 명령문이면 「~하세요」·「합니다」로, 설명문이면 평서형으로 옮긴다. 원문 어조(주의·경고 수위)를 유지한다.
-- 조사(은/는·이/가·을/를·과/와)는 앞 단어의 받침에 맞춘다. 영어 원문 유지 단어 뒤 조사는 실제 발음 기준(예: 「Ignite는」, 「RAFT 그룹은」).
-- 문장이 원문보다 길어지면 둘로 나눈다. 영어 관계절을 그대로 긴 관형절로 옮기지 않는다.
+- The register per deliverable follows the table in [response-style.md](response-style.md) §1. A
+  manual and reader-facing explanatory text are 합니다체 with 「~하세요」 for instructions; design and
+  development documents are -다체. (A project glossary with a different standard wins.)
+- An imperative source becomes 「~하세요」 · 「합니다」, and an explanatory source becomes a plain
+  declarative. Keep the source's tone, including the level of a caution or a warning.
+- Particles (은/는 · 이/가 · 을/를 · 과/와) agree with the final consonant of the preceding word. After
+  a word kept in English, agreement follows how it is actually pronounced (「Ignite는」,
+  「RAFT 그룹은」).
+- If the sentence grows longer than the source, split it in two. Do not carry an English relative
+  clause over as one long Korean modifier.
 
-## 번역·교정 시 유지해야 하는 것 (원문 충실도)
+## What translation and proofreading must preserve
 
-- 고유명사·수치·날짜·단위·직접 인용은 한 글자도 바꾸지 않는다.
-- 원문이 격식체면 결과도 격식체로 옮긴다(어조 보존).
-- 윤문한다며 원문에 없던 비유·수사·내용을 추가하지 않는다. 원문 충실도가 유려함보다 우선한다.
-- 정착 외래어·정착 기술 용어는 유지한다 — 판단 목록은 response-style.md 「과잉 교정 금지」 절을 따른다.
+- Proper nouns, figures, dates, units, and direct quotations do not change by a single character.
+- A formal source stays formal in the result.
+- Do not add a metaphor, a flourish, or content that is not in the source in the name of polish.
+  Fidelity to the source outranks fluency.
+- Settled loanwords and settled technical terms stay — judge them by the over-correction section of
+  response-style.md.

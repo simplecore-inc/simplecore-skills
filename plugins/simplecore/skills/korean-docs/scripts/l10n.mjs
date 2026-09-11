@@ -123,11 +123,11 @@ const CONFIG = loadConfig();
 function requireKinds() {
   if (Object.keys(CONFIG.kinds).length) return;
   throw new Error(
-    "자원 부류가 선언되지 않았다 — 프로젝트의 .claude/l10n.json에 kinds를 적어야 한다.\n" +
-      "  예: { \"languages\": [\"ko\",\"en\"], \"kinds\": { \"frontend\": {\n" +
-      "        \"label\": \"프론트엔드 i18n\", \"patterns\": [\"apps/**/locales/{lang}.json\"],\n" +
+    "No resource kinds are declared — write kinds into the project's .claude/l10n.json.\n" +
+      "  Example: { \"languages\": [\"ko\",\"en\"], \"kinds\": { \"frontend\": {\n" +
+      "        \"label\": \"frontend i18n\", \"patterns\": [\"apps/**/locales/{lang}.json\"],\n" +
       "        \"format\": \"json\", \"register\": \"screen\" } } }\n" +
-      "  문서 감사는 부류 선언 없이도 된다: l10n.mjs check [경로...]",
+      "  The document audit needs no declaration: l10n.mjs check [paths...]",
   );
 }
 
@@ -304,7 +304,7 @@ function discover({ kind, lang, docFallback = false, command } = {}) {
   const found = new Map();
   for (const k of kinds) {
     const spec = CONFIG.kinds[k];
-    if (!spec) throw new Error(`알 수 없는 부류: ${k}`);
+    if (!spec) throw new Error(`Unknown kind: ${k}`);
     for (const l of langs) {
       // A kind whose globs name no language is single-language: it belongs to the
       // default language and must not be reported under any other.
@@ -422,7 +422,7 @@ function segmentsJson(src) {
         pendingKey = value;
       } else {
         const key = [...path, pendingKey].filter(Boolean).join(".");
-        segments.push(segment(start + 1, i - 1, value, key || "(값)"));
+        segments.push(segment(start + 1, i - 1, value, key || "(value)"));
         pendingKey = null;
       }
       continue;
@@ -1022,7 +1022,7 @@ function glossaryBans() {
   return ruleSet().rules.map((r) => ({
     re: r.pattern,
     term: r.source,
-    correct: r.suggestion || "(대체어 없음)",
+    correct: r.suggestion || "(no replacement given)",
     label: r.label,
     level: r.level,
     threshold: r.threshold,
@@ -1208,11 +1208,11 @@ function cmdList(opts) {
     if (e.kind !== current) {
       current = e.kind;
       // The synthetic `docs` kind of the no-declaration fallback has no entry to label it.
-      console.log(`\n${C.bold(CONFIG.kinds[e.kind]?.label ?? "문서 (선언 없음)")} ${C.dim(`(${e.kind})`)}`);
+      console.log(`\n${C.bold(CONFIG.kinds[e.kind]?.label ?? "Documents (no declaration)")} ${C.dim(`(${e.kind})`)}`);
     }
     console.log(`  ${e.file}`);
   }
-  console.log(`\n${entries.length}개 파일`);
+  console.log(`\n${entries.length} files`);
   return 0;
 }
 
@@ -1237,7 +1237,7 @@ function cmdStats(opts) {
     console.log(JSON.stringify(rows, null, 2));
     return 0;
   }
-  console.log(`\n${"부류".padEnd(12)}${"언어".padEnd(6)}${"파일".padStart(6)}${"문구".padStart(8)}${"글자".padStart(10)}`);
+  console.log(`\n${"kind".padEnd(12)}${"lang".padEnd(6)}${"files".padStart(7)}${"strings".padStart(9)}${"chars".padStart(10)}`);
   console.log("─".repeat(42));
   for (const r of rows) {
     console.log(
@@ -1282,7 +1282,7 @@ function cmdGrep(pattern, opts) {
     const shown = hit.text.replace(re, (m) => C.yellow(m));
     console.log(`  ${C.dim(`${hit.line}:`)} ${C.bold(hit.key)}  ${shown}`);
   }
-  console.log(`\n${hits.length}건 · ${new Set(hits.map((h) => h.file)).size}개 파일`);
+  console.log(`\n${hits.length} hits · ${new Set(hits.map((h) => h.file)).size} files`);
   return hits.length ? 0 : 1;
 }
 
@@ -1337,7 +1337,7 @@ function lensDrift() {
   } catch {
     return null;
   }
-  const section = doc.split("## 렌즈 — 계열별 어간")[1]?.split("### ")[0];
+  const section = doc.split("## The lens — stems by family")[1]?.split("### ")[0];
   if (!section) return null;
   const inDoc = new Set();
   for (const line of section.split("\n")) {
@@ -1384,7 +1384,7 @@ function lensDrift() {
  */
 const EXTRACTOR_CASES = [
   {
-    what: "와이어프레임: 문장 속 강조는 문장을 자르지 않는다",
+    what: "wireframe: emphasis inside a sentence does not cut the sentence",
     of: () => segmentsWireframe,
     src: "const a = '앱이 고정하는 것은 <b>무엇에 동의했는가</b>인 범위 셋뿐이다.<br>' +\n  '<b>범위 셋은 각각 켜고 끈다.</b> 사진을 붙일 수 없다.';",
     want: [
@@ -1396,19 +1396,19 @@ const EXTRACTOR_CASES = [
     // A rule that judges a line ends its pattern on `$`. Leave the closing tag on the
     // tail and the bolded heading — the very thing those rules are written for — stops
     // reaching them, silently and in the direction nobody checks.
-    what: "와이어프레임: 통째로 굵게 쓴 줄은 강조를 벗겨 한 줄로 준다",
+    what: "wireframe: a fully bold line comes back as one line with the emphasis stripped",
     of: () => segmentsWireframe,
     src: "const a = '<b>언제 무엇을 잃는가</b><br>' + '남은 날을 적는다.';",
     want: ["언제 무엇을 잃는가", "남은 날을 적는다."],
   },
   {
-    what: "와이어프레임: 강조 안쪽의 공백까지 벗긴다",
+    what: "wireframe: whitespace inside the emphasis is stripped too",
     of: () => segmentsWireframe,
     src: "const a = '<strong> 어디에 기대는가 </strong><br>' + '조건을 적는다.';",
     want: ["어디에 기대는가", "조건을 적는다."],
   },
   {
-    what: "와이어프레임: 속성이 붙은 태그와 코드는 여전히 경계다",
+    what: "wireframe: a tag with attributes and a code span are still boundaries",
     of: () => segmentsWireframe,
     src: "const a = '<span class=\"open\">OPEN:</span> 보관해야 하는지.<br>' +\n  '<code>refusePhoto</code>를 먼저 묻는다.';",
     want: ["보관해야 하는지.", "를 먼저 묻는다."],
@@ -1417,7 +1417,7 @@ const EXTRACTOR_CASES = [
     wantAfter: ["", ""],
   },
   {
-    what: "와이어프레임: 짝이 밖에 있는 강조는 예전처럼 가른다",
+    what: "wireframe: emphasis whose pair sits outside splits as before",
     of: () => segmentsWireframe,
     src: "const a = '<b>고를 수 있는 형태는 <code>x</code> 이 이름을 가진 둘뿐이다</b> 끝.';",
     want: ["고를 수 있는 형태는", "이 이름을 가진 둘뿐이다", "끝."],
@@ -1426,7 +1426,7 @@ const EXTRACTOR_CASES = [
     wantAfter: [" ", "", ""],
   },
   {
-    what: "마크다운: 첫 줄에서 여는 머리말은 빠진다",
+    what: "markdown: front matter opening on the first line is excluded",
     of: () => segmentsMarkdown,
     src: "---\ntitle: 안전 점검\n키워드: 작업허가\n---\n\n본문이 여기서 시작한다.\n",
     want: ["본문이 여기서 시작한다."],
@@ -1435,14 +1435,14 @@ const EXTRACTOR_CASES = [
     // The pair-off defect: with three body rules the old pattern held 1↔2 and left 3
     // alone, so 둘째 문단 vanished while 첫째 · 셋째 stayed. Two of three surviving is
     // what made it invisible — the file still had text under the rules.
-    what: "마크다운: 본문의 가로줄은 사이 문장을 삼키지 않는다",
+    what: "markdown: a horizontal rule in the body does not swallow the sentences between",
     of: () => segmentsMarkdown,
     src: "첫째 문단이다.\n\n---\n\n둘째 문단이다.\n\n---\n\n셋째 문단이다.\n\n---\n\n넷째 문단이다.\n",
     want: ["첫째 문단이다.", "둘째 문단이다.", "셋째 문단이다.", "넷째 문단이다."],
   },
   {
     // Front matter and body rules in one file — the shape every document here has.
-    what: "마크다운: 머리말은 빠지고 그 뒤 가로줄 사이는 남는다",
+    what: "markdown: front matter is excluded and the rules after it keep their text",
     of: () => segmentsMarkdown,
     src: "---\ntitle: 안전 점검\n---\n\n머리말 뒤 첫 문장이다.\n\n---\n\n가로줄 뒤 문장이다.\n",
     want: ["머리말 뒤 첫 문장이다.", "가로줄 뒤 문장이다."],
@@ -1450,7 +1450,7 @@ const EXTRACTOR_CASES = [
   {
     // A `---` that never closes is not front matter. Holding from it to end of file
     // would empty the document, which is the same silence in a louder form.
-    what: "마크다운: 닫히지 않는 여는 줄은 머리말이 아니다",
+    what: "markdown: an unclosed opening line is not front matter",
     of: () => segmentsMarkdown,
     src: "---\n\n닫는 줄이 없는 문서다.\n",
     want: ["닫는 줄이 없는 문서다."],
@@ -1460,7 +1460,7 @@ const EXTRACTOR_CASES = [
     // ban on 「~에 있어서」 declines on the space that follows — a space the segment used
     // to trim off its tail, leaving the lookahead nothing to read and nothing to decline
     // on. Reported as a 번역투 in a sentence that has none.
-    what: "마크다운: 코드 조각에서 끊긴 문장은 뒷문맥을 함께 준다",
+    what: "markdown: a sentence cut off by a code span carries its following text",
     of: () => segmentsMarkdown,
     src: "제출 현황(G-14)이 W17에 있어 `StatutoryReport`\n",
     want: ["제출 현황(G-14)이 W17에 있어"],
@@ -1468,7 +1468,7 @@ const EXTRACTOR_CASES = [
     silent: ["에 있어(?![야도\\s])서?"],
   },
   {
-    what: "마크다운: 코드 조각 뒤로 이어지는 본문이 뒷문맥이다",
+    what: "markdown: the body continuing after a code span is that following text",
     of: () => segmentsMarkdown,
     src: "값은 `x` 뒤에 온다.\n",
     want: ["값은", "뒤에 온다."],
@@ -1478,7 +1478,7 @@ const EXTRACTOR_CASES = [
     // The other direction, on the same path: giving a rule its context must not stop it
     // catching what it is for. A green rule that no longer fires is the failure this
     // whole harness exists to make visible.
-    what: "마크다운: 진짜 번역투는 그대로 잡힌다",
+    what: "markdown: real translation-ese is still caught",
     of: () => segmentsMarkdown,
     src: "이 점에 있어서 두 값이 다르다.\n",
     want: ["이 점에 있어서 두 값이 다르다."],
@@ -1490,7 +1490,7 @@ const EXTRACTOR_CASES = [
     // visible, or the marker trades one silence for a bigger one. `silent`/`loud` prove
     // both directions with the same pattern — the clause inside is not reported and the
     // author's own sentence after the close still is.
-    what: "마크다운: 인용 구간은 훑기에서 빠지고 뒤 본문은 그대로 남는다",
+    what: "markdown: a quoted span is skipped and the body after it stays",
     of: () => segmentsMarkdown,
     src:
       "앞 문단이 있다.\n" +
@@ -1507,7 +1507,7 @@ const EXTRACTOR_CASES = [
     // label. Read as one line of markup — which is what a rendered diagram is — no label sits
     // at the end of anything, so every such rule reported 0 over 35 files and the 0 read as
     // clean. `loud` proves the anchor lands; `silent` proves the attribute soup is not prose.
-    what: "SVG: 그려지는 라벨만 조각이 되고 마크업은 조각이 아니다",
+    what: "SVG: only rendered labels become segments; markup does not",
     of: () => segmentsSvg,
     src:
       '<svg xmlns="http://www.w3.org/2000/svg" font-family="\'Inter\',system-ui,sans-serif">' +
@@ -1521,7 +1521,7 @@ const EXTRACTOR_CASES = [
     // Closing the region must hand the rest of the file back. A greedy match would run to
     // the last close in the document and swallow every commentary paragraph between two
     // quotations — silently, which is the failure mode this marker exists to avoid.
-    what: "마크다운: 인용 구간 둘 사이의 본문은 살아남는다",
+    what: "markdown: the body between two quoted spans survives",
     of: () => segmentsMarkdown,
     src:
       "<!-- l10n:quote 첫 인용 -->\n" +
@@ -1559,18 +1559,18 @@ function extractorProblems() {
     const got = test.of()(test.src);
     const texts = got.map((s) => s.text);
     if (texts.length !== test.want.length || texts.some((t, i) => t !== test.want[i])) {
-      problems.push([test.what, `기대 ${JSON.stringify(test.want)} · 실제 ${JSON.stringify(texts)}`]);
+      problems.push([test.what, `expected ${JSON.stringify(test.want)} · got ${JSON.stringify(texts)}`]);
       continue;
     }
     const slipped = got.find((s) => test.src.slice(s.start, s.end) !== s.text);
     if (slipped) {
-      problems.push([test.what, `자리가 어긋난다: ${JSON.stringify(slipped.text)}`]);
+      problems.push([test.what, `offset does not line up: ${JSON.stringify(slipped.text)}`]);
       continue;
     }
     if (test.wantAfter) {
       const after = got.map((s) => s.after ?? "");
       if (after.some((a, i) => a !== test.wantAfter[i])) {
-        problems.push([test.what, `뒷문맥 기대 ${JSON.stringify(test.wantAfter)} · 실제 ${JSON.stringify(after)}`]);
+        problems.push([test.what, `following text expected ${JSON.stringify(test.wantAfter)} · got ${JSON.stringify(after)}`]);
         continue;
       }
     }
@@ -1580,11 +1580,11 @@ function extractorProblems() {
     for (const src of test.silent ?? []) {
       const re = new RegExp(src, "g");
       const fired = got.find((s) => matchSegment(re, s));
-      if (fired) problems.push([test.what, `잡으면 안 되는데 잡음 (/${src}/): ${fired.text}`]);
+      if (fired) problems.push([test.what, `caught but should not be (/${src}/): ${fired.text}`]);
     }
     for (const src of test.loud ?? []) {
       const re = new RegExp(src, "g");
-      if (!got.some((s) => matchSegment(re, s))) problems.push([test.what, `잡아야 하는데 놓침 (/${src}/)`]);
+      if (!got.some((s) => matchSegment(re, s))) problems.push([test.what, `should be caught but was missed (/${src}/)`]);
     }
   }
   return problems;
@@ -1599,21 +1599,21 @@ function cmdRulesTest(opts) {
   const extractor = extractorProblems();
   if (extractor.length) {
     failures += 1;
-    console.log(`\n${C.red("✖")} ${C.bold("추출기")} ${C.dim("규칙이 받는 조각의 경계")}`);
+    console.log(`\n${C.red("✖")} ${C.bold("extractor")} ${C.dim("the boundaries of the segments rules receive")}`);
     for (const [what, detail] of extractor) console.log(`    ${what}: ${C.yellow(detail)}`);
   } else if (opts.verbose) {
-    console.log(`${C.green("✔")} 추출기 ${C.dim(`(경계 ${EXTRACTOR_CASES.length}건)`)}`);
+    console.log(`${C.green("✔")} extractor ${C.dim(`(${EXTRACTOR_CASES.length} boundary cases)`)}`);
   }
   for (const rule of rules) {
     const res = ruleMatchers(rule);
     const problems = [];
     for (const ex of rule.hit ?? []) {
-      if (!res.some((re) => ((re.lastIndex = 0), re.test(ex)))) problems.push(["잡아야 하는데 놓침", ex]);
+      if (!res.some((re) => ((re.lastIndex = 0), re.test(ex)))) problems.push(["should be caught but was missed", ex]);
     }
     for (const ex of rule.miss ?? []) {
       const caught = res.find((re) => ((re.lastIndex = 0), re.test(ex)));
       if (caught) {
-        problems.push([`잡으면 안 되는데 잡음 (/${caught.source}/)`, ex]);
+        problems.push([`caught but should not be (/${caught.source}/)`, ex]);
         continue;
       }
       // A miss example that passes only because it was cut short proves nothing. A rule
@@ -1624,7 +1624,7 @@ function cmdRulesTest(opts) {
       const late = MISS_CONTEXTS.map((wrap) => wrap(ex)).find((v) =>
         res.some((re) => ((re.lastIndex = 0), re.test(v))),
       );
-      if (late) problems.push(["잘려서 통과한 miss 예문 — 문장 안에서는 잡힌다", `${ex}  →  ${late}`]);
+      if (late) problems.push(["a miss example that passes only by being cut short — inside a sentence it is caught", `${ex}  →  ${late}`]);
     }
     // An exception is a hole, and a hole nobody proved is a rule quietly switched off. The
     // sample has to be a sentence THIS rule catches and this exception releases — an exception
@@ -1633,16 +1633,16 @@ function cmdRulesTest(opts) {
     for (const ex of rule.except ?? []) {
       const caught = res.map((re) => ((re.lastIndex = 0), re.exec(ex.sample))).find(Boolean);
       if (!caught) {
-        problems.push(["예외의 sample을 이 규칙이 잡지 않는다", `${ex.sample} — 놓아 줄 것이 없는 예외다`]);
+        problems.push(["this rule does not catch the exception's sample", `${ex.sample} — the exception releases nothing`]);
         continue;
       }
       ex.re.lastIndex = 0;
       const covers = [...ex.sample.matchAll(ex.re)]
         .some((e) => e.index <= caught.index && caught.index < e.index + e[0].length);
-      if (!covers) problems.push([`예외가 sample의 검출 자리를 덮지 않는다 (/${ex.re.source}/)`, ex.sample]);
+      if (!covers) problems.push([`the exception does not cover the hit position in its sample (/${ex.re.source}/)`, ex.sample]);
     }
-    if (!(rule.hit ?? []).length) problems.push(["hit 예문이 없음", "규칙이 무엇을 잡는지 증명되지 않는다"]);
-    if (!(rule.miss ?? []).length) problems.push(["miss 예문이 없음", "오탐을 막는 근거가 없다"]);
+    if (!(rule.hit ?? []).length) problems.push(["no hit example", "nothing proves what this rule catches"]);
+    if (!(rule.miss ?? []).length) problems.push(["no miss example", "nothing guards against false positives"]);
     // The lens knowing a family HALF is the defect — 「붙는」 stood in it without
     // 붙이·붙은·붙지·붙어, so the lens reported finding the family while 126 sites walked
     // past. A rule's examples are all of one family, so a lens that matches some of them
@@ -1658,8 +1658,8 @@ function cmdRulesTest(opts) {
       const unseen = rule.hit.filter((ex) => ((lens.lastIndex = 0), !lens.test(ex)));
       if (unseen.length && unseen.length < rule.hit.length) {
         problems.push([
-          "렌즈가 이 계열을 반만 안다",
-          `${unseen[0]} — 이 꼴이 references/lens.txt를 빠져나간다`,
+          "the lens knows only half of this family",
+          `${unseen[0]} — this form escapes references/lens.txt`,
         ]);
       }
     }
@@ -1674,13 +1674,13 @@ function cmdRulesTest(opts) {
   }
   if (drift && (drift.docOnly.length || drift.lensOnly.length)) {
     failures += 1;
-    console.log(`\n${C.red("✖")} ${C.bold("렌즈")} ${C.dim("lens.txt ↔ reading-lens.md")}`);
-    if (drift.docOnly.length) console.log(`    표에만 있음: ${C.yellow(drift.docOnly.join(" · "))}`);
-    if (drift.lensOnly.length) console.log(`    lens.txt에만 있음: ${C.yellow(drift.lensOnly.join(" · "))}`);
+    console.log(`\n${C.red("✖")} ${C.bold("lens")} ${C.dim("lens.txt ↔ reading-lens.md")}`);
+    if (drift.docOnly.length) console.log(`    in the table only: ${C.yellow(drift.docOnly.join(" · "))}`);
+    if (drift.lensOnly.length) console.log(`    in lens.txt only: ${C.yellow(drift.lensOnly.join(" · "))}`);
   }
   console.log(
-    `\n검증한 규칙 ${rules.length}개 · ${failures ? C.red(`실패 ${failures}개`) : C.green("전부 통과")}` +
-      C.dim("\n용어사전 규칙은 예문 검증 대상이 아니다 — 등재 후 check --list-rules 출력으로 대조한다"),
+    `\n${rules.length} rules verified · ${failures ? C.red(`${failures} failed`) : C.green("all passed")}` +
+      C.dim("\nGlossary rules are not example-verified — after registering, compare the check --list-rules output"),
   );
   return failures ? 1 : 0;
 }
@@ -1765,25 +1765,25 @@ function cmdRulesScan(opts) {
     const hits = byRule.get(rule.id) ?? [];
     if (!hits.length) continue;
     total += hits.length;
-    console.log(`\n${C.bold(rule.id)} ${C.dim(`${rule.scope} · ${hits.length}건`)} — ${rule.reason}`);
+    console.log(`\n${C.bold(rule.id)} ${C.dim(`${rule.scope} · ${hits.length} hits`)} — ${rule.reason}`);
     for (const h of hits.slice(0, opts.all ? hits.length : 5)) {
       console.log(`  ${C.cyan(h.file.split("/").pop())}${C.dim(":" + h.line)} ${C.bold(h.key)}  ${h.text.slice(0, 76)}`);
     }
-    if (!opts.all && hits.length > 5) console.log(`  ${C.dim(`… 외 ${hits.length - 5}건 (--all로 전부)`)}`);
+    if (!opts.all && hits.length > 5) console.log(`  ${C.dim(`… and ${hits.length - 5} more (--all for every one)`)}`);
   }
-  console.log(`\n${total ? C.yellow(`${total}건`) : C.green("0건")} · 규칙 ${active.length}개 적용`);
+  console.log(`\n${total ? C.yellow(`${total} hits`) : C.green("0 hits")} · ${active.length} rules applied`);
   // A rule the project turned off has to be named. Silently short a sweep and the zero it
   // prints is indistinguishable from a zero that was earned.
   const off = rulePacks().disabled;
   if (off?.size) {
-    console.log(C.dim(`끈 규칙 ${off.size}개 — .claude/l10n-rules.json의 disable`));
+    console.log(C.dim(`${off.size} rules disabled — disable in .claude/l10n-rules.json`));
     for (const [id, why] of off) console.log(C.dim(`  ${id} — ${why}`));
   }
   // A narrowing is a hole in a rule that still reports, so it is named for the same reason a
   // disabled rule is: nobody can tell a hole from a clean file by looking at the count.
   const narrowed = rulePacks().except;
   if (narrowed?.size) {
-    console.log(C.dim(`좁힌 규칙 ${narrowed.size}개 — .claude/l10n-rules.json의 except`));
+    console.log(C.dim(`${narrowed.size} rules narrowed — except in .claude/l10n-rules.json`));
     for (const [id, list] of narrowed) {
       for (const ex of list) console.log(C.dim(`  ${id} /${ex.re.source}/ — ${ex.why}`));
     }
@@ -1810,7 +1810,7 @@ const SMELLS = [
   {
     id: "metaphor-verb",
     weight: 3,
-    why: "사물을 사람처럼 다루는 비유 동사 — 영어 원문의 은유를 그대로 옮긴 자리일 때가 많다",
+    why: "a metaphorical verb treating a thing as a person — usually an English metaphor carried over",
     // Left boundaries matter as much here as in the rule pack: 품은 lives inside 제품은,
     // 서다 inside 위해서다, 문다 inside 물문다. Without them this smell fires on half
     // the corpus and the score stops meaning anything.
@@ -1822,20 +1822,20 @@ const SMELLS = [
   {
     id: "nominal-ending",
     weight: 2,
-    why: "'~것' 종결 — 화면 문구에서는 어색하게 읽힌다. 설계 문서의 -다체에서는 정상이라 화면 문구에서만 센다",
+    why: "a 「~것」 ending — awkward in screen copy. Normal in -다체 design prose, so counted only for screens",
     registers: ["screen"],
     test: (t) => (t.match(/(?:하는 것|되는 것|인 것|한 것|은 것|는 것)(?:이다|입니다|\.|$)/g) ?? []).length,
   },
   {
     id: "dash-pileup",
     weight: 2,
-    why: "한 문장에 줄표가 둘 이상 — 영어의 삽입절을 그대로 옮기면 이렇게 된다",
+    why: "two or more dashes in one sentence — what carrying over an English parenthetical produces",
     test: (t) => ((t.match(/—/g) ?? []).length >= 2 ? 1 : 0),
   },
   {
     id: "long-unbroken",
     weight: 2,
-    why: "끊어 읽을 자리 없이 긴 문장 — 읽는 사람이 숨 쉴 곳을 찾지 못한다",
+    why: "a long sentence with nowhere to break — the reader finds no place to breathe",
     // An em dash and a middle dot break a sentence as effectively as a comma does, and
     // Korean design prose uses both heavily. Counting a sentence that has them as
     // unbroken flagged well-formed design notes by the dozen.
@@ -1845,13 +1845,13 @@ const SMELLS = [
   {
     id: "same-ending-run",
     weight: 1,
-    why: "같은 어미가 잇달아 반복 — 기계 번역이 남기는 자국",
+    why: "the same ending three times in a row — a mark machine translation leaves",
     test: (t) => ((t.match(/(습니다|입니다)[^가-힣]*(습니다|입니다)[^가-힣]*(습니다|입니다)/g) ?? []).length ? 1 : 0),
   },
   {
     id: "heavy-nominalization",
     weight: 2,
-    why: "명사화 과다(~함/~됨/~임) — 동사로 풀어 쓰면 읽기 쉬워진다",
+    why: "heavy nominalization (~함/~됨/~임) — unfolding it into a verb reads better",
     // `해제됨·폐기됨·취소됨` is a list of status labels, and a status label is a noun by
     // design. Strip those runs before counting, or every screen that lists its states
     // scores as heavily nominalized prose.
@@ -1863,7 +1863,7 @@ const SMELLS = [
   {
     id: "passive-stack",
     weight: 2,
-    why: "이중 피동 — 행위자를 주어로 세우면 대개 사라진다",
+    why: "a double passive — putting the actor in the subject usually removes it",
     // Only genuine double passives. `만들어지는`/`곤란해지는` are ordinary Korean, and
     // counting them made this smell fire on well-written sentences.
     test: (t) => (t.match(/(?:되어지|지게 되|되게 되)/g) ?? []).length,
@@ -1871,56 +1871,56 @@ const SMELLS = [
   {
     id: "colloquial",
     weight: 2,
-    why: "구어체 — 업무 화면·문서의 문체와 어긋난다",
+    why: "colloquial — out of register for business screens and documents",
     // Each needs a left boundary: 막 lives inside 마지막, 좀 inside 조좀, 뭐 inside 뭐라도.
     test: (t) => (t.match(/(?<![가-힣])(?:그냥|좀 |뭐 |되게 |엄청 |잘 안 |막 )/g) ?? []).length,
   },
   {
     id: "spatial-metaphor",
     weight: 2,
-    why: "공간 비유(층·자리·길·칸)를 추상 개념에 씀 — 영어 layer/slot/path의 직역일 때가 많다",
+    why: "a spatial metaphor (층·자리·길·칸) applied to an abstract concept — usually a literal layer/slot/path",
     test: (t) => (t.match(/(?:받는 층|위층|아래층|그 층|이 층|나가는 길|들어가는 길|다른 길|길을 두|자리가 없|자리를 두)/g) ?? []).length,
   },
   {
     id: "have-translation",
     weight: 3,
-    why: "영어 have의 직역 — 「A는 B를 가지고 있다」보다 「A에는 B가 있다」가 한국어다",
+    why: "a literal English have — 「A에는 B가 있다」 is the Korean, not 「A는 B를 가지고 있다」",
     test: (t) => (t.match(/(?:가지고 있|갖고 있|를 가진다|을 가진다)/g) ?? []).length,
   },
   {
     id: "haedang-overuse",
     weight: 2,
-    why: "「해당」 남용 — 기계 번역과 AI 문장의 대표 표지다. 대개 「그」로 충분하거나 빼도 뜻이 산다",
+    why: "「해당」 overused — a signature of machine translation and AI prose. 「그」 usually suffices, or drop it",
     test: (t) => (t.match(/해당\s*[가-힣]/g) ?? []).length,
   },
   {
     id: "it-pronoun",
     weight: 2,
-    why: "영어 it의 직역 — 한국어는 대명사를 생략하거나 「이는·이것」으로 받는다",
+    why: "a literal English it — Korean drops the pronoun or picks it up with 「이는·이것」",
     test: (t) => (t.match(/(?<![가-힣])그것[은이을를의]/g) ?? []).length,
   },
   {
     id: "one-of",
     weight: 2,
-    why: "영어 one of·a의 직역 — 「~중 하나」와 「하나의 ~」는 대개 빼거나 풀어 쓴다",
+    why: "a literal one of / a — 「~중 하나」 and 「하나의 ~」 are usually dropped or unfolded",
     test: (t) => (t.match(/(?:중\s*하나|하나의\s*[가-힣])/g) ?? []).length,
   },
   {
     id: "about-through-by",
     weight: 2,
-    why: "전치사 직역(about·through·by) — 목적격 조사 직결이나 행위자 주어로 바꾼다",
+    why: "a literal preposition (about·through·by) — attach the object particle directly, or make the actor the subject",
     test: (t) => (t.match(/(?:에 대한|에 대해|에 대하여|을 통해|를 통해|을 통하여|에 의해|에 의하여|에 있어서)/g) ?? []).length,
   },
   {
     id: "hedging-claim",
     weight: 2,
-    why: "헤징 상투구 — 확인한 사실은 단언한다",
+    why: "a hedging cliche — a confirmed fact is asserted",
     test: (t) => (t.match(/(?:라고 할 수 있|라고 볼 수 있|할 수 있을 것입니다|일 수 있습니다만)/g) ?? []).length,
   },
   {
     id: "bare-subject-drop",
     weight: 1,
-    why: "'~는다/~ㄴ다' 서술이 화면·독자용 문구에 섞임 — 그 자리는 '~합니다'로 쓴다. 설계 문서와 보드는 -다체가 정상이라 세지 않는다",
+    why: "a -다체 predicate mixed into screen or reader-facing copy — that slot takes 「~합니다」. Design documents and boards are -다체 by default and are not counted",
     registers: ["screen", "manual"],
     test: (t) => ((/(?:한다|된다|본다|쓴다|넣는다|만든다)$/.test(t.trim()) ? 1 : 0)),
   },
@@ -1987,17 +1987,17 @@ function cmdSuspects(opts) {
    * supposed to say, and guessing at domain vocabulary is how a plausible-but-wrong
    * phrase gets committed. So the instruction to go and check is part of the result.
    */
-  const domain = CONFIG.domainHint ? `이 도메인(${CONFIG.domainHint})` : "이 도메인";
+  const domain = CONFIG.domainHint ? `this domain (${CONFIG.domainHint})` : "this domain";
   const guidance = [
-    "이 목록은 '문체가 어색할 수 있다'는 신호일 뿐 판정이 아니다. 문장마다 아래를 따른다.",
-    "1. 원문이 무엇을 말하려 했는지 먼저 파악한다 — 뜻을 바꾸지 않는다.",
-    "2. 자연스러운 한국어로 다시 쓴다. 어휘만 바꾸지 말고 문장 구조를 바꾼다.",
-    `3. ${domain}에서 그 표현이 실제로 쓰이는지 확신이 서지 않으면`,
-    "   반드시 인터넷에서 신뢰할 수 있는 출처(그 업계 사업자의 공식 문서, 표준 문서,",
-    "   업계 매뉴얼)를 찾아 실제 예문을 확인한 뒤 정한다. 짐작으로 용어를 만들지 않는다.",
-    "4. 정한 표현이 되풀이될 만하면 용어사전(.claude/GLOSSARY.md)에, 문장 패턴이면",
-    "   .claude/l10n-rules.json에 hit/miss 예문과 함께 올린다.",
-    "5. 다시 쓴 결과는 [{file, key, from, to}] 형태로 모아 `apply --patch`로 되돌려 넣는다.",
+    "This list is a signal that the style may read as translated. It is not a verdict. For each sentence:",
+    "1. Work out what the original is trying to say first — do not change the meaning.",
+    "2. Write it again as natural Korean. Change the sentence structure, not only the words.",
+    `3. When you are not certain the expression is actually used in ${domain},`,
+    "   find a reliable source online (a vendor's official documentation, a standard, an",
+    "   industry manual), confirm a real example, and then decide. Do not invent a term by guessing.",
+    "4. If the expression you settled on will recur, register it in the glossary (.claude/GLOSSARY.md),",
+    "   or, if it is a sentence pattern, in .claude/l10n-rules.json with hit/miss examples.",
+    "5. Collect the rewrites as [{file, key, from, to}] and feed them back with `apply --patch`.",
   ];
 
   if (opts.json) {
@@ -2010,8 +2010,8 @@ function cmdSuspects(opts) {
     );
     console.log(`   ${f.text.slice(0, 160)}`);
   }
-  console.log(`\n${found.length}건 의심 (${shown.length}건 표시) · 점수 ${min} 이상\n`);
-  console.log(C.bold("다시 쓰는 사람에게"));
+  console.log(`\n${found.length} suspects (${shown.length} shown) · score ${min} and above\n`);
+  console.log(C.bold("For whoever rewrites these"));
   for (const line of guidance) console.log(`  ${line}`);
   return 0;
 }
@@ -2034,7 +2034,7 @@ function cmdApply(opts) {
   for (const [file, items] of byFile) {
     const full = join(ROOT, file);
     if (!existsSync(full)) {
-      console.log(`${C.red("✖ 없는 파일")} ${file}`);
+      console.log(`${C.red("✖ no such file")} ${file}`);
       refused += items.length;
       continue;
     }
@@ -2046,12 +2046,12 @@ function cmdApply(opts) {
     for (const item of items) {
       const seg = segments.find((s) => s.text === item.from && (!item.key || s.key === item.key));
       if (!seg) {
-        console.log(`${C.red("✖ 원문 불일치")} ${file} ${C.dim(item.key ?? "")} ${item.from.slice(0, 48)}`);
+        console.log(`${C.red("✖ original does not match")} ${file} ${C.dim(item.key ?? "")} ${item.from.slice(0, 48)}`);
         refused += 1;
         continue;
       }
       if (!placeholdersIntact(item.from, item.to)) {
-        console.log(`${C.red("✖ 자리표시자 손상")} ${file} ${item.key ?? ""}`);
+        console.log(`${C.red("✖ placeholder damaged")} ${file} ${item.key ?? ""}`);
         refused += 1;
         continue;
       }
@@ -2063,15 +2063,15 @@ function cmdApply(opts) {
       out = out.slice(0, seg.start) + next + out.slice(seg.end);
     }
     if (opts.write) {
-      if (ROOT_OVERRIDE) throw new Error("--root로 연 저장소에는 쓰지 않는다. 읽기 전용으로만 쓴다");
+      if (ROOT_OVERRIDE) throw new Error("A repository opened with --root is never written to; it is read-only");
       writeFileSync(full, out, "utf8");
     }
     applied += edits.length;
-    console.log(`${C.green("✔")} ${C.cyan(file)} ${C.dim(`${edits.length}건`)}`);
+    console.log(`${C.green("✔")} ${C.cyan(file)} ${C.dim(`${edits.length} edits`)}`);
   }
   console.log(
-    `\n${applied}건 ${opts.write ? C.green("적용함") : C.yellow("미리보기 (--write로 적용)")}` +
-      (refused ? ` · ${C.red(`${refused}건 거절`)}` : ""),
+    `\n${applied} ${opts.write ? C.green("applied") : C.yellow("previewed (--write to apply)")}` +
+      (refused ? ` · ${C.red(`${refused} refused`)}` : ""),
   );
   return refused ? 1 : 0;
 }
@@ -2099,8 +2099,8 @@ function reportDeadExceptions() {
   if (dead.length === 0) return;
   console.log(
     C.dim(
-      `\n죽은 예외 ${dead.length}개 — 아래 항목이 기본 용어사전의 어느 규칙과도 글자가 맞지 않아 아무것도 끄지 않는다.` +
-        ` 기본 규칙의 정규식이 바뀌면 그 규칙을 끈 예외가 조용히 되살아나므로, 지금 규칙의 글자로 고쳐 적는다.`,
+      `\n${dead.length} dead exceptions — the entries below match no rule in the base glossary character for character, so they switch nothing off.` +
+        ` When a base rule's regex changes, the exception that disabled it quietly comes back to life, so rewrite them against the current rule text.`,
     ),
   );
   for (const row of dead) console.log(C.dim(`  ${row}`));
@@ -2214,7 +2214,7 @@ function cmdAudit(opts) {
 
   const section = (title, rows, render) => {
     if (!rows.length) return;
-    console.log(`\n${C.bold(title)} ${C.dim(`${rows.length}건`)}`);
+    console.log(`\n${C.bold(title)} ${C.dim(`${rows.length}`)}`);
     let file = null;
     for (const row of rows) {
       if (row.file && row.file !== file) {
@@ -2225,23 +2225,23 @@ function cmdAudit(opts) {
     }
   };
 
-  section(`✖ 번역 누락 (한국어 값에 한글이 없음)`, findings.untranslated, (r) =>
+  section(`✖ untranslated (a Korean value with no Hangul)`, findings.untranslated, (r) =>
     `    ${C.dim(`${r.line}:`)} ${C.bold(r.key)}  ${C.red(r.text)}`,
   );
-  section(`✖ 용어사전 금지 표기`, findings.banned, (r) =>
+  section(`✖ banned spelling (glossary)`, findings.banned, (r) =>
     `    ${C.dim(`${r.line}:`)} ${C.bold(r.key)}  ${C.red(r.term)} → ${C.green(r.correct)}  ${C.dim(r.text)}`,
   );
-  section(`✖ 조사 어긋남`, findings.particles, (r) =>
+  section(`✖ particle disagreement`, findings.particles, (r) =>
     `    ${C.dim(`${r.line}:`)} ${C.bold(r.key)}  ${C.red(r.wrong)} → ${C.green(r.correct)}  ${C.dim(r.text.slice(0, 60))}`,
   );
-  section(`⚠ 용어사전 경고 표기`, findings.bannedWarn, (r) =>
+  section(`⚠ warned spelling (glossary)`, findings.bannedWarn, (r) =>
     `    ${C.dim(`${r.line}:`)} ${C.bold(r.key)}  ${C.yellow(r.term)} → ${C.green(r.correct)}  ${C.dim(r.text.slice(0, 60))}`,
   );
-  section(`⚠ 짝 언어 파일 없음`, findings.missingPair, (r) => `    ${r.stem} ${C.dim(`(${r.lang} 없음)`)}`);
+  section(`⚠ missing paired language file`, findings.missingPair, (r) => `    ${r.stem} ${C.dim(`(no ${r.lang})`)}`);
 
   const errors = findings.untranslated.length + findings.banned.length + findings.particles.length;
   console.log(
-    `\n${errors ? C.red(`오류 ${errors}건`) : C.green("오류 0건")} · 경고 ${findings.bannedWarn.length + findings.missingPair.length}건`,
+    `\n${errors ? C.red(`${errors} errors`) : C.green("0 errors")} · ${findings.bannedWarn.length + findings.missingPair.length} warnings`,
   );
   reportDeadExceptions();
   return errors ? 1 : 0;
@@ -2264,8 +2264,8 @@ function cmdCheck(rest) {
     else if (a === "--init-l10n") args.initL10n = true;
     else if (a === "--glossary") {
       args.glossary = rest[++i];
-      if (!args.glossary) throw new Error("--glossary 뒤에 경로가 필요합니다");
-    } else if (a.startsWith("--")) throw new Error(`알 수 없는 플래그: ${a}`);
+      if (!args.glossary) throw new Error("--glossary needs a path after it");
+    } else if (a.startsWith("--")) throw new Error(`Unknown flag: ${a}`);
     else args.paths.push(a);
   }
   const cliHint = `${SCRIPT_PATH} check`;
@@ -2285,45 +2285,47 @@ function cmdCheck(rest) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 const USAGE = `
-${C.bold("l10n.mjs")} — 프로젝트의 한국어를 문서와 자원 가리지 않고 한 규칙으로 검사한다
+${C.bold("l10n.mjs")} — checks a project's Korean under one set of rules, documents and resources alike
 
-  ${C.bold("check")}    [경로...] [--all] [--strict]              문서를 감사한다 (훅과 같은 엔진·판정)
+  ${C.bold("check")}    [paths...] [--all] [--strict]            audit documents (the hook's engine and judgement)
            [--untranslated] [--list-rules] [--init]
-  ${C.bold("list")}     [--kind K] [--lang L] [--json]           자원 파일을 열거한다
-  ${C.bold("stats")}    [--json]                                 부류·언어별 문구 수를 센다
-  ${C.bold("grep")}     <패턴> [--regex] [--kind K] [--lang L]   문구 값에서 찾는다
-  ${C.bold("audit")}    [--kind K] [--json]                      자원의 번역 누락·금지 표기·짝 언어를 검사한다
-  ${C.bold("rules")}    --test [--verbose]                       규칙 팩이 제 예문을 통과하는지 검증한다
-  ${C.bold("rules")}    [--scope S] [--all] [--kind K] [--json]  규칙 팩으로 훑는다 (고치지 않는다)
-  ${C.bold("suspects")} [--min N] [--limit N] [--kind K] [--json] 문체가 어색한 문장을 점수순으로 뽑는다
-  ${C.bold("apply")}    --patch <파일> [--write]                  다시 쓴 문장 목록을 적용한다
+  ${C.bold("list")}     [--kind K] [--lang L] [--json]           list the resource files
+  ${C.bold("stats")}    [--json]                                 count strings by kind and language
+  ${C.bold("grep")}     <pattern> [--regex] [--kind K] [--lang L] search the copy values
+  ${C.bold("audit")}    [--kind K] [--json]                      check resources for missing translations, banned spellings, paired languages
+  ${C.bold("rules")}    --test [--verbose]                       verify the rule pack against its own examples
+  ${C.bold("rules")}    [--scope S] [--all] [--kind K] [--json]  sweep with the rule pack (changes nothing)
+  ${C.bold("suspects")} [--min N] [--limit N] [--kind K] [--json] rank the sentences that read as translated
+  ${C.bold("apply")}    --patch <file> [--write]                 apply a list of rewritten sentences
 
-${C.bold("규칙 원천은 하나다.")} 용어사전(스킬의 GLOSSARY.base.md + 프로젝트의 .claude/GLOSSARY.md)이
-check와 audit 양쪽의 금지 표기를 대고, 문장 패턴 규칙 팩(스킬의 RULES.base.json + 프로젝트의
-.claude/l10n-rules.json)이 rules 훑기를 댄다. 용어사전에 등재하면 문서와 화면 문구가 함께 걸린다.
+${C.bold("There is one source of rules.")} The glossary (the skill's GLOSSARY.base.md plus the project's
+.claude/GLOSSARY.md) supplies the banned spellings for both check and audit, and the sentence rule
+pack (the skill's RULES.base.json plus the project's .claude/l10n-rules.json) supplies the rules
+sweep. Register a term once and documents and screen copy are both covered.
 
-${C.bold("이 도구는 찾기만 한다.")} 고치는 것은 문맥을 읽는 쪽의 일이다 — 규칙은 낱말이 어디 있는지
-알지만 그 자리에서 무엇을 가리키는지는 모른다. 같은 「허용 수량」이 한 줄에서는 계약이 파는 수량이고
-다른 줄에서는 한도 항목의 상한이며, 두 규칙이 각자 옳게 걸린 한 문장이 「라이선스 수량 라이선스
-하나가」로 끝나기도 한다. 어느 것도 정규식이 가릴 수 없다.
+${C.bold("This tool only finds.")} Fixing belongs to whoever reads the context — a rule knows where a
+word sits, never what it means there. The same 「허용 수량」 is the quantity a contract sells on one
+line and the ceiling of a limit item on another, and one sentence where two rules each fired
+correctly can end up reading 「라이선스 수량 라이선스 하나가」. No regex can tell those apart.
 
-  1. ${C.bold("rules --test")}      규칙이 오탐을 내지 않는지 먼저 확인한다
-  2. ${C.bold("check")} · ${C.bold("audit")}    고칠 자리를 뽑는다 — 도구가 하는 일은 여기까지다
-  3. ${C.bold("rules")} · ${C.bold("suspects --json")}   번역투·어색한 문장을 함께 뽑는다
-  4. ${C.bold("문맥을 보고 다시 쓴다")} — 낱말만 갈아 끼우면 문장이 조용히 뜻을 잃는다
-  5. ${C.bold("apply --patch")}     다시 쓴 결과를 되돌려 넣는다 (원문이 어긋나면 거절한다)
-  6. ${C.bold("check")} · ${C.bold("audit")} · ${C.bold("suspects")} 다시 훑는다 — 고친 것이 새 어색함을 만들지 않았는지 본다
+  1. ${C.bold("rules --test")}      confirm the rules produce no false positives first
+  2. ${C.bold("check")} · ${C.bold("audit")}    pull the places to fix — this is as far as the tool goes
+  3. ${C.bold("rules")} · ${C.bold("suspects --json")}   pull the translation-ese and the awkward sentences too
+  4. ${C.bold("read the context and rewrite")} — swapping words alone loses the meaning quietly
+  5. ${C.bold("apply --patch")}     feed the rewrites back (refused when the original does not match)
+  6. ${C.bold("check")} · ${C.bold("audit")} · ${C.bold("suspects")} sweep again — see whether the fixes created new awkwardness
 
-${C.bold("apply 옵션")}
-  --write        실제로 파일에 쓴다 (없으면 미리보기)
-  --kind K       한 부류만
+${C.bold("apply options")}
+  --write        actually write to the files (a preview without it)
+  --kind K       one kind only
 
-${C.dim("apply 는 (파일, 키)로 자리를 찾는다. 키가 유일한 부류 — i18n JSON · properties · 마크다운(줄 번호) —")}
-${C.dim("에서만 쓸 수 있고, 키가 태그 이름(td · strong · text)이라 한 파일에 여럿인 형식(HTML · 보드)은")}
-${C.dim("거절된다. 그쪽은 audit 이 준 줄 번호로 자리를 좁혀 고친다.")}
+${C.dim("apply locates a place by (file, key). It works only for kinds where the key is unique — i18n JSON ·")}
+${C.dim("properties · markdown (line numbers) — and is refused for formats where the key is a tag name")}
+${C.dim("(td · strong · text) and repeats within a file (HTML · boards). Those are narrowed by the line")}
+${C.dim("numbers audit reports and fixed there.")}
 
-${C.dim("자원 부류는 프로젝트의 .claude/l10n.json이 선언한다. 키·태그·자리표시자·코드는 건드리지")}
-${C.dim("않는다. 값만 다룬다. --root <dir> 는 다른 프로젝트를 읽기 전용으로 검사한다.")}
+${C.dim("Resource kinds are declared by the project's .claude/l10n.json. Keys, tags, placeholders and code")}
+${C.dim("are never touched — only values. --root <dir> checks another project read-only.")}
 `;
 
 function parseArgs(argv) {
@@ -2377,14 +2379,14 @@ function main() {
       case "stats":
         return cmdStats(opts);
       case "grep":
-        if (!rest[0]) throw new Error("검색할 패턴을 적어야 한다");
+        if (!rest[0]) throw new Error("A search pattern is required");
         return cmdGrep(rest[0], opts);
       // Refuse loudly rather than fall through to the usage text: an agent that reaches
       // for a sweep needs to read why it is not here, not to guess the flag was renamed.
       case "replace":
         throw new Error(
-          "치환 명령은 없다 — 규칙은 자리를 찾을 뿐이고 고치는 것은 문맥을 읽는 쪽이 한다.\n" +
-            "  rules · audit으로 자리를 뽑고, 문장을 다시 써서 apply --patch로 되돌려 넣는다.",
+          "There is no substitution command — rules find positions, and whoever reads the context does the fixing.\n" +
+            "  Pull the positions with rules · audit, rewrite the sentences, and feed them back with apply --patch.",
         );
       case "audit":
         return cmdAudit(opts);
@@ -2394,7 +2396,7 @@ function main() {
       case "suspects":
         return cmdSuspects(opts);
       case "apply":
-        if (!opts.patch) throw new Error("--patch <파일>로 수정안 목록을 지정해야 한다");
+        if (!opts.patch) throw new Error("--patch <file> must name the list of rewrites");
         return cmdApply(opts);
       default:
         console.log(USAGE);

@@ -3,131 +3,157 @@ name: korean-docs
 description: Use for virtually EVERY task — all user-facing output in this environment is Korean. Assistant replies and explanations, documentation, translations, proofreading, README/design docs/release notes, UI copy in i18n resources and wireframe board sources, SVG text labels, and Korean glossary (GLOSSARY.md) management. Also use when the user mentions 번역투, awkward Korean, terminology consistency, or asks to re-check documents against glossary rules (화면 문구 검토 · 카피 검수 · UX 라이팅 · 문구를 자연스럽게). 한국어로 답변·설명·문서 작성·번역·교정·검수·용어사전 관리를 하는 모든 상황에서 사용한다 — 일반 답변도 예외가 아니다.
 ---
 
-# 한국어 산출물 기준
+# The standard for Korean output
 
-모든 프로젝트의 모든 한국어 산출물에 적용한다. 문장을 쓰는 기준은
-[references/response-style.md](references/response-style.md) 하나이고, 단어와 표기의 검사는
-용어사전과 규칙 팩이 기계로 한다. 이 파일은 언제 무엇을 읽고, 감사를 언제 실행하고, 용어 결정을 어디에
-남기는지를 정한다.
+Applies to every Korean deliverable in every project. The sentence standard is one file,
+[references/response-style.md](references/response-style.md); words and spellings are checked by
+machine through the glossary and the rule pack. This file decides what to read and when, when the
+audit runs, and where a term decision is recorded.
 
-## 두 가지 모드
+**This skill is written in English.** Korean appears only where it must: the trigger phrases in the
+description, a specimen of copy being judged, a glossary entry, a rule's `find`/`hit`/`miss`
+examples, and the section headings the glossary parser reads. Every sentence carrying an
+instruction is English, including the ones surrounding a Korean quotation.
 
-**답변 모드** — 모든 한국어 답변 · 설명 · 보고.
+## Two modes
 
-1. `references/response-style.md`가 지금 맥락에 없으면 읽는다. 읽었다는 기억은 근거가 아니다. 문체 표와
-   여덟 물음을 지금 인용할 수 없으면 읽지 않은 것이고, 요약이 일어난 뒤에도 같다.
-2. 프로젝트 용어사전(`.claude/GLOSSARY.md` 또는 루트 `GLOSSARY.md`)이 있으면 그 표준 번역과 금지 표기를
-   답변에도 적용한다.
-3. 감사 스크립트는 실행하지 않고, 용어사전을 만들자고 제안하지 않는다.
+**Reply mode** — every Korean reply, explanation, and report.
 
-**문서 작업 모드** — 작성 · 번역 · 교정 · 검수 · 전수 검토 · 용어사전 관리.
+1. Read `references/response-style.md` if it is not in context right now. Remembering that you read
+   it is not evidence: if the register table and the eight questions cannot be quoted at this
+   moment, it has not been read, and the same holds after a summary.
+2. If the project keeps a glossary (`.claude/GLOSSARY.md` or a root `GLOSSARY.md`), its standard
+   translations and banned spellings apply to replies too.
+3. Do not run the audit scripts, and do not offer to create a glossary.
 
-1. 용어사전을 찾는다. 현재 디렉터리에서 위로 올라가며 `.claude/GLOSSARY.md` → `GLOSSARY.md` 순서로
-   확인하고, `.git`이 있는 디렉터리나 홈 디렉터리에서 멈춘다. 찾으면 처음부터 끝까지 읽고 어느 파일을
-   쓰는지 사용자에게 알린다. 없으면 기본 용어사전만으로 진행하고, 만들라고 제안하지 않으며 없다는 사실도
-   알리지 않는다.
-2. `references/response-style.md`를 읽는다. 교정 · 검수에는 [references/korean-style.md](references/korean-style.md)를,
-   화면 문구에는 [references/ui-copy.md](references/ui-copy.md)를, 통째로 검토하는 요청(문구 검토 · 카피
-   검수 · 문서 전수 교정)에는 [references/ui-copy-sweep.md](references/ui-copy-sweep.md)의 절차를 더한다.
-3. 번역은 원문을 이해한 뒤 옮기고, 도메인 개념이 불확실하면 원문과 공식 문서에서 확인한다. 번역 프로젝트는
-   감사에 `--untranslated`를 붙인다.
-4. 아래 「감사」와 「용어 결정」을 따른다.
+**Document mode** — writing, translating, proofreading, reviewing, sweeping, glossary work.
 
-## 감사
+1. Find the glossary. Walk up from the current directory checking `.claude/GLOSSARY.md` then
+   `GLOSSARY.md`, stopping at a directory holding `.git` or at the home directory. Read it end to
+   end when found and tell the user which file is in force. When there is none, work from the base
+   glossary alone: do not propose creating one and do not report its absence.
+2. Read `references/response-style.md`. Add
+   [references/ai-tells.md](references/ai-tells.md) for the structural habits that survive a clean
+   audit, [references/korean-style.md](references/korean-style.md) for proofreading and review,
+   [references/ui-copy.md](references/ui-copy.md) for screen copy, and the procedure in
+   [references/ui-copy-sweep.md](references/ui-copy-sweep.md) for any request to go through a whole
+   surface (문구 검토 · 카피 검수 · 문서 전수 교정).
+3. Translate by understanding the source and writing it again in Korean; check the source and the
+   official documentation when a domain concept is uncertain. A translation project adds
+   `--untranslated` to the audit.
+4. Follow **The audit** and **Term decisions** below.
 
-**기준은 늘 적용하고, 감사 스크립트는 요청받았을 때만 실행한다.** 「감사해 줘」 · 「용어사전으로 검사해
-줘」 · 「전체 재감사」 · 「문구 검토」처럼 검사를 지시한 말이 있어야 한다. 프로젝트의 지시문(`AGENTS.md` ·
-`CLAUDE.md`)이 어떤 단계의 마무리로 감사를 요구하면 그것도 요청이다. 문서를 하나 고쳤다는 이유로
-저장소를 훑지 않는다. 감사 환경(`.claude/l10n.json`)이 없으면 무엇을 검사하지 못하는지 한 줄로 말하고,
-만들라고 먼저 제안하지 않는다.
+## The audit
 
-**요청받은 감사는 한 번에 끝낸다.** 「감사해 줘」는 「찾아서 고쳐 줘」다.
+**The standard always applies; the audit scripts run only when asked.** There has to be an
+instruction to check — 「감사해 줘」 · 「용어사전으로 검사해 줘」 · 「전체 재감사」 · 「문구 검토」. A
+project instruction file (`AGENTS.md` · `CLAUDE.md`) requiring the audit as the closing step of some
+stage is also a request. Editing one document is not a reason to sweep the repository. When the
+audit environment (`.claude/l10n.json`) is missing, say in one line what cannot be checked and do
+not offer to create it.
 
-- 네 명령을 다 실행한다. `check` · `rules` · `audit` · `suspects`. 하나가 0건이어도 나머지가 0건인 것은
-  아니다. 0건을 통과로 읽기 전에 일부러 위반을 한 줄 넣어 검사가 도달하는지 확인하고 지운다.
-- 검출은 발견한 그때 고치고, 고친 뒤 보고한다. 건수가 많다는 이유로, 유형이 넓다는 이유로, 규칙을 새로
-  등재해야 한다는 이유로, 스킬 저장소를 고쳐야 한다는 이유로 멈추지 않는다. 「진행할까요」 · 「어느 쪽으로
-  할까요」로 턴을 끝내지 않는다.
-- 규칙이 0건이어도 `references/ui-copy-sweep.md`의 순차 읽기를 건너뛰지 않는다. 규칙은 등재된 형태만 본다.
-- 찾은 유형은 같은 작업에서 규칙 팩 또는 렌즈에 올리고 저장소 전체에 다시 실행한다.
-- 오류 0건까지 고치고, 경고는 하나씩 고치거나 유지 근거를 적는다. 고쳐 쓴 문장도 다시 검사한다. 대신
-  넣은 말이 금지 표현인 경우가 가장 흔하다.
-- 멈추는 곳은 둘뿐이다. 갈리는 용어 결정(잠정 표기로 끝까지 진행한 뒤 모아서 한 번 묻는다)과 git 커밋 ·
-  푸시.
+**An audit that was asked for is finished in one go.** 「감사해 줘」 means 「find it and fix it」.
 
-도구는 하나다.
+- Run all four commands: `check` · `rules` · `audit` · `suspects`. One of them at zero says nothing
+  about the other three. Before reading zero as a pass, insert a deliberate violation, confirm the
+  check reaches it, and delete it.
+- Fix each finding when it is found, then report. Do not stop because the count is large, because
+  the types are varied, because a new rule has to be registered, or because the skill repository
+  has to be edited. Do not end a turn with 「진행할까요」 · 「어느 쪽으로 할까요」.
+- Zero findings from the rules does not let you skip the in-order reading in
+  `references/ui-copy-sweep.md`. A rule sees only the forms registered in it.
+- A type you find goes into the rule pack or the lens in the same change, and the sweep runs again
+  across the repository.
+- Drive errors to zero; fix warnings one by one or write down why each stays. Re-check the
+  sentences you rewrote — the replacement being itself a banned expression is the most common
+  outcome.
+- There are exactly two places to stop: a term decision that could go either way (carry a
+  provisional spelling to the end, then ask once, in a batch) and a git commit or push.
+
+There is one tool.
 
 ```bash
 T="$HOME/.claude/skills/simplecore/skills/korean-docs/scripts/l10n.mjs"
-node "$T" check [경로...]   # 문서 감사 (쓰기 시점 훅과 같은 판정)
-node "$T" rules            # 문장 규칙 훑기. --test 로 규칙 팩 검증
-node "$T" audit            # 다국어 자원 감사 (.claude/l10n.json 필요)
-node "$T" suspects         # 문체가 어색한 문장을 점수순으로
+node "$T" check [paths...]   # document audit (the same judgement as the write-time hook)
+node "$T" rules              # sentence-rule sweep; --test verifies the rule pack
+node "$T" audit              # locale-resource audit (needs .claude/l10n.json)
+node "$T" suspects           # sentences that read as translated, ranked
 ```
 
-플래그, 훅, 선언 파일, 규칙 작성법, 남의 검출을 확인하는 법은
-[references/audit-tooling.md](references/audit-tooling.md)에 있다. 감사를 실행하거나 규칙을 만들고 고칠
-때 읽는다.
+Flags, the hook, the declaration files, how to write a rule, and how to confirm somebody else's
+finding are in [references/audit-tooling.md](references/audit-tooling.md). Read it when running the
+audit or when creating or changing a rule.
 
-## 용어 결정
+## Term decisions
 
-작업 중 다음에 해당하면 **즉시** 프로젝트 용어사전에 등재한다.
+Register a term in the project glossary **immediately** when any of these holds:
 
-- 도메인 개념어 (다른 문서에도 나올 것이 확실한 용어)
-- 번역 선택지가 갈리는 용어 (음차 vs 번역, 자연스러운 후보가 둘 이상)
-- 이번 작업에서 잘못 쓸 뻔한 표현 (금지 표기로)
-- 사용자가 교정한 표현 (대역표에 표준으로, 이전 표현을 금지 표기로). 등재는 마지막 단계다. 먼저 아래
-  「지적받은 표현은 지침을 진단한다」를 거친다.
+- It is a domain concept certain to appear in other documents.
+- The translation could go either way (transliteration against translation, or two natural
+  candidates).
+- It is an expression this task nearly got wrong (register it as a banned spelling).
+- The user corrected it (the correction becomes the standard and the earlier form becomes a banned
+  spelling). Registration is the last step — first work through **A correction diagnoses the
+  guidance** below.
 
-**용어사전이냐 규칙 팩이냐.** 활용하는 용언이거나 정상 쓰임과 가르는 예외를 적어야 하면 규칙 팩(hit/miss
-예문 필수), 둘 다 아니면 용어사전이다. 등재한 뒤 `--list-rules`로 등재 결과를 대조하고, 표준 번역을
-바꿨거나 금지 표기를 추가했으면 같은 세션에서 전수 재감사한다.
+**Glossary or rule pack.** If the thing to ban conjugates, or if an exception separating it from
+legitimate use has to be written down, it belongs in the rule pack (hit/miss examples required);
+otherwise it belongs in the glossary. After registering, compare the result with `--list-rules`,
+and when a standard translation changed or a banned spelling was added, re-run the full audit in the
+same session.
 
-**불확실하면 혼자 정하지 않는다.** 후보가 둘 이상이고 어느 쪽도 정착어가 아니거나, 도메인 관례를
-모르거나, 이미 등재된 표준을 바꾸려 할 때다. 추천 표기를 잠정 적용해 끝까지 진행한 뒤, 후보 · 추천안 ·
-근거를 모아 한 번에 묻는다. 서브에이전트라면 추천안으로 진행하고 최종 보고에 확인 요청으로 올린다.
-받은 결정은 즉시 등재하고 탈락한 후보를 금지 표기로 적는다.
+**Do not decide alone when it is uncertain.** That means two or more candidates with neither
+settled, an unfamiliar domain convention, or a change to a standard already registered. Apply the
+recommended spelling provisionally, carry it to the end, then ask once with the candidates, the
+recommendation, and the reasoning. A subagent proceeds with its recommendation and raises the
+question in its final report. Register the decision as soon as it arrives, and record the rejected
+candidate as a banned spelling.
 
-**완료 보고에는 용어 결정 절을 넣는다.** 등재한 용어(영어 → 한국어, 금지 표기), 사용자 확인 대기
-항목(후보 · 추천 · 근거), 둘 다 없으면 「용어 결정 없음」.
+**The completion report carries a term-decision section**: what was registered (English → Korean,
+banned spellings), what is waiting on the user (candidates · recommendation · reasoning), or
+「용어 결정 없음」 when there is neither.
 
-## 지적받은 표현은 지침을 진단한다
+## A correction diagnoses the guidance
 
-사용자가 문장을 짚으면 그 문장은 증상이고 진단 대상은 이 스킬과 프로젝트 지침이다. 단어를 금지
-표기로 올리는 것으로 끝내지 않는다. `references/response-style.md` 5절의 세 물음(어느 규칙이 놓쳤나 ·
-지침 자신이 그 말을 쓰고 있나 · 유형이 없나)에 답하고 원인을 고친 뒤 등재하며, 보고에 셋 중
-무엇이었는지 적는다.
+When the user points at a sentence, that sentence is the symptom and the diagnosis is about this
+skill and the project instructions. Registering the word as banned is not the end of it. Answer the
+three questions in `references/response-style.md` §5 — which rule should have caught it and why it
+did not, whether the guidance itself uses the expression, whether the type is missing altogether —
+fix that cause, then register, and say in the report which of the three it was.
 
-## 보존 대상 (번역 · 교정 시 건드리지 않는 것)
+## What not to touch (translation and proofreading)
 
-- 코드 블록 · 인라인 코드 · 설정 키 · CLI 명령 · SQL 키워드 · 파일 경로 · URL. 코드 블록 안 주석도 원문 유지.
-- front matter의 키와 슬러그 값. `title` · `description` 값은 번역한다.
-- 링크 경로 · 앵커 · 이미지 경로. 링크 텍스트는 번역한다.
-- 마크다운 구조, MDX import/export 문, 컴포넌트 이름 · 속성, HTML 태그.
-- 제목 자동 앵커를 쓰는 사이트에서는 번역한 제목에 원문 앵커를 명시한다: `## 버전 저장 {#version-storage}`.
-- 다이어그램 코드 블록(mermaid 등)은 라벨까지 원문 유지. 렌더돼 저장된 `.svg`의 `<text>`는 반대로 감사 ·
-  수정 대상이다.
-- 제품명 · 언어명 · 약어 (프로젝트 용어사전의 「원문 유지 용어」 표).
-- `l10n:quote`로 감싼 인용 구간.
+- Code blocks, inline code, configuration keys, CLI commands, SQL keywords, file paths, URLs.
+  Comments inside a code block stay in the source language.
+- Front matter keys and slug values. The `title` and `description` values are translated.
+- Link targets, anchors, image paths. Link text is translated.
+- Markdown structure, MDX import/export statements, component names and attributes, HTML tags.
+- On a site that auto-generates heading anchors, pin the original anchor on the translated heading:
+  `## 버전 저장 {#version-storage}`.
+- Diagram code blocks (mermaid and the like) keep their labels in the source language. A rendered
+  `.svg` is the opposite: its `<text>` is audited and fixed.
+- Product names, language names, abbreviations (the 「원문 유지 용어」 table of the project glossary).
+- Any span wrapped in `l10n:quote`.
 
-## 흔한 합리화
+## Common rationalizations
 
-| 합리화 | 실제 |
+| The thought | What is true |
 | --- | --- |
-| "문서를 고쳤으니 마무리로 검사만 한 번 돌리자" | 사용자가 감사를 요청하지 않았다. 기준은 쓰면서 적용하고 스크립트는 지시받았을 때만 실행한다. |
-| "용어사전이 없다고 알려 주는 편이 친절하다" | 설정 이야기를 꺼내는 것 자체가 시키지 않은 일이다. 기본 용어사전만으로 쓴다. |
-| "용어사전은 지난번에 읽어서 기억한다" | 세션 사이에 바뀐다. 매번 다시 읽는다. |
-| "`check`가 0건이니 깨끗하다" | `check`는 넷 중 하나다. 넷을 다 실행한 뒤 판정하고, 규칙이 0건이어도 순차 읽기를 한다. |
-| "검출 목록을 보여 주고 고칠지 확인받는 것이 안전하다" | 감사를 시킨 사람이 원한 것은 고쳐진 파일이다. 수정은 묻지 않고 끝내고 확인은 완료 보고에서 한다. |
-| "규칙을 새로 만드는 건 스킬을 고치는 일이라 허락이 필요하다" | 전역 지침이 그 편집을 같은 변경의 일부로 정했다. 등재하고 무엇을 넣었는지 보고한다. |
-| "후보 중 무난한 쪽으로 정해서 등재하면 된다" | 갈리는 용어를 임의로 등재하면 잘못된 표준이 굳는다. 잠정 적용 뒤 묻는다. |
-| "고쳐 쓴 문장은 검사할 필요가 없다" | 대신 넣은 말이 금지 표현인 경우가 가장 흔하다. 다시 검사한다. |
-| "기본 규칙이 안 맞으니 `GLOSSARY.base.md`를 고친다" | 전 프로젝트 공유 파일이다. 프로젝트 용어사전의 예외 표로 조정하고, 한 곳만 문제면 `except`로 좁힌다. |
-| "등재했으니 보고는 생략해도 된다" | 보고 없는 등재는 사용자가 검토할 수 없다. 완료 보고에 용어 결정 절을 넣는다. |
+| "I edited a document, so let me just run the check as a closing step" | The user did not ask for an audit. The standard applies while writing; the script runs when instructed. |
+| "It would be helpful to mention there is no glossary" | Raising the setup at all is unasked work. Write with the base glossary. |
+| "I read the glossary last time and remember it" | It changes between sessions. Read it again every time. |
+| "`check` is at zero, so it is clean" | `check` is one of four. Judge after running all four, and read in order even at zero. |
+| "Listing the findings and confirming before fixing is safer" | Whoever asked for the audit wanted fixed files. Fix without asking and confirm in the completion report. |
+| "Writing a new rule edits the skill, so I need permission" | The global instructions already made that edit part of the same change. Register it and report what went in. |
+| "I will register the safer-looking candidate" | Registering a contested term on your own freezes the wrong standard. Apply it provisionally, then ask. |
+| "A sentence I rewrote does not need checking" | The replacement being a banned expression is the most common outcome. Check it again. |
+| "The base rule does not fit, so I will edit `GLOSSARY.base.md`" | That file is shared by every project. Adjust through the project glossary's exception table, and narrow with `except` when only one site is affected. |
+| "I registered it, so the report can skip it" | Registration nobody can review is not a decision. Put the term-decision section in the completion report. |
 
-## Red Flags — 이 생각이 들면 멈춘다
+## Red flags — stop when you think this
 
-- 새 용어를 "일단 이렇게 옮기고 나중에 정리"하려 한다
-- 감사 오류를 고치는 대신 규칙을 완화하려 한다 (완화가 정당하면 먼저 사용자에게 근거를 보고한다)
-- 사용자가 교정해 준 표현을 등재하지 않고 넘어가려 한다
-- 답변을 -다체나 「~해 달라」로 쓰고 있다
+- You are about to translate a new term "this way for now and tidy it up later".
+- You are about to relax a rule instead of fixing what it found (if relaxing is right, report the
+  reasoning to the user first).
+- You are about to move on without registering an expression the user corrected.
+- You are writing a reply in -다체, or with 「~해 달라」.

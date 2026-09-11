@@ -1,69 +1,73 @@
-# 화면 문구 판정 기준
+# Judging screen copy
 
-[response-style.md](response-style.md)의 문체 표와 여덟 물음이 기본이다. 이 파일은 화면 문구와 문서를
-검토할 때 그 위에 더하는 판정과, 실제로 나온 교정 예를 담는다. 전수로 검토하고 고치는 절차는
-[ui-copy-sweep.md](ui-copy-sweep.md)에 있다.
+The register table and the eight questions in [response-style.md](response-style.md) are the base.
+This file adds the judgements that apply on top when reviewing screen copy and documents, with the
+corrections that actually came up. The procedure for reviewing and fixing a whole surface is in
+[ui-copy-sweep.md](ui-copy-sweep.md).
 
-**적용 대상**: 화면 문구(i18n 자원 · 메시지 번들 · 메일 템플릿 · 와이어프레임 보드 소스), 문서(설계 · 기술
-문서 · README · 매뉴얼 · 계획서 · 검토 노트), 코드 안의 설명글(설계 의도를 적은 주석, `OPEN:` · `TODO:`
-메모). Q · S · W · Z와 「UI 요소별 문체」만 화면 전용이고 나머지는 문서에도 그대로 적용된다.
+**Scope**: screen copy (i18n resources · message bundles · mail templates · wireframe board
+sources), documents (design and technical documents · README · manuals · plans · review notes), and
+explanatory text inside code (comments recording design intent, `OPEN:` · `TODO:` notes). Only
+Q · S · W · Z and 「UI 요소별 문체」 are screen-only; everything else applies to documents unchanged.
 
-**화면 문구에는 판정이 하나 더 붙는다.** 문서는 「읽는 사람이 뜻을 한 번에 이해하는가」로 충분하지만,
-화면 문구는 **「업무용 소프트웨어에서 실제로 쓰는 말인가」**도 통과해야 한다. 아래 셋은 문법에 맞지만
-화면에 쓰지 않는다. 문법적으로 가능하다는 이유로 통과시키지 않고, 단어 몇 개만 바꾸지 말고 전달하려는
-사실을 확인해 문장 전체를 다시 쓴다.
+**Screen copy takes one more test.** For a document, 「does the reader get it in one pass?」 is
+enough; screen copy also has to pass **「is this what business software actually says?」** The three
+below are grammatical and are not written on a screen. Do not pass something because it is
+grammatically possible, and do not swap a few words: confirm the fact being conveyed and write the
+whole sentence again.
 
 - `무엇에 기대는가`
 - `항목 하나에 딸리는 네 가지`
 - `목록은 사람이 손으로 채우지 않습니다`
 
-## 세 가지를 갈라서 판단한다
+## Three things judged separately
 
-| 무엇 | 어떻게 |
+| What | How |
 | --- | --- |
-| 법정 용어 · 정식 기술 용어 | 그대로 둔다. 쉬운 말로 바꾸면 법적 · 기술적 의미가 달라진다 |
-| 그 용어가 든 문장의 조사 · 어순 · 서술어 | 자연스럽게 다시 쓴다 |
-| 실제 물리 동작 | 비유가 아니므로 그대로 둔다. 출입문은 실제로 열리고 잠금 장치는 실제로 잠긴다 |
+| Legal terms · formal technical terms | Leave them. Replacing them with plainer words changes the legal or technical meaning |
+| The particles, word order, and predicate of the sentence holding that term | Rewrite them naturally |
+| A real physical action | Not a metaphor, so leave it. A door really opens and a lock really locks |
 
-명칭 보존이 비유 보존은 아니다. 도메인 모델의 이름이 `gate`이더라도 사용자 문구와 설계 노트에서는
-실제 의미(필수 요건 · 배정 전 요건 확인 · 단계 진행 조건)를 쓰고, 주위의 서술어는 언제나 실제 처리
-내용으로 바꾼다.
+Keeping a name is not keeping a metaphor. Even when the domain model is called `gate`, user-facing
+copy and design notes use the actual meaning (필수 요건 · 배정 전 요건 확인 · 단계 진행 조건), and the
+predicates around it always become the actual processing.
 
 - `배치 관문이 잡습니다` → 배치 전 미충족 요건을 판정해 배정을 제한합니다
 - `스코프로 가릅니다` → 접근 범위에 따라 조회 권한을 구분합니다
 
-## 판정 관점
+## What to look for
 
-아래는 검색어 목록이 아니라 검토 관점이다. 목록에 없는 비슷한 문장도 전부 찾는다. 다시 쓰기 전에
-여섯 가지에 답한다. 실제 주체는 무엇인가 · 시스템이 실제로 하는 동작은 무엇인가 · 적용 대상은
-무엇인가 · 어떤 조건에서 하는가 · 결과는 무엇인가 · 사용자가 지금 알아야 하거나 해야 하는 것은
-무엇인가.
+What follows is a set of review angles, not a list of search terms. Find every similar sentence,
+including the ones not listed. Before rewriting, answer six questions: what is the actual actor ·
+what does the system actually do · what does it apply to · under what condition · what is the result
+· what does the user need to know or do right now.
 
-### A. 물리 비유 → 기능 동사
+### A. Physical metaphor → functional verb
 
-비유를 다른 비유로 바꾸지 않는다. 서술어는 적용 · 포함 · 등록 · 저장 · 전송 · 표시 · 구분 · 확인 · 승인 ·
-제한 · 완료 · 복구 · 조회 · 변경 · 삭제처럼 기능을 그대로 가리키는 말을 고르고, 처리 · 진행 · 관리처럼
-넓은 동사도 남용하지 않는다.
+Do not replace a metaphor with another metaphor. Choose a predicate that names the function
+directly — 적용 · 포함 · 등록 · 저장 · 전송 · 표시 · 구분 · 확인 · 승인 · 제한 · 완료 · 복구 · 조회 ·
+변경 · 삭제 — and do not lean on the broad 처리 · 진행 · 관리 either.
 
-| 비유 | 확인할 것 | 대체 |
+| Metaphor | What to confirm | Replacement |
 | --- | --- | --- |
-| 조건이 무엇에 `기대다` | 선행 조건인가 운영 조건인가 | ~해야 한다, 유지 조건 |
-| 정책이 `걸리다` · `붙다` · `딸리다` | 적용인가 차단인가 경고인가 | ~에 적용된다, ~에 포함된다 |
-| 보고서가 값을 `싣다` · `안고 오다` | 포함인가 첨부인가 전송인가 | ~를 포함한다, ~를 공급한다 |
-| 화면이 정보를 `쥐다` · `품다` | 표시인가 상태 관리인가 | ~에 표시한다 |
-| 단계가 `막히다` · `풀리다` · `열리다` | 권한인가 선행 업무인가 오류인가 | 진행할 수 없다, 진행할 수 있다 |
-| 조건이 `무너지다` · `살아나다` | 미충족인가 해제인가 복구인가 | 충족하지 않는다, 다시 표시된다 |
-| 기록이 서버로 `올라가다`, 단말로 `내려오다` | 전송인가 저장 완료인가 | 서버로 전송한다, 내려받는다 |
-| 기한이 `밀리다`, 업무가 `넘어가다` | 연기인가 재배정인가 | 연기된다, 다음 담당자에게 자동 배정된다 |
-| 기준이 대상을 `가르다` | 분류인가 제외인가 제한인가 | 기준에 따라 구분한다 |
-| 설정 · 예약 · 판정을 `잡다` | 설정인가 예약인가 판정인가 | 설정한다, 예약한다, 판정한다 |
-| 기한을 `시계`, 담당자를 `주인`, 단계를 `걸음`이라 부르기 | 무엇의 이름인가 | 처리기한, 담당자, 단계 |
-| 예외 · 관계를 `깨지다` · `얽힘` · `갈림선` | 예외인가 연결인가 기준인가 | 예외가 있다, 연결 관계, 구분 기준 |
+| A condition `기대다` on something | a prerequisite or an operating condition | ~해야 한다, 유지 조건 |
+| A policy `걸리다` · `붙다` · `딸리다` | application, blocking, or a warning | ~에 적용된다, ~에 포함된다 |
+| A report `싣다` · `안고 오다` a value | inclusion, attachment, or transmission | ~를 포함한다, ~를 공급한다 |
+| A screen `쥐다` · `품다` information | display or state management | ~에 표시한다 |
+| A step `막히다` · `풀리다` · `열리다` | permission, a prior task, or an error | 진행할 수 없다, 진행할 수 있다 |
+| A condition `무너지다` · `살아나다` | unmet, released, or restored | 충족하지 않는다, 다시 표시된다 |
+| A record `올라가다` to the server, `내려오다` to the device | transmission or a completed save | 서버로 전송한다, 내려받는다 |
+| A deadline `밀리다`, a task `넘어가다` | postponement or reassignment | 연기된다, 다음 담당자에게 자동 배정된다 |
+| A criterion `가르다` its targets | classification, exclusion, or restriction | 기준에 따라 구분한다 |
+| `잡다` for a setting, a booking, or a judgement | setting, booking, or judging | 설정한다, 예약한다, 판정한다 |
+| Calling a deadline a `시계`, an owner a `주인`, a step a `걸음` | what is this the name of | 처리기한, 담당자, 단계 |
+| An exception or a relation as `깨지다` · `얽힘` · `갈림선` | an exception, a connection, or a criterion | 예외가 있다, 연결 관계, 구분 기준 |
 
-### B. 「닿다」와 「길」
+### B. 「닿다」 and 「길」
 
-정보나 기능이 사람 · 서버 · 시스템 · 문서에 `닿는다`고 쓰지 않는다. 실제 접촉 동사라 전달 · 전송 · 연결 ·
-적용 · 접근이 사라진다. 「길」도 같다. 수치가 한계에 이르는 것은 「한도에 도달한다」다.
+Information and features do not `닿는다` to a person, a server, a system, or a document. It is a
+verb of physical contact, so delivery, transmission, connection, application, and access disappear
+into it. 「길」 is the same. A figure reaching a limit is 「한도에 도달한다」.
 
 - `알림이 사용자에게 닿지 않습니다` → 사용자가 알림을 수신하지 못했습니다
 - `서버에 닿은 뒤` → 서버 전송이 완료된 뒤
@@ -72,19 +76,19 @@
 - `알림을 보내는 길` → 알림 채널
 - `이의 제기할 길` → 이의 제기 방법
 
-### C. 대체 처리 순서를 「사다리」로 부르지 않는다
+### C. A fallback order is not a 「사다리」
 
-무엇이 자동이고 어디서 사람이 개입하며 마지막 실패 상태가 무엇인지가 숨는다.
+It hides what is automatic, where a person steps in, and what the final failure state is.
 
 - `대체발송 사다리` → 대체 채널 우선순위
 - `메신저가 실패하면 문자로 갑니다` → 메신저 발송에 실패하면 문자로 자동 전송합니다
 - `끝에서 실패하면 사람이 전화합니다` → 문자 전송에도 실패하면 담당자가 전화합니다
 - `실패 건이 수동 처리로 넘어갑니다` → 실패 건을 수동 처리 대기열에 등록합니다
 
-### D. 상태 · 적용 · 기간을 방향 · 스위치 · 이동으로 말하지 않는다
+### D. State, application, and duration are not directions, switches, or movement
 
-「켜기」 · 「끄기」는 사용자가 직접 바꾸는 스위치의 동작명일 때만 쓰고, 설명 문장에서는 활성화 ·
-비활성화 · 사용 · 중지처럼 결과 상태를 적는다.
+「켜기」 · 「끄기」 are used only as the action name of a switch the user flips; an explanatory
+sentence states the resulting state — 활성화 · 비활성화 · 사용 · 중지.
 
 - `집행 모드로 올린다` → 집행 모드로 변경한다
 - `기능이 열린다` → 해당 기능을 사용할 수 있다
@@ -93,10 +97,11 @@
 - `기업 요금제에서 켜집니다` → 기업 요금제에 적용됩니다
 - `기록 하나가 왜 10년을 가는가` → 거래 기록을 10년 보존하는 이유
 
-### E. 업무 은어와 구어적 이동 동사
+### E. Office slang and colloquial verbs of movement
 
-나가다 · 올라오다 · 내려오다 · 걸다 · 풀다 · 붙이다로 승인 · 발급 · 제출 · 등록 · 적용을 대신하지 않는다.
-이벤트 이름이 `uploaded`이더라도 사용자 문구는 한국어 행정 동작을 쓴다.
+나가다 · 올라오다 · 내려오다 · 걸다 · 풀다 · 붙이다 do not stand in for approval, issuance,
+submission, registration, or application. Even when the event is named `uploaded`, user-facing copy
+uses the Korean administrative verb.
 
 - `허가가 나갑니다` → 이용 허가가 발급됩니다
 - `결재가 올라갑니다` → 결재가 요청됩니다
@@ -104,21 +109,21 @@
 - `조건과 기한을 붙입니다` → 조건과 이행 기한을 지정합니다
 - `제한을 풉니다` → 제한을 해제합니다
 
-### F. 「통째로 · 조용히 · 그대로」로 영향을 뭉뚱그리지 않는다
+### F. Do not blur impact with 「통째로 · 조용히 · 그대로」
 
-바뀌는 항목, 유지되는 항목, 사용자에게 알리는 방식을 적는다.
+Write what changes, what stays, and how the user is told.
 
 - `일정이 통째로 밀립니다` → 설치 일정이 연기될 수 있습니다
 - `기록이 통째로 빕니다` → 해당 시간대의 접속 기록이 누락됩니다
 - `문이 조용히 남습니다` → 연결되지 않은 장치를 결과 목록에 표시합니다
 - `자격이 그대로 따라갑니다` → 기존 이력과 자격 정보를 유지합니다
 
-### G. 무생물 주어와 의인화
+### G. Inanimate subjects and personification
 
-화면 · 카드 · 목록 · 정책 · 규칙 · 보고서 · 결과 · 일정은 판단하거나 말하거나 기억하거나 책임지지
-않는다. 「보이다」도 시스템이 표시하는 것인지 사용자가 조회하는 것인지를 갈라 표시한다 · 안내한다 ·
-조회할 수 있다 · 확인한다 가운데 고른다. `값이 정책을 수행한다` · `카드가 문서를 승인한다`는 문법
-오류가 아니라 주체가 틀린 문장이다.
+A screen, a card, a list, a policy, a rule, a report, a result, a schedule does not judge, speak,
+remember, or take responsibility. 「보이다」 is split too, by whether the system displays or the user
+looks: choose among 표시한다 · 안내한다 · 조회할 수 있다 · 확인한다. `값이 정책을 수행한다` ·
+`카드가 문서를 승인한다` are not grammar errors but sentences with the wrong actor.
 
 - `화면이 다음 행동을 말합니다` → 화면에 다음 작업을 안내합니다
 - `이 카드가 모든 값을 기억합니다` → 카드에 모든 값을 표시합니다
@@ -127,61 +132,64 @@
 - `임박한 것을 보이는 일이 이 화면의 몫입니다` → 점검 임박 장비를 미리 표시합니다
 - `설정 화면이 답합니다` → 설정 화면에서 변경 방법을 안내합니다
 
-### H. 명사와 명사의 관계를 비유로 감추지 않는다
+### H. Do not hide a noun-to-noun relation behind a metaphor
 
-`A에 붙는 B` · `A에 딸리는 B` · `A가 켜는 B` · `A 뒤에 있는 B`는 관계를 짐작하게 만든다. 관계를 확인해
-이름을 붙인다. 적용(A에 적용되는 B) · 포함(A에 포함된 B) · 소속(A에 속한 B) · 생성(A를 기준으로 생성된
-B) · 선행(B를 시작하기 전에 완료해야 하는 A) · 참조 · 연계 · 조건(A일 때 필요한 B).
+`A에 붙는 B` · `A에 딸리는 B` · `A가 켜는 B` · `A 뒤에 있는 B` make the reader guess the relation.
+Confirm it and name it: application (A에 적용되는 B) · inclusion (A에 포함된 B) · membership
+(A에 속한 B) · derivation (A를 기준으로 생성된 B) · precedence (B를 시작하기 전에 완료해야 하는 A) ·
+reference · linkage · condition (A일 때 필요한 B).
 
-### I. 조직 · 역할 · 기능을 「자리」라고 부르지 않는다
+### I. An organization, a role, or a feature is not a 「자리」
 
-「자리」는 실제 장소 · 좌석 · 배치 위치 · 자릿수를 뜻할 때만 쓴다. 표 머리글 · 필드 라벨 · 통계 타일에
-남은 「자리」는 위치 · 항목 · 화면 · 직책 · 미편성으로 갈라 쓰고, 법정 직위와 정식 역할은 그 용어를
-그대로 쓴다.
+Use 「자리」 only for a real place, a seat, a layout position, or a digit position. A 「자리」 left in
+a table header, a field label, or a statistics tile is split into 위치 · 항목 · 화면 · 직책 ·
+미편성, while a statutory position or a formal role keeps its own term.
 
 - `사람이 소속되는 자리` → 사용자가 소속되는 조직
 - `검토자 자리가 비어 있습니다` → 필수 역할인 검토자가 지정되지 않았습니다
 - `바깥 시스템과 잇는 자리` → 외부 시스템 연동 설정
 - `사람이 아니라 자리입니다` → 특정 개인이 아니라 작업별 필수 역할을 지정합니다
 
-### J. 모호한 주어와 지시어
+### J. Vague subjects and demonstratives
 
-`이것` · `이 결과` · `해당 건`이 무엇을 가리키는지 한 번에 알 수 없으면 명칭을 다시 적는다. 같은 화면에
-대상이 여럿이면 지시어를 쓰지 않는다.
+When `이것` · `이 결과` · `해당 건` cannot be resolved in one pass, write the name again. Where one
+screen holds several objects, do not use a demonstrative at all.
 
 - `이 결과에서 나오는 네 가지 의무` → 심사 결과에 따라 적용되는 네 가지 의무
 - `이것이 완료되면 다음으로 넘어갑니다` → 사전 심사가 승인되면 이용 신청서를 작성합니다
 
-### K. 영어식 부정문과 수동 표현
+### K. English-style negatives and passives
 
-법령 문장에서 피동이 정착한 것은 그대로 둔다.
+A passive settled in statutory language stays.
 
 - `목록은 사람이 손으로 채우지 않습니다` → 시스템이 목록을 자동으로 생성합니다
 - `이 값은 사용자에 의해 변경될 수 없습니다` → 사용자는 이 값을 변경할 수 없습니다
 - `승인 없이는 진행되지 않도록 되어 있습니다` → 다음 단계로 진행하려면 승인을 완료하세요
 
-### L. 고친 뒤에 조사 · 어미 · 호응을 따로 검사한다
+### L. After fixing, check particles, endings, and agreement separately
 
-앞의 수정이 만든 오류는 원문에 없던 것이라 눈에 띄지 않는다. 고친 뒤 이 아홉을 훑는다. 조사 어긋남과
-같은 말의 연속은 감사 스크립트가 잡고 사람은 나머지 일곱을 본다. 높임말 혼용과 대상명 불일치는 한
-파일 안을 세로로 읽어야 드러난다.
+An error created by the previous fix was not in the original, so it does not stand out. Sweep these
+nine after fixing. Particle disagreement and a word repeated twice are caught by the audit script; a
+person reads the other seven. Mixed politeness and a mismatched object name only show up when
+reading one file vertically.
 
-- 조사(을/를 · 이/가 · 은/는 · 으로/로 · 와/과)
-- 단수와 복수: `항목들이 각각` → 항목이 각각
-- 높임말과 해라체 혼용
-- 「할 수 있습니다」와 「가능합니다」의 중복
-- 같은 단어의 연속
-- 두 칸 이상의 공백
-- 괄호와 숫자 · 단위의 띄어쓰기
-- 제목과 설명의 대상명 불일치
-- 버튼은 명령형인데 설명이 장황함
+- Particles (을/를 · 이/가 · 은/는 · 으로/로 · 와/과)
+- Singular against plural: `항목들이 각각` → 항목이 각각
+- Honorific and plain forms mixed
+- 「할 수 있습니다」 duplicated with 「가능합니다」
+- The same word twice in a row
+- Two or more consecutive spaces
+- Spacing around parentheses, numbers, and units
+- The title and the description naming different objects
+- An imperative button paired with a rambling description
 
-### M. 제목 · 라벨 · 표 머리글은 질문이 아니라 이름이다
+### M. A title, a label, and a table header are names, not questions
 
-질문형 제목은 사용자가 실제로 입 밖에 내어 묻는 형태(「제출 후에도 수정할 수 있나요?」)만 남긴다.
-「~는가」로 끝나는 제목은 설계자가 스스로에게 던진 질문이고 제목이 아니라 그 화면이 답할 내용이다.
-필드 라벨은 값의 종류다. 어미를 「~는가」로만 찾으면 「필요한가」 · 「중대한가」가 빠져나간다. 명사만
-이어 붙인 제목은 조사나 관형어를 넣는다.
+Keep a question-form title only in the form a user would actually say out loud
+(「제출 후에도 수정할 수 있나요?」). A title ending in 「~는가」 is the designer's question to himself,
+and it is not a title but what the screen is supposed to answer. A field label is the kind of value.
+Searching only for the ending 「~는가」 lets 「필요한가」 · 「중대한가」 escape. A title made of stacked
+nouns gets a particle or an adnominal.
 
 - `무엇에 기대는가` → 효과 유지 조건
 - `이 화면이 무엇을 쥐고 있는가` → 화면에 표시되는 정보
@@ -193,61 +201,65 @@ B) · 선행(B를 시작하기 전에 완료해야 하는 A) · 참조 · 연계
 - `누가 지정하는가` → 지정 주체
 - `대상 결과 의무 적용 상태` → 판정 결과에 따른 의무 적용 현황
 
-### N. 과장 · 단정 · 감정 평가로 기능을 설명하지 않는다
+### N. Do not explain a feature with exaggeration, flat assertion, or an emotional verdict
 
-방법이 하나뿐이면 「해야 합니다」 · 「할 수 없습니다」로 요건을 직접 쓴다.
+When there really is only one way, write the requirement directly with 「해야 합니다」 ·
+「할 수 없습니다」.
 
 - `이 기록이 최악입니다` → 필수 요건 미충족 상태의 처리 기록을 별도로 확인합니다
 - `외부 기관 일정이 유일한 길입니다` → 지정된 외부 기관의 일정을 예약해야 합니다
 
-### O. 「가능 · 급한 · 즉시」는 기준과 함께 쓴다
+### O. 「가능 · 급한 · 즉시」 come with a criterion
 
-적용 시점이나 제한 시간(「승인 완료 후」 · 「5분 이내」)을 명시하고, 정해지지 않았으면 숫자를 지어내지
-말고 처리 조건을 적는다.
+State when it applies or the time limit (「승인 완료 후」 · 「5분 이내」); where nothing is fixed, do
+not invent a number — write the processing condition.
 
 - `저장하면 바로 반영됩니다` → 저장한 문안은 다음 발송부터 적용됩니다
 - `문안을 수정할 수 있습니다` → 문안을 변경할 수 있지만 재심사를 통과한 뒤 발송에 적용됩니다
 
-### P. 간접의문절 + 「입니다」
+### P. An indirect question plus 「입니다」
 
-「가지입니다」 · 「기한입니다」처럼 완성된 명사는 대상이 아니다.
+A completed noun such as 「가지입니다」 · 「기한입니다」 is not this.
 
 - `언제까지 유효한지입니다` → 사용자별 지급 내역과 유효기간을 확인합니다
 - `누구를 누구로 볼지입니다` → 외부 시스템 연결과 신원 매핑을 설정합니다
 
-### Q. 페이지 설명은 대상과 기능을 직접 쓴다 (화면 전용)
+### Q. A page description states the object and the function directly (screen only)
 
-의문사와 포괄어에 기대지 않는다. 순서는 대상(이용 허가 · 법정 의무처럼 구체적인 명칭) → 기준 ·
-범위(사용자별 · 현재 · 만료 후) → 기능(확인합니다 · 관리합니다 · 설정합니다). 상세 화면이 「A동 3층 ·
-2026-08-12 · 진행 중」처럼 값을 나열하는 것은 설명문이 아니므로 그대로 둔다.
+Do not lean on interrogatives and catch-all words. The order is the object (a specific name such as
+이용 허가 · 법정 의무) → the criterion or scope (사용자별 · 현재 · 만료 후) → the function
+(확인합니다 · 관리합니다 · 설정합니다). A detail screen listing values — 「A동 3층 · 2026-08-12 ·
+진행 중」 — is not explanatory text and stays as it is.
 
 - `무엇이 언제 끝나고 무엇이 이미 지났는지 봅니다` → 계약별 만료 시각과 만료 상태를 확인합니다
 - `누가 언제 막히는지 봅니다` → 미이수로 이용이 제한되는 사용자와 제한 시점을 확인합니다
 
-### R. 내부 노트와 강조 제목도 비유 없이 쓴다
+### R. Internal notes and bold lead-ins are written without metaphor too
 
-`OPEN:` · `TODO:` · 설계 메모 · 보드 주석은 나중에 화면 문구와 요구사항의 원문이 된다. 조사와
-종결어미를 생략하지 않고, 미확정 상태(「검토 중」)는 유지하되 완전한 문장으로 쓴다. `<strong>` 안의
-강조 제목은 압축하다 비유가 되기 쉽다. 강조 제목은 설계 결정 · 적용 조건 · 권한 · 법적 · 업무상 이유 ·
-연결된 화면과 데이터 가운데 하나를 분명히 설명해야 한다.
+`OPEN:` · `TODO:` notes, design memos, and board annotations later become the source text of screen
+copy and requirements. Do not drop particles and final endings, and keep an undecided state
+(「검토 중」) while still writing a complete sentence. A bold lead-in inside `<strong>` turns into a
+metaphor easily while being compressed. A bold lead-in has to clearly explain one of: the design
+decision, the condition of application, the permission, the legal or business reason, or the
+connected screen and data.
 
 - `근거 조문은 확인 필요다` → 근거 조문을 확인해야 한다
 - `점검 결과가 프로그램을 켠다` → 점검 결과에 따라 항목별 프로그램 대상이 정해집니다
 - `사건마다 시계가 흐른다` → 사건마다 처리기한이 다릅니다
 
-### S. 카드와 다이얼로그 설명의 추상 명사 (화면 전용)
+### S. Abstract nouns in card and dialog descriptions (screen only)
 
-짧게 쓰려고 「본문」 · 「전제」 · 「모양」 · 「묶음」 · 「무게」 · 「흐름」 같은 추상어로 압축하지 않는다.
-설명은 대상 · 조건 → 실제 동작 → 처리 결과 → (필요할 때만) 이유의 순서로 쓰고, 판단이 셋 이상이면
-문장을 나눈다.
+Do not compress for brevity into abstractions such as 「본문」 · 「전제」 · 「모양」 · 「묶음」 ·
+「무게」 · 「흐름」. Write the description as object and condition → the actual action → the result →
+(only where needed) the reason, and split the sentence when it carries three or more judgements.
 
 - `대피 시간과 실패 지점이 평가의 본문입니다` → 대피 완료 시간과 계획대로 수행하지 못한 지점을 기록해 훈련 결과를 평가합니다
 - `요청은 다섯 갈래입니다` → 요청을 열람, 정정 · 삭제, 처리정지 등 유형별로 구분합니다
 - `만료 기한은 계속 흐릅니다` → 가동을 중지해도 검사 유효기간은 변경되지 않습니다
 
-### T. 조건 · 판정 · 제한을 문이나 관문에 빗대지 않는다
+### T. A condition, a judgement, or a restriction is not a door or a gate
 
-「출입문」 · 「문 개방」처럼 실제 설비는 그대로 쓴다.
+A real fixture — 「출입문」 · 「문 개방」 — stays as it is.
 
 - `자격이 관문을 연다` → 자격별로 배정 · 승인 시 확인할 단계를 지정합니다
 - `만료가 관문을 닫는다` → 유효기간이 지나면 해당 작업의 배정을 제한합니다
@@ -255,112 +267,120 @@ B) · 선행(B를 시작하기 전에 완료해야 하는 A) · 참조 · 연계
 - `관문이 샌다` → 필수 요건 판정이 누락됐다
 - `승인되지 않아 착수가 막힌다` → 승인되기 전에는 착수할 수 없습니다
 
-### U. 표어형 단정문을 업무 절차 설명으로 바꾼다
+### U. Turn a slogan into a description of the procedure
 
-`A가 곧 B다` · `A는 B일 뿐이다` · `A가 유일한 방어다` · `A가 핵심이다` · `A가 아니라 B다`는 조건 · 처리
-방법 · 확인 주체를 생략한다. 넷을 확인한다. 어떤 대상에 어떤 조건이 적용되는가 · 누가 무엇을 확인하거나
-기록하는가 · 미충족 시 무엇이 제한되는가 · 사용자가 할 조치는 무엇인가. 법령 · 교육 자료의 공식
-표어와 실제 인용문은 바꾸지 않는다.
+`A가 곧 B다` · `A는 B일 뿐이다` · `A가 유일한 방어다` · `A가 핵심이다` · `A가 아니라 B다` omit the
+condition, the handling, and who verifies. Confirm four things: what condition applies to what
+object · who checks or records what · what is restricted when it is not met · what the user should
+do. An official slogan or a real quotation in statutory or training material is not changed.
 
 - `사진이 곧 근거다` → 이상 항목에는 상태를 확인할 수 있는 사진을 첨부해야 합니다
 - `인원 대조가 핵심이다` → 입장 인원과 퇴장 인원이 일치해야 허가를 반납할 수 있습니다
 - `반납이 아니라 수색이다` → 퇴장 인원이 일치하지 않으면 반납 처리 전에 미확인 인원의 위치를 확인합니다
 
-### V. 내부 구현 표현을 사용자 안내에 내지 않는다
+### V. Internal implementation wording does not go out as user guidance
 
-관리자 화면에서 사용자가 실제로 설정하는 기술 용어(API · Webhook · HMAC-SHA256)는 유지하되
-서술어는 전송 · 검증 · 변경 · 재시도처럼 실제 동작으로 쓴다.
+Technical terms the user actually configures on an administrator screen (API · Webhook ·
+HMAC-SHA256) stay, while the predicates become the real action — 전송 · 검증 · 변경 · 재시도.
 
 - `값은 공용 응답 세트를 그대로 씁니다` → 각 항목에서 「이상 없음」 또는 「이상 있음」을 선택합니다
 - `검사는 하나도 돌지 않습니다` → 해당 필드에 검증 규칙을 적용할 수 없습니다
 - `비밀은 서비스 계정 화면에서 회전합니다` → 서명용 비밀값은 서비스 계정 화면에서 변경합니다
 
-### W. 법정 · 전문 용어를 짧은 UI 명사로만 두지 않는다 (화면 전용)
+### W. A legal or specialist term is not left as a short UI noun (screen only)
 
-본문에서는 「A 기록으로 B 의무를 갈음합니다」처럼 A와 B를 모두 밝히고, 목록의 짧은 상태값은
-사용자가 바로 이해할 결과(「대체 인정」 · 「별도 제출 불필요」)를 먼저 표시한다. 어느 용어가 라벨로
-서면 안 되는지는 도메인마다 다르므로 프로젝트 용어사전에 등재한다.
+In the body, name both sides — 「A 기록으로 B 의무를 갈음합니다」 — and let a short status value in a
+list show the result the user understands immediately (「대체 인정」 · 「별도 제출 불필요」). Which
+terms may not stand as a label differs by domain, so register them in the project glossary.
 
 - `갈음` → 다른 의무 이행으로 인정
 - `이 입력이 갈음하는 의무` → 이 제출로 이행한 것으로 인정되는 의무
 
-### X. 술어는 덮는 주어 전부에 맞아야 한다
+### X. A predicate has to fit every subject it covers
 
-「A와 B는 …한다」를 「A는 …하고 B는 …한다」로 펴 보고 둘 다 참인지 확인한다.
+Unfold 「A와 B는 …한다」 into 「A는 …하고 B는 …한다」 and check that both halves are true.
 
 - `톨루엔과 소음은 실제로 마신 양이 아닙니다` → 노출된 양이 아닙니다
 - `파일과 링크는 만료되면 삭제됩니다` → 파일은 삭제되고 링크는 만료됩니다
 - `담당자와 기한을 선임합니다` → 담당자를 지정하고 기한을 정합니다
 
-### Y. 한 동작에 이름은 하나다
+### Y. One action has one name
 
-「연결」 · 「잇기」 · 「붙이기」는 각각 정상 한국어라 규칙이 잡을 근거가 없고, 잘못은 단어 사이에 있다.
-한 화면 안에서 동작과 그 반대가 다른 어근을 쓰면(「잇기」 옆의 「연결 끊기」) 이미 갈린 것이다. 행
-동작 · 버튼 · 탭 · 화면 이름 · 지표 라벨을 늘어놓고 세어 가장 많이 쓰인 이름으로 통일하고, 비유인 쪽
-(잇다 · 붙이다 · 걸다)을 버린다. 화면 이름을 바꿨으면 목차 · 명세 · 계획 문서를 같은 변경에서 고친다.
-찾는 방법은 [ui-copy-sweep.md](ui-copy-sweep.md) 6단계의 세기다.
+「연결」 · 「잇기」 · 「붙이기」 are each correct Korean, so a rule has no grounds to catch them: the
+defect is between the words. When an action and its opposite use different roots on one screen
+(「잇기」 beside 「연결 끊기」), they have already diverged. Lay out the row actions, buttons, tabs,
+screen names, and metric labels, count them, unify on the most used name, and drop the metaphorical
+one (잇다 · 붙이다 · 걸다). When a screen name changes, fix the table of contents, the specification,
+and the planning documents in the same change. How to find these is the counting in
+[ui-copy-sweep.md](ui-copy-sweep.md) step 6.
 
-### Z. 없는 기능은 어디에 없는지를 대지 않는다 (화면 전용)
+### Z. A missing feature does not say where it is missing (screen only)
 
-`이 빌드에 없음` · `이 설치본에 없음`은 다른 곳에는 있다고 읽히고, 설정을 뒤지고 다시 설치하게
-만든다. 코드에 없어서 없는 것은 「아직 없음」 하나로 쓴다. 정말로 상황에 따라 다른 것만 갈라 쓴다.
+`이 빌드에 없음` · `이 설치본에 없음` read as 「it exists elsewhere」 and send the user digging through
+settings and reinstalling. What is missing because it is not in the code is 「아직 없음」, one phrase.
+Split only what genuinely differs by situation.
 
-| 무엇 | 읽는 사람이 할 일 | 문구 |
+| What | What the reader should do | The copy |
 | --- | --- | --- |
-| 코드에 없다 | 없다, 기다린다 | 아직 없음 |
-| 함께 왔는데 설치하지 않았다 | 설치하면 쓸 수 있다 | 설치되지 않음 |
-| 권한이 없어 보이지 않는다 | 권한을 요청한다 | 볼 수 있는 권한 없음 |
-| 이 프로젝트 · 이 계정에 없다 | 다른 곳에서 찾거나 만든다 | 이 프로젝트에 없음 |
+| Not in the code | nothing; wait | 아직 없음 |
+| Shipped but not installed | install it | 설치되지 않음 |
+| Hidden for lack of permission | request permission | 볼 수 있는 권한 없음 |
+| Not in this project or account | look elsewhere, or create it | 이 프로젝트에 없음 |
 
-절에서는 단어를 끼우지 말고 서술어로 푼다. 「내보내기 파일은 아직 만들지 않습니다」. 규칙으로는
-잡히지 않으므로 세어서 찾고, 그 프로젝트가 쓰던 철자를 용어사전의 `## 금지 표현`에 등재한다.
+In a clause, do not splice the phrase in: unfold it into a predicate — 「내보내기 파일은 아직 만들지
+않습니다」. No rule catches this, so find it by counting, and register the spelling that project was
+using under `## 금지 표현` in the glossary.
 
-## UI 요소별 문체 (화면 전용)
+## Register by UI element (screen only)
 
-| 요소 | 문체 |
+| Element | Register |
 | --- | --- |
-| 화면명 · 탭 · 배지 | 대상을 가리키는 짧은 명사형 |
-| 버튼 · 행 작업 | 사용자가 실행할 구체적인 동작명. 화면 이동 버튼은 목적지 이름 |
-| 필드 라벨 | 입력하거나 표시하는 값의 이름. `항목명: 값`으로 읽히게 쓴다 |
-| 설명 | 화면에서 확인하거나 처리하는 내용 |
-| 경고 | 문제, 영향, 필요한 조치 |
-| 도움말 | 개념, 적용 조건, 예외, 판단 기준 |
-| 내부 메모 | 생략 없는 완전한 설명문 |
+| Screen name · tab · badge | a short noun form naming the object |
+| Button · row action | the specific action the user performs; a navigation button takes the destination's name |
+| Field label | the name of the value entered or displayed, readable as `항목명: 값` |
+| Description | what is checked or done on this screen |
+| Warning | the problem, the impact, the action required |
+| Help | the concept, the conditions, the exceptions, the criteria |
+| Internal note | a complete sentence with nothing elided |
 
-- 같은 정보를 요소마다 반복하지 않는다. 화면명에 대상이 분명하면 설명에는 확인하거나 수행할 일을 적는다.
-- 상태값과 동작명을 구분한다. 오프라인 · 미이수 · 차단은 상태이고, 재연결 후 동기화 · 교육 배정은
-  동작이다. 상태 이름도 비유에 기대지 않는다. 같은 「열림」이 출입 가능 · 편집 가능 · 승인 완료를 뜻할 수
-  있으므로 실제 상태로 갈라 적는다.
+- Do not repeat the same information in every element. When the screen name already makes the object
+  clear, the description says what to check or do.
+- Keep state values and action names apart. 오프라인 · 미이수 · 차단 are states; 재연결 후 동기화 ·
+  교육 배정 are actions. A state name does not lean on a metaphor either. One 「열림」 can mean
+  entry allowed, editing allowed, or approval complete, so write the actual state.
   - `관문 열림` → 배정 가능
   - `정책 뒤짐` → 정책 미동기화
   - `장치 침묵` → 데이터 미수신
-- 설명과 버튼이 같은 동작을 다른 이름으로 부르지 않는다. 경고 「검사를 신청하세요」와 버튼 「검사 일정
-  잡기」는 둘 다 「검사 신청」이다.
-- 설명 · 경고 · 도움말 · 내부 메모는 문장이므로 조사와 종결어미를 갖춘다.
+- A description and a button do not call the same action by different names. The warning
+  「검사를 신청하세요」 and the button 「검사 일정 잡기」 are both 「검사 신청」.
+- Descriptions, warnings, help, and internal notes are sentences, so they carry particles and final
+  endings.
   - `첨부 없어 반려됨` → 첨부 파일이 없어서 반려했습니다
   - `승인 대기 중. 결재선 확인 필요` → 결재선을 확인한 뒤 다시 요청하세요
-- 설명 문장에 엠대시를 쓰지 않는다. 문장을 둘로 나누거나 접속어를 넣는다.
+- No em dash in an explanatory sentence. Split the sentence in two or add a connective.
 
-## 하지 않는 것
+## What not to do
 
-- 사용자가 준 예문 몇 개만 검색하고 끝내기
-- 비유를 다른 비유로 바꾸기
-- 문맥을 읽지 않은 일괄 치환
-- 짧게 만들려고 필수 조건 · 법적 의미 · 적용 대상을 지우기
-- 법정 용어 · 기술 용어를 임의의 쉬운 말로 바꾸기
-- 실제 물리 동작까지 비유로 판정하기
-- 사용자에게 보이는 문구와 코드 식별자를 구분하지 않고 고치기
-- 관련 없는 기존 변경 사항을 되돌리기
-- 검사에 통과했다는 이유로 자연스러움 검토를 생략하기
-- 문제 목록만 만들고 원본 문구를 고치지 않기
+- Searching for the few examples the user gave and stopping there.
+- Replacing a metaphor with another metaphor.
+- Bulk substitution without reading the context.
+- Deleting a required condition, a legal meaning, or the scope of application to make it shorter.
+- Replacing a legal or technical term with an arbitrary plainer word.
+- Judging a real physical action as a metaphor.
+- Fixing user-facing copy and code identifiers without telling them apart.
+- Reverting unrelated existing changes.
+- Skipping the naturalness review because the checks passed.
+- Producing a list of problems without fixing the copy.
 
-### AA. 가능 표현이 지시와 사실을 대신하지 않는다 (합니다체 전용)
+### AA. A possibility does not stand in for an instruction or a fact (합니다체 only)
 
-영어 can · may가 「~할 수 있습니다」로 옮겨 오면, 안내문이 무엇을 하라는지도 무엇이 일어나는지도 말하지
-않은 채 가능성만 남는다. 화면과 매뉴얼은 셋 중 하나로 적는다 — 조건 뒤의 가능은 「~하려면 ~하세요」,
-사실의 가능은 「~합니다」, 원인의 짐작은 확인할 것으로. 관형형 「~할 수 있는」과 부정 「~할 수 없습니다」는
-능력과 금지를 말하므로 그대로 두고, 정말로 권한의 차이를 말하는 문장만 남긴다. 규칙
-`can-instead-of-does`가 합니다체 문장을 잡는다 — -다체 설계 문서의 「~할 수 있다」는 잡지 않는다.
+When English *can* and *may* arrive as 「~할 수 있습니다」, the guidance says neither what to do nor
+what happens, and only the possibility is left. A screen and a manual write one of three things: a
+possibility after a condition is 「~하려면 ~하세요」, a possibility that is a fact is 「~합니다」, and a
+guess at a cause becomes something to verify. The adnominal 「~할 수 있는」 and the negative
+「~할 수 없습니다」 state ability and prohibition and stay, and so do the sentences that really are
+about a difference in permission. The rule `can-instead-of-does` catches 합니다체 sentences — it does
+not catch 「~할 수 있다」 in a -다체 design document.
 
 - `입력을 고쳐야 다음 단계로 진행할 수 있습니다` → 다음 단계로 진행하려면 입력을 고치세요
 - `원본 값 탭에서 확인할 수 있습니다` → 조회 결과는 원본 값 탭에서 확인합니다
@@ -368,6 +388,7 @@ B) · 선행(B를 시작하기 전에 완료해야 하는 A) · 참조 · 연계
 - `방화벽이나 스위치의 ACL이 막고 있을 수 있습니다` → 방화벽과 스위치 ACL에서 UDP 161 통신을 허용했는지 확인하세요
 - `즉시 적용됩니다` → 선택 즉시 화면 언어를 바꿉니다
 
-**같은 자리에서 영어 낱말이 한국어 문장 안에 남는다.** `host[:port]` · `ERROR` · 기호 목록 `. _ -`는
-영어 화면을 옮긴 흔적이고, 우리말이 있는 것은 우리말로 적는다 — 주소[:포트] · 오류 · 마침표·밑줄·붙임표.
-제품 이름 · 옵션 이름(`--plain-http`) · 규격 이름(CIDR · UDP 161)은 그대로 둔다.
+**English words survive inside Korean sentences in the same places.** `host[:port]` · `ERROR` · a
+list of symbols such as `. _ -` are traces of a translated English screen, and what has a Korean
+word is written in Korean — 주소[:포트] · 오류 · 마침표·밑줄·붙임표. Product names, option names
+(`--plain-http`), and specification names (CIDR · UDP 161) stay as they are.

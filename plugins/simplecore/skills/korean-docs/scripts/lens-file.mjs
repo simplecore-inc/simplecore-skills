@@ -19,7 +19,7 @@ import { fileURLToPath } from 'node:url';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const target = process.argv[2];
 if (!target) {
-  console.error('용법: node lens-file.mjs <파일>');
+  console.error('usage: node lens-file.mjs <file>');
   process.exit(2);
 }
 
@@ -36,4 +36,4 @@ lines.forEach((line, i) => {
   console.log(`      ${line.trim().slice(0, 100)}`);
 });
 
-console.log(total ? `\n${total}건 — 판정이 아니라 신호다. 문장마다 판단한다.` : '깨끗함');
+console.log(total ? `\n${total} candidates — a signal, not a verdict. Judge each sentence.` : 'nothing found');

@@ -130,7 +130,7 @@ export function localeResourceCoverage(patterns, root) {
   const perPattern = patterns.map((pattern) => {
     const base = patternBaseDir(pattern);
     const files = filesUnder(base);
-    if (files === null) return {pattern, count: 0, reason: `${base || '.'} 디렉터리가 없습니다`};
+    if (files === null) return {pattern, count: 0, reason: `no such directory: ${base || '.'}`};
     const matches = makeExcludeMatcher(pattern);
     let count = 0;
     for (const file of files) {
@@ -139,7 +139,7 @@ export function localeResourceCoverage(patterns, root) {
       count++;
       matched.add(rel);
     }
-    return {pattern, count, reason: count === 0 ? '이 패턴과 맞는 파일이 없습니다' : null};
+    return {pattern, count, reason: count === 0 ? 'no file matches this pattern' : null};
   });
   return {perPattern, total: matched.size};
 }
@@ -175,7 +175,7 @@ function discoveryStart(paths = []) {
 
 function findPath(p, root, label) {
   const found = [resolve(p), join(root, p)].find((c) => existsSync(c));
-  if (!found) throw new Error(`${label} 경로를 찾을 수 없습니다: ${p}`);
+  if (!found) throw new Error(`${label} path not found: ${p}`);
   return found;
 }
 
@@ -806,7 +806,7 @@ export function parseResolvedPlaceholders(declarations) {
   const parsed = [];
   for (const decl of declarations ?? []) {
     const m = String(decl).match(RESOLVED_RULE_RE);
-    if (!m) throw new Error(`audit.resolvedPlaceholders 항목에 " => "가 없습니다: ${decl}`);
+    if (!m) throw new Error(`an audit.resolvedPlaceholders entry has no " => ": ${decl}`);
     parsed.push({pattern: new RegExp(m[1]), template: m[2]});
   }
   return parsed;
@@ -899,8 +899,8 @@ function checkInterpolatedParticles(lines, isAnnotation = () => false, resolved 
           hits.push({
             line: idx + 1,
             text: `${opener}${inner}${m[1]}${m[2]}`,
-            suggestion: `참조가 「${rendered}」${particleFor(rendered, BY)} 표시되므로 `
-              + `「${rendered}${correct}」${particleFor(correct, BY)} 고친다`,
+            suggestion: `the reference renders as 「${rendered}」, so write `
+              + `「${rendered}${correct}」`,
           });
         }
         continue;
@@ -1169,8 +1169,8 @@ export function auditFile(filePath, rules, checkUntranslated, isLocaleResource =
 
   for (const hit of checkParticles(lines)) {
     errors.push({...hit, count: 1, rule: {
-      source: 'particle', label: '조사 어긋남', level: 'error', threshold: 1,
-      suggestion: '앞 글자의 받침에 맞춰 이/가 · 을/를 · 과/와를 고른다',
+      source: 'particle', label: 'particle disagreement', level: 'error', threshold: 1,
+      suggestion: 'choose 이/가 · 을/를 · 과/와 by the final consonant of the preceding syllable',
     }});
   }
   for (const hit of checkInterpolatedParticles(lines, isAnnotation, resolvedPlaceholders)) {
@@ -1179,15 +1179,15 @@ export function auditFile(filePath, rules, checkUntranslated, isLocaleResource =
     const resolvedRef = hit.suggestion !== undefined;
     errors.push({...hit, count: 1, rule: {
       source: resolvedRef ? 'reference-particle' : 'interpolated-particle',
-      label: resolvedRef ? '참조 뒤의 조사' : '치환값 뒤의 조사', level: 'error', threshold: 1,
-      suggestion: hit.suggestion ?? '값의 받침을 알 수 없으므로 조사가 오지 않게 문장을 고친다',
+      label: resolvedRef ? 'particle after a reference' : 'particle after a placeholder', level: 'error', threshold: 1,
+      suggestion: hit.suggestion ?? 'the final consonant of the value is unknown, so rewrite the sentence to take no particle there',
     }});
   }
   if (!disabledChecks.has('repeat')) {
     for (const hit of checkRepeats(lines)) {
       warnings.push({...hit, count: 1, rule: {
-        source: 'repeat', label: '같은 말이 잇달아 나옴', level: 'warn', threshold: 1,
-        suggestion: '치환이 겹쳐 생긴 중복인지 확인한다',
+        source: 'repeat', label: 'the same word twice in a row', level: 'warn', threshold: 1,
+        suggestion: 'check whether a substitution overlapped and duplicated it',
       }});
     }
   }
@@ -1196,8 +1196,8 @@ export function auditFile(filePath, rules, checkUntranslated, isLocaleResource =
   if (isProse && !isSvg && !disabledChecks.has('heading-form')) {
     for (const hit of checkHeadingForm(rawLines, lines, fm)) {
       warnings.push({...hit, count: 1, rule: {
-        source: 'heading-form', label: '제목이 서술문이다', level: 'warn', threshold: 1,
-        suggestion: '이름 자리이므로 명사형으로 쓴다 — 「자료를 넣는다」가 아니라 「자료 넣기」',
+        source: 'heading-form', label: 'the heading is a sentence', level: 'warn', threshold: 1,
+        suggestion: 'a heading is a name slot, so use a noun form — 「자료 넣기」, not 「자료를 넣는다」',
       }});
     }
   }
@@ -1229,8 +1229,8 @@ export function auditFile(filePath, rules, checkUntranslated, isLocaleResource =
     if (englishProse.length > 0) {
       warnings.push({
         line: englishProse[0],
-        text: `영문 문장 ${englishProse.length}줄 잔존 (줄: ${englishProse.slice(0, 10).join(', ')}${englishProse.length > 10 ? ' …' : ''})`,
-        rule: {source: 'untranslated', suggestion: '번역 필요 여부 확인', label: '번역 미완 가능성', level: 'warn', threshold: 1},
+        text: `${englishProse.length} lines of English prose remain (lines: ${englishProse.slice(0, 10).join(', ')}${englishProse.length > 10 ? ' …' : ''})`,
+        rule: {source: 'untranslated', suggestion: 'check whether this still needs translating', label: 'possibly untranslated', level: 'warn', threshold: 1},
         count: englishProse.length,
       });
     }
@@ -1245,8 +1245,8 @@ export function auditFile(filePath, rules, checkUntranslated, isLocaleResource =
       text: '<!-- l10n:quote -->',
       rule: {
         source: 'quote-region',
-        suggestion: '`<!-- l10n:/quote -->`로 닫으세요 — 닫지 않으면 이 줄부터 파일 끝까지 검사에서 빠집니다',
-        label: '인용 구간이 닫히지 않음',
+        suggestion: 'close it with `<!-- l10n:/quote -->` — unclosed, everything from this line to the end of the file drops out of the check',
+        label: 'an unclosed quoted span',
         level: 'error',
         threshold: 1,
       },
@@ -1258,8 +1258,8 @@ export function auditFile(filePath, rules, checkUntranslated, isLocaleResource =
 }
 
 function formatFinding(relPath, f, kind) {
-  const tag = kind === 'error' ? '오류' : '경고';
-  const countInfo = f.rule.threshold > 1 ? ` [파일 내 ${f.count}회]` : '';
+  const tag = kind === 'error' ? 'error' : 'warning';
+  const countInfo = f.rule.threshold > 1 ? ` [${f.count} in this file]` : '';
   return `${relPath}:${f.line}: [${tag}] "${f.text}" → ${f.rule.suggestion} (${f.rule.label})${countInfo}`;
 }
 
@@ -1270,19 +1270,19 @@ function formatFinding(relPath, f, kind) {
 export function initGlossary(cliPath) {
   const existing = discoverGlossary();
   if (existing) {
-    console.log(`이미 용어사전이 있습니다: ${existing.path}`);
-    console.log('이 프로젝트에 별도 용어사전이 필요하면 templates/GLOSSARY.md를 직접 복사하세요.');
+    console.log(`A glossary already exists: ${existing.path}`);
+    console.log('If this project needs its own, copy templates/GLOSSARY.md yourself.');
     process.exitCode = 2;
     return;
   }
   const target = join(process.cwd(), '.claude', 'GLOSSARY.md');
   mkdirSync(dirname(target), {recursive: true});
   writeFileSync(target, readFileSync(TEMPLATE_PATH, 'utf8'), {flag: 'wx'});
-  console.log(`프로젝트 용어사전을 생성했습니다: ${relative(process.cwd(), target)}`);
-  console.log('다음 단계:');
-  console.log('  1. 파일 상단의 <프로젝트명>을 채우고, 작업하면서 용어를 등재합니다.');
-  console.log('  2. front matter의 audit.paths에 기본 감사 대상을 지정합니다 (예: [docs]).');
-  console.log(`  3. 감사 실행: node ${cliPath} [경로...]`);
+  console.log(`Created the project glossary: ${relative(process.cwd(), target)}`);
+  console.log('Next:');
+  console.log('  1. Fill in the project name at the top, and register terms as you work.');
+  console.log('  2. Set the default audit scope in audit.paths in the front matter (e.g. [docs]).');
+  console.log(`  3. Run the audit: node ${cliPath} [paths...]`);
 }
 
 /**
@@ -1296,37 +1296,37 @@ export function initL10n(cliPath) {
   const layout = join(dir, 'l10n.json');
   const pack = join(dir, 'l10n-rules.json');
   if (existsSync(layout)) {
-    console.log(`이미 선언이 있습니다: ${relative(process.cwd(), layout)}`);
+    console.log(`A declaration already exists: ${relative(process.cwd(), layout)}`);
     process.exitCode = 2;
     return;
   }
   mkdirSync(dir, {recursive: true});
   writeFileSync(layout, `${JSON.stringify(L10N_TEMPLATE, null, 2)}\n`, {flag: 'wx'});
   if (!existsSync(pack)) writeFileSync(pack, `${JSON.stringify(RULES_TEMPLATE, null, 2)}\n`, {flag: 'wx'});
-  console.log(`자원 선언을 생성했습니다: ${relative(process.cwd(), layout)}`);
-  console.log('다음 단계:');
-  console.log('  1. kinds의 patterns를 이 저장소의 실제 경로로 바꿉니다. {lang}이 언어 코드 자리입니다.');
-  console.log('  2. 언어가 부류마다 다르면 부류 안에 languages를 적습니다 (매뉴얼은 ko·en, 화면은 ko·en·ja처럼).');
-  console.log(`  3. 선언이 맞는지 확인: node ${cliPath.replace(/ check$/, '')} list`);
-  console.log(`  4. 문장 규칙 훑기: node ${cliPath.replace(/ check$/, '')} rules`);
+  console.log(`Created the resource declaration: ${relative(process.cwd(), layout)}`);
+  console.log('Next:');
+  console.log('  1. Replace the patterns in kinds with this repository\'s real paths. {lang} is the language code slot.');
+  console.log('  2. When languages differ by kind, write languages inside that kind (a manual in ko·en, screens in ko·en·ja).');
+  console.log(`  3. Confirm the declaration is right: node ${cliPath.replace(/ check$/, '')} list`);
+  console.log(`  4. Sweep with the sentence rules: node ${cliPath.replace(/ check$/, '')} rules`);
   console.log('');
-  console.log('※ git ls-files의 **는 경로 마디 하나 이상이라, locales/**/ko.json은');
-  console.log('  locales/ko.json에 걸리지 않습니다. 두 모양이 다 있으면 glob을 둘 적으세요 —');
-  console.log('  빠뜨린 파일은 오류가 아니라 침묵으로 나타납니다.');
+  console.log('NOTE git ls-files\' ** means one or more path segments, so locales/**/ko.json');
+  console.log('  does not match locales/ko.json. When both shapes exist, write two globs —');
+  console.log('  a missed file shows up as silence, not as an error.');
 }
 
 const L10N_TEMPLATE = {
   $comment: [
-    'korean-docs의 l10n 도구가 읽는 자원 선언. 이 파일은 번역된 문구가 어디 있는지만 말한다 —',
-    '규칙은 용어사전 짝(.claude/GLOSSARY.md + 스킬의 GLOSSARY.base.md)과 규칙 팩',
-    '(.claude/l10n-rules.json + 스킬의 RULES.base.json)에 있다.',
+    'The resource declaration the korean-docs l10n tool reads. This file says only where the',
+    'translated strings are — the rules live in the glossary pair (.claude/GLOSSARY.md plus the',
+    "skill's GLOSSARY.base.md) and the rule pack (.claude/l10n-rules.json plus RULES.base.json).",
     '',
-    'glob 함정: git ls-files의 **는 경로 마디 하나 이상이라 locales/**/ko.json은',
-    'locales/ko.json에 걸리지 않는다. 두 모양이 다 있는 부류는 glob이 둘 필요하다.',
-    '하나를 빠뜨리면 그 파일이 모든 명령에서 조용히 빠지고, 그것이 「문제 없음」으로 읽힌다.',
+    "glob trap: git ls-files' ** means one or more path segments, so locales/**/ko.json does not",
+    'match locales/ko.json. A kind with both shapes needs two globs. Miss one and that file drops',
+    'silently out of every command, which reads as a clean result.',
     '',
-    'register: "screen" = 화면 문구(합니다체), "manual" = 독자용 합니다체 설명문,',
-    '생략 = -다체 작업 문서. 한 문체에만 뜻이 있는 검사는 이 값으로 갈린다.',
+    'register: "screen" = screen copy (합니다체), "manual" = reader-facing 합니다체 prose,',
+    'omitted = a -다체 working document. Checks that mean something in one register are gated on it.',
   ],
   languages: ['ko', 'en'],
   defaultLanguage: 'ko',
@@ -1337,7 +1337,7 @@ const L10N_TEMPLATE = {
   untranslatedExclude: [],
   kinds: {
     manual: {
-      label: '사용설명서',
+      label: 'manual',
       patterns: ['docs/manual/{lang}/*.md'],
       languages: ['ko', 'en'],
       format: 'markdown',
@@ -1348,10 +1348,10 @@ const L10N_TEMPLATE = {
 
 const RULES_TEMPLATE = {
   $comment: [
-    '이 저장소에만 참인 문장 규칙 팩. 규칙마다 hit(걸려야 하는 예문)과 miss(걸리면 안 되는 예문)를',
-    '반드시 달고 l10n.mjs rules --test로 검증한다. 낱말 금지는 .claude/GLOSSARY.md에 넣는다 —',
-    '거기 넣어야 문서 감사와 자원 감사가 함께 읽는다. 이 저장소를 넘어 참인 규칙은',
-    '스킬의 RULES.base.json으로 올린다.',
+    'Sentence rules true only in this repository. Every rule carries hit (must be caught) and',
+    'miss (must not be caught) examples and is verified with l10n.mjs rules --test. A banned word',
+    'goes into .claude/GLOSSARY.md instead — only there do the document audit and the resource',
+    "audit both read it. A rule true beyond this repository goes up to the skill's RULES.base.json.",
   ],
   version: 1,
   rules: [],
@@ -1372,7 +1372,7 @@ export function runDocAudit(args, cliPath) {
   let discovered = null;
   if (args.glossary) {
     const p = resolve(args.glossary);
-    if (!existsSync(p)) throw new Error(`용어사전을 찾을 수 없습니다: ${args.glossary}`);
+    if (!existsSync(p)) throw new Error(`Glossary not found: ${args.glossary}`);
     discovered = {path: p, root: rootFromGlossaryPath(p)};
   } else {
     discovered = discoverGlossary(discoveryStart(args.paths));
@@ -1390,7 +1390,7 @@ export function runDocAudit(args, cliPath) {
 
   let base = emptyGlossary();
   if (!args.noBase) {
-    if (!existsSync(BASE_GLOSSARY_PATH)) throw new Error(`기본 용어사전이 없습니다: ${BASE_GLOSSARY_PATH}`);
+    if (!existsSync(BASE_GLOSSARY_PATH)) throw new Error(`The base glossary is missing: ${BASE_GLOSSARY_PATH}`);
     base = parseGlossary(readFileSync(BASE_GLOSSARY_PATH, 'utf8'), 'base', BASE_GLOSSARY_PATH);
   }
 
@@ -1398,18 +1398,18 @@ export function runDocAudit(args, cliPath) {
 
   if (args.listRules) {
     for (const r of rules) {
-      console.log(`[${r.origin === 'base' ? '기본' : '프로젝트'}] [${r.level}${r.threshold > 1 ? ` ${r.threshold}+` : ''}] ${r.source} → ${r.suggestion} (${r.label})`);
+      console.log(`[${r.origin === 'base' ? 'base' : 'project'}] [${r.level}${r.threshold > 1 ? ` ${r.threshold}+` : ''}] ${r.source} → ${r.suggestion} (${r.label})`);
     }
-    console.log(`\n규칙 ${rules.length}개 로드됨.`);
+    console.log(`\n${rules.length} rules loaded.`);
     return 0;
   }
 
   if (discovered) {
     const shown = relative(process.cwd(), discovered.path) || discovered.path;
-    console.log(`용어사전: ${shown}${args.noBase ? '' : ' + 기본 용어사전'} (규칙 ${rules.length}개)`);
+    console.log(`glossary: ${shown}${args.noBase ? '' : ' + the base glossary'} (${rules.length} rules)`);
   } else {
-    console.log('프로젝트 용어사전이 없습니다 — 기본 용어사전만으로 검사합니다.');
-    console.log('프로젝트 용어사전을 만들려면 (기본 위치: .claude/GLOSSARY.md):');
+    console.log('No project glossary — checking with the base glossary alone.');
+    console.log('To create one (the default location is .claude/GLOSSARY.md):');
     console.log(`  node ${cliPath} --init`);
   }
   // **An exception names a base rule by its pattern TEXT, so editing that pattern in the base
@@ -1421,8 +1421,8 @@ export function runDocAudit(args, cliPath) {
   // them was intact.
   if (deadExceptions.length > 0) {
     console.log(
-      `\n죽은 예외 ${deadExceptions.length}개 — 아래 항목이 기본 용어사전의 어느 규칙과도 글자가 맞지 않아 아무것도 끄지 않습니다.` +
-        ` 기본 규칙의 정규식이 바뀌면 그 규칙을 끈 예외가 조용히 되살아나므로, 지금 규칙의 글자로 고쳐 적으세요.`,
+      `\n${deadExceptions.length} dead exceptions — the entries below match no base-glossary rule character for character, so they switch nothing off.` +
+        ` When a base rule's regex changes, the exception that disabled it quietly comes back to life, so rewrite them against the current rule text.`,
     );
     for (const row of deadExceptions) console.log(`  ${row}`);
   }
@@ -1431,7 +1431,7 @@ export function runDocAudit(args, cliPath) {
   // is which of the built-in checks did not look at this tree.
   if (disabledChecks.size > 0) {
     const off = [...disabledChecks].map(([id, label]) => `${id}(${label})`).join(' · ');
-    console.log(`기본 규칙 예외로 끈 내장 검사: ${off}`);
+    console.log(`built-in checks disabled through 기본 규칙 예외: ${off}`);
   }
   console.log('');
 
@@ -1439,7 +1439,7 @@ export function runDocAudit(args, cliPath) {
   const annotationKeys = new Set(config.localeAnnotationKeys);
   const resolvedPlaceholders = parseResolvedPlaceholders(config.resolvedPlaceholders);
   const {files: targets, excludedCount, glossarySkipped} = resolveTargets(args, config, root, discovered?.path, isLocaleResource);
-  if (excludedCount > 0) console.log(`audit.exclude 패턴으로 파일 ${excludedCount}개 제외됨`);
+  if (excludedCount > 0) console.log(`${excludedCount} files excluded by audit.exclude patterns`);
   // A declared glob that reaches nothing is a shorter run reporting 「오류 0건」 exactly like a
   // clean one, so the declaration is reported on the line where it is applied. Two numbers,
   // because they answer different questions and only one of them can be wrong: what the patterns
@@ -1451,7 +1451,7 @@ export function runDocAudit(args, cliPath) {
     const {perPattern, total} = localeResourceCoverage(config.localeResources, root);
     deadPatterns = perPattern.filter((p) => p.count === 0);
     const inScope = targets.filter((f) => isLocaleResource(f)).length;
-    console.log(`audit.localeResources: 자원 파일 ${total}개 (이번 검사 범위 ${inScope}개)`);
+    console.log(`audit.localeResources: ${total} resource files (${inScope} in this run's scope)`);
   }
   // **A pattern reaching nothing fails the run rather than printing a line.** The declaration is
   // a promise that a corpus is being checked; when it reaches nothing, every later 「오류 0건」 is
@@ -1462,17 +1462,17 @@ export function runDocAudit(args, cliPath) {
   // code so a gate and the write-time hook both stop on it.
   if (deadPatterns.length > 0) {
     console.log(
-      `\n[오류] audit.localeResources 패턴 ${deadPatterns.length}개가 아무 파일과도 맞지 않습니다 —` +
-        ` 선언한 화면 문구가 검사에서 빠집니다.`,
+      `\n[error] ${deadPatterns.length} audit.localeResources patterns match no file —` +
+        ` the screen copy you declared is dropping out of the check.`,
     );
     for (const {pattern, reason} of deadPatterns) console.log(`  ${pattern} — ${reason}`);
-    console.log(`  패턴은 저장소 루트(${root}) 기준입니다.`);
-    console.log('  `*`는 `/`를 포함하지 않습니다 — 하위 디렉터리까지 훑으려면 `**/`를 씁니다.');
-    console.log('  자원 파일이 옮겨졌거나 사라졌다면 선언에서 지우세요.');
+    console.log(`  Patterns are relative to the repository root (${root}).`);
+    console.log('  `*` does not cross `/` — use `**/` to reach subdirectories.');
+    console.log('  If the resource files moved or are gone, remove them from the declaration.');
   }
-  if (glossarySkipped) console.log('용어사전 파일 자체는 감사 대상에서 제외됩니다');
+  if (glossarySkipped) console.log('the glossary file itself is excluded from the audit');
   if (targets.length === 0) {
-    console.log('검사 대상 파일이 없습니다.');
+    console.log('No files to check.');
     return deadPatterns.length > 0 ? 1 : 0;
   }
 
@@ -1501,15 +1501,15 @@ export function runDocAudit(args, cliPath) {
   // the same as a clean pass. Naming the size of it keeps the closing count honest.
   if (quotedRegions > 0) {
     console.log(
-      `\n인용 구간으로 건너뛴 줄: 파일 ${quotedFiles}개 · 구간 ${quotedRegions}개 · ${quotedLines}줄` +
-        ` (원문 그대로 두는 남의 글 — 이 줄들은 검사하지 않았습니다)`,
+      `\nLines skipped as quoted spans: ${quotedFiles} files · ${quotedRegions} spans · ${quotedLines} lines` +
+        ` (somebody else's text kept verbatim — these lines were not checked)`,
     );
   }
 
   // The dead-pattern count rides in the total so the closing line can never read 「오류 0건」 while
   // a declared corpus went unread.
   const configErrors = deadPatterns.length;
-  console.log(`\n검사 완료: 파일 ${targets.length}개, 오류 ${errorCount + configErrors}건, 경고 ${warningCount}건`);
+  console.log(`\nChecked ${targets.length} files: ${errorCount + configErrors} errors, ${warningCount} warnings`);
   reportDarkCommands(root, cliPath);
   return errorCount + configErrors > 0 || (args.strict && warningCount > 0) ? 1 : 0;
 }
@@ -1526,10 +1526,10 @@ export function runDocAudit(args, cliPath) {
 function reportDarkCommands(root, cliPath) {
   if (existsSync(join(root, '.claude', 'l10n.json'))) return;
   console.log('');
-  console.log('⚠ .claude/l10n.json이 없어 이 저장소에서는 check만 돕니다.');
-  console.log('  꺼져 있는 것: rules(문장 규칙 훑기) · audit(로케일 짝·조사) · suspects(문체 의심 문장)');
-  console.log('  이 0건은 용어사전 낱말 검사의 0건이지, 문장 검사를 통과했다는 뜻이 아닙니다.');
-  console.log(`  선언을 만들려면: node ${l10nCommand(cliPath)} --init-l10n`);
+  console.log('⚠ With no .claude/l10n.json, only check runs in this repository.');
+  console.log('  Off: rules (the sentence-rule sweep) · audit (locale pairs and particles) · suspects (style smells)');
+  console.log('  This zero is a zero from the glossary word check, not a pass on the sentence checks.');
+  console.log(`  To create the declaration: node ${l10nCommand(cliPath)} --init-l10n`);
 }
 
 /**

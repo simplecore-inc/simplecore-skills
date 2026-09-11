@@ -1,76 +1,109 @@
 ---
 audit:
-  paths: []          # 기본 감사 대상 경로(이 파일이 있는 프로젝트 루트 기준). 비우면 프로젝트 전체를 검사. 예: [docs]
-  exclude: []        # 감사에서 제외할 글롭 패턴. 예: ["**/legacy/**", "CHANGELOG.md"]
-  localeResources: [] # 화면 문구가 들어 있는 다국어 자원 파일의 글롭. 지정한 파일은 따옴표 문자열의 값만 검사한다(키·주석 제외). 예: ["packages/i18n/src/resources/*.ts", "locales/*.json"]
-                      # `*`는 `/`를 포함하지 않는다(git pathspec과 다르다) — 하위 디렉터리까지 넣으려면 `**/`를 쓴다.
-                      # 아무 파일과도 맞지 않는 패턴은 오류이며 check가 종료 코드 1로 끝낸다.
-  untranslated: false # true면 영문 문장 잔존을 경고한다(번역 프로젝트용)
+  paths: []          # Default audit scope, relative to the project root holding this file. Empty means the whole project. e.g. [docs]
+  exclude: []        # Globs to exclude from the audit. e.g. ["**/legacy/**", "CHANGELOG.md"]
+  localeResources: [] # Globs for locale resource files holding screen copy. For these, only quoted string values are checked (keys and comments are not). e.g. ["packages/i18n/src/resources/*.ts", "locales/*.json"]
+                      # `*` does not cross `/` (unlike a git pathspec) — use `**/` to reach subdirectories.
+                      # A pattern matching no file at all is an error and makes check exit 1.
+  untranslated: false # true warns about leftover English sentences (for translation projects)
 ---
 
-# <프로젝트명> 한국어 용어사전
+# Korean glossary — <project>
 
-이 프로젝트의 한국어 용어·표기 표준. 한국어 문서를 작성·번역·교정하는 모든 작업은 이 파일을 먼저 읽고 진행한다.
+The Korean terminology and spelling standard for this project. Every task that writes, translates,
+or proofreads Korean reads this file first.
 
-- korean-docs 스킬(`${CLAUDE_PLUGIN_ROOT}/skills/korean-docs/`)의 감사 스크립트가 이 파일을 기본 용어사전(GLOSSARY.base.md)과 병합해 검사한다. 감사 실행: `/simplecore:glossary-audit [경로...]` 또는 `node "${CLAUDE_PLUGIN_ROOT}/skills/korean-docs/scripts/check-glossary.mjs" [경로...]`
-- 표의 형식(열 구성·헤더)은 스크립트가 파싱하므로 임의로 바꾸지 않는다. 항목은 `,`로 구분한다. `/pattern/` 형태는 정규식, 그 외는 리터럴이다. 셀 안에 `|`를 쓰지 않고(alternation 대신 항목 분리), 정규식 안에 `,`를 쓰지 않는다.
-- `금지 표현`의 `수준` 열: `오류`는 발견 즉시 위반(감사 실패), `경고`는 검토 대상, `경고(N+)`는 한 파일에서 N회 이상일 때만 보고. 세 형식 외의 표기는 파싱 오류이며, `경고(3+)`처럼 공백 없이 정확히 쓴다.
-- `경고(N+)`는 글쓴이가 되풀이한 횟수만 센다. **`금지 → 대체` 대조 행의 대체 쪽은 세지 않는다** — 카탈로그가 쓰라고 적어 둔 문구이므로 글쓴이의 문장이 아니다. 목록 항목·인용 줄·표 칸에 화살표 하나짜리 짝으로 적은 행만 대조 행으로 판정하므로, 문장 속에 화살표를 넣어 흘려 쓴 대조는 그대로 세어 경고로 보고한다.
-- 표준 번역을 바꾸거나 금지 표기를 추가했다면 같은 세션에서 감사를 다시 실행해 기존 문서를 일괄 수정한다. 용어사전과 문서가 어긋난 채로 두지 않는다.
+- The audit script of the korean-docs skill (`${CLAUDE_PLUGIN_ROOT}/skills/korean-docs/`) merges this
+  file with the base glossary (GLOSSARY.base.md) and checks both. To run it:
+  `/simplecore:glossary-audit [paths...]`, or
+  `node "${CLAUDE_PLUGIN_ROOT}/skills/korean-docs/scripts/check-glossary.mjs" [paths...]`.
+- The table format (columns and headers) is parsed by the script, so do not change it. Items are
+  separated by `,`. A `/pattern/` item is a regex; anything else is a literal. Do not write `|`
+  inside a cell (separate items instead of using alternation) and do not write `,` inside a regex.
+- The `수준` column of `금지 표현`: `오류` is a violation on sight (the audit fails), `경고` is for
+  review, and `경고(N+)` is reported only at N or more occurrences in one file. Anything outside
+  those three is a parse error, and the form is exact with no spaces, as in `경고(3+)`.
+- `경고(N+)` counts only what the author repeated. **The replacement side of a `금지 → 대체` contrast
+  row is not counted** — it is copy the catalogue prescribes, not the author's own sentence. Only a
+  single-arrow pair inside a list item, a quotation line, or a table cell is read as a contrast row,
+  so an arrow written inline in running prose is counted and reported as usual.
+- After changing a standard translation or adding a banned spelling, run the audit again in the same
+  session and fix the existing documents. Never leave the glossary and the documents disagreeing.
 
 ## 용어 대역표
 
-이 프로젝트의 도메인 개념어와 번역 선택지가 갈리는 용어. `금지 표기` 열에 예상되는 오표기·경쟁 표기를 함께 적는다(감사는 이 열로 이루어진다).
+This project's domain concepts and the terms whose translation could go either way. Write the
+expected misspellings and competing spellings in the `금지 표기` column — that column is what the
+audit runs on.
 
 | 영어 | 한국어 | 금지 표기 | 비고 |
 | ---- | ------ | --------- | ---- |
 
-등재 예시(위 표에 이런 행을 추가한다):
+Examples (add rows like these to the table above):
 
 ```
 | endpoint | 엔드포인트 | 종단점, 엔드 포인트 | |
-| primary key | 기본 키 | 주 키, 프라이머리 키 | 첫 등장 시 "기본 키(primary key)" 병기 |
-| lease | 리스 | 임대, 임차 | 도메인 개념어. 첫 등장 시 "리스(lease)" 병기 |
+| primary key | 기본 키 | 주 키, 프라이머리 키 | gloss as "기본 키(primary key)" on first use |
+| lease | 리스 | 임대, 임차 | a domain concept; gloss as "리스(lease)" on first use |
 ```
 
 ## 원문 유지 용어
 
-번역·음차하지 않고 원문 그대로 두는 용어(제품명, 언어명, 약어, API 고유 명칭 등). 감사 대상은 아니며 작성·검수 시 참조한다.
+Terms kept in the original rather than translated or transliterated (product names, language names,
+abbreviations, API names). Not an audit target; a reference while writing and reviewing.
 
 | 용어 | 비고 |
 | ---- | ---- |
 
 ## 금지 표현
 
-이 프로젝트 고유의 금지 패턴만 추가한다. 보편적 번역투·표기 오류는 기본 용어사전이 이미 잡는다.
+Add only the patterns specific to this project. Common translation-ese and spelling errors are
+already caught by the base glossary.
 
 | 금지 | 대체 | 수준 | 비고 |
 | ---- | ---- | ---- | ---- |
 
 ## 기본 규칙 예외
 
-기본 용어사전 규칙 중 이 프로젝트·도메인에 맞지 않는 것을 비활성화한다. `항목`에는 기본 대역표의 영어 키(행 전체 비활성) 또는 금지 패턴 텍스트(개별 규칙 비활성)를 적는다. 패턴 텍스트는 기본 용어사전의 항목과 **공백·기호까지 정확히 일치**해야 한다 — 한 글자라도 다르면 아무것도 비활성화하지 않고, `check`가 그 행을 「죽은 예외」로 보고한다.
+Disable the base-glossary rules that do not fit this project or domain. In `항목` write either the
+English key of a base translation row (disabling the whole row) or the text of a banned pattern
+(disabling that one rule). The pattern text must match the base glossary **exactly, whitespace and
+symbols included** — one character off disables nothing, and `check` reports that row as a dead
+exception.
 
-**감사 엔진의 내장 검사도 같은 표로 끈다.** 끌 수 있는 것은 경고 수준의 셋뿐이다 — `heading-form`(제목이 서술문이다) · `repeat`(같은 말이 잇달아 나옴) · `untranslated`(번역 미완 가능성). 오류 수준의 조사 검사(`particle` · `interpolated-particle` · `reference-particle`)는 문맥이 갈리지 않으므로 적으면 설정 오류로 거절한다. 끈 검사는 실행할 때마다 이름이 출력되므로 침묵이 통과로 읽히지 않는다.
+**The audit engine's built-in checks are turned off through the same table.** Only the three
+warning-level ones can be turned off — `heading-form` (the heading is a sentence) · `repeat` (the
+same word twice in a row) · `untranslated` (possibly untranslated). The error-level particle checks
+(`particle` · `interpolated-particle` · `reference-particle`) do not split by context and are
+refused as a configuration error. Every disabled check is printed on each run, so silence is never
+read as a pass.
 
-같은 영어 키의 행을 위 `## 용어 대역표`에 다시 정의하는 방법도 있다. 이때는 기본 행 **전체가 교체**되므로, 유지할 기본 금지 표기가 있으면 함께 옮겨 적는다.
+The other way is to define a row with the same English key under `## 용어 대역표` above. That
+**replaces the base row entirely**, so carry over any base banned spellings you want to keep.
 
 | 항목 | 사유 |
 | ---- | ---- |
 
-작성 예시:
+Examples:
 
 ```
-| 레버리지 | 금융 문서 — 정착 용어라 유지한다 |
-| method | 이 프로젝트는 "메소드" 표기를 관례로 쓴다 |
-| /소비(?!자)/ | 메시징 문서 — "메시지를 소비한다"가 정착 표현이다 |
-| heading-form | 규칙서라 제목이 규칙 문장 그 자체다 |
+| 레버리지 | a financial document — the settled term stays |
+| method | this project uses "메소드" by convention |
+| /소비(?!자)/ | a messaging document — "메시지를 소비한다" is the settled expression |
+| heading-form | a rulebook, where a heading is the rule sentence itself |
 ```
 
 ## 문체·표기 규칙
 
-감사 스크립트가 잡지 못하는 프로젝트 고유 규칙을 적는다. 보편 기준은 스킬의 `references/response-style.md`(어휘·표기·말투)와 `references/korean-style.md`(문장 패턴·번역 문체)를 따른다.
+Write the project-specific rules the audit script cannot catch here. The general standard is the
+skill's `references/response-style.md` (vocabulary, spelling, register),
+`references/korean-style.md` (sentence patterns and translation register), and
+`references/ai-tells.md` (the structural habits an audit cannot see).
 
-- 문체는 스킬의 `references/response-style.md` 1절 표를 따른다. 설계·개발 문서는 -다체, 매뉴얼과 화면 문구는 합니다체이고 독자 지시는 「~하세요」다. 이 프로젝트가 다르게 정하면 여기에 적는다.
-- 주요 개념어는 문서별 첫 등장 시 `한국어(English)` 형태로 병기하고, 이후에는 한국어만 쓴다.
-- 조사(은/는, 이/가, 을/를, 과/와)는 앞 단어의 받침에 맞춘다. 영어 원문 유지 단어 뒤 조사는 실제 발음 기준으로 붙인다.
+- The register follows the table in section 1 of the skill's `references/response-style.md`: design
+  and development documents are -다체, manuals and screen copy are 합니다체, and an instruction to
+  the reader is 「~하세요」. Write it here if this project decides otherwise.
+- Gloss a key concept as `한국어(English)` on first use in each document, and use Korean alone
+  afterwards.
+- Particles (은/는, 이/가, 을/를, 과/와) agree with the final consonant of the preceding word. After a
+  word kept in English, agreement follows how it is actually pronounced.
