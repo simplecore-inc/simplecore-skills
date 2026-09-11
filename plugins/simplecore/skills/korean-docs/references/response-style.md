@@ -92,6 +92,13 @@ stay. Screen copy takes no dash at all.
   메타데이터 · 네임스페이스 · 리터럴, API · SQL, Docker · Kubernetes · Java (as written). Do not
   change them to make the text look more Korean. Framework terms (`hook` · `contract` · `entity`)
   stay in the original too.
+- **A technical term is explained technically.** A mechanism is named by what it is and what
+  it does to what — 프로파일 · 어댑터 · SPI · 설정, and 변환 · 교체 · 반영 · 조정 — never by a verb
+  standing where the mechanism should be: `차이를 수용하는 확장 지점` → 제품 · 규격 차이의 처리
+  위치 — 프로파일 · 어댑터 · SPI · `어댑터 버전으로 수용하고` → 어댑터의 새 버전으로 반영하고 ·
+  `코드 변경 없이 수용합니다` → 코드 변경 없이 처리합니다. A reader of 「차이 수용」 cannot tell
+  what handles which difference. 「수용」 is acceptance (수용 기준 · 수용 주체 · 점검을 수용한다)
+  and nothing else; the rule `absorb-for-mechanism` reads the rest.
 - **Replace a word only when a plainer one means the same thing.** If meaning is lost, nothing was
   replaced: `쓴 비용을 구하는 함수` dropped both 지출 and 추론, so 「지출한 비용을 추론하는 함수」 is
   the right sentence.

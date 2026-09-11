@@ -3542,6 +3542,46 @@
         "밸브를 손으로 닫는다",
         "위자드의 검증 단계를 이어간다. 닫으면 작성 중인 작업은 임시 저장한다"
       ]
+    },
+    {
+      "id": "absorb-for-mechanism",
+      "scope": "universal",
+      "severity": "error",
+      "reason": "A vague `absorb` / `accommodate`. A difference between vendors, products, sites or external formats written as 「수용」 · 「흡수」 hides the mechanism that handles it, and a reader cannot tell what handles which difference — 「프로파일·에이전트·설정으로 차이 수용」 says three names and no action, 「차이를 수용하는 확장 지점」 says neither. Name the mechanism and what it does: 기종 차이는 프로파일로 변환 · 외부 규격은 어댑터에서 변환 · 운영 제품은 SPI 구현 교체 · 사업소 증가는 설정으로 조정, and a change is 반영 · 처리 · 대응. 「수용」 is acceptance and stays there: 수용 기준 · 수용 주체 · 점검을 수용한다 · 변경 요청을 수용한다 (an object particle or a following noun). The particle-less compound and the 로 · 에서 · 없이 adverbials are the hiding positions, so those are the anchors.",
+      "find": [
+        "(?:차이|편차|변화)(?:를|는|의|도|가)? ?(?:수용|흡수)",
+        "(?:차이|편차|변화|변경|규격)[을를는이가의도]? [^.]{0,15}흡수(?:한다|하는|하고|하며|해|된다|되는|합니다)",
+        "수용하는 확장",
+        "(?:으로|로|에서|없이) 수용(?:한다|하고|하며|해|합니다|하는|된다)",
+        "(?:등록|설정|탐지) 수용",
+        "변경 수용 절차",
+        "(?:규격|형식|버전) 변경(?:을|은)? 수용"
+      ],
+      "replace": null,
+      "hit": [
+        "프로파일·에이전트·설정으로 차이 수용",
+        "기술 계층과 장비 · 제품 차이를 수용하는 확장 지점",
+        "기술 계층과 차이를 흡수하는 확장 지점",
+        "규격 변경은 어댑터 버전으로 수용하고",
+        "연계 교체를 코드 변경 없이 수용합니다",
+        "제조사 · 연계 방식 증가 시 등록 · 설정 수용",
+        "외부 시스템과의 차이는 어댑터에서 수용한다",
+        "신규 제조사와 운영 제품은 프로파일 또는 어댑터 추가로 수용한다",
+        "변경 수용 절차",
+        "수집 편차는 프로파일이 흡수한다"
+      ],
+      "miss": [
+        "요구사항의 수용 기준을 정한다",
+        "잔여 위험과 수용 주체를 기록한다",
+        "발주자의 월 1회 점검을 수용한다",
+        "계약조건 수용",
+        "요청 수용 전 준비 상태",
+        "지원 항목별 수용 기준",
+        "변경 요청을 수용한다",
+        "충격 흡수 장치",
+        "기종 차이는 프로파일로 변환하고 외부 규격은 어댑터에서 변환한다",
+        "제품 · 규격 차이 처리 위치 — 프로파일 · 어댑터 · SPI"
+      ]
     }
   ]
 }
