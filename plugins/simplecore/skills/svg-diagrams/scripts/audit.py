@@ -1337,6 +1337,22 @@ def lint(svg_path):
                                f'— offset one by 12px or more'))
                 _pairs += 1
                 break
+            # Two runs on ONE line that touch or nearly touch are the same
+            # defect at a shorter overlap: the rounded corners of one route
+            # flow into the next and the reader sees a single trunk with
+            # branches. Five side-to-side connectors bent at the same middle
+            # x once printed exactly that, and the parallel rule stayed
+            # quiet because no pair overlapped by 24px. A gap wider than two
+            # bend radii separates them again.
+            if sep <= 2.5 and ov > -16:
+                issues.append(("COLLINEAR-CONNECTORS",
+                               f'two connectors share one line near '
+                               f'({pi[0]:.0f},{pi[1]:.0f}) with '
+                               f'{max(-ov, 0.0):.0f}px between their runs — '
+                               f'they print as one; give each its own lane '
+                               f'(ortho(..., lane=))'))
+                _pairs += 1
+                break
 
     # 9d) rule 2 — a label mask erases the line behind its glyphs, which is
     #     what it is for. Two placements break that bargain. A mask over a
@@ -2471,6 +2487,42 @@ def _interior_checks(svg, W, H, rmeta, solids, containers, node_rects,
                         f'the reader cannot tell which it belongs to; put it '
                         f'inside its box, or keep twice the distance to '
                         f'everything else'))
+
+    # -- a separator glyph between two boxes sits in the middle of the gap --
+    # A 「›」 or 「→」 standing between two boxes of one row is anchored on its
+    # middle, so its x is where the eye reads the gap's centre. A generator
+    # that places it a fixed distance before the next box is right for the
+    # gap it was written against and drifts toward that box on every row
+    # with a wider gap — one deck carried it 7px off centre in 22px gaps and
+    # nobody saw it until a reader did. Measured against the two boxes the
+    # glyph stands between; a glyph with a box on one side only is a label.
+    SEP_GLYPHS = {"›", "→", "»", "▶", "▸", "‣"}
+    SEP_TOL = 1.5
+    for (tx, ty, x0, y0, x1, y1, txt) in texts_full:
+        if txt.strip() not in SEP_GLYPHS:
+            continue
+        cy = (y0 + y1) / 2
+        cx = (x0 + x1) / 2
+        left = right = None
+        for r in rinfo:
+            if r["dashed"] or r["op"] < 0.99 or r["h"] < 12:
+                continue
+            if not (r["y"] <= cy <= r["y"] + r["h"]):
+                continue
+            rr = r["x"] + r["w"]
+            if rr <= x0 + SEP_TOL and (left is None or rr > left):
+                left = rr
+            if r["x"] >= x1 - SEP_TOL and (right is None or r["x"] < right):
+                right = r["x"]
+        if left is None or right is None or right - left > 60:
+            continue
+        mid = (left + right) / 2
+        if abs(cx - mid) > SEP_TOL:
+            out.append(("SEPARATOR-OFF-CENTRE",
+                        f'"{txt.strip()}" at x={cx:.0f} sits {cx - mid:+.0f}px '
+                        f'from the middle of the {right - left:.0f}px gap '
+                        f'between the boxes at {left:.0f} and {right:.0f} — '
+                        f'anchor it on the gap\'s midpoint'))
     return out
 
 
