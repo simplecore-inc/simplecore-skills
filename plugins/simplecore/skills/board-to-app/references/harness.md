@@ -592,6 +592,26 @@ a shared account, a lab device — still goes through a person. The rule is not 
 coordinate"; it is that **anything a lock can arbitrate should not be arbitrated by
 messages**, because the messages are the part that fails.
 
+### A port fixed on purpose is still a shared resource, and the socket blames the product
+
+A capture has to be the same picture every run, so a port a screen prints is fixed rather than picked
+— which is right. What it also does is make that port a resource the run hands from one rendering to
+the next, and a rendering that takes it before the one before it has let go fails on the bind.
+
+**The failure arrives wearing the product's stack.** `BindException: Address already in use` is
+thrown from inside the server the screen was starting, so the trace names the product's file and line
+and reads as a defect in it. A session spent an afternoon there: it found a real defect on the way (a
+server that never shut down the executor it had set), fixed it, and the symptom did not move — because
+the symptom was never about that.
+
+- **Wait for the resource where it is taken**, and fail with its name: 「port N could not be taken in
+  10s — something outside this run holds it」 sends the next reader to `lsof`, and 「Address already in
+  use」 sends them into the product.
+- **Prove the wait in both directions.** Hold the port from a shell, run the frame, and read the
+  sentence; then let go and watch it pass. A wait nobody has seen fire is a wait nobody can trust.
+- **A symptom that will not reproduce is not a symptom that was fixed.** Say which it is. The fix
+  here is the waiting, and whether anything else was also wrong is still open.
+
 ### An agent that ends, and an agent that only paused
 
 An agent's session can end for reasons that have nothing to do with the work — a usage
