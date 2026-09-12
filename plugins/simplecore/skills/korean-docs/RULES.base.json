@@ -2920,11 +2920,11 @@
       "id": "connective-ending",
       "scope": "universal",
       "severity": "error",
-      "reason": "Ending a sentence on a connective ending. A connective ending calls for the clause that follows, so cutting there makes the reader guess the missing clause — 「값을 확인하고 다음 단계로 넘어간다.」 or 「값을 확인한다.」 rather than 「값을 확인하고.」. **Only the families that overlap with nouns in letters are narrowed** — no noun ends in 「며」·「지만」·「는데」·「인데」, so the ending alone is matched, while 「고」 has many nouns (보고 · 참고 · 경고 · 사고 · 광고 · 창고) and only conjugations that cannot be nouns are enumerated. **Requiring a preceding word misses the cases where the stem is a whole word** — 「서로 같고.」 has a space in front, so putting `[가-힣]` before it lets the sentence escape, and the lookbehind is applied only to forms that also stand as words, such as 「어서」. **The rest of the 「고」 family and the noun-phrase endings that escape the enumeration are shown to a person by the 「생략·개조식」 family of references/lens.txt** — widening the rule would catch nouns. 「한 가지만」 overlaps in letters with 「지만」 and is excluded by the preceding 「가」. A name slot such as a table cell, a label, or a title takes no full stop and is never caught",
+      "reason": "Ending a sentence on a connective ending. A connective ending calls for the clause that follows, so cutting there makes the reader guess the missing clause — 「값을 확인하고 다음 단계로 넘어간다.」 or 「값을 확인한다.」 rather than 「값을 확인하고.」. **Only the families that overlap with nouns in letters are narrowed** — no noun ends in 「며」·「지만」·「는데」·「인데」, so the ending alone is matched, while 「고」 has many nouns (보고 · 참고 · 경고 · 사고 · 광고 · 창고) and only conjugations that cannot be nouns are enumerated. **Requiring a preceding word misses the cases where the stem is a whole word** — 「서로 같고.」 has a space in front, so putting `[가-힣]` before it lets the sentence escape, and the lookbehind is applied only to forms that also stand as words, such as 「어서」. **The rest of the 「고」 family and the noun-phrase endings that escape the enumeration are shown to a person by the 「생략·개조식」 family of references/lens.txt** — widening the rule would catch nouns. 「한 가지만」 and the nouns ending in 「지」 (페이지 · 이미지 · 메시지 · 패키지 · 에너지 · 스토리지 · 브리지 · 배지 · 표지) overlap in letters with 「지만」 and are excluded by the preceding syllable — 「현재 페이지만.」 is a page, not a clause. A name slot such as a table cell, a label, or a title takes no full stop and is never caught",
       "find": [
         "/며\\./",
         "/(?:하고|되고|이고|지고|있고|없고|같고)\\./",
-        "/(?<!가)지만\\./",
+        "/(?<!가|페이|이미|메시|패키|에너|스토리|브리|배|표)지만\\./",
         "/(?:는데|인데)\\./",
         "/(?<=[가-힣])(?:해서|어서|아서|나서)\\./"
       ],
@@ -2944,6 +2944,9 @@
         "제출한 계약서",
         "한 가지만 고른다",
         "한 가지만",
+      "현재 페이지만.",
+      "원본 이미지만.",
+      "행위자 색의 배지만.",
         "처리 순서를 지킨다",
         "이 값을 쓰고 저 값을 지운다",
         "경고",

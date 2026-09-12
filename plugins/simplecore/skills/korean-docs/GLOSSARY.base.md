@@ -54,7 +54,7 @@ Standard spellings from the loanword orthography and for widely shared technical
 | metric | 메트릭 | /매트릭(?!스)/ | a misspelling. 「매트릭스」 (matrix) is a different word, so a lookahead keeps it out. A project may translate it as 「지표」 |
 | repository | 저장소 | 리포지토리, 레포지토리 | shared by the git repository and the Repository design pattern |
 | operating system | 운영 체제 | 운영체제 | standard spacing |
-| among them | 그중 | /그 중(?!복)(?!요)(?!간)(?!계)(?!단)(?!력)(?!심)(?!립)(?!재)(?!지)(?!점)/ | 「그중」 is one word, written closed up. Places where another word follows — 「그 중복」·「그 중요한」 — are filtered out by the following syllable |
+| among them | 그중 | /(?<![가-힣])그 중(?!복)(?!요)(?!간)(?!계)(?!단)(?!력)(?!심)(?!립)(?!재)(?!지)(?!점)/ | 「그중」 is one word, written closed up. Places where another word follows — 「그 중복」·「그 중요한」 — are filtered out by the following syllable, and a word ending in 「그」 followed by 「중」 — 「드래그 중」·「태그 중」 — by the preceding syllable |
 | annotation | 애노테이션 | 어노테이션, 애너테이션 | a code annotation in Java and the like. A name in code (`@Table`) keeps its own spelling |
 | capture | 캡처 | 캡쳐 | loanword spelling |
 | webhook | 웹훅 | 웹후크, 웹 훅 | loanword spelling |
