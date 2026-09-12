@@ -2956,9 +2956,9 @@
       "severity": "error",
       "reason": "Ending a sentence in the nominal 음슴체. A nominal ending does not complete a sentence, so who did what disappears from the ending — 「승인 요청을 반려했습니다.」 rather than 「반려됨.」, 「검토를 마쳤습니다.」 rather than 「검토를 마쳤음.」. **Only the slots that do not overlap with nouns are caught** — no noun ends in 「됨」, so it is matched as it stands, and 「음」 is matched only when the preceding syllable is a past tense (-았/었/였/했/났/왔…). 「함」·「임」·「음」 in general have too many nouns (사물함 · 보관함 · 책임 · 담임 · 믿음 · 처음) for a rule to separate, so the 「생략·개조식」 family of references/lens.txt shows them to a person. **A repository where the headline style is the document's own form, such as minutes, disables this with `disable` in the project rule pack** — with the reason written in",
       "find": [
-        "/(?<!→[^.|]{0,12})[가-힣]됨\\./",
-        "/[았었였했갔왔봤줬됐쳤켰냈렸뒀웠랐팠샀짰났섰폈꿨뀄췄쐈깼뺐]음\\./",
-        "/겠음\\./"
+        "/(?<!→[^.|]{0,12})[가-힣]됨\\.(?!」)/",
+        "/[았었였했갔왔봤줬됐쳤켰냈렸뒀웠랐팠샀짰났섰폈꿨뀄췄쐈깼뺐]음\\.(?!」)/",
+        "/겠음\\.(?!」)/"
       ],
       "replace": null,
       "hit": [
@@ -2980,7 +2980,9 @@
         "승인 요청을 반려했습니다",
         "검토를 마쳤습니다",
         "받음 → 미리 보기 → 설치 → 업그레이드 · 병합 대기 → 대체됨.",
-        "작성 → 제출 → 승인 → 대체됨."
+        "작성 → 제출 → 승인 → 대체됨.",
+        "상태 표시가 「준비됨.」으로 돌아온다",
+        "화면에 「검토를 마쳤음.」이 표시된다"
       ]
     },
     {
