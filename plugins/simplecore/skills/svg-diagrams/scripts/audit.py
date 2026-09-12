@@ -304,6 +304,35 @@ def lint(svg_path):
                            f'url(#{m.group(1)}) not defined → arrowhead '
                            f'will not render'))
 
+    # 2a) how long each defined arrowhead prints, per 1.0 of stroke-width.
+    #     markerUnits defaults to strokeWidth, so a head's length on the page
+    #     is (refX - the path's leftmost x) * markerWidth / viewBox width * sw.
+    #     The checks below measure a connector against its own head rather
+    #     than against a fixed pixel floor: the same 20px drop is a readable
+    #     arrow at sw=1 and a triangle stuck to a corner at sw=2.
+    head_len = {}
+    for m in re.finditer(r'<marker\b([^>]*)>(.*?)</marker>', svg, re.S):
+        at, body = m.group(1), m.group(2)
+        mid = re.search(r'id="([^"]+)"', at)
+        vb = re.search(r'viewBox="\s*[-\d.]+\s+[-\d.]+\s+([\d.]+)', at)
+        mw = re.search(r'markerWidth="([\d.]+)"', at)
+        rx_ = re.search(r'refX="([-\d.]+)"', at)
+        if not (mid and vb and mw and rx_ and float(vb.group(1))):
+            continue
+        xs = [float(v) for v in re.findall(r'[MLC]\s*(-?[\d.]+)', body)]
+        if not xs:
+            continue
+        head_len[mid.group(1)] = ((float(rx_.group(1)) - min(xs))
+                                  * float(mw.group(1)) / float(vb.group(1)))
+
+    def _head_of(attrs):
+        """Arrowhead length in user units for a tag carrying marker-end."""
+        me = re.search(r'marker-end="url\(#([^)]+)\)"', attrs)
+        if not me or me.group(1) not in head_len:
+            return None
+        sw_ = re.search(r'stroke-width="([\d.]+)"', attrs)
+        return head_len[me.group(1)] * (float(sw_.group(1)) if sw_ else 1.0)
+
     # 2b) oblique arrow entry: an arrowed connector's FINAL segment must be
     #     axis-aligned (horizontal/vertical) so the head meets the box edge at
     #     90 degrees. Diagonal approaches read as sloppy.
@@ -364,6 +393,14 @@ def lint(svg_path):
             issues.append(("SHORT-ARROW",
                            f'final segment {math.hypot(*t):.0f}px < 18px → '
                            f'cramped / head-only arrow'))
+        hl = _head_of(a)
+        if t and hl and math.hypot(*t) - hl < hl:
+            issues.append(("ARROWHEAD-OVER-SHAFT",
+                           f'final segment {math.hypot(*t):.0f}px leaves '
+                           f'{math.hypot(*t) - hl:.0f}px of line under a '
+                           f'{hl:.0f}px head → reads as a triangle stuck to '
+                           f'the corner, not an arrow; lengthen the segment '
+                           f'or thin the stroke'))
     for tag in re.finditer(r'<line\b([^>]*)/?>', svg):
         a = tag.group(1)
         if "marker-end" not in a:
@@ -378,14 +415,44 @@ def lint(svg_path):
             issues.append(("SHORT-ARROW",
                            f'<line> {math.hypot(dx, dy):.0f}px < 18px → '
                            f'head-only arrow'))
+        hl = _head_of(a)
+        if hl and math.hypot(dx, dy) - hl < hl:
+            issues.append(("ARROWHEAD-OVER-SHAFT",
+                           f'<line> {math.hypot(dx, dy):.0f}px leaves '
+                           f'{math.hypot(dx, dy) - hl:.0f}px of line under a '
+                           f'{hl:.0f}px head → reads as a triangle stuck to '
+                           f'the corner, not an arrow; lengthen the segment '
+                           f'or thin the stroke'))
 
     # 3) markers must declare orient for direction correctness
     for m in re.finditer(r'<marker\b([^>]*)>', svg):
-        if "orient=" not in m.group(1):
-            mid = re.search(r'id="([^"]+)"', m.group(1))
+        mid = re.search(r'id="([^"]+)"', m.group(1))
+        name = mid.group(1) if mid else "?"
+        om = re.search(r'\borient="([^"]*)"', m.group(1))
+        if om is None:
             issues.append(("MARKER-NO-ORIENT",
-                           f'marker {mid.group(1) if mid else "?"} '
-                           f'missing orient="auto"'))
+                           f'marker {name} missing orient="auto"'))
+            continue
+        val = om.group(1).strip()
+        # orient takes "auto", an angle, or the SVG 2 "auto-start-reverse".
+        # The last one is a trap for anything that leaves the authoring
+        # rasterizer: a renderer that does not implement it falls back to the
+        # initial value 0 and draws every arrowhead unrotated, pointing +x
+        # whatever direction its connector runs. The document still validates
+        # and every other check still passes, so the defect is only visible on
+        # the page somebody prints. Use orient="auto" and put the reversal in
+        # the geometry.
+        if val == "auto-start-reverse":
+            issues.append(("MARKER-ORIENT-UNSUPPORTED",
+                           f'marker {name} declares orient="auto-start-reverse" '
+                           f'→ a renderer without SVG 2 marker support draws '
+                           f'every head unrotated (pointing +x); use '
+                           f'orient="auto"'))
+        elif val != "auto" and not re.fullmatch(
+                r'[-+]?\d*\.?\d+(?:deg|grad|rad)?', val):
+            issues.append(("MARKER-ORIENT-UNSUPPORTED",
+                           f'marker {name} declares orient="{val}" → not '
+                           f'"auto" and not an angle'))
 
     # 4) off-canvas rects
     for (x, y, w, h) in rects:

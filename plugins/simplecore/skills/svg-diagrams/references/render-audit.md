@@ -48,6 +48,32 @@ an edge, whether a glyph touches a border, etc.
 
 Set the Chrome binary with the `CHROME` env var if auto-detection fails.
 
+### The renderer that ships the figure is not the one you author in
+
+Chrome is ground truth for the picture; it is not ground truth for where the
+picture ends up. A figure embedded in a `.pptx`, a `.docx`, an e-reader or a
+print pipeline is redrawn by that product's own SVG engine, and those engines
+implement a smaller language than a browser does. **Where they differ, the
+failure is silent in both directions**: the document validates, the lint is
+clean, and the authoring render is correct, so nothing between the generator
+and the reader can see it. The one that has actually cost a deck is
+`orient="auto-start-reverse"` — a renderer that does not know the SVG 2 value
+falls back to the initial `orient` of 0 and draws **every** arrowhead
+unrotated, pointing +x, so a downward connector arrives with a triangle stuck
+to its side and a right-to-left one points back where it came from.
+
+So keep the emitted SVG inside SVG 1.1 wherever a feature has a 1.1 spelling
+that does the same job, and settle any doubt by rendering one page **in the
+destination product** and looking at it. What the toolkit holds to:
+
+- `orient="auto"`, never `auto-start-reverse` — put the reversal in the
+  geometry by swapping the segment's endpoints.
+- no `marker-start`; every connector carries its head on `marker-end`.
+- markers sized in `strokeWidth` units, which every engine implements.
+
+Adding a feature past that list means rendering it in the destination before it
+goes into the toolkit, and writing the verdict here.
+
 ### Reading the PNGs
 
 When viewing several full renders in one read, keep each image **≤ 2000px on
@@ -73,7 +99,8 @@ details that the downscaled overview hides.
 | `LINE-THROUGH-BOX` | a separator line strikes through content | a markerless line PARTIALLY crosses a node box (fully-inside divider/legend lines are fine) | split the line into segments around the box, or move it |
 | `FRAME-OVER-NODE` | nodes vanish behind a frame/panel | a frame-sized decorative rect (height > 44px) appears in the document **after** a solid rect it overlaps — document order is z-order in SVG | emit frames before nodes; in svgkit, `group_frame` auto-underlays regardless of call order |
 | `OFFCANVAS-TEXT` / `OFFCANVAS-RECT` | element clipped at the picture edge | a coordinate falls outside the root `viewBox` | grow the canvas or reposition |
-| `MARKER-NO-ORIENT` | arrowhead points the wrong way | a `<marker>` has no `orient="auto"` | add `orient="auto-start-reverse"` |
+| `MARKER-NO-ORIENT` | arrowhead points the wrong way | a `<marker>` has no `orient` at all, so it never rotates | add `orient="auto"` |
+| `MARKER-ORIENT-UNSUPPORTED` | **every** arrowhead in the picture points right, whatever direction its connector runs | a `<marker>` declares `orient="auto-start-reverse"` (SVG 2) or any value that is neither `auto` nor an angle | write `orient="auto"`; put a reversal in the geometry, never in the marker |
 | `WIDE-CANVAS` | long single row, shrinks when embedded | aspect ratio > 4.5:1 and width > 1200 | wrap the nodes onto two rows |
 | `ROW-PADDING-UNEVEN` | every card in a row has a band of paper under its text | the boxes of one row (same y and height) all leave more air below their content than above, by more than 6px | size the row from its tallest content with even padding (`cards_row`, `card(valign="middle")`) |
 | `BOX-PADDING-UNEVEN` | one box has its text pushed up or down | a single box's content sits more than 6px nearer one horizontal edge than the other; a header band counts as chrome, so the inset is measured from under it | `card()` computes the height; for a forced height pass `valign="middle"` |

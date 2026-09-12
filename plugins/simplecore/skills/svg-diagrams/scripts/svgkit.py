@@ -974,9 +974,17 @@ class Canvas:
         markers = []
         for name in _ARROW_ROLES:
             col = self._arrow_color(name)
+            # orient="auto", never "auto-start-reverse". The SVG 2 value adds
+            # nothing here — nothing in this toolkit emits marker-start — and a
+            # renderer that does not know it falls back to the initial orient
+            # of 0, which draws every arrowhead pointing +x whatever direction
+            # its connector runs. That reaches the reader as a downward arrow
+            # with a triangle stuck to its side, and no check upstream of the
+            # rendered page can see it, because the SVG is valid and the
+            # rasterizers used during authoring do support the value.
             markers.append(
                 f'<marker id="arr-{name}" viewBox="0 0 10 10" refX="8.5" refY="5" '
-                f'markerWidth="7" markerHeight="7" orient="auto-start-reverse">'
+                f'markerWidth="7" markerHeight="7" orient="auto">'
                 f'<path d="M0.5 1 L9 5 L0.5 9 z" fill="{col}"/></marker>')
         soft = ''
         if self.shadow:
