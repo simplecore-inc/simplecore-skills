@@ -55,6 +55,21 @@ as much right after an audit came back clean.
    `갈무리하다` → 저장하다 · `일컫다` → 부르다 · `기본값을 두었다 — 검증이 건너뛰어진다` →
    기본값을 그대로 두면 검증을 건너뜁니다. A dash that restates or itemises stays.
 
+**What a sentence has to carry.** An action, a control, a procedure or a completion criterion
+names its actor, its action, its object, its condition and the result or evidence that proves it,
+and none of the five is deleted to make the sentence shorter; one principal action per sentence,
+one name per object across title, body, figure and notes. A middle dot, slash, arrow or dash joins
+field names and peer items, never a workflow: `동일 예약 검수 대기 전환 · 이중 생성 금지` → 작업을
+완료하면 기존 예약을 검수 대기 상태로 전환하고 추가 예약 생성을 차단한다. A pointer does not open a
+sentence when the noun fits: `이제` · `다음은` · `이 구현` · `해당` · `동일하게 적용한다` → name the
+system, the record or the preceding action. A broad verb is incomplete when the reader cannot tell
+what changes or what proves completion: `품질을 확보한다` → 결함이 0건인지 검사한다 ·
+`자료를 관리한다` → 반입 · 열람 · 반출 이력과 승인자를 기록한다. A placeholder noun (`기준선`, an
+unqualified `기준` · `체계`) is replaced by the measured or approved object. The condition comes
+before the action, and `전` · `후` · `완료` · `승인` name their object: `승인 후` → 부서장 승인 후.
+A number stays only with its source, meaning and unit; an assumption, a measurement, a
+requirement, a target and a verified result are never presented as one another.
+
 **AI tells.** A sentence can pass every check above and still read as machine-written, because
 the draft was English first and each tell arrives as the 번역투 it turns into. Five survive a
 rewrite most often: `단순히 ~가 아니라` staging a claim (`not just X but Y`); a closing line that only

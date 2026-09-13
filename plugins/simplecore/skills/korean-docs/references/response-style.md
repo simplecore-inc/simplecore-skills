@@ -21,7 +21,7 @@ task is registered in the glossary or the rule pack, not here
 | Manuals · explanatory text for readers | 합니다체; an instruction to the reader is 「~하세요」 | 저장을 누르세요 |
 | Screen copy | 합니다체; buttons and item names are noun phrases or short actions | 저장할 수 없습니다 · 저장 |
 | Titles · table headers · menus · labels | Noun form. No full stop, no question, no 「~한다」 | 시작하기 · 유지 조건 |
-| Text inside a diagram or figure | Noun form in 개조식 — title, card, label, note, closing line, **all of it**. No predicate ending, no relative clause, no particle inside a label, no connective ending, no author's working word | 당일 대면 대응 항목 · 근거: 경력증명서 · 착수 첫 주 기준선 확보 |
+| Text inside a diagram or figure | Noun form in 개조식 — title, card, label, note, closing line, **all of it**. No predicate ending, no relative clause, no particle inside a label, no connective ending, no author's working word | 당일 대면 대응 항목 · 근거: 경력증명서 · 착수 첫 주 처리기간 측정 |
 
 - **Never mirror the user's register.** 반말, clipped questions, and swearing in the prompt do not
   change the answer: it stays 합니다체. `비워 달라` · `알려 달라` · `실행해 달라` do not appear in a
@@ -33,7 +33,7 @@ task is registered in the glossary or the rule pack, not here
   content, not on a summarizing flourish.
 - **A diagram holds no sentences, and its noun phrases are 개조식.** Every piece of text inside a
   figure is a noun phrase, and the claim belongs in the prose beside it. A relative clause
-  (`착수 첫 주에 확보하는 기준선` → 착수 첫 주 기준선 확보), a particle inside a label
+  (`착수 첫 주에 측정하는 처리기간` → 착수 첫 주 처리기간 측정), a particle inside a label
   (`차이를 수용하는 확장 지점` → 차이 수용 확장 지점), a connective ending between items
   (`확인 뒤 접수` → 확인 후 접수) and a word only the authors use (`보드` → 와이어프레임) are
   a working note pasted into the document. A range (「A에서 B까지」), a title pair (「A와 B」), an
@@ -86,7 +86,63 @@ on), and close on a predicate. Doubling 「의」 leaves no room for a predicate
 dash. Apposition, enumeration, and a gloss after a name do not hide a relation, so those dashes
 stay. Screen copy takes no dash at all.
 
-## 3. Choosing a word
+## 3. What a sentence has to carry
+
+A sentence that states an action, a control, a procedure, or a completion criterion lets a
+first-time reader identify five things without reconstructing them from the neighbouring text:
+the **actor** (담당자 · 시스템 · 수집 에이전트 · 결재자), the **action** (측정 · 등록 · 차단 · 승인 ·
+전송 · 검증), the **object** it acts on, the **condition or time** under which it starts, stops, or
+changes state, and the **result or evidence** — the state, record, measurement, or deliverable that
+proves it happened. A label or a short title carries fewer; a sentence that distinguishes one action
+from another carries every element the distinction needs, and none of them is deleted to make the
+sentence shorter. One principal action per sentence: split when the actors, the times, or the
+decisions differ. One object keeps one name across the title, the body, the figure, and the notes.
+
+- **A procedure names its trigger, actor, action, state transition, and record. A control names
+  what it prevents, the condition that activates it, and the evidence it leaves. A deliverable's
+  name is not an answer**: say who produces it, when it is approved, and what it proves.
+  `감사 조치요구 이행 · 이력 통합관리` → 교체 판단부터 청구까지의 처리 근거를 한 이력으로 연결해
+  조회할 수 있게 구축한다.
+- **A middle dot, a slash, an arrow, or a dash does not express a workflow.** They join field
+  names, true alternatives, fixed compounds, and short peer items. When the value describes work,
+  write the verb and the result: `동일 예약 검수 대기 전환 · 이중 생성 금지` → 작업을 완료하면 기존
+  예약을 검수 대기 상태로 전환하고 추가 예약 생성을 차단한다 · `원인 구간 특정 최적화 · 동일
+  시나리오 재시험` → 병목 구간을 식별해 개선하고 같은 시나리오로 다시 시험한다. A label–value card
+  whose label already supplies the relation stays nominal (`규모: 총자산 100백만원 · 자기자본
+  62백만원 · 결손 없음`), and one cell never holds two unrelated decisions.
+- **A pointer does not open a sentence when the noun fits.** `이제` · `다음은` · `이 업무` ·
+  `이 구현` · `해당` · `동일하게` · `그 항목` at the head of a printed sentence make the reader fetch
+  the subject from the previous paragraph or figure. Name the business, the system, the record, or
+  the preceding action: `이 구현을 표준 환경에서 운영한다` → 소모품 관리시스템을 전자정부
+  표준프레임워크 환경에서 운영한다 · `동일하게 적용한다` → 자동 통보와 같은 결재 · 증빙 · 이력 관리
+  절차를 수동 통보에도 적용한다. `이를` · `해당` · `동일` · `관련` · `등` are not written when more
+  than one antecedent is possible. A spoken transition (`이제` · `다음으로` · `말씀드리겠습니다`)
+  belongs in a speaker note and nowhere else, and even there it does not replace the subject. The
+  rule `spoken-transition-opener` catches the sentence-initial forms.
+- **A broad verb is incomplete when the reader cannot tell what changes or what proves
+  completion.** 관리한다 · 확보한다 · 지원한다 · 적용한다 · 검토한다 · 처리한다 · 연계한다 are
+  replaced by the observable operation: `품질을 확보한다` → 치명 · 주요 결함, 순환 의존, 코드 내 비밀
+  값이 0건인지 검사한다 · `자료를 관리한다` → 자료의 반입 · 열람 · 반출 이력과 승인자를 기록한다 ·
+  `장애 대응을 지원한다` → 장애를 접수하고 재현한 뒤 임시복구 결과와 근본조치 내역을 통보한다 ·
+  `표준을 적용한다` → 용어사전의 표준 용어와 도메인을 논리 · 물리 모델에 적용한다. The rule
+  `quality-noun-placeholder-verb` catches a quality noun on one of these verbs.
+- **A placeholder noun is replaced by the measured or approved object.** `기준선`, an unqualified
+  `비교 기준` · `기준` · `기반` · `체계`, say that something is compared with or built on without
+  saying what: 도입 전 처리기간 측정값 · 착수 시 오류 건수 · 승인된 요구사항 · 시험 조건 · 형상
+  승인본 · 승인된 범위와 일정. Where a generic label cannot be avoided, its contents are defined in
+  the same sentence or in the adjacent value.
+- **The condition comes before the action**, and `전` · `후` · `이하` · `이상` · `완료` · `승인`
+  name their object: `업로드 전` → 사진 업로드 전 · `승인 후` → 부서장 승인 후 · `완료 처리` → 준공
+  요청을 완료 상태로 전환. 「필수 사진이 누락되면 준공 요청을 차단한다」 is the order. A statement
+  is positive unless it is an actual prohibition or an acceptance boundary: 승인되지 않은 청구 건은
+  전송하지 않는다.
+- **A number stays only when its source, meaning, and unit are clear.** An assumption, a current
+  measurement, a contractual requirement, a target, and a verified result are five different things
+  and are never presented as one another. A rate names its denominator and its measurement interval
+  when they affect the judgement, and the same number carries the same status on every surface —
+  title, body, figure, note, and the report that relays it.
+
+## 4. Choosing a word
 
 - **Settled loanwords and technical terms stay.** 어댑터 · 콜백 · 매핑 · 슬롯 · 캐시 · 핸들러 ·
   메타데이터 · 네임스페이스 · 리터럴, API · SQL, Docker · Kubernetes · Java (as written). Do not
@@ -153,7 +209,7 @@ stay. Screen copy takes no dash at all.
   대사 (reconciliation) · 프로필 (a user) and 프로파일 (an execution environment) · 절대 시각 ·
   달력 날짜 · 현지 시각 (`Instant` · `LocalDate` · `LocalTime`).
 
-## 4. Replies and reports
+## 5. Replies and reports
 
 - **A chat reply passes through no check at all.** The write-time hook reads files only. So the
   eight questions above are needed more often in a reply than in a file, and a reply written
@@ -174,7 +230,7 @@ stay. Screen copy takes no dash at all.
 - **A word used in a brief spreads through the report into replies and documents.** Writing the
   brief is the last chance to choose it.
 
-## 5. A correction diagnoses the guidance
+## 6. A correction diagnoses the guidance
 
 When the user points at a sentence, that sentence is the symptom and the diagnosis is about this
 file and the rules. Before adding the word to a banned list, check three things.
@@ -191,7 +247,7 @@ boundary and its hit/miss examples. Say in the report which of the three it was.
 that keeps coming back after failed self-correction, but a rule has to be able to judge sentences
 that are not in its list.
 
-## 6. Domain terms
+## 7. Domain terms
 
 - Project terms are decided by the project glossary (`.claude/GLOSSARY.md`), which wins over this
   file when they conflict.

@@ -131,7 +131,7 @@ banned spellings), what is waiting on the user (candidates · recommendation · 
 
 When the user points at a sentence, that sentence is the symptom and the diagnosis is about this
 skill and the project instructions. Registering the word as banned is not the end of it. Answer the
-three questions in `references/response-style.md` §5 — which rule should have caught it and why it
+three questions in `references/response-style.md` §6 — which rule should have caught it and why it
 did not, whether the guidance itself uses the expression, whether the type is missing altogether —
 fix that cause, then register, and say in the report which of the three it was.
 

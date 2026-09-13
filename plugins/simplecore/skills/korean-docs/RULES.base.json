@@ -3643,6 +3643,58 @@
         "잔량이 다시 증가하면 재판정한다",
         "가용 수량이 안전재고 미만이 되면 경고한다"
       ]
+    },
+    {
+      "id": "spoken-transition-opener",
+      "scope": "universal",
+      "severity": "error",
+      "reason": "A spoken transition or a bare pointer opening a printed sentence — 「이제」·「다음으로」·「동일하게 적용한다」 — makes the reader fetch the subject from the previous paragraph or figure, or from a presenter who is not there. Name the system, the record or the preceding action instead: 「이제 실제 장치와 연계의 차이를 처리하겠습니다」 is 「제조사별 차이는 프로파일로 관리하고 규격 차이는 어댑터에서 처리합니다」, and 「동일하게 적용한다」 is 「자동 통보와 같은 결재·증빙·이력 관리 절차를 수동 통보에도 적용한다」 (response-style.md §3). Only the sentence-initial position is caught: 「이제」 inside a clause (「이제 막 도착한」) and 「동일하게」 after a named antecedent (「수동 통보에도 동일하게 적용한다」) are ordinary, and 「이제」 in a manual's step (「이제 저장을 누르세요」) is still a transition the step's own object replaces",
+      "find": [
+        "/(?<=^(?:[-*>|\\d.]+\\s+)?|[.!?]\\s+)(?:이제|다음으로)[ ,](?!막 )/",
+        "/(?<=^(?:[-*>|\\d.]+\\s+)?|[.!?]\\s+)동일하게 (?:적용|처리|운영)(?:한다|합니다|하고|하여|해|됩니다|된다)/"
+      ],
+      "replace": null,
+      "hit": [
+        "이제 실제 장치와 연계의 차이를 처리하겠습니다",
+        "다음으로 데이터 이관 절차를 설명한다",
+        "동일하게 적용한다.",
+        "동일하게 처리합니다",
+        "- 이제 수집 주기를 설명한다",
+        "기록을 남긴다. 다음으로 결재 절차를 설명한다"
+      ],
+      "miss": [
+        "제조사별 차이는 프로파일로 관리하고 규격 차이는 어댑터에서 처리합니다",
+        "자동 통보와 같은 절차를 수동 통보에도 동일하게 적용한다",
+        "이제 막 도착한 요청은 대기열에 넣는다",
+        "다음 절에서 예외를 설명한다",
+        "두 값이 동일하게 계산된다",
+        "| 항목 | 이제까지의 누계 |"
+      ]
+    },
+    {
+      "id": "quality-noun-placeholder-verb",
+      "scope": "universal",
+      "severity": "error",
+      "reason": "A quality noun on an all-purpose verb — 「품질을 확보한다」·「안정성을 강화합니다」·「이력을 체계적으로 관리한다」 — says that something gets better without saying what changes or what proves it. Replace it with the observable operation and its evidence: 「품질을 확보한다」 is 「치명·주요 결함, 순환 의존, 코드 내 비밀 값이 0건인지 검사한다」, and 「이력을 체계적으로 관리한다」 is 「반입·열람·반출 이력과 승인자를 기록한다」 (response-style.md §3). A quality noun followed by its measure (「가용성 99.9%를 보장한다」) or by the thing checked (「품질 기준을 적용한다」·「품질을 검사한다」) names what is done and is untouched, and 「체계」 as a noun (「관리 체계를 수립한다」) is not the adverb",
+      "find": [
+        "/(?:품질|안정성|신뢰성|보안성|일관성|가용성|완성도|효율성|생산성|투명성)[을를] ?(?:확보|보장|제고|강화|향상|증대|극대화)(?:한다|합니다|하고|하여|해|하는|하겠|할 |함)/",
+        "/체계적으로 ?(?:관리|운영|지원|추진|수행)(?:한다|합니다|하고|하여|해|하는|하겠|할 |함)/"
+      ],
+      "replace": null,
+      "hit": [
+        "품질을 확보한다",
+        "시스템의 안정성을 강화합니다",
+        "운영 효율성을 제고하고",
+        "이력을 체계적으로 관리한다",
+        "사업을 체계적으로 추진하겠습니다"
+      ],
+      "miss": [
+        "가용성 99.9%를 보장한다",
+        "품질 기준을 적용한다",
+        "치명·주요 결함이 0건인지 검사한다",
+        "관리 체계를 수립한다",
+        "반입·열람·반출 이력과 승인자를 기록한다"
+      ]
     }
   ]
 }
