@@ -1,6 +1,6 @@
 # The Korean sentence standard
 
-Applies to every Korean deliverable — replies, documents, translations, reviews, screen copy.
+Applies to every Korean deliverable - replies, documents, translations, reviews, screen copy.
 **Read it before writing the session's first Korean sentence, and read it again after a summary in a
 long session.** Remembering that you read it is not evidence: if the register table and the eight
 questions below cannot be quoted right now, it has not been read.
@@ -8,7 +8,7 @@ questions below cannot be quoted right now, it has not been read.
 **What a machine checks is not repeated here.** Spellings (디렉터리 · 라이선스 · 애플리케이션),
 banned transliterations, proper nouns, and banned words live in `GLOSSARY.base.md` and
 `RULES.base.json`, where the audit script and the write-time hook check them. This file holds what a
-machine cannot judge — what the writer has to decide. A new term or banned spelling settled during a
+machine cannot judge - what the writer has to decide. A new term or banned spelling settled during a
 task is registered in the glossary or the rule pack, not here
 ([audit-tooling.md](audit-tooling.md)).
 
@@ -21,7 +21,7 @@ task is registered in the glossary or the rule pack, not here
 | Manuals · explanatory text for readers | 합니다체; an instruction to the reader is 「~하세요」 | 저장을 누르세요 |
 | Screen copy | 합니다체; buttons and item names are noun phrases or short actions | 저장할 수 없습니다 · 저장 |
 | Titles · table headers · menus · labels | Noun form. No full stop, no question, no 「~한다」 | 시작하기 · 유지 조건 |
-| Text inside a diagram or figure | Noun form in 개조식 — title, card, label, note, closing line, **all of it**. No predicate ending, no relative clause, no particle inside a label, no connective ending, no author's working word | 당일 대면 대응 항목 · 근거: 경력증명서 · 착수 첫 주 처리기간 측정 |
+| Text inside a diagram or figure | Noun form in 개조식 - title, card, label, note, closing line, **all of it**. No predicate ending, no relative clause, no particle inside a label, no connective ending, no author's working word | 당일 대면 대응 항목 · 근거: 경력증명서 · 착수 첫 주 처리기간 측정 |
 
 - **Never mirror the user's register.** 반말, clipped questions, and swearing in the prompt do not
   change the answer: it stays 합니다체. `비워 달라` · `알려 달라` · `실행해 달라` do not appear in a
@@ -37,11 +37,11 @@ task is registered in the glossary or the rule pack, not here
   (`차이를 수용하는 확장 지점` → 차이 수용 확장 지점), a connective ending between items
   (`확인 뒤 접수` → 확인 후 접수) and a word only the authors use (`보드` → 와이어프레임) are
   a working note pasted into the document. A range (「A에서 B까지」), a title pair (「A와 B」), an
-  adverb (「없이」) and a quoted screen label stay. **The closing line is where this is broken most often** —
+  adverb (「없이」) and a quoted screen label stay. **The closing line is where this is broken most often** -
   it is added last, after the drawing is finished, so a sentence there feels justified.
   `근거는 경력증명서다.` → 근거: 경력증명서 · `이동 시간이 사업 기간에 들어가지 않는다` →
   사업 기간에서 제외되는 이동 시간. Titles work the same way: `거리가 정하는 대응 방식` is a bodiless
-  thing deciding something, so write the name of what the figure shows — 「당일 대면 대응 항목」.
+  thing deciding something, so write the name of what the figure shows - 「당일 대면 대응 항목」.
 
 ## 2. Eight questions before a Korean sentence leaves
 
@@ -50,16 +50,16 @@ One "yes" means rewriting the sentence, not softening it.
 | # | Question | Caught → fixed |
 | --- | --- | --- |
 | 1 | Does something without a body speak, ask, remember, or judge? | `화면이 알려 줍니다` → 화면에 표시합니다 · `규칙이 스스로 구분합니다` → 규칙으로 자동 판정합니다 · `기록이 오래 산다` → 기록이 오래 남는다 |
-| 2 | Does something that cannot move, move — or leave traces, or get handled like an object? | `알림이 갑니다` → 알림을 보냅니다 · `서버로 올라간다` → 서버로 전송한다 · `사업 조건이 설계에 남기는 제약` → 사업 조건에 따른 설계 제약 · `담당과 기한을 붙인다` → 지정한다 · `두 값이 부딪힌다` → 충돌한다 · `사업장이 손댄 것` → 고친 것 |
+| 2 | Does something that cannot move, move - or leave traces, or get handled like an object? | `알림이 갑니다` → 알림을 보냅니다 · `서버로 올라간다` → 서버로 전송한다 · `사업 조건이 설계에 남기는 제약` → 사업 조건에 따른 설계 제약 · `담당과 기한을 붙인다` → 지정한다 · `두 값이 부딪힌다` → 충돌한다 · `사업장이 손댄 것` → 고친 것 |
 | 3 | Is something with a real name called by a metaphor, or a change hidden in an adverb? | `관문을 연다` → 요건을 충족하면 진행할 수 있다 · `통째로 바뀝니다` → name which items change and how · `이 화면의 동사다` → 이 화면이 하는 일이다 |
 | 4 | Was an English sentence carried over word for word? | `되어진다` → 된다 · `~하는 것을 가능하게 합니다` → ~할 수 있습니다 · `~를 가지고 있다` → ~가 있다 · `~에 대해 설명` → ~를 설명 · `~할 것입니다` for a fact → ~합니다 · delete `당신` · `우리는` · `그것은` · `-들` |
 | 5 | Do the subject and the predicate agree, for every subject the predicate covers? | `낱말은 아이디만 오고 화면이 꺼낸다` → 서버는 아이디만 보내고 낱말은 화면이 꺼낸다 · `12곳은 전부 상한이고` → 12곳은 전부 상한을 뜻한다 · `톨루엔과 소음은 마신 양이 아니다` → split into two sentences |
 | 6 | Is a hedge attached to a confirmed fact, or a tic sitting where nothing belongs? | `~로 보입니다` · `~인 것 같습니다` → state it · `본질적으로` · `결론적으로` · `요약하면` → delete · a paragraph-opening `또한` · `따라서` · `즉` → carry it with the sentence flow · `강력한` · `획기적인` → the number and the fact |
 | 7 | Is a particle, an ending, or a component missing; does the sentence close on a predicate; is 「의」 doubled? | `컨텍스트 압축 전 신중 반영한다` → 컨텍스트가 압축되기 전에 신중하게 반영합니다 · `승인 요청이 반려됨.` → 승인 요청을 반려했습니다 · `값을 확인하고.` → 값을 확인하고 넘어갑니다 · `사본의 문구는 작업의 상황을` → 사본에 기재된 문구는 작업이 진행되는 상황을 |
-| 8 | Is there a word this field does not write, or a dash hiding a relation? | `견주다` → 비교하다 · `갈무리하다` → 저장하다 · `일컫다` → 부르다 · `여쭈다` for a machine action → 조회하다 · `기본값을 두었다 — 검증이 건너뛰어진다` → 기본값을 그대로 두면 검증을 건너뜁니다 |
+| 8 | Is there a word this field does not write, or an em dash? | `견주다` → 비교하다 · `갈무리하다` → 저장하다 · `일컫다` → 부르다 · `여쭈다` for a machine action → 조회하다 · `기본값을 두었다 — 검증이 건너뛰어진다` → 기본값을 그대로 두면 검증을 건너뜁니다 |
 
 **The nouns behind question 3.** `자리` · `몫` · `천장` · `바닥` · `함정` · `관문` · `사다리` ·
-`갈래` · `길` · `연료` · `씨앗` · `사슬` · `함대` (a group of machines called a fleet — 장치군 ·
+`갈래` · `길` · `연료` · `씨앗` · `사슬` · `함대` (a group of machines called a fleet - 장치군 ·
 장치 N대) standing in for something that has a real name are replaced by that name: 소속 조직 ·
 필수 역할 · 설정 화면 · 유형 · 상한 · 대체 순서. A real object (출입문 · 벽보 · 사다리) is not a
 metaphor.
@@ -69,7 +69,7 @@ decides.** A person or a system leaving 기록 · 이력 · 사유 · 버전 is 
 condition, a schedule, or an environment leaving 제약 · 영향 · 부담 · 과제 is a bodiless thing
 leaving traces (rule `inanimate-namgida`). 「사슬」 is the same: `신뢰 사슬` (certificate chain) or a
 product's own defined term `추적 사슬` is a name, while `처리 사슬` · `원장으로 잇는 사슬` for
-workflow steps is a metaphor — write 「업무 처리 단계」. Which one it is depends on what is left and
+workflow steps is a metaphor - write 「업무 처리 단계」. Which one it is depends on what is left and
 what is called a chain, so a stem alone cannot decide it.
 
 **Question 5 comes from compression.** Folding two sentences into one separates the topic from the
@@ -82,9 +82,10 @@ first. Write the relation (`~가 압축되기 전에`) and the missing component
 on), and close on a predicate. Doubling 「의」 leaves no room for a predicate (`화면의 항목의 이름` →
 화면 항목의 이름).
 
-**The dash in question 8.** Cause, contrast, and condition are written with a connective, not a
-dash. Apposition, enumeration, and a gloss after a name do not hide a relation, so those dashes
-stay. Screen copy takes no dash at all.
+**The dash in question 8.** The em dash (`—`) is never written; the rule `em-dash` reports every
+one. Cause, contrast, and condition are written with a connective. Apposition, enumeration, and a
+gloss after a name take a comma, a colon, parentheses, or a middle dot, and a spaced hyphen (` - `)
+where none of those fits. Screen copy takes no dash of any kind.
 
 ## 3. What a sentence has to carry
 
@@ -92,7 +93,7 @@ A sentence that states an action, a control, a procedure, or a completion criter
 first-time reader identify five things without reconstructing them from the neighbouring text:
 the **actor** (담당자 · 시스템 · 수집 에이전트 · 결재자), the **action** (측정 · 등록 · 차단 · 승인 ·
 전송 · 검증), the **object** it acts on, the **condition or time** under which it starts, stops, or
-changes state, and the **result or evidence** — the state, record, measurement, or deliverable that
+changes state, and the **result or evidence** - the state, record, measurement, or deliverable that
 proves it happened. A label or a short title carries fewer; a sentence that distinguishes one action
 from another carries every element the distinction needs, and none of them is deleted to make the
 sentence shorter. One principal action per sentence: split when the actors, the times, or the
@@ -139,7 +140,7 @@ decisions differ. One object keeps one name across the title, the body, the figu
 - **A number stays only when its source, meaning, and unit are clear.** An assumption, a current
   measurement, a contractual requirement, a target, and a verified result are five different things
   and are never presented as one another. A rate names its denominator and its measurement interval
-  when they affect the judgement, and the same number carries the same status on every surface —
+  when they affect the judgement, and the same number carries the same status on every surface -
   title, body, figure, note, and the report that relays it.
 
 ## 4. Choosing a word
@@ -149,9 +150,9 @@ decisions differ. One object keeps one name across the title, the body, the figu
   change them to make the text look more Korean. Framework terms (`hook` · `contract` · `entity`)
   stay in the original too.
 - **A technical term is explained technically.** A mechanism is named by what it is and what
-  it does to what — 프로파일 · 어댑터 · SPI · 설정, and 변환 · 교체 · 반영 · 조정 — never by a verb
+  it does to what - 프로파일 · 어댑터 · SPI · 설정, and 변환 · 교체 · 반영 · 조정 - never by a verb
   standing where the mechanism should be: `차이를 수용하는 확장 지점` → 제품 · 규격 차이의 처리
-  위치 — 프로파일 · 어댑터 · SPI · `어댑터 버전으로 수용하고` → 어댑터의 새 버전으로 반영하고 ·
+  위치 - 프로파일 · 어댑터 · SPI · `어댑터 버전으로 수용하고` → 어댑터의 새 버전으로 반영하고 ·
   `코드 변경 없이 수용합니다` → 코드 변경 없이 처리합니다. A reader of 「차이 수용」 cannot tell
   what handles which difference. 「수용」 is acceptance (수용 기준 · 수용 주체 · 점검을 수용한다)
   and nothing else; the rule `absorb-for-mechanism` reads the rest.
@@ -166,7 +167,7 @@ decisions differ. One object keeps one name across the title, the body, the figu
   Registered ones are caught by machine; for a new one the test is 「does this field's writing
   already use it?」.
   **The listed fields are not the scope of this rule.** They are the ones that have come up, and the
-  test is one question — 「is the word I am using another field's formal term?」 A field missing from
+  test is one question - 「is the word I am using another field's formal term?」 A field missing from
   the list only means it has not come up yet.
   **It shows up most where distance, extent, or degree is being blurred**: `같은 생활권` makes the
   reader guess the range, while `도보 10분 거리` is a fact that can be checked. Write the actual
@@ -179,7 +180,7 @@ decisions differ. One object keeps one name across the title, the body, the figu
 - **A metaphor written in an English brief comes back in the Korean answer.** `furniture` → `세간`,
   `ladder` → `사다리`: a metaphor you wrote an hour ago arrives as recall and passes unfiltered.
   Write the real name in the brief. When the real name is already in the same sentence, the metaphor
-  is decoration — delete it.
+  is decoration - delete it.
 - **Do not attach `-하다` or `-되다` to an English word.** `인라인하다` → 직접 작성하다,
   `resolve되다` → ~를 가리키다, `export합니다` → 내보냅니다. Using `import` · `re-export` as the name
   of a code construct is fine.
@@ -214,8 +215,8 @@ decisions differ. One object keeps one name across the title, the body, the figu
 - **A chat reply passes through no check at all.** The write-time hook reads files only. So the
   eight questions above are needed more often in a reply than in a file, and a reply written
   straight after an audit returned zero is no exception.
-- **AI tells outlive the audit.** The structural habits — staging a claim instead of stating it, a
-  closing line that repeats, three of everything, borrowed authority, a chat wrapper — carry no
+- **AI tells outlive the audit.** The structural habits - staging a claim instead of stating it, a
+  closing line that repeats, three of everything, borrowed authority, a chat wrapper - carry no
   banned word, so a zero-finding file can be built entirely out of them.
   [ai-tells.md](ai-tells.md) catalogues them in their Korean form; the five that most often survive
   a rewrite are `단순히 ~가 아니라`, a repeating closing line, a 줄표, a three-item series, and a

@@ -1,4 +1,4 @@
-# Audit tooling — l10n.mjs · the hook · declaration files · writing rules
+# Audit tooling - l10n.mjs · the hook · declaration files · writing rules
 
 Read this when running the audit, when creating or changing a rule, or when confirming a finding
 somebody else reported. The sentence standard is in [response-style.md](response-style.md); this
@@ -18,7 +18,7 @@ One script, `scripts/l10n.mjs`, checks documents and locale resources with the s
 T="$HOME/.claude/skills/simplecore/skills/korean-docs/scripts/l10n.mjs"
 node "$T" sweep [paths...]       # rules --test, then check · rules · suspects · audit (when declared) · lens count, then what reached what
   --all --strict --explain --untranslated   # passed through to the commands that take them
-node "$T" check [paths...]       # document audit — audit.paths, or the whole project (same judgement as the hook)
+node "$T" check [paths...]       # document audit - audit.paths, or the whole project (same judgement as the hook)
   --all             # ignore audit.paths and take the whole project
   --strict          # treat warnings as failures
   --untranslated    # warn on leftover English sentences (translation projects)
@@ -27,7 +27,7 @@ node "$T" check [paths...]       # document audit — audit.paths, or the whole 
   --list-rules      # show the merged rules (compare against what you registered)
   --init            # create a .claude/GLOSSARY.md template
   --init-l10n       # create the .claude/l10n.json + .claude/l10n-rules.json skeleton
-node "$T" audit [--kind K]       # resource audit — missing translations · banned spellings · particles · paired language files
+node "$T" audit [--kind K]       # resource audit - missing translations · banned spellings · particles · paired language files
 node "$T" rules --test           # verify the rule pack against its own hit/miss examples
 node "$T" rules [paths...] [--scope S] [--explain] [--strict]  # sentence-rule sweep (changes nothing); errors set the exit code, --strict adds warnings
 node "$T" suspects [paths...] [--json]  # rank the sentences that read as translated
@@ -77,7 +77,7 @@ form written down and misses every other ending.
   `audit.untranslated` · `audit.resolvedPlaceholders`.
 - An explicitly named file is checked even if `audit.exclude` covers it. The glossary file itself is
   never checked. **The exclusion reaches a declared kind too**: a kind glob is a git pathspec, and
-  git's `*` crosses `/`, so a `docs/*.md` kind takes every document under `docs` — including the
+  git's `*` crosses `/`, so a `docs/*.md` kind takes every document under `docs` - including the
   review records a project excluded because they quote each round's sentences verbatim. `discover()`
   drops those before any command reads them.
 - Code blocks, inline code, link targets, and URLs are excluded from checking. **Put a specimen of
@@ -114,10 +114,10 @@ glossary.
 }
 ```
 
-### A span copied verbatim from somebody else's document — `l10n:quote`
+### A span copied verbatim from somebody else's document - `l10n:quote`
 
-A span that has to stay character for character — a request-for-proposal original, a standard, a
-statutory clause — is wrapped in a marker with the reason beside it.
+A span that has to stay character for character - a request-for-proposal original, a standard, a
+statutory clause - is wrapped in a marker with the reason beside it.
 
 ```markdown
 <!-- l10n:quote 제안요청서 SFR-003 원문 -->
@@ -162,8 +162,8 @@ audit:
   Nothing in the global or project `settings.json` declares it, and that is normal. It is a blocking
   hook: an error stops at that point rather than reverting the edit.
 - **It makes two runs on the written file**: `check` for the glossary words, then `rules` for the
-  sentence pack. The two answer different questions — a document can be clean of every banned
-  spelling and full of personification and AI tells — and both reports come back together under
+  sentence pack. The two answer different questions - a document can be clean of every banned
+  spelling and full of personification and AI tells - and both reports come back together under
   `[glossary]` and `[sentence rules]`. A file the project lists in `audit.exclude` is skipped by
   the second run and named as skipped, so an edit to a catalogue that quotes the banned sentences
   on purpose is never blocked by the sentences it quotes.
@@ -176,14 +176,14 @@ audit:
   because the word check would read its keys as prose.
 - It checks only in a project that has a glossary (`.claude/GLOSSARY.md` or `GLOSSARY.md`). No
   glossary means write-time checking is off entirely.
-- A document changed through `Bash` — `node` · `python` · `sed` · a heredoc — never passes the hook.
+- A document changed through `Bash` - `node` · `python` · `sed` · a heredoc - never passes the hook.
   When a script edited a document, run `check` on that file directly, chained onto the script
   command with `&&` so it is one call.
 - If you doubt the hook is running, do not go digging through settings files: write one banned
   spelling into a file and save it. Delete that line immediately afterwards.
 - It also fires on the resource files declared in `audit.localeResources`.
 
-## Resource declaration — `.claude/l10n.json`
+## Resource declaration - `.claude/l10n.json`
 
 Which paths hold locale resources is declared by the project in `kinds`. The skill assumes no
 layout.
@@ -202,7 +202,7 @@ layout.
   the part that is not translated, for example `"^docs/manual/[^/]+/(\\d+)-"`.
 - `untranslatedExclude`: paths (a file or a directory prefix) whose English is deliberate, so the
   missing-translation check skips them whole. `untranslatedAllow`: regexes matched against a
-  catalogue key or value; a match is a value that has no Korean form — a unit (`μm`), a language
+  catalogue key or value; a match is a value that has no Korean form - a unit (`μm`), a language
   name shown in its own language (`English`), a file list, a formula of identifiers. Both lists
   are the project's; the skill ships neither.
 - With no declaration at all, `rules` · `suspects` · `grep` · `list` still run over the document set
@@ -230,7 +230,7 @@ Every rule carries `id` · `scope` · `severity` · `reason` · `find` · `repla
 is verified with `rules --test`. The `universal` scope always applies; a domain scope (`saas` and
 the like) applies when the project opts in through `ruleScopes` in `.claude/l10n.json`. A rule
 written for one register names it in `registers` (`screen` · `manual` · `plain`; a document with no
-declared kind is `plain`) and is skipped elsewhere — 「~할 수 있습니다」 replacing an instruction is
+declared kind is `plain`) and is skipped elsewhere - 「~할 수 있습니다」 replacing an instruction is
 a defect on a screen and the ordinary capability sentence of a reference manual, and a rule that
 cannot tell the two apart by letters tells them apart by register. A rule true
 beyond this repository goes into `RULES.base.json`; a rule true only in one project goes into that
@@ -246,7 +246,7 @@ has this failure caught by `rules --test`.
 ### Do not write `|$` inside a lookahead
 
 A pattern ending in a negative lookahead, such as `자바(?!스크립트)`, is satisfied for free at the
-end of a string. At an artificial end — a markdown line cut off by a code fragment — a correct word
+end of a string. At an artificial end - a markdown line cut off by a code fragment - a correct word
 is reported. The place to fix is not the pattern but the extractor: `segment()` carries the
 following text as `after`, rules match against `text + after`, and a hit counts only when it starts
 inside `text`. Writing `(?!스크립트|$)` rejects the real end too and becomes a miss. A new extractor
@@ -293,7 +293,7 @@ add one stem, add its final, adnominal, connective, and nominal forms with it. T
 T="$HOME/.claude/skills/simplecore/skills/korean-docs/scripts/l10n.mjs"
 node "$T" lens                   # the document set, or the declared resources
 node "$T" lens docs/manual       # one directory
-node "$T" lens /tmp/draft.md     # a draft outside the project — a reply before it is sent
+node "$T" lens /tmp/draft.md     # a draft outside the project - a reply before it is sent
 ```
 
 ### Anchor an ending check on everything that closes a clause
@@ -323,8 +323,8 @@ documents in -다체), the check runs in both directions.
 - The body of `<text>` · `<tspan>` in an `.svg` is checked as a document. Tags, attributes, and path
   data are ignored. After changing text, re-render with the `svg-diagrams` skill and check for
   overflow and clipping. A mermaid code block inside a document is preserved as is.
-- **`audit`'s untranslated check reads catalogues only.** A file the plain-line fallback reads — a
-  typesetting XML, a Python figure module, a build script — is source: every line without Hangul is
+- **`audit`'s untranslated check reads catalogues only.** A file the plain-line fallback reads - a
+  typesetting XML, a Python figure module, a build script - is source: every line without Hangul is
   code, so those files are never judged untranslated, the way markdown never is. Inside a catalogue a
   hex colour (`1B4A9C`) and a value made only of placeholders and separators (`%1$s ~ %2$s`, Android's
   positional `%s`) are not translations either and pass.

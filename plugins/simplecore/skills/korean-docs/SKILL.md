@@ -1,6 +1,6 @@
 ---
 name: korean-docs
-description: Use for virtually EVERY task — all user-facing output in this environment is Korean. Assistant replies and explanations, documentation, translations, proofreading, README/design docs/release notes, UI copy in i18n resources and wireframe board sources, SVG text labels, and Korean glossary (GLOSSARY.md) management. Also use when the user mentions 번역투, awkward Korean, terminology consistency, or asks to re-check documents against glossary rules (화면 문구 검토 · 카피 검수 · UX 라이팅 · 문구를 자연스럽게). 한국어로 답변·설명·문서 작성·번역·교정·검수·용어사전 관리를 하는 모든 상황에서 사용한다 — 일반 답변도 예외가 아니다.
+description: Use for virtually EVERY task - all user-facing output in this environment is Korean. Assistant replies and explanations, documentation, translations, proofreading, README/design docs/release notes, UI copy in i18n resources and wireframe board sources, SVG text labels, and Korean glossary (GLOSSARY.md) management. Also use when the user mentions 번역투, awkward Korean, terminology consistency, or asks to re-check documents against glossary rules (화면 문구 검토 · 카피 검수 · UX 라이팅 · 문구를 자연스럽게). 한국어로 답변·설명·문서 작성·번역·교정·검수·용어사전 관리를 하는 모든 상황에서 사용한다 - 일반 답변도 예외가 아니다.
 ---
 
 # The standard for Korean output
@@ -17,7 +17,7 @@ instruction is English, including the ones surrounding a Korean quotation.
 
 ## Two modes
 
-**Reply mode** — every Korean reply, explanation, and report.
+**Reply mode** - every Korean reply, explanation, and report.
 
 1. Read `references/response-style.md` if it is not in context right now. Remembering that you read
    it is not evidence: if the register table and the eight questions cannot be quoted at this
@@ -26,11 +26,11 @@ instruction is English, including the ones surrounding a Korean quotation.
    translations and banned spellings apply to replies too.
 3. Do not sweep the repository, and do not offer to create a glossary. **A report goes through
    the machine before it is sent**: a completion report, a review result, anything longer than a
-   screen is written to the scratch directory first and run through `sweep <that file>` — the
-   sentence rules, the smells, and the lens read it in about a tenth of a second — and what it
+   screen is written to the scratch directory first and run through `sweep <that file>` - the
+   sentence rules, the smells, and the lens read it in about a tenth of a second - and what it
    finds is fixed before the reply leaves. A one-line answer needs no such pass.
 
-**Document mode** — writing, translating, proofreading, reviewing, sweeping, glossary work.
+**Document mode** - writing, translating, proofreading, reviewing, sweeping, glossary work.
 
 1. Find the glossary. Walk up from the current directory checking `.claude/GLOSSARY.md` then
    `GLOSSARY.md`, stopping at a directory holding `.git` or at the home directory. Read it end to
@@ -52,7 +52,7 @@ instruction is English, including the ones surrounding a Korean quotation.
 **The standard always applies; the repository sweep runs only when asked.** The write-time hook
 already runs the glossary check and the sentence-rule pack on every file written in a project that
 has a glossary, so a single document is judged as it is written. A sweep of the whole repository
-takes an instruction — 「감사해 줘」 · 「용어사전으로 검사해 줘」 · 「전체 재감사」 · 「문구 검토」. A
+takes an instruction - 「감사해 줘」 · 「용어사전으로 검사해 줘」 · 「전체 재감사」 · 「문구 검토」. A
 project instruction file (`AGENTS.md` · `CLAUDE.md`) requiring the audit as the closing step of some
 stage is also a request. Editing one document is not a reason to sweep the repository. When the
 audit environment (`.claude/l10n.json`) is missing, say in one line what cannot be checked and do
@@ -60,8 +60,8 @@ not offer to create it.
 
 **An audit that was asked for is finished in one go.** 「감사해 줘」 means 「find it and fix it」.
 
-- Run `sweep`. It verifies the rule pack, then runs every check — `check` · `rules` · `suspects` ·
-  `audit` when resource kinds are declared · the lens count — and closes with what reached what: the file count, the glossary
+- Run `sweep`. It verifies the rule pack, then runs every check - `check` · `rules` · `suspects` ·
+  `audit` when resource kinds are declared · the lens count - and closes with what reached what: the file count, the glossary
   and sentence rule counts, and whether the lens loaded. Read that line before reading any zero as
   a pass; a zero over zero files is not a pass. When running one command on its own, insert a
   deliberate violation, confirm the check reaches it, and delete it.
@@ -73,7 +73,7 @@ not offer to create it.
 - A type you find goes into the rule pack or the lens in the same change, and the sweep runs again
   across the repository.
 - Drive errors to zero; fix warnings one by one or write down why each stays. Re-check the
-  sentences you rewrote — the replacement being itself a banned expression is the most common
+  sentences you rewrote - the replacement being itself a banned expression is the most common
   outcome.
 - There are exactly two places to stop: a term decision that could go either way (carry a
   provisional spelling to the end, then ask once, in a batch) and a git commit or push.
@@ -90,8 +90,8 @@ node "$T" lens [paths...]    # the reading lens: candidates for a person, never 
 node "$T" audit              # locale-resource audit (needs .claude/l10n.json)
 ```
 
-`rules` · `suspects` · `lens` take a file or a directory, and a file outside the project — a reply
-drafted in the scratch directory — is read as a document, which is how a reply gets a machine's eyes
+`rules` · `suspects` · `lens` take a file or a directory, and a file outside the project - a reply
+drafted in the scratch directory - is read as a document, which is how a reply gets a machine's eyes
 before it goes out.
 
 Flags, the hook, the declaration files, how to write a rule, and how to confirm somebody else's
@@ -107,7 +107,7 @@ Register a term in the project glossary **immediately** when any of these holds:
   candidates).
 - It is an expression this task nearly got wrong (register it as a banned spelling).
 - The user corrected it (the correction becomes the standard and the earlier form becomes a banned
-  spelling). Registration is the last step — first work through **A correction diagnoses the
+  spelling). Registration is the last step - first work through **A correction diagnoses the
   guidance** below.
 
 **Glossary or rule pack.** If the thing to ban conjugates, or if an exception separating it from
@@ -131,8 +131,8 @@ banned spellings), what is waiting on the user (candidates · recommendation · 
 
 When the user points at a sentence, that sentence is the symptom and the diagnosis is about this
 skill and the project instructions. Registering the word as banned is not the end of it. Answer the
-three questions in `references/response-style.md` §6 — which rule should have caught it and why it
-did not, whether the guidance itself uses the expression, whether the type is missing altogether —
+three questions in `references/response-style.md` §6 - which rule should have caught it and why it
+did not, whether the guidance itself uses the expression, whether the type is missing altogether -
 fix that cause, then register, and say in the report which of the three it was.
 
 ## What not to touch (translation and proofreading)
@@ -164,7 +164,7 @@ fix that cause, then register, and say in the report which of the three it was.
 | "The base rule does not fit, so I will edit `GLOSSARY.base.md`" | That file is shared by every project. Adjust through the project glossary's exception table, and narrow with `except` when only one site is affected. |
 | "I registered it, so the report can skip it" | Registration nobody can review is not a decision. Put the term-decision section in the completion report. |
 
-## Red flags — stop when you think this
+## Red flags - stop when you think this
 
 - You are about to translate a new term "this way for now and tidy it up later".
 - You are about to relax a rule instead of fixing what it found (if relaxing is right, report the

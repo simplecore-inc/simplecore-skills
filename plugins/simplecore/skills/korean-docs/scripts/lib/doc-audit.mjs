@@ -4,7 +4,7 @@
  * Audits Markdown/MDX prose, SVG <text>/<tspan> labels, and the quoted string
  * values of declared locale-resource files against the merged glossary rules.
  * Two callers share it: check-glossary.mjs (the CLI the write-time hook runs)
- * and l10n.mjs's `check` subcommand — one engine, so both report identically.
+ * and l10n.mjs's `check` subcommand - one engine, so both report identically.
  */
 
 import {readFileSync, readdirSync, existsSync, statSync, mkdirSync, writeFileSync} from 'node:fs';
@@ -108,7 +108,7 @@ function walkAll(dir, out = []) {
  *
  * The run's own target list cannot answer this. A run scoped to one Markdown file
  * scans no resources by definition, so counting resources among its targets reports
- * zero for a declaration that is perfectly correct — and the write-time hook scopes
+ * zero for a declaration that is perfectly correct - and the write-time hook scopes
  * every run to one file. Judging the patterns against the tree separates a narrowed
  * scope from a declaration that reaches nothing, which is the only one of the two
  * that anybody can act on.
@@ -158,8 +158,8 @@ export function makeLocaleResourceMatcher(patterns, root) {
  * Where glossary discovery starts.
  *
  * **The glossary belongs to the audited file, not to the shell.** Starting from
- * cwd means naming a path outside the current directory's project — which every
- * caller passing an absolute path does — discovers no glossary at all: the
+ * cwd means naming a path outside the current directory's project - which every
+ * caller passing an absolute path does - discovers no glossary at all: the
  * project's own rules fall away to the base set, its locale resources stop
  * being recognised, and the run still exits 0. Starting from the first target
  * that exists makes the audit the same whichever directory it is invoked from.
@@ -180,7 +180,7 @@ function findPath(p, root, label) {
 }
 
 /**
- * Resolves audit targets. Explicitly named files are always audited —
+ * Resolves audit targets. Explicitly named files are always audited -
  * audit.exclude applies only to files discovered by scanning (directory
  * walks, audit.paths, project-wide scan), so naming a file cannot silently
  * report "clean" because a glob filtered it out. The glossary file itself is
@@ -249,9 +249,9 @@ function blank(match) {
 // Verbatim quotation of somebody else's document
 // ---------------------------------------------------------------------------
 //
-// A document that reproduces another organisation's prose — a tender's requirement clauses
+// A document that reproduces another organisation's prose - a tender's requirement clauses
 // beside the bidder's assessment of each one, a standard's wording quoted before the
-// commentary, a statute's article next to how it is met — carries two layers with opposite
+// commentary, a statute's article next to how it is met - carries two layers with opposite
 // rules. The commentary is this repository's writing and every rule applies to it; the quoted
 // clause belongs to whoever wrote it and reproducing it faithfully is the whole point, so
 // "correcting" its spelling is a defect rather than a fix.
@@ -352,18 +352,18 @@ function stripLines(content) {
 // ---------------------------------------------------------------------------
 //
 // A code span is already exempt: `ACCESSCORE` in backticks is a value somebody types, not a
-// spelling this standard judges. Screen copy cannot use backticks — they would be drawn on the
-// screen — so a value shown on a screen is marked up instead, with `<code>` or with a class that
+// spelling this standard judges. Screen copy cannot use backticks - they would be drawn on the
+// screen - so a value shown on a screen is marked up instead, with `<code>` or with a class that
 // sets it in a monospace face. Those are the same statement in a different notation, and the
 // exemption follows the statement rather than the notation.
 //
 // **A span is a literal only when there is no Hangul in it.** The same monospace face carries
-// dense Korean metadata lines — 「담당 자격 · 주기 · 기한 · 정원 제약」 — and those are prose
+// dense Korean metadata lines - 「담당 자격 · 주기 · 기한 · 정원 제약」 - and those are prose
 // whatever face they are set in; blanking them would silence hundreds of checkable sentences to
 // quiet one DSN name. Text outside the span is never touched, so the sentence a value sits in is
 // read in full.
 //
-// What this gives up is a misspelling inside a literal — a `AccessCore` written in a mono span
+// What this gives up is a misspelling inside a literal - a `AccessCore` written in a mono span
 // goes unread, exactly as it does inside backticks today. That is the price of the code-span
 // contract and not a new hole.
 
@@ -392,31 +392,31 @@ export function blankLiteralMarkup(lines) {
 //
 // A style catalogue is written as `금지 → 대체` rows, so the phrasings it tells people to write
 // are printed in it as many times as it has rows. A frequency rule counts them as the author
-// repeating a tic and reports the file for saying the very thing it prescribes — one document
+// repeating a tic and reports the file for saying the very thing it prescribes - one document
 // here drew eleven warnings for 「수 있습니다」 and every one of them sat on the right of an
 // arrow, line 281 being 「조회 가능합니다 → 조회할 수 있습니다」.
 //
 // Exempting that one file would leave the next catalogue somebody writes to hit it again, so
 // the count is what changes: **the recommended side of a contrast row does not feed a frequency
-// count, in any file.** Only a frequency rule is affected — an outright ban matching there is a
+// count, in any file.** Only a frequency rule is affected - an outright ban matching there is a
 // catalogue teaching a banned form, which is a real finding and still reported.
 //
 // **The recognition is deliberately narrow, because over-suppression is the worse failure.** A
 // rule that stops counting real repetition costs more than the warning it silences, so four
 // things must all hold and a stray arrow in a sentence satisfies none of them:
 //
-//   1. The line is a row — a list item, a blockquote line, or a table row. Ordinary prose is
+//   1. The line is a row - a list item, a blockquote line, or a table row. Ordinary prose is
 //      never masked, which is what keeps 「화면 문구 27,830개 → 2,000자리 안팎. 사람이 …」 and
 //      「문장 원칙 → 금지 패턴 → 어휘 … 순으로 구성한다」 counted in full.
 //   2. Within the row (a table cell, or one `·`-separated pair of a specimen line) there is
 //      exactly one arrow, with text on both sides.
-//   3. Neither side carries a sentence break — no `.` mid-string and none at the end. A
+//   3. Neither side carries a sentence break - no `.` mid-string and none at the end. A
 //      specimen is a fragment; a bullet that continues into prose after the pair is prose.
 //   4. The block holds two or more such pairs. A catalogue comes in rows; a lone arrow inside
 //      one bullet of an ordinary list is not a catalogue.
 //
 // Where these disagree with a real catalogue the mask simply does not apply and the phrase is
-// counted — so the way this rule fails is a warning somebody re-reads, never a silence.
+// counted - so the way this rule fails is a warning somebody re-reads, never a silence.
 
 const ROW_MARKER = /^(\s*(?:[-*+]|\d+[.)]|>+)\s+)/;
 const SENTENCE_BREAK = /[.。](\s|$)/;
@@ -489,8 +489,8 @@ export function contrastRecommendedRanges(lines) {
 /**
  * Returns lines with every character blanked except the text content of
  * <text>/<tspan> elements, preserving line numbers and column offsets so
- * findings report accurate positions. SVG markup — tags, attribute values
- * (coordinates, colors, styles), <style>/<defs>/path data — carries no prose
+ * findings report accurate positions. SVG markup - tags, attribute values
+ * (coordinates, colors, styles), <style>/<defs>/path data - carries no prose
  * and would produce false positives if matched, so only visible label text is
  * kept. Nested <tspan> inside <text> stays included; other children do not.
  */
@@ -510,7 +510,7 @@ function stripSvgLines(content) {
     if (inText === 0) blankRange(cursor, m.index); // content outside text elements
     blankRange(m.index, tagRe.lastIndex);          // the tag markup itself
     if (/^<[!?]/.test(tag)) {
-      // declarations, comments, CDATA — no element nesting
+      // declarations, comments, CDATA - no element nesting
     } else if (/^<\//.test(tag)) {
       const name = tag.match(/^<\/\s*([A-Za-z0-9:_-]+)/);
       if (name && (name[1] === 'text' || name[1] === 'tspan')) inText = Math.max(0, inText - 1);
@@ -528,8 +528,8 @@ function stripSvgLines(content) {
  * Returns lines with every character blanked except the values of quoted
  * string literals, preserving line numbers and column offsets so findings
  * report accurate positions. Identifiers, punctuation and comments carry no
- * screen copy; a literal that a ':' follows is an object key — a message id,
- * not something anyone reads — and is blanked too. Single, double and template
+ * screen copy; a literal that a ':' follows is an object key - a message id,
+ * not something anyone reads - and is blanked too. Single, double and template
  * quotes are all recognised, escapes included, which covers .ts, .js, .json
  * and .jsonc resource files alike.
  */
@@ -598,11 +598,11 @@ function frontMatterRange(rawLines) {
 // it belongs in the machine pass. Bulk find-and-replace is what produces these:
 // swapping a noun changes its final consonant and leaves the old particle behind.
 //
-// 은/는 is deliberately NOT checked in running text — it collides with the adnominal
+// 은/는 is deliberately NOT checked in running text - it collides with the adnominal
 // ending (있는, 없는, 받는), which would bury the real findings in false positives.
 //
 // It IS checked in one position: directly after a closing quotation mark. An adnominal
-// ending cannot sit there — 「…」 closes a noun phrase, so what follows is a particle and
+// ending cannot sit there - 「…」 closes a noun phrase, so what follows is a particle and
 // nothing else. That narrow window catches the mistake bulk replacement leaves behind on
 // quoted screen labels (「선택한 구역」는), which is otherwise invisible to every check.
 // `true` means the particle belongs after a syllable that ENDS in a consonant.
@@ -612,7 +612,7 @@ const PARTICLE_NEEDS_FINAL = {이: true, 가: false, 을: true, 를: false, 과:
 const PARTICLE_STEM_SKIP =
   /(하|되|있|없|않|같|받|모|찾|잡|접|읽|적|맞|묻|닿|주|보|쓰|가|오|넣|만들|생기|나오|바뀌|걸리|남|들|풀|막|열|끊|끝나|늘|줄|물|앉|서|섞|싣|얹|짚|채우|인|누구|언제|누|무엇)$/;
 // **The ㅅ-irregular adnominal.** 짓다 · 붓다 · 잇다 · 낫다 · 긋다 · 젓다 drop their ㅅ
-// before a vowel ending, so 짝짓+을 surfaces as 짝지을 — a vowel-final syllable followed by
+// before a vowel ending, so 짝짓+을 surfaces as 짝지을 - a vowel-final syllable followed by
 // 을, which reads as a noun that took the wrong object particle. It is not an enumeration
 // standing in for a family: Korean has about a dozen ㅅ-irregular verbs and the list is
 // closed, unlike the -ㄴ가 case above where enumerating syllables was the defect.
@@ -630,20 +630,20 @@ const QUOTED_PARTICLE_RE = /([가-힣])[」』](은|는)(?=[\s.,·)\]'"]|$)/g;
 // Korean morphology, and each entry is a word rather than a domain term.
 //
 // **The -ㄴ가 branch is decided by position, not by an enumeration of syllables.** It used
-// to list 는·은·른·운·한·인 and let 아닌가 · 그런가 · 어떤가 through as particle errors — an
+// to list 는·은·른·운·한·인 and let 아닌가 · 그런가 · 어떤가 through as particle errors - an
 // enumeration standing in for a family, which is the defect this file exists to catch.
 //
 // Widening it to «every ㄴ-final syllable» is NOT the fix: 화면 · 조건 · 시간 · 사건 all end
 // in ㄴ, so 「화면가 열린다」 would go quiet with it. What separates the two is where the
 // token sits. The interrogative -ㄴ가 CLOSES a sentence; 명사 + 가 is a subject and something
 // has to follow it. So the ending is accepted only at the end of a line, before a question
-// mark, or before a closing quote — and a subject in mid-sentence is still judged.
+// mark, or before a closing quote - and a subject in mid-sentence is still judged.
 const PARTICLE_WORD_SKIP = /(ㄴ가|[간-힣]?[는은른운한인]가|언젠가|누군가|어딘가|뭔가|무언가|선가)$/;
 /**
- * Nothing but closing punctuation left on the line — the interrogative -ㄴ가's position.
+ * Nothing but closing punctuation left on the line - the interrogative -ㄴ가's position.
  *
  * <p>**A table cell's edge closes a clause exactly as the end of a line does**, so `|` counts.
- * A checklist written as a table puts the question in a cell — 「파일 크기가 0이 아닌가 |」 —
+ * A checklist written as a table puts the question in a cell - 「파일 크기가 0이 아닌가 |」 -
  * and without the pipe the ending is read as 아닌 + 가 and a correct question is reported as a
  * particle error. What is given up is a ㄴ-final noun that takes 가 and is followed by nothing
  * but the cell edge (「사건가 |」), which is a sentence fragment rather than the shape bulk
@@ -664,11 +664,11 @@ function isNGaEnding(whole, rest) {
 // **Transliterated place names are the third source**, and they are a family rather than a
 // coincidence: a foreign name written in Hangul ends wherever the source language ends, and 이
 // is a common one (하노이 · 상하이 · 뭄바이 · 두바이 · 하와이). A product written for foreign
-// workers names their cities, so this arrives in ordinary screen copy — 「하노이 공장」 read as
+// workers names their cities, so this arrives in ordinary screen copy - 「하노이 공장」 read as
 // 하노+이 turns a factory into a subject particle. Only the bare name is skipped: 「하노이가」 ·
 // 「하노이를」 are still judged, and they are already right, because the name is vowel-final.
 //
-// **`타이` belongs to the same loanword family as `레이` · `웨이` · `페이` · `메이`** — an English
+// **`타이` belongs to the same loanword family as `레이` · `웨이` · `페이` · `메이`** - an English
 // `-ie` / `-ay` / `-y` ending transliterated with 이 as its last syllable. It arrives through
 // method names as often as through clothing: 보우타이(Bow-Tie) is a standard risk-assessment
 // technique, so 「보우타이 기법」 reads as 보우타+이 and a correct term is reported as a particle
@@ -683,18 +683,18 @@ function hasFinalConsonant(ch) {
 }
 
 // 과/와 joins two noun phrases, so it always stands BETWEEN them: a space and another Hangul word
-// follow it. A word whose last syllable simply IS 과 can be followed by anything — a middle dot in
+// follow it. A word whose last syllable simply IS 과 can be followed by anything - a middle dot in
 // a list, a closing paren, the end of the line.
 //
 // **That position is the family test, and it is here because the enumeration was losing.**
 // `PARTICLE_TAIL_SKIP` already carried 효과 · 초과 for this one syllable, and the Sino-Korean -과
 // vocabulary behind them has no end: 결과 · 성과 · 경과 · 통과 · 학과 · 교과 and every medical
 // department (내과 · 외과 · 치과 · 정형외과 · 이비인후과). Adding them one at a time is the defect
-// this file names elsewhere — an enumeration standing in for a family — and each miss is an error
+// this file names elsewhere - an enumeration standing in for a family - and each miss is an error
 // on a correct sentence, which is the finding that teaches people to stop reading the output.
 //
 // What is given up is 「내과 진료를」, where a noun does follow. What is kept is the shape bulk
-// replacement actually leaves — 「회사과 협력사」 — and the other direction, 「사업장와」, is judged
+// replacement actually leaves - 「회사과 협력사」 - and the other direction, 「사업장와」, is judged
 // as before because no Korean word ends in 와 after a consonant.
 const CONJUNCTION_FOLLOWS = /^\s+[가-힣]/;
 
@@ -729,12 +729,12 @@ function checkParticles(lines) {
 
 // ── a particle after an interpolation ───────────────────────────────────────
 // `버전 {{version}}이 되었습니다` is correct for version 3 and wrong for version 2, and
-// nothing about the string says which. The value arrives at render time — a number, a
-// name, a count, a word from another language — so its final consonant is unknown when
+// nothing about the string says which. The value arrives at render time - a number, a
+// name, a count, a word from another language - so its final consonant is unknown when
 // the sentence is written, and 이/가 · 을/를 · 과/와 · 로/으로 all turn on exactly that.
 //
 // The rule above cannot see these: it matches a particle after Korean syllables, and what
-// precedes this one is `}}`. Neither can a translator, a review, or any amount of care —
+// precedes this one is `}}`. Neither can a translator, a review, or any amount of care -
 // the sentence is right in front of whoever wrote it, for the one value they had in mind.
 //
 // **Every hit is a real alternation and none of them is decided here.** Which values a
@@ -745,11 +745,11 @@ function checkParticles(lines) {
 //
 // Interpolation shapes: {{name}} (i18next, Handlebars, Mustache), {name} (ICU, .NET,
 // Python format), %s and %1$s (printf, Android). Listed rather than generalised to 「any
-// punctuation」 — a particle after a closing bracket or quote is somebody quoting a label,
+// punctuation」 - a particle after a closing bracket or quote is somebody quoting a label,
 // which the rule above already decides correctly.
 //
 // **`${…}` is deliberately not among them.** A template literal is code, and what it
-// substitutes is in the same file a few lines up — `${planted()}가` is decidable by
+// substitutes is in the same file a few lines up - `${planted()}가` is decidable by
 // reading, and it was right. This rule is about the placeholder a MESSAGE carries, whose
 // value arrives from data the sentence never sees.
 //
@@ -757,7 +757,7 @@ function checkParticles(lines) {
 // separates the two is not the punctuation but whether the author can know the final
 // syllable, and a template literal is merely the shape in which that happens most often.
 // A cross-reference is the other shape: `{{b-06-new}}` on a wireframe board resolves at
-// BUILD time to `B-06`, so the author knows the syllable and chooses 이/가 correctly —
+// BUILD time to `B-06`, so the author knows the syllable and chooses 이/가 correctly -
 // and firing on those buries the genuine i18n case under a hundred false errors, which is
 // how a checker teaches its reader to skip the output. See RESOLVED_PLACEHOLDERS below:
 // a project declares the shape of its cross-references and how they render, and the
@@ -766,7 +766,7 @@ function checkParticles(lines) {
 // **Annotations are skipped only where the value is still unknown.** A note addressed to
 // whoever maintains the file (audit.localeAnnotationKeys) is prose whose tokens are usually
 // cross-references a build resolves to a fixed string, and skipping the whole note used to
-// stand in for saying so — the same missing family, wearing a second disguise. Now that a
+// stand in for saying so - the same missing family, wearing a second disguise. Now that a
 // resolved reference is judged rather than excused, the skip applies to the undecidable
 // branch alone: declare the shape and a wrong particle inside a note is reported like any
 // other, which is where most of them are.
@@ -774,8 +774,8 @@ const INTERPOLATION_PARTICLE_RE =
   /(?<!\$\{[^{}]{0,80})(\}\}|\}|%[sd]|%\d+\$[sd])(이|가|을|를|은|는|과|와|으로|로|이라|라)(?=[\s.,·)\]'"]|$)/g;
 
 // A single-brace group that ENUMERATES rather than names is prose, not a placeholder. A
-// design document writes the required fields of a form as a set — `{유해·위험요인, 위험성
-// 결정의 내용, 조치의 내용}을 포함해야 한다` — and the particle there is decided by the last
+// design document writes the required fields of a form as a set - `{유해·위험요인, 위험성
+// 결정의 내용, 조치의 내용}을 포함해야 한다` - and the particle there is decided by the last
 // word inside the braces, which is right in front of whoever wrote it. A placeholder name
 // never carries a comma or a space (`{count}`, `{userName}`, `{사업장명}`), so those two
 // characters separate the two shapes without needing to guess at the content's language.
@@ -793,7 +793,7 @@ const BRACE_ENUMERATION = /[, ]/;
 //
 // Left of `=>` is a regex over the placeholder's inner text; right of it is a replacement
 // template producing the string the build puts on the page (`$1`…`$9`, and `\U$n` for a
-// group the build uppercases). **Declaring one does not silence the check — it turns it
+// group the build uppercases). **Declaring one does not silence the check - it turns it
 // into a real one**: the rendered value is known, so the particle after it is judged like
 // any Korean noun, and `B-25과` is reported with the particle it should have been.
 //
@@ -820,8 +820,8 @@ function renderTemplate(template, match) {
 
 // Digits and Latin letters are read aloud in Korean, and a particle after one follows that
 // reading rather than the glyph. A NUMBER's reading is settled by its last digit under both
-// the digit-by-digit reading (「이오」) and the sino-Korean one (「이십오」) — 0 is 공·영 and
-// 십·백, all closed, and the other nine agree with themselves — so the last character is
+// the digit-by-digit reading (「이오」) and the sino-Korean one (「이십오」) - 0 is 공·영 and
+// 십·백, all closed, and the other nine agree with themselves - so the last character is
 // enough and no number parsing is needed. `r` is left out on purpose: 아르 and 알 are both
 // current, and a checker that cannot tell which stays silent instead of demanding one.
 const READING_FINAL = {
@@ -912,7 +912,7 @@ function checkInterpolatedParticles(lines, isAnnotation = () => false, resolved 
 }
 
 // ── repeated word ───────────────────────────────────────────────────────────
-// `작업작업`, `정비 정비` — the other thing bulk replacement leaves behind, when
+// `작업작업`, `정비 정비` - the other thing bulk replacement leaves behind, when
 // a phrase is substituted into text that already contained the replacement.
 const REPEAT_RE = /(?<![가-힣])([가-힣]{2,4}) ?\1(?![가-힣])/g;
 const REPEAT_OK = new Set([
@@ -921,7 +921,7 @@ const REPEAT_OK = new Set([
   '구석구석', '집집', '나날', '틈틈', '알알', '겹겹', '층층', '줄줄',
   // Reduplicated adverbs of spacing and density. They describe how often
   // something occurs, so technical prose reaches for them whenever it says a
-  // stream is sparse or a series is uneven — 「프레임은 드문드문 나온다」 is the
+  // stream is sparse or a series is uneven - 「프레임은 드문드문 나온다」 is the
   // ordinary way to say an event-driven protocol is quiet.
   '드문드문', '띄엄띄엄', '듬성듬성', '군데군데',
 ]);
@@ -940,11 +940,11 @@ function checkRepeats(lines) {
 // ── a heading written as a sentence ─────────────────────────────────────────
 // A markdown heading is a name slot: a table of contents, a cross-reference and a
 // breadcrumb all quote it as a noun. Ending it in a finite verb reads as a sentence cut
-// short — `## 자료를 넣는다` where `## 자료 넣기` belongs.
+// short - `## 자료를 넣는다` where `## 자료 넣기` belongs.
 //
 // The style reference calls this hard to judge by machine, and for a sentence anywhere in
 // a document it is: the same 「~한다」 is correct prose one line lower. **A heading is not
-// anywhere** — `^#{1,6} ` is a position the file itself declares, so the ambiguity that
+// anywhere** - `^#{1,6} ` is a position the file itself declares, so the ambiguity that
 // made the rule undecidable is gone the moment the check reads the raw line instead of the
 // extracted segment.
 //
@@ -953,23 +953,23 @@ function checkRepeats(lines) {
 // heading rule the same lines judged `### 반만 아는 계열은 \`rules --test\`가 검출한다` as
 // 「반만 아는 계열은 　　가 검출한다」 and reported that back to the reader, a finding naming a
 // heading nobody can find by searching for it. Worse, the quoting exemption below lists a
-// backtick among the marks that make a heading somebody else's sentence — and a backtick cannot
+// backtick among the marks that make a heading somebody else's sentence - and a backtick cannot
 // survive the mask, so the branch was dead for the one quoting style Markdown actually uses.
 //
 // What the mask WAS doing for it is refusing lines that only look like headings: `# 값을 넣는다`
 // inside a shell fence is a comment, and a YAML front-matter line beginning `#` is a comment
-// too. Those are positions, not spellings, so they are excluded by position — a line the mask
-// emptied, and the front-matter block — while the text itself is read exactly as written.
+// too. Those are positions, not spellings, so they are excluded by position - a line the mask
+// emptied, and the front-matter block - while the text itself is read exactly as written.
 //
 // The ending is decided by jamo arithmetic rather than by a list of verbs. `-ㄴ다`/`-는다`
 // is the productive plain-style finite ending, and every inflection of it puts ㄴ in the
-// jongseong of the syllable before 다 — 한다 · 온다 · 짓는다 · 붙인다 · 않는다 all fall out
+// jongseong of the syllable before 다 - 한다 · 온다 · 짓는다 · 붙인다 · 않는다 all fall out
 // of one test, where a list of verb forms would have to grow with every new verb.
 const HEADING_RE = /^(#{1,6})\s+(.*\S)\s*$/;
 /** Finite endings that jamo arithmetic does not reach: past, 합니다체, and the adjectives. */
 const HEADING_FINITE_TAIL = /(했다|았다|었다|였다|ㅂ니다|습니다|입니다|아니다|없다|있다|다르다|같다)$/;
 
-/** Whether `ch` is a Hangul syllable whose final jamo is ㄴ — the `-ㄴ다` ending. */
+/** Whether `ch` is a Hangul syllable whose final jamo is ㄴ - the `-ㄴ다` ending. */
 function endsInNieun(ch) {
   const code = ch?.codePointAt(0);
   if (code === undefined || code < 0xac00 || code > 0xd7a3) return false;
@@ -979,7 +979,7 @@ function endsInNieun(ch) {
 function checkHeadingForm(rawLines, strippedLines, fm) {
   const hits = [];
   rawLines.forEach((line, idx) => {
-    // A line the mask emptied is not prose — a fence and its contents, a JSX template, an
+    // A line the mask emptied is not prose - a fence and its contents, a JSX template, an
     // import. A `#` there is a shell comment or a colour.
     if (line.trim() !== '' && strippedLines[idx] === '') return;
     // Front matter is YAML, where a leading `#` opens a comment.
@@ -987,10 +987,10 @@ function checkHeadingForm(rawLines, strippedLines, fm) {
     const m = HEADING_RE.exec(line);
     if (!m) return;
     const text = m[2];
-    // A heading that is one word is a term being defined, not a sentence — `### 없다`
+    // A heading that is one word is a term being defined, not a sentence - `### 없다`
     // heads the entry for that word. A sentence needs something to predicate about.
     if (!/\s/.test(text)) return;
-    // A quoted heading reproduces somebody else's sentence — a rule being cited, a screen
+    // A quoted heading reproduces somebody else's sentence - a rule being cited, a screen
     // label, the title of another document. Fidelity outranks the name-slot rule there.
     if (/^([「"'`(\[]).*$/.test(text) && /[」"'`)\]]$/.test(text)) return;
     const finite =
@@ -1003,7 +1003,7 @@ function checkHeadingForm(rawLines, strippedLines, fm) {
 
 // ── Annotation values inside a locale resource ──────────────────────────────
 // Some resource files mix screen copy with commentary addressed to whoever
-// maintains the file — a wireframe frame carries its design notes beside the
+// maintains the file - a wireframe frame carries its design notes beside the
 // labels it draws. Both are string values, so the string-value mask cannot
 // tell them apart, and a screen-only ban would fire on prose that is allowed
 // to name the implementation it documents. audit.localeAnnotationKeys names
@@ -1026,7 +1026,7 @@ function endOfString(content, start) {
  * End of the value expression that begins at `start`, i.e. the first `,` or
  * `;` reached at bracket depth zero, or the closer of the object holding it.
  * Strings and comments are skipped whole, so punctuation inside them cannot
- * end the value early — which is what lets a value built from several
+ * end the value early - which is what lets a value built from several
  * concatenated literals across many lines be treated as one span.
  */
 function endOfValue(content, start) {
@@ -1080,7 +1080,7 @@ export function annotationRanges(content, keys) {
       i = close === -1 ? content.length : close + 2;
       continue;
     }
-    // A quoted key ("notes": ...) as well as a bare one — JSON and JS alike.
+    // A quoted key ("notes": ...) as well as a bare one - JSON and JS alike.
     if (ch === '"' || ch === "'" || ch === '`') {
       const end = endOfString(content, i);
       const colon = afterSpace(end);
@@ -1155,7 +1155,7 @@ export function auditFile(filePath, rules, checkUntranslated, isLocaleResource =
       for (const m of line.matchAll(rule.pattern)) {
         if (rule.screenOnly && isAnnotation(idx, m.index)) continue;
         // Only the frequency judgement is corrupted by a catalogue. A threshold-1 ban matching
-        // recommended copy means the catalogue prescribes a banned form — that stays reported.
+        // recommended copy means the catalogue prescribes a banned form - that stays reported.
         if (rule.threshold > 1 && isRecommendedCopy(idx, m.index)) continue;
         hits.push({line: idx + 1, text: m[0]});
       }
@@ -1197,13 +1197,13 @@ export function auditFile(filePath, rules, checkUntranslated, isLocaleResource =
     for (const hit of checkHeadingForm(rawLines, lines, fm)) {
       warnings.push({...hit, count: 1, rule: {
         source: 'heading-form', label: 'the heading is a sentence', level: 'warn', threshold: 1,
-        suggestion: 'a heading is a name slot, so use a noun form — 「자료 넣기」, not 「자료를 넣는다」',
+        suggestion: 'a heading is a name slot, so use a noun form - 「자료 넣기」, not 「자료를 넣는다」',
       }});
     }
   }
 
   // Untranslated-content heuristic: flag remaining English prose lines.
-  // Markdown-only — the SVG mask leaves isolated short labels that would
+  // Markdown-only - the SVG mask leaves isolated short labels that would
   // misfire this prose detector, and an English locale resource is correct by
   // definition.
   if (checkUntranslated && isProse && !disabledChecks.has('untranslated')) {
@@ -1245,7 +1245,7 @@ export function auditFile(filePath, rules, checkUntranslated, isLocaleResource =
       text: '<!-- l10n:quote -->',
       rule: {
         source: 'quote-region',
-        suggestion: 'close it with `<!-- l10n:/quote -->` — unclosed, everything from this line to the end of the file drops out of the check',
+        suggestion: 'close it with `<!-- l10n:/quote -->` - unclosed, everything from this line to the end of the file drops out of the check',
         label: 'an unclosed quoted span',
         level: 'error',
         threshold: 1,
@@ -1311,14 +1311,14 @@ export function initL10n(cliPath) {
   console.log(`  4. Sweep with the sentence rules: node ${cliPath.replace(/ check$/, '')} rules`);
   console.log('');
   console.log('NOTE git ls-files\' ** means one or more path segments, so locales/**/ko.json');
-  console.log('  does not match locales/ko.json. When both shapes exist, write two globs —');
+  console.log('  does not match locales/ko.json. When both shapes exist, write two globs -');
   console.log('  a missed file shows up as silence, not as an error.');
 }
 
 const L10N_TEMPLATE = {
   $comment: [
     'The resource declaration the korean-docs l10n tool reads. This file says only where the',
-    'translated strings are — the rules live in the glossary pair (.claude/GLOSSARY.md plus the',
+    'translated strings are - the rules live in the glossary pair (.claude/GLOSSARY.md plus the',
     "skill's GLOSSARY.base.md) and the rule pack (.claude/l10n-rules.json plus RULES.base.json).",
     '',
     "glob trap: git ls-files' ** means one or more path segments, so locales/**/ko.json does not",
@@ -1350,7 +1350,7 @@ const RULES_TEMPLATE = {
   $comment: [
     'Sentence rules true only in this repository. Every rule carries hit (must be caught) and',
     'miss (must not be caught) examples and is verified with l10n.mjs rules --test. A banned word',
-    'goes into .claude/GLOSSARY.md instead — only there do the document audit and the resource',
+    'goes into .claude/GLOSSARY.md instead - only there do the document audit and the resource',
     "audit both read it. A rule true beyond this repository goes up to the skill's RULES.base.json.",
   ],
   version: 1,
@@ -1408,7 +1408,7 @@ export function runDocAudit(args, cliPath) {
     const shown = relative(process.cwd(), discovered.path) || discovered.path;
     console.log(`glossary: ${shown}${args.noBase ? '' : ' + the base glossary'} (${rules.length} rules)`);
   } else {
-    console.log('No project glossary — checking with the base glossary alone.');
+    console.log('No project glossary - checking with the base glossary alone.');
     console.log('To create one (the default location is .claude/GLOSSARY.md):');
     console.log(`  node ${cliPath} --init`);
   }
@@ -1416,18 +1416,18 @@ export function runDocAudit(args, cliPath) {
   // glossary silently revives the rule in every project that had turned it off.** The revived
   // finding then reads as a fresh defect: the exception row is still there, still explains why
   // the rule is off, and disables nothing. It was reported by `audit` alone, which is not the
-  // command a gate or the write-time hook runs — so the one place the silence mattered was the
+  // command a gate or the write-time hook runs - so the one place the silence mattered was the
   // one place it stayed silent, and three warnings sat in a repository whose exception row for
   // them was intact.
   if (deadExceptions.length > 0) {
     console.log(
-      `\n${deadExceptions.length} dead exceptions — the entries below match no base-glossary rule character for character, so they switch nothing off.` +
+      `\n${deadExceptions.length} dead exceptions - the entries below match no base-glossary rule character for character, so they switch nothing off.` +
         ` When a base rule's regex changes, the exception that disabled it quietly comes back to life, so rewrite them against the current rule text.`,
     );
     for (const row of deadExceptions) console.log(`  ${row}`);
   }
   // **A check that was switched off is named on every run.** Silence is what an exception buys,
-  // and silence is indistinguishable from a check that passed — so the one line the reader needs
+  // and silence is indistinguishable from a check that passed - so the one line the reader needs
   // is which of the built-in checks did not look at this tree.
   if (disabledChecks.size > 0) {
     const off = [...disabledChecks].map(([id, label]) => `${id}(${label})`).join(' · ');
@@ -1444,7 +1444,7 @@ export function runDocAudit(args, cliPath) {
   // clean one, so the declaration is reported on the line where it is applied. Two numbers,
   // because they answer different questions and only one of them can be wrong: what the patterns
   // reach in the repository, and how much of that this run's scope covers. Reporting the second
-  // alone made every single-file run — which is every run the write-time hook makes — accuse
+  // alone made every single-file run - which is every run the write-time hook makes - accuse
   // correct globs of matching nothing.
   let deadPatterns = [];
   if (config.localeResources.length > 0) {
@@ -1462,12 +1462,12 @@ export function runDocAudit(args, cliPath) {
   // code so a gate and the write-time hook both stop on it.
   if (deadPatterns.length > 0) {
     console.log(
-      `\n[error] ${deadPatterns.length} audit.localeResources patterns match no file —` +
+      `\n[error] ${deadPatterns.length} audit.localeResources patterns match no file -` +
         ` the screen copy you declared is dropping out of the check.`,
     );
-    for (const {pattern, reason} of deadPatterns) console.log(`  ${pattern} — ${reason}`);
+    for (const {pattern, reason} of deadPatterns) console.log(`  ${pattern} - ${reason}`);
     console.log(`  Patterns are relative to the repository root (${root}).`);
-    console.log('  `*` does not cross `/` — use `**/` to reach subdirectories.');
+    console.log('  `*` does not cross `/` - use `**/` to reach subdirectories.');
     console.log('  If the resource files moved or are gone, remove them from the declaration.');
   }
   if (glossarySkipped) console.log('the glossary file itself is excluded from the audit');
@@ -1502,7 +1502,7 @@ export function runDocAudit(args, cliPath) {
   if (quotedRegions > 0) {
     console.log(
       `\nLines skipped as quoted spans: ${quotedFiles} files · ${quotedRegions} spans · ${quotedLines} lines` +
-        ` (somebody else's text kept verbatim — these lines were not checked)`,
+        ` (somebody else's text kept verbatim - these lines were not checked)`,
     );
   }
 
@@ -1515,17 +1515,17 @@ export function runDocAudit(args, cliPath) {
 }
 
 /**
- * `check` reads the glossary alone — the word rules. The sentence rules, the suspects and the
+ * `check` reads the glossary alone - the word rules. The sentence rules, the suspects and the
  * lens read the same document set without any declaration, and only the resource audit and the
  * declared resource kinds need `.claude/l10n.json`. So a zero from `check` is one check's zero,
  * and the line that says so is the difference between "nothing is wrong" and "one of five
  * checks looked". An earlier version of this footer said the sentence commands were off too,
- * which taught readers not to run them — the footer is now checked against what actually runs.
+ * which taught readers not to run them - the footer is now checked against what actually runs.
  */
 function reportDarkCommands(root, cliPath) {
   const declared = existsSync(join(root, '.claude', 'l10n.json'));
   console.log('');
-  console.log('This is the glossary word check alone. The sentence rules, the suspects and the lens have not run —');
+  console.log('This is the glossary word check alone. The sentence rules, the suspects and the lens have not run -');
   console.log(`  run \`node ${l10nCommand(cliPath).replace(/ check$/, '')} sweep\` for every check in one pass.`);
   if (!declared) {
     console.log('  With no .claude/l10n.json the sweep reads documents only (.md · .mdx · .svg); the resource audit');
@@ -1538,7 +1538,7 @@ function reportDarkCommands(root, cliPath) {
  *
  * `l10n.mjs` passes its own subcommand in as part of `cliPath`, so its hint is the path
  * itself. The hook entry point passes a bare script path and rejects the l10n flags, so a
- * hint built from it names a command that exits 2 — name the tool beside it instead.
+ * hint built from it names a command that exits 2 - name the tool beside it instead.
  */
 function l10nCommand(cliPath) {
   return cliPath.endsWith(' check') ? cliPath : `${join(dirname(cliPath), 'l10n.mjs')} check`;

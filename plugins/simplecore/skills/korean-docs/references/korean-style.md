@@ -9,8 +9,8 @@ How it divides with its neighbours:
   replacements, loanword spelling, what counts as settled, finance and quant terms) live in
   [response-style.md](response-style.md), the file that applies at all times. Apply it alongside
   this catalogue, always.
-- **Structural AI habits** — staging a claim instead of stating it, a closing line that repeats,
-  three of everything, inflated significance, borrowed authority, chat residue — live in
+- **Structural AI habits** - staging a claim instead of stating it, a closing line that repeats,
+  three of everything, inflated significance, borrowed authority, chat residue - live in
   [ai-tells.md](ai-tells.md). They carry no banned word, so the audit stays silent on them and the
   reader is the only check.
 - **Machine-checkable patterns** are registered in the base glossary (`GLOSSARY.base.md`) and the
@@ -18,7 +18,7 @@ How it divides with its neighbours:
   judgement the audit cannot make.
 - **Copy that goes on a screen** (i18n resources, message bundles, wireframe board sources) adds
   [ui-copy.md](ui-copy.md). A sentence that passes the document standard can still fail on a screen
-  — one more test applies there: 「does business software actually say this?」
+  - one more test applies there: 「does business software actually say this?」
 
 ## The principle
 
@@ -86,5 +86,5 @@ line that repeats, a 줄표, a three-item series, and a bold label.
 - A formal source stays formal in the result.
 - Do not add a metaphor, a flourish, or content that is not in the source in the name of polish.
   Fidelity to the source outranks fluency.
-- Settled loanwords and settled technical terms stay — judge them by the over-correction section of
+- Settled loanwords and settled technical terms stay - judge them by the over-correction section of
   response-style.md.

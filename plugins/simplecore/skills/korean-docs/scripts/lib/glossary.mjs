@@ -1,8 +1,8 @@
 /**
  * Shared glossary rule layer for the korean-docs tools.
  *
- * Both entry points — check-glossary.mjs (document audit, also run by the
- * write-time hook) and l10n.mjs (locale-resource engine) — load their banned
+ * Both entry points - check-glossary.mjs (document audit, also run by the
+ * write-time hook) and l10n.mjs (locale-resource engine) - load their banned
  * terms from here, so a term registered once in a project glossary is enforced
  * on documents and screen copy alike, with identical merge semantics.
  *
@@ -38,14 +38,14 @@ export function discoverGlossary(startDir = process.cwd()) {
       if (existsSync(candidate) && statSync(candidate).isFile()) {
         // The root comes from where the glossary sits, not from where the walk stopped. A file
         // being edited inside `.claude/` starts the walk there, and `<repo>/.claude/GLOSSARY.md`
-        // then matches the second candidate with `dir` already inside `.claude` — taking `dir` as
+        // then matches the second candidate with `dir` already inside `.claude` - taking `dir` as
         // the root resolves every `audit.*` glob against `.claude/`, so the declared screen copy
         // reports "directory missing" and the write is blocked on a finding about nothing.
         return {path: candidate, root: rootFromGlossaryPath(candidate)};
       }
     }
     // A .git directory marks the project root, and the home directory is
-    // never part of a project above cwd — stop ascending there so an
+    // never part of a project above cwd - stop ascending there so an
     // unrelated ancestor glossary (monorepo sibling, ~/GLOSSARY.md) is not
     // silently adopted as this project's standard.
     if (existsSync(join(dir, '.git')) || dir === home) return null;
@@ -75,7 +75,7 @@ function parseInlineArray(value) {
 }
 
 // A flow sequence is one shape however it is wrapped. A formatter reflows a long one across
-// lines the moment it stops fitting — `localeResources: [` then an item per line then `]` — and
+// lines the moment it stops fitting - `localeResources: [` then an item per line then `]` - and
 // a parser that only knows the single-line form reads the opening bracket as the whole value.
 //
 // **The result is not an error but a silent narrowing**, which is the worst thing a declaration
@@ -128,7 +128,7 @@ export function parseGlossaryConfig(markdown) {
         config.untranslated = value === 'true';
       } else if (value === '' && fm[i + 1]?.trim().startsWith('[')) {
         // A formatter may also push the whole sequence onto the following lines, leaving the
-        // key bare — which reads exactly like the block form until the '[' is looked at.
+        // key bare - which reads exactly like the block form until the '[' is looked at.
         const gathered = gatherFlowSequence(fm[i + 1].trim(), fm, i + 2, `audit.${key}`);
         i = gathered.next - 1;
         config[key] = parseInlineArray(gathered.value);
@@ -225,12 +225,12 @@ function parseLevel(cell, sourceName) {
 
 /**
  * Both rule tables have exactly 4 columns. More cells means a stray '|'
- * inside a cell, which silently shifts columns and drops banned items —
+ * inside a cell, which silently shifts columns and drops banned items -
  * surface it instead of parsing garbage quietly.
  */
 function warnExtraColumns(cells, sourceName, heading) {
   if (cells.length > 4) {
-    console.error(`경고: ${sourceName} "${heading}" 표의 행 "${cells[0]}"에 열이 ${cells.length}개입니다 — 셀 안에 '|'가 있는지 확인하세요 (항목 분리는 ','를 씁니다)`);
+    console.error(`경고: ${sourceName} "${heading}" 표의 행 "${cells[0]}"에 열이 ${cells.length}개입니다 - 셀 안에 '|'가 있는지 확인하세요 (항목 분리는 ','를 씁니다)`);
   }
 }
 
@@ -325,14 +325,14 @@ export function emptyGlossary() {
 //
 // A glossary rule is a banned spelling; these are checks written in code because no table
 // can express them. Both are rules a repository lives under, so both answer to the same
-// door — `## 기본 규칙 예외` in the project glossary — rather than to a second mechanism
+// door - `## 기본 규칙 예외` in the project glossary - rather than to a second mechanism
 // nobody remembers exists.
 //
 // **What separates the two halves is the level, not the subject.** A warning names a line
 // somebody has to judge, and judgement is exactly what a project can settle once for its
 // whole corpus: a rulebook whose headings ARE its rules is not a rulebook with 53 defects.
-// An error names something wrong in every context — a particle disagreeing with the syllable
-// before it is not a house style — so those have no door, and naming one is refused rather
+// An error names something wrong in every context - a particle disagreeing with the syllable
+// before it is not a house style - so those have no door, and naming one is refused rather
 // than honoured, because an exception that reads as accepted and disables nothing is the
 // failure this file already carries a dead-exception report for.
 export const EXEMPTABLE_CHECKS = new Map([
@@ -353,7 +353,7 @@ export function mergeGlossaries(base, project) {
 
   // **An exception is matched by the rule's pattern TEXT, so editing a base pattern silently
   // kills every project exception keyed to it.** The project reads as if the rule were still
-  // off and the finding comes back under a new name — indistinguishable from a fresh defect.
+  // off and the finding comes back under a new name - indistinguishable from a fresh defect.
   // So an exception that disabled nothing is reported rather than dropped.
   const deadExceptions = [];
   const disabledChecks = new Map();
@@ -365,7 +365,7 @@ export function mergeGlossaries(base, project) {
       }
       if (FIXED_CHECKS.has(raw)) {
         throw new Error(
-          `This check cannot be disabled through 기본 규칙 예외: ${raw} (${FIXED_CHECKS.get(raw)}) — ` +
+          `This check cannot be disabled through 기본 규칙 예외: ${raw} (${FIXED_CHECKS.get(raw)}) - ` +
             `an error-level built-in check does not split by context, so it takes no exception. ` +
             `What can be disabled: ${[...EXEMPTABLE_CHECKS.keys()].join(' · ')}`,
         );
@@ -376,7 +376,7 @@ export function mergeGlossaries(base, project) {
       terms.delete(key);
       for (const [src, rule] of [...expressions]) {
         // Compared on the rule's own pattern text rather than the map key, so an exception
-        // reaches a screen-only rule as well — its key carries a scope prefix.
+        // reaches a screen-only rule as well - its key carries a scope prefix.
         if (rule.source === raw || rule.source.toLowerCase() === key) expressions.delete(src);
       }
       for (const [tKey, term] of terms) {
@@ -413,21 +413,21 @@ export function mergeGlossaries(base, project) {
 }
 
 // ---------------------------------------------------------------------------
-// Rule set loading — one call that both tools share
+// Rule set loading - one call that both tools share
 // ---------------------------------------------------------------------------
 
 /**
  * Loads and merges the base and project glossaries.
  *
  * Returns {rules, terms, config, root, glossaryPath, keepOriginal}:
- *   rules        — flat merged rule list (pattern, source, suggestion, label,
+ *   rules        - flat merged rule list (pattern, source, suggestion, label,
  *                  level, threshold, screenOnly?, origin)
- *   terms        — merged 용어 대역표 map (english → {english, korean, rules})
- *   config       — audit config from the project glossary's front matter
- *   root         — project root (directory holding the glossary, or startDir)
- *   glossaryPath — project glossary path, or null when none was found
- *   keepOriginal — plain-ASCII terms of the merged 원문 유지 용어 tables
- *   disabledChecks — built-in checks the project turned off (id → label)
+ *   terms        - merged 용어 대역표 map (english → {english, korean, rules})
+ *   config       - audit config from the project glossary's front matter
+ *   root         - project root (directory holding the glossary, or startDir)
+ *   glossaryPath - project glossary path, or null when none was found
+ *   keepOriginal - plain-ASCII terms of the merged 원문 유지 용어 tables
+ *   disabledChecks - built-in checks the project turned off (id → label)
  */
 export function loadRuleSet({glossaryPath = null, noBase = false, startDir = process.cwd()} = {}) {
   let discovered = null;
@@ -469,7 +469,7 @@ export function loadRuleSet({glossaryPath = null, noBase = false, startDir = pro
  * one exists at <root>/.claude/l10n-rules.json.
  *
  * A pack rule states sentence-level patterns a glossary table cannot express
- * safely — each carries hit/miss examples that `rules --test` verifies. Rules
+ * safely - each carries hit/miss examples that `rules --test` verifies. Rules
  * are advisory sweeps (the finds-only loop), never write-time gates.
  *
  * `scopes` filters by rule scope: 'universal' rules always apply; any other
@@ -484,7 +484,7 @@ export function loadRulePacks({root = process.cwd(), scopes = []} = {}) {
   if (existsSync(projectPack)) {
     packs.push({origin: 'project', path: projectPack, ...JSON.parse(readFileSync(projectPack, 'utf8'))});
   }
-  // A base rule can be true everywhere and still be wrong for one domain — the glossary has
+  // A base rule can be true everywhere and still be wrong for one domain - the glossary has
   // `## 기본 규칙 예외` for exactly that, and without the same door here a project's only
   // choices are editing the shared base pack (forbidden: it would break other projects) or
   // carrying a permanent false positive, which is how a count stops meaning anything.
@@ -494,7 +494,7 @@ export function loadRulePacks({root = process.cwd(), scopes = []} = {}) {
     if (pack.origin !== 'project') continue;
     for (const [id, why] of Object.entries(pack.disable ?? {})) {
       if (!String(why ?? '').trim()) {
-        throw new Error(`${pack.path}: disable["${id}"] needs a reason — an exception with no reason cannot be revived by the next person.`);
+        throw new Error(`${pack.path}: disable["${id}"] needs a reason - an exception with no reason cannot be revived by the next person.`);
       }
       disabled.set(id, why);
     }
@@ -504,7 +504,7 @@ export function loadRulePacks({root = process.cwd(), scopes = []} = {}) {
     if (!known.has(id)) throw new Error(`Trying to disable an unknown rule: ${id}`);
   }
   // Killing a rule is not the only thing a project needs. A base rule can be right about
-  // sixteen words and wrong about one PLACE — a requirement title quoted from a client's
+  // sixteen words and wrong about one PLACE - a requirement title quoted from a client's
   // document keeps that document's spelling, and correcting it makes it no longer a
   // quotation. `disable` there would drop the other sixteen spellings with it, which is how
   // a project ends up choosing between a permanent false positive and a check that stopped
@@ -512,7 +512,7 @@ export function loadRulePacks({root = process.cwd(), scopes = []} = {}) {
   //
   //   "except": { "<rule-id>": [{ "find": "/…/", "why": "…", "sample": "…" }] }
   //
-  // A hit is released when an exception's match COVERS the place the rule fired — not merely
+  // A hit is released when an exception's match COVERS the place the rule fired - not merely
   // appears in the same segment, which would excuse a real defect standing next to a quotation.
   // `why` and `sample` are both required, and `rules --test` proves each one: the rule has to
   // catch the sample and the exception has to release it. An exception that proves nothing is
@@ -525,7 +525,7 @@ export function loadRulePacks({root = process.cwd(), scopes = []} = {}) {
       const items = (Array.isArray(list) ? list : [list]).map((it) => {
         for (const field of ['find', 'why', 'sample']) {
           if (!String(it?.[field] ?? '').trim()) {
-            throw new Error(`${pack.path}: except["${id}"] has an empty ${field} — ` +
+            throw new Error(`${pack.path}: except["${id}"] has an empty ${field} - ` +
               'find (what it releases) · why (the reason) · sample (a sentence the exception actually releases) are all required.');
           }
         }

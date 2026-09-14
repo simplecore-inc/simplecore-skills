@@ -45,8 +45,8 @@ what does the system actually do · what does it apply to · under what conditio
 ### A. Physical metaphor → functional verb
 
 Do not replace a metaphor with another metaphor. Choose a predicate that names the function
-directly — 적용 · 포함 · 등록 · 저장 · 전송 · 표시 · 구분 · 확인 · 승인 · 제한 · 완료 · 복구 · 조회 ·
-변경 · 삭제 — and do not lean on the broad 처리 · 진행 · 관리 either.
+directly - 적용 · 포함 · 등록 · 저장 · 전송 · 표시 · 구분 · 확인 · 승인 · 제한 · 완료 · 복구 · 조회 ·
+변경 · 삭제 - and do not lean on the broad 처리 · 진행 · 관리 either.
 
 | Metaphor | What to confirm | Replacement |
 | --- | --- | --- |
@@ -88,7 +88,7 @@ It hides what is automatic, where a person steps in, and what the final failure 
 ### D. State, application, and duration are not directions, switches, or movement
 
 「켜기」 · 「끄기」 are used only as the action name of a switch the user flips; an explanatory
-sentence states the resulting state — 활성화 · 비활성화 · 사용 · 중지.
+sentence states the resulting state - 활성화 · 비활성화 · 사용 · 중지.
 
 - `집행 모드로 올린다` → 집행 모드로 변경한다
 - `기능이 열린다` → 해당 기능을 사용할 수 있다
@@ -212,7 +212,7 @@ When there really is only one way, write the requirement directly with 「해야
 ### O. 「가능 · 급한 · 즉시」 come with a criterion
 
 State when it applies or the time limit (「승인 완료 후」 · 「5분 이내」); where nothing is fixed, do
-not invent a number — write the processing condition.
+not invent a number - write the processing condition.
 
 - `저장하면 바로 반영됩니다` → 저장한 문안은 다음 발송부터 적용됩니다
 - `문안을 수정할 수 있습니다` → 문안을 변경할 수 있지만 재심사를 통과한 뒤 발송에 적용됩니다
@@ -228,8 +228,8 @@ A completed noun such as 「가지입니다」 · 「기한입니다」 is not t
 
 Do not lean on interrogatives and catch-all words. The order is the object (a specific name such as
 이용 허가 · 법정 의무) → the criterion or scope (사용자별 · 현재 · 만료 후) → the function
-(확인합니다 · 관리합니다 · 설정합니다). A detail screen listing values — 「A동 3층 · 2026-08-12 ·
-진행 중」 — is not explanatory text and stays as it is.
+(확인합니다 · 관리합니다 · 설정합니다). A detail screen listing values - 「A동 3층 · 2026-08-12 ·
+진행 중」 - is not explanatory text and stays as it is.
 
 - `무엇이 언제 끝나고 무엇이 이미 지났는지 봅니다` → 계약별 만료 시각과 만료 상태를 확인합니다
 - `누가 언제 막히는지 봅니다` → 미이수로 이용이 제한되는 사용자와 제한 시점을 확인합니다
@@ -259,7 +259,7 @@ Do not compress for brevity into abstractions such as 「본문」 · 「전제�
 
 ### T. A condition, a judgement, or a restriction is not a door or a gate
 
-A real fixture — 「출입문」 · 「문 개방」 — stays as it is.
+A real fixture - 「출입문」 · 「문 개방」 - stays as it is.
 
 - `자격이 관문을 연다` → 자격별로 배정 · 승인 시 확인할 단계를 지정합니다
 - `만료가 관문을 닫는다` → 유효기간이 지나면 해당 작업의 배정을 제한합니다
@@ -281,7 +281,7 @@ do. An official slogan or a real quotation in statutory or training material is 
 ### V. Internal implementation wording does not go out as user guidance
 
 Technical terms the user actually configures on an administrator screen (API · Webhook ·
-HMAC-SHA256) stay, while the predicates become the real action — 전송 · 검증 · 변경 · 재시도.
+HMAC-SHA256) stay, while the predicates become the real action - 전송 · 검증 · 변경 · 재시도.
 
 - `값은 공용 응답 세트를 그대로 씁니다` → 각 항목에서 「이상 없음」 또는 「이상 있음」을 선택합니다
 - `검사는 하나도 돌지 않습니다` → 해당 필드에 검증 규칙을 적용할 수 없습니다
@@ -289,7 +289,7 @@ HMAC-SHA256) stay, while the predicates become the real action — 전송 · 검
 
 ### W. A legal or specialist term is not left as a short UI noun (screen only)
 
-In the body, name both sides — 「A 기록으로 B 의무를 갈음합니다」 — and let a short status value in a
+In the body, name both sides - 「A 기록으로 B 의무를 갈음합니다」 - and let a short status value in a
 list show the result the user understands immediately (「대체 인정」 · 「별도 제출 불필요」). Which
 terms may not stand as a label differs by domain, so register them in the project glossary.
 
@@ -327,7 +327,7 @@ Split only what genuinely differs by situation.
 | Hidden for lack of permission | request permission | 볼 수 있는 권한 없음 |
 | Not in this project or account | look elsewhere, or create it | 이 프로젝트에 없음 |
 
-In a clause, do not splice the phrase in: unfold it into a predicate — 「내보내기 파일은 아직 만들지
+In a clause, do not splice the phrase in: unfold it into a predicate - 「내보내기 파일은 아직 만들지
 않습니다」. No rule catches this, so find it by counting, and register the spelling that project was
 using under `## 금지 표현` in the glossary.
 
@@ -357,7 +357,7 @@ using under `## 금지 표현` in the glossary.
   endings.
   - `첨부 없어 반려됨` → 첨부 파일이 없어서 반려했습니다
   - `승인 대기 중. 결재선 확인 필요` → 결재선을 확인한 뒤 다시 요청하세요
-- No em dash in an explanatory sentence. Split the sentence in two or add a connective.
+- No dash of any kind in an explanatory sentence. Split the sentence in two or add a connective. The em dash is never written anywhere (rule `em-dash`).
 
 ## What not to do
 
@@ -391,5 +391,5 @@ and there the question is density, which the glossary counts at 경고(10+).
 
 **English words survive inside Korean sentences in the same places.** `host[:port]` · `ERROR` · a
 list of symbols such as `. _ -` are traces of a translated English screen, and what has a Korean
-word is written in Korean — 주소[:포트] · 오류 · 마침표·밑줄·붙임표. Product names, option names
+word is written in Korean - 주소[:포트] · 오류 · 마침표·밑줄·붙임표. Product names, option names
 (`--plain-http`), and specification names (CIDR · UDP 161) stay as they are.

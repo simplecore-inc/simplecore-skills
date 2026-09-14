@@ -1,7 +1,7 @@
 <!--
 This file IS the block that goes into `~/.claude/CLAUDE.md`. It is kept here so the skill can
 show it, diff it and write it, and so a machine can tell whether a global instruction already
-carries it — `detect-simplecore.mjs` reads the marker below.
+carries it - `detect-simplecore.mjs` reads the marker below.
 
 Copy it whole, under the chapter that holds the Korean standard. Do not summarise it on the way:
 a pointer is what this exists to replace.
@@ -51,14 +51,15 @@ as much right after an audit came back clean.
    `컨텍스트 압축 전 신중 반영한다` → 컨텍스트가 압축되기 전에 신중하게 반영합니다 ·
    `승인 요청이 반려됨.` → 승인 요청을 반려했습니다 · `값을 확인하고.` → 값을 확인하고 넘어갑니다 ·
    `사본의 문구는 작업의 상황을` → 사본에 기재된 문구는 작업이 진행되는 상황을
-8. Is there a word this field does not write, or a dash hiding a relation? `견주다` → 비교하다 ·
+8. Is there a word this field does not write, or an em dash? `견주다` → 비교하다 ·
    `갈무리하다` → 저장하다 · `일컫다` → 부르다 · `기본값을 두었다 — 검증이 건너뛰어진다` →
-   기본값을 그대로 두면 검증을 건너뜁니다. A dash that restates or itemises stays.
+   기본값을 그대로 두면 검증을 건너뜁니다. The em dash is never written; a restatement or an
+   itemisation takes a comma, a colon, parentheses or a middle dot, and a spaced hyphen otherwise.
 
 **What a sentence has to carry.** An action, a control, a procedure or a completion criterion
 names its actor, its action, its object, its condition and the result or evidence that proves it,
 and none of the five is deleted to make the sentence shorter; one principal action per sentence,
-one name per object across title, body, figure and notes. A middle dot, slash, arrow or dash joins
+one name per object across title, body, figure and notes. A middle dot, slash, arrow or hyphen joins
 field names and peer items, never a workflow: `동일 예약 검수 대기 전환 · 이중 생성 금지` → 작업을
 완료하면 기존 예약을 검수 대기 상태로 전환하고 추가 예약 생성을 차단한다. A pointer does not open a
 sentence when the noun fits: `이제` · `다음은` · `이 구현` · `해당` · `동일하게 적용한다` → name the
@@ -73,7 +74,7 @@ requirement, a target and a verified result are never presented as one another.
 **AI tells.** A sentence can pass every check above and still read as machine-written, because
 the draft was English first and each tell arrives as the 번역투 it turns into. Five survive a
 rewrite most often: `단순히 ~가 아니라` staging a claim (`not just X but Y`); a closing line that only
-repeats the paragraph (`이것이 진짜 이점입니다`); a 줄표 carrying cause or contrast; three of
+repeats the paragraph (`이것이 진짜 이점입니다`); a dash carrying cause or contrast; three of
 everything; a bold label on every list item. Four more: a run-up before the point
 (`지금부터 자세히 살펴보겠습니다`), inflated significance (`중요한 이정표` · `자리매김` ·
 `시사하는 바가 크다`), borrowed authority (`전문가들은` · `업계에서는`), and chat residue
@@ -90,8 +91,8 @@ agent is 「에이전트」 or 「읽는 쪽」. A process is not alive or dead:
 
 **A report goes through the machine first.** A completion report, a review result, anything
 longer than a screen is written to the scratch directory and run through
-`l10n.mjs sweep <that file>` before it is sent — a tenth of a second for the sentence rules, the
-smells and the lens — and what it finds is fixed in the draft. A one-line answer needs no pass.
+`l10n.mjs sweep <that file>` before it is sent - a tenth of a second for the sentence rules, the
+smells and the lens - and what it finds is fixed in the draft. A one-line answer needs no pass.
 
 **A brief and a report.** A metaphor in an English brief comes back as Korean in the answer
 (`furniture` → `세간`, `ladder` → `사다리`); write the real name in the brief. A subagent's report

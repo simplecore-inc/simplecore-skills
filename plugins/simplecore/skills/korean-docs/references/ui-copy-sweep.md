@@ -65,7 +65,7 @@ Do not substitute a single word. State in one sentence the fact the original is 
 who actually acts and what the action is, delete the metaphors and the abstract nouns, put the
 condition or result the user needs to know first, choose the most specific predicate, and match the
 screen's register and level of politeness. Making it shorter is not the goal. Put every rewritten
-sentence back through `check` and `rules` — the replacement being itself a banned expression is the
+sentence back through `check` and `rules` - the replacement being itself a banned expression is the
 most common outcome of this work.
 
 ## 5. Widen the repeating pattern and search again

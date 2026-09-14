@@ -2,15 +2,15 @@
 /**
  * Korean glossary audit for Markdown/MDX documents and SVG diagrams.
  *
- * Thin CLI over the shared engine in lib/ — the write-time hook runs this
+ * Thin CLI over the shared engine in lib/ - the write-time hook runs this
  * entry point, and l10n.mjs's `check` subcommand runs the same engine, so the
  * two report identically. Rule loading and merge semantics live in
  * lib/glossary.mjs; target resolution, content masking and the audit itself
  * live in lib/doc-audit.mjs.
  *
  * Markdown/MDX are audited as prose. SVG files are audited on the text content
- * of <text>/<tspan> elements only — markup, attributes, styles, and path data
- * are ignored — so diagram labels follow the same orthography and
+ * of <text>/<tspan> elements only - markup, attributes, styles, and path data
+ * are ignored - so diagram labels follow the same orthography and
  * translation-ese rules as the documents they illustrate.
  *
  * Files matching audit.localeResources are i18n resource files: they are
@@ -19,7 +19,7 @@
  * are held to the same standard as the documents.
  *
  * Rule sources, merged before auditing:
- *   1. The base glossary bundled with this skill (../GLOSSARY.base.md) —
+ *   1. The base glossary bundled with this skill (../GLOSSARY.base.md) -
  *      project-independent orthography and translation-ese rules.
  *   2. The project glossary, discovered by walking up from cwd and checking
  *      <dir>/.claude/GLOSSARY.md (default location) then <dir>/GLOSSARY.md
@@ -29,7 +29,7 @@
  * A project glossary customizes the base rules:
  *   - A "용어 대역표" row whose 영어 key matches a base row replaces it.
  *   - A "금지 표현" row whose 금지 pattern matches a base item replaces it.
- *   - A "화면 금지 표현" row bans a word ON SCREEN ONLY — it is applied to
+ *   - A "화면 금지 표현" row bans a word ON SCREEN ONLY - it is applied to
  *     audit.localeResources files and to nothing else. Internal vocabulary is
  *     the case it exists for: a design document has to say "chunk" to specify
  *     chunking, and the same word on a screen is a leak of an implementation

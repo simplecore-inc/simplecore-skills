@@ -5,29 +5,29 @@
     "",
     "`replace` is the suggested wording, not an instruction the script carries out: a rule",
     "knows where a word sits, never what it means there. Two rules that each match correctly",
-    "left one sentence reading 라이선스 수량 라이선스 하나가, and 부르다 — \"to call\" a function and",
-    "\"to invite\" a person — turned 운영자를 부른다 into 운영자를 호출한다. Neither is a regex mistake.",
+    "left one sentence reading 라이선스 수량 라이선스 하나가, and 부르다 - \"to call\" a function and",
+    "\"to invite\" a person - turned 운영자를 부른다 into 운영자를 호출한다. Neither is a regex mistake.",
     "",
     "Every rule carries `hit` (must match) and `miss` (must NOT match) examples, and",
     "`l10n.mjs rules --test` runs them. A bare term like 텀 also lives inside 커스텀 · 시스템 ·",
     "아이템, so a rule without a `miss` proving the near-misses it must ignore only produces",
     "noise a reader learns to skip. A rule without examples does not belong here.",
     "",
-    "`scope`: universal — true of any Korean product copy; always applied.",
-    "         saas     — true of any subscription / billing / licensing product; applied",
+    "`scope`: universal - true of any Korean product copy; always applied.",
+    "         saas     - true of any subscription / billing / licensing product; applied",
     "                    when a project lists it in ruleScopes of its .claude/l10n.json.",
-    "Project-only rules never enter this file — they go to <project>/.claude/l10n-rules.json,",
+    "Project-only rules never enter this file - they go to <project>/.claude/l10n-rules.json,",
     "which is applied whole wherever it exists.",
     "",
     "These rules are advisory sweeps for the finds-only loop (`l10n.mjs rules`), never",
-    "write-time gates — word-level bans belong in GLOSSARY.base.md or a project glossary.",
+    "write-time gates - word-level bans belong in GLOSSARY.base.md or a project glossary.",
     "",
-    "`severity` is documentation only — the scanner never reads it. Thresholding comes from",
+    "`severity` is documentation only - the scanner never reads it. Thresholding comes from",
     "`minPerFile` alone, so a rule labelled \"warn(3+)\" without minPerFile fires on the first",
     "hit and the label lies. Write both, and keep the \"(N+)\" suffix equal to minPerFile.",
     "",
     "What a minPerFile rule counts is the author repeating himself, so the recommended side of a",
-    "`금지 → 대체` contrast row is left out of the count — a catalogue prints the copy it",
+    "`금지 → 대체` contrast row is left out of the count - a catalogue prints the copy it",
     "prescribes once per row, and counting those reported one document eleven times for saying",
     "the very phrasing it teaches. `contrastRecommendedRanges` in scripts/lib/doc-audit.mjs holds",
     "the four conditions that make a row recognisable, and a contrast written as flowing prose",
@@ -41,7 +41,7 @@
     "",
     "A verb rule covers the conjugation family, never one ending. Korean negation and the",
     "connectives attach AFTER the stem, so a pattern that stops at an adnominal ending is",
-    "blind to the negative of the very habit it describes — 에 딸린 caught while",
+    "blind to the negative of the very habit it describes - 에 딸린 caught while",
     "에 딸리지 않은 walked past. Write the stem plus the syllables the contraction changes",
     "(딸[리린립려릴렸]), not a list of endings; where a form has to be excluded, exclude it",
     "with a lookahead and say why (손대(?!지), 기대지(?! 마[세시라십])) rather than by",
@@ -49,7 +49,7 @@
     "Prove every branch: a hit example per added form, and a miss example for the sense that",
     "shares the syllables (체력이 딸리지 않도록 · 난간에 기대지 마세요 · 반품지 주소).",
     "",
-    "Adding a form usually means `references/lens.txt` needs it too — `rules --test` fails a",
+    "Adding a form usually means `references/lens.txt` needs it too - `rules --test` fails a",
     "universal rule whose hit examples the lens matches only some of. Where the missing form",
     "is an everyday word the lens cannot afford (가지 as in 세 가지), set `lens: false` with",
     "a `lensReason` instead of flooding the reading list."
@@ -101,7 +101,7 @@
       "id": "stand-for-display",
       "scope": "universal",
       "severity": "error",
-      "reason": "A literal English `stand`. What appears on a screen 「표시된다」. **Compounds of 서다 mean something else and are excluded** — 앞서다·넘어서다·나서다·맞서다·들어서다·물러서다·마주서다·가로서다·앞장서다 speak of order and opposition, not placement. Rewriting 「평소 수신 거부보다 앞섭니다」 as 「표시됩니다」 loses the meaning. The prefixed stems are excluded with a lookbehind that also allows a space between them — letting the spaced form through would block only half the family",
+      "reason": "A literal English `stand`. What appears on a screen 「표시된다」. **Compounds of 서다 mean something else and are excluded** - 앞서다·넘어서다·나서다·맞서다·들어서다·물러서다·마주서다·가로서다·앞장서다 speak of order and opposition, not placement. Rewriting 「평소 수신 거부보다 앞섭니다」 as 「표시됩니다」 loses the meaning. The prefixed stems are excluded with a lookbehind that also allows a space between them - letting the spaced form through would block only half the family",
       "find": [
         "(?<=[가-힣])(?<!앞 ?)(?<!나 ?)(?<!맞 ?)(?<!넘어 ?)(?<!들어 ?)(?<!물러 ?)(?<!마주 ?)(?<!가로 ?)(?<!앞장 ?) ?섭니다",
         "줄에 선다",
@@ -168,7 +168,7 @@
       "id": "screen-says",
       "scope": "universal",
       "severity": "error",
-      "reason": "A literal English `the screen says/tells`. A screen, a table, a badge, a card, a list 「알린다·표시한다·설명한다」. 「화면의 몫이다」·「화면이 답한다」·「화면이 밝힌다」·「목록이 보여 준다」·「카드가 기억한다」 are the same personification — rewrite with what is actually displayed, or the feature provided, as the subject",
+      "reason": "A literal English `the screen says/tells`. A screen, a table, a badge, a card, a list 「알린다·표시한다·설명한다」. 「화면의 몫이다」·「화면이 답한다」·「화면이 밝힌다」·「목록이 보여 준다」·「카드가 기억한다」 are the same personification - rewrite with what is actually displayed, or the feature provided, as the subject",
       "find": [
         "화면이 말한다",
         "화면이 먼저 말한다",
@@ -207,7 +207,7 @@
       "id": "reach-for-access",
       "scope": "universal",
       "severity": "error",
-      "reason": "A literal English `reach`. Delivering a notification, sending to a server, connecting a system, applying a policy, or reaching a screen written as 「닿다」 loses the actual action — write 수신하지 못했다 · 전송이 완료된 뒤 · 연결할 수 없다 · 적용되지 않는다 · 접근할 수 없다. Make 「길」 concrete along with it (알림을 보내는 길 → 알림 채널). Physical contact is legitimate, so the pattern is narrowed to phrases, and a figure reaching a limit is 「한도에 도달한다」. **A figure reaching a limit is a family, not one word** — writing only 「상한에 닿는」 lets the negative (상한에 닿지 않는다) and the other limit nouns (한도 · 임계 · 최댓값) all escape. Anchoring 「에 닿」 on the stem after a limit noun catches every conjugation. **「바닥」 and 「천장」 are left out** — a foot really touches the floor and a hand really touches the ceiling, and letters do not separate those, so the reading lens takes them.",
+      "reason": "A literal English `reach`. Delivering a notification, sending to a server, connecting a system, applying a policy, or reaching a screen written as 「닿다」 loses the actual action - write 수신하지 못했다 · 전송이 완료된 뒤 · 연결할 수 없다 · 적용되지 않는다 · 접근할 수 없다. Make 「길」 concrete along with it (알림을 보내는 길 → 알림 채널). Physical contact is legitimate, so the pattern is narrowed to phrases, and a figure reaching a limit is 「한도에 도달한다」. **A figure reaching a limit is a family, not one word** - writing only 「상한에 닿는」 lets the negative (상한에 닿지 않는다) and the other limit nouns (한도 · 임계 · 최댓값) all escape. Anchoring 「에 닿」 on the stem after a limit noun catches every conjugation. **「바닥」 and 「천장」 are left out** - a foot really touches the floor and a hand really touches the ceiling, and letters do not separate those, so the reading lens takes them.",
       "find": [
         "서버에 닿지",
         "에 닿는 화면",
@@ -259,7 +259,7 @@
       "id": "cap-for-impose",
       "scope": "saas",
       "severity": "error",
-      "reason": "A literal English `cap`/`impose`. A limit is 「적용한다·제한한다」 — 「건다」 is office slang too. It is the same verb as putting a hat on someone, so the pattern is narrowed to phrases whose object is a limit",
+      "reason": "A literal English `cap`/`impose`. A limit is 「적용한다·제한한다」 - 「건다」 is office slang too. It is the same verb as putting a hat on someone, so the pattern is narrowed to phrases whose object is a limit",
       "find": [
         "상한을 씌",
         "한도를 씌",
@@ -283,7 +283,7 @@
       "id": "compare-gyeonju",
       "scope": "universal",
       "severity": "error",
-      "reason": "「견주다」 is literary. Screen text and manuals use 「비교하다」. The conjugation changes the syllable block, so the whole stem is matched — enumerating forms such as 「과 견주면」 lets 「견줍니다·견줄·견주는·견주어」 all escape",
+      "reason": "「견주다」 is literary. Screen text and manuals use 「비교하다」. The conjugation changes the syllable block, so the whole stem is matched - enumerating forms such as 「과 견주면」 lets 「견줍니다·견줄·견주는·견주어」 all escape",
       "find": [
         "/견주|견줍|견줄|견준|견줘/"
       ],
@@ -305,7 +305,7 @@
       "id": "run-for-software",
       "scope": "universal",
       "severity": "error",
-      "reason": "A literal English `run`. Software does not 「돈다」. Neither the particle nor the subject is enumerated — 「프로필로 돕니다」 is caught by its particle, but 「제품은 계속 돕니다」 escapes because an adverb sits between, and 「요청마다 도는」 has yet another particle. Requiring one preceding space catches all three. The space is needed because the 는 of 정도는 · 속도는 · 빈도는 is attached to a noun. **Parts that really rotate are excluded** — a fan, a motor, a disk, a wheel, a propeller really do turn, and a product that reads hardware writes those sentences. The subject stands there in letters, so a lookbehind separates them",
+      "reason": "A literal English `run`. Software does not 「돈다」. Neither the particle nor the subject is enumerated - 「프로필로 돕니다」 is caught by its particle, but 「제품은 계속 돕니다」 escapes because an adverb sits between, and 「요청마다 도는」 has yet another particle. Requiring one preceding space catches all three. The space is needed because the 는 of 정도는 · 속도는 · 빈도는 is attached to a noun. **Parts that really rotate are excluded** - a fan, a motor, a disk, a wheel, a propeller really do turn, and a product that reads hardware writes those sentences. The subject stands there in letters, so a lookbehind separates them",
       "find": [
         "(?<!팬이|팬은|모터가|모터는|디스크가|디스크는|바퀴가|바퀴는|프로펠러가|프로펠러는) 돕니다",
         "(?<!팬이|팬은|모터가|모터는|디스크가|디스크는|바퀴가|바퀴는|프로펠러가|프로펠러는) 돈다",
@@ -344,7 +344,7 @@
       "id": "lives-in",
       "scope": "universal",
       "severity": "error",
-      "reason": "A literal English `lives` — an inanimate thing living somewhere. Where something is is 「있다·둔다·정의된다」. Enumerating objects catches only 「사는 값」 while 「사는 자리·파일·곳」 leak, so it is matched as a family, and a person really living somewhere is legitimate, so a following person noun is excluded with a lookbehind. 「~를 사는」 (buying) has a different particle and is never caught. **The space between the particle and the verb is required** — with `\\s*` instead, 「대표이사는」 reads as 「이 + 사는」 and is caught.",
+      "reason": "A literal English `lives` - an inanimate thing living somewhere. Where something is is 「있다·둔다·정의된다」. Enumerating objects catches only 「사는 값」 while 「사는 자리·파일·곳」 leak, so it is matched as a family, and a person really living somewhere is legitimate, so a following person noun is excluded with a lookbehind. 「~를 사는」 (buying) has a different particle and is never caught. **The space between the particle and the verb is required** - with `\\s*` instead, 「대표이사는」 reads as 「이 + 사는」 and is caught.",
       "find": [
         "에 산다",
         "에 삽니다",
@@ -396,7 +396,7 @@
       "id": "ceiling-for-cap",
       "scope": "saas",
       "severity": "error",
-      "reason": "A literal English `ceiling`. A quantity limit is 「상한」. It is the same word as a building's ceiling, so it is always narrowed to a phrase. 「천장을 씌우다」 is caught by this rule alone — splitting it with cap-for-impose would report one sentence twice",
+      "reason": "A literal English `ceiling`. A quantity limit is 「상한」. It is the same word as a building's ceiling, so it is always narrowed to a phrase. 「천장을 씌우다」 is caught by this rule alone - splitting it with cap-for-impose would report one sentence twice",
       "find": [
         "천장이 있",
         "천장을 씌",
@@ -447,7 +447,7 @@
       "id": "embed-for-contain",
       "scope": "universal",
       "severity": "error",
-      "reason": "A literal English `embed`/`carry`. **The adnominal and negative forms are matched from the stem too** — writing only the final form 「품는다」 lets 「그 값을 품는 배포」 and 「어느 것도 품지 않는다」 escape. It overlaps with a word-final 「품」 (제품 · 부품 · 반품지), so it does not fire when the preceding character is Hangul. **The past 「품었」 and the adnominal 「품을」 are not caught** — the legitimate sense of a person holding something in mind (「의문을 품었다」) occupies that slot",
+      "reason": "A literal English `embed`/`carry`. **The adnominal and negative forms are matched from the stem too** - writing only the final form 「품는다」 lets 「그 값을 품는 배포」 and 「어느 것도 품지 않는다」 escape. It overlaps with a word-final 「품」 (제품 · 부품 · 반품지), so it does not fire when the preceding character is Hangul. **The past 「품었」 and the adnominal 「품을」 are not caught** - the legitimate sense of a person holding something in mind (「의문을 품었다」) occupies that slot",
       "find": [
         "품고 있",
         "(?<![가-힣])품고 ",
@@ -476,7 +476,7 @@
       "id": "hold-for-have",
       "scope": "universal",
       "severity": "error",
-      "reason": "A literal English `hold` — an inanimate thing holding a value, a state, or a version in its hand. It is the same verb as a person picking something up, and it overlaps in letters with the conjugations of 「듣다」 (강의를 들었다 · 의견을 들어야) and with 「예를 들다」 (사례를 들지만). **So it is not built by excluding physical nouns** — the list of words to exclude grows with every product, and a tablet, a question, a measure, and an example leaked in turn. What an inanimate thing holds is only 값 · 상태 · 버전 · 토큰 · 계약 · 권한 · 설정 · 이력 · 키, so **it fires only when the object is one of those words.** Add a new word to the list when it joins the family. **A form with the object elided is beyond this rule** — 「스냅샷은 만든 순서로 들고 있으므로」 has an inanimate subject and no object, so there are no letters left to look at, and enumerating subjects is the same construction that failed while enumerating objects. That half is taken by the reading lens's `들고[ ,)]`.",
+      "reason": "A literal English `hold` - an inanimate thing holding a value, a state, or a version in its hand. It is the same verb as a person picking something up, and it overlaps in letters with the conjugations of 「듣다」 (강의를 들었다 · 의견을 들어야) and with 「예를 들다」 (사례를 들지만). **So it is not built by excluding physical nouns** - the list of words to exclude grows with every product, and a tablet, a question, a measure, and an example leaked in turn. What an inanimate thing holds is only 값 · 상태 · 버전 · 토큰 · 계약 · 권한 · 설정 · 이력 · 키, so **it fires only when the object is one of those words.** Add a new word to the list when it joins the family. **A form with the object elided is beyond this rule** - 「스냅샷은 만든 순서로 들고 있으므로」 has an inanimate subject and no object, so there are no letters left to look at, and enumerating subjects is the same construction that failed while enumerating objects. That half is taken by the reading lens's `들고[ ,)]`.",
       "find": [
         "이미 들고 있",
         "그대로 들고 있",
@@ -519,7 +519,7 @@
       "id": "lead-for-drive",
       "scope": "universal",
       "severity": "error",
-      "reason": "An inanimate thing leading a procedure — personification. A rule, a record, a setting, a document cannot lead: a person acts on it, or things proceed according to it. A person or an organization leading a team, a meeting, or an investigation is legitimate, so those objects are excluded with a lookbehind.",
+      "reason": "An inanimate thing leading a procedure - personification. A rule, a record, a setting, a document cannot lead: a person acts on it, or things proceed according to it. A person or an organization leading a team, a meeting, or an investigation is legitimate, so those objects are excluded with a lookbehind.",
       "find": [
         "/(?<!(팀|조직|회의|프로젝트|조사|논의|토론|수사|그룹|부서|무리|행사|세션|수업|예배))[을를]\\s*(이끈다|이끌고|이끌게|이끄는|이끌어|이끕니다|이끌었|이끌 )/"
       ],
@@ -542,7 +542,7 @@
       "id": "slot-for-seat",
       "scope": "universal",
       "severity": "error",
-      "reason": "Calling a role, an organization, a feature, or a screen a 「자리」. Use 「자리」 only for a real place, a seat, or the layout position of a screen element; elsewhere name what it holds — 사람이 소속되는 자리 → 소속 조직, 검토자 자리가 비어 있습니다 → 필수 역할인 검토자가 지정되지 않았습니다, 바깥 시스템과 잇는 자리 → 외부 시스템 연동 설정. Rendering `seat` as 「자리」 is the same. A statutory position or a formal role is not unfolded into 「자리」 but keeps its own term. Catching 「자리가 비어」 wholesale would also catch a blank in a form and an empty cell on a timeline, so it fires only when a role name precedes it. A role where a person really has to be standing — a site watcher, a guard — is left out, because 「자리를 비운다」 is the precise term for that; only roles about appointment and designation are matched. A bold lead-in in a design note compresses into this metaphor especially — 「권한과 책임이 겹치는 자리다」 is 「항목별로 두 담당자의 권한을 구분한다」, and 「한 게시물을 읽는 자리는 하나다」 is 「상세 정보는 하나의 패널에 표시한다」. **It surfaces last in name slots** — after every screen name is fixed, the table headers 「찾은 자리」·「어긋난 자리」, the label 「자리 이름」, and the statistics tile 「빈 자리」 remain. Split by what is meant: 위치 · 항목 · 화면 · 직책 · 미편성. **「N자리」 counts digits and is not a seat** — 「숫자 6자리로 정합니다」 was caught by 「자리로 정합」. Every form beginning with 「자리」 carries a condition excluding a preceding digit, which blocks the family. **Where a screen element sits is outside this rule, and 「빈 자리」 is also used in that sense** — the empty space on a row with no icon, a cell missing an image. This reason declared 「the layout position of a screen element」 legitimate from the start, but 「빈 자리」 alone lacked that exception and fired on correct sentences. Exclude it when a word naming a screen element precedes it; catch it when a role name does. **「자리표시자」 is the compound noun for a placeholder**, so 「읽는 자리표시자」 and 「담는 자리표시자」 are not this metaphor; every form ending in 「자리」 excludes a following 「표시자」.",
+      "reason": "Calling a role, an organization, a feature, or a screen a 「자리」. Use 「자리」 only for a real place, a seat, or the layout position of a screen element; elsewhere name what it holds - 사람이 소속되는 자리 → 소속 조직, 검토자 자리가 비어 있습니다 → 필수 역할인 검토자가 지정되지 않았습니다, 바깥 시스템과 잇는 자리 → 외부 시스템 연동 설정. Rendering `seat` as 「자리」 is the same. A statutory position or a formal role is not unfolded into 「자리」 but keeps its own term. Catching 「자리가 비어」 wholesale would also catch a blank in a form and an empty cell on a timeline, so it fires only when a role name precedes it. A role where a person really has to be standing - a site watcher, a guard - is left out, because 「자리를 비운다」 is the precise term for that; only roles about appointment and designation are matched. A bold lead-in in a design note compresses into this metaphor especially - 「권한과 책임이 겹치는 자리다」 is 「항목별로 두 담당자의 권한을 구분한다」, and 「한 게시물을 읽는 자리는 하나다」 is 「상세 정보는 하나의 패널에 표시한다」. **It surfaces last in name slots** - after every screen name is fixed, the table headers 「찾은 자리」·「어긋난 자리」, the label 「자리 이름」, and the statistics tile 「빈 자리」 remain. Split by what is meant: 위치 · 항목 · 화면 · 직책 · 미편성. **「N자리」 counts digits and is not a seat** - 「숫자 6자리로 정합니다」 was caught by 「자리로 정합」. Every form beginning with 「자리」 carries a condition excluding a preceding digit, which blocks the family. **Where a screen element sits is outside this rule, and 「빈 자리」 is also used in that sense** - the empty space on a row with no icon, a cell missing an image. This reason declared 「the layout position of a screen element」 legitimate from the start, but 「빈 자리」 alone lacked that exception and fired on correct sentences. Exclude it when a word naming a screen element precedes it; catch it when a role name does. **「자리표시자」 is the compound noun for a placeholder**, so 「읽는 자리표시자」 and 「담는 자리표시자」 are not this metaphor; every form ending in 「자리」 excludes a following 「표시자」.",
       "find": [
         "잡은 자리(?!표시자)",
         "(?<![0-9])자리를 놓",
@@ -626,7 +626,7 @@
       "id": "metaphor-noun-for-name",
       "scope": "universal",
       "severity": "error",
-      "reason": "Calling something that has a real name by a metaphorical noun. 「함정」 is a failure that is easy to walk into, 「유령」 is an old value still present, 「출발점」 is a starting value — in all three the reader has to unpack the metaphor before knowing what it is, and the actual behaviour is lost on the way. 「알려진 함정」 is 「주의할 것」, 「이 함정을 밟았다」 is 「이것을 겪었다」, 「안전한 출발점」 is 「안전한 시작 값」, 「유령 행」 is 「지워지지 않은 행」. **A real trap, a real ghost, a real starting line stays** — those three have almost no place in software writing, and where they appear the preceding word says so.",
+      "reason": "Calling something that has a real name by a metaphorical noun. 「함정」 is a failure that is easy to walk into, 「유령」 is an old value still present, 「출발점」 is a starting value - in all three the reader has to unpack the metaphor before knowing what it is, and the actual behaviour is lost on the way. 「알려진 함정」 is 「주의할 것」, 「이 함정을 밟았다」 is 「이것을 겪었다」, 「안전한 출발점」 is 「안전한 시작 값」, 「유령 행」 is 「지워지지 않은 행」. **A real trap, a real ghost, a real starting line stays** - those three have almost no place in software writing, and where they appear the preceding word says so.",
       "find": [
         "알려진 함정",
         "함정이다",
@@ -661,7 +661,7 @@
       "id": "ladder-for-sequence",
       "scope": "universal",
       "severity": "error",
-      "reason": "A literal English `ladder`. Neither a set of stages nor a fallback order is called a ladder — write 「릴리스 단계」·「대체 채널 우선순위」·「자동 대체발송의 마지막 채널」. The movement metaphor hides what is automatic, where a person steps in, and what the final failure state is",
+      "reason": "A literal English `ladder`. Neither a set of stages nor a fallback order is called a ladder - write 「릴리스 단계」·「대체 채널 우선순위」·「자동 대체발송의 마지막 채널」. The movement metaphor hides what is automatic, where a person steps in, and what the final failure state is",
       "find": [
         "릴리스 사다리",
         "버전 사다리",
@@ -706,7 +706,7 @@
       "id": "call-for-invoke",
       "scope": "universal",
       "severity": "error",
-      "reason": "A literal English `call`. **Every conjugation is in scope** — writing only the final form lets 「재평가를 부르는지」·「경보를 부르지 않는다」 walk past. **Calling a person out loud is legitimate, so the object decides** — calling a name, a person, or a child is not caught, and only writing that something else (an API, a rule, a frame, a re-evaluation) is 「부른다」 is. Write the real action: 호출한다 · 실행한다 · 적용한다 · 요구한다 · 가리킨다",
+      "reason": "A literal English `call`. **Every conjugation is in scope** - writing only the final form lets 「재평가를 부르는지」·「경보를 부르지 않는다」 walk past. **Calling a person out loud is legitimate, so the object decides** - calling a name, a person, or a child is not caught, and only writing that something else (an API, a rule, a frame, a re-evaluation) is 「부른다」 is. Write the real action: 호출한다 · 실행한다 · 적용한다 · 요구한다 · 가리킨다",
       "find": [
         "/(?<!이름|사람|아이)[을를] 부(르는(?! ?(이름|말|낱말|명칭))|르지|른다|릅니다|를|른 )/"
       ],
@@ -872,7 +872,7 @@
       "id": "term-transliteration",
       "scope": "saas",
       "severity": "error",
-      "reason": "A transliterated English `term`. Caught only when it stands alone — 커스텀 · 시스템 · 아이템 end in the same syllable",
+      "reason": "A transliterated English `term`. Caught only when it stands alone - 커스텀 · 시스템 · 아이템 end in the same syllable",
       "find": [
         "(?<![가-힣A-Za-z])텀(?=[이가은는을를과와의도만에서로])",
         "(?<![가-힣A-Za-z])텀(?=\\s|$)"
@@ -931,7 +931,7 @@
       "id": "payment-vs-approval",
       "scope": "saas",
       "severity": "error",
-      "reason": "「결재」 is an approval procedure. Only compounds in a payment context are caught — 「결재 신청·결재 위임」 are correct. **A compound that works for either is not caught** — 「결재 완료·결재 경로·결재 내역·결재 취소」 are all what an approval system actually says, and they cannot be told apart from the correct field names of an approval box. What is left are the words that only work for payment: 수단 · 금액 · 대행사 have no place in an approval procedure, and an approval is not 실패 but 반려",
+      "reason": "「결재」 is an approval procedure. Only compounds in a payment context are caught - 「결재 신청·결재 위임」 are correct. **A compound that works for either is not caught** - 「결재 완료·결재 경로·결재 내역·결재 취소」 are all what an approval system actually says, and they cannot be told apart from the correct field names of an approval box. What is left are the words that only work for payment: 수단 · 금액 · 대행사 have no place in an approval procedure, and an approval is not 실패 but 반려",
       "find": [
         "결재수단",
         "결재 실패",
@@ -988,7 +988,7 @@
       "severity": "error",
       "id": "formal-connective",
       "scope": "universal",
-      "reason": "The literary connectives 「함으로써·에 관하여·에 관한 사항」. One occurrence already reads as stiff, so every one is caught — 「분석하면 알 수 있다」 rather than 「분석함으로써 알 수 있다」, 「보안을 다룬다」 rather than 「보안에 관하여」, 「~에 필요한 것」 rather than 「~에 관한 사항」. **A sentence-opening 「따라서」 is fine once and split off from here** — the repetition is the habit, so `therefore-repeat` counts it per file. **Text inside 「」·『』 is not the author's sentence** — 「~에 관한 사항」 is the formal name statutes and public tenders give to a clause item, and writing that quotes such a document has to carry the name across character for character. The same expression outside quotation marks is caught as usual.",
+      "reason": "The literary connectives 「함으로써·에 관하여·에 관한 사항」. One occurrence already reads as stiff, so every one is caught - 「분석하면 알 수 있다」 rather than 「분석함으로써 알 수 있다」, 「보안을 다룬다」 rather than 「보안에 관하여」, 「~에 필요한 것」 rather than 「~에 관한 사항」. **A sentence-opening 「따라서」 is fine once and split off from here** - the repetition is the habit, so `therefore-repeat` counts it per file. **Text inside 「」·『』 is not the author's sentence** - 「~에 관한 사항」 is the formal name statutes and public tenders give to a clause item, and writing that quotes such a document has to carry the name across character for character. The same expression outside quotation marks is caught as usual.",
       "find": [
         "함으로써",
         "에 관하여",
@@ -1015,15 +1015,16 @@
       "id": "therefore-repeat",
       "scope": "universal",
       "minPerFile": 3,
-      "reason": "「따라서」 repeated paragraph after paragraph. Once is normal; past three times it is a habit and the flow of the sentences should carry it — delete it where the reader already knows this follows from the previous sentence, and lower it to 「그래서」 where it stays. **It is separated from the conjugations of the verb 「따르다」** — 「규칙을 따라서 만든다」 is legitimate, so only the start of a sentence (the start of a line, or after a full stop or a dash) is matched. **The split is by what precedes, not by a lookbehind on the word** — 「따라서」 after a particle is the verb, and only a sentence-opening 「따라서」 is the connective",
+      "reason": "「따라서」 repeated paragraph after paragraph. Once is normal; past three times it is a habit and the flow of the sentences should carry it - delete it where the reader already knows this follows from the previous sentence, and lower it to 「그래서」 where it stays. **It is separated from the conjugations of the verb 「따르다」** - 「규칙을 따라서 만든다」 is legitimate, so only the start of a sentence (the start of a line, or after a full stop or a dash, the em dash of older text included) is matched. **The split is by what precedes, not by a lookbehind on the word** - 「따라서」 after a particle is the verb, and only a sentence-opening 「따라서」 is the connective",
       "find": [
-        "(?:^|[.—]\\s+)따라서 "
+        "(?:^|[.—-]\\s+)따라서 "
       ],
       "replace": null,
       "hit": [
         "따라서 이 값을 쓴다.",
         "값이 정해졌다. 따라서 이 값을 쓴다.",
-        "값이 정해졌다 — 따라서 이 값을 쓴다."
+        "값이 정해졌다 — 따라서 이 값을 쓴다.",
+        "값이 정해졌다 - 따라서 이 값을 쓴다."
       ],
       "miss": [
         "규칙을 따라서 만든다.",
@@ -1036,7 +1037,7 @@
       "severity": "error",
       "id": "mt-hedge",
       "scope": "universal",
-      "reason": "Machine-translation hedging — a confirmed fact is asserted (slop-gate ko-georeuro-boinda)",
+      "reason": "Machine-translation hedging - a confirmed fact is asserted (slop-gate ko-georeuro-boinda)",
       "find": [
         "것으로 보인다",
         "것으로 보입니다",
@@ -1062,7 +1063,7 @@
       "severity": "error",
       "id": "from-date",
       "scope": "universal",
-      "reason": "A literal English `from a date` — 「~부터」 is enough (slop-gate ko-robuteo-date)",
+      "reason": "A literal English `from a date` - 「~부터」 is enough (slop-gate ko-robuteo-date)",
       "find": [
         "날로부터",
         "일로부터",
@@ -1084,7 +1085,7 @@
       "severity": "error",
       "id": "third-person-geunyeo",
       "scope": "universal",
-      "reason": "A literal English `she` — Korean uses the name or the role (slop-gate ko-geunyeo)",
+      "reason": "A literal English `she` - Korean uses the name or the role (slop-gate ko-geunyeo)",
       "find": [
         "그녀"
       ],
@@ -1101,7 +1102,7 @@
       "id": "for-purpose",
       "scope": "universal",
       "minPerFile": 3,
-      "reason": "「~을 위해」 purpose clauses everywhere — spread them across 「~하려면·~용」",
+      "reason": "「~을 위해」 purpose clauses everywhere - spread them across 「~하려면·~용」",
       "find": [
         "을 위해",
         "를 위해",
@@ -1120,7 +1121,7 @@
       "severity": "error",
       "id": "future-assertion",
       "scope": "universal",
-      "reason": "A literal English `will` — a statement of fact is asserted in the present tense. A slot where 「것」 names a task to do, as in 「처리할 것」, is excluded",
+      "reason": "A literal English `will` - a statement of fact is asserted in the present tense. A slot where 「것」 names a task to do, as in 「처리할 것」, is excluded",
       "find": [
         "할 것이다",
         "될 것이다",
@@ -1144,7 +1145,7 @@
       "severity": "error",
       "id": "abstract-subject-verb",
       "scope": "universal",
-      "reason": "An abstract subject with an all-purpose verb — a literal English `brings`/`causes`",
+      "reason": "An abstract subject with an all-purpose verb - a literal English `brings`/`causes`",
       "find": [
         "기회를 가져오",
         "변화를 가져오",
@@ -1168,7 +1169,7 @@
       "severity": "error",
       "id": "case-of",
       "scope": "universal",
-      "reason": "A literal English `in the case of` — 「은/는」 is enough, or drop it (slop-gate ko-ui-gyeongu)",
+      "reason": "A literal English `in the case of` - 「은/는」 is enough, or drop it (slop-gate ko-ui-gyeongu)",
       "find": [
         "의 경우에는",
         "의 경우에 ",
@@ -1187,7 +1188,7 @@
       "severity": "error",
       "id": "mechanical-list",
       "scope": "universal",
-      "reason": "A mechanical enumeration — 「첫째·둘째·셋째」 becomes a real list or is carried by the flow",
+      "reason": "A mechanical enumeration - 「첫째·둘째·셋째」 becomes a real list or is carried by the flow",
       "find": [
         "첫째,",
         "둘째,",
@@ -1256,7 +1257,7 @@
       "id": "lean-on-for-depend",
       "scope": "universal",
       "severity": "error",
-      "reason": "A literal English `depend on`/`rely on`. A condition is written as 「~해야 한다·유지 조건·선행 조건·추가 조건이 없다」. It overlaps in letters with the Sino-Korean 기대(期待), so the stem alone is not matched: a preceding particle is required — 「기대 주기」·「기대에 못 미친다」 would be caught by the stem alone. **Requiring the particle lets the adnominal form, which stands without one, escape** — 「기댄 것이 넷이라」 is such a case and is matched separately. 「기댄」 is only the adnominal of lean, since 期待's adnominal is 「기대한」, so that one is safe without a particle. **After the particle, the stem is matched rather than an enumeration of endings** — negatives and connectives attach after the stem, so a list of final forms cannot hold 「에 기대지 않는다」·「에 기댈」·「에 기댔던」. Restricting what follows 「기대」 to an ending is the boundary against 期待 — 「에 기대를」·「에 기대가」 are the noun and are not caught. **The negative form also carries the sense of leaning on a railing** — 「난간에 기대지 마세요」 is a safety notice, so it is excluded when 「마세요·마십시오·마라」 follows",
+      "reason": "A literal English `depend on`/`rely on`. A condition is written as 「~해야 한다·유지 조건·선행 조건·추가 조건이 없다」. It overlaps in letters with the Sino-Korean 기대(期待), so the stem alone is not matched: a preceding particle is required - 「기대 주기」·「기대에 못 미친다」 would be caught by the stem alone. **Requiring the particle lets the adnominal form, which stands without one, escape** - 「기댄 것이 넷이라」 is such a case and is matched separately. 「기댄」 is only the adnominal of lean, since 期待's adnominal is 「기대한」, so that one is safe without a particle. **After the particle, the stem is matched rather than an enumeration of endings** - negatives and connectives attach after the stem, so a list of final forms cannot hold 「에 기대지 않는다」·「에 기댈」·「에 기댔던」. Restricting what follows 「기대」 to an ending is the boundary against 期待 - 「에 기대를」·「에 기대가」 are the noun and are not caught. **The negative form also carries the sense of leaning on a railing** - 「난간에 기대지 마세요」 is a safety notice, so it is excluded when 「마세요·마십시오·마라」 follows",
       "find": [
         "에(?:만|는|도)? 기(?:대[는고면며야]|대지(?! 마[세시라십])|댄|댑|댈|댔)",
         "도 기대지 않",
@@ -1290,7 +1291,7 @@
       "id": "attached-to-for-belong",
       "scope": "universal",
       "severity": "error",
-      "reason": "Blurring a relation into 「딸리다」. Say which it is — application, inclusion, or membership — and write 「~에 적용되는·~에 포함된·~에 속한」. It is the same verb as 「일손이 딸린다」 (to be short of), so it fires only when the particle 「에」 precedes it. **The stem is matched rather than an enumeration of endings** — Korean negatives and connectives attach after the stem, so a list stopping at the adnominal cannot hold 「에 딸리지 않은」·「에 딸리고」·「에 딸릴」. The auxiliary-particle forms 「에는·에도·에만」 take the same shape and are matched too",
+      "reason": "Blurring a relation into 「딸리다」. Say which it is - application, inclusion, or membership - and write 「~에 적용되는·~에 포함된·~에 속한」. It is the same verb as 「일손이 딸린다」 (to be short of), so it fires only when the particle 「에」 precedes it. **The stem is matched rather than an enumeration of endings** - Korean negatives and connectives attach after the stem, so a list stopping at the adnominal cannot hold 「에 딸리지 않은」·「에 딸리고」·「에 딸릴」. The auxiliary-particle forms 「에는·에도·에만」 take the same shape and are matched too",
       "find": [
         "에(?:만|는|도)? 딸[리린립려릴렸]"
       ],
@@ -1319,7 +1320,7 @@
       "id": "load-for-carry",
       "scope": "universal",
       "severity": "error",
-      "reason": "A literal English `carry`/`ship with`. A pack, a report, or a response does not 「싣고 온다」 a value — say whether it includes, supplies, or transmits it. It is the same verb as loading cargo, so it is narrowed to the 「싣고 오다」 shape and to phrases whose object is abstract",
+      "reason": "A literal English `carry`/`ship with`. A pack, a report, or a response does not 「싣고 온다」 a value - say whether it includes, supplies, or transmits it. It is the same verb as loading cargo, so it is narrowed to the 「싣고 오다」 shape and to phrases whose object is abstract",
       "find": [
         "싣고 온",
         "싣고 옵",
@@ -1353,7 +1354,7 @@
       "id": "wholesale-adverb",
       "scope": "universal",
       "severity": "error",
-      "reason": "Covering the scope of an impact with 「통째로」. Write what changes and what stays — 「해당 시간대의 출입 기록이 누락됩니다」 rather than 「기록이 통째로 빕니다」. Handling one physical object whole is legitimate, so it is narrowed by the following predicate",
+      "reason": "Covering the scope of an impact with 「통째로」. Write what changes and what stays - 「해당 시간대의 출입 기록이 누락됩니다」 rather than 「기록이 통째로 빕니다」. Handling one physical object whole is legitimate, so it is narrowed by the following predicate",
       "find": [
         "통째로 바뀌",
         "통째로 빈",
@@ -1389,7 +1390,7 @@
       "id": "silently-adverb",
       "scope": "universal",
       "severity": "error",
-      "reason": "Covering a result with 「조용히」. Write what the user is not told — 「전송 실패를 알리지 않고 종료한다」 rather than 「조용히 실패한다」. A person doing something quietly is legitimate, so it is narrowed by the following predicate",
+      "reason": "Covering a result with 「조용히」. Write what the user is not told - 「전송 실패를 알리지 않고 종료한다」 rather than 「조용히 실패한다」. A person doing something quietly is legitimate, so it is narrowed by the following predicate",
       "find": [
         "조용히 남",
         "조용히 실패",
@@ -1446,7 +1447,7 @@
       "id": "office-slang-issue",
       "scope": "universal",
       "severity": "error",
-      "reason": "Approval, issuance, and submission replaced by office slang verbs of movement. Even when the status value is issued/uploaded, user-facing copy uses the Korean administrative verb — 「이용 허가가 발급됩니다」 rather than 「허가가 나갑니다」, 「결재가 요청됩니다」 rather than 「결재가 올라갑니다」. **「올라오다」 hides whether it is registration, receipt, or transmission** — 「검수에서 올라온 용어」 is 「등재된 용어」, 「충돌로 올라옵니다」 is 「충돌로 등록됩니다」, and 「승인자가 올라간다」 is 「상위 결재자가 승인한다」. **The split is by subject rather than by enumerating conjugations**: with a record a person handles as the subject — 결재 · 서류 · 건 — every conjugation of 「올라오다·올라가다」 is caught, while things that really do go up and down (an elevator, stairs, a temperature) are not in that list and are not caught. Listing conjugations instead makes 「이 올라온」 miss 「이 올라옵니다」, and both are the same slang, the latter more common on screens",
+      "reason": "Approval, issuance, and submission replaced by office slang verbs of movement. Even when the status value is issued/uploaded, user-facing copy uses the Korean administrative verb - 「이용 허가가 발급됩니다」 rather than 「허가가 나갑니다」, 「결재가 요청됩니다」 rather than 「결재가 올라갑니다」. **「올라오다」 hides whether it is registration, receipt, or transmission** - 「검수에서 올라온 용어」 is 「등재된 용어」, 「충돌로 올라옵니다」 is 「충돌로 등록됩니다」, and 「승인자가 올라간다」 is 「상위 결재자가 승인한다」. **The split is by subject rather than by enumerating conjugations**: with a record a person handles as the subject - 결재 · 서류 · 건 - every conjugation of 「올라오다·올라가다」 is caught, while things that really do go up and down (an elevator, stairs, a temperature) are not in that list and are not caught. Listing conjugations instead makes 「이 올라온」 miss 「이 올라옵니다」, and both are the same slang, the latter more common on screens",
       "find": [
         "허가가 나가",
         "허가가 나갑",
@@ -1493,7 +1494,7 @@
       "id": "only-way-superlative",
       "scope": "universal",
       "severity": "error",
-      "reason": "An assertion with no grounds, and an emotional verdict. Risk and priority are explained with conditions and results — 「지정된 외부 교육기관의 회차를 예약해야 합니다」 rather than 「유일한 길이다」. When there really is only one way, write the requirement directly with 「해야 합니다·할 수 없습니다」",
+      "reason": "An assertion with no grounds, and an emotional verdict. Risk and priority are explained with conditions and results - 「지정된 외부 교육기관의 회차를 예약해야 합니다」 rather than 「유일한 길이다」. When there really is only one way, write the requirement directly with 「해야 합니다·할 수 없습니다」",
       "find": [
         "유일한 길",
         "최악이다",
@@ -1517,7 +1518,7 @@
       "id": "metaphor-question-label",
       "scope": "universal",
       "severity": "error",
-      "reason": "A question-form title in the English manner whose predicate is a metaphor. A title and a label are name slots, so 「적용 요건」 rather than 「무엇을 켜는가」, 「유지 조건」 rather than 「무엇에 기대는가」, 「전송 위치」 rather than 「어디로 올라가는가」. **Question-form titles in general are judged by references/ui-copy.md** — the principle is the noun form and the exception is the shape a real user would ask (「누가 승인할 수 있나요?」). This rule catches only what a machine can separate with certainty: the cases where the predicate is a metaphor. Without blocking the character before the stem, the middle of a word is caught, as in the 「켜」 of 「지켜지는가」. A door really opening and closing cannot be separated by letters and is judged in context. 「무엇에 기대는가」·「무엇을 켜는가」 are caught by lean-on-for-depend and turn-on-for-apply as well — the sentence carries both defects, the question form and the metaphorical predicate, so being reported twice is correct",
+      "reason": "A question-form title in the English manner whose predicate is a metaphor. A title and a label are name slots, so 「적용 요건」 rather than 「무엇을 켜는가」, 「유지 조건」 rather than 「무엇에 기대는가」, 「전송 위치」 rather than 「어디로 올라가는가」. **Question-form titles in general are judged by references/ui-copy.md** - the principle is the noun form and the exception is the shape a real user would ask (「누가 승인할 수 있나요?」). This rule catches only what a machine can separate with certainty: the cases where the predicate is a metaphor. Without blocking the character before the stem, the middle of a word is caught, as in the 「켜」 of 「지켜지는가」. A door really opening and closing cannot be separated by letters and is judged in context. 「무엇에 기대는가」·「무엇을 켜는가」 are caught by lean-on-for-depend and turn-on-for-apply as well - the sentence carries both defects, the question form and the metaphorical predicate, so being reported twice is correct",
       "find": [
         "(?<![가-힣])(켜|기대|쥐|싣|품|무너지|살아나|막히|풀리|열리|닫히|가르|딸리|밀리)[가-힣 ]{0,6}는가$",
         "(?<![가-힣])(올라가|내려오|올라오|내려가)[가-힣 ]{0,4}는가$"
@@ -1547,7 +1548,7 @@
       "id": "turn-on-for-apply",
       "scope": "universal",
       "severity": "error",
-      "reason": "A literal English `trigger`/`turn on`. A requirement or an obligation is not 「켜진다」 — 「항목별 적용 요건」 rather than 「항목 하나가 켜는 의무」. **Really switching on a light, an auxiliary lamp, or a feature is legitimate, so the particle alone does not decide** — it fires only when 의무 · 요건 · 조건 follows 「가 켜는」·「이 켜는」. 「이 리더가 켜는 보조등」 is a real switch and is legitimate",
+      "reason": "A literal English `trigger`/`turn on`. A requirement or an obligation is not 「켜진다」 - 「항목별 적용 요건」 rather than 「항목 하나가 켜는 의무」. **Really switching on a light, an auxiliary lamp, or a feature is legitimate, so the particle alone does not decide** - it fires only when 의무 · 요건 · 조건 follows 「가 켜는」·「이 켜는」. 「이 리더가 켜는 보조등」 is a real switch and is legitimate",
       "find": [
         "가 켜는 의무",
         "이 켜는 의무",
@@ -1577,7 +1578,7 @@
       "id": "interlock-for-order",
       "scope": "universal",
       "severity": "error",
-      "reason": "Writing a business relation as 「물리다」·「물고 있다」. Say whether it is a precedence relation or a plain linkage — 「두 업무에 선후 관계가 있다」 rather than 「두 업무가 서로 물린다」. Gears and parts really do interlock, so it is narrowed to phrases whose subject is a task or a schedule",
+      "reason": "Writing a business relation as 「물리다」·「물고 있다」. Say whether it is a precedence relation or a plain linkage - 「두 업무에 선후 관계가 있다」 rather than 「두 업무가 서로 물린다」. Gears and parts really do interlock, so it is narrowed to phrases whose subject is a task or a schedule",
       "find": [
         "서로 물린",
         "서로 물리",
@@ -1602,7 +1603,7 @@
       "id": "split-for-classify",
       "scope": "universal",
       "severity": "warn",
-      "reason": "Writing that a criterion 「가른다」 its targets. Say whether it classifies, excludes, or restricts, and write 「해당 기준에 따라 대상을 구분한다」. 「의견이 갈린다」 is a settled expression, so it fires only with the object particle. **「A와/과 B를 가른다」 is not caught** — it is the settled sense of telling two things apart side by side, which differs from a criterion classifying its targets (「초기화로 사라지는 것과 앱에 남는 것을 가르는 근거」). **A counting word in front means the same thing** — 「두 프로세스를 가르는」 · 「둘을 가르는」 · 「양쪽을 가르는」 are one family with 「A와 B를 가른다」 and differ only in construction. An exception written for 와/과 alone lets the rest of that family through. The split is by whether 와/과 or a word counting two or more precedes it",
+      "reason": "Writing that a criterion 「가른다」 its targets. Say whether it classifies, excludes, or restricts, and write 「해당 기준에 따라 대상을 구분한다」. 「의견이 갈린다」 is a settled expression, so it fires only with the object particle. **「A와/과 B를 가른다」 is not caught** - it is the settled sense of telling two things apart side by side, which differs from a criterion classifying its targets (「초기화로 사라지는 것과 앱에 남는 것을 가르는 근거」). **A counting word in front means the same thing** - 「두 프로세스를 가르는」 · 「둘을 가르는」 · 「양쪽을 가르는」 are one family with 「A와 B를 가른다」 and differ only in construction. An exception written for 와/과 alone lets the rest of that family through. The split is by whether 와/과 or a word counting two or more precedes it",
       "find": [
         "/(?<![과와] [^\\n]{0,40})(?<!(두|세|네|다섯|둘|셋|넷|양쪽|여럿|여러)[^\\n]{0,20})[을를] 가(른다|르는|릅니다)/"
       ],
@@ -1627,7 +1628,7 @@
       "id": "thing-stands-there",
       "scope": "universal",
       "severity": "warn",
-      "reason": "The metaphor of writing placement as 「선다」. A thing is not standing but placed, so write 「놓인다·나온다·붙는다·표시된다」. The base rule /[이가로] 선다/ fires only with a particle, so 「위에 선다」·「넷만 선다」·「따로 선다」 escape. The conjugation and the particle escape together — 「아래에도 서고」 has the particle 도 and the ending 서고, and 「정책은 선다」 has the particle 은, so neither falls into the two branches above. **The 「~(으)로」 of manner is another branch** — 「한 줄로 서고」·「세 층으로 서고」·「「수동 확인」으로 서고」 have a manner phrase rather than a particle in front and are not caught by the particle branch. So each branch carries the same bundle of conjugations. 을·이·가 would drag in 「줄을 선다」·「칼날이 선다」, so only 은·는·도 are matched. 「문 앞에 서」 is a person waiting their turn and is filtered out by the preceding word — it is not the placement of a thing. 「일렬로」·「똑바로」·「거꾸로」 describe a person really standing and are left out of the manner branch's word list. 「서므로」 has no preceding word in any branch — an adverbial phrase precedes it, as in 「쌓여야 서므로」 — so the ending itself is matched and only subjects that are people really standing are filtered out by the preceding word. **「서면」 is left out of the conjugation bundle** — the 서면 of 「서면 요건」·「서면 통지」 is a noun meaning a written document, and matching the ending would catch statutory documents wholesale. **When the character before 「서므로」 is Hangul it is not examined at all** — 앞서다 · 나서다 · 맞서다 · 들어서다 · 넘어서다 · 물러서다 are different words whose stem ends in 「서」, and a lookbehind enumerating person nouns and adverbs cannot reach that family, which is how 「일주일 앞서므로」 was reported as a placement metaphor. A real placement has a space before it, as in 「쌓여야 서므로」, so requiring a non-Hangul preceding character removes the whole family at once",
+      "reason": "The metaphor of writing placement as 「선다」. A thing is not standing but placed, so write 「놓인다·나온다·붙는다·표시된다」. The base rule /[이가로] 선다/ fires only with a particle, so 「위에 선다」·「넷만 선다」·「따로 선다」 escape. The conjugation and the particle escape together - 「아래에도 서고」 has the particle 도 and the ending 서고, and 「정책은 선다」 has the particle 은, so neither falls into the two branches above. **The 「~(으)로」 of manner is another branch** - 「한 줄로 서고」·「세 층으로 서고」·「「수동 확인」으로 서고」 have a manner phrase rather than a particle in front and are not caught by the particle branch. So each branch carries the same bundle of conjugations. 을·이·가 would drag in 「줄을 선다」·「칼날이 선다」, so only 은·는·도 are matched. 「문 앞에 서」 is a person waiting their turn and is filtered out by the preceding word - it is not the placement of a thing. 「일렬로」·「똑바로」·「거꾸로」 describe a person really standing and are left out of the manner branch's word list. 「서므로」 has no preceding word in any branch - an adverbial phrase precedes it, as in 「쌓여야 서므로」 - so the ending itself is matched and only subjects that are people really standing are filtered out by the preceding word. **「서면」 is left out of the conjugation bundle** - the 서면 of 「서면 요건」·「서면 통지」 is a noun meaning a written document, and matching the ending would catch statutory documents wholesale. **When the character before 「서므로」 is Hangul it is not examined at all** - 앞서다 · 나서다 · 맞서다 · 들어서다 · 넘어서다 · 물러서다 are different words whose stem ends in 「서」, and a lookbehind enumerating person nouns and adverbs cannot reach that family, which is how 「일주일 앞서므로」 was reported as a placement metaphor. A real placement has a space before it, as in 「쌓여야 서므로」, so requiring a non-Hangul preceding character removes the whole family at once",
       "find": [
         "/(?<!문 )(위|안|옆|아래|앞|뒤|맨 위|맨 앞)에도?\\s*(선다|서고|서며|서므로|섰다|섰고|섭니다)/",
         "/[가-힣]만\\s*(선다|서고|서며|서므로|섰다|섰고|섭니다)/",
@@ -1668,7 +1669,7 @@
       "id": "screen-speaks-repeat",
       "scope": "universal",
       "severity": "warn",
-      "reason": "「말한다」 more than three times in one file is a habit. Split by what the screen, the table, or the badge actually does: 표시한다 · 안내한다 · 기록한다 · 설명한다. **Changing it to 「밝힌다」·「보인다」 is not a fix** — a screen revealing a fact is personification too, and 「보이다」 hides whether the system displays or the user looks. Sentences screen-says already reports as errors are counted here as well — that rule is about one sentence's defect and this one about a file's habit, so removing the overlap would stop the habit being counted",
+      "reason": "「말한다」 more than three times in one file is a habit. Split by what the screen, the table, or the badge actually does: 표시한다 · 안내한다 · 기록한다 · 설명한다. **Changing it to 「밝힌다」·「보인다」 is not a fix** - a screen revealing a fact is personification too, and 「보이다」 hides whether the system displays or the user looks. Sentences screen-says already reports as errors are counted here as well - that rule is about one sentence's defect and this one about a file's habit, so removing the overlap would stop the habit being counted",
       "find": [
         "/말한다/"
       ],
@@ -1688,7 +1689,7 @@
       "id": "noun-phrase-as-thing",
       "scope": "universal",
       "severity": "warn",
-      "reason": "A string ending in 「~것」 is a name slot — a title, a label, a band heading — and there it is translation-ese. Replace it with a noun that says what it is: 항목 · 값 · 기록 · 화면 · 문구. **Enumerating adnominal endings always leaks** — matching only 「~하는 것」 lets 「기다린 것」·「손댄 것」·「바꾼 것」·「적은 것」·「만든 것」·「온 것」 all escape, which is how labels survive. Anchoring on the final 「것」 alone catches every ending. A noun clause inside a sentence continues as 「것이다」·「것입니다」·「것을」, so it does not end the string and is not caught. **How many more there are in the file is not counted** — a name is wrong from the first occurrence, and the segment-end anchor already separates a label from a noun clause inside a sentence, so counting would cut detection rather than raise precision. A threshold belongs to rules where 「once is normal and six times is a habit」 (`therefore-repeat` · `for-purpose` · `screen-speaks-repeat`), and this rule is not in that family. **With a threshold, the same defect is judged by how many others happen to sit beside it** — a string reported in a file with four occurrences stays silent, byte for byte identical, in a file with two",
+      "reason": "A string ending in 「~것」 is a name slot - a title, a label, a band heading - and there it is translation-ese. Replace it with a noun that says what it is: 항목 · 값 · 기록 · 화면 · 문구. **Enumerating adnominal endings always leaks** - matching only 「~하는 것」 lets 「기다린 것」·「손댄 것」·「바꾼 것」·「적은 것」·「만든 것」·「온 것」 all escape, which is how labels survive. Anchoring on the final 「것」 alone catches every ending. A noun clause inside a sentence continues as 「것이다」·「것입니다」·「것을」, so it does not end the string and is not caught. **How many more there are in the file is not counted** - a name is wrong from the first occurrence, and the segment-end anchor already separates a label from a noun clause inside a sentence, so counting would cut detection rather than raise precision. A threshold belongs to rules where 「once is normal and six times is a habit」 (`therefore-repeat` · `for-purpose` · `screen-speaks-repeat`), and this rule is not in that family. **With a threshold, the same defect is judged by how many others happen to sit beside it** - a string reported in a file with four occurrences stays silent, byte for byte identical, in a file with two",
       "find": [
         "/[가-힣]\\s*것$/"
       ],
@@ -1719,7 +1720,7 @@
       "id": "metaphor-place-as-name",
       "scope": "universal",
       "severity": "warn",
-      "reason": "A physical metaphor used in a name slot. Calling a procedure, a condition, or a position a 「길」·「자리」·「줄」 makes the reader guess what it holds — 「갱신이 지나는 길」 is the update procedure, and 「세션이 무너지는 자리」 is where a session breaks. Name what it holds: 절차 · 조건 · 위치 · 연결 · 순서. **It fires only at the end of a string** — the name slot is the problem, and the same word inside a sentence (「그 사람이 서는 자리를 비운다」·「대피 경로가 막힌 길」) is legitimate. A place where a person really stands is excluded entirely, and only things being placed or breaking are matched. A form with no subject leaks again — 「갖추는 길」·「고치는 길」·「빠지는 자리」·「멈춘 자리」 have no 「~이/가」 in front and miss the branch that requires a subject, so an adnominal plus 길/자리 ending the string is matched separately. **「축」 is the same family** — 「범위를 정하는 축」·「권한을 정하는 두 축」 are names borrowed from a coordinate system, and what they hold is a criterion. But a rotation axis, a horizontal axis, and a coordinate axis are real axes, so the word alone cannot separate them and it is matched only after an adnominal that says it decides or divides something — 「회전하는 축」 is not caught.",
+      "reason": "A physical metaphor used in a name slot. Calling a procedure, a condition, or a position a 「길」·「자리」·「줄」 makes the reader guess what it holds - 「갱신이 지나는 길」 is the update procedure, and 「세션이 무너지는 자리」 is where a session breaks. Name what it holds: 절차 · 조건 · 위치 · 연결 · 순서. **It fires only at the end of a string** - the name slot is the problem, and the same word inside a sentence (「그 사람이 서는 자리를 비운다」·「대피 경로가 막힌 길」) is legitimate. A place where a person really stands is excluded entirely, and only things being placed or breaking are matched. A form with no subject leaks again - 「갖추는 길」·「고치는 길」·「빠지는 자리」·「멈춘 자리」 have no 「~이/가」 in front and miss the branch that requires a subject, so an adnominal plus 길/자리 ending the string is matched separately. **「축」 is the same family** - 「범위를 정하는 축」·「권한을 정하는 두 축」 are names borrowed from a coordinate system, and what they hold is a criterion. But a rotation axis, a horizontal axis, and a coordinate axis are real axes, so the word alone cannot separate them and it is matched only after an adnominal that says it decides or divides something - 「회전하는 축」 is not caught.",
       "find": [
         "/[가-힣]+[이가]\\s*(지나는|바뀌는|들어가는|나가는|흐르는)\\s*길$/",
         "/[가-힣]+[을를]\\s*(가져가는|내보내는|들여오는)\\s*길$/",
@@ -1731,7 +1732,7 @@
         "/(빠지는|무너지는|막히는|비는|멈춘|끊긴)\\s*자리$/",
         "/[가-힣]{2,}[을를이가]\\s*(정하는|가르는|나누는|이루는)\\s*(?:[가-힣]{1,3}\\s+)?축$/"
       ],
-      "replace": "절차 · 조건 · 위치 · 연결 · 순서 — 담긴 것을 그대로 부른다",
+      "replace": "절차 · 조건 · 위치 · 연결 · 순서 - 담긴 것을 그대로 부른다",
       "hit": [
         "갱신이 지나는 길",
         "배포가 지나는 길",
@@ -1772,7 +1773,7 @@
       "id": "indirect-question-copula",
       "scope": "universal",
       "severity": "error",
-      "reason": "Attaching 「입니다」 to an indirect question. It carries over only the word order of the English `This page is about whether…`, and ending a question clause as if it were a nominal predicate leaves a sentence that parses grammatically but does not stand as Korean. Rewrite it with the concrete object and function — 「사용자별 지급 내역과 유효기간을 확인합니다」 rather than 「누구에게 무엇이 나갔고 언제까지 유효한지입니다」. **Matching the final 「지입니다」 alone is not enough** — sentences ending in a complete noun, such as 「가지입니다」·「별지입니다」, get caught. So the endings without a final consonant are enumerated, and for 「~ㄹ지」 the whole class of syllables with ㄹ as the final consonant is opened. 「일」 and 「별」 are removed from that class because 「작업일지입니다」·「이 문서에 붙인 별지입니다」 cannot be separated by letters from 「보일지입니다」, and the common passive forms are written in separately instead",
+      "reason": "Attaching 「입니다」 to an indirect question. It carries over only the word order of the English `This page is about whether…`, and ending a question clause as if it were a nominal predicate leaves a sentence that parses grammatically but does not stand as Korean. Rewrite it with the concrete object and function - 「사용자별 지급 내역과 유효기간을 확인합니다」 rather than 「누구에게 무엇이 나갔고 언제까지 유효한지입니다」. **Matching the final 「지입니다」 alone is not enough** - sentences ending in a complete noun, such as 「가지입니다」·「별지입니다」, get caught. So the endings without a final consonant are enumerated, and for 「~ㄹ지」 the whole class of syllables with ㄹ as the final consonant is opened. 「일」 and 「별」 are removed from that class because 「작업일지입니다」·「이 문서에 붙인 별지입니다」 cannot be separated by letters from 「보일지입니다」, and the common passive forms are written in separately instead",
       "find": [
         "(는지|은지|인지|한지|았는지|었는지|하는지|되는지)입니다",
         "[갈갤걀걜걸겔결곌골괄괠괼굘굴궐궬귈귤글긜길깔깰꺌꺨껄껠껼꼘꼴꽐꽬꾈꾤꿀꿜꿸뀔뀰끌끨낄날낼냘냴널넬녈녤놀놜놸뇔뇰눌눨뉄뉠뉼늘늴닐달댈댤덀덜델뎔뎰돌돨됄될됼둘둴뒐뒬듈들딀딜딸땔땰떌떨뗄뗠뗼똘똴뙐뙬뚈뚤뛀뛜뛸뜔뜰띌띨랄랠랼럘럴렐렬롈롤뢀뢜뢸룔룰뤌뤨륄률를릘릴말맬먈먤멀멜멸몔몰뫌뫨묄묠물뭘뭴뮐뮬믈믤밀발밸뱔뱰벌벨볠볼봘봴뵐뵬불붤뷀뷜뷸블븰빌빨뺄뺠뺼뻘뻴뼐뼬뽈뽤뾀뾜뾸뿔뿰쀌쀨쁄쁠쁼삘살샐샬섈설셀셜셸솔솰쇌쇨숄술숼쉘쉴슐슬싈실쌀쌜쌸썔썰쎌쎨쏄쏠쏼쐘쐴쑐쑬쒈쒤쓀쓜쓸씔씰알앨얄얠얼엘열옐올왈왤욀욜울월웰윌율을읠잘잴쟐쟬절젤졀졜졸좔좰죌죨줄줠줼쥘쥴즐즬질짤쨀쨜쨸쩔쩰쪌쪨쫄쫠쫼쬘쬴쭐쭬쮈쮤쯀쯜쯸찔찰챌챨첄철첼쳘쳴촐촬쵈쵤춀출춸췔췰츌츨칄칠칼캘캴컐컬켈켤콀콜콸쾔쾰쿌쿨퀄퀠퀼큘클킐킬탈탤턀턜털텔텰톌톨퇄퇠퇼툘툴퉐퉬튈튤틀틜틸팔팰퍌퍨펄펠펼폘폴퐐퐬푈푤풀풜풸퓔퓰플픨필할핼햘햴헐헬혈혤홀활홸횔횰훌훨휄휠휼흘흴힐]지입니다",
@@ -1798,7 +1799,7 @@
       "id": "vague-page-description",
       "scope": "universal",
       "severity": "error",
-      "reason": "Writing a page description with interrogatives and catch-all words. A description is not a riddle restating the title but the place where one sentence says what the user checks or handles on this screen — write it as the object (a specific name) + the criterion or scope (고객별 · 채널별 · 현재) + the function (확인합니다 · 관리합니다 · 설정합니다). 「계약별 만료 시각과 만료 상태를 확인합니다」 rather than 「무엇이 언제 끝나는지 봅니다」. A detail screen listing an object name, a time, and a state briefly — 「A동 3층 · 2026-08-12 · 진행 중」 — is not explanatory text and is not expanded into a sentence",
+      "reason": "Writing a page description with interrogatives and catch-all words. A description is not a riddle restating the title but the place where one sentence says what the user checks or handles on this screen - write it as the object (a specific name) + the criterion or scope (고객별 · 채널별 · 현재) + the function (확인합니다 · 관리합니다 · 설정합니다). 「계약별 만료 시각과 만료 상태를 확인합니다」 rather than 「무엇이 언제 끝나는지 봅니다」. A detail screen listing an object name, a time, and a state briefly - 「A동 3층 · 2026-08-12 · 진행 중」 - is not explanatory text and is not expanded into a sentence",
       "find": [
         "(무엇|누가|누구|어느|어디|언제)[^\\n]{0,40}(는지|을지|ㄹ지) ?봅니다$",
         "(무엇|누가|누구|어느|어디)[^\\n]{0,40}(는지|은지) ?보는 화면$"
@@ -1820,7 +1821,7 @@
       "id": "duration-scope-metaphor",
       "scope": "universal",
       "severity": "error",
-      "reason": "Writing a retention period, a feature's applicability, or a permission restriction as a metaphor of movement or a power switch. Write the real retention period, what it applies to, whether it is allowed, and the result — 「30년 보존하는 이유」 rather than 「30년을 가는가」, 「기업 요금제에 적용됩니다」 rather than 「기업 요금제에서 켜집니다」, 「대리로 작성할 수 없습니다」 rather than 「대리가 막힙니다」. **「켜기·끄기」 is used only as the action name of a switch the user flips** — where a measurement, a statute, a policy, or a customer type decides automatically, it is 「적용됩니다·대상으로 판정합니다」. 「막히다」 is the same verb as a passage really being blocked, so it fires only when an action noun precedes it.",
+      "reason": "Writing a retention period, a feature's applicability, or a permission restriction as a metaphor of movement or a power switch. Write the real retention period, what it applies to, whether it is allowed, and the result - 「30년 보존하는 이유」 rather than 「30년을 가는가」, 「기업 요금제에 적용됩니다」 rather than 「기업 요금제에서 켜집니다」, 「대리로 작성할 수 없습니다」 rather than 「대리가 막힙니다」. **「켜기·끄기」 is used only as the action name of a switch the user flips** - where a measurement, a statute, a policy, or a customer type decides automatically, it is 「적용됩니다·대상으로 판정합니다」. 「막히다」 is the same verb as a passage really being blocked, so it fires only when an action noun precedes it.",
       "find": [
         "년을 가는",
         "년을 갑니다",
@@ -1870,13 +1871,13 @@
         "그 기록은 30년 보존한다"
       ],
       "lens": false,
-      "lensReason": "hit 예문이 기간 비유와 범위 진술 두 계열에 걸쳐 있어 한 어간으로 묶이지 않는다 — 기간 쪽은 렌즈의 이동 계열이 이미 덮는다"
+      "lensReason": "hit 예문이 기간 비유와 범위 진술 두 계열에 걸쳐 있어 한 어간으로 묶이지 않는다 - 기간 쪽은 렌즈의 이동 계열이 이미 덮는다"
     },
     {
       "id": "gate-metaphor",
       "scope": "universal",
       "severity": "error",
-      "reason": "Carrying over the English `gate`/`open`/`close`/`block` as it stands. 「관문을 연다·닫는다」·「관문에 걸렸다」 hide whether assignment is restricted, access is refused, or the next stage cannot proceed — write the object and the result: 「유효기간이 지나면 해당 작업의 배정을 제한합니다」 rather than 「만료가 관문을 닫는다」. Even when the domain model is called gate, user-facing copy unfolds it into 「필수 요건」·「배정 전 요건 확인」·「단계 진행 조건」. **A real door stays** — 출입문 · 문 개방 · 문 잠금 are physical fixtures, so only occurrences containing 「관문」 are matched",
+      "reason": "Carrying over the English `gate`/`open`/`close`/`block` as it stands. 「관문을 연다·닫는다」·「관문에 걸렸다」 hide whether assignment is restricted, access is refused, or the next stage cannot proceed - write the object and the result: 「유효기간이 지나면 해당 작업의 배정을 제한합니다」 rather than 「만료가 관문을 닫는다」. Even when the domain model is called gate, user-facing copy unfolds it into 「필수 요건」·「배정 전 요건 확인」·「단계 진행 조건」. **A real door stays** - 출입문 · 문 개방 · 문 잠금 are physical fixtures, so only occurrences containing 「관문」 are matched",
       "find": [
         "관문을 연",
         "관문을 열",
@@ -1911,7 +1912,7 @@
       "id": "legal-term-as-label",
       "scope": "universal",
       "severity": "error",
-      "reason": "Leaving a legal term nobody uses in daily speech alone on a tab, a badge, or a column name. The reader cannot tell what stands in for what, so show the result first — 「다른 의무 이행으로 인정」 rather than 「갈음」, 「다른 기록으로 이행한 의무 확인」 rather than 「갈음 판정」. In the body both sides are named, as in 「A 기록으로 B 의무를 갈음합니다」, so **it fires only when the whole string is that term**. Which terms may not stand as a label differs by domain, so register them in the project glossary to be caught alongside",
+      "reason": "Leaving a legal term nobody uses in daily speech alone on a tab, a badge, or a column name. The reader cannot tell what stands in for what, so show the result first - 「다른 의무 이행으로 인정」 rather than 「갈음」, 「다른 기록으로 이행한 의무 확인」 rather than 「갈음 판정」. In the body both sides are named, as in 「A 기록으로 B 의무를 갈음합니다」, so **it fires only when the whole string is that term**. Which terms may not stand as a label differs by domain, so register them in the project glossary to be caught alongside",
       "find": [
         "^갈음(?: 판정| 관계| 대상| 여부| 인정)?$",
         "^갈음하는 [가-힣]+$"
@@ -1933,7 +1934,7 @@
       "id": "cause-as-root",
       "scope": "universal",
       "severity": "error",
-      "reason": "Likening a cause, a source, or an effect to the movement of a plant or a substance. Write 「그 행이 원인입니다」 rather than 「그 행이 뿌리입니다」, 「도메인 용어가 섞인 것」 rather than 「도메인이 배어든 것」, 「도메인 용어를 뺀다」 rather than 「도메인을 걷어낸다」. It is an easy metaphor for whoever is explaining, so it survives especially in replies and design notes. A real plant root and a linguistic root (語根) are legitimate, so only the sense of a cause is matched. **The family of a process, a session, or a build living and dying belongs to `process-as-alive`, not here** — a rule carrying only one direction teaches that the other direction is fine, so that family sits in one rule holding both life and death. **걷어내다 shares its letters with the physical sense of clearing something away** — 「천막을 걷어 낸 자리」 and 「거르개가 그 행만 걷어 낸 경우」 really do clear something and are not defects. What separates them is not the word but **what is being cleared**, so objects that are placed and then removed, and a single row of a list, are excluded with a lookbehind — the metaphorical side's object is a quality soaked into something (도메인 · 비유 · 흔적), not an object sitting there. An object missing from the lookbehind is caught and judged by a person. The spaced form (`걷어 낸`) is the standard spacing and is caught with it, and the past form (`걷어냈`) is the same family and sits in the same pattern.",
+      "reason": "Likening a cause, a source, or an effect to the movement of a plant or a substance. Write 「그 행이 원인입니다」 rather than 「그 행이 뿌리입니다」, 「도메인 용어가 섞인 것」 rather than 「도메인이 배어든 것」, 「도메인 용어를 뺀다」 rather than 「도메인을 걷어낸다」. It is an easy metaphor for whoever is explaining, so it survives especially in replies and design notes. A real plant root and a linguistic root (語根) are legitimate, so only the sense of a cause is matched. **The family of a process, a session, or a build living and dying belongs to `process-as-alive`, not here** - a rule carrying only one direction teaches that the other direction is fine, so that family sits in one rule holding both life and death. **걷어내다 shares its letters with the physical sense of clearing something away** - 「천막을 걷어 낸 자리」 and 「거르개가 그 행만 걷어 낸 경우」 really do clear something and are not defects. What separates them is not the word but **what is being cleared**, so objects that are placed and then removed, and a single row of a list, are excluded with a lookbehind - the metaphorical side's object is a quality soaked into something (도메인 · 비유 · 흔적), not an object sitting there. An object missing from the lookbehind is caught and judged by a person. The spaced form (`걷어 낸`) is the standard spacing and is caught with it, and the past form (`걷어냈`) is the same family and sits in the same pattern.",
       "find": [
         "가 뿌리",
         "이 뿌리다",
@@ -1971,7 +1972,7 @@
       "id": "process-as-alive",
       "scope": "universal",
       "severity": "error",
-      "reason": "Calling a process, a session, an agent, a server, or a build alive or dead. What stopped, and how, disappears — write 「에이전트가 중단됐다」 rather than 「에이전트가 죽었다」, 「멈춘 에이전트」 rather than 「죽은 에이전트」, 「프로세스를 종료한다」 rather than 「프로세스를 죽인다」, 「세션이 유효하다」·「세션이 실행 중이다」 rather than 「세션이 살아 있다」, 「빌드가 다시 동작한다」 rather than 「빌드가 살아났다」, 「서버가 응답하는지」 rather than 「서버의 생사」. **Both directions live in one rule** — catching only the dying side makes 「살아 있다」 read as fine, and catching only the living side does the same for 「죽었다」. **The boundary is people and animals.** A real death is outside this rule, and 「사망 재해」·「사망자」·「중대재해」·「사망하거나 영구 장해」 in industrial-safety, medical, and insurance documents are that domain's formal terms and must stay silent. So it is not widened to the stems 「죽」·「살아」 but fires **only when the subject is a software construct** — enumerating subjects is known to leak, and it is left that way because a false positive calling a real death a metaphor costs far more than a miss",
+      "reason": "Calling a process, a session, an agent, a server, or a build alive or dead. What stopped, and how, disappears - write 「에이전트가 중단됐다」 rather than 「에이전트가 죽었다」, 「멈춘 에이전트」 rather than 「죽은 에이전트」, 「프로세스를 종료한다」 rather than 「프로세스를 죽인다」, 「세션이 유효하다」·「세션이 실행 중이다」 rather than 「세션이 살아 있다」, 「빌드가 다시 동작한다」 rather than 「빌드가 살아났다」, 「서버가 응답하는지」 rather than 「서버의 생사」. **Both directions live in one rule** - catching only the dying side makes 「살아 있다」 read as fine, and catching only the living side does the same for 「죽었다」. **The boundary is people and animals.** A real death is outside this rule, and 「사망 재해」·「사망자」·「중대재해」·「사망하거나 영구 장해」 in industrial-safety, medical, and insurance documents are that domain's formal terms and must stay silent. So it is not widened to the stems 「죽」·「살아」 but fires **only when the subject is a software construct** - enumerating subjects is known to leak, and it is left that way because a false positive calling a real death a metaphor costs far more than a miss",
       "find": [
         "/(에이전트|프로세스|세션|서버|빌드|컨테이너|파드|워커|데몬|스레드|커넥션|인스턴스|노드|서비스)[이가] ?(?:아직 |이미 |벌써 |그냥 |또 |다시 |전부 |다 )?죽/",
         "/죽은 (에이전트|프로세스|세션|서버|빌드|컨테이너|파드|워커|데몬|스레드|커넥션|인스턴스|노드|서비스)/",
@@ -2006,7 +2007,7 @@
       "id": "relation-as-picture",
       "scope": "universal",
       "severity": "error",
-      "reason": "Naming a picture instead of explaining the **relation between** two things. What is the same and what differs disappears entirely — write 「방향만 반대인 같은 결함」 rather than 「거울상」, 「똑같다」 rather than 「판박이다」, 「좌우가 뒤집힌 같은 배치」 rather than 「데칼코마니」, 「같은 규칙의 두 방향이다」 rather than 「동전의 양면이다」, 「구조가 같다」 rather than 「쌍둥이다」. The family presses a metaphor into a single noun, so each word takes a different replacement and one glossary row cannot judge them. **The real things are legitimate** — optics' and chemistry's 「거울상 이성질체」 (enantiomer), a real mirror, a real coin, a transfer sticker, real twins are not caught, so the following predicate is matched with it",
+      "reason": "Naming a picture instead of explaining the **relation between** two things. What is the same and what differs disappears entirely - write 「방향만 반대인 같은 결함」 rather than 「거울상」, 「똑같다」 rather than 「판박이다」, 「좌우가 뒤집힌 같은 배치」 rather than 「데칼코마니」, 「같은 규칙의 두 방향이다」 rather than 「동전의 양면이다」, 「구조가 같다」 rather than 「쌍둥이다」. The family presses a metaphor into a single noun, so each word takes a different replacement and one glossary row cannot judge them. **The real things are legitimate** - optics' and chemistry's 「거울상 이성질체」 (enantiomer), a real mirror, a real coin, a transfer sticker, real twins are not caught, so the following predicate is matched with it",
       "find": [
         "/거울상(?! ?이성질체)/",
         "/거울처럼 (?:뒤집|반대|같|닮)/",
@@ -2036,7 +2037,7 @@
       "id": "software-surface",
       "scope": "universal",
       "severity": "error",
-      "reason": "Rendering a software surface as 「표면」. What it refers to disappears — 「REST 엔드포인트」 rather than 「REST 표면」, 「목록 조회 주소」 rather than 「목록 표면」, 「엔티티를 받치는 엔드포인트」 rather than 「엔티티를 받치는 표면」, and 「맡은 범위」·「서버 쪽」 rather than the 「서버 표면」·「화면 표면」 an agent takes on. **It is not widened to the stem 「표면」 but split by the preceding word** — pipe surface temperature, a painted surface, and surface treatment are physical terms and legitimate. The base glossary's 「표면」 row can be switched off wholesale through 「기본 규칙 예외」 by a repository dealing with physical surfaces, but **that exception silences one whole repository, the software sense included** — physical and software surfaces sitting in one repository is a common arrangement, and this rule, which the exception does not reach, keeps catching the software one",
+      "reason": "Rendering a software surface as 「표면」. What it refers to disappears - 「REST 엔드포인트」 rather than 「REST 표면」, 「목록 조회 주소」 rather than 「목록 표면」, 「엔티티를 받치는 엔드포인트」 rather than 「엔티티를 받치는 표면」, and 「맡은 범위」·「서버 쪽」 rather than the 「서버 표면」·「화면 표면」 an agent takes on. **It is not widened to the stem 「표면」 but split by the preceding word** - pipe surface temperature, a painted surface, and surface treatment are physical terms and legitimate. The base glossary's 「표면」 row can be switched off wholesale through 「기본 규칙 예외」 by a repository dealing with physical surfaces, but **that exception silences one whole repository, the software sense included** - physical and software surfaces sitting in one repository is a common arrangement, and this rule, which the exception does not reach, keeps catching the software one",
       "find": [
         "/(REST|API|HTTP|GraphQL|RPC|CLI|UI|OpenAPI) 표면/",
         "/(목록|상세|조회|검색|등록|수정|삭제|응답|요청|엔드포인트) 표면/",
@@ -2064,7 +2065,7 @@
       "id": "explainer-question-title",
       "scope": "universal",
       "severity": "error",
-      "reason": "A question form standing in a name slot. A title, a table header, and a table's name column are places that name the information being looked for, and an ending in 「~는가」 makes the title unable to predict the content, so the answer arrives only after reading the whole body — 「회의체별 구성과 의결 요건」 rather than 「무엇이 다른가」, 「유지 기간」 rather than 「살아 있는가」, 「이행하는 엔티티」 rather than 「무엇이 이행하는가」. **It is matched by slot, not by word** — enumerating finished strings means adding 「무엇을 정하는가」 still lets 「무엇을 담는가」·「무엇을 여는가」 through, so the family of endings (는가 · 은가 · 한가 · 른가 · 린가 · 운가 · 긴가 · 던가 · 큰가 · 아닌가, plus 「인가」) is anchored on a table cell and on a whole line. **There are three boundaries.** (1) A form a reader would actually say out loud is legitimate — 「누가 승인할 수 있나요?」·「제출 후에도 수정할 수 있나요?」 have a different ending and are not caught. (2) A review item answered yes or no is a question rather than a name and is legitimate. **A name slot is the first cell of a row, not just any cell** — a review table writes the axis (완전성 · 추적성) in the first cell and 「빠짐없이 반영됐는가」 in the second, and there the question is in its proper place. So the first cell is caught as it is and the other cells only when an interrogative is present — 「무엇이 어떻게 문제가 되는가」 in the second cell is still an explanatory question, and something else should have been the name. (3) A whole line is caught only when an interrogative is present (무엇 · 무슨 · 누가 · 누구 · 어느 · 어디 · 언제 · 왜 · 어떻게 · 어떤 · 얼마 · 몇) — what that interrogative asks about is exactly what should have been the name — and a line ending in a full stop is folded prose and is excluded. 「인가」 overlaps in letters with 認可 · 단가 · 원가 · 전문가, so it always requires an interrogative alongside",
+      "reason": "A question form standing in a name slot. A title, a table header, and a table's name column are places that name the information being looked for, and an ending in 「~는가」 makes the title unable to predict the content, so the answer arrives only after reading the whole body - 「회의체별 구성과 의결 요건」 rather than 「무엇이 다른가」, 「유지 기간」 rather than 「살아 있는가」, 「이행하는 엔티티」 rather than 「무엇이 이행하는가」. **It is matched by slot, not by word** - enumerating finished strings means adding 「무엇을 정하는가」 still lets 「무엇을 담는가」·「무엇을 여는가」 through, so the family of endings (는가 · 은가 · 한가 · 른가 · 린가 · 운가 · 긴가 · 던가 · 큰가 · 아닌가, plus 「인가」) is anchored on a table cell and on a whole line. **There are three boundaries.** (1) A form a reader would actually say out loud is legitimate - 「누가 승인할 수 있나요?」·「제출 후에도 수정할 수 있나요?」 have a different ending and are not caught. (2) A review item answered yes or no is a question rather than a name and is legitimate. **A name slot is the first cell of a row, not just any cell** - a review table writes the axis (완전성 · 추적성) in the first cell and 「빠짐없이 반영됐는가」 in the second, and there the question is in its proper place. So the first cell is caught as it is and the other cells only when an interrogative is present - 「무엇이 어떻게 문제가 되는가」 in the second cell is still an explanatory question, and something else should have been the name. (3) A whole line is caught only when an interrogative is present (무엇 · 무슨 · 누가 · 누구 · 어느 · 어디 · 언제 · 왜 · 어떻게 · 어떤 · 얼마 · 몇) - what that interrogative asks about is exactly what should have been the name - and a line ending in a full stop is folded prose and is excluded. 「인가」 overlaps in letters with 認可 · 단가 · 원가 · 전문가, so it always requires an interrogative alongside",
       "find": [
         "^[ \\t]*\\|[^|]*[가-힣](?:는가|은가|한가|른가|린가|운가|긴가|던가|큰가|아닌가)[?]?[ ]*\\|",
         "^[ \\t]*\\|[^|]*[가-힣](?:는가|은가|한가|른가|린가|운가|긴가|던가|큰가|아닌가)[.?]",
@@ -2100,13 +2101,13 @@
         "| 검증 가능성 | 서술이 시험으로 확인할 수 있는 형태인가 |"
       ],
       "lens": false,
-      "lensReason": "이름 자리의 어미는 비유 계열이 아니라 문서 구조다 — 렌즈는 어간으로 비유를 뽑는 도구라 담을 것이 없다"
+      "lensReason": "이름 자리의 어미는 비유 계열이 아니라 문서 구조다 - 렌즈는 어간으로 비유를 뽑는 도구라 담을 것이 없다"
     },
     {
       "id": "abstract-noun-compression",
       "scope": "universal",
       "severity": "error",
-      "reason": "Compressing a card or dialog description into abstractions. Lumping it into 「본문」·「전제」·「갈래」·「모양」·「묶음」·「무게」 loses the real items, the handling, and the result — 「요청을 열람, 정정·삭제, 처리정지 등 유형별로 구분합니다」 rather than 「요청은 다섯 갈래입니다」. Write a description as object → action → result, adding one sentence of reason only where it is needed. 「본문」 meaning a document's actual body is legitimate, so it fires only with a predicate attached. Matching only 「~의 본문이다」 lets the subject-particle forms 「제목이 본문이다」·「사유가 본문이다」 escape — which is exactly how they survived a sample review. 「묶음」 is a legitimate noun counting real bundles (서류 묶음 · 사진 묶음), so only counting and lumping into kinds is matched",
+      "reason": "Compressing a card or dialog description into abstractions. Lumping it into 「본문」·「전제」·「갈래」·「모양」·「묶음」·「무게」 loses the real items, the handling, and the result - 「요청을 열람, 정정·삭제, 처리정지 등 유형별로 구분합니다」 rather than 「요청은 다섯 갈래입니다」. Write a description as object → action → result, adding one sentence of reason only where it is needed. 「본문」 meaning a document's actual body is legitimate, so it fires only with a predicate attached. Matching only 「~의 본문이다」 lets the subject-particle forms 「제목이 본문이다」·「사유가 본문이다」 escape - which is exactly how they survived a sample review. 「묶음」 is a legitimate noun counting real bundles (서류 묶음 · 사진 묶음), so only counting and lumping into kinds is matched",
       "find": [
         "의 전제입니다",
         "의 전제다",
@@ -2142,13 +2143,13 @@
         "같은 사람으로 본 사진 묶음입니다"
       ],
       "lens": false,
-      "lensReason": "빠진 형태가 「본문」처럼 평범한 명사라 계열이 아니라 낱말이다 — 규칙이 목록으로 덮는다"
+      "lensReason": "빠진 형태가 「본문」처럼 평범한 명사라 계열이 아니라 낱말이다 - 규칙이 목록으로 덮는다"
     },
     {
       "id": "slogan-assertion",
       "scope": "universal",
       "severity": "error",
-      "reason": "A slogan-shaped assertion. 「A가 곧 B다」·「A가 B가 아니라 C다」·「A는 B일 뿐이다」·「A가 유일한 방어다」 sound forceful while omitting the real condition, the handling, and who verifies, so the user does not understand the feature — 「이상 항목에는 상태를 확인할 수 있는 사진을 첨부해야 합니다」 rather than 「사진이 곧 근거다」. It is often a literal English slogan or contrast sentence, and it sometimes overstates a legal effect. **Only the contrast form (아니라) and the equation form (곧) are caught; the bare negative (~가 아니다) is not** — 「그 조항의 대상이 아니다」·「사업장이 정하는 값이 아니다」 state the scope of a statute precisely, and letters do not separate them from a slogan. A bare negative title is judged by a person in context. **A sentence-end anchor alone is not enough** — a bold lead-in is usually followed by an explanation, so a full stop, a tag, and whitespace all count as closing. **Not every final 「다」 is an assertive ending** — 「마다」·「보다」 are particles preceded by a noun, which is how 「사람이 아니라 필드마다 다르다」 was caught as 「A가 아니라 B다」. The character right before the ending separates them. An official slogan or a quotation in statutory or training material is out of scope",
+      "reason": "A slogan-shaped assertion. 「A가 곧 B다」·「A가 B가 아니라 C다」·「A는 B일 뿐이다」·「A가 유일한 방어다」 sound forceful while omitting the real condition, the handling, and who verifies, so the user does not understand the feature - 「이상 항목에는 상태를 확인할 수 있는 사진을 첨부해야 합니다」 rather than 「사진이 곧 근거다」. It is often a literal English slogan or contrast sentence, and it sometimes overstates a legal effect. **Only the contrast form (아니라) and the equation form (곧) are caught; the bare negative (~가 아니다) is not** - 「그 조항의 대상이 아니다」·「사업장이 정하는 값이 아니다」 state the scope of a statute precisely, and letters do not separate them from a slogan. A bare negative title is judged by a person in context. **A sentence-end anchor alone is not enough** - a bold lead-in is usually followed by an explanation, so a full stop, a tag, and whitespace all count as closing. **Not every final 「다」 is an assertive ending** - 「마다」·「보다」 are particles preceded by a noun, which is how 「사람이 아니라 필드마다 다르다」 was caught as 「A가 아니라 B다」. The character right before the ending separates them. An official slogan or a quotation in statutory or training material is out of scope",
       "find": [
         "[가이] 곧 [가-힣]+(?<![마보])다[.<\\s]",
         "[가이] 곧 [가-힣]+이다[.<\\s]",
@@ -2186,7 +2187,7 @@
       "id": "internal-implementation-leak",
       "scope": "universal",
       "severity": "error",
-      "reason": "Internal implementation wording going out as user guidance. A data structure, a component's implementation, or an internal processing metaphor cannot explain the user's action and its result — 「검증 규칙을 적용한다」 rather than 「검사가 돈다」, 「서명용 비밀값을 변경한다」 rather than 「비밀값이 회전한다」, 「값을 불러오지 못한다」 rather than 「값이 깨진다」. **On an administrator or developer screen, technical terms the user actually configures (API · Webhook · exponential backoff) stay**, but the sentence holding them still takes a real action as its predicate: 전송 · 검증 · 변경 · 재시도. 「돌다」 is already caught by run-for-software, so this rule takes the rest",
+      "reason": "Internal implementation wording going out as user guidance. A data structure, a component's implementation, or an internal processing metaphor cannot explain the user's action and its result - 「검증 규칙을 적용한다」 rather than 「검사가 돈다」, 「서명용 비밀값을 변경한다」 rather than 「비밀값이 회전한다」, 「값을 불러오지 못한다」 rather than 「값이 깨진다」. **On an administrator or developer screen, technical terms the user actually configures (API · Webhook · exponential backoff) stay**, but the sentence holding them still takes a real action as its predicate: 전송 · 검증 · 변경 · 재시도. 「돌다」 is already caught by run-for-software, so this rule takes the rest",
       "find": [
         "규칙을 찾지 못",
         "필드를 찾지 못",
@@ -2219,7 +2220,7 @@
       "id": "question-as-field-label",
       "scope": "universal",
       "severity": "error",
-      "reason": "Writing a field label or a table header as a question. A label is **the place that names the kind of value**, so 「의미」 rather than 「무엇을 뜻하는가」, 「비활성화 가능 여부」 rather than 「끌 수 있는가」, 「위험 요인」 rather than 「왜 위험한가」. **It surfaces later than a question-form title** — a screen name is conspicuous while a table header and a label hide behind their values, and in one repository ninety-seven remained in labels alone after every screen name had been fixed. **The endings have to be enumerated** — matching only 「~는가」 lets 「필요한가」·「중대한가」·「어려운가」 escape. A help question in the form a real user would ask (「누가 승인할 수 있나요?」) is not in a label slot and is out of scope",
+      "reason": "Writing a field label or a table header as a question. A label is **the place that names the kind of value**, so 「의미」 rather than 「무엇을 뜻하는가」, 「비활성화 가능 여부」 rather than 「끌 수 있는가」, 「위험 요인」 rather than 「왜 위험한가」. **It surfaces later than a question-form title** - a screen name is conspicuous while a table header and a label hide behind their values, and in one repository ninety-seven remained in labels alone after every screen name had been fixed. **The endings have to be enumerated** - matching only 「~는가」 lets 「필요한가」·「중대한가」·「어려운가」 escape. A help question in the form a real user would ask (「누가 승인할 수 있나요?」) is not in a label slot and is out of scope",
       "find": [
         "'[^']{2,40}(는가|은가|한가|린가|운가|긴가)'\\s*[,)]",
         "label: '[^']*(는가|은가|한가)'",
@@ -2243,7 +2244,7 @@
       "id": "office-metaphor-vocabulary",
       "scope": "universal",
       "severity": "error",
-      "reason": "The metaphorical words business copy keeps reaching for. Each is rare on its own, but **inside one product they spread as a family**, so when you fix one, sweep the whole repository for the same word — 시계 (a deadline) · 주인 (the person responsible) · 걸음 (a step) · 연료 · 짐 · 얽힘 · 갈림선 · 늙다 · 깨지다 · 동사다 · 첫 질문이다. Replace each with the real thing: 기한 · 담당자 · 단계 · 필요 조건 · 용량 · 연결 관계 · 구분 기준 · 처리되지 않는다 · 예외가 있다 · 이 화면에서 하는 일 · 먼저 확인한다. **Legitimate words overlap in letters (시계열 · 자릿수 · 작품), so it is narrowed by form.** 「짐」 fires only with a particle attached — 「꺼짐이다」·「켜짐이다」 are switch state names and only share letters with the 짐 that means a burden",
+      "reason": "The metaphorical words business copy keeps reaching for. Each is rare on its own, but **inside one product they spread as a family**, so when you fix one, sweep the whole repository for the same word - 시계 (a deadline) · 주인 (the person responsible) · 걸음 (a step) · 연료 · 짐 · 얽힘 · 갈림선 · 늙다 · 깨지다 · 동사다 · 첫 질문이다. Replace each with the real thing: 기한 · 담당자 · 단계 · 필요 조건 · 용량 · 연결 관계 · 구분 기준 · 처리되지 않는다 · 예외가 있다 · 이 화면에서 하는 일 · 먼저 확인한다. **Legitimate words overlap in letters (시계열 · 자릿수 · 작품), so it is narrowed by form.** 「짐」 fires only with a particle attached - 「꺼짐이다」·「켜짐이다」 are switch state names and only share letters with the 짐 that means a burden",
       "find": [
         "시계가 (흐르|멈추|다르|도[는나며])",
         "다른 시계",
@@ -2287,13 +2288,13 @@
         "기본값은 꺼짐이다"
       ],
       "lens": false,
-      "lensReason": "계열이 아니라 닫힌 낱말 목록이다 — 시계·주인·동사·걸음·연료·얽힘·짐을 규칙이 통째로 열거하므로 렌즈가 더할 것이 없고, 낱말을 하나씩 좇으면 렌즈가 규칙의 사본이 된다"
+      "lensReason": "계열이 아니라 닫힌 낱말 목록이다 - 시계·주인·동사·걸음·연료·얽힘·짐을 규칙이 통째로 열거하므로 렌즈가 더할 것이 없고, 낱말을 하나씩 좇으면 렌즈가 규칙의 사본이 된다"
     },
     {
       "id": "open-for-grant",
       "scope": "universal",
       "severity": "error",
-      "reason": "Writing that a qualification, a feature key, or an event 「연다」 something. What is permitted and what starts disappears — 「이 자격으로 통과할 수 있는 출입문」 rather than 「이 자격이 여는 출입문」, 「기능 키로 사용할 수 있는 화면」 rather than 「기능 키가 여는 화면」, 「사건에서 발생하는 기한」 rather than 「사건이 여는 기한」, 「등록하면 심사가 시작된다」 rather than 「등록이 심사를 연다」. **Really opening a file, a door, or a window is legitimate, so it fires only when the subject is a qualification, a key, an event, or an organization.** **「~를 연다」 is not matched from the stem** — opening a file, a window, or a dialog is legitimate, so only objects that are not things — 심사 · 회차 · 기한 · 권한 — are matched. Matching 「여는 범위」 as a bare word catches endings such as the 「하여는」 before 「범위 밖이다」, so the subject's particle is required too. 「여는 것은」 also hides the subject — opening a screen, a window, a file, or a dialog is a real action and is filtered out by the preceding word",
+      "reason": "Writing that a qualification, a feature key, or an event 「연다」 something. What is permitted and what starts disappears - 「이 자격으로 통과할 수 있는 출입문」 rather than 「이 자격이 여는 출입문」, 「기능 키로 사용할 수 있는 화면」 rather than 「기능 키가 여는 화면」, 「사건에서 발생하는 기한」 rather than 「사건이 여는 기한」, 「등록하면 심사가 시작된다」 rather than 「등록이 심사를 연다」. **Really opening a file, a door, or a window is legitimate, so it fires only when the subject is a qualification, a key, an event, or an organization.** **「~를 연다」 is not matched from the stem** - opening a file, a window, or a dialog is legitimate, so only objects that are not things - 심사 · 회차 · 기한 · 권한 - are matched. Matching 「여는 범위」 as a bare word catches endings such as the 「하여는」 before 「범위 밖이다」, so the subject's particle is required too. 「여는 것은」 also hides the subject - opening a screen, a window, a file, or a dialog is a real action and is filtered out by the preceding word",
       "find": [
         "[가이] 여는 (출입문|화면|기한|범위|자리)",
         "누가 여는가",
@@ -2328,7 +2329,7 @@
       "id": "catch-for-set",
       "scope": "universal",
       "severity": "error",
-      "reason": "Replacing setting, booking, or judging with 「잡다」. Which action it is disappears — 「짧게 설정한다」 rather than 「유효 시간을 짧게 잡는다」, 「일정을 배정하지 않는다」 rather than 「일정을 잡지 않는다」, 「두 가지로 판정한다」 rather than 「겹침을 둘 다로 잡는다」, 「검출한다」 rather than 「검사가 결함을 잡는다」. **Holding an object in your hand and taking a seat are legitimate, so it is narrowed by the object** A count with its unit before 「로 잡았다」 (「최대 500대로 잡았고」) is an assumption being set, so the unit counters are enumerated in front of the past and connective endings the older forms did not cover.",
+      "reason": "Replacing setting, booking, or judging with 「잡다」. Which action it is disappears - 「짧게 설정한다」 rather than 「유효 시간을 짧게 잡는다」, 「일정을 배정하지 않는다」 rather than 「일정을 잡지 않는다」, 「두 가지로 판정한다」 rather than 「겹침을 둘 다로 잡는다」, 「검출한다」 rather than 「검사가 결함을 잡는다」. **Holding an object in your hand and taking a seat are legitimate, so it is narrowed by the object** A count with its unit before 「로 잡았다」 (「최대 500대로 잡았고」) is an assumption being set, so the unit counters are enumerated in front of the past and connective endings the older forms did not cover.",
       "find": [
         "짧게 잡",
         "길게 잡",
@@ -2365,7 +2366,7 @@
       "id": "inanimate-have",
       "scope": "universal",
       "severity": "error",
-      "reason": "Writing that a thing 「갖는다·가진다」 something. A literal English have: a screen, a list, or a record does not own anything — something is displayed or set there. 「첫 열에 이름을 표시한다」 rather than 「첫 열이 이름을 갖는다」, 「받은 이수에도 만료일을 설정한다」 rather than 「받은 이수도 만료를 갖는다」, 「선택지 순서가 판단에 영향을 준다」 rather than 「순서가 뜻을 가진다」. **The base glossary catches only 「가지고 있」**, so the final forms 「갖는다」·「가진다」 escaped wholesale, and suspects found twelve sites. **A person or an organization as the subject is legitimate** — 「한 사람이 여러 자격을 갖는다」·「키를 쥔 쪽이 가진 권한」. **A person subject is excluded with a variable-length lookbehind** — in 「한 사람이 여러 자격을 갖는다」 the subject is at the head of the sentence rather than immediately before the object particle, so up to twelve characters are allowed between the person noun and the particle (`(?<!(사람|…)[이가][^.<]{0,12})`). Excluding the full stop and 「<」 from that window keeps a person noun in the previous sentence out of the condition, and a subject further than twelve characters away is caught and judged by a person in context. **This lookbehind is something the miss examples actually prove, not the kind that still passes when deleted** — an example with no closing punctuation is never reached by 「[을를] 갖는다[.<\\s]」, so passing would prove nothing, and every miss example in this family therefore ends as a sentence. **The adnominal is the same family** — 「그룹을 직접 갖는 리더」 is not caught by the list of final forms and escapes wholesale. But 「자격을 가진 근로자」 is legitimate, so the stem alone cannot widen it, and only a following noun that is a thing is matched. **There is a separate form with no object particle** — 「읽는 순서는 그 문서가 갖는다」·「보존 근거는 필드가 갖습니다」 front the topic and leave only the subject as 「~가」, avoiding the 「[을를] 갖는다」 family entirely. So the 「[이가] 갖는다」 shape is matched separately, with the person nouns that often stand there (사람 · 담당자 · 관리자 · 근로자 · 승인자 · 작성자 · 감독자 · 사용자 · 본인 · 누구) excluded by a lookbehind — 「이 권한은 관리자가 갖는다」 is legitimate. A slot that could be a person or a thing and is not in the list, such as 「그쪽이 갖는다」, is caught and judged by a person in context. **A legal sentence's settled object is excluded on the object side** — 「권리를 가진다」·「의무를 갖는다」·「권한을 가집니다」·「자격을 갖습니다」·「책임을 갖는다」 are the fixed form of statutes and contracts, and 권리 · 의무 · 권한 · 자격 · 책임 are by definition borne only by a person or a legal entity, so an inanimate subject cannot stand before these objects. The subject-side lookbehind does not reach them — in 「정보주체는 …(a hundred characters)… 해당 결정을 거부할 수 있는 권리를 가진다」 the subject is outside the twelve-character window, and widening the window that far lets a person noun in the previous sentence hide a real defect. A quoted statute has to be carried over character for character, so there is no way to fix the document, and disabling the whole rule would also remove the real defects caught in the same run. **An organization is a group of people and is legitimate too** — 조직 · 부서 · 팀 · 파트 · 위원회 · 기관 · 법인 · 회사 holding a permission or a responsibility is not an inanimate subject and goes into the lookbehind with the rest. **Closing only on a full stop, an angle bracket, or whitespace lets a closing asterisk escape** — in 「**이름을 갖는다**(챕터 02)」 an asterisk follows the verb directly, so it does not read as the end of a segment, and a bold subheading is exactly that shape, which silences the most conspicuous slot. An asterisk, a backtick, a closing parenthesis, a closing bracket, a middle dot, and a comma are all in the closing set, so everything that closes a clause is matched. **The attributive form hides the same calque** — 「유효기간을 가진 규칙」 is `a rule that has a validity period`; Korean says 유효기간이 있는 규칙. A person may 가지다 a right, a qualification or experience, so those nouns are excluded.",
+      "reason": "Writing that a thing 「갖는다·가진다」 something. A literal English have: a screen, a list, or a record does not own anything - something is displayed or set there. 「첫 열에 이름을 표시한다」 rather than 「첫 열이 이름을 갖는다」, 「받은 이수에도 만료일을 설정한다」 rather than 「받은 이수도 만료를 갖는다」, 「선택지 순서가 판단에 영향을 준다」 rather than 「순서가 뜻을 가진다」. **The base glossary catches only 「가지고 있」**, so the final forms 「갖는다」·「가진다」 escaped wholesale, and suspects found twelve sites. **A person or an organization as the subject is legitimate** - 「한 사람이 여러 자격을 갖는다」·「키를 쥔 쪽이 가진 권한」. **A person subject is excluded with a variable-length lookbehind** - in 「한 사람이 여러 자격을 갖는다」 the subject is at the head of the sentence rather than immediately before the object particle, so up to twelve characters are allowed between the person noun and the particle (`(?<!(사람|…)[이가][^.<]{0,12})`). Excluding the full stop and 「<」 from that window keeps a person noun in the previous sentence out of the condition, and a subject further than twelve characters away is caught and judged by a person in context. **This lookbehind is something the miss examples actually prove, not the kind that still passes when deleted** - an example with no closing punctuation is never reached by 「[을를] 갖는다[.<\\s]」, so passing would prove nothing, and every miss example in this family therefore ends as a sentence. **The adnominal is the same family** - 「그룹을 직접 갖는 리더」 is not caught by the list of final forms and escapes wholesale. But 「자격을 가진 근로자」 is legitimate, so the stem alone cannot widen it, and only a following noun that is a thing is matched. **There is a separate form with no object particle** - 「읽는 순서는 그 문서가 갖는다」·「보존 근거는 필드가 갖습니다」 front the topic and leave only the subject as 「~가」, avoiding the 「[을를] 갖는다」 family entirely. So the 「[이가] 갖는다」 shape is matched separately, with the person nouns that often stand there (사람 · 담당자 · 관리자 · 근로자 · 승인자 · 작성자 · 감독자 · 사용자 · 본인 · 누구) excluded by a lookbehind - 「이 권한은 관리자가 갖는다」 is legitimate. A slot that could be a person or a thing and is not in the list, such as 「그쪽이 갖는다」, is caught and judged by a person in context. **A legal sentence's settled object is excluded on the object side** - 「권리를 가진다」·「의무를 갖는다」·「권한을 가집니다」·「자격을 갖습니다」·「책임을 갖는다」 are the fixed form of statutes and contracts, and 권리 · 의무 · 권한 · 자격 · 책임 are by definition borne only by a person or a legal entity, so an inanimate subject cannot stand before these objects. The subject-side lookbehind does not reach them - in 「정보주체는 …(a hundred characters)… 해당 결정을 거부할 수 있는 권리를 가진다」 the subject is outside the twelve-character window, and widening the window that far lets a person noun in the previous sentence hide a real defect. A quoted statute has to be carried over character for character, so there is no way to fix the document, and disabling the whole rule would also remove the real defects caught in the same run. **An organization is a group of people and is legitimate too** - 조직 · 부서 · 팀 · 파트 · 위원회 · 기관 · 법인 · 회사 holding a permission or a responsibility is not an inanimate subject and goes into the lookbehind with the rest. **Closing only on a full stop, an angle bracket, or whitespace lets a closing asterisk escape** - in 「**이름을 갖는다**(챕터 02)」 an asterisk follows the verb directly, so it does not read as the end of a segment, and a bold subheading is exactly that shape, which silences the most conspicuous slot. An asterisk, a backtick, a closing parenthesis, a closing bracket, a middle dot, and a comma are all in the closing set, so everything that closes a clause is matched. **The attributive form hides the same calque** - 「유효기간을 가진 규칙」 is `a rule that has a validity period`; Korean says 유효기간이 있는 규칙. A person may 가지다 a right, a qualification or experience, so those nouns are excluded.",
       "find": [
         "(?<!(사람|담당자|관리자|근로자|승인자|작성자|감독자|사용자|본인|누구|조직|부서|팀|파트|위원회|기관|법인|회사)[이가][^.<]{0,12})(?<!(권리|의무|권한|자격|책임)[*`」’”]{0,3})[을를] 갖는다[.<\\s*`)）」』·,]",
         "(?<!(사람|담당자|관리자|근로자|승인자|작성자|감독자|사용자|본인|누구|조직|부서|팀|파트|위원회|기관|법인|회사)[이가][^.<]{0,12})(?<!(권리|의무|권한|자격|책임)[*`」’”]{0,3})[을를] 가진다[.<\\s*`)）」』·,]",
@@ -2428,7 +2429,7 @@
       "id": "one-of-determiner",
       "scope": "universal",
       "severity": "error",
-      "reason": "A literal English `one` or Japanese 一つの. Korean counts with 「한 X」 or 「X 하나」, and 「하나의」 in the determiner slot is translation-ese — 「한 패널에」 rather than 「하나의 패널에 표시한다」, 「한 건의 이력으로」 rather than 「하나의 이력으로 기록한다」, 「기록 하나를」 rather than 「하나의 기록을 두 의무 이행으로」. **「X 하나의 Y」 is legitimate** — 「설치 하나의 설정」·「설비 하나의 검사 이력」 count the preceding noun and are not translation-ese, and 「하나하나」 is a different word. So it fires only where what precedes does not end in a noun. **What separates them is the end of the preceding word** — ending in a particle (정보「는」 하나의) is the determiner slot, and ending in a bare noun (설치 하나의) counts that noun. **Words ending in the syllable used as the boundary particle are this rule's false-positive family** — the 「도」 of 「시도 하나의 엔드포인트」 is not a particle but the last syllable of 시도, and the same happens with 제도 · 용도 · 정도 · 속도 (도), 추가 · 평가 · 국가 (가), 문서 · 순서 · 보고서 (서), 경로 · 통로 · 회로 (로), 사고 · 보고 · 참고 · 경고 (고), 종이 · 길이 · 높이 (이), and 하나 (나). Examples alone would never end, so those words are excluded wholesale, and what escapes is picked up as reading by the lens's 「하나의」. **The same translation-ese holds when the following name is in Roman letters** — 「하나의 Work/Task 문맥으로」 is that slot, and a pattern looking only at Hangul walked past it silently.",
+      "reason": "A literal English `one` or Japanese 一つの. Korean counts with 「한 X」 or 「X 하나」, and 「하나의」 in the determiner slot is translation-ese - 「한 패널에」 rather than 「하나의 패널에 표시한다」, 「한 건의 이력으로」 rather than 「하나의 이력으로 기록한다」, 「기록 하나를」 rather than 「하나의 기록을 두 의무 이행으로」. **「X 하나의 Y」 is legitimate** - 「설치 하나의 설정」·「설비 하나의 검사 이력」 count the preceding noun and are not translation-ese, and 「하나하나」 is a different word. So it fires only where what precedes does not end in a noun. **What separates them is the end of the preceding word** - ending in a particle (정보「는」 하나의) is the determiner slot, and ending in a bare noun (설치 하나의) counts that noun. **Words ending in the syllable used as the boundary particle are this rule's false-positive family** - the 「도」 of 「시도 하나의 엔드포인트」 is not a particle but the last syllable of 시도, and the same happens with 제도 · 용도 · 정도 · 속도 (도), 추가 · 평가 · 국가 (가), 문서 · 순서 · 보고서 (서), 경로 · 통로 · 회로 (로), 사고 · 보고 · 참고 · 경고 (고), 종이 · 길이 · 높이 (이), and 하나 (나). Examples alone would never end, so those words are excluded wholesale, and what escapes is picked up as reading by the lens's 「하나의」. **The same translation-ese holds when the following name is in Roman letters** - 「하나의 Work/Task 문맥으로」 is that slot, and a pattern looking only at Hangul walked past it silently.",
       "find": [
         "[는은을를이가에도서로며고나](?<!시도)(?<!제도)(?<!용도)(?<!정도)(?<!속도)(?<!한도)(?<!강도)(?<!빈도)(?<!척도)(?<!온도)(?<!각도)(?<!별도)(?<!지도)(?<!의도)(?<!태도)(?<!밀도)(?<!궤도)(?<!보도)(?<!인도)(?<!고도)(?<!추가)(?<!평가)(?<!증가)(?<!국가)(?<!단가)(?<!원가)(?<!물가)(?<!저가)(?<!경가)(?<!문서)(?<!순서)(?<!절차서)(?<!보고서)(?<!의견서)(?<!각서)(?<!경로)(?<!통로)(?<!회로)(?<!진로)(?<!도로)(?<!사고)(?<!보고)(?<!참고)(?<!경고)(?<!창고)(?<!광고)(?<!중고)(?<!종이)(?<!길이)(?<!높이)(?<!넓이)(?<!차이)(?<!깊이)(?<!하나) 하나의 [가-힣A-Za-z]",
         "[.,—>] 하나의 [가-힣A-Za-z]",
@@ -2460,7 +2461,7 @@
       "id": "attach-for-relation",
       "scope": "universal",
       "severity": "error",
-      "reason": "Writing something invisible — a period, a deadline, a condition, an assignee, a permission — as 「붙는다·붙인다」. It is the verb for sticking an object on, so what is decided and what is connected disappears — 「기간을 정한 계정」 rather than 「기간이 붙은 계정」, 「담당과 기한을 지정한다」 rather than 「담당과 기한을 붙인다」, 「담당자를 지정하지 않은 자리」 rather than 「사람이 붙지 않은 자리」, 「상한이 있는 항목」 rather than 「상한이 붙는 항목」. **Sticking something physically, and a marker being attached, are legitimate and not caught** — a notice on a wall, a form attached as an annex, a badge beside a value, a label read as running into the next line. So it is matched not from the stem but only when an abstract noun plus a particle precedes it",
+      "reason": "Writing something invisible - a period, a deadline, a condition, an assignee, a permission - as 「붙는다·붙인다」. It is the verb for sticking an object on, so what is decided and what is connected disappears - 「기간을 정한 계정」 rather than 「기간이 붙은 계정」, 「담당과 기한을 지정한다」 rather than 「담당과 기한을 붙인다」, 「담당자를 지정하지 않은 자리」 rather than 「사람이 붙지 않은 자리」, 「상한이 있는 항목」 rather than 「상한이 붙는 항목」. **Sticking something physically, and a marker being attached, are legitimate and not caught** - a notice on a wall, a form attached as an annex, a badge beside a value, a label read as running into the next line. So it is matched not from the stem but only when an abstract noun plus a particle precedes it",
       "find": [
         "/(기간|기한|조건|상한|권한)이 (?:따로 |이미 |함께 |또 )?붙/",
         "/(기한|담당|규칙)을 붙/",
@@ -2488,7 +2489,7 @@
       "id": "collide-for-conflict",
       "scope": "universal",
       "severity": "error",
-      "reason": "Writing that values, versions, policies, or schedules 「부딪힌다」. 충돌 is already the settled word, and 부딪힘 is physical objects touching, so the two senses mix on one screen — 「같은 자리에서 충돌합니다」 rather than 「같은 자리에서 부딪힙니다」, 「충돌한 쌍」 rather than 「부딪힌 쌍」. **A person or a machine really colliding stays** — 「부딪힘」 as an accident type is a statutory classification name, so the nominal form is not caught and only an abstract-noun subject is matched",
+      "reason": "Writing that values, versions, policies, or schedules 「부딪힌다」. 충돌 is already the settled word, and 부딪힘 is physical objects touching, so the two senses mix on one screen - 「같은 자리에서 충돌합니다」 rather than 「같은 자리에서 부딪힙니다」, 「충돌한 쌍」 rather than 「부딪힌 쌍」. **A person or a machine really colliding stays** - 「부딪힘」 as an accident type is a statutory classification name, so the nominal form is not caught and only an abstract-noun subject is matched",
       "find": [
         "/(값|버전|이름|정책|일정|규칙|용어|설정|기록|항목|개정|조건)[이과와] ?.{0,8}부딪/",
         "부딪힌 쌍",
@@ -2511,7 +2512,7 @@
       "id": "touch-for-edit",
       "scope": "universal",
       "severity": "error",
-      "reason": "Writing editing as 「손대다」. What is changed and how far disappears, and it overlaps with the sense of touching with a hand — 「사업장이 고친 버전」 rather than 「사업장이 손댄 버전」, 「보기 좋게 고치면」 rather than 「보기 좋게 손대면」, 「사람이 고쳐야 하는 것」 rather than 「사람이 손대야 하는 것」. **「손대지 마세요」 is a safety notice about not touching an object and is not caught** — in the negative, the editing sense appears as the adnominal and connective forms 「손대지 않은 항목」·「손대지 않고 적용한」·「여기서 손대지 말고」, and only those are matched. **The positive side, conversely, does not enumerate endings** — writing each conjugation lets 「손댑니다」·「손댔다」·「손대고」 escape, so a following 「지」 blocks the match and only the forms whose stem changes as the consonant contracts — 손댄 · 손댈 · 손댑 · 손댔 — are written in separately.",
+      "reason": "Writing editing as 「손대다」. What is changed and how far disappears, and it overlaps with the sense of touching with a hand - 「사업장이 고친 버전」 rather than 「사업장이 손댄 버전」, 「보기 좋게 고치면」 rather than 「보기 좋게 손대면」, 「사람이 고쳐야 하는 것」 rather than 「사람이 손대야 하는 것」. **「손대지 마세요」 is a safety notice about not touching an object and is not caught** - in the negative, the editing sense appears as the adnominal and connective forms 「손대지 않은 항목」·「손대지 않고 적용한」·「여기서 손대지 말고」, and only those are matched. **The positive side, conversely, does not enumerate endings** - writing each conjugation lets 「손댑니다」·「손댔다」·「손대고」 escape, so a following 「지」 blocks the match and only the forms whose stem changes as the consonant contracts - 손댄 · 손댈 · 손댑 · 손댔 - are written in separately.",
       "find": [
         "손대(?!지)",
         "손댄",
@@ -2548,7 +2549,7 @@
       "id": "divide-for-distinguish",
       "scope": "universal",
       "severity": "error",
-      "reason": "Writing distinguishing as 「가르다」. It is the verb for splitting an object in two, so the sense of judging and separating blurs — 「소속을 구분하지 않는다」 rather than 「소속을 가르지 않는다」, 「무엇인지부터 구분하세요」 rather than 「무엇인지부터 가르세요」. **The sense of deciding an outcome (the one point that decided the match) and the physical sense of a road forking stay**",
+      "reason": "Writing distinguishing as 「가르다」. It is the verb for splitting an object in two, so the sense of judging and separating blurs - 「소속을 구분하지 않는다」 rather than 「소속을 가르지 않는다」, 「무엇인지부터 구분하세요」 rather than 「무엇인지부터 가르세요」. **The sense of deciding an outcome (the one point that decided the match) and the physical sense of a road forking stay**",
       "find": [
         "가르지 않",
         "가르세요",
@@ -2574,7 +2575,7 @@
       "id": "sit-for-place",
       "scope": "universal",
       "severity": "error",
-      "reason": "Writing where a screen element sits as 「앉는다」. Sitting belongs to something with a body, so when a cell, a tile, a number, or a screen sits, the reader has to work out once more what happened — 「맨 아래에 놓인다」 rather than 「맨 아래에 앉는다」, 「두 줄로 놓인다」 rather than 「두 줄로 앉는다」, 「반 줄 내린다」 rather than 「반 줄 내려앉힌다」. **A place where a person really sits stays** — 자리에 앉으세요 · 의자에 앉는다 · 앉아서 기다린다. What separates them is not the word but whether the subject has a body, so it is narrowed to cases where a position word precedes. **「내려앉」 is matched from the stem** — enumerating conjugations lets 「내려앉고」 escape, and a person settling down has no place in business copy. The branch with a preceding position word leaves out 「앉아」 — 「맨 앞줄에 앉아 계신 분」 is a legitimate sentence about a person sitting.",
+      "reason": "Writing where a screen element sits as 「앉는다」. Sitting belongs to something with a body, so when a cell, a tile, a number, or a screen sits, the reader has to work out once more what happened - 「맨 아래에 놓인다」 rather than 「맨 아래에 앉는다」, 「두 줄로 놓인다」 rather than 「두 줄로 앉는다」, 「반 줄 내린다」 rather than 「반 줄 내려앉힌다」. **A place where a person really sits stays** - 자리에 앉으세요 · 의자에 앉는다 · 앉아서 기다린다. What separates them is not the word but whether the subject has a body, so it is narrowed to cases where a position word precedes. **「내려앉」 is matched from the stem** - enumerating conjugations lets 「내려앉고」 escape, and a person settling down has no place in business copy. The branch with a preceding position word leaves out 「앉아」 - 「맨 앞줄에 앉아 계신 분」 is a legitimate sentence about a person sitting.",
       "find": [
         "(위|안|아래|옆|뒤|앞|가운데|쪽|줄)에 앉[는습은고을]",
         "줄로 앉[는습고을]",
@@ -2601,7 +2602,7 @@
       "id": "notice-goes",
       "scope": "universal",
       "severity": "error",
-      "reason": "Writing that a notification, an email, or a notice 「간다」. The sender disappears and it reads as something that happened by itself — 「담당에게 알림을 보낸다」 rather than 「담당에게 알림이 간다」, 「승인자에게 메일을 보냅니다」 rather than 「승인자에게 메일이 갑니다」. **The negative and the adnominal are the same metaphor** — 「알림이 가지 않는다」 is 「알림을 보내지 않는다」, and a list of final forms alone holds neither those nor the past form. **Putting the recipient in the subject is legitimate** — 「알림을 받는다」·「알림이 도착한다」. A slot followed by an adverb beginning with 「가」 (「가장」·「가끔」) is a different word rather than an ending, so the endings are constrained",
+      "reason": "Writing that a notification, an email, or a notice 「간다」. The sender disappears and it reads as something that happened by itself - 「담당에게 알림을 보낸다」 rather than 「담당에게 알림이 간다」, 「승인자에게 메일을 보냅니다」 rather than 「승인자에게 메일이 갑니다」. **The negative and the adnominal are the same metaphor** - 「알림이 가지 않는다」 is 「알림을 보내지 않는다」, and a list of final forms alone holds neither those nor the past form. **Putting the recipient in the subject is legitimate** - 「알림을 받는다」·「알림이 도착한다」. A slot followed by an adverb beginning with 「가」 (「가장」·「가끔」) is a different word rather than an ending, so the endings are constrained",
       "find": [
         "(알림|메일|통지)[이가] 나?(간다|갑니다|가지|가는|갔)"
       ],
@@ -2629,7 +2630,7 @@
       "id": "vcs-as-shove",
       "scope": "universal",
       "severity": "error",
-      "reason": "Writing a version-control operation as a physical push or pull. `push` and `pull` are physical verbs in English, and carrying them over **loses what went where** — 「푸시한다」 rather than 「원격에 민다」, or, unfolded, 「원격 저장소에 올린다」. Like 커밋 · 머지 · 리베이스, **푸시 is a word this field has settled on** and is written as it is. **What separates them is not the word but the object** — pushing a commit, a branch, a change, or a remote is the metaphor, while 「일정을 뒤로 민다」·「밀린 작업」·「밀어붙인다」 are everyday words for a person actually postponing or shoving and are not caught. So the object is required alongside. **A slot with the object elided is beyond this rule** — 「지금 밀까요」 cannot be separated, on that line alone, into a commit or a schedule. A person reads that one",
+      "reason": "Writing a version-control operation as a physical push or pull. `push` and `pull` are physical verbs in English, and carrying them over **loses what went where** - 「푸시한다」 rather than 「원격에 민다」, or, unfolded, 「원격 저장소에 올린다」. Like 커밋 · 머지 · 리베이스, **푸시 is a word this field has settled on** and is written as it is. **What separates them is not the word but the object** - pushing a commit, a branch, a change, or a remote is the metaphor, while 「일정을 뒤로 민다」·「밀린 작업」·「밀어붙인다」 are everyday words for a person actually postponing or shoving and are not caught. So the object is required alongside. **A slot with the object elided is beyond this rule** - 「지금 밀까요」 cannot be separated, on that line alone, into a commit or a schedule. A person reads that one",
       "find": [
         "(커밋|브랜치|변경(?:분|사항)?|작업물|원격|메인)(?:을|를|에|으로|로)?\\s*(?:다시\\s*)?(민다|밉니다|밀었|밀고|밀면|밀지|밀까|밀어야|미는)",
         "(커밋|브랜치|변경(?:분|사항)?|원격)(?:을|를|에서)?\\s*(당긴다|당깁니다|당겨\\s*온)"
@@ -2658,7 +2659,7 @@
       "id": "walk-through-list",
       "scope": "universal",
       "severity": "error",
-      "reason": "A literal English `walk`. Writing that a list, a board, a journey, or a frame is 「걷는다」 loses the actual work (대조 · 검토 · 처리) and collides in one sentence with a person walking a path — 「보드를 대조한다」 rather than 「보드를 걷는다」, 「이 여정을 맡는 사람」 rather than 「이 여정을 걷는 사람」, 「따로 떼어 검토하지 않는다」 rather than 「따로 걷지 않는다」, 「페르소나가 훑는 순서」 rather than 「페르소나가 걷는 순서」. **Half of this family is where the stem becomes 「걸-」** — 걷다 is a ㄷ-irregular verb, so it becomes `걸어 봤다` · `걸어 본` · `걸어 보지 않았다` · `걸었다`, and a rule watching only the stem misses that half wholesale. **There it overlaps in letters with 「걸다」, so it is matched in two branches**: when a unit of review stands as the object in front, it is caught by that noun list; with no object, only slots where the preceding word does not end in 「을·를·에」 are caught — 「걸다」 always writes what is hung where, so an objectless `걸어 봤다` · `걸었다` is 걷다. **Choose the replacement from the real action the sentence names** — where a screen was opened in a browser and checked, 「열어 봤다」 · 「열어 보지 않았다」 · 「열어 봐야 하는 클러스터」 is the action; where a list was handled in order, it is 「훑는다」 · 「작업한다」. **「걷어」 is excluded** — 걷어내다 · 걷어붙이다 are clearing actions and different words even with the same object. **It is a family rather than a rule counting words** — any noun acting as a list (「줄」·「단계」·「계층」) fits the same slot, so when a new noun appears, widen this list rather than that noun. A person really walking stays — a supervisor walking the site, a passage workers walk, a six-minute walk. Really hanging an object stays too — hanging a lock, a place to hang a tablet, fixing a safety line.",
+      "reason": "A literal English `walk`. Writing that a list, a board, a journey, or a frame is 「걷는다」 loses the actual work (대조 · 검토 · 처리) and collides in one sentence with a person walking a path - 「보드를 대조한다」 rather than 「보드를 걷는다」, 「이 여정을 맡는 사람」 rather than 「이 여정을 걷는 사람」, 「따로 떼어 검토하지 않는다」 rather than 「따로 걷지 않는다」, 「페르소나가 훑는 순서」 rather than 「페르소나가 걷는 순서」. **Half of this family is where the stem becomes 「걸-」** - 걷다 is a ㄷ-irregular verb, so it becomes `걸어 봤다` · `걸어 본` · `걸어 보지 않았다` · `걸었다`, and a rule watching only the stem misses that half wholesale. **There it overlaps in letters with 「걸다」, so it is matched in two branches**: when a unit of review stands as the object in front, it is caught by that noun list; with no object, only slots where the preceding word does not end in 「을·를·에」 are caught - 「걸다」 always writes what is hung where, so an objectless `걸어 봤다` · `걸었다` is 걷다. **Choose the replacement from the real action the sentence names** - where a screen was opened in a browser and checked, 「열어 봤다」 · 「열어 보지 않았다」 · 「열어 봐야 하는 클러스터」 is the action; where a list was handled in order, it is 「훑는다」 · 「작업한다」. **「걷어」 is excluded** - 걷어내다 · 걷어붙이다 are clearing actions and different words even with the same object. **It is a family rather than a rule counting words** - any noun acting as a list (「줄」·「단계」·「계층」) fits the same slot, so when a new noun appears, widen this list rather than that noun. A person really walking stays - a supervisor walking the site, a passage workers walk, a six-minute walk. Really hanging an object stays too - hanging a lock, a place to hang a tablet, fixing a safety line.",
       "find": [
         "(보드|목록|여정|프레임|화면|구역|섹션|클러스터|설치|시나리오|챕터|줄|단계|절|사다리|계층|트리|묶음)[을를] (?:\\S+ ){0,2}걷(?!어)",
         "(보드|목록|여정|프레임|화면|구역|섹션|클러스터|설치|시나리오|챕터|단계|계층|트리|묶음)[을를] (?:\\S+ ){0,2}걸(어 [봐봤보본볼봅]|었다|었고|어야)",
@@ -2728,7 +2729,7 @@
       "id": "portion-for-belonging",
       "scope": "universal",
       "severity": "error",
-      "reason": "Calling something that has a real name a 「몫」. A 「몫」 after an organization or a date is that organization's data or that day's work, and it makes the reader guess what is meant — 「자사 것만 보이는 대시보드」 rather than 「자사 몫만 보이는 대시보드」, 「오늘 할 일을 마무리한다」 rather than 「오늘 몫을 닫는다」, 「자사 항목을 작성한다」 rather than 「자사 몫을 작성한다」. **「몫」 meaning a share or an allocation is legitimate** (제 몫을 다한다 · 각자 몫을 정한다 · 한 사람 몫의 식사), so only the shape with an organization or a date in front is matched",
+      "reason": "Calling something that has a real name a 「몫」. A 「몫」 after an organization or a date is that organization's data or that day's work, and it makes the reader guess what is meant - 「자사 것만 보이는 대시보드」 rather than 「자사 몫만 보이는 대시보드」, 「오늘 할 일을 마무리한다」 rather than 「오늘 몫을 닫는다」, 「자사 항목을 작성한다」 rather than 「자사 몫을 작성한다」. **「몫」 meaning a share or an allocation is legitimate** (제 몫을 다한다 · 각자 몫을 정한다 · 한 사람 몫의 식사), so only the shape with an organization or a date in front is matched",
       "find": [
         "(자사|원청|협력사|오늘|어제|그날) 몫"
       ],
@@ -2750,7 +2751,7 @@
       "id": "software-consumer",
       "scope": "universal",
       "severity": "error",
-      "reason": "Rendering an API or event consumer as 「소비자」. Write 「사용하는 쪽」·「사용처」. **The word 「소비자」 itself is not banned** — 소비자물가 · 소비자 보호 · 최종 소비자 · 소비자원 are legitimate terms of economics and statute. The base glossary's `/소비(?!자)/` excludes 「소비자」 not because it is allowed but because one word cannot separate the two senses, and what separates them is the word in front. So only slots with a technical noun in front, and Kafka's 「소비자 그룹」, are matched",
+      "reason": "Rendering an API or event consumer as 「소비자」. Write 「사용하는 쪽」·「사용처」. **The word 「소비자」 itself is not banned** - 소비자물가 · 소비자 보호 · 최종 소비자 · 소비자원 are legitimate terms of economics and statute. The base glossary's `/소비(?!자)/` excludes 「소비자」 not because it is allowed but because one word cannot separate the two senses, and what separates them is the word in front. So only slots with a technical noun in front, and Kafka's 「소비자 그룹」, are matched",
       "find": [
         "(API|REST|gRPC|Kafka|SDK|HTTP|이벤트|메시지|큐|토픽|스트림|서비스|클라이언트|다운스트림|업스트림)\\s?소비자",
         "소비자\\s?그룹"
@@ -2775,7 +2776,7 @@
       "id": "kinship-for-grouping",
       "scope": "universal",
       "severity": "error",
-      "reason": "Using a word for a relation between people as the name of a group of things. Calling several screens, several frames, or several defects a 「가족」 pushes aside the names that group already has (묶음 · 갈래 · 부류 · 무리) and collides in one document with the same word meaning a person's family — in this field 유가족 · 무급가족종사자 · 가족돌봄휴가 · 가족관계증명서 are all real families. The test is one question: if what is called a 「가족」 is people, it stays; if it is screens, files, types, or defects, write 묶음 · 갈래 · 부류. A tree's parent, child, and sibling nodes are settled technical terms and stay — there is no plainer Korean for them, and what this rule blocks is bringing a kinship word into a slot that already has a name",
+      "reason": "Using a word for a relation between people as the name of a group of things. Calling several screens, several frames, or several defects a 「가족」 pushes aside the names that group already has (묶음 · 갈래 · 부류 · 무리) and collides in one document with the same word meaning a person's family - in this field 유가족 · 무급가족종사자 · 가족돌봄휴가 · 가족관계증명서 are all real families. The test is one question: if what is called a 「가족」 is people, it stays; if it is screens, files, types, or defects, write 묶음 · 갈래 · 부류. A tree's parent, child, and sibling nodes are settled technical terms and stay - there is no plainer Korean for them, and what this rule blocks is bringing a kinship word into a slot that already has a name",
       "find": [
         "화면 가족",
         "프레임 가족",
@@ -2819,7 +2820,7 @@
       "id": "cost-for-effort",
       "scope": "universal",
       "severity": "error",
-      "reason": "Substituting price and weight for the size of a job. 「싼 쪽」·「비싸진다」·「가벼운 변경」 give the reader no number at all, because what it costs and how much is missing. Write the real thing: 한 줄이면 된다 · 파일 스물을 건드린다 · 살아 있는 데이터 위의 마이그레이션이 된다 · 그 챕터의 증거 절을 다시 실행해야 한다. **Real money stays** — an expensive plan, a cheap screen on site, double counting as the most expensive mistake (a story about a cost ledger) are all real amounts. What separates them is not the word but **whether money changes hands**. The weight side is the same — evidence is not 「무겁다」 but 「강하다」, and that pair is already in the glossary",
+      "reason": "Substituting price and weight for the size of a job. 「싼 쪽」·「비싸진다」·「가벼운 변경」 give the reader no number at all, because what it costs and how much is missing. Write the real thing: 한 줄이면 된다 · 파일 스물을 건드린다 · 살아 있는 데이터 위의 마이그레이션이 된다 · 그 챕터의 증거 절을 다시 실행해야 한다. **Real money stays** - an expensive plan, a cheap screen on site, double counting as the most expensive mistake (a story about a cost ledger) are all real amounts. What separates them is not the word but **whether money changes hands**. The weight side is the same - evidence is not 「무겁다」 but 「강하다」, and that pair is already in the glossary",
       "find": [
         "싼 쪽",
         "싼 편",
@@ -2858,7 +2859,7 @@
       "id": "household-metaphor-for-code",
       "scope": "universal",
       "severity": "error",
-      "reason": "Calling code, files, or settings household goods — 「세간」·「살림」·「가재도구」. It covers something that has a real name with a metaphor, so the reader has to work it out, and **the real name is usually already in the same sentence**: in 「앱에는 자기 세간만 남는다 — 셸 · 내비 · 에러」 the answer follows the dash and the front half is decoration. Deleting the metaphor there only makes the sentence shorter. **It arrives when an English brief's furniture or housekeeping is rendered into Korean** — the English is ordinary idiom and passes unnoticed, and the moment it is carried over it becomes a metaphor. 「세간의 관심·이목·평가」 is 世間, a different word, and is excluded by the following 「의」. A person's real housekeeping — 「살림을 차리다」·「살림이 늘다」 — is legitimate too and is separated by the preceding word.",
+      "reason": "Calling code, files, or settings household goods - 「세간」·「살림」·「가재도구」. It covers something that has a real name with a metaphor, so the reader has to work it out, and **the real name is usually already in the same sentence**: in 「앱에는 자기 세간만 남는다 - 셸 · 내비 · 에러」 the answer follows the dash and the front half is decoration. Deleting the metaphor there only makes the sentence shorter. **It arrives when an English brief's furniture or housekeeping is rendered into Korean** - the English is ordinary idiom and passes unnoticed, and the moment it is carried over it becomes a metaphor. 「세간의 관심·이목·평가」 is 世間, a different word, and is excluded by the following 「의」. A person's real housekeeping - 「살림을 차리다」·「살림이 늘다」 - is legitimate too and is separated by the preceding word.",
       "find": [
         "/세간(?!의)/",
         "/가재도구/",
@@ -2881,7 +2882,7 @@
       "id": "answer-anio",
       "scope": "universal",
       "severity": "error",
-      "reason": "The word answering a yes/no question is 「아니요」. 「아니오」 is a 하오체 predicate (「그것은 사실이 아니오」), so standing on a button, an option, or an answer cell it is the wrong word, and mixed with 「아니요」 inside one product the same option appears in two spellings. **The boundary is the preceding word** — 「아니오」 after 「이 」·「가 」 is the predicate and is not caught; elsewhere it means the answer and is. 「아니오를 선택하면」 with a particle also names the answer, so what follows is not constrained",
+      "reason": "The word answering a yes/no question is 「아니요」. 「아니오」 is a 하오체 predicate (「그것은 사실이 아니오」), so standing on a button, an option, or an answer cell it is the wrong word, and mixed with 「아니요」 inside one product the same option appears in two spellings. **The boundary is the preceding word** - 「아니오」 after 「이 」·「가 」 is the predicate and is not caught; elsewhere it means the answer and is. 「아니오를 선택하면」 with a particle also names the answer, so what follows is not constrained",
       "find": [
         "(?<![이가]\\s)아니오"
       ],
@@ -2900,7 +2901,7 @@
       "id": "spacing-last-period",
       "scope": "universal",
       "severity": "error",
-      "reason": "「지난주」·「지난달」·「지난해」·「지난밤」 are single words and written closed up. Spaced, 「지난」 becomes an adnominal and the construction matches 「지난 주말」·「지난 달력」, so it reads as 「something that passed」 rather than as the name of a period. **The boundary is what follows** — 「지난 주말」·「지난 달력」·「지난 해외 출장」, where another syllable continues, really are two words, so it fires only when a particle, a space, punctuation, or the end of the line follows",
+      "reason": "「지난주」·「지난달」·「지난해」·「지난밤」 are single words and written closed up. Spaced, 「지난」 becomes an adnominal and the construction matches 「지난 주말」·「지난 달력」, so it reads as 「something that passed」 rather than as the name of a period. **The boundary is what follows** - 「지난 주말」·「지난 달력」·「지난 해외 출장」, where another syllable continues, really are two words, so it fires only when a particle, a space, punctuation, or the end of the line follows",
       "find": [
         "지난 (?:주|달|해|밤)(?=[는은이가을를에의도만과와나로]|[\\s,.)\\]]|$)"
       ],
@@ -2922,7 +2923,7 @@
       "id": "connective-ending",
       "scope": "universal",
       "severity": "error",
-      "reason": "Ending a sentence on a connective ending. A connective ending calls for the clause that follows, so cutting there makes the reader guess the missing clause — 「값을 확인하고 다음 단계로 넘어간다.」 or 「값을 확인한다.」 rather than 「값을 확인하고.」. **Only the families that overlap with nouns in letters are narrowed** — no noun ends in 「며」·「지만」·「는데」·「인데」, so the ending alone is matched, while 「고」 has many nouns (보고 · 참고 · 경고 · 사고 · 광고 · 창고) and only conjugations that cannot be nouns are enumerated. **Requiring a preceding word misses the cases where the stem is a whole word** — 「서로 같고.」 has a space in front, so putting `[가-힣]` before it lets the sentence escape, and the lookbehind is applied only to forms that also stand as words, such as 「어서」. **The rest of the 「고」 family and the noun-phrase endings that escape the enumeration are shown to a person by the 「생략·개조식」 family of references/lens.txt** — widening the rule would catch nouns. 「한 가지만」 and the nouns ending in 「지」 (페이지 · 이미지 · 메시지 · 패키지 · 에너지 · 스토리지 · 브리지 · 배지 · 표지) overlap in letters with 「지만」 and are excluded by the preceding syllable — 「현재 페이지만.」 is a page, not a clause. A name slot such as a table cell, a label, or a title takes no full stop and is never caught",
+      "reason": "Ending a sentence on a connective ending. A connective ending calls for the clause that follows, so cutting there makes the reader guess the missing clause - 「값을 확인하고 다음 단계로 넘어간다.」 or 「값을 확인한다.」 rather than 「값을 확인하고.」. **Only the families that overlap with nouns in letters are narrowed** - no noun ends in 「며」·「지만」·「는데」·「인데」, so the ending alone is matched, while 「고」 has many nouns (보고 · 참고 · 경고 · 사고 · 광고 · 창고) and only conjugations that cannot be nouns are enumerated. **Requiring a preceding word misses the cases where the stem is a whole word** - 「서로 같고.」 has a space in front, so putting `[가-힣]` before it lets the sentence escape, and the lookbehind is applied only to forms that also stand as words, such as 「어서」. **The rest of the 「고」 family and the noun-phrase endings that escape the enumeration are shown to a person by the 「생략·개조식」 family of references/lens.txt** - widening the rule would catch nouns. 「한 가지만」 and the nouns ending in 「지」 (페이지 · 이미지 · 메시지 · 패키지 · 에너지 · 스토리지 · 브리지 · 배지 · 표지) overlap in letters with 「지만」 and are excluded by the preceding syllable - 「현재 페이지만.」 is a page, not a clause. A name slot such as a table cell, a label, or a title takes no full stop and is never caught",
       "find": [
         "/며\\./",
         "/(?:하고|되고|이고|지고|있고|없고|같고)\\./",
@@ -2959,7 +2960,7 @@
       "id": "nominal-eum-ending",
       "scope": "universal",
       "severity": "error",
-      "reason": "Ending a sentence in the nominal 음슴체. A nominal ending does not complete a sentence, so who did what disappears from the ending — 「승인 요청을 반려했습니다.」 rather than 「반려됨.」, 「검토를 마쳤습니다.」 rather than 「검토를 마쳤음.」. **Only the slots that do not overlap with nouns are caught** — no noun ends in 「됨」, so it is matched as it stands, and 「음」 is matched only when the preceding syllable is a past tense (-았/었/였/했/났/왔…). 「함」·「임」·「음」 in general have too many nouns (사물함 · 보관함 · 책임 · 담임 · 믿음 · 처음) for a rule to separate, so the 「생략·개조식」 family of references/lens.txt shows them to a person. **A repository where the headline style is the document's own form, such as minutes, disables this with `disable` in the project rule pack** — with the reason written in",
+      "reason": "Ending a sentence in the nominal 음슴체. A nominal ending does not complete a sentence, so who did what disappears from the ending - 「승인 요청을 반려했습니다.」 rather than 「반려됨.」, 「검토를 마쳤습니다.」 rather than 「검토를 마쳤음.」. **Only the slots that do not overlap with nouns are caught** - no noun ends in 「됨」, so it is matched as it stands, and 「음」 is matched only when the preceding syllable is a past tense (-았/었/였/했/났/왔…). 「함」·「임」·「음」 in general have too many nouns (사물함 · 보관함 · 책임 · 담임 · 믿음 · 처음) for a rule to separate, so the 「생략·개조식」 family of references/lens.txt shows them to a person. **A repository where the headline style is the document's own form, such as minutes, disables this with `disable` in the project rule pack** - with the reason written in",
       "find": [
         "/(?<!→[^.|]{0,12})[가-힣]됨\\.(?!」)/",
         "/[았었였했갔왔봤줬됐쳤켰냈렸뒀웠랐팠샀짰났섰폈꿨뀄췄쐈깼뺐]음\\.(?!」)/",
@@ -2994,7 +2995,7 @@
       "id": "possessive-chain",
       "scope": "universal",
       "severity": "warn",
-      "reason": "Using the adnominal particle 「의」 twice in a row in one noun phrase. Chaining with 「의」 loses what the relation between the two nouns is, so delete the first 「의」 to form a compound or unfold the relation into a predicate — 「화면 항목의 이름」 rather than 「화면의 항목의 이름」, 「값 형식을 검사하는 일」 rather than 「값의 형식의 검사」. **A single 「의」 that swallowed a whole predicate is beyond a rule** (「사본의 문구」 → 「사본에 기재된 문구」) — references/response-style.md leaves that judgement to a person. Two 「의」 across separate clauses are legitimate, so it fires only when two words ending in 「의」 are adjacent. **A word ending in the same syllable as the particle is excluded wholesale** — 「숙의」·「재숙의」 read as 「숙 + 의」 and fired on 「나의 숙의」 and 「대안의 재숙의 요청」. Words ending in 「숙」 (합숙 · 성숙 · 미숙) rarely stand in a possessive chain, so the cost of the miss is small.",
+      "reason": "Using the adnominal particle 「의」 twice in a row in one noun phrase. Chaining with 「의」 loses what the relation between the two nouns is, so delete the first 「의」 to form a compound or unfold the relation into a predicate - 「화면 항목의 이름」 rather than 「화면의 항목의 이름」, 「값 형식을 검사하는 일」 rather than 「값의 형식의 검사」. **A single 「의」 that swallowed a whole predicate is beyond a rule** (「사본의 문구」 → 「사본에 기재된 문구」) - references/response-style.md leaves that judgement to a person. Two 「의」 across separate clauses are legitimate, so it fires only when two words ending in 「의」 are adjacent. **A word ending in the same syllable as the particle is excluded wholesale** - 「숙의」·「재숙의」 read as 「숙 + 의」 and fired on 「나의 숙의」 and 「대안의 재숙의 요청」. Words ending in 「숙」 (합숙 · 성숙 · 미숙) rarely stand in a possessive chain, so the cost of the miss is small.",
       "find": [
         "/(?:(?!(?:모|협|회|합|주|정|의|문|동|편|유|창|발|제|항|건|결|논|상|심|품|강|수|이|전|호|사|임|질|거|밖|숙)의)[가-힣])의 [가-힣]+(?<!(?:모|협|회|합|주|정|의|문|동|편|유|창|발|제|항|건|결|논|상|심|품|강|수|이|전|호|사|임|질|거|밖|숙))의(?![가-힣])/"
       ],
@@ -3029,7 +3030,7 @@
       "id": "inanimate-carries",
       "scope": "universal",
       "severity": "warn",
-      "reason": "Writing that a structure, a response, or a setting 「싣는다」 its content as the subject. A data structure does not load anything by itself — 「담는다」 rather than 「응답이 두 철자를 함께 싣는다」, 「대장에 적는 것」 rather than 「대장이 싣는 것」, 「저널에 있는 상태 목록」 rather than 「저널이 싣는 상태 목록」. **What separates them is not the subject but where it is loaded.** Loading something into what a person reads — a newspaper, a report, a document, material, a price list — is the primary sense of 싣다 and not a metaphor: `공개된 요금만 싣는다` · `보고서에 싣는 것과 싣지 않는 것을 나눈다` · `확인될 때까지 원문을 싣지 않는다` are all correct Korean. An inanimate subject alone does not separate them (`보고서가 싣는다` and `DTO가 싣는다` are the same shape), so **only the two provable shapes are caught**: an inanimate subject standing in front with its particle, and the slots where something is said to be loaded into a data structure (요청 · 응답 · 헤더 · 파라미터 · 열). **A bare form with neither a subject nor a destination is beyond a rule** — `다시 싣지 않는다` and `원문을 싣지 않는다` share the same construction in letters, so the `싣` of references/lens.txt shows that slot to a person. **The passive 「실리다」 has the stem 「실-」 and is never caught.** Loading cargo, freight, or materials, and slots with a person as the subject, are excluded. **「담는다」 is not always the answer** — where the inanimate subject stays, a person subject takes 「적는다」, placement takes 「놓는다」, and existence takes 「~에 있다」.",
+      "reason": "Writing that a structure, a response, or a setting 「싣는다」 its content as the subject. A data structure does not load anything by itself - 「담는다」 rather than 「응답이 두 철자를 함께 싣는다」, 「대장에 적는 것」 rather than 「대장이 싣는 것」, 「저널에 있는 상태 목록」 rather than 「저널이 싣는 상태 목록」. **What separates them is not the subject but where it is loaded.** Loading something into what a person reads - a newspaper, a report, a document, material, a price list - is the primary sense of 싣다 and not a metaphor: `공개된 요금만 싣는다` · `보고서에 싣는 것과 싣지 않는 것을 나눈다` · `확인될 때까지 원문을 싣지 않는다` are all correct Korean. An inanimate subject alone does not separate them (`보고서가 싣는다` and `DTO가 싣는다` are the same shape), so **only the two provable shapes are caught**: an inanimate subject standing in front with its particle, and the slots where something is said to be loaded into a data structure (요청 · 응답 · 헤더 · 파라미터 · 열). **A bare form with neither a subject nor a destination is beyond a rule** - `다시 싣지 않는다` and `원문을 싣지 않는다` share the same construction in letters, so the `싣` of references/lens.txt shows that slot to a person. **The passive 「실리다」 has the stem 「실-」 and is never caught.** Loading cargo, freight, or materials, and slots with a person as the subject, are excluded. **「담는다」 is not always the answer** - where the inanimate subject stays, a person subject takes 「적는다」, placement takes 「놓는다」, and existence takes 「~에 있다」.",
       "find": [
         "/[가-힣A-Za-z0-9][이가](?<!사람이)(?<!기자가)(?<!저자가)(?<!작성자가)(?<!담당자가)(?<!편집자가) (?:[가-힣]+ ){0,3}(?<!(?:짐|화물|컨테이너|자재|장비|승객)[을를] )싣/",
         "/(?:요청|응답|파라미터|매개변수|페이로드|헤더|쿼리|필드|속성|칼럼|컬럼|DTO|바디)[에을를] (?:[가-힣]+ ){0,3}싣/"
@@ -3066,7 +3067,7 @@
       "id": "bodyless-stands",
       "scope": "universal",
       "severity": "warn",
-      "reason": "Writing that something with no legs 「선다」. A build, a path, a demo, a pipeline, a server do not stand — they hold, are made, finish, come into being. 「빌드가 성립하는지」 rather than 「빌드가 서는지」, 「4개월에 끝낸다」 rather than 「4개월에 서고」, 「하나씩 생기고」 rather than 「파이프라인이 하나씩 서고」. **This family appears most readily right after an audit passes** — a session that fixed 829 findings in files wrote 「서버 절반이 섰습니다」 in the report on that very work. **A person, a queue, or a building as the subject is legitimate, so a person judges what is caught** — this rule does not fix, it selects places to read. **The 「서」 of 「~에서는」·「확인서는」 is part of a word and is separated by requiring a space after the particle.** **Up to two words of adverbial material are allowed between the subject and the verb** — 「파이프라인이 하나씩 서고」 has no verb immediately after the particle, and a regex matching only adjacency misses that sentence. **「앞에 서다」 is not excluded** — it is a settled expression about precedence, but with an inanimate subject (「컨설팅이 앞에 서는 방식」) it is the same personification and is fixed to 「앞세우는」. A person really standing in front is caught and judged by a person.",
+      "reason": "Writing that something with no legs 「선다」. A build, a path, a demo, a pipeline, a server do not stand - they hold, are made, finish, come into being. 「빌드가 성립하는지」 rather than 「빌드가 서는지」, 「4개월에 끝낸다」 rather than 「4개월에 서고」, 「하나씩 생기고」 rather than 「파이프라인이 하나씩 서고」. **This family appears most readily right after an audit passes** - a session that fixed 829 findings in files wrote 「서버 절반이 섰습니다」 in the report on that very work. **A person, a queue, or a building as the subject is legitimate, so a person judges what is caught** - this rule does not fix, it selects places to read. **The 「서」 of 「~에서는」·「확인서는」 is part of a word and is separated by requiring a space after the particle.** **Up to two words of adverbial material are allowed between the subject and the verb** - 「파이프라인이 하나씩 서고」 has no verb immediately after the particle, and a regex matching only adjacency misses that sentence. **「앞에 서다」 is not excluded** - it is a settled expression about precedence, but with an inanimate subject (「컨설팅이 앞에 서는 방식」) it is the same personification and is fixed to 「앞세우는」. A person really standing in front is caught and judged by a person.",
       "find": [
         "/[가-힣]{2,}[이가] (?:[가-힣]+ ){0,2}(서는|섰다|섰습니다|선다|서고|서서)(?![비운류])/"
       ],
@@ -3088,7 +3089,7 @@
       "id": "seed-as-planting",
       "scope": "universal",
       "severity": "error",
-      "reason": "The farming metaphor of rendering `seed` (initial data) as 「씨앗」·「심다」. The source term being settled in this field does not make its literal translation settled — Korean calls it 「표본 데이터」·「초기 데이터」, and a configuration file kept for copying is 「원본」. The verbs are 「넣는다」·「만든다」·「준비한다」. A real seed and a random-number seed are legitimate and separated by the preceding word. A random-number seed is 「시드」 too, not 「씨앗」 — 고정 씨앗 · 기관의 씨앗 · 씨앗을 나눠 쓰다 are the same family.",
+      "reason": "The farming metaphor of rendering `seed` (initial data) as 「씨앗」·「심다」. The source term being settled in this field does not make its literal translation settled - Korean calls it 「표본 데이터」·「초기 데이터」, and a configuration file kept for copying is 「원본」. The verbs are 「넣는다」·「만든다」·「준비한다」. A real seed and a random-number seed are legitimate and separated by the preceding word. A random-number seed is 「시드」 too, not 「씨앗」 - 고정 씨앗 · 기관의 씨앗 · 씨앗을 나눠 쓰다 are the same family.",
       "find": [
         "/(표본|초기|시험|검증|기본)\\s*(자료|데이터)를?\\s*심/",
         "/데이터베이스에\\s*심/",
@@ -3126,7 +3127,7 @@
       "id": "can-instead-of-does",
       "scope": "universal",
       "severity": "error",
-      "reason": "「~할 수 있습니다」 standing in for an instruction or a fact in screen copy. Guidance on a screen says what happens and what to do — a possibility after a condition is 「~하려면 ~하세요」, a possibility that is a fact is 「~합니다」, and a guess at a cause (「막고 있을 수 있습니다」) becomes something to verify. The adnominal 「~할 수 있는」 and the negative 「~할 수 없습니다」 state ability and prohibition and stay; a sentence that really is about a difference in permission (「관리자만 바꿀 수 있습니다」) is released by the project's except. **Screen register only.** A reference manual states capabilities — 「데이터를 직접 스트리밍할 수 있습니다」·「와일드카드를 사용할 수 있습니다」 — and the same sentence there is the ordinary way to say what a product does: on a 119-file manual this rule fired 467 times, every hit a capability. Overuse in a document is a density question, which the glossary's `수 있습니다` row counts at 경고(10+), and the S2 row of korean-style.md covers it in review.",
+      "reason": "「~할 수 있습니다」 standing in for an instruction or a fact in screen copy. Guidance on a screen says what happens and what to do - a possibility after a condition is 「~하려면 ~하세요」, a possibility that is a fact is 「~합니다」, and a guess at a cause (「막고 있을 수 있습니다」) becomes something to verify. The adnominal 「~할 수 있는」 and the negative 「~할 수 없습니다」 state ability and prohibition and stay; a sentence that really is about a difference in permission (「관리자만 바꿀 수 있습니다」) is released by the project's except. **Screen register only.** A reference manual states capabilities - 「데이터를 직접 스트리밍할 수 있습니다」·「와일드카드를 사용할 수 있습니다」 - and the same sentence there is the ordinary way to say what a product does: on a 119-file manual this rule fired 467 times, every hit a capability. Overuse in a document is a density question, which the glossary's `수 있습니다` row counts at 경고(10+), and the S2 row of korean-style.md covers it in review.",
       "find": [
         "/[가-힣]\\s?수 있(?:습니다|어요)/"
       ],
@@ -3151,13 +3152,13 @@
         "screen"
       ],
       "lens": false,
-      "lensReason": "A screen-register rule; in a document every capability sentence would be a candidate, and a 119-file manual gave 467 of them — a wall, not reading material. Overuse in a document is a density question and the glossary counts it at 경고(10+)"
+      "lensReason": "A screen-register rule; in a document every capability sentence would be a candidate, and a 119-file manual gave 467 of them - a wall, not reading material. Overuse in a document is a density question and the glossary counts it at 경고(10+)"
     },
     {
       "id": "inanimate-namgida",
       "scope": "universal",
       "severity": "error",
-      "reason": "Something without a body performing the act of leaving a trace. 「사업 조건이 설계에 남기는 제약」 says the condition puts something down and walks away, so write the relation instead — 「사업 조건에 따른 설계 제약」. A person or a system leaving a record, a history, a reason, or a version is legitimate, so the object separates them — leaving a record stays, while 제약 · 영향 · 부담 · 과제 · 여지 · 흔적 is caught",
+      "reason": "Something without a body performing the act of leaving a trace. 「사업 조건이 설계에 남기는 제약」 says the condition puts something down and walks away, so write the relation instead - 「사업 조건에 따른 설계 제약」. A person or a system leaving a record, a history, a reason, or a version is legitimate, so the object separates them - leaving a record stays, while 제약 · 영향 · 부담 · 과제 · 여지 · 흔적 is caught",
       "find": [
         "/남[기긴길겨겼깁][^.\\n]{0,4}(제약|영향|부담|과제|여지|흔적)/",
         "/(제약|영향|부담|과제|여지|흔적)[을를] ?남[기긴길겨겼깁]/"
@@ -3185,7 +3186,7 @@
       "id": "chatbot-residue",
       "scope": "universal",
       "severity": "error",
-      "reason": "A chat wrapper left in text that has to stand on its own — a greeting, a compliment, an offer, a sign-off. It is the most certain AI tell there is and the easiest to miss when it wraps real content, because the content between the wrapper and the sign-off is usually correct. Remove the wrapper and keep the content; a reply and a manual both end on the content itself (ai-tells.md §22). The banned side is a closed list of set phrases, so 「질문 항목」·「문의 게시판」·「도움말」 with the same syllables are untouched",
+      "reason": "A chat wrapper left in text that has to stand on its own - a greeting, a compliment, an offer, a sign-off. It is the most certain AI tell there is and the easiest to miss when it wraps real content, because the content between the wrapper and the sign-off is usually correct. Remove the wrapper and keep the content; a reply and a manual both end on the content itself (ai-tells.md §22). The banned side is a closed list of set phrases, so 「질문 항목」·「문의 게시판」·「도움말」 with the same syllables are untouched",
       "find": [
         "좋은 질문입니다",
         "좋은 질문이에요",
@@ -3212,13 +3213,13 @@
         "작업을 계속 진행한다"
       ],
       "lens": false,
-      "lensReason": "A closed list of set phrases rather than a stem family — the lens would be a copy of this rule's enumeration and would gain no conjugation it can lose"
+      "lensReason": "A closed list of set phrases rather than a stem family - the lens would be a copy of this rule's enumeration and would gain no conjugation it can lose"
     },
     {
       "id": "staged-run-up",
       "scope": "universal",
       "severity": "error",
-      "reason": "The writer announces the point, or stages a moment of candor, instead of making the point — English `let's dive in`·`here's what you need to know`·`honestly?` rendered into Korean. Delete the run-up and open on the fact: 「지금부터 캐시 동작을 자세히 살펴보겠습니다」 is 「캐시는 세 계층에서 동작합니다」 (ai-tells.md §4). 「솔직히」 inside an ordinary sentence is ordinary, so only the standalone opener is caught, and a plain 「살펴본다」 in the middle of a design document is not this",
+      "reason": "The writer announces the point, or stages a moment of candor, instead of making the point - English `let's dive in`·`here's what you need to know`·`honestly?` rendered into Korean. Delete the run-up and open on the fact: 「지금부터 캐시 동작을 자세히 살펴보겠습니다」 is 「캐시는 세 계층에서 동작합니다」 (ai-tells.md §4). 「솔직히」 inside an ordinary sentence is ordinary, so only the standalone opener is caught, and a plain 「살펴본다」 in the middle of a design document is not this",
       "find": [
         "자세히 살펴보겠습니다",
         "함께 살펴보겠습니다",
@@ -3250,7 +3251,7 @@
       "id": "negation-contrast-staging",
       "scope": "universal",
       "severity": "error",
-      "reason": "English `not just X but Y` arriving as 「단순히 X가 아니라 Y다」. The negative half names something nobody claimed, so the positive half sounds larger without carrying a new claim — 「단순한 기록이 아니라 선언입니다」 is 「이 기록은 처리 결과와 담당자를 함께 남깁니다」 (ai-tells.md §1). Only the staged forms with 단순히·단지·그저 and 「그 이상이다」 are caught: a bare 「A가 아니라 B다」 is often a precise factual correction and is left to the reader, and the slogan form is `slogan-assertion`",
+      "reason": "English `not just X but Y` arriving as 「단순히 X가 아니라 Y다」. The negative half names something nobody claimed, so the positive half sounds larger without carrying a new claim - 「단순한 기록이 아니라 선언입니다」 is 「이 기록은 처리 결과와 담당자를 함께 남깁니다」 (ai-tells.md §1). Only the staged forms with 단순히·단지·그저 and 「그 이상이다」 are caught: a bare 「A가 아니라 B다」 is often a precise factual correction and is left to the reader, and the slogan form is `slogan-assertion`",
       "find": [
         "단순히 [^.]{0,25}[가이] 아니",
         "단순한 [^.]{0,25}[가이] 아니",
@@ -3277,7 +3278,7 @@
       "id": "inflated-significance",
       "scope": "universal",
       "severity": "error",
-      "reason": "An ordinary fact dressed as a turning point, a legacy, or a promise — English `marks a pivotal moment`·`stands as a testament`·`the future looks bright` rendered into press-release Korean. Keep the fact and drop the significance, and end on the last concrete fact instead of a send-off: 「1989년에 설립되어 중요한 이정표가 되었습니다」 is 「1989년에 설립됐고, 같은 시기 행정 기능 분산 정책의 일부였습니다」 (ai-tells.md §13). Plain 「영향이 크다」·「전환 비용」 state a measured thing and are not this",
+      "reason": "An ordinary fact dressed as a turning point, a legacy, or a promise - English `marks a pivotal moment`·`stands as a testament`·`the future looks bright` rendered into press-release Korean. Keep the fact and drop the significance, and end on the last concrete fact instead of a send-off: 「1989년에 설립되어 중요한 이정표가 되었습니다」 is 「1989년에 설립됐고, 같은 시기 행정 기능 분산 정책의 일부였습니다」 (ai-tells.md §13). Plain 「영향이 크다」·「전환 비용」 state a measured thing and are not this",
       "find": [
         "이정표",
         "전환점이 되",
@@ -3308,13 +3309,13 @@
         "기대 수명을 산정한다"
       ],
       "lens": false,
-      "lensReason": "A closed list of inflation nouns rather than a stem family — 자리매김 matches the lens only through the metaphor stem 자리, and following the rest word by word would make the lens a copy of this enumeration"
+      "lensReason": "A closed list of inflation nouns rather than a stem family - 자리매김 matches the lens only through the metaphor stem 자리, and following the rest word by word would make the lens a copy of this enumeration"
     },
     {
       "id": "promo-copy",
       "scope": "universal",
       "severity": "error",
-      "reason": "Advertising copy in a document that is supposed to state what a thing is — English `boasts`·`breathtaking`·`nestled in the heart of` rendered into Korean. State the thing: 「아름다운 자연 속에 자리한 이 도시는 풍부한 문화유산을 자랑합니다」 is 「이 도시는 곤데르 지역에 있습니다」 (ai-tells.md §16). 「자랑스럽다」 about a person and the proper noun 「혁신도시」 keep their own meaning, so the object particle and the adjective form are what the pattern anchors on",
+      "reason": "Advertising copy in a document that is supposed to state what a thing is - English `boasts`·`breathtaking`·`nestled in the heart of` rendered into Korean. State the thing: 「아름다운 자연 속에 자리한 이 도시는 풍부한 문화유산을 자랑합니다」 is 「이 도시는 곤데르 지역에 있습니다」 (ai-tells.md §16). 「자랑스럽다」 about a person and the proper noun 「혁신도시」 keep their own meaning, so the object particle and the adjective form are what the pattern anchors on",
       "find": [
         "[을를] 자랑[하한합]",
         "숨 막히는",
@@ -3347,7 +3348,7 @@
       "id": "unnamed-authority",
       "scope": "universal",
       "severity": "error",
-      "reason": "An unnamed authority propping up a claim — English `experts argue`·`industry reports`·`some critics` rendered into Korean. Name who said what when the source gives it, and cut the claim when it does not; never invent a source (ai-tells.md §17). A missing citation on its own is not this, so 「전문가 검토를 거친다」·「업계 표준을 따른다」, which name a step rather than borrow an opinion, are untouched",
+      "reason": "An unnamed authority propping up a claim - English `experts argue`·`industry reports`·`some critics` rendered into Korean. Name who said what when the source gives it, and cut the claim when it does not; never invent a source (ai-tells.md §17). A missing citation on its own is not this, so 「전문가 검토를 거친다」·「업계 표준을 따른다」, which name a step rather than borrow an opinion, are untouched",
       "find": [
         "전문가들[은이]",
         "업계에서는",
@@ -3375,7 +3376,7 @@
       "id": "training-cutoff-disclaimer",
       "scope": "universal",
       "severity": "error",
-      "reason": "The text says where the model's knowledge ends, or admits it found no source and then fills the gap with a plausible guess. State what the source does not show, or remove the sentence, and never present a guess as a fact: 「공개된 자료에서는 확인되지 않지만 1990년대로 보입니다」 is 「설립 시점은 확인된 자료에 없습니다」 (ai-tells.md §23). Ordinary uses of the same words — 「학습 데이터를 분리한다」 — describe a dataset and are not a disclaimer",
+      "reason": "The text says where the model's knowledge ends, or admits it found no source and then fills the gap with a plausible guess. State what the source does not show, or remove the sentence, and never present a guess as a fact: 「공개된 자료에서는 확인되지 않지만 1990년대로 보입니다」 is 「설립 시점은 확인된 자료에 없습니다」 (ai-tells.md §23). Ordinary uses of the same words - 「학습 데이터를 분리한다」 - describe a dataset and are not a disclaimer",
       "find": [
         "제 학습 데이터",
         "학습 시점 기준",
@@ -3398,13 +3399,13 @@
         "확인된 자료에 없습니다"
       ],
       "lens": false,
-      "lensReason": "Fixed disclaimer phrases, not a conjugating family — what the lens could add is the guess that follows, and that is 「~로 보인다」, which `mt-hedge` already owns"
+      "lensReason": "Fixed disclaimer phrases, not a conjugating family - what the lens could add is the guess that follows, and that is 「~로 보인다」, which `mt-hedge` already owns"
     },
     {
       "id": "shallow-rider",
       "scope": "universal",
       "severity": "error",
-      "reason": "A rider bolted onto a plain fact to make it sound deeper — the English `-ing` tail (`symbolizing`·`reflecting`·`underscoring`) arriving as a Korean connective ending. Keep the fact and drop the tail unless the source supports what it claims: 「파랑과 초록으로 칠해져 지역의 자연을 상징하며」 is 「파랑과 초록으로 칠했습니다」 (ai-tells.md §15). The object particle is what separates these from 「조명을 켠다」·「상징 색을 지정한다」, where the same nouns are the thing itself",
+      "reason": "A rider bolted onto a plain fact to make it sound deeper - the English `-ing` tail (`symbolizing`·`reflecting`·`underscoring`) arriving as a Korean connective ending. Keep the fact and drop the tail unless the source supports what it claims: 「파랑과 초록으로 칠해져 지역의 자연을 상징하며」 is 「파랑과 초록으로 칠했습니다」 (ai-tells.md §15). The object particle is what separates these from 「조명을 켠다」·「상징 색을 지정한다」, where the same nouns are the thing itself",
       "find": [
         "[을를] 상징[하한합]",
         "[을를] 방증[하한]",
@@ -3431,7 +3432,7 @@
       "id": "fake-objection",
       "scope": "universal",
       "severity": "error",
-      "reason": "The text answers an objection, or rejects an option, that appears nowhere else — usually a leftover from an earlier draft. Remove the defence, and if it holds a real claim state the claim: 「문서가 중요하지 않다고 말하는 것은 아닙니다. 문제는 …」 is 「문제는 …」 (ai-tells.md §5). An objection the text attributes and answers in full, and an option a reader would actually weigh, are kept — which is why only the set openers are caught, with the ending opened to 아니·아닙 because a Korean syllable block hides one inside the other, and the judgement stays with the reader",
+      "reason": "The text answers an objection, or rejects an option, that appears nowhere else - usually a leftover from an earlier draft. Remove the defence, and if it holds a real claim state the claim: 「문서가 중요하지 않다고 말하는 것은 아닙니다. 문제는 …」 is 「문제는 …」 (ai-tells.md §5). An objection the text attributes and answers in full, and an option a reader would actually weigh, are kept - which is why only the set openers are caught, with the ending opened to 아니·아닙 because a Korean syllable block hides one inside the other, and the judgement stays with the reader",
       "find": [
         "오해를 막기 위해",
         "오해하지 마[시실]",
@@ -3452,13 +3453,13 @@
         "반려 사유를 함께 적는다"
       ],
       "lens": false,
-      "lensReason": "Set openers rather than a stem family — what conjugates in them (말하다·유혹되다) is ordinary Korean the lens must not pull in"
+      "lensReason": "Set openers rather than a stem family - what conjugates in them (말하다·유혹되다) is ordinary Korean the lens must not pull in"
     },
     {
       "id": "closing-flourish",
       "scope": "universal",
       "severity": "error",
-      "reason": "A closing line that asks the reader to pause on a claim instead of adding to it — English `that is the real win`·`read that again` rendered into Korean. A short sentence may carry emphasis when it carries a new fact; a line that repeats the paragraph above it is cut (ai-tells.md §2). 「이 지점에서 오류가 발생한다」 names a place in the code and is not this. The Korean tic that ends a paragraph on emphasis, 「~인 것이다」, is counted per file by `emphatic-copula-repeat` instead, because a single 「~하는 것이다」 is an ordinary definition sentence",
+      "reason": "A closing line that asks the reader to pause on a claim instead of adding to it - English `that is the real win`·`read that again` rendered into Korean. A short sentence may carry emphasis when it carries a new fact; a line that repeats the paragraph above it is cut (ai-tells.md §2). 「이 지점에서 오류가 발생한다」 names a place in the code and is not this. The Korean tic that ends a paragraph on emphasis, 「~인 것이다」, is counted per file by `emphatic-copula-repeat` instead, because a single 「~하는 것이다」 is an ordinary definition sentence",
       "find": [
         "이것이 진짜",
         "바로 이 지점입니다",
@@ -3481,7 +3482,7 @@
         "값을 확인한 것이 전부다"
       ],
       "lens": false,
-      "lensReason": "Set closing phrases, not a stem family — 읽다·곱씹다 conjugate but are ordinary verbs the lens must not pull in"
+      "lensReason": "Set closing phrases, not a stem family - 읽다·곱씹다 conjugate but are ordinary verbs the lens must not pull in"
     },
     {
       "id": "emphatic-copula-repeat",
@@ -3510,7 +3511,7 @@
       "id": "open-item-calque",
       "scope": "universal",
       "severity": "error",
-      "reason": "A literal English `open` — an open issue, an open item, an open question written as 「열린 이슈」·「열린 항목」·「열린 질문」. 「열린」 says a door or a file is open; what the register means is that the item is not yet settled, and Korean names that state directly: 미결 항목 · 미결 이슈 · 미해결 결함 · 미정 질문. Things that really open — a window, a file, a structure described as open — are left alone by the object list.",
+      "reason": "A literal English `open` - an open issue, an open item, an open question written as 「열린 이슈」·「열린 항목」·「열린 질문」. 「열린」 says a door or a file is open; what the register means is that the item is not yet settled, and Korean names that state directly: 미결 항목 · 미결 이슈 · 미해결 결함 · 미정 질문. Things that really open - a window, a file, a structure described as open - are left alone by the object list.",
       "find": [
         "/열린 (항목|이슈|위험|건|결함|과제|질문|문제|요청|사안)/"
       ],
@@ -3532,7 +3533,7 @@
       "id": "close-for-complete",
       "scope": "universal",
       "severity": "error",
-      "reason": "A literal English `close` — finishing a work unit, a stage or a register entry written as 「닫는다」. 「닫다」 is the verb for a door, a window, a file or a connection; a stage is 종료한다, a unit is 완료 판정한다, a risk entry is 종결한다, and 「자동시험으로 닫는다」 hides which of those it means. Two shapes are caught: a work noun as the object (단위 · 단계 · 분석 · 기준선 · 결함 …) and 「~(으)로 닫다」 with a means in front (시험 · 식별자 · 인수 · 증빙 · 승인 …), which is never how a door closes. 「회차를 닫는다」 and 「이슈를 닫는다」 are left to the lens: a product that gives a collection run an open/closed state and an issue tracker whose own button says 「닫기」 share the letters with the calque, and a rule cannot tell them apart. The words between the object and 「닫다」 may not carry a full stop or a tag, so a dialog closed in the next sentence is not read as the stage before it being closed.",
+      "reason": "A literal English `close` - finishing a work unit, a stage or a register entry written as 「닫는다」. 「닫다」 is the verb for a door, a window, a file or a connection; a stage is 종료한다, a unit is 완료 판정한다, a risk entry is 종결한다, and 「자동시험으로 닫는다」 hides which of those it means. Two shapes are caught: a work noun as the object (단위 · 단계 · 분석 · 기준선 · 결함 …) and 「~(으)로 닫다」 with a means in front (시험 · 식별자 · 인수 · 증빙 · 승인 …), which is never how a door closes. 「회차를 닫는다」 and 「이슈를 닫는다」 are left to the lens: a product that gives a collection run an open/closed state and an issue tracker whose own button says 「닫기」 share the letters with the calque, and a rule cannot tell them apart. The words between the object and 「닫다」 may not carry a full stop or a tag, so a dialog closed in the next sentence is not read as the stage before it being closed.",
       "find": [
         "/(단위|항목|단계|결함|사업|기준선|분석|설계|구현|과제|시험|위험 대장)[을를] ([^ .。<>]+ ){0,3}닫(는다|습니다|는|아|고|으면|음|힌다|힙니다)/",
         "/(시험|테스트|식별자|인수|증빙|판정|승인|보고|검토|시연|배포|결재)[으]?로 닫(는다|습니다|는|아|고|으면|음|힌다|힙니다)/"
@@ -3561,7 +3562,7 @@
       "id": "absorb-for-mechanism",
       "scope": "universal",
       "severity": "error",
-      "reason": "A vague `absorb` / `accommodate`. A difference between vendors, products, sites or external formats written as 「수용」 · 「흡수」 hides the mechanism that handles it, and a reader cannot tell what handles which difference — 「프로파일·에이전트·설정으로 차이 수용」 says three names and no action, 「차이를 수용하는 확장 지점」 says neither. Name the mechanism and what it does: 기종 차이는 프로파일로 변환 · 외부 규격은 어댑터에서 변환 · 운영 제품은 SPI 구현 교체 · 사업소 증가는 설정으로 조정, and a change is 반영 · 처리 · 대응. 「수용」 is acceptance and stays there: 수용 기준 · 수용 주체 · 점검을 수용한다 · 변경 요청을 수용한다 (an object particle or a following noun). The particle-less compound and the 로 · 에서 · 없이 adverbials are the hiding positions, so those are the anchors.",
+      "reason": "A vague `absorb` / `accommodate`. A difference between vendors, products, sites or external formats written as 「수용」 · 「흡수」 hides the mechanism that handles it, and a reader cannot tell what handles which difference - 「프로파일·에이전트·설정으로 차이 수용」 says three names and no action, 「차이를 수용하는 확장 지점」 says neither. Name the mechanism and what it does: 기종 차이는 프로파일로 변환 · 외부 규격은 어댑터에서 변환 · 운영 제품은 SPI 구현 교체 · 사업소 증가는 설정으로 조정, and a change is 반영 · 처리 · 대응. 「수용」 is acceptance and stays there: 수용 기준 · 수용 주체 · 점검을 수용한다 · 변경 요청을 수용한다 (an object particle or a following noun). The particle-less compound and the 로 · 에서 · 없이 adverbials are the hiding positions, so those are the anchors.",
       "find": [
         "(?:차이|편차|변화)(?:를|는|의|도|가)? ?(?:수용|흡수)",
         "(?:차이|편차|변화|변경|규격)[을를는이가의도]? [^.]{0,15}흡수(?:한다|하는|하고|하며|해|된다|되는|합니다)",
@@ -3601,7 +3602,7 @@
       "id": "show-for-display",
       "scope": "universal",
       "severity": "error",
-      "reason": "A literal `shows`. A screen, a list, a tool, a report or a figure written as the subject of 「보여 준다」 acts like a person handing something over; the document register writes what is displayed or presented — 재처리 화면은 … 예상 영향을 표시한다 · 그림은 … 순서를 제시한다. A person can 보여 주다 (강사가 화면을 보여 준다), so the pattern anchors on a thing-subject within the clause.",
+      "reason": "A literal `shows`. A screen, a list, a tool, a report or a figure written as the subject of 「보여 준다」 acts like a person handing something over; the document register writes what is displayed or presented - 재처리 화면은 … 예상 영향을 표시한다 · 그림은 … 순서를 제시한다. A person can 보여 주다 (강사가 화면을 보여 준다), so the pattern anchors on a thing-subject within the clause.",
       "find": [
         "(?:화면|목록|도구|그림|도식|보고서|리포트|시스템|대시보드|패널|표|차트|메뉴)[은는이가] [^.。\\n]{0,40}보여 (?:준|줍|주는|주고|주며|줘)",
         "[을를] [^.。\\n]{0,12}(?:결재자|승인자|담당자|관리자|사용자|운영자)에게 보여 (?:준|줍|주는)"
@@ -3625,7 +3626,7 @@
       "id": "figure-climbs",
       "scope": "universal",
       "severity": "error",
-      "reason": "A quantity written as moving up or down a slope — 「잔량이 다시 올라가면」 · 「안전재고 아래로 내려가면」. A value does not walk; it 증가한다 · 감소한다, and a threshold is crossed as 이하가 된다 · 미만이 된다 · 초과한다. A person or a vehicle really goes up and down, and a mode or a level that is stepped is another rule (mode-up-down), so the pattern anchors on a quantity noun or on a threshold adverbial.",
+      "reason": "A quantity written as moving up or down a slope - 「잔량이 다시 올라가면」 · 「안전재고 아래로 내려가면」. A value does not walk; it 증가한다 · 감소한다, and a threshold is crossed as 이하가 된다 · 미만이 된다 · 초과한다. A person or a vehicle really goes up and down, and a mode or a level that is stepped is another rule (mode-up-down), so the pattern anchors on a quantity noun or on a threshold adverbial.",
       "find": [
         "(?:잔량|수치|값|비율|수량|재고|온도|매출|비용|건수|점수|사용량|출력량)[이가] (?:다시 |계속 |점점 )?(?:올라가|내려가)",
         "(?:아래로|이하로|미만으로|위로|이상으로) (?:내려가|올라가)"
@@ -3648,7 +3649,7 @@
       "id": "spoken-transition-opener",
       "scope": "universal",
       "severity": "error",
-      "reason": "A spoken transition or a bare pointer opening a printed sentence — 「이제」·「다음으로」·「동일하게 적용한다」 — makes the reader fetch the subject from the previous paragraph or figure, or from a presenter who is not there. Name the system, the record or the preceding action instead: 「이제 실제 장치와 연계의 차이를 처리하겠습니다」 is 「제조사별 차이는 프로파일로 관리하고 규격 차이는 어댑터에서 처리합니다」, and 「동일하게 적용한다」 is 「자동 통보와 같은 결재·증빙·이력 관리 절차를 수동 통보에도 적용한다」 (response-style.md §3). Only the sentence-initial position is caught: 「이제」 inside a clause (「이제 막 도착한」) and 「동일하게」 after a named antecedent (「수동 통보에도 동일하게 적용한다」) are ordinary, and 「이제」 in a manual's step (「이제 저장을 누르세요」) is still a transition the step's own object replaces",
+      "reason": "A spoken transition or a bare pointer opening a printed sentence - 「이제」·「다음으로」·「동일하게 적용한다」 - makes the reader fetch the subject from the previous paragraph or figure, or from a presenter who is not there. Name the system, the record or the preceding action instead: 「이제 실제 장치와 연계의 차이를 처리하겠습니다」 is 「제조사별 차이는 프로파일로 관리하고 규격 차이는 어댑터에서 처리합니다」, and 「동일하게 적용한다」 is 「자동 통보와 같은 결재·증빙·이력 관리 절차를 수동 통보에도 적용한다」 (response-style.md §3). Only the sentence-initial position is caught: 「이제」 inside a clause (「이제 막 도착한」) and 「동일하게」 after a named antecedent (「수동 통보에도 동일하게 적용한다」) are ordinary, and 「이제」 in a manual's step (「이제 저장을 누르세요」) is still a transition the step's own object replaces",
       "find": [
         "/(?<=^(?:[-*>|\\d.]+\\s+)?|[.!?]\\s+)(?:이제|다음으로)[ ,](?!막 )/",
         "/(?<=^(?:[-*>|\\d.]+\\s+)?|[.!?]\\s+)동일하게 (?:적용|처리|운영)(?:한다|합니다|하고|하여|해|됩니다|된다)/"
@@ -3675,7 +3676,7 @@
       "id": "quality-noun-placeholder-verb",
       "scope": "universal",
       "severity": "error",
-      "reason": "A quality noun on an all-purpose verb — 「품질을 확보한다」·「안정성을 강화합니다」·「이력을 체계적으로 관리한다」 — says that something gets better without saying what changes or what proves it. Replace it with the observable operation and its evidence: 「품질을 확보한다」 is 「치명·주요 결함, 순환 의존, 코드 내 비밀 값이 0건인지 검사한다」, and 「이력을 체계적으로 관리한다」 is 「반입·열람·반출 이력과 승인자를 기록한다」 (response-style.md §3). A quality noun followed by its measure (「가용성 99.9%를 보장한다」) or by the thing checked (「품질 기준을 적용한다」·「품질을 검사한다」) names what is done and is untouched, and 「체계」 as a noun (「관리 체계를 수립한다」) is not the adverb",
+      "reason": "A quality noun on an all-purpose verb - 「품질을 확보한다」·「안정성을 강화합니다」·「이력을 체계적으로 관리한다」 - says that something gets better without saying what changes or what proves it. Replace it with the observable operation and its evidence: 「품질을 확보한다」 is 「치명·주요 결함, 순환 의존, 코드 내 비밀 값이 0건인지 검사한다」, and 「이력을 체계적으로 관리한다」 is 「반입·열람·반출 이력과 승인자를 기록한다」 (response-style.md §3). A quality noun followed by its measure (「가용성 99.9%를 보장한다」) or by the thing checked (「품질 기준을 적용한다」·「품질을 검사한다」) names what is done and is untouched, and 「체계」 as a noun (「관리 체계를 수립한다」) is not the adverb",
       "find": [
         "/(?:품질|안정성|신뢰성|보안성|일관성|가용성|완성도|효율성|생산성|투명성)[을를] ?(?:확보|보장|제고|강화|향상|증대|극대화)(?:한다|합니다|하고|하여|해|하는|하겠|할 |함)/",
         "/체계적으로 ?(?:관리|운영|지원|추진|수행)(?:한다|합니다|하고|하여|해|하는|하겠|할 |함)/"
@@ -3695,6 +3696,30 @@
         "관리 체계를 수립한다",
         "반입·열람·반출 이력과 승인자를 기록한다"
       ]
+    },
+    {
+      "id": "em-dash",
+      "scope": "universal",
+      "severity": "error",
+      "reason": "The em dash (U+2014) is never written, in Korean or in English, in a document, a diagram label, screen copy, a comment, or a commit message. It is the same ban as the emoji ban: the character itself is prohibited, so there is no legitimate context and no exception to write down. Cause, contrast, and condition take a connective (「기본값을 그대로 두면 검증을 건너뜁니다」); a gloss or a restatement takes a comma, a colon, or parentheses; an itemisation takes a middle dot or a list; a range takes 「~」 in Korean and a hyphen in English. Where none of those fits, a spaced hyphen (「 - 」) stands in. **The hyphen, the en dash, and the box-drawing bar are not this character** and are not caught. **A span quoted verbatim from somebody else's document keeps its dashes**: wrap it in `l10n:quote`",
+      "find": [
+        "—"
+      ],
+      "replace": " - ",
+      "hit": [
+        "기본값을 두었다 — 검증을 건너뛴다.",
+        "값이 정해졌다—따라서 이 값을 쓴다.",
+        "the folio — the page number at the foot"
+      ],
+      "miss": [
+        "기본값을 그대로 두면 검증을 건너뜁니다.",
+        "값이 정해졌다 - 이 값을 쓴다.",
+        "1~10개월 · pages 3-5",
+        "상태: ─ │ ├ └",
+        "2024–2026"
+      ],
+      "lens": false,
+      "lensReason": "A punctuation character, not a Korean stem; the lens reads Hangul families only"
     }
   ]
 }

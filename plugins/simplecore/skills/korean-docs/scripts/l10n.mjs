@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 /**
- * Korean copy tool for a whole project — documents and locale resources alike.
+ * Korean copy tool for a whole project - documents and locale resources alike.
  *
  * One entry point for the korean-docs workflow. `check` audits documents the
  * same way the write-time hook does (same engine, same verdicts); the resource
- * commands find the translated text a product ships — front-end i18n
+ * commands find the translated text a product ships - front-end i18n
  * catalogues, back-end message bundles, mail templates, manuals, wireframe
- * sources — and let one term be searched or audited across all of them in a
+ * sources - and let one term be searched or audited across all of them in a
  * single pass.
  *
  *   node l10n.mjs check    [paths...] [--all] [--strict] [--untranslated]
@@ -18,7 +18,7 @@
  *   node l10n.mjs apply    --patch <file> [--write]
  *   node l10n.mjs stats
  *
- * Rule sources — the same ones for every command, so a term registered once in
+ * Rule sources - the same ones for every command, so a term registered once in
  * the project glossary is enforced on documents and screen copy alike:
  *   1. The glossary pair: GLOSSARY.base.md bundled with the skill, merged with
  *      the project glossary (.claude/GLOSSARY.md), replacement and exception
@@ -29,13 +29,13 @@
  *      verified against their own hit/miss examples by `rules --test`.
  *
  * The resource commands edit *values only*. A JSON key, a properties key, an
- * HTML tag, a Thymeleaf attribute, a placeholder, a markdown code fence — none
+ * HTML tag, a Thymeleaf attribute, a placeholder, a markdown code fence - none
  * of them are text a reader sees, and a blind file-wide `sed` corrupts every
  * one of them. Each format below yields the byte ranges that are genuinely
  * reader-facing, and every command works on those ranges alone.
  *
  * Every command here finds; none of them rewrites on a rule's say-so. A rule
- * knows where a word sits, never what it means there — the same 허용 수량 is a
+ * knows where a word sits, never what it means there - the same 허용 수량 is a
  * contract's seat count on one line and a quota's ceiling on the next, and two
  * rules that each match correctly can still leave one sentence reading
  * 라이선스 수량 라이선스 하나가. Sentences are rewritten by whoever reads them and come
@@ -46,8 +46,8 @@
  *
  * Project layout config: `.claude/l10n.json` at the project root declares the
  * resource kinds (path globs per language), proper nouns, sample patterns and
- * rule scopes — beside the glossary and the project rule pack it belongs with.
- * The skill ships no kind defaults — a project's layout is data, never an
+ * rule scopes - beside the glossary and the project rule pack it belongs with.
+ * The skill ships no kind defaults - a project's layout is data, never an
  * assumption baked into shared code.
  */
 
@@ -82,12 +82,12 @@ const ROOT = discoverGlossary(START)?.root ?? START;
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * Generic defaults only. Everything project-shaped — which paths hold locale
- * resources, which nouns stay English, which sample values placeholders use —
+ * Generic defaults only. Everything project-shaped - which paths hold locale
+ * resources, which nouns stay English, which sample values placeholders use -
  * comes from `.claude/l10n.json` at the project root. A kind names a family of
  * locale resources: `patterns` are globs passed to `git ls-files`, with
  * `{lang}` standing in for the language code, and `register` states the copy's
- * voice — "screen" (UI copy, 합니다체), "manual" (reader-facing 합니다체 prose) or
+ * voice - "screen" (UI copy, 합니다체), "manual" (reader-facing 합니다체 prose) or
  * absent for plain -다체 working documents. Style smells that only make sense
  * for one register are gated on it.
  */
@@ -100,7 +100,7 @@ const DEFAULT_CONFIG = {
   samplePatterns: [],
   /** Files whose English is deliberate, so the missing-translation check skips them. */
   untranslatedExclude: [],
-  /** Regexes over a catalogue key or value; a match is a value nobody translates — a unit,
+  /** Regexes over a catalogue key or value; a match is a value nobody translates - a unit,
    *  a language name shown in its own language, a file list, a formula of identifiers. */
   untranslatedAllow: [],
   /** Domain scopes of RULES.base.json the project opts into (universal always applies). */
@@ -126,7 +126,7 @@ const CONFIG = loadConfig();
 function requireKinds() {
   if (Object.keys(CONFIG.kinds).length) return;
   throw new Error(
-    "No resource kinds are declared — write kinds into the project's .claude/l10n.json.\n" +
+    "No resource kinds are declared - write kinds into the project's .claude/l10n.json.\n" +
       "  Example: { \"languages\": [\"ko\",\"en\"], \"kinds\": { \"frontend\": {\n" +
       "        \"label\": \"frontend i18n\", \"patterns\": [\"apps/**/locales/{lang}.json\"],\n" +
       "        \"format\": \"json\", \"register\": \"screen\" } } }\n" +
@@ -141,26 +141,26 @@ function requireKinds() {
 /**
  * Files matching a glob, from git when the root is a repository.
  *
- * Falls back to the filesystem when it is not — a monorepo whose subprojects each carry
+ * Falls back to the filesystem when it is not - a monorepo whose subprojects each carry
  * their own `.git` has no index at the top, and `git ls-files` there returns nothing at
  * all rather than erroring. Without the fallback such a tree scans as empty and reads as
  * "no problems found", which is the most misleading result this tool can produce.
  *
- * `-z` is not optional. Without it git quotes any path holding a byte outside ASCII —
+ * `-z` is not optional. Without it git quotes any path holding a byte outside ASCII -
  * a Korean document file name comes back as `"docs/\355\225\234.md"`, quotes and octal
- * escapes included — and every such file is then opened at a path that does not exist.
+ * escapes included - and every such file is then opened at a path that does not exist.
  * A repository that writes its documents in its own language is exactly the one this
  * tool exists for, so that spelling has to survive the round trip intact.
  *
  * `--others --exclude-standard` is not optional either, and for a worse reason. The index
  * is not the working tree: without them the audit reads what happens to be staged, so a
- * file written a minute ago — the one most in need of checking — is invisible, and its
+ * file written a minute ago - the one most in need of checking - is invisible, and its
  * absence is reported as `0건`. That zero is indistinguishable from a zero that was
  * earned, which makes it the most expensive result this tool can produce. `--cached` keeps
  * the tracked files, `--others` adds what is written but not staged, and
  * `--exclude-standard` keeps `.gitignore` honoured so build output stays out.
  *
- * A path in the index whose file is gone — staged deletion, an interrupted rebase — is
+ * A path in the index whose file is gone - staged deletion, an interrupted rebase - is
  * dropped rather than opened, since a file that is not there has no Korean in it.
  */
 function gitFiles(pattern) {
@@ -173,7 +173,7 @@ function gitFiles(pattern) {
     const files = [...new Set(out.split("\0").filter(Boolean))].filter((f) => existsSync(join(ROOT, f)));
     if (files.length) return files;
   } catch {
-    /* not a repository — fall through */
+    /* not a repository - fall through */
   }
   return findFiles(pattern);
 }
@@ -230,7 +230,7 @@ function formatOf(kind, file) {
  * The document set `check` reads, as discover() entries.
  *
  * Without this the sentence sweeps needed a `kinds` declaration that the word check does
- * not, so the same repository got two different answers to «which files are judged» — and
+ * not, so the same repository got two different answers to «which files are judged» - and
  * a project with only documents got `check`'s 0 while thirty sentence rules never ran.
  * Both `*.md` and `**\/*.md` are listed on purpose: the non-repository fallback treats `**`
  * as one-or-more segments, so the top-level files drop out of the second form alone.
@@ -240,9 +240,9 @@ function formatOf(kind, file) {
  *
  * `audit.exclude` is honoured by the sentence commands for the same reason `check` honours it:
  * the commands read one file set, and a file a project excluded from the word check is excluded
- * from the sentence sweep too. Without this the skill's own catalogues — pages that quote every
- * banned spelling on purpose — came back as 79 findings from `rules` while `check` passed.
- * A glossary is a page of banned spellings and is never judged by them — `check` skips both, so
+ * from the sentence sweep too. Without this the skill's own catalogues - pages that quote every
+ * banned spelling on purpose - came back as 79 findings from `rules` while `check` passed.
+ * A glossary is a page of banned spellings and is never judged by them - `check` skips both, so
  * the sentence sweep skips both too.
  */
 function projectExclusions() {
@@ -273,11 +273,11 @@ function docEntries() {
 }
 
 /**
- * Entries for the paths named on the command line — a file, or a directory expanded to the
+ * Entries for the paths named on the command line - a file, or a directory expanded to the
  * document set beneath it.
  *
  * This is what lets the write-time hook run the sentence rules on the one file it just wrote,
- * and what lets a draft outside the repository — a reply written to a scratch file — be read by
+ * and what lets a draft outside the repository - a reply written to a scratch file - be read by
  * the lens before it goes out. A file under the project keeps its project-relative name, so a
  * declared resource kind still decides its format and register; a file outside keeps its
  * absolute path and is read as a document.
@@ -304,8 +304,8 @@ function pathEntries(paths) {
   for (const p of paths) {
     const given = resolve(START, p);
     if (!existsSync(given)) throw new Error(`No such file: ${p}`);
-    // Canonical on both sides. `process.cwd()` is the physical path — on macOS `/tmp` is
-    // `/private/tmp` — while an argument keeps the spelling it was typed with, and `relative()`
+    // Canonical on both sides. `process.cwd()` is the physical path - on macOS `/tmp` is
+    // `/private/tmp` - while an argument keeps the spelling it was typed with, and `relative()`
     // between the two begins with `..`: the file is read as outside the project, loses its kind,
     // its register and its format, and a screen rule stays silent on screen copy.
     const abs = realpathSync(given);
@@ -327,7 +327,7 @@ function pathEntries(paths) {
 /**
  * Every resource file, as `{ kind, lang, file, format }`, deduplicated across globs.
  *
- * `docFallback` is for the commands that judge one file at a time — `rules`, `suspects`,
+ * `docFallback` is for the commands that judge one file at a time - `rules`, `suspects`,
  * `grep`, `list`. `audit` and `stats` do not take it: both read a kind against its
  * counterpart language, and there is no counterpart to a document set.
  */
@@ -336,15 +336,15 @@ function pathEntries(paths) {
  *
  * <p><b>`true` keeps it out of every one; a list keeps it out of the ones it names.</b> The two
  * are different needs and one flag could only serve the first. A kind whose files a generator
- * rewrites cannot be held to a translation gate — an English label nobody may edit would fail
- * every chapter — and the sentence rules have nothing to do with that: they read what a Korean
+ * rewrites cannot be held to a translation gate - an English label nobody may edit would fail
+ * every chapter - and the sentence rules have nothing to do with that: they read what a Korean
  * sentence does, which is the same question on a generated file as on a hand-written one.
  *
  * <p><b>Left as one flag the exclusion is silent and total.</b> A project that opts a kind out of
  * `audit` also loses it from `rules`, `suspects`, `grep` and `list`, and the count those report
  * then reads as covering a tree they never opened.
  *
- * @param optIn the kind's declaration — true, or the commands it opts out of
+ * @param optIn the kind's declaration - true, or the commands it opts out of
  * @param command which command is asking, or undefined where the caller names none
  * @returns whether this kind is left out of that command's default set
  */
@@ -369,7 +369,7 @@ function discover({ kind, lang, docFallback = false, command } = {}) {
   const langs = lang ? [lang] : [CONFIG.defaultLanguage];
   const found = new Map();
   // The glossary's `audit.exclude` reaches a declared kind too. A kind glob is a git pathspec,
-  // and git's `*` crosses `/`, so `docs/*.md` takes every document under docs — including the
+  // and git's `*` crosses `/`, so `docs/*.md` takes every document under docs - including the
   // review records a project excluded because they quote each round's sentences verbatim. One
   // repository's 278 such files came back as the sentence sweep's largest source of findings,
   // and every one of them was a file nobody may edit.
@@ -403,18 +403,18 @@ function discover({ kind, lang, docFallback = false, command } = {}) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Segment extraction — the reader-facing ranges of each format
+// Segment extraction - the reader-facing ranges of each format
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
  * A segment is one span of reader-facing text.
  *
  * `start`/`end` are byte offsets into the raw file, so a rewrite can be applied to the
- * original source without reserializing it — reserializing a JSON catalogue reorders
+ * original source without reserializing it - reserializing a JSON catalogue reorders
  * nothing but reformats everything, and the diff becomes unreadable.
  *
  * `after` is what follows the segment when the segment's end is NOT the end of the text
- * the reader sees — held-out spans blanked to spaces, exactly the view `check` gives the
+ * the reader sees - held-out spans blanked to spaces, exactly the view `check` gives the
  * same line. A rule is matched against `text + after` and a hit is kept only when it
  * begins inside `text`, so the extra context is read and never reported.
  *
@@ -423,8 +423,8 @@ function discover({ kind, lang, docFallback = false, command } = {}) {
  * 있어 \`StatutoryReport\`` was cut at 있어 and the ban on 「~에 있어서」 fired, because
  * the space it declines on had been trimmed off the tail. The pattern was right and the
  * string it was handed was short. Every rule that ends in `(?!…)` carries the same hole,
- * and none of their authors can see it from the pattern — one project's merged glossary
- * and rule pack held 57 of them — which is why it is closed here rather than one
+ * and none of their authors can see it from the pattern - one project's merged glossary
+ * and rule pack held 57 of them - which is why it is closed here rather than one
  * lookahead at a time.
  *
  * **`after` is empty at a real end, and that is the whole of the judgement.** A value
@@ -433,8 +433,8 @@ function discover({ kind, lang, docFallback = false, command } = {}) {
  * pattern instead would silence the rule on a line that genuinely ends in 자바, which is
  * a hit somebody wants.
  *
- * **There is deliberately no `before`.** The mirror hole exists — a lookbehind at offset
- * 0 is vacuous too — but supplying left context moves the `^` anchor as well, and `^` in
+ * **There is deliberately no `before`.** The mirror hole exists - a lookbehind at offset
+ * 0 is vacuous too - but supplying left context moves the `^` anchor as well, and `^` in
  * these rules means 「the label starts here」: a heading opening with a code span and a
  * screen line prefixed by an `OPEN:` badge are both still labels, and their question-form
  * rules must keep firing. No pattern that loads here loses anything to the vacuous
@@ -549,7 +549,7 @@ function segmentsProperties(src) {
 /**
  * HTML: text nodes only.
  *
- * Attributes are skipped wholesale. That is deliberate for Thymeleaf — `th:text="${x}"`
+ * Attributes are skipped wholesale. That is deliberate for Thymeleaf - `th:text="${x}"`
  * is an expression, and a `title` attribute that does hold prose is rare enough that
  * catching it is not worth the risk of rewriting an expression by accident.
  */
@@ -567,7 +567,7 @@ function segmentsHtml(src) {
     if (!text.trim()) continue;
     if (isBlocked(m.index)) continue;
     const start = m.index + m[0].indexOf(text);
-    // The nearest preceding tag names the segment — and when that tag carries a `name`
+    // The nearest preceding tag names the segment - and when that tag carries a `name`
     // attribute (an Android `<string name="unit_micrometers">`), the name is the key a
     // project's allow list can address; the bare tag name is the same for every value.
     const before = src.slice(Math.max(0, m.index - 200), m.index + 1);
@@ -587,7 +587,7 @@ function segmentsHtml(src) {
   return segments.sort((a, b) => a.start - b.start);
 }
 
-/** Markdown: prose only — code fences, inline code, link targets and HTML are held out. */
+/** Markdown: prose only - code fences, inline code, link targets and HTML are held out. */
 function segmentsMarkdown(src) {
   const blocked = [];
   const hold = (re) => {
@@ -600,9 +600,9 @@ function segmentsMarkdown(src) {
   hold(/\]\([^)\s]+\)/g); // link/image target, not the label
   hold(/^ {4,}\S.*$/gm); // indented code
   hold(/<[^>\n]+>/g);
-  hold(/^-{3,}[ \t]*$/gm); // thematic break — structure, not prose
+  hold(/^-{3,}[ \t]*$/gm); // thematic break - structure, not prose
   // Verbatim quotation of somebody else's document, marked by the author. `check` skips the
-  // same region in doc-audit.mjs — the two engines have to agree about what the file contains,
+  // same region in doc-audit.mjs - the two engines have to agree about what the file contains,
   // or a clause excused by one is reported by the other and nobody can tell which is right.
   // An unclosed region reaches the end of the file here too; `check` reports that as an error,
   // and the sweeps stay quiet over the same span rather than disagreeing with it.
@@ -611,12 +611,12 @@ function segmentsMarkdown(src) {
   // Front matter is a fence that opens on the file's very FIRST line and closes at the
   // next `---`. Every later `---` is a horizontal rule in the body.
   //
-  // Anchored to any line instead — `/^---$[\s\S]*?^---$/gm` — the rules pair off two by
+  // Anchored to any line instead - `/^---$[\s\S]*?^---$/gm` - the rules pair off two by
   // two and each pair swallows the prose between them. It has no symptom: the text is
   // never handed to a rule, so `rules`, `grep` and `suspects` report nothing and the
   // silence reads exactly like a clean document. One repository lost 698 lines across 46
-  // files that way. `check` was never affected — doc-audit.mjs and glossary.mjs both
-  // require line 0 — so the two passes disagreed about what the file even contained.
+  // files that way. `check` was never affected - doc-audit.mjs and glossary.mjs both
+  // require line 0 - so the two passes disagreed about what the file even contained.
   const front = /^---[ \t]*\r?\n[\s\S]*?^---[ \t]*$/m.exec(src);
   if (front && front.index === 0) blocked.push([0, front[0].length]);
 
@@ -634,7 +634,7 @@ function segmentsMarkdown(src) {
     const end = offset + line.length;
     if (line.trim()) {
       // Trim the markdown prefix (heading marks, list bullets, quote marks) so a
-      // replacement can never eat the structure. A bullet requires whitespace after it —
+      // replacement can never eat the structure. A bullet requires whitespace after it -
       // without that, the first `*` of a `**bold**` run is mistaken for a bullet and the
       // segment starts one character late, so `**Files:**` can never be matched whole.
       const prefix = /^(\s*(?:#{1,6}\s+|>+\s*|[-*+](?=\s)\s*|\d+\.\s+)?)/.exec(line)[1];
@@ -642,10 +642,10 @@ function segmentsMarkdown(src) {
 
       // Emit the prose AROUND each blocked span rather than dropping the whole line.
       // Skipping the line outright hid every sentence that merely mentions a code
-      // identifier — and worse, it let a two-line sentence be rewritten on one line
+      // identifier - and worse, it let a two-line sentence be rewritten on one line
       // only, leaving the other half stranded without a predicate.
       // `blocked` is scanned once per line, so a per-line filter over the whole array
-      // is quadratic — on a long document that turned a sub-second run into minutes.
+      // is quadratic - on a long document that turned a sub-second run into minutes.
       // The array is pre-sorted below, so advance a cursor through it instead.
       while (blockIdx < blocked.length && blocked[blockIdx][1] <= cursor) blockIdx += 1;
       const spans = [];
@@ -682,7 +682,7 @@ function segmentsMarkdown(src) {
 /**
  * Emphasis tags that mark a phrase INSIDE a sentence rather than bounding one.
  *
- * Bare only — an attribute means the tag carries something a rewrite must not touch
+ * Bare only - an attribute means the tag carries something a rewrite must not touch
  * (`<span class="open">`, a link's href), so those keep bounding a run and stay out of
  * rewritable text. `<code>` is left out for the same reason: what is inside it is an
  * identifier, not prose.
@@ -699,7 +699,7 @@ const OPENING_CODE = /^<code\b[^>]*>$/i;
  * Whether every emphasis tag in this run has its partner in the same run.
  *
  * A board writes `<b>고를 수 있는 형태는 <code>x</code> 이 이름을 가진 둘뿐이다</b>`, and
- * `<code>` bounds a run — so the emphasis straddles two of them. Held whole, each half
+ * `<code>` bounds a run - so the emphasis straddles two of them. Held whole, each half
  * would carry a tag with nothing to match, and a rewritten sentence that drops it leaves
  * the board's markup unbalanced. Those runs go back to splitting at their emphasis, which
  * is what every run did before.
@@ -717,28 +717,28 @@ function emphasisBalanced(text) {
 /**
  * Wireframe board sources: JavaScript modules whose string literals hold HTML.
  *
- * Three things are interleaved here — JS syntax, HTML markup, and the Korean a reviewer
- * reads — and only the third may be rewritten. The filter that makes this safe is that a
+ * Three things are interleaved here - JS syntax, HTML markup, and the Korean a reviewer
+ * reads - and only the third may be rewritten. The filter that makes this safe is that a
  * segment must contain Hangul: a class name, a route, a CSS declaration and an enum-ish
  * option value never do, so they are excluded by construction rather than by a blocklist
  * of things to avoid.
  *
  * **An emphasis tag is not a boundary between two texts.** Split at every tag alike,
  * `…고정하는 것은 <b>무엇에 동의했는가</b>인 범위 셋뿐이다` arrives as three segments and
- * the middle one reaches the rules as a whole line — so a rule that anchors on a line to
+ * the middle one reaches the rules as a whole line - so a rule that anchors on a line to
  * find a heading reads a noun phrase mid-sentence as one, and refuses a sentence that is
  * correct. Emphasis is therefore carried inside its run, while `<br>` and every tag with
  * an attribute still bound one.
  *
  * The tags stay in the segment rather than being trimmed off its edges, so `<b>…</b>`
  * arrives balanced and a rewrite cannot leave a closing tag with nothing to close. Line
- * anchors are unharmed — every one of them opens on `[^|]*` or `.*`, which a tag passes
- * through — and a line that IS a bolded heading is still read as one, which it is.
+ * anchors are unharmed - every one of them opens on `[^|]*` or `.*`, which a tag passes
+ * through - and a line that IS a bolded heading is still read as one, which it is.
  */
 function segmentsWireframe(src) {
   const segments = [];
 
-  // Pass 1 — locate every string literal, tracking line comments so a commented-out
+  // Pass 1 - locate every string literal, tracking line comments so a commented-out
   // apostrophe cannot desynchronize the scanner.
   const literals = [];
   let i = 0;
@@ -764,7 +764,7 @@ function segmentsWireframe(src) {
           continue;
         }
         if (src[i] === quote) break;
-        // A template literal's `${...}` holds code, not prose — skip it wholesale.
+        // A template literal's `${...}` holds code, not prose - skip it wholesale.
         if (quote === "`" && src[i] === "$" && src[i + 1] === "{") {
           let depth = 1;
           i += 2;
@@ -784,7 +784,7 @@ function segmentsWireframe(src) {
     i += 1;
   }
 
-  // Pass 2 — inside each literal, keep the runs that sit outside HTML tags and carry
+  // Pass 2 - inside each literal, keep the runs that sit outside HTML tags and carry
   // Hangul. Splitting on tags also keeps `${...}` interpolations intact, since the
   // scanner above never let them into a literal's interior.
   for (const [ls, le] of literals) {
@@ -795,7 +795,7 @@ function segmentsWireframe(src) {
       // Trim surrounding whitespace so a rewrite cannot swallow layout, and peel an
       // emphasis pair that wraps the whole run. Emphasis inside a sentence is part of
       // the sentence, but a run that is nothing BUT emphasis is a bolded line, and every
-      // rule that judges a line anchors on its end — a `</b>` left on the tail puts the
+      // rule that judges a line anchors on its end - a `</b>` left on the tail puts the
       // line out of reach of the rule written for exactly that line.
       let start = from;
       let end = to;
@@ -816,7 +816,7 @@ function segmentsWireframe(src) {
       if (end <= start) return;
       segments.push(segment(ls + start, ls + end, body.slice(start, end), "text", after));
     };
-    /** One run between two BOUNDING tags — emphasis inside it is part of the sentence. */
+    /** One run between two BOUNDING tags - emphasis inside it is part of the sentence. */
     const emit = (from, to, after = "") => {
       const text = body.slice(from, to);
       if (emphasisBalanced(text)) {
@@ -839,7 +839,7 @@ function segmentsWireframe(src) {
       if (INLINE_EMPHASIS.test(m[0])) continue;
       // `<code>` is this board's inline code span: an identifier the sentence runs past,
       // not the end of anything. A run stopped there is stopped mid-sentence, so a rule
-      // reading off its tail gets the word boundary that is really there — the same
+      // reading off its tail gets the word boundary that is really there - the same
       // context the markdown extractor gives a run stopped by a backtick. Every other
       // bounding tag ends a line or a cell, and there the run's end IS the reader's.
       emit(cursor, m.index, OPENING_CODE.test(m[0]) ? " " : "");
@@ -852,8 +852,8 @@ function segmentsWireframe(src) {
 }
 
 /**
- * A locale catalogue written as a JavaScript or TypeScript object literal —
- * `'namespace.key': 'text',` — which is how a typed i18n package keeps its copy so the
+ * A locale catalogue written as a JavaScript or TypeScript object literal -
+ * `'namespace.key': 'text',` - which is how a typed i18n package keeps its copy so the
  * key set can be a type. Values are read whole, including the ones a formatter wrapped
  * onto the next line and the ones split across concatenated pieces; a line-by-line
  * reader sees those as keys with no value and reports every one as a missing translation.
@@ -906,9 +906,9 @@ function segmentsTsObject(src) {
 }
 
 /**
- * SVG: the drawn labels only — the content of `<text>` and `<tspan>`, one segment each.
+ * SVG: the drawn labels only - the content of `<text>` and `<tspan>`, one segment each.
  *
- * Without this an `.svg` fell through `formatOf` to `text`, whose segment is a whole line —
+ * Without this an `.svg` fell through `formatOf` to `text`, whose segment is a whole line -
  * and a rendered diagram is one very long line, so the entire file arrived as a single
  * segment of attribute soup wrapped around the labels. **The failure was silent in the
  * direction nobody checks**: `suspects` scored `font-family` lists as prose, and every rule
@@ -916,7 +916,7 @@ function segmentsTsObject(src) {
  * `check` read the same files correctly through `stripSvgLines`, so the two engines
  * disagreed about what a diagram even contained and only one of them said so.
  *
- * The element set matches `stripSvgLines` exactly — that agreement is the point.
+ * The element set matches `stripSvgLines` exactly - that agreement is the point.
  */
 function segmentsSvg(src) {
   const segments = [];
@@ -937,7 +937,7 @@ function segmentsSvg(src) {
     const tag = m[0];
     if (depth > 0) emit(cursor, m.index);
     if (/^<[!?]/.test(tag)) {
-      // declarations, comments, CDATA — no element nesting
+      // declarations, comments, CDATA - no element nesting
     } else if (/^<\//.test(tag)) {
       const name = tag.match(/^<\/\s*([A-Za-z0-9:_-]+)/);
       if (name && (name[1] === "text" || name[1] === "tspan")) depth = Math.max(0, depth - 1);
@@ -974,7 +974,7 @@ const EXTRACTORS = {
 
 /**
  * Keys whose values are commentary addressed to whoever maintains the file rather
- * than copy a user reads — a wireframe frame's design notes beside the labels it
+ * than copy a user reads - a wireframe frame's design notes beside the labels it
  * draws. The glossary's front matter names them, and `check` already exempts them
  * from screen-only bans; `audit` reads the same list so the two agree. Without it a
  * note that says 청크 because it documents chunking is reported as screen copy, and
@@ -990,7 +990,7 @@ function annotationKeys() {
  * The context is there to be read and never to be reported: a hit that starts past the
  * segment's own text belongs to whatever segment comes next, and returning it here would
  * count the same sentence twice. A hit that starts inside and runs on into the context is
- * kept — that is one phrase interrupted by a code span, which is what the reader sees.
+ * kept - that is one phrase interrupted by a code span, which is what the reader sees.
  */
 function matchSegment(re, seg) {
   const text = seg.after ? seg.text + seg.after : seg.text;
@@ -1006,7 +1006,7 @@ function matchSegment(re, seg) {
 /**
  * Whether a project exception releases a hit.
  *
- * <p>The exception has to COVER the match — the same segment is not enough. `PER-001 어플리케이션
+ * <p>The exception has to COVER the match - the same segment is not enough. `PER-001 어플리케이션
  * 응답시간` is a requirement title quoted from a client's document and keeps that document's
  * spelling; a second, genuine 어플리케이션 later in the same cell is still a defect.
  */
@@ -1062,7 +1062,7 @@ function escapeRegex(s) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Rule loading — the merged glossary and the style-rule packs
+// Rule loading - the merged glossary and the style-rule packs
 // ─────────────────────────────────────────────────────────────────────────────
 
 const HANGUL = /[가-힣]/;
@@ -1089,7 +1089,7 @@ function rulePacks() {
 /**
  * The glossary rules as audit bans. Levels and per-file thresholds carry over
  * from the glossary tables; `screenOnly` rules apply only to kinds whose
- * register is "screen" — a design document has to be able to name the thing it
+ * register is "screen" - a design document has to be able to name the thing it
  * specifies.
  */
 /** Built-in checks the project glossary switched off, shared with `check`. */
@@ -1114,7 +1114,7 @@ function glossaryBans() {
  *
  * A particle after one of these can be judged exactly: the word is a noun the rules put
  * there, so the syllable before the particle is a word boundary by construction. That
- * removes the ambiguity that forces the general check to stay narrow — 경로 and 초과 are
+ * removes the ambiguity that forces the general check to stay narrow - 경로 and 초과 are
  * unjudgeable in running text, but 아이디 followed by 은 is unambiguously wrong when the
  * rules are what produced 아이디.
  *
@@ -1126,7 +1126,7 @@ function replacementNouns() {
     if (typeof v !== "string") return;
     // A replacement may be a phrase ("시스템 내역") or a slash-separated pair
     // ("대행사 내역 / 시스템 내역"). Both carry particles on their final syllable, so
-    // split the alternatives and keep each — skipping phrases outright is what let
+    // split the alternatives and keep each - skipping phrases outright is what let
     // `시스템 내역를` through: the swap changed 장부(vowel-final) to 내역(consonant-final)
     // and nothing re-checked the particle.
     for (const part of v.split(/[/·,]/)) {
@@ -1157,7 +1157,7 @@ function buildWrongForms() {
       const wrong = hasFinal ? afterVowel : afterConsonant;
       const right = hasFinal ? afterConsonant : afterVowel;
       if (wrong === right) continue;
-      // ㄹ-final nouns take 로, not 으로 — the pair above already has that backwards.
+      // ㄹ-final nouns take 로, not 으로 - the pair above already has that backwards.
       if (afterConsonant === "으로" && (noun.codePointAt(noun.length - 1) - 0xac00) % 28 === 8) continue;
       WRONG_FORMS.set(noun + wrong, noun + right);
     }
@@ -1186,7 +1186,7 @@ function replacedWordParticleErrors(text) {
 
 /**
  * A value that carries no Hangul at all in a Korean catalogue is an untranslated
- * leftover — unless it is a proper noun, an identifier, or pure punctuation/markup,
+ * leftover - unless it is a proper noun, an identifier, or pure punctuation/markup,
  * which this filter lets through. Proper nouns come from the glossary's
  * 원문 유지 용어 tables plus the project config's own list.
  */
@@ -1224,7 +1224,7 @@ function looksUntranslated(text) {
  * Scope is deliberately narrow: only a particle directly after a **number and a counter
  * word** is judged. Korean writes particles attached to the preceding word with no
  * space, so in general text there is no way to tell a particle from a noun that merely
- * ends in the same syllable — `경로`, `초과`, `차이`, `국가`, `단가` all end in one, and
+ * ends in the same syllable - `경로`, `초과`, `차이`, `국가`, `단가` all end in one, and
  * checking every value flagged them by the hundred while finding two real defects.
  * A checker that is wrong nine times out of ten trains its reader to skip the output,
  * and the real defect goes with it.
@@ -1270,7 +1270,7 @@ function particleErrors(text) {
 // Commands
 // ─────────────────────────────────────────────────────────────────────────────
 
-// Colour only where a person is looking. Through a pipe — the write-time hook, a `$(…)`, a log —
+// Colour only where a person is looking. Through a pipe - the write-time hook, a `$(…)`, a log -
 // the escapes are noise in the report that reaches the reader, and the reader is then an agent
 // parsing `[error]` out of `\x1b[31m`.
 const COLOR = Boolean(process.stdout.isTTY) && !process.env.NO_COLOR;
@@ -1381,11 +1381,11 @@ function placeholdersIntact(before, after) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Style-rule pack commands — portable Korean copy rules with self-verification
+// Style-rule pack commands - portable Korean copy rules with self-verification
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * The reading lens, as one matcher — `references/lens.txt`, a single broad alternation.
+ * The reading lens, as one matcher - `references/lens.txt`, a single broad alternation.
  *
  * Read here so `rules --test` can assert that a rule's family is one the lens can surface.
  * Missing or unreadable, the assertion is skipped rather than failed: the lens is a reading
@@ -1411,7 +1411,7 @@ function ruleMatchers(rule) {
 
 /**
  * `references/lens.txt` is the regex; `reading-lens.md`'s family tables are what a person
- * reads. Two places holding one truth drift — widening one and not the other is how the
+ * reads. Two places holding one truth drift - widening one and not the other is how the
  * document came to promise stems the lens did not carry. Compared here so `rules --test`
  * says which side is short.
  */
@@ -1424,13 +1424,13 @@ function lensDrift() {
   } catch {
     return null;
   }
-  const section = doc.split("## The lens — stems by family")[1]?.split("### ")[0];
+  const section = doc.split(/## The lens [—-] stems by family/)[1]?.split("### ")[0];
   if (!section) return null;
   const inDoc = new Set();
   for (const line of section.split("\n")) {
-    // A family may explain itself after an em dash; that prose is not an entry, and read as
+    // A family may explain itself after a spaced hyphen (an em dash in older text); that prose is not an entry, and read as
     // one it becomes a phantom the lens can never satisfy.
-    const body = line.trim().replace(/^\*\*[^*]+\*\* /, "").split(" — ")[0];
+    const body = line.trim().replace(/^\*\*[^*]+\*\* /, "").split(/ [—-] /)[0];
     if (!body || body.startsWith("**")) continue;
     for (const term of body.split("·")) if (term.trim()) inDoc.add(term.trim().replace(/`/g, ""));
   }
@@ -1452,7 +1452,7 @@ function lensDrift() {
  * A sweep rule is only as safe as the near-misses it refuses. `텀` must catch a bare
  * term but never 커스텀 / 시스템 / 아이템, and the only way to keep that true as rules
  * accumulate is to make each rule state its own counter-examples and check them.
- * All pack rules are tested, opted-in or not — a broken rule is broken for the
+ * All pack rules are tested, opted-in or not - a broken rule is broken for the
  * next project even when this one does not run it.
  */
 /**
@@ -1460,7 +1460,7 @@ function lensDrift() {
  *
  * **A wrong boundary is a wrong verdict from a right rule, and it has no symptom of its
  * own.** A wireframe run split at `<b>` handed `무엇에 동의했는가` to the name-slot rule as
- * a whole line, so a correct sentence was reported as an error — and everything visible
+ * a whole line, so a correct sentence was reported as an error - and everything visible
  * pointed at the rule, which is the thing that would have been loosened. Two rules and one
  * board later, the extractor was the fault both times.
  *
@@ -1481,7 +1481,7 @@ const EXTRACTOR_CASES = [
   },
   {
     // A rule that judges a line ends its pattern on `$`. Leave the closing tag on the
-    // tail and the bolded heading — the very thing those rules are written for — stops
+    // tail and the bolded heading - the very thing those rules are written for - stops
     // reaching them, silently and in the direction nobody checks.
     what: "wireframe: a fully bold line comes back as one line with the emphasis stripped",
     of: () => segmentsWireframe,
@@ -1521,14 +1521,14 @@ const EXTRACTOR_CASES = [
   {
     // The pair-off defect: with three body rules the old pattern held 1↔2 and left 3
     // alone, so 둘째 문단 vanished while 첫째 · 셋째 stayed. Two of three surviving is
-    // what made it invisible — the file still had text under the rules.
+    // what made it invisible - the file still had text under the rules.
     what: "markdown: a horizontal rule in the body does not swallow the sentences between",
     of: () => segmentsMarkdown,
     src: "첫째 문단이다.\n\n---\n\n둘째 문단이다.\n\n---\n\n셋째 문단이다.\n\n---\n\n넷째 문단이다.\n",
     want: ["첫째 문단이다.", "둘째 문단이다.", "셋째 문단이다.", "넷째 문단이다."],
   },
   {
-    // Front matter and body rules in one file — the shape every document here has.
+    // Front matter and body rules in one file - the shape every document here has.
     what: "markdown: front matter is excluded and the rules after it keep their text",
     of: () => segmentsMarkdown,
     src: "---\ntitle: 안전 점검\n---\n\n머리말 뒤 첫 문장이다.\n\n---\n\n가로줄 뒤 문장이다.\n",
@@ -1544,7 +1544,7 @@ const EXTRACTOR_CASES = [
   },
   {
     // The vacuous-lookahead defect. 「W17에 있어」 is 있다 + the connective -어, and the
-    // ban on 「~에 있어서」 declines on the space that follows — a space the segment used
+    // ban on 「~에 있어서」 declines on the space that follows - a space the segment used
     // to trim off its tail, leaving the lookahead nothing to read and nothing to decline
     // on. Reported as a 번역투 in a sentence that has none.
     what: "markdown: a sentence cut off by a code span carries its following text",
@@ -1575,7 +1575,7 @@ const EXTRACTOR_CASES = [
   {
     // The region has to be invisible to a sweep and the prose around it has to stay
     // visible, or the marker trades one silence for a bigger one. `silent`/`loud` prove
-    // both directions with the same pattern — the clause inside is not reported and the
+    // both directions with the same pattern - the clause inside is not reported and the
     // author's own sentence after the close still is.
     what: "markdown: a quoted span is skipped and the body after it stays",
     of: () => segmentsMarkdown,
@@ -1591,7 +1591,7 @@ const EXTRACTOR_CASES = [
   },
   {
     // The whole point of the SVG extractor: a rule anchored on `$` has to be able to reach a
-    // label. Read as one line of markup — which is what a rendered diagram is — no label sits
+    // label. Read as one line of markup - which is what a rendered diagram is - no label sits
     // at the end of anything, so every such rule reported 0 over 35 files and the 0 read as
     // clean. `loud` proves the anchor lands; `silent` proves the attribute soup is not prose.
     what: "SVG: only rendered labels become segments; markup does not",
@@ -1607,7 +1607,7 @@ const EXTRACTOR_CASES = [
   {
     // Closing the region must hand the rest of the file back. A greedy match would run to
     // the last close in the document and swallow every commentary paragraph between two
-    // quotations — silently, which is the failure mode this marker exists to avoid.
+    // quotations - silently, which is the failure mode this marker exists to avoid.
     what: "markdown: the body between two quoted spans survives",
     of: () => segmentsMarkdown,
     src:
@@ -1628,11 +1628,11 @@ const EXTRACTOR_CASES = [
  * Only punctuation and whitespace: appending a full stop or a closing bracket puts the
  * example where the pack's own patterns expect to find it (`[.<\s]` · `[.?]` · `[.—]` ·
  * `[,)]` · `[.,—>]`), and the leading sentence supplies what a pattern needs in front.
- * **A particle is deliberately absent** — appending 을 or 이 would make a different
+ * **A particle is deliberately absent** - appending 을 or 이 would make a different
  * sentence, and a rule firing on a sentence nobody wrote is a false alarm, not a finding.
  */
 const MISS_CONTEXTS = [
-  ...[".", "?", "。", ",", ")", ">", "—", "<", " ", "\n", "'", "`", '"', "”", "」"].map(
+  ...[".", "?", "。", ",", ")", ">", "-", "<", " ", "\n", "'", "`", '"', "”", "」"].map(
     (tail) => (ex) => `${ex}${tail}`,
   ),
   (ex) => `가나다. ${ex}`,
@@ -1704,23 +1704,23 @@ function cmdRulesTest(opts) {
         continue;
       }
       // A miss example that passes only because it was cut short proves nothing. A rule
-      // that anchors after a verb ending — `[을를] 갖는다[.<\s]` — cannot reach an example
+      // that anchors after a verb ending - `[을를] 갖는다[.<\s]` - cannot reach an example
       // that stops at 갖는다, so the example is declared legitimate and the same sentence
       // in a file, with its full stop, is caught. That reads as proof in both directions
       // and is proof in neither.
       const late = MISS_CONTEXTS.map((wrap) => wrap(ex)).find((v) =>
         res.some((re) => ((re.lastIndex = 0), re.test(v))),
       );
-      if (late) problems.push(["a miss example that passes only by being cut short — inside a sentence it is caught", `${ex}  →  ${late}`]);
+      if (late) problems.push(["a miss example that passes only by being cut short - inside a sentence it is caught", `${ex}  →  ${late}`]);
     }
     // An exception is a hole, and a hole nobody proved is a rule quietly switched off. The
-    // sample has to be a sentence THIS rule catches and this exception releases — an exception
+    // sample has to be a sentence THIS rule catches and this exception releases - an exception
     // whose regex never covers its own sample passes every other check while releasing nothing,
     // or releasing something else entirely.
     for (const ex of rule.except ?? []) {
       const caught = res.map((re) => ((re.lastIndex = 0), re.exec(ex.sample))).find(Boolean);
       if (!caught) {
-        problems.push(["this rule does not catch the exception's sample", `${ex.sample} — the exception releases nothing`]);
+        problems.push(["this rule does not catch the exception's sample", `${ex.sample} - the exception releases nothing`]);
         continue;
       }
       ex.re.lastIndex = 0;
@@ -1730,26 +1730,26 @@ function cmdRulesTest(opts) {
     }
     if (!(rule.hit ?? []).length) problems.push(["no hit example", "nothing proves what this rule catches"]);
     for (const reg of rule.registers ?? []) {
-      if (!["screen", "manual", "plain"].includes(reg)) problems.push(["unknown register in registers", `${reg} — screen · manual · plain`]);
+      if (!["screen", "manual", "plain"].includes(reg)) problems.push(["unknown register in registers", `${reg} - screen · manual · plain`]);
     }
     if (!(rule.miss ?? []).length) problems.push(["no miss example", "nothing guards against false positives"]);
-    // The lens knowing a family HALF is the defect — 「붙는」 stood in it without
+    // The lens knowing a family HALF is the defect - 「붙는」 stood in it without
     // 붙이·붙은·붙지·붙어, so the lens reported finding the family while 126 sites walked
     // past. A rule's examples are all of one family, so a lens that matches some of them
     // and loses the rest has an incomplete stem, and this says which example it lost.
     //
     // Matching NONE is not judged: the lens has no interest in that family, which is the
-    // ordinary case for a rule whose target does not conjugate — spelling, loanwords,
+    // ordinary case for a rule whose target does not conjugate - spelling, loanwords,
     // particles, connectives. Putting those stems in the lens would lengthen the reading
     // list without adding a family it can lose. `lens: false` opts a rule out entirely,
     // and a domain-scoped rule is never asked: the lens is universal and owes a domain
-    // nothing — 천장 is a metaphor in a billing product and a real ceiling on a site.
+    // nothing - 천장 is a metaphor in a billing product and a real ceiling on a site.
     if (lens && rule.lens !== false && rule.scope === "universal" && (rule.hit ?? []).length > 1) {
       const unseen = rule.hit.filter((ex) => ((lens.lastIndex = 0), !lens.test(ex)));
       if (unseen.length && unseen.length < rule.hit.length) {
         problems.push([
           "the lens knows only half of this family",
-          `${unseen[0]} — this form escapes references/lens.txt`,
+          `${unseen[0]} - this form escapes references/lens.txt`,
         ]);
       }
     }
@@ -1770,7 +1770,7 @@ function cmdRulesTest(opts) {
   }
   console.log(
     `\n${rules.length} rules verified · ${failures ? C.red(`${failures} failed`) : C.green("all passed")}` +
-      C.dim("\nGlossary rules are not example-verified — after registering, compare the check --list-rules output"),
+      C.dim("\nGlossary rules are not example-verified - after registering, compare the check --list-rules output"),
   );
   return failures ? 1 : 0;
 }
@@ -1779,7 +1779,7 @@ function cmdRulesTest(opts) {
 /**
  * Absolute offsets of the recommended side of every contrast row in a markdown source. A
  * catalogue prints the copy it prescribes once per `금지 → 대체` row, and counting those as the
- * author repeating himself reports the file for saying the thing it teaches — the reasoning and
+ * author repeating himself reports the file for saying the thing it teaches - the reasoning and
  * the four conditions that make a row recognisable are in `contrastRecommendedRanges`.
  *
  * Markdown only: a catalogue is a document form. A shipped resource value that happens to hold
@@ -1799,13 +1799,13 @@ function contrastOffsets(entry, src) {
   return ranges;
 }
 
-/** `error` or `warn` — the pack writes the level as a word; the per-file threshold is `minPerFile`. */
+/** `error` or `warn` - the pack writes the level as a word; the per-file threshold is `minPerFile`. */
 function severityOf(rule) {
   return String(rule.severity ?? "error").startsWith("warn") ? "warn" : "error";
 }
 
 /**
- * The opening sentences of a reason — enough to say what the rule is and what to write instead.
+ * The opening sentences of a reason - enough to say what the rule is and what to write instead.
  *
  * The full reason is an essay on the rule's boundaries: right when writing the rule, wrong when
  * forty hits print it forty times and the file names drown between paragraphs. The sweep prints
@@ -1835,7 +1835,7 @@ function cmdRulesScan(opts) {
     const perFile = new Map();
     // A rule may name the registers it is written for. 「~할 수 있습니다」 standing in for an
     // instruction is a defect on a screen, where guidance has to say do or does, and the ordinary
-    // way a reference manual states a capability — one such rule fired 467 times on a 119-file
+    // way a reference manual states a capability - one such rule fired 467 times on a 119-file
     // manual, every hit a capability sentence. The register comes from the declared kind; a
     // document with no kind is "plain".
     const register = CONFIG.kinds[entry.kind]?.register ?? "plain";
@@ -1878,7 +1878,7 @@ function cmdRulesScan(opts) {
 
   // A warning rule names a place to read, an error rule names a defect. The exit code follows
   // the errors, as `check`'s does, so a hook or a gate stops on a defect and not on a place to
-  // read — `--strict` makes the warnings stop it too.
+  // read - `--strict` makes the warnings stop it too.
   let errors = 0;
   let warnings = 0;
   for (const rule of active) {
@@ -1898,7 +1898,7 @@ function cmdRulesScan(opts) {
     const level = severityOf(rule);
     const tag = level === "warn" ? C.yellow("warn") : C.red("error");
     console.log(
-      `\n${C.bold(rule.id)} ${C.dim(`${rule.scope} ·`)} ${tag} ${C.dim(`· ${hits.length} hits`)} — ${opts.explain ? rule.reason : shortReason(rule.reason)}`,
+      `\n${C.bold(rule.id)} ${C.dim(`${rule.scope} ·`)} ${tag} ${C.dim(`· ${hits.length} hits`)} - ${opts.explain ? rule.reason : shortReason(rule.reason)}`,
     );
     for (const h of hits.slice(0, opts.all ? hits.length : 5)) {
       console.log(`  ${C.cyan(h.file.split("/").pop())}${C.dim(":" + h.line)} ${C.bold(h.key)}  ${h.text.slice(0, 76)}`);
@@ -1915,23 +1915,23 @@ function cmdRulesScan(opts) {
   // prints is indistinguishable from a zero that was earned.
   const off = rulePacks().disabled;
   if (off?.size) {
-    console.log(C.dim(`${off.size} rules disabled — disable in .claude/l10n-rules.json`));
-    for (const [id, why] of off) console.log(C.dim(`  ${id} — ${why}`));
+    console.log(C.dim(`${off.size} rules disabled - disable in .claude/l10n-rules.json`));
+    for (const [id, why] of off) console.log(C.dim(`  ${id} - ${why}`));
   }
   // A narrowing is a hole in a rule that still reports, so it is named for the same reason a
   // disabled rule is: nobody can tell a hole from a clean file by looking at the count.
   const narrowed = rulePacks().except;
   if (narrowed?.size) {
-    console.log(C.dim(`${narrowed.size} rules narrowed — except in .claude/l10n-rules.json`));
+    console.log(C.dim(`${narrowed.size} rules narrowed - except in .claude/l10n-rules.json`));
     for (const [id, list] of narrowed) {
-      for (const ex of list) console.log(C.dim(`  ${id} /${ex.re.source}/ — ${ex.why}`));
+      for (const ex of list) console.log(C.dim(`  ${id} /${ex.re.source}/ - ${ex.why}`));
     }
   }
   return failed ? 1 : 0;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Suspect detection — what a rule cannot fix
+// Suspect detection - what a rule cannot fix
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
@@ -1942,14 +1942,14 @@ function cmdRulesScan(opts) {
  * replacing, and `suspects` hands the ranked list to whoever does the rewriting.
  *
  * Each entry returns a count; the score is the weighted sum. `registers` limits
- * a smell to kinds of that voice — a screen reads differently from a design
+ * a smell to kinds of that voice - a screen reads differently from a design
  * document, and judging one by the other's smells only produces noise.
  */
 const SMELLS = [
   {
     id: "metaphor-verb",
     weight: 3,
-    why: "a metaphorical verb treating a thing as a person — usually an English metaphor carried over",
+    why: "a metaphorical verb treating a thing as a person - usually an English metaphor carried over",
     // Left boundaries matter as much here as in the rule pack: 품은 lives inside 제품은,
     // 서다 inside 위해서다, 문다 inside 물문다. Without them this smell fires on half
     // the corpus and the score stops meaning anything.
@@ -1961,36 +1961,36 @@ const SMELLS = [
   {
     id: "nominal-ending",
     weight: 2,
-    why: "a 「~것」 ending — awkward in screen copy. Normal in -다체 design prose, so counted only for screens",
+    why: "a 「~것」 ending - awkward in screen copy. Normal in -다체 design prose, so counted only for screens",
     registers: ["screen"],
     test: (t) => (t.match(/(?:하는 것|되는 것|인 것|한 것|은 것|는 것)(?:이다|입니다|\.|$)/g) ?? []).length,
   },
   {
     id: "dash-pileup",
     weight: 2,
-    why: "two or more dashes in one sentence — what carrying over an English parenthetical produces",
+    why: "two or more dashes in one sentence - what carrying over an English parenthetical produces",
     test: (t) => ((t.match(/—/g) ?? []).length >= 2 ? 1 : 0),
   },
   {
     id: "long-unbroken",
     weight: 2,
-    why: "a long sentence with nowhere to break — the reader finds no place to breathe",
+    why: "a long sentence with nowhere to break - the reader finds no place to breathe",
     // An em dash and a middle dot break a sentence as effectively as a comma does, and
     // Korean design prose uses both heavily. Counting a sentence that has them as
     // unbroken flagged well-formed design notes by the dozen.
     test: (t) =>
-      t.length >= 70 && !/[,·—:;]/.test(t) && !/다\.\s/.test(t) ? 1 : 0,
+      t.length >= 70 && !/[,·—:;]|\s-\s/.test(t) && !/다\.\s/.test(t) ? 1 : 0,
   },
   {
     id: "same-ending-run",
     weight: 1,
-    why: "the same ending three times in a row — a mark machine translation leaves",
+    why: "the same ending three times in a row - a mark machine translation leaves",
     test: (t) => ((t.match(/(습니다|입니다)[^가-힣]*(습니다|입니다)[^가-힣]*(습니다|입니다)/g) ?? []).length ? 1 : 0),
   },
   {
     id: "heavy-nominalization",
     weight: 2,
-    why: "heavy nominalization (~함/~됨/~임) — unfolding it into a verb reads better",
+    why: "heavy nominalization (~함/~됨/~임) - unfolding it into a verb reads better",
     // `해제됨·폐기됨·취소됨` is a list of status labels, and a status label is a noun by
     // design. Strip those runs before counting, or every screen that lists its states
     // scores as heavily nominalized prose.
@@ -2002,7 +2002,7 @@ const SMELLS = [
   {
     id: "passive-stack",
     weight: 2,
-    why: "a double passive — putting the actor in the subject usually removes it",
+    why: "a double passive - putting the actor in the subject usually removes it",
     // Only genuine double passives. `만들어지는`/`곤란해지는` are ordinary Korean, and
     // counting them made this smell fire on well-written sentences.
     test: (t) => (t.match(/(?:되어지|지게 되|되게 되)/g) ?? []).length,
@@ -2010,56 +2010,56 @@ const SMELLS = [
   {
     id: "colloquial",
     weight: 2,
-    why: "colloquial — out of register for business screens and documents",
+    why: "colloquial - out of register for business screens and documents",
     // Each needs a left boundary: 막 lives inside 마지막, 좀 inside 조좀, 뭐 inside 뭐라도.
     test: (t) => (t.match(/(?<![가-힣])(?:그냥|좀 |뭐 |되게 |엄청 |잘 안 |막 )/g) ?? []).length,
   },
   {
     id: "spatial-metaphor",
     weight: 2,
-    why: "a spatial metaphor (층·자리·길·칸) applied to an abstract concept — usually a literal layer/slot/path",
+    why: "a spatial metaphor (층·자리·길·칸) applied to an abstract concept - usually a literal layer/slot/path",
     test: (t) => (t.match(/(?:받는 층|위층|아래층|그 층|이 층|나가는 길|들어가는 길|다른 길|길을 두|자리가 없|자리를 두)/g) ?? []).length,
   },
   {
     id: "have-translation",
     weight: 3,
-    why: "a literal English have — 「A에는 B가 있다」 is the Korean, not 「A는 B를 가지고 있다」",
+    why: "a literal English have - 「A에는 B가 있다」 is the Korean, not 「A는 B를 가지고 있다」",
     test: (t) => (t.match(/(?:가지고 있|갖고 있|를 가진다|을 가진다)/g) ?? []).length,
   },
   {
     id: "haedang-overuse",
     weight: 2,
-    why: "「해당」 overused — a signature of machine translation and AI prose. 「그」 usually suffices, or drop it",
+    why: "「해당」 overused - a signature of machine translation and AI prose. 「그」 usually suffices, or drop it",
     test: (t) => (t.match(/해당\s*[가-힣]/g) ?? []).length,
   },
   {
     id: "it-pronoun",
     weight: 2,
-    why: "a literal English it — Korean drops the pronoun or picks it up with 「이는·이것」",
+    why: "a literal English it - Korean drops the pronoun or picks it up with 「이는·이것」",
     test: (t) => (t.match(/(?<![가-힣])그것[은이을를의]/g) ?? []).length,
   },
   {
     id: "one-of",
     weight: 2,
-    why: "a literal one of / a — 「~중 하나」 and 「하나의 ~」 are usually dropped or unfolded",
+    why: "a literal one of / a - 「~중 하나」 and 「하나의 ~」 are usually dropped or unfolded",
     test: (t) => (t.match(/(?:중\s*하나|하나의\s*[가-힣])/g) ?? []).length,
   },
   {
     id: "about-through-by",
     weight: 2,
-    why: "a literal preposition (about·through·by) — attach the object particle directly, or make the actor the subject",
+    why: "a literal preposition (about·through·by) - attach the object particle directly, or make the actor the subject",
     test: (t) => (t.match(/(?:에 대한|에 대해|에 대하여|을 통해|를 통해|을 통하여|에 의해|에 의하여|에 있어서)/g) ?? []).length,
   },
   {
     id: "hedging-claim",
     weight: 2,
-    why: "a hedging cliche — a confirmed fact is asserted",
+    why: "a hedging cliche - a confirmed fact is asserted",
     test: (t) => (t.match(/(?:라고 할 수 있|라고 볼 수 있|할 수 있을 것입니다|일 수 있습니다만)/g) ?? []).length,
   },
   {
     id: "bare-subject-drop",
     weight: 1,
-    why: "a -다체 predicate mixed into screen or reader-facing copy — that slot takes 「~합니다」. Design documents and boards are -다체 by default and are not counted",
+    why: "a -다체 predicate mixed into screen or reader-facing copy - that slot takes 「~합니다」. Design documents and boards are -다체 by default and are not counted",
     registers: ["screen", "manual"],
     test: (t) => ((/(?:한다|된다|본다|쓴다|넣는다|만든다)$/.test(t.trim()) ? 1 : 0)),
   },
@@ -2086,8 +2086,8 @@ function scoreSuspect(text, register) {
  * judgement is and the editing where precision is.
  */
 function cmdSuspects(opts) {
-  // 3 is where the signal starts. At 2 the list fills with correct Korean — status
-  // labels (저장됨), settled idioms (막다른 길 · 나가는 길), and -다체 design prose — so a
+  // 3 is where the signal starts. At 2 the list fills with correct Korean - status
+  // labels (저장됨), settled idioms (막다른 길 · 나가는 길), and -다체 design prose - so a
   // lower threshold trains its reader to skim past the findings that matter.
   const min = Number(opts.min ?? 3);
   const named = opts.paths?.length ? pathEntries(opts.paths) : null;
@@ -2098,7 +2098,7 @@ function cmdSuspects(opts) {
     for (const seg of segments) {
       if (!HANGUL.test(seg.text)) continue;
       if (seg.text.length < 12) continue;
-      // A status label is a noun phrase by design — `해제됨 · 라이선스 반환됨` is correct
+      // A status label is a noun phrase by design - `해제됨 · 라이선스 반환됨` is correct
       // Korean for a badge and wrong as a sentence, so judging it by sentence smells
       // only produces noise. Same for a markdown table row, which is a grid of cells.
       if (seg.text.trim().startsWith("|")) continue;
@@ -2122,7 +2122,7 @@ function cmdSuspects(opts) {
   /**
    * The rewriting instruction travels with the findings.
    *
-   * `suspects` is read by whoever rewrites — often an agent that sees only this output.
+   * `suspects` is read by whoever rewrites - often an agent that sees only this output.
    * A smell name is a hint, not a verdict: the tool cannot know what the sentence is
    * supposed to say, and guessing at domain vocabulary is how a plausible-but-wrong
    * phrase gets committed. So the instruction to go and check is part of the result.
@@ -2130,7 +2130,7 @@ function cmdSuspects(opts) {
   const domain = CONFIG.domainHint ? `this domain (${CONFIG.domainHint})` : "this domain";
   const guidance = [
     "This list is a signal that the style may read as translated. It is not a verdict. For each sentence:",
-    "1. Work out what the original is trying to say first — do not change the meaning.",
+    "1. Work out what the original is trying to say first - do not change the meaning.",
     "2. Write it again as natural Korean. Change the sentence structure, not only the words.",
     `3. When you are not certain the expression is actually used in ${domain},`,
     "   find a reliable source online (a vendor's official documentation, a standard, an",
@@ -2157,19 +2157,19 @@ function cmdSuspects(opts) {
 }
 
 /**
- * The reading lens over the document set, or over the files named — `references/lens.txt` as one
+ * The reading lens over the document set, or over the files named - `references/lens.txt` as one
  * matcher, reported and never judged.
  *
  * It reads segments rather than raw lines, so a specimen in a code span and a key in a resource
  * file never surface: what surfaces is what a reader would read. A draft written to a scratch
- * file outside the repository is a valid argument — a chat reply is read by nobody before it is
+ * file outside the repository is a valid argument - a chat reply is read by nobody before it is
  * sent, and the habits the lens exists to catch survive there long after the repository is clean.
  * Each hit is a stem the lens has learned to suspect; whether the sentence is wrong is the
  * reader's call, and `references/reading-lens.md` says what each family is about.
  */
 function cmdLens(opts) {
   const lens = readLens();
-  if (!lens) throw new Error("references/lens.txt is missing or empty — the lens has nothing to match");
+  if (!lens) throw new Error("references/lens.txt is missing or empty - the lens has nothing to match");
   const named = opts.paths?.length ? pathEntries(opts.paths) : null;
   const entries = named ? named.entries : discover({ ...opts, docFallback: true, command: "lens" });
   const hits = [];
@@ -2205,20 +2205,20 @@ function cmdLens(opts) {
   }
   console.log(
     `\n${hits.length ? C.yellow(`${hits.length} candidates`) : C.green("0 candidates")} in ${files} of ${entries.length} files` +
-      ` — a signal, not a verdict. ${hits.length ? "Read each sentence" : "The lens knows only its own stems, so read in order"} (references/reading-lens.md).`,
+      ` - a signal, not a verdict. ${hits.length ? "Read each sentence" : "The lens knows only its own stems, so read in order"} (references/reading-lens.md).`,
   );
   if (named?.skipped.length) console.log(C.dim(`skipped by audit.exclude: ${named.skipped.join(" · ")}`));
   return 0;
 }
 
 /**
- * Every check in one run — check · rules · suspects · audit (when kinds are declared) · lens —
+ * Every check in one run - check · rules · suspects · audit (when kinds are declared) · lens -
  * closed by a line saying what reached what.
  *
  * Four commands, each with its own zero, is how a zero gets read as a pass: the command that
  * would have found the defect is the one that was not run, and nothing in the output of the
  * three that ran says so. One command that runs them all removes the forgetting, and the
- * closing summary is the deliberate-violation test in another form — it names the file count,
+ * closing summary is the deliberate-violation test in another form - it names the file count,
  * the rule counts and the lens, so a zero over zero files or zero rules cannot pass as clean.
  * It does not remove the reading: the lens candidates and the in-order pass stay with the person.
  */
@@ -2267,7 +2267,7 @@ function cmdSweep(opts) {
     run("audit", () => cmdAudit({ ...opts, json: false }));
   } else {
     banner("audit");
-    console.log(C.dim("skipped — no resource kinds declared in .claude/l10n.json (check --init-l10n declares them)"));
+    console.log(C.dim("skipped - no resource kinds declared in .claude/l10n.json (check --init-l10n declares them)"));
     steps.push(["audit", null]);
   }
   run("lens", () => cmdLens({ ...opts, json: false, count: true }));
@@ -2286,7 +2286,7 @@ function cmdSweep(opts) {
   const worst = Math.max(0, ...steps.map(([, code]) => code ?? 0));
   console.log(
     worst
-      ? C.red("\nNot clean — fix the findings above, re-check the sentences you rewrote, then sweep again.")
+      ? C.red("\nNot clean - fix the findings above, re-check the sentences you rewrote, then sweep again.")
       : C.green("\nClean on every check that ran. The lens candidates and the in-order reading are still the reader's."),
   );
   return worst;
@@ -2352,12 +2352,12 @@ function cmdApply(opts) {
   return refused ? 1 : 0;
 }
 
-/** The kind whose patterns could have produced this file, or null — format falls back to the extension. */
+/** The kind whose patterns could have produced this file, or null - format falls back to the extension. */
 function guessKind(file) {
   for (const [k, spec] of Object.entries(CONFIG.kinds)) {
     if ((spec.exclude ?? []).some((p) => file.startsWith(p))) continue;
     // `{lang}` is a wildcard too: `ui/{lang}.json` has no `*` before it, and taking the prefix
-    // before the first `*` alone made that pattern's root the whole pattern — no file starts with
+    // before the first `*` alone made that pattern's root the whole pattern - no file starts with
     // a literal `{lang}`, so every screen file named on the command line lost its kind, and with
     // it its register and its format.
     const roots = [...(spec.patterns ?? []), ...(spec.basePatterns ?? [])].map((p) => p.replaceAll("{lang}", "*").split("*")[0]);
@@ -2370,7 +2370,7 @@ function guessKind(file) {
  * Project exceptions that disabled nothing.
  *
  * `## 기본 규칙 예외` names a base rule by its pattern TEXT, so editing that pattern in the base
- * glossary silently revives the rule in every project that had turned it off — and the finding
+ * glossary silently revives the rule in every project that had turned it off - and the finding
  * returns wearing a slightly different regex, which reads as a new defect rather than as a
  * broken exception. Naming the dead rows is what makes the two distinguishable.
  */
@@ -2379,7 +2379,7 @@ function reportDeadExceptions() {
   if (dead.length === 0) return;
   console.log(
     C.dim(
-      `\n${dead.length} dead exceptions — the entries below match no rule in the base glossary character for character, so they switch nothing off.` +
+      `\n${dead.length} dead exceptions - the entries below match no rule in the base glossary character for character, so they switch nothing off.` +
         ` When a base rule's regex changes, the exception that disabled it quietly comes back to life, so rewrite them against the current rule text.`,
     ),
   );
@@ -2403,10 +2403,10 @@ function cmdAudit(opts) {
       // Markdown has no untranslated concept: a Korean document legitimately carries
       // English identifiers, table cells, link text and code, and every one of them
       // reads as a missing translation. Reporting them buries the findings that matter
-      // — 132 such hits once drowned the real ones in `_plans`.
+      // - 132 such hits once drowned the real ones in `_plans`.
       // The glossary's `## 기본 규칙 예외` table switches built-in checks off, and `check`
       // honours it. `audit` reading its own list meant one repository turned `untranslated`
-      // off, watched `check` fall silent, and still got 114 hits here — URLs, routes, device
+      // off, watched `check` fall silent, and still got 114 hits here - URLs, routes, device
       // labels and protocol names in a single-language tree, which buried the two real
       // particle errors in the same output. One list, both commands.
       // A file the plain-line fallback reads (a typesetting XML, a Python figure module, a
@@ -2419,7 +2419,7 @@ function cmdAudit(opts) {
         formatOf(entry.kind, entry.file) === "text" ||
         (CONFIG.untranslatedExclude ?? []).some((p) => entry.file === p || entry.file.startsWith(p)) ||
         // A unit (`μm`), a language name in its own language (`English`), a file list, a
-        // formula of identifiers — each is a value with no Korean form, and only the project
+        // formula of identifiers - each is a value with no Korean form, and only the project
         // knows which keys hold one. The list is the project's, matched on key or value.
         (CONFIG.untranslatedAllow ?? []).some((p) => new RegExp(p).test(seg.key ?? "") || new RegExp(p).test(seg.text));
       if (!skipUntranslated && looksUntranslated(seg.text)) {
@@ -2454,7 +2454,7 @@ function cmdAudit(opts) {
 
   // A Korean catalogue with no counterpart in another language is a gap the reader of
   // that language hits as a raw key on screen. Only the languages a kind actually ships
-  // are compared — a board may be Korean-only and a manual a two-language pair, so
+  // are compared - a board may be Korean-only and a manual a two-language pair, so
   // checking those against the full language list reports gaps that do not exist.
   for (const kind of opts.kind ? [opts.kind] : defaultKinds("audit")) {
     const spec = CONFIG.kinds[kind];
@@ -2464,7 +2464,7 @@ function cmdAudit(opts) {
     /** Reduce a path to a language-independent stem so counterparts line up. */
     const stemOf = (file, lang) => {
       // A translated document usually gets a translated file name, so the path carries
-      // nothing the two languages share — `01-시작하기.md` and `01-getting-started.md`
+      // nothing the two languages share - `01-시작하기.md` and `01-getting-started.md`
       // are the same page. `stemKey` names the part that does not translate (a step
       // number, an id) as capture groups; a file the pattern misses keeps its path, so
       // it surfaces as unpaired instead of vanishing from the comparison.
@@ -2575,7 +2575,7 @@ function cmdCheck(rest, extra = {}) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 const USAGE = `
-${C.bold("l10n.mjs")} — checks a project's Korean under one set of rules, documents and resources alike
+${C.bold("l10n.mjs")} - checks a project's Korean under one set of rules, documents and resources alike
 
   ${C.bold("sweep")}    [paths...] [--all] [--strict] [--explain]  the pack test, then every check below in one run, closed by what reached what
   ${C.bold("check")}    [paths...] [--all] [--strict]            glossary audit of documents (the hook's engine and judgement)
@@ -2595,20 +2595,20 @@ ${C.bold("There is one source of rules.")} The glossary (the skill's GLOSSARY.ba
 pack (the skill's RULES.base.json plus the project's .claude/l10n-rules.json) supplies the rules
 sweep. Register a term once and documents and screen copy are both covered.
 
-${C.bold("This tool only finds.")} Fixing belongs to whoever reads the context — a rule knows where a
+${C.bold("This tool only finds.")} Fixing belongs to whoever reads the context - a rule knows where a
 word sits, never what it means there. The same 「허용 수량」 is the quantity a contract sells on one
 line and the ceiling of a limit item on another, and one sentence where two rules each fired
 correctly can end up reading 「라이선스 수량 라이선스 하나가」. No regex can tell those apart.
 
   1. ${C.bold("rules --test")}      confirm the rules produce no false positives first
-  2. ${C.bold("sweep")}             pull every place to fix in one run — this is as far as the tool goes
-  3. ${C.bold("read the context and rewrite")} — swapping words alone loses the meaning quietly
+  2. ${C.bold("sweep")}             pull every place to fix in one run - this is as far as the tool goes
+  3. ${C.bold("read the context and rewrite")} - swapping words alone loses the meaning quietly
   4. ${C.bold("apply --patch")}     feed the rewrites back (refused when the original does not match)
-  5. ${C.bold("sweep")} again       see whether the fixes created new findings — a replacement is often a banned phrase itself
+  5. ${C.bold("sweep")} again       see whether the fixes created new findings - a replacement is often a banned phrase itself
   6. ${C.bold("lens")} · in-order reading   what no rule knows; the reader's part, not the tool's
 
 ${C.bold("Paths.")} rules · suspects · lens take files or directories. A file under the project keeps its
-declared kind; a file outside it — a draft in a scratch directory — is read as a document. audit.exclude
+declared kind; a file outside it - a draft in a scratch directory - is read as a document. audit.exclude
 is honoured and the skipped names are printed. The write-time hook runs check and rules on the file
 it just wrote, so every sentence rule bites at the moment of writing.
 
@@ -2616,13 +2616,13 @@ ${C.bold("apply options")}
   --write        actually write to the files (a preview without it)
   --kind K       one kind only
 
-${C.dim("apply locates a place by (file, key). It works only for kinds where the key is unique — i18n JSON ·")}
-${C.dim("properties · markdown (line numbers) — and is refused for formats where the key is a tag name")}
+${C.dim("apply locates a place by (file, key). It works only for kinds where the key is unique - i18n JSON ·")}
+${C.dim("properties · markdown (line numbers) - and is refused for formats where the key is a tag name")}
 ${C.dim("(td · strong · text) and repeats within a file (HTML · boards). Those are narrowed by the line")}
 ${C.dim("numbers audit reports and fixed there.")}
 
 ${C.dim("Resource kinds are declared by the project's .claude/l10n.json. Keys, tags, placeholders and code")}
-${C.dim("are never touched — only values. --root <dir> checks another project read-only.")}
+${C.dim("are never touched - only values. --root <dir> checks another project read-only.")}
 `;
 
 function parseArgs(argv) {
@@ -2686,7 +2686,7 @@ function main() {
       // for a sweep needs to read why it is not here, not to guess the flag was renamed.
       case "replace":
         throw new Error(
-          "There is no substitution command — rules find positions, and whoever reads the context does the fixing.\n" +
+          "There is no substitution command - rules find positions, and whoever reads the context does the fixing.\n" +
             "  Pull the positions with rules · audit, rewrite the sentences, and feed them back with apply --patch.",
         );
       case "audit":
@@ -2716,7 +2716,7 @@ function main() {
 
 // `process.exit` would cut a pipe mid-write: stdout to a pipe is asynchronous, so a
 // long `--json` result is delivered in pieces and the exit discards whatever is still
-// queued. The consumer then gets a prefix that ends inside a string — and the guidance
+// queued. The consumer then gets a prefix that ends inside a string - and the guidance
 // this tool prints tells the reader to pipe that JSON somewhere. Setting the code and
 // letting the event loop drain is the only spelling that keeps the two compatible.
 process.exitCode = main();

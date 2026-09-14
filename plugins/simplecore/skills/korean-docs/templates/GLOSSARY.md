@@ -3,12 +3,12 @@ audit:
   paths: []          # Default audit scope, relative to the project root holding this file. Empty means the whole project. e.g. [docs]
   exclude: []        # Globs to exclude from the audit. e.g. ["**/legacy/**", "CHANGELOG.md"]
   localeResources: [] # Globs for locale resource files holding screen copy. For these, only quoted string values are checked (keys and comments are not). e.g. ["packages/i18n/src/resources/*.ts", "locales/*.json"]
-                      # `*` does not cross `/` (unlike a git pathspec) — use `**/` to reach subdirectories.
+                      # `*` does not cross `/` (unlike a git pathspec) - use `**/` to reach subdirectories.
                       # A pattern matching no file at all is an error and makes check exit 1.
   untranslated: false # true warns about leftover English sentences (for translation projects)
 ---
 
-# Korean glossary — <project>
+# Korean glossary - <project>
 
 The Korean terminology and spelling standard for this project. Every task that writes, translates,
 or proofreads Korean reads this file first.
@@ -24,7 +24,7 @@ or proofreads Korean reads this file first.
   review, and `경고(N+)` is reported only at N or more occurrences in one file. Anything outside
   those three is a parse error, and the form is exact with no spaces, as in `경고(3+)`.
 - `경고(N+)` counts only what the author repeated. **The replacement side of a `금지 → 대체` contrast
-  row is not counted** — it is copy the catalogue prescribes, not the author's own sentence. Only a
+  row is not counted** - it is copy the catalogue prescribes, not the author's own sentence. Only a
   single-arrow pair inside a list item, a quotation line, or a table cell is read as a contrast row,
   so an arrow written inline in running prose is counted and reported as usual.
 - After changing a standard translation or adding a banned spelling, run the audit again in the same
@@ -33,7 +33,7 @@ or proofreads Korean reads this file first.
 ## 용어 대역표
 
 This project's domain concepts and the terms whose translation could go either way. Write the
-expected misspellings and competing spellings in the `금지 표기` column — that column is what the
+expected misspellings and competing spellings in the `금지 표기` column - that column is what the
 audit runs on.
 
 | 영어 | 한국어 | 금지 표기 | 비고 |
@@ -68,11 +68,11 @@ already caught by the base glossary.
 Disable the base-glossary rules that do not fit this project or domain. In `항목` write either the
 English key of a base translation row (disabling the whole row) or the text of a banned pattern
 (disabling that one rule). The pattern text must match the base glossary **exactly, whitespace and
-symbols included** — one character off disables nothing, and `check` reports that row as a dead
+symbols included** - one character off disables nothing, and `check` reports that row as a dead
 exception.
 
 **The audit engine's built-in checks are turned off through the same table.** Only the three
-warning-level ones can be turned off — `heading-form` (the heading is a sentence) · `repeat` (the
+warning-level ones can be turned off - `heading-form` (the heading is a sentence) · `repeat` (the
 same word twice in a row) · `untranslated` (possibly untranslated). The error-level particle checks
 (`particle` · `interpolated-particle` · `reference-particle`) do not split by context and are
 refused as a configuration error. Every disabled check is printed on each run, so silence is never
@@ -87,9 +87,9 @@ The other way is to define a row with the same English key under `## 용어 대�
 Examples:
 
 ```
-| 레버리지 | a financial document — the settled term stays |
+| 레버리지 | a financial document - the settled term stays |
 | method | this project uses "메소드" by convention |
-| /소비(?!자)/ | a messaging document — "메시지를 소비한다" is the settled expression |
+| /소비(?!자)/ | a messaging document - "메시지를 소비한다" is the settled expression |
 | heading-form | a rulebook, where a heading is the rule sentence itself |
 ```
 
