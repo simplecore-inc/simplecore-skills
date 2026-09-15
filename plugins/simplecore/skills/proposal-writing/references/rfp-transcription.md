@@ -91,6 +91,17 @@ The glossary would report the tender's own spellings as errors, and correcting t
 break the transcription. Add the transcription's directory to `audit.exclude` in the
 project glossary, and say in the glossary why it is excluded.
 
+**The same holds for everything else the submission quotes word for word** - the statutes,
+decrees and administrative rules the tender cites, gathered into a reference pack so the
+authors can read what binds them. Sentence rules fire on a statute's own drafting, which is
+not the transcriber's to fix. Put every such quotation under one declared path and exclude
+that path, rather than excluding a file at a time.
+
+**Commentary on a quotation lives outside the excluded path.** What the article means for
+this bid, where the tender cites it, which evaluation item it earns: that is the authors'
+own writing and is checked like any other copy. A note left inside the quoted file escapes
+the check, which is how an unchecked paragraph reaches a panel.
+
 **Declare the exclusion before writing the first file.** `audit.exclude` reaches a named
 file as well as a scanned one, and the write-time hook reports such a file as skipped
 rather than blocking it, so the transcription is writable from the first line. Without the
