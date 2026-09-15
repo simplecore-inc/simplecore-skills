@@ -8,8 +8,8 @@
       "kind": "document",
       // the MCP server that owns this deck; its tools are mcp__slideglance-proposal__*
       "mcp": "slideglance-proposal",
-      // the sizes this deck is set at, in points
-      "type": { "floor": 8, "body": 8.25, "heading": 9.75, "codeLabel": 8 },
+      // the sizes this deck is set at, in points; codeLabel null where that class is not measured
+      "type": { "floor": 8, "codeLabel": null },
       // what the tender calls the annex, so the deck writes its word
       "annex": { "term": "별첨" },
       "page": { "w": 794, "h": 1123, "textBlock": 682 },

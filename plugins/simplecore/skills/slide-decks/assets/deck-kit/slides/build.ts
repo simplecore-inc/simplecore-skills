@@ -154,7 +154,9 @@ async function renderFigures(): Promise<number> {
  */
 function figureTemplate(name: string, src: string, boxW: number, w: number, h: number): string {
   return (
-    `    <Template name="${name}">\n` +
+    `    <Template name="${name}" form="figure" tags="generated,figure"\n` +
+    `             doc="the figure ${name} placed alone and centred in its box, with no caption"\n` +
+    `             use="in a slide region; not a captured screen, which carries its pointing discs">\n` +
     `      <VStack w="${boxW}" alignItems="center" flexShrink="0">\n` +
     `        <Image src="${src}" w="${w}" h="${h}" altText="${path.basename(src)}" />\n` +
     `      </VStack>\n` +
@@ -253,7 +255,9 @@ function calloutTemplate(
     ` textAlign="center" textVAlign="middle" lineHeight="1.0">${m.n}</Text>`,
   ).join("\n");
   return (
-    `    <Template name="${name}">\n` +
+    `    <Template name="${name}" form="figure" tags="generated,capture"\n` +
+    `             doc="the screen capture ${name} with its pointing discs fixed onto the picture"\n` +
+    `             use="in a slide region beside the pointing order; not a drawn figure, which carries no discs">\n` +
     `      <VStack w="${boxW}" alignItems="center" flexShrink="0">\n` +
     `        <Layer w="${w}" h="${h}">\n` +
     `          <Image x="0" y="0" src="${src}" w="${w}" h="${h}" altText="${path.basename(src)}" />\n` +
@@ -398,7 +402,10 @@ ${style("bar-stub-key", 'backgroundColor="F5F6F8" padding="0 14" h="28" w="240"'
   </Styles>
 
   <Templates>
-    <Template name="partline">
+    <Template name="partline"
+              form="row" tags="generated,runhead"
+              doc="the head band's part line: the part numeral in that part's colour and its name"
+              use="in the slide template's head band; not a heading - it names where the reader is, not what the slide says">
       <Choose>
 ${PARTS.filter((q) => q.p > 0).map(branch).join("\n")}
         <Otherwise><Text class="runhead-part" w="236" lineHeight="1.0" textVAlign="middle">{part}</Text></Otherwise>

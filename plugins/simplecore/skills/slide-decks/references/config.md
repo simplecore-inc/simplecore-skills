@@ -26,11 +26,12 @@ that does not exist is the same error. The check scripts shipped in the kit
       "kind": "document",                   // "document" (A4 portrait) or "slides" (landscape)
       "mcp": "slideglance-proposal",        // the MCP server that owns this deck: mcp__slideglance-proposal__*
       "page": { "w": 794, "h": 1123, "textBlock": 682 },
-      // The sizes this deck is set at, in points. `floor` is the absolute
-      // minimum any reader-facing string may print at; `body` and `heading`
-      // are what a projected deck is set for and what its type-floor check
-      // holds prose to; `codeLabel` is the one class allowed at the floor.
-      "type": { "floor": 8, "body": 8.25, "heading": 9.75, "codeLabel": 8 },
+      // The sizes this deck is set at, in points. `floor` is what prose is
+      // held to: the absolute minimum on a document deck, the body size on a
+      // projected one. `heading` is a projected deck's region heading.
+      // `codeLabel` is the lower floor a looked-up code value may print at,
+      // or null where that class is not measured at all.
+      "type": { "floor": 8.25, "heading": 9.75, "codeLabel": 6 },
       // What the tender calls the annex, so the deck writes its word
       "annex": { "term": "별첨" },
       "manuscript": "proposal",             // document deck: the prose the pages are set from
@@ -122,7 +123,7 @@ that does not exist is the same error. The check scripts shipped in the kit
 | `kind` | `document` (A4 portrait, prose pages, part dividers, a manuscript) or `slides` (landscape, one plan section per slide, speaker notes) | required - the page shell, the layouts and the fill rule differ by kind |
 | `mcp` | the MCP server that owns this deck, so its tools are `mcp__<name>__*` and the deck is reached rather than guessed at. It is the server `.mcp.json` registers on this deck's `main.sgx`; the desktop app's connection replaces it while the app holds the deck open, and then `deck` names the deck on every call | required wherever a deck is edited - three decks and three servers is three chances to write the wrong one, and the only report is the picture |
 | `page` | page size in CSS px at 96 dpi and the text-block width | required - every width in the layout templates is derived from it |
-| `type.floor` · `body` · `heading` · `codeLabel` | the sizes in points: the absolute floor, the body and region heading a projected deck is set for, and the code-label class held at the floor. Units are CSS pixels and the builder writes points as units × 0.75, so 8pt is 10.67 units | the floor becomes a number in the skill rather than a judgement about one deck's room, and the type-floor check has nothing to hold prose to |
+| `type.floor` · `heading` · `codeLabel` | the sizes in points. `floor` is what prose is held to - the absolute minimum on a document deck, the body size on a projected one, since a slide is set for the room; `heading` is a projected deck's region heading; `codeLabel` is the lower floor a looked-up code value (a requirement id in a badge, an evidence number, a frame id) may print at, or `null` where that class is not measured. Units are CSS pixels and the builder writes points as units × 0.75, so 8pt is 10.67 units | the floor becomes a number in the skill rather than a judgement about one deck's room and audience, and the type-floor check has nothing to hold prose to |
 | `annex.term` | the word the tender uses for the annex (`별첨` · `부록` · `첨부`), so the deck answers in the panel's own word | the deck names the annex whatever the author happened to type, and the references check has no word to read against |
 | `manuscript` | the directory of page-files a document deck is set from | a document deck without it cannot run parity or coverage against its prose; report it |
 | `plan` | the plan file a slide deck is set from - one section per slide with what the slide shows, what it answers and its script | a slide deck without it cannot check coverage; report it |

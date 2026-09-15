@@ -11,25 +11,22 @@
          A region bar sized for one column of a 2- or 3-column layout: the
          same filled block as `bar`, with the narrow `bar-stub-sm` so the
          heading keeps most of the column. -->
-    <!-- @kind bar · @box filled · @emph part colour
-         @content a region head inside a column
-         @shape   part-coloured block + a narrow stub
-         @with    cols2 · cols3
-         @not     bar across the whole block -->
-    <Template name="col-bar">
+    <Template name="col-bar"
+              form="bar"
+              doc="a region head inside a column (part-coloured block + a narrow stub)"
+              use="with cols2 · cols3; not bar across the whole block"
+              tags="filled,part">
       <HStack gap="0" alignItems="start" w="100%" h="32" group="true">
         <Text class="bar-{p} bar-text" lineHeight="1.0" textVAlign="middle">{text}</Text>
         <Text class="bar-stub-sm bar-key" lineHeight="1.0" textVAlign="middle"
               textAlign="right">{keyText}</Text>
       </HStack>
     </Template>
-    <!-- @kind bar · @box filled · @emph part colour
-         @content a column region head citing requirement ids
-         @shape   col-bar + ids in the stub
-         @with    cols2 · cols3
-         @not     — -->
-
-    <Template name="col-bar-req">
+    <Template name="col-bar-req"
+              form="bar"
+              doc="a column region head citing requirement ids (col-bar + ids in the stub)"
+              use="with cols2 · cols3"
+              tags="filled,part">
       <HStack gap="0" alignItems="start" w="100%" h="32" group="true">
         <Text class="bar-{p} bar-text" lineHeight="1.0" textVAlign="middle">{text}</Text>
         <Text class="bar-stub-sm bar-key-req" lineHeight="1.0" textVAlign="middle"
@@ -38,24 +35,21 @@
     </Template>
 
     <!-- A column region opened by a column bar. -->
-    <!-- @kind bar · @box filled · @emph part colour
-         @content a column region opened by its bar
-         @shape   col-bar + slot
-         @with    cols2 · cols3
-         @not     — -->
-    <Template name="col-section">
+    <Template name="col-section"
+              form="bar"
+              doc="a column region opened by its bar (col-bar + slot)"
+              use="with cols2 · cols3"
+              tags="filled,part">
       <VStack gap="14" w="100%">
         <Use template="col-bar" p="{p}" text="{text}" keyText="{keyText}" />
         <Slot name="default" />
       </VStack>
     </Template>
-    <!-- @kind bar · @box filled · @emph part colour
-         @content a column region whose bar cites ids
-         @shape   col-bar-req + slot
-         @with    cols2 · cols3
-         @not     — -->
-
-    <Template name="col-section-req">
+    <Template name="col-section-req"
+              form="bar"
+              doc="a column region whose bar cites ids (col-bar-req + slot)"
+              use="with cols2 · cols3"
+              tags="filled,part">
       <VStack gap="14" w="100%">
         <Use template="col-bar-req" p="{p}" text="{text}" ids="{ids}" />
         <Slot name="default" />
@@ -66,37 +60,34 @@
          A column region inside a frame: a hairline border with the column
          bar flush at the top and a padded body under it, so neighbouring
          columns read as separate surfaces. Some regions of a slide take a
-         panel, never all — a slide with every column framed is a grid.
+         panel, never all - a slide with every column framed is a grid.
          `frame` is the same border around a run of sections or rows that
          has no bar of its own. -->
-    <!-- @kind layout · @box bordered · @emph none
-         @content a column standing in its own hairline frame
-         @shape   bordered column shell
-         @with    cols2 · cols3
-         @not     never every column — the frame is what tells one column from its neighbour -->
-    <Template name="col-panel">
+    <Template name="col-panel"
+              form="layout"
+              doc="a column standing in its own hairline frame (bordered column shell)"
+              use="with cols2 · cols3; not never every column - the frame is what tells one column from its neighbour"
+              tags="bordered">
       <VStack w="100%" gap="0" flexGrow="1" border.color="D9DEE7" border.width="0.8" borderRadius="2">
         <Use template="col-bar" p="{p}" text="{text}" keyText="{keyText}" />
         <VStack w="100%" gap="12" padding="12 12 14 12"><Slot name="default" /></VStack>
       </VStack>
     </Template>
-    <!-- @kind layout · @box bordered · @emph none
-         @content a framed column whose head cites ids
-         @shape   col-panel + ids
-         @with    cols2 · cols3
-         @not     — -->
-    <Template name="col-panel-req">
+    <Template name="col-panel-req"
+              form="layout"
+              doc="a framed column whose head cites ids (col-panel + ids)"
+              use="with cols2 · cols3"
+              tags="bordered">
       <VStack w="100%" gap="0" flexGrow="1" border.color="D9DEE7" border.width="0.8" borderRadius="2">
         <Use template="col-bar-req" p="{p}" text="{text}" ids="{ids}" />
         <VStack w="100%" gap="12" padding="12 12 14 12"><Slot name="default" /></VStack>
       </VStack>
     </Template>
-    <!-- @kind layout · @box bordered · @emph none
-         @content a hairline frame around a region of a slide
-         @shape   a bordered shell
-         @with    stack · cols*
-         @not     col-panel when the region is a whole column -->
-    <Template name="frame">
+    <Template name="frame"
+              form="layout"
+              doc="a hairline frame around a region of a slide (a bordered shell)"
+              use="with stack · cols*; not col-panel when the region is a whole column"
+              tags="bordered">
       <VStack w="100%" gap="12" padding="12 12 14 12" flexGrow="1" border.color="D9DEE7" border.width="0.8" borderRadius="2">
         <Slot name="default" />
       </VStack>
@@ -106,12 +97,11 @@
          A requirement id in its badge followed by the requirement's name,
          so a page names what it answers in the RFP's own words rather than
          by code alone. -->
-    <!-- @kind head · @box tinted · @emph accent
-         @content a requirement id standing on a slide
-         @shape   a small tag chip
-         @with    head-band · card heads
-         @not     — -->
-    <Template name="req-tag">
+    <Template name="req-tag"
+              form="head"
+              doc="a requirement id standing on a slide (a small tag chip)"
+              use="with head-band · card heads"
+              tags="tinted,accent">
       <HStack gap="6" alignItems="center" group="true">
         <Use template="reqbadge" ids="{id}" />
         <Text class="body-sm" lineHeight="1.0" textVAlign="middle">{name}</Text>
@@ -121,12 +111,11 @@
     <!-- ==================== Callout ====================
          A numbered note beside a capture: a round accent plate, a bold head
          and a muted line under it. The number is what the speaker points at. -->
-    <!-- @kind band · @box tinted · @emph accent×1
-         @content the one line a slide turns on
-         @shape   an accent-edged band
-         @with    stack
-         @not     one per slide -->
-    <Template name="callout">
+    <Template name="callout"
+              form="band"
+              doc="the one line a slide turns on (an accent-edged band)"
+              use="with stack; not one per slide"
+              tags="tinted,accent">
       <HStack gap="8" alignItems="start" w="100%" group="true">
         <Text w="20" h="20" flexShrink="0" fontFamily="Pretendard" fontSize="11" bold="true"
               color="FFFFFF" backgroundColor="1B4A9C" borderRadius="10"
@@ -140,14 +129,13 @@
 
     <!-- ==================== Contents rows ====================
          The presentation contents: a part group line in the part's colour
-         with its square mark, then one line per slide — the plan's slide
+         with its square mark, then one line per slide - the plan's slide
          number, the title, and the proposal section it answers. -->
-    <!-- @kind toc · @box none · @emph part colour
-         @content a group of the contents on a slide
-         @shape   a group head + lines
-         @with    toc-line
-         @not     — -->
-    <Template name="toc-group">
+    <Template name="toc-group"
+              form="toc"
+              doc="a group of the contents on a slide (a group head + lines)"
+              use="with toc-line"
+              tags="part">
       <VStack gap="0" w="100%" margin.top="8" group="true">
         <HStack gap="9" alignItems="center" w="100%">
           <VStack class="dot-{p}" />
@@ -156,13 +144,10 @@
         <VStack class="hairline" margin.top="4" />
       </VStack>
     </Template>
-    <!-- @kind toc · @box none · @emph none
-         @content one contents line on a slide
-         @shape   number + title + page
-         @with    toc-group
-         @not     — -->
-
-    <Template name="toc-line">
+    <Template name="toc-line"
+              form="toc"
+              doc="one contents line on a slide (number + title + page)"
+              use="with toc-group">
       <HStack gap="10" alignItems="center" w="100%" margin.top="4" group="true">
         <Text fontFamily="Pretendard" fontSize="10.67" bold="true" color="9AA0AB"
               w="22" textAlign="right" lineHeight="1.0" textVAlign="middle">{no}</Text>
@@ -174,33 +159,29 @@
     <!-- ==================== Order chips ====================
          The cover's 발표 순서: one chip per part in that part's colour. The
          chip style (`chip-N`) is generated with the palette in parts.xml. -->
-    <!-- @kind toc · @box none · @emph part colour
-         @content the ordering department's chips on the cover
-         @shape   a row of chips
-         @with    order-chip
-         @not     — -->
-    <Template name="order-row">
+    <Template name="order-row"
+              form="toc"
+              doc="the ordering department's chips on the cover (a row of chips)"
+              use="with order-chip"
+              tags="part">
       <HStack gap="6" alignItems="center" w="100%"><Slot name="default" /></HStack>
     </Template>
-    <!-- @kind toc · @box filled · @emph part colour
-         @content one such chip
-         @shape   a part-coloured chip
-         @with    order-row
-         @not     — -->
-
-    <Template name="order-chip">
+    <Template name="order-chip"
+              form="toc"
+              doc="one such chip (a part-coloured chip)"
+              use="with order-row"
+              tags="filled,part">
       <Text class="chip-{p}" w="{w}" lineHeight="1.0" textVAlign="middle" textAlign="center">{text}</Text>
     </Template>
 
     <!-- ==================== Cover blocks ====================
          A labelled block on the cover: a muted label over whatever the
          cover lists under it (chips, a table, a note). -->
-    <!-- @kind shell · @box none · @emph part colour
-         @content the cover's title block
-         @shape   hero lines over the brand ground
-         @with    cover
-         @not     — -->
-    <Template name="cover-block">
+    <Template name="cover-block"
+              form="shell"
+              doc="the cover's title block (hero lines over the brand ground)"
+              use="with cover"
+              tags="part">
       <VStack gap="8" w="100%" margin.top="{gapTop}">
         <Text class="meta-label">{label}</Text>
         <Slot name="default" />
@@ -209,12 +190,11 @@
 
     <!-- ==================== Closing promise ====================
          One promise on the closing slide: an icon, a heading and a line. -->
-    <!-- @kind card · @box tinted · @emph accent×1
-         @content one promise of the closing slide
-         @shape   a cell with a head and a line
-         @with    closing
-         @not     — -->
-    <Template name="promise-cell">
+    <Template name="promise-cell"
+              form="card"
+              doc="one promise of the closing slide (a cell with a head and a line)"
+              use="with closing"
+              tags="tinted,accent">
       <VStack flexGrow="1" flexBasis="0" gap="6" padding="12 14" group="true"
               backgroundColor="FFFFFF" borderRadius="2"
               border.color="D9DEE7" border.width="0.8">
@@ -231,35 +211,31 @@
          title, the claim under it, and a source or note line. These are the
          shapes the phrases stand in. -->
 
-    <!-- One phrase in a bordered box, centred — the node of a vertical flow. -->
-    <!-- @kind band · @box bordered · @emph none
-         @content a phrase the slide wants read as a unit
-         @shape   a bordered phrase
-         @with    stack
-         @not     phrase-ink when it is the slide's conclusion -->
-    <Template name="phrase-box">
+    <!-- One phrase in a bordered box, centred - the node of a vertical flow. -->
+    <Template name="phrase-box"
+              form="band"
+              doc="a phrase the slide wants read as a unit (a bordered phrase)"
+              use="with stack; not phrase-ink when it is the slide's conclusion"
+              tags="bordered">
       <Text class="h3" w="100%" padding="8 10" textAlign="center" lineHeight="1.3"
             backgroundColor="FFFFFF" borderRadius="2" border.color="D9DEE7" border.width="0.8">{text}</Text>
     </Template>
 
-    <!-- The same node in the accent — the one the flow is about. -->
-    <!-- @kind band · @box filled · @emph accent×1
-         @content the phrase a slide closes on
-         @shape   a filled accent phrase, the words reversed out
-         @with    stack
-         @not     phrase-box when the phrase is read rather than concluded -->
-    <Template name="phrase-ink">
+    <!-- The same node in the accent - the one the flow is about. -->
+    <Template name="phrase-ink"
+              form="band"
+              doc="the phrase a slide closes on (a filled accent phrase, the words reversed out)"
+              use="with stack; not phrase-box when the phrase is read rather than concluded"
+              tags="filled,accent">
       <Text w="100%" padding="8 10" textAlign="center" lineHeight="1.3" fontFamily="Pretendard"
             fontSize="11.5" bold="true" color="FFFFFF" backgroundColor="1B4A9C" borderRadius="2">{text}</Text>
     </Template>
 
     <!-- A phrase with a muted second line under it, in the same box. -->
-    <!-- @kind prose · @box none · @emph none
-         @content a note under a phrase
-         @shape   a quiet line
-         @with    phrase-box · phrase-ink
-         @not     — -->
-    <Template name="phrase-note">
+    <Template name="phrase-note"
+              form="prose"
+              doc="a note under a phrase (a quiet line)"
+              use="with phrase-box · phrase-ink">
       <VStack w="100%" gap="2" padding="8 10" alignItems="center" group="true"
               backgroundColor="FFFFFF" borderRadius="2" border.color="D9DEE7" border.width="0.8">
         <Text class="h3" w="100%" textAlign="center" lineHeight="1.3">{text}</Text>
@@ -268,24 +244,22 @@
     </Template>
 
     <!-- The connector between two nodes of a vertical flow. -->
-    <!-- @kind figure · @box none · @emph accent×1
-         @content the step between two stacked blocks
-         @shape   a centred accent arrow
-         @with    flow-down
-         @not     — -->
-    <Template name="arrow-down">
+    <Template name="arrow-down"
+              form="figure"
+              doc="the step between two stacked blocks (a centred accent arrow)"
+              use="with flow-down"
+              tags="accent">
       <HStack w="100%" justifyContent="center" alignItems="center" h="12">
         <Icon name="chevron-down" size="12" color="9AA0AB" isDecorative="true" />
       </HStack>
     </Template>
 
     <!-- A vertical flow: nodes and connectors stacked at the column's width. -->
-    <!-- @kind layout · @box none · @emph accent arrows
-         @content a sequence read downward
-         @shape   stacked cells joined by arrows
-         @with    process-node · arrow-down
-         @not     process-strip when the sequence reads across -->
-    <Template name="flow-down">
+    <Template name="flow-down"
+              form="layout"
+              doc="a sequence read downward (stacked cells joined by arrows)"
+              use="with process-node · arrow-down; not process-strip when the sequence reads across"
+              tags="accent">
       <VStack w="100%" gap="2"><Slot name="default" /></VStack>
     </Template>
 
@@ -293,21 +267,18 @@
          plate with the number, the step's name, and a short note under it.
          `nodeW` is the node's width; `process-link` takes the width between
          two nodes the page computed. -->
-    <!-- @kind layout · @box none · @emph accent links
-         @content a sequence read across the slide
-         @shape   cells joined by links
-         @with    process-node · process-link
-         @not     flow-down when the slide is tall -->
-    <Template name="process-strip">
+    <Template name="process-strip"
+              form="layout"
+              doc="a sequence read across the slide (cells joined by links)"
+              use="with process-node · process-link; not flow-down when the slide is tall"
+              tags="accent">
       <HStack gap="0" alignItems="start" w="100%"><Slot name="default" /></HStack>
     </Template>
-    <!-- @kind card · @box tinted · @emph accent×1
-         @content one stage of a process strip
-         @shape   a tinted cell with a head and a note
-         @with    process-strip
-         @not     — -->
-
-    <Template name="process-node">
+    <Template name="process-node"
+              form="card"
+              doc="one stage of a process strip (a tinted cell with a head and a note)"
+              use="with process-strip"
+              tags="tinted,accent">
       <VStack w="{nodeW}" gap="6" alignItems="center" group="true">
         <Text w="22" h="22" fontFamily="Pretendard" fontSize="10.67" bold="true"
               color="FFFFFF" backgroundColor="1B4A9C" borderRadius="11"
@@ -316,13 +287,11 @@
         <Text class="footnote" w="100%" textAlign="center" lineHeight="1.3">{note}</Text>
       </VStack>
     </Template>
-    <!-- @kind figure · @box none · @emph accent×1
-         @content the link between two process nodes
-         @shape   a short accent rule
-         @with    process-strip
-         @not     — -->
-
-    <Template name="process-link">
+    <Template name="process-link"
+              form="figure"
+              doc="the link between two process nodes (a short accent rule)"
+              use="with process-strip"
+              tags="accent">
       <VStack w="{w}" flexShrink="0" padding.top="10">
         <VStack w="100%" h="2" backgroundColor="C6D5EC" />
       </VStack>
@@ -331,12 +300,11 @@
     <!-- A demand and its answer as two phrases with an arrow between: the
          shortest way to show 「요구 → 구현」 without a table. `aW` is the
          demand's width; the answer takes the rest. -->
-    <!-- @kind row · @box none · @emph accent arrow
-         @content a before and an after, joined
-         @shape   two cells and an arrow
-         @with    stack
-         @not     delta-row when the pair is a term and its meaning -->
-    <Template name="arrow-pair">
+    <Template name="arrow-pair"
+              form="row"
+              doc="a before and an after, joined (two cells and an arrow)"
+              use="with stack; not delta-row when the pair is a term and its meaning"
+              tags="accent">
       <HStack gap="8" alignItems="center" w="100%" group="true">
         <Text class="body-sm" w="{aW}" padding="7 10" lineHeight="1.3" textVAlign="middle"
               backgroundColor="F5F6F8" borderRadius="2">{aText}</Text>
@@ -347,55 +315,48 @@
       </HStack>
     </Template>
 
-    <!-- A horizontal flow of filled cells joined by chevrons — the sequence shape
+    <!-- A horizontal flow of filled cells joined by chevrons - the sequence shape
          that carries no number, for a slide whose numbered strip would be the
          deck's third in a row. `stepW` is the cell's width; a link is 14 px. -->
-    <!-- @kind layout · @box none · @emph accent links
-         @content a flow of short phrases across the slide
-         @shape   cells joined by links
-         @with    flow-cell · flow-link
-         @not     process-strip when each stage carries a note -->
-    <Template name="flow-row">
+    <Template name="flow-row"
+              form="layout"
+              doc="a flow of short phrases across the slide (cells joined by links)"
+              use="with flow-cell · flow-link; not process-strip when each stage carries a note"
+              tags="accent">
       <HStack gap="0" alignItems="stretch" w="100%"><Slot name="default" /></HStack>
     </Template>
-    <!-- @kind card · @box tinted · @emph none
-         @content one cell of a flow row
-         @shape   a tinted phrase cell
-         @with    flow-row
-         @not     — -->
-    <Template name="flow-cell">
+    <Template name="flow-cell"
+              form="card"
+              doc="one cell of a flow row (a tinted phrase cell)"
+              use="with flow-row"
+              tags="tinted">
       <VStack w="{stepW}" gap="3" padding="8 10" group="true" flexGrow="1" backgroundColor="F5F6F8" borderRadius="2">
         <Text class="h3" w="100%" lineHeight="1.25">{head}</Text>
         <Text class="footnote" w="100%" lineHeight="1.3">{note}</Text>
       </VStack>
     </Template>
-    <!-- @kind figure · @box none · @emph accent×1
-         @content the link between two flow cells
-         @shape   a short accent rule
-         @with    flow-row
-         @not     — -->
-    <Template name="flow-link">
+    <Template name="flow-link"
+              form="figure"
+              doc="the link between two flow cells (a short accent rule)"
+              use="with flow-row"
+              tags="accent">
       <VStack w="14" flexShrink="0" alignItems="center" padding.top="10">
         <Icon name="chevron-right" size="12" color="9AA0AB" isDecorative="true" />
       </VStack>
     </Template>
 
     <!-- A row of chips: one short phrase per chip, fixed width so rows line up. -->
-    <!-- @kind layout · @box none · @emph none
-         @content a row of short labels
-         @shape   chips laid across
-         @with    tag-chip
-         @not     flow-row when the labels are a sequence -->
-    <Template name="tag-row">
+    <Template name="tag-row"
+              form="layout"
+              doc="a row of short labels (chips laid across)"
+              use="with tag-chip; not flow-row when the labels are a sequence">
       <HStack gap="6" alignItems="center" w="100%"><Slot name="default" /></HStack>
     </Template>
-    <!-- @kind card · @box tinted · @emph none
-         @content one such label
-         @shape   a tinted chip
-         @with    tag-row
-         @not     — -->
-
-    <Template name="tag-chip">
+    <Template name="tag-chip"
+              form="card"
+              doc="one such label (a tinted chip)"
+              use="with tag-row"
+              tags="tinted">
       <Text w="{w}" fontFamily="Pretendard" fontSize="10.67" color="2E3138" padding="6 9"
             textAlign="center" lineHeight="1.0" backgroundColor="F5F6F8" borderRadius="2"
             border.color="D9DEE7" border.width="0.8">{text}</Text>
@@ -404,12 +365,11 @@
     <!-- One measured figure as a tinted tile: the value large in the accent,
          the unit beside it, the label and a note under. In a row, each stands
          in its own flexGrow column. -->
-    <!-- @kind card · @box tinted · @emph accent×1
-         @content one measured figure on a slide
-         @shape   a tile with a value and a label
-         @with    cols3
-         @not     stat-cell in a document deck -->
-    <Template name="kpi-tile">
+    <Template name="kpi-tile"
+              form="card"
+              doc="one measured figure on a slide (a tile with a value and a label)"
+              use="with cols3; not stat-cell in a document deck"
+              tags="tinted,accent">
       <VStack w="100%" gap="4" padding="12 13" group="true" flexGrow="1"
               backgroundColor="EEF2FA" borderRadius="2">
         <HStack w="100%" gap="4" alignItems="center">
@@ -424,12 +384,11 @@
 
     <!-- An icon over a short head and a note, centred: one of a row of
          three or four pillars, each a direct child of the row. -->
-    <!-- @kind card · @box tinted · @emph accent×1
-         @content one of the few things a slide argues
-         @shape   a column with a head and lines
-         @with    cols3
-         @not     process-node when the columns are a sequence -->
-    <Template name="pillar">
+    <Template name="pillar"
+              form="card"
+              doc="one of the few things a slide argues (a column with a head and lines)"
+              use="with cols3; not process-node when the columns are a sequence"
+              tags="tinted,accent">
       <VStack flexGrow="1" flexBasis="0" gap="6" padding="12 10" alignItems="center" group="true"
               backgroundColor="FFFFFF" borderRadius="2" border.color="D9DEE7" border.width="0.8">
         <Icon name="{icon}" size="18" color="1B4A9C" altText="{head}" />
@@ -440,61 +399,48 @@
 
     <!-- ==================== Schedule ====================
          A compact schedule: a head row of week labels, then one row per
-         phase — a label column and bars placed by width. The chapter passes
+         phase - a label column and bars placed by width. The chapter passes
          widths computed from the week pitch: a week cell is `weekW` wide and
          cells stand `gap` apart, so a bar from week a to b is
          (b − a) × (weekW + gap) + weekW wide, the spacer before the first bar
          (a − 1) × (weekW + gap), and the spacer between a bar ending at b and
          one starting at a2 is (a2 − b − 1) × (weekW + gap) + gap. -->
-    <!-- @kind layout · @box none · @emph none
-         @content the week scale of a schedule
-         @shape   a header row of weeks
-         @with    gantt-week
-         @not     — -->
-    <Template name="gantt-head">
+    <Template name="gantt-head"
+              form="layout"
+              doc="the week scale of a schedule (a header row of weeks)"
+              use="with gantt-week">
       <HStack gap="0" alignItems="center" w="100%" group="true">
         <Text class="meta-label" w="{labelW}" lineHeight="1.0" textVAlign="middle">{label}</Text>
         <Slot name="default" />
       </HStack>
     </Template>
-    <!-- @kind layout · @box none · @emph none
-         @content one week of that scale
-         @shape   a week cell
-         @with    gantt-head
-         @not     — -->
-
-    <Template name="gantt-week">
+    <Template name="gantt-week"
+              form="layout"
+              doc="one week of that scale (a week cell)"
+              use="with gantt-head">
       <Text class="meta-label" w="{w}" h="18" flexShrink="0" textAlign="center" lineHeight="1.0" textVAlign="middle"
             margin.right="{gap}" backgroundColor="F5F6F8">{text}</Text>
     </Template>
-    <!-- @kind layout · @box none · @emph none
-         @content one activity line of a schedule
-         @shape   a label + bars
-         @with    gantt-bar · gantt-gap
-         @not     — -->
-
-    <Template name="gantt-row">
+    <Template name="gantt-row"
+              form="layout"
+              doc="one activity line of a schedule (a label + bars)"
+              use="with gantt-bar · gantt-gap">
       <HStack gap="0" alignItems="center" w="100%" group="true">
         <Text class="h3" fontSize="11" w="{labelW}" lineHeight="1.0" textVAlign="middle">{label}</Text>
         <Slot name="default" />
       </HStack>
     </Template>
-    <!-- @kind layout · @box none · @emph none
-         @content the empty span before a bar
-         @shape   a spacer at week width
-         @with    gantt-row
-         @not     — -->
-
-    <Template name="gantt-gap">
+    <Template name="gantt-gap"
+              form="layout"
+              doc="the empty span before a bar (a spacer at week width)"
+              use="with gantt-row">
       <VStack w="{w}" h="18" flexShrink="0" />
     </Template>
-    <!-- @kind card · @box filled · @emph part colour
-         @content one activity's span
-         @shape   a part-coloured bar over its weeks
-         @with    gantt-row
-         @not     — -->
-
-    <Template name="gantt-bar">
+    <Template name="gantt-bar"
+              form="card"
+              doc="one activity's span (a part-coloured bar over its weeks)"
+              use="with gantt-row"
+              tags="filled,part">
       <Text class="{tone}" w="{w}" flexShrink="0" lineHeight="1.0" textVAlign="middle">{text}</Text>
     </Template>
 

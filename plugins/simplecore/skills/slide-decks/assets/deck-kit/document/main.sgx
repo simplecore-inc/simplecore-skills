@@ -18,23 +18,11 @@
   <Import src="templates/page.xml" />
   <Import src="templates/figures.xml" />
 
-  <!-- 장 순서 = 인쇄 순서. 앞자리는 부 번호이고, x00 은 그 부의 간지다.
-       아래는 모양을 보이는 예시이며, 실제 목록은 덱마다 다르다. -->
-  <Import src="chapters/00-표지.xml" />
-  <Import src="chapters/01-목차.xml" />
-
-  <Import src="chapters/100-간지-1부.xml" />
-  <Import src="chapters/1101-1장-개요.xml" />
-  <Import src="chapters/1102-1장-본문.xml" />
-  <Import src="chapters/1201-2장-개요.xml" />
-
-  <Import src="chapters/200-간지-2부.xml" />
-  <Import src="chapters/2101-1장-개요.xml" />
-  <Import src="chapters/2102-1장-본문.xml" />
-
-  <!-- 부록. 본문 쪽수 밖이며 「부록 - n」으로 따로 센다. 표 부록과 캡처 부록은
-       원고에서 생성하므로, 생성기가 쓰는 파일은 손으로 고치지 않는다. -->
-  <Import src="chapters/1000-부록-간지.xml" />
-  <Import src="chapters/1011-부록A-요구사항-추적.xml" />
-  <Import src="chapters/1012-부록B-화면목록.xml" />
+  <!-- The page order is the import order, so a section added between two
+       others takes a letter (02a-…) rather than renumbering the folder. Name a
+       file after its section; two digits keep the folder in reading order. -->
+  <Import src="chapters/01-cover.xml" />      <!-- cover and contents -->
+  <Import src="chapters/02-divider.xml" />    <!-- a part divider -->
+  <Import src="chapters/03-body.xml" />       <!-- one file per section, a few pages each -->
+  <Import src="chapters/90-annex.xml" />      <!-- the annex and its own divider -->
 </SlideGlance>

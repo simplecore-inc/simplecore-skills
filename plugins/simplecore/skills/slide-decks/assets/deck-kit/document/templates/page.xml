@@ -1,13 +1,13 @@
 <Fragment>
   <!--
-    Page shells. Every page is one <Use> of a template below — the running
+    Page shells. Every page is one <Use> of a template below - the running
     head, the rules and the margins exist in exactly one place.
 
     Every template that stands inside a 부 takes `p`, the part index 1~8. It
     is the only thing a chapter file says about colour: `p` picks the master
     (`BODY-4`), the running head's numeral, the divider's ink and the section
-    bars on the page. A page that belongs to no part — the third contents
-    page, every 별첨 page — passes 0, which resolves to the document's own
+    bars on the page. A page that belongs to no part - the third contents
+    page, every 별첨 page - passes 0, which resolves to the document's own
     navy.
 
     The running head is identical on every content page:
@@ -21,10 +21,10 @@
     Three text rows and one hairline, the first two rows sitting on the grey
     panel the BODY master draws. `evalItem` and `reqs` are the evaluation item
     and the requirement IDs the page answers (서식 7 조견표 / 붙임 1 심사기준).
-    Pass "—" where the part carries no score rather than dropping the field: a
+    Pass "-" where the part carries no score rather than dropping the field: a
     head that changes shape between pages is the thing this template prevents.
 
-    `part` is the part's name without its numeral — 「기술 및 기능」, not
+    `part` is the part's name without its numeral - 「기술 및 기능」, not
     「Ⅳ. 기술 및 기능」. The numeral is `p`, set beside it in colour.
   -->
   <Templates>
@@ -34,12 +34,10 @@
          folio: 유의사항 14 leaves a 표지 out of the page count. Everything
          on it is reversed out of the image, so the type is white and there
          is no rule and no tint anywhere. -->
-    <!-- @kind reserved · @box filled · @emph none
-         @content the artwork cover
-         @shape   absolute text over a brand image
-         @with    —
-         @not     the submitted copy opens with cover; this one is the alternative -->
-    <Template name="cover-art">
+    <Template name="cover-art"
+              doc="the artwork cover (absolute text over a brand image)"
+              use="not the submitted copy opens with cover; this one is the alternative"
+              tags="reserved,filled">
       <Slide master="COVER-ART">
         <Layer w="100%" h="1000">
           <Text class="cover-badge" x="535" y="159" w="197" h="47"
@@ -59,15 +57,14 @@
          and a deep one across the foot; the foot band is the ground the
          제안사 · 제출일 block is reversed out of, which is why that block
          sets its own white and the rest of the page does not. -->
-    <!-- @kind shell · @box filled · @emph part colour
-         @content the 서식 1 cover
-         @shape   navy head and foot bands
-         @with    —
-         @not     cover-art is the artwork alternative and only one of the two is used -->
-    <Template name="cover">
+    <Template name="cover"
+              form="shell"
+              doc="the 서식 1 cover (navy head and foot bands)"
+              use="not cover-art is the artwork alternative and only one of the two is used"
+              tags="filled,part">
       <Slide master="COVER">
         <!-- 높이 1110·아래 여백 40 은 치수다. 발치 띠는 y=956 에서 시작하므로
-             글 상자가 1070 까지 내려와야 제안사·제출일 묶음이 띠 위에 얹힌다 —
+             글 상자가 1070 까지 내려와야 제안사·제출일 묶음이 띠 위에 얹힌다 -
              1000 에서 끊으면 흰 글자가 흰 바탕에 놓여 사라진다. -->
         <VStack padding.left="56" padding.right="56"
                 padding.top="196" padding.bottom="40" gap="0" h="1110">
@@ -78,16 +75,15 @@
 
     <!-- ============================ 간지 ============================
          The part divider. The PART master carries what is the same on all
-         eight — the project name set against the top margin, the rule that
+         eight - the project name set against the top margin, the rule that
          runs in from the left margin to meet it, and the full-bleed foot
-         band — each in that part's colour. What the page passes is what
+         band - each in that part's colour. What the page passes is what
          differs: the numeral, the name, the lede and the chapter list. -->
-    <!-- @kind shell · @box none · @emph part colour
-         @content a 부 divider
-         @shape   kicker + numeral + title + rule + lede + chapter foot
-         @with    part-foot
-         @not     — -->
-    <Template name="part">
+    <Template name="part"
+              form="shell"
+              doc="a 부 divider (kicker + numeral + title + rule + lede + chapter foot)"
+              use="with part-foot"
+              tags="part">
       <Slide master="PART-{p}">
         <VStack padding.left="56" padding.right="57"
                 padding.top="314" padding.bottom="150" gap="0" h="100%">
@@ -111,16 +107,14 @@
 
     <!-- ============================= 차례 =============================
          Three pages, and they do not share a ground. The first two stand on
-         the brand artwork, whose shapes crowd one edge — so `padLeft` and
+         the brand artwork, whose shapes crowd one edge - so `padLeft` and
          `padRight` move the text block to the free side and the two pages
          face each other. The third carries tables across the whole text
          block and stands on PLAIN instead. -->
-    <!-- @kind shell · @box none · @emph none
-         @content a contents page
-         @shape   kicker + title + hairline + rows
-         @with    toc-part · toc-row
-         @not     — -->
-    <Template name="toc">
+    <Template name="toc"
+              form="shell"
+              doc="a contents page (kicker + title + hairline + rows)"
+              use="with toc-part · toc-row">
       <Slide master="{master}">
         <VStack padding.left="{padLeft}" padding.right="{padRight}"
                 padding.top="64" padding.bottom="58" gap="0" h="100%">
@@ -141,12 +135,11 @@
     </Template>
 
     <!-- ========================= 본문 (표준 페이지) ========================= -->
-    <!-- @kind shell · @box none · @emph part colour
-         @content a body page
-         @shape   running head + a 16px-gap content stack
-         @with    every body shape
-         @not     — -->
-    <Template name="page">
+    <Template name="page"
+              form="shell"
+              doc="a body page (running head + a 16px-gap content stack)"
+              use="with every body shape"
+              tags="part">
       <Slide master="BODY-{p}">
         <VStack padding.left="56" padding.right="56"
                 padding.top="64" padding.bottom="58" gap="0" h="100%">
@@ -154,7 +147,7 @@
                sub="{sub}" evalItem="{evalItem}" reqs="{reqs}" />
           <!-- 본문은 위에서부터 흐르고 아래 고정이 없다. 여기에 `fill` 을 두면
                내용이 바닥 여백까지 닿아 그 여백이 두 번 세어지고(동작 20), 꽉 찬
-               쪽마다 자동 맞춤이 표를 눌러 넣는다 — 일곱 쪽이 그렇게 눌려 있었다.
+               쪽마다 자동 맞춤이 표를 눌러 넣는다 - 일곱 쪽이 그렇게 눌려 있었다.
                margin.top 은 절 템플릿의 margin.top 과 겹쳐 쌓이므로 여기서는
                머리글과의 최소 간격만 잡는다. -->
           <VStack gap="16" w="100%" margin.top="10">
@@ -172,32 +165,29 @@
          마스터의 쪽 번호와 같은 자리이고, x·w 는 본문 폭이라 가로 가운데가
          맞는다.
 
-         **Layer 는 자식 높이를 합으로 잰다** — 절대 배치인데도 자동 맞춤은
+         **Layer 는 자식 높이를 합으로 잰다** - 절대 배치인데도 자동 맞춤은
          겹침을 보지 않고 더한다. 그래서 쪽 틀에 h="100%" 를 주면 폴리오
          16px 만큼 쪽을 넘겨 AUTOFIT_OVERFLOW 가 난다. 쪽 틀 높이를 1106 으로
          못 박아 합이 쪽 높이 1122 가 되게 하고, 아래 여백은 본문 쪽과 같은
          자리(64~1048)를 지키도록 16 씩 줄여 잡았다. -->
-    <!-- @kind annex · @box none · @emph none
-         @content the annex's own page number
-         @shape   an absolute folio line
-         @with    annex-*
-         @not     the master's SlideNumber counts the whole document and cannot be used here -->
-    <Template name="annex-folio">
+    <Template name="annex-folio"
+              form="annex"
+              doc="the annex's own page number (an absolute folio line)"
+              use="with annex-*; not the master's SlideNumber counts the whole document and cannot be used here">
       <Text x="56" y="1066" w="682" h="16" fontFamily="Pretendard" fontSize="10.67"
             color="6B7280" textAlign="center" lineHeight="1.0">{folio}</Text>
     </Template>
 
     <!-- ========================= 별첨 간지 =========================
          본문의 간지(`part`)와 같은 구성이되 PART 가 아니라 PLAIN 마스터에
-         선다 — 별첨은 자기 쪽 번호를 들므로 같은 모양에 본문 꼬리말만 없다.
+         선다 - 별첨은 자기 쪽 번호를 들므로 같은 모양에 본문 꼬리말만 없다.
          로마 숫자 자리는
-         부 번호가 아니라 「별첨 1」이 든다 — 별첨은 여럿일 수 있다. -->
-    <!-- @kind annex · @box none · @emph accent
-         @content an annex divider
-         @shape   part shape on PLAIN with its own folio
-         @with    annex-folio
-         @not     — -->
-    <Template name="annex-part">
+         부 번호가 아니라 「별첨 1」이 든다 - 별첨은 여럿일 수 있다. -->
+    <Template name="annex-part"
+              form="annex"
+              doc="an annex divider (part shape on PLAIN with its own folio)"
+              use="with annex-folio"
+              tags="accent">
       <Slide master="PLAIN">
         <Layer w="100%" h="100%">
           <VStack x="0" y="0" w="100%" h="1106"
@@ -218,12 +208,10 @@
     </Template>
 
     <!-- 별첨의 안내·색인 쪽. 차례(`toc`)와 같은 모양이되 별첨 쪽 번호를 든다 -->
-    <!-- @kind annex · @box none · @emph none
-         @content an annex index page
-         @shape   toc shape with an annex folio
-         @with    annex-folio
-         @not     — -->
-    <Template name="annex-index">
+    <Template name="annex-index"
+              form="annex"
+              doc="an annex index page (toc shape with an annex folio)"
+              use="with annex-folio">
       <Slide master="PLAIN">
         <Layer w="100%" h="100%">
           <VStack x="0" y="0" w="100%" h="1092"
@@ -247,12 +235,10 @@
     <!-- 별첨의 본문 쪽. 본문 `page` 와 같은 러닝헤드를 쓰되 꼬리말 없는 PLAIN
          마스터에 서고 쪽 번호는 별첨 계열을 든다. 오른쪽 상자의 첫 줄 라벨이
          평가항목이 아니라 쪽이 정하는 값인 것만 다르다 -->
-    <!-- @kind annex · @box none · @emph none
-         @content an annex body page
-         @shape   annex head + an 18px-gap stack
-         @with    annex-head
-         @not     — -->
-    <Template name="annex-page">
+    <Template name="annex-page"
+              form="annex"
+              doc="an annex body page (annex head + an 18px-gap stack)"
+              use="with annex-head">
       <Slide master="ANNEX">
         <Layer w="100%" h="100%">
           <VStack x="0" y="0" w="100%" h="1106"
@@ -271,12 +257,10 @@
     </Template>
 
     <!-- 별첨의 마지막 본문 쪽. 내용 영역 아래 여백에 종결 표시를 둔다. -->
-    <!-- @kind annex · @box none · @emph none
-         @content the annex's closing body page
-         @shape   annex-page + 「- 끝 -」
-         @with    annex-head
-         @not     — -->
-    <Template name="annex-last-page">
+    <Template name="annex-last-page"
+              form="annex"
+              doc="the annex's closing body page (annex-page + 「- 끝 -」)"
+              use="with annex-head">
       <Slide master="ANNEX">
         <Layer w="100%" h="100%">
           <VStack x="0" y="0" w="100%" h="1092"
@@ -299,12 +283,10 @@
     <!-- ===================== 별첨 · 와이어프레임 =====================
          별첨은 자기 쪽 번호를 들므로 꼬리말 없는 PLAIN 마스터에 얹는다. 한 쪽에 프레임 한 장과 그 설명을
          놓고, 설명은 그림에 그려 넣지 않고 이 쪽의 글로 적는다. -->
-    <!-- @kind wireframe · @box none · @emph none
-         @content a wireframe frame page
-         @shape   wf-head + a 16px-gap stack + folio
-         @with    wf-key
-         @not     — -->
-    <Template name="wf-page">
+    <Template name="wf-page"
+              form="wireframe"
+              doc="a wireframe frame page (wf-head + a 16px-gap stack + folio)"
+              use="with wf-key">
       <Slide master="ANNEX">
         <Layer w="100%" h="100%">
           <VStack x="0" y="0" w="100%" h="1106"
@@ -322,12 +304,10 @@
     </Template>
 
     <!-- 별첨 1의 마지막 와이어프레임 쪽. 내용 영역 아래 여백에 종결 표시를 둔다. -->
-    <!-- @kind deprecated · @box none · @emph none
-         @content the wireframe annex's closing page
-         @shape   wf-page + 「- 끝 -」
-         @with    —
-         @not     the generator closes the annex with annex-end -->
-    <Template name="wf-last-page">
+    <Template name="wf-last-page"
+              doc="the wireframe annex's closing page (wf-page + 「- 끝 -」)"
+              use="not the generator closes the annex with annex-end"
+              tags="deprecated">
       <Slide master="ANNEX">
         <Layer w="100%" h="100%">
           <VStack x="0" y="0" w="100%" h="1092"
@@ -350,12 +330,11 @@
          제출본이 여기서 끝난다는 표시. 뒤에 붙어 있어야 할 것이 빠진 채
          제출됐는지를 심사위원이 이 쪽 하나로 판정한다. 표지와 짝이 되도록
          END 마스터의 브랜드 그림 위에 선다. -->
-    <!-- @kind annex · @box filled · @emph accent
-         @content the page that says the submission ends here
-         @shape   brand image + 끝 mark
-         @with    —
-         @not     — -->
-    <Template name="annex-end">
+    <Template name="annex-end"
+              form="annex"
+              doc="the page that says the submission ends here (brand image + 끝 mark)"
+              
+              tags="filled,accent">
       <Slide master="END">
         <Layer w="100%" h="100%">
           <!-- The END master's navy panel holds the project name at y 336~627; the closing
@@ -378,16 +357,15 @@
     </Template>
 
     <!-- ============================ 러닝헤드 ============================
-         왼쪽 두 줄은 BODY 마스터가 그린 회색 판 위에 선다 — 판이 이미 이
+         왼쪽 두 줄은 BODY 마스터가 그린 회색 판 위에 선다 - 판이 이미 이
          묶음을 가두므로 오른쪽 평가항목·요구사항 쌍에는 따로 상자를 두지
          않는다. 오른쪽 칸의 위·아래 여백 12 는 장식이 아니라 치수다: 이
          행의 높이를 48 로 만들어 쪽 제목이 늘 y=128 에 오게 한다. -->
-    <!-- @kind head · @box tinted · @emph part colour
-         @content the running head every content page carries
-         @shape   part line + chapter path + two meta rows + title + claim + hairline
-         @with    page
-         @not     a field with nothing to say takes 「해당 없음」 rather than disappearing -->
-    <Template name="runhead">
+    <Template name="runhead"
+              form="head"
+              doc="the running head every content page carries (part line + chapter path + two meta rows + title + claim + hairline)"
+              use="with page; not a field with nothing to say takes 「해당 없음」 rather than disappearing"
+              tags="tinted,part">
       <VStack gap="0" w="100%" group="true">
         <HStack alignItems="start" justifyContent="spaceBetween" w="100%">
           <VStack gap="5" w="max" padding.top="8" padding.left="10">
@@ -406,12 +384,10 @@
     </Template>
 
     <!-- ============================ 단 구성 ============================ -->
-    <!-- @kind layout · @box none · @emph none
-         @content two equal columns whose cards share a bottom edge
-         @shape   HStack, stretch, gap 22
-         @with    cards
-         @not     col2-top when a column holds a table -->
-    <Template name="col2">
+    <Template name="col2"
+              form="layout"
+              doc="two equal columns whose cards share a bottom edge (HStack, stretch, gap 22)"
+              use="with cards; not col2-top when a column holds a table">
       <HStack gap="22" alignItems="stretch" w="100%">
         <VStack flexGrow="1" flexBasis="0" gap="14"><Slot name="left" /></VStack>
         <VStack flexGrow="1" flexBasis="0" gap="14"><Slot name="right" /></VStack>
@@ -420,12 +396,10 @@
 
     <!-- 표를 놓는 2단. stretch 로 단 높이를 맞추면 표 틀이 늘어나고,
          렌더러가 행 높이를 틀에 맞춰 비례 확대해 아래 내용을 덮는다. -->
-    <!-- @kind layout · @box none · @emph none
-         @content two equal columns aligned to the top
-         @shape   HStack, start, gap 22
-         @with    tables · lists
-         @not     col2 when both columns hold cards -->
-    <Template name="col2-top">
+    <Template name="col2-top"
+              form="layout"
+              doc="two equal columns aligned to the top (HStack, start, gap 22)"
+              use="with tables · lists; not col2 when both columns hold cards">
       <HStack gap="22" alignItems="start" w="100%">
         <VStack flexGrow="1" flexBasis="0" gap="14"><Slot name="left" /></VStack>
         <VStack flexGrow="1" flexBasis="0" gap="14"><Slot name="right" /></VStack>
@@ -434,12 +408,10 @@
 
     <!-- 좌우 콘텐츠를 독립 열이 아니라 한 행의 직접 자식으로 배치한다.
          두 항목의 자연 높이 중 큰 값으로 행을 정하고 짧은 항목을 늘린다. -->
-    <!-- @kind layout · @box none · @emph none
-         @content two blocks in one row, the shorter stretched to the taller
-         @shape   HStack, stretch, caller's gap
-         @with    badge-panel · key-panel
-         @not     col2 when the two are independent columns -->
-    <Template name="equal-pair">
+    <Template name="equal-pair"
+              form="layout"
+              doc="two blocks in one row, the shorter stretched to the taller (HStack, stretch, caller's gap)"
+              use="with badge-panel · key-panel; not col2 when the two are independent columns">
       <HStack gap="{gap}" alignItems="stretch" w="100%">
         <Slot name="left" />
         <Slot name="right" />
@@ -448,12 +420,10 @@
 
     <!-- 좁은 왼쪽 레일 + 넓은 본문. 요구사항 번호나 단계 이름이 본문 옆에
          서야 할 때 쓴다. 쪽마다 같은 대칭 2단이 이어지지 않게 하는 자리다 -->
-    <!-- @kind layout · @box none · @emph none
-         @content a narrow rail beside a wide body
-         @shape   168 + 24 + max
-         @with    index-rail · anchor-cell · paired-note
-         @not     col2 when the two sides are equals -->
-    <Template name="col-rail">
+    <Template name="col-rail"
+              form="layout"
+              doc="a narrow rail beside a wide body (168 + 24 + max)"
+              use="with index-rail · anchor-cell · paired-note; not col2 when the two sides are equals">
       <HStack gap="24" alignItems="stretch" w="100%">
         <VStack w="168" flexShrink="0" gap="12"><Slot name="rail" /></VStack>
         <VStack w="max" gap="12"><Slot name="body" /></VStack>
@@ -464,19 +434,17 @@
          세로로 긴 도식 하나를 300px 단에 세우고 본문을 그 옆 354px 단에 놓는다.
          300 + 28 + 354 = 682 이라 본문 폭에 정확히 맞는다.
 
-         도식은 520 단위 판에 그린 것만 들어간다 — `fig-…` 템플릿이 판 폭에서
+         도식은 520 단위 판에 그린 것만 들어간다 - `fig-…` 템플릿이 판 폭에서
          자기 자리를 정하므로 1200 판을 여기에 넣으면 682px 짜리가 300px 단에
          들어가 밖으로 넘친다. 어느 판에 그렸는지는 그림 파일이 들고 있고
          `build.ts`가 읽는다.
 
          `figure` 슬롯에는 도식 하나만 둔다. 그 아래 붙일 주석은 본문 슬롯이
          아니라 도식 슬롯에 이어 놓아야 캡션과 같은 단에 선다. -->
-    <!-- @kind layout · @box none · @emph none
-         @content a vertical figure at the left with the body beside it
-         @shape   300 + 28 + 354
-         @with    fig-* on a 520 board
-         @not     a 1200-board figure overflows this column -->
-    <Template name="fig-col-left">
+    <Template name="fig-col-left"
+              form="layout"
+              doc="a vertical figure at the left with the body beside it (300 + 28 + 354)"
+              use="with fig-* on a 520 board; not a 1200-board figure overflows this column">
       <HStack gap="28" alignItems="start" w="100%">
         <VStack w="300" flexShrink="0" gap="10"><Slot name="figure" /></VStack>
         <VStack w="354" gap="14"><Slot name="default" /></VStack>
@@ -485,12 +453,10 @@
 
     <!-- 같은 짜임을 좌우로 뒤집은 것. 이어지는 두 쪽이 같은 쪽에 도식을 세우면
          펼친 면이 한쪽으로 쏠리므로 번갈아 쓴다. -->
-    <!-- @kind layout · @box none · @emph none
-         @content the same, mirrored, so two spreads do not lean the same way
-         @shape   354 + 28 + 300
-         @with    fig-* on a 520 board
-         @not     — -->
-    <Template name="fig-col-right">
+    <Template name="fig-col-right"
+              form="layout"
+              doc="the same, mirrored, so two spreads do not lean the same way (354 + 28 + 300)"
+              use="with fig-* on a 520 board">
       <HStack gap="28" alignItems="start" w="100%">
         <VStack w="354" gap="14"><Slot name="default" /></VStack>
         <VStack w="300" flexShrink="0" gap="10"><Slot name="figure" /></VStack>
@@ -498,16 +464,14 @@
     </Template>
 
     <!-- 세로 도식 두 장을 나란히. 327 + 28 + 327 = 682.
-         비교하는 두 그림에만 쓴다 — 서로 무관한 두 그림을 나란히 두면 읽는
+         비교하는 두 그림에만 쓴다 - 서로 무관한 두 그림을 나란히 두면 읽는
          사람이 없는 대응을 찾는다. 두 그림은 같은 높이여야 하고, 그러려면
          두 판의 높이를 같게 그린다. `claim` 슬롯의 한 줄이 무엇을 견주는지
          말하고, 각 도식의 캡션은 그 한쪽만 설명한다. -->
-    <!-- @kind layout · @box none · @emph none
-         @content two figures compared side by side
-         @shape   claim + 327 + 28 + 327
-         @with    fig-* on a 520 board
-         @not     only for two figures that are compared — unrelated neighbours make the reader look for a correspondence -->
-    <Template name="fig-pair">
+    <Template name="fig-pair"
+              form="layout"
+              doc="two figures compared side by side (claim + 327 + 28 + 327)"
+              use="with fig-* on a 520 board; not only for two figures that are compared - unrelated neighbours make the reader look for a correspondence">
       <VStack gap="12" w="100%">
         <Slot name="claim" />
         <HStack gap="28" alignItems="start" w="100%">
@@ -519,14 +483,12 @@
     </Template>
 
     <!-- 전면 도식 두 장을 위아래로. 앞 그림의 결과가 뒤 그림의 입력일 때만
-         쓴다 — 이어지지 않는 두 그림을 겹쳐 쌓으면 쪽이 그냥 길어진다.
+         쓴다 - 이어지지 않는 두 그림을 겹쳐 쌓으면 쪽이 그냥 길어진다.
          `bridge` 는 두 그림을 잇는 한 줄이고, 비워 두면 그냥 간격이 된다. -->
-    <!-- @kind layout · @box none · @emph none
-         @content two full-width figures where the first one's result is the second one's input
-         @shape   top + bridge + bottom
-         @with    fig-bridge
-         @not     two unrelated figures stacked only make the page longer -->
-    <Template name="fig-stack">
+    <Template name="fig-stack"
+              form="layout"
+              doc="two full-width figures where the first one's result is the second one's input (top + bridge + bottom)"
+              use="with fig-bridge; not two unrelated figures stacked only make the page longer">
       <VStack gap="14" w="100%">
         <Slot name="top" />
         <Slot name="bridge" />
@@ -536,22 +498,18 @@
 
     <!-- 도식과 본문을 잇는 한 줄. 가운데 맞춤에 강조색이라 두 그림 사이에서
          화살표 노릇을 한다. -->
-    <!-- @kind figure · @box none · @emph accent×1
-         @content the line that joins two figures
-         @shape   one centred accent line
-         @with    fig-stack
-         @not     leave it empty and the stack is just a gap -->
-    <Template name="fig-bridge">
+    <Template name="fig-bridge"
+              form="figure"
+              doc="the line that joins two figures (one centred accent line)"
+              use="with fig-stack; not leave it empty and the stack is just a gap"
+              tags="accent">
       <Text class="body-sm" textAlign="center" w="100%"
             color="1B4A9C" lineHeight="1.4">{text}</Text>
     </Template>
-    <!-- @kind layout · @box none · @emph none
-         @content three equal columns whose cards share a bottom edge
-         @shape   HStack, stretch, gap 18
-         @with    cards
-         @not     col3-top when a column holds a table -->
-
-    <Template name="col3">
+    <Template name="col3"
+              form="layout"
+              doc="three equal columns whose cards share a bottom edge (HStack, stretch, gap 18)"
+              use="with cards; not col3-top when a column holds a table">
       <HStack gap="18" alignItems="stretch" w="100%">
         <VStack flexGrow="1" flexBasis="0" gap="12"><Slot name="a" /></VStack>
         <VStack flexGrow="1" flexBasis="0" gap="12"><Slot name="b" /></VStack>
@@ -560,12 +518,10 @@
     </Template>
 
     <!-- 표를 놓는 3단. col2-top 과 같은 까닭으로 start 정렬이다. -->
-    <!-- @kind layout · @box none · @emph none
-         @content three equal columns aligned to the top
-         @shape   HStack, start, gap 18
-         @with    tables
-         @not     — -->
-    <Template name="col3-top">
+    <Template name="col3-top"
+              form="layout"
+              doc="three equal columns aligned to the top (HStack, start, gap 18)"
+              use="with tables">
       <HStack gap="18" alignItems="start" w="100%">
         <VStack flexGrow="1" flexBasis="0" gap="12"><Slot name="a" /></VStack>
         <VStack flexGrow="1" flexBasis="0" gap="12"><Slot name="b" /></VStack>

@@ -208,7 +208,9 @@ async function writeFigureTemplates(): Promise<void> {
         ? path.join(FIGURE_DIR, name.replace(/\.svg$/, ".png"))
         : path.join(DIAGRAM_DIR, name);
     rows.push(
-      `    <Template name="fig-${id}">\n` +
+      `    <Template name="fig-${id}" form="figure" tags="generated,figure"\n` +
+      `             doc="the drawn figure ${id} at its board's placed width, with a numbered caption"\n` +
+      `             use="in a page slot; not cap-${id}, which places a screen capture">\n` +
       `      <VStack gap="6" w="${placed}" flexShrink="0">\n` +
       `        <Image src="${src}" w="${placed}" h="${h}" altText="{caption}" />\n` +
       // The caption sits under a figure that spans the whole text block, so it
@@ -231,7 +233,9 @@ async function writeFigureTemplates(): Promise<void> {
     if (board === COLUMN_WIDTH_UNITS) {
       const ph = Math.round(COLUMN_PAIR_W * ratio);
       rows.push(
-        `    <Template name="fig-${id}-pair">\n` +
+        `    <Template name="fig-${id}-pair" form="figure" tags="generated,figure,column"\n` +
+        `             doc="the drawn figure ${id} at the paired-column width"\n` +
+        `             use="in a column of a two-column page; not fig-${id}, which spans the text block">\n` +
         `      <VStack gap="6" w="${COLUMN_PAIR_W}" flexShrink="0">\n` +
         `        <Image src="${src}" w="${COLUMN_PAIR_W}" h="${ph}" altText="{caption}" />\n` +
         `        <Text class="caption" flexShrink="0" textAlign="center" lineHeight="1.2">` +
@@ -261,7 +265,9 @@ async function writeFigureTemplates(): Promise<void> {
     pw = Math.round(pw);
     ph = Math.round(ph);
     rows.push(
-      `    <Template name="cap-${id}">\n` +
+      `    <Template name="cap-${id}" form="figure" tags="generated,capture"\n` +
+      `             doc="the screen capture ${id}, centred with a numbered caption"\n` +
+      `             use="in a page slot; not fig-${id}, which places a drawn figure">\n` +
       `      <VStack gap="6" w="${block}" alignItems="center" flexShrink="0">\n` +
       `        <Image src="${path.join(CASE_DIR, name)}" w="${pw}" h="${ph}" altText="{caption}" />\n` +
       `        <Text class="caption" flexShrink="0" textAlign="center" lineHeight="1.2">` +
@@ -406,7 +412,10 @@ ${style("bar-stub-key", 'backgroundColor="F5F6F8" padding="0 16" h="32" w="264"'
   </Styles>
 
   <Templates>
-    <Template name="partline">
+    <Template name="partline"
+              form="row" tags="generated,runhead"
+              doc="the running head's part line: the leading zero, the part numeral in that part's colour, and its name"
+              use="in the page template's head panel; not a heading - it names where the reader is, not what the page says">
       <Choose>
 ${PARTS.filter((q) => q.p > 0).map(branch).join("\n")}
         <Otherwise><Text class="runhead-part" w="max" textVAlign="middle">{part}</Text></Otherwise>

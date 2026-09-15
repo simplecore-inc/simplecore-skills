@@ -259,8 +259,9 @@ The one exception is a code value standing as a label (a requirement id in a bad
 bar's stub, an evidence number, a frame id), looked up rather than read. `typefloor.py`
 enforces it. **A slide deck is set for the room, not for paper**, and the sizes it is set
 at are a judgement about one deck's audience and one room, so the deck declares them
-(`type` in the config: the floor, the body, the region heading and the code label) and the
-type-floor check holds prose to the declared body size rather than to the floor. Settle
+(`type` in the config: the floor prose is held to, the region heading, and the lower floor
+a looked-up code value may print at) and the type-floor check reads them rather than
+carrying numbers of its own. Settle
 them by reading the deck on the screen it will be shown on: one deck could not be read at
 7.2pt and read as too large for what a slide carries at 10pt, and settled at 8.25pt body
 with 9.75pt region headings. A slide then carries about half the characters a document
@@ -719,8 +720,9 @@ param's name - so choosing becomes looking, which is the part a table could neve
 do.
 
 **What the server does not judge stays a check of the deck's own**: that every
-live definition carries a note, that no two claim the same purpose, and that a
-`use` naming a neighbour names one the deck actually has. The last fires the
+live template carries a note - a style or a master takes one when its name does not
+already say what it is - that no two claim the same purpose, and that a `use` naming
+a neighbour names one the deck actually has. The last fires the
 moment a component set is copied between decks - the second deck's set is a clone
 with its own layout names, so a neighbour named in the first points at nothing in
 the second, and sixteen of one deck's declarations did on the first run.

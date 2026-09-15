@@ -1,10 +1,20 @@
 <Fragment>
   <!--
-    Reusable blocks, cloned from the proposal deck (pptx/templates/components.xml)
-    with the inline body size raised one step to 11 px for the slide ladder.
+    Reusable blocks, cloned from the document deck's components with the inline
+    body size raised one step for the slide ladder.
     Presentation-only components live in deck.xml. Anything that appears on two
     pages lives here or there; a chapter file never draws a rule, a caption or
     a label by hand.
+
+    Every template says what it is for in its own attributes, and that is how
+    the next author finds it through the server: `doc` (what it is, one line,
+    phrased as the CONTENT's shape rather than the component's), `use` (when and
+    where to use it, naming the neighbour a wrong choice lands on), `form` (card,
+    row, band, section, layout, figure, page) and `tags` (comma-separated words
+    it is found by, including `reserved` and `deprecated`). None of them draws
+    anything. `<Style>` takes doc, use and tags; `<Master>` takes doc and use.
+    There is no catalogue file: `definition_find` ranks these and
+    `render_definition` draws one shape on its own.
 
     Components carry SHAPE ONLY. Every visible string - headings, labels,
     figures, tail lines - is a parameter the chapter passes; a template that
@@ -38,54 +48,48 @@
          alternate bullet skins. A rail binds one subject to its explanation;
          a numbered stage carries real order; a ratio exposes its denominator.
          All prose remains native editable text at the existing body size. -->
-    <!-- @kind section · @box none · @emph accent icon
-         @content a heading and the prose or list under it
-         @shape   icon heading + a 3px-gap slot
-         @with    copy-text · prose-list
-         @not     section when the region needs the standard gap above it -->
-    <Template name="copy-block">
+    <Template name="copy-block"
+              form="section"
+              doc="a heading and the prose or list under it (icon heading + a 3px-gap slot)"
+              use="with copy-text · prose-list; not section when the region needs the standard gap above it"
+              tags="accent">
       <VStack w="100%" gap="5">
         <Use template="h2" icon="{icon}" text="{head}" />
         <VStack w="100%" gap="3"><Slot name="default" /></VStack>
       </VStack>
     </Template>
-    <!-- @kind prose · @box none · @emph none
-         @content one paragraph of body prose
-         @shape   a single Text at the block's measure
-         @with    copy-block · section*
-         @not     three of these in a row is a page with no shape — the third one is a card -->
-    <Template name="copy-text">
+    <Template name="copy-text"
+              form="prose"
+              doc="one paragraph of body prose (a single Text at the block's measure)"
+              use="with copy-block · section*; not three of these in a row is a page with no shape - the third one is a card">
       <Text class="body-sm" w="100%">{bodyText}</Text>
     </Template>
-    <!-- @kind section · @box tinted · @emph accent icon
-         @content a heading and its prose set apart on a tint
-         @shape   icon heading + slot on F5F6F8
-         @with    col2 · col2-top
-         @not     one per column — two tinted panels side by side read as borderless cards -->
-    <Template name="copy-panel">
+    <Template name="copy-panel"
+              form="section"
+              doc="a heading and its prose set apart on a tint (icon heading + slot on F5F6F8)"
+              use="with cols2 · cols2-top; not one per column - two tinted panels side by side read as borderless cards"
+              tags="tinted,accent">
       <VStack w="100%" gap="8" padding="9 12" backgroundColor="F5F6F8" group="true" flexGrow="1">
         <Use template="h2" icon="{icon}" text="{head}" />
         <VStack w="100%" gap="4"><Slot name="default" /></VStack>
       </VStack>
     </Template>
-    <!-- @kind band · @box tinted · @emph accent formula
-         @content a formula and the terms that feed it
-         @shape   tinted band, label + formula + slot
-         @with    page
-         @not     ratio-band when the point is the denominator -->
-    <Template name="equation-band">
+    <Template name="equation-band"
+              form="band"
+              doc="a formula and the terms that feed it (tinted band, label + formula + slot)"
+              use="with page; not ratio-band when the point is the denominator"
+              tags="tinted,accent">
       <VStack w="100%" gap="8" padding="11 13" backgroundColor="EEF2FA" group="true">
         <Text class="meta-label">{head}</Text>
         <Text class="h2 kw" w="100%">{formula}</Text>
         <Slot name="default" />
       </VStack>
     </Template>
-    <!-- @kind row · @box none · @emph accent×1
-         @content one dated event: when it runs, how long, by what method, and what it cites
-         @shape   icon head + count + period + duration/method + body + reference
-         @with    col2 · section*
-         @not     stage when only the timing matters — this one carries the method and the citation -->
-    <Template name="event-detail">
+    <Template name="event-detail"
+              form="row"
+              doc="one dated event: when it runs, how long, by what method, and what it cites (icon head + count + period + duration/method + body + reference)"
+              use="with cols2 · section*; not stage when only the timing matters - this one carries the method and the citation"
+              tags="accent">
       <VStack w="100%" gap="7" group="true">
         <HStack w="100%" gap="8" alignItems="center">
           <Icon name="calendar-check" size="14" color="1B4A9C" altText="{head}" />
@@ -101,14 +105,13 @@
         <Text class="footnote" w="100%">{reference}</Text>
       </VStack>
     </Template>
-    <!-- A rail beside a body column. The icon aligns with the rail's own text —
+    <!-- A rail beside a body column. The icon aligns with the rail's own text -
          centred over left-set lines it reads as a stray glyph, not a heading. -->
-    <!-- @kind layout · @box none · @emph accent icon
-         @content a subject in a narrow rail beside its explanation
-         @shape   18px icon + 132px rail + body slot
-         @with    page
-         @not     index-rail when the rail indexes the page rather than naming a subject -->
-    <Template name="copy-rail">
+    <Template name="copy-rail"
+              form="layout"
+              doc="a subject in a narrow rail beside its explanation (18px icon + 132px rail + body slot)"
+              use="with page; not index-rail when the rail indexes the page rather than naming a subject"
+              tags="accent">
       <HStack w="100%" gap="24" alignItems="start">
         <VStack w="132" flexShrink="0" gap="7" alignItems="start">
           <Icon name="{icon}" size="18" color="1B4A9C" altText="{head}" />
@@ -118,12 +121,11 @@
         <VStack w="max" gap="5"><Slot name="default" /></VStack>
       </HStack>
     </Template>
-    <!-- @kind row · @box none · @emph accent numeral
-         @content a numbered stage opening a block of prose
-         @shape   an 18px accent numeral + head + slot
-         @with    col2 · col2-top
-         @not     step-row when the stage fits one line -->
-    <Template name="stage-detail">
+    <Template name="stage-detail"
+              form="row"
+              doc="a numbered stage opening a block of prose (an 18px accent numeral + head + slot)"
+              use="with cols2 · cols2-top; not step-row when the stage fits one line"
+              tags="accent">
       <HStack w="100%" gap="13" alignItems="start" group="true">
         <Text class="stat-value kw" fontSize="18" w="27" flexShrink="0">{no}</Text>
         <VStack w="max" gap="5">
@@ -132,12 +134,11 @@
         </VStack>
       </HStack>
     </Template>
-    <!-- @kind row · @box none · @emph accent×1
-         @content one numbered stage of a strip laid across the block
-         @shape   a small accent number + head + slot at cellW
-         @with    stage-strip
-         @not     stage-detail when the stages stack rather than run across -->
-    <Template name="stage-cell">
+    <Template name="stage-cell"
+              form="row"
+              doc="one numbered stage of a strip laid across the block (a small accent number + head + slot at cellW)"
+              use="with stage-strip; not stage-detail when the stages stack rather than run across"
+              tags="accent">
       <VStack w="{cellW}" gap="7" group="true">
         <HStack w="100%" gap="9" alignItems="center">
           <Text class="h3 kw" w="20" flexShrink="0">{no}</Text>
@@ -146,20 +147,17 @@
         <VStack w="100%" gap="4"><Slot name="default" /></VStack>
       </VStack>
     </Template>
-    <!-- @kind layout · @box none · @emph none
-         @content stages laid across the block
-         @shape   HStack, start, gap 14
-         @with    stage-cell · flow-step · num-step
-         @not     col3 when the three are not a sequence -->
-    <Template name="stage-strip">
+    <Template name="stage-strip"
+              form="layout"
+              doc="stages laid across the block (HStack, start, gap 14)"
+              use="with stage-cell · flow-step · num-step; not cols3 when the three are not a sequence">
       <HStack w="100%" gap="14" alignItems="start"><Slot name="default" /></HStack>
     </Template>
-    <!-- @kind row · @box none · @emph accent numerator
-         @content a ratio with its denominator exposed
-         @shape   head + numerator over a rule over denominator + suffix
-         @with    section*
-         @not     stat-cell when the figure needs no denominator -->
-    <Template name="ratio-band">
+    <Template name="ratio-band"
+              form="row"
+              doc="a ratio with its denominator exposed (head + numerator over a rule over denominator + suffix)"
+              use="with section*; not stat-cell when the figure needs no denominator"
+              tags="accent">
       <HStack w="100%" gap="24" alignItems="center" group="true">
         <VStack w="154" flexShrink="0" gap="5">
           <Text class="h2">{head}</Text>
@@ -173,12 +171,11 @@
         <Text class="h3" w="60" flexShrink="0">{suffix}</Text>
       </HStack>
     </Template>
-    <!-- @kind row · @box none · @emph accent arrow
-         @content a condition and the branch it opens
-         @shape   a labelW column + accent arrow + slot
-         @with    section*
-         @not     choice-card when the branches are alternatives to weigh -->
-    <Template name="branch-detail">
+    <Template name="branch-detail"
+              form="row"
+              doc="a condition and the branch it opens (a labelW column + accent arrow + slot)"
+              use="with section*; not choice-card when the branches are alternatives to weigh"
+              tags="accent">
       <HStack w="100%" gap="14" alignItems="start" group="true">
         <VStack w="{labelW}" flexShrink="0" gap="5">
           <Text class="h3 kw" w="100%">{head}</Text>
@@ -191,34 +188,28 @@
 
     <!-- Flat prose regions for related material consolidated onto one page.
          Explicit editable markers avoid the renderer's escaped native bullet. -->
-    <!-- @kind section · @box none · @emph accent icon
-         @content a heading whose body is flat prose
-         @shape   icon heading + a 5px-gap slot
-         @with    copy-text
-         @not     copy-block when the body is a list -->
-    <Template name="section-compact">
+    <Template name="section-compact"
+              form="section"
+              doc="a heading whose body is flat prose (icon heading + a 5px-gap slot)"
+              use="with copy-text; not copy-block when the body is a list"
+              tags="accent">
       <VStack gap="5" w="100%">
         <Use template="h2" icon="{icon}" text="{text}" />
         <Slot name="default" />
       </VStack>
     </Template>
-    <!-- @kind layout · @box none · @emph none
-         @content the container every list row sits in
-         @shape   a VStack that owns the row gap
-         @with    dot-row · num-row · prose-item
-         @not     never set the gap on a wrapper of your own -->
-
-    <Template name="prose-list">
+    <Template name="prose-list"
+              form="layout"
+              doc="the container every list row sits in (a VStack that owns the row gap)"
+              use="with dot-row · num-row · prose-item; not never set the gap on a wrapper of your own">
       <VStack gap="2" w="100%">
         <Slot name="default" />
       </VStack>
     </Template>
-    <!-- @kind list · @box none · @emph none
-         @content a list row whose mark the page supplies — a number, a letter, a code
-         @shape   a right-aligned 20px mark column
-         @with    prose-list
-         @not     a bullet is not a mark; the unordered list is dot-row -->
-    <Template name="prose-item">
+    <Template name="prose-item"
+              form="list"
+              doc="a list row whose mark the page supplies - a number, a letter, a code (a right-aligned 20px mark column)"
+              use="with prose-list; not a bullet is not a mark; the unordered list is dot-row">
       <HStack gap="5" alignItems="start" w="100%" group="true">
         <Text class="body-sm" w="24" flexShrink="0">{mark}</Text>
         <Text class="body-sm" w="max">{bodyText}</Text>
@@ -230,12 +221,11 @@
          text run. The dot sits on the first line's centre (body-sm 9.5px at
          1.62 leaves the centre 7.7px down; the 5px dot starts at 5), a
          little in from the block's left edge and close to its text. -->
-    <!-- @kind list · @box none · @emph accent dot
-         @content an unordered list row
-         @shape   a drawn accent dot hanging beside the text
-         @with    prose-list
-         @not     a run of these under every heading is the monotony rhythm.py exists to catch -->
-    <Template name="dot-row">
+    <Template name="dot-row"
+              form="list"
+              doc="an unordered list row (a drawn accent dot hanging beside the text)"
+              use="with prose-list; not a run of these under every heading is the monotony rhythm.py exists to catch"
+              tags="accent">
       <HStack gap="6" alignItems="start" w="100%" padding.left="5" group="true">
         <VStack w="5" h="5" flexShrink="0" backgroundColor="1B4A9C" borderRadius="3" margin.top="5" />
         <Text class="body-sm" w="max">{bodyText}</Text>
@@ -246,12 +236,11 @@
          number, the text hanging beside it. The text sits in a VStack so
          the row is not read as a mixed-size label row (the plate's 7.5px
          and the body's 9.5px would otherwise trip the baseline lint). -->
-    <!-- @kind list · @box none · @emph accent plate
-         @content an ordered list row that carries weight
-         @shape   a filled accent circle carrying the number
-         @with    prose-list
-         @not     prose-item for a quiet 「1.」; step-row when each step has an owner or a criterion -->
-    <Template name="num-row">
+    <Template name="num-row"
+              form="list"
+              doc="an ordered list row that carries weight (a filled accent circle carrying the number)"
+              use="with prose-list; not prose-item for a quiet 「1.」; step-row when each step has an owner or a criterion"
+              tags="accent">
       <HStack gap="7" alignItems="start" w="100%" padding.left="3" group="true">
         <Text w="16" h="16" flexShrink="0" fontFamily="Pretendard" fontSize="11" bold="true"
               color="FFFFFF" backgroundColor="1B4A9C" borderRadius="8"
@@ -262,12 +251,10 @@
 
     <!-- One row of the running head's right box. The label column width is
          fixed so the values left-align across rows. -->
-    <!-- @kind head · @box none · @emph none
-         @content one label/value row of the running head's right box
-         @shape   a 52px label column
-         @with    runhead · annex-head · wf-head
-         @not     — -->
-    <Template name="meta">
+    <Template name="meta"
+              form="head"
+              doc="one label/value row of the running head's right box (a 52px label column)"
+              use="with runhead">
       <HStack gap="10" alignItems="center" w="100%" group="true">
         <Text class="meta-label" w="52" lineHeight="1.0" textVAlign="middle">{label}</Text>
         <Text class="meta-value" w="max" lineHeight="1.0" textVAlign="middle">{value}</Text>
@@ -290,12 +277,11 @@
          one bar per region, headings beneath it. -->
 
     <!-- Default title bar -->
-    <!-- @kind bar · @box filled · @emph part colour
-         @content the head of a region that cites something other than requirements
-         @shape   a part-coloured block + a 200px neutral stub
-         @with    section-bar
-         @not     bar-req when the stub carries requirement ids -->
-    <Template name="bar">
+    <Template name="bar"
+              form="bar"
+              doc="the head of a region that cites something other than requirements (a part-coloured block + a 200px neutral stub)"
+              use="with section-bar; not bar-req when the stub carries requirement ids"
+              tags="filled,part">
       <HStack gap="0" alignItems="start" w="100%" h="28" group="true">
         <Text class="bar-{p} bar-text" lineHeight="1.0" textVAlign="middle">{text}</Text>
         <Text class="bar-stub bar-key" lineHeight="1.0" textVAlign="middle"
@@ -304,12 +290,11 @@
     </Template>
 
     <!-- Title bar whose stub carries requirement ids -->
-    <!-- @kind bar · @box filled · @emph part colour
-         @content the head of a region that cites requirement ids
-         @shape   part-coloured block + ids in the stub
-         @with    section-bar-req
-         @not     the ids need no badge — the stub bounds them -->
-    <Template name="bar-req">
+    <Template name="bar-req"
+              form="bar"
+              doc="the head of a region that cites requirement ids (part-coloured block + ids in the stub)"
+              use="with section-bar-req; not the ids need no badge - the stub bounds them"
+              tags="filled,part">
       <HStack gap="0" alignItems="start" w="100%" h="28" group="true">
         <Text class="bar-{p} bar-text" lineHeight="1.0" textVAlign="middle">{text}</Text>
         <Text class="bar-stub bar-key-req" lineHeight="1.0" textVAlign="middle"
@@ -321,12 +306,11 @@
          The stub stays one 32px block: the phrase on the first line in the
          stub's muted grey, the ids on the second in the badge colour. The
          stub bounds the citation, so the ids need no badge box of their own -->
-    <!-- @kind bar · @box filled · @emph part colour
-         @content the head of a region that cites a key phrase over its ids
-         @shape   part-coloured block + a two-line 264px stub
-         @with    section-bar-req-key
-         @not     both stub lines must stand on one line each inside 32px -->
-    <Template name="bar-req-key">
+    <Template name="bar-req-key"
+              form="bar"
+              doc="the head of a region that cites a key phrase over its ids (part-coloured block + a two-line 264px stub)"
+              use="with section-bar-req-key; not both stub lines must stand on one line each inside 32px"
+              tags="filled,part">
       <HStack gap="0" alignItems="start" w="100%" h="28" group="true">
         <Text class="bar-{p} bar-text" lineHeight="1.0" textVAlign="middle">{text}</Text>
         <VStack class="bar-stub-key" gap="1" justifyContent="center" alignItems="end">
@@ -337,12 +321,10 @@
     </Template>
 
     <!-- Inverse title bar. At most one per page -->
-    <!-- @kind reserved · @box filled · @emph dark
-         @content the inverse region head, at most one per page
-         @shape   an ink block + neutral stub
-         @with    section-bar
-         @not     a page that already carries ink-band, fact-band or anchor-row has spent its dark surface -->
-    <Template name="bar-ink">
+    <Template name="bar-ink"
+              doc="the inverse region head, at most one per page (an ink block + neutral stub)"
+              use="with section-bar; not a page that already carries ink-band, fact-band or anchor-row has spent its dark surface"
+              tags="reserved,filled,dark">
       <HStack gap="0" alignItems="start" w="100%" h="28" group="true">
         <Text class="bar-ink bar-text" lineHeight="1.0" textVAlign="middle">{text}</Text>
         <Text class="bar-stub bar-key" lineHeight="1.0" textVAlign="middle"
@@ -351,12 +333,10 @@
     </Template>
 
     <!-- Unfilled title bar. Opens its region with the heavy rule below it -->
-    <!-- @kind reserved · @box none · @emph none
-         @content a region head that opens with a rule instead of a fill
-         @shape   h2 + a 2px ink rule under it
-         @with    —
-         @not     a page whose head names requirement ids must use section-bar-req* -->
-    <Template name="bar-quiet">
+    <Template name="bar-quiet"
+              doc="a region head that opens with a rule instead of a fill (h2 + a 2px ink rule under it)"
+              use="not a page whose head names requirement ids must use section-bar-req*"
+              tags="reserved">
       <HStack class="bar-quiet" gap="8" alignItems="center" group="true">
         <Text class="h2" lineHeight="1.0" textVAlign="middle" w="max">{text}</Text>
         <Text class="meta-label" lineHeight="1.0" textVAlign="middle">{keyText}</Text>
@@ -364,12 +344,11 @@
     </Template>
 
     <!-- Region opened by a title bar -->
-    <!-- @kind bar · @box filled · @emph part colour
-         @content a region opened by a title bar
-         @shape   bar + a 13px-gap slot
-         @with    bar
-         @not     — -->
-    <Template name="section-bar">
+    <Template name="section-bar"
+              form="bar"
+              doc="a region opened by a title bar (bar + a 13px-gap slot)"
+              use="with bar"
+              tags="filled,part">
       <VStack gap="12" w="100%" margin.top="4">
         <Use template="bar" p="{p}" text="{text}" keyText="{keyText}" />
         <Slot name="default" />
@@ -378,24 +357,22 @@
 
     <!-- Region whose bar carries only requirement ids on the right. The id
          is a citation, not a label, so it draws the same badge everywhere -->
-    <!-- @kind bar · @box filled · @emph part colour
-         @content a region whose bar carries requirement ids
-         @shape   bar-req + slot
-         @with    bar-req
-         @not     — -->
-    <Template name="section-bar-req">
+    <Template name="section-bar-req"
+              form="bar"
+              doc="a region whose bar carries requirement ids (bar-req + slot)"
+              use="with bar-req"
+              tags="filled,part">
       <VStack gap="12" w="100%" margin.top="4">
         <Use template="bar-req" p="{p}" text="{text}" ids="{ids}" />
         <Slot name="default" />
       </VStack>
     </Template>
     <!-- Region whose bar carries a key phrase and the requirement ids -->
-    <!-- @kind bar · @box filled · @emph part colour
-         @content a region whose bar carries a key phrase and its ids
-         @shape   bar-req-key + slot
-         @with    bar-req-key
-         @not     — -->
-    <Template name="section-bar-req-key">
+    <Template name="section-bar-req-key"
+              form="bar"
+              doc="a region whose bar carries a key phrase and its ids (bar-req-key + slot)"
+              use="with bar-req-key"
+              tags="filled,part">
       <VStack gap="12" w="100%" margin.top="4">
         <Use template="bar-req-key" p="{p}" text="{text}" keyText="{keyText}" ids="{ids}" />
         <Slot name="default" />
@@ -405,12 +382,11 @@
     <!-- One section. The gap between heading and body, and the gap to the
          previous section, are set here once - per-page margins would make
          section spacing drift page by page -->
-    <!-- @kind section · @box none · @emph accent icon
-         @content a heading and its body, with the gap above set once
-         @shape   icon heading + a 10px-gap slot
-         @with    any body shape
-         @not     section-req on a page whose head names requirement ids -->
-    <Template name="section">
+    <Template name="section"
+              form="section"
+              doc="a heading and its body, with the gap above set once (icon heading + a 10px-gap slot)"
+              use="with any body shape; not section-req on a page whose head names requirement ids"
+              tags="accent">
       <VStack gap="10" w="100%" margin.top="6" flexGrow="1">
         <Use template="h2" icon="{icon}" text="{text}" />
         <Slot name="default" />
@@ -418,12 +394,11 @@
     </Template>
 
     <!-- Section heading. The icon takes the bullet's place - no text bullet -->
-    <!-- @kind head · @box none · @emph accent icon
-         @content a sub-section heading inside a region
-         @shape   13px accent icon + 12.5px ink
-         @with    section
-         @not     one bar per region, headings beneath it -->
-    <Template name="h2">
+    <Template name="h2"
+              form="head"
+              doc="a sub-section heading inside a region (13px accent icon + 12.5px ink)"
+              use="with section; not one bar per region, headings beneath it"
+              tags="accent">
       <HStack gap="8" alignItems="center" w="100%" group="true">
         <Icon name="{icon}" size="13" color="1B4A9C" altText="{text}" />
         <Text class="h2" lineHeight="1.0" textVAlign="middle" w="max">{text}</Text>
@@ -431,24 +406,21 @@
     </Template>
 
     <!-- Section heading with requirement ids badged at its right end -->
-    <!-- @kind section · @box none · @emph accent icon · badge
-         @content a heading that answers named requirement ids
-         @shape   icon heading + id badge + slot
-         @with    any body shape
-         @not     the badge's ids must be a subset of the page's reqs -->
-    <Template name="section-req">
+    <Template name="section-req"
+              form="section"
+              doc="a heading that answers named requirement ids (icon heading + id badge + slot)"
+              use="with any body shape; not the badge's ids must be a subset of the page's reqs"
+              tags="accent">
       <VStack gap="10" w="100%" margin.top="6" flexGrow="1">
         <Use template="h2-req" icon="{icon}" text="{text}" ids="{ids}" />
         <Slot name="default" />
       </VStack>
     </Template>
-    <!-- @kind head · @box none · @emph accent icon · badge
-         @content a sub-section heading carrying requirement ids
-         @shape   icon + heading + id badge
-         @with    section-req
-         @not     — -->
-
-    <Template name="h2-req">
+    <Template name="h2-req"
+              form="head"
+              doc="a sub-section heading carrying requirement ids (icon + heading + id badge)"
+              use="with section-req"
+              tags="accent">
       <HStack gap="8" alignItems="center" w="100%" group="true">
         <Icon name="{icon}" size="13" color="1B4A9C" altText="{text}" />
         <Text class="h2" lineHeight="1.0" textVAlign="middle" w="max">{text}</Text>
@@ -459,24 +431,21 @@
     <!-- Requirement-id badge standing in the page body. Unlike the running
          head's requirement row it mixes with body text, so a border and a
          light ground mark it as a number -->
-    <!-- @kind head · @box tinted · @emph accent
-         @content a requirement number standing in the page body
-         @shape   a bordered chip on the lightest accent tint
-         @with    h2-req · card heads
-         @not     bare text under a heading reads as a stray fragment -->
-    <Template name="reqbadge">
+    <Template name="reqbadge"
+              form="head"
+              doc="a requirement number standing in the page body (a bordered chip on the lightest accent tint)"
+              use="with h2-req · card heads; not bare text under a heading reads as a stray fragment"
+              tags="tinted,accent">
       <Text class="reqbadge" fontFamily="Pretendard" fontSize="8" bold="true"
             color="1B4A9C" lineHeight="1.0" textVAlign="middle"
             textAlign="center">{ids}</Text>
     </Template>
 
     <!-- One figure -->
-    <!-- @kind deprecated · @box none · @emph none
-         @content one measured figure with its label and source
-         @shape   value + label + source, no stub
-         @with    —
-         @not     superseded by stat-cell, whose accent stub tells two figures apart -->
-    <Template name="stat">
+    <Template name="stat"
+              doc="one measured figure with its label and source (value + label + source, no stub)"
+              use="not superseded by stat-cell, whose accent stub tells two figures apart"
+              tags="deprecated">
       <VStack gap="6" w="100%" group="true">
         <Text class="stat-value">{value}</Text>
         <Text class="h3">{label}</Text>
@@ -488,12 +457,11 @@
          the rule that drops from it carries the body: the body's left edge is
          where the heading's text starts (12px icon + 7px gap), so the two read
          as one block instead of a title floating over a paragraph. -->
-    <!-- @kind card · @box none · @emph accent icon
-         @content a heading and the paragraph that belongs to it, unboxed
-         @shape   icon head + a rule dropping to the body
-         @with    page · col2
-         @not     detail-card when the item needs an edge of its own -->
-    <Template name="item">
+    <Template name="item"
+              form="card"
+              doc="a heading and the paragraph that belongs to it, unboxed (icon head + a rule dropping to the body)"
+              use="with page · cols2; not detail-card when the item needs an edge of its own"
+              tags="accent">
       <VStack gap="4" w="100%" group="true">
         <HStack gap="7" alignItems="center" w="100%">
           <Icon name="{icon}" size="12" color="1B4A9C" altText="{head}" />
@@ -509,12 +477,10 @@
     </Template>
 
     <!-- Label / value row -->
-    <!-- @kind row · @box none · @emph none
-         @content a quiet label/value list
-         @shape   a 92px bold label + value
-         @with    section* · card
-         @not     pair-card when each row needs a head of its own -->
-    <Template name="keyrow">
+    <Template name="keyrow"
+              form="row"
+              doc="a quiet label/value list (a 92px bold label + value)"
+              use="with section* · card; not pair-card when each row needs a head of its own">
       <HStack gap="14" alignItems="start" w="100%" group="true">
         <Text class="h3" w="92" lineHeight="1.62">{label}</Text>
         <Text class="body-sm" w="max">{valueText}</Text>
@@ -522,12 +488,10 @@
     </Template>
 
     <!-- Quotation -->
-    <!-- @kind prose · @box none · @emph none
-         @content a passage quoted from a source, with the source under it
-         @shape   a serif quotation and a caption
-         @with    section*
-         @not     note for a citation; this one is for words the deck did not write -->
-    <Template name="quote">
+    <Template name="quote"
+              form="prose"
+              doc="a passage quoted from a source, with the source under it (a serif quotation and a caption)"
+              use="with section*; not note for a citation; this one is for words the deck did not write">
       <VStack gap="8" w="100%" group="true">
         <Text class="quote">{text}</Text>
         <Text class="caption">{source}</Text>
@@ -535,22 +499,18 @@
     </Template>
 
     <!-- Footnote with a bold lead mark -->
-    <!-- @kind prose · @box none · @emph none
-         @content an aside a region needs, opened by a bold mark
-         @shape   a footnote line with a bold lead
-         @with    section* · page
-         @not     ruled-note when the aside is a labelled statement, not a footnote -->
-    <Template name="note">
+    <Template name="note"
+              form="prose"
+              doc="an aside a region needs, opened by a bold mark (a footnote line with a bold lead)"
+              use="with section* · page; not ruled-note when the aside is a labelled statement, not a footnote">
       <Text class="footnote" margin.top="3"><Span bold="true" color="14161C">{mark}</Span> {bodyText}</Text>
     </Template>
 
     <!-- One requirement-category cell: label, count, chapter reference -->
-    <!-- @kind row · @box none · @emph none
-         @content one requirement category: its count and where it is answered
-         @shape   label + 17px count + chapter reference at cellW
-         @with    col3 · toc
-         @not     — -->
-    <Template name="req-cell">
+    <Template name="req-cell"
+              form="row"
+              doc="one requirement category: its count and where it is answered (label + 17px count + chapter reference at cellW)"
+              use="with cols3 · toc">
       <VStack w="{cellW}" gap="4" group="true">
         <Text class="meta-label">{label}</Text>
         <Text fontFamily="Pretendard" fontSize="17" bold="true" color="14161C"
@@ -567,12 +527,10 @@
          answer. -->
 
     <!-- One step of a process strip -->
-    <!-- @kind row · @box none · @emph none
-         @content one step of an unboxed process strip
-         @shape   head + note at stepW
-         @with    stage-strip · flow-arrow
-         @not     num-step when the steps carry a decision each -->
-    <Template name="flow-step">
+    <Template name="flow-step"
+              form="row"
+              doc="one step of an unboxed process strip (head + note at stepW)"
+              use="with stage-strip · flow-arrow; not num-step when the steps carry a decision each">
       <VStack w="{stepW}" gap="3" group="true">
         <Text class="h3" fontSize="11">{head}</Text>
         <Text class="footnote">{note}</Text>
@@ -580,23 +538,20 @@
     </Template>
 
     <!-- Connector between steps -->
-    <!-- @kind row · @box none · @emph none
-         @content the connector between two flow-steps
-         @shape   a muted chevron
-         @with    flow-step
-         @not     — -->
-    <Template name="flow-arrow">
+    <Template name="flow-arrow"
+              form="row"
+              doc="the connector between two flow-steps (a muted chevron)"
+              use="with flow-step">
       <Icon name="chevron-right" size="11" color="9AA0AB" isDecorative="true" />
     </Template>
 
     <!-- Numbered step card: a round number plate, the action, and its
          judgement note - for a strip whose steps carry a decision each -->
-    <!-- @kind row · @box bordered · @emph accent plate
-         @content one step of a process strip that carries a decision
-         @shape   round accent plate + head + note, bordered
-         @with    stage-strip
-         @not     flow-step when the strip should read unboxed -->
-    <Template name="num-step">
+    <Template name="num-step"
+              form="row"
+              doc="one step of a process strip that carries a decision (round accent plate + head + note, bordered)"
+              use="with stage-strip; not flow-step when the strip should read unboxed"
+              tags="bordered,accent">
       <HStack w="{stepW}" h="40" gap="7" alignItems="center" padding="6 8"
               backgroundColor="F5F6F8" borderRadius="2" group="true"
               border.color="D9DEE7" border.width="0.8">
@@ -618,12 +573,11 @@
          behaviour 7). The cell width comes from the surrounding column. 24pt
          collides with the 24pt Myeongjo page title, so the value sits at
          20pt. -->
-    <!-- @kind row · @box none · @emph accent stub
-         @content a measured figure with its unit, label and source
-         @shape   a 2px accent stub + 24px value + unit
-         @with    col2 · col3 · col-rail
-         @not     fact-band when three figures belong to one claim -->
-    <Template name="stat-cell">
+    <Template name="stat-cell"
+              form="row"
+              doc="a measured figure with its unit, label and source (a 2px accent stub + 24px value + unit)"
+              use="with cols2 · cols3 · cols-rail; not fact-band when three figures belong to one claim"
+              tags="accent">
       <HStack w="100%" gap="10" alignItems="stretch" group="true">
         <VStack w="2" flexShrink="0" backgroundColor="1B4A9C" />
         <VStack w="max" gap="5">
@@ -641,12 +595,11 @@
     <!-- Vertical lane: a numbered colour plate and tinted head, a display
          verb, body copy, and a labeled foot note under a hairline. The
          colour pair comes from the deck's subsystem code (see the skill) -->
-    <!-- @kind band · @box tinted · @emph declared pair
-         @content one subsystem layer: what it is, what it does, and what it leaves
-         @shape   numbered colour plate + tinted head + display verb + foot note
-         @with    page · col2
-         @not     a layered table with lane cells when the layers are rows of one table -->
-    <Template name="lane">
+    <Template name="lane"
+              form="band"
+              doc="one subsystem layer: what it is, what it does, and what it leaves (numbered colour plate + tinted head + display verb + foot note)"
+              use="with page · cols2; not a layered table with lane cells when the layers are rows of one table"
+              tags="tinted,declared">
       <VStack w="100%" gap="0" group="true">
         <HStack w="100%" h="30" gap="0" alignItems="stretch">
           <Text w="34" fontFamily="Pretendard" fontSize="11" bold="true" color="FFFFFF"
@@ -670,12 +623,11 @@
 
     <!-- Full-width inverse band: a kicker/heading pair on the left, one
          running line of body text on the right -->
-    <!-- @kind band · @box filled · @emph dark
-         @content a claim the page turns on, set against the reading
-         @shape   ink band, kicker/head at the left, one running line
-         @with    page
-         @not     one dark surface per page -->
-    <Template name="ink-band">
+    <Template name="ink-band"
+              form="band"
+              doc="a claim the page turns on, set against the reading (ink band, kicker/head at the left, one running line)"
+              use="with page; not one dark surface per page"
+              tags="filled,dark">
       <HStack w="100%" gap="16" alignItems="center" padding="10 14"
               backgroundColor="14161C" group="true">
         <VStack w="142" gap="3" flexShrink="0">
@@ -692,12 +644,11 @@
     <!-- Typographic index column for a rail-and-body layout: a kicker, two
          display lines, an accent rule, then whatever the page lists under it
          (meta-label lines, footnotes) as slot children -->
-    <!-- @kind layout · @box none · @emph accent rule
-         @content a typographic index standing beside the body it opens
-         @shape   kicker + two display lines + accent rule + slot
-         @with    col-rail (rail slot)
-         @not     copy-rail when the rail is a subject rather than an index -->
-    <Template name="index-rail">
+    <Template name="index-rail"
+              form="layout"
+              doc="a typographic index standing beside the body it opens (kicker + two display lines + accent rule + slot)"
+              use="with cols-rail (rail slot); not copy-rail when the rail is a subject rather than an index"
+              tags="accent">
       <VStack w="100%" gap="0" group="true">
         <Text class="meta-label" color="1B4A9C">{kicker}</Text>
         <VStack gap="2" margin.top="7">
@@ -718,12 +669,11 @@
          hanging beside a paragraph, and a hairline closes the note against
          what follows. The plate's width and its gap add up to the 82px the
          body has always started at, so no note re-wraps. -->
-    <!-- @kind row · @box tinted · @emph accent plate
-         @content an indexed note closed off from what follows
-         @shape   a 76px accent plate + body + hairline
-         @with    section*
-         @not     note for a footnote; delta-row when the label is a term -->
-    <Template name="ruled-note">
+    <Template name="ruled-note"
+              form="row"
+              doc="an indexed note closed off from what follows (a 76px accent plate + body + hairline)"
+              use="with section*; not note for a footnote; delta-row when the label is a term"
+              tags="tinted,accent">
       <VStack w="100%" gap="8" group="true">
         <HStack w="100%" gap="6" alignItems="stretch">
           <Text w="76" flexShrink="0" fontFamily="Pretendard" fontSize="11" bold="true"
@@ -741,12 +691,11 @@
          muted body, and an accent-labeled tail line. The light border keeps
          neighbouring strips apart; weight, colour and the badge make the
          hierarchy inside -->
-    <!-- @kind card · @box bordered · @emph badge · accent tail
-         @content a claim, its evidence number, and what closes it
-         @shape   bordered strip, head + proof badge, accent tail
-         @with    col2 · col3
-         @not     proof-line when the claim needs no evidence number -->
-    <Template name="proof-strip">
+    <Template name="proof-strip"
+              form="card"
+              doc="a claim, its evidence number, and what closes it (bordered strip, head + proof badge, accent tail)"
+              use="with cols2 · cols3; not proof-line when the claim needs no evidence number"
+              tags="bordered,badge">
       <VStack gap="6" padding="8 10" group="true"
               backgroundColor="FFFFFF" borderRadius="2"
               border.color="D9DEE7" border.width="0.8" flexGrow="1">
@@ -768,12 +717,10 @@
 
     <!-- Bordered card for one asset: heading, a green status chip, a
          reference badge, muted body, and a tinted labeled footer band -->
-    <!-- @kind deprecated · @box bordered · @emph badge
-         @content a claim, its form, its evidence and a tinted foot
-         @shape   proof-strip + a form chip and a footer band
-         @with    —
-         @not     superseded by proof-strip — two evidence cards were one too many -->
-    <Template name="asset-card">
+    <Template name="asset-card"
+              doc="a claim, its form, its evidence and a tinted foot (proof-strip + a form chip and a footer band)"
+              use="not superseded by proof-strip - two evidence cards were one too many"
+              tags="deprecated,bordered,badge">
       <VStack gap="5" padding="7 10" group="true"
               backgroundColor="FFFFFF" borderRadius="2"
               border.color="D9DEE7" border.width="0.8" flexGrow="1">
@@ -798,12 +745,11 @@
 
     <!-- Two-cell row: an ink label plate on the left, a tinted body cell
          taking the rest of the width -->
-    <!-- @kind row · @box filled · @emph accent plate
-         @content a term and what it means, read across
-         @shape   an accent label plate + a tinted body cell
-         @with    section*
-         @not     ruled-note when the label is a citation rather than a term -->
-    <Template name="delta-row">
+    <Template name="delta-row"
+              form="row"
+              doc="a term and what it means, read across (an accent label plate + a tinted body cell)"
+              use="with section*; not ruled-note when the label is a citation rather than a term"
+              tags="filled,accent">
       <HStack gap="9" alignItems="stretch" w="100%" group="true">
         <Text w="92" flexShrink="0" fontFamily="Pretendard" fontSize="11" bold="true"
               color="FFFFFF" backgroundColor="1B4A9C" padding="6 9"
@@ -817,12 +763,10 @@
     <!-- Three-panel summary band: two labeled title/body panels (the second
          tinted) and a dark stat panel on the right with one value and two
          bold lines under it -->
-    <!-- @kind deprecated · @box filled · @emph dark
-         @content two prose panels and a dark stat panel
-         @shape   two tinted panels + an ink panel
-         @with    —
-         @not     superseded by fact-band — the same band with readings instead of prose -->
-    <Template name="brief-band">
+    <Template name="brief-band"
+              doc="two prose panels and a dark stat panel (two tinted panels + an ink panel)"
+              use="not superseded by fact-band - the same band with readings instead of prose"
+              tags="deprecated,filled,dark">
       <HStack w="100%" gap="0" alignItems="stretch" group="true"
               backgroundColor="F5F6F8" borderRadius="2">
         <VStack flexGrow="1" flexBasis="0" gap="7" padding="11 13">
@@ -852,12 +796,11 @@
     </Template>
 
     <!-- Bordered item card with an icon heading and a role tag at the right -->
-    <!-- @kind card · @box bordered · @emph accent icon
-         @content one node of a structure, with the role it plays
-         @shape   bordered card, icon head, role at the right
-         @with    col2 · col3
-         @not     detail-card when the item has no role to name -->
-    <Template name="node-card">
+    <Template name="node-card"
+              form="card"
+              doc="one node of a structure, with the role it plays (bordered card, icon head, role at the right)"
+              use="with cols2 · cols3; not detail-card when the item has no role to name"
+              tags="bordered,accent">
       <VStack w="100%" gap="6" padding="9 11" group="true"
               backgroundColor="FFFFFF" borderRadius="2"
               border.color="C6D5EC" border.width="0.8" flexGrow="1">
@@ -873,12 +816,11 @@
 
     <!-- Full-width tinted band: icon, a fixed-width heading, body text
          filling the rest. Colour pair comes from the subsystem code -->
-    <!-- @kind band · @box tinted · @emph declared pair
-         @content a term and its statement, read across on a tint
-         @shape   icon + fixed-width head + body on a tint pair
-         @with    page
-         @not     delta-row for the accent pair; this one takes the subsystem code's colours -->
-    <Template name="icon-band">
+    <Template name="icon-band"
+              form="band"
+              doc="a term and its statement, read across on a tint (icon + fixed-width head + body on a tint pair)"
+              use="with page; not delta-row for the accent pair; this one takes the subsystem code's colours"
+              tags="tinted,declared">
       <HStack w="100%" gap="12" alignItems="center" padding="8 11"
               backgroundColor="{tint}" borderRadius="2" group="true">
         <Icon name="{icon}" size="14" color="{accent}" altText="{head}" />
@@ -896,12 +838,11 @@
     </Template>
 
     <!-- Numbered tinted card: a square number plate, heading, body -->
-    <!-- @kind card · @box tinted · @emph accent plate
-         @content a numbered item whose body is one paragraph
-         @shape   tinted card, 20px square accent plate
-         @with    col2 · col3
-         @not     num-step when the item is a step in a strip -->
-    <Template name="num-card">
+    <Template name="num-card"
+              form="card"
+              doc="a numbered item whose body is one paragraph (tinted card, 20px square accent plate)"
+              use="with cols2 · cols3; not num-step when the item is a step in a strip"
+              tags="tinted,accent">
       <VStack w="100%" gap="6" padding="9 11" group="true"
               backgroundColor="F5F6F8" borderRadius="2" flexGrow="1">
         <HStack w="100%" gap="8" alignItems="center">
@@ -916,12 +857,11 @@
 
     <!-- Generic input → operation → output lane. Content is supplied only
          by the Use call; the template owns geometry and visual hierarchy. -->
-    <!-- @kind band · @box filled · @emph dark
-         @content input → operation → output
-         @shape   tinted in-panel + ink operation + accent out-panel
-         @with    page
-         @not     stage-strip when the stages are more than three -->
-    <Template name="transform-lane">
+    <Template name="transform-lane"
+              form="band"
+              doc="input → operation → output (tinted in-panel + ink operation + accent out-panel)"
+              use="with page; not stage-strip when the stages are more than three"
+              tags="filled,dark">
       <HStack w="100%" gap="0" alignItems="stretch" group="true"
               backgroundColor="FFFFFF" borderRadius="2"
               border.color="D9DEE7" border.width="0.8">
@@ -951,12 +891,11 @@
 
     <!-- Band with a dark stat panel on the left and three labeled columns
          beside it: label / heading / footnote each -->
-    <!-- @kind band · @box filled · @emph dark
-         @content one measured figure and the three readings beside it
-         @shape   ink stat panel + three label/head/note columns
-         @with    page
-         @not     brief-band is superseded; stat-cell for a single figure -->
-    <Template name="fact-band">
+    <Template name="fact-band"
+              form="band"
+              doc="one measured figure and the three readings beside it (ink stat panel + three label/head/note columns)"
+              use="with page; not brief-band is superseded; stat-cell for a single figure"
+              tags="filled,dark">
       <HStack w="100%" gap="0" alignItems="stretch" group="true"
               backgroundColor="F5F6F8" borderRadius="2">
         <VStack w="146" flexShrink="0" gap="5" padding="11 13"
@@ -990,12 +929,11 @@
 
     <!-- Inverse fact row: small label over a large value on the left, a bold
          line and a muted line on the right -->
-    <!-- @kind band · @box filled · @emph dark
-         @content one fixed figure and what it anchors, across the block
-         @shape   ink row, 105px label/value + head/subText
-         @with    page
-         @not     anchor-cell in a rail or a narrow column -->
-    <Template name="anchor-row">
+    <Template name="anchor-row"
+              form="band"
+              doc="one fixed figure and what it anchors, across the block (ink row, 105px label/value + head/subText)"
+              use="with page; not anchor-cell in a rail or a narrow column"
+              tags="filled,dark">
       <HStack w="100%" h="72" gap="12" alignItems="center" padding="9 11"
               backgroundColor="14161C" borderRadius="2" group="true">
         <VStack w="105" flexShrink="0" gap="4">
@@ -1017,12 +955,11 @@
          anchor-row stacked vertically - label over value, then a bold line
          and a muted line. anchor-row's 105px label column leaves a rail no
          room, so narrow slots take this form instead -->
-    <!-- @kind band · @box filled · @emph dark
-         @content one fixed figure and what it anchors, in a narrow column
-         @shape   ink cell, label over value over head/subText
-         @with    col-rail · col3
-         @not     anchor-row across the text block — its 105px label column leaves a rail no room -->
-    <Template name="anchor-cell">
+    <Template name="anchor-cell"
+              form="band"
+              doc="one fixed figure and what it anchors, in a narrow column (ink cell, label over value over head/subText)"
+              use="with cols-rail · cols3; not anchor-row across the text block - its 105px label column leaves a rail no room"
+              tags="filled,dark">
       <VStack w="100%" gap="4" padding="10 11"
               backgroundColor="14161C" borderRadius="2" group="true" flexGrow="1">
         <Text fontFamily="Pretendard" fontSize="11" bold="true" color="AFC7EE"
@@ -1038,12 +975,11 @@
 
     <!-- Tinted card for a value settled later: label, heading, footnote, and
          a green bold tail line naming what happens after the decision -->
-    <!-- @kind card · @box tinted · @emph accent×1
-         @content a value settled later, and what happens after the decision
-         @shape   tinted card, accent label, ink tail
-         @with    col2 · col3
-         @not     choice-card when alternatives are on the table -->
-    <Template name="decision-card">
+    <Template name="decision-card"
+              form="card"
+              doc="a value settled later, and what happens after the decision (tinted card, accent label, ink tail)"
+              use="with cols2 · cols3; not choice-card when alternatives are on the table"
+              tags="tinted,accent">
       <VStack w="100%" gap="6" padding="8 10" backgroundColor="F5F6F8"
               borderRadius="2" group="true" flexGrow="1">
         <Text fontFamily="Pretendard" fontSize="11" bold="true" color="1B4A9C" lineHeight="1.35">{label}</Text>
@@ -1056,12 +992,11 @@
 
     <!-- Fixed-height tinted card with a heading, a reference badge, and two
          labeled rows - the first label red, the second green -->
-    <!-- @kind card · @box tinted · @emph declared judgement pair
-         @content a trigger and the response to it, judged
-         @shape   tinted card, key badge, block label then pass label
-         @with    col2 · cols2
-         @not     the two labels must be a block word and a pass word — a neutral pair takes pair-card-key -->
-    <Template name="trigger-card">
+    <Template name="trigger-card"
+              form="card"
+              doc="a trigger and the response to it, judged (tinted card, key badge, block label then pass label)"
+              use="with cols2 · cols2; not the two labels must be a block word and a pass word - a neutral pair takes card-key"
+              tags="tinted,declared">
       <VStack w="100%" h="80" gap="5" padding="8 10" group="true"
               backgroundColor="F5F6F8" borderRadius="2" flexGrow="1">
         <HStack w="100%" gap="8" alignItems="center">
@@ -1086,12 +1021,11 @@
 
     <!-- Bordered panel opened by a badge chip and a right-aligned key,
          holding whatever rows the page stacks inside -->
-    <!-- @kind card · @box bordered · @emph accent badge
-         @content a panel opened by a badge chip, holding rows the page stacks
-         @shape   bordered panel, accent badge + right key
-         @with    equal-pair · col2
-         @not     needs a row parent — flexGrow resolves to zero height without one -->
-    <Template name="badge-panel">
+    <Template name="badge-panel"
+              form="card"
+              doc="a panel opened by a badge chip, holding rows the page stacks (bordered panel, accent badge + right key)"
+              use="with cols2 · cols2; not needs a row parent - flexGrow resolves to zero height without one"
+              tags="bordered,accent">
       <VStack flexGrow="{grow}" flexBasis="0" gap="8" padding="8 10" group="true"
               backgroundColor="FFFFFF" borderRadius="2"
               border.color="D9DEE7" border.width="0.8">
@@ -1107,12 +1041,11 @@
     </Template>
 
     <!-- Heading, footnote body, and an accent bold tail line -->
-    <!-- @kind card · @box none · @emph accent tail
-         @content a claim and its closing line, unboxed
-         @shape   head + footnote body + accent tail
-         @with    col2 · col3
-         @not     proof-strip when there is an evidence number to cite -->
-    <Template name="proof-line">
+    <Template name="proof-line"
+              form="card"
+              doc="a claim and its closing line, unboxed (head + footnote body + accent tail)"
+              use="with cols2 · cols3; not proof-strip when there is an evidence number to cite"
+              tags="accent">
       <VStack w="100%" gap="3">
         <Text class="h3" fontSize="11">{head}</Text>
         <Text class="footnote">{bodyText}</Text>
@@ -1124,12 +1057,11 @@
     <!-- Three-panel commitment row: a numbered tinted head cell with a
          subline, a green-labeled middle panel, and a red-labeled closing
          panel on a warning tint -->
-    <!-- @kind row · @box bordered · @emph declared judgement pair
-         @content a numbered commitment read as pass and block
-         @shape   round plate + head cell + pass panel + block panel
-         @with    section*
-         @not     panel-row when neither panel is a judgement -->
-    <Template name="verdict-row">
+    <Template name="verdict-row"
+              form="row"
+              doc="a numbered commitment read as pass and block (round plate + head cell + pass panel + block panel)"
+              use="with section*; not ledger-row when neither panel is a judgement"
+              tags="bordered,declared">
       <HStack w="100%" h="60" gap="0" alignItems="stretch" group="true"
               backgroundColor="FFFFFF" borderRadius="2"
               border.color="D9DEE7" border.width="0.8">
@@ -1159,12 +1091,11 @@
 
     <!-- Inverse identity band pinning the start of a detail page: a large
          number plate, heading and subline, and a tinted key cell -->
-    <!-- @kind band · @box filled · @emph dark
-         @content the identity of a detail page, pinned at its start
-         @shape   ink band, 58px number plate + head/subText + tinted key cell
-         @with    page
-         @not     section-bar-req-key when the region is a heading rather than an identity -->
-    <Template name="marker-band">
+    <Template name="marker-band"
+              form="band"
+              doc="the identity of a detail page, pinned at its start (ink band, 58px number plate + head/subText + tinted key cell)"
+              use="with page; not section-bar-req-key when the region is a heading rather than an identity"
+              tags="filled,dark">
       <HStack w="100%" h="52" gap="0" alignItems="stretch" group="true"
               backgroundColor="14161C" borderRadius="2">
         <Text w="58" flexShrink="0" fontFamily="Pretendard" fontSize="22" bold="true"
@@ -1186,12 +1117,11 @@
     </Template>
 
     <!-- Tinted card with an icon heading and body -->
-    <!-- @kind card · @box tinted · @emph accent icon
-         @content one item, an icon earning its place
-         @shape   tinted card, icon head, one paragraph
-         @with    col2 · col3
-         @not     item when the block should read unboxed -->
-    <Template name="detail-card">
+    <Template name="detail-card"
+              form="card"
+              doc="one item, an icon earning its place (tinted card, icon head, one paragraph)"
+              use="with cols2 · cols3; not item when the block should read unboxed"
+              tags="tinted,accent">
       <VStack gap="7" padding="8 10" group="true" flexGrow="1"
               backgroundColor="F5F6F8" borderRadius="2">
         <HStack w="100%" gap="8" alignItems="center">
@@ -1205,12 +1135,11 @@
     <!-- Four-cell ladder step: number plate, a tinted head cell with a
          subline, a green-labeled middle panel, and a red-labeled closing
          panel on a warning tint -->
-    <!-- @kind row · @box bordered · @emph declared judgement pair
-         @content one rung of a ladder, each rung judged
-         @shape   number plate + head cell + pass panel + block panel
-         @with    section*
-         @not     step-row when the rung carries one closing attribute instead -->
-    <Template name="ladder-step">
+    <Template name="ladder-step"
+              form="row"
+              doc="one rung of a ladder, each rung judged (number plate + head cell + pass panel + block panel)"
+              use="with section*; not step-row when the rung carries one closing attribute instead"
+              tags="bordered,declared">
       <HStack w="100%" h="38" gap="0" alignItems="stretch" group="true"
               backgroundColor="FFFFFF" borderRadius="2"
               border.color="D9DEE7" border.width="0.8">
@@ -1236,12 +1165,11 @@
 
     <!-- Tinted panel opened by a large accent key and a right-aligned count,
          holding whatever rows the page stacks inside -->
-    <!-- @kind card · @box tinted · @emph accent×1
-         @content a panel opened by a large accent key, holding rows the page stacks
-         @shape   tinted panel, 12.5px accent head + right key
-         @with    equal-pair · col2
-         @not     as badge-panel — needs a row parent -->
-    <Template name="key-panel">
+    <Template name="key-panel"
+              form="card"
+              doc="a panel opened by a large accent key, holding rows the page stacks (tinted panel, 12.5px accent head + right key)"
+              use="with cols2 · cols2; not as badge-panel - needs a row parent"
+              tags="tinted,accent">
       <VStack flexGrow="{grow}" flexBasis="0" gap="5" padding="7 10" group="true"
               backgroundColor="F5F6F8" borderRadius="2">
         <HStack w="100%" gap="8" alignItems="center">
@@ -1260,12 +1188,11 @@
          half column the longest label of the stack plus 6, so a short
          heading is not parted from its lines by a fixed hole and the text
          column keeps clear of the wrap boundary. -->
-    <!-- @kind row · @box none · @emph accent×1
-         @content a heading and its subline facing two consequence lines
-         @shape   a labelW column + two lines, the second accent
-         @with    col-rail · col2
-         @not     keyrow when the right side is one plain value -->
-    <Template name="paired-note">
+    <Template name="paired-note"
+              form="row"
+              doc="a heading and its subline facing two consequence lines (a labelW column + two lines, the second accent)"
+              use="with cols-rail · cols2; not keyrow when the right side is one plain value"
+              tags="accent">
       <HStack w="100%" gap="10" alignItems="start">
         <VStack w="{labelW}" flexShrink="0" gap="3">
           <Text fontFamily="Pretendard" fontSize="11" bold="true" color="14161C"
@@ -1284,12 +1211,11 @@
     <!-- Tinted card with a plain heading over two labeled rows - accent
          then muted. The lightest of the labeled-row cards: no badge, no
          reference key, for design decisions and setting/reason pairs -->
-    <!-- @kind card · @box tinted · @emph accent×1
-         @content two labelled rows under one head
-         @shape   tinted card, accent label then muted
-         @with    col2 · col3
-         @not     the lightest of the labelled-row cards — no badge, no key -->
-    <Template name="pair-card">
+    <Template name="pair-card"
+              form="card"
+              doc="two labelled rows under one head (tinted card, accent label then muted)"
+              use="with cols2 · cols3; not the lightest of the labelled-row cards - no badge, no key"
+              tags="tinted,accent">
       <VStack gap="4" padding="5 9" group="true" flexGrow="1"
               backgroundColor="F5F6F8" borderRadius="2">
         <Text class="h3" fontSize="11" lineHeight="1.2">{head}</Text>
@@ -1312,12 +1238,11 @@
          cell, the step's body, and a muted key cell on the right - for a
          sequence whose steps carry a description and one closing attribute
          (owner, criterion, spec). Rows stack; the numbers carry the order -->
-    <!-- @kind row · @box bordered · @emph accent plate
-         @content an ordered step with a description and one closing attribute
-         @shape   accent number plate + tinted step name + body + key cell
-         @with    section*
-         @not     num-row when the step is one line and carries nothing else -->
-    <Template name="step-row">
+    <Template name="step-row"
+              form="row"
+              doc="an ordered step with a description and one closing attribute (accent number plate + tinted step name + body + key cell)"
+              use="with section*; not num-row when the step is one line and carries nothing else"
+              tags="bordered,accent">
       <HStack w="100%" gap="0" alignItems="stretch" group="true"
               backgroundColor="FFFFFF" borderRadius="2"
               border.color="D9DEE7" border.width="0.8">
@@ -1350,12 +1275,11 @@
     <!-- pair-card with a third, green-labeled closing row - for items whose
          reading ends on a verdict: a pass criterion, a verification, a
          result. Same geometry as pair-card otherwise -->
-    <!-- @kind card · @box tinted · @emph accent×1
-         @content three labelled rows, the reading closing on the third
-         @shape   tinted card, accent · muted · ink labels
-         @with    col2 · col3
-         @not     pair-card when the third row is not a conclusion -->
-    <Template name="trio-card">
+    <Template name="trio-card"
+              form="card"
+              doc="three labelled rows, the reading closing on the third (tinted card, accent · muted · ink labels)"
+              use="with cols2 · cols3; not pair-card when the third row is not a conclusion"
+              tags="tinted,accent">
       <VStack gap="5" padding="7 9" group="true"
               backgroundColor="F5F6F8" borderRadius="2" flexGrow="1">
         <Text class="h3" fontSize="11" lineHeight="1.0">{head}</Text>
@@ -1382,12 +1306,11 @@
 
     <!-- Tinted card headed by a round badge, a heading and a wide reference
          badge, over two labeled rows - accent then green -->
-    <!-- @kind card · @box tinted · @emph accent plate · badge
-         @content a numbered item with a reference key and two labelled rows
-         @shape   tinted card, 24px round plate, wide badge
-         @with    col2
-         @not     pair-card-key when the item carries no number -->
-    <Template name="axis-card">
+    <Template name="axis-card"
+              form="card"
+              doc="a numbered item with a reference key and two labelled rows (tinted card, 24px round plate, wide badge)"
+              use="with cols2; not card-key when the item carries no number"
+              tags="tinted,accent">
       <VStack gap="5" padding="7 9" group="true"
               backgroundColor="F5F6F8" borderRadius="2" flexGrow="1">
         <HStack w="100%" gap="7" alignItems="center">
@@ -1415,12 +1338,11 @@
 
     <!-- Bordered decision card: heading with a warning chip, two labeled
          rows - green then muted - and an accent tail line -->
-    <!-- @kind card · @box bordered · @emph accent tail
-         @content a choice among alternatives, with what settles it
-         @shape   bordered card, key chip, two rows, accent tail
-         @with    col2 · col3
-         @not     decision-card when the value is settled later rather than chosen now -->
-    <Template name="choice-card">
+    <Template name="choice-card"
+              form="card"
+              doc="a choice among alternatives, with what settles it (bordered card, key chip, two rows, accent tail)"
+              use="with cols2 · cols3; not decision-card when the value is settled later rather than chosen now"
+              tags="bordered,accent">
       <VStack gap="5" padding="7 9" group="true"
               backgroundColor="FFFFFF" borderRadius="2"
               border.color="D9DEE7" border.width="0.8" flexGrow="1">
@@ -1448,12 +1370,11 @@
     </Template>
 
     <!-- Two stages on an axis -->
-    <!-- @kind row · @box none · @emph accent rule
-         @content a stage with a time on it
-         @shape   icon head + when + a 2px accent rule + body
-         @with    col2 · section*
-         @not     stage-detail when the stage opens a block rather than standing alone -->
-    <Template name="stage">
+    <Template name="stage"
+              form="row"
+              doc="a stage with a time on it (icon head + when + a 2px accent rule + body)"
+              use="with cols2 · section*; not stage-detail when the stage opens a block rather than standing alone"
+              tags="accent">
       <VStack w="max" gap="0" group="true">
         <HStack gap="7" alignItems="center" w="100%">
           <Icon name="{icon}" size="12" color="1B4A9C" altText="{head}" />
@@ -1466,12 +1387,11 @@
     </Template>
 
     <!-- A demand facing its answer in one row -->
-    <!-- @kind row · @box none · @emph accent label
-         @content a requirement and how it is met
-         @shape   a 240px demand column + arrow + answer
-         @with    section*
-         @not     card-split when the pair needs an edge and a key -->
-    <Template name="ledger-row">
+    <Template name="ledger-row"
+              form="row"
+              doc="a requirement and how it is met (a 240px demand column + arrow + answer)"
+              use="with section*; not card-split when the pair needs an edge and a key"
+              tags="accent">
       <!-- The demand column is fixed so the arrow and the answer column
            align across stacked rows - two w="max" siblings would split the
            row by content and let every row draw its own boundary -->
@@ -1495,12 +1415,11 @@
          two, the text box keeps its leading and the icon floats high. -->
 
     <!-- Default card -->
-    <!-- @kind card · @box bordered · @emph accent icon
-         @content a discrete item whose body the page composes
-         @shape   bordered card, icon title bar, free slot
-         @with    col2 · col3
-         @not     detail-card when the body is one paragraph -->
-    <Template name="card">
+    <Template name="card"
+              form="card"
+              doc="a discrete item whose body the page composes (bordered card, icon title bar, free slot)"
+              use="with cols2 · cols3; not detail-card when the body is one paragraph"
+              tags="bordered,accent">
       <VStack class="card" w="100%" group="true" flexGrow="1">
         <HStack class="card-bar" gap="7" alignItems="center">
           <Icon name="{icon}" size="12" color="1B4A9C" altText="{head}" />
@@ -1513,12 +1432,11 @@
     </Template>
 
     <!-- Card with a key (such as requirement ids) at the title bar's right -->
-    <!-- @kind card · @box bordered · @emph accent icon
-         @content a discrete item whose title bar carries a key
-         @shape   card + a muted key at the bar's right
-         @with    col2
-         @not     — -->
-    <Template name="card-key">
+    <Template name="card-key"
+              form="card"
+              doc="a discrete item whose title bar carries a key (card + a muted key at the bar's right)"
+              use="with cols2"
+              tags="bordered,accent">
       <VStack class="card" w="100%" group="true" flexGrow="1">
         <HStack class="card-bar" gap="7" alignItems="center">
           <Icon name="{icon}" size="12" color="1B4A9C" altText="{head}" />
@@ -1532,12 +1450,10 @@
     </Template>
 
     <!-- Inverse card. At most one per page -->
-    <!-- @kind reserved · @box bordered · @emph dark
-         @content the inverse card, at most one per page
-         @shape   card on an ink title bar
-         @with    col2
-         @not     as bar-ink — one dark surface per page -->
-    <Template name="card-ink">
+    <Template name="card-ink"
+              doc="the inverse card, at most one per page (card on an ink title bar)"
+              use="with cols2; not as bar-ink - one dark surface per page"
+              tags="reserved,bordered,dark">
       <VStack class="card" w="100%" group="true" flexGrow="1">
         <HStack class="card-bar-ink" gap="7" alignItems="center">
           <Icon name="{icon}" size="12" color="FFFFFF" altText="{head}" />
@@ -1551,12 +1467,11 @@
     </Template>
 
     <!-- Card holding a demand and its answer side by side -->
-    <!-- @kind card · @box bordered · @emph accent icon
-         @content a demand facing the answer to it
-         @shape   card + two half-width labelled columns
-         @with    page · col2
-         @not     ledger-row when the pair is one line each and repeats down the page -->
-    <Template name="card-split">
+    <Template name="card-split"
+              form="card"
+              doc="a demand facing the answer to it (card + two half-width labelled columns)"
+              use="with page · cols2; not ledger-row when the pair is one line each and repeats down the page"
+              tags="bordered,accent">
       <VStack class="card" w="100%" group="true" flexGrow="1">
         <HStack class="card-bar" gap="7" alignItems="center">
           <Icon name="{icon}" size="12" color="1B4A9C" altText="{head}" />

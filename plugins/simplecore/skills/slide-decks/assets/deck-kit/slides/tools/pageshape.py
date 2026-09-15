@@ -122,12 +122,12 @@ def candidates(rows: list[str], heading: str = "") -> tuple[list[str], str]:
 
 
 def dark_set(entries: dict[str, dict]) -> set[str]:
-    """The shapes that spend the page's one dark surface, from the catalogue.
+    """The shapes that spend the page's one dark surface, from the declarations.
 
     A hardcoded list here would go stale the first time a component gained or
-    lost its ink ground — which is the whole reason the declaration exists.
+    lost its ink ground, which is the whole reason the declaration exists.
     """
-    return {n for n, e in entries.items() if "dark" in e["emph"]}
+    return {n for n, e in entries.items() if "dark" in e["tags"]}
 
 
 def place(body: list[dict], kind_of: dict[str, str],
@@ -211,7 +211,7 @@ def main() -> int:
     args = ap.parse_args()
 
     entries, _ = catalog.read()
-    kind_of = {n: e["kind"] for n, e in entries.items()}
+    kind_of = {n: e["form"] for n, e in entries.items()}
 
     flat: list[str] = []
     dense: list[str] = []
