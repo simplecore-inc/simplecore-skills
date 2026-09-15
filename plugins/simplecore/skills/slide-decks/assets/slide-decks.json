@@ -1,0 +1,136 @@
+{
+  // The decks this repository typesets with slideglance, read by the slide-decks skill and by
+  // each deck's own check scripts. Paths are relative to the repository root. Edit as text -
+  // a JSON round-trip drops these comments and the per-key layout.
+  "decks": {
+    "proposal": {
+      "dir": "pptx",
+      "kind": "document",
+      // the MCP server that owns this deck; its tools are mcp__slideglance-proposal__*
+      "mcp": "slideglance-proposal",
+      // the sizes this deck is set at, in points
+      "type": { "floor": 8, "body": 8.25, "heading": 9.75, "codeLabel": 8 },
+      // what the tender calls the annex, so the deck writes its word
+      "annex": { "term": "별첨" },
+      "page": { "w": 794, "h": 1123, "textBlock": 682 },
+      "manuscript": "proposal",
+      "instructions": ["pptx/AGENTS.md", "pptx/README.md"],
+      "render": "cd pptx && npm run render",
+      "output": "pptx/out/제안서.pptx",
+      "previews": "pptx/out/png",
+      "deliverable": { "label": "비계량", "pdfScale": 1.0 },
+      "figures": {
+        "sources": ["proposal/diagrams"],
+        "generator": "tools/diagrams",
+        "verify": "python3 tools/diagrams/verify.py",
+        // board width in drawing units -> placed width in page px
+        "boards": { "1200": 682, "520": 300, "520-pair": 327 }
+      },
+      "checks": {
+        "dir": "tools/deck",
+        "preflight": ["evaluation", "contents", "chapter_pages", "typefloor"],
+        "after": ["overlap", "rowheight", "rhythm", "fignum", "figures", "parity", "echo", "twice",
+                  "naming", "bleed", "secref", "reqid", "reqbadge", "proof", "samefact", "samecol",
+                  "coltotal", "dangle", "figtext", "lookup", "rfpwords"]
+      },
+      "korean": {
+        "audit": ["pptx/chapters/*.xml", "pptx/templates/page.xml", "pptx/templates/components.xml",
+                  "pptx/styles/*.xml", "pptx/main.sgx", "pptx/README.md"]
+      },
+      "review": { "prompt": "docs/persona-review.md", "records": "docs/reviews/persona" }
+    },
+    "presentation": {
+      "dir": "pptx-presentation",
+      "kind": "slides",
+      "mcp": "slideglance-presentation",
+      "page": { "w": 1123, "h": 794, "textBlock": 1027 },
+      // the manuscript a slide deck is built from: the presentation plan, one section per slide
+      "plan": "proposal/11-요약서/01-20분-발표스크립트-슬라이드계획.md",
+      // the document deck whose sections the running head cites (「본 제안서 Ⅳ-2 · 57~101쪽」)
+      "references": { "deck": "proposal" },
+      "instructions": ["pptx-presentation/AGENTS.md", "pptx-presentation/README.md"],
+      "render": "cd pptx-presentation && npm run render",
+      "output": "pptx-presentation/out/제안발표.pptx",
+      "previews": "pptx-presentation/out/png",
+      "deliverable": { "label": "요약서", "pdfScale": 1.0 },
+      "screens": "pptx-presentation/assets/screens",
+      "figures": {
+        // The reused figures are a snapshot this deck owns, not a live read of
+        // the document deck's directory - `tools/figuresync.py` is the only
+        // writer and reports the drift when it is not run.
+        "sources": ["<slides.dir>/assets/figures", "<slides.dir>/diagrams"],
+        "upstream": "<document.dir-relative figure directory>",
+        "generator": "pptx-presentation/tools/diagrams",
+        "verify": "python3 pptx-presentation/tools/diagrams/verify.py",
+        // One scale for every board so type inside a diagram is the same size on
+        // every page. A slide deck takes no width variants: a chapter that wants a
+        // figure wider is asking for a different board.
+        "scale": 0.5666,
+        "boards": { "1800": 1020, "1200": 680, "880": 499, "520": 295 }
+      },
+      "checks": {
+        "dir": "pptx-presentation/tools",
+        "preflight": ["typefloor", "refpages", "coverage"],
+        "after": ["overlap", "rowheight", "census", "density", "verdict", "colfill"],
+        "census": { "sequences": ["process-strip", "flow-row", "stage-strip", "flow-down"],
+                    "sequenceRows": ["step-row", "ladder-step", "stage-detail"], "maxShare": 0.34,
+                    // The rows a slide closes a region on. One of them on nearly
+                    // every body slide makes the run read as one slide mirrored,
+                    // and no sequence rule reaches it.
+                    "closers": ["arrow-pair", "ruled-note", "delta-row"],
+                    "maxCloserShare": 0.75 },
+        "density": { "maxChars": 1300, "maxShapes": 24 },
+        // The judgement pair: the two hexes, the shapes that may carry them and
+        // which slot of each holds the block and the pass label, and the words
+        // each slot may print. A pair that is neither takes a neutral twin.
+        "verdict": {
+          "block": "B6382B",
+          "pass": "507C39",
+          "templates": {
+            "trigger-card": { "blockAttr": "aLabel", "passAttr": "bLabel" },
+            "verdict-row": { "blockAttr": "endLabel", "passAttr": "midLabel" }
+          },
+          "blockWords": ["차단", "오류", "통제", "제한", "보류", "반려", "실패", "위반", "누락"],
+          "passWords": ["통과", "허용", "처리", "보존", "적합", "충족", "완료", "승인", "정상"]
+        },
+        // A column layout is measured per column: the page-level fill number is
+        // met by whichever column runs longest. Each layout gives its columns'
+        // x ranges inside the text block, measured from its left edge.
+        "colfill": {
+          "maxGap": 0.15,
+          // A gap rule alone passes a page whose columns are both short, so the
+          // floor is declared beside it.
+          "minFill": 0.80,
+          "textBlock": { "x": 48, "top": 150, "bottom": 752 },
+          "layouts": {
+            "cols-wide-left":  [[0, 680], [708, 1027]],
+            "cols-wide-right": [[0, 319], [347, 1027]],
+            "cols2":           [[0, 507], [520, 1027]],
+            "cols3":           [[0, 333], [347, 680], [694, 1027]]
+          }
+        }
+      },
+      "korean": {
+        "audit": ["pptx-presentation/chapters/*.xml", "pptx-presentation/templates/page.xml",
+                  "pptx-presentation/templates/components.xml", "pptx-presentation/templates/deck.xml",
+                  "pptx-presentation/styles/*.xml", "pptx-presentation/main.sgx",
+                  "pptx-presentation/README.md"]
+      }
+    }
+  },
+  "submission": {
+    "dir": "제출물",
+    "title": "<사업명>_제안서",
+    "date": "2026년 9월 15일",
+    "pdfLimitMB": { "file": 50, "total": 180 },
+    "pdf": { "engine": "slideglance", "imageDpi": 150, "jpegQuality": 88 },
+    "copies": {
+      "원본":   { "volumes": ["proposal", "presentation"] },
+      "평가본": { "volumes": ["proposal", "presentation"] }
+    },
+    "identity": {
+      "원본":   { "name": "<제안사 상호>", "label": "제안사", "logo": "docs/reference/logo.svg" },
+      "평가본": { "name": "\u00a0", "label": "\u00a0" }
+    }
+  }
+}

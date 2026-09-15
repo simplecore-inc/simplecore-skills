@@ -1,7 +1,7 @@
 {
   "name": "simplecore",
   "version": "4.0.0",
-  "description": "SimpleCORE's curated skill set — Korean output standards with glossary tooling, SVG and ASCII diagrams, low-fidelity wireframe boards, the scenario-driven build that grows an app from one in dependency order, one chapter per agent, and the parity walk that reconciles a board with a running app",
+  "description": "SimpleCORE's curated skill set — Korean output standards with glossary tooling, SVG and ASCII diagrams, low-fidelity wireframe boards, the scenario-driven build that grows an app from one in dependency order, one chapter per agent, the parity walk that reconciles a board with a running app, and the proposal set: the content standard for a bid and the typesetting standard for the decks it is submitted as",
   "author": {
     "name": "SimpleCORE Inc.",
     "email": "dev@simplecore.kr",
@@ -18,6 +18,10 @@
     "wireframe",
     "parity-walk",
     "scenario",
-    "persona-test"
+    "persona-test",
+    "proposal",
+    "pptx",
+    "slideglance",
+    "typesetting"
   ]
 }

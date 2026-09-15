@@ -1,0 +1,123 @@
+<Fragment>
+  <!--
+    Two families, as in the proposal deck.
+
+      KoPub Batang  — display only: cover, page title, contents, closing.
+      Pretendard    — everything else.
+
+    The ladder is one step above the proposal's: a slide is read from a
+    projector as well as from paper, so the body sits at 11 px (8.25pt) and
+    the floor stays at 10.67 px (8pt) for labels, captions and footnotes.
+    Hierarchy is carried by size and weight; colour is reserved for the
+    accent, which appears at most once per block.
+  -->
+  <Styles>
+    <!-- Display — serif -->
+    <Style name="hero"       fontFamily="KoPub Batang" fontSize="46" bold="true"  color="1B4A9C" lineHeight="1.16" />
+    <Style name="hero-sub"   fontFamily="KoPub Batang" fontSize="20" bold="false" color="2E3138" lineHeight="1.3" />
+    <Style name="page-title" fontFamily="KoPub Batang" fontSize="20" bold="true"  color="14161C" lineHeight="1.2" />
+    <Style name="toc-part"   fontFamily="KoPub Batang" fontSize="15" bold="true"  lineHeight="1.0" />
+    <Style name="toc-row"    fontFamily="KoPub Batang" fontSize="12" bold="false" color="14161C" lineHeight="1.0" />
+    <Style name="quote"      fontFamily="KoPub Batang" fontSize="15" bold="false" color="14161C" lineHeight="1.5" />
+    <Style name="end-mark"   fontFamily="KoPub Batang" fontSize="53" bold="true"  color="14161C" lineHeight="1.2" />
+
+    <!-- Headings — sans -->
+    <Style name="h2" fontFamily="Pretendard" fontSize="12.5" bold="true" color="14161C" lineHeight="1.25" />
+    <Style name="h3" fontFamily="Pretendard" fontSize="11.5" bold="true" color="14161C" lineHeight="1.3" />
+
+    <!-- Body -->
+    <Style name="body"    fontFamily="Pretendard" fontSize="11.5" color="2E3138" lineHeight="1.5" />
+    <Style name="body-sm" fontFamily="Pretendard" fontSize="11" color="2E3138" lineHeight="1.45" />
+    <Style name="lede"    fontFamily="Pretendard" fontSize="11" color="6B7280" lineHeight="1.45" />
+    <Style name="lead-in" fontFamily="Pretendard" fontSize="13" bold="true" color="1B4A9C" lineHeight="1.5" />
+
+    <!-- Meta. letterSpacing is points, not em (자간(pt) = letterSpacing × 100). -->
+    <Style name="eyebrow"     fontFamily="Pretendard" fontSize="10.67" bold="true" color="14161C" lineHeight="1.0" letterSpacing="0.0054" />
+    <Style name="eyebrow-alt" fontFamily="Pretendard" fontSize="10.67" color="6B7280" lineHeight="1.0" />
+    <Style name="meta-label"  fontFamily="Pretendard" fontSize="10.67" color="9AA0AB" lineHeight="1.0" />
+    <Style name="meta-value"  fontFamily="Pretendard" fontSize="10.67" bold="true" color="14161C" lineHeight="1.0" />
+    <Style name="caption"     fontFamily="Pretendard" fontSize="10.67" color="6B7280" lineHeight="1.2" />
+    <Style name="footnote"    fontFamily="Pretendard" fontSize="10.67" color="6B7280" lineHeight="1.4" />
+    <Style name="body-xs"     fontFamily="Pretendard" fontSize="10.67" color="2E3138" lineHeight="1.5" />
+    <Style name="label-xs"    fontFamily="Pretendard" fontSize="10.67" bold="true" color="14161C" lineHeight="1.5" />
+
+    <!-- Head band. The first row reads 「04  기술 및 기능」 reversed out of the part-coloured
+         band: a two-digit part number whose leading zero is a soft tint of white, then the
+         part name — one text with spans, drawn by `partline` in the generated
+         templates/parts.xml. The reference beside it and the foot band's pair are one step
+         smaller. -->
+    <Style name="runhead-part"    fontFamily="Pretendard" fontSize="14"    bold="true" color="FFFFFF" lineHeight="1.0" letterSpacing="0.0054" />
+    <Style name="runhead-chapter" fontFamily="Pretendard" fontSize="10.67" color="E4EAF4" lineHeight="1.0" />
+    <Style name="foot-label"      fontFamily="Pretendard" fontSize="10.67" color="9AA0AB" lineHeight="1.0" />
+    <Style name="foot-value"      fontFamily="Pretendard" fontSize="10.67" bold="true" color="14161C" lineHeight="1.0" />
+
+    <!-- Section bar: heading reversed out of the part colour; the stub keeps
+         the quiet neutral. -->
+    <Style name="bar-text"    fontFamily="Pretendard" fontSize="12" bold="true" color="FFFFFF" lineHeight="1.0" />
+    <Style name="bar-key"     fontFamily="Pretendard" fontSize="8"    color="9AA0AB" lineHeight="1.0" />
+    <Style name="bar-key-req" fontFamily="Pretendard" fontSize="8"    bold="true" color="1B4A9C" lineHeight="1.0" />
+
+    <!-- Cover artwork. The landscape crop of the brand cover is light where
+         the title stands, so the title is set in the deck's own navy and ink. -->
+    <Style name="cover-hero"  fontFamily="Pretendard" fontSize="46" bold="true" color="1B4A9C" lineHeight="1.2" letterSpacing="-0.015" />
+    <Style name="cover-org"   fontFamily="Pretendard" fontSize="16" bold="true" color="14161C" lineHeight="1.34" letterSpacing="-0.015" />
+    <Style name="cover-badge" fontFamily="Pretendard" fontSize="16" bold="true" color="FFFFFF" lineHeight="1.0" />
+    <Style name="cover-date"  fontFamily="Pretendard" fontSize="14" bold="true" color="14161C" lineHeight="1.0" />
+
+    <!-- Numerals -->
+    <Style name="stat-value" fontFamily="Pretendard" fontSize="26" bold="true" color="14161C" lineHeight="1.0" />
+
+    <!-- Table. Open-side grid with a centred header; the horizontal cell
+         margin stays at 9 so a full line overshoots into the border zone
+         rather than the neighbour cell. -->
+    <Style name="table" flexShrink="0" cellBorder.color="E2E5EA" cellBorder.width="0.5"
+                        cellBorderSides="no-outer-vertical"
+                        cellMargin="3 8" defaultRowHeight="22" w="100%" />
+    <Style name="th"  fontFamily="Pretendard" fontSize="11" bold="true" color="14161C"
+                      backgroundColor="F5F6F8" textAlign="center" />
+    <Style name="tl"  fontFamily="Pretendard" fontSize="11" bold="true" color="14161C" />
+    <Style name="td"  fontFamily="Pretendard" fontSize="11" color="2E3138" />
+    <Style name="tdb" fontFamily="Pretendard" fontSize="11" bold="true" color="1B4A9C" />
+    <Style name="tc"  fontFamily="Pretendard" fontSize="11" color="2E3138" textAlign="center" />
+    <Style name="tlc" fontFamily="Pretendard" fontSize="11" bold="true" color="14161C" textAlign="center" />
+
+    <!-- Lane cell — the merged first column of a layered table. The three
+         colours are the deck's subsystem code: collection 1B4A9C, central
+         console 087EA4, verification tools 507C39. -->
+    <Style name="lane-collect" fontFamily="Pretendard" fontSize="11" bold="true" color="1B4A9C"
+                               backgroundColor="EEF2FA" textAlign="center" verticalAlign="middle" />
+    <Style name="lane-core"    fontFamily="Pretendard" fontSize="11" bold="true" color="087EA4"
+                               backgroundColor="EAF6F8" textAlign="center" verticalAlign="middle" />
+    <Style name="lane-tool"    fontFamily="Pretendard" fontSize="11" bold="true" color="507C39"
+                               backgroundColor="EFF5EC" textAlign="center" verticalAlign="middle" />
+
+    <!-- Compact table — one step down, for a column of a 3-column layout. -->
+    <Style name="table-sm" flexShrink="0" cellBorder.color="E2E5EA" cellBorder.width="0.5"
+                           cellBorderSides="no-outer-vertical"
+                           cellMargin="3 6" defaultRowHeight="20" w="100%" />
+    <Style name="th-sm" fontFamily="Pretendard" fontSize="10.67" bold="true" color="14161C"
+                        backgroundColor="F5F6F8" textAlign="center" />
+    <Style name="tl-sm" fontFamily="Pretendard" fontSize="10.67" bold="true" color="14161C" />
+    <Style name="td-sm" fontFamily="Pretendard" fontSize="10.67" color="2E3138" />
+    <Style name="tc-sm"  fontFamily="Pretendard" fontSize="10.67" color="2E3138" textAlign="center" />
+    <Style name="tlc-sm" fontFamily="Pretendard" fontSize="10.67" bold="true" color="14161C" textAlign="center" />
+
+    <!-- Matrix cells — a permission or coverage grid read as a picture: an
+         allowed cell is a tinted plate with the accent mark, a refused one a
+         soft mark on paper. -->
+    <Style name="cell-on"  fontFamily="Pretendard" fontSize="11" bold="true" color="1B4A9C"
+                           backgroundColor="EEF2FA" textAlign="center" />
+    <Style name="cell-off" fontFamily="Pretendard" fontSize="11" color="C8CDD6" textAlign="center" />
+
+    <!-- Schedule bars — a filled bar for a phase, a tinted one for a phase
+         that runs alongside; both one line, white or accent text. -->
+    <Style name="gantt-bar"       fontFamily="Pretendard" fontSize="10.67" bold="true" color="FFFFFF"
+                                  backgroundColor="1B4A9C" borderRadius="2" padding="0 6" h="18" />
+    <Style name="gantt-bar-light" fontFamily="Pretendard" fontSize="10.67" bold="true" color="1B4A9C"
+                                  backgroundColor="EEF2FA" borderRadius="2" padding="0 6" h="18" />
+
+    <!-- Inline accent — one per block -->
+    <Style name="kw"     color="1B4A9C" bold="true" />
+    <Style name="kw-ink" fontFamily="Pretendard" color="14161C" bold="true" />
+  </Styles>
+</Fragment>

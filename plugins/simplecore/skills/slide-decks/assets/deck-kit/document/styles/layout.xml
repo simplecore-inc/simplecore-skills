@@ -1,0 +1,79 @@
+<Fragment>
+  <!--
+    Page geometry — A4 portrait, 794 x 1123 px at 96 dpi (210 x 297 mm).
+
+      margin  56 left / right          content width 682
+      top     64 (masthead sits above, in the master)
+      bottom  74 (folio sits below, in the master)
+
+    One rule exists in this document: the hairline that closes the running
+    head. Columns are separated by the gutter, not by a line — where the
+    column holds cards, the card borders already divide it, and where it holds
+    prose, the gutter does. Ticks, dots, accent stubs, per-row underlines and
+    column rules are all a line drawn where nothing needed dividing.
+
+    Never set these numbers on a slide. Every page goes through a page
+    template, and the template owns the padding.
+  -->
+  <Styles>
+    <Style name="fill" h="max" w="100%" />
+
+    <!-- The only rule -->
+    <Style name="hairline" backgroundColor="E2E5EA" h="1" w="100%" />
+
+    <!--
+      One box, and it is the running head's meta block.
+
+      A tinted box around an aside, and an ink mat around a figure that
+      already carries its own dark background, are both a second frame drawn
+      over content that was already bounded. An aside is marked by one rule
+      above it and a heading; a figure is bounded by its own edge.
+
+      The exception is `metabox`: two label/value rows that have to line up
+      with each other and stay apart from the chapter path beside them. A
+      tint does that with one element where alignment alone would not.
+    -->
+    <Style name="metabox" backgroundColor="F5F6F8" padding="12 16" borderRadius="1" />
+
+    <!--
+      Requirement badge. A requirement number inside the page body is a
+      citation, not a sentence, and left as bare text under a heading it reads
+      as a stray fragment. The chip is the second exception to the rule above:
+      it bounds a token, not a block of content. It carries the accent at the
+      lightest tint that still separates from paper, so a page can hold several
+      without the page turning blue. The running head never uses it — there the
+      meta box already does the bounding.
+    -->
+    <Style name="reqbadge" backgroundColor="EEF2FA" borderRadius="2"
+                           border.color="C6D5EC" border.width="0.75"
+                           padding="2 7" h="13" />
+
+    <!--
+      Cards. A discrete item — one requirement, one device, one stage — has an
+      edge in the reader's head, and a card is that edge drawn. The rule
+      against boxes above is about a frame drawn over content that was already
+      bounded; a list of separate items is not that.
+
+      One border weight, one radius, one title-bar tint. A card never sits
+      inside another card.
+    -->
+    <Style name="card"       backgroundColor="FFFFFF" borderRadius="2"
+                             border.color="E2E5EA" border.width="1" />
+    <Style name="card-bar"   backgroundColor="F5F6F8" padding="11 17" w="100%" />
+    <Style name="card-bar-ink" backgroundColor="14161C" padding="11 17" w="100%" />
+    <Style name="card-body"  padding="16 17" w="100%" />
+
+    <!--
+      Title bars. A bar is the heading of a whole region — it spans the text
+      block and closes the section above it. The plain icon heading (`h2`)
+      stays the sub-level inside a region, so the two never compete: one bar
+      per region, headings beneath it.
+
+      The filled bars carry a 부 colour, so they live in the generated
+      styles/parts.xml with the rest of the palette. This one does not fill
+      anything: it opens a region with a rule alone.
+    -->
+    <Style name="bar-quiet" padding="0 0 9 0" w="100%"
+                            borderBottom.color="14161C" borderBottom.width="2" />
+  </Styles>
+</Fragment>

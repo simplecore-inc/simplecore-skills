@@ -1,0 +1,332 @@
+<Fragment>
+  <!--
+    Page shells. Every slide is one <Use> of a template below — the running
+    head, the rule and the margins exist in exactly one place.
+
+    `p` is the part index 1~9 and the only thing a chapter file says about
+    colour: it picks the master (`BODY-4`), the running head's numeral and
+    the section bars on the page. A slide that serves two parts (Ⅷ and Ⅸ on
+    one page) takes the first as `p` and lets its second region's bar name
+    the other.
+
+    The running head is identical on every content slide:
+
+        04  기술 및 기능   본 제안서 Ⅳ-2 기능 요구사항 · 57~101쪽    평가항목  기능 요구사항
+                                                                    요구사항  SFR-004
+        프린터 등록·변경·이력 관리
+        탐지와 등록, 중복 검사와 MAC 기준 이력으로 전사 프린터 대장을 유지한다.
+        ────────────────────────────────────────────────────────────────
+
+    One 42 px row on the grey panel the BODY master draws, then the title,
+    the one-sentence claim and the hairline. `refPages` is written by
+    tools/refpages.py from the proposal deck's import order — never by hand.
+    `notes` is the speaker script, written into the slide's notes page.
+  -->
+  <Templates>
+
+    <!-- ============================ 표지 ============================
+         The brand cover, cropped to landscape. The artwork's orange shape
+         holds the left half, so the content column stands on the light
+         right half: `padLeft` moves the text block there. The folio is on
+         the master — the cover is slide 01 of the numbered run. -->
+    <!-- @kind shell · @box filled · @emph part colour
+         @content the 서식 1 cover
+         @shape   navy head and foot bands
+         @with    —
+         @not     cover-art is the artwork alternative and only one of the two is used -->
+    <Template name="cover">
+      <Slide master="COVER">
+        <Notes>{notes}</Notes>
+        <!-- 높이 782·아래 여백 44 는 치수다. 발치의 제안사·제출일 묶음을 `fill` 로
+             내리므로 h="100%" 를 주면 아래 여백이 두 번 세어져 넘친 것으로 측정된다
+             (동작 20). -->
+        <VStack padding.left="{padLeft}" padding.right="48"
+                padding.top="52" padding.bottom="44" gap="0" h="782">
+          <Slot name="default" />
+        </VStack>
+      </Slide>
+    </Template>
+
+    <!-- ============================ 차례 ============================
+         The brand contents artwork keeps its circles on the left edge, so
+         the text block starts at `padLeft`. Carries no folio: the slide
+         numbers the plan assigns start at the cover and skip this page. -->
+    <!-- @kind shell · @box none · @emph none
+         @content a contents page
+         @shape   kicker + title + hairline + rows
+         @with    toc-part · toc-row
+         @not     — -->
+    <Template name="toc">
+      <Slide master="TOC">
+        <VStack padding.left="{padLeft}" padding.right="48"
+                padding.top="52" padding.bottom="40" gap="0" h="100%">
+          <HStack alignItems="center" w="100%">
+            <Text class="eyebrow" lineHeight="1.0" textVAlign="middle" w="max">{kicker}</Text>
+            <Text class="meta-label" lineHeight="1.0" textVAlign="middle" w="260" textAlign="right">{note}</Text>
+          </HStack>
+          <Text class="page-title" margin.top="8">{title}</Text>
+          <VStack class="hairline" margin.top="12" />
+          <VStack gap="0" w="100%" margin.top="4">
+            <Slot name="default" />
+          </VStack>
+        </VStack>
+      </Slide>
+    </Template>
+
+    <!-- ========================= 본문 (표준 슬라이드) =========================
+         The slide is not printed, so its head and foot are full-bleed bands the
+         master draws (part colour above, a light neutral below) and the page
+         only lays its text on them: the part line and the proposal reference on
+         the head, the evaluation item and the requirement ids on the foot, the
+         folio at the foot's right. The shell is a Layer: the content column has
+         a fixed height so the Layer's sum of heights (758 + 34) stays inside
+         the page (behaviour 20), and the foot row sits at its absolute y. -->
+    <!-- @kind shell · @box none · @emph part colour
+         @content a body page
+         @shape   running head + a 16px-gap content stack
+         @with    every body shape
+         @not     — -->
+    <Template name="page">
+      <Slide master="BODY-{p}">
+        <Notes>{notes}</Notes>
+        <Layer w="100%" h="100%">
+          <VStack x="0" y="0" w="100%" h="758"
+                  padding.left="48" padding.right="48" padding.top="0" padding.bottom="10" gap="0">
+            <Use template="head-band" p="{p}" part="{part}" ref="{ref}" refTitle="{refTitle}" refPages="{refPages}" />
+            <Text class="page-title" margin.top="10" w="100%">{title}</Text>
+            <Text class="lede" margin.top="6" w="980">{sub}</Text>
+            <VStack class="hairline" margin.top="10" />
+            <VStack gap="18" w="100%" margin.top="14">
+              <Slot name="default" />
+            </VStack>
+          </VStack>
+          <Use template="foot-band" evalItem="{evalItem}" reqs="{reqs}" />
+        </Layer>
+      </Slide>
+    </Template>
+
+    <!-- ========================= 마지막 쪽 =========================
+         The closing slide on the END artwork: the navy plate at the top
+         right carries the project name (master); the greeting stands on
+         the light left half and the closing promises run along the foot. -->
+    <!-- @kind shell · @box none · @emph part colour
+         @content the closing slide
+         @shape   the promise cells over the brand ground
+         @with    promise-cell
+         @not     — -->
+    <Template name="closing">
+      <Slide master="END">
+        <Notes>{notes}</Notes>
+        <Layer w="100%" h="100%">
+          <VStack x="48" y="150" w="470" gap="0">
+            <Text class="eyebrow">{kicker}</Text>
+            <Text class="end-mark" margin.top="14">{line1}</Text>
+            <Text class="hero-sub" margin.top="6">{subText}</Text>
+            <VStack class="mark-0" margin.top="22" />
+            <Text class="lede" margin.top="18" w="440" lineHeight="1.7">{lede}</Text>
+          </VStack>
+          <VStack x="48" y="{footY}" w="1027" gap="12">
+            <Slot name="default" />
+          </VStack>
+        </Layer>
+      </Slide>
+    </Template>
+
+    <!-- ============================ 머리 띠 · 발치 띠 ============================
+         The head row stands on the master's band (36 px, the part colour): the
+         part line in white (fixed width, generated per part in parts.xml) and
+         the proposal reference taking the slack up to the deck-name block the
+         master draws at the right. The foot row stands on the master's light
+         band (34 px at y=760): the evaluation item and the requirement ids as
+         label/value pairs, the folio at the right being the master's. Every
+         width is explicit — an HStack shares its width among children that
+         declare none (slideglance behaviour 21). -->
+    <!-- @kind head · @box filled · @emph part colour
+         @content a slide's head band
+         @shape   a full-bleed band naming the part and the source
+         @with    page
+         @not     — -->
+    <Template name="head-band">
+      <HStack alignItems="center" w="795" h="36" gap="14" group="true">
+        <Use template="partline" p="{p}" part="{part}" />
+        <Text class="runhead-chapter" w="max" lineHeight="1.0" textVAlign="middle">본 제안서 {ref} {refTitle} · {refPages}</Text>
+      </HStack>
+    </Template>
+    <!-- @kind head · @box filled · @emph part colour
+         @content a slide's foot band
+         @shape   a full-bleed band with the items, ids and folio
+         @with    page
+         @not     — -->
+
+    <Template name="foot-band">
+      <HStack x="48" y="760" w="960" h="34" alignItems="center" gap="28" group="true">
+        <Use template="foot-meta" w="430" label="평가항목" value="{evalItem}" />
+        <Use template="foot-meta" w="max" label="요구사항" value="{reqs}" />
+      </HStack>
+    </Template>
+
+    <!-- A label and its value side by side; `w` is the pair's share of the band. -->
+    <!-- @kind head · @box none · @emph none
+         @content one pair of that foot
+         @shape   a label/value pair
+         @with    foot-band
+         @not     — -->
+    <Template name="foot-meta">
+      <HStack w="{w}" gap="8" alignItems="center">
+        <Text class="foot-label" w="52" flexShrink="0" lineHeight="1.0" textVAlign="middle">{label}</Text>
+        <Text class="foot-value" w="max" lineHeight="1.0" textVAlign="middle">{value}</Text>
+      </HStack>
+    </Template>
+
+    <!-- ============================ 단 구성 ============================
+         Content width 1027. The column widths are dimensions, and every
+         layout's columns add up to it:
+
+           cols2          499.5 · 28 · 499.5      two equal columns
+           cols3          326 · 24 · 326 · 24 · 326
+           cols3-wide     475 · 24 · 252 · 24 · 252   a wide first column
+           cols-wide-left 660 · 28 · 339            2 : 1
+           cols-wide-right 339 · 28 · 660           1 : 2
+           cols-rail      236 · 28 · 763            an index rail and a body
+           screen-side    640 · 28 · 359            a capture and its notes
+           stack          full width, two regions   상단 · 하단
+
+         `stretch` rows make boxed cards standing side by side share a bottom
+         edge; the `-top` variants keep `start` alignment for columns that
+         hold a table, which the renderer would otherwise scale to the
+         stretched frame. -->
+    <!-- @kind layout · @box none · @emph none
+         @content two equal columns on a slide
+         @shape   HStack, stretch
+         @with    col-section*
+         @not     cols2-top when a column holds a table -->
+    <Template name="cols2">
+      <HStack gap="28" alignItems="stretch" w="100%">
+        <VStack flexGrow="1" flexBasis="0" gap="12"><Slot name="left" /></VStack>
+        <VStack flexGrow="1" flexBasis="0" gap="12"><Slot name="right" /></VStack>
+      </HStack>
+    </Template>
+    <!-- @kind layout · @box none · @emph none
+         @content two equal columns aligned to the top
+         @shape   HStack, start
+         @with    tables
+         @not     — -->
+
+    <Template name="cols2-top">
+      <HStack gap="28" alignItems="start" w="100%">
+        <VStack flexGrow="1" flexBasis="0" gap="12"><Slot name="left" /></VStack>
+        <VStack flexGrow="1" flexBasis="0" gap="12"><Slot name="right" /></VStack>
+      </HStack>
+    </Template>
+    <!-- @kind layout · @box none · @emph none
+         @content three equal columns on a slide
+         @shape   HStack, stretch
+         @with    pillar · kpi-tile
+         @not     cols3-top when a column holds a table -->
+
+    <Template name="cols3">
+      <HStack gap="24" alignItems="stretch" w="100%">
+        <VStack flexGrow="1" flexBasis="0" gap="12"><Slot name="a" /></VStack>
+        <VStack flexGrow="1" flexBasis="0" gap="12"><Slot name="b" /></VStack>
+        <VStack flexGrow="1" flexBasis="0" gap="12"><Slot name="c" /></VStack>
+      </HStack>
+    </Template>
+    <!-- @kind layout · @box none · @emph none
+         @content three equal columns aligned to the top
+         @shape   HStack, start
+         @with    tables
+         @not     — -->
+
+    <Template name="cols3-top">
+      <HStack gap="24" alignItems="start" w="100%">
+        <VStack flexGrow="1" flexBasis="0" gap="12"><Slot name="a" /></VStack>
+        <VStack flexGrow="1" flexBasis="0" gap="12"><Slot name="b" /></VStack>
+        <VStack flexGrow="1" flexBasis="0" gap="12"><Slot name="c" /></VStack>
+      </HStack>
+    </Template>
+
+    <!-- A wide first column (a table or a ledger) and two narrow ones. -->
+    <!-- @kind layout · @box none · @emph none
+         @content three columns, the middle one wider
+         @shape   HStack, stretch, uneven
+         @with    col-section*
+         @not     — -->
+    <Template name="cols3-wide">
+      <HStack gap="24" alignItems="stretch" w="100%">
+        <VStack w="475" flexShrink="0" gap="12"><Slot name="a" /></VStack>
+        <VStack flexGrow="1" flexBasis="0" gap="12"><Slot name="b" /></VStack>
+        <VStack flexGrow="1" flexBasis="0" gap="12"><Slot name="c" /></VStack>
+      </HStack>
+    </Template>
+
+    <!-- 2 : 1 — the argument on the left, its measures on the right. -->
+    <!-- @kind layout · @box none · @emph none
+         @content an argument on the left beside its measures
+         @shape   a wide left column and a narrow right
+         @with    col-section*
+         @not     cols-wide-right so two consecutive slides do not lean the same way -->
+    <Template name="cols-wide-left">
+      <HStack gap="28" alignItems="start" w="100%">
+        <VStack w="660" flexShrink="0" gap="12"><Slot name="left" /></VStack>
+        <VStack w="max" gap="12"><Slot name="right" /></VStack>
+      </HStack>
+    </Template>
+
+    <!-- 1 : 2 — mirrored, so consecutive asymmetric pages do not tip the
+         same way. -->
+    <!-- @kind layout · @box none · @emph none
+         @content the same, mirrored
+         @shape   a narrow left column and a wide right
+         @with    col-section*
+         @not     — -->
+    <Template name="cols-wide-right">
+      <HStack gap="28" alignItems="start" w="100%">
+        <VStack w="339" flexShrink="0" gap="12"><Slot name="left" /></VStack>
+        <VStack w="max" gap="12"><Slot name="right" /></VStack>
+      </HStack>
+    </Template>
+
+    <!-- A narrow index rail and the body that reads it. -->
+    <!-- @kind layout · @box none · @emph none
+         @content an index beside its body
+         @shape   a narrow rail and a wide body
+         @with    col-section*
+         @not     — -->
+    <Template name="cols-rail">
+      <HStack gap="28" alignItems="start" w="100%">
+        <VStack w="236" flexShrink="0" gap="12"><Slot name="rail" /></VStack>
+        <VStack w="max" gap="12"><Slot name="body" /></VStack>
+      </HStack>
+    </Template>
+
+    <!-- A screen capture at 640 px beside a 359 px notes column. The capture
+         comes from the generated screens.xml (`scr-<id>-side`), which fits
+         the bitmap into the column and computes its height. -->
+    <!-- @kind layout · @box none · @emph none
+         @content a capture beside its notes
+         @shape   a wide capture column and a note column
+         @with    figures
+         @not     — -->
+    <Template name="screen-side">
+      <HStack gap="28" alignItems="start" w="100%">
+        <VStack w="640" flexShrink="0" gap="12"><Slot name="figure" /></VStack>
+        <VStack w="max" gap="12"><Slot name="default" /></VStack>
+      </HStack>
+    </Template>
+
+    <!-- Two full-width regions, one above the other. Named so a page's
+         layout is stated at its top rather than inferred from its bars. -->
+    <!-- @kind layout · @box none · @emph none
+         @content two full-width regions, one over the other
+         @shape   a VStack of regions
+         @with    col-section*
+         @not     cols2 when the two are read side by side -->
+    <Template name="stack">
+      <VStack gap="12" w="100%">
+        <Slot name="top" />
+        <Slot name="bottom" />
+      </VStack>
+    </Template>
+
+  </Templates>
+</Fragment>

@@ -1,0 +1,21 @@
+{
+  "name": "oa-consumables-presentation-pptx",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsx build.ts",
+    "render": "tsx build.ts --render",
+    "check": "python3 tools/rowheight.py && python3 tools/coverage.py",
+    "pdf": "python3 tools/pdf.py"
+  },
+  "dependencies": {
+    "@slideglance/builder": "^0.4.0"
+  },
+  "devDependencies": {
+    "@resvg/resvg-js": "^2.6.2",
+    "@types/node": "^26.5.0",
+    "tsx": "^4.23.13",
+    "typescript": "^7.0.2"
+  }
+}

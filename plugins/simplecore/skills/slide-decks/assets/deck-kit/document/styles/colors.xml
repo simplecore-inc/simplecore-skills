@@ -1,0 +1,35 @@
+<Fragment>
+  <!--
+    White paper, cool neutrals, one accent per part.
+
+    The ink tone (14161C) sits next to the diagram background in
+    proposal/diagrams, so a figure dropped on the page reads as part of the
+    document rather than a pasted screenshot. Everything else is a single
+    neutral ramp — a second warm or coloured family on white reads as dirt.
+
+    `t-accent` (1B4A9C) is the document's inline accent and belongs to no
+    part: a keyword, a figure number, an icon, a requirement badge, a table's
+    answer column. It is spent once per block and never twice in one.
+
+    The nine 부 colours are page *chrome* only — the masthead band, the
+    running head's part numeral, the section bar, the divider and the contents
+    row. Chrome says which part the reader is in; the inline accent says which
+    word matters. Keeping them apart is what stops a page turning into two
+    competing colour systems.
+
+    They are not written here. `styles/parts.xml` holds them, generated from
+    the one table in build.ts that also emits the masters — a palette written
+    out twice drifts.
+
+    There are no surface tokens here. The tinted surfaces this document
+    allows — the running head's panel, a section bar, a table header row —
+    carry their fill in the style that defines them, so a surface cannot be
+    reached for by accident from a chapter file.
+  -->
+  <Styles>
+    <Style name="t-ink"    color="14161C" />
+    <Style name="t-body"   color="2E3138" />
+    <Style name="t-muted"  color="6B7280" />
+    <Style name="t-accent" color="1B4A9C" />
+  </Styles>
+</Fragment>

@@ -1,0 +1,54 @@
+<Fragment>
+  <!--
+    Page geometry — A4 landscape, 1123 x 794 px at 96 dpi (297 x 210 mm).
+
+      margin  48 left / right          content width 1027
+      top     40 (masthead band and the running-head panel sit above and
+                  under it, drawn by the master)
+      bottom  44 (folio sits below, in the master)
+
+    The content area runs from about y=165 (under the page title and its
+    hairline) to y=750, roughly 585 px tall. A page is filled to that line,
+    never past it.
+
+    One rule exists in this deck: the hairline that closes the running head.
+    Columns are separated by the gutter, not by a line.
+
+    Never set these numbers on a slide. Every page goes through a page
+    template, and the template owns the padding.
+  -->
+  <Styles>
+    <Style name="fill" h="max" w="100%" />
+
+    <!-- The only rule -->
+    <Style name="hairline" backgroundColor="E2E5EA" h="1" w="100%" />
+
+    <!-- The running head's meta block. Two label/value rows that line up
+         with each other and stay apart from the chapter line beside them. -->
+    <Style name="metabox" backgroundColor="F5F6F8" padding="12 16" borderRadius="1" />
+
+    <!-- Requirement badge: a code value standing in the body, bounded by a
+         border and the lightest accent tint. -->
+    <Style name="reqbadge" backgroundColor="EEF2FA" borderRadius="2"
+                           border.color="C6D5EC" border.width="0.75"
+                           padding="2 7" h="13" />
+
+    <!-- Cards. One border weight, one radius, one title-bar tint. A card
+         never sits inside another card. -->
+    <Style name="card"       backgroundColor="FFFFFF" borderRadius="2"
+                             border.color="E2E5EA" border.width="1" />
+    <Style name="card-bar"   backgroundColor="F5F6F8" padding="11 17" w="100%" />
+    <Style name="card-bar-ink" backgroundColor="14161C" padding="11 17" w="100%" />
+    <Style name="card-body"  padding="16 17" w="100%" />
+
+    <!-- Unfilled title bar: opens a region with the rule alone. -->
+    <Style name="bar-quiet" padding="0 0 9 0" w="100%"
+                            borderBottom.color="14161C" borderBottom.width="2" />
+
+    <!-- The stub of a column bar. A region bar across the text block keeps
+         the 200 px stub (`bar-stub` in the generated parts.xml); a bar that
+         heads one column of a 2- or 3-column layout takes this narrower one
+         so the heading keeps most of the column. -->
+    <Style name="bar-stub-sm" backgroundColor="F5F6F8" padding="0 10" h="28" w="120" />
+  </Styles>
+</Fragment>

@@ -1,0 +1,141 @@
+<Fragment>
+  <!--
+    Two families.
+
+      KoPub Batang  — display only: cover, part divider, page title, table of
+                      contents. A Korean serif carries the weight the RFP asks
+                      of the contents page (신명조) and separates the title from
+                      the body without another rule or another colour.
+      Pretendard    — everything else. Bundled in the builder, so wrap width is
+                      measured from real OpenType metrics.
+
+    One ramp, seven steps. Hierarchy is carried by size and weight; colour is
+    reserved for the accent, which appears at most once per block.
+  -->
+  <Styles>
+    <!-- Display — serif.
+         `part-no`, `part-title` and `toc-part` carry no colour: the part
+         colour arrives as a second class (`t-p4`) at the call site, and a
+         colour written here would win over it only by accident of order. -->
+    <Style name="hero"       fontFamily="KoPub Batang" fontSize="53" bold="true"  color="1B4A9C" lineHeight="1.16" />
+    <Style name="hero-sub"   fontFamily="KoPub Batang" fontSize="26" bold="false" color="2E3138" lineHeight="1.3" />
+    <Style name="part-no"    fontFamily="KoPub Batang" fontSize="80" bold="true"  lineHeight="1.0" />
+    <Style name="part-stat"  fontFamily="Pretendard"  fontSize="18" bold="true"  color="14161C" lineHeight="1.0" />
+    <Style name="part-title" fontFamily="KoPub Batang" fontSize="48" bold="true"  lineHeight="1.2" />
+    <Style name="page-title" fontFamily="KoPub Batang" fontSize="24" bold="true"  color="14161C" lineHeight="1.22" />
+    <Style name="toc-part"   fontFamily="KoPub Batang" fontSize="20" bold="true"  lineHeight="1.0" />
+    <Style name="toc-row"    fontFamily="KoPub Batang" fontSize="16" bold="false" color="14161C" lineHeight="1.0" />
+    <Style name="quote"      fontFamily="KoPub Batang" fontSize="16" bold="false" color="14161C" lineHeight="1.5" />
+    <Style name="end-mark"   fontFamily="KoPub Batang" fontSize="53" bold="true"  color="14161C" lineHeight="1.2" />
+
+    <!-- Headings — sans -->
+    <Style name="h2" fontFamily="Pretendard" fontSize="12.5" bold="true" color="14161C" lineHeight="1.3" />
+    <Style name="h3" fontFamily="Pretendard" fontSize="10.67" bold="true" color="14161C" lineHeight="1.35" />
+
+    <!-- Body -->
+    <Style name="body"    fontFamily="Pretendard" fontSize="10.67" color="2E3138" lineHeight="1.66" />
+    <Style name="body-sm" fontFamily="Pretendard" fontSize="10.67" color="2E3138" lineHeight="1.55" />
+    <Style name="lede"    fontFamily="Pretendard" fontSize="10.67" color="6B7280" lineHeight="1.6" />
+    <Style name="lead-in" fontFamily="Pretendard" fontSize="12.5" bold="true" color="1B4A9C" lineHeight="1.5" />
+
+    <!-- Meta -->
+    <!-- letterSpacing 은 em 이 아니라 포인트다 — 자간(pt) = letterSpacing × 100.
+         PNG 렌더러는 이 값을 무시하므로 미리보기에서는 아무 차이가 없고
+         PowerPoint 로 연 .pptx 에서만 벌어진다. 0.06 은 6pt 자간이었다. -->
+    <Style name="eyebrow"     fontFamily="Pretendard" fontSize="10.67"   bold="true" color="14161C" lineHeight="1.0" letterSpacing="0.0054" />
+    <Style name="eyebrow-alt" fontFamily="Pretendard" fontSize="10.67"   color="6B7280" lineHeight="1.0" />
+        <Style name="meta-label"  fontFamily="Pretendard" fontSize="10.67"   color="9AA0AB" lineHeight="1.0" />
+    <Style name="meta-value"  fontFamily="Pretendard" fontSize="10.67"   bold="true" color="14161C" lineHeight="1.0" />
+    <Style name="caption"     fontFamily="Pretendard" fontSize="10.67" color="6B7280" lineHeight="1.2" />
+    <Style name="footnote"    fontFamily="Pretendard" fontSize="10.67"   color="6B7280" lineHeight="1.5" />
+
+    <!-- Annex frame write-up beside a half-width capture. One step under
+         body-sm so six labelled rows stand beside a half-width capture; the
+         label keeps the h3 weight at the same size so the two columns of a
+         row read as one line. -->
+    <Style name="body-xs"  fontFamily="Pretendard" fontSize="10.67"   color="2E3138" lineHeight="1.5" />
+    <Style name="label-xs" fontFamily="Pretendard" fontSize="10.67"   bold="true" color="14161C" lineHeight="1.5" />
+    <!-- A frame id standing before its name — the accent, one per block. -->
+    <Style name="frame-id" fontFamily="Pretendard" fontSize="9.5" bold="true" color="1B4A9C" lineHeight="1.35" />
+
+    <!-- Running head.
+         The first row reads 「04  기술 및 기능」: a two-digit part number whose
+         leading zero is set in the lightest neutral so the digit that changes
+         is the one the eye lands on, then the part name in ink. All three are
+         one text: `partline` in the generated templates/parts.xml writes the
+         two colours as spans, because a span reads a hex and not a class. -->
+    <Style name="runhead-part"    fontFamily="Pretendard" fontSize="15"  bold="true" color="14161C" lineHeight="1.0" letterSpacing="0.0054" />
+    <Style name="runhead-chapter" fontFamily="Pretendard" fontSize="10.67"   color="6B7280" lineHeight="1.0" />
+
+    <!-- Section bar. The bar is filled with the part colour, so its heading
+         is reversed out; the grey stub beside it keeps the quiet neutral. -->
+    <Style name="bar-text"    fontFamily="Pretendard" fontSize="12.5" bold="true" color="FFFFFF" lineHeight="1.0" />
+    <Style name="bar-key"     fontFamily="Pretendard" fontSize="8"    color="9AA0AB" lineHeight="1.0" />
+    <Style name="bar-key-req" fontFamily="Pretendard" fontSize="8"    bold="true" color="1B4A9C" lineHeight="1.0" />
+
+    <!-- Cover artwork. Nothing else on the document uses these sizes.
+
+         The brand cover is light where the title sits — the ground measures
+         about 205 in luminance — so the title and the ordering department are
+         set in the document's own navy and ink rather than reversed out. Only
+         the date is white: it stands on the dark plate at the foot. -->
+    <Style name="cover-hero"  fontFamily="Pretendard" fontSize="77" bold="true" color="1B4A9C" lineHeight="1.26" letterSpacing="-0.015" />
+    <Style name="cover-org"   fontFamily="Pretendard" fontSize="21" bold="true" color="14161C" lineHeight="1.34" letterSpacing="-0.015" />
+    <Style name="cover-badge" fontFamily="Pretendard" fontSize="27" bold="true" color="FFFFFF" lineHeight="1.0" />
+    <Style name="cover-date"  fontFamily="Pretendard" fontSize="24" bold="true" color="FFFFFF" lineHeight="1.0" />
+
+    <!-- Numerals -->
+    <Style name="stat-value" fontFamily="Pretendard" fontSize="28" bold="true" color="14161C" lineHeight="1.0" />
+
+    <!-- Table. The header tint and the cell rule live here so a chapter
+         never repeats a hex. -->
+    <!-- Horizontal cell margin 10 (vertical stays 7): the preview
+         renderer's wrap measure runs a few percent narrow, so a full line
+         can overshoot its cell by ~1 glyph. The wider side margins keep
+         that overshoot inside the border zone instead of on top of the
+         neighbour cell's text; the vertical value stays untouched so the
+         builder's row-height estimate keeps matching the render. -->
+    <Style name="table" flexShrink="0" cellBorder.color="E2E5EA" cellBorder.width="0.5"
+                        cellBorderSides="no-outer-vertical"
+                        cellMargin="3 9" defaultRowHeight="22" w="100%" />
+    <Style name="th"  fontFamily="Pretendard" fontSize="10.67" bold="true" color="14161C"
+                      backgroundColor="F5F6F8" textAlign="center" />
+    <Style name="tl"  fontFamily="Pretendard" fontSize="10.67" bold="true" color="14161C" />
+    <Style name="td"  fontFamily="Pretendard" fontSize="10.67" color="2E3138" />
+    <Style name="tdb" fontFamily="Pretendard" fontSize="10.67" bold="true" color="1B4A9C" />
+    <!-- Centred cells: a column of marks (● · △), codes or names that reads
+         as a grid rather than as text takes `tc`; its bold row label, `tlc`. -->
+    <Style name="tc"  fontFamily="Pretendard" fontSize="10.67" color="2E3138" textAlign="center" />
+    <Style name="tlc" fontFamily="Pretendard" fontSize="10.67" bold="true" color="14161C" textAlign="center" />
+
+    <!-- Compact table — reference lists (약어 일람) whose row count would
+         otherwise overflow the page. Same look, one step smaller. -->
+    <!-- Lane cell — the merged (rowspan) first column of a layered table,
+         naming the subsystem its rows belong to. The three colours are the
+         deck's subsystem code: the collection layer (agent, simulator)
+         1B4A9C, the central console (web, API, batch, DB) 087EA4, the
+         verification tools (Workbench, field collection kit) 507C39. A
+         grouped table reads its lane colour from here rather than inventing
+         a fourth. -->
+    <Style name="lane-collect" fontFamily="Pretendard" fontSize="10.67" bold="true" color="1B4A9C"
+                               backgroundColor="EEF2FA" textAlign="center" verticalAlign="middle" />
+    <Style name="lane-core"    fontFamily="Pretendard" fontSize="10.67" bold="true" color="087EA4"
+                               backgroundColor="EAF6F8" textAlign="center" verticalAlign="middle" />
+    <Style name="lane-tool"    fontFamily="Pretendard" fontSize="10.67" bold="true" color="507C39"
+                               backgroundColor="EFF5EC" textAlign="center" verticalAlign="middle" />
+
+    <Style name="table-sm" flexShrink="0" cellBorder.color="E2E5EA" cellBorder.width="0.5"
+                           cellBorderSides="no-outer-vertical"
+                           cellMargin="3 7" defaultRowHeight="20" w="100%" />
+    <Style name="th-sm" fontFamily="Pretendard" fontSize="10.67" bold="true" color="14161C"
+                        backgroundColor="F5F6F8" textAlign="center" />
+    <Style name="tl-sm" fontFamily="Pretendard" fontSize="10.67" bold="true" color="14161C" />
+    <Style name="td-sm" fontFamily="Pretendard" fontSize="10.67" color="2E3138" />
+    <Style name="tc-sm"  fontFamily="Pretendard" fontSize="10.67" color="2E3138" textAlign="center" />
+    <Style name="tlc-sm" fontFamily="Pretendard" fontSize="10.67" bold="true" color="14161C" textAlign="center" />
+
+    <!-- Inline accent — one per block -->
+    <Style name="kw"     color="1B4A9C" bold="true" />
+    <Style name="kw-ink" fontFamily="Pretendard" color="14161C" bold="true" />
+  </Styles>
+</Fragment>

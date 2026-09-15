@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<SlideGlance
+    xmlns="urn:slideglance:builder:v1"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="urn:slideglance:builder:v1 https://unpkg.com/@slideglance/builder@^0.1/builder.xsd">
+
+  <!-- A4 landscape, 1123 x 794 px at 96 dpi (297 x 210 mm). The deck is
+       submitted on paper as well as projected, so it keeps the proposal's
+       page size turned on its side rather than a 16:9 screen ratio. -->
+  <Document w="1123" h="794" defaultMaster="PLAIN" fontFamily="Pretendard" />
+
+  <!-- styles -> masters -> templates -> chapters. The order matters:
+       templates consume styles, chapters consume templates. -->
+  <Import src="styles/colors.xml" />
+  <Import src="styles/typography.xml" />
+  <Import src="styles/layout.xml" />
+
+  <Import src="templates/parts.xml" />     <!-- 생성 파일: 부별 색 -->
+  <Import src="templates/master.xml" />    <!-- 생성 파일: 마스터 -->
+  <Import src="templates/components.xml" />
+  <Import src="templates/deck.xml" />
+  <Import src="templates/page.xml" />
+  <Import src="templates/figures.xml" />   <!-- 생성 파일: 도식 -->
+  <Import src="templates/screens.xml" />   <!-- 생성 파일: 화면 캡처 -->
+
+  <!-- 슬라이드 순서 = 발표 계획의 쪽 번호 순서. 파일 이름의 앞 두 자리가 계획의 쪽이다. -->
+  <Import src="chapters/01-표지-일반현황.xml" />
+  <Import src="chapters/01a-발표-차례.xml" />
+  <Import src="chapters/02-제안-배경-목적.xml" />
+  <Import src="chapters/05-Workbench-현장-수집.xml" />
+  <Import src="chapters/08-제조사-지원-시뮬레이터.xml" />
+  <Import src="chapters/12-프린터-등록-변경-이력.xml" />
+  <Import src="chapters/27-데이터-표준-모델-전환.xml" />
+  <Import src="chapters/29-응답시간-성능-판정.xml" />
+  <Import src="chapters/36-진도-위험-변경-보고.xml" />
+  <Import src="chapters/38-요구사항-기반-시험.xml" />
+  <Import src="chapters/41-상생협력-하도급-기타.xml" />
+  <Import src="chapters/42-질의응답.xml" />
+</SlideGlance>
