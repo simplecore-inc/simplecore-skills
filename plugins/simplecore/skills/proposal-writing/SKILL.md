@@ -83,6 +83,14 @@ performance claims.
 **A capture in a blind evaluation is masked before it is placed**, and what the mask
 removes is the proposer's identity, never the evidence the capture exists to show.
 
+**A screen drawn for the proposal is filled with the tender's own data.** Wireframes,
+mock-ups and entity diagrams attached to a submission are read as evidence that the
+proposer understood the work, and placeholder rows say the opposite. Collect the values
+the tender prints before designing the screens, and read
+[references/sample-data.md](references/sample-data.md) for where the collection lives, how
+an invented row is derived from a quoted one, the consistency a screen will expose, and how
+far a blind evaluation reaches into the attachments.
+
 ## One fact, one wording, across every document in the submission
 
 **A milestone is one fact.** When a week, a duration or a completion point appears in the
