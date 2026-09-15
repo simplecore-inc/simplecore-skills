@@ -1,6 +1,6 @@
 ---
 name: proposal-writing
-description: The content standard for a Korean bid proposal, its presentation summary and the technical documents around them - what a page must claim, how a requirement is answered in the panel's own words, controlled language for titles, body, tables, figure labels, captions and speaker notes, enumerations as lists, self-contained references and annex naming, honest reporting of tests and evidence, and the evaluator-persona review that judges the result. Use when writing, revising, translating, reviewing or auditing proposal or technical-document copy, when deciding how much a page or slide answers, when a requirement or evaluation item has to be traced to where it is answered, or when reviewing a document as its evaluators. Triggers - 제안서, 기술문서, 제안요청서, 요구사항 대응, 평가항목, 평가위원, 발표본, 발표자 노트, 문구 검토, 카피 검수, 용어 통일, 열거, 별첨, 증빙, 페르소나 검토, 제안서 검토.
+description: The content standard for a Korean bid proposal, its presentation summary and the technical documents around them - what a page must claim, how a requirement is answered in the panel's own words, controlled language for titles, body, tables, figure labels, captions and speaker notes, enumerations as lists, self-contained references and annex naming, honest reporting of tests and evidence, and the evaluator-persona review that judges the result. Use when writing, revising, translating, reviewing or auditing proposal or technical-document copy, when deciding how much a page or slide answers, when a requirement or evaluation item has to be traced to where it is answered, when transcribing an issued tender into Markdown the authors can cite, or when reviewing a document as its evaluators. Triggers - 제안서, 기술문서, 제안요청서, RFP 정리, RFP 문서화, 요구사항 정리, 요구사항 목록, 요구사항 대응, 평가항목, 평가위원, 발표본, 발표자 노트, 문구 검토, 카피 검수, 용어 통일, 열거, 별첨, 증빙, 페르소나 검토, 제안서 검토.
 ---
 
 # Proposal and technical-document writing
@@ -23,6 +23,22 @@ discipline to Korean proposal writing without claiming formal ASD-STE100 complia
 Follow its common rules first, then the separate rules for the submitted document and
 for the presentation. It also defines the full-document inspection order and the minimum
 context that must survive when a phrase is shortened.
+
+## Transcribing the tender is a quotation, not a rewrite
+
+Before a proposal can answer a tender, the authors need the tender in a form they can cite
+and search, and that copy has to carry the tender's own words. **Read
+[references/rfp-transcription.md](references/rfp-transcription.md) before converting a
+tender - or any issued document the submission answers - into Markdown.** It carries what
+is reproduced character for character, how the tender's own outline decides the file
+split, how requirement ids and detail numbers are carried, the separate requirement index,
+how a figure and its description are kept, and why the transcription is excluded from the
+Korean audit while the tender's competing spellings are still registered as decisions.
+
+**The failure is a helpful transcriber.** A transcription that corrects the tender's
+spelling, merges two clauses that say the same thing, or adds a line explaining what a
+requirement means has destroyed the thing it was made for: the panel's words. Nothing in
+the body is the transcriber's sentence.
 
 ## A requirement is answered in the panel's own words
 
