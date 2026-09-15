@@ -10,9 +10,11 @@
  * rule pack judges sentences: personification, metaphors standing in for real
  * names, AI tells. For a long time only the first ran here, and every sentence
  * rule bit only when somebody asked for an audit; a document could be written
- * clean of banned words and full of the habits the pack exists to catch. The
- * rule pack honours `audit.exclude` on a named file, so an edit to a catalogue
- * that quotes the banned sentences on purpose is reported as skipped, not blocked.
+ * clean of banned words and full of the habits the pack exists to catch.
+ * Both runs honour `audit.exclude` on a named file, so an edit to a catalogue that
+ * quotes the banned sentences on purpose - or to a verbatim transcription of an issued
+ * document, which reproduces its source's spellings as running prose - is reported as
+ * skipped, not blocked.
  *
  * Scope guard: the audit runs only when the edited file belongs to a project
  * that has a project glossary (<dir>/.claude/GLOSSARY.md or <dir>/GLOSSARY.md,

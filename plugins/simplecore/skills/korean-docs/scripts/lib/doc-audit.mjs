@@ -180,11 +180,22 @@ function findPath(p, root, label) {
 }
 
 /**
- * Resolves audit targets. Explicitly named files are always audited -
- * audit.exclude applies only to files discovered by scanning (directory
- * walks, audit.paths, project-wide scan), so naming a file cannot silently
- * report "clean" because a glob filtered it out. The glossary file itself is
- * never audited (it lists banned terms by definition).
+ * Resolves audit targets. `audit.exclude` reaches a named file as well as a
+ * scanned one, and a named file it reaches is reported as skipped rather than
+ * dropped, so naming a file can never silently report "clean" because a glob
+ * filtered it out.
+ *
+ * Naming a file used to override the exclusion, on the reasoning that a
+ * catalogue of banned spellings reads clean anyway because its specimens sit in
+ * code spans. **A verbatim transcription is the case that reasoning never
+ * addressed**: a project's copy of an issued tender reproduces the tender's own
+ * spellings as running prose, on purpose, and correcting them would destroy the
+ * thing the copy exists to be. Every write to such a file was blocked by the
+ * write-time hook, and the only ways out were to corrupt the transcription or to
+ * switch the hook off. A project that declares a path excluded has answered the
+ * question for that path; this reports what it skipped so the answer stays
+ * visible. The glossary file itself is never audited (it lists banned terms by
+ * definition).
  */
 function resolveTargets(args, config, root, glossaryPath, isLocaleResource) {
   const direct = [];
@@ -212,6 +223,7 @@ function resolveTargets(args, config, root, glossaryPath, isLocaleResource) {
   const glossaries = new Set([glossaryPath, BASE_GLOSSARY_PATH].filter(Boolean).map((p) => resolve(p)));
   const files = [];
   let excludedCount = 0;
+  const excludedNamed = [];
   let glossarySkipped = false;
   const seen = new Set();
   for (const {file, isDirect} of [
@@ -224,17 +236,16 @@ function resolveTargets(args, config, root, glossaryPath, isLocaleResource) {
       glossarySkipped = true;
       continue;
     }
-    if (!isDirect) {
-      const rel = relative(root, file).split(sep).join('/');
-      if (excludes.some((matches) => matches(rel))) {
-        excludedCount++;
-        continue;
-      }
+    const rel = relative(root, file).split(sep).join('/');
+    if (excludes.some((matches) => matches(rel))) {
+      if (isDirect) excludedNamed.push(rel);
+      else excludedCount++;
+      continue;
     }
     files.push(file);
   }
   files.sort();
-  return {files, excludedCount, glossarySkipped};
+  return {files, excludedCount, excludedNamed, glossarySkipped};
 }
 
 // ---------------------------------------------------------------------------
@@ -1438,8 +1449,11 @@ export function runDocAudit(args, cliPath) {
   const isLocaleResource = makeLocaleResourceMatcher(config.localeResources, root);
   const annotationKeys = new Set(config.localeAnnotationKeys);
   const resolvedPlaceholders = parseResolvedPlaceholders(config.resolvedPlaceholders);
-  const {files: targets, excludedCount, glossarySkipped} = resolveTargets(args, config, root, discovered?.path, isLocaleResource);
+  const {files: targets, excludedCount, excludedNamed, glossarySkipped} = resolveTargets(args, config, root, discovered?.path, isLocaleResource);
   if (excludedCount > 0) console.log(`${excludedCount} files excluded by audit.exclude patterns`);
+  // A named file the project excluded is said by name. Silence here would read as a pass on a
+  // file nothing checked, which is the failure this whole block exists to prevent.
+  for (const rel of excludedNamed) console.log(`skipped by audit.exclude: ${rel}`);
   // A declared glob that reaches nothing is a shorter run reporting 「오류 0건」 exactly like a
   // clean one, so the declaration is reported on the line where it is applied. Two numbers,
   // because they answer different questions and only one of them can be wrong: what the patterns
