@@ -24,6 +24,15 @@ Follow its common rules first, then the separate rules for the submitted documen
 for the presentation. It also defines the full-document inspection order and the minimum
 context that must survive when a phrase is shortened.
 
+**A working document the submission draws on is a copy task too.** A design document, a
+feature study or a strategy note under the project's own folders is not the submitted
+document, so its register and its file-specific rules come from `simplecore:korean-docs`;
+what still applies is this reference's general part - the five elements a sentence carries,
+noun chains, vague pointers, abstract verbs, placeholder nouns, conditions and numbers.
+Read the reference before writing one. **Invoking this skill is not reading it**: the
+reference is a separate file, it is where the checks live, and a claim that the
+controlled-language review was applied is false until that file is in context.
+
 ## Transcribing the tender is a quotation, not a rewrite
 
 Before a proposal can answer a tender, the authors need the tender in a form they can cite
