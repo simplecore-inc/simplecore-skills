@@ -20,6 +20,14 @@ skill never restates its register table or its word rules.
 revising or reviewing Korean titles, title explanations, body copy, tables, diagram
 labels, captions or speaker notes. It adapts ASD-STE100's useful controlled-language
 discipline to Korean proposal writing without claiming formal ASD-STE100 compliance.
+
+**Judge by what is in context, not by having invoked the skill.** A session that is
+summarized re-injects this file and does not re-inject anything it routes to, so the
+reference is gone while the invocation still looks done. The same holds for a long session
+that has written many documents since. If the five elements, the noun-chain rewrites and
+the completion questions cannot be quoted right now, the file has not been read - open it
+before the next Korean string, and say in the reply that the pass ran after the writing
+rather than before it when that is what happened.
 Follow its common rules first, then the separate rules for the submitted document and
 for the presentation. It also defines the full-document inspection order and the minimum
 context that must survive when a phrase is shortened.
