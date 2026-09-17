@@ -90,7 +90,18 @@ knows what the prompt has to settle.
    held, with reasons, and for every adopted change the final wording and layout, the
    files, the ripple and the verification. Circulate it to all five; unresolved
    disagreement stays unresolved and is never marked unanimous.
-5. **Apply and verify.** Edit the source of truth first (the manuscript, then the design
+5. **The brief that dispatches an applier is copied out of the decision file.** It
+   carries the adopted set and nothing else. A list assembled from the reviewers' own
+   reports instead carries whatever each reviewer proposed, rejections included, because
+   a reviewer's report does not say which of its proposals lost; a list assembled from
+   memory of the agenda does the same. Open `consensus.md`, copy the adopted ids, and
+   check every id in the brief against the rejected list as well, because an id whose
+   wording sounds right is exactly the one that gets through. One dispatch of five briefs
+   named two rejected items as adopted, and the coordinator had already written one of
+   them into the project's format rules before any applier saw it. That last part is the
+   half nobody downstream catches: an applier reading a rules file takes the rule as
+   settled, so a rule added from the same list is checked before it is written, not after.
+6. **Apply and verify.** Edit the source of truth first (the manuscript, then the design
    and requirement records, then the figure modules, then the chapter files), never a
    generated file. **That order is a sequence, not a list - and when the work is split
    across people or agents, only one stage runs at a time.** A figure's height is the
@@ -112,7 +123,7 @@ knows what the prompt has to settle.
    `changes.md` (consensus id → files → new page mapping → evidence) and `validation.md`
    (every command, exit code, scope, and which images were read). Run every check the
    deck declares; never relax a check or a baseline to make a failure disappear.
-6. **Full re-review.** A new round directory, new reviewer agents with no history, the
+7. **Full re-review.** A new round directory, new reviewer agents with no history, the
    same rubric; the previous findings are handed over only after the new verdicts are
    in, to check recurrence, omission and side effects.
 
