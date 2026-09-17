@@ -195,6 +195,35 @@ scaffold's `canvas()` disables `title()` so no figure module has to remember.
 The prose must stand without the picture. A reader whose images failed to load
 still has to follow the argument; the figure supplements it.
 
+**And whatever the document says about a figure has to be checked by machine.**
+A document that plans its figures - a caption, a list of the strings a figure
+prints, a paragraph telling the reader how to read it - keeps that text in one
+file and the drawing in another, and a figure is redrawn every time its chapter
+changes. Nothing reports the drift: the build succeeds, the lint passes, and the
+reader is told to follow a dashed line that went solid three revisions ago, or
+handed a list of labels that names a symbol the figure stopped using. Every
+instance of this found in one 132-figure set had survived a careful human pass
+over the same pages.
+
+Two comparisons catch nearly all of it, and both are a short script over the
+`.svg` and the source file:
+
+- **The planned strings against the printed ones, in both directions.** A string
+  the figure prints that the plan does not name, and an item the plan names that
+  the figure does not print. One direction alone misses half: a plan that glues
+  two printed labels into one line reads as complete until something checks the
+  plan's own items back against the drawing. Compare with the quotation brackets
+  and the whitespace removed, and by containment rather than equality, since a
+  label the figure wraps is two text elements and one planned item.
+- **A line style the prose tells the reader to look for against the styles the
+  drawing has.** A page that says 「점선」 with no dashed stroke in its figure is
+  a stale instruction, and it lives in prose where no string comparison reaches
+  it.
+
+Scope each comparison to one figure. A page carrying two figures will otherwise
+judge the second against the first one's text, and the false positive teaches
+people to edit true sentences to silence the check - worse than not checking.
+
 ## The composition comes from the claim, not from the list
 
 **Before laying anything out, write down the one sentence the surrounding prose
