@@ -189,8 +189,11 @@ def text_block(c, x, y, text, width, size, color, step=18, anchor="start",
     return y + len(rows) * step
 
 
-ICON_SIZE = 20
-ICON_SW = 1.6
+# One icon size and stroke for the whole set, sized to sit beside BODY type.
+# Derive them here rather than per figure, and never declare a second pair
+# further down the file: the later one wins and the figures quietly change.
+ICON_SIZE = round(BODY * 1.2)
+ICON_SW = max(1.6, BODY / 12)
 
 
 def icon_title(c, x, y, name, text, color, size=CARD, gap=12, weight=700):
