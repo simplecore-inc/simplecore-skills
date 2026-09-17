@@ -2,15 +2,15 @@
 
 Six passes, and the first five fail the run:
 
-1. the shared canvas width — a figure of any other width prints at a different
+1. the shared canvas width - a figure of any other width prints at a different
    type size from its neighbours
-2. the type scale — a one-off size is invisible in the source and obvious on
+2. the type scale - a one-off size is invisible in the source and obvious on
    the page
-3. the type hierarchy — a figure set entirely on the smallest rung prints as
+3. the type hierarchy - a figure set entirely on the smallest rung prints as
    a block of grey with no entry point
-4. the stroke ladder — three weights for the whole set, icons excepted
-5. the toolkit's static lint — arrowheads, overflow, occlusion, margins
-6. height review — a recommendation, not a failure
+4. the stroke ladder - three weights for the whole set, icons excepted
+5. the toolkit's static lint - arrowheads, overflow, occlusion, margins
+6. height review - a recommendation, not a failure
 
 None of them replaces looking at the rendered figure. Use `--render <dir>` to
 write PNGs to read.
@@ -165,7 +165,7 @@ def main(argv):
 
     tall = height_reviews(svgs)
     if tall:
-        print(f"\n[height review] {len(tall)} over {HEIGHT_REVIEW} — split or keep, "
+        print(f"\n[height review] {len(tall)} over {HEIGHT_REVIEW} - split or keep, "
               "but decide")
         for name, height in tall:
             print(f"  {name}: {height:g}" if height else f"  {name}: no height")
@@ -176,7 +176,7 @@ def main(argv):
         for svg in svgs:
             subprocess.run([sys.executable, str(AUDIT), "render", str(svg),
                             str(outdir / f"{svg.stem}.png"), "2"], check=False)
-        print(f"\nrendered to {outdir} — read them")
+        print(f"\nrendered to {outdir} - read them")
 
     print("\nverdict:", "needs work" if failed else "pass")
     return 1 if failed else 0

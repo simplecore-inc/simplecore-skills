@@ -2,20 +2,20 @@
 
 Copy this file into the project (conventionally `tools/diagrams/common.py`) and
 set the four constants below. Every figure module imports from here, so the
-whole set shares one canvas width, one type scale and one output directory —
+whole set shares one canvas width, one type scale and one output directory  - 
 which is the point: figures placed side by side in a document must print their
 body text at the same size.
 
 The second half of the file is the content-first layer: every box is sized from
 the text it holds, with even padding, so a row of cards ends where its tallest
 text ends and a label never crosses a line it was not drawn on. Draw with these
-helpers rather than with fixed heights — the lint (`ROW-PADDING-UNEVEN`,
+helpers rather than with fixed heights - the lint (`ROW-PADDING-UNEVEN`,
 `WRAP-SLACK`, `ROW-HEIGHT-MISMATCH`, `LABEL-GROUPING`, `TEXT-ON-LINE`) reports
 exactly the defects a fixed height produces.
 
 The drawing toolkit lives in the `simplecore:svg-diagrams` skill rather than in
 the project. Its location differs per machine, so it is resolved at run time and
-can be overridden with `SVG_DIAGRAMS_SCRIPTS` — nothing here hardcodes one
+can be overridden with `SVG_DIAGRAMS_SCRIPTS` - nothing here hardcodes one
 person's home directory.
 """
 import os
@@ -125,7 +125,7 @@ def _snap_font_sizes(c):
     """Force emitted text onto the project's type scale and its one grey.
 
     Layout code may keep the working size it measured with, but the saved
-    artifact may not introduce a one-off printed size — equal-width figures then
+    artifact may not introduce a one-off printed size - equal-width figures then
     hold the same visual hierarchy everywhere in the document.
 
     The same holds for the neutral grey. The theme carries two (`fg_dim` and
@@ -167,6 +167,17 @@ def save(c, name, board=STANDARD_WIDTH, margin=MARGIN):
     path = OUT / f"{name}.svg"
     _snap_font_sizes(c)
     c.trim(margin=margin, min_w=board, max_w=board)
+    # `trim()` keeps a floor under the side margin, so a drawing too wide to
+    # fit inside it widens the board instead of being squeezed. The board width
+    # is what sets the printed type size, so such a figure prints its labels
+    # smaller than the rest of the set with nothing on the page to show it. Say
+    # how many units to take out, here, where the drawing is. The run still
+    # fails: verify.py's width check refuses to pass a set holding one.
+    if c.w > board + 0.01:
+        print(f"  ! {name}: {c.w - board:.0f} units wider than its {board} "
+              "board. Take that much out of the widest row: a gap, a column "
+              "width, or the label that sets the row's width.",
+              file=sys.stderr)
     c.save(str(path))
     print("wrote", path)
     return path
@@ -271,7 +282,7 @@ def centered_baseline(y, h, size):
 def heading(c, x, y, text, size=SECTION, color=None, anchor="start",
             mask=False):
     """A section heading with its glyph top at `y`. Returns the y where the
-    section's first box starts — HEAD_GAP below the heading — so a heading is
+    section's first box starts - HEAD_GAP below the heading - so a heading is
     always nearer to what it names than to the block above it. `mask=True`
     puts a paper plate under the letters for a heading a leader has to pass
     behind; draw the leader first, the heading last."""
@@ -327,8 +338,8 @@ def card(c, x, y, w, accent, title=None, lines=(), *, h=None, icon=None,
          opacity=None, wash=False, valign="top"):
     """A card sized from its content: an optional title line (with an icon or a
     right-aligned tag), then body text wrapped to the card's inner width.
-    Padding is even above and below by construction. `h` overrides the height —
-    `cards_row()` passes the row's tallest — and `band=True` draws the title on
+    Padding is even above and below by construction. `h` overrides the height  - 
+    `cards_row()` passes the row's tallest - and `band=True` draws the title on
     a tinted header band whose bottom corners are square (`Canvas.band`).
     `stripe` draws a 6px accent band on the left edge, `wash=True` (or an
     opacity) tints the box with its accent under the outline. `valign="middle"`
@@ -394,7 +405,7 @@ def card(c, x, y, w, accent, title=None, lines=(), *, h=None, icon=None,
 
 
 def cards_row(c, xs, y, w, items, accents=None, **kw):
-    """A row of cards at one height — the tallest content's. `items` are
+    """A row of cards at one height - the tallest content's. `items` are
     (title, lines) pairs or dicts of card() keywords; `accents` one colour per
     card or a single colour. Returns the boxes."""
     if accents is None:
@@ -462,8 +473,8 @@ def frame_around(boxes, pad=PAD, pad_top=None):
 
 def label_band(c, x, y, w, h, band_w, text, accent, *, size=CARD, rx=10,
                opacity=0.13, color=None):
-    """A label band on the left edge of a box — round on the outline, square
-    against the body — with its text centred in the band."""
+    """A label band on the left edge of a box - round on the outline, square
+    against the body - with its text centred in the band."""
     c.band(x, y, band_w, h, rx, accent, opacity=opacity, side="left")
     c.text(x + band_w / 2, centered_baseline(y, h, size), text, size=size,
            color=color or accent, family=SANS, weight=700, anchor="middle")
@@ -480,7 +491,7 @@ def disc(c, cx, cy, r, fill, stroke=None, sw=1.6):
 def zone(c, x, y, w, h, accent, label, tag=None, dash=None, fill=None,
          icon=None):
     """A boundary panel whose name sits in a chip on its top border and whose
-    tag, if any, sits on the same border at the right — both on a paper plate,
+    tag, if any, sits on the same border at the right - both on a paper plate,
     so the border is broken behind the letters rather than running through
     them. Returns the y where content starts: one PAD below the chip's lower
     edge, so the inset under the chip equals the side insets."""
@@ -555,8 +566,8 @@ def segment_bar(c, x, y, w, h, items, *, size=MICRO, min_label_pad=10, rx=0):
 
 def step_row(c, xs, cw, y, items, accent, numbered=True, fill=None, dash=None,
              sep="arrow", size=BODY, sub_size=MICRO):
-    """A row of step cards at one height — an optional number, the name, one
-    sub-line — joined by arrows (`sep="arrow"`), chevrons (`"chevron"`) or
+    """A row of step cards at one height - an optional number, the name, one
+    sub-line - joined by arrows (`sep="arrow"`), chevrons (`"chevron"`) or
     nothing (`None`). `items` are (name, sub) pairs; `sub` may be None.
     Returns the row height."""
     inner = cw - 16
