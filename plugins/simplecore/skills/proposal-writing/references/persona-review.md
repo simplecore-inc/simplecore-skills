@@ -112,6 +112,16 @@ knows what the prompt has to settle.
    with it - including a later one. And **a reversal is the coordinator's to justify, not
    to distribute**: when an applier's own pages argue against a ruling, weigh it before
    sending, because the applier who was right has already paid for the first change.
+   **A file two appliers both write has one owner.** Parallel appliers are safe while
+   each writes only its own files; a shared file - a helper module, a rules table -
+   is written by the coordinator or by one named applier, and the others send their
+   additions to that owner. Telling two agents to put their parts into the same new
+   file is the same mistake as two agents editing one chapter: one figure pass wrote
+   the shared helper module fresh while another applier's section was already in
+   it, the other chapter stopped building, and with no version control there was no
+   copy to restore. When a shared file must be split between writers anyway, create
+   it first with one empty section per writer and tell each to insert under its own
+   heading and never rewrite the file.
 7. **Apply and verify.** Edit the source of truth first (the manuscript, then the design
    and requirement records, then the figure modules, then the chapter files), never a
    generated file. **That order is a sequence, not a list - and when the work is split
