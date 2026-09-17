@@ -1,6 +1,6 @@
 """Check every figure before it is committed.
 
-Six passes, and the first five fail the run:
+Seven passes, and the first six fail the run:
 
 1. the shared canvas width - a figure of any other width prints at a different
    type size from its neighbours
@@ -9,8 +9,9 @@ Six passes, and the first five fail the run:
 3. the type hierarchy - a figure set entirely on the smallest rung prints as
    a block of grey with no entry point
 4. the stroke ladder - three weights for the whole set, icons excepted
-5. the toolkit's static lint - arrowheads, overflow, occlusion, margins
-6. height review - a recommendation, not a failure
+5. the dash vocabulary - four gaps, one meaning each
+6. the toolkit's static lint - arrowheads, overflow, occlusion, margins
+7. height review - a recommendation, not a failure
 
 None of them replaces looking at the rendered figure. Use `--render <dir>` to
 write PNGs to read.
@@ -20,8 +21,9 @@ import re
 import subprocess
 import sys
 
-from common import (BODY, FONT_SCALE, HAIRLINE, ICON_SW, OUT, PLACEMENT,
-                    STROKE, THICK, toolkit_dir)
+from common import (BODY, DASH_ALT, DASH_BLOCK, DASH_OUTSIDE, DASH_PENDING,
+                    FONT_SCALE, HAIRLINE, ICON_SW, OUT, PLACEMENT, STROKE,
+                    THICK, toolkit_dir)
 
 AUDIT = toolkit_dir() / "audit.py"
 HEIGHT_REVIEW = 840
@@ -108,6 +110,25 @@ def stroke_width_errors(svgs):
             out.append((svg.name, sorted(seen.items())))
     return out
 
+def dash_pattern_errors(svgs):
+    """Dash patterns off the four the set declares.
+
+    A dashed line carries one of four meanings and the gap is what tells them
+    apart, so a fifth gap is a meaning the reader cannot look up. One figure in a
+    set of 132 drew the only `3 7` in the document, and nothing reported it: it
+    read as a prohibition to its author and as nothing at all to a reader
+    matching it against the four.
+    """
+    allowed = {DASH_PENDING, DASH_OUTSIDE, DASH_ALT, DASH_BLOCK}
+    out = []
+    for svg in svgs:
+        found = set(re.findall(r'stroke-dasharray="([^"]+)"',
+                               svg.read_text(encoding="utf-8")))
+        unexpected = sorted(found - allowed)
+        if unexpected:
+            out.append((svg.name, unexpected))
+    return out
+
 def main(argv):
     svgs = sorted(OUT.glob("*.svg"))
     if not svgs:
@@ -152,6 +173,15 @@ def main(argv):
                   + ", ".join(f"{w:g}x{n}" for w, n in widths))
     else:
         print(f"[stroke] all on {HAIRLINE} / {STROKE} / {THICK}")
+
+    dashes = dash_pattern_errors(svgs)
+    if dashes:
+        failed = True
+        print(f"\n[dash] {len(dashes)} with patterns off the declared four")
+        for name, patterns in dashes:
+            print(f"  {name}: " + ", ".join(patterns))
+    else:
+        print("[dash] every dash on one of the four declared patterns")
 
     lint = subprocess.run(
         [sys.executable, str(AUDIT), "lint", *[str(s) for s in svgs]],

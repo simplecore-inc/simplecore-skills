@@ -115,6 +115,16 @@ grounds or space them; do not rule them. An icon's own stroke is the one
 exception, because an icon is a glyph rather than a border - it keeps `ICON_SW`
 and the check exempts it.
 
+**A dashed line means one of four things, and the gap says which.** Declare the
+patterns once beside the type and stroke ladders, give each one meaning, and
+draw with the names: not yet decided, outside this project, the alternative
+path, prohibited. A fifth gap is a meaning no reader can look up - one figure in
+a set of 132 drew the only `3 7` in the document, which read as a prohibition to
+its author and as nothing at all to anyone matching it against the four. The
+scaffold's `verify.py` fails the run on a pattern off the list, and a figure that
+draws a dash without naming its meaning in the figure is the unexplained
+distinction the audit pass is for.
+
 **One neutral grey, and it is the darker one.** A theme carries two - a
 mid grey for secondary type and a pale one for rules and fills - and the pale
 one set on type prints at a contrast ratio around 4.0 on white, under the 4.5 a

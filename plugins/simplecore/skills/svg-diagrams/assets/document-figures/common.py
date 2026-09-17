@@ -66,6 +66,15 @@ MICRO, BODY, LEAD, CARD, SECTION, EMPH, DISPLAY = FONT_SCALE
 # faint grid drawn from such lines is the most common way a figure turns grey.
 HAIRLINE, STROKE, THICK = 1.4, 1.9, 2.8
 
+# One dash pattern per meaning, for the whole set. A dashed border says one of
+# these four things and nothing else, and the gap is what tells them apart, so
+# a fifth gap is a meaning the reader cannot look up. Name the meanings the
+# document actually needs; four is the ceiling, not a target.
+DASH_PENDING = "6 5"      # not yet decided, not yet obtained
+DASH_OUTSIDE = "5 4"      # outside this project's scope, another system's
+DASH_ALT = "4 4"          # the alternative taken when the first path fails
+DASH_BLOCK = "3 3"        # prohibited or blocked; drawn in red
+
 # Themes render on a white page unless the document is dark.
 THEME = "paper"
 
