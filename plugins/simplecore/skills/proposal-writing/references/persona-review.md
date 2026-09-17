@@ -101,7 +101,18 @@ knows what the prompt has to settle.
    them into the project's format rules before any applier saw it. That last part is the
    half nobody downstream catches: an applier reading a rules file takes the rule as
    settled, so a rule added from the same list is checked before it is written, not after.
-6. **Apply and verify.** Edit the source of truth first (the manuscript, then the design
+6. **A ruling is written into the rules file, and the message points at it.** A decision
+   sent as a message is a decision several agents hold different versions of: they are
+   mid-edit when it arrives, their reports cross it, and a coordinator who changes its
+   mind sends a second message that overtakes the first in some inboxes and not others.
+   One review settled an annotation-label set three times in an hour and four chapters
+   ended the hour in three different states, each obeying the last message it happened to
+   receive. Write the ruling into the file every applier reads, say in the message that
+   the file is what changed, and tell them the file wins over any message that disagrees
+   with it - including a later one. And **a reversal is the coordinator's to justify, not
+   to distribute**: when an applier's own pages argue against a ruling, weigh it before
+   sending, because the applier who was right has already paid for the first change.
+7. **Apply and verify.** Edit the source of truth first (the manuscript, then the design
    and requirement records, then the figure modules, then the chapter files), never a
    generated file. **That order is a sequence, not a list - and when the work is split
    across people or agents, only one stage runs at a time.** A figure's height is the
@@ -123,7 +134,7 @@ knows what the prompt has to settle.
    `changes.md` (consensus id → files → new page mapping → evidence) and `validation.md`
    (every command, exit code, scope, and which images were read). Run every check the
    deck declares; never relax a check or a baseline to make a failure disappear.
-7. **Full re-review.** A new round directory, new reviewer agents with no history, the
+8. **Full re-review.** A new round directory, new reviewer agents with no history, the
    same rubric; the previous findings are handed over only after the new verdicts are
    in, to check recurrence, omission and side effects.
 
