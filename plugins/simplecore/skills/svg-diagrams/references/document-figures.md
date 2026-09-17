@@ -73,7 +73,38 @@ an explanation panel.
 
 ## One type scale for the whole set
 
-Pick a ladder and use only its rungs. A workable one for a 1200-unit canvas:
+**The ladder is derived from the document's body size, not chosen.** A figure is
+placed at a fraction of the page, so a label's drawn size and its printed size
+are different numbers, and only the printed one matters. The floor is that
+**the figure's smallest label prints at the document's body size**: a reader who
+can read the paragraph can read every word in the picture beside it. Work
+backwards from the placed width:
+
+```
+scale  = placed width in px / board width in units
+units  = printed pt x 4/3 / scale          (96 dpi: 1pt = 4/3 px)
+```
+
+A 1200-unit board placed on a 642.5px column scales by 0.5354, so a 10pt body
+needs 25 units and the familiar 15-unit micro-label would print at 6pt. **That
+gap is invisible in the SVG and obvious on paper**, which is why the ladder is
+computed once per document rather than carried between projects.
+
+Then give each rung a role the document already has - body, a heading level, a
+chip - so a label in a figure prints at the same size as the same kind of text
+around it. A document that publishes its own type scale hands you the rungs; take
+them rather than inventing a parallel set.
+
+A second board for column-width figures uses **the same scale**, not the same
+width: `column board = column px / scale`. Two boards at one scale means one
+ladder serves both and a figure never has to be shrunk to fit a column - it is
+re-laid out on the narrower board.
+
+Stroke weights come from the same arithmetic. A 1-unit hairline on a 0.5354
+scale prints at 0.54px and drops out on paper; derive the weights from printed
+px the way the type is derived from printed pt.
+
+A workable ladder for a 1200-unit canvas, before the derivation above adjusts it:
 
 | Size | Role |
 |---|---|
