@@ -17,7 +17,7 @@ import re
 import subprocess
 import sys
 
-from common import FONT_SCALE, OUT, STANDARD_WIDTH, toolkit_dir
+from common import FONT_SCALE, OUT, PLACEMENT, toolkit_dir
 
 AUDIT = toolkit_dir() / "audit.py"
 HEIGHT_REVIEW = 840
@@ -28,13 +28,17 @@ def _head(svg):
 
 
 def width_errors(svgs):
-    """Figures whose final canvas is not the shared width."""
+    """Figures whose final canvas is not one of the declared boards."""
     out = []
+    boards = sorted(PLACEMENT)
     for svg in svgs:
         m = re.search(r'<svg\b[^>]*\bwidth="([\d.]+)"[^>]*\bviewBox="0 0 ([\d.]+)',
                       _head(svg))
-        if not m or abs(float(m.group(1)) - STANDARD_WIDTH) > 0.01 \
-                or abs(float(m.group(2)) - STANDARD_WIDTH) > 0.01:
+        if not m:
+            out.append(svg.name)
+            continue
+        w, vb = float(m.group(1)), float(m.group(2))
+        if not any(abs(w - b) <= 0.01 and abs(vb - b) <= 0.01 for b in boards):
             out.append(svg.name)
     return out
 
@@ -70,11 +74,11 @@ def main(argv):
     widths = width_errors(svgs)
     if widths:
         failed = True
-        print(f"\n[width] {len(widths)} not {STANDARD_WIDTH}")
+        print(f"\n[width] {len(widths)} off every declared board")
         for name in widths:
             print(" ", name)
     else:
-        print(f"[width] all {STANDARD_WIDTH}")
+        print(f"[width] all on a declared board {sorted(PLACEMENT)}")
 
     fonts = font_size_errors(svgs)
     if fonts:

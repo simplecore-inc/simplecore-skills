@@ -29,12 +29,25 @@ HERE = pathlib.Path(__file__).resolve().parent
 # Where the generated SVGs land, relative to this file.
 OUT = HERE.parent.parent / "docs" / "assets" / "diagrams"
 
-# One canvas width for every figure in the document. Derive it from the text
-# column: A4 with 25.4mm margins is 159.2mm ≈ 602px at 96 dpi, so a set drawn at
-# 1200 units and placed at 50% prints at exactly that column.
+# The boards this document draws on, and where each one is placed on the page.
+# Derive them from the text column: A4 with 25.4mm margins is 159.2mm ≈ 602px at
+# 96 dpi, so a 1200-unit board placed across it scales by 602/1200 = 0.5017.
+#
+# A second board for column-width figures uses the SAME SCALE, not the same
+# width: `column board = column px / scale`. One scale means one type ladder
+# serves every board, and a landscape drawing is re-laid out on the narrow board
+# rather than shrunk into the column - which would print its labels at a third
+# of the intended size with nothing downstream able to report it.
 STANDARD_WIDTH = 1200
+PLACEMENT = {STANDARD_WIDTH: 602}
+SCALE = PLACEMENT[STANDARD_WIDTH] / STANDARD_WIDTH
 
 # The only type sizes the saved artifacts may contain, smallest first.
+#
+# Derive them from the document's body size rather than copying this ladder: a
+# rung prints at `units * SCALE * 0.75` points, and the floor is that the
+# smallest label prints at the document's body size. At the 0.5017 scale above,
+# a 10pt body needs 27 units and the 15 below would print at 5.6pt.
 FONT_SCALE = (15.0, 16.0, 17.0, 18.0, 20.0, 21.0, 24.0)
 
 # Draw with these names, never with a raw number. `save()` snaps whatever is
@@ -47,7 +60,19 @@ THEME = "paper"
 
 # The side margin `save()` leaves around the ink; the content width follows.
 MARGIN = 28
-CONTENT_W = STANDARD_WIDTH - 2 * (MARGIN + 10)
+
+
+def content_w(board=STANDARD_WIDTH):
+    """Drawable width inside `board` once `save()`'s margin is taken."""
+    return board - 2 * (MARGIN + 10)
+
+
+CONTENT_W = content_w(STANDARD_WIDTH)
+
+
+def printed_pt(units):
+    """What `units` of type prints at on the page, in points."""
+    return units * SCALE * 0.75
 # ───────────────────────────────────────────────────────────────────────────
 
 
@@ -105,12 +130,21 @@ def _snap_font_sizes(c):
     c.under = [(order, snap(m)) for order, m in c.under]
 
 
-def save(c, name, margin=MARGIN):
-    """Write one figure at the shared width."""
+def save(c, name, board=STANDARD_WIDTH, margin=MARGIN):
+    """Write one figure at its board's width.
+
+    `board` decides the slot the document puts the figure in, so it is declared
+    here rather than inferred: a landscape drawing saved on a column board would
+    print its labels at a fraction of the intended size, and no check further
+    down the pipeline can see that.
+    """
+    if board not in PLACEMENT:
+        raise ValueError(
+            f"{name}: board must be one of {sorted(PLACEMENT)}, not {board}")
     OUT.mkdir(parents=True, exist_ok=True)
     path = OUT / f"{name}.svg"
     _snap_font_sizes(c)
-    c.trim(margin=margin, min_w=STANDARD_WIDTH, max_w=STANDARD_WIDTH)
+    c.trim(margin=margin, min_w=board, max_w=board)
     c.save(str(path))
     print("wrote", path)
     return path
