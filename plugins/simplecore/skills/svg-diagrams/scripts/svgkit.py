@@ -725,12 +725,22 @@ class Canvas:
 
     # -- composites ---------------------------------------------------------
     def chip(self, x, y, label, color=_DEF, fill=_DEF, size=12.5,
-             mono=True, pad=11, h=24, dot=None, weight=500):
+             mono=True, pad=11, h=24, dot=None, weight=500, sw=1,
+             stroke=_DEF):
+        """A pill with a label. `sw` and `stroke` are the outline.
+
+        A document that declares its own stroke ladder passes its hairline
+        here: an outline hardcoded at 1 unit is off any ladder derived from a
+        placed width, and a set drawn through this helper then carries a weight
+        no figure asked for. Pass `stroke=None` for a pill that has only its
+        fill.
+        """
         color = self.t["fg_dim"] if color is _DEF else color
         fill = self.t["box_hi"] if fill is _DEF else fill
+        stroke = self.t["line"] if stroke is _DEF else stroke
         fam = MONO if mono else SANS
         w = tw(label, size, mono) + pad * 2 + (14 if dot else 0)
-        self.rrect(x, y, w, h, rx=h / 2, fill=fill, stroke=self.t["line"], sw=1)
+        self.rrect(x, y, w, h, rx=h / 2, fill=fill, stroke=stroke, sw=sw)
         tx = x + pad
         if dot:
             self.dot(x + pad + 3, y + h / 2, 3.5, dot)
