@@ -1,13 +1,16 @@
 """Check every figure before it is committed.
 
-Four passes, and the first three fail the run:
+Six passes, and the first five fail the run:
 
 1. the shared canvas width — a figure of any other width prints at a different
    type size from its neighbours
 2. the type scale — a one-off size is invisible in the source and obvious on
    the page
-3. the toolkit's static lint — arrowheads, overflow, occlusion, margins
-4. height review — a recommendation, not a failure
+3. the type hierarchy — a figure set entirely on the smallest rung prints as
+   a block of grey with no entry point
+4. the stroke ladder — three weights for the whole set, icons excepted
+5. the toolkit's static lint — arrowheads, overflow, occlusion, margins
+6. height review — a recommendation, not a failure
 
 None of them replaces looking at the rendered figure. Use `--render <dir>` to
 write PNGs to read.
@@ -17,7 +20,8 @@ import re
 import subprocess
 import sys
 
-from common import FONT_SCALE, OUT, PLACEMENT, toolkit_dir
+from common import (BODY, FONT_SCALE, HAIRLINE, ICON_SW, OUT, PLACEMENT,
+                    STROKE, THICK, toolkit_dir)
 
 AUDIT = toolkit_dir() / "audit.py"
 HEIGHT_REVIEW = 840
@@ -64,6 +68,46 @@ def font_size_errors(svgs):
     return out
 
 
+def smallest_rung_only(svgs):
+    """Figures whose every word prints at the ladder's smallest rung.
+
+    A figure whose every word sits on MICRO has no hierarchy at print size:
+    the reader has no entry point and reads it as a block of grey. The
+    smallest rung is for a short marker and a value looked up, not for the
+    figure's own words.
+    """
+    return [svg.name for svg in svgs
+            if not [v for v in re.findall(r'font-size="([\d.]+)"',
+                                          svg.read_text(encoding="utf-8"))
+                    if float(v) >= BODY]]
+
+
+def stroke_width_errors(svgs):
+    """Strokes off the three declared weights.
+
+    An icon is drawn from line segments at ICON_SW and is exempt: it is one
+    glyph, not a border. Every other stroke is a border, a rail or a
+    connector, and takes one of the three declared weights.
+    """
+    allowed = {HAIRLINE, STROKE, THICK}
+    out = []
+    for svg in svgs:
+        text = svg.read_text(encoding="utf-8")
+        seen = {}
+        for element in re.findall(r'<[a-z]+\b[^>]*>', text):
+            m = re.search(r'stroke-width="([\d.]+)"', element)
+            if not m:
+                continue
+            width = float(m.group(1))
+            if width in allowed:
+                continue
+            if width == ICON_SW and 'stroke-linecap="round"' in element:
+                continue
+            seen[width] = seen.get(width, 0) + 1
+        if seen:
+            out.append((svg.name, sorted(seen.items())))
+    return out
+
 def main(argv):
     svgs = sorted(OUT.glob("*.svg"))
     if not svgs:
@@ -88,6 +132,26 @@ def main(argv):
             print(f"  {name}: {', '.join(f'{s:g}' for s in sizes)}")
     else:
         print("[type scale] all on the ladder")
+
+    flat = smallest_rung_only(svgs)
+    if flat:
+        failed = True
+        print(f"\n[type hierarchy] {len(flat)} with nothing above the smallest rung")
+        for name in flat:
+            print(" ", name)
+    else:
+        print("[type hierarchy] every figure carries a larger rung")
+
+    strokes = stroke_width_errors(svgs)
+    if strokes:
+        failed = True
+        print(f"\n[stroke] {len(strokes)} with widths off "
+              f"{HAIRLINE} / {STROKE} / {THICK}")
+        for name, widths in strokes:
+            print(f"  {name}: "
+                  + ", ".join(f"{w:g}x{n}" for w, n in widths))
+    else:
+        print(f"[stroke] all on {HAIRLINE} / {STROKE} / {THICK}")
 
     lint = subprocess.run(
         [sys.executable, str(AUDIT), "lint", *[str(s) for s in svgs]],

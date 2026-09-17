@@ -55,6 +55,17 @@ FONT_SCALE = (15.0, 16.0, 17.0, 18.0, 20.0, 21.0, 24.0)
 # measured at one size and printed at another.
 MICRO, BODY, LEAD, CARD, SECTION, EMPH, DISPLAY = FONT_SCALE
 
+# The only stroke weights the saved artifacts may contain: a hairline for a
+# rule or a faint separator, a normal weight for a box border, a thick one for
+# a line the reader is meant to follow. Three is enough to build a hierarchy
+# and few enough that a reader learns it; a fourth weight is a distinction
+# nobody can see at print size. Derive them like the type ladder - a stroke
+# prints at `units * SCALE` px, so these three land on 0.70 / 0.95 / 1.40 px at
+# the 0.5017 scale above. Draw with the names, never with a raw number, and
+# never below HAIRLINE: a line thinner than this drops out of the print, and a
+# faint grid drawn from such lines is the most common way a figure turns grey.
+HAIRLINE, STROKE, THICK = 1.4, 1.9, 2.8
+
 # Themes render on a white page unless the document is dark.
 THEME = "paper"
 

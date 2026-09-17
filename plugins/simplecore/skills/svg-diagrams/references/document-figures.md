@@ -100,9 +100,27 @@ width: `column board = column px / scale`. Two boards at one scale means one
 ladder serves both and a figure never has to be shrunk to fit a column - it is
 re-laid out on the narrower board.
 
-Stroke weights come from the same arithmetic. A 1-unit hairline on a 0.5354
-scale prints at 0.54px and drops out on paper; derive the weights from printed
-px the way the type is derived from printed pt.
+Stroke weights come from the same arithmetic, and there are **three of them for
+the whole set**: a hairline for a rule or a faint separator, a normal weight for
+a box border, a thick one for a line the reader is meant to follow. A 1-unit
+hairline on a 0.5354 scale prints at 0.54px and drops out on paper, so derive
+the three from printed px the way the type is derived from printed pt, declare
+them once beside the type ladder (`HAIRLINE, STROKE, THICK` in the scaffold's
+`common.py`) and draw with the names.
+
+A fourth weight is a distinction nobody can see at print size, and the weights
+below the hairline are worse than invisible: **a grid drawn from them is how a
+figure turns grey.** Where a set of rows needs separating, alternate the row
+grounds or space them; do not rule them. An icon's own stroke is the one
+exception, because an icon is a glyph rather than a border - it keeps `ICON_SW`
+and the check exempts it.
+
+**The smallest rung is for a short marker and a value looked up, not for the
+figure's own words.** A figure whose every label sits on it has no entry point:
+at print size the reader meets an even field of grey and has nowhere to start.
+Every figure carries at least one label at the body rung - normally the thing the
+figure is about. The scaffold's `verify.py` fails the run on both of these, so
+neither is a matter of judgement at review time.
 
 A workable ladder for a 1200-unit canvas, before the derivation above adjusts it:
 
