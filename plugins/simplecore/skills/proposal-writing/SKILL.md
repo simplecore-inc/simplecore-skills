@@ -242,6 +242,34 @@ closes on a predicate is a sentence and takes the stop, with the stop outside a 
 reference (「~확인한다(부록 C).」); a head, a label, a bar's key and a column head are names
 whatever they end in.
 
+## Every external basis is named where the claim is made
+
+A claim that rests on something outside the document names that source in the printed copy,
+at the claim, close enough that the panel can check it without turning to another page.
+External means the tender and its parts (chapter and clause, requirement id and name, annex
+and form names, the reference screen and the row or column a value came from), a statute or
+administrative rule (law, enforcement decree, article and paragraph, notice number and
+effective date), a public standard or guide (exact title, issuing body, version or date) and
+any vendor or portal document (title, site, confirmation date). A number, screen name,
+combo value, count rule, organisation name, date, cycle or threshold taken from one of those
+carries its source the same way.
+
+**The citation is exact or it is not a citation.** 「제안요청서에 따라」, 「관련 법령에 따라」
+and 「원문 기준」 name nothing a panel can open: write the clause, the article, the requirement
+id and its issued name. Where the document cites the same source on many pages, the form of
+the citation is one form, decided once and used everywhere - a column in the table, a clause
+in the sentence, a line under the page title - rather than each page inventing its own.
+
+**Open the source before citing it.** A wrong article, a stale notice number or a value
+attributed to the wrong screen is worse than no citation, because it invites the panel to
+check and find the document wrong. Where a source cannot be verified, the sentence stands on
+what the proposer can show and the unverifiable reference is left out.
+
+**And the proposer's own work is marked as the proposer's.** An assumption, a plan value, a
+design decision and a target are not external bases; presented without a marking they read as
+tender facts, and a panel that discovers otherwise reads every other number with suspicion.
+Mark them (전제 · 대안 · 제안사 계획값) as consistently as the citations.
+
 ## Self-contained references
 
 Reader-facing copy must not refer to internal Markdown files or design-document sections
