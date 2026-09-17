@@ -151,6 +151,34 @@ Before closing a full-copy sweep, compare the grammar of every table column acro
 manuscript and the typesetting source, so a corrected cell cannot return at the next
 regeneration.
 
+**The manuscript of a submitted proposal is short sentences, figures and tables.** A page
+opens with a title and one or two sentences of explanatory copy; what follows is a table,
+a figure, a list or a sentence short enough to hold one action. A paragraph of four
+running sentences is a page the panel skims, and the typesetter then has to guess which
+part was the claim. Where a paragraph compares options, crosses two attributes or states
+values, it becomes a table in the manuscript; where it states order, dependency or
+containment, it becomes a figure plan.
+
+**An enumeration is already a list in the manuscript**, never a sentence left for the
+typesetter to split. Steps, stages, priorities and anything whose order changes the result
+take an ordered list; peer items (roles, checks, deliverables, conditions) take an
+unordered list. 「A, B, C와 D를 확인한다」 with four checks is four list items under a
+short lead-in. The same holds inside a table cell that strings three or more independent
+items: give the items their own rows or their own column. The test is the manuscript, not
+the rendered page - a list written as a sentence in the source returns as a sentence at
+every regeneration.
+
+**A figure plan in the manuscript is a design, not a placeholder.** It names the one claim
+the figure proves, the visual type chosen for that claim (state machine, swimlane, funnel,
+matrix, ladder, loop, layer stack, tree, timeline and so on), the orientation (vertical or
+horizontal) and why, the structure (lanes, layers, nodes, branches and their order), and
+every label the figure prints, in the tender's words. One generic sentence copied onto
+every row of a figure table - 「관계 · 구조 · 흐름을 한 그림에 표시」 under forty
+different titles - is the same plan forty times, and forty identical plans produce forty
+box-and-arrow rows. Across a chapter the plans rotate type and orientation: a portrait page
+reads a top-to-bottom flow, a ladder of gates, a funnel or a lane column beside the text
+as naturally as a horizontal row, and a run of horizontal rows reads as one page repeated.
+
 ## Presentation copy
 
 Write every reader-facing string as a short sentence or an explicit action-result pair
