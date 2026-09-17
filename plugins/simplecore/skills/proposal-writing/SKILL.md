@@ -313,6 +313,21 @@ repagination and go stale only when the section is renamed or dropped, which is 
 when a check should fail. Carry the section name, not the chapter number alone: a chapter
 number on its own can point seven references at one long span.
 
+**A tender numbers its chapters the way the proposal does, so a citation can name the
+proposal's own chapter and look right.** The tender prints the proposal's outline - that
+is where the proposal's chapters get their numbers - so both documents carry a Ⅱ, a Ⅳ and
+a Ⅴ, and 「제안요청서 Ⅱ. 제안개요」 reads as a citation while 제안개요 is the proposal's
+chapter and the tender's Ⅱ is something else entirely. It survives review because the
+sentence around it is true: the fact is right, the source is the wrong document. One
+proposal carried four of them, in the manuscript, the annex and two working documents,
+and each was found by hand only when somebody happened to open the tender at that page.
+**Resolve every such citation against the transcription** - the chapter number exists, the
+section number exists in that chapter, and the name the citation prints is a name that
+chapter carries. A check does this in a second, and the finding it reports most often is
+the outline: a claim about what the proposal must contain cites the tender's chapter of
+that number instead of the tender's own 제안서 목차 section, which is where the proposal's
+outline is actually printed.
+
 ## A wording-only pass changes wording and nothing else
 
 When the user excludes diagrams and layout, review and edit only the existing text and

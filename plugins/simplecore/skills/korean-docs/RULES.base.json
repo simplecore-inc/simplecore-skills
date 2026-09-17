@@ -1770,6 +1770,29 @@
       ]
     },
     {
+      "id": "branch-as-galrae",
+      "scope": "universal",
+      "severity": "warn",
+      "reason": "A branch in a flow, a screen or a procedure called a 「갈래」. It is one of the nouns response-style.md replaces with the real name, and the real name is usually 경로 · 분기 · 방식 · 유형 - 「두 경로로 나뉜다」 rather than 「두 갈래로 나뉜다」, 「분기 상자」 rather than 「갈래 상자」. A stream or a road that physically forks is not this, so only the shapes that name a branch in a document are matched",
+      "find": [
+        "/(한|두|세|네|다섯|여섯|일곱|여덟|아홉|[0-9]+)\\s?갈래/",
+        "/갈래(?=\\s?(상자|칸|카드|선|화살표|줄|마다|의|는|가|를|로))/"
+      ],
+      "replace": "경로 · 분기 · 유형",
+      "hit": [
+        "한 상자에서 두 갈래로 나뉘어",
+        "갈래 상자 둘이 나란히 선다",
+        "판단에서 두 갈래 선이 나간다",
+        "갈래마다 화살표가 내려온다"
+      ],
+      "miss": [
+        "갈래머리를 묶는다",
+        "물줄기가 갈라진다",
+        "분기 상자를 둔다",
+        "두 경로로 나뉜다"
+      ]
+    },
+    {
       "id": "indirect-question-copula",
       "scope": "universal",
       "severity": "error",
