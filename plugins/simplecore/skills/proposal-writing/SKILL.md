@@ -79,6 +79,15 @@ already been written. Pages are allocated in proportion to the score, and each p
 content is selected from what that item's criteria ask for. An item that runs over
 several pages says so, counting from its first page.
 
+**The strategy chapter does not outweigh the technical chapter.** Where a strategy and
+methodology chapter and a technical and functional chapter carry comparable scores, the
+strategy chapter is the shorter one. Strategy states the risks, the choices and the claims;
+the mechanism that makes a claim true is described once, in the technical chapter, and the
+strategy page points at that section. The drift runs the other way because a strategy page
+reaches for credibility by explaining how the thing works, and five such pages later the
+chapter has become a second copy of the technical design: when a strategy page's body is
+mostly mechanism, move the mechanism to the technical chapter and keep the claim.
+
 **A score or a weight is never printed.** The document answers the item; it does not
 quote the panel's own weighting back at it.
 
