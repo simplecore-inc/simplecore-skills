@@ -1909,7 +1909,28 @@ def _interior_checks(svg, W, H, rmeta, solids, containers, node_rects,
         end on the edges."""
         x, y, w, h = box
         cont = []
+        # A cell drawn across the box's border is a marker on that border, not
+        # content: it is already left out below, and so is the text inside it,
+        # or its label alone would pull one inset to nothing.
+        straddlers = []
+        for r in rinfo + rpaths:
+            if r["canvas"] or r["pos"] == own_pos:
+                continue
+            rx0, ry0 = r["x"], r["y"]
+            rx1, ry1 = rx0 + r["w"], ry0 + r["h"]
+            # It has to reach well past the border and well into the box: a
+            # header band or tab lying on the border from inside is the box's
+            # own heading, and its text is content.
+            out_by = max(x - rx0, y - ry0, rx1 - (x + w), ry1 - (y + h))
+            in_by = min(rx1, x + w) - max(rx0, x), min(ry1, y + h) - max(ry0, y)
+            encloses = (rx0 <= x + TOL and ry0 <= y + TOL
+                        and rx1 >= x + w - TOL and ry1 >= y + h - TOL)
+            if out_by >= 8 and min(in_by) >= 8 and not encloses:
+                straddlers.append((rx0, ry0, rx1, ry1))
         for t in T:
+            if any(a <= t["x"] <= c and b <= t["y"] <= d
+                   for a, b, c, d in straddlers):
+                continue
             if x <= t["x"] <= x + w and y <= t["y"] <= y + h \
                     and _inside((t["x0"], t["y0"], t["x1"], t["y1"]), box, 3):
                 cont.append((t["x0"], t["y0"], t["x1"], t["y1"]))
