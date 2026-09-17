@@ -122,20 +122,31 @@ def canvas(w, h):
 
 
 def _snap_font_sizes(c):
-    """Force emitted text onto the project's type scale.
+    """Force emitted text onto the project's type scale and its one grey.
 
     Layout code may keep the working size it measured with, but the saved
     artifact may not introduce a one-off printed size — equal-width figures then
     hold the same visual hierarchy everywhere in the document.
+
+    The same holds for the neutral grey. The theme carries two (`fg_dim` and
+    the paler `muted`), and the pale one is for a rule or a fill: set on type it
+    prints at a contrast ratio of 4.0 on white, under the 4.5 a small size
+    needs. Normalising here rather than at every call site means a figure
+    cannot reintroduce it, and a call site may still reach for `muted` on a
+    line, where it belongs.
     """
     ladder = sorted(FONT_SCALE)
+    pale, neutral = c.t["muted"], c.t["fg_dim"]
 
     def snap(markup):
         def replace(match):
             value = float(match.group(1))
             nearest = min(ladder, key=lambda step: (abs(step - value), step))
             return f'font-size="{nearest:g}"'
-        return re.sub(r'font-size="([\d.]+)"', replace, markup)
+        markup = re.sub(r'font-size="([\d.]+)"', replace, markup)
+        if markup.startswith("<text") and f'fill="{pale}"' in markup:
+            markup = markup.replace(f'fill="{pale}"', f'fill="{neutral}"')
+        return markup
 
     c.body = [snap(m) for m in c.body]
     c.under = [(order, snap(m)) for order, m in c.under]

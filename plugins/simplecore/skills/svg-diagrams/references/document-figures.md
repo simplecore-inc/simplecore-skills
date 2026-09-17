@@ -115,6 +115,13 @@ grounds or space them; do not rule them. An icon's own stroke is the one
 exception, because an icon is a glyph rather than a border - it keeps `ICON_SW`
 and the check exempts it.
 
+**One neutral grey, and it is the darker one.** A theme carries two - a
+mid grey for secondary type and a pale one for rules and fills - and the pale
+one set on type prints at a contrast ratio around 4.0 on white, under the 4.5 a
+small size needs. The scaffold's `save()` promotes any pale-grey `<text>` to the
+neutral grey rather than leaving it to every call site, so a figure cannot
+reintroduce it and a line may still be drawn in the pale grey, where it belongs.
+
 **The smallest rung is for a short marker and a value looked up, not for the
 figure's own words.** A figure whose every label sits on it has no entry point:
 at print size the reader meets an even field of grey and has nowhere to start.
