@@ -125,6 +125,18 @@ notes, every occurrence carries the same value. Distinguish an activity's workin
 from its approval or completion milestone instead of changing both mechanically, and
 update the manuscript and every generator that owns the repeated value.
 
+**A shared-wording rule governs the words, not the paste.** A document that keeps a table of
+facts several chapters state - one row per fact, with the wording to print and the pages that
+print it - has to say what a page takes from a row, or the row gets pasted whole. One such rule
+read 「이 문구를 글자 단위로 그대로 인쇄하고, 줄이거나 덧붙이지 않는다」 and a five-line row
+duly appeared three times in one chapter, on consecutive pages, each time under the page's own
+title explanation: the panel reads that chapter in order and meets the same paragraph three
+times. **The writer was obeying the rule**, which is what makes it the rule's defect rather than
+theirs. Say that a page prints the sentences it uses, character for character, that the
+sentences it does not use are printed by the pages that do, and that a page never repeats what
+a neighbouring page in its own chapter already printed. A standalone annex is the exception,
+because it is read away from the body and has to carry the fact whole.
+
 **A term introduced in one surface is changed in every surface that carries the same
 claim** - body, table, figure label, caption and speaker note in the same pass. Keep the
 manuscript, the typesetting source and every generated figure's source wording aligned;
