@@ -2067,6 +2067,11 @@ def _interior_checks(svg, W, H, rmeta, solids, containers, node_rects,
                 if b["y"] - a["y"] > a["size"] * 1.3:
                     continue              # separate items, not a wrap
                 avail = box[2] - 2 * SIDE_PAD
+                if a["anchor"] == "start":
+                    # A start-anchored block may begin after an icon or an
+                    # indent; the room it had is from its own left edge to the
+                    # box's right padding, not the whole inner width.
+                    avail = min(avail, box[0] + box[2] - SIDE_PAD - a["x0"])
                 wa, wb = a["x1"] - a["x0"], b["x1"] - b["x0"]
                 if wa < 0.55 * avail:
                     continue              # a short first line is a list
