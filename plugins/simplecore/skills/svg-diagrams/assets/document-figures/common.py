@@ -220,7 +220,7 @@ TITLE_GAP = 8     # air between a title and the body under it
 BAND_PAD = 8      # air above and below a title inside a header band
 SECTION_GAP = 30  # air between a block and the heading of the next section
 HEAD_GAP = 12     # air between a heading and the first box of its section
-CHIP_RISE = 13    # a zone's name chip rises this far above the zone's top border;
+CHIP_RISE = round(BODY * 0.72)   # a zone's name chip rises this far above the zone's top border;
                   # a zone under a heading starts at heading() + CHIP_RISE so the
                   # chip, not the border, keeps HEAD_GAP from the heading
 
@@ -444,6 +444,14 @@ def label_band(c, x, y, w, h, band_w, text, accent, *, size=CARD, rx=10,
            color=color or accent, family=SANS, weight=700, anchor="middle")
 
 
+def disc(c, cx, cy, r, fill, stroke=None, sw=1.6):
+    """One circle. svgkit has no circle primitive: an arc path lints as a
+    diameter line and a fully rounded rect lints as OVERLAP when two discs
+    overlap, so the element is emitted directly, as viztypes.venn() does."""
+    c.add(f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="{r:.1f}" fill="{fill}" '
+          f'stroke="{stroke or fill}" stroke-width="{sw}"/>')
+
+
 def zone(c, x, y, w, h, accent, label, tag=None, dash=None, fill=None,
          icon=None):
     """A boundary panel whose name sits in a chip on its top border and whose
@@ -453,20 +461,27 @@ def zone(c, x, y, w, h, accent, label, tag=None, dash=None, fill=None,
     edge, so the inset under the chip equals the side insets."""
     fill = c.t["panel"] if fill is None else fill
     c.rrect(x, y, w, h, rx=14, fill=fill, stroke=accent, sw=1.6, dash=dash)
+    # Every dimension below follows BODY, so the chip still holds its label
+    # when a document derives a larger ladder. Fixed pixel offsets here were
+    # written for a 17-unit body and cropped a 24-unit one.
     chip_h = 2 * CHIP_RISE
-    lw = tw(label, BODY, False) + 26 + (26 if icon else 0)
+    isz = round(BODY * 1.05)
+    lw = tw(label, BODY, False) + 26 + (isz + 8 if icon else 0)
     c.rrect(x + 18, y - chip_h / 2, lw, chip_h, rx=7, fill=c.t["bg"],
             stroke=accent, sw=1.2)
+    base = centered_baseline(y - chip_h / 2, chip_h, BODY)
     if icon:
-        c.icon(icon, x + 34, y, size=17, color=accent, sw=1.6)
-        c.text(x + 48, y + 5, label, size=BODY, color=accent, family=SANS,
-               weight=700)
+        c.icon(icon, x + 31 + isz / 2, y, size=isz, color=accent,
+               sw=max(1.6, BODY / 12))
+        c.text(x + 31 + isz + 8, base, label, size=BODY, color=accent,
+               family=SANS, weight=700)
     else:
-        c.text(x + 18 + lw / 2, y + 5, label, size=BODY, color=accent,
+        c.text(x + 18 + lw / 2, base, label, size=BODY, color=accent,
                family=SANS, weight=700, anchor="middle")
     if tag:
-        c.text(x + w - 18, y + 5, tag, size=MICRO, color=c.t["muted"],
-               family=SANS, anchor="end", mask=True)
+        c.text(x + w - 18, centered_baseline(y - chip_h / 2, chip_h, MICRO),
+               tag, size=MICRO, color=c.t["muted"], family=SANS,
+               anchor="end", mask=True)
     return y + chip_h / 2 + PAD
 
 
