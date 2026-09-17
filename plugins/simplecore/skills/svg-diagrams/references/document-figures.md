@@ -290,6 +290,21 @@ A vertical figure in a column obeys the same rule the other way: its panels
 are as tall as their lines and the gaps between them are one number. Height
 there is what the column trades width for, never a page-fill target.
 
+## Every arrow arrives somewhere
+
+An arrowhead says a route arrives here, so it ends on the edge of the thing it
+arrives at. An arrow that stops in open canvas - an exit drawn off the side of a
+box, a descent drawn beside a stack and ending beside it, a sample arrow in a
+legend - has no destination, and the reader looks for one that is not there.
+Draw the destination (an outside system as a dashed box, the bottom layer the
+descent reaches) and land the arrow on it; route a descent with `ortho()` from
+the first box's edge to the last box's edge rather than as a free line beside
+them. `FLOATING-ENDPOINT` reports the miss.
+
+`Canvas.line()` and `Canvas.path()` draw a head by default. A rail, a bracket or
+a containment line is not a route: pass `marker=None`, or the rail reads as a
+flow that arrives at nothing.
+
 ## A label belongs to one thing
 
 A reader cannot tell which box a label names when it sits nearly as close to

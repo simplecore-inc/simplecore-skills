@@ -1207,6 +1207,47 @@ def lint(svg_path):
 
     _all_rects = [(r[0], r[1], r[2], r[3]) for r in rmeta]
 
+    # A frame drawn as a closed outline path - a card whose corners are rounded
+    # one by one, a zone boundary - is an edge a connector may land on just as
+    # a <rect> is. Its bounding box stands in for it.
+    def _closed_path_box(d):
+        if not re.search(r'[Zz]\s*$', d.strip()):
+            return None
+        toks = re.findall(r'[MLHVACQSTZmlhvacqstz]|-?[\d.]+', d)
+        xs, ys, cur, i = [], [], (0.0, 0.0), 0
+        try:
+            while i < len(toks):
+                c = toks[i]; i += 1
+                if c in "ML":
+                    cur = (float(toks[i]), float(toks[i + 1])); i += 2
+                elif c == "H":
+                    cur = (float(toks[i]), cur[1]); i += 1
+                elif c == "V":
+                    cur = (cur[0], float(toks[i])); i += 1
+                elif c == "A":
+                    cur = (float(toks[i + 5]), float(toks[i + 6])); i += 7
+                elif c == "Q":
+                    cur = (float(toks[i + 2]), float(toks[i + 3])); i += 4
+                elif c == "C":
+                    cur = (float(toks[i + 4]), float(toks[i + 5])); i += 6
+                elif c in "Zz":
+                    continue
+                else:
+                    return None          # relative commands: not ours to guess
+                xs.append(cur[0]); ys.append(cur[1])
+        except (IndexError, ValueError):
+            return None
+        if len(xs) < 4:
+            return None
+        return (min(xs), min(ys), max(xs) - min(xs), max(ys) - min(ys))
+
+    for tag in re.finditer(r'<path\b[^>]*\bd="([^"]+)"', svg):
+        if tag.group(0).find("marker-end") >= 0:
+            continue
+        box = _closed_path_box(tag.group(1))
+        if box and box[2] > 8 and box[3] > 8:
+            _all_rects.append(box)
+
     # A ring of arcs — a flywheel's cycle — rides a circle inside the nodes
     # and touches none of them, and that is the grammar rather than a mistake:
     # arcs drawn between the boxes say the cycle has no end, where arrows
@@ -1249,8 +1290,15 @@ def lint(svg_path):
         if None not in p1 + p2:
             _anchor_lines.append((p1, p2))
 
-    def _on_line(pt, tol=3.0):
+    def _on_line(pt, tol=3.0, own=()):
         for (ax, ay), (bx, by) in _anchor_lines:
+            # A connector is not its own anchor. Without this every endpoint
+            # lies on the line it ends, and an arrow pointing at empty canvas
+            # passes as "attached to a drawn line" - the check never fires.
+            if any(math.hypot(ax - p0[0], ay - p0[1]) <= 0.5
+                   and math.hypot(bx - q0[0], by - q0[1]) <= 0.5
+                   for p0, q0 in own):
+                continue
             vx, vy = bx - ax, by - ay
             L2 = vx * vx + vy * vy
             if L2 < 1:
@@ -1262,14 +1310,17 @@ def lint(svg_path):
 
     _float = set()
     _ends_by_conn = {}
+    _segs_by_conn = {}
     for cid, _kind, p, q in segs:
         e = _ends_by_conn.setdefault(cid, [p, q])
         e[1] = q
+        _segs_by_conn.setdefault(cid, []).append((p, q))
     for cid, (p, q) in _ends_by_conn.items():
         if _is_ring(cid, p, q):
             continue
         for pt, which in ((p, "start"), (q, "end")):
-            if any(_on_edge(pt, r) for r in _all_rects) or _on_line(pt):
+            if any(_on_edge(pt, r) for r in _all_rects) \
+                    or _on_line(pt, own=_segs_by_conn.get(cid, ())):
                 continue
             key = (round(pt[0]), round(pt[1]))
             if key in _float:
