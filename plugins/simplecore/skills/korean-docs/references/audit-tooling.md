@@ -174,6 +174,16 @@ audit:
   `audit.localeResources` declares get both runs; a file declared only as a kind in
   `.claude/l10n.json` gets the sentence-rule run alone, read by that kind's format and register,
   because the word check would read its keys as prose.
+- **A sweep over a directory reads those kinds and nothing else, so Korean living in a source file
+  is invisible to it.** `rules` and `check` read whatever path they are given, a `.py` or a `.ts`
+  included, but nobody points them there, and the gap does not announce itself: the sweep says
+  clean over the repository while the prose in the generators goes unread. It matters wherever a
+  project keeps Korean in code against the usual rule that comments are English - most often a
+  figure generator, whose docstrings carry each figure's claim in the document's own words and are
+  read as that claim during a review. A project in that position names the paths in its own check
+  list and runs them, because the repository sweep will not. One document's generators held
+  thirty-seven findings on their first reading, every one of them in prose a person had reviewed
+  more than once.
 - It checks only in a project that has a glossary (`.claude/GLOSSARY.md` or `GLOSSARY.md`). No
   glossary means write-time checking is off entirely.
 - A document changed through `Bash` - `node` · `python` · `sed` · a heredoc - never passes the hook.
