@@ -1925,7 +1925,12 @@ def _interior_checks(svg, W, H, rmeta, solids, containers, node_rects,
             in_by = min(rx1, x + w) - max(rx0, x), min(ry1, y + h) - max(ry0, y)
             encloses = (rx0 <= x + TOL and ry0 <= y + TOL
                         and rx1 >= x + w - TOL and ry1 >= y + h - TOL)
-            if out_by >= 8 and min(in_by) >= 8 and not encloses:
+            # A band that passes through - past two opposite edges, like a
+            # highlighted column across every row - is not a marker either.
+            passes = ((rx0 < x - TOL and rx1 > x + w + TOL)
+                      or (ry0 < y - TOL and ry1 > y + h + TOL))
+            if out_by >= 8 and min(in_by) >= 8 and not encloses \
+                    and not passes:
                 straddlers.append((rx0, ry0, rx1, ry1))
         for t in T:
             if any(a <= t["x"] <= c and b <= t["y"] <= d
