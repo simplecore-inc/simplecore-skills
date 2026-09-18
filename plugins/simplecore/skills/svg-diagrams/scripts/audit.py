@@ -105,6 +105,73 @@ def _iter_texts(svg):
             yield a, txt
 
 
+def _rel_path_points(d):
+    """Points of a path written with relative commands, for a bounding box.
+
+    An icon set draws with `c` · `a` · `l`, so a reader of absolute commands
+    alone sees no ink where an icon is and reports the box around it as empty.
+    Control points are included, which bounds a curve rather than tracing it -
+    enough for the small-ink box this feeds, never for geometry.
+    """
+    toks = re.findall(r'([A-Za-z])([^A-Za-z]*)', d)
+    x = y = 0.0
+    start = None
+    pts = []
+    for cmd, rest in toks:
+        nums = [float(v) for v in re.findall(r'-?\d*\.?\d+(?:e-?\d+)?', rest)]
+        rel = cmd.islower()
+        k = cmd.upper()
+        i = 0
+        while True:
+            if k == "M" or k == "L" or k == "T":
+                if i + 2 > len(nums):
+                    break
+                nx, ny = nums[i], nums[i + 1]
+                i += 2
+                x, y = (x + nx, y + ny) if rel else (nx, ny)
+                if k == "M" and start is None:
+                    start = (x, y)
+                pts.append((x, y))
+            elif k == "H":
+                if i + 1 > len(nums):
+                    break
+                x = x + nums[i] if rel else nums[i]
+                i += 1
+                pts.append((x, y))
+            elif k == "V":
+                if i + 1 > len(nums):
+                    break
+                y = y + nums[i] if rel else nums[i]
+                i += 1
+                pts.append((x, y))
+            elif k in ("C", "S", "Q", "A"):
+                n = {"C": 6, "S": 4, "Q": 4, "A": 7}[k]
+                if i + n > len(nums):
+                    break
+                seg = nums[i:i + n]
+                i += n
+                if k == "A":
+                    nx, ny = seg[5], seg[6]
+                    x, y = (x + nx, y + ny) if rel else (nx, ny)
+                    pts.append((x, y))
+                else:
+                    for j in range(0, n, 2):
+                        px, py = seg[j], seg[j + 1]
+                        pts.append((x + px, y + py) if rel else (px, py))
+                    ex, ey = seg[n - 2], seg[n - 1]
+                    x, y = (x + ex, y + ey) if rel else (ex, ey)
+            elif k == "Z":
+                if start:
+                    x, y = start
+                    pts.append((x, y))
+                break
+            else:
+                break
+            if i >= len(nums):
+                break
+    return pts
+
+
 def _path_points(d):
     """Real (x, y) points of an absolute path. Mirrors svgkit.path_points.
 
@@ -2008,10 +2075,7 @@ def _interior_checks(svg, W, H, rmeta, solids, containers, node_rects,
         pts = []
         dm = re.search(r'\bd="([^"]+)"', a)
         if dm:
-            if set(re.findall(r'[A-Za-z]', dm.group(1))) & set(
-                    "mlhvqcsta"):
-                continue                  # relative commands: not measurable
-            pts = _path_points(dm.group(1))
+            pts = _path_points(dm.group(1)) or _rel_path_points(dm.group(1))
         pm = re.search(r'\bpoints="([^"]+)"', a)
         if pm:
             pts = [(float(px), float(py)) for px, py in
@@ -2083,6 +2147,13 @@ def _interior_checks(svg, W, H, rmeta, solids, containers, node_rects,
                 continue                  # a band, a tab, a stripe
             cont.append(rb)
         for bb in small:
+            # an icon inside a name chip on the border belongs to the chip, as
+            # the chip's text does - counting it would pull the box's inset to
+            # nothing on that side
+            cx_, cy_ = (bb[0] + bb[2]) / 2, (bb[1] + bb[3]) / 2
+            if any(a_ <= cx_ <= c_ and b_ <= cy_ <= d_
+                   for a_, b_, c_, d_ in straddlers):
+                continue
             if _inside(bb, box, 0.5):
                 cont.append(bb)
         return cont
