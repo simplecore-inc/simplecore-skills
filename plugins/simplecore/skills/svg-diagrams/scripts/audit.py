@@ -1514,6 +1514,40 @@ def lint(svg_path):
                            f'marker=None on the rest'))
             break
 
+    # 9b-4) two routes arriving at one box within a head's width of each
+    #     other. An arrowhead is about 13px across at the usual stroke, so a
+    #     pair that close prints as one doubled head and the reader counts one
+    #     route where the drawing has two. Space the arrivals down the edge,
+    #     or join the two routes into one before they reach the box.
+    _crowd = set()
+    for _i in range(len(_heads)):
+        for _j in range(_i + 1, len(_heads)):
+            (t1, d1), (t2, d2) = _heads[_i], _heads[_j]
+            gap = math.hypot(t1[0] - t2[0], t1[1] - t2[1])
+            if not (2 < gap < 24):
+                continue
+            n1, n2 = math.hypot(*d1), math.hypot(*d2)
+            if n1 < 1 or n2 < 1:
+                continue
+            # Heads pointing different ways at one corner are two routes the
+            # reader can still tell apart; only a near-parallel pair merges.
+            if (d1[0] * d2[0] + d1[1] * d2[1]) / (n1 * n2) < 0.94:
+                continue
+            if not any(_on_edge(t1, r) and _on_edge(t2, r)
+                       for r in _all_rects):
+                continue
+            key = tuple(sorted(((round(t1[0]), round(t1[1])),
+                                (round(t2[0]), round(t2[1])))))
+            if key in _crowd:
+                continue
+            _crowd.add(key)
+            issues.append(("CROWDED-ARRIVAL",
+                           f'arrowheads at ({t1[0]:.0f},{t1[1]:.0f}) and '
+                           f'({t2[0]:.0f},{t2[1]:.0f}) land {gap:.0f}px apart '
+                           f'on one box - they print as one doubled head; '
+                           f'space the arrivals or join the routes before the '
+                           f'box'))
+
     # 9c) rule 3 — no two connectors run on top of each other. Parallel and
     #     close reads as one thick line, and the reader cannot follow either
     #     to its end. Only runs that actually overlap along their shared axis

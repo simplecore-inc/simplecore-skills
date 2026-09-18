@@ -56,7 +56,7 @@ import { execFileSync } from "node:child_process";
 import { join, dirname, resolve, relative, isAbsolute } from "node:path";
 import { fileURLToPath } from "node:url";
 import { discoverGlossary, loadRuleSet, loadRulePacks, parseGlossaryConfig, BASE_GLOSSARY_PATH } from "./lib/glossary.mjs";
-import { initGlossary, initL10n, runDocAudit, annotationRanges, contrastRecommendedRanges } from "./lib/doc-audit.mjs";
+import { initGlossary, initL10n, runDocAudit, lastWarningCount, annotationRanges, contrastRecommendedRanges } from "./lib/doc-audit.mjs";
 
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
 
@@ -1070,6 +1070,11 @@ const HANGUL = /[가-힣]/;
 // separator (`%1$s ~ %2$s`) is a template, not an untranslated string.
 const PLACEHOLDER = /\{\{[^}]+\}\}|\{[0-9A-Za-z_.]+\}|\$\{[^}]+\}|%(\d+\$)?[sd]/g;
 
+// A step that prints warnings and exits 0 reads as clean in the sweep summary, which is the
+// only part of the output a reader reaches on a long run. Each command records what it warned
+// about here so the summary can say so.
+let LAST_WARNINGS = 0;
+
 let RULE_SET = null;
 
 /** Merged glossary rule set (base + project), loaded once. */
@@ -1887,6 +1892,7 @@ function cmdRulesScan(opts) {
     else errors += n;
   }
   const failed = errors > 0 || (opts.strict && warnings > 0);
+  LAST_WARNINGS = warnings;
 
   if (opts.json) {
     console.log(JSON.stringify(Object.fromEntries(byRule), null, 2));
@@ -2229,13 +2235,14 @@ function cmdSweep(opts) {
   const run = (name, fn) => {
     banner(name);
     let code;
+    LAST_WARNINGS = 0;
     try {
       code = fn();
     } catch (err) {
       console.error(C.red(`✖ ${err.message}`));
       code = 2;
     }
-    steps.push([name, code]);
+    steps.push([name, code, code === 2 ? 0 : LAST_WARNINGS]);
   };
 
   // The pack first: a rule that no longer catches its own example, or a lens that lost half a
@@ -2256,7 +2263,9 @@ function cmdSweep(opts) {
     });
     const g = outside ? discoverGlossary(ROOT) : null;
     if (g?.path) args.push("--glossary", g.path);
-    return cmdCheck(args, { noFooter: true });
+    const code = cmdCheck(args, { noFooter: true });
+    LAST_WARNINGS = lastWarningCount;
+    return code;
   });
   run("rules", () => cmdRulesScan({ ...opts, json: false }));
   run("suspects", () => {
@@ -2278,16 +2287,30 @@ function cmdSweep(opts) {
     `files in the sentence sweep: ${entries.length} · glossary rules: ${ruleSet().rules.length}` +
       ` · sentence rules: ${rulePacks().active.length} · lens: ${readLens() ? "loaded" : "missing"}`,
   );
-  for (const [name, code] of steps) {
+  for (const [name, code, warns] of steps) {
     const mark =
-      code === null ? C.dim("– skipped") : code === 0 ? C.green("✔ clean") : code === 1 ? C.red("✖ findings") : C.red("✖ did not run");
+      code === null
+        ? C.dim("– skipped")
+        : code === 0
+          ? warns
+            ? C.yellow(`⚠ ${warns} ${warns === 1 ? "warning" : "warnings"}`)
+            : C.green("✔ clean")
+          : code === 1
+            ? C.red("✖ findings")
+            : C.red("✖ did not run");
     console.log(`  ${name.padEnd(9)} ${mark}`);
   }
   const worst = Math.max(0, ...steps.map(([, code]) => code ?? 0));
+  const warned = steps.reduce((n, [, , w]) => n + (w ?? 0), 0);
   console.log(
     worst
       ? C.red("\nNot clean - fix the findings above, re-check the sentences you rewrote, then sweep again.")
-      : C.green("\nClean on every check that ran. The lens candidates and the in-order reading are still the reader's."),
+      : warned
+        ? C.yellow(
+            `\nNo errors, but ${warned} ${warned === 1 ? "warning" : "warnings"} above are a place to read: a warned` +
+              " term is wrong unless the sentence is quoting one. Fix or record each, then sweep again.",
+          )
+        : C.green("\nClean on every check that ran. The lens candidates and the in-order reading are still the reader's."),
   );
   return worst;
 }
@@ -2529,6 +2552,7 @@ function cmdAudit(opts) {
   section(`⚠ missing paired language file`, findings.missingPair, (r) => `    ${r.stem} ${C.dim(`(no ${r.lang})`)}`);
 
   const errors = findings.untranslated.length + findings.banned.length + findings.particles.length;
+  LAST_WARNINGS = findings.bannedWarn.length + findings.missingPair.length;
   console.log(
     `\n${errors ? C.red(`${errors} errors`) : C.green("0 errors")} · ${findings.bannedWarn.length + findings.missingPair.length} warnings`,
   );

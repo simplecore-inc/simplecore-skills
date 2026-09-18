@@ -1379,6 +1379,9 @@ const RULES_TEMPLATE = {
  * `cliPath` appears in the --init hint when no project glossary exists.
  * Returns the exit code (0 clean, 1 violations) rather than setting it.
  */
+/** Warnings printed by the last `runDocAudit` call. A live binding, read by the sweep. */
+export let lastWarningCount = 0;
+
 export function runDocAudit(args, cliPath) {
   let discovered = null;
   if (args.glossary) {
@@ -1523,6 +1526,9 @@ export function runDocAudit(args, cliPath) {
   // The dead-pattern count rides in the total so the closing line can never read 「오류 0건」 while
   // a declared corpus went unread.
   const configErrors = deadPatterns.length;
+  // A warning prints above and the exit code stays 0, so a caller that reports only the code -
+  // the sweep's summary line - would call this run clean. The count rides out here so it cannot.
+  lastWarningCount = warningCount;
   console.log(`\nChecked ${targets.length} files: ${errorCount + configErrors} errors, ${warningCount} warnings`);
   if (!args.noFooter) reportDarkCommands(root, cliPath);
   return errorCount + configErrors > 0 || (args.strict && warningCount > 0) ? 1 : 0;
