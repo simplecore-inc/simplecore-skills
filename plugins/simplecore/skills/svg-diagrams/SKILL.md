@@ -37,6 +37,13 @@ that a list cannot say, and build that relation out of the primitives already
 here — a figure that turns six list items into six equal cards repeats the
 paragraph above it. This judgement is made for every figure, not once per set.
 
+**A claim-led figure also names the decision boundary.** When a figure mixes a
+default, an optional choice, a condition and an exception, its title, row or
+lane names and closing verdict say which is which. Do not make the reader infer
+that one column is always applied while the neighbouring columns are selected
+later. The full semantic audit and before/after examples live in
+`references/document-figures.md`.
+
 **Every box is sized from its content.** The scaffold's `common.py` carries a
 content-first layer — `heading` · `card` · `cards_row` · `pill` · `note` ·
 `zone` · `step_row` · `segment_bar` · `joined_cell` — that computes each box's height from
@@ -180,7 +187,7 @@ Loop: **lint → render → hotspots → fix → repeat** until lint is clean *a
 
 **CJK / non-Latin text:** width estimation is CJK-aware across the toolchain (`svgkit.tw`, `layout.js`, and the lint all count Hangul/Kana/CJK glyphs at ~1 em, Latin at ~0.55 em). A box or chip auto-sized for Latin will overflow Korean/Japanese if you hardcode a width — size boxes from `tw()`, not by eye. The Mermaid `--svg` path (beautiful-mermaid) sizes its own boxes and can clip CJK labels; lint its output and prefer svgkit/layout.js when labels are CJK-heavy.
 
-**Read it as somebody who has never seen the system (the pass no lint replaces).** A clean lint means the picture is well-formed, not that it explains anything. Once the crops look right, look at the full render once more as a first-time reader and answer four questions: what is this a picture *of* (is there a title saying so); where does the eye start, and is that where the flow starts; is every label a word the reader knows rather than an internal identifier or an abbreviation only the author expands; and does every line style, colour, and shape difference mean something a legend states. A diagram that fails one of these is redrawn, not re-linted — and an unexplained visual distinction is the most common failure, because the author knows what it meant.
+**Read it as somebody who has never seen the system (the pass no lint replaces).** A clean lint means the picture is well-formed, not that it explains anything. Once the crops look right, look at the full render once more as a first-time reader and answer: what is this a picture *of*; where does the eye start; who acts or decides; what is always true; what changes only after a choice or condition; what remains when an option is not applied; and whether every line style, colour, and shape difference has a stated meaning. Every label must use a term the reader knows rather than an internal identifier or an abbreviation only the author expands. A diagram that fails one of these is redrawn, not re-linted — and an unexplained visual distinction is the most common failure, because the author knows what it meant.
 
 **Two placement rules prevent most of the checks above at generation time:** place edge labels in open space above or below the arrow rather than in a narrow gap between boxes, and route connectors around any box that is neither their source nor their target — including a frame's own title chip, which counts as a box. Every check's detection rule and fix is in `references/render-audit.md`.
 

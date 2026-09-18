@@ -273,6 +273,58 @@ should still say the claim: four things feeding one point that opens into two.
 If the covered figure says nothing, the labels were doing all the work and the
 composition is decoration.
 
+## Make the decision boundary explicit
+
+A figure can have the right geometry and still make the reader reconstruct its
+meaning. This happens most often when one board mixes a default, an optional
+choice, a condition and an exception, but labels all of them with broad nouns
+such as `제공 범위`, `대상`, `방식`, `해당`, `선택` or `결과`. The author knows
+which item is always applied and which one the client decides later; the first-
+time reader does not.
+
+Audit every figure as a four-part copy unit: the surrounding claim, caption,
+internal labels and closing verdict. They must answer the same questions with
+the same terms:
+
+1. **What is the figure about?** The caption names the relationship or decision,
+   not two adjacent topics joined with `·` or `와`.
+2. **Who acts or decides?** Name the proposer, client, operator, system or role
+   whenever more than one actor is possible.
+3. **What is always true, and what changes?** Separate the default state,
+   optional application, trigger or condition, result and exception. Do not put
+   an always-applied item under a heading that says everything in the row is a
+   choice.
+4. **What remains when an option is not used?** State the retained artifact,
+   function or fallback directly; `미선택 범위`, `남는 것` and `고르지 않아도`
+   are prompts for an explanation, not finished labels.
+
+For a matrix, timeline, lane or layered figure, write row and column headers as
+the questions the cells answer. Prefer `계약 범위로 제공하는 것`, `기본 운영 시
+제공 상태`, `운영환경 적용 결과` over `제공`, `미선택`, `선택`. A cell then
+states the concrete answer (`단일 노드로 운영해도 응용 코드는 동일`) rather than
+an author-side comment (`고르고 말고가 없다`).
+
+Keep mutually exclusive categories truly parallel. If three columns are choices
+and one is mandatory, either split the mandatory item into a labelled default
+band or state `항상 적용 · 별도 선택 없음` in the same decision row. A visual
+group must not imply a shared decision rule that its members do not share.
+
+Examples:
+
+| Avoid | Write |
+| --- | --- |
+| `운영 방식별 제공 범위와 발주처가 고르는 대상` | `운영 기술 4종의 제공 범위와 착수 후 적용 결정` |
+| `고르지 않아도 남는 범위` | `기본 운영 시 제공 상태` |
+| `고르면 달라지는 운영 방식` | `운영환경 적용 결과` |
+| `사업분야와 겹치는 본 사업 부분` | `신고 사업분야가 포괄하는 본 사업 범위` |
+| `상태 구성` | `상태별 열과 기한 경과 표시` |
+
+The final semantic pass is not a search for awkward words. Read the rendered
+figure from its caption through its axes or lanes to its verdict and explain it
+back in one sentence. If that sentence needs information known only from the
+source code or surrounding prose, put the missing actor, condition, retained
+state or result into the figure and render it again.
+
 ## Vary the composition across a set
 
 Preserve each figure's semantic grammar. Use boundaries or strata for zones, a
