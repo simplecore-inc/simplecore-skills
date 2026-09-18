@@ -1372,6 +1372,9 @@ const RULES_TEMPLATE = {
 // The audit flow both CLIs run
 // ---------------------------------------------------------------------------
 
+/** Warnings printed by the last `runDocAudit` call. A live binding, read by the sweep. */
+export let lastWarningCount = 0;
+
 /**
  * Runs the document audit end to end and prints the report.
  *
@@ -1379,9 +1382,6 @@ const RULES_TEMPLATE = {
  * `cliPath` appears in the --init hint when no project glossary exists.
  * Returns the exit code (0 clean, 1 violations) rather than setting it.
  */
-/** Warnings printed by the last `runDocAudit` call. A live binding, read by the sweep. */
-export let lastWarningCount = 0;
-
 export function runDocAudit(args, cliPath) {
   let discovered = null;
   if (args.glossary) {

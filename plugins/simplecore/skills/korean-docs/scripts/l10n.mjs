@@ -2307,8 +2307,8 @@ function cmdSweep(opts) {
       ? C.red("\nNot clean - fix the findings above, re-check the sentences you rewrote, then sweep again.")
       : warned
         ? C.yellow(
-            `\nNo errors, but ${warned} ${warned === 1 ? "warning" : "warnings"} above are a place to read: a warned` +
-              " term is wrong unless the sentence is quoting one. Fix or record each, then sweep again.",
+            `\nNo errors, but ${warned} ${warned === 1 ? "warning is" : "warnings are"} a place to read above:` +
+              " a warned term is wrong unless the sentence is quoting one. Fix or record each, then sweep again.",
           )
         : C.green("\nClean on every check that ran. The lens candidates and the in-order reading are still the reader's."),
   );
