@@ -1862,7 +1862,8 @@ def _interior_checks(svg, W, H, rmeta, solids, containers, node_rects,
                        "stroke": stroke.lower(),
                        "op": float(op.group(1)) if op else 1.0,
                        "dashed": "stroke-dasharray" in a, "canvas": False,
-                       "measured": "data-measure=" in a})
+                       "measured": "data-measure=" in a,
+                       "band": "data-band=" in a})
 
     # -- texts as records ---------------------------------------------------
     T = []
@@ -2315,7 +2316,8 @@ def _interior_checks(svg, W, H, rmeta, solids, containers, node_rects,
                 for o in solids):
             frames.append(r)
     # a strip's end segment is a quantity, not a frame around its label
-    frames += [p for p in rpaths if p["stroke"] != "none" and not p["measured"]]
+    frames += [p for p in rpaths if p["stroke"] != "none" and not p["measured"]
+               and not p.get("band")]
     seen_frame = set()
     for f in frames:
         k = _key(f)

@@ -510,7 +510,10 @@ class Canvas:
         else:
             raise ValueError(
                 f"side must be 'top', 'bottom', 'left' or 'right', not {side!r}")
-        a = [f'<path d="{d}" fill="{color}" opacity="{opacity}"']
+        # A band is one half of a cell, not a frame around content: the four
+        # insets of a label tile or a text box have no reason to agree, and
+        # the frame-padding check skips anything carrying this.
+        a = [f'<path d="{d}" fill="{color}" opacity="{opacity}" data-band="1"']
         if stroke:
             a.append(f'stroke="{stroke}" stroke-width="{sw}"')
         if measure:
