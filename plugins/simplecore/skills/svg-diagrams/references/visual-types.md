@@ -96,7 +96,12 @@ past its budget with the reason in the message.
 it judges a hand-drawn one. Six checks carry exceptions these types need.
 
 - **`FLOATING-ENDPOINT`** accepts an endpoint on a box edge *or* on a drawn
-  line — a sequence message lands on a lifeline.
+  line — a sequence message lands on a lifeline. A drawn line is a `<line>`
+  or a straight run of a `<path>` that carries no arrowhead: a bracket, an
+  axis, the shoulder of a sheet lying behind a box are all surfaces a
+  connector may land on, and reading only `<line>` reported those as pointing
+  at empty canvas. A path with a marker is a route, not a surface, so an
+  arrow still cannot anchor on another arrow.
 - **`LINE-THROUGH-BOX`** exempts a line whose two ends sit on the same box's
   outline — a quadrant's axes divide their panel.
 - **`SWEEPING-CURVE`** exempts a connector whose ends are within 90px of each

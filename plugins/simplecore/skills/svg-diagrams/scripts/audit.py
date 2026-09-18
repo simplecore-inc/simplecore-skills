@@ -658,6 +658,55 @@ def lint(svg_path):
                                f'rects [{a[0]:.0f},{a[1]:.0f}] and '
                                f'[{b[0]:.0f},{b[1]:.0f}] sit {-oy:.1f}px apart '
                                'vertically - join them or open the gap'))
+
+    # 6c) a sheet behind a box written as a rectangle. One of a thing standing
+    #     for many is drawn as sheets lying behind it, and the sheet is the
+    #     sliver that shows, drawn as an open path. Written instead as a rect
+    #     flattened to the depth of the offset, it reads as a stray hairline
+    #     and its side edges stick out past the front box, because the width
+    #     did not shrink when the offset moved it. The tell is exactly that: a
+    #     flat unfilled rect lying across a much taller box and reaching past
+    #     that box's flank. A bar outline sits square on its own fill and a
+    #     double edge is inset on every side, so neither is caught.
+    #     Fix: `references/document-figures.md`, 「A stack behind a box is
+    #     drawn as the sliver that shows」.
+    def _ra(a, k):
+        mm = re.search(rf'\b{k}="([\-\d.]+)"', a)
+        return float(mm.group(1)) if mm else None
+
+    _rects_all = []
+    for m in re.finditer(r'<rect\b([^>]*)/?>', svg):
+        a = m.group(1)
+        rx0, ry0, rw0, rh0 = (_ra(a, "x"), _ra(a, "y"),
+                              _ra(a, "width"), _ra(a, "height"))
+        if None in (rx0, ry0, rw0, rh0):
+            continue
+        fm = re.search(r'\bfill="([^"]*)"', a)
+        hollow = (fm is None or fm.group(1) in ("none", "transparent")) \
+            and "stroke=" in a and "data-measure=" not in a
+        _rects_all.append((rx0, ry0, rw0, rh0, hollow))
+    for rx0, ry0, rw0, rh0, hollow in _rects_all:
+        if not (hollow and rh0 < 12 and rw0 >= 40):
+            continue
+        for bx, by, bw, bh, _hb in _rects_all:
+            if (bx, by, bw, bh) == (rx0, ry0, rw0, rh0) or bh < rh0 * 3:
+                continue
+            if min(rx0 + rw0, bx + bw) - max(rx0, bx) <= 4:
+                continue
+            # The sheet sits on the box's top edge or just above it, so
+            # proximity rather than overlap is what relates the two.
+            gap_y = by - (ry0 + rh0)
+            if not (-bh < gap_y <= 24):
+                continue
+            past = max(bx - rx0, rx0 + rw0 - (bx + bw))
+            if past > 2:
+                issues.append(("SLIVER-RECT",
+                               f'flat rect [{rx0:.0f},{ry0:.0f},{rw0:.0f},'
+                               f'{rh0:.0f}] lies across box [{bx:.0f},{by:.0f}]'
+                               f' and reaches {past:.0f}px past its flank - a '
+                               'sheet behind a box is the sliver that shows, '
+                               'drawn as an open path before the box'))
+                break
             elif not mixed and ox > 1.5 and oy > 1.5:
                 # Below the occlusion gate and above stroke bleed. Two bordered
                 # boxes that should sit edge to edge but were stepped by less
@@ -1319,6 +1368,23 @@ def lint(svg_path):
         p1, p2 = (_lv("x1"), _lv("y1")), (_lv("x2"), _lv("y2"))
         if None not in p1 + p2:
             _anchor_lines.append((p1, p2))
+    # A path stroked without an arrowhead is a drawn surface too — a bracket,
+    # an axis, the visible shoulder of a sheet lying behind a box. It is as
+    # visible to the reader as a <line>, so an endpoint landing on one is
+    # attached to something, and reading only <line> here reported those as
+    # pointing at empty canvas. Paths carrying a marker are routes rather than
+    # surfaces and stay out, so an arrow cannot anchor on another arrow.
+    for tag in re.finditer(r'<path\b([^>]*)/?>', svg):
+        a = tag.group(1)
+        if "marker-end" in a or "marker-start" in a:
+            continue
+        dm = re.search(r'\bd="([^"]+)"', a)
+        if not dm:
+            continue
+        pp = _path_points(dm.group(1))
+        for q1, q2 in zip(pp, pp[1:]):
+            if math.hypot(q2[0] - q1[0], q2[1] - q1[1]) >= 8:
+                _anchor_lines.append((q1, q2))
 
     def _on_line(pt, tol=3.0, own=()):
         for (ax, ay), (bx, by) in _anchor_lines:

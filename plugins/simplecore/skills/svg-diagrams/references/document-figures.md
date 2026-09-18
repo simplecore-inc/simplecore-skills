@@ -442,6 +442,35 @@ through that box. Where stacked masked labels sit too close, open the step.
 The same rule holds for the end segments of a proportional strip inside a
 rounded outline.
 
+## A stack behind a box is drawn as the sliver that shows
+
+**One of a thing standing for many is drawn as sheets lying behind it** - one
+order line and its many items, one request and its many measurements, one
+template and its many issued copies. `stack_behind(c, x, y, w, h, color,
+side=…)` draws the sheets and returns the rectangle the whole stack occupies.
+It is called **before** the front box, because the box is what covers the rest
+of each sheet; called after, the sheets paint over the box and the drawing
+shows a line running across the box's top.
+
+**The sheet is the visible sliver, not a rectangle.** Two wrong forms both look
+plausible in the source. A closed rectangle of the sheet's full size lays a
+bottom edge across the front box's top. And a rectangle flattened to the depth
+of the offset - a box eight units tall - reads as a stray hairline rather than
+as a sheet, and its side edges stick out past the front box because the width
+did not change with the offset. Drawing only the edges that would show, as one
+open path per sheet, produces neither.
+
+**Which way the stack offsets is decided by the room the box has.** Up and to
+the right is the default and wants clear space beside the box. A box already
+flush with the content margin takes `side="up"`, which insets each sheet on
+both flanks so nothing reaches past either edge and the shoulders above the box
+are what the reader sees. A stack offset into a margin is what the content-edge
+pass reports as a box past the line the rest line up on.
+
+**A connector arriving from outside lands on the topmost sheet**, not on the
+front box, and that is the truer target: the many is what the connector counts.
+Pass the returned rectangle's top to the arrow.
+
 ## Icons carry meaning or they are noise
 
 `Canvas.icon(name, x, y, size, color, sw)` draws one Lucide glyph, and every

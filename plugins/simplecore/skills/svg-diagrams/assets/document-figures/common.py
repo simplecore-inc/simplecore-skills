@@ -519,6 +519,53 @@ def joined_cell(c, x, y, w, h, lead_w, accent, *, rx=10, lead_op=0.28,
     return lead, body
 
 
+def stack_behind(c, x, y, w, h, color, *, depth=2, off=7, rx=10, side="right",
+                 sw=1.4):
+    """Sheets lying behind a box, to say the box stands for many of a thing.
+
+    One order line and its many items, one request and its many measurements,
+    one template and its many issued copies. Only the edges that would
+    actually be visible are drawn, as one open path per sheet, and the call
+    goes **before** the front box so the box covers the rest.
+
+    Two ways to draw this are wrong and both look plausible in the source. A
+    closed rectangle of the sheet's full size lays a bottom edge across the
+    front box's top. And a rectangle flattened to the depth of the offset - a
+    box 8 units tall - reads as a stray hairline rather than as a sheet, and
+    its side edges stick out past the front box because the width did not
+    change with the offset.
+
+    `side="right"` offsets each sheet up and to the right and is the default,
+    for a box with room beside it. `side="up"` insets each sheet on both
+    flanks and offsets it up, for a box already flush with the content margin:
+    nothing then reaches past either edge, and the shoulders above the box are
+    what the reader sees.
+
+    Returns the rectangle the whole stack occupies, so a connector arriving
+    from outside can be pointed at the topmost sheet rather than at the front
+    box - which is the truer target, because the many is what it counts.
+    """
+    if side not in ("right", "up"):
+        raise ValueError(f"side must be 'right' or 'up', not {side!r}")
+    for k in range(depth, 0, -1):
+        d = off * k
+        if side == "right":
+            c.path(f"M {x + d:.1f} {y:.1f} V {y - d:.1f} "
+                   f"H {x + w + d:.1f} V {y + h - d:.1f} "
+                   f"H {x + w:.1f}", color=color, sw=sw, marker=None)
+        else:
+            x1, x2, yy = x + d, x + w - d, y - d
+            c.path(f"M {x1:.1f} {y:.1f} V {yy + rx:.1f} "
+                   f"A {rx} {rx} 0 0 1 {x1 + rx:.1f} {yy:.1f} "
+                   f"H {x2 - rx:.1f} "
+                   f"A {rx} {rx} 0 0 1 {x2:.1f} {yy + rx:.1f} "
+                   f"V {y:.1f}", color=color, sw=sw, marker=None)
+    d = off * depth
+    if side == "right":
+        return (x, y - d, w + d, h + d)
+    return (x + d, y - d, w - 2 * d, h + d)
+
+
 def disc(c, cx, cy, r, fill, stroke=None, sw=1.6):
     """One circle. svgkit has no circle primitive: an arc path lints as a
     diameter line and a fully rounded rect lints as OVERLAP when two discs
