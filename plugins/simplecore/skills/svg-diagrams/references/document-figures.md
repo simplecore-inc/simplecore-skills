@@ -425,6 +425,13 @@ for halves that cross by less than `OVERLAP`'s gate. A join made with `band`
 trips neither, because both read rects and a band is a path: the drawing
 itself is what says the overlap was meant.
 
+**A mask plate is not a half to join.** `text(mask=True)` paints a paper plate
+the size of its own line so a label can sit on a line that passes behind it,
+and stacked labels get one plate each. Joining them into a single plate behind
+all the lines looks like the same move and is not: a paper rect taller than its
+own line is a box to the lint, and the line it was protecting now strikes
+through that box. Where stacked masked labels sit too close, open the step.
+
 The same rule holds for the end segments of a proportional strip inside a
 rounded outline.
 
