@@ -640,6 +640,19 @@ def lint(svg_path):
                                f'rects [{a[0]:.0f},{a[1]:.0f}] and '
                                f'[{b[0]:.0f},{b[1]:.0f}] overlap '
                                f'{ox:.0f}x{oy:.0f}px (occlusion)'))
+            elif 0 > ox > -3 and oy > 1.5:
+                # Neither joined nor apart. The strokes on either side of the
+                # gap are thicker than the gap itself, so it prints as one
+                # heavy line with a light sliver in it rather than as space.
+                issues.append(("HAIRLINE-GAP",
+                               f'rects [{a[0]:.0f},{a[1]:.0f}] and '
+                               f'[{b[0]:.0f},{b[1]:.0f}] sit {-ox:.1f}px apart '
+                               'sideways - join them or open the gap'))
+            elif 0 > oy > -3 and ox > 1.5:
+                issues.append(("HAIRLINE-GAP",
+                               f'rects [{a[0]:.0f},{a[1]:.0f}] and '
+                               f'[{b[0]:.0f},{b[1]:.0f}] sit {-oy:.1f}px apart '
+                               'vertically - join them or open the gap'))
             elif ox > 1.5 and oy > 1.5:
                 # Below the occlusion gate and above stroke bleed. Two bordered
                 # boxes that should sit edge to edge but were stepped by less
