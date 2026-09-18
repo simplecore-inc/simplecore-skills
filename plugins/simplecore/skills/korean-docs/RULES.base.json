@@ -3763,6 +3763,30 @@
       ],
       "lens": false,
       "lensReason": "A punctuation character, not a Korean stem; the lens reads Hangul families only"
+    },
+    {
+      "id": "bound-noun-alone",
+      "scope": "universal",
+      "severity": "error",
+      "reason": "A bound noun cannot stand as a whole string. 「때」 · 「것」 · 「뿐」 need the word they attach to, so a label, a cell or a line that holds nothing else is a phrase a line break split - 「아니요일 때」 wrapped at its only space prints 「아니요일」 over 「때」, and the first line reads as a different word. Rewrite the string so it does not need the break: put the branch word on the connector, shorten the phrase, or widen the box",
+      "find": [
+        "/^(때|것|뿐)$/"
+      ],
+      "replace": "",
+      "hit": [
+        "때",
+        "것",
+        "뿐"
+      ],
+      "miss": [
+        "아니요일 때",
+        "그럴 때",
+        "정하는 것",
+        "확인할 뿐",
+        "때를 적는다",
+        "수",
+        "곳"
+      ]
     }
   ]
 }
