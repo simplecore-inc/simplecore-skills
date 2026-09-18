@@ -629,13 +629,18 @@ def lint(svg_path):
     for i in range(len(solids)):
         for j in range(i + 1, len(solids)):
             a, b = solids[i], solids[j]
-            if (id(a) in containers) != (id(b) in containers):
-                continue
             ox = min(a[0] + a[2], b[0] + b[2]) - max(a[0], b[0])
             oy = min(a[1] + a[3], b[1] + b[3]) - max(a[1], b[1])
             if contains(a, b) or contains(b, a):
                 continue
-            if ox > 4 and oy > 4:
+            # A chip straddling its subgroup's border is normal layout, so the
+            # occlusion checks skip a container paired with a plain box. A
+            # chip a hair short of that border is the opposite - it reads as
+            # touching and was never meant to - so the gap check sees them.
+            mixed = (id(a) in containers) != (id(b) in containers)
+            if mixed and ox > 0 and oy > 0:
+                continue
+            if not mixed and ox > 4 and oy > 4:
                 issues.append(("OVERLAP",
                                f'rects [{a[0]:.0f},{a[1]:.0f}] and '
                                f'[{b[0]:.0f},{b[1]:.0f}] overlap '
@@ -653,7 +658,7 @@ def lint(svg_path):
                                f'rects [{a[0]:.0f},{a[1]:.0f}] and '
                                f'[{b[0]:.0f},{b[1]:.0f}] sit {-oy:.1f}px apart '
                                'vertically - join them or open the gap'))
-            elif ox > 1.5 and oy > 1.5:
+            elif not mixed and ox > 1.5 and oy > 1.5:
                 # Below the occlusion gate and above stroke bleed. Two bordered
                 # boxes that should sit edge to edge but were stepped by less
                 # than their own height: the shared border prints doubled and

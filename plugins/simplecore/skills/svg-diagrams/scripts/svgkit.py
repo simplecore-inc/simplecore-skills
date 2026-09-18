@@ -471,7 +471,7 @@ class Canvas:
         return sorted(n for n in _LUCIDE if keyword in n)
 
     def band(self, x, y, w, h, rx, color, opacity=0.14, side="top",
-             stroke=None, sw=1.0, measure=None):
+             stroke=None, sw=1.0, measure=None, corners=None):
         """A tinted band on the edge of a card: outer corners round, inner square.
 
         Drawing a card's header as a rounded rectangle rounds its bottom corners
@@ -489,7 +489,28 @@ class Canvas:
         the card's bottom minus h.
         """
         r = min(rx, w / 2, h / 2)
-        if side == "top":
+        if corners is not None:
+            # A cell joined on two sides has one corner left to round, which
+            # `side` cannot say: a band under a card and against a rail is
+            # square at the top and down its leading edge. Name the corners
+            # that round - any of "tl" "tr" "br" "bl" - and `side` is ignored.
+            want = {c for c in re.findall(r"tl|tr|br|bl", corners)}
+            if not want <= {"tl", "tr", "br", "bl"} or not corners.strip():
+                raise ValueError(
+                    "corners names any of 'tl' 'tr' 'br' 'bl', not "
+                    f"{corners!r}")
+            def arc(cx, cy):
+                return f"A {r} {r} 0 0 1 {cx:.1f} {cy:.1f} "
+            d = f"M {x:.1f} {y + r:.1f} " if "tl" in want else f"M {x:.1f} {y:.1f} "
+            d += arc(x + r, y) if "tl" in want else ""
+            d += f"H {x + w - r:.1f} " if "tr" in want else f"H {x + w:.1f} "
+            d += arc(x + w, y + r) if "tr" in want else ""
+            d += f"V {y + h - r:.1f} " if "br" in want else f"V {y + h:.1f} "
+            d += arc(x + w - r, y + h) if "br" in want else ""
+            d += f"H {x + r:.1f} " if "bl" in want else f"H {x:.1f} "
+            d += arc(x, y + h - r) if "bl" in want else ""
+            d += "Z"
+        elif side == "top":
             d = (f"M {x:.1f} {y + r:.1f} A {r} {r} 0 0 1 {x + r:.1f} {y:.1f} "
                  f"H {x + w - r:.1f} A {r} {r} 0 0 1 {x + w:.1f} {y + r:.1f} "
                  f"V {y + h:.1f} H {x:.1f} Z")

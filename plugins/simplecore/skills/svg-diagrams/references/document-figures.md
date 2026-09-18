@@ -413,6 +413,13 @@ stack where they cross and the overlap prints darker than the rest - a band
 down the content's leading edge, which is a second artefact in place of the
 first. Squaring both facing corners gets the join with nothing stacked.
 
+**A cell joined on two sides has one corner left to round**, which `side`
+cannot say: a band under a card and against a rail is square along the top and
+down its leading edge. `corners=` names the corners that round - any of `tl`
+`tr` `br` `bl` - and `side` is ignored when it is given. A rail that runs the
+full leading edge against a corner that curves away from it is the shape this
+is for.
+
 **Give the halves separate fill and outline paths when either is tinted.**
 `band` applies its opacity to the whole element, so a translucent fill takes
 the outline with it and the cell loses its border. Draw the tint as one path
