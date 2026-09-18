@@ -144,6 +144,12 @@ proposer action, method or control, and evidence or deliverable needed for evalu
   organisational facts, qualifications and delivery experience.
 - Review proposal XML and the source of every generated diagram. Edit the generator, not
   the generated SVG or generated chapter file.
+- Use `comparison` in a title or caption only when the figure directly puts peer values,
+  alternatives or states against one another. When the figure breaks a total into parts
+  and derives a subtotal, name those relations as allocation and calculation instead of
+  joining two noun phrases with `and` and calling the result a comparison. For example,
+  rewrite `role effort and development effort comparison` as `role allocation of planned
+  effort and development-effort calculation`.
 
 Example:
 
