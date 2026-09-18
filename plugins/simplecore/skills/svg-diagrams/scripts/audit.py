@@ -633,11 +633,23 @@ def lint(svg_path):
                 continue
             ox = min(a[0] + a[2], b[0] + b[2]) - max(a[0], b[0])
             oy = min(a[1] + a[3], b[1] + b[3]) - max(a[1], b[1])
-            if ox > 4 and oy > 4 and not contains(a, b) and not contains(b, a):
+            if contains(a, b) or contains(b, a):
+                continue
+            if ox > 4 and oy > 4:
                 issues.append(("OVERLAP",
                                f'rects [{a[0]:.0f},{a[1]:.0f}] and '
                                f'[{b[0]:.0f},{b[1]:.0f}] overlap '
                                f'{ox:.0f}x{oy:.0f}px (occlusion)'))
+            elif ox > 1.5 and oy > 1.5:
+                # Below the occlusion gate and above stroke bleed. Two bordered
+                # boxes that should sit edge to edge but were stepped by less
+                # than their own height: the shared border prints doubled and
+                # the rows read as touching. A stack whose pitch is smaller
+                # than the box it repeats lands here.
+                issues.append(("NEAR-OVERLAP",
+                               f'rects [{a[0]:.0f},{a[1]:.0f}] and '
+                               f'[{b[0]:.0f},{b[1]:.0f}] overlap '
+                               f'{ox:.1f}x{oy:.1f}px - edge to edge or apart'))
 
     # rich text list (x, y, bbox, txt) for occlusion checks
     texts_full = []
