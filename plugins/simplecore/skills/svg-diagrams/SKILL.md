@@ -39,7 +39,7 @@ paragraph above it. This judgement is made for every figure, not once per set.
 
 **Every box is sized from its content.** The scaffold's `common.py` carries a
 content-first layer — `heading` · `card` · `cards_row` · `pill` · `note` ·
-`zone` · `step_row` · `segment_bar` — that computes each box's height from
+`zone` · `step_row` · `segment_bar` · `joined_cell` — that computes each box's height from
 its wrapped text with even padding and gives a row its tallest content's
 height. Draw with those rather than with a number: a fixed height is what
 leaves a band of paper under a row's text, and the lint's box-geometry checks

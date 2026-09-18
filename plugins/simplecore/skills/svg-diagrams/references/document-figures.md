@@ -386,17 +386,47 @@ order: a plate drawn before the line hides nothing. `heading(..., mask=True)`
 does the same for a section heading that a leader drops past; compute the
 section's top with `section_top()` first, draw the leaders, then the heading.
 
-## Card headers meet the card
+## Two halves of one cell are joined, not set near each other
 
-A tinted header drawn as a rounded rectangle rounds its bottom corners too, and
-the card's straight body butts against them - the header reads as a chip resting
-on the card rather than as its top. Use `Canvas.band(x, y, w, h, rx, color,
-side=)`, which rounds only the corners that follow the card's own outline
-(`side="left"` for a label band at the start of a row, `"right"` and
-`"bottom"` for their mirrors). Pass the card's own `rx` so the two outlines
-meet without a step; the lint reports a rounded rect on a box edge as
-`BAND-CORNERS`. The same rule holds for the end segments of a proportional
-strip inside a rounded outline.
+**The commonest two-part shape in a document set is a label joined to its
+content**: an icon tile and the sentence it marks, a row's name and the row, a
+header and the card body, a 「추가 전」 badge and the chips it labels, a lane's
+title and its lane. It is one cell that happens to have two fills, and the
+reader has to see one cell.
+
+Drawn as two rounded boxes side by side it is not one cell. The two outlines
+meet at four arcs with a sliver of paper between them, and at print size the
+pair reads as two things touching - which is the wrong claim, because the label
+means nothing without the content beside it. One set of 132 figures carried 45
+such pairs before this was named.
+
+**Draw it as two halves whose facing corners are square.** `Canvas.band(x, y,
+w, h, rx, color, side=)` rounds only the corners that follow the cell's own
+outline: `side="left"` for the label at the start of a row, `"right"` for the
+content after it, `"top"` for a header above a body, `"bottom"` for its mirror.
+Pass the cell's own `rx` so the two outlines meet without a step. The lint
+reports a rounded rect on a box edge as `BAND-CORNERS`.
+
+**They butt at exactly one x, and never overlap.** Running one half under the
+other fills the corners and looks right for a moment, but two translucent fills
+stack where they cross and the overlap prints darker than the rest - a band
+down the content's leading edge, which is a second artefact in place of the
+first. Squaring both facing corners gets the join with nothing stacked.
+
+**Give the halves separate fill and outline paths when either is tinted.**
+`band` applies its opacity to the whole element, so a translucent fill takes
+the outline with it and the cell loses its border. Draw the tint as one path
+and the border as another.
+
+**What reports a cell that was approached rather than joined**: `HAIRLINE-GAP`
+for halves left 0 to 3 units apart - a gap narrower than the stroke on either
+side of it prints as one heavy line with a sliver in it - and `NEAR-OVERLAP`
+for halves that cross by less than `OVERLAP`'s gate. A join made with `band`
+trips neither, because both read rects and a band is a path: the drawing
+itself is what says the overlap was meant.
+
+The same rule holds for the end segments of a proportional strip inside a
+rounded outline.
 
 ## Icons carry meaning or they are noise
 

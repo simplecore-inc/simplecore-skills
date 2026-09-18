@@ -489,6 +489,36 @@ def label_band(c, x, y, w, h, band_w, text, accent, *, size=CARD, rx=10,
            color=color or accent, family=SANS, weight=700, anchor="middle")
 
 
+def joined_cell(c, x, y, w, h, lead_w, accent, *, rx=10, lead_op=0.28,
+                body_op=0.10, body_fill=None, sw=1.4, side="left"):
+    """One cell in two halves: a lead that labels and a body that says it.
+
+    An icon tile and its sentence, a row's name and the row, a header and the
+    card body. Drawn as two rounded boxes the outlines meet at four arcs with
+    paper between them and the pair reads as two things touching, which is the
+    wrong claim - the lead means nothing without the body.
+
+    Both halves round only their outer corners and butt at one x, so the seam
+    is a straight line. They never overlap: two translucent fills stack where
+    they cross and print the overlap darker than the rest, which is a second
+    artefact in place of the first. The tint and the border are separate paths
+    because `band` applies its opacity to the whole element and a translucent
+    fill would take the outline with it.
+
+    Returns the lead's box and the body's box, so the caller places the icon in
+    one and the text in the other.
+    """
+    if side not in ("left", "right"):
+        raise ValueError(f"side must be 'left' or 'right', not {side!r}")
+    lead = (x, y, lead_w, h) if side == "left" else (x + w - lead_w, y, lead_w, h)
+    body = (x + lead_w, y, w - lead_w, h) if side == "left" else (x, y, w - lead_w, h)
+    c.band(*lead[:4], rx, accent, opacity=lead_op, side=side)
+    other = "right" if side == "left" else "left"
+    c.band(*body[:4], rx, body_fill or accent, opacity=body_op, side=other)
+    c.band(*body[:4], rx, "none", opacity=1.0, side=other, stroke=accent, sw=sw)
+    return lead, body
+
+
 def disc(c, cx, cy, r, fill, stroke=None, sw=1.6):
     """One circle. svgkit has no circle primitive: an arc path lints as a
     diameter line and a fully rounded rect lints as OVERLAP when two discs
