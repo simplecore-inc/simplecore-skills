@@ -38,7 +38,8 @@ Standard spellings from the loanword orthography and for widely shared technical
 | architecture | 아키텍처 | 아키텍쳐 | loanword spelling |
 | transaction | 트랜잭션 | 트랜젝션 | loanword spelling |
 | cache | 캐시 | 캐쉬 | loanword spelling |
-| face (font face, typeface) | 서체 | | the field's term; a font file's instance is a 서체, a family is 글꼴 가족, and 「얼굴」 is the everyday sense of the English word, which the field never uses. Registered from a user correction |
+| face (font face, typeface) | 서체 | | the field's term; a font file's instance is a 서체, and 「얼굴」 is the everyday sense of the English word, which the field never uses. Registered from a user correction |
+| font family | 글꼴 패밀리 | 글꼴 가족, 서체 가족 | the settled loanword in CSS and OS documentation; 「가족」 is the kinship word and the rule `kinship-for-grouping` reads it. Registered from a user correction; 「서체군」 is the other candidate and was not chosen |
 | data | 데이터 | 데이타 | loanword spelling |
 | content | 콘텐츠 | 컨텐츠 | loanword spelling |
 | business | 비즈니스 | 비지니스 | loanword spelling |

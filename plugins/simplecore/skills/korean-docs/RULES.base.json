@@ -2842,7 +2842,7 @@
       "id": "kinship-for-grouping",
       "scope": "universal",
       "severity": "error",
-      "reason": "Using a word for a relation between people as the name of a group of things. Calling several screens, several frames, or several defects a 「가족」 pushes aside the names that group already has (묶음 · 갈래 · 부류 · 무리) and collides in one document with the same word meaning a person's family - in this field 유가족 · 무급가족종사자 · 가족돌봄휴가 · 가족관계증명서 are all real families. The test is one question: if what is called a 「가족」 is people, it stays; if it is screens, files, types, or defects, write 묶음 · 갈래 · 부류. A tree's parent, child, and sibling nodes are settled technical terms and stay - there is no plainer Korean for them, and what this rule blocks is bringing a kinship word into a slot that already has a name",
+      "reason": "Using a word for a relation between people as the name of a group of things. Calling several screens, several frames, or several defects a 「가족」 pushes aside the names that group already has (묶음 · 갈래 · 부류 · 무리) and collides in one document with the same word meaning a person's family - in this field 유가족 · 무급가족종사자 · 가족돌봄휴가 · 가족관계증명서 are all real families. The test is one question: if what is called a 「가족」 is people, it stays; if it is screens, files, types, or defects, write 묶음 · 갈래 · 부류. A tree's parent, child, and sibling nodes are settled technical terms and stay - there is no plainer Korean for them, and what this rule blocks is bringing a kinship word into a slot that already has a name The forms were enumerated and a day of font writing walked past them (「글꼴 가족」 · 「가족 덱」 · 「없는 가족을 부르는」), so the font and grouping contexts are matched as patterns; a font family is 글꼴 패밀리.",
       "find": [
         "화면 가족",
         "프레임 가족",
@@ -2862,7 +2862,11 @@
         "가족의 브리핑",
         "가족을 맡",
         "가족이 닫",
-        "가족이 사례"
+        "가족이 사례",
+        "/(글꼴|서체|폰트|font)\\s*가족/",
+        "/가족\\s*(덱|이름|넷|셋|둘|열둘|목록|표)/",
+        "/(없는|있는|같은|다른|매핑된|부르는|답하는|요청한|설치된)\\s*가족/",
+        "/가족(의 실행|만 부르|을 부르|에 동의|마다)/"
       ],
       "replace": null,
       "hit": [
@@ -2870,7 +2874,12 @@
         "공용 컴포넌트 둘이 한 가족 아래에 있다",
         "N 가족이 사례를 넘긴다",
         "W04 화면 가족의 브리핑에 넣는다",
-        "호출자 가족은 둘이다"
+        "호출자 가족은 둘이다",
+        "글꼴 가족 이름으로 찾는다",
+        "CJK 가족 넷의 1번 슬라이드",
+        "없는 가족을 부르는 덱",
+        "두 사슬이 매핑된 가족에 동의한다",
+        "글자 잉크가 가족 덱마다 준다"
       ],
       "miss": [
         "유가족에게 지급한다",
@@ -2879,7 +2888,10 @@
         "가족관계증명서를 첨부한다",
         "근로자와 그 가족",
         "부모 노드와 자식 노드",
-        "형제 노드를 함께 옮긴다"
+        "형제 노드를 함께 옮긴다",
+        "글꼴 패밀리 이름으로 찾는다",
+        "근로자와 그 가족에게 지급한다",
+        "가족 수당을 신청한다"
       ]
     },
     {

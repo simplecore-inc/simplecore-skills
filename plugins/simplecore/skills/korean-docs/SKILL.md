@@ -70,6 +70,13 @@ not offer to create it.
   has to be edited. Do not end a turn with 「진행할까요」 · 「어느 쪽으로 할까요」.
 - Zero findings from the rules does not let you skip the in-order reading in
   `references/ui-copy-sweep.md`. A rule sees only the forms registered in it.
+- **The sweep's closing line is the verdict of the checks that judge, not of the lens.** `sweep`
+  prints the lens candidates above and then `Clean on every check that ran` below, and the
+  attractive misreading is to take that last line as the result of the whole run. One coordinator
+  swept eight reports in a day, read `Clean` eight times, and never opened the ten candidates
+  listed above it; `가족` for a font family was among them every time, and it reached the user.
+  **A lens candidate is read the moment it is printed**, and a reply is not sent while one stands
+  unread.
 - A type you find goes into the rule pack or the lens in the same change, and the sweep runs again
   across the repository.
 - Drive errors to zero; fix warnings one by one or write down why each stays. Re-check the
