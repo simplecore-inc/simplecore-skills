@@ -293,12 +293,35 @@
         "이전 화면과 견주어",
         "같은 모델끼리만 견줍니다",
         "견줄 수 없는 값",
-        "얼굴을 견주어 묶습니다",
+        "서체를 견주어 묶습니다",
         "지금까지 모은 것과 견주는 일"
       ],
       "miss": [
         "비교하면 다음과 같다",
         "두 값을 비교합니다"
+      ]
+    },
+    {
+      "id": "font-face-as-face",
+      "scope": "universal",
+      "severity": "error",
+      "reason": "A font face rendered by the English word's everyday sense. The type: a polysemous English technical noun translated by its common meaning where the field has a term - face → 서체, never 얼굴. Bounded to a font context so a person's face stays; the two patterns look up to 24 characters either side for a font word",
+      "find": [
+        "/(글꼴|폰트|서체|글리프|번들|테마|대체|후보|라틴|CJK|font|face|typeface)[^.\\n]{0,24}얼굴/",
+        "/얼굴[^.\\n]{0,24}(글꼴|폰트|서체|글리프|진행폭|매핑|해상|변형|선택|목록)/"
+      ],
+      "replace": "서체",
+      "hit": [
+        "번들 얼굴에 닿은 적이 없다",
+        "그 얼굴의 진행폭을 더한다",
+        "글꼴 크레이트가 얼굴 변형을 고른다",
+        "얼굴 하나를 해상기에 건넨다",
+        "테마의 얼굴을 앞세운다"
+      ],
+      "miss": [
+        "사용자의 얼굴 사진을 저장한다",
+        "서체 변형은 6.3의 항목이다",
+        "글꼴 크레이트가 서체를 고른다"
       ]
     },
     {

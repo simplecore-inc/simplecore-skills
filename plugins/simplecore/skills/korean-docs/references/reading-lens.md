@@ -63,6 +63,8 @@ the lens is for.
 
 **Household metaphors** `세간(?!의)` · `가재도구` · `살림` - code, files, and modules called somebody's household goods. 「세간의 관심」 is 世間 and a different word.
 
+**A technical noun by its everyday sense** `얼굴` - a font face called a face; the field's word is 서체. The rule `font-face-as-face` judges it inside a font context; the lens lists the bare word because a document about fonts rarely has a person's face in it.
+
 **Structure standing in for evidence** `구조로 보장` · `구조로 지키` · `구조로 지킨` · `구조로 지켜` · `구조로 막` · `구조로 충족` · `구조로 방지` · `구조로 배제` · `구조적 충족` · `구조적으로` - one word, 「구조」, covering what does the thing and how. The reader is left with nothing to verify, so write the test item and its pass criterion, or the number. Uses that name a real arrangement - 「계층 구조」·「저장 구조」·「구조 변경」 - are legitimate, so what separates them is not the word but whether the sentence is making a claim that needs evidence.
 
 **Queues** `큐` - a product's own waiting list called 「큐」. 「이벤트 큐」·「로컬 큐」 are data structures and 「렌더 큐」·「처리 큐」 are screen names, and the preceding word does not separate them. So the machine side catches it by enumerating screen names in the glossary, and whatever escapes the enumeration is what this lens shows a person.
