@@ -1075,6 +1075,20 @@ const PLACEHOLDER = /\{\{[^}]+\}\}|\{[0-9A-Za-z_.]+\}|\$\{[^}]+\}|%(\d+\$)?[sd]/
 // about here so the summary can say so.
 let LAST_WARNINGS = 0;
 
+/**
+ * A file path a reader can act on, relative to the run's root.
+ *
+ * A basename is not a location: two catalogues both called `i18n.ts` produce
+ * findings nobody can attribute, and a report whose location is ambiguous
+ * sends its reader at the wrong file. A path outside the root keeps the
+ * spelling it arrived with, since a `../../..` chain says less than the
+ * absolute one.
+ */
+function shortPath(file) {
+  const rel = relative(ROOT, resolve(ROOT, file));
+  return rel && !rel.startsWith("..") ? rel : file;
+}
+
 let RULE_SET = null;
 
 /** Merged glossary rule set (base + project), loaded once. */
@@ -1907,7 +1921,7 @@ function cmdRulesScan(opts) {
       `\n${C.bold(rule.id)} ${C.dim(`${rule.scope} ·`)} ${tag} ${C.dim(`· ${hits.length} hits`)} - ${opts.explain ? rule.reason : shortReason(rule.reason)}`,
     );
     for (const h of hits.slice(0, opts.all ? hits.length : 5)) {
-      console.log(`  ${C.cyan(h.file.split("/").pop())}${C.dim(":" + h.line)} ${C.bold(h.key)}  ${h.text.slice(0, 76)}`);
+      console.log(`  ${C.cyan(shortPath(h.file))}${C.dim(":" + h.line)} ${C.bold(h.key)}  ${h.text.slice(0, 76)}`);
     }
     if (!opts.all && hits.length > 5) console.log(`  ${C.dim(`… and ${hits.length - 5} more (--all for every one)`)}`);
   }
@@ -2152,7 +2166,7 @@ function cmdSuspects(opts) {
   }
   for (const f of shown) {
     console.log(
-      `\n${C.yellow(String(f.score).padStart(2))} ${C.cyan(f.file.split("/").pop())}${C.dim(":" + f.line)} ${C.bold(f.key)} ${C.dim(f.smells.join(" · "))}`,
+      `\n${C.yellow(String(f.score).padStart(2))} ${C.cyan(shortPath(f.file))}${C.dim(":" + f.line)} ${C.bold(f.key)} ${C.dim(f.smells.join(" · "))}`,
     );
     console.log(`   ${f.text.slice(0, 160)}`);
   }
