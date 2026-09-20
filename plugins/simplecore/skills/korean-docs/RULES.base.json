@@ -2195,11 +2195,11 @@
       "id": "slogan-assertion",
       "scope": "universal",
       "severity": "error",
-      "reason": "A slogan-shaped assertion. 「A가 곧 B다」·「A가 B가 아니라 C다」·「A는 B일 뿐이다」·「A가 유일한 방어다」 sound forceful while omitting the real condition, the handling, and who verifies, so the user does not understand the feature - 「이상 항목에는 상태를 확인할 수 있는 사진을 첨부해야 합니다」 rather than 「사진이 곧 근거다」. It is often a literal English slogan or contrast sentence, and it sometimes overstates a legal effect. **Only the contrast form (아니라) and the equation form (곧) are caught; the bare negative (~가 아니다) is not** - 「그 조항의 대상이 아니다」·「사업장이 정하는 값이 아니다」 state the scope of a statute precisely, and letters do not separate them from a slogan. A bare negative title is judged by a person in context. **A sentence-end anchor alone is not enough** - a bold lead-in is usually followed by an explanation, so a full stop, a tag, and whitespace all count as closing. **Not every final 「다」 is an assertive ending** - 「마다」·「보다」 are particles preceded by a noun, which is how 「사람이 아니라 필드마다 다르다」 was caught as 「A가 아니라 B다」. The character right before the ending separates them. An official slogan or a quotation in statutory or training material is out of scope",
+      "reason": "A slogan-shaped assertion. 「A가 곧 B다」·「A가 B가 아니라 C다」·「A는 B일 뿐이다」·「A가 유일한 방어다」 sound forceful while omitting the real condition, the handling, and who verifies, so the user does not understand the feature - 「이상 항목에는 상태를 확인할 수 있는 사진을 첨부해야 합니다」 rather than 「사진이 곧 근거다」. It is often a literal English slogan or contrast sentence, and it sometimes overstates a legal effect. **Only the contrast form (아니라) and the equation form (곧) are caught; the bare negative (~가 아니다) is not** - 「그 조항의 대상이 아니다」·「사업장이 정하는 값이 아니다」 state the scope of a statute precisely, and letters do not separate them from a slogan. A bare negative title is judged by a person in context. **A sentence-end anchor alone is not enough** - a bold lead-in is usually followed by an explanation, so a full stop, a tag, and whitespace all count as closing. **Not every final 「다」 is an assertive ending** - 「마다」·「보다」 are particles preceded by a noun, which is how 「사람이 아니라 필드마다 다르다」 was caught as 「A가 아니라 B다」. The character right before the ending separates them. **The equation form's particle must not be the tail of a connective ending** - 「알렸다가 곧 취소했습니다」 puts a 「가」 before 「곧」 that is the ending 「-다가」 and an adverbial 「곧」 meaning soon, so the three 「곧」 patterns carry a `(?<!다)` lookbehind; the cost is a subject noun ending in 「다」, which is rarer than the ending. An official slogan or a quotation in statutory or training material is out of scope",
       "find": [
-        "[가이] 곧 [가-힣]+(?<![마보])다[.<\\s]",
-        "[가이] 곧 [가-힣]+이다[.<\\s]",
-        "[가이] 곧 [가-힣]+입니다",
+        "(?<!다)[가이] 곧 [가-힣]+(?<![마보])다[.<\\s]",
+        "(?<!다)[가이] 곧 [가-힣]+이다[.<\\s]",
+        "(?<!다)[가이] 곧 [가-힣]+입니다",
         "유일한 방어",
         "[가이] 핵심이다",
         "[가이] 핵심입니다",
@@ -2226,7 +2226,9 @@
         "사업장이 정하는 값이 아니다",
         "이것은 결함이 아니다",
         "화면 하나가 아니라 필드마다 다르다",
-        "총계가 아니라 항목별 합계보다 크다"
+        "총계가 아니라 항목별 합계보다 크다",
+        "알렸다가 곧 취소했습니다",
+        "열어 두었다가 곧 닫았습니다"
       ]
     },
     {
