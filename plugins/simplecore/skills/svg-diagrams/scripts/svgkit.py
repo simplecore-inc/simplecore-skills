@@ -372,6 +372,9 @@ class Canvas:
         self._c2m = {self.t[a]: a for a in _ACCENTS}
         self._c2m[self.t["muted"]] = "muted"
         self._c2m[self.t["fg_dim"]] = "fg"
+        # arrowhead roles this canvas defines: the theme's, plus any accent
+        # registered later with add_accent()
+        self._roles = list(_ARROW_ROLES)
 
     def add(self, s):
         self.body.append(s)
@@ -380,9 +383,29 @@ class Canvas:
         """Resolve a marker arg to a defined marker name. Accepts a role name
         ('blue') or a theme color value (c.blue) — never a dead url(#arr-<hex>).
         """
-        if marker in _ARROW_NAMES:
+        if marker in self._roles:
             return marker
         return self._c2m.get(marker, "muted")
+
+    def add_accent(self, name, color):
+        """Register a colour the theme does not carry — a client's brand, an
+        institution's assigned colour — as a first-class accent.
+
+        Afterwards `c.<name>` and `c.t[name]` hold the colour, and a line or
+        path drawn with `marker=c.<name>` (or `marker="<name>"`) gets an
+        arrowhead in that colour instead of falling back to the muted one,
+        because the marker is emitted into <defs> beside the theme's own.
+        Register before drawing; a marker resolved earlier is not revisited.
+        """
+        if not re.fullmatch(r"[A-Za-z][A-Za-z0-9_-]*", name):
+            raise ValueError(f"accent name must be an identifier, not {name!r}")
+        if name in self.t and name not in self._roles:
+            raise ValueError(f"{name!r} is a theme chrome key, not an accent")
+        self.t[name] = color
+        setattr(self, name, color)
+        self._c2m[color] = name
+        if name not in self._roles:
+            self._roles.append(name)
 
     # -- primitives ---------------------------------------------------------
     def rrect(self, x, y, w, h, rx=10, fill=_DEF, stroke=_DEF, sw=1.5,
@@ -1006,7 +1029,7 @@ class Canvas:
 
     def defs(self):
         markers = []
-        for name in _ARROW_ROLES:
+        for name in self._roles:
             col = self._arrow_color(name)
             # orient="auto", never "auto-start-reverse". The SVG 2 value adds
             # nothing here — nothing in this toolkit emits marker-start — and a
