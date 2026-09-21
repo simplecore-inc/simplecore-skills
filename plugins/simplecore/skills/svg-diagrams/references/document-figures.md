@@ -325,6 +325,36 @@ back in one sentence. If that sentence needs information known only from the
 source code or surrounding prose, put the missing actor, condition, retained
 state or result into the figure and render it again.
 
+## Decode domain terms inside the figure
+
+A figure must not require the reader to know the field's shorthand before the
+figure can be read. A term may be exact and still fail as copy when only a
+practitioner knows what it measures, identifies or decides. Audit every noun in
+the rendered labels from the viewpoint of a first-time evaluator, especially
+units, asset names, status words and screen-field names.
+
+- On first use in a figure, write the plain meaning before a field term only
+  when it is not issued copy: `교체 전선 길이(긍장, C-km)`. A field name,
+  screen label, requirement name or other term printed by the tender remains
+  character for character. Explain it in a separate key such as
+  `전산화번호: 배전설비 한 기를 구분하는 식별번호`; never replace the label
+  itself with the gloss.
+- When two field terms form a calculation, state what each counts instead of
+  joining the unexplained names: `교체 구간 수(경간)` rather than `경간`, and
+  name the numerator and denominator in the verdict.
+- Decode abbreviations in Korean, not only in English. `Health Index` beside a
+  number still asks the reader to translate it; `설비 건전도 지수(H.I)` says
+  what the value means.
+- A formal field, screen or requirement name remains character for character.
+  Put its gloss in a subtitle, key or note rather than rewriting the quoted
+  name or inserting a synonym into the field slot.
+- Repeat the gloss when a figure must stand alone. A definition in an earlier
+  figure or in body copy is not visible to a panel reading this figure first.
+
+The check is simple: point to every specialised label and ask what physical
+thing, count, identifier, state or decision it denotes. If the answer is not in
+the same figure, the label is unfinished.
+
 ## Vary the composition across a set
 
 Preserve each figure's semantic grammar. Use boundaries or strata for zones, a
