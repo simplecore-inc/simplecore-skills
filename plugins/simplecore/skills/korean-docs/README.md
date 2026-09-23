@@ -47,35 +47,27 @@ korean-docs/
     └── domain-finance.md        # finance · quant · trading terms (only for work in that field)
 ```
 
-## How it works - two modes
+## How it works
 
-- **Reply mode**: every Korean reply and explanation applies the standard in
-  `references/response-style.md` (합니다체, the eight questions, how a word is chosen). Where the
-  project keeps a glossary, replies follow it too. The audit scripts do not run.
 - **Document mode**: writing, translating, proofreading, reviewing, and glossary work follow the
   whole workflow - read the glossary → do the work → register new terms (asking the user about the
   contested ones) → drive a requested audit to zero errors → include the term-decision section in
   the completion report.
+- **Replies are out of scope.** An ordinary reply, explanation, or report in the conversation does
+  not invoke the skill. It follows the habits card that the global instructions carry, so the
+  register and the eight questions are in force without reading any file of this skill.
 
-There are two paths to activation. The skill description fires on nearly any task with Korean
-output, and for the small questions where the skill is skipped, the mandatory reading instruction in
-the global instructions (below) still guarantees the standard is applied.
+The skill description fires on document work only.
 
 ## The link to the global instructions (required)
 
-Using this skill in every session takes two things in the global instructions
-(`~/.claude/CLAUDE.md`).
+The global instructions (`~/.claude/CLAUDE.md`) carry two things.
 
-1. **A reading instruction** - one paragraph saying to read `references/response-style.md` before
-   writing the session's first Korean and to apply it throughout. This covers the small questions
-   where the skill does not fire.
-2. **The habits card** - `references/global-korean-card.md` pasted whole, marker comments included.
-   When a long session is summarized, files that were read leave the context while the global
-   instructions are reloaded, so the reply register and the eight questions have to live in that
-   file directly.
-
-Check for both with `globalKorean.present` · `card` from
-`node scripts/detect-simplecore.mjs --json`; `/simplecore:init` writes in whichever is missing.
+1. **The habits card** - `references/global-korean-card.md` pasted whole, marker comments included.
+   It is the reply standard: it is reloaded after every summary, so the register and the eight
+   questions stay in force for replies that never invoke this skill.
+2. **A routing line** - one sentence saying to invoke `simplecore:korean-docs` when producing or
+   changing a Korean document, and not for ordinary replies.
 
 ## Starting in a new project
 

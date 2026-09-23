@@ -345,18 +345,18 @@ documents in -다체), the check runs in both directions.
 
 ## The link to the global instructions
 
-This skill applies to every Korean reply, but its description trigger does not fire on an ordinary
-question. That gap is filled by one paragraph and one card in the global `~/.claude/CLAUDE.md`.
+This skill applies to Korean documents only. Replies follow the habits card that the global
+`~/.claude/CLAUDE.md` carries, and a routing line there sends document work to this skill.
 Bring it up only when the user says 「스킬이 안 걸린다」 · 「전역 설정을 걸어 달라」.
 
 ```bash
 node "$HOME/.claude/skills/simplecore/scripts/detect-simplecore.mjs" --json   # globalKorean.present · card
 ```
 
-- `present` false: the skill does not fire on ordinary questions. Propose this paragraph.
-  > 세션에서 한국어 답변·산출물을 처음 작성하기 전에 `simplecore:korean-docs` 스킬의
-  > `references/response-style.md`를 반드시 읽고 세션 내내 적용한다.
-- `card` false: when the file it points at leaves the context, the standard leaves with it. Paste
+- `card` false: replies are written without the reply standard. Paste
   [global-korean-card.md](global-korean-card.md) whole, marker comments included, without
   summarizing it.
+- `present` false: nothing routes document work to the skill. Propose this line.
+  > Invoke `simplecore:korean-docs` when producing or changing a Korean document; an ordinary
+  > reply follows the habits block and does not invoke it.
 - The global instructions are the user's file: do not edit them without being asked.

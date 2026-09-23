@@ -13,7 +13,7 @@ The skills from the `simplecore-skills` marketplace are designed for proactive u
 - **svg-diagrams** — invoke for ANY diagram or visualization request: architecture pictures, flowcharts, sequence/state/class/ER diagrams, pipelines, network and infrastructure layouts, ASCII diagrams, Mermaid. Trigger even when the user only says "draw", "visualize", "show the structure", or uses Korean phrases such as 다이어그램, 구성도, 도식화, 그림 그려. Always run the bundled render audit before delivering an SVG.
 - **wireframe-boards** — invoke before implementing a screen from a board, checking code against one, syncing one after a change, or drawing new frames; propose a board when substantial new UI has none. On a board, screens are addressed by their permanent id (`A-02`), never by the bracketed position beside it.
 - **board-parity-walk** — invoke when reconciling a whole board's frames against the running app across sessions. It applies **only** where a wireframe board already exists; with no board, draw one first.
-- **korean-docs** — when the [Korean Output Environment](#optional-korean-output-environment) chapter below is active, invoke for virtually every task that produces Korean output, including ordinary answers; it is mandatory for document writing, translation, proofreading, review, and glossary work.
+- **korean-docs** — when the [Korean Output Environment](#optional-korean-output-environment) chapter below is active, invoke for document writing, translation, proofreading, review, screen copy, and glossary work. Ordinary answers do not invoke it.
 
 ### SimpliX projects
 
@@ -300,6 +300,6 @@ Keep this chapter only if user-facing output should be Korean. It pairs with the
 
 Do not coin awkward literal translations of English words; use natural Korean that fits the context. The full rules — banned expressions, vocabulary substitutions, response tone, orthography, and domain terminology — live in the `korean-docs` skill.
 
-- Invoke the `korean-docs` skill for virtually every task that produces Korean output, including ordinary answers. It is mandatory for document writing, translation, proofreading, review, and glossary work (it bundles a glossary audit tool and a full translationese catalog)
-- Apply the skill's style baseline (`references/response-style.md`, loaded when the skill runs) throughout the session
+- Invoke the `korean-docs` skill for document writing, translation, proofreading, review, screen copy, and glossary work (it bundles a glossary audit tool and a full translationese catalog). Ordinary answers do not invoke it
+- Ordinary answers follow the Korean habits block (`references/global-korean-card.md`) pasted into the global instructions
 - Trigger keywords include: 번역투, awkward Korean, terminology consistency, glossary re-check

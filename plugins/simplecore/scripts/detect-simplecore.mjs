@@ -396,9 +396,10 @@ function routesToDir(root, dir) {
  * Whether the user's global instruction file already carries the Korean style baseline.
  *
  * @remarks
- * The korean-docs skill governs every Korean answer, not only document tasks, so its trigger
- * has to survive a session that never mentions documents — which is what a line in the global
- * instruction file buys. Checked read-only, and absence is reported rather than acted on.
+ * Ordinary answers never invoke the korean-docs skill; they follow the habits block the global
+ * instruction file carries, so that block is what a session needs before its first Korean reply.
+ * A routing line there sends document work to the skill. Checked read-only, and absence is
+ * reported rather than acted on.
  */
 const KOREAN_CARD_MARKER = "<!-- simplecore:korean-habits -->";
 const KOREAN_CARD_FILE = path.join(
@@ -591,14 +592,13 @@ export function analyze(root) {
       "there is no project glossary, so the same term is translated differently from one document to the next and the write-time audit stays off",
     );
   }
-  if (korean && !globalKorean.present) {
+  if (korean && !globalKorean.card) {
     missing.push(
-      "the global instruction file does not load the Korean style baseline, so ordinary answers are written without it",
+      "the global instruction file does not carry the Korean habits block, so ordinary answers are written without the reply standard",
     );
-  } else if (korean && !globalKorean.card) {
+  } else if (korean && !globalKorean.present) {
     missing.push(
-      "the global instruction file points at the Korean standard but does not carry the habits block, " +
-        "so the rules are only in force while the file it points at is still in context",
+      "the global instruction file does not route Korean document work to korean-docs, so documents are written without the glossary and the audit",
     );
   } else if (korean && globalKorean.cardStale) {
     missing.push(

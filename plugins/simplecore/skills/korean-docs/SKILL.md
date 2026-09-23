@@ -1,6 +1,6 @@
 ---
 name: korean-docs
-description: Use for virtually EVERY task - all user-facing output in this environment is Korean. Assistant replies and explanations, documentation, translations, proofreading, README/design docs/release notes, UI copy in i18n resources and wireframe board sources, SVG text labels, and Korean glossary (GLOSSARY.md) management. Also use when the user mentions 번역투, awkward Korean, terminology consistency, or asks to re-check documents against glossary rules (화면 문구 검토 · 카피 검수 · UX 라이팅 · 문구를 자연스럽게). 한국어로 답변·설명·문서 작성·번역·교정·검수·용어사전 관리를 하는 모든 상황에서 사용한다 - 일반 답변도 예외가 아니다.
+description: Use when writing, translating, proofreading, or reviewing a Korean document - README, docs/, design and planning documents, release notes, manuals, UI copy in i18n resources and wireframe board sources, SVG and diagram text labels - and for Korean glossary (GLOSSARY.md) management or an audit sweep. Also use when the user mentions 번역투, awkward Korean, terminology consistency, or asks to re-check documents against glossary rules (화면 문구 검토 · 카피 검수 · UX 라이팅 · 문구를 자연스럽게). NOT for ordinary chat replies, explanations, or reports in the conversation - those follow the habits block in the global instructions. 한국어 문서 작성·번역·교정·검수·화면 문구·용어사전 관리를 할 때 사용한다. 일반 답변에는 사용하지 않는다.
 ---
 
 # The standard for Korean output
@@ -15,22 +15,15 @@ description, a specimen of copy being judged, a glossary entry, a rule's `find`/
 examples, and the section headings the glossary parser reads. Every sentence carrying an
 instruction is English, including the ones surrounding a Korean quotation.
 
-## Two modes
+## Scope
 
-**Reply mode** - every Korean reply, explanation, and report.
+**Documents only.** This skill is invoked for writing, translating, proofreading, reviewing,
+sweeping, and glossary work. An ordinary reply, explanation, or report in the conversation does not
+invoke it and does not read its files: it follows the habits block
+([references/global-korean-card.md](references/global-korean-card.md)) that the global instructions
+carry, which is always in context. A report the user asked to have written as a file is a document.
 
-1. Read `references/response-style.md` if it is not in context right now. Remembering that you read
-   it is not evidence: if the register table and the eight questions cannot be quoted at this
-   moment, it has not been read, and the same holds after a summary.
-2. If the project keeps a glossary (`.claude/GLOSSARY.md` or a root `GLOSSARY.md`), its standard
-   translations and banned spellings apply to replies too.
-3. Do not sweep the repository, and do not offer to create a glossary. **A report goes through
-   the machine before it is sent**: a completion report, a review result, anything longer than a
-   screen is written to the scratch directory first and run through `sweep <that file>` - the
-   sentence rules, the smells, and the lens read it in about a tenth of a second - and what it
-   finds is fixed before the reply leaves. A one-line answer needs no such pass.
-
-**Document mode** - writing, translating, proofreading, reviewing, sweeping, glossary work.
+**Document mode**
 
 1. Find the glossary. Walk up from the current directory checking `.claude/GLOSSARY.md` then
    `GLOSSARY.md`, stopping at a directory holding `.git` or at the home directory. Read it end to
@@ -177,4 +170,4 @@ fix that cause, then register, and say in the report which of the three it was.
 - You are about to relax a rule instead of fixing what it found (if relaxing is right, report the
   reasoning to the user first).
 - You are about to move on without registering an expression the user corrected.
-- You are writing a reply in -다체, or with 「~해 달라」.
+- You are writing a document sentence in the wrong register, or with 「~해 달라」.

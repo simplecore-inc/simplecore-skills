@@ -6,7 +6,7 @@
  * Without this, every one of these skills depends on its description firing — which it does when
  * the user names the work in the right words, and does not when they ask for a screen. A board
  * nobody is routed to goes stale, a build or a walk nobody can find is restarted from scratch, and
- * a Korean answer written without the style baseline reads as a translation.
+ * a Korean document written without the style baseline reads as a translation.
  *
  * A directory that matches no marker produces no output at all — projects that use none of these
  * skills never see this hook.
@@ -58,7 +58,7 @@ function buildContext(report) {
   }
   if (binds('korean-docs')) {
     lines.push(
-      `- this project's documents are written in Korean${report.glossary ? ` and it keeps a glossary (\`${report.glossary}\`)` : ''} → invoke \`simplecore:korean-docs\` for Korean output, ordinary answers included.`,
+      `- this project's documents are written in Korean${report.glossary ? ` and it keeps a glossary (\`${report.glossary}\`)` : ''} → invoke \`simplecore:korean-docs\` when writing, translating, proofreading or reviewing a Korean document, screen copy or glossary entry. Ordinary replies follow the Korean habits block in the global instructions and do not invoke it.`,
     );
   }
 

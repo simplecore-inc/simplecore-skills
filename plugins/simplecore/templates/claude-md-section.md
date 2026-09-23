@@ -87,14 +87,12 @@ It names no paths, so it applies to every project on the machine.
 ```markdown
 ### Korean output
 
-Invoke `simplecore:korean-docs` for virtually every task that produces Korean output — ordinary
-answers included, and mandatory for writing, translating, proofreading, reviewing, or auditing a
-Korean document.
-
-Before writing the session's first Korean output, read the skill's `references/response-style.md`
-and apply it for the rest of the session. It is the single source for vocabulary, orthography, and
-tone; do not produce Korean output without having read it. Where a project keeps its own glossary
+Ordinary replies follow the Korean habits block below and do not invoke a skill. Invoke
+`simplecore:korean-docs` when writing, translating, proofreading, reviewing, or auditing a Korean
+document, screen copy, or glossary entry. Where a project keeps its own glossary
 (`.claude/GLOSSARY.md` or `GLOSSARY.md`), that glossary wins over the baseline.
+
+<!-- Paste skills/korean-docs/references/global-korean-card.md here, whole. -->
 ```
 
 ---
