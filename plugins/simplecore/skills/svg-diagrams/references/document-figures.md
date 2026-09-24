@@ -402,7 +402,7 @@ across the page - and it trades the claim's reading direction for a few lines. D
 board. The exception is a page with nothing to set beside a column figure: one that holds only wide
 tables (five columns and more, which cannot narrow to the text column) or already carries a
 full-width figure keeps the horizontal strip, because there the column figure stacks and the page
-overflows. A full-width figure less than 0.3 as tall as it is wide is such a strip; check each one
+overflows. A full-width figure less than about 0.3 as tall as it is wide is such a strip; check each one
 against its claim and its page.
 
 ## Redrawing an existing figure
