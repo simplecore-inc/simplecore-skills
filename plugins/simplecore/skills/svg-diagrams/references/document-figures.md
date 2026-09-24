@@ -396,6 +396,15 @@ prose it proves and drawn on the column board the layout defines, so its type
 stays on the ladder instead of being placed at full width and shrunk. Within a
 chapter, no three consecutive figures share both type and orientation.
 
+**The pull toward horizontal is height.** A sequence laid on its side as a strip is shorter, so
+「to reduce height」 is the reason written down when a top-to-bottom claim is drawn as a row of boxes
+across the page - and it trades the claim's reading direction for a few lines. Draw it on the column
+board. The exception is a page with nothing to set beside a column figure: one that holds only wide
+tables (five columns and more, which cannot narrow to the text column) or already carries a
+full-width figure keeps the horizontal strip, because there the column figure stacks and the page
+overflows. A full-width figure less than 0.3 as tall as it is wide is such a strip; check each one
+against its claim and its page.
+
 ## Redrawing an existing figure
 
 When a set is redrawn, keep only the information, the relationships and the
