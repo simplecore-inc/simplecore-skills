@@ -305,6 +305,24 @@ def lint(svg_path):
                        f'aspect {W / H:.1f}:1 (w={W:.0f}) — wrap nodes onto '
                        f'2 rows'))
 
+    # 0b) a run of spaces inside one label: SVG collapses it to a single space
+    #     unless whitespace is preserved, so two fields a generator separated
+    #     with spaces print as one run ("128 GB 변수:" for "128 GB    변수:")
+    if not re.search(r'<svg\b[^>]*xml:space="preserve"', svg):
+        for m in re.finditer(r'<text\b([^>]*)>(.*?)</text>', svg, re.S):
+            a, inner = m.group(1), m.group(2)
+            if 'xml:space="preserve"' in a or "white-space" in a:
+                continue
+            runs = re.findall(r'<tspan[^>]*>([^<]*)</tspan>', inner) \
+                or [re.sub(r'<[^>]+>', '', inner)]
+            hit = next((t for t in runs if re.search(r'\S {2,}\S', t)), None)
+            if hit:
+                issues.append(("COLLAPSED-SPACE",
+                               f'"{hit.strip()[:40]}" separates fields with a run '
+                               f'of spaces, which prints as one space - set each '
+                               f'field as its own text at its own x, or join them '
+                               f'with a visible separator'))
+
     # collect rects as candidate containers: (x,y,w,h)
     rects = []
     for m in re.finditer(r'<rect\b([^>]*)/?>', svg):
@@ -2139,6 +2157,13 @@ def _interior_checks(svg, W, H, rmeta, solids, containers, node_rects,
                 continue
             rb = (r["x"], r["y"], r["x"] + r["w"], r["y"] + r["h"])
             if not _inside(rb, box, TOL):
+                continue
+            # a rect inside a name chip on the border is the chip's ink - an
+            # icon glyph drawn with rects (router, server) - and belongs to the
+            # chip exactly as its text and its path strokes do below
+            cx_, cy_ = (rb[0] + rb[2]) / 2, (rb[1] + rb[3]) / 2
+            if any(a_ <= cx_ <= c_ and b_ <= cy_ <= d_
+                   for a_, b_, c_, d_ in straddlers):
                 continue
             if all(abs(v) <= 3 for v in (r["x"] - x, r["y"] - y,
                                          r["w"] - w, r["h"] - h)):
