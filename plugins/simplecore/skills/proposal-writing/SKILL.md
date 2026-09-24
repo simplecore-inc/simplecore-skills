@@ -168,6 +168,17 @@ nominal, but replace broken noun chains and vague pointers such as 「이 업무
 「이 범위」, 「운영 기반」 or 「그 장비」 with the exact actor, object, condition and
 decision.
 
+**A figure's copy is written in noun form, its explanatory lines and verdict bands included.**
+A figure is read as names and findings; the sentence belongs to the body beside it. A condition
+becomes 「~ 시」, a finding 「대상: 결과」, an action a noun phrase that keeps its object:
+「게이트웨이와 저장 노드를 분리해 계층별 성능 한계를 구분한다」 →
+「게이트웨이·저장 노드 분리로 계층별 성능 한계 구분」, 「시스템 귀속 유실 0건을 합격 기준으로
+적용한다」 → 「합격 기준: 시스템 귀속 유실 0건」. The pull toward sentences is the controlled-language
+review itself: rewriting a noun chain so the actor and the condition show, the easy fix is a full
+「~하고 ~한다」 clause, and a figure then reads like a paragraph. Keep the relation explicit inside the
+noun form instead (「지연 시 위험 대장 등록 및 보고」). A label ending on a predicate is machine-visible;
+a project's figure check should fail it.
+
 Before closing a full-copy sweep, compare the grammar of every table column across the
 manuscript and the typesetting source, so a corrected cell cannot return at the next
 regeneration.

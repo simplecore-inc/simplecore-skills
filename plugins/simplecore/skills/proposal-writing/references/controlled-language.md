@@ -124,6 +124,10 @@ proposer action, method or control, and evidence or deliverable needed for evalu
 - Keep ordinary body paragraphs in the document's declarative `-다` form. Keep concise
   table headings and diagram node labels as parallel noun phrases when their relationship
   is already explicit in the enclosing sentence, row heading, arrow label or legend.
+- Write every diagram string in noun form, explanatory lines and verdict bands included:
+  a condition as 「~ 시」, a finding as 「대상: 결과」, an action as a noun phrase that keeps
+  its object. When this review makes a relation explicit inside a figure, it does so within
+  the noun form, never by turning the label into a 「~한다」 sentence.
 - A part-opening explanation speaks from the proposer. It does not explain how the
   chapter was written or list what the chapter contains. State the client's situation,
   the proposer action and the result to be delivered.
