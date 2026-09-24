@@ -21,7 +21,7 @@ import re
 import subprocess
 import sys
 
-from common import (BODY, DASH_ALT, DASH_BLOCK, DASH_OUTSIDE, DASH_PENDING,
+from common import (BODY, FONT_STACK, SUB_BODY, DASH_ALT, DASH_BLOCK, DASH_OUTSIDE, DASH_PENDING,
                     FONT_SCALE, HAIRLINE, ICON_SW, OUT, PLACEMENT, STROKE,
                     THICK, toolkit_dir)
 
@@ -82,6 +82,44 @@ def smallest_rung_only(svgs):
             if not [v for v in re.findall(r'font-size="([\d.]+)"',
                                           svg.read_text(encoding="utf-8"))
                     if float(v) >= BODY]]
+
+
+def sub_body_heavy(svgs, limit=0.5):
+    """Figures with most of their characters on a rung below the body size.
+
+    Every size can be on the ladder while the figure's sentences print below
+    the paragraph beside it. Counted in characters, so many short chips beside
+    a few body-size lines pass and card bodies left on a tag rung do not.
+    """
+    if not SUB_BODY:
+        return []
+    out = []
+    for svg in svgs:
+        small = total = 0
+        for size, body in re.findall(
+                r'<text\b[^>]*font-size="([\d.]+)"[^>]*>([^<]*)</text>',
+                svg.read_text(encoding="utf-8")):
+            n = len(body.strip())
+            total += n
+            if any(abs(float(size) - r) < 0.01 for r in SUB_BODY):
+                small += n
+        if total and small / total > limit:
+            out.append((svg.name, small / total))
+    return out
+
+
+def font_family_errors(svgs):
+    """Texts naming a stack other than the document's declared one."""
+    if not FONT_STACK:
+        return []
+    out = []
+    for svg in svgs:
+        fams = set(re.findall(r'<text\b[^>]*font-family="([^"]+)"',
+                              svg.read_text(encoding="utf-8")))
+        bad = sorted(f for f in fams if f != FONT_STACK)
+        if bad:
+            out.append((svg.name, bad[0]))
+    return out
 
 
 def stroke_width_errors(svgs):
@@ -162,6 +200,25 @@ def main(argv):
             print(" ", name)
     else:
         print("[type hierarchy] every figure carries a larger rung")
+
+    heavy = sub_body_heavy(svgs)
+    if heavy:
+        failed = True
+        print(f"\n[sub-body share] {len(heavy)} with most characters below "
+              "the body size - set running text at the body rung")
+        for name, share in heavy:
+            print(f"  {name}: {share:.0%}")
+    elif SUB_BODY:
+        print("[sub-body share] running text sits at the body rung or above")
+
+    fams = font_family_errors(svgs)
+    if fams:
+        failed = True
+        print(f"\n[font family] {len(fams)} not set in FONT_STACK")
+        for name, fam in fams:
+            print(f"  {name}: {fam[:60]}")
+    elif FONT_STACK:
+        print("[font family] every text in FONT_STACK")
 
     strokes = stroke_width_errors(svgs)
     if strokes:

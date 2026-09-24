@@ -139,6 +139,22 @@ Every figure carries at least one label at the body rung - normally the thing th
 figure is about. The scaffold's `verify.py` fails the run on both of these, so
 neither is a matter of judgement at review time.
 
+**A rung below the body size is never a helper's default for running text.** A
+document may keep a tag rung under its body size for chips, codes and requirement
+ids. Once it does, every box helper's body default has to point at the body rung:
+left on the smallest rung, every card and note body prints below the paragraph
+beside it while every size is still on the ladder, so the ladder check passes. One
+set of 34 figures carried 59~93% of its characters on such a rung before the
+default moved. Declare those rungs as `SUB_BODY` in the scaffold's `common.py`;
+`verify.py` then fails a figure with more than half its characters on them.
+
+**The figure names the document's body typeface first.** The toolkit's stack
+leads with Latin UI faces, so a document set in another face gets labels whose
+digits and letters print in one typeface and whose Hangul prints in another, on
+any machine that has those faces; the preview renderer, handed only the document
+face, never shows it. Set `FONT_STACK` in `common.py`: `save()` writes it in
+place of the toolkit's stack and `verify.py` fails a text that names another.
+
 A workable ladder for a 1200-unit canvas, before the derivation above adjusts it:
 
 | Size | Role |

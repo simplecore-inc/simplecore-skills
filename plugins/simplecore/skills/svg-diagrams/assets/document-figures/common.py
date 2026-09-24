@@ -55,6 +55,17 @@ FONT_SCALE = (15.0, 16.0, 17.0, 18.0, 20.0, 21.0, 24.0)
 # measured at one size and printed at another.
 MICRO, BODY, LEAD, CARD, SECTION, EMPH, DISPLAY = FONT_SCALE
 
+# Rungs that print below the document's body size, kept for tags, codes and
+# requirement ids. Empty when the smallest rung is the body size, as above. A
+# rung listed here is never a helper's default for running text, and
+# verify.py fails a figure with more than half its characters on these rungs.
+SUB_BODY = ()
+
+# The document's own typeface stack, body face first. None keeps the toolkit's
+# stack, which leads with Latin UI faces; a document set in another face names
+# it here so a label never prints in two typefaces. `save()` applies it.
+FONT_STACK = None
+
 # The only stroke weights the saved artifacts may contain: a hairline for a
 # rule or a faint separator, a normal weight for a box border, a thick one for
 # a line the reader is meant to follow. Three is enough to build a hierarchy
@@ -159,6 +170,9 @@ def _snap_font_sizes(c):
 
     c.body = [snap(m) for m in c.body]
     c.under = [(order, snap(m)) for order, m in c.under]
+    if FONT_STACK:
+        c.body = [m.replace(SANS, FONT_STACK) for m in c.body]
+        c.under = [(order, m.replace(SANS, FONT_STACK)) for order, m in c.under]
 
 
 def save(c, name, board=STANDARD_WIDTH, margin=MARGIN):
@@ -188,6 +202,10 @@ def save(c, name, board=STANDARD_WIDTH, margin=MARGIN):
               "width, or the label that sets the row's width.",
               file=sys.stderr)
     c.save(str(path))
+    if FONT_STACK:
+        # The toolkit also writes its stack on the root element.
+        path.write_text(path.read_text(encoding="utf-8").replace(
+            SANS, FONT_STACK), encoding="utf-8")
     print("wrote", path)
     return path
 
@@ -566,7 +584,7 @@ def stack_behind(c, x, y, w, h, color, *, depth=2, off=7, rx=10, side="right",
     return (x + d, y - d, w - 2 * d, h + d)
 
 
-def disc(c, cx, cy, r, fill, stroke=None, sw=1.6):
+def disc(c, cx, cy, r, fill, stroke=None, sw=HAIRLINE):
     """One circle. svgkit has no circle primitive: an arc path lints as a
     diameter line and a fully rounded rect lints as OVERLAP when two discs
     overlap, so the element is emitted directly, as viztypes.venn() does."""
@@ -582,7 +600,7 @@ def zone(c, x, y, w, h, accent, label, tag=None, dash=None, fill=None,
     them. Returns the y where content starts: one PAD below the chip's lower
     edge, so the inset under the chip equals the side insets."""
     fill = c.t["panel"] if fill is None else fill
-    c.rrect(x, y, w, h, rx=14, fill=fill, stroke=accent, sw=1.6, dash=dash)
+    c.rrect(x, y, w, h, rx=14, fill=fill, stroke=accent, sw=STROKE, dash=dash)
     # Every dimension below follows BODY, so the chip still holds its label
     # when a document derives a larger ladder. Fixed pixel offsets here were
     # written for a 17-unit body and cropped a 24-unit one.
