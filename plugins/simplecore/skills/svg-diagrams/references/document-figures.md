@@ -578,6 +578,29 @@ pass reports as a box past the line the rest line up on.
 front box, and that is the truer target: the many is what the connector counts.
 Pass the returned rectangle's top to the arrow.
 
+## No key line under the drawing
+
+A line set under the whole picture that glosses a mark (`dashed: out of scope`,
+`blue: permanent staff`, `① data path: …`) is a key the reader has to carry
+back up into the figure. Name the thing where it is: put the word on the line
+(a connector label beside the path instead of a numbered disc), in the box
+title, or as a group head over the rows it covers. Where the page prose already
+states the distinction, the mark needs no words at all. A finding stated as
+`subject: result` is not a key; a chart's axis note set at its head is not a
+key either.
+
+## Lists inside a box are bullets, and one figure uses one form
+
+Items listed under a box title are drawn as a bulleted list, each wrapped line
+hanging under the text rather than the bullet; a run of short peer names inside
+a bar may be badges instead. Never join items with middle dots on wrapped
+lines. The form is decided per figure, not per box: once any box in a figure
+lists items, every titled box in it bullets its items, a single item included,
+so a one-item box does not read as a different kind. A figure whose boxes each
+hold at most one subtitle line stays plain throughout. Keep the choice in one
+place the generator reads (a set of plain figure names) and check it against
+the drawn bullets.
+
 ## Icons carry meaning or they are noise
 
 `Canvas.icon(name, x, y, size, color, sw)` draws one Lucide glyph, and every

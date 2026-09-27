@@ -2308,8 +2308,11 @@ def _interior_checks(svg, W, H, rmeta, solids, containers, node_rects,
     #      line taller than its text needs.
     for r in pad_boxes:
         box = _box(r)
+        # a list marker set on its own (a bullet before an item) is not a
+        # line of the paragraph above it
         inside = [t for t in T if box[0] <= t["x"] <= box[0] + box[2]
-                  and box[1] <= t["y"] <= box[1] + box[3]]
+                  and box[1] <= t["y"] <= box[1] + box[3]
+                  and t["txt"].strip() not in ("•", "·", "‣", "◦", "-")]
         # two lines are one paragraph only in the same ink: a bold line
         # over a muted line is a title and its detail, not a wrap
         groups = {}
@@ -2322,6 +2325,11 @@ def _interior_checks(svg, W, H, rmeta, solids, containers, node_rects,
             for a, b in zip(g, g[1:]):
                 if b["y"] - a["y"] > a["size"] * 1.3:
                     continue              # separate items, not a wrap
+                # a line led by its own bullet starts a new item
+                if any(t["txt"].strip() in ("•", "‣", "◦")
+                       and abs(t["y"] - b["y"]) < 1 and t["x"] < b["x0"]
+                       and b["x0"] - t["x"] < 2 * b["size"] for t in T):
+                    continue
                 avail = box[2] - 2 * SIDE_PAD
                 if a["anchor"] == "start":
                     # A start-anchored block may begin after an icon or an
@@ -2549,6 +2557,10 @@ def _interior_checks(svg, W, H, rmeta, solids, containers, node_rects,
                 chip_bottom = max(chip_bottom, t["y1"])
         top -= chip_bottom - fy
         pads = (left, right, top, bottom)
+        # a bar whose width is a quantity holds its content from the start;
+        # the slack on the far side is the quantity, not an inset
+        if measured.get(f["pos"]) in ("width", "both"):
+            pads = (left, top, bottom)
         if (left <= 3 and right <= 3) or (top <= 3 and bottom <= 3):
             continue                      # a table row or column, not a frame
         where = (f'[{f["x"]:.0f},{f["y"]:.0f},{f["w"]:.0f},{f["h"]:.0f}]')
