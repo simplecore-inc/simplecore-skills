@@ -2047,8 +2047,11 @@ def _interior_checks(svg, W, H, rmeta, solids, containers, node_rects,
         fill = (re.search(r'\bfill="([^"]+)"', a) or [None, "none"])[1]
         stroke = (re.search(r'\bstroke="([^"]+)"', a) or [None, "none"])[1]
         op = re.search(r'\bopacity="([\d.]+)"', a)
+        # the arc radius is the corner radius: a capsule outline (a stacked
+        # chip behind another) is a pill, not a frame with an inset
+        arcs = [float(r) for r in re.findall(r'A\s*([\d.]+)', d)]
         rpaths.append({"pos": m.start(), "x": x0, "y": y0, "w": x1 - x0,
-                       "h": y1 - y0, "rx": 0.0, "fill": fill.lower(),
+                       "h": y1 - y0, "rx": max(arcs, default=0.0), "fill": fill.lower(),
                        "stroke": stroke.lower(),
                        "op": float(op.group(1)) if op else 1.0,
                        "dashed": "stroke-dasharray" in a, "canvas": False,
