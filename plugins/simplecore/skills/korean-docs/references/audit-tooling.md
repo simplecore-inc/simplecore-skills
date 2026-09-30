@@ -166,7 +166,9 @@ audit:
   spelling and full of personification and AI tells - and both reports come back together under
   `[glossary]` and `[sentence rules]`. A file the project lists in `audit.exclude` is skipped by
   the second run and named as skipped, so an edit to a catalogue that quotes the banned sentences
-  on purpose is never blocked by the sentences it quotes.
+  on purpose is never blocked by the sentences it quotes. The hook passes `--no-footer` to
+  `rules`: a standalone `rules` ends by naming the checks it did not run, and the hook has just run
+  `check` itself.
 - An error-level rule blocks; a warning-level rule reports and lets the edit stand. A false
   positive is narrowed with `except` in `.claude/l10n-rules.json` (below), never by switching the
   hook off.

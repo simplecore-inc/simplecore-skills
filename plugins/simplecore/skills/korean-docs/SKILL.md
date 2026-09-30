@@ -153,10 +153,11 @@ fix that cause, then register, and say in the report which of the three it was.
 
 | The thought | What is true |
 | --- | --- |
-| "I edited a document, so let me just run the sweep as a closing step" | The user did not ask for an audit, and the hook already judged the file as it was written. The standard applies while writing; the repository sweep runs when instructed. |
+| "I edited a document, so let me just run the sweep as a closing step" | The user did not ask for an audit, and the hook already judged the file as it was written. The standard applies while writing; the repository sweep runs when instructed. The hook judged it only when the project has a glossary and the edit went through Write or Edit: a document in a project with no glossary, or one changed by a script, was judged by nobody, so run `sweep` on those files (not the repository) before reporting them done. |
 | "It would be helpful to mention there is no glossary" | Raising the setup at all is unasked work. Write with the base glossary. |
 | "I read the glossary last time and remember it" | It changes between sessions. Read it again every time. |
 | "`check` is at zero, so it is clean" | `check` is the word check alone. Judge after `sweep`, read its reach line, and read in order even at zero. |
+| "`rules` came back 0 errors, so the documents pass" | `rules` is the sentence pack alone, and its footer says so. The base glossary is judged by `check`: a document reported clean on `rules` alone went out with a banned base-glossary spelling in it. Run `sweep` on the files and report what it printed. |
 | "Listing the findings and confirming before fixing is safer" | Whoever asked for the audit wanted fixed files. Fix without asking and confirm in the completion report. |
 | "Writing a new rule edits the skill, so I need permission" | The global instructions already made that edit part of the same change. Register it and report what went in. |
 | "I will register the safer-looking candidate" | Registering a contested term on your own freezes the wrong standard. Apply it provisionally, then ask. |

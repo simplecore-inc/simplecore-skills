@@ -1931,6 +1931,16 @@ function cmdRulesScan(opts) {
   );
   if (named?.skipped.length) console.log(C.dim(`skipped by audit.exclude: ${named.skipped.join(" · ")}`));
   if (!opts.explain && errors + warnings > 0) console.log(C.dim("--explain prints each rule's full reasoning"));
+  // A zero from `rules` is the sentence pack's zero. The base glossary is judged by `check`, and a
+  // project with no glossary has no write-time hook to run it, so a standalone `rules` names what
+  // has not run - the same footer `check` prints. The sweep and the hook pass `noFooter` because
+  // they run `check` themselves.
+  if (!opts.noFooter) {
+    console.log("");
+    console.log("This is the sentence-rule sweep alone. The glossary words, the suspects and the lens have not run -");
+    console.log(`  run \`node ${SCRIPT_PATH} sweep\` for every check in one pass. A project with no glossary has no`);
+    console.log("  write-time hook, so nothing else has checked these files against the base glossary.");
+  }
   // A rule the project turned off has to be named. Silently short a sweep and the zero it
   // prints is indistinguishable from a zero that was earned.
   const off = rulePacks().disabled;
@@ -2281,7 +2291,7 @@ function cmdSweep(opts) {
     LAST_WARNINGS = lastWarningCount;
     return code;
   });
-  run("rules", () => cmdRulesScan({ ...opts, json: false }));
+  run("rules", () => cmdRulesScan({ ...opts, json: false, noFooter: true }));
   run("suspects", () => {
     cmdSuspects({ ...opts, json: false, limit: opts.limit ?? 20 });
     return 0;
@@ -2675,6 +2685,7 @@ function parseArgs(argv) {
     else if (a === "--verbose") opts.verbose = true;
     else if (a === "--explain") opts.explain = true;
     else if (a === "--strict") opts.strict = true;
+    else if (a === "--no-footer") opts.noFooter = true;
     else if (a === "--untranslated") opts.untranslated = true;
     else if (a === "--count") opts.count = true;
     else if (a === "--scope") opts.scope = argv[++i];

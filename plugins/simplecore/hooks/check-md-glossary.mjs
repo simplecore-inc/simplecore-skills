@@ -134,7 +134,7 @@ function main() {
   // glossary. process.execPath avoids PATH/.cmd-shim issues on Windows.
   const runs = [];
   if (auditable) runs.push(['glossary', [AUDIT_SCRIPT, abs]]);
-  runs.push(['sentence rules', [L10N_SCRIPT, 'rules', abs]]);
+  runs.push(['sentence rules', [L10N_SCRIPT, 'rules', '--no-footer', abs]]);
   const reports = [];
   for (const [name, argv] of runs) {
     const result = spawnSync(process.execPath, argv, {
