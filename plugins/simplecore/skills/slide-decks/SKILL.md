@@ -827,6 +827,10 @@ printed deck.
 - **No three equal cards.** Two columns of three, or an asymmetric split.
 - **No pure black**, no glow, no gradient text, no oversaturated accent.
 - **Control hierarchy with weight and colour, not raw size.**
+- **No bare abbreviation list.** A row of term-and-expansion pairs under a figure or at a
+  page's foot, standing on its own as a 「범례」, reads as filler and is cut even when the
+  manuscript carries it. Expand an abbreviation at its first use in the page's text and keep the
+  full list in the annex glossary.
 - **No fake-perfect numbers.** Every figure is traceable to the source or to a
   measurement; an invented round number is worse than no number.
 
