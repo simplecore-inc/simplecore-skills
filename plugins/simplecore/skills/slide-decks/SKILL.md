@@ -90,7 +90,11 @@ inside its slot; `insertUse` into a slot container lands beside the columns inst
 
 **A write is made against the generation it was read at.** `node#N` is assigned per build
 and renumbers after every `write_slide` and `write_deck`, so the keys in the last answer
-are not the keys for the next write: re-read the slide. A `stale` refusal comes with
+are not the keys for the next write: re-read the slide. **A `use:FILE#N` handle renumbers
+too**: it counts the uses in source order, so `removeAt` or `replaceAt` on one use shifts every
+later `#N` in that file, and a `setUseArg` sent with the old number writes the argument onto a
+different element and still answers `ok`. Search the source for the use again after any
+structural edit in the same file, and read the result's diff before the next write. A `stale` refusal comes with
 `changes_since` rather than an invitation to retry, a `refused` write names the errors it
 would have added, and a node the person locked is left alone and said so. Every write
 carries a `why`, and the lines that ride on a result - a note the person left, where they
