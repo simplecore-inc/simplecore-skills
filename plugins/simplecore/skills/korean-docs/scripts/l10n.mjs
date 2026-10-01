@@ -1419,6 +1419,15 @@ function readLens() {
   }
 }
 
+/** `references/lens-cases.json`, or null when absent or unreadable (the lens check is then skipped). */
+function readLensCases() {
+  try {
+    return JSON.parse(readFileSync(join(dirname(SCRIPT_PATH), "..", "references", "lens-cases.json"), "utf8"));
+  } catch {
+    return null;
+  }
+}
+
 function ruleMatchers(rule) {
   // Pack files may write bare regex source or `/…/` delimiters; both compile to the
   // same matcher, so a rule behaves identically in `rules`, `rules --test` and `audit`.
@@ -1453,9 +1462,10 @@ function lensDrift() {
     if (!body || body.startsWith("**")) continue;
     for (const term of body.split("·")) if (term.trim()) inDoc.add(term.trim().replace(/`/g, ""));
   }
-  // `붙[는들]` in the regex stands for 붙는 and 붙들 in the table.
+  // `붙[는들]` in the regex stands for 붙는 and 붙들 in the table. A range or a negated class
+  // (`[가-힣]` in a lookbehind) is a guard, not a list of spellings, and stays as written.
   const expand = (alt) => {
-    const m = /^(.*?)\[([^\]]+)\](.*)$/.exec(alt);
+    const m = /^(.*?)\[([^\]\-^]+)\](.*)$/.exec(alt);
     return m ? [...m[2]].map((c) => m[1] + c + m[3]) : [alt];
   };
   const inLens = new Set(src.slice(1, -1).split("|").flatMap(expand).map((x) => x.trim()));
@@ -1779,6 +1789,27 @@ function cmdRulesTest(opts) {
       for (const [what, ex] of problems) console.log(`    ${what}: ${C.yellow(ex)}`);
     } else if (opts.verbose) {
       console.log(`${C.green("✔")} ${rule.id} ${C.dim(`(hit ${rule.hit.length} · miss ${rule.miss.length})`)}`);
+    }
+  }
+  // The lens's own examples: `references/lens-cases.json` holds, per family, sentences it must
+  // surface and sentences it must stay quiet on. A guard added to cut a false-positive family
+  // is proven here on both sides, so narrowing the lens cannot silently drop the form it exists for.
+  const lensCases = readLensCases();
+  if (lens && lensCases) {
+    const problems = [];
+    for (const c of lensCases) {
+      for (const ex of c.hit ?? []) if (((lens.lastIndex = 0), !lens.test(ex))) problems.push([`${c.family} hit missed`, ex]);
+      for (const ex of c.miss ?? []) {
+        const found = [...ex.matchAll(lens)].map((m) => m[0]);
+        if (found.length) problems.push([`${c.family} miss matched ${found.join(" · ")}`, ex]);
+      }
+    }
+    if (problems.length) {
+      failures += 1;
+      console.log(`\n${C.red("✖")} ${C.bold("lens")} ${C.dim("references/lens-cases.json")}`);
+      for (const [what, ex] of problems) console.log(`    ${what}: ${C.yellow(ex)}`);
+    } else if (opts.verbose) {
+      console.log(`${C.green("✔")} lens cases ${C.dim(`(${lensCases.length} families)`)}`);
     }
   }
   if (drift && (drift.docOnly.length || drift.lensOnly.length)) {

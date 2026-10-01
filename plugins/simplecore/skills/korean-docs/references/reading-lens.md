@@ -67,12 +67,12 @@ the lens is for.
 
 **Structure standing in for evidence** `구조로 보장` · `구조로 지키` · `구조로 지킨` · `구조로 지켜` · `구조로 막` · `구조로 충족` · `구조로 방지` · `구조로 배제` · `구조적 충족` · `구조적으로` - one word, 「구조」, covering what does the thing and how. The reader is left with nothing to verify, so write the test item and its pass criterion, or the number. Uses that name a real arrangement - 「계층 구조」·「저장 구조」·「구조 변경」 - are legitimate, so what separates them is not the word but whether the sentence is making a claim that needs evidence.
 
-**Queues** `큐` - a product's own waiting list called 「큐」. 「이벤트 큐」·「로컬 큐」 are data structures and 「렌더 큐」·「처리 큐」 are screen names, and the preceding word does not separate them. So the machine side catches it by enumerating screen names in the glossary, and whatever escapes the enumeration is what this lens shows a person.
+**Queues** `(?<![가-힣])(?<!메시지 )(?<!수신 )(?<!송신 )(?<!요청 )(?<!저장 )(?<!이벤트 )(?<!전용 )(?<!실행 )(?<!불러오기 )(?<!프로토콜 )(?<!채널 )(?<!채널별 )(?<!공통 )(?<!별도 )(?<!\()큐(?! 항목)(?! 라벨)(?! 적재)(?! In)(?!잉)(?! 잔량)(?! 상태)(?! 용량)(?! 등록)(?! 관리)(?! 포화)(?! 적체)(?! 점유율)(?! 입출력)(?! 현황)` - a product's own waiting list called 「큐」 (「검수 큐」·「렌더 큐」·「처리 큐」). The stem stays quiet inside another word (「시큐어」), after a qualifier that names a message system (「메시지 큐」·「수신 큐」·「요청 큐」·「파티션별 저장 큐」), right after an opening parenthesis, and before a measurement or operation of the queue itself (「큐 잔량」·「큐 상태」·「큐 등록」·「큐잉」), because there it is the data structure. The machine side catches screen names by enumerating them in the glossary, and whatever escapes both is what this lens shows a person.
 
 **Shape · state** `펼치` · `펼쳐` · `무너지` · `살아나` · `살아났` · `되살` · `살아 있` · `생사` · `죽는` · `죽은` · `죽었` · `죽어` ·
 `죽이` · `죽으` · `죽음` · `산다` · `삽니다` · `살고 있` · `(?<!안)사는(?! *사람)` · `(?<!주)사는(?! *사람)` · `(?<!조)사는(?! *사람)` · `(?<!회)사는(?! *사람)` · `(?<!검)사는(?! *사람)` · `흔들리` ·
 `흔들립` · `벌어집` · `벌어진` · `얼어붙` · `돕니다` · `돈다` · `도는` · `새어` · `가른다` · `가르는` · `가르지` · `가르세` ·
-`가르면` · `가릅` · `갈린` · `갈라 적` · `갈라 쓰` · `갈라 써` · `갈라 두` · `갈라 둔` · `갈라 답` · `갈라 세` · `갈라 센` · `갈라 판정` · `갈라 분류` · `갈라 다루` · `갈라 다룬` · `갈라 놓` · `갈라야` · `물린` · `물리` · `맞물` · `부딪` · `늙는` · `늙은` · `깨진`
+`가르면` · `가릅` · `갈린` · `갈라 적` · `갈라 쓰` · `갈라 써` · `갈라 두` · `갈라 둔` · `갈라 답` · `갈라 세` · `갈라 센` · `갈라 판정` · `갈라 분류` · `갈라 다루` · `갈라 다룬` · `갈라 놓` · `갈라야` · `물린` · `물리(?! )(?!적)(?!학)` · `맞물` · `부딪` · `늙는` · `늙은` · `깨진`
 
 **Metaphors settled as names** `몫` · `자리` · `(?<!구)축(?![소적약])` · `(?<!단)축(?![소적약])` · `(?<!압)축(?![소적약])` · `(?<!감)축(?![소적약])` · `시계(?!열)` · `주인` · `걸음` · `연료` · `얽힘` · `사다리` · `뼈대` · `골격` · `는 길` · `관문` ·
 `함정` · `유령` · `천장` · `바닥` · `출발점` · `구실` · `거울` · `판박이` · `데칼코마니` · `동전의` · `쌍둥이` · `판본` · `싼 쪽` · `싼 편` · `이 싸다` · `싸다\.` · `비싸` · `가벼운` · `무거운` ·
@@ -86,7 +86,7 @@ the lens is for.
 
 **Planting · seeds** 씨앗 · 심는 · 심은 · 심어 · 심을 · 심기 - `seed` rendered as 「씨앗」 and loading sample data rendered as 「심는다」. A random-number seed is 「시드」 too. 「중심은」 · 「핵심은」 coming along for the ride is reading material
 
-**Counting with native numerals** `(?<!모)(?<!구)두(?= )` · `(?<!미)(?<!상)(?<!자)(?<!정)(?<!실)(?<!추)(?<!시)(?<!형)세(?= )` · `(?<!하)네(?= )` · `다섯(?= )` · `여섯(?= )` · `일곱(?= )` · `여덟(?= )` · `아홉(?= )` - a place where the name is already written beside it and a number covers it (「탐지 네 판정」 · 「사본 두 벌」). With a name present, delete the number; where it is a value to check, write it in digits. 「둘」 · 「셋」 · 「넷」 are left out because of 「둘 다」 and the verb 「두다」
+**Counting with native numerals** `(?<![가-힣])두(?= )(?! 번)(?! 배)` · `(?<![가-힣])세(?= )(?! 번)(?! 배)` · `(?<![가-힣])네(?= )(?! 번)(?! 배)` · `다섯(?= )` · `여섯(?= )` · `일곱(?= )` · `여덟(?= )` · `아홉(?= )` - a place where the name is already written beside it and a number covers it (「탐지 네 판정」 · 「사본 두 벌」). With a name present, delete the number; where it is a value to check, write it in digits. 「둘」 · 「셋」 · 「넷」 are left out because of 「둘 다」 and the verb 「두다」. A numeral glued to the syllable before it is part of another word (「모두」·「명세」·「태세」·「부가세」·「하네」), an ordinal or a repetition (「세 번째」·「두 번을 넘기지 않는다」) states an order or a fixed limit, and a multiplier (「두 배」) is a ratio, so none of those surface
 
 
 **Empty relations · avoiding the plain verb** `관련되어 있` · `연관되어 있` · `연계되어 있` · `역할을 한` · `역할을 합` · `역할을 하는` · `기능한다` · `기능합니다` · `기능하는` · `갖추고 있` · `보유하고 있` - how two things connect is covered by 「관련」 instead of named, or a slot for 「이다 · 있다」 is filled with a longer phrase (ai-tells.md §14 · §18). A place where a role really is defined (「관리자 역할을 한 명 지정한다」) is legitimate, which is why this is a lens family and not a rule.
@@ -105,6 +105,13 @@ common hole in the lens.
 Put it in the rules too if a rule can hold it, but **what a narrow rule cannot hold is the lens's
 job** - 「자리」 drags in digits and seats and 「연다」 drags in files and windows, and in the lens
 those false positives are not a cost but reading material.
+
+### A guard added to the lens carries its own cases
+
+A guard that quiets a false-positive family (a lookbehind, a lookahead) is written into
+`references/lens-cases.json` in the same change: per family, `hit` sentences the lens must still
+surface and `miss` sentences it must stay quiet on. `rules --test` reads both sides and fails on
+either, so narrowing the lens cannot drop the form the family exists for.
 
 ### `rules --test` catches a family the lens only half knows
 
