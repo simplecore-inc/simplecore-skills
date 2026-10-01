@@ -37,6 +37,8 @@ SlideGlance: the slideglance-pptx skill and the server's sg://guide).
       // `codeLabel` is the lower floor a looked-up code value may print at,
       // or null where that class is not measured at all.
       "type": { "floor": 8.25, "heading": 9.75, "codeLabel": 6 },
+      // Item numbers for headings, outermost first, and where each level restarts
+      "numbering": { "ladder": ["가.", "1)", "가)", "①", "□", "○", "-"], "levels": ["pageTitle", "regionHead", "nestedRegionHead"], "restart": { "pageTitle": "chapter", "regionHead": "page", "nestedRegionHead": "parentRegion" } },
       // What the tender calls the annex, so the deck writes its word
       "annex": { "term": "별첨" },
       "manuscript": "proposal",             // document deck: the prose the pages are set from
@@ -156,6 +158,7 @@ SlideGlance: the slideglance-pptx skill and the server's sg://guide).
 | `checks.verdict.block` · `pass` · `templates` · `blockWords` · `passWords` | the deck's judgement pair: the two hexes, the shapes allowed to carry them with the slot that holds each side (`blockSlot` · `passSlot`), and the vocabulary each slot may print | which shapes carry a judgement and what a pass is called are the deck's own decisions; the check refuses to guess either |
 | `checks.palette.scan` · `allowed` · `lane` | the hand-written sources, every hex they may write, and the one file the deck's third system lives in | an undeclared colour family arrives through a component's fixed slot rather than through anybody's decision, and no page-by-page review sees it: each page shows one of the colours and looks deliberate |
 | `checks.colfill.maxGap` · `minFill` · `textBlock` · `layouts` | how far two columns of one page may end apart, how high the shortest column may end on its own (a gap rule alone passes two equally short columns), the text block's edges, and each column layout's column x ranges | the geometry is the deck's page and templates; the skill cannot derive it |
+| `numbering.ladder` · `levels` · `restart` | the item-number markers from the outermost heading inward (a Korean public-document ladder is `가.` · `1)` · `가)` · `①` · `□` · `○` · `-`), which heading levels take them (page title, region head, a region nested in a region), and where each level starts again (page titles per chapter, region heads per page, nested heads per parent region; a part with no chapters runs its page titles across the part). Detail items (a card's head, a table row, a list row) take none | headings are numbered by whoever typesets the page, so the same level reads `가.` in one chapter and `1.` in the next, and a part typeset later invents its own |
 | `korean.audit` | the deck's Korean sources, as directories, since a repository-wide sweep reads `.md` and `.svg` only | the deck's Korean is never audited |
 | `review.prompt` · `review.records` | the canonical evaluator-persona review prompt and where rounds are recorded | a persona review has no rubric and no place to write; the generic workflow needs both |
 

@@ -340,6 +340,15 @@ a bar's accent edge is its mark. Every heading names its icon; there is no defau
 an unnamed icon fails the build rather than drawing the wrong thing. **A section heading
 and the head of the first card under it must differ.**
 
+**Headings carry the deck's item numbers, and the deck declares them once.** Where the
+tender or the client's convention numbers items, every page title and every region head
+takes its marker from the ladder in the config (`numbering`), restarting where the config
+says; a card's head, a table row and a list row take none. The number is part of the
+heading string, so a renumbering pass strips an existing marker before it writes one,
+and a page moved between chapters is renumbered with its chapter rather than by hand.
+The contents and the dividers already number the chapters; the ladder starts one level
+below them.
+
 **A table is an open-side grid with a centred header**; a column that reads as a grid
 (marks, codes, names) centres, a prose column stays left. A table whose rows fall into
 groups takes a lane column - one merged cell per group in the group's tint - when the
