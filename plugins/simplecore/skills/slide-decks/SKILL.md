@@ -740,6 +740,16 @@ under the rhythm rules**, so the deck does not trade one monotony for another:
 no component the page before it leaned on, none past a third of its 부, one dark
 surface per page. Run it before rewriting a page, never after.
 
+## Every judgment step has a first pass and a confirmation
+
+Choosing a component, judging a page monotonous, finding a block that restates its figure,
+picking a fill remedy and choosing what a condensed page drops are judgments, not measurements.
+**Where Jev is available it makes the first pass and the agent confirms; where it is not, the
+agent makes both**, with the same questions, the same shortlists and the same confirmation.
+Before the first such step in a session, read
+[references/decisions.md](references/decisions.md): how availability is checked, the steps and
+their candidates, why a shortlist and not the catalogue, and how the report names who decided.
+
 ## A run of pages must not read as one page repeated
 
 A hundred pages of *landscape figure across the top, cards underneath* is one page
