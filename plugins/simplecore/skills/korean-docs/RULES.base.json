@@ -3151,7 +3151,7 @@
       "severity": "warn",
       "reason": "Writing that something with no legs 「선다」. A build, a path, a demo, a pipeline, a server do not stand - they hold, are made, finish, come into being. 「빌드가 성립하는지」 rather than 「빌드가 서는지」, 「4개월에 끝낸다」 rather than 「4개월에 서고」, 「하나씩 생기고」 rather than 「파이프라인이 하나씩 서고」. **This family appears most readily right after an audit passes** - a session that fixed 829 findings in files wrote 「서버 절반이 섰습니다」 in the report on that very work. **A person, a queue, or a building as the subject is legitimate, so a person judges what is caught** - this rule does not fix, it selects places to read. **The 「서」 of 「~에서는」·「확인서는」 is part of a word and is separated by requiring a space after the particle.** **Up to two words of adverbial material are allowed between the subject and the verb** - 「파이프라인이 하나씩 서고」 has no verb immediately after the particle, and a regex matching only adjacency misses that sentence. **「앞에 서다」 is not excluded** - it is a settled expression about precedence, but with an inanimate subject (「컨설팅이 앞에 서는 방식」) it is the same personification and is fixed to 「앞세우는」. A person really standing in front is caught and judged by a person.",
       "find": [
-        "/[가-힣]{2,}[이가] (?:[가-힣]+ ){0,2}(서는|섰다|섰습니다|선다|서고|서서)(?![비운류])/"
+        "/[가-힣]{2,}[이가] (?:[가-힣]+ ){0,2}(서는|섰다|섰습니다|선다|서고|서서)(?![비운류히])/"
       ],
       "replace": "성립한다 · 만들어진다 · 생긴다 · 끝낸다",
       "hit": [
@@ -3164,7 +3164,8 @@
         "이 화면에서는 고칠 수 없다",
         "신용평가 등급 확인서는 유효기간 안의 것",
         "정상 상태에서는 경보를 내지 않는다",
-        "구간에서는 3 × V × I 형태"
+        "구간에서는 3 × V × I 형태",
+        "잔량이 서서히 증가하는 상태"
       ]
     },
     {
