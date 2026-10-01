@@ -59,6 +59,12 @@ What carries over from tool to tool, and so stays here:
 - **A write is made against the state it was read at.** Handles and node numbers from an
   earlier answer are stale after a structural edit; read again before the next write, and
   read the result's diff after it.
+- **A file rewritten whole is read from the tool, never from disk.** Where the tool holds
+  the deck open, the disk can lag its model, and a file read from disk, edited and sent back
+  whole replaces the edits the disk had not caught up with; two edits were lost that way,
+  each overwritten by a later edit to a different page of the same file. Read the file's
+  current source through the tool, or edit by handle, and look at the page you did not
+  mean to change after the write.
 - **Measured geometry comes from the tool's checks, and no project script re-measures
   it.** Overflow, overlap, text outside its box, a row taller than reserved, the type
   floor and the sheet count are the tool's readings over the built file. Two
