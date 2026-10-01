@@ -315,6 +315,30 @@ skipped. A paragraph that is a list of attributes stays a table or a card; drawi
 adds a page and says nothing. The claim test from the drawing skill decides: cover the
 labels, and the shape alone must still say the claim.
 
+## A document figure prints at 90% of its board placement, centred
+
+On a document deck the picture is drawn at **0.9 of its board placement** and centred in
+the slot: the figure's box keeps the placed width (the text block or the column), its
+height is the board height × the board scale × 0.9, and the picture is letterboxed
+(contained) inside that box, so it sits centred with even paper on both sides and the
+caption stays centred under it. A picture at the full measure reads as heavier than the
+text around it and pushes the blocks under it off the page; at 0.9 it reads as part of
+the page. The factor is `figures.placeScale` in the config, 0.9 unless a deck declares
+otherwise, and it is applied to every figure the same way, never chosen per page to make
+one fit.
+
+- **The floor still holds after the factor.** The smallest label's printed size is the
+  figure's type ladder × the board scale × `placeScale`; at 0.9 a ladder that printed
+  8.94pt prints 8.05pt. A deck whose ladder would fall under the floor at its factor
+  raises the ladder's smallest step in the generator, not the factor per figure. At
+  0.85 the same ladder printed 7.6pt on 14 of 17 figures, which is why the factor is not
+  lowered to win a page back.
+- **Where applying the factor refuses a page**, the refusal names a block on that page,
+  not the figure: fix the block, never exempt the figure. An exemption left in place is
+  reported in the deck's notes with the page and the reason.
+- **A slide deck keeps its single slide scale** (the section above) and does not apply
+  this factor; its figures are already re-laid for the slot.
+
 ## What a figure may not do
 
 - **Repeat the words beside it.** A document caption states what the picture shows and a
@@ -325,7 +349,8 @@ labels, and the shape alone must still say the claim.
 - **Carry a title.** The figure's name and its one line belong to the document caption,
   or on a slide to the title and the claim above it.
 - **Draw a shadow.** PowerPoint drops every element that references a `<filter>`.
-- **Be scaled to fit.** Re-lay out the primitives on the board the slot wants.
+- **Be scaled to fit.** Re-lay out the primitives on the board the slot wants. The one
+  scale applied after the board's is the deck-wide `placeScale`, the same for every figure.
 
 ## Screen captures on a slide
 

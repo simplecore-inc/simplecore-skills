@@ -693,7 +693,8 @@ full slide from becoming a crammed one.
 
 Every figure is drawn by code in the project, saved on one of a few fixed board widths,
 and placed by the build at the width the board decides; the chapter file cannot squeeze a
-landscape drawing into a column. A slide deck reads the document deck's figures as they
+landscape drawing into a column. A document deck prints every figure at 90% of that placement, centred
+(`figures.placeScale`), the same factor on every page. A slide deck reads the document deck's figures as they
 are and adds its own re-laid or new ones on slide boards; the rules for reuse, re-layout
 and replacing prose with a drawing are in [references/figures.md](references/figures.md).
 Diagrams are drawn on the paper theme; a dark figure on a white page reads as a block
@@ -791,8 +792,8 @@ Run every line. A failure means the page is not done.
    through anybody's decision. Every list row sits in the list container at one indent,
    one mark gap and one row gap; every plate is the shape its name says; two sizes on
    one row stand on one baseline.
-7. Every figure is at a placed width its board decides, with its own height, and its
-   caption carries a number.
+7. Every figure is at a placed width its board decides, printed at the deck's
+   `placeScale` (0.9 by default) and centred, and its caption carries a number.
 8. The Korean audit reports zero errors over the deck's sources.
 9. The tool's layout checks (overflow, overlap, text outside its box, row height, the
    package as shipped) report no finding, and its rules check (sheet count, palette,
