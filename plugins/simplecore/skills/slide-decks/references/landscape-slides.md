@@ -2,20 +2,25 @@
 
 A slide deck is a document deck turned on its side and read from farther away: the same
 palette, the same two families, the same component set, the same rule that everything
-repeated is a template - with a page that has less height, more width, a one-row head, a
+repeated is a reusable component - with a page that has less height, more width, a one-row head, a
 speaker script, and a plan instead of a manuscript. This file is what changes.
+
+Layout and component names in this file (`cols2`, `trio-card`, `arrow-pair`, …) are one deck's
+vocabulary, given as examples of shapes; the deck in hand names its own. How any of it is
+written in the deck tool is that tool's own authoring guide (for SlideGlance: the
+slideglance-pptx skill and the server's sg://guide).
 
 ## Geometry
 
-The kit's slide shell is A4 landscape (1123×794 px at 96 dpi, `w`/`h` on `<Document>`
-because the presets are portrait or screen). The content width is 1027 (48 px margins).
+The slide shell is A4 landscape (1123×794 px at 96 dpi, set explicitly where the tool's
+page presets are portrait or screen). The content width is 1027 (48 px margins).
 **A slide deck is projected, not printed, so its chrome is full-bleed**: a head band
 (36 px, the part colour, with a deep block at the right carrying the deck's masthead) and
 a foot band (34 px, the lightest neutral) run edge to edge with no border and no margin,
 both drawn by the master. The page lays text on them and draws nothing else: the head
 carries the part line and the reference to the document the deck summarises (「본 제안서
-Ⅳ-2 기능 요구사항 · 57~101쪽」, its pages computed by `refpages.py` from the document
-deck's import order); the foot carries the evaluation item, the requirement ids and, at
+Ⅳ-2 기능 요구사항 · 57~101쪽」, its pages computed from the document deck's own page
+order, never typed by hand); the foot carries the evaluation item, the requirement ids and, at
 its right in the part colour, the folio, counted over the numbered slides only - a cover
 is slide 1 and a contents page carries none. Under the head come the title, the
 one-sentence claim and the hairline, and the body runs from about y=110 to y=748, roughly
@@ -23,11 +28,10 @@ one-sentence claim and the hairline, and the body runs from about y=110 to y=748
 regions and a figure, a slide holds two regions and a strip, or one region and a figure,
 and a sentence that wraps once on a document page wraps twice here.
 
-The shell is a `Layer`: the content column has a fixed height (758) so the Layer's sum of
-child heights stays inside the page (behaviour 20), and the foot row sits at its absolute
-y. When the column's content outgrows it, the builder shrinks the flexible rows and
-reports the child that no longer fits as `OUT_OF_PARENT` on the row, not on the page
-(behaviour 32) - the fix is less content on that slide, never a taller column.
+The content column has a fixed height (758) so its children stay inside the page, and the
+foot row sits at a fixed position. When the column's content outgrows it, the overflow is
+reported on the row that no longer fits, not on the page - the fix is less content on that
+slide, never a taller column.
 
 ## The layouts, and what each is for
 
@@ -47,21 +51,20 @@ Two rules the document deck does not have:
 
 - **Asymmetric layouts alternate sides.** Two consecutive `cols-wide-left` slides tip the
   run one way; the mirror exists for that.
-- **A column bar heads a column, a section bar heads the slide.** `col-section` /
-  `col-section-req` carry the narrow stub; a full-width `section-bar` inside a 326 px
-  column leaves the heading 126 px.
+- **A column bar heads a column, a section bar heads the slide.** A column bar carries the
+  narrow stub; a full-width section bar inside a 326 px column leaves the heading 126 px.
 - **Some column regions stand in a frame, never all.** A column whose body is a run of
   rows - arrow pairs, ruled notes, chips, a vertical flow - blends into its neighbour;
-  `col-panel` / `col-panel-req` put the column bar flush on a hairline frame with a
-  padded body under it, and `frame` draws the same border around a run of sections or
-  rows that has no bar. One or two regions of a slide take it, chosen by the content
+  a column panel puts the column bar flush on a hairline frame with a padded body under
+  it, and a plain frame draws the same border around a run of sections or rows that has
+  no bar. One or two regions of a slide take it, chosen by the content
   that needs bounding; a table, a figure, a card stack or a lane is bounded already and
   stays open, and a slide with every column framed is a grid. A panel in a stretched
   column grows to the column's height, so framed regions side by side share a bottom.
 
-The `-top` variants keep `alignItems="start"` for columns that hold a table (the renderer
-scales a table to a stretched frame); the plain ones stretch so boxed cards standing side
-by side share a bottom edge.
+Columns that hold a table align to the top rather than stretching (a table stretched to its
+frame is scaled, not lengthened); columns of boxed cards stretch so cards standing side by
+side share a bottom edge.
 
 ## Prose stays in the head; the body is short phrases in shapes
 
@@ -75,7 +78,7 @@ phrase in a shape is read at a glance and the script says the sentence.
   「등록·수정 시 중복과 기준정보 일치를 검사한다」 becomes `등록 · 수정 → 중복 검사 · 기준정보
   일치` in an `arrow-pair`; a five-sentence procedure becomes five `process-node`s with a
   three-word note each. A phrase that will not shorten without losing a condition keeps the
-  condition and drops the verb; a claim that needs a sentence goes to `sub`.
+  condition and drops the verb; a claim that needs a sentence goes to the claim line.
 - **The shape says the relation the sentences implied**: a sequence is a `process-strip` or
   a `flow-down`, a demand and its answer an `arrow-pair`, a set of attributes a `tag-row`, a
   measured figure a `kpi-tile` or a `stat-cell`, a grid of allowed and refused a matrix with
@@ -83,7 +86,7 @@ phrase in a shape is read at a glance and the script says the sentence.
   `ladder-step`, a group of three parallel things a row of `pillar`s.
 - **No captions on a slide.** A figure or a capture stands alone; the slide's title and
   claim say what it shows, and a caption under a projected picture is a line nobody reads.
-  The build's figure and screen templates carry no caption slot, so a chapter file cannot
+  Give the deck's slide figure and screen components no caption at all, so a page cannot
   add one by accident. A source or a test run is a `delta-row` or a `note` beside the
   picture, not a caption under it.
 - **Compact by default, at the room's type size.** The body and the region heading are
@@ -100,9 +103,9 @@ phrase in a shape is read at a glance and the script says the sentence.
 
 The plan assigns every scored item and every requirement to a slide, and **each appears
 on the slide it is assigned to** - in the running head's meta pair, and in the body in the
-panel's own words rather than by id alone. `coverage.py` rejects a name or an id the plan
-does not know and reports how much of each list the deck covers; `--complete` is the gate
-for a finished deck. The plan's 배점 is never printed.
+panel's own words rather than by id alone. The coverage check rejects a name or an id the
+plan does not know and reports how much of each list the deck covers; its completeness mode
+is the gate for a finished deck. The plan's 배점 is never printed.
 
 **The cross-reference cites a chapter for every evaluation item the slide is scored on.**
 A slide answers two evaluation items out of two different chapters more often than it looks -
@@ -120,8 +123,8 @@ the page has items is allowed; citing fewer is not.
 The band's right end carries the deck's masthead and its left the part line, and what is
 left is the room the citation gets - a body slide here has 545 px of a 795 px band, a
 part's first slide the whole 795. A third chapter took one slide's head to 680 px with
-nothing in the source to show it. **The renderer is what judges this**, exactly, as
-`TEXT_OVERFLOW_H` with the natural width beside the box width; measuring it from the
+nothing in the source to show it. **The renderer is what judges this**, exactly, as a
+horizontal overflow finding with the natural width beside the box width; measuring it from the
 font's advance widths instead came out 6% short of the renderer on one slide and right on
 the next, which is worse than not checking. **Room is bought back by emptying the section
 names of a chapter the page is not scored on, never by dropping a chapter** - the section
@@ -143,13 +146,13 @@ table whose columns are those four are the components for it.
 
 **Dense is the default.** The audience reads the slide while the script says one sentence
 per region, so everything the plan lists for the slide is on the slide; the script goes
-into `notes` and never replaces content. What keeps density readable is the same as on a
+into the speaker notes and never replaces content. What keeps density readable is the same as on a
 document page: three registers at most (a picture, a measured thing, prose in cards), one
 dark surface, one accent per block, headings that differ from the head of the first card
 under them.
 
 **A screen-only slide keeps the capture as the main content.** The build fits a capture
-into `full` · `side` · `half` · `third` boxes from its own pixel size (`scr-<id>-<box>`);
+into full, side, half and third boxes from its own pixel size;
 the slide adds the title, the requirement, numbered callouts that the speaker points at,
 a `delta-row` naming the source and the test run, and under it - because a picture alone
 answers nothing - the functions and judgement conditions the capture shows. Identifying
@@ -229,7 +232,7 @@ exists to stop the deck cropping on its own judgement, not to overrule the autho
 A picture placed as evidence and read at a third of the body size is not evidence, and
 the type-floor check does not reach it: that check reads the strings the deck writes,
 and a figure is exempt because it sets its own ladder. So a capture is measured
-separately (`capfloor.py`) - its own line height times the placement scale, against the
+separately by a capture-floor check - its own line height times the placement scale, against the
 floor the deck already accepts for a figure's smallest label. **A capture that fails is
 never shrunk further**: the finding names the region the pointing order actually points
 at, the scale rises with that cut, and the cut is made once the user names the band (the
@@ -265,8 +268,8 @@ not a blank) so the row still reads as what it is.
 an un-marked picture leaves the audience hunting for the place the speaker means, and two
 independent reviewers of one deck read the same page and made the same complaint. So the
 markers live in a data file the build reads - one entry per capture, each marker a number
-and an `x`/`y` pair as *fractions* of the capture - and the build emits a `-callout`
-variant of every box template that layers accent discs over the image. Fractions rather
+and an `x`/`y` pair as *fractions* of the capture - and the build layers accent discs over
+the image at those positions. Fractions rather
 than pixels are what makes a re-cropped capture keep its markers. Two rules on placement:
 a marker sits **beside** its target and never over the words it points at, and the slide
 prints the same numbers in its pointing row so the list and the picture answer each other.
@@ -408,9 +411,9 @@ citation the panel can follow.
 reference deck usually arrives as this deck's own build with pictures pasted on its
 masters: one picture per part opener (the deep band, an illustration at its right, a
 rounded white card under the band), one for the page outside the score table, and the
-cover, contents and closing grounds. Take the pictures into `assets/brand/` at 2× the
-page and set them as `backgroundPath` on the masters the generator writes - nothing on
-the page changes hands. Two things follow. The opener's right 400px are the
+cover, contents and closing grounds. Take the pictures into the deck's brand assets at 2×
+the page and set them as the backgrounds of the masters - nothing on the page changes
+hands. Two things follow. The opener's right 400px are the
 illustration's, so the part's item list comes off the band; the contents page and every
 foot band already name the items. And the body stands on the card the picture draws, so
 the first region's top margin is read off the card's edge (26px under a 224px band),
@@ -423,11 +426,11 @@ navy on navy there and vanishes.
 The opening page's job is the whole part's argument, and a drawing makes it in
 one look where a pair of tables makes it twice. Where a deck takes that option it
 needs a second shell beside the ordinary opening page - same head band, same
-title, same claim line, same foot - whose body slot is placed by the Layer at the
-page's own measure rather than inside the text margins, because a body wider than
-the padded stack overflows its parent and the renderer reports it. Declare it in
-the catalogue with a `use` line naming the ordinary shell, and say in the deck's
-instructions that the wide body is for one figure and nothing else: a card, a
+title, same claim line, same foot - whose body is placed at the page's own measure
+rather than inside the text margins, because a body wider than the padded column
+overflows its parent and the renderer reports it. Declare it in the deck's component
+catalogue as a variant of the ordinary shell, and say in the deck's instructions that
+the wide body is for one figure and nothing else: a card, a
 table or a region heading still stands on the text measure, and the moment a
 second block joins the figure the page is an ordinary opening page that happens
 to be wider.
@@ -435,7 +438,7 @@ to be wider.
 Every check that keys on the shell's name has to learn the new one - the page
 reader, the folio list, the density and census counts, the shape check, the
 running-head citation, the progress band and the width check each match a
-template name, and the longer name goes first in an alternation or the shorter
+shell name, and the longer name goes first in an alternation or the shorter
 claims the prefix. A shell nobody taught them about is a page measured by
 nothing.
 
@@ -451,10 +454,10 @@ nothing.
   and the page number at its right** - and nothing under them. A third level naming each
   page's subject turns the contents into a second deck and is not what a panel reads it
   for. It carries no folio. On branded artwork the five parts stand as five white cards
-  (`toc-card`), three across and two centred under them, the part's head in its colour
-  over a short rule; the page numbers stay on the rows, because `tocpages.py` reads them.
-  The card's head is set in the display serif whole, so its numeral prints in the one
-  shape the page uses (`roman.py`).
+  (for example `toc-card`), three across and two centred under them, the part's head in its
+  colour over a short rule; the page numbers stay on the rows, because the contents-page
+  check reads them. The card's head is set in the display serif whole, so its numeral prints
+  in the one shape the page uses (a check reads every Roman numeral's face).
 - **The closing slide is one promise row** on the closing artwork: the greeting centred
   between the artwork's two shapes, the project name in navy beside the artwork's bar at
   the top left (from the master), and three white promise cards along the foot, each
@@ -480,7 +483,7 @@ seven shapes here - the numbered circle strip (`process-strip`), the chevron row
 filled cells (`flow-row`), the plain-numbered stage strip (`stage-strip`), the vertical
 flow (`flow-down`), numbered rows (`step-row`), ladder steps (`ladder-step`) and the
 numbered detail (`stage-detail`) - and a deck that reaches for the circle strip on every
-slide is the bullet list reborn with circles. `census.py` fails a container shape that
+slide is the bullet list reborn with circles. The census check fails a container shape that
 stands twice on one slide, any sequence shape on two consecutive body slides, and any
 that stands on more than a third of the body slides; the project lists its sequence
 shapes in `checks.census`.
@@ -496,7 +499,7 @@ figure or a taller row. Fill per column: the short column takes the next shape, 
 **Full is not crammed.** The fill rule is met with spacing and type, not with more
 shapes: regions stand 18 px apart, sections 10, a row's padding is 7–10, a table row
 22, and a slide carries what the plan assigns it plus what that room takes from the
-manuscript - no more. `density.py` counts the characters a reader sees and the shapes
+manuscript - no more. The density check counts the characters a reader sees and the shapes
 that carry them (a strip, a flow or a chip row is one shape) and fails a slide over
 `checks.density.maxChars` / `maxShapes`, the ceilings the project set the day its author
 called a slide too dense; a slide over either is trimmed, never re-spaced tighter.
@@ -507,7 +510,7 @@ grey block.
 
 ## A part's first page is its overview
 
-A slide deck opens each part with a page of its own shell (`page-open`), and the user set
+A slide deck opens each part with a page of its own shell, and the user set
 what that page is: **the part's overview, never page (1/n) of its first evaluation item.**
 Three things follow. The head band prints no item and no count - it carries the part title,
 the part's evaluation items as a list at the band's right edge behind a hairline rule, and an
@@ -518,8 +521,8 @@ proposer's claim for each evaluation item, and a closing row of the part's stren
 from the same shapes as any body page; a four-storey figure that runs the whole slide is a
 poster, and it was rejected. Detail that is not overview moves to the sub-chapter page that
 owns it, and when no page does, a new one is added (34a · 39a here) and the contents ranges
-are recomputed (`tocpages.py --write`). The citation and coverage checks read an opener's
-`ref` as the part's chapters and skip the per-item rule.
+are recomputed from the page order. The citation and coverage checks read an opener's
+citation as the part's chapters and skip the per-item rule.
 
 ## Figures on a slide
 
@@ -535,7 +538,7 @@ figure may take on a slide is what the slide leaves after the rows beside it; re
 sideways before cutting anything, and never leave a figure narrower than its column - the
 blank strip beside it reads as a hole.
 
-**A schedule is a figure, not a run of bar templates.** A week grid built from text boxes
+**A schedule is a figure, not a run of bar components.** A week grid built from text boxes
 prints its bar labels at the body weight, drifts off the week pitch by the gap arithmetic,
 and reads as blocks of tint; the user asked for its type 「약간 더 작게」 and the chart
 「좀더 알아보기 쉽게」. It is drawn on the text-block board (1400 here, placed at 1027 px)
@@ -548,13 +551,14 @@ never by a size under the ladder.
 
 ## Before a slide is done
 
-1. `error 0 · warn 0`, `layout_check` (every kind, `ink` and `package` named) clean,
-   `rules_check` 0 failed, `rowheight.py` 0; `refpages.py` and `coverage.py`
-   clean; `census.py` 어긋남 0 and `density.py` 초과 0.
-2. The PNG has been looked at, and both columns reach the foot of the body; one or two
+1. The build reports zero errors and zero warnings; the layout check (overlap, overflow,
+   ink and package findings) is clean, the rule check reports no failure and the row-height
+   check none; the reference-page and coverage checks are clean; the census check reports
+   no departure and the density check no slide over its ceiling.
+2. The rendered picture has been looked at, and both columns reach the foot of the body; one or two
    column regions stand in a frame and the rest stand open.
 3. The head names the part and the document section with its pages, the foot the items,
-   the requirements and the folio; the title is a name and `sub` is one claim.
+   the requirements and the folio; the title is a name and the claim line is one claim.
 4. Everything the plan lists for the slide is on it as short phrases in shapes; a sentence
    stands only in the title, the claim and a note or source line; no caption stands under a
    figure or a capture; the four (demand, implementation, verification, deliverable) are on

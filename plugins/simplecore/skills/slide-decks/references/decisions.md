@@ -21,25 +21,25 @@ agent judging openly, without a probability.
 | --- | --- | --- | --- | --- |
 | Monotony | page | is the body only full-width blocks stacked vertically · does it repeat the previous page's placement and main component | yes / no each | the render, and the rhythm check where the deck declares one |
 | Duplication | block beside a figure | does this block restate words the figure already draws | yes / no | reading both; cut the weaker side, never both |
-| Component | manuscript block | which component typesets it | a shortlist of 5-8 from `definition_find` on the block's shape, never the whole catalogue | `render_definition` of the pick, then the page render and `layout_check` |
+| Component | manuscript block | which component typesets it | a shortlist of 5-8 from the tool's component search on the block's shape, never the whole catalogue | the pick drawn alone, then the page render and the tool's layout check |
 | Fill remedy | page short of the text block | which remedy, in the order the fill rule gives | the manuscript sections the page declares, a merge with a neighbour, a split table | the fill measured again after the edit |
 | Condense | page over the allocation | which block goes, keeping the figure | the page's blocks | the page count and the requirement ids still answered |
 
 Measured things are never a decision step: fill, overflow, overlap, ink, type floor, page count
-and sheet count come from the server's checks and the deck's own scripts.
+and sheet count come from the tool's checks and the deck's own checks.
 
 ## How a first pass is asked
 
 - **A shortlist, not a catalogue.** Asked to pick from 92 components, two phrasings agreed on 4
   of 10 blocks; asked for a component family, it agreed on 17 of 20 and answered with the
   manuscript's own Markdown form (a table became `table`, bullets became `list`), which is the
-  monotony the step exists to break. Narrow by shape with `definition_find` first.
+  monotony the step exists to break. Narrow by shape with the tool's component search first.
 - **Say that the generic shapes are the fallback.** The instruction names plain table, list and
   prose as what to pick only when no specific component fits.
 - **Two phrasings per question, trust only agreement.** Where they disagree, or the top
   probability is under 0.6, the agent decides as it would without Jev and says so.
 - **The evidence goes in the state**: the block text, the page's other blocks, the figure's
-  labels when duplication is asked, each candidate's `doc` and `use`.
+  labels when duplication is asked, each candidate's declared purpose and use.
 - One statistics line per run: questions · answers · errors · time · cost, then flagged and
   confirmed counts.
 

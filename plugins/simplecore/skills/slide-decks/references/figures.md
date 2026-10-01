@@ -40,7 +40,7 @@ the page spends on a table the room the picture would have taken.
   gains height at the same time.
 - **A capture cropped down does not lose the relation it carried**; the relation moves to
   a drawing beside it.
-- **Keep an inventory rather than reading the chapter files.** Generate a table of every
+- **Keep an inventory rather than reading the pages.** Generate a table of every
   figure with its number, subject, board size, orientation and the page that places it;
   a blank placement column is the list of what is available. Regenerate it when either
   deck changes - a stale inventory is what makes an author write the prose.
@@ -77,9 +77,9 @@ and the narrow boards float in the middle of a column drawn for the widest one.
 
 ## The board decides the placement
 
-`build.ts` reads the width out of each SVG and emits one template per placement
-(`fig-<id>`, plus a `-<variant>` for boards that have a second slot). A chapter file cannot
-override the width: a landscape drawing put in a narrow column would print its labels at
+The build reads the width out of each SVG and offers one placement per slot the board fits
+(a second one for boards that have a second slot, such as a pair). A page cannot override the
+width: a landscape drawing put in a narrow column would print its labels at
 3pt, and nothing in the page source could report it.
 
 | Deck | Board (units) | Placed at (px) | Scale | The claim is |
@@ -98,8 +98,8 @@ step at the slide's declared body size (a 11-unit body against a 15-unit ladder 
 the document's boards are for paper and are not placed on a slide. **A slide figure uses
 the ladder's three lowest steps** - MICRO and BODY for labels, LEAD for its headings -
 because the slide's own region heading is one step over its body and a figure heading at
-SECTION prints larger than anything on the page; the deck's `common.py` defaults
-`heading()` to LEAD and its verify script fails text over LEAD. **And it runs across the board before it stacks**:
+SECTION prints larger than anything on the page; the slide generator's heading helper defaults
+to LEAD and its figure verifier fails text over LEAD. **And it runs across the board before it stacks**:
 the rows beside a figure pay for its height, so a relation that reads left to right is laid
 that way, and a figure taller than it is wide is re-laid before it is placed.
 
@@ -188,9 +188,9 @@ regenerated without it.
 **A connector label is small type on a tight plate, and it never lands on a box.** The toolkit's own pill
 spreads 8 units a side and a third of an em above and below the letters; on a slide
 board that plate is taller than the gap the arrow runs in, and three figures in one
-round printed it over the cards either side. The generator's `common.py` carries
-`edge_label()` with the plate fitted to the glyph box (6 a side, 3 above and below),
-and the deck's `verify.py` fails a module that calls the canvas method instead. The
+round printed it over the cards either side. The generator's shared helpers carry a
+connector-label function with the plate fitted to the glyph box (6 a side, 3 above and
+below), and the figure verifier fails a module that calls the toolkit's own pill instead. The
 type size does not move: the ladder's smallest step is already the deck's body size
 and the 8pt floor leaves no room under it, so a label that reads too large is made
 **shorter** - 「업무 DB 직접 접속 없음」 → 「DB 직접 접속 없음」 next to the DB it names,
@@ -200,18 +200,18 @@ and a label in a channel narrower than its words is set **one word a line** (「
 line takes no plate at all.
 
 - **A plate never straddles a box border.** A label laid on a lane between two blocks
-  needs the gap to hold the plate with paper either side of it - grow the gap
-  (`GAP`), not the plate's opacity.
+  needs the gap to hold the plate with paper either side of it - grow the gap, not the
+  plate's opacity.
 - **Labels of one kind stand at one height.** Two return paths under a rail whose
   spans do not overlap share one lane; the second lane is for a path that would cross
   one already there, never a lane per path.
 - **Lines that share a channel take lanes.** Five connectors bent at one middle x
   print as a trunk with branches, and the reader cannot tell which socket feeds which
-  layer; each takes its own bend coordinate (`ortho(..., lane=)`), ordered so none
+  layer; each takes its own bend coordinate (its own lane), ordered so none
   crosses, with a bend and an 18-unit straight run inset from either edge. The toolkit
   lint reports the shared run as `COLLINEAR-CONNECTORS`.
-- **A separator between two boxes sits in the middle of the gap.** `chevron()` in the
-  generator's `common.py` anchors the 「›」 on the midpoint of the two boxes' edges; a
+- **A separator between two boxes sits in the middle of the gap.** The generator's chevron
+  helper anchors the 「›」 on the midpoint of the two boxes' edges; a
   glyph placed a fixed distance before the next box drifts toward it on every row with
   a wider gap. The lint reports it as `SEPARATOR-OFF-CENTRE`.
 
@@ -222,7 +222,7 @@ size, so it is not placed.** Every figure
 on a slide is drawn for the slide on the slide's board, with the document figure as its
 source - the same relation, the same labels where they fit, and the content cut to what
 the board carries at the body size. The module docstring names the source
-(재구성 원본: `03-01-01-…`); the chapter file's comment names the document figure the drawing
+(재구성 원본: `03-01-01-…`); the slide's source note names the document figure the drawing
 was made from (「본 제안서 그림 Ⅲ-1-1 재구성」); a slide prints no caption. A snapshot
 directory of reused copies, where a deck keeps one, is expected to be empty and its sync
 tool reports a copy that slips back in.
@@ -242,8 +242,8 @@ copy no page places any more, because a snapshot nobody prunes is the next
 thing to rot.
 
 **The type floor is the deck's own floor, and a figure has a second one.** The floor a
-deck enforces is over the strings *it* draws - a check that reads the styles, templates
-and chapter files cannot see inside a bitmap or an SVG, and should not try. A figure's
+deck enforces is over the strings *it* draws - a check that reads the deck's styles,
+components and pages cannot see inside a bitmap or an SVG, and should not try. A figure's
 smallest label is set by the figure's own type ladder times the placement scale, and
 that product is the number to hold: pick the scale so the ladder's smallest step still
 clears the figure floor, and say in the deck's instructions what that floor is. Without
@@ -274,7 +274,7 @@ accent per column, one grey step for a sequence, and the distinction stays in wo
 hues.** The pass green is learned from the first page that uses it, so a green box on an
 earlier slide meaning 「사후 확인」 or 「인도 대조」 teaches the panel the colour is
 decoration before the verdict rows ever appear. A generator's palette is not an exemption
-here: the check that guards the pair reads chapter files and templates and cannot look
+here: the check that guards the pair reads the deck's pages and components and cannot look
 inside an SVG, so the figure modules are where this is enforced by hand. When a
 non-verdict box needs an accent, take one the pair does not use.
 
@@ -292,20 +292,20 @@ a slide board **with its concept intact**:
   claim, so the next author sees the pair and keeps them in step when the original
   changes.
 - **The slide deck's generator extends the document's toolkit**, importing its helpers,
-  ladder and badges, and adds only the slide boards and its own output directory
-  (`assets/deck-kit/slides/tools/diagrams/common.py` is that file). One ladder, one icon
+  ladder and badges, and adds only the slide boards and its own output directory (one
+  shared helper module in the slide deck's figure directory). One ladder, one icon
   size, one badge set across both decks.
-- **Naming.** A slide figure is `s<NN>[a-z]-<name>.svg`, `NN` the slide it was drawn
-  for; the build reads the id from that prefix, and a document id and a slide id never
-  collide.
+- **Naming.** A slide figure's file name starts with the slide it was drawn for
+  (for example `s<NN>[a-z]-<name>.svg`); the figure's id comes from that prefix, and a
+  document id and a slide id never collide.
 - **Renaming one leaves an orphan that breaks the build for everybody.** The id comes
   from the prefix, not from the file, so a module that starts writing
   `s02-<new name>.svg` while `s02-<old name>.svg` is still in the output directory
-  gives two files one id, and the build stops with 「도식 아이디 s02 가 두 파일에
-  있다」 - not on that slide, but on every render anybody runs, including the agents
-  working on other chapters. The generator writes; it never deletes. So a rename is
-  three steps in one change: rename the `save()` name, delete the old SVG, and repoint
-  the chapter file - and if the two drawings are both wanted, the second takes the next
+  gives two files one id, and a build that refuses a duplicate id stops - not on that
+  slide, but on every render anybody runs, including the agents working on other
+  chapters. The generator writes; it never deletes. So a rename is three steps in one
+  change: rename the output the module writes, delete the old SVG, and repoint the page
+  that places it - and if the two drawings are both wanted, the second takes the next
   letter (`s02a`) rather than the same number.
 
 **Replace prose with a figure when the prose is a relation.** A paragraph that lists
@@ -318,7 +318,7 @@ labels, and the shape alone must still say the claim.
 ## What a figure may not do
 
 - **Repeat the words beside it.** A document caption states what the picture shows and a
-  slide's title and claim do; the argument is the page's `sub`. Ten or more characters standing verbatim in both the figure and
+  slide's title and claim do; the argument is the page's claim line. Ten or more characters standing verbatim in both the figure and
   the block beside it is the figure redrawing that block; fix whichever side is weaker.
 - **Carry a document section number.** Numbers move when a page is inserted; the figure
   verifier fails the Arabic shape, and a Roman reference is on the author.
@@ -329,8 +329,8 @@ labels, and the shape alone must still say the claim.
 
 ## Screen captures on a slide
 
-A capture is a figure the build sizes from the PNG header into the boxes the layouts
-define (`full` · `side` · `half` · `third`), ratio kept, never taller than the box. A
+A capture is a figure the build sizes from its own pixel size into the boxes the layouts
+define (full, side, half, third), ratio kept, never taller than the box. A
 screen-only slide keeps the capture as the main content and puts around it only the
 title, the requirement it answers, the pointing notes and the source line; the slide
 still names the functions and the judgement conditions the capture shows, because a
