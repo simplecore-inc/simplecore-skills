@@ -4,7 +4,7 @@
 An evaluator reads the requirement, then looks for its own words on the page.
 A requirement answered in different words reads as unanswered, so the nouns a
 requirement's detail names are looked for across the whole manuscript, and with
-`--deck` across the deck's printed sources: a word answered only in the
+`--against-deck` across the deck's printed sources: a word answered only in the
 manuscript never reaches the page the evaluator is scoring.
 
 Every requirement's detail is tokenised, inflected forms and ordinary words
@@ -14,7 +14,7 @@ syllable that is also a particle (응답속「도」, 평가결「과」), so a 
 peeled one syllable at a time and a hit on any step counts as written.
 
 A word the proposal writes another way on purpose is retired in the baseline
-with the reason (`rfpwords.json`, or `rfpwords-deck.json` with `--deck`),
+with the reason (`rfpwords.json`, or `rfpwords-deck.json` with `--against-deck`),
 keyed 「<id>\\t<word>」.
 
 Config:
@@ -25,7 +25,7 @@ Config:
                       "detailStop": "\\*\\*산출물\\*\\*" },               // optional: where the detail ends
     "checks": { "rfpwords": { "stop": [...], "minLen": 3 } }            // optional: more ordinary words
 
-    rfpwords.py [ID ...] [--deck] [--bless]
+    rfpwords.py [ID ...] [--against-deck] [--bless]
 """
 from __future__ import annotations
 
@@ -170,7 +170,7 @@ def missing(deck: DeckConfig, hay: str, only: list[str]) -> dict[str, list[str]]
 def main(argv: list[str] | None = None) -> int:
     ap = cli.parser(__doc__.splitlines()[0], bless=True)
     ap.add_argument("ids", nargs="*", help="only these requirement ids")
-    ap.add_argument("--deck", dest="against_deck", action="store_true",
+    ap.add_argument("--against-deck", action="store_true",
                     help="look for the words in the deck's sources instead of the manuscript")
     args = ap.parse_args(argv)
     deck = cli.deck_config(args)

@@ -1,8 +1,10 @@
 """layout, chapter_pages and contents over recorded decks."""
+import io
 import json
 import sys
 import tempfile
 import unittest
+from contextlib import redirect_stdout
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -11,6 +13,7 @@ sys.path.insert(0, str(HERE.parents[4] / "scripts"))
 
 import chapter_pages  # noqa: E402
 import contents  # noqa: E402
+import deliver  # noqa: E402
 import layout  # noqa: E402
 from bidkit.config import ConfigError  # noqa: E402
 from bidkit.sgmcp import DeckUnavailable  # noqa: E402
@@ -176,6 +179,20 @@ class ContentsTests(unittest.TestCase):
         r.vocab.data.pop("contents")
         with self.assertRaises(ConfigError):
             contents.entries(r, self.deck)
+
+
+class CommandLineTests(unittest.TestCase):
+    """Every check's parser builds: a flag that collides with a shared one fails only at run time."""
+
+    def test_help_of_every_check(self):
+        for module in MODULES:
+            with self.subTest(module.__name__), redirect_stdout(io.StringIO()):
+                with self.assertRaises(SystemExit) as caught:
+                    module.main(["--help"])
+                self.assertEqual(caught.exception.code, 0)
+
+
+MODULES = [chapter_pages, contents, deliver, layout]
 
 
 if __name__ == "__main__":

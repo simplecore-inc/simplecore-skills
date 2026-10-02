@@ -1,8 +1,10 @@
 """mdtwice, rfpwords, annexref, rfpcite and sharedvalues on small projects."""
+import io
 import json
 import sys
 import tempfile
 import unittest
+from contextlib import redirect_stdout
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -10,10 +12,14 @@ sys.path.insert(0, str(HERE.parent))
 sys.path.insert(0, str(HERE.parents[3] / "scripts"))
 
 import annexref  # noqa: E402
+import budget  # noqa: E402
+import claims  # noqa: E402
+import evaluation  # noqa: E402
 import mdtwice  # noqa: E402
 import rfpcite  # noqa: E402
 import rfpwords  # noqa: E402
 import sharedvalues  # noqa: E402
+import volume  # noqa: E402
 from bidkit.baseline import Baseline  # noqa: E402
 from bidkit.config import ConfigError  # noqa: E402
 from bidkit.tests.support import body, project, reader, recording  # noqa: E402
@@ -269,6 +275,20 @@ class SharedValuesTests(Base):
         self.deck.data["manuscript"]["sharedValues"]["section"] = "## 9. 없음"
         with self.assertRaises(ConfigError):
             sharedvalues.check(self.deck, None)
+
+
+class CommandLineTests(unittest.TestCase):
+    """Every check's parser builds: a flag that collides with a shared one fails only at run time."""
+
+    def test_help_of_every_check(self):
+        for module in MODULES:
+            with self.subTest(module.__name__), redirect_stdout(io.StringIO()):
+                with self.assertRaises(SystemExit) as caught:
+                    module.main(["--help"])
+                self.assertEqual(caught.exception.code, 0)
+
+
+MODULES = [annexref, budget, claims, evaluation, mdtwice, rfpcite, rfpwords, sharedvalues, volume]
 
 
 if __name__ == "__main__":
