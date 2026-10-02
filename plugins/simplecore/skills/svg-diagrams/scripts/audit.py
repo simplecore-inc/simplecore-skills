@@ -5,6 +5,8 @@ Usage:
   audit.py render   <svg> <out.png> [scale]
   audit.py crop     <svg> <x> <y> <w> <h> <out.png> [scale]
   audit.py lint     <svg> [more.svg ...]     # exit 1 when any issue is found
+  audit.py contrast [--floor 3.0] <svg> [more.svg ...]   # labels lost on their ground
+  audit.py markers  <module.py> [more.py ...]  # connector calls with no marker=
   audit.py hotspots <svg> <outdir> [scale]   # zoom-crop every arrow endpoint
 """
 import math
@@ -14,6 +16,8 @@ import subprocess
 import sys
 import tempfile
 import os
+
+import lintrules
 
 
 def _find_chrome():
@@ -56,7 +60,7 @@ def _is_wide(ch):
             or 0xFF00 <= o <= 0xFFEF or 0x20000 <= o <= 0x3FFFD)
 
 
-_NARROW = set(" \u00b7.,:;|'`!\u2019\u2018\u02c8")
+_NARROW = set(" \u00a0\u00b7.,:;|'`!\u2019\u2018\u02c8")
 _CAPS = set("ABCDEFGHJKLMNOPQRSTUVWXYZ")
 
 
@@ -266,6 +270,13 @@ def render(svg_path, out, scale=2):
     w, h = _root_dims(svg)
     _chrome(svg_path, out, w, h, scale)
     print(f"render {out} ({w:.0f}x{h:.0f} @{scale}x)")
+
+
+def _render_quiet(svg_path, out, scale=2):
+    """render() without the progress line, for checks that render many files."""
+    with open(svg_path) as f:
+        w, h = _root_dims(f.read())
+    _chrome(svg_path, out, w, h, scale)
 
 
 def crop(svg_path, x, y, w, h, out, scale=4):
@@ -1951,6 +1962,11 @@ def lint(svg_path):
                                f'stroke is clipped by the viewBox and what '
                                f'survives lands in the page margin'))
 
+    # Rules kept in lintrules.py: a drop into the gap of a row, and two runs
+    # of ink that print as one line.
+    issues += lintrules.drop_into_gap(svg)
+    issues += lintrules.line_overlaps(svg)
+
     print(f"=== lint {os.path.basename(svg_path)} ({W:.0f}x{H:.0f}) ===")
     if not issues:
         print("  ✔ no static issues")
@@ -2982,6 +2998,26 @@ if __name__ == "__main__":
         total = 0
         for p in sys.argv[2:]:
             total += len(lint(p))
+        sys.exit(1 if total else 0)
+    elif cmd == "contrast":
+        args = sys.argv[2:]
+        floor = lintrules.CONTRAST_FLOOR
+        if args[:1] == ["--floor"]:
+            floor, args = float(args[1]), args[2:]
+        total = 0
+        for p in args:
+            found = lintrules.contrast(p, _render_quiet, _text_w, floor=floor)
+            print(f"=== contrast {os.path.basename(p)} ===")
+            for kind, msg in found:
+                print(f"  ✖ {kind}: {msg}")
+            total += len(found)
+        sys.exit(1 if total else 0)
+    elif cmd == "markers":
+        total = 0
+        for p in sys.argv[2:]:
+            for kind, msg in lintrules.marker_defaults(p):
+                print(f"  ✖ {kind}: {msg}")
+                total += 1
         sys.exit(1 if total else 0)
     elif cmd == "hotspots":
         hotspots(sys.argv[2], sys.argv[3],

@@ -1,0 +1,57 @@
+{
+  // Copy to <project>/.claude/document-figures.json and set every value for the
+  // document. The schema is in the skill's references/document-figures.md.
+  "out": "docs/assets/diagrams",
+  "modules": ["tools/diagrams/*.py"],
+  "helpers": [],
+
+  // Board width in units -> placed width in px. A4 with 25.4mm margins is a
+  // 602px text column, so a 1200-unit board placed across it scales by 0.5017.
+  // A column board takes the same scale: 300px / 0.5017 = 598 units.
+  "boards": { "1200": 602, "598": 300 },
+  "boardNames": { "FULL": 1200, "COLUMN": 598 },
+  "columnBoard": 598,
+  "placeScale": 1.0,
+  "margin": 28,
+  "sideMargin": 28,
+
+  // The type ladder, derived from the body size (see the reference), and the
+  // names the library's helpers draw with.
+  "ladder": [15, 16, 17, 18, 20, 21, 24],
+  "names": { "MICRO": 15, "BODY": 16, "LEAD": 17, "CARD": 18, "SECTION": 20,
+             "EMPH": 21, "DISPLAY": 24 },
+  "steps": { "STEP": 18 },
+  "subBodyShareMax": null,
+  "maxRung": null,
+
+  "strokes": { "HAIRLINE": 1.4, "STROKE": 1.9, "THICK": 2.8 },
+  "dashes": {
+    "DASH_PENDING": { "pattern": "6 5", "words": ["not yet decided"] },
+    "DASH_OUTSIDE": { "pattern": "5 4", "words": ["outside scope"] },
+    "DASH_ALT":     { "pattern": "4 4", "words": ["alternative"] },
+    "DASH_BLOCK":   { "pattern": "3 3", "words": ["prohibited"] }
+  },
+  "dashWord": "dashed",
+
+  "theme": "paper",
+  "fontStack": null,
+  "icon": { "size": 20, "sw": 1.6 },
+  "icons": { "model": "brain-circuit", "store": "database", "person": "user-round" },
+  "accents": {},
+  "badges": {},
+  "verdict": null,
+  "bullets": true,
+  "noBreak": [],
+
+  "heightReview": { "1200": 840, "598": 1400 },
+  "deadMargin": null,
+  "stripRatio": 0.28,
+  "legendWords": { "dashed": ["dashed"] },
+  "footLegend": null,
+  "labelForm": {},
+  "register": null,
+  "sectionNumbers": true,
+  "contrastFloor": 3.0,
+  "references": null,
+  "plans": null
+}

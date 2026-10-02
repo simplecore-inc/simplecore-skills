@@ -23,13 +23,18 @@ carelessness. Do not compensate with smaller type, do not pad a narrow drawing
 out to the width, and never `transform="scale(…)"` a finished picture onto it —
 re-lay out the primitives. One type scale governs the set the same way.
 
-**The generator lives in the project, not in a scratch directory.** A figure is
-redrawn whenever its chapter changes, so the drawing code is versioned beside
-the document. Copy `assets/document-figures/` into the project as
-`tools/diagrams/`, set the four constants at the top of `common.py`, and build
-with `python3 tools/diagrams/build.py`. Writing a one-off script under `/tmp`
-produces an SVG nobody can regenerate — the next person hand-edits it, and the
-next build silently discards the edit.
+**The figure modules live in the project; the library lives here.** A figure
+is redrawn whenever its chapter changes, so the code that draws it is
+versioned beside the document: the project keeps its figure modules (one per
+chapter) and one settings file, `.claude/document-figures.json`, and nothing
+else. The drawing layer, the build and the checks are this skill's
+`scripts/docfigures/`, imported, never copied: a module writes
+`from common import card, save, BODY`, the project builds with
+`python3 <skill>/scripts/docfigures/build.py` and checks with
+`python3 <skill>/scripts/docfigures/verify.py`, both run from the project.
+Start the settings file from `assets/document-figures/document-figures.json`.
+Writing a one-off script under `/tmp` produces an SVG nobody can regenerate:
+the next person hand-edits it, and the next build silently discards the edit.
 
 **The composition comes from the claim the prose makes, not from the list of
 items.** Write that claim as one sentence first, name what the reader must see
@@ -44,9 +49,9 @@ that one column is always applied while the neighbouring columns are selected
 later. The full semantic audit and before/after examples live in
 `references/document-figures.md`.
 
-**Every box is sized from its content.** The scaffold's `common.py` carries a
-content-first layer — `heading` · `card` · `cards_row` · `pill` · `note` ·
-`zone` · `step_row` · `segment_bar` · `joined_cell` — that computes each box's height from
+**Every box is sized from its content.** The library carries a content-first
+layer (`heading` · `card` · `cards_row` · `pill` · `note` · `zone` · `step_row`
+· `segment_bar` · `joined_cell`) that computes each box's height from
 its wrapped text with even padding and gives a row its tallest content's
 height. Draw with those rather than with a number: a fixed height is what
 leaves a band of paper under a row's text, and the lint's box-geometry checks
@@ -181,9 +186,11 @@ python3 <skill>/scripts/audit.py lint     one.svg [more.svg …]   # static defe
 python3 <skill>/scripts/audit.py render   diagram.svg out.png 2  # full raster — Read it
 python3 <skill>/scripts/audit.py hotspots diagram.svg crops/ 4   # zoom-crop EVERY arrow endpoint — Read them
 python3 <skill>/scripts/audit.py crop     diagram.svg X Y W H z.png 5   # zoom one spot
+python3 <skill>/scripts/audit.py contrast one.svg [more.svg …]   # labels lost on the band under them
+python3 <skill>/scripts/audit.py markers  module.py [more.py …]  # connector calls with no marker=
 ```
 
-Loop: **lint → render → hotspots → fix → repeat** until lint is clean *and* the endpoint crops look right. A full render viewed downscaled hides sub-10px defects (an arrowhead landing on a chip, a label kissing a box) — `hotspots` turns "eyeball the overview" into a systematic pass over exactly the places those defects live. Lint is a screen, not the verdict. Checks: `UNRESOLVED-MARKER`, `OBLIQUE-ARROW`, `SHORT-ARROW`, `TEXT-OVERFLOW`, `TEXT-COLLISION`, `COLLAPSED-SPACE`, `TIGHT-BOTTOM`, `OVERLAP`, `NEAR-OVERLAP`, `HAIRLINE-GAP`, `SLIVER-RECT`, `LABEL-OCCLUSION`, `ARROW-THROUGH-BOX`, `ARROWHEAD-IN-BOX`, `ARROWHEAD-AT-BEND`, `CROWDED-ARRIVAL`, `LINE-THROUGH-BOX`, `FRAME-OVER-NODE`, `OFFCANVAS-TEXT`, `OFFCANVAS-RECT`, `MARKER-NO-ORIENT`, `MARKER-ORIENT-UNSUPPORTED`, `WIDE-CANVAS`, and the box-geometry set — `ROW-PADDING-UNEVEN`, `BOX-PADDING-UNEVEN`, `WRAP-SLACK`, `ROW-HEIGHT-MISMATCH`, `ROW-WIDTH-MISMATCH`, `ROW-GAP-UNEVEN`, `STACK-GAP-UNEVEN`, `FRAME-PADDING-UNEVEN`, `BAND-CORNERS`, `TEXT-ON-LINE`, `LABEL-GROUPING`, `EMPTY-STACK-GAP` — and the connector set, `PARALLEL-CONNECTORS`, `COLLINEAR-CONNECTORS`, `SEPARATOR-OFF-CENTRE`. Full catalog, fixes, prevention rules: `references/render-audit.md`.
+Loop: **lint → render → hotspots → fix → repeat** until lint is clean *and* the endpoint crops look right. A full render viewed downscaled hides sub-10px defects (an arrowhead landing on a chip, a label kissing a box); `hotspots` turns "eyeball the overview" into a systematic pass over exactly the places those defects live. Lint is a screen, not the verdict. Checks: `UNRESOLVED-MARKER`, `OBLIQUE-ARROW`, `SHORT-ARROW`, `TEXT-OVERFLOW`, `TEXT-COLLISION`, `COLLAPSED-SPACE`, `TIGHT-BOTTOM`, `OVERLAP`, `NEAR-OVERLAP`, `HAIRLINE-GAP`, `SLIVER-RECT`, `LABEL-OCCLUSION`, `ARROW-THROUGH-BOX`, `ARROWHEAD-IN-BOX`, `ARROWHEAD-AT-BEND`, `CROWDED-ARRIVAL`, `LINE-THROUGH-BOX`, `FRAME-OVER-NODE`, `OFFCANVAS-TEXT`, `OFFCANVAS-RECT`, `MARKER-NO-ORIENT`, `MARKER-ORIENT-UNSUPPORTED`, `WIDE-CANVAS`, and the box-geometry set (`ROW-PADDING-UNEVEN`, `BOX-PADDING-UNEVEN`, `WRAP-SLACK`, `ROW-HEIGHT-MISMATCH`, `ROW-WIDTH-MISMATCH`, `ROW-GAP-UNEVEN`, `STACK-GAP-UNEVEN`, `FRAME-PADDING-UNEVEN`, `BAND-CORNERS`, `TEXT-ON-LINE`, `LABEL-GROUPING`, `EMPTY-STACK-GAP`) and the connector set, `PARALLEL-CONNECTORS`, `COLLINEAR-CONNECTORS`, `COINCIDENT-LINES`, `SELF-DOUBLED`, `DROP-INTO-GAP`, `SEPARATOR-OFF-CENTRE`; `contrast` reports `LOW-CONTRAST` and `markers` reports `MARKER-DEFAULT`. Full catalog, fixes, prevention rules: `references/render-audit.md`.
 
 **CJK / non-Latin text:** width estimation is CJK-aware across the toolchain (`svgkit.tw`, `layout.js`, and the lint all count Hangul/Kana/CJK glyphs at ~1 em, Latin at ~0.55 em). A box or chip auto-sized for Latin will overflow Korean/Japanese if you hardcode a width — size boxes from `tw()`, not by eye. The Mermaid `--svg` path (beautiful-mermaid) sizes its own boxes and can clip CJK labels; lint its output and prefer svgkit/layout.js when labels are CJK-heavy.
 
@@ -254,5 +261,6 @@ pass/fail, reach for the quantitative registers and compose.
 | `references/svg-templates.md` | SVG header, node/edge/subgroup XML templates, palette, layout rules | Hand-crafting SVG by XML, or fixing layout |
 | `references/visual-types.md` | The 39 visual types, what each is for, which have a dedicated builder, and the budget each one enforces | Choosing what kind of picture this is — read BEFORE laying anything out |
 | `references/document-figures.md` | Uniform width across a figure set, the type ladder, height economy, composition variety, redraw rules | Before the first figure of anything that goes in a document |
-| `assets/document-figures/` | Project scaffold — `common.py` · `build.py` · `verify.py` · an example module, plus a README on wiring it in | Setting a project up to draw its own figures |
+| `scripts/docfigures/` | The document-figure library a project imports: `common.py` (drawing layer), `build.py`, `verify.py`, `figplans.py`, configured by the project's `.claude/document-figures.json` | Drawing, building or checking figures that go in a document |
+| `assets/document-figures/` | A sample `document-figures.json` and an example figure module, plus a README on wiring a project to the library | Setting a project up to draw its own figures |
 | `references/domain-templates.md` | 8 domain layouts (architecture, pipeline, microservice, CI/CD, network, state machine, infra, sequence) with canvas sizes and color assignments | Choosing a layout pattern / canvas size |

@@ -1,48 +1,43 @@
-# Project figure scaffold
+# Wiring a project to the document-figure library
 
-Copy these four files into the project — conventionally `tools/diagrams/` — so
-the drawing code is versioned with the document it illustrates. **Do not author
-figures in a scratch directory:** a figure is regenerated whenever its chapter
-changes, and code that lives outside the repository cannot be rerun by the next
-person or by CI.
+The drawing layer, the build and the checks live in this skill at
+`scripts/docfigures/` and are imported, never copied. A project keeps two kinds
+of file and nothing else:
 
 ```
-tools/diagrams/
-  common.py           shared width, type scale, output path, toolkit resolution
-  build.py            regenerate every figure module
-  verify.py           width · type scale · lint · height review
-  <chapter>.py        one module per chapter or per topic
-docs/assets/diagrams/ generated SVGs — build artifacts, but committed so the
-                      document renders without running the build
+.claude/document-figures.json   every value this document decides
+tools/diagrams/<chapter>.py     one figure module per chapter or topic
+docs/assets/diagrams/           generated SVGs, committed so the document
+                                renders without running the build
 ```
 
-## Wiring it up
+## Setting a project up
 
-1. Copy `common.py`, `build.py`, `verify.py` and rename `figures_example.py` to
-   something meaningful (`ch01.py`, `architecture.py`).
-2. Set the four constants at the top of `common.py`: `OUT`, `STANDARD_WIDTH`,
-   `FONT_SCALE`, `THEME`.
+1. Copy `document-figures.json` from this folder to the project's
+   `.claude/document-figures.json` and set its values: the output folder, the
+   module glob, the boards and their placement, the type ladder derived from the
+   body size, and the vocabularies. The schema is in
+   `references/document-figures.md`.
+2. Copy `figures_example.py` to the module folder under a chapter name
+   (`ch01.py`) and draw from it.
 3. Add two lines to the project's instruction file (`AGENTS.md`, `CLAUDE.md`):
-   figures are generated through `tools/diagrams/common.py`, and
-   `python3 tools/diagrams/verify.py` runs after any figure change.
+   figures are drawn by the modules the config lists, with the svg-diagrams
+   library, and the library's `verify.py` runs after any figure change.
 
 ## Working on a figure
 
+Run from the project, with `<skill>` the svg-diagrams skill directory:
+
 ```bash
-python3 tools/diagrams/build.py ch01        # regenerate one module
-python3 tools/diagrams/verify.py            # width · type scale · lint
-python3 tools/diagrams/verify.py --render /tmp/figs   # PNGs to read
+python3 <skill>/scripts/docfigures/build.py ch01            # regenerate one module
+python3 <skill>/scripts/docfigures/verify.py                # every check
+python3 <skill>/scripts/docfigures/verify.py --render /tmp/figs   # PNGs to read
+python3 <skill>/scripts/docfigures/figplans.py              # plans against figures
 ```
 
 Edit the module, never the SVG. A hand-edited SVG is overwritten by the next
 build, and the edit is lost without a trace.
 
-The sizing discipline these files enforce — one width, one type scale, height
-economy, composition variety — is in `references/document-figures.md`.
-
-`common.py` also carries the content-first layer: `heading`, `card`,
-`cards_row`, `pill`, `note`, `zone`, `step_row`, `segment_bar`, `joined_cell` and the glyph
-arithmetic under them. Every box they draw is sized from its wrapped text with
-even padding, so a figure written with them passes the lint's box-geometry
-checks without a second pass. Draw with them; reach for a raw `rrect` only for a
-shape none of them expresses.
+A file the module glob reaches is not run when it is a test (`test_*.py`), a
+helper listed under `helpers`, or named after a library module (`common.py`);
+a project that still carries an old copy of `common.py` can delete it.

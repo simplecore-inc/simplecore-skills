@@ -105,8 +105,8 @@ the whole set**: a hairline for a rule or a faint separator, a normal weight for
 a box border, a thick one for a line the reader is meant to follow. A 1-unit
 hairline on a 0.5354 scale prints at 0.54px and drops out on paper, so derive
 the three from printed px the way the type is derived from printed pt, declare
-them once beside the type ladder (`HAIRLINE, STROKE, THICK` in the scaffold's
-`common.py`) and draw with the names.
+them once beside the type ladder (`strokes` in the project's settings file,
+drawn with as `HAIRLINE`, `STROKE`, `THICK`) and draw with the names.
 
 A fourth weight is a distinction nobody can see at print size, and the weights
 below the hairline are worse than invisible: **a grid drawn from them is how a
@@ -121,14 +121,14 @@ draw with the names: not yet decided, outside this project, the alternative
 path, prohibited. A fifth gap is a meaning no reader can look up - one figure in
 a set of 132 drew the only `3 7` in the document, which read as a prohibition to
 its author and as nothing at all to anyone matching it against the four. The
-scaffold's `verify.py` fails the run on a pattern off the list, and a figure that
+library's `verify.py` fails the run on a pattern off the list, and a figure that
 draws a dash without naming its meaning in the figure is the unexplained
 distinction the audit pass is for.
 
 **One neutral grey, and it is the darker one.** A theme carries two - a
 mid grey for secondary type and a pale one for rules and fills - and the pale
 one set on type prints at a contrast ratio around 4.0 on white, under the 4.5 a
-small size needs. The scaffold's `save()` promotes any pale-grey `<text>` to the
+small size needs. The library's `save()` promotes any pale-grey `<text>` to the
 neutral grey rather than leaving it to every call site, so a figure cannot
 reintroduce it and a line may still be drawn in the pale grey, where it belongs.
 
@@ -136,7 +136,7 @@ reintroduce it and a line may still be drawn in the pale grey, where it belongs.
 figure's own words.** A figure whose every label sits on it has no entry point:
 at print size the reader meets an even field of grey and has nowhere to start.
 Every figure carries at least one label at the body rung - normally the thing the
-figure is about. The scaffold's `verify.py` fails the run on both of these, so
+figure is about. The library's `verify.py` fails the run on both of these, so
 neither is a matter of judgement at review time.
 
 **A rung below the body size is never a helper's default for running text.** A
@@ -145,15 +145,16 @@ ids. Once it does, every box helper's body default has to point at the body rung
 left on the smallest rung, every card and note body prints below the paragraph
 beside it while every size is still on the ladder, so the ladder check passes. One
 set of 34 figures carried 59~93% of its characters on such a rung before the
-default moved. Declare those rungs as `SUB_BODY` in the scaffold's `common.py`;
-`verify.py` then fails a figure with more than half its characters on them.
+default moved. Every rung under `BODY` counts as one; set `subBodyShareMax`
+(0.5 is the usual line) and `verify.py` fails a figure with more than that share
+of its characters below the body rung.
 
 **The figure names the document's body typeface first.** The toolkit's stack
 leads with Latin UI faces, so a document set in another face gets labels whose
 digits and letters print in one typeface and whose Hangul prints in another, on
 any machine that has those faces; the preview renderer, handed only the document
-face, never shows it. Set `FONT_STACK` in `common.py`: `save()` writes it in
-place of the toolkit's stack and `verify.py` fails a text that names another.
+face, never shows it. Set `fontStack` in the settings file: `save()` writes it
+in place of the toolkit's stack and `verify.py` fails a text that names another.
 
 A workable ladder for a 1200-unit canvas, before the derivation above adjusts it:
 
@@ -171,7 +172,7 @@ A one-off size introduced to make one label fit is the defect this prevents.
 **Rewrite the label or change the layout instead of dropping below the scale.**
 
 Snap the emitted sizes at save time rather than trusting every call site - the
-scaffold's `save()` does this, so layout code may keep its working numbers while
+library's `save()` does this, so layout code may keep its working numbers while
 the artifact carries only scale values.
 
 ## Height is the scarce axis - minimise it, every figure, every time
@@ -216,7 +217,7 @@ another inseparable relationship, keep one figure and let it be tall -
 Put the figure's name and its one-line explanation in the document's caption,
 not inside the SVG. A title block inside the picture duplicates the caption and
 adds vertical space to every figure in the set. Suppress it centrally - the
-scaffold's `canvas()` disables `title()` so no figure module has to remember.
+library's `canvas()` disables `title()` so no figure module has to remember.
 
 The prose must stand without the picture. A reader whose images failed to load
 still has to follow the argument; the figure supplements it.
@@ -231,8 +232,9 @@ handed a list of labels that names a symbol the figure stopped using. Every
 instance of this found in one 132-figure set had survived a careful human pass
 over the same pages.
 
-Two comparisons catch nearly all of it, and both are a short script over the
-`.svg` and the source file:
+Two comparisons catch nearly all of it, and the library's
+`scripts/docfigures/figplans.py` makes both over the `.svg` and the source file,
+reading the manuscript's conventions from the settings file's `plans`:
 
 - **The planned strings against the printed ones, in both directions.** A string
   the figure prints that the plan does not name, and an item the plan names that
@@ -426,7 +428,8 @@ three lines spills past its edge, how a note sits high in its band - and each
 of those is a defect the lint now reports (`ROW-PADDING-UNEVEN`,
 `BOX-PADDING-UNEVEN`, `WRAP-SLACK`, `TIGHT-BOTTOM`).
 
-The scaffold's `common.py` carries the layer that makes the rule automatic:
+The library (`from common import ...`) carries the layer that makes the rule
+automatic:
 
 | Helper | What it sizes |
 |---|---|
@@ -597,9 +600,12 @@ a bar may be badges instead. Never join items with middle dots on wrapped
 lines. The form is decided per figure, not per box: once any box in a figure
 lists items, every titled box in it bullets its items, a single item included,
 so a one-item box does not read as a different kind. A figure whose boxes each
-hold at most one subtitle line stays plain throughout. Keep the choice in one
-place the generator reads (a set of plain figure names) and check it against
-the drawn bullets.
+hold at most one subtitle line stays plain throughout. Declare a plain figure
+on its function with `@figure(plain=True)`: the declaration holds from the
+function's first line, so a box measured before the canvas exists is measured
+plain too, and `save()` records it on the root element, where `verify.py`
+compares it with the drawn bullets. A list of plain figure names kept apart from
+the drawing code is the form that drifts.
 
 ## Icons carry meaning or they are noise
 
@@ -666,3 +672,78 @@ model produced, or the act of producing it. Mark the act.
 Icon names change between Lucide releases. `scripts/fetch_icons.py` regenerates
 `scripts/lucide.py` from `lucide-static`; a name that disappears upstream raises
 at draw time with the near-matches listed, so a stale name never renders blank.
+
+## The library and the project's settings file
+
+A project draws with this skill's `scripts/docfigures/` and never copies it.
+The project keeps its figure modules and `.claude/document-figures.json`; the
+library reads every value that differs between documents from that file, and
+holds none of its own. Run from the project:
+
+```bash
+python3 <skill>/scripts/docfigures/build.py [module ...]     # regenerate
+python3 <skill>/scripts/docfigures/verify.py [name-prefix ...]   # check
+python3 <skill>/scripts/docfigures/figplans.py               # plans against figures
+```
+
+The settings file is found through `DOCUMENT_FIGURES_CONFIG`, then in the
+working directory or its nearest parent holding `.claude/document-figures.json`;
+`--config` names one directly. Every relative path in it is resolved against the
+directory holding `.claude/`. It may carry `//` and `/* */` comments and
+trailing commas. The svg-diagrams scripts are found through
+`SVG_DIAGRAMS_SCRIPTS`, then the `toolkit` key, then the library's own parent
+directory, never through an assumed home-directory path.
+
+A figure module imports by name: `from common import card, save, BODY`.
+`save(c, name, board=...)` writes one figure; `width=` is the older name for
+`board=` and still works, with a deprecation warning. `@figure(plain=True)` on a
+figure function declares a figure with no list. Any name the settings file
+declares (a board name, a rung name, a dash name, a content-width name) is
+importable as a module constant.
+
+| Key | Required | Value | Default |
+|---|---|---|---|
+| `out` | yes | folder the SVGs are written to | |
+| `modules` | yes | globs of figure modules the build runs; a test file, a helper and a file named after a library module never run | |
+| `helpers` | | globs of project modules that figure modules import and the build never runs; the source checks read them | `[]` |
+| `toolkit` | | path to the svg-diagrams `scripts/` folder | the library's parent |
+| `boards` | yes | board width in units → placed width in px; the first is the default board | |
+| `defaultBoard` | | the board `save()` uses when none is named | first of `boards` |
+| `boardNames` | | name → board width, exported as constants (`FULL`, `COLUMN`) | `{}` |
+| `columnBoard` | | the board `column.py` draws on | none |
+| `contentNames` | | name → board width, exported as that board's content width | `{}` |
+| `placeScale` | | the factor the document prints every figure at, for `SCALE` and `printed_pt()` | `1.0` |
+| `margin` | | air `save()` leaves above and below the ink; a number or `{width: n}` | `28` |
+| `sideMargin` | | side margin the content width is computed from (`board - 2 * (sideMargin + 10)`); a number or `{width: n}` | `28` |
+| `ladder` | yes | the only type sizes a figure may print | |
+| `names` | yes | rung name → size, each on the ladder; must define `MICRO` `BODY` `LEAD` `CARD` `SECTION` `EMPH` `DISPLAY`; `CHIP`, the tag rung, defaults to the smallest | |
+| `steps` | | `STEP` (baseline step for body text) and `CHIP_STEP` (for lines on the tag rung) | `18`, `STEP` |
+| `subBodyShareMax` | | largest share of a figure's characters below `BODY`; a figure with every character there always fails | none |
+| `maxRung` | | name of the largest rung a figure may print | none |
+| `strokes` | | `HAIRLINE` `STROKE` `THICK`; with none declared the stroke check does not run | none |
+| `dashes` | | dash name → `{pattern, words}`; the pattern is the only gap for that meaning, the words its gloss | none |
+| `dashWord` | | the word a figure uses for a dash (「점선」); turns on the dash-gloss check and the figure-plan dash check | none |
+| `theme` | | svgkit theme | `paper` |
+| `fontStack` | | the document's typeface stack, written in place of the toolkit's | none |
+| `icon` | | `{size, sw}` for every icon in the set | from `BODY` |
+| `icons` | | meaning → Lucide name, exported as `ICON_OF`; turns on the icon-literal check | none |
+| `accents` | | printed label → theme accent it owns in every figure, exported as `ROLE_ACCENT` | `{}` |
+| `badges` | | kind → `{icon, text, accent}` for `badge()` and its family | `{}` |
+| `verdict` | | `{pass, block}` hues, or `{from, key}` naming the file and dotted key that hold them (a deck's `checks.verdict`) | theme's own |
+| `bullets` | | whether titled boxes bullet their items | `true` |
+| `noBreak` | | patterns with two groups whose space must not break a line inside a box | `[]` |
+| `heightReview` | | height over which a figure is listed for review; a number or `{width: n}` | `840` |
+| `deadMargin` | | side gap that fails, judged per board in place of the lint's 40; a number or `{width: n}` | lint's own |
+| `stripRatio` | | height-to-width ratio under which a full-width figure is listed as a strip | `0.28` |
+| `legendWords` | | `heavyBorder` / `dashed` → words a legend uses for that distinction | none |
+| `footLegend` | | `{marks}`: pattern of words that name a visual mark, for the key-line check | none |
+| `labelForm` | | `{allow: [...]}` strings that pass the predicate-ending check, or `false` to turn it off | `{}` |
+| `register` | | `{words, allow}`: the project's working-word pattern and passing strings, for the register check | none |
+| `sectionNumbers` | | `false` turns off the section-number check | `true` |
+| `contrastFloor` | | WCAG ratio every label clears on its own ground; `null` turns it off | `3.0` |
+| `references` | | `{manuscripts, caption, placements: [{glob, pattern, copies}]}` for the reference check | none |
+| `plans` | | `{manuscripts, blockStart, row, caption, name, pagePad, embed}` for `figplans.py`; `caption` has groups `caption`, `page`, `index` | none |
+
+A key left out turns its check off rather than guessing, and `verify.py` says
+`not configured` for it, so a quiet report is never mistaken for a pass of a
+check that did not run.

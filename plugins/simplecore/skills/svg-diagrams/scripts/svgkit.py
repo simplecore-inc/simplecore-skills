@@ -224,12 +224,13 @@ def _scale_path(d, ox, oy, k):
     return " ".join(out)
 
 
-# Glyphs a proportional face sets at about a third of an em — the space, the
-# middle dot that Korean copy uses as a list separator, and the thin
+# Glyphs a proportional face sets at about a third of an em - the space (and
+# the no-break space a generator glues a phrase with, which prints the same),
+# the middle dot that Korean copy uses as a list separator, and the thin
 # punctuation. Counting them at Latin width overstates a label by a tenth
 # and the box drawn around it by the same; the lint's proximity checks then
 # see labels touching that the reader sees apart.
-_NARROW = set(" \u00b7.,:;|'`!\u2019\u2018\u02c8")
+_NARROW = set(" \u00a0\u00b7.,:;|'`!\u2019\u2018\u02c8")
 _CAPS = set("ABCDEFGHJKLMNOPQRSTUVWXYZ")
 
 

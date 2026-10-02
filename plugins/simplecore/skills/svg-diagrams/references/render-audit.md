@@ -6,7 +6,11 @@ against a box edge are **invisible in the source** and only show up once the
 SVG is rasterized. Always rasterize and inspect before delivering an SVG.
 
 `scripts/audit.py` provides the three operations of the loop: `render` (full),
-`crop` (zoom into a region), and `lint` (static defect scan).
+`crop` (zoom into a region), and `lint` (static defect scan). Two more cover
+what a static scan of one SVG cannot see: `contrast` renders each figure with
+its text removed and measures every label against the ground painted under it,
+and `markers` reads a generator's Python source for connector calls that
+inherit the default arrowhead.
 
 ## The loop
 
@@ -16,6 +20,8 @@ generate SVG
   → audit.py render <svg> out.png    # full raster, Read it
   → audit.py hotspots <svg> crops/   # auto-crop EVERY arrow endpoint at high zoom, Read them
   → audit.py crop <svg> x y w h …    # zoom any remaining tight spot
+  → audit.py contrast <svg> [more…]  # every label clears 3:1 on its own ground
+  → audit.py markers <module.py> …   # every .line()/.path() call states marker=
   → fix generator
   → repeat until lint is clean AND the endpoint crops look right
 ```
@@ -121,6 +127,11 @@ details that the downscaled overview hides.
 | `EMPTY-STACK-GAP` | a hand's width of blank paper between two stacked boxes | over 96px between vertically stacked boxes with nothing in the band but a plain vertical drop; a heading crossing the band counts as content | close the gap, or put the routing and its labels there |
 | `PARALLEL-CONNECTORS` | two connectors read as one thick line | two arrowed runs on the same axis under 12px apart that overlap by more than 24px along it | offset one of them by 12px or more |
 | `COLLINEAR-CONNECTORS` | one trunk with branches where several connectors were drawn | two arrowed runs on one line (under 2.5px apart) that overlap by less than 24px or leave under 16px — two bend radii — between them, so their corners flow into each other | give each connector its own bend coordinate (`ortho(..., lane=)`); order the lanes so none crosses |
+| `COINCIDENT-LINES` | two lines print as one where two were drawn | two stroked runs of any kind and orientation (a divider, a rule, a connector) lie under 2.5px apart for 6px or more; a crow's-foot prong along its relationship line and two unheaded lines meeting end to end where routes merge are the notation and pass, and a pair `PARALLEL-CONNECTORS` already reports is left to it | move one line off, or draw the shared run once |
+| `SELF-DOUBLED` | a route runs back over itself | two segments of one path lie on top of each other - a check that compares different connectors never sees it | draw the route once, without the return leg |
+| `DROP-INTO-GAP` | a vertical arrow points at the paper between two cards | a headed vertical line's lower end lands within 72px above a row of two or more boxes and on none of them - the drop was drawn from a zone's centre onto an even row | land it on one box, or end it on a rail (or fork it into legs) that reaches each box |
+| `LOW-CONTRAST` (`audit.py contrast`) | a label disappears into the band under it | the most common colour inside the label's own box, on a render with every `<text>` removed, gives the label's fill a contrast ratio under 3:1 | take the band's own dark tone for the label, or move the label off the band |
+| `MARKER-DEFAULT` (`audit.py markers`) | a route grows an arrowhead on every corner while its source reads as correct | a `.line()` or `.path()` call in a generator states no `marker=` (a call forwarding `**kwargs` is not judged) | pass `marker=None` on every segment but the last, and the head's colour on the one that arrives |
 | `SEPARATOR-OFF-CENTRE` | a 「›」 between two boxes leans toward one of them | a separator glyph (`›` `→` `»` `▶` `▸` `‣`) whose centre is more than 1.5px from the midpoint of the gap between the box on its left and the box on its right | anchor the glyph on the gap's midpoint — `(x1 + x2) / 2` from the two boxes' edges, never a fixed offset from one of them |
 
 Decorative rects (a `stroke-dasharray` frame, or a low-`opacity` wash) are
@@ -186,7 +197,7 @@ bakes them in:
 - **Size every box from its content.** A fixed height is how a row ends up
   with a band of paper under its text and how the one card with three lines
   spills past its edge. Compute the height from the wrapped lines with even
-  padding — the scaffold's `card()`, `cards_row()`, `pill()`, `note()`,
+  padding - the document-figure library's `card()`, `cards_row()`, `pill()`, `note()`,
   `zone()` and `step_row()` do — and give a whole row the tallest content's
   height. The glyph model the lint uses is `0.78·size` above the baseline and
   `0.24·size` below.
