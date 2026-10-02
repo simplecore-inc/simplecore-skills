@@ -1,0 +1,291 @@
+---
+name: bid-proposal
+description: Runs a Korean bid from the issued tender to the submitted package without the user steering each step - tender transcription, score simulation, kickoff decisions asked once, manuscript and figures, wireframe and evidence annexes, persona and Korean review, the SlideGlance proposal deck chapter by chapter, the presentation deck, the quantitative volume, expected Q&A and the packaged deliverables - and keeps a ledger so any session, Claude Code or Codex, resumes where the last one stopped. It orders the work and makes the calls; the standards it applies live in proposal-writing, slide-decks, korean-docs, svg-diagrams, wireframe-boards and slideglance-pptx. Use when starting a bid, resuming one, asking where a bid stands, or running a whole-document pass. Triggers - 입찰 착수, 새 제안서, 제안서 작성 시작, 제안서 이어서, 제안서 진행, 현재 상태, 원고 작성, 덱 조판, 발표본 작성, 계량 제안서, 예상 질의응답, 제출물 패키지, 전체 검토, 전체 교정.
+---
+
+# Bid proposal
+
+## Purpose
+
+Take one bid from the issued tender to a submitted package, asking the user once at kickoff
+and showing each chapter only after it has passed its own checks.
+
+## When to use
+
+- A tender has been issued and the repository for it is empty or nearly so.
+- A session opens on a bid already under way: read the ledger and continue from its next step.
+  「현재 상태는?」 is answered from the ledger, never from memory.
+- A whole-document pass is wanted: Korean and terms, the evaluator panel, cross-document agreement.
+- The presentation deck, the quantitative volume, the expected Q&A or the submission package is next.
+
+Not for one sentence or one figure fixed on its own (load the standard skill for it directly),
+and not for work on the SlideGlance editor itself.
+
+## Inputs
+
+| Input | Where |
+| --- | --- |
+| Tender as issued: 제안요청서, 입찰공고문, 평가항목 및 배점표, 작성요령, forms | `rfp/` in the bid repository, originals untouched, the Markdown transcription beside them |
+| Company and staff facts: overview, credit rating, founding date, track record, staff careers, owned assets and tools, certificates, logo | `~/Workspace/simplecore-company/` (private repository; never the public skill repository). Who bids and who is staffed differs per bid and may be undecided until late |
+| Facts the user gives in chat | written into the ledger in the same turn |
+| Ledger | `.claude/proposal-ledger.md` in the bid repository |
+| Deck configuration: deck folders, kit, checks, figure scale | `.claude/slide-decks.json` in the bid repository |
+| Kit | `~/Workspace/slideglance/kits/simplecore-proposal-01`, bound in the deck's `slideglance.json` |
+| Term standard | `.claude/GLOSSARY.md` and `.claude/l10n.json` in the bid repository |
+| Earlier bids, read for method, tools, kit blocks and checks only | `~/Workspace/kdn-proxy-gw-proposal`, `~/Workspace/kepco-pde-safety`, `~/Workspace/printer-manager` |
+
+The ledger is English and holds, in this order: bid facts with the tender clause each came from;
+the kickoff answers; assumptions decided by recommendation; the open list (every 「(미정: …)」 in
+the documents); rules the user gave during the bid; and one row per step below with its status
+and the next action. It is a working file, so it carries state; the documents never do.
+
+Another bid's tender-specific content is never copied. A competitor's proposal is never a source.
+When `~/Workspace/simplecore-company/` does not exist yet, create its folders (overview, staff,
+assets, evidence, logo) empty, tell the user what to fill, and carry on with 「(미정: …)」.
+
+## Steps
+
+**Kickoff**
+
+1. Set up the bid folder: tender, manuscript, figures, deck, ledger, glossary. Copy the check
+   tools and the kit binding from the most recent bid.
+2. Copy the tender into Markdown word for word, one file per topic, plus one list holding only
+   the requirement numbers and names. Leave nothing out; describe every picture.
+3. Read out of the tender, with the clause for each: the scoring table, the page limit, the
+   presentation time and slide limit, the blind-evaluation rules, the writing instructions, the
+   forms, the file names and size limits for submission. Write them into the ledger.
+4. Work out the score: the technical and price weights, the price formula, and which evaluation
+   items decide the bid.
+5. Read the company folder and list what this bid needs that it does not hold.
+6. Draft the page plan: pages per chapter from the points and the amount of requirements, and
+   every requirement placed on a page.
+7. Draft the main claims, the strengths, and several candidate extra proposals.
+8. Ask the user once, in one message: the main claims and strengths, which extra proposals to
+   keep, the pages per chapter, and what from step 5 only they can supply. After this, do not
+   ask again until the end.
+
+**Manuscript**
+
+9. Make one file per page: page id, title, the requirement numbers and points it answers, and
+   where its content comes from.
+10. Write every page in full at about one and a half times its page share, with a plan for each
+    figure it needs and a source for each number.
+11. Draw the figures.
+12. When screens are asked for or scored, draw them as a wireframe board and attach it as an annex.
+13. Write the evidence annex: the tests done before the bid, their conditions, measured results
+    and limits.
+14. Cut the manuscript to about 1.1 times the page budget. Compare every cut with the text before
+    it, so nothing that answers a requirement is lost.
+15. Review the manuscript: Korean and terms, the evaluator panel, and sentences that claim a
+    result with no evidence. Fix and review again until the panel has no serious or moderate finding.
+
+**Deck**
+
+16. Set up the deck: cover, contents, part dividers, masters, running head.
+17. For each chapter: list the kit's blocks, choose a block for each piece of content, set the
+    pages, render every page, check it, fix it, and only then report the chapter. Chapters that
+    do not depend on each other are set at the same time.
+18. When the user points at a page, turn the remark into a rule, fix that page, and apply the rule
+    to every page already set and every page still to come.
+19. Whenever the deck changes, change the manuscript to match in the same step.
+20. Run every deck check over the whole deck, and make the manuscript, deck, annexes and figures agree.
+
+**Presentation, quantitative volume, Q&A**
+
+21. Build the presentation from the finished proposal deck, in the order of the scoring table,
+    with a script for every slide.
+22. Put the quantitative volume together: cover, contents, and the supplied PDF pages unchanged.
+23. Write the expected questions with short answers.
+
+**Submission**
+
+24. Fill what the ledger still lists as undecided, or show the user that list.
+25. Build the original and evaluation copies as PowerPoint and PDF with the names and folders the
+    tender asks for, under its size limits, and open each PowerPoint file to see that it opens
+    without a repair prompt.
+26. Commit and push.
+
+## Decisions
+
+**Asking and reporting**
+
+- If a decision concerns the main claims, the extra proposals or the pages per chapter, it goes
+  into the step 8 question. Every other decision is made by the recommendation, written into the
+  ledger as an assumption, and reported at the end.
+- If a fact about the bidder or the staff is not decided, write 「(미정: <what>)」 where it belongs,
+  add it to the open list, and keep writing. Never invent a name, a career or a number to fill it.
+- If the user asks a question mid-task, answer it and carry on with the work in the same turn.
+- If the user takes a design over (「내가 진행할께」, 「여기에서 멈춰」), stop touching it.
+- Open every step with one line naming what is being settled and what it is for; send short
+  progress notes while it runs; close a chapter or a pass with what was checked and what changed,
+  quoting the counts the checks printed.
+
+**Source and agreement**
+
+- If the deck changes, the manuscript changes in the same commit, and the deck's parity check
+  confirms the two agree.
+- If the presentation needs content, take it from the proposal deck, never from the manuscript.
+- If a fact appears in several places (proposal, presentation, annex, figure, wireframe screen,
+  script, Q&A), change every one together, and search each tree, figure generators and board
+  screen files included, for the old and the new wording.
+- If a scope item is dropped, remove every reference to it.
+- If a page or figure is cited, cite it by id and name (「Ⅳ-1 15 외부 장치 요청 처리」,
+  「그림 Ⅳ-2-1 …」); the presentation cites the proposal by chapter, never by page number.
+
+**Content**
+
+- The tender's terms come before ours. Requirement names are copied verbatim. 「원문」 alone is never
+  written; write 제안요청서 or 요구사항.
+- If a claim cannot be proven (track record, a certificate), leave it out; state the field of work only.
+- If the tender is blind-evaluated, the evaluation copy carries no company name, staff name, logo
+  or wording that identifies the bidder, and staff experience is given without full project names.
+- If something is mandatory or customary, it is not an extra proposal.
+- If a capability depends on a condition, write it as prepared and ready, never as a promise, and
+  drop columns that read as one (「본 사업 적용」).
+- If a past problem of the client (an audit) motivates a requirement, frame the work as carrying out
+  the client's own requirement, never as blame, and never cite press reports.
+- If something already built answers a requirement, show the real screen labelled 「제안사 구현
+  사례」 with the relevant area marked, rather than a description.
+- The page-head description (`sub`) and the part-divider lede are 합니다체 and state the proposer's
+  claim and what the client gains, never how the page is organised. Body and judgment cells are
+  -다체; titles, labels and captions are noun phrases. 합니다체 never spreads past those two places.
+- Copy never counts items, never sets a bare abbreviation list, and never contains an em dash.
+
+**Numbers and evidence**
+
+- The proposer's own test figures appear only in the annex, with their conditions and limits. The
+  body cites the annex by name; the page-head description and the presentation script carry no
+  such figure and say only that the test was done.
+- If a number has no source, cite one or remove it.
+- Figures from the tender and the client are used as given.
+
+**Figures**
+
+- If the claim is a structure, a flow, a sequence of steps, a relationship or a comparison, draw
+  it. If prose, a list or a table proves it more directly, do not. A figure that only re-lists
+  requirements is never drawn.
+- Before writing text onto a page, check whether a figure already says it.
+- Edit the generator, never the picture. No legend along the bottom; every arrow has a target;
+  labels are noun phrases.
+- Place every figure at the one scale `.claude/slide-decks.json` gives. A page that cannot hold
+  it is split or condensed, never given a smaller figure.
+- A figure the task did not name is never changed.
+
+**Deck**
+
+- Decks are edited only through the editor's tool server, never by writing the deck's files.
+  Find a node again after every edit, because node ids change between builds.
+- If no kit block fits, add one to the kit without asking, kept generic: no chapter names, no logo,
+  no fonts. Before each chapter, list the blocks not used so far and prefer them where they fit.
+  The same block on consecutive pages for different kinds of content is a defect.
+- Block choice: Jev gives the first pass and Claude confirms it; without Jev, Claude decides.
+- If a page has an empty bottom, bring in more of the manuscript, change the block, or merge with a
+  neighbour. Never stretch every page by default, never pad with filler.
+- If a page continues the previous topic, it keeps the title with 「(1/2)」 and 「(2/2)」; a different
+  topic takes its own title.
+- Caveats, notes and verification remarks go in the notice block, not in prose.
+- The running head matches the contents page, and a page has one title.
+- If the editor misbehaves (wrong orientation, a layout error that is the tool's own), fix the tool
+  or report it before going on; never work round it with embedded images or absolute paths.
+- The editor app is never restarted unless the user asks.
+
+**Copy passes**
+
+- Allowed: lengthening where meaning was lost, as long as nothing overflows; enlarging boxes and
+  margins; changing figure text in the generator; changing a figure's shape when the new wording no
+  longer fits it, reporting each such figure.
+- Not allowed: swapping blocks, reordering or merging pages, redesigning a figure whose wording fits.
+- Figure text and wireframe screen copy are always in scope.
+- Read the whole page with its figures before changing a sentence; judge by meaning, not by pattern.
+- If an awkward word is replaced, search every tree for it and its family in the same pass.
+
+**Review**
+
+- Panel: three client evaluators, two external evaluators, a typesetting expert and a requirements
+  engineer; the presentation adds a speech coach and an announcer. One agent per persona, in parallel.
+- Findings go to a file, graded 상·중·하. Fix every 상 and 중, apply the 하 once, and review again.
+  Stop when no 상 or 중 is left; delete the round files once applied.
+- If the same finding returns in two rounds, write a check that finds it and fix everything it finds.
+- Before reporting a pass complete, run the check that proves it covered everything (every page
+  id, every figure, every board screen) and quote its count.
+
+**Running long**
+
+- Update the ledger at every step: status, next action, open list, assumptions, the user's rules.
+- Chapters that do not depend on each other go to separate agents, one fresh agent per chapter.
+  Without subagents (Codex), run them one after another in the same order.
+- A rule the user gives is written into the skill that owns its subject or the bid repository's
+  instruction file in the same change.
+
+**Which standard to load**
+
+| Work | Skill |
+| --- | --- |
+| Tender transcription, claims, enumerations, evaluator review | `proposal-writing` |
+| Korean copy and terms | `korean-docs` in Claude Code; in Codex, the Korean standard Codex has installed, never Claude Code's audit hook |
+| Figures | `svg-diagrams` |
+| Screens | `wireframe-boards` |
+| Deck typesetting | `slide-decks`, plus the bid repository's own typesetting skill when it has one |
+| The editor and its server | `slideglance-pptx` and the server's `sg://guide` |
+| Many judgments by meaning (claims without evidence, block choice, figure text) | Jev first pass, each flagged item confirmed by reading it |
+
+## Definition of done
+
+A chapter is done when:
+
+- every page has been rendered and looked at: no overflow, no layout error mark, no empty bottom,
+  no block repeated on consecutive pages for different content, figures at the configured scale;
+- every check under `checks` in `.claude/slide-decks.json` passes;
+- the manuscript matches the deck.
+
+The bid is done when, in addition:
+
+- every scoring item and every requirement number is on a page of the proposal, and every scoring
+  item is on a slide of the presentation, shown by a check's count;
+- the figure checks pass, and all three Korean audit commands report zero;
+- the panel's last round has no 상 or 중;
+- schedules, figures, requirement numbers and page citations agree across proposal, presentation,
+  annexes, figures, script and Q&A;
+- no own-test figure appears outside the annex, and every number has a source;
+- the evaluation copy meets the blind-evaluation rules;
+- the open list is empty, or the user has seen what remains on it;
+- the package has the tender's names and folders, stays under its size limits, exports to PDF, and
+  every PowerPoint file opens without a repair prompt;
+- everything is committed and pushed.
+
+## Exceptions
+
+Each of these happened in an earlier bid; the rule after the arrow keeps it from happening again.
+
+- The deck's `.xml` was edited as if it were PowerPoint → it is the editor's source and is changed
+  only through the tool server.
+- A summary was written where the manuscript was asked for, and a plan where pages were asked for
+  → write the full pages.
+- A whole-document pass stopped at chapter 6 and was reported done → the coverage check above.
+- 합니다체 was applied to every sentence and a whole session went to undoing it → it belongs to the
+  page-head description and the divider lede only.
+- Compression lost content, and the gap was then padded with forced filler (「100%, 2-2-1 같은
+  내용이 억지스러움」) → compare with the earlier text; never pad.
+- The wrong pages were merged → name the pages by id and title before merging.
+- Figures and the annex were changed without being asked and had to be restored from git → a
+  figure the task did not name is never changed.
+- Stretch was made the default and many pages looked wrong → only where it reads well.
+- An abbreviation line was set under a figure, and a divider kicker said 「요구사항 73건, 네 개 장」
+  → neither is ever set.
+- A description said how the page was written instead of the claim
+  (「작성방식을 쓰는것이 아니라, 제안사의 주장을 쓰는것이다」).
+- The running head differed from the contents page, a page carried two titles, and the second band's
+  type shrank on some pages → fixed in the kit and master, checked on every page.
+- The deck rendered landscape and work went on → a tool defect stops the deck work until fixed.
+- Absolute paths and embedded images broke the preview; a PowerPoint repair prompt survived three
+  attempts → find the cause in the tool and fix it there.
+- Features nobody asked for were drawn into the screens (「결재 알림 보내기」), and the user's own
+  draft requirement was treated as the client's → only what the tender or the user asked for.
+- Checks passed over defects because each read only part of the deck (one skipped the summary
+  folder, one read chapter files only, one read the manuscript only) → every check names the trees
+  it reads and is proven on a known defect before it is trusted.
+- A table titled 「요구사항 61건」 had 62 rows → counts are computed, never typed.
+- A different diagram was placed than the one asked for → cite figures by number and title.
+- Persona round files piled up across rounds → delete each round once applied.
+- Figures ended up in two folders → one generator, one output folder.
+- Codex used Claude Code's Korean audit skill → use the standard that tool has installed.
