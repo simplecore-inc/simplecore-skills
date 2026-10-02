@@ -107,6 +107,10 @@ class Vocabulary:
     def args(self, cls: str) -> set[str]:
         return set(self.data.get("args", {}).get(cls, []))
 
+    def kinds(self, group: str) -> set[str]:
+        """The contract kinds (`<Template kind=...>`) the kit counts in `group`."""
+        return set(self.data.get("kinds", {}).get(group, []))
+
     def values(self, cls: str, template: str, attrs: dict) -> Iterator[tuple[str, str]]:
         """(slot, printed value) for every slot of class `cls` a `<Use>` fills."""
         for spec in self.data.get("slots", {}).get(cls, {}).get(template, []):
@@ -127,6 +131,21 @@ class Vocabulary:
                 continue
             if spec in attrs:
                 yield spec, attrs[spec]
+
+
+def role(deck: DeckConfig, vocab: Vocabulary | None, check: str, name: str) -> tuple:
+    """(value, where it came from) for a component role a check needs.
+
+    The deck's `checks.<check>.<name>` wins over the kit vocabulary's
+    `roles.<name>`; `(None, None)` when neither declares it, which the check
+    reports as a rule it did not judge rather than passing it.
+    """
+    key = f"checks.{check}.{name}"
+    if deck.has(key):
+        return deck.get(key), key
+    if vocab is not None and name in vocab.data.get("roles", {}):
+        return vocab.data["roles"][name], f"vocabulary {vocab.origin} roles.{name}"
+    return None, None
 
 
 def _json_list(value: str | None) -> list:

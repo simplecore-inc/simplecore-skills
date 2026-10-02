@@ -87,5 +87,88 @@
     // Plain arguments holding a head or a label.
     "heads": ["head", "label", "aLabel", "bLabel", "headA", "headB", "headC",
               "statLabel", "labelA", "labelB", "labelC"]
-  }
+  },
+
+  // Sentence slots, in reading order: the arguments and item fields that carry a
+  // sentence of the page's own, which closes on a predicate and takes a full stop
+  // (checks period and dangle). Plain arguments listed together are one claim split
+  // over rows, so only the last one present has to finish it; every item of a JSON
+  // list is a row of its own. Names (heads, labels, terms) are never listed here.
+  "sentences": {
+    "page": ["sub"],
+    "prose": ["text"], "lead": ["text"], "term-para": ["text"], "text-note": ["text"],
+    "note": ["text"], "notice": ["text"], "callout": ["text"], "quote": ["text"],
+    "list": ["items[].text", "items[].sub"], "list-row": ["text", "sub"],
+    "checklist": ["items[].text"], "keyrow": ["value"], "deflist": ["items[].definition"],
+    "steps": ["items[].body"], "step-row": ["body"], "delta-row": ["body"],
+    "ledger-row": ["demand", "answer"], "branch-detail": ["sub"], "paired-note": ["aText", "bText"],
+    "event-detail": ["body"],
+    "card": ["body"], "pair-card": ["aText", "bText"], "choice-card": ["aText", "bText", "tail"],
+    "trio-card": ["aText", "bText", "cText"], "card-split": ["leftText", "rightText"],
+    "axis-card": ["aText", "bText"], "trigger-card": ["aText", "bText"],
+    "decision-card": ["body", "tail"], "proof-strip": ["body", "tail"], "proof-line": ["body", "tail"],
+    "item": ["body"], "copy-rail": ["sub"], "stage": ["body"], "panel-row": ["mid", "end"],
+    "transform-lane": ["inNote", "opNote", "outNote"], "fact-band": ["statNote", "noteA", "noteB", "noteC"],
+    "lane": ["body", "foot"], "icon-band": ["body"], "anchor-row": ["sub"], "marker-band": ["sub"],
+    "key-summary": ["items[].body"], "value-chain": ["items[].b", "items[].c"],
+    "risk-response": ["items[].detail", "items[].response"], "trace-matrix": ["items[].how"],
+    "level-ladder": ["items[].criterion", "items[].action"], "quadrant": ["cells[].body"],
+    "timeline": ["items[].body"], "flow": ["steps[].note"], "num-step": ["note"], "flow-step": ["note"],
+    "fig-column": ["notes[].body"], "evidence-stat": ["condition"], "kpi": ["note"]
+  },
+
+  // How the checks group components by the kind each declares on its <Template>
+  // (read from the server, so a component the kit adds is grouped without a list).
+  "kinds": {
+    // A shaped block: what carries a page other than paragraphs and a plain list.
+    "shape": ["card", "chart", "figure", "flow", "kpi", "steps", "table", "list-row", "box", "note"],
+    // Content components: the blocks a page is composed of, counted by the census and
+    // by the one-component-carries-the-page rule. Figures and tables are not among them.
+    "content": ["card", "flow", "kpi", "steps", "list-row", "box", "note", "chip"],
+    // Kinds that are never vocabulary a page reaches for.
+    "held": ["internal"]
+  },
+
+  // Component roles a check needs, by name. A deck overrides one with
+  // `checks.<check>.<role>` in its declaration.
+  "roles": {
+    // Plain list rows and the container that sets their gap; a row outside it takes the
+    // gap of whatever slot it lands in. `listItems` is the container's own item list.
+    "listRows": ["list-row"],
+    "listContainers": ["list"],
+    "listItems": "items",
+    // The argument a list row or a list item carries a supplied mark in.
+    "markArg": "mark",
+    // Label and value rows, with the argument holding the label; the label column is
+    // fixed for alignment, so an index does not belong in it.
+    "labelRows": { "keyrow": "label" },
+    // Components that are shapes for the composition rules even where their kind is not,
+    // and components whose kind is a shape kind but which are only frames or furniture.
+    "notShapes": ["list-row", "frame", "canvas", "fill", "rule", "panel", "block", "toc-annex",
+                  "toc-head", "toc-part", "toc-row", "toc-annex-row"],
+    // Figures, and the layouts that place one beside the text. A side layout maps to the
+    // side its figure stands on, or to `arg:<name>` when an argument chooses it.
+    "figures": ["figure", "screenshot"],
+    "figureSide": { "fig-left": "left", "fig-right": "right", "fig-column": "arg:side" },
+    "figurePair": ["fig-pair"],
+    "rails": ["rail"],
+    "columnLayouts": ["cols2", "cols3", "span-cols"],
+    // Components that number a sequence, with the argument holding the number.
+    "numbered": { "step-row": "no", "num-step": "no", "stage-cell": "no", "stage-detail": "no",
+                  "panel-row": "no", "marker-band": "no" },
+    // Components that repeat by design because their content is a sequence or a register;
+    // the one-component rule still reports them, with that named.
+    "sequences": ["step-row", "num-step", "stage-detail", "stage-cell", "ledger-row", "steps", "timeline"],
+    // Region heads that can carry the requirement ids their region answers, with the
+    // argument they carry them in, and standalone badges with theirs.
+    "regionIds": { "section": "code", "section-bar": "code", "heading": "code", "block": "code" },
+    "badgeIds": { "req-chips": "items[].ids", "chip": "text" },
+    // Code values standing as labels (a requirement id on a chip), held to the code-label
+    // floor rather than the type floor when the deck declares one.
+    "codeLabels": ["chip", "badge", "req-chips"]
+  },
+
+  // The inks fine print is set in: lead, caption, footnote (doc.inkMuted). The body ink
+  // (doc.inkBody) is not one.
+  "palette": { "fine": ["646B77"] }
 }

@@ -44,6 +44,35 @@ class DeckError(ValueError):
 
 
 @dataclass
+class Use:
+    """One component drawn on a slide, as the printed model nests it."""
+    tag: str                       # the template's name
+    attrs: dict                    # its arguments as the model holds them
+    key: str                       # the model's node key
+    depth: int                     # 0 for a block standing on the page, +1 per enclosing use
+    parent: str | None = None      # the tag of the enclosing use, None on the page
+
+
+@dataclass
+class Span:
+    """One printed string and where it came from."""
+    text: str
+    component: str | None          # the nearest enclosing use's tag
+    origin: str                    # the model's origin without its arrow: `arg:title`,
+                                   # `row[0].entry.definition`, `mixed`, `template:...`
+    key: str = ""
+
+    @property
+    def field(self) -> str:
+        """The argument or item field the string was drawn from (`title`, `definition`)."""
+        if self.origin.startswith("arg:"):
+            return self.origin[4:]
+        if self.origin.startswith("row["):
+            return self.origin.rsplit(".", 1)[-1]
+        return ""
+
+
+@dataclass
 class Page:
     n: int                         # slide number in the built deck
     master: str
@@ -51,6 +80,8 @@ class Page:
     texts: list                    # printed strings in reading order (master chrome excluded)
     rows: list = field(default_factory=list)   # [(table key, [cells])] per table row
     notes: str = ""
+    uses: list = field(default_factory=list)   # [Use] in reading order, running head excluded
+    spans: list = field(default_factory=list)  # [Span], one per printed string of `texts`
     folio: int | None = None       # body folio, None for folioless and annex pages
     page_id: str | None = None     # computed from `pages.id` for a body page
     part: str | None = None        # the part numeral of a body page
@@ -119,6 +150,10 @@ USE = re.compile(r'<Use\s+template="([\w-]+)"((?:"[^"]*"|\'[^\']*\'|[^>"\'])*?)/
 ATTR = re.compile(r'(\w+)=(?:"([^"]*)"|\'([^\']*)\')')
 ANY_ATTR = re.compile(r'(?<![\w-])([\w.-]+)=(?:"([^"]*)"|\'([^\']*)\')')
 COMMENT = re.compile(r"<!--.*?-->", re.S)
+TEMPLATE = re.compile(r'<Template\b((?:"[^"]*"|[^>"])*)>', re.S)
+TEMPLATE_ATTR = re.compile(r'([\w.-]+)="([^"]*)"')
+# A slide line of `sg://deck`: `6  master=BODY-1  ...  use:pages/11-overview.xml#1 › ...`
+SLIDE_LINE = re.compile(r"^\s*(\d+)\s+master=\S+.*?\buse:([^\s#›]+)#")
 
 
 def uses(raw: str) -> Iterator[tuple[str, dict, int]]:
@@ -174,6 +209,9 @@ class DeckReader:
         self._pages: PagesConfig | None = None
         self._files: list | None = None
         self._slides: list | None = None
+        self._markup: dict | None = None
+        self._templates: dict | None = None
+        self._sources: dict | None = None
 
     def close(self) -> None:
         self.session.close()
@@ -203,6 +241,41 @@ class DeckReader:
                 raise DeckError(f"{entry} imports files the server does not hold: {', '.join(missing)}")
             self._files = [(p.rsplit("/", 1)[-1], sources[p]) for p in order]
         return self._files
+
+    def markup(self) -> dict[str, str]:
+        """Every source the server holds for the deck, the kit's included: {path: text}."""
+        if self._markup is None:
+            self._markup = split_markup(self.session.read("sg://deck/markup"))
+        return self._markup
+
+    def templates(self) -> dict[str, dict]:
+        """{name: declaration attributes} for every `<Template>` the deck can use.
+
+        The kit's components and the deck's own both declare themselves on the
+        opening tag (`kind`, `form`, `doc`, `use`, `tags`), so a check groups
+        components by what they declare rather than by a list of names.
+        """
+        if self._templates is None:
+            out: dict[str, dict] = {}
+            for path, text in self.markup().items():
+                for m in TEMPLATE.finditer(strip_comments(text)):
+                    attrs = {a: unescape(b) for a, b in TEMPLATE_ATTR.findall(m.group(1))}
+                    if attrs.get("name"):
+                        attrs["file"] = path
+                        out.setdefault(attrs["name"], attrs)
+            self._templates = out
+        return self._templates
+
+    def slide_sources(self) -> dict[int, str]:
+        """{slide number: the source file whose page component drew it} from `sg://deck`."""
+        if self._sources is None:
+            out: dict[int, str] = {}
+            for line in self.session.read("sg://deck").splitlines():
+                m = SLIDE_LINE.match(line)
+                if m:
+                    out[int(m.group(1))] = m.group(2).rsplit("/", 1)[-1]
+            self._sources = out
+        return self._sources
 
     def slides(self) -> list[Page]:
         """Every slide as printed, with folio and page id where it has one."""
@@ -291,23 +364,44 @@ class DeckReader:
             yield label, index, rows
 
 
-def _walk(node: dict, slide: Page, head_component: str) -> None:
+def _walk(node: dict, slide: Page, head_component: str, use: str | None = None,
+          depth: int = 0) -> None:
+    """Collect one slide's head, rows, strings and component uses.
+
+    `use` is the tag of the nearest enclosing component and `depth` the number
+    of components enclosing this node, the running head not counted.
+    """
     role = node.get("role")
     if role == "master":
         return                       # the master's chrome is the same on every page
     if role == "notes":
         slide.notes = node.get("text", "")
         return
-    if role == "use" and node.get("tag") == head_component and not slide.head:
-        slide.head = node.get("attrs", {}) or {}
+    if role == "use":
+        tag = node.get("tag", "")
+        attrs = node.get("attrs", {}) or {}
+        if tag == head_component:
+            if not slide.head:
+                slide.head = attrs
+            for child in node.get("children", []):
+                _walk(child, slide, head_component, tag, depth)
+            return
+        slide.uses.append(Use(tag, attrs, node.get("key", ""), depth, use))
+        for child in node.get("children", []):
+            _walk(child, slide, head_component, tag, depth + 1)
+        return
     if role == "row":
         cells = [c.strip() for c in node.get("aux", "").strip().strip("|").split(" | ")]
-        slide.rows.append((node.get("key", "").split("/row:")[0], cells))
+        table = node.get("key", "").split("/row:")[0]
+        slide.rows.append((table, cells))
         slide.texts.extend(cells)
+        slide.spans.extend(Span(c, use, "cell", table) for c in cells)
     elif role in ("text", "title"):
         runs = node.get("runs")
         text = "".join(r.get("text", "") for r in runs) if runs else node.get("text", "")
         if text.strip():
             slide.texts.append(text)
+            origin = str(node.get("origin", "")).lstrip("←").strip()
+            slide.spans.append(Span(text, use, origin, node.get("key", "")))
     for child in node.get("children", []):
-        _walk(child, slide, head_component)
+        _walk(child, slide, head_component, use, depth)
