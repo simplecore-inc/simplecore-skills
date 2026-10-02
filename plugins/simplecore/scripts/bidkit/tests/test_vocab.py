@@ -4,7 +4,7 @@ import unittest
 from pathlib import Path
 
 from bidkit.config import ConfigError
-from bidkit.vocab import KITS_DIR, Vocabulary
+from bidkit.vocab import KITS_DIR, Vocabulary, json_items, read_slots
 
 from .support import project
 
@@ -35,6 +35,13 @@ class VocabularyTests(unittest.TestCase):
         self.assertEqual(list(v.values("name", "stat-grid", {"items": "not json"})), [])
         self.assertIn("text", v.args("prose"))
         self.assertEqual(v.pages()["head"]["component"], "sg-master-head")
+
+    def test_any_slot_table_reads_like_slots(self):
+        items = json.dumps([{"term": "가", "definition": "뜻이다."}], ensure_ascii=False)
+        self.assertEqual(list(read_slots(["items[].definition", "missing"], {"items": items})),
+                         [("items.definition", "뜻이다.")])
+        self.assertEqual(json_items(items), [{"term": "가", "definition": "뜻이다."}])
+        self.assertEqual(json_items('{"a": 1}'), [])
 
     def test_project_override_replaces_a_component(self):
         (self.root / "vocab.json").write_text(json.dumps(

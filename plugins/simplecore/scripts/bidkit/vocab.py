@@ -113,24 +113,38 @@ class Vocabulary:
 
     def values(self, cls: str, template: str, attrs: dict) -> Iterator[tuple[str, str]]:
         """(slot, printed value) for every slot of class `cls` a `<Use>` fills."""
-        for spec in self.data.get("slots", {}).get(cls, {}).get(template, []):
-            m = _ITEM.match(spec)
-            if m:
-                arg, key = m.groups()
-                for item in _json_list(attrs.get(arg)):
-                    if isinstance(item, dict) and isinstance(item.get(key), str):
-                        yield f"{arg}.{key}", item[key]
-                continue
-            m = _ROW0.match(spec)
-            if m:
-                rows = _json_list(attrs.get(m.group(1)))
-                if rows and isinstance(rows[0], list):
-                    for cell in rows[0]:
-                        if isinstance(cell, str):
-                            yield f"{m.group(1)}[0]", cell
-                continue
-            if spec in attrs:
-                yield spec, attrs[spec]
+        return read_slots(self.data.get("slots", {}).get(cls, {}).get(template, []), attrs)
+
+
+def read_slots(specs: list, attrs: dict) -> Iterator[tuple[str, str]]:
+    """(slot, value) for every slot spec (`arg`, `arg[].key`, `arg[0][]`) an argument set fills.
+
+    The same reading serves `slots` and any other table of slot specs the
+    vocabulary carries (`sentences`, `marks`).
+    """
+    for spec in specs:
+        m = _ITEM.match(spec)
+        if m:
+            arg, key = m.groups()
+            for item in _json_list(attrs.get(arg)):
+                if isinstance(item, dict) and isinstance(item.get(key), str):
+                    yield f"{arg}.{key}", item[key]
+            continue
+        m = _ROW0.match(spec)
+        if m:
+            rows = _json_list(attrs.get(m.group(1)))
+            if rows and isinstance(rows[0], list):
+                for cell in rows[0]:
+                    if isinstance(cell, str):
+                        yield f"{m.group(1)}[0]", cell
+            continue
+        if spec in attrs:
+            yield spec, attrs[spec]
+
+
+def json_items(value: str | None) -> list:
+    """The items of an argument holding a JSON list, [] when it holds anything else."""
+    return _json_list(value)
 
 
 def role(deck: DeckConfig, vocab: Vocabulary | None, check: str, name: str) -> tuple:
