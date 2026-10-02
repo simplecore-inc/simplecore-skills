@@ -380,6 +380,32 @@ the user's limit in the run's basis and report completion of the requested round
 not claim the default consecutive-round completion criterion was met. Keep missing
 evidence and unresolved decisions visible in the result.
 
+## The checks this skill ships
+
+`scripts/` holds the checks of what the document says, beside the deck checks of
+`simplecore:slide-decks`:
+
+- `reqid`: every cited requirement id, ranges included, is one the digest issues.
+- `rfpwords`: every noun a requirement's tender wording names is written somewhere.
+- `rfpcite`: a cited tender chapter or section exists, under the name cited.
+- `annexref`: every annex reference names an item its definition carries.
+- `sharedvalues`: a fact several pages share is printed on the pages its row assigns, and only there.
+- `evaluation`: every scored item has a lookup row, every row answers something scored, and the
+  pages each row cites print what it says.
+- `mdtwice`: the same explanation written in two manuscript files.
+- `volume` and `budget`: a printed page over its capacity estimate, a part over its planned pages,
+  and the numbered pages against the tender's ceiling.
+- `claims`: the Jev triage of manuscript lines that read as a measured result with no evidence
+  beside them. It never gates; its flags are read against their source.
+
+Each is run through the slide-decks runner by name, from anywhere inside the project
+(`python3 <skills>/slide-decks/scripts/check.py run reqid evaluation`), or declared in a
+phase of `checks.preflight` or `checks.after`; a script can also be run directly. Every one
+reads its keys from the project's `.claude/slide-decks.json` and exits 2 naming a key it
+needs and does not find. What each reads and when it fails is in the slide-decks
+[checks](../slide-decks/references/checks.md#the-shared-checks-and-the-runner); the keys and
+their defaults are in its [config](../slide-decks/references/config.md).
+
 ## Before the copy is done
 
 1. Every scored item and every requirement appears where it is answered, in the panel's

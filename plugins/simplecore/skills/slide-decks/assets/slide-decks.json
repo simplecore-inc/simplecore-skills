@@ -15,46 +15,69 @@
       "pages": { "numerals": ["Ⅰ", "Ⅱ", "Ⅲ", "Ⅳ", "Ⅴ", "Ⅵ", "Ⅶ", "Ⅷ"], "id": "{part}-{chapter} {ordinal:02}" },
       // the sizes this deck is set at, in points; codeLabel null where that class is not measured
       "type": { "floor": 8, "codeLabel": null },
+      // the register's closing syllable and stop, read by the sentence checks
+      "lang": { "sentenceEnd": "다." },
       // what the tender calls the annex, so the deck writes its word
       "annex": { "term": "별첨" },
       "page": { "w": 794, "h": 1123, "textBlock": 682 },
       // the manuscript and its conventions: printed part, page heading, declaration, caption
       "manuscript": { "dir": "proposal", "printed": "## 인쇄 원고", "page": "### ",
                       "declaration": "<!--\\s*md:", "caption": "^캡션: ",
-                      "exclude": ["README.md"], "annex": ["10-별첨/**"] },
+                      "exclude": ["README.md", "00-서식/**"], "annex": ["10-별첨/**"],
+                      "skipLines": ["^\\*\\*대응 요구사항[::]"] },
       // the requirement digest whose headings issue the ids, and the id shape
       "requirements": { "source": "docs/requirements.md",
                         "id": { "prefix": "[A-Z]{3}[-_]", "digits": 3 },
                         "notAnId": [],
-                        "absence": "제안요청서에 (?:없다|없음|없습니다)" },
+                        "absence": "제안요청서에 (?:없다|없음|없습니다)",
+                        "manuscriptLine": "^>\\s*대응 요구사항[::]\\s*(.*)$" },
+      // the transcribed tender the citations are read against
+      "rfp": { "dir": "docs/rfp/md" },
       // the evidence notation; null when the deck cites no evidence items
       "evidence": { "tag": "증빙", "table": "proposal/00-서식/07-평가항목-조견표.md", "pagesColumn": -1 },
-      // the numbered-page ceiling and the tender clause it comes from
-      "budget": { "maxNumbered": 100, "clause": "제안요청서 「나. 서류 제출방법 3)」", "plan": "docs/page-plan.md" },
+      // the numbered-page ceiling, the tender clause it comes from, and the capacity
+      // estimate the volume check reads
+      "budget": { "maxNumbered": 100, "clause": "제안요청서 「나. 서류 제출방법 3)」", "plan": "docs/page-plan.md",
+                  "charsPerPage": { "figure": 650, "text": 1150 }, "pageTolerance": 1.1 },
+      // the tender's scoring table and the proposal's lookup table as the deck prints it
+      "evaluation": { "scoring": { "file": "docs/rfp/md/05-평가.md", "section": "## 평가 항목",
+                                   "columns": { "item": "평가항목", "element": "평가요소" } },
+                      "lookup": { "deck": true, "columns": { "item": "평가항목", "pages": "관련 페이지" } } },
+      // the Jev gateway the claims triage asks; the key is read from the environment
+      "jev": { "claims": { "evidence": "별첨|증빙|실측|시험환경" } },
       "instructions": ["pptx/AGENTS.md", "pptx/README.md"],
       "render": "cd pptx && npm run render",
       "output": "pptx/out/제안서.pptx",
       "previews": "pptx/out/png",
+      "renderer": { "command": "slideglance", "minVersion": "0.2.0" },
       "deliverable": { "label": "비계량", "pdfScale": 1.0 },
       "figures": {
         "sources": ["proposal/diagrams"],
         "generator": "tools/diagrams",
         "verify": "tools/diagrams/verify",
         // board width in drawing units -> placed width in page px
-        "boards": { "1200": 682, "520": 300, "520-pair": 327 }
+        "boards": { "1200": 682, "520": 300, "520-pair": 327 },
+        // the printed figure number: the body series and an annex's own series
+        "numbering": { "caption": "그림 {part}-{n}", "annex": "그림 별첨{a}-{n}" }
       },
       // Check names, run by skills/slide-decks/scripts/check.py: a name resolves to
-      // <local>/<name>.py first, then to the shared check of that name.
+      // <local>/<name>.py first, then to the shared check of that name. The delivery
+      // is run on demand (check.py run deliver), never declared in a phase.
       "checks": {
-        "preflight": ["evaluation", "contents", "chapter_pages", "typefloor"],
-        "after": ["rowheight", "rhythm", "fignum", "figures", "parity", "echo", "twice", "naming",
-                  "bleed", "secref", "reqid", "reqbadge", "proof", "samefact", "samecol", "coltotal",
-                  "dangle", "figtext", "lookup", "rfpwords"],
+        "preflight": ["abspath", "typefloor", "contents", "chapter_pages", "evaluation"],
+        "after": ["renderer", "layout", "rowheight", "finetype", "pageshape", "rhythm", "grade",
+                  "listrow", "period", "dangle", "naming", "markecho", "echo", "twice", "samefact",
+                  "figures", "figtext", "parity", "carry", "mdorder", "fignum", "secref", "reqid",
+                  "reqbadge", "rfpwords", "rfpcite", "proof", "coltotal", "samecol", "budget",
+                  "volume", "mdtwice"],
         "local": "tools/deck",
         // one <check>.json per check: {finding: reason}
         "baselines": "tools/deck/baselines",
         // a local script that is not a check, and why
-        "excluded": { "deckio": "the reader the local checks import" }
+        "excluded": { "deckio": "the reader the local checks import" },
+        // options a deck sets away from the shared defaults
+        "twice": { "sentences": true, "minLen": 28 },
+        "abspath": { "generated": ["pptx/out/**"] }
       },
       "korean": {
         "audit": ["pptx/chapters", "pptx/templates", "pptx/styles", "pptx/README.md"]
@@ -90,8 +113,10 @@
         "scale": 0.5666,
         "boards": { "1800": 1020, "1200": 680, "880": 499, "520": 295 }
       },
+      // refpages, coverage, census, density, verdict and colfill are this deck's own
+      // checks under checks.local; no shared check holds those properties
       "checks": {
-        "preflight": ["typefloor", "refpages", "coverage"],
+        "preflight": ["abspath", "typefloor", "refpages", "coverage"],
         "after": ["rowheight", "census", "density", "verdict", "colfill"],
         "local": "pptx-presentation/tools",
         "baselines": "pptx-presentation/tools/baselines",
@@ -143,9 +168,11 @@
     "dir": "제출물",
     "title": "<사업명>_제안서",
     "date": "2026년 9월 15일",
-    "deliver": "tools/deck/deliver",
     "pdfLimitMB": { "file": 50, "total": 180 },
     "pdf": { "engine": "slideglance", "imageDpi": 150, "jpegQuality": 88 },
+    // the blind copy is built last; with two copies, one render command per copy
+    "blindCopy": "평가본",
+    "build": "{render} --copy {copy}",
     "copies": {
       "원본":   { "volumes": ["proposal", "presentation"] },
       "평가본": { "volumes": ["proposal", "presentation"] }

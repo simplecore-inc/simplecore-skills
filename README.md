@@ -14,11 +14,11 @@ General-purpose skills that apply to any repository.
 | Skill | Description |
 | ----- | ----------- |
 | `simplecore:korean-docs` | Korean output standards for all deliverables - writing, translation, proofreading, and glossary (GLOSSARY.md) management. Ships a base glossary, a style reference catalog, and an automated glossary audit script. |
-| `simplecore:svg-diagrams` | Create diagrams as SVG or ASCII - flowcharts, sequence/state/class/ER diagrams, system architecture, pipelines, and network layouts. Includes JSON-spec auto-layout, Mermaid conversion, and a render audit script that catches missing arrowheads, text overflow, and clipped content. |
+| `simplecore:svg-diagrams` | Create diagrams as SVG or ASCII - flowcharts, sequence/state/class/ER diagrams, system architecture, pipelines, and network layouts. Includes JSON-spec auto-layout, Mermaid conversion, a render audit script that catches missing arrowheads, text overflow, and clipped content, and the shared document-figure library (`scripts/docfigures/`) a project's figure modules import to build and verify every figure of a document. |
 | `simplecore:wireframe-boards` | Author low-fidelity wireframes as a single self-contained HTML board - fixed-viewport phone and tablet frames, fluid-height desktop frames with a fold marker, a CSS-only narrow ⇄ wide viewport toggle, greybox primitives, flow connectors, and annotation callouts. Frames wrap into a vertical grid rather than scrolling sideways, and each carries a permanent id plus its current board position. Ships a board template, a build kit for larger boards, and an implementation contract that travels with every board so readers build from the structure instead of copying the greyboxes as a design. |
 | `simplecore:board-parity-walk` | Walk a board's frames against the running app, section by section, across many sessions. Applies only where a board already exists. Carries what a walk that long needs to survive itself: one cluster per subagent with a fresh agent after each, facts shared in one handover file while narrative stays per-agent, judgment lenses so parity is the floor rather than the verdict, a decision nobody can settle parked instead of stopping the walk, and a list that holds only what is left. Ships the walker agent, the two document templates, and the config that turns the write-time checks on. |
-| `simplecore:proposal-writing` | The content standard for a Korean bid proposal, its presentation summary and the technical documents around them - what a page must claim, how a requirement is answered in the panel's own words, controlled language for every reader-facing string, enumerations as lists, self-contained references and annex naming, honest reporting of tests and evidence, and the evaluator-persona review that judges the result. |
-| `simplecore:slide-decks` | The typesetting standard for a deck compiled by slideglance from `.sgx` sources - a portrait document volume and a landscape presentation summary. Carries the design contract, the page and slide rhythm, templates and the component catalogue, the running head, page fill and budget, figure boards and placement, the builder's behaviours and the checks, and edits every deck through the SlideGlance MCP rather than as files. Reads every path, board and check from the project's own `.claude/slide-decks.json`. |
+| `simplecore:proposal-writing` | The content standard for a Korean bid proposal, its presentation summary and the technical documents around them - what a page must claim, how a requirement is answered in the panel's own words, controlled language for every reader-facing string, enumerations as lists, self-contained references and annex naming, honest reporting of tests and evidence, and the evaluator-persona review that judges the result. Ships the content checks in `scripts/` (requirement ids, tender citations, annex references, scoring coverage, shared facts, page volume, claims triage), run through the slide-decks runner. |
+| `simplecore:slide-decks` | The typesetting standard for a deck compiled by slideglance from `.sgx` sources - a portrait document volume and a landscape presentation summary. Carries the design contract, the page and slide rhythm, templates and the component catalogue, the running head, page fill and budget, figure boards and placement, the builder's behaviours and the checks, and edits every deck through the SlideGlance MCP rather than as files. Reads every path, board and check from the project's own `.claude/slide-decks.json`, and ships the shared deck checks in `scripts/checks/` with their runner `scripts/check.py`, reading the deck through the `scripts/bidkit/` library. |
 | `simplecore:bid-proposal` | Runs one bid from the issued tender to the submitted package - tender transcription, score simulation, kickoff decisions asked once, manuscript, figures and annexes, persona and Korean review, the proposal deck chapter by chapter, the presentation deck, the quantitative volume, expected Q&A and the packaged deliverables - with a ledger in the bid repository so any session resumes where the last stopped. Orders the work and makes the calls; the standards come from the skills above. |
 
 It also registers four commands, one agent, and a set of hooks, all documented below:
@@ -65,7 +65,7 @@ Both gates are inactive until the project declares them, and each skill checks f
 
 - Claude Code 2.x
 - Node.js 18+ - used by the korean-docs audit tooling, the svg-diagrams layout/conversion scripts, and the simplix frontend audit scripts
-- Python 3 - used by the svg-diagrams render audit script
+- Python 3 - used by the svg-diagrams render audit script and figure library, and by the slide-decks and proposal-writing checks
 - A browser-automation MCP (Claude in Chrome or equivalent) - used by `simplix:frontend-e2e`
 
 ## Installation
@@ -335,7 +335,7 @@ simplecore-skills/
 │   │   ├── hooks/                        # hooks.json + session-start.mjs + check-md-glossary.mjs
 │   │   │                                 #   + check-parity-walk.mjs + check-svg-render.mjs
 │   │   │                                 #   + check-board.mjs + walk-gate.mjs + shared config/marker modules
-│   │   ├── scripts/                      # detect-simplecore.mjs
+│   │   ├── scripts/                      # detect-simplecore.mjs + test.sh + bidkit/ (the deck checks' library)
 │   │   ├── templates/                    # claude-md-section.md
 │   │   └── skills/
 │   │       ├── board-parity-walk/        # SKILL.md + assets/ (two document templates + config)
@@ -394,6 +394,16 @@ Notes for symlink users:
 - Keep the marketplace registered (`claude plugin marketplace add ./path/to/simplecore-skills`) so `claude plugin validate .` and release testing stay available while you develop against the link.
 - Scripts and reference files are addressed through `${CLAUDE_PLUGIN_ROOT}`, which resolves to `~/.claude/skills/<name>` under a link and to the versioned cache directory under a marketplace install. Do not hardcode either path.
 - On Windows, creating symlinks requires Developer Mode (or an elevated shell with `mklink /D`). WSL and Linux need no special setup. On Windows, prefer the plugin installation over symlinks unless you are actively editing the skills.
+
+## Development
+
+The Python suites of the `simplecore` plugin (the `bidkit` library, the slide-decks checks, the proposal-writing checks and the svg-diagrams figure library) run with one command, which starts each suite from the directory its imports expect, prints one count line per suite and exits non-zero when any fails:
+
+```bash
+plugins/simplecore/scripts/test.sh        # add -v for each suite's full output
+```
+
+A check is added with tests that build its broken form and its fixed form, so a suite that passes has seen each check fire and stay quiet.
 
 ## Releasing Changes
 
