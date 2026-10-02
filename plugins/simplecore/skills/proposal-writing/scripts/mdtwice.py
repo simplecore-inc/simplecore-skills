@@ -47,7 +47,7 @@ from bidkit.manuscript import Manuscript  # noqa: E402
 from bidkit.textko import norm, sentences  # noqa: E402
 
 # Separators between words. The dash characters are data: prose may carry any of them.
-WORD_SPLIT = re.compile(r"[\s·,、/+()\[\]—–\-~:;.]+")
+WORD_SPLIT = re.compile(r"[\s·,、/+()\[\]\u2014\u2013\-~:;.]+")
 NOT_PROSE = ("|", "#", ">", "!", "<!--")
 
 
