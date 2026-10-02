@@ -154,11 +154,18 @@ FONTS_OPTION = re.compile(r"\bfonts=(\S+)")
 
 
 def deck_fonts(reader: DeckReader) -> list[Path]:
-    """The font files the server builds the deck with (`sg://deck` options)."""
+    """The font files the server builds the deck with (`sg://deck` options).
+
+    The server reports a relative font path as written in the deck's build
+    options, relative to the folder of the deck's entry file, so it is resolved
+    there and never against the working directory.
+    """
     m = FONTS_OPTION.search(reader.session.read("sg://deck"))
     if not m or m.group(1) == "-":
         return []
-    return [Path(p) for p in m.group(1).split(",") if p]
+    base = Path(reader.session.path).parent
+    return [(base / p).resolve() if not Path(p).is_absolute() else Path(p)
+            for p in m.group(1).split(",") if p]
 
 
 def face(reader: DeckReader, deck: DeckConfig, vocab: Vocabulary | None, role: str,

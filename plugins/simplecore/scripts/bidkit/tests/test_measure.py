@@ -150,6 +150,19 @@ class GlyphWidthTests(unittest.TestCase):
         with self.assertRaises(glyphwidth.FontError):
             glyphwidth.face(r, deck, r.vocab, "mono")
 
+    def test_a_relative_deck_font_resolves_against_the_deck_folder_not_the_cwd(self):
+        deck = project(self.dir, {})
+        rec = recording(slides=[])
+        r = reader(deck, rec)
+        base = Path(r.session.path).parent
+        fonts = base / "fonts"
+        fonts.mkdir(parents=True, exist_ok=True)
+        path = tiny_font(fonts / "Face-Regular.ttf", {"가": 900})
+        rec["resources"]["sg://deck"] = "options autoFit=true fonts=fonts/Face-Regular.ttf masterPptx=-\n"
+        r = reader(deck, rec)
+        r.vocab.data["fonts"] = {"sans": "Face"}
+        self.assertEqual(glyphwidth.face(r, deck, r.vocab, "sans").path, path.resolve())
+
 
 def tiny_pptx(path: Path, slide_xml: str, cx: int = 794 * 9525) -> Path:
     with zipfile.ZipFile(path, "w") as z:
