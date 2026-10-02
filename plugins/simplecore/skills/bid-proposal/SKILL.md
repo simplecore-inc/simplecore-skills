@@ -26,16 +26,17 @@ and not for work on the SlideGlance editor itself.
 | Input | Where |
 | --- | --- |
 | Tender as issued: 제안요청서, 입찰공고문, 평가항목 및 배점표, 작성요령, forms | `rfp/` in the bid repository, originals untouched, the Markdown transcription beside them |
-| Company and staff facts: overview, credit rating, founding date, track record, staff careers, owned assets and tools, certificates, logo | `~/Workspace/simplecore-company/` (private repository; never the public skill repository). Who bids and who is staffed differs per bid and may be undecided until late |
+| User settings: where the company folder is, which bid is the reference bid, which earlier bids may be read | `~/.claude/bid-proposal.json` (`companyDir`, `referenceBid`, `earlierBids`). Never written into this skill: the reference bid moves forward with every bid |
+| Company and staff facts: overview, credit rating, founding date, track record, staff careers, owned assets and tools, certificates, logo | the folder `companyDir` names, a private repository, never the public skill repository. Who bids and who is staffed differs per bid and may be undecided until late |
 | Facts the user gives in chat | written into the ledger in the same turn |
 | Ledger | `.claude/proposal-ledger.md` in the bid repository |
 | Deck configuration: deck folders, kit, checks, figure scale | `.claude/slide-decks.json` in the bid repository |
-| Kit | `~/Workspace/slideglance/kits/simplecore-proposal-01`, bound in the deck's `slideglance.json` |
+| Kit | the kit the deck binds (`build.kit.dir` in the deck's `slideglance.json`); a new deck binds the kit the reference bid's deck binds |
 | Term standard | `.claude/GLOSSARY.md` and `.claude/l10n.json` in the bid repository |
 | Figure set: output folder, boards, type ladder, placement scale | `.claude/document-figures.json` in the bid repository, read by the figure library in `svg-diagrams/scripts/docfigures/` |
 | Shared checks | `slide-decks/scripts/check.py` runs the checks a deck declares; manuscript checks live in `proposal-writing/scripts/`. A bid keeps only its own checks (`checks.local`) and baselines (`checks.baselines`) |
-| Reference bid: the latest and final standard for conventions, page ids, figure numbering, manuscript form and deck setup | `~/Workspace/kdn-proxy-gw-proposal` |
-| Finished bids, reference only; where they differ from the reference bid, the reference bid wins | `~/Workspace/kepco-pde-safety`, `~/Workspace/printer-manager` |
+| Reference bid: the standard for conventions, page ids, figure numbering, manuscript form and deck setup | the repository `referenceBid` names, written into the ledger at kickoff |
+| Earlier bids, reference only; where one differs from the reference bid, the reference bid wins | the repositories `earlierBids` lists |
 
 The ledger is English and holds, in this order: bid facts with the tender clause each came from;
 the kickoff answers; assumptions decided by recommendation; the open list (every 「(미정: …)」 in
@@ -43,8 +44,10 @@ the documents); rules the user gave during the bid; and one row per step below w
 and the next action. It is a working file, so it carries state; the documents never do.
 
 Another bid's tender-specific content is never copied. A competitor's proposal is never a source.
-When `~/Workspace/simplecore-company/` does not exist yet, create its folders (overview, staff,
-assets, evidence, logo) empty, tell the user what to fill, and carry on with 「(미정: …)」.
+When `~/.claude/bid-proposal.json` is missing, ask for `companyDir` and `referenceBid` in the
+step 8 question and write the file. When the company folder does not exist yet, create its
+folders (overview, staff, assets, evidence, logo) empty, tell the user what to fill, and carry on
+with 「(미정: …)」.
 
 ## Steps
 
@@ -108,6 +111,8 @@ assets, evidence, logo) empty, tell the user what to fill, and carry on with 「
     tender asks for, under its size limits, and open each PowerPoint file to see that it opens
     without a repair prompt.
 26. Commit and push.
+27. Make this bid the reference bid for the next one: set `referenceBid` in
+    `~/.claude/bid-proposal.json` to this repository and move the previous one into `earlierBids`.
 
 ## Decisions
 
