@@ -32,7 +32,9 @@ and not for work on the SlideGlance editor itself.
 | Deck configuration: deck folders, kit, checks, figure scale | `.claude/slide-decks.json` in the bid repository |
 | Kit | `~/Workspace/slideglance/kits/simplecore-proposal-01`, bound in the deck's `slideglance.json` |
 | Term standard | `.claude/GLOSSARY.md` and `.claude/l10n.json` in the bid repository |
-| Earlier bids, read for method, tools, kit blocks and checks only | `~/Workspace/kdn-proxy-gw-proposal`, `~/Workspace/kepco-pde-safety`, `~/Workspace/printer-manager` |
+| Figure set: output folder, boards, type ladder, placement scale | `.claude/document-figures.json` in the bid repository, read by the figure library in `svg-diagrams/scripts/docfigures/` |
+| Shared checks | `slide-decks/scripts/check.py` runs the checks a deck declares; manuscript checks live in `proposal-writing/scripts/`. A bid keeps only its own checks (`checks.local`) and baselines (`checks.baselines`) |
+| Earlier bids, read for method and kit blocks only | `~/Workspace/kdn-proxy-gw-proposal`, `~/Workspace/kepco-pde-safety`, `~/Workspace/printer-manager` |
 
 The ledger is English and holds, in this order: bid facts with the tender clause each came from;
 the kickoff answers; assumptions decided by recommendation; the open list (every 「(미정: …)」 in
@@ -47,8 +49,9 @@ assets, evidence, logo) empty, tell the user what to fill, and carry on with 「
 
 **Kickoff**
 
-1. Set up the bid folder: tender, manuscript, figures, deck, ledger, glossary. Copy the check
-   tools and the kit binding from the most recent bid.
+1. Set up the bid folder: tender, manuscript, figures, deck, ledger, glossary, and the two
+   settings files the shared checks and the figure drawing library read, started from the
+   samples the skills ship. Nothing is copied from an earlier bid except kit blocks.
 2. Copy the tender into Markdown word for word, one file per topic, plus one list holding only
    the requirement numbers and names. Leave nothing out; describe every picture.
 3. Read out of the tender, with the clause for each: the scoring table, the page limit, the
@@ -235,7 +238,8 @@ A chapter is done when:
 
 - every page has been rendered and looked at: no overflow, no layout error mark, no empty bottom,
   no block repeated on consecutive pages for different content, figures at the configured scale;
-- every check under `checks` in `.claude/slide-decks.json` passes;
+- every check the deck declares in `.claude/slide-decks.json` passes, run through
+  `slide-decks/scripts/check.py`, and the figure checks of `svg-diagrams/scripts/docfigures/` pass;
 - the manuscript matches the deck.
 
 The bid is done when, in addition:
