@@ -31,9 +31,9 @@ def deck_config(args: Namespace) -> DeckConfig:
     return Project.load().deck(args.deck)
 
 
-def open_reader(deck: DeckConfig, with_vocabulary: bool = True) -> DeckReader:
+def open_reader(deck: DeckConfig, with_vocabulary: bool = True, write: bool = False) -> DeckReader:
     vocab = Vocabulary.for_deck(deck) if with_vocabulary and deck.has("vocabulary") else None
-    session = Session(deck)
+    session = Session(deck, write=write)
     announce(session.source)
     return DeckReader(session, deck, vocab)
 

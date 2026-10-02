@@ -64,9 +64,12 @@ def output(deck: DeckConfig) -> Path:
     if not path.is_file():
         raise ConfigError(f"no built deck at {path}; render the deck first (its `render` command)")
     ddir = deck.dir
+    # A dot-directory (the editor's journal, caches) holds tool state, not deck sources.
     newest = max((p.stat().st_mtime for p in ddir.rglob("*")
                   if p.is_file() and p.suffix.lower() in SOURCE_SUFFIXES
-                  and path.parent not in p.parents), default=0.0)
+                  and path.parent not in p.parents
+                  and not any(part.startswith(".") for part in p.relative_to(ddir).parts[:-1])),
+                 default=0.0)
     if newest > path.stat().st_mtime:
         raise DeckError(f"{path} is older than the deck's sources under {ddir}; render it again "
                         "before measuring it")

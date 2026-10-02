@@ -191,6 +191,18 @@ class PptxTests(unittest.TestCase):
         with self.assertRaises(DeckError):
             pptxread.output(self.deck)
 
+    def test_tool_state_in_a_dot_directory_is_not_a_source(self):
+        # The editor rewrites .slideglance/journal.json on every connection; a fresh
+        # build must not be refused because of it.
+        (self.root / "deck" / "out").mkdir()
+        built = tiny_pptx(self.root / "deck" / "out" / "main.pptx", "")
+        state = self.root / "deck" / ".slideglance" / "journal.json"
+        state.parent.mkdir()
+        state.write_text("{}")
+        later = built.stat().st_mtime + 50
+        os.utime(state, (later, later))
+        self.assertEqual(pptxread.output(self.deck).resolve(), built.resolve())
+
     def test_hangul_wraps_between_syllables(self):
         def em(s):
             return len(s.replace(" ", "")) + 0.3 * s.count(" ")

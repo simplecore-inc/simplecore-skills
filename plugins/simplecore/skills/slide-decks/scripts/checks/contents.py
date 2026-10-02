@@ -158,7 +158,7 @@ def main(argv: list[str] | None = None) -> int:
                     help="set the computed numbers in the open deck through set_texts")
     args = ap.parse_args(argv)
     deck = cli.deck_config(args)
-    with cli.open_reader(deck) as reader:
+    with cli.open_reader(deck, write=args.write) as reader:
         found = entries(reader, deck)
         wrong, pending = judge(found)
         if not found:

@@ -16,6 +16,9 @@ Which server:
 
 An app that answers but cannot be read (a refused token, a server error) is an
 error, never a reason to fall back: the disk may be behind it.
+A session opened to write (`Session(deck, write=True)`) never falls back to the
+disk while the app's connection file exists: an unreachable app may still hold
+the deck, and a write to the disk server would be lost while reporting success.
 
 Tests inject a `RecordedTransport`, which answers from captured resources and
 records every call made to it.
@@ -240,15 +243,22 @@ def binary(deck: DeckConfig) -> str:
 class Session:
     """One connection to whichever server holds the deck."""
 
-    def __init__(self, deck: DeckConfig, transport: Any = None):
+    def __init__(self, deck: DeckConfig, transport: Any = None, write: bool = False):
         self.deck = deck
         self.path = deck.entry
         if transport is not None:
             self.t, self.source = transport, "recording"
             handshake(self.t)
             return
-        t = app_transport(app_connection_file(deck), self.path)
+        connection = app_connection_file(deck)
+        t = app_transport(connection, self.path)
         self.source = "app"
+        if t is None and write and connection.exists():
+            # The app may hold the deck: a write to a private disk server would be
+            # overwritten by the app's model, or lost, while reporting success.
+            raise DeckUnavailable(f"{connection} exists but the app's server for {self.path} could not be "
+                                  "reached; a write never falls back to the disk server. Open the deck in "
+                                  "the app, or quit the app, and run again")
         if t is None:
             t = StdioTransport([binary(deck), "mcp", str(self.path)])
             handshake(t)

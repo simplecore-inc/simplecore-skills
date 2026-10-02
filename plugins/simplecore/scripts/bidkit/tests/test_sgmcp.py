@@ -70,6 +70,17 @@ class ConnectionTests(unittest.TestCase):
         conn.write_text(json.dumps({"servers": {"slideglance": {"url": f"http://127.0.0.1:{port}/mcp"}}}))
         self.assertIsNone(sgmcp.app_transport(conn, self.deck.entry))
 
+    def test_a_write_never_falls_back_to_the_disk_while_the_app_may_hold_the_deck(self):
+        with socket.socket() as s:
+            s.bind(("127.0.0.1", 0))
+            port = s.getsockname()[1]
+        conn = self.root / "conn.json"
+        conn.write_text(json.dumps({"servers": {"slideglance": {"url": f"http://127.0.0.1:{port}/mcp"}}}))
+        with mock.patch.object(sgmcp, "StdioTransport") as disk:
+            with self.assertRaises(DeckUnavailable):
+                Session(self.deck, write=True)
+            disk.assert_not_called()
+
     def test_malformed_connection_file_is_an_error(self):
         conn = self.root / "conn.json"
         conn.write_text("{}")
