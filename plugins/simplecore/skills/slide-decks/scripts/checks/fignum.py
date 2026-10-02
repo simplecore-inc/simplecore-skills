@@ -150,13 +150,10 @@ def check(reader: DeckReader, deck: DeckConfig) -> dict:
            + [("manuscript",) + b for b in strict_errors(ms_series)]}
     in_deck, in_ms = labels(deck_series), labels(ms_series)
 
-    number_args = {re.escape(a) for a in args.values()}
-    own = re.compile(r"(?<![\w-])(?:" + "|".join(number_args) + r")=[\"']$")
     dangling = []
     for name, raw in reader.files():
-        text = strip_comments(raw)
-        for pos, label in numbering.find(text):
-            if not own.search(text[max(0, pos - 40):pos]) and label not in in_deck:
+        for _, label in numbering.find(strip_comments(raw)):
+            if label not in in_deck:
                 dangling.append((name, label))
     for path in ms.files(include_excluded=False):
         text = FENCE.sub("", path.read_text(encoding="utf-8"))
