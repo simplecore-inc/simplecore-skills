@@ -6,7 +6,7 @@ The glyph model matches the lint's: a line of text at `size` occupies
 import re
 
 from figlib.settings import (BODY, CHIP, CHIP_STEP, CONTENT_W, FIGURE, LIST_BULLETS,
-                             NO_BREAK, SANS, SECTION, STEP, tw)
+                             NO_BREAK, SANS, SECTION, STEP, WRAP_LIST_ITEMS, tw)
 
 def row(n, gap, width=CONTENT_W, x0=0.0):
     """Evenly spaced column x-positions and the column width."""
@@ -24,11 +24,11 @@ WRAP_SAFETY = 0.93
 # opens a list, so every such mark stays at the end of the line it came from.
 JOINING = ("·", "↔", "→", "←", "~", "/", "&", "+")
 
-# A wrapped 「·」 list is read by its separators, and a break inside one item
-# adds a member the author never wrote. Only wrap() holds the source phrase
-# and the line boundaries at once, so it collects each such break here and
-# `build.py` reports them and fails the run. An item wider than the measure
-# has to break somewhere and is left alone.
+# With `wrapListItems` on, a wrapped 「·」 list is read by its separators, and a
+# break inside one item adds a member the author never wrote. Only wrap() holds
+# the source phrase and the line boundaries at once, so it collects each such
+# break here and `build.py` reports them and fails the run. An item too wide to
+# be held whole has to break somewhere and is left alone.
 SPLIT_ITEMS = []
 _SPLIT_SEEN = set()
 
@@ -36,18 +36,21 @@ _SPLIT_SEEN = set()
 def wrap(text, width, size):
     """Break a phrase onto lines that fit `width` at `size`.
 
-    An authored newline is kept as a line boundary; a 「·」 list breaks at its
-    separators while every item fits; anything else breaks by word.
+    An authored newline is kept as a line boundary and anything else breaks by
+    word, each line filled as far as the safety limit allows. With
+    `wrapListItems` on, a 「·」 list breaks at its separators while every item
+    fits, and a break inside an item is reported.
     """
     if "\n" in text:
         return [line for paragraph in text.split("\n")
                 for line in (wrap(paragraph, width, size) or [""])]
     limit = width * WRAP_SAFETY
-    lines = _wrap_items(text, limit, size)
+    lines = _wrap_items(text, limit, size) if WRAP_LIST_ITEMS else None
     if lines is None:
         lines = _wrap_words(text, limit, size)
     lines = _raise_marks(lines, width, size)
-    _note_split_item(text, lines, width, size)
+    if WRAP_LIST_ITEMS:
+        _note_split_item(text, lines, limit, size)
     return lines
 
 
@@ -56,29 +59,47 @@ def wrap(text, width, size):
 LIST_SEP = re.compile(r"\s+·\s+")
 
 
+def _list_items(text):
+    """(items, seps) of a 「·」 list; each separator kept as written."""
+    parts = re.split(f"({LIST_SEP.pattern})", text)
+    # a run of spaces collapses as it does in the word wrap
+    return [re.sub(" {2,}", " ", p.strip()) for p in parts[0::2]], parts[1::2]
+
+
+def _tail(seps, k):
+    """What closes item `k` on its line: its separator without the space after."""
+    return seps[k].rstrip() if k < len(seps) else ""
+
+
+def _holds(line, tail, limit, size):
+    """Whether `line` fits with the separator that closes it.
+
+    The one measure for a list item: the wrap that keeps items whole and the
+    report of a broken item both ask it, so an item the wrap cannot hold is
+    never reported as one it broke.
+    """
+    return tw(line + tail, size, False) <= limit
+
+
 def _wrap_items(text, limit, size):
     """Break a 「·」 list at its separators, or None when that cannot hold.
 
     A line that is followed by another item keeps the separator at its end,
-    so the separator is measured with the line it closes. Each separator is
-    kept as written, a no-break space included.
+    so the separator is measured with the line it closes.
     """
-    parts = re.split(f"({LIST_SEP.pattern})", text)
-    # a run of spaces collapses as it does in the word wrap
-    items = [re.sub(" {2,}", " ", p.strip()) for p in parts[0::2]]
-    seps = parts[1::2]
+    items, seps = _list_items(text)
     if len(items) < 2 or not all(items):
         return None
     lines, cur = [], ""
     for k, item in enumerate(items):
-        tail = seps[k].rstrip() if k < len(seps) else ""
+        tail = _tail(seps, k)
         trial = f"{cur}{seps[k - 1]}{item}" if cur else item
-        if cur and tw(trial + tail, size, False) > limit:
+        if cur and not _holds(trial, tail, limit, size):
             lines.append(cur + seps[k - 1].rstrip())
             cur = item
         else:
             cur = trial
-        if tw(cur + tail, size, False) > limit:
+        if not _holds(cur, tail, limit, size):
             return None
     lines.append(cur)
     return lines
@@ -99,29 +120,33 @@ def _wrap_words(text, limit, size):
 
 
 def _raise_marks(lines, width, size):
-    # The mark rides up to the line it belongs to. It is one glyph, so it is
-    # measured against the full width rather than the safety limit.
+    """Move a joining mark that opens a line to the end of the line before.
+
+    The mark is one glyph, so it is measured against the full width rather than
+    the safety limit. A line that held only the mark is dropped once the mark
+    has moved.
+    """
     lines = list(lines)
     for i in range(1, len(lines)):
         if lines[i] in JOINING or lines[i].startswith(tuple(m + " " for m in JOINING)):
             mark, _, rest = lines[i].partition(" ")
             moved = f"{lines[i - 1]} {mark}"
-            if rest and tw(moved, size, False) <= width:
+            if lines[i - 1] and tw(moved, size, False) <= width:
                 lines[i - 1], lines[i] = moved, rest
     return [ln for ln in lines if ln]
 
 
-def _note_split_item(text, lines, width, size):
+def _note_split_item(text, lines, limit, size):
     if len(lines) < 2:
         return
-    items = [re.sub(" {2,}", " ", it.strip()) for it in LIST_SEP.split(text)
-             if it.strip()]
+    items, seps = _list_items(text)
+    items = [(it, _tail(seps, k)) for k, it in enumerate(items) if it]
     if len(items) < 2:
         return
-    for item in items:
+    for item, tail in items:
         if any(item in ln for ln in lines):
             continue
-        if tw(item, size, False) > width * WRAP_SAFETY:
+        if not _holds(item, tail, limit, size):
             continue
         hit = (text, tuple(lines))
         if hit not in _SPLIT_SEEN:

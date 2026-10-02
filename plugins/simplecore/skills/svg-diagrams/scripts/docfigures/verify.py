@@ -17,7 +17,9 @@ run. Four checks are reviews: they list what to look at and fail nothing.
   font family    every text in `fontStack`
   stroke         every stroke on the declared ladder, icons excepted
   dash           every dash on a declared pattern
-  dash legend    a drawn dash names its declared meaning before any gloss
+  dash legend    where two dash meanings are drawn (every dash with
+                 `dashGloss: "every"`), each names its declared meaning
+                 before any gloss
   legend         a legend word names a distinction the drawing carries
   foot legend    no key line under the drawing
   icon           no Lucide name written at a call site
@@ -179,7 +181,7 @@ def run(cfg, prefixes=(), render_dir=None):
     r.check("dash", dash_pattern_errors(svgs, cfg), "every dash on a declared pattern",
             lambda i: f"{i[0]}: {', '.join(i[1])}")
     r.check("dash legend", dash_legend_errors(svgs, cfg),
-            "every dash names its declared meaning",
+            "every dash a gloss is owed names its declared meaning",
             lambda i: f"{i[0]}: {i[4]} - 「{i[1]}」 means 「{i[2]}」"
                       + (f", glossed as 「{i[3]}」" if i[3] else ""))
     r.check("legend", legend_mismatches(svgs, cfg), "every named distinction is drawn",

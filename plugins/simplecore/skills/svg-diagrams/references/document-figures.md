@@ -121,9 +121,11 @@ draw with the names: not yet decided, outside this project, the alternative
 path, prohibited. A fifth gap is a meaning no reader can look up - one figure in
 a set of 132 drew the only `3 7` in the document, which read as a prohibition to
 its author and as nothing at all to anyone matching it against the four. The
-library's `verify.py` fails the run on a pattern off the list, and a figure that
-draws a dash without naming its meaning in the figure is the unexplained
-distinction the audit pass is for.
+library's `verify.py` fails the run on a pattern off the list. A figure that
+draws two or more dash meanings names each one in the figure, the gloss opening
+on the declared meaning (「점선: 범위 밖 · 미확정」), and the run fails when one is
+missing; a figure with a single dash leaves it to the document's key, unless the
+project sets `dashGloss` to `every`.
 
 **One neutral grey, and it is the darker one.** A theme carries two - a
 mid grey for secondary type and a pale one for rules and fills - and the pale
@@ -449,6 +451,18 @@ arithmetic. `tw()` measures a run with a calibrated per-class table - Hangul
 0.92 em, lowercase 0.52, capitals 0.66, digits 0.58 - so a wrap computed with
 it lands where the browser breaks the line.
 
+`wrap()` breaks by word and fills each line to 93% of the width, the margin
+that absorbs `tw()` running a few percent short on mixed Hangul and Latin. An
+authored newline is a line boundary, and a joining mark (「·」 「→」 「~」 「/」)
+that would open a line moves up to the end of the line before when it fits the
+full width. A box's items are glued before they wrap: a no-break space binds a
+spaced middle dot to the word before it, so no line opens on the dot, and every
+`noBreak` pattern binds its two groups (a page id and its number, a number and
+its unit); the drawn line carries plain spaces. A project whose figures set
+「·」 lists inside running labels can set `wrapListItems`: the wrap then breaks
+such a list between items while every item fits with its separator, and the
+build fails on a break inside an item that would have fit, naming the string.
+
 ## Rows and stacks are uniform
 
 One gap per row and per stack, one width per row, one height per row.
@@ -723,6 +737,7 @@ importable as a module constant.
 | `strokes` | | `HAIRLINE` `STROKE` `THICK`; with none declared the stroke check does not run | none |
 | `dashes` | | dash name → `{pattern, words}`; the pattern is the only gap for that meaning, the words its gloss | none |
 | `dashWord` | | the word a figure uses for a dash (「점선」); turns on the dash-gloss check and the figure-plan dash check | none |
+| `dashGloss` | | `several`: a figure drawing two or more dash meanings glosses each; `every`: every dashed figure glosses its dash | `several` |
 | `theme` | | svgkit theme | `paper` |
 | `fontStack` | | the document's typeface stack, written in place of the toolkit's | none |
 | `icon` | | `{size, sw}` for every icon in the set | from `BODY` |
@@ -732,6 +747,7 @@ importable as a module constant.
 | `verdict` | | `{pass, block}` hues, or `{from, key}` naming the file and dotted key that hold them (a deck's `checks.verdict`) | theme's own |
 | `bullets` | | whether titled boxes bullet their items | `true` |
 | `noBreak` | | patterns with two groups whose space must not break a line inside a box | `[]` |
+| `wrapListItems` | | break a spaced 「·」 list between its items and fail the build on a break inside one that fits | `false` |
 | `heightReview` | | height over which a figure is listed for review; a number or `{width: n}` | `840` |
 | `deadMargin` | | side gap that fails, judged per board in place of the lint's 40; a number or `{width: n}` | lint's own |
 | `stripRatio` | | height-to-width ratio under which a full-width figure is listed as a strip | `0.28` |

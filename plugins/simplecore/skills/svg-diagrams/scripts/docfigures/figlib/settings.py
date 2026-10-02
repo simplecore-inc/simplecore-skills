@@ -132,6 +132,10 @@ VERDICT_PASS, VERDICT_BLOCK = _VERDICT if _VERDICT else (None, None)
 # item as a plain line.
 LIST_BULLETS = bool(CFG.get("bullets", True))
 
+# Whether wrap() breaks a 「·」 list between its items and fails the build on a
+# break inside one, rather than breaking every phrase by word.
+WRAP_LIST_ITEMS = bool(CFG.get("wrapListItems", False))
+
 # Spaces that must not break a line, as patterns with two groups: the space
 # between them becomes a no-break space while a box's items are wrapped.
 NO_BREAK = [re.compile(p) for p in CFG.get("noBreak") or []]

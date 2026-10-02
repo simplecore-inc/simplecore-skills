@@ -21,6 +21,13 @@ class Jsonc(unittest.TestCase):
         self.assertNotIn("7333", line.split("//")[0])
         self.assertIn("7333", figconfig.strip_jsonc(line))
 
+    def test_unterminated_comment_is_a_config_error_naming_the_file(self):
+        p = Project()
+        p.config_path.write_text('{"out": "figures" /* open', encoding="utf-8")
+        with self.assertRaisesRegex(figconfig.ConfigError, "unterminated"):
+            p.cfg()
+        p.close()
+
 
 class Required(unittest.TestCase):
     def test_missing_ladder_raises(self):

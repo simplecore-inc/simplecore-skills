@@ -1,7 +1,7 @@
 """verify.py's checks, each red on its broken form and quiet on the fixed one."""
 import unittest
 
-from helpers import Project, svg, text
+from helpers import Project, figconfig, svg, text
 
 import verify  # noqa: E402
 
@@ -88,13 +88,47 @@ class Dashes(Case):
                           'stroke-width="1.4" stroke-dasharray="3 7"/>')
         self.assertEqual(verify.dash_pattern_errors([f], self.cfg), [("a.svg", ["3 7"])])
 
-    def test_dash_glossed_in_its_own_words_fails_and_named_passes(self):
-        line = ('<line x1="40" y1="60" x2="300" y2="60" stroke="#000" '
-                'stroke-width="1.4" stroke-dasharray="5 4"/>')
-        bad = self.fig("bad", line + text(40, 120, "점선 칸: 따로 저장"))
-        good = self.fig("good", line + text(40, 120, "점선 칸: 범위 밖(따로 저장)"))
-        self.assertEqual([r[0] for r in verify.dash_legend_errors([bad, good], self.cfg)],
-                         ["bad.svg"])
+    OUTSIDE = ('<line x1="40" y1="60" x2="300" y2="60" stroke="#000" '
+               'stroke-width="1.4" stroke-dasharray="5 4"/>')
+    PENDING = ('<line x1="40" y1="90" x2="300" y2="90" stroke="#000" '
+               'stroke-width="1.4" stroke-dasharray="6 5"/>')
+    TWO = {"DASH_OUTSIDE": {"pattern": "5 4", "words": ["범위 밖"]},
+           "DASH_PENDING": {"pattern": "6 5", "words": ["미확정"]}}
+
+    def legend_errors(self, *figures, **config):
+        p = Project(**config)
+        try:
+            files = [p.write(f"figures/{name}.svg", svg(body)) for name, body in figures]
+            return [r[0] for r in verify.dash_legend_errors(files, p.cfg())]
+        finally:
+            p.close()
+
+    def test_one_dash_meaning_needs_no_gloss_by_default(self):
+        # one dash in the figure cannot be confused with another
+        self.assertEqual(self.legend_errors(("bare", self.OUTSIDE),
+                                            ("own", self.OUTSIDE + text(40, 120, "점선 칸: 따로 저장"))),
+                         [])
+
+    def test_two_dash_meanings_need_a_gloss_by_default(self):
+        bare = self.OUTSIDE + self.PENDING
+        half = bare + text(40, 120, "점선: 범위 밖")
+        named = bare + text(40, 120, "점선: 범위 밖 · 미확정")
+        self.assertEqual(self.legend_errors(("bare", bare), ("half", half), ("named", named),
+                                            dashes=self.TWO),
+                         ["bare.svg", "bare.svg", "half.svg"])
+
+    def test_every_dash_glossed_when_configured(self):
+        bad = ("bad", self.OUTSIDE + text(40, 120, "점선 칸: 따로 저장"))
+        good = ("good", self.OUTSIDE + text(40, 120, "점선 칸: 범위 밖(따로 저장)"))
+        self.assertEqual(self.legend_errors(bad, good, dashGloss="every"), ["bad.svg"])
+
+    def test_unknown_gloss_mode_is_refused(self):
+        p = Project(dashGloss="some")
+        try:
+            with self.assertRaisesRegex(figconfig.ConfigError, "dashGloss"):
+                p.cfg()
+        finally:
+            p.close()
 
 
 class Strokes(Case):

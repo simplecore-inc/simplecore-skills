@@ -11,7 +11,8 @@ never run even when a glob matches them: a test file (`test_*.py`,
 after one of this library's own modules, which would shadow it. Each module
 draws its figures at import time and calls `save()` for each.
 
-The run fails when a wrap fell inside one item of a 「·」 list.
+With `wrapListItems` on, the run fails when a wrap fell inside one item of a
+「·」 list that fits whole.
 """
 import argparse
 import os

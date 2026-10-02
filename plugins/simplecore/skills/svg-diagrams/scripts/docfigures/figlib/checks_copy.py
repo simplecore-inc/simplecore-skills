@@ -15,6 +15,11 @@ def dash_legend_errors(svgs, cfg):
     opens on a declared meaning - so a sentence elsewhere that happens to hold
     the word does not stand in for the gloss. A meaning inside the parentheses
     alone still leaves the reader unable to tell which of the four it is.
+
+    By default (`dashGloss: "several"`) only a figure that draws two or more
+    declared meanings needs the gloss: a lone dash cannot be mistaken for
+    another one in the same drawing, and the document's key names it.
+    `dashGloss: "every"` asks it of every dashed figure.
     """
     dashes = cfg.dashes
     word = cfg.get("dashWord")
@@ -22,15 +27,18 @@ def dash_legend_errors(svgs, cfg):
         return None
     meaning_of = {p: w for p, w in dashes.values() if w}
     all_words = [w for ws in meaning_of.values() for w in ws]
+    least = 1 if cfg.dash_gloss == "every" else 2
     out = []
     for svg in svgs:
         raw = _read(svg)
+        drawn = [p for p in sorted(set(re.findall(r'stroke-dasharray="([^"]+)"', raw)))
+                 if p in meaning_of]
+        if len(drawn) < least:
+            continue
         clauses = [c.strip() for _a, t in texts(svg) for c in t.split("·")]
         notes = [c for c in clauses if word in c or any(c.startswith(w) for w in all_words)]
-        for pat in sorted(set(re.findall(r'stroke-dasharray="([^"]+)"', raw))):
-            words = meaning_of.get(pat)
-            if not words:
-                continue
+        for pat in drawn:
+            words = meaning_of[pat]
             if any(w in c.split("(")[0] for c in notes for w in words):
                 continue
             inverted = any(w in c for c in notes for w in words)

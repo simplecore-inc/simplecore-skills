@@ -17,13 +17,22 @@ The project root is the directory holding `.claude/`, and every relative path
 in the file is resolved against it.
 
 The file may carry `//` and `/* */` comments and trailing commas. Comment
-markers inside a string are data: `"http://127.0.0.1:7333/mcp"` survives.
+markers inside a string are data: `"http://127.0.0.1:7333/mcp"` survives. It
+is read by `bidkit.config`, the plugin's one JSONC reader.
 """
-import json
 import os
 import re
+import sys
 from glob import glob
 from pathlib import Path
+
+# The plugin's one JSONC reader, shared with the deck checks. The plugin keeps
+# its scripts in `plugins/<plugin>/scripts/`, four levels above this file.
+_PLUGIN_SCRIPTS = Path(__file__).resolve().parents[4] / "scripts"
+if str(_PLUGIN_SCRIPTS) not in sys.path:
+    sys.path.append(str(_PLUGIN_SCRIPTS))
+from bidkit.config import ConfigError as JsoncError  # noqa: E402
+from bidkit.config import parse_jsonc, strip_jsonc  # noqa: E402,F401
 
 CONFIG_NAME = Path(".claude") / "document-figures.json"
 ENV_CONFIG = "DOCUMENT_FIGURES_CONFIG"
@@ -33,82 +42,11 @@ ENV_CONFIG = "DOCUMENT_FIGURES_CONFIG"
 HELPER_NAMES = ("MICRO", "BODY", "LEAD", "CARD", "SECTION", "EMPH", "DISPLAY")
 STROKE_NAMES = ("HAIRLINE", "STROKE", "THICK")
 DEFAULT_STROKES = {"HAIRLINE": 1.4, "STROKE": 1.9, "THICK": 2.8}
+DASH_GLOSS_MODES = ("several", "every")
 
 
 class ConfigError(Exception):
     """The settings file is missing, unreadable, or lacks a required value."""
-
-
-def strip_jsonc(text):
-    """JSON text with comments and trailing commas removed.
-
-    String-aware: a `//` or `/*` inside a quoted string is kept, so a URL
-    value reads back intact, and an escaped quote does not end the string.
-    """
-    out = []
-    i, n = 0, len(text)
-    in_string = False
-    while i < n:
-        ch = text[i]
-        if in_string:
-            out.append(ch)
-            if ch == "\\" and i + 1 < n:
-                out.append(text[i + 1])
-                i += 2
-                continue
-            if ch == '"':
-                in_string = False
-            i += 1
-            continue
-        if ch == '"':
-            in_string = True
-            out.append(ch)
-            i += 1
-            continue
-        if text.startswith("//", i):
-            end = text.find("\n", i)
-            i = n if end < 0 else end
-            continue
-        if text.startswith("/*", i):
-            end = text.find("*/", i + 2)
-            if end < 0:
-                raise ConfigError("unterminated /* comment")
-            i = end + 2
-            continue
-        out.append(ch)
-        i += 1
-    return _drop_trailing_commas("".join(out))
-
-
-def _drop_trailing_commas(text):
-    """Remove a comma that closes an object or array, outside strings."""
-    out = []
-    in_string = False
-    i, n = 0, len(text)
-    while i < n:
-        ch = text[i]
-        if in_string:
-            out.append(ch)
-            if ch == "\\" and i + 1 < n:
-                out.append(text[i + 1])
-                i += 2
-                continue
-            if ch == '"':
-                in_string = False
-            i += 1
-            continue
-        if ch == '"':
-            in_string = True
-        elif ch == ",":
-            j = i + 1
-            while j < n and text[j] in " \t\r\n":
-                j += 1
-            if j < n and text[j] in "}]":
-                i += 1
-                continue
-        out.append(ch)
-        i += 1
-    return "".join(out)
 
 
 def read_jsonc(path):
@@ -118,9 +56,9 @@ def read_jsonc(path):
     except OSError as err:
         raise ConfigError(f"cannot read {path}: {err}") from err
     try:
-        return json.loads(strip_jsonc(raw))
-    except json.JSONDecodeError as err:
-        raise ConfigError(f"{path}: {err}") from err
+        return parse_jsonc(raw, str(path))
+    except JsoncError as err:
+        raise ConfigError(str(err)) from err
 
 
 def find_config(start=None):
@@ -210,6 +148,10 @@ class FigureConfig:
                 raise ConfigError(f"{self.path}: boardNames.{name} = {width} is not a board")
         if self.column_board is not None and self.column_board not in self.boards:
             raise ConfigError(f"{self.path}: columnBoard {self.column_board} is not a board")
+        if self.dash_gloss not in DASH_GLOSS_MODES:
+            raise ConfigError(
+                f"{self.path}: dashGloss must be one of {', '.join(DASH_GLOSS_MODES)}, "
+                f"not {self.dash_gloss!r}")
         strokes = self.data.get("strokes")
         if strokes is not None:
             absent = [n for n in STROKE_NAMES if n not in strokes]
@@ -327,6 +269,11 @@ class FigureConfig:
             else:
                 out[name] = (spec["pattern"], tuple(spec.get("words") or ()))
         return out
+
+    @property
+    def dash_gloss(self):
+        """`several`: a gloss only where two meanings are drawn; `every`: always."""
+        return self.data.get("dashGloss", "several")
 
     @property
     def verdict(self):
