@@ -102,6 +102,17 @@ class ClaimsTests(unittest.TestCase):
         self.assertRegex(line, r"^질문 8 · 답 6 · 오류 2 · \d+초\(초당 \d+건\) · \$0\.06$")
         self.assertEqual(code, 1)          # an unanswered question is not a clean run
 
+    def test_a_path_inside_the_manuscript_keeps_its_exclusions(self):
+        (self.root / "proposal" / "README.md").write_text("작성 안내 문장 12개를 둔다.\n", encoding="utf-8")
+        self.deck.data["manuscript"]["exclude"] = ["README.md"]
+        client = FakeClient({})
+        out = io.StringIO()
+        with redirect_stdout(out):
+            claims.run(Namespace(path=str(self.root / "proposal"), json=None, dry_run=False), self.deck,
+                       lambda d: client)
+        self.assertNotIn("작성 안내 문장 12개를 둔다.", client.asked)
+        self.assertIn("측정값 12,345행/초를 얻었다.", client.asked)     # an explicit path reads the annex
+
     def test_stats_format(self):
         s = claims.Stats(694, 694, 0, 63.0, 0.031)
         self.assertEqual(s.line(), "질문 694 · 답 694 · 오류 0 · 63초(초당 11건) · $0.03")

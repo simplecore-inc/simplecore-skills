@@ -236,6 +236,11 @@ def targets(deck: DeckConfig, path: str | None) -> list[tuple[Path, str]]:
         if not p.exists():
             raise ConfigError(f"{path} does not exist")
         files = [p] if p.is_file() else sorted(p.rglob("*.md"))
+        if deck.has("manuscript"):
+            # A path inside the manuscript keeps its exclusions: an authoring brief is not copy.
+            ms = Manuscript.for_deck(deck)
+            kept = set(ms.files())
+            files = [f for f in files if not f.is_relative_to(ms.dir) or f in kept]
         return [(f, _label(f, deck.root)) for f in files]
     ms = Manuscript.for_deck(deck)
     return [(f, _label(f, deck.root)) for f in ms.files(annex=False)]
