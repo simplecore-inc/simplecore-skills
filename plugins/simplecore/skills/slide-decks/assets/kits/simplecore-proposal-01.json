@@ -11,8 +11,10 @@
 
   "pages": {
     // The running head every body page draws, and which of its arguments carry the
-    // part number, the chapter line and the page title.
-    "head": { "component": "sg-master-head", "part": "tone", "chapter": "chapter", "title": "title" },
+    // part number, the chapter line, the page title, the evaluation item the page
+    // answers and the requirement ids it answers.
+    "head": { "component": "sg-master-head", "part": "tone", "chapter": "chapter", "title": "title",
+              "evalItem": "badge", "reqs": "refTitle" },
     // Master name prefixes. A body page's master is BODY-<part>; a divider's PART-<part>.
     // Folioless masters carry no folio while no folio has been counted yet (cover and
     // contents); annex masters carry their own series and are outside the body count.
@@ -26,6 +28,17 @@
     // The page components a source file opens a page with.
     "components": { "body": ["page"], "contents": ["toc"], "divider": ["part"], "annexDivider": ["annex-part"] }
   },
+
+  // The contents component's rows: the data field each printed number and page is
+  // bound to (`←row[i].<field>` in the content reading), per level.
+  "contents": {
+    "part": { "number": "ch.no", "page": "ch.page" },
+    "chapter": { "number": "it.no", "page": "it.page" }
+  },
+
+  // The faces the kit sets its type in; `sans` is the face a figure's labels are
+  // printed in when a deliverable PDF inlines the figure.
+  "fonts": { "sans": "Pretendard", "serif": "KoPubBatang" },
 
   "slots": {
     // Name slots: titles, heads and labels, which take a noun phrase.
