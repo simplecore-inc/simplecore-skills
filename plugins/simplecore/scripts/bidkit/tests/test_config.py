@@ -47,6 +47,10 @@ class StripTests(unittest.TestCase):
         with self.assertRaises(ConfigError):
             strip_jsonc('{"a": 1 /* open')
 
+    def test_trailing_commas_outside_strings_are_dropped(self):
+        text = '{\n  "a": [1, 2, // last\n  ],\n  "s": "x, ]",\n}'
+        self.assertEqual(parse_jsonc(text, "sample"), {"a": [1, 2], "s": "x, ]"})
+
 
 class ProjectTests(unittest.TestCase):
     def setUp(self):

@@ -23,11 +23,13 @@ class ConfigError(Exception):
 
 
 def strip_jsonc(text: str) -> str:
-    """Remove `//` and `/* */` comments that stand outside strings.
+    """Remove `//` and `/* */` comments and trailing commas outside strings.
 
     A line-based strip breaks on a value such as "http://127.0.0.1:7333/mcp"
     and on a value line that ends in a comment, so the text is walked
-    character by character with string state.
+    character by character with string state. This is the one JSONC reader
+    the plugin's scripts share, the deck declaration and the figure settings
+    alike.
     """
     out: list[str] = []
     i, n = 0, len(text)
@@ -61,6 +63,37 @@ def strip_jsonc(text: str) -> str:
             out.append("\n" * text.count("\n", i, end))
             i = end + 2
             continue
+        out.append(c)
+        i += 1
+    return _drop_trailing_commas("".join(out))
+
+
+def _drop_trailing_commas(text: str) -> str:
+    """Remove a comma that closes an object or array, outside strings."""
+    out: list[str] = []
+    i, n = 0, len(text)
+    in_str = False
+    while i < n:
+        c = text[i]
+        if in_str:
+            out.append(c)
+            if c == "\\" and i + 1 < n:
+                out.append(text[i + 1])
+                i += 2
+                continue
+            if c == '"':
+                in_str = False
+            i += 1
+            continue
+        if c == '"':
+            in_str = True
+        elif c == ",":
+            j = i + 1
+            while j < n and text[j] in " \t\r\n":
+                j += 1
+            if j < n and text[j] in "}]":
+                i += 1
+                continue
         out.append(c)
         i += 1
     return "".join(out)
