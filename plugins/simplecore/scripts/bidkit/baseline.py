@@ -150,3 +150,17 @@ class Baseline:
                                         ensure_ascii=False, indent=2, sort_keys=True) + "\n",
                              encoding="utf-8")
         return self.unreasoned()
+
+
+def judge(baseline: Baseline, findings: list, key_of: Callable[[Any], str],
+          measure_of: Callable[[Any], Any] | None = None) -> tuple[list, list]:
+    """(live findings, findings retired with a blank reason), in the order given."""
+    live, owed = [], []
+    for item in findings:
+        verdict = (baseline.verdict(key_of(item), measure_of(item)) if measure_of
+                   else baseline.verdict(key_of(item)))
+        if verdict == LIVE:
+            live.append(item)
+        elif verdict == UNREASONED:
+            owed.append(item)
+    return live, owed

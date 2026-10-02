@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import re
 import zipfile
+from zipfile import BadZipFile
 from dataclasses import dataclass
 from html import unescape
 from pathlib import Path
@@ -82,7 +83,7 @@ class Built:
                 pres = z.read("ppt/presentation.xml").decode("utf-8")
                 self.slides = {int(m.group(1)): z.read(n).decode("utf-8")
                                for n in z.namelist() for m in [SLIDE.fullmatch(n)] if m}
-        except (zipfile.BadZipFile, KeyError) as e:
+        except (BadZipFile, KeyError) as e:
             raise DeckError(f"{path} is not a readable .pptx: {e}") from e
         size = SLD_SZ.search(pres)
         if not size:

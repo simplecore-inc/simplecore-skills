@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import re
 import struct
+from struct import error as StructError
 from pathlib import Path
 
 from .config import ConfigError, DeckConfig
@@ -40,7 +41,7 @@ class Font:
             raise FontError(f"cannot read the font {self.path}: {e}") from e
         try:
             self._load(data)
-        except (struct.error, KeyError, ValueError, IndexError) as e:
+        except (StructError, KeyError, ValueError, IndexError) as e:
             raise FontError(f"{self.path} is not a readable TrueType or OpenType font: {e}") from e
         self.missing: set[str] = set()
         self._cache: dict[str, float] = {}
