@@ -11,10 +11,10 @@
 
   "pages": {
     // The running head every body page draws, and which of its arguments carry the
-    // part number, the chapter line, the page title, the evaluation item the page
-    // answers and the requirement ids it answers.
+    // part number, the chapter line, the page title, the explanation under it, the
+    // evaluation item the page answers and the requirement ids it answers.
     "head": { "component": "sg-master-head", "part": "tone", "chapter": "chapter", "title": "title",
-              "evalItem": "badge", "reqs": "refTitle" },
+              "sub": "sub", "evalItem": "badge", "reqs": "refTitle" },
     // Master name prefixes. A body page's master is BODY-<part>; a divider's PART-<part>.
     // Folioless masters carry no folio while no folio has been counted yet (cover and
     // contents); annex masters carry their own series and are outside the body count.
@@ -165,7 +165,41 @@
     "badgeIds": { "req-chips": "items[].ids", "chip": "text" },
     // Code values standing as labels (a requirement id on a chip), held to the code-label
     // floor rather than the type floor when the deck declares one.
-    "codeLabels": ["chip", "badge", "req-chips"]
+    "codeLabels": ["chip", "badge", "req-chips"],
+    // The argument a figure component prints its number in (「그림 Ⅲ-1」).
+    "figureNumber": { "figure": "no", "figure-caption": "no" },
+    // Components that open a region, with the argument holding the region's title, and
+    // the arguments that are a component's own head: a region's title and the head of
+    // the first component under it must differ, or one of the two carries nothing.
+    "regions": { "section": "head", "section-bar": "head", "heading": "text", "block": "head" },
+    "regionHeads": ["head"]
+  },
+
+  // A label and the prose it stands in front of, per component, in reading order. Slot
+  // syntax as in `slots`; a pair of `arg[].key` slots on one list is read item by item.
+  // A label that repeats its own prose's opening word carries nothing (check markecho).
+  "marks": {
+    "keyrow": [["label", "value"]], "anchor-row": [["label", "value"]],
+    "notice": [["label", "text"]], "note": [["mark", "text"]], "list-row": [["mark", "text"]],
+    "list": [["items[].mark", "items[].text"]], "term-para": [["term", "text"]],
+    "deflist": [["items[].term", "items[].definition"]],
+    "callout": [["head", "text"]], "card": [["head", "body"]], "item": [["head", "body"]],
+    "proof-line": [["head", "body"]], "delta-row": [["head", "body"]], "icon-band": [["head", "body"]],
+    "stage": [["head", "body"]], "step-row": [["head", "body"]], "decision-card": [["head", "body"]],
+    "lane": [["head", "body"]], "event-detail": [["head", "body"]], "flow-step": [["head", "note"]],
+    "num-step": [["head", "note"]], "proof-strip": [["tailLabel", "tail"]],
+    "ledger-row": [["answerLabel", "answer"]],
+    "panel-row": [["midLabel", "mid"], ["endLabel", "end"]],
+    "axis-card": [["aLabel", "aText"], ["bLabel", "bText"]],
+    "pair-card": [["aLabel", "aText"], ["bLabel", "bText"]],
+    "choice-card": [["aLabel", "aText"], ["bLabel", "bText"]],
+    "trigger-card": [["aLabel", "aText"], ["bLabel", "bText"]],
+    "trio-card": [["aLabel", "aText"], ["bLabel", "bText"], ["cLabel", "cText"]],
+    "card-split": [["leftLabel", "leftText"], ["rightLabel", "rightText"]],
+    "steps": [["items[].head", "items[].body"]], "timeline": [["items[].head", "items[].body"]],
+    "key-summary": [["items[].head", "items[].body"]], "fig-column": [["notes[].head", "notes[].body"]],
+    "flow": [["steps[].head", "steps[].note"]], "value-chain": [["items[].a", "items[].b"]],
+    "risk-response": [["items[].risk", "items[].detail"]]
   },
 
   // The inks fine print is set in: lead, caption, footnote (doc.inkMuted). The body ink
