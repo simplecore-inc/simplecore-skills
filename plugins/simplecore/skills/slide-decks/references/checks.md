@@ -1,12 +1,13 @@
 # The checks, and what each one catches
 
-The geometry of a page is judged by the deck tool's own checks over its live model, and a
-deck carries its own checks for what the tool cannot know. A project implements those
-checks in its own repository and declares them in `.claude/slide-decks.json`
-([config.md](config.md)): the pre-flight group runs inside the build and stops it, the
-after group runs after every render, and either group can be run on demand once the deck
-is saved. A check that fails is fixed at the source, never by relaxing the check or its
-baseline.
+The geometry of a page is judged by the deck tool's own checks over its live model, and the
+deck's declared checks hold what the tool cannot know. The checks true of any deck ship with
+the skills ([the shared checks](#the-shared-checks-and-the-runner)); a check true of one
+project only lives in that project's `checks.local` directory. Both are declared by name in
+`.claude/slide-decks.json` ([config.md](config.md)) and run by `scripts/check.py`: the
+pre-flight group runs inside the build and stops it, the after group runs after every
+render, and either group can be run on demand. A check that fails is fixed at the source,
+never by relaxing the check or its baseline.
 
 How any of this is written in the deck tool is that tool's own authoring guide (for
 SlideGlance: the slideglance-pptx skill and the server's sg://guide).
@@ -79,8 +80,10 @@ Each check is named by the property it holds. The deck kind says where it applie
 | Korean audit, wired into the build | the paths in `korean.audit` | the same violations, but on every render rather than when somebody remembers; see below | both |
 | absolute paths | every source reference in the deck (image sources, background paths, links, imports) | a path begins at `/` or at a drive letter. It runs in pre-flight, before anything is compiled, because the defect it catches is invisible afterwards: the deck builds and renders on the machine whose home directory is in the path, and nowhere else | both |
 
-A document deck's manuscript checks are written against that manuscript's conventions and
-stay with the project, like every other check.
+A document deck's manuscript checks read the manuscript's conventions (its printed-part
+heading, page heading, caption line, declaration comment) from the `manuscript`
+declaration, so they are shared like the deck checks. Only a check whose subject exists in
+one project alone goes under `checks.local`.
 
 **A line count is measured by wrapping, never by dividing widths.** A generator that
 asks how tall a cell or a paragraph will be is tempted to divide the run's total
@@ -152,6 +155,47 @@ carry no source line, so the build prints its node path and measured context (bo
 natural width, font size): the path names the template nesting and the font size names
 the style that overflowed, which is usually enough to find the string.
 
+## The shared checks and the runner
+
+The library every shared check reads through is `plugins/simplecore/scripts/bidkit/`:
+`config` (the declaration, found by walking up from the working directory, comments
+stripped with string state so a URL survives), `sgmcp` (the connection to whichever server
+holds the deck: the application that has it open, else a private `slideglance mcp` over the
+files on disk), `deckread` (source files in import order, slides as printed, page ids,
+folios and tables), `vocab` (the kit vocabulary in `assets/kits/<kit>.json`), `baseline`,
+`textko` and `manuscript`. A check reads the deck from the server, never from disk, because
+the application's model runs ahead of the disk until the deck is saved.
+
+| Check | Lives in | Reads | Fails when | Declares |
+| --- | --- | --- | --- | --- |
+| `coltotal` | `slide-decks/scripts/checks/` | every printed table, a table continued onto the next page read as one | a total row's number differs from the sum of the numeric column above it | `checks.coltotal` (optional) |
+| `samecol` | `slide-decks/scripts/checks/` | every printed table, continued tables joined | every body cell of a column holds one value, judged over the whole table so a column that varies on its first page is not reported for its last; a retired column whose value changes fires again | `checks.baselines`, `checks.samecol` (optional) |
+| `proof` | `slide-decks/scripts/checks/` | the deck's source files and the evidence table | a cited item is not defined, a defined item is cited by no page (pending while every page listed for it is in a chapter not yet typeset), a cell cites by number without the tag, or pages cite while the table is missing. A count (「증빙 3건」) and a range (「증빙 1~9」) are not citations | `evidence`, `pages.numerals` with `evidence.pagesColumn` |
+| `reqid` | `proposal-writing/scripts/` | the deck's source files (comments stripped) and every manuscript file | an id the digest's headings do not issue is cited, a range included (`PER-001~008` over a never-issued `PER-007`); a sentence matching `requirements.absence` may name a missing id | `requirements`, `manuscript` |
+
+**Run them through the runner**, from anywhere inside the project:
+
+```bash
+python3 <skills>/slide-decks/scripts/check.py after        # or preflight
+python3 <skills>/slide-decks/scripts/check.py run reqid    # named checks
+python3 <skills>/slide-decks/scripts/check.py list         # what each name resolves to
+python3 <skills>/slide-decks/scripts/check.py undeclared   # local scripts nobody runs
+```
+
+A name resolves to `<checks.local>/<name>.py` first, then to the shared check, so a project
+overrides a shared check by writing its own under the same name. Every check is timed, its
+standard error is printed whatever its exit code, a check that prints nothing is reported,
+and a declared name that resolves to nothing fails. Exit codes are 0 clean, 1 findings, 2 a
+check that could not reach its input (a missing key, no server holding the deck, a deck
+that contradicts the declaration). Every shared check prints one line saying what it read
+and what it found.
+
+A shared check is added with tests that build its broken form and its fixed form
+(`scripts/bidkit/tests/`, `slide-decks/scripts/checks/tests/`,
+`proposal-writing/scripts/tests/`, standard-library `unittest`), and fire on the first and
+stay quiet on the second. The deck reader is tested on a recording of a live deck
+(`RecordedTransport`) whose wording is replaced, since the skill repository is public.
+
 ## A baseline entry carries the reason, not just the finding
 
 A baseline retires a finding, and a finding retired on the strength of having
@@ -162,6 +206,15 @@ writes the entry blank so the reason has to be typed before the check goes
 quiet. Where a baseline predates the rule, its existing entries stay retired and only
 a new or changed one demands a reason; a flag day that fails forty entries at
 once teaches nobody anything.
+
+Baselines live in the directory `checks.baselines` names, one `<check>.json` per check,
+never beside a check's script. An entry is `"finding": "reason"`, or
+`{"reason": …, "measure": …}` when the judgement holds only at one measure (an overlap
+ratio, a set of values); `""` is retired with the reason still owed and fails. A legacy file
+(a list of findings, a bare measure, an object without a reason) loads as grandfathered
+entries that stay retired while their measure is unchanged. `--bless` rewrites the file
+with today's findings, keeps the reason of every entry found unchanged, writes the rest
+blank, and prints the ones that still owe a reason.
 
 ## A check that cannot reach its input says so instead of passing
 
@@ -266,8 +319,9 @@ The order is fixed:
    declared check; on a slide deck the sequence census, density, verdict and column fill.
 5. **Figure verify**, over the figure directory.
 
-The checks read the files on disk, so a deck held open in an editor is saved before they
-run, or it is checked as it was.
+The shared checks read the deck from the server that holds it, so an edit applied in the
+application is checked before it is saved. A project check that reads files on disk reads
+the deck as it was last saved; save the deck before running such a check.
 
 **A check run by hand names a directory, never a deck file**, where the project guards its
 deck sources against writes from the shell: a script handed a deck file may write it, so

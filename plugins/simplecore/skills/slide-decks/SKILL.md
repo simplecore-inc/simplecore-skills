@@ -69,9 +69,10 @@ What carries over from tool to tool, and so stays here:
   it.** Overflow, overlap, text outside its box, a row taller than reserved, the type
   floor and the sheet count are the tool's readings over the built file. Two
   measurements of one thing is how a deck ships the bug one of them fixed. What the
-  project's own checks hold is what the tool cannot know: the manuscript, the tender, the
-  deck's component vocabulary and rhythm, a floor that exempts a class of label, the
-  Korean audit ([references/checks.md](references/checks.md)).
+  declared checks hold, the shared ones this skill carries and a project's own, is what
+  the tool cannot know: the manuscript, the tender, the deck's component vocabulary and
+  rhythm, a floor that exempts a class of label, the Korean audit
+  ([references/checks.md](references/checks.md)).
 
 ## The loop is not optional
 

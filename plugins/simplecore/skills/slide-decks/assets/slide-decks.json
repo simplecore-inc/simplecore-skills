@@ -6,14 +6,31 @@
     "proposal": {
       "dir": "pptx",
       "kind": "document",
-      // the deck tool, its authoring skill, and the server that owns this deck
-      "tool": { "name": "slideglance", "skill": "slideglance-pptx", "server": "slideglance-proposal" },
+      // the deck tool, its authoring skill, the server that owns this deck, and the entry file
+      "tool": { "name": "slideglance", "skill": "slideglance-pptx", "server": "slideglance-proposal",
+                "entry": "main.sgx" },
+      // the kit vocabulary the shared checks read (skills/slide-decks/assets/kits/<kit>.json)
+      "vocabulary": "simplecore-proposal-01",
+      // page ids and folios: the part numerals in order and the id format
+      "pages": { "numerals": ["Ⅰ", "Ⅱ", "Ⅲ", "Ⅳ", "Ⅴ", "Ⅵ", "Ⅶ", "Ⅷ"], "id": "{part}-{chapter} {ordinal:02}" },
       // the sizes this deck is set at, in points; codeLabel null where that class is not measured
       "type": { "floor": 8, "codeLabel": null },
       // what the tender calls the annex, so the deck writes its word
       "annex": { "term": "별첨" },
       "page": { "w": 794, "h": 1123, "textBlock": 682 },
-      "manuscript": "proposal",
+      // the manuscript and its conventions: printed part, page heading, declaration, caption
+      "manuscript": { "dir": "proposal", "printed": "## 인쇄 원고", "page": "### ",
+                      "declaration": "<!--\\s*md:", "caption": "^캡션: ",
+                      "exclude": ["README.md"], "annex": ["10-별첨/**"] },
+      // the requirement digest whose headings issue the ids, and the id shape
+      "requirements": { "source": "docs/requirements.md",
+                        "id": { "prefix": "[A-Z]{3}[-_]", "digits": 3 },
+                        "notAnId": [],
+                        "absence": "제안요청서에 (?:없다|없음|없습니다)" },
+      // the evidence notation; null when the deck cites no evidence items
+      "evidence": { "tag": "증빙", "table": "proposal/00-서식/07-평가항목-조견표.md", "pagesColumn": -1 },
+      // the numbered-page ceiling and the tender clause it comes from
+      "budget": { "maxNumbered": 100, "clause": "제안요청서 「나. 서류 제출방법 3)」", "plan": "docs/page-plan.md" },
       "instructions": ["pptx/AGENTS.md", "pptx/README.md"],
       "render": "cd pptx && npm run render",
       "output": "pptx/out/제안서.pptx",
@@ -26,35 +43,18 @@
         // board width in drawing units -> placed width in page px
         "boards": { "1200": 682, "520": 300, "520-pair": 327 }
       },
+      // Check names, run by skills/slide-decks/scripts/check.py: a name resolves to
+      // <local>/<name>.py first, then to the shared check of that name.
       "checks": {
-        "preflight": {
-          "evaluation": "tools/deck/check evaluation",
-          "contents": "tools/deck/check contents",
-          "chapter_pages": "tools/deck/check chapter_pages",
-          "typefloor": "tools/deck/check typefloor"
-        },
-        "after": {
-          "rowheight": "tools/deck/check rowheight",
-          "rhythm": "tools/deck/check rhythm",
-          "fignum": "tools/deck/check fignum",
-          "figures": "tools/deck/check figures",
-          "parity": "tools/deck/check parity",
-          "echo": "tools/deck/check echo",
-          "twice": "tools/deck/check twice",
-          "naming": "tools/deck/check naming",
-          "bleed": "tools/deck/check bleed",
-          "secref": "tools/deck/check secref",
-          "reqid": "tools/deck/check reqid",
-          "reqbadge": "tools/deck/check reqbadge",
-          "proof": "tools/deck/check proof",
-          "samefact": "tools/deck/check samefact",
-          "samecol": "tools/deck/check samecol",
-          "coltotal": "tools/deck/check coltotal",
-          "dangle": "tools/deck/check dangle",
-          "figtext": "tools/deck/check figtext",
-          "lookup": "tools/deck/check lookup",
-          "rfpwords": "tools/deck/check rfpwords"
-        }
+        "preflight": ["evaluation", "contents", "chapter_pages", "typefloor"],
+        "after": ["rowheight", "rhythm", "fignum", "figures", "parity", "echo", "twice", "naming",
+                  "bleed", "secref", "reqid", "reqbadge", "proof", "samefact", "samecol", "coltotal",
+                  "dangle", "figtext", "lookup", "rfpwords"],
+        "local": "tools/deck",
+        // one <check>.json per check: {finding: reason}
+        "baselines": "tools/deck/baselines",
+        // a local script that is not a check, and why
+        "excluded": { "deckio": "the reader the local checks import" }
       },
       "korean": {
         "audit": ["pptx/chapters", "pptx/templates", "pptx/styles", "pptx/README.md"]
@@ -91,18 +91,10 @@
         "boards": { "1800": 1020, "1200": 680, "880": 499, "520": 295 }
       },
       "checks": {
-        "preflight": {
-          "typefloor": "pptx-presentation/tools/check typefloor",
-          "refpages": "pptx-presentation/tools/check refpages",
-          "coverage": "pptx-presentation/tools/check coverage"
-        },
-        "after": {
-          "rowheight": "pptx-presentation/tools/check rowheight",
-          "census": "pptx-presentation/tools/check census",
-          "density": "pptx-presentation/tools/check density",
-          "verdict": "pptx-presentation/tools/check verdict",
-          "colfill": "pptx-presentation/tools/check colfill"
-        },
+        "preflight": ["typefloor", "refpages", "coverage"],
+        "after": ["rowheight", "census", "density", "verdict", "colfill"],
+        "local": "pptx-presentation/tools",
+        "baselines": "pptx-presentation/tools/baselines",
         "census": { "sequences": ["process-strip", "flow-row", "stage-strip", "flow-down"],
                     "sequenceRows": ["step-row", "ladder-step", "stage-detail"], "maxShare": 0.34,
                     // The rows a slide closes a region on. One of them on nearly

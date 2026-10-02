@@ -1,0 +1,78 @@
+{
+  // The component vocabulary of the SlideGlance kit simplecore-proposal-01, as the
+  // shared deck checks read it (scripts/bidkit/vocab.py). Every name here is a
+  // template or parameter the kit defines; a project that adds its own components
+  // overrides a class with a file named by `vocabulary.override`.
+  //
+  // Slot syntax: `arg` is an argument's value, `arg[].key` is the `key` of every item
+  // in the JSON list `arg` holds, and `arg[0][]` is every cell of the first row of the
+  // JSON grid `arg` holds (a table's header row).
+  "kit": "simplecore-proposal-01",
+
+  "pages": {
+    // The running head every body page draws, and which of its arguments carry the
+    // part number, the chapter line and the page title.
+    "head": { "component": "sg-master-head", "part": "tone", "chapter": "chapter", "title": "title" },
+    // Master name prefixes. A body page's master is BODY-<part>; a divider's PART-<part>.
+    // Folioless masters carry no folio while no folio has been counted yet (cover and
+    // contents); annex masters carry their own series and are outside the body count.
+    "masters": {
+      "body": ["BODY"],
+      "divider": ["PART"],
+      "folioless": ["COVER", "TOC", "PLAIN"],
+      "annex": ["ANNEX"],
+      "fullBleed": ["COVER", "TOC", "PART", "ANNEX-END", "END"]
+    },
+    // The page components a source file opens a page with.
+    "components": { "body": ["page"], "contents": ["toc"], "divider": ["part"], "annexDivider": ["annex-part"] }
+  },
+
+  "slots": {
+    // Name slots: titles, heads and labels, which take a noun phrase.
+    "name": {
+      "page": ["title", "chapter"],
+      "toc": ["title"],
+      "part": ["name", "cells[].head"],
+      "annex-part": ["title", "cells[].head"],
+      "heading": ["text"],
+      "section": ["head"],
+      "figure": ["caption"],
+      "notice": ["label"],
+      "keyrow": ["label"],
+      "stage": ["head"],
+      "axis-card": ["head", "aLabel", "bLabel"],
+      "fact-band": ["statLabel", "labelA", "labelB", "labelC"],
+      "value-chain": ["headA", "headB", "headC", "items[].a"],
+      "stat-grid": ["items[].label"],
+      "deflist": ["items[].term"],
+      "evidence-stat": ["claim"],
+      "table": ["rows[0][]"]
+    },
+    // Prose blocks: a paragraph of the page's own argument.
+    "prose": {
+      "prose": ["text"],
+      "text-note": ["text"],
+      "note": ["text"],
+      "notice": ["text"]
+    },
+    "caption": { "figure": ["caption"] },
+    "sub": { "page": ["sub"] }
+  },
+
+  // Argument classes for a check that traces printed copy to the manuscript.
+  "args": {
+    // Deck furniture: set by the typesetter and checked against the furniture source.
+    "furniture": ["title", "sub", "caption", "chapter", "part", "refTitle", "badge", "notes",
+                  "description", "no", "name", "kicker", "locator", "lede", "cells"],
+    // Layout and data that are not printed copy.
+    "layout": ["template", "src", "alt", "tone", "icon", "w", "h", "variant", "size", "master",
+               "termW", "labelW", "figW", "aGrow", "bGrow", "stretch", "marker", "numbered",
+               "lastTotal", "level", "code", "folioPrefix", "folioRestart", "columns", "when"],
+    // Plain arguments holding a sentence of the document's own.
+    "prose": ["text", "aText", "bText", "value", "claim", "condition", "statNote",
+              "noteA", "noteB", "noteC"],
+    // Plain arguments holding a head or a label.
+    "heads": ["head", "label", "aLabel", "bLabel", "headA", "headB", "headC",
+              "statLabel", "labelA", "labelB", "labelC"]
+  }
+}

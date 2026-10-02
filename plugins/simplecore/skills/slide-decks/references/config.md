@@ -13,8 +13,9 @@ Insert and replace by string, then parse (comments stripped) only to check it is
 
 **A required key that is absent is an error the skill reports, never a path it guesses.**
 Name the key, say what it names and what it buys, and offer to fill it in. A declared path
-that does not exist is the same error. A project's own checks that read this file refuse
-the same way.
+that does not exist is the same error. The shared checks (`scripts/check.py` and the checks
+it runs, [checks.md](checks.md#the-shared-checks-and-the-runner)) read this file through one
+loader and refuse the same way: a missing key exits 2 with the key's name, never 0.
 
 How the deck itself is written in the deck tool is that tool's own authoring guide (for
 SlideGlance: the slideglance-pptx skill and the server's sg://guide).
@@ -29,7 +30,15 @@ SlideGlance: the slideglance-pptx skill and the server's sg://guide).
       "kind": "document",                   // "document" (A4 portrait) or "slides" (landscape)
       // The deck tool, the skill that teaches its authoring, and the server
       // that owns this deck, so the deck is reached rather than guessed at
-      "tool": { "name": "<deck tool>", "skill": "<authoring skill>", "server": "<server name>" },
+      "tool": { "name": "<deck tool>", "skill": "<authoring skill>", "server": "<server name>",
+                "entry": "main.sgx",              // the deck's entry file inside `dir`
+                "appConnection": null,            // the host app's connection file, when not the tool's default
+                "binary": null },                 // the tool binary the checks start when no app holds the deck
+      // The kit vocabulary the shared checks read: which components carry a name, a
+      // prose block or a caption, and the master names of each page kind
+      "vocabulary": "simplecore-proposal-01",
+      // How the checks compute page ids and folios, over the vocabulary's defaults
+      "pages": { "numerals": ["Ⅰ", "Ⅱ", "Ⅲ", "Ⅳ", "Ⅴ", "Ⅵ", "Ⅶ", "Ⅷ"], "id": "{part}-{chapter} {ordinal:02}" },
       "page": { "w": 794, "h": 1123, "textBlock": 682 },
       // The sizes this deck is set at, in points. `floor` is what prose is
       // held to: the absolute minimum on a document deck, the body size on a
@@ -41,7 +50,17 @@ SlideGlance: the slideglance-pptx skill and the server's sg://guide).
       "numbering": { "ladder": ["가.", "1)", "가)", "①", "□", "○", "-"], "levels": ["pageTitle", "regionHead", "nestedRegionHead"], "restart": { "pageTitle": "chapter", "regionHead": "page", "nestedRegionHead": "parentRegion" } },
       // What the tender calls the annex, so the deck writes its word
       "annex": { "term": "별첨" },
-      "manuscript": "proposal",             // document deck: the prose the pages are set from
+      // document deck: the prose the pages are set from, and its conventions
+      "manuscript": { "dir": "proposal", "printed": "## 인쇄 원고", "page": "### ",
+                      "declaration": "<!--\\s*md:", "caption": "^캡션: ",
+                      "exclude": ["README.md"], "annex": ["10-별첨/**"] },
+      // the requirement digest whose headings issue the ids, and the id shape
+      "requirements": { "source": "docs/requirements.md", "id": { "prefix": "[A-Z]{3}[-_]", "digits": 3 },
+                        "notAnId": [], "absence": "제안요청서에 (?:없다|없음|없습니다)" },
+      // the evidence notation and the table that defines its items; null when unused
+      "evidence": { "tag": "증빙", "table": "proposal/00-서식/07-평가항목-조견표.md", "pagesColumn": -1 },
+      // the numbered-page ceiling, the tender clause it comes from, and the page plan
+      "budget": { "maxNumbered": 100, "clause": "제안요청서 「나. 서류 제출방법 3)」", "plan": "docs/page-plan.md" },
       "plan": "docs/plan.md",               // slide deck: the plan, one section per slide
       // A volume that reproduces an issued document: the PDF it carries. Its
       // body pages are generated from this file, one source page per deck
@@ -64,10 +83,14 @@ SlideGlance: the slideglance-pptx skill and the server's sg://guide).
         "boards": { "1200": 682, "520": 300, "520-pair": 327 }   // units -> placed px
       },
       "checks": {
-        // Only what the deck tool's own checks do not judge. Each entry is a
-        // check name and the command the project owns that runs it.
-        "preflight": { "type-floor": "tools/deck/check type-floor" },  // run by the build; a failure stops it
-        "after": { "row-height": "tools/deck/check row-height" },      // run after every render
+        // Only what the deck tool's own checks do not judge. Each phase lists check
+        // names; a name resolves to <local>/<name>.py first, then to the shared check.
+        "preflight": ["typefloor"],                  // run by the build; a failure stops it
+        "after": ["coltotal", "samecol", "proof", "reqid"],   // run after every render
+        "local": "tools/deck",                       // the project's own checks
+        "baselines": "tools/deck/baselines",         // <check>.json per check, {finding: reason}
+        "excluded": { "deckio": "a library the local checks import, not a check" },
+        "coltotal": { "totalLabels": ["합계", "소계", "계", "총계", "누계"] },
         // slide decks add census and density, with their own keys:
         "census": { "sequences": ["process-strip", "flow-row", "stage-strip", "flow-down"],
                     "sequenceRows": ["step-row", "ladder-step", "stage-detail"], "maxShare": 0.34 },
@@ -152,7 +175,18 @@ SlideGlance: the slideglance-pptx skill and the server's sg://guide).
 | `figures.upstream` | the document deck's figure directory a slide deck snapshots from; `figures.sources` then names only directories the slide deck owns | which document a slide deck summarises is the project's arrangement, and the snapshot check refuses to guess where to sync from |
 | `figures.placeScale` | the share of its board placement a document figure prints at, centred in a box that keeps the placed width; 0.9 when absent | figures print at the full measure and read heavier than the page around them, or a typesetter lowers one figure to make a page fit |
 | `figures.boards` (· `figures.scale`) | drawing-unit board width → placed px. A document deck, whose boards differ little, may add `-<variant>` entries for a board's second placement; a slide deck declares one `scale` and no variants, so a label drawn at 15 units is the same size on every slide | the build cannot place a figure; report the board it met |
-| `checks.preflight` · `checks.after` | each a map of check name → the command the project owns that runs it: the pre-flight group the build runs before compiling, and the after group run after every render. The commands live in the project's repository, never in this skill | a check nobody runs is a defect nobody finds; the pre-flight lists what is missing |
+| `checks.preflight` · `checks.after` | the pre-flight group the build runs before compiling and the after group run after every render, each a list of check names. `scripts/check.py` resolves a name to `<checks.local>/<name>.py` first and then to the shared check of that name, so a project overrides a shared check by writing its own under the same name. A map of name → command is accepted as well: an entry with a command runs that command from the project root, an entry with an empty command resolves by name. Declare names rather than commands for the shared checks, since a command would carry the skill's installed path | a check nobody runs is a defect nobody finds; a declared name that resolves to nothing fails the run |
+| `checks.local` | the directory of the project's own checks, relative to the root. Every `.py` in it that is not `_`-prefixed or `test_` is expected in a phase or in `checks.excluded` | a project check has nowhere to resolve from, and `check.py undeclared` cannot name the scripts nobody runs |
+| `checks.baselines` | the directory every check's baseline lives in, one `<check>.json` each, never beside the check's script (a shared check's directory belongs to the skill) | a check that keeps a baseline exits 2: a finding cannot be retired, and a retired one cannot be read |
+| `checks.excluded` | a local script left out of both phases, and the reason (a library the checks import, a generator) | the script is reported as undeclared on every `list` |
+| `checks.coltotal.totalLabels` · `tolerance` · `checks.samecol.minRows` | the words a total row opens with (default 「합계」 · 「소계」 · 「계」 · 「총계」 · 「누계」), the arithmetic slack (0.5), and the fewest body rows a uniform column is judged on (3) | the defaults apply |
+| `tool.entry` · `tool.appConnection` · `tool.binary` | the entry file inside `dir` (`main.sgx` when absent); the host application's connection file when it is not the tool's default location (`$SLIDEGLANCE_APP_MCP` overrides it); the tool binary a check starts over stdio when no application holds the deck (`$SLIDEGLANCE_BIN` overrides it, `slideglance` on PATH otherwise) | the checks look in the default places; a check that finds neither an application holding the deck nor a binary exits 2 |
+| `vocabulary` | the kit whose component vocabulary the checks read (`assets/kits/<kit>.json`: name slots, prose slots, captions, argument classes, the running head, master name prefixes), or `{"kit": …, "override": "<file>"}` to replace the components a project adds, or `{"file": "<file>"}` for a deck on no shared kit. Slot syntax: `arg`, `arg[].key` (each item of a JSON list), `arg[0][]` (the first row of a JSON grid) | a check that reads components cannot tell a title from a paragraph, and the reader cannot find the running head |
+| `pages.numerals` · `pages.id` (· `pages.head` · `pages.masters`) | the part numerals in order (part 1 is the first) and the page-id format over `part`, `chapter` and `ordinal` (`"{part}-{chapter} {ordinal:02}"` prints 「Ⅲ-1 02」); `head` and `masters` override the vocabulary's running head (`component`, `part`, `chapter`, `title` arguments) and master prefixes (`body`, `divider`, `folioless`, `annex`, `fullBleed`). Folios count every page except annex pages and the folioless pages before the first folio; ids count a chapter's body pages in printed order. Two pages computing one id is an error | no page id and no folio, so no check that reports by page can run |
+| `manuscript` | the manuscript directory, alone or as an object: `printed` (the heading that opens a file's printed part), `page` (the heading prefix of one printed page), `declaration` (how a deck source names its manuscript in a comment), `caption` (the caption line), `exclude` and `annex` (globs relative to `dir`, `*` crossing directories) | a document deck without it cannot run parity, coverage or the id check against its prose; a helper that needs an undeclared convention refuses rather than guessing it |
+| `requirements.source` · `id` · `notAnId` · `absence` | the requirement digest whose headings (`#### PER-002 …`) issue the ids; the id shape (`{"prefix": <pattern>, "digits": <n>}`, the separator inside the prefix, so `QUR_001` and `PER-001` both read); prefixes that share the shape and are model or standard names (cipher and standard names are always excluded); and the pattern of a sentence that names an id to say the tender lacks it | the id check exits 2: it cannot tell an issued id from a fabricated one |
+| `evidence.tag` · `table` · `pagesColumn` · `countUnits` | the word an evidence citation opens with; the Markdown table that defines the items (a row opening `\| 증빙 1 \|`); optionally the table cell listing the pages that will cite each item (an index, `-1` for the last), so an item whose pages are all in chapters not yet typeset is pending rather than a defect; and the units that make the tag a count (「증빙 3건」). `"evidence": null` declares the notation unused | the evidence check exits 2 rather than reading an absent notation as clean |
+| `budget.maxNumbered` · `clause` · `plan` | the numbered-page ceiling, the tender clause it comes from (printed beside every over-budget finding), and the page plan that allocates pages per part | a page budget has no ceiling and no source the panel can check it against |
 | `checks.census.sequences` · `sequenceRows` · `maxShare` | the sequence shapes a slide deck uses (containers that hold a whole sequence, shapes that stand once per item) and the share of body slides one may stand on | the shapes are the deck's own templates; the skill cannot name them |
 | `checks.census.closers` · `maxCloserShare` | the rows a slide closes a region on, and the share of body slides one of them may stand on | which shapes read as a closing row is the deck's own component vocabulary |
 | `checks.density.maxChars` · `maxShapes` (· `skipSlots` · `layoutPrefixes` · `itemTemplates`) | the character and shape ceilings of a body slide, set when the deck's author called a slide too dense; the optional lists widen what is not counted | a ceiling is a judgement about one deck's audience and room, never a constant of the skill |
