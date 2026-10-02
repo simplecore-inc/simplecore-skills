@@ -34,7 +34,8 @@ and not for work on the SlideGlance editor itself.
 | Term standard | `.claude/GLOSSARY.md` and `.claude/l10n.json` in the bid repository |
 | Figure set: output folder, boards, type ladder, placement scale | `.claude/document-figures.json` in the bid repository, read by the figure library in `svg-diagrams/scripts/docfigures/` |
 | Shared checks | `slide-decks/scripts/check.py` runs the checks a deck declares; manuscript checks live in `proposal-writing/scripts/`. A bid keeps only its own checks (`checks.local`) and baselines (`checks.baselines`) |
-| Earlier bids, read for method and kit blocks only | `~/Workspace/kdn-proxy-gw-proposal`, `~/Workspace/kepco-pde-safety`, `~/Workspace/printer-manager` |
+| Reference bid: the latest and final standard for conventions, page ids, figure numbering, manuscript form and deck setup | `~/Workspace/kdn-proxy-gw-proposal` |
+| Finished bids, reference only; where they differ from the reference bid, the reference bid wins | `~/Workspace/kepco-pde-safety`, `~/Workspace/printer-manager` |
 
 The ledger is English and holds, in this order: bid facts with the tender clause each came from;
 the kickoff answers; assumptions decided by recommendation; the open list (every 「(미정: …)」 in
