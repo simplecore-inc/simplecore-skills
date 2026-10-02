@@ -4,7 +4,8 @@ from pathlib import Path
 
 from bidkit.config import ConfigError
 from bidkit.manuscript import Manuscript
-from bidkit.textko import loose, norm, sentences, strip_particle, wrapped_lines
+from bidkit.textko import (loose, marker_pattern, norm, sentences, strip_marker, strip_particle,
+                           wrapped_lines)
 
 from .support import project
 
@@ -35,6 +36,20 @@ class TextTests(unittest.TestCase):
         self.assertEqual(wrapped_lines(text, 10, w), 2)
         self.assertEqual(wrapped_lines("aaaaaa bbbbbb cccc", 10, w), 3)  # 18 units: division says two
         self.assertEqual(wrapped_lines("a" * 25, 10, w), 3)               # a word wider than the box
+
+
+class MarkerTests(unittest.TestCase):
+    def test_each_sample_stands_for_its_series(self):
+        rx = marker_pattern(["가.", "1)", "가)", "①", "□", "-"])
+        for title, bare in [("나. 사업의 배경", "사업의 배경"), ("12) 대응 기준", "대응 기준"),
+                            ("다) 절체", "절체"), ("③ 복구", "복구"), ("□ 범위", "범위"), ("- 항목", "항목")]:
+            self.assertEqual(strip_marker(title, rx), bare)
+
+    def test_a_title_that_only_looks_like_a_marker_is_kept(self):
+        rx = marker_pattern(["가.", "1)", "-"])
+        for title in ("사업의 배경", "10% 여유", "-10% 감축", "3.2 절"):
+            self.assertEqual(strip_marker(title, rx), title)
+        self.assertEqual(strip_marker("1) 기본 순서"), "기본 순서")
 
 
 class ManuscriptTests(unittest.TestCase):

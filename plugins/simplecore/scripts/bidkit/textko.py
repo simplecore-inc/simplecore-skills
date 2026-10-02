@@ -67,6 +67,46 @@ def strip_particle(word: str) -> str:
     return _PARTICLE.sub("", word)
 
 
+# The item markers of a Korean numbering ladder, used when a deck declares none.
+DEFAULT_LADDER = ["가.", "1)", "가)", "①"]
+_CIRCLED = "①-⑳"
+
+
+def marker_pattern(ladder: list | None = None) -> re.Pattern:
+    """The item marker at the head of a title, read from a numbering ladder's samples.
+
+    Each sample stands for its whole series: a Hangul syllable for any syllable
+    (「가.」 for 「나.」), a digit run for any number (「1)」 for 「12)」), a
+    circled digit for any circled digit. A marker of letters or digits may run
+    into the title (「가.사업」); a marker that is only a symbol (「□」, 「-」)
+    must be followed by a space, so a title that opens on a sign keeps it.
+    """
+    alternatives = []
+    for sample in ladder or DEFAULT_LADDER:
+        out, wordlike = [], False
+        for ch in str(sample):
+            if "가" <= ch <= "힣":
+                out.append("[가-힣]")
+                wordlike = True
+            elif ch.isdigit() and ch.isascii():
+                if out[-1:] != [r"\d+"]:
+                    out.append(r"\d+")
+                wordlike = True
+            elif "①" <= ch <= "⑳":
+                out.append(f"[{_CIRCLED}]")
+                wordlike = True
+            else:
+                out.append(re.escape(ch))
+        alternatives.append("".join(out) + (r"\s*" if wordlike else r"\s+"))
+    alternatives.sort(key=len, reverse=True)
+    return re.compile(r"^\s*(?:" + "|".join(alternatives) + ")")
+
+
+def strip_marker(title: str, pattern: re.Pattern | None = None) -> str:
+    """A title without the numbering ladder's marker at its head."""
+    return (pattern or marker_pattern()).sub("", title, count=1)
+
+
 # Fallback advance widths as a share of the em, for when no font metrics are
 # handed in. They are an estimate: a full-width script at 0.95 em, Latin at 0.5.
 FALLBACK_WIDE = 0.95
