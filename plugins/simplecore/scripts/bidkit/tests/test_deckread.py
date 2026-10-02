@@ -1,9 +1,10 @@
+import re
 import tempfile
 import unittest
 from pathlib import Path
 
 from bidkit.config import ConfigError
-from bidkit.deckread import DeckError, DeckReader, attribute_values, json_strings, uses
+from bidkit.deckread import DeckError, DeckReader, attribute_values, format_pattern, json_strings, uses
 from bidkit.sgmcp import RecordedTransport, Session
 
 from .support import FIXTURES, body, project, reader, recording, slide
@@ -115,6 +116,19 @@ class SourceHelpersTests(unittest.TestCase):
         self.assertEqual(json_strings("not json"), [])
         raw = '<!-- c="skip" --><Td text="[2]" /><Use template="t" head="h" />'
         self.assertEqual(list(attribute_values(raw)), [("text", "[2]"), ("template", "t"), ("head", "h")])
+
+
+class FormatPatternTests(unittest.TestCase):
+    def test_page_id_format_reads_back_its_fields(self):
+        rx = format_pattern("{part}-{chapter} {ordinal:02}", {"part": "Ⅲ|Ⅳ", "chapter": r"\d+", "ordinal": r"\d+"})
+        m = re.search(rx, "see Ⅳ-1\n 03 for it")
+        self.assertEqual((m.group("part"), m.group("chapter"), m.group("ordinal")), ("Ⅳ", "1", "03"))
+        # The width holds the ordinal to two digits, so a year is not read as one.
+        self.assertIsNone(re.fullmatch(rx, "Ⅲ-1 2026"))
+
+    def test_a_field_the_caller_does_not_know_is_refused(self):
+        with self.assertRaises(ConfigError):
+            format_pattern("그림 {part}-{x}", {"part": "Ⅰ"})
 
 
 if __name__ == "__main__":

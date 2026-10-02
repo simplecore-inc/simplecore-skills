@@ -30,6 +30,7 @@ import json
 import re
 from dataclasses import dataclass, field
 from html import unescape
+from string import Formatter
 from typing import Any, Iterator
 
 from .config import ConfigError, DeckConfig
@@ -144,6 +145,39 @@ class PagesConfig:
 
     def is_(self, kind: str, master: str) -> bool:
         return master.startswith(tuple(self.masters.get(kind, [])))
+
+    def numeral_pattern(self) -> str:
+        """An alternation of the part numerals, longest first."""
+        return "|".join(re.escape(n) for n in sorted(self.numerals, key=len, reverse=True))
+
+    def id_pattern(self) -> str:
+        """A regex for a page id as `pages.id` writes it, with groups part, chapter, ordinal."""
+        return format_pattern(self.id_format, {"part": self.numeral_pattern(),
+                                               "chapter": r"\d+", "ordinal": r"\d+"})
+
+
+def format_pattern(fmt: str, fields: dict[str, str]) -> str:
+    """A regex matching the strings a `str.format` pattern writes.
+
+    Each field becomes a named group holding the pattern `fields` gives it; a
+    digit field with a width (`{ordinal:02}`) matches exactly that many digits.
+    Literal text is escaped, and a space in it matches any run of whitespace,
+    so an id written across a line break still reads as one.
+    """
+    out = []
+    for literal, name, spec, _ in Formatter().parse(fmt):
+        out.append(re.sub(r"(?:\\ )+", r"\\s+", re.escape(literal)))
+        if name is None:
+            continue
+        if name not in fields:
+            raise ConfigError(f"format {fmt!r} uses the field `{name}`, which is not one of "
+                              + ", ".join(fields))
+        pattern = fields[name]
+        width = re.fullmatch(r"0?(\d+)d?", spec or "")
+        if width and pattern == r"\d+":
+            pattern = rf"\d{{{width.group(1)}}}"
+        out.append(f"(?P<{name}>{pattern})")
+    return "".join(out)
 
 
 USE = re.compile(r'<Use\s+template="([\w-]+)"((?:"[^"]*"|\'[^\']*\'|[^>"\'])*?)/?>', re.S)
