@@ -154,6 +154,17 @@ def anchored_refs(reader: DeckReader, rules: Rules, order: dict) -> tuple[list, 
             cut = window.rfind('"')
             window = window[cut + 1:] if cut >= 0 else re.sub(r"^[^<]*", " ", window)
             keys = rules.anchors(re.sub(r"<[^>]+>", " ", window))
+            # A folio of the cited chapter printed beside the id (a lookup table's
+            # 「14~17(Ⅲ-1 01~04)」) is the citation's own page number, not an anchor;
+            # the contents check proves those numbers. One of them must be the cited
+            # page's own folio, or the id and the number have drifted apart.
+            folios = {str(p.folio) for p in pages if p.folio}
+            beside = [k for k in keys if k in folios]
+            keys = [k for k in keys if k not in folios]
+            if beside and page.folio and str(page.folio) not in beside:
+                bad.append((name, m.group(0), f"printed beside folio {beside[0]}, the page is {page.folio}",
+                            " · ".join(beside)))
+                continue
             if not keys:
                 continue              # nothing identifies what is cited
             if not any(k in page.text for k in keys):

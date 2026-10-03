@@ -46,6 +46,13 @@ class SecRefTests(unittest.TestCase):
         self.assertEqual(self.found(self.prose("PER-002 판정(Ⅲ-1 02)"))[0], [])
         self.assertEqual(self.found(self.prose("PER-002 판정(Ⅲ-1 01)"))[0], [("Ⅲ-1 01", "not on page 1")])
 
+    def test_a_folio_beside_the_id_is_not_an_anchor(self):
+        self.pages = [page(i, text("처리 내용을 적는다."), head={"title": "가. 쪽"}) for i in range(1, 13)]
+        self.assertEqual(self.found(self.prose("10~12(Ⅲ-1 10~12)"))[0], [])
+        self.assertEqual(self.found(self.prose("12(Ⅲ-1 10)"))[0],
+                         [("Ⅲ-1 10", "printed beside folio 12, the page is 10")])
+        self.assertEqual(self.found(self.prose("3초 10(Ⅲ-1 10)"))[0], [("Ⅲ-1 10", "not on page 10")])
+
     def test_the_anchor_window_stops_at_the_string_and_at_the_previous_citation(self):
         # The left cell's 「30만 건」 does not prove the right cell's citation.
         rows = q([["구분", "쪽"], ["처리량 30만 건/초", "상세 Ⅲ-1 02"]])
