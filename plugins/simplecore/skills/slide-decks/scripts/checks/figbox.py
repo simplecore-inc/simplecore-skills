@@ -10,7 +10,11 @@ the SVG's viewBox height × (placed width ÷ board width) × placeScale.
 
 Read from the printed model: every use of a figure component (the kit
 vocabulary's `roles.figures`, default `figure`) with an `src` naming an `.svg`
-whose viewBox width is one of `figures.boards`.
+whose viewBox width is one of `figures.boards`, or a `.png` capture. A capture
+has no board, so it takes the placed width (one of the boards' placed widths,
+the text block or a column) nearest its box, × placeScale, and its height
+follows the image's own pixel ratio: a screen printed at the full measure reads
+heavier than every diagram beside it.
 
 Config: `figures.boards` ({board units: placed px}, required), `figures.placeScale`
 (0.9), `checks.figbox.tolerance` (1.5 px).
@@ -18,6 +22,7 @@ Config: `figures.boards` ({board units: placed px}, required), `figures.placeSca
 from __future__ import annotations
 
 import re
+import struct
 import sys
 from pathlib import Path
 
@@ -46,6 +51,17 @@ def expected(svg: Path, boards: dict, scale: float) -> tuple[float, float] | Non
     return placed * scale, vh * placed / vw * scale
 
 
+def expected_raster(path: Path, w: float, boards: dict, scale: float) -> tuple[float, float] | None:
+    head = path.read_bytes()[:24]
+    if path.suffix.lower() != ".png" or len(head) < 24 or head[:8] != b"\x89PNG\r\n\x1a\n":
+        return None
+    pw, ph = struct.unpack(">II", head[16:24])
+    placed = min((float(px) for px in boards.values()),
+                 key=lambda px: min(abs(w - px), abs(w - px * scale)))
+    width = placed * scale
+    return width, width * ph / pw
+
+
 def find(reader: DeckReader, deck: DeckConfig) -> list[tuple[str, str, str, str]]:
     """[(page, src, found, wanted)] for each figure whose box differs from its picture."""
     boards = deck.require("figures.boards", "the placed width of each board")
@@ -60,14 +76,17 @@ def find(reader: DeckReader, deck: DeckConfig) -> list[tuple[str, str, str, str]
     for page in reader.slides():
         for u in page.uses:
             src = str(u.attrs.get("src", ""))
-            if u.tag not in roles or not src.endswith(".svg"):
+            if u.tag not in roles or not src.lower().endswith((".svg", ".png")):
                 continue
             path = Path(src) if Path(src).is_absolute() else base / src
-            if not path.is_file():
-                continue
-            want = expected(path, boards, scale)
             w, h = _px(u.attrs.get("w", "")), _px(u.attrs.get("h", ""))
-            if want is None or w is None or h is None:
+            if not path.is_file() or w is None or h is None:
+                continue
+            if path.suffix.lower() == ".svg":
+                want = expected(path, boards, scale)
+            else:
+                want = expected_raster(path, w, boards, scale)
+            if want is None:
                 continue
             if abs(w - want[0]) > tol or abs(h - want[1]) > tol:
                 bad.append((page.label, path.name, f"{w:g}×{h:g}", f"{want[0]:.0f}×{want[1]:.0f}"))

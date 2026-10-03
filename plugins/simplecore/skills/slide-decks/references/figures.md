@@ -323,7 +323,11 @@ and as tall (the board height × the board scale × 0.9), so the box and the dra
 coincide, the figure is centred in its slot and the caption stays centred under it. A box
 kept at the placed width with the picture letterboxed inside it selects, frames and
 measures 10% wider than anything the reader sees; in a column layout the column is the
-figure's printed width and the text column takes what that frees. A picture at the full measure reads as heavier than the
+figure's printed width and the text column takes what that frees. **A screen capture follows
+the same rule**: it has no board, so it takes the placed width of its slot (the text block or a
+column) × the factor, its height follows the image's own pixel ratio, and it is centred like a
+diagram; a capture at the full measure reads heavier than every diagram beside it. `figbox`
+reads both. A picture at the full measure reads as heavier than the
 text around it and pushes the blocks under it off the page; at 0.9 it reads as part of
 the page. The factor is `figures.placeScale` in the config, 0.9 unless a deck declares
 otherwise, and it is applied to every figure the same way, never chosen per page to make
