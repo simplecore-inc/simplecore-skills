@@ -318,10 +318,12 @@ labels, and the shape alone must still say the claim.
 ## A document figure prints at 90% of its board placement, centred
 
 On a document deck the picture is drawn at **0.9 of its board placement** and centred in
-the slot: the figure's box keeps the placed width (the text block or the column), its
-height is the board height × the board scale × 0.9, and the picture is letterboxed
-(contained) inside that box, so it sits centred with even paper on both sides and the
-caption stays centred under it. A picture at the full measure reads as heavier than the
+the slot: the figure's box is as wide as the picture it prints (the placed width × 0.9)
+and as tall (the board height × the board scale × 0.9), so the box and the drawing
+coincide, the figure is centred in its slot and the caption stays centred under it. A box
+kept at the placed width with the picture letterboxed inside it selects, frames and
+measures 10% wider than anything the reader sees; in a column layout the column is the
+figure's printed width and the text column takes what that frees. A picture at the full measure reads as heavier than the
 text around it and pushes the blocks under it off the page; at 0.9 it reads as part of
 the page. The factor is `figures.placeScale` in the config, 0.9 unless a deck declares
 otherwise, and it is applied to every figure the same way, never chosen per page to make
