@@ -435,6 +435,14 @@ because the figure carried it. So:
 - **Nothing but the figure and its caption goes in the figure column.** A short note may follow
   the caption in the same column; a card there turns the column into a second body column and
   the layout stops reading.
+- **The region with the longest heading and the most text takes the full width, and the short
+  items stand beside the figure.** A long section heading wraps in a 390px column and four
+  sentence-long bullets run to three lines each there, while a set of two-word items spread across
+  the full measure leaves most of each line empty; swapping the two is the cheapest fix a column
+  page has.
+- **Items of one or two words are a phrase, not a list.** Three columns of one-word bullets
+  (「형식」, 「범위」, 「품질」) stand six rows tall with most of each column white; join each group
+  with middle dots into one line under its name (a definition row, a tile).
 - **The text column takes the page's ordinary regions.** A section with an icon, cards, a
   footnote to close - the components do not change, only their width. A three-column small table
   fits (placement 5); a wider table is what the full-width placements are for.
