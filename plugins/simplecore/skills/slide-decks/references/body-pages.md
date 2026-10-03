@@ -477,7 +477,10 @@ sites and nothing more.
 
 ## Before the page is done
 
-1. The build reports zero errors and zero warnings.
+1. The build reports zero errors and zero warnings, and nothing on the page was fitted by the
+   build: a page whose tree shows its content over the block, or a gap or padding applied smaller
+   than declared, is overflowing even when no warning fires. The build trims gaps before it warns,
+   so the first sign is a bullet pressed against its text or an icon touching its heading.
 2. The rendered picture has been looked at - not the file count, not the clean build.
 3. The claim line is one claim, the figure shows it, and the caption does not repeat it.
 4. The page has one opener, two or three regions (or one table), one bar per region, an icon on
