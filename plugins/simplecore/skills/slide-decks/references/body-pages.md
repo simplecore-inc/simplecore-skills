@@ -202,6 +202,7 @@ The shape names are one deck's vocabulary, given as examples; the deck in hand n
 | The content is | Example shape |
 | --- | --- |
 | a quiet label/value list | a key row (`keyrow`) |
+| parallel items, each a short name and a short phrase, in a column or beside a table | a tile grid (`tag-grid`); a table's header and rules weigh more than such content, and a KPI grid prints the phrase as a figure |
 | one item, an icon earning its place | an item or detail card |
 | two labelled rows under one head | a pair card (`pair-card`) |
 | three rows closing on a verdict | a trio card (`trio-card`) |
