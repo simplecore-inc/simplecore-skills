@@ -485,7 +485,7 @@ sites and nothing more.
 3. The claim line is one claim, the figure shows it, and the caption does not repeat it.
 4. The page has one opener, two or three regions (or one table), one bar per region, an icon on
    every sub-section heading.
-5. Content reaches the bottom of the text block (about 95% of the page height in the
+5. Content reaches the bottom of the text block (`foothole` measures the band above the folio on the rendered page; a page judged acceptable is retired there with its reason) (about 95% of the page height in the
    measurement); in a column layout both columns do.
 6. The rhythm check reports no departure and the census for the part has no finding. **These are
    gates, not advisories**: a chapter with a rhythm or census finding is not reported done, the
