@@ -490,13 +490,14 @@ short page beside it is filled from a section already assigned to it - a check n
 the sections and the pages that owe them. Where the section is too big for the page's
 remainder, it gets a page of its own rather than a paragraph of itself.
 
-**A page whose content is one picture is filled by the picture.** The fill rule
-forbids inflating a figure to cover a hole in a page of prose; a page whose
-subject *is* the capture is the opposite case, and a capture read at print size
-is the whole point of such a page. Measure the foot of the rendered page and
-grow the capture into what is left, up to the text block's width - a script that
-reads the lowest ink on each PNG converges in one pass, because the capture is
-the only thing that moves.
+**A page whose content is one picture is still placed at the deck's figure
+width.** Where the deck declares a `placeScale`, a capture prints at its slot's
+placed width times that factor like every diagram, and `figbox` holds it there; a
+capture grown to the full measure reads heavier than every figure around it. The
+room under it goes to the page's own write-up (the screen's states, actions and
+the requirements it answers), not to a bigger picture. A deck that declares no
+`placeScale` may grow a picture-only page's capture to the text block, measuring
+the foot of the rendered page.
 
 **A section whose body is a table opens a page of its own.** Two tables of
 different content sharing a page read as one table with a heading dropped into
