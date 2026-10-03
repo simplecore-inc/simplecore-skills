@@ -209,7 +209,8 @@ The shape names are one deck's vocabulary, given as examples; the deck in hand n
 | an ordered sequence in a strip | numbered steps or flow steps with arrows |
 | an ordered sequence with a judgement each | ladder steps or verdict rows |
 | a demand facing its answer | a split card |
-| a requirement and how it is met | a ledger row |
+| a requirement and how it is met, one to three of them on a page with room | a ledger row (it stacks the id over the name and the head over the answer, about twice a table row per item) |
+| four or more requirement-to-answer rows, or any page short of height | a compact table or a one-line row with a badge |
 | a choice among alternatives | a choice card |
 | one measured figure among three | a fact band (`fact-band`) |
 | a row of measured figures | stat cells |
