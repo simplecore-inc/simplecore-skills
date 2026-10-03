@@ -24,6 +24,12 @@ Fails, over body pages in printed order:
 - the same layout on three pages in a row
 - a side figure on the same side on two pages in a row (the spread leans)
 - two pages in a row with the same layout and the same dominant component
+- `stackRun` pages in a row whose body is full-width blocks stacked one under
+  another (no column layout, side figure, figure pair or rail anywhere on the
+  page), and a part where such pages are more than `stackShare` of its pages.
+  The figure layout cannot see this: a page of three tables and a page of a
+  figure over two tables are different layouts and the same stack, and a run of
+  them reads as one long scroll however the figures move
 
 The census counts the content components (the kit vocabulary's
 `kinds.content`, less `roles.notShapes`) per part: one component above a
@@ -32,7 +38,7 @@ using fewer kinds than it has pages (capped at `minKindsCap`). Content
 components no page uses are listed, as the vocabulary still to reach for.
 
 Config (`checks.rhythm`, optional): `run` (3), `topShare` (1/3), `minUses` (9),
-`minKindsCap` (10).
+`minKindsCap` (10), `stackRun` (3), `stackShare` (1/2).
 """
 from __future__ import annotations
 
@@ -48,6 +54,7 @@ from bidkit.deckread import DeckReader, Page  # noqa: E402
 from pageshape import Kit, _names  # noqa: E402
 
 RUN, TOP_SHARE, MIN_USES, MIN_KINDS_CAP = 3, 1 / 3, 9, 10
+STACK_RUN, STACK_SHARE = 3, 1 / 2
 LAYOUTS = ("full", "bottom", "left", "right", "pair", "rail", "none")
 
 
@@ -112,6 +119,34 @@ def layout(roles: Roles, page: Page) -> str:
     return "full"
 
 
+def stacked(roles: Roles, page: Page) -> bool:
+    """True when nothing on the page stands beside anything else."""
+    for u in page.uses:
+        if (u.tag in roles.columns or u.tag in roles.rails or u.tag in roles.pair
+                or _side_of(roles, u)):
+            return False
+    return True
+
+
+def stack_findings(pages: list[Page], flags: list[bool], cfg: dict) -> list[tuple[str, str]]:
+    run = int(cfg.get("stackRun", STACK_RUN))
+    share = float(cfg.get("stackShare", STACK_SHARE))
+    bad = []
+    streak = 0
+    for p, flat in zip(pages, flags):
+        streak = streak + 1 if flat else 0
+        if streak >= run:
+            bad.append((p.label, f"a plain stack of full-width blocks, {streak} consecutive body pages"))
+    by_part: dict[str, list[bool]] = defaultdict(list)
+    for p, flat in zip(pages, flags):
+        by_part[p.part or "?"].append(flat)
+    for part, fl in by_part.items():
+        if len(fl) >= run and sum(fl) > len(fl) * share:
+            bad.append((f"part {part}", f"a plain stack on {sum(fl)} of {len(fl)} body pages, "
+                                         f"above a {share:.0%} share"))
+    return bad
+
+
 def dominant(kit: Kit, roles: Roles, page: Page) -> str | None:
     counts = Counter(u.tag for u in page.uses
                      if kit.kind.get(u.tag, "") in kit.content_kinds and u.tag not in roles.not_shapes)
@@ -169,6 +204,8 @@ def find(reader: DeckReader, deck: DeckConfig):
     pages = reader.body_pages()
     rows = [(p.label, layout(roles, p), dominant(kit, roles, p)) for p in pages]
     bad = sequence(rows, int(cfg.get("run", RUN)))
+    flags = [stacked(roles, p) for p in pages]
+    bad += stack_findings(pages, flags, cfg)
     parts, unused = census(kit, roles, pages, cfg)
     return kit, rows, bad, parts, unused
 

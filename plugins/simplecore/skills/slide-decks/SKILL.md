@@ -677,6 +677,13 @@ their candidates, why a shortlist and not the catalogue, and how the report name
 
 ## A run of pages must not read as one page repeated
 
+**This is a design input with the same weight as overflow, not a review afterwards.** The
+chapter's pages are storyboarded (placement, grid, lead component) before the first one is
+written, and a chapter with a rhythm or census finding is not done
+([references/body-pages.md](references/body-pages.md#the-procedure)). Consistency is carried by
+the chrome, the type ladder and the component grammar; the arrangement of the body varies from
+page to page, and a creative composition that the content supports beats a safe stack.
+
 A hundred pages of *landscape figure across the top, cards underneath* is one page
 printed a hundred times, and no individual page looks wrong, which is why it survives
 page-by-page review. **The shape a page closes on is part of that rhythm**: a deck

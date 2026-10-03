@@ -17,10 +17,33 @@ must have, whatever tool compiles it.
 ## The procedure
 
 A manuscript page-file (one section file under the deck's manuscript directory) becomes one
-chapter of the deck holding one or more deck pages. In this order:
+chapter of the deck holding one or more deck pages.
 
-1. **Read the page-file and its figure(s).** Note the claim each `##` section makes; a section that
-   is a table stays a table, a section that argues becomes a region of cards.
+**The chapter is composed before any page is written, and the composition is a design input,
+not a check run afterwards.** Typesetting page by page in manuscript order - each `##` section a
+full-width region, each region the component its Markdown form suggests - produces pages that are
+each correct and a chapter that is one page repeated: one chapter came out with `keyrow` carrying
+17 of 21 component uses, 9 of 13 pages a plain stack of full-width blocks, and four component kinds
+over thirteen pages while fifty sat unused. The rhythm check reported all of it and the chapter was
+still reported done, because the rules sat at the end of the procedure as something to verify. So
+before the first page, write the chapter's storyboard (in the working notes, not in a document):
+one row per deck page with its claim, its composition (from the placement table below, the
+non-figure compositions included), its grid (stack, two columns, asymmetric columns, rail) and its
+lead component. Read the storyboard against the rhythm rules and the census first, and only then
+write pages. **Consistency comes from the shared chrome, the type ladder and the component
+grammar; monotony comes from repeating one arrangement, and the two are not traded.** Pick the
+arrangement the content suggests most strongly that the neighbouring pages have not used.
+
+In this order:
+
+0. **Storyboard the chapter**, as above. Run the component search for each page's lead content
+   and draw two or three candidates alone before choosing; a component no page in the part uses
+   yet is preferred where it fits.
+1. **Read the page-file and its figure(s).** Note the claim each `##` section makes and the
+   content's kind - a record set, a sequence, a demand and its answer, a set of parallel items, a
+   measured figure. **The manuscript's Markdown form is not the page's form**: a Markdown table may
+   be a record set (stays a table) or a set of three parallel items (cards, a strip, a ladder), and
+   a section that argues becomes a region of cards.
 2. **Decide how many deck pages it is.** The manuscript's page budget gives the chapter its pages;
    divide by the chapter's page-files. On an A4 text block a deck page holds about 650 characters
    beside a full-width figure and about 1,150 across two columns with a table, and a sentence
@@ -29,8 +52,10 @@ chapter of the deck holding one or more deck pages. In this order:
 4. **Pick the figure's placement from its claim**, then check the rotation (below). A page whose
    claim wants a column placement needs a figure drawn on the column board; if the manuscript's
    figure is on the full board, redraw it there, keeping its number and caption.
-5. **Map each `##` section to a region**, choose the component by the content's shape, and write
-   the page.
+5. **Map each `##` section to a region**, choose the component by the content's shape under the
+   storyboard, and write the page. Two regions side by side are as ordinary as two stacked: a long
+   narrow list (requirement ids by topic, a register of names) runs down one column while the
+   other column stacks the tables or cards it indexes.
 6. **Build, render, look at the picture, measure.** The page is done when its content reaches the
    bottom of the text block; the parity check's coverage listing names the declared manuscript the
    page does not show yet, and that is what fills the rest. Then run the deck checks. Only then
@@ -213,7 +238,11 @@ carrying the same content. Work in this order, and measure after each:
 4. **Only then, sentences.** And never the exception, the threshold, the acceptance
    criterion or the wording the requirement uses - those are what the page is scored on.
 
-What never comes down: a type size, a page's fill, or a figure's scale.
+What never comes down: a type size, a page's fill, or a figure's scale. **That includes a size the
+build lowers on its own**: a deck tool that fits an overflowing page by scaling its content prints
+every string on the page smaller while the source still says the base size, so a check reading the
+source passes it. One chapter shipped body text at 6.75pt that way. Overflow is fixed in the
+content; read the built sizes, never the declared ones, before calling a page fitted.
 
 **When two page-files become one page, that page declares both manuscripts**, the earlier
 section first - the parity check reads the declaration to know what the page may print, the carry
@@ -303,6 +332,14 @@ natural home of a particular claim - pick by the claim first and check the rotat
 | 8 | 전면 도식 + 3단 | a full-board figure, then three columns | one structure whose three parts each need a sentence |
 | 9 | 레일 + 본문 | a rail beside a body | one fixed thing on the left and everything that reads it |
 | 10 | 도식 없는 쪽 | a table or a matrix | the content is a record set; the chapter's figure sits on the facing page |
+| 11 | 세로 목록 + 본문 | a tall narrow table or list in one column, the page's other blocks stacked in the wider column | a register the other blocks are read against (requirements by topic, the items a matrix covers) |
+| 12 | 표 2단 | two small tables or card stacks side by side under one heading | two record sets compared or read together |
+| 13 | 비대칭 2단 | a wide column of the argument beside a narrow column of measures, badges or a verdict | an argument with its numbers or its acceptance criteria beside it |
+
+Placements 11-13 carry no figure, so a chapter whose figures are few still has three ways to break
+a stack. **The grid is a second axis beside the placement**: the rhythm check also fails three
+plain stacks in a row and a part where plain stacks are more than half the pages, whatever the
+figures do.
 
 **Placements 3-6 exist only for a figure drawn on the column board**, so a chapter's rotation is
 decided when its figures are reviewed, not page by page: read the chapter's figures, pick the ones whose claim is a sequence or
@@ -437,7 +474,9 @@ sites and nothing more.
    every sub-section heading.
 5. Content reaches the bottom of the text block (about 95% of the page height in the
    measurement); in a column layout both columns do.
-6. The rhythm check reports no departure.
+6. The rhythm check reports no departure and the census for the part has no finding. **These are
+   gates, not advisories**: a chapter with a rhythm or census finding is not reported done, the
+   same as one with an overflow.
 7. The layout check (overlap, overflow, ink and package findings) reports nothing, the rule check
    reports no failure, and every check the deck declares to run after a build is clean.
 8. The Korean audit reports zero over the deck's sources.

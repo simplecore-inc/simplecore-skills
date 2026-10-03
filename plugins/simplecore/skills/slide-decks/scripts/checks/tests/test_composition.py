@@ -133,6 +133,16 @@ class RhythmTests(Base):
         bad = rhythm.find(self.read([page(1, side), page(2, side)]), self.deck)[2]
         self.assertEqual([label for label, w in bad if "side figure" in w], ["Ⅲ-1 02"])
 
+    def test_a_run_of_plain_stacks(self):
+        stacks = [page(i, use("figure", {"src": "a.svg"}), use("card")) for i in range(1, 4)]
+        bad = rhythm.find(self.read(stacks), self.deck)[2]
+        self.assertEqual([label for label, w in bad if "consecutive" in w], ["Ⅲ-1 03"])
+        self.assertTrue(any("plain stack on 3 of 3" in w for _, w in bad))
+        split = [use("cols2", {}, use("card"), use("pair-card"))]
+        mixed = [stacks[0], page(2, *split), page(3, use("rail", {}, use("card")))]
+        bad = rhythm.find(self.read(mixed), self.deck)[2]
+        self.assertEqual([w for _, w in bad if "plain stack" in w], [])
+
     def test_census_top_share(self):
         heavy = [page(i, *[use("card") for _ in range(9)], use("pair-card")) for i in range(1, 3)]
         parts = rhythm.find(self.read(heavy), self.deck)[3]
