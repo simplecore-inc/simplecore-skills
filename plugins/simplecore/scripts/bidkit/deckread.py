@@ -83,7 +83,7 @@ class Page:
     notes: str = ""
     uses: list = field(default_factory=list)   # [Use] in reading order, running head excluded
     spans: list = field(default_factory=list)  # [Span], one per printed string of `texts`
-    folio: int | None = None       # body folio, None for folioless, unnumbered and annex pages
+    folio: int | None = None       # body folio, None for folioless (outside the body), unnumbered and annex pages
     page_id: str | None = None     # computed from `pages.id` for a body page
     part: str | None = None        # the part numeral of a body page
     chapter: str | None = None     # the chapter number of a body page
@@ -333,12 +333,16 @@ class DeckReader:
                     s.master = block.get("key", "").removeprefix("master:")
                 _walk(block, s, cfg.head["component"])
             out.append(s)
-        folio, ordinal, seen = 0, {}, {}
+        folio, ordinal, seen, closed = 0, {}, {}, False
         for s in out:
-            # folioless masters go unnumbered only before the first folio; unnumbered
-            # masters (a closing page after the annexes) never take one
-            if (cfg.is_("annex", s.master) or cfg.is_("unnumbered", s.master)
-                    or (folio == 0 and cfg.is_("folioless", s.master))):
+            # folioless masters go unnumbered before the first folio and after the body
+            # series has closed (an unnumbered closing page or an annex page has been
+            # seen, so a plain cover in front of the annexes is not counted); unnumbered
+            # and annex masters never take one
+            if cfg.is_("annex", s.master) or cfg.is_("unnumbered", s.master):
+                closed = True
+                continue
+            if (folio == 0 or closed) and cfg.is_("folioless", s.master):
                 continue
             folio += 1
             s.folio = folio

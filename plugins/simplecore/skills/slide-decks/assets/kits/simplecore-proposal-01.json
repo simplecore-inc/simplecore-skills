@@ -17,7 +17,9 @@
               "sub": "sub", "evalItem": "badge", "reqs": "refTitle" },
     // Master name prefixes. A body page's master is BODY-<part>; a divider's PART-<part>.
     // Folioless masters carry no folio while no folio has been counted yet (cover and
-    // contents); annex masters carry their own series and are outside the body count.
+    // contents) and again once the body has closed on an unnumbered or annex page (the
+    // plain cover in front of all the annexes); annex masters carry their own series and
+    // are outside the body count.
     "masters": {
       "body": ["BODY"],
       "divider": ["PART"],

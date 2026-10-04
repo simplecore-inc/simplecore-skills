@@ -84,6 +84,18 @@ class SyntheticTests(unittest.TestCase):
         self.assertEqual([p.folio for p in reader(self.deck, recording(slides=slides)).slides()],
                          [None, 1, 2, None, 3])
 
+    def test_folioless_page_after_the_body_closes_takes_no_folio(self):
+        # A plain cover standing in front of the annexes, after the closing page,
+        # prints no folio; once an unnumbered or annex page has closed the body
+        # series, a folioless master is not counted against the page limit.
+        self.deck.data["pages"]["masters"] = {"body": ["BODY"], "divider": ["PART"],
+                                             "folioless": ["COVER", "PLAIN"],
+                                             "unnumbered": ["END"], "annex": ["ANNEX"]}
+        slides = [slide(1, "COVER"), slide(2, "PART-1"), body(3, 1, 1), slide(4, "PLAIN"),
+                  body(5, 1, 2), slide(6, "END"), slide(7, "PLAIN"), slide(8, "ANNEX-PLAIN")]
+        self.assertEqual([p.folio for p in reader(self.deck, recording(slides=slides)).slides()],
+                         [None, 1, 2, 3, 4, None, None, None])
+
     def test_continued_table_joined_only_across_consecutive_pages(self):
         head = ["구분", "값"]
         a = body(1, 3, 1, tables=[[head, ["가", "1"], ["나", "2"]]])
