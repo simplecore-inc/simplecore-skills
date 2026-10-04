@@ -14,7 +14,7 @@ row, and a row whose heights differ by more than the tolerance is reported
 with the page, the top edge and the first words of each box. A box that spans
 others on its top edge is their wrapper, not their neighbour. A small square
 whose text is a bare number is a marker plate laid over a picture, not a box
-in a row, and is left out.
+in a row, and is left out; so is a list bullet, a small square with no words.
 
 Reads the deck's built `.pptx` (`output`); refuses one older than the deck.
 
@@ -87,7 +87,8 @@ def boxes(xml: str, built: Built) -> list[tuple[float, float, float, float, str]
 
 def is_marker(b, side: float) -> bool:
     _, _, w, h, words = b
-    return w <= side and abs(w - h) <= 1.0 and words.isdigit()
+    # a numbered plate, or a bare list bullet (a small square with no words)
+    return w <= side and abs(w - h) <= 1.0 and (words.isdigit() or not words.strip())
 
 
 def rows(items, top_tol: float = TOP_TOLERANCE):

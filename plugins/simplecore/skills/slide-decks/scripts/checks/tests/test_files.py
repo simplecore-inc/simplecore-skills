@@ -144,6 +144,9 @@ class RowHeightTests(Base):
         self.assertEqual(self.found(sp(10, 100, 200, 60), sp(230, 100, 200, 80, fill=False)), [])
         marker = sp(230, 100, 18, 18, "<p:txBody><a:p><a:r><a:t>3</a:t></a:r></a:p></p:txBody>")
         self.assertEqual(self.found(sp(10, 100, 200, 60), marker), [])
+        bullet = sp(230, 100, 6, 6)
+        self.assertEqual(self.found(sp(10, 100, 200, 20), bullet), [])
+        self.assertEqual(len(self.found(sp(10, 100, 200, 20), sp(230, 100, 30, 30))), 1)
 
     def test_a_group_counts_only_when_it_draws_its_own_frame(self):
         def group(h, fill):
