@@ -16,7 +16,7 @@ Page ids and folios are computed here and nowhere else, from the deck's
       "numerals": ["Ⅰ", "Ⅱ", ...],                 // part number 1 is the first entry
       "id": "{part}-{chapter} {ordinal:02}",       // fields: part, chapter, ordinal
       "head": {"component": ..., "part": ..., "chapter": ..., "title": ...},
-      "masters": {"body": [...], "folioless": [...], "annex": [...], ...}
+      "masters": {"body": [...], "folioless": [...], "unnumbered": [...], "annex": [...], ...}
     }
 
 The part comes from the running head's part argument, the chapter from the
@@ -37,7 +37,7 @@ from .config import ConfigError, DeckConfig
 from .sgmcp import Session, split_markup
 from .vocab import Vocabulary
 
-MASTER_KINDS = ("body", "divider", "folioless", "annex", "fullBleed")
+MASTER_KINDS = ("body", "divider", "folioless", "unnumbered", "annex", "fullBleed")
 
 
 class DeckError(ValueError):
@@ -83,7 +83,7 @@ class Page:
     notes: str = ""
     uses: list = field(default_factory=list)   # [Use] in reading order, running head excluded
     spans: list = field(default_factory=list)  # [Span], one per printed string of `texts`
-    folio: int | None = None       # body folio, None for folioless and annex pages
+    folio: int | None = None       # body folio, None for folioless, unnumbered and annex pages
     page_id: str | None = None     # computed from `pages.id` for a body page
     part: str | None = None        # the part numeral of a body page
     chapter: str | None = None     # the chapter number of a body page
@@ -330,7 +330,10 @@ class DeckReader:
             out.append(s)
         folio, ordinal, seen = 0, {}, {}
         for s in out:
-            if cfg.is_("annex", s.master) or (folio == 0 and cfg.is_("folioless", s.master)):
+            # folioless masters go unnumbered only before the first folio; unnumbered
+            # masters (a closing page after the annexes) never take one
+            if (cfg.is_("annex", s.master) or cfg.is_("unnumbered", s.master)
+                    or (folio == 0 and cfg.is_("folioless", s.master))):
                 continue
             folio += 1
             s.folio = folio

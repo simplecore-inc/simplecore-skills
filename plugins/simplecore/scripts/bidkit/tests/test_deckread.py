@@ -39,6 +39,13 @@ class CapturedDeckTests(unittest.TestCase):
         self.deck.data["pages"]["masters"] = {"body": ["BODY"], "folioless": ["TOC"], "annex": ["ANNEX"]}
         self.assertEqual([p.folio for p in self.read().slides()], [1, 2, 3])
 
+    def test_unnumbered_master_takes_no_folio(self):
+        # A master declared unnumbered (a closing page after the annexes) never
+        # takes a folio, so it is not counted against the page limit.
+        self.deck.data["pages"]["masters"] = {"body": ["BODY"], "folioless": ["TOC"],
+                                             "unnumbered": ["COVER"], "annex": ["ANNEX"]}
+        self.assertEqual([p.folio for p in self.read().slides()], [None, 1, 2])
+
     def test_duplicate_page_id_is_an_error(self):
         self.deck.data["pages"]["id"] = "{part}-{chapter}"
         with self.assertRaises(DeckError):
