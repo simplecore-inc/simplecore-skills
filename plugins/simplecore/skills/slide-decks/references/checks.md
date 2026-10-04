@@ -53,6 +53,7 @@ deck through the server and the kit vocabulary, so none of them reads page files
 | type floor | `typefloor`, on the printed size of every text box, so a size set in a style or scaled with the page is read where it prints | both |
 | absolute paths | `abspath`, in pre-flight, because the deck builds and renders on the machine whose home directory is in the path and nowhere else | both |
 | equal row height | `rowheight`, over the built `.pptx` | both |
+| a narrow column wrapping inside a word (「학 / 력」, 「R / HEL」) or stranding a scrap of a short label (「전 / 구간」) | `wordbreak`, the renderer's wrap replayed over the built `.pptx` with the server's measurer | both |
 | renderer version | `renderer`, first in the after group and in front of the render | both |
 | catalogue | the kit: its `<Template kind doc use>` declarations, its generated components document and the tool's library search. A deck on templates of its own writes a catalogue check under `checks.local` | both |
 | list rows, typed bullets, an index in a label column, a page that draws its own stack | `listrow` | both |
@@ -143,7 +144,7 @@ readings.
 **A check that reads the render needs a full render.** A check that reads the preview
 images (a slide deck's fill and column fill) sees the pages a partial render left exactly
 as they were, so running it after rendering one page reads one fresh page and every other
-page stale and reports nothing. `finetype` and `rowheight` read the built `.pptx` and
+page stale and reports nothing. `finetype`, `rowheight` and `wordbreak` read the built `.pptx` and
 refuse one older than the deck's sources. Render the pages while editing, render
 everything before the checks.
 
@@ -184,6 +185,7 @@ saved.
 | `renderer` | `slide-decks/scripts/checks/` | the renderer's own `--version` | the renderer is older than `renderer.minVersion`, or cannot be run | `renderer.command`, `renderer.minVersion` |
 | `rowheight` | `slide-decks/scripts/checks/` | the built `.pptx` (`output`), refusing one older than the sources | framed boxes on one top edge differ in height by more than the tolerance | `output`, `page.w`, `checks.rowheight` (optional) |
 | `finetype` | `slide-decks/scripts/checks/` | the built `.pptx`, measured with the deck's own face | a text box printed only in the fine-print inks at the floor wraps to more than `lines` lines; a face that cannot be found or read is an error | `output`, `type.floor`, `palette.fine` (kit), `checks.finetype` (optional) |
+| `wordbreak` | `slide-decks/scripts/checks/` | the built `.pptx` (`output`), refusing one older than the sources; page labels and `text_measure` from the deck server | a table cell or wrapping text box whose replayed wrap cuts a word (a word wider than its column, or two syllables of a non-Korean run) other than after `breakAfter` or before `breakBefore`, or a label of at most `labelWords` words that strands a one-character or id-fragment line | `output`, `checks.wordbreak` (optional) |
 | `contents` | `slide-decks/scripts/checks/` | the printed contents rows (nodes bound to the vocabulary's `contents` fields) and the folios | a part's number differs from its divider's folio or a chapter's from its first body page; an untypeset part or chapter is pending. `--write` sets the folios through `set_texts`, never a file | vocabulary `contents`, `pages` |
 | `chapter_pages` | `slide-decks/scripts/checks/` | every body page's running head | a topic set on several pages lacks `(n/total)` or carries the wrong numbers, or a lone page keeps a marker; topics group by part, chapter and the marked argument | `checks.chapter_pages.slot` (optional; default `pages.head.title`) |
 | `mdorder` | `slide-decks/scripts/checks/` | the import order and every body page's declared manuscript | a body page's declared source comes before the source of the page in front of it | `manuscript.declaration` |
@@ -286,6 +288,15 @@ the repair is to move the page, never to renumber its figures. `renderer` compar
 (`output`), refusing one older than the deck's sources; `finetype` measures with the deck's own
 face (`bidkit.glyphwidth`, standard-library TrueType reading, faces found among the server's build
 fonts by the vocabulary's `fonts.sans`), and a face that cannot be found or read is an error.
+`wordbreak` takes each cell's width (grid columns less the cell margins) and each run's size, weight,
+language and explicit breaks from the built file, and fits every line with the server's
+`text_measure`, whose `lines` answer is the wrap's own verdict (its `width` field is not what the
+wrap compares). It replays the renderer's units: a Korean run keeps a word whole until the word alone
+is wider than its column, which opens a line and is cut at the longest prefix that fits; a closing
+mark the cut would strand hangs instead. Each line is fitted in its column plus `slack` (0.5 px), because the
+column is EMU rounded in the file and a word short of it by a fraction of a pixel prints whole. Type sizes go to the server in the deck's CSS px (pt × 4/3);
+a size derived from the slide's EMU per px is off by the page's rounding and moves cuts by a
+character.
 
 **A check that writes goes through the deck server.** `contents --write` sets each number with the
 server's `set_texts`, keyed by the printed node it read and addressed with the generation and
@@ -396,7 +407,7 @@ entries that stay retired while their measure is unchanged. `--bless` rewrites t
 with today's findings, keeps the reason of every entry found unchanged, writes the rest
 blank, and prints the ones that still owe a reason. The shared checks that keep a baseline
 take `--bless`: `period`, `dangle`, `markecho`, `echo`, `twice`, `samefact`, `figtext`,
-`carry`, `fignum`, `secref`, `samecol`, `finetype`, `grade`, `mdtwice` and `rfpwords`;
+`carry`, `fignum`, `secref`, `samecol`, `finetype`, `wordbreak`, `grade`, `mdtwice` and `rfpwords`;
 `generated` keeps its record of digests in the same directory.
 
 ## A check that cannot reach its input says so instead of passing
