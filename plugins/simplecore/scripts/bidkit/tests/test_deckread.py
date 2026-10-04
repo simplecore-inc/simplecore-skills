@@ -121,6 +121,9 @@ class SourceHelpersTests(unittest.TestCase):
     def test_json_strings_and_attribute_values(self):
         self.assertEqual(json_strings('[{"a": "x", "b": ["y"]}]'), ["x", "y"])
         self.assertEqual(json_strings("not json"), [])
+        cell = '[["a", {"text": "printed", "tone": "accent", "align": "right"}]]'
+        self.assertEqual(json_strings(cell), ["a", "printed", "accent", "right"])
+        self.assertEqual(json_strings(cell, {"tone", "align"}), ["a", "printed"])
         raw = '<!-- c="skip" --><Td text="[2]" /><Use template="t" head="h" />'
         self.assertEqual(list(attribute_values(raw)), [("text", "[2]"), ("template", "t"), ("head", "h")])
 

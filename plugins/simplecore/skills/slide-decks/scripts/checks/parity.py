@@ -149,7 +149,7 @@ class Parity:
                     if self.furniture is not None:
                         out += [(FURNITURE, v) for v in json_strings(value) or [value]]
                     continue
-                leaves = json_strings(value) if value.lstrip()[:1] in "[{" else []
+                leaves = json_strings(value, layout) if value.lstrip()[:1] in "[{" else []
                 if leaves:
                     out += [(CELL, v) for v in leaves]
                 elif key in prose:

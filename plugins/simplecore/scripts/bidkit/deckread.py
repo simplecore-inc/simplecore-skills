@@ -31,7 +31,7 @@ import re
 from dataclasses import dataclass, field
 from html import unescape
 from string import Formatter
-from typing import Any, Iterator
+from typing import Any, Collection, Iterator
 
 from .config import ConfigError, DeckConfig
 from .sgmcp import Session, split_markup
@@ -203,8 +203,12 @@ def attribute_values(raw: str) -> Iterator[tuple[str, str]]:
         yield name, unescape(b if b or not c else c)
 
 
-def json_strings(value: str) -> list[str]:
-    """Every string leaf of an argument holding JSON, or [] when it is not JSON."""
+def json_strings(value: str, skip: Collection[str] = ()) -> list[str]:
+    """Every string leaf of an argument holding JSON, or [] when it is not JSON.
+
+    `skip` names object keys whose values are not printed copy (a table cell's
+    `tone` or `align`); their leaves are left out.
+    """
     try:
         data = json.loads(value)
     except (ValueError, TypeError):
@@ -218,8 +222,9 @@ def json_strings(value: str) -> list[str]:
             for x in v:
                 walk(x)
         elif isinstance(v, dict):
-            for x in v.values():
-                walk(x)
+            for k, x in v.items():
+                if k not in skip:
+                    walk(x)
     walk(data)
     return out
 

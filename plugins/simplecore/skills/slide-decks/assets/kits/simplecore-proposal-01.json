@@ -84,7 +84,7 @@
     "layout": ["template", "src", "alt", "tone", "icon", "w", "h", "variant", "size", "master",
                "termW", "labelW", "figW", "aGrow", "bGrow", "stretch", "marker", "numbered",
                "lastTotal", "level", "code", "folioPrefix", "folioRestart", "columns", "when",
-               "frame"],
+               "frame", "align", "valign"],
     // Plain arguments holding a sentence of the document's own.
     "prose": ["text", "aText", "bText", "value", "claim", "condition", "statNote",
               "noteA", "noteB", "noteC"],
