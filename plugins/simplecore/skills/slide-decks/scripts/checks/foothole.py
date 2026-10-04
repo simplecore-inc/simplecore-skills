@@ -18,9 +18,12 @@ the hole rounded to 10 px, so a retired page comes back when its hole grows.
 Read the PNGs of a full render: a partial render leaves stale pages.
 
 Config (`checks.foothole`, optional): `masters` (regex, default
-`^(BODY|ANNEX)`), `footBand` (0.955), `max` (0.08), `ink` (luminance below
-which a pixel is ink, 235), `pattern` (PNG name with `{n}` for the slide
-number, default `<entry stem>-{n}.png`).
+`^(BODY|ANNEX)`), `footBand` (0.955), `footBands` (a map from a master regex
+to its own foot band, for a master whose footer starts higher than the
+default band: a footer inside the band is read as content and hides every
+hole on that master), `max` (0.08), `ink` (luminance below which a pixel is
+ink, 235), `pattern` (PNG name with `{n}` for the slide number, default
+`<entry stem>-{n}.png`).
 """
 from __future__ import annotations
 
@@ -54,6 +57,7 @@ def find(reader: DeckReader, deck: DeckConfig) -> list[tuple[str, int, int]]:
     cfg = deck.section("checks.foothole")
     masters = re.compile(str(cfg.get("masters", r"^(BODY|ANNEX)")))
     foot = float(cfg.get("footBand", 0.955))
+    bands = [(re.compile(k), float(v)) for k, v in dict(cfg.get("footBands", {})).items()]
     share = float(cfg.get("max", 0.08))
     ink = int(cfg.get("ink", 235))
     folder = deck.resolve(deck.require("previews", "the folder the render writes page PNGs into"))
@@ -66,7 +70,8 @@ def find(reader: DeckReader, deck: DeckConfig) -> list[tuple[str, int, int]]:
         png = folder / pattern.format(n=page.n)
         if not png.is_file():
             raise FileNotFoundError(f"{png} is missing: render the whole deck before foothole")
-        gap = hole(png, foot, ink)
+        band = next((v for rx, v in bands if rx.search(page.master or "")), foot)
+        gap = hole(png, band, ink)
         limit = int(Image.open(png).size[1] * share)
         if gap is not None and gap > limit:
             out.append((page.label, gap, limit))
