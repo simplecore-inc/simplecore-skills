@@ -467,6 +467,29 @@ budget is the row's width minus 106 (the 92px label and the 14px gap): 248px in 
 105px in a third. A value past the budget spills into the margin with a horizontal overflow
 warning; in a third, reach for a detail card instead.
 
+### A line end inside a name
+
+A wrapped line must not end inside a quoted label, a value, a screen or field name, or a request
+(`「<label> / <label>」`, `14 / / 16`, `<METHOD> / <path>`). Each shape has its own cure, and
+the cure is chosen by what it does to the rest of the paragraph:
+
+- **A short quoted pair** (a two-word label, a value with spaces, `<condition> 시`): join it with a
+  no-break space in the manuscript and the deck alike. Keep a quoted value as the source prints it;
+  the join, not a rewrite, holds it together.
+- **A list whose items are already glued by middle dots** (`<ID>(<name>)·<ID>(<name>)`): never add
+  a no-break join inside it. The run becomes one unbreakable token and the line before it ends
+  short with a white run. Separate the items with commas so each item is a break point.
+- **A list of names in a cell** (linked screens, related items): reorder the items until every
+  break falls after a comma. Choose the order with a greedy wrap simulation at the deck's own font
+  metrics, calibrated against one rendered line, and keep a margin of a few pixels either side of
+  the measure; reordering by eye moves the split to the next item.
+- **Several requests or statements separated by `;` in one cell**: put each on its own line (the
+  in-cell break) wherever that costs no extra line; where it would add one and the break already
+  falls between items, leave it.
+
+A line that ends within about 5px of the measure is also where a renderer that keeps the break
+space prints it at the start of the next line, so tune the wording until no line ends there.
+
 ## Where the layouts live
 
 The layouts - the column figure left and right, the side-by-side pair, the stacked pair with its
