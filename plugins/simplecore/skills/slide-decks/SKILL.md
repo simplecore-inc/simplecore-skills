@@ -767,7 +767,11 @@ printed deck.
   separate list items and never appears twice in one meta line.
 - **No decorative hairlines.** A line that does not separate two things is decoration.
 - **No border above and below every row** of a label/value list. Spacing.
-- **No three equal cards.** Two columns of three, or an asymmetric split.
+- **No three equal cards.** Two columns of three, or an asymmetric split. The tell is the
+  shape on the page, not the component's name: a flow strip without boxes or a step-row
+  variant that lays its items side by side at `flexGrow=1` still prints three equal columns,
+  and a review reads it as the same finding. A sequence becomes a numbered list or a stacked
+  step column; confirm the fix on the render, never on the swapped component name.
 - **No pure black**, no glow, no gradient text, no oversaturated accent.
 - **Control hierarchy with weight and colour, not raw size.**
 - **No bare abbreviation list.** A row of term-and-expansion pairs under a figure or at a
