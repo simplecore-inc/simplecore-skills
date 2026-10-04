@@ -160,8 +160,9 @@ class Parity:
                     out.append((ATTR, value))
         split = []
         for kind, value in out:
-            # An explicit break stacks two values; each traces to its own manuscript line.
-            split += [(kind, norm(part)) for part in value.split(r"\n") if norm(part)]
+            # An explicit break (a paragraph \n or a line break \v) stacks two values;
+            # each traces to its own manuscript line.
+            split += [(kind, norm(part)) for part in re.split(r"\\[nv]", value) if norm(part)]
         return split
 
     def verdicts(self, raw: str, hay: Haystack) -> list[tuple[str, str, str]]:

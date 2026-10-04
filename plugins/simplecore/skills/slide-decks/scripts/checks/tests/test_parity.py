@@ -57,6 +57,12 @@ class ParityTests(unittest.TestCase):
     def missing(self, body: str, **kw):
         return [(k, t) for v, k, t in self.verdicts(body, **kw) if v == "missing"]
 
+    def test_a_line_break_stacks_values_like_a_paragraph_break(self):
+        broken = '<Use template="card" head="지표" body="절체 시간\\v3초" />'
+        self.assertEqual(self.missing(broken), [])
+        wrong = '<Use template="card" head="지표" body="절체 시간\\v장애 발생 후 구십 분 이내 복구" />'
+        self.assertEqual(self.missing(wrong), [("attribute", "장애 발생 후 구십 분 이내 복구")])
+
     def test_a_prose_sentence_matches_as_written_or_is_missing(self):
         body = '<Use template="prose" text="본 사업은 계측 데이터를 수집한다. 수집한 데이터는 NAS에 저장한다."/>'
         self.assertEqual(self.missing(body), [("prose", "수집한 데이터는 NAS에 저장한다")])
