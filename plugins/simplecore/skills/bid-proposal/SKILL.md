@@ -176,8 +176,10 @@ with 「(미정: …)」.
 - Before writing text onto a page, check whether a figure already says it.
 - Edit the generator, never the picture. No legend along the bottom; every arrow has a target;
   labels are noun phrases.
-- Place every figure at the one scale `.claude/slide-decks.json` gives. A page that cannot hold
-  it is split or condensed, never given a smaller figure.
+- Place every figure at its deck's `figures.placeScale` in `.claude/slide-decks.json`: 0.9 on
+  the proposal document, 1.0 on the presentation deck. A figure that does not fit its slot at
+  that scale may take the deck's `oversizeScale` (about 0.95); a page that still cannot hold it
+  is split or condensed, never given a smaller figure.
 - A figure the task did not name is never changed.
 
 **Deck**

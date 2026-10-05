@@ -491,13 +491,11 @@ the sections and the pages that owe them. Where the section is too big for the p
 remainder, it gets a page of its own rather than a paragraph of itself.
 
 **A page whose content is one picture is still placed at the deck's figure
-width.** Where the deck declares a `placeScale`, a capture prints at its slot's
-placed width times that factor like every diagram, and `figbox` holds it there; a
+width.** A capture prints at its slot's placed width times the deck's
+`placeScale` like every diagram, and `figbox` holds it there; a
 capture grown to the full measure reads heavier than every figure around it. The
 room under it goes to the page's own write-up (the screen's states, actions and
-the requirements it answers), not to a bigger picture. A deck that declares no
-`placeScale` may grow a picture-only page's capture to the text block, measuring
-the foot of the rendered page.
+the requirements it answers), not to a bigger picture.
 
 **A section whose body is a table opens a page of its own.** Two tables of
 different content sharing a page read as one table with a heading dropped into
@@ -708,8 +706,10 @@ full slide from becoming a crammed one.
 
 Every figure is drawn by code in the project, saved on one of a few fixed board widths,
 and placed by the build at the width the board decides; the chapter file cannot squeeze a
-landscape drawing into a column. A document deck prints every figure at 90% of that placement, centred
-(`figures.placeScale`), the same factor on every page. A slide deck reads the document deck's figures as they
+landscape drawing into a column. Each deck sets its own factor (`figures.placeScale`): a document
+deck prints every figure at 90% of that placement and a slide deck at 100%, centred, the
+same factor on every page; a figure that does not fit its slot at that factor may print
+at `figures.oversizeScale` (about 95% on a slide deck) and no smaller. A slide deck reads the document deck's figures as they
 are and adds its own re-laid or new ones on slide boards; the rules for reuse, re-layout
 and replacing prose with a drawing are in [references/figures.md](references/figures.md).
 Diagrams are drawn on the paper theme; a dark figure on a white page reads as a block
@@ -812,7 +812,8 @@ Run every line. A failure means the page is not done.
    one mark gap and one row gap; every plate is the shape its name says; two sizes on
    one row stand on one baseline.
 7. Every figure is at a placed width its board decides, printed at the deck's
-   `placeScale` (0.9 by default) and centred, and its caption carries a number.
+   `placeScale` (0.9 on a document deck, 1.0 on a slide deck), or at its
+   `oversizeScale` only where it does not fit its slot, and centred, and its caption carries a number.
 8. The Korean audit reports zero errors over the deck's sources.
 9. The tool's layout checks (overflow, overlap, text outside its box, row height, the
    package as shipped) report no finding, and its rules check (sheet count, palette,

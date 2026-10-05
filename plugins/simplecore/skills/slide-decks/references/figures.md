@@ -122,8 +122,10 @@ nowhere of its own and stands inside the text column, where the same band reappe
 slide that needs two drawings wants them on the same board, or the second one is the
 page's evidence that the first should have been drawn differently.
 
-**A slide deck places every figure at one scale**, so a label drawn at 15 units is the
-same size on every page - a reader who sees a 1200-board figure across a whole slide and
+**A slide deck places every figure at its board placement (`figures.placeScale` 1.0)**,
+and only a figure that does not fit its slot at 1.0 prints at `figures.oversizeScale`
+(about 0.95); no figure prints smaller unless `checks.figbox.exceptions` names it. So a
+label drawn at 15 units is the same size on every page - a reader who sees a 1200-board figure across a whole slide and
 another in a column is reading the same drawing at two sizes, and the second one looks
 like a different deck. The scale is the largest that still lets each board fit the slot it
 belongs in (the widest board across the text block, the next in the wide column of an
@@ -315,9 +317,19 @@ skipped. A paragraph that is a list of attributes stays a table or a card; drawi
 adds a page and says nothing. The claim test from the drawing skill decides: cover the
 labels, and the shape alone must still say the claim.
 
-## A document figure prints at 90% of its board placement, centred
+## Each deck sets the share of its board placement a figure prints at
 
-On a document deck the picture is drawn at **0.9 of its board placement** and centred in
+`figures.placeScale` is declared per deck: a document deck (the portrait main volume)
+prints its figures at **0.9 of their board placement**, a slide deck (the presentation)
+at **1.0**. Either deck may declare `figures.oversizeScale` (about 0.95 on a slide deck),
+and it applies to one figure only when that figure **does not fit its slot at
+placeScale**: its box at placeScale is wider than the board's placed width or taller
+than the slot height the deck declares for that board in `figures.slots`. A board with
+no slot height has no oversize figures, and a deck with no `oversizeScale` has none
+either. A figure at any other scale is a `figbox` finding unless
+`checks.figbox.exceptions` names its file and the reason.
+
+On a document deck the picture is drawn at **placeScale of its board placement** and centred in
 the slot: the figure's box is as wide as the picture it prints (the placed width × 0.9)
 and as tall (the board height × the board scale × 0.9), so the box and the drawing
 coincide, the figure is centred in its slot and the caption stays centred under it. A box
@@ -329,9 +341,10 @@ column) × the factor, its height follows the image's own pixel ratio, and it is
 diagram; a capture at the full measure reads heavier than every diagram beside it. `figbox`
 reads both. A picture at the full measure reads as heavier than the
 text around it and pushes the blocks under it off the page; at 0.9 it reads as part of
-the page. The factor is `figures.placeScale` in the config, 0.9 unless a deck declares
-otherwise, and it is applied to every figure the same way, never chosen per page to make
-one fit.
+the page. The factor is `figures.placeScale` in the config (0.9 on a document deck and 1.0 on a
+slide deck when absent), and it is applied to every figure the same way, never chosen per
+page to make one fit; the one departure is `oversizeScale` on a figure that does not fit
+its slot.
 
 - **The floor still holds after the factor.** The smallest label's printed size is the
   figure's type ladder × the board scale × `placeScale`; at 0.9 a ladder that printed
@@ -342,8 +355,9 @@ one fit.
 - **Where applying the factor refuses a page**, the refusal names a block on that page,
   not the figure: fix the block, never exempt the figure. An exemption left in place is
   reported in the deck's notes with the page and the reason.
-- **A slide deck keeps its single slide scale** (the section above) and does not apply
-  this factor; its figures are already re-laid for the slot.
+- **A slide deck's figures are already re-laid for the slot**, so its placeScale is 1.0:
+  the board placement is the printed size, and `oversizeScale` covers the figure that
+  still runs past its slot.
 
 ## What a figure may not do
 
@@ -356,7 +370,8 @@ one fit.
   or on a slide to the title and the claim above it.
 - **Draw a shadow.** PowerPoint drops every element that references a `<filter>`.
 - **Be scaled to fit.** Re-lay out the primitives on the board the slot wants. The one
-  scale applied after the board's is the deck-wide `placeScale`, the same for every figure.
+  scale applied after the board's is the deck's `placeScale`, the same for every figure,
+  or its `oversizeScale` on a figure that does not fit its slot at placeScale.
 
 ## Screen captures on a slide
 

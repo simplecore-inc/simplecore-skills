@@ -533,7 +533,9 @@ and a paragraph that is a relation becomes a drawing - [figures.md](figures.md).
 figure on a slide prints at one scale, the one that puts the ladder's smallest step at the
 body size** (11 ÷ 15 = 0.7333 here), so a board is the placed width divided by that
 scale - 873 for a 640 px column, 640 for 469, 378 for 277, 1400 across the text block, 1488 across the page - and a
-figure never fills a slot by being enlarged or fits one by being shrunk. The height a
+figure never fills a slot by being enlarged or fits one by being shrunk past the deck's
+`figures.oversizeScale` (about 0.95), which applies only to a figure that does not fit its
+slot at `placeScale` 1.0. The height a
 figure may take on a slide is what the slide leaves after the rows beside it; re-lay it
 sideways before cutting anything, and never leave a figure narrower than its column - the
 blank strip beside it reads as a hole.
