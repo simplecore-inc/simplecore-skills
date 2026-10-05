@@ -39,6 +39,7 @@ from bidkit.config import DeckConfig  # noqa: E402
 from bidkit.deckread import DeckReader  # noqa: E402
 
 NODE = re.compile(r"node#(\d+)\s+(\w+)\s+\[(-?[\d.]+),(-?[\d.]+) ([\d.]+)×([\d.]+)\]")
+SLIDE = re.compile(r"^\s*(\d+)\s+master=(\S+)")
 HEAD = re.compile(r"^slide \d+\s+master=(\S+)\s+(\d+)×(\d+)")
 CONTAINERS = {"VStack", "HStack", "Layer", "Group"}
 
@@ -135,10 +136,13 @@ def find(reader: DeckReader, deck: DeckConfig) -> list[tuple[str, float, str]]:
     share = float(cfg.get("max", 0.11))
     min_column = float(cfg.get("minColumn", 0.2))
     out = []
-    for page in reader.slides():
-        if not masters.search(page.master or ""):
+    # slides and masters straight from `sg://deck`, so a deck with no page-id scheme is read too
+    for line in reader.session.read("sg://deck").splitlines():
+        m = SLIDE.match(line)
+        if not m or not masters.search(m.group(2)):
             continue
-        answer = reader.session.call("slide_tree", {"slide": page.n})
+        n = int(m.group(1))
+        answer = reader.session.call("slide_tree", {"slide": n})
         tree = "".join(c.get("text", "") for c in answer.get("content", []))
         _, pw, ph, root = parse(tree)
         if root is None:
@@ -146,7 +150,7 @@ def find(reader: DeckReader, deck: DeckConfig) -> list[tuple[str, float, str]]:
         found = gaps(root, pw, ph, share, min_column)
         if found:
             what = "; ".join(f"{k} {g:.0f} px in the column at x {x:.0f} from y {y:.0f}" for k, x, g, y in found)
-            out.append((page.label, max(f[2] for f in found), what))
+            out.append((f"slide {n}", max(f[2] for f in found), what))
     return out
 
 
