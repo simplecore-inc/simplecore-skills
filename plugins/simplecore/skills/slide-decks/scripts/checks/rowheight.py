@@ -14,7 +14,8 @@ row, and a row whose heights differ by more than the tolerance is reported
 with the page, the top edge and the first words of each box. A box that spans
 others on its top edge is their wrapper, not their neighbour. A small square
 whose text is a bare number is a marker plate laid over a picture, not a box
-in a row, and is left out; so is a list bullet, a small square with no words.
+in a row, and is left out; so is a list bullet, a small square with no words,
+and a rule, a rectangle under 1 pt thick that draws a hairline rather than a box.
 
 Reads the deck's built `.pptx` (`output`); refuses one older than the deck.
 
@@ -85,6 +86,11 @@ def boxes(xml: str, built: Built) -> list[tuple[float, float, float, float, str]
     return out
 
 
+def is_rule(b) -> bool:
+    # a hairline drawn as a rectangle: it divides rows, it is not one of them
+    return min(b[2], b[3]) < 1.0
+
+
 def is_marker(b, side: float) -> bool:
     _, _, w, h, words = b
     # a numbered plate, or a bare list bullet (a small square with no words)
@@ -119,7 +125,7 @@ def check(built: Built, deck: DeckConfig, only: set[int] | None = None) -> list[
     for n in sorted(built.slides):
         if only and n not in only:
             continue
-        items = [b for b in boxes(built.slides[n], built) if not is_marker(b, side)]
+        items = [b for b in boxes(built.slides[n], built) if not is_marker(b, side) and not is_rule(b)]
         for top, beside in rows(items, top_tol):
             heights = [b[3] for b in beside]
             if max(heights) - min(heights) > h_tol:

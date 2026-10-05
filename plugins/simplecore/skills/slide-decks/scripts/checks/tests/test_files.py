@@ -148,6 +148,11 @@ class RowHeightTests(Base):
         self.assertEqual(self.found(sp(10, 100, 200, 20), bullet), [])
         self.assertEqual(len(self.found(sp(10, 100, 200, 20), sp(230, 100, 30, 30))), 1)
 
+    def test_a_rule_is_not_a_box(self):
+        # a hairline drawn as a zero-height rectangle above a row of a list
+        self.assertEqual(self.found(sp(10, 100, 200, 0), sp(230, 100, 200, 50)), [])
+        self.assertEqual(self.found(sp(10, 100, 0, 60), sp(230, 100, 200, 50)), [])
+
     def test_a_group_counts_only_when_it_draws_its_own_frame(self):
         def group(h, fill):
             inner = sp(0, 0, 200, h, fill=fill)
