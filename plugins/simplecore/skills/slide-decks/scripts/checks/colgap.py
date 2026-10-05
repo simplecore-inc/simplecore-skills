@@ -17,11 +17,13 @@ a shape; not the stacks around them) are projected onto the vertical axis.
 A column whose drawn content ends more than `max` (a share of the page
 height) above the lowest column's is reported as `bottom`; an uncovered run
 taller than `max` between a column's first and last drawn box is reported as
-`hole`. A judged slide is retired in `<checks.baselines>/colgap.json` with its
+`hole`. When every column of the row stops more than `max` above the box the
+row was given (a row stretched to the page's body), the band is reported as
+`foot`. A judged slide is retired in `<checks.baselines>/colgap.json` with its
 reason; the measure is the largest gap rounded to 10 px.
 
 Config (`checks.colgap`, optional): `masters` (regex, default `.`), `max`
-(0.11), `minColumn` (0.2, a share of the page width).
+(0.08), `minColumn` (0.2, a share of the page width).
 
     colgap.py           # every matching slide
 """
@@ -122,6 +124,10 @@ def gaps(root: Node, pw: float, ph: float, share: float, min_column: float) -> l
                 for col, end in ends:
                     if lowest - end > limit:
                         out.append(("bottom", col.x, lowest - end, end))
+                # every column stopping well above the box the row was given
+                floor = max(c.y + c.h for c in line)
+                if floor - lowest > limit:
+                    out.append(("foot", line[0].x, floor - lowest, lowest))
         for c in node.children:
             visit(c)
 
@@ -133,7 +139,7 @@ def find(reader: DeckReader, deck: DeckConfig) -> list[tuple[str, float, str]]:
     """[(slide label, largest gap px, what)] for each slide with a gap over the limit."""
     cfg = deck.section("checks.colgap")
     masters = re.compile(str(cfg.get("masters", ".")))
-    share = float(cfg.get("max", 0.11))
+    share = float(cfg.get("max", 0.08))
     min_column = float(cfg.get("minColumn", 0.2))
     out = []
     # slides and masters straight from `sg://deck`, so a deck with no page-id scheme is read too

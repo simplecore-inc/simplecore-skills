@@ -29,7 +29,7 @@ def tree(left: list, right: list, wide: list = ()) -> str:
 
 def gaps(text):
     _, pw, ph, root = colgap.parse(text)
-    return colgap.gaps(root, pw, ph, 0.11, 0.2)
+    return colgap.gaps(root, pw, ph, 0.09, 0.2)
 
 
 class ColGapTests(unittest.TestCase):
@@ -59,6 +59,11 @@ class ColGapTests(unittest.TestCase):
                        "  ├ node#5  Text  [400,100 330×300]  \"tall card\"\n"
                        "  └ node#6  Text  [48,420 330×80]  \"short card on the next line\"\n")
         self.assertEqual(gaps(text), [])
+
+    def test_both_columns_stopping_above_their_box_is_a_foot(self):
+        # the columns are given 520 px and both stop after 380
+        found = gaps(tree([(175, 380)], [(175, 375)]))
+        self.assertEqual([k for k, _, _, _ in found], ["foot"])
 
     def test_a_narrow_lane_is_not_a_column(self):
         text = HEAD + ("node#1  Layer  [0,0 1122×793]\n"
