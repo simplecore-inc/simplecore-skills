@@ -149,7 +149,9 @@ readings.
 **A check that reads the render needs a full render.** A check that reads the preview
 images (a slide deck's fill and column fill) sees the pages a partial render left exactly
 as they were, so running it after rendering one page reads one fresh page and every other
-page stale and reports nothing. `finetype`, `rowheight` and `wordbreak` read the built `.pptx` and
+page stale and reports nothing. The full render is the expensive one: one deck's loop of full
+renders rasterised 296 pages for every one-page edit, which is why the editing loop renders
+the page that changed and the full render waits for these checks. `finetype`, `rowheight` and `wordbreak` read the built `.pptx` and
 refuse one older than the deck's sources. Render the pages while editing, render
 everything before the checks.
 
@@ -214,14 +216,14 @@ saved.
 | `figures` | `slide-decks/scripts/checks/` | the printed pages | a sentence quoting a value from a part (「Ⅰ에서 인용한 … 462건」) names a value no body page of that part prints | `pages.numerals`, `checks.figures` (optional) |
 | `figtext` | `slide-decks/scripts/checks/` | each placed figure's SVG labels and the printed strings of every slide from the same source file | `limit` or more labels of `minLen` letters stand in the text beside the figure; a placed figure whose file is missing | vocabulary `roles.figures`, `roles.figureSrc`, `checks.figtext` (optional), `checks.baselines` |
 | `parity` | `slide-decks/scripts/checks/` | each page file holding a body page, its declared manuscripts | a printed string traces to none of them (prose as written, heads word by word, the rest as a fragment); a declared manuscript does not exist | `manuscript.dir`, `manuscript.declaration`, vocabulary `args`, `checks.parity` (optional) |
-| `carry` | `slide-decks/scripts/checks/` | each declared manuscript's printed prose and the printed text of the pages declaring it | the share of a declared section that reaches its pages falls under `floor` | `manuscript`, `lang.sentenceEnd`, `checks.carry` (optional), `checks.baselines` |
+| `carry` | `slide-decks/scripts/checks/` | each declared manuscript's printed prose and the printed text of the pages declaring it | the share of a declared section that reaches its pages falls under `floor`; opt-in (`checks.carry.undeclared`): a manuscript file with printed prose that no page declares, retired under `<file><TAB>undeclared` | `manuscript`, `lang.sentenceEnd`, `checks.carry` (optional), `checks.baselines` |
 | `fignum` | `slide-decks/scripts/checks/` | the figure components' number argument in printed order, the manuscript's caption lines, both sides' citations | a series does not run 1..n (deck: or does not rise, with `deckOrder: monotonic`), a citation names a number its side lacks; opt-in: a deck number no caption carries, an idle figure | `figures.numbering`, `manuscript.caption`, `roles.figureNumber` (kit), `checks.fignum` (optional) |
 | `secref` | `slide-decks/scripts/checks/` | the deck's sources (comments out, escapes undone) and the printed body pages | a named page-id citation's name is not on the cited page, or none of the anchors just before a citation is (a folio of the cited chapter beside the id is not an anchor, but must be the cited page's own folio); a citation of an untypeset chapter is pending | `pages.id`, `requirements.id` (optional), `checks.secref` (optional), `checks.baselines` |
 | `reqbadge` | `slide-decks/scripts/checks/` | every body page's head ids, region and badge ids, and with `requirements.manuscriptLine` the declared manuscripts | a head id the tender never issued, a region or badge id the head does not name, a head id missing from the manuscript's requirement line or a sub-section line not badged; opt-in: unbadged region heads, an id written bare in a sentence slot | `requirements`, `pages.head.reqs` (kit), `roles.regionIds`, `roles.badgeIds`, `checks.reqbadge` (optional) |
 | `proof` | `slide-decks/scripts/checks/` | the deck's source files and the evidence table | a cited item is not defined, a defined item is cited by no page (pending while every page listed for it is in a chapter not yet typeset), a cell cites by number without the tag, or pages cite while the table is missing. A count (「증빙 3건」) and a range (「증빙 1~9」) are not citations | `evidence`, `pages.numerals` with `evidence.pagesColumn` |
 | `coltotal` | `slide-decks/scripts/checks/` | every printed table, a table continued onto the next page read as one | a total row's number differs from the sum of the numeric column above it | `checks.coltotal` (optional) |
 | `samecol` | `slide-decks/scripts/checks/` | every printed table, continued tables joined | every body cell of a column holds one value, judged over the whole table so a column that varies on its first page is not reported for its last; a retired column whose value changes fires again | `checks.baselines`, `checks.samecol` (optional) |
-| `deliver` | `slide-decks/scripts/checks/` | `submission`, each deck's `output`, `render`, `previews`, `page.w`, `deliverable` | not a check: builds and writes the deliverables; exit 1 when the folder passes `submission.pdfLimitMB` or the blind copy's document properties (the pptx's `docProps`, the PDF's information and XMP) carry a proposer name another copy's `identity` declares, 2 when a step cannot be completed | `submission` |
+| `deliver` | `slide-decks/scripts/checks/` | `submission`, each deck's `output`, `render`, `previews`, `page.w`, `deliverable` | not a check: builds and writes the deliverables at the paths `submission.name` and `submission.layout` give, clears the blind copy's `dc:creator`, `cp:lastModifiedBy`, PDF author and XMP `dc:creator`, then reads its properties; exit 1 when the folder passes `submission.pdfLimitMB` or the blind copy's document properties (the pptx's `docProps`, the PDF's information and XMP) still carry a proposer name another copy's `identity` declares, 2 when a step cannot be completed | `submission` |
 | `reqid` | `proposal-writing/scripts/` | the deck's source files (comments stripped) and every manuscript file; with `--manuscript-only` the manuscript alone | an id the digest's headings do not issue is cited, a range included (`PER-001~008` over a never-issued `PER-007`); a sentence matching `requirements.absence` may name a missing id | `requirements`, `manuscript` |
 | `rfpwords` | `proposal-writing/scripts/` | each requirement's quoted detail and the manuscript (or the deck with `--against-deck`) | a noun the requirement names is written nowhere, unless retired with a reason | `requirements`, `checks.rfpwords` (optional), `checks.baselines` |
 | `rfpcite` | `proposal-writing/scripts/` | the transcribed tender and the manuscript (and `rfp.scan`) | a cited tender chapter or section does not exist, or a cited section name is in another chapter; a name in no chapter is a warning | `rfp.dir` |
@@ -273,7 +275,9 @@ read the kit vocabulary's `sentences` (component to sentence slots in reading or
 items are rows of their own) and the printed table cells. `period` reports a sentence without its
 stop and a stop on a string that is not a sentence, after setting aside any number of trailing
 references (`(…)`, `[…]`); the closing syllable and stop come from `lang.sentenceEnd` (default
-「다.」). `dangle` reports a claim whose last present row ends on a connective. `reqbadge` checks
+「다.」). One deck ran 185 values with the stop and 192 without, every page passing its own
+review, which is the split `period` reads. `dangle` reports a claim whose last present row ends
+on a connective. `reqbadge` checks
 that ids nest: head ids are issued (the proposal-writing `reqid` reader), region and badge ids are
 the head's, and, with `requirements.manuscriptLine`, head ids are on the manuscript's requirement
 line and its sub-section lines are badged; `checks.reqbadge.regions` and `bareIds` are policies a
@@ -324,7 +328,9 @@ adds the vocabulary's other sentence slots. `fignum` holds the deck's series to 
 reads the kit's name slots; `checks.naming.fallback` and `regionEcho` add the head arguments of
 unlisted components and the region-title rule. `parity` compares the furniture only when
 `manuscript.furnitureSource` names the file it is written in, and loosens short attributes only
-with `checks.parity.accentLen`.
+with `checks.parity.accentLen`. `carry` reads the manuscripts the pages declare;
+`checks.carry.undeclared` adds every manuscript file with printed prose that no page declares, the
+one gap no other check reads.
 
 **A figure number and a page id are read back from the format that writes them.** `fignum` builds
 its pattern from `figures.numbering.caption` (fields `part`, optional `chapter`, `n`) and
@@ -346,6 +352,18 @@ the baseline is written again, because an exemption that matches nothing reads a
 and every part over its planned pages; a finding is a page to look at before typesetting, not a
 number of characters to delete. A project that stops condensing short of 1.0 declares the ratio it
 stops at as `budget.pageTolerance`. The page title is not body copy and is not counted.
+
+**A shared-facts table's rule is obeyed to the letter.** One such rule read 「이 문구를 글자 단위로
+그대로 인쇄하고, 줄이거나 덧붙이지 않는다」 and a five-line row duly appeared three times in one
+chapter, on consecutive pages, each time under the page's own title explanation: the panel reads
+that chapter in order and meets the same paragraph three times. The writer was obeying the rule,
+which is what makes it the rule's defect rather than theirs. `sharedvalues` holds a value to the
+pages its row assigns and cannot see a row repeated across those pages, so only the table's own
+rule keeps them from repeating it.
+
+**An annex reference survives the change that breaks it.** One document carried seven such
+breaks, two of them numbering gaps and two of them appendix letters three reorderings stale, and
+the build reported none of them; `annexref` reads every reference against the item's definition.
 
 **Claims triage reports its own cost.** The statistics line is counted from the answers, never
 estimated: questions sent, answers received, errors, seconds, the rate, and the sum of
@@ -421,9 +439,11 @@ Baselines live in the directory `checks.baselines` names, one `<check>.json` per
 never beside a check's script. An entry is `"finding": "reason"`, or
 `{"reason": …, "measure": …}` when the judgement holds only at one measure (an overlap
 ratio, a set of values); `""` is retired with the reason still owed and fails. A legacy file
-(a list of findings, a bare measure, an object without a reason, or an object carrying its
-reason under 「사유」 and its measure under 「값」) loads as grandfathered entries that stay
-retired while their measure is unchanged. `--bless` rewrites the file
+(a list of findings, a bare measure, an object without a reason) loads as grandfathered entries
+that stay retired while their measure is unchanged. The shared loader reads `reason` and
+`measure` and no other key names; a check whose legacy file named them otherwise translates it on
+load, as `samecol` does for its `page<TAB>table<TAB>head` keys (a bare value, or the reason under
+「사유」 and the value under 「값」). `--bless` rewrites the file
 with today's findings, keeps the reason of every entry found unchanged, writes the rest
 blank, and prints the ones that still owe a reason. The shared checks that keep a baseline
 take `--bless`: `period`, `dangle`, `markecho`, `echo`, `twice`, `samefact`, `figtext`,
@@ -540,6 +560,11 @@ The shared checks read the deck from the server that holds it, so an edit applie
 application is checked before it is saved. A project check that reads files on disk reads
 the deck as it was last saved; save the deck before running such a check.
 
+**A write made from the disk loses edits the same way a reading from it misses them.** Two
+edits were lost that way, each overwritten by a later edit to a different page of the same
+file: the file was read from disk, edited and sent back whole while the tool held edits the
+disk had not caught up with.
+
 **A check run by hand names a directory, never a deck file**, where the project guards its
 deck sources against writes from the shell: a script handed a deck file may write it, so
 such a guard refuses the line whatever the script does. Hand the Korean audit the chapter
@@ -550,7 +575,8 @@ variable.
 server's layout: the lowest drawn box of the body against the body's inner box, and each
 column of the row that closes the page against the others, because the lowest box on the page
 belongs to whichever column runs longest and a tall figure in one column reports the page as
-full while the other stops halfway. A slide deck's preview-image fill check finds the lowest
+full while the other stops halfway; one deck carried ten such pages while its page fill read
+90 % at worst. A slide deck's preview-image fill check finds the lowest
 row that carries ink, excluding the folio band, and reads a column layout per column for the
 same reason. Covers, dividers, contents pages and a closing slide are exempt; their whitespace
 is the composition.

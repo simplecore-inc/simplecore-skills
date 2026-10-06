@@ -33,7 +33,9 @@ check comes from the project's `.claude/slide-decks.json` - read it first, on ev
 invocation, and read the deck's own `instructions` (its working rules and file map) in
 full before the first edit. A required key that is absent is reported, never guessed.
 [references/config.md](references/config.md) holds the schema; `assets/slide-decks.json`
-is an example.
+is an example. Commands in this skill's references are written from the plugin's skills
+directory, `<skills>`, which is `${CLAUDE_PLUGIN_ROOT}/skills` (`<svg-diagrams>` is
+`<skills>/svg-diagrams`).
 
 **Invoke `simplecore:svg-diagrams` before drawing or redrawing a figure.**
 
@@ -62,10 +64,10 @@ What carries over from tool to tool, and so stays here:
   read the result's diff after it.
 - **A file rewritten whole is read from the tool, never from disk.** Where the tool holds
   the deck open, the disk can lag its model, and a file read from disk, edited and sent back
-  whole replaces the edits the disk had not caught up with; two edits were lost that way,
-  each overwritten by a later edit to a different page of the same file. Read the file's
-  current source through the tool, or edit by handle, and look at the page you did not
-  mean to change after the write.
+  whole replaces the edits the disk had not caught up with. Read the file's current source
+  through the tool, or edit by handle, and look at the page you did not mean to change after
+  the write (the edits this cost: [checks.md](references/checks.md#running-them); read it
+  before a whole-file write).
 - **Measured geometry comes from the tool's checks, and no project script re-measures
   it.** Overflow, overlap, text outside its box, a row taller than reserved, the type
   floor and the sheet count are the tool's readings over the built file. Two
@@ -88,7 +90,9 @@ editing, and run the project's render before those checks and before shipping.
 
 **Render the whole deck only when the whole deck is the question.** A long deck takes
 minutes to rasterise, and most edits are one page that just changed, so a loop of full
-renders spends its time on 296 pages nobody is going to open. Reach for the full render
+renders spends its time on pages nobody is going to open (one deck's count:
+[checks.md](references/checks.md#where-each-property-is-held); read it before choosing a full
+render). Reach for the full render
 when the change moves pagination (a page added or removed, a chapter reordered), before
 the checks that measure the rendered images, and before shipping - a partial render
 leaves every other page image as it was, which is exactly what makes it cheap and exactly
@@ -202,10 +206,10 @@ at are a judgement about one deck's audience and one room, so the deck declares 
 (`type` in the config: the floor prose is held to, the region heading, and the lower floor
 a looked-up code value may print at). The type-floor check holds prose to the floor and code
 labels to theirs rather than carrying numbers of its own; the region heading is a size the
-typesetter applies, and no check reads it. Settle
-them by reading the deck on the screen it will be shown on: one deck could not be read at
-7.2pt and read as too large for what a slide carries at 10pt, and settled at 8.25pt body
-with 9.75pt region headings. A slide then carries about half the characters a document
+typesetter applies, and no check reads it. Settle them by reading the deck on the screen it
+will be shown on (the sizes one deck settled at, and the ones it could not read:
+[landscape-slides.md](references/landscape-slides.md#prose-stays-in-the-head-the-body-is-short-phrases-in-shapes);
+read it before declaring `type`). A slide then carries about half the characters a document
 page does, so its content is cut to what the size allows - the density ceilings are re-set
 with the size - never re-spaced tighter. **A figure's smallest label prints at the body size on a slide**: the boards are
 derived from the placed widths (board = placed px ÷ (body px ÷ ladder minimum)), a
@@ -259,10 +263,10 @@ does not fill - the words then sit low inside their own colour, and the page rea
 band with its text dropped. Nothing reports it: the box does not overflow, the page
 measures full, and a bar drawn the right way two inches above it looks identical at a
 glance. So a one-line filled surface - a band, a phrase, a plate, a stub - takes a fixed
-height, middle vertical alignment, a line height of 1.0 and horizontal padding only; one
-deck's ink phrase shipped with vertical padding and a 1.3 line height and printed its
-words three rendered pixels below centre while the column bar beside it was square.
-Where the text may run to two lines the surface is not this shape - give it a card.
+height, middle vertical alignment, a line height of 1.0 and horizontal padding only (the
+measured case: [body-pages.md](references/body-pages.md#measured-cases-behind-the-design-contract); read it before giving a filled
+surface vertical padding). Where the text may run to two lines the surface is not this
+shape - give it a card.
 
 **A requirement number inside the page body is a badge, never bare text**, and a page
 whose running head names requirement ids nests them: every region bar and sub-section
@@ -274,9 +278,10 @@ does not belong on the page. That the page answers in the panel's own words is
 **A card's closing row and a sentence's full stop are copy rules**
 (`simplecore:proposal-writing`, 「Enumerations as simple lists」): the row the reader
 finishes on closes on a predicate, and a sentence takes the stop while a name never does.
-The deck has to write them the same way on every page - one deck ran 185 values with the
-stop and 192 without, so the same shape read as finished on one page and unfinished on the
-next while every page passed its own review. `dangle` and `period` read every sentence slot
+The deck has to write them the same way on every page, or the same shape reads as finished
+on one page and unfinished on the next while every page passes its own review (the count on
+one deck: [checks.md](references/checks.md#the-shared-checks-and-the-runner); read it before
+retiring a `period` finding). `dangle` and `period` read every sentence slot
 and table cell for them, and a name that closes on a predicate is `naming`'s.
 
 **A figure never draws the words the page already prints.** A figure whose labels stand
@@ -288,8 +293,9 @@ both.
 **A list is one shape, and the deck has one of it.** Its mark is drawn, not typed - a
 `•` or a `-` in the text run is the same thing as a `·` standing in for a bullet. The
 row is indented a little from the block's left edge, and the mark sits close to its
-text: a mark parked in a wide fixed column reads as two columns rather than as a list,
-and one deck ran 26px of white between a 2px bullet and its sentence on 749 rows.
+text: a mark parked in a wide fixed column reads as two columns rather than as a list
+(the measured case: [body-pages.md](references/body-pages.md#measured-cases-behind-the-design-contract); read it before setting a
+list's mark column).
 **An ordered list written as a label/value list is the same defect wearing a
 different component.** A label/value row fixes its label column so the labels
 align down the page - which is what a one-glyph number does not want: 92px spent
@@ -379,12 +385,12 @@ folio.
 
 **The head's bands run the page's width and start at its edge.** A band inset to the text
 measure leaves a strip of paper above it that carries nothing, and the reader's eye starts
-below that strip on every page; taking it back is the cheapest room a deck has - this one
-gained 45px on 291 pages, about 5% of the text block, without moving a single word. The
-type inside is the exception: **the masthead's own text stays on the text measure's right
-axis**, because a band may bleed and a letter may not - the deck's first attempt put the
-masthead one pixel from the trim. Give the band enough height that the type has air above
-and below it rather than filling it edge to edge.
+below that strip on every page; taking it back is the cheapest room a deck has. The type
+inside is the exception: **the masthead's own text stays on the text measure's right
+axis**, because a band may bleed and a letter may not (both measured on one deck:
+[body-pages.md](references/body-pages.md#measured-cases-behind-the-design-contract); read it before moving the head's bands). Give
+the band enough height that the type has air above and below it rather than filling it
+edge to edge.
 
 **The client's mark belongs on the chrome; the proposer's belongs nowhere on the blind
 copy.** A blind evaluation bars the bidder's name, logo and people - it says nothing about the
@@ -406,9 +412,9 @@ same ground says something false by carrying it, and the contents' own count the
 be read without it.
 
 **The foot band's pairs are sized per page, and the render decides.** The band
-carries two label/value pairs to the left of the folio, and the two longest values
-never share a page - one deck's longest item is 206px and its longest id list 228px,
-against 370px of band after the labels. Give the first pair the width its own value
+carries two label/value pairs to the left of the folio (the measured case:
+[body-pages.md](references/body-pages.md#measured-cases-behind-the-design-contract); read it before sizing the band's columns).
+Give the first pair the width its own value
 needs (measured in the deck's face and written into the chapter as `evalW`) and let the
 second take the rest; fixed columns wide enough for each longest value do not fit
 together, and a value that wraps prints its second line over the band's edge where the
@@ -433,11 +439,11 @@ between pages is the thing the component exists to prevent.
   stale (`contents` for the contents page, `evaluation` for the lookup table's folios).
 - **A cross-reference into *another* deck names its chapter and section, never its
   page.** Computing the page number does not save it: the other deck is still being
-  written, and a page added anywhere before the target moves every reference after it.
-  One presentation had its 41 body slides rewritten from the proposal's import order and
-  38 of them were stale again an hour later, because the proposal had gained a page - so
-  the deck would have printed page numbers landing a page or two off every time a panel
-  member followed one. A chapter number and a section name survive a repagination, and
+  written, and a page added anywhere before the target moves every reference after it
+  (how fast on one presentation:
+  [landscape-slides.md](references/landscape-slides.md#what-a-slide-has-to-carry); read it
+  before computing a page reference). A chapter number and a section name survive a
+  repagination, and
   go stale only when the other deck renames or drops the section, which is exactly when
   the check should fail.
   **Carry the section name, not the chapter number alone.** A contents page that lists
@@ -507,8 +513,9 @@ the second. The break is forced before the section bar, and nothing that
 rebalances pages afterwards may undo it. **The exception is an appendix whose
 sections are one list cut into groups** - a bibliography, a glossary, a
 traceability matrix. The reader reads it as one run, the columns mean the same
-thing in every group, and a page per group buys nothing and costs pages; one
-such appendix ran to eight pages and reads better in four.
+thing in every group, and a page per group buys nothing and costs pages (the
+measured case: [body-pages.md](references/body-pages.md#measured-cases-behind-the-design-contract); read it before forcing a page
+per group).
 
 **A table that will not fit is shortened by what it prints, not by what it
 says.** Two moves recover most of it. A printed URL drops the scheme and the
@@ -534,9 +541,10 @@ layout is measured per column: both columns reach the bottom - **and measured me
 measured, by a check that reads the columns' own x ranges** (`grade` and `colgap` on the
 server's layout). A page-level fill number is
 met by whichever column runs longest, so a page whose wide column is full and whose
-narrow column stops half way passes every reading of that number; one deck carried ten
-such pages while its page fill read 90 % at worst, and each of them reads to a panel as
-a page the author had nothing more to say on. **A hole in the middle of a
+narrow column stops half way passes every reading of that number, and reads to a panel as
+a page the author had nothing more to say on (how many one deck carried:
+[checks.md](references/checks.md#running-them); read it before trusting a page-level fill).
+**A hole in the middle of a
 page is not normal** - no `class="fill"` pinning a trailing block on a body page; the
 cover and the divider are the exception, where the bottom cluster is the composition.
 Covers, dividers, contents pages and a closing slide are exempt from the fill rule.
@@ -610,10 +618,9 @@ moved.
 A deck grows a hundred components and keeps a prose table naming twenty of them.
 The table is what an author reads, so the deck uses twenty: the page that needed
 a numbered identity band gets another bullet list, and no review catches it
-because each page is fine on its own. One deck reached 199 body pages of which
-**135 carried at most one card kind and 67 carried none**, while 22 of its
-components had never been used - and the chapters somebody had filled with
-bullets carried 0.68 card kinds per page against 1.17 for the ones set by hand.
+because each page is fine on its own (what that did to one deck:
+[body-pages.md](references/body-pages.md#choosing-the-shape-of-a-regions-body); read it
+before keeping a component list by hand).
 
 So the index is not a file kept beside the components. **A component declares
 itself where it is defined**, and the tool's catalogue reads those declarations:
@@ -658,7 +665,8 @@ component carries a declaration, that no two claim the same purpose, and that a
 neighbour named in one is one the deck actually has. The last fires the moment a
 component set is copied between decks - the second deck's set is a clone with its
 own layout names, so a neighbour named in the first points at nothing in the
-second, and sixteen of one deck's declarations did on the first run.
+second (the case: [checks.md](references/checks.md#where-each-property-is-held); read it
+before copying a component set between decks).
 
 **A body page needs a shape that is not a paragraph and not a list**, and the
 page-shape check measures it: a page whose body is prose and bullets under every
@@ -756,13 +764,15 @@ the ear:
   「15개월 차」, 「3초」, the ratio 「1 대 3」); every English term is in Hangul as pronounced
   (「아파치 이그나이트 쓰리」, 「아이엠디지」), with the meaning said at the first mention where the
   listener cannot know it. The slide keeps the written form. `notespeech` lists every digit joined
-  to a native-numeral counter and every Latin letter left in a note.
+  to a native-numeral counter and every Latin letter left in a note. Mark the script as spoken so the transliteration bans stand down there ([`simplecore:korean-docs`, 「A speaker script - `l10n:spoken`」](../korean-docs/references/audit-tooling.md#a-speaker-script---l10nspoken)).
 - **Unpacked, not compounded.** A noun stack the slide can afford is unpacked into a clause the
   ear can follow: 「멱등 저장」 → 「멱등성을 보장해 저장합니다」, 「무유실 전달」 → 「잃는 데이터 없이
   전달합니다」. The slide keeps the short label; the note says what it does.
-- **Timed at the measured rate.** Read the script aloud once and time it at that rate (one deck
-  read 5,247 characters in about 15 minutes, 350 a minute); an assumed rate cut a script by a
-  fifth that the talk had room for. Leave the seconds the speaker will add on a slide the user
+- **Timed at the measured rate.** Read the script aloud once and time it at that rate, because
+  an assumed rate misjudges how much script the talk has room for (one deck's rate and what an
+  assumed one cost:
+  [landscape-slides.md](references/landscape-slides.md#the-speakers-script-and-the-claim-line-are-one-sentence-apart);
+  read it before timing a script). Leave the seconds the speaker will add on a slide the user
   names (a company page often takes questions).
 
 ## A guideline the user gives is written down in the same change
@@ -811,7 +821,9 @@ printed deck.
 - **No bare abbreviation list.** A row of term-and-expansion pairs under a figure or at a
   page's foot, standing on its own as a 「범례」, reads as filler and is cut even when the
   manuscript carries it. Expand an abbreviation at its first use in the page's text and keep the
-  full list in the annex glossary.
+  full list in the annex glossary. A gloss inside a figure is the figure's own:
+  `simplecore:svg-diagrams` references/document-figures.md, 「Decode domain terms inside the
+  figure」.
 - **No fake-perfect numbers.** A number keeps its source, meaning and unit
   (`simplecore:proposal-writing`, 「What the document may claim」).
 

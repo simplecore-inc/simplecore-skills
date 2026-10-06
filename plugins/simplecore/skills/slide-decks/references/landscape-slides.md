@@ -92,7 +92,9 @@ phrase in a shape is read at a glance and the script says the sentence.
   picture, not a caption under it.
 - **Compact by default, at the room's type size.** The body and the region heading are
   the sizes the deck declares under `type`, and every padding, gap and bar is one step
-  down from the document's; the deck's instructions carry the values. Room on a slide is
+  down from the document's; the deck's instructions carry the values. One deck could not be
+  read at 7.2pt and read as too large for what a slide carries at 10pt, and settled at 8.25pt
+  body with 9.75pt region headings. Room on a slide is
   spent on content, never on air - and at this size a slide carries about half the
   characters a document page does, so **the content is cut to the size**: a region of
   eight rows becomes four, a paragraph becomes one phrase, a figure of twelve boxes
@@ -106,6 +108,12 @@ on the slide it is assigned to** - in the running head's meta pair, and in the b
 panel's own words rather than by id alone. The project's plan-coverage check (`checks.local`)
 rejects a name or an id the plan does not know and reports how much of each list the deck
 covers; its completeness mode is the gate for a finished deck. The plan's 배점 is never printed.
+
+**A page number into the document deck goes stale faster than anyone recomputes it.** One
+presentation had its 41 body slides rewritten from the proposal's import order and 38 of them
+were stale again an hour later, because the proposal had gained a page - so the deck would have
+printed page numbers landing a page or two off every time a panel member followed one. The head
+cites a chapter and a section by name for that reason.
 
 **The cross-reference cites a chapter for every evaluation item the slide is scored on.**
 A slide answers two evaluation items out of two different chapters more often than it looks -
@@ -163,8 +171,8 @@ below sets out.
 obvious wrapper - the figure's own placed width with centring on it - is a no-op, and a
 600px drawing then sits against the left edge of a 680px column while every reader reads
 the gap on the right as a mistake. Give the wrapper the region's measure. The cost to
-watch for is a figure sharing a row with a panel: it now claims the whole row unless the
-chapter gives it a column of its own.
+watch for is a figure sharing a row with a panel: a wrapper at the region's measure claims
+the whole row unless the chapter gives the figure a column of its own.
 
 **A progress band under the head is three tones, in this order.** A deck that runs twenty
 minutes can say where it is without the speaker saying it: a thin full-bleed strip under
@@ -313,6 +321,10 @@ reading, not listening: the claim line carries what the part shows (「이미 �
 and the framing sentence that names the part and hands over to the next one lives in the note.
 The two are one sentence apart, which is the point of the rule below, not the same sentence in
 two places.
+
+**The script is timed at a rate measured by reading it aloud.** One deck read 5,247 characters
+in about 15 minutes, 350 a minute; an assumed rate cut a script by a fifth that the talk had room
+for.
 
 A slide prints one claim under its title - the line the panel is reading while the
 presenter speaks - and the note is what the presenter says over it. **The note opens on

@@ -40,6 +40,14 @@ a numeric prefix keeps it.
 Each file opens with a head block naming the source document, the pages it covers and the
 part of the tender it holds. That block is the only place the transcriber writes.
 
+**The outline the files follow is also what a citation of the tender is resolved against.** The
+tender prints the proposal's outline, so both documents carry chapters of the same numbers, and a
+citation of the tender's chapter can name the proposal's own. One proposal carried four of them,
+in the manuscript, the annex and two working documents, and each was found by hand only when
+somebody happened to open the tender at that page. `rfpcite` reads every such citation against
+the transcription's chapter and section headings, which is why those headings are carried as
+issued.
+
 ## Identifiers and detail numbers are carried as issued
 
 - The requirement's own id (`SFR-001`) and its name, character for character.

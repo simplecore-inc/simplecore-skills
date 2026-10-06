@@ -89,7 +89,8 @@ Every page carries, beside its body:
   scanning the source.
 - **A manuscript declaration** naming every manuscript file the page draws from. The parity check
   reads it, and a page with no declaration is invisible to the parity check; a manuscript file no
-  page declares is read by no check, so the deck's chapter list is where its absence shows. When
+  page declares is reported by `carry` once the deck sets `checks.carry.undeclared`, and without
+  that the deck's chapter list is the only place its absence shows. When
   one page-file becomes three deck pages, all three carry the same declaration.
 - **The head values**: the folio, the part, the chapter line, the title, the claim line and the
   deck's two meta fields. Never drop one - print 「해당 없음」 or a hyphen. The deck's instructions
@@ -196,8 +197,11 @@ table; 1-3 prose attributes answering what/why/how becomes a labelled card.
 components themselves** - the table below is the entry set every deck starts with, and it is not
 the deck's inventory. A hand-kept index is complete on the day it is written and shorter than the
 components on every day after: one deck's covered twenty of its ninety-nine, and the seventy-nine
-outside it were the ones nobody used. Read the generated catalogue for the deck in hand, and look
-at a rendered component rather than its name.
+outside it were the ones nobody used. One deck reached 199 body pages of which 135 carried at most
+one card kind and 67 carried none, while 22 of its components had never been used - and the
+chapters somebody had filled with bullets carried 0.68 card kinds per page against 1.17 for the
+ones set by hand. Read the generated catalogue for the deck in hand, and look at a rendered
+component rather than its name.
 
 The shape names are one deck's vocabulary, given as examples; the deck in hand names its own.
 
@@ -506,6 +510,27 @@ bridge, two columns, three columns, the rail - are the deck's own, so a width ma
 the deck without asking anyone. Where a shared layout library carries the same geometry, keep the
 deck's layouts geometrically identical to it, so moving to the library is a rename at the call
 sites and nothing more.
+
+## Measured cases behind the design contract
+
+`SKILL.md` states the design contract, the running head and the page rules; these are the
+measurements on one deck behind the rules that point here. Read the one beside a rule before
+arguing that the rule does not apply.
+
+- **A one-line filled surface.** One deck's ink phrase shipped with vertical padding and a 1.3
+  line height and printed its words three rendered pixels below centre while the column bar
+  beside it was square.
+- **A list's mark column.** One deck ran 26px of white between a 2px bullet and its sentence on
+  749 rows.
+- **The head's bands at the page's width.** Taking back the strip above the band gained one deck
+  45px on 291 pages, about 5% of the text block, without moving a single word. The deck's first
+  attempt put the masthead one pixel from the trim, which is why the masthead's own text stays
+  on the text measure's right axis.
+- **The foot band's pairs.** One deck's longest evaluation item is 206px and its longest id list
+  228px, against 370px of band after the labels, and the two never share a page: fixed columns
+  wide enough for each do not fit together, and widths set per page do.
+- **An appendix that is one list cut into groups.** One such appendix ran to eight pages at a
+  page per group and reads better in four.
 
 ## Before the page is done
 

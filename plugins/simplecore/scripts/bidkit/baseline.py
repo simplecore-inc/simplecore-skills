@@ -17,8 +17,10 @@ File: `<checks.baselines>/<check>.json`, an object of `finding: entry`:
 Entries that predate the reason rule are grandfathered: a top-level list of
 findings, a bare measure (`"finding": 0.71`, `"finding": ["1", "8"]`), and an
 object without a reason. They stay retired while their measure is unchanged,
-and only a new or changed finding demands a reason. A check whose legacy file
-used another key shape passes `migrate` to translate each raw entry.
+and only a new or changed finding demands a reason. The loader reads the keys
+`reason` and `measure` and no others; a check whose legacy file used another
+key shape, or other names for those two keys, passes `migrate` to translate
+each raw entry, and `--bless` then writes the entry in the shape above.
 """
 from __future__ import annotations
 
@@ -64,13 +66,11 @@ def parse_entry(value: Any) -> Entry:
     if isinstance(value, str):
         return Entry(value)
     if isinstance(value, dict):
-        reason = value.get("reason", value.get("사유"))
+        reason = value.get("reason")
         if reason is not None and not isinstance(reason, str):
             raise ConfigError(f"a baseline reason must be a string, not {reason!r}")
         if "measure" in value:
             return Entry(reason, _canon(value["measure"]))
-        if "값" in value:
-            return Entry(reason, _canon(value["값"]))
         return Entry(reason)
     # A bare number or list: a legacy measure with no reason.
     return Entry(None, _canon(value))

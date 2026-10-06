@@ -35,8 +35,8 @@ requirement names, requirement IDs, product names and legally fixed terms.
   condition or the preceding action it stands for.
 - **A spoken transition stands only in a speaker note**, where it helps the oral flow, and even
   there it does not replace the subject or the action.
-- **A demonstration number the user has excluded from the oral presentation** stays out of the
-  speaker notes.
+- **A proposer's own test figure or demonstration number** stays out of the speaker notes until the
+  user allows it to be spoken (SKILL.md, 「What the document may claim」).
 
 ## The submitted document
 
@@ -109,6 +109,8 @@ The presentation must work both when projected and when read without the present
   `오른쪽`, `위`, `아래`, `이 도식` or a visible arrow.
 - Do not introduce a technical abbreviation only in a diagram. Expand it at the first
   meaningful use in the title explanation, body or note, then use the same abbreviation.
+  A gloss inside the figure itself follows `simplecore:svg-diagrams` references/document-figures.md,
+  「Decode domain terms inside the figure」.
 - When a demonstration figure is not to be spoken, keep the number out of the notes and
   explain only the capability and verified state permitted by the user.
 - During a wording-only edit, preserve slide order and diagram meaning. Treat the user's

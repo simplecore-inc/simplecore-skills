@@ -1,9 +1,13 @@
 """mdorder, abspath, generated, renderer, finetype and rowheight: files, tools and the built deck."""
+import io
 import json
+import os
 import tempfile
 import unittest
 import zipfile
+from contextlib import redirect_stdout
 from pathlib import Path
+from unittest import mock
 
 from fixtures import page, project, reader, recording, use
 
@@ -13,6 +17,7 @@ import generated
 import mdorder
 import renderer
 import rowheight
+from bidkit import cli
 from bidkit.pptxread import Built
 from bidkit.tests.test_measure import tiny_font
 
@@ -97,6 +102,52 @@ class GeneratedTests(Base):
 
 
 class RendererTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.root = Path(self.tmp.name)
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def stand_in(self, version: str) -> Path:
+        """An executable that answers `--version` the way the renderer does."""
+        path = self.root / "bin" / "slideglance-built"
+        path.parent.mkdir(exist_ok=True)
+        path.write_text(f"#!/bin/sh\necho 'slideglance {version}'\n", encoding="utf-8")
+        path.chmod(0o755)
+        return path
+
+    def run_check(self, command: str, env: dict) -> tuple[int, str]:
+        deck = project(self.root, {"renderer": {"command": command, "minVersion": "9.9.0"}})
+        out = io.StringIO()
+        with mock.patch.dict(os.environ, env, clear=False), \
+                mock.patch.object(cli, "deck_config", lambda args: deck), redirect_stdout(out):
+            for name in ("SLIDEGLANCE_CLI", "SLIDEGLANCE_BIN"):
+                if name not in env:
+                    os.environ.pop(name, None)
+            code = renderer.main([])
+        return code, out.getvalue()
+
+    def test_the_tool_binary_named_by_slideglance_bin_is_the_renderer_measured(self):
+        built = self.stand_in("9.9.1")
+        code, out = self.run_check("slideglance", {"SLIDEGLANCE_BIN": str(built)})
+        self.assertEqual(code, 0, out)
+        self.assertIn("9.9.1", out)
+        self.assertIn("$SLIDEGLANCE_BIN", out)
+
+    def test_slideglance_bin_leaves_another_renderer_alone_and_slideglance_cli_wins(self):
+        built = self.stand_in("9.9.1")
+        other = self.root / "bin" / "other-renderer"
+        other.write_text("#!/bin/sh\necho 'other 9.9.5'\n", encoding="utf-8")
+        other.chmod(0o755)
+        code, out = self.run_check(str(other), {"SLIDEGLANCE_BIN": str(built)})
+        self.assertEqual(code, 0, out)
+        self.assertIn("9.9.5", out)
+        self.assertIn("renderer.command", out)
+        code, out = self.run_check("slideglance", {"SLIDEGLANCE_BIN": str(other), "SLIDEGLANCE_CLI": str(built)})
+        self.assertIn("9.9.1", out)
+        self.assertIn("$SLIDEGLANCE_CLI", out)
+
     def test_versions(self):
         self.assertIsNone(renderer.judge("slideglance 0.4.2", "0.4.0"))
         self.assertIn("0.3.9", renderer.judge("slideglance 0.3.9", "0.4.0"))

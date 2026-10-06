@@ -99,6 +99,27 @@ class SameColTests(unittest.TestCase):
         self.assertEqual(live, [("Ⅲ-1 03", 2, "M", "●", 3)])
         self.assertEqual(owed, [("Ⅲ-1 01", 1, "출력", "허용", 3)])
 
+    def test_a_legacy_baseline_is_read_by_migrate_and_blessed_into_the_current_keys(self):
+        found = [("Ⅲ-1 01", 1, "조회", "전체", 3), ("Ⅲ-1 02", 1, "성명", "***", 4),
+                 ("Ⅲ-1 03", 2, "M", "●", 3), ("Ⅲ-1 04", 1, "등급", "A", 3)]
+        b = self.write_baseline({
+            "Ⅲ-1 01\t1\t조회": {"값": "전체", "사유": "reading is unrestricted for every role"},
+            "Ⅲ-1 02\t1\t성명": {"값": "***", "사유": ""},              # reason still owed
+            "Ⅲ-1 03\t2\tM": "●",                                      # bare legacy value
+            "Ⅲ-1 04\t1\t등급\tA": {"사유": "one grade is the claim"},  # current key, legacy reason name
+        })
+        live, owed = samecol.judge(found, b)
+        self.assertEqual(live, [])
+        self.assertEqual(owed, [("Ⅲ-1 02", 1, "성명", "***", 4)])
+        b.bless({samecol.key(*f[:4]): None for f in found})
+        written = json.loads((self.root / "baselines" / "samecol.json").read_text(encoding="utf-8"))
+        self.assertEqual(written, {"Ⅲ-1 01\t1\t조회\t전체": "reading is unrestricted for every role",
+                                   "Ⅲ-1 02\t1\t성명\t***": "",
+                                   "Ⅲ-1 03\t2\tM\t●": None,
+                                   "Ⅲ-1 04\t1\t등급\tA": "one grade is the claim"})
+        self.assertNotIn("사유", json.dumps(written, ensure_ascii=False))
+        self.assertNotIn("값", json.dumps(written, ensure_ascii=False))
+
 
 if __name__ == "__main__":
     unittest.main()

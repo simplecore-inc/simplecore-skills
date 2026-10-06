@@ -7,6 +7,7 @@ from pathlib import Path
 from fixtures import page, project, reader, recording, table, text, use
 
 import carry
+import runmain
 import dangle
 import figtext
 import period
@@ -229,6 +230,54 @@ class CarryTests(Base):
         (self.root / "ms" / "a.md").write_text("# 계획\n\n이 파일은 작성 계획이며 인쇄하지 않는다. " * 5,
                                                encoding="utf-8")
         self.assertEqual(self.measure([])[1], [])
+
+
+class CarryUndeclaredTests(Base):
+    extra = CarryTests.extra
+    FULL = ["첫째 문장은 계측 자료를 수집한다. 둘째 문장은 자료를 정규화한다.", "셋째 항목은 저장 경로를 분리한다"]
+
+    def setUp(self):
+        super().setUp()
+        (self.root / "ms").mkdir()
+        (self.root / "ms" / "a.md").write_text(CarryTests.MD, encoding="utf-8")
+        (self.root / "ms" / "b.md").write_text(CarryTests.MD, encoding="utf-8")   # no page declares it
+        (self.root / "ms" / "c.md").write_text("# 계획\n\n작성 계획이며 인쇄하지 않는다.\n", encoding="utf-8")
+
+    def opt(self, on: bool):
+        carry_cfg = {"undeclared": True} if on else {}
+        self.deck = project(self.root, {"checks": {"baselines": "baselines", "carry": carry_cfg}, **self.extra})
+
+    def run_main(self):
+        files = {"pages/a.xml": "<!-- md: a.md --><Use template=\"page\"/>"}
+        slides = [page(1, use("prose", {}, *[text(t) for t in self.FULL]))]
+        return runmain.run(carry, self.deck, recording(slides, files=files, sources={1: "pages/a.xml"}))
+
+    def test_off_by_default_no_undeclared_file_is_read(self):
+        self.opt(False)
+        code, out = self.run_main()
+        self.assertEqual(code, 0, out)
+        self.assertNotIn("b.md", out)
+
+    def test_a_file_no_page_declares_is_reported_and_a_plan_is_not(self):
+        self.opt(True)
+        code, out = self.run_main()
+        self.assertEqual(code, 1, out)
+        self.assertIn("b.md: 4 prose sentences, and no page declares the file", out)
+        self.assertIn("1 declared by no page", out)
+        self.assertNotIn("c.md", out)
+        self.assertNotIn("a.md:", out)
+
+    def test_an_undeclared_file_retires_with_a_reason_and_a_blank_one_still_fails(self):
+        self.opt(True)
+        path = self.root / "baselines" / "carry.json"
+        path.write_text(json.dumps({"b.md\tundeclared": ""}, ensure_ascii=False), encoding="utf-8")
+        code, out = self.run_main()
+        self.assertEqual(code, 1, out)
+        self.assertIn("b.md (declared by no page): retired with a blank reason", out)
+        path.write_text(json.dumps({"b.md\tundeclared": "typeset in the second volume"}, ensure_ascii=False),
+                        encoding="utf-8")
+        code, out = self.run_main()
+        self.assertEqual(code, 0, out)
 
 
 if __name__ == "__main__":

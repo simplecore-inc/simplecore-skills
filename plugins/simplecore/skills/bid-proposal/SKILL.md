@@ -30,13 +30,17 @@ and not for work on the SlideGlance editor itself.
 | Company and staff facts: overview, credit rating, founding date, track record, staff careers, owned assets and tools, certificates, logo | the folder `companyDir` names, a private repository, never the public skill repository. Who bids and who is staffed differs per bid and may be undecided until late |
 | Facts the user gives in chat | written into the ledger in the same turn |
 | Ledger | `.claude/proposal-ledger.md` in the bid repository |
-| Deck configuration: deck folders, kit, checks, figure scale | `.claude/slide-decks.json` in the bid repository |
+| Deck configuration: deck folders, kit, checks, figure boards and placement scale | `.claude/slide-decks.json` in the bid repository, the one owner of the boards and the scale |
 | Kit | the kit the deck binds (`build.kit.dir` in the deck's `slideglance.json`); a new deck binds the kit the reference bid's deck binds |
 | Term standard | `.claude/GLOSSARY.md` and `.claude/l10n.json` in the bid repository |
-| Figure set: output folder, boards, type ladder, placement scale | `.claude/document-figures.json` in the bid repository, read by the figure library in `svg-diagrams/scripts/docfigures/` |
+| Figure set: output folder, type ladder | `.claude/document-figures.json` in the bid repository, read by the figure library in `svg-diagrams/scripts/docfigures/`, which takes the boards and the placement scale from the deck configuration |
 | Shared checks | `slide-decks/scripts/check.py` runs the checks a deck declares; manuscript checks live in `proposal-writing/scripts/`. A bid keeps only its own checks (`checks.local`) and baselines (`checks.baselines`) |
 | Reference bid: the standard for conventions, page ids, figure numbering, manuscript form and deck setup | the repository `referenceBid` names, written into the ledger at kickoff |
 | Earlier bids, reference only; where one differs from the reference bid, the reference bid wins | the repositories `earlierBids` lists |
+
+A path to another skill's files in this skill (`slide-decks/scripts/check.py`,
+`svg-diagrams/scripts/docfigures/`) is relative to the plugin's skills directory,
+`${CLAUDE_PLUGIN_ROOT}/skills`.
 
 The ledger is English and holds, in this order: bid facts with the tender clause each came from;
 the kickoff answers; assumptions decided by recommendation; the open list (every 「(미정: …)」 in
@@ -114,8 +118,8 @@ question waits for step 8. When the company folder does not exist yet, create it
 
 24. Fill what the ledger still lists as undecided, or show the user that list.
 25. Build the original and evaluation copies as PowerPoint and PDF with the names and folders the
-    tender asks for, under its size limits, and open each PowerPoint file to see that it opens
-    without a repair prompt.
+    tender asks for (`submission.name` and `submission.layout` in `.claude/slide-decks.json`), under
+    its size limits, and open each PowerPoint file to see that it opens without a repair prompt.
 26. Commit and push.
 27. Make this bid the reference bid for the next one: set `referenceBid` in
     `~/.claude/bid-proposal.json` to this repository and move the previous one into `earlierBids`.
@@ -153,6 +157,7 @@ question waits for step 8. When the company folder does not exist yet, create it
 - The tender's terms come before ours, and requirement names are copied verbatim (`proposal-writing`).
   「원문」 alone is never written: a citation names the clause, the article, or the requirement id
   and its issued name (`proposal-writing`, 「Every external basis is named where the claim is made」).
+- If pages or a manuscript are asked for, write the full pages, never a summary or a plan of them.
 - If a claim cannot be proven (track record, a certificate), leave it out; state the field of work only.
 - If the tender is blind-evaluated, the evaluation copy carries no company name, staff name, logo
   or wording that identifies the bidder, and staff experience is given without full project names.
@@ -163,12 +168,14 @@ question waits for step 8. When the company folder does not exist yet, create it
   the client's own requirement, never as blame, and never cite press reports.
 - If something already built answers a requirement, show the real screen labelled 「제안사 구현
   사례」 with the relevant area marked, rather than a description.
+- Screens and features carry only what the tender or the user asked for, and a draft requirement the
+  user wrote is the user's, never the client's.
 - The register is `proposal-writing`'s: 합니다체 in the page-head description (`sub`) and the
   part-divider lede and nowhere else, -다체 in the body and the judgment cells, noun phrases in
   titles, labels and captions. The description and the lede state the proposer's claim and what
   the client gains, never how the page is organised.
 - Copy never counts items, never sets a bare abbreviation list (`slide-decks`' tell checklist), and
-  never contains an em dash.
+  never contains an em dash; a count reported anywhere else is computed, never typed.
 
 **Presentation script**
 
@@ -176,13 +183,14 @@ question waits for step 8. When the company folder does not exist yet, create it
   without the screen, in the screen's order and its printed words, numbers and English terms
   written as they are read, compounds unpacked, and timed at the rate measured by reading it
   aloud. `notespeech` lists what a voice would misread, with the counters `checks.notespeech.counters`
-  sets.
+  sets. Mark the script as spoken so the transliteration bans stand down there
+  ([`korean-docs`, 「A speaker script - `l10n:spoken`」](../korean-docs/references/audit-tooling.md#a-speaker-script---l10nspoken)).
 
 **Numbers and evidence**
 
-- The proposer's own test figures appear only in the annex, with their conditions and limits. The
-  body cites the annex by name; the page-head description and the presentation script carry no
-  such figure and say only that the test was done.
+- The proposer's own test figures follow `proposal-writing` (「What the document may claim」): printed
+  only in the annex, with their conditions and limits, and spoken in the script only where the user
+  has allowed it.
 - If a number has no source, cite one or remove it.
 - Figures from the tender and the client are used as given.
 
@@ -198,7 +206,8 @@ question waits for step 8. When the company folder does not exist yet, create it
   figure that does not fit its slot at that scale at the deck's `figures.oversizeScale`
   (`slide-decks` references/figures.md); a page that still cannot hold it is split or
   condensed, never given a smaller figure.
-- A figure the task did not name is never changed.
+- A figure or an annex part the task did not name is never changed.
+- One generator and one output folder hold every figure.
 
 **Deck**
 
@@ -212,11 +221,14 @@ question waits for step 8. When the company folder does not exist yet, create it
   The same block on consecutive pages for different kinds of content is a defect.
 - Block choice: Jev gives the first pass and Claude confirms it; without Jev, Claude decides.
 - If a page has an empty bottom, bring in more of the manuscript, change the block, or merge with a
-  neighbour. Never stretch every page by default, never pad with filler.
+  neighbour. Never stretch every page by default (stretch only where it reads well), never pad with
+  filler.
+- Before merging pages, name each by id and title.
 - If a page continues the previous topic, it keeps the title with 「(1/2)」 and 「(2/2)」; a different
   topic takes its own title.
 - Caveats, notes and verification remarks go in the notice block, not in prose.
-- The running head matches the contents page, and a page has one title.
+- The running head matches the contents page, and a page has one title; a defect in either is fixed
+  in the kit and the master and checked on every page.
 - If the editor misbehaves (wrong orientation, a layout error that is the tool's own), fix the tool
   or report it before going on; never work round it with embedded images or absolute paths.
 - The editor app is never restarted unless the user asks.
@@ -246,6 +258,8 @@ precedence over these.
 - Findings go to a file, graded 상·중·하. Fix every 상 and 중, apply the 하 once, and review again.
   Stop when no 상 or 중 is left; delete a round's files once the next round has read them (the next round checks each finding against them), and the last round's once it is applied.
 - If the same finding returns in two rounds, write a check that finds it and fix everything it finds.
+- Every check names the trees it reads (a summary folder, the chapter files, the manuscript) and is
+  proven on a known defect before it is trusted.
 - Before reporting a pass complete, run the check that proves it covered everything (every page
   id, every figure, every board screen) and quote its count.
 
@@ -296,9 +310,10 @@ The bid is done when, in addition:
 - the panel's last round has no 상 or 중;
 - schedules, figures, requirement numbers and page citations agree across proposal, presentation,
   annexes, figures, script and Q&A;
-- no own-test figure appears outside the annex, and every number has a source;
+- no own-test figure is printed outside the annex or spoken in the script without the user's leave,
+  and every number has a source;
 - the evaluation copy meets the blind-evaluation rules, its document properties included
-  (`check.py run deliver` reads them);
+  (`check.py run deliver` clears the creator, last-saver and author fields and then reads them);
 - the open list is empty, or the user has seen what remains on it;
 - the package has the tender's names and folders, stays under its size limits, exports to PDF, and
   every PowerPoint file opens without a repair prompt;
@@ -306,37 +321,6 @@ The bid is done when, in addition:
 
 ## Exceptions
 
-Each of these happened in an earlier bid; the rule after the arrow keeps it from happening again.
-
-- The deck's `.xml` was edited as if it were PowerPoint → it is the editor's source and is changed
-  only through the tool server.
-- A summary was written where the manuscript was asked for, and a plan where pages were asked for
-  → write the full pages.
-- A whole-document pass stopped at chapter 6 and was reported done → the coverage check above.
-- 합니다체 was applied to every sentence and a whole session went to undoing it → it belongs to the
-  page-head description and the divider lede only.
-- Compression lost content, and the gap was then padded with forced filler (「100%, 2-2-1 같은
-  내용이 억지스러움」) → compare with the earlier text; never pad.
-- The wrong pages were merged → name the pages by id and title before merging.
-- Figures and the annex were changed without being asked and had to be restored from git → a
-  figure the task did not name is never changed.
-- Stretch was made the default and many pages looked wrong → only where it reads well.
-- An abbreviation line was set under a figure, and a divider kicker said 「요구사항 73건, 네 개 장」
-  → neither is ever set.
-- A description said how the page was written instead of the claim
-  (「작성방식을 쓰는것이 아니라, 제안사의 주장을 쓰는것이다」).
-- The running head differed from the contents page, a page carried two titles, and the second band's
-  type shrank on some pages → fixed in the kit and master, checked on every page.
-- The deck rendered landscape and work went on → a tool defect stops the deck work until fixed.
-- Absolute paths and embedded images broke the preview; a PowerPoint repair prompt survived three
-  attempts → find the cause in the tool and fix it there.
-- Features nobody asked for were drawn into the screens (「결재 알림 보내기」), and the user's own
-  draft requirement was treated as the client's → only what the tender or the user asked for.
-- Checks passed over defects because each read only part of the deck (one skipped the summary
-  folder, one read chapter files only, one read the manuscript only) → every check names the trees
-  it reads and is proven on a known defect before it is trusted.
-- A table titled 「요구사항 61건」 had 62 rows → counts are computed, never typed.
-- A different diagram was placed than the one asked for → cite figures by number and title.
-- Persona round files piled up across rounds → delete each round once the next round has read it; a round deleted before the next review left that review nothing to check its fixes against.
-- Figures ended up in two folders → one generator, one output folder.
-- Codex used Claude Code's Korean audit skill → use the standard that tool has installed.
+What happened in the earlier bids behind the rules above is in
+[references/earlier-bids.md](references/earlier-bids.md), grouped as the Decisions are. Read it at
+kickoff and before a whole-document pass.
