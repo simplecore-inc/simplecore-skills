@@ -25,7 +25,9 @@ import {
 // Directories never scanned by default. Dot-directories (.git, .claude,
 // .docusaurus, ...) are skipped as well. Explicit path arguments bypass this
 // for the argument itself, so any of these can still be audited on demand.
-const DEFAULT_EXCLUDE_DIRS = new Set(['node_modules', 'dist', 'build', 'out', 'target', 'coverage', 'vendor']);
+// Exported because the sentence commands read the same set: a directory one
+// command skips and another reads makes their two zeros cover different files.
+export const DEFAULT_EXCLUDE_DIRS = new Set(['node_modules', 'dist', 'build', 'out', 'target', 'coverage', 'vendor']);
 
 // ---------------------------------------------------------------------------
 // Target file resolution
@@ -35,7 +37,14 @@ const DEFAULT_EXCLUDE_DIRS = new Set(['node_modules', 'dist', 'build', 'out', 't
  * Collects auditable files under `dir`. Markdown, MDX and SVG are auditable by
  * extension; locale resource files are auditable because the project declared
  * their paths, so `isLocaleResource` decides them regardless of extension.
+ *
+ * Exported as `walkTargets` for the sentence commands, which expand a named
+ * directory into exactly the files `check` reads under it.
  */
+export function walkTargets(dir, isLocaleResource = () => false) {
+  return walk(dir, isLocaleResource);
+}
+
 function walk(dir, isLocaleResource = () => false) {
   const found = [];
   for (const entry of readdirSync(dir, {withFileTypes: true})) {
@@ -201,6 +210,24 @@ function findPath(p, root, label) {
  * that path; this reports what it skipped so the answer stays visible. The
  * glossary file itself is never audited (it lists banned terms by definition).
  */
+/**
+ * The files `check` reads when no path is named: `audit.paths` (or the whole project with `all`),
+ * walked with the default directory exclusions, less `audit.exclude` and the glossaries.
+ *
+ * The sentence commands take their document set from here, so `check` and `rules` judge one file
+ * set by construction rather than by two enumerations kept in step by hand.
+ *
+ * @param root the project root
+ * @param config the project glossary's `audit` front matter
+ * @param glossaryPath the project glossary, never judged by itself
+ * @param all ignore `audit.paths` and take the whole project
+ * @returns absolute paths, sorted
+ */
+export function documentTargets({root, config, glossaryPath = null, all = false}) {
+  const isLocaleResource = makeLocaleResourceMatcher(config.localeResources ?? [], root);
+  return resolveTargets({paths: [], all}, {exclude: [], paths: [], ...config}, root, glossaryPath, isLocaleResource).files;
+}
+
 function resolveTargets(args, config, root, glossaryPath, isLocaleResource) {
   const direct = [];
   const scanned = [];

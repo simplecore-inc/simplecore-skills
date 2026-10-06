@@ -67,6 +67,10 @@ import {
   BASE_GLOSSARY_PATH,
 } from "./lib/glossary.mjs";
 import {
+  DEFAULT_EXCLUDE_DIRS,
+  documentTargets,
+  walkTargets,
+  makeLocaleResourceMatcher,
   initGlossary,
   initL10n,
   runDocAudit,
@@ -203,9 +207,12 @@ function gitFiles(pattern) {
   return findFiles(pattern);
 }
 
-const PRUNED = new Set([".git", "node_modules", "build", "dist", "target", ".gradle", ".next", "vendor"]);
-
-/** Glob against the filesystem, honouring only the subset of glob syntax used here. */
+/**
+ * Glob against the filesystem, honouring only the subset of glob syntax used here.
+ *
+ * It prunes the directories `check` prunes (`DEFAULT_EXCLUDE_DIRS`). A dot-directory is skipped
+ * too, except `.claude` and `.plans`, where a declared kind may keep its files.
+ */
 function findFiles(pattern) {
   // `**/` spans zero or more directories; a lone `*` stops at a separator. Every glob character
   // becomes a placeholder before any regex is written, because the regex for `**/` carries a `?`
@@ -231,7 +238,7 @@ function findFiles(pattern) {
     }
     for (const e of entries) {
       if (e.name.startsWith(".") && e.name !== ".claude" && e.name !== ".plans") continue;
-      if (PRUNED.has(e.name)) continue;
+      if (DEFAULT_EXCLUDE_DIRS.has(e.name)) continue;
       const child = rel ? `${rel}/${e.name}` : e.name;
       if (e.isDirectory()) walk(join(dir, e.name), child);
       else if (re.test(child)) out.push(child);
@@ -268,10 +275,20 @@ function formatOf(kind, file) {
  * A glossary is a page of banned spellings and is never judged by them - `check` skips both, so
  * the sentence sweep skips both too.
  */
-function projectExclusions() {
+/** The project glossary and its `audit` front matter, read once. */
+let PROJECT_GLOSSARY = null;
+function projectGlossary() {
+  if (PROJECT_GLOSSARY) return PROJECT_GLOSSARY;
   const g = discoverGlossary(START);
-  const patterns = g ? (parseGlossaryConfig(readFileSync(g.path, "utf8")).config?.exclude ?? []) : [];
-  const glossaries = new Set([g?.path, BASE_GLOSSARY_PATH].filter(Boolean).map((x) => resolve(x)));
+  const config = g ? parseGlossaryConfig(readFileSync(g.path, "utf8")).config : { paths: [], exclude: [], localeResources: [] };
+  PROJECT_GLOSSARY = { path: g?.path ?? null, config };
+  return PROJECT_GLOSSARY;
+}
+
+function projectExclusions() {
+  const g = projectGlossary();
+  const patterns = g.config.exclude ?? [];
+  const glossaries = new Set([g.path, BASE_GLOSSARY_PATH].filter(Boolean).map((x) => resolve(x)));
   const matchers = patterns.map(makeExcludeMatcher);
   return {
     excluded: (file) => {
@@ -287,22 +304,21 @@ function projectExclusions() {
  *
  * Without this the sentence sweeps would need a `kinds` declaration that the word check does
  * not, and a project with only documents would get `check`'s zero while no sentence rule ran.
- * Both `*.md` and `**\/*.md` are listed so that both enumerations reach the whole tree: git's
- * pathspec `*` crosses `/` while `**\/*.md` needs a separator, and the filesystem fallback's `*`
- * stops at one.
+ *
+ * **The set is `check`'s own, taken from the function `check` resolves its targets with**:
+ * `audit.paths` (the whole project with `--all`), the same directory exclusions, `audit.exclude`,
+ * the glossaries left out, and the resources `audit.localeResources` declares. Two enumerations
+ * kept in step by hand drift - a tracked `vendor/` file read by one and skipped by the other made
+ * the sentence sweep's count disagree with `check`'s - so there is one.
+ *
+ * @param all ignore `audit.paths`, as `check --all` does
  */
-function docEntries() {
-  const found = new Map();
-  const skip = projectExclusions();
-  for (const ext of ["md", "mdx", "svg"]) {
-    for (const glob of [`*.${ext}`, `**/*.${ext}`]) {
-      for (const file of gitFiles(glob)) {
-        if (skip.excluded(file) || skip.isGlossary(file)) continue;
-        found.set(file, { kind: "docs", lang: CONFIG.defaultLanguage, file, format: formatOf(null, file) });
-      }
-    }
-  }
-  return [...found.values()].sort((a, b) => a.file.localeCompare(b.file));
+function docEntries({ all = false } = {}) {
+  const g = projectGlossary();
+  return documentTargets({ root: ROOT, config: g.config, glossaryPath: g.path, all })
+    .map((abs) => relative(ROOT, abs).split(sep).join("/"))
+    .map((file) => ({ kind: "docs", lang: CONFIG.defaultLanguage, file, format: formatOf(null, file) }))
+    .sort((a, b) => a.file.localeCompare(b.file));
 }
 
 /**
@@ -362,9 +378,10 @@ function pathEntries(paths, command) {
     if (statSync(abs).isDirectory()) {
       if (!inside) throw new Error(`A directory has to be inside the project: ${p}`);
       const dir = rel.split(sep).join("/");
-      for (const ext of ["md", "mdx", "svg"]) {
-        for (const glob of [`${dir}/*.${ext}`, `${dir}/**/*.${ext}`]) for (const f of gitFiles(glob)) add(f);
-      }
+      // The documents beneath it are the ones `check` reads beneath it - its walk, its
+      // directory exclusions, and the resources the glossary declares.
+      const isLocaleResource = makeLocaleResourceMatcher(projectGlossary().config.localeResources ?? [], ROOT);
+      for (const f of walkTargets(abs, isLocaleResource)) add(relative(ROOT, f).split(sep).join("/"));
       for (const entry of declaredUnder(dir)) add(entry.file, entry);
     } else {
       add(inside ? rel : abs);
@@ -412,8 +429,8 @@ function defaultKinds(command) {
   return Object.keys(CONFIG.kinds).filter((k) => !optedOut(CONFIG.kinds[k].optIn, command));
 }
 
-function discover({ kind, lang, docFallback = false, command } = {}) {
-  if (docFallback && !kind && !Object.keys(CONFIG.kinds).length) return docEntries();
+function discover({ kind, lang, docFallback = false, command, all = false } = {}) {
+  if (docFallback && !kind && !Object.keys(CONFIG.kinds).length) return docEntries({ all });
   requireKinds();
   const kinds = kind ? [kind] : defaultKinds(command);
   const langs = lang ? [lang] : [CONFIG.defaultLanguage];
@@ -2515,7 +2532,7 @@ function cmdSweep(opts) {
   run("lens", () => cmdLens({ ...opts, json: false, listLimit: SWEEP_LENS_LIST }));
 
   banner("sweep");
-  const entries = paths.length ? pathEntries(paths, "rules").entries : discover({ docFallback: true, command: "rules" });
+  const entries = paths.length ? pathEntries(paths, "rules").entries : discover({ docFallback: true, command: "rules", all: opts.all });
   console.log(
     `files in the sentence sweep: ${entries.length} · glossary rules: ${ruleSet().rules.length}` +
       ` · sentence rules: ${rulePacks().active.length} · lens: ${readLens() ? "loaded" : "missing"}`,

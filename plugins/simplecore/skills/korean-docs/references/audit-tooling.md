@@ -30,6 +30,7 @@ node "$T" check [paths...]       # document audit - audit.paths, or the whole pr
 node "$T" audit [--kind K]       # resource audit - missing translations · banned spellings · particles · paired language files
 node "$T" rules --test           # verify the rule pack against its own hit/miss examples
 node "$T" rules [paths...] [--scope S] [--explain] [--strict]  # sentence-rule sweep (changes nothing); errors set the exit code, --strict adds warnings
+  --all             # list every hit, and ignore audit.paths as check --all does
 node "$T" suspects [paths...] [--json]  # rank the sentences that read as translated
 node "$T" lens [paths...] [--count] [--json]  # the reading lens over the same files, or over a draft outside the project
 node "$T" grep <pattern> [--regex]  # search the copy values of the resources
@@ -273,7 +274,10 @@ layout.
   name shown in its own language (`English`), a file list, a formula of identifiers. Both lists
   are the project's; the skill ships neither.
 - With no declaration at all, `rules` · `suspects` · `grep` · `list` still run over the document set
-  `check` reads (`.md` · `.mdx` · `.svg`). Only `audit` requires the declaration.
+  `check` reads, produced by the function `check` resolves its targets with: `audit.paths` (the
+  whole project with `--all`), the `.md` · `.mdx` · `.svg` files and the declared
+  `audit.localeResources` beneath it, `audit.exclude` and the glossaries left out. Only `audit`
+  requires the declaration.
 - **`.claude/l10n.json` is only consulted when an audit was requested.** When it is missing, say in
   one line what cannot be checked and do not offer to create it. If the user asks, create it with
   `check --init-l10n` and confirm with `list` that the files are actually caught.
@@ -282,10 +286,15 @@ layout.
 
 - `git ls-files`'s `**` means one or more path segments, so `locales/**/ko.json` does not match
   `locales/ko.json`. When both shapes exist, write two globs.
-- **A file `.gitignore` covers is not in the enumeration.** The sentence commands list files with
-  `git ls-files --cached --others --exclude-standard`, so a new file is read before it is staged
-  and an ignored one is not, while `check` walks the filesystem and reads it. Compare the file
-  count `list` prints against the real one.
+- **The document set skips the same directories in every command.** `check` and the sentence
+  commands walk the filesystem past `node_modules` · `dist` · `build` · `out` · `target` ·
+  `coverage` · `vendor` and every dot-directory (`.claude` included), so a tracked `vendor/` file
+  is read by neither. A path named on the command line is read whatever directory holds it, and a
+  directory named there is walked the same way beneath it.
+- **A declared kind is enumerated through git.** A kind's globs go to
+  `git ls-files --cached --others --exclude-standard`, so a new file is read before it is staged and
+  a file `.gitignore` covers is not; a kind may name a dot-directory (`.claude/chapters/*.md`)
+  because its globs are explicit. Compare the file count `list` prints against the real one.
 - Globs in `audit.localeResources` are relative to the repository root, and `*` does not cross `/`.
   To include subdirectories write `src/**/*.mjs`. A pattern matching no file at all makes `check`
   exit with an error.
