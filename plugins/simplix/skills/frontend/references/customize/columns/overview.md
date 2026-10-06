@@ -103,7 +103,7 @@ The framework has no declarative hidden-by-default: `hiddenColumns` is a runtime
 ### Step 4: Apply Rendering Patterns
 
 Select appropriate rendering for each column based on field type:
-- For **enum** columns, use a children render that resolves the boot enum and draws `StatusBadge` with the enum's ONE shared tone map from the project UI package and the `enumLabel` text (`../../audit/registry/tones-and-badges.md`). A module-local status color map is what the audit's `status-map-resurrect` fails; only a categorical palette stays local
+- For **enum** columns, use a children render that resolves the boot enum and draws `StatusBadge` with the enum's ONE shared tone map from the project UI package and the `enumLabel` text (`../../audit/registry/tones-and-badges.md`). A module-local status color map is a defect: the audit's `status-map-resurrect` fails a map under a name the project declares retired (`audit.statusMapResurrect` in `.claude/simplix.json`), and `inline-dark-tone-map` lists the other status maps for review; only a categorical palette stays local
 - Use children render `{({ row, value }) => ...}` for any complex / relational / i18n rendering
 - `display` prop is the simple built-in for the no-i18n case (`"boolean"` for booleans; `"badge"` ALSO available, optionally with the `variants` map, but it skips `resolveBootEnum`/`enumLabel`)
 - Use `format` prop for date formatting (`"date"`, `"datetime"`, `"relative"`)
@@ -419,7 +419,7 @@ See [Cell Render Recipes](cell-components.md) for the complete recipe catalog.
 
 ### Enum Badge with resolveBootEnum
 
-The enum's ONE tone map lives in the project UI package (`../../audit/registry/tones-and-badges.md`); a module-local status color map is what the audit's `status-map-resurrect` fails.
+The enum's ONE tone map lives in the project UI package (`../../audit/registry/tones-and-badges.md`); a module-local status color map is a defect, and the audit's `status-map-resurrect` fails a map under a name the project declares retired (`audit.statusMapResurrect` in `.claude/simplix.json`), and `inline-dark-tone-map` lists the other status maps for review.
 
 ```tsx
 import { productStatusToTone } from "@<scope>/<ui-package>/<domain>";

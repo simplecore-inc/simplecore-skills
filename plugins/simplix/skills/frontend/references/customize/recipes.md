@@ -13,7 +13,7 @@ Step-by-step patterns for common post-scaffold customization tasks.
 <CrudList.Column<Entity> field="status" header={fieldLabel("status")} sortable />
 ```
 
-**After** (customized) - the enum's ONE tone map lives in the project UI package, never in the module (`../audit/registry/tones-and-badges.md`; the audit's `status-map-resurrect` fails a module-local status map):
+**After** (customized) - the enum's ONE tone map lives in the project UI package, never in the module (`../audit/registry/tones-and-badges.md`; the audit's `status-map-resurrect` fails a map under a name the project declares retired (`audit.statusMapResurrect` in `.claude/simplix.json`), and `inline-dark-tone-map` lists the other status maps for review):
 ```tsx
 import { resolveBootEnum } from "@simplix-react-ext/simplix-boot-utils";
 import { StatusBadge, EmptyValue } from "@simplix-react/ui";

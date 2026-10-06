@@ -485,10 +485,11 @@ Exception: categorical (non-status) palettes - `CATEGORY_COLORS`, `<ENTITY>_TYPE
 
 **Pattern 2 - Resurrected named status maps (high confidence)**
 ```bash
-# Replace the alternation with the project's actual resurrected status/severity map names
-grep -rnE "STATUS_COLORS|SEVERITY_COLORS|severityConfig|<status-map-name>" --include="*.tsx" modules/
+# Replace the alternation with the retired map names the project declares in
+# .claude/simplix.json audit.statusMapResurrect.names
+grep -rnE "<status-map-name>|<status-map-name>" --include="*.tsx" modules/
 ```
-Expected: 0 (all replaced by the project-local shared tone maps)
+Expected: 0 (all replaced by the project-local shared tone maps). `audit-frontend.mjs`'s `status-map-resurrect` runs this pattern with the declared names and is off where none are declared: `{ "audit": { "statusMapResurrect": { "names": ["<status-map-name>"], "importFrom": "@<scope>/<ui-package>" } } }`.
 
 **Pattern 3 - Raw status dot span (medium confidence)**
 ```bash

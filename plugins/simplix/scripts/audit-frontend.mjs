@@ -427,6 +427,17 @@ function columnBlocks(content) {
   return blocks;
 }
 
+// The `.claude/simplix.json` declarations the project-vocabulary rules' samples run under.
+const STATUS_MAP_DECLARATION = JSON.stringify({
+  audit: { statusMapResurrect: { names: ["STATUS_COLORS", "SEVERITY_COLORS"], importFrom: "@acme/site-ui" } },
+});
+const SHARED_CONSTANT_DECLARATION = JSON.stringify({
+  audit: { dragThresholdCopy: { names: ["DRAG_THRESHOLD_PX"], importFrom: "@acme/site-ui" } },
+});
+const EDGE_HANDLE_DECLARATION = JSON.stringify({
+  audit: { cursorColResize: { component: "ResizeHandle", importFrom: "@acme/site-ui" } },
+});
+
 // ---------------------------------------------------------------------------
 // Rules - { id, invariant, level: "error"|"review", desc, appliesTo(relPath), check(content, relPath) }
 // ---------------------------------------------------------------------------
@@ -1200,6 +1211,48 @@ function chipModeOfManifest(manifest) {
     if (v[i] !== MULTI_SELECT_CHIP_FILTER[i]) return v[i] < MULTI_SELECT_CHIP_FILTER[i] ? "single" : "multiple";
   }
   return "multiple";
+}
+
+/**
+ * A rule's project-declared vocabulary, read from the `audit` section of `.claude/simplix.json`.
+ *
+ * @remarks
+ * Some rules guard one product's own shared components: the names of the maps it retired, a
+ * constant its UI package exports, the component that replaces an inline grip. Those names are
+ * the project's, so the project declares them and the rule is off where it does not. A
+ * declaration of the wrong shape turns the rule off as well, and says so once, because an
+ * error-grade rule that stops firing without a word reads exactly like a clean tree.
+ *
+ * @example
+ * { "audit": { "dragThresholdCopy": { "names": ["DRAG_THRESHOLD_PX"], "importFrom": "@acme/site-ui" } } }
+ *
+ * @param key the key under `audit`, named after the rule
+ * @param listKey the key holding the declared names, `names` or `component`
+ * @returns `{ names, importFrom }` when declared in full, otherwise null
+ */
+const warnedDeclarations = new Set();
+function declaredVocabulary(key, listKey) {
+  const raw = settings()[key];
+  if (raw === undefined) return null;
+  const names = listKey === "component" ? [raw?.component] : raw?.[listKey];
+  const valid =
+    Array.isArray(names) &&
+    names.length > 0 &&
+    names.every((n) => typeof n === "string" && /^[\w$-]+$/.test(n)) &&
+    typeof raw?.importFrom === "string" &&
+    raw.importFrom.length > 0;
+  if (valid) return { names, importFrom: raw.importFrom };
+  if (!warnedDeclarations.has(key)) {
+    warnedDeclarations.add(key);
+    const shape = listKey === "component" ? `{ "component": "<Name>", "importFrom": "<package>" }` : `{ "names": ["<name>"], "importFrom": "<package>" }`;
+    console.error(`⚠ .claude/simplix.json audit.${key} is not ${shape}, so the rule is off.`);
+  }
+  return null;
+}
+
+/** @returns an alternation matching any of the names as a whole word */
+function wordAlternation(names) {
+  return names.map((n) => n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|");
 }
 
 function publicRouteDirs() {
@@ -4966,24 +5019,48 @@ return <Badge>{data?.totalElements ?? 0}</Badge>;`,
     id: "status-map-resurrect",
     invariant: "registry: tone maps",
     level: "error",
-    desc: "Resurrected local status/severity color map — use the shared tone maps + StatusBadge/StatusDot",
+    // The names are the ones a project retired when it moved its maps into its UI package, so
+    // they are the project's to declare: `audit.statusMapResurrect` in `.claude/simplix.json`.
+    get desc() {
+      const d = declaredVocabulary("statusMapResurrect", "names");
+      return d
+        ? `Resurrected local status/severity color map (${d.names.join(", ")}): use the shared tone maps from ${d.importFrom} with StatusBadge / StatusDot`
+        : "Resurrected local status/severity color map: off until `.claude/simplix.json` declares `audit.statusMapResurrect` ({ names, importFrom })";
+    },
     appliesTo: (p) => inModules(p),
-    check: (c) => lineHits(c, /\b(STATUS_COLORS|SEVERITY_COLORS|severityConfig)\b/),
+    check: (c) => {
+      const d = declaredVocabulary("statusMapResurrect", "names");
+      return d ? lineHits(c, new RegExp(`\\b(?:${wordAlternation(d.names)})\\b`)) : [];
+    },
     samples: {
       file: "modules/site/src/widgets/area/list.tsx",
-      broken: `const STATUS_COLORS: Record<string, string> = {
+      broken: {
+        files: { ".claude/simplix.json": STATUS_MAP_DECLARATION },
+        source: `const STATUS_COLORS: Record<string, string> = {
   ACTIVE: "bg-green-100 text-green-800",
   CLOSED: "bg-red-100 text-red-800",
 };`,
-      fixed: `import { areaStatusToTone } from "@acme/site-ui";
+      },
+      fixed: {
+        files: { ".claude/simplix.json": STATUS_MAP_DECLARATION },
+        source: `import { areaStatusToTone } from "@acme/site-ui";
 
 <StatusBadge tone={areaStatusToTone[resolveBootEnum(row.status)]} />`,
+      },
       miss: [
         {
           note: "a categorical palette, which the registry says stays domain-local",
+          files: { ".claude/simplix.json": STATUS_MAP_DECLARATION },
           source: `const CATEGORY_COLORS: Record<string, string> = {
   ENTRANCE: "bg-sky-100",
   STORAGE: "bg-violet-100",
+};`,
+        },
+        {
+          note: "a project that declares no retired map names, where the rule is off",
+          source: `const STATUS_COLORS: Record<string, string> = {
+  ACTIVE: "bg-green-100 text-green-800",
+  CLOSED: "bg-red-100 text-red-800",
 };`,
         },
       ],
@@ -5020,53 +5097,98 @@ return <Badge>{data?.totalElements ?? 0}</Badge>;`,
   },
   {
     id: "drag-threshold-copy",
-    invariant: "registry: ResizeHandle",
+    invariant: "registry: project shared constants",
     level: "error",
-    desc: "Local DRAG_THRESHOLD_PX redefinition — import it from the shared UI package",
+    // Which constants the project's UI package owns is the project's to declare:
+    // `audit.dragThresholdCopy` in `.claude/simplix.json`.
+    get desc() {
+      const d = declaredVocabulary("dragThresholdCopy", "names");
+      return d
+        ? `Local redefinition of a constant the shared UI package exports (${d.names.join(", ")}): import it from ${d.importFrom}`
+        : "Local redefinition of a shared UI package constant: off until `.claude/simplix.json` declares `audit.dragThresholdCopy` ({ names, importFrom })";
+    },
     appliesTo: (p) => inModules(p),
-    check: (c) => lineHits(c, /const DRAG_THRESHOLD_PX/),
+    check: (c) => {
+      const d = declaredVocabulary("dragThresholdCopy", "names");
+      return d ? lineHits(c, new RegExp(`const (?:${wordAlternation(d.names)})\\b`)) : [];
+    },
     samples: {
       file: "modules/site/src/widgets/schedule/bar.tsx",
-      broken: `const DRAG_THRESHOLD_PX = 4;`,
-      fixed: `import { DRAG_THRESHOLD_PX, ResizeHandle } from "@acme/site-ui";`,
+      broken: {
+        files: { ".claude/simplix.json": SHARED_CONSTANT_DECLARATION },
+        source: `const DRAG_THRESHOLD_PX = 4;`,
+      },
+      fixed: {
+        files: { ".claude/simplix.json": SHARED_CONSTANT_DECLARATION },
+        source: `import { DRAG_THRESHOLD_PX, ResizeHandle } from "@acme/site-ui";`,
+      },
       miss: [
         {
           note: "a different threshold, in a different unit, is a different constant",
+          files: { ".claude/simplix.json": SHARED_CONSTANT_DECLARATION },
           source: `const DRAG_THRESHOLD_MS = 120;`,
         },
         {
           note: "the shared package is where the constant is defined",
           file: "packages/site-ui/src/resize-handle.tsx",
+          files: { ".claude/simplix.json": SHARED_CONSTANT_DECLARATION },
           source: `export const DRAG_THRESHOLD_PX = 4;`,
+        },
+        {
+          note: "a project that declares no shared constants, where the rule is off",
+          source: `const DRAG_THRESHOLD_PX = 4;`,
         },
       ],
     },
   },
   {
     id: "cursor-col-resize",
-    invariant: "registry: ResizeHandle",
+    invariant: "registry: project edge handle",
     level: "review",
-    desc: "Inline cursor-col-resize edge grip — use <ResizeHandle /> (canvas vertex handles are OK)",
+    // An inline column-resize grip is only a defect where the project has a shared edge handle
+    // to use instead, and that component is the project's to declare:
+    // `audit.cursorColResize` in `.claude/simplix.json`.
+    get desc() {
+      const d = declaredVocabulary("cursorColResize", "component");
+      return d
+        ? `Inline cursor-col-resize edge grip: use <${d.names[0]} /> from ${d.importFrom} (canvas vertex handles are OK)`
+        : "Inline cursor-col-resize edge grip: off until `.claude/simplix.json` declares `audit.cursorColResize` ({ component, importFrom })";
+    },
     appliesTo: (p) => inModules(p) && isTsx(p),
-    check: (c) => lineHits(c, /cursor-col-resize/),
+    check: (c) => (declaredVocabulary("cursorColResize", "component") ? lineHits(c, /cursor-col-resize/) : []),
     // No `miss` for the canvas-vertex exception the description names - a vertex handle and an
     // edge grip carry the same class, and only what they sit on tells them apart.
     samples: {
       file: "modules/site/src/widgets/schedule/bar.tsx",
-      broken: `<div
+      broken: {
+        files: { ".claude/simplix.json": EDGE_HANDLE_DECLARATION },
+        source: `<div
   className="absolute inset-y-0 right-0 w-2.5 cursor-col-resize hover:bg-white/20"
   onPointerDown={(e) => handlePointerDown(e, "resize-right")}
 />`,
-      fixed: `<ResizeHandle side="right" disabled={disabled} onPointerDown={(e) => handlePointerDown(e, "resize-right")} />`,
+      },
+      fixed: {
+        files: { ".claude/simplix.json": EDGE_HANDLE_DECLARATION },
+        source: `<ResizeHandle side="right" disabled={disabled} onPointerDown={(e) => handlePointerDown(e, "resize-right")} />`,
+      },
       miss: [
         {
           note: "a row grip resizes the other axis",
+          files: { ".claude/simplix.json": EDGE_HANDLE_DECLARATION },
           source: `<div className="cursor-row-resize" onPointerDown={onGrab} />`,
         },
         {
           note: "the shared package that defines the handle",
           file: "packages/site-ui/src/resize-handle.tsx",
+          files: { ".claude/simplix.json": EDGE_HANDLE_DECLARATION },
           source: `<div className="w-2.5 cursor-col-resize" onPointerDown={onPointerDown} />`,
+        },
+        {
+          note: "a project that declares no shared edge handle, where the rule is off",
+          source: `<div
+  className="absolute inset-y-0 right-0 w-2.5 cursor-col-resize hover:bg-white/20"
+  onPointerDown={(e) => handlePointerDown(e, "resize-right")}
+/>`,
         },
       ],
     },

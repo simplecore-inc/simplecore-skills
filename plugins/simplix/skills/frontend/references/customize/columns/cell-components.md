@@ -48,7 +48,7 @@ import { productStatusToTone } from "@<scope>/<ui-package>/<domain>";
 **Key points:**
 - Always use `resolveBootEnum()` to extract the string value from boot enum objects
 - Use `enumLabel("<EnumType>", value)` from `useEntityTranslation()` for i18n display
-- A status enum's tone map is imported from the project UI package, never defined in the module - the audit's `status-map-resurrect` fails a module-local status color map (`../../audit/registry/tones-and-badges.md`); only a categorical palette (a kind's colors, not a state's) stays local
+- A status enum's tone map is imported from the project UI package, never defined in the module - the audit's `status-map-resurrect` fails a map under a name the project declares retired (`audit.statusMapResurrect` in `.claude/simplix.json`), and `inline-dark-tone-map` lists the other status maps for review (`../../audit/registry/tones-and-badges.md`); only a categorical palette (a kind's colors, not a state's) stays local
 - The inline render is the convention here because it lets you run `enumLabel()` for the displayed text. `CrudList.Column` also exposes a built-in `display="badge"` + `variants={{ <value>: "<variant>" }}` prop pair (`variants` is typed `Record<string, BadgeVariants["variant"]>`), but it renders the raw value without `enumLabel()`, so prefer the inline children render whenever the badge text needs i18n.
 
 ---
