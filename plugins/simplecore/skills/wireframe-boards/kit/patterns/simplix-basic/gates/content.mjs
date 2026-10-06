@@ -613,6 +613,17 @@ export const newModeGate = {
   },
 };
 
+/**
+ * Whether a frame belongs to a cluster the board declares as its pattern catalogue.
+ *
+ * <p>A catalogue frame is a specimen of a component rather than a screen of the product, and three
+ * gates step around what a specimen legitimately carries. **Which clusters those are is the
+ * board's**, declared as `catalogueClusters` in `board.config.mjs` by section letter. A board that
+ * declares none has no catalogue, and every frame is judged as a screen.
+ */
+const inCatalogue = (ctx, file) =>
+  (ctx.config?.catalogueClusters ?? []).some((L) => file.startsWith(`${String(L).toLowerCase()}-`));
+
 export const registerGate = {
   id: 'registerGate',
   title: 'screen copy is in the plain register',
@@ -634,8 +645,8 @@ export const registerGate = {
     // a card's own subtitle, and a chart's note. `sectHead` above an explanation block is still not
     // read - that is the heading convention described above.
     //
-    // **The P cluster is exempt from those three, and only from those three.** Its frames are the
-    // pattern catalogue: a `tSub` there is sometimes specimen copy a real screen would show
+    // **A catalogue cluster is exempt from those three, and only from those three.** Its frames are
+    // the pattern catalogue: a `tSub` there is sometimes specimen copy a real screen would show
     // (「추가 등록은 되지만 곧 막힙니다」) and sometimes the board captioning the pattern for whoever
     // implements it (「탭을 바꾸면 동작 행의 윗단만 바뀐다」). Both registers are correct in that
     // cluster, for different strings, and no pattern can tell them apart - judging them would
@@ -660,7 +671,7 @@ export const registerGate = {
       const src = ctx.srcOf(sc.file);
       // Cut the notes and the pageForm declaration - both talk about the screen, not to its user.
       const body = src.replace(/notes:[\s\S]*?(?=\n {2}\w+:)/g, '').replace(/pageForm:\s*'[^']*'/g, '');
-      const isPattern = sc.file.startsWith('p-');
+      const isPattern = inCatalogue(ctx, sc.file);
       for (const [re, where, key] of SOURCES) {
         if (isPattern && key && PATTERN_ONLY.has(key)) continue;
         for (const m of body.matchAll(re)) {
@@ -721,7 +732,7 @@ export const pageActionGate = {
       // state, a lock card, a conflict notice or a job tray carries as part of the pattern being
       // drawn, not a row of page links. Six frames, and every one of them is illustrating the
       // component that owns those buttons.
-      if (sc.file.startsWith('p-')) return false;
+      if (inCatalogue(ctx, sc.file)) return false;
       const src = ctx.srcOf(sc.file);
       return /\bbtnRow\(/.test(src) && /\bpageHeader\(\{/.test(src);
     })
@@ -1056,7 +1067,7 @@ export const listPanelGate = {
     const bad = [];
     for (const sc of ctx.screens) {
       const src = ctx.srcOf(sc.file);
-      if (sc.file.startsWith('p-')) continue;              // the pattern catalogue is a demonstration
+      if (inCatalogue(ctx, sc.file)) continue;             // the pattern catalogue is a demonstration
       if (/^import base/m.test(src)) continue;             // a state frame follows its base
       if (/\blistDetail\(/.test(src)) continue;
       if (!/\bfilterBar\(/.test(src)) continue;

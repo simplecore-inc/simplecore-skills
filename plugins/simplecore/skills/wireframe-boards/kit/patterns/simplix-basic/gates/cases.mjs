@@ -259,8 +259,15 @@ export function cases(t) {
     tiered("aiCard({ title: 'x', tier: 4 }) + aiCard({ title: 'y', tier: 1 })", { tiers: ['1', '4'] }), false);
   add('aiTierGate', 'a board that declares no tiers is not held to any',
     tiered("aiCard({ title: 'x', tier: 4 })", {}), false);
+  // The catalogue is the board's declaration; the fixture names cluster C.
+  const catalogued = (file, src, catalogueClusters = ['C']) =>
+    ctxWith([screen(file, src)], { config: { ...config, catalogueClusters } });
   add('listPanelGate', 'a list with no panel',
     ctxWith([screen('x-01-a', "filterBar({ total: '4건' })\ntable({ rows: [] })")]), true);
+  add('listPanelGate', 'a catalogue specimen of a list needs no panel',
+    catalogued('c-21-history', "filterBar({ total: '4건' })\ntable({ rows: [] })"), false);
+  add('listPanelGate', 'outside a declared catalogue the same list needs one',
+    catalogued('c-21-history', "filterBar({ total: '4건' })\ntable({ rows: [] })", []), true);
   add('listPanelGate', 'states why there is no panel',
     ctxWith([screen('x-01-a', "filterBar({ total: '4건' })\ntable({ rows: [] })\n  pageList: '격자가 곧 입력면이다'")]), false);
   add('canvasListGate', 'a drawing and a list stacked',
@@ -271,8 +278,10 @@ export function cases(t) {
   add('calendarListGate', 'a view switch is there', ctxWith([screen('x-01-a', "calendar({ month: 8 })\ntable({ rows: [] })\nviews: ['목록', '달력']")]), false);
   add('registerGate', 'a chart note in the plain register',
     ctxWith([screen('x-01-a', "note: '목표는 그림 안에 그린다',")]), true);
-  add('registerGate', 'the pattern catalogue is not measured',
-    ctxWith([screen('p-25-charts', "note: '목표는 그림 안에 그린다',")]), false);
+  add('registerGate', 'a declared catalogue cluster is not measured',
+    catalogued('c-25-charts', "note: '목표는 그림 안에 그린다',"), false);
+  add('registerGate', 'a cluster no board declared as its catalogue is measured',
+    catalogued('c-25-charts', "note: '목표는 그림 안에 그린다',", []), true);
   add('listColumnGate', 'a list of four columns',
     ctxWith([screen('x-01-a', "const list =\n  table({ head: [th('a', { w: 'w2' }), th('b'), th('c'), th('', { w: 'fix' })],\n  })\nconst panel = listDetail(list, panel)")]), true);
   add('listColumnGate', 'a list of three columns',
@@ -281,6 +290,10 @@ export function cases(t) {
     ctxWith([screen('x-01-a', "pageHeader({ title: 'x' }) + btnRow(btn('가기'))")]), true);
   add('pageActionGate', 'a titleless form\'s primary button',
     ctxWith([screen('x-01-a', "btnRow(btn('로그인', 'primary'))")]), false);
+  add('pageActionGate', 'a catalogue specimen carries its own buttons',
+    catalogued('c-09-empty', "pageHeader({ title: 'x' }) + btnRow(btn('다시 시도'))"), false);
+  add('pageActionGate', 'outside a declared catalogue the same frame is a page',
+    catalogued('c-09-empty', "pageHeader({ title: 'x' }) + btnRow(btn('다시 시도'))", []), true);
   // The vocabulary is the board's declaration; the fixture's words are placeholders.
   const WORDS = ['법정 기본', '설치 기본', '현장 설정'];
   const badged = (src, sourceWords = WORDS) => ctxWith([screen('x-01-a', src)], { config: { ...config, sourceWords } });

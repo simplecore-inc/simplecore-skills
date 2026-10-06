@@ -214,6 +214,17 @@ export const CONFIG_CHANGES = [
     ],
   },
   {
+    id: 'catalogueClusters',
+    applies: (c) => c.pattern === 'simplix-basic' && !c.catalogueClusters?.length,
+    title: 'simplix-basic\'s pattern catalogue is the clusters the board names',
+    changed: [
+      '`registerGate`, `pageActionGate` and `listPanelGate` step around a pattern-catalogue specimen only in the clusters `catalogueClusters` in `board.config.mjs` names. A board that names none has no catalogue, and every frame is judged as a screen.',
+    ],
+    steps: [
+      'Where a cluster of this board draws the pattern catalogue, declare `catalogueClusters: [\'<section letter>\']` and build. A board without one owes nothing.',
+    ],
+  },
+  {
     id: "pattern: 'penstock-console'",
     applies: (c) => c.pattern === 'penstock-console',
     title: 'penstock-console carries no answer-and-evidence primitives',
