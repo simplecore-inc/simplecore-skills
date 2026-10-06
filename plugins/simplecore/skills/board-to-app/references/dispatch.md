@@ -1,6 +1,3 @@
-<!-- Split out of SKILL.md so a session loads it only when its subject comes up. The skill's
-     own section of this name is a routing stub pointing here. -->
-
 # The unit of work is a chapter, and one agent takes one chapter
 
 **Never build in the coordinating context.** Not the first chapter, not one screen
@@ -26,12 +23,17 @@ ledger, the handover file, the wave decision, and the barrier work the wave give
 
 1. **One chapter, one subagent - `simplecore:chapter-builder`.** Dispatch that agent
    rather than composing a prompt each time; a builder briefed from scratch builds
-   differently from the last one. Hand it five things and nothing more:
+   differently from the last one. Hand it five things:
    - the chapter file's path
    - the path to `.claude/board-to-app.json` (it reads the rest itself)
    - the state ledger's path, so it can read which chapters closed before it
    - its resource slot when another agent is running - checkout, database, port
    - **the design document that decides what this chapter builds, by chapter and section**
+
+   **What every builder needs beyond those five is in its definition**: how it stages and commits,
+   and how its step reports and its conclusions travel for the way it was launched. So a builder's
+   brief adds only the name a named builder sends to (item 8); a brief for any other agent carries
+   those rules itself (items 3 and 8).
 
    **Naming the folder is not naming the chapter.** 「the design is in the design folder」 hands an
    agent nothing it can act on - nobody holding one chapter opens twenty design chapters hunting
@@ -91,7 +93,11 @@ ledger, the handover file, the wave decision, and the barrier work the wave give
    permission for anything adjacent, and two agents on one surface is the
    coordinator's mistake rather than theirs. Read each new brief against every
    running one for what it is asked to **produce**, not only what it may touch: two
-   briefs with disjoint paths can still both build the same checker.
+   briefs with disjoint paths can still both build the same checker. **Where two would
+   build the same artefact, name its owner in both** - the one who builds it, and the one
+   who waits for it and is told where it will appear. **An agent that finds another
+   working its surface stands down and reports rather than resolving it**: neither can see
+   the other, and whose scope was wrong is something only the coordinator knows.
 
    **An agent that changes a published shape is scoped by surface, never by a list of
    paths.** A published shape - an API schema, a shared type, a copy key, an enum a
@@ -162,11 +168,12 @@ ledger, the handover file, the wave decision, and the barrier work the wave give
    > could reach was genuinely sound. A permission hook answering correctly and a side nav
    > filtering correctly are what a guarded shell with nothing inside it looks like from
    > below: the layer that works is the reason nobody suspects the layer that does not.
-3. **The brief carries the staging rule itself, never a pointer to it.** Say in every
-   brief: stage the paths you touched by name, never `git add -A` or its cousins, and
-   read `references/harness.md` § Stage your own paths **before it is needed**. An
-   agent that meets a shared file without having read that section reaches for the
-   obvious move, and every obvious move there costs somebody their work.
+3. **The staging rule travels with every agent that commits, never as a pointer.**
+   `simplecore:chapter-builder` carries it in its definition. Any other agent's brief says
+   it in so many words: stage the paths you touched by name, never `git add -A` or its
+   cousins, and read `references/harness.md` § Stage your own paths **before it is
+   needed**. An agent that meets a shared file without having read that section reaches
+   for the obvious move, and every obvious move there costs somebody their work.
 4. **Finish, then replace.** When the chapter closes the agent ends and the next
    chapter gets a **new** one. Never stack a second chapter on a running agent, and
    stop a finished one once its report is in - a coordinator watching six finished
@@ -175,15 +182,9 @@ ledger, the handover file, the wave decision, and the barrier work the wave give
    continue.** The successor would inherit conclusions without the screens behind
    them. Restart it, split at a seam where the two halves do not need to see each
    other.
-6. **An agent whose output is a judgment writes to a file as it goes.** An agent that
-   builds leaves its work in the tree, so a report that never arrives costs a look at
-   the diff. An agent that produces a *judgment* - an audit, a comparison, a decision
-   between two designs - leaves nothing if it ends before reporting, and agents end
-   for reasons that have nothing to do with the work. Dispatch those with a file to
-   write, a section at a time, with a line at the top saying how far they got. **So a
-   read-only agent still needs `Write`**: read-only means it does not touch the
-   subject, not that it produces nothing. Check the tool list before dispatching, and
-   give it a scratch file outside the tree it is reading.
+6. **An agent whose output is a judgment writes to a file as it goes, so a read-only agent
+   still needs `Write`** → `references/harness.md` § *An agent that ends, and an agent that
+   only paused*.
 7. **The agent reports at every step it closes, not only at the end.** A step is
    anything that stands on its own - a screen finished, a gate passing, a commit cut,
    a decision settled, a blocker hit - and each one is one short message in a fixed
@@ -205,8 +206,8 @@ ledger, the handover file, the wave decision, and the barrier work the wave give
 
    **They also make the stall test decidable**: an agent that stops sending steps *and*
    whose artifact has not moved is stalled; one that is quiet while its artifact grows
-   is inside something long and is left alone → *An agent that ends, and an agent that
-   only paused*.
+   is inside something long and is left alone → `../SKILL.md` § *An agent that ends, and an
+   agent that only paused*, where the threshold is two checks.
 
    **Give the artifact time to move before reading it as stalled.** A build, a rebuild of a
    workspace package, a long typecheck - each leaves the tree untouched for many minutes
@@ -439,7 +440,7 @@ spans weeks and several sessions.
 
 > **Read it this way and it is wrong**: 「it is written down in the file, so the next session will
 > read it」. A chapter's own entry carried a note asking the next session to stamp the start at
-> dispatch, and nobody read it - `costLog` is data, and nothing in *Opening a session* sends
+> dispatch, and nobody read it - `costLog` is data, and nothing in `../SKILL.md` § *Opening a session* sends
 > anybody to it. **An instruction living in a file nothing tells anybody to open is the third
 > category wearing a data file's clothes**: it reads as recorded, and the reading it asks for is
 > taken by nobody.
@@ -464,7 +465,7 @@ as the build runs, since whether another agent is mid-commit is not observable:
 | **`Closes #N` lines sit in the body, and the `Chapter:` trailer stands alone as the last paragraph** | git reads trailers only from a final paragraph made entirely of `key: value` lines; `Closes #2, #3` has no colon, so a `Chapter:` line under it is prose and `trailerGate` reports the commit - and GitHub closes only the first number of a comma list, so write one `Closes #N` line per issue |
 | **An issue tracked outside the repository closes with its result written on the issue, before the commit that closes it** | `Closes #N` closes the issue with nothing on it but a commit link, and the person reading the tracker sees a closed row and no account of what was done. The brief names the comment as part of closing - what was done, which files, which rule now holds it, what verified it, what was left - and the agent posts it before the closing commit, from a file rather than a shell string (backticks in a quoted body have silently emptied the comment). The coordinator checks every closed issue carries one; a closed issue without its result is reopened work |
 | **stage by explicit path - `git commit --only <paths>`, never `git add -A`** | `-A` sweeps whatever the other agent has left in the tree into your commit, and says nothing |
-| **`git add` a file you created before committing the path it sits under, and read `git status --porcelain` after every commit** | `--only <directory>` carries what git tracks and drops what it does not, silently - so a commit naming the directory lands without the new file in it. One change put twenty files outside the five commits that imported them. **A list of explicit files is the same trap read as safe**: the file you forgot to name is the one you created last, and the pushed commit references a class that is not in it. A `??` under your paths after a commit is a file that commit needed |
+| **`git add` a file you created before committing the path it sits under, and read `git status --porcelain` after every commit** | `--only <directory>` carries what git tracks and drops what it does not, silently - so a commit naming the directory lands without the new file in it → `references/harness.md` § Stage your own paths. **A list of explicit files is the same trap read as safe**: the file you forgot to name is the one you created last, and the pushed commit references a class that is not in it. A `??` under your paths after a commit is a file that commit needed |
 | **read `git rev-parse HEAD` before and after each commit** | expect it to have moved - that is the normal state during a wave, and it is the state in which a rewrite destroys work |
 
 **A destroyed commit is in the reflog.** Read it back with `git reflog`, re-commit it
@@ -474,8 +475,8 @@ does, and only while the reflog still reaches it.
 
 **Every parallel agent is tracked by its artifact.** The plan says which file each
 agent writes and what its progress line looks like, and progress is read from that
-file. An agent's own announcement is not progress → *An agent that ends, and an agent
-that only paused*, below.
+file. An agent's own announcement is not progress → `../SKILL.md` § *An agent that ends, and
+an agent that only paused*.
 
 ### Two coordinating positions on one checkout, and how the plan is what shows it
 
@@ -506,7 +507,7 @@ repository:
 | nothing - and it is said rather than asked | **the holder cannot close the other session.** Only the person who opened it can, and saying so to them beats leaving a second position quietly alive |
 
 **A stopped peer still announces itself as available, and answering that is how a finished
-position goes on costing turns** → *An agent that ends, and an agent that only paused*.
+position goes on costing turns** → `../SKILL.md` § *An agent that ends, and an agent that only paused*.
 
 ### Judge the overlap before every parallel dispatch - then parallelise
 
@@ -518,8 +519,8 @@ Walk this list for the two chapters and answer each with a fact, not a forecast:
 
 | Shared thing | Parallel only if |
 | --- | --- |
-| working tree · git index | separate checkouts, or one agent writes and the other only reads |
-| database · seed data | separate databases; a shared one fails silently when one agent's test rewrites the row the other asserts on. **The coordinator is a party to this row**, not just the agents it dispatched - its closing gate run is a full suite against the same database → *Closing a chapter* |
+| working tree · git index | separate checkouts - each cut from the current HEAD of the branch the project builds, with its own database, port and browser profile from the rows below, and its commits back on that branch before the next wave is planned - or one agent writes and the other only reads |
+| database · seed data | separate databases; a shared one fails silently when one agent's test rewrites the row the other asserts on. **The coordinator is a party to this row**, not just the agents it dispatched - its closing gate run is a full suite against the same database → `../SKILL.md` § *Closing a chapter* |
 | dev server · port | **each agent runs its own instance on its own port** - or one agent runs it and the rest only drive it, never restarting it |
 | the browser profile · the signed-in session | one profile per agent; two agents in one session overwrite each other's account |
 | background workers · queues | separate, or owned by one agent |
@@ -589,7 +590,7 @@ afterwards:
 
 **And a suspension that races an instruction is not a suspension.** A message sent once the
 deletion has been ordered arrives after the deletion has happened; the only thing that reaches an
-agent before its next act is stopping it → *An agent that ends, and an agent that only paused*.
+agent before its next act is stopping it → `references/harness.md` § *An agent that ends, and an agent that only paused*.
 
 > **Read it this way and it is wrong**: 「one of them writes and the other only reads, so they can
 > run at once」 - the table's first row, read across. A builder was told to clear superseded
@@ -603,12 +604,13 @@ Two disjoint file lists are not an answer - what an agent touches is settled whi
 works, and the files that collide are the ones no brief could name: a registry, a
 locale catalogue, a config, a barrel, the ledger.
 
-**Do not reach for a worktree to buy the first row.** A second checkout duplicates
-the tree, leaves everything else shared, and then lies about the tree too: standing
-on an older commit it shows work already in the history as though it were somebody's
-uncommitted changes, so the next agent either preserves what does not need
-preserving or sweeps what it cannot see the origin of. Build on the branch the
-project actually builds.
+**A separate checkout buys the first row and nothing else.** It duplicates the tree and
+leaves every other row shared, so the database, the port and the profile are answered by
+their own rows or the checkout buys nothing. It is cut from the current HEAD: a checkout
+standing on an older commit shows work already in the history as though it were somebody's
+uncommitted changes, so the next agent either preserves what does not need preserving or
+sweeps what it cannot see the origin of. And its commits come back to the branch the project
+builds before the next wave is planned, so the next wave starts from one tree.
 
 **Anything only one user can hold at a time arbitrates itself, in the tool that uses
 it.** A simulator, a phone, a browser profile, a development database, a port, a
