@@ -11,7 +11,7 @@ export default {
     '<strong>실패 문구에 무엇이 틀렸는지 표시하지 않는다</strong> — 어느 쪽이 맞았는지 알려 주면 계정이 있는지를 확인해 주는 셈이다.',
   body: auth_({
     title: '로그인',
-    description: 'PRODUCT',
+    description: '<PRODUCT>',
     body:
       formGrid(
         fText({ label: '아이디', value: '', wide: true }) +
