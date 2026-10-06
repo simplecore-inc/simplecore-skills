@@ -27,7 +27,7 @@ from bidkit import cli  # noqa: E402
 from bidkit.config import ConfigError, DeckConfig  # noqa: E402
 from bidkit.sgmcp import DeckUnavailable, Session  # noqa: E402
 
-KINDS = ["overlap", "outside", "escape", "empty", "tiny", "font", "diagnostic", "ink"]
+KINDS = ["overlap", "outside", "escape", "empty", "tiny", "font", "diagnostic", "ink", "spread"]
 
 
 def arguments(deck: DeckConfig, slides: str | None) -> dict:

@@ -47,7 +47,7 @@ deck through the server and the kit vocabulary, so none of them reads page files
 
 | Property | Held by | Deck kind |
 | --- | --- | --- |
-| measured geometry: overlap, overflow, escape, empty and tiny boxes, small type, ink | `layout`, which runs the deck tool's own check | both |
+| measured geometry: overlap, overflow, escape, empty and tiny boxes, small type, ink, rows spread apart to fill a height | `layout`, which runs the deck tool's own check | both |
 | tag balance: a close tag that does not match its open tag, which a lenient parser accepts and re-shapes silently | no shared check; a project whose tool accepts the mismatch writes it under `checks.local` | both |
 | source rules: an em dash in a display face with no glyph for it, space-between distribution between content-sized siblings, a style class on an inline format tag, a numeric newline entity | the deck tool's declared rules where it carries them; otherwise `checks.local` | both |
 | type floor | `typefloor`, on the printed size of every text box, so a size set in a style or scaled with the page is read where it prints | both |
@@ -179,7 +179,7 @@ saved.
 
 | Check | Lives in | Reads | Fails when | Declares |
 | --- | --- | --- | --- | --- |
-| `layout` | `slide-decks/scripts/checks/` | the deck tool's own `layout_check` over the open deck | the tool reports any overlap, spill, escape, empty or tiny box, small type, diagnostic or ink finding; a summary missing a requested kind is exit 2, never a pass | `type.floor`, `checks.layout` (optional) |
+| `layout` | `slide-decks/scripts/checks/` | the deck tool's own `layout_check` over the open deck | the tool reports any overlap, spill, escape, empty or tiny box, small type, diagnostic, ink or spread finding (rows of a stack standing two lines or more apart because the height was spread between them); a summary missing a requested kind is exit 2, never a pass | `type.floor`, `checks.layout` (optional) |
 | `typefloor` | `slide-decks/scripts/checks/` | every text box's printed size from the server's layout | a text prints below `type.floor`, or a code label (`roles.codeLabels`) below `type.codeLabel`, beyond `checks.typefloor.tolerance`; table cells are one box in that reading and are not measured | `type`, `checks.typefloor` (optional) |
 | `abspath` | `slide-decks/scripts/checks/` | the deck's sources from the server (path attributes, `<Import src>`, JSON string values of the build file) and the `checks.abspath.scan` files from disk | a path begins at `/`, `~/` or a drive letter; a file `checks.abspath.generated` names as build output is tracked by git | `checks.abspath` (optional) |
 | `generated` | `slide-decks/scripts/checks/` | every source whose opening names a generator, from the server and from `checks.generated.scan` | a generated file or its generator differs from the record `--bless` wrote; the check never runs a generator | `checks.generated.generator`, `checks.baselines` |
