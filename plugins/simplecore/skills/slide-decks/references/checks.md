@@ -214,7 +214,7 @@ saved.
 | `figures` | `slide-decks/scripts/checks/` | the printed pages | a sentence quoting a value from a part (「Ⅰ에서 인용한 … 462건」) names a value no body page of that part prints | `pages.numerals`, `checks.figures` (optional) |
 | `figtext` | `slide-decks/scripts/checks/` | each placed figure's SVG labels and the printed strings of every slide from the same source file | `limit` or more labels of `minLen` letters stand in the text beside the figure; a placed figure whose file is missing | vocabulary `roles.figures`, `roles.figureSrc`, `checks.figtext` (optional), `checks.baselines` |
 | `parity` | `slide-decks/scripts/checks/` | each page file holding a body page, its declared manuscripts | a printed string traces to none of them (prose as written, heads word by word, the rest as a fragment); a declared manuscript does not exist | `manuscript.dir`, `manuscript.declaration`, vocabulary `args`, `checks.parity` (optional) |
-| `carry` | `slide-decks/scripts/checks/` | each declared manuscript's printed prose and the printed text of the pages declaring it | the share of a declared section that reaches its pages falls under `floor` | `manuscript`, `lang.sentenceEnd`, `checks.carry` (optional), `checks.baselines` |
+| `carry` | `slide-decks/scripts/checks/` | each declared manuscript's printed prose and the printed text of the pages declaring it | the share of a declared section that reaches its pages falls under `floor`; opt-in (`checks.carry.undeclared`): a manuscript file with printed prose that no page declares, retired under `<file><TAB>undeclared` | `manuscript`, `lang.sentenceEnd`, `checks.carry` (optional), `checks.baselines` |
 | `fignum` | `slide-decks/scripts/checks/` | the figure components' number argument in printed order, the manuscript's caption lines, both sides' citations | a series does not run 1..n (deck: or does not rise, with `deckOrder: monotonic`), a citation names a number its side lacks; opt-in: a deck number no caption carries, an idle figure | `figures.numbering`, `manuscript.caption`, `roles.figureNumber` (kit), `checks.fignum` (optional) |
 | `secref` | `slide-decks/scripts/checks/` | the deck's sources (comments out, escapes undone) and the printed body pages | a named page-id citation's name is not on the cited page, or none of the anchors just before a citation is (a folio of the cited chapter beside the id is not an anchor, but must be the cited page's own folio); a citation of an untypeset chapter is pending | `pages.id`, `requirements.id` (optional), `checks.secref` (optional), `checks.baselines` |
 | `reqbadge` | `slide-decks/scripts/checks/` | every body page's head ids, region and badge ids, and with `requirements.manuscriptLine` the declared manuscripts | a head id the tender never issued, a region or badge id the head does not name, a head id missing from the manuscript's requirement line or a sub-section line not badged; opt-in: unbadged region heads, an id written bare in a sentence slot | `requirements`, `pages.head.reqs` (kit), `roles.regionIds`, `roles.badgeIds`, `checks.reqbadge` (optional) |
@@ -324,7 +324,9 @@ adds the vocabulary's other sentence slots. `fignum` holds the deck's series to 
 reads the kit's name slots; `checks.naming.fallback` and `regionEcho` add the head arguments of
 unlisted components and the region-title rule. `parity` compares the furniture only when
 `manuscript.furnitureSource` names the file it is written in, and loosens short attributes only
-with `checks.parity.accentLen`.
+with `checks.parity.accentLen`. `carry` reads the manuscripts the pages declare;
+`checks.carry.undeclared` adds every manuscript file with printed prose that no page declares, the
+one gap no other check reads.
 
 **A figure number and a page id are read back from the format that writes them.** `fignum` builds
 its pattern from `figures.numbering.caption` (fields `part`, optional `chapter`, `n`) and

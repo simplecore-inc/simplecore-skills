@@ -20,7 +20,15 @@ figures, caption lines (`manuscript.caption`) and `manuscript.skipLines`.
 Compared, loosely (spacing and separators ignored), with the printed text of
 every slide drawn from a source file that declares the manuscript.
 
-Config (`checks.carry`, optional): `floor` (0.25), `minUnits` (4), `minLen` (12).
+A manuscript file no page declares is read by no other check either, so the
+deck's chapter list is the only place its absence shows. With
+`checks.carry.undeclared` set, every manuscript file (`manuscript.files()`,
+the excluded globs left out) that carries a printed prose sentence and that no
+page declares is reported too, and is retired in the same baseline under
+`<file><TAB>undeclared`.
+
+Config (`checks.carry`, optional): `floor` (0.25), `minUnits` (4), `minLen` (12),
+`undeclared` (false).
 """
 from __future__ import annotations
 
@@ -38,6 +46,7 @@ from bidkit.manuscript import Manuscript  # noqa: E402
 from bidkit.textko import loose, norm, sentences  # noqa: E402
 
 FLOOR, MIN_UNITS, MIN_LEN = 0.25, 4, 12
+UNDECLARED = "undeclared"
 SKIP_START = ("|", "#", ">", "!")
 LIST_ITEM = re.compile(r"^(?:[-*+]|\d{1,2}[.)])\s+")
 
@@ -70,6 +79,17 @@ def prose_units(md: str, manuscript: Manuscript, skip: list[Pattern], end: str, 
     return out
 
 
+def owners_of(reader: DeckReader, manuscript: Manuscript) -> dict[str, list[str]]:
+    """{declared manuscript path: the source files whose declarations name it}."""
+    owners: dict[str, list[str]] = {}
+    for name, raw in reader.files():
+        for rel in manuscript.declarations(raw):
+            owners.setdefault(rel, [])
+            if name not in owners[rel]:
+                owners[rel].append(name)
+    return owners
+
+
 def measure(reader: DeckReader, deck: DeckConfig) -> tuple[int, list[dict]]:
     """(declared manuscripts, [{md, files, carried, total, missing}] below the floor)."""
     cfg = deck.section("checks.carry")
@@ -79,12 +99,7 @@ def measure(reader: DeckReader, deck: DeckConfig) -> tuple[int, list[dict]]:
     manuscript = Manuscript.for_deck(deck)
     skip = [re.compile(p) for p in deck.get("manuscript.skipLines", []) or []]
     end = deck.get("lang.sentenceEnd", "다.")
-    owners: dict[str, list[str]] = {}
-    for name, raw in reader.files():
-        for rel in manuscript.declarations(raw):
-            owners.setdefault(rel, [])
-            if name not in owners[rel]:
-                owners[rel].append(name)
+    owners = owners_of(reader, manuscript)
     sources = reader.slide_sources()
     text_of: dict[str, list[str]] = {}
     for page in reader.slides():
@@ -106,27 +121,62 @@ def measure(reader: DeckReader, deck: DeckConfig) -> tuple[int, list[dict]]:
     return len(owners), out
 
 
+def undeclared(reader: DeckReader, deck: DeckConfig) -> list[dict]:
+    """[{md, total}] for each manuscript file with printed prose that no page declares.
+
+    Empty unless `checks.carry.undeclared` is set.
+    """
+    if not deck.section("checks.carry").get("undeclared", False):
+        return []
+    min_len = int(deck.section("checks.carry").get("minLen", MIN_LEN))
+    manuscript = Manuscript.for_deck(deck)
+    skip = [re.compile(p) for p in deck.get("manuscript.skipLines", []) or []]
+    end = deck.get("lang.sentenceEnd", "다.")
+    declared = {(manuscript.dir / rel).resolve() for rel in owners_of(reader, manuscript)}
+    out = []
+    for path in manuscript.files():
+        if path.resolve() in declared:
+            continue
+        units = prose_units(path.read_text(encoding="utf-8"), manuscript, skip, end, min_len)
+        if units:
+            out.append({"md": path.relative_to(manuscript.dir).as_posix(), "total": len(units)})
+    return out
+
+
+def undeclared_key(row: dict) -> str:
+    return f"{row['md']}\t{UNDECLARED}"
+
+
 @cli.guarded
 def main(argv: list[str] | None = None) -> int:
     args = cli.parser(__doc__.splitlines()[0], bless=True).parse_args(argv)
     deck = cli.deck_config(args)
     baseline = Baseline.for_check(deck, "carry")
+    opted = bool(deck.section("checks.carry").get("undeclared", False))
     with cli.open_reader(deck) as reader:
         declared, low = measure(reader, deck)
+        unclaimed = undeclared(reader, deck)
     if args.bless:
-        return cli.report_bless(baseline, {r["md"]: None for r in low}, "sections carried below the floor")
+        findings = {r["md"]: None for r in low} | {undeclared_key(r): None for r in unclaimed}
+        return cli.report_bless(baseline, findings, "sections carried below the floor or declared by no page")
     live, owed = judge(baseline, low, lambda r: r["md"])
-    print(f"carry: {declared} declared manuscripts, {len(live)} carried below the floor, "
-          f"{len(owed)} retired without a reason")
+    orphans, orphans_owed = judge(baseline, unclaimed, undeclared_key)
+    tail = f", {len(orphans)} declared by no page" if opted else ""
+    print(f"carry: {declared} declared manuscripts, {len(live)} carried below the floor{tail}, "
+          f"{len(owed) + len(orphans_owed)} retired without a reason")
     for r in sorted(live, key=lambda r: r["carried"] / r["total"]):
         mark = "✖" if r["carried"] == 0 else "⚠"
         print(f"  {mark} {r['md']}: {r['carried']} of {r['total']} prose sentences printed "
               f"({r['carried'] / r['total']:.0%}), declared by {', '.join(r['files'])}")
         for m in r["missing"][:4]:
             print(f"       · {m[:96]}")
+    for r in orphans:
+        print(f"  ✖ {r['md']}: {r['total']} prose sentences, and no page declares the file")
     for r in owed:
         print(f"  ✖ {r['md']}: retired with a blank reason; write why")
-    return 1 if live or owed else 0
+    for r in orphans_owed:
+        print(f"  ✖ {r['md']} (declared by no page): retired with a blank reason; write why")
+    return 1 if live or owed or orphans or orphans_owed else 0
 
 
 if __name__ == "__main__":

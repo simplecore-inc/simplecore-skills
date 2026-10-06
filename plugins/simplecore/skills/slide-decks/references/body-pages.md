@@ -89,7 +89,8 @@ Every page carries, beside its body:
   scanning the source.
 - **A manuscript declaration** naming every manuscript file the page draws from. The parity check
   reads it, and a page with no declaration is invisible to the parity check; a manuscript file no
-  page declares is read by no check, so the deck's chapter list is where its absence shows. When
+  page declares is reported by `carry` once the deck sets `checks.carry.undeclared`, and without
+  that the deck's chapter list is the only place its absence shows. When
   one page-file becomes three deck pages, all three carry the same declaration.
 - **The head values**: the folio, the part, the chapter line, the title, the claim line and the
   deck's two meta fields. Never drop one - print 「해당 없음」 or a hyphen. The deck's instructions
