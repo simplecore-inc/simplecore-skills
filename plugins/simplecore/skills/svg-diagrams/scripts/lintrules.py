@@ -236,8 +236,10 @@ def line_overlaps(svg):
 
 
 # ── LOW-CONTRAST ───────────────────────────────────────────────────────────
-# Every figure label is drawn large enough that WCAG's large-text floor is the
-# right one; below it a label stops being readable.
+# WCAG's floor for large text, the default. Text under the large-text size
+# needs 4.5, and a document figure's labels, printed at the document's body
+# size, are that small: `--floor 4.5` (verify.py's `contrastFloor`) holds them
+# to it.
 CONTRAST_FLOOR = 3.0
 
 

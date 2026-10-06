@@ -564,8 +564,8 @@ def entity(c, x, y, w, name, sections, sub=None, accent=None, row_h=22,
     c.rrect(x, y, w, h, rx=8, fill=c.t["box"], stroke=col, sw=1.4)
     # the header follows the box's own top corners and meets the body square
     c.band(x, y, w, head_h, 8, col, opacity=0.10, side="top")
-    # 이름과 부제는 머리 칸의 같은 줄에 좌우로 놓인다. 기준선을 다르게 잡으면
-    # 이름만 위로 밀려 머리 칸이 위쪽으로 치우쳐 보인다.
+    # The name and the subtitle sit left and right on one line of the header;
+    # a different baseline pushes the name up and the header looks top-heavy.
     c.text(x + 14, y + head_h / 2 + 5, name, size=13.5, color=c.t["fg"],
            family=SANS, weight=700)
     if sub:
@@ -1183,6 +1183,11 @@ def fishbone(c, x, y, w, h, effect, bones):
     if len(bones) > 6:
         raise ValueError("fishbone: %d categories; past 6 the bones cross "
                          "the spine's labels" % len(bones))
+    for cat, causes in bones:
+        if len(causes) > 3:
+            raise ValueError("fishbone: %d causes under %r; a bone holds 3 "
+                             "before the next one runs past its tip into the "
+                             "category name" % (len(causes), cat))
     spine_y = y + h / 2
     head_w = max(tw(effect, 13.5, False) + 40, 180)
     c.line(x, spine_y, x + w - head_w - 10, spine_y, color=c.t["fg_dim"],
@@ -1203,7 +1208,7 @@ def fishbone(c, x, y, w, h, effect, bones):
         c.line(bx, spine_y, tipx, tipy, color=col, sw=1.6, marker=None)
         c.text(tipx, tipy + (-8 if up else 18), cat, size=12.5, color=col,
                family=SANS, weight=700, anchor="middle")
-        for k, cause in enumerate(causes[:3]):
+        for k, cause in enumerate(causes):
             f = 0.30 + k * 0.24
             px = bx + (tipx - bx) * f
             py = spine_y + (tipy - spine_y) * f

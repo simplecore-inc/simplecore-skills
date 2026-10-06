@@ -246,8 +246,16 @@ def _clip_len(p, q, r, inset=5):
 
 
 def _root_dims(svg):
-    w = re.search(r'<svg[^>]*\bwidth="([\d.]+)"', svg)
-    h = re.search(r'<svg[^>]*\bheight="([\d.]+)"', svg)
+    """The root element's own width and height.
+
+    Read from the root tag alone and as whole attribute names: a root that
+    carries `stroke-width` (every icon set's does) would otherwise be read
+    as that many units wide.
+    """
+    root = re.search(r'<svg\b[^>]*>', svg)
+    tag = root.group(0) if root else ""
+    w = re.search(r'(?<![\w-])width="([\d.]+)"', tag)
+    h = re.search(r'(?<![\w-])height="([\d.]+)"', tag)
     return (float(w.group(1)) if w else 1200.0,
             float(h.group(1)) if h else 900.0)
 
