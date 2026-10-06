@@ -68,3 +68,18 @@ work.
 - **A reflowed flow sequence in the front matter** (`scripts/lib/glossary.mjs`,
   `gatherFlowSequence`): the audit went on reporting 「오류 0건」 while its file count fell from 407
   to 86, and nothing on screen distinguished that from a clean run.
+- **A trailing lookahead at an artificial end** (`scripts/l10n.mjs`, `segment`): one project's merged
+  glossary and rule pack held 57 rules ending in `(?!…)`, each open to the same hole.
+- **Front matter anchored to any line** (`scripts/l10n.mjs`, the markdown extractor): one repository
+  lost 698 lines across 46 files from the sentence commands, while `check` read them.
+- **SVG read as one line of markup** (`scripts/l10n.mjs`, `EXTRACTOR_CASES`): every rule anchored on
+  `$` reported 0 over 35 files, and the 0 read as clean.
+- **A lens stem without its family** (`scripts/l10n.mjs`, `rules --test`): 「붙는」 stood in the lens
+  without 붙이 · 붙은 · 붙지 · 붙어, and 126 sites walked past while the lens reported the family as
+  found.
+- **The untranslated check on markdown and source** (`scripts/l10n.mjs`, `audit`): 132 such hits
+  drowned the real findings in one `_plans` tree; one repository that turned `untranslated` off
+  still got 114 hits from `audit` and lost two real particle errors among them; one deck's 47
+  chapter files reported 12,833 lines of code as untranslated.
+- **A catalogue counted as repetition** (`scripts/lib/doc-audit.mjs`, `contrastRecommendedRanges`):
+  one document drew eleven warnings for `수 있습니다`, every one on the right of an arrow.

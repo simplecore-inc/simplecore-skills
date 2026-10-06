@@ -23,9 +23,9 @@
  * **What counts as auditable is the project's answer, not an extension list.**
  * A project declaring audit.localeResources says those files hold screen copy,
  * and screen copy is what this hook exists to catch at the moment it is typed.
- * Gating on the extension list first meant the declared resources - a whole
- * board's worth of Korean strings - had no write-time gate at all, and the
- * silence read exactly like a pass. So the glossary is discovered first and its
+ * Gating on the extension list first would leave the declared resources - a
+ * whole board's worth of Korean strings - with no write-time gate at all, and
+ * the silence would read exactly like a pass. So the glossary is discovered first and its
  * declaration widens what is auditable.
  *
  * Exit codes: 0 = silent pass (not applicable, or clean),

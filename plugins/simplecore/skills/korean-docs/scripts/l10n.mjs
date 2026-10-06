@@ -485,13 +485,12 @@ function discover({ kind, lang, docFallback = false, command, all = false } = {}
  * begins inside `text`, so the extra context is read and never reported.
  *
  * **A trailing negative lookahead is vacuously satisfied at the end of a string**, so a
- * segment that stops one character early turns a correct word into a finding: `…W17에
- * 있어 \`StatutoryReport\`` was cut at 있어 and the ban on 「~에 있어서」 fired, because
- * the space it declines on had been trimmed off the tail. The pattern was right and the
- * string it was handed was short. Every rule that ends in `(?!…)` carries the same hole,
- * and none of their authors can see it from the pattern - one project's merged glossary
- * and rule pack held 57 of them - which is why it is closed here rather than one
- * lookahead at a time.
+ * segment that stops one character early turns a correct word into a finding: cut at 있어,
+ * `…W17에 있어 \`StatutoryReport\`` fires the ban on 「~에 있어서」, because the space it
+ * declines on is trimmed off the tail. The pattern is right and the string it is handed is
+ * short. Every rule that ends in `(?!…)` carries the same hole, and none of their authors
+ * can see it from the pattern (references/cases.md), which is why it is closed here rather
+ * than one lookahead at a time.
  *
  * **`after` is empty at a real end, and that is the whole of the judgement.** A value
  * that ends, a line that ends, a label that ends: nothing follows, `$` anchors hold, and
@@ -701,9 +700,9 @@ function segmentsMarkdown(src) {
   // Anchored to any line instead - `/^---$[\s\S]*?^---$/gm` - the rules pair off two by
   // two and each pair swallows the prose between them. It has no symptom: the text is
   // never handed to a rule, so `rules`, `grep` and `suspects` report nothing and the
-  // silence reads exactly like a clean document. One repository lost 698 lines across 46
-  // files that way. `check` was never affected - doc-audit.mjs and glossary.mjs both
-  // require line 0 - so the two passes disagreed about what the file even contained.
+  // silence reads exactly like a clean document (references/cases.md). `check` requires
+  // line 0 too - doc-audit.mjs and glossary.mjs both do - so the anchor keeps the two
+  // passes agreeing on what the file contains.
   const front = /^---[ \t]*\r?\n[\s\S]*?^---[ \t]*$/m.exec(src);
   if (front && front.index === 0) blocked.push([0, front[0].length]);
 
@@ -1738,8 +1737,9 @@ const EXTRACTOR_CASES = [
   {
     // The whole point of the SVG extractor: a rule anchored on `$` has to be able to reach a
     // label. Read as one line of markup - which is what a rendered diagram is - no label sits
-    // at the end of anything, so every such rule reported 0 over 35 files and the 0 read as
-    // clean. `loud` proves the anchor lands; `silent` proves the attribute soup is not prose.
+    // at the end of anything, so every such rule would report 0 and the 0 would read as clean
+    // (references/cases.md). `loud` proves the anchor lands; `silent` proves the attribute
+    // soup is not prose.
     what: "SVG: only rendered labels become segments; markup does not",
     of: () => segmentsSvg,
     src:
@@ -1917,9 +1917,9 @@ function cmdRulesTest(opts) {
       if (!["screen", "manual", "plain", "spoken"].includes(reg)) problems.push(["unknown register in registers", `${reg} - screen · manual · plain · spoken`]);
     }
     if (!(rule.miss ?? []).length) problems.push(["no miss example", "nothing guards against false positives"]);
-    // The lens knowing a family HALF is the defect - 「붙는」 stood in it without
-    // 붙이·붙은·붙지·붙어, so the lens reported finding the family while 126 sites walked
-    // past. A rule's examples are all of one family, so a lens that matches some of them
+    // The lens knowing a family HALF is the defect - a stem such as 「붙는」 without
+    // 붙이·붙은·붙지·붙어 reports the family as found while its other forms walk past
+    // (references/cases.md). A rule's examples are all of one family, so a lens that matches some of them
     // and loses the rest has an incomplete stem, and this says which example it lost.
     //
     // Matching NONE is not judged: the lens has no interest in that family, which is the
@@ -2684,17 +2684,16 @@ function cmdAudit(opts) {
       const line = () => src.slice(0, seg.start).split("\n").length;
       // Markdown has no untranslated concept: a Korean document legitimately carries
       // English identifiers, table cells, link text and code, and every one of them
-      // reads as a missing translation. Reporting them buries the findings that matter
-      // - 132 such hits once drowned the real ones in `_plans`.
+      // reads as a missing translation. Reporting them buries the findings that matter.
       // The glossary's `## 기본 규칙 예외` table switches built-in checks off, and `check`
-      // honours it. `audit` reading its own list meant one repository turned `untranslated`
-      // off, watched `check` fall silent, and still got 114 hits here - URLs, routes, device
-      // labels and protocol names in a single-language tree, which buried the two real
-      // particle errors in the same output. One list, both commands.
+      // honours it. `audit` reads the same list: with a list of its own, a project that turned
+      // `untranslated` off would watch `check` fall silent and still get URLs, routes, device
+      // labels and protocol names here, burying the real particle errors in the same output.
+      // One list, both commands.
       // A file the plain-line fallback reads (a typesetting XML, a Python figure module, a
-      // build script) is source, not a catalogue: every line without Hangul is code, and one
-      // deck's 47 chapter files reported 12,833 of them while its real findings sat in the
-      // sentence sweep. The same reasoning as markdown, one extractor further down.
+      // build script) is source, not a catalogue: every line without Hangul is code, and read
+      // as a catalogue every one of them would be reported (references/cases.md). The same
+      // reasoning as markdown, one extractor further down.
       const skipUntranslated =
         DISABLED_CHECKS.has("untranslated") ||
         CONFIG.kinds[entry.kind]?.format === "markdown" ||

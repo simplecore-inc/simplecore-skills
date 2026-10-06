@@ -469,9 +469,8 @@ export function blankLiteralMarkup(lines) {
 //
 // A style catalogue is written as `금지 → 대체` rows, so the phrasings it tells people to write
 // are printed in it as many times as it has rows. A frequency rule counts them as the author
-// repeating a tic and reports the file for saying the very thing it prescribes - one document
-// here drew eleven warnings for 「수 있습니다」 and every one of them sat on the right of an
-// arrow, line 281 being 「조회 가능합니다 → 조회할 수 있습니다」.
+// repeating a tic and reports the file for saying the very thing it prescribes, every warning
+// sitting on the right of an arrow (references/cases.md).
 //
 // Exempting that one file would leave the next catalogue somebody writes to hit it again, so
 // the count is what changes: **the recommended side of a contrast row does not feed a frequency
@@ -846,10 +845,9 @@ function checkParticles(lines) {
 //
 // **Annotations are skipped only where the value is still unknown.** A note addressed to
 // whoever maintains the file (audit.localeAnnotationKeys) is prose whose tokens are usually
-// cross-references a build resolves to a fixed string, and skipping the whole note used to
-// stand in for saying so - the same missing family, wearing a second disguise. Now that a
-// resolved reference is judged rather than excused, the skip applies to the undecidable
-// branch alone: declare the shape and a wrong particle inside a note is reported like any
+// cross-references a build resolves to a fixed string, and skipping the whole note would stand
+// in for saying so - the same missing family, wearing a second disguise. A resolved reference
+// is judged rather than excused, so the skip applies to the undecidable branch alone: declare the shape and a wrong particle inside a note is reported like any
 // other, which is where most of them are.
 const INTERPOLATION_PARTICLE_RE =
   /(?<!\$\{[^{}]{0,80})(\}\}|\}|%[sd]|%\d+\$[sd])(이|가|을|를|은|는|과|와|으로|로|이라|라)(?=[\s.,·)\]'"]|$)/g;
