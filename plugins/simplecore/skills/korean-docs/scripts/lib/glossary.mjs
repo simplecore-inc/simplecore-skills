@@ -519,7 +519,7 @@ export function loadRulePacks({root = process.cwd(), scopes = []} = {}) {
   if (existsSync(projectPack)) {
     packs.push({origin: 'project', path: projectPack, ...JSON.parse(readFileSync(projectPack, 'utf8'))});
   }
-  // A base rule that left the pack is still named by the projects that disabled or narrowed it.
+  // A retired base rule id is still named by the projects that disabled or narrowed it.
   // Refusing those names would stop every one of those projects' sweeps and write-time runs over
   // an entry that only ever turned something off, so a retired id is reported instead.
   const retiredIds = new Map(Object.entries(packs.find((p) => p.origin === 'base')?.retired ?? {}));

@@ -117,7 +117,7 @@ glossary.
 ```
 
 `except` narrows a pack rule only. A glossary spelling has no such door: keep a quoted original
-inside `l10n:quote` (below), which both engines skip. A pack rule that left the pack is listed under
+inside `l10n:quote` (below), which both engines skip. A rule id no longer in the pack is listed under
 `retired` in `RULES.base.json`, and a project pack still naming it under `disable` or `except` gets a
 line saying the entry does nothing and where the ban lives now, instead of a load failure.
 
