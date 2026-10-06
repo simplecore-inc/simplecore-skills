@@ -187,7 +187,7 @@ After running `npx simplix scaffold <entity> --module <domain>`, the generated c
 ### Step 3: Detail Widget (`detail.tsx`)
 
 - [ ] Set field display order
-- [ ] Use appropriate detail field types (`DetailBadgeField` for enums, `DetailBooleanField` for booleans)
+- [ ] Use appropriate detail field types (`DetailStatusField` for an enum with a shared tone map, `DetailBadgeField` for one with a Badge variants map - invariant #53; `DetailBooleanField` for booleans)
 - [ ] Add `layout="inline"` for compact display
 - [ ] Wire delete action with i18n confirmation messages
 

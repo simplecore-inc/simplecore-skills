@@ -37,26 +37,15 @@ import path from "node:path";
 import { execFileSync } from "node:child_process";
 import { createRequire } from "node:module";
 
+import { parseOptions, reportUnknown } from "./lib/cli-options.mjs";
+
 // Every option this script knows. `--root` is written `--root=<dir>` or `--root <dir>`.
-const BOOLEAN_FLAGS = ["--json", "--warn-only"];
-const args = process.argv.slice(2);
-let rootArg;
-const unknown = [];
-for (let i = 0; i < args.length; i++) {
-  const a = args[i];
-  if (BOOLEAN_FLAGS.includes(a)) continue;
-  if (a.startsWith("--root=")) rootArg = a.slice("--root=".length);
-  else if (a === "--root" && i + 1 < args.length) rootArg = args[++i];
-  else unknown.push(a);
-}
-if (unknown.length) {
-  console.error(`\u2716 unrecognised option: ${unknown.join(" ")}`);
-  console.error(`  known options: ${BOOLEAN_FLAGS.join("  ")}  --root=<dir>`);
-  process.exit(2);
-}
-const ROOT = path.resolve(rootArg ?? process.cwd());
-const asJson = args.includes("--json");
-const warnOnly = args.includes("--warn-only");
+const OPTION_SPEC = { flags: ["--json", "--warn-only"], valued: ["root"] };
+const { flags, values, unknown } = parseOptions(process.argv.slice(2), OPTION_SPEC);
+if (reportUnknown(unknown, OPTION_SPEC)) process.exit(2);
+const ROOT = path.resolve(values.root ?? process.cwd());
+const asJson = flags.has("--json");
+const warnOnly = flags.has("--warn-only");
 
 // TypeScript is resolved from the project being audited, never from wherever this script is
 // installed: the checker has to be the one the repository itself compiles with, or a type it

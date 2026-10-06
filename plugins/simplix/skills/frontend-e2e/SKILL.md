@@ -1,7 +1,6 @@
 ---
 name: frontend-e2e
 description: Use when a task asks to drive a simplix-react frontend through a real browser and judge it - walking a feature area as a user, exercising a lifecycle across screens, checking that functionally connected screens agree (values, states, counts, terminology), finding what is confusing / missing / unusable, reviewing a menu tree end to end, or verifying a delivered feature the way an operator would use it. Cues: 사용자 관점 · 처음 접하는 사용자 · 직접 사용해 보며 · 전수 점검 · 전체 흐름 · 라이프사이클 · E2E · 사용성 점검 · 화면 검토 · 화면 간 연동 · 화면 대조 · 일관성 점검 · UI/UX 관점 · 브라우저로 확인 · 개선점 찾아줘 · 빠진 기능 · 쓸 수 없는 화면. Also use before declaring a feature complete when its screens have never been driven by hand. NOT for unit tests, typecheck / lint runs, or a single-component visual tweak.
-version: 1.0.0
 ---
 
 # Frontend E2E Audit Handbook
@@ -25,6 +24,8 @@ What the gate cannot check is scope, and scope is where this pass is usually los
 
 **When the project has not armed the gate**, say so once and offer `/simplix:init` - it writes the config. Until then the discipline holds only while somebody remembers it, which on a green build is not long.
 
+**Under `simplecore:board-to-app`, a chapter's close-out is this pass for the screens the chapter placed.** The chapter's persona journeys are the browser walk for those screens: they take each one through the states its frames draw, as the personas the board names. The close-out then invokes this skill for the Mandatory Censuses below, run over every screen the chapter placed and over the cluster each belongs to, so the agreement census reaches the surfaces either side of them. That invocation is what the `e2eGate` reads as the browser pass, so a session that closed a chapter this way has met that half of the gate; the other half, a full run of `audit-frontend.mjs`, is still the session's to make. The gate cannot tell which screens the run covered, so a screen the session changed outside the chapter is outside that run and takes its own pass. Commits follow the chapter's rules (Ground Rule 9).
+
 ---
 
 ## The audit runs in a subagent - one per cluster
@@ -47,7 +48,7 @@ Watching it happen costs nothing: the auditor's own browser turns stream to the 
 
 ## How to Use
 
-Steps 3 to 8 are the auditor's work, per cluster; steps 1, 2, and 9 are the coordinator's.
+Steps 3 to 8 are the auditor's work, per cluster; steps 1, 2, and 9 are the coordinator's. Commands in this skill's references are written from the plugin root, which is ${CLAUDE_PLUGIN_ROOT}.
 
 1. Read **Ground Rules** below - they are what separates an audit from a demo.
 2. **Load the judgment rubric**: invoke the `simplix:frontend` skill now if it is not already loaded this session. Its Non-Negotiable Invariants, Task Router references, and `customize/precedent-check.md` comparison sheet are the standard of "correct" for every judgment below → `references/judgment-lenses.md`.

@@ -3,7 +3,7 @@
  * Frontend convention audit - machine-checkable subset of the `simplix:frontend`
  * skill's invariants and audit checklist (its references/audit/).
  *
- * Run from the frontend project root, or point at it with --root=<dir>.
+ * Run from the frontend project root, or point at it with --root <dir> (or --root=<dir>).
  *
  * Usage:
  *   node "${CLAUDE_PLUGIN_ROOT}/scripts/audit-frontend.mjs"             # run all rules
@@ -49,16 +49,26 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-// Project root: --root=<dir> wins, else the current working directory. The script
-// ships inside a plugin, so it must never resolve the root from its own location.
+import { parseOptions, reportUnknown } from "./lib/cli-options.mjs";
+
+// Every option this script knows. `--rule` is taken only as `--rule=<ids>`: the plugin's e2e
+// gate tells a narrowed run from a full one by that spelling, and a second spelling would let a
+// one-rule run count as the full audit.
+const OPTION_SPEC = {
+  flags: ["--list", "--selftest", "--errors-only"],
+  valued: ["root", "rule"],
+  inlineOnly: ["rule"],
+};
+const OPTIONS = parseOptions(process.argv.slice(2), OPTION_SPEC);
+
+// Project root: --root wins, else the current working directory. The script ships inside a
+// plugin, so it must never resolve the root from its own location.
 //
 // Reassignable because the self-test points the whole audit at a fixture tree it writes and
 // throws away - a rule that reads a sibling file, a generated model or a locale catalogue can
 // only be proved against a tree, and a rule proved against a hand-made stub of its own reader
 // is proving the stub.
-let ROOT = path.resolve(
-  process.argv.find((a) => a.startsWith("--root="))?.slice("--root=".length) ?? process.cwd(),
-);
+let ROOT = path.resolve(OPTIONS.values.root ?? process.cwd());
 // `packages` belongs here as much as the other two: a simplix-react project is package-first, and
 // the conventions actively push shared UI out of `modules`/`apps` and into a package. Leaving it out
 // made the audit blindest exactly where the rules send code - and blind to the framework's own
@@ -416,6 +426,17 @@ function columnBlocks(content) {
   }
   return blocks;
 }
+
+// The `.claude/simplix.json` declarations the project-vocabulary rules' samples run under.
+const STATUS_MAP_DECLARATION = JSON.stringify({
+  audit: { statusMapResurrect: { names: ["STATUS_COLORS", "SEVERITY_COLORS"], importFrom: "@acme/site-ui" } },
+});
+const SHARED_CONSTANT_DECLARATION = JSON.stringify({
+  audit: { dragThresholdCopy: { names: ["DRAG_THRESHOLD_PX"], importFrom: "@acme/site-ui" } },
+});
+const EDGE_HANDLE_DECLARATION = JSON.stringify({
+  audit: { cursorColResize: { component: "EdgeHandle", importFrom: "@acme/site-ui" } },
+});
 
 // ---------------------------------------------------------------------------
 // Rules - { id, invariant, level: "error"|"review", desc, appliesTo(relPath), check(content, relPath) }
@@ -1123,6 +1144,115 @@ function generatedEnumNames() {
   }
   generatedEnumCache = names;
   return names;
+}
+
+/**
+ * The first `@simplix-react/ui` release whose `ChipFilter` is multi-select.
+ *
+ * @remarks
+ * Through 0.3.8 the component was single-select: a `columns` grid writing one value under
+ * `field.equals`. From 0.3.9 it narrows to several values at once and writes an array under the
+ * membership key `field.in`, and a row where exactly one pill is chosen became `ChoiceChips`.
+ */
+const MULTI_SELECT_CHIP_FILTER = [0, 3, 9];
+
+let chipModeCache = new Map();
+
+/**
+ * The selection mode of the `ChipFilter` a file resolves.
+ *
+ * @remarks
+ * Read from the installed package rather than asked of the project: the `node_modules` nearest
+ * the file is the copy that file imports, and in a pnpm workspace each package can resolve its
+ * own. Where no installed copy is found the current framework is assumed.
+ *
+ * @param rel the file's path relative to the project root
+ * @returns "single" for 0.3.8 and earlier, "multiple" otherwise
+ */
+function chipFilterSelectionMode(rel) {
+  let dir = path.dirname(path.join(ROOT, rel));
+  const visited = [];
+  let mode = "multiple";
+  for (;;) {
+    if (chipModeCache.has(dir)) {
+      mode = chipModeCache.get(dir);
+      break;
+    }
+    visited.push(dir);
+    const manifest = path.join(dir, "node_modules", "@simplix-react", "ui", "package.json");
+    if (fs.existsSync(manifest)) {
+      mode = chipModeOfManifest(manifest);
+      break;
+    }
+    const parent = path.dirname(dir);
+    if (dir === ROOT || parent === dir || !dir.startsWith(ROOT)) break;
+    dir = parent;
+  }
+  for (const d of visited) chipModeCache.set(d, mode);
+  return mode;
+}
+
+/**
+ * @param manifest path of an installed `@simplix-react/ui/package.json`
+ * @returns the selection mode its version ships, "multiple" when the version cannot be read
+ */
+function chipModeOfManifest(manifest) {
+  let version;
+  try {
+    version = JSON.parse(fs.readFileSync(manifest, "utf8")).version;
+  } catch (e) {
+    if (!(e instanceof SyntaxError)) throw e;
+    return "multiple";
+  }
+  const parts = /^(\d+)\.(\d+)\.(\d+)/.exec(String(version ?? ""));
+  if (!parts) return "multiple";
+  const v = parts.slice(1, 4).map(Number);
+  for (let i = 0; i < 3; i++) {
+    if (v[i] !== MULTI_SELECT_CHIP_FILTER[i]) return v[i] < MULTI_SELECT_CHIP_FILTER[i] ? "single" : "multiple";
+  }
+  return "multiple";
+}
+
+/**
+ * A rule's project-declared vocabulary, read from the `audit` section of `.claude/simplix.json`.
+ *
+ * @remarks
+ * Some rules guard one product's own shared components: the names of the maps it retired, a
+ * constant its UI package exports, the component that replaces an inline grip. Those names are
+ * the project's, so the project declares them and the rule is off where it does not. A
+ * declaration of the wrong shape turns the rule off as well, and says so once, because an
+ * error-grade rule that stops firing without a word reads exactly like a clean tree.
+ *
+ * @example
+ * { "audit": { "dragThresholdCopy": { "names": ["DRAG_THRESHOLD_PX"], "importFrom": "@acme/site-ui" } } }
+ *
+ * @param key the key under `audit`, named after the rule
+ * @param listKey the key holding the declared names, `names` or `component`
+ * @returns `{ names, importFrom }` when declared in full, otherwise null
+ */
+const warnedDeclarations = new Set();
+function declaredVocabulary(key, listKey) {
+  const raw = settings()[key];
+  if (raw === undefined) return null;
+  const names = listKey === "component" ? [raw?.component] : raw?.[listKey];
+  const valid =
+    Array.isArray(names) &&
+    names.length > 0 &&
+    names.every((n) => typeof n === "string" && /^[\w$-]+$/.test(n)) &&
+    typeof raw?.importFrom === "string" &&
+    raw.importFrom.length > 0;
+  if (valid) return { names, importFrom: raw.importFrom };
+  if (!warnedDeclarations.has(key)) {
+    warnedDeclarations.add(key);
+    const shape = listKey === "component" ? `{ "component": "<Name>", "importFrom": "<package>" }` : `{ "names": ["<name>"], "importFrom": "<package>" }`;
+    console.error(`⚠ .claude/simplix.json audit.${key} is not ${shape}, so the rule is off.`);
+  }
+  return null;
+}
+
+/** @returns an alternation matching any of the names as a whole word */
+function wordAlternation(names) {
+  return names.map((n) => n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|");
 }
 
 function publicRouteDirs() {
@@ -2021,7 +2151,7 @@ export function AlertPanel() { return null; }`,
     id: "per-screen-enum-badge",
     invariant: "#22 / #23 / audit: registry first",
     level: "error",
-    desc: "A screen declares its own component to draw an enum as a badge — resolve the boot enum, look the label up, pick a tone. The framework already has that component twice over (`StatusBadge` takes a tone map keyed by the raw value, `EnumBadge` takes one tone for a categorical kind), and every screen that writes its own arrives at a slightly different answer for the absent value, the tone of the default case, and the size of the pill. Six of them in one module is six pills that do not match, and nothing compares them. Pass the module's variant map to the shared component instead",
+    desc: "A screen declares its own component to draw an enum as a badge: resolve the boot enum, look the label up, pick a tone. That is the shared components' job: the framework's `StatusBadge` takes a resolved `tone` from the enum's one tone map and a translated `label`, and a vocabulary several screens share has one `<Domain>StatusBadge` in the project UI package (registry: tones-and-badges.md). Every screen that writes its own arrives at a slightly different answer for the absent value, the tone of the default case, and the size of the pill, so several of them in one module are pills that do not match, and nothing compares them. Draw the shared component from the enum's tone map instead",
     appliesTo: isTsx,
     check: (c) => {
       const lines = c.split("\n");
@@ -2045,30 +2175,31 @@ export function AlertPanel() { return null; }`,
   const kind = resolveBootEnum(row.kind);
   return <Badge variant="warning">{kind ? enumLabel("ThingKind", kind) : "—"}</Badge>;
 }`,
-      fixed: `const KIND_VARIANTS: Record<string, StatusVariant> = { URGENT: "warning", ROUTINE: "outline" };
+      fixed: `import { thingKindToTone } from "@acme/site-ui";
 
 export function ThingList() {
   const { enumLabel } = useEntityTranslation("thing");
   return (
     <CrudList.Column<ThingListDTO> field="kind" header={fieldLabel("kind")}>
-      {({ row }) => (
-        <StatusBadge
-          enumName="ThingKind"
-          value={row.kind}
-          enumLabel={enumLabel}
-          variantMap={KIND_VARIANTS}
-        />
-      )}
+      {({ row }) => {
+        const kind = resolveBootEnum(row.kind) || "";
+        return kind ? (
+          <StatusBadge tone={thingKindToTone[kind] ?? "neutral"} label={enumLabel("ThingKind", kind)} />
+        ) : (
+          <EmptyValue />
+        );
+      }}
     </CrudList.Column>
   );
 }`,
       miss: [
         {
-          note: "the shared component itself, which is where the resolving belongs",
-          source: `export function StatusBadge({ enumName, value, enumLabel, variantMap }: StatusBadgeProps) {
+          note: "the domain's shared badge in the project UI package, which is where the resolving belongs",
+          file: "packages/site-ui/src/thing/thing-kind-badge.tsx",
+          source: `export function ThingKindBadge({ enumName, value, enumLabel }: ThingKindBadgeProps) {
   const resolved = resolveBootEnum(value);
   if (!resolved) return null;
-  return <Badge variant={statusVariant(variantMap, resolved)}>{enumLabel(enumName, resolved)}</Badge>;
+  return <Badge variant={THING_KIND_VARIANT[resolved] ?? "outline"}>{enumLabel(enumName, resolved)}</Badge>;
 }`,
         },
         {
@@ -2654,23 +2785,25 @@ return (
     id: "chip-filter-equality-field",
     invariant: "#15 / audit: chip filters",
     level: "error",
-    desc: "A `ChipFilter`'s field is declared with an equality operator. A chip row narrows to several values at once and writes an ARRAY under that key, so the operator has to be the membership one — `status.in`, never `status.equals`. Under `.equals` the server is handed a comma-joined string it matches nothing against, or refuses outright, and neither side of the mistake can see the other: the caller declares the key as its own string constant and nothing ever compares it with what the component writes, so both halves type-check green while the row silently stops narrowing",
+    desc: "A `ChipFilter`'s field is declared with an equality operator. The multi-select chip row (`@simplix-react/ui` 0.3.9 and later) narrows to several values at once and writes an ARRAY under that key, so the operator has to be the membership one: `status.in`, never `status.equals`. Under `.equals` the server is handed a comma-joined string it matches nothing against, or refuses outright, and neither side of the mistake can see the other: the caller declares the key as its own string constant and nothing ever compares it with what the component writes, so both halves type-check green while the row silently stops narrowing. A file that resolves 0.3.8 or earlier gets the single-select row, which writes one value and takes `.equals`, and is not judged",
     appliesTo: isTsx,
     // Matched at the constant's declaration rather than at `field={...}`, because every call site
     // passes a constant and the string is nowhere near the tag. The filter is what keeps this from
     // firing on the many other filter keys a screen declares: only a constant this file actually
     // hands to a ChipFilter is a chip's field.
-    check: (c) =>
-      lineHits(
-        c,
-        /^\s*const\s+[A-Za-z_$][\w$]*\s*=\s*["'][^"']+\.equals["']\s*;/,
-        (line, lines) => {
-          const name = line.match(/const\s+([A-Za-z_$][\w$]*)/)?.[1];
-          if (!name) return false;
-          const whole = lines.join("\n");
-          return whole.includes("<ChipFilter") && whole.includes(`field={${name}}`);
-        },
-      ),
+    check: (c, rel) =>
+      chipFilterSelectionMode(rel) === "single"
+        ? []
+        : lineHits(
+            c,
+            /^\s*const\s+[A-Za-z_$][\w$]*\s*=\s*["'][^"']+\.equals["']\s*;/,
+            (line, lines) => {
+              const name = line.match(/const\s+([A-Za-z_$][\w$]*)/)?.[1];
+              if (!name) return false;
+              const whole = lines.join("\n");
+              return whole.includes("<ChipFilter") && whole.includes(`field={${name}}`);
+            },
+          ),
     samples: {
       file: "modules/<domain>/src/pages/<entity>/crud-page.tsx",
       broken: `const SCOPE_FIELD = "orgScope.equals";
@@ -2703,6 +2836,31 @@ export function Page() {
 export function Page() {
   const list = useCrudList(adaptForcedList(useListThings, { [SCOPE_FIELD]: scope }));
   return <CrudList list={list} />;
+}`,
+        },
+        {
+          note: "a project on @simplix-react/ui 0.3.8, whose single-select chip row takes `.equals`",
+          files: {
+            "node_modules/@simplix-react/ui/package.json": `{ "name": "@simplix-react/ui", "version": "0.3.8" }`,
+          },
+          source: `const SCOPE_FIELD = "orgScope.equals";
+
+export function Page() {
+  const filters = useFilterBarState();
+  return <ChipFilter field={SCOPE_FIELD} state={filters} options={options} columns={3} />;
+}`,
+        },
+        {
+          note: "a module whose own node_modules resolves 0.3.2 inside a workspace that hoists a newer copy",
+          files: {
+            "node_modules/@simplix-react/ui/package.json": `{ "name": "@simplix-react/ui", "version": "0.3.10" }`,
+            "modules/<domain>/node_modules/@simplix-react/ui/package.json": `{ "name": "@simplix-react/ui", "version": "0.3.2" }`,
+          },
+          source: `const SCOPE_FIELD = "orgScope.equals";
+
+export function Page() {
+  const filters = useFilterBarState();
+  return <ChipFilter field={SCOPE_FIELD} state={filters} options={options} />;
 }`,
         },
       ],
@@ -3650,6 +3808,10 @@ export function ScopePane({ line }: Props) {
         // A credential is write-only on purpose, and a foreign key is the relation the detail
         // renders by name rather than by id - neither is a missing read.
         if (/^(password|secret|token|.*Secret|.*Password)$/i.test(f) || /Ids?$/.test(f)) return false;
+        // A system field the form edits at all is `system-field-exposure`'s finding: the scaffold
+        // draws it on neither surface, so asking the detail to render it as well would ask for a
+        // second copy of the same defect.
+        if (/^(id|sortOrder|displayOrder)$/.test(f)) return false;
         if (new RegExp(`displayData\\.${f}\\b|fieldLabel\\("${f}"\\)`).test(ds)) return false;
         return !new RegExp(`\\b${f}\\b`).test(delegated);
       });
@@ -3678,6 +3840,17 @@ export function ScopePane({ line }: Props) {
 />`,
       },
       miss: [
+        {
+          note: "a system field edited in the form is system-field-exposure's finding, not a missing read",
+          files: {
+            "modules/site/src/widgets/area/detail.tsx": `<DetailFields.DetailTextField label={fieldLabel("name")} value={displayData.name} />`,
+          },
+          source: `<FormFields.NumberField
+  label={fieldLabel("sortOrder")}
+  value={values.sortOrder}
+  onChange={(v) => updateField("sortOrder", v)}
+/>`,
+        },
         {
           note: "a credential is write-only on purpose",
           files: {
@@ -4846,24 +5019,48 @@ return <Badge>{data?.totalElements ?? 0}</Badge>;`,
     id: "status-map-resurrect",
     invariant: "registry: tone maps",
     level: "error",
-    desc: "Resurrected local status/severity color map — use the shared tone maps + StatusBadge/StatusDot",
+    // The names are the ones a project retired when it moved its maps into its UI package, so
+    // they are the project's to declare: `audit.statusMapResurrect` in `.claude/simplix.json`.
+    get desc() {
+      const d = declaredVocabulary("statusMapResurrect", "names");
+      return d
+        ? `Resurrected local status/severity color map (${d.names.join(", ")}): use the shared tone maps from ${d.importFrom} with StatusBadge / StatusDot`
+        : "Resurrected local status/severity color map: off until `.claude/simplix.json` declares `audit.statusMapResurrect` ({ names, importFrom })";
+    },
     appliesTo: (p) => inModules(p),
-    check: (c) => lineHits(c, /\b(STATUS_COLORS|SEVERITY_COLORS|severityConfig)\b/),
+    check: (c) => {
+      const d = declaredVocabulary("statusMapResurrect", "names");
+      return d ? lineHits(c, new RegExp(`\\b(?:${wordAlternation(d.names)})\\b`)) : [];
+    },
     samples: {
       file: "modules/site/src/widgets/area/list.tsx",
-      broken: `const STATUS_COLORS: Record<string, string> = {
+      broken: {
+        files: { ".claude/simplix.json": STATUS_MAP_DECLARATION },
+        source: `const STATUS_COLORS: Record<string, string> = {
   ACTIVE: "bg-green-100 text-green-800",
   CLOSED: "bg-red-100 text-red-800",
 };`,
-      fixed: `import { areaStatusToTone } from "@acme/site-ui";
+      },
+      fixed: {
+        files: { ".claude/simplix.json": STATUS_MAP_DECLARATION },
+        source: `import { areaStatusToTone } from "@acme/site-ui";
 
 <StatusBadge tone={areaStatusToTone[resolveBootEnum(row.status)]} />`,
+      },
       miss: [
         {
           note: "a categorical palette, which the registry says stays domain-local",
+          files: { ".claude/simplix.json": STATUS_MAP_DECLARATION },
           source: `const CATEGORY_COLORS: Record<string, string> = {
   ENTRANCE: "bg-sky-100",
   STORAGE: "bg-violet-100",
+};`,
+        },
+        {
+          note: "a project that declares no retired map names, where the rule is off",
+          source: `const STATUS_COLORS: Record<string, string> = {
+  ACTIVE: "bg-green-100 text-green-800",
+  CLOSED: "bg-red-100 text-red-800",
 };`,
         },
       ],
@@ -4900,53 +5097,98 @@ return <Badge>{data?.totalElements ?? 0}</Badge>;`,
   },
   {
     id: "drag-threshold-copy",
-    invariant: "registry: ResizeHandle",
+    invariant: "registry: project shared constants",
     level: "error",
-    desc: "Local DRAG_THRESHOLD_PX redefinition — import it from the shared UI package",
+    // Which constants the project's UI package owns is the project's to declare:
+    // `audit.dragThresholdCopy` in `.claude/simplix.json`.
+    get desc() {
+      const d = declaredVocabulary("dragThresholdCopy", "names");
+      return d
+        ? `Local redefinition of a constant the shared UI package exports (${d.names.join(", ")}): import it from ${d.importFrom}`
+        : "Local redefinition of a shared UI package constant: off until `.claude/simplix.json` declares `audit.dragThresholdCopy` ({ names, importFrom })";
+    },
     appliesTo: (p) => inModules(p),
-    check: (c) => lineHits(c, /const DRAG_THRESHOLD_PX/),
+    check: (c) => {
+      const d = declaredVocabulary("dragThresholdCopy", "names");
+      return d ? lineHits(c, new RegExp(`const (?:${wordAlternation(d.names)})\\b`)) : [];
+    },
     samples: {
       file: "modules/site/src/widgets/schedule/bar.tsx",
-      broken: `const DRAG_THRESHOLD_PX = 4;`,
-      fixed: `import { DRAG_THRESHOLD_PX, ResizeHandle } from "@acme/site-ui";`,
+      broken: {
+        files: { ".claude/simplix.json": SHARED_CONSTANT_DECLARATION },
+        source: `const DRAG_THRESHOLD_PX = 4;`,
+      },
+      fixed: {
+        files: { ".claude/simplix.json": SHARED_CONSTANT_DECLARATION },
+        source: `import { DRAG_THRESHOLD_PX, EdgeHandle } from "@acme/site-ui";`,
+      },
       miss: [
         {
           note: "a different threshold, in a different unit, is a different constant",
+          files: { ".claude/simplix.json": SHARED_CONSTANT_DECLARATION },
           source: `const DRAG_THRESHOLD_MS = 120;`,
         },
         {
           note: "the shared package is where the constant is defined",
-          file: "packages/site-ui/src/resize-handle.tsx",
+          file: "packages/site-ui/src/edge-handle.tsx",
+          files: { ".claude/simplix.json": SHARED_CONSTANT_DECLARATION },
           source: `export const DRAG_THRESHOLD_PX = 4;`,
+        },
+        {
+          note: "a project that declares no shared constants, where the rule is off",
+          source: `const DRAG_THRESHOLD_PX = 4;`,
         },
       ],
     },
   },
   {
     id: "cursor-col-resize",
-    invariant: "registry: ResizeHandle",
+    invariant: "registry: project edge handle",
     level: "review",
-    desc: "Inline cursor-col-resize edge grip — use <ResizeHandle /> (canvas vertex handles are OK)",
+    // An inline column-resize grip is only a defect where the project has a shared edge handle
+    // to use instead, and that component is the project's to declare:
+    // `audit.cursorColResize` in `.claude/simplix.json`.
+    get desc() {
+      const d = declaredVocabulary("cursorColResize", "component");
+      return d
+        ? `Inline cursor-col-resize edge grip: use <${d.names[0]} /> from ${d.importFrom} (canvas vertex handles are OK)`
+        : "Inline cursor-col-resize edge grip: off until `.claude/simplix.json` declares `audit.cursorColResize` ({ component, importFrom })";
+    },
     appliesTo: (p) => inModules(p) && isTsx(p),
-    check: (c) => lineHits(c, /cursor-col-resize/),
+    check: (c) => (declaredVocabulary("cursorColResize", "component") ? lineHits(c, /cursor-col-resize/) : []),
     // No `miss` for the canvas-vertex exception the description names - a vertex handle and an
     // edge grip carry the same class, and only what they sit on tells them apart.
     samples: {
       file: "modules/site/src/widgets/schedule/bar.tsx",
-      broken: `<div
+      broken: {
+        files: { ".claude/simplix.json": EDGE_HANDLE_DECLARATION },
+        source: `<div
   className="absolute inset-y-0 right-0 w-2.5 cursor-col-resize hover:bg-white/20"
   onPointerDown={(e) => handlePointerDown(e, "resize-right")}
 />`,
-      fixed: `<ResizeHandle side="right" disabled={disabled} onPointerDown={(e) => handlePointerDown(e, "resize-right")} />`,
+      },
+      fixed: {
+        files: { ".claude/simplix.json": EDGE_HANDLE_DECLARATION },
+        source: `<EdgeHandle side="right" disabled={disabled} onPointerDown={(e) => handlePointerDown(e, "resize-right")} />`,
+      },
       miss: [
         {
           note: "a row grip resizes the other axis",
+          files: { ".claude/simplix.json": EDGE_HANDLE_DECLARATION },
           source: `<div className="cursor-row-resize" onPointerDown={onGrab} />`,
         },
         {
           note: "the shared package that defines the handle",
-          file: "packages/site-ui/src/resize-handle.tsx",
+          file: "packages/site-ui/src/edge-handle.tsx",
+          files: { ".claude/simplix.json": EDGE_HANDLE_DECLARATION },
           source: `<div className="w-2.5 cursor-col-resize" onPointerDown={onPointerDown} />`,
+        },
+        {
+          note: "a project that declares no shared edge handle, where the rule is off",
+          source: `<div
+  className="absolute inset-y-0 right-0 w-2.5 cursor-col-resize hover:bg-white/20"
+  onPointerDown={(e) => handlePointerDown(e, "resize-right")}
+/>`,
         },
       ],
     },
@@ -5582,41 +5824,31 @@ const canManage = useCan("manage", SUBJECTS.area);
     id: "system-field-exposure",
     invariant: "audit: system fields",
     level: "review",
-    desc: "id / sortOrder / displayOrder surfaced as a visible field — system fields live in auditData only",
+    desc: "id / sortOrder / displayOrder drawn as a visible detail or form field. The framework's scaffold treats id, sortOrder and displayOrder as system fields and draws none of them (`SYSTEM_FIELDS` in `@simplix-react/cli`): they stay in the form's values and its submit, the id shows only in the audit strip, and a row order is set by dragging the list's rows",
     appliesTo: (p) => inModules(p) && isTsx(p),
-    // A field the entity's own form edits is a decision the operator makes, not a value the
-    // system maintains - an order that ranks a storefront is chosen, and once it is chosen the
-    // read surfaces have to say what it currently is. Flagging those would put this rule in
-    // direct opposition to `write-only-form-field`, which demands exactly that read.
-    check: (c, rel) => {
-      const form = path.join(ROOT, path.dirname(rel), "form.tsx");
-      const edits = fs.existsSync(form) ? fs.readFileSync(form, "utf8") : "";
-      return lineHits(c, /fieldLabel\("(id|sortOrder|displayOrder)"\)/, (line) => {
-        const m = /fieldLabel\("(id|sortOrder|displayOrder)"\)/.exec(line);
-        return !new RegExp(`updateField\\(\\s*"${m[1]}"`).test(edits);
-      });
-    },
+    // A form that edits one of them is reported here as well, not exempted: the scaffold leaves
+    // them out of the form too. `write-only-form-field` skips them for the same reason, so this
+    // rule and that one never ask for opposite things.
+    check: (c) => lineHits(c, /fieldLabel\("(id|sortOrder|displayOrder)"\)/),
     samples: {
       file: "modules/site/src/widgets/area/detail.tsx",
       broken: {
         files: {
-          "modules/site/src/widgets/area/form.tsx": `<FormFields.TextField label={fieldLabel("name")} value={values.name} onChange={(v) => updateField("name", v)} />`,
+          "modules/site/src/widgets/area/form.tsx": `<FormFields.NumberField label={fieldLabel("sortOrder")} value={values.sortOrder} onChange={(v) => updateField("sortOrder", v)} />`,
         },
         source: `<DetailFields.DetailTextField label={fieldLabel("sortOrder")} value={displayData.sortOrder} />`,
       },
       fixed: {
         files: {
-          "modules/site/src/widgets/area/form.tsx": `<FormFields.TextField label={fieldLabel("name")} value={values.name} onChange={(v) => updateField("name", v)} />`,
+          "modules/site/src/widgets/area/form.tsx": `const [sortOrder] = useState<number>(defaultValues?.sortOrder ?? 0);
+<FormFields.TextField label={fieldLabel("name")} value={values.name} onChange={(v) => updateField("name", v)} />`,
         },
         source: `<DetailFields.DetailTextField label={fieldLabel("name")} value={displayData.name} />`,
       },
       miss: [
         {
-          note: "an order the operator chooses has to be readable back — flagging it would contradict write-only-form-field",
-          files: {
-            "modules/site/src/widgets/area/form.tsx": `<FormFields.NumberField label={fieldLabel("sortOrder")} value={values.sortOrder} onChange={(v) => updateField("sortOrder", v)} />`,
-          },
-          source: `<DetailFields.DetailTextField label={fieldLabel("sortOrder")} value={displayData.sortOrder} />`,
+          note: "a field whose name only begins like a system field",
+          source: `<DetailFields.DetailTextField label={fieldLabel("idCardNumber")} value={displayData.idCardNumber} />`,
         },
       ],
     },
@@ -8207,6 +8439,7 @@ function resetCaches() {
   localeKeyCache.clear();
   catalogueIndexCache = null;
   catalogueLangCache.clear();
+  chipModeCache = new Map();
 }
 
 function setRoot(dir) {
@@ -8380,6 +8613,27 @@ function selftestMechanisms() {
       },
     },
     {
+      name: "chipFilterSelectionMode: none installed, 0.3.8, 0.3.9-SNAPSHOT, 0.3.10 read multiple, single, multiple, multiple",
+      pass: () => {
+        const modeWith = (version) => {
+          const dir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "simplix-chip-")));
+          const previousRoot = ROOT;
+          try {
+            if (version) {
+              writeFixture(dir, "node_modules/@simplix-react/ui/package.json", JSON.stringify({ version }));
+            }
+            setRoot(dir);
+            return chipFilterSelectionMode("modules/site/src/pages/area/crud-page.tsx");
+          } finally {
+            setRoot(previousRoot);
+            fs.rmSync(dir, { recursive: true, force: true });
+          }
+        };
+        return [undefined, "0.3.8", "0.3.9-SNAPSHOT", "0.3.10"].map(modeWith).join(",")
+          === "multiple,single,multiple,multiple";
+      },
+    },
+    {
       name: "readsServerData: a domain import puts server data in scope, a bare file does not",
       pass: () =>
         readsServerData(`import { useListAreas } from "@acme/domain-site";`)
@@ -8463,21 +8717,11 @@ function selftest() {
 // Runner
 // ---------------------------------------------------------------------------
 
-const args = process.argv.slice(2);
-
 // An unrecognised option stops the run rather than falling through to a scan. `--self-test`
 // against a script that only knows `--selftest` scanned nothing and printed
 // "0 source files scanned - 0 error hit(s)", which is exactly what a clean project prints.
-const FLAGS = ["--list", "--selftest", "--errors-only"];
-const VALUED_FLAGS = ["--root=", "--rule="];
-const unknownArgs = args.filter(
-  (a) => !FLAGS.includes(a) && !VALUED_FLAGS.some((f) => a.startsWith(f)),
-);
-if (unknownArgs.length) {
-  console.error(`✖ unrecognised option: ${unknownArgs.join(" ")}`);
-  console.error(`  known options: ${FLAGS.join("  ")}  ${VALUED_FLAGS.map((f) => `${f}<value>`).join("  ")}`);
-  process.exit(2);
-}
+if (reportUnknown(OPTIONS.unknown, OPTION_SPEC)) process.exit(2);
+const args = [...OPTIONS.flags];
 
 if (args.includes("--list")) {
   for (const r of ALL_RULES) {
@@ -8491,7 +8735,7 @@ if (args.includes("--selftest")) {
 }
 
 const errorsOnly = args.includes("--errors-only");
-const ruleFilter = args.find((a) => a.startsWith("--rule="))?.slice(7).split(",");
+const ruleFilter = OPTIONS.values.rule?.split(",");
 
 // A rule id that names no rule would run nothing and print the clean-tree summary - the same
 // false clean the option guard above exists to stop - so it stops the run the same way.

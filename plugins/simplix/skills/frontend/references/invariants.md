@@ -42,11 +42,33 @@ first render).
 ## #15 Chip filters - the sanctioned cases
 
 `ChipFilter` is for bitmask fields or visual distinction; standard enum / FK uses
-`type: "faceted"`. One more sanctioned chip case: **narrowing WITHIN a server-forced
-scope** - a list locked to `field.in: "A,B"` takes a single-select `CrudList.ChipFilter` on
-`field.equals` (the params AND together: no chip = whole scope, chip = one state inside
-it). Requires the backend `@SearchableField` to allow BOTH `EQUALS` and `IN` on that
-field - with only one allowed, the combination fails disguised as an empty result.
+`type: "faceted"`.
+
+**The key's operator is set by the installed `ChipFilter`'s selection mode**, read from the
+`@simplix-react/ui` the screen resolves (its `package.json`):
+
+| Selection mode | Release | Key | Value written |
+|---|---|---|---|
+| multi-select - a second chip widens the narrowing, a lit chip drops its value | 0.3.9 and later | `field.in` | an array; nothing with every chip off |
+| single-select - a `columns` grid, pressing the lit chip clears it | 0.3.8 and earlier | `field.equals` | one value |
+
+A row where exactly one pill is chosen, in 0.3.9 and later, is `ChoiceChips` (`value` /
+`onChange`, no filter key); a value it hands to a query goes under `field.equals`.
+`audit-frontend.mjs`'s `chip-filter-equality-field` reports an `.equals` chip key wherever the
+file resolves the multi-select row and stays silent where it resolves the single-select one.
+
+One more sanctioned chip case: **narrowing WITHIN a server-forced scope** - a list locked to
+`field.in: "A,B"`. How the chips narrow it follows the same selection modes:
+
+- **Multi-select.** The chips write `field.in`, which is the forced scope's own key, so they
+  cannot sit in the list's filter state beside the scope: two values under one key leave the one
+  merged first unread. Hold the chip row on a page-level `useFilterBarState`, read
+  `chipFilterValues(state, "field.in")`, and force `field.in` to the chosen values when any
+  chip is lit and to the whole scope when none is. Offer only the scope's own values as chips.
+- **Single-select.** A `CrudList.ChipFilter` on `field.equals` (the params AND together: no
+  chip = whole scope, chip = one state inside it). Requires the backend `@SearchableField` to
+  allow BOTH `EQUALS` and `IN` on that field - with only one allowed, the combination fails
+  disguised as an empty result.
 
 **And a fourth: a narrowing that reaches past the list.** A faceted filter lives inside
 `CrudList.FilterBar`, so its value reaches exactly one request - the list's own. Where the
@@ -335,9 +357,26 @@ shadows the real table and is reverted instead, with the page importing from the
 (`scaffold/overview.md` § Scaffolding into a module that already has widgets). The audit script (`${CLAUDE_PLUGIN_ROOT}/scripts/audit-frontend.mjs`)
 fails on an ungated `showNew`.
 
-## #53 Detail-row enums go through `DetailBadgeField`, resolved first
+## #53 Detail-row enums go through the field their tone source names, resolved first
 
-The component looks its tone up by the RAW `value` (`variants[value] ?? "default"`), so
+`DetailStatusField` and `DetailBadgeField` both draw an enum on a detail row (`@simplix-react/ui`
+`fields/detail/`), and the source of the tone picks between them:
+
+| Tone source | Field | What it takes |
+|---|---|---|
+| a shared `StatusTone` map in the project UI package (`<enum>ToTone`) | `DetailFields.DetailStatusField` | `tone` (the resolved `StatusTone`), `value` (the translated label) |
+| a Badge variants map (`Record<value, BadgeVariant>`) | `DetailFields.DetailBadgeField` | `value` (the raw value, the variant key), `displayValue` (the label), `variants` |
+
+An enum that has a tone map uses `DetailStatusField`, so the status colour stays the one the
+list and the badges draw. The scaffold emits `DetailBadgeField` with an all-`"default"` variants
+map, which is a placeholder: it is replaced by a real variants map or by `DetailStatusField`,
+never kept.
+
+`DetailStatusField` takes the tone already resolved, so the lookup sits at the call site and
+needs the resolved key: `tone={<enum>ToTone[resolveBootEnum(x) || ""] ?? "neutral"}` beside
+`value={enumLabel("<EnumType>", resolveBootEnum(x) || "")}`.
+
+`DetailBadgeField` looks its tone up by the RAW `value` (`variants[value] ?? "default"`), so
 handing it the boot-enum object the DTO carries makes every lookup miss: the badge renders
 `default` however the variant map is written, while `displayValue` still shows the right
 label. The failure is silent and reads as a broken tone map. Pass
@@ -347,14 +386,16 @@ gives); the scaffold emits the
 unresolved form (`value={displayData.<field>}`), so every generated detail needs this fixed
 at customization time.
 
-**A nullable enum row uses `DetailBadgeField` too, never a bare badge inside
-`DetailFieldWrapper`.** Module badge shells (`StatusBadge` / `EnumBadge` wrappers over
+**A nullable enum row uses `DetailStatusField` or `DetailBadgeField` too, never a bare badge
+inside `DetailFieldWrapper`.** Module badge shells (`<Domain>StatusBadge` wrappers over
 `resolveBootEnum`) return `null` for an absent value - right in a list cell or an inline
 flex row, but inside a `DetailFieldWrapper` it leaves a silently blank row while every
 sibling `DetailFields.*` row shows the shared no-value badge. For a detail or dialog row
 whose enum can legitimately be absent (a verdict that exists only when something matched),
-render `DetailBadgeField` with `value={resolveBootEnum(x) || null}` so the empty state goes
-through the shared fallback. A row whose enum is always present may keep the
+render the field with an empty value - `DetailBadgeField` with
+`value={resolveBootEnum(x) || null}`, or `DetailStatusField` with an empty `value` - so the
+empty state goes through the shared fallback; both render it when `value` is null, undefined
+or an empty string. A row whose enum is always present may keep the
 wrapper-plus-badge shape.
 
 ## #54 The scaffold emits fields that say nothing

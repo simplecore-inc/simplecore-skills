@@ -22,7 +22,7 @@ Each entry below is one registered shared pattern: what it is, and which detail 
 - **LabeledField** - Label + optional description on the left, an arbitrary `control` (Switch/Select/Button/…) on the right. `Setti
 - **DetailListRow / DetailList** - Bordered list of `icon? + primary + trailing?` rows. `DetailList` is the `overflow-hidden rounded-lg border` c
 - **DetailStatusField (tone-driven status detail field)** - Read-only status/severity detail field. Renders a tone-driven `StatusBadge` inside the standard `DetailFieldWr
-- **User identity labels (UserAvatar / UserLabel / UserHeading / useCurrentUserAvatar)** - Every render of a user account's display name carries the user's avatar. The public avatar endpoint 404s for u
+- **User identity labels (@<scope>/<ui-package>/identity)** - Placeholder: where the product shows avatars, every user display name goes through the project's identity components; the project's registry names them
 - **PeekTriggerButton (cross-detail peek trigger)** - A cross-detail reference opens the referenced record in a `DetailPeekDialog`; its trigger is always `PeekTrigg
 - **usePeekTarget (peek open/close state machine)** - The open/close state a widget-root `DetailPeekDialog` needs comes from `usePeekTarget`, never a hand-rolled `useState(fals
 - **usePeekHost / PeekHost (app-root peek mounting)** - Reference labels dispatch their dialog to the app-root host instead of mounting it in the row that opened it
@@ -54,13 +54,10 @@ Each entry below is one registered shared pattern: what it is, and which detail 
 
 - **ListDetail Dialog Height Control** - `ListDetail` dialog variant (`variant="dialog"`) supports a `dialogHeight` prop to control the dialog's height
 - **SectionHeaderBar / PanelList / SelectableListItem / IndentedSubsection (project layout)** - These are project-specific composition patterns (domain-agnostic but not generic enough for the framework - se
-- **ContextBreadcrumb (@<scope>/<ui-package>/spatial)** - Site → Building → Floor location chain. Separator standardized to `ChevronRight`. `withBox` for the muted boxe
 - **Layout primitive variants (Stack / Grid)** - Scroll bodies use `<Stack flex overflow="auto">` (not `<div className="flex-1 overflow-y-auto">`); fixed cells
 - **AssignmentChip trailing slot** - `AssignmentChip` accepts a `trailing?: ReactNode` slot rendered between the label and the remove button. Use i
-- **BrandMapMarker (@<scope>/<ui-package>/spatial)** - Renders the brand map-pin glyph (`/images/logo/<brand-icon>.svg`). Props: `size?` (Tailwind size token, defaul
 - **Section variant convention (detail=flat / form=card)** - Every read-only `CrudDetail.Section` uses `variant="flat"`; every write `CrudForm.Section` uses `variant="card
-- **HardwareEditorActions / CapacityBadge / GridControls** - - `HardwareEditorActions` - standardized editor footer (Back/Cancel + optional aria-labelled Delete + `SaveBut
-- **ResizeHandle (shared drag-on-track edge resize affordance)** - Edge resize affordance for absolutely-positioned draggable bars on a track (bit-map field bars, schedule time 
+- **A domain's editor primitives (@<scope>/<ui-package>/<domain>)** - Placeholder: editor chrome several editors draw the same way is one UI-package component; the edge handle and its constants are declared to the audit in `.claude/simplix.json`
 
 ## List toolbars, filters & counts → `registry/lists-and-filters.md`
 
@@ -70,14 +67,10 @@ Each entry below is one registered shared pattern: what it is, and which detail 
 - **FilterBar count prop (the one total badge)** - The "전체 N건" badge comes from the FilterBar's `count` prop, which renders the shared `ListTotalBadge` internall
 - **StatusCard placement (page-level status strip only)** - On a page with an always-visible status strip (summary `StatusCard`s under the page header), tab bodies must N
 
-## Domain-shared widgets (activity / calendar / lifecycle / approval) → `registry/domain-widgets.md`
+## Domain-shared widgets (calendar chrome and per-domain widgets) → `registry/domain-widgets.md`
 
-- **ActivityList (@<scope>/<ui-package>/activity)** - Scrolling activity/event feed. Rows are `ActivityRowModel { id, title, subtitle?, icon?, badge?, timestamp?, o
 - **CalendarShell / CalendarApiBridge / CalendarColorLegend (calendar package)** - Every calendar screen composes its chrome from the calendar package, inside a `CalendarProvider`:
-- **Day-detail dialog for calendar boards (@<scope>/<ui-package>/<domain>)** - Every board over the same day-scoped record family shares ONE day-detail popup - status pill, breakdown
-- **Gantt row extras and view-family legends (@<scope>/<ui-package>/<domain>)** - Row-extra badges are one shared component; the legend swaps with the active view family; the timeline
-- **Lifecycle / presence predicate tables (module `features/`)** - The condition for whether a lifecycle action applies (submit / review / cancel / check-in / extend / assign) l
-- **ApprovalFlowSection (approver-scoped - not for operator surfaces)** - `ApprovalFlowSection` reads the approval-flow endpoint, which is scoped to the flow's PARTICIPANTS - for any o
+- **A widget several boards of one domain draw (@<scope>/<ui-package>/<domain>)** - Placeholder: one component per domain in the UI package, and one lifecycle predicate table in the module's `features/`; the project's registry names them
 
 ## Adding a new pattern
 

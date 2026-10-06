@@ -217,7 +217,8 @@ A control composed OUTSIDE the field is a defect: wrapping the field and a butto
 | `DetailField` | Plain text | `label`, `value`, `layout?` (inline/stacked) |
 | `DetailTextField` | Formatted text | `label`, `value` |
 | `DetailNumberField` | Formatted number | `label`, `value` |
-| `DetailBadgeField` | Badge with color | `label`, `value` (the RAW resolved value - the tone key), `displayValue` (the translated label), `variants` (value → Badge variant map) - invariant #53 |
+| `DetailStatusField` | Tone-driven status pill | `label`, `tone` (the resolved `StatusTone`, from the shared tone map), `value` (the translated label), `showDot?`, `icon?` - the field for an enum with a tone map, invariant #53 |
+| `DetailBadgeField` | Badge with color | `label`, `value` (the RAW resolved value - the tone key), `displayValue` (the translated label), `variants` (value → Badge variant map) - the field for an enum with a Badge variants map, invariant #53 |
 | `DetailBooleanField` | Boolean indicator | `label`, `value`, `mode?` (checkbox/text/badge) |
 | `DetailDateField` | Formatted date/time field row | `label`, `value`, `format?` (`date`/`datetime`/`time`/`relative`), `displayZone?` (instants) |
 | `DetailImageField` | Image display | `label`, `value` (URL) |

@@ -1,7 +1,6 @@
 ---
 name: frontend
 description: MANDATORY handbook for ALL frontend work in a simplix-react project - a repository with `simplix.config.ts`, `@simplix-react/*` dependencies, or CLI-generated `packages/domain-*`; skip it for stock React/Next repositories with none of those markers. Invoke on the session's first frontend-touching task, before reading, writing, reviewing, refactoring, or explaining any TSX, TS, CSS, or documentation file there. Trigger on ANY cue implying frontend work: component, widget, page, hook, list, form, detail, dialog, badge, column, filter, table, CrudList, CrudForm, CrudDetail, FilterBar, defineApi, OpenAPI, scaffold, add-domain, add-module, TSDoc, README, Diataxis, FSD - or a task touching apps/, modules/, packages/, or producing `*.md` / TSDoc. Never skip on "this is simple". Once invoked in a session, do not re-invoke.
-version: 1.0.0
 ---
 
 # SimpliX Frontend Development Handbook
@@ -76,7 +75,7 @@ take a domain out of `meta.export`, and `simplix openapi` owns it again.
 
 ### Project wiring - check on load, offer once
 
-Two halves make this handbook hold: the routing block in the project's instruction file, and the gate config in `<subproject>/.claude/simplix.json` that lets the plugin's hooks enforce it. Run `node "${CLAUDE_PLUGIN_ROOT}/scripts/detect-simplix.mjs" --json` and read `routedBy` and each match's `skillGate` / `e2eGate`.
+Two halves make this handbook hold: the routing block in the project's instruction file, and the gate config in `<subproject>/.claude/simplix.json` that lets the plugin's hooks enforce it. The plugin's SessionStart hook owns this check: when its note in this session already named this subproject, it has said what is missing and asked for `/simplix:init` to be offered, so follow the note and do not check again. Only when no such note arrived, run `node "${CLAUDE_PLUGIN_ROOT}/scripts/detect-simplix.mjs" --json` and read `routedBy` and this subproject's `skillGate` / `e2eGate` (`skillGateMissing` / `e2eGateMissing` name any key a declared gate lacks).
 
 | Missing | What goes unenforced |
 | --- | --- |
@@ -84,7 +83,7 @@ Two halves make this handbook hold: the routing block in the project's instructi
 | `skillGate` | an edit written from memory is not refused, so drift lands before anyone reads a reference |
 | `e2eGate` | a session can change screens and end with none of them opened in a browser |
 
-When anything is missing, say so in one sentence per piece - the user has no reason to know this wiring exists - and offer `/simplix:init`. It shows what it will write and writes nothing without agreement. Offer once per session; if declined, continue and do not raise it again.
+When anything is missing, say so in one sentence per piece - the user has no reason to know this wiring exists - and offer `/simplix:init`. It shows what it will write and writes nothing without agreement. Offer once per session, whether the note or this check raised it; if declined, continue and do not raise it again.
 
 ### Handbook-skip red flags (each of these thoughts means: stop and route)
 
@@ -101,7 +100,7 @@ When anything is missing, say so in one sentence per piece - the user has no rea
 1. Paths inside the **Task Router** and in invariant pointers (`invariants.md`, `customize/datetime-fields.md`, `audit/audit-checklist.md`, …) are relative to this skill's own `references/` directory.
 2. Every other path is relative to the **frontend project root** - the directory holding `simplix.config.ts`. In a monorepo, prefix the subproject name when the working directory is the repository root.
 3. Where an invariant points at a project-owned document (FSD rules, development workflow, policy tables), read whatever the project keeps under its own `.claude/`; when it keeps none, the rule stated here stands on its own.
-4. Scripts shipped with this plugin are addressed through `${CLAUDE_PLUGIN_ROOT}` and run from the frontend project root (or with `--root=<dir>`).
+4. Scripts shipped with this plugin are addressed through `${CLAUDE_PLUGIN_ROOT}` and run from the frontend project root (or with `--root <dir>`). Commands in this skill's references are written from the plugin root, which is ${CLAUDE_PLUGIN_ROOT}.
 
 ---
 
@@ -188,7 +187,7 @@ These invariants apply to **every** frontend file you touch. Treat each as invio
 
 13. **`maxBadges={3}`** - every `CrudList.FilterBar` you create or touch MUST set `maxBadges={3}` (active-filter badges beyond 3 collapse to `+N`, keeping the badge bar scannable). Prescriptive standard - apply it whenever you add or modify a FilterBar, even if neighbouring lists predate the rule and lack it.
 14. **Boolean → toggle** - boolean fields use `type: "toggle"`, NEVER `type: "faceted"` with true/false options.
-15. **Chip = special cases only** - `ChipFilter` is for bitmask fields, visual distinction, narrowing WITHIN a server-forced scope, or a narrowing that also has to reach the tab counts / a census / a sibling list; standard enum / FK uses `type: "faceted"`. A facet reaches the list's request and nothing else, so converting the fourth case silently leaves the counts unnarrowed above narrowed rows. The test - does anything but the list hook read this filter's value? - the forced-scope recipe, and its backend `@SearchableField` requirement → `invariants.md` #15.
+15. **Chip = special cases only** - `ChipFilter` is for bitmask fields, visual distinction, narrowing WITHIN a server-forced scope, or a narrowing that also has to reach the tab counts / a census / a sibling list; standard enum / FK uses `type: "faceted"`. A facet reaches the list's request and nothing else, so converting the fourth case silently leaves the counts unnarrowed above narrowed rows. The key's operator follows the installed `ChipFilter`'s selection mode: the multi-select row (`@simplix-react/ui` 0.3.9 and later) writes an array under `field.in`, the single-select row (0.3.8 and earlier, the one with `columns`) writes one value under `field.equals`, and a row where exactly one pill is chosen is `ChoiceChips`, which is not a filter. The test - does anything but the list hook read this filter's value? - the forced-scope recipe per selection mode, and its backend `@SearchableField` requirement → `invariants.md` #15.
 16. **Filter ordering** - category order (String → Date → Number → Attribute), then by table column order. Deterministic, not aesthetic.
 17. **Backend DTO verification** - after filter design is complete, verify the backend DTO supports all filter fields. Missing fields → implement them in the backend under the `simplix:backend` skill (or, when the backend is out of scope for the session, raise the gap with the exact field, operator, and screen it blocks).
 
@@ -269,7 +268,7 @@ These invariants apply to **every** frontend file you touch. Treat each as invio
 
 52. **Every action affordance is gated on the permission its endpoint requires** - a button that leads to a call the server will refuse must not render. Gate with `useCan("<action>", SUBJECTS.<screenKey>)`, never an inline group literal; both header variants, a tree's per-row `add-child`, and buttons inside action groups. The audit script fails on an ungated `showNew`. Full wiring → `invariants.md` #52.
 
-53. **A detail row's enum goes through `DetailBadgeField`, with its value resolved before it is passed** - the tone lookup uses the RAW `value`, so the boot-enum object makes every lookup miss and the badge silently renders `default`. Pass `value={resolveBootEnum(x) || ""}` (`||`, never `??`, on what `resolveBootEnum` returns - #36); the scaffold emits the unresolved form, so every generated detail needs this fixed. Nullable-enum rows → `invariants.md` #53.
+53. **A detail row's enum goes through the detail field its tone source names, with its value resolved before it is passed** - a shared `StatusTone` map → `DetailFields.DetailStatusField` (`tone={<enum>ToTone[resolveBootEnum(x) || ""] ?? "neutral"}` + the translated label as `value`); a Badge variants map → `DetailFields.DetailBadgeField`, which looks its variant up by the RAW `value`, so the boot-enum object makes every lookup miss and the badge silently renders `default`. Either map is keyed by the resolved value: pass `resolveBootEnum(x) || ""` (`||`, never `??`, on what `resolveBootEnum` returns - #36); the scaffold emits `DetailBadgeField` in the unresolved form with an all-`"default"` variants map, so every generated detail needs this fixed. Nullable-enum rows → `invariants.md` #53.
 
 54. **The scaffold emits fields that say nothing - remove them at customization time** - strip `deleted` / `deletedTimestamp`, the entity PK, and the audit quartet from the columns, cards, detail, form, and filters; `CrudDetail`'s `auditData` slot already carries the audit values, and hiding means removing from source. → `invariants.md` #54.
 

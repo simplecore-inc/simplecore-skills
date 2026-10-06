@@ -60,17 +60,6 @@ These are project-specific composition patterns (domain-agnostic but not generic
 - **SelectableListItem** - selectable/draggable row, `tone: "tint" | "inverted" | "card"`. Replaces `<button className="... bg-primary/10 ...">` selectable rows.
 - **IndentedSubsection** - labeled, left-ruled indented group (`border-l-2 border-border/50 pl-4`). Replaces the raw indented `<div>` editor idiom.
 
-## ContextBreadcrumb (@<scope>/<ui-package>/spatial)
-
-| Field | Value |
-|-------|-------|
-| **Component** | `ContextBreadcrumb` + `buildSpatialSegments` |
-| **Package** | `@<scope>/<ui-package>` (subpath `./spatial`) |
-
-### Rule
-
-Site → Building → Floor location chain. Separator standardized to `ChevronRight`. `withBox` for the muted boxed strip, `rightAction` for a trailing button. Replaces inline site/building breadcrumb strips and the `/` literal separator.
-
 ## Layout primitive variants (Stack / Grid)
 
 | Field | Value |
@@ -94,18 +83,6 @@ Scroll bodies use `<Stack flex overflow="auto">` (not `<div className="flex-1 ov
 
 `AssignmentChip` accepts a `trailing?: ReactNode` slot rendered between the label and the remove button. Use it for per-chip metadata (e.g. a count Badge, a role tag) instead of composing a bespoke chip row. Replaces hand-built `Badge` + label + remove-button chips such as a hand-built group-membership panel chip.
 
-## BrandMapMarker (@<scope>/<ui-package>/spatial)
-
-| Field | Value |
-|-------|-------|
-| **Component** | `BrandMapMarker` |
-| **Package** | `@<scope>/<ui-package>` (subpath `./spatial`) |
-| **Source** | `packages/<ui-package>/src/spatial/brand-map-marker.tsx` |
-
-### Rule
-
-Renders the brand map-pin glyph (`/images/logo/<brand-icon>.svg`). Props: `size?` (Tailwind size token, default `size-5`), `className?`. Replaces raw `<img src="/images/logo/<brand-icon>.svg" ... />` inside `MapPinContainer` marker slots. Project-specific (brand asset) → lives in `@<scope>/<ui-package>/spatial`, not the framework.
-
 ## Section variant convention (detail=flat / form=card)
 
 | Field | Value |
@@ -117,51 +94,15 @@ Renders the brand map-pin glyph (`/images/logo/<brand-icon>.svg`). Props: `size?
 
 Every read-only `CrudDetail.Section` uses `variant="flat"`; every write `CrudForm.Section` uses `variant="card"`. `collapsible` is an additive flag, independent of variant. `CrudForm.Section` and `CrudDetail.Section` are pure styled wrappers (no parent context dependency), so a write-context section that contains `FormFields.*` MUST use the FORM primitive (`CrudForm.Section`), never `CrudDetail.Section`. The scaffold templates emit the canonical variant (`form.hbs` → card, `detail.hbs` → flat) so regeneration does not re-introduce drift. Sole sanctioned `flat` exception in a form: a section embedded in a tab/dialog host that already supplies card chrome (annotate with a `{/* raw layout: tab host supplies chrome */}` note).
 
-## HardwareEditorActions / CapacityBadge / GridControls
+## A domain's editor primitives (@<scope>/<ui-package>/<domain>)
 
 | Field | Value |
 |-------|-------|
-| **Components** | `HardwareEditorActions` (@<scope>/<ui-package>/hardware); `CapacityBadge`, `GridControls` (a module-local `shared/ui`) |
+| **Components** | the chrome every editor of one domain draws the same way - an editor footer (`<Domain>EditorActions`), a drag-on-track edge handle (`<EdgeHandle>` and its tap-vs-drag constant), a location breadcrumb, a brand marker |
+| **Package** | `@<scope>/<ui-package>` (the domain's subpath, or the package root) |
 
 ### Rule
 
-- `HardwareEditorActions` - standardized editor footer (Back/Cancel + optional aria-labelled Delete + `SaveButton`) inside `EditorFooter`, shared by every editor of one domain.
-- `CapacityBadge` - interval-count badge whose tone derives from `count/max` ratio (no magic literal).
-- `GridControls` - undo/redo/delete icon-button cluster shared between the schedule editor panel header and toolbar.
-- Module-local commonization (a `modules/<m>/src/shared/ui/` component) is correct when reuse is WITHIN one module; promote to `@<scope>/<ui-package>` only when 2+ modules need it. A single-consumer "shared" component (e.g. a reader-port row that lives in exactly one editor) must NOT be extracted - that is a speculative abstraction.
+A piece of editor chrome that several editors draw the same way - the footer's Back/Cancel, Delete and Save, the grip on a draggable bar's edge, the location chain above a plan - is ONE component in the project's UI package, listed in the project's own registry (`../registry.md` § Adding a new pattern), never redrawn per editor. Module-local commonization (a `modules/<m>/src/shared/ui/` component) is correct when reuse is WITHIN one module; promote to `@<scope>/<ui-package>` only when 2+ modules need it. A single-consumer "shared" component (a row that lives in exactly one editor) must NOT be extracted - that is a speculative abstraction.
 
-## ResizeHandle (shared drag-on-track edge resize affordance)
-
-| Field | Value |
-|-------|-------|
-| **Component** | `ResizeHandle` (+ `DRAG_THRESHOLD_PX`) |
-| **Package** | `@<scope>/<ui-package>` (root export) |
-| **Source** | `packages/<ui-package>/src/resize-handle.tsx` |
-| **Export** | `import { ResizeHandle, DRAG_THRESHOLD_PX } from "@<scope>/<ui-package>"` |
-
-### Rule
-
-Edge resize affordance for absolutely-positioned draggable bars on a track (bit-map field bars, schedule time blocks). Renders a fixed-width (`w-2.5`) hit area pinned to the `left`/`right` edge with `cursor-col-resize hover:bg-white/20` and a centered ALWAYS-WHITE vertical grip line (SVG, `non-scaling-stroke` 1.5px, round caps) that fills the parent bar height. The handle calls `event.stopPropagation()` before the consumer's `onPointerDown`, so grabbing an edge resizes instead of moving the whole bar. `DRAG_THRESHOLD_PX` (4) is the shared tap-vs-drag boundary; consumers gate the first move with `Math.hypot(dx, dy) > DRAG_THRESHOLD_PX` to push exactly one undo per drag.
-
-Props: `side: "left" | "right"`, `onPointerDown`, `disabled?`, `className?`.
-
-Project-specific drag-on-track editor primitive (not generic enough for the framework - the placement rule is SKILL.md invariant #23); it belongs in `@<scope>/<ui-package>` once a second module needs it. The grip is white because the bars it sits on are saturated colours.
-
-### Anti-Pattern
-
-```tsx
-// FORBIDDEN — inline edge resize handle (raw div + pill/line grip)
-<div
-  className="absolute left-0 top-0 bottom-0 w-2.5 cursor-col-resize hover:bg-white/20 flex items-center justify-center"
-  onPointerDown={(e) => { e.stopPropagation(); handlePointerDown(e, "resize-left"); }}
->
-  <div className="rounded-full" style={{ width: 2, height: 12, backgroundColor: "rgba(255,255,255,0.6)" }} />
-</div>
-
-// REQUIRED — shared ResizeHandle
-<ResizeHandle side="left" disabled={disabled} onPointerDown={(e) => handlePointerDown(e, "resize-left")} />
-```
-
-### Exception
-
-Non-edge / non-bar drag handles keep their bespoke rendering: a handle centred on a boundary rather than pinned to a bar's edge, and a konva/canvas vertex handle (a polygon vertex), are NOT left/right edge grips and stay local. Where one sits in the same editor as a `ResizeHandle`, it shares the white grip color (`text-white`) so every drag handle there reads identically.
+Where the project declares its edge handle and the constants its UI package owns in `.claude/simplix.json`, the audit holds every module to them: `audit.cursorColResize` (`{ "component": "<EdgeHandle>", "importFrom": "@<scope>/<ui-package>" }`) for `cursor-col-resize`, `audit.dragThresholdCopy` (`{ "names": ["<SHARED_CONSTANT>"], "importFrom": "@<scope>/<ui-package>" }`) for `drag-threshold-copy` → `../audit-checklist.md` § Project Edge Handle Violations.
