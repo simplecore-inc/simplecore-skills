@@ -652,9 +652,8 @@ agent is dispatched.** A builder's return lands in one place - the coordinator's
 is the one place in the arrangement guaranteed not to survive: a summary keeps the shape of a
 report and drops its items, and the agent that produced them is gone. So a defect the return names
 in another chapter's ground, a surface it says it could not verify, a fix it deferred - each goes
-to the ledger or the open items **on reading the report**, not at the end of the round: a summary
-keeps the count and drops the items → `references/dispatch.md` § *What a return names survives only
-in a file*.
+to the ledger or the open items **on reading the report**, not at the end of the round →
+`references/dispatch.md` § *What a return names survives only in a file*.
 
 **A count is what survives, and a count reads as a record while being none.** 「seven defects in
 other chapters' ground」 tells the chapter that owns them nothing it can act on, which is why the
