@@ -434,15 +434,15 @@ Every temporal field belongs to exactly ONE semantic kind (skill invariant #18).
 | **Calendar period** | Year-month / year bucket | fixed-width String `yyyy-MM` + `@Pattern` validation | VARCHAR | `yyyy-MM` |
 
 ```java
-// Absolute instant — event timestamps, expirations, activation windows with time-of-day precision
+// Absolute instant - event timestamps, expirations, activation windows with time-of-day precision
 @Column(name = "published_at")
 private Instant publishedAt;
 
-// Calendar date — holidays, leave dates, effective-from/to, birth dates
+// Calendar date - holidays, leave dates, effective-from/to, birth dates
 @Column(name = "birth_date")
 private LocalDate birthDate;
 
-// Wall-clock time — shift start/end, core time, cutoff times
+// Wall-clock time - shift start/end, core time, cutoff times
 @Column(name = "shift_start")
 private LocalTime shiftStart;
 ```

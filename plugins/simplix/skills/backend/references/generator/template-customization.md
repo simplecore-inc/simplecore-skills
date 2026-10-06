@@ -185,7 +185,7 @@ package <%= packagePaths['service'] %>;   // e.g. {basePackage}.web.facility.ide
 public class <%= entityName %>Service extends SimpliXBaseService<<%= entityName %>, String> {
 
     private final MessageSource messageSource;
-    // modelMapper is inherited from SimpliXBaseService (@Autowired there) — never redeclare or inject it here
+    // modelMapper is inherited from SimpliXBaseService (@Autowired there) - never redeclare or inject it here
 
     public <%= entityName %>Service(<%= entityName %>Repository repository, EntityManager entityManager, MessageSource messageSource) {
         super(repository, entityManager);

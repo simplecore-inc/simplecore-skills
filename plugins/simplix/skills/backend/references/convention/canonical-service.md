@@ -16,7 +16,7 @@ public class BuildingService extends SimpliXBaseService<Building, String> {
     private final SiteRepository siteRepository;              // related-entity repos (for FK validation, enrichment)
     private final MessageSource messageSource;                // a message that carries arguments (invariant 3)
 
-    public BuildingService(                                   // invariant 8 — explicit constructor
+    public BuildingService(                                   // invariant 8 - explicit constructor
             BuildingRepository repository,                    //   the entity's own repo
             SiteRepository siteRepository,                    //   related-entity repos (if any)
             EntityManager entityManager,                      //   required by base class
@@ -53,7 +53,7 @@ public class BuildingService extends SimpliXBaseService<Building, String> {
         deleteAllByIds(ids);
     }
 
-    // search(Map) and search(SearchCondition) — REQUIRED to implement in every service.
+    // search(Map) and search(SearchCondition) - REQUIRED to implement in every service.
     // They are NOT provided by the base class because they reference entity-specific DTOs.
     // Controllers call these; URLs hit simpleSearch (GET) or search (POST).
     public Page<BuildingListDTO> search(Map<String, String> params) {

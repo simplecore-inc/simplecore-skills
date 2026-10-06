@@ -198,7 +198,7 @@ The generator produces the canonical shapes. Manual controllers and services mus
     6. GET    /{id}/edit        updateForm
     7. PATCH  /batch            batchUpdate
     8. DELETE /batch            batchDelete
-    9. PATCH  /order            updateOrder    (optional — only entities with displayOrder)
+    9. PATCH  /order            updateOrder    (optional - only entities with displayOrder)
     10. GET   /search           simpleSearch
     11. POST  /search           search
   Every endpoint: @XxxMapping → @Operation(summary, description) → @PreAuthorize("hasPermission('<FEATURE_AREA>', '<action>')")
@@ -214,7 +214,7 @@ The generator produces the canonical shapes. Manual controllers and services mus
   constructor: super(repository, entityManager); + related repos + messageSource
   Required: create, update (ID-mismatch check mandatory), delete, batchDelete, search(Map), search(SearchCondition)
   Optional: multiUpdate, batchUpdate, updateOrder, buildDetailDTO (only when enrichment needed)
-  Private: saveAndGetProjection(entity, fkId) — save + FK resolution + projection lookup
+  Private: saveAndGetProjection(entity, fkId) - save + FK resolution + projection lookup
 ```
 
 For full annotated code with every endpoint, existence-check patterns, `@Validated` placement, base-class helpers, and required method signatures → Read `convention/canonical-controller.md` and `convention/canonical-service.md` via the Task Router above

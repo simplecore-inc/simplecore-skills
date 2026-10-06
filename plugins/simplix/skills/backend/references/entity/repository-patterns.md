@@ -28,7 +28,7 @@ public interface {EntityName}Repository extends SimpliXBaseRepository<{EntityNam
 `@IdClass` and `@EmbeddedId` composite keys are **prohibited**. Every entity - including junction tables, time-series points, sync-state tuples, monitoring snapshots, and history tables - uses a single `String` primary key (`{entityName}Id`, UUID v7; `field-types.md` § ID Field) and expresses the business uniqueness of the composite columns as a `@Table(uniqueConstraints = @UniqueConstraint(columnNames = {...}))`.
 
 ```java
-// CORRECT — single String id + unique composite index
+// CORRECT - single String id + unique composite index
 @Entity
 @Table(
     name = "user_group_member",

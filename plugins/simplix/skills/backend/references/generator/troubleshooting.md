@@ -62,7 +62,7 @@ If the package doesn't match, the generated import will be wrong.
 private Boolean active;  // → getActive()
 
 // Wrong
-private boolean active;  // → isActive()  — breaks framework lookups
+private boolean active;  // → isActive()  - breaks framework lookups
 ```
 
 ## A JSON Column Holding a List of Domain POJOs

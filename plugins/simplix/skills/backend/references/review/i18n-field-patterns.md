@@ -468,7 +468,7 @@ The `@I18nTrans` + `@JsonIgnore` pair applies to EVERY read-path DTO that copies
 
 **Detection** (run from the module root):
 ```bash
-# DTO name fields not annotated with @I18nTrans — verify each read-path hit
+# DTO name fields not annotated with @I18nTrans - verify each read-path hit
 grep -rn -B3 "private String name;" --include="*DTOs.java" src/main/java | grep -v I18nTrans
 ```
 Search/Create/Update DTO `name` fields are write-path input and are exempt.

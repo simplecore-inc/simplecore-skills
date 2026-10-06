@@ -184,10 +184,10 @@ public class MonitoringDashboardService {
         this.healthStateManager = healthStateManager;
     }
 
-    // Read methods — inherit class-level @Transactional(readOnly = true)
+    // Read methods - inherit class-level @Transactional(readOnly = true)
     public DashboardSnapshot getSnapshot() { ... }
 
-    // Write methods — explicit @Transactional
+    // Write methods - explicit @Transactional
     @Transactional
     public void acknowledge(String alarmId) { ... }
 }
@@ -209,7 +209,7 @@ NEVER on:
 ### Action Trigger Controller
 
 ```java
-// SyncExecutionController — triggers sync pipeline
+// SyncExecutionController - triggers sync pipeline
 @RestController
 @RequestMapping("/sync")
 @Tag(name = "facility.sync.SyncExecution", description = "Sync execution pipeline operations")
@@ -227,7 +227,7 @@ public class SyncExecutionController {
 ### Dashboard/Aggregation Controller
 
 ```java
-// MonitoringDashboardController — aggregates multiple data sources
+// MonitoringDashboardController - aggregates multiple data sources
 @RestController
 @RequestMapping("/monitoring/dashboard")
 @Tag(name = "facility.monitoring.Dashboard", description = "Monitoring dashboard")
@@ -244,7 +244,7 @@ public class MonitoringDashboardController {
 ### User-Self Controller
 
 ```java
-// CurrentUserRestController — different auth pattern (self-access)
+// CurrentUserRestController - different auth pattern (self-access)
 @RestController
 @RequestMapping("/me")
 @Tag(name = "user.self.CurrentUser", description = "Current user operations")
@@ -261,7 +261,7 @@ public class CurrentUserRestController {
 ### Dev/Test Controller
 
 ```java
-// ErrorTestRestController — dev environment only
+// ErrorTestRestController - dev environment only
 @RestController
 @RequestMapping("/dev/test/errors")
 @Tag(name = "dev.ErrorTest", description = "Error handling test endpoints")
