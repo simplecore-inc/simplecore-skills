@@ -51,7 +51,11 @@ function buildContext(report) {
     );
   }
   if (binds('board-parity-walk')) {
-    const docs = [report.parityWalk.parityList, report.parityWalk.handoverFile].filter(Boolean);
+    // A two-board config leaves the top-level fields null and names each pair under `boards`.
+    const pairs = report.parityWalk.boards?.length ? report.parityWalk.boards : [report.parityWalk];
+    const docs = pairs.flatMap((one) =>
+      [one.parityList, one.handoverFile].filter(Boolean).map((doc) => (one.board ? `${doc} (${one.board})` : doc)),
+    );
     lines.push(
       `- a board-parity walk is wired against that board${docs.length ? ` (\`${docs.join('`, `')}\`)` : ''} → invoke \`simplecore:board-parity-walk\` before starting or resuming one. It runs in a subagent per cluster, never in this context.`,
     );

@@ -298,6 +298,7 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/audit-frontend.mjs"             # machine-ch
 node "${CLAUDE_PLUGIN_ROOT}/scripts/audit-frontend.mjs" --selftest  # prove every rule both ways
 node "${CLAUDE_PLUGIN_ROOT}/scripts/screen-inventory.mjs"           # every screen classified by shape
 node "${CLAUDE_PLUGIN_ROOT}/scripts/check-duplicate-contexts.mjs"   # one physical copy per context-owning package
+node "${CLAUDE_PLUGIN_ROOT}/scripts/check-interpolation-types.mjs"  # formatted catalogue placeholders handed a number
 node "${CLAUDE_PLUGIN_ROOT}/scripts/audit-rendered.mjs" --url <address>  # boxes and rows on a rendered page
 ```
 
@@ -381,8 +382,8 @@ Installing from the marketplace copies a plugin into `~/.claude/plugins/cache/`,
 Notes for symlink users:
 
 - Keep the marketplace registered (`claude plugin marketplace add ./path/to/simplecore-skills`) so `claude plugin validate .` and release testing stay available while you develop against the link.
-- Scripts and reference files are addressed through `${CLAUDE_PLUGIN_ROOT}`, which resolves to `~/.claude/skills/<name>` under a link and to the versioned cache directory under a marketplace install. Do not hardcode either path.
-- Installed from a local folder (`claude plugin marketplace add ./simplecore-skills`), a plugin is already read live from the working tree, so it needs no link to pick up edits. Some paths still go through `~/.claude/skills/simplecore` (the wireframe kit's lookup in `resolve.mjs` and `wf.mjs`, `korean-docs` scripts, global instruction files), and linking the whole plugin there fails with the name-conflict error at every `/reload-plugins`. Make that path a plain folder holding links to the data alone, with no `.claude-plugin/` in it, so it is not loaded as a second plugin:
+- Scripts are addressed through `${CLAUDE_PLUGIN_ROOT}`. Claude Code replaces it with the plugin's directory (`~/.claude/skills/<name>` under a link, the versioned cache directory under a marketplace install, the working tree under a local-folder install) in a SKILL.md, a command and a hook. A reference file is read as written and the shell carries no such variable, so each SKILL.md whose references run commands states the plugin root once. Do not hardcode any of these paths.
+- Installed from a local folder (`claude plugin marketplace add ./simplecore-skills`), a plugin is already read live from the working tree, so it needs no link to pick up edits. A board's `wf.mjs` finds the kit through `WIREFRAME_KIT`, `~/.claude/skills/simplecore`, the install record and the plugin cache, in that order. Global instruction files that name the skills' references by path (`~/.claude/skills/simplecore/skills/korean-docs/...`) still need that folder, and linking the whole plugin there fails with the name-conflict error at every `/reload-plugins`. Make it a plain folder holding links to the data alone, with no `.claude-plugin/` in it, so it is not loaded as a second plugin:
 
   ```bash
   mkdir -p ~/.claude/skills/simplecore
