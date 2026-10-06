@@ -372,13 +372,13 @@ export function cases(t) {
   });
   t.add(
     'evidenceSaysWhereItCameFrom',
-    'a result document with no provenance line, which is how an invalidated reading survives',
+    'a run record with no provenance line, which is how an invalidated reading survives',
     evidence({ 'docs/evidence/w01.md': '# 검증 결과\n\n화면을 열었다.\n' }),
     true
   );
   t.add(
     'evidenceSaysWhereItCameFrom',
-    'the same document saying all three, so a later reader can date every picture in it',
+    'the same record saying all three, so a later reader can date every picture in it',
     evidence({ 'docs/evidence/w01.md': '# 검증 결과\n\n빌드 `abc1234` · 기동 09:02 · 자료 이야기 시드.\n' }),
     false
   );

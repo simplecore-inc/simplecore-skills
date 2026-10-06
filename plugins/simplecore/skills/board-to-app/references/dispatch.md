@@ -56,15 +56,14 @@ ledger, the handover file, the wave decision, and the barrier work the wave give
    copy goes stale the day the source moves and nothing announces it, both documents keep reading
    as authoritative, and the builder has to guess which one the code should follow.
    **Hand the TEXT of what the agent must act on; hand a PATH only for what it must search.**
-   The distinction is worth real money. A chapter file runs to tens of thousands of characters and
-   a result document to well over a hundred thousand, so an agent dispatched for one section that
-   is given the document's path reads the whole thing to find one part of it - and pays that again
-   on the next dispatch. The coordinator already has the section in hand; passing it costs one
+   The distinction is worth real money. A chapter file runs to tens of thousands of characters,
+   so an agent dispatched for one section that is given the file's path reads the whole thing to
+   find one part of it - and pays that again on the next dispatch. The coordinator already has the section in hand; passing it costs one
    copy and saves the search. Paths stay right for what the agent genuinely has to range over: the
    config, the ledger, the board it must look screens up in.
 
    **This is what makes a per-screen agent affordable at all.** An agent that must load the
-   instruction files, the board manifest, the chapter and the result document has spent most of a
+   instruction files, the board manifest, the chapter and the design document has spent most of a
    context before it opens a browser, and the work it was dispatched for is a few thousand
    characters of that. Brief it with those few thousand.
 

@@ -16,7 +16,7 @@ statement:
 | `null` | **the file is not there** |
 | a key ending in `/` | an empty directory |
 
-**`null` is what half the cases here need** - a result document that was never written, a capture
+**`null` is what half the cases here need** - a run record that was never written, a capture
 that was cited and never made. Written as `''` instead, the case proves a different defect and
 passes for the wrong reason, so the natural way to say 「absent」 has to mean absent.
 

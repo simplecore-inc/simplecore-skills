@@ -874,7 +874,7 @@ things otherwise turn into a question, and none of them has to.
    | **Out of scope** | a remote host - production, staging, a shared environment - the user's own accounts, and any external service. Each of those is asked for, and none of them is on the way to a chapter closing |
    | **Where a credential comes from** | the project's development configuration, its seed, a `.env`-shaped file, a fixture, or a value the user supplied. **Never invented.** Where none can be found anywhere, that is one of the questions below that waits for a person |
    | **Where there is no account** | a development server exposing a sign-up screen gets a test account made on it, and the run continues |
-   | **Where a credential must not go** | a reply, a log line, a capture caption, a result document, a commit, or any file. It reaches the process signing in and stops there |
+   | **Where a credential must not go** | a reply, a log line, a capture caption, a run record, a commit, or any file. It reaches the process signing in and stops there |
 3. **What data should exist?** The seed makes the story's relations true against the schema:
    every record the chapter's screens need exists, connected as the entity model says, in every
    state the board draws, for every persona the journeys name. **Its values are its own.** The

@@ -70,7 +70,7 @@ export function makeBuilders() {
 
     for (const [rel, body] of Object.entries(files)) {
       // `null` is the case saying THIS FILE IS NOT THERE, which half the gates here exist to
-      // find - an absent result document, a capture that was cited and never written. Writing it
+      // find - an absent run record, a capture that was cited and never written. Writing it
       // as an empty file instead proves a different defect and passes for the wrong reason, so
       // the natural notation has to mean absence.
       if (body === null) continue;
