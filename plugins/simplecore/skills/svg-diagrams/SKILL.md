@@ -89,7 +89,7 @@ Execution model: `scripts/audit.py`, `scripts/convert.js`, `scripts/layout.js`, 
 
 ```python
 import sys
-sys.path.insert(0, "<skill>/scripts")          # <skill> = base dir shown at load
+sys.path.insert(0, "<skill>/scripts")          # <skill>: see Paths above
 from svgkit import Canvas
 
 c = Canvas(900, 320, theme="tokyo-night")       # paper (white page) · nord · catppuccin · gruvbox · one-dark
