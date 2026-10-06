@@ -176,7 +176,7 @@ private boolean active;
 private Boolean active;
 ```
 
-This applies to ALL DTOs. Entity can use primitive `boolean` with `@Builder.Default`, but DTOs must always use wrapper `Boolean`.
+This applies to ALL DTOs, and entities use the wrapper too (`../entity/field-types.md` § Boolean Fields).
 
 ---
 
@@ -404,10 +404,10 @@ public SimpliXApiResponse<EntityNameDetailDTO> get(@PathVariable String id) { ..
 ## AP-18: Missing Audit Fields in DTO
 
 ```java
-// WRONG — DetailDTO/ListDTO missing audit fields
+// WRONG - DetailDTO/ListDTO missing audit fields
 @Data
 public static class EntityNameDetailDTO {
-    private String id;
+    private String entityNameId;
     private String name;
     // Missing: createdBy, createdAt, updatedBy, updatedAt
 }
@@ -415,7 +415,7 @@ public static class EntityNameDetailDTO {
 // CORRECT
 @Data
 public static class EntityNameDetailDTO {
-    private String id;
+    private String entityNameId;
     private String name;
 
     //----------
@@ -465,7 +465,7 @@ Include contextually useful fields (ID + name + any fields the frontend needs fo
 // WRONG — UpdateDTO does not extend CreateDTO
 @Data
 public static class EntityNameUpdateDTO {
-    private String id;
+    private String entityNameId;
     private String name;
     private String description;
     // Duplicates all CreateDTO fields
@@ -476,9 +476,9 @@ public static class EntityNameUpdateDTO {
 @EqualsAndHashCode(callSuper = true)
 public static class EntityNameUpdateDTO extends EntityNameCreateDTO {
     @Schema(description = "Entity ID")
-    @FieldLabel("{entities.EntityName.id}")
+    @FieldLabel("{entities.EntityName.entityNameId}")
     @NotBlank(message = "ID is required")
-    private String id;
+    private String entityNameId;
 }
 ```
 

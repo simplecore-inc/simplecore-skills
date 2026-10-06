@@ -28,7 +28,7 @@ public class CmsContent {
 
     // I18n field - translations
     @Convert(converter = StringMapConverter.class)
-    @Column(columnDefinition = "jsonb")
+    @Column(name = "title_i18n")
     private Map<String, String> titleI18n;
 }
 ```

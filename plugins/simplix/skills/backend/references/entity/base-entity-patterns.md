@@ -2,7 +2,7 @@
 
 `BaseEntity` and the cross-cutting concerns it enables.
 
-> **Scope (canonical):** `BaseEntity<String>`, audit fields (`createdAt`, `updatedAt`, `createdBy`, `updatedBy`), soft delete (`@SQLDelete` + `deleted` / `deletedAt`), domain events (`@EntityEventConfig`), lifecycle callbacks, FK string normalization. For field-level type rules see **field-types.md**; for relationships see **relationship-patterns.md**; for security/PII see **entity-security-patterns.md**.
+> **Scope (canonical):** `BaseEntity<String>`, audit fields (`createdAt`, `updatedAt`, `createdBy`, `updatedBy`), soft delete (`SoftDeletable`: `@SQLDelete` + `@Filter`, fields `deleted` / `deletedTimestamp`), domain events (`@EntityEventConfig`), lifecycle callbacks, FK string normalization. For field-level type rules see **field-types.md**; for relationships see **relationship-patterns.md**; for security/PII see **entity-security-patterns.md**.
 
 ---
 
@@ -19,6 +19,18 @@ packages/domain-{aggregate}/src/main/java/{basePackage}/domain/{module}/entity/{
 - `{aggregate}` is the Gradle module suffix (e.g. `facility-config`, `facility-runtime`, `user`).
 - `{module}` is the Java package segment under `{basePackage}.domain` for the same aggregate (e.g. `facilityconfig`, `facilityruntime`, `user`). Keep it aligned with the Gradle module name, minus the hyphens.
 - `{EntityName}` is the PascalCase entity class name.
+
+### Enums and message bundles
+
+They live in the same `packages/domain-{aggregate}` module as the entities that use them, so that module's domain tests (SKILL.md #16) see them:
+
+```
+packages/domain-{aggregate}/src/main/java/{basePackage}/domain/enums/{module}/{EnumName}.java
+packages/domain-{aggregate}/src/main/resources/messages/entities/{module}/entities-{module}-messages*.properties
+packages/domain-{aggregate}/src/main/resources/messages/enums/{module}/enums-{module}-messages*.properties
+```
+
+Read the module's existing bundles before adding one; a project that keeps its bundles elsewhere follows its own layout.
 
 ### Discovering existing modules
 
@@ -52,7 +64,7 @@ If the new entity does not belong to any existing `domain-*` module, do **not** 
 
 All entities in a SimpliX project extend `BaseEntity<ID>`, which provides:
 - Audit fields (createdAt, updatedAt, createdBy, updatedBy)
-- Soft delete support (deletedAt)
+- The soft-delete filter an entity opts into by implementing `SoftDeletable` (§ Soft Delete)
 - Optimistic locking (version)
 - Domain event support
 - i18n label support
@@ -63,14 +75,20 @@ All entities in a SimpliX project extend `BaseEntity<ID>`, which provides:
 @Entity
 @Audited
 @Table(name = "table_name")
+@Comment("Entity description")
 @EntityEventConfig(
     onCreate = "MY_ENTITY_CREATED",
     onUpdate = "MY_ENTITY_UPDATED",
     onDelete = "MY_ENTITY_DELETED"
 )
-@Comment("Entity description")
+@SQLDelete(sql = "UPDATE table_name"
+    + SoftDeletable.SQL_SOFT_DELETE_SET
+    + "entity_id = ?"                       // the PK column
+    + SoftDeletable.SQL_VERSION_CHECK)
+@Filter(name = SoftDeletable.FILTER_NAME,
+    condition = "deleted = :isDeleted")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
-public class MyEntity extends BaseEntity<String> {
+public class MyEntity extends BaseEntity<String> implements SoftDeletable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID, generator = "uuid-v7")
@@ -79,6 +97,12 @@ public class MyEntity extends BaseEntity<String> {
     private String entityId;
 
     // ... entity-specific fields
+
+    @Builder.Default
+    private Boolean deleted = false;            // soft delete (§ Soft Delete)
+
+    @Builder.Default
+    private Long deletedTimestamp = -1L;
 
     @Override
     public String getId() {
@@ -132,11 +156,12 @@ private String searchIndex;
 
 ## Soft Delete
 
-> **Current pattern**: SimpliX uses the `SoftDeletable` interface with `@SQLDelete` + `@Filter`:
+> SimpliX soft delete is the `SoftDeletable` interface with `@SQLDelete` + `@Filter`, and an entity soft-deletes exactly when it implements `SoftDeletable`:
 > ```java
 > @SQLDelete(sql = "UPDATE table_name"
 >     + SoftDeletable.SQL_SOFT_DELETE_SET
->     + "id = ?" + SoftDeletable.SQL_VERSION_CHECK)
+>     + "entity_id = ?"                       // the PK column (field-types.md § ID Field)
+>     + SoftDeletable.SQL_VERSION_CHECK)
 > @Filter(name = SoftDeletable.FILTER_NAME,
 >     condition = "deleted = :isDeleted")
 > public class Entity extends BaseEntity<String> implements SoftDeletable {
@@ -239,10 +264,10 @@ public class MyEntity extends BaseEntity<String> {
     private String name;
 
     @Type(JsonType.class)
-    @Column(name = "name_i18n", columnDefinition = "TEXT")
+    @Column(name = "name_i18n")
     private Map<String, String> nameI18n;
 
-    @Column(name = "search_index", columnDefinition = "TEXT")
+    @Column(name = "search_index", length = 4000)
     @NotAudited
     private String searchIndex;
 
@@ -290,7 +315,7 @@ String fieldLabel = entity.getFieldLabel("status");
 
 ### Message Properties
 
-Location: `modules/domain/.../resources/messages/entities/{module}/`
+Location: § Where to Create the Entity File, under Enums and message bundles.
 
 ```properties
 # entities-cms-messages.properties
@@ -399,8 +424,7 @@ For entities with @Check constraints:
 
 ```java
 @Check(
-    constraints = "active IN (true, false) AND " +
-        "((target_type = 'ROLE' AND role_id IS NOT NULL AND user_id IS NULL) OR " +
+    constraints = "((target_type = 'ROLE' AND role_id IS NOT NULL AND user_id IS NULL) OR " +
         "(target_type = 'USER' AND user_id IS NOT NULL AND role_id IS NULL))"
 )
 public class AuthRolePermission extends BaseEntity<String> {

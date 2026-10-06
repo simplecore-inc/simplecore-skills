@@ -92,6 +92,7 @@ public class CmsCategory extends BaseEntity<String>
     private CmsCategory parent;
 
     @Transient
+    @Builder.Default
     private List<CmsCategory> children = new ArrayList<>();
 
     @Column(name = "depth", nullable = false)
@@ -106,7 +107,7 @@ public class CmsCategory extends BaseEntity<String>
     private String name;
 
     @Type(JsonType.class)
-    @Column(name = "name_i18n", columnDefinition = "TEXT")
+    @Column(name = "name_i18n")
     private Map<String, String> nameI18n;
 
     @Column(name = "sort_order", nullable = false)
@@ -251,7 +252,7 @@ public interface CmsCategoryRepository extends SimpliXBaseRepository<CmsCategory
 
 ```java
 @Repository
-public interface CmsCategoryTreeRepository extends SearchableJpaRepository<CmsCategory, String> {
+public interface CmsCategoryTreeRepository extends SimpliXTreeRepository<CmsCategory, String> {
 
     // Custom tree operations can be added here
 }
@@ -265,10 +266,13 @@ public interface CmsCategoryTreeRepository extends SearchableJpaRepository<CmsCa
 
 ```java
 @Service
-@RequiredArgsConstructor
 public class CmsCategoryTreeService {
 
     private final CmsCategoryRepository repository;
+
+    public CmsCategoryTreeService(CmsCategoryRepository repository) {   // invariant 8
+        this.repository = repository;
+    }
 
     public List<CmsCategory> buildTree(String channelId) {
         List<CmsCategory> allCategories = repository.findByChannelIdOrderByDepthAndSortOrder(channelId);
@@ -297,7 +301,9 @@ public class CmsCategoryTreeService {
     }
 
     public List<CmsCategory> getAncestors(String categoryId) {
-        CmsCategory category = repository.findById(categoryId).orElseThrow();
+        CmsCategory category = repository.findById(categoryId)
+            .orElseThrow(() -> new SimpliXGeneralException(
+                ErrorCode.GEN_NOT_FOUND, "{error.<domain>.categoryNotFound}", null));   // invariant 3
         List<CmsCategory> ancestors = new ArrayList<>();
 
         while (category.getParentId() != null) {
@@ -428,6 +434,7 @@ Always use `@Transient` for children:
 
 ```java
 @Transient
+@Builder.Default
 private List<CmsCategory> children = new ArrayList<>();
 ```
 
@@ -455,7 +462,7 @@ private static final int MAX_DEPTH = 10;
 
 public void validateDepth(CmsCategory category) {
     if (category.getDepth() > MAX_DEPTH) {
-        throw new SimpliXGeneralException(ErrorCode.GEN_CONFLICT, "Maximum hierarchy depth exceeded", null);
+        throw new SimpliXGeneralException(ErrorCode.GEN_CONFLICT, "{error.<domain>.maxDepthExceeded}", null);
     }
 }
 ```
@@ -465,7 +472,7 @@ public void validateDepth(CmsCategory category) {
 ```java
 public void validateNotCircular(CmsCategory category, String newParentId) {
     if (category.getCategoryId().equals(newParentId)) {
-        throw new SimpliXGeneralException(ErrorCode.GEN_CONFLICT, "Category cannot be its own parent", null);
+        throw new SimpliXGeneralException(ErrorCode.GEN_CONFLICT, "{error.<domain>.ownParent}", null);
     }
 
     // Check if newParent is a descendant
@@ -473,7 +480,7 @@ public void validateNotCircular(CmsCategory category, String newParentId) {
         CmsCategory newParent = repository.findById(newParentId).orElse(null);
         if (newParent != null && newParent.getPath() != null &&
             newParent.getPath().contains("/" + category.getCategoryId() + "/")) {
-            throw new SimpliXGeneralException(ErrorCode.GEN_CONFLICT, "Cannot create circular reference", null);
+            throw new SimpliXGeneralException(ErrorCode.GEN_CONFLICT, "{error.<domain>.circularReference}", null);
         }
     }
 }

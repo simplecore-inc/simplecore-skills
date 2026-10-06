@@ -35,7 +35,7 @@ public class BuildingService extends SimpliXBaseService<Building, String> {
 
     @Transactional
     public BuildingDetailDTO update(Building entity, BuildingUpdateDTO dto) {
-        if (!Objects.equals(entity.getId(), dto.getId())) {   // ID-mismatch check is MANDATORY on update
+        if (!Objects.equals(entity.getId(), dto.getBuildingId())) {   // ID-mismatch check is MANDATORY on update
             String message = messageSource.getMessage(
                 "error.id.cannot.change", null,
                 "ID cannot be changed",

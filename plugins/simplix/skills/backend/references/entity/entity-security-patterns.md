@@ -267,12 +267,12 @@ public class AuditEvent extends BaseEntity<String> {
     private String ipAddress;
 
     @MaskSensitive
-    @Column(name = "user_agent", columnDefinition = "TEXT")
+    @Column(name = "user_agent", length = 1024)
     private String userAgent;
 
     @MaskSensitive
     @Type(JsonType.class)
-    @Column(name = "details", columnDefinition = "TEXT")
+    @Column(name = "details")
     private Map<String, Object> details;
 }
 ```
@@ -373,7 +373,7 @@ private String password;  // BCrypt hash
 
 // Password history for reuse prevention
 @Type(JsonType.class)
-@Column(name = "password_history", columnDefinition = "TEXT")
+@Column(name = "password_history")
 private List<String> passwordHistory;
 
 // Failed attempts tracking
@@ -451,6 +451,7 @@ private String organizationId;
 // Visibility
 @Enumerated(EnumType.STRING)
 @Column(name = "visibility", nullable = false)
+@Builder.Default
 private Visibility visibility = Visibility.PRIVATE;
 ```
 

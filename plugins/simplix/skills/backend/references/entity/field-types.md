@@ -83,16 +83,18 @@ private String channelCode;
 ### Text (Long String)
 
 ```java
-@Column(name = "description", columnDefinition = "TEXT")
+@Column(name = "description", length = 4000)
 private String description;
 ```
 
 ### Rich Text / HTML Content
 
 ```java
-@Column(name = "body", columnDefinition = "TEXT")
+@Column(name = "body", length = Length.LONG32)   // org.hibernate.Length: the engine's longest text type
 private String body;
 ```
+
+A long text is sized by `length`, never by `columnDefinition`: Hibernate then writes each engine's own type for that size (AP-35). A column searched through `lower()` (the search index) stays a sized `length`, because a large-object type cannot be its argument.
 
 ---
 
@@ -103,6 +105,7 @@ private String body;
 ```java
 // Correct - wrapper type
 @Column(name = "active", nullable = false)
+@Builder.Default
 private Boolean active = true;
 
 // Wrong - primitive type (causes issues with DTOs)
@@ -114,6 +117,8 @@ private Boolean active = true;
 - Allows null for optional boolean fields
 - Consistent with other field types
 
+Every initialised field on an entity carries `@Builder.Default`: the entity class carries `@Builder` (`../convention/annotation-ordering.md`), and Lombok's builder ignores an initialiser without it, so an entity built through the builder holds `null` there.
+
 ### Common Boolean Fields
 
 ```java
@@ -122,6 +127,7 @@ private Boolean active = true;
 private Boolean active = true;
 
 @Column(name = "featured")
+@Builder.Default
 private Boolean featured = false;
 
 @Column(name = "published", nullable = false)
@@ -138,6 +144,7 @@ private Boolean published = false;
 ```java
 @Enumerated(EnumType.STRING)
 @Column(name = "status", nullable = false, length = 32)
+@Builder.Default
 private ContentStatus status = ContentStatus.DRAFT;
 ```
 
@@ -153,7 +160,7 @@ All enums MUST implement `LabeledEnum` for i18n support:
 ```java
 package {basePackage}.domain.enums.cms;
 
-import com.simplix.core.i18n.LabeledEnum;
+import dev.simplecore.simplix.<package>.LabeledEnum;   // the framework's interface; take the exact package from the framework jar
 
 public enum ContentStatus implements LabeledEnum {
     DRAFT,
@@ -171,8 +178,10 @@ public enum ContentStatus implements LabeledEnum {
 ### Enum File Location
 
 ```
-modules/domain/.../enums/{module}/{EnumName}.java
+packages/domain-{aggregate}/src/main/java/{basePackage}/domain/enums/{module}/{EnumName}.java
 ```
+
+The owning module and its bundle layout: `base-entity-patterns.md` § Where to Create the Entity File.
 
 **Package Structure:**
 - `enums/cms/` - CMS related enums
@@ -185,19 +194,19 @@ modules/domain/.../enums/{module}/{EnumName}.java
 
 **File Location:**
 ```
-modules/domain/.../resources/messages/enums/{module}/enums-{module}-messages.properties
+packages/domain-{aggregate}/src/main/resources/messages/enums/{module}/enums-{module}-messages.properties
 ```
 
-**Message Format:**
+**Message Format** (the `enums.{SimpleName}.{CONSTANT}` key is invariant #16's, merged across the classpath):
 ```properties
 # Enum type label
-enum.ContentStatus=Content Status
+enums.ContentStatus=Content Status
 
 # Enum value labels
-enum.ContentStatus.DRAFT=Draft
-enum.ContentStatus.PUBLISHED=Published
-enum.ContentStatus.SCHEDULED=Scheduled
-enum.ContentStatus.ARCHIVED=Archived
+enums.ContentStatus.DRAFT=Draft
+enums.ContentStatus.PUBLISHED=Published
+enums.ContentStatus.SCHEDULED=Scheduled
+enums.ContentStatus.ARCHIVED=Archived
 ```
 
 **Multi-language Files:**
@@ -209,11 +218,11 @@ enums-cms-messages_ja.properties   # Japanese
 
 **Korean Example (`enums-cms-messages_ko.properties`):**
 ```properties
-enum.ContentStatus=콘텐츠 상태
-enum.ContentStatus.DRAFT=초안
-enum.ContentStatus.PUBLISHED=발행됨
-enum.ContentStatus.SCHEDULED=예약됨
-enum.ContentStatus.ARCHIVED=보관됨
+enums.ContentStatus=콘텐츠 상태
+enums.ContentStatus.DRAFT=초안
+enums.ContentStatus.PUBLISHED=발행됨
+enums.ContentStatus.SCHEDULED=예약됨
+enums.ContentStatus.ARCHIVED=보관됨
 ```
 
 ### Enum Naming Conventions
@@ -223,7 +232,7 @@ enum.ContentStatus.ARCHIVED=보관됨
 | Enum class | PascalCase: `ContentStatus`, `UserRole` |
 | Enum values | UPPER_SNAKE_CASE: `DRAFT`, `IN_PROGRESS` |
 | Package | lowercase: `enums/cms/`, `enums/user/` |
-| i18n key | `enum.{EnumName}.{VALUE}` |
+| i18n key | `enums.{EnumName}.{VALUE}` (SKILL.md #16) |
 
 ### Common Enum Patterns
 
@@ -303,7 +312,7 @@ private String name;
 
 // Multilingual values as JSON
 @Type(JsonType.class)
-@Column(name = "name_i18n", columnDefinition = "TEXT")
+@Column(name = "name_i18n")
 private Map<String, String> nameI18n;
 ```
 
@@ -314,14 +323,14 @@ private Map<String, String> nameI18n;
 private String title;
 
 @Type(JsonType.class)
-@Column(name = "title_i18n", columnDefinition = "TEXT")
+@Column(name = "title_i18n")
 private Map<String, String> titleI18n;
 
-@Column(name = "description", columnDefinition = "TEXT")
+@Column(name = "description", length = 4000)
 private String description;
 
 @Type(JsonType.class)
-@Column(name = "description_i18n", columnDefinition = "TEXT")
+@Column(name = "description_i18n")
 private Map<String, String> descriptionI18n;
 ```
 
@@ -348,7 +357,7 @@ private void generateSearchIndex() {
 
 ```java
 @Type(JsonType.class)
-@Column(name = "metadata", columnDefinition = "TEXT")
+@Column(name = "metadata")
 private Map<String, Object> metadata;
 ```
 
@@ -356,7 +365,7 @@ private Map<String, Object> metadata;
 
 ```java
 @Type(JsonType.class)
-@Column(name = "tags", columnDefinition = "TEXT")
+@Column(name = "tags")
 private List<String> tags;
 ```
 
@@ -364,7 +373,7 @@ private List<String> tags;
 
 ```java
 @Type(JsonType.class)
-@Column(name = "settings", columnDefinition = "TEXT")
+@Column(name = "settings")
 private ChannelSettings settings;
 ```
 
@@ -494,7 +503,7 @@ private BigDecimal price;
 ### Pattern
 
 ```java
-@Column(name = "search_index", columnDefinition = "TEXT")
+@Column(name = "search_index", length = 4000)
 @NotAudited
 private String searchIndex;
 
@@ -550,7 +559,7 @@ sortOrderConfig:
 | `@Column(nullable = false)` | NOT NULL |
 | `@Column(unique = true)` | Unique constraint |
 | `@Column(length = n)` | VARCHAR length |
-| `@Column(columnDefinition = "TEXT")` | Long text |
+| `@Column(length = Length.LONG32)` | Unbounded text in each engine's own type (never `columnDefinition`, AP-35) |
 | `@Column(precision = p, scale = s)` | Decimal precision |
 | `@NaturalId` | Business key |
 | `@Enumerated(EnumType.STRING)` | Enum as string |

@@ -43,23 +43,14 @@ private CmsChannel channel;
 ### Service Layer Usage
 
 ```java
-// Creating entity - use ID field
-public CmsContent create(CreateRequest request) {
-    CmsContent entity = new CmsContent();
-    entity.setChannelId(request.getChannelId());  // Use ID field
-    entity.setTitle(request.getTitle());
-    return repository.save(entity);
-}
+// Writing the FK - set the ID field; the reference loads on read
+entity.setChannelId(createDTO.getChannelId());
 
-// Reading entity - access via entity field
-public ContentResponse get(String id) {
-    CmsContent entity = repository.findById(id).orElseThrow();
-    return new ContentResponse(
-        entity.getContentId(),
-        entity.getChannel().getName()  // Access via entity field
-    );
-}
+// Reading through the reference - navigate the entity field
+String channelName = entity.getChannel().getName();
 ```
+
+The service around these lines keeps the canonical shape (`../convention/canonical-service.md`).
 
 ---
 
@@ -75,6 +66,7 @@ public ContentResponse get(String id) {
     inverseJoinColumns = @JoinColumn(name = "tag_id")
 )
 @BatchSize(size = 20)
+@Builder.Default
 private Set<CmsTagEntry> tags = new HashSet<>();
 ```
 
@@ -124,6 +116,7 @@ public class CmsContentLink extends BaseEntity<String> {
 ```java
 @OneToMany(mappedBy = "channel", cascade = CascadeType.ALL, orphanRemoval = true)
 @BatchSize(size = 20)
+@Builder.Default
 private List<CmsContent> contents = new ArrayList<>();
 ```
 
@@ -141,6 +134,7 @@ private List<CmsContent> contents = new ArrayList<>();
 // For collections, always use LAZY
 @OneToMany(mappedBy = "channel", fetch = FetchType.LAZY)
 @BatchSize(size = 20)  // Batch loading to avoid N+1
+@Builder.Default
 private List<CmsContent> contents = new ArrayList<>();
 ```
 
@@ -163,6 +157,7 @@ private MyEntity parent;
 
 // Children (for tree display)
 @Transient
+@Builder.Default
 private List<MyEntity> children = new ArrayList<>();
 ```
 
