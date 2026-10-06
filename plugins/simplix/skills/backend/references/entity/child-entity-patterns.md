@@ -9,7 +9,7 @@ When a child entity should NOT be exposed as a separate REST API, internalize it
 - Client always manages children through the parent editor UI
 - No independent search/listing use case for the child
 
-**Typical pairs:** `Schedule → ScheduleInterval`, `DevicePreset → DevicePresetFunction`. Any parent-child pair with no independent API need follows the same pattern.
+**Typical pairs:** `Schedule → ScheduleInterval`, `Order → OrderLine`. Any parent-child pair with no independent API need follows the same pattern.
 
 ## Mandatory Rules
 
@@ -30,18 +30,15 @@ When a child entity should NOT be exposed as a separate REST API, internalize it
 | Child entity class | ☑ | |
 | ChildRepository | ☑ | |
 | Child i18n keys | ☑ | |
-| SyncUnitTableMapping entry | ☑ | |
+| Mappings and mappers outside the CRUD stack that read the child repository | ☑ | |
 | ChildRestController | | ☒ |
 | ChildService | | ☒ |
 | ChildServiceTest | | ☒ |
 | `.simplix/entity/Child.yml` | | ☒ |
 
-## Reference Implementation: DevicePreset -> DevicePresetFunction
+## Precedent
 
-**Files:**
-- Service: `modules/facility-config/src/main/java/{basePackage}/web/facility/device/service/DevicePresetService.java`
-- DTOs: `modules/facility-config/src/main/java/{basePackage}/web/facility/device/dto/DevicePresetDTOs.java`
-- Controller: `modules/facility-config/src/main/java/{basePackage}/web/facility/device/controller/DevicePresetRestController.java`
+Before writing one, read an internalized pair the project already has end to end (SKILL.md #19): the parent service that injects the child repository and reconciles the children, the parent's DTOs carrying the child `ItemDTO` list, and the parent's controller.
 
 ## DTO Structure
 
@@ -282,11 +279,10 @@ When internalizing a previously independent child entity:
 | ChildServiceTest | DELETE |
 | `.simplix/entity/Child.yml` | DELETE (prevent re-generation) |
 | ChildDTOs | Reduce to ItemDTO + DetailDTO only |
-| ChildRepository | KEEP (used by parent service + sync mappers) |
+| ChildRepository | KEEP (used by the parent service and any mapper outside the CRUD stack) |
 | Child entity | KEEP (no changes) |
 | i18n message keys | KEEP (used by @FieldLabel) |
-| SyncUnitTableMapping | KEEP (sync pipeline) |
-| DataMapper (e.g. SU11DataMapper) | KEEP (uses repository directly) |
+| Mappings and mappers outside the CRUD stack that read the child repository | KEEP (they use the repository directly) |
 | Permission strings | Merge into parent permission |
 
 ## Entity Event Considerations

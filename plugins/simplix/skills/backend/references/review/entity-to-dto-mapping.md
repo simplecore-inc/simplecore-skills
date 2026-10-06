@@ -35,7 +35,7 @@ Carry over unchanged:
 | Type | Notes |
 |---|---|
 | `String` | straight copy |
-| `Instant`, `LocalDate`, `LocalDateTime`, `OffsetDateTime` | straight copy; UpdateFormDTO adds `@DateTimeFormat` on audit fields |
+| `Instant`, `LocalDate`, `LocalTime` | straight copy; UpdateFormDTO adds `@DateTimeFormat` on audit fields. The type follows the field's semantic kind (`../entity/field-types.md` § Date/Time Fields); `LocalDateTime` / `OffsetDateTime` / `ZonedDateTime` are banned (#18) |
 | `BigDecimal`, `BigInteger` | straight copy |
 | `Enum` | same enum type (SimpliX resolves labels via `LabeledEnum`) |
 | `Map<String, String>` | used for i18n pairs - see [i18n Pair Handling](#i18n-pair-handling) |
@@ -89,7 +89,7 @@ Detail → `reference-field-patterns.md` (self-reference section).
 
 ## Soft-Delete Fields
 
-Entities opt into soft delete by implementing `SoftDeletable` and declaring `deleted`, `deletedAt` (or `deletedTimestamp`).
+Entities opt into soft delete by implementing `SoftDeletable` and declaring `deleted` and `deletedTimestamp` (`../entity/base-entity-patterns.md` § Soft Delete).
 
 - Excluded from every DTO type that takes user input (Create, Update, UpdateForm, OrderUpdate). The framework manages these fields.
 - BatchUpdateDTO may include them when the admin action "bulk soft-delete" is exposed - treat as a privileged exception.
@@ -101,7 +101,7 @@ At-a-glance: for each entity-field kind, which DTO types include it.
 
 | Entity field kind | Search | Create | Update | UpdateForm | BatchUpdate | Detail | List |
 |---|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
-| PK (`id`) | ☑ | ☒ | ☑ | ☑ | ☒ (Set of IDs instead) | ☑ | ☑ |
+| PK (`{entityName}Id`) | ☑ | ☒ | ☑ | ☑ | ☒ (Set of IDs instead) | ☑ | ☑ |
 | required String/number/enum | ☑ | ☑ (+ validation) | ☑ | ☑ | optional subset | ☑ | ☑ |
 | optional `Boolean` | ☑ | ☑ | ☑ | ☑ | common | ☑ | ☑ |
 | `@ManyToOne` → `refId` | ☑ | ☑ | ☑ | full entity | rarely | full entity | full entity |
@@ -112,7 +112,7 @@ At-a-glance: for each entity-field kind, which DTO types include it.
 | audit (`createdAt/By`, `updatedAt/By`) | ☑ (searchable) | ☒ | ☒ | ☑ (display) | ☒ | ☑ | ☑ |
 | tree `children` | ☒ | ☒ | ☒ | ☒ | ☒ | ☒ | ☑ (tree entity) |
 | tree `depth` / `path` | ☑ | ☒ | ☒ | ☑ | ☒ | ☑ | ☑ |
-| soft-delete (`deleted`, `deletedAt`) | ☑ | ☒ | ☒ | ☒ | privileged | usually ☒ | usually ☒ |
+| soft-delete (`deleted`, `deletedTimestamp`) | ☑ | ☒ | ☒ | ☒ | privileged | usually ☒ | usually ☒ |
 
 Validation annotations, `@FieldLabel`, `@Schema`, `@SearchableField`, `@JsonIncludeProperties`, `@I18nTrans`/`@JsonIgnore` pairs are **not** in this table - each is owned by its specialist file.
 

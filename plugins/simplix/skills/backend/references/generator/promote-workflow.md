@@ -44,6 +44,9 @@ yo simplix:promote EntityName
 yo simplix:promote EntityName --force
 ```
 
+With `--force`, the form this handbook uses, promote overwrites `src/` without asking; without it,
+a file that already exists in `src/` is skipped. Either way the collision check below comes first.
+
 **IMPORTANT**: Always use `yo simplix:promote` instead of manual file operations. The command ensures:
 - Files are deleted from `generated/` after copying (no duplicate classes)
 - Proper directory structure is created
@@ -64,7 +67,7 @@ count. Four promoted files is the normal shape for an entity with no optional pa
 
 ## Before generating: the collision check (MANDATORY)
 
-**`yo simplix:promote` OVERWRITES `src/` files silently.** Before generating an entity `X`,
+**`yo simplix:promote --force` OVERWRITES `src/` files silently** (§ Usage). Before generating an entity `X`,
 verify no hand-authored `X{Service,RestController,DTOs}` already exists in the target
 `modulePath` package. `yo simplix:generate X` + `promote` will clobber a same-named
 hand-written `XService` - a lifecycle or action service, say - with a generated CRUD one and
@@ -82,8 +85,8 @@ constructor or leaves a dangling body. Remove one endpoint method at a time - Ja
 annotations and body as a unit - and compile after each.
 
 For an append-only audit or history entity, trim the writes down to a read surface (keep `get`
-+ `search`). Re-apply `@RequiresFeature` and a real `@Tag` description after any
-re-generation; regeneration wipes both.
++ `search`). Re-apply the project's feature-gate annotation, if it has one, and a real `@Tag`
+description after any re-generation; regeneration wipes both.
 
 ## After generating: the promoted service test goes stale with the service
 
@@ -91,6 +94,20 @@ The promoted `*ServiceTest` references the generated CRUD DTOs and methods. If t
 converted to non-CRUD, or generated DTOs are deleted, **delete or rewrite that test in the same
 step** - a stale generated test fails for a reason that has nothing to do with the change
 being made.
+
+## After promoting: the permission target and the tag
+
+The controller template emits the entity name as the permission target
+(`hasPermission('<Entity>', '<action>')`). Invariant #9 forbids a per-entity target, and the
+audit's `permission-target-not-group` fails every endpoint that keeps it, so rewrite each target to
+the feature-area group the related controllers already share: grep the existing `hasPermission('`
+targets, and where the project keeps its own group table, that table wins. A project can instead
+make its copy of `.simplix/templates/controller/rest/EntityRestController.java.template` emit its
+group.
+
+Check the generated `@Tag(name)` in the same pass: it is the domain namespace
+`{module}.{subdomain}.{Entity}` with no `web` segment (#10; the audit's
+`tag-java-package-namespace` fails one).
 
 ## Post-Promote Verification
 
@@ -111,5 +128,7 @@ find generated -name "EntityName*" -type f
 
 - [ ] Run `yo simplix:promote EntityName --force`
 - [ ] Verify no files remain in `generated/` for the entity
+- [ ] Every `hasPermission` target rewritten to the feature-area group (#9), and the `@Tag` free of a `web` segment (#10)
+- [ ] `node "${CLAUDE_PLUGIN_ROOT}/scripts/audit-backend.mjs"` reports 0 error-level hits on the promoted files
 - [ ] Build passes (no duplicate class errors)
 - [ ] Tests pass

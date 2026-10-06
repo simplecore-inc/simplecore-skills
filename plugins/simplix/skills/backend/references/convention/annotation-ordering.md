@@ -25,7 +25,8 @@ Exact annotation order for each component type. Derived from SimpliX generator t
 )
 @SQLDelete(sql = "UPDATE table_name"                  // 6. Soft delete SQL
     + SoftDeletable.SQL_SOFT_DELETE_SET
-    + "id = ?" + SoftDeletable.SQL_VERSION_CHECK)
+    + "entity_name_id = ?"                            //    the PK column (field-types.md § ID Field)
+    + SoftDeletable.SQL_VERSION_CHECK)
 @Filter(name = SoftDeletable.FILTER_NAME,             // 7. Soft delete filter
     condition = "deleted = :isDeleted")
 @Getter                                               // 8. Lombok getter
@@ -38,16 +39,16 @@ public class EntityName extends BaseEntity<String> implements SoftDeletable {
 
 ### Entity Field Annotations
 
-**ID field (always this exact set):**
+**ID field (always this exact set; the names follow `../entity/field-types.md` § ID Field):**
 ```java
 @Id                                                   // 1
 @GeneratedValue(strategy = GenerationType.UUID,       // 2
     generator = "uuid-v7")
 @UuidV7Generator                                      // 3
-@Column(name = "id", nullable = false,                // 4
+@Column(name = "entity_name_id", nullable = false,    // 4  {entity_name}_id
     unique = true, updatable = false)
 @Comment("Unique identifier")                         // 5
-private String id;
+private String entityNameId;                          //    {entityName}Id, with the getId()/setId() overrides
 ```
 
 **Regular field:**
@@ -110,7 +111,7 @@ public class EntityNameRestController
 @PostMapping("/create")                               // 1. HTTP mapping
 @Operation(summary = "Create EntityName",             // 2. OpenAPI
     description = "Creates a new EntityName")
-@PreAuthorize("hasPermission('EntityName', 'create')")// 3. Security
+@PreAuthorize("hasPermission('<FEATURE_AREA>', 'create')") // 3. Security
 public SimpliXApiResponse<EntityNameDetailDTO> create(
     @RequestBody @Validated EntityNameCreateDTO createDto) {
 ```
@@ -121,7 +122,7 @@ public SimpliXApiResponse<EntityNameDetailDTO> create(
 @Operation(summary = "Update EntityName Orders",      // 2
     description = "Updates the order of multiple entities")
 @SimpliXStandardApi                                   // 3. Standard API marker
-@PreAuthorize("hasPermission('EntityName', 'edit')")  // 4
+@PreAuthorize("hasPermission('<FEATURE_AREA>', 'edit')") // 4
 public SimpliXApiResponse<List<EntityNameDetailDTO>> updateOrder(...)
 ```
 
@@ -225,9 +226,9 @@ public static class EntityNameUpdateDTO
     extends EntityNameCreateDTO {
 
     @Schema(description = "Entity ID")                // 1
-    @FieldLabel("{entities.EntityName.id}")            // 2
+    @FieldLabel("{entities.EntityName.entityNameId}")  // 2
     @NotBlank(message = "ID is required")             // 3
-    private String id;
+    private String entityNameId;
 ```
 
 ### DetailDTO / ListDTO
@@ -257,4 +258,4 @@ public static class EntityNameDetailDTO {
 | Event name | `{ENTITY_SCREAMING_SNAKE}_{ACTION}` | `CREDENTIAL_CREATED` |
 | Request path | `/kebab-case` | `/access-point`, `/sync/execution` |
 | `@Tag` name | `{module}.{subdomain}.{Name}` | `facility.identity.Credential` |
-| Permission | `hasPermission('{EntityName}', '{action}')` | `hasPermission('Credential', 'create')` |
+| Permission | `hasPermission('{FEATURE_AREA}', '{action}')`, the UPPER_SNAKE feature-area group (SKILL.md #9) | `hasPermission('FACILITY_IDENTITY', 'create')` |

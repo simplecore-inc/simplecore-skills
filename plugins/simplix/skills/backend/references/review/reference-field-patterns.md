@@ -210,14 +210,16 @@ public class CmsContent {
 
 ### DTO Rule
 
-When entity has both:
-- Use explicit ID field in DTO
-- Skip generating ID from reference
+When the entity has both, the DTO role decides (§ Overview):
+
+- **Search, Create, Update and BatchUpdate DTOs** carry the explicit ID field only, and never derive it from the reference:
 
 ```java
 // Only channelId, not channel -> channelId conversion
 private String channelId;
 ```
+
+- **UpdateForm, Detail and List DTOs** keep the reference object, restricted with `@JsonIncludeProperties` (§ @JsonIncludeProperties Pattern). The frontend's detail and form screens read the nested object, so it is never flattened to the bare id there.
 
 ---
 
@@ -352,7 +354,7 @@ public class CmsContent {
 @Setter
 public static class CmsContentSearchDTO {
 
-    @SearchableField(operators = {EQUALS})
+    @SearchableField(operators = {EQUALS, IN}, sortable = true)   // the entity's own id: the PK contract
     private String contentId;
 
     // @ManyToOne -> nested path
@@ -481,7 +483,7 @@ private CmsChannel channel;
 private String channelId;  // Both exist
 ```
 
-**DTO Fix**: Use only one (prefer explicit ID)
+**DTO Fix**: Search, Create, Update and BatchUpdate DTOs keep only the explicit ID; UpdateForm, Detail and List DTOs keep the object (§ Explicit ID Field Detection).
 
 ---
 

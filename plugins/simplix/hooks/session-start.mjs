@@ -44,11 +44,25 @@ function buildContext(report) {
   if (!report.wired) {
     const missing = [];
     if (!report.routedBy) missing.push("no CLAUDE.md or AGENTS.md routes to these skills");
+    const keys = (list) => list.map((k) => `\`${k}\``).join(" or ");
     for (const m of report.matches) {
       const where = m.dir === "." ? "this directory" : `\`${m.dir}/\``;
-      if (!m.skillGate) missing.push(`${where} has no skill gate armed, so an edit written from memory is not refused`);
+      if (m.gateConfigInvalid) {
+        missing.push(`${where} has a \`.claude/simplix.json\` that does not parse, so no gate it declares is armed`);
+      }
+      if (!m.skillGate) {
+        missing.push(
+          m.skillGateMissing?.length
+            ? `${where} declares a skill gate without ${keys(m.skillGateMissing)}, so it refuses no edit`
+            : `${where} has no skill gate armed, so an edit written from memory is not refused`,
+        );
+      }
       if (m.kind === "frontend" && !m.e2eGate) {
-        missing.push(`${where} has no e2e gate armed, so a session can change screens and end without any of them being opened in a browser`);
+        missing.push(
+          m.e2eGateMissing?.length
+            ? `${where} declares an e2e gate without ${keys(m.e2eGateMissing)}, so it never stops a session`
+            : `${where} has no e2e gate armed, so a session can change screens and end without any of them being opened in a browser`,
+        );
       }
     }
     lines.push("");

@@ -2,7 +2,7 @@
 
 Customizing SimpliX generator `.java.template` files.
 
-> **Scope (canonical):** EJS syntax inside `.java.template` files, template variable reference, template paths under `.simplix/templates/`, regeneration workflow after editing. For generator-level commands see SKILL.md's Decision Tree; for runtime generator errors see **troubleshooting.md**; for YML config passed to templates see `../entity/yml-configuration.md`.
+> **Scope (canonical):** EJS syntax inside `.java.template` files, template variable reference, template paths under `.simplix/templates/`, regeneration workflow after editing. For generator-level commands see **promote-workflow.md** and `../entity/yml-configuration.md` § Code Generation; for runtime generator errors see **troubleshooting.md**; for YML config passed to templates see `../entity/yml-configuration.md`.
 
 ---
 
@@ -144,7 +144,7 @@ import <%= packagePaths['service'] %>.<%= entityName %>Service;
 
 @RestController
 @RequestMapping("/<%= templatePath %>")
-@Tag(name = "<%= packagePaths['controllerRest'].substring(basePackage.length + 1).replace(/\.controller$/, '') %>.<%= entityName %>")  // -> {module}.{subdomain}.{Entity}, e.g. facility.identity.Credential
+@Tag(name = "<%= packagePaths['controllerRest'].substring(basePackage.length + 1).replace(/\.controller$/, '') %>.<%= entityName %>")  // must come out as {module}.{subdomain}.{Entity} (#10)
 public class <%= entityName %>RestController extends SimpliXBaseController<<%= entityName %>, String> {
 
     private final <%= entityName %>Service service;
@@ -161,9 +161,11 @@ public class <%= entityName %>RestController extends SimpliXBaseController<<%= e
         return SimpliXApiResponse.success(service.create(createDto));
     }
 
-    // ... 10 more endpoints: update, multiUpdate, delete, get, updateForm, batchUpdate, batchDelete, [updateOrder], simpleSearch, search
+    // ... the other endpoints: update, multiUpdate, delete, get, updateForm, batchUpdate, batchDelete, [updateOrder], simpleSearch, search
 }
 ```
+
+> The template names the permission target after the entity (`'<%= entityName %>'`), which invariant #9 forbids. Whether its `@Tag` expression drops the `web` segment depends on what the generator passes as `basePackage`: with the project's base package and `packagePaths['controllerRest']` as in the first line, it yields `web.{module}.{subdomain}.{Entity}`, which #10 forbids. `promote-workflow.md` § After promoting rewrites both.
 
 ---
 

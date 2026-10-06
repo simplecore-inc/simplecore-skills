@@ -23,7 +23,7 @@ public ResponseEntity<EntityDTO> get(@PathVariable String id) {
 // CORRECT
 @GetMapping("/{id}")
 @Operation(summary = "Get EntityName")
-@PreAuthorize("hasPermission('EntityName', 'view')")
+@PreAuthorize("hasPermission('<FEATURE_AREA>', 'view')")
 public SimpliXApiResponse<EntityNameDetailDTO> get(@PathVariable String id) {
     return service.findById(id, EntityNameDetailDTO.class)
         .map(SimpliXApiResponse::success)
@@ -75,7 +75,7 @@ public SimpliXApiResponse<EntityNameDetailDTO> create(@RequestBody @Validated En
 // CORRECT
 @PostMapping("/create")
 @Operation(summary = "Create EntityName")
-@PreAuthorize("hasPermission('EntityName', 'create')")    // MANDATORY
+@PreAuthorize("hasPermission('<FEATURE_AREA>', 'create')")    // MANDATORY
 public SimpliXApiResponse<EntityNameDetailDTO> create(@RequestBody @Validated EntityNameCreateDTO dto) {
     return SimpliXApiResponse.success(service.create(dto));
 }
@@ -153,15 +153,14 @@ throw new IllegalArgumentException("Entity not found: " + id);
 throw new RuntimeException("ID mismatch");
 throw new ResponseStatusException(HttpStatus.NOT_FOUND);
 
-// CORRECT
-throw new SimpliXGeneralException(ErrorCode.GEN_NOT_FOUND,
-    messageSource.getMessage("error.entity.not.found",
-        new Object[]{"EntityName", id}, "EntityName not found: " + id,
-        LocaleContextHolder.getLocale()), null);
+// CORRECT - a {error.*} placeholder, resolved at the HTTP layer (invariant 3)
+throw new SimpliXGeneralException(ErrorCode.GEN_NOT_FOUND, "{error.<domain>.notFound}", null);
 
+throw new SimpliXGeneralException(ErrorCode.GEN_CONFLICT, "{error.<domain>.idCannotChange}", null);
+
+// CORRECT - a message that carries arguments is resolved at throw time (invariant 3)
 throw new SimpliXGeneralException(ErrorCode.GEN_CONFLICT,
-    messageSource.getMessage("error.id.cannot.change", null,
-        "ID cannot be changed", LocaleContextHolder.getLocale()), null);
+    MessageUtils.get("error.<domain>.entityInUse", refs), null);
 ```
 
 ---
@@ -176,7 +175,7 @@ private boolean active;
 private Boolean active;
 ```
 
-This applies to ALL DTOs. Entity can use primitive `boolean` with `@Builder.Default`, but DTOs must always use wrapper `Boolean`.
+This applies to ALL DTOs, and entities use the wrapper too (`../entity/field-types.md` § Boolean Fields).
 
 ---
 
@@ -196,10 +195,9 @@ private String name;
 private String name;
 ```
 
-`@FieldLabel` is required on:
+`@FieldLabel` is required on (invariant #12, checked by the audit's `missing-field-label`):
 - SearchDTO fields (after `@Schema`)
-- CreateDTO fields (after `@Schema`)
-- BatchUpdateDTO fields (after `@Schema`)
+- CreateDTO fields (after `@Schema`), which the UpdateDTO and UpdateFormDTO inherit
 
 ### Which message key to use
 
@@ -235,15 +233,9 @@ Why: `{field.*}` is reserved for truly generic field names. A virtual field that
 // WRONG — writing CRUD manually
 // Claude: "I'll create the service, controller, and DTOs for you..."
 
-// CORRECT workflow:
-// 1. Create Entity class in packages/domain-*/
-// 2. Add i18n messages
-// 3. ./gradlew :packages:domain-<aggregate>:test
-// 4. yo simplix:config EntityName --force
-// 5. Edit .simplix/entity/EntityName.yml
-// 6. yo simplix:generate EntityName --force
-// 7. yo simplix:promote EntityName --force
-// 8. Customize promoted code
+// CORRECT - generate, promote, then customize, in the step order that
+// ../entity/yml-configuration.md § Creating YML Configuration owns
+// (the promote half: ../generator/promote-workflow.md)
 ```
 
 ---
@@ -371,13 +363,13 @@ private String name;
 ```java
 // WRONG — no OpenAPI documentation
 @GetMapping("/{id}")
-@PreAuthorize("hasPermission('EntityName', 'view')")
+@PreAuthorize("hasPermission('<FEATURE_AREA>', 'view')")
 public SimpliXApiResponse<EntityNameDetailDTO> get(@PathVariable String id) { ... }
 
 // CORRECT
 @GetMapping("/{id}")
 @Operation(summary = "Get EntityName", description = "Retrieves EntityName by ID")
-@PreAuthorize("hasPermission('EntityName', 'view')")
+@PreAuthorize("hasPermission('<FEATURE_AREA>', 'view')")
 public SimpliXApiResponse<EntityNameDetailDTO> get(@PathVariable String id) { ... }
 ```
 
@@ -388,14 +380,14 @@ public SimpliXApiResponse<EntityNameDetailDTO> get(@PathVariable String id) { ..
 ```java
 // WRONG — @PreAuthorize before @Operation
 @GetMapping("/{id}")
-@PreAuthorize("hasPermission('EntityName', 'view')")
+@PreAuthorize("hasPermission('<FEATURE_AREA>', 'view')")
 @Operation(summary = "Get EntityName")
 public SimpliXApiResponse<EntityNameDetailDTO> get(@PathVariable String id) { ... }
 
 // CORRECT — @XxxMapping → @Operation → @PreAuthorize
 @GetMapping("/{id}")
 @Operation(summary = "Get EntityName", description = "Retrieves EntityName by ID")
-@PreAuthorize("hasPermission('EntityName', 'view')")
+@PreAuthorize("hasPermission('<FEATURE_AREA>', 'view')")
 public SimpliXApiResponse<EntityNameDetailDTO> get(@PathVariable String id) { ... }
 ```
 
@@ -404,10 +396,10 @@ public SimpliXApiResponse<EntityNameDetailDTO> get(@PathVariable String id) { ..
 ## AP-18: Missing Audit Fields in DTO
 
 ```java
-// WRONG — DetailDTO/ListDTO missing audit fields
+// WRONG - DetailDTO/ListDTO missing audit fields
 @Data
 public static class EntityNameDetailDTO {
-    private String id;
+    private String entityNameId;
     private String name;
     // Missing: createdBy, createdAt, updatedBy, updatedAt
 }
@@ -415,7 +407,7 @@ public static class EntityNameDetailDTO {
 // CORRECT
 @Data
 public static class EntityNameDetailDTO {
-    private String id;
+    private String entityNameId;
     private String name;
 
     //----------
@@ -465,7 +457,7 @@ Include contextually useful fields (ID + name + any fields the frontend needs fo
 // WRONG — UpdateDTO does not extend CreateDTO
 @Data
 public static class EntityNameUpdateDTO {
-    private String id;
+    private String entityNameId;
     private String name;
     private String description;
     // Duplicates all CreateDTO fields
@@ -476,9 +468,9 @@ public static class EntityNameUpdateDTO {
 @EqualsAndHashCode(callSuper = true)
 public static class EntityNameUpdateDTO extends EntityNameCreateDTO {
     @Schema(description = "Entity ID")
-    @FieldLabel("{entities.EntityName.id}")
+    @FieldLabel("{entities.EntityName.entityNameId}")
     @NotBlank(message = "ID is required")
-    private String id;
+    private String entityNameId;
 }
 ```
 
@@ -494,11 +486,11 @@ public SimpliXApiResponse<AuditEntryDTO> getAuditEntry(...)
 // WRONG — arbitrary authority string
 @PreAuthorize("hasAuthority('SUPER_USER')")
 
-// CORRECT — entity-action permission (matches generator output + seed data)
-@PreAuthorize("hasPermission('ControlAudit', 'view')")
+// CORRECT - the feature-area group permission (invariant #9)
+@PreAuthorize("hasPermission('<FEATURE_AREA>', 'view')")
 ```
 
-**Why**: the project's permission infrastructure is seeded from `@PreAuthorize("hasPermission(Entity, action)")` annotations at startup. Role-based guards (`hasRole`, `hasAuthority`) bypass that registry, leaving permissions unmanageable through the admin UI and breaking the frontend permission-sync automation.
+**Why**: the project's permission infrastructure is seeded from the `@PreAuthorize("hasPermission('<FEATURE_AREA>', '<action>')")` annotations at startup. Role-based guards (`hasRole`, `hasAuthority`) bypass that registry, leaving permissions unmanageable through the admin UI and breaking the frontend permission-sync automation.
 
 **Only acceptable non-`hasPermission` expressions**: `permitAll()` (public endpoint) and `isAuthenticated()` (user-self access). Everything else is a violation.
 
@@ -519,7 +511,7 @@ public SimpliXApiResponse<Dto> get(@PathVariable Long id) { ... }
 public SimpliXApiResponse<AuditEntryDTO> getAuditEntry(@PathVariable String commandId) { ... }
 ```
 
-**Why**: Invariant 4/5 and the CRUD Layer Stack table (SKILL.md:139-145) mandate `String` for every ID. Accepting `UUID`/`Long` at the edge forces binding-layer conversion, diverges from generator output, and makes the URL shape inconsistent across endpoints.
+**Why**: invariant #17e and SKILL.md § CRUD Layer Stack mandate `String` for every ID. Accepting `UUID`/`Long` at the edge forces binding-layer conversion, diverges from generator output, and makes the URL shape inconsistent across endpoints.
 
 ---
 
@@ -529,7 +521,7 @@ public SimpliXApiResponse<AuditEntryDTO> getAuditEntry(@PathVariable String comm
 // WRONG — verbose, not produced by any SimpliX template
 @GetMapping("/{id}")
 @Operation(summary = "Get entity")
-@PreAuthorize("hasPermission('Entity', 'view')")
+@PreAuthorize("hasPermission('<FEATURE_AREA>', 'view')")
 @ApiResponses({
     @ApiResponse(responseCode = "200", description = "OK"),
     @ApiResponse(responseCode = "404", description = "Not found")
@@ -539,7 +531,7 @@ public SimpliXApiResponse<Dto> get(@PathVariable String id) { ... }
 // CORRECT — @Operation alone; the global ResponseEntityExceptionHandler documents errors
 @GetMapping("/{id}")
 @Operation(summary = "Get entity", description = "Retrieves entity by ID")
-@PreAuthorize("hasPermission('Entity', 'view')")
+@PreAuthorize("hasPermission('<FEATURE_AREA>', 'view')")
 public SimpliXApiResponse<Dto> get(@PathVariable String id) { ... }
 ```
 
@@ -634,7 +626,7 @@ private String activationDate;
 @SearchableField(entityField = "activationDate", operators = {BETWEEN, GREATER_THAN, LESS_THAN}, sortable = true)
 private String activationDate;
 
-// CORRECT — semantic type stored; the wire string is produced at the SU mapper
+// CORRECT - semantic type stored; the wire string is produced by the outbound mapper
 @Column(name = "activation_date")
 private Instant activationDate;
 ```
@@ -648,13 +640,13 @@ private Instant activationDate;
 LocalDate today = LocalDate.now();
 Instant dayStart = date.atStartOfDay(ZoneId.systemDefault()).toInstant();
 
-// CORRECT — resolve the zone from the hierarchy (site → policy → app timezone)
+// CORRECT - resolve the zone from the narrowest owner the project models, falling back to the app timezone
 ZoneId zone = policyResolver.resolveTimeZone(userAccountId);
 LocalDate today = LocalDate.now(zone);
 Instant dayStart = date.atStartOfDay(zone).toInstant();
 ```
 
-**Why**: date attribution ("which day does this punch/visit/review belong to") must follow the SITE's clock, not the server container's. Argless `now()` and `ZoneId.systemDefault()` silently change results between deployments (cloud containers default to UTC) and are wrong for every site whose timezone differs from the server's. `Instant.now()` is zone-free and always fine. This rule binds ALL Java code including schedulers and infrastructure - invariant #18 is not covered by the infra exemption. Zone hierarchy and the timezone-literal ban: `../entity/field-types.md` § Zone handling in services.
+**Why**: date attribution ("which day does this punch/visit/review belong to") must follow the clock of the place the record belongs to (a site, where the project models one), not the server container's. Argless `now()` and `ZoneId.systemDefault()` silently change results between deployments (cloud containers default to UTC) and are wrong for every place whose timezone differs from the server's. `Instant.now()` is zone-free and always fine. This rule binds ALL Java code including schedulers and infrastructure - invariant #18 is not covered by the infra exemption. Zone hierarchy and the timezone-literal ban: `../entity/field-types.md` § Zone handling in services.
 
 ## AP-29: Entity Mutation Discarded by a `clearAutomatically` Bulk Op
 
@@ -749,13 +741,13 @@ private void rejectIfInUse(String id) {
 }
 ```
 
-**Why**: four rules converge here. **(1) "If there is no reason to block, ALLOW."** A delete guard exists only where a real reference or a legal/audit reason blocks it; "just in case" is not a reason - a screen missing its delete because nobody wired it is a defect, not caution. **(2) Concrete reason, not generic.** The block message names WHAT references it and HOW MANY (`"signed by {0} members and required by {1} plan types"`), args-bearing, resolved via `messageSource.getMessage` at throw time (clone the established `rejectIfInUse` precedent), every locale filled - a generic integrity message strands the operator. **(3) Order - before the delete.** A reference guard, a token revoke, and the audit record all read the row or its ids; after `em.remove`/`deleteById` those values are gone, so the revoke/audit targets a vanished row and silently no-ops or NPEs. Guard and record BEFORE `deleteById`; `forEach(rejectIfInUse)` BEFORE `deleteAllByIds`. **(4) A record that must never be user-deleted** (a legal signature, an audit row) removes its DELETE endpoint entirely - full removal only via the anonymization/purge path - rather than guarding a delete that should not exist. Symptom of a too-late side-effect: the delete succeeds but the token stays live / the audit trail has no removal event.
+**Why**: four rules converge here. **(1) "If there is no reason to block, ALLOW."** A delete guard exists only where a real reference or a legal/audit reason blocks it; "just in case" is not a reason - a screen missing its delete because nobody wired it is a defect, not caution. **(2) Concrete reason, not generic.** The block message names WHAT references it and HOW MANY (`"signed by {0} members and required by {1} plan types"`), args-bearing, so resolved at throw time as invariant #3 allows (clone the project's established `rejectIfInUse` precedent), every locale filled - a generic integrity message strands the operator. **(3) Order - before the delete.** A reference guard, a token revoke, and the audit record all read the row or its ids; after `em.remove`/`deleteById` those values are gone, so the revoke/audit targets a vanished row and silently no-ops or NPEs. Guard and record BEFORE `deleteById`; `forEach(rejectIfInUse)` BEFORE `deleteAllByIds`. **(4) A record that must never be user-deleted** (a legal signature, an audit row) removes its DELETE endpoint entirely - full removal only via the anonymization/purge path - rather than guarding a delete that should not exist. Symptom of a too-late side-effect: the delete succeeds but the token stays live / the audit trail has no removal event.
 
 ## AP-33: Orphaned i18n Keys on Entity/Enum Removal; Unsafe Homonym Deletion
 
 ```bash
 # WRONG — delete the entity/enum Java in one commit, its message bundles in the next:
-#   EntityMessageTranslationTest / EnumMessageTranslationTest go RED the instant the class is
+#   the translation-coverage tests (e.g. EntityMessageTranslationTest / EnumMessageTranslationTest) go RED the instant the class is
 #   gone while entities.X.* / enums.Y.* keys remain (orphan keys), so the intermediate commit
 #   cannot build.
 # WRONG — a feature-removal grep of a polysemous term matches unrelated features:
@@ -767,7 +759,7 @@ grep -rEn 'DeliveryRecord|deliveryRecord|delivery_records|[Dd]eliveryMatcher' \
   --include='*.java' --include='*.properties' | grep -vE '/build/|/generated/'
 ```
 
-**Why**: the orphan-key translation tests treat every `entities.*` / `enums.*` key with no backing `@FieldLabel` / enum value as an orphan and fail the build. So a removal that splits the Java change (entity/enum class) from the message-bundle change into separate commits cannot produce a green intermediate - it violates "never commit a broken build". Fold the bundle removal into the same commit as the class deletion; symmetrically, a NEW enum value needs its `enums/*.properties` label in every locale in the same commit that adds the value, or `EnumMessageTranslationTest` fails. For feature removal, a polysemous identifier (a word used by several features) makes a bare `grep -ri` report false positives from siblings; use a symbol-precise `grep -E` (never `-i`), exclude `/build/` `/generated/` and plan docs, and enumerate the homonyms to KEEP before deleting - the only safe basis for judging "fully removed" is a pattern that matches the target and nothing else.
+**Why**: the orphan-key translation tests treat every `entities.*` / `enums.*` key with no backing `@FieldLabel` / enum value as an orphan and fail the build. So a removal that splits the Java change (entity/enum class) from the message-bundle change into separate commits cannot produce a green intermediate - it violates "never commit a broken build". Fold the bundle removal into the same commit as the class deletion; symmetrically, a NEW enum value needs its `enums/*.properties` label in every locale in the same commit that adds the value, or the project's enum translation test (e.g. `EnumMessageTranslationTest`) fails. For feature removal, a polysemous identifier (a word used by several features) makes a bare `grep -ri` report false positives from siblings; use a symbol-precise `grep -E` (never `-i`), exclude `/build/` `/generated/` and plan docs, and enumerate the homonyms to KEEP before deleting - the only safe basis for judging "fully removed" is a pattern that matches the target and nothing else.
 
 ## AP-34: A `@NaturalId` Column the Update Path Still Accepts
 

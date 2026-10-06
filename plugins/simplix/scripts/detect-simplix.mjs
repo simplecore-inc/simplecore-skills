@@ -18,6 +18,7 @@
  */
 
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 
@@ -72,6 +73,17 @@ function subdirs(dir) {
   }
 }
 
+/**
+ * Gradle or properties text with its comments removed: block comments, line comments (a `//` that
+ * is not part of a `://` URL), and `#` comment lines.
+ */
+function withoutBuildComments(text) {
+  return text
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/(^|[^:])\/\/[^\n]*/g, "$1")
+    .replace(/^\s*#[^\n]*/gm, "");
+}
+
 /** Backend markers, strongest first. Empty when the directory is not one. */
 function backendMarkers(dir) {
   const found = [];
@@ -83,8 +95,11 @@ function backendMarkers(dir) {
   const settings = GRADLE_FILES.slice(0, 2).find((n) => fs.existsSync(path.join(dir, n)));
   if (settings) {
     // Only a Gradle ROOT (one that carries settings.gradle) counts, so the
-    // submodules below it are never reported as separate subprojects.
-    const declaresSimplix = GRADLE_FILES.some((n) => /simplix/i.test(readIfPresent(path.join(dir, n)) ?? ""));
+    // submodules below it are never reported as separate subprojects. Comments are
+    // dropped first: a note that mentions the framework declares nothing.
+    const declaresSimplix = GRADLE_FILES.some((n) =>
+      /simplix/i.test(withoutBuildComments(readIfPresent(path.join(dir, n)) ?? "")),
+    );
     if (declaresSimplix) found.push(`${settings} declares a simplix dependency`);
   }
 
@@ -224,10 +239,38 @@ function detect(root) {
   return results;
 }
 
-/** The first CLAUDE.md/AGENTS.md at or under root that already routes to the skills. */
+/**
+ * The directories above `start`, nearest first, up to and including the repository root (the
+ * first one holding `.git`), and never the home directory or above it.
+ *
+ * A session opened inside a monorepo subproject still answers to the routing block that
+ * `/simplix:init` writes at the repository root, so the routing search reaches it. The home
+ * directory is excluded on purpose: `~/.claude/CLAUDE.md` holds the global block, which is not
+ * this repository's routing.
+ *
+ * @param start the scanned root
+ * @returns absolute directory paths
+ */
+function ancestorsToRepoRoot(start) {
+  const home = os.homedir();
+  const out = [];
+  let dir = start;
+  while (!fs.existsSync(path.join(dir, ".git"))) {
+    const parent = path.dirname(dir);
+    if (parent === dir || parent === home) break;
+    out.push(parent);
+    dir = parent;
+  }
+  return out;
+}
+
+/**
+ * The first CLAUDE.md/AGENTS.md that already routes to the skills: at the root, in a matched
+ * subproject, or in a directory above the root up to the repository root.
+ */
 function routingDocument(root, matchedDirs) {
   const candidates = new Set();
-  for (const dir of [root, ...matchedDirs]) {
+  for (const dir of [root, ...matchedDirs, ...ancestorsToRepoRoot(root)]) {
     candidates.add(path.join(dir, "CLAUDE.md"));
     candidates.add(path.join(dir, ".claude", "CLAUDE.md"));
     candidates.add(path.join(dir, "AGENTS.md"));
@@ -251,22 +294,39 @@ function gatesOf(dir) {
   const file = path.join(dir, ".claude", "simplix.json");
   const raw = readIfPresent(file);
   if (!raw) return { skillGate: false, e2eGate: false };
+  let config;
   try {
-    const config = JSON.parse(raw);
-    return {
-      skillGate: Array.isArray(config.skillGate?.skills) && config.skillGate.skills.length > 0,
-      e2eGate: Boolean(config.e2eGate?.skill),
-    };
-  } catch {
-    return { skillGate: false, e2eGate: false };
+    config = JSON.parse(raw);
+  } catch (e) {
+    if (!(e instanceof SyntaxError)) throw e;
+    return { skillGate: false, e2eGate: false, gateConfigInvalid: true };
   }
+  // A gate refuses nothing until every key its hook reads is present: skill-gate.mjs needs a
+  // skill list AND source directories, e2e-gate.mjs a skill AND UI directories. A section with
+  // only half of them reads as armed and never fires, so it is reported by what it lacks.
+  const listed = (v) => Array.isArray(v) && v.length > 0;
+  const skillGateMissing = config?.skillGate
+    ? ["skills", "sourceDirs"].filter((k) => !listed(config.skillGate[k]))
+    : [];
+  const e2eGateMissing = config?.e2eGate
+    ? [config.e2eGate.skill ? null : "skill", listed(config.e2eGate.uiDirs) ? null : "uiDirs"].filter(Boolean)
+    : [];
+  return {
+    skillGate: Boolean(config?.skillGate) && skillGateMissing.length === 0,
+    e2eGate: Boolean(config?.e2eGate) && e2eGateMissing.length === 0,
+    ...(skillGateMissing.length ? { skillGateMissing } : {}),
+    ...(e2eGateMissing.length ? { e2eGateMissing } : {}),
+  };
 }
 
 /**
  * Analyze a directory tree. Returns
  * `{ root, frameworkRepo, matches: [{kind, dir, markers, skillGate, e2eGate}], skills, routedBy, wired }`
- * with every `dir` relative to `root`. `wired` is true when the routing document exists and
- * every subproject has armed the gates that apply to it.
+ * with every `dir` relative to `root`. A match also carries `skillGateMissing` / `e2eGateMissing`
+ * (the keys a declared gate lacks) and `gateConfigInvalid` (its `.claude/simplix.json` does not
+ * parse) when they apply. `routedBy` may point above `root`, up to the repository root. `wired`
+ * is true when the routing document exists and every subproject has armed the gates that apply
+ * to it.
  */
 export function analyze(root) {
   const resolved = path.resolve(root);
@@ -340,9 +400,12 @@ function main() {
     }
     console.log(`\nSkills that apply: ${report.skills.join(", ")}`);
     for (const m of report.matches) {
+      const state = (armed, missing) =>
+        armed ? "armed" : missing?.length ? `incomplete, missing ${missing.join(" and ")}` : "OFF";
       const gates = [
-        m.skillGate ? "skill gate armed" : "skill gate OFF",
-        m.kind === "frontend" ? (m.e2eGate ? "e2e gate armed" : "e2e gate OFF") : null,
+        `skill gate ${state(m.skillGate, m.skillGateMissing)}`,
+        m.kind === "frontend" ? `e2e gate ${state(m.e2eGate, m.e2eGateMissing)}` : null,
+        m.gateConfigInvalid ? ".claude/simplix.json does not parse" : null,
       ].filter(Boolean);
       console.log(`  ${m.dir.padEnd(28)} ${gates.join(", ")}`);
     }

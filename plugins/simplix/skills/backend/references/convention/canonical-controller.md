@@ -1,10 +1,10 @@
 # Canonical Controller
 
-The generator produces this shape. Manual controllers must match it. **11 standard endpoints.** Each endpoint has `@Operation` and `@PreAuthorize` - mandatory per invariants 2 and 11. Note the SimpliX URL convention: **`POST /create`** (not `POST /`).
+The generator produces this shape. Manual controllers must match it. **The standard endpoints below**, `updateOrder` only where the entity has a display order. Each endpoint has `@Operation` and `@PreAuthorize` - mandatory per invariants 2 and 11. Note the SimpliX URL convention: **`POST /create`** (not `POST /`).
 
-> **Single source of truth:** The authoritative definition is the generator template at `.simplix/templates/controller/rest/EntityRestController.java.template`. This file mirrors it. **When template and doc diverge, the template wins** - update the doc, not the template-generated output. The endpoint order, `@Operation` wording, and method signatures below were derived from the template verbatim (examples just substitute `Building` for the entity name).
+> **Single source of truth:** The authoritative definition is the generator template at `.simplix/templates/controller/rest/EntityRestController.java.template`. This file mirrors it. **When template and doc diverge, the template wins** - update the doc, not the template-generated output. The endpoint order, `@Operation` wording, and method signatures below were derived from the template verbatim (examples just substitute `Building` for the entity name). The permission target is the one deliberate departure: the template emits `hasPermission('<%= entityName %>', ...)`, invariant #9 requires the feature-area group, so the examples carry `'<FEATURE_AREA>'` and promote rewrites the generated target (`../generator/promote-workflow.md` § After promoting).
 
-> **Scope (canonical):** class-level annotation order, constructor with `super(service)`, all 11 endpoint signatures with response wrapper, permission wording, `@Validated` placement. For non-CRUD controllers, see `non-crud-controller.md`.
+> **Scope (canonical):** class-level annotation order, constructor with `super(service)`, every endpoint signature with response wrapper, permission wording, `@Validated` placement. For non-CRUD controllers, see `non-crud-controller.md`.
 
 ---
 
@@ -28,9 +28,9 @@ public class BuildingRestController
     //---------------------------------- Create
     @PostMapping("/create")
     @Operation(summary = "Create Building", description = "Creates a new Building")
-    @PreAuthorize("hasPermission('Building', 'create')")     // invariant 2, 9 — PascalCase class name
+    @PreAuthorize("hasPermission('<FEATURE_AREA>', 'create')") // invariant 2, 9 - the feature-area group, never the entity name
     public SimpliXApiResponse<BuildingDetailDTO> create(     // invariant 1 — SimpliXApiResponse
-            @RequestBody @Validated BuildingCreateDTO dto) { // invariant 12 — @Validated on body
+            @RequestBody @Validated BuildingCreateDTO dto) { // invariant 13 - @Validated on body
         return SimpliXApiResponse.success(service.create(dto));
     }
 
@@ -38,7 +38,7 @@ public class BuildingRestController
     @PutMapping("/{id}")
     @Operation(summary = "Update Building",
             description = "Updates existing Building")
-    @PreAuthorize("hasPermission('Building', 'edit')")
+    @PreAuthorize("hasPermission('<FEATURE_AREA>', 'edit')")
     public SimpliXApiResponse<BuildingDetailDTO> update(
             @PathVariable String id,
             @RequestBody @Validated BuildingUpdateDTO dto) {
@@ -51,7 +51,7 @@ public class BuildingRestController
     @PatchMapping
     @Operation(summary = "Update Multiple Building",
             description = "Updates multiple existing Building")
-    @PreAuthorize("hasPermission('Building', 'edit')")
+    @PreAuthorize("hasPermission('<FEATURE_AREA>', 'edit')")
     public SimpliXApiResponse<List<BuildingDetailDTO>> multiUpdate(
             @RequestBody Set<BuildingUpdateDTO> dtos) {      // no @Validated on Set; validation runs per element
         return SimpliXApiResponse.success(service.multiUpdate(dtos));
@@ -61,7 +61,7 @@ public class BuildingRestController
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete Building",
             description = "Deletes Building by ID")
-    @PreAuthorize("hasPermission('Building', 'delete')")
+    @PreAuthorize("hasPermission('<FEATURE_AREA>', 'delete')")
     public SimpliXApiResponse<Void> delete(@PathVariable String id) {
         if (!service.existsById(id)) {                       // existence-check pattern for delete
             return SimpliXApiResponse.failure(null, "Building not found");
@@ -74,7 +74,7 @@ public class BuildingRestController
     @GetMapping("/{id}")
     @Operation(summary = "Get Building",
             description = "Retrieves Building by ID")
-    @PreAuthorize("hasPermission('Building', 'view')")
+    @PreAuthorize("hasPermission('<FEATURE_AREA>', 'view')")
     public SimpliXApiResponse<BuildingDetailDTO> get(@PathVariable String id) {
         return service.findById(id, BuildingDetailDTO.class)
                 .map(SimpliXApiResponse::success)
@@ -86,7 +86,7 @@ public class BuildingRestController
     @GetMapping("/{id}/edit")
     @Operation(summary = "Get Building for Update",
             description = "Retrieves Building by ID for update purposes")
-    @PreAuthorize("hasPermission('Building', 'view')")
+    @PreAuthorize("hasPermission('<FEATURE_AREA>', 'view')")
     public SimpliXApiResponse<BuildingUpdateFormDTO> updateForm(@PathVariable String id) {
         return service.findById(id, BuildingUpdateFormDTO.class)
                 .map(SimpliXApiResponse::success)
@@ -98,7 +98,7 @@ public class BuildingRestController
     @PatchMapping("/batch")
     @Operation(summary = "Batch Update Buildings",
             description = "Updates multiple Buildings")
-    @PreAuthorize("hasPermission('Building', 'edit')")
+    @PreAuthorize("hasPermission('<FEATURE_AREA>', 'edit')")
     public SimpliXApiResponse<Void> batchUpdate(
             @RequestBody @Validated BuildingBatchUpdateDTO dto) {
         service.batchUpdate(dto);
@@ -109,7 +109,7 @@ public class BuildingRestController
     @DeleteMapping("/batch")
     @Operation(summary = "Delete multiple Buildings",
             description = "Deletes multiple Buildings by their IDs")
-    @PreAuthorize("hasPermission('Building', 'delete')")
+    @PreAuthorize("hasPermission('<FEATURE_AREA>', 'delete')")
     public SimpliXApiResponse<Void> batchDelete(@RequestParam List<String> ids) {
         service.batchDelete(ids);
         return SimpliXApiResponse.success(null, "Buildings deleted successfully");
@@ -120,7 +120,7 @@ public class BuildingRestController
     @Operation(summary = "Update Building Orders",
             description = "Updates the order of multiple Building entities")
     @SimpliXStandardApi                                      // add-on for non-standard CRUD endpoints
-    @PreAuthorize("hasPermission('Building', 'edit')")
+    @PreAuthorize("hasPermission('<FEATURE_AREA>', 'edit')")
     public SimpliXApiResponse<List<BuildingDetailDTO>> updateOrder(
             @RequestBody @Validated List<BuildingOrderUpdateDTO> dtos) {
         return SimpliXApiResponse.success(service.updateOrders(dtos), "Building orders updated successfully");
@@ -130,7 +130,7 @@ public class BuildingRestController
     @GetMapping("/search")
     @Operation(summary = "Search Building list (GET)",
             description = "Searches Building with various conditions using GET method")
-    @PreAuthorize("hasPermission('Building', 'list')")
+    @PreAuthorize("hasPermission('<FEATURE_AREA>', 'list')")
     public SimpliXApiResponse<Page<BuildingListDTO>> simpleSearch(
             @RequestParam(required = false)
             @SearchableParams(BuildingSearchDTO.class) Map<String, String> params) {  // @SearchableParams binds URL to SearchDTO
@@ -141,7 +141,7 @@ public class BuildingRestController
     @PostMapping("/search")
     @Operation(summary = "Search Building list (POST)",
             description = "Searches Building with various conditions using POST method")
-    @PreAuthorize("hasPermission('Building', 'list')")
+    @PreAuthorize("hasPermission('<FEATURE_AREA>', 'list')")
     public SimpliXApiResponse<Page<BuildingListDTO>> search(
             @RequestBody @Validated SearchCondition<BuildingSearchDTO> searchCondition) {
         return SimpliXApiResponse.success(service.search(searchCondition));
@@ -153,7 +153,7 @@ public class BuildingRestController
 
 ## Permission Mapping
 
-PascalCase entity name, lowercase action:
+The target is the UPPER_SNAKE feature-area group the related controllers share (invariant #9); the action is lowercase:
 
 | Endpoint | Action |
 |---|---|

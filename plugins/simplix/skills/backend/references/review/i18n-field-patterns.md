@@ -28,7 +28,7 @@ public class CmsContent {
 
     // I18n field - translations
     @Convert(converter = StringMapConverter.class)
-    @Column(columnDefinition = "jsonb")
+    @Column(name = "title_i18n")
     private Map<String, String> titleI18n;
 }
 ```
@@ -350,9 +350,7 @@ public static class CmsTagGroupDetailDTO {
 
 ## SearchDTO I18n Handling
 
-### Check Entity for Searchable I18n Content
-
-For text search across translations, typically search the i18n field:
+A pattern operator cannot run against a Map, so a SearchDTO never declares `@SearchableField` over the `*I18n` map. The name search runs on the base column, and the service keeps that column worth searching by filling it from the map on save (§ Which Value a Surface Writes - the Reader Test).
 
 **Entity**:
 ```java
@@ -362,20 +360,8 @@ private Map<String, String> titleI18n;  // JSON stored
 
 **SearchDTO**:
 ```java
-// Search in i18n translations
-@SearchableField(entityField = "titleI18n", operators = {CONTAINS})
+@SearchableField(entityField = "title", operators = {CONTAINS}, sortable = true)
 private String title;
-```
-
-Or search both:
-```java
-// Search default language
-@SearchableField(entityField = "title", operators = {CONTAINS})
-private String title;
-
-// Search translations separately
-@SearchableField(entityField = "titleI18n", operators = {CONTAINS})
-private String titleI18n;
 ```
 
 ---
