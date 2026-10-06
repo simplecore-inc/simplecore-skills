@@ -252,10 +252,11 @@ prunes is the next thing to rot.
 deck enforces is over the strings *it* draws - a check that reads the deck's styles,
 components and pages cannot see inside a bitmap or an SVG, and should not try. A figure's
 smallest label is set by the figure's own type ladder times the placement scale, and that
-product is held to the figure floor `simplecore:svg-diagrams` sets, by the figure checks
+product is held to the tag rung's 6.4pt floor `simplecore:svg-diagrams` states
 (references/document-figures.md, 「One type scale for the whole set」: the body rung prints at
-the document's body size, and only a tag rung for chips, codes and ids sits below it): pick
-the scale so the body rung still reaches it, and say in the deck's instructions which floor a
+the document's body size, and only a tag rung for chips, codes and ids sits below it). No
+figure check computes a printed size, so pick the scale so the ladder's smallest step clears
+that floor and the body rung still reaches the body size, and say in the deck's instructions which floor a
 figure answers to. Without that a reviewer measures a diagram
 label, finds it under the deck's floor, and reports a violation of a rule that never applied
 to it.
