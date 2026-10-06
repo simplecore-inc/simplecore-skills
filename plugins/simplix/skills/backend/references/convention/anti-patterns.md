@@ -23,7 +23,7 @@ public ResponseEntity<EntityDTO> get(@PathVariable String id) {
 // CORRECT
 @GetMapping("/{id}")
 @Operation(summary = "Get EntityName")
-@PreAuthorize("hasPermission('EntityName', 'view')")
+@PreAuthorize("hasPermission('<FEATURE_AREA>', 'view')")
 public SimpliXApiResponse<EntityNameDetailDTO> get(@PathVariable String id) {
     return service.findById(id, EntityNameDetailDTO.class)
         .map(SimpliXApiResponse::success)
@@ -75,7 +75,7 @@ public SimpliXApiResponse<EntityNameDetailDTO> create(@RequestBody @Validated En
 // CORRECT
 @PostMapping("/create")
 @Operation(summary = "Create EntityName")
-@PreAuthorize("hasPermission('EntityName', 'create')")    // MANDATORY
+@PreAuthorize("hasPermission('<FEATURE_AREA>', 'create')")    // MANDATORY
 public SimpliXApiResponse<EntityNameDetailDTO> create(@RequestBody @Validated EntityNameCreateDTO dto) {
     return SimpliXApiResponse.success(service.create(dto));
 }
@@ -371,13 +371,13 @@ private String name;
 ```java
 // WRONG — no OpenAPI documentation
 @GetMapping("/{id}")
-@PreAuthorize("hasPermission('EntityName', 'view')")
+@PreAuthorize("hasPermission('<FEATURE_AREA>', 'view')")
 public SimpliXApiResponse<EntityNameDetailDTO> get(@PathVariable String id) { ... }
 
 // CORRECT
 @GetMapping("/{id}")
 @Operation(summary = "Get EntityName", description = "Retrieves EntityName by ID")
-@PreAuthorize("hasPermission('EntityName', 'view')")
+@PreAuthorize("hasPermission('<FEATURE_AREA>', 'view')")
 public SimpliXApiResponse<EntityNameDetailDTO> get(@PathVariable String id) { ... }
 ```
 
@@ -388,14 +388,14 @@ public SimpliXApiResponse<EntityNameDetailDTO> get(@PathVariable String id) { ..
 ```java
 // WRONG — @PreAuthorize before @Operation
 @GetMapping("/{id}")
-@PreAuthorize("hasPermission('EntityName', 'view')")
+@PreAuthorize("hasPermission('<FEATURE_AREA>', 'view')")
 @Operation(summary = "Get EntityName")
 public SimpliXApiResponse<EntityNameDetailDTO> get(@PathVariable String id) { ... }
 
 // CORRECT — @XxxMapping → @Operation → @PreAuthorize
 @GetMapping("/{id}")
 @Operation(summary = "Get EntityName", description = "Retrieves EntityName by ID")
-@PreAuthorize("hasPermission('EntityName', 'view')")
+@PreAuthorize("hasPermission('<FEATURE_AREA>', 'view')")
 public SimpliXApiResponse<EntityNameDetailDTO> get(@PathVariable String id) { ... }
 ```
 
@@ -494,11 +494,11 @@ public SimpliXApiResponse<AuditEntryDTO> getAuditEntry(...)
 // WRONG — arbitrary authority string
 @PreAuthorize("hasAuthority('SUPER_USER')")
 
-// CORRECT — entity-action permission (matches generator output + seed data)
-@PreAuthorize("hasPermission('ControlAudit', 'view')")
+// CORRECT - the feature-area group permission (invariant #9)
+@PreAuthorize("hasPermission('<FEATURE_AREA>', 'view')")
 ```
 
-**Why**: the project's permission infrastructure is seeded from `@PreAuthorize("hasPermission(Entity, action)")` annotations at startup. Role-based guards (`hasRole`, `hasAuthority`) bypass that registry, leaving permissions unmanageable through the admin UI and breaking the frontend permission-sync automation.
+**Why**: the project's permission infrastructure is seeded from the `@PreAuthorize("hasPermission('<FEATURE_AREA>', '<action>')")` annotations at startup. Role-based guards (`hasRole`, `hasAuthority`) bypass that registry, leaving permissions unmanageable through the admin UI and breaking the frontend permission-sync automation.
 
 **Only acceptable non-`hasPermission` expressions**: `permitAll()` (public endpoint) and `isAuthenticated()` (user-self access). Everything else is a violation.
 
@@ -529,7 +529,7 @@ public SimpliXApiResponse<AuditEntryDTO> getAuditEntry(@PathVariable String comm
 // WRONG — verbose, not produced by any SimpliX template
 @GetMapping("/{id}")
 @Operation(summary = "Get entity")
-@PreAuthorize("hasPermission('Entity', 'view')")
+@PreAuthorize("hasPermission('<FEATURE_AREA>', 'view')")
 @ApiResponses({
     @ApiResponse(responseCode = "200", description = "OK"),
     @ApiResponse(responseCode = "404", description = "Not found")
@@ -539,7 +539,7 @@ public SimpliXApiResponse<Dto> get(@PathVariable String id) { ... }
 // CORRECT — @Operation alone; the global ResponseEntityExceptionHandler documents errors
 @GetMapping("/{id}")
 @Operation(summary = "Get entity", description = "Retrieves entity by ID")
-@PreAuthorize("hasPermission('Entity', 'view')")
+@PreAuthorize("hasPermission('<FEATURE_AREA>', 'view')")
 public SimpliXApiResponse<Dto> get(@PathVariable String id) { ... }
 ```
 

@@ -110,7 +110,7 @@ public class EntityNameRestController
 @PostMapping("/create")                               // 1. HTTP mapping
 @Operation(summary = "Create EntityName",             // 2. OpenAPI
     description = "Creates a new EntityName")
-@PreAuthorize("hasPermission('EntityName', 'create')")// 3. Security
+@PreAuthorize("hasPermission('<FEATURE_AREA>', 'create')") // 3. Security
 public SimpliXApiResponse<EntityNameDetailDTO> create(
     @RequestBody @Validated EntityNameCreateDTO createDto) {
 ```
@@ -121,7 +121,7 @@ public SimpliXApiResponse<EntityNameDetailDTO> create(
 @Operation(summary = "Update EntityName Orders",      // 2
     description = "Updates the order of multiple entities")
 @SimpliXStandardApi                                   // 3. Standard API marker
-@PreAuthorize("hasPermission('EntityName', 'edit')")  // 4
+@PreAuthorize("hasPermission('<FEATURE_AREA>', 'edit')") // 4
 public SimpliXApiResponse<List<EntityNameDetailDTO>> updateOrder(...)
 ```
 
@@ -257,4 +257,4 @@ public static class EntityNameDetailDTO {
 | Event name | `{ENTITY_SCREAMING_SNAKE}_{ACTION}` | `CREDENTIAL_CREATED` |
 | Request path | `/kebab-case` | `/access-point`, `/sync/execution` |
 | `@Tag` name | `{module}.{subdomain}.{Name}` | `facility.identity.Credential` |
-| Permission | `hasPermission('{EntityName}', '{action}')` | `hasPermission('Credential', 'create')` |
+| Permission | `hasPermission('{FEATURE_AREA}', '{action}')`, the UPPER_SNAKE feature-area group (SKILL.md #9) | `hasPermission('FACILITY_IDENTITY', 'create')` |

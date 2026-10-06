@@ -53,7 +53,7 @@ public class PurposeController {
 // CRUD Controller — method level only (on special endpoints like updateOrder)
 @PatchMapping("/order")
 @SimpliXStandardApi
-@PreAuthorize("hasPermission('Entity', 'edit')")
+@PreAuthorize("hasPermission('<FEATURE_AREA>', 'edit')")
 public SimpliXApiResponse<...> updateOrder(...)
 
 // Non-CRUD Controller — class level
@@ -78,7 +78,7 @@ public class SomeController {
 @PostMapping("/{controllerId}/execute")
 @Operation(summary = "Execute sync pipeline",
         description = "Creates deliveries for pending changes")
-@PreAuthorize("hasPermission('SyncExecution', 'create')")
+@PreAuthorize("hasPermission('<FEATURE_AREA>', 'create')")
 public SimpliXApiResponse<SyncExecutionResult> execute(
         @PathVariable String controllerId) {
     return SimpliXApiResponse.success(syncExecutionService.execute(controllerId));
@@ -124,7 +124,7 @@ For endpoints with multiple query parameters, use `@Parameter` annotations:
 @GetMapping("/stats")
 @Operation(summary = "Get event statistics",
         description = "Returns time-bucketed event counts")
-@PreAuthorize("hasPermission('EventStatistics', 'list')")
+@PreAuthorize("hasPermission('<FEATURE_AREA>', 'list')")
 public SimpliXApiResponse<List<EventBucketDTO>> getStats(
         @RequestParam @Parameter(description = "Start time (ISO-8601, inclusive)") Instant from,
         @RequestParam @Parameter(description = "End time (ISO-8601, exclusive)") Instant to,
@@ -193,7 +193,7 @@ public class SyncExecutionController {
 
     @PostMapping("/{controllerId}/execute")
     @Operation(summary = "Execute sync pipeline")
-    @PreAuthorize("hasPermission('SyncExecution', 'create')")
+    @PreAuthorize("hasPermission('<FEATURE_AREA>', 'create')")
     public SimpliXApiResponse<SyncExecutionResult> execute(
             @PathVariable String controllerId) { ... }
 }
@@ -211,7 +211,7 @@ public class MonitoringDashboardController {
 
     @GetMapping("/safety-snapshot")
     @Operation(summary = "Get safety snapshot")
-    @PreAuthorize("hasPermission('MonitoringDashboard', 'view')")
+    @PreAuthorize("hasPermission('<FEATURE_AREA>', 'view')")
     public SimpliXApiResponse<SafetySnapshotDto> getSafetySnapshot() { ... }
 }
 ```
@@ -245,7 +245,7 @@ public class ErrorTestRestController {
 
     @GetMapping("/not-found")
     @Operation(summary = "Simulate 404")
-    @PreAuthorize("hasPermission('DevTest', 'view')")
+    @PreAuthorize("hasPermission('<FEATURE_AREA>', 'view')")
     public SimpliXApiResponse<Void> testNotFound() { ... }
 }
 ```
@@ -253,7 +253,7 @@ public class ErrorTestRestController {
 ### Dev/Test Controller Exception Policy
 
 Dev/test controllers (`@Profile({"local", "dev"})`) still MUST follow all conventions:
-- `@PreAuthorize` required (use `hasPermission('DevTest', 'view')` or `permitAll()`)
+- `@PreAuthorize` required (use `hasPermission('<FEATURE_AREA>', 'view')` or `permitAll()`)
 - `SimpliXApiResponse<T>` required (not `ResponseEntity`)
 - `@Operation` on every endpoint
 

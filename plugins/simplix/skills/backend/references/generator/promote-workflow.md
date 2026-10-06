@@ -92,6 +92,20 @@ converted to non-CRUD, or generated DTOs are deleted, **delete or rewrite that t
 step** - a stale generated test fails for a reason that has nothing to do with the change
 being made.
 
+## After promoting: the permission target and the tag
+
+The controller template emits the entity name as the permission target
+(`hasPermission('<Entity>', '<action>')`). Invariant #9 forbids a per-entity target, and the
+audit's `permission-target-not-group` fails every endpoint that keeps it, so rewrite each target to
+the feature-area group the related controllers already share: grep the existing `hasPermission('`
+targets, and where the project keeps its own group table, that table wins. A project can instead
+make its copy of `.simplix/templates/controller/rest/EntityRestController.java.template` emit its
+group.
+
+Check the generated `@Tag(name)` in the same pass: it is the domain namespace
+`{module}.{subdomain}.{Entity}` with no `web` segment (#10; the audit's
+`tag-java-package-namespace` fails one).
+
 ## Post-Promote Verification
 
 ```bash
@@ -111,5 +125,7 @@ find generated -name "EntityName*" -type f
 
 - [ ] Run `yo simplix:promote EntityName --force`
 - [ ] Verify no files remain in `generated/` for the entity
+- [ ] Every `hasPermission` target rewritten to the feature-area group (#9), and the `@Tag` free of a `web` segment (#10)
+- [ ] `node "${CLAUDE_PLUGIN_ROOT}/scripts/audit-backend.mjs"` reports 0 error-level hits on the promoted files
 - [ ] Build passes (no duplicate class errors)
 - [ ] Tests pass
