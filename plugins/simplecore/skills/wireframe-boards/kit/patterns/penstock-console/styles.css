@@ -486,38 +486,12 @@
   .tb-btn { border: 1px solid var(--line); border-radius: 4px; padding: 0 5px; font: 11px var(--mono); color: var(--muted); }
   .input.search { color: var(--faint); }
 
-  /* ── answer sentences: grade by border style + word, not hue ──── */
-  .sent { display: flex; align-items: flex-start; gap: 8px; padding: 8px 10px; margin-bottom: 6px;
-    border: 1px solid var(--fill-deep); border-left-width: 4px; border-radius: 6px; font-size: 13px; line-height: 1.55; }
-  .sent .gr { flex: 0 0 auto; font: 700 9.5px var(--mono); letter-spacing: .03em; padding: 2px 6px; border-radius: 3px; margin-top: 1px; }
-  .sent .tx { flex: 1; min-width: 0; }
-  .sent .ref { flex: 0 0 auto; font: 700 9.5px var(--mono); border: 1px solid var(--line-strong); border-radius: 3px; padding: 1px 5px; margin-top: 1px; }
-  .sent.ok { border-left-color: var(--line-strong); border-left-style: solid; }
-  .sent.ok .gr { background: var(--fill-deep); }
-  .sent.part { border-left-color: var(--line); border-left-style: dashed; background: var(--fill); }
-  .sent.part .gr { background: var(--screen); border: 1px solid var(--line-strong); }
-  .sent.none { border-left-color: var(--line-strong); border-left-style: dotted; background: var(--fill-deep); }
-  .sent.none .gr { background: var(--ink); color: var(--screen); }
-  .sent.active { outline: 2px solid var(--line-strong); outline-offset: 1px; }
-
-  /* ── evidence cards + source tier ─────────────────────────────── */
-  .ev-card { border: 1px solid var(--line); border-radius: 7px; padding: 9px 10px; display: flex; flex-direction: column; gap: 5px; }
-  .ev-card.active { border-color: var(--line-strong); border-width: 2px; padding: 8px 9px; background: var(--fill); }
-  .ev-top { display: flex; align-items: center; gap: 6px; }
-  .ev-n { font: 700 10px var(--mono); background: var(--ink); color: var(--screen); border-radius: 3px; padding: 1px 6px; }
-  .ev-title { font-size: 12.5px; font-weight: 600; }
-  .ev-meta { font: 10.5px var(--mono); color: var(--muted); }
-  .tier { font: 700 9.5px var(--mono); border-radius: 3px; padding: 1px 6px; letter-spacing: .02em; }
-  .tier.doc { background: var(--fill-deep); }                              /* fully traceable */
-  .tier.data { background: var(--screen); border: 1px solid var(--line-strong); }  /* query + result */
-  .tier.tool { background: var(--screen); border: 1px dashed var(--line-strong); color: var(--muted); } /* outside */
-  .tier.sum { background: var(--fill); border: 1px solid var(--line); color: var(--muted); }      /* one unfold from source */
-  .tier.page { background: var(--fill); border: 1px dotted var(--line-strong); color: var(--muted); } /* no text to compare */
+  /* ── score ────────────────────────────────────────────────────── */
   .scorebar { display: inline-block; width: 46px; height: 6px; border-radius: 3px; background: var(--fill); border: 1px solid var(--line); overflow: hidden; vertical-align: 0; }
   .scorebar .fill { display: block; height: 100%; background: var(--line-strong); }
   .scorenum { font: 700 10px var(--mono); color: var(--muted); }
 
-  /* ── source viewer: markdown and PDF over one block model ─────── */
+  /* ── source viewer: two formats over one block model ──────────── */
   .vswitch { display: inline-flex; border: 1px solid var(--line-strong); border-radius: 6px; overflow: hidden; font: 600 10.5px var(--mono); }
   .vswitch .opt { padding: 3px 9px; color: var(--muted); }
   .vswitch .opt.on { background: var(--fill-deep); color: var(--ink); }
@@ -526,30 +500,8 @@
   .mdb .bk { position: absolute; right: 6px; top: 5px; font: 9px var(--mono); color: var(--faint); }
   .mdb.active { border-color: var(--line-strong); border-width: 2px; background: var(--fill); padding: 6px 8px; }
   .mdb.masked { background: repeating-linear-gradient(45deg, var(--fill) 0 6px, var(--fill-deep) 6px 12px); }
-  .pdfview { flex: 0 0 230px; display: flex; flex-direction: column; gap: 5px; }
-  .pdfpage { position: relative; flex: 1; min-height: 250px; border: 1px solid var(--line-strong); background: var(--screen);
-    background-image: repeating-linear-gradient(var(--fill) 0 1px, transparent 1px 9px); }
-  .pdfpage .hl { position: absolute; border: 1.5px solid var(--line); background: rgba(31,36,48,.06); border-radius: 2px; }
-  .pdfpage .hl.active { border: 2px solid var(--line-strong); background: rgba(31,36,48,.14); }
-  .pdfpage .hl.mask { background: var(--ink); border-color: var(--ink); }
-  .pdfbar { display: flex; align-items: center; gap: 6px; font: 10px var(--mono); color: var(--muted); }
 
-  /* ── search rounds ────────────────────────────────────────────── */
-  .round { border: 1px solid var(--line); border-left-width: 4px; border-radius: 6px; padding: 8px 10px; display: flex; flex-direction: column; gap: 4px; }
-  .round.ok { border-left-style: solid; border-left-color: var(--line-strong); }
-  .round.part { border-left-style: dashed; }
-  .round.none { border-left-style: dotted; background: var(--fill); }
-  .rd-top { display: flex; align-items: center; gap: 8px; }
-  .rd-n { font: 700 10px var(--mono); background: var(--fill-deep); border-radius: 3px; padding: 1px 6px; }
-  .rd-v { font: 10px var(--mono); color: var(--muted); }
-  .rd-q { font-size: 12.5px; }
-  .rd-f { font: 10.5px var(--mono); color: var(--muted); }
-
-  /* ── graph canvas · sensitive values · progress ───────────────── */
-  .graphview { min-height: 200px; border: 1px solid var(--line); border-radius: 8px; background: var(--fill);
-    background-image: radial-gradient(var(--line) 1.5px, transparent 1.5px); background-size: 34px 34px;
-    display: flex; align-items: center; justify-content: center; }
-  .gnote { background: var(--screen); border: 1px solid var(--line); font: 10.5px var(--mono); color: var(--muted); padding: 3px 9px; border-radius: 4px; }
+  /* ── sensitive values · progress ─────────────────────────────── */
   .masked { font: 700 9.5px var(--mono); border: 1px dashed var(--line-strong); border-radius: 3px; padding: 1px 5px; color: var(--muted); }
   .maskval { font: 11px var(--mono); background: var(--ink); color: var(--screen); border-radius: 3px; padding: 2px 7px; }
   .stages { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font: 10.5px var(--mono); }
@@ -701,10 +653,6 @@
      pressed along with the question. */
   .suggest-from { font-size: 11px; color: var(--muted); padding: 3px 2px 1px 11px; }
 
-  /* the big question box on an empty ask surface */
-  .askbox { border: 1.5px solid var(--line-strong); border-radius: 10px; background: var(--screen);
-    padding: 13px 14px; display: flex; flex-direction: column; gap: 11px; }
-  .askbox .ph { font-size: 14px; color: var(--faint); }
   /* NOT `.row` - that class belongs to the board's own frame rows and carries
      `zoom: var(--frame-zoom)`, which would scale a frame's contents a second time. */
   .hrow { display: flex; align-items: center; gap: 8px; }
@@ -725,7 +673,7 @@
      `overflow: hidden` for the rounded corner - loses rows with no scrollbar and no sign
      that anything is missing. Overflow is a finding on this board; silent shrinkage is not. */
   .pane-body > * { flex-shrink: 0; }
-  .pane-body > .mdview, .pane-body > .psplit, .pane-body > .graphview { flex-shrink: 1; }
+  .pane-body > .mdview, .pane-body > .psplit { flex-shrink: 1; }
 
   /* Table bodies carry real values on this board - query results, rate tables - and at
      the body's default size they tower over the 11px mono header and the surrounding
@@ -770,12 +718,6 @@
   .tm-sep { border-top: 1px solid var(--line); margin: 6px 0; }
   .tm-a { padding: 5px 12px; font-size: 12px; }
 
-  .planted { display: inline-flex; align-items: center; gap: 4px; vertical-align: 1px;
-    border: 1px solid var(--ink); border-radius: 4px; padding: 1px 6px;
-    font: 700 9.5px var(--mono); color: var(--screen); background: var(--ink);
-    letter-spacing: .02em; white-space: nowrap; }
-  .planted .gl { font-size: 10px; line-height: 1; }
-
   /* ── validity periods ──────────────────────────────────────────────
      A value that changed reads as a contradiction in a list and as a revision on a
      track. The track is what keeps the diagnosis from calling a normal amendment a defect. */
@@ -815,10 +757,6 @@
   .qturn .qm { font: 10px var(--mono); color: var(--faint); }
   /* what a follow-up inherited, stated rather than implied */
   .carry { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; font: 10.5px var(--mono); color: var(--muted); }
-
-  /* a round still running - the fourth state of .round */
-  .round.run { border-left-color: var(--line-strong); border-left-style: solid; border-left-width: 4px; background: var(--fill); }
-  .round.run .rd-n { background: var(--ink); color: var(--screen); }
 
   /* a step-up authentication that has been granted: it expires, and the
      remaining time is the point - an unmask is not a mode you stay in */

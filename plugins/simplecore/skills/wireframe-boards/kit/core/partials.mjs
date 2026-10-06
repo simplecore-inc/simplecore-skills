@@ -31,7 +31,7 @@ export const BOARD_CONTRACT = 4;
  * @param roles the board's `src/roles.mjs`, or null where the board settles no roles
  * @returns `{ frame, sidebar, page }`
  */
-export function makePartials({ components, roles = null, lang = 'en', reqsById = {} }) {
+export function makePartials({ components, roles = null, lang = 'en', reqsById = {}, requirements = null }) {
   const { browserbar, frameSpec, frameNotesBody } = components;
   const ROLES = roles?.ROLES ?? {};
   const VERDICTS = roles?.VERDICTS ?? {};
@@ -77,7 +77,7 @@ export function makePartials({ components, roles = null, lang = 'en', reqsById =
     // stands on it, what it does and which state this is, and which requirement it answers. The
     // pattern derives them from the frame itself - written beside the frame instead, they would be
     // right the day they were typed and wrong at the next edit.
-    const spec = frameSpec ? frameSpec(s, { reqs: reqsById[id.replace(/[a-z]$/, '')] ?? [] }) : null;
+    const spec = frameSpec ? frameSpec(s, { reqs: reqsById[id.replace(/[a-z]$/, '')] ?? [], requirements }) : null;
     const specRows = spec
       ? Object.entries(spec).filter(([, v]) => v && String(v).trim())
         .map(([k, v]) => `<div class="fs-row${['권한', '자료'].includes(k) ? ' fs-meta' : ''}">`
@@ -114,7 +114,7 @@ export function makePartials({ components, roles = null, lang = 'en', reqsById =
     // a URL is free text.
     const chrome = s.chrome ?? 'browser';
     if (!['browser', 'app', 'none'].includes(chrome)) {
-      throw new Error(`${id}: chrome은 browser · app · none 중 하나입니다 (받은 값: ${chrome})`);
+      throw new Error(`${id}: chrome is one of browser · app · none (got: ${chrome})`);
     }
     const browser = isDesktop && chrome !== 'none'
       ? `${browserbar(s.url || 'app.example.com', { chrome, title: s.appTitle })}\n        `

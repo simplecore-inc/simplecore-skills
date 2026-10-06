@@ -16,7 +16,7 @@ const ledgerOf = (ctx) => ({ LEDGER: ctx.crud?.LEDGER ?? null, NON_ENTITY: ctx.c
 // its edit, and its delete are.
 export const crudGate = {
   id: 'crudGate',
-  title: 'CRUD 대장이 맞지 않는다 (src/crud.mjs)',
+  title: 'the CRUD ledger does not match the board (src/crud.mjs)',
   stage: 'built',
   run: (ctx) => {
     const { LEDGER, NON_ENTITY } = ledgerOf(ctx);
@@ -31,13 +31,13 @@ export const crudGate = {
       for (const [entity, row] of Object.entries(LEDGER)) {
         for (const verb of VERBS) {
           const at = row[verb];
-          if (at == null) { crudErrors.push(`${entity}.${verb} — 빠졌다 (프레임 id · 'generic' · { waived })`); continue; }
+          if (at == null) { crudErrors.push(`${entity}.${verb} - missing (a frame id · 'generic' · { waived })`); continue; }
           if (at === 'generic') continue;
           if (typeof at === 'object') {
-            if (!String(at.waived ?? '').trim()) crudErrors.push(`${entity}.${verb} — waived에 사유가 없다`);
+            if (!String(at.waived ?? '').trim()) crudErrors.push(`${entity}.${verb} - waived gives no reason`);
             continue;
           }
-          if (!frameIds.has(at)) crudErrors.push(`${entity}.${verb} — ${at} 프레임이 없다`);
+          if (!frameIds.has(at)) crudErrors.push(`${entity}.${verb} - frame ${at} does not exist`);
         }
       }
       // A route is accounted for when some frame the ledger names carries it - the verb entries and
@@ -47,7 +47,7 @@ export const crudGate = {
         for (const verb of VERBS) if (typeof row[verb] === 'string' && row[verb] !== 'generic') ledgerFrames.add(row[verb]);
         for (const id of row.also ?? []) ledgerFrames.add(id);
       }
-      for (const id of ledgerFrames) if (!frameIds.has(id)) crudErrors.push(`${id} — 대장이 가리키는 프레임이 없다`);
+      for (const id of ledgerFrames) if (!frameIds.has(id)) crudErrors.push(`${id} - the ledger names a frame that does not exist`);
       const claimedRoutes = new Set(Object.keys(NON_ENTITY));
       for (const s of ctx.loaded) if (ledgerFrames.has(s.num) && s.mod.route) claimedRoutes.add(s.mod.route);
       for (const s of ctx.loaded) {
@@ -55,11 +55,11 @@ export const crudGate = {
         if (!route) continue;                       // the P cluster is the generic pattern itself
         if (claimedRoutes.has(route)) {
           if (Object.hasOwn(NON_ENTITY, route) && !String(NON_ENTITY[route]).trim()) {
-            crudErrors.push(`${route} — NON_ENTITY에 사유가 없다`);
+            crudErrors.push(`${route} - NON_ENTITY gives no reason`);
           }
           continue;
         }
-        crudErrors.push(`${s.num} ${route} — crud.mjs의 어느 엔티티에도, NON_ENTITY에도 없다`);
+        crudErrors.push(`${s.num} ${route} - in no entity of crud.mjs and not in NON_ENTITY`);
       }
     }
     return crudErrors;
@@ -78,7 +78,7 @@ export const crudGate = {
 //    because its default view is the calendar - but the DEFAULT is `view`, not the order.
 export const viewSwitchGate = {
   id: 'viewSwitchGate',
-  title: '보기 전환이 화면마다 다르게 말한다',
+  title: 'view switching is written differently from screen to screen',
   stage: 'built',
   run: (ctx) => {
     const viewKeyErrors = [];
@@ -89,7 +89,7 @@ export const viewSwitchGate = {
         const src = ctx.srcOf(sc.file);
         for (const m of src.matchAll(/url: '[^']*\?view=([a-z]+)'/g)) {
           if (MODE_WORDS.test(m[1])) {
-            viewKeyErrors.push(`${idOf(sc.file)} — ?view=${m[1]}는 보기 모드다. ?view=는 목록에서 고른 레코드를 가리키므로 보기 모드는 ?mode=를 쓴다`);
+            viewKeyErrors.push(`${idOf(sc.file)} - ?view=${m[1]} is a view mode. ?view= points at the record picked from the list, so a view mode takes ?mode=`);
           }
         }
         for (const m of src.matchAll(/views: \[([^\]]+)\]/g)) {
@@ -98,7 +98,7 @@ export const viewSwitchGate = {
           const seen = orders.get(key);
           if (!seen) orders.set(key, { order: list.join(' · '), file: sc.file });
           else if (seen.order !== list.join(' · ')) {
-            viewKeyErrors.push(`보기 세그먼트 순서가 화면마다 다르다 — 「${list.join(' · ')}」(${idOf(sc.file)}) vs 「${seen.order}」(${idOf(seen.file)}). 순서는 어디서나 같고, 어느 것이 열려 있는지는 view가 정한다`);
+            viewKeyErrors.push(`the view segments are ordered differently - 「${list.join(' · ')}」 (${idOf(sc.file)}) vs 「${seen.order}」 (${idOf(seen.file)}). The order is the same everywhere, and view says which one is open`);
           }
         }
       }
@@ -116,7 +116,7 @@ export const viewSwitchGate = {
 // the list (the list sat lower in the manifest, and the manifest's order IS where the tree lands).
 export const reachabilityGate = {
   id: 'reachabilityGate',
-  title: '찾아갈 수 없는 화면이 있다',
+  title: 'a screen cannot be reached',
   stage: 'built',
   run: (ctx) => {
     const reachErrors = [];
@@ -145,7 +145,7 @@ export const reachabilityGate = {
         if (group.length < 2) continue;
         for (const s of group.slice(1)) {
           if (inDeg.get(s.num) === 0) {
-            reachErrors.push(`${s.num} — 「${cur}」 아래에 있으나 트리는 ${group[0].num}에 내려앉고, 아무 프레임도 이 화면을 가리키지 않는다`);
+            reachErrors.push(`${s.num} - under 「${cur}」 the tree lands on ${group[0].num}, and no frame points at this screen`);
           }
         }
       }
@@ -175,7 +175,7 @@ function renderedStrings(value, depth = 0, out = []) {
 
 export const targetGate = {
   id: 'targetGate',
-  title: '행선지가 없는 프레임을 가리킨다',
+  title: 'a target points at a frame that does not exist',
   stage: 'built',
   run: (ctx) => {
     const errors = [];
@@ -186,9 +186,9 @@ export const targetGate = {
           const target = m[1].trim();
           const id = ID_HEAD.exec(target)?.[1];
           if (id) {
-            if (!ids.has(id)) errors.push(`${s.num} — 행선지 「${target}」의 ${id}는 이 보드에 없는 프레임이다`);
+            if (!ids.has(id)) errors.push(`${s.num} - ${id} in the target 「${target}」 is not a frame on this board`);
           } else if (ID_LIKE.test(target)) {
-            errors.push(`${s.num} — 행선지 「${target}」는 프레임 id로 시작하는 것처럼 보이나 id의 모양(\`A-01a\`)이 아니다`);
+            errors.push(`${s.num} - the target 「${target}」 reads like it starts with a frame id and is not one in shape (\`A-01a\`)`);
           }
         }
       }
@@ -208,7 +208,7 @@ export const targetGate = {
 // so moving the state behind its base changes the brackets and nothing else.
 export const landingIsAddressableGate = {
   id: 'landingIsAddressableGate',
-  title: '메뉴 항목이 자기 주소가 없는 상태 프레임에 내려앉는다',
+  title: 'a menu entry lands on a state frame with no address of its own',
   stage: 'built',
   run: (ctx) => {
     const groups = new Map();
@@ -227,8 +227,8 @@ export const landingIsAddressableGate = {
       if (!group[0].state) continue;
       const own = group.find((s) => !s.state);
       if (!own) continue;
-      out.push(`${group[0].num} — 「${cur}」의 첫 프레임인데 자기 주소가 없는 상태 프레임이다. `
-        + `트리가 여기 내려앉으므로 ${own.num}를 매니페스트에서 앞으로 옮긴다`);
+      out.push(`${group[0].num} - the first frame of 「${cur}」 is a state frame with no address of its own. `
+        + `The tree lands here, so move ${own.num} ahead of it in the manifest`);
     }
     return out;
   },
@@ -251,7 +251,7 @@ export const landingIsAddressableGate = {
 // own landing was never the way anybody got there. Taking those buttons out is what exposed it.
 export const landingIsTheListGate = {
   id: 'landingIsTheListGate',
-  title: '메뉴 항목이 목록을 두고 레코드 주소에 내려앉는다',
+  title: 'a menu entry lands on a record address instead of its list',
   stage: 'built',
   run: (ctx) => {
     /** A route that cannot be opened without a record already chosen. */
@@ -275,8 +275,8 @@ export const landingIsTheListGate = {
       if (!needsRecord(group[0].route)) continue;
       const list = group.find((s) => !needsRecord(s.route));
       if (!list) continue;
-      out.push(`${group[0].num} — 「${cur}」가 여기 내려앉는데 ${group[0].route}는 레코드를 골라야 열린다. `
-        + `같은 항목 아래 ${list.num}(${list.route})가 목록이므로 매니페스트에서 앞으로 옮긴다`);
+      out.push(`${group[0].num} - 「${cur}」 lands here and ${group[0].route} opens only once a record is picked. `
+        + `${list.num} (${list.route}) under the same entry is the list, so move it ahead in the manifest`);
     }
     return out;
   },
@@ -286,7 +286,7 @@ export const landingIsTheListGate = {
 // inconsistency and costs a reader a guess every time they meet it.
 export const controlVocabularyGate = {
   id: 'controlVocabularyGate',
-  title: '버튼이 화면마다 다르게 말한다',
+  title: 'a button is worded differently from screen to screen',
   stage: 'built',
   run: (ctx) => {
     const controlErrors = [];
@@ -299,7 +299,7 @@ export const controlVocabularyGate = {
         //    already do. 「상세」 is a noun standing in a verb's slot, and 「열기」 was used for the same
         //    act on 23 rows: three words for one thing, which a reader has to learn as three.
         for (const m of src.matchAll(/rowActions\(\[\s*'(상세|열기)'/g)) {
-          controlErrors.push(`${id} — 행의 첫 액션이 「${m[1]}」다. 행에서 그 기록을 여는 것은 「보기」로 통일한다`);
+          controlErrors.push(`${id} - a row's first action is 「${m[1]}」. Opening the record from a row is 「보기」 everywhere`);
         }
 
         // 2. A dialog must always be leavable without choosing. A merge dialog offering only
@@ -308,7 +308,7 @@ export const controlVocabularyGate = {
           const foot = m[1];
           if (!/btn\(/.test(foot)) continue;
           if (!/(닫기|취소|나중에|이전)/.test(foot)) {
-            controlErrors.push(`${id} — 다이얼로그에 고르지 않고 나갈 길이 없다 (닫기·취소·나중에 가운데 하나)`);
+            controlErrors.push(`${id} - the dialog has no way out without choosing (one of 「닫기」 · 「취소」 · 「나중에」)`);
           }
         }
 
@@ -320,7 +320,7 @@ export const controlVocabularyGate = {
         for (const verb of ['저장', '제출', '발급']) {
           const inTail = new RegExp(`btn\\('${verb}'\\s*,\\s*'primary'`).test(tail);
           if (inTail && !head.includes(`'${verb}'`)) {
-            controlErrors.push(`${id} — 「${verb}」 버튼이 페이지 맨 아래에만 있다. 확정 동작은 pageHeader에도 둔다`);
+            controlErrors.push(`${id} - the 「${verb}」 button is only at the foot of the page. A confirming action also goes in pageHeader`);
           }
         }
       }
@@ -336,7 +336,7 @@ export const controlVocabularyGate = {
 // a judgement: the ledger says so when an entity's `read` is a frame other than its `list`.
 export const panelVerbGate = {
   id: 'panelVerbGate',
-  title: '패널 주 버튼이 화면을 잘못 말한다',
+  title: 'the panel\'s main button names the wrong screen',
   stage: 'built',
   run: (ctx) => {
     const { LEDGER, NON_ENTITY } = ledgerOf(ctx);
@@ -357,7 +357,7 @@ export const panelVerbGate = {
         const foot = /<div class="ld-foot">([\s\S]*?)<\/div><\/aside>/.exec(body);
         const primary = foot && /class="btn primary">([^<]+)</.exec(foot[1]);
         if (primary && primary[1].includes('편집')) {
-          panelVerbErrors.push(`${list} — ${entity}의 레코드 페이지가 ${read}에 따로 있으므로 패널 주 버튼은 「편집」이 아니라 「열기」다`);
+          panelVerbErrors.push(`${list} - ${entity} has a record page of its own at ${read}, so the panel\'s main button is 「열기」, not 「편집」`);
         }
       }
     }
@@ -372,7 +372,7 @@ export const panelVerbGate = {
 // remove frame that is a page of its own owes a `back` naming it.
 export const backControlGate = {
   id: 'backControlGate',
-  title: '목록으로 돌아가는 자리가 없다',
+  title: 'there is no way back to the list',
   stage: 'built',
   run: (ctx) => {
     const { LEDGER, NON_ENTITY } = ledgerOf(ctx);
@@ -394,7 +394,7 @@ export const backControlGate = {
           if (seen.has(at) || !bodyOf.has(at)) continue;
           seen.add(at);
           if (!bodyOf.get(at).includes('ph-back')) {
-            backMissing.push(`${at} — ${entity}.${verb}이므로 ${list} 목록으로 돌아가는 자리가 있어야 한다 (pageHeader의 back)`);
+            backMissing.push(`${at} - as ${entity}.${verb} it owes a way back to the ${list} list (the back of pageHeader)`);
           }
         }
       }

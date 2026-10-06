@@ -15,6 +15,7 @@ import { gatesFor } from '../gates/index.mjs';
 import { BOARD_CONTRACT } from '../partials.mjs';
 import { LATEST } from '../migrations.mjs';
 import { makeBuilders, runCases, untested } from './harness.mjs';
+import { trackDocuments, unreadDocumentNotices } from '../document-reads.mjs';
 import { cases as coreCases } from './cases.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -38,18 +39,49 @@ function contractCopies() {
   const bad = [];
   const unread = [];
   if (LATEST !== BOARD_CONTRACT) {
-    bad.push(`core/migrations.mjs의 마지막 계약은 ${LATEST}인데 BOARD_CONTRACT는 ${BOARD_CONTRACT}입니다`);
+    bad.push(`the last contract in core/migrations.mjs is ${LATEST} and BOARD_CONTRACT is ${BOARD_CONTRACT}`);
   }
   if (existsSync(TEMPLATE)) {
     const stamp = /<meta\s+name="wireframe-board-contract"\s+content="(\d+)"/.exec(readFileSync(TEMPLATE, 'utf8'));
-    if (!stamp) bad.push('assets/board-template.html에 wireframe-board-contract 표기가 없습니다');
+    if (!stamp) bad.push('assets/board-template.html carries no wireframe-board-contract stamp');
     else if (Number(stamp[1]) !== BOARD_CONTRACT) {
-      bad.push(`assets/board-template.html은 계약 ${stamp[1]}을 표기하는데 BOARD_CONTRACT는 ${BOARD_CONTRACT}입니다`);
+      bad.push(`assets/board-template.html stamps contract ${stamp[1]} and BOARD_CONTRACT is ${BOARD_CONTRACT}`);
     }
   } else {
     unread.push('assets/board-template.html');
   }
   return { bad, unread };
+}
+
+/**
+ * The unread-document notice, fed the form it exists to catch and the form it must leave alone.
+ *
+ * <p>Not a gate: a declared document nothing reads refuses nothing, because the board drew what it
+ * drew. It is asked here because the notice going quiet looks exactly like every declared
+ * document being read, which is the same decay a gate's two cases guard against.
+ *
+ * @returns `{ lines, bad }` - one line per check in the cases' own format, and the failures
+ */
+function documentReadChecks() {
+  const lines = [];
+  let bad = 0;
+  const judge = (name, documents, read, shouldReport, expectText) => {
+    const config = { documents: { ...documents } };
+    const reads = trackDocuments(config);
+    for (const key of read) void config.documents?.[key];
+    const notices = unreadDocumentNotices(reads);
+    const reported = notices.length > 0 && (!expectText || notices.some((l) => l.includes(expectText)));
+    if (reported === shouldReport) lines.push(`✔ unread documents / ${name}${notices.length ? ` → ${notices[0].slice(0, 60)}` : ''}`);
+    else {
+      lines.push(`✖ unread documents / ${name} - ${shouldReport ? 'should report and stayed quiet' : `reported what was read: ${notices[0]}`}`);
+      bad += 1;
+    }
+  };
+  judge('a declared document no gate read', { a: 'a.md', b: 'b.md' }, ['a'], true, 'documents.b');
+  judge('every declared document was read', { a: 'a.md', b: 'b.md' }, ['a', 'b'], false);
+  judge('a key whose gate left the kit names the step', { frameManifest: 'fm.md' }, [], true, 'board.gates.mjs');
+  judge('a board that declares no documents', {}, [], false);
+  return { lines, bad };
 }
 
 /** Whatever a module exports that IS a gate rather than a helper. */
@@ -110,21 +142,25 @@ export async function runGateTests(boardDir) {
 
   const missing = untested(collected, gates);
   if (missing.length) {
-    console.log(`\n시험이 없는 게이트 ${missing.length}개 — ${missing.join(', ')}`);
-    console.log('게이트를 더할 때 걸려야 할 경우와 걸리면 안 되는 경우를 같은 변경에 함께 적는다.');
+    console.log(`\ngates with no case: ${missing.join(', ')}`);
+    console.log('A gate gets the case that must trip it and the case that must not in the same change.');
   }
   const orphans = await unreached(gates, ctx.patternDir);
   if (orphans.length) {
-    console.log(`\n어느 목록에도 없는 게이트 ${orphans.length}개 — ${orphans.join(', ')}`);
-    console.log('저장소에 있고 아무것도 실행하지 않습니다 — 찾아본 사람은 규칙이 지켜진다고 읽습니다.');
-    console.log('CORE_GATES(kit/core/gates/index.mjs)나 패턴의 gates에 넣습니다.');
+    console.log(`\ngates no list reaches: ${orphans.join(', ')}`);
+    console.log('They are in the repository and nothing runs them - whoever finds one reads the rule as held.');
+    console.log('Add each to CORE_GATES (kit/core/gates/index.mjs) or to the pattern\'s gates.');
   }
   const copies = contractCopies();
   if (copies.bad.length) {
-    console.log(`\n계약 번호의 사본이 BOARD_CONTRACT와 다릅니다: ${copies.bad.join(' · ')}`);
-    console.log('BOARD_CONTRACT를 올리는 변경에서 마이그레이션 항목과 템플릿 표기를 함께 고칩니다.');
+    console.log(`\ncopies of the contract number disagree with BOARD_CONTRACT: ${copies.bad.join(' · ')}`);
+    console.log('The change that raises BOARD_CONTRACT updates the migration entry and the template stamp with it.');
   }
-  if (copies.unread.length) console.log(`\n계약 표기를 대조하지 못한 사본: ${copies.unread.join(', ')}`);
-  console.log(bad ? `\n${bad}건 실패` : `\n${collected.length}건 모두 통과`);
-  return bad === 0 && missing.length === 0 && orphans.length === 0 && copies.bad.length === 0;
+  if (copies.unread.length) console.log(`\ncontract stamps not compared on this install: ${copies.unread.join(', ')}`);
+  const reads = documentReadChecks();
+  console.log(`\n${reads.lines.join('\n')}`);
+  const total = collected.length + reads.lines.length;
+  const failed = bad + reads.bad;
+  console.log(failed ? `\n${failed} of ${total} failed` : `\nall ${total} cases passed`);
+  return failed === 0 && missing.length === 0 && orphans.length === 0 && copies.bad.length === 0;
 }

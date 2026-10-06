@@ -9,7 +9,7 @@ import { splitTop } from './util.mjs';
 // and state both say "dialog" and whose picture has none, and every check upstream passes.
 export const overlayGate = {
   id: 'overlayGate',
-  title: 'overlay를 셸에 넘기지 않았다 (셸 인자로 overlay를 전달할 것)',
+  title: 'overlay is not handed to the shell (pass overlay as a shell argument)',
   stage: 'built',
   run: (ctx) => {
     return ctx.loaded
@@ -31,7 +31,7 @@ export const overlayGate = {
 // not a use, and a use is a call, a template hole, or a value passed on.
 export const deadImportGate = {
   id: 'deadImportGate',
-  title: '쓰지 않는 import가 남아 있다 (import 줄이 그 화면이 그리는 것을 말해야 한다)',
+  title: 'an unused import remains (the import line says what the screen draws)',
   stage: 'built',
   run: (ctx) => {
     const errs = [];
@@ -42,7 +42,7 @@ export const deadImportGate = {
           .split('\n').map((l) => l.replace(/^\s*\/\/.*$/, '')).join('\n');
         const dead = m[1].split(',').map((s) => s.trim()).filter(Boolean)
           .filter((n) => !new RegExp(`\\b${n}\\s*[({\`]|\\b${n}\\b(?=\\s*[,)\\]])`).test(body));
-        if (dead.length) errs.push(`${idOf(sc.file)} — ${dead.join(', ')}`);
+        if (dead.length) errs.push(`${idOf(sc.file)} - ${dead.join(', ')}`);
       }
     }
     return errs;
@@ -59,7 +59,7 @@ export const deadImportGate = {
 // day it is written.
 export const optionKeyGate = {
   id: 'optionKeyGate',
-  title: '컴포넌트가 모르는 키로 불린다 (그 내용은 그려지지 않는다)',
+  title: 'a component is called with a key it does not know (that content is not drawn)',
   stage: 'built',
   run: (ctx) => {
     const optionErrors = [];
@@ -81,7 +81,7 @@ export const optionKeyGate = {
             const used = splitTop(m[1]).map((part) => /^\s*([a-zA-Z_][\w]*)\s*:/.exec(part)?.[1]).filter(Boolean);
             const stray = used.filter((k) => !keys.has(k));
             if (stray.length) {
-              optionErrors.push(`${idOf(sc.file)} — ${name}({ ${stray.join(', ')} }) — 모르는 키다 (쓸 수 있는 키: ${[...keys].join(', ')})`);
+              optionErrors.push(`${idOf(sc.file)} - ${name}({ ${stray.join(', ')} }): unknown key (known keys: ${[...keys].join(', ')})`);
             }
           }
         }
@@ -99,7 +99,7 @@ export const optionKeyGate = {
 // survived until a persona review walked the pair.
 export const dupKeyGate = {
   id: 'dupKeyGate',
-  title: '한 호출에 같은 키가 두 번 있다',
+  title: 'one call carries the same key twice',
   stage: 'built',
   run: (ctx) => {
     const dupKeyErrors = [];
@@ -123,7 +123,7 @@ export const dupKeyGate = {
           // `overlay,` shorthand and `overlay: x` name the same key.
           const key = /^\s*([a-zA-Z_]\w*)\s*(?::|,|$)/.exec(part)?.[1];
           if (!key) continue;
-          if (seen.has(key)) dupKeyErrors.push(`${idOf(sc.file)} — ${m[1]}({ … }) 에 「${key}」가 두 번 있다. 뒤엣것이 조용히 이기므로 앞엣것은 그려지지 않는다`);
+          if (seen.has(key)) dupKeyErrors.push(`${idOf(sc.file)} - ${m[1]}({ … }) carries 「${key}」 twice. The later one wins silently, so the earlier one is not drawn`);
           seen.set(key, true);
         }
       }
@@ -149,7 +149,7 @@ export const dupKeyGate = {
 // carries no size and no register marker, and a gate that accepted it would accept the defect.
 export const classlessGate = {
   id: 'classlessGate',
-  title: '화면 안에 클래스 없는 raw 요소가 있다',
+  title: 'a raw element without a class sits inside a screen',
   stage: 'built',
   run: (ctx) => {
     const bad = [];
@@ -164,7 +164,7 @@ export const classlessGate = {
       for (const [tag, name] of screen[1].matchAll(/<(div|p)(?![a-zA-Z0-9])([^>]*)>/g)) {
         const attrs = tag.slice(1 + name.length, -1);
         if (/\bclass\s*=\s*["'][^"']+["']/.test(attrs)) continue;
-        bad.push(`${aid} — <${name}${attrs.trim() ? ' ' + attrs.trim().slice(0, 30) : ''}> 클래스가 없다`);
+        bad.push(`${aid} - <${name}${attrs.trim() ? ' ' + attrs.trim().slice(0, 30) : ''}> has no class`);
       }
     }
     return bad;
@@ -193,7 +193,7 @@ export const structureGate = {
           break;
         }
       }
-      if (stack.length) unbalanced.push(`${aid}: ${stack.length} tag(s) left open — <${stack.join('>, <')}>`);
+      if (stack.length) unbalanced.push(`${aid}: ${stack.length} tag(s) left open: <${stack.join('>, <')}>`);
     }
     return unbalanced;
   },
@@ -284,7 +284,7 @@ function screenBodyArgs(src) {
  */
 export const panelFormStateGate = {
   id: 'panelFormStateGate',
-  title: '「패널 폼 열림」인데 패널 자리가 비어 있다',
+  title: 'the state is 「패널 폼 열림」 and the panel slot is empty',
   stage: 'preflight',
   run: (ctx) => {
     const bad = [];
@@ -300,7 +300,7 @@ export const panelFormStateGate = {
       // The base and the order it takes, said out loud. The cost this rule leaves behind is
       // 「open the base and check which argument is which」, and it is paid on every frame written
       // against a base whose overlay comes first. Saying it in the refusal is what removes it.
-      const order = `${imp ? imp[1] : e.file}는 ${params.join(' · ')} 순서다`;
+      const order = `${imp ? imp[1] : e.file} takes ${params.join(' · ')} in that order`;
       const filled = params.some((slot, i) => {
         if (slot === 'overlay') return false;
         const arg = (call.args[i] ?? '').trim();
@@ -308,7 +308,7 @@ export const panelFormStateGate = {
       });
       if (filled) continue;
       const fixed = params.map((pp) => (pp === 'overlay' ? 'undefined' : call.args[0] ?? 'form'));
-      bad.push(`${e.num}: state가 「패널 폼 열림」인데 screenBody(${call.raw.trim()})가 패널 자리에 아무것도 넘기지 않는다 — 다이얼로그로 그려진다. screenBody(${fixed.join(', ')})로 쓴다 (${order})`);
+      bad.push(`${e.num}: the state is 「패널 폼 열림」 and screenBody(${call.raw.trim()}) passes nothing to the panel slot, so it draws as a dialog. Write screenBody(${fixed.join(', ')}) (${order})`);
     }
     return bad;
   },
@@ -316,7 +316,7 @@ export const panelFormStateGate = {
 
 export const slotGate = {
   id: 'slotGate',
-  title: '다이얼로그가 상세 패널 자리로 들어간다',
+  title: 'a dialog goes into the detail panel slot',
   stage: 'preflight',
   run: (ctx) => {
     const bad = [];
@@ -339,7 +339,7 @@ export const slotGate = {
       const sig = /export const screenBody = \(([^)]*)\)/.exec(baseSrc);
       if (!sig) continue;
       const params = sig[1].split(',').map((x) => x.split('=')[0].trim());
-      const order = `${imp[1]}는 ${params.join(' · ')} 순서다`;
+      const order = `${imp[1]} takes ${params.join(' · ')} in that order`;
       const args = call.args;
       args.forEach((arg, i) => {
         if (!arg || arg === 'undefined' || arg === "''" || arg === '""') return;
@@ -353,7 +353,7 @@ export const slotGate = {
         // the tab is drawn. Nothing throws and the picture looks like a screen.
         if (slot === 'overlay' && /^[A-Za-z_$][\w$]*\(/.test(arg)) {
           const fixed = params.map((pp) => (pp === 'overlay' ? "''" : arg));
-          bad.push(`${e.num}: screenBody(${arg}) — ${arg}는 상세 패널인데 ${i + 1}번째 인자라 「overlay」 자리로 들어간다. screenBody(${fixed.join(', ')})로 쓴다 (${order})`);
+          bad.push(`${e.num}: screenBody(${arg}) - ${arg} is a detail panel and, as argument ${i + 1}, lands in the overlay slot. Write screenBody(${fixed.join(', ')}) (${order})`);
           return;
         }
         // Only a bare identifier can name an exported dialog. Anything else - a call, a template
@@ -372,14 +372,14 @@ export const slotGate = {
         // takes. 「레이아웃이 깨짐」 is how it was reported, which is all a reader can say.
         if (slot === 'overlay' && kind === 'panelForm') {
           const fixed = params.map((pp) => (pp === 'overlay' ? 'undefined' : arg));
-          bad.push(`${e.num}: screenBody(${call.raw.trim()}) — ${arg}는 패널 폼인데 ${i + 1}번째 인자라 「overlay」 자리로 들어가 기기 위에 겹쳐 그려진다. screenBody(${fixed.join(', ')})로 쓴다 (${order})`);
+          bad.push(`${e.num}: screenBody(${call.raw.trim()}) - ${arg} is a panel form and, as argument ${i + 1}, lands in the overlay slot and draws over the device. Write screenBody(${fixed.join(', ')}) (${order})`);
           return;
         }
         const isDialog = kind === 'dialog' || kind === 'viewerDialog';
         if (!isDialog || slot === 'overlay') return;
         const fixed = params.map((pp, j) => (pp === 'overlay' ? arg : j === i ? 'undefined' : 'undefined'));
         while (fixed.length && fixed[fixed.length - 1] === 'undefined') fixed.pop();
-        bad.push(`${e.num}: screenBody(${call.raw.trim()}) — ${arg}는 다이얼로그인데 ${i + 1}번째 인자라 「${slot}」 자리로 들어간다. screenBody(${fixed.join(', ')})로 쓴다 (${order})`);
+        bad.push(`${e.num}: screenBody(${call.raw.trim()}) - ${arg} is a dialog and, as argument ${i + 1}, lands in the ${slot} slot. Write screenBody(${fixed.join(', ')}) (${order})`);
       });
     }
     return bad;

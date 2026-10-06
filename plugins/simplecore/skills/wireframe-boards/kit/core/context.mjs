@@ -12,7 +12,8 @@ const kitCoreDir = dirname(fileURLToPath(import.meta.url));
 import { idOf } from './ids.mjs';
 import { makePartials, BOARD_CONTRACT } from './partials.mjs';
 import { textFor } from './text.mjs';
-import { migrationReport } from './migrations.mjs';
+import { migrationReport, CONFIG_CHANGES, REMOVED_EXPORTS } from './migrations.mjs';
+import { trackDocuments } from './document-reads.mjs';
 import { loadSplit } from './split.mjs';
 
 /** Import a board-local module by path, or null when the board does not have that file. */
@@ -78,22 +79,31 @@ export function patternDirFor(boardDir, pattern) {
  * Which requirement each SCREEN answers, read from the board's own frame inventory.
  *
  * <p>A frame's notes cite requirements as it argues about them, and a state frame that rewrites its
- * notes loses the citations its base carried - so the notes are not where 「이 화면이 답하는 요구
- * 사항」 lives. The inventory's trace table is: one row per requirement naming the screens that
- * answer it, maintained because the proposal is scored against it.
+ * notes loses the citations its base carried - so the notes are not where the requirements a
+ * screen answers live. The inventory's trace table is: one row per requirement naming the screens
+ * that answer it, kept because the work is judged against it.
+ *
+ * <p><b>The shape of a requirement id is the board's</b>, declared as `requirements.id` (a regular
+ * expression). A board that declares none reads no trace table - the documents decide what a
+ * requirement looks like, and the kit guessing one would read some other project's numbering into
+ * this one.
  *
  * <p>Keyed by SCREEN id (`B-01`), so every state of a screen inherits the same answer, which is
  * what a trace table means.
  */
 function reqTrace(boardDir, config) {
+  const requirements = config.requirements ?? {};
+  if (!requirements.id) return {};
   const rel = config.documents?.frameInventory;
   if (!rel) return {};
   const p = join(boardDir, rel);
   if (!existsSync(p) || statSync(p).isDirectory()) return {};
+  const text = readFileSync(p, 'utf8');
+  const one = new RegExp(requirements.id, 'g');
+  const row = new RegExp(`^\\|\\s*((?:${requirements.id})[^|]*?)\\s*\\|\\s*([^|]*)\\|`, 'gm');
   const out = {};
-  for (const m of readFileSync(p, 'utf8')
-    .matchAll(/^\|\s*((?:[A-Z]{3}-\d{3}[^|]*?))\s*\|\s*([^|]*)\|/gm)) {
-    const req = (m[1].match(/[A-Z]{3}-\d{3}/g) ?? []);
+  for (const m of text.matchAll(row)) {
+    const req = m[1].match(one) ?? [];
     if (!req.length) continue;
     for (const id of m[2].matchAll(/\b([A-Z])-(\d{2,})\b/g)) {
       const key = `${id[1]}-${id[2]}`;
@@ -103,21 +113,45 @@ function reqTrace(boardDir, config) {
   for (const k of Object.keys(out)) out[k] = [...new Set(out[k])];
   // A screen the board adds BEYOND the requirements has no row in the trace, and a blank line
   // there reads as an oversight rather than as the decision it is. The inventory says which those
-  // are in its own section; naming them turns the blank into an answer.
-  const beyond = /##\s*\d+\.\s*요구사항 밖[\s\S]*/.exec(readFileSync(p, 'utf8'));
-  if (beyond) {
-    for (const m of beyond[0].matchAll(/^\|\s*([A-Z])-(\d{2,})\b/gm)) {
-      const key = `${m[1]}-${m[2]}`;
-      if (!out[key]) out[key] = ['요구사항 밖'];
+  // are in a numbered section of its own; naming them turns the blank into an answer, and the
+  // section's heading text is what the screen carries.
+  if (requirements.outside) {
+    const heading = requirements.outside.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const beyond = new RegExp(`##\\s*\\d+\\.\\s*${heading}[\\s\\S]*`).exec(text);
+    if (beyond) {
+      for (const m of beyond[0].matchAll(/^\|\s*([A-Z])-(\d{2,})\b/gm)) {
+        const key = `${m[1]}-${m[2]}`;
+        if (!out[key]) out[key] = [requirements.outside];
+      }
     }
   }
   return out;
 }
 
+/**
+ * Import one screen module, naming the step when it imports a piece its pattern no longer ships.
+ *
+ * <p>The engine's own message names the missing export and the importing file, which is accurate
+ * and says nothing about why the pattern lacks it. The recorded change does.
+ */
+async function importScreen(path, config) {
+  try {
+    return (await import(pathToFileURL(path).href)).default;
+  } catch (e) {
+    const gone = REMOVED_EXPORTS[config.pattern] ?? [];
+    const name = /does not provide an export named '([^']+)'/.exec(e?.message ?? '')?.[1];
+    if (e instanceof SyntaxError && name && gone.includes(name)) {
+      const change = CONFIG_CHANGES.find((c) => c.applies(config) && c.id === `pattern: '${config.pattern}'`);
+      throw new Error(`${e.message}\n\n${change ? `${change.title}.\n${change.steps.map((x) => `  · ${x}`).join('\n')}` : ''}`);
+    }
+    throw e;
+  }
+}
+
 export async function loadBoard(boardDir, { screens = true } = {}) {
   const configPath = join(boardDir, 'board.config.mjs');
   if (!existsSync(configPath)) {
-    throw new Error(`${boardDir}에 board.config.mjs가 없습니다 — 여기는 보드 폴더가 아닙니다`);
+    throw new Error(`${boardDir} has no board.config.mjs - this is not a board folder`);
   }
   const config = { ...CONFIG_DEFAULTS, ...(await import(pathToFileURL(configPath).href)).default };
   config.boardName ??= config.pdfName ?? basename(boardDir);
@@ -127,29 +161,33 @@ export async function loadBoard(boardDir, { screens = true } = {}) {
   // read as 1 - the contract that had no stamp - rather than as «current», because assuming
   // current is the reading that silently skips a migration the board genuinely owes.
   config.contract ??= 1;
+
+  // Every document key read from here on is recorded, so the build can name a declared document
+  // no gate looked at. Installed before anything reads the config.
+  const documentReads = trackDocuments(config);
   if (config.contract < BOARD_CONTRACT) {
     // Refused, not warned. The steps between two contracts change what a screen file may say and
     // where the components live, so a build that keeps going produces a board drawn half one way
     // and half the other - and nothing in the artifact would show which halves.
     throw new Error(
       `${migrationReport(config.contract, BOARD_CONTRACT)}\n\n` +
-      `board.config.mjs의 contract를 ${BOARD_CONTRACT}로 올리는 것은 마이그레이션의 마지막 단계입니다.`
+      `Raising contract to ${BOARD_CONTRACT} in board.config.mjs is the LAST step of the migration.`
     );
   }
   if (config.contract > BOARD_CONTRACT) {
     throw new Error(
-      `보드는 계약 ${config.contract}을 선언했는데 이 킷이 지원하는 계약은 ${BOARD_CONTRACT}까지입니다 — ` +
-      '킷이 오래되었습니다. claude plugin update simplecore@simplecore-skills'
+      `The board declares contract ${config.contract} and this kit supports contracts up to ${BOARD_CONTRACT} - ` +
+      'the kit is out of date: claude plugin update simplecore@simplecore-skills'
     );
   }
 
   const patternDir = patternDirFor(boardDir, config.pattern);
   if (!existsSync(patternDir)) {
     throw new Error(
-      `공통패턴 '${config.pattern}'을 찾지 못했습니다 (${patternDir}).\n` +
-      "킷이 싣고 다니는 패턴은 이름으로 적고(pattern: 'simplix-basic'), 이 보드가 가진 패턴은 " +
-      "보드 폴더 기준 경로로 적습니다(pattern: './pattern'). 쓸 수 있는 이름은 " +
-      'node wf.mjs patterns, 보드가 제 패턴을 갖는 절차는 node wf.mjs pattern fork입니다.'
+      `Pattern '${config.pattern}' was not found (${patternDir}).\n` +
+      "A pattern the kit ships is written by name (pattern: 'simplix-basic'), a pattern this board " +
+      "carries by a path from the board folder (pattern: './pattern'). node wf.mjs patterns lists " +
+      'the names; node wf.mjs pattern fork gives the board a pattern of its own.'
     );
   }
   const pattern = (await import(pathToFileURL(join(patternDir, 'pattern.mjs')).href)).default;
@@ -228,7 +266,11 @@ export async function loadBoard(boardDir, { screens = true } = {}) {
     projectGates,
     styles,
     introParts,
-    partials: makePartials({ components, roles, lang: config.boardLang, reqsById: reqTrace(boardDir, config) }),
+    documentReads,
+    partials: makePartials({
+      components, roles, lang: config.boardLang,
+      reqsById: reqTrace(boardDir, config), requirements: config.requirements ?? null,
+    }),
     text: textFor(config.boardLang),
     manifest: [],
     sections: [],
@@ -249,9 +291,9 @@ export async function loadBoard(boardDir, { screens = true } = {}) {
     for (const sc of sec.screens) {
       const path = join(boardDir, 'src/screens', `${sc.file}.mjs`);
       if (!existsSync(path)) {
-        throw new Error(`manifest에 적힌 화면 파일이 없습니다: src/screens/${sc.file}.mjs`);
+        throw new Error(`the manifest names a screen file that does not exist: src/screens/${sc.file}.mjs`);
       }
-      const mod = (await import(pathToFileURL(path).href)).default;
+      const mod = await importScreen(path, config);
       entries.push({ ...sc, mod, id: idOf(sc.file) });
       ctx.loaded.push({ num: idOf(sc.file) ?? sc.file, file: sc.file, label: sc.label, mod });
     }

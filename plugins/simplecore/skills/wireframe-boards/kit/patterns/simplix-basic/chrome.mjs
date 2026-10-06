@@ -197,11 +197,11 @@ export function makeConsole({
     search: searchIn = search, sitePick = true,
   }) => {
     if (!TAB_KEYS.has(tab)) {
-      throw new Error(`console_ — 없는 탭 「${tab}」 (쓸 수 있는 탭: ${[...TAB_KEYS].join(' · ')}), `
-        + '상단 메뉴와 사이드바 맥락을 지정해야 한다');
+      throw new Error(`console_ - no tab 「${tab}」 (tabs: ${[...TAB_KEYS].join(' · ')}); `
+        + 'the tab sets the top menu and the sidebar context');
     }
     if (current && !MENU_LABELS.has(current)) {
-      throw new Error(`console_ — 어느 메뉴에도 없는 「${current}」 — 보드의 chrome.mjs MENU에 있는 이름이어야 한다`);
+      throw new Error(`console_ - 「${current}」 is in no menu: current takes a name from MENU in the board's chrome.mjs`);
     }
     const groups = tabGroups(tab, role);
     return `<div class="console">` +

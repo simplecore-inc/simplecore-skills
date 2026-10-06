@@ -143,14 +143,10 @@ frame of its own with an id of its own.
 built from `...base` inherits that reader's mistake along with the body. So a finding can name a
 file whose source does not contain the thing the finding is about.
 
-It happened: a component option named `role` collided with a frame's own `role:`, and three of the
-eight frames reported had no `role` in their source at all - they spread the module of a frame that
-did. **The three were only found because the check is an error rather than a warning**; scrolled
-past, they would have stayed.
-
 **So when a pattern-reading check fires, look past the named files to what spreads them**, and when
 naming a component option, check it against the keys a frame declares - the collision is invisible
-from inside the kit.
+from inside the kit. The case behind this rule is in the skill's `references/build-kit.md`
+§ What the gates catch that reading would not (`$(node wf.mjs where)/skills/wireframe-boards/`).
 
 ## A frame id in prose is a citation, whatever the sentence around it says
 

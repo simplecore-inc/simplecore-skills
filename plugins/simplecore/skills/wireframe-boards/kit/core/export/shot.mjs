@@ -56,7 +56,7 @@ export async function shootFrames(boardDir, outDir, prefix = '', { notes = true 
     ? [process.env.BOARD]
     : outputFiles(config).map((f) => join(boardDir, f));
   for (const f of files) {
-    if (!existsSync(f)) throw new Error(`빌드된 보드가 없습니다: ${f} — 먼저 node wf.mjs build를 실행합니다`);
+    if (!existsSync(f)) throw new Error(`no built board: ${f} - run node wf.mjs build first`);
   }
   await mkdir(outDir, { recursive: true });
 
@@ -84,7 +84,7 @@ export async function shootFrames(boardDir, outDir, prefix = '', { notes = true 
       }
       taken += frames.length;
     }
-    console.log(`${taken}개 → ${outDir}${files.length > 1 ? ` (파일 ${files.length}개)` : ''}`);
+    console.log(`${taken} frames → ${outDir}${files.length > 1 ? ` (from ${files.length} files)` : ''}`);
     return taken;
   } finally {
     await browser.close();

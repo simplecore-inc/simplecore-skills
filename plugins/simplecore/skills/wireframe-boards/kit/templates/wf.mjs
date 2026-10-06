@@ -136,9 +136,9 @@ const kitDir = candidates().find((d) => existsSync(d) && isKit(d));
 
 if (!kitDir) {
   console.error(
-    'wireframe-boards 킷을 찾지 못했습니다.\n' +
+    'The wireframe-boards kit was not found.\n' +
     '  claude plugin install simplecore@simplecore-skills\n' +
-    '개발 중인 체크아웃을 쓰려면 WIREFRAME_KIT에 그 kit 디렉터리 경로를 지정합니다.'
+    'To use a checkout under development, set WIREFRAME_KIT to its kit directory.'
   );
   process.exit(1);
 }
@@ -172,7 +172,7 @@ try {
   // is a fault in this file and surfaces as one.
   if (typeof e?.code !== 'string') throw e;
   cpSync(kitDir, link, { recursive: true, dereference: true });
-  console.error(`알림: 링크를 만들 수 없어 킷을 복사했습니다 (${e.code}). 스킬을 갱신하면 다시 실행하세요.`);
+  console.error(`notice: the kit was copied because a link could not be made (${e.code}). Run again after updating the skill.`);
 }
 
 // Appended rather than inserted: the subcommand has to stay at argv[2], and a positional the

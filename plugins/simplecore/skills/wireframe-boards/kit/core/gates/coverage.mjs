@@ -11,12 +11,12 @@
 // «still has to build», and this gate then refused every build until a frame was drawn.
 export const sectionCoverageGate = {
   id: 'sectionCoverageGate',
-  title: '아직 그리지 않은 클러스터가 있다',
+  title: 'a required cluster is not drawn yet',
   stage: 'built',
   run: (ctx) => {
     const required = ctx.config.requiredSections ?? [];
     if (!required.length) return [];
-    if (!ctx.manifest.length) return [`manifest is empty — sections required: ${required.join(', ')}`];
+    if (!ctx.manifest.length) return [`manifest is empty - sections required: ${required.join(', ')}`];
     const present = new Set(ctx.manifest.map((s) => s.letter));
     const missing = required.filter((l) => !present.has(l));
     return missing.length ? [`sections not present: ${missing.join(', ')}`] : [];

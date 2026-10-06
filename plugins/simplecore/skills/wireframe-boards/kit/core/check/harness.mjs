@@ -31,6 +31,9 @@ import { idOf } from '../ids.mjs';
  */
 export const FIXTURE_CONFIG = {
   today: '2026-08-12',
+  // The language list a forked pattern's cases are judged against: a board's own copy of a
+  // pattern may carry cases that expect it here. The shipped patterns' cases declare theirs in
+  // `over` and read nothing from this one.
   site: { languages: ['한국어', 'English', 'Tiếng Việt', 'ភាសាខ្មែរ'], offLanguages: ['中文'] },
   phases: { 2: { tag: '2단계', why: '뒤에 만든다' } },
   features: {
@@ -117,12 +120,12 @@ export async function runCases(cases, gates) {
   let bad = 0;
   for (const { gate, name, ctx, shouldFire } of cases) {
     const g = byId[gate];
-    if (!g) { console.log(`✖ ${gate} — 그런 게이트가 없다`); bad += 1; continue; }
+    if (!g) { console.log(`✖ ${gate} - no such gate`); bad += 1; continue; }
     let msgs;
     try {
       msgs = (await g.run(ctx)) ?? [];
     } catch (e) {
-      console.log(`✖ ${gate} / ${name} — 던졌다: ${e.message}`);
+      console.log(`✖ ${gate} / ${name} - threw: ${e.message}`);
       bad += 1;
       continue;
     }
@@ -130,7 +133,7 @@ export async function runCases(cases, gates) {
     if (fired === shouldFire) {
       console.log(`✔ ${gate} / ${name}${fired ? ` → ${msgs[0].slice(0, 60)}` : ''}`);
     } else {
-      console.log(`✖ ${gate} / ${name} — ${shouldFire ? '잡아야 하는데 조용하다' : `잡으면 안 되는데 걸렸다: ${msgs[0]}`}`);
+      console.log(`✖ ${gate} / ${name} - ${shouldFire ? 'should fire and stayed quiet' : `should stay quiet and fired: ${msgs[0]}`}`);
       bad += 1;
     }
   }

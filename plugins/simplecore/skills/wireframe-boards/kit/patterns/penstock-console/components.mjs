@@ -216,62 +216,11 @@ export const hint = (t) => `<div class="hint">${t}</div>`
 export const sticky = (t) => `<div class="sticky">${t}</div>`
 export const search = (t = '검색') => `<span class="input search">${t}</span>`
 
-// ── answer, confidence, evidence ────────────────────────────────────────────
-// A generated answer is shown sentence by sentence, because confidence is judged
-// per sentence - not per answer. `grade` is ok | part | none.
-export const GRADE_LABEL = { ok: '뒷받침됨', part: '일부만', none: '근거 없음' }
-export function sentence({ text, grade = 'ok', refs = [], active = false }) {
-  const marks = refs.map((r) => `<span class="ref">${r}</span>`).join('')
-  return `<div class="sent ${grade}${active ? ' active' : ''}"><span class="gr">${GRADE_LABEL[grade]}</span><span class="tx">${text}</span>${marks}</div>`
-}
-
-// Where a piece of evidence came from decides how deep it can be traced back.
-export const TIER_LABEL = {
-  doc: '내부 문서',
-  data: '내부 데이터',
-  tool: '외부 도구',
-  sum: '묶음 요약',
-  page: '쪽 그림',
-}
-export const tier = (t) => `<span class="tier ${t}">${TIER_LABEL[t]}</span>`
+// ── score ────────────────────────────────────────────────────────────────────
 export const scorebar = (pct) =>
   `<span class="scorebar"><span class="fill" style="width:${pct}%"></span></span><span class="scorenum">${pct}</span>`
 
-/** One evidence row in the right-hand list. `n` is the citation number the answer refers to. */
-/**
- * One evidence card.
- *
- * `meta` is optional, and its absence draws no row at all. A card whose subject may not say how
- * much material stands behind it - a community summary, where the count itself tells a reader
- * the size of what their scope hides - passes no meta, and the line has to vanish rather than
- * print the missing value as a label.
- */
-export function evidence({
-  n,
-  t = 'doc',
-  title,
-  meta,
-  score,
-  masked = false,
-  // Whether this card's material carries a sentence addressed to the model (14.6 · C-10).
-  //
-  // On the card and not only in the passage, because the list is what a reader scans: told that an
-  // answer leaned on such a sentence, the card is where they find out WHICH of four it was. The
-  // mark is solid like `masked`, never the dashed AI mark - one is somebody else's file giving an
-  // order and the other is this product proposing something.
-  planted: hasPlanted = false,
-  active = false,
-}) {
-  const tags = [masked ? maskedTag() : '', hasPlanted ? planted() : ''].filter(Boolean).join(' ')
-  const tail = tags ? (meta ? ' ' : '') + tags : ''
-  const foot = meta || tags ? `\n  <div class="ev-meta">${meta ?? ''}${tail}</div>` : ''
-  return `<div class="ev-card${active ? ' active' : ''}">
-  <div class="ev-top"><span class="ev-n">${n}</span>${tier(t)}<span class="grow"></span>${score != null ? scorebar(score) : ''}</div>
-  <div class="ev-title">${title}</div>${foot}
-</div>`
-}
-
-// ── source viewer (markdown ⇄ PDF on the same block model) ──────────────────
+// ── source viewer ────────────────────────────────────────────────────────────
 /**
  * The two faces of one part. The console names them by their formats, because an operator
  * reviewing a parse is looking at exactly those; the asking screens name them 글 · 쪽, because
@@ -289,37 +238,6 @@ export function mdBlocks(blocks) {
     )
     .join('')}</div>`
 }
-
-/** PDF side: a page with absolutely-placed boxes - the same block coordinates. */
-export function pdfPage({ page = 1, of = 1, boxes = [] }) {
-  const rects = boxes
-    .map(
-      (b) =>
-        `<span class="hl${b.masked ? ' mask' : ''}${b.active ? ' active' : ''}" style="left:${b.x}%;top:${b.y}%;width:${b.w}%;height:${b.h}%"></span>`
-    )
-    .join('')
-  return `<div class="pdfview"><div class="pdfpage">${rects}</div><div class="pdfbar"><span>${page} / ${of} 쪽</span><span class="grow"></span><span class="tb-btn">−</span><span class="tb-btn">+</span></div></div>`
-}
-
-// ── iterative search rounds ─────────────────────────────────────────────────
-/**
- * One round of the search loop: what it asked, what it found, what it judged missing.
- * `verdict` is ok | part | none | run - `run` is the round in flight, which the reader
- * watches while the answer is still being written.
- */
-const ROUND_LABEL = { ...GRADE_LABEL, run: '찾는 중' }
-export function round({ n, question, found, verdict = 'part', done = false, next = '' }) {
-  return `<div class="round ${verdict}">
-  <div class="rd-top"><span class="rd-n">${n}회차</span><span class="rd-v">${done ? '채워짐' : ROUND_LABEL[verdict]}</span></div>
-  <div class="rd-q">${question}</div>
-  ${found ? `<div class="rd-f">${found}</div>` : ''}
-  ${next ? `<div class="rd-f">다음에 묻기로 한 것 · ${next}</div>` : ''}
-</div>`
-}
-
-// ── knowledge graph canvas (rendered with sigma.js in the product) ──────────
-export const graphCanvas = (note = '지식 그래프 · WebGL 캔버스') =>
-  `<div class="graphview"><span class="gnote">${note}</span></div>`
 
 // ── sensitive values ────────────────────────────────────────────────────────
 export const maskedTag = () => `<span class="masked">가려짐</span>`
@@ -418,12 +336,6 @@ export const choice = ({ label, options, hint: h }) =>
   chips(options.map((o) => chip(o.label, !!o.on))) +
   `${h ? `<span class="t-sub">${h}</span>` : ''}</div>`
 
-/** The ask surface with nothing asked yet: one box, the scope beside it. */
-export const askBox = ({ placeholder = '무엇이든 물어보세요', left = '', right = '' }) =>
-  `<div class="askbox"><span class="ph">${placeholder}</span>` +
-  hrow(`${left}<span class="grow"></span>${right}`) +
-  `</div>`
-
 // ── AI assistance mark ──────────────────────────────────────────────────────
 /**
  * Marks anything the product PROPOSES rather than knows. Every assisted feature carries
@@ -437,14 +349,6 @@ export const ai = (label = 'AI') => `<span class="ai"><span class="gl">◈</span
 /** A block whose whole content is a proposal - carries the mark at its top-left. */
 export const aiBox = (children, label = 'AI 추천') =>
   `<div class="aibox">${ai(label)}${children}</div>`
-
-/**
- * Marks a sentence inside a document that speaks TO the model instead of about the subject.
- * Solid rather than dotted so it never reads as the AI mark: one is the product proposing,
- * the other is somebody else's file trying to give orders.
- */
-export const planted = (label = '자료 속 지시') =>
-  `<span class="planted"><span class="gl">⚠</span>${label}</span>`
 
 // ── validity periods ────────────────────────────────────────────────────────
 /**
@@ -672,46 +576,20 @@ export const CATALOG = [
     ex: `${hdot('ok')} ${hdot('warn')} ${hdot('bad')} ${hdot('off')}${grid(3, [stat({ k: '처리 완료', v: '21', hint: '문서' }), stat({ k: '처리 중', v: '2' }), stat({ k: '실패', v: '1', hint: '확인 필요' })])}${banner({ dot: 'warn', text: '<b>상한에 걸려 멈췄습니다</b> · 3회차까지 찾은 결과입니다', actions: btn('더 찾기', 'ghost') })}`,
   },
   {
-    cat: '신뢰도·근거',
-    name: 'sentence({text, grade, refs})',
-    note: '답변 문장 하나 + 신뢰도 등급 · ok·part·none',
-    ex: `${sentence({ text: '적정공기는 산소농도 18퍼센트 이상 23.5퍼센트 미만입니다.', grade: 'ok', refs: [1, 2] })}${sentence({ text: '불활성화가 진행되는 동안에는 농도를 계속 감시하는 것으로 보입니다.', grade: 'part', refs: [2] })}${sentence({ text: '측정 간격은 확인되지 않았습니다.', grade: 'none' })}`,
-  },
-  {
-    cat: '신뢰도·근거',
-    name: 'evidence({n, t, title, meta, score, masked})',
-    note: '근거 카드 · 출처 등급 doc·data·tool',
-    ex: `${evidence({ n: 1, t: 'doc', title: '밀폐공간 작업프로그램 수립 및 시행에 관한 기술지원규정.pdf', meta: '6쪽 · 적정공기 정의', score: 92, active: true })}${evidence({ n: 3, t: 'data', title: '조회 · 시험 주기를 넘긴 안전밸브', meta: '3행 · 실행 0.4초', score: 71 })}${evidence({ n: 5, t: 'tool', title: '사내 설비관리시스템', meta: '제품 밖 · 2건 응답', score: 44, masked: true })}`,
-  },
-  {
     cat: '원본 보기',
-    name: 'viewSwitch · mdBlocks · pdfPage',
-    note: '마크다운 ⇄ PDF 전환 · 같은 블록 좌표를 공유',
+    name: 'viewSwitch · mdBlocks',
+    note: '같은 내용의 두 형식 전환 · 읽는 차례대로 놓인 블록',
     ex: `${viewSwitch('md')}<div style="display:flex;gap:10px;margin-top:8px">${mdBlocks([
       { kind: '제목', body: bar('w60') },
       { kind: '문단', body: bar('w100') + bar('w80'), active: true },
       { kind: '표', body: bar('w100'), masked: true },
-    ])}${pdfPage({
-      page: 4,
-      of: 26,
-      boxes: [
-        { x: 8, y: 12, w: 60, h: 5 },
-        { x: 8, y: 26, w: 84, h: 12, active: true },
-        { x: 8, y: 62, w: 40, h: 6, masked: true },
-      ],
-    })}</div>`,
+    ])}</div>`,
   },
   {
-    cat: '탐색',
-    name: 'round({n, question, found, verdict, done, next})',
-    note: '스스로 넓혀 가는 탐색의 한 회차. next는 그 회차가 다음에 묻기로 한 것이고, 다음 회차의 질문과 같다',
-    ex: `${round({ n: 1, question: '탱크에 들어가기 전에 산소 농도를 얼마로 확인하나?', found: '근거 4건 · 새 근거 4건 · 문장 2/3 뒷받침', verdict: 'part', next: '탱크 청소·치환이 정한 값은 어디에 있는가?' })}${round({ n: 2, question: '탱크 청소·치환이 정한 값은 어디에 있는가?', found: '근거 2건 추가 · 새 근거 2건', verdict: 'ok', done: true })}`,
-  },
-  {
-    cat: '그래프·민감정보',
-    name: 'graphCanvas(note) · maskedValue(kind) · maskedTag()',
-    note: 'sigma.js 캔버스 자리 · 가려진 값',
-    ex: `${graphCanvas()}<div style="margin-top:8px">${maskedValue('주민등록번호')} ${maskedTag()}</div>`,
+    cat: '민감정보',
+    name: 'maskedValue(kind) · maskedTag()',
+    note: '가려진 값 · 가려졌다는 표시',
+    ex: `${maskedValue('주민등록번호')} ${maskedTag()}`,
   },
   {
     cat: '진행',
@@ -754,15 +632,6 @@ export const CATALOG = [
     ex: `${emptyState({ title: '올린 자료가 없습니다', body: '문서를 올리면 자료 정리가 시작되고, 끝나면 질문할 수 있습니다.', actions: btn('문서 올리기', 'primary') })}<div style="margin-top:8px;display:flex;flex-direction:column;gap:6px">${suggest(['탱크에 들어가기 전에 산소 농도를 얼마로 확인하나요?', '설비를 바꾼 뒤 시운전 전에 무엇을 확인하나요?'])}</div>`,
   },
   {
-    cat: '진입',
-    name: 'askBox({placeholder, left, right}) · hrow(children)',
-    note: '아무것도 묻지 않은 묻기 화면의 입력 상자 · 프레임 안 가로 줄(클래스 row는 보드 것이라 쓰지 않는다)',
-    ex: askBox({
-      left: chips([chip('범위 · 전체'), chip('적극성 · 기본')]),
-      right: btn('묻기', 'primary'),
-    }),
-  },
-  {
     cat: 'input',
     name: 'choice({label, options, hint})',
     note: '선택지를 전부 펼쳐 보이는 라벨 + 칩 묶음',
@@ -801,12 +670,6 @@ export const CATALOG = [
     name: 'grant({text, left})',
     note: '추가 인증으로 열린 상태와 남은 시간',
     ex: grant({ text: '주민등록번호 1건 해제됨 · 사유 기록됨', left: '남은 시간 8분' }),
-  },
-  {
-    cat: 'AI 지원',
-    name: 'planted(label)',
-    note: '남의 문서 안에서 모델에게 말을 거는 문장 · AI 표시가 점선인 것과 달리 실선이다',
-    ex: `${planted()} ${planted('격리됨')}<div style="margin-top:8px">${banner({ dot: 'warn', text: `이 근거에 ${planted()}가 있습니다 · 답변 문장의 신뢰도가 내려갑니다` })}</div>`,
   },
   {
     cat: '설치본',
