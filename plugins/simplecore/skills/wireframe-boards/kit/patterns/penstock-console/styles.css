@@ -571,7 +571,7 @@
      Signing in and choosing a project happen before there is a project to
      put in panes. The window still has a fixed height, so the column
      centres in it and the fold stays the window bottom. */
-  /* ── 데스크톱 창의 컨트롤 크기 ──────────────────────────────────────────────
+  /* ── Desktop window control sizes ──────────────────────────────────────────────
      The touch-sized defaults belong to a phone and to the entry surfaces (signing in, activating),
      where a control is the only thing on screen. Inside an application window the same button sits
      in a toolbar, a card, a table cell and a dialog, and three heights in one row read as three
