@@ -261,30 +261,37 @@ Usage:
 
 ## CrudList.ChipFilter Props
 
+`@simplix-react/ui` 0.3.9 and later (`crud/filters/chip-filter.tsx`) - multi-select:
+
 ```tsx
-interface ChipFilterProps {
-  /** Field key in "field.operator" format */
+interface ChipFilterProps<T extends string | number = string> {
+  /** Field key in "field.operator" format, with the membership operator ("status.in") */
   field: string;
-  /** Chip options */
-  options: { label: string; value: string }[];
-  /** Filter state from useCrudList */
+  /** Chip options; `icon` replaces the on/off mark, so pass one only where the colour says it */
+  options: { value: T; label: string; icon?: ReactNode; disabled?: boolean }[];
+  /** Filter state from useCrudList or useFilterBarState */
   state: CrudListFilters;
-  /** Number of columns for chip layout */
-  columns?: number;
-  /** Gap between chips */
-  gap?: string | number;
+  /** Space between chips (default "xs") */
+  gap?: "none" | "xs" | "sm" | "md" | "lg";
 }
 ```
+
+The row writes an array under `field` and nothing with every chip off. A consumer that reads the
+narrowing outside the list reads it with `chipFilterValues(state, field)`, never as a scalar.
 
 Usage:
 
 ```tsx
 <CrudList.ChipFilter
-  field="status.equals"
+  field="status.in"
   options={statusChipOptions}
   state={list.filters}
 />
 ```
+
+0.3.8 and earlier - single-select: the same props plus `columns?: 1 | 2 | 3 | 4 | 5 | 6`
+(default 4, a grid), and `field` takes the equality operator (`"status.equals"`) because the row
+writes one value. Invariant #15 holds the table of both modes.
 
 ---
 

@@ -108,7 +108,7 @@ const statusChipOptions = [
 
 // Rendered above or alongside FilterBar
 <CrudList.ChipFilter
-  field="status.equals"
+  field="status.in"
   options={statusChipOptions}
   state={list.filters}
 />
@@ -116,7 +116,7 @@ const statusChipOptions = [
 
 ### Key Observations
 
-- ★ ChipFilter uses `"field.operator"` format for `field` prop
+- ★ ChipFilter uses `"field.operator"` format for `field` prop: the membership operator `"status.in"`, because the multi-select row writes an array; on `@simplix-react/ui` 0.3.8 and earlier the single-select row takes `"status.equals"` (invariant #15)
 - ★ Options use `enumLabel()` for i18n
 - ★ Used only because the field needs prominent visual chip selection
 - ※ For standard enum filtering, `type: "faceted"` in FilterBar is preferred

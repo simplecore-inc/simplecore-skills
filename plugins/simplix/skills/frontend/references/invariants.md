@@ -42,11 +42,33 @@ first render).
 ## #15 Chip filters - the sanctioned cases
 
 `ChipFilter` is for bitmask fields or visual distinction; standard enum / FK uses
-`type: "faceted"`. One more sanctioned chip case: **narrowing WITHIN a server-forced
-scope** - a list locked to `field.in: "A,B"` takes a single-select `CrudList.ChipFilter` on
-`field.equals` (the params AND together: no chip = whole scope, chip = one state inside
-it). Requires the backend `@SearchableField` to allow BOTH `EQUALS` and `IN` on that
-field - with only one allowed, the combination fails disguised as an empty result.
+`type: "faceted"`.
+
+**The key's operator is set by the installed `ChipFilter`'s selection mode**, read from the
+`@simplix-react/ui` the screen resolves (its `package.json`):
+
+| Selection mode | Release | Key | Value written |
+|---|---|---|---|
+| multi-select - a second chip widens the narrowing, a lit chip drops its value | 0.3.9 and later | `field.in` | an array; nothing with every chip off |
+| single-select - a `columns` grid, pressing the lit chip clears it | 0.3.8 and earlier | `field.equals` | one value |
+
+A row where exactly one pill is chosen, in 0.3.9 and later, is `ChoiceChips` (`value` /
+`onChange`, no filter key); a value it hands to a query goes under `field.equals`.
+`audit-frontend.mjs`'s `chip-filter-equality-field` reports an `.equals` chip key wherever the
+file resolves the multi-select row and stays silent where it resolves the single-select one.
+
+One more sanctioned chip case: **narrowing WITHIN a server-forced scope** - a list locked to
+`field.in: "A,B"`. How the chips narrow it follows the same two modes:
+
+- **Multi-select.** The chips write `field.in`, which is the forced scope's own key, so they
+  cannot sit in the list's filter state beside the scope: two values under one key leave the one
+  merged first unread. Hold the chip row on a page-level `useFilterBarState`, read
+  `chipFilterValues(state, "field.in")`, and force `field.in` to the chosen values when any
+  chip is lit and to the whole scope when none is. Offer only the scope's own values as chips.
+- **Single-select.** A `CrudList.ChipFilter` on `field.equals` (the params AND together: no
+  chip = whole scope, chip = one state inside it). Requires the backend `@SearchableField` to
+  allow BOTH `EQUALS` and `IN` on that field - with only one allowed, the combination fails
+  disguised as an empty result.
 
 **And a fourth: a narrowing that reaches past the list.** A faceted filter lives inside
 `CrudList.FilterBar`, so its value reaches exactly one request - the list's own. Where the

@@ -1135,6 +1135,73 @@ function generatedEnumNames() {
   return names;
 }
 
+/**
+ * The first `@simplix-react/ui` release whose `ChipFilter` is multi-select.
+ *
+ * @remarks
+ * Through 0.3.8 the component was single-select: a `columns` grid writing one value under
+ * `field.equals`. From 0.3.9 it narrows to several values at once and writes an array under the
+ * membership key `field.in`, and a row where exactly one pill is chosen became `ChoiceChips`.
+ */
+const MULTI_SELECT_CHIP_FILTER = [0, 3, 9];
+
+let chipModeCache = new Map();
+
+/**
+ * The selection mode of the `ChipFilter` a file resolves.
+ *
+ * @remarks
+ * Read from the installed package rather than asked of the project: the `node_modules` nearest
+ * the file is the copy that file imports, and in a pnpm workspace each package can resolve its
+ * own. Where no installed copy is found the current framework is assumed.
+ *
+ * @param rel the file's path relative to the project root
+ * @returns "single" for 0.3.8 and earlier, "multiple" otherwise
+ */
+function chipFilterSelectionMode(rel) {
+  let dir = path.dirname(path.join(ROOT, rel));
+  const visited = [];
+  let mode = "multiple";
+  for (;;) {
+    if (chipModeCache.has(dir)) {
+      mode = chipModeCache.get(dir);
+      break;
+    }
+    visited.push(dir);
+    const manifest = path.join(dir, "node_modules", "@simplix-react", "ui", "package.json");
+    if (fs.existsSync(manifest)) {
+      mode = chipModeOfManifest(manifest);
+      break;
+    }
+    const parent = path.dirname(dir);
+    if (dir === ROOT || parent === dir || !dir.startsWith(ROOT)) break;
+    dir = parent;
+  }
+  for (const d of visited) chipModeCache.set(d, mode);
+  return mode;
+}
+
+/**
+ * @param manifest path of an installed `@simplix-react/ui/package.json`
+ * @returns the selection mode its version ships, "multiple" when the version cannot be read
+ */
+function chipModeOfManifest(manifest) {
+  let version;
+  try {
+    version = JSON.parse(fs.readFileSync(manifest, "utf8")).version;
+  } catch (e) {
+    if (!(e instanceof SyntaxError)) throw e;
+    return "multiple";
+  }
+  const parts = /^(\d+)\.(\d+)\.(\d+)/.exec(String(version ?? ""));
+  if (!parts) return "multiple";
+  const v = parts.slice(1, 4).map(Number);
+  for (let i = 0; i < 3; i++) {
+    if (v[i] !== MULTI_SELECT_CHIP_FILTER[i]) return v[i] < MULTI_SELECT_CHIP_FILTER[i] ? "single" : "multiple";
+  }
+  return "multiple";
+}
+
 function publicRouteDirs() {
   const declared = settings().publicRouteDirs;
   return Array.isArray(declared) ? declared : [];
@@ -2664,23 +2731,25 @@ return (
     id: "chip-filter-equality-field",
     invariant: "#15 / audit: chip filters",
     level: "error",
-    desc: "A `ChipFilter`'s field is declared with an equality operator. A chip row narrows to several values at once and writes an ARRAY under that key, so the operator has to be the membership one — `status.in`, never `status.equals`. Under `.equals` the server is handed a comma-joined string it matches nothing against, or refuses outright, and neither side of the mistake can see the other: the caller declares the key as its own string constant and nothing ever compares it with what the component writes, so both halves type-check green while the row silently stops narrowing",
+    desc: "A `ChipFilter`'s field is declared with an equality operator. The multi-select chip row (`@simplix-react/ui` 0.3.9 and later) narrows to several values at once and writes an ARRAY under that key, so the operator has to be the membership one: `status.in`, never `status.equals`. Under `.equals` the server is handed a comma-joined string it matches nothing against, or refuses outright, and neither side of the mistake can see the other: the caller declares the key as its own string constant and nothing ever compares it with what the component writes, so both halves type-check green while the row silently stops narrowing. A file that resolves 0.3.8 or earlier gets the single-select row, which writes one value and takes `.equals`, and is not judged",
     appliesTo: isTsx,
     // Matched at the constant's declaration rather than at `field={...}`, because every call site
     // passes a constant and the string is nowhere near the tag. The filter is what keeps this from
     // firing on the many other filter keys a screen declares: only a constant this file actually
     // hands to a ChipFilter is a chip's field.
-    check: (c) =>
-      lineHits(
-        c,
-        /^\s*const\s+[A-Za-z_$][\w$]*\s*=\s*["'][^"']+\.equals["']\s*;/,
-        (line, lines) => {
-          const name = line.match(/const\s+([A-Za-z_$][\w$]*)/)?.[1];
-          if (!name) return false;
-          const whole = lines.join("\n");
-          return whole.includes("<ChipFilter") && whole.includes(`field={${name}}`);
-        },
-      ),
+    check: (c, rel) =>
+      chipFilterSelectionMode(rel) === "single"
+        ? []
+        : lineHits(
+            c,
+            /^\s*const\s+[A-Za-z_$][\w$]*\s*=\s*["'][^"']+\.equals["']\s*;/,
+            (line, lines) => {
+              const name = line.match(/const\s+([A-Za-z_$][\w$]*)/)?.[1];
+              if (!name) return false;
+              const whole = lines.join("\n");
+              return whole.includes("<ChipFilter") && whole.includes(`field={${name}}`);
+            },
+          ),
     samples: {
       file: "modules/<domain>/src/pages/<entity>/crud-page.tsx",
       broken: `const SCOPE_FIELD = "orgScope.equals";
@@ -2713,6 +2782,31 @@ export function Page() {
 export function Page() {
   const list = useCrudList(adaptForcedList(useListThings, { [SCOPE_FIELD]: scope }));
   return <CrudList list={list} />;
+}`,
+        },
+        {
+          note: "a project on @simplix-react/ui 0.3.8, whose single-select chip row takes `.equals`",
+          files: {
+            "node_modules/@simplix-react/ui/package.json": `{ "name": "@simplix-react/ui", "version": "0.3.8" }`,
+          },
+          source: `const SCOPE_FIELD = "orgScope.equals";
+
+export function Page() {
+  const filters = useFilterBarState();
+  return <ChipFilter field={SCOPE_FIELD} state={filters} options={options} columns={3} />;
+}`,
+        },
+        {
+          note: "a module whose own node_modules resolves 0.3.2 inside a workspace that hoists a newer copy",
+          files: {
+            "node_modules/@simplix-react/ui/package.json": `{ "name": "@simplix-react/ui", "version": "0.3.10" }`,
+            "modules/<domain>/node_modules/@simplix-react/ui/package.json": `{ "name": "@simplix-react/ui", "version": "0.3.2" }`,
+          },
+          source: `const SCOPE_FIELD = "orgScope.equals";
+
+export function Page() {
+  const filters = useFilterBarState();
+  return <ChipFilter field={SCOPE_FIELD} state={filters} options={options} />;
 }`,
         },
       ],
@@ -8217,6 +8311,7 @@ function resetCaches() {
   localeKeyCache.clear();
   catalogueIndexCache = null;
   catalogueLangCache.clear();
+  chipModeCache = new Map();
 }
 
 function setRoot(dir) {
@@ -8387,6 +8482,27 @@ function selftestMechanisms() {
           `cardTitle={(row) => row.name}\ncardContent={(row) => row.code}\n<CrudList.Column field="status">{(row) => row.status}</CrudList.Column>`,
         );
         return slots.includes("row.code") && !slots.includes("row.status");
+      },
+    },
+    {
+      name: "chipFilterSelectionMode: none installed, 0.3.8, 0.3.9-SNAPSHOT, 0.3.10 read multiple, single, multiple, multiple",
+      pass: () => {
+        const modeWith = (version) => {
+          const dir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "simplix-chip-")));
+          const previousRoot = ROOT;
+          try {
+            if (version) {
+              writeFixture(dir, "node_modules/@simplix-react/ui/package.json", JSON.stringify({ version }));
+            }
+            setRoot(dir);
+            return chipFilterSelectionMode("modules/site/src/pages/area/crud-page.tsx");
+          } finally {
+            setRoot(previousRoot);
+            fs.rmSync(dir, { recursive: true, force: true });
+          }
+        };
+        return [undefined, "0.3.8", "0.3.9-SNAPSHOT", "0.3.10"].map(modeWith).join(",")
+          === "multiple,single,multiple,multiple";
       },
     },
     {

@@ -97,11 +97,13 @@ The test for the last case, and the backend `@SearchableField` the forced-scope 
 
 For standard enum/FK filtering, use `type: "faceted"` inside `FilterBar`.
 
-**`ChipFilter` has no width of its own.** It lays its chips out on a grid, so dropped into a
-`Flex` beside other controls it takes the narrowest column the row will give it and each
-label breaks one character to a line. Put it in a cell that can grow - a `Stack` with a
-minimum width and `flex-1` - whenever it shares a row; alone on its own line it needs
-nothing.
+**The single-select `ChipFilter` (0.3.8 and earlier) has no width of its own.** It lays its
+chips out on a `columns` grid, so dropped into a `Flex` beside other controls it takes the
+narrowest column the row will give it and each label breaks one character to a line. Put it in
+a cell that can grow - a `Stack` with a minimum width and `flex-1` - whenever it shares a row;
+alone on its own line it needs nothing. The multi-select row (0.3.9 and later) flows its chips
+from the left at their label's width, wraps when the row runs out, and spans the full width
+itself.
 
 ### ★ A condition the screen forces goes in the request params, never in `transformFilters`
 
@@ -348,11 +350,15 @@ Use only for the cases invariant #15 sanctions - bitmask, visual distinction, na
 
 ```tsx
 <CrudList.ChipFilter
-  field="status.equals"
+  field="status.in"
   options={statusChipOptions}
   state={list.filters}
 />
 ```
+
+The multi-select row writes an array under the membership key. On `@simplix-react/ui` 0.3.8
+and earlier the row is single-select and the key is `"status.equals"` (invariant #15 holds the
+table).
 
 ※ For standard enum filtering, always prefer `type: "faceted"` inside `FilterBar`.
 
@@ -584,7 +590,7 @@ Verification itself is not a question: invariant #17 makes it mandatory after ev
 | Faceted filter shows no options | Empty options array | Build options from boot enum or API data |
 | Filter not applying | Wrong field name | Verify field matches API query parameter name |
 | Toggle filter not working | Used faceted instead of toggle | Use `type: "toggle"` for boolean fields |
-| ChipFilter not syncing | Wrong field format | Use `"field.operator"` format (e.g., `"status.equals"`) |
+| ChipFilter not syncing | Wrong field format | Use `"field.operator"` format with the operator its selection mode takes: `"status.in"` for the multi-select row (0.3.9 and later), `"status.equals"` for the single-select row (0.3.8 and earlier) |
 | FK filter always applied | Direct param injection | Use API-level injection pattern, not FilterBar |
 | External filter not updating | Missing useEffect dependency | Ensure `commitValue` runs when external state changes |
 
@@ -610,7 +616,7 @@ Verification itself is not a question: invariant #17 makes it mandatory after ev
 **For ChipFilter (Special Cases Only):**
 
 - ☐ Verified that ChipFilter is one of the cases invariant #15 sanctions (bitmask, visual distinction, narrowing within a forced scope, a narrowing that reaches past the list)
-- ☐ Field uses `"field.operator"` format
+- ☐ Field uses `"field.operator"` format, with `.in` for the multi-select row and `.equals` for the single-select row of 0.3.8 and earlier (invariant #15)
 - ☐ `state` connected to `list.filters`
 
 **For FK / External Filters:**
