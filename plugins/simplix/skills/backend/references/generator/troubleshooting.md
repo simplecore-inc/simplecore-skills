@@ -91,5 +91,6 @@ setter on the DTO. Delete those lines after promoting.
 `field.getType()` returns `java.util.List`, which is outside the domain package, so the POJO's
 fields are never walked: they are left with **no label in any locale and nothing fails** - and
 writing the labels anyway makes them fail as orphan keys, which reads as the opposite problem.
-The fix is in the tests, not in the entity: resolve the generic argument of a
-`@JdbcTypeCode(SqlTypes.JSON)` field and walk the type it names.
+The fix is in the tests, not in the entity: resolve the generic argument of a JSON-mapped
+field, whichever annotation maps it (`../entity/field-types.md` § JSON Fields), and walk the
+type it names.

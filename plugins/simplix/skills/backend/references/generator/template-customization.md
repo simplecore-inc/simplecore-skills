@@ -2,7 +2,7 @@
 
 Customizing SimpliX generator `.java.template` files.
 
-> **Scope (canonical):** EJS syntax inside `.java.template` files, template variable reference, template paths under `.simplix/templates/`, regeneration workflow after editing. For generator-level commands see SKILL.md's Decision Tree; for runtime generator errors see **troubleshooting.md**; for YML config passed to templates see `../entity/yml-configuration.md`.
+> **Scope (canonical):** EJS syntax inside `.java.template` files, template variable reference, template paths under `.simplix/templates/`, regeneration workflow after editing. For generator-level commands see **promote-workflow.md** and `../entity/yml-configuration.md` § Code Generation; for runtime generator errors see **troubleshooting.md**; for YML config passed to templates see `../entity/yml-configuration.md`.
 
 ---
 

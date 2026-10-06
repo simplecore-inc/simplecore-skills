@@ -14,13 +14,13 @@ The generator produces this shape. Manual services must match it.
 public class BuildingService extends SimpliXBaseService<Building, String> {
 
     private final SiteRepository siteRepository;              // related-entity repos (for FK validation, enrichment)
-    private final MessageSource messageSource;                // i18n error messages
+    private final MessageSource messageSource;                // a message that carries arguments (invariant 3)
 
     public BuildingService(                                   // invariant 8 — explicit constructor
             BuildingRepository repository,                    //   the entity's own repo
             SiteRepository siteRepository,                    //   related-entity repos (if any)
             EntityManager entityManager,                      //   required by base class
-            MessageSource messageSource) {                    //   required for localized exception messages
+            MessageSource messageSource) {                    //   resolves a message with arguments at throw time
         super(repository, entityManager);
         this.siteRepository = siteRepository;
         this.messageSource = messageSource;
@@ -36,11 +36,8 @@ public class BuildingService extends SimpliXBaseService<Building, String> {
     @Transactional
     public BuildingDetailDTO update(Building entity, BuildingUpdateDTO dto) {
         if (!Objects.equals(entity.getId(), dto.getBuildingId())) {   // ID-mismatch check is MANDATORY on update
-            String message = messageSource.getMessage(
-                "error.id.cannot.change", null,
-                "ID cannot be changed",
-                LocaleContextHolder.getLocale());
-            throw new SimpliXGeneralException(ErrorCode.GEN_CONFLICT, message, null);  // invariant 3
+            throw new SimpliXGeneralException(ErrorCode.GEN_CONFLICT,
+                "{error.<domain>.idCannotChange}", null);  // invariant 3 - a placeholder, resolved at the HTTP layer
         }
         modelMapper.map(dto, entity);
         return saveAndGetProjection(entity, dto.getSiteId());
@@ -76,14 +73,14 @@ public class BuildingService extends SimpliXBaseService<Building, String> {
         Building saved = saveAndFlush(entity);                  // base-class helper
         BuildingDetailDTO detail = findById(saved.getId(), BuildingDetailDTO.class)  // projection lookup
             .orElseThrow(() -> new SimpliXGeneralException(
-                ErrorCode.GEN_NOT_FOUND, "Failed to retrieve saved entity", null));
+                ErrorCode.GEN_NOT_FOUND, "{error.<domain>.savedEntityNotFound}", null));
         enrichSiteInfo(detail);                                 // optional per-service enrichment
         return detail;
     }
 
-    // multiUpdate / batchUpdate / updateOrder(s) / buildDetailDTO / buildUpdateFormDTO
-    // are also REQUIRED when the corresponding controller endpoint is generated.
-    // See modules/facility-site/.../BuildingService.java for exact shape.
+    // multiUpdate / batchUpdate / updateOrder(s) are also REQUIRED when the corresponding
+    // controller endpoint is generated; their exact shape is the project's
+    // .simplix/templates/service/EntityService.java.template.
 }
 ```
 

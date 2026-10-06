@@ -121,6 +121,11 @@ return SimpliXApiResponse.success(service.process(id));
 For endpoints with multiple query parameters, use `@Parameter` annotations:
 
 ```java
+/**
+ * Returns time-bucketed event counts.
+ *
+ * <p>The site is judged by {@code scopeGuard.require} in the service before anything is read.
+ */
 @GetMapping("/stats")
 @Operation(summary = "Get event statistics",
         description = "Returns time-bucketed event counts")
@@ -133,7 +138,15 @@ public SimpliXApiResponse<List<EventBucketDTO>> getStats(
     return SimpliXApiResponse.success(
             statisticsService.getEventStats(from, to, granularity, siteId));
 }
+
+// Service: the caller-supplied scope is judged before the first query (SKILL.md #20)
+public List<EventBucketDTO> getEventStats(Instant from, Instant to, TimeGranularity granularity, String siteId) {
+    Set<String> sites = scopeGuard.require(siteId);   // the project's scope helper; refuses a site the caller was not granted
+    return eventRepository.countBuckets(from, to, granularity, sites);
+}
 ```
+
+A read that takes a scope identifier from the caller names its guard in the javadoc, or states there that it is installation-wide and why (SKILL.md #20).
 
 ---
 
@@ -167,10 +180,7 @@ public class MonitoringDashboardService {
 
 ### When `@RequiredArgsConstructor` is Acceptable:
 
-Only for non-SimpliX services that are:
-- Configuration classes (`@Configuration`)
-- Infrastructure classes (`@Component` in `app` package)
-- Beans declared via `@Bean` method (no explicit class annotations)
+Only on the infrastructure beans SKILL.md § Scope lists (`app.*` infrastructure, and `web.*.{scheduler,config,listener,factory,helper,stream}.*` where the feature owns its infra).
 
 NEVER on:
 - Controllers (CRUD or non-CRUD)
@@ -179,7 +189,7 @@ NEVER on:
 
 ---
 
-## Real Examples from Codebase
+## Examples
 
 ### Action Trigger Controller
 
@@ -257,7 +267,7 @@ Dev/test controllers (`@Profile({"local", "dev"})`) still MUST follow all conven
 - `SimpliXApiResponse<T>` required (not `ResponseEntity`)
 - `@Operation` on every endpoint
 
-**Exception**: `ErrorTestRestController` intentionally throws various exception types to test the global error handler. This is the ONLY controller allowed to use `ResponseEntity` and throw `RuntimeException`/`ResponseStatusException` directly, because its purpose is to verify error handling behavior. Mark such controllers with a class-level JavaDoc: `/** Error handling test — intentionally violates response conventions. */`
+**Exception**: a controller bound to non-production profiles only, whose purpose is to exercise the global error handler, may return `ResponseEntity` and throw `RuntimeException` / `ResponseStatusException` directly. It is the exemption the audit applies: a class whose `@Profile` names only `local`, `dev`, `test`, `development`, `it` or `integration` is skipped by `banned-exception-type` and `undocumented-response-entity`, while `@PreAuthorize` and `@Operation` still bind it. Give it a class-level JavaDoc with the reason: `/** Error handling test - intentionally violates response conventions. */`
 
 ---
 

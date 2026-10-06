@@ -1,10 +1,10 @@
 # Canonical Controller
 
-The generator produces this shape. Manual controllers must match it. **11 standard endpoints.** Each endpoint has `@Operation` and `@PreAuthorize` - mandatory per invariants 2 and 11. Note the SimpliX URL convention: **`POST /create`** (not `POST /`).
+The generator produces this shape. Manual controllers must match it. **The standard endpoints below**, `updateOrder` only where the entity has a display order. Each endpoint has `@Operation` and `@PreAuthorize` - mandatory per invariants 2 and 11. Note the SimpliX URL convention: **`POST /create`** (not `POST /`).
 
 > **Single source of truth:** The authoritative definition is the generator template at `.simplix/templates/controller/rest/EntityRestController.java.template`. This file mirrors it. **When template and doc diverge, the template wins** - update the doc, not the template-generated output. The endpoint order, `@Operation` wording, and method signatures below were derived from the template verbatim (examples just substitute `Building` for the entity name). The permission target is the one deliberate departure: the template emits `hasPermission('<%= entityName %>', ...)`, invariant #9 requires the feature-area group, so the examples carry `'<FEATURE_AREA>'` and promote rewrites the generated target (`../generator/promote-workflow.md` § After promoting).
 
-> **Scope (canonical):** class-level annotation order, constructor with `super(service)`, all 11 endpoint signatures with response wrapper, permission wording, `@Validated` placement. For non-CRUD controllers, see `non-crud-controller.md`.
+> **Scope (canonical):** class-level annotation order, constructor with `super(service)`, every endpoint signature with response wrapper, permission wording, `@Validated` placement. For non-CRUD controllers, see `non-crud-controller.md`.
 
 ---
 
@@ -30,7 +30,7 @@ public class BuildingRestController
     @Operation(summary = "Create Building", description = "Creates a new Building")
     @PreAuthorize("hasPermission('<FEATURE_AREA>', 'create')") // invariant 2, 9 - the feature-area group, never the entity name
     public SimpliXApiResponse<BuildingDetailDTO> create(     // invariant 1 — SimpliXApiResponse
-            @RequestBody @Validated BuildingCreateDTO dto) { // invariant 12 — @Validated on body
+            @RequestBody @Validated BuildingCreateDTO dto) { // invariant 13 - @Validated on body
         return SimpliXApiResponse.success(service.create(dto));
     }
 

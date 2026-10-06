@@ -33,14 +33,17 @@ yo simplix:config CmsContent --force
 
 The command generates a YML file by analyzing the existing entity class and extracting field information automatically.
 
-**Workflow:**
-1. Create the entity class first
-2. Run domain module tests: `./gradlew :packages:domain-<aggregate>:test`
+**Workflow** (the step order SKILL.md #15 points to; the promote half is owned by `../generator/promote-workflow.md`):
+1. Create the entity class (`base-entity-patterns.md`)
+2. Write its message bundles in every locale the project ships: entity labels and enum values (SKILL.md #16)
+3. Run domain module tests: `./gradlew :packages:domain-<aggregate>:test`
    - **MANDATORY**: Tests validate entity and enum i18n translations
    - Fix any missing translations before proceeding
-3. Run `yo simplix:config EntityName --force` to generate YML
-4. Modify the generated YML as needed (views, searchOperators, references, etc.)
-5. Run `yo simplix:generate EntityName --force` to generate service/controller/DTOs
+4. Run `yo simplix:config EntityName --force` to generate YML
+5. Modify the generated YML as needed (views, searchOperators, references, etc.)
+6. Run the collision check (`../generator/promote-workflow.md` § Before generating), then `yo simplix:generate EntityName --force` to generate service/controller/DTOs
+7. Promote, and finish what the template leaves: `../generator/promote-workflow.md`
+8. Customize within the invariants
 
 ---
 
@@ -132,8 +135,8 @@ Views control where fields appear in generated code.
 |------|---------|--------------|
 | `list` | List/table display | ListDTO, List template |
 | `detail` | Detail view | DetailDTO, Detail template |
-| `edit` | Create/edit form | CreateRequest, UpdateRequest |
-| `batchUpdate` | Bulk update | BatchUpdateRequest |
+| `edit` | Create/edit form | `<Entity>CreateDTO`, `<Entity>UpdateDTO` |
+| `batchUpdate` | Bulk update | `<Entity>BatchUpdateDTO` |
 
 ### Examples
 
@@ -385,12 +388,12 @@ yo simplix:generate CmsContent CmsChannel CmsCategory
 
 ### Generated Files
 
-| Type | Generated Output | Promoted Location |
+| Type | Generated Output | Promoted Location (`../generator/promote-workflow.md` § File Mapping) |
 |------|------------------|-------------------|
-| Repository | (manual - not generated) | `modules/domain/.../repository/{module}/` |
-| Service | `generated/main/java/.../web/{modulePath}/service/` | `modules/{promoteModule}/src/main/java/.../web/{modulePath}/service/` |
-| Controller | `generated/main/java/.../web/{modulePath}/controller/rest/` | `modules/{promoteModule}/src/main/java/.../web/{modulePath}/controller/rest/` |
-| DTOs | `generated/main/java/.../web/{modulePath}/dto/` | `modules/{promoteModule}/src/main/java/.../web/{modulePath}/dto/` |
+| Repository | not in promote's output | `repository-patterns.md` § File Location |
+| Service | `generated/main/java/.../web/{modulePath}/service/` | `src/main/java/.../web/{modulePath}/service/` |
+| Controller | `generated/main/java/.../web/{modulePath}/controller/rest/` | `src/main/java/.../web/{modulePath}/controller/rest/` |
+| DTOs | `generated/main/java/.../web/{modulePath}/dto/` | `src/main/java/.../web/{modulePath}/dto/` |
 
 ---
 
@@ -400,7 +403,7 @@ yo simplix:generate CmsContent CmsChannel CmsCategory
 
 **Check**: `views` array includes the required view
 ```yaml
-# Missing 'edit' - won't appear in CreateRequest
+# Missing 'edit' - won't appear in the CreateDTO
 fieldName:
   views: [list, detail]  # Add 'edit'
 ```

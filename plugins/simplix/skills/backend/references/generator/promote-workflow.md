@@ -44,6 +44,9 @@ yo simplix:promote EntityName
 yo simplix:promote EntityName --force
 ```
 
+With `--force`, the form this handbook uses, promote overwrites `src/` without asking; without it,
+a file that already exists in `src/` is skipped. Either way the collision check below comes first.
+
 **IMPORTANT**: Always use `yo simplix:promote` instead of manual file operations. The command ensures:
 - Files are deleted from `generated/` after copying (no duplicate classes)
 - Proper directory structure is created
@@ -64,7 +67,7 @@ count. Four promoted files is the normal shape for an entity with no optional pa
 
 ## Before generating: the collision check (MANDATORY)
 
-**`yo simplix:promote` OVERWRITES `src/` files silently.** Before generating an entity `X`,
+**`yo simplix:promote --force` OVERWRITES `src/` files silently** (§ Usage). Before generating an entity `X`,
 verify no hand-authored `X{Service,RestController,DTOs}` already exists in the target
 `modulePath` package. `yo simplix:generate X` + `promote` will clobber a same-named
 hand-written `XService` - a lifecycle or action service, say - with a generated CRUD one and
@@ -82,8 +85,8 @@ constructor or leaves a dangling body. Remove one endpoint method at a time - Ja
 annotations and body as a unit - and compile after each.
 
 For an append-only audit or history entity, trim the writes down to a read surface (keep `get`
-+ `search`). Re-apply `@RequiresFeature` and a real `@Tag` description after any
-re-generation; regeneration wipes both.
++ `search`). Re-apply the project's feature-gate annotation, if it has one, and a real `@Tag`
+description after any re-generation; regeneration wipes both.
 
 ## After generating: the promoted service test goes stale with the service
 

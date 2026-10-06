@@ -153,15 +153,14 @@ throw new IllegalArgumentException("Entity not found: " + id);
 throw new RuntimeException("ID mismatch");
 throw new ResponseStatusException(HttpStatus.NOT_FOUND);
 
-// CORRECT
-throw new SimpliXGeneralException(ErrorCode.GEN_NOT_FOUND,
-    messageSource.getMessage("error.entity.not.found",
-        new Object[]{"EntityName", id}, "EntityName not found: " + id,
-        LocaleContextHolder.getLocale()), null);
+// CORRECT - a {error.*} placeholder, resolved at the HTTP layer (invariant 3)
+throw new SimpliXGeneralException(ErrorCode.GEN_NOT_FOUND, "{error.<domain>.notFound}", null);
 
+throw new SimpliXGeneralException(ErrorCode.GEN_CONFLICT, "{error.<domain>.idCannotChange}", null);
+
+// CORRECT - a message that carries arguments is resolved at throw time (invariant 3)
 throw new SimpliXGeneralException(ErrorCode.GEN_CONFLICT,
-    messageSource.getMessage("error.id.cannot.change", null,
-        "ID cannot be changed", LocaleContextHolder.getLocale()), null);
+    MessageUtils.get("error.<domain>.entityInUse", refs), null);
 ```
 
 ---
@@ -234,15 +233,9 @@ Why: `{field.*}` is reserved for truly generic field names. A virtual field that
 // WRONG — writing CRUD manually
 // Claude: "I'll create the service, controller, and DTOs for you..."
 
-// CORRECT workflow:
-// 1. Create Entity class in packages/domain-*/
-// 2. Add i18n messages
-// 3. ./gradlew :packages:domain-<aggregate>:test
-// 4. yo simplix:config EntityName --force
-// 5. Edit .simplix/entity/EntityName.yml
-// 6. yo simplix:generate EntityName --force
-// 7. yo simplix:promote EntityName --force
-// 8. Customize promoted code
+// CORRECT - generate, promote, then customize, in the step order that
+// ../entity/yml-configuration.md § Creating YML Configuration owns
+// (the promote half: ../generator/promote-workflow.md)
 ```
 
 ---
@@ -518,7 +511,7 @@ public SimpliXApiResponse<Dto> get(@PathVariable Long id) { ... }
 public SimpliXApiResponse<AuditEntryDTO> getAuditEntry(@PathVariable String commandId) { ... }
 ```
 
-**Why**: Invariant 4/5 and the CRUD Layer Stack table (SKILL.md:139-145) mandate `String` for every ID. Accepting `UUID`/`Long` at the edge forces binding-layer conversion, diverges from generator output, and makes the URL shape inconsistent across endpoints.
+**Why**: invariant #17e and SKILL.md § CRUD Layer Stack mandate `String` for every ID. Accepting `UUID`/`Long` at the edge forces binding-layer conversion, diverges from generator output, and makes the URL shape inconsistent across endpoints.
 
 ---
 
@@ -748,7 +741,7 @@ private void rejectIfInUse(String id) {
 }
 ```
 
-**Why**: four rules converge here. **(1) "If there is no reason to block, ALLOW."** A delete guard exists only where a real reference or a legal/audit reason blocks it; "just in case" is not a reason - a screen missing its delete because nobody wired it is a defect, not caution. **(2) Concrete reason, not generic.** The block message names WHAT references it and HOW MANY (`"signed by {0} members and required by {1} plan types"`), args-bearing, resolved via `messageSource.getMessage` at throw time (clone the established `rejectIfInUse` precedent), every locale filled - a generic integrity message strands the operator. **(3) Order - before the delete.** A reference guard, a token revoke, and the audit record all read the row or its ids; after `em.remove`/`deleteById` those values are gone, so the revoke/audit targets a vanished row and silently no-ops or NPEs. Guard and record BEFORE `deleteById`; `forEach(rejectIfInUse)` BEFORE `deleteAllByIds`. **(4) A record that must never be user-deleted** (a legal signature, an audit row) removes its DELETE endpoint entirely - full removal only via the anonymization/purge path - rather than guarding a delete that should not exist. Symptom of a too-late side-effect: the delete succeeds but the token stays live / the audit trail has no removal event.
+**Why**: four rules converge here. **(1) "If there is no reason to block, ALLOW."** A delete guard exists only where a real reference or a legal/audit reason blocks it; "just in case" is not a reason - a screen missing its delete because nobody wired it is a defect, not caution. **(2) Concrete reason, not generic.** The block message names WHAT references it and HOW MANY (`"signed by {0} members and required by {1} plan types"`), args-bearing, so resolved at throw time as invariant #3 allows (clone the project's established `rejectIfInUse` precedent), every locale filled - a generic integrity message strands the operator. **(3) Order - before the delete.** A reference guard, a token revoke, and the audit record all read the row or its ids; after `em.remove`/`deleteById` those values are gone, so the revoke/audit targets a vanished row and silently no-ops or NPEs. Guard and record BEFORE `deleteById`; `forEach(rejectIfInUse)` BEFORE `deleteAllByIds`. **(4) A record that must never be user-deleted** (a legal signature, an audit row) removes its DELETE endpoint entirely - full removal only via the anonymization/purge path - rather than guarding a delete that should not exist. Symptom of a too-late side-effect: the delete succeeds but the token stays live / the audit trail has no removal event.
 
 ## AP-33: Orphaned i18n Keys on Entity/Enum Removal; Unsafe Homonym Deletion
 

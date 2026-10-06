@@ -1,12 +1,11 @@
 ---
 name: backend
 description: MANDATORY handbook for ALL Java work in a SimpliX Spring Boot project - a repository whose classes extend `SimpliXBase*`, whose endpoints return `SimpliXApiResponse`, or which has a `.simplix/` generator directory; skip stock Spring Boot repositories with none of those markers. Invoke on the session's first backend-touching task, before reading, writing, reviewing, or explaining any Java file there - SimpliX deviates from stock Spring Boot in subtle ways (response wrapper, base classes, DTO shape, exception types, permission names, annotation order), so working from memory produces defects. Trigger on ANY cue implying Java work: controller, service, entity, DTO, repository, CRUD, endpoint, REST, JPA, `@RestController`, `@Entity`, `@PreAuthorize`, `@SearchableField`, `yo simplix` - or a request to add a field, fix an endpoint, add a filter, review DTOs, or run the generator. Never skip on "this is simple". Once invoked in a session, do not re-invoke.
-version: 1.0.0
 ---
 
 # SimpliX Backend Development Handbook
 
-Single source of truth for backend Java work in a SimpliX project. SimpliX is a Spring Boot extension framework providing the base classes that generated code extends: `SimpliXBaseController` (a thin `@SimpliXStandardApi`-annotated base that holds the service - the **11 CRUD endpoints are emitted into the concrete subclass by the generator controller template, not inherited from the base class**), `SimpliXBaseService` (entity operations + search), `SimpliXBaseRepository` (enhanced JPA), and `SimpliXApiResponse` (standard API envelope). All conventions below enforce consistency with this framework.
+Single source of truth for backend Java work in a SimpliX project. SimpliX is a Spring Boot extension framework providing the base classes that generated code extends: `SimpliXBaseController` (a thin `@SimpliXStandardApi`-annotated base that holds the service - the **CRUD endpoints are emitted into the concrete subclass by the generator controller template, not inherited from the base class**), `SimpliXBaseService` (entity operations + search), `SimpliXBaseRepository` (enhanced JPA), and `SimpliXApiResponse` (standard API envelope). All conventions below enforce consistency with this framework.
 
 ## How to Use
 
@@ -14,12 +13,12 @@ Single source of truth for backend Java work in a SimpliX project. SimpliX is a 
 2. **Before writing ANY controller/service/DTO, run the generator-first gate (invariant #15).** It is the top-priority decision: any REST surface backed by a single entity MUST be scaffolded via `yo simplix:generate` → `promote` → customize - never hand-written from scratch. Only entity-less/aggregation surfaces may be hand-authored. This check comes FIRST, before you consider annotations, DTOs, or anything else.
 3. **Past the generator (customizing, or a permitted hand-authored surface), run the precedent gate (invariant #19)** - locate two same-shape precedent surfaces and read them end to end before writing.
 4. Then review the rest of the **Non-Negotiable Invariants** - especially #2 (`@PreAuthorize`), #8 (constructor).
-5. After writing, verify all 20 invariants hold per the **After Writing** checklist.
+5. After writing, verify every invariant holds per the **After Writing** checklist.
 6. **Check the project's wiring once per session** (see below) and offer `/simplix:init` when a piece is missing.
 
 ### Project wiring - check on load, offer once
 
-Two halves make this handbook hold: the routing block in the project's instruction file, and the gate config in `<subproject>/.claude/simplix.json` that lets the plugin's hooks enforce it. The plugin's SessionStart hook owns this check: when its note in this session already named this subproject, it has said what is missing and asked for `/simplix:init` to be offered, so follow the note and do not check again. Only when no such note arrived, run `node "${CLAUDE_PLUGIN_ROOT}/scripts/detect-simplix.mjs" --json` and read `routedBy` and this subproject's `skillGate` (`skillGateMissing` names any key a declared gate lacks).
+This handbook holds through the routing block in the project's instruction file and the gate config in `<subproject>/.claude/simplix.json` that lets the plugin's hooks enforce it. The plugin's SessionStart hook owns this check: when its note in this session already named this subproject, it has said what is missing and asked for `/simplix:init` to be offered, so follow the note and do not check again. Only when no such note arrived, run `node "${CLAUDE_PLUGIN_ROOT}/scripts/detect-simplix.mjs" --json` and read `routedBy` and this subproject's `skillGate` (`skillGateMissing` names any key a declared gate lacks).
 
 Without `routedBy`, a session that starts elsewhere in the repository never learns this handbook binds. Without `skillGate`, an edit written from memory is not refused, and drift lands before anyone reads a reference.
 
@@ -43,28 +42,28 @@ When unclear whether a class is REST or View, check: does it return `SimpliXApiR
 
 Apply and enforce these on every controller, service, repository, and DTO you touch. Treat each as inviolate unless the invariant itself names an exception.
 
-1. **Response wrapper** - return `SimpliXApiResponse<T>`, never `ResponseEntity<T>`. **Two exceptions only**:
+1. **Response wrapper** - return `SimpliXApiResponse<T>`, never `ResponseEntity<T>`. **Only these exceptions**:
    - **Binary streaming** - `ResponseEntity<Resource>` for image/file bytes. On the binary path, error cases must still route through `throw new SimpliXGeneralException(ErrorCode.xxx, ...)` - NOT `ResponseEntity.notFound().build()` - so the global handler produces the standard `SimpliXApiResponse` error envelope.
    - **Async command (202 Accepted + Location)** - `ResponseEntity<SimpliXApiResponse<T>>` is acceptable ONLY for fire-and-poll commands that must return 202 and a `Location` header pointing to a polling endpoint (RFC 7231 §6.3.3). Outside this pattern, `ResponseEntity<SimpliXApiResponse<T>>` is a double-wrap violation.
 2. **Security** - every endpoint has `@PreAuthorize`. Public? → `permitAll()`. User-self? → `isAuthenticated()`. Dev/test profile is NOT a substitute.
 3. **Exceptions** - throw `SimpliXGeneralException(ErrorCode.xxx, message, null)`. Never `IllegalArgumentException`, `RuntimeException`, or `ResponseStatusException`.
-   - **Message = `{error.<domain>.<key>}` placeholder, resolved ONLY at the HTTP layer.** The dominant convention passes the literal placeholder (e.g. `"{error.channel.publishNotAllowed}"`); `GlobalExceptionHandler` (app-core) resolves it to the request locale when building the response envelope. The exception constructor performs NO resolution, so `getMessage()` carries the raw key **by design** - everywhere below the HTTP layer, including logs and tests.
-   - **Error key bundles** live in `apps/<app>/src/main/resources/messages/errors*.properties` - add every new key to EVERY locale the project ships. `ExceptionMessageTranslationTest` (in the app module) scans source for `"{error.*}"` literals and `MessageUtils.get(...)` calls and fails the build on any key missing a translation or any cross-locale bundle drift - it is the single owner of message-text coverage.
-   - **Unit tests assert the message KEY, never resolved English prose** - `hasMessageContaining("error.channel.publishNotAllowed")`, not `hasMessageContaining("Publish")`. Mockito service tests have no Spring context: `{key}` placeholders stay raw, and `MessageUtils.get(key, args)` returns the code itself with args dropped (its static `MessageSource` is never initialized). English-prose assertions are valid ONLY for the minority pattern where the service resolves at throw time via an injected `MessageSource` that the test stubs (`when(messageSource.getMessage(...)).thenReturn(...)`).
+   - **Message = `{error.<domain>.<key>}` placeholder, resolved ONLY at the HTTP layer.** Pass the literal placeholder (e.g. `"{error.channel.publishNotAllowed}"`); `GlobalExceptionHandler` (app-core) resolves it to the request locale when building the response envelope. The exception constructor performs NO resolution, so `getMessage()` carries the raw key **by design** - everywhere below the HTTP layer, including logs and tests. **A message that carries arguments** (a count, a name) is the one case resolved at throw time: through `MessageUtils.get("error.<domain>.<key>", args)`, which the translation-coverage test scans, or through an injected `MessageSource`, whose bare key that test cannot see. Never an English literal.
+   - **Error key bundles** live in `apps/<app>/src/main/resources/messages/errors*.properties` - add every new key to EVERY locale the project ships. The project's translation-coverage test (e.g. `ExceptionMessageTranslationTest` in the app module) scans source for `"{error.*}"` literals and `MessageUtils.get(...)` calls and fails the build on any key missing a translation or any cross-locale bundle drift - it is the single owner of message-text coverage.
+   - **Unit tests assert the message KEY, never resolved English prose** - `hasMessageContaining("error.channel.publishNotAllowed")`, not `hasMessageContaining("Publish")`. Mockito service tests have no Spring context: `{key}` placeholders stay raw, and `MessageUtils.get(key, args)` returns the code itself with args dropped (its static `MessageSource` is never initialized). English-prose assertions are valid ONLY for a message resolved at throw time through an injected `MessageSource` that the test stubs (`when(messageSource.getMessage(...)).thenReturn(...)`).
 4. **Repository** - `extends SimpliXBaseRepository<E, String>` (`SimpliXTreeRepository<E, String>` for a tree entity). Never plain `JpaRepository`, nor another `*JpaRepository` base such as `SearchableJpaRepository`.
 5. **DTOs** - entity-backed DTOs MUST be static inner classes of `{Entity}DTOs` (one container file per entity). **Exception for DTOs with no matching `.simplix/entity/*.yml`** (projections, statistics, aggregation results, inter-service payloads): MAY be defined either (a) as separate top-level DTO files or (b) grouped in a feature container `{Feature}DTOs`. Prefer the container when the DTOs share a feature and lifecycle; use separate files when they are independent or reused across features.
 6. **SearchDTO Lombok** - `@Getter @Setter`. Never `@Data` (SearchDTO is a search-condition container, not an identity-bearing object; `@Data` generates equals/hashCode that cause framework-internal comparison issues on large DTOs).
 7. **Boolean in DTO** - `Boolean` wrapper. Never primitive `boolean` (getter-naming breaks framework lookups - `isXxx()` vs expected `getXxx()`).
-8. **Constructor** - explicit. CRUD classes call `super(...)` from the constructor body. Never `@RequiredArgsConstructor` or `@Autowired` field injection in `web` package. Acceptable ONLY in `app` package infrastructure (`@Component`, `@Configuration`).
+8. **Constructor** - explicit. CRUD classes call `super(...)` from the constructor body. Never `@RequiredArgsConstructor` or `@Autowired` field injection in the `web` package, except on the infrastructure beans § Scope lists (`app.*`, and `web.*.{scheduler,config,listener,factory,helper,stream}.*`), which the audit's `field-injection-in-web` exempts the same way.
 9. **Permission name** - UPPER_SNAKE feature-area group in `hasPermission('<FEATURE_AREA>', '<action>')` (e.g. `'CONTENT_CHANNEL'`, `'FACILITY_HARDWARE'`). Related controllers share ONE group target; per-entity PascalCase targets are forbidden. The generator's controller template emits the entity name as the target, so promote rewrites it (`generator/promote-workflow.md` § After promoting). Grep the existing `hasPermission('` targets before inventing one, and pick the group already covering the feature area; add a new group only when a genuinely new feature area appears. When the project keeps an authoritative group table (a policy reference under its own `.claude/`), that table wins. Actions are limited to those the evaluator resolves: `list`/`view`/`create`/`edit`/`delete`/`export`/`import`/`approve`/`manage` - any other verb can never be granted.
 10. **`@Tag(name)`** - domain-based namespace (`facility.identity.Credential`). Never Java-package-based (`{basePackage}.web.Monitoring`).
 11. **`@Operation`** - every endpoint has `@Operation(summary = "...", description = "...")`. Concise API-consumer summary; do not duplicate validation constraints.
 12. **`@FieldLabel`** - required on every SearchDTO and CreateDTO field (`@FieldLabel("{entities.Entity.field}")`), so validation errors use the translated label. **Exception**: audit fields (`createdBy`, `createdAt`, `updatedBy`, `updatedAt`) are BaseEntity auto-managed and excluded from `@FieldLabel`. **Virtual/derived fields** (populated from another entity's field, no column of their own) reuse that source entity's existing key `{entities.<SourceEntity>.<originalField>}` - never a new `{field.*}` key; `{field.*}` is only for genuinely generic field names. See AP-9 in `convention/anti-patterns.md`.
-13. **`@Validated`** on `@RequestBody` - follow the generator's pattern: single DTO (Create/Update/UpdateForm/BatchUpdate) → yes; `List<OrderUpdateDTO>` → yes; `SearchCondition<SearchDTO>` → yes; bare `Set<UpdateDTO>` (multiUpdate) → no (validation cascades per element anyway).
+13. **`@Validated`** on `@RequestBody` - follow the generator's pattern: single DTO (Create/Update/BatchUpdate) → yes (the UpdateFormDTO is a response of `GET /{id}/edit`, never a request body); `List<OrderUpdateDTO>` → yes; `SearchCondition<SearchDTO>` → yes; bare `Set<UpdateDTO>` (multiUpdate) → no (validation cascades per element anyway).
 14. **No debug logs by default** - no `@Slf4j` + `log.debug/info` in controllers or services unless explicitly requested. The global exception handler logs errors; controllers/services do not. For business-event recording (user action, state change, security event), write an `AuditEvent` entity - not a log statement. Credential-adjacent flows (password verify/change, token issuance) must NOT log any identifier, hash, or length via `log.debug/info` - even at DEBUG level, this is a data-leak risk.
 15. **Generator-first, always - this is the TOP-PRIORITY gate; run it BEFORE writing any controller/service/DTO.** For every entity you add, and every REST surface you build, the FIRST question is "can the generator produce this?" - not "how do I write this class?". Skipping the generator is the single most common way this module drifts, so it is checked before all other invariants.
 
-    **Why this is the top rule:** the generated OpenAPI contract is what the frontend's CLI codegen turns into a full `CrudList` screen (list → search → view → edit → delete). Hand-written backend endpoints produce no such contract shape, so the frontend must build every screen by hand. Generator-first is therefore load-bearing for the whole full-stack pipeline, not a backend style preference.
+    **Why this is the top rule:** the generated API contract (the OpenAPI document, or SimpliX Meta where the frontend generates from it) is what the frontend's CLI codegen turns into a full `CrudList` screen (list → search → view → edit → delete). Hand-written backend endpoints produce no such contract shape, so the frontend must build every screen by hand. Generator-first is therefore load-bearing for the whole full-stack pipeline, not a backend style preference.
 
     **① Decision procedure (run once per new REST surface, before typing any Java):**
     - **A `@Entity` with its own table that any admin/user screen lists, views, or edits** (CRUD, or an action/read surface over one entity - e.g. an `Order`, an `AssetAssignment`, an `IncidentEvent`, an audit table like `InspectionResult`, an invitation/delegation/credential row) → **MUST** be generated and promoted, THEN customized (add actions, trim endpoints). The steps and their flags are owned by `entity/yml-configuration.md` § Creating YML Configuration (config → edit yml → generate) and `generator/promote-workflow.md` (the collision check before generating, `yo simplix:promote <EntityName>`, and the rewrite of the permission targets to the #9 group after it). Never hand-write it from scratch. Even a "non-CRUD, action-only" or read-only-audit surface over one entity is generate-then-trim.
@@ -73,9 +72,9 @@ Apply and enforce these on every controller, service, repository, and DTO you to
     - **Entity-less or multi-entity aggregation** (no single backing table - dashboards, reports, cross-entity actions, token/device-authenticated portals) → hand-authoring in canonical non-CRUD shape is permitted (there is no entity to scaffold from), and invariant #17 governs the shape. Document the reason in a one-line class JavaDoc.
     - When unsure which bucket, default to generate-then-trim. "It's just a read/audit surface" is NOT a reason to hand-write - generate it read-only.
 
-    **② Three rules govern the generate → promote → trim path itself**, and each fails silently when skipped: the **pre-generation collision check** (`promote` overwrites `src/` without asking, so a hand-authored `XService` is clobbered by the generated one), **manual trimming verified after each cut** (a script that bulk-deletes endpoints eats the constructor), and **the promoted `*ServiceTest` going stale with the service it tests**. Full rules → `generator/promote-workflow.md`.
+    **② These rules govern the generate → promote → trim path itself**, and each fails silently when skipped: the **pre-generation collision check** (promote with `--force`, the form this handbook uses, overwrites `src/` without asking, so a hand-authored `XService` is clobbered by the generated one), **manual trimming verified after each cut** (a script that bulk-deletes endpoints eats the constructor), and **the promoted `*ServiceTest` going stale with the service it tests**. Full rules → `generator/promote-workflow.md`.
 
-    **③ Two contract rules bind every generated surface:**
+    **③ Contract rules that bind every generated surface:**
     - **List-serving endpoints must be paged searchable.** Any endpoint that feeds a frontend list whose row count can grow (accumulating records, per-user histories, request queues - when in doubt, assume it grows) MUST expose the standard searchable surface from the controller template: `@SearchableParams(SearchDTO.class) Map<String, String>` → `service.search(params)` → `Page<ListDTO>`. Self-scoped or aggregated surfaces keep the same shape and force their scope conditions server-side on top of the client params (overwrite the scoped keys; client filters may only narrow). Returning an unpaged `List<T>` for such data is a defect - the frontend pairs every list screen with CLI-scaffolded `CrudList` pagination/filtering, which requires this contract. This backend-first, template-based path is ALWAYS the first implementation method considered for list screens.
     - **SearchDTO PK must be sortable AND accept `IN`.** Every SearchDTO's entity-ID field MUST carry `@SearchableField(operators = {EQUALS, IN}, sortable = true)`, and the scaffold emits neither half. Without `sortable` the scaffolded list's very first request fails, because the frontend's default list sort is `<entityId>.desc`. Without `IN` the list's own filter for that entity is dead: it resolves the labels of what is selected by asking the entity's own search endpoint for those ids at once (`<entityId>.in=a,b,c`), and the whole request is refused the moment a value is picked - on every list that offers the filter, including other modules', since the filter is shared. The asymmetry that hides it: the same id declared as a FOREIGN key elsewhere is routinely `{EQUALS, IN}` and works, so only the entity's own list carries the defect. Details, both verification requests, and a spec-wide sweep → `review/searchable-field-patterns.md` § PK Contract.
 16. **i18n mandatory** - every entity (for labels) and every LabeledEnum (for values) has properties files in every locale the project ships, before domain tests pass. **LabeledEnum message keys are `enums.{SimpleName}.{CONSTANT}` and are merged globally across the classpath, so every LabeledEnum simple class name MUST be globally unique** - two enums sharing a simple name (even in different packages/modules) collide on the merged key and silently mistranslate. Resolve any collision by renaming one enum (and migrating its keys in every locale) or, if both model the same concept, merging into a single enum.
@@ -100,9 +99,9 @@ Apply and enforce these on every controller, service, repository, and DTO you to
 
     **A count leaks as much as a record.** Judge by what the answer tells the caller, not by whether entities cross the boundary: 「220 people are registered at that workplace」 is information about a workplace the caller was not granted, and no list-scoping test on any screen will ever see it. The figure that hides longest is the one on a tile whose neighbours are all correctly narrowed - a number right in five places and wrong in the sixth reads as a scoped screen.
 
-    **Where a static rule CAN reach this, it is comparative - two neighbours over one subject disagreeing about whether to check.** An absolute rule (「a read taking a scope identifier must check it」) drowns, because whether a given read should be scoped is a product question: a shared catalogue is the installation's and everyone reads all of it. But a class that already narrows one read has imported the range, named it, and decided which axis the subject sits on - so a second read in the same class taking the same kind of identifier and never mentioning it is one decision left half-applied. That rule judges nothing about what is legitimate; it only asks why two neighbours disagree, which is why it can be written at all. **Three exclusions make the difference between usable and useless**, and each is a false-positive class somebody will otherwise re-derive by widening the rule: overloads (a name-keyed call graph resolves a short form's call to its long form back to the caller itself), controllers (they reach the range through the service by design), and the scope classes themselves (they define the vocabulary rather than call it).
+    **Where a static rule CAN reach this, it is comparative - two neighbours over one subject disagreeing about whether to check.** An absolute rule (「a read taking a scope identifier must check it」) drowns, because whether a given read should be scoped is a product question: a shared catalogue is the installation's and everyone reads all of it. But a class that already narrows one read has imported the range, named it, and decided which axis the subject sits on - so a second read in the same class taking the same kind of identifier and never mentioning it is one decision left half-applied. That rule judges nothing about what is legitimate; it only asks why two neighbours disagree, which is why it can be written at all. **Its exclusions make the difference between usable and useless**, and each is a false-positive class somebody will otherwise re-derive by widening the rule: overloads (a name-keyed call graph resolves a short form's call to its long form back to the caller itself), controllers (they reach the range through the service by design), and the scope classes themselves (they define the vocabulary rather than call it).
 
-    **Give the read side its own vocabulary rather than the write side's.** A write refuses ONE record, so it always ends at a `require…`; a read far more often BOUNDS A SET and lets the caller's identifier narrow inside it. A rule that inherits the write vocabulary calls every correctly bounded count a defect. And drop any bare `narrow*`-shaped word from the read list: on a write path it is nearly always the range, while on a read path it is routinely a filter resolver - one such method made a whole class read as scope-aware while it resolved every value against a caller-named identifier with no range anywhere in the file.
+    **Give the read side its own vocabulary rather than the write side's.** A write refuses ONE record, so it always ends at a `require…`; a read far more often BOUNDS A SET and lets the caller's identifier narrow inside it. A rule that inherits the write vocabulary calls every correctly bounded count a defect. And drop any bare `narrow*`-shaped word from the read list: on a write path it is nearly always the range, while on a read path it is routinely a filter resolver, and a class holding one reads as scope-aware while it resolves every value against a caller-named identifier with no range anywhere in the file.
 
     **The blind spot ships with the rule, as its own warning.** A rule comparing a class against itself is silent on a class that never heard of scope - and that is where the worst instance lives, because there is no neighbour to disagree with. Report it separately and grade it a warning, since a legitimate class produces the same finding and only a person settles it. Green over the hole the rule cannot see is worse than no rule at all: everybody stops looking.
 
@@ -126,16 +125,13 @@ Identify the task, Read the referenced file(s), then work. Do not preload everyt
    - `.simplix/entity/*.yml` → `entity/yml-configuration.md`
 
 2. **GENERATE** - Scaffold & promote (`yo simplix:*` is a Yeoman-based code generator; run from project root)
-   - First-time config + generate → `entity/yml-configuration.md`
-     1. Design entity 2. Write i18n for every locale 3. Run domain tests
-     4. `yo simplix:config` 5. `yo simplix:generate` 6. Build & review
-     7. `yo simplix:promote` 8. Customize within Invariants
+   - First-time config + generate → `entity/yml-configuration.md` § Creating YML Configuration (the step order, from the entity to the customization)
    - Promote generated → src → `generator/promote-workflow.md`
    - Edit `.java.template` → `generator/template-customization.md`
    - Generator error → `generator/troubleshooting.md`
 
 3. **WRITE** - Author controller, service, DTO
-   - **STOP - run invariant #15's generator-first gate BEFORE reading these.** Backed by one entity → generate → promote → customize (never hand-write). Only entity-less/aggregation surfaces are hand-authored. And run the pre-generation collision check: if a hand-authored `X{Service,RestController}` already exists, rename it or don't generate `X` - `promote` overwrites silently.
+   - **STOP - run invariant #15's generator-first gate BEFORE reading these.** Backed by one entity → generate → promote → customize (never hand-write). Only entity-less/aggregation surfaces are hand-authored. And run the pre-generation collision check: if a hand-authored `X{Service,RestController}` already exists, rename it or don't generate `X` (`generator/promote-workflow.md` § Before generating).
    - New CRUD controller + service → `convention/canonical-controller.md` + `convention/canonical-service.md`
      ※ MUST scaffold via generator first - generate → promote → customize
    - New non-CRUD controller → `convention/non-crud-controller.md`
@@ -144,7 +140,7 @@ Identify the task, Read the referenced file(s), then work. Do not preload everyt
    - Modify existing code → Read surrounding code first. For convention drift, also check `convention/anti-patterns.md` + `review/common-issues-checklist.md`. Invariants apply.
 
 4. **REVIEW** - Validate DTO, annotation, code quality
-   - DTO structure / 8 DTO roles → `review/dto-type-reference.md`
+   - DTO structure / DTO roles → `review/dto-type-reference.md`
    - Entity → DTO field mapping → `review/entity-to-dto-mapping.md`
    - Validation (`@NotBlank`, `@UniqueFields`) → `review/validation-patterns.md`
    - FK / entity ref (`@JsonIncludeProperties`) → `review/reference-field-patterns.md`
@@ -157,9 +153,9 @@ Identify the task, Read the referenced file(s), then work. Do not preload everyt
    - JavaDoc formatting → `convention/javadoc.md`
    - Common anti-patterns → `convention/anti-patterns.md`
 
-6. **SYNC** - Cross-subproject coordination (after the OpenAPI contract changes)
+6. **SYNC** - Cross-subproject coordination (after the API contract changes)
    - Trigger: new / renamed / removed endpoint, DTO field, enum value, or `@Tag`.
-   - **Flag - do not execute - the frontend update.** The frontend subproject derives `packages/domain-*/src/generated/` from this service's OpenAPI spec; stale generated code produces silent UI bugs. When your PR alters the contract, state the delta in the PR description so the frontend session can take its SCAFFOLD Update path (see the `simplix:frontend` skill, invariant #29). No frontend edits from this skill.
+   - **Flag - do not execute - the frontend update.** The frontend subproject regenerates its domain contract from this service (`packages/domain-*/src/generated/` from the OpenAPI spec, or `src/generated-meta/` from SimpliX Meta, per the `codegen` mode the detector reports for it); stale generated code produces silent UI bugs. When your PR alters the contract, state the delta in the PR description so the frontend session can take its SCAFFOLD Update path (see the `simplix:frontend` skill, invariant #29). No frontend edits from this skill.
 
 7. **RUNTIME** - What the framework does that the code does not show → `framework/runtime-behaviour.md`
    - Trigger: sign-in / token / session work, an audit-history surface over a generated entity, or a symptom whose cause is not in any file you can read - a 401 on correct credentials, a context that fails to start naming an unrelated bean, a session row that multiplies, a `NoClassDefFoundError` from a running application.
@@ -196,7 +192,7 @@ The generator produces the canonical shapes. Manual controllers and services mus
 ```
 @RestController → @RequestMapping("/{entity}") → @Tag(name = "{module}.{subdomain}.{Entity}") → class extends SimpliXBaseController<E, String>
   constructor: super(service); this.service = service;
-  11 endpoints (order per generator template):
+  Endpoints (order per generator template):
     1. POST   /create           create
     2. PUT    /{id}             update
     3. PATCH                    multiUpdate
@@ -224,13 +220,13 @@ The generator produces the canonical shapes. Manual controllers and services mus
   Private: saveAndGetProjection(entity, fkId) — save + FK resolution + projection lookup
 ```
 
-For full annotated code with all 11 endpoints, existence-check patterns, `@Validated` placement, base-class helpers, and required method signatures → Read `convention/canonical-controller.md` and `convention/canonical-service.md` via the Task Router above
+For full annotated code with every endpoint, existence-check patterns, `@Validated` placement, base-class helpers, and required method signatures → Read `convention/canonical-controller.md` and `convention/canonical-service.md` via the Task Router above
 
 ---
 
 ## DTO Convention Summary
 
-All DTOs are **static inner classes** of `{EntityName}DTOs`. For the 8 DTO roles (SearchDTO, CreateDTO, UpdateDTO, UpdateFormDTO, BatchUpdateDTO, DetailDTO, ListDTO, OrderUpdateDTO) with their exact Lombok annotations, extends relationships, and per-field annotation rules → see `references/review/dto-type-reference.md`.
+All DTOs are **static inner classes** of `{EntityName}DTOs`. For the DTO roles (SearchDTO, CreateDTO, UpdateDTO, UpdateFormDTO, BatchUpdateDTO, DetailDTO, ListDTO, OrderUpdateDTO) with their exact Lombok annotations, extends relationships, and per-field annotation rules → see `references/review/dto-type-reference.md`.
 
 ---
 
@@ -264,7 +260,7 @@ Exhaustive ordering + rationale → `references/convention/annotation-ordering.m
 After writing:
 
 - [ ] `node "${CLAUDE_PLUGIN_ROOT}/scripts/audit-backend.mjs"` clean - 0 error-level hits; review candidates judged against the rule's stated exceptions, not bulk-rewritten
-- [ ] All 20 Non-Negotiable Invariants hold - the audit covers the mechanically visible subset, never all of them
+- [ ] All Non-Negotiable Invariants hold - the audit covers the mechanically visible subset, never all of them
 - [ ] Completion report names the precedent classes cloned from, with justified divergences (#19 - customization / hand-authored surfaces)
 - [ ] Annotation ordering matches `references/convention/annotation-ordering.md`
 - [ ] No anti-patterns from `references/convention/anti-patterns.md`
