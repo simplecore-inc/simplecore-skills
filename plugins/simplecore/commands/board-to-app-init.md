@@ -143,25 +143,8 @@ repository.
 
 7. **Add the pointer to the instruction file.** This matters most: the description trigger alone
    does not survive a fresh session that starts elsewhere in the repository. Append to `CLAUDE.md`
-   (or `AGENTS.md`), adapting the paths and the language:
-
-   ```markdown
-   ## Building the app from the board
-
-   The board is built chapter by chapter in dependency order. Invoke the
-   `simplecore:board-to-app` skill before building a chapter, running its persona tests, planning
-   a wave, or resuming - it carries the coordination discipline. This repository supplies the
-   contents:
-
-   - `<chapter dir>/00-overview.md` - the chapter table; the file order is the build order
-   - `<state ledger>` - the one place that says which chapter is open
-   - `<evidence dir>/00-overview.md` - what a chapter's verification leaves behind
-   - `.claude/board-to-app.json` - the paths, and what each chapter passes before it closes
-
-   The skill comes from the `simplecore` plugin
-   (`claude plugin install simplecore@simplecore-skills`). When it is not in the `Skill` tool
-   list, install it rather than working from memory.
-   ```
+   (or `AGENTS.md`), adapting the paths and the language: the section 「Building the app from the board」 of the project block in
+   `${CLAUDE_PLUGIN_ROOT}/templates/claude-md-section.md`, with the block's closing install line.
 
    When such a section already exists, correct it in place rather than adding a second one.
 

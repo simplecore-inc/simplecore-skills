@@ -98,30 +98,8 @@ The scaffold is generic on purpose. Walk these with the user rather than guessin
 
 This is the step that matters most: the description trigger alone does not survive a session that
 starts elsewhere in the repository. Append to the project's `CLAUDE.md` (or `AGENTS.md` where the
-project uses that), adapting the paths:
-
-```markdown
-## The wireframe board is the screen contract
-
-Screens are built from the board: the spec decides behavior, the board renders it as
-screens / states / flow, the code matches the board. Invoke the
-`simplecore:wireframe-boards` skill before implementing a screen from it, checking code
-against it, syncing it after a change, or drawing new frames.
-
-- `<board path>/src/manifest.mjs` - the table of contents. Find a screen here, then open
-  that one screen file. Never read the built HTML.
-- `<board path>/AGENTS.md` - the working rules for this board.
-- The board carries no build script. `node wf.mjs <command>` from the board folder; the kit
-  lives in the skill.
-
-A screen, dialog, state, or flow added during development is back-filled as a frame in the
-same change. A design decision that changes needs the design owner's sign-off and updates
-the spec in the same breath.
-
-The skill comes from the `simplecore` plugin
-(`claude plugin install simplecore@simplecore-skills`). When it is not in the `Skill` tool
-list, install it rather than working from memory.
-```
+project uses that), adapting the paths: the section 「The wireframe board is the screen contract」 of the project block in
+`${CLAUDE_PLUGIN_ROOT}/templates/claude-md-section.md`, with the block's closing install line.
 
 When such a section already exists, correct it in place rather than adding a second one.
 

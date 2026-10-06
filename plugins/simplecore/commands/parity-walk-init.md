@@ -75,23 +75,8 @@ repository.
 5. **Add the pointer to the instruction file.** This is the step that matters most, because the
    description trigger alone does not survive a fresh session that starts somewhere else in the
    repository. Append to the project's `CLAUDE.md` (or `AGENTS.md` when the project uses that),
-   adapting the paths and the language:
-
-   ```markdown
-   ## Walking the board against the app
-
-   Reconciling implemented screens with the board is a long walk across many sessions. Invoke the
-   `simplecore:board-parity-walk` skill before starting or resuming one - it carries the
-   discipline. This repository supplies the contents:
-
-   - `<parity list path>` - the frames left to walk, and the decisions parked for a human
-   - `<handover file path>` - how to start the servers, known traps, accounts and data standing
-   - `.claude/board-parity-walk.json` - names those two for the write-time checks
-
-   The skill comes from the `simplecore` plugin
-   (`claude plugin install simplecore@simplecore-skills`). When it is not in the `Skill` tool
-   list, install it rather than working from memory.
-   ```
+   adapting the paths and the language: the section 「Walking the board against the app」 of the project block in
+   `${CLAUDE_PLUGIN_ROOT}/templates/claude-md-section.md`, with the block's closing install line.
 
    When such a section already exists, correct it in place rather than adding a second one.
 

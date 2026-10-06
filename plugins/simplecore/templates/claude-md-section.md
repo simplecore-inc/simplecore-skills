@@ -19,8 +19,10 @@ filling the parity list from the board - belongs to `/simplecore:board-init`,
 ## Project block
 
 Insert into the project's `CLAUDE.md` (or `.claude/CLAUDE.md`, or `AGENTS.md` when the project
-keeps its instructions there). Delete the sections the repository does not have, and replace every
-path with what the detector reported.
+keeps its instructions there). Delete the sections the repository does not have, keep the closing
+install line whichever sections stay, and replace every path with what the detector reported.
+`/simplecore:board-init`, `/simplecore:board-to-app-init` and `/simplecore:parity-walk-init` write
+their own section of this block the same way.
 
 **A board reaches code one of two ways and a project runs one of them**, so exactly one of
 「Building the app from the board」 and 「Walking the board against the app」 is written. The
@@ -37,6 +39,8 @@ or drawing new frames.
 - `<board path>/src/manifest.mjs` - the table of contents. Find a screen here, then open that
   one screen file. Never read the built HTML.
 - `<board path>/AGENTS.md` - the working rules for this board.
+- The board carries no build script. `node wf.mjs <command>` from the board folder; the kit
+  lives in the skill.
 
 A screen, dialog, state, or flow added during development is back-filled as a frame in the same
 change. A design decision that changes needs the design owner's sign-off and updates the spec in
@@ -52,6 +56,7 @@ what may run alongside, or resuming a build. This repository supplies the conten
 - `<chapter directory>` - one file per chapter; the file order is the build order
 - `<state ledger path>` - the one place that says which chapter is open, and each persona's
   development account. Read it first; write to it when a chapter changes state
+- `<evidence dir>/00-overview.md` - what a chapter's verification leaves behind
 - `.claude/board-to-app.json` - every path, command and heading the build reads
 
 Chapter files are generated from the board, never hand-edited: fix the board and regenerate. A
