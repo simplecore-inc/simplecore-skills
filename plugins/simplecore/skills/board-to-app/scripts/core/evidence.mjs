@@ -302,7 +302,7 @@ function upFrom(id, base) {
 export const RETIRED_READER = 'RetiredReaderError';
 
 /**
- * A reader `ctx.evidence` no longer serves, called by a project gate.
+ * A retired reader on `ctx.evidence`, called by a project gate.
  *
  * <p>Both read a run-record shape no declared key describes - sections carrying three labels, and
  * frames under a section a persona line proves - so on every project they could only return an
