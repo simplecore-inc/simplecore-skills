@@ -26,7 +26,7 @@ export async function reportCoverage(boardDir, { onlyMissing = false, section = 
   const { config, manifest } = await loadBoard(boardDir);
   const roots = config.code?.appRoots ?? [];
   if (!roots.length) {
-    console.log('board.config.mjs에 code.appRoots가 없습니다 — 어느 앱이 라우트를 제공하는지 선언해야 셀 수 있습니다.');
+    console.log('board.config.mjs declares no code.appRoots - the apps that serve routes must be declared before frames can be counted.');
     return null;
   }
   const APP_ROOTS = roots.map((r) => join(boardDir, r));
@@ -149,8 +149,8 @@ const wanted = section ? section.toUpperCase() : null;
 // is, because only one of the two is a coverage result.
 const present = APP_ROOTS.filter((dir) => existsSync(dir));
 if (!present.length) {
-  console.log(`앱을 찾지 못했다 — ${APP_ROOTS.map((d) => relative(boardDir, d)).join(', ')}`);
-  console.log('프론트엔드가 아직 없으면 정상이다. 있다면 board.config.mjs의 code.appRoots를 고친다.\n');
+  console.log(`no app found at ${APP_ROOTS.map((d) => relative(boardDir, d)).join(', ')}`);
+  console.log('That is expected while no front end exists yet. If one does, fix code.appRoots in board.config.mjs.\n');
 }
 
 const served = servedRoutes();
@@ -184,7 +184,7 @@ for (const row of rows) {
 
   const missing = row.frames.filter((f) => f.state === 'missing');
   if (!onlyMissing || missing.length) {
-    const bar = counted.length ? `${ok}/${counted.length}` : '—';
+    const bar = counted.length ? `${ok}/${counted.length}` : '-';
     console.log(`${row.letter}  ${row.title.padEnd(width)}  ${bar.padStart(7)}`);
   }
   for (const f of missing) {
@@ -192,7 +192,7 @@ for (const row of rows) {
   }
 }
 
-console.log(`\n도달 가능 ${totalServed}/${totalFrames} · 라우트 없음 ${totalFrames - totalServed}`);
-console.log('✖ 표시가 없는 것은 라우트가 있다는 뜻일 뿐이다 — 상태까지 맞는지는 손으로 대조한다.');
+console.log(`\nreachable ${totalServed}/${totalFrames} · no route ${totalFrames - totalServed}`);
+console.log('A frame without ✖ only has a route; whether its states match is compared by hand.');
 return { served: totalServed, frames: totalFrames };
 }

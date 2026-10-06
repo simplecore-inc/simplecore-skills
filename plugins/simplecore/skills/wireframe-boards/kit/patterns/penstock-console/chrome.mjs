@@ -200,7 +200,7 @@ export function makeChrome({
       if (at === -1) {
         throw new Error(
           'appShell: this screen sits under something and owes a way out of it, and its work pane ' +
-            'has no control strip to draw one in — give workPane a `toolbar`, or say `back: false` ' +
+            'has no control strip to draw one in: give workPane a `toolbar`, or say `back: false` ' +
             'on the titlebar if the layer above never left the screen'
         );
       }

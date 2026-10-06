@@ -13,7 +13,7 @@
 /** Every frame the board draws is placed by the declared axis, and no part comes out empty. */
 export const splitPlacementGate = {
   id: 'splitPlacementGate',
-  title: '선언된 축이 프레임을 놓지 못한다',
+  title: 'the declared axis does not place every frame',
   stage: 'preflight',
   run: (ctx) => {
     const split = ctx.split;
@@ -27,11 +27,11 @@ export const splitPlacementGate = {
         seen.add(e.id);
         const key = split.partOf(e.id);
         if (key === null) {
-          findings.push(`${e.id} — 어느 부분에도 놓이지 않았다 (split.module이 답하지 않는다)`);
+          findings.push(`${e.id} - placed in no part (split.module gives no answer)`);
           continue;
         }
         if (!split.partFor(key)) {
-          findings.push(`${e.id} — split.parts에 없는 '${key}'에 놓였다`);
+          findings.push(`${e.id} - placed in '${key}', which split.parts does not declare`);
           continue;
         }
         held.add(key);
@@ -41,7 +41,7 @@ export const splitPlacementGate = {
     // every part is legitimately empty until the first screen is written.
     if (seen.size) {
       for (const part of split.parts) {
-        if (!held.has(part.key)) findings.push(`'${part.key}' 부분에 프레임이 하나도 없다 — ${part.file}이 빈 채로 나간다`);
+        if (!held.has(part.key)) findings.push(`part '${part.key}' holds no frame - ${part.file} goes out empty`);
       }
     }
     return findings;

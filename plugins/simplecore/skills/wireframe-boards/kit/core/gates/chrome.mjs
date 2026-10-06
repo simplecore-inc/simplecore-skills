@@ -72,7 +72,7 @@ function scriptHandles(src) {
  */
 export const chromeStyledGate = {
   id: 'chromeStyledGate',
-  title: '킷이 쓰는 클래스에 규칙이 없다 (킷의 마크업은 킷이 스타일한다 — core/chrome.css)',
+  title: 'a class the kit draws has no rule (the kit styles its own markup: core/chrome.css)',
   stage: 'built',
   run: (ctx) => {
     const written = new Set();

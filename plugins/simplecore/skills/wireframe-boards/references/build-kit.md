@@ -364,6 +364,8 @@ on boards it does not describe; one level too low is rewritten by the next proje
 
 Every finding refuses the build - no warn level, no lenient mode. **A gate gets its two cases in
 the same change**, in the case file beside it, and `wf.mjs gates` names any gate that has none.
+A gate's title, its messages and its cases' names are English, like every line the kit prints; Korean
+appears in them only as a quotation of what a frame draws or a document writes, in 「」.
 The cases are built from a **fixed fixture config**, never from the board's own settings: a case
 that reads `config.today` passes on the board that declared it and fails everywhere else.
 

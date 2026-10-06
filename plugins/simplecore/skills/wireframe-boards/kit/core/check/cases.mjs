@@ -15,20 +15,20 @@ export function cases(t) {
   // pattern sits on top of them, the chrome has to work without it.
   const KIT_CSS = ['overview.css', 'chrome.css']
     .map((f) => readFileSync(new URL(`../${f}`, import.meta.url), 'utf8')).join('\n');
-  add('chromeStyledGate', '패턴이 킷의 크롬을 스타일하지 않는다', base({ styles: '' }), true);
-  add('chromeStyledGate', '킷의 두 층만으로 크롬이 선다', base({ styles: KIT_CSS }), false);
+  add('chromeStyledGate', 'the pattern does not style the kit\'s chrome', base({ styles: '' }), true);
+  add('chromeStyledGate', 'the kit\'s two layers alone hold the chrome up', base({ styles: KIT_CSS }), false);
 
   // The list only shrinks: a frame the board draws and the list no longer names was walked.
-  add('parityListGate', '걸은 프레임이 목록에서 지워졌다',
+  add('parityListGate', 'a walked frame was deleted from the list',
     withDocs({ 'pa.md': '### X 구역\n- X-01 `x-01-a` - 하나\n' }), false);
-  add('parityListGate', '목록에만 있는 프레임',
+  add('parityListGate', 'a frame only the list names',
     withDocs({ 'pa.md': `${PARITY_OK}- X-99 \`x-99-z\` - 없는 것\n` }), true);
-  add('parityListGate', '목록과 보드가 같다', withDocs({ 'pa.md': PARITY_OK }), false);
+  add('parityListGate', 'the list and the board agree', withDocs({ 'pa.md': PARITY_OK }), false);
   // A section heading carries no count, so one left over from an older list is not compared.
-  add('parityListGate', '머리글의 장 수는 목록이 아니다',
+  add('parityListGate', 'a heading\'s frame count is not the list',
     withDocs({ 'pa.md': '### X 구역 (5장)\n- X-01 `x-01-a` - 하나\n' }), false);
 
-  add('docFrameRefGate', '없는 프레임을 부른다',
+  add('docFrameRefGate', 'cites a frame that does not exist',
     withDocs({ 'rm.md': ROADMAP_OK, 'note.md': '자세한 것은 X-77을 본다.\n' }), true);
   // An id of another numbering scheme is exempt only where the board names it: the gate carries
   // no list of its own, because a guide number one project cites is a missing frame on another.
@@ -40,9 +40,9 @@ export function cases(t) {
   // Reading two digits only does not make `X-100` a wrong id - it makes it no id at all, and this
   // gate then reports zero on a reference nobody resolved.
   const WIDE = [{ file: 'x-01-a' }, { file: 'x-02-b' }, { file: 'x-100-c' }];
-  add('docFrameRefGate', '세 자리 아이디를 부르는데 보드에 없다',
+  add('docFrameRefGate', 'cites a three-digit id the board does not draw',
     withDocs({ 'rm.md': ROADMAP_OK, 'note.md': '자세한 것은 X-100을 본다.\n' }), true);
-  add('docFrameRefGate', '세 자리 아이디가 보드에 있다',
+  add('docFrameRefGate', 'cites a three-digit id the board draws',
     withDocs({ 'rm.md': ROADMAP_OK, 'note.md': '자세한 것은 X-100을 본다.\n' },
       { manifest: [{ letter: 'X', title: 't', screens: WIDE }], screens: WIDE }), false);
 
@@ -52,112 +52,112 @@ export function cases(t) {
   const SUFFIXED = [{ file: 'x-01a-a' }, { file: 'x-01b-b' }, { file: 'x-02a-c' }];
   const suffixed = (note) => withDocs({ 'rm.md': ROADMAP_OK, 'note.md': note },
     { manifest: [{ letter: 'X', title: 't', screens: SUFFIXED }], screens: SUFFIXED });
-  add('docFrameRefGate', '접미가 붙은 아이디를 그대로 부른다', suffixed('자세한 것은 X-01b를 본다.\n'), false);
-  add('docFrameRefGate', '접미를 뗀 화면 번호를 부른다', suffixed('X-01 화면은 상태가 둘이다.\n'), false);
-  add('docFrameRefGate', '없는 상태 letter를 부른다', suffixed('자세한 것은 X-01c를 본다.\n'), true);
+  add('docFrameRefGate', 'cites a suffixed id as it is', suffixed('자세한 것은 X-01b를 본다.\n'), false);
+  add('docFrameRefGate', 'cites the screen number without the suffix', suffixed('X-01 화면은 상태가 둘이다.\n'), false);
+  add('docFrameRefGate', 'cites a state letter that does not exist', suffixed('자세한 것은 X-01c를 본다.\n'), true);
   // A document numbering its own tables `B-02 PrinterModel` collides with the frame id shape, and
   // no per-id list stays right as that model grows - so the board names the file.
   const OTHER = (docs) => withDocs({ 'rm.md': ROADMAP_OK, ...docs },
     { config: { ...config, documents: { scan: ['.'], otherIdScheme: ['model.md'] } } });
-  add('docFrameRefGate', '다른 번호 체계를 쓰는 문서를 선언하지 않았다',
+  add('docFrameRefGate', 'a document in another numbering scheme is not declared',
     withDocs({ 'rm.md': ROADMAP_OK, 'model.md': '#### B-02 PrinterModel\n' }), true);
-  add('docFrameRefGate', '다른 번호 체계를 쓰는 문서를 선언했다',
+  add('docFrameRefGate', 'a document in another numbering scheme is declared',
     OTHER({ 'model.md': '#### B-02 PrinterModel\n' }), false);
-  add('docFrameRefGate', '선언하지 않은 문서는 그대로 검사한다',
+  add('docFrameRefGate', 'an undeclared document is still checked',
     OTHER({ 'model.md': '#### B-02 PrinterModel\n', 'note.md': '자세한 것은 X-77을 본다.\n' }), true);
 
   // A board that declares no registry is not held to one: declaring it is what accepts the rule.
-  add('docRegistryGate', '문서 목록을 선언하지 않았다',
+  add('docRegistryGate', 'no registry is declared',
     withDocs({ 'a.md': '# a\n', 'b.md': '# b\n' }), false);
-  add('docRegistryGate', '문서 목록에 없는 문서',
+  add('docRegistryGate', 'a document missing from the registry',
     withDocs({ 'reg.md': '| 문서 | 무엇 |\n| `a.md` | 하나 |\n', 'a.md': '# a\n', 'b.md': '# b\n' },
       { config: { ...config, documents: { scan: ['.'], registry: 'reg.md' } } }), true);
-  add('docRegistryGate', '문서 목록이 없는 문서를 부른다',
+  add('docRegistryGate', 'the registry names a document that does not exist',
     withDocs({ 'reg.md': '| 문서 | 무엇 |\n| `a.md` | 하나 |\n| `gone.md` | 사라진 것 |\n', 'a.md': '# a\n' },
       { config: { ...config, documents: { scan: ['.'], registry: 'reg.md' } } }), true);
-  add('docRegistryGate', '문서 목록과 문서가 맞는다',
+  add('docRegistryGate', 'the registry and the documents agree',
     withDocs({ 'reg.md': '| 문서 | 무엇 |\n| `a.md` | 하나 |\n| `b.md` | 둘 |\n', 'a.md': '# a\n', 'b.md': '# b\n' },
       { config: { ...config, documents: { scan: ['.'], registry: 'reg.md' } } }), false);
 
-  add('docLinkGate', '없는 파일로 가는 링크',
+  add('docLinkGate', 'a link to a file that does not exist',
     withDocs({ 'a.md': '[없는 것](./gone.md)\n' }), true);
-  add('docLinkGate', '있는 파일로 가는 링크',
+  add('docLinkGate', 'a link to a file that exists',
     withDocs({ 'a.md': '[있는 것](./b.md)\n', 'b.md': '# b\n' }), false);
 
-  add('roleDocGate', '문서에 없는 역할',
+  add('roleDocGate', 'a role missing from the document',
     withDocs({ 'src/roles.mjs': ROLES_SRC, 'p.md': '시스템 관리자만 적혀 있다\n' }), true);
-  add('roleDocGate', '문서가 역할을 다 담았다',
+  add('roleDocGate', 'the document holds every role',
     withDocs({ 'src/roles.mjs': ROLES_SRC, 'p.md': '시스템 관리자 · 문지기\n' }), false);
 
-  add('featureKeyDocGate', '가격 문서에 없는 기능 키',
+  add('featureKeyDocGate', 'a feature key missing from the pricing document',
     withDocs({ 'pr.md': 'CONNECTED만 판다\n' },
       { config: { ...config, documents: DOCS, features: { CONNECTED: { tag: 'a' }, PACK_X: { tag: 'b' } } } }), true);
-  add('featureKeyDocGate', '가격 문서가 키를 다 담았다',
+  add('featureKeyDocGate', 'the pricing document holds every key',
     withDocs({ 'pr.md': 'CONNECTED · PACK_X\n' },
       { config: { ...config, documents: DOCS, features: { CONNECTED: { tag: 'a' }, PACK_X: { tag: 'b' } } } }), false);
 
   // ── markup ────────────────────────────────────────────────────────────────────
-  add('structureGate', '닫지 않은 태그', base({ html: '<article class="frame" id="s-x-01"><div><span></div></article>' }), true);
-  add('structureGate', '균형 잡힌 마크업', base({ html: '<article class="frame" id="s-x-01"><div><span></span></div></article>' }), false);
-  add('leakedValueGate', 'undefined 유출', base({ html: '<article class="frame" id="s-x-01">undefined</article>' }), true);
-  add('leakedValueGate', '값이 온전함', base({ html: '<article class="frame" id="s-x-01">로그인</article>' }), false);
-  add('overlayGate', 'overlay를 셸에 안 넘김',
+  add('structureGate', 'an unclosed tag', base({ html: '<article class="frame" id="s-x-01"><div><span></div></article>' }), true);
+  add('structureGate', 'balanced markup', base({ html: '<article class="frame" id="s-x-01"><div><span></span></div></article>' }), false);
+  add('leakedValueGate', 'undefined leaked', base({ html: '<article class="frame" id="s-x-01">undefined</article>' }), true);
+  add('leakedValueGate', 'the value is intact', base({ html: '<article class="frame" id="s-x-01">로그인</article>' }), false);
+  add('overlayGate', 'overlay not handed to the shell',
     base({ loaded: [{ num: 'X-01', file: 'x-01-a', label: 'a', mod: { overlay: '<div class="modal">x</div>', body: '<main></main>' } }] }), true);
-  add('overlayGate', 'overlay를 넘김',
+  add('overlayGate', 'overlay handed to the shell',
     base({ loaded: [{ num: 'X-01', file: 'x-01-a', label: 'a', mod: { overlay: '<div class="modal">x</div>', body: '<main><div class="modal">x</div></main>' } }] }), false);
   // A target is read by whoever derives flow from the board; one naming a frame that is not there
   // falls back silently to a guess from the label, so the gate has to speak where the reader does not.
   // The harness numbers a screen `X-02` from `x-02-a` (no state letter), so the targets here are
   // written in that shape; a built board's numbers carry the letter and the gate reads both.
   const TARGETED = (t) => ({ body: `<div class="btn primary" data-target="${t}">다음</div>` });
-  add('targetGate', '없는 프레임을 가리키는 행선지',
+  add('targetGate', 'a target pointing at a frame that does not exist',
     ctxWith([screen('x-01-a', '', TARGETED('X-02 둘'))]), true);
-  add('targetGate', 'id처럼 시작하지만 id의 모양이 아니다',
+  add('targetGate', 'starts like an id and is not shaped like one',
     ctxWith([screen('x-01-a', '', TARGETED('X-2a 둘')), screen('x-02-a', '')]), true);
-  add('targetGate', '있는 프레임을 가리킨다',
+  add('targetGate', 'points at a frame that exists',
     ctxWith([screen('x-01-a', '', TARGETED('X-02 둘')), screen('x-02-a', '')]), false);
-  add('targetGate', 'id가 아닌 글자 행선지는 패턴의 몫이다',
+  add('targetGate', 'a target that is not an id belongs to the pattern',
     ctxWith([screen('x-01-a', '', TARGETED('공급 조건 등록'))]), false);
-  add('dupKeyGate', '한 호출에 같은 키 두 번', ctxWith([screen('x-01-a', "console_({ overlay: a, tab: 'x', overlay: b })")]), true);
-  add('dupKeyGate', '키가 하나씩', ctxWith([screen('x-01-a', "console_({ overlay: a, tab: 'x' })")]), false);
-  add('optionKeyGate', '모르는 키로 호출',
+  add('dupKeyGate', 'the same key twice in one call', ctxWith([screen('x-01-a', "console_({ overlay: a, tab: 'x', overlay: b })")]), true);
+  add('dupKeyGate', 'each key once', ctxWith([screen('x-01-a', "console_({ overlay: a, tab: 'x' })")]), false);
+  add('optionKeyGate', 'called with an unknown key',
     ctxWith([screen('x-01-a', 'calendar({ month: 8, marks: [] })')], { componentsSrc: 'export const calendar = ({ weeks, today }) => ``;' }), true);
-  add('optionKeyGate', '아는 키로 호출',
+  add('optionKeyGate', 'called with known keys',
     ctxWith([screen('x-01-a', 'calendar({ weeks: [], today: 3 })')], { componentsSrc: 'export const calendar = ({ weeks, today }) => ``;' }), false);
 
-  add('deadImportGate', '쓰지 않는 import',
+  add('deadImportGate', 'an unused import',
     ctxWith([screen('x-01-a', "import { btn, btnRow } from '../components.mjs';\nbtn('저장')")]), true);
-  add('deadImportGate', '전부 쓰는 import',
+  add('deadImportGate', 'every import used',
     ctxWith([screen('x-01-a', "import { btn, btnRow } from '../components.mjs';\nbtnRow(btn('저장'))")]), false);
   // A name appearing only in a comment is not a use - without that distinction, what should be deleted survives.
-  add('deadImportGate', '주석에만 있는 이름',
+  add('deadImportGate', 'a name that appears only in a comment',
     ctxWith([screen('x-01-a', "import { btn, divider } from '../components.mjs';\n// divider()를 쓸까 했다\nbtn('저장')")]), true);
 
   // Slot mismatch: a state frame calling its base's drawing puts an argument in the wrong position.
   const slotted = (stateSrc, baseSrc) => ctxWith([
     screen('x-02-b', stateSrc), screen('x-01-a', baseSrc),
   ], { loaded: [{ num: 'X-02', file: 'x-02-b', label: 'a', mod: {} }] });
-  add('slotGate', '다이얼로그가 상세 자리로',
+  add('slotGate', 'a dialog into the detail slot',
     slotted("import base, { screenBody, help } from './x-01-a.mjs';\nexport default { body: screenBody(help) };",
       "export const help = dialog({ title: 'x' });\nexport const screenBody = (detail = panel, overlay = '') => ``;"), true);
-  add('slotGate', '오버레이 자리로 제대로',
+  add('slotGate', 'correctly into the overlay slot',
     slotted("import base, { screenBody, help } from './x-01-a.mjs';\nexport default { body: screenBody(undefined, help) };",
       "export const help = dialog({ title: 'x' });\nexport const screenBody = (detail = panel, overlay = '') => ``;"), false);
   // Where the base takes an overlay first, that call is correct and must stay quiet.
-  add('slotGate', '바탕의 첫 인자가 오버레이',
+  add('slotGate', 'the base\'s first parameter is the overlay',
     slotted("import base, { screenBody, help } from './x-01-a.mjs';\nexport default { body: screenBody(help) };",
       "export const help = dialog({ title: 'x' });\nexport const screenBody = (overlay = '') => ``;"), false);
   // A form belongs in the detail slot - what is not a dialog must stay quiet.
-  add('slotGate', '패널 폼은 상세 자리가 맞다',
+  add('slotGate', 'a panel form belongs in the detail slot',
     slotted("import base, { screenBody, form } from './x-01-a.mjs';\nexport default { body: screenBody(form) };",
       "export const form = panelForm({ title: 'x' });\nexport const screenBody = (detail = panel, overlay = '') => ``;"), false);
   // The mirror, and the one that reached a person: a panel form handed to an overlay-first base
   // draws over the whole device. Nothing throws - a string is what that slot takes.
-  add('slotGate', '패널 폼이 오버레이 자리로',
+  add('slotGate', 'a panel form into the overlay slot',
     slotted("import base, { screenBody } from './x-01-a.mjs';\nexport const form = panelForm({ title: 'x' });\nexport default { body: screenBody(form) };",
       "export const screenBody = (overlay = '', detail = panel) => ``;"), true);
   // Declared in the state frame rather than in the base, which is where a form usually lives.
-  add('slotGate', '상태 프레임이 제 폼을 상세 자리에 넘긴다',
+  add('slotGate', 'a state frame passes its own form to the detail slot',
     slotted("import base, { screenBody } from './x-01-a.mjs';\nexport const form = panelForm({ title: 'x' });\nexport default { body: screenBody(undefined, form) };",
       "export const screenBody = (overlay = '', detail = panel) => ``;"), false);
 
@@ -166,15 +166,15 @@ export function cases(t) {
   const stated = (state, stateSrc, baseSrc) => ctxWith([
     screen('x-02-b', stateSrc), screen('x-01-a', baseSrc),
   ], { loaded: [{ num: 'X-02', file: 'x-02-b', label: 'a', mod: { state } }] });
-  add('panelFormStateGate', '패널 폼 열림인데 다이얼로그로 그린다',
+  add('panelFormStateGate', '「패널 폼 열림」 drawn as a dialog',
     stated('패널 폼 열림',
       "import base, { screenBody } from './x-01-a.mjs';\nexport const form = dialog({ title: 'x' });\nexport default { body: screenBody(form) };",
       "export const screenBody = (overlay = '', detail = panel) => ``;"), true);
-  add('panelFormStateGate', '패널 폼 열림이 패널 자리를 채운다',
+  add('panelFormStateGate', '「패널 폼 열림」 fills the panel slot',
     stated('패널 폼 열림',
       "import base, { screenBody } from './x-01-a.mjs';\nexport const form = panelForm({ title: 'x' });\nexport default { body: screenBody(undefined, form) };",
       "export const screenBody = (overlay = '', detail = panel) => ``;"), false);
-  add('panelFormStateGate', '다이얼로그 열림은 오버레이가 맞다',
+  add('panelFormStateGate', '「다이얼로그 열림」 belongs in the overlay',
     stated('다이얼로그 열림',
       "import base, { screenBody } from './x-01-a.mjs';\nexport const form = dialog({ title: 'x' });\nexport default { body: screenBody(form) };",
       "export const screenBody = (overlay = '', detail = panel) => ``;"), false);
@@ -182,71 +182,71 @@ export function cases(t) {
   // A state frame drawing one of the base's tabs passes a CALL, not a name. Reading the argument
   // list with `[^)]*` cut it at the inner paren and the RegExp built from the fragment threw, which
   // takes the whole build down instead of reporting anything. This case is the crash.
-  add('slotGate', '인자가 호출식이다',
+  add('slotGate', 'the argument is a call expression',
     slotted("import base, { screenBody, panel } from './x-01-a.mjs';\nexport default { body: screenBody(panel('센서')) };",
       "export const help = dialog({ title: 'x' });\nexport const screenBody = (detail = panel, overlay = '') => ``;"), false);
   // The mirror: the same call against a base whose overlay parameter comes first puts the panel in
   // the overlay, and the frame silently draws the default tab.
-  add('slotGate', '패널이 오버레이 자리로',
+  add('slotGate', 'a panel into the overlay slot',
     slotted("import base, { screenBody, panel } from './x-01-a.mjs';\nexport default { body: screenBody(panel('센서')) };",
       "export const help = dialog({ title: 'x' });\nexport const screenBody = (overlay = '', detail = panel_()) => ``;"), true);
-  add('slotGate', '패널이 상세 자리로 제대로',
+  add('slotGate', 'a panel correctly into the detail slot',
     slotted("import base, { screenBody, panel } from './x-01-a.mjs';\nexport default { body: screenBody('', panel('센서')) };",
       "export const help = dialog({ title: 'x' });\nexport const screenBody = (overlay = '', detail = panel_()) => ``;"), false);
 
   // ── navigation ────────────────────────────────────────────────────────────────
-  add('controlVocabularyGate', '행 첫 액션이 「상세」', ctxWith([screen('x-01-a', "rowActions([ '상세', '편집' ])")]), true);
-  add('controlVocabularyGate', '행 첫 액션이 「보기」', ctxWith([screen('x-01-a', "rowActions([ '보기', '편집' ])")]), false);
-  add('controlVocabularyGate', '다이얼로그에 나갈 길 없음', ctxWith([screen('x-01-a', "foot: `${btn('둘 다 반영', 'primary')}`")]), true);
-  add('controlVocabularyGate', '다이얼로그에 닫기 있음', ctxWith([screen('x-01-a', "foot: `${btn('닫기')}${btn('둘 다 반영', 'primary')}`")]), false);
-  add('viewSwitchGate', '보기 모드에 ?view=', ctxWith([screen('x-01-a', "url: '/plans?view=month'")]), true);
-  add('viewSwitchGate', '보기 모드에 ?mode=', ctxWith([screen('x-01-a', "url: '/plans?mode=month'")]), false);
-  add('reachabilityGate', '아무도 가리키지 않는 화면', ctxWith([
+  add('controlVocabularyGate', 'a row\'s first action is 「상세」', ctxWith([screen('x-01-a', "rowActions([ '상세', '편집' ])")]), true);
+  add('controlVocabularyGate', 'a row\'s first action is 「보기」', ctxWith([screen('x-01-a', "rowActions([ '보기', '편집' ])")]), false);
+  add('controlVocabularyGate', 'a dialog with no way out', ctxWith([screen('x-01-a', "foot: `${btn('둘 다 반영', 'primary')}`")]), true);
+  add('controlVocabularyGate', 'a dialog with a close', ctxWith([screen('x-01-a', "foot: `${btn('닫기')}${btn('둘 다 반영', 'primary')}`")]), false);
+  add('viewSwitchGate', '?view= for a view mode', ctxWith([screen('x-01-a', "url: '/plans?view=month'")]), true);
+  add('viewSwitchGate', '?mode= for a view mode', ctxWith([screen('x-01-a', "url: '/plans?mode=month'")]), false);
+  add('reachabilityGate', 'a screen nothing points at', ctxWith([
     screen('x-01-a', "current: '점검'", { notes: '' }),
     screen('x-02-b', "current: '점검'", { notes: '' }),
   ]), true);
-  add('reachabilityGate', '앞 화면이 가리킴', ctxWith([
+  add('reachabilityGate', 'the screen before points at it', ctxWith([
     screen('x-01-a', "current: '점검'", { notes: '{{x-02-b}}에서 이어진다' }),
     screen('x-02-b', "current: '점검'", { notes: '' }),
   ]), false);
 
-  add('landingIsAddressableGate', '상태 프레임이 항목의 첫 자리에 있다', ctxWith([
+  add('landingIsAddressableGate', 'a state frame stands first under the entry', ctxWith([
     screen('x-02-b', "import base, { screenBody } from './x-01-a.mjs';", { notes: '' }),
     screen('x-01-a', "current: '점검'", { notes: '{{x-02-b}}가 딸린다' }),
   ]), true);
-  add('landingIsAddressableGate', '바탕이 앞에 있다', ctxWith([
+  add('landingIsAddressableGate', 'the base comes first', ctxWith([
     screen('x-01-a', "current: '점검'", { notes: '{{x-02-b}}가 딸린다' }),
     screen('x-02-b', "import base, { screenBody } from './x-01-a.mjs';", { notes: '' }),
   ]), false);
 
-  add('landingIsTheListGate', '목록을 두고 레코드 주소에 내려앉는다', ctxWith([
+  add('landingIsTheListGate', 'lands on a record address instead of the list', ctxWith([
     screen('x-01-a', "  route: '/checks/:id'\n  current: '점검'", { notes: '' }),
     screen('x-02-b', "  route: '/checks'\n  current: '점검'", { notes: '' }),
   ]), true);
-  add('landingIsTheListGate', '목록이 앞에 있다', ctxWith([
+  add('landingIsTheListGate', 'the list comes first', ctxWith([
     screen('x-02-b', "  route: '/checks'\n  current: '점검'", { notes: '' }),
     screen('x-01-a', "  route: '/checks/:id'\n  current: '점검'", { notes: '' }),
   ]), false);
   // No parameter-free route under the entry at all - a missing list or a parameter a global
   // control settles, and neither is this gate's call to make.
-  add('landingIsTheListGate', '항목 아래에 목록이 없다', ctxWith([
+  add('landingIsTheListGate', 'no list under the entry', ctxWith([
     screen('x-01-a', "  route: '/sites/:id/areas'\n  current: '구역'", { notes: '' }),
     screen('x-02-b', "  route: '/zones/:id/policy'\n  current: '구역'", { notes: '' }),
   ]), false);
 
   // ── numbering ─────────────────────────────────────────────────────────────────
-  add('slugGate', '슬러그가 그 번호와 다름', ctxWith([
+  add('slugGate', 'a slug differs from its number', ctxWith([
     screen('x-01-a', '', { notes: '{{x-01-wrong-name}}' }),
   ]), true);
-  add('slugGate', '슬러그가 맞음', ctxWith([screen('x-01-a', '', { notes: '{{x-01-a}}' })]), false);
-  add('refNumGate', '한 번호를 두 이름으로', ctxWith([
+  add('slugGate', 'the slug matches', ctxWith([screen('x-01-a', '', { notes: '{{x-01-a}}' })]), false);
+  add('refNumGate', 'one number under two names', ctxWith([
     screen('x-01-a', '', { notes: '{{o-05-work-quality}} {{o-05-working-hours}}' }),
   ]), true);
-  add('refTailGate', '한 화면을 두 번호로', ctxWith([
+  add('refTailGate', 'one screen under two numbers', ctxWith([
     screen('x-01-a', '', { notes: '{{j-04-evidence-package}} {{j-09-evidence-package}}' }),
   ]), true);
-  add('pairGate', '상태 프레임 없는 base', ctxWith([screen('x-01-a', 'export const screenBody = () => ``;')]), true);
-  add('pairGate', '짝이 맞음', ctxWith([
+  add('pairGate', 'a base with no state frame', ctxWith([screen('x-01-a', 'export const screenBody = () => ``;')]), true);
+  add('pairGate', 'the pair matches', ctxWith([
     screen('x-01-a', 'export const screenBody = () => ``;'),
     screen('x-01-b', "import base, { screenBody } from './x-01-a.mjs';"),
   ]), false);
@@ -254,18 +254,18 @@ export function cases(t) {
 
   // A classless block takes the board's base size instead of its neighbours', so it draws larger
   // than everything around it with nothing in the source saying why.
-  add('classlessGate', '화면 안에 맨 div가 있다',
+  add('classlessGate', 'a bare div inside a screen',
     base({ html: '<article class="frame" id="s-x-01"><div class="device"><div class="screen">' +
       '<div>88.4 dB</div></div></div></article>' }), true);
-  add('classlessGate', '클래스가 있으면 정상',
+  add('classlessGate', 'a classed element is fine',
     base({ html: '<article class="frame" id="s-x-01"><div class="device"><div class="screen">' +
       '<div class="t-body">88.4 dB</div></div></div></article>' }), false);
   // Inline emphasis inside a line of copy carries no size of its own and is ordinary.
-  add('classlessGate', '글 안의 강조는 대상이 아니다',
+  add('classlessGate', 'emphasis inside a line of copy is not judged',
     base({ html: '<article class="frame" id="s-x-01"><div class="device"><div class="screen">' +
       '<div class="t-body">값이 <b>둘</b>이다</div></div></div></article>' }), false);
   // The label and the notes are the kit's own markup, not a screen file's.
-  add('classlessGate', '프레임 라벨은 대상이 아니다',
+  add('classlessGate', 'the frame label is not judged',
     base({ html: '<article class="frame" id="s-x-01"><div class="device"><div class="screen">' +
       '<div class="t-body">x</div></div></div><div class="frame-label">[01]X-01</div></article>' }), false);
 
@@ -275,25 +275,25 @@ export function cases(t) {
   const sect = (letter, entries) => base({ sections: [{ letter, title: 't', entries }] });
   const ent = (file, id, mod = {}) => ({ file, id, mod, label: '화면' });
 
-  add('idGate', '파일 이름에 id가 없다', sect('X', [ent('bad-name', null)]), true);
-  add('idGate', '섹션 글자와 id가 어긋난다', sect('X', [ent('y-01-a', 'Y-01')]), true);
-  add('idGate', '한 id를 두 화면이 쓴다',
+  add('idGate', 'the file name carries no id', sect('X', [ent('bad-name', null)]), true);
+  add('idGate', 'the id disagrees with the section letter', sect('X', [ent('y-01-a', 'Y-01')]), true);
+  add('idGate', 'two screens share one id',
     sect('X', [ent('x-01-a', 'X-01'), ent('x-01-b', 'X-01')]), true);
   // The one legitimate sharing: two viewport halves of ONE screen.
-  add('idGate', '반응형 짝은 id를 함께 쓴다',
+  add('idGate', 'a responsive pair shares its id',
     sect('X', [ent('x-01-a', 'X-01', { variant: 'narrow' }), ent('x-01-b', 'X-01', { variant: 'wide' })]), false);
-  add('idGate', '제 자리의 id는 정상', sect('X', [ent('x-01-a', 'X-01')]), false);
+  add('idGate', 'an id in its place is fine', sect('X', [ent('x-01-a', 'X-01')]), false);
 
-  add('sectionCoverageGate', '요구한 클러스터를 안 그렸다',
+  add('sectionCoverageGate', 'a required cluster is not drawn',
     base({ config: { ...config, requiredSections: ['X', 'Y'] },
       manifest: [{ letter: 'X', title: 't', screens: [] }] }), true);
-  add('sectionCoverageGate', '요구한 클러스터를 다 그렸다',
+  add('sectionCoverageGate', 'every required cluster is drawn',
     base({ config: { ...config, requiredSections: ['X'] },
       manifest: [{ letter: 'X', title: 't', screens: [] }] }), false);
-  add('sectionCoverageGate', '요구한 클러스터가 있는데 manifest가 비었다',
+  add('sectionCoverageGate', 'clusters are required and the manifest is empty',
     base({ config: { ...config, requiredSections: ['X'] }, manifest: [] }), true);
   // The scaffolded board: nothing required yet, nothing drawn yet. It has to build.
-  add('sectionCoverageGate', '요구한 클러스터가 없으면 빈 manifest도 통과한다',
+  add('sectionCoverageGate', 'with nothing required an empty manifest passes',
     base({ config: { ...config, requiredSections: [] }, manifest: [] }), false);
 
   // The declared split. The fixture stands in for `core/split.mjs`'s loader rather than calling
@@ -306,15 +306,15 @@ export function cases(t) {
     partFor: (key) => parts.find((p) => p.key === key) ?? null,
   });
   const twoFrames = [{ letter: 'X', title: 't', entries: [ent('x-01-a', 'X-01'), ent('x-02-b', 'X-02')] }];
-  add('splitPlacementGate', '축을 선언하지 않은 보드는 걸리지 않는다',
+  add('splitPlacementGate', 'a board that declares no axis is not judged',
     base({ sections: twoFrames }), false);
-  add('splitPlacementGate', '어느 부분에도 놓이지 않은 프레임',
+  add('splitPlacementGate', 'a frame placed in no part',
     base({ sections: twoFrames, split: splitOf({ 'X-01': '1' }) }), true);
-  add('splitPlacementGate', '선언되지 않은 부분에 놓였다',
+  add('splitPlacementGate', 'placed in an undeclared part',
     base({ sections: twoFrames, split: splitOf({ 'X-01': '1', 'X-02': '9' }) }), true);
-  add('splitPlacementGate', '빈 채로 나가는 부분이 있다',
+  add('splitPlacementGate', 'a part goes out empty',
     base({ sections: twoFrames, split: splitOf({ 'X-01': '1', 'X-02': '1' }) }), true);
-  add('splitPlacementGate', '프레임이 전부 놓이고 빈 부분이 없다',
+  add('splitPlacementGate', 'every frame placed and no part empty',
     base({ sections: twoFrames, split: splitOf({ 'X-01': '1', 'X-02': '2' }) }), false);
 
   // The CRUD census, the panel's main verb and the back control all read the board's ledger.
@@ -327,9 +327,9 @@ export function cases(t) {
   ];
   const crudCtx = (over) => base({ crud: { LEDGER, NON_ENTITY: { '/login': '인증 화면' } }, ...over });
 
-  add('crudGate', '어느 대장에도 없는 라우트',
+  add('crudGate', 'a route in no ledger',
     crudCtx({ loaded: drawn([{ num: 'X-09', file: 'x-09-a', label: '화면', mod: { route: '/nowhere' } }]) }), true);
-  add('crudGate', 'NON_ENTITY에 사유와 함께 있다',
+  add('crudGate', 'in NON_ENTITY with a reason',
     crudCtx({ loaded: drawn([{ num: 'X-09', file: 'x-09-a', label: '화면', mod: { route: '/login' } }]) }), false);
 
   // A panel whose entity has a page of its own says 「열기」, never 「편집」 - labelling it 편집
@@ -339,8 +339,8 @@ export function cases(t) {
       body: `<aside><div class="ld-foot"><div class="btn primary">${verb}</div></div></aside>` } },
     { num: 'X-02', file: 'x-02-b', label: '화면', mod: { route: '/records/{id}' } },
   ] });
-  add('panelVerbGate', '페이지가 있는데 패널이 「편집」이라 한다', withFoot('편집'), true);
-  add('panelVerbGate', '페이지가 있으면 「열기」', withFoot('열기'), false);
+  add('panelVerbGate', 'a record page exists and the panel says 「편집」', withFoot('편집'), true);
+  add('panelVerbGate', 'with a record page the panel says 「열기」', withFoot('열기'), false);
 
 
   // A full page opened from a list carries ONE back control naming that list. Which frames owe
@@ -351,6 +351,6 @@ export function cases(t) {
     { num: 'X-02', file: 'x-02-b', label: '화면', mod: { route: '/records/{id}',
       body: backOnRead ? '<div class="ph-back">기록 목록</div><h1>레코드</h1>' : '<h1>레코드</h1>' } },
   ] });
-  add('backControlGate', '레코드 페이지에 돌아갈 자리가 없다', paged(false), true);
-  add('backControlGate', '목록을 이름으로 부르는 back이 있다', paged(true), false);
+  add('backControlGate', 'a record page with no way back', paged(false), true);
+  add('backControlGate', 'a back control naming the list', paged(true), false);
 }

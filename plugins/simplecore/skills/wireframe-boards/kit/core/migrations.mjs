@@ -33,7 +33,7 @@ export const MIGRATIONS = [
       'The built board carries `<meta name="wireframe-board-contract">`.',
     ],
     steps: [
-      'Decide which numbering becomes permanent — the file-name ids, or what the board displays today — and rename the drifted screen files to match the decision.',
+      'Decide which numbering becomes permanent (the file-name ids, or what the board displays today), and rename the drifted screen files to match the decision.',
       'Rewrite every `{{slug}}` note reference that named a renamed file.',
       'Derive the id from the file name in the build; refuse on a missing id, a section-letter mismatch, or a duplicate that is not one screen\'s two viewport halves.',
       'Give `.row` `max-width: var(--row-max)` and wrap it; add the `--frame-zoom` steps and `.scroll-x`.',
@@ -53,11 +53,11 @@ export const MIGRATIONS = [
       '`board.config.mjs` carries `contract:`, and `node wf.mjs doctor` reports when it is behind.',
     ],
     steps: [
-      'Delete the board\'s `tools/` directory — every script in it now lives in the kit.',
+      'Delete the board\'s `tools/` directory: every script in it now lives in the kit.',
       'Write `wf.mjs` in the board folder: the bootstrap that resolves the kit and forwards to it.',
       'Replace `src/components.mjs`, `src/partials.mjs` and `src/styles.css` with the pattern\'s copies. A style the board genuinely added stays in `src/styles.css`, which the kit appends to the pattern\'s; a component or a gate it added goes into the pattern, and a board whose components are mostly its own takes a pattern of its own with `node wf.mjs pattern adopt`.',
       'Split `src/chrome.mjs`: the shells come from the pattern, and the board keeps its own menu tree, roles and purchase as the data it hands the shell factory.',
-      'Move the board\'s own gates — the ones that read this product\'s documents — into `board.gates.mjs`.',
+      'Move the board\'s own gates (the ones that read this product\'s documents) into `board.gates.mjs`.',
       'Declare `pattern:` and `contract: 3` in `board.config.mjs`, and move the document paths under `documents:`.',
       'Add `.kit` to `.gitignore`.',
       'Run `node wf.mjs build` and confirm the built board is unchanged apart from the contract stamp.',
@@ -70,13 +70,13 @@ export const MIGRATIONS = [
     changed: [
       '`board.config.mjs` may carry `patternOptions`, and the kit hands it to the pattern before any screen module is imported. Everything a pattern gains is off until a board names it, so a board that declares nothing draws exactly what it drew before.',
       '`simplix-basic` declares three: `dismissibleNotices` (a close on the notice cards, and the page header controls that bring a closed one back), `noticeKindMarks` (a glyph beside a message\'s kind word), `chipClearControl` (the control that clears a chip filter once a second chip is lit).',
-      'TWO CHANGES ARE NOT BEHIND A SWITCH, because a board wanting the old behaviour wants a defect. `fNum` takes its width from the digits it holds rather than stretching to the form column — a two-digit field at the width of a sentence stops saying what goes in it. The list column of `listDetail` carries its own bottom gutter, so opening a record no longer adds or removes space beneath the rows and the reader keeps the line they were on.',
+      'TWO CHANGES ARE NOT BEHIND A SWITCH, because a board wanting the old behaviour wants a defect. `fNum` takes its width from the digits it holds rather than stretching to the form column: a two-digit field at the width of a sentence stops saying what goes in it. The list column of `listDetail` carries its own bottom gutter, so opening a record no longer adds or removes space beneath the rows and the reader keeps the line they were on.',
     ],
     steps: [
-      'Read the two unswitched changes above and look at one form frame and one list-detail frame after building — they are the only places the drawing moves.',
+      'Read the two unswitched changes above and look at one form frame and one list-detail frame after building: they are the only places the drawing moves.',
       'Where a number field must hold more digits than the value it draws, state `digits` on that `fNum`; the default reads the drawn value.',
       'Decide each `patternOptions` capability and declare the ones you want in `board.config.mjs`. Declaring none is a complete answer and keeps the board as it is.',
-      'A board switching `dismissibleNotices` on owes the header controls with it — `pageHeader({ notices, drop })` — or its cards close with no way back.',
+      'A board switching `dismissibleNotices` on owes the header controls with it (`pageHeader({ notices, drop })`), or its cards close with no way back.',
       'Raise `contract` to 4 in `board.config.mjs`, build, and confirm the board is unchanged apart from those two.',
     ],
     // A board still declaring 3 is refused by this kit like any board behind it (`loadBoard`), so

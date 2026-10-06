@@ -98,14 +98,14 @@ const DEV_CLIENT = `
     if (down) { down = false; reload(); return; }
     quiet();
   });
-  es.addEventListener('building', function () { say('빌드 중…'); });
+  es.addEventListener('building', function () { say('building…'); });
   es.addEventListener('reload', function () { reload(); });
   es.addEventListener('failed', function (e) {
     var payload = {};
     try { payload = JSON.parse(e.data); } catch (err) {}
-    say('빌드에 실패했습니다. 고치면 다시 빌드해 화면을 새로 고칩니다.\\n\\n' + (payload.message || ''));
+    say('The build failed. Once it is fixed the board is rebuilt and this page reloads.\\n\\n' + (payload.message || ''));
   });
-  es.onerror = function () { down = true; say('서버와 연결이 끊겼습니다. 다시 연결하는 중…'); };
+  es.onerror = function () { down = true; say('The connection to the server was lost. Reconnecting…'); };
 })();
 </script>
 `;
@@ -243,10 +243,10 @@ export async function serveBoard(boardDir, {
       // see as the build error it is, on a page that reloads itself once the build goes green.
       res.end(missingEntry
         ? injectDevClient(statusPage({
-          title: lastError ? '빌드에 실패해 아직 보드가 없습니다' : '보드를 빌드하는 중입니다',
+          title: lastError ? 'The build failed, so there is no board yet' : 'Building the board',
           detail: lastError,
         }))
-        : statusPage({ title: `${rel} 파일이 없습니다`, detail: null }));
+        : statusPage({ title: `${rel} does not exist`, detail: null }));
       return;
     }
 
@@ -263,7 +263,7 @@ export async function serveBoard(boardDir, {
 
   const bound = await listen(server, { host, port });
   const shown = host === '0.0.0.0' || host === '::' ? 'localhost' : host;
-  console.log(`${config.boardName} — http://${shown}:${bound}/`);
+  console.log(`${config.boardName}: http://${shown}:${bound}/`);
 
   // Building and rebuilding. One build at a time, and at most one queued behind it: saving four
   // files in a row is one board, not four builds.
@@ -310,11 +310,11 @@ export async function serveBoard(boardDir, {
       if (name && settings.has(String(name))) bump();
     }));
 
-    console.log(`바뀌면 다시 빌드합니다 — ${roots.map((d) => d.replace(`${boardDir}${sep}`, '')).join(' · ')} · ${[...settings].join(' · ')}`);
+    console.log(`rebuilds when any of these change: ${roots.map((d) => d.replace(`${boardDir}${sep}`, '')).join(' · ')} · ${[...settings].join(' · ')}`);
   } else {
-    console.log('변경 감시 없이 한 번만 빌드했습니다 (--no-watch)');
+    console.log('built once without watching for changes (--no-watch)');
   }
-  console.log('멈추려면 Ctrl+C');
+  console.log('Ctrl+C stops it');
 
   if (open) {
     const opener = process.platform === 'darwin' ? 'open' : process.platform === 'win32' ? 'start' : 'xdg-open';

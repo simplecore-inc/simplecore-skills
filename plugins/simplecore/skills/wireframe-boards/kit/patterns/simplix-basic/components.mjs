@@ -1866,8 +1866,8 @@ export const chartPh = ({
   kind = 'line', title = '', legend = [], note = '', height = 132, goal = '목표 80%', x = '', y = '',
 }) => {
   if (kind === 'progress' && legend.length > 1) {
-    throw new Error(`chartPh 「${title}」 — progress는 막대 하나인데 범례가 ${legend.length}개다 ` +
-      `(항목 비교는 kind: 'bar', 한 전체의 부분은 kind: 'stack')`);
+    throw new Error(`chartPh 「${title}」 - progress is one bar and the legend has ${legend.length} entries ` +
+      `(comparing items is kind: 'bar', parts of one whole is kind: 'stack')`);
   }
   return chartBody({ kind, title, legend, note, height, goal, x, y });
 };
@@ -1935,13 +1935,13 @@ const CAL_DAY_KEYS = new Set(['n', 'today', 'off', 'marks', 'more']);
 export const calendar = (opts) => {
   const stray = Object.keys(opts).filter((k) => !CAL_KEYS.has(k));
   if (stray.length) {
-    throw new Error(`calendar — 모르는 키 ${stray.join(', ')} ` +
-      `(쓸 수 있는 키: ${[...CAL_KEYS].join(', ')}; 날짜는 days: [{ n, today, off, marks, more }])`);
+    throw new Error(`calendar - unknown keys ${stray.join(', ')} ` +
+      `(known keys: ${[...CAL_KEYS].join(', ')}; days go in days: [{ n, today, off, marks, more }])`);
   }
   const { month = '', head = ['월', '화', '수', '목', '금', '토', '일'], days = [] } = opts;
   for (const d of days) {
     const bad = Object.keys(d).filter((k) => !CAL_DAY_KEYS.has(k));
-    if (bad.length) throw new Error(`calendar day 「${d.n}」 — 모르는 키 ${bad.join(', ')}`);
+    if (bad.length) throw new Error(`calendar day 「${d.n}」 - unknown keys ${bad.join(', ')}`);
   }
   return `<div class="cal">` +
   (month ? `<div class="cal-nav"><span class="cn-step">‹</span><span class="cn-month">${month}</span>` +
@@ -2129,8 +2129,8 @@ export const journey = (nodes) =>
   `<div class="jn">${nodes.map((n, i) => {
     const stray = Object.keys(n).filter((k) => !JOURNEY_KEYS.has(k));
     if (stray.length) {
-      throw new Error(`journey node 「${n.label}」 — 모르는 키 ${stray.join(', ')} ` +
-        `(쓸 수 있는 키: ${[...JOURNEY_KEYS].join(', ')})`);
+      throw new Error(`journey node 「${n.label}」 - unknown keys ${stray.join(', ')} ` +
+        `(known keys: ${[...JOURNEY_KEYS].join(', ')})`);
     }
     // The last stage draws no line down - there is nothing after it. But a lane hanging off that
     // last stage ties back to the rail with two elbows, and with no line to meet they ended in

@@ -96,22 +96,22 @@ const SHIM = 'src/components.mjs';
  */
 export function forkPattern(boardDir, { into = 'pattern', name = null } = {}) {
   const configPath = join(boardDir, CONFIG);
-  if (!existsSync(configPath)) throw new Error(`${boardDir}에 ${CONFIG}가 없습니다`);
+  if (!existsSync(configPath)) throw new Error(`${boardDir} has no ${CONFIG}`);
   const configSrc = readFileSync(configPath, 'utf8');
   const declared = /^\s*pattern:\s*'([^']+)'/m.exec(configSrc);
-  if (!declared) throw new Error(`${CONFIG}에서 pattern을 읽지 못했습니다`);
+  if (!declared) throw new Error(`could not read pattern from ${CONFIG}`);
   if (declared[1].startsWith('.')) {
     throw new Error(
-      `이 보드는 이미 제 패턴을 갖고 있습니다 (${declared[1]}). 컴포넌트는 거기에 더합니다.`
+      `this board already has a pattern of its own (${declared[1]}). A component is added there.`
     );
   }
 
   const from = patternDirFor(boardDir, declared[1]);
-  if (!existsSync(from)) throw new Error(`패턴 '${declared[1]}'을 찾지 못했습니다 (${from})`);
+  if (!existsSync(from)) throw new Error(`pattern '${declared[1]}' was not found (${from})`);
   const to = join(boardDir, into);
   if (existsSync(to)) {
     throw new Error(
-      `${into}/가 이미 있습니다 — 덮어쓰지 않습니다. 다른 이름으로 하려면 --into <디렉터리>.`
+      `${into}/ already exists and is not overwritten. Name another folder with --into <dir>.`
     );
   }
 
@@ -124,7 +124,7 @@ export function forkPattern(boardDir, { into = 'pattern', name = null } = {}) {
     copied.push(part);
   }
   if (!copied.includes('pattern.mjs') || !copied.includes('components.mjs')) {
-    throw new Error(`패턴 '${declared[1]}'에 pattern.mjs나 components.mjs가 없습니다 (${from})`);
+    throw new Error(`pattern '${declared[1]}' has no pattern.mjs or no components.mjs (${from})`);
   }
 
   // The fork's own name. Two patterns answering to one name is the kind of thing that reads fine
@@ -134,7 +134,7 @@ export function forkPattern(boardDir, { into = 'pattern', name = null } = {}) {
   const patternSrc = readFileSync(patternPath, 'utf8');
   const named = patternSrc.replace(/(\n\s*name:\s*)'[^']*'/, `$1'${forkName}'`);
   if (named === patternSrc) {
-    throw new Error(`${into}/pattern.mjs의 name을 바꾸지 못했습니다 — 직접 고칩니다`);
+    throw new Error(`could not rename the pattern in ${into}/pattern.mjs - edit its name by hand`);
   }
   writeFileSync(patternPath, named);
 
@@ -150,7 +150,7 @@ export function forkPattern(boardDir, { into = 'pattern', name = null } = {}) {
     `export * from '../${into}/components.mjs';`
   );
   if (shim === shimSrc) {
-    throw new Error(`${SHIM}의 재수출 경로를 바꾸지 못했습니다 — 직접 '../${into}/components.mjs'로 고칩니다`);
+    throw new Error(`could not re-point the re-export in ${SHIM} - change it to '../${into}/components.mjs' by hand`);
   }
   writeFileSync(shimPath, shim);
 
@@ -215,7 +215,7 @@ function looksLikeDocument(html) {
 }
 
 /** The smallest `pattern.mjs` the kit will load, written around what was promoted. */
-const PATTERN_MJS = (name, title) => `// ${name} — this board's own pattern, promoted out of \`src/\`.
+const PATTERN_MJS = (name, title) => `// ${name} - this board's own pattern, promoted out of \`src/\`.
 //
 // **It is a pattern rather than a folder of files because the kit draws boards from patterns.**
 // The components, the stylesheet and the reading-contract items below are what every frame here is
@@ -223,12 +223,12 @@ const PATTERN_MJS = (name, title) => `// ${name} — this board's own pattern, p
 // now that the kit builds it.
 //
 // **This board owns all of it.** Nothing arrives from the kit's own patterns, and nothing here
-// reaches another board — which is the trade a board makes by having its own. A component that
+// reaches another board, which is the trade a board makes by having its own. A component that
 // would be right in a second product drawn this way is better placed in a shipped pattern.
 export default {
   name: '${name}',
   title: '${title}',
-  description: '이 보드가 그리는 방식 — 컴포넌트·스타일시트·읽기 계약을 이 보드가 갖는다.',
+  description: 'How this board draws: the board owns its components, stylesheet and reading contract.',
 
   /** The device classes this pattern draws. Widen it as the board draws more of them. */
   devices: { desktop: '${title}' },
@@ -238,7 +238,7 @@ export default {
    *
    * <p>Empty to begin with, and that is honest rather than finished: the core gates already hold
    * the permanent id, balanced markup, reachability and the documents. A rule true of every frame
-   * drawn THIS way — a copy register, a layout discipline, a control vocabulary — belongs here,
+   * drawn THIS way (a copy register, a layout discipline, a control vocabulary) belongs here,
    * and each one added is a defect that cannot come back.
    */
   gates: [],
@@ -255,14 +255,14 @@ export default {
 export function adoptPattern(boardDir, { into = 'pattern', name = null } = {}) {
   const src = join(boardDir, 'src');
   if (!existsSync(join(src, 'components.mjs'))) {
-    throw new Error(`${boardDir}/src/components.mjs가 없습니다 — 승격할 것이 없습니다`);
+    throw new Error(`${boardDir}/src/components.mjs does not exist - there is nothing to promote`);
   }
   const shimmed = readFileSync(join(src, 'components.mjs'), 'utf8');
   if (/export \* from '\.\..*components\.mjs';/.test(shimmed) && shimmed.split('\n').filter((l) => l.trim() && !l.trim().startsWith('//')).length <= 1) {
-    throw new Error('src/components.mjs가 이미 심(shim)입니다 — 이 보드는 이미 패턴을 쓰고 있습니다');
+    throw new Error('src/components.mjs is already a shim - this board already draws from a pattern');
   }
   const to = join(boardDir, into);
-  if (existsSync(to)) throw new Error(`${into}/가 이미 있습니다 — 덮어쓰지 않습니다`);
+  if (existsSync(to)) throw new Error(`${into}/ already exists and is not overwritten`);
 
   mkdirSync(to, { recursive: true });
   const moved = [];
@@ -287,7 +287,7 @@ export function adoptPattern(boardDir, { into = 'pattern', name = null } = {}) {
     + `// \`${into}/components.mjs\`; a component added here would reach this one file and nothing else.\n`
     + '//\n'
     + '// It exists because the screen files import `../components.mjs`, and an ESM re-export needs a\n'
-    + '// STATIC specifier — it cannot resolve a path at run time.\n'
+    + '// STATIC specifier: it cannot resolve a path at run time.\n'
     + `export * from '../${into}/components.mjs';\n`
   );
 

@@ -22,7 +22,7 @@ export async function buildCatalog(boardDir) {
   // components. `screens: false` is the difference between reading one file and importing 747.
   const ctx = await loadBoard(boardDir, { screens: false });
   const { CATALOG } = ctx.components;
-  if (!CATALOG) throw new Error(`패턴 '${ctx.pattern.name}'의 components.mjs에 CATALOG가 없습니다`);
+  if (!CATALOG) throw new Error(`the components.mjs of pattern '${ctx.pattern.name}' has no CATALOG`);
   const { page } = ctx.partials;
 
   const cats = [];
@@ -46,16 +46,16 @@ ${cats.map((c, i) => `      <a href="#cat-${i}"><span class="num">C-${String(i +
   </nav>`;
 
   const headerHtml = `<header class="board-header">
-  <h1>${ctx.pattern.name} — component catalog</h1>
+  <h1>${ctx.pattern.name} · component catalog</h1>
   <span class="tag">COMPONENTS · building blocks</span>
-  <a class="to-readme" href="#readme">읽는 법</a>
+  <a class="to-readme" href="#readme">how to read</a>
 </header>`;
 
   const readmeHtml = `<section class="readme" id="readme"><h2>How to read this catalog</h2><ol>
-  <li>Screens are made by <em>composing</em> the components below — never by hand-writing raw HTML. Each is a function in the pattern's <code>components.mjs</code> mapped to a class in its <code>styles.css</code>.</li>
-  <li>Onboarding starts <strong>here</strong>: read the kit — content primitives plus the device chrome — before drawing product screens.</li>
+  <li>Screens are made by <em>composing</em> the components below, never by hand-writing raw HTML. Each is a function in the pattern's <code>components.mjs</code> mapped to a class in its <code>styles.css</code>.</li>
+  <li>Onboarding starts <strong>here</strong>: read the kit (content primitives plus the device chrome) before drawing product screens.</li>
   <li>Add a component → register it in <code>CATALOG</code> and it appears on this page automatically.</li>
-  <li>Grey and the single accent are lo-fi notation — color, type, and spacing are the design system's call.</li>
+  <li>Grey and the single accent are lo-fi notation; color, type, and spacing are the design system's call.</li>
 </ol></section>`;
 
   const sectionsHtml = cats.map((cat, i) => {
@@ -75,7 +75,7 @@ ${items}
   }).join('\n\n');
 
   const html = page({
-    title: `${ctx.pattern.name} — component catalog`,
+    title: `${ctx.pattern.name} · component catalog`,
     sidebarHtml, headerHtml, sectionsHtml, readmeHtml, styles: ctx.styles,
   });
   writeFileSync(join(boardDir, '_catalog.html'), html);

@@ -104,6 +104,6 @@ export function textFor(lang) {
 for (const [name, table] of Object.entries(LANGS)) {
   const missing = Object.keys(en).filter((k) => !(k in table));
   if (missing.length) {
-    throw new Error(`core/text.mjs: '${name}' 표에 없는 열쇠 — ${missing.join(' · ')}`);
+    throw new Error(`core/text.mjs: keys missing from the '${name}' table: ${missing.join(' · ')}`);
   }
 }

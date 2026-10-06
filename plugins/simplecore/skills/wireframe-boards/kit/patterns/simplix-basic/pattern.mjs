@@ -20,16 +20,17 @@ import * as gates from './gates/content.mjs';
 
 export default {
   name: 'simplix-basic',
-  title: 'SimpliX 관리 콘솔 · 현장 앱 · 공용 단말',
+  title: 'SimpliX admin console · field app · shared terminal',
   description:
-    '목록–상세를 중심에 둔 관리 콘솔과, 같은 제품의 폰 앱·공용 단말·로그인 화면까지 한 벌로 그린다. ' +
-    '업무용 소프트웨어의 화면 어휘와 한국어 문체를 게이트로 지킨다.',
+    'Draws a list-detail admin console together with the same product\'s phone app, shared terminal ' +
+    'and sign-in screens as one set, and holds the screen vocabulary of business software and its ' +
+    'Korean register with gates.',
 
   /** The device classes this pattern draws, and what each one is for. */
   devices: {
-    desktop: '관리 콘솔 — 탭 · 섹션 메뉴 · 목록–상세 · 하단 상태 띠',
-    phone: '현장 앱과 콘솔의 폰 폭 — 앱 바 · 본문 · 탭 바',
-    tablet: '공용 단말 — 세션 없이 한 가지 일만 처리하고 대기 화면으로 돌아간다',
+    desktop: 'admin console: tabs · section menu · list-detail · status strip at the foot',
+    phone: 'field app and the console at phone width: app bar · body · tab bar',
+    tablet: 'shared terminal: one task with no session, then back to the idle screen',
   },
 
   /**
@@ -46,15 +47,15 @@ export default {
    * missing piece instead of letting the board fail somewhere inside a render.
    */
   requires: {
-    'src/chrome.mjs': '이 보드의 탭·메뉴 트리·역할·구매 상태를 셸 팩토리에 넘기는 파일',
-    'src/manifest.mjs': '차례 — 섹션과 그 안의 화면 순서',
-    'src/screens/': '화면 하나에 파일 하나',
+    'src/chrome.mjs': 'hands this board\'s tabs, menu tree, roles and purchases to the shell factories',
+    'src/manifest.mjs': 'the table of contents: sections and the order of the screens in them',
+    'src/screens/': 'one file per screen',
   },
   optional: {
-    'src/roles.mjs': '프레임마다 누가 접근하는지 — 없으면 역할 띠를 그리지 않는다',
-    'src/crud.mjs': 'CRUD 대장 — 없으면 다섯 동사 점검을 돌리지 않는다',
-    'src/intro.html': '이 제품만의 읽기 규약 항목 — 패턴의 규약 뒤에 덧붙는다',
-    'src/styles.css': '이 보드가 더한 클래스 — 패턴 스타일시트 뒤에 덧붙는다',
-    'board.gates.mjs': '이 제품의 문서 형식에 맞춘 게이트',
+    'src/roles.mjs': 'who reaches each frame; without it no role strip is drawn',
+    'src/crud.mjs': 'the CRUD ledger; without it the five-verb census does not run',
+    'src/intro.html': 'this product\'s own reading-contract items, appended after the pattern\'s',
+    'src/styles.css': 'classes this board adds, appended after the pattern stylesheet',
+    'board.gates.mjs': 'gates fitted to this product\'s document formats',
   },
 };

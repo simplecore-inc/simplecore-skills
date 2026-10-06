@@ -70,7 +70,7 @@ contract, where the frames come from, the source layout, and how to build.
  */
 function onContract(text) {
   const line = /^(\s*)contract:\s*\d+\s*,\s*$/m;
-  if (!line.test(text)) throw new Error('시작 board.config.mjs에 contract 줄이 없습니다');
+  if (!line.test(text)) throw new Error('the starting board.config.mjs has no contract line');
   return text.replace(line, `$1contract: ${BOARD_CONTRACT},`);
 }
 
@@ -124,7 +124,7 @@ export function initBoard(boardDir, { pattern = 'simplix-basic', name = '<PRODUC
   const patternDir = join(kitDir, 'patterns', pattern);
   if (!existsSync(patternDir)) {
     const have = readdirSync(join(kitDir, 'patterns')).join(' · ');
-    throw new Error(`공통패턴 '${pattern}'이 킷에 없습니다 — 쓸 수 있는 것: ${have}`);
+    throw new Error(`the kit ships no pattern '${pattern}' - available: ${have}`);
   }
   const report = { written: [], kept: [], pattern, name };
   const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'board';
@@ -147,7 +147,7 @@ export function initBoard(boardDir, { pattern = 'simplix-basic', name = '<PRODUC
   put(join(boardDir, 'AGENTS.md'), fill(existsSync(sharedRules) ? routedAgents(agentsTemplate) : agentsTemplate), report);
 
   const ex = join(patternDir, 'examples');
-  if (!existsSync(ex)) throw new Error(`패턴 '${pattern}'에 시작 프레임(examples/)이 없습니다`);
+  if (!existsSync(ex)) throw new Error(`pattern '${pattern}' has no starting frames (examples/)`);
 
   put(join(boardDir, 'board.config.mjs'), onContract(fill(readFileSync(join(ex, 'board.config.mjs'), 'utf8'))), report);
   // An empty board still has to build, so it gets an empty manifest rather than the starter one

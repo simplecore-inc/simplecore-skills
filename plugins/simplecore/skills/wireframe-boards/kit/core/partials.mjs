@@ -114,7 +114,7 @@ export function makePartials({ components, roles = null, lang = 'en', reqsById =
     // a URL is free text.
     const chrome = s.chrome ?? 'browser';
     if (!['browser', 'app', 'none'].includes(chrome)) {
-      throw new Error(`${id}: chrome은 browser · app · none 중 하나입니다 (받은 값: ${chrome})`);
+      throw new Error(`${id}: chrome is one of browser · app · none (got: ${chrome})`);
     }
     const browser = isDesktop && chrome !== 'none'
       ? `${browserbar(s.url || 'app.example.com', { chrome, title: s.appTitle })}\n        `

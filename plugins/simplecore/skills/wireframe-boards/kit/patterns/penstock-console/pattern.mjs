@@ -9,13 +9,14 @@
 // without sharing the words.
 export default {
   name: 'penstock-console',
-  title: 'penstock 콘솔 셸 — 고정 창의 앱',
+  title: 'penstock console shell · a fixed-window app',
   description:
-    '타이틀바 · 탐색 · 작업 · 검사 · 상태바로 짜인 고정 창(1440×900)을 그린다. 페이지가 아니라 패널이 스크롤하는 ' +
-    '앱 — 설치형 프로그램의 창과 트레이 메뉴, 브라우저에서 도는 앱을 한 패턴으로 그린다.',
+    'Draws a fixed window (1440×900) of title bar · navigator · work pane · inspector · status bar. ' +
+    'The panes scroll rather than the page, and one pattern draws an installed program\'s window, ' +
+    'its tray menu and an app running in a browser.',
 
   /** The device classes this pattern draws. One: a desktop window. */
-  devices: { desktop: '1440×900 고정 창 — 타이틀바 · 탐색 · 작업 · 검사 · 상태바, 패널 안 스크롤' },
+  devices: { desktop: '1440×900 fixed window: title bar · navigator · work · inspector · status bar, scrolling inside the panes' },
 
   /**
    * The gates every board in this pattern runs, on top of the kit's core gates.
@@ -28,13 +29,13 @@ export default {
   gates: [],
 
   requires: {
-    'src/chrome.mjs': '이 보드의 브랜드 · 탐색 트리 · 팔레트 · 상태바 · 활동 예시를 makeChrome에 넘기는 파일',
-    'src/manifest.mjs': '차례 — 섹션과 그 안의 화면 순서',
-    'src/screens/': '화면 하나에 파일 하나',
+    'src/chrome.mjs': 'hands this board\'s brand, navigation tree, palette, status bar and sample activity to makeChrome',
+    'src/manifest.mjs': 'the table of contents: sections and the order of the screens in them',
+    'src/screens/': 'one file per screen',
   },
   optional: {
-    'src/intro.html': '이 제품만의 읽기 규약 항목 — 패턴의 규약 뒤에 덧붙는다',
-    'src/styles.css': '이 보드가 더한 클래스 — 패턴 스타일시트 뒤에 덧붙는다',
-    'board.gates.mjs': '이 제품의 문서 형식에 맞춘 게이트',
+    'src/intro.html': 'this product\'s own reading-contract items, appended after the pattern\'s',
+    'src/styles.css': 'classes this board adds, appended after the pattern stylesheet',
+    'board.gates.mjs': 'gates fitted to this product\'s document formats',
   },
 };

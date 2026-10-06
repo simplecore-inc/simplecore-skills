@@ -7,7 +7,7 @@ import { idOf } from '../ids.mjs';
 // trusted, so the build refuses rather than emitting one.
 export const idGate = {
   id: 'idGate',
-  title: '영구 id가 맞지 않는다',
+  title: 'a permanent id is wrong',
   stage: 'preflight',
   run: (ctx) => {
     const idErrors = [];
@@ -15,7 +15,7 @@ export const idGate = {
     for (const sec of ctx.sections) {
       for (const e of sec.entries) {
         if (!e.id) {
-          idErrors.push(`${e.file}: file name carries no permanent id — name it <letter>-<nn>-<slug>.mjs`);
+          idErrors.push(`${e.file}: file name carries no permanent id - name it <letter>-<nn>-<slug>.mjs`);
           continue;
         }
         if (!e.id.startsWith(`${sec.letter}-`)) {
@@ -35,7 +35,7 @@ export const idGate = {
         group.length === 2 && variants.includes('narrow') && variants.includes('wide');
       if (!isPair) {
         idErrors.push(
-          `id ${id} is used by ${group.length} screens (${files}) — an id is shared only by the narrow and wide halves of one responsive screen`
+          `id ${id} is used by ${group.length} screens (${files}) - an id is shared only by the narrow and wide halves of one responsive screen`
         );
       }
     }
@@ -50,7 +50,7 @@ export const idGate = {
 // that is not drawn yet is a forward reference and stays allowed.
 export const slugGate = {
   id: 'slugGate',
-  title: '참조 슬러그가 그 번호의 화면과 다르다',
+  title: 'a reference slug differs from the screen at that number',
   stage: 'built',
   run: (ctx) => {
     const fileById = new Map(ctx.loaded.map((s) => [s.num, s.file]));
@@ -61,7 +61,7 @@ export const slugGate = {
         const id = idOf(slug);
         if (!id || !fileById.has(id)) continue;     // not drawn yet - a forward reference
         if (fileById.get(id) !== slug) {
-          wrongSlugs.push(`${s.file}: {{${slug}}} → ${id}는 ${fileById.get(id)}다`);
+          wrongSlugs.push(`${s.file}: {{${slug}}} → ${id} is ${fileById.get(id)}`);
         }
       }
     }
@@ -78,7 +78,7 @@ export const slugGate = {
 // disagreement to settle now, while both notes are in hand.
 export const refTailGate = {
   id: 'refTailGate',
-  title: '같은 화면을 두 번호로 참조한다',
+  title: 'one screen is referenced by two numbers',
   stage: 'built',
   run: (ctx) => {
     const refTails = new Map();
@@ -92,7 +92,7 @@ export const refTailGate = {
     const refClashes = [];
     for (const [tail, nums] of refTails) {
       if (nums.size < 2) continue;
-      refClashes.push(`${tail} — ${[...nums].map(([n, f]) => `${n} (${f})`).join(' vs ')}`);
+      refClashes.push(`${tail} - ${[...nums].map(([n, f]) => `${n} (${f})`).join(' vs ')}`);
     }
     return refClashes;
   },
@@ -106,7 +106,7 @@ export const refTailGate = {
 // disagreement to settle while the notes are still in hand.
 export const refNumGate = {
   id: 'refNumGate',
-  title: '한 번호를 두 화면 이름으로 참조한다',
+  title: 'one number is referenced by two screen names',
   stage: 'built',
   run: (ctx) => {
     const refNums = new Map();
@@ -120,7 +120,7 @@ export const refNumGate = {
     const numClashes = [];
     for (const [num, tails] of refNums) {
       if (tails.size < 2) continue;
-      numClashes.push(`${num} — ${[...tails].map(([t, f]) => `${t} (${f})`).join(' vs ')}`);
+      numClashes.push(`${num} - ${[...tails].map(([t, f]) => `${t} (${f})`).join(' vs ')}`);
     }
     return numClashes;
   },
@@ -137,7 +137,7 @@ export const refNumGate = {
 // exists to prevent.
 export const pairGate = {
   id: 'pairGate',
-  title: '닫힌 상태와 열린 상태가 짝이 맞지 않는다',
+  title: 'a closed state and its open states do not pair up',
   stage: 'built',
   run: (ctx) => {
     const pairErrors = [];
@@ -153,10 +153,10 @@ export const pairGate = {
       for (const [, base] of states) counted.set(base, (counted.get(base) ?? 0) + 1);
       for (const b of bases) {
         const n = counted.get(b) ?? 0;
-        if (n === 0) pairErrors.push(`${idOf(b)} — screenBody를 내보내는데 그것을 쓰는 상태 프레임이 없다`);
+        if (n === 0) pairErrors.push(`${idOf(b)} - exports screenBody and no state frame uses it`);
       }
       for (const [f, base] of states) {
-        if (!bases.has(base)) pairErrors.push(`${idOf(f)} — ${base}에서 screenBody를 가져오는데 그쪽이 내보내지 않는다`);
+        if (!bases.has(base)) pairErrors.push(`${idOf(f)} - imports screenBody from ${base}, which does not export it`);
       }
     }
     return pairErrors;

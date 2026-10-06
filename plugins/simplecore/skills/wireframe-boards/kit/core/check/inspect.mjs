@@ -27,7 +27,7 @@ const measureFrames = (pre) => {
     if (pre && !f.id.includes(pre)) continue;
     const label = f.querySelector('.frame-label')?.textContent?.trim().slice(0, 34) ?? f.id;
     const screen = f.querySelector('.screen');
-    if (!screen) { errors.push(`${label} — .screen 없음`); continue; }
+    if (!screen) { errors.push(`${label} - no .screen`); continue; }
     const sb = screen.getBoundingClientRect();
     const fold = parseFloat(getComputedStyle(f).getPropertyValue('--vh'));
     const issues = [];
@@ -76,7 +76,7 @@ const measureFrames = (pre) => {
       const cs = getComputedStyle(el);
       if (cs.overflowX === 'visible') continue;
       if (cs.overflowX === 'hidden' && cs.textOverflow === 'ellipsis') continue;
-      issues.push(`${cs.overflowX === 'hidden' ? '잘림' : 'scroll-x'}:${String(el.className).split(' ')[0]}`);
+      issues.push(`${cs.overflowX === 'hidden' ? 'clipped' : 'scroll-x'}:${String(el.className).split(' ')[0]}`);
       break;
     }
 
@@ -86,14 +86,14 @@ const measureFrames = (pre) => {
     // balanced, no value leaked, the frame is there. Only the emptiness gives it away, so that is
     // what is measured: a container whose whole job is to hold rows, holding none.
     const MUST_HOLD = {
-      '.cal-grid': '달력에 날짜가 없다', '.mx': '매트릭스에 행이 없다',
-      '.jn': '레일에 노드가 없다', '.att-grid': '첨부 격자가 비었다',
-      '.aflow': '승인 흐름에 단계가 없다', '.tree': '트리에 노드가 없다',
-      '.ts-track': '시간 선택기에 띠가 없다', '.cvs-stage': '캔버스에 표시가 없다',
+      '.cal-grid': 'the calendar has no days', '.mx': 'the matrix has no rows',
+      '.jn': 'the rail has no nodes', '.att-grid': 'the attachment grid is empty',
+      '.aflow': 'the approval flow has no steps', '.tree': 'the tree has no nodes',
+      '.ts-track': 'the time picker has no band', '.cvs-stage': 'the canvas has no marks',
     };
     for (const [sel, why] of Object.entries(MUST_HOLD)) {
       for (const el of screen.querySelectorAll(sel)) {
-        if (el.children.length === 0) issues.push(`empty:${sel.slice(1)} — ${why}`);
+        if (el.children.length === 0) issues.push(`empty:${sel.slice(1)} - ${why}`);
       }
     }
 
@@ -141,7 +141,7 @@ const measureFrames = (pre) => {
       }
       if (fused) break;
     }
-    if (fused) issues.push(`붙음:${fused} — 두 상자가 맞닿아 한 덩어리로 그려진다. 담은 컨테이너에 gap이 없다`);
+    if (fused) issues.push(`fused:${fused} - two boxes touch and draw as one block; the container holding them has no gap`);
 
     // Something that was never copy, rendered as copy. A frame concatenated its own header
     // FUNCTION instead of calling it - `head +` where `head() +` was meant - and JavaScript did
@@ -159,12 +159,12 @@ const measureFrames = (pre) => {
     // frame reference the build could not resolve is already marked `{{slug?}}` by the build
     // itself. Only that marked form is read here.
     const NOT_COPY = [
-      ['함수 소스', /\b(?:function|const|let|return|=>)\b[^\n]{0,40}[({=][^\n]{0,40}[)};]|=>\s*[`'"({]/],
-      ['객체', /\[object [A-Z]\w+\]/],
+      ['function source', /\b(?:function|const|let|return|=>)\b[^\n]{0,40}[({=][^\n]{0,40}[)};]|=>\s*[`'"({]/],
+      ['object', /\[object [A-Z]\w+\]/],
       ['undefined', /(?<![\w-])undefined(?![\w-])/],
       ['NaN', /(?<![\w-])NaN(?![\w-])/],
-      ['풀리지 않은 프레임 참조', /\{\{[^}]{1,60}\?\}\}/],
-      ['템플릿 리터럴', /\$\{[^}]{1,60}\}/],
+      ['unresolved frame reference', /\{\{[^}]{1,60}\?\}\}/],
+      ['template literal', /\$\{[^}]{1,60}\}/],
     ];
     const reading = document.createTreeWalker(screen, NodeFilter.SHOW_TEXT);
     let notCopy = null;
@@ -174,11 +174,11 @@ const measureFrames = (pre) => {
       if (node.parentElement?.closest('code, kbd, samp, tt, [class*="mono"], [class*="code"]')) continue;
       for (const [what, shape] of NOT_COPY) {
         if (!shape.test(said)) continue;
-        notCopy = `${what} — ${said.replace(/\s+/g, ' ').trim().slice(0, 60)}`;
+        notCopy = `${what}: ${said.replace(/\s+/g, ' ').trim().slice(0, 60)}`;
         break;
       }
     }
-    if (notCopy) issues.push(`문구가 아님:${notCopy}`);
+    if (notCopy) issues.push(`not copy:${notCopy}`);
 
     // A desktop screen may run past its fold - it scrolls - but its primary action may not.
     // The primary action is the emphasised button in the page header; a screen whose main act is
@@ -201,7 +201,7 @@ const measureFrames = (pre) => {
     if (desktop && primary) {
       const pb = primary.getBoundingClientRect();
       if (pb.bottom - sb.top > fold + 1) {
-        issues.push(`primary action fold 아래 (+${Math.round(pb.bottom - sb.top - fold)}px)`);
+        issues.push(`primary action below the fold (+${Math.round(pb.bottom - sb.top - fold)}px)`);
       }
     }
 
@@ -210,7 +210,7 @@ const measureFrames = (pre) => {
       const el = !desktop && screen.querySelector(sel);
       if (!el) continue;
       const r = el.getBoundingClientRect();
-      if (r.bottom - sb.top > fold + 1) issues.push(`${sel} fold 아래`);
+      if (r.bottom - sb.top > fold + 1) issues.push(`${sel} below the fold`);
     }
 
     // The same clip, downwards. Only the sideways version was ever measured, and a dialog capped
@@ -223,7 +223,7 @@ const measureFrames = (pre) => {
       const cs = getComputedStyle(el);
       if (cs.overflowY !== 'hidden' && cs.overflowY !== 'clip') continue;
       const over = Math.round(el.scrollHeight - el.clientHeight);
-      issues.push(`세로 잘림:${String(el.className).split(' ')[0] || el.tagName} (+${over}px)`);
+      issues.push(`clipped vertically:${String(el.className).split(' ')[0] || el.tagName} (+${over}px)`);
       break;
     }
 
@@ -237,7 +237,7 @@ const measureFrames = (pre) => {
       const first = region.querySelector('.ld-list .table .trow');
       if (first && first.getBoundingClientRect().bottom - sb.top > fold + 1) {
         const over = Math.round(first.getBoundingClientRect().bottom - sb.top - fold);
-        issues.push(`목록의 첫 행이 fold 아래 (+${over}px) — 영역 위를 덜어낸다`);
+        issues.push(`the list's first row is below the fold (+${over}px) - take something off above the region`);
       }
     }
 
@@ -251,13 +251,13 @@ const measureFrames = (pre) => {
         if (!el.textContent.trim()) continue;
         const r = el.getBoundingClientRect();
         if (r.right < ob.left || r.left > ob.right || r.bottom < ob.top || r.top > ob.bottom) continue;
-        issues.push(`겹침: ${String(over.className).split(' ')[0]} 위에 「${el.textContent.trim().slice(0, 16)}」`);
+        issues.push(`overlap: ${String(over.className).split(' ')[0]} over 「${el.textContent.trim().slice(0, 16)}」`);
         break;
       }
     }
 
-    if (issues.length) errors.push(`${label} — ${issues.join(' · ')}`);
-    else if (sb.height > fold + 1) notes.push(`${label} — fold +${Math.round(sb.height - fold)}px (스크롤)`);
+    if (issues.length) errors.push(`${label} - ${issues.join(' · ')}`);
+    else if (sb.height > fold + 1) notes.push(`${label} - fold +${Math.round(sb.height - fold)}px (scrolls)`);
   }
 
   return { errors, notes };
@@ -279,7 +279,7 @@ export async function inspectBoard(boardDir, { framePrefix = '' } = {}) {
     ? [process.env.BOARD]
     : outputFiles(config).map((f) => join(boardDir, f));
   for (const f of files) {
-    if (!existsSync(f)) throw new Error(`빌드된 보드가 없습니다: ${f} — 먼저 node wf.mjs build를 실행합니다`);
+    if (!existsSync(f)) throw new Error(`no built board: ${f} - run node wf.mjs build first`);
   }
 
   const browser = await launchBrowser();
@@ -317,18 +317,18 @@ export async function inspectBoard(boardDir, { framePrefix = '' } = {}) {
         const de = document.documentElement;
         return de.scrollWidth > de.clientWidth + 2 ? de.scrollWidth - de.clientWidth : 0;
       });
-      if (over) sideways.push(`${where}${width}px에서 보드 가로 스크롤 ${over}px`);
+      if (over) sideways.push(`${where}the board scrolls sideways by ${over}px at ${width}px`);
     }
   }
 
   // One report, however many files were opened. A sweep that printed per file would make the
   // reader add up five verdicts to find out whether the board is clean.
   for (const line of errors) console.log(`✖ ${line}`);
-  if (!errors.length) console.log('✔ 넘침·가로 스크롤·fold 위 주 버튼 — 문제 없음');
-  if (notes.length) console.log(`ℹ fold 아래로 이어지는 프레임 ${notes.length}개 (데스크톱은 스크롤되므로 정상)`);
+  if (!errors.length) console.log('✔ overflow · sideways scroll · primary action above the fold: nothing found');
+  if (notes.length) console.log(`ℹ frames running past the fold: ${notes.length} (a desktop screen scrolls, so this is expected)`);
   for (const line of sideways) console.log(`✖ ${line}`);
-  if (!sideways.length) console.log('✔ 1900·1440·1280px 어디서도 보드 가로 스크롤 없음');
-  if (files.length > 1) console.log(`ℹ 파일 ${files.length}개를 한 번에 훑었습니다`);
+  if (!sideways.length) console.log('✔ the board does not scroll sideways at 1900 · 1440 · 1280px');
+  if (files.length > 1) console.log(`ℹ swept ${files.length} files as one board`);
 
   await browser.close();
   return errors.length + sideways.length;

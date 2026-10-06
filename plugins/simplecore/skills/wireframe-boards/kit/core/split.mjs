@@ -51,10 +51,10 @@ const keyOf = (v) => (v === null || v === undefined ? null : String(v));
  * builds with four empty files. Named here, it is one sentence at the top of the build.
  */
 function callable(mod, spec, what, modulePath) {
-  if (!spec?.call) throw new Error(`board.config.mjs의 split.${what}에 call이 없습니다`);
+  if (!spec?.call) throw new Error(`split.${what} in board.config.mjs has no call`);
   const fn = mod[spec.call];
   if (typeof fn !== 'function') {
-    throw new Error(`${modulePath}에 '${spec.call}' 함수가 없습니다 — split.${what}.call이 가리키는 것입니다`);
+    throw new Error(`${modulePath} has no function '${spec.call}', which split.${what}.call names`);
   }
   return fn;
 }
@@ -69,14 +69,14 @@ function callable(mod, spec, what, modulePath) {
  */
 export async function loadSplit(boardDir, decl) {
   if (!decl) return null;
-  if (!decl.module) throw new Error('board.config.mjs의 split에 module이 없습니다');
+  if (!decl.module) throw new Error('split in board.config.mjs has no module');
   if (!Array.isArray(decl.parts) || !decl.parts.length) {
-    throw new Error('board.config.mjs의 split에 parts가 없습니다 — 파일 하나로 빌드하려면 split을 지웁니다');
+    throw new Error('split in board.config.mjs has no parts - to build one file, remove split');
   }
 
   const modulePath = isAbsolute(decl.module) ? decl.module : resolve(boardDir, decl.module);
   if (!existsSync(modulePath)) {
-    throw new Error(`split.module이 가리키는 파일이 없습니다: ${modulePath}`);
+    throw new Error(`the file split.module names does not exist: ${modulePath}`);
   }
   const mod = await import(pathToFileURL(modulePath).href);
 
@@ -86,31 +86,31 @@ export async function loadSplit(boardDir, decl) {
 
   const entry = { file: decl.entry?.file ?? DEFAULT_ENTRY, nav: decl.entry?.nav ?? null };
   const parts = decl.parts.map((p) => {
-    if (p.key === undefined || p.key === null) throw new Error('split.parts의 항목에 key가 없습니다');
-    if (!p.file) throw new Error(`split.parts의 ${p.key}에 file이 없습니다`);
+    if (p.key === undefined || p.key === null) throw new Error('an entry of split.parts has no key');
+    if (!p.file) throw new Error(`split.parts entry ${p.key} has no file`);
     return { ...p, key: keyOf(p.key) };
   });
 
   const files = [entry.file, ...parts.map((p) => p.file)];
   const dupFile = files.find((f, i) => files.indexOf(f) !== i);
-  if (dupFile) throw new Error(`split이 파일 이름 '${dupFile}'을 두 번 씁니다 — 뒤엣것이 앞엣것을 덮습니다`);
+  if (dupFile) throw new Error(`split writes the file name '${dupFile}' twice - the later one overwrites the earlier`);
   const keys = parts.map((p) => p.key);
   const dupKey = keys.find((k, i) => keys.indexOf(k) !== i);
-  if (dupKey) throw new Error(`split.parts가 key '${dupKey}'를 두 번 선언합니다`);
+  if (dupKey) throw new Error(`split.parts declares the key '${dupKey}' twice`);
 
   const volumes = (decl.volumes ?? []).map((v, i) => {
     const vKeys = (v.parts ?? []).map(keyOf);
     const unknown = vKeys.filter((k) => !keys.includes(k));
     if (unknown.length) {
-      throw new Error(`split.volumes[${i}]가 선언되지 않은 part를 부릅니다 — ${unknown.join(' · ')}`);
+      throw new Error(`split.volumes[${i}] names parts that are not declared: ${unknown.join(' · ')}`);
     }
-    if (!v.name) throw new Error(`split.volumes[${i}]에 name이 없습니다 — 파일 이름에 들어갈 마디입니다`);
+    if (!v.name) throw new Error(`split.volumes[${i}] has no name - the segment that goes into the file name`);
     return { ...v, parts: vKeys };
   });
   const placed = volumes.flatMap((v) => v.parts);
   const orphan = keys.filter((k) => !placed.includes(k));
   if (volumes.length && orphan.length) {
-    throw new Error(`어느 volume에도 들지 않은 part가 있습니다 — ${orphan.join(' · ')}`);
+    throw new Error(`parts in no volume: ${orphan.join(' · ')}`);
   }
 
   return {
