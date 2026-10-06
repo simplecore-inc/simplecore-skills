@@ -33,7 +33,7 @@ the page spends on a table the room the picture would have taken.
   page, so the two rules meet head-on and rows cannot satisfy both: one slide sat at
   1274 characters against a ceiling of 1300 with its narrow column at 70 %, and the
   three rows that filled the column put it 145 characters over. A figure resolves it
-  because the density check counts the strings the deck writes and a drawing carries
+  because the deck's density check counts the strings the deck writes and a drawing carries
   none - it adds height and one shape. Check the character count *before* reaching for
   rows on a column that is short, and where the column's rows already spell out a
   sequence, draw that sequence and delete them: the page then loses characters and
