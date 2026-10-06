@@ -3,7 +3,7 @@
  * Frontend convention audit - machine-checkable subset of the `simplix:frontend`
  * skill's invariants and audit checklist (its references/audit/).
  *
- * Run from the frontend project root, or point at it with --root=<dir>.
+ * Run from the frontend project root, or point at it with --root <dir> (or --root=<dir>).
  *
  * Usage:
  *   node "${CLAUDE_PLUGIN_ROOT}/scripts/audit-frontend.mjs"             # run all rules
@@ -49,16 +49,26 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-// Project root: --root=<dir> wins, else the current working directory. The script
-// ships inside a plugin, so it must never resolve the root from its own location.
+import { parseOptions, reportUnknown } from "./lib/cli-options.mjs";
+
+// Every option this script knows. `--rule` is taken only as `--rule=<ids>`: the plugin's e2e
+// gate tells a narrowed run from a full one by that spelling, and a second spelling would let a
+// one-rule run count as the full audit.
+const OPTION_SPEC = {
+  flags: ["--list", "--selftest", "--errors-only"],
+  valued: ["root", "rule"],
+  inlineOnly: ["rule"],
+};
+const OPTIONS = parseOptions(process.argv.slice(2), OPTION_SPEC);
+
+// Project root: --root wins, else the current working directory. The script ships inside a
+// plugin, so it must never resolve the root from its own location.
 //
 // Reassignable because the self-test points the whole audit at a fixture tree it writes and
 // throws away - a rule that reads a sibling file, a generated model or a locale catalogue can
 // only be proved against a tree, and a rule proved against a hand-made stub of its own reader
 // is proving the stub.
-let ROOT = path.resolve(
-  process.argv.find((a) => a.startsWith("--root="))?.slice("--root=".length) ?? process.cwd(),
-);
+let ROOT = path.resolve(OPTIONS.values.root ?? process.cwd());
 // `packages` belongs here as much as the other two: a simplix-react project is package-first, and
 // the conventions actively push shared UI out of `modules`/`apps` and into a package. Leaving it out
 // made the audit blindest exactly where the rules send code - and blind to the framework's own
@@ -8463,21 +8473,11 @@ function selftest() {
 // Runner
 // ---------------------------------------------------------------------------
 
-const args = process.argv.slice(2);
-
 // An unrecognised option stops the run rather than falling through to a scan. `--self-test`
 // against a script that only knows `--selftest` scanned nothing and printed
 // "0 source files scanned - 0 error hit(s)", which is exactly what a clean project prints.
-const FLAGS = ["--list", "--selftest", "--errors-only"];
-const VALUED_FLAGS = ["--root=", "--rule="];
-const unknownArgs = args.filter(
-  (a) => !FLAGS.includes(a) && !VALUED_FLAGS.some((f) => a.startsWith(f)),
-);
-if (unknownArgs.length) {
-  console.error(`✖ unrecognised option: ${unknownArgs.join(" ")}`);
-  console.error(`  known options: ${FLAGS.join("  ")}  ${VALUED_FLAGS.map((f) => `${f}<value>`).join("  ")}`);
-  process.exit(2);
-}
+if (reportUnknown(OPTIONS.unknown, OPTION_SPEC)) process.exit(2);
+const args = [...OPTIONS.flags];
 
 if (args.includes("--list")) {
   for (const r of ALL_RULES) {
@@ -8491,7 +8491,7 @@ if (args.includes("--selftest")) {
 }
 
 const errorsOnly = args.includes("--errors-only");
-const ruleFilter = args.find((a) => a.startsWith("--rule="))?.slice(7).split(",");
+const ruleFilter = OPTIONS.values.rule?.split(",");
 
 // A rule id that names no rule would run nothing and print the clean-tree summary - the same
 // false clean the option guard above exists to stop - so it stops the run the same way.

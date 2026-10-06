@@ -42,6 +42,8 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
+import { parseOptions, reportUnknown } from "./lib/cli-options.mjs";
+
 // ---------------------------------------------------------------------------
 // Defaults - the vocabulary, in one place, overridable per project
 // ---------------------------------------------------------------------------
@@ -3101,44 +3103,20 @@ function selfTest(session, options, selected = checks) {
 // CLI
 // ---------------------------------------------------------------------------
 
-function arg(name) {
-  const hit = process.argv.find((a) => a.startsWith(`--${name}=`));
-  if (hit) return hit.slice(name.length + 3);
-  const i = process.argv.indexOf(`--${name}`);
-  return i >= 0 ? process.argv[i + 1] : undefined;
-}
-
 // Every option this script knows, so an unrecognised one can stop the run instead of falling
-// through to a normal one. A valued option is written either `--name value` or `--name=value`,
-// so the walk has to skip the value that follows the first form.
-const BOOLEAN_FLAGS = ["--list", "--selftest", "--keep-session"];
-const VALUED_FLAGS = ["url", "check", "print", "session", "options"];
+// through to a normal one. The script reads no project tree, so it takes no `--root`.
+const OPTION_SPEC = {
+  flags: ["--list", "--selftest", "--keep-session"],
+  valued: ["url", "check", "print", "session", "options"],
+};
+const OPTIONS = parseOptions(process.argv.slice(2), OPTION_SPEC);
 
-function unrecognisedArgs() {
-  const argv = process.argv.slice(2);
-  const bad = [];
-  for (let i = 0; i < argv.length; i++) {
-    const a = argv[i];
-    if (BOOLEAN_FLAGS.includes(a)) continue;
-    const named = VALUED_FLAGS.find((n) => a === `--${n}` || a.startsWith(`--${n}=`));
-    if (named) {
-      if (a === `--${named}`) i++;
-      continue;
-    }
-    bad.push(a);
-  }
-  return bad;
+function arg(name) {
+  return OPTIONS.values[name];
 }
 
 function main() {
-  const unknown = unrecognisedArgs();
-  if (unknown.length) {
-    console.error(`\u2716 unrecognised option: ${unknown.join(" ")}`);
-    console.error(
-      `  known options: ${BOOLEAN_FLAGS.join("  ")}  ${VALUED_FLAGS.map((f) => `--${f} <value>`).join("  ")}`,
-    );
-    return 2;
-  }
+  if (reportUnknown(OPTIONS.unknown, OPTION_SPEC)) return 2;
   const options = { ...DEFAULTS, ...JSON.parse(arg("options") ?? "{}") };
   const only = arg("check");
   const selected = only ? checks.filter((c) => c.id === only) : checks;
@@ -3151,7 +3129,7 @@ function main() {
   }
   const session = arg("session") ?? "simplix-audit-rendered";
 
-  if (process.argv.includes("--list")) {
+  if (OPTIONS.flags.has("--list")) {
     for (const c of checks) console.log(`${c.id} [${c.grade}] — ${c.title}`);
     return 0;
   }
@@ -3169,7 +3147,7 @@ function main() {
   // opened it and is left exactly as found. `--keep-session` holds one open on purpose - for a
   // caller that runs this script several times against the same screen and pays the browser
   // start-up once.
-  const keepSession = process.argv.includes("--keep-session");
+  const keepSession = OPTIONS.flags.has("--keep-session");
   const startedHere = !keepSession && !sessionIsRunning(session);
   try {
     return run(session, options, selected);
@@ -3179,7 +3157,7 @@ function main() {
 }
 
 function run(session, options, selected) {
-  if (process.argv.includes("--selftest")) return selfTest(session, options, selected);
+  if (OPTIONS.flags.has("--selftest")) return selfTest(session, options, selected);
 
   const url = arg("url");
   if (!url) {

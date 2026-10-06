@@ -39,36 +39,14 @@ import fs from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 
+import { parseOptions, reportUnknown } from "./lib/cli-options.mjs";
+
 // Every option this script knows, so an unrecognised one stops the run instead of falling
-// through to an audit of the wrong tree or with the wrong grade. A valued option is written
-// `--name=value` or `--name value`.
-const BOOLEAN_FLAGS = ["--json", "--warn-only"];
-const VALUED_OPTIONS = ["root", "dedupe"];
-
-function parseOptions(argv) {
-  const values = {};
-  const unknown = [];
-  for (let i = 0; i < argv.length; i++) {
-    const a = argv[i];
-    if (BOOLEAN_FLAGS.includes(a)) continue;
-    const name = VALUED_OPTIONS.find((n) => a === `--${n}` || a.startsWith(`--${n}=`));
-    if (!name) unknown.push(a);
-    else if (a !== `--${name}`) values[name] = a.slice(name.length + 3);
-    else if (i + 1 < argv.length) values[name] = argv[++i];
-    else unknown.push(`${a} (no value)`);
-  }
-  return { values, unknown };
-}
-
-const args = process.argv.slice(2);
-const { values: options, unknown } = parseOptions(args);
-if (unknown.length) {
-  console.error(`\u2716 unrecognised option: ${unknown.join(" ")}`);
-  console.error(
-    `  known options: ${BOOLEAN_FLAGS.join("  ")}  ${VALUED_OPTIONS.map((n) => `--${n}=<value>`).join("  ")}`,
-  );
-  process.exit(2);
-}
+// through to an audit of the wrong tree or with the wrong grade.
+const OPTION_SPEC = { flags: ["--json", "--warn-only"], valued: ["root", "dedupe"] };
+const { flags, values: options, unknown } = parseOptions(process.argv.slice(2), OPTION_SPEC);
+if (reportUnknown(unknown, OPTION_SPEC)) process.exit(2);
+const args = [...flags];
 
 // The audit reads the project it is pointed at, never the directory it is installed in, so one
 // copy serves a repository's own scripts/ and a shared toolchain alike.

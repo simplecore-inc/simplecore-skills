@@ -26,34 +26,12 @@ import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 
-// Every option this script knows. A valued option is written `--name=value` or `--name value`,
-// so the walk has to take the value that follows the second form.
-const VALUED_OPTIONS = ["root", "shape", "module"];
+import { parseOptions, reportUnknown } from "./lib/cli-options.mjs";
 
-function parseOptions(argv) {
-  const values = {};
-  const unknown = [];
-  for (let i = 0; i < argv.length; i++) {
-    const a = argv[i];
-    const name = VALUED_OPTIONS.find((n) => a === `--${n}` || a.startsWith(`--${n}=`));
-    if (!name) {
-      unknown.push(a);
-    } else if (a === `--${name}`) {
-      if (i + 1 < argv.length) values[name] = argv[++i];
-      else unknown.push(`${a} (no value)`);
-    } else {
-      values[name] = a.slice(name.length + 3);
-    }
-  }
-  return { values, unknown };
-}
-
-const { values: options, unknown } = parseOptions(process.argv.slice(2));
-if (unknown.length) {
-  console.error(`\u2716 unrecognised option: ${unknown.join(" ")}`);
-  console.error(`  known options: ${VALUED_OPTIONS.map((n) => `--${n}=<value>`).join("  ")}`);
-  process.exit(2);
-}
+// Every option this script knows.
+const OPTION_SPEC = { valued: ["root", "shape", "module"] };
+const { values: options, unknown } = parseOptions(process.argv.slice(2), OPTION_SPEC);
+if (reportUnknown(unknown, OPTION_SPEC)) process.exit(2);
 
 // Project root: --root wins, else the current working directory. The script ships inside a
 // plugin, so it must never resolve the root from its own location.
