@@ -8,8 +8,12 @@ and the switch changes speed, not the result.
 
 ## Is Jev available
 
-Run `zsh -c 'source ~/.zshenv; jev-decide setup'` once per session. `available.typesafe` or
-`available.openrouter` true means Jev is available; call it with that provider by name. A
+The judgment steps ask Jev through `jev-decide`, the Jev command-line client, which is installed
+and keyed apart from this skill. Run `jev-decide setup` once per session, in a shell that carries
+the client's key; `available.typesafe` or `available.openrouter` true means Jev is available, and
+it is called with that provider by name. The claims triage (`claims`) is a different client: it
+asks the gateway the deck declares (`jev` in `.claude/slide-decks.json`), so the two can disagree
+on availability, and each is reported as it answered. A
 `decide` call that errors is reported with its message and retried after the cause is fixed. It is
 never replaced silently by the agent's own judgment for the rest of the run: say which steps fell
 back and why. Simulating Jev with another model is not the fallback either; the fallback is the

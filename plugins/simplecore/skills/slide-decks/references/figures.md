@@ -3,10 +3,10 @@
 A figure is drawn by code in the project (`figures.generator`), lands as an SVG in one of
 `figures.sources`, and is placed by the build at a width the board it was drawn on decides.
 The drawing discipline itself - claim first, visual type by the claim, content-first
-boxes, the type ladder, the badges, the lint - is the `simplecore:svg-diagrams` skill and
-the generator directory's own `AGENTS.md`; invoke the skill before drawing. This file is
-what the deck adds: where a figure may stand, at what size, and how a document figure
-becomes a slide figure.
+boxes, the canvas, the type ladder and the smallest label it may print, the height budget,
+the badges, the lint - is the `simplecore:svg-diagrams` skill (references/document-figures.md);
+invoke it before drawing. This file is what the deck adds: where a figure may stand, at what
+placement scale, and how a document figure becomes a slide figure.
 
 ## Look for the figure before writing the content
 
@@ -48,14 +48,13 @@ the page spends on a table the room the picture would have taken.
 ## A figure prints proposal Korean
 
 The panel reads a figure's strings the way it reads the proposal's headings, so every
-drawn string is a 개조식 noun phrase: no relative clause (「보드로 앞당기는 설계 확정」 →
-「와이어프레임 기반 설계 조기 확정」), no particle inside a label (「승인된 설계 단위마다
-확인」 → 「승인 설계 단위별 확인」), no connective ending between items (「…를 제출해 종속성
-방지」 → 「… 제출 - 종속성 방지」), and none of the authors' working vocabulary (보드 ·
-프레임 · 이 사업 → 와이어프레임 · 화면 · 본 사업). One deck had nearly every drawn string
-rewritten in a single round on this rule alone, so a figure module is written in this
-register from its first string and the deck's figure check fails a drawn string outside it
-(`[figure register]`). **And a technical term is explained technically**: a label names
+drawn string is a 개조식 noun phrase in the panel's words: the rule and its rewrites are
+`simplecore:proposal-writing`'s (「A figure's copy is written in noun form」), and the figure
+checks of `simplecore:svg-diagrams` fail a label that closes on a predicate (`[label form]`)
+and, once the figure settings declare `register`, one that carries a clause, a particle or a
+working word (`[register]`). One deck had nearly every drawn string rewritten in a single
+round on this rule alone, so a figure module is written in this register from its first
+string. **And a technical term is explained technically**: a label names
 the mechanism and what it does, never a broad verb standing in for it. Compressing the
 broad verb into a noun does not fix it - 「확장 지점」 written as 「확장 지점 확보」 says no
 more than before; what fixes it is naming the thing and the mechanism
@@ -82,6 +81,9 @@ The build reads the width out of each SVG and offers one placement per slot the 
 width: a landscape drawing put in a narrow column would print its labels at
 3pt, and nothing in the page source could report it.
 
+One deck's boards, as an example of the derivation below; a project's are in its
+`figures.boards`:
+
 | Deck | Board (units) | Placed at (px) | Scale | The claim is |
 | --- | --- | --- | --- | --- |
 | document | 1200 | the text block (682) | 0.57 | a comparison, a matrix, a timeline, a fan-out, a wide row |
@@ -93,13 +95,14 @@ width: a landscape drawing put in a narrow column would print its labels at
 | slides | 378 | the 277 px column | 0.73 | a rail of states or a stack beside its text |
 
 A slide board is the placed width divided by the scale that prints the ladder's smallest
-step at the slide's declared body size (a 11-unit body against a 15-unit ladder minimum is
-0.7333);
+step at the slide's declared body size (an 11px body, 8.25pt, against a 15-unit ladder minimum
+is 0.7333 px per unit);
 the document's boards are for paper and are not placed on a slide. **A slide figure uses
 the ladder's three lowest steps** - MICRO and BODY for labels, LEAD for its headings -
 because the slide's own region heading is one step over its body and a figure heading at
-SECTION prints larger than anything on the page; the slide generator's heading helper defaults
-to LEAD and its figure verifier fails text over LEAD. **And it runs across the board before it stacks**:
+SECTION prints larger than anything on the page: the slide deck's figure settings declare
+`maxRung: "LEAD"`, so the figure checks fail text over LEAD, and a module passes `size=LEAD`
+to the library's `heading()`, which defaults to SECTION. **And it runs across the board before it stacks**:
 the rows beside a figure pay for its height, so a relation that reads left to right is laid
 that way, and a figure taller than it is wide is re-laid before it is placed.
 
@@ -108,8 +111,8 @@ had.** A 600px drawing standing in a 680px column leaves 40px of paper down each
 and a reader takes that band as the figure being too small for its box rather than as a
 margin - one deck's author stopped on exactly that. So the layout is chosen from the
 board: one asymmetric layout per board width, each with a fixed figure column and the
-rest of the measure going to the text (600 · 440 · 260 against 399 · 559 · 739 on a
-1027px block), and a mirror of each so a run of slides does not all tip the same way.
+rest of the measure going to the text (one deck's: 600 · 440 · 260 against 399 · 559 · 739
+on a 1027px block), and a mirror of each so a run of slides does not all tip the same way.
 The mirror is for the run, not for one page: flipping puts the text column first, and a
 slide whose own title names the figure's subject reads worse that way, so check the
 title and the two neighbours before flipping.
@@ -132,11 +135,11 @@ belongs in (the widest board across the text block, the next in the wide column 
 asymmetric layout, and so on), and a figure is placed at `board × scale`, never at the
 width of the slot; the wide column is sized to the placed width, not the other way round.
 A document deck, whose boards differ less, keeps its own near-uniform pair. The scale is
-chosen so the ladder's smallest step prints at 6.4pt or more (15 units × 0.57 × 0.75);
-the project's `figures.boards` carries the widths. **Height is the
-only dimension a figure may spend**: on the document's full board stay under 720 units
-(840 for review); on a slide board the height budget is what the slide leaves after its
-head, so a slide figure is short and wide - 380 to 600 units on the 1800 board.
+chosen so the ladder's smallest step meets the figure floor `simplecore:svg-diagrams` sets,
+after the deck's `placeScale`; the project's `figures.boards` carries the widths. **Height is
+the only dimension a figure may spend**: a document figure's height budget is
+`simplecore:svg-diagrams`' (and its `heightReview`); on a slide board the budget is what the
+slide leaves after its head, so a slide figure is short and wide.
 
 ## A page whose body is one figure
 
@@ -149,16 +152,17 @@ have to be arranged before the first line is drawn.
 
 - **The board is placed across the page, not inside the text measure.** Held to
   two thirds it prints a white strip down both sides of a page whose only
-  content is the picture. Give the board its own placement scale beside the
-  deck's ordinary one, and say in the deck's instructions which board that is.
+  content is the picture. Declare a board whose placed width is the page's body width
+  (`figures.boards`, at the deck's one scale, so its labels print at the size of every
+  other slide figure), and say in the deck's instructions which board that is.
 - **Its margins are the smallest the trim can hold.** A figure standing beside a
   column of text can afford air; on a drawing that fills a page every unit of
   margin is a unit the drawing does not get.
 - **Its height ceiling is the page's body region**, in board units: the region's
-  height divided by the placement scale. Write that number into the figure lint's
-  height review for that board, because the review's usual number - a figure
-  sharing its page - is not the number here.
-- **The column-fill check measures it; it is not exempt.** A drawing that stops
+  height divided by the scale. Write that number into the figure settings' height review
+  for that board (`heightReview` per board, `simplecore:svg-diagrams`), because the
+  review's usual number - a figure sharing its page - is not the number here.
+- **The deck's column-fill check measures it; it is not exempt.** A drawing that stops
   short leaves exactly the hole the check exists for, and the figure is the only
   thing on the page that could have filled it. Measure it as one column across
   the block.
@@ -179,20 +183,20 @@ A figure module writes a sentence and the column decides where it splits, so a
 word ends up alone on a line and nobody sees it - the eye reads the card, not its
 ragged edge, and a page-by-page review passes every one of them. It is
 mechanically visible: group the finished SVG's text elements into wrapped runs
-(same x, same size, one step apart) and report every run whose last line is under
-about 42 % of its longest. The fix is a shorter string or a wider column; an
-explicit line break belongs only where the wording cannot move, as in a formula.
-Run it beside the figure lint, from the same command, so a figure is never
-regenerated without it.
+(same x, same size, one step apart), and a run whose last line is under about 42 % of
+its longest is the stub. No shipped check groups the runs, so read the rendered figures
+for it (`verify.py --render`) before a figure is placed. The fix is a shorter string or a
+wider column; an explicit line break belongs only where the wording cannot move, as in a
+formula.
 
 ## Connector labels, lanes and separators
 
 **A connector label is small type on a tight plate, and it never lands on a box.** The toolkit's own pill
 spreads 8 units a side and a third of an em above and below the letters; on a slide
 board that plate is taller than the gap the arrow runs in, and three figures in one
-round printed it over the cards either side. The generator's shared helpers carry a
-connector-label function with the plate fitted to the glyph box (6 a side, 3 above and
-below), and the figure verifier fails a module that calls the toolkit's own pill instead. The
+round printed it over the cards either side. The figure library's `edge_label` fits the
+plate to the glyph box (6 a side, 3 above and below), and a module calls it rather than the
+toolkit's pill; no check reads a module for which one it called, so this is on the author. The
 type size does not move: the ladder's smallest step is already the deck's body size
 and the 8pt floor leaves no room under it, so a label that reads too large is made
 **shorter** - 「업무 DB 직접 접속 없음」 → 「DB 직접 접속 없음」 next to the DB it names,
@@ -212,8 +216,8 @@ line takes no plate at all.
   layer; each takes its own bend coordinate (its own lane), ordered so none
   crosses, with a bend and an 18-unit straight run inset from either edge. The toolkit
   lint reports the shared run as `COLLINEAR-CONNECTORS`.
-- **A separator between two boxes sits in the middle of the gap.** The generator's chevron
-  helper anchors the 「›」 on the midpoint of the two boxes' edges; a
+- **A separator between two boxes sits in the middle of the gap.** The figure library's
+  `chevron` anchors the 「›」 on the midpoint of the two boxes' edges; a
   glyph placed a fixed distance before the next box drifts toward it on every row with
   a wider gap. The lint reports it as `SEPARATOR-OFF-CENTRE`.
 
@@ -225,32 +229,30 @@ on a slide is drawn for the slide on the slide's board, with the document figure
 source - the same relation, the same labels where they fit, and the content cut to what
 the board carries at the body size. The module docstring names the source
 (재구성 원본: `03-01-01-…`); the slide's source note names the document figure the drawing
-was made from (「본 제안서 그림 Ⅲ-1-1 재구성」); a slide prints no caption. A snapshot
-directory of reused copies, where a deck keeps one, is expected to be empty and its sync
-tool reports a copy that slips back in.
+was made from (「본 제안서 그림 Ⅲ-1-1 재구성」); a slide prints no caption.
 
-**The reused figures are a snapshot the slide deck owns, not a live read of the
-document's directory.** Reading them where the document keeps them looks like the
-tidy arrangement - one copy, and a correction reaches the slide on the next
-build. What it actually builds is a deck that moves when somebody else's deck
-moves: the document's authors redraw a figure for the document's own reasons, it
-grows twenty pixels, and a column of the slide deck overflows in a build those
-authors never run, with nothing in their checks to report it. So the slide deck
-keeps its own copy under its assets, one tool is the only writer of that copy,
-and running that tool is a layout change - followed by a render and the deck's
-checks in the same breath. Without the flag that tool reports the drift, so the
-link between the two decks stays visible instead of silent. It also reports a
-copy no page places any more, because a snapshot nobody prunes is the next
-thing to rot.
+**The slide deck never reads the document's figure directory.** Reading the figures where
+the document keeps them looks like the tidy arrangement - one copy, and a correction reaches
+the slide on the next build. What it actually builds is a deck that moves when somebody
+else's deck moves: the document's authors redraw a figure for the document's own reasons, it
+grows twenty pixels, and a column of the slide deck overflows in a build those authors never
+run, with nothing in their checks to report it. So a slide deck's `figures.sources` names only
+the directories it owns, a redrawn figure follows its source through the docstring that names
+it, and a change to the source is a change the slide deck takes on purpose, followed by a
+render and the deck's checks in the same breath. A deck that keeps a snapshot directory
+expects it to be empty: its snapshot check (`checks.local`, reading `figures.upstream`)
+reports a document figure that slips in and a copy no page places, because a snapshot nobody
+prunes is the next thing to rot.
 
 **The type floor is the deck's own floor, and a figure has a second one.** The floor a
 deck enforces is over the strings *it* draws - a check that reads the deck's styles,
 components and pages cannot see inside a bitmap or an SVG, and should not try. A figure's
-smallest label is set by the figure's own type ladder times the placement scale, and
-that product is the number to hold: pick the scale so the ladder's smallest step still
-clears the figure floor, and say in the deck's instructions what that floor is. Without
-it a reviewer measures a diagram label, finds it under the deck's floor, and reports a
-violation of a rule that never applied to it.
+smallest label is set by the figure's own type ladder times the placement scale, and that
+product is held to the figure floor `simplecore:svg-diagrams` sets, by the figure checks:
+pick the scale so the ladder's smallest step still clears it, and say in the deck's
+instructions which floor a figure answers to. Without that a reviewer measures a diagram
+label, finds it under the deck's floor, and reports a violation of a rule that never applied
+to it.
 
 **A reused figure brings its own palette, and that palette is not a page colour.** A figure
 generator has a named theme of its own - a colour per category, a mark colour for one kind
@@ -346,7 +348,7 @@ slide deck when absent), and it is applied to every figure the same way, never c
 page to make one fit; the one departure is `oversizeScale` on a figure that does not fit
 its slot.
 
-- **The floor still holds after the factor.** The smallest label's printed size is the
+- **The figure floor still holds after the factor.** The smallest label's printed size is the
   figure's type ladder × the board scale × `placeScale`; at 0.9 a ladder that printed
   8.94pt prints 8.05pt. A deck whose ladder would fall under the floor at its factor
   raises the ladder's smallest step in the generator, not the factor per figure. At
@@ -362,12 +364,13 @@ its slot.
 ## What a figure may not do
 
 - **Repeat the words beside it.** A document caption states what the picture shows and a
-  slide's title and claim do; the argument is the page's claim line. Ten or more characters standing verbatim in both the figure and
-  the block beside it is the figure redrawing that block; fix whichever side is weaker.
+  slide's title and claim do; the argument is the page's claim line. A figure whose labels
+  stand verbatim in the copy beside it is redrawing that copy (`SKILL.md`, and `figtext`
+  reads it); fix whichever side is weaker.
 - **Carry a document section number.** Numbers move when a page is inserted; the figure
   verifier fails the Arabic shape, and a Roman reference is on the author.
-- **Carry a title.** The figure's name and its one line belong to the document caption,
-  or on a slide to the title and the claim above it.
+- **Carry a title inside the drawing.** The figure's name and its one line belong to the
+  document caption, or on a slide to the title and the claim above it.
 - **Draw a shadow.** PowerPoint drops every element that references a `<filter>`.
 - **Be scaled to fit.** Re-lay out the primitives on the board the slot wants. The one
   scale applied after the board's is the deck's `placeScale`, the same for every figure,
@@ -375,21 +378,19 @@ its slot.
 
 ## Screen captures on a slide
 
-A capture is a figure the build sizes from its own pixel size into the boxes the layouts
-define (full, side, half, third), ratio kept, never taller than the box. A
-screen-only slide keeps the capture as the main content and puts around it only the
-title, the requirement it answers, the pointing notes and the source line; the slide
-still names the functions and the judgement conditions the capture shows, because a
-picture alone answers nothing. Identifying detail - addresses, users, certificate
-names - is masked in the copy the slide uses; the raw capture stays where it was taken.
+A capture is sized like a diagram ([the rule above](#each-deck-sets-the-share-of-its-board-placement-a-figure-prints-at)):
+it takes the placed width of its slot × the deck's `placeScale`, its height follows its
+own pixel ratio, and only a capture that does not fit its slot at that size prints at
+`oversizeScale`; it is never fitted into a box by its height, and `figbox` holds it there.
+What a screen-only slide carries around its capture and how a capture is masked for a blind
+evaluation are in [landscape-slides.md](landscape-slides.md#what-a-slide-has-to-carry).
 
-## A figure's title names the process, never a journey
+## A figure's caption names the process, never a journey
 
 A process drawing invites a travel metaphor - 「지나가는 길」, 「거쳐 가는 자리」,
-「남기는 것」 - because the picture really is a line moving down a page, and the
-module's `register` field rewards evocative phrasing. The line is the drawing;
-the title is prose, and prose does not replace a real name
-with a metaphor (`길` · `자리` · `갈래` · `관문` are named in the global rules).
-Title the figure with the thing it draws: 「한 회차의 수집 실행 순서」,
-「회차 종료 시 나누어 보존하는 값」. The same test applies to a station's heading
-and a lane's label, which are read at full size on a projected slide.
+「남기는 것」 - because the picture really is a line moving down a page. The line is the
+drawing; the caption (on a slide, the title above the figure) is prose, and prose does not
+replace a real name with a metaphor (`길` · `자리` · `갈래` · `관문` are named in the
+`simplecore:korean-docs` standard). Name the figure by the thing it draws:
+「한 회차의 수집 실행 순서」, 「회차 종료 시 나누어 보존하는 값」. The same test applies to a
+station's heading and a lane's label, which are read at full size on a projected slide.

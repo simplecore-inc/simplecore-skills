@@ -45,9 +45,10 @@ In this order:
    be a record set (stays a table) or a set of three parallel items (cards, a strip, a ladder), and
    a section that argues becomes a region of cards.
 2. **Decide how many deck pages it is.** The manuscript's page budget gives the chapter its pages;
-   divide by the chapter's page-files. On an A4 text block a deck page holds about 650 characters
-   beside a full-width figure and about 1,150 across two columns with a table, and a sentence
-   never continues onto the next page.
+   divide by the chapter's page-files. A deck page holds what the deck measured it to hold
+   (`budget.charsPerPage`: the characters beside a full-width figure and on a text page; one
+   deck measured about 650 and 1,150 on an A4 text block), and a sentence never continues onto
+   the next page.
 3. **Write the claim line for each deck page first** - one claim per page - then the title, a name.
 4. **Pick the figure's placement from its claim**, then check the rotation (below). A page whose
    claim wants a column placement needs a figure drawn on the column board; if the manuscript's
@@ -57,13 +58,14 @@ In this order:
    narrow list (requirement ids by topic, a register of names) runs down one column while the
    other column stacks the tables or cards it indexes.
 6. **Build, render, look at the picture, measure.** The page is done when its content reaches the
-   bottom of the text block; the parity check's coverage listing names the declared manuscript the
-   page does not show yet, and that is what fills the rest. Then run the deck checks. Only then
-   the next page.
+   bottom of the text block; `carry` names a declared section its pages carry below the floor,
+   with the sentences they leave out, and that is what fills the rest. Then run the deck checks.
+   Only then the next page.
 
 A figure that does not exist yet is added to the manuscript first - the image line, the caption
-line and the row in the manuscript's figure list - and to the deck second. The figure-numbering
-check fails a deck page whose number the manuscript does not carry, so the two cannot drift.
+line and the row in the manuscript's figure list - and to the deck second. With
+`checks.fignum.deckInManuscript` on, the figure-numbering check fails a deck page whose number the
+manuscript does not carry, so the two cannot drift.
 
 ## What a chapter holds
 
@@ -86,9 +88,9 @@ Every page carries, beside its body:
   reads the placement from the page's structure, not from this note; the note is for the person
   scanning the source.
 - **A manuscript declaration** naming every manuscript file the page draws from. The parity check
-  reads it: a page with no declaration is invisible to the parity check, and a manuscript file no
-  page claims is reported as unplaced. When one page-file becomes three deck pages, all three
-  carry the same declaration.
+  reads it, and a page with no declaration is invisible to the parity check; a manuscript file no
+  page declares is read by no check, so the deck's chapter list is where its absence shows. When
+  one page-file becomes three deck pages, all three carry the same declaration.
 - **The head values**: the folio, the part, the chapter line, the title, the claim line and the
   deck's two meta fields. Never drop one - print 「해당 없음」 or a hyphen. The deck's instructions
   hold what each means. The chapter line is 「장 번호. 장 이름 · 이 쪽의 주제」, and it stays the
@@ -130,13 +132,13 @@ compared three different ways, and every 「없음」 finding comes from mixing 
   check.
 
 **A head that carries the subject and a body that carries the predicate is one claim, and the
-coverage listing cannot see it.** The manuscript writes 「운영자는 배치·연계·에이전트·저장공간의
+carry check cannot see it.** The manuscript writes 「운영자는 배치·연계·에이전트·저장공간의
 이상을 확인한다」; the card names the role in its head and opens the body at 「배치·연계…」, which
 is what stops the page reading the name twice. The parity check passes, because the body is still
-a run of the manuscript's own characters - but the coverage listing compares whole sentences and
-lists that one as untypeset. **That listing is not a defect and the manuscript is not what to
-fix.** Never edit a manuscript sentence to make a coverage line disappear: the claim is on the
-page, split across two fields the way the deck's own components are built to split it.
+a run of the manuscript's own characters - but `carry` compares whole sentences and counts that
+one as not printed. **That count is not a defect and the manuscript is not what to fix.** Never
+edit a manuscript sentence to make a carry line disappear: the claim is on the page, split across
+two fields the way the deck's own components are built to split it.
 
 The title, the claim line and the caption are deck furniture and are not checked against the
 manuscript.
@@ -227,8 +229,8 @@ The shape names are one deck's vocabulary, given as examples; the deck in hand n
 A deck that has to lose pages loses them fastest where a figure and its prose are both
 carrying the same content. Work in this order, and measure after each:
 
-1. **The prose a figure already draws.** The figure-echo check fails only at three verbatim runs
-   of ten characters or more, which is the flagrant case; the ordinary case is a paragraph
+1. **The prose a figure already draws.** `figtext` fails only where `limit` labels (3) of
+   `minLen` letters (10) or more stand in the text, which is the flagrant case; the ordinary case is a paragraph
    that walks the reader through the boxes the figure beside it already shows. Cut it, and
    keep the caption doing the naming.
 2. **The second copy of an explanation.** A check that compares manuscript sections names the
@@ -285,15 +287,16 @@ most-used component.
 
 **A page needs a shape that is not a paragraph and not a list.** The page-shape check fails a body
 page whose body is prose and bullets under every heading, and a 「list」 of one row - both of which
-read as deliberate on the page and as one page repeated over a run. Its simulation mode reads
-every list run and names what the content's own form asks for, then picks under the rhythm rules
-so the deck does not trade bullets for one card used everywhere. Run it before rewriting a page.
+read as deliberate on the page and as one page repeated over a run. It reports and does not
+choose: choosing the shape is the judgment step `SKILL.md` describes, made before a page is
+rewritten, reading every list run for what the content's own form asks for and picking under the
+rhythm rules so the deck does not trade bullets for one card used everywhere.
 
-**And it counts the whole set.** The same check prints a census per 부 and fails a 부 where one
-component carries more than a third of the card uses, or that uses fewer kinds than it has pages
-(capped at ten); it also lists the components no page has reached for yet. Five cards over fifty
-pages is the failure this catches - every page passes its own review and the run still reads as
-one page repeated.
+**And the rhythm check counts the whole set.** It prints a census per part and fails a part where
+one component carries more than a third of the card uses, or that uses fewer kinds than it has
+pages (capped at `minKindsCap`, ten); it also lists the components no page has reached for yet.
+Five cards over fifty pages is the failure this catches - every page passes its own review and the
+run still reads as one page repeated.
 
 Three things need the parent to be right. A panel that grows to fill its column resolves to zero
 height unless a row container gives it a row to fill. A ruled note's head sits in a fixed 72px
@@ -319,8 +322,8 @@ why page-by-page review never catches it.
 
 So the placement rotates, and the rhythm check enforces it: **no placement runs three pages
 in a row; two consecutive vertical figures do not stand on the same side; two consecutive pages do
-not share both placement and most-used component.** Ten placements are available, and each is the
-natural home of a particular claim - pick by the claim first and check the rotation second.
+not share both placement and most-used component.** Each placement is the natural home of a
+particular claim - pick by the claim first and check the rotation second.
 
 | # | Placement | Built from | The claim is |
 | --- | --- | --- | --- |
@@ -364,11 +367,12 @@ Four rules, all learned from the facing page rather than from the single page:
 
 ### The two-figure placements
 
-- **A side-by-side pair places each column-board figure at the pair width (327px), not the lone
-  column width (300px).** Every column-board figure is placeable at both. The pair prints its
-  labels at about 7.1pt against the lone column figure's 6.5pt - inside the band, and a pair is
-  read against its partner, not against the page's other figures. The full board has no pair
-  width, because 1200 units at 327px prints the smallest label at 3pt.
+- **A side-by-side pair places each column-board figure at the pair width, not the lone column
+  width** (a `-pair` board entry beside the column board: one deck's 327px against 300px). Every
+  column-board figure is placeable at both, and a pair is read against its partner, not against
+  the page's other figures; both widths still print the smallest label at or above the figure
+  floor `simplecore:svg-diagrams` sets. The full board has no pair width, because a full-board
+  drawing at a pair's width prints its smallest label at a fraction of that floor.
 - **The two figures in a pair are drawn to the same board height.** Different heights leave the
   two captions on different lines and the pair stops reading as a pair.
 - **A pair compares; it does not merely fit two pictures on a page.** Two unrelated figures side
@@ -380,23 +384,26 @@ Four rules, all learned from the facing page rather than from the single page:
 
 Every figure is placed at one of two widths, and **the board it was drawn on decides which**.
 The build reads the width out of the figure; the page cannot override it, which is what stops a
-landscape drawing being squeezed into a column at 3pt.
+landscape drawing being squeezed into a column at 3pt. One deck's two boards, as the deck's
+`figures.boards` declares them:
 
-| Board | Placed at | Height: target · review | The claim is |
-| --- | --- | --- | --- |
-| 1200 (standard) | 682px, the whole text block | 720 · 840 units (840 ≈ 478px) | a comparison, a matrix, a timeline, a fan-out, a wide row |
-| 520 (column) | 300px, one column | - · 1400 units (≈ 808px) | a sequence, a rail of states, a stack of layers, a descent |
+| Board | Placed at | The claim is |
+| --- | --- | --- |
+| 1200 (standard) | 682px, the whole text block | a comparison, a matrix, a timeline, a fan-out, a wide row |
+| 520 (column) | 300px, one column | a sequence, a rail of states, a stack of layers, a descent |
 
-Both ratios are about 0.57, so the smallest step of the type ladder prints at roughly 6.5pt on
-either board and two figures on facing pages read at the same size. The figure generator's own
-instructions carry the drawing rules for both.
+Both boards share one scale (about 0.57 px per unit), so the type ladder prints its smallest step
+at one size on either board and two figures on facing pages read at the same size. The size that
+step has to reach, the height budget and the drawing rules for both boards are
+`simplecore:svg-diagrams`' (references/document-figures.md).
 
 A placed figure is the figure plus a number and a caption:
 
-- **The number is 부-장-순번** (「그림 Ⅳ-2-2」), and it is the manuscript's number. The
-  figure-numbering check fails a deck number the manuscript does not carry, a number repeated in
-  the deck, and a chapter whose deck numbers run out of order; the manuscript itself has to run
-  1..n with no gap.
+- **The number is in the format `figures.numbering` declares** (「그림 Ⅳ-2」 for
+  `그림 {part}-{n}`, 「그림 Ⅳ-2-2」 for `그림 {part}-{chapter}-{n}`), and it is the manuscript's
+  number. The figure-numbering check fails a number repeated in the deck and a chapter whose deck
+  numbers run out of order, and with `checks.fignum.deckInManuscript` a deck number the manuscript
+  does not carry; the manuscript itself has to run 1..n with no gap.
 - **The caption states what the picture shows, not what the section argues.** The argument is
   the claim line; a caption that repeats it makes the reader read the same sentence twice, and
   the echo check reports the overlap.
@@ -418,10 +425,11 @@ columns as written, which is why five beside two is fine and two beside two is n
 that will not fit one column goes across the block as a stage strip, where the chevrons carry
 the order and the reading direction is the order. The page-shape check fails on the even split.
 
-**The geometry is fixed and the numbers are dimensions, not preferences.** 300 figure + 28 gutter
-+ 354 text = 682. The content area under the running head runs from about y=211 to y=1065, so a
-column figure has 854px to stand in - a 1400-unit board fills 808 of it and leaves room for the
-caption, which is why 1400 is the ceiling.
+**The geometry is fixed and the numbers are dimensions, not preferences.** The figure column, the
+gutter and the text column add up to the text block, and the column figure's height ceiling is the
+content area under the running head less its caption. One deck's: 300 figure + 28 gutter + 354
+text = 682, and a content area from about y=211 to y=1065 gives a column figure 854px to stand in,
+so a 1400-unit board fills 808 of it and leaves room for the caption.
 
 **The short column is this layout's one failure, and it is the reason to check the render.** A
 1130-unit figure reaches y≈879 while four cards in the text column stop at y≈454 - the page then
@@ -429,7 +437,8 @@ has a 425px hole down its right side, and the measurement in `SKILL.md` reads th
 because the figure carried it. So:
 
 - **Both columns reach the bottom of the text block.** The figure gets there by being drawn
-  tall enough (up to 1400 units, 808px); the text column by carrying more of the manuscript.
+  tall enough (up to the column figure's height ceiling); the text column by carrying more of the
+  manuscript.
   Where the page genuinely has less to say than that, the figure is too tall for what the page
   argues: put it on the full board and give the page a different shape.
 - **Nothing but the figure and its caption goes in the figure column.** A short note may follow
@@ -463,8 +472,8 @@ the name of the component. What has been rendered in each slot (shape names are 
 | a three-column third | 211 | a detail card; a key row fails here |
 
 **A key row's value is one line and never wraps** - the value box sizes to its content. Its
-budget is the row's width minus 106 (the 92px label and the 14px gap): 248px in the 354 column,
-105px in a third. A value past the budget spills into the margin with a horizontal overflow
+budget is the row's width less the label column and the gap (one deck's 92px label and 14px gap
+leave 248px in a 354px column and 105px in a third). A value past the budget spills into the margin with a horizontal overflow
 warning; in a third, reach for a detail card instead.
 
 ### A line end inside a name
@@ -500,7 +509,8 @@ sites and nothing more.
 
 ## Before the page is done
 
-1. The build reports zero errors and zero warnings, and nothing on the page was fitted by the
+1. The build reports zero errors and no warning that is not accounted for (`SKILL.md`, 「The loop
+   is not optional」), and nothing on the page was fitted by the
    build: a page whose tree shows its content over the block, or a gap or padding applied smaller
    than declared, is overflowing even when no warning fires. The build trims gaps before it warns,
    so the first sign is a bullet pressed against its text or an icon touching its heading.
