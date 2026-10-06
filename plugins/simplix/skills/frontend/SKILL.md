@@ -1,7 +1,6 @@
 ---
 name: frontend
 description: MANDATORY handbook for ALL frontend work in a simplix-react project - a repository with `simplix.config.ts`, `@simplix-react/*` dependencies, or CLI-generated `packages/domain-*`; skip it for stock React/Next repositories with none of those markers. Invoke on the session's first frontend-touching task, before reading, writing, reviewing, refactoring, or explaining any TSX, TS, CSS, or documentation file there. Trigger on ANY cue implying frontend work: component, widget, page, hook, list, form, detail, dialog, badge, column, filter, table, CrudList, CrudForm, CrudDetail, FilterBar, defineApi, OpenAPI, scaffold, add-domain, add-module, TSDoc, README, Diataxis, FSD - or a task touching apps/, modules/, packages/, or producing `*.md` / TSDoc. Never skip on "this is simple". Once invoked in a session, do not re-invoke.
-version: 1.0.0
 ---
 
 # SimpliX Frontend Development Handbook
@@ -76,7 +75,7 @@ take a domain out of `meta.export`, and `simplix openapi` owns it again.
 
 ### Project wiring - check on load, offer once
 
-Two halves make this handbook hold: the routing block in the project's instruction file, and the gate config in `<subproject>/.claude/simplix.json` that lets the plugin's hooks enforce it. Run `node "${CLAUDE_PLUGIN_ROOT}/scripts/detect-simplix.mjs" --json` and read `routedBy` and each match's `skillGate` / `e2eGate`.
+Two halves make this handbook hold: the routing block in the project's instruction file, and the gate config in `<subproject>/.claude/simplix.json` that lets the plugin's hooks enforce it. The plugin's SessionStart hook owns this check: when its note in this session already named this subproject, it has said what is missing and asked for `/simplix:init` to be offered, so follow the note and do not check again. Only when no such note arrived, run `node "${CLAUDE_PLUGIN_ROOT}/scripts/detect-simplix.mjs" --json` and read `routedBy` and this subproject's `skillGate` / `e2eGate` (`skillGateMissing` / `e2eGateMissing` name any key a declared gate lacks).
 
 | Missing | What goes unenforced |
 | --- | --- |
@@ -84,7 +83,7 @@ Two halves make this handbook hold: the routing block in the project's instructi
 | `skillGate` | an edit written from memory is not refused, so drift lands before anyone reads a reference |
 | `e2eGate` | a session can change screens and end with none of them opened in a browser |
 
-When anything is missing, say so in one sentence per piece - the user has no reason to know this wiring exists - and offer `/simplix:init`. It shows what it will write and writes nothing without agreement. Offer once per session; if declined, continue and do not raise it again.
+When anything is missing, say so in one sentence per piece - the user has no reason to know this wiring exists - and offer `/simplix:init`. It shows what it will write and writes nothing without agreement. Offer once per session, whether the note or this check raised it; if declined, continue and do not raise it again.
 
 ### Handbook-skip red flags (each of these thoughts means: stop and route)
 
@@ -101,7 +100,7 @@ When anything is missing, say so in one sentence per piece - the user has no rea
 1. Paths inside the **Task Router** and in invariant pointers (`invariants.md`, `customize/datetime-fields.md`, `audit/audit-checklist.md`, …) are relative to this skill's own `references/` directory.
 2. Every other path is relative to the **frontend project root** - the directory holding `simplix.config.ts`. In a monorepo, prefix the subproject name when the working directory is the repository root.
 3. Where an invariant points at a project-owned document (FSD rules, development workflow, policy tables), read whatever the project keeps under its own `.claude/`; when it keeps none, the rule stated here stands on its own.
-4. Scripts shipped with this plugin are addressed through `${CLAUDE_PLUGIN_ROOT}` and run from the frontend project root (or with `--root=<dir>`).
+4. Scripts shipped with this plugin are addressed through `${CLAUDE_PLUGIN_ROOT}` and run from the frontend project root (or with `--root <dir>`). Commands in this skill's references are written from the plugin root, which is ${CLAUDE_PLUGIN_ROOT}.
 
 ---
 
