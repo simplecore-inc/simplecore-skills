@@ -35,8 +35,8 @@ requirement names, requirement IDs, product names and legally fixed terms.
   condition or the preceding action it stands for.
 - **A spoken transition stands only in a speaker note**, where it helps the oral flow, and even
   there it does not replace the subject or the action.
-- **A demonstration number the user has excluded from the oral presentation** stays out of the
-  speaker notes.
+- **A proposer's own test figure or demonstration number** stays out of the speaker notes until the
+  user allows it to be spoken (SKILL.md, 「What the document may claim」).
 
 ## The submitted document
 

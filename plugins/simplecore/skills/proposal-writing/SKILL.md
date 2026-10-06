@@ -103,6 +103,12 @@ their own sections, and never turn pending or failed work into completion.
 measurement, a requirement, a target and a verified result are never presented as one
 another, and an invented round number is worse than no number.
 
+**The proposer's own test figures are printed only in the annex, with their conditions and
+limits.** A figure read without its conditions reads as a guaranteed result. The body cites the
+annex by name, and the page-head description carries no such figure and says only that the test
+was done. Whether the speaker notes speak one is the user's decision: until the user allows it,
+the notes say that the test was done and what it verified, and leave the number out.
+
 **An implementation-case page describes supported functions and their operational use.**
 Numbers that happen to be visible in a sample capture are not test results and not
 performance claims.
@@ -128,12 +134,11 @@ update the manuscript and every generator that owns the repeated value.
 
 **A shared-wording rule governs the words, not the paste.** A document that keeps a table of
 facts several chapters state - one row per fact, with the wording to print and the pages that
-print it - has to say what a page takes from a row, or the row gets pasted whole. One such rule
-read 「이 문구를 글자 단위로 그대로 인쇄하고, 줄이거나 덧붙이지 않는다」 and a five-line row
-duly appeared three times in one chapter, on consecutive pages, each time under the page's own
-title explanation: the panel reads that chapter in order and meets the same paragraph three
-times. **The writer was obeying the rule**, which is what makes it the rule's defect rather than
-theirs. Say that a page prints the sentences it uses, character for character, that the
+print it - has to say what a page takes from a row, or the row gets pasted whole: a writer who
+obeys a rule demanding only the wording, character for character, prints the whole row on every
+page it lists, and the repetition is the rule's defect rather than the writer's (the case:
+slide-decks [checks.md](../slide-decks/references/checks.md#the-shared-checks-and-the-runner); read it before writing such a table's
+rule). Say that a page prints the sentences it uses, character for character, that the
 sentences it does not use are printed by the pages that do, and that a page never repeats what
 a neighbouring page in its own chapter already printed. A standalone annex is the exception,
 because it is read away from the body and has to carry the fact whole.
@@ -315,8 +320,9 @@ letter or a number survives a reordering of the annex, a source number survives 
 being deleted, a board frame id survives the board it named being left out, and the build
 reports none of it. Read each reference against the annex's own inventory (the import
 order, the bibliography's rows, the capture numbers, the frame index) over the body, the
-manuscripts and the slides. One document carried seven such breaks, two of them numbering
-gaps and two of them appendix letters three reorderings stale.
+manuscripts and the slides; `annexref` does it (the breaks one document carried: slide-decks
+[checks.md](../slide-decks/references/checks.md#the-shared-checks-and-the-runner); read them before trusting a reference that survived a
+reordering).
 
 **An evidence number that indexes files outside the document is a reference to nothing.**
 A document that carries 「[증빙 3]」 through its body and an index page resolving 증빙 3 to
@@ -348,10 +354,11 @@ proposal's own chapter and look right.** The tender prints the proposal's outlin
 is where the proposal's chapters get their numbers - so both documents carry a Ⅱ, a Ⅳ and
 a Ⅴ, and 「제안요청서 Ⅱ. 제안개요」 reads as a citation while 제안개요 is the proposal's
 chapter and the tender's Ⅱ is something else entirely. It survives review because the
-sentence around it is true: the fact is right, the source is the wrong document. One
-proposal carried four of them, in the manuscript, the annex and two working documents,
-and each was found by hand only when somebody happened to open the tender at that page.
-**Resolve every such citation against the transcription** - the chapter number exists, the
+sentence around it is true: the fact is right, the source is the wrong document (how many
+one proposal carried, and where:
+[references/rfp-transcription.md](references/rfp-transcription.md#the-tenders-outline-decides-the-files);
+read it before citing a tender chapter by number). **Resolve every such citation against the
+transcription** - the chapter number exists, the
 section number exists in that chapter, and the name the citation prints is a name that
 chapter carries. A check does this in a second, and the finding it reports most often is
 the outline: a claim about what the proposal must contain cites the tender's chapter of
@@ -411,7 +418,8 @@ phase of `checks.preflight` or `checks.after`; a script can also be run directly
 a check's own options are given. **Before the deck exists**, while the manuscript is written,
 `reqid`, `annexref` and `evaluation` run directly with `--manuscript-only`
 (`python3 <skills>/proposal-writing/scripts/reqid.py --manuscript-only`), which opens no deck
-server; the runner passes only `--deck`. Every one reads its keys from the project's
+server; the runner passes only `--deck`. `<skills>` in these commands is the plugin's skills
+directory, `${CLAUDE_PLUGIN_ROOT}/skills`. Every one reads its keys from the project's
 `.claude/slide-decks.json` and exits 2 naming a key it needs and does not find. What each reads and when it fails is in the slide-decks
 [checks](../slide-decks/references/checks.md#the-shared-checks-and-the-runner); the keys and
 their defaults are in its [config](../slide-decks/references/config.md).

@@ -149,7 +149,9 @@ readings.
 **A check that reads the render needs a full render.** A check that reads the preview
 images (a slide deck's fill and column fill) sees the pages a partial render left exactly
 as they were, so running it after rendering one page reads one fresh page and every other
-page stale and reports nothing. `finetype`, `rowheight` and `wordbreak` read the built `.pptx` and
+page stale and reports nothing. The full render is the expensive one: one deck's loop of full
+renders rasterised 296 pages for every one-page edit, which is why the editing loop renders
+the page that changed and the full render waits for these checks. `finetype`, `rowheight` and `wordbreak` read the built `.pptx` and
 refuse one older than the deck's sources. Render the pages while editing, render
 everything before the checks.
 
@@ -273,7 +275,9 @@ read the kit vocabulary's `sentences` (component to sentence slots in reading or
 items are rows of their own) and the printed table cells. `period` reports a sentence without its
 stop and a stop on a string that is not a sentence, after setting aside any number of trailing
 references (`(…)`, `[…]`); the closing syllable and stop come from `lang.sentenceEnd` (default
-「다.」). `dangle` reports a claim whose last present row ends on a connective. `reqbadge` checks
+「다.」). One deck ran 185 values with the stop and 192 without, every page passing its own
+review, which is the split `period` reads. `dangle` reports a claim whose last present row ends
+on a connective. `reqbadge` checks
 that ids nest: head ids are issued (the proposal-writing `reqid` reader), region and badge ids are
 the head's, and, with `requirements.manuscriptLine`, head ids are on the manuscript's requirement
 line and its sub-section lines are badged; `checks.reqbadge.regions` and `bareIds` are policies a
@@ -348,6 +352,18 @@ the baseline is written again, because an exemption that matches nothing reads a
 and every part over its planned pages; a finding is a page to look at before typesetting, not a
 number of characters to delete. A project that stops condensing short of 1.0 declares the ratio it
 stops at as `budget.pageTolerance`. The page title is not body copy and is not counted.
+
+**A shared-facts table's rule is obeyed to the letter.** One such rule read 「이 문구를 글자 단위로
+그대로 인쇄하고, 줄이거나 덧붙이지 않는다」 and a five-line row duly appeared three times in one
+chapter, on consecutive pages, each time under the page's own title explanation: the panel reads
+that chapter in order and meets the same paragraph three times. The writer was obeying the rule,
+which is what makes it the rule's defect rather than theirs. `sharedvalues` holds a value to the
+pages its row assigns and cannot see a row repeated across those pages, so only the table's own
+rule keeps them from repeating it.
+
+**An annex reference survives the change that breaks it.** One document carried seven such
+breaks, two of them numbering gaps and two of them appendix letters three reorderings stale, and
+the build reported none of them; `annexref` reads every reference against the item's definition.
 
 **Claims triage reports its own cost.** The statistics line is counted from the answers, never
 estimated: questions sent, answers received, errors, seconds, the rate, and the sum of
@@ -544,6 +560,11 @@ The shared checks read the deck from the server that holds it, so an edit applie
 application is checked before it is saved. A project check that reads files on disk reads
 the deck as it was last saved; save the deck before running such a check.
 
+**A write made from the disk loses edits the same way a reading from it misses them.** Two
+edits were lost that way, each overwritten by a later edit to a different page of the same
+file: the file was read from disk, edited and sent back whole while the tool held edits the
+disk had not caught up with.
+
 **A check run by hand names a directory, never a deck file**, where the project guards its
 deck sources against writes from the shell: a script handed a deck file may write it, so
 such a guard refuses the line whatever the script does. Hand the Korean audit the chapter
@@ -554,7 +575,8 @@ variable.
 server's layout: the lowest drawn box of the body against the body's inner box, and each
 column of the row that closes the page against the others, because the lowest box on the page
 belongs to whichever column runs longest and a tall figure in one column reports the page as
-full while the other stops halfway. A slide deck's preview-image fill check finds the lowest
+full while the other stops halfway; one deck carried ten such pages while its page fill read
+90 % at worst. A slide deck's preview-image fill check finds the lowest
 row that carries ink, excluding the folio band, and reads a column layout per column for the
 same reason. Covers, dividers, contents pages and a closing slide are exempt; their whitespace
 is the composition.
