@@ -22,15 +22,35 @@ PAGE = ('<svg xmlns="http://www.w3.org/2000/svg"><text>본문</text><image x="10
         f'href="data:image/svg+xml;base64,{base64.b64encode(FIGURE.encode()).decode()}"/></svg>')
 
 
-def pptx(path: Path, slides: int, creator: str = "", company: str = "") -> None:
+def pptx(path: Path, slides: int, creator: str = "", company: str = "", saver: str = "",
+         title: str = "사업 제안서") -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    with zipfile.ZipFile(path, "w") as z:
+    with zipfile.ZipFile(path, "w", zipfile.ZIP_DEFLATED) as z:
+        z.writestr("[Content_Types].xml", "<Types/>")
+        z.writestr("docProps/", b"")
         for i in range(1, slides + 1):
             z.writestr(f"ppt/slides/slide{i}.xml", "<p:sld/>")
         z.writestr("ppt/presentation.xml", "<p:presentation/>")
-        z.writestr("docProps/core.xml", f"<cp:coreProperties><dc:title>사업 제안서</dc:title>"
-                                        f"<dc:creator>{creator}</dc:creator></cp:coreProperties>")
+        z.writestr("docProps/core.xml", f"<cp:coreProperties><dc:title>{title}</dc:title>"
+                                        f"<dc:creator>{creator}</dc:creator>"
+                                        f"<cp:lastModifiedBy>{saver}</cp:lastModifiedBy></cp:coreProperties>")
         z.writestr("docProps/app.xml", f"<Properties><Company>{company}</Company></Properties>")
+
+
+def real_pdf(path: Path, author: str) -> Path:
+    """A PDF whose information and XMP packet both name `author` (PyMuPDF)."""
+    import fitz
+    doc = fitz.open()
+    doc.new_page()
+    doc.set_metadata({"author": author, "title": "제안서"})
+    doc.set_xml_metadata('<x:xmpmeta xmlns:x="adobe:ns:meta/"><rdf:RDF '
+                         'xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"><rdf:Description '
+                         'xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:creator><rdf:Seq><rdf:li>'
+                         f'{author}</rdf:li></rdf:Seq></dc:creator><dc:title>제안서</dc:title>'
+                         '</rdf:Description></rdf:RDF></x:xmpmeta>')
+    doc.save(path)
+    doc.close()
+    return path
 
 
 class FakeRunner:
@@ -100,35 +120,95 @@ class DeliverTests(unittest.TestCase):
                                                                 encoding="utf-8")
         self.project = Project.load(self.root)
 
-    def run_delivery(self, runner=None, pages=2, raster=False, pdf_props=None, **kw):
+    def run_delivery(self, runner=None, pages=2, raster=False, pdf_props=None, pdf_clear=None, **kw):
         runner = runner or FakeRunner()
         log = []
+        self.cleared_pdfs = []
+
+        def clear(pdf):
+            self.cleared_pdfs.append(pdf.name)
+            return []
         d = deliver.Deliverer(self.project, deliver.settings(self.project, raster), runner,
                               shrink=lambda pdf, dpi, q: pages, log=log.append,
-                              properties=pdf_props or (lambda pdf: {"producer": "rsvg"}))
+                              properties=pdf_props or (lambda pdf: {"producer": "rsvg"}),
+                              clear_pdf=pdf_clear or clear)
         code = deliver.deliver(self.project, args(**kw), d)
         return code, runner, log
 
-    def test_the_proposer_s_name_in_the_blind_copy_s_properties_fails(self):
-        pptx(self.root / "proposal" / "out" / "main.pptx", 2, creator="(주)가나다정보")
+    def core(self, rel: str) -> str:
+        with zipfile.ZipFile(self.root / rel) as z:
+            return z.read("docProps/core.xml").decode("utf-8")
+
+    def test_the_proposer_s_name_left_in_a_field_nothing_clears_fails(self):
+        pptx(self.root / "proposal" / "out" / "main.pptx", 2, title="(주)가나다정보 제안서")
         code, _, log = self.run_delivery()
         self.assertEqual(code, 1)
         self.assertTrue(any("✖ blind copy: 사업_제안서(평가본_비계량).pptx docProps/core.xml carries 「(주)가나다정보」"
                             in line for line in log), log)
 
+    def test_the_blind_copy_s_creator_and_last_saver_are_cleared_and_then_pass(self):
+        pptx(self.root / "proposal" / "out" / "main.pptx", 2, creator="(주)가나다정보", saver="SlideGlance")
+        code, _, log = self.run_delivery()
+        self.assertEqual(code, 0, log)
+        blind = self.core("제출물/평가본/pptx/사업_제안서(평가본_비계량).pptx")
+        self.assertIn("<dc:creator></dc:creator>", blind)
+        self.assertIn("<cp:lastModifiedBy></cp:lastModifiedBy>", blind)
+        self.assertIn("(주)가나다정보", self.core("제출물/원본/pptx/사업_제안서(원본_비계량).pptx"))
+        self.assertIn("(주)가나다정보", self.core("proposal/out/main.pptx"))   # the deck's own output is untouched
+        self.assertTrue(any("cleared 사업_제안서(평가본_비계량).pptx dc:creator 「(주)가나다정보」" in line for line in log), log)
+        self.assertEqual(self.cleared_pdfs, ["사업_제안서(평가본_비계량).pdf"])     # the blind PDF only
+
+    def test_clearing_keeps_every_other_part_of_the_package(self):
+        path = self.root / "a.pptx"
+        pptx(path, 3, creator="(주)가나다정보", saver="SlideGlance")
+        with zipfile.ZipFile(path) as z:
+            before = [(i.filename, i.compress_type, z.read(i.filename)) for i in z.infolist()]
+        held = deliver.clear_pptx_people(path)
+        self.assertEqual(held, ["dc:creator 「(주)가나다정보」", "cp:lastModifiedBy 「SlideGlance」"])
+        with zipfile.ZipFile(path) as z:
+            after = [(i.filename, i.compress_type, z.read(i.filename)) for i in z.infolist()]
+        self.assertEqual([a[:2] for a in after], [b[:2] for b in before])
+        self.assertEqual([a for a in after if a[0] != "docProps/core.xml"],
+                         [b for b in before if b[0] != "docProps/core.xml"])
+        self.assertEqual(deliver.clear_pptx_people(path), [])
+
     def test_the_proposer_s_name_in_the_blind_pdf_fails_and_the_original_is_not_read(self):
         def props(pdf):
-            return {"author": "(주)가나다정보"} if "평가본" in pdf.name else {"author": "anyone"}
+            return {"title": "(주)가나다정보 제안서"} if "평가본" in pdf.name else {"author": "anyone"}
         code, _, log = self.run_delivery(pdf_props=props)
         self.assertEqual(code, 1)
-        self.assertTrue(any("(평가본_비계량).pdf author carries 「(주)가나다정보」" in line for line in log), log)
+        self.assertTrue(any("(평가본_비계량).pdf title carries 「(주)가나다정보」" in line for line in log), log)
         self.assertFalse(any("원본" in line and "blind copy" in line for line in log), log)
 
     def test_a_person_field_that_names_no_proposer_is_printed_and_passes(self):
-        pptx(self.root / "proposal" / "out" / "main.pptx", 2, creator="편집자", company="")
+        pptx(self.root / "proposal" / "out" / "main.pptx", 2, company="편집 회사")
         code, _, log = self.run_delivery()
         self.assertEqual(code, 0)
-        self.assertTrue(any("⚠ blind copy:" in line and "dc:creator 「편집자」" in line for line in log), log)
+        self.assertTrue(any("⚠ blind copy:" in line and "Company 「편집 회사」" in line for line in log), log)
+
+    def test_an_uncleared_pdf_is_said_so(self):
+        code, _, log = self.run_delivery(pdf_clear=lambda pdf: None)
+        self.assertEqual(code, 0)
+        self.assertTrue(any("the PDF's author was not cleared" in line for line in log), log)
+
+    def test_a_cleared_blind_copy_passes_the_property_check(self):
+        if importlib.util.find_spec("fitz") is None:
+            self.skipTest("PyMuPDF is not installed")
+        out = self.root / "제출물" / "평가본"
+        out.mkdir(parents=True)
+        v = deliver.Volume("평가본", "proposal", self.project.deck("proposal"), out / "a.pptx",
+                           real_pdf(out / "a.pdf", "(주)가나다정보"), True)
+        pptx(v.pptx, 2, creator="(주)가나다정보", saver="(주)가나다정보")
+        names = deliver.proposer_names(self.project)
+        found, _ = deliver.blind_properties(v, names, deliver.pdf_properties)
+        self.assertEqual(found, ["a.pptx docProps/core.xml carries 「(주)가나다정보」",
+                                 "a.pdf author carries 「(주)가나다정보」", "a.pdf xmp carries 「(주)가나다정보」"])
+        self.assertEqual(deliver.clear_pptx_people(v.pptx), ["dc:creator 「(주)가나다정보」",
+                                                            "cp:lastModifiedBy 「(주)가나다정보」"])
+        self.assertEqual(deliver.clear_pdf_author(v.pdf), ["author 「(주)가나다정보」", "XMP dc:creator"])
+        found, notes = deliver.blind_properties(v, names, deliver.pdf_properties)
+        self.assertEqual((found, notes), ([], []))
+        self.assertNotIn("가나다".encode("utf-8"), v.pdf.read_bytes())
 
     def test_unread_pdf_properties_are_said_so(self):
         code, _, log = self.run_delivery(pdf_props=lambda pdf: None)
@@ -178,6 +258,51 @@ class DeliverTests(unittest.TestCase):
         self.run_delivery()
         self.assertFalse(stale.exists())
         self.assertTrue(other.exists())
+
+    def test_a_declared_name_and_layout_place_the_files_and_decide_what_is_stale(self):
+        self.config["submission"]["name"] = "{title}_{copy}_{label}"
+        self.config["submission"]["layout"] = "{copy}"
+        self.write()
+        folder = self.root / "제출물" / "원본"
+        stale = folder / "사업_제안서_원본_옛이름.pdf"
+        default_shape = folder / "pdf" / "사업_제안서(원본_비계량).pdf"
+        other = folder / "메모.txt"
+        default_shape.parent.mkdir(parents=True)
+        for p in (stale, default_shape):
+            p.write_bytes(b"old")
+        other.write_text("keep", encoding="utf-8")
+        code, _, log = self.run_delivery()
+        self.assertEqual(code, 0, log)
+        for rel in ("제출물/원본/사업_제안서_원본_비계량.pdf", "제출물/원본/사업_제안서_원본_발표.pptx",
+                    "제출물/평가본/사업_제안서_평가본_비계량.pdf"):
+            self.assertTrue((self.root / rel).is_file(), rel)
+        self.assertFalse(stale.exists())
+        self.assertTrue(default_shape.exists())        # a shape the templates do not produce is not this run's
+        self.assertTrue(other.exists())
+        self.assertTrue(any("PDF size: 3 files" in line for line in log), log)
+
+    def test_neither_template_declared_keeps_the_default_names(self):
+        n = deliver.Naming.of(self.project)
+        self.assertEqual(n.path("원본", "proposal", "비계량", "pdf").relative_to(self.project.root).as_posix(),
+                         "제출물/원본/pdf/사업_제안서(원본_비계량).pdf")
+        self.assertEqual(n.pdf_glob(), "*/pdf/*.pdf")
+        self.assertTrue(n.written_by("원본").match("원본/pptx/사업_제안서(원본_옛이름).pptx"))
+        self.assertFalse(n.written_by("원본").match("평가본/pptx/사업_제안서(평가본_비계량).pptx"))
+
+    def test_templates_that_give_two_volumes_one_file_are_refused(self):
+        self.config["submission"]["name"] = "{title}_{label}"
+        self.config["submission"]["layout"] = "{ext}"
+        self.write()
+        with self.assertRaises(ConfigError):
+            deliver.plan(self.project, None, None)
+
+    def test_a_template_field_the_delivery_does_not_know_is_refused(self):
+        for key, value in (("name", "{title}_{date}"), ("layout", "{copy}/{ext!r}"), ("layout", "../{copy}")):
+            self.config["submission"][key] = value
+            self.write()
+            with self.assertRaises(ConfigError, msg=value):
+                deliver.plan(self.project, None, None)
+            del self.config["submission"][key]
 
     def test_one_volume_run_removes_nothing_else(self):
         stale = self.root / "제출물" / "원본" / "pdf" / "사업_제안서(원본_옛이름).pdf"

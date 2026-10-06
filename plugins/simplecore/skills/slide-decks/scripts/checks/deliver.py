@@ -10,10 +10,16 @@
 Everything comes from the top-level `submission` of `.claude/slide-decks.json`:
 the folder, the file title, which volumes each copy carries, and how the PDF
 is made. For every (copy, volume) the deck is built for that copy, then the
-built pptx is copied and its PDF written:
+built pptx is copied and its PDF written at
 
-    <dir>/<copy>/pptx/<title>(<copy>_<label>).pptx
-    <dir>/<copy>/pdf/<title>(<copy>_<label>).pdf
+    <dir>/<layout>/<name>.pptx
+    <dir>/<layout>/<name>.pdf
+
+`submission.name` is a template over `{title}`, `{copy}`, `{label}` (the deck's
+`deliverable.label`) and `{deck}`, `{title}({copy}_{label})` when absent;
+`submission.layout` is the folder under `dir`, a template over the same fields
+and `{ext}` (`pptx` or `pdf`), `{copy}/{ext}` when absent, and empty for one
+flat folder. Two volumes the templates give one path is a configuration error.
 
 A submission that ships one versioned pair instead declares
 `submission.versioned` (`deck`, `name` with `{version}`, `versionFile`, `dir`,
@@ -39,17 +45,21 @@ falls back to it on its own.
 
 The blind copy (`submission.blindCopy`) is built last, so each deck's output,
 which every check and review reads, is left holding the copy the panel sees.
-A whole run owns its copy folders: a file carrying the title that the run did
-not write is removed. The folder is measured against `submission.pdfLimitMB`
-after every run.
+A whole run owns its copy folders: a file the two templates produce for a copy
+the run wrote, with any label and any deck, that the run did not write is
+removed. The folder's PDFs (every `.pdf` in a folder the layout produces) are
+measured against `submission.pdfLimitMB` after every run.
 
-The blind copy's document properties are read once it is written: the pptx's
-`docProps` parts and the PDF's information and XMP packet. A proposer name
-another copy's `identity` declares, found in any of them, fails the run; a
-person or company field that carries anything (`dc:creator`,
-`cp:lastModifiedBy`, `Company`, `Manager`, the PDF's author) is printed, since
-a blind copy names nobody there. Without PyMuPDF the PDF's properties are not
-read, and the run says so.
+The blind copy names nobody in its document properties, so they are cleared
+and then read. Clearing empties the pptx's `dc:creator` and
+`cp:lastModifiedBy` before its PDF is made, and the PDF's author and its XMP
+`dc:creator` after; the deck's own output keeps what its tool wrote. Reading
+covers the pptx's `docProps` parts and the PDF's information and XMP packet:
+a proposer name another copy's `identity` declares, found in any of them,
+fails the run, and a person or company field that still carries anything
+(`dc:creator`, `cp:lastModifiedBy`, `Company`, `Manager`, the PDF's author) is
+printed. Without PyMuPDF the PDF is neither cleared nor read, and the run says
+so.
 
 The build: a deck's `render` command, or `submission.build`, a command
 template over `{render}`, `{copy}` and `{deck}`, which a submission with more
@@ -73,6 +83,7 @@ from html import unescape
 from importlib import import_module
 from io import BytesIO
 from pathlib import Path
+from string import Formatter
 from typing import Any, Callable
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[4] / "scripts"))
@@ -136,6 +147,92 @@ class Volume:
     deck: DeckConfig
     pptx: Path
     pdf: Path
+    blind: bool = False    # the copy the panel reads, whose properties are cleared
+
+
+NAME = "{title}({copy}_{label})"
+LAYOUT = "{copy}/{ext}"
+NAME_FIELDS = ("title", "copy", "label", "deck")
+LAYOUT_FIELDS = ("title", "copy", "label", "deck", "ext")
+EXTENSIONS = ("pptx", "pdf")
+
+
+def template_fields(template: Any, key: str, allowed: tuple[str, ...]) -> list[str]:
+    """The fields a `submission` naming template uses, refused when it uses any other."""
+    if not isinstance(template, str):
+        raise ConfigError(f"`submission.{key}` must be a template string")
+    try:
+        parsed = list(Formatter().parse(template))
+    except ValueError as e:
+        raise ConfigError(f"`submission.{key}` {template!r} is not a template: {e}") from e
+    fields = []
+    for _, field, spec, conversion in parsed:
+        if field is None:
+            continue
+        if field not in allowed or spec or conversion:
+            raise ConfigError(f"`submission.{key}` uses {{{field}}}; it takes "
+                              + ", ".join(f"{{{f}}}" for f in allowed))
+        fields.append(field)
+    return fields
+
+
+@dataclass
+class Naming:
+    """Where a submission's files go: `<dir>/<layout>/<name>.<ext>`, from one pair of templates."""
+    root: Path
+    title: str
+    name: str = NAME
+    layout: str = LAYOUT
+
+    @classmethod
+    def of(cls, project: Project) -> "Naming":
+        sub = project.data["submission"]
+        name, layout = sub.get("name", NAME), sub.get("layout", LAYOUT)
+        template_fields(name, "name", NAME_FIELDS)
+        template_fields(layout, "layout", LAYOUT_FIELDS)
+        if layout.startswith("/") or ".." in layout.split("/"):
+            raise ConfigError(f"`submission.layout` {layout!r} must stay inside `submission.dir`")
+        return cls(project.root / sub["dir"], sub["title"], name, layout)
+
+    def path(self, copy: str, deck: str, label: str, ext: str) -> Path:
+        values = {"title": self.title, "copy": copy, "label": label, "deck": deck, "ext": ext}
+        folder = self.layout.format(**values).strip("/")
+        file = f"{self.name.format(**values)}.{ext}"
+        return self.root / folder / file if folder else self.root / file
+
+    def _regex(self, template: str, copy: str) -> str:
+        out = []
+        for literal, field, _, _ in Formatter().parse(template):
+            out.append(re.escape(literal))
+            if field == "title":
+                out.append(re.escape(self.title))
+            elif field == "copy":
+                out.append(re.escape(copy))
+            elif field == "ext":
+                out.append("(?:" + "|".join(EXTENSIONS) + ")")
+            elif field is not None:
+                out.append("[^/]+?")
+        return "".join(out)
+
+    def written_by(self, copy: str) -> re.Pattern:
+        """The paths, relative to `dir`, the templates produce for one copy with any label and deck."""
+        folder = self._regex(self.layout, copy).strip("/")
+        file = self._regex(self.name, copy) + r"\.(?:" + "|".join(EXTENSIONS) + ")"
+        return re.compile("^" + (folder + "/" if folder else "") + file + "$")
+
+    def pdf_glob(self) -> str:
+        """A glob, relative to `dir`, over every PDF in a folder the layout produces."""
+        out = []
+        for literal, field, _, _ in Formatter().parse(self.layout):
+            out.append(glob_escape(literal))
+            if field == "title":
+                out.append(glob_escape(self.title))
+            elif field == "ext":
+                out.append("pdf")
+            elif field is not None:
+                out.append("*")
+        folder = "".join(out).strip("/")
+        return f"{folder}/*.pdf" if folder else "*.pdf"
 
 
 def settings(project: Project, raster: bool) -> Settings:
@@ -195,7 +292,7 @@ def plan(project: Project, only_copy: str | None, only_volume: str | None) -> li
     if blind is not None and blind not in copies:
         raise ConfigError(f"`submission.blindCopy` {blind} is not a declared copy")
     order = sorted((c for c in copies if not only_copy or c == only_copy), key=lambda c: c == blind)
-    root = project.root / sub["dir"]
+    naming = Naming.of(project)
     out = []
     for copy in order:
         for name in copies[copy].get("volumes", []):
@@ -203,9 +300,17 @@ def plan(project: Project, only_copy: str | None, only_volume: str | None) -> li
                 continue
             deck = project.deck(name)
             label = deck.require("deliverable.label", "what the volume is called in the submission's file names")
-            stem = f"{sub['title']}({copy}_{label})"
-            out.append(Volume(copy, name, deck, root / copy / "pptx" / f"{stem}.pptx",
-                              root / copy / "pdf" / f"{stem}.pdf"))
+            out.append(Volume(copy, name, deck, naming.path(copy, name, label, "pptx"),
+                              naming.path(copy, name, label, "pdf"), blind is not None and copy == blind))
+    every = [(copy, name) for copy in copies for name in copies[copy].get("volumes", [])]
+    seen: dict[Path, tuple[str, str]] = {}
+    for copy, name in every:
+        label = project.deck(name).require("deliverable.label", "what the volume is called in the submission's file names")
+        path = naming.path(copy, name, label, "pdf")
+        if path in seen:
+            raise ConfigError(f"`submission.name` and `submission.layout` write {seen[path][0]} · {seen[path][1]} "
+                              f"and {copy} · {name} to the same file {path.relative_to(project.root)}")
+        seen[path] = (copy, name)
     return out
 
 
@@ -284,10 +389,12 @@ class Deliverer:
 
     def __init__(self, project: Project, s: Settings, run: Runner = subprocess.run,
                  shrink: Callable[[Path, int, int], int] | None = None, log: Callable[[str], None] = print,
-                 properties: Callable[[Path], dict | None] | None = None):
+                 properties: Callable[[Path], dict | None] | None = None,
+                 clear_pdf: Callable[[Path], list[str] | None] | None = None):
         self.project, self.s, self.run, self.log = project, s, run, log
         self.shrink = shrink or shrink_images
         self.properties = properties or pdf_properties
+        self.clear_pdf = clear_pdf or clear_pdf_author
 
     def _run(self, argv: list[str] | str, **kw: Any) -> subprocess.CompletedProcess:
         try:
@@ -350,6 +457,9 @@ class Deliverer:
         volume.pptx.parent.mkdir(parents=True, exist_ok=True)
         volume.pdf.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(src, volume.pptx)
+        if volume.blind:
+            for held in clear_pptx_people(volume.pptx):
+                self.log(f"  blind copy: cleared {volume.pptx.name} {held}")
         if self.s.engine == "raster":
             previews = volume.deck.resolve(volume.deck.require("previews", "the rendered page images"))
             files = preview_files(previews, count)
@@ -357,14 +467,21 @@ class Deliverer:
                 self.log(f"removed stale preview {p.name}")
             width = volume.deck.require("page.w", "the paper width in CSS px")
             ratio = scale if scale is not None else float(volume.deck.get("deliverable.pdfScale", 1.0))
-            return write_raster(files, volume.pdf, width, ratio)
-        if self.s.engine == "powerpoint":
-            self.export_powerpoint(volume.pptx, volume.pdf)
+            pages = write_raster(files, volume.pdf, width, ratio)
         else:
-            self.export_slideglance(volume.pptx, volume.pdf, volume)
-        pages = self.shrink(volume.pdf, int(self.s.dpi or 0), int(self.s.quality or 0))
-        if pages != count:
-            raise DeliveryError(f"{volume.pdf.name}: the PDF has {pages} pages, the pptx {count} slides")
+            if self.s.engine == "powerpoint":
+                self.export_powerpoint(volume.pptx, volume.pdf)
+            else:
+                self.export_slideglance(volume.pptx, volume.pdf, volume)
+            pages = self.shrink(volume.pdf, int(self.s.dpi or 0), int(self.s.quality or 0))
+            if pages != count:
+                raise DeliveryError(f"{volume.pdf.name}: the PDF has {pages} pages, the pptx {count} slides")
+        if volume.blind:
+            held = self.clear_pdf(volume.pdf)
+            if held is None:
+                self.log(f"  ⚠ blind copy: {volume.pdf.name}: the PDF's author was not cleared (PyMuPDF is missing)")
+            for field in held or []:
+                self.log(f"  blind copy: cleared {volume.pdf.name} {field}")
         return pages
 
 
@@ -440,6 +557,75 @@ def shrink_images(pdf: Path, dpi: int, quality: int) -> int:
 
 # The fields of a pptx's document properties that name a person or a company.
 PERSON_FIELDS = re.compile(r"<(dc:creator|cp:lastModifiedBy|Company|Manager)>([^<]*)</\1>")
+# The ones a blind copy is written with empty: who made the file and who saved it last.
+CLEARED_FIELDS = re.compile(r"<(dc:creator|cp:lastModifiedBy)(\s[^>]*)?>([^<]*)</\1>")
+CORE_PART = "docProps/core.xml"
+XMP_CREATOR = re.compile(r"<dc:creator\b[^>]*/>|<dc:creator\b.*?</dc:creator>", re.S)
+
+
+def clear_pptx_people(pptx: Path) -> list[str]:
+    """Empty `dc:creator` and `cp:lastModifiedBy` in a pptx's core properties; return what they held.
+
+    Every other part is written back byte for byte, in the order and with the
+    compression it had, so the package opens as it did.
+    """
+    with zipfile.ZipFile(pptx) as z:
+        infos = z.infolist()
+        if CORE_PART not in z.namelist():
+            return []
+        parts = {info.filename: z.read(info.filename) for info in infos}
+    held: list[str] = []
+
+    def blank(m: re.Match) -> str:
+        if m.group(3).strip():
+            held.append(f"{m.group(1)} 「{unescape(m.group(3).strip())}」")
+        return f"<{m.group(1)}{m.group(2) or ''}></{m.group(1)}>"
+
+    core = CLEARED_FIELDS.sub(blank, parts[CORE_PART].decode("utf-8"))
+    if not held:
+        return []
+    tmp = pptx.with_name(pptx.name + ".tmp")
+    with zipfile.ZipFile(tmp, "w") as out:
+        for info in infos:
+            out.writestr(info, core.encode("utf-8") if info.filename == CORE_PART else parts[info.filename])
+    tmp.replace(pptx)
+    return held
+
+
+def clear_pdf_author(pdf: Path) -> list[str] | None:
+    """Empty a PDF's author and its XMP `dc:creator`; return what was cleared, None without PyMuPDF.
+
+    The file is saved whole, not incrementally, so the old values do not stay
+    behind in an earlier revision of it.
+    """
+    try:
+        fitz = import_module("fitz")
+    except ImportError:
+        return None
+    try:
+        doc = fitz.open(pdf)
+    except fitz.FileDataError as e:
+        raise DeliveryError(f"{pdf.name} cannot be read to clear its author: {e}") from e
+    held: list[str] = []
+    tmp = pdf.with_name(pdf.name + ".tmp")
+    try:
+        meta = dict(doc.metadata or {})
+        author = str(meta.get("author") or "").strip()
+        if author:
+            held.append(f"author 「{author}」")
+            meta["author"] = ""
+            doc.set_metadata(meta)
+        xmp = doc.get_xml_metadata()
+        if xmp and XMP_CREATOR.search(xmp):
+            held.append("XMP dc:creator")
+            doc.set_xml_metadata(XMP_CREATOR.sub("", xmp))
+        if held:
+            doc.save(tmp, garbage=3, deflate=True)
+    finally:
+        doc.close()
+    if held:
+        tmp.replace(pdf)
+    return held
 
 
 def pptx_properties(pptx: Path) -> dict[str, str]:
@@ -516,12 +702,15 @@ def stale_files(project: Project, written: list[Volume], whole: bool) -> list[Pa
         return stale
     if not whole:
         return []
-    root = project.root / sub["dir"]
+    naming = Naming.of(project)
+    if not naming.root.is_dir():
+        return []
+    patterns = [naming.written_by(copy) for copy in dict.fromkeys(v.copy for v in written)]
     out = []
-    for copy in dict.fromkeys(v.copy for v in written):
-        for p in (root / copy).glob(f"*/{glob_escape(sub['title'])}*"):
-            if p.is_file() and p not in keep:
-                out.append(p)
+    for p in sorted(naming.root.rglob("*")):
+        rel = p.relative_to(naming.root).as_posix()
+        if p.is_file() and p not in keep and any(rx.match(rel) for rx in patterns):
+            out.append(p)
     return out
 
 
@@ -535,7 +724,8 @@ def within_limits(project: Project, log: Callable[[str], None] = print) -> bool:
     if sub.get("versioned"):
         pdfs = [v for v in (project.root / sub["versioned"].get("dir", ".")).glob("*.pdf")]
     else:
-        pdfs = sorted((project.root / sub["dir"]).glob("*/pdf/*.pdf"))
+        naming = Naming.of(project)
+        pdfs = sorted(naming.root.glob(naming.pdf_glob()))
     total = sum(p.stat().st_size for p in pdfs) / 1e6
     log(f"PDF size: {len(pdfs)} files, {total:.1f} MB together")
     if not limit:
@@ -567,9 +757,9 @@ def deliver(project: Project, args: Any, d: Deliverer) -> int:
     for p in stale_files(project, volumes, whole=not args.volume):
         p.unlink()
         d.log(f"removed {p.relative_to(project.root)}")
-    blind, names, leaks = sub.get("blindCopy"), proposer_names(project), []
+    names, leaks = proposer_names(project), []
     for v in volumes:
-        if blind and v.copy == blind:
+        if v.blind:
             found, notes = blind_properties(v, names, d.properties)
             leaks += found
             for note in notes:

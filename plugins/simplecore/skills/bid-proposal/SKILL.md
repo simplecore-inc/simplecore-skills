@@ -114,8 +114,8 @@ question waits for step 8. When the company folder does not exist yet, create it
 
 24. Fill what the ledger still lists as undecided, or show the user that list.
 25. Build the original and evaluation copies as PowerPoint and PDF with the names and folders the
-    tender asks for, under its size limits, and open each PowerPoint file to see that it opens
-    without a repair prompt.
+    tender asks for (`submission.name` and `submission.layout` in `.claude/slide-decks.json`), under
+    its size limits, and open each PowerPoint file to see that it opens without a repair prompt.
 26. Commit and push.
 27. Make this bid the reference bid for the next one: set `referenceBid` in
     `~/.claude/bid-proposal.json` to this repository and move the previous one into `earlierBids`.
@@ -298,7 +298,7 @@ The bid is done when, in addition:
   annexes, figures, script and Q&A;
 - no own-test figure appears outside the annex, and every number has a source;
 - the evaluation copy meets the blind-evaluation rules, its document properties included
-  (`check.py run deliver` reads them);
+  (`check.py run deliver` clears the creator, last-saver and author fields and then reads them);
 - the open list is empty, or the user has seen what remains on it;
 - the package has the tender's names and folders, stays under its size limits, exports to PDF, and
   every PowerPoint file opens without a repair prompt;
