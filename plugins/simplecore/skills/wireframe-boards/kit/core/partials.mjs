@@ -294,10 +294,10 @@ ${parts.map((p) => `    <a class="ep" href="${p.file}">
   // narrow⇄wide toggle keeps working (its rules reach frames via the sibling combinator);
   // pair a `.view-toggle` label in your intro/header to flip it. The only script is a
   // progressive-enhancement navigation aid over the TOC (no external resources): it
-  // highlights the entry of the frame you click or view, and filters the index as you
-  // type. Both act on the SIDEBAR only - every frame stays on the board, no content is
-  // created, and with JS off the board renders whole, the index lists everything and every
-  // anchor still works.
+  // highlights the entry of the frame you click or view, filters the index as you type, and
+  // sets the index's width from its handle. All of it acts on the SIDEBAR only - every frame
+  // stays on the board, no content is created, and with JS off the board renders whole, the
+  // index lists everything and every anchor still works.
   // `readmeHtml` is the last thing in the board, after every frame. It is read once, before
   // implementing, and at the top it would stand between every later reader and the frames they
   // came for - on a board hundreds of frames long that is a toll paid on every visit. The

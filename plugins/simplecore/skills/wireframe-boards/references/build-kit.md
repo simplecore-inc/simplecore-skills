@@ -19,19 +19,20 @@ be migrated by hand each time the skill moves.
 
 ```
 kit/
-  bin/wfb.mjs             one command line: build · catalog · check · gates · coverage ·
-                          pdf · shots · doctor · migrations · patterns · init
+  bin/wfb.mjs             one command line: build · serve · catalog · check · gates ·
+                          coverage · pdf · shots · doctor · migrations · where ·
+                          patterns · pattern fork · pattern adopt · init
   core/
     context.mjs           loads a board: settings, pattern, screens
     build.mjs             the build
     partials.mjs          frame() · sidebar() · page(), bound to a pattern by makePartials()
-    contract.mjs          the standing reading-contract items — the layer nothing may drop
+    contract.mjs          the standing reading-contract items - the layer nothing may drop
     migrations.mjs        what each contract changed, and the steps to cross it
     gates/                the gates true of ANY board
     check/                inspect · the gate self-tests and their cases
     export/               pdf · shot · watermark
     serve.mjs             build · watch · serve, for drawing with the board open in a browser
-    templates/            wf.mjs, dev.sh and AGENTS.md, as a new board receives them
+  templates/              wf.mjs, dev.sh and AGENTS.md, as a new board receives them
   patterns/<name>/
     pattern.mjs           what the pattern is, what it requires, which gates it adds
     components.mjs        the composition kit + CATALOG
@@ -39,7 +40,7 @@ kit/
     styles.css            the class vocabulary
     intro.html            the reading-contract items true of every board drawn this way
     gates/                the gates true of every board drawn this way, with their cases
-    examples/             a starter board — the frames `init` copies
+    examples/             a starter board - the frames `init` copies
 ```
 
 A board, in full:
@@ -47,8 +48,8 @@ A board, in full:
 ```
 board.config.mjs   the pattern, the contract, the PDF name, phases, feature keys, documents
 board.gates.mjs    gates true of this repository only, with their cases          (optional)
-wf.mjs             twenty lines that find the kit and hand over
-dev.sh             one line onto `wf.mjs serve` — the loop a board is drawn in
+wf.mjs             the bootstrap that finds the kit and hands over
+dev.sh             one line onto `wf.mjs serve` - the loop a board is drawn in
 src/manifest.mjs   the table of contents and build order
 src/screens/       one file per screen
 src/chrome.mjs     THIS product's tabs, menu tree, roles, purchase → the shell factories
@@ -64,6 +65,43 @@ belong in the screen-list sidebar but not in the product frame - for example, an
 proposal or an AI-assisted calculation. These marks do not mean `phase` (when it is built) or
 `feature` (what must be bought), never appear inside the device, and must be derived from a named
 project document rather than used as free-form decoration.
+
+### What `board.config.mjs` declares
+
+Every key the kit or a shipped pattern reads, in one place. A key a board leaves out takes the
+default named here, or switches its feature off.
+
+| Key | What it holds |
+| --- | --- |
+| `pattern` | the pattern the board is drawn in: a name the kit ships (`'simplix-basic'`, the default) or a path beginning with `.` to the board's own (§ A board may carry its own pattern) |
+| `contract` | the board contract the board was last brought up to; the build refuses any number but the kit's `BOARD_CONTRACT` (§ The board carries the contract number) |
+| `patternOptions` | the pattern capabilities this board switches on, by the names the pattern declares; absent, the pattern draws what it draws by default |
+| `boardLang` | the language of the board's own chrome - index legend, filter, viewport toggle, a section's frame count: `'ko'`, otherwise English. The kit's standing reading-contract items stay English, and this is not the product's languages (`site.languages`) |
+| `boardName` · `headline` · `title` · `tag` | the board's name (default: `pdfName`, then the folder name), the header's heading (default: `boardName`), the HTML title (default: `Wireframe` and `boardName`), the header's tag (default: `WIREFRAME · LO-FI`) |
+| `logo` | a path relative to the board folder; the header draws that file, embedded as a data URI. A path that resolves to nothing leaves the header without a mark |
+| `pdfName` | the PDF's file name; `build` renders `pdf/<pdfName>-<stamp>.pdf` only when it is set |
+| `today` | the day every dated frame is drawn against, shown in the header and read by the gates that check dates |
+| `phases` | `{ <key>: { tag, why } }` - the phases a frame may be deferred to; the build draws the band and the chips from it |
+| `features` | `{ <KEY>: { tag, why } }` - what has to be bought before a frame is reachable; the feature chip and `featureKeyDocGate` read it |
+| `requiredSections` | the section letters the manifest must hold before the coverage gate lets the board build; empty while a board is being started |
+| `viewportPairs` | `'narrow-first'` (the default) · `'wide-first'` · `'stacked'` → `references/device-frames.md` § Viewport pairs and the toggle |
+| `split` | the axis the output is written along → § Splitting a board along a declared axis |
+| `code.appRoots` | the front-end apps, relative to the board folder, whose routes `wf.mjs coverage` compares with the board |
+| `watermark` | `{ logo, opacity, widthRatio }` for `wf.mjs pdf --watermark` |
+| `site.languages` | the languages the product ships in; simplix-basic's language-list gate holds every language switch a frame draws to it |
+| `compoundTerms` | terms written with a middle dot that are one term (simplix-basic's middle-dot spacing gate keeps them whole) |
+| `documents.scan` | directories whose `.md` files are read for frame ids and links (`docFrameRefGate`, `docLinkGate`, `docRegistryGate`) |
+| `documents.notFrames` · `documents.otherIdScheme` | ids, and whole files, whose `X-nn` numbering is not a frame id → § What the gates catch that reading would not |
+| `documents.frameManifest` | the design document's list of what exists; `frameManifestGate` holds each cluster's items to the manifest |
+| `documents.parity` | a parity walk's list of frames left; `parityListGate` refuses a line naming a frame the board does not draw |
+| `documents.roadmap` | the plan placing every base screen in one phase (`roadmapPlacementGate`) |
+| `documents.registry` | the register of documents `docRegistryGate` holds to the scanned files |
+| `documents.personas` | the document every role in `src/roles.mjs` must appear in (`roleDocGate`) |
+| `documents.pricing` | the price list every `features` key must appear in (`featureKeyDocGate`) |
+| `documents.frameInventory` | the inventory whose trace table names the requirements each screen answers; a pattern's frame spec draws them where it has one |
+
+A `documents` path may name one file or a directory of `.md` files, and a path that does not exist
+switches that gate off rather than failing it.
 
 ## Drawing with the board open: `./dev.sh`
 
@@ -106,12 +144,14 @@ it belongs to: a boundary the product itself does not have.
 `penstock-console` draws an **application window** rather than a page: a fixed 1440×900 window
 whose panes scroll inside themselves, with the penstock console's shell - title bar, navigator, work
 pane, inspector (selection above, activity below), status bar - and the installed program's own
-window (`url: 'app:<title>'`) and tray menu (`url: 'none:'`) in the same pattern. It was promoted out
-of the RAG Studio board, where it was drawn first; every product-bound piece (brand, navigation tree,
-palette, status bar, sample activity) comes from the board's `src/chrome.mjs` through `makeChrome`,
-and the board's `src/components.mjs` re-exports the pattern's primitives and that bound chrome so a
-screen imports both from one place. Pick it for a desktop tool or a browser app that behaves as one;
-pick `simplix-basic` for a page-scrolling console with a phone app and a terminal beside it.
+window and its tray menu in the same pattern, declared with the window-kind axis (`chrome: 'app'`
+with `appTitle`, and `chrome: 'none'` → `references/device-frames.md`). The pattern also reads the
+kind written into the address (`url: 'app:<title>'`, `url: 'none:'`), so a screen that declares it
+there draws the same window. Every product-bound piece (brand, navigation tree, palette, status
+bar, sample activity) comes from the board's `src/chrome.mjs` through `makeChrome`, and the board's
+`src/components.mjs` re-exports the pattern's primitives and that bound chrome so a screen imports
+both from one place. Pick it for a desktop tool or a browser app that behaves as one; pick
+`simplix-basic` for a page-scrolling console with a phone app and a terminal beside it.
 
 `node <kit>/bin/wfb.mjs patterns` lists what is installed.
 
