@@ -443,6 +443,14 @@ across in the same change. Two screens that genuinely draw the same thing are on
   `B-01a` · `B-01b`, `B-01` is the screen those are states of, and the inventory's headings and the
   menu tree cite it that way - the gate accepts it as long as the board draws at least one of its
   states. A citation that carries a letter has to be that exact frame.
+- **A finding that names a frame whose source does not hold what it names.** A check that reads a
+  frame's source by pattern reads a frame built from `...base` through its base, so the frame
+  inherits the check's misreading along with the body. It happened: a component option named
+  `role` collided with a frame's own `role:`, and three of the eight frames reported had no `role`
+  in their source at all - they spread the module of a frame that did. **The three were only found
+  because the check is an error rather than a warning**; scrolled past, they would have stayed.
+  The rule a board keeps is in its `AGENTS.md`: look past the named files to what spreads them, and
+  check a new component option against the keys a frame declares.
 
 ## The LLM reads the manifest plus one screen, never the whole board
 
