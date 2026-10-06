@@ -7,7 +7,7 @@ description: Use when asked to draw, render, or diagram a system, flow, or struc
 
 Produce a diagram as SVG (or ASCII). Pick the technique by what you are drawing, then verify any SVG before delivering. (For screen layouts - wireframes, mockups, a screen inventory - defer to the `simplecore:wireframe-boards` skill; this skill is architecture/flow/system pictures.)
 
-**Paths.** All files live under this skill's base directory - the `Base directory for this skill: …` path shown when the skill loads. Below, `<skill>` stands for that directory; substitute the real path at use time. Never hardcode an absolute or `~/…` path (it differs per user and platform).
+**Paths.** All files live under this skill's directory, ${CLAUDE_SKILL_DIR}. In this file and in every file under `references/` and `assets/`, `<skill>` stands for that directory; substitute it at use time. Never hardcode an absolute or `~/…` path (it differs per user and platform).
 
 ## Figures for a document (the usual case)
 

@@ -158,6 +158,15 @@ as one; set `subBodyShareMax`
 (0.5 is the usual line) and `verify.py` fails a figure with more than that share
 of its characters below the body rung.
 
+**The tag rung prints at 6.4pt or more.** It is the smallest size a figure
+label may print at, on every board: `CHIP` units × the board's placed px ÷ its
+width in units × `placeScale` × 0.75, which `printed_pt(CHIP)` returns for the
+default board. Derive `CHIP` from it the way `BODY` is derived from the body
+size: at 0.57 px per unit, 15 units prints 6.4pt. A deck that places the
+figures holds its own strings to its own type floor, and a figure's labels
+answer to this one. No check computes a rung's printed size, so the ladder's
+derivation is where the floor is met.
+
 **The figure names the document's body typeface first.** The toolkit's stack
 leads with Latin UI faces, so a document set in another face gets labels whose
 digits and letters print in one typeface and whose Hangul prints in another, on
