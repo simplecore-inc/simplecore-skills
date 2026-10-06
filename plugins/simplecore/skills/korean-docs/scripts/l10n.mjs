@@ -9,12 +9,15 @@
  * sources - and let one term be searched or audited across all of them in a
  * single pass.
  *
- *   node l10n.mjs check    [paths...] [--all] [--strict] [--untranslated]
+ *   node l10n.mjs sweep    [paths...] [--all] [--strict] [--explain] [--untranslated]
+ *   node l10n.mjs check    [paths...] [--all] [--strict] [--untranslated] [--list-rules] [--init] [--init-l10n]
+ *   node l10n.mjs rules    [paths...] [--scope S] [--kind K] [--explain] [--strict] [--json]
+ *   node l10n.mjs rules    --test [--verbose]
+ *   node l10n.mjs suspects [paths...] [--min N] [--limit N] [--kind K] [--json]
+ *   node l10n.mjs lens     [paths...] [--count] [--json]
+ *   node l10n.mjs audit    [--kind K] [--json]
  *   node l10n.mjs list     [--kind K] [--lang L]
  *   node l10n.mjs grep     <pattern> [--regex] [--kind K] [--lang L]
- *   node l10n.mjs rules    [--test] [--scope S] [--kind K]
- *   node l10n.mjs audit    [--kind K]
- *   node l10n.mjs suspects [--min N] [--limit N] [--kind K]
  *   node l10n.mjs apply    --patch <file> [--write]
  *   node l10n.mjs stats
  *
@@ -53,10 +56,19 @@
 
 import { readFileSync, writeFileSync, existsSync, readdirSync, statSync, realpathSync } from "node:fs";
 import { execFileSync } from "node:child_process";
-import { join, dirname, resolve, relative, isAbsolute } from "node:path";
+import { join, dirname, resolve, relative, isAbsolute, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { discoverGlossary, loadRuleSet, loadRulePacks, parseGlossaryConfig, BASE_GLOSSARY_PATH } from "./lib/glossary.mjs";
-import { initGlossary, initL10n, runDocAudit, lastWarningCount, annotationRanges, contrastRecommendedRanges } from "./lib/doc-audit.mjs";
+import {
+  initGlossary,
+  initL10n,
+  runDocAudit,
+  lastWarningCount,
+  annotationRanges,
+  contrastRecommendedRanges,
+  makeExcludeMatcher,
+  parseCheckArgs,
+} from "./lib/doc-audit.mjs";
 
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
 
@@ -162,13 +174,16 @@ function requireKinds() {
  *
  * A path in the index whose file is gone - staged deletion, an interrupted rebase - is
  * dropped rather than opened, since a file that is not there has no Korean in it.
+ *
+ * git's own stderr is discarded: outside a repository it prints `fatal: not a git repository`
+ * once per glob, and the fallback below is the expected path there, not a failure to report.
  */
 function gitFiles(pattern) {
   try {
     const out = execFileSync(
       "git",
       ["ls-files", "-z", "--cached", "--others", "--exclude-standard", "--", pattern],
-      { cwd: ROOT, encoding: "utf8", maxBuffer: 32 * 1024 * 1024 },
+      { cwd: ROOT, encoding: "utf8", maxBuffer: 32 * 1024 * 1024, stdio: ["ignore", "pipe", "ignore"] },
     );
     const files = [...new Set(out.split("\0").filter(Boolean))].filter((f) => existsSync(join(ROOT, f)));
     if (files.length) return files;
@@ -182,15 +197,18 @@ const PRUNED = new Set([".git", "node_modules", "build", "dist", "target", ".gra
 
 /** Glob against the filesystem, honouring only the subset of glob syntax used here. */
 function findFiles(pattern) {
-  // `**/` spans zero or more directories; a lone `*` stops at a separator.
+  // `**/` spans zero or more directories; a lone `*` stops at a separator. Every glob character
+  // becomes a placeholder before any regex is written, because the regex for `**/` carries a `?`
+  // of its own (`(?:`) that a later `?` replacement would turn into `[^/]:`.
   const source = pattern
     .replace(/[.+^${}()|[\]\\]/g, "\\$&")
+    .replace(/\?/g, "@@ONE@@")
     .replace(/\*\*\//g, "@@ANY_DIRS@@")
     .replace(/\*\*/g, "@@ANY@@")
     .replace(/\*/g, "[^/]*")
     .replace(/@@ANY_DIRS@@/g, "(?:[^/]+/)*")
     .replace(/@@ANY@@/g, ".*")
-    .replace(/\?/g, "[^/]");
+    .replace(/@@ONE@@/g, "[^/]");
   const re = new RegExp(`^${source}$`);
 
   const out = [];
@@ -227,37 +245,42 @@ function formatOf(kind, file) {
 }
 
 /**
- * The document set `check` reads, as discover() entries.
- *
- * Without this the sentence sweeps needed a `kinds` declaration that the word check does
- * not, so the same repository got two different answers to «which files are judged» - and
- * a project with only documents got `check`'s 0 while thirty sentence rules never ran.
- * Both `*.md` and `**\/*.md` are listed on purpose: the non-repository fallback treats `**`
- * as one-or-more segments, so the top-level files drop out of the second form alone.
- */
-/**
  * What the project keeps out of every sweep: its `audit.exclude` globs, and the glossary files.
  *
  * `audit.exclude` is honoured by the sentence commands for the same reason `check` honours it:
  * the commands read one file set, and a file a project excluded from the word check is excluded
- * from the sentence sweep too. Without this the skill's own catalogues - pages that quote every
- * banned spelling on purpose - came back as 79 findings from `rules` while `check` passed.
+ * from the sentence sweep too - a catalogue that quotes every banned sentence on purpose, or a
+ * verbatim transcription of somebody else's document. **The patterns are read by `check`'s own
+ * matcher** (`makeExcludeMatcher`), against the same project-relative path. Any other glob engine
+ * disagrees with it somewhere - on whether `**\/legacy/**` covers a root `legacy/`, or a slash-less
+ * `CHANGELOG.md` a nested one - and the write-time hook's sentence run then blocks an edit to a
+ * file `check` skips.
  * A glossary is a page of banned spellings and is never judged by them - `check` skips both, so
  * the sentence sweep skips both too.
  */
 function projectExclusions() {
-  const g = discoverGlossary();
+  const g = discoverGlossary(START);
   const patterns = g ? (parseGlossaryConfig(readFileSync(g.path, "utf8")).config?.exclude ?? []) : [];
   const glossaries = new Set([g?.path, BASE_GLOSSARY_PATH].filter(Boolean).map((x) => resolve(x)));
-  const excluded = patterns.map((p) => new RegExp(
-    "^" + p.replace(/[.+^${}()|[\]\\]/g, "\\$&").replace(/\*\*/g, "\u0000").replace(/\*/g, "[^/]*").replace(/\u0000/g, ".*") + "$",
-  ));
+  const matchers = patterns.map(makeExcludeMatcher);
   return {
-    excluded: (file) => excluded.some((re) => re.test(file)),
+    excluded: (file) => {
+      const rel = isAbsolute(file) ? relative(ROOT, file).split(sep).join("/") : file;
+      return matchers.some((matches) => matches(rel));
+    },
     isGlossary: (file) => glossaries.has(isAbsolute(file) ? file : resolve(ROOT, file)),
   };
 }
 
+/**
+ * The document set `check` reads, as discover() entries.
+ *
+ * Without this the sentence sweeps would need a `kinds` declaration that the word check does
+ * not, and a project with only documents would get `check`'s zero while no sentence rule ran.
+ * Both `*.md` and `**\/*.md` are listed so that both enumerations reach the whole tree: git's
+ * pathspec `*` crosses `/` while `**\/*.md` needs a separator, and the filesystem fallback's `*`
+ * stops at one.
+ */
 function docEntries() {
   const found = new Map();
   const skip = projectExclusions();
@@ -274,32 +297,47 @@ function docEntries() {
 
 /**
  * Entries for the paths named on the command line - a file, or a directory expanded to the
- * document set beneath it.
+ * documents beneath it (`.md` · `.mdx` · `.svg`) and the files of every declared kind beneath it.
  *
  * This is what lets the write-time hook run the sentence rules on the one file it just wrote,
  * and what lets a draft outside the repository - a reply written to a scratch file - be read by
  * the lens before it goes out. A file under the project keeps its project-relative name, so a
  * declared resource kind still decides its format and register; a file outside keeps its
- * absolute path and is read as a document.
+ * absolute path and is read as a document. **A directory reaches the declared kinds too**: a
+ * catalogue, a board source or a deck's markup under it is Korean the project declared, and a
+ * directory sweep that read only the document extensions would report a clean directory while
+ * those files went unread.
  *
- * `audit.exclude` is honoured here, unlike in `check`, and on purpose: `check` reads a named
- * catalogue clean because its specimens sit in code spans, but the sentence rules match the
- * recommended prose a catalogue has to print in the open. A hook that blocked every edit to
- * the skill's own references would be a hook somebody switches off. The skipped names are
- * returned so the caller can say they were skipped rather than let them read as clean.
+ * `audit.exclude` is honoured here as `check` honours it, a named file included: a file it covers
+ * is skipped, and the skipped names are returned so the caller can say they were skipped rather
+ * than let them read as clean.
+ *
+ * @param paths the files and directories named on the command line
+ * @param command which command is asking, so a kind opted out of it stays out of a directory too
  */
-function pathEntries(paths) {
+function pathEntries(paths, command) {
   const skip = projectExclusions();
   const entries = new Map();
   const skipped = [];
-  const add = (file) => {
+  const add = (file, kindEntry = null) => {
     if (skip.isGlossary(file)) return;
     if (skip.excluded(file)) {
       skipped.push(file);
       return;
     }
+    if (kindEntry) {
+      entries.set(file, kindEntry);
+      return;
+    }
     const kind = isAbsolute(file) ? null : guessKind(file);
     entries.set(file, { kind: kind ?? "docs", lang: CONFIG.defaultLanguage, file, format: formatOf(kind, file) });
+  };
+  // The declared kinds' files, read once and only when a directory asks for them.
+  let kindFiles = null;
+  const declaredUnder = (dir) => {
+    if (!Object.keys(CONFIG.kinds).length) return [];
+    kindFiles ??= discover({ command });
+    return kindFiles.filter((e) => e.file.startsWith(`${dir}/`));
   };
   for (const p of paths) {
     const given = resolve(START, p);
@@ -313,9 +351,11 @@ function pathEntries(paths) {
     const inside = rel !== "" && !rel.startsWith("..") && !isAbsolute(rel);
     if (statSync(abs).isDirectory()) {
       if (!inside) throw new Error(`A directory has to be inside the project: ${p}`);
+      const dir = rel.split(sep).join("/");
       for (const ext of ["md", "mdx", "svg"]) {
-        for (const glob of [`${rel}/*.${ext}`, `${rel}/**/*.${ext}`]) for (const f of gitFiles(glob)) add(f);
+        for (const glob of [`${dir}/*.${ext}`, `${dir}/**/*.${ext}`]) for (const f of gitFiles(glob)) add(f);
       }
+      for (const entry of declaredUnder(dir)) add(entry.file, entry);
     } else {
       add(inside ? rel : abs);
     }
@@ -1875,7 +1915,7 @@ function cmdRulesScan(opts) {
   // An explicit --scope reaches rules the project did not opt into; the default
   // sweep runs universal rules plus the project's declared scopes.
   const active = opts.scope ? rulePacks().all.filter((r) => r.scope === opts.scope) : rulePacks().active;
-  const named = opts.paths?.length ? pathEntries(opts.paths) : null;
+  const named = opts.paths?.length ? pathEntries(opts.paths, "rules") : null;
   const entries = named ? named.entries : discover({ ...opts, docFallback: true, command: "rules" });
   const byRule = new Map();
 
@@ -2151,7 +2191,7 @@ function cmdSuspects(opts) {
   // labels (저장됨), settled idioms (막다른 길 · 나가는 길), and -다체 design prose - so a
   // lower threshold trains its reader to skim past the findings that matter.
   const min = Number(opts.min ?? 3);
-  const named = opts.paths?.length ? pathEntries(opts.paths) : null;
+  const named = opts.paths?.length ? pathEntries(opts.paths, "suspects") : null;
   const entries = named ? named.entries : discover({ ...opts, docFallback: true, command: "suspects" });
   const found = [];
   for (const entry of entries) {
@@ -2231,7 +2271,7 @@ function cmdSuspects(opts) {
 function cmdLens(opts) {
   const lens = readLens();
   if (!lens) throw new Error("references/lens.txt is missing or empty - the lens has nothing to match");
-  const named = opts.paths?.length ? pathEntries(opts.paths) : null;
+  const named = opts.paths?.length ? pathEntries(opts.paths, "lens") : null;
   const entries = named ? named.entries : discover({ ...opts, docFallback: true, command: "lens" });
   const hits = [];
   for (const entry of entries) {
@@ -2337,7 +2377,7 @@ function cmdSweep(opts) {
   run("lens", () => cmdLens({ ...opts, json: false, count: true }));
 
   banner("sweep");
-  const entries = paths.length ? pathEntries(paths).entries : discover({ docFallback: true, command: "rules" });
+  const entries = paths.length ? pathEntries(paths, "rules").entries : discover({ docFallback: true, command: "rules" });
   console.log(
     `files in the sentence sweep: ${entries.length} · glossary rules: ${ruleSet().rules.length}` +
       ` · sentence rules: ${rulePacks().active.length} · lens: ${readLens() ? "loaded" : "missing"}`,
@@ -2620,22 +2660,7 @@ function cmdAudit(opts) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 function cmdCheck(rest, extra = {}) {
-  const args = { all: false, strict: false, untranslated: false, noBase: false, listRules: false, init: false, initL10n: false, glossary: null, paths: [] };
-  for (let i = 0; i < rest.length; i++) {
-    const a = rest[i];
-    if (a === "--all") args.all = true;
-    else if (a === "--strict") args.strict = true;
-    else if (a === "--untranslated") args.untranslated = true;
-    else if (a === "--no-base") args.noBase = true;
-    else if (a === "--list-rules") args.listRules = true;
-    else if (a === "--init") args.init = true;
-    else if (a === "--init-l10n") args.initL10n = true;
-    else if (a === "--glossary") {
-      args.glossary = rest[++i];
-      if (!args.glossary) throw new Error("--glossary needs a path after it");
-    } else if (a.startsWith("--")) throw new Error(`Unknown flag: ${a}`);
-    else args.paths.push(a);
-  }
+  const args = parseCheckArgs(rest, { initL10n: true });
   args.noFooter = Boolean(extra.noFooter);
   const cliHint = `${SCRIPT_PATH} check`;
   if (args.init) {

@@ -135,8 +135,9 @@ The write-time hook makes two runs on every file written in a project that has a
 `l10n.mjs rules <file>` (the sentence pack). Calling either directly gives the same judgement the
 hook gives.
 
-- An explicitly named file is always checked, regardless of `audit.exclude`. Code blocks, inline
-  code, link targets, and URLs are excluded from checking.
+- `audit.exclude` reaches a named file too: `check` and `rules` skip it and print
+  `skipped by audit.exclude: <path>`, and the hook passes an edit to it silently. Code blocks,
+  inline code, link targets, and URLs are excluded from checking.
 - `.svg` files are checked alongside `.md` and `.mdx` - for SVG only `<text>`/`<tspan>` labels are
   read, and tags, attributes, styles, and path data are ignored. Both an SVG embedded in a document
   and a standalone `.svg` file in the repository are in scope.

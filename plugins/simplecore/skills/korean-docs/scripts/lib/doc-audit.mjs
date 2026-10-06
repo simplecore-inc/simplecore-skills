@@ -62,8 +62,14 @@ function globToRegExp(glob) {
   return new RegExp(`^${re}$`);
 }
 
-/** Patterns without a slash match any path segment; others match the whole relative path. */
-function makeExcludeMatcher(pattern) {
+/**
+ * Patterns without a slash match any path segment; others match the whole relative path.
+ *
+ * Exported because every command that reads `audit.exclude` has to read it with this one
+ * matcher: `check` and the sentence commands judge one file set only while they agree on what
+ * `**\/legacy/**` and a slash-less `CHANGELOG.md` cover.
+ */
+export function makeExcludeMatcher(pattern) {
   const re = globToRegExp(pattern);
   if (pattern.includes('/')) return (rel) => re.test(rel);
   return (rel) => rel.split('/').some((seg) => re.test(seg));
@@ -1378,6 +1384,37 @@ const RULES_TEMPLATE = {
 
 /** Warnings printed by the last `runDocAudit` call. A live binding, read by the sweep. */
 export let lastWarningCount = 0;
+
+/**
+ * Parses the document audit's flags, for both entry points: `check-glossary.mjs` (the one the
+ * write-time hook runs) and `l10n.mjs check`. One parser keeps the two flag sets from drifting.
+ *
+ * `--init-l10n` is accepted only when `initL10n` is set: the declaration it writes is read by
+ * commands only `l10n.mjs` has, so the hook's entry point refuses it as an unknown flag.
+ *
+ * @param argv the arguments after the command name
+ * @param options `{initL10n}` - whether `--init-l10n` is accepted
+ * @returns `{all, strict, untranslated, noBase, listRules, init, initL10n, glossary, paths}`
+ */
+export function parseCheckArgs(argv, {initL10n = false} = {}) {
+  const args = {all: false, strict: false, untranslated: false, noBase: false, listRules: false, init: false, initL10n: false, glossary: null, paths: []};
+  for (let i = 0; i < argv.length; i++) {
+    const a = argv[i];
+    if (a === '--all') args.all = true;
+    else if (a === '--strict') args.strict = true;
+    else if (a === '--untranslated') args.untranslated = true;
+    else if (a === '--no-base') args.noBase = true;
+    else if (a === '--list-rules') args.listRules = true;
+    else if (a === '--init') args.init = true;
+    else if (a === '--init-l10n' && initL10n) args.initL10n = true;
+    else if (a === '--glossary') {
+      args.glossary = argv[++i];
+      if (!args.glossary) throw new Error('--glossary needs a path after it');
+    } else if (a.startsWith('--')) throw new Error(`Unknown flag: ${a}`);
+    else args.paths.push(a);
+  }
+  return args;
+}
 
 /**
  * Runs the document audit end to end and prints the report.

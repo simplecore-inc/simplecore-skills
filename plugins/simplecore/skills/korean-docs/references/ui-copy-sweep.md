@@ -179,8 +179,8 @@ judgement standard.
 2. The project's gate checks.
 3. Regenerating the artifacts (boards, bundles).
 4. Whitespace and conflict-marker checks on the diff.
-5. All four audit commands (`check` · `rules` · `audit` · `suspects`). Stage new files before
-   auditing. `check` alone at zero is not a pass.
+5. `sweep`, which runs the pack test, `check` · `rules` · `suspects` · `audit` (when kinds are
+   declared) and the lens in one run. `check` alone at zero is not a pass.
 
 If you were asked to skip the visual review, do not launch a browser and say so in the final report.
 

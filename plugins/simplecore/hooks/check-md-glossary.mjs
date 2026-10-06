@@ -8,13 +8,12 @@
  * Two runs, because the two engines answer different questions. The glossary
  * check judges words - spellings, transliterations, banned phrases - and the
  * rule pack judges sentences: personification, metaphors standing in for real
- * names, AI tells. For a long time only the first ran here, and every sentence
- * rule bit only when somebody asked for an audit; a document could be written
- * clean of banned words and full of the habits the pack exists to catch.
- * Both runs honour `audit.exclude` on a named file, so an edit to a catalogue that
- * quotes the banned sentences on purpose - or to a verbatim transcription of an issued
- * document, which reproduces its source's spellings as running prose - is reported as
- * skipped, not blocked.
+ * names, AI tells. With the first run alone, a document could be written clean
+ * of banned words and full of the habits the pack exists to catch.
+ * Both runs honour `audit.exclude` on a named file, through one matcher, so an edit
+ * to a catalogue that quotes the banned sentences on purpose - or to a verbatim
+ * transcription of an issued document, which reproduces its source's spellings as
+ * running prose - is skipped by both and passes silently rather than being blocked.
  *
  * Scope guard: the audit runs only when the edited file belongs to a project
  * that has a project glossary (<dir>/.claude/GLOSSARY.md or <dir>/GLOSSARY.md,

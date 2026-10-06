@@ -75,7 +75,9 @@ form written down and misses every other ending.
   you intended. The script only reports regex errors, level spelling, and shifted columns.
 - Front matter settings: `audit.paths` · `audit.exclude` · `audit.localeResources` ·
   `audit.untranslated` · `audit.resolvedPlaceholders`.
-- An explicitly named file is checked even if `audit.exclude` covers it. The glossary file itself is
+- `audit.exclude` reaches a named file as well as a scan: `check` and the sentence commands skip it
+  and print `skipped by audit.exclude: <path>`, all of them through one matcher (a pattern with no
+  `/` matches any path segment, `**/` spans zero or more directories). The glossary file itself is
   never checked. **The exclusion reaches a declared kind too**: a kind glob is a git pathspec, and
   git's `*` crosses `/`, so a `docs/*.md` kind takes every document under `docs` - including the
   review records a project excluded because they quote each round's sentences verbatim. `discover()`
@@ -165,10 +167,10 @@ audit:
   sentence pack. The two answer different questions - a document can be clean of every banned
   spelling and full of personification and AI tells - and both reports come back together under
   `[glossary]` and `[sentence rules]`. A file the project lists in `audit.exclude` is skipped by
-  the second run and named as skipped, so an edit to a catalogue that quotes the banned sentences
-  on purpose is never blocked by the sentences it quotes. The hook passes `--no-footer` to
-  `rules`: a standalone `rules` ends by naming the checks it did not run, and the hook has just run
-  `check` itself.
+  both runs, and the hook passes the edit silently, so an edit to a catalogue that quotes the
+  banned sentences on purpose is never blocked by the sentences it quotes. The hook passes
+  `--no-footer` to `rules`: a standalone `rules` ends by naming the checks it did not run, and the
+  hook has just run `check` itself.
 - An error-level rule blocks; a warning-level rule reports and lets the edit stand. A false
   positive is narrowed with `except` in `.claude/l10n-rules.json` (below), never by switching the
   hook off.
@@ -177,9 +179,12 @@ audit:
   `.claude/l10n.json` gets the sentence-rule run alone, read by that kind's format and register,
   because the word check would read its keys as prose.
 - **A sweep over a directory reads those kinds and nothing else, so Korean living in a source file
-  is invisible to it.** `rules` and `check` read whatever path they are given, a `.py` or a `.ts`
-  included, but nobody points them there, and the gap does not announce itself: the sweep says
-  clean over the repository while the prose in the generators goes unread. It matters wherever a
+  is invisible to it.** A directory expands to the documents beneath it and to the files of every
+  kind `.claude/l10n.json` declares beneath it, each read by its kind's format and register (for
+  `check`, to the resources `audit.localeResources` declares). `rules` and `check` read whatever
+  path they are given, a `.py` or a `.ts` included, but nobody points them there, and the gap does
+  not announce itself: the sweep says clean over the repository while the prose in the generators
+  goes unread. It matters wherever a
   project keeps Korean in code against the usual rule that comments are English - most often a
   figure generator, whose docstrings carry each figure's claim in the document's own words and are
   read as that claim during a review. A project in that position names the paths in its own check
@@ -227,9 +232,10 @@ layout.
 
 - `git ls-files`'s `**` means one or more path segments, so `locales/**/ko.json` does not match
   `locales/ko.json`. When both shapes exist, write two globs.
-- **A file not yet `git add`ed is not in the enumeration.** It is reported as zero without having
-  been checked. Stage new files before the audit, and compare the file count `list` prints against
-  the real one.
+- **A file `.gitignore` covers is not in the enumeration.** The sentence commands list files with
+  `git ls-files --cached --others --exclude-standard`, so a new file is read before it is staged
+  and an ignored one is not, while `check` walks the filesystem and reads it. Compare the file
+  count `list` prints against the real one.
 - Globs in `audit.localeResources` are relative to the repository root, and `*` does not cross `/`.
   To include subdirectories write `src/**/*.mjs`. A pattern matching no file at all makes `check`
   exit with an error.
@@ -326,7 +332,7 @@ documents in -다체), the check runs in both directions.
 - Sweeping the report itself does not reproduce anything: a specimen in backticks is skipped by the
   checker. The reporting side writes the raw finding line, the sentence it avoided, the file holding
   that sentence, and the command that was run. The confirming side checks that file, and when the
-  file does not exist, puts the sentence into the repository, stages it, and runs all four.
+  file does not exist, puts the sentence into a file in the repository and runs `sweep` on it.
 - When an audit returns zero, confirm the check reached the file first: insert one deliberate
   violation, see it caught, and delete it.
 
