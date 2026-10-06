@@ -8,6 +8,9 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 RUNNER = HERE.parents[1] / "check.py"
+sys.path.insert(0, str(HERE.parents[4] / "scripts"))
+
+from bidkit.config import Project  # noqa: E402
 
 PASS = 'print("local pass: 1 item read, 0 found")\n'
 FAIL = 'import sys\nprint("local fail: 1 found")\nsys.exit(1)\n'
@@ -88,6 +91,27 @@ class RunnerTests(unittest.TestCase):
         r = self.run_cmd("after")
         self.assertEqual(r.returncode, 2)
         self.assertIn("checks.after", r.stderr)
+
+
+SAMPLE = HERE.parents[2] / "assets" / "slide-decks.json"
+
+
+class SampleTests(unittest.TestCase):
+    """The sample a new bid copies lists on a fresh project, and every name it declares is a shared check."""
+
+    def test_the_shipped_sample_runs_on_a_project_that_has_nothing_yet(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / ".claude").mkdir()
+            (root / ".claude" / "slide-decks.json").write_text(SAMPLE.read_text(encoding="utf-8"),
+                                                               encoding="utf-8")
+            project = Project.load(root)
+            for deck in project.deck_names():
+                for command in ("list", "undeclared"):
+                    r = subprocess.run([sys.executable, str(RUNNER), command, "--deck", deck], cwd=root,
+                                       capture_output=True, text=True)
+                    self.assertEqual(r.returncode, 0, f"{deck} {command}: {r.stdout}{r.stderr}")
+                    self.assertNotIn("UNRESOLVED", r.stdout, deck)
 
 
 if __name__ == "__main__":
