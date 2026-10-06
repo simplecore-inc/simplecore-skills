@@ -67,11 +67,11 @@ knows what the prompt has to settle.
    before and after the render and re-render if they moved; list every file and image
    reviewed, the page order from the deck's import list, and the figure and item lists,
    in `basis.md`.
-2. **One ledger, generated.** Build the slide ledger every persona reads from the deck's
-   own import order rather than by hand: one entry per page with its title, template,
+2. **One page inventory, generated.** Build the page inventory every persona reads from the
+   deck's own import order rather than by hand: one entry per page with its title, template,
    evaluation item, requirement ids, figures, captures, render path, printed claim line
    and speaker note in full, and the script's syllable count and speaking time in the
-   head. A round that hand-writes this file starts from a ledger that has already stopped
+   head. A round that hand-writes this file starts from an inventory that has already stopped
    matching the deck, and five personas then cite page numbers the panel will not see.
    Keep the generator in the deck's own `tools/`, beside the checks.
 3. **Independent review.** Hand each persona the same package and a report path. Each
@@ -184,8 +184,9 @@ discovers them.
 - **A figure that outlives its slide.** The drawing keeps a structure the prose has
   since corrected - a zone that collects where the proposal says it receives, a colour
   that means a verdict on a word that is not one. Figures are reviewed at source.
-- **Time.** Speech plus page turns, at the slow end of the reading range. Two seconds a
-  turn is the number that made a 19.6-minute deck read as 21.2.
+- **Time.** Speech at the rate measured by reading the script aloud (`simplecore:slide-decks`,
+  「The script is heard, not read」), plus the page turns: two seconds a turn is the number that
+  made a 19.6-minute deck read as 21.2.
 
 **Merging pages is a legitimate answer to a timing failure**, and the reviewers will
 propose it: two pages that repeat the same six approvals, or an extra-proposal page whose

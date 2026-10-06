@@ -60,6 +60,8 @@ it is breached.
 - Every place a person's name would appear is masked in the tender's own convention (`OOO`,
   `***`). Writers, approvers, operators and inspectors all count.
 - No proposer name or logo in a header, a footer, a browser tab, a file name, a diagram caption or
-  a document property. Export metadata carries the author's name by default; clear it.
+  a document property. Export metadata carries the author's name by default; clear it. The
+  slide-decks `deliver` reads the blind copy's document properties and fails on a proposer name
+  another copy declares.
 - Names the **client** printed - its own organisations, its equipment manufacturers - are not the
   proposer's identity and stay as printed.

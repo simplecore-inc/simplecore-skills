@@ -53,6 +53,16 @@ its detail item numbers, and nothing else.** It is the checklist the proposal is
 against, so it holds no prose: one row per requirement, and a count per category that can
 be compared with the tender's own totals table.
 
+**The id checks read a requirement digest, not the index** (`requirements.source` in
+`.claude/slide-decks.json`): every issued id as a heading of its own with its issued name
+(`#### SFR-001 <issued name>`), and the requirement's detail under it, its verbatim tender
+wording between the `requirements.quote` markers (`<!-- l10n:quote -->` and
+`<!-- l10n:/quote -->`). `reqid` takes an id as issued only from such a heading and `rfpwords`
+reads the tender's nouns between the markers, so `requirements.source` pointed at the index's
+table makes every cited id read as unissued. The digest is built from the transcription and is
+a quotation like it; an id the tender never issued, named in the digest to say so, stands in a
+sentence and never in a heading.
+
 ## Nothing inside a requirement is dropped
 
 A requirement's detail is the scored content. Conditions, exceptions, counts, dates,

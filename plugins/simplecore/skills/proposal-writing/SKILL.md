@@ -24,22 +24,23 @@ discipline to Korean proposal writing without claiming formal ASD-STE100 complia
 **Judge by what is in context, not by having invoked the skill.** A session that is
 summarized re-injects this file and does not re-inject anything it routes to, so the
 reference is gone while the invocation still looks done. The same holds for a long session
-that has written many documents since. If the five elements, the noun-chain rewrites and
-the completion questions cannot be quoted right now, the file has not been read - open it
-before the next Korean string, and say in the reply that the pass ran after the writing
-rather than before it when that is what happened.
+that has written many documents since. If the reference's proposer-voice rules, its
+full-document procedure and its completion questions cannot be quoted right now, the file has
+not been read - open it before the next Korean string, and say in the reply that the pass ran
+after the writing rather than before it when that is what happened.
 Follow its common rules first, then the separate rules for the submitted document and
 for the presentation. It also defines the full-document inspection order and the minimum
 context that must survive when a phrase is shortened.
 
 **A working document the submission draws on is a copy task too.** A design document, a
 feature study or a strategy note under the project's own folders is not the submitted
-document, so its register and its file-specific rules come from `simplecore:korean-docs`;
-what still applies is this reference's general part - the five elements a sentence carries,
-noun chains, vague pointers, abstract verbs, placeholder nouns, conditions and numbers.
-Read the reference before writing one. **Invoking this skill is not reading it**: the
-reference is a separate file, it is where the checks live, and a claim that the
-controlled-language review was applied is false until that file is in context.
+document, so its register and its file-specific rules come from `simplecore:korean-docs`, and
+so does what still applies to it: the sentence standard (`references/response-style.md` §3) -
+the five elements a sentence carries, noun chains, vague pointers, abstract verbs,
+placeholder nouns, conditions and numbers. Read it before writing one. **Invoking this skill
+is not reading it**: the reference is a separate file, it is where the checks live, and a
+claim that the controlled-language review was applied is false until that file is in
+context.
 
 ## Transcribing the tender is a quotation, not a rewrite
 
@@ -150,8 +151,9 @@ conditions, measures or deliverables. Review the lead, the notes and the figure 
 one copy unit before rendering.
 
 **The printed line is written and the spoken line is spoken.** A script has to stand
-without the slide: it says what the slide shows, why it matters and what the proposer
-commits to, and it does not read the slide aloud.
+without the slide, and `simplecore:slide-decks` sets how it is written for the ear
+(「The script is heard, not read」): it follows the screen in the words printed there and adds
+what the slide cannot carry - why it matters and what the proposer commits to.
 
 ## Submitted document copy
 
@@ -176,8 +178,9 @@ becomes 「~ 시」, a finding 「대상: 결과」, an action a noun phrase tha
 적용한다」 → 「합격 기준: 시스템 귀속 유실 0건」. The pull toward sentences is the controlled-language
 review itself: rewriting a noun chain so the actor and the condition show, the easy fix is a full
 「~하고 ~한다」 clause, and a figure then reads like a paragraph. Keep the relation explicit inside the
-noun form instead (「지연 시 위험 대장 등록 및 보고」). A label ending on a predicate is machine-visible;
-a project's figure check should fail it.
+noun form instead (「지연 시 위험 대장 등록 및 보고」). The figure checks of `simplecore:svg-diagrams`
+fail a label ending on a predicate (`[label form]`), and, once the figure settings declare
+`register`, one that carries a clause, a particle or a working word (`[register]`).
 
 Before closing a full-copy sweep, compare the grammar of every table column across the
 manuscript and the typesetting source, so a corrected cell cannot return at the next
@@ -213,16 +216,20 @@ as naturally as a horizontal row, and a run of horizontal rows reads as one page
 
 ## Presentation copy
 
-Write every reader-facing string as a short sentence or an explicit action-result pair
-whenever the slot permits it. Replace noun chains and symbol-only separators with a clear
-subject, action, object and result: say who checks, records, submits, approves or
-retries, and under what condition. Use the proposer voice for commitments (`수행합니다`,
-`확인합니다`, `기록합니다`, `제출합니다`, `확정합니다`).
+Which strings on a slide are sentences is `simplecore:slide-decks`' decision: the title, the
+one-line claim under it and a note or source line are, and the body is short phrases in
+shapes (its 「Slides」 section and references/landscape-slides.md). What each string says is
+this skill's. A sentence names a clear subject, action, object and result - who checks,
+records, submits, approves or retries, and under what condition - in the proposer voice for
+commitments (`수행합니다`, `확인합니다`, `기록합니다`, `제출합니다`, `확정합니다`). A phrase in a
+shape keeps its condition and its object when it drops the verb, so the relation the
+sentence carried still stands in it.
 
 Expand an abbreviation or a compressed phrase at its first meaningful use, so a
 first-time listener can infer the workflow without reading the submitted document beside
-the slide. Use `·`, `/` and arrows only for true alternatives, field lists or fixed
-identifiers, never as a substitute for a sentence. A table cell or key row may stay
+the slide. In a sentence, `·`, `/` and arrows stand only for true alternatives, field lists
+or fixed identifiers, never in place of the verb; a phrase in a shape may join its terms
+with them where the shape itself carries the relation. A table cell or key row may stay
 compact when it is an intentional label, but its accompanying value states the action or
 the decision in plain Korean. Keep the original text slot and shorten by removing
 repetition before removing the actor, the condition, the evidence or the outcome.
@@ -232,10 +239,10 @@ likening them: 「범위·일정·산출물을 승인 항목으로 정하고 승
 「관리의 큰 줄기를 세운다」. A metaphor or a personified system reads as decoration exactly
 where the panel is looking for a commitment.
 
-**Do not write a placeholder noun where a measured or approved object belongs.**
-An unqualified 「기준선」 makes an evaluator infer whether the sentence means a
-current-state measurement, an approved requirement, a fixed test condition or a target;
-name the object instead.
+**Do not write a placeholder noun where a measured or approved object belongs**
+(`simplecore:korean-docs`, 「What a sentence has to carry」). In a proposal 「기준선」 is the one
+that costs most: it leaves the evaluator to infer whether a current-state measurement, an
+approved requirement, a fixed test condition or a target is meant.
 
 ## Enumerations as simple lists
 
@@ -400,9 +407,12 @@ evidence and unresolved decisions visible in the result.
 
 Each is run through the slide-decks runner by name, from anywhere inside the project
 (`python3 <skills>/slide-decks/scripts/check.py run reqid evaluation`), or declared in a
-phase of `checks.preflight` or `checks.after`; a script can also be run directly. Every one
-reads its keys from the project's `.claude/slide-decks.json` and exits 2 naming a key it
-needs and does not find. What each reads and when it fails is in the slide-decks
+phase of `checks.preflight` or `checks.after`; a script can also be run directly, which is how
+a check's own options are given. **Before the deck exists**, while the manuscript is written,
+`reqid`, `annexref` and `evaluation` run directly with `--manuscript-only`
+(`python3 <skills>/proposal-writing/scripts/reqid.py --manuscript-only`), which opens no deck
+server; the runner passes only `--deck`. Every one reads its keys from the project's
+`.claude/slide-decks.json` and exits 2 naming a key it needs and does not find. What each reads and when it fails is in the slide-decks
 [checks](../slide-decks/references/checks.md#the-shared-checks-and-the-runner); the keys and
 their defaults are in its [config](../slide-decks/references/config.md).
 
