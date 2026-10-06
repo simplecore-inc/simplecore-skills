@@ -355,33 +355,35 @@ export function cases(t) {
     ctxWith([screen('x-01-a', "listDetail(list, detail)"), LD_BASE]), false);
 
   add('tagCollisionGate', 'a phase tag equals a feature tag',
-    ctxWith([], { config: { ...config, phases: { pack: { tag: '건설 팩' } }, features: { PACK_CONSTRUCTION: { tag: '건설 팩' } } } }), true);
+    ctxWith([], { config: { ...config, phases: { pack: { tag: '예시 팩' } }, features: { PACK_EXAMPLE: { tag: '예시 팩' } } } }), true);
   add('tagCollisionGate', 'the two axes use different words',
-    ctxWith([], { config: { ...config, phases: { pack: { tag: '팩 대기' } }, features: { PACK_CONSTRUCTION: { tag: '건설 팩' } } } }), false);
+    ctxWith([], { config: { ...config, phases: { pack: { tag: '팩 대기' } }, features: { PACK_EXAMPLE: { tag: '예시 팩' } } } }), false);
+  // The feature catalogue is the case's own, so no case reads the fixture's keys.
+  const FEATURES = { features: { PACK_EXAMPLE: { tag: '예시 팩', why: '예시' }, CONNECTED: { tag: 'Connected', why: '연동' } } };
   add('featureGate', 'a key not in the catalogue',
     ctxWith([screen('x-01-a', "\n  notes: 'AUTH: 세션 · 기능 키 PACK_UNKNOWN',\n  body: x,")], {
       manifest: [{ letter: 'X', title: 't', screens: [{ file: 'x-01-a', feature: 'PACK_UNKNOWN' }] }],
-      html: '<span class="fft">건설 팩</span>',
+      html: '<span class="fft">예시 팩</span>', config: { ...config, ...FEATURES },
     }), true);
   add('featureGate', 'notes and manifest disagree',
     ctxWith([screen('x-01-a', "\n  notes: 'AUTH: 세션 · 기능 키 CONNECTED',\n  body: x,")], {
-      manifest: [{ letter: 'X', title: 't', screens: [{ file: 'x-01-a', feature: 'PACK_CONSTRUCTION' }] }],
-      html: '<span class="fft">건설 팩</span>',
+      manifest: [{ letter: 'X', title: 't', screens: [{ file: 'x-01-a', feature: 'PACK_EXAMPLE' }] }],
+      html: '<span class="fft">예시 팩</span>', config: { ...config, ...FEATURES },
     }), true);
   add('featureGate', 'declaration, chip and notes agree',
-    ctxWith([screen('x-01-a', "\n  notes: 'AUTH: 세션 · 기능 키 PACK_CONSTRUCTION',\n  body: x,")], {
-      manifest: [{ letter: 'X', title: 't', screens: [{ file: 'x-01-a', feature: 'PACK_CONSTRUCTION' }] }],
-      html: '<span class="fft">건설 팩</span>',
+    ctxWith([screen('x-01-a', "\n  notes: 'AUTH: 세션 · 기능 키 PACK_EXAMPLE',\n  body: x,")], {
+      manifest: [{ letter: 'X', title: 't', screens: [{ file: 'x-01-a', feature: 'PACK_EXAMPLE' }] }],
+      html: '<span class="fft">예시 팩</span>', config: { ...config, ...FEATURES },
     }), false);
   add('featureGate', 'declared, and the notes carry no key',
     ctxWith([screen('x-01-a', "\n  notes: 'AUTH: 세션',\n  body: x,")], {
-      manifest: [{ letter: 'X', title: 't', screens: [{ file: 'x-01-a', feature: 'PACK_CONSTRUCTION' }] }],
-      html: '<span class="fft">건설 팩</span>',
+      manifest: [{ letter: 'X', title: 't', screens: [{ file: 'x-01-a', feature: 'PACK_EXAMPLE' }] }],
+      html: '<span class="fft">예시 팩</span>', config: { ...config, ...FEATURES },
     }), true);
   add('featureGate', 'inheriting base.notes is not asked',
     ctxWith([screen('x-01-a', "\n  notes: base.notes + '한 줄',\n  body: x,")], {
-      manifest: [{ letter: 'X', title: 't', screens: [{ file: 'x-01-a', feature: 'PACK_CONSTRUCTION' }] }],
-      html: '<span class="fft">건설 팩</span>',
+      manifest: [{ letter: 'X', title: 't', screens: [{ file: 'x-01-a', feature: 'PACK_EXAMPLE' }] }],
+      html: '<span class="fft">예시 팩</span>', config: { ...config, ...FEATURES },
     }), false);
   add('panelDupVerbGate', 'the same verb in both rows',
     ctxWith([screen('x-01-a', "panelVerbs(btn('명단 조정') + btn('세션 열기')) +\n  panelFoot(btn('닫기', 'ghost') + btn('세션 열기', 'primary'))")]), true);
@@ -440,15 +442,15 @@ export function cases(t) {
   add('consoleBrandGate', 'a placeholder is drawn',
     base({ html: '<div class="topnav"><span class="tn-brand">PRODUCT</span></div>' }), true);
   add('consoleBrandGate', 'the product name is drawn',
-    base({ html: '<div class="topnav"><span class="tn-brand">OA 소모품 관리시스템</span></div>' }), false);
+    base({ html: '<div class="topnav"><span class="tn-brand">예시 관리시스템</span></div>' }), false);
   add('consoleBrandGate', 'a board drawing no console is not asked', base({ html: '<div class="auth"></div>' }), false);
 
   add('roleGate', 'AUTH names a role the verdicts lack',
-    roled([{ num: 'N-02', file: 'n-02-a', mod: { notes: 'AUTH: safety-admin 세션 · 시스템 관리자 (협력사 관리자는 자사 인력 초대만)<br>' } }]), true);
+    roled([{ num: 'N-02', file: 'n-02-a', mod: { notes: 'AUTH: admin 세션 · 시스템 관리자 (협력사 관리자는 자사 인력 초대만)<br>' } }]), true);
   add('roleGate', 'the frame declares it in roles',
-    roled([{ num: 'N-02', file: 'n-02-a', mod: { roles: { partner: 'scoped' }, notes: 'AUTH: safety-admin 세션 · 시스템 관리자 (협력사 관리자는 자사 인력 초대만)<br>' } }]), false);
+    roled([{ num: 'N-02', file: 'n-02-a', mod: { roles: { partner: 'scoped' }, notes: 'AUTH: admin 세션 · 시스템 관리자 (협력사 관리자는 자사 인력 초대만)<br>' } }]), false);
   add('roleGate', 'names a role the verdicts hold',
-    roled([{ num: 'N-02', file: 'n-02-a', mod: { notes: 'AUTH: safety-admin 세션 · 시스템 관리자<br>' } }]), false);
+    roled([{ num: 'N-02', file: 'n-02-a', mod: { notes: 'AUTH: admin 세션 · 시스템 관리자<br>' } }]), false);
   // A cluster with neither a verdict nor a 「대상 아님」 reason has fallen out of the matrix.
   add('roleGate', 'a cluster missing from the matrix',
     roled([], [{ letter: 'Y', title: 'y', screens: [] }]), true);

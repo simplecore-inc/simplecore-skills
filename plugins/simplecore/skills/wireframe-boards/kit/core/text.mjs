@@ -13,10 +13,11 @@
 // rather than failing, because a board is worth building in a language nobody has translated yet.
 //
 // **`boardLang` is the language of the DRAWING, and it is not `site.languages`.** The second is what
-// the product ships in - the list C-17 renders and a language switcher offers - and the two answer
-// different questions: a board drawn in Korean can specify a product that runs in eleven languages,
-// and a board drawn in English can specify one that runs only in Korean. The names are kept apart
-// because a single word `lang` sitting beside `site.languages` reads as the same axis.
+// the product ships in - the list a language settings screen renders and a language switcher
+// offers - and the two answer different questions: a board drawn in Korean can specify a product
+// that runs in eleven languages, and a board drawn in English can specify one that runs only in
+// Korean. The names are kept apart because a single word `lang` sitting beside `site.languages`
+// reads as the same axis.
 //
 // **Adding a language means adding every key.** A partial table would render half a sidebar in one
 // language and half in another, which reads as a bug in the board rather than a gap in the kit. The

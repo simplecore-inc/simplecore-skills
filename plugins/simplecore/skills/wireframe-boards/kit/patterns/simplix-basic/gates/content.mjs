@@ -98,10 +98,10 @@ export const panelDupVerbGate = {
   },
 };
 
-// A frame says on its face what has to be BOUGHT before anyone reaches it. Q and R carry no
-// `phase` - they are built in 1단계 - and yet none of their 39 frames opens without
-// `PACK_CONSTRUCTION`, which the board stated nowhere at all until this gate existed. Filling
-// the frames once is not the job: the job is that the next cluster cannot land empty.
+// A frame says on its face what has to be BOUGHT before anyone reaches it. A cluster built in the
+// first phase can still open only behind a feature key, and a board that states the key nowhere
+// leaves the implementer to find it out. Filling the frames once is not the job: the job is that
+// the next cluster cannot land without it.
 //
 // Three things are checked, and the first reads the BUILT HTML rather than the declaration -
 // a declaration that never reached a drawing is exactly the failure a declaration cannot see.
@@ -127,9 +127,8 @@ export const featureGate = {
     for (const sc of ctx.screens) {
       const id = idOf(sc.file);
       const src = ctx.srcOf(sc.file);
-      // 「기능 키 X」 must not be read out of a table cell inside the screen - N-63 carried those
-      // words in a device row and passed while its notes never named the key once. Only the notes
-      // string is read.
+      // 「기능 키 X」 must not be read out of a table cell inside the screen - a row can carry those
+      // words while the notes never name the key. Only the notes string is read.
       const notes = (src.match(/\n  notes: ([\s\S]*?)\n  (?:body|device|route|screen|state|pageForm|pageList|pageCanvas|pageCalendar|offLanguages|roles):/) ?? [])[1] ?? '';
       const auth = (notes.match(/기능 키 ([A-Z_]+)/) ?? [])[1] ?? null;
       const key = declared.get(id) ?? null;
@@ -341,8 +340,8 @@ export const notesRegisterGate = {
     // Two narrowings. 「」 holds copy quoted FROM the screen, and a quotation keeps its own
     // register - 「저장했습니다」 inside a note is the screen speaking, not the board. And the
     // ending is anchored on what closes a clause rather than on a period alone: 「…표시합니다
-    // ({{p-04-list-detail}}).」 and 「…표시합니다<br>」 escaped a period-only anchor, which is how
-    // 36 of the 111 stayed hidden through the first sweep.
+    // ({{b-04-record-detail}}).」 and 「…표시합니다<br>」 close a clause with no period after the
+    // ending, and a period-only anchor reads past both.
     const END = /(합니다|습니다|입니다|하세요|십시오)(?=[.。(<'`]|\s*$)/;
     const bad = [];
     for (const sc of ctx.screens) {
@@ -388,7 +387,7 @@ export const refLeakGate = {
   run: (ctx) => {
     // `{{slug}}` is how a frame's NOTES point at another frame - the build turns it into that
     // frame's number for the reader of the board. In the body it does the same thing, so a user
-    // of the product would read 「P-18」 in a sentence meant for them. Thirteen frames had one.
+    // of the product would read 「B-04」 in a sentence meant for them. Thirteen frames had one.
     const bad = [];
     for (const sc of ctx.screens) {
       const src = ctx.srcOf(sc.file);
@@ -772,8 +771,7 @@ export const sourceWordGate = {
 // differently from its base read as a different screen.
 //
 // **A compound term whose own name carries a 가운뎃점 is one item, not two.** 「시정·예방조치」 is
-// the settled Korean for CAPA and 「전력·가스」 names one pack, so splitting them turns one word
-// into a list and then demands spaces inside it - which is how 「시정·예방조치 보드」 came out as
+// the settled Korean for CAPA, so splitting it turns one word into a list and then demands spaces inside it - which is how 「시정·예방조치 보드」 came out as
 // 「시정 · 예방조치 보드」, a phrase that reads as two things. The terms are the product's, so they
 // are declared in `board.config.mjs` → `compoundTerms` rather than guessed at here; a kit that
 // carried the list would be carrying one project's vocabulary into every other project's board.
@@ -849,7 +847,7 @@ export const dialogTitleGate = {
 };
 
 // List-and-form gate: the standard page is the CRUD list-detail - the list, and the record beside
-// it in a panel where adding and editing happen (P-04). Where that will not fit, the form goes in
+// it in a panel where adding and editing happen. Where that will not fit, the form goes in
 // a dialog. What it must never do is sit UNDER the list on the same page: the reader scrolls past
 // records to reach fields that belong to no visible row, the page has two subjects, and 「저장」
 // down there is ambiguous about which one it saves. Forty-six frames had drifted into it.
@@ -1115,10 +1113,8 @@ export const calendarListGate = {
     for (const sc of ctx.screens) {
       const src = ctx.srcOf(sc.file);
       if (!/\bcalendar\(\{/.test(src)) continue;
-      // A plain `table({` is a list too. The list-and-form gate above learned this the hard way -
-      // its first cut looked only for a filterBar or a pagination row and let nineteen frames past -
-      // and the first cut of THIS gate repeated it on the very same file (F-21, whose measurement
-      // table carries neither).
+      // A plain `table({` is a list too: a measurement table carries neither a filterBar nor a
+      // pagination row and is still a list, so a check that looks only for those two reads past it.
       if (!/\btable\(\{|\blistDetail\(/.test(src)) continue;
       if (/\bviews:\s*\[/.test(src)) continue;          // a view switch - two states, not a stack
       if (/\n  pageCalendar: '[^']+'/.test(src)) continue;
@@ -1160,7 +1156,7 @@ export const filterChainGate = {
   run: (ctx) => {
     const BODY = new Set(['listdetail', 'table', 'treetable', 'mx', 'cal', 'tree', 'cvs', 'hit']);
     // The language switch is read out of the sequence altogether. It is a filter of the same
-    // family - 「전체 언어 · 한국어 · Tiếng Việt」 over a result list - so it does not break the
+    // family - 「전체 언어 · 한국어 · English」 over a result list - so it does not break the
     // reading of tab → chip → list the way a tile row or an explanation card does; and it is not a
     // member of the triple either, because a screen may keep it beside a document instead.
     const rank = (cls) => {
@@ -1293,7 +1289,7 @@ export const panelTailGate = {
 //
 // Two halves, because the marker can be lost from either end. The declaration can stop being
 // drawn (someone edits the frame chrome), or a deferred screen can be written without one -
-// a new frame in a cluster that is not itself deferred, the way L-21 sits inside worker PWA.
+// a new frame in a cluster that is not itself deferred.
 export const phaseGate = {
   id: 'phaseGate',
   title: 'a frame with a declared phase does not draw it on its face',
@@ -1328,30 +1324,6 @@ export const phaseGate = {
   },
 };
 
-// Role gate: the visibility matrix and the frame's own words must agree.
-//
-// §9 of the screen design fills the matrix in per CLUSTER, which is as far as a table can go - it
-// cannot say which of E's sixty-five frames 「관리감독자 ✔(담당 구역)」 means. `src/roles.mjs` holds
-// that table as data and a frame overrides it only where it departs. What this gate catches is the
-// disagreement between the two statements a frame makes about who may be there: the matrix, and the
-// `AUTH:` note somebody wrote in prose.
-//
-// A frame whose AUTH names a role its cluster does not admit is one of two things, and both need
-// fixing: the matrix is wrong for that cluster, or the frame is a departure that never declared
-// itself. Neither is visible without this check - sixteen J frames were written for an outside
-// auditor while §9 had no column for one at all.
-/**
- * The console says this product's name, not the placeholder.
- *
- * <p>`topNav` has to default its brand to something, and whatever that something is will be drawn
- * on every board that forgets to pass one. The failure is silent and total - the name is in the
- * top left of every desktop frame, so a board can be built, exported and sent with another
- * product's name on all of it, and nothing about the drawing looks wrong.
- *
- * <p>It reads the shell rather than the config because the shell is what draws it: a board can
- * declare a `boardName` for the index and hand the console a different display brand, and only the
- * second one reaches the frame.
- */
 /**
  * A chart names both of its axes.
  *
@@ -1384,6 +1356,18 @@ export const chartAxisGate = {
   },
 };
 
+/**
+ * The console says this product's name, not the placeholder.
+ *
+ * <p>`topNav` has to default its brand to something, and whatever that something is will be drawn
+ * on every board that forgets to pass one. The failure is silent and total - the name is in the
+ * top left of every desktop frame, so a board can be built, exported and sent with another
+ * product's name on all of it, and nothing about the drawing looks wrong.
+ *
+ * <p>It reads the shell rather than the config because the shell is what draws it: a board can
+ * declare a `boardName` for the index and hand the console a different display brand, and only the
+ * second one reaches the frame.
+ */
 export const consoleBrandGate = {
   id: 'consoleBrandGate',
   title: 'the console draws a placeholder instead of the product name',
@@ -1396,6 +1380,18 @@ export const consoleBrandGate = {
   },
 };
 
+// Role gate: the visibility matrix and the frame's own words must agree.
+//
+// The screen design fills the matrix in per CLUSTER, which is as far as a table can go - it cannot
+// say which of a cluster's frames a scoped verdict such as 「담당자 ✔(담당 구역)」 means.
+// `src/roles.mjs` holds that table as data and a frame overrides it only where it departs. What
+// this gate catches is the disagreement between the two statements a frame makes about who may be
+// there: the matrix, and the `AUTH:` note somebody wrote in prose.
+//
+// A frame whose AUTH names a role its cluster does not admit is one of two things, and both need
+// fixing: the matrix is wrong for that cluster, or the frame is a departure that never declared
+// itself. Neither is visible without this check: a cluster's frames can be written for a role the
+// matrix has no column for.
 export const roleGate = {
   id: 'roleGate',
   title: 'the role verdicts and the AUTH line disagree',

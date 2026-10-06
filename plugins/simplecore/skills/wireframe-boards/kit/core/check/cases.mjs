@@ -32,10 +32,10 @@ export function cases(t) {
     withDocs({ 'rm.md': ROADMAP_OK, 'note.md': '자세한 것은 X-77을 본다.\n' }), true);
   // An id of another numbering scheme is exempt only where the board names it: the gate carries
   // no list of its own, because a guide number one project cites is a missing frame on another.
-  const NOT_FRAMES = (notFrames) => withDocs({ 'rm.md': ROADMAP_OK, 'note.md': 'GUIDE P-94 work permit.\n' },
+  const NOT_FRAMES = (notFrames) => withDocs({ 'rm.md': ROADMAP_OK, 'note.md': 'GUIDE Q-94 work permit.\n' },
     { config: { ...config, documents: { ...DOCS, notFrames } } });
   add('docFrameRefGate', 'another scheme\'s id the board does not name is a missing frame', NOT_FRAMES([]), true);
-  add('docFrameRefGate', 'another scheme\'s id named in documents.notFrames is not a frame', NOT_FRAMES(['P-94']), false);
+  add('docFrameRefGate', 'another scheme\'s id named in documents.notFrames is not a frame', NOT_FRAMES(['Q-94']), false);
   // A cluster that runs past 99 numbers into three digits, and the id reader has to widen with it.
   // Reading two digits only does not make `X-100` a wrong id - it makes it no id at all, and this
   // gate then reports zero on a reference nobody resolved.

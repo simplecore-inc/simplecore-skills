@@ -59,7 +59,7 @@ export function makePartials({ components, roles = null, lang = 'en', reqsById =
     // What has to be BOUGHT before this frame is reachable. It is drawn as one chip beside the id
     // and NOT as a band: the screen exists and is drawn: what is conditional is reaching it. A band
     // would say the same thing `phase` says - that the drawing is not there - and the two states
-    // are different. Nothing goes inside the device either; the locked state is P-11's frame, and a
+    // are different. Nothing goes inside the device either; the locked state is a frame of its own, and a
     // badge inside a normal frame leaves the implementer guessing whether it is screen content.
     // The chip's WORD is not its meaning. 「Connected」 beside an id tells a reader who already
     // knows the catalogue and nobody else, and a frame reaches most of its readers alone - a PNG,

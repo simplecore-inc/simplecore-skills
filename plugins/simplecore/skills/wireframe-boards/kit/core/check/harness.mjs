@@ -31,9 +31,9 @@ import { idOf } from '../ids.mjs';
  */
 export const FIXTURE_CONFIG = {
   today: '2026-08-12',
-  // The language list a forked pattern's cases are judged against: a board's own copy of a
-  // pattern may carry cases that expect it here. The shipped patterns' cases declare theirs in
-  // `over` and read nothing from this one.
+  // The language list and the feature catalogue a forked pattern's cases are judged against: a
+  // board's own copy of a pattern may carry cases that expect these values here. The shipped
+  // patterns' cases declare their own in `over` and read neither.
   site: { languages: ['한국어', 'English', 'Tiếng Việt', 'ភាសាខ្មែរ'], offLanguages: ['中文'] },
   phases: { 2: { tag: '2단계', why: '뒤에 만든다' } },
   features: {

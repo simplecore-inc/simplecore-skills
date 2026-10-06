@@ -188,12 +188,12 @@ const measureFrames = (pre) => {
     // "Elsewhere" excludes three places, because a button there belongs to the thing that holds
     // it rather than to the screen - and each of the three is BELOW THE FOLD BY CONSTRUCTION, so
     // counting it reports a defect that no layout could avoid:
-    //   .msg     a message's own action (「12개월로 되돌리기」 on B-04, 「첫 칸으로」 on G-12)
+    //   .msg     a message's own action (「12개월로 되돌리기」, 「첫 칸으로」)
     //   .ld-foot the detail panel's footer, pinned to the floor of a list-detail region that the
-    //            board's layout rule puts LAST on the page (J-12 · J-38)
-    //   .modal   a dialog's action; a dialog is an overlay with its own reading order (J-29)
+    //            board's layout rule puts LAST on the page
+    //   .modal   a dialog's action; a dialog is an overlay with its own reading order
     //   .dv-note the viewer's note strip - it acts on what the viewer is drawing, and the viewer
-    //            sits wherever the page put it (G-12)
+    //            sits wherever the page put it
     const desktop = f.classList.contains('desktop') || sb.width >= 1000;
     const NOT_THE_SCREENS = '.msg, .ld-foot, .modal, .dv-note';
     const primary = screen.querySelector('.pagehead .actions .btn.primary, .pagehead .actions .btn.danger')
