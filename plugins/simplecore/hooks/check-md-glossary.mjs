@@ -121,8 +121,10 @@ function main() {
 
   const glossary = findProjectGlossary(dirname(abs));
   if (!glossary) return 0;
-  // The glossary itself contains banned forms by definition; never audit it.
-  if (resolve(glossary) === abs || basename(abs) === 'GLOSSARY.md') return 0;
+  // A glossary contains banned forms by definition; never audit it. That includes a base glossary
+  // by its file name: a checkout or worktree of the skill holds its own copy, and the engine this
+  // hook runs recognises only the base glossary at its own path.
+  if (resolve(glossary) === abs || ['GLOSSARY.md', 'GLOSSARY.base.md'].includes(basename(abs))) return 0;
   // The glossary check reads documents and the resources the glossary declares; the sentence
   // rules read those and every kind `.claude/l10n.json` declares. A resource file known only to
   // the second gets the second run alone - the word check would read its keys as prose.

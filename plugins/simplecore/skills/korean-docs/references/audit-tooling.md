@@ -108,13 +108,18 @@ glossary.
 
 ```json
 "except": {
-  "loanword-spelling": [{
-    "find": "/어플리케이션 응답시간/",
+  "ratio-ryul-ryool": [{
+    "find": "/시스템 가동율/",
     "why": "제안요청서 요구사항명 원문. 고치면 인용이 아니게 된다",
-    "sample": "| PER-001 | 어플리케이션 응답시간 |"
+    "sample": "| PER-001 | 시스템 가동율 |"
   }]
 }
 ```
+
+`except` narrows a pack rule only. A glossary spelling has no such door: keep a quoted original
+inside `l10n:quote` (below), which both engines skip. A pack rule that left the pack is listed under
+`retired` in `RULES.base.json`, and a project pack still naming it under `disable` or `except` gets a
+line saying the entry does nothing and where the ban lives now, instead of a load failure.
 
 ### A span copied verbatim from somebody else's document - `l10n:quote`
 

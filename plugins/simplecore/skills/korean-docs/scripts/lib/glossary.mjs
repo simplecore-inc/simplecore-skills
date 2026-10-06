@@ -470,10 +470,16 @@ export function loadRuleSet({glossaryPath = null, noBase = false, startDir = pro
  *
  * A pack rule states sentence-level patterns a glossary table cannot express
  * safely - each carries hit/miss examples that `rules --test` verifies. Rules
- * are advisory sweeps (the finds-only loop), never write-time gates.
+ * find and never rewrite; the write-time hook runs them on every file it checks,
+ * so an error-level hit blocks that write.
  *
  * `scopes` filters by rule scope: 'universal' rules always apply; any other
  * scope applies only when listed (a project opts into its domains).
+ *
+ * Returns `{active, all, disabled, except, retired}`. `retired` maps each retired
+ * base rule id a project pack still disables or narrows to where its ban lives
+ * now - the base pack's `retired` table - so the caller can say the entry does
+ * nothing rather than fail to load the project's pack.
  */
 export function loadRulePacks({root = process.cwd(), scopes = []} = {}) {
   const packs = [];
@@ -484,29 +490,38 @@ export function loadRulePacks({root = process.cwd(), scopes = []} = {}) {
   if (existsSync(projectPack)) {
     packs.push({origin: 'project', path: projectPack, ...JSON.parse(readFileSync(projectPack, 'utf8'))});
   }
+  // A base rule that left the pack is still named by the projects that disabled or narrowed it.
+  // Refusing those names would stop every one of those projects' sweeps and write-time runs over
+  // an entry that only ever turned something off, so a retired id is reported instead.
+  const retiredIds = new Map(Object.entries(packs.find((p) => p.origin === 'base')?.retired ?? {}));
+  const retired = new Map();
   // A base rule can be true everywhere and still be wrong for one domain - the glossary has
   // `## 기본 규칙 예외` for exactly that, and without the same door here a project's only
   // choices are editing the shared base pack (forbidden: it would break other projects) or
   // carrying a permanent false positive, which is how a count stops meaning anything.
   // `{"disable": {"rule-id": "왜 끄는가"}}` in the project pack, reason required.
   const disabled = new Map();
+  const known = new Set(packs.flatMap((p) => (p.rules ?? []).map((r) => r.id)));
   for (const pack of packs) {
     if (pack.origin !== 'project') continue;
     for (const [id, why] of Object.entries(pack.disable ?? {})) {
       if (!String(why ?? '').trim()) {
         throw new Error(`${pack.path}: disable["${id}"] needs a reason - an exception with no reason cannot be revived by the next person.`);
       }
+      if (!known.has(id) && retiredIds.has(id)) {
+        retired.set(id, retiredIds.get(id));
+        continue;
+      }
       disabled.set(id, why);
     }
   }
-  const known = new Set(packs.flatMap((p) => (p.rules ?? []).map((r) => r.id)));
   for (const id of disabled.keys()) {
     if (!known.has(id)) throw new Error(`Trying to disable an unknown rule: ${id}`);
   }
   // Killing a rule is not the only thing a project needs. A base rule can be right about
-  // sixteen words and wrong about one PLACE - a requirement title quoted from a client's
+  // every word it lists and wrong about one PLACE - a requirement title quoted from a client's
   // document keeps that document's spelling, and correcting it makes it no longer a
-  // quotation. `disable` there would drop the other sixteen spellings with it, which is how
+  // quotation. `disable` there would drop the rule's other words with it, which is how
   // a project ends up choosing between a permanent false positive and a check that stopped
   // looking. So a project may also NARROW a base rule:
   //
@@ -521,6 +536,10 @@ export function loadRulePacks({root = process.cwd(), scopes = []} = {}) {
   for (const pack of packs) {
     if (pack.origin !== 'project') continue;
     for (const [id, list] of Object.entries(pack.except ?? {})) {
+      if (!known.has(id) && retiredIds.has(id)) {
+        retired.set(id, retiredIds.get(id));
+        continue;
+      }
       if (!known.has(id)) throw new Error(`Trying to add an exception to an unknown rule: ${id}`);
       const items = (Array.isArray(list) ? list : [list]).map((it) => {
         for (const field of ['find', 'why', 'sample']) {
@@ -550,5 +569,5 @@ export function loadRulePacks({root = process.cwd(), scopes = []} = {}) {
       }
     }
   }
-  return {active, all, disabled, except};
+  return {active, all, disabled, except, retired};
 }

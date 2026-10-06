@@ -113,7 +113,7 @@ uses the Korean administrative verb.
 
 Write what changes, what stays, and how the user is told.
 
-- `일정이 통째로 밀립니다` → 설치 일정이 연기될 수 있습니다
+- `일정이 통째로 밀립니다` → 남은 설치 일정이 모두 연기됩니다
 - `기록이 통째로 빕니다` → 해당 시간대의 접속 기록이 누락됩니다
 - `문이 조용히 남습니다` → 연결되지 않은 장치를 결과 목록에 표시합니다
 - `자격이 그대로 따라갑니다` → 기존 이력과 자격 정보를 유지합니다

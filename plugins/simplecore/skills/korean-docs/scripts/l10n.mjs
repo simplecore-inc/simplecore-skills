@@ -1866,6 +1866,7 @@ function cmdRulesTest(opts) {
     `\n${rules.length} rules verified · ${failures ? C.red(`${failures} failed`) : C.green("all passed")}` +
       C.dim("\nGlossary rules are not example-verified - after registering, compare the check --list-rules output"),
   );
+  reportRetired();
   return failures ? 1 : 0;
 }
 
@@ -2032,7 +2033,20 @@ function cmdRulesScan(opts) {
       for (const ex of list) console.log(C.dim(`  ${id} /${ex.re.source}/ - ${ex.why}`));
     }
   }
+  reportRetired();
   return failed ? 1 : 0;
+}
+
+/**
+ * Retired base rules the project pack still disables or narrows. The entry turns nothing off any
+ * more, so it is named with where the ban lives now - left silent, it reads as a disable or a
+ * narrowing still in force.
+ */
+function reportRetired() {
+  const retired = rulePacks().retired;
+  if (!retired?.size) return;
+  console.log(C.dim(`${retired.size} retired rules named in .claude/l10n-rules.json - those entries do nothing:`));
+  for (const [id, where] of retired) console.log(C.dim(`  ${id} - ${where}`));
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

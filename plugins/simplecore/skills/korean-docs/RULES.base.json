@@ -19,22 +19,30 @@
     "Project-only rules never enter this file - they go to <project>/.claude/l10n-rules.json,",
     "which is applied whole wherever it exists.",
     "",
-    "These rules are advisory sweeps for the finds-only loop (`l10n.mjs rules`), never",
-    "write-time gates - word-level bans belong in GLOSSARY.base.md or a project glossary.",
+    "These rules find; they never rewrite. `l10n.mjs rules` runs them, and the write-time hook runs",
+    "`rules` on every file it checks, so an error-level hit blocks that write. Word-level bans - a",
+    "spelling with no conjugation and no exception - belong in GLOSSARY.base.md or a project glossary.",
     "",
-    "`severity` is documentation only - the scanner never reads it. Thresholding comes from",
-    "`minPerFile` alone, so a rule labelled \"warn(3+)\" without minPerFile fires on the first",
-    "hit and the label lies. Write both, and keep the \"(N+)\" suffix equal to minPerFile.",
+    "`severity` decides the level: a value starting with `warn` is a warning, anything else an error,",
+    "and errors set the exit code (`--strict` adds warnings). The per-file threshold comes from",
+    "`minPerFile` alone, so a rule labelled \"warn(3+)\" without minPerFile fires on the first hit and",
+    "the label lies. Write both, and keep the \"(N+)\" suffix equal to minPerFile.",
     "",
     "What a minPerFile rule counts is the author repeating himself, so the recommended side of a",
     "`금지 → 대체` contrast row is left out of the count - a catalogue prints the copy it",
     "prescribes once per row, and counting those reported one document eleven times for saying",
     "the very phrasing it teaches. `contrastRecommendedRanges` in scripts/lib/doc-audit.mjs holds",
-    "the four conditions that make a row recognisable, and a contrast written as flowing prose",
+    "the conditions that make a row recognisable, and a contrast written as flowing prose",
     "meets none of them and is still counted.",
     "",
     "Two rules must not share a `find` literal: each matching rule reports independently, so a",
     "shared pattern prints the same sentence twice and a reader learns to skip the pair.",
+    "The same holds across the two engines: a ban the glossary already holds is not repeated here,",
+    "or `sweep` and both hook runs report the sentence twice. A spelling stays in the glossary; a",
+    "pattern that conjugates or needs an exception lives here, and the glossary row is deleted.",
+    "",
+    "`retired` names a rule id that left this pack and where its ban lives now. A project pack that",
+    "still disables or narrows that id is told so on every run instead of failing to load.",
     "",
     "`find` entries are regular expressions. Prefer a two-or-three word phrase over a",
     "bare word: phrases are unambiguous, single short words rarely are.",
@@ -55,6 +63,9 @@
     "a `lensReason` instead of flooding the reading list."
   ],
   "version": 1,
+  "retired": {
+    "loanword-spelling": "its spellings are the base glossary's 용어 대역표 rows, judged by `check` - turn one off with that row's English key under `## 기본 규칙 예외`, and keep a quoted original inside `l10n:quote`"
+  },
   "rules": [
     {
       "id": "honorific-sipsio",
@@ -80,21 +91,26 @@
       "id": "double-passive",
       "scope": "universal",
       "severity": "error",
-      "reason": "A double passive",
+      "reason": "A double passive - 되다 or 보이다 passivised a second time (「되어진다」 · 「보여집니다」). **The conjugation changes the syllable block, so the final consonants are opened up** - matching only 「되어지」 lets 「되어진다」 · 「되어질」 through, and 「보여지」 alone lets 「보여진」 through. A single passive or the active form is the fix, and for 「보여지다」 the fix also says who acts: 「보입니다」 alone removes the double passive but leaves it unclear whether the system displays or the user looks, so screen copy says 「표시됩니다」",
       "find": [
-        "되어진",
-        "되어집니다",
-        "보여집니다",
-        "보여진"
+        "되어[지집진질]",
+        "보여[지집진질]"
       ],
-      "replace": null,
+      "replace": "~됩니다 · ~될 · 표시됩니다 · 나타납니다",
       "hit": [
         "처리되어집니다",
-        "화면에 보여집니다"
+        "화면에 보여집니다",
+        "처리되어진다",
+        "저장되어질 값",
+        "결과가 보여지는 화면",
+        "보여진 결과를 확인한다",
+        "보여질 항목"
       ],
       "miss": [
         "되어 있습니다",
-        "보여 줍니다"
+        "보여 줍니다",
+        "처리됩니다",
+        "결과를 표시합니다"
       ]
     },
     {
@@ -912,42 +928,6 @@
         "아이템 목록",
         "플랫텀",
         "텀블러"
-      ]
-    },
-    {
-      "id": "loanword-spelling",
-      "scope": "universal",
-      "severity": "error",
-      "reason": "A loanword spelling error",
-      "find": [
-        "디렉토리",
-        "라이센스",
-        "릴리즈",
-        "메세지",
-        "어플리케이션",
-        "아키텍쳐",
-        "트랜젝션",
-        "캐쉬",
-        "데이타",
-        "컨텐츠",
-        "비지니스",
-        "메소드",
-        "템플레이트",
-        "스넵샷",
-        "쓰레드",
-        "콜렉션",
-        "타임존"
-      ],
-      "replace": null,
-      "hit": [
-        "라이센스 발급",
-        "릴리즈 노트",
-        "타임존 설정"
-      ],
-      "miss": [
-        "라이선스 발급",
-        "릴리스 노트",
-        "시간대 설정"
       ]
     },
     {
@@ -2700,10 +2680,12 @@
       "id": "vcs-as-shove",
       "scope": "universal",
       "severity": "error",
-      "reason": "Writing a version-control operation as a physical push or pull. `push` and `pull` are physical verbs in English, and carrying them over **loses what went where** - 「푸시한다」 rather than 「원격에 민다」, or, unfolded, 「원격 저장소에 올린다」. Like 커밋 · 머지 · 리베이스, **푸시 is a word this field has settled on** and is written as it is. **What separates them is not the word but the object** - pushing a commit, a branch, a change, or a remote is the metaphor, while 「일정을 뒤로 민다」·「밀린 작업」·「밀어붙인다」 are everyday words for a person actually postponing or shoving and are not caught. So the object is required alongside. **A slot with the object elided is beyond this rule** - 「지금 밀까요」 cannot be separated, on that line alone, into a commit or a schedule. A person reads that one",
+      "reason": "Writing a version-control operation as a physical push or pull. `push` and `pull` are physical verbs in English, and carrying them over **loses what went where** - 「푸시한다」 rather than 「원격에 민다」, or, unfolded, 「원격 저장소에 올린다」. Like 커밋 · 머지 · 리베이스, **푸시 is a word this field has settled on** and is written as it is. **What separates them is not the word but the object** - pushing a commit, a branch, a change, or a remote is the metaphor, while 「일정을 뒤로 민다」·「밀린 작업」·「밀어붙인다」 are everyday words for a person actually postponing or shoving and are not caught. So the object is required alongside. A repository (저장소) counts only with a particle of direction, because 「저장소를 밀고 새로 만든다」 is wiping it; 「밀어붙인다」 counts only after a version-control object, because forcing a 변경 through is the everyday sense. **A slot with the object elided is beyond this rule** - 「지금 밀까요」 cannot be separated, on that line alone, into a commit or a schedule. A person reads that one",
       "find": [
-        "(커밋|브랜치|변경(?:분|사항)?|작업물|원격|메인)(?:을|를|에|으로|로)?\\s*(?:다시\\s*)?(민다|밉니다|밀었|밀고|밀면|밀지|밀까|밀어야|미는)",
-        "(커밋|브랜치|변경(?:분|사항)?|원격)(?:을|를|에서)?\\s*(당긴다|당깁니다|당겨\\s*온)"
+        "(커밋|브랜치|변경(?:분|사항)?|작업물|원격|메인)(?:을|를|에|으로|로)?\\s*(?:다시\\s*)?(민다|밉니다|밀다|밀었|밀고|밀면|밀지|밀까|밀어(?!붙)|미는|밀자|밀려[고면]|밀\\s)",
+        "(커밋|브랜치|변경(?:분|사항)?|원격)(?:을|를|에서)?\\s*(당긴다|당깁니다|당겨\\s*온)",
+        "저장소(?:에|로|으로)\\s*(?:다시\\s*)?(민다|밉니다|밀다|밀었|밀고|밀면|밀지|밀까|밀어(?!붙)|미는|밀자|밀려[고면]|밀\\s)",
+        "(커밋|브랜치|원격|메인)(?:을|를|에|으로|로)?\\s*밀어붙"
       ],
       "replace": null,
       "hit": [
@@ -2711,7 +2693,15 @@
         "커밋을 밀었습니다",
         "변경분을 메인에 밀고 브랜치를 지운다",
         "브랜치를 미는 사람",
-        "원격에서 커밋을 당겨 온다"
+        "원격에서 커밋을 당겨 온다",
+        "커밋을 밀어 둔다",
+        "브랜치를 밀자",
+        "커밋을 밀 때마다 검사한다",
+        "커밋을 밀려면 먼저 검증한다",
+        "원격 저장소에 밀었다",
+        "저장소로 다시 밀어야 한다",
+        "커밋을 원격에 밀다",
+        "커밋을 밀어붙인다"
       ],
       "miss": [
         "원격 저장소에 푸시한다",
@@ -2720,7 +2710,9 @@
         "밀린 작업이 넷이다",
         "근거 없이 밀어붙이지 않는다",
         "문을 밀어서 연다",
-        "지금 밀까요, 검증 뒤에 밀까요"
+        "지금 밀까요, 검증 뒤에 밀까요",
+        "변경을 밀어붙이지 않는다",
+        "저장소를 밀고 새로 만든다"
       ],
       "lens": false,
       "lensReason": "「민다」는 일정·작업을 미루는 일상어와 글자가 같아 목적어 없이는 갈리지 않는다. 목적어를 요구하는 이 규칙이 잡고, 렌즈에 넣으면 미루는 뜻의 문장을 전부 읽게 된다"
@@ -2846,7 +2838,7 @@
       "id": "kinship-for-grouping",
       "scope": "universal",
       "severity": "error",
-      "reason": "Using a word for a relation between people as the name of a group of things. Calling several screens, several frames, or several defects a 「가족」 pushes aside the names that group already has (묶음 · 갈래 · 부류 · 무리) and collides in one document with the same word meaning a person's family - in this field 유가족 · 무급가족종사자 · 가족돌봄휴가 · 가족관계증명서 are all real families. The test is one question: if what is called a 「가족」 is people, it stays; if it is screens, files, types, or defects, write 묶음 · 갈래 · 부류. A tree's parent, child, and sibling nodes are settled technical terms and stay - there is no plainer Korean for them, and what this rule blocks is bringing a kinship word into a slot that already has a name The forms were enumerated and a day of font writing walked past them (「글꼴 가족」 · 「가족 덱」 · 「없는 가족을 부르는」), so the font and grouping contexts are matched as patterns; a font family is 글꼴 패밀리.",
+      "reason": "Using a word for a relation between people as the name of a group of things. Calling several screens, several frames, or several defects a 「가족」 pushes aside the name that group already has and collides in one document with the same word meaning a person's family - in this field 유가족 · 무급가족종사자 · 가족돌봄휴가 · 가족관계증명서 are all real families. The test is one question: if what is called a 「가족」 is people, it stays; if it is screens, files, types, or defects, write the group's own name, or 유형 · 부류. A tree's parent, child, and sibling nodes are settled technical terms and stay - there is no plainer Korean for them, and what this rule blocks is bringing a kinship word into a slot that already has a name. The grouping contexts are matched as patterns (「가족 덱」 · 「없는 가족을 부르는」) rather than as listed words, and a font family is the base glossary's `font family` row (글꼴 패밀리).",
       "find": [
         "화면 가족",
         "프레임 가족",
@@ -2867,7 +2859,6 @@
         "가족을 맡",
         "가족이 닫",
         "가족이 사례",
-        "/(글꼴|서체|폰트|font)\\s*가족/",
         "/가족\\s*(덱|이름|넷|셋|둘|열둘|목록|표)/",
         "/(없는|있는|같은|다른|매핑된|부르는|답하는|요청한|설치된)\\s*가족/",
         "/가족(의 실행|만 부르|을 부르|에 동의|마다)/"
@@ -2879,7 +2870,6 @@
         "N 가족이 사례를 넘긴다",
         "W04 화면 가족의 브리핑에 넣는다",
         "호출자 가족은 둘이다",
-        "글꼴 가족 이름으로 찾는다",
         "CJK 가족 넷의 1번 슬라이드",
         "없는 가족을 부르는 덱",
         "두 사슬이 매핑된 가족에 동의한다",
@@ -2902,7 +2892,7 @@
       "id": "cost-for-effort",
       "scope": "universal",
       "severity": "error",
-      "reason": "Substituting price and weight for the size of a job. 「싼 쪽」·「비싸진다」·「가벼운 변경」 give the reader no number at all, because what it costs and how much is missing. Write the real thing: 한 줄이면 된다 · 파일 스물을 건드린다 · 살아 있는 데이터 위의 마이그레이션이 된다 · 그 챕터의 증거 절을 다시 실행해야 한다. **Real money stays** - an expensive plan, a cheap screen on site, double counting as the most expensive mistake (a story about a cost ledger) are all real amounts. What separates them is not the word but **whether money changes hands**. The weight side is the same - evidence is not 「무겁다」 but 「강하다」, and that pair is already in the glossary",
+      "reason": "Substituting price and weight for the size of a job. 「싼 쪽」·「비싸진다」·「가벼운 변경」 give the reader no number at all, because what it costs and how much is missing. Write the real thing: 한 줄이면 된다 · 파일 스물을 건드린다 · 운영 데이터를 마이그레이션해야 한다 · 그 챕터의 증거 절을 다시 실행해야 한다. **Real money stays** - an expensive plan, a cheap screen on site, double counting as the most expensive mistake (a story about a cost ledger) are all real amounts. What separates them is not the word but **whether money changes hands**. The weight side is the same - evidence is not 「무겁다」 but 「강하다」, and that pair is already in the glossary",
       "find": [
         "싼 쪽",
         "싼 편",
@@ -3210,7 +3200,7 @@
       "id": "can-instead-of-does",
       "scope": "universal",
       "severity": "error",
-      "reason": "「~할 수 있습니다」 standing in for an instruction or a fact in screen copy. Guidance on a screen says what happens and what to do - a possibility after a condition is 「~하려면 ~하세요」, a possibility that is a fact is 「~합니다」, and a guess at a cause (「막고 있을 수 있습니다」) becomes something to verify. The adnominal 「~할 수 있는」 and the negative 「~할 수 없습니다」 state ability and prohibition and stay; a sentence that really is about a difference in permission (「관리자만 바꿀 수 있습니다」) is released by the project's except, which goes in .claude/l10n-rules.json as \"except\": {\"can-instead-of-does\": [{\"find\", \"why\", \"sample\"}]} - the shape lib/glossary.mjs:513 documents, and `rules --test` proves the rule catches the sample and the exception releases it. A miss example cannot do this job: a miss must not match, and this find does, so making one miss would mean narrowing the pattern for every project. **Screen register only.** A reference manual states capabilities - 「데이터를 직접 스트리밍할 수 있습니다」·「와일드카드를 사용할 수 있습니다」 - and the same sentence there is the ordinary way to say what a product does: on a 119-file manual this rule fired 467 times, every hit a capability. Overuse in a document is a density question, which the glossary's `수 있습니다` row counts at 경고(10+), and the S2 row of korean-style.md covers it in review.",
+      "reason": "「~할 수 있습니다」 standing in for an instruction or a fact in screen copy. Guidance on a screen says what happens and what to do - a possibility after a condition is 「~하려면 ~하세요」, a possibility that is a fact is 「~합니다」, and a guess at a cause (「막고 있을 수 있습니다」) becomes something to verify. The adnominal 「~할 수 있는」 and the negative 「~할 수 없습니다」 state ability and prohibition and stay; a sentence that really is about a difference in permission (「관리자만 바꿀 수 있습니다」) is released by the project's except, which goes in .claude/l10n-rules.json as \"except\": {\"can-instead-of-does\": [{\"find\", \"why\", \"sample\"}]} - the shape `loadRulePacks` in scripts/lib/glossary.mjs documents, and `rules --test` proves the rule catches the sample and the exception releases it. A miss example cannot do this job: a miss must not match, and this find does, so making one miss would mean narrowing the pattern for every project. **Screen register only.** A reference manual states capabilities - 「데이터를 직접 스트리밍할 수 있습니다」·「와일드카드를 사용할 수 있습니다」 - and the same sentence there is the ordinary way to say what a product does: on a 119-file manual this rule fired 467 times, every hit a capability. Overuse in a document is a density question, which the glossary's `수 있습니다` row counts at 경고(10+), and the S2 row of korean-style.md covers it in review.",
       "find": [
         "/[가-힣]\\s?수 있(?:습니다|어요)/"
       ],
