@@ -731,6 +731,28 @@ the document's, and the room that buys is spent on content. [references/landscap
 carries the geometry, the layouts, the rhythm across slides, the cover, contents and
 closing shells, and the per-slide checklist.
 
+## The script is heard, not read
+
+The notes are what the panel hears, often without looking at the slide, so they are written for
+the ear:
+
+- **Understood without the screen.** No referent the listener has not been given: 「보유 수신
+  기술」 says whose technology, what it is and how it was proven; a requirement code, a figure
+  number and a table are spoken as what they mean; no 「이 표」 or 「여기」 pointing at the slide.
+- **In the order of the screen.** The page-head description first, then the body top to bottom
+  and left to right, in the words printed there; the words the note speaks are emphasised on the
+  slide (bold, colour or underline), so speaker and panel follow the same line.
+- **Written as it is read.** A counter read with a native Korean numeral is in words (「열한 대」,
+  「여섯 명」, 「네 시간」); one read with a Sino-Korean numeral keeps its digits (「10만 건」,
+  「15개월 차」, 「3초」, the ratio 「1 대 3」); every English term is in Hangul as pronounced
+  (「아파치 이그나이트 쓰리」, 「아이엠디지」), with the meaning said at the first mention where the
+  listener cannot know it. The slide keeps the written form. `notespeech` lists every digit joined
+  to a native-numeral counter and every Latin letter left in a note.
+- **Timed at the measured rate.** Read the script aloud once and time it at that rate (one deck
+  read 5,247 characters in about 15 minutes, 350 a minute); an assumed rate cut a script by a
+  fifth that the talk had room for. Leave the seconds the speaker will add on a slide the user
+  names (a company page often takes questions).
+
 ## A guideline the user gives is written down in the same change
 
 When the user states a rule for a deck - a register, a shape, a spacing, a size, what a
