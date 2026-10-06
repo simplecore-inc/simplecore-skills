@@ -149,6 +149,8 @@ fix that cause, then register, and say in the report which of the three it was.
 - Diagram code blocks (mermaid and the like) keep their labels in the source language. A rendered
   `.svg` is the opposite: its `<text>` is audited and fixed.
 - Product names, language names, abbreviations (the 「원문 유지 용어」 table of the project glossary).
+  A speaker script is the exception: it writes them as they are pronounced, inside a span marked
+  as spoken ([references/audit-tooling.md](references/audit-tooling.md), "A speaker script").
 - Any span wrapped in `l10n:quote`.
 
 ## Common rationalizations

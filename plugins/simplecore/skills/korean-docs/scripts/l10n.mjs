@@ -58,7 +58,14 @@ import { readFileSync, writeFileSync, existsSync, readdirSync, statSync, realpat
 import { execFileSync } from "node:child_process";
 import { join, dirname, resolve, relative, isAbsolute, sep } from "node:path";
 import { fileURLToPath } from "node:url";
-import { discoverGlossary, loadRuleSet, loadRulePacks, parseGlossaryConfig, BASE_GLOSSARY_PATH } from "./lib/glossary.mjs";
+import {
+  discoverGlossary,
+  loadRuleSet,
+  loadRulePacks,
+  parseGlossaryConfig,
+  isOriginalScriptBan,
+  BASE_GLOSSARY_PATH,
+} from "./lib/glossary.mjs";
 import {
   initGlossary,
   initL10n,
@@ -68,6 +75,8 @@ import {
   contrastRecommendedRanges,
   makeExcludeMatcher,
   parseCheckArgs,
+  quotedRegions,
+  spokenRegions,
 } from "./lib/doc-audit.mjs";
 
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
@@ -627,6 +636,27 @@ function segmentsHtml(src) {
   return segments.sort((a, b) => a.start - b.start);
 }
 
+/**
+ * The character ranges of the lines a marker region covers, one range per run of lines.
+ *
+ * @param src the file
+ * @param regions what `quotedRegions` or `spokenRegions` returned for its lines
+ */
+function regionRanges(src, regions) {
+  const ranges = [];
+  let at = 0;
+  src.split("\n").forEach((line, idx) => {
+    const end = at + line.length;
+    if (regions.skip.has(idx)) {
+      const last = ranges[ranges.length - 1];
+      if (last && last[1] === at - 1) last[1] = end;
+      else ranges.push([at, end]);
+    }
+    at = end + 1;
+  });
+  return ranges;
+}
+
 /** Markdown: prose only - code fences, inline code, link targets and HTML are held out. */
 function segmentsMarkdown(src) {
   const blocked = [];
@@ -641,12 +671,12 @@ function segmentsMarkdown(src) {
   hold(/^ {4,}\S.*$/gm); // indented code
   hold(/<[^>\n]+>/g);
   hold(/^-{3,}[ \t]*$/gm); // thematic break - structure, not prose
-  // Verbatim quotation of somebody else's document, marked by the author. `check` skips the
-  // same region in doc-audit.mjs - the two engines have to agree about what the file contains,
-  // or a clause excused by one is reported by the other and nobody can tell which is right.
-  // An unclosed region reaches the end of the file here too; `check` reports that as an error,
-  // and the sweeps stay quiet over the same span rather than disagreeing with it.
-  hold(/^[ \t]*<!--[ \t]*l10n:quote\b[\s\S]*?(?:^[ \t]*<!--[ \t]*l10n:\/quote[ \t]*-->[ \t]*$|$(?![\s\S]))/gm);
+  // Verbatim quotation of somebody else's document, marked by the author. The region is read by
+  // doc-audit.mjs's own `quotedRegions` - the two engines have to agree about what the file
+  // contains, or a clause excused by one is reported by the other and nobody can tell which is
+  // right. An unclosed region reaches the end of the file here too; `check` reports that as an
+  // error, and the sweeps stay quiet over the same span rather than disagreeing with it.
+  blocked.push(...regionRanges(src, quotedRegions(src.split("\n"))));
 
   // Front matter is a fence that opens on the file's very FIRST line and closes at the
   // next `---`. Every later `---` is a horizontal rule in the body.
@@ -716,7 +746,25 @@ function segmentsMarkdown(src) {
     }
     offset = end + 1;
   }
+  // A speaker script, marked by its author. It is this repository's writing, so it is read in
+  // full like any prose; it is only flagged, so that a ban which keeps a name in its original
+  // script stands down on it (`isOriginalScriptBan`). doc-audit.mjs reads the same marker for
+  // `check`. An unclosed region runs to the end of the file here, and `check` reports it.
+  const spoken = regionRanges(src, spokenRegions(src.split("\n")));
+  if (spoken.length) {
+    for (const seg of segments) seg.spoken = spoken.some(([a, b]) => seg.start >= a && seg.start < b);
+  }
   return segments;
+}
+
+/**
+ * Whether a segment is a speaker script: inside a marked span, or in a kind declared spoken.
+ *
+ * @param entry the file the segment came from
+ * @param seg the segment
+ */
+function isSpoken(entry, seg) {
+  return seg.spoken === true || CONFIG.kinds[entry.kind]?.register === "spoken";
 }
 
 /**
@@ -1169,6 +1217,7 @@ function glossaryBans() {
     level: r.level,
     threshold: r.threshold,
     screenOnly: r.screenOnly === true,
+    originalScript: isOriginalScriptBan(r),
   }));
 }
 
@@ -1693,6 +1742,37 @@ const EXTRACTOR_CASES = [
       "<!-- l10n:/quote -->\n",
     want: ["가운데 검토 의견이다."],
   },
+  {
+    // A speaker script is the repository's own writing, so unlike a quotation it is read in
+    // full; it is only flagged, so that the bans keeping a name in its original script stand
+    // down on it. The sentence after the close is ordinary prose again, flag and all.
+    what: "markdown: a spoken span is read in full and flagged, and the body after it is not",
+    of: () => segmentsMarkdown,
+    src:
+      "<!-- l10n:spoken 발표 대본 -->\n" +
+      "도커 컨테이너로 배포합니다.\n" +
+      "<!-- l10n:/spoken -->\n" +
+      "Docker 컨테이너로 배포한다.\n",
+    want: ["도커 컨테이너로 배포합니다.", "Docker 컨테이너로 배포한다."],
+    wantSpoken: [true, false],
+    loud: ["도커"],
+  },
+  {
+    // A document that explains a marker shows it in a code fence, often the opening line alone.
+    // That is an example of the marker and opens nothing: read as a real one, it would hold or
+    // flag every sentence after the fence and report an unclosed region the author never wrote.
+    what: "markdown: a marker shown in a code fence opens no span",
+    of: () => segmentsMarkdown,
+    src:
+      "```markdown\n" +
+      "<!-- l10n:quote 예시 -->\n" +
+      "<!-- l10n:spoken 예시 -->\n" +
+      "```\n" +
+      "이 점에 있어서 우리가 쓴 문장이다.\n",
+    want: ["이 점에 있어서 우리가 쓴 문장이다."],
+    wantSpoken: [false],
+    loud: ["우리가 쓴"],
+  },
 ];
 
 /**
@@ -1731,6 +1811,13 @@ function extractorProblems() {
       const after = got.map((s) => s.after ?? "");
       if (after.some((a, i) => a !== test.wantAfter[i])) {
         problems.push([test.what, `following text expected ${JSON.stringify(test.wantAfter)} · got ${JSON.stringify(after)}`]);
+        continue;
+      }
+    }
+    if (test.wantSpoken) {
+      const spoken = got.map((s) => s.spoken === true);
+      if (spoken.some((v, i) => v !== test.wantSpoken[i])) {
+        problems.push([test.what, `speaker-script flags expected ${JSON.stringify(test.wantSpoken)} · got ${JSON.stringify(spoken)}`]);
         continue;
       }
     }
@@ -1803,7 +1890,7 @@ function cmdRulesTest(opts) {
     }
     if (!(rule.hit ?? []).length) problems.push(["no hit example", "nothing proves what this rule catches"]);
     for (const reg of rule.registers ?? []) {
-      if (!["screen", "manual", "plain"].includes(reg)) problems.push(["unknown register in registers", `${reg} - screen · manual · plain`]);
+      if (!["screen", "manual", "plain", "spoken"].includes(reg)) problems.push(["unknown register in registers", `${reg} - screen · manual · plain · spoken`]);
     }
     if (!(rule.miss ?? []).length) problems.push(["no miss example", "nothing guards against false positives"]);
     // The lens knowing a family HALF is the defect - 「붙는」 stood in it without
@@ -1950,6 +2037,9 @@ function cmdRulesScan(opts) {
           // rule fired. Matching elsewhere in the same segment would excuse a real defect
           // for standing next to a quotation.
           if (releasedBy(rule, seg, m)) continue;
+          // The spoken-script boundary is the same in both engines: a rule that only keeps a name in its
+          // original script stands down on a speaker script, whichever file holds the rule.
+          if (isSpoken(entry, seg) && isOriginalScriptBan({ source: rule.find.join(" "), suggestion: rule.replace })) continue;
           if (!perFile.has(rule.id)) perFile.set(rule.id, []);
           perFile.get(rule.id).push({
             file: entry.file,
@@ -2589,6 +2679,8 @@ function cmdAudit(opts) {
       }
       for (const ban of bans) {
         if (ban.screenOnly && (!isScreen || seg.annotation)) continue;
+        // A speaker script writes a name as it is pronounced; only that family of bans stands down.
+        if (ban.originalScript && isSpoken(entry, seg)) continue;
         if (matchSegment(ban.re, seg)) {
           if (!perRule.has(ban.term)) perRule.set(ban.term, []);
           perRule.get(ban.term).push({

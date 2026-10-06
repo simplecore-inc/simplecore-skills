@@ -148,7 +148,9 @@ decisions differ. One object keeps one name across the title, the body, the figu
 - **Settled loanwords and technical terms stay.** 어댑터 · 콜백 · 매핑 · 슬롯 · 캐시 · 핸들러 ·
   메타데이터 · 네임스페이스 · 리터럴, API · SQL, Docker · Kubernetes · Java (as written). Do not
   change them to make the text look more Korean. Framework terms (`hook` · `contract` · `entity`)
-  stay in the original too.
+  stay in the original too. A speaker script is the one place that writes a name as it is
+  pronounced, inside a span marked as spoken ([audit-tooling.md](audit-tooling.md), "A speaker
+  script").
 - **A technical term is explained technically.** A mechanism is named by what it is and what
   it does to what - 프로파일 · 어댑터 · SPI · 설정, and 변환 · 교체 · 반영 · 조정 - never by a verb
   standing where the mechanism should be: `차이를 수용하는 확장 지점` → 제품 · 규격 차이의 처리

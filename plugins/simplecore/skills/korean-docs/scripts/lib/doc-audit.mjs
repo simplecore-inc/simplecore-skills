@@ -19,6 +19,7 @@ import {
   emptyGlossary,
   mergeGlossaries,
   escapeRegExp,
+  isOriginalScriptBan,
 } from './glossary.mjs';
 
 // Directories never scanned by default. Dot-directories (.git, .claude,
@@ -289,6 +290,49 @@ function blank(match) {
 const QUOTE_OPEN = /^\s*<!--\s*l10n:quote\b(.*?)-->\s*$/;
 const QUOTE_CLOSE = /^\s*<!--\s*l10n:\/quote\s*-->\s*$/;
 
+// A speaker script, marked the same way. Its lines are read in full - it is this repository's
+// writing - and only the bans that keep a name in its original script stand down there
+// (`isOriginalScriptBan` in glossary.mjs says which). An unclosed region fails the run for the
+// same reason an unclosed quotation does: left open, it would quietly release those bans for
+// the rest of the file.
+//
+//     <!-- l10n:spoken 발표 대본 -->
+//     ... 들리는 대로 적은 대본 ...
+//     <!-- l10n:/spoken -->
+const SPOKEN_OPEN = /^\s*<!--\s*l10n:spoken\b(.*?)-->\s*$/;
+const SPOKEN_CLOSE = /^\s*<!--\s*l10n:\/spoken\s*-->\s*$/;
+
+/**
+ * The lines between an opening and a closing marker, markers included.
+ *
+ * A marker inside a fenced code block is an example of the marker, not one: a document that
+ * shows `<!-- l10n:quote -->` in a fence opens no region, and showing the opening line alone
+ * there is not an unclosed region. l10n.mjs reads the markers through this function too, so
+ * the two engines agree on every region.
+ */
+function markedRegions(lines, open, close) {
+  const skip = new Set();
+  const reasons = [];
+  let openAt = null;
+  let inFence = false;
+  lines.forEach((line, idx) => {
+    const fence = /^\s*(```|~~~)/.test(line);
+    if (fence) inFence = !inFence;
+    if (openAt === null) {
+      const opened = fence || inFence ? null : open.exec(line);
+      if (opened) {
+        openAt = idx;
+        reasons.push(opened[1].trim());
+        skip.add(idx);
+      }
+      return;
+    }
+    skip.add(idx);
+    if (!fence && !inFence && close.test(line)) openAt = null;
+  });
+  return {skip, reasons, unclosedAt: openAt === null ? null : openAt + 1};
+}
+
 /**
  * Locates the verbatim-quotation regions in a document.
  *
@@ -296,23 +340,15 @@ const QUOTE_CLOSE = /^\s*<!--\s*l10n:\/quote\s*-->\s*$/;
  * and the line the last region opened on when it was never closed.
  */
 export function quotedRegions(lines) {
-  const skip = new Set();
-  const reasons = [];
-  let openAt = null;
-  lines.forEach((line, idx) => {
-    if (openAt === null) {
-      const open = QUOTE_OPEN.exec(line);
-      if (open) {
-        openAt = idx;
-        reasons.push(open[1].trim());
-        skip.add(idx);
-      }
-      return;
-    }
-    skip.add(idx);
-    if (QUOTE_CLOSE.test(line)) openAt = null;
-  });
-  return {skip, reasons, unclosedAt: openAt === null ? null : openAt + 1};
+  return markedRegions(lines, QUOTE_OPEN, QUOTE_CLOSE);
+}
+
+/**
+ * Locates the speaker-script regions in a document, in the shape `quotedRegions` returns.
+ * `skip` here names the lines read as spoken, not lines left unread.
+ */
+export function spokenRegions(lines) {
+  return markedRegions(lines, SPOKEN_OPEN, SPOKEN_CLOSE);
 }
 
 /**
@@ -1144,6 +1180,7 @@ export function auditFile(filePath, rules, checkUntranslated, isLocaleResource =
   else ({lines, quoted} = stripLines(content));
   lines = blankLiteralMarkup(lines);
   const fm = isProse ? frontMatterRange(rawLines) : null;
+  const spoken = isProse ? spokenRegions(rawLines) : {skip: new Set(), reasons: [], unclosedAt: null};
   const errors = [];
   const warnings = [];
 
@@ -1170,8 +1207,12 @@ export function auditFile(filePath, rules, checkUntranslated, isLocaleResource =
     // A screen-only rule bans a word where a user reads it and nowhere else. A design document
     // has to be able to name the thing it specifies, and so does a note written beside a screen.
     if (rule.screenOnly && !isLocaleResource) continue;
+    // Inside a speaker script a name is written as it is pronounced, so a ban that only keeps a
+    // name in its original script stands down on those lines; every other rule still reads them.
+    const standsDown = spoken.skip.size > 0 && isOriginalScriptBan(rule);
     const hits = [];
     lines.forEach((line, idx) => {
+      if (standsDown && spoken.skip.has(idx)) return;
       rule.pattern.lastIndex = 0;
       for (const m of line.matchAll(rule.pattern)) {
         if (rule.screenOnly && isAnnotation(idx, m.index)) continue;
@@ -1274,8 +1315,29 @@ export function auditFile(filePath, rules, checkUntranslated, isLocaleResource =
       count: 1,
     });
   }
+  if (spoken.unclosedAt !== null) {
+    errors.push({
+      line: spoken.unclosedAt,
+      text: '<!-- l10n:spoken -->',
+      rule: {
+        source: 'spoken-region',
+        suggestion: 'close it with `<!-- l10n:/spoken -->` - unclosed, the rest of the file is read as a speaker script and its names are not held to their original spelling',
+        label: 'an unclosed speaker-script span',
+        level: 'error',
+        threshold: 1,
+      },
+      count: 1,
+    });
+  }
 
-  return {errors, warnings, quotedLines: quoted.skip.size, quotedRegions: quoted.reasons.length};
+  return {
+    errors,
+    warnings,
+    quotedLines: quoted.skip.size,
+    quotedRegions: quoted.reasons.length,
+    spokenLines: spoken.skip.size,
+    spokenRegions: spoken.reasons.length,
+  };
 }
 
 function formatFinding(relPath, f, kind) {
@@ -1347,7 +1409,8 @@ const L10N_TEMPLATE = {
     'silently out of every command, which reads as a clean result.',
     '',
     'register: "screen" = screen copy (합니다체), "manual" = reader-facing 합니다체 prose,',
-    'omitted = a -다체 working document. Checks that mean something in one register are gated on it.',
+    '"spoken" = a speaker script, where a name is written as it is pronounced, omitted = a -다체',
+    'working document. Checks that mean something in one register are gated on it.',
   ],
   languages: ['ko', 'en'],
   defaultLanguage: 'ko',
@@ -1540,6 +1603,9 @@ export function runDocAudit(args, cliPath) {
   let quotedLines = 0;
   let quotedRegions = 0;
   let quotedFiles = 0;
+  let spokenLines = 0;
+  let spokenRegions = 0;
+  let spokenFiles = 0;
   for (const file of targets) {
     const rel = relative(root, file);
     const relPath = rel.startsWith('..') ? file : rel;
@@ -1552,6 +1618,11 @@ export function runDocAudit(args, cliPath) {
       quotedRegions += res.quotedRegions;
       quotedLines += res.quotedLines;
     }
+    if (res.spokenRegions > 0) {
+      spokenFiles += 1;
+      spokenRegions += res.spokenRegions;
+      spokenLines += res.spokenLines;
+    }
     for (const f of errors) console.log(formatFinding(relPath, f, 'error'));
     for (const f of warnings) console.log(formatFinding(relPath, f, 'warn'));
   }
@@ -1561,6 +1632,13 @@ export function runDocAudit(args, cliPath) {
     console.log(
       `\nLines skipped as quoted spans: ${quotedFiles} files · ${quotedRegions} spans · ${quotedLines} lines` +
         ` (somebody else's text kept verbatim - these lines were not checked)`,
+    );
+  }
+  // A speaker-script span releases one family of bans, so its size is named for the same reason.
+  if (spokenRegions > 0) {
+    console.log(
+      `\nLines read as a speaker script: ${spokenFiles} files · ${spokenRegions} spans · ${spokenLines} lines` +
+        ` (names written as pronounced - the bans that keep a name in its original script did not apply there)`,
     );
   }
 

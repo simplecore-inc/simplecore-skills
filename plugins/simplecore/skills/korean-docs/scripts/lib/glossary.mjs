@@ -320,6 +320,35 @@ export function emptyGlossary() {
 }
 
 // ---------------------------------------------------------------------------
+// The spoken-script boundary
+// ---------------------------------------------------------------------------
+//
+// A speaker script is heard, so it writes an English name the way it is pronounced - 「도커」
+// for Docker, 「아파치 이그나이트 쓰리」 for Apache Ignite 3 - which is exactly the spelling a
+// transliteration ban stops in writing. Inside a span the author marks as spoken, those bans
+// stand down and nothing else does.
+//
+// **The ban is recognised by its replacement, not by a list.** A rule whose banned text holds
+// Hangul and whose replacement is Latin with no Hangul in it (`도커 → Docker`, `심플릭스 →
+// SimpliX`) exists to keep a name in its original script, and a script cannot. A replacement
+// with Hangul in it (`디폴트 → 기본값`, `디렉토리 → 디렉터리`) is a Korean word or spelling the
+// script says too, so that rule keeps reporting there. A project's own name rows qualify by
+// the same test, so no table has to be kept in step with this one.
+const HANGUL_IN = /[가-힣]/;
+
+/**
+ * Whether a rule only keeps a name in its original Latin script - the kind of ban a speaker
+ * script is exempt from.
+ *
+ * @param rule `{source, suggestion}`: the banned pattern text and the replacement it prescribes
+ * @returns true when the banned text holds Hangul and the replacement is Latin without Hangul
+ */
+export function isOriginalScriptBan({source = '', suggestion = ''}) {
+  const replacement = String(suggestion ?? '');
+  return HANGUL_IN.test(String(source)) && /[A-Za-z]/.test(replacement) && !HANGUL_IN.test(replacement);
+}
+
+// ---------------------------------------------------------------------------
 // Built-in checks the audit engine runs beside the glossary rules
 // ---------------------------------------------------------------------------
 //

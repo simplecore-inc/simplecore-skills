@@ -90,6 +90,9 @@ Standard spellings from the loanword orthography and for widely shared technical
 
 Categories kept in the original rather than translated or transliterated. A reference table, not an
 audit target (the common transliteration errors are caught by the banned-expression table below).
+A speaker script writes these names as they are pronounced, and inside a span marked as spoken the
+bans that keep a name in its original script stand down (`references/audit-tooling.md`, "A speaker
+script").
 **The first column stays Korean on purpose**: an item carrying Hangul or parentheses is read as a
 category description, and only a plain-ASCII item is taken as a proper noun for the untranslated
 check.

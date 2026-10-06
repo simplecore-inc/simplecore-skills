@@ -140,6 +140,34 @@ statutory clause - is wrapped in a marker with the reason beside it.
   `class` contains `mono` or `code` is excluded the same way. An element containing any Hangul is
   not excluded.
 
+### A speaker script - `l10n:spoken`
+
+A script is heard, not read, so it writes an English name the way it is pronounced (`도커` for
+Docker, `아파치 이그나이트 쓰리` for Apache Ignite 3), which is the spelling the transliteration
+bans stop in writing. The author marks the script, with a reason beside the marker.
+
+```markdown
+<!-- l10n:spoken 3번 슬라이드 대본 -->
+도커 컨테이너로 배포하고 쿠버네티스로 운영합니다.
+<!-- l10n:/spoken -->
+```
+
+- Inside the span, a rule stands down when its banned text holds Hangul and its replacement is
+  Latin with no Hangul in it: a ban that keeps a name in its original script (`도커 → Docker` ·
+  `심플릭스 → SimpliX`, and a project's own name rows by the same test). Every other rule still
+  applies, a loanword spelling included (`디렉토리 → 디렉터리`: the script says that word too, and
+  it has one Hangul spelling), and so does a ban whose replacement is a Korean word
+  (`디폴트 → 기본값`).
+- `check` · `rules` · `audit` honour the span, and so do both runs of the write-time hook. `check`
+  prints how many lines it read as a speaker script on every run, and an unclosed span is an
+  error.
+- A resource kind whose every value is a script (speaker notes kept in their own files) declares
+  `"register": "spoken"` in `.claude/l10n.json`, and `rules` · `audit` read each of its segments as
+  a marked span. `check` reads the glossary's declarations, not that register, so a script in a
+  file `check` reads is marked with the span.
+- Only the script is marked. A slide's text, a caption and a manuscript sentence keep the written
+  form, `Docker` included.
+
 ### The two built-in checks
 
 They run regardless of the glossary.
@@ -214,8 +242,9 @@ layout.
   · `markdown` · `html` · `wireframe` · `text` · `auto`) · `register` · `exclude` · `optIn` ·
   `stemKey`.
 - `register`: `"screen"` (screen copy, 합니다체) · `"manual"` (reader-facing 합니다체 prose) ·
-  omitted (a -다체 working document). Checks that only mean something in one register are gated on
-  this value.
+  `"spoken"` (a speaker script, [A speaker script](#a-speaker-script---l10nspoken)) · omitted (a
+  -다체 working document). Checks that only mean something in one register are gated on this
+  value.
 - `optIn`: `true` removes the kind from every default sweep. Naming commands (`["audit"]`) removes it
   from those only. A kind a generator rewrites is removed from the translation gate (`audit`) while
   the sentence rules keep running on it. Removing it with `true` also loses it for `rules` ·
@@ -252,8 +281,8 @@ layout.
 Every rule carries `id` · `scope` · `severity` · `reason` · `find` · `replace` · `hit` · `miss`, and
 is verified with `rules --test`. The `universal` scope always applies; a domain scope (`saas` and
 the like) applies when the project opts in through `ruleScopes` in `.claude/l10n.json`. A rule
-written for one register names it in `registers` (`screen` · `manual` · `plain`; a document with no
-declared kind is `plain`) and is skipped elsewhere - 「~할 수 있습니다」 replacing an instruction is
+written for one register names it in `registers` (`screen` · `manual` · `spoken` · `plain`; a
+document with no declared kind is `plain`) and is skipped elsewhere - 「~할 수 있습니다」 replacing an instruction is
 a defect on a screen and the ordinary capability sentence of a reference manual, and a rule that
 cannot tell the two apart by letters tells them apart by register. A rule true
 beyond this repository goes into `RULES.base.json`; a rule true only in one project goes into that
@@ -273,7 +302,8 @@ end of a string. At an artificial end - a markdown line cut off by a code fragme
 is reported. The place to fix is not the pattern but the extractor: `segment()` carries the
 following text as `after`, rules match against `text + after`, and a hit counts only when it starts
 inside `text`. Writing `(?!스크립트|$)` rejects the real end too and becomes a miss. A new extractor
-declares its own boundaries in `EXTRACTOR_CASES` with `want` · `wantAfter` · `silent` · `loud`.
+declares its own boundaries in `EXTRACTOR_CASES` with `want` · `wantAfter` · `wantSpoken` ·
+`silent` · `loud`.
 
 ### A rule that uses a particle as a boundary meets words ending in that syllable
 
