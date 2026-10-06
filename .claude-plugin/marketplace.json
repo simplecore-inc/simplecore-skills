@@ -13,7 +13,7 @@
     {
       "name": "simplecore",
       "source": "./plugins/simplecore",
-      "description": "SimpleCORE's curated skill set — Korean output standards with glossary tooling, SVG and ASCII diagrams, low-fidelity wireframe boards, the long-running board-parity walk that reconciles them with the running app, and the proposal set: what a bid document must say and how its decks are typeset",
+      "description": "SimpleCORE's curated skill set: Korean output standards with glossary tooling, SVG and ASCII diagrams, low-fidelity wireframe boards, the scenario-driven build that grows an app from one in dependency order, one chapter per agent, the parity walk that reconciles a board with a running app, and the proposal set: the content standard for a bid, the typesetting standard for the decks it is submitted as, and the runner that takes one bid from tender to submission",
       "keywords": [
         "korean",
         "documentation",
@@ -22,9 +22,12 @@
         "diagram",
         "wireframe",
         "parity-walk",
+        "scenario",
+        "persona-test",
         "proposal",
         "pptx",
-        "slideglance"
+        "slideglance",
+        "typesetting"
       ]
     },
     {

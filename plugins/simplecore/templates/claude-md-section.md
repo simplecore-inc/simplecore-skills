@@ -1,17 +1,18 @@
 # Routing blocks for `simplecore` skills
 
-Three blocks. The **project block** names this repository's board, the way that board reaches code,
-and the glossary, and belongs in the project's own instruction file. The **global Korean block** and the **global
-local-server block** are path-free and belong in `~/.claude/CLAUDE.md`, where they cover every
-project on the machine.
+The **project block** names this repository's board, the way that board reaches code, and the
+glossary, and belongs in the project's own instruction file. The **global Korean block** and the
+**global local-server block** are path-free and belong in `~/.claude/CLAUDE.md`, where they cover
+every project on the machine.
 
 Writing them is what makes the routing durable. The plugin's SessionStart hook announces the same
 thing, but a hook only fires where the plugin is installed, while an instruction file travels with
 the repository - and a global block covers the sessions that never touch a marked project at all.
 
 `/simplecore:init` writes them. The deeper setup each skill needs - installing the board build
-kit, writing the board folder's reading contract, filling the parity list from the board - belongs
-to `/simplecore:board-init` and `/simplecore:parity-walk-init`.
+kit, writing the board folder's reading contract, writing the build config and its tracking files,
+filling the parity list from the board - belongs to `/simplecore:board-init`,
+`/simplecore:board-to-app-init` and `/simplecore:parity-walk-init`.
 
 ---
 
@@ -69,9 +70,11 @@ This repository supplies the contents:
 
 ## Korean output
 
-This project's documents are Korean. Invoke `simplecore:korean-docs` for Korean output, ordinary
-answers included, and follow `<glossary path>` for standard translations and banned spellings.
-A term decided during a task is registered in the glossary in the same task.
+This project's documents are Korean. Invoke `simplecore:korean-docs` when writing, translating,
+proofreading, reviewing, or auditing a Korean document, screen copy, or glossary entry; ordinary
+replies follow the Korean habits block in the global instructions and do not invoke it. Follow
+`<glossary path>` for standard translations and banned spellings. A term decided during a task
+is registered in the glossary in the same task.
 
 Skills come from the `simplecore` plugin (`claude plugin install simplecore@simplecore-skills`).
 When one is not in the `Skill` tool list, install it rather than working from memory.
