@@ -9,11 +9,11 @@ from runmain import run
 
 import fignum
 
-KDN = {"caption": "그림 {part}-{n}", "annex": "그림 별첨{a}-{n}"}
+PART_SERIES = {"caption": "그림 {part}-{n}", "annex": "그림 별첨{a}-{n}"}
 
 
 class Base(unittest.TestCase):
-    numbering = KDN
+    numbering = PART_SERIES
     caption = "^캡션: "
 
     def setUp(self):
