@@ -9,6 +9,11 @@ Set this project up so its wireframe board can be built chapter by chapter and, 
 so a session holding none of this conversation can pick the next chapter up. Invoke
 `simplecore:board-to-app` first and follow it; this command is the setup it asks for.
 
+**Arguments: `$ARGUMENTS`.** `--chapters <dir>` names the chapter directory and `--evidence <dir>`
+the evidence folder. A path given there is written into `chapterDir` or `evidenceDir` as given
+rather than searched for, and a folder it names that does not exist yet is created empty when the
+config is written, so every path the config declares is there.
+
 **This is for any project that has a board**, whatever else it already has. A project with no
 chapter set gets everything; a project with thirty-six chapters, three tracking files and a green
 config gets whatever is missing and a report - **and the more that is already there, the shorter
@@ -16,11 +21,11 @@ this command runs.** Step 2 counts what exists and step 3 writes only the rest.
 
 **Do not read a half-wired project as out of scope.** A project that has most of this and cannot
 finish a chapter is exactly the one that needs the pass: everything present reads as done, and the
-one absent piece is invisible precisely because nothing else is. A project whose config was green
-on twenty-nine keys still could not close a chapter, twice.
+one absent piece is invisible precisely because nothing else is. A project with most of its keys
+green can still be unable to close a chapter, and closing is what this pass is for.
 
 Coming off a board-parity walk is a different move with different costs, and it is reserved for the
-user's own words - `skills/board-to-app/references/migrating-from-a-walk.md` says why and what it
+user's own words - `${CLAUDE_PLUGIN_ROOT}/skills/board-to-app/references/migrating-from-a-walk.md` says why and what it
 discards. When you find a walk here, say so and stop.
 
 Report what already exists before writing anything, then write only what is missing. Show the user
@@ -42,9 +47,10 @@ repository.
    its own `chapterDir`, `chapterOverview`, `stateLedger`, `handoverFile` and `evidenceDir`, and
    everything the two share left at the top level. Wiring one and leaving the other is the failure
    worth naming out loud: the config is then valid, `doctor` is green, and the second product has
-   no build at all while nothing on disk says so. `references/config.md` § *A repository that draws
-   two products declares two boards* has the shape, and `boardsGate` refuses two boards that share
-   a progress file.
+   no build at all while nothing on disk says so.
+   `${CLAUDE_PLUGIN_ROOT}/skills/board-to-app/references/config.md` § *A repository that draws two
+   products declares two boards* has the shape, and `boardsGate` refuses two boards that share a
+   progress file.
 
    **A board before the current contract is a different matter, and it is the one thing here that
    is worth stopping for.** Every check the kit holds - permanent ids, balanced markup, reachability,
@@ -53,7 +59,8 @@ repository.
    has checked. **Say so, name `/simplecore:board-migrate`, and let the user decide whether to
    migrate first or wire the build over a board that is not yet held.** Where the board's components
    are mostly its own, `node wf.mjs pattern adopt` is the step that makes the migration possible at
-   all - `skills/wireframe-boards/references/build-kit.md` § *A board may carry its own pattern*.
+   all - `${CLAUDE_PLUGIN_ROOT}/skills/wireframe-boards/references/build-kit.md` § *A board may carry
+   its own pattern, and that is the last resort*.
 
 2. **Check what is already there** and tell the user, one line each:
    - `.claude/board-to-app.json`
@@ -75,11 +82,11 @@ repository.
    about a build somebody has to guess at. Read its grades:
 
    - `✖` - required, and nothing works until it is declared.
-   - `◑` - **every chapter needs it to CLOSE.** Everything runs, nothing finishes. Five keys carry
-     it, and they are one decision rather than five: `journeyTestsDir` says where the journeys live
-     as tests, `journeyCommand` runs them and writes the run record, `evidenceDir` says where that
-     record goes, and `closedStatus` and `verdictRole` are the two words the checks over the ledger
-     and a foundation chapter compare. A build with a page of green that cannot end a chapter is
+   - `◑` - **every chapter needs it to CLOSE.** Everything runs, nothing finishes. The keys that
+     carry it are one decision: `journeyTestsDir` says where the journeys live as tests,
+     `journeyCommand` runs them and writes the run record, `evidenceDir` says where that record
+     goes, `closedStatus` is the ledger's word for a closed chapter, and `gates` lists the commands
+     a close reads by their exit status. A build with a page of green that cannot end a chapter is
      what this grade exists to stop being invisible.
    - `◐` / `●` - a key some chapter promised in `deferredKeys`; the second says its subject now
      exists, so the promise is due.
@@ -117,6 +124,10 @@ repository.
    (`handoverFile`) say what an agent working a chapter worked out; the open items
    (`openItemsFile`) say what a person has to decide. **Progress lives in these and nowhere else** -
    a design document that carries a status column goes stale silently.
+
+   **The open-items file carries a heading whose text is exactly the `openItemsHeading` the config
+   declares, and the two keys are declared together.** `openItemsGate` reads the lines under that
+   heading, and a file with no heading matching it fails the first `check`.
 
    **A fourth is written only where the project needs one, and it has no key.** Where several
    numbering schemes share one shape - a frame `A-01`, a cluster group `S1`, a statutory code
@@ -160,17 +171,17 @@ repository.
    chapter on paper and watch the gates say no.**
 
    Pick a chapter that is genuinely unfinished, write the ledger's closed word into its row, run
-   `bta.mjs check`, and read what comes back. It should name the missing result document, and - if
-   that chapter places frames - the captures nothing shows. **Then put the row back.**
+   `bta.mjs check`, and read what comes back. It should report that the chapter left no run
+   record. **Then put the row back.**
 
    **Where anything else may be running, do not edit the real ledger at all.** It is the one file
    every agent reads, and a row that is wrong for ten seconds is a row somebody else can read or
    commit. Copy it, point a config of your own at the copy, and leave the shared file alone:
 
    ```bash
-   cp <state ledger> /tmp/prove-STATE.md          # then write the closed word into one row of the copy
+   cp <state ledger> <scratch>/prove-STATE.md     # then write the closed word into one row of the copy
    # a config beside it, identical but for `stateLedger`, with the other paths made absolute
-   node <kit>/bta.mjs check --config /tmp/prove/.claude/board-to-app.json
+   node "${CLAUDE_PLUGIN_ROOT}/skills/board-to-app/scripts/bta.mjs" check --config <scratch>/prove/.claude/board-to-app.json
    ```
 
    The gates read the real board, the real chapters and the real evidence folder; only the ledger
