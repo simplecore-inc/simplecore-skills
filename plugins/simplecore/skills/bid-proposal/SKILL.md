@@ -176,6 +176,8 @@ with 「(미정: …)」.
   「아파치 이그나이트 쓰리」, 「IMDG」 → 「아이엠디지」), with the meaning said at the first mention
   where the listener cannot know it; the slide keeps the written form. The same check lists any
   Latin letter left in a note.
+- A compound term the slide uses as a label is unpacked in the script into what it does
+  (「멱등 저장」 → 「멱등성을 보장해 저장합니다」).
 - Time the script at the speaking rate measured by reading it aloud (one bid read 5,247
   characters in about 15 minutes, 350 a minute), never at an assumed rate; an assumed 300 a minute
   cut a script by a fifth that the talk had room for.

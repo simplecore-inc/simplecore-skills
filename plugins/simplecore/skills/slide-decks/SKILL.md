@@ -748,6 +748,9 @@ the ear:
   (「아파치 이그나이트 쓰리」, 「아이엠디지」), with the meaning said at the first mention where the
   listener cannot know it. The slide keeps the written form. `notespeech` lists every digit joined
   to a native-numeral counter and every Latin letter left in a note.
+- **Unpacked, not compounded.** A noun stack the slide can afford is unpacked into a clause the
+  ear can follow: 「멱등 저장」 → 「멱등성을 보장해 저장합니다」, 「무유실 전달」 → 「잃는 데이터 없이
+  전달합니다」. The slide keeps the short label; the note says what it does.
 - **Timed at the measured rate.** Read the script aloud once and time it at that rate (one deck
   read 5,247 characters in about 15 minutes, 350 a minute); an assumed rate cut a script by a
   fifth that the talk had room for. Leave the seconds the speaker will add on a slide the user
