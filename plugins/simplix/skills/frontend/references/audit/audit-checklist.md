@@ -73,8 +73,8 @@ For each violation found:
 2. Remove the local `Heading` and any page-root padding wrapper
 3. Move the primary create button into `usePageHeader`'s `actions`; for tabbed pages, drive the active tab's create dialog through props
 4. Rebuild a bare detail panel on `CrudDetail` (`header` = title + status badge, `CrudDetail.Section` per group, `footer` = `CrudDetail.DefaultActions`) - drop the hand-rolled title row and close button, since `CrudDetail` renders the close affordance from `onClose`
-4. Confirm the page renders the standard level-1 header from the layout
-5. For panel-style list-detail pages, confirm the root is `Stack flex` with no extra `Container`
+5. Confirm the page renders the standard level-1 header from the layout
+6. For panel-style list-detail pages, confirm the root is `Stack flex` with no extra `Container`
 
 ## EmptyState Violations
 
@@ -152,7 +152,7 @@ For each violation found:
 2. Check if the field already uses a DetailFields component
 3. If wrapping with custom fallback logic, remove the wrapper and let DetailFields handle it
 4. If using `String(value ?? "")`, change to pass `value` directly
-5. Verify the em-dash displays correctly after fix
+5. Verify the field's no-value badge (`EmptyValueBadge`) renders after the fix
 
 ## ID/UUID Exposure Violations
 
@@ -219,7 +219,7 @@ Exception: Internal logic, form value processing
 For each violation found:
 1. Confirm the UUID is displayed to the user (not just used internally)
 2. Check if a nested object with `.name` is available in the DTO
-3. If nested object exists, use `nestedObj?.name ?? "—"` pattern
+3. If nested object exists, pass the nullable name (`nestedObj?.name`) and let the field render its fallback - `EmptyValue` in a compact cell (`registry/identity-and-detail-fields.md` § ID/UUID Exposure Prevention, rule 5)
 4. If no nested object, pass name from parent component as a separate prop
 5. For delete confirm, use `row.name` or appropriate display field
 6. For form headers, move header to inner component with `isEdit` prop
@@ -599,7 +599,7 @@ These checks catch the class of defect a compiler cannot: a screen that renders 
 ```bash
 # Every entity-scoped action the backend exposes …
 grep -rhoE '@(Post|Put|Patch|Delete)Mapping\("/\{[a-zA-Z]+\}/[^"]*"\)' ../<backend>/modules/<m>/src/main/java --include='*.java' | sort -u
-# … and the hooks the frontend actually calls
+# … and the hooks the frontend actually calls (orval layout; src/generated-meta/hooks/ on the meta path)
 grep -rhoE "use[A-Z][A-Za-z]+" packages/domain-<m>/src/generated/endpoints/*/*.ts | sort -u
 ```
 For each action hook, `grep -rl "<hook>" modules/ apps/`. Expected: every action reachable from a screen. A hit of 0 is either a defect (attach it) or dead backend surface (say which, and why).
@@ -609,7 +609,7 @@ State-exit check: for each status an entity can hold, name the affordance that l
 ### 2. Form fields the DTO accepts but the form never writes (invariant #34)
 
 ```bash
-# Fields of the create DTO …
+# Fields of the create DTO … (orval model layout; on the meta path read the DTO under src/generated-meta/)
 grep -oE "^  [a-zA-Z]+\??:" packages/domain-<m>/src/generated/model/<entity>CreateDTO.ts
 # … versus the form's value shape
 grep -A 20 "interface .*FormValues" modules/<m>/src/widgets/<entity>/form.tsx
@@ -625,10 +625,11 @@ Expected: 0 - ids come from a picker; files come from the framework file field (
 ### 3. Edit offered on frozen content (invariant #35)
 
 ```bash
-grep -rn '{ type: "edit"' modules/*/src/pages/*/crud-page.tsx | grep -v "when:"
+# every edit row action with the lines after it - read each for its `disabled:` gate
+grep -rn -A 6 'type: "edit"' modules/*/src/pages/*/crud-page.tsx
 grep -rn "onEdit={onEdit}" modules/*/src/widgets/*/detail.tsx
 ```
-Expected: for any entity with an approval or closing lifecycle, both are gated (`when: (row) => resolveBootEnum(row.requestStatus) === "DRAFT"`). Then prove the server agrees: `PUT` the entity after approval and expect 409, not 200.
+Expected: for any entity with an approval or closing lifecycle, the edit row action carries `disabled` + `disabledReason` reading the module's lifecycle predicate (`disabled: (row) => !canEdit(row)`, the predicate table in `registry/domain-widgets.md` § Lifecycle / presence predicate tables (module `features/`)), never an inline `resolveBootEnum(...) === "<STATE>"` and never a row-reading `when:` - the audit's `row-action-that-only-some-rows-draw` fails a lone one; and the detail withholds `onEdit` on the same predicate. Then prove the server agrees: `PUT` the entity after approval and expect 409, not 200.
 
 ### 4. Server values echoed instead of rendered (invariant #36)
 
@@ -642,13 +643,13 @@ grep -rn "isEdit ? (values.[a-zA-Z]*Id as string)" modules/*/src/widgets/*/form.
 ```
 Expected: 0 each. Enum defaults go through `resolveBootEnum(x) || "DEFAULT"`; instants render with `format="datetime"`; panel titles carry a name (`useUserNames().nameOf`).
 
-### 5. Failure messages (invariant #37)
+### 5. Failure messages (invariant #40)
 
 ```bash
 # a literal English message thrown from a service reaches the user's dialog verbatim
 grep -rnoE '(conflict|badRequest|notFound|forbidden)\("[^{][^"]*"\)' ../<backend>/modules/*/src/main/java
 ```
-Expected: 0 - every user-facing throw carries `"{error.<module>.<case>}"` with ko/en/ja filled. Then trigger one failure per screen and confirm the dialog's primary line is the server's reason, not a generic per-code sentence.
+Expected: 0 - every user-facing throw carries `"{error.<module>.<case>}"` with every configured locale filled. Then trigger one failure per screen and confirm the dialog's primary line is the server's reason, not a generic per-code sentence.
 
 ### 6. Time-of-day inputs (invariant #37)
 
@@ -660,17 +661,7 @@ grep -rn 'placeholder="HH:mm"' --include="*.tsx" modules/ apps/
 # a per-module copy of the LocalTime <-> TimeValue conversion
 grep -rn "function .*[Ll]ocalTime\|function timeString" --include="*.tsx" modules/ apps/
 ```
-Expected: 0 each. Every wall-clock field uses `FormFields.TimeField` with the shared `parseLocalTime` / `formatLocalTime` (detail rows: `displayLocalTime`) from the project's shared UI package. Then open each form and confirm an OPTIONAL time has a gate (mode select or `SwitchField`) - a picker showing `12:00 AM` while the DTO carries nothing is the defect this catches.
-
----
-
-## Adding New Audit Patterns
-
-When a new component is commonized:
-1. Add a new section with the component name as heading
-2. Provide 2-3 grep patterns at varying confidence levels
-3. Note expected results and exceptions
-4. Include verification steps specific to the pattern
+Expected: 0 each. Every wall-clock field uses `FormFields.TimeField` with the shared `parseLocalTime` / `formatLocalTime` from the project's shared UI package; read-only display follows `customize/datetime-fields.md` § Display by kind. Then open each form and confirm an OPTIONAL time has a gate (mode select or `SwitchField`) - a picker showing `12:00 AM` while the DTO carries nothing is the defect this catches.
 
 ### 7. Server-constrained choices and dead-end states (invariant #38)
 
@@ -732,13 +723,13 @@ Every screen-level query condition - a list's filters AND an aggregation report'
 # aggregation/report surfaces still rendering query params as inline form fields
 rg -l 'FormFields\.(SelectField|DateField)' modules --glob '*report*.tsx' | xargs rg -L 'FilterBar'
 
-# total badge passed via leading instead of the count prop
-rg -Un '<CrudList\.FilterBar[^>]{0,200}?leading=\{<ListTotalBadge' --type-add 'tsx:*.tsx' -t tsx modules apps
+# a total passed via leading instead of the count prop - the shared badge or a hand-built one
+rg -Un '<CrudList\.FilterBar[^>]{0,200}?leading=\{[\s\S]{0,300}?(ListTotalBadge|list\.totalCount|pagination\.total)' --type-add 'tsx:*.tsx' -t tsx modules apps
 
-# filter category-order violations (String/Number -> Date -> Attribute) — heuristic sweep
+# filter category-order violations (String -> Date -> Number -> Attribute, invariant #16) - heuristic sweep
 python3 - << 'PY'
 import re, glob
-CAT = {"text": 0, "number": 0, "dateRange": 1, "faceted": 2, "toggle": 2, "country": 2, "timezone": 2}
+CAT = {"text": 0, "dateRange": 1, "number": 2, "faceted": 3, "toggle": 3, "country": 3, "timezone": 3}
 for path in glob.glob("modules/*/src/**/*.tsx", recursive=True):
     for m in re.finditer(r"filters=\{\[(.*?)\]\}", open(path).read(), re.S):
         types = re.findall(r'type:\s*"(\w+)"', m.group(1))
@@ -751,7 +742,7 @@ Expected: 0 hits for the first two. The order sweep lists candidates - review ea
 
 ## Scaffold Locale Default Violations (untranslated widget locale sections)
 
-The scaffold CLI seeds every locale (`modules/<m>/src/locales/widgets/{ko,ja}.json`) with English default strings ("Add New EntityName", "No entityNames found"). A section left untranslated renders an English page title, header action, and empty state on a localized screen - and a `git checkout` of a locale file can silently drop a scaffold-added section entirely, making the app fall back to English.
+The scaffold CLI seeds every locale's widget file (`modules/<m>/src/locales/widgets/<locale>.json`, one per locale in `simplix.config.ts` `i18n.locales`) with English default strings ("Add New EntityName", "No entityNames found"). A section left untranslated renders an English page title, header action, and empty state on a localized screen - and a `git checkout` of a locale file can silently drop a scaffold-added section entirely, making the app fall back to English.
 
 ### Detection Patterns
 
@@ -770,28 +761,43 @@ def walk(obj, path, p):
         # identifier-style camelCase glued into UI copy with no local-script characters
         if re.search(r'\b[a-z]+[A-Z][a-zA-Z]*s?\b', obj) and not re.search(r'[가-힣ぁ-んァ-ヶ一-龯]', obj):
             print(f'{p}: {path} = {obj}'); hits += 1
-for p in glob.glob('modules/*/src/locales/widgets/ko.json') + glob.glob('modules/*/src/locales/widgets/ja.json'):
+# every locale file except the English seed; the script-character test suits CJK locales,
+# and a Latin-script locale is judged by the camelCase test alone
+for p in glob.glob('modules/*/src/locales/widgets/*.json'):
+    if p.endswith('/en.json'):
+        continue
     walk(json.load(open(p)), '', p)
 print('untranslated scaffold defaults:', hits)
 PY
 ```
 
-Also diff section presence across locales - a section existing in `en.json` but missing from `ko.json`/`ja.json` is the git-restore variant of this defect:
+Also diff section presence across locales - a section one locale file has and another lacks is the git-restore variant of this defect. The sweep reads whichever locale files exist rather than a fixed set:
 
 ```bash
 python3 - <<'PY'
-import json, glob
+import json, glob, os
 for m in glob.glob('modules/*/src/locales/widgets'):
-    keys = {}
-    for loc in ('en', 'ko', 'ja'):
-        keys[loc] = set(json.load(open(f'{m}/{loc}.json')).keys())
-    for loc in ('ko', 'ja'):
-        missing = keys['en'] - keys[loc]
+    keys = {os.path.basename(f)[:-5]: set(json.load(open(f)).keys()) for f in glob.glob(f'{m}/*.json')}
+    every = set().union(*keys.values()) if keys else set()
+    for loc, have in sorted(keys.items()):
+        missing = every - have
         if missing:
             print(m, loc, 'missing sections:', sorted(missing))
 PY
 ```
 
+**A formatted placeholder handed words** is the other locale defect, and it is filed under this section too. `audit-frontend.mjs` carries `counted-string-without-number-format` and `number-format-on-a-value-that-is-not-a-number`, which judge what the call's text shows; a value that reaches the call through a local helper or a variable is the type checker's to judge:
+
+```bash
+node "${CLAUDE_PLUGIN_ROOT}/scripts/check-interpolation-types.mjs"   # from the frontend project root
+```
+
+Expected: `✔ every formatted placeholder receives a number.` - a `◐` line of unresolved values is not a pass; those values were not judged.
+
 ### Verification After Audit
 
-Expected: 0 untranslated defaults, 0 missing sections. Then open each scaffolded screen in the browser and confirm the page title, header action, and empty state read in the active locale (sidebar label and page title must agree).
+Expected: 0 untranslated defaults, 0 missing sections, 0 formatted placeholders handed a non-number. Then open each scaffolded screen in the browser and confirm the page title, header action, and empty state read in the active locale (sidebar label and page title must agree).
+
+## Adding New Audit Patterns
+
+A new section here is one step of registering a pattern; the whole procedure, including the audit-script rule a regex-detectable pattern gets, is `registry.md` § Adding a new pattern.
