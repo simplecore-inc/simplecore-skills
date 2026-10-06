@@ -182,6 +182,7 @@ After running `npx simplix scaffold <entity> --module <domain>`, the generated c
 - [ ] Add field validation hints (placeholder, min/max, required indicator)
 - [ ] Wire enum fields to `SelectField` with proper options
 - [ ] Handle optional vs required fields
+- [ ] Free-form prose (a note, description, memo, remark, bio) is a `TextareaField` on a row of its own, never a single-line `TextField` - it is written on more than one line (the audit's `single-line-free-text`)
 
 ### Step 3: Detail Widget (`detail.tsx`)
 

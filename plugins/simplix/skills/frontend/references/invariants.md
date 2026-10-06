@@ -403,7 +403,11 @@ this and the list written under those conditions does not name them.
   local-link profile to the registry, any `pnpm install` that rewrites the lockfile. It
   reports same-version copies of directly-depended packages whose code creates a context
   and which the dedupe list does not name; different major versions living side by side
-  are ordinary resolution and are not reported.
+  are ordinary resolution and are not reported. It reads the list from the module
+  `--dedupe=<file>` names, else a dedupe module at `config/vite/dedupe.js` (or `.mjs`, or
+  `vite.dedupe.js`), else every `resolve.dedupe: [...]` written as a literal list in a Vite
+  config; a Vite config declaring the list any other way (an identifier, a spread) stops the
+  run with exit 2, because a list it cannot read is not an empty one.
 - **Missing chrome has TWO causes, and WHICH pages lost it tells them apart before you
   touch anything.** Duplication takes out every page past the package boundary - the
   app's own pages keep their header while every `modules/*` page loses it. When only

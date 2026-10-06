@@ -1842,14 +1842,15 @@ export function AlertPanel() { return null; }`,
   );
 }`,
       fixed: `export function HoldersTab({ positionId }: Props) {
-  const list = useCrudList<AccountRow>({
-    listHook: adaptForcedList(useListAccounts, { "positionId.equals": positionId }),
-  });
+  const list = useCrudList<AccountRow>(
+    adaptForcedList(useListAccounts, { "positionId.equals": positionId }),
+    { stateMode: "server" },
+  );
   return (
     <CrudList>
       <CrudList.Toolbar>
         <CrudList.Search value={list.search} onChange={list.setSearch} />
-        <CrudList.FilterBar filters={FILTERS} state={list.filters} maxBadges={3} count={list.total} />
+        <CrudList.FilterBar filters={FILTERS} state={list.filters} maxBadges={3} count={list.pagination.total} />
       </CrudList.Toolbar>
       <CrudList.TableCard>
         <CrudList.Table rows={list.rows} sort={list.sort}>
@@ -2338,7 +2339,7 @@ window.history.replaceState(null, "", window.location.pathname + window.location
   },
   {
     id: "row-action-that-reads-as-text",
-    invariant: "#20 / #77",
+    invariant: "#20",
     level: "error",
     desc: "An action inside a table cell drawn as a ghost button carrying words. With no border and no glyph it reads as a sentence rather than as something to press, and where two sit side by side — one available and one not — nothing but the tone tells them apart. A row action carries a border and its own glyph; ghost is for an icon-only control, where the glyph is the whole button",
     appliesTo: isTsx,
@@ -4391,10 +4392,10 @@ const confirmOptions = [
       broken: `const { data } = useListAreaVisits({ areaId, page: 0, size: 20, sort: "startedAt,desc" });
 
 return <Table rows={data?.content ?? []} />;`,
-      fixed: `const list = useCrudList({
-  queryHook: useListAreaVisits,
-  params: { areaId },
-});
+      fixed: `const list = useCrudList(
+  adaptForcedList(useListAreaVisits, { "areaId.equals": areaId }),
+  { stateMode: "server" },
+);
 
 return (
   <Stack gap="sm">
@@ -4650,8 +4651,8 @@ return <Badge>{data?.totalElements ?? 0}</Badge>;`,
       broken: `export function useAreaList(siteId: string, tab: AreaTab) {
   const forcedScope = { siteId, status: TAB_STATUS[tab] };
 
-  return useCrudList({
-    queryHook: useListAreas,
+  return useCrudList(adaptOrvalList(useListAreas), {
+    stateMode: "server",
     transformFilters: (filters) => ({
       ...filters,
       ...forcedScope,
@@ -4659,9 +4660,8 @@ return <Badge>{data?.totalElements ?? 0}</Badge>;`,
   });
 }`,
       fixed: `export function useAreaList(siteId: string) {
-  return useCrudList({
-    queryHook: useListAreas,
-    params: { siteId },
+  return useCrudList(adaptForcedList(useListAreas, { "siteId.equals": siteId }), {
+    stateMode: "server",
     transformFilters: (filters) => ({
       ...filters,
       openedFrom: filters.openedAt?.from,
@@ -4672,8 +4672,8 @@ return <Badge>{data?.totalElements ?? 0}</Badge>;`,
         {
           note: "the documented use — the transform rewrites what it was handed and adds nothing",
           source: `export function useAreaList() {
-  return useCrudList({
-    queryHook: useListAreas,
+  return useCrudList(adaptOrvalList(useListAreas), {
+    stateMode: "server",
     transformFilters: (filters) => ({
       ...filters,
       status: filters.status?.toUpperCase(),
@@ -4684,8 +4684,8 @@ return <Badge>{data?.totalElements ?? 0}</Badge>;`,
         {
           note: "a transform that spreads nothing at all",
           source: `export function useAreaList() {
-  return useCrudList({
-    queryHook: useListAreas,
+  return useCrudList(adaptOrvalList(useListAreas), {
+    stateMode: "server",
     transformFilters: (filters) => ({ name: filters.name }),
   });
 }`,
@@ -5071,7 +5071,7 @@ return <Badge>{data?.totalElements ?? 0}</Badge>;`,
   },
   {
     id: "visible-native-file-input",
-    invariant: "e2e census 2",
+    invariant: "e2e census 4",
     level: "error",
     desc: "Visible native file input — its label follows the browser's locale, not the app's; hide it and drive it from an app-owned button",
     appliesTo: isTsx,
@@ -5506,7 +5506,7 @@ const canManage = useCan("manage", SUBJECTS.area);
   },
   {
     id: "single-line-free-text",
-    invariant: "#33",
+    invariant: "customize: form checklist",
     level: "error",
     desc: "Free-form prose (note / description / memo / remark / bio) in a single-line TextField — it is written on more than one line, so it takes a TextareaField on a row of its own",
     appliesTo: isTsx,
@@ -5636,7 +5636,7 @@ const canManage = useCan("manage", SUBJECTS.area);
     samples: {
       file: "modules/site/src/widgets/area/form.tsx",
       broken: `const status = row.areaStatus ?? "ACTIVE";`,
-      fixed: `const status = resolveBootEnum(row.areaStatus) ?? "ACTIVE";`,
+      fixed: `const status = resolveBootEnum(row.areaStatus) || "ACTIVE";`,
       miss: [
         {
           note: "a boolean whose name merely ends in one of the enum words",
@@ -5665,7 +5665,7 @@ const canManage = useCan("manage", SUBJECTS.area);
       miss: [
         {
           note: "a real default, which resolves to a word rather than to the key itself",
-          source: `<Text>{enumLabel("AreaStatus", resolveBootEnum(displayData.status) ?? "ACTIVE")}</Text>`,
+          source: `<Text>{enumLabel("AreaStatus", resolveBootEnum(displayData.status) || "ACTIVE")}</Text>`,
         },
       ],
     },
@@ -7157,7 +7157,7 @@ const saveContacts = async (contacts: ContactItemDTO[]) => {
     id: "filter-category-order",
     invariant: "#16",
     level: "review",
-    desc: "FilterBar filters out of category order (String/Number -> Date -> Attribute) — confirm before reordering (#19)",
+    desc: "FilterBar filters out of category order (String -> Date -> Number -> Attribute) - confirm before reordering (#19)",
     appliesTo: isTsx,
     check: (c) => {
       // Invariant #16 category order: String -> Date -> Number -> Attribute
@@ -7210,7 +7210,7 @@ const saveContacts = async (contacts: ContactItemDTO[]) => {
   },
   {
     id: "screen-picks-action-variant",
-    invariant: "#31",
+    invariant: "#67",
     level: "error",
     desc: "A screen names actionVariant as a literal — how dense a row action reads is one decision for the whole product, and it is already made: the shape the scaffold emits. A product that departs from it says so once on UIProvider's `defaults`; neither answer is repeated per screen, where the next screen forgets it",
     appliesTo: isTsx,
@@ -7244,7 +7244,7 @@ const saveContacts = async (contacts: ContactItemDTO[]) => {
   },
   {
     id: "screen-picks-detail-presentation",
-    invariant: "#31",
+    invariant: "#69",
     level: "error",
     desc: "A screen names ListDetail's `variant` as a literal — whether a record opens in a panel beside the list or in a drawer over it is one decision for the installation, declared once on UIProvider's `defaults.detailPresentation`. A screen that hardcodes it takes the choice away from every installation, and seventeen screens hardcoding it mean the setting does nothing at all",
     appliesTo: isTsx,
@@ -8492,6 +8492,18 @@ if (args.includes("--selftest")) {
 
 const errorsOnly = args.includes("--errors-only");
 const ruleFilter = args.find((a) => a.startsWith("--rule="))?.slice(7).split(",");
+
+// A rule id that names no rule would run nothing and print the clean-tree summary - the same
+// false clean the option guard above exists to stop - so it stops the run the same way.
+if (ruleFilter) {
+  const known = new Set(ALL_RULES.map((r) => r.id));
+  const unknownIds = ruleFilter.filter((id) => !known.has(id));
+  if (unknownIds.length) {
+    console.error(`\u2716 no such rule: ${unknownIds.map((id) => id || "(empty)").join(", ")}`);
+    console.error("  --list prints every rule id");
+    process.exit(2);
+  }
+}
 
 const files = collectSources();
 const results = new Map(); // ruleId -> { rule, hits: [{file, line, excerpt}] }

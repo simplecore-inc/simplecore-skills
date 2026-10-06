@@ -3142,6 +3142,13 @@ function main() {
   const options = { ...DEFAULTS, ...JSON.parse(arg("options") ?? "{}") };
   const only = arg("check");
   const selected = only ? checks.filter((c) => c.id === only) : checks;
+  // A check id that names no check selects nothing, and nothing run reads exactly like a clean
+  // screen - in a script or a hook, and under --selftest too. It stops here, before a browser.
+  if (only !== undefined && selected.length === 0) {
+    console.error(`no such check: ${only}`);
+    console.error(`  checks: ${checks.map((c) => c.id).join("  ")}`);
+    return 2;
+  }
   const session = arg("session") ?? "simplix-audit-rendered";
 
   if (process.argv.includes("--list")) {
