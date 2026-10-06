@@ -16,8 +16,8 @@
 // rows and evidence into whichever board it guessed.
 import { pathToFileURL } from 'node:url';
 import { CORE_GATES, applies, gatesFor, gradeOf } from './core/gates.mjs';
-import { HEADING_ROLES, SCHEMA, findConfig, loadProject } from './core/context.mjs';
-import { makeBuilders, misdeclared, proveCensusReads, proveGatesAreRegistered, proveKeysAreDocumented, proveMisdeclaredNeeds, proveSeverity, proveShadowedIds, runCases, ungraded, unproven } from './core/harness.mjs';
+import { HEADING_ROLES, RETIRED_KEYS, SCHEMA, findConfig, loadProject } from './core/context.mjs';
+import { makeBuilders, misdeclared, proveCensusReads, proveGatesAreRegistered, proveKeysAreDocumented, proveMisdeclaredNeeds, proveRetiredReaders, proveSeverity, proveShadowedIds, runCases, ungraded, unproven } from './core/harness.mjs';
 import { cases as coreCases } from './core/cases.mjs';
 import { censusLine, vocabularyCensus } from './core/vocabulary.mjs';
 
@@ -111,7 +111,7 @@ async function check() {
     const shown = advisory && !flag('warnings') ? findings.slice(0, 1) : findings;
     for (const finding of shown) console.log(`   ${finding}`);
     if (shown.length < findings.length) {
-      console.log(`   … 외 ${findings.length - shown.length}건 — 전문은 --warnings`);
+      console.log(`   … ${findings.length - shown.length} more, printed in full with --warnings`);
     }
   }
 
@@ -180,6 +180,7 @@ async function proveGates() {
   const mistyped = [...ungraded(gates), ...misdeclared(gates)];
   const severity = [
     ...proveSeverity(builders.project), ...proveShadowedIds(builders.project), ...proveMisdeclaredNeeds(builders.project),
+    ...proveRetiredReaders(builders.project),
   ];
   const census = proveCensusReads(builders.project);
   builders.cleanup();
@@ -198,6 +199,7 @@ async function proveGates() {
     console.log('\n✔ severity: a fired warning leaves the exit status zero, a fired error fails the run');
     console.log('✔ ids: a project gate under a core gate\'s id is refused, unless the core one is turned off');
     console.log('✔ needs: a gate whose needs names a non-key is refused by name, not counted as skipped');
+    console.log('✔ retired readers: a project gate calling one stops the run by its name and the reader that replaced it');
   }
   // A key nobody documented works perfectly and is met by nobody, which is a shape no gate over a
   // project can see - the subject is this skill's own two documents.
@@ -278,6 +280,13 @@ async function doctor() {
     const full = typeof value === 'string' ? value : JSON.stringify(value);
     const shown = full.length > 72 ? `${full.slice(0, 69)}…` : full;
     console.log(`✔ ${key.padEnd(18)} ${shown}`);
+  }
+
+  // A retired key is listed apart from the keys the skill reads: it costs nothing, and the one
+  // thing to do about it is delete the line, which `retiredKeyGate` says at warning grade in `check`.
+  for (const key of Object.keys(RETIRED_KEYS)) {
+    if (ctx.raw(key) === undefined) continue;
+    console.log(`⚠ ${key.padEnd(18)} retired - ${RETIRED_KEYS[key]}`);
   }
 
   if (closing) {

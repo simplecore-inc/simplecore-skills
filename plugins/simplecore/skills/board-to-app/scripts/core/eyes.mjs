@@ -49,14 +49,23 @@ import { proseLines } from './prose.mjs';
  * Korean phrase with `\b`, and `\b` in JavaScript is ASCII-only, so that row matched nothing in
  * Korean prose for as long as it existed and reported the same zero either way.
  *
- * @returns the three lists, or null where the project has declared none
+ * <p>`notAssigning` is optional: the markers that make an `assigns` phrase a negation or a
+ * recounting rather than an assignment. Null where the project declares none, which is what sends
+ * `assigned` to the built-in Korean markers.
+ *
+ * @returns the three lists and the optional markers, or null where the project has declared none
  */
 function vocabularies(ctx) {
   const declared = ctx.declared('eyesPhrases');
   const ok = (list) => Array.isArray(list) && list.length && list.every((p) => typeof p === 'string' && p);
   if (!declared || !ok(declared.assigns) || !ok(declared.reader) || !ok(declared.moment)) return null;
   const lower = (list) => list.map((phrase) => phrase.toLowerCase());
-  return { assigns: lower(declared.assigns), reader: lower(declared.reader), moment: lower(declared.moment) };
+  return {
+    assigns: lower(declared.assigns),
+    reader: lower(declared.reader),
+    moment: lower(declared.moment),
+    notAssigning: ok(declared.notAssigning) ? lower(declared.notAssigning) : null,
+  };
 }
 
 /** Whether one statement says any of what a vocabulary is a list of. */
@@ -83,13 +92,33 @@ const said = (list, text) => list.find((phrase) => text.toLowerCase().includes(p
  */
 const NOT_ASSIGNING = /^[^.。\n]{0,6}?(수\s*없|지\s*못|지\s*않|다가|았다|었다|였다|나왔)/;
 
-const assigned = (list, text) => {
+/** How far after a phrase a marker may begin and still sit in the phrase's own clause. */
+const MARKER_WINDOW = 6;
+
+/**
+ * Whether what follows a phrase turns it into something other than an assignment.
+ *
+ * <p>A declared `notAssigning` list replaces the built-in Korean markers rather than adding to
+ * them: a project that names its own negation has said what its documents write, and the Korean
+ * forms would only fire on a quotation. The window is the same either way - a marker beginning
+ * within six characters after the phrase, before the sentence ends.
+ */
+function negated(markers, rest) {
+  if (markers === null) return NOT_ASSIGNING.test(rest);
+  const clause = rest.split(/[.。\n]/, 1)[0];
+  return markers.some((marker) => {
+    const at = clause.indexOf(marker);
+    return at >= 0 && at <= MARKER_WINDOW;
+  });
+}
+
+const assigned = (list, text, markers = null) => {
   const low = text.toLowerCase();
   return list.find((phrase) => {
     for (let from = 0; ; ) {
       const at = low.indexOf(phrase, from);
       if (at < 0) return false;
-      if (!NOT_ASSIGNING.test(low.slice(at + phrase.length))) return true;
+      if (!negated(markers, low.slice(at + phrase.length))) return true;
       from = at + phrase.length;
     }
   });
@@ -172,7 +201,7 @@ export const eyesRuleNamesItsReader = {
       parts.forEach((block, index) => {
         if (HEADING_ONLY(block)) return;
         const body = block.lines.filter((line) => !/^\s*#/.test(line)).join('\n');
-        const assigning = assigned(words.assigns, body);
+        const assigning = assigned(words.assigns, body, words.notAssigning);
         if (!assigning) return;
 
         const window = [
@@ -321,6 +350,15 @@ const EYES_NEGATED = `# 검증 결과
 데다 어느 축의 값인지도 알려 주지 않는다.
 `;
 
+/**
+ * An English document whose assigning phrase is negated by the word after it - a marker the
+ * built-in Korean list does not carry, so only a declared `notAssigning` reads it as a negation.
+ */
+const CLAUDE_NEGATED_EN = `# 프로젝트
+
+**Whether the label is right stays with eyes no longer:** the label check reads it on every run.
+`;
+
 /** A reading that already happened, recounted - not one being assigned to anybody. */
 const EYES_RECOUNTED = `# 검증 결과
 
@@ -393,6 +431,40 @@ export function cases(t) {
     'eyesRuleNamesItsReader',
     'a document that hands nothing to eyes',
     project({ 'docs/evidence/00-overview.md': EYES_ABSENT }),
+    false
+  );
+
+  // `notAssigning` - the markers a project declares for its own language. Declared, the list is
+  // what reads a negation; absent, the built-in Korean markers do.
+  const declaring = (markers, files) => t.project({
+    config: {
+      eyesDocuments: ['docs/evidence/00-overview.md', '.claude/CLAUDE.md'],
+      eyesPhrases: { ...PHRASES, notAssigning: markers },
+    },
+    files,
+  });
+  t.add(
+    'eyesRuleNamesItsReader',
+    'an English negation with no notAssigning declared, which the Korean markers do not read',
+    project({ '.claude/CLAUDE.md': CLAUDE_NEGATED_EN }),
+    true
+  );
+  t.add(
+    'eyesRuleNamesItsReader',
+    'the same English negation with its marker declared in notAssigning',
+    declaring(['no longer'], { '.claude/CLAUDE.md': CLAUDE_NEGATED_EN }),
+    false
+  );
+  t.add(
+    'eyesRuleNamesItsReader',
+    'a declared notAssigning list replaces the Korean markers, so a recounting it does not name is read as an assignment',
+    declaring(['no longer'], { 'docs/evidence/00-overview.md': EYES_RECOUNTED }),
+    true
+  );
+  t.add(
+    'eyesRuleNamesItsReader',
+    'a declared notAssigning list naming the recounting marker its documents write',
+    declaring(['다가'], { 'docs/evidence/00-overview.md': EYES_RECOUNTED }),
     false
   );
 }

@@ -124,6 +124,63 @@ export function cases(t) {
     true,
   );
 
+  // An optional vocabulary role: checked where declared, unknown roles still refused.
+  const EYES = { assigns: ['stays with eyes'], reader: ['the coordinator'], moment: ['before '] };
+  add(
+    'configGate',
+    'an optional notAssigning role declared and left empty',
+    { config: { eyesDocuments: ['docs/OVERVIEW.md'], eyesPhrases: { ...EYES, notAssigning: [] } } },
+    true,
+  );
+  add(
+    'configGate',
+    'an optional notAssigning role naming the markers the documents write',
+    { config: { eyesDocuments: ['docs/OVERVIEW.md'], eyesPhrases: { ...EYES, notAssigning: ['no longer'] } } },
+    false,
+  );
+  add(
+    'configGate',
+    'an eyes vocabulary role the skill does not know',
+    { config: { eyesDocuments: ['docs/OVERVIEW.md'], eyesPhrases: { ...EYES, negations: ['no longer'] } } },
+    true,
+  );
+
+  // A retired key keeps loading: configGate accepts it wherever a config can carry it, and
+  // retiredKeyGate names it at warning grade so the line is deleted.
+  add(
+    'configGate',
+    'a config carrying retired keys at the top level, in a board and as a deferral',
+    {
+      config: {
+        verdictRole: '판정',
+        placeholderLine: '**Same component as {text}**…',
+        deferredKeys: { placeholderLine: { chapter: 'W04', whenExists: 'apps/console' } },
+      },
+    },
+    false,
+  );
+  add('retiredKeyGate', 'a config still carrying verdictRole', { config: { verdictRole: '판정' } }, true);
+  add(
+    'retiredKeyGate',
+    'a board entry still carrying placeholderLine',
+    {
+      config: {
+        boards: {
+          console: { boardRoot: 'board', placeholderLine: '**Same component as {text}**…' },
+        },
+      },
+      options: { board: 'console' },
+    },
+    true,
+  );
+  add(
+    'retiredKeyGate',
+    'a deferral promising a retired key to a chapter',
+    { config: { deferredKeys: { verdictRole: { chapter: 'W04', whenExists: 'apps/console' } } } },
+    true,
+  );
+  add('retiredKeyGate', 'a config carrying only keys the skill reads', {}, false);
+
   // The capture standard. The template ships its three fields as `<…>` placeholders on purpose:
   // a number left in place would become somebody's standard in silence, where a string is refused
   // here and named. A third colour scheme is refused for the same reason a fourth commit policy

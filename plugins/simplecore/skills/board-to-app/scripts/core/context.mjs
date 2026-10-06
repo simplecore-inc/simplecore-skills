@@ -142,6 +142,17 @@ function boardContaining(config, names, cwd, root) {
 export const EYES_PHRASE_ROLES = ['assigns', 'reader', 'moment'];
 
 /**
+ * The vocabulary roles `eyesPhrases` may declare and need not.
+ *
+ * <p>`notAssigning` lists the markers that turn an `assigns` phrase into something other than an
+ * assignment - a negation (a person CANNOT read the value) or a recounting (a person read it once).
+ * A marker counts where it begins within six characters after the phrase, in the same sentence.
+ * Absent, `eyesRuleNamesItsReader` falls back to its built-in Korean markers; declared, the list
+ * replaces them, so a project writing in another language says what its own negation looks like.
+ */
+export const EYES_OPTIONAL_ROLES = ['notAssigning'];
+
+/**
  * What one entry of `captureStandard` names: the window a capture is taken in, and the scheme.
  *
  * <p>`width` and `height` are CSS pixels, so a run reads them back out of the page with
@@ -223,10 +234,6 @@ export const SCHEMA = {
   // that look like a chapter closed on evidence afterwards, so the ledger says which it was and
   // the evidence checks skip the decided ones rather than reporting their absent verification.
   decidedStatus: { kind: 'text', absent: 'a chapter can only be closed by its verification, so a person who ends one has to either fake the evidence or leave the ledger saying it is still open' },
-  // The word a foundation chapter's run record writes in the persona column, for a verification a
-  // machine proves rather than a journey a persona walks. No gate reads it, so it is not `closing`:
-  // `doctor`'s census counts the rows that carry it, and that count is all it feeds.
-  verdictRole: { kind: 'text', absent: 'no gate reads this word, so leaving it out costs no check; doctor\'s census has no word to count in the run records' },
   // The line a chapter's run record carries when a check RAN and this installation cannot decide it.
   // Compiled by `compileLine` (`grammar.mjs`), and its `{text}` is the chapter that repays the
   // debt. Optional: a project that has never met the case declares nothing and the two checks over
@@ -235,10 +242,6 @@ export const SCHEMA = {
   // failure the key exists to stop, and the reason `references/evidence.md` names the key at the
   // moment the case first comes up rather than in a list of options.
   deferredLine: { kind: 'text', absent: 'a project that has met that case writes the marker in prose instead, and the chapter it names closes with the debt outstanding and nothing reading it' },
-  // The line a chapter's run record carries in place of a picture, where the pane behind a tab is
-  // the same unbuilt placeholder another capture already shows; its `{text}` names that capture.
-  // Compiled by `compileLine` like `deferredLine`. No gate reads it: `doctor`'s census counts it.
-  placeholderLine: { kind: 'text', absent: 'no gate reads this line, so leaving it out costs no check; doctor\'s census has no line to count in the run records' },
   // Where `journeyCommand` writes a chapter's run record and the captures it shows. **Not required
   // to configure and required to close** - a project builds screens without it and cannot finish a
   // chapter, which is the difference `required` alone could not express and `doctor` reported as an
@@ -278,7 +281,7 @@ export const SCHEMA = {
   // decide how somebody else's history is written. The three words are `commitPolicyGate`'s, not
   // this schema's - a value outside them is a decision the build cannot follow, which is a finding
   // rather than a type error.
-  commitPolicy: { kind: 'text', absent: 'whatever the repository\'s own rules say; with neither, the build asks before every commit, cannot run unattended, and the two gates that read commits see nothing until somebody is present → `SKILL.md` § *Whether the build may commit at all*' },
+  commitPolicy: { kind: 'text', absent: 'whatever the repository\'s own rules say; with neither, the build asks before every commit, cannot run unattended, and the two gates that read commits see nothing until somebody is present → `references/commits.md` § *Whether the build may commit at all is the project\'s answer, given once*' },
   auditScript: { kind: 'path', absent: 'a new rule has nowhere to land, so the project cannot ratchet - report the rule that should have been written rather than inventing a home for it' },
   migrationDir: { kind: 'dir', many: true, absent: 'nothing says where a migration goes or how two of them collide, so backend chapters run one at a time' },
   // What a screen owes beyond working code, and - the half a reader meets late - where a defect the
@@ -346,7 +349,7 @@ export const SCHEMA = {
   // absence of the whole subject is said by declaring neither, which is a statement; half of it
   // is not a statement, it is a gap that reports as green.
   eyesDocuments: { kind: 'list', requiredWith: 'eyesPhrases', absent: 'the project\'s own eyes rules go unread - **declare these two together or neither**, because documents with no vocabulary read every one of them and match nothing' },
-  eyesPhrases: { kind: 'phrases', roles: EYES_PHRASE_ROLES, requiredWith: 'eyesDocuments', absent: 'the project\'s own eyes rules go unread - **declare these two together or neither**, because 「nothing to find」 and 「no idea what to look for」 come out as the same zero' },
+  eyesPhrases: { kind: 'phrases', roles: EYES_PHRASE_ROLES, optionalRoles: EYES_OPTIONAL_ROLES, requiredWith: 'eyesDocuments', absent: 'the project\'s own eyes rules go unread - **declare these two together or neither**, because 「nothing to find」 and 「no idea what to look for」 come out as the same zero' },
   logDir: { kind: 'outdir', absent: 'there is nothing to watch - say so once, and each agent reports its steps in its return' },
   capturesDir: { kind: 'outdir', absent: 'captures go to the session\'s scratch space and are forwarded by path; nothing is kept' },
   costLog: { kind: 'outfile', absent: 'what a chapter cost cannot be recovered afterwards; only what git holds survives - and with nowhere to stamp a start at the moment of dispatch, the span is gone by the close rather than merely unwritten' },
@@ -360,6 +363,20 @@ export const SCHEMA = {
   projectVocabulary: { kind: 'phrases', roles: null, absent: 'a project gate that judges by a list of words carries that list in its own source, so a word the project stops using and a word it never had read the same - and widening it is an edit to a gate rather than a row in a config' },
   disabledGates: { kind: 'exceptions', absent: 'every generic gate runs - which is the default, and a gate is never turned off silently' },
   deferredKeys: { kind: 'deferrals', absent: 'an absence waiting on a chapter reads exactly like one the project decided against, and the cost in that key\'s row is paid silently from the day the subject appears' },
+};
+
+/**
+ * Keys this skill does not read and a config written against an earlier schema may still carry,
+ * each with the notice `retiredKeyGate` prints for it.
+ *
+ * <p><b>Accepted, never refused.</b> Nothing reads either value, so a project declaring one loses
+ * nothing by it, and a refusal would fail a build over a line that costs nothing. `configGate`
+ * and `boardsGate` pass them; `retiredKeyGate` names each one at warning grade so the line is
+ * deleted, and `doctor` lists them apart from the keys the skill reads.
+ */
+export const RETIRED_KEYS = {
+  verdictRole: 'no gate and no census reads it: a foundation chapter is closed on its verification rows, and the persona column of those rows is the project\'s own to word; delete the line',
+  placeholderLine: 'no gate and no census reads it: every frame a closed chapter places is owed a capture of its own or of the frame it is drawn on, so no line stands in for a picture; delete the line',
 };
 
 /** The roles `chapterHeadings` maps, so nothing in the skill has to know one project's wording. */
@@ -500,15 +517,12 @@ export function loadProject(configPath, options = {}) {
     // imports the compiler: a project's own gate file cannot reach into the skill by path - the
     // skill is installed somewhere else on every machine - so what a gate needs arrives here.
     get lines() {
-      // Two lines are compiled, both read off a run record: `deferredLine` and `placeholderLine`,
-      // each absent where the project declares none. A chapter file is read by its headings - a
-      // frame's `## <n>. <frame id>` section, a journey's `### <n>. <persona> - <title>` - rather
-      // than by a declared phrase.
+      // One line is compiled, read off a run record: `deferredLine`, absent where the project
+      // declares none. A chapter file is read by its headings - a frame's `## <n>. <frame id>`
+      // section, a journey's `### <n>. <persona> - <title>` - rather than by a declared phrase.
       const lines = {};
       const deferred = declared('deferredLine');
       if (deferred) lines.deferred = compileLine(deferred, 'deferredLine');
-      const placeholder = declared('placeholderLine');
-      if (placeholder) lines.placeholder = compileLine(placeholder, 'placeholderLine');
       return lines;
     },
     // The readers over the evidence folder, bound to this repository. A project's own gate over

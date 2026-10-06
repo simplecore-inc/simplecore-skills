@@ -1,8 +1,7 @@
 // A word a project declares as its own, held against the documents that are supposed to write it.
 //
 // Some keys name a project's own words rather than paths: `closedStatus` in the state ledger,
-// `verdictRole`, `deferredLine` and `placeholderLine` in the run records, and `eyesPhrases` in the
-// documents `eyesDocuments` names. **A word declared wrongly does not fail; it matches nothing, and
+// `deferredLine` in the run records, and `eyesPhrases` in the documents `eyesDocuments` names. **A word declared wrongly does not fail; it matches nothing, and
 // matching nothing is what a repository with nothing wrong also does.** So `doctor` prints what each
 // declared word matched, and that count is what tells the two apart.
 //
@@ -13,7 +12,6 @@
 // whether the comparison ran.
 import { compileLine } from './grammar.mjs';
 import { proseLines, tableCells } from './prose.mjs';
-import { runRows } from './evidence.mjs';
 
 /**
  * The markup a declaration and a document line may differ by while saying the same words.
@@ -131,37 +129,6 @@ function closedStatusEntry(ctx) {
 }
 
 /**
- * The word a foundation chapter's run record writes in the persona column, for a verification row.
- *
- * <p><b>No witness, and the markup-blind reader is the whole of what can be said.</b> A project
- * whose chapters all place screens writes no verification row, which is a project with nothing
- * wrong - so a zero here says nothing until the relaxed comparison finds the word written another
- * way.
- */
-function verdictRoleEntry(ctx) {
-  const role = ctx.declared('verdictRole');
-  if (role === null || ctx.declared('evidenceDir') === null) return [];
-  let documents = 0;
-  let compared = 0;
-  let matched = 0;
-  let relaxed = 0;
-  for (const [, file] of [...chapters(ctx)].sort()) {
-    const record = recordText(ctx, file);
-    if (record === null) continue;
-    documents += 1;
-    for (const { persona } of runRows(record)) {
-      compared += 1;
-      if (persona === role) matched += 1;
-      if (bare(persona) === bare(role)) relaxed += 1;
-    }
-  }
-  return [entry(
-    'verdictRole', role, CONVENTIONS.word, 'run records', documents, compared, matched, relaxed, false,
-    'a project whose chapters all place screens writes no verification row, which is a project with nothing wrong'
-  )];
-}
-
-/**
  * The line a run record carries for a check this installation could not decide.
  *
  * <p>**No witness, and there never can be one.** A project declares this because it expects to meet
@@ -183,32 +150,6 @@ function deferredLineEntry(ctx, lines) {
     'deferredLine', phrase, CONVENTIONS.line, 'run records',
     docs.length, lineCount(docs), countLines(docs, lines.deferred), countBare(docs, loose), false,
     'a project that has never met the case writes no such line, which is a project with nothing wrong'
-  )];
-}
-
-/**
- * The line a run record carries in place of a picture.
- *
- * <p>Same shape as the deferral above and the same absence of a witness: a project declares it
- * because it expects to meet unbuilt placeholders behind a tab strip, and one that declares it and
- * never meets them is a project with nothing wrong. The markup-blind count is the whole of what
- * can be said - a declaration written without the line's own markup matches nothing, and the
- * relaxed reading finding the line is what shows that.
- */
-function placeholderLineEntry(ctx, lines) {
-  const phrase = ctx.declared('placeholderLine');
-  if (phrase === null || ctx.declared('evidenceDir') === null) return [];
-  let loose = null;
-  try {
-    loose = compileLine(bare(phrase), 'placeholderLine');
-  } catch {
-    return [];
-  }
-  const docs = records(ctx);
-  return [entry(
-    'placeholderLine', phrase, CONVENTIONS.line, 'run records',
-    docs.length, lineCount(docs), countLines(docs, lines.placeholder), countBare(docs, loose), false,
-    'a project whose panes are all built discharges nothing, which is a project with nothing wrong'
   )];
 }
 
@@ -246,7 +187,9 @@ function eyesPhraseEntries(ctx) {
       role === 'assigns' && lines.length > 0,
       role === 'assigns'
         ? `${texts.length} declared document(s) hold ${lines.length} lines of prose, and a document is declared here because it hands checks to eyes`
-        : 'this list is read only inside a block `assigns` already matched, so a hole in it fires `eyesRuleNamesItsReader` on every such block rather than going quiet'
+        : role === 'notAssigning'
+          ? 'a marker is read only right after an `assigns` phrase, so one that matches nothing leaves that phrase read as an assignment, which fires `eyesRuleNamesItsReader` rather than going quiet'
+          : 'this list is read only inside a block `assigns` already matched, so a hole in it fires `eyesRuleNamesItsReader` on every such block rather than going quiet'
     ));
   }
   return out;
@@ -271,9 +214,7 @@ export function vocabularyCensus(ctx) {
   }
   return [
     ...closedStatusEntry(ctx),
-    ...verdictRoleEntry(ctx),
     ...deferredLineEntry(ctx, lines),
-    ...placeholderLineEntry(ctx, lines),
     ...eyesPhraseEntries(ctx),
   ];
 }

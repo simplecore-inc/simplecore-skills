@@ -115,21 +115,26 @@ first three cannot express it: a project missing one of these reads a page of gr
 being unable to finish anything, which is what `bta.mjs doctor` prints it apart for.
 
 **Some keys are not paths but this project's own words, and a word declared wrongly does not
-fail** - `closedStatus` in the state ledger, `verdictRole`, `deferredLine` and `placeholderLine` in
-the run records, and `eyesPhrases` in the documents `eyesDocuments` names. A declaration that
+fail** - `closedStatus` in the state ledger, `deferredLine` in the run records, and `eyesPhrases` in
+the documents `eyesDocuments` names. A declaration that
 matches nothing leaves every check over it reporting the same zero as a repository with nothing
 wrong, so `bta.mjs doctor` prints a census of what each declared word matched, matched and
 unmatched alike: the count is what shows a comparison reached anything at all, and a word whose
 markup-blind form matches where the strict one does not is a declaration whose markup is wrong.
 
-**A declared line is written as the line itself, markup included** - `deferredLine` and
-`placeholderLine` are compiled from the phrase a project writes, never from a regex. The grammar is
-two placeholders and one mark: `{text}` is the value the check takes (the chapter that repays the
-debt, the capture that already shows the component), `{n}` stands for a number the check steps
-over, and `…` at the front or the back leaves that end of the line open. Any other `{…}` token
-stops the run with the key named, because passing it through would compile a pattern that never
-matches. **A word is the word alone** - `closedStatus`, `verdictRole` and each phrase of
-`eyesPhrases` carry no markup.
+**A declared line is written as the line itself, markup included** - `deferredLine` is compiled
+from the phrase a project writes, never from a regex. The grammar is two placeholders and one mark:
+`{text}` is the value the check takes (the chapter that repays the debt), `{n}` stands for a number
+the check steps over, and `…` at the front or the back leaves that end of the line open. Any other
+`{…}` token stops the run with the key named, because passing it through would compile a pattern
+that never matches. **A word is the word alone** - `closedStatus` and each phrase of `eyesPhrases`
+carry no markup.
+
+**A retired key keeps loading.** `verdictRole` and `placeholderLine` are read by no gate and no
+census, so a config that still carries one loses nothing by it: `configGate` accepts it at the top
+level, inside a board and as a deferral, and `retiredKeyGate` names each at warning grade with the
+reason, so the line is deleted rather than kept as a declaration nothing reads. `bta.mjs doctor`
+lists them apart from the keys below.
 
 | Key | What the project names with it | Required | Absent means |
 | --- | --- | --- | --- |
@@ -144,19 +149,17 @@ matches. **A word is the word alone** - `closedStatus`, `verdictRole` and each p
 | `chapterHeadings` | the exact headings the chapter files use, per role (below) | ○ | a section is named by its role rather than by a heading, and an agent that cannot find one stops and reports |
 | `closedStatus` | the word the state ledger writes in a chapter's row when that chapter is closed | ◑ | nothing is closed, and every check over a closed chapter stays silent |
 | `decidedStatus` | the word the ledger writes for a chapter the product's owner ended rather than the verification | ○ | a chapter can only be closed by its verification, so a person who ends one has to either fake the evidence or leave the ledger saying it is still open |
-| `verdictRole` | the word a foundation chapter's run record writes in the persona column, for a verification a machine proves rather than a journey a persona walks | ○ | no gate reads this word, so leaving it out costs no check; doctor's census has no word to count in the run records |
 | `deferredLine` | the line a chapter's run record carries when a check ran and **this installation** could not decide it, in the line grammar above - its `{text}` is the chapter that repays the debt | ○ | a project that has met that case writes the marker in prose instead, and the chapter it names closes with the debt outstanding and nothing reading it |
-| `placeholderLine` | the line a chapter's run record carries **in place of a picture**, where the pane behind a tab is the same unbuilt placeholder another capture already shows, in the line grammar above - its `{text}` names that capture | ○ | no gate reads this line, so leaving it out costs no check; doctor's census has no line to count in the run records |
 | `evidenceDir` | where `journeyCommand` writes a chapter's run record, one per chapter, with the captures the journeys took in a folder of the same name beside it → `references/evidence.md` | ◑ | screens get built and no chapter can be shown to have closed on anything - the grounds die with the session |
 | `journeyTestsDir` | where a chapter's journeys live as automated tests, in the project's own framework → `references/demands.md` | ◑ | the journeys have nowhere to live as tests, so a chapter closes on a claim rather than on a run |
 | `journeyCommand` | the command that runs the journey tests and writes the chapter's run record into `evidenceDir` → `references/evidence.md` | ◑ | nothing runs the journeys and writes the run record, so no chapter can be shown to have closed on anything |
 | `stateLedger` | the one file saying which chapter is open, in progress, awaiting its tests or closed - and which development account each persona signs in with | ● | the build cannot start |
-| `handoverFile` | the facts a builder needs to start: how to stand the system up, known traps, what data is already standing. **It may be one document or an index that routes to them** → `../SKILL.md` § *A handover file grows, and the answer is not another trim* | ● | the build cannot start |
+| `handoverFile` | the facts a builder needs to start: how to stand the system up, known traps, what data is already standing. **It may be one document or an index that routes to them** → `references/handover.md` § *A handover file grows, and the answer is not another trim* | ● | the build cannot start |
 | `openItemsFile` | where a parked decision is written | ○ | parked lines go in the state ledger |
 | `openItemsHeading` | the heading those lines live under - the heading's **text only**, with no `#` markers on it | ◐ with `openItemsFile` | the config is incomplete - report it rather than choosing a heading |
 | `gates` | the commands a chapter must pass before it closes, each read by its exit status - `bta.mjs check` among them | ◑ | nothing mechanical holds a chapter closed; say so once per session and close on the persona runs alone |
 | `generatedArtefacts` | the census of files no person writes - a build output, a generated client, a derived catalogue - as `{ path, by }`, the git pathspec and the command that writes it, plus `neverCommitted` with its reason where the artefact must not be committed → `checks.md` § *A gate reads the tree; a chapter closes on the commit* | ○ | a generator's output is judged in the working tree and nowhere else, so an artefact a gate rebuilt and passed can be one no commit carries - and the regeneration that made the gate green is what hides it |
-| `commitPolicy` | whether the build may commit and push without asking - `commit`, `commitAndPush`, or `ask`. It does not override a repository whose own rules already say | ○ | whatever the repository's own rules say; with neither, the build asks before every commit, cannot run unattended, and the two gates that read commits see nothing until somebody is present → `SKILL.md` § *Whether the build may commit at all* |
+| `commitPolicy` | whether the build may commit and push without asking - `commit`, `commitAndPush`, or `ask`. It does not override a repository whose own rules already say | ○ | whatever the repository's own rules say; with neither, the build asks before every commit, cannot run unattended, and the two gates that read commits see nothing until somebody is present → `references/commits.md` § *Whether the build may commit at all is the project's answer, given once* |
 | `auditScript` | where a mechanically visible defect becomes a detection rule - one script, or the directory a family of them lives in | ○ | a new rule has nowhere to land, so the project cannot ratchet - report the rule that should have been written rather than inventing a home for it |
 | `migrationDir` | where migrations live, and with it how two agents adding one at the same time avoid colliding - one directory, or several where the database has more than one lineage | ○ | nothing says where a migration goes or how two of them collide, so backend chapters run one at a time |
 | `frameDeliverables` | the standing checks every screen owes beyond working code, one sentence each, **each naming the mechanism that holds it** - a rule in `auditScript` or a helper the journey tests call - and where a defect the running product showed that no frame can draw lands, with its check → `references/frame-artefacts.md` | ○ | a screen owes nothing beyond the code and its journeys, so a defect no frame can draw is fixed once on the screen it was found on and met again on every screen built afterwards |
@@ -170,7 +173,7 @@ matches. **A word is the word alone** - `closedStatus`, `verdictRole` and each p
 | `browserDrivers` | what drives a browser here, **in order** - the run takes the first that can express the task | ○ | whoever opens a screen picks whatever the environment offers, so two runs of one frame can be shot through different instruments; the run must then name its driver in the return and write it into the handover file, because nothing else records the choice → `references/driving-the-product.md` |
 | `deviceDrivers` | what drives a simulator or a real device here, in the same order | ○ | whoever opens a screen on a simulator or a handset picks whatever is installed, so two runs of one screen can be shot through different instruments; and where the project ships on a device and declares none, a sweep reaches for the platform's own commands with nothing saying that was a choice → `references/driving-the-product.md` |
 | `eyesDocuments` | the documents that hand a check to human eyes | ○ | the project's own eyes rules go unread - **declare these two together or neither**, because documents with no vocabulary read every one of them and match nothing |
-| `eyesPhrases` | the words those documents hand it in - `assigns`, `reader`, `moment` | ◐ with `eyesDocuments` | the project's own eyes rules go unread - **declare these two together or neither**, because 「nothing to find」 and 「no idea what to look for」 come out as the same zero |
+| `eyesPhrases` | the words those documents hand it in - `assigns`, `reader`, `moment`, and optionally `notAssigning`: the markers that make an `assigns` phrase a negation or a recounting when they begin within six characters after it, in the same sentence. Absent, the built-in Korean markers are read; declared, the list replaces them | ◐ with `eyesDocuments` | the project's own eyes rules go unread - **declare these two together or neither**, because 「nothing to find」 and 「no idea what to look for」 come out as the same zero |
 | `logDir` | one agreed, ignored directory for the builders' run logs | ○ | there is nothing to watch - say so once, and each agent reports its steps in its return |
 | `capturesDir` | one agreed, ignored directory for judging captures | ○ | captures go to the session's scratch space and are forwarded by path; nothing is kept |
 | `costLog` | a machine-readable file the wall-clock span and consumption are appended to, per chapter | ○ | what a chapter cost cannot be recovered afterwards; only what git holds survives - and with nowhere to stamp a start at the moment of dispatch, the span is gone by the close rather than merely unwritten |
