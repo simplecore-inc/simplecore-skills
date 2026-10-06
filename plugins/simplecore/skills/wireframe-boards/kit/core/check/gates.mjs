@@ -129,16 +129,25 @@ export async function runGateTests(boardDir) {
   const gates = gatesFor(ctx);
 
   const collected = [];
-  const builders = makeBuilders(ctx.config);
-  const t = { ...builders, add: (gate, name, c, shouldFire) => collected.push({ gate, name, ctx: c, shouldFire }) };
+  const made = [];
+  // Each case file gets builders of its own, so the settings one file's cases are judged against
+  // (its exported `fixture`) never leak into another's.
+  const run = (cases, fixture) => {
+    const builders = makeBuilders(ctx.config, fixture);
+    made.push(builders);
+    cases({ ...builders, add: (gate, name, c, shouldFire) => collected.push({ gate, name, ctx: c, shouldFire }) });
+  };
 
-  coreCases(t);
+  run(coreCases);
   const patternCases = join(ctx.patternDir, 'gates/cases.mjs');
-  if (existsSync(patternCases)) (await import(pathToFileURL(patternCases).href)).cases(t);
-  if (ctx.projectGates?.cases) ctx.projectGates.cases(t);
+  if (existsSync(patternCases)) {
+    const mod = await import(pathToFileURL(patternCases).href);
+    run(mod.cases, mod.fixture);
+  }
+  if (ctx.projectGates?.cases) run(ctx.projectGates.cases, ctx.projectGates.fixture);
 
   const bad = await runCases(collected, gates);
-  builders.cleanup();
+  for (const builders of made) builders.cleanup();
 
   const missing = untested(collected, gates);
   if (missing.length) {

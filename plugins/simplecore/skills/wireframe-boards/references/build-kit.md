@@ -363,6 +363,11 @@ because `CORE_GATES` is ordered by hand on purpose (cheapest refusals first, the
 the rendered HTML last), and the cost of a hand-written list is a gate that falls off it. Either
 one fails the command.
 
+**A case file judges its gates against the kit's fixture settings, plus whatever it exports as
+`fixture`.** A pattern's `gates/cases.mjs` or a board's `board.gates.mjs` whose cases need a
+language list or a feature catalogue exports `fixture` (`{ site, features, ... }`), and only
+that file's cases see it; the kit's fixture names no product.
+
 **Ask whether it would still be right on somebody else's board.** A gate one level too high fires
 on boards it does not describe; one level too low is rewritten by the next project that needs it.
 

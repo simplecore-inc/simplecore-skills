@@ -31,15 +31,7 @@ import { idOf } from '../ids.mjs';
  */
 export const FIXTURE_CONFIG = {
   today: '2026-08-12',
-  // The language list and the feature catalogue a forked pattern's cases are judged against: a
-  // board's own copy of a pattern may carry cases that expect these values here. The shipped
-  // patterns' cases declare their own in `over` and read neither.
-  site: { languages: ['한국어', 'English', 'Tiếng Việt', 'ភាសាខ្មែរ'], offLanguages: ['中文'] },
   phases: { 2: { tag: '2단계', why: '뒤에 만든다' } },
-  features: {
-    PACK_CONSTRUCTION: { tag: '건설 팩', why: '건설 규제' },
-    CONNECTED: { tag: 'Connected', why: '연동' },
-  },
   documents: {},
 };
 
@@ -48,9 +40,11 @@ export const FIXTURE_CONFIG = {
  *
  * @param boardConfig the board's own settings. Handed through as `boardConfig` for the rare case
  *   that genuinely wants them; `config` is the fixture above, which is what `base()` uses
+ * @param fixture what a case file exports as `fixture`: settings its cases are judged against
+ *   (a language list, a feature catalogue), laid over the fixture key by key
  */
-export function makeBuilders(boardConfig = {}) {
-  const config = FIXTURE_CONFIG;
+export function makeBuilders(boardConfig = {}, fixture = {}) {
+  const config = { ...FIXTURE_CONFIG, ...fixture };
   const docRoots = [];
   // The document gates read real files, so their fixtures are a real tree - a throwaway one
   // whose paths the ctx points at. Faking the reader instead would test the fake.
