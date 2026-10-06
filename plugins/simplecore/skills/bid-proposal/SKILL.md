@@ -249,6 +249,11 @@ with 「(미정: …)」.
   Without subagents (Codex), run them one after another in the same order.
 - A rule the user gives is written into the skill that owns its subject or the bid repository's
   instruction file in the same change.
+- If another session or tool (a second agent, Codex) edits the bid repository at the same time,
+  a deck written whole from a generator overwrites what it changed. Before every whole-deck
+  write, diff the deck's files and the generator's inputs against the last commit and fold any
+  change you did not make into the generator first; edit by exact replacement of the lines you
+  mean, never by writing back a copy read earlier; commit only your own paths.
 
 **Which standard to load**
 
