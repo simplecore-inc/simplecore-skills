@@ -5,6 +5,9 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw
 
+# fixtures puts the checks and the plugin's scripts on sys.path
+import fixtures  # noqa: F401
+
 import foothole
 
 

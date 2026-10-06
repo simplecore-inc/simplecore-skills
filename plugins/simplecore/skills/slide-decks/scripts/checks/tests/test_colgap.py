@@ -1,6 +1,9 @@
 """colgap: a column that stops early or opens a hole beside its neighbour."""
 import unittest
 
+# fixtures puts the checks and the plugin's scripts on sys.path
+import fixtures  # noqa: F401
+
 import colgap
 
 HEAD = "slide 7  master=SLIDE-BODY-1  1122×793  gen 1  diag 0\n"
