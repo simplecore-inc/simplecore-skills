@@ -1046,9 +1046,9 @@ function matchSegment(re, seg) {
 /**
  * Whether a project exception releases a hit.
  *
- * <p>The exception has to COVER the match - the same segment is not enough. `PER-001 어플리케이션
- * 응답시간` is a requirement title quoted from a client's document and keeps that document's
- * spelling; a second, genuine 어플리케이션 later in the same cell is still a defect.
+ * <p>The exception has to COVER the match - the same segment is not enough. `PER-001 시스템
+ * 가동율` is a requirement title quoted from a client's document and keeps that document's
+ * spelling; a second, genuine 가동율 later in the same cell is still a defect.
  */
 function releasedBy(rule, seg, m) {
   if (!rule.except?.length) return false;
