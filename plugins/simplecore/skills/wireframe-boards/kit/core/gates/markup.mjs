@@ -274,8 +274,8 @@ function screenBodyArgs(src) {
  * A frame that says it draws a panel form and hands nothing to the panel.
  *
  * <p><b>The other gate reads what was passed; this one reads what the frame says it is.</b> They
- * miss different things. N-68 declared its form with `dialog(` and put it in the overlay, which is
- * where a dialog belongs - every type check passes and the slot check has nothing to object to.
+ * miss different things. A frame that declares its form with `dialog(` and puts it in the overlay,
+ * where a dialog belongs, passes every type check and gives the slot check nothing to object to.
  * What was wrong was the frame's own `state`: 「패널 폼 열림」, a panel, drawn as a dialog. Only the
  * declared state says so.
  *

@@ -38,8 +38,8 @@ const console__ = makeConsole({
   clusterPack: CLUSTER_PACK, bought: BOUGHT,
   adminTab: '설정', adminClusters: ['N'],
   defaultRole: 'staff',
-  brand: 'PRODUCT',
-  powered: 'Powered by COMPANY',
+  brand: '<PRODUCT>',
+  powered: 'Powered by <COMPANY>',
   ticker: '조치가 필요한 항목이 없습니다',
   site: '본사',
   segments: [{ label: '동기화 최신', tone: 'ok' }],
@@ -55,6 +55,6 @@ export const worker_ = makeWorker({
   },
 });
 
-export const kiosk_ = makeKiosk({ brand: 'PRODUCT', defaultTerminal: 'KIOSK-01', defaultSite: '본사' });
-export const auth_ = makeAuth({ brand: 'PRODUCT', themes: { '한국어': '테마', English: 'Theme' } });
+export const kiosk_ = makeKiosk({ brand: '<PRODUCT>', defaultTerminal: 'KIOSK-01', defaultSite: '본사' });
+export const auth_ = makeAuth({ brand: '<PRODUCT>', themes: { '한국어': '테마', English: 'Theme' } });
 export const consolePhone_ = makeConsolePhone({ tabs: ['요약', '알림', '내 정보'] });

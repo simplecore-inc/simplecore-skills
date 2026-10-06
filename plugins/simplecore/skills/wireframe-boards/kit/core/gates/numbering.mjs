@@ -43,7 +43,7 @@ export const idGate = {
   },
 };
 
-// Slug gate: `resolveRefs` turns `{{f-12-foreign-basic}}` into "F-12" by reading the number and
+// Slug gate: `resolveRefs` turns `{{b-12-record-detail}}` into "B-12" by reading the number and
 // nothing else, so a note that names an EXISTING id with the wrong tail resolves silently and
 // points the reader at a different screen - worse than the visible `{{slug?}}`, because it looks
 // right. A reference whose number is drawn must match that frame's file name exactly; a number
@@ -72,7 +72,7 @@ export const slugGate = {
 // Forward-reference gate: a note may point at a frame that is not drawn yet - the whole point of
 // drawing clusters in order - and the build leaves it visible as `{{slug?}}` so it fails loudly
 // rather than disappearing. What it cannot see on its own is TWO notes naming the same future
-// screen by different numbers (`j-04-evidence-package` and `j-09-evidence-package`): both render
+// screen by different numbers (`d-04-export-package` and `d-09-export-package`): both render
 // as an honest-looking unresolved marker, and only one of them will be right when that cluster is
 // drawn. The tail after the number is the screen's name, so one tail with two numbers is a
 // disagreement to settle now, while both notes are in hand.
@@ -99,10 +99,9 @@ export const refTailGate = {
 };
 
 // The same disagreement runs the other way and the check above cannot see it: TWO different screen
-// names claiming ONE future number (`o-05-work-quality` and `o-05-working-hours`). Both render as
+// names claiming ONE future number (`e-05-shift-plan` and `e-05-shift-hours`). Both render as
 // an honest-looking `{{slug?}}`, and when that cluster is drawn only one of them resolves while the
-// other silently keeps pointing at a screen it does not mean. Three notes had drifted onto a number
-// that belonged to a fourth. The number is the address, so one address with two names is a
+// other silently keeps pointing at a screen it does not mean. The number is the address, so one address with two names is a
 // disagreement to settle while the notes are still in hand.
 export const refNumGate = {
   id: 'refNumGate',

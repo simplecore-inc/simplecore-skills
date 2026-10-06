@@ -52,7 +52,7 @@ export const crudGate = {
       for (const s of ctx.loaded) if (ledgerFrames.has(s.num) && s.mod.route) claimedRoutes.add(s.mod.route);
       for (const s of ctx.loaded) {
         const route = s.mod.route ?? '';
-        if (!route) continue;                       // the P cluster is the generic pattern itself
+        if (!route) continue;                       // a frame with no route is a pattern specimen
         if (claimedRoutes.has(route)) {
           if (Object.hasOwn(NON_ENTITY, route) && !String(NON_ENTITY[route]).trim()) {
             crudErrors.push(`${route} - NON_ENTITY gives no reason`);
@@ -69,13 +69,12 @@ export const crudGate = {
 // View-switch vocabulary gate. Two things the persona review found once the switch existed on five
 // screens, both of which read as trivia and both of which cost a reader a guess every time.
 //
-// 1. `?view=` already means ONE thing on this board - the record picked out of the list, across
-//    ninety frames (`?view=cti_0119`). The first cut of the calendar switch borrowed the same key
-//    for the view mode (`?view=month`), copying it from the pattern frame, so one parameter meant
-//    a record on one frame and a layout on the next. The view mode is `?mode=`.
+// 1. `?view=` already means ONE thing on a board - the record picked out of the list
+//    (`?view=rec_0119`). A view mode written with the same key (`?view=month`) makes one parameter
+//    mean a record on one frame and a layout on the next. The view mode is `?mode=`.
 // 2. A segment control that offers the same two things in a different order on a different screen
-//    is two controls to learn. E-05 drew 「달력 · 목록」 while the other four drew 「목록 · 달력」,
-//    because its default view is the calendar - but the DEFAULT is `view`, not the order.
+//    is two controls to learn. A screen whose default view is the calendar still writes
+//    「목록 · 달력」 like the others: the DEFAULT is `view`, not the order.
 export const viewSwitchGate = {
   id: 'viewSwitchGate',
   title: 'view switching is written differently from screen to screen',

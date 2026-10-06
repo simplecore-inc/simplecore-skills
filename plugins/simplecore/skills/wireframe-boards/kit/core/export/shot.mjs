@@ -1,7 +1,7 @@
 // One PNG per frame of a built board, for looking at the work and for sending it on.
 //
 //   node wf.mjs shots _shots            every frame
-//   node wf.mjs shots _shots p-         only the P cluster
+//   node wf.mjs shots _shots b-         only cluster B
 //   node wf.mjs shots _shots --no-notes without each frame's annotation block
 //
 // `--no-notes` is for a capture that goes into a document which carries its own write-up. The

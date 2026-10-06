@@ -98,10 +98,10 @@ export const panelDupVerbGate = {
   },
 };
 
-// A frame says on its face what has to be BOUGHT before anyone reaches it. Q and R carry no
-// `phase` - they are built in 1단계 - and yet none of their 39 frames opens without
-// `PACK_CONSTRUCTION`, which the board stated nowhere at all until this gate existed. Filling
-// the frames once is not the job: the job is that the next cluster cannot land empty.
+// A frame says on its face what has to be BOUGHT before anyone reaches it. A cluster built in the
+// first phase can still open only behind a feature key, and a board that states the key nowhere
+// leaves the implementer to find it out. Filling the frames once is not the job: the job is that
+// the next cluster cannot land without it.
 //
 // Three things are checked, and the first reads the BUILT HTML rather than the declaration -
 // a declaration that never reached a drawing is exactly the failure a declaration cannot see.
@@ -127,9 +127,8 @@ export const featureGate = {
     for (const sc of ctx.screens) {
       const id = idOf(sc.file);
       const src = ctx.srcOf(sc.file);
-      // 「기능 키 X」 must not be read out of a table cell inside the screen - N-63 carried those
-      // words in a device row and passed while its notes never named the key once. Only the notes
-      // string is read.
+      // 「기능 키 X」 must not be read out of a table cell inside the screen - a row can carry those
+      // words while the notes never name the key. Only the notes string is read.
       const notes = (src.match(/\n  notes: ([\s\S]*?)\n  (?:body|device|route|screen|state|pageForm|pageList|pageCanvas|pageCalendar|offLanguages|roles):/) ?? [])[1] ?? '';
       const auth = (notes.match(/기능 키 ([A-Z_]+)/) ?? [])[1] ?? null;
       const key = declared.get(id) ?? null;
@@ -341,8 +340,8 @@ export const notesRegisterGate = {
     // Two narrowings. 「」 holds copy quoted FROM the screen, and a quotation keeps its own
     // register - 「저장했습니다」 inside a note is the screen speaking, not the board. And the
     // ending is anchored on what closes a clause rather than on a period alone: 「…표시합니다
-    // ({{p-04-list-detail}}).」 and 「…표시합니다<br>」 escaped a period-only anchor, which is how
-    // 36 of the 111 stayed hidden through the first sweep.
+    // ({{b-04-record-detail}}).」 and 「…표시합니다<br>」 close a clause with no period after the
+    // ending, and a period-only anchor reads past both.
     const END = /(합니다|습니다|입니다|하세요|십시오)(?=[.。(<'`]|\s*$)/;
     const bad = [];
     for (const sc of ctx.screens) {
@@ -388,7 +387,7 @@ export const refLeakGate = {
   run: (ctx) => {
     // `{{slug}}` is how a frame's NOTES point at another frame - the build turns it into that
     // frame's number for the reader of the board. In the body it does the same thing, so a user
-    // of the product would read 「P-18」 in a sentence meant for them. Thirteen frames had one.
+    // of the product would read 「B-04」 in a sentence meant for them. Thirteen frames had one.
     const bad = [];
     for (const sc of ctx.screens) {
       const src = ctx.srcOf(sc.file);
@@ -406,26 +405,50 @@ export const refLeakGate = {
   },
 };
 
+/**
+ * The languages a board declares a field-app body may be written in, each with its letters as a
+ * global expression. An entry without `letters` carries the shell's words in that language and is
+ * never recognised in a body.
+ *
+ * <p>`letters` is a regular expression, or its source as a string, matching one letter that only
+ * that language writes. `min` is how many of them make a body written in it rather than one word
+ * quoted inside a Korean body, and is 10 where the board leaves it out.
+ */
+const recognisedLanguages = (config) => (config.fieldLanguages ?? [])
+  .filter((l) => l && l.lang && l.letters)
+  .map((l) => {
+    const source = l.letters instanceof RegExp ? l.letters.source : String(l.letters);
+    const flags = l.letters instanceof RegExp ? l.letters.flags.replace('g', '') : '';
+    return { lang: l.lang, name: l.name ?? l.lang, min: l.min ?? 10, letters: new RegExp(source, `${flags}g`) };
+  });
+
+const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+// The two things always on a worker's screen - the tab row and the offline strip - come from the
+// shell, and a body written in another language under a Korean shell leaves its reader unable to
+// read either. A person who cannot read the strip cannot tell a signature the server has from one
+// only their phone has, which is the single thing that strip exists to say. The shell takes
+// `lang`; a frame whose body is written in another language passes that language's code.
+//
+// **The languages are the board's**, declared as `fieldLanguages` in `board.config.mjs`, each with
+// the letters that identify a body written in it. A board that declares none is not held to any.
 export const workerLangGate = {
   id: 'workerLangGate',
   title: 'the field-app shell does not speak the screen\'s language',
   stage: 'built',
+  configuredBy: { key: 'fieldLanguages', what: 'the languages a field-app body may be written in, each with its lang code and the letters that identify it' },
   run: (ctx) => {
-    // The two things always on a worker's screen - the tab row and the offline strip - come from
-    // the shell, and fifteen frames whose entire body was Tiếng Việt drew both in Korean. A person
-    // who cannot read the strip cannot tell a signature the server has from one only their phone
-    // has, which is the single thing that strip exists to say. The shell takes `lang`; a frame
-    // written in another language has to pass it.
-    // Vietnamese Extended Additional (U+1EA0–U+1EF9) plus the six base letters outside it.
-    const VI = /[\u1EA0-\u1EF9ăâđêôơưĂÂĐÊÔƠƯ]/g;
+    const languages = recognisedLanguages(ctx.config);
+    if (!languages.length) return [];
     const bad = [];
     for (const sc of ctx.screens) {
       const src = ctx.srcOf(sc.file);
       if (!/worker_\(\{/.test(src)) continue;
-      if (/\blang:\s*'(vi|en|km)'/.test(src)) continue;
-      // Ten or more Vietnamese-only letters is a body written in it, not a word quoted inside one.
-      const n = (src.match(VI) ?? []).length;
-      if (n >= 10) bad.push(`${sc.file}: the body is in Tiếng Việt and the shell is given no lang - the tabs and the offline line stay Korean`);
+      for (const l of languages) {
+        if (new RegExp(`\\blang:\\s*'${escapeRe(l.lang)}'`).test(src)) continue;
+        if ((src.match(l.letters) ?? []).length < l.min) continue;
+        bad.push(`${sc.file}: the body is in ${l.name} and the shell is given no lang: '${l.lang}' - the tabs and the offline line stay Korean`);
+      }
     }
     return bad;
   },
@@ -589,6 +612,17 @@ export const newModeGate = {
   },
 };
 
+/**
+ * Whether a frame belongs to a cluster the board declares as its pattern catalogue.
+ *
+ * <p>A catalogue frame is a specimen of a component rather than a screen of the product, and three
+ * gates step around what a specimen legitimately carries. **Which clusters those are is the
+ * board's**, declared as `catalogueClusters` in `board.config.mjs` by section letter. A board that
+ * declares none has no catalogue, and every frame is judged as a screen.
+ */
+const inCatalogue = (ctx, file) =>
+  (ctx.config?.catalogueClusters ?? []).some((L) => file.startsWith(`${String(L).toLowerCase()}-`));
+
 export const registerGate = {
   id: 'registerGate',
   title: 'screen copy is in the plain register',
@@ -610,8 +644,8 @@ export const registerGate = {
     // a card's own subtitle, and a chart's note. `sectHead` above an explanation block is still not
     // read - that is the heading convention described above.
     //
-    // **The P cluster is exempt from those three, and only from those three.** Its frames are the
-    // pattern catalogue: a `tSub` there is sometimes specimen copy a real screen would show
+    // **A catalogue cluster is exempt from those three, and only from those three.** Its frames are
+    // the pattern catalogue: a `tSub` there is sometimes specimen copy a real screen would show
     // (「추가 등록은 되지만 곧 막힙니다」) and sometimes the board captioning the pattern for whoever
     // implements it (「탭을 바꾸면 동작 행의 윗단만 바뀐다」). Both registers are correct in that
     // cluster, for different strings, and no pattern can tell them apart - judging them would
@@ -636,7 +670,7 @@ export const registerGate = {
       const src = ctx.srcOf(sc.file);
       // Cut the notes and the pageForm declaration - both talk about the screen, not to its user.
       const body = src.replace(/notes:[\s\S]*?(?=\n {2}\w+:)/g, '').replace(/pageForm:\s*'[^']*'/g, '');
-      const isPattern = sc.file.startsWith('p-');
+      const isPattern = inCatalogue(ctx, sc.file);
       for (const [re, where, key] of SOURCES) {
         if (isPattern && key && PATTERN_ONLY.has(key)) continue;
         for (const m of body.matchAll(re)) {
@@ -697,7 +731,7 @@ export const pageActionGate = {
       // state, a lock card, a conflict notice or a job tray carries as part of the pattern being
       // drawn, not a row of page links. Six frames, and every one of them is illustrating the
       // component that owns those buttons.
-      if (sc.file.startsWith('p-')) return false;
+      if (inCatalogue(ctx, sc.file)) return false;
       const src = ctx.srcOf(sc.file);
       return /\bbtnRow\(/.test(src) && /\bpageHeader\(\{/.test(src);
     })
@@ -737,8 +771,7 @@ export const sourceWordGate = {
 // differently from its base read as a different screen.
 //
 // **A compound term whose own name carries a 가운뎃점 is one item, not two.** 「시정·예방조치」 is
-// the settled Korean for CAPA and 「전력·가스」 names one pack, so splitting them turns one word
-// into a list and then demands spaces inside it - which is how 「시정·예방조치 보드」 came out as
+// the settled Korean for CAPA, so splitting it turns one word into a list and then demands spaces inside it - which is how 「시정·예방조치 보드」 came out as
 // 「시정 · 예방조치 보드」, a phrase that reads as two things. The terms are the product's, so they
 // are declared in `board.config.mjs` → `compoundTerms` rather than guessed at here; a kit that
 // carried the list would be carrying one project's vocabulary into every other project's board.
@@ -814,7 +847,7 @@ export const dialogTitleGate = {
 };
 
 // List-and-form gate: the standard page is the CRUD list-detail - the list, and the record beside
-// it in a panel where adding and editing happen (P-04). Where that will not fit, the form goes in
+// it in a panel where adding and editing happen. Where that will not fit, the form goes in
 // a dialog. What it must never do is sit UNDER the list on the same page: the reader scrolls past
 // records to reach fields that belong to no visible row, the page has two subjects, and 「저장」
 // down there is ambiguous about which one it saves. Forty-six frames had drifted into it.
@@ -881,9 +914,6 @@ export const listFormGate = {
 // - 실시 일정 under a 대상자 표 - is a judgement no regex can make, so that frame declares it in
 // one sentence naming what the calendar shows that the list does not. Writing that sentence is the
 // check, exactly as it is for `pageForm` above.
-// The AI badge's vocabulary is five words and no more. A sixth is a sixth thing every reader of
-// every screen has to learn, and the whole value of the mark is that it means one settled thing -
-// 「사람을 아직 거치지 않았다」. `sourceBadge` is closed the same way and for the same reason.
 // Five rules the persona review wrote regexes for. Each is the same defect wearing a different
 // component: a name that stopped being a name. A label is what a value is called, so a sentence
 // there leaves the reader looking for the value that is not beside it.
@@ -922,9 +952,22 @@ export const labelSentenceGate = {
 // The worker's shell draws its tab row in one language, and `lang` is what picks it. A Korean
 // screen needs neither - `ko` is the default - so the defect is narrower than "no lang": a frame
 // whose BODY is in a worker's own language while the shell around it stays Korean. That frame
-// looks bilingual by accident in the one place this product cannot afford it, and the reviewer
-// found it by reading, not by grepping for a missing key.
-const FOREIGN = /[À-ǿḀ-ỿ฀-๿ក-៿ऀ-ॿ]/;
+// looks bilingual by accident on the screen a worker has to act on, and a reviewer finds it by
+// reading, not by grepping for a missing key.
+//
+// **No language list is needed to see it.** A letter outside Hangul, ASCII and the punctuation and
+// symbols every script shares belongs to a body written for a reader of another language, whichever
+// language that is.
+const FOREIGN = /[\p{L}--[\p{Script=Hangul}\p{Script=Common}\p{Script=Inherited}\p{ASCII}]]/v;
+
+// The scripts a line is counted in, to tell a language picker from a body. Chinese and Japanese
+// share one entry: a Japanese sentence writes kana and kanji together and is still one language.
+const SCRIPT_FAMILIES = [
+  'Latin', 'Greek', 'Cyrillic', 'Armenian', 'Georgian', 'Hebrew', 'Arabic', 'Syriac', 'Thaana',
+  'Devanagari', 'Bengali', 'Gurmukhi', 'Gujarati', 'Oriya', 'Tamil', 'Telugu', 'Kannada',
+  'Malayalam', 'Sinhala', 'Thai', 'Lao', 'Tibetan', 'Myanmar', 'Khmer', 'Mongolian', 'Ethiopic',
+  ['Han', 'Hiragana', 'Katakana', 'Bopomofo'],
+].map((s) => new RegExp(`[[${[s].flat().map((x) => `\\p{Script=${x}}`).join('')}]--\\p{ASCII}]`, 'v'));
 
 export const workerShellLangGate = {
   id: 'workerShellLangGate',
@@ -936,34 +979,42 @@ export const workerShellLangGate = {
       if (!/\bworker_\(\{/.test(src)) return false;
       if (/^import base/m.test(src)) return false;
       if (/\blang:\s*/.test(src) || /\btabs:\s*/.test(src)) return false;
-      // Language names laid out to be chosen from are not body copy - L-01's picker and L-20's
-      // language chips are that. Only what a person reads is judged: body lines, description
-      // lines, and the body of a message.
+      // Language names laid out to be chosen from are not body copy - a language picker's options
+      // and a settings screen's language chips are that. Only what a person reads is judged: body
+      // lines, description lines, and the body of a message.
       const body = src.slice(src.indexOf('worker_({'));
       const prose = [...body.matchAll(/\b(?:tBody|tSub)\(\s*(['"`])((?:[^'"`\\]|\\.)*)\1/g)].map((m) => m[2])
         .concat([...body.matchAll(/\bbody:\s*(['"`])((?:[^'"`\\]|\\.)*)\1/g)].map((m) => m[2]));
-      // A line written in several languages at once, inviting a choice, is a picker rather than
-      // body copy in any one of them - L-01's 「Choose language · Chọn ngôn ngữ · ជ្រើសរើសភាសា」 is
-      // that line, and writing it that way is correct.
-      const families = (t) => [/[À-ǿḀ-ỿ]/, /[฀-๿]/, /[ក-៿]/, /[ऀ-ॿ]/].filter((re) => re.test(t)).length;
+      // A line written in several scripts at once, inviting a choice, is a picker rather than body
+      // copy in any one of them - 「Choose language · Wybierz język · Выберите язык」 is that
+      // line, and writing it that way is correct.
+      const families = (t) => SCRIPT_FAMILIES.filter((re) => re.test(t)).length;
       return prose.some((t) => FOREIGN.test(t) && families(t) < 2);
     })
     .map((sc) => `${idOf(sc.file)} - the body is in the worker\'s language and worker_ is given no lang, so the tabs draw in Korean`),
 };
 
-const AI_WORDS = new Set(['추정', '자동 분류', '자동번역', '초안', '사진 판독']);
-
+// The AI badge's vocabulary is closed. A word beyond it is one more thing every reader of every
+// screen has to learn, and the whole value of the mark is that it means one settled thing - 「사람을
+// 아직 거치지 않았다」. `sourceBadge` is closed the same way and for the same reason.
+//
+// **The words are the board's**, declared as `aiWords` in `board.config.mjs` - the kinds of machine
+// output this product distinguishes. A board that declares none is not held to a list.
 export const aiWordGate = {
   id: 'aiWordGate',
   title: 'an AI badge uses a word outside its vocabulary',
   stage: 'built',
+  configuredBy: { key: 'aiWords', what: 'every word an AI badge may carry' },
   run: (ctx) => {
+    const words = ctx.config.aiWords ?? [];
+    if (!words.length) return [];
+    const ALLOWED = new Set(words);
     const bad = [];
     for (const sc of ctx.screens) {
       const src = ctx.srcOf(sc.file);
       for (const m of src.matchAll(/\baiBadge\(\s*'((?:[^'\\]|\\.)*)'/g)) {
-        if (!AI_WORDS.has(m[1])) {
-          bad.push(`${idOf(sc.file)} - aiBadge('${m[1]}'): the words it may carry are ${[...AI_WORDS].join(' · ')}`);
+        if (!ALLOWED.has(m[1])) {
+          bad.push(`${idOf(sc.file)} - aiBadge('${m[1]}'): the words it may carry are ${words.join(' · ')}`);
         }
       }
     }
@@ -972,21 +1023,28 @@ export const aiWordGate = {
 };
 
 // The tier is the reader's answer to 「왜 내 화면에는 없지」, so a card that names one that does not
-// exist answers nothing. One, two, three - always on, model pack, GPU or LLM.
+// exist answers nothing. A tier that is always on cannot be switched off, so a card on it has
+// nothing to say - only the badge stands.
+//
+// **The tiers are the board's**, declared as `aiTiers: { tiers, alwaysOn }` in `board.config.mjs`.
+// A board that declares no tiers is not held to any.
 export const aiTierGate = {
   id: 'aiTierGate',
   title: 'an AI card names a tier that does not exist',
   stage: 'built',
+  configuredBy: { key: 'aiTiers.tiers', what: 'the tiers an AI card may name, and the ones that are always on' },
   run: (ctx) => {
+    const tiers = (ctx.config.aiTiers?.tiers ?? []).map(String);
+    if (!tiers.length) return [];
+    const alwaysOn = new Set((ctx.config.aiTiers?.alwaysOn ?? []).map(String));
     const bad = [];
     for (const sc of ctx.screens) {
       const src = ctx.srcOf(sc.file);
       for (const m of src.matchAll(/\baiCard\(\{[\s\S]{0,400}?\btier:\s*(\d+)/g)) {
-        if (!['1', '2', '3'].includes(m[1])) bad.push(`${idOf(sc.file)} - aiCard tier ${m[1]}: the tiers are 1 · 2 · 3`);
-      }
-      // Tier 1 cannot be switched off, so a card has nothing to say - only the badge stands.
-      if (/\baiCard\(\{[\s\S]{0,400}?\btier:\s*1\b/.test(src)) {
-        bad.push(`${idOf(sc.file)} - an aiCard on tier 1. A calculation that cannot be switched off gives the card nothing to say; only the badge stands`);
+        if (!tiers.includes(m[1])) bad.push(`${idOf(sc.file)} - aiCard tier ${m[1]}: the tiers are ${tiers.join(' · ')}`);
+        else if (alwaysOn.has(m[1])) {
+          bad.push(`${idOf(sc.file)} - an aiCard on tier ${m[1]}. A calculation that cannot be switched off gives the card nothing to say; only the badge stands`);
+        }
       }
     }
     return bad;
@@ -1007,7 +1065,7 @@ export const listPanelGate = {
     const bad = [];
     for (const sc of ctx.screens) {
       const src = ctx.srcOf(sc.file);
-      if (sc.file.startsWith('p-')) continue;              // the pattern catalogue is a demonstration
+      if (inCatalogue(ctx, sc.file)) continue;             // the pattern catalogue is a demonstration
       if (/^import base/m.test(src)) continue;             // a state frame follows its base
       if (/\blistDetail\(/.test(src)) continue;
       if (!/\bfilterBar\(/.test(src)) continue;
@@ -1055,10 +1113,8 @@ export const calendarListGate = {
     for (const sc of ctx.screens) {
       const src = ctx.srcOf(sc.file);
       if (!/\bcalendar\(\{/.test(src)) continue;
-      // A plain `table({` is a list too. The list-and-form gate above learned this the hard way -
-      // its first cut looked only for a filterBar or a pagination row and let nineteen frames past -
-      // and the first cut of THIS gate repeated it on the very same file (F-21, whose measurement
-      // table carries neither).
+      // A plain `table({` is a list too: a measurement table carries neither a filterBar nor a
+      // pagination row and is still a list, so a check that looks only for those two reads past it.
       if (!/\btable\(\{|\blistDetail\(/.test(src)) continue;
       if (/\bviews:\s*\[/.test(src)) continue;          // a view switch - two states, not a stack
       if (/\n  pageCalendar: '[^']+'/.test(src)) continue;
@@ -1100,7 +1156,7 @@ export const filterChainGate = {
   run: (ctx) => {
     const BODY = new Set(['listdetail', 'table', 'treetable', 'mx', 'cal', 'tree', 'cvs', 'hit']);
     // The language switch is read out of the sequence altogether. It is a filter of the same
-    // family - 「전체 언어 · 한국어 · Tiếng Việt」 over a result list - so it does not break the
+    // family - 「전체 언어 · 한국어 · English」 over a result list - so it does not break the
     // reading of tab → chip → list the way a tile row or an explanation card does; and it is not a
     // member of the triple either, because a screen may keep it beside a document instead.
     const rank = (cls) => {
@@ -1233,7 +1289,7 @@ export const panelTailGate = {
 //
 // Two halves, because the marker can be lost from either end. The declaration can stop being
 // drawn (someone edits the frame chrome), or a deferred screen can be written without one -
-// a new frame in a cluster that is not itself deferred, the way L-21 sits inside worker PWA.
+// a new frame in a cluster that is not itself deferred.
 export const phaseGate = {
   id: 'phaseGate',
   title: 'a frame with a declared phase does not draw it on its face',
@@ -1268,30 +1324,6 @@ export const phaseGate = {
   },
 };
 
-// Role gate: the visibility matrix and the frame's own words must agree.
-//
-// §9 of the screen design fills the matrix in per CLUSTER, which is as far as a table can go - it
-// cannot say which of E's sixty-five frames 「관리감독자 ✔(담당 구역)」 means. `src/roles.mjs` holds
-// that table as data and a frame overrides it only where it departs. What this gate catches is the
-// disagreement between the two statements a frame makes about who may be there: the matrix, and the
-// `AUTH:` note somebody wrote in prose.
-//
-// A frame whose AUTH names a role its cluster does not admit is one of two things, and both need
-// fixing: the matrix is wrong for that cluster, or the frame is a departure that never declared
-// itself. Neither is visible without this check - sixteen J frames were written for an outside
-// auditor while §9 had no column for one at all.
-/**
- * The console says this product's name, not the placeholder.
- *
- * <p>`topNav` has to default its brand to something, and whatever that something is will be drawn
- * on every board that forgets to pass one. The failure is silent and total - the name is in the
- * top left of every desktop frame, so a board can be built, exported and sent with another
- * product's name on all of it, and nothing about the drawing looks wrong.
- *
- * <p>It reads the shell rather than the config because the shell is what draws it: a board can
- * declare a `boardName` for the index and hand the console a different display brand, and only the
- * second one reaches the frame.
- */
 /**
  * A chart names both of its axes.
  *
@@ -1324,6 +1356,18 @@ export const chartAxisGate = {
   },
 };
 
+/**
+ * The console says this product's name, not the placeholder.
+ *
+ * <p>`topNav` has to default its brand to something, and whatever that something is will be drawn
+ * on every board that forgets to pass one. The failure is silent and total - the name is in the
+ * top left of every desktop frame, so a board can be built, exported and sent with another
+ * product's name on all of it, and nothing about the drawing looks wrong.
+ *
+ * <p>It reads the shell rather than the config because the shell is what draws it: a board can
+ * declare a `boardName` for the index and hand the console a different display brand, and only the
+ * second one reaches the frame.
+ */
 export const consoleBrandGate = {
   id: 'consoleBrandGate',
   title: 'the console draws a placeholder instead of the product name',
@@ -1336,6 +1380,18 @@ export const consoleBrandGate = {
   },
 };
 
+// Role gate: the visibility matrix and the frame's own words must agree.
+//
+// The screen design fills the matrix in per CLUSTER, which is as far as a table can go - it cannot
+// say which of a cluster's frames a scoped verdict such as 「담당자 ✔(담당 구역)」 means.
+// `src/roles.mjs` holds that table as data and a frame overrides it only where it departs. What
+// this gate catches is the disagreement between the two statements a frame makes about who may be
+// there: the matrix, and the `AUTH:` note somebody wrote in prose.
+//
+// A frame whose AUTH names a role its cluster does not admit is one of two things, and both need
+// fixing: the matrix is wrong for that cluster, or the frame is a departure that never declared
+// itself. Neither is visible without this check: a cluster's frames can be written for a role the
+// matrix has no column for.
 export const roleGate = {
   id: 'roleGate',
   title: 'the role verdicts and the AUTH line disagree',

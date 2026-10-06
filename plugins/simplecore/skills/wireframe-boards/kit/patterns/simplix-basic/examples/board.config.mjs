@@ -17,8 +17,8 @@ export default {
   // or absent falls back to English.
   boardLang: 'ko',
 
-  headline: 'PRODUCT — 관리 콘솔 · 현장 앱 · 공용 단말',
-  boardName: 'product',
+  headline: '<PRODUCT> - 관리 콘솔 · 현장 앱 · 공용 단말',
+  boardName: '<product>',
   tag: 'WIREFRAME v0.1 · LO-FI',
   pdfName: 'wireframe',
 

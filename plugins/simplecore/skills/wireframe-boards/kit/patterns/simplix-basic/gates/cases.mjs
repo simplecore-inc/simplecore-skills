@@ -144,13 +144,32 @@ export function cases(t) {
   add('refLeakGate', 'a reference in notes is fine',
     ctxWith([screen('x-01-a', "  notes: 'AUTH: x<br>여기서 여는 화면 — {{p-18-change-history}}',\n  body: tSub('변경은 변경 이력에 남습니다'),")]), false);
 
-  add('workerLangGate', 'a Vietnamese body with a Korean shell',
-    ctxWith([screen('x-01-a', "worker_({ title: 'TBM', body: 'Đã hiểu và ký · Chưa hiểu · phổ biến đánh giá rủi ro · Thiếu oxy · Đeo mặt nạ dưỡng khí · Có người giám sát' })")]), true);
+  // The field languages are the board's declaration; the fixture declares one placeholder
+  // language with the letters that identify it, and one that carries words only.
+  const FIELD = [
+    { lang: 'es', name: 'Español', letters: /[ñáéíóú¿¡]/, min: 6 },
+    { lang: 'en', text: {} },
+  ];
+  const fielded = (src, fieldLanguages = FIELD) => ctxWith([screen('x-01-a', src)], { config: { ...config, fieldLanguages } });
+  const ES_BODY = 'Señal de evacuación · Póngase el casco · Oxígeno bajo · Ningún ruido · Atención · ¿Está seguro? · Sí · También';
+  add('workerLangGate', 'a body in a declared language with a Korean shell',
+    fielded(`worker_({ title: 'x', body: '${ES_BODY}' })`), true);
   add('workerLangGate', 'lang is handed to the shell',
-    ctxWith([screen('x-01-a', "worker_({ title: 'TBM', lang: 'vi', body: 'Đã hiểu và ký · Chưa hiểu · phổ biến đánh giá rủi ro · Thiếu oxy · Đeo mặt nạ dưỡng khí' })")]), false);
-  // One Vietnamese word quoted on a Korean screen does not make the body copy Vietnamese.
+    fielded(`worker_({ title: 'x', lang: 'es', body: '${ES_BODY}' })`), false);
+  // Another language's code is not this language's: the shell would draw the wrong words.
+  add('workerLangGate', 'the shell is handed another language',
+    fielded(`worker_({ title: 'x', lang: 'en', body: '${ES_BODY}' })`), true);
+  // One word quoted on a Korean screen does not make the body copy that language.
   add('workerLangGate', 'one quoted word',
-    ctxWith([screen('x-01-a', "worker_({ title: '내 자격', body: '모국어 Tiếng Việt로 나갑니다' })")]), false);
+    fielded("worker_({ title: '내 자격', body: '모국어 Español로 나갑니다' })"), false);
+  // The letters may be declared as a source string as well as a regular expression.
+  add('workerLangGate', 'letters declared as a string',
+    fielded(`worker_({ title: 'x', body: '${ES_BODY}' })`, [{ lang: 'es', letters: '[ñáéíóú¿¡]' }]), true);
+  // No declaration, no vocabulary: the gate holds the board to nothing and doctor names it.
+  add('workerLangGate', 'a board that declares no field languages is not held to any',
+    fielded(`worker_({ title: 'x', body: '${ES_BODY}' })`, []), false);
+  add('workerLangGate', 'a language declared without letters is never recognised',
+    fielded(`worker_({ title: 'x', body: '${ES_BODY}' })`, [{ lang: 'es', text: {} }]), false);
 
   add('twinActionGate', 'two buttons, one name written long',
     ctxWith([screen('x-01-a', "actions: btn('역할·권한', 'ghost') + btn('역할·권한 매트릭스', 'ghost')")]), true);
@@ -209,21 +228,46 @@ export function cases(t) {
   add('labelSentenceGate', '「연결 안 됨」 is a kind',
     ctxWith([screen('x-01-a', "statTile({ label: '연결 안 됨', value: '5' })")]), false);
   add('workerShellLangGate', 'a body in the worker\'s language with a Korean shell',
-    ctxWith([screen('x-01-a', "worker_({ title: 'x', body: tBody('Nồng độ oxy dưới 18%') })")]), true);
+    ctxWith([screen('x-01-a', "worker_({ title: 'x', body: tBody('Oxígeno por debajo del 18%') })")]), true);
+  // Any script other than Hangul is a worker's language; no list of languages is consulted.
+  add('workerShellLangGate', 'a body in a script no board declared',
+    ctxWith([screen('x-01-a', "worker_({ title: 'x', body: tBody('Выберите язык') })")]), true);
   add('workerShellLangGate', 'a language picker writes several languages together',
-    ctxWith([screen('x-01-a', "worker_({ title: 'x', body: tSub('Choose language · Chọn ngôn ngữ · ជ្រើសរើសភាសា') })")]), false);
-  add('aiWordGate', 'a sixth word',
-    ctxWith([screen('x-01-a', "aiBadge('예측')")]), true);
-  add('aiWordGate', 'one of the five words',
-    ctxWith([screen('x-01-a', "aiBadge('추정', '회차 5개')")]), false);
+    ctxWith([screen('x-01-a', "worker_({ title: 'x', body: tSub('Choose language · Wybierz język · Выберите язык') })")]), false);
+  // Symbols every script shares are not another language: a unit in a Korean body stays Korean.
+  add('workerShellLangGate', 'a Korean body with a unit sign',
+    ctxWith([screen('x-01-a', "worker_({ title: 'x', body: tBody('분진 농도 150µg/m³ · 기준 초과') })")]), false);
+  // The AI vocabulary and tiers are the board's declaration; the fixture's are placeholders.
+  const AI = ['추정', '초안'];
+  const aiWorded = (src, aiWords = AI) => ctxWith([screen('x-01-a', src)], { config: { ...config, aiWords } });
+  add('aiWordGate', 'a word outside the declared vocabulary',
+    aiWorded("aiBadge('예측')"), true);
+  add('aiWordGate', 'one of the declared words',
+    aiWorded("aiBadge('추정', '회차 5개')"), false);
+  add('aiWordGate', 'a board that declares no vocabulary is not held to one',
+    aiWorded("aiBadge('예측')", []), false);
+  const TIERS = { tiers: [1, 2, 3], alwaysOn: [1] };
+  const tiered = (src, aiTiers = TIERS) => ctxWith([screen('x-01-a', src)], { config: { ...config, aiTiers } });
   add('aiTierGate', 'a tier that does not exist',
-    ctxWith([screen('x-01-a', "aiCard({ title: 'x', tier: 4 })")]), true);
-  add('aiTierGate', 'a card on tier 1',
-    ctxWith([screen('x-01-a', "aiCard({ title: 'x', tier: 1 })")]), true);
-  add('aiTierGate', 'a tier 2 card',
-    ctxWith([screen('x-01-a', "aiCard({ title: 'x', hint: 'y', tier: 2 })")]), false);
+    tiered("aiCard({ title: 'x', tier: 4 })"), true);
+  add('aiTierGate', 'a card on a tier that is always on',
+    tiered("aiCard({ title: 'x', tier: 1 })"), true);
+  add('aiTierGate', 'a card on a declared tier that can be off',
+    tiered("aiCard({ title: 'x', hint: 'y', tier: 2 })"), false);
+  // A board's own tiers, not the fixture's: tier 4 exists there and none is always on.
+  add('aiTierGate', 'a board with its own tiers',
+    tiered("aiCard({ title: 'x', tier: 4 }) + aiCard({ title: 'y', tier: 1 })", { tiers: ['1', '4'] }), false);
+  add('aiTierGate', 'a board that declares no tiers is not held to any',
+    tiered("aiCard({ title: 'x', tier: 4 })", {}), false);
+  // The catalogue is the board's declaration; the fixture names cluster C.
+  const catalogued = (file, src, catalogueClusters = ['C']) =>
+    ctxWith([screen(file, src)], { config: { ...config, catalogueClusters } });
   add('listPanelGate', 'a list with no panel',
     ctxWith([screen('x-01-a', "filterBar({ total: '4건' })\ntable({ rows: [] })")]), true);
+  add('listPanelGate', 'a catalogue specimen of a list needs no panel',
+    catalogued('c-21-history', "filterBar({ total: '4건' })\ntable({ rows: [] })"), false);
+  add('listPanelGate', 'outside a declared catalogue the same list needs one',
+    catalogued('c-21-history', "filterBar({ total: '4건' })\ntable({ rows: [] })", []), true);
   add('listPanelGate', 'states why there is no panel',
     ctxWith([screen('x-01-a', "filterBar({ total: '4건' })\ntable({ rows: [] })\n  pageList: '격자가 곧 입력면이다'")]), false);
   add('canvasListGate', 'a drawing and a list stacked',
@@ -234,8 +278,10 @@ export function cases(t) {
   add('calendarListGate', 'a view switch is there', ctxWith([screen('x-01-a', "calendar({ month: 8 })\ntable({ rows: [] })\nviews: ['목록', '달력']")]), false);
   add('registerGate', 'a chart note in the plain register',
     ctxWith([screen('x-01-a', "note: '목표는 그림 안에 그린다',")]), true);
-  add('registerGate', 'the pattern catalogue is not measured',
-    ctxWith([screen('p-25-charts', "note: '목표는 그림 안에 그린다',")]), false);
+  add('registerGate', 'a declared catalogue cluster is not measured',
+    catalogued('c-25-charts', "note: '목표는 그림 안에 그린다',"), false);
+  add('registerGate', 'a cluster no board declared as its catalogue is measured',
+    catalogued('c-25-charts', "note: '목표는 그림 안에 그린다',", []), true);
   add('listColumnGate', 'a list of four columns',
     ctxWith([screen('x-01-a', "const list =\n  table({ head: [th('a', { w: 'w2' }), th('b'), th('c'), th('', { w: 'fix' })],\n  })\nconst panel = listDetail(list, panel)")]), true);
   add('listColumnGate', 'a list of three columns',
@@ -244,6 +290,10 @@ export function cases(t) {
     ctxWith([screen('x-01-a', "pageHeader({ title: 'x' }) + btnRow(btn('가기'))")]), true);
   add('pageActionGate', 'a titleless form\'s primary button',
     ctxWith([screen('x-01-a', "btnRow(btn('로그인', 'primary'))")]), false);
+  add('pageActionGate', 'a catalogue specimen carries its own buttons',
+    catalogued('c-09-empty', "pageHeader({ title: 'x' }) + btnRow(btn('다시 시도'))"), false);
+  add('pageActionGate', 'outside a declared catalogue the same frame is a page',
+    catalogued('c-09-empty', "pageHeader({ title: 'x' }) + btnRow(btn('다시 시도'))", []), true);
   // The vocabulary is the board's declaration; the fixture's words are placeholders.
   const WORDS = ['법정 기본', '설치 기본', '현장 설정'];
   const badged = (src, sourceWords = WORDS) => ctxWith([screen('x-01-a', src)], { config: { ...config, sourceWords } });
@@ -305,33 +355,35 @@ export function cases(t) {
     ctxWith([screen('x-01-a', "listDetail(list, detail)"), LD_BASE]), false);
 
   add('tagCollisionGate', 'a phase tag equals a feature tag',
-    ctxWith([], { config: { ...config, phases: { pack: { tag: '건설 팩' } }, features: { PACK_CONSTRUCTION: { tag: '건설 팩' } } } }), true);
+    ctxWith([], { config: { ...config, phases: { pack: { tag: '예시 팩' } }, features: { PACK_EXAMPLE: { tag: '예시 팩' } } } }), true);
   add('tagCollisionGate', 'the two axes use different words',
-    ctxWith([], { config: { ...config, phases: { pack: { tag: '팩 대기' } }, features: { PACK_CONSTRUCTION: { tag: '건설 팩' } } } }), false);
+    ctxWith([], { config: { ...config, phases: { pack: { tag: '팩 대기' } }, features: { PACK_EXAMPLE: { tag: '예시 팩' } } } }), false);
+  // The feature catalogue is the case's own, so no case reads the fixture's keys.
+  const FEATURES = { features: { PACK_EXAMPLE: { tag: '예시 팩', why: '예시' }, CONNECTED: { tag: 'Connected', why: '연동' } } };
   add('featureGate', 'a key not in the catalogue',
     ctxWith([screen('x-01-a', "\n  notes: 'AUTH: 세션 · 기능 키 PACK_UNKNOWN',\n  body: x,")], {
       manifest: [{ letter: 'X', title: 't', screens: [{ file: 'x-01-a', feature: 'PACK_UNKNOWN' }] }],
-      html: '<span class="fft">건설 팩</span>',
+      html: '<span class="fft">예시 팩</span>', config: { ...config, ...FEATURES },
     }), true);
   add('featureGate', 'notes and manifest disagree',
     ctxWith([screen('x-01-a', "\n  notes: 'AUTH: 세션 · 기능 키 CONNECTED',\n  body: x,")], {
-      manifest: [{ letter: 'X', title: 't', screens: [{ file: 'x-01-a', feature: 'PACK_CONSTRUCTION' }] }],
-      html: '<span class="fft">건설 팩</span>',
+      manifest: [{ letter: 'X', title: 't', screens: [{ file: 'x-01-a', feature: 'PACK_EXAMPLE' }] }],
+      html: '<span class="fft">예시 팩</span>', config: { ...config, ...FEATURES },
     }), true);
   add('featureGate', 'declaration, chip and notes agree',
-    ctxWith([screen('x-01-a', "\n  notes: 'AUTH: 세션 · 기능 키 PACK_CONSTRUCTION',\n  body: x,")], {
-      manifest: [{ letter: 'X', title: 't', screens: [{ file: 'x-01-a', feature: 'PACK_CONSTRUCTION' }] }],
-      html: '<span class="fft">건설 팩</span>',
+    ctxWith([screen('x-01-a', "\n  notes: 'AUTH: 세션 · 기능 키 PACK_EXAMPLE',\n  body: x,")], {
+      manifest: [{ letter: 'X', title: 't', screens: [{ file: 'x-01-a', feature: 'PACK_EXAMPLE' }] }],
+      html: '<span class="fft">예시 팩</span>', config: { ...config, ...FEATURES },
     }), false);
   add('featureGate', 'declared, and the notes carry no key',
     ctxWith([screen('x-01-a', "\n  notes: 'AUTH: 세션',\n  body: x,")], {
-      manifest: [{ letter: 'X', title: 't', screens: [{ file: 'x-01-a', feature: 'PACK_CONSTRUCTION' }] }],
-      html: '<span class="fft">건설 팩</span>',
+      manifest: [{ letter: 'X', title: 't', screens: [{ file: 'x-01-a', feature: 'PACK_EXAMPLE' }] }],
+      html: '<span class="fft">예시 팩</span>', config: { ...config, ...FEATURES },
     }), true);
   add('featureGate', 'inheriting base.notes is not asked',
     ctxWith([screen('x-01-a', "\n  notes: base.notes + '한 줄',\n  body: x,")], {
-      manifest: [{ letter: 'X', title: 't', screens: [{ file: 'x-01-a', feature: 'PACK_CONSTRUCTION' }] }],
-      html: '<span class="fft">건설 팩</span>',
+      manifest: [{ letter: 'X', title: 't', screens: [{ file: 'x-01-a', feature: 'PACK_EXAMPLE' }] }],
+      html: '<span class="fft">예시 팩</span>', config: { ...config, ...FEATURES },
     }), false);
   add('panelDupVerbGate', 'the same verb in both rows',
     ctxWith([screen('x-01-a', "panelVerbs(btn('명단 조정') + btn('세션 열기')) +\n  panelFoot(btn('닫기', 'ghost') + btn('세션 열기', 'primary'))")]), true);
@@ -390,15 +442,15 @@ export function cases(t) {
   add('consoleBrandGate', 'a placeholder is drawn',
     base({ html: '<div class="topnav"><span class="tn-brand">PRODUCT</span></div>' }), true);
   add('consoleBrandGate', 'the product name is drawn',
-    base({ html: '<div class="topnav"><span class="tn-brand">OA 소모품 관리시스템</span></div>' }), false);
+    base({ html: '<div class="topnav"><span class="tn-brand">예시 관리시스템</span></div>' }), false);
   add('consoleBrandGate', 'a board drawing no console is not asked', base({ html: '<div class="auth"></div>' }), false);
 
   add('roleGate', 'AUTH names a role the verdicts lack',
-    roled([{ num: 'N-02', file: 'n-02-a', mod: { notes: 'AUTH: safety-admin 세션 · 시스템 관리자 (협력사 관리자는 자사 인력 초대만)<br>' } }]), true);
+    roled([{ num: 'N-02', file: 'n-02-a', mod: { notes: 'AUTH: admin 세션 · 시스템 관리자 (협력사 관리자는 자사 인력 초대만)<br>' } }]), true);
   add('roleGate', 'the frame declares it in roles',
-    roled([{ num: 'N-02', file: 'n-02-a', mod: { roles: { partner: 'scoped' }, notes: 'AUTH: safety-admin 세션 · 시스템 관리자 (협력사 관리자는 자사 인력 초대만)<br>' } }]), false);
+    roled([{ num: 'N-02', file: 'n-02-a', mod: { roles: { partner: 'scoped' }, notes: 'AUTH: admin 세션 · 시스템 관리자 (협력사 관리자는 자사 인력 초대만)<br>' } }]), false);
   add('roleGate', 'names a role the verdicts hold',
-    roled([{ num: 'N-02', file: 'n-02-a', mod: { notes: 'AUTH: safety-admin 세션 · 시스템 관리자<br>' } }]), false);
+    roled([{ num: 'N-02', file: 'n-02-a', mod: { notes: 'AUTH: admin 세션 · 시스템 관리자<br>' } }]), false);
   // A cluster with neither a verdict nor a 「대상 아님」 reason has fallen out of the matrix.
   add('roleGate', 'a cluster missing from the matrix',
     roled([], [{ letter: 'Y', title: 'y', screens: [] }]), true);
