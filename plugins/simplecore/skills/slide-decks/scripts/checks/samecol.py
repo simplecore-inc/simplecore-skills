@@ -68,19 +68,32 @@ def key(page: str, index: int, head: str, value: str) -> str:
     return "\t".join([page, str(index), head, value])
 
 
-def migrate(raw_key: str, raw: Any) -> tuple[str, Entry] | None:
-    """A legacy entry keyed `page<TAB>table<TAB>head` with the value as its entry.
+# The names a legacy samecol baseline gave the entry's reason and its value.
+LEGACY_REASON, LEGACY_VALUE = "사유", "값"
 
-    The bare value form predates the reason rule and is grandfathered; the
-    object form carried its reason under 「사유」 and its value under 「값」.
+
+def migrate(raw_key: str, raw: Any) -> tuple[str, Entry] | None:
+    """A legacy samecol entry, translated into the current key and entry; None for a current one.
+
+    Two legacy forms. The key `page<TAB>table<TAB>head` carried the column's
+    value as its entry: a bare value, which predates the reason rule and is
+    grandfathered, or an object with the reason under 「사유」 and the value
+    under 「값」. And an object under the current four-field key may still name
+    its reason 「사유」. `--bless` writes each of them in the current keys.
     """
-    if raw_key.count("\t") != 2:
+    legacy_object = isinstance(raw, dict) and (LEGACY_REASON in raw or LEGACY_VALUE in raw)
+    if raw_key.count("\t") == 2:
+        if isinstance(raw, str):
+            return raw_key + "\t" + raw, Entry(None)
+        if legacy_object and LEGACY_VALUE in raw:
+            entry = parse_entry({"reason": raw.get("reason", raw.get(LEGACY_REASON))})
+            return raw_key + "\t" + str(raw[LEGACY_VALUE]), Entry(entry.reason)
         return None
-    if isinstance(raw, str):
-        return raw_key + "\t" + raw, Entry(None)
-    if isinstance(raw, dict) and "값" in raw:
-        entry = parse_entry({k: v for k, v in raw.items() if k != "값"})
-        return raw_key + "\t" + str(raw["값"]), Entry(entry.reason)
+    if legacy_object:
+        current = {"reason": raw.get("reason", raw.get(LEGACY_REASON))}
+        if "measure" in raw or LEGACY_VALUE in raw:
+            current["measure"] = raw.get("measure", raw.get(LEGACY_VALUE))
+        return raw_key, parse_entry(current)
     return None
 
 

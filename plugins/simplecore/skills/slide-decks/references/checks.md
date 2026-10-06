@@ -423,9 +423,11 @@ Baselines live in the directory `checks.baselines` names, one `<check>.json` per
 never beside a check's script. An entry is `"finding": "reason"`, or
 `{"reason": …, "measure": …}` when the judgement holds only at one measure (an overlap
 ratio, a set of values); `""` is retired with the reason still owed and fails. A legacy file
-(a list of findings, a bare measure, an object without a reason, or an object carrying its
-reason under 「사유」 and its measure under 「값」) loads as grandfathered entries that stay
-retired while their measure is unchanged. `--bless` rewrites the file
+(a list of findings, a bare measure, an object without a reason) loads as grandfathered entries
+that stay retired while their measure is unchanged. The shared loader reads `reason` and
+`measure` and no other key names; a check whose legacy file named them otherwise translates it on
+load, as `samecol` does for its `page<TAB>table<TAB>head` keys (a bare value, or the reason under
+「사유」 and the value under 「값」). `--bless` rewrites the file
 with today's findings, keeps the reason of every entry found unchanged, writes the rest
 blank, and prints the ones that still owe a reason. The shared checks that keep a baseline
 take `--bless`: `period`, `dangle`, `markecho`, `echo`, `twice`, `samefact`, `figtext`,

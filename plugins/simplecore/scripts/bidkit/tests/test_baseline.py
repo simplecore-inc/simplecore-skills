@@ -50,11 +50,15 @@ class BaselineTests(unittest.TestCase):
         self.assertEqual(b.verdict("fact", ["1", "9"]), LIVE)
 
     def test_reason_with_measure(self):
-        b = Baseline.load(self.write({"pair": {"reason": "judged", "measure": 0.7},
-                                      "old": {"값": "●", "사유": "위와 같다."}}))
+        b = Baseline.load(self.write({"pair": {"reason": "judged", "measure": 0.7}}))
         self.assertEqual(b.verdict("pair", 0.7), RETIRED)
         self.assertEqual(b.verdict("pair", 0.9), LIVE)
-        self.assertEqual(b.verdict("old", "●"), RETIRED)
+
+    def test_the_shared_loader_reads_no_check_s_own_key_names(self):
+        # Other names for the reason and the measure are one check's legacy, translated by its migrate.
+        b = Baseline.load(self.write({"old": {"값": "●", "사유": "위와 같다."}}))
+        self.assertIsNone(b.entries["old"].reason)
+        self.assertFalse(b.entries["old"].has_measure)
 
     def test_bless_keeps_reasons_and_writes_new_findings_blank(self):
         path = self.write({"kept": "a reason", "legacy": None, "moved": {"reason": "r", "measure": 1},
