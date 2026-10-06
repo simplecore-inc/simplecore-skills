@@ -7,12 +7,19 @@
  * from memory produces defects a reviewer then has to catch. The instruction file already says
  * "invoke the skill first"; this makes it hold when the instruction is skimmed.
  *
- * Wired as two modes on one command:
- *   PostToolUse  matcher "Skill"                : skill-gate.mjs mark
- *   PreToolUse   matcher "Write|Edit|MultiEdit" : skill-gate.mjs check
+ * Wired as three modes on one command:
+ *   PostToolUse       matcher "Skill"                : skill-gate.mjs mark
+ *   UserPromptSubmit                                 : skill-gate.mjs mark-prompt
+ *   PreToolUse        matcher "Write|Edit|MultiEdit" : skill-gate.mjs check
  *
- * "mark" records every skill invoked this session, for this gate and for the e2e gate beside
- * it. "check" denies an edit under a guarded directory when no gating skill has been recorded.
+ * "mark" records every skill invoked through the Skill tool this session, for this gate and for
+ * the e2e gate beside it. "mark-prompt" records a skill the user loaded by typing its slash
+ * command (`/simplix:backend`), a path that need not pass through the Skill tool at all. "check"
+ * denies an edit under a guarded directory when no gating skill has been recorded.
+ *
+ * Limits: only Write, Edit and MultiEdit are intercepted, so a source file changed through Bash
+ * (`sed -i`, a heredoc, a codemod) is never refused; the instruction file's routing is the only
+ * guard on that path.
  *
  * Scope guard: nothing is gated until a project declares `skillGate` in `.claude/simplix.json`:
  *
@@ -44,6 +51,12 @@ if (!input?.session_id) process.exit(0);
 if (mode === 'mark') {
   const skill = String(input.tool_input?.skill ?? '');
   if (skill) setMarker('skill', input.session_id, skill);
+  process.exit(0);
+}
+
+if (mode === 'mark-prompt') {
+  const typed = String(input.prompt ?? '').match(/^\s*\/([\w-]+:[\w-]+)(?![\w:-])/);
+  if (typed) setMarker('skill', input.session_id, typed[1]);
   process.exit(0);
 }
 

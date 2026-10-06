@@ -10,8 +10,8 @@ instruction file travels with the repository.
 
 A routing block states the gate; it does not enforce it. Enforcement is the other half:
 `<subproject>/.claude/simplix.json` arms the plugin's hooks, so an edit written without the
-handbook is refused and a session that changed screens cannot end without them being opened
-in a browser. `/simplix:init` writes both halves; the project block below documents the
+handbook is refused, and a session that changed screens is stopped once at its end when they
+were never opened in a browser or the convention audit never ran. `/simplix:init` writes both halves; the project block below documents the
 second so a reader knows the gates exist and why.
 
 ---
@@ -60,8 +60,8 @@ Rules that follow from the gate:
 
 Each subproject's `.claude/simplix.json` arms the gates that enforce the rules above: a
 source edit is refused until the handbook is invoked, and a session that changed screens is
-refused an ending until they have been driven in a browser and the convention audit has run.
-`/simplix:init` writes it. Do not delete it to make a gate stop firing — answer the gate
+stopped once, at its end, when it neither drove them in a browser nor ran the convention audit.
+`/simplix:init` writes it. Do not delete it to make a gate stop firing; answer the gate
 instead.
 
 Install: `claude plugin install simplix@simplecore-skills`. Without the plugin these

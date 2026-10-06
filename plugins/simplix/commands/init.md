@@ -25,7 +25,10 @@ the two you did.
 
 2. Report what it found in one short paragraph: the matched subprojects with their paths
    and markers, which skills therefore apply, and - from `routedBy` and each match's
-   `skillGate` / `e2eGate` - which of the two halves is already in place.
+   `skillGate` / `e2eGate` - which of the two halves is already in place. A gate reads as
+   armed only when every key its hook needs is present; `skillGateMissing` /
+   `e2eGateMissing` name the keys a declared gate lacks, and such a gate refuses nothing.
+   `routedBy` may name a file above the scanned directory, up to the repository root.
 
    - `frameworkRepo: true` → this IS simplix-react, not a project using it. Say so and
      stop; the consumer handbooks do not apply here.
@@ -86,12 +89,22 @@ the two you did.
    - Show the file and get agreement before writing, the same as the routing block.
 
    Say what each gate does in one clause, because the user has no reason to know: the skill gate
-   refuses an edit under those directories until the handbook is loaded; the e2e gate refuses to
-   end a session that changed screens without any of them being opened in a browser. Both have
-   escape hatches (`SIMPLIX_SKILL_GATE=off`, `SIMPLIX_E2E_GATE=off`) for scripted migrations.
+   refuses an edit (Write, Edit, MultiEdit) under those directories until the handbook is loaded;
+   the e2e gate stops a session that changed screens once, at its end, when none of them was
+   opened in a browser or the convention audit never ran. Both have escape hatches
+   (`SIMPLIX_SKILL_GATE=off`, `SIMPLIX_E2E_GATE=off`) for scripted migrations.
 
-7. Verify by re-running the detector - `routedBy` must name the file you wrote and `wired` must
-   be true - and report the result. Tell the user the routing applies immediately to anyone
-   reading the instruction file, while the gates take effect for new sessions.
+7. Verify what you wrote, and report the result:
+
+   - **`--project`**: re-run the detector. `routedBy` must name the file you wrote and `wired`
+     must be true.
+   - **`--global`**: read the inserted section back from `~/.claude/CLAUDE.md`. The detector
+     reads only the repository's own instruction files, so `routedBy` stays empty for a global
+     block; that is expected, and it is no reason to write a project block the user did not ask
+     for.
+
+   Tell the user the routing applies immediately to anyone reading the instruction file, and the
+   gates apply from the next edit in this session: both hooks read `.claude/simplix.json` on every
+   tool call. So invoke the subproject's handbook skill before the next source edit here.
 
 Do not commit. Report; the user commits.

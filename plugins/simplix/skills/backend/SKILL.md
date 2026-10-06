@@ -19,11 +19,11 @@ Single source of truth for backend Java work in a SimpliX project. SimpliX is a 
 
 ### Project wiring - check on load, offer once
 
-Two halves make this handbook hold: the routing block in the project's instruction file, and the gate config in `<subproject>/.claude/simplix.json` that lets the plugin's hooks enforce it. Run `node "${CLAUDE_PLUGIN_ROOT}/scripts/detect-simplix.mjs" --json` and read `routedBy` and this subproject's `skillGate`.
+Two halves make this handbook hold: the routing block in the project's instruction file, and the gate config in `<subproject>/.claude/simplix.json` that lets the plugin's hooks enforce it. The plugin's SessionStart hook owns this check: when its note in this session already named this subproject, it has said what is missing and asked for `/simplix:init` to be offered, so follow the note and do not check again. Only when no such note arrived, run `node "${CLAUDE_PLUGIN_ROOT}/scripts/detect-simplix.mjs" --json` and read `routedBy` and this subproject's `skillGate` (`skillGateMissing` names any key a declared gate lacks).
 
 Without `routedBy`, a session that starts elsewhere in the repository never learns this handbook binds. Without `skillGate`, an edit written from memory is not refused, and drift lands before anyone reads a reference.
 
-When either is missing, say so in one sentence each - the user has no reason to know this wiring exists - and offer `/simplix:init`. It shows what it will write and writes nothing without agreement. Offer once per session; if declined, continue and do not raise it again.
+When either is missing, say so in one sentence each - the user has no reason to know this wiring exists - and offer `/simplix:init`. It shows what it will write and writes nothing without agreement. Offer once per session, whether the note or this check raised it; if declined, continue and do not raise it again.
 
 ---
 

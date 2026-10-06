@@ -18,8 +18,9 @@
  *   Stop                                        : e2e-gate.mjs check
  *
  * "touch" records that a UI file changed this session. "mark-audit" records that the convention
- * audit script was run. "check" blocks the stop once, naming every omission at the same time so
- * a session is interrupted once rather than twice.
+ * audit ran in full: a `node` invocation of the script, not a `--list`, a `--selftest`, a run
+ * narrowed by `--rule=`, or a `cat` / `grep` of the file. "check" blocks the stop once, naming
+ * every omission at the same time so a session is interrupted once rather than twice.
  *
  * It blocks AT MOST ONCE per session. The gate exists to make an omission visible, not to trap
  * a session that has a good reason - a pure refactor, a change with no reachable screen, a user
@@ -41,6 +42,21 @@ const DEFAULT_UI_EXTENSIONS = ['.tsx'];
 /** The convention audit this plugin ships. Recognized by script name, wherever it is invoked from. */
 const AUDIT_SCRIPT = 'audit-frontend.mjs';
 
+/**
+ * Whether a Bash command ran the convention audit over the project.
+ *
+ * Naming the script is not enough: a listing, a self-test, a one-rule run, or a read of the file
+ * mentions it and verifies none of the rules the gate asks about.
+ *
+ * @param command the Bash command text
+ * @returns true when the command runs the script with node and none of those flags
+ */
+function ranTheAudit(command) {
+  const script = AUDIT_SCRIPT.replace(/\./g, '\\.');
+  const run = command.match(new RegExp(`\\bnode\\b[^|;&\\n]*${script}[^|;&\\n]*`));
+  return Boolean(run) && !/--(?:list|selftest|rule=)/.test(run[0]);
+}
+
 function readInput() {
   try {
     return JSON.parse(readFileSync(0, 'utf8'));
@@ -55,7 +71,7 @@ if (!input?.session_id) process.exit(0);
 
 if (mode === 'mark-audit') {
   const command = String(input.tool_input?.command ?? '');
-  if (command.includes(AUDIT_SCRIPT)) setMarker('audit-ran', input.session_id);
+  if (ranTheAudit(command)) setMarker('audit-ran', input.session_id);
   process.exit(0);
 }
 
