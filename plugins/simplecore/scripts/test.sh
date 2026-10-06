@@ -3,6 +3,11 @@
 # working directory its imports expect, and print one count line per suite.
 # Exit status is non-zero when any suite fails or cannot be run.
 #
+# The Node suites run on their own, from the repository root:
+#   node plugins/simplecore/skills/board-to-app/scripts/bta.mjs gates
+#   node plugins/simplecore/skills/korean-docs/scripts/l10n.mjs rules --test
+# and the wireframe kit's `node wf.mjs gates` runs from a board folder (README, Development).
+#
 #   plugins/simplecore/scripts/test.sh          # every suite
 #   plugins/simplecore/scripts/test.sh -v       # also print each suite's full output
 set -u
