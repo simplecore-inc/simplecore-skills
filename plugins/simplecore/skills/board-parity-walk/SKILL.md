@@ -202,7 +202,8 @@ Paths are relative to this skill's own directory.
 | Opening the product to look at it - which browser driver, which simulator or emulator, how a capture route is built, and how pictures reach the person judging them | `simplecore:board-to-app`'s `references/driving-the-product.md` |
 | A project whose frames owe an artefact beyond code - captures, snapshots - or deciding what `frameDeliverables` should hold | `simplecore:board-to-app`'s `references/frame-artefacts.md` |
 | Sample data and the story the screens live in | `simplecore:board-to-app`'s `references/scenario.md` |
-| What a cluster cost - its wall-clock span and what the runtime reports it consumed, written as each is known | `simplecore:board-to-app`'s `references/scenario.md` § Record what a unit of work cost, or the number is gone |
+| What a cluster cost - its wall-clock span and what the runtime reports it consumed, written as each is known | `simplecore:board-to-app`'s `references/dispatch.md` § *The dispatch is planned, written down, and then made* |
+| Parking a decision, honouring a parked line, writing to the handover file | `simplecore:board-to-app`'s `references/handover.md` - the parking rule and the handover rules, shared with the chapter build; where the two differ it says which holds for a walk |
 
 ## Opening a session
 
@@ -291,13 +292,8 @@ That failure is the reason this skill exists.
    belongs by building the screen - so a path split is a claim about the future rather
    than a fact anybody can check. The files that break it are the ones no brief could
    have named, because every agent eventually arrives at them: a registry, a locale
-   catalogue, a config, a barrel, the handover file. Three agents on paths that
-   genuinely did not overlap, and one commit carried off a translation key another had
-   just added; both reported success independently. Six split the same way produced, in
-   one session, seven commits that swept somebody else's uncommitted work, two agents
-   each hunting through source for a failure that was the other one's test writing to
-   the same hardware, and a checker whose forty-minute run reported a defect that had
-   been fixed while it ran.
+   catalogue, a config, a barrel, the handover file. What split paths produced in
+   practice → `references/walking-a-cluster.md` § *The cases behind the walk's rules*.
 
    **Two things earn it, and both are facts rather than forecasts:**
 
@@ -339,10 +335,8 @@ That failure is the reason this skill exists.
    mechanism reads as housekeeping - so it goes in on the same pass as the cluster, never
    as a check afterwards.
 
-   > **Read it this way and it is wrong**: 「it wrote the report, so it has reported」. Two
-   > named walkers in one session each cost three rounds of asking, both believing they
-   > had reported and neither having sent anything - and from the coordinator's side both
-   > read as agents that went quiet after committing.
+   > **Read it this way and it is wrong**: 「it wrote the report, so it has reported」 - from
+   > the coordinator's side such a walker reads as one that went quiet after committing.
 
    **The deliverable lands in a file; the report summarises it.** An agent that fixes
    code leaves its work in the tree, so a report that never arrives costs a look at
@@ -535,99 +529,20 @@ line on the list.
 
 ### Parking is a last resort, and most things do not qualify
 
-**The default is to decide.** An open question is answered by designing the answer -
-architecture first, then consistency with what the product already does, then stability,
-then performance - and the decision is applied to the code and the board in the same
-change. Those four are an order, not a list: a fast screen built on the wrong shape is a
-rewrite, and a screen that disagrees with its neighbours is a defect no benchmark can
-see. A walk whose parked section keeps growing is not being careful; it is deferring the
-design work the walk exists to do, and every deferred decision makes the next frame
-harder to build because it rests on nothing.
-
-**These are never reasons to park:**
-
-| "I can't decide this because…" | What to do instead |
-| --- | --- |
-| it would add screens or states | Add them. Draw the frames, then build them. Scope is not a reason to leave a product incoherent. |
-| it is complex to implement | Complexity is the work. Design it properly and build it. |
-| there are two reasonable options | Pick the one more consistent with the rest of the product, and say why. Two reasonable options is a decision, not a blocker. |
-| the requirement is not written down | Derive it from the spec and the personas the board names. Write down what you derived. |
-| an external system's behaviour is unknown | Design so the answer does not matter - declare the capability, handle both, reject explicitly what is unsupported. A product that changes shape when a vendor's answer arrives was not designed. |
-
-That last row is the one that hides. An unknown about somebody else's API is almost never
-a reason to stop drawing a screen; parking it freezes a whole section behind a fact nobody
-is chasing.
-
-**Three things genuinely qualify**, and they share a property - no amount of design makes
-the answer derivable:
-
-- **A decision that changes what the product does.** A behaviour the board does not draw and
-  the spec does not settle is somebody's to decide, and that somebody is not the walk:
-  deciding it from inside a cluster is designing, and designing from inside a walk is how a
-  board stops being a contract. A small, obvious gap is not this - build it and back-fill
-  the frame (`references/walking-a-cluster.md`).
-- **A commercial or legal decision that is somebody's to make.** A price, a contractual
-  term, a retention period a regulator sets. Design everything around it so the value is
-  the only thing missing.
-- **A blocker in the world.** An environment that cannot reach a service, hardware nobody
-  has yet. Build and judge everything that does not depend on it, and park only the part
-  that does.
-
-Even then, park the narrowest thing. "The whole M section is blocked" is almost always
-"one decision inside M is blocked, and nobody separated it from the rest".
-
-When something does qualify: **do not stop, and do not guess.** Add one line to the parked
-section and move to the next frame - which frame · what the choice or blocker is · which
-side looks stale. A line missing the third part sends the next session back to re-derive
-it, which is the cost parking exists to avoid.
-
-```markdown
-- C-07 — board draws a bulk reverse; the API reverses one record at a time.
-  Board looks stale, but the operator does 40 a day. Product decision.
-- D-02 — needs a role that does not exist in any environment yet. Blocked, not stale.
-```
-
-**Write the line before saying it is parked.** A decision announced in a message and never
-written down is one the next session cannot find, and the coordinator is the likeliest
-author of that gap: an agent reports something undecided, the reply acknowledges it, and
-both sides then believe it is on the list. Nothing is. So when an agent surfaces a parked
-decision, put it on the list yourself in the same turn, or tell the agent to - then say
-which one happened. "Recorded" is a claim about a file, and the file is the only place it
-is true.
-
-Parked lines are read at the start of every session, which is what keeps parking from
-becoming forgetting.
+**The default is to decide**, and only what no design can derive is parked: narrowly, as one line
+in the parked section, written there before anybody is told it is parked, and read first at the
+start of every session. → `simplecore:board-to-app`'s `references/handover.md` § *Parking is a
+last resort, and most things do not qualify*, read before parking anything and before honouring a
+parked line; where a walk and a chapter build differ, that file says which holds for a walk.
 
 ## Two kinds of leaving-behind, and only one is shared
 
-Sequential agents must not re-derive what the last one learned. But left to append freely
-they produce a diary with several authors, and the next agent cannot tell a confirmed fact
-from somebody's impression.
-
-| | Shared - facts | Not shared - narrative |
-| --- | --- | --- |
-| Where | the project's handover file - there is exactly one | one log file per agent |
-| What | how to start the servers, known traps, accounts and data standing | what was walked, what diverged |
-| How | present state in plain declaratives; **overwrite** when wrong | one line appended per step |
-| Read by | every agent, at the start | its own agent, and whoever is watching |
-
-**The handover file has no room for a point of view.** No "I found that", no "this time",
-no "it used to be". A fact that changes is corrected in place, with no history left
-behind. That is what lets any number of authors maintain it. **Do not create a shared
-narrative file** - several agents stacking their stories in one place produces exactly the
-confusion this split prevents.
-
-**A log written afterwards is not a log.** Its whole value is answering "where is this
-now" while the answer is still changing; written at the end it answers a question nobody
-still has, and every hour before that was spent looking silent. Silence reads as a stall,
-and a stall gets a running agent killed - so the cost of skipping the line is not tidiness,
-it is somebody stopping work that was fine. That failure lands hardest on an agent that
-**dispatches** sub-work rather than walking frames itself: its own file stays empty because
-it is not the one touching screens, and it is the only file anybody watching can read. An
-agent that hands out work still writes one line per step it takes - briefed, judged,
-committed - under its own name.
-
-The line's shape and vocabulary → `references/walking-a-cluster.md`.
+**Facts go to the one handover file, in present-state declaratives with no point of view;
+narrative goes to one log per agent, a line per step as it ends.** Every walker reads the handover
+file at the start, and only its own agent and whoever is watching read a log.
+→ `simplecore:board-to-app`'s `references/handover.md` § *Two kinds of leaving-behind, and only
+one is shared*, read before writing to the handover file. The log line's shape and vocabulary
+→ `references/walking-a-cluster.md` § *The log line*.
 
 ## The list holds only what is left
 
@@ -786,27 +701,12 @@ on - by running the thing, not by reading the diff** - and move on rather than c
 second ask name the mechanism rather than repeat the request → *The unit of work is a cluster,
 and one agent takes one cluster* § 4, where the brief that settles it is written.
 
-**A reading that contradicts a report is a clock before it is a defect.** Measuring rather than
-taking a walker's word earns its keep - but a file read one commit behind the walker who just
-fixed it yields line numbers for a defect already gone, with both sides right. So before
-returning anything a report contradicts, **look for the hashes it named** (walkers put one on
-every claim of a change): absent is work that has not landed, present is a reading taken in
-front of it. Then argue what the file says, never where it says it - a fix that adds a line
-moves every number under it.
-
-**Take the reading out of a commit, never off the working tree.**
-
-```bash
-git show HEAD:<path> | grep <what you are checking for>   # or the hash the report named
-```
-
-While a walker is in the tree, the tree is not any moment at all. Proving a new rule means
-planting the defect back into the file and taking it out again - in the working tree and
-never in a commit, which is what this skill requires of walkers - so a `grep` that lands in
-that window reads a file mid-repair and reports finished work as missing. One session paid
-for exactly that twice, both times as "it did not go in, I measured it", and both times the
-walker answered with a `git show` of a hash its report had already named. A commit holds
-still; disk does not.
+**A reading that contradicts a report is a clock before it is a defect.** Before returning
+anything a report contradicts, look for the hashes it named, and **take the reading out of a
+commit, never off the working tree**: a walker proving a rule plants the defect back in the
+working tree, so a read in that window reports finished work as missing →
+`simplecore:board-to-app`'s `references/harness.md` § *A reading that contradicts a report is a
+clock before it is a defect*.
 
 `PARKED, STILL OPEN` is the part the user acts on, so it is never folded into a sentence
 about progress. `LEFT ON THE LIST` is read off the list itself, not counted from what was

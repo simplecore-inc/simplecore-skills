@@ -96,8 +96,8 @@ export const exampleGate = {
 | `exists(p)` · `isDir(p)` · `rel(p)` | presence, kind, and the path as the repository sees it |
 | `size(p)` · `bytes(p, n)` | a file's length · its first `n` bytes undecoded - the two questions `read` cannot answer about a picture, since the length of a binary file's utf8 decoding is not its size and its header is not text |
 | `git(args)` | git in the project root - `{ ok, out }` |
-| `lines` | the project's declared lines, compiled - `ctx.lines.deferred` from `deferredLine` and `ctx.lines.placeholder` from `placeholderLine`, each a RegExp and each absent where the project declares none |
-| `evidence` | the readers over the evidence folder - the folder (`dir`), the chapter files and the chapter a file name carries (`chapterFiles`, `chapterOf`), the closed chapters (`closedChapters`), the frames a chapter places (`framesPlaced`), and the capture name grammar and suffix (`captureName`, `captureSuffix`) |
+| `lines` | the project's declared lines, compiled - `ctx.lines.deferred` from `deferredLine`, a RegExp, absent where the project declares none |
+| `evidence` | the readers over the evidence folder - the folder (`dir`), the chapter files and the chapter a file name carries (`chapterFiles`, `chapterOf`), the closed chapters (`closedChapters`), the frames a chapter places (`framesPlaced`), a run record's rows (`runRows`), and the capture name grammar and suffix (`captureName`, `captureSuffix`). `sections` and `demandedFrames` are retired: a call throws `RetiredReaderError` naming the reader that replaced it, so a project gate built on one stops `check` instead of reading an empty list |
 | `options` | what the command line passed, such as `range` |
 
 The last two are on `ctx` for the same reason everything else is: **a project's own gate cannot

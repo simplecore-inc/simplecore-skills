@@ -1,5 +1,5 @@
-// Compiling a line a project declares - `deferredLine`, `placeholderLine` - into a reader, from a
-// phrase rather than from a regex.
+// Compiling a line a project declares - `deferredLine` - into a reader, from a phrase rather than
+// from a regex.
 //
 // **A config holding raw regular expressions is a config nobody can read.** It also fails in the
 // worst available way: a pattern with a typo matches nothing, and a check that matches nothing is

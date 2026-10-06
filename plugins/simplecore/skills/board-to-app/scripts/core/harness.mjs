@@ -9,6 +9,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { CONFIG_NAME, SCHEMA, loadProject } from './context.mjs';
+import { RETIRED_READER } from './evidence.mjs';
 import { GRADES } from './gates.mjs';
 import { vocabularyCensus } from './vocabulary.mjs';
 
@@ -524,7 +525,7 @@ function censusProject(words) {
         + '| 1 | verdict | tests/w01.spec.ts › schema | pass |\n\n**Deferred to W02** - the role is installed there\n',
       'docs/evidence/w02-screens.md':
         '# W02 - run\n\n| journey | persona | test | result |\n| --- | --- | --- | --- |\n'
-        + '| 1 | operator | tests/w02.spec.ts › list | pass |\n\n**Same component as w02-screens/a-01.webp** - the second pane\n',
+        + '| 1 | operator | tests/w02.spec.ts › list | pass |\n',
       'docs/eyes.md': 'Whether the picture is the frame stays with eyes: the coordinator reads it before the ledger row is written.\n',
     },
   };
@@ -545,16 +546,12 @@ function censusProject(words) {
 export function proveCensusReads(project) {
   const right = {
     closedStatus: 'closed',
-    verdictRole: 'verdict',
     deferredLine: '**Deferred to {text}**…',
-    placeholderLine: '**Same component as {text}**…',
     eyesPhrases: { assigns: ['stays with eyes'], reader: ['the coordinator'], moment: ['before '] },
   };
   const wrong = {
     closedStatus: 'shut',
-    verdictRole: 'judge',
     deferredLine: '**Postponed to {text}**…',
-    placeholderLine: '**Like {text}**…',
     eyesPhrases: { assigns: ['a person decides'], reader: ['the reviewer'], moment: ['after the close'] },
   };
   const out = [];
@@ -565,7 +562,7 @@ export function proveCensusReads(project) {
   } catch (err) {
     return [`the census threw on a project declaring every word it reads: ${err instanceof Error ? err.message : String(err)}`];
   }
-  const labels = ['closedStatus', 'verdictRole', 'deferredLine', 'placeholderLine', 'eyesPhrases.assigns', 'eyesPhrases.reader', 'eyesPhrases.moment'];
+  const labels = ['closedStatus', 'deferredLine', 'eyesPhrases.assigns', 'eyesPhrases.reader', 'eyesPhrases.moment'];
   for (const label of labels) {
     const item = census.find((entry) => entry.label === label);
     if (!item) out.push(`the census printed no line for ${label}, which the fixture declares`);
@@ -606,18 +603,6 @@ const ERROR_GATE = {
 };
 
 /**
- * What `check` does with each grade, read off its exit status rather than argued about.
- *
- * <p>The grade is worth nothing unless the two channels part company at the exit code, and no
- * case in `runCases` can see an exit code - it judges a gate's findings, not a process. So the
- * proof is a real project with a real `projectGates` module in it, and a real `bta.mjs check`
- * over it.
- *
- * @param project the fixture builder from `makeBuilders`, so the directories are cleaned up with
- *   every other fixture
- * @returns one string per expectation that came out the wrong way
- */
-/**
  * A project gate answering to a core gate's id is refused, and saying so is the whole point.
  *
  * <p>Two directions, because the door matters as much as the refusal: a project that copied a core
@@ -632,7 +617,7 @@ const ERROR_GATE = {
 export function proveShadowedIds(project) {
   const CORE_ID = 'trailerGate';
   /** The words the refusal is recognised by - it fires or it does not, and nothing else says this. */
-  const REFUSAL = '코어 게이트와 같은 아이디';
+  const REFUSAL = "a project gate under a core gate's id";
   const base = cleanProject();
   const shadow = gatesModule([{ id: CORE_ID, finding: 'notes/OPEN.md:1: the copy' }]);
   const out = [];
@@ -668,6 +653,71 @@ export function proveShadowedIds(project) {
   return out;
 }
 
+/**
+ * A project gate calling a retired reader on `ctx.evidence` stops the run, by the reader's name
+ * and with what replaced it.
+ *
+ * <p>`sections` and `demandedFrames` read a run-record shape no project declares, so the only thing
+ * either could return is an empty list - and a project gate reading an empty list reports the same
+ * nothing as a project with nothing wrong. A throw is the one answer a gate cannot mistake for a
+ * pass. Proved through `check` rather than by calling the reader, because what has to hold is that
+ * the run stops, and a reader that throws inside a gate the runner swallowed would pass a direct
+ * call and fail nobody.
+ *
+ * @param project the fixture builder
+ * @returns one string per expectation that came out the wrong way
+ */
+export function proveRetiredReaders(project) {
+  const base = cleanProject();
+  const module = (body) =>
+    '// Built by the retired-reader proof; it exists for the length of one run.\n'
+    + 'export const gates = [{\n'
+    + "  id: 'fixtureReadsTheEvidence',\n"
+    + "  title: 'the fixture gate reading the evidence folder',\n"
+    + '  needs: [],\n'
+    + `  run: (ctx) => { ${body}; return []; },\n`
+    + '}];\n';
+  const run = (body) => {
+    const ctx = project({
+      config: { ...base.config, projectGates: 'gates/project-gates.mjs' },
+      files: { ...base.files, 'gates/project-gates.mjs': module(body) },
+      commits: ['chore(fixture): a project with nothing wrong with it\n\nChapter: none'],
+    });
+    const r = spawnSync(process.execPath, [BTA, 'check', '--config', ctx.configPath], {
+      cwd: ctx.root, encoding: 'utf8',
+    });
+    return { status: r.status, said: `${r.stdout ?? ''}${r.stderr ?? ''}` };
+  };
+  const out = [];
+  for (const [reader, call, replacement] of [
+    ['sections', "ctx.evidence.sections('# W01\\n')", 'runRows'],
+    ['demandedFrames', "ctx.evidence.demandedFrames('chapters/w01-foundation.md')", 'framesPlaced'],
+  ]) {
+    const retired = run(call);
+    if (retired.status === 0) out.push(`a project gate calling ctx.evidence.${reader} left the exit status zero`);
+    if (!retired.said.includes(RETIRED_READER) || !retired.said.includes(reader) || !retired.said.includes(replacement)) {
+      out.push(`a project gate calling ctx.evidence.${reader} was not stopped by name with ${replacement} as the replacement`);
+    }
+  }
+  const live = run("ctx.evidence.runRows('| 1 | operator | t › list | pass |\\n'); ctx.evidence.framesPlaced('chapters/w01-foundation.md')");
+  if (live.status !== 0 || live.said.includes(RETIRED_READER)) {
+    out.push(`a project gate calling the readers that replaced them was refused - \`check\` exited ${live.status}`);
+  }
+  return out;
+}
+
+/**
+ * What `check` does with each grade, read off its exit status rather than argued about.
+ *
+ * <p>The grade is worth nothing unless the two channels part company at the exit code, and no
+ * case in `runCases` can see an exit code - it judges a gate's findings, not a process. So the
+ * proof is a real project with a real `projectGates` module in it, and a real `bta.mjs check`
+ * over it.
+ *
+ * @param project the fixture builder from `makeBuilders`, so the directories are cleaned up with
+ *   every other fixture
+ * @returns one string per expectation that came out the wrong way
+ */
 export function proveSeverity(project) {
   const cases = [
     {

@@ -37,7 +37,7 @@
 // **The test is not size and not usefulness** - both are useful anywhere in the abstract. It is
 // whether the check can be RUN in a repository that declares this skill's keys and nothing more.
 import { pathToFileURL } from 'node:url';
-import { BOARDS_KEY, BOARD_OWN_KEYS, COLOR_SCHEMES, HEADING_ROLES, SCHEMA, STANDARD_FIELDS, boardNames, isPathKey } from './context.mjs';
+import { BOARDS_KEY, BOARD_OWN_KEYS, COLOR_SCHEMES, HEADING_ROLES, RETIRED_KEYS, SCHEMA, STANDARD_FIELDS, boardNames, isPathKey } from './context.mjs';
 import { NARRATIVE_PHRASES, hasHeading, onlyQuoted, proseLines, sectionUnder } from './prose.mjs';
 import { EVIDENCE_GATES } from './evidence.mjs';
 import { EYES_GATES } from './eyes.mjs';
@@ -203,6 +203,8 @@ export const configGate = {
           continue;
         }
         for (const [name, entry] of Object.entries(value)) {
+          // A deferral for a retired key is a promise nothing collects; `retiredKeyGate` names it.
+          if (name in RETIRED_KEYS) continue;
           if (!(name in SCHEMA)) {
             findings.push(`${key}.${name} is not a key this skill reads — a deferral for a key nobody reads is never due`);
             continue;
@@ -237,7 +239,10 @@ export const configGate = {
         // homeless, and a schema that can only describe its own roles pushes every project into
         // keeping one somewhere the config gate never reads.
         const open = spec.roles === null;
-        for (const role of open ? Object.keys(value) : spec.roles ?? []) {
+        // An optional role is checked like a required one where it is declared, and skipped where
+        // it is not: a role the project chose to name and left empty still matches nothing.
+        const optional = (spec.optionalRoles ?? []).filter((role) => role in value);
+        for (const role of open ? Object.keys(value) : [...(spec.roles ?? []), ...optional]) {
           const list = value[role];
           if (!Array.isArray(list) || !list.length || list.some((p) => typeof p !== 'string' || !p.trim())) {
             findings.push(
@@ -252,8 +257,9 @@ export const configGate = {
           findings.push(`${key} names no roles at all — declare the vocabulary or leave the key out`);
         }
         if (!open) {
+          const known = [...(spec.roles ?? []), ...(spec.optionalRoles ?? [])];
           for (const role of Object.keys(value)) {
-            if (!(spec.roles ?? []).includes(role)) findings.push(`${key}.${role} is not a role this skill knows`);
+            if (!known.includes(role)) findings.push(`${key}.${role} is not a role this skill knows`);
           }
         }
         continue;
@@ -359,8 +365,52 @@ export const configGate = {
     for (const key of Object.keys(ctx.config)) {
       // `boards` is the container a project with two products declares them under, and it is not a
       // schema key because it holds schema keys. `boardsGate` is what checks its shape.
-      if (key in SCHEMA || key === BOARDS_KEY || key.startsWith('//')) continue;
+      // A retired key is accepted: nothing reads it, so it costs nothing, and `retiredKeyGate`
+      // names it at warning grade.
+      if (key in SCHEMA || key in RETIRED_KEYS || key === BOARDS_KEY || key.startsWith('//')) continue;
       findings.push(`${key} is not a key this skill reads — a mistyped key is silent; a note starts with //`);
+    }
+    return findings;
+  },
+};
+
+/**
+ * A key this skill does not read, still carried by a config written against an earlier schema.
+ *
+ * <p><b>A warning, and never a refusal.</b> Nothing reads the value, so the build loses nothing
+ * by it, and failing a project over a line that costs nothing would teach whoever meets the red to
+ * turn the gate off. What the finding asks for is one deletion, and it names where the line sits:
+ * the top level, a board's own entry, or a deferral promising the key to a chapter.
+ */
+export const retiredKeyGate = {
+  id: 'retiredKeyGate',
+  title: 'a retired key the config still carries - nothing reads it, and the line can go',
+  needs: [],
+  grade: 'warning',
+  run: (ctx) => {
+    const config = ctx.config;
+    if (!config || typeof config !== 'object' || Array.isArray(config)) return [];
+    const where = ctx.rel(ctx.configPath);
+    const findings = [];
+    const name = (label, key) => `${where}: ${label} is retired - ${RETIRED_KEYS[key]}`;
+    for (const key of Object.keys(config)) {
+      if (key in RETIRED_KEYS) findings.push(name(key, key));
+    }
+    const boards = config[BOARDS_KEY];
+    if (boards && typeof boards === 'object' && !Array.isArray(boards)) {
+      for (const board of boardNames(config)) {
+        const entry = boards[board];
+        if (!entry || typeof entry !== 'object' || Array.isArray(entry)) continue;
+        for (const key of Object.keys(entry)) {
+          if (key in RETIRED_KEYS) findings.push(name(`${BOARDS_KEY}.${board}.${key}`, key));
+        }
+      }
+    }
+    const deferrals = config.deferredKeys;
+    if (deferrals && typeof deferrals === 'object' && !Array.isArray(deferrals)) {
+      for (const key of Object.keys(deferrals)) {
+        if (key in RETIRED_KEYS) findings.push(name(`deferredKeys.${key}`, key));
+      }
     }
     return findings;
   },
@@ -434,7 +484,7 @@ export const boardsGate = {
       // A mistyped key inside a board is the same silence one level down, and worse: the board
       // resolves to the shared value for it and the build runs on somebody else's path.
       for (const key of Object.keys(entry)) {
-        if (key in SCHEMA || key.startsWith('//')) continue;
+        if (key in SCHEMA || key in RETIRED_KEYS || key.startsWith('//')) continue;
         findings.push(
           `${BOARDS_KEY}.${name}.${key} is not a key this skill reads — a mistyped key inside a `
           + 'board is silent AND falls through to the shared value, so the build runs on the other '
@@ -518,8 +568,9 @@ export const handoverGate = {
     // **The handover file may be an index that routes**, and then the facts this rule was written
     // for are not in it - they are in `references/` beside it. Reading the declared file alone
     // there covers a table of contents and reports the same clean result it reported while it was
-    // reading facts, which is the one failure mode a split introduces → *A handover file grows,
-    // and the answer is not another trim*. So the sweep follows the routing where there is any.
+    // reading facts, which is the one failure mode a split introduces → `references/handover.md`
+    // § *A handover file grows, and the answer is not another trim*. So the sweep follows the
+    // routing where there is any.
     const dir = declared.includes('/') ? declared.slice(0, declared.lastIndexOf('/')) : '';
     const beside = (ctx.list(`${dir}/references`) ?? [])
       .filter((name) => name.endsWith('.md'))
@@ -1244,6 +1295,7 @@ export const generatedArtefactsMatchHead = {
 /** The gates that hold on any project that builds from a board. */
 export const CORE_GATES = [
   configGate,
+  retiredKeyGate,
   boardsGate,
   deferredKeyGate,
   commitPolicyGate,
@@ -1299,10 +1351,10 @@ export async function gatesFor(ctx) {
     .filter((id) => CORE_GATES.some((g) => g.id === id) && !off.has(id));
   if (shadowed.length) {
     throw new Error(
-      `${modulePath}: ${shadowed.join(' · ')} — 코어 게이트와 같은 아이디입니다.\n`
-      + '  둘이 함께 돌고 아이디로 찾으면 프로젝트 것이 잡히므로, 코어 게이트가 조용해진 것을\n'
-      + '  아무도 알 수 없습니다. 코어 것을 대신하려면 disabledGates에 까닭과 함께 적어\n'
-      + '  아이디를 비우고, 그냥 옛 사본이라면 지웁니다.'
+      `${modulePath}: ${shadowed.join(' · ')} - a project gate under a core gate's id.\n`
+      + '  Both would run, and a lookup by id finds the project one, so the core gate going quiet\n'
+      + '  is something nobody can see. To replace the core gate, name it in disabledGates with the\n'
+      + '  reason, which frees the id; if the project gate is an old copy, delete it.'
     );
   }
 

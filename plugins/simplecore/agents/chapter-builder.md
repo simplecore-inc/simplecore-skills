@@ -111,7 +111,7 @@ seed bent to satisfy it has stopped describing the product. A scoped persona's n
 reaches a record by its address and asserts the server refused; a hidden button proves nothing.
 
 **Each test takes one capture per screen-state it visits**, into the chapter's folder under
-`evidenceDir`, named by the grammar in the skill's `references/evidence.md` § *The file name*: the
+`evidenceDir`, named by the grammar in `simplecore:board-to-app`'s `references/evidence.md` § *The file name*: the
 frame id lower-cased, `-t<n>` for a pane or `-empty` / `-error` for those two states, and `.webp`
 (`f-01a.webp`, `a-17-t3.webp`). A capture named any other way is no capture to the checks, and the
 frame reads as never opened. Then run `journeyCommand`; it writes the chapter's run record.
@@ -157,7 +157,7 @@ and say what you would commit.
 git commit --only <paths>`. Never `git add -A`, `git add .` or `git commit -a`, and never a commit
 that names no path - the index is shared, and a bare commit carries whatever another agent has
 staged. Read `git show --stat HEAD` after each commit: a file you created that is not in it is a
-file that commit needed. A file another agent is also editing is the skill's
+file that commit needed. A file another agent is also editing is `simplecore:board-to-app`'s
 `references/harness.md` § Stage your own paths.
 
 **Never rewrite a commit** - no `git reset`, no `--amend`, no `git stash`, no rebase. Another commit

@@ -15,6 +15,7 @@ node "${CLAUDE_PLUGIN_ROOT}/skills/board-to-app/scripts/bta.mjs" check
 | Rule | The gate |
 | --- | --- |
 | the config is complete, well typed, and every declared path is there | `configGate` |
+| a retired key the config still carries is accepted and named for deletion | `retiredKeyGate` - **a warning**: nothing reads the value, so the build loses nothing by it, and a refusal would fail a project over a line that costs nothing |
 | a project declaring several boards gives each one its own progress files, and every board declares something of its own | `boardsGate` - two boards sharing a ledger, a chapter folder or an evidence folder run one build whose rows are about whichever board wrote last |
 | a key promised to a chapter is declared once that chapter has created its subject | `deferredKeyGate` |
 | the commit policy is one of the three words the build knows how to follow | `commitPolicyGate` - a fourth word reads as a decision and is followed by nobody |
@@ -26,6 +27,7 @@ node "${CLAUDE_PLUGIN_ROOT}/skills/board-to-app/scripts/bta.mjs" check
 | a capture was taken in the colour scheme the project declared | `everyCaptureIsInTheDeclaredScheme` - **a warning while a backlog stands**, promoted in the change that drives it to zero. The scheme is in the pixels and nowhere else, so it decodes each capture small and reads its luma; a scheme is not settled with certainty that way and does not have to be, because what separates the two in an application UI is the whole range rather than a margin. A decoder it cannot run is reported rather than passed |
 | a capture holds more than an empty canvas of its size would | `everyCaptureIsDenserThanAnEmptyCanvas` - **a warning**, because what it raises is 「open this one」, and the reading it narrows the pile for is the coordinator's row in the table below. It measures bytes against the canvas rather than bytes, since quality and device pixel ratio are both undeclared and an absolute count reads a blank 2×-ratio shot as a fuller screen; an empty canvas costs about 1,900 bytes per megapixel at any quality and any size, and the sparsest real screen 3,900. Failing on it would leave one way to green a correct picture - re-encode it larger - which silences the check for the next one that really is blank |
 | a closed chapter has a run record whose rows cover every journey the chapter names, each passing - or skipped with the parked line that releases it | `closedChapterHasAJourneyRun` - it matches rows to journeys by number and persona, so a record that renumbered its journeys reports rather than passes; it reads the journeys off their `### <n>. <persona> - <title>` headings → `references/demands.md` |
+| a closed chapter that places frames names at least one journey in the shape the record is matched against | `closedChapterNamesAJourney` - **a warning**: a journey written as a bullet or under another heading depth is one to a person and none to the parser, so the record is held against an empty list and every row passes |
 | a closed chapter's run record shows a capture of every frame the chapter places | `everyPlacedFrameIsCaptured` - a frame no journey photographed is a screen nobody opened; a frame drawn on another is covered by its base's picture, and a shared pattern with no address of its own owes none |
 | captures in a chapter's folder have the run record beside them | `evidenceKeepsPaceWithItsCaptures` - **a warning**: a folder of captures with no record is a run of the journey tests that `journeyCommand` did not finish, and the answer is the command, never a hand-written record |
 | a check deferred in a run record names a chapter that exists, and not the chapter deferring it | `deferredCheckNamesAChapter` - it reads `deferredLine`; a debt naming itself or nothing is a check nobody will run |
@@ -79,7 +81,7 @@ whose eyes and at which moment**, for the reason the next paragraph gives:
 | how many agents may extend the migrations at once | **the coordinator**, when the wave is planned | it follows from the project's scheme - a range divides, a parent chain does not - and the scheme is read off `migrationDir` per wave |
 | a sentence standing beside a chip filter is one the chip choice changes, or a page note in the wrong place | **the coordinator**, reading the frame before dispatching the chapter that builds it - never the agent that drew it | 「Does this sentence change when the chip changes?」 is answered by reading the sentence; the board's gate sees a block between the chip row and the list and cannot see which side of that question it falls on → `simplecore:wireframe-boards` |
 | the documents, the board and the code agree in meaning | **whoever moves one of the three**, in the same change | a checker holds that a frame is referenced, never that two sentences say the same thing |
-| an agent is stalled rather than inside something long | **the coordinator**, at each check on a quiet agent | the readings of the stall test in `../SKILL.md` § *An agent that ends, and an agent that only paused*, and they need somebody to take them |
+| an agent is stalled rather than inside something long | **the coordinator**, at each check on a quiet agent | the readings of the stall test in `references/dispatch.md` § *A quiet agent is stalled or inside something long*, and they need somebody to take them |
 | a parked decision genuinely qualifies | **whoever is about to honour the line**, against today's sources | the default is to decide, and only a person can say the design ran out |
 | a path carried over from a retired arrangement still names it | **whoever opens the document** | only somebody who knows the project moved can tell a live document from a leftover → `references/migrating-from-a-walk.md` |
 | a document about to be deleted is opened by a program | **whoever deletes it**, before deleting | this skill reads no path that is being retired; what holds it is the project's own gate, run after the deletion rather than before → `references/migrating-from-a-walk.md` |
@@ -194,3 +196,106 @@ are the whole of it:
 > **Read it this way and it is wrong**: 「the checker exists, so the rule is held」. A manual
 > checker sat in the repository and in no entry of the `check` chain; measured for the first time
 > it had 232 findings, and not one of them had ever been seen.
+
+## What is learned goes back into the instructions, in the same change
+
+A defect fixed once and walked past grows back next session, so the finding is worth more than
+the fix. **Never end with only the work corrected.**
+
+**And this rule is the one most likely to destroy the thing it protects, so it comes with a
+ceiling.** Written without one it says only 「add」, and every session adds; one repository reached
+about 1.1 million characters of reachable instruction that way - more than a context window, so no
+agent could hold the rules it was judged by, and every repeat it suffered had a paragraph
+forbidding it that nobody had read. **`instructionBudget` is what stops that**: a ceiling per file,
+declared at what the file measures the day it arrives, so nothing is red on arrival and the next
+append is the one that fails. Adding then means trading, and `instructionFitsItsBudget` says so at
+the moment of the append rather than a year later.
+
+**A rule that gets a check gives up its paragraph in the same change.** The reasoning belongs in
+the check's own message, where a reader meets it at the moment it fires; what stays behind is one
+sentence naming the check. Carrying both is how machine coverage and prose grow together, and
+`aGateIsTaughtOnce` reports it. **The instinct to keep the essay 「so people understand why」 is
+exactly the instinct to guard against** - nobody reads a file looking for a rule they do not yet
+know they are breaking, and everybody reads a message that just fired at them.
+
+| The finding is | Where it goes |
+| --- | --- |
+| a defect type a regex or a tree walk can judge | a detection rule in `auditScript`, run across the whole tree, and what it finds is fixed now |
+| something about how the build is coordinated - a brief that misled, a report that never arrived, a rule with a hole | this skill, or the brief every agent of that kind receives |
+| a convention or trap that needs eyes | this skill or the project's instruction file, with the misreading printed beside the rule |
+| a path, a list, or a policy true only of this project | the project's config or instructions - never this skill |
+
+Three things make it stick, and skipping any one of them means nothing happened:
+
+1. **In the same change as the work**, not deferred to a cleanup that never comes.
+2. **Proved to fire.** A gate is run against the broken form and then the fixed form
+   (`bta.mjs gates` does exactly this); a written rule names the case it now catches. A rule
+   added without that is a claim, and it converts *nobody has checked* into *something is
+   checking* - which is much harder to doubt.
+3. **Said out loud.** These files live outside the repository being built, so name which file
+   changed; otherwise nobody sees the change that was the point.
+
+**Write it into the checkout, not into the installed copy.** A skill reached through a plugin
+directory is replaced wholesale by the next install of that plugin, so a finding written there is
+deleted by a command nobody connects to it - and it fails the way this whole section exists to
+prevent, silently and later. Where the skill is installed rather than checked out, **say the
+finding and where it belongs instead of writing it into a copy that will not survive**; nobody can
+be told afterwards what a reinstall removed. Committing in that checkout follows its own rules, not
+`commitPolicy`, which is about the repository being built.
+
+**"I will be careful next time" is not a fix.** Memory ends with the session, and the same
+misreading grows back. If no sentence and no gate changed, the finding was not recorded.
+
+## Waste does not announce itself - the check that passed is the one to suspect
+
+**Almost every hour this arrangement wastes is spent on a proxy.** Something was checked, the check
+passed, and what the check was for was never looked at. Nobody notices, because a passing check and
+a sound thing are the same green.
+
+**The test, and it takes one sentence: what would have to be true for this check to pass while the
+thing it protects is broken?** If the answer comes easily, the check is a proxy. One chapter's
+round produced these, and every one answers instantly:
+
+| The check | Passes while |
+| --- | --- |
+| the seed produces the figure the board draws | the figure is one a wireframe author typed and describes nothing |
+| the empty-data fixture returned a response | it returned a shape the server has no way to return |
+| the generated package typechecks | every module importing it is broken |
+| the capture came out at a width | it is not the declared width, and the chapter now holds two instruments |
+| no findings in this file | three sit under a per-file threshold |
+| the rule's examples pass | its stated boundary is in the prose and not in the pattern |
+| the judge read the board | it read one of the two frames that draw the screen |
+| the picture is named for its frame | it is the sign-in screen at the right width in the right container |
+
+**The proxy is never obviously wrong when it is written.** Each of those was a reasonable thing to
+check; what makes it a proxy is that something else - a sketch, a fixture, a package, a threshold -
+stands between the check and the subject, and the check cannot see past it.
+
+### The question a chapter closes with
+
+**Before the ledger row is written, ask what this round did twice.**
+
+> Which work was undone, redone, or withdrawn - and what would have had to be different for it
+> never to have been done at all?
+
+The answer names a proxy nearly every time, and it is the cheapest finding available because the
+evidence is already in the round's own messages. **A round that redid nothing has not proved it
+wastes nothing** - it has usually not looked.
+
+**Three answers are not proxies and should not be recorded as waste.** Work redone because the
+product genuinely changed underneath it; a finding withdrawn because a judge read the evidence and
+was right to; and an investigation that came back empty on a real question. Those are the
+arrangement working.
+
+**What is waste, and each of these happened**: a lane sent to a screen a second lane was already
+shooting. An observation about a file another lane was mid-edit in, relayed as a fact and dated
+nowhere. A brief that named one artifact where two govern. A demand asking for a picture the
+existing captures already contain. **The common half is that the coordinator held both sides and
+compared neither.**
+
+### Fix the mechanism, not the instance
+
+**A waste found and fixed once is a waste that returns next chapter.** So the finding lands where
+the proxy lives - the check's own definition, the brief's template, the script that inherited what
+it should have set - and the report says which of the three it was. A round that lists what it
+wasted and changes nothing has produced a confession rather than a repair.

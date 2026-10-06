@@ -80,7 +80,7 @@ const CAPTURE_FLOOR_PER_MPX = 2800;
 export const CAPTURE_NAME = /^([a-z])-(\d{2,}[a-z]?)(?:-t\d+|-empty|-error)?\.webp$/;
 
 /**
- * A frame id as a heading writes it.
+ * The heading a chapter file writes for each frame it places: `## <n>. <frame id> <title>`.
  *
  * <p><b>The trailing letter is part of the id, not a suffix on it.</b> A board drawn with
  * `simplecore:wireframe-boards` gives every state of a screen its own frame and its own permanent
@@ -90,33 +90,10 @@ export const CAPTURE_NAME = /^([a-z])-(\d{2,}[a-z]?)(?:-t\d+|-empty|-error)?\.we
  * gate that would have asked for a capture of it reports the same nothing as a chapter with no
  * screens. It is bounded rather than open - one lowercase letter, and `N-02abc` matches nothing.
  */
-const FRAME_ID = /\b[A-Z]-\d{2,}[a-z]?\b/g;
-
-/** The heading a chapter file writes for each frame it places: `## <n>. <frame id> <title>`. */
 const BASE_HEADING = /^## \d+\. ([A-Z]-\d{2,}[a-z]?)(?: |$)/;
-
-/** A numbered section of a chapter, as its number and its title. */
-const CHAPTER_SECTION = /^## (\d+)\. (.+?)\s*$/;
-
-/** A `## ` section of a document, as its whole title. */
-const EVIDENCE_HEADING = /^## (.+?)\s*$/;
-
-/** The opening or closing line of a fenced block. */
-const FENCE = /^\s*(```|~~~)/;
-
-/**
- * One item of an ordered list.
- *
- * <p>A chapter whose demands are numbered is quoted item by item, so a section that has gone
- * stale names the one demand that moved rather than dragging the whole paragraph with it.
- */
-const ORDERED_ITEM = /^\s*\d+\.\s+(.*\S)\s*$/;
 
 /** `![alt](target)`, with an optional quoted title after the target. */
 const MARKDOWN_IMAGE = /!\[[^\]]*\]\(\s*<?([^)<>\s]+)>?(?:\s+"[^"]*")?\s*\)/g;
-
-/** Whether a line opens a block of its own rather than continuing the one above it. */
-const BLOCK_START = /^\s*(?:\*\*|[-*+]\s|\d+\.\s|\||>|#)/;
 
 /**
  * The names a CHAPTER folder's own index takes.
@@ -235,45 +212,6 @@ function framesPlaced(ctx, rel) {
 }
 
 /**
- * The frames one chapter places under a section a persona line proves, with the states listed on
- * a states line beside them.
- *
- * <p><b>On every project this returns an empty set.</b> A persona line and a states line are
- * compiled from no declared key, so `ctx.lines` carries neither and no section reads as proved. It
- * stays on `ctx.evidence` for a project gate that calls it; such a gate reads nothing through it.
- */
-function demandedFrames(ctx, rel) {
-  const demanded = new Set();
-  const text = ctx.read(rel);
-  if (text === null) return demanded;
-  const { persona, states } = ctx.lines;
-  let open = null;
-  const close = () => {
-    if (open?.proved) for (const id of open.frames) demanded.add(id);
-    open = null;
-  };
-  for (const { line } of proseLines(text)) {
-    const frame = BASE_HEADING.exec(line);
-    if (frame) {
-      close();
-      open = { frames: new Set([frame[1]]), proved: false };
-      continue;
-    }
-    if (CHAPTER_SECTION.test(line)) {
-      close();
-      continue;
-    }
-    if (!open) continue;
-    // Same guard as `framesPlaced`: a states line declared without `{text}` captures nothing.
-    const hanging = states?.exec(line)?.[1];
-    if (hanging !== undefined) for (const [id] of hanging.matchAll(FRAME_ID)) open.frames.add(id);
-    if (persona?.test(line)) open.proved = true;
-  }
-  close();
-  return demanded;
-}
-
-/**
  * The frames one run record shows, as the ids its images are named after.
  *
  * <p>Where in the record the image sits is not this reader's business - a frame is shown once per
@@ -307,9 +245,8 @@ function capturedFrames(text, stem) {
  * that copy, and it read in the folder like a second observation.
  */
 function drawnOn(ctx) {
-  // Its own pattern rather than `FRAME_ID`: board sources name a frame in lower case, and that
-  // constant is both upper-case-only and global - an `exec` against a global regex carries its
-  // `lastIndex` into the next call, so reusing it here would read every other file correctly.
+  // Its own pattern rather than `BASE_HEADING`'s: board sources name a frame in lower case, and
+  // a file name carries no heading around the id.
   const STEM = /^([a-z]-\d{2,})(?:-[a-z0-9-]+)?$/;
   const declared = ctx.declared('boardRoot');
   const base = new Map();
@@ -361,131 +298,36 @@ function upFrom(id, base) {
   return chain;
 }
 
-/**
- * One document read as `## ` sections carrying the three labels `evidenceLabels` names.
- *
- * <p><b>The schema declares no `evidenceLabels`</b>, so on any project `configGate` accepts,
- * `labelsOf` is null and `ctx.evidence.sections` returns no sections without calling this. It
- * stays on `ctx.evidence` for a project gate that calls it.
- *
- * <p>`proseLines` is not enough here. A section that proves a machine verification carries the
- * command and what came back, and a fenced block is the one thing `proseLines` removes - so a
- * document made entirely of those would read as a document with no evidence in it at all.
- *
- * <p>The quoted rule is carried whole rather than as its first line. A rule long enough to wrap
- * wraps wherever the sentence happens to reach the margin, and two documents wrap it in different
- * places - so a reader that stopped at the newline would hand the quote check half a sentence and
- * call the other half missing.
- */
-function evidenceSections(text, labels, placeholder = null) {
-  const quoted = new RegExp(String.raw`^\*\*${labels.demanded}\*\*\s*—\s*(.*)$`);
-  const sections = [];
-  const opensList = new RegExp(String.raw`^\*\*${labels.demanded}\*\*\s*$`);
-  let current = null;
-  let fenced = false;
-  let quoting = false;
-  let listing = false;
-  let operating = false;
-  text.split(/\r?\n/).forEach((line, i) => {
-    if (FENCE.test(line)) {
-      fenced = !fenced;
-      quoting = false;
-      listing = false;
-      operating = false;
-      if (current) current.fenced = true;
-      return;
-    }
-    if (fenced) return;
-    const heading = EVIDENCE_HEADING.exec(line);
-    if (heading) {
-      quoting = false;
-      current = { title: heading[1], no: i + 1, labels: new Set(), images: [], fenced: false, quotes: [], discharged: [], did: [] };
-      listing = false;
-      operating = false;
-      sections.push(current);
-      return;
-    }
-    if (!current) return;
-    // A demand met by 「the same component as this picture」 rather than by a picture of its own.
-    // Collected here rather than in a reader of its own, because a section's evidence is one
-    // question - what does this section show - and three answers to it read together.
-    const stood = placeholder?.exec(line);
-    if (stood) current.discharged.push({ proof: (stood[1] ?? '').trim(), no: i + 1 });
-    const said = quoted.exec(line);
-    const listed = listing && ORDERED_ITEM.exec(line);
-    if (said) {
-      current.quotes.push({ text: said[1], no: i + 1 });
-      quoting = true;
-      listing = false;
-    } else if (quoting && line.trim() && !/^\s*(?:\*\*|#|!\[|\d+\.\s)/.test(line)) {
-      current.quotes[current.quotes.length - 1].text += ` ${line}`;
-    } else if (opensList.test(line)) {
-      // The other shape the label takes: a heading of its own with the demands numbered under it.
-      // A chapter that writes its demands as a list is quoted item by item, and one item that has
-      // gone stale is then named on its own rather than dragging the whole paragraph with it.
-      quoting = false;
-      listing = true;
-    } else if (listed) {
-      current.quotes.push({ text: listed[1], no: i + 1 });
-    } else {
-      quoting = false;
-      // A blank line inside a list does not end it - an ordered list with a blank between items
-      // is one list, and the markdown renderer reads it that way too.
-      if (line.trim()) listing = false;
-    }
-    for (const label of Object.values(labels)) {
-      if (line.startsWith(`**${label}**`)) current.labels.add(label);
-    }
-    // What was operated, kept as its own text. A section's addresses are written here and
-    // nowhere else - 「본 것」 says what was on the screen and the quote is the chapter's own
-    // sentence - so a gate asking WHERE a run was driven reads this and not the section.
-    //
-    // **Both shapes the label takes.** It is either a sentence on the label's own line or a
-    // heading with the steps bulleted under it, and in the second the addresses are in the
-    // bullets - so a reader that takes the label line alone comes back with the word 「조작」 and
-    // nothing else, which is indistinguishable from a section that named no address.
-    //
-    // **`steps` keeps what `text` folds away.** The joined text answers 「did this section name an
-    // address anywhere」, which is what most readers want; it cannot answer 「is the address on the
-    // step that walked the journey」, because one section pays several demands and the folded
-    // string makes every step's address look like every other step's.
-    if (line.startsWith(`**${labels.did}**`)) {
-      current.did.push({ text: line, no: i + 1, steps: [line] });
-      operating = true;
-    } else if (operating && (BLOCK_START.test(line) ? /^\s*[-*+]\s|^\s*\d+\.\s/.test(line) : line.trim())) {
-      const last = current.did[current.did.length - 1];
-      last.text += ` ${line.trim()}`;
-      last.steps.push(line.trim());
-    } else if (line.trim()) {
-      operating = false;
-    }
-    for (const [, target] of line.matchAll(MARKDOWN_IMAGE)) current.images.push({ target, no: i + 1 });
-  });
-  return sections;
-}
-
-/** The three labels a section carries, by role - null on every project, since the schema declares no `evidenceLabels`. */
-function labelsOf(ctx) {
-  const declared = ctx.declared('evidenceLabels');
-  if (!declared?.did || !declared?.demanded || !declared?.saw) return null;
-  return { did: declared.did, demanded: declared.demanded, saw: declared.saw };
-}
+/** The name a retired reader's error carries, so a run stopped by one says which kind of stop it was. */
+export const RETIRED_READER = 'RetiredReaderError';
 
 /**
- * The compiled `placeholderLine` - 「the same component as this picture」 - or null.
+ * A retired reader on `ctx.evidence`, called by a project gate.
  *
- * <p>A grammar that will not compile is `configGate`'s finding, not this file's - here it simply
- * means no such line can be recognised, and every check over one is skipped rather than run
- * against a pattern nobody can trust.
+ * <p>Both read a run-record shape no declared key describes - sections carrying three labels, and
+ * frames under a section a persona line proves - so on every project they could only return an
+ * empty list, and a gate reading an empty list reports the same nothing as a project with nothing
+ * wrong. Throwing is what stops that: `check` ends on the message, by the reader's name, with the
+ * reader that answers the question now.
  */
-function placeholderOf(ctx) {
-  if (ctx.declared('placeholderLine') === null) return null;
-  try {
-    return ctx.lines.placeholder ?? null;
-  } catch {
-    return null;
+export class RetiredReaderError extends Error {
+  constructor(reader, replacement) {
+    super(
+      `${RETIRED_READER}: ctx.evidence.${reader} is retired - on every project it read an empty `
+      + `list, which reports the same nothing as a project with nothing wrong. ${replacement}`
+    );
+    this.name = RETIRED_READER;
   }
 }
+
+/** What answers each retired reader's question now, as the error states it. */
+const RETIRED_READERS = {
+  sections:
+    'A run record is the table `journeyCommand` writes, one row per journey - read it with '
+    + '`ctx.evidence.runRows(text)`, and the captures it shows by the `ctx.evidence.captureName` grammar',
+  demandedFrames:
+    'Every frame a chapter places is owed a capture - read them with `ctx.evidence.framesPlaced(rel)`',
+};
 
 /**
  * What a project's own gates read out of the evidence folder, bound to one repository.
@@ -496,9 +338,9 @@ function placeholderOf(ctx) {
  * readers arrive on `ctx`, one definition, and a project gate never writes a second copy that
  * drifts from this one.
  *
- * <p>`demandedFrames` and `sections` read lines and labels no declared key compiles, so both come
- * back empty on every project; the other readers read the chapter files, the ledger, the record and
- * the folder as they are.
+ * <p>`demandedFrames` and `sections` are retired and throw `RetiredReaderError` with the reader
+ * that replaced each; the other readers read the chapter files, the ledger, the record and the
+ * folder as they are.
  */
 export function evidenceReaders(ctx) {
   return {
@@ -508,11 +350,13 @@ export function evidenceReaders(ctx) {
     chapterOf,
     chapterFiles: () => chapterFiles(ctx),
     closedChapters: () => closedChapters(ctx),
-    demandedFrames: (rel) => demandedFrames(ctx, rel),
     framesPlaced: (rel) => framesPlaced(ctx, rel),
-    sections: (text) => {
-      const labels = labelsOf(ctx);
-      return labels === null ? [] : evidenceSections(text, labels, placeholderOf(ctx));
+    runRows,
+    demandedFrames: () => {
+      throw new RetiredReaderError('demandedFrames', RETIRED_READERS.demandedFrames);
+    },
+    sections: () => {
+      throw new RetiredReaderError('sections', RETIRED_READERS.sections);
     },
   };
 }
@@ -1185,6 +1029,46 @@ export const closedChapterHasAJourneyRun = {
 };
 
 /**
+ * A closed chapter that places frames names at least one journey the parser reads.
+ *
+ * <p><b>`closedChapterHasAJourneyRun` holds the record against the journeys it reads, so a chapter
+ * whose journeys it cannot read is held against nothing.</b> A journey written as a bullet, under a
+ * heading of another depth, or with no separator after the persona is a journey to a person and
+ * none to the parser: the record's rows are matched to an empty list and every one passes. A
+ * foundation chapter places no frames and closes on verifications instead, so it is not asked.
+ *
+ * <p><b>A warning</b>, because the chapter may genuinely have been closed on journeys a person
+ * read, and what the finding asks for is a re-read of its headings against
+ * `### <n>. <persona> - <title>` rather than a refusal of the close.
+ */
+export const closedChapterNamesAJourney = {
+  id: 'closedChapterNamesAJourney',
+  title: 'a closed chapter that places frames and names no journey the parser reads',
+  needs: ['chapterDir', 'stateLedger', 'closedStatus'],
+  grade: 'warning',
+  run: (ctx) => {
+    const closed = closedChapters(ctx);
+    if (!closed.size) return [];
+    const dir = ctx.declared('chapterDir');
+    const findings = [];
+    for (const [chapter, file] of [...chapterFiles(ctx)].sort()) {
+      if (!closed.has(chapter)) continue;
+      const rel = `${dir}/${file}`;
+      const placed = framesPlaced(ctx, rel);
+      if (!placed.size) continue;
+      if (journeysOf(ctx.read(rel) ?? '').length) continue;
+      findings.push(
+        `${rel}: ${chapter} is closed, places ${[...placed].sort().join(' · ')}, and names no journey `
+        + 'the parser reads - `closedChapterHasAJourneyRun` then holds its run record against nothing. '
+        + 'Head each journey `### <n>. <persona> - <title>`, and regenerate the chapter where the '
+        + 'generator wrote another shape'
+      );
+    }
+    return findings;
+  },
+};
+
+/**
  * A journey test drives the running application, never the frame route.
  *
  * <p>The frame route renders one frame in one state, so a control whose destination is another
@@ -1226,6 +1110,7 @@ export const journeyTestsDriveTheApplication = {
 
 export const EVIDENCE_GATES = [
   closedChapterHasAJourneyRun,
+  closedChapterNamesAJourney,
   evidenceKeepsPaceWithItsCaptures,
   everyPlacedFrameIsCaptured,
   journeyTestsDriveTheApplication,
@@ -1249,7 +1134,6 @@ export const EVIDENCE_GATES = [
 const WORDS = {
   evidenceDir: 'docs/evidence',
   closedStatus: '닫힘',
-  verdictRole: '판정',
 };
 
 /**
@@ -1394,6 +1278,20 @@ export function cases(t) {
   const hyphened = (files) => run({ 'chapters/w02-org-shell.md': HYPHENED_CHAPTER, ...files });
   t.add('closedChapterHasAJourneyRun', 'a record missing a journey whose heading takes a spaced hyphen', hyphened({ 'docs/evidence/w02-org-shell.md': RECORD('pass', 'pass').replace(/\| 2 \|.*\n/, '') }), true);
   t.add('closedChapterHasAJourneyRun', 'journeys headed with a spaced hyphen, every one passing in the record', hyphened({ 'docs/evidence/w02-org-shell.md': RECORD('pass', 'pass') }), false);
+
+  // ── closedChapterNamesAJourney ─────────────────────────────────────────────
+  // Journeys written as bullets read as journeys to a person and as none to the parser, so the
+  // record is held against an empty list and every row passes.
+  const BULLETED_CHAPTER = JOURNEY_CHAPTER.replace(/^###\s+\d+\.\s+(\S+)\s+\u2014\s+(.+)$/gm, '- $1: $2');
+  t.add('closedChapterNamesAJourney', 'a closed chapter placing a frame whose journeys are bullets', run({ 'chapters/w02-org-shell.md': BULLETED_CHAPTER, 'docs/evidence/w02-org-shell.md': RECORD('pass', 'pass') }), true);
+  t.add('closedChapterNamesAJourney', 'a closed chapter placing a frame with its journeys headed as the parser reads them', run({ 'docs/evidence/w02-org-shell.md': RECORD('pass', 'pass') }), false);
+  t.add('closedChapterNamesAJourney', 'an open chapter whose journeys are bullets', run({ 'chapters/w02-org-shell.md': BULLETED_CHAPTER, 'tracking/STATE.md': LEDGER('열림', '열림') }), false);
+  t.add(
+    'closedChapterNamesAJourney',
+    'a closed foundation chapter that places no frames and names no journey',
+    run({ 'chapters/w02-org-shell.md': '# W02. 기반\n\n## 1. 인증 골격\n\n**판정** - 만료된 토큰은 거부된다.\n' }),
+    false,
+  );
 
   // ── journeyTestsDriveTheApplication ───────────────────────────────────────
   const tests = (body) => t.project({
