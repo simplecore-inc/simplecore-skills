@@ -160,6 +160,18 @@ with 「(미정: …)」.
   -다체; titles, labels and captions are noun phrases. 합니다체 never spreads past those two places.
 - Copy never counts items, never sets a bare abbreviation list, and never contains an em dash.
 
+**Presentation script**
+
+- The script is understood by a listener who never sees the screen. A phrase that leans on the
+  slide or on knowledge the listener lacks is spelled out: 「보유 수신 기술」 says whose
+  technology, what it is and how it was proven; an abbreviation, a requirement code, a figure
+  number or a table is spoken as what it means.
+- The script follows the screen: the page-head description first, then the body top to bottom and
+  left to right, in the words printed there, and the words it speaks are emphasised on the slide.
+- Time the script at the speaking rate measured by reading it aloud (one bid read 5,247
+  characters in about 15 minutes, 350 a minute), never at an assumed rate; an assumed 300 a minute
+  cut a script by a fifth that the talk had room for.
+
 **Numbers and evidence**
 
 - The proposer's own test figures appear only in the annex, with their conditions and limits. The
