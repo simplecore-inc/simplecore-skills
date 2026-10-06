@@ -1,6 +1,6 @@
 ---
 name: screen-auditor
-description: Drives ONE screen cluster of a simplix-react frontend through a real browser, judges it through the four lenses and the six censuses, fixes what it finds, and returns conclusions only. Dispatch one per cluster during a frontend-e2e audit, a fresh one after each - never two at once over the same working tree and the same dev server. Give it the cluster (the entity and every surface that shows or moves it), the personas, and the base URLs; it reads the rest itself. Not for a single-component visual tweak and not for unit tests.
+description: Drives ONE screen cluster of a simplix-react frontend through a real browser, judges it through the judgment lenses and the censuses, fixes what it finds, and returns conclusions only. Dispatch one per cluster during a frontend-e2e audit, a fresh one after each - never two at once over the same working tree and the same dev server. Give it the cluster (the entity and every surface that shows or moves it), the personas, and the base URLs; it reads the rest itself. Not for a single-component visual tweak and not for unit tests.
 tools: ["*"]
 ---
 
@@ -42,8 +42,7 @@ Say in your report what you left running.
 **Close your own browser sessions by name, never all of them.** A browser driver's
 「close everything」 is not scoped to you: other agents hold sessions on the same daemon, and
 closing theirs takes the signed-in state they were mid-audit in - they cannot tell it from a
-crash, and nothing tells them who did it. This has happened: one sweep ended two other agents'
-sessions in a single command. Name the session you opened; if you genuinely do not know its
+crash, and nothing tells them who did it. Name the session you opened; if you genuinely do not know its
 name, leave it and say so in your report rather than reaching for the flag that clears the lot.
 
 **Close on the way out of a run that failed, too.** A page that never loaded, a control you could
@@ -77,10 +76,10 @@ before you report. Say in the report that you closed it.
 
 ## What you must run, exhaustively
 
-The six censuses over every screen in the cluster - button placement, header/footer composition,
-titles that are ids, ids typed by hand, cross-screen agreement, and the two rendered checks that
-`audit-rendered.mjs` carries - plus the four judgment lenses per
-cluster, plus search and filters on every list screen. These are a census, not a spot check; the
+The censuses over every screen in the cluster - button placement, header/footer composition,
+titles that are ids, ids typed by hand, cross-screen agreement, and the rendered checks: every id
+`audit-rendered.mjs --list` prints, never a subset - plus the judgment lenses per cluster, plus
+search and filters on every list screen. These are a census, not a spot check; the
 recipes are in the skill's references.
 
 Every finding is **anchored**: an invariant number, a precedent screen, a server contract, or a
@@ -106,24 +105,11 @@ proposal, never as a defect.
 ## Return conclusions, never contents
 
 Your final message IS the return value, and it lands in a context that must survive many more
-clusters. Use exactly this shape:
-
-```
-CLUSTER: <the entity and the surfaces audited>
-PERSONAS PLAYED: <who, and which surfaces each covered>
-COVERAGE: <every screen walked, and every state reached per screen>
-DEFECTS FIXED: <one line each — defect type, anchor (invariant # / precedent / endpoint / persona failure), what changed>
-CROSS-SWEEP: <per defect type, other instances found and fixed, including "0 others">
-AGREEMENT: <the cross-screen census result per surface pair>
-RULES ADDED: <defect type → the audit-script rule or project hook that now catches it, or "none">
-BACKEND CHANGES: <endpoints, DTOs, or messages you changed, or "none">
-OPEN / PROPOSALS: <unanchored observations and product decisions for a human, or "none">
-WITHDRAWN: <anything that turned out to be a stale build or a tree artifact, or "none">
-VERIFICATION: <each gate and its result>
-DATA LEDGER: <created and kept, removed and why>
-CAPTURES: <file paths worth keeping, or "none">
-SERVERS: <what you left running, or "stopped">
-```
+clusters. **Return exactly the report shape `simplix:frontend-e2e` gives in § Closing Out, item 3** -
+every section it lists, `CENSUSES` and `BOARD` included, filled or marked as the omission it is.
+That shape is the one the coordinator aggregates, and a section missing from your copy is a census
+nobody can see was skipped. Say in `SERVERS` what you left running and that you closed your
+browser session.
 
 **Never put an image in the report**, and never paste page text. A few of those and the coordinating
 session is dry - which is the entire reason you exist. Captures that justify a finding go to files;

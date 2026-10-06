@@ -1,8 +1,8 @@
 # Framework Component Reference
 
-Complete catalog of `@simplix-react/ui` components, hooks, and utilities available for widget customization.
+Catalog of the `@simplix-react/ui` components, hooks, and utilities widget customization reaches for most. It is not exhaustive: the shared-pattern components (`StatusBadge`, `EmptyValueBadge`, `ListTotalBadge`, `QueryFallback`, `DetailStatusField`, `CrudDetail.AuditFooter`, …) have their contracts in the registry (`../audit/registry.md`), and a component or prop this page does not list is checked against the component's source before it is ruled out (invariant #44).
 
-> **Scope.** This catalog covers only the framework-generic primitives in `@simplix-react/ui`. Project-/domain-specific shared UI (composites tied to your entities, branded cards, domain badges) does NOT live here - it belongs in the project's own shared UI package (e.g. `@<prefix>/<name>-ui`). Don't add domain widgets to `@simplix-react/ui`; import them from the project package and only commonize truly generic pieces upstream.
+> **Scope.** This catalog covers only the framework-generic primitives in `@simplix-react/ui`. Project-/domain-specific shared UI (composites tied to your entities, branded cards, domain badges) does NOT live here - it belongs in the project's own shared UI package (e.g. `@<scope>/<ui-package>`). Don't add domain widgets to `@simplix-react/ui`; import them from the project package and only commonize truly generic pieces upstream.
 
 ## Layout Primitives
 
@@ -165,7 +165,7 @@ is usually to change something that was already right.
 | `TextareaField` | `string` | `label`, `value`, `onChange` |
 | `SwitchField` | `boolean` | `label`, `value`, `onChange` - defaults to `layout="trailing"`: switch right-aligned with a dashed leader line from the label, description below at the label's left edge. Keep the default so toggle columns line up; pass `layout="inline"` only inside dense grids (e.g. a permission matrix dialog) |
 | `CheckboxField` | `boolean` | `label`, `value`, `onChange` |
-| `SelectField` | `string` | `label`, `value`, `onChange`, `options: {label, value}[]` |
+| `SelectField` | `string` | `label`, `value`, `onChange`, `options: {label, value}[]`, `clearable?` + `clearLabel?` (returns an optional field to absent - invariant #75) |
 | `MultiSelectField` | `string[]` | `label`, `value`, `onChange`, `options` |
 | `ComboboxField` | `string` | `label`, `value`, `onChange`, `options` (searchable) |
 | `RadioGroupField` | `string` | `label`, `value`, `onChange`, `options` |
@@ -217,7 +217,7 @@ A control composed OUTSIDE the field is a defect: wrapping the field and a butto
 | `DetailField` | Plain text | `label`, `value`, `layout?` (inline/stacked) |
 | `DetailTextField` | Formatted text | `label`, `value` |
 | `DetailNumberField` | Formatted number | `label`, `value` |
-| `DetailBadgeField` | Badge with color | `label`, `value`, `variant` |
+| `DetailBadgeField` | Badge with color | `label`, `value` (the RAW resolved value - the tone key), `displayValue` (the translated label), `variants` (value → Badge variant map) - invariant #53 |
 | `DetailBooleanField` | Boolean indicator | `label`, `value`, `mode?` (checkbox/text/badge) |
 | `DetailDateField` | Formatted date/time field row | `label`, `value`, `format?` (`date`/`datetime`/`time`/`relative`), `displayZone?` (instants) |
 | `DetailImageField` | Image display | `label`, `value` (URL) |
@@ -227,7 +227,7 @@ A control composed OUTSIDE the field is a defect: wrapping the field and a butto
 | `DetailCountryField` | Country name | `label`, `value` (code) |
 | `DetailTimezoneField` | Timezone name | `label`, `value` |
 | `DetailNoteField` | Rich text/HTML | `label`, `value` |
-| `DetailFieldWrapper` | Label + slot wrapper | `label?`, `labelKey?`, `layout?` (top/left/inline/hidden), `children` |
+| `DetailFieldWrapper` | Label + slot wrapper | `label?`, `labelKey?`, `layout?` (top/left/inline/trailing/hidden; `trailing` puts the label left and the value at the right edge), `children` |
 | `PlateViewer` | Rich-text content (Plate) | `value` (serialized JSON \| plain text \| parsed `Value`), `variant?` (basic/standard/advanced), `className?` - from `@simplix-react/ui/plate-editor`; borderless read-only renderer for `PlateEditorField` content. Wrap in `DetailFieldWrapper layout="top"`; plain-text values render as paragraphs |
 
 `DetailFieldWrapper` is the shared label/layout wrapper that all `DetailFields.*` build on - wrap a custom read-only value in it to match the standard label treatment instead of re-implementing the label row.
@@ -268,7 +268,7 @@ A time-of-day input is ALWAYS `FormFields.TimeField`. A `TextField` with `inputP
 />
 ```
 
-Read-only detail rows render the same value with the shared `displayLocalTime` helper, not a local slice/pad.
+Read-only display of the same value follows `customize/datetime-fields.md` § Display by kind - `DetailDateField format="time"` on a detail row, `WallClockText` inline - never a local slice/pad.
 
 Rules that follow from how the picker behaves:
 
@@ -285,7 +285,7 @@ Rules that follow from how the picker behaves:
 
 ```tsx
 <CrudList>
-  <CrudList.FilterBar filters={[...]} state={list.filters} leading={<Badge>...</Badge>} />
+  <CrudList.FilterBar filters={[...]} state={list.filters} count={list.pagination.total} maxBadges={3} />
 
   <CrudList.Table
     data={list.data}
@@ -301,15 +301,17 @@ Rules that follow from how the picker behaves:
     selectedIndices={list.selection.selected}
     onSelectionChange={list.selection.toggle}
     onSelectAll={() => list.selection.toggleAll(list.data)}
-    actions={rowActions}                 // RowActionDef[]
-    actionVariant="dropdown"             // "inline" | "dropdown"
+    actions={rowActions}                 // RowActionDef[]; how they draw is the product's default (below)
     cardBreakpoint={480}                 // responsive card view below this width
     cardTitle={({ row }) => <span>{row.name}</span>}
     cardContent={({ row }) => <span>{row.type}</span>}
   >
-    <CrudList.Column<Entity> field="name" header="Name" sortable />
-    <CrudList.Column<Entity> field="status" header="Status" sortable>
-      {({ value }) => <Badge>{value}</Badge>}
+    <CrudList.Column<Entity> field="name" header={fieldLabel("name")} sortable />
+    <CrudList.Column<Entity> field="status" header={fieldLabel("status")} sortable>
+      {({ value }) => {
+        const v = resolveBootEnum(value);
+        return v ? <StatusBadge tone={entityStatusToTone[v] ?? "neutral"} label={enumLabel("entityStatus", v)} /> : <EmptyValue />;
+      }}
     </CrudList.Column>
   </CrudList.Table>
 
@@ -323,6 +325,8 @@ Rules that follow from how the picker behaves:
   />
 </CrudList>
 ```
+
+`actionVariant` (`"outline"` / `"ghost"` / `"icon"`) is how the row actions draw, and it is the product's default, set once on `UIProvider`'s `defaults` - a screen does not name it (invariant #67; the audit's `screen-picks-action-variant` fails a literal).
 
 ### CrudForm
 
@@ -340,7 +344,7 @@ Rules that follow from how the picker behaves:
     </CrudForm.Actions>
   }
 >
-  <CrudForm.Section title={t("entity.section")} variant="flat">
+  <CrudForm.Section title={t("entity.section")} variant="card">
     <FormFields.TextField label="..." value={v} onChange={setV} />
   </CrudForm.Section>
 </CrudForm>
@@ -353,7 +357,7 @@ Rules that follow from how the picker behaves:
   isLoading={isLoading}
   header={onClose ? <Heading level={4} tone="muted">{data.name}</Heading> : undefined}
   onClose={onClose}
-  displayZone={siteZone}                 // instants + audit footer render in this zone
+  displayZone={zone}                     // the record's display zone (datetime-fields.md); instants + audit footer render in it
   auditData={{ id: data.id, createdAt: data.createdAt, updatedAt: data.updatedAt }}
   footer={
     <CrudDetail.DefaultActions onClose={onClose} onDelete={requestDelete} onEdit={onEdit} isPending={isDeleting} />
@@ -405,7 +409,7 @@ Options for `useCrudList`:
 | `adaptOrvalCreate` | `(mutation, options?)` | Adapted create mutation |
 | `adaptOrvalUpdate` | `(mutation, pathParam?, options?)` | Adapted update mutation |
 | `adaptOrvalDelete` | `(mutation, pathParam)` | Adapted delete mutation |
-| `useInvalidateEntity` | `(entityPath)` | `() => void` (invalidate query cache) |
+| `useInvalidateEntity` | `(entityPath)` | `() => Promise<void>` - resolves once the refetch settles; an inline editor awaits it before resetting state (`../audit/registry/actions-and-forms.md` § Awaitable Cache Invalidation) |
 
 ### Navigation & State Hooks
 

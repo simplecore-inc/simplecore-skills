@@ -13,8 +13,8 @@ API calls go through each domain's `src/mutator.ts`, which uses `getMutator("boo
 T; timestamp: string; errorCode?: string | null; errorDetail?: ErrorDetail | null }` -
 `type` is a **free string** (the success marker is the literal `"SUCCESS"`, NOT a closed
 enum), and the DTO payload lives in `body`. The boot mutator unwraps this envelope (returns
-`.body`) so React Query `data` is the plain DTO directly; `adaptOrvalList` then reads the
-already-unwrapped `.body.content` for list hooks. Any envelope whose `type !== "SUCCESS"`
+`.body`) so React Query `data` is the plain DTO directly; for a list hook that is the page
+itself, and `adaptOrvalList` reads its rows from `data.content`. Any envelope whose `type !== "SUCCESS"`
 throws `ApiResponseError`. Never bypass the mutator or hand-roll fetch - and never re-access
 `data.body` after unwrap (it resolves to `undefined`). See `scaffold/overview.md` Common
 Issues for the one-time `getMutator("boot")` fix.
@@ -22,9 +22,9 @@ Issues for the one-time `getMutator("boot")` fix.
 ## #3 Query builder / params
 
 NEVER hand-assemble query strings. In the hand-authored contract path, use the framework's
-`simpleQueryBuilder` (unless custom pagination is required). In the Orval-codegen path (the
-CLI default), list/sort/pagination params are produced by the generated request params -
-`simpleQueryBuilder` is not used (see `framework/overview.md`). Either way, no ad-hoc query
+`simpleQueryBuilder` (unless custom pagination is required). On a codegen path (`orval` or
+`meta`, whichever the project's config declares), list/sort/pagination params are produced by the
+generated request params - `simpleQueryBuilder` is not used (see `framework/overview.md`). Either way, no ad-hoc query
 string assembly. Paged list reads send `page` and `size` TOGETHER - some searchable-params
 parsers reject a lone `{ size }`; confirm the pagination contract from the spec rather than
 assuming `size` is independently optional.
@@ -65,10 +65,10 @@ Where the answer is no, it is a plain axis and it becomes a facet.
 
 ## #18 Column order - the one domain exception
 
-A narrow domain exception to the mandatory column order is allowed only when a hidden
-category IS the entity's primary data - e.g. an audit-log entity whose
+A narrow domain exception to the mandatory column order is allowed only when a category the
+list otherwise leaves out IS the entity's primary data - e.g. an audit-log entity whose
 actor/timestamp/field-change columns are the whole point of the list; surface those rather
-than hiding them. The default ordering still applies to every other entity.
+than removing them (#54). The default ordering still applies to every other entity.
 
 ## #31 Standard page chrome
 
@@ -176,9 +176,8 @@ copy all point at one thing, and the control exists precisely so a reader raisin
 can pick the identifier up. Everything a person recognises the record by - its name, its code - is
 already above, in the title and the fields.
 
-**It has now been replaced with a human-readable code three times**, each time by somebody applying
-「a raw id is not drawn on a screen」 to this line without asking what the line was for; the third
-was an audit rule written to enforce it, asking for a `code` prop the component does not have. The
+**Do not replace it with a human-readable code** by applying 「a raw id is not drawn on a screen」
+to this line, and do not write an audit rule asking for a `code` prop: the component has none. The
 framework's own source carries the warning at that line. Read it before changing it, and do not
 write a rule that fires on it.
 
@@ -320,8 +319,10 @@ neighbor overlap, outer-corner-only rounding, `whitespace-nowrap`) - a run of in
 ## #52 Every action affordance is permission-gated
 
 A button that leads to a call the server will refuse must not render. Read the group from
-the module's `src/shared/auth/subjects.ts` (`SUBJECTS.<screenKey>`), mirroring the
-backend's `hasPermission('<group>', '<action>')`, and gate with
+`SUBJECTS.<screenKey>` where the module's screens already import `SUBJECTS` - the module's own
+`src/shared/auth/subjects.ts`, or the project UI package where the project keeps the table
+there (a sibling screen's import says which) - mirroring the backend's
+`hasPermission('<group>', '<action>')`, and gate with
 `useCan("<action>", SUBJECTS.<screenKey>)` from `@simplix-react/access/react` - never a
 group literal inline, so a screen's gate and the server's rule move together. Create
 affordances: the page-header create button on BOTH header variants (page and panel - gating
@@ -329,7 +330,9 @@ one leaves the other open), a tree's per-row `add-child`, and any create button 
 into an action group (drop the button out of the group, not the whole `actions` entry). The
 scaffold emits the gate and the CLI creates an empty `subjects.ts` when a module has none,
 so a missing entry is a compile error on the generated page - supply the real group, never
-a plausible one. The audit script (`${CLAUDE_PLUGIN_ROOT}/scripts/audit-frontend.mjs`)
+a plausible one. Where the project keeps `SUBJECTS` in its UI package, that empty file
+shadows the real table and is reverted instead, with the page importing from the package
+(`scaffold/overview.md` § Scaffolding into a module that already has widgets). The audit script (`${CLAUDE_PLUGIN_ROOT}/scripts/audit-frontend.mjs`)
 fails on an ungated `showNew`.
 
 ## #53 Detail-row enums go through `DetailBadgeField`, resolved first
@@ -338,8 +341,9 @@ The component looks its tone up by the RAW `value` (`variants[value] ?? "default
 handing it the boot-enum object the DTO carries makes every lookup miss: the badge renders
 `default` however the variant map is written, while `displayValue` still shows the right
 label. The failure is silent and reads as a broken tone map. Pass
-`value={resolveBootEnum(x) ?? ""}` beside
-`displayValue={enumLabel("<EnumType>", resolveBootEnum(x) ?? "")}`; the scaffold emits the
+`value={resolveBootEnum(x) || ""}` beside
+`displayValue={enumLabel("<EnumType>", resolveBootEnum(x) || "")}` (`||` for the reason #36
+gives); the scaffold emits the
 unresolved form (`value={displayData.<field>}`), so every generated detail needs this fixed
 at customization time.
 
@@ -399,7 +403,11 @@ this and the list written under those conditions does not name them.
   local-link profile to the registry, any `pnpm install` that rewrites the lockfile. It
   reports same-version copies of directly-depended packages whose code creates a context
   and which the dedupe list does not name; different major versions living side by side
-  are ordinary resolution and are not reported.
+  are ordinary resolution and are not reported. It reads the list from the module
+  `--dedupe=<file>` names, else a dedupe module at `config/vite/dedupe.js` (or `.mjs`, or
+  `vite.dedupe.js`), else every `resolve.dedupe: [...]` written as a literal list in a Vite
+  config; a Vite config declaring the list any other way (an identifier, a spread) stops the
+  run with exit 2, because a list it cannot read is not an empty one.
 - **Missing chrome has TWO causes, and WHICH pages lost it tells them apart before you
   touch anything.** Duplication takes out every page past the package boundary - the
   app's own pages keep their header while every `modules/*` page loses it. When only
@@ -458,7 +466,7 @@ empty option list reads as "failed to load", not as "your tier does not include 
 the reader retries, then reports a bug against a screen that is behaving exactly as
 designed. Remove the control, or replace it with a sentence naming what is missing.
 
-Three shapes this takes, all found in one afternoon on one product:
+The shapes this takes:
 
 | Shape | Where it hid | What still fired |
 | --- | --- | --- |
@@ -467,7 +475,7 @@ Three shapes this takes, all found in one afternoon on one product:
 | Feature-owned picker on a base-edition screen | customer list filter and form field | the roster search |
 | Chrome sourcing a list from an admin endpoint | app shell, every role | the administrative search, at sign-in |
 
-**The chrome row is the worst of the four, because it fires for everybody.** A shell reads
+**The chrome row is the worst of them, because it fires for everybody.** A shell reads
 the signed-in account and whatever it needs to draw itself; the moment one of those reads
 comes from an administrative endpoint, **every role without that permission meets a
 refusal dialog on the first screen after signing in** - before touching anything. The rule
@@ -528,7 +536,7 @@ it needs a detector, not a paragraph.
 **Which value gets one is decided by the domain model, not by the label.** A field is a
 reference when it carries a foreign key - when its value identifies a record of another
 entity, or another record of the same entity. The generated DTO types are the evidence,
-because they are what the server actually sends. Three cases decide themselves once that
+because they are what the server actually sends. These cases decide themselves once that
 is the test:
 
 | The value | Peek? | Why |
@@ -566,9 +574,10 @@ is the same word - pass `target` so the name is 「남부현장 보기」 rather
 **A dialog holds the referenced record's whole detail, tabs included** - not a summary
 somebody chose six fields for. A summary is a second description of the record that drifts
 from the first, and the reader who opened it to check one thing usually needs the next
-thing too. This makes each peek cost what that entity's detail component costs: where none
-exists yet, the reference waits for the chapter that builds one rather than getting a
-hand-written card.
+thing too. This makes each peek cost what that entity's detail component costs: until that
+component exists, the field renders the name without a trigger rather than getting a
+hand-written card, and the first screen that needs the peek once it exists creates the entity's
+`*PeekLabel` (`customize/consistency-checklist.md` § Referenced records link out).
 
 **That detector belongs to the project, not to this script.** The shape is mechanically
 plain - a `<Link>`, or a call to the surrounding panel's selector, inside a
@@ -631,9 +640,10 @@ on first view the request goes out unnarrowed, the whole register comes back, an
 and its rows disagree. Nothing errors.
 
 ```tsx
-const list = useCrudList<HolderRow>({
-  listHook: adaptForcedList(useListAccounts, { "positionId.equals": positionId }),
-});
+const list = useCrudList<HolderRow>(
+  adaptForcedList(useListAccounts, { "positionId.equals": positionId }),
+  { stateMode: "server" },
+);
 ```
 
 **The tab's count and the list's total are the same number** - read the total off the list rather
@@ -679,14 +689,17 @@ two tints, and a glyph alone does not reach one scanning the page without readin
 own button (「설명 보기」) is drawn inside that control too, so the explanation it opens stays one
 press away after the card has been put away.
 
-**Every kind closes, and a live count in the title changes nothing.** The older reading of this
-invariant kept a message whose words move with the data on the screen for ever, reasoning that an
-operator who dismissed 「미확인 2건」 on a day it read 2 would not be shown it on the day it reads
-40. That reasoning was sound while putting a message away meant losing it, and the header control
-is what changed the footing: a kind with a hidden card is tinted and pulses, so a dismissed
+**The notice component is the product's, and the rule presumes it.** Neither the component
+catalogue nor the registry names it, so read it from the project. Where a product has no header
+control to bring a closed card back - a sign-in panel, a kiosk body, a product that never built
+one - a close would lose the message rather than move it, and the rule does not apply; the
+rendered check below makes the same exception.
+
+**Every kind closes, and a live count in the title changes nothing.** The worry a count raises -
+an operator who dismissed 「미확인 2건」 on a day it read 2 is not shown it on the day it reads 40 -
+is answered by the header control: a kind with a hidden card is tinted and pulses, so a dismissed
 warning is a message MOVED rather than a message lost, and the reader can see from any route that
-one of that kind is standing. That is the argument the notice kinds already make for `danger`, and
-it is true of all four.
+one of that kind is standing. That holds for all four kinds, `danger` included.
 
 **The test before writing either**: does this message survive the reader doing nothing? If it is
 still there a minute later, it stands, and it closes. If it is the answer to a press - a read that
@@ -744,12 +757,16 @@ for a standing sentence - a page note, a sub-caption, a message - and only the m
 whether it closes. Where the board drew a caption, or marked a message as drawing no close
 control, and the message stands, the board is the thing that moves.
 
-**Detecting it**: a banner standing where nothing guards it is mechanically decidable and belongs
-in a gate - walk the JSX, skip any banner contained in a dialog / sheet / help card / notice card
-or in a file that is a sign-in surface end to end, and report the rest. A banner drawn under a
-condition is NOT decidable that way: a state and a transient failure have the same shape, so the
-gate holds the unconditional half and the conditional half is read by whoever writes the screen.
-Say so where the gate is declared rather than leaving the silence to read as coverage.
+**Detecting it**: `standingMessageDrawsNoClose` in `audit-rendered.mjs` decides it on the painted
+page - a standing message in the page's own column with no way to put it away, or with no glyph
+saying its kind. It reads a page that has only been loaded, where nothing answers a press, so
+whatever message is there is standing; run past a submit, it reports the refusal too. A source
+gate in the project can hold the unconditional half as well - walk the JSX, skip any banner
+contained in a dialog / sheet / help card / notice card or in a file that is a sign-in surface end
+to end, and report the rest. A banner drawn under a condition is NOT decidable that way: a state
+and a transient failure have the same shape, so such a gate holds the unconditional half and the
+conditional half is read by whoever writes the screen. Say so where the gate is declared rather
+than leaving the silence to read as coverage.
 
 ## #74 One value's state is changed in one place, on every screen that shows it
 
@@ -881,7 +898,7 @@ export function exportRequestOf(values: Values): RequestDTO | undefined {
 request DTO still validates the field it never reads, so the narrowed client call comes back 400 and
 the screen is as blank as before. Give the preview its own DTO carrying the scope, and let the
 request DTO extend it with what only a submit needs - the same shape the backend handbook's
-`UpdateDTO extends CreateDTO` already uses. See `simplix:backend` #19.
+`UpdateDTO extends CreateDTO` already uses (`simplix:backend` → `references/review/dto-type-reference.md` § 3. UpdateDTO).
 
 **The tell, when you are looking for it rather than at it: a required field whose requirement is
 stated by a sentence the screen has not been able to render yet.** 「개인정보가 포함되므로 받는

@@ -120,9 +120,11 @@ Date/time display goes through a framework component, never an inline `formatDat
 | **Package** | `@simplix-react/ui` |
 | **Source** | `simplix-react/packages/ui/src/base/controls/button.tsx` |
 
-### Components Enhanced
+A save button is not this entry's: it is `SaveButton` (`actions-and-forms.md` § SaveButton), which carries the loading state itself. This entry covers every other action button that waits on a request - a submit that is not a save, a run, a send, a connection test - and the panel actions.
 
-| Component | Prop Added | Behavior |
+### Components
+
+| Component | Prop | Behavior |
 |-----------|-----------|----------|
 | `Button` | `loading`, `loadingText` | Spinner + text swap + auto-disable + `aria-busy` |
 | `CrudForm` | `isSubmitting` | `data-submitting` attribute propagation |
@@ -140,24 +142,21 @@ interface ButtonProps {
 ### Standard Usage
 
 ```tsx
-// Form submit button (Phase 1 pattern)
+// An action that waits on a request and is not a save
+<Button onClick={handleTest} loading={testMutation.isPending} loadingText={t("entity.testing")}>
+  {t("entity.testConnection")}
+</Button>
+
+// A form's submit marks the form while it is pending; its save button is SaveButton
 const { handleSubmit, isPending } = useCrudFormSubmit({ ... });
 <CrudForm onSubmit={handleSubmit} isSubmitting={isPending}>
   <CrudForm.Actions>
     <Button variant="outline" disabled={isPending}>{t("common.cancel")}</Button>
-    <Button type="submit" variant="primary" loading={isPending} loadingText={t("common.saving")}>
-      {t("entity.save")}
-    </Button>
+    <SaveButton type="submit" isSaving={isPending}>{t("entity.save")}</SaveButton>
   </CrudForm.Actions>
 </CrudForm>
 
-// Editor save button (Phase 2 pattern)
-<Button onClick={handleSave} disabled={!isDirty}
-  loading={updateMutation.isPending} loadingText={t("entity.saving")}>
-  {t("entity.saveChanges")}
-</Button>
-
-// Detail default actions (Phase 3 pattern)
+// Detail default actions
 <CrudDetail.DefaultActions onEdit={onEdit} onDelete={del.requestDelete}
   isPending={deleteMutation.isPending} />
 ```
@@ -191,10 +190,9 @@ const { handleSubmit, isPending } = useCrudFormSubmit({ ... });
 
 ### HBS Templates
 
-All 3 scaffold templates (`form.hbs`, `detail.hbs`, `editor.hbs`) enforce this pattern:
-- `form.hbs`: `isPending` extracted from `useCrudFormSubmit`, Button `loading` + `loadingText`
-- `detail.hbs`: `isPending` on `CrudDetail.DefaultActions`
-- `editor.hbs`: Button `loading` + `loadingText` on save button
+The template names are listed once, in SKILL.md invariant #67. Of these:
+- `form.hbs` and `editor.hbs` draw their save buttons with `SaveButton` (`actions-and-forms.md` § SaveButton); `form.hbs` takes `isPending` from `useCrudFormSubmit`
+- `detail.hbs` passes `isPending` to `CrudDetail.DefaultActions`
 
 ## EmptyValue (em-dash placeholder for non-field cells)
 

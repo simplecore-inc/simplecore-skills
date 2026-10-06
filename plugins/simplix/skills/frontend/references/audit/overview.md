@@ -43,26 +43,14 @@ Tracks and enforces UI / code commonization across the project. Ensures that sha
 `${CLAUDE_PLUGIN_ROOT}/scripts/audit-frontend.mjs` reads source and runs with nothing
 started. `${CLAUDE_PLUGIN_ROOT}/scripts/audit-rendered.mjs` asks about boxes and rows on a
 live page, and **the defects it catches are invisible to the source audit** - the component
-is imported, the props typecheck, the request answers 200, and the screen is unusable. Two
-of them today: two text boxes painted into the same rectangle, and a list that prints a
-total and draws no rows.
+is imported, the props typecheck, the request answers 200, and the screen is unusable. What
+it checks is whatever `--list` prints; run every id there, never a subset named in prose.
 
-**Do not point it at a URL with `--url` on a product that needs signing in.** It opens a
-browser session of its own, which lands on the sign-in screen, and a self-signed development
-certificate needs the ignore-certificate flag on that session's first command. Take the
-snippet out instead and evaluate it in the session that is already signed in:
-
-```bash
-A="${CLAUDE_PLUGIN_ROOT}/scripts/audit-rendered.mjs"
-node "$A" --list                       # the checks and what each catches
-node "$A" --print <check-id> > <scratch>/check.js
-# then evaluate <scratch>/check.js in the already-signed-in browser session
-```
-
-Each snippet is one self-contained expression returning `{ compared, findings }`, so any
-driver can run it. **Read `compared` as well as `findings`** - zero findings out of zero
-comparisons is a check that reached nothing, and it prints the same exit status as a clean
-screen.
+How to run it - including why a product that needs signing in takes the `--print` snippet into
+the already-signed-in session rather than `--url` - is owned by the `simplix:frontend-e2e`
+skill's `references/browser-driving.md` § The checks that need the browser, and the script that
+carries them. **Read `compared` as well as `findings`** - zero findings out of zero comparisons
+is a check that reached nothing, and it prints the same exit status as a clean screen.
 
 ## Registered Patterns
 

@@ -1,12 +1,12 @@
 ---
 name: frontend
-description: MANDATORY handbook for ALL frontend work in a simplix-react project - a repository with `simplix.config.ts`, `@simplix-react/*` dependencies, or CLI-generated `packages/domain-*`; skip it for stock React/Next repositories with none of those markers. Invoke on the session's first frontend-touching task, before reading, writing, reviewing, refactoring, or explaining any TSX, TS, CSS, or documentation file there - its conventions diverge from stock React/Next patterns, so working from memory produces defects. Trigger on ANY cue implying frontend work: component, widget, page, hook, list, form, detail, dialog, badge, column, filter, table, CrudList, CrudForm, CrudDetail, FilterBar, defineApi, OpenAPI, scaffold, add-domain, add-module, TSDoc, README, Diataxis, FSD - or a task touching apps/, modules/, packages/, or producing `*.md` / TSDoc. Never skip on "this is simple"; simple changes are where convention drift happens. Once invoked in a session, do not re-invoke.
+description: MANDATORY handbook for ALL frontend work in a simplix-react project - a repository with `simplix.config.ts`, `@simplix-react/*` dependencies, or CLI-generated `packages/domain-*`; skip it for stock React/Next repositories with none of those markers. Invoke on the session's first frontend-touching task, before reading, writing, reviewing, refactoring, or explaining any TSX, TS, CSS, or documentation file there. Trigger on ANY cue implying frontend work: component, widget, page, hook, list, form, detail, dialog, badge, column, filter, table, CrudList, CrudForm, CrudDetail, FilterBar, defineApi, OpenAPI, scaffold, add-domain, add-module, TSDoc, README, Diataxis, FSD - or a task touching apps/, modules/, packages/, or producing `*.md` / TSDoc. Never skip on "this is simple". Once invoked in a session, do not re-invoke.
 version: 1.0.0
 ---
 
 # SimpliX Frontend Development Handbook
 
-Single source of truth for frontend work in a **simplix-react** project - a package-first React framework that auto-generates reusable domain packages from OpenAPI specs - with strict conventions for FSD layering, framework component composition, filter/column design, commonization, and documentation. The handbook is project-agnostic: concrete domain, entity, and package names come from the project's `simplix.config.ts` and codebase, never from this document. Names appearing in examples (`@<scope>/<ui-package>`, `packages/domain-<name>`, `modules/<domain>`) are placeholders.
+Single source of truth for frontend work in a **simplix-react** project - a package-first React framework that auto-generates reusable domain packages from OpenAPI specs - with strict conventions for framework component composition, filter/column design, commonization, and documentation. The handbook is project-agnostic: concrete domain, entity, and package names come from the project's `simplix.config.ts` and codebase, never from this document. Names appearing in examples (`@<scope>/<ui-package>`, `packages/domain-<name>`, `modules/<domain>`) are placeholders.
 
 ---
 
@@ -56,8 +56,11 @@ If the user says no, the answer holds for the session.
 
 **When the user does ask, the move is these steps and nothing more:**
 
-1. `meta.export` lists every configured domain, or the config drops `spec` and names `meta.source`
-   outright - either one puts every domain on SimpliX Meta.
+1. The config drops `spec` and names `meta.source` outright, which puts every domain on SimpliX
+   Meta and makes the detector report `codegen: meta`. Listing every domain in `meta.export` while
+   keeping `spec` moves the barrels too, but the config then still declares both halves: the
+   detector reports `both`, the `both` row of the Scaffolding table applies, and the leftover
+   report above never runs.
 2. `simplix meta` regenerates them all.
 3. Delete `packages/*/src/generated/`, then run codegen once more and diff `src/locales/*.json` -
    the enum filter reads that directory, and without the check a silently unfiltered run writes
@@ -68,8 +71,8 @@ If the user says no, the answer holds for the session.
    `…200Body`, an invented `DashboardPanel` - is what surfaces here, and each one has a SimpliX
    Meta equivalent.
 
-**Going the other way is one line**: remove the `meta` block, or take a domain out of
-`meta.export`, and `simplix openapi` owns it again.
+**Going the other way** starts from a config that declares `spec`: remove the `meta` block, or
+take a domain out of `meta.export`, and `simplix openapi` owns it again.
 
 ### Project wiring - check on load, offer once
 
@@ -88,7 +91,7 @@ When anything is missing, say so in one sentence per piece - the user has no rea
 | Thought | Reality |
 | --- | --- |
 | "This change is small - no need to open the references" | Small changes are where drift accumulates. The Task Router names a file for every trigger; read it before the first edit. |
-| "I remember this convention from a previous session" | Conventions evolve with every promoted learning; memory is stale by definition. The reference is the current state. |
+| "I remember this convention from a previous session" | Conventions change as rules are added to the references; memory is stale by definition. The reference is the current state. |
 | "The scaffold / framework output is already consistent" | Generated output is generic. Project decisions live in these references and in precedent screens. |
 | "I'll make it consistent with the siblings afterwards" | Post-hoc alignment = review churn. The precedent check (#51) and routed reads come FIRST. |
 | "This screen is a special case - no precedent applies" | Special cases still classify into a shape in `customize/precedent-check.md`, and chrome / filters / columns / mutations always have precedents. |
@@ -104,7 +107,7 @@ When anything is missing, say so in one sentence per piece - the user has no rea
 
 ## Scope - What This Handbook Covers
 
-In scope: the five **Task Router** categories below - framework contracts and the API layer,
+In scope: the **Task Router** categories below - framework contracts and the API layer,
 domain scaffolding, widget customization (with filters and columns as its specializations),
 commonization audit, and documentation. The router names the reference file for each.
 
@@ -136,7 +139,7 @@ These invariants apply to **every** frontend file you touch. Treat each as invio
 > **Scaffold-first - generate, don't hand-create (CLI + OpenAPI before anything).** Creating a new domain package, UI module, or CRUD widget set is ALWAYS done with the `simplix` CLI (and OpenAPI codegen when a spec exists) - never by authoring the skeleton, contract, or list/form/detail widgets by hand. This is the FIRST action when adding any new package, module, or page; hand-creating them forks the structure codegen and the validators expect.
 >
 > **Which command generates a domain depends on the project, and the detector reads it.** Run
-> `node "/Users/taehwan/.claude/skills/simplix/scripts/detect-simplix.mjs" --json` and take
+> `node "${CLAUDE_PLUGIN_ROOT}/scripts/detect-simplix.mjs" --json` and take
 > `codegen` off the frontend match - never assume, and never hand a project the other mode's
 > command:
 >
@@ -175,7 +178,7 @@ These invariants apply to **every** frontend file you touch. Treat each as invio
 
 ### Widget Composition
 
-8. **No raw HTML layout** - NEVER write `<div className="flex ...">` / `<div className="grid ...">` / `<div className="mx-auto ...">` when framework primitives exist (`Flex`, `Stack`, `Grid`, `Container`, `Section`, `Card`). Framework primitives only.
+8. **No raw HTML layout** - NEVER write `<div className="flex ...">` / `<div className="grid ...">` / `<div className="mx-auto ...">` when framework primitives exist (`Flex`, `Stack`, `Grid`, `Container`, `Section`, `Card`). Framework primitives only. The one exception is a box no primitive can be - an absolute drag or resize handle, a canvas host, a custom time-grid cell - which keeps its raw `div` with a `{/* raw layout: <reason> */}` comment on that line or the two above it, the form the audit's `raw-layout-div` rule accepts → `audit/registry/layout-and-chrome.md` § Layout primitive variants.
 9. **Framework components first** - before writing any custom component, check `@simplix-react/ui` and existing module code for an existing component. Propose adding a variant/feature to the framework before creating a project-local custom component.
 10. **Boot enums everywhere** - boot enum fields use `resolveBootEnum()` in list columns, form defaults, detail display, AND DTO assembly - ALL four contexts. A single context missing it produces drift. A detail row is its own trap, because the badge's tone is looked up by the raw value - invariant #53.
 11. **SelectField async options** - gate the whole select on EVERY contributing query's loading state; a Radix select whose options arrive after first render keeps an empty trigger even once they load. Mechanism and the fallback-selection rule → `invariants.md` #11.
@@ -191,7 +194,7 @@ These invariants apply to **every** frontend file you touch. Treat each as invio
 
 ### Column Design
 
-18. **Column order** - Drag > Select > Identifier (hidden) > Relations (hidden) > Type > Text > Description > Attributes > Metrics > Schedule > Audit (hidden) > Actions. Mandatory, not a suggestion; the one domain exception → `invariants.md` #18.
+18. **Column order** - Drag > Select > Identifier > Relations > Type > Text > Description > Attributes > Metrics > Schedule > Audit > Actions. Mandatory, not a suggestion. Nothing in it is hidden by default, because the framework has no such state (#54): the PK, raw FK ids and the audit quartet are removed from source, so Identifier holds a human identifier (a code), Relations the referenced record's name, and Audit appears only under the one domain exception → `invariants.md` #18.
 19. **User confirmation before restyling** - present analysis and get approval before modifying existing column source.
 20. **Alignment rules** - fixed-length codes: center; long text: left; bounded numeric ranges: center; unbounded / large numbers: right. `CrudList.Column` has no `align` prop - apply alignment inside the cell render (the column's `children` render function) using framework primitives (`Flex`/`Stack` `align`/`justify`, or a text-align utility class), never a column-level prop.
 21. **Boolean columns** - preserve existing renderers as-is; NEW boolean columns render via `Badge`.
@@ -199,20 +202,20 @@ These invariants apply to **every** frontend file you touch. Treat each as invio
 ### Commonization Audit
 
 22. **Registry first** - before implementing an empty state, error state, loading state, or status card, check `references/audit/registry.md` for an existing shared component. NEVER write custom inline versions when a shared component exists.
-23. **Shared components live in a shared package, never in `modules/` or `apps/`** - extract framework-generic, reusable patterns into the framework UI package (`@simplix-react/ui`); extract project-domain-specific shared UI (selects bound to your domains, project dialogs, labels) into the project's OWN shared UI package (e.g. a `@<prefix>/<name>-ui` package). A reusable pattern MUST NOT stay inlined in a module or app.
+23. **Shared components live in a shared package, never in `modules/` or `apps/`** - extract framework-generic, reusable patterns into the framework UI package (`@simplix-react/ui`); extract project-domain-specific shared UI (selects bound to your domains, project dialogs, labels) into the project's OWN shared UI package (e.g. a `@<scope>/<ui-package>` package). A reusable pattern MUST NOT stay inlined in a module or app.
 
 ### Documentation
 
 24. **Diataxis single-type** - every doc is exactly one of Tutorial, How-to Guide, Reference, Explanation. Never mix types in a single document.
-25. **Language policy** - README, TSDoc, public-facing docs, CONTRIBUTING, CHANGELOG are in English. Internal notes may be Korean.
+25. **Language policy** - README, TSDoc, public-facing docs, CONTRIBUTING, CHANGELOG are in English. A file an agent reads as instructions (`CLAUDE.md`, `AGENTS.md`, a skill) is English too; the language of any other internal note is the project's own instructions' call.
 26. **Official terminology** - use project vocabulary strictly: `contract`, `entity`, `operation`, `derive`, `hook`, `mock handler`. No synonyms.
 27. **Code fences are tagged** - every code block has a language tag (`ts`, `tsx`, `bash`, `json`, `md`).
-28. **Result-first writing** - open with what the thing does, not how it works internally. "Generates type-safe hooks for all entities" beats "Iterates config.entities and…".
+28. **Result-first writing** - open with what the thing does, not how it works internally. "Derives type-safe hooks for all entities" beats "Iterates config.entities and…".
 
 ### Backend Sync (applies FIRST when backend changed - overrides category order)
 
 29. **Backend-change gate** - when the backend OpenAPI spec has changed since the last codegen, the SCAFFOLD Update path MUST run **before** any CUSTOMIZE work. Even "just a column change" is blocked.
-    - **Detect**: `pnpm --filter @<prefix>/domain-<name> run codegen` → non-empty `git status` on the domain's generated directory means the backend moved - `src/generated/` on the `orval` path, `src/generated-meta/` on the `meta` path. On `meta` the change gate is sharper: it compares the fetched document against the committed `meta.snapshot`, so a constraint or an access rule that never moved the OpenAPI document still registers as a change. Alternate recipes (tag-list diff, field snapshot) → `scaffold/overview.md` §"Detection recipes".
+    - **Detect**: `pnpm --filter <package> run codegen`, with `<package>` the `name` in the domain's `package.json` (`@<scope>/<prefix>-domain-<name>` by default → `framework/configuration.md` § packages; a filter that matches no package runs nothing and leaves the tree clean) → non-empty `git status` on the domain's generated directory means the backend moved - `src/generated/` on the `orval` path, `src/generated-meta/` on the `meta` path. On `meta` the change gate is sharper: it compares the fetched document against the committed `meta.snapshot`, so a constraint or an access rule that never moved the OpenAPI document still registers as a change. Alternate recipes (tag-list diff, field snapshot) → `scaffold/overview.md` §"Detection recipes".
     - **Update path** (existing domain) → `scaffold/overview.md` §"Updating an Existing Domain" Update Steps 1~7.
     - **Initial path** (new domain, `packages/domain-<name>/` absent) → `scaffold/overview.md` §"Workflow Steps" Step 0~8, starting with `simplix.config.ts` registration.
 
@@ -226,11 +229,11 @@ These invariants apply to **every** frontend file you touch. Treat each as invio
 
 32. **List screens are paged searchable - ALWAYS the first implementation method considered** - if the row count can grow (when in doubt, it grows), the backend exposes the standard paged searchable endpoint and the frontend is CLI-generated then customized (`useCrudList` + `adaptOrvalList` + `CrudList.*`). A hand-built table over an unpaged array endpoint is NOT an acceptable list screen. → `invariants.md` #32.
 
-33. **A screen that shows a lifecycle must be able to drive it** - every entity-scoped action endpoint is reachable from the UI, and every state the UI shows has an exit; a stuck row is a defect even when every screen renders. The endpoint-vs-hooks diff recipe → `invariants.md` #33.
+33. **A screen that shows a lifecycle must be able to drive it** - every entity-scoped action endpoint is reachable from the UI, and every state the UI shows has an exit; a stuck row is a defect even when every screen renders. The endpoint-vs-hooks diff recipe → `audit/audit-checklist.md` § Usability Audit 1; full form → `invariants.md` #33.
 
 34. **A form writes what the create/update DTO accepts** - account for every DTO field: edited, deliberately server-owned, or deliberately out of scope. Ids the user cannot know come from a picker or the framework file field, never a text input. → `invariants.md` #34.
 
-35. **Edit is a state, not a button** - content that has left the draft state is what approvers decided on. Gate the edit affordance (`when:` on the row action, `onEdit` on the detail) on the same condition the server enforces, and make the server enforce it: an update that rewrites an approved request's content must be rejected there, not merely hidden in the UI.
+35. **Edit is a state, not a button** - content that has left the draft state is what approvers decided on. Gate the edit affordance on the same condition the server enforces - `disabled` with a `disabledReason` on the row action, reading the module's lifecycle predicate (never a row-reading `when:`, which takes the control off some rows - the audit's `row-action-that-only-some-rows-draw`), and `onEdit` withheld on the detail - and make the server enforce it: an update that rewrites an approved request's content must be rejected there, not merely hidden in the UI.
 
 36. **Values that come back from the server are rendered, never echoed** - resolve enums (`resolveBootEnum(x) || "DEFAULT"` - the object is truthy, so `??` never fires), format instants with `format="datetime"`, title panels with a name and never an id. Trap catalogue → `invariants.md` #36.
 
@@ -244,7 +247,7 @@ These invariants apply to **every** frontend file you touch. Treat each as invio
 
 41. **One search form everywhere - `CrudList.FilterBar`, even off-list** - every screen-level query condition renders through the standard FilterBar (`useCrudList` on lists, `useFilterBarState` elsewhere); the total badge is the `count` prop, never a hand-placed badge in `leading`. → `invariants.md` #41, detection → `audit/audit-checklist.md` § 11.
 
-42. **Date/time values follow the semantic-kind contract** - every temporal field is exactly one of absolute instant, calendar date, wall-clock time. Encode by kind (site timezone, never the browser's), decode from the string's own components (never local `Date` getters), display through the framework date components (`InstantText format="date"` is the ONLY zone-local instant date). Full rules, per-kind tables and greps → `customize/datetime-fields.md`.
+42. **Date/time values follow the semantic-kind contract** - every temporal field is exactly one of absolute instant, calendar date, wall-clock time. Encode by kind (the record's display zone, never the browser's), decode from the string's own components (never local `Date` getters), display through the framework date components (`InstantText format="date"` is the ONLY zone-local instant date). Full rules, per-kind tables and greps → `customize/datetime-fields.md`.
 
 43. **Badge density parity** - detail/form badges render at the list's size: omit `size` on `StatusBadge` (defaults `sm`), never enlarge; explicit `size="xs"` only in genuinely denser contexts. → `invariants.md` #43.
 
@@ -266,7 +269,7 @@ These invariants apply to **every** frontend file you touch. Treat each as invio
 
 52. **Every action affordance is gated on the permission its endpoint requires** - a button that leads to a call the server will refuse must not render. Gate with `useCan("<action>", SUBJECTS.<screenKey>)`, never an inline group literal; both header variants, a tree's per-row `add-child`, and buttons inside action groups. The audit script fails on an ungated `showNew`. Full wiring → `invariants.md` #52.
 
-53. **A detail row's enum goes through `DetailBadgeField`, with its value resolved before it is passed** - the tone lookup uses the RAW `value`, so the boot-enum object makes every lookup miss and the badge silently renders `default`. Pass `value={resolveBootEnum(x) ?? ""}`; the scaffold emits the unresolved form, so every generated detail needs this fixed. Nullable-enum rows → `invariants.md` #53.
+53. **A detail row's enum goes through `DetailBadgeField`, with its value resolved before it is passed** - the tone lookup uses the RAW `value`, so the boot-enum object makes every lookup miss and the badge silently renders `default`. Pass `value={resolveBootEnum(x) || ""}` (`||`, never `??`, on what `resolveBootEnum` returns - #36); the scaffold emits the unresolved form, so every generated detail needs this fixed. Nullable-enum rows → `invariants.md` #53.
 
 54. **The scaffold emits fields that say nothing - remove them at customization time** - strip `deleted` / `deletedTimestamp`, the entity PK, and the audit quartet from the columns, cards, detail, form, and filters; `CrudDetail`'s `auditData` slot already carries the audit values, and hiding means removing from source. → `invariants.md` #54.
 
@@ -282,7 +285,7 @@ These invariants apply to **every** frontend file you touch. Treat each as invio
 
 60. **A context-owning package resolves to ONE copy - name the framework packages in `resolve.dedupe`, and prove it after every resolution change** - pnpm splits one version into two physical copies whenever two importers' peer sets differ, and a provider rendered from one copy is invisible to a consumer importing the other: chrome vanishes with a clean build and correct-reading source. Run `node "${CLAUDE_PLUGIN_ROOT}/scripts/check-duplicate-contexts.mjs"` after any change to dependency resolution, and run it FIRST when chrome is missing - one command rules out the resolution half of that symptom. Full mechanism, the two-cause missing-chrome triage, the linked-checkout variant, and the RN/Metro caveat → `invariants.md` #60.
 
-61. **Hiding a surface is not the same as not asking for it - the gate belongs beside the request** - a hook runs wherever it is written, so a screen that gates only its JSX still fires the read the server refuses, and the user gets a bare "access denied" dialog over a panel with nothing on it to explain the refusal. Put the condition where the request is (the hook's `enabled`, the shared factory's `useEnabled`), never only at the route or the parent that composes it - a caller that forgets is then impossible rather than merely unlikely. Check the framework for an existing gate channel before inventing one. And drop the affordance too: a filter or picker left standing with an empty option list reads as "failed to load", not as "you did not buy this". Symptom catalogue, the three shapes it takes, and why this is not a script rule → `invariants.md` #61.
+61. **Hiding a surface is not the same as not asking for it - the gate belongs beside the request** - a hook runs wherever it is written, so a screen that gates only its JSX still fires the read the server refuses, and the user gets a bare "access denied" dialog over a panel with nothing on it to explain the refusal. Put the condition where the request is (the hook's `enabled`, the shared factory's `useEnabled`), never only at the route or the parent that composes it - a caller that forgets is then impossible rather than merely unlikely. Check the framework for an existing gate channel before inventing one. And drop the affordance too: a filter or picker left standing with an empty option list reads as "failed to load", not as "you did not buy this". Symptom catalogue, the shapes it takes, and why this is not a script rule → `invariants.md` #61.
 
 62. **A screen with no list beside it still lays out in columns** - the two-column rule is written for a `CrudDetail` panel a few hundred pixels wide, and a settings page, a single-record editor, a preferences tab or a wizard step has no panel to be narrow. At 1440px a stack of short fields draws each input a thousand pixels wide for a value of twenty characters. Give the content columns, cap the measure, and **judge by the rendered input rather than by the component name** - a screen that never imports `FormFields` is still a form when it draws `<Label>` + `<Input>` pairs or a bare `<select>`, and a survey counting framework component names walks straight past the one screen most likely to be laid out wrong. Full rule → `customize/consistency-checklist.md` § 2b.
 63. **Tab strip, chip filter and rows sit together, in that order, with nothing between them** -
@@ -330,7 +333,7 @@ These invariants apply to **every** frontend file you touch. Treat each as invio
     already ends. Where the count outgrows one row, the second row carries the secondary verbs and
     the committing verb stays on the last.
 
-66. **A field that names another record peeks at it, never travels to it - the peek is the first choice, and navigation is what you fall back to** - a detail field, list cell or panel row whose value is another record's NAME renders that name plus the peek trigger, and the trigger opens that record in the host-mounted dialog (#45); the dialog's go-to is the only way out of the screen. **Which values qualify is decided by the DTO's foreign keys, not by the label** - a foreign key is a peek (including the same entity's parent), while an enum, a count, and a denormalized name snapshot are not. **The dialog holds the referenced record's whole detail, tabs included**, never a summary of six chosen fields - so a reference costs what that entity's detail component costs, and one that does not exist yet waits for the chapter that builds it. **Two shapes, and one question decides which - does the trigger stand alone in its own region, or sit at the end of a value?**: standing alone (a card, a footer action row) it is `appearance="inline"`, an outline button with the label and the icon, because nothing precedes it to say what it opens; at the end of a value (detail field, list column, detail-list row, section header's trailing slot) it is the default `appearance="icon"`, because the word takes the width the value needs and truncates the name the row exists to show. Both misreadings have been made - 「label only on cards」 leaves a footer of identical glyphs nobody can tell apart, 「label wherever there is a label」 eats every detail value. An icon-only trigger passes `target` so its accessible name is 「남부현장 보기」 rather than the fourth 「보기」 on the screen. Two shapes break the rule, and the second does not even navigate: a `<Link>` in a field, and a link-styled button wired to the panel's own `onSelect` - which replaces the record under the reader, same panel, same chrome, different subject. Peeks stack. **The failure mode is disuse**: build the machinery, use it once, and every screen written afterwards reaches for a link because nothing fails when it does - so the rule needs a detector in the project's own gate script, never a paragraph. → `invariants.md` #66.
+66. **A field that names another record peeks at it, never travels to it - the peek is the first choice, and navigation is what you fall back to** - a detail field, list cell or panel row whose value is another record's NAME renders that name plus the peek trigger, and the trigger opens that record in the host-mounted dialog (#45); the dialog's go-to is the only way out of the screen. **Which values qualify is decided by the DTO's foreign keys, not by the label** - a foreign key is a peek (including the same entity's parent), while an enum, a count, and a denormalized name snapshot are not. **The dialog holds the referenced record's whole detail, tabs included**, never a summary of six chosen fields - so a reference costs what that entity's detail component costs, and until that component exists the field renders the name without a trigger. **Two shapes, and one question decides which - does the trigger stand alone in its own region, or sit at the end of a value?**: standing alone (a card, a footer action row) it is `appearance="inline"`, an outline button with the label and the icon, because nothing precedes it to say what it opens; at the end of a value (detail field, list column, detail-list row, section header's trailing slot) it is the default `appearance="icon"`, because the word takes the width the value needs and truncates the name the row exists to show. An icon-only trigger passes `target` so its accessible name is 「남부현장 보기」 rather than the fourth 「보기」 on the screen. Two shapes break the rule, and the second does not even navigate: a `<Link>` in a field, and a link-styled button wired to the panel's own `onSelect` - which replaces the record under the reader, same panel, same chrome, different subject. Peeks stack. **The failure mode is disuse**: build the machinery, use it once, and every screen written afterwards reaches for a link because nothing fails when it does - so the rule needs a detector in the project's own gate script, never a paragraph. → `invariants.md` #66.
 67. **The shape the scaffold emits is the product's shape, and a census of hand-written screens is
     not evidence of a convention** - every screen here starts from `simplix scaffold`, so what the
     generator draws IS the house style and a screen departing from it is the thing that needs a
@@ -363,7 +366,8 @@ These invariants apply to **every** frontend file you touch. Treat each as invio
     - **A shape the generator does not emit is added to the project's template, never to one
       screen.** The CLI reads `.simplix/templates/<name>.hbs` before its own bundled template and
       falls through per name, so a project takes over the page shapes it cares about and leaves the
-      rest - `crud-page`, `tree-crud-page`, `hub-page` and `page-index` are the page-side names.
+      rest - `crud-page`, `tree-crud-page`, `hub-page` and `page-index` are the page-side names,
+      `list`, `form`, `detail` and `editor` the widget-side ones.
       That directory is the seam between what the CLI knows (the entity's operations) and what only
       the product knows (its chrome, its tiles, its notice cards, its tab strip), which is why
       shipping the chrome in the CLI is not the alternative.
@@ -417,16 +421,16 @@ These invariants apply to **every** frontend file you touch. Treat each as invio
       next reader what they are looking at, the second sends them to fix something that is not
       broken.
     - **They give the detail the same room, and where they differ in behaviour that difference is
-      the framework's to own - as a decision, not as an accident.** A modal drawer costs two
-      presses to move between records where a panel costs one, because the backdrop takes the first
-      press; this console chose the modal drawer, wanting the backdrop to block and to close.
-      That is a product's call and it belongs in the framework's comment beside the code, so the
-      next reader knows they are re-opening a decision rather than fixing an oversight. What is
-      never a screen's business either way: a screen must not work around the difference.
-    - **A width that differs between the two IS an accident, and was one.** The panel column, the
-      drawer and the dialog were 600, 576 and 672, so switching the setting changed how much
-      content fitted and an audit reading the narrow one reported a screen defect that was really
-      a setting. One measure for the three.
+      the framework's to own - as a decision, not as an accident.** Under a modal drawer the
+      backdrop takes the first press, so moving between records is 「close, then choose」 where a
+      panel takes one press; a product chooses the modal drawer to have the backdrop block and
+      close. That choice is written in the framework's comment beside the code, so the next reader
+      knows they are re-opening a decision rather than fixing an oversight. What is never a
+      screen's business either way: a screen must not work around the difference.
+    - **One measure for the three.** The panel column, the drawer and the dialog are one width, so
+      switching the setting never changes how much content fits; a width that differs between them
+      is a framework defect, and an audit reading the narrow one would report a screen defect that
+      is really a setting.
 70. **A sentence holding a value that can be absent is judged by that value, not by the record
     that carries it** - `t("k", { site: site?.siteName ?? "" })` typechecks, builds green, and
     renders a title ending in an em dash with nothing after it, and the first paint of every one of
@@ -441,7 +445,7 @@ These invariants apply to **every** frontend file you touch. Treat each as invio
 
 72. **The audit strip belongs to the record, so it sits in the FIRST tab and nowhere else** - on the `CrudDetail` root it renders under every tab, and the record's stamps read as the stamps of whatever rows that tab is listing. A detail with no tabs keeps it on the root. → `invariants.md` #72.
 
-73. **Every standing message is a card the reader can put away; only a transient failure stays a banner** - a message still on the screen a minute after the reader has done nothing is standing, whatever its kind (help · warning · info · danger) and whatever its words, so it goes through the notice component. Two things make that safe: the dismissal is remembered per operator on the server, and the header control for that kind is tinted and pulses while a card of its kind is hidden - so putting one away MOVES it rather than losing it. **A live count in the title is not an exemption**; that was the argument for keeping `danger` off the dismissible list, and the header control answered it for every kind at once. **What is not a card is the answer to something the reader just did** - a read that failed, a submit the server refused, a field rejecting the value being typed - gone on the next attempt, so it stays a bare `AlertBanner`. **Every message passes `icon` either way**: a bare banner draws no glyph unless the caller gives it one, and a message carried by tint alone does not reach a reader who cannot separate the two tints (a card takes its glyph from its kind, so it cannot forget). **The half that gets skipped is the standing one**, because a standing sentence drawn as a muted caption - a page-note component, a bare `<Text tone="muted">` above the tab strip - looks like every other muted sentence and nothing says it was meant to be a card; a component whose whole job is to draw one is the shape to look for, and a board that drew a caption is what moves. → `invariants.md` #73.
+73. **Every standing message is a card the reader can put away; only a transient failure stays a banner** - a message still on the screen a minute after the reader has done nothing is standing, whatever its kind (help · warning · info · danger) and whatever its words, so it goes through the product's notice component: a card whose dismissal is remembered per operator on the server, with a header control per kind that is tinted and pulses while a card of its kind is hidden - so putting one away MOVES it rather than losing it. Neither the component catalogue nor the registry names that component, so read it from the project; **where a product has no such header control the rule does not apply**, because a close would lose the message rather than move it - the same exception `standingMessageDrawsNoClose` makes. **A live count in the title is not an exemption**: a kind with a hidden card is tinted and pulsing on every route, so a reader who put the card away while its count was small can still see that one of its kind is standing. **What is not a card is the answer to something the reader just did** - a read that failed, a submit the server refused, a field rejecting the value being typed - gone on the next attempt, so it stays a bare `AlertBanner`. **Every message passes `icon` either way**: a bare banner draws no glyph unless the caller gives it one, and a message carried by tint alone does not reach a reader who cannot separate the two tints (a card takes its glyph from its kind, so it cannot forget). **The half that gets skipped is the standing one**, because a standing sentence drawn as a muted caption - a page-note component, a bare `<Text tone="muted">` above the tab strip - looks like every other muted sentence and nothing says it was meant to be a card; a component whose whole job is to draw one is the shape to look for, and a board that drew a caption is what moves. `standingMessageDrawsNoClose` in `audit-rendered.mjs` decides the standing half from the painted page. → `invariants.md` #73.
 
 74. **One value's state is changed in one place, on every screen that shows it** - a record's active / suspended / closed state moves through an action with its confirmation and its reason (a row action, a footer button), never also through a switch in the edit form. So the edit form does not carry the state field. → `invariants.md` #74.
 
@@ -531,7 +535,7 @@ Trigger: writing or editing README, TSDoc on public exports, tutorials, how-to g
 
 ## Before Writing Frontend Code
 
-- [ ] **Backend-sync gate (#29)** - run codegen; `git status packages/domain-<name>/src/generated/` is clean? If not, take the SCAFFOLD Update path FIRST.
+- [ ] **Backend-sync gate (#29)** - run codegen; `git status` on the domain's generated directory (`packages/domain-<name>/src/generated/` on `orval`, `src/generated-meta/` on `meta`) is clean? If not, take the SCAFFOLD Update path FIRST.
 - [ ] Identified the app / module / package the code belongs to (FSD layer determined)
 - [ ] Read the existing module to pick up local patterns
 - [ ] **New or reshaped screen? Precedent check done (#51)** - shape classified, TWO same-shape precedent screens read end to end, comparison sheet extracted (`customize/precedent-check.md`)
@@ -546,9 +550,10 @@ After writing:
 - [ ] Every action affordance gated on its endpoint's permission (#52) - both header variants, tree `add-child`, and buttons inside action groups; group read from `SUBJECTS`, never inlined
 - [ ] Precedent parity pass done (new / reshaped screens - #51): comparison sheet walked row by row against both precedents, screens compared in the browser
 - [ ] Completion report (in conversation - never recorded in files) names the Task Router references consulted and, for screen work, the shape + both precedent files + justified divergences (#51)
-- [ ] No `generated/` drift - `git status packages/domain-<name>/src/generated/` clean, OR generated changes committed together with widget / mock seed / locale updates (#29/#30)
+- [ ] No generated-code drift - `git status` on the domain's generated directory (`src/generated/` or `src/generated-meta/`) clean, OR generated changes committed together with widget / mock seed / locale updates (#29/#30)
 - [ ] `node "${CLAUDE_PLUGIN_ROOT}/scripts/audit-frontend.mjs"` clean (0 error-level hits; review candidates judged, not bulk-rewritten)
 - [ ] Dependency resolution changed this task (version bump, new dependency, link-profile switch, any `pnpm install` that rewrote the lockfile)? → `node "${CLAUDE_PLUGIN_ROOT}/scripts/check-duplicate-contexts.mjs"` clean (#60)
+- [ ] A catalogue entry with a formatted placeholder (`{{x, number}}`), or a call site handing it a value, changed this task? → `node "${CLAUDE_PLUGIN_ROOT}/scripts/check-interpolation-types.mjs"` clean - the type-aware half of the audit's `number-format-on-a-value-that-is-not-a-number`, which reaches a value whose type the call's text does not show (§ A Rule Discovered While Working Goes Straight Into Its Home)
 - [ ] AUDIT run (if CUSTOMIZE touched existing modules) - `audit/audit-checklist.md`
 - [ ] DOCUMENT run (if exports / APIs / user-facing surfaces changed) - `docs/quality-checklist.md`
 - [ ] Backend data / translation gaps implemented or raised (if DTO gaps found)
@@ -567,7 +572,7 @@ what kind of thing it is:
 | --- | --- |
 | Specific to this project (its packages, its domains, its policy decisions) | an entry in the project's own reference under its `.claude/` - this skill ships read-only from the plugin install, so a project fact does not belong in it |
 | True of any simplix-react project, and mechanically detectable | a rule in `${CLAUDE_PLUGIN_ROOT}/scripts/audit-frontend.mjs`, proved to fire on the defect and stay silent on the fix |
-| True of any simplix-react project, mechanically detectable, **and it turns on what a value's TYPE is** | a standalone type-aware check beside `check-duplicate-contexts.mjs`, resolving typescript from the project under audit - a rule in the audit script reads source text and cannot see a type |
+| True of any simplix-react project, mechanically detectable, **and it turns on what a value's TYPE is** | a standalone type-aware check beside `check-duplicate-contexts.mjs`, resolving typescript from the project under audit - a rule in the audit script reads source text and cannot see a type. `check-interpolation-types.mjs` is the one this family has, and the After-writing checklist runs it |
 | True of any simplix-react project, and a judgment call | a new **invariant** here when it binds every task, otherwise a section in the reference that owns the topic - `framework/*` for contracts and the install, `customize/*` for widget work, `audit/*` for commonization, `docs/*` for documentation |
 
 **That third row is not a refinement of the second, and the difference is measurable.** One family -

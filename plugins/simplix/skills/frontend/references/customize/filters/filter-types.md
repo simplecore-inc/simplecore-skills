@@ -231,20 +231,26 @@ import { SearchOperator } from "@simplix-react/ui";
 interface FilterBarProps {
   /** Array of filter definitions */
   filters: FilterDef[];
-  /** Filter state from useCrudList */
+  /** Filter state from useCrudList (or useFilterBarState off-list) */
   state: CrudListFilters;
-  /** Leading element (typically total count badge) */
+  /** The list total, drawn as the shared ListTotalBadge - the one place the total goes (invariant #41) */
+  count?: number;
+  /** Extra summary content beside the total (an aggregate total, a pending-count badge) - never the total itself */
   leading?: React.ReactNode;
   /** Maximum number of filter badges to show before collapsing */
   maxBadges?: number;
+  /** Popover form layout: "auto" (default), 1, 2 or 3 columns - `columnBreak` on a filter starts a column (invariant #39) */
+  popoverColumns?: "auto" | 1 | 2 | 3;
 }
 ```
+
+This lists the props this handbook's rules use; read the component source for the rest before working around a prop that seems missing (invariant #44).
 
 Usage:
 
 ```tsx
 <CrudList.FilterBar
-  leading={<Badge>...</Badge>}
+  count={list.pagination.total}
   maxBadges={3}
   filters={[...]}
   state={list.filters}

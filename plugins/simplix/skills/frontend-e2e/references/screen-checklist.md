@@ -19,21 +19,21 @@ Paths in the recipes are written generically (`modules/`, `apps/`, `<backend>/mo
 
 ## B. Detail surface
 
-1. **The title identifies the record to a human.** Never a UUID, never `편집: <id>`, never a bare code.
+1. **The title identifies the record to a human.** Never a UUID or another machine key, never `편집: <id>`. A code the record is known by (a management number) is a human identifier and may stand where the record has no name (`simplix:frontend` #70).
 
    ```bash
    # header expressions that involve an id — REVIEW each hit, do not bulk-report
    rg -n 'Heading[^>]*>\{[^}]*Id' modules/*/src/widgets/*/{form,detail}.tsx
    rg -n '\{\{ *id *\}\}' modules/*/src/locales
    ```
-   Review standard: an id fed through a name resolver (`userName(...)`, `siteName(...)`, `nameOf(...)`) is correct; an id used only as the *fallback* behind a name (`name ?? t("editHeader", { id })`) is acceptable; an id rendered as the title itself is the defect. The browser-side UUID snippet (`browser-driving.md` § Verdict snippets) is the ground truth - grep only widens the sweep. When the name is absent because the server's detail projection filled a relation with its id only (list shows a name, detail shows a UUID), fix the projection in the backend - do not paper over it with an extra frontend lookup.
+   Review standard: an id fed through a name resolver (`userName(...)`, `siteName(...)`, `nameOf(...)`) is correct; an id rendered as the title is the defect, and so is an id kept as the *fallback* behind a name (`name ?? t("editHeader", { id })`) - the frontend registry forbids an id-bearing header key outright (`simplix:frontend` `references/audit/registry/identity-and-detail-fields.md` § ID/UUID Exposure Prevention). The browser-side UUID snippet (`browser-driving.md` § Verdict snippets) is the ground truth - grep only widens the sweep. When the name is absent because the server's detail projection filled a relation with its id only (list shows a name, detail shows a UUID), fix the projection in the backend - do not paper over it with an extra frontend lookup.
 
 2. **Relations show names, not ids.** Every `*Id` rendered as a value is a finding.
 
    ```bash
    rg -n 'value=\{[^}]*Id[a-z]*[^(}]*\}' modules/*/src/widgets/*/detail.tsx
    ```
-   Review standard: an id wrapped in a name resolver (`ownerName(x.ownerId)`, `nameOf(...)`) or a relation object's name (`x.owner?.name ?? x.ownerId` - fallback only) is correct; a bare `value={x.somethingId}` is the defect. Expected after review: 0 outside a deliberate technical-id row.
+   Review standard: an id wrapped in a name resolver (`ownerName(x.ownerId)`, `nameOf(...)`) or a relation object's name passed nullable (`x.owner?.name`, so the field draws its no-value badge when it is absent) is correct; a bare `value={x.somethingId}` is the defect, and so is the id as the fallback behind the name (`x.owner?.name ?? x.ownerId`) - same registry section, rule 5. Expected after review: 0 outside a deliberate technical-id row.
 
 3. **Timestamps show the time when the time matters.** An `Instant` rendered date-only silently drops the hour an approver needs.
 

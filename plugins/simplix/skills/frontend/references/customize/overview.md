@@ -41,7 +41,7 @@ Before writing custom UI, check if a framework component exists. If a needed var
 
 ### Rule 3: All Strings Must Be i18n Keys
 
-No hardcoded user-visible strings. Use `useTranslation()` or `useEntityTranslation()`.
+No hardcoded user-visible strings. Use `useTranslation("<module>/widgets")` (it takes a namespace, `columns/i18n.md` § useTranslation) or `useEntityTranslation()`.
 
 ```tsx
 // FORBIDDEN
@@ -76,7 +76,7 @@ const initialType = resolveBootEnum(data?.fieldType) || "DEFAULT";
 // In update DTO assembly (CRITICAL — for-edit response has enum objects)
 const dto: UpdateDTO = {
   ...form,
-  enumField: (resolveBootEnum(form.enumField) ?? form.enumField) as UpdateDTO["enumField"],
+  enumField: (resolveBootEnum(form.enumField) || form.enumField) as UpdateDTO["enumField"],
 };
 ```
 
@@ -87,7 +87,7 @@ When adding UI elements (action buttons, footers, headers, toolbars, etc.), **al
 - **Action button layout** → Read `CrudDetail.DefaultActions` source for the standard `[Left] ... [Delete icon] [Primary]` pattern
 - **Editor footer** → Read `EditorFooter` source (it uses `justify-between`)
 - **Panel header** → Read `PanelHeader` source for `children` slot usage
-- **Delete confirmation** → Read `CrudDelete` + `useCrudDeleteDetail` for the standard wiring
+- **Delete confirmation** → Clone `useCrudDeleteWired` + `adaptOrvalDelete` + `{deleteDialog}` from a precedent page (invariant #46, `recipes.md` Recipe 7)
 
 Never guess at button placement or layout - the framework defines the pattern, and all pages must be consistent.
 
@@ -169,7 +169,7 @@ After running `npx simplix scaffold <entity> --module <domain>`, the generated c
 
 ### Step 1: List Widget (`list.tsx`)
 
-- [ ] Remove unnecessary columns (comment out, don't delete - easier to restore)
+- [ ] Remove unnecessary columns from source, then the imports left unused (invariant #54 - git keeps the generated form)
 - [ ] Add enum badge rendering for enum columns (replace `display="badge"`)
 - [ ] Add card view content (`cardTitle`, `cardContent` props)
 - [ ] Tune filter types (`faceted` for enums, `number` for numeric, `dateRange` for dates)
@@ -182,6 +182,7 @@ After running `npx simplix scaffold <entity> --module <domain>`, the generated c
 - [ ] Add field validation hints (placeholder, min/max, required indicator)
 - [ ] Wire enum fields to `SelectField` with proper options
 - [ ] Handle optional vs required fields
+- [ ] Free-form prose (a note, description, memo, remark, bio) is a `TextareaField` on a row of its own, never a single-line `TextField` - it is written on more than one line (the audit's `single-line-free-text`)
 
 ### Step 3: Detail Widget (`detail.tsx`)
 
@@ -205,11 +206,11 @@ After running `npx simplix scaffold <entity> --module <domain>`, the generated c
 
 ### Step 6: Verify
 
-`<prefix>` is the package prefix derived from the root `package.json` name (see `../framework/configuration.md`).
+`<module-package>` is the name the module's own `package.json` declares (`../scaffold/overview.md` § Prerequisites, Package names) - a filter that matches no package runs nothing and exits clean.
 
 ```bash
-pnpm --filter @<prefix>/<module> typecheck
-pnpm --filter @<prefix>/<module> build
+pnpm --filter <module-package> typecheck
+pnpm --filter <module-package> build
 ```
 
 ---
@@ -322,11 +323,16 @@ Gap values: `none`, `xs`, `sm`, `md`, `lg`, `xl`
 // Boolean column
 <CrudList.Column<Entity> field="isEnabled" header={fieldLabel("isEnabled")} display="boolean" sortable />
 
-// Custom render (enum with badge)
+// Custom render (enum as a status badge; the tone map comes from the project UI package,
+// registry `audit/registry/tones-and-badges.md`)
+import { entityStatusToTone } from "@<scope>/<ui-package>/<domain>";
+
 <CrudList.Column<Entity> field="status" header={fieldLabel("status")} sortable>
   {({ value }) => {
     const v = resolveBootEnum(value);
-    return <Badge variant={STATUS_COLORS[v]}>{enumLabel("entityStatus", v)}</Badge>;
+    return v
+      ? <StatusBadge tone={entityStatusToTone[v] ?? "neutral"} label={enumLabel("entityStatus", v)} />
+      : <EmptyValue />;
   }}
 </CrudList.Column>
 ```
@@ -334,7 +340,7 @@ Gap values: `none`, `xs`, `sm`, `md`, `lg`, `xl`
 ### Form Fields
 
 ```tsx
-// After F12: single object state pattern
+// Single object state pattern
 const [values, setValues] = useState<FormValues>({ name: "", count: 0 });
 const updateField = useCallback(<K extends keyof FormValues>(field: K, value: FormValues[K]) => {
   setValues(prev => ({ ...prev, [field]: value }));
@@ -351,7 +357,8 @@ const updateField = useCallback(<K extends keyof FormValues>(field: K, value: Fo
 ```tsx
 <CrudDetail.Section title={t("entity.details")}>
   <DetailField label={fieldLabel("name")} value={data.name} layout="inline" />
-  <DetailBadgeField label={fieldLabel("status")} value={enumLabel("entityStatus", v)} variant={STATUS_COLORS[v]} layout="inline" />
+  {/* RAW resolved value + the label + the domain's variant map (invariant #53) */}
+  <DetailBadgeField label={fieldLabel("status")} value={resolveBootEnum(data.status) || ""} displayValue={enumLabel("entityStatus", resolveBootEnum(data.status) || "")} variants={entityStatusVariants} layout="inline" />
   <DetailBooleanField label={fieldLabel("isActive")} value={data.isActive} layout="inline" />
   <DetailDateField label={fieldLabel("createdAt")} value={data.createdAt} layout="inline" />
 </CrudDetail.Section>
@@ -410,13 +417,17 @@ return (
 ### Page Header
 
 ```tsx
-// Standard — in CrudPage
+// Standard - in CrudPage; the create action is gated on its endpoint's permission (invariant #52)
+const canCreate = useCan("create", SUBJECTS.<screenKey>);
 usePageHeader((() => {
   if (variant === "page") {
     if (view === "new") return { title: t("entity.newEntity") };
     if (view === "edit") return { title: t("entity.editEntity") };
     if (view === "detail") return { title: t("entity.entityDetail") };
-    return { title: t("entity.entities"), actions: <Button onClick={handleAdd}>Add</Button> };
+    return {
+      title: t("entity.entities"),
+      actions: canCreate ? <Button onClick={handleAdd}>{t("common.add")}</Button> : undefined,
+    };
   }
   return { title: t("entity.entities"), description: t("entity.description"), actions };
 })());
@@ -525,13 +536,16 @@ const slotOptions = useMemo(
 ```tsx
 <CrudList.FilterBar
   filters={[
+    // category order, invariant #16: String → Date → Number → Attribute
     { type: "text", field: "name", label: fieldLabel("name"), operators: [SearchOperator.CONTAINS], defaultOperator: SearchOperator.CONTAINS },
+    { type: "dateRange", field: "publishedAt", label: fieldLabel("publishedAt") },
     { type: "number", field: "count", label: fieldLabel("count"), operators: [SearchOperator.EQUALS] },
-    { type: "faceted", field: "type", label: fieldLabel("type"), options: [{ label: "A", value: "A" }, { label: "B", value: "B" }] },
+    { type: "faceted", field: "type", label: fieldLabel("type"), options: typeOptions }, // labels via enumLabel
     { type: "toggle", field: "isEnabled", label: fieldLabel("isEnabled") },
-    { type: "dateRange", field: "createdAt", label: fieldLabel("createdAt") },
   ]}
   state={list.filters}
+  count={list.pagination.total}
+  maxBadges={3}
 />
 ```
 
@@ -549,7 +563,7 @@ const slotOptions = useMemo(
 | `className="flex-wrap"` on Flex | Use `wrap` prop |
 | `className="...overflow-y-auto"` / `overflow-auto` scroll body | Use `overflow` prop, e.g. `<Stack flex overflow="auto">` |
 | `CrudForm.Actions className={justify-*}` | Use `spread` prop |
-| Hardcoded strings in JSX | Use `t("key")` from `useTranslation()` |
+| Hardcoded strings in JSX | Use `t("key")` from `useTranslation("<module>/widgets")` |
 | `useState` per field (old pattern) | Single `useState<FormValues>({...})` + `updateField` |
 | Custom delete confirmation dialog | Use `CrudDelete` or `ConfirmDialog` |
 | Custom loading spinner | Use `<QueryFallback isLoading />` |
@@ -568,17 +582,14 @@ const slotOptions = useMemo(
 
 ---
 
-## 6. Module Boundary Rules (FSD)
+## 6. Where a Module's Code Lives
 
-```
-app → pages → widgets → features → entities → shared
-```
+Layer rules and import direction belong to the project's own architecture reference (SKILL.md § Scope). What this handbook fixes is where the scaffold puts each kind of code inside a module:
 
 - **widgets/**: Reusable UI compositions (list, form, detail, editor). Import from domain package + `@simplix-react/ui`.
 - **pages/**: Page-level orchestration (CrudPage, MapPage). Import from widgets + domain package.
 - **shared/config/**: Module-level constants and configuration.
 - **shared/lib/**: Module-level utilities.
-- Cross-slice import within the same layer is FORBIDDEN.
-- App-specific UI components MUST go into the framework, NOT the module.
+- UI reused beyond one module goes to a shared package, framework-generic or the project's own (invariant #23).
 
 ---

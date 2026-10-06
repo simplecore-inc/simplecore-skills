@@ -11,7 +11,7 @@ In `@simplix-react`, there are no standalone cell components (UuidCell, EnumBadg
 | Recipe | Use When | Key Imports |
 
 |--------|----------|-------------|
-| [Enum Badge](#enum-badge) | Boot enum fields (status, type) | `resolveBootEnum`, `Badge` (built-in `display="badge"`+`variants` also exists, no i18n) |
+| [Enum Badge](#enum-badge) | Boot enum fields (status, type) | `resolveBootEnum`, `StatusBadge`, the enum's shared tone map (built-in `display="badge"`+`variants` also exists, no i18n) |
 | [FK Relation](#fk-relation) | Foreign key fields showing related name | (none extra) |
 | [Boolean Badge](#boolean-badge-new-columns) | NEW boolean columns | `Badge` |
 | [Boolean Display Prop](#boolean-display-prop-existing) | Existing boolean columns | (built-in prop) |
@@ -31,24 +31,16 @@ For boot enum fields that need color-coded badge display.
 
 ```tsx
 import { resolveBootEnum } from "@simplix-react-ext/simplix-boot-utils";
-import { Badge } from "@simplix-react/ui";
+import { StatusBadge, EmptyValue } from "@simplix-react/ui";
+// The enum's ONE tone map, defined once in the project UI package
+import { productStatusToTone } from "@<scope>/<ui-package>/<domain>";
 
-// Define color map outside component
-const STATUS_COLORS: Record<string, string> = {
-  ACTIVE: "success",
-  INACTIVE: "secondary",
-  ARCHIVED: "destructive",
-};
-
-// In JSX
 <CrudList.Column<ProductListDTO> field="status" header={fieldLabel("status")}>
   {({ value }) => {
-    const v = resolveBootEnum(value) as string;
-    return (
-      <Badge variant={STATUS_COLORS[v] ?? "secondary"}>
-        {enumLabel("ProductStatus", v)}
-      </Badge>
-    );
+    const v = resolveBootEnum(value);
+    return v
+      ? <StatusBadge tone={productStatusToTone[v] ?? "neutral"} label={enumLabel("ProductStatus", v)} />
+      : <EmptyValue />;
   }}
 </CrudList.Column>
 ```
@@ -56,7 +48,7 @@ const STATUS_COLORS: Record<string, string> = {
 **Key points:**
 - Always use `resolveBootEnum()` to extract the string value from boot enum objects
 - Use `enumLabel("<EnumType>", value)` from `useEntityTranslation()` for i18n display
-- Define color maps as module-level constants, not inline
+- A status enum's tone map is imported from the project UI package, never defined in the module - the audit's `status-map-resurrect` fails a module-local status color map (`../../audit/registry/tones-and-badges.md`); only a categorical palette (a kind's colors, not a state's) stays local
 - The inline render is the convention here because it lets you run `enumLabel()` for the displayed text. `CrudList.Column` also exposes a built-in `display="badge"` + `variants={{ <value>: "<variant>" }}` prop pair (`variants` is typed `Record<string, BadgeVariants["variant"]>`), but it renders the raw value without `enumLabel()`, so prefer the inline children render whenever the badge text needs i18n.
 
 ---
@@ -67,14 +59,14 @@ For foreign key fields where the related entity name should be displayed instead
 
 ```tsx
 <CrudList.Column<ProductListDTO> field="categoryId" header={fieldLabel("categoryId")}>
-  {({ row }) => row.category?.name ?? ""}
+  {({ row }) => row.category?.name ?? <EmptyValue />}
 </CrudList.Column>
 ```
 
 **Key points:**
 - The `field` is the FK ID field (e.g., `categoryId`) for sorting/filtering
-- Access the nested relation object via `row` (e.g., `row.category?.name`)
-- Use `?? ""` for null safety
+- Access the nested relation object via `row` (e.g., `row.category?.name`); where the entity has a `*PeekLabel`, render the name through it (invariant #66)
+- An absent name renders `EmptyValue`, never the raw id (`../../audit/registry/identity-and-detail-fields.md` § ID/UUID Exposure Prevention)
 
 ---
 
@@ -171,7 +163,7 @@ For simple date display, use the built-in `format` prop.
 />
 ```
 
-`format="date"` is zone-neutral (for a `LocalDate`); `format="datetime"` renders an `Instant` and needs `displayZone` (a string, or `(row) => zone` for a per-row site zone). An `Instant` shown date-only cannot use `format="date"` (zone-neutral) - use `InstantText` (below).
+`format="date"` is zone-neutral (for a `LocalDate`); `format="datetime"` renders an `Instant` and needs `displayZone` (a string, or `(row) => zone` for a per-row display zone - `../datetime-fields.md`). An `Instant` shown date-only cannot use `format="date"` (zone-neutral) - use `InstantText` (below).
 
 ---
 

@@ -10,17 +10,11 @@
 | **Package** | `@simplix-react/ui` |
 | **Source** | `simplix-react/packages/ui/src/crud/list/crud-list.tsx`, `simplix-react/packages/ui/src/crud/tree/crud-tree.tsx` |
 
-### Changes
+### Rule
 
-1. **Delete button color normalized**: Removed `text-destructive` (icon variant) and `variant="destructive"` (outline/ghost variant) from delete action. All row action icons now use the same base color.
-2. **`"unlink"` ActionType added**: New action type for removing associations (e.g., user-group membership, access-level assignment).
-3. **`UnlinkIcon` added**: Inline SVG icon (Link2Off) in `icons.tsx`, no external dependency.
-
-### ActionType
-
-```typescript
-type ActionType = "view" | "edit" | "delete" | "locate" | "unlink";
-```
+1. **Every row action icon uses the same base color**, the delete action included - no `text-destructive` on the icon variant and no `variant="destructive"` on the outline/ghost variant.
+2. **Removing an association** (a user-group membership, an access-level assignment) is the `"unlink"` type, which draws the framework's own Link2Off glyph (`UnlinkIcon`, inline SVG in `icons.tsx`).
+3. **The action types** are the ones `customize/framework-components.md` § Row Actions lists; each carries a default label and glyph.
 
 ### Usage
 
@@ -30,7 +24,7 @@ const actions: RowActionDef<<Entity>DTO>[] = [
   { type: "unlink", onClick: (row) => handleUnlink(row) },
 ];
 
-// Delete action — no longer red/destructive
+// Delete action - same base color as every other row action
 const actions: RowActionDef<<Entity>DTO>[] = [
   { type: "delete", onClick: (row) => handleDelete(row) },
 ];
@@ -328,7 +322,7 @@ reset();             // Now safe — UI shows fresh server data
 
 ### HBS Templates
 
-No template changes needed. All 6 templates (`form.hbs`, `detail.hbs`, `list.hbs`, `crud-page.hbs`, `tree-crud-page.hbs`, `editor.hbs`) use fire-and-forget patterns via `onSettled` or `.mutate()` callbacks.
+No template changes needed. The templates that invalidate (`form.hbs`, `detail.hbs`, `list.hbs`, `crud-page.hbs`, `tree-crud-page.hbs`, `editor.hbs`; every template name is listed in SKILL.md invariant #67) use fire-and-forget patterns via `onSettled` or `.mutate()` callbacks.
 
 ## SaveButton (Unified Save Button with isDirty + Validation)
 
@@ -419,7 +413,7 @@ import { CredentialStatus } from "@<scope>/domain-<domain>";
 options={Object.values(CredentialStatus).map((v) => ({ label: enumLabel("CredentialStatus", v), value: v }))}
 ```
 
-EXCEPTION - keep an explicit hardcoded list ONLY when the form deliberately offers a SUBSET (e.g. audit-log/form `action` exposes INSERT/UPDATE/DELETE but NOT the system-only SYNC_EXECUTE/FULL_DOWNLOAD of the 5-value `ConfigChangeAction`). Annotate why. Adopted across several generated forms in the reference project.
+EXCEPTION - keep an explicit hardcoded list ONLY when the form deliberately offers a SUBSET (e.g. a form's `action` field exposes `CREATE` / `UPDATE` / `DELETE` but not the system-only values of `<EnumType>`, which only the server writes). Annotate why.
 
 ## groupValidationErrors (no inline validation-error grouping loops)
 

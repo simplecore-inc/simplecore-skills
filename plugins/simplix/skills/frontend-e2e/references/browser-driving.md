@@ -8,7 +8,7 @@ The browser is the instrument. Everything below is about keeping it honest and k
 
 **On the local machine the servers are yours to run.** An audit that stops to ask before every restart cannot cover a feature area, and the restart is not optional - it is the difference between a defect and a stale build. Start, restart, and stop the app and its API as the work needs, within these bounds:
 
-1. **Take the commands from the project, never from memory** - whatever it documents under its own `.claude/`, else its README, package scripts, Gradle tasks, or compose file: how the app and the API start and stop, how a workspace package is rebuilt, and the HTTPS/self-signed-certificate requirement.
+1. **Take the commands from the project, never from memory** - whatever it documents under its own `.claude/`, else its README, package scripts, Gradle tasks, or compose file: how the app and the API start and stop, how a workspace package is rebuilt, and whether the dev server is HTTPS with a self-signed certificate. **Where it is, a CLI driver takes its ignore-certificate flag on the session's FIRST command**: certificate and viewport flags apply when the session's context is created, so a session that ran anything first fails every navigation and no later flag changes it. A daemon already in that state is closed by name and started again with the flag.
 2. **Read the port from the server's own output or a readiness probe.** A dev server that finds its usual port taken silently moves to another one, so a hardcoded port verifies the wrong thing - or nothing.
 3. **Reclaim only a port you own.** A port held by a development server from an earlier session of *this* project is stopped and replaced. A process you cannot identify as this project's dev server is left alone, and reported instead.
 4. **Local only.** Remote hosts of any kind - production, staging, shared development - and orchestrators outside this machine are out of scope. Ask first.
@@ -128,10 +128,9 @@ everywhere except the pixels:
 | an open pane painting nothing - the reader pressed a tab and got a blank rectangle | a `return null` that is correct in a dozen other places, and a build with nothing wrong in it |
 | a list scrolling inside itself while the page around it cannot move | the rows are all there, the layout classes read correctly, and a screenshot of it is a screenshot of a scrolling list |
 
-**That table is what the defects feel like, and `--list` is what the script actually runs.** Three
-of these were written down when three existed; enumerating them in prose is how a reader ends up
-running a subset and reporting the rest as clean. Read `--list` before a walk and run every id it
-prints.
+**That table is what the defects feel like, and `--list` is what the script actually runs.**
+Enumerating the checks in prose is how a reader ends up running a subset and reporting the rest
+as clean. Read `--list` before a walk and run every id it prints.
 
 **The pane check only sees the defect in the state that produces it**, which is almost never
 the state a walk lands on: the record the pane renders exists in the seeded database, so the
@@ -146,11 +145,17 @@ are questions about boxes on a painted page. Keeping them apart is what stops a 
 「audit clean」 with no browser anywhere near it.
 
 ```bash
-node "${CLAUDE_PLUGIN_ROOT}/scripts/audit-rendered.mjs" --url <address>   # drives agent-browser
-node "${CLAUDE_PLUGIN_ROOT}/scripts/audit-rendered.mjs" --print <id>      # the snippet, for this session's driver
-node "${CLAUDE_PLUGIN_ROOT}/scripts/audit-rendered.mjs" --selftest        # both directions, generated fixtures
-node "${CLAUDE_PLUGIN_ROOT}/scripts/audit-rendered.mjs" --list
+A="${CLAUDE_PLUGIN_ROOT}/scripts/audit-rendered.mjs"
+node "$A" --list                       # the checks and what each catches
+node "$A" --print <id> > <scratch>/check.js   # the snippet, for the session's own driver
+node "$A" --url <address>              # its own agent-browser session - only where nothing asks to sign in
+node "$A" --selftest                   # both directions, generated fixtures
 ```
+
+**On a product that needs signing in, do not use `--url`.** It opens a browser session of its
+own, which lands on the sign-in screen, and a self-signed development certificate needs the flag
+from § Environment on that session's first command. Print the snippet instead and evaluate it in
+the session that is already signed in.
 
 **Run all of them over every screen the walk opens, while it is open.** The cost is one evaluate
 call per screen and it settles a question no screenshot settles reliably - a reader scanning

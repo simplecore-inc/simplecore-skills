@@ -41,7 +41,7 @@ Each entry below is one registered shared pattern: what it is, and which detail 
 
 ## Actions, saves, selects & validation → `registry/actions-and-forms.md`
 
-- **Row Action Standardization** - 1. Delete button color normalized: Removed `text-destructive` (icon variant) and `variant="destructive"` (outl
+- **Row Action Standardization** - Every row action icon uses the same base color, the delete action included; removing an association is the `"unlink"` type
 - **SearchPopover (Unified Searchable Assignment)** - Unified searchable assignment popover (trigger + search + flat/grouped items) - replaces hand-rolled Popover+Command
 - **SelectField Compact Mode** - `FormFields.SelectField compact` for table-cell / toolbar selects - modules never import raw Select primitives
 - **Awaitable Cache Invalidation (useInvalidateEntity)** - `useInvalidateEntity` returns `() => Promise<void>` and calls `queryClient.invalidateQueries(...)` directly (n
@@ -64,7 +64,7 @@ Each entry below is one registered shared pattern: what it is, and which detail 
 
 ## List toolbars, filters & counts → `registry/lists-and-filters.md`
 
-- **ListTotalBadge (standard "Total N" FilterBar leading badge)** - The leading total-count badge of every list FilterBar is `<ListTotalBadge count={list.pagination.total} />` -
+- **ListTotalBadge (the "Total N" badge the FilterBar draws)** - A list's total badge is drawn by the FilterBar's `count` prop, which renders `ListTotalBadge` internally - never passed through `leading`
 - **User-select filter (useUserOptions + faceted dropdown)** - Every list filter over a user-account reference field (`userAccountId`, `delegatorId`, actor ids, …) is a `fac
 - **useFilterBarState (FilterBar on non-CrudList surfaces)** - A surface whose query is NOT a `useCrudList` list (an aggregation report, a dashboard section, a custom endpoi
 - **FilterBar count prop (the one total badge)** - The "전체 N건" badge comes from the FilterBar's `count` prop, which renders the shared `ListTotalBadge` internall

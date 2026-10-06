@@ -1,4 +1,4 @@
-> Commonization registry - **Status tones, badges & flash**. Detail file of `../registry.md` (the index); sections verbatim. Check the index first, then read only the section you need.
+> Commonization registry - **Status tones, badges & flash**. Detail file of `../registry.md` (the index); sections verbatim. Check the index first, then read only the section you need. Entries whose package is `@<scope>/<ui-package>` illustrate the kind of pattern a project's own UI package holds - their component, map and module names are examples, never imports to copy (`../registry.md`).
 
 # Registry - Status tones, badges & flash
 
@@ -39,12 +39,12 @@ const severityConfig = { CRITICAL: { dot: "bg-red-500", badge: "bg-red-100 dark:
 
 | Field | Value |
 |-------|-------|
-| **Maps** | `severityToTone`, `connectionStateToTone`, `channelStatusToTone`, `syncStatusToTone`, `circuitStateToTone`, `syncDeliveryStatusToTone`, `activityActionToTone`, `controllerHealthToTone` (`./status`); `eventSeverityToTone`, `eventActionToTone` (`./event`); `memberStatusToTone`, `credentialStatusToTone` (`./identity`) |
-| **Package** | `@<scope>/<ui-package>` (subpaths `./status`, `./event`, `./identity`) |
+| **Maps** | one `<enum>ToTone` per domain status enum (e.g. `severityToTone`, `memberStatusToTone`), plus icon-bearing ones that pair the tone with a glyph |
+| **Package** | `@<scope>/<ui-package>` (one subpath per domain, e.g. `./status`, `./identity`) |
 
 ### Rule
 
-Each domain status enum has exactly ONE tone map, defined once in `@<scope>/<ui-package>`. Modules import the map; they do not redefine it. Maps carry NO display text (`t()` stays in the widget); icon-bearing maps (`controllerHealthToTone`, `eventActionToTone`) pair the tone with a `lucide-react` icon (+ optional `pulse`). Categorical (non-status) palettes - `CATEGORY_COLORS`, `CARD_FORMAT_TYPE_COLORS`, `VENDOR_TYPE_COLORS`, `LED_COLOR_MAP`, `TYPE_ICONS`, `MODE_VARIANTS` - are intentionally NOT tone maps and stay domain-local.
+Each domain status enum has exactly ONE tone map, defined once in `@<scope>/<ui-package>`. Modules import the map; they do not redefine it. Maps carry NO display text (`t()` stays in the widget); icon-bearing maps (e.g. a health-state map) pair the tone with a `lucide-react` icon (+ optional `pulse`). Categorical (non-status) palettes - a `CATEGORY_COLORS`, a `<KIND>_TYPE_COLORS`, a `TYPE_ICONS` - are intentionally NOT tone maps and stay domain-local.
 
 ## AlertBanner
 
@@ -56,7 +56,7 @@ Each domain status enum has exactly ONE tone map, defined once in `@<scope>/<ui-
 
 ### Rule
 
-Tone-tinted inline notice box (icon + title/subtitle/children + optional trailing). `tone` (StatusTone), `density` (`default | sm | hint`). Replaces hand-written `rounded-md border bg-{tone}-50 dark:...` boxes and the former module-local `AlarmCallout` / `InfoHint` / `WarningHint`.
+Tone-tinted inline notice box (icon + title/subtitle/children + optional trailing). `tone` (StatusTone), `density` (`default | sm | hint`). Replaces hand-written `rounded-md border bg-{tone}-50 dark:...` boxes and any module-local callout or hint component.
 
 ### Anti-Pattern
 
@@ -114,18 +114,18 @@ Small circular swatch filled with an arbitrary CSS color (props: `color`, `size?
 
 | Field | Value |
 |-------|-------|
-| **Maps / fn** | `commandTypeToTone`, `resolveSyncResultStatusTone` (`@<scope>/<ui-package>/status`); `configChangeActionToTone`, `diffChangeToTone` (`@<scope>/<ui-package>/event`) |
+| **Maps / fn** | e.g. `commandTypeToTone`, `resolveResultStatusTone` (`@<scope>/<ui-package>/status`); `changeActionToTone`, `diffChangeToTone` (`@<scope>/<ui-package>/event`) |
 | **Source** | `packages/<ui-package>/src/status/tones.ts`, `packages/<ui-package>/src/event/event-tones.ts` |
 
 ### Rule
 
 Extends the [[Domain enum→tone maps (@<scope>/<ui-package>)]] set:
-- `commandTypeToTone` - sync `SyncCommandType` → `{ tone, icon }` (icon-bearing, like `eventActionToTone`): `PARTIAL_UPDATE`→info/RefreshCw, `FULL_DOWNLOAD`→warning/Download.
-- `resolveSyncResultStatusTone(value)` - a FUNCTION (not a Record map) because the backend types `resultStatus` as a free-form `string`; keyword-derived (`COMPLETED`/`ACKNOWLEDGED`→success, `FAILED`/`TIMEOUT`→danger, else neutral). The function form is the sanctioned exception to the "plain Record map" convention for free-form string fields.
-- `configChangeActionToTone` - `ConfigChangeAction` → `StatusTone` (INSERT→success, UPDATE→info, DELETE→danger, SYNC_EXECUTE→processing, FULL_DOWNLOAD→neutral).
+- `commandTypeToTone` - a command-type enum → `{ tone, icon }` (icon-bearing): e.g. `PARTIAL_UPDATE`→info/RefreshCw, `FULL_DOWNLOAD`→warning/Download.
+- `resolveResultStatusTone(value)` - a FUNCTION (not a Record map) because the backend types `resultStatus` as a free-form `string`; keyword-derived (`COMPLETED`/`ACKNOWLEDGED`→success, `FAILED`/`TIMEOUT`→danger, else neutral). The function form is the sanctioned exception to the "plain Record map" convention for free-form string fields.
+- `changeActionToTone` - a change-action enum → `StatusTone` (e.g. CREATE→success, UPDATE→info, DELETE→danger).
 - `diffChangeToTone` - `{ added: "success", removed: "danger" }` for bit/field diff direction.
 
-Modules import these; they do NOT redefine them. Adopted in sync-delivery-detail, audit-log/detail, event/detail-sections. See [[Status Tone System (STATUS_TONES + StatusBadge + StatusDot)]].
+Modules import these; they do NOT redefine them. See [[Status Tone System (STATUS_TONES + StatusBadge + StatusDot)]].
 
 ## Seed-driven tone classes (toneSlotClass + STATUS_TONE_CLASS_OVERRIDE)
 

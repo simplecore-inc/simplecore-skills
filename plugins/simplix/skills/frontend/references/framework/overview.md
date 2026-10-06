@@ -4,16 +4,18 @@
 
 > Define once. Derive everything.
 
-A CLI-scaffolded project is a **framework user**, not a re-implementer. It does NOT hand-call the
-generic simplix-react derivation primitives (`defineApi`, `deriveEntityHooks`,
-`deriveMockHandlers`, `simpleQueryBuilder` - grep = 0 across `packages/`, `apps/`,
-`modules/`). Instead it derives its API layer through **Orval codegen** wired to the
-`simplix-boot` profile. For the generic framework contract mechanics (full
+A CLI-scaffolded project is a **framework user**, not a re-implementer. On a codegen path it does
+NOT hand-call the generic simplix-react derivation primitives (`defineApi`, `deriveEntityHooks`,
+`deriveMockHandlers`, `simpleQueryBuilder`). It derives its API layer through the generator its
+config declares - **Orval codegen** (`simplix openapi`, the `orval` path) or **SimpliX Meta**
+(`simplix meta`, the `meta` path), both reading the `simplix-boot` profile - and which one runs is
+the detector's `codegen` (SKILL.md § Which generator this project runs). The sections below are
+written for the `orval` path; § The `meta` path says where it differs. For the generic framework contract mechanics (full
 `defineApi` / `deriveEntityHooks` / `deriveMockHandlers` signatures and type
 derivation), **see the simplix-react framework documentation** - those signatures live there and are
 maintained there, so this handbook does not re-document them.
 
-## Architecture (as wired on the codegen path)
+## Architecture (the `orval` path)
 
 ```
 OpenAPI spec (backend)  ──orval codegen──>  packages/domain-<name>/src/generated/
@@ -34,6 +36,15 @@ OpenAPI spec (backend)  ──orval codegen──>  packages/domain-<name>/src/g
   `createMockEntityStore(seeds)` and registers the generated `create<Entity>Handlers`.
 - See `scaffold/overview.md` for the end-to-end boot/Orval codegen path; see the
   simplix-react framework documentation for the underlying framework contract APIs.
+
+### The `meta` path
+
+`simplix meta` writes the domain's generated code into `src/generated-meta/`, and the package
+barrel exports its `hooks/` directly: there is no `src/generated/` and no `src/hooks/` re-export
+layer (SKILL.md invariant #1). `src/mutator.ts` with `getMutator("boot")` and the preserved
+`src/mock/seeds.ts` are the same files on both paths (invariants #2 and #30), so the envelope,
+the list adapter and the mock seeds below hold for it unchanged. Commands for both paths →
+`scaffold/overview.md`.
 
 ## How the codegen path derives its API layer
 
@@ -72,7 +83,7 @@ export async function customFetch<T>(url: string, options: RequestInit): Promise
 }
 ```
 
-The full boot envelope is `{ type: string; message: string; body: T; timestamp: string; errorCode?: string | null; errorDetail?: ErrorDetail | null }` - here, for a list, `body` is the `PagedResult` (so `body.content` is the rows). `type` is a plain string whose success literal is `"SUCCESS"` (NOT an enum); the list adapter `adaptOrvalList` reads the already-unwrapped `.body.content`. A non-`SUCCESS` type throws `ApiResponseError` (which carries `status` / `type` / `errorMessage` / `timestamp` / `errorCode` / `errorDetail`). If `mutator.ts` uses the default `getMutator()` instead of
+The full boot envelope is `{ type: string; message: string; body: T; timestamp: string; errorCode?: string | null; errorDetail?: ErrorDetail | null }` - here, for a list, `body` is the `PagedResult` (so `body.content` is the rows). `type` is a plain string whose success literal is `"SUCCESS"` (NOT an enum); the boot mutator hands React Query the unwrapped `body`, so a list hook's `data` is the page itself and `adaptOrvalList` reads its rows from `data.content`. A non-`SUCCESS` type throws `ApiResponseError` (which carries `status` / `type` / `errorMessage` / `timestamp` / `errorCode` / `errorDetail`). If `mutator.ts` uses the default `getMutator()` instead of
 `getMutator("boot")`, lists render empty - see `scaffold/overview.md` Common Issues.
 
 ### Mock layer - `createMockEntityStore` + generated handlers
@@ -134,10 +145,11 @@ import { createTestQueryClient, createTestWrapper, createMockClient, waitForQuer
 
 - File naming: kebab-case (`api-client.ts`, `use-query.ts`)
 - One domain package per backend domain (`domain-inventory`, `domain-<name>`)
-- Hooks are re-exported once per entity from `src/hooks/<entity>.ts` and barrelled in
-  `src/hooks/index.ts`; do not call `deriveEntityHooks` directly (Orval supplies them)
-- Pagination / sort params are produced by the Orval-generated request params; no
-  hand-written query-string assembly (the framework's `simpleQueryBuilder` is not used here)
+- On the `orval` path hooks are re-exported once per entity from `src/hooks/<entity>.ts` and
+  barrelled in `src/hooks/index.ts`; on `meta` the barrel exports `src/generated-meta/hooks/`
+  directly. Either way, do not call `deriveEntityHooks` directly (the generator supplies them)
+- Pagination / sort params are produced by the generated request params; no hand-written
+  query-string assembly (the framework's `simpleQueryBuilder` is not used on a codegen path)
 - The boot mutator (`getMutator("boot")`) unwraps `{ type: "SUCCESS", body }` and throws
   `ApiResponseError` on a non-`SUCCESS` type. (The framework's `defaultFetch` separately
   unwraps a `{ data: T }` envelope and throws `ApiError` - see the simplix-react framework documentation -
@@ -216,7 +228,7 @@ a silent correctness failure. Regression-test it by loading the module twice
 asserting the other sees it - including a React render whose provider and consumer come from
 different copies.
 
-## Running the workspace - four traps with no error message
+## Running the workspace - traps with no error message
 
 Each of these ends with a correct tree reading as a broken one.
 
@@ -226,13 +238,14 @@ Each of these ends with a correct tree reading as a broken one.
 - **Never build packages one at a time by hand.** Vite's dependency optimizer computes the
   graph from what is present when it starts, so a partial tree gives it a wrong answer and
   it fails on a package that is fine. `pnpm build` at the root, once.
-- **The dev server is HTTPS with a self-signed certificate**, so `curl http://<host>:<port>`
-  connects, receives nothing, and returns `000` with exit 52 - **byte for byte what a
-  stopped server returns**. A healthy server has been restarted on that reading. Probe a
-  real route over TLS instead (`curl -sk https://<host>:<port>/<route>`), and take the
-  origin from the `Local:` line the dev server printed rather than from memory. A browser
-  driver needs its ignore-certificate flag on the session's FIRST command - see the
-  `simplecore:board-to-app` skill's `references/driving-the-product.md`.
+- **Where the dev server is HTTPS with a self-signed certificate** (the project's dev
+  configuration says whether it is), `curl http://<host>:<port>` connects, receives nothing,
+  and returns `000` with exit 52 - **byte for byte what a stopped server returns**. A healthy
+  server has been restarted on that reading. Probe a real route over TLS instead
+  (`curl -sk https://<host>:<port>/<route>`), and take the origin from the `Local:` line the
+  dev server printed rather than from memory. A browser driver needs its ignore-certificate
+  flag on the session's FIRST command - see the `simplix:frontend-e2e` skill's
+  `references/browser-driving.md` § Environment.
 - **`add-domain` writes `workspace:*` for the framework's own extension packages.** When
   those come from the workspace catalogue rather than from `packages/`, `pnpm install`
   cannot resolve the generated line and refuses; change it to `catalog:`. The rest of the
@@ -299,7 +312,7 @@ export default defineConfig({
   codegen: { header: true },           // Auto-generated file header
   openapi: [                           // ARRAY — one entry per OpenAPI spec
     {
-      spec: "openapi.json",            // spec file path or URL (required)
+      spec: "openapi.json",            // spec file path or URL (required unless the entry declares `meta`)
       profile: "simplix-boot",         // bundles naming + responseAdapter
       domains: {                       // domainName → tag patterns (required)
         "inventory": ["inventory-*"],
@@ -312,8 +325,8 @@ export default defineConfig({
 > Valid top-level keys are `plugins` / `api` / `queryBuilder` / `packages` / `http` /
 > `codegen` / `i18n` / `openapi`. There is **NO** top-level `mock` key - mock-layer
 > behaviour comes from the per-spec `profile` (and from `src/mock/`), not config. The
-> `openapi` value is an **array** of per-spec configs (each needs `spec` + `domains`;
-> `profile` / `naming` / `responseAdapter` / `crud` are optional), never an object.
+> `openapi` value is an **array** of per-spec configs (each needs `domains`, and `spec` unless it
+> declares `meta`; `profile` / `naming` / `responseAdapter` / `crud` are optional), never an object.
 
 See [Configuration Reference](configuration.md) for full option details.
 
@@ -321,8 +334,8 @@ See [Configuration Reference](configuration.md) for full option details.
 
 Load `framework/*.md` when:
 
-- Understanding how a codegen project derives its API layer (Orval codegen + boot mutator)
-- Re-exporting or consuming the Orval-generated React Query hooks per domain
+- Understanding how a codegen project derives its API layer (Orval codegen or SimpliX Meta, plus the boot mutator)
+- Consuming the generated React Query hooks per domain
 - Wiring the mock layer (`createMockEntityStore` + generated handlers) with MSW
 - Configuring `simplix.config.ts` project settings (`openapi` array, `profile`)
 - Debugging the boot-envelope unwrap path (`getMutator("boot")`, `adaptOrvalList`)

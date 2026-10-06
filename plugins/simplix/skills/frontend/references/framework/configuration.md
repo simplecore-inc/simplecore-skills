@@ -61,7 +61,8 @@ export default defineConfig({
 
   // ── OpenAPI ────────────────────────────────────────────────
   // An ARRAY of spec configs. Each entry pulls one OpenAPI document and
-  // splits it into domain packages. `spec` and `domains` are required;
+  // splits it into domain packages. `domains` is required, and `spec`
+  // unless the entry declares `meta` (SimpliX Meta - see below);
   // `profile` / `naming` / `responseAdapter` / `crud` are optional.
   openapi: [
     {
@@ -143,7 +144,8 @@ When `true`, generated files include a header like:
 
 | Option | Type | Required | Description |
 | --- | --- | --- | --- |
-| `spec` | `string` | yes | URL or path to the OpenAPI document |
+| `spec` | `string` | yes, unless `meta` is set | URL or path to the OpenAPI document (the `orval` path, `simplix openapi`) |
+| `meta` | object | no | The SimpliX Meta source (the `meta` path, `simplix meta`) - § openapi[].meta below |
 | `domains` | `Record<string, string[]>` | yes | Domain name → operation/tag identifiers grouped into that package |
 | `profile` | `string` | no | Spec profile registered by a plugin (SimpliX backends use `"simplix-boot"`) |
 | `naming` | - | no | Naming overrides for generated symbols |
@@ -167,10 +169,21 @@ openapi: [
 
 When running `simplix openapi` or `simplix meta`, operations are grouped into domain packages based on these identifiers - the two read the same `domains` map. See the simplix-react framework documentation for the full `OpenAPISpecConfig` field reference.
 
+### openapi[].meta
+
+An entry with a `meta` block generates from SimpliX Meta through `simplix meta`, into each domain's `src/generated-meta/`. Which keys an entry declares decides the mode the detector reports (`SKILL.md` § Which generator this project runs): `meta` with no `spec` is `meta`, `spec` with no `meta` is `orval`, both is `both`. The keys this handbook relies on:
+
+| Key | What it is |
+| --- | --- |
+| `meta.source` | Where SimpliX Meta is read from. An entry that names it and drops `spec` puts every domain on SimpliX Meta |
+| `meta.export` | The domains whose barrel carries the SimpliX Meta half while the entry still declares `spec`; taking a domain out of it hands that domain back to `simplix openapi` |
+| `meta.snapshot` | The committed snapshot `simplix meta` compares the fetched document against - the sharper change gate SKILL.md invariant #29 describes, which registers a constraint or an access rule that never moved the OpenAPI document |
+
+The full field reference is the simplix-react framework documentation's.
+
 ## The config has no slot for a UI module
 
-`SimplixConfig` carries seven keys - `plugins` · `api` · `packages` · `http` · `codegen` ·
-`i18n` · `openapi` - and none of them names a module. `openapi[].domains` looks like the
+None of `SimplixConfig`'s top-level keys (listed at the top of this file) names a module. `openapi[].domains` looks like the
 place and is not: what it points at is `packages/domain-*`, the API side, and a UI module
 under `modules/` is registered somewhere else entirely.
 

@@ -15,7 +15,7 @@
 
 ## Forbidden Tags
 
-- `@deprecated` - project rule: delete deprecated code immediately
+- `@deprecated` - when documenting simplix-react itself, whose rule is to delete deprecated code immediately; a project with a deprecation policy follows its own
 - `@author` - use git blame
 - `@since` - use CHANGELOG
 
@@ -48,8 +48,9 @@ Document the public exports most visible in IDE tooltips first. Prioritize by ho
  * Derives type-safe React Query hooks from an API contract.
  *
  * @remarks
- * For each entity, generates 5 hooks (useList, useGet, useCreate, useUpdate, useDelete).
- * For each operation, generates a useMutation hook.
+ * For each entity, derives its hooks (useList, useGet, useCreate, useUpdate, useDelete, and
+ * the list and tree variants the entity supports).
+ * For each operation, derives a useMutation hook.
  * Mutation hooks automatically invalidate related queries.
  *
  * @typeParam TEntities - Mapping from entity names to EntityDefinition

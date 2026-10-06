@@ -28,7 +28,8 @@
  *   node scripts/check-interpolation-types.mjs --warn-only  # report, never fail
  *
  * Exit code 1 when a formatted placeholder is handed a value the checker types as anything but
- * a number, unless --warn-only is passed.
+ * a number, unless --warn-only is passed. Exit code 2 on an unrecognised option: a misspelt flag
+ * that fell through would audit the wrong tree, or grade it wrongly, and say nothing.
  */
 
 import fs from "node:fs";
@@ -36,8 +37,24 @@ import path from "node:path";
 import { execFileSync } from "node:child_process";
 import { createRequire } from "node:module";
 
+// Every option this script knows. `--root` is written `--root=<dir>` or `--root <dir>`.
+const BOOLEAN_FLAGS = ["--json", "--warn-only"];
 const args = process.argv.slice(2);
-const ROOT = path.resolve(args.find((a) => a.startsWith("--root="))?.slice(7) ?? process.cwd());
+let rootArg;
+const unknown = [];
+for (let i = 0; i < args.length; i++) {
+  const a = args[i];
+  if (BOOLEAN_FLAGS.includes(a)) continue;
+  if (a.startsWith("--root=")) rootArg = a.slice("--root=".length);
+  else if (a === "--root" && i + 1 < args.length) rootArg = args[++i];
+  else unknown.push(a);
+}
+if (unknown.length) {
+  console.error(`\u2716 unrecognised option: ${unknown.join(" ")}`);
+  console.error(`  known options: ${BOOLEAN_FLAGS.join("  ")}  --root=<dir>`);
+  process.exit(2);
+}
+const ROOT = path.resolve(rootArg ?? process.cwd());
 const asJson = args.includes("--json");
 const warnOnly = args.includes("--warn-only");
 

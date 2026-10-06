@@ -56,14 +56,15 @@ const header = onClose ? <Heading level={4} tone="muted">{isEdit ? `${values.las
 
 #### 3. Detail FK Field Resolution
 
-FK fields (ending with `Id`) MUST display the nested object's `.name` instead of the raw UUID. Backend DTOs provide dual fields: `categoryId` (string) + `category` (nested object with `{ id, name }`).
+FK fields (ending with `Id`) MUST display the nested object's `.name` instead of the raw UUID. Backend DTOs provide dual fields: `categoryId` (string) + `category` (nested object with `{ id, name }`). The name is drawn through the referenced entity's peek label wherever its detail component exists (SKILL.md invariant #66), and what is handed over is the raw nullable name - never the id, which rule 5 below covers when the name is absent.
 
 ```tsx
-// REQUIRED — Nested object name with ID fallback
-value={displayData.category?.name ?? String(displayData.categoryId ?? "")}
+// REQUIRED - Nested object name, passed nullable so the field draws its own no-value badge
+value={displayData.category?.name}
 
-// FORBIDDEN — Raw UUID display
+// FORBIDDEN - Raw UUID display, alone or as the fallback behind the name
 value={String(displayData.categoryId ?? "")}
+value={displayData.category?.name ?? String(displayData.categoryId ?? "")}
 ```
 
 When nested object is not available (e.g., form `RootValues` only has ID), pass name from parent component as a separate prop.
@@ -88,11 +89,13 @@ Delete dialog MUST display entity name, not UUID. When display field is null/und
 
 #### 5. Fallback Values
 
-When a referenced entity name is unavailable, use em-dash `"—"` as fallback, NEVER the raw UUID.
+When a referenced entity name is unavailable, pass the nullable name and let the component draw the fallback - a `DetailFields.*` field its `EmptyValueBadge`, a table cell or other compact context `EmptyValue` (`states-and-fallbacks.md`) - NEVER the raw UUID, and never a hand-written dash literal.
 
 ```tsx
-// REQUIRED
-value={data.parent?.category?.name ?? "—"}
+// REQUIRED - detail field: the raw nullable name
+value={data.parent?.category?.name}
+// REQUIRED - compact cell
+{data.parent?.category?.name ?? <EmptyValue />}
 
 // FORBIDDEN
 value={data.parent?.category?.name ?? data.parent?.categoryId}
@@ -101,7 +104,7 @@ value={data.parent?.category?.name ?? data.parent?.categoryId}
 **Exception - picker option labels**: select/picker
 OPTION labels may fall back to the id (`item.name ?? item.id ?? ""` - the SearchPopover pattern),
 since a picker item must remain identifiable and selectable even when unnamed. Table cells,
-detail fields, and headers still follow the em-dash rule above.
+detail fields, and headers still follow the fallback rule above.
 
 ### HBS Template Patterns (Scaffolding)
 
@@ -263,8 +266,10 @@ auditData?: AuditData;
 
 ### Anti-Pattern
 
+A detail **with no tabs**:
+
 ```tsx
-// FORBIDDEN — AuditFooter as children (causes width mismatch in dialog and position drift)
+// FORBIDDEN - AuditFooter as children of an untabbed detail (causes width mismatch in dialog and position drift)
 <CrudDetail>
   <CrudDetail.Section>...</CrudDetail.Section>
   <CrudDetail.AuditFooter auditData={...} />
@@ -275,6 +280,8 @@ auditData?: AuditData;
   <CrudDetail.Section>...</CrudDetail.Section>
 </CrudDetail>
 ```
+
+A **tabbed** detail is the other shape: `CrudDetail.AuditFooter` goes at the end of the FIRST tab's panel and nowhere else, because on the root the record's stamps render under every tab (SKILL.md invariant #72; the audit's `audit-strip-outside-the-first-tab` enforces it).
 
 ### HBS Template
 
@@ -378,7 +385,7 @@ const header = onClose ? <UserHeading userId={String(data.userAccountId ?? "")} 
 // FORBIDDEN — bare text render of a user name where the user id is in scope
 {({ row }) => nameOf(String(row.userAccountId ?? ""))}
 // FORBIDDEN — hand-built <img> against the avatar endpoint (no 404 fallback, no cache-busting contract)
-<img src={`/api/v1/public/user/${id}-avatar-sm.png`} />
+<img src={`${AVATAR_ENDPOINT}/${id}`} />
 // FORBIDDEN — module-local re-implementation of the current-user avatar assembly
 const url = userId && avatar?.attachmentId ? getUserAvatarUrl(userId, { size: "sm", version: avatar.attachmentId }) : DEFAULT_USER_AVATAR_URL;
 ```
@@ -392,7 +399,12 @@ const url = userId && avatar?.attachmentId ? getUserAvatarUrl(userId, { size: "s
 
 ### Rule
 
-A cross-detail reference opens the referenced record in a `DetailPeekDialog`; its trigger is always `PeekTriggerButton`, never a hand-rolled `<Button>` with a `stopPropagation` closure. Two forms via the `appearance` prop, and **one question decides which: does the trigger stand alone in its own region, or sit at the end of a value?** Standing alone - a card, a `CrudDetail.ActionFooter` action row - it takes `"inline"` (outline button carrying the label and the icon), because nothing precedes it to say what it opens. At the end of a value - `DetailFieldWrapper`, `CrudList.Column`, `DetailListRow`, a `CrudDetail.Section` header `trailing` slot - it takes the default `"icon"` (icon-only ghost button, label as tooltip and accessible name), because the word takes the width the value needs and truncates the name the row exists to show. Both misreadings have been made: 「the label is for cards」 leaves a footer of identical glyphs nobody can tell apart, and 「the label is for anything with a label beside it」 puts a button at the end of every detail row. A separate `tight` prop decides whether the control hugs the value in front of it; it defaults to the shape (`"icon"` hugs, `"inline"` does not) and is overridden only for an icon in a trailing slot, where nothing precedes it. Every trigger passes `target` - what it opens, as a person reads it - and an icon-only one must: with the label gone, `aria-label` is all a screen reader has, and one panel holds several triggers whose label is the same word. The name becomes 「남부현장 보기」 rather than the fourth 「보기」 on the screen. Both draw the external-link icon - the dialog is a window onto another record, and an eye says 「read-only」, which is a different promise - and both stop row-click propagation. A module-local icon-only peek button is a duplicate - use `appearance="icon"`.
+A cross-detail reference opens the referenced record in a `DetailPeekDialog`; its trigger is always `PeekTriggerButton`, never a hand-rolled `<Button>` with a `stopPropagation` closure. Which form a place takes, and why, is SKILL.md invariant #66 (full form in `invariants.md`); this entry is the component's contract:
+
+- **`appearance`** - `"inline"` (outline button carrying the label and the icon) or the default `"icon"` (icon-only ghost button, label as tooltip and accessible name).
+- **`tight`** - whether the control hugs the value in front of it. It defaults to the shape (`"icon"` hugs, `"inline"` does not) and is overridden only for an icon in a trailing slot, where nothing precedes it.
+- **`target`** - what it opens, as a person reads it; it becomes the accessible name of an icon-only trigger, which must pass it.
+- Both forms draw the external-link icon - the dialog is a window onto another record, and an eye says 「read-only」, which is a different promise - and both stop row-click propagation. A module-local icon-only peek button is a duplicate - use `appearance="icon"`.
 
 ## usePeekTarget (peek open/close state machine)
 

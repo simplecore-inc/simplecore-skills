@@ -29,17 +29,22 @@ interface EditorProps {
 
 ## 3. usePageHeader Patterns
 
-Four patterns found across pages:
+Header patterns:
 
 ### A. Standard conditional (e.g., product, category)
 
 ```tsx
+// the create action is gated on its endpoint's permission on BOTH variants (invariant #52)
+const canCreate = useCan("create", SUBJECTS.<screenKey>);
 usePageHeader((() => {
   if (variant === "page") {
     if (view === "new") return { title: t("entity.new") };
     if (view === "edit") return { title: t("entity.edit") };
     if (view === "detail") return { title: t("entity.detail") };
-    return { title: t("entity.list"), actions: <Button>Add</Button> };
+    return {
+      title: t("entity.list"),
+      actions: canCreate ? <Button onClick={handleAdd}>{t("common.add")}</Button> : undefined,
+    };
   }
   return { title, description, actions };
 })());
@@ -65,8 +70,8 @@ usePageHeader({ title: t("entity.title"), description: t("entity.description") }
 
 ## 4. ListDetail Sizing Guide
 
-- Default: `detailWidth={480}` for standard detail/form panels
-- Override `listWidth` only when list needs specific size (e.g., `listWidth={380}` for compact list with wide editor)
+- The detail's width is not set per screen: the panel, the drawer and the dialog share one measure (invariant #69), and a product that needs another changes it once on `UIProvider`'s `defaults` (invariant #67)
+- Pass `detailWidth` or `listWidth` (e.g., `listWidth={380}` for a compact list beside a wide editor) only with the reason written at that line, as any departure from the generated shape is (#67)
 - Do NOT set both unless explicitly needed
 - **`ListDetail` splits the height that is left**, so a page that stacks status cards, a
   banner and a description table above it hands both panels very little - and opening the

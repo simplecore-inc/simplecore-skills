@@ -75,13 +75,14 @@ const peek = usePeekHost();
 
 ```tsx
 <CrudDetail.Section title={t("<entity>.sectionMain")} variant="flat" layout="two-column">
-  <DetailFields.DetailTextField label={fieldLabel("code")} value={String(data.code ?? "")} layout="inline" />
+  {/* the raw nullable value, so an absent one reaches the field's no-value badge */}
+  <DetailFields.DetailTextField label={fieldLabel("code")} value={data.code} layout="inline" />
   <DetailFieldWrapper label={fieldLabel("active")} layout="inline"><BooleanBadge value={!!data.active} /></DetailFieldWrapper>
 </CrudDetail.Section>
 
 {data.description ? (
   <CrudDetail.Section title={fieldLabel("description")} variant="flat" className="pt-3">
-    <DetailFields.DetailBlockField value={String(data.description)} />
+    <DetailFields.DetailBlockField value={data.description} />
   </CrudDetail.Section>
 ) : null}
 ```
@@ -94,30 +95,24 @@ const peek = usePeekHost();
 ### Embedded record lists
 
 - **The detail embeds a collection - does it grow?** → that one question picks the shape (invariant #71). A set that will never have more rows than it has today (a catalogue, an enum, a matrix, the modes an enum fixes) is a **bordered card with no pager**. A set a person adds to (a history, the accounts holding a role, sessions, grants, declared items) is a **list wherever it sits**: `CrudList` with the total, the search, the filters, sortable headers and the pager, bound to the parent with `adaptForcedList`. A pager under a bordered row list - `CrudDetail.List` / `CrudDetail.Table` and nothing else - is the shape this rule exists to remove: it proves the collection grows and then withholds every way of finding a row in it.
-- **A bordered `DetailList` is the shape for the FIXED case**, one row per record, each row `border-b px-4 py-2 last:border-b-0`, each row linking out (peek) to its own page. This is the standard "card-style list", distinct from a two-column field grid.
-- **The component AND the row class are the contract - visual resemblance is not conformance.** A block that *already looks like* a bordered list but is a hand-rolled `Stack` / `Flex` with `border-b border-border/50`, `py-1.5`, or any ad-hoc padding is **NOT compliant** and must be converted to `DetailList` + the exact `border-b px-4 py-2 last:border-b-0` row class - do not pass it over as "already a bordered list" and touch only its spacing. Every embedded record list on the panel renders through the same `DetailList`, so two lists on sibling screens (or two in one panel) never diverge in padding or divider tone. Grep the panel for `border-b` rows outside a `DetailList` before declaring the pass done.
+- **A bordered `DetailList` is the shape for the FIXED case**, one `DetailListRow` per record, each row linking out (peek) to its own page. This is the standard "card-style list", distinct from a two-column field grid.
+- **The components are the contract - visual resemblance is not conformance.** A block that *already looks like* a bordered list but is a hand-rolled `Stack` / `Flex` with `border-b border-border/50`, `py-1.5`, or any ad-hoc padding is **NOT compliant** and must be converted to `DetailList` + `DetailListRow`, whose row geometry the registry owns (`../audit/registry/identity-and-detail-fields.md` § DetailListRow / DetailList) - do not pass it over as "already a bordered list" and touch only its spacing. Every embedded record list on the panel renders through the same pair, so two lists on sibling screens (or two in one panel) never diverge in padding or divider tone. Grep the panel for `border-b` rows outside a `DetailList` before declaring the pass done.
 
 ### Referenced records link out - every FK is navigable
 
 - **A field holds a reference to another record (an FK, or an id resolved to a name - user, site, org, policy, device, category)?** → it is NOT plain text. Render it as a peek link to that record, the same as a list cell does. Resolving the id to a name and printing it through `DetailTextField` is a defect: every reference the screen shows must be navigable to the referenced record. This holds on **every** surface - detail rows, card facts, embedded list rows - not just list columns.
-- Use the shared label for the entity where one exists (`UserPeekLabel` for a user account; a domain `*PeekLabel` for a domain entity). Where none exists yet, **build one shared component** (module `shared/ui` for a single-module entity; the project UI package for a cross-module one) - a per-screen inline `usePeekTarget` + `DetailPeekDialog` copy is the thing you extract, not the thing you ship (invariant #23). The first screen that needs a new entity's peek creates its `*PeekLabel`; the rest import it.
+- Use the shared label for the entity where one exists (`UserPeekLabel` for a user account; a domain `*PeekLabel` for a domain entity). Where the label is missing but the entity's detail component exists, **build one shared component** (module `shared/ui` for a single-module entity; the project UI package for a cross-module one) - a per-screen inline `usePeekTarget` + `DetailPeekDialog` copy is the thing you extract, not the thing you ship (invariant #23). The first screen that needs a new entity's peek creates its `*PeekLabel`; the rest import it. Until the referenced entity's detail component exists, the field renders the name without a trigger (invariant #66).
 - Every surface uses the same label with the same wiring - the peek host mounts the dialog, so a detail row, a card fact, and a list cell are written identically (invariant #45).
 - **Sweep the panel before declaring done**: any `fieldLabel(...Id)` row whose value is a resolved name rendered as text (`nameOf(...)`, `*Name(...)`, `DetailTextField value={...Name}`) is an un-linked reference - convert it.
 
 ### Dates and times are never formatted inline
 
-- **A temporal value rendered anywhere on the screen?** → it goes through the shared date components, never a hand-rolled string. Formatting inline - `formatDateTime(new Date(x), …)`, `datePart(String(x))`, `String(x).slice(0, 5)`, `toLocaleDateString()` - is a defect on every surface (list cell, card, detail row, dialog, caption). Pick by semantic kind (invariant #42):
-
-| Kind | Field row (detail) | Inline (cell / card / dialog / caption) |
-| --- | --- | --- |
-| Absolute instant (RFC 3339) | `DetailDateField format="datetime"` + `displayZone` | `<InstantText value={x} displayZone={zone} />` |
-| Calendar date (bare `yyyy-MM-dd`) | `DetailDateField format="date"` | `<CalendarDateText value={x} />` |
-| Wall-clock time (`HH:mm[:ss]`) | `DetailFieldWrapper` + `WallClockText` | `<WallClockText value={x} />` |
+- **A temporal value rendered anywhere on the screen?** → it goes through the shared date components, never a hand-rolled string. Formatting inline - `formatDateTime(new Date(x), …)`, `datePart(String(x))`, `String(x).slice(0, 5)`, `toLocaleDateString()` - is a defect on every surface (list cell, card, detail row, dialog, caption). Pick the component by semantic kind from the table `datetime-fields.md` § Display by kind owns (invariant #42).
 
 - **Why it matters beyond consistency**: a hand-rolled formatter silently drops the viewer's locale (`formatDateTime(d, undefined, zone)` renders one fixed locale for everyone), and `slice(0, 5)` / `datePart` bypass locale ordering entirely. The components read the active locale and the explicit display zone, so the same value reads correctly for every viewer.
 - **Fallbacks belong to the component** - `<CalendarDateText value={x} fallback={t("...openEnded")} />` instead of a ternary that formats one branch and prints a label in the other.
 - **Legitimate non-display uses stay** - `datePart()` producing a bare `yyyy-MM-dd` for a **form prefill value** or for a **date comparison** is data, not display; keep it and let the rendered output go through a component. Everything a user reads is a component.
-- **Sweep before declaring done**: grep the touched module for `datePart(`, `slice(0, 5)`, `formatDateTime(`, `toLocale`; every remaining hit must be a prefill or a comparison, never something rendered.
+- **Sweep before declaring done**: grep the touched module for `datePart(`, `slice(0, 5)`, `formatDateTime(`, `toLocale`; every remaining hit must be a prefill, a comparison, or the one rendered use `datetime-fields.md` allows - a bare `datePart(x)` of a `LocalDate` handed to something that takes only a string (a `t()` interpolation).
 
 ### Field rows
 
@@ -125,7 +120,7 @@ const peek = usePeekHost();
 - **A nullable enum row?** → render it with `DetailFields.DetailBadgeField` (`value={resolveBootEnum(x) || null}` + `displayValue` + the module variant map), never a bare module badge shell inside a `DetailFieldWrapper` - the shell returns `null` for an absent value and leaves a silently blank row while sibling rows show the shared no-value badge.
 - **Badge size** → omit `size` on detail badges so they match the list (invariant #43); never enlarge a detail/form badge.
 - **Custom-rendered value?** → `DetailTextField` has no `children`; compose the value inside a `DetailFieldWrapper` (invariant #44).
-- **Audit footer** → pass the panel's `displayZone` (the site zone for site-scoped screens); stamps render locale-aware in that zone (invariant #42).
+- **Audit footer** → pass the panel's `displayZone` (the record's display zone on zone-scoped screens - `datetime-fields.md`); stamps render locale-aware in that zone (invariant #42).
 
 ---
 
@@ -164,7 +159,7 @@ the same screen the survey cannot see. Count the input controls themselves: `<in
 - **A card component (`variant="card"`) - is it the right owner?** → the card treatment is for a summary of **another** record referenced by this screen. A record's own primary information stays **flat** (a plain section), never wrapped in a card of itself.
 - **Facts inside a card?** → lay them two-to-a-row as well (`<Grid columns={2} gapX="lg" divider>`), matching the detail's two-column density; one fact per line pushes the card past the fold on a panel-width surface.
 - **A full-width fact belongs with a card's two-column facts (e.g. check-in / check-out instants)?** → render it **after the two-column grid closes**, not inside it - a timestamp read next to an unrelated column reads as a value of that column. Expose a dedicated slot (e.g. `trailingFacts`) rather than smuggling it into the grid.
-- **Action buttons on a card / panel footer?** → make them fill the width evenly (`[&>*]:flex-1`, or equal `w-` classes), not a ragged left-packed row.
+- **Action buttons on a card's own action row?** → make them fill the width evenly (`[&>*]:flex-1`, or equal `w-` classes), not a ragged left-packed row. A panel footer is not this: it uses the framework footer (`CrudDetail.DefaultActions` / `CrudDetail.ActionFooter`, `EditorFooter`), Close or Back on the left and the action group on the right (invariant #65).
 - **Two sibling sub-blocks in one card (e.g. items and vehicles)?** → separate them with a rule **only when both render** - put `border-t pt-3` on the second block, gated on the first being present, so a lone block never carries a dangling line.
 
 ---
