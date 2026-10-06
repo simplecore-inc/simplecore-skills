@@ -18,14 +18,16 @@
  *
  * Scope guard: the checks run only for a project that opted in by writing
  * `.claude/board-parity-walk.json` (discovered by walking up from the edited
- * file). Every other project never sees any output from this hook.
+ * file). Every other project never sees any output from this hook. Every pair
+ * of documents the config declares is checked - the top-level pair, and each
+ * board's own under `boards`.
  *
  * Exit codes: 0 = silent pass (not applicable, or clean),
  *             2 = findings reported on stderr, fed back to Claude.
  */
 import {existsSync, readFileSync} from 'node:fs';
 import {dirname, relative, resolve} from 'node:path';
-import {CONFIG_NAME, documentPath, findParityConfig} from './parity-config.mjs';
+import {CONFIG_NAME, documentRole, findParityConfig} from './parity-config.mjs';
 
 /**
  * A completion marker is a LIST STRUCTURE, never a word.
@@ -148,8 +150,9 @@ function main() {
   let payload;
   try {
     payload = JSON.parse(readFileSync(0, 'utf8'));
-  } catch {
-    return 0; // no parseable hook input; nothing to audit
+  } catch (error) {
+    if (error instanceof SyntaxError) return 0; // no parseable hook input; nothing to audit
+    throw error;
   }
 
   const filePath = payload?.tool_input?.file_path;
@@ -167,23 +170,23 @@ function main() {
   }
 
   const {config} = found;
-  const at = (key) => documentPath(found, key);
+  const declared = documentRole(found, abs);
+  if (!declared) return 0;
   const lines = readFileSync(abs, 'utf8').split('\n');
 
   let findings = [];
   let role = null;
-  if (abs === at('parityList')) {
+  if (declared.key === 'parityList') {
     role = 'parity list';
     findings = auditParityList(lines, config.parkedSection);
-  } else if (abs === at('handoverFile')) {
+  } else {
     role = 'handover file';
     const extra = Array.isArray(config.narrativePhrases)
       ? config.narrativePhrases.filter((p) => typeof p === 'string' && p.length > 0)
       : [];
     findings = auditHandoverFile(lines, extra);
-  } else {
-    return 0;
   }
+  if (declared.board) role = `${role} of board ${declared.board}`;
 
   if (findings.length === 0) return 0;
 

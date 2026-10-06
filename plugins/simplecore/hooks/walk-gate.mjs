@@ -14,10 +14,11 @@
  *   PostToolUse  matcher "Write|Edit|MultiEdit"  : walk-gate.mjs touch
  *   Stop                                         : walk-gate.mjs check
  *
- * "mark-agent" records that a subagent ran. "touch" records that frames were REMOVED from the
- * parity list - which is what walking a frame does, and what neither filling the list from the
- * board nor settling a parked decision does. "check" blocks once when frames left the list and no
- * subagent ever ran.
+ * "mark-agent" records that a subagent ran. "touch" records that items were REMOVED from a parity
+ * list the config declares - the top-level one, or a board's own under `boards`. Walking a frame
+ * removes one, and so does settling a parked decision, which is why the block names that case as
+ * a reason the session may give; filling the list from the board and recording a parked decision
+ * only add lines. "check" blocks once when items left a list and no subagent ever ran.
  *
  * It blocks AT MOST ONCE per session, and only for a project that opted into a walk by writing
  * `.claude/board-parity-walk.json`. A project turns it off with `{"walkGate": false}` in
@@ -27,15 +28,16 @@
  */
 import {readFileSync} from 'node:fs';
 import {dirname, relative, resolve} from 'node:path';
-import {documentPath, findParityConfig} from './parity-config.mjs';
+import {documentRole, findParityConfig} from './parity-config.mjs';
 import {gateEnabled} from './project-config.mjs';
 import {hasMarker, readMarker, setMarker} from './session-marker.mjs';
 
 function readInput() {
   try {
     return JSON.parse(readFileSync(0, 'utf8'));
-  } catch {
-    return null;
+  } catch (error) {
+    if (error instanceof SyntaxError) return null;
+    throw error;
   }
 }
 
@@ -80,7 +82,7 @@ if (mode === 'touch') {
   const abs = resolve(input.cwd || process.cwd(), filePath);
   const found = findParityConfig(dirname(abs));
   if (!found?.config) process.exit(0);
-  if (abs !== documentPath(found, 'parityList')) process.exit(0);
+  if (documentRole(found, abs)?.key !== 'parityList') process.exit(0);
   if (itemsRemoved(input.tool_input) <= 0) process.exit(0);
 
   // The marker carries the list's path, so the block can name the document it is about.
