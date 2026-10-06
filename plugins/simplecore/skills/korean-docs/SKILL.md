@@ -54,10 +54,11 @@ not offer to create it.
 **An audit that was asked for is finished in one go.** 「감사해 줘」 means 「find it and fix it」.
 
 - Run `sweep`. It verifies the rule pack, then runs every check - `check` · `rules` · `suspects` ·
-  `audit` when resource kinds are declared · the lens count - and closes with what reached what: the file count, the glossary
-  and sentence rule counts, and whether the lens loaded. Read that line before reading any zero as
-  a pass; a zero over zero files is not a pass. When running one command on its own, insert a
-  deliberate violation, confirm the check reaches it, and delete it.
+  `audit` when resource kinds are declared · the lens, listing its first candidates - and closes
+  with what reached what: the file count, the glossary and sentence rule counts, and whether the
+  lens loaded. Read that line before reading any zero as a pass; a zero over zero files is not a
+  pass. When running one command on its own, insert a deliberate violation, confirm the check
+  reaches it, and delete it.
 - Fix each finding when it is found, then report. Do not stop because the count is large, because
   the types are varied, because a new rule has to be registered, or because the skill repository
   has to be edited. Do not end a turn with 「진행할까요」 · 「어느 쪽으로 할까요」.
@@ -69,7 +70,8 @@ not offer to create it.
   swept eight reports in a day, read `Clean` eight times, and never opened the ten candidates
   listed above it; `가족` for a font family was among them every time, and it reached the user.
   **A lens candidate is read the moment it is printed**, and a reply is not sent while one stands
-  unread.
+  unread. The summary's lens row and the closing line say how many stand; when the sweep lists
+  only the first of them, `lens` with the same paths lists every one.
 - A type you find goes into the rule pack or the lens in the same change, and the sweep runs again
   across the repository.
 - Drive errors to zero; fix warnings one by one or write down why each stays. Re-check the
@@ -81,7 +83,7 @@ not offer to create it.
 There is one tool.
 
 ```bash
-T="$HOME/.claude/skills/simplecore/skills/korean-docs/scripts/l10n.mjs"
+T="${CLAUDE_PLUGIN_ROOT}/skills/korean-docs/scripts/l10n.mjs"
 node "$T" sweep [paths...]   # every check in one run, closed by what reached what
 node "$T" check [paths...]   # glossary audit alone (the write-time hook's first run)
 node "$T" rules [paths...]   # sentence-rule sweep alone (the hook's second run); --test verifies the pack
@@ -112,9 +114,9 @@ Register a term in the project glossary **immediately** when any of these holds:
 
 **Glossary or rule pack.** If the thing to ban conjugates, or if an exception separating it from
 legitimate use has to be written down, it belongs in the rule pack (hit/miss examples required);
-otherwise it belongs in the glossary. After registering, compare the result with `--list-rules`,
-and when a standard translation changed or a banned spelling was added, re-run the full audit in the
-same session.
+otherwise it belongs in the glossary. After registering, compare a glossary row with
+`check --list-rules` and prove a pack rule with `rules --test`, and when a standard translation
+changed or a banned spelling was added, re-run the full audit in the same session.
 
 **Do not decide alone when it is uncertain.** That means two or more candidates with neither
 settled, an unfamiliar domain convention, or a change to a standard already registered. Apply the
@@ -147,6 +149,8 @@ fix that cause, then register, and say in the report which of the three it was.
 - Diagram code blocks (mermaid and the like) keep their labels in the source language. A rendered
   `.svg` is the opposite: its `<text>` is audited and fixed.
 - Product names, language names, abbreviations (the 「원문 유지 용어」 table of the project glossary).
+  A speaker script is the exception: it writes them as they are pronounced, inside a span marked
+  as spoken ([references/audit-tooling.md](references/audit-tooling.md), "A speaker script").
 - Any span wrapped in `l10n:quote`.
 
 ## Common rationalizations

@@ -1,7 +1,7 @@
 # AI tells - staging instead of stating
 
 Structural habits that make Korean prose read as machine-written. Read this when writing,
-proofreading, or reviewing any Korean output; the sentence standard is
+proofreading, or reviewing any Korean document; the sentence standard is
 [response-style.md](response-style.md) and the translation-ese catalogue is
 [korean-style.md](korean-style.md). This file owns the shapes that survive a clean audit.
 
@@ -192,8 +192,9 @@ noun sound analytic, and the sentence loses the actual object.
 ### 11. Passive voice and the missing actor
 
 **Why it is a tell.** The text hides who acts, or drops the subject entirely. Korean double passives
-(`되어진다` · `보여집니다`) are caught by the glossary; what is left for the reader is the single
-passive that hides the actor. Use the active voice when it makes the actor and the action clearer.
+(`되어진다` · `보여집니다`) are caught by the rule pack (`double-passive`); what is left for the
+reader is the single passive that hides the actor. Use the active voice when it makes the actor and
+the action clearer.
 *Weak alone.*
 
 - `설정 파일은 필요하지 않습니다. 결과는 자동으로 보존됩니다.` → `설정 파일은 없어도 됩니다. 결과는 시스템이 자동으로 저장합니다.`
@@ -377,9 +378,9 @@ aside or self-correction.
 
 | Tell | Where it is caught |
 | --- | --- |
-| §1 · §3 · §4 · §5 · §13 · §16 · §17 · §22 · §23 fixed phrases | rule pack (`rules`) |
-| §12 vocabulary, §11 double passives | glossary (`check`) |
-| §2 · §6 · §7 · §14 · §15 · §19 · §24 shapes | the reader, via [ui-copy-sweep.md](ui-copy-sweep.md) and the lens |
+| §1 · §4 · §5 · §13 · §16 · §17 · §22 · §23 fixed phrases, in the forms the rules enumerate; §11 double passives; from §12, `획기적인` and the riders `부각하다` · `조명하다` | rule pack (`rules`) |
+| §3 `본질적으로`; §12 `강력한` three or more times in one file | glossary (`check`) |
+| the rest of §3 and §12, and the §2 · §6 · §7 · §14 · §15 · §19 · §24 shapes | the reader, via [ui-copy-sweep.md](ui-copy-sweep.md) and the lens |
 | §8 two dashes in one sentence, §9 stacked hedges | `suspects` |
 
 A rule sees the enumerated form only, so zero findings is not a clean text: §2, §6, §7, §19 and §24

@@ -1,17 +1,17 @@
 ---
 audit:
-  # `rules` honours this list too, so the two commands judge one file set.
+  # `rules` reads this list with the matcher `check` uses, so it removes the same files from both.
   #
   # Three reference files are catalogues of the very phrasings they ban. Their banned SPELLINGS
   # sit in code spans, so the glossary check reads all three clean - what cannot go into a code
   # span is a banned SENTENCE: every `금지 → 대체` row writes both sides as ordinary prose, and
   # masking the right-hand side would hide the copy a reader is meant to reuse. The sentence-rule
-  # pack matches on exactly that, so judging the three against themselves adds 115 findings to
-  # `rules`, every one of them a catalogue row, and buries the eight that are real.
+  # pack matches on exactly that, so judged against themselves the three would report every
+  # catalogue row and bury the findings that are real.
   #
-  # This list narrows the SCAN, never a write. An explicitly named path is always audited, and the
-  # write-time hook names the file it just wrote - so an edit to any of these three is still
-  # checked as it is made, which is where a newly added bare specimen shows up.
+  # The list reaches a named file as well as a scan. `check` and `rules` skip any of these three
+  # when it is named and print it as skipped, and the write-time hook passes an edit to one of them
+  # silently, so a bare specimen added to one of them is found by reading it, not by the hook.
   #
   # What is NOT excluded and still reports is `references/reading-lens.md` - its family tables ARE
   # the banned stems, and the prose around them is checked, so the hits from those lines are read

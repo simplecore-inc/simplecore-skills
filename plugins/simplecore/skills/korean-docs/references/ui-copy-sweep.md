@@ -46,7 +46,7 @@ When the volume is large, pull candidates with the lens ([reading-lens.md](readi
 those in filename order first, then sweep what the lens did not catch. The lens is a stem list, not
 a check, so everything gets read in the end.
 
-Judge each sentence on ten questions.
+Judge each sentence on these questions.
 
 1. Does a first-time reader get the meaning in one pass?
 2. Is this what business software actually says?
@@ -179,8 +179,8 @@ judgement standard.
 2. The project's gate checks.
 3. Regenerating the artifacts (boards, bundles).
 4. Whitespace and conflict-marker checks on the diff.
-5. All four audit commands (`check` · `rules` · `audit` · `suspects`). Stage new files before
-   auditing. `check` alone at zero is not a pass.
+5. `sweep`, which runs the pack test, `check` · `rules` · `suspects` · `audit` (when kinds are
+   declared) and the lens in one run. `check` alone at zero is not a pass.
 
 If you were asked to skip the visual review, do not launch a browser and say so in the final report.
 

@@ -21,10 +21,10 @@
  * Rule sources, merged before auditing:
  *   1. The base glossary bundled with this skill (../GLOSSARY.base.md) -
  *      project-independent orthography and translation-ese rules.
- *   2. The project glossary, discovered by walking up from cwd and checking
- *      <dir>/.claude/GLOSSARY.md (default location) then <dir>/GLOSSARY.md
- *      in each directory. The directory that holds the glossary becomes the
- *      project root for path resolution.
+ *   2. The project glossary, discovered by walking up from the first path named
+ *      (cwd when none is) and checking <dir>/.claude/GLOSSARY.md (default
+ *      location) then <dir>/GLOSSARY.md in each directory. The directory that
+ *      holds the glossary becomes the project root for path resolution.
  *
  * A project glossary customizes the base rules:
  *   - A "용어 대역표" row whose 영어 key matches a base row replaces it.
@@ -72,31 +72,12 @@
  */
 
 import {fileURLToPath} from 'node:url';
-import {initGlossary, runDocAudit} from './lib/doc-audit.mjs';
+import {initGlossary, parseCheckArgs, runDocAudit} from './lib/doc-audit.mjs';
 
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
 
-function parseArgs(argv) {
-  const args = {all: false, strict: false, untranslated: false, noBase: false, listRules: false, init: false, glossary: null, paths: []};
-  for (let i = 0; i < argv.length; i++) {
-    const a = argv[i];
-    if (a === '--all') args.all = true;
-    else if (a === '--strict') args.strict = true;
-    else if (a === '--untranslated') args.untranslated = true;
-    else if (a === '--no-base') args.noBase = true;
-    else if (a === '--list-rules') args.listRules = true;
-    else if (a === '--init') args.init = true;
-    else if (a === '--glossary') {
-      args.glossary = argv[++i];
-      if (!args.glossary) throw new Error('--glossary needs a path after it');
-    } else if (a.startsWith('--')) throw new Error(`Unknown flag: ${a}`);
-    else args.paths.push(a);
-  }
-  return args;
-}
-
 try {
-  const args = parseArgs(process.argv.slice(2));
+  const args = parseCheckArgs(process.argv.slice(2));
   if (args.init) initGlossary(SCRIPT_PATH);
   else process.exitCode = runDocAudit(args, SCRIPT_PATH);
 } catch (err) {

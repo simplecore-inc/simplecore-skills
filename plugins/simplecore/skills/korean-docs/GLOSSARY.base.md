@@ -22,7 +22,8 @@ guidance and is English.
   only in that product's repository - design documents, meeting notes, and another product's
   integration documents all write it, and a transliteration or a wrong capitalization is wrong in
   every project. A lowercase package, directory, or file name is correct, and each row's note draws
-  that boundary. The instruction on spelling is section 3 of `references/response-style.md`.
+  that boundary. The instruction on spelling is §4 (Choosing a word) of
+  `references/response-style.md`.
 
 ## 용어 대역표
 
@@ -39,7 +40,7 @@ Standard spellings from the loanword orthography and for widely shared technical
 | transaction | 트랜잭션 | 트랜젝션 | loanword spelling |
 | cache | 캐시 | 캐쉬 | loanword spelling |
 | face (font face, typeface) | 서체 | | the field's term; a font file's instance is a 서체, and 「얼굴」 is the everyday sense of the English word, which the field never uses. Registered from a user correction |
-| font family | 글꼴 패밀리 | 글꼴 가족, 서체 가족 | the settled loanword in CSS and OS documentation; 「가족」 is the kinship word and the rule `kinship-for-grouping` reads it. Registered from a user correction; 「서체군」 is the other candidate and was not chosen |
+| font family | 글꼴 패밀리 | 글꼴 가족, 서체 가족, 글꼴가족, 서체가족, 폰트 가족, 폰트가족, /font\s*가족/, 서체군 | the settled loanword in CSS and OS documentation; 「가족」 is the kinship word, and where it names any other group of things the rule `kinship-for-grouping` reads it. Registered from a user correction; 「서체군」 was the other candidate, was not chosen, and is banned with the rest |
 | data | 데이터 | 데이타 | loanword spelling |
 | content | 콘텐츠 | 컨텐츠 | loanword spelling |
 | business | 비즈니스 | 비지니스 | loanword spelling |
@@ -81,7 +82,7 @@ Standard spellings from the loanword orthography and for widely shared technical
 | checkbox | 확인란 | 체크박스, 체크 박스, 선택 상자 | the square a person ticks, and the marker a list draws as ☑ · ☐. The tick itself is 「확인 표시」 and the state is 「선택됨 · 선택 안 됨」, so 「확인란」 names the element alone. Hit: 「완료 여부를 확인란으로 표시합니다」. Miss: the code identifier `checkbox` and the HTML `type="checkbox"`, which stay as written |
 | hyphen | 붙임표 | 하이픈, /(?<![가-힣])대시(?!보드)/ | the `-` character, by its orthographic name, for a list marker or a range in Korean text. The em dash `—` is a different character and is refused outright by the rule `em-dash`; 「대시보드」 is a different word and is not caught, and neither is a word whose 「대」 and 「시」 belong to other syllables (「중대시민재해」 · 「확대시」), which the preceding Hangul syllable filters out. Hit: 「대시(-)로 표시합니다」. Miss: 「대시보드에 표시합니다」, 「중대시민재해 예방」, a CLI flag such as `--only`, and an English range such as `pages 3-5` |
 | rail (layout) | 곁줄 | 레일 칸, 레일 영역, 레일 폭 | the narrow column beside the body of a page, holding a note, a legend or a running summary. A real rail (안전 레일 · 가이드레일) and a screen's navigation area (사이드바) are different things and are not caught. Hit: 「곁줄 칸의 폭입니다」. Miss: 「가이드레일을 설치한다」, 「사이드바에서 메뉴를 고릅니다」, and the code identifier `rail`, which stays as written |
-| AccessCORE | AccessCORE | AccessCore, Accesscore, ACCESSCORE, 액세스코어 | a product name; only the last four letters are capitalized. **A lowercase identifier is correct and is not caught** - the package `dev.accesscore`, the directory `accesscore-license-admin`, the file `accesscore-logo.tsx`. The rule is case-sensitive, so lowercase `accesscore` matches none of the four patterns. Write an all-caps code name (a constant, an environment variable) inside a code span, which is excluded from checking and so never matches `ACCESSCORE`. **Screen copy cannot use backticks, so mark that place with `<code>` or a `mono` class** - its inside, holding no Hangul, is excluded like inline code (SKILL.md), which is why no project-level exception is needed here |
+| AccessCORE | AccessCORE | AccessCore, Accesscore, ACCESSCORE, 액세스코어 | a product name; only the last four letters are capitalized. **A lowercase identifier is correct and is not caught** - the package `dev.accesscore`, the directory `accesscore-license-admin`, the file `accesscore-logo.tsx`. The rule is case-sensitive, so lowercase `accesscore` matches none of the four patterns. Write an all-caps code name (a constant, an environment variable) inside a code span, which is excluded from checking and so never matches `ACCESSCORE`. **Screen copy cannot use backticks, so mark that place with `<code>` or a `mono` class** - its inside, holding no Hangul, is excluded like inline code (`references/audit-tooling.md`), which is why no project-level exception is needed here |
 | SimpliX | SimpliX | 심플릭스 | a product name; do not transliterate. **Lowercase `simplix` is correct and is not caught** - the package `simplix-react`, the config file `simplix.config.ts`, the skill name `simplix:frontend`. This row looks only for the Hangul transliteration |
 | PACS Studio | PACS Studio | 팩스 스튜디오 | a product name. **「팩스」 on its own is not caught** - the fax that sends documents is a different word, so only the two-word `팩스 스튜디오` is matched |
 | NICEPAY | 나이스페이 | 나이스페이먼츠, NICE페이 | the name of a payment gateway. **`NICE`·`nice`·「나이스」 alone are not this company and are not caught** - the English word nice, the credit-rating agency 나이스, and the grade NICE are all different things, so only `나이스페이먼츠`·`NICE페이` are matched |
@@ -90,6 +91,9 @@ Standard spellings from the loanword orthography and for widely shared technical
 
 Categories kept in the original rather than translated or transliterated. A reference table, not an
 audit target (the common transliteration errors are caught by the banned-expression table below).
+A speaker script writes these names as they are pronounced, and inside a span marked as spoken the
+bans that keep a name in its original script stand down (`references/audit-tooling.md`, "A speaker
+script").
 **The first column stays Korean on purpose**: an item carrying Hangul or parentheses is read as a
 category description, and only a plain-ASCII item is taken as a proper noun for the untranslated
 check.
@@ -109,16 +113,14 @@ standard is in `references/response-style.md`.
 
 | 금지 | 대체 | 수준 | 비고 |
 | ---- | ---- | ---- | ---- |
-| /것을 허용/ | ~할 수 있습니다 | 오류 | a literal "allows you to" |
+| /것을 허용/ | ~할 수 있습니다 (화면 문구: ~합니다 · ~하려면 ~하세요) | 오류 | a literal "allows you to". Screen copy says what happens or what to do rather than what is possible, and the rule pack's `can-instead-of-does` reports 「~할 수 있습니다」 there |
 | /(?<![가-힣])꼴(?![찌불사])/ | 형태 · 경우 · 표현 · 방식 · 문장 | 오류 | a colloquial noun meaning 「모양」, which reads as low register in technical writing. **The replacement is decided by context, not fixed** - 「등재된 꼴만 본다」 is **형태**, 「~가 앞에 오는 꼴만 본다」 is **경우**, 「그 꼴을 허락한다」 is **표현**, 「새는 꼴 하나」 is **예문**. **A compound with Hangul in front of it is legitimate and is not caught** - 글꼴·사다리꼴·세모꼴·네모꼴·마름모꼴, and one repository held thirty-nine occurrences of 「글꼴」 alone. 「꼴찌·꼴불견·꼴사납다」 are different words too |
 | /(?<![가-힣])산문/ | 글 · 본문 · 설명문 · 서술 | 오류 | a literal `prose`. Korean 「산문」 is a literary term, the opposite of verse, so it misses when it is meant as 「writing that is not code」. **The replacement is decided by context** - 「커밋 인접 산문」 is **커밋 메시지 주변의 글**, 「합니다체 산문」 is **설명문**, 「설명 산문」 is **설명하는 문장**, 「문서의 산문」 is **본문**. **A compound with Hangul in front is not caught** - the 「산문」 of 「등산문화」 is a different word. A project that discusses literature and pairs it with verse turns this off through `## 기본 규칙 예외` |
 | /것을 가능하게/ | ~할 수 있게 합니다 | 오류 | a literal "enables" |
-| 할 수 있게 해줍니다 | ~할 수 있습니다 | 오류 | a literal "lets you" |
+| 할 수 있게 해줍니다 | ~할 수 있습니다 (화면 문구: ~합니다 · ~하려면 ~하세요) | 오류 | a literal "lets you". Screen copy says what happens or what to do rather than what is possible, and the rule pack's `can-instead-of-does` reports 「~할 수 있습니다」 there |
 | 에 대한 지원을 제공 | ~를 지원합니다 | 오류 | a literal "provides support for" |
-| /되어[지집진질]/ | ~됩니다, ~될 | 오류 | a double passive ("되어진다", "되어집니다"). The conjugation changes the syllable block, so the final consonants are opened up to catch 「되어진·되어질」 - matching only 「되어지」 lets 「되어진다」 through |
-| /보여[지집]/ | 표시됩니다, 나타납니다 | 오류 | a double passive. Fixing it to 「보입니다」 alone removes the double passive but leaves it unclear whether the system displays or the user looks - screen copy says 「표시됩니다」 |
 | 당신 | (생략 또는 문장 재구성) | 오류 | a literal "you" |
-| /빚지/, /빚는다/, /빚습니다/, /빚어야/ | 요구한다, 필요하다, 함께 내야 한다 | 오류 | a literal "owe". Every conjugation is caught - 빚진다·빚지고·빚질·빚지지 |
+| /빚지/, /빚[진질졌져]/, /빚는다/, /빚습니다/, /빚어야/ | 요구한다, 필요하다, 함께 내야 한다 | 오류 | a literal "owe". **The conjugation changes the syllable block**, so the stem 「빚지」 alone lets 빚진다 · 빚질 · 빚졌다 · 빚져 through, and the changed syllables stand beside it: 빚지고 · 빚지지 · 빚진다 · 빚질 · 빚졌다 · 빚져 are all caught |
 | /[의는] 빚[을이가도는]/, /빚을 [진지]/ | 남은 항목, 요구하는 것 | 오류 | the nominal form of a literal "owe" (「프레임의 빚」). A financial document dealing with real debt disables this with a base-rule exception |
 | 여러분 | (생략) | 오류 | a literal "you" |
 | 우리는, 우리가, 저희 | (생략 또는 문장 재구성) | 오류 | a literal "we" |
@@ -135,10 +137,9 @@ standard is in `references/response-style.md`.
 | 배선 | 조립(부트 구성)·등록·연결(경로에 꽂기) | 경고 | a literal "wiring" (including 「재배선」). "연동" (runtime linkage) and "통합" (integration) are separate concepts and are not replacements. Physical electrical wiring is the correct term, so keep such uses and disable the rule in a document centred on it |
 | 와이어링 | 조립, 등록, 연결 | 오류 | a transliterated "wiring" |
 | /전선에서 [빼걷]/, /전선에 [싣실]/, /전선이 [나실]/, /전선을 [타탄]/ | 응답에서 뺀다, 응답에 포함한다, 응답이 전달한다 | 오류 | a literal "on the wire". A Korean 전선 is an electrical cable. A document about actual cables and power distribution disables this with a base-rule exception |
-| /커밋[을를] ?밀/, /브랜치[을를] ?밀/, /메인[을를] ?밀/, /원격[에으]?로 ?밀/, /저장소[에로] ?밀/ | 푸시한다 | 오류 | "push" rendered into Korean. **It is the pair of 커밋** - this tool's operation names (커밋·머지·리베이스) are used as they are, and translating only 푸시 is the inconsistency. **The word 「밀다」 itself is not blocked** - a forklift pushing its forks and a bulldozer pushing earth are real actions in that field and appear in industrial-safety documents. What separates them is the object: a commit, a branch, and a remote cannot be physically pushed. **The cause is the urge to render a settled loanword into Korean, and over-correction is not the safe side but the twin failure** |
 | /인구 ?조사/ | 전수 조사, 전수 확인, 전부 세기 | 오류 | a literal "census". **인구 is a count of people** - counting files, call sites, checkers, or frames is not a population, and 「전수 조사」 says the same thing without the human metaphor. **It is worst in a product about people**: it collides in one document with places that really do count people (상시 근로자 수 · 재적 인원), and the reader has to think twice about which is meant (the same reason 「죽은」·「살아 있는」 were separated). Counting people really has its own names (「상시 근로자 수」·「재적 인원」·「출역 인원」), so no exception is needed |
 | /생활권/ | 도보 N분 거리, 인접, 같은 지역, 같은 단지 | 오류 | a formal term of urban planning and regional development (「생활권 계획」·「중생활권」·「생활권 공원」) borrowed to mean 「nearby」. **What separates them is whether there is a value that can be checked** - 「같은 생활권에 있다」 makes the reader guess the range, while 「도보 10분 거리에 있다」 is a fact that can be compared. Caught: 「발주자 본사와 같은 생활권에 있다」 → 「발주자 본사에서 도보 10분 거리에 있다」. Not to be caught: 「1생활권 상업용지」·「생활권 계획 수립」 in urban-planning, regional-development, and real-estate documents are formal terms, so those projects disable it through `## 기본 규칙 예외` |
-| /에 산다/, /에 삽니다/, /에 사는[지 ]/, /에 살고/, /에 살아 있/, 사는 곳 | ~에 있다, ~에 둔다, ~에 남는다, 위치 | 경고 | a literal "lives". Do not write where a file, some code, or a setting 「산다」. **Conjugation changes the syllable block** - matching only `산다` lets `사는지`·`살고`·`삽니다` through. A person really living somewhere (「서울에 산다」) is legitimate and letters alone do not separate them, so this is a warning rather than an error. A document full of people disables it with a base-rule exception |
+| /에 살아 있/, 사는 곳 | ~에 있다, ~에 둔다, ~에 남는다, 위치 | 경고 | a literal "lives", in the phrases the rule pack's `lives-in` does not hold: do not write that a file, some code, or a setting 「살아 있다」 somewhere, or name its 「사는 곳」. The conjugated forms (에 산다 · 에 삽니다 · 에 사는 · 에 살고) are `lives-in`'s, which releases a person living somewhere by the noun that follows. Here letters alone do not separate a person from a file (「기억에 살아 있다」 · 「표를 사는 곳」), so this is a warning rather than an error. A document full of people disables it with a base-rule exception |
 | /같은 나무/, /한 나무에/, /그 나무에/, /나무에서 [일작커]/, /나무를 [나공쓰]/, /마이그레이션 나무/, /디렉터리 나무/, /폴더 나무/ | 작업 트리, 저장소, 계보, 디렉터리 구조 | 경고 | a literal "working tree"·"tree". A folder tree on a screen is 「트리」. A document about actual trees disables this with a base-rule exception |
 | /에 있어(?![야도\s])서?/ | ~에서, ~할 때 | 경고 | a literal "in terms of". **Conjugations that state existence are excluded by the following syllable** - the 「있어야」 of 「목록에 있어야 합니다」, the 「있어도」 of 「범위 밖에 있어도」, and **the connective form followed by a clause** (「낱말이 한 자리에 있어 고치면」) are not this translation-ese. All three have to be enumerated because the ending changes the syllable, so the stem 「있어」 cannot separate them. The translation-ese side appears as 「~에 있어서」 and as 「~에 있어,」 with a comma, so 「서」 and the punctuation are caught as they are |
 | /가지고 있/ | ~가 있습니다, ~를 제공합니다 | 경고 | a literal "have" |
@@ -170,7 +171,7 @@ standard is in `references/response-style.md`.
 | 역위상 | 의존성 역순 | 오류 | the reverse of a topological sort. "역위상" is misread as signal anti-phase and reads oddly. Child → parent direction |
 | 위상 순서 | 의존성 순서 | 오류 | topological order - the execution order of a sorted dependency graph. Parent → child direction |
 | 위상 정렬 | 의존성 정렬 | 오류 | topological sort - the algorithm that orders a dependency graph |
-| 위상 그래프 | 그래프 구조 | 오류 | a literal "topology". **The bare word 「위상」 is not registered** - a signal's phase, mathematical topology, and 「국제적 위상」 are all legitimate, and letters alone do not separate them. Only the compounds diverge in software, so the machine catches these four rows and a person judges the remaining 「위상」 in context |
+| 위상 그래프 | 그래프 구조 | 오류 | a literal "topology". **The bare word 「위상」 is not registered** - a signal's phase, mathematical topology, and 「국제적 위상」 are all legitimate, and letters alone do not separate them. Only the compounds diverge in software, so the machine catches these rows and a person judges the remaining 「위상」 in context |
 | /(?<!표현의 )(?<!표현 )충실성/ | 원문 충실도 | 오류 | a literal "fidelity". Accounting's 「표현의 충실성」 (faithful representation) is a formal term and is excluded by the preceding words. An accounting document that repeats it disables the rule with a base-rule exception |
 | 거버너 | 감시기, 품질 감시기 | 오류 | a transliterated "governor". A mechanical speed governor is not transliterated either - it is 「조속기」. 「거버넌스」 differs by a syllable (넌 ≠ 너) and is not caught |
 | /(?<!논리적 )(?<![가-힣])함의(?![하한할함해])/ | 뒷받침, 담고 있음 | 오류 | a literal "implication". **Logic's 함의 is used as a predicate, so it is excluded by the following syllable** - 「p가 q를 함의한다」·「함의하는」·「함의할」·「함의함」 are legitimate and 「논리적 함의」 is excluded by a lookbehind. **When the preceding character is Hangul it is not the word but 「…함」 plus the particle 「의」** - 결함의·포함의·정함의 are all that shape, and without excluding them every document about defects is caught. What is left is the noun use, 「정책적 함의」·「함의를 담다」. Finance's implied is 「내재」 (내재 변동성) |

@@ -1,9 +1,11 @@
 # The Korean sentence standard
 
-Applies to every Korean deliverable - replies, documents, translations, reviews, screen copy.
-**Read it before writing the session's first Korean sentence, and read it again after a summary in a
-long session.** Remembering that you read it is not evidence: if the register table and the eight
-questions below cannot be quoted right now, it has not been read.
+Applies to every Korean document - design and development documents, manuals, translations,
+reviews, screen copy, and a report written to a file. A reply in the conversation follows the habits
+card ([global-korean-card.md](global-korean-card.md)) the global instructions carry and does not
+read this file. **Read it before writing a document's first Korean sentence, and read it again after
+a summary in a long session.** Remembering that you read it is not evidence: if the register table
+and the eight questions below cannot be quoted right now, it has not been read.
 
 **What a machine checks is not repeated here.** Spellings (디렉터리 · 라이선스 · 애플리케이션),
 banned transliterations, proper nouns, and banned words live in `GLOSSARY.base.md` and
@@ -148,7 +150,9 @@ decisions differ. One object keeps one name across the title, the body, the figu
 - **Settled loanwords and technical terms stay.** 어댑터 · 콜백 · 매핑 · 슬롯 · 캐시 · 핸들러 ·
   메타데이터 · 네임스페이스 · 리터럴, API · SQL, Docker · Kubernetes · Java (as written). Do not
   change them to make the text look more Korean. Framework terms (`hook` · `contract` · `entity`)
-  stay in the original too.
+  stay in the original too. A speaker script is the one place that writes a name as it is
+  pronounced, inside a span marked as spoken ([audit-tooling.md](audit-tooling.md), "A speaker
+  script").
 - **A technical term is explained technically.** A mechanism is named by what it is and what
   it does to what - 프로파일 · 어댑터 · SPI · 설정, and 변환 · 교체 · 반영 · 조정 - never by a verb
   standing where the mechanism should be: `차이를 수용하는 확장 지점` → 제품 · 규격 차이의 처리
@@ -212,24 +216,12 @@ decisions differ. One object keeps one name across the title, the body, the figu
 
 ## 5. Replies and reports
 
-- **A chat reply passes through no check at all.** The write-time hook reads files only. So the
-  eight questions above are needed more often in a reply than in a file, and a reply written
-  straight after an audit returned zero is no exception.
-- **AI tells outlive the audit.** The structural habits - staging a claim instead of stating it, a
-  closing line that repeats, three of everything, borrowed authority, a chat wrapper - carry no
-  banned word, so a zero-finding file can be built entirely out of them.
-  [ai-tells.md](ai-tells.md) catalogues them in their Korean form; the five that most often survive
-  a rewrite are `단순히 ~가 아니라`, a repeating closing line, a 줄표, a three-item series, and a
-  bold label.
-- **Relaying a report is not quoting.** A subagent's report, an execution log, or somebody's note
-  passed on to the user becomes the relayer's sentence and takes the same standard. What is quoted
-  literally is only what exists somewhere in those characters: a screen label, an error message, a
-  string in a file, a document title.
-- **The project glossary applies to reports too.** Do not rename the repository's own machinery
-  (검사 · 단계 · 대장) into English or a transliteration. Code identifiers stay in backticks as
-  written.
-- **A word used in a brief spreads through the report into replies and documents.** Writing the
-  brief is the last chance to choose it.
+A reply in the conversation, a relayed report and a brief follow the habits card
+([global-korean-card.md](global-korean-card.md)), which owns that guidance. A report written to a
+file is a document and takes this whole file, with the structural habits of
+[ai-tells.md](ai-tells.md) that a zero-finding file can still be built out of. **The project
+glossary applies to reports too**: do not rename the repository's own machinery (검사 · 단계 · 대장)
+into English or a transliteration, and keep code identifiers in backticks as written.
 
 ## 6. A correction diagnoses the guidance
 

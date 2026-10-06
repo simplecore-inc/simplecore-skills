@@ -8,13 +8,12 @@
  * Two runs, because the two engines answer different questions. The glossary
  * check judges words - spellings, transliterations, banned phrases - and the
  * rule pack judges sentences: personification, metaphors standing in for real
- * names, AI tells. For a long time only the first ran here, and every sentence
- * rule bit only when somebody asked for an audit; a document could be written
- * clean of banned words and full of the habits the pack exists to catch.
- * Both runs honour `audit.exclude` on a named file, so an edit to a catalogue that
- * quotes the banned sentences on purpose - or to a verbatim transcription of an issued
- * document, which reproduces its source's spellings as running prose - is reported as
- * skipped, not blocked.
+ * names, AI tells. With the first run alone, a document could be written clean
+ * of banned words and full of the habits the pack exists to catch.
+ * Both runs honour `audit.exclude` on a named file, through one matcher, so an edit
+ * to a catalogue that quotes the banned sentences on purpose - or to a verbatim
+ * transcription of an issued document, which reproduces its source's spellings as
+ * running prose - is skipped by both and passes silently rather than being blocked.
  *
  * Scope guard: the audit runs only when the edited file belongs to a project
  * that has a project glossary (<dir>/.claude/GLOSSARY.md or <dir>/GLOSSARY.md,
@@ -122,8 +121,10 @@ function main() {
 
   const glossary = findProjectGlossary(dirname(abs));
   if (!glossary) return 0;
-  // The glossary itself contains banned forms by definition; never audit it.
-  if (resolve(glossary) === abs || basename(abs) === 'GLOSSARY.md') return 0;
+  // A glossary contains banned forms by definition; never audit it. That includes a base glossary
+  // by its file name: a checkout or worktree of the skill holds its own copy, and the engine this
+  // hook runs recognises only the base glossary at its own path.
+  if (resolve(glossary) === abs || ['GLOSSARY.md', 'GLOSSARY.base.md'].includes(basename(abs))) return 0;
   // The glossary check reads documents and the resources the glossary declares; the sentence
   // rules read those and every kind `.claude/l10n.json` declares. A resource file known only to
   // the second gets the second run alone - the word check would read its keys as prose.

@@ -15,8 +15,8 @@ One script, `scripts/l10n.mjs`, checks documents and locale resources with the s
 | Lens | `references/lens.txt` | widens what narrow rules miss into candidates for a person to read | `lens` |
 
 ```bash
-T="$HOME/.claude/skills/simplecore/skills/korean-docs/scripts/l10n.mjs"
-node "$T" sweep [paths...]       # rules --test, then check · rules · suspects · audit (when declared) · lens count, then what reached what
+T="${CLAUDE_PLUGIN_ROOT}/skills/korean-docs/scripts/l10n.mjs"
+node "$T" sweep [paths...]       # rules --test, then check · rules · suspects · audit (when declared) · lens (first candidates), then what reached what
   --all --strict --explain --untranslated   # passed through to the commands that take them
 node "$T" check [paths...]       # document audit - audit.paths, or the whole project (same judgement as the hook)
   --all             # ignore audit.paths and take the whole project
@@ -75,7 +75,9 @@ form written down and misses every other ending.
   you intended. The script only reports regex errors, level spelling, and shifted columns.
 - Front matter settings: `audit.paths` · `audit.exclude` · `audit.localeResources` ·
   `audit.untranslated` · `audit.resolvedPlaceholders`.
-- An explicitly named file is checked even if `audit.exclude` covers it. The glossary file itself is
+- `audit.exclude` reaches a named file as well as a scan: `check` and the sentence commands skip it
+  and print `skipped by audit.exclude: <path>`, all of them through one matcher (a pattern with no
+  `/` matches any path segment, `**/` spans zero or more directories). The glossary file itself is
   never checked. **The exclusion reaches a declared kind too**: a kind glob is a git pathspec, and
   git's `*` crosses `/`, so a `docs/*.md` kind takes every document under `docs` - including the
   review records a project excluded because they quote each round's sentences verbatim. `discover()`
@@ -106,13 +108,18 @@ glossary.
 
 ```json
 "except": {
-  "loanword-spelling": [{
-    "find": "/어플리케이션 응답시간/",
+  "ratio-ryul-ryool": [{
+    "find": "/시스템 가동율/",
     "why": "제안요청서 요구사항명 원문. 고치면 인용이 아니게 된다",
-    "sample": "| PER-001 | 어플리케이션 응답시간 |"
+    "sample": "| PER-001 | 시스템 가동율 |"
   }]
 }
 ```
+
+`except` narrows a pack rule only. A glossary spelling has no such door: keep a quoted original
+inside `l10n:quote` (below), which both engines skip. A rule id no longer in the pack is listed under
+`retired` in `RULES.base.json`, and a project pack still naming it under `disable` or `except` gets a
+line saying the entry does nothing and where the ban lives now, instead of a load failure.
 
 ### A span copied verbatim from somebody else's document - `l10n:quote`
 
@@ -133,14 +140,53 @@ statutory clause - is wrapped in a marker with the reason beside it.
   `class` contains `mono` or `code` is excluded the same way. An element containing any Hangul is
   not excluded.
 
-### The two built-in checks
+### A speaker script - `l10n:spoken`
 
-They run regardless of the glossary.
+A script is heard, not read, so it writes an English name the way it is pronounced (`도커` for
+Docker, `아파치 이그나이트 쓰리` for Apache Ignite 3), which is the spelling the transliteration
+bans stop in writing. The author marks the script, with a reason beside the marker.
 
-- **Particle disagreement** (이/가 · 을/를 · 과/와): an error. It judges only after a word that can
-  appear as a replacement in the glossary or the rule pack. A particle after an unregistered word is
-  read by a person. 은/는 overlaps with the adnominal ending and is not checked.
-- **The same word twice in a row** (`같은 같은`): a warning. Only adjacent words count.
+```markdown
+<!-- l10n:spoken 3번 슬라이드 대본 -->
+도커 컨테이너로 배포하고 쿠버네티스로 운영합니다.
+<!-- l10n:/spoken -->
+```
+
+- Inside the span, a rule stands down when its banned text holds Hangul and its replacement is
+  Latin with no Hangul in it: a ban that keeps a name in its original script (`도커 → Docker` ·
+  `심플릭스 → SimpliX`, and a project's own name rows by the same test). Every other rule still
+  applies, a loanword spelling included (`디렉토리 → 디렉터리`: the script says that word too, and
+  it has one Hangul spelling), and so does a ban whose replacement is a Korean word
+  (`디폴트 → 기본값`).
+- `check` · `rules` · `audit` honour the span, and so do both runs of the write-time hook. `check`
+  prints how many lines it read as a speaker script on every run, and an unclosed span is an
+  error.
+- A resource kind whose every value is a script (speaker notes kept in their own files) declares
+  `"register": "spoken"` in `.claude/l10n.json`, and `rules` · `audit` read each of its segments as
+  a marked span. `check` reads the glossary's declarations, not that register, so a script in a
+  file `check` reads is marked with the span.
+- Only the script is marked. A slide's text, a caption and a manuscript sentence keep the written
+  form, `Docker` included.
+
+### The built-in checks
+
+`check` runs these regardless of the glossary, each under the name `## 기본 규칙 예외` uses.
+
+- `particle` (error): 이/가 · 을/를 · 과/와 after a Hangul word of two syllables or more. Verb
+  stems, adnominal endings and words that merely end in those syllables are skipped. 은/는 overlaps
+  with the adnominal ending, so it is judged only right after a closing 」 or 』.
+- `interpolated-particle` (error): a particle right after a placeholder whose value is unknown
+  when the sentence is written (`{{name}}` · `{name}` · `%s` · `%1$s`).
+- `reference-particle` (error): a particle after a placeholder `audit.resolvedPlaceholders`
+  declares, judged against the value the build renders (below).
+- `repeat` (warning): the same word twice in a row (`같은 같은`); only adjacent words count.
+- `heading-form` (warning): a Markdown heading written as a sentence.
+- `untranslated` (warning): leftover English prose lines, only with `--untranslated` or
+  `audit.untranslated`.
+
+The warning-level ones can be turned off in the project glossary; the error-level ones cannot.
+`audit` judges resource values more narrowly: a particle only after a noun the glossary or the
+rule pack writes as a replacement, and after a number and a counter.
 
 ### Placeholders the build resolves to a fixed value
 
@@ -165,10 +211,10 @@ audit:
   sentence pack. The two answer different questions - a document can be clean of every banned
   spelling and full of personification and AI tells - and both reports come back together under
   `[glossary]` and `[sentence rules]`. A file the project lists in `audit.exclude` is skipped by
-  the second run and named as skipped, so an edit to a catalogue that quotes the banned sentences
-  on purpose is never blocked by the sentences it quotes. The hook passes `--no-footer` to
-  `rules`: a standalone `rules` ends by naming the checks it did not run, and the hook has just run
-  `check` itself.
+  both runs, and the hook passes the edit silently, so an edit to a catalogue that quotes the
+  banned sentences on purpose is never blocked by the sentences it quotes. The hook passes
+  `--no-footer` to `rules`: a standalone `rules` ends by naming the checks it did not run, and the
+  hook has just run `check` itself.
 - An error-level rule blocks; a warning-level rule reports and lets the edit stand. A false
   positive is narrowed with `except` in `.claude/l10n-rules.json` (below), never by switching the
   hook off.
@@ -177,9 +223,12 @@ audit:
   `.claude/l10n.json` gets the sentence-rule run alone, read by that kind's format and register,
   because the word check would read its keys as prose.
 - **A sweep over a directory reads those kinds and nothing else, so Korean living in a source file
-  is invisible to it.** `rules` and `check` read whatever path they are given, a `.py` or a `.ts`
-  included, but nobody points them there, and the gap does not announce itself: the sweep says
-  clean over the repository while the prose in the generators goes unread. It matters wherever a
+  is invisible to it.** A directory expands to the documents beneath it and to the files of every
+  kind `.claude/l10n.json` declares beneath it, each read by its kind's format and register (for
+  `check`, to the resources `audit.localeResources` declares). `rules` and `check` read whatever
+  path they are given, a `.py` or a `.ts` included, but nobody points them there, and the gap does
+  not announce itself: the sweep says clean over the repository while the prose in the generators
+  goes unread. It matters wherever a
   project keeps Korean in code against the usual rule that comments are English - most often a
   figure generator, whose docstrings carry each figure's claim in the document's own words and are
   read as that claim during a review. A project in that position names the paths in its own check
@@ -189,11 +238,10 @@ audit:
 - It checks only in a project that has a glossary (`.claude/GLOSSARY.md` or `GLOSSARY.md`). No
   glossary means write-time checking is off entirely.
 - A document changed through `Bash` - `node` · `python` · `sed` · a heredoc - never passes the hook.
-  When a script edited a document, run `check` on that file directly, chained onto the script
-  command with `&&` so it is one call.
+  When a script edited a document, run `sweep` on that file, chained onto the script command with
+  `&&` so it is one call; `check` alone would skip the sentence rules the hook runs.
 - If you doubt the hook is running, do not go digging through settings files: write one banned
   spelling into a file and save it. Delete that line immediately afterwards.
-- It also fires on the resource files declared in `audit.localeResources`.
 
 ## Resource declaration - `.claude/l10n.json`
 
@@ -204,8 +252,9 @@ layout.
   · `markdown` · `html` · `wireframe` · `text` · `auto`) · `register` · `exclude` · `optIn` ·
   `stemKey`.
 - `register`: `"screen"` (screen copy, 합니다체) · `"manual"` (reader-facing 합니다체 prose) ·
-  omitted (a -다체 working document). Checks that only mean something in one register are gated on
-  this value.
+  `"spoken"` (a speaker script, [A speaker script](#a-speaker-script---l10nspoken)) · omitted (a
+  -다체 working document). Checks that only mean something in one register are gated on this
+  value.
 - `optIn`: `true` removes the kind from every default sweep. Naming commands (`["audit"]`) removes it
   from those only. A kind a generator rewrites is removed from the translation gate (`audit`) while
   the sentence rules keep running on it. Removing it with `true` also loses it for `rules` ·
@@ -227,22 +276,24 @@ layout.
 
 - `git ls-files`'s `**` means one or more path segments, so `locales/**/ko.json` does not match
   `locales/ko.json`. When both shapes exist, write two globs.
-- **A file not yet `git add`ed is not in the enumeration.** It is reported as zero without having
-  been checked. Stage new files before the audit, and compare the file count `list` prints against
-  the real one.
+- **A file `.gitignore` covers is not in the enumeration.** The sentence commands list files with
+  `git ls-files --cached --others --exclude-standard`, so a new file is read before it is staged
+  and an ignored one is not, while `check` walks the filesystem and reads it. Compare the file
+  count `list` prints against the real one.
 - Globs in `audit.localeResources` are relative to the repository root, and `*` does not cross `/`.
   To include subdirectories write `src/**/*.mjs`. A pattern matching no file at all makes `check`
   exit with an error.
-- `check` prints the resource file count as `자원 파일 N개 (이번 검사 범위 M개)`. A run naming a
-  single file is normal with M at zero; a broken declaration is N at zero.
+- `check` prints the resource file count as
+  `audit.localeResources: N resource files (M in this run's scope)`. A run naming a single file is
+  normal with M at zero; a broken declaration is N at zero.
 
 ## Writing a rule pack
 
 Every rule carries `id` · `scope` · `severity` · `reason` · `find` · `replace` · `hit` · `miss`, and
 is verified with `rules --test`. The `universal` scope always applies; a domain scope (`saas` and
 the like) applies when the project opts in through `ruleScopes` in `.claude/l10n.json`. A rule
-written for one register names it in `registers` (`screen` · `manual` · `plain`; a document with no
-declared kind is `plain`) and is skipped elsewhere - 「~할 수 있습니다」 replacing an instruction is
+written for one register names it in `registers` (`screen` · `manual` · `spoken` · `plain`; a
+document with no declared kind is `plain`) and is skipped elsewhere - 「~할 수 있습니다」 replacing an instruction is
 a defect on a screen and the ordinary capability sentence of a reference manual, and a rule that
 cannot tell the two apart by letters tells them apart by register. A rule true
 beyond this repository goes into `RULES.base.json`; a rule true only in one project goes into that
@@ -262,7 +313,8 @@ end of a string. At an artificial end - a markdown line cut off by a code fragme
 is reported. The place to fix is not the pattern but the extractor: `segment()` carries the
 following text as `after`, rules match against `text + after`, and a hit counts only when it starts
 inside `text`. Writing `(?!스크립트|$)` rejects the real end too and becomes a miss. A new extractor
-declares its own boundaries in `EXTRACTOR_CASES` with `want` · `wantAfter` · `silent` · `loud`.
+declares its own boundaries in `EXTRACTOR_CASES` with `want` · `wantAfter` · `wantSpoken` ·
+`silent` · `loud`.
 
 ### A rule that uses a particle as a boundary meets words ending in that syllable
 
@@ -302,7 +354,7 @@ add one stem, add its final, adnominal, connective, and nominal forms with it. T
 [reading-lens.md](reading-lens.md).
 
 ```bash
-T="$HOME/.claude/skills/simplecore/skills/korean-docs/scripts/l10n.mjs"
+T="${CLAUDE_PLUGIN_ROOT}/skills/korean-docs/scripts/l10n.mjs"
 node "$T" lens                   # the document set, or the declared resources
 node "$T" lens docs/manual       # one directory
 node "$T" lens /tmp/draft.md     # a draft outside the project - a reply before it is sent
@@ -326,7 +378,7 @@ documents in -다체), the check runs in both directions.
 - Sweeping the report itself does not reproduce anything: a specimen in backticks is skipped by the
   checker. The reporting side writes the raw finding line, the sentence it avoided, the file holding
   that sentence, and the command that was run. The confirming side checks that file, and when the
-  file does not exist, puts the sentence into the repository, stages it, and runs all four.
+  file does not exist, puts the sentence into a file in the repository and runs `sweep` on it.
 - When an audit returns zero, confirm the check reached the file first: insert one deliberate
   violation, see it caught, and delete it.
 
@@ -352,7 +404,7 @@ This skill applies to Korean documents only. Replies follow the habits card that
 Bring it up only when the user says 「스킬이 안 걸린다」 · 「전역 설정을 걸어 달라」.
 
 ```bash
-node "$HOME/.claude/skills/simplecore/scripts/detect-simplecore.mjs" --json   # globalKorean.present · card
+node "${CLAUDE_PLUGIN_ROOT}/scripts/detect-simplecore.mjs" --json   # globalKorean.present · card
 ```
 
 - `card` false: replies are written without the reply standard. Paste

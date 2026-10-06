@@ -320,6 +320,35 @@ export function emptyGlossary() {
 }
 
 // ---------------------------------------------------------------------------
+// The spoken-script boundary
+// ---------------------------------------------------------------------------
+//
+// A speaker script is heard, so it writes an English name the way it is pronounced - 「도커」
+// for Docker, 「아파치 이그나이트 쓰리」 for Apache Ignite 3 - which is exactly the spelling a
+// transliteration ban stops in writing. Inside a span the author marks as spoken, those bans
+// stand down and nothing else does.
+//
+// **The ban is recognised by its replacement, not by a list.** A rule whose banned text holds
+// Hangul and whose replacement is Latin with no Hangul in it (`도커 → Docker`, `심플릭스 →
+// SimpliX`) exists to keep a name in its original script, and a script cannot. A replacement
+// with Hangul in it (`디폴트 → 기본값`, `디렉토리 → 디렉터리`) is a Korean word or spelling the
+// script says too, so that rule keeps reporting there. A project's own name rows qualify by
+// the same test, so no table has to be kept in step with this one.
+const HANGUL_IN = /[가-힣]/;
+
+/**
+ * Whether a rule only keeps a name in its original Latin script - the kind of ban a speaker
+ * script is exempt from.
+ *
+ * @param rule `{source, suggestion}`: the banned pattern text and the replacement it prescribes
+ * @returns true when the banned text holds Hangul and the replacement is Latin without Hangul
+ */
+export function isOriginalScriptBan({source = '', suggestion = ''}) {
+  const replacement = String(suggestion ?? '');
+  return HANGUL_IN.test(String(source)) && /[A-Za-z]/.test(replacement) && !HANGUL_IN.test(replacement);
+}
+
+// ---------------------------------------------------------------------------
 // Built-in checks the audit engine runs beside the glossary rules
 // ---------------------------------------------------------------------------
 //
@@ -470,10 +499,16 @@ export function loadRuleSet({glossaryPath = null, noBase = false, startDir = pro
  *
  * A pack rule states sentence-level patterns a glossary table cannot express
  * safely - each carries hit/miss examples that `rules --test` verifies. Rules
- * are advisory sweeps (the finds-only loop), never write-time gates.
+ * find and never rewrite; the write-time hook runs them on every file it checks,
+ * so an error-level hit blocks that write.
  *
  * `scopes` filters by rule scope: 'universal' rules always apply; any other
  * scope applies only when listed (a project opts into its domains).
+ *
+ * Returns `{active, all, disabled, except, retired}`. `retired` maps each retired
+ * base rule id a project pack still disables or narrows to where its ban lives
+ * now - the base pack's `retired` table - so the caller can say the entry does
+ * nothing rather than fail to load the project's pack.
  */
 export function loadRulePacks({root = process.cwd(), scopes = []} = {}) {
   const packs = [];
@@ -484,29 +519,38 @@ export function loadRulePacks({root = process.cwd(), scopes = []} = {}) {
   if (existsSync(projectPack)) {
     packs.push({origin: 'project', path: projectPack, ...JSON.parse(readFileSync(projectPack, 'utf8'))});
   }
+  // A retired base rule id is still named by the projects that disabled or narrowed it.
+  // Refusing those names would stop every one of those projects' sweeps and write-time runs over
+  // an entry that only ever turned something off, so a retired id is reported instead.
+  const retiredIds = new Map(Object.entries(packs.find((p) => p.origin === 'base')?.retired ?? {}));
+  const retired = new Map();
   // A base rule can be true everywhere and still be wrong for one domain - the glossary has
   // `## 기본 규칙 예외` for exactly that, and without the same door here a project's only
   // choices are editing the shared base pack (forbidden: it would break other projects) or
   // carrying a permanent false positive, which is how a count stops meaning anything.
   // `{"disable": {"rule-id": "왜 끄는가"}}` in the project pack, reason required.
   const disabled = new Map();
+  const known = new Set(packs.flatMap((p) => (p.rules ?? []).map((r) => r.id)));
   for (const pack of packs) {
     if (pack.origin !== 'project') continue;
     for (const [id, why] of Object.entries(pack.disable ?? {})) {
       if (!String(why ?? '').trim()) {
         throw new Error(`${pack.path}: disable["${id}"] needs a reason - an exception with no reason cannot be revived by the next person.`);
       }
+      if (!known.has(id) && retiredIds.has(id)) {
+        retired.set(id, retiredIds.get(id));
+        continue;
+      }
       disabled.set(id, why);
     }
   }
-  const known = new Set(packs.flatMap((p) => (p.rules ?? []).map((r) => r.id)));
   for (const id of disabled.keys()) {
     if (!known.has(id)) throw new Error(`Trying to disable an unknown rule: ${id}`);
   }
   // Killing a rule is not the only thing a project needs. A base rule can be right about
-  // sixteen words and wrong about one PLACE - a requirement title quoted from a client's
+  // every word it lists and wrong about one PLACE - a requirement title quoted from a client's
   // document keeps that document's spelling, and correcting it makes it no longer a
-  // quotation. `disable` there would drop the other sixteen spellings with it, which is how
+  // quotation. `disable` there would drop the rule's other words with it, which is how
   // a project ends up choosing between a permanent false positive and a check that stopped
   // looking. So a project may also NARROW a base rule:
   //
@@ -521,6 +565,10 @@ export function loadRulePacks({root = process.cwd(), scopes = []} = {}) {
   for (const pack of packs) {
     if (pack.origin !== 'project') continue;
     for (const [id, list] of Object.entries(pack.except ?? {})) {
+      if (!known.has(id) && retiredIds.has(id)) {
+        retired.set(id, retiredIds.get(id));
+        continue;
+      }
       if (!known.has(id)) throw new Error(`Trying to add an exception to an unknown rule: ${id}`);
       const items = (Array.isArray(list) ? list : [list]).map((it) => {
         for (const field of ['find', 'why', 'sample']) {
@@ -550,5 +598,5 @@ export function loadRulePacks({root = process.cwd(), scopes = []} = {}) {
       }
     }
   }
-  return {active, all, disabled, except};
+  return {active, all, disabled, except, retired};
 }

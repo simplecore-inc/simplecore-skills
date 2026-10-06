@@ -9,12 +9,15 @@
  * sources - and let one term be searched or audited across all of them in a
  * single pass.
  *
- *   node l10n.mjs check    [paths...] [--all] [--strict] [--untranslated]
+ *   node l10n.mjs sweep    [paths...] [--all] [--strict] [--explain] [--untranslated]
+ *   node l10n.mjs check    [paths...] [--all] [--strict] [--untranslated] [--list-rules] [--init] [--init-l10n]
+ *   node l10n.mjs rules    [paths...] [--scope S] [--kind K] [--explain] [--strict] [--json]
+ *   node l10n.mjs rules    --test [--verbose]
+ *   node l10n.mjs suspects [paths...] [--min N] [--limit N] [--kind K] [--json]
+ *   node l10n.mjs lens     [paths...] [--count] [--json]
+ *   node l10n.mjs audit    [--kind K] [--json]
  *   node l10n.mjs list     [--kind K] [--lang L]
  *   node l10n.mjs grep     <pattern> [--regex] [--kind K] [--lang L]
- *   node l10n.mjs rules    [--test] [--scope S] [--kind K]
- *   node l10n.mjs audit    [--kind K]
- *   node l10n.mjs suspects [--min N] [--limit N] [--kind K]
  *   node l10n.mjs apply    --patch <file> [--write]
  *   node l10n.mjs stats
  *
@@ -53,10 +56,28 @@
 
 import { readFileSync, writeFileSync, existsSync, readdirSync, statSync, realpathSync } from "node:fs";
 import { execFileSync } from "node:child_process";
-import { join, dirname, resolve, relative, isAbsolute } from "node:path";
+import { join, dirname, resolve, relative, isAbsolute, sep } from "node:path";
 import { fileURLToPath } from "node:url";
-import { discoverGlossary, loadRuleSet, loadRulePacks, parseGlossaryConfig, BASE_GLOSSARY_PATH } from "./lib/glossary.mjs";
-import { initGlossary, initL10n, runDocAudit, lastWarningCount, annotationRanges, contrastRecommendedRanges } from "./lib/doc-audit.mjs";
+import {
+  discoverGlossary,
+  loadRuleSet,
+  loadRulePacks,
+  parseGlossaryConfig,
+  isOriginalScriptBan,
+  BASE_GLOSSARY_PATH,
+} from "./lib/glossary.mjs";
+import {
+  initGlossary,
+  initL10n,
+  runDocAudit,
+  lastWarningCount,
+  annotationRanges,
+  contrastRecommendedRanges,
+  makeExcludeMatcher,
+  parseCheckArgs,
+  quotedRegions,
+  spokenRegions,
+} from "./lib/doc-audit.mjs";
 
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
 
@@ -162,13 +183,16 @@ function requireKinds() {
  *
  * A path in the index whose file is gone - staged deletion, an interrupted rebase - is
  * dropped rather than opened, since a file that is not there has no Korean in it.
+ *
+ * git's own stderr is discarded: outside a repository it prints `fatal: not a git repository`
+ * once per glob, and the fallback below is the expected path there, not a failure to report.
  */
 function gitFiles(pattern) {
   try {
     const out = execFileSync(
       "git",
       ["ls-files", "-z", "--cached", "--others", "--exclude-standard", "--", pattern],
-      { cwd: ROOT, encoding: "utf8", maxBuffer: 32 * 1024 * 1024 },
+      { cwd: ROOT, encoding: "utf8", maxBuffer: 32 * 1024 * 1024, stdio: ["ignore", "pipe", "ignore"] },
     );
     const files = [...new Set(out.split("\0").filter(Boolean))].filter((f) => existsSync(join(ROOT, f)));
     if (files.length) return files;
@@ -182,15 +206,18 @@ const PRUNED = new Set([".git", "node_modules", "build", "dist", "target", ".gra
 
 /** Glob against the filesystem, honouring only the subset of glob syntax used here. */
 function findFiles(pattern) {
-  // `**/` spans zero or more directories; a lone `*` stops at a separator.
+  // `**/` spans zero or more directories; a lone `*` stops at a separator. Every glob character
+  // becomes a placeholder before any regex is written, because the regex for `**/` carries a `?`
+  // of its own (`(?:`) that a later `?` replacement would turn into `[^/]:`.
   const source = pattern
     .replace(/[.+^${}()|[\]\\]/g, "\\$&")
+    .replace(/\?/g, "@@ONE@@")
     .replace(/\*\*\//g, "@@ANY_DIRS@@")
     .replace(/\*\*/g, "@@ANY@@")
     .replace(/\*/g, "[^/]*")
     .replace(/@@ANY_DIRS@@/g, "(?:[^/]+/)*")
     .replace(/@@ANY@@/g, ".*")
-    .replace(/\?/g, "[^/]");
+    .replace(/@@ONE@@/g, "[^/]");
   const re = new RegExp(`^${source}$`);
 
   const out = [];
@@ -227,37 +254,42 @@ function formatOf(kind, file) {
 }
 
 /**
- * The document set `check` reads, as discover() entries.
- *
- * Without this the sentence sweeps needed a `kinds` declaration that the word check does
- * not, so the same repository got two different answers to «which files are judged» - and
- * a project with only documents got `check`'s 0 while thirty sentence rules never ran.
- * Both `*.md` and `**\/*.md` are listed on purpose: the non-repository fallback treats `**`
- * as one-or-more segments, so the top-level files drop out of the second form alone.
- */
-/**
  * What the project keeps out of every sweep: its `audit.exclude` globs, and the glossary files.
  *
  * `audit.exclude` is honoured by the sentence commands for the same reason `check` honours it:
  * the commands read one file set, and a file a project excluded from the word check is excluded
- * from the sentence sweep too. Without this the skill's own catalogues - pages that quote every
- * banned spelling on purpose - came back as 79 findings from `rules` while `check` passed.
+ * from the sentence sweep too - a catalogue that quotes every banned sentence on purpose, or a
+ * verbatim transcription of somebody else's document. **The patterns are read by `check`'s own
+ * matcher** (`makeExcludeMatcher`), against the same project-relative path. Any other glob engine
+ * disagrees with it somewhere - on whether `**\/legacy/**` covers a root `legacy/`, or a slash-less
+ * `CHANGELOG.md` a nested one - and the write-time hook's sentence run then blocks an edit to a
+ * file `check` skips.
  * A glossary is a page of banned spellings and is never judged by them - `check` skips both, so
  * the sentence sweep skips both too.
  */
 function projectExclusions() {
-  const g = discoverGlossary();
+  const g = discoverGlossary(START);
   const patterns = g ? (parseGlossaryConfig(readFileSync(g.path, "utf8")).config?.exclude ?? []) : [];
   const glossaries = new Set([g?.path, BASE_GLOSSARY_PATH].filter(Boolean).map((x) => resolve(x)));
-  const excluded = patterns.map((p) => new RegExp(
-    "^" + p.replace(/[.+^${}()|[\]\\]/g, "\\$&").replace(/\*\*/g, "\u0000").replace(/\*/g, "[^/]*").replace(/\u0000/g, ".*") + "$",
-  ));
+  const matchers = patterns.map(makeExcludeMatcher);
   return {
-    excluded: (file) => excluded.some((re) => re.test(file)),
+    excluded: (file) => {
+      const rel = isAbsolute(file) ? relative(ROOT, file).split(sep).join("/") : file;
+      return matchers.some((matches) => matches(rel));
+    },
     isGlossary: (file) => glossaries.has(isAbsolute(file) ? file : resolve(ROOT, file)),
   };
 }
 
+/**
+ * The document set `check` reads, as discover() entries.
+ *
+ * Without this the sentence sweeps would need a `kinds` declaration that the word check does
+ * not, and a project with only documents would get `check`'s zero while no sentence rule ran.
+ * Both `*.md` and `**\/*.md` are listed so that both enumerations reach the whole tree: git's
+ * pathspec `*` crosses `/` while `**\/*.md` needs a separator, and the filesystem fallback's `*`
+ * stops at one.
+ */
 function docEntries() {
   const found = new Map();
   const skip = projectExclusions();
@@ -274,32 +306,47 @@ function docEntries() {
 
 /**
  * Entries for the paths named on the command line - a file, or a directory expanded to the
- * document set beneath it.
+ * documents beneath it (`.md` · `.mdx` · `.svg`) and the files of every declared kind beneath it.
  *
  * This is what lets the write-time hook run the sentence rules on the one file it just wrote,
  * and what lets a draft outside the repository - a reply written to a scratch file - be read by
  * the lens before it goes out. A file under the project keeps its project-relative name, so a
  * declared resource kind still decides its format and register; a file outside keeps its
- * absolute path and is read as a document.
+ * absolute path and is read as a document. **A directory reaches the declared kinds too**: a
+ * catalogue, a board source or a deck's markup under it is Korean the project declared, and a
+ * directory sweep that read only the document extensions would report a clean directory while
+ * those files went unread.
  *
- * `audit.exclude` is honoured here, unlike in `check`, and on purpose: `check` reads a named
- * catalogue clean because its specimens sit in code spans, but the sentence rules match the
- * recommended prose a catalogue has to print in the open. A hook that blocked every edit to
- * the skill's own references would be a hook somebody switches off. The skipped names are
- * returned so the caller can say they were skipped rather than let them read as clean.
+ * `audit.exclude` is honoured here as `check` honours it, a named file included: a file it covers
+ * is skipped, and the skipped names are returned so the caller can say they were skipped rather
+ * than let them read as clean.
+ *
+ * @param paths the files and directories named on the command line
+ * @param command which command is asking, so a kind opted out of it stays out of a directory too
  */
-function pathEntries(paths) {
+function pathEntries(paths, command) {
   const skip = projectExclusions();
   const entries = new Map();
   const skipped = [];
-  const add = (file) => {
+  const add = (file, kindEntry = null) => {
     if (skip.isGlossary(file)) return;
     if (skip.excluded(file)) {
       skipped.push(file);
       return;
     }
+    if (kindEntry) {
+      entries.set(file, kindEntry);
+      return;
+    }
     const kind = isAbsolute(file) ? null : guessKind(file);
     entries.set(file, { kind: kind ?? "docs", lang: CONFIG.defaultLanguage, file, format: formatOf(kind, file) });
+  };
+  // The declared kinds' files, read once and only when a directory asks for them.
+  let kindFiles = null;
+  const declaredUnder = (dir) => {
+    if (!Object.keys(CONFIG.kinds).length) return [];
+    kindFiles ??= discover({ command });
+    return kindFiles.filter((e) => e.file.startsWith(`${dir}/`));
   };
   for (const p of paths) {
     const given = resolve(START, p);
@@ -313,9 +360,11 @@ function pathEntries(paths) {
     const inside = rel !== "" && !rel.startsWith("..") && !isAbsolute(rel);
     if (statSync(abs).isDirectory()) {
       if (!inside) throw new Error(`A directory has to be inside the project: ${p}`);
+      const dir = rel.split(sep).join("/");
       for (const ext of ["md", "mdx", "svg"]) {
-        for (const glob of [`${rel}/*.${ext}`, `${rel}/**/*.${ext}`]) for (const f of gitFiles(glob)) add(f);
+        for (const glob of [`${dir}/*.${ext}`, `${dir}/**/*.${ext}`]) for (const f of gitFiles(glob)) add(f);
       }
+      for (const entry of declaredUnder(dir)) add(entry.file, entry);
     } else {
       add(inside ? rel : abs);
     }
@@ -587,6 +636,27 @@ function segmentsHtml(src) {
   return segments.sort((a, b) => a.start - b.start);
 }
 
+/**
+ * The character ranges of the lines a marker region covers, one range per run of lines.
+ *
+ * @param src the file
+ * @param regions what `quotedRegions` or `spokenRegions` returned for its lines
+ */
+function regionRanges(src, regions) {
+  const ranges = [];
+  let at = 0;
+  src.split("\n").forEach((line, idx) => {
+    const end = at + line.length;
+    if (regions.skip.has(idx)) {
+      const last = ranges[ranges.length - 1];
+      if (last && last[1] === at - 1) last[1] = end;
+      else ranges.push([at, end]);
+    }
+    at = end + 1;
+  });
+  return ranges;
+}
+
 /** Markdown: prose only - code fences, inline code, link targets and HTML are held out. */
 function segmentsMarkdown(src) {
   const blocked = [];
@@ -601,12 +671,12 @@ function segmentsMarkdown(src) {
   hold(/^ {4,}\S.*$/gm); // indented code
   hold(/<[^>\n]+>/g);
   hold(/^-{3,}[ \t]*$/gm); // thematic break - structure, not prose
-  // Verbatim quotation of somebody else's document, marked by the author. `check` skips the
-  // same region in doc-audit.mjs - the two engines have to agree about what the file contains,
-  // or a clause excused by one is reported by the other and nobody can tell which is right.
-  // An unclosed region reaches the end of the file here too; `check` reports that as an error,
-  // and the sweeps stay quiet over the same span rather than disagreeing with it.
-  hold(/^[ \t]*<!--[ \t]*l10n:quote\b[\s\S]*?(?:^[ \t]*<!--[ \t]*l10n:\/quote[ \t]*-->[ \t]*$|$(?![\s\S]))/gm);
+  // Verbatim quotation of somebody else's document, marked by the author. The region is read by
+  // doc-audit.mjs's own `quotedRegions` - the two engines have to agree about what the file
+  // contains, or a clause excused by one is reported by the other and nobody can tell which is
+  // right. An unclosed region reaches the end of the file here too; `check` reports that as an
+  // error, and the sweeps stay quiet over the same span rather than disagreeing with it.
+  blocked.push(...regionRanges(src, quotedRegions(src.split("\n"))));
 
   // Front matter is a fence that opens on the file's very FIRST line and closes at the
   // next `---`. Every later `---` is a horizontal rule in the body.
@@ -676,7 +746,25 @@ function segmentsMarkdown(src) {
     }
     offset = end + 1;
   }
+  // A speaker script, marked by its author. It is this repository's writing, so it is read in
+  // full like any prose; it is only flagged, so that a ban which keeps a name in its original
+  // script stands down on it (`isOriginalScriptBan`). doc-audit.mjs reads the same marker for
+  // `check`. An unclosed region runs to the end of the file here, and `check` reports it.
+  const spoken = regionRanges(src, spokenRegions(src.split("\n")));
+  if (spoken.length) {
+    for (const seg of segments) seg.spoken = spoken.some(([a, b]) => seg.start >= a && seg.start < b);
+  }
   return segments;
+}
+
+/**
+ * Whether a segment is a speaker script: inside a marked span, or in a kind declared spoken.
+ *
+ * @param entry the file the segment came from
+ * @param seg the segment
+ */
+function isSpoken(entry, seg) {
+  return seg.spoken === true || CONFIG.kinds[entry.kind]?.register === "spoken";
 }
 
 /**
@@ -1006,9 +1094,9 @@ function matchSegment(re, seg) {
 /**
  * Whether a project exception releases a hit.
  *
- * <p>The exception has to COVER the match - the same segment is not enough. `PER-001 어플리케이션
- * 응답시간` is a requirement title quoted from a client's document and keeps that document's
- * spelling; a second, genuine 어플리케이션 later in the same cell is still a defect.
+ * <p>The exception has to COVER the match - the same segment is not enough. `PER-001 시스템
+ * 가동율` is a requirement title quoted from a client's document and keeps that document's
+ * spelling; a second, genuine 가동율 later in the same cell is still a defect.
  */
 function releasedBy(rule, seg, m) {
   if (!rule.except?.length) return false;
@@ -1075,6 +1163,10 @@ const PLACEHOLDER = /\{\{[^}]+\}\}|\{[0-9A-Za-z_.]+\}|\$\{[^}]+\}|%(\d+\$)?[sd]/
 // about here so the summary can say so.
 let LAST_WARNINGS = 0;
 
+// The lens judges nothing and always exits 0, so its candidates are counted apart from the
+// warnings: the sweep's summary names them as reading still owed, never as a clean step.
+let LAST_LENS_CANDIDATES = 0;
+
 /**
  * A file path a reader can act on, relative to the run's root.
  *
@@ -1125,6 +1217,7 @@ function glossaryBans() {
     level: r.level,
     threshold: r.threshold,
     screenOnly: r.screenOnly === true,
+    originalScript: isOriginalScriptBan(r),
   }));
 }
 
@@ -1649,6 +1742,37 @@ const EXTRACTOR_CASES = [
       "<!-- l10n:/quote -->\n",
     want: ["가운데 검토 의견이다."],
   },
+  {
+    // A speaker script is the repository's own writing, so unlike a quotation it is read in
+    // full; it is only flagged, so that the bans keeping a name in its original script stand
+    // down on it. The sentence after the close is ordinary prose again, flag and all.
+    what: "markdown: a spoken span is read in full and flagged, and the body after it is not",
+    of: () => segmentsMarkdown,
+    src:
+      "<!-- l10n:spoken 발표 대본 -->\n" +
+      "도커 컨테이너로 배포합니다.\n" +
+      "<!-- l10n:/spoken -->\n" +
+      "Docker 컨테이너로 배포한다.\n",
+    want: ["도커 컨테이너로 배포합니다.", "Docker 컨테이너로 배포한다."],
+    wantSpoken: [true, false],
+    loud: ["도커"],
+  },
+  {
+    // A document that explains a marker shows it in a code fence, often the opening line alone.
+    // That is an example of the marker and opens nothing: read as a real one, it would hold or
+    // flag every sentence after the fence and report an unclosed region the author never wrote.
+    what: "markdown: a marker shown in a code fence opens no span",
+    of: () => segmentsMarkdown,
+    src:
+      "```markdown\n" +
+      "<!-- l10n:quote 예시 -->\n" +
+      "<!-- l10n:spoken 예시 -->\n" +
+      "```\n" +
+      "이 점에 있어서 우리가 쓴 문장이다.\n",
+    want: ["이 점에 있어서 우리가 쓴 문장이다."],
+    wantSpoken: [false],
+    loud: ["우리가 쓴"],
+  },
 ];
 
 /**
@@ -1687,6 +1811,13 @@ function extractorProblems() {
       const after = got.map((s) => s.after ?? "");
       if (after.some((a, i) => a !== test.wantAfter[i])) {
         problems.push([test.what, `following text expected ${JSON.stringify(test.wantAfter)} · got ${JSON.stringify(after)}`]);
+        continue;
+      }
+    }
+    if (test.wantSpoken) {
+      const spoken = got.map((s) => s.spoken === true);
+      if (spoken.some((v, i) => v !== test.wantSpoken[i])) {
+        problems.push([test.what, `speaker-script flags expected ${JSON.stringify(test.wantSpoken)} · got ${JSON.stringify(spoken)}`]);
         continue;
       }
     }
@@ -1759,7 +1890,7 @@ function cmdRulesTest(opts) {
     }
     if (!(rule.hit ?? []).length) problems.push(["no hit example", "nothing proves what this rule catches"]);
     for (const reg of rule.registers ?? []) {
-      if (!["screen", "manual", "plain"].includes(reg)) problems.push(["unknown register in registers", `${reg} - screen · manual · plain`]);
+      if (!["screen", "manual", "plain", "spoken"].includes(reg)) problems.push(["unknown register in registers", `${reg} - screen · manual · plain · spoken`]);
     }
     if (!(rule.miss ?? []).length) problems.push(["no miss example", "nothing guards against false positives"]);
     // The lens knowing a family HALF is the defect - 「붙는」 stood in it without
@@ -1822,6 +1953,7 @@ function cmdRulesTest(opts) {
     `\n${rules.length} rules verified · ${failures ? C.red(`${failures} failed`) : C.green("all passed")}` +
       C.dim("\nGlossary rules are not example-verified - after registering, compare the check --list-rules output"),
   );
+  reportRetired();
   return failures ? 1 : 0;
 }
 
@@ -1875,7 +2007,7 @@ function cmdRulesScan(opts) {
   // An explicit --scope reaches rules the project did not opt into; the default
   // sweep runs universal rules plus the project's declared scopes.
   const active = opts.scope ? rulePacks().all.filter((r) => r.scope === opts.scope) : rulePacks().active;
-  const named = opts.paths?.length ? pathEntries(opts.paths) : null;
+  const named = opts.paths?.length ? pathEntries(opts.paths, "rules") : null;
   const entries = named ? named.entries : discover({ ...opts, docFallback: true, command: "rules" });
   const byRule = new Map();
 
@@ -1905,6 +2037,9 @@ function cmdRulesScan(opts) {
           // rule fired. Matching elsewhere in the same segment would excuse a real defect
           // for standing next to a quotation.
           if (releasedBy(rule, seg, m)) continue;
+          // The spoken-script boundary is the same in both engines: a rule that only keeps a name in its
+          // original script stands down on a speaker script, whichever file holds the rule.
+          if (isSpoken(entry, seg) && isOriginalScriptBan({ source: rule.find.join(" "), suggestion: rule.replace })) continue;
           if (!perFile.has(rule.id)) perFile.set(rule.id, []);
           perFile.get(rule.id).push({
             file: entry.file,
@@ -1988,7 +2123,20 @@ function cmdRulesScan(opts) {
       for (const ex of list) console.log(C.dim(`  ${id} /${ex.re.source}/ - ${ex.why}`));
     }
   }
+  reportRetired();
   return failed ? 1 : 0;
+}
+
+/**
+ * Retired base rules the project pack still disables or narrows. The entry turns nothing off any
+ * more, so it is named with where the ban lives now - left silent, it reads as a disable or a
+ * narrowing still in force.
+ */
+function reportRetired() {
+  const retired = rulePacks().retired;
+  if (!retired?.size) return;
+  console.log(C.dim(`${retired.size} retired rules named in .claude/l10n-rules.json - those entries do nothing:`));
+  for (const [id, where] of retired) console.log(C.dim(`  ${id} - ${where}`));
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -2151,7 +2299,7 @@ function cmdSuspects(opts) {
   // labels (저장됨), settled idioms (막다른 길 · 나가는 길), and -다체 design prose - so a
   // lower threshold trains its reader to skim past the findings that matter.
   const min = Number(opts.min ?? 3);
-  const named = opts.paths?.length ? pathEntries(opts.paths) : null;
+  const named = opts.paths?.length ? pathEntries(opts.paths, "suspects") : null;
   const entries = named ? named.entries : discover({ ...opts, docFallback: true, command: "suspects" });
   const found = [];
   for (const entry of entries) {
@@ -2231,7 +2379,7 @@ function cmdSuspects(opts) {
 function cmdLens(opts) {
   const lens = readLens();
   if (!lens) throw new Error("references/lens.txt is missing or empty - the lens has nothing to match");
-  const named = opts.paths?.length ? pathEntries(opts.paths) : null;
+  const named = opts.paths?.length ? pathEntries(opts.paths, "lens") : null;
   const entries = named ? named.entries : discover({ ...opts, docFallback: true, command: "lens" });
   const hits = [];
   for (const entry of entries) {
@@ -2250,18 +2398,25 @@ function cmdLens(opts) {
     }
   }
   const files = new Set(hits.map((h) => h.file)).size;
+  LAST_LENS_CANDIDATES = hits.length;
   if (opts.json) {
     console.log(JSON.stringify({ count: hits.length, files, candidates: hits }, null, 2));
     return 0;
   }
   if (!opts.count) {
+    // `listLimit` is the sweep's: it prints the first candidates where the reader already is, and
+    // says how many more `lens` itself lists, so a long list cannot bury the other checks.
+    const shown = opts.listLimit ? hits.slice(0, opts.listLimit) : hits;
     let current = null;
-    for (const h of hits) {
+    for (const h of shown) {
       if (h.file !== current) {
         current = h.file;
         console.log(`\n${C.cyan(h.file)}`);
       }
       console.log(`  ${C.dim(`${h.line}:`)} ${C.yellow(h.stems.join(" · "))}  ${h.text.slice(0, 100)}`);
+    }
+    if (shown.length < hits.length) {
+      console.log(C.dim(`\n  … and ${hits.length - shown.length} more - \`lens\` with the same paths lists every one`));
     }
   }
   console.log(
@@ -2281,8 +2436,12 @@ function cmdLens(opts) {
  * three that ran says so. One command that runs them all removes the forgetting, and the
  * closing summary is the deliberate-violation test in another form - it names the file count,
  * the rule counts and the lens, so a zero over zero files or zero rules cannot pass as clean.
- * It does not remove the reading: the lens candidates and the in-order pass stay with the person.
+ * It does not remove the reading: the lens candidates and the in-order pass stay with the person,
+ * so the lens lists its first candidates here and its row in the summary says how many stand -
+ * a lens row marked clean beside candidates nobody opened reads as a pass on all of them.
  */
+const SWEEP_LENS_LIST = 40;
+
 function cmdSweep(opts) {
   const paths = opts.paths ?? [];
   const banner = (name) => console.log(`\n${C.bold(`── ${name} ${"─".repeat(Math.max(0, 66 - name.length))}`)}`);
@@ -2291,13 +2450,14 @@ function cmdSweep(opts) {
     banner(name);
     let code;
     LAST_WARNINGS = 0;
+    LAST_LENS_CANDIDATES = 0;
     try {
       code = fn();
     } catch (err) {
       console.error(C.red(`✖ ${err.message}`));
       code = 2;
     }
-    steps.push([name, code, code === 2 ? 0 : LAST_WARNINGS]);
+    steps.push([name, code, code === 2 ? 0 : LAST_WARNINGS, code === 2 ? 0 : LAST_LENS_CANDIDATES]);
   };
 
   // The pack first: a rule that no longer catches its own example, or a lens that lost half a
@@ -2334,22 +2494,24 @@ function cmdSweep(opts) {
     console.log(C.dim("skipped - no resource kinds declared in .claude/l10n.json (check --init-l10n declares them)"));
     steps.push(["audit", null]);
   }
-  run("lens", () => cmdLens({ ...opts, json: false, count: true }));
+  run("lens", () => cmdLens({ ...opts, json: false, listLimit: SWEEP_LENS_LIST }));
 
   banner("sweep");
-  const entries = paths.length ? pathEntries(paths).entries : discover({ docFallback: true, command: "rules" });
+  const entries = paths.length ? pathEntries(paths, "rules").entries : discover({ docFallback: true, command: "rules" });
   console.log(
     `files in the sentence sweep: ${entries.length} · glossary rules: ${ruleSet().rules.length}` +
       ` · sentence rules: ${rulePacks().active.length} · lens: ${readLens() ? "loaded" : "missing"}`,
   );
-  for (const [name, code, warns] of steps) {
+  for (const [name, code, warns, candidates] of steps) {
     const mark =
       code === null
         ? C.dim("– skipped")
         : code === 0
           ? warns
             ? C.yellow(`⚠ ${warns} ${warns === 1 ? "warning" : "warnings"}`)
-            : C.green("✔ clean")
+            : candidates
+              ? C.yellow(`ℹ ${candidates} ${candidates === 1 ? "candidate" : "candidates"} to read`)
+              : C.green("✔ clean")
           : code === 1
             ? C.red("✖ findings")
             : C.red("✖ did not run");
@@ -2357,15 +2519,24 @@ function cmdSweep(opts) {
   }
   const worst = Math.max(0, ...steps.map(([, code]) => code ?? 0));
   const warned = steps.reduce((n, [, , w]) => n + (w ?? 0), 0);
+  const candidates = steps.reduce((n, [, , , c]) => n + (c ?? 0), 0);
+  // The closing line is the verdict of the checks that judge. The lens judges nothing, so its
+  // candidates are named as reading still owed rather than folded into either verdict.
+  const owed = candidates
+    ? ` ${candidates} lens ${candidates === 1 ? "candidate stands" : "candidates stand"} above unjudged:` +
+      " read each sentence before reporting (references/reading-lens.md)."
+    : "";
   console.log(
     worst
-      ? C.red("\nNot clean - fix the findings above, re-check the sentences you rewrote, then sweep again.")
+      ? C.red(`\nNot clean - fix the findings above, re-check the sentences you rewrote, then sweep again.${owed}`)
       : warned
         ? C.yellow(
             `\nNo errors, but ${warned} ${warned === 1 ? "warning is" : "warnings are"} a place to read above:` +
-              " a warned term is wrong unless the sentence is quoting one. Fix or record each, then sweep again.",
+              ` a warned term is wrong unless the sentence is quoting one. Fix or record each, then sweep again.${owed}`,
           )
-        : C.green("\nClean on every check that ran. The lens candidates and the in-order reading are still the reader's."),
+        : candidates
+          ? C.yellow(`\nClean on every check that ran.${owed} The in-order reading is still the reader's.`)
+          : C.green("\nClean on every check that ran. The in-order reading is still the reader's."),
   );
   return worst;
 }
@@ -2508,6 +2679,8 @@ function cmdAudit(opts) {
       }
       for (const ban of bans) {
         if (ban.screenOnly && (!isScreen || seg.annotation)) continue;
+        // A speaker script writes a name as it is pronounced; only that family of bans stands down.
+        if (ban.originalScript && isSpoken(entry, seg)) continue;
         if (matchSegment(ban.re, seg)) {
           if (!perRule.has(ban.term)) perRule.set(ban.term, []);
           perRule.get(ban.term).push({
@@ -2620,22 +2793,7 @@ function cmdAudit(opts) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 function cmdCheck(rest, extra = {}) {
-  const args = { all: false, strict: false, untranslated: false, noBase: false, listRules: false, init: false, initL10n: false, glossary: null, paths: [] };
-  for (let i = 0; i < rest.length; i++) {
-    const a = rest[i];
-    if (a === "--all") args.all = true;
-    else if (a === "--strict") args.strict = true;
-    else if (a === "--untranslated") args.untranslated = true;
-    else if (a === "--no-base") args.noBase = true;
-    else if (a === "--list-rules") args.listRules = true;
-    else if (a === "--init") args.init = true;
-    else if (a === "--init-l10n") args.initL10n = true;
-    else if (a === "--glossary") {
-      args.glossary = rest[++i];
-      if (!args.glossary) throw new Error("--glossary needs a path after it");
-    } else if (a.startsWith("--")) throw new Error(`Unknown flag: ${a}`);
-    else args.paths.push(a);
-  }
+  const args = parseCheckArgs(rest, { initL10n: true });
   args.noFooter = Boolean(extra.noFooter);
   const cliHint = `${SCRIPT_PATH} check`;
   if (args.init) {

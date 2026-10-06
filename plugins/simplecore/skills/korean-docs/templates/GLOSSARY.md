@@ -13,10 +13,10 @@ audit:
 The Korean terminology and spelling standard for this project. Every task that writes, translates,
 or proofreads Korean reads this file first.
 
-- The audit script of the korean-docs skill (`${CLAUDE_PLUGIN_ROOT}/skills/korean-docs/`) merges this
-  file with the base glossary (GLOSSARY.base.md) and checks both. To run it:
-  `/simplecore:glossary-audit [paths...]`, or
-  `node "${CLAUDE_PLUGIN_ROOT}/skills/korean-docs/scripts/check-glossary.mjs" [paths...]`.
+- The audit tool of the korean-docs skill (`${CLAUDE_PLUGIN_ROOT}/skills/korean-docs/`) merges this
+  file with the base glossary (GLOSSARY.base.md) and checks documents against both and against the
+  sentence-rule pack. To run every check: `/simplecore:glossary-audit [paths...]`, or
+  `node "${CLAUDE_PLUGIN_ROOT}/skills/korean-docs/scripts/l10n.mjs" sweep [paths...]`.
 - The table format (columns and headers) is parsed by the script, so do not change it. Items are
   separated by `,`. A `/pattern/` item is a regex; anything else is a literal. Do not write `|`
   inside a cell (separate items instead of using alternation) and do not write `,` inside a regex.
@@ -71,7 +71,7 @@ English key of a base translation row (disabling the whole row) or the text of a
 symbols included** - one character off disables nothing, and `check` reports that row as a dead
 exception.
 
-**The audit engine's built-in checks are turned off through the same table.** Only the three
+**The audit engine's built-in checks are turned off through the same table.** Only the
 warning-level ones can be turned off - `heading-form` (the heading is a sentence) · `repeat` (the
 same word twice in a row) · `untranslated` (possibly untranslated). The error-level particle checks
 (`particle` · `interpolated-particle` · `reference-particle`) do not split by context and are

@@ -8,7 +8,7 @@ corrections that actually came up. The procedure for reviewing and fixing a whol
 **Scope**: screen copy (i18n resources · message bundles · mail templates · wireframe board
 sources), documents (design and technical documents · README · manuals · plans · review notes), and
 explanatory text inside code (comments recording design intent, `OPEN:` · `TODO:` notes). Only
-Q · S · W · Z and 「UI 요소별 문체」 are screen-only; everything else applies to documents unchanged.
+Q · S · W · Z and "Register by UI element" are screen-only; everything else applies to documents unchanged.
 
 **Screen copy takes one more test.** For a document, 「does the reader get it in one pass?」 is
 enough; screen copy also has to pass **「is this what business software actually says?」** The three
@@ -113,7 +113,7 @@ uses the Korean administrative verb.
 
 Write what changes, what stays, and how the user is told.
 
-- `일정이 통째로 밀립니다` → 설치 일정이 연기될 수 있습니다
+- `일정이 통째로 밀립니다` → 남은 설치 일정이 모두 연기됩니다
 - `기록이 통째로 빕니다` → 해당 시간대의 접속 기록이 누락됩니다
 - `문이 조용히 남습니다` → 연결되지 않은 장치를 결과 목록에 표시합니다
 - `자격이 그대로 따라갑니다` → 기존 이력과 자격 정보를 유지합니다
@@ -169,8 +169,8 @@ A passive settled in statutory language stays.
 ### L. After fixing, check particles, endings, and agreement separately
 
 An error created by the previous fix was not in the original, so it does not stand out. Sweep these
-nine after fixing. Particle disagreement and a word repeated twice are caught by the audit script; a
-person reads the other seven. Mixed politeness and a mismatched object name only show up when
+after fixing. Particle disagreement and a word repeated twice are caught by the audit script; a
+person reads the rest. Mixed politeness and a mismatched object name only show up when
 reading one file vertically.
 
 - Particles (을/를 · 이/가 · 은/는 · 으로/로 · 와/과)
