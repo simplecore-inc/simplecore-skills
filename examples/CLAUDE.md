@@ -6,41 +6,43 @@ Structure: [Skill Usage](#skill-usage) → [Communication & Reporting](#communic
 
 ## Skill Usage
 
-Before starting any task, check whether an installed skill matches it. If a skill's description matches even partially, invoke the skill first and follow it — do not work from memory of what the skill contains. Skills evolve; the installed version is the source of truth.
+Before starting any task, check whether an installed skill matches it. If a skill's description matches even partially, invoke the skill first and follow it - do not work from memory of what the skill contains. Skills evolve; the installed version is the source of truth.
 
-The skills from the `simplecore-skills` marketplace are designed for proactive use — invoke them without waiting for the user to name them:
+The skills from the `simplecore-skills` marketplace are designed for proactive use - invoke them without waiting for the user to name them:
 
-- **svg-diagrams** — invoke for ANY diagram or visualization request: architecture pictures, flowcharts, sequence/state/class/ER diagrams, pipelines, network and infrastructure layouts, ASCII diagrams, Mermaid. Trigger even when the user only says "draw", "visualize", "show the structure", or uses Korean phrases such as 다이어그램, 구성도, 도식화, 그림 그려. Always run the bundled render audit before delivering an SVG.
-- **wireframe-boards** — invoke before implementing a screen from a board, checking code against one, syncing one after a change, or drawing new frames; propose a board when substantial new UI has none. On a board, screens are addressed by their permanent id (`A-02`), never by the bracketed position beside it.
-- **board-parity-walk** — invoke when reconciling a whole board's frames against the running app across sessions. It applies **only** where a wireframe board already exists; with no board, draw one first.
-- **korean-docs** — when the [Korean Output Environment](#optional-korean-output-environment) chapter below is active, invoke for document writing, translation, proofreading, review, screen copy, and glossary work. Ordinary answers do not invoke it.
+- **svg-diagrams** - invoke for ANY diagram or visualization request: architecture pictures, flowcharts, sequence/state/class/ER diagrams, pipelines, network and infrastructure layouts, ASCII diagrams, Mermaid. Trigger even when the user only says "draw", "visualize", "show the structure", or uses Korean phrases such as 다이어그램, 구성도, 도식화, 그림 그려. Always run the bundled render audit before delivering an SVG.
+- **wireframe-boards** - invoke before implementing a screen from a board, checking code against one, syncing one after a change, or drawing new frames; propose a board when substantial new UI has none. On a board, screens are addressed by their permanent id (`A-02`), never by the bracketed position beside it.
+- **board-to-app** - invoke before building an application from a board chapter by chapter, running a chapter's persona journeys, deciding which chapters may run alongside each other, or resuming a build. Like the walk below, it applies only where a board exists.
+- **board-parity-walk** - invoke when reconciling a whole board's frames against the running app across sessions. It applies **only** where a wireframe board already exists; with no board, draw one first.
+- **proposal-writing**, **slide-decks** and **bid-proposal** - the proposal set: what a Korean bid document says, how the decks it is submitted as are typeset, and the runner that takes one bid from the issued tender to the submitted package. Invoke the runner to start or resume a bid, and the two standards when writing or typesetting any of its documents.
+- **korean-docs** - when the [Korean Output Environment](#optional-korean-output-environment) chapter below is active, invoke for document writing, translation, proofreading, review, screen copy, and glossary work. Ordinary answers do not invoke it.
 
 ### SimpliX projects
 
-When a repository is built on the SimpliX stack, its handbook skill is a first-touch gate — invoke it with the Skill tool before reading, writing, reviewing, or explaining any file it covers, and follow it rather than memory.
+When a repository is built on the SimpliX stack, its handbook skill is a first-touch gate - invoke it with the Skill tool before reading, writing, reviewing, or explaining any file it covers, and follow it rather than memory.
 
-- **`simplix:backend`** — a Spring Boot repository whose classes extend `SimpliXBaseController` / `SimpliXBaseService` / `SimpliXBaseRepository`, whose endpoints return `SimpliXApiResponse`, or that carries a `.simplix/` generator directory.
-- **`simplix:frontend`** — a React repository with a `simplix.config.ts` or `@simplix-react/*` dependencies.
-- **`simplix:frontend-e2e`** — before declaring any frontend feature complete, and whenever a task asks to walk a feature as a user, check screens against each other, or find what is confusing, missing, or unusable.
+- **`simplix:backend`** - a Spring Boot repository whose classes extend `SimpliXBaseController` / `SimpliXBaseService` / `SimpliXBaseRepository`, whose endpoints return `SimpliXApiResponse`, or that carries a `.simplix/` generator directory.
+- **`simplix:frontend`** - a React repository with a `simplix.config.ts` or `@simplix-react/*` dependencies.
+- **`simplix:frontend-e2e`** - before declaring any frontend feature complete, and whenever a task asks to walk a feature as a user, check screens against each other, or find what is confusing, missing, or unusable.
 
-In a monorepo the marker sits in the subproject, so the gate applies per subproject and a cross-subproject task invokes both skills. Neither skill applies to the simplix-react framework repository itself — that one is the framework, not a project using it.
+In a monorepo the marker sits in the subproject, so the gate applies per subproject and a cross-subproject task invokes both skills. Neither skill applies to the simplix-react framework repository itself - that one is the framework, not a project using it.
 
-These skills load only where the plugin is installed (`claude plugin install simplecore@simplecore-skills`) or where the plugin directory is linked under `~/.claude/skills/`.
+These skills load only where the plugin is installed (`claude plugin install simplix@simplecore-skills`) or where the plugin directory is linked under `~/.claude/skills/`.
 
 ### Local development servers
 
-For a development server on the local machine (`localhost`, `127.0.0.1`, `[::1]`, or the development machine's private IP), start, restart, and stop it directly as the work needs. Do not stop to ask each time — verifying a screen needs a running application, and a session that asks before every restart cannot walk a whole feature area.
+For a development server on the local machine (`localhost`, `127.0.0.1`, `[::1]`, or the development machine's private IP), start, restart, and stop it directly as the work needs. Do not stop to ask each time - verifying a screen needs a running application, and a session that asks before every restart cannot walk a whole feature area.
 
 - **Take the commands from the project**, never from memory: its package scripts, Gradle tasks, compose file, or the dev-server section of its own instruction files.
 - **Read the port from the server's own output or a readiness probe.** A dev server whose usual port is taken moves silently to another one, and a hardcoded port then verifies the wrong thing.
 - **Restart rather than reason about staleness.** A screen served from a stale build looks exactly like a missing translation or a vanished column; when output disagrees with the source, rebuild or restart before writing anything down as a defect.
 - **Reclaim only a port you own.** When the port is held by a development server from an earlier session of this same project, stop that process and start a fresh one. Never kill a process you cannot identify as this project's development server.
 - **Leave the environment as you found it.** Stop the servers this session started once the work no longer needs them, and say which are still running and why when you leave one up.
-- **Out of scope**: remote hosts of any kind — production, staging, shared development — container orchestrators outside the local machine, and anything serving other people. Ask first.
+- **Out of scope**: remote hosts of any kind - production, staging, shared development - container orchestrators outside the local machine, and anything serving other people. Ask first.
 
 ### Delegate context-hungry verification
 
-Browser-driven screen audits and long parity walks are made of screenshots, accessibility trees, and console logs — the things that fill a context fastest. Run them in a subagent, one per screen cluster, a fresh one after each, returning conclusions rather than contents. Never put an image in a subagent's report: surface the file path instead, so it renders for the reader without entering the coordinating context.
+Browser-driven screen audits and long parity walks are made of screenshots, accessibility trees, and console logs - the things that fill a context fastest. Run them in a subagent, one per screen cluster, a fresh one after each, returning conclusions rather than contents. Never put an image in a subagent's report: surface the file path instead, so it renders for the reader without entering the coordinating context.
 
 ## Communication & Reporting
 
@@ -60,17 +62,17 @@ Do not estimate or present scope, size, duration, dates, effort, or complexity r
 
 When the user asks to "implement everything", "do all of it", or "leave nothing out":
 
-1. Do not defer parts into tiers, phases, or backlogs — implement every discovered item in the current session
+1. Do not defer parts into tiers, phases, or backlogs - implement every discovered item in the current session
 2. Do not skip items because "it can be done later", "it will resolve naturally during implementation", or "it is low severity"
 3. After an audit, implement every unimplemented finding immediately, regardless of severity
-4. Run a full audit before reporting "done" — repeat until the audit returns zero findings
-5. When the user asks "is it fully done?", treat that as suspicion that something remains — re-audit and answer honestly
+4. Run a full audit before reporting "done" - repeat until the audit returns zero findings
+5. When the user asks "is it fully done?", treat that as suspicion that something remains - re-audit and answer honestly
 
-### Fair Comparison — Change One Variable Only (A/B, benchmarks, ablations; CRITICAL)
+### Fair Comparison - Change One Variable Only (A/B, benchmarks, ablations; CRITICAL)
 
 When comparing two systems or configurations, vary only the variable under test and keep everything else identical. Do not give either arm a disadvantage in context, inputs, retrieval paths, prompts, models, data, or preprocessing.
 
-To measure the effect of feature X, compare "baseline" vs "baseline + X" — identical in everything except X. If one arm is deprived of inputs the other receives, the measurement captures that deprivation, not the effect of X.
+To measure the effect of feature X, compare "baseline" vs "baseline + X" - identical in everything except X. If one arm is deprived of inputs the other receives, the measurement captures that deprivation, not the effect of X.
 
 1. Before comparing, explicitly enumerate how the two arms differ and confirm they are identical except for the intended variable
 2. Never remove inputs or context from your own arm that the baseline receives. If your feature affects only one stage, keep the remaining stages identical to the baseline
@@ -81,7 +83,7 @@ On violation: immediately retract any numbers or conclusions produced by an unfa
 
 ### No Process History or Self-Evaluation in Artifacts
 
-Artifacts — documents, code, comments, commit bodies — contain only the final state. Never record work process, change history, or self-assessment. An artifact must stand complete on its own without explaining how it got there.
+Artifacts - documents, code, comments, commit bodies - contain only the final state. Never record work process, change history, or self-assessment. An artifact must stand complete on its own without explaining how it got there.
 
 Prohibited content:
 
@@ -96,9 +98,9 @@ Correct approach:
 - State the current correct form assertively; omit how it came to be
 - Write rules and standards as forward-looking directives only ("Write X as Y"), without appraising existing content
 - Keep change history in git commits and PRs only (commit messages state the change, not self-evaluation)
-- Report process, audits, and evaluations to the user in conversation only — never in files
+- Report process, audits, and evaluations to the user in conversation only - never in files
 
-Scope: README, `docs/`, design documents, skills and handbooks, source comments, commit message bodies — no exceptions.
+Scope: README, `docs/`, design documents, skills and handbooks, source comments, commit message bodies - no exceptions.
 
 ## Code Authoring
 
@@ -116,11 +118,11 @@ Write ALL comments inside source code in English, regardless of the team's worki
 
 ### No Inline Fully Qualified Names
 
-Bring types into scope with the language's import mechanism. Never spell out a full package or module path inline in code bodies — method signatures, variable declarations, instantiations, doc-comment links.
+Bring types into scope with the language's import mechanism. Never spell out a full package or module path inline in code bodies - method signatures, variable declarations, instantiations, doc-comment links.
 
 This applies in every language that has an import mechanism (Java, Kotlin, TypeScript, Python, Rust, C#, Go, and others).
 
-Prohibited — inline fully qualified references:
+Prohibited - inline fully qualified references:
 
 ```java
 public static Result wire(java.util.logging.Logger auditLogger) { ... }
@@ -136,7 +138,7 @@ function render(spec: import("./layout/spec").DiagramSpec): string { ... }
 def wire(audit_logger: infrastructure.logging.adapters.AuditLogger) -> Result: ...
 ```
 
-Correct — import first, then use the simple name:
+Correct - import first, then use the simple name:
 
 ```java
 import java.util.logging.Logger;
@@ -157,15 +159,15 @@ Language notes:
 - Java/Kotlin: standard-library types outside the auto-import set (`java.util.List`, `java.time.Instant`, and the like) must also be imported
 - Python: qualifying through a single imported module (`logging.Logger` after `import logging`) is idiomatic and allowed; the violation is deep dotted paths written inline
 - Rust: prefer `use` declarations; inline paths only for one-off disambiguation
-- Go: package-qualified names (`http.Client`) are the language's import mechanism itself — this rule adds nothing beyond running the standard formatter
+- Go: package-qualified names (`http.Client`) are the language's import mechanism itself - this rule adds nothing beyond running the standard formatter
 
-Exception — simple-name collisions (narrow): only when two types with the same simple name are both needed in one file (for example `org.slf4j.Logger` and `java.util.logging.Logger`) may one side be referenced by its full path. In that case:
+Exception - simple-name collisions (narrow): only when two types with the same simple name are both needed in one file (for example `org.slf4j.Logger` and `java.util.logging.Logger`) may one side be referenced by its full path. In that case:
 
 1. Import the more frequently used side; inline the less frequent one
 2. Put a one-line comment directly above the FQN line explaining why it cannot be imported
 3. Prefer removing the collision entirely via rename or wrapper when possible
 
-On violation: when modifying a file, convert any inlined FQNs you find to imports (touch-and-fix). Never inline FQNs in new code — if the collision exception does not apply, add an import.
+On violation: when modifying a file, convert any inlined FQNs you find to imports (touch-and-fix). Never inline FQNs in new code - if the collision exception does not apply, add an import.
 
 ### Code Quality
 
@@ -186,7 +188,7 @@ Do not write mocks, stubs, placeholder code, or fake responses. Implement every 
 - No fake handlers that echo the request without persisting anything
 - If a feature is not implemented, raise an explicit error instead (`throw new Error("Not implemented")`, `panic!("not implemented")`, `raise NotImplementedError`)
 
-What counts as a stub — any one of the following:
+What counts as a stub - any one of the following:
 
 1. A function or method that returns fixed values without reading its request parameters
 2. A handler that never calls its dependencies
@@ -238,7 +240,7 @@ What counts as project-specific hardcoding:
 2. Direct comparison of framework or tool names (`if name == "spring-boot"`, `if framework == "our-internal-lib"`)
 3. Exclude/allow/priority lists as code constants when users may need different values per project
 4. Matching file names, extensions, or naming conventions that are merely local custom
-5. Logic that other projects would fail to recognize — or would misrecognize
+5. Logic that other projects would fail to recognize - or would misrecognize
 
 Prohibited patterns:
 
@@ -252,7 +254,7 @@ Correct alternatives:
 1. Config keys: users declare `exclude_paths = ["tests/fixtures/**"]` in project config or ignore files. Defaults are empty or minimal universal patterns only (build output, dependency directories, `.git/`)
 2. User-supplied globs/regexes instead of hardcoded strings
 3. CLI flags only override config: config file first, flags as per-session overrides
-4. Documentation: show "add `tests/fixtures/` to exclude_paths when analyzing this repo itself" as an example in the README or config sample — never as a built-in
+4. Documentation: show "add `tests/fixtures/` to exclude_paths when analyzing this repo itself" as an example in the README or config sample - never as a built-in
 5. Decide at the call site: the library exposes a pure path-filter function; the application decides what to filter
 
 Pre-commit checklist:
@@ -274,7 +276,7 @@ When modifying a file, improve raw null returns and catch-all handlers you find 
 
 ## Git
 
-- Conventional commit format: `type(scope): description` — English only
+- Conventional commit format: `type(scope): description` - English only
 - NEVER add AI-related signatures (Co-Authored-By: Claude, Generated with Claude Code)
 - Commit and push ONLY when the user explicitly requests it
 
@@ -296,10 +298,10 @@ Keep this chapter only if user-facing output should be Korean. It pairs with the
 - Code artifacts (variables, comments, logs, exceptions, commits): English only
 - Documentation (README, `docs/`): Korean allowed
 
-### Natural Korean — no translationese
+### Natural Korean - no translationese
 
-Do not coin awkward literal translations of English words; use natural Korean that fits the context. The full rules — banned expressions, vocabulary substitutions, response tone, orthography, and domain terminology — live in the `korean-docs` skill.
+Do not coin awkward literal translations of English words; use natural Korean that fits the context. The full rules - banned expressions, vocabulary substitutions, response tone, orthography, and domain terminology - live in the `korean-docs` skill.
 
 - Invoke the `korean-docs` skill for document writing, translation, proofreading, review, screen copy, and glossary work (it bundles a glossary audit tool and a full translationese catalog). Ordinary answers do not invoke it
-- Ordinary answers follow the Korean habits block (`references/global-korean-card.md`) pasted into the global instructions
+- Ordinary answers follow the Korean habits block pasted into the global instructions: the `korean-docs` skill's `references/global-korean-card.md`, which `/simplecore:init --global` offers whole
 - Trigger keywords include: 번역투, awkward Korean, terminology consistency, glossary re-check

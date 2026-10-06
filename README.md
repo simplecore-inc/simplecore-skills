@@ -1,6 +1,7 @@
 # SimpleCORE Skills
 
-[![version](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Fsimplecore-inc%2Fsimplecore-skills%2Fmain%2F.claude-plugin%2Fmarketplace.json&query=%24.metadata.version&label=version&color=blue)](https://github.com/simplecore-inc/simplecore-skills/blob/main/.claude-plugin/marketplace.json)
+[![simplecore](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Fsimplecore-inc%2Fsimplecore-skills%2Fmain%2Fplugins%2Fsimplecore%2F.claude-plugin%2Fplugin.json&query=%24.version&label=simplecore&color=blue)](https://github.com/simplecore-inc/simplecore-skills/blob/main/plugins/simplecore/.claude-plugin/plugin.json)
+[![simplix](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Fsimplecore-inc%2Fsimplecore-skills%2Fmain%2Fplugins%2Fsimplix%2F.claude-plugin%2Fplugin.json&query=%24.version&label=simplix&color=blue)](https://github.com/simplecore-inc/simplecore-skills/blob/main/plugins/simplix/.claude-plugin/plugin.json)
 [![last updated](https://img.shields.io/github/last-commit/simplecore-inc/simplecore-skills/main?label=last%20updated&color=green)](https://github.com/simplecore-inc/simplecore-skills/commits/main)
 
 A collection of [Claude Code](https://claude.com/claude-code) skills maintained by SimpleCORE Inc., distributed as a plugin marketplace. The marketplace carries two plugins, each registering its skills under its own namespace - `simplecore:korean-docs`, `simplix:backend`, and so on - so they stay identifiable among the skills you have from other sources. Install either one on its own.
@@ -16,21 +17,25 @@ General-purpose skills that apply to any repository.
 | `simplecore:korean-docs` | Korean output standards for all deliverables - writing, translation, proofreading, and glossary (GLOSSARY.md) management. Ships a base glossary, a style reference catalog, and an automated glossary audit script. |
 | `simplecore:svg-diagrams` | Create diagrams as SVG or ASCII - flowcharts, sequence/state/class/ER diagrams, system architecture, pipelines, and network layouts. Includes JSON-spec auto-layout, Mermaid conversion, a render audit script that catches missing arrowheads, text overflow, and clipped content, and the shared document-figure library (`scripts/docfigures/`) a project's figure modules import to build and verify every figure of a document. |
 | `simplecore:wireframe-boards` | Author low-fidelity wireframes as a single self-contained HTML board - fixed-viewport phone and tablet frames, fluid-height desktop frames with a fold marker, a CSS-only narrow ⇄ wide viewport toggle, greybox primitives, flow connectors, and annotation callouts. Frames wrap into a vertical grid rather than scrolling sideways, and each carries a permanent id plus its current board position. Ships a board template, a build kit for larger boards, and an implementation contract that travels with every board so readers build from the structure instead of copying the greyboxes as a design. |
+| `simplecore:board-to-app` | Build an application from a board in dependency order - the foundation first, one chapter per agent, each chapter closing on persona journeys run as tests. Carries what a build across many sessions needs: which chapters may run alongside each other, a state ledger that says which chapter is open, the evidence a closed chapter owes, and the generic gates a build runs on. Ships the chapter-builder agent, the `bta.mjs` gate runner, and the config template `/simplecore:board-to-app-init` writes. |
 | `simplecore:board-parity-walk` | Walk a board's frames against the running app, section by section, across many sessions. Applies only where a board already exists. Carries what a walk that long needs to survive itself: one cluster per subagent with a fresh agent after each, facts shared in one handover file while narrative stays per-agent, judgment lenses so parity is the floor rather than the verdict, a decision nobody can settle parked instead of stopping the walk, and a list that holds only what is left. Ships the walker agent, the two document templates, and the config that turns the write-time checks on. |
 | `simplecore:proposal-writing` | The content standard for a Korean bid proposal, its presentation summary and the technical documents around them - what a page must claim, how a requirement is answered in the panel's own words, controlled language for every reader-facing string, enumerations as lists, self-contained references and annex naming, honest reporting of tests and evidence, and the evaluator-persona review that judges the result. Ships the content checks in `scripts/` (requirement ids, tender citations, annex references, scoring coverage, shared facts, page volume, claims triage), run through the slide-decks runner. |
 | `simplecore:slide-decks` | The typesetting standard for a deck compiled by slideglance from `.sgx` sources - a portrait document volume and a landscape presentation summary. Carries the design contract, the page and slide rhythm, templates and the component catalogue, the running head, page fill and budget, figure boards and placement, the builder's behaviours and the checks, and edits every deck through the SlideGlance MCP rather than as files. Reads every path, board and check from the project's own `.claude/slide-decks.json`, and ships the shared deck checks in `scripts/checks/` with their runner `scripts/check.py`, reading the deck through the `scripts/bidkit/` library. |
 | `simplecore:bid-proposal` | Runs one bid from the issued tender to the submitted package - tender transcription, score simulation, kickoff decisions asked once, manuscript, figures and annexes, persona and Korean review, the proposal deck chapter by chapter, the presentation deck, the quantitative volume, expected Q&A and the packaged deliverables - with a ledger in the bid repository so any session resumes where the last stopped. Orders the work and makes the calls; the standards come from the skills above. |
 
-It also registers four commands, one agent, and a set of hooks, all documented below:
+It also registers the commands, agents and hooks below, each documented further down:
 
 | Component | Belongs to | What it does |
 | --- | --- | --- |
 | `/simplecore:init` | all | Detects which skills bind here, writes the routing, proposes the global instructions they need |
 | `/simplecore:glossary-audit` | `korean-docs` | Runs the Korean glossary audit and drives it to zero errors |
 | `/simplecore:board-init` | `wireframe-boards` | Wires a project for its board - build kit, folder reading contract, instruction-file pointer |
+| `/simplecore:board-migrate` | `wireframe-boards` | Moves an existing board to the current board contract, after asking |
+| `/simplecore:board-to-app-init` | `board-to-app` | Wires a project to build its board chapter by chapter - config, tracking files, evidence folder, instruction-file pointer |
 | `/simplecore:parity-walk-init` | `board-parity-walk` | Wires a project for a parity walk - config, the two documents, instruction-file pointer |
+| `simplecore:chapter-builder` agent | `board-to-app` | Builds one chapter, closes it on its journey tests, and returns conclusions only |
 | `simplecore:board-walker` agent | `board-parity-walk` | Walks one cluster against the running app and returns conclusions only |
-| SessionStart hook | all | Detects a board, a parity walk, or Korean documents, and reports which wiring is missing |
+| SessionStart hook | all | Detects a board, a board build, a parity walk, or Korean documents, and reports which wiring is missing |
 | Markdown/SVG audit hook | `korean-docs` | Audits Korean prose and diagram labels as they are written |
 | Parity-walk hook | `board-parity-walk` | Holds the parity list and handover file to their shape at write time |
 | Walk gate | `board-parity-walk` | Refuses to end a session that walked frames off the list without delegating to a subagent |
@@ -45,11 +50,11 @@ Handbooks for repositories built on SimpliX. Each skill states its own applicabi
 
 | Skill | Description |
 | ----- | ----------- |
-| `simplix:backend` | Spring Boot backend handbook - 19 non-negotiable invariants (response envelope, `@PreAuthorize`, exception and message-key policy, DTO roles, date/time semantic typing), entity design, the YAML-driven `yo simplix` generator workflow, and DTO / security review. |
-| `simplix:frontend` | simplix-react frontend handbook - 59 non-negotiable invariants, OpenAPI-driven scaffolding, `CrudList` / `CrudForm` / `CrudDetail` customization, filter and column design, a commonization registry, and documentation standards. Ships the convention audit and screen-inventory scripts. |
-| `simplix:frontend-e2e` | Browser-driven usability, lifecycle, and cross-screen consistency audit. Drives the running app as each persona, judges through four lenses anchored to the `simplix:frontend` invariants, and runs five mandatory censuses over every screen in scope. |
+| `simplix:backend` | Spring Boot backend handbook - the non-negotiable invariants (response envelope, `@PreAuthorize`, exception and message-key policy, DTO roles, date/time semantic typing), entity design, the YAML-driven `yo simplix` generator workflow, and DTO / security review. Ships the backend convention audit. |
+| `simplix:frontend` | simplix-react frontend handbook - the non-negotiable invariants, OpenAPI-driven scaffolding, `CrudList` / `CrudForm` / `CrudDetail` customization, filter and column design, a commonization registry, and documentation standards. Ships the convention audit, the screen inventory and the duplicate-context check. |
+| `simplix:frontend-e2e` | Browser-driven usability, lifecycle, and cross-screen consistency audit. Drives the running app as each persona, judges through lenses anchored to the `simplix:frontend` invariants, and runs the mandatory censuses over every screen in scope. Ships the rendered-layout audit. |
 
-It also registers the `/simplix:init` command, one agent, and three hooks, all documented below:
+It also registers the command, agent and hooks below, each documented further down:
 
 | Component | What it does |
 | --- | --- |
@@ -65,7 +70,8 @@ Both gates are inactive until the project declares them, and each skill checks f
 
 - Claude Code 2.x
 - Node.js 18+ - used by the korean-docs audit tooling, the svg-diagrams layout/conversion scripts, and the simplix frontend audit scripts
-- Python 3 - used by the svg-diagrams render audit script and figure library, and by the slide-decks and proposal-writing checks
+- Python 3 - used by the svg-diagrams render audit script and figure library, the `bidkit` library, and the slide-decks and proposal-writing checks
+- Optional Python packages, needed only by the steps that name them: Pillow (the slide-decks `foothole` check, the svg-diagrams raster lint rule, the board PDF watermark, the raster delivery route), PyMuPDF (the board PDF watermark and the delivery PDF's picture resampling) and img2pdf (the raster delivery route); `rsvg-convert` binds the delivery PDF
 - A browser-automation MCP (Claude in Chrome or equivalent) - used by `simplix:frontend-e2e`
 
 ## Installation
@@ -90,18 +96,6 @@ claude plugin install simplix@simplecore-skills
 
 Restart your Claude Code session to load the installed components. Commands and hooks register automatically with their plugin - no manual configuration is needed.
 
-### Coming from the separate plugins
-
-Earlier releases shipped `svg-diagrams`, `korean-docs`, `ignite3`, and `wireframe-boards` as four plugins. Uninstall them before installing `simplecore`, or the skills register twice:
-
-```bash
-claude plugin uninstall svg-diagrams korean-docs ignite3 wireframe-boards
-claude plugin marketplace update simplecore-skills
-claude plugin install simplecore@simplecore-skills
-```
-
-The `/glossary-audit` command is now `/simplecore:glossary-audit`.
-
 ## Updating
 
 Fetch the latest marketplace metadata, then update each installed plugin:
@@ -122,7 +116,8 @@ The plugin recognizes what a project needs from its markers rather than from con
 
 | Skill | Markers |
 | --- | --- |
-| `wireframe-boards` | a directory holding the build kit's `build.mjs` beside `src/manifest.mjs`, or an HTML file whose head carries the board class vocabulary |
+| `wireframe-boards` | a directory holding the board's `wf.mjs` (or an older board's `build.mjs`) beside `src/manifest.mjs`, or an HTML file whose head carries the board class vocabulary |
+| `board-to-app` | a `.claude/board-to-app.json` **and** a board - the build grows the app from the frames, so it never binds without one |
 | `board-parity-walk` | a `.claude/board-parity-walk.json` **and** a board - the walk reconciles code against frames, so it never binds without one |
 | `korean-docs` | a project glossary, or Hangul in the README / instruction file |
 
@@ -151,17 +146,17 @@ Writes the routing into an instruction file, so the skills bind in sessions wher
 
 Both blocks live in [`plugins/simplecore/templates/claude-md-section.md`](plugins/simplecore/templates/claude-md-section.md) - copy them by hand if you would rather not run the command. Deeper setup stays with `/simplecore:board-init` and `/simplecore:parity-walk-init`.
 
-### Write-time hooks on the artifacts
+### Gates on the artifacts
 
-Three hooks check an artifact the moment it is written, because each defect they catch is invisible in the source and survives a careful read of the diff:
+The SVG lint and the board contract check a file the moment it is written, because each defect they catch is invisible in the source and survives a careful read of the diff. The walk gate holds the end of a session instead:
 
 | Hook | Fires on | Catches |
 | --- | --- | --- |
 | SVG lint | any `.svg` written or edited | unresolved markers, oblique arrows, text overflow, clipped content - the same scan `audit.py lint` runs |
 | Board contract | an HTML file carrying the board class vocabulary | a missing reading contract, an external resource, a second script, unlabelled frames, an unpaired `.narrow`, a second accent colour |
-| Walk gate | a session that removed frames from the parity list | that the walking never went to a subagent |
+| Walk gate | the end of a session that removed frames from the parity list | that the walking never went to a subagent |
 
-The first two are on by default; a project turns one off in `.claude/simplecore.json`:
+All of them are on by default, the walk gate only where a parity walk is configured; a project turns one off in `.claude/simplecore.json`:
 
 ```json
 { "svgLint": false, "boardCheck": false, "walkGate": false }
@@ -294,19 +289,21 @@ Both blocks live in [`plugins/simplix/templates/claude-md-section.md`](plugins/s
 
 ### Frontend scripts
 
-The `frontend` and `frontend-e2e` skills reference two scripts that ship with the plugin. Run them from the frontend project root, or point them at it with `--root=<dir>`:
+The `frontend` and `frontend-e2e` skills route to scripts that ship with the plugin. Run the source-reading ones from the frontend project root, or point them at it with `--root=<dir>`:
 
 ```bash
 node "${CLAUDE_PLUGIN_ROOT}/scripts/audit-frontend.mjs"             # machine-checkable convention rules
 node "${CLAUDE_PLUGIN_ROOT}/scripts/audit-frontend.mjs" --selftest  # prove every rule both ways
 node "${CLAUDE_PLUGIN_ROOT}/scripts/screen-inventory.mjs"           # every screen classified by shape
+node "${CLAUDE_PLUGIN_ROOT}/scripts/check-duplicate-contexts.mjs"   # one physical copy per context-owning package
+node "${CLAUDE_PLUGIN_ROOT}/scripts/audit-rendered.mjs" --url <address>  # boxes and rows on a rendered page
 ```
 
 `audit-frontend.mjs` exits 1 when an error-level rule has hits; review-level rules print candidates that need human judgment and never fail the run. It reads the `audit` section of `.claude/simplix.json` for the handful of policies that are a property of the product rather than of the framework - which route directories are open to anybody, for one - so nothing about a particular repository's layout is baked into the script.
 
 **No rule counts as added until `--selftest` proves it fires on the broken form and stays silent on the fixed one.** Every rule carries both samples, and the ones whose invariant states an exception carry `miss` samples too - a rule that fires on its own exception teaches the next reader that this audit cries wolf. A rule that reads the tree around a file (a sibling detail panel, a generated model, a locale catalogue, a `package.json`) is proved against a throwaway tree the selftest writes, never against a stub of its own reader. The selftest also refuses a sample the file collection would never reach: a check that cannot fire is indistinguishable from a clean project.
 
-`--selftest` is spelt the same way in all three audit scripts, and each stops on an option it does not know. A misspelling that fell through to a scan reported `0 files scanned, 0 findings`, which is what a clean project reports.
+`--selftest` is spelt the same way in every audit script, and each stops on an option it does not know: a misspelling that fell through to a scan would report `0 files scanned, 0 findings`, which is what a clean project reports.
 
 ### Backend script
 
@@ -330,31 +327,21 @@ simplecore-skills/
 ├── plugins/
 │   ├── simplecore/
 │   │   ├── .claude-plugin/plugin.json
-│   │   ├── agents/                       # board-walker.md
-│   │   ├── commands/                     # init.md + glossary-audit.md + board-init.md + parity-walk-init.md
-│   │   ├── hooks/                        # hooks.json + session-start.mjs + check-md-glossary.mjs
-│   │   │                                 #   + check-parity-walk.mjs + check-svg-render.mjs
-│   │   │                                 #   + check-board.mjs + walk-gate.mjs + shared config/marker modules
-│   │   ├── scripts/                      # detect-simplecore.mjs + test.sh + bidkit/ (the deck checks' library)
-│   │   ├── templates/                    # claude-md-section.md
-│   │   └── skills/
-│   │       ├── board-parity-walk/        # SKILL.md + assets/ (two document templates + config)
-│   │       ├── korean-docs/              # SKILL.md + references/ + scripts/ + templates/
-│   │       ├── svg-diagrams/             # SKILL.md + references/ + scripts/
-│   │       └── wireframe-boards/         # SKILL.md + references/ + assets/ (board-template.html + build-kit/)
+│   │   ├── agents/                       # the subagents the build and the walk dispatch
+│   │   ├── commands/                     # /simplecore:* commands
+│   │   ├── hooks/                        # hooks.json, the SessionStart note, the write-time checks and gates
+│   │   ├── scripts/                      # detect-simplecore.mjs, test.sh, bidkit/ (the deck checks' library)
+│   │   ├── templates/                    # claude-md-section.md, the routing blocks /simplecore:init writes
+│   │   └── skills/                       # one directory per skill: SKILL.md beside its references/,
+│   │                                     #   assets/ and scripts/; the board build kit is wireframe-boards/kit/
 │   └── simplix/
 │       ├── .claude-plugin/plugin.json
 │       ├── agents/                       # screen-auditor.md
 │       ├── commands/init.md
-│       ├── hooks/                        # hooks.json + session-start.mjs + skill-gate.mjs + e2e-gate.mjs
-│       │                                 #   + shared config/marker modules
-│       ├── scripts/                      # detect-simplix.mjs + audit-frontend.mjs + audit-backend.mjs
-│       │                                 #   + audit-rendered.mjs + screen-inventory.mjs
-│       ├── templates/                    # claude-md-section.md
-│       └── skills/
-│           ├── backend/                  # SKILL.md + references/
-│           ├── frontend/                 # SKILL.md + references/
-│           └── frontend-e2e/             # SKILL.md + references/
+│       ├── hooks/                        # hooks.json, the SessionStart note, the skill and completion gates
+│       ├── scripts/                      # the detector and the audit scripts the handbooks route to
+│       ├── templates/                    # claude-md-section.md, the routing blocks /simplix:init writes
+│       └── skills/                       # backend/, frontend/, frontend-e2e/: SKILL.md + references/
 ├── examples/
 │   └── CLAUDE.md                         # Global instruction file example
 ├── LICENSE
@@ -411,12 +398,24 @@ The Python suites of the `simplecore` plugin (the `bidkit` library, the slide-de
 plugins/simplecore/scripts/test.sh        # add -v for each suite's full output
 ```
 
+The Node tools prove their own rules both ways:
+
+```bash
+node plugins/simplecore/skills/korean-docs/scripts/l10n.mjs rules --test   # the rule pack against its hit and miss examples
+node plugins/simplecore/skills/board-to-app/scripts/bta.mjs gates          # every build gate against the defect it exists to catch
+node plugins/simplix/scripts/audit-backend.mjs --selftest
+node plugins/simplix/scripts/audit-frontend.mjs --selftest
+node plugins/simplix/scripts/audit-rendered.mjs --selftest                 # drives a browser over generated pages
+```
+
+The wireframe kit's gates run from a board folder. Point a scratch board at the checkout's kit with `WIREFRAME_KIT=<checkout>/plugins/simplecore/skills/wireframe-boards/kit node wf.mjs gates`; `node <kit>/bin/wfb.mjs init --pattern <name> --name <product>` creates one.
+
 A check is added with tests that build its broken form and its fixed form, so a suite that passes has seen each check fire and stay quiet.
 
 ## Releasing Changes
 
 1. Edit the skill content under `plugins/<plugin>/skills/<skill>/`.
-2. Bump the `version` in `plugins/<plugin>/.claude-plugin/plugin.json` (semantic versioning). A plugin's skills share one version - a change to any of them bumps it. Bump `metadata.version` in `.claude-plugin/marketplace.json` when the set of plugins changes.
+2. Bump the `version` in `plugins/<plugin>/.claude-plugin/plugin.json` (semantic versioning) in a `chore(release)` commit of its own, covering every plugin that changed. A plugin's skills share one version - a change to any of them bumps it. The badges at the top read each `plugin.json`. Bump `metadata.version` in `.claude-plugin/marketplace.json` when the set of plugins changes.
 3. Validate the manifest: `claude plugin validate .`
 4. Commit and push. Users receive the new version through `claude plugin marketplace update` followed by `claude plugin update <plugin>`.
 
