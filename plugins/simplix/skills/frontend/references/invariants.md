@@ -319,8 +319,10 @@ neighbor overlap, outer-corner-only rounding, `whitespace-nowrap`) - a run of in
 ## #52 Every action affordance is permission-gated
 
 A button that leads to a call the server will refuse must not render. Read the group from
-the module's `src/shared/auth/subjects.ts` (`SUBJECTS.<screenKey>`), mirroring the
-backend's `hasPermission('<group>', '<action>')`, and gate with
+`SUBJECTS.<screenKey>` where the module's screens already import `SUBJECTS` - the module's own
+`src/shared/auth/subjects.ts`, or the project UI package where the project keeps the table
+there (a sibling screen's import says which) - mirroring the backend's
+`hasPermission('<group>', '<action>')`, and gate with
 `useCan("<action>", SUBJECTS.<screenKey>)` from `@simplix-react/access/react` - never a
 group literal inline, so a screen's gate and the server's rule move together. Create
 affordances: the page-header create button on BOTH header variants (page and panel - gating
@@ -328,7 +330,9 @@ one leaves the other open), a tree's per-row `add-child`, and any create button 
 into an action group (drop the button out of the group, not the whole `actions` entry). The
 scaffold emits the gate and the CLI creates an empty `subjects.ts` when a module has none,
 so a missing entry is a compile error on the generated page - supply the real group, never
-a plausible one. The audit script (`${CLAUDE_PLUGIN_ROOT}/scripts/audit-frontend.mjs`)
+a plausible one. Where the project keeps `SUBJECTS` in its UI package, that empty file
+shadows the real table and is reverted instead, with the page importing from the package
+(`scaffold/overview.md` § Scaffolding into a module that already has widgets). The audit script (`${CLAUDE_PLUGIN_ROOT}/scripts/audit-frontend.mjs`)
 fails on an ungated `showNew`.
 
 ## #53 Detail-row enums go through `DetailBadgeField`, resolved first

@@ -1,6 +1,6 @@
 # API Patterns Reference
 
-Orientation for simplix-react package APIs **as used on the codegen path**.
+Orientation for simplix-react package APIs **as used on the codegen path** - written for the `orval` path, with the `meta` path's differences in `overview.md` § The `meta` path. A project with no `openapi` entry (`none`) hand-authors its contract after `add-domain` (SKILL.md § Scaffolding).
 
 > Posture: this is the PROJECT handbook, written from the perspective of a framework USER.
 > For the authoritative, full type signatures of generic framework mechanics (`defineApi`,
@@ -10,9 +10,8 @@ Orientation for simplix-react package APIs **as used on the codegen path**.
 > appears it must be correct, but do not treat this file as the source of truth for signatures.
 >
 > What the codegen path actually uses (see "How the codegen path wires the API" at the bottom):
-> Orval codegen + `getMutator("boot")` + `createMockEntityStore` + `adaptOrval*` - NOT
-> hand-authored `defineApi` / `deriveEntityHooks` / `deriveMockHandlers` / `simpleQueryBuilder`
-> (grep for those in this repo returns zero hits).
+> generated clients + `getMutator("boot")` + `createMockEntityStore` + `adaptOrval*` - NOT
+> hand-authored `defineApi` / `deriveEntityHooks` / `deriveMockHandlers` / `simpleQueryBuilder`.
 
 ## @simplix-react/contract
 
@@ -649,8 +648,10 @@ contracts or call the derivers - it generates clients with **Orval** and routes 
 
 ### Generated clients + boot mutator
 
-- **Codegen is Orval** (`orval` v8.5.3). Each domain's `src/generated/` holds Orval output;
-  `packages/domain-*/src/hooks/` **re-export** the generated React Query hooks.
+- **On the `orval` path codegen is Orval**, at the version the workspace catalogue pins. Each
+  domain's `src/generated/` holds Orval output; `packages/domain-*/src/hooks/` **re-export** the
+  generated React Query hooks. On `meta` the generated hooks are `src/generated-meta/hooks/`,
+  exported by the barrel directly.
 - Every domain's `src/mutator.ts` returns `getMutator("boot")<T>(url, options)` (simplix-boot
   profile). `bootMutator` unwraps the Boot envelope `{ type: "SUCCESS", body: { content: [...] } }`;
   a non-`SUCCESS` envelope throws `ApiResponseError`.
@@ -660,7 +661,7 @@ contracts or call the derivers - it generates clients with **Orval** and routes 
 
 ### List adapter + paging + sort
 
-- `adaptOrvalList` (from `@simplix-react/ui`) reads the already-unwrapped `.body.content`. If a
+- `adaptOrvalList` (from `@simplix-react/ui`) reads the rows from the unwrapped page (`data.content`). If a
   domain's `mutator.ts` still uses the default `getMutator()` instead of `getMutator("boot")`,
   `content` is `undefined` and the list renders empty. (See `scaffold/overview.md` for the
   diagnosis/fix.) The read-side (detail) counterpart is `adaptOrvalGet`, which re-types a
@@ -742,5 +743,5 @@ with `wrapEnvelope` (from `@simplix-react-ext/simplix-boot-auth`) so the mock re
 Boot envelope the real API does. The store exposes `listPaged(page, size, sort)` returning a
 `PagedResult`.
 
-For the framework-level mechanics behind any of the names above, defer to the `simplix-react`
-skill - this section documents only how the codegen path composes them.
+For the framework-level mechanics behind any of the names above, defer to the simplix-react
+framework documentation - this section documents only how the codegen path composes them.

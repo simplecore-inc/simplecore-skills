@@ -36,12 +36,14 @@ This workflow runs in **two situations**, both with BLOCKING priority over any C
 
 Pick whichever is cheapest in the current context:
 
+`<domain-package>` below is the name the domain package's own `package.json` declares (§ Prerequisites). Recipes B and C read the `orval` layout; on the `meta` path, Recipe A is the one to run, and its change gate also compares the committed `meta.snapshot` (SKILL.md invariant #29).
+
 ```bash
 # Recipe A — run codegen and inspect diff. The codegen is idempotent; empty diff = no change.
-pnpm --filter @<prefix>/domain-<name> run codegen
-git status packages/domain-<name>/src/generated/
+pnpm --filter <domain-package> run codegen
+git status packages/domain-<name>/src/generated/        # src/generated-meta/ on the meta path
 
-# Recipe B — compare backend tag list against simplix.config.ts domain mapping.
+# Recipe B - compare backend tag list against simplix.config.ts domain mapping (orval: reads `spec`).
 SPEC=$(grep -m1 'spec:' simplix.config.ts | sed -E 's/.*"([^"]+)".*/\1/')
 curl -s "$SPEC" | jq -r '.tags[].name' | sort > /tmp/backend-tags.txt
 # Compare with the tags listed in simplix.config.ts openapi[].domains — new entries mean new scaffolding needed.
@@ -49,7 +51,7 @@ curl -s "$SPEC" | jq -r '.tags[].name' | sort > /tmp/backend-tags.txt
 # Recipe C — field snapshot diff (pre vs post codegen).
 grep -h "^\s\+\w\+[?:]\?:" packages/domain-<name>/src/generated/model/*DetailDTO.ts \
   | sed 's/[?:].*//' | sort > /tmp/fields-before.txt
-pnpm --filter @<prefix>/domain-<name> run codegen
+pnpm --filter <domain-package> run codegen
 grep -h "^\s\+\w\+[?:]\?:" packages/domain-<name>/src/generated/model/*DetailDTO.ts \
   | sed 's/[?:].*//' | sort > /tmp/fields-after.txt
 diff /tmp/fields-before.txt /tmp/fields-after.txt
@@ -57,22 +59,24 @@ diff /tmp/fields-before.txt /tmp/fields-after.txt
 
 ### Why this gate blocks CUSTOMIZE work
 
-CUSTOMIZE-category tasks (widget composition, column restyling, filter design) assume `generated/` is current. Stale generated files cause **silent bugs**:
+CUSTOMIZE-category tasks (widget composition, column restyling, filter design) assume the generated directory (`generated/`, or `generated-meta/` on the `meta` path) is current. Stale generated files cause **silent bugs**:
 
 - Widget imports a hook whose response shape no longer matches the server → runtime `undefined` reads.
 - `resolveBootEnum` lookup fails because a new enum value was added server-side but the generated locale was not regenerated.
 - Form submission sends a DTO missing a newly-required field → 400 only at runtime, passes all TypeScript checks because the generated DTO interface is stale.
 
-The Scaffold Update path regenerates `generated/` in place and surfaces the diff as TypeScript compile errors - the fastest path to correctness.
+The Scaffold Update path regenerates that directory in place and surfaces the diff as TypeScript compile errors - the fastest path to correctness.
 
 ## Prerequisites
 
 Before starting, read `simplix.config.ts` at the project root. It defines:
-- **`openapi[].spec`** - the API spec URL (use this exact URL for the `openapi` CLI command)
+- **`openapi[].spec`** - the API spec URL on the `orval` path (use this exact URL for the `openapi` CLI command); a `meta` project declares `openapi[].meta` instead (`../framework/configuration.md` § openapi)
 - **`openapi[].domains`** - domain name → tag list mapping
 - **`openapi[].profile`** - API profile (e.g., `simplix-boot`)
 
 All CLI commands derive their configuration from this file.
+
+**Package names.** Commands below write `<domain-package>` and `<module-package>` for the names the packages' own `package.json` files declare. With the default config a domain package is `{scope}/{prefix}-domain-{name}` (`../framework/configuration.md` § packages); read the module's name from its `package.json` once `add-module` has written it. Take both from the files rather than composing them: a `pnpm --filter` that matches no package runs nothing and exits clean.
 
 ## Workflow Steps
 
@@ -100,7 +104,7 @@ openapi: [
 
 **Decisions captured in this file**:
 
-- **Domain name**: kebab-case (e.g., `inventory`). Must match what you pass to `add-domain` in Step 1 and to `add-module` in Step 4. Used to derive the package names `@<prefix>/domain-<name>` and `@<prefix>/<name>` (`<prefix>` is the package prefix derived from the root `package.json` name - see `framework/configuration.md`).
+- **Domain name**: kebab-case (e.g., `inventory`). Must match what you pass to `add-domain` in Step 1 and to `add-module` in Step 4. Used to derive the package directories `packages/domain-<name>/` and `modules/<name>/` and the package names (§ Prerequisites, Package names).
 - **Tag list**: the exact tag strings the backend emits in its OpenAPI spec. Fetch the `spec` URL and inspect `tags[]` (or `paths[*].<method>.tags`):
   ```bash
   curl -s "<spec-url>" | jq -r '.tags[].name' | grep "<expected-prefix>"
@@ -135,11 +139,11 @@ npx simplix openapi <spec-url-from-config> -d <domain-name> -y
 
 > **Tip**: The domain package created by `add-domain` already includes a `codegen` script:
 > ```bash
-> pnpm --filter @<prefix>/domain-<domain-name> run codegen
+> pnpm --filter <domain-package> run codegen
 > ```
 > This script uses the spec URL from `simplix.config.ts`, so you do not need to specify the URL directly.
 
-This generates into `packages/domain-<domain-name>/src/`:
+On the `orval` path this generates into `packages/domain-<domain-name>/src/` (on `meta`, the output lands in `src/generated-meta/`, its hooks in `src/generated-meta/hooks/`, with no `src/hooks/` layer - SKILL.md invariant #1):
 - `generated/endpoints/` - Orval-generated React Query hooks
 - `generated/model/` - TypeScript interfaces from OpenAPI schemas
 - `hooks/` - Re-exported hooks for consumer use
@@ -172,10 +176,10 @@ or not the file was clean beforehand.
 
 ```bash
 pnpm install
-pnpm --filter @<prefix>/domain-<domain-name> run build
+pnpm --filter <domain-package> run build
 ```
 
-The package prefix comes from the root `package.json` name field (e.g., `@<prefix>`).
+The package name comes from the domain package's own `package.json` (§ Prerequisites, Package names).
 
 **Verify**: Build succeeds with `dist/index.js` and `dist/mock.js` output.
 
@@ -249,7 +253,8 @@ Also updates: `widgets/index.ts`, `pages/index.ts`, `src/index.ts`, `locales/`, 
 
 `scaffold <entity>` looks the entity up by the file name in the domain package's
 `src/hooks/` - `packages/domain-<name>/src/hooks/userAccount.ts` means
-`simplix scaffold userAccount`. A name that matches nothing (`user-account`, `UserAccount`,
+`simplix scaffold userAccount`. On the `meta` path the hook files live in
+`src/generated-meta/hooks/` (SKILL.md invariant #1); read the name from there. A name that matches nothing (`user-account`, `UserAccount`,
 a table name) **does not fail**: the CLI falls back to a generic skeleton, emits widgets
 carrying mock data, and prints `Fields detected: id, name` with **no `Domain package:` line
 above it**. Those widgets do not compile, and the compile errors point at the widget rather
@@ -283,7 +288,7 @@ after the run:
 | What | Why it is reverted |
 | --- | --- |
 | the `widgets` namespace in `locales/index.ts` | it points at `locales/widgets/{<locales>}.json`, which the CLI does not create, so the import fails |
-| an empty `SUBJECTS = {}` in `shared/auth/subjects.ts` | it shadows the real `SUBJECTS` the screens import from the project UI package, and every `useCan` gate then resolves against nothing |
+| an empty `SUBJECTS = {}` in `shared/auth/subjects.ts`, where the module's screens import `SUBJECTS` from the project UI package | it shadows the real `SUBJECTS`, and every `useCan` gate then resolves against nothing. Where the screens import it from `shared/auth/subjects.ts` itself, the file is the one invariant #52 fills - keep it and add the real group (a sibling screen's import says which) |
 | `@simplix-react/ui` / `@simplix-react/i18n` in `package.json` | sibling modules take them through the `simplix-react` meta-package; one module depending directly is exactly the peer-set split that makes a second context copy (invariant #60) |
 | `pages/<entity>/crud-page.tsx` and its `index.ts` | a second page beside the one already routed |
 | the new line in `pages/index.ts` | it exports that second page |
@@ -299,7 +304,7 @@ generated set was discarded and why, so the next reader does not assume it was n
 
 ```bash
 pnpm install
-pnpm --filter @<prefix>/<domain-name> run build
+pnpm --filter <module-package> run build
 ```
 
 **Verify**: Build succeeds with `dist/pages/index.js` and `dist/widgets/index.js`.
@@ -343,11 +348,11 @@ Three files need updating in the app (`apps/<app-name>/`):
 
 #### 7a. Add Dependencies to `package.json`
 
-Add both domain package and UI module to `dependencies` (alphabetical order):
+Add both domain package and UI module to `dependencies` (ordering is not significant - `patterns.md`):
 
 ```json
-"@<prefix>/domain-<domain-name>": "workspace:*",
-"@<prefix>/<domain-name>": "workspace:*",
+"<domain-package>": "workspace:*",
+"<module-package>": "workspace:*",
 ```
 
 #### 7b. Register Mock in `main.tsx`
@@ -356,7 +361,7 @@ Inside `enableMocking()`, add the dynamic import and domain registration:
 
 ```ts
 // Import (add alongside other domain mock imports)
-const { create<PascalDomain>Mock } = await import("@<prefix>/domain-<domain-name>/mock");
+const { create<PascalDomain>Mock } = await import("<domain-package>/mock");
 
 // Register (add to setupMockWorker domains array)
 await setupMockWorker({
@@ -379,7 +384,7 @@ For each entity page, create a route file following the existing pattern:
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { validateCrudSearch } from "@simplix-react/ui";
 
-import { <Entity>CrudPage } from "@<prefix>/<domain-name>/pages";
+import { <Entity>CrudPage } from "<module-package>/pages";
 
 export const Route = createFileRoute("/<route-path>/")({
   component: <RouteName>,
@@ -421,7 +426,7 @@ When the server-side API changes (fields added/removed/renamed, new endpoints, e
 Before regenerating, capture the current field list from the generated model types. This enables diff-based detection of changes.
 
 ```bash
-# Extract field names from DetailDTO types for each entity
+# Extract field names from DetailDTO types for each entity (orval model layout)
 grep -h "^\s\+\w\+[?:]\?:" packages/domain-<domain>/src/generated/model/*DetailDTO.ts | \
   sed 's/[?:].*//' | sort > /tmp/fields-before.txt
 ```
@@ -433,7 +438,7 @@ Or read the `FormValues` interface in `modules/<domain>/src/widgets/<entity>/for
 Use the `codegen` script built into the domain package (the spec URL is already included):
 
 ```bash
-pnpm --filter @<prefix>/domain-<domain-name> run codegen
+pnpm --filter <domain-package> run codegen
 ```
 
 Or specify it directly:
@@ -446,26 +451,27 @@ Or specify it directly:
 npx simplix openapi <spec-url-from-config> -d <domain-name> -y
 ```
 
-This overwrites:
+This overwrites (the `orval` layout; on `meta`, `src/generated-meta/` is the regenerated directory):
 - `src/generated/` - endpoints + model types (always regenerated)
 - `src/hooks/` - re-exported hooks (always regenerated)
 - `src/generated/mock/handlers.ts` - MSW handler factories (always regenerated)
 - `src/locales/` - domain-level i18n keys (always regenerated)
-- `src/schemas.ts`, `src/translations.ts`, `src/mutator.ts` - support files
+- `src/schemas.ts`, `src/translations.ts` - support files
 
 This regenerates only when not customized:
 - `src/mock/index.ts` - store wiring + generated-handler spreads; regenerated to stay in sync with `handlers.ts` UNLESS it has custom handler overrides (the `// Add custom handler overrides here` region is non-empty), in which case it is preserved untouched.
 
 This preserves:
 - `src/mock/seeds.ts` - only generated on first creation, customizable
+- `src/mutator.ts` - only generated on the first `add-domain`, so the one-time `getMutator("boot")` fix (SKILL.md invariant #30, § Common Issues) survives every regeneration
 
 ### Update Step 3: Build Domain Package & Detect Changes
 
 ```bash
-pnpm --filter @<prefix>/domain-<domain-name> run build
+pnpm --filter <domain-package> run build
 ```
 
-Then compare field changes:
+Then compare field changes (orval model layout):
 
 ```bash
 grep -h "^\s\+\w\+[?:]\?:" packages/domain-<domain>/src/generated/model/*DetailDTO.ts | \
@@ -514,13 +520,15 @@ The domain package's `src/locales/*.json` files are regenerated with new field k
 ### Update Step 7: Build & Verify
 
 ```bash
-pnpm --filter @<prefix>/<domain-name> run build      # UI module
+pnpm --filter <module-package> run build             # UI module
 pnpm --filter <app-name> run build                     # App
 ```
 
 Build errors at this stage indicate missed field updates in widgets.
 
 ### Quick Reference: Files Affected by Field Changes
+
+The tree is the `orval` layout; on `meta`, `generated-meta/` stands where `generated/` and `hooks/` stand here.
 
 ```
 packages/domain-<domain>/src/
@@ -537,9 +545,7 @@ modules/<domain>/src/
 │   ├── form.tsx   ← UPDATE: FormValues, useState, handleSubmit, FormFields
 │   └── detail.tsx ← UPDATE: DetailFields
 └── locales/widgets/
-    ├── en.json    ← UPDATE: add/remove field label keys
-    ├── ko.json    ← UPDATE: add/remove field label keys
-    └── ja.json    ← UPDATE: add/remove field label keys
+    └── <locale>.json ← UPDATE: add/remove field label keys, in every locale of `i18n.locales`
 ```
 
 ---
@@ -561,8 +567,8 @@ When unsure, ask the user which entities should have standalone pages.
 | Source | Convention | Example |
 | --- | --- | --- |
 | Domain name (config) | kebab-case | `inventory` |
-| Package name | `@<prefix>/domain-<domain>` | `@<prefix>/domain-inventory` |
-| Module package name | `@<prefix>/<domain>` | `@<prefix>/inventory` |
+| Package name | `{scope}/{prefix}-domain-<domain>` by default (`../framework/configuration.md` § packages) | `@acme/shop-domain-inventory` |
+| Module package name | whatever `add-module` writes into the module's `package.json` | read it from the file |
 | Entity (CLI arg) | camelCase | `product` |
 | Entity widget dir | kebab-case | `product/` |
 | CrudPage export | PascalCase + `CrudPage` | `ProductCrudPage` |
@@ -580,15 +586,15 @@ The CLI couldn't match the domain name to tags in the provided spec. Possible ca
 
 ### scaffold command `ReferenceError: path is not defined`
 
-Known CLI bug in `scaffold-crud.ts:1538`. Fix: change `path.basename(moduleDir)` to `basename(moduleDir)` in the framework CLI source, then rebuild (`pnpm --filter @simplix-react/cli run build`).
+A defect in the CLI's own scaffold step, not in the project. Upgrade `@simplix-react/cli` to a release without it, or report it upstream; do not patch the installed package - a consumer project has no CLI package of its own to rebuild, and an edit under `node_modules` is gone on the next install. In a checkout of the framework itself, the fix belongs in the CLI's scaffold source, followed by that package's build.
 
 ### List page shows an error state immediately after scaffold (first request fails)
 
-Every scaffolded list starts with `defaultSort: { field: "<entityId>", direction: "desc" }`, sent as `sort=<entityId>.desc` on the first page load. This is a backend contract: the entity's SearchDTO PK field must carry `@SearchableField(operators = {EQUALS}, sortable = true)`.
+Every scaffolded list starts with `defaultSort: { field: "<entityId>", direction: "desc" }`, sent as `sort=<entityId>.desc` on the first page load. This is a backend contract: the entity's SearchDTO PK field must be sortable, under the PK contract the backend handbook owns (below).
 
 **Symptoms**: the list renders its error empty-state on first load; the network tab shows the `/search?page=0&size=10&sort=<entityId>.desc` request returning a search error whose detail names the id field ("정렬할 수 없습니다: <entityId>" or a sort-format error).
 
-**Fix**: on the BACKEND, add `sortable = true` to the SearchDTO's PK `@SearchableField` (see the `simplix:backend` skill's `review/searchable-field-patterns.md` § PK Sortable Contract). Do NOT work around it by changing the frontend `defaultSort` - ID-desc is the standard newest-first ordering (UUID v7 is time-ordered) and every other module relies on it.
+**Fix**: on the BACKEND, give the SearchDTO's PK `@SearchableField` what the `simplix:backend` skill's `references/review/searchable-field-patterns.md` § PK Contract - sortable AND `IN` requires - the operator set is that section's, not this one's. Do NOT work around it by changing the frontend `defaultSort` - ID-desc is the standard newest-first ordering (UUID v7 is time-ordered) and every other module relies on it.
 
 **Verify (per entity, before customizing)**:
 ```bash
@@ -645,7 +651,7 @@ nothing changed or it failed to see what changed, and the two need opposite resp
 | --- | --- | --- |
 | The snapshot genuinely matches the contract | the package is skipped whole, so **a file the run fills in late stays empty** - `src/mock/seeds.ts` is the one that does this, and the index that imports it then names exports that are not there | delete `src/mock/seeds.ts` and re-run with `-f`; the file's own header says it is written once and not overwritten, but it IS rewritten when absent, and there is nothing to lose unless it was hand-edited |
 | The contract moved and the comparison missed it | a DTO that only **gained properties** slips past `-d <domain>`; the widget then typechecks against the stale client and **every error names the widget** | verify against the served spec, then re-run with `-f` |
-| Only a **search operator** moved | `@SearchableField(operators = …)` gained one and nothing else changed. The snapshot compares an entity's **properties**, not the operators on them, so a spec that already serves the new operator is read as unchanged - and the widget goes on sending one the server does not accept | `-d <domain> -f`, which regenerates that domain whatever the snapshot thinks |
+| Only a **search operator** moved | `@SearchableField(operators = …)` gained one and nothing else changed. The snapshot compares an entity's **properties**, not the operators on them, so a spec that already serves the new operator is read as unchanged - and the widget goes on sending one the server does not accept | `-d <domain> -f`, which regenerates that one domain whatever the snapshot thinks |
 
 **The second is the worse one, and the sentence is identical - so read the spec rather than
 the log:**
@@ -654,8 +660,10 @@ the log:**
 curl -s "<spec-url>" | grep -c '<new-field>'   # > 0 while codegen says "No changes detected" ⇒ second cause
 ```
 
-**`-f` regenerates every domain, and that width is part of what it buys** - a package
-nobody regenerated after the contract moved comes along with it. **A package that was not
+**`-f` bypasses the snapshot; `-d` decides how wide the run is.** `-d <domain> -f`
+regenerates that one domain, which is what the headless form above runs; `-f` with no `-d`
+regenerates every domain, and that width is part of what it buys - a package nobody
+regenerated after the contract moved comes along with it. **A package that was not
 regenerated gives no sign of being stale**, so the wide run is the only thing that finds
 one.
 
@@ -666,7 +674,7 @@ A spec-resolution failure - most commonly a binary endpoint (`ResponseEntity<byt
 **Fix**: after every codegen, scroll the WHOLE log for `Validation failed` (it appears mid-log, before the success line), and positively verify the expected hooks still exist rather than assuming they were written:
 
 ```bash
-grep -rl 'useGet<Entity>\|useList<Entity>' packages/domain-<domain>/src/generated/   # must hit real endpoint files, not just mock/
+grep -rl 'useGet<Entity>\|useList<Entity>' packages/domain-<domain>/src/generated/   # must hit real endpoint files, not just mock/ (src/generated-meta/ on the meta path)
 ```
 
 If the output is degenerate, STOP - do not commit it. The usual root cause is a backend binary endpoint that should carry `@Hidden` (or be split off the domain tag) so it stays out of the codegen'd surface.
@@ -712,4 +720,4 @@ This is the **SCAFFOLD** category entry point inside this skill. It sits between
 - An OpenAPI `operationId` containing an underscore (e.g. `EntityRest_create`) is recorded verbatim into `crud.config.ts`, but Orval strips underscores and PascalCases the hook name (`useEntityRestCreate`). If a scaffolded widget imports a non-existent `use…_…` hook, fix the hook name in `crud.config.ts` by hand (already-generated config files are not regenerated).
 - Read-only entities (no create/update) can confuse field extraction if a `*SearchBody` schema (the search request body: `conditions`, `page`, `size`) is mistaken for entity fields - verify the scaffolded field set against the real DTO when scaffolding a read-only entity.
 - After regeneration, spot-check that server enum translations were not silently truncated (e.g. compare the enum count in a domain's `locales/en.json` before/after). An i18n overlay failure can pass typecheck/build while dropping enums.
-- The i18n overlay is a **rewrite, not a merge**: a full regen replaces `packages/domain-<name>/src/locales/*.json` with what the backend properties provide. Any enum block that exists only on the frontend disappears, and raw keys (`SomeEnum.VALUE`) leak into every badge/label that used it. After each regen, run `git diff packages/domain-<name>/src/locales/` - if enum blocks vanished, `git restore` the three files (the overlay's own changes are usually trivial reorderings). The durable fix is to add those enum labels to the backend `messages/enums/*.properties` so the overlay carries them.
+- The i18n overlay is a **rewrite, not a merge**: a full regen replaces `packages/domain-<name>/src/locales/*.json` with what the backend properties provide. Any enum block that exists only on the frontend disappears, and raw keys (`SomeEnum.VALUE`) leak into every badge/label that used it. After each regen, run `git diff packages/domain-<name>/src/locales/` - if enum blocks vanished, the fix is to add those enum labels to the backend `messages/enums/*.properties` and regenerate, so the overlay carries them. Reverting the locale files instead is safe only in a tree that holds nobody else's uncommitted regeneration (Step 2: generated code is restored by regenerating it), and then it is the domain's `src/locales/*.json` and nothing wider.

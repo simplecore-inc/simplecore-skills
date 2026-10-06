@@ -202,7 +202,7 @@ These invariants apply to **every** frontend file you touch. Treat each as invio
 ### Commonization Audit
 
 22. **Registry first** - before implementing an empty state, error state, loading state, or status card, check `references/audit/registry.md` for an existing shared component. NEVER write custom inline versions when a shared component exists.
-23. **Shared components live in a shared package, never in `modules/` or `apps/`** - extract framework-generic, reusable patterns into the framework UI package (`@simplix-react/ui`); extract project-domain-specific shared UI (selects bound to your domains, project dialogs, labels) into the project's OWN shared UI package (e.g. a `@<prefix>/<name>-ui` package). A reusable pattern MUST NOT stay inlined in a module or app.
+23. **Shared components live in a shared package, never in `modules/` or `apps/`** - extract framework-generic, reusable patterns into the framework UI package (`@simplix-react/ui`); extract project-domain-specific shared UI (selects bound to your domains, project dialogs, labels) into the project's OWN shared UI package (e.g. a `@<scope>/<ui-package>` package). A reusable pattern MUST NOT stay inlined in a module or app.
 
 ### Documentation
 

@@ -1,6 +1,6 @@
 # Code Patterns Reference
 
-Detailed code patterns for each integration point. Examples use the neutral `inventory` domain with a `product` entity.
+Detailed code patterns for each integration point. Examples use the neutral `inventory` domain with a `product` entity, and write `<domain-package>` / `<module-package>` for the names the packages' own `package.json` files declare (`overview.md` § Prerequisites, Package names).
 
 ## Route File Pattern
 
@@ -10,7 +10,7 @@ Detailed code patterns for each integration point. Examples use the neutral `inv
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { validateCrudSearch } from "@simplix-react/ui";
 
-import { ProductCrudPage } from "@<prefix>/inventory/pages";
+import { ProductCrudPage } from "<module-package>/pages";
 
 export const Route = createFileRoute("/inventory/products/")({
   component: ProductsRoute,
@@ -37,7 +37,7 @@ Key rules:
 - `validateCrudSearch` handles `?view=`, `?id=` search params
 - The `onNavigate` callback uses the **same route path** (without trailing slash) as `to:`
 - Route component name = Section + "Route" (e.g., `ProductsRoute`, `<Section>Route`)
-- Import page from `@<prefix>/<module>/pages` subpath
+- Import page from the module package's `/pages` subpath
 
 ## Sidebar Config Pattern
 
@@ -72,7 +72,7 @@ async function enableMocking() {
 
   const { setupMockWorker } = await import("@simplix-react/mock");
   const { createAuthMock } = await import("@simplix-react-ext/simplix-boot-auth/mock");
-  const { createInventoryMock } = await import("@<prefix>/domain-inventory/mock");
+  const { createInventoryMock } = await import("<domain-package>/mock");
 
   const { MOCK_USERS } = await import("./shared/auth/mock/mock-users");
   const authMock = createAuthMock({ users: MOCK_USERS });
@@ -90,7 +90,7 @@ Rules:
 - All mock imports are dynamic (inside `enableMocking()`) - they only load in dev mode
 - Domain mocks are called with no arguments: `create<PascalDomain>Mock()`
 - Only `authMock` receives arguments (`{ users: MOCK_USERS }`)
-- Import from `@<prefix>/domain-<domain>/mock` subpath
+- Import from the domain package's `/mock` subpath
 
 ## App package.json Dependencies
 
@@ -99,8 +99,8 @@ Add both domain package AND UI module:
 ```json
 {
   "dependencies": {
-    "@<prefix>/domain-inventory": "workspace:*",
-    "@<prefix>/inventory": "workspace:*"
+    "<domain-package>": "workspace:*",
+    "<module-package>": "workspace:*"
   }
 }
 ```
@@ -149,11 +149,13 @@ modules/<domain>/src/
 │   └── ui/.gitkeep
 └── locales/
     ├── index.ts                # registerModuleTranslations()
-    ├── features/{en,ko,ja}.json
-    └── widgets/{en,ko,ja}.json
+    ├── features/<locale>.json  # one per locale in simplix.config.ts i18n.locales
+    └── widgets/<locale>.json
 ```
 
 ## Domain Package Structure After OpenAPI
+
+The `orval` layout; on the `meta` path the generated code is `src/generated-meta/`, its hooks in `src/generated-meta/hooks/` exported by the barrel, with no `src/hooks/` layer (SKILL.md invariant #1).
 
 ```
 packages/domain-<domain>/src/
@@ -163,7 +165,7 @@ packages/domain-<domain>/src/
 ├── mutator.ts                  # getMutator("boot") custom fetch wrapper
 ├── hooks/                      # app-facing hooks (one file per entity)
 │   ├── index.ts                # barrel: export * from "./<entity>"
-│   └── <entity>.ts             # adaptOrval* wrappers over generated hooks
+│   └── <entity>.ts             # one-line `export *` re-export of the generated endpoint module
 ├── generated/
 │   ├── endpoints/              # Orval React Query hooks (use<Verb><Entity>)
 │   ├── model/                  # generated DTO TypeScript interfaces
@@ -173,9 +175,7 @@ packages/domain-<domain>/src/
 │   └── seeds.ts                # initial mock data
 └── locales/
     ├── index.ts
-    ├── en.json
-    ├── ko.json
-    └── ja.json
+    └── <locale>.json           # one per locale in simplix.config.ts i18n.locales
 ```
 
 Note: there is no `contract.ts` and no flat `hooks.ts` on the OpenAPI/Orval path - hooks live in a `hooks/` directory (per-entity files behind an `index.ts` barrel), and the domain's public surface is the top-level `index.ts` barrel. (A `constants.ts` may also appear when a domain has shared enums/constants.)

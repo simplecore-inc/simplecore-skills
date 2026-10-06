@@ -205,11 +205,11 @@ After running `npx simplix scaffold <entity> --module <domain>`, the generated c
 
 ### Step 6: Verify
 
-`<prefix>` is the package prefix derived from the root `package.json` name (see `../framework/configuration.md`).
+`<module-package>` is the name the module's own `package.json` declares (`../scaffold/overview.md` § Prerequisites, Package names) - a filter that matches no package runs nothing and exits clean.
 
 ```bash
-pnpm --filter @<prefix>/<module> typecheck
-pnpm --filter @<prefix>/<module> build
+pnpm --filter <module-package> typecheck
+pnpm --filter <module-package> build
 ```
 
 ---

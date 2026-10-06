@@ -1,6 +1,6 @@
 # Recipes
 
-Project-side recipes for working with generated domain packages. A CLI-scaffolded project does **not** hand-write `defineApi` contracts - every domain package is produced by the `openapi` CLI (Orval codegen), and the application consumes the generated Orval hooks. The recipes below show that real flow. For the underlying simplix-react framework contract mechanics (`defineApi`, `deriveEntityHooks`, `deriveEntityFormHooks`, `deriveMockHandlers`, full type signatures), see the simplix-react framework documentation rather than re-deriving them here.
+Project-side recipes for working with generated domain packages. On a codegen path a CLI-scaffolded project does **not** hand-write `defineApi` contracts - each domain package is produced by the generator its config declares, `simplix openapi` (Orval, the `orval` path) or `simplix meta` (the `meta` path), and the application consumes the generated hooks; a project with no `openapi` entry (`none`) hand-authors its contract after `add-domain` (SKILL.md § Scaffolding has the table of modes). The recipes below show the `orval` flow; `overview.md` § The `meta` path says where the other one differs. For the underlying simplix-react framework contract mechanics (`defineApi`, `deriveEntityHooks`, `deriveEntityFormHooks`, `deriveMockHandlers`, full type signatures), see the simplix-react framework documentation rather than re-deriving them here.
 
 ## Basic CRUD
 
@@ -8,7 +8,7 @@ A domain package re-exports Orval-generated hooks; the application consumes them
 
 ### 1. Generate the Domain Package
 
-Codegen comes from the `openapi` CLI (Orval v8), driven by `simplix.config.ts`. The generated output lands under `packages/domain-<name>/src/generated/` (model DTOs, endpoint hooks, mock handlers). Do not hand-write these files - they are overwritten on the next codegen (#30). For the full Initial / Update workflow see `../scaffold/overview.md`.
+On the `orval` path codegen comes from the `openapi` CLI (Orval, at the version the workspace catalogue pins), driven by `simplix.config.ts`. The generated output lands under `packages/domain-<name>/src/generated/` (model DTOs, endpoint hooks, mock handlers); on `meta` it is `src/generated-meta/`. Do not hand-write these files - they are overwritten on the next codegen (#30). For the full Initial / Update workflow see `../scaffold/overview.md`.
 
 ### 2. Re-export the Generated Hooks
 
@@ -41,12 +41,12 @@ export async function customFetch<T>(url: string, options: RequestInit): Promise
 
 ### 3. Use in a Widget
 
-Generated Orval hooks (`useListProducts`, `useCreateProduct`, `useOrderProduct`, …) are wired into framework widgets via adapters such as `adaptOrvalList`. The list hook's `data` is already the unwrapped Boot `.body.content` thanks to the boot mutator. (`<prefix>` is the package prefix derived from the root `package.json` name - see `framework/configuration.md`.)
+Generated Orval hooks (`useListProducts`, `useCreateProduct`, `useOrderProduct`, …) are wired into framework widgets via adapters such as `adaptOrvalList`. The list hook's `data` is already the unwrapped `PagedResult` thanks to the boot mutator, so `data.content` holds the rows. (`<domain-package>` is the name the domain package's own `package.json` declares - `../scaffold/overview.md` § Prerequisites, Package names.)
 
 ```tsx
 // modules/inventory/src/widgets/product/list.tsx
 import { adaptOrvalList, CrudList, useCrudList } from "@simplix-react/ui";
-import { useListProducts } from "@<prefix>/domain-inventory";
+import { useListProducts } from "<domain-package>";
 
 interface Product {
   id: string;
@@ -101,7 +101,7 @@ import {
   useGetCategoryTree,
   useGetCategorySubtree,
   useCreateCategory,
-} from "@<prefix>/domain-inventory";
+} from "<domain-package>";
 
 function CategoryTree() {
   // Full tree: GET /api/v1/category/tree

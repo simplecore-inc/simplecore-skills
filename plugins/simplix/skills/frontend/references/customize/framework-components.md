@@ -2,7 +2,7 @@
 
 Catalog of the `@simplix-react/ui` components, hooks, and utilities widget customization reaches for most. It is not exhaustive: the shared-pattern components (`StatusBadge`, `EmptyValueBadge`, `ListTotalBadge`, `QueryFallback`, `DetailStatusField`, `CrudDetail.AuditFooter`, …) have their contracts in the registry (`../audit/registry.md`), and a component or prop this page does not list is checked against the component's source before it is ruled out (invariant #44).
 
-> **Scope.** This catalog covers only the framework-generic primitives in `@simplix-react/ui`. Project-/domain-specific shared UI (composites tied to your entities, branded cards, domain badges) does NOT live here - it belongs in the project's own shared UI package (e.g. `@<prefix>/<name>-ui`). Don't add domain widgets to `@simplix-react/ui`; import them from the project package and only commonize truly generic pieces upstream.
+> **Scope.** This catalog covers only the framework-generic primitives in `@simplix-react/ui`. Project-/domain-specific shared UI (composites tied to your entities, branded cards, domain badges) does NOT live here - it belongs in the project's own shared UI package (e.g. `@<scope>/<ui-package>`). Don't add domain widgets to `@simplix-react/ui`; import them from the project package and only commonize truly generic pieces upstream.
 
 ## Layout Primitives
 
