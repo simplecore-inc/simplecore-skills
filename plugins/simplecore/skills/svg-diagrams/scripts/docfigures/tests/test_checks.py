@@ -131,6 +131,54 @@ class Dashes(Case):
             p.close()
 
 
+class StubLine(Case):
+    def column(self, *lines, x=40, top=60, gap=30, bullets=False):
+        body = ""
+        for i, s in enumerate(lines):
+            y = top + i * gap
+            if bullets:
+                body += text(x - 14, y, "•")
+            body += text(x, y, s)
+        return body
+
+    def stubs(self, body):
+        return [(n, last) for n, last, _s, _l in verify.stub_lines([self.fig("a", body)], self.cfg)]
+
+    def test_wrapped_run_ending_on_a_stub_fails(self):
+        self.assertEqual(self.stubs(self.column("시험 운영 · 기술이전 시스템 테스트", "후")),
+                         [("a.svg", "후")])
+
+    def test_rebalanced_run_passes(self):
+        self.assertEqual(self.stubs(self.column("시험 운영 · 기술이전", "시스템 테스트 후")), [])
+
+    def test_bullets_keep_a_short_item_out_of_the_run_before_it(self):
+        lines = ("관리 모듈 개발 및 통합 시험 준비", "인수")
+        self.assertEqual(self.stubs(self.column(*lines)), [("a.svg", "인수")])
+        self.assertEqual(self.stubs(self.column(*lines, bullets=True)), [])
+
+    def test_list_whose_breaks_the_column_did_not_force_passes(self):
+        # a timeline's task names: the short last item follows an item it
+        # would have fitted beside, so no wrap put it on its own line
+        tasks = ("Proxy Gateway 클러스터 환경 구축", "클러스터 관리 모듈 개발",
+                 "프로토콜 수집 및 처리 기능 개발", "포인트 매핑 기능 개발", "단위 테스트")
+        self.assertEqual(self.stubs(self.column(*tasks)), [])
+
+    def test_lines_of_another_weight_or_further_apart_are_not_one_run(self):
+        title = text(40, 60, "시험 운영 · 기술이전 시스템 테스트").replace(
+            "<text ", '<text font-weight="700" ', 1)
+        self.assertEqual(self.stubs(title + text(40, 90, "후")), [])
+        self.assertEqual(self.stubs(self.column("시험 운영 · 기술이전 시스템 테스트", "후",
+                                                gap=60)), [])
+
+    def test_null_turns_the_check_off(self):
+        p = Project(stubLine=None)
+        try:
+            f = p.write("figures/a.svg", svg(self.column("시험 운영 · 기술이전 시스템 테스트", "후")))
+            self.assertIsNone(verify.stub_lines([f], p.cfg()))
+        finally:
+            p.close()
+
+
 class Strokes(Case):
     def test_stroke_off_the_ladder_fails_and_icon_stroke_passes(self):
         bad = self.fig("bad", '<rect x="40" y="40" width="200" height="60" fill="#fff" '

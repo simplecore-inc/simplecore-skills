@@ -477,6 +477,19 @@ its unit); the drawn line carries plain spaces. A project whose figures set
 such a list between items while every item fits with its separator, and the
 build fails on a break inside an item that would have fit, naming the string.
 
+**A wrapped run never ends on a stub.** The column decides where a sentence
+breaks, so a word can end up alone on the last line, and a reader looking at
+the card never sees its ragged edge. `verify.py` groups each figure's text into
+wrapped runs (the same x, anchor, size, weight and fill, one line step apart,
+the step the same down the run) and fails, as `[stub-line]`, a run whose last
+line is under `stubLine` (0.42) of its longest. A bullet opens a new item, and
+a break where the next word would have fitted (an authored newline, the next
+item of a list) ends the run, so neither is read as one string's lines. The fix
+is a shorter string or a wider column; an explicit line break belongs only
+where the wording cannot move, as in a formula. A list set without bullets
+whose short last item follows a long one reads as such a run, which is one more
+reason a box bullets its items.
+
 ## Rows and stacks are uniform
 
 One gap per row and per stack, one width per row, one height per row.
@@ -764,6 +777,7 @@ importable as a module constant.
 | `bullets` | | whether titled boxes bullet their items | `true` |
 | `noBreak` | | patterns with two groups whose space must not break a line inside a box | `[]` |
 | `wrapListItems` | | break a spaced 「·」 list between its items and fail the build on a break inside one that fits | `false` |
+| `stubLine` | | share of its run's longest line under which a wrapped run's last line fails as `[stub-line]`; `null` turns the check off | `0.42` |
 | `heightReview` | | height over which a figure is listed for review; a number or `{width: n}` | `840` |
 | `deadMargin` | | side gap that fails, judged per board in place of the lint's 40; a number or `{width: n}` | lint's own |
 | `stripRatio` | | height-to-width ratio under which a full-width figure is listed as a strip | `0.28` |
@@ -780,4 +794,4 @@ A key with no default turns its check off rather than guessing, and `verify.py`
 says `not configured` for it, so a quiet report is never mistaken for a pass of
 a check that did not run. A key with a default in the table runs at that default
 until the project sets it: `false` turns off `labelForm`, `sectionNumbers` and
-`bullets`, and `null` turns off `contrastFloor` and `heightReview`.
+`bullets`, and `null` turns off `contrastFloor`, `heightReview` and `stubLine`.
