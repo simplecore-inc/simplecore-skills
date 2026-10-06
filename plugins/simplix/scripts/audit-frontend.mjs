@@ -435,7 +435,7 @@ const SHARED_CONSTANT_DECLARATION = JSON.stringify({
   audit: { dragThresholdCopy: { names: ["DRAG_THRESHOLD_PX"], importFrom: "@acme/site-ui" } },
 });
 const EDGE_HANDLE_DECLARATION = JSON.stringify({
-  audit: { cursorColResize: { component: "ResizeHandle", importFrom: "@acme/site-ui" } },
+  audit: { cursorColResize: { component: "EdgeHandle", importFrom: "@acme/site-ui" } },
 });
 
 // ---------------------------------------------------------------------------
@@ -5120,7 +5120,7 @@ return <Badge>{data?.totalElements ?? 0}</Badge>;`,
       },
       fixed: {
         files: { ".claude/simplix.json": SHARED_CONSTANT_DECLARATION },
-        source: `import { DRAG_THRESHOLD_PX, ResizeHandle } from "@acme/site-ui";`,
+        source: `import { DRAG_THRESHOLD_PX, EdgeHandle } from "@acme/site-ui";`,
       },
       miss: [
         {
@@ -5130,7 +5130,7 @@ return <Badge>{data?.totalElements ?? 0}</Badge>;`,
         },
         {
           note: "the shared package is where the constant is defined",
-          file: "packages/site-ui/src/resize-handle.tsx",
+          file: "packages/site-ui/src/edge-handle.tsx",
           files: { ".claude/simplix.json": SHARED_CONSTANT_DECLARATION },
           source: `export const DRAG_THRESHOLD_PX = 4;`,
         },
@@ -5169,7 +5169,7 @@ return <Badge>{data?.totalElements ?? 0}</Badge>;`,
       },
       fixed: {
         files: { ".claude/simplix.json": EDGE_HANDLE_DECLARATION },
-        source: `<ResizeHandle side="right" disabled={disabled} onPointerDown={(e) => handlePointerDown(e, "resize-right")} />`,
+        source: `<EdgeHandle side="right" disabled={disabled} onPointerDown={(e) => handlePointerDown(e, "resize-right")} />`,
       },
       miss: [
         {
@@ -5179,7 +5179,7 @@ return <Badge>{data?.totalElements ?? 0}</Badge>;`,
         },
         {
           note: "the shared package that defines the handle",
-          file: "packages/site-ui/src/resize-handle.tsx",
+          file: "packages/site-ui/src/edge-handle.tsx",
           files: { ".claude/simplix.json": EDGE_HANDLE_DECLARATION },
           source: `<div className="w-2.5 cursor-col-resize" onPointerDown={onPointerDown} />`,
         },

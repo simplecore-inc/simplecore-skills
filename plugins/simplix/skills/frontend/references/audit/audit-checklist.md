@@ -547,17 +547,17 @@ grep -rnE 'h-10[^"]*border-b[^"]*px-4|border-b[^"]*last:border-b-0' --include="*
 ```
 Expected: 0 - use `DetailList` / `DetailListRow` from `@simplix-react/ui`. Exception: `CrudList` tables / form field groups (different primitive).
 
-## ActivityList Violations (hand-rolled recent-activity / event-feed lists)
+## Domain Feed Violations (hand-rolled recent-activity / event-feed lists)
 
 ```bash
-# Duplicated relative/absolute time helpers that ActivityList owns internally
+# Duplicated relative/absolute time helpers that a shared feed component owns internally
 grep -rnE '(function|const) format(Relative|Absolute)Time' --include="*.tsx" --include="*.ts" modules/
-# Hand-rolled recent-events / recent-activity / entity-feed markup
-grep -rnE 'recent-?events|recent-?activity|activity-feed|EntityFeed' --include="*.tsx" modules/
+# Hand-rolled recent-events / recent-activity / feed markup
+grep -rnE 'recent-?events|recent-?activity|activity-feed' --include="*.tsx" modules/
 ```
-Expected: 0 - use the project-local activity-list primitive (e.g. `ActivityList` from `@<scope>/<ui-package>/activity`), which owns its relative-time formatter and empty state and renders rows from a shared row model. Exception: feeds with bespoke per-row interaction not expressible via that shared row model.
+Expected: 0 where the project's UI package has a feed component (its registry names it, in the shape of `registry/domain-widgets.md` § A widget several boards of one domain draw): the shared feed owns its relative-time formatter and empty state and renders rows from a shared row model. Exception: feeds with bespoke per-row interaction not expressible via that shared row model.
 
-## ContextBreadcrumb Violations (inline site/building/floor location strips)
+## Hierarchy Breadcrumb Violations (inline location / category strips)
 
 ```bash
 # Inline hierarchy chain (replace <Level1|Level2|Level3> with the project's location/category segment labels) using a raw '/' or non-standard separator
@@ -565,7 +565,7 @@ grep -rnE '(<Level1>|<Level2>|<Level3>)[^<]*</[^>]*>[^<]*[/›»·]' --include="
 # Manual separator literal between hierarchy segments
 grep -rnE 'className="[^"]*text-border[^"]*">\s*[/·›»]\s*</span>' --include="*.tsx" modules/
 ```
-Expected: 0 - use the project-local breadcrumb primitive and its segment builder (e.g. `ContextBreadcrumb` + `buildSpatialSegments` from `@<scope>/<ui-package>/spatial`), with a standardized separator (e.g. `ChevronRight`). Exception: non-hierarchy breadcrumbs (router path, category trees).
+Expected: 0 where the project's UI package has a breadcrumb primitive and a segment builder (its registry names them): every hierarchy strip uses them, with the one standardized separator. Exception: non-hierarchy breadcrumbs (router path, category trees).
 
 ## Raw Layout Div Violations (#8)
 
@@ -575,19 +575,21 @@ grep -rnE '<div className="[^"]*(flex|grid|space-y|space-x|mx-auto|items-|justif
 ```
 Expected: every hit either uses `Flex`/`Stack`/`Grid` (+ the `overflow`/`shrink`/`minSize`/`gap="px"`/`template` variants) OR carries a `{/* raw layout: <reason> */}` justification comment (absolute drag/resize handles, konva/canvas hosts, custom time-grid cells, bitmap chips, container-query responsive rows, arbitrary grid templates).
 
-## ResizeHandle Violations (inline edge resize handle on draggable bars)
+## Project Edge Handle Violations (inline edge resize grips on draggable bars)
+
+Runs where the project declares its shared edge handle and the constants its UI package owns in `.claude/simplix.json`: `audit-frontend.mjs` runs both patterns with the declared names (`cursor-col-resize` from `audit.cursorColResize`, `drag-threshold-copy` from `audit.dragThresholdCopy`) and is silent where nothing is declared.
 
 ```bash
-# Inline edge resize handle wrapper (should be the project-local ResizeHandle from @<scope>/<ui-package>)
+# Inline edge resize grip (should be the project's declared edge-handle component)
 grep -rn "cursor-col-resize" --include="*.tsx" modules/
 ```
-Expected: only documented parity-coverage handle exceptions (e.g. a single grid file with centered arrow icons). Every left/right edge grip on a draggable bar (e.g. range bars, time blocks) MUST use `<ResizeHandle side=... onPointerDown=... />`. Exception: canvas/konva vertex handles are not edge resize grips.
+Expected: only documented exceptions. Every left/right edge grip on a draggable bar (range bars, time blocks) uses the declared component. Exception: canvas/konva vertex handles are not edge resize grips.
 
 ```bash
-# Local DRAG_THRESHOLD_PX redefinition (should import from the project-local UI package)
-grep -rn "const DRAG_THRESHOLD_PX" --include="*.tsx" modules/
+# Local redefinition of a constant the UI package exports (replace with the declared names)
+grep -rn "const <SHARED_CONSTANT>" --include="*.tsx" modules/
 ```
-Expected: 0 - import `DRAG_THRESHOLD_PX` from `@<scope>/<ui-package>` so the tap-vs-drag boundary stays unified.
+Expected: 0 - import it from `@<scope>/<ui-package>` so every module reads the one value.
 
 ---
 
@@ -706,7 +708,7 @@ A board offering both month and gantt views draws two different color vocabulari
 
 ```bash
 # a board with gantt views whose legend never switches to the bar legend
-rg -l 'views=\{?\[[^\]]*"gantt-' modules --glob '*.tsx' | xargs rg -L 'BarLegend'
+rg -l 'views=\{?\[[^\]]*"gantt-' modules --glob '*.tsx' | xargs rg -L '<BarLegend>'  # the project's bar-legend component
 
 # a gantt without the explanatory empty state
 rg -l 'views=\{?\[[^\]]*"gantt-' modules --glob '*.tsx' | xargs rg -L 'timelineEmptyState'

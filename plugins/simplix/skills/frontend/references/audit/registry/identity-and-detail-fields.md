@@ -351,46 +351,16 @@ const v = resolveBootEnum(displayData.status) || "";
 <DetailFields.DetailStatusField tone={...} value={...} />
 ```
 
-## User identity labels (UserAvatar / UserLabel / UserHeading / useCurrentUserAvatar)
+## User identity labels (@<scope>/<ui-package>/identity)
 
 | Field | Value |
 |-------|-------|
-| **Components** | `UserAvatar`, `UserLabel`, `UserHeading` |
-| **Hooks** | `useCurrentUserAvatar()` |
+| **Components** | the project's inline user label, its detail-header label, its avatar, and its current-user avatar hook |
 | **Package** | `@<scope>/<ui-package>` (subpath `./identity`) |
-| **Export** | `import { UserAvatar, UserLabel, UserHeading, useCurrentUserAvatar } from "@<scope>/<ui-package>/identity"` |
 
 ### Rule
 
-Every render of a user account's display name carries the user's avatar. The public avatar endpoint 404s for users without an uploaded photo, so all avatar rendering goes through these components (they handle the failure fallback to the app default image):
-
-1. **`UserLabel userId name`** - the one inline user label (compact avatar + truncating name) for list columns, card titles, board/panel rows, and dialog lines. Surrounding typography is passed via `className` (and `avatarClassName="size-4"` for caption-size rows).
-2. **`UserHeading userId name`** - detail-panel header for person-attributed records (avatar + muted level-4 `Heading`). Replaces a bare `Heading level={4} tone="muted"` titled by a person's name.
-3. **`UserAvatar userId name`** - avatar only, when the name renders elsewhere (dialog titles, custom compositions).
-4. **`useCurrentUserAvatar()`** - the signed-in user's `{ userId, version, avatarUrl }` (cache-busted by the avatar attachment id). The ONLY way to render the current user's avatar; never re-implement the auth + avatar-query + URL assembly inline.
-
-Calendar/gantt resources get avatars centrally via the shared calendar adapters (`avatarUrl` + `avatarFallbackUrl` on `CalendarResource`) - never per-screen.
-
-### Standard Usage
-
-```tsx
-<CrudList.Column<RowDTO> field="userAccountId" header={fieldLabel("userAccountId")}>
-  {({ row }) => (row.userAccountId ? <UserLabel userId={String(row.userAccountId)} name={nameOf(String(row.userAccountId))} /> : "")}
-</CrudList.Column>
-
-const header = onClose ? <UserHeading userId={String(data.userAccountId ?? "")} name={nameOf(String(data.userAccountId ?? ""))} /> : undefined;
-```
-
-### Anti-Pattern
-
-```tsx
-// FORBIDDEN — bare text render of a user name where the user id is in scope
-{({ row }) => nameOf(String(row.userAccountId ?? ""))}
-// FORBIDDEN — hand-built <img> against the avatar endpoint (no 404 fallback, no cache-busting contract)
-<img src={`${AVATAR_ENDPOINT}/${id}`} />
-// FORBIDDEN — module-local re-implementation of the current-user avatar assembly
-const url = userId && avatar?.attachmentId ? getUserAvatarUrl(userId, { size: "sm", version: avatar.attachmentId }) : DEFAULT_USER_AVATAR_URL;
-```
+Where the product shows user avatars, every render of a user account's display name goes through the project's identity components, which own the avatar request and the fallback for a user with no uploaded photo. Never a bare name where the user id is in scope, never a hand-built `<img>` against the avatar endpoint, and never a module-local copy of the current-user avatar assembly. The project's own registry names the components and their props (`../registry.md` § Adding a new pattern).
 
 ## PeekTriggerButton (cross-detail peek trigger)
 

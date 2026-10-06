@@ -1,19 +1,8 @@
-> Commonization registry - **Domain-shared widgets (activity / calendar / lifecycle / approval)**. Detail file of `../registry.md` (the index); sections verbatim. Check the index first, then read only the section you need.
+> Commonization registry - **Domain-shared widgets (calendar chrome and per-domain widgets)**. Detail file of `../registry.md` (the index); sections verbatim. Check the index first, then read only the section you need.
 >
 > Entries naming `@simplix-react/*` are framework components and apply to every project. Entries naming `@<scope>/<ui-package>` are the *shape* a project's own shared UI package takes - substitute the project's package and its domain nouns.
 
-# Registry - Domain-shared widgets (activity / calendar / lifecycle / approval)
-
-## ActivityList (@<scope>/<ui-package>/activity)
-
-| Field | Value |
-|-------|-------|
-| **Component** | `ActivityList` |
-| **Package** | `@<scope>/<ui-package>` (subpath `./activity`) |
-
-### Rule
-
-Scrolling activity/event feed. Rows are `ActivityRowModel { id, title, subtitle?, icon?, badge?, timestamp?, onNavigate? }`; the component owns relative-time formatting (`formatRelativeTime`) and the empty state. Replaces hand-rolled recent-events / recent-activity / entity-feed lists and their duplicated `formatRelativeTime`/`formatAbsoluteTime` helpers.
+# Registry - Domain-shared widgets (calendar chrome and per-domain widgets)
 
 ## CalendarShell / CalendarApiBridge / CalendarColorLegend (calendar package)
 
@@ -39,56 +28,15 @@ Every calendar screen composes its chrome from the calendar package, inside a `C
 </CalendarProvider>
 ```
 
-## Day-detail dialog for calendar boards (@<scope>/<ui-package>/<domain>)
+## A widget several boards of one domain draw (@<scope>/<ui-package>/<domain>)
 
 | Field | Value |
 |-------|-------|
-| **Component** | one `<Domain>DayDetailDialog` per calendar domain |
+| **Component** | one `<Domain><Widget>` per domain - an activity feed, a day-detail popup, a view legend, a row-extra badge group |
 | **Package** | `@<scope>/<ui-package>` (the domain's subpath) |
 
 ### Rule
 
-Every board over the same day-scoped record family shares ONE day-detail popup - a status pill, the breakdown rows, the event stream, and the locked/closed state. The caller owns the query and passes `row`/`isLoading`; a boolean prop adds the privileged-only rows; a `footer` slot carries the action and is suppressed when the day is locked. Labels come from the package's own i18n namespace. Do NOT re-build a `Dialog` + `DetailFieldWrapper` breakdown + event list per module - two boards showing the same day must not disagree about what that day contains.
+A widget that more than one board over the same record family draws is ONE component in the domain's subpath of the project UI package. The caller owns the query and passes the row and its loading state; the component owns its labels (the package's own i18n namespace), its empty state and its formatting. Do NOT re-build it per module - two boards showing the same record must not disagree about what it holds.
 
-## Gantt row extras and view-family legends (@<scope>/<ui-package>/<domain>)
-
-| Field | Value |
-|-------|-------|
-| **Components** | a row-extra badge group, a bar-vocabulary legend, a timeline empty notice |
-| **Package** | `@<scope>/<ui-package>` (the domain's subpath) |
-
-### Rule
-
-1. **Row-extra badges** - the summary badges appended to gantt rows through `renderGanttRowExtra` are ONE shared component per domain. It takes the raw numbers, hides zero values, and owns its label i18n. NEVER re-build the badge pair with inline `text-[0.625rem] tabular-nums` classes in a module.
-2. **View-family legend** - gantt views speak a bar vocabulary (work / overtime / night / break / uncredited spans) that is DIFFERENT from the month view's day-status colors, so a board offering both families **swaps its legend with the active view**: the bar legend while a `gantt-*` view is active, the day-status legend for month/year/agenda. Swatches reuse the framework's `timelineBarClass`/`patternClass` - never hand-rolled bar swatches. A legend entry that only some boards draw (a leave span on the time grid) is opt-in via a prop, not always rendered.
-3. **Timeline empty notice** - passed through `CalendarProvider`'s `timelineEmptyState` slot on every gantt. Gantt rows exist only for *timed* records, so the framework's generic "no records" empty state misleads on a day that holds only untimed ones (an absence, a leave, a holiday); this notice says where those live instead. Boards without the side panel the default hint points at pass their own `hint`.
-
-### Standard Usage
-
-```tsx
-{view.startsWith("gantt-") ? <BarLegend /> : <StatusLegend ... />}
-
-<CalendarProvider ... timelineEmptyState={<TimelineEmptyNotice />}>
-```
-
-## Lifecycle / presence predicate tables (module `features/`)
-
-| Field | Value |
-|-------|-------|
-| **Modules** | `modules/<domain>/src/features/lifecycle-actions` (approval-lifecycle predicates), `modules/<domain>/src/features/presence-actions` (`presenceValue` / `isOnSite` / `isCheckinable` / `isLivePresence` / `isTerminalPresence`) |
-| **Scope** | Every surface that gates an action or affordance on an entity's lifecycle / presence state |
-
-### Rule
-
-The condition for whether a lifecycle action applies (submit / review / cancel / check-in / extend / assign) lives in ONE predicate table in the domain module's `features/` segment, and every surface - list row actions, detail footer buttons, operator boards - reads its condition from there. An inline `resolveBootEnum(x.status) === "SOME_STATE"` comparison in a widget is a duplicate: it silently diverges from the sibling surface the next time the state machine changes (a desk button enabled where the panel's is disabled is this exact failure). New states or actions extend the table, not the widgets.
-
-## ApprovalFlowSection (approver-scoped - not for operator surfaces)
-
-| Field | Value |
-|-------|-------|
-| **Component** | `ApprovalFlowSection` (`@<scope>/<ui-package>/approval`) |
-| **Scope** | Approval surfaces where the viewer is a flow participant (approval inbox, requester self-service detail) |
-
-### Rule
-
-`ApprovalFlowSection` reads the approval-flow endpoint, which is scoped to the flow's PARTICIPANTS - for any other viewer it rejects with an access-denied error that surfaces as a modal. Operator surfaces (desks, ops consoles) must NOT embed it: they show the request's approval STATUS (a `StatusBadge` from the entity's own DTO) and, where relevant, the operator-actionable review affordance instead. Embedding the flow section outside a participant-scoped surface is a defect even when it happens to render for an admin account.
+The condition for whether a lifecycle action applies is shared the same way: ONE predicate table in the domain module's `features/` segment that every surface reads - list row actions, detail footer buttons, operator boards. An inline `resolveBootEnum(x.status) === "SOME_STATE"` comparison in a widget is a duplicate: it silently diverges from the sibling surface the next time the state machine changes. The project's own registry names the widgets and the tables (`../registry.md` § Adding a new pattern).
