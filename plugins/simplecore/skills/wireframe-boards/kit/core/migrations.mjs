@@ -192,6 +192,28 @@ export const CONFIG_CHANGES = [
     ],
   },
   {
+    id: 'aiWords',
+    applies: (c) => c.pattern === 'simplix-basic' && !c.aiWords?.length,
+    title: 'simplix-basic\'s AI-badge vocabulary is the board\'s',
+    changed: [
+      '`aiWordGate` holds every `aiBadge` word to `aiWords` in `board.config.mjs`. A board that declares no list is not held to one, and `node wf.mjs doctor` names the gate as not configured.',
+    ],
+    steps: [
+      'Declare `aiWords: [\'<word>\', …]` with every word an AI badge on this board may carry, or leave it out to switch the gate off.',
+    ],
+  },
+  {
+    id: 'aiTiers',
+    applies: (c) => c.pattern === 'simplix-basic' && !c.aiTiers?.tiers?.length,
+    title: 'simplix-basic\'s AI-card tiers are the board\'s',
+    changed: [
+      '`aiTierGate` holds every `aiCard` tier to `aiTiers.tiers` in `board.config.mjs`, and refuses a card on a tier `aiTiers.alwaysOn` names. A board that declares no tiers is not held to any, and `node wf.mjs doctor` names the gate as not configured.',
+    ],
+    steps: [
+      'Declare `aiTiers: { tiers: [<tier>, …], alwaysOn: [<tier that cannot be switched off>, …] }`, or leave it out to switch the gate off.',
+    ],
+  },
+  {
     id: "pattern: 'penstock-console'",
     applies: (c) => c.pattern === 'penstock-console',
     title: 'penstock-console carries no answer-and-evidence primitives',

@@ -1540,7 +1540,7 @@ export const msg = ({
  * certificate checks - and none of that is an edition it failed to buy. The two look identical
  * once a control is merely greyed, so an operator raises a support ticket for something no
  * purchase can fix, or waits for a network that is deliberately absent. This badge is what
- * keeps them apart from the 「라이선스」 lock the navigation column draws (설계서 5.5절).
+ * keeps them apart from the 「라이선스」 lock the navigation column draws.
  *
  * @param what the capability that is off
  */
@@ -1552,9 +1552,10 @@ export const msg = ({
  * the screen has to say which. `sourceBadge` answers a different question (what DECIDED this
  * value: a statute, the site's setting, an industry pack); this one answers how it was MADE.
  *
- * <p>**The words are five and closed** - 추정 (a calculation's forecast) · 자동 분류 (a model's
- * label) · 자동번역 · 초안 (generated prose) · 사진 판독 (vision). A sixth word would be a sixth
- * thing the reader has to learn, and `aiWordGate` refuses one.
+ * <p>**The words are closed**, and they are the board's: `aiWords` in `board.config.mjs` names the
+ * kinds of machine output the product distinguishes (a calculation's forecast, a model's label, a
+ * machine translation, generated prose, a reading taken from a photo). A word beyond them would be
+ * one more thing the reader has to learn, and `aiWordGate` refuses one.
  *
  * <p>**A reviewed value carries no badge.** The badge marks what has not been through a person
  * yet, exactly as machine translation does today - so it disappears on review rather than turning
@@ -1580,9 +1581,10 @@ export const aiBadge = (kind, basis = '', lang = 'ko') =>
  * estimated number, because the badge already says that and a card there would cost the list a
  * row for nothing.
  *
- * <p>The tier is on the card because it is the reader's answer to 「왜 내 화면에는 없지」: tier 1
- * is always there, tier 2 needs a model pack, tier 3 needs a GPU or an LLM endpoint and is off by
- * default on an air-gapped install.
+ * <p>The tier is on the card because it is the reader's answer to 「왜 내 화면에는 없지」: each tier
+ * names what an installation needs before the feature is there. The tiers, and the ones that are
+ * always there, are the board's (`aiTiers` in `board.config.mjs`), and `aiTierGate` holds every
+ * card to them.
  */
 export const aiCard = ({ title, hint = '', tier = 2, open = '무엇이 만든 값인가' }) =>
   `<div class="aicard"><span class="ac-mark">◈</span>` +

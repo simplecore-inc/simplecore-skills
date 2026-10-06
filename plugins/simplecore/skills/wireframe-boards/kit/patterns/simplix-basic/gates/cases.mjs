@@ -237,16 +237,28 @@ export function cases(t) {
   // Symbols every script shares are not another language: a unit in a Korean body stays Korean.
   add('workerShellLangGate', 'a Korean body with a unit sign',
     ctxWith([screen('x-01-a', "worker_({ title: 'x', body: tBody('분진 농도 150µg/m³ · 기준 초과') })")]), false);
-  add('aiWordGate', 'a sixth word',
-    ctxWith([screen('x-01-a', "aiBadge('예측')")]), true);
-  add('aiWordGate', 'one of the five words',
-    ctxWith([screen('x-01-a', "aiBadge('추정', '회차 5개')")]), false);
+  // The AI vocabulary and tiers are the board's declaration; the fixture's are placeholders.
+  const AI = ['추정', '초안'];
+  const aiWorded = (src, aiWords = AI) => ctxWith([screen('x-01-a', src)], { config: { ...config, aiWords } });
+  add('aiWordGate', 'a word outside the declared vocabulary',
+    aiWorded("aiBadge('예측')"), true);
+  add('aiWordGate', 'one of the declared words',
+    aiWorded("aiBadge('추정', '회차 5개')"), false);
+  add('aiWordGate', 'a board that declares no vocabulary is not held to one',
+    aiWorded("aiBadge('예측')", []), false);
+  const TIERS = { tiers: [1, 2, 3], alwaysOn: [1] };
+  const tiered = (src, aiTiers = TIERS) => ctxWith([screen('x-01-a', src)], { config: { ...config, aiTiers } });
   add('aiTierGate', 'a tier that does not exist',
-    ctxWith([screen('x-01-a', "aiCard({ title: 'x', tier: 4 })")]), true);
-  add('aiTierGate', 'a card on tier 1',
-    ctxWith([screen('x-01-a', "aiCard({ title: 'x', tier: 1 })")]), true);
-  add('aiTierGate', 'a tier 2 card',
-    ctxWith([screen('x-01-a', "aiCard({ title: 'x', hint: 'y', tier: 2 })")]), false);
+    tiered("aiCard({ title: 'x', tier: 4 })"), true);
+  add('aiTierGate', 'a card on a tier that is always on',
+    tiered("aiCard({ title: 'x', tier: 1 })"), true);
+  add('aiTierGate', 'a card on a declared tier that can be off',
+    tiered("aiCard({ title: 'x', hint: 'y', tier: 2 })"), false);
+  // A board's own tiers, not the fixture's: tier 4 exists there and none is always on.
+  add('aiTierGate', 'a board with its own tiers',
+    tiered("aiCard({ title: 'x', tier: 4 }) + aiCard({ title: 'y', tier: 1 })", { tiers: ['1', '4'] }), false);
+  add('aiTierGate', 'a board that declares no tiers is not held to any',
+    tiered("aiCard({ title: 'x', tier: 4 })", {}), false);
   add('listPanelGate', 'a list with no panel',
     ctxWith([screen('x-01-a', "filterBar({ total: '4건' })\ntable({ rows: [] })")]), true);
   add('listPanelGate', 'states why there is no panel',

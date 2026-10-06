@@ -905,9 +905,6 @@ export const listFormGate = {
 // - 실시 일정 under a 대상자 표 - is a judgement no regex can make, so that frame declares it in
 // one sentence naming what the calendar shows that the list does not. Writing that sentence is the
 // check, exactly as it is for `pageForm` above.
-// The AI badge's vocabulary is five words and no more. A sixth is a sixth thing every reader of
-// every screen has to learn, and the whole value of the mark is that it means one settled thing -
-// 「사람을 아직 거치지 않았다」. `sourceBadge` is closed the same way and for the same reason.
 // Five rules the persona review wrote regexes for. Each is the same defect wearing a different
 // component: a name that stopped being a name. A label is what a value is called, so a sentence
 // there leaves the reader looking for the value that is not beside it.
@@ -988,19 +985,27 @@ export const workerShellLangGate = {
     .map((sc) => `${idOf(sc.file)} - the body is in the worker\'s language and worker_ is given no lang, so the tabs draw in Korean`),
 };
 
-const AI_WORDS = new Set(['추정', '자동 분류', '자동번역', '초안', '사진 판독']);
-
+// The AI badge's vocabulary is closed. A word beyond it is one more thing every reader of every
+// screen has to learn, and the whole value of the mark is that it means one settled thing - 「사람을
+// 아직 거치지 않았다」. `sourceBadge` is closed the same way and for the same reason.
+//
+// **The words are the board's**, declared as `aiWords` in `board.config.mjs` - the kinds of machine
+// output this product distinguishes. A board that declares none is not held to a list.
 export const aiWordGate = {
   id: 'aiWordGate',
   title: 'an AI badge uses a word outside its vocabulary',
   stage: 'built',
+  configuredBy: { key: 'aiWords', what: 'every word an AI badge may carry' },
   run: (ctx) => {
+    const words = ctx.config.aiWords ?? [];
+    if (!words.length) return [];
+    const ALLOWED = new Set(words);
     const bad = [];
     for (const sc of ctx.screens) {
       const src = ctx.srcOf(sc.file);
       for (const m of src.matchAll(/\baiBadge\(\s*'((?:[^'\\]|\\.)*)'/g)) {
-        if (!AI_WORDS.has(m[1])) {
-          bad.push(`${idOf(sc.file)} - aiBadge('${m[1]}'): the words it may carry are ${[...AI_WORDS].join(' · ')}`);
+        if (!ALLOWED.has(m[1])) {
+          bad.push(`${idOf(sc.file)} - aiBadge('${m[1]}'): the words it may carry are ${words.join(' · ')}`);
         }
       }
     }
@@ -1009,21 +1014,28 @@ export const aiWordGate = {
 };
 
 // The tier is the reader's answer to 「왜 내 화면에는 없지」, so a card that names one that does not
-// exist answers nothing. One, two, three - always on, model pack, GPU or LLM.
+// exist answers nothing. A tier that is always on cannot be switched off, so a card on it has
+// nothing to say - only the badge stands.
+//
+// **The tiers are the board's**, declared as `aiTiers: { tiers, alwaysOn }` in `board.config.mjs`.
+// A board that declares no tiers is not held to any.
 export const aiTierGate = {
   id: 'aiTierGate',
   title: 'an AI card names a tier that does not exist',
   stage: 'built',
+  configuredBy: { key: 'aiTiers.tiers', what: 'the tiers an AI card may name, and the ones that are always on' },
   run: (ctx) => {
+    const tiers = (ctx.config.aiTiers?.tiers ?? []).map(String);
+    if (!tiers.length) return [];
+    const alwaysOn = new Set((ctx.config.aiTiers?.alwaysOn ?? []).map(String));
     const bad = [];
     for (const sc of ctx.screens) {
       const src = ctx.srcOf(sc.file);
       for (const m of src.matchAll(/\baiCard\(\{[\s\S]{0,400}?\btier:\s*(\d+)/g)) {
-        if (!['1', '2', '3'].includes(m[1])) bad.push(`${idOf(sc.file)} - aiCard tier ${m[1]}: the tiers are 1 · 2 · 3`);
-      }
-      // Tier 1 cannot be switched off, so a card has nothing to say - only the badge stands.
-      if (/\baiCard\(\{[\s\S]{0,400}?\btier:\s*1\b/.test(src)) {
-        bad.push(`${idOf(sc.file)} - an aiCard on tier 1. A calculation that cannot be switched off gives the card nothing to say; only the badge stands`);
+        if (!tiers.includes(m[1])) bad.push(`${idOf(sc.file)} - aiCard tier ${m[1]}: the tiers are ${tiers.join(' · ')}`);
+        else if (alwaysOn.has(m[1])) {
+          bad.push(`${idOf(sc.file)} - an aiCard on tier ${m[1]}. A calculation that cannot be switched off gives the card nothing to say; only the badge stands`);
+        }
       }
     }
     return bad;
