@@ -39,7 +39,7 @@ It also registers the commands, agents and hooks below, each documented further 
 | Markdown/SVG audit hook | `korean-docs` | Audits Korean prose and diagram labels as they are written |
 | Parity-walk hook | `board-parity-walk` | Holds the parity list and handover file to their shape at write time |
 | Walk gate | `board-parity-walk` | Refuses to end a session that walked frames off the list without delegating to a subagent |
-| SVG lint hook | `svg-diagrams` | Lints every SVG at write time for unresolved markers, overflow, and clipped content |
+| SVG lint hook | `svg-diagrams` | Lints an SVG written with the Write or Edit tools that carries a label or an arrowhead, for unresolved markers, overflow, and clipped content |
 | Board contract hook | `wireframe-boards` | Checks a board's output contract - reading contract, offline rendering, labels, pairing, one accent |
 
 The `*-init` commands exist because these skills depend on wiring the user has no reason to know about. Each skill checks for it on load and offers the command; none writes anything without agreement.
@@ -72,6 +72,8 @@ Both gates are inactive until the project declares them, and each skill checks f
 - Node.js 18+ - used by the korean-docs audit tooling, the svg-diagrams layout/conversion scripts, and the simplix frontend audit scripts
 - Python 3 - used by the svg-diagrams render audit script and figure library, the `bidkit` library, and the slide-decks and proposal-writing checks
 - Optional Python packages, needed only by the steps that name them: Pillow (the slide-decks `foothole` check, the svg-diagrams raster lint rule, the board PDF watermark, the raster delivery route), PyMuPDF (the board PDF watermark and the delivery PDF's picture resampling) and img2pdf (the raster delivery route); `rsvg-convert` binds the delivery PDF
+- Chrome or Chromium, found on the usual install paths or named by `CHROME` - used by the svg-diagrams render, crop, hotspot and contrast steps
+- Optional: `npm install -g beautiful-mermaid` - used by svg-diagrams for Mermaid sequence, state, class and ER rendering and for ASCII output; a plugin install runs no package manager, so nothing installs it for you
 - A browser-automation MCP (Claude in Chrome or equivalent) - used by `simplix:frontend-e2e`
 
 ## Installation
@@ -152,7 +154,7 @@ The SVG lint and the board contract check a file the moment it is written, becau
 
 | Hook | Fires on | Catches |
 | --- | --- | --- |
-| SVG lint | any `.svg` written or edited | unresolved markers, oblique arrows, text overflow, clipped content - the same scan `audit.py lint` runs |
+| SVG lint | an `.svg` written with the Write or Edit tools that carries text or an arrowhead | unresolved markers, oblique arrows, text overflow, clipped content - the same scan `audit.py lint` runs |
 | Board contract | an HTML file carrying the board class vocabulary | a missing reading contract, an external resource, a second script, unlabelled frames, an unpaired `.narrow`, a second accent colour |
 | Walk gate | the end of a session that removed frames from the parity list | that the walking never went to a subagent |
 
