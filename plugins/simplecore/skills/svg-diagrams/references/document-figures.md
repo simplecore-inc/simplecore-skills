@@ -749,6 +749,18 @@ trailing commas. The svg-diagrams scripts are found through
 `SVG_DIAGRAMS_SCRIPTS`, then the `toolkit` key, then the library's own parent
 directory, never through an assumed home-directory path.
 
+**Where a deck places the figures, the deck config owns the boards and the
+print factor.** `.claude/slide-decks.json` declares `figures.boards` and
+`figures.placeScale` per deck, and the deck's figure checks place and measure
+every figure with them. The settings file names them there instead of copying
+them: `"boards": {"from": ".claude/slide-decks.json", "key":
+"decks.<deck>.figures.boards"}`, and the same form ending
+`figures.placeScale` for `placeScale`. The library skips a deck's
+`<width>-<variant>` entry, which is a second placement of a board it already
+reads. A key the deck does not declare is refused, not defaulted: a deck that
+leaves `placeScale` to its kind's default declares it to be read here. A
+project with no deck config declares both values inline.
+
 A figure module imports by name: `from common import card, save, BODY`.
 `save(c, name, board=...)` writes one figure; `width=` is a deprecated alias
 for `board=` and warns. `@figure(plain=True)` on a
@@ -762,12 +774,12 @@ importable as a module constant.
 | `modules` | yes | globs of figure modules the build runs; a test file, a helper and a file named after a library module never run | |
 | `helpers` | | globs of project modules that figure modules import and the build never runs; the source checks read them | `[]` |
 | `toolkit` | | path to the svg-diagrams `scripts/` folder | the library's parent |
-| `boards` | yes | board width in units → placed width in px; the first is the default board | |
+| `boards` | yes | board width in units → placed width in px, the first the default board; or `{from, key}` naming the deck config's `figures.boards` | |
 | `defaultBoard` | | the board `save()` uses when none is named | first of `boards` |
 | `boardNames` | | name → board width, exported as constants (`FULL`, `COLUMN`) | `{}` |
 | `columnBoard` | | the board `column.py` draws on | none |
 | `contentNames` | | name → board width, exported as that board's content width | `{}` |
-| `placeScale` | | the factor the document prints every figure at, for `SCALE` and `printed_pt()` | `1.0` |
+| `placeScale` | | the factor the document prints every figure at, for `SCALE` and `printed_pt()`; or `{from, key}` naming the deck config's `figures.placeScale` | `1.0` |
 | `margin` | | air `save()` leaves above and below the ink; a number or `{width: n}` | `28` |
 | `sideMargin` | | side margin the content width is computed from (`board - 2 * (sideMargin + 10)`); a number or `{width: n}` | `28` |
 | `ladder` | yes | the only type sizes a figure may print | |

@@ -69,6 +69,28 @@ save(c, "by-board", board=528)
         self.assertIn('width="528', a)
         self.assertEqual(a, b)
 
+    def test_boards_and_scale_the_deck_config_owns_reach_the_drawing_layer(self):
+        deck = ".claude/slide-decks.json"
+        p = Project(boards={"from": deck, "key": "decks.d.figures.boards"},
+                    placeScale={"from": deck, "key": "decks.d.figures.placeScale"})
+        try:
+            p.write(deck, '{"decks": {"d": {"figures": {"boards": '
+                          '{"1200": 600, "528": 264, "528-pair": 290}, "placeScale": 0.9}}}}')
+            p.write("figs/a.py", '''from pathlib import Path
+from common import PLACEMENT, SCALE, canvas, card, save
+Path("scale.txt").write_text(f"{sorted(PLACEMENT.items())} {SCALE:.4f}")
+c = canvas(528, 200)
+card(c, 24, 24, 480, c.blue, "Title", ["item"])
+save(c, "column", board=528)
+''')
+            run = p.run("build.py")
+            self.assertEqual(run.returncode, 0, run.stdout + run.stderr)
+            self.assertEqual((p.root / "scale.txt").read_text(),
+                             "[(528, 264.0), (1200, 600.0)] 0.4500")
+            self.assertIn('width="528', (p.root / "figures" / "column.svg").read_text())
+        finally:
+            p.close()
+
     def test_board_not_declared_raises(self):
         self.p.write("figs/a.py", '''from common import canvas, save
 save(canvas(700, 100), "x", board=700)

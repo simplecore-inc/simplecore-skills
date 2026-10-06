@@ -8,6 +8,8 @@
   // Board width in units -> placed width in px. A4 with 25.4mm margins is a
   // 602px text column, so a 1200-unit board placed across it scales by 0.5017.
   // A column board takes the same scale: 300px / 0.5017 = 598 units.
+  // Where a deck places these figures, boards and placeScale name the deck
+  // config that owns them instead ({from, key}, references/document-figures.md).
   "boards": { "1200": 602, "598": 300 },
   "boardNames": { "FULL": 1200, "COLUMN": 598 },
   "columnBoard": 598,
