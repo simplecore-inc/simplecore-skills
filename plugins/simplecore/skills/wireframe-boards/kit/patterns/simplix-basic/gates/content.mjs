@@ -958,7 +958,12 @@ export const labelSentenceGate = {
 // **No language list is needed to see it.** A letter outside Hangul, ASCII and the punctuation and
 // symbols every script shares belongs to a body written for a reader of another language, whichever
 // language that is.
-const FOREIGN = /[\p{L}--[\p{Script=Hangul}\p{Script=Common}\p{Script=Inherited}\p{ASCII}]]/v;
+// Tested a character at a time, so the check runs on every Node the plugin supports (set
+// difference in a character class needs the `v` flag, which older Node rejects).
+const LETTER = /\p{L}/u;
+const SHARED = /[\p{Script=Hangul}\p{Script=Common}\p{Script=Inherited}]/u;
+const nonAscii = (t) => [...t].filter((ch) => ch.codePointAt(0) > 0x7f);
+const isForeign = (t) => nonAscii(t).some((ch) => LETTER.test(ch) && !SHARED.test(ch));
 
 // The scripts a line is counted in, to tell a language picker from a body. Chinese and Japanese
 // share one entry: a Japanese sentence writes kana and kanji together and is still one language.
@@ -967,7 +972,7 @@ const SCRIPT_FAMILIES = [
   'Devanagari', 'Bengali', 'Gurmukhi', 'Gujarati', 'Oriya', 'Tamil', 'Telugu', 'Kannada',
   'Malayalam', 'Sinhala', 'Thai', 'Lao', 'Tibetan', 'Myanmar', 'Khmer', 'Mongolian', 'Ethiopic',
   ['Han', 'Hiragana', 'Katakana', 'Bopomofo'],
-].map((s) => new RegExp(`[[${[s].flat().map((x) => `\\p{Script=${x}}`).join('')}]--\\p{ASCII}]`, 'v'));
+].map((s) => new RegExp(`[${[s].flat().map((x) => `\\p{Script=${x}}`).join('')}]`, 'u'));
 
 export const workerShellLangGate = {
   id: 'workerShellLangGate',
@@ -988,8 +993,11 @@ export const workerShellLangGate = {
       // A line written in several scripts at once, inviting a choice, is a picker rather than body
       // copy in any one of them - 「Choose language · Wybierz język · Выберите язык」 is that
       // line, and writing it that way is correct.
-      const families = (t) => SCRIPT_FAMILIES.filter((re) => re.test(t)).length;
-      return prose.some((t) => FOREIGN.test(t) && families(t) < 2);
+      const families = (t) => {
+        const chars = nonAscii(t);
+        return SCRIPT_FAMILIES.filter((re) => chars.some((ch) => re.test(ch))).length;
+      };
+      return prose.some((t) => isForeign(t) && families(t) < 2);
     })
     .map((sc) => `${idOf(sc.file)} - the body is in the worker\'s language and worker_ is given no lang, so the tabs draw in Korean`),
 };
