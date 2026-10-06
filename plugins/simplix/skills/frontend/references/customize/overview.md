@@ -323,18 +323,8 @@ Gap values: `none`, `xs`, `sm`, `md`, `lg`, `xl`
 // Boolean column
 <CrudList.Column<Entity> field="isEnabled" header={fieldLabel("isEnabled")} display="boolean" sortable />
 
-// Custom render (enum as a status badge; the tone map comes from the project UI package,
-// registry `audit/registry/tones-and-badges.md`)
-import { entityStatusToTone } from "@<scope>/<ui-package>/<domain>";
-
-<CrudList.Column<Entity> field="status" header={fieldLabel("status")} sortable>
-  {({ value }) => {
-    const v = resolveBootEnum(value);
-    return v
-      ? <StatusBadge tone={entityStatusToTone[v] ?? "neutral"} label={enumLabel("entityStatus", v)} />
-      : <EmptyValue />;
-  }}
-</CrudList.Column>
+// Custom render: an enum as a status badge is columns/cell-components.md § Enum Badge,
+// with the tone map from the project UI package (audit/registry/tones-and-badges.md)
 ```
 
 ### Form Fields

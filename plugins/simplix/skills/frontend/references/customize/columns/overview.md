@@ -421,18 +421,7 @@ See [Cell Render Recipes](cell-components.md) for the complete recipe catalog.
 
 The enum's ONE tone map lives in the project UI package (`../../audit/registry/tones-and-badges.md`); a module-local status color map is a defect, and the audit's `status-map-resurrect` fails a map under a name the project declares retired (`audit.statusMapResurrect` in `.claude/simplix.json`), and `inline-dark-tone-map` lists the other status maps for review.
 
-```tsx
-import { productStatusToTone } from "@<scope>/<ui-package>/<domain>";
-
-<CrudList.Column<ProductListDTO> field="status" header={fieldLabel("status")}>
-  {({ value }) => {
-    const v = resolveBootEnum(value);
-    return v
-      ? <StatusBadge tone={productStatusToTone[v] ?? "neutral"} label={enumLabel("ProductStatus", v)} />
-      : <EmptyValue />;
-  }}
-</CrudList.Column>
-```
+The column itself is [Cell Render Recipes § Enum Badge](cell-components.md#enum-badge).
 
 ### FK Relation Display
 
