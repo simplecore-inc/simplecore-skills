@@ -198,8 +198,10 @@ export async function loadBoard(boardDir, { screens = true } = {}) {
   // `check` and `shots` see the same board `build` does.
   //
   // **The pattern names the capability; the board answers yes or no.** The kit holds neither -
-  // it knows only that a pattern may take a declaration and where that declaration lives.
-  components.configure?.(config.patternOptions ?? {});
+  // it knows only that a pattern may take a declaration and where that declaration lives. The
+  // whole config rides along for a pattern whose words are the board's (simplix-basic reads its
+  // field-app languages from `fieldLanguages`).
+  components.configure?.(config.patternOptions ?? {}, config);
 
   // What the board itself settles. Each is optional, and each absence means something specific:
   // no roles means the board draws no visibility strip, no crud means the CRUD census is not run,

@@ -263,11 +263,12 @@ export const pattern_ = ({ main, overlay = '' }) =>
  * signed offline looks exactly as finished as one the server has, and somebody who cannot tell
  * the two apart has no reason to walk back into range before the shift ends.
  *
- * <p>**The shell speaks the app's language, not the deployment's.** A frame whose body is written
- * in another language used to draw a Korean app bar above it and a Korean tab row below - the two
- * things always on screen were the two things the reader could not read. `lang` names the app
- * language and the tab row, the offline strip and the default title follow it; a frame that
- * passes its own `tabs` still wins, because a screen may rename a destination.
+ * <p>**The shell speaks the app's language, not the deployment's.** Around a body written in
+ * another language, a Korean app bar and a Korean tab row are the two things always on screen and
+ * the two things the reader cannot read. `lang` names the app language and the tab row, the
+ * offline strip and the default title follow it; the strip's words in that language are the
+ * board's `fieldLanguages[].text`. A frame that passes its own `tabs` still wins, because a
+ * screen may rename a destination.
  *
  * @param tabsByLang the bottom tab row per language - `{ ko: […], en: […] }`
  */
@@ -333,8 +334,7 @@ export function makeAuth({ brand = 'PRODUCT', themes = {}, defaultLang = '한국
     `<div class="auth">` +
     // The corner carries two chips and the first already names the language, so the second
     // follows it rather than taking a parameter of its own - two values for one fact can
-    // disagree, and on an invitation screen they did: the chip said Tiếng Việt beside a
-    // Korean 「테마」.
+    // disagree, and a language chip beside a theme chip in another language says two things.
     `<div class="auth-corner"><span class="chip">${lang}</span>` +
     `<span class="chip">${themes[lang] ?? themes[defaultLang] ?? 'Theme'}</span></div>` +
     `<div class="auth-box${wide ? ' wide' : ''}">` +

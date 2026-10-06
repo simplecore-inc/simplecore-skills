@@ -179,6 +179,19 @@ export const CONFIG_CHANGES = [
     ],
   },
   {
+    id: 'fieldLanguages',
+    applies: (c) => c.pattern === 'simplix-basic' && !c.fieldLanguages?.length,
+    title: 'simplix-basic\'s field-app languages are the board\'s',
+    changed: [
+      '`workerLangGate` recognises a field-app body written in a language by the letters `fieldLanguages` in `board.config.mjs` declares for it, and asks that frame to hand the shell that language\'s `lang`. A board that declares no languages is not held to any, and `node wf.mjs doctor` names the gate as not configured.',
+      'The shell\'s words in a language other than Korean (the offline strip, the required mark, the message kinds, the mail header, the AI badge words) come from each entry\'s `text`. A `lang` the board does not declare draws Korean.',
+    ],
+    steps: [
+      'Declare `fieldLanguages: [{ lang: \'<code>\', name: \'<the language in its own name>\', letters: /<one letter only it writes>/, min: <letters that make a body>, text: { … } }, …]`, or leave it out to switch the gate off and draw every shell in Korean.',
+      'Build, and compare a frame that passes `lang` with what it drew before: the words now come from `text`.',
+    ],
+  },
+  {
     id: "pattern: 'penstock-console'",
     applies: (c) => c.pattern === 'penstock-console',
     title: 'penstock-console carries no answer-and-evidence primitives',

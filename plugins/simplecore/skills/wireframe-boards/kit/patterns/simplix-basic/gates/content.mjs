@@ -406,26 +406,50 @@ export const refLeakGate = {
   },
 };
 
+/**
+ * The languages a board declares a field-app body may be written in, each with its letters as a
+ * global expression. An entry without `letters` carries the shell's words in that language and is
+ * never recognised in a body.
+ *
+ * <p>`letters` is a regular expression, or its source as a string, matching one letter that only
+ * that language writes. `min` is how many of them make a body written in it rather than one word
+ * quoted inside a Korean body, and is 10 where the board leaves it out.
+ */
+const recognisedLanguages = (config) => (config.fieldLanguages ?? [])
+  .filter((l) => l && l.lang && l.letters)
+  .map((l) => {
+    const source = l.letters instanceof RegExp ? l.letters.source : String(l.letters);
+    const flags = l.letters instanceof RegExp ? l.letters.flags.replace('g', '') : '';
+    return { lang: l.lang, name: l.name ?? l.lang, min: l.min ?? 10, letters: new RegExp(source, `${flags}g`) };
+  });
+
+const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+// The two things always on a worker's screen - the tab row and the offline strip - come from the
+// shell, and a body written in another language under a Korean shell leaves its reader unable to
+// read either. A person who cannot read the strip cannot tell a signature the server has from one
+// only their phone has, which is the single thing that strip exists to say. The shell takes
+// `lang`; a frame whose body is written in another language passes that language's code.
+//
+// **The languages are the board's**, declared as `fieldLanguages` in `board.config.mjs`, each with
+// the letters that identify a body written in it. A board that declares none is not held to any.
 export const workerLangGate = {
   id: 'workerLangGate',
   title: 'the field-app shell does not speak the screen\'s language',
   stage: 'built',
+  configuredBy: { key: 'fieldLanguages', what: 'the languages a field-app body may be written in, each with its lang code and the letters that identify it' },
   run: (ctx) => {
-    // The two things always on a worker's screen - the tab row and the offline strip - come from
-    // the shell, and fifteen frames whose entire body was Tiếng Việt drew both in Korean. A person
-    // who cannot read the strip cannot tell a signature the server has from one only their phone
-    // has, which is the single thing that strip exists to say. The shell takes `lang`; a frame
-    // written in another language has to pass it.
-    // Vietnamese Extended Additional (U+1EA0–U+1EF9) plus the six base letters outside it.
-    const VI = /[\u1EA0-\u1EF9ăâđêôơưĂÂĐÊÔƠƯ]/g;
+    const languages = recognisedLanguages(ctx.config);
+    if (!languages.length) return [];
     const bad = [];
     for (const sc of ctx.screens) {
       const src = ctx.srcOf(sc.file);
       if (!/worker_\(\{/.test(src)) continue;
-      if (/\blang:\s*'(vi|en|km)'/.test(src)) continue;
-      // Ten or more Vietnamese-only letters is a body written in it, not a word quoted inside one.
-      const n = (src.match(VI) ?? []).length;
-      if (n >= 10) bad.push(`${sc.file}: the body is in Tiếng Việt and the shell is given no lang - the tabs and the offline line stay Korean`);
+      for (const l of languages) {
+        if (new RegExp(`\\blang:\\s*'${escapeRe(l.lang)}'`).test(src)) continue;
+        if ((src.match(l.letters) ?? []).length < l.min) continue;
+        bad.push(`${sc.file}: the body is in ${l.name} and the shell is given no lang: '${l.lang}' - the tabs and the offline line stay Korean`);
+      }
     }
     return bad;
   },
@@ -922,9 +946,22 @@ export const labelSentenceGate = {
 // The worker's shell draws its tab row in one language, and `lang` is what picks it. A Korean
 // screen needs neither - `ko` is the default - so the defect is narrower than "no lang": a frame
 // whose BODY is in a worker's own language while the shell around it stays Korean. That frame
-// looks bilingual by accident in the one place this product cannot afford it, and the reviewer
-// found it by reading, not by grepping for a missing key.
-const FOREIGN = /[À-ǿḀ-ỿ฀-๿ក-៿ऀ-ॿ]/;
+// looks bilingual by accident on the screen a worker has to act on, and a reviewer finds it by
+// reading, not by grepping for a missing key.
+//
+// **No language list is needed to see it.** A letter outside Hangul, ASCII and the punctuation and
+// symbols every script shares belongs to a body written for a reader of another language, whichever
+// language that is.
+const FOREIGN = /[\p{L}--[\p{Script=Hangul}\p{Script=Common}\p{Script=Inherited}\p{ASCII}]]/v;
+
+// The scripts a line is counted in, to tell a language picker from a body. Chinese and Japanese
+// share one entry: a Japanese sentence writes kana and kanji together and is still one language.
+const SCRIPT_FAMILIES = [
+  'Latin', 'Greek', 'Cyrillic', 'Armenian', 'Georgian', 'Hebrew', 'Arabic', 'Syriac', 'Thaana',
+  'Devanagari', 'Bengali', 'Gurmukhi', 'Gujarati', 'Oriya', 'Tamil', 'Telugu', 'Kannada',
+  'Malayalam', 'Sinhala', 'Thai', 'Lao', 'Tibetan', 'Myanmar', 'Khmer', 'Mongolian', 'Ethiopic',
+  ['Han', 'Hiragana', 'Katakana', 'Bopomofo'],
+].map((s) => new RegExp(`[[${[s].flat().map((x) => `\\p{Script=${x}}`).join('')}]--\\p{ASCII}]`, 'v'));
 
 export const workerShellLangGate = {
   id: 'workerShellLangGate',
@@ -936,16 +973,16 @@ export const workerShellLangGate = {
       if (!/\bworker_\(\{/.test(src)) return false;
       if (/^import base/m.test(src)) return false;
       if (/\blang:\s*/.test(src) || /\btabs:\s*/.test(src)) return false;
-      // Language names laid out to be chosen from are not body copy - L-01's picker and L-20's
-      // language chips are that. Only what a person reads is judged: body lines, description
-      // lines, and the body of a message.
+      // Language names laid out to be chosen from are not body copy - a language picker's options
+      // and a settings screen's language chips are that. Only what a person reads is judged: body
+      // lines, description lines, and the body of a message.
       const body = src.slice(src.indexOf('worker_({'));
       const prose = [...body.matchAll(/\b(?:tBody|tSub)\(\s*(['"`])((?:[^'"`\\]|\\.)*)\1/g)].map((m) => m[2])
         .concat([...body.matchAll(/\bbody:\s*(['"`])((?:[^'"`\\]|\\.)*)\1/g)].map((m) => m[2]));
-      // A line written in several languages at once, inviting a choice, is a picker rather than
-      // body copy in any one of them - L-01's 「Choose language · Chọn ngôn ngữ · ជ្រើសរើសភាសា」 is
-      // that line, and writing it that way is correct.
-      const families = (t) => [/[À-ǿḀ-ỿ]/, /[฀-๿]/, /[ក-៿]/, /[ऀ-ॿ]/].filter((re) => re.test(t)).length;
+      // A line written in several scripts at once, inviting a choice, is a picker rather than body
+      // copy in any one of them - 「Choose language · Wybierz język · Выберите язык」 is that
+      // line, and writing it that way is correct.
+      const families = (t) => SCRIPT_FAMILIES.filter((re) => re.test(t)).length;
       return prose.some((t) => FOREIGN.test(t) && families(t) < 2);
     })
     .map((sc) => `${idOf(sc.file)} - the body is in the worker\'s language and worker_ is given no lang, so the tabs draw in Korean`),

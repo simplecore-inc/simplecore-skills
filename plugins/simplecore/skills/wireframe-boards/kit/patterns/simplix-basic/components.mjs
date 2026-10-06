@@ -55,9 +55,40 @@ const OPTIONS = {
  * behind the kit reading this file, and a declaration for a capability that is not here yet is a
  * board that upgraded first, not a board that is wrong.
  */
-export function configure(options = {}) {
+export function configure(options = {}, config = {}) {
   Object.assign(OPTIONS, options);
+  LANG_TEXT.clear();
+  for (const l of config.fieldLanguages ?? []) if (l?.lang && l.text) LANG_TEXT.set(l.lang, l.text);
 }
+
+/**
+ * The words the field app's shell and the components a worker reads draw in Korean, which is this
+ * pattern's own language.
+ *
+ * <p>**Every other language's words are the board's**, declared as `fieldLanguages[].text` in
+ * `board.config.mjs`: the languages a product's field app speaks are that product's decision, and a
+ * table of them here would carry one product's languages into every board drawn this way. A
+ * component handed a `lang` the board does not declare, or a piece of text the board leaves out,
+ * draws the Korean word.
+ *
+ * <p>`offline.queued` writes the count as `{n}`.
+ */
+const KO_TEXT = {
+  offline: { on: '온라인 · 서버 저장', off: '오프라인 · 이 기기에 저장', queued: '동기화 대기 {n}건' },
+  required: '필수',
+  kinds: { help: '지침', info: '알림', warn: '주의', danger: '위험', error: '오류', example: '예시', legal: '근거' },
+  mail: { from: '보낸사람', to: '받는사람' },
+};
+
+/** `fieldLanguages[].text` by `lang`, from the board's config. Filled by {@link configure}. */
+const LANG_TEXT = new Map();
+
+/** One word of the shell in `lang`: the board's word where it declares one, the Korean word otherwise. */
+const wordIn = (lang, piece, key) => {
+  const own = LANG_TEXT.get(lang)?.[piece];
+  const word = key === undefined ? own : own?.[key];
+  return word ?? (key === undefined ? KO_TEXT[piece] : KO_TEXT[piece]?.[key]);
+};
 
 // ── content primitives ─────────────────────────────────────────────────────
 export const tTitle = (t) => `<div class="t-title">${t}</div>`;
@@ -350,25 +381,15 @@ export const tabbar = (tabs) => `<div class="tabbar">${tabs.map((t) => `<div cla
  * @param offline whether the handset currently has no connection
  */
 // The strip a worker reads to tell a signature the server has from one only their phone has -
-// which is the whole reason it is always there. It is also the one line on the screen that
-// nobody translated: a frame whose body is entirely Tiếng Việt drew a Korean bar above it and
-// a Korean tab row below, so the two states this bar distinguishes were unreadable to the person
-// they exist for. `lang` carries the app's language, and the shell passes its own down.
-const OFFBAR_TEXT = {
-  ko: { on: '온라인 · 서버 저장', off: '오프라인 · 이 기기에 저장', q: (n) => `동기화 대기 ${n}건` },
-  vi: { on: 'Trực tuyến · đã lưu máy chủ', off: 'Ngoại tuyến · lưu trong máy', q: (n) => `Chờ gửi ${n}` },
-  en: { on: 'Online · saved on server', off: 'Offline · saved on device', q: (n) => `${n} waiting to send` },
-  km: { on: 'អនឡាញ · រក្សាទុកលើម៉ាស៊ីនមេ', off: 'ក្រៅបណ្ដាញ · រក្សាទុកក្នុងឧបករណ៍', q: (n) => `រង់ចាំផ្ញើ ${n}` },
-};
-
-export const offlineBar = ({ queued = 0, offline = false, lang = 'ko' }) => {
-  const t = OFFBAR_TEXT[lang] ?? OFFBAR_TEXT.ko;
-  return `<div class="offbar${offline ? ' off' : ''}">` +
-    `<span class="dot${offline ? ' warn' : ''}"></span>` +
-    `<span>${offline ? t.off : t.on}</span>` +
-    `<span class="spacer"></span>` +
-    `<span class="qn">${t.q(queued)}</span></div>`;
-};
+// which is the whole reason it is always there. It is drawn in the app's language: a Korean strip
+// over a body in another language leaves the two states this bar distinguishes unreadable to the
+// person they exist for. `lang` carries the app's language, and the shell passes its own down.
+export const offlineBar = ({ queued = 0, offline = false, lang = 'ko' }) =>
+  `<div class="offbar${offline ? ' off' : ''}">` +
+  `<span class="dot${offline ? ' warn' : ''}"></span>` +
+  `<span>${wordIn(lang, 'offline', offline ? 'off' : 'on')}</span>` +
+  `<span class="spacer"></span>` +
+  `<span class="qn">${String(wordIn(lang, 'offline', 'queued')).replaceAll('{n}', String(queued))}</span></div>`;
 
 // ── desktop chrome ──────────────────────────────────────────────────────────
 //
@@ -690,12 +711,11 @@ export const formSection = (title, children, { one = false } = {}) =>
 /**
  * The mark that says a field cannot be left blank, in the reader's language.
  *
- * <p>A worker accepting an invitation reads the whole form in Tiếng Việt and met this one word in
- * Korean - and it is the word that decides whether they may press the button, so it is exactly
- * the kind that has to be readable.
+ * <p>A reader filling a form written in their own language reads this one word too, and it is the
+ * word that decides whether they may press the button, so it is exactly the kind that has to be
+ * readable.
  */
-const REQ_MARK = { ko: '필수', vi: 'Bắt buộc', en: 'Required', km: 'ចាំបាច់' };
-const req = (required, lang) => (required ? `<i>${REQ_MARK[lang] ?? REQ_MARK.ko}</i>` : '');
+const req = (required, lang) => (required ? `<i>${wordIn(lang, 'required')}</i>` : '');
 
 export const fText = ({ label, value = '', hint = '', wide = false, required = false, lang = 'ko' }) =>
   `<div class="ffield${wide ? ' wide' : ''}"><span class="label">${label}${req(required, lang)}</span>` +
@@ -825,18 +845,10 @@ export const drawer = ({ title, children }) =>
  * client's, drawn so the reviewer sees what the recipient sees: who it claims to be from, what the
  * subject line says before it is opened, and how much of it survives a preview pane.
  */
-const MAIL_META = {
-  ko: { from: '보낸사람', to: '받는사람' },
-  vi: { from: 'Từ', to: 'Đến' },
-  en: { from: 'From', to: 'To' },
-  km: { from: 'ពី', to: 'ជូន' },
-};
-
 export const mailFrame = ({ subject, from, to, children, foot = '', lang = 'ko' }) => {
-  const t = MAIL_META[lang] ?? MAIL_META.ko;
   return `<div class="msgwrap"><div class="mailbox">` +
   `<div class="mb-head"><div class="mb-subject">${subject}</div>` +
-  `<div class="mb-meta">${t.from} ${from} · ${t.to} ${to}</div></div>` +
+  `<div class="mb-meta">${wordIn(lang, 'mail', 'from')} ${from} · ${wordIn(lang, 'mail', 'to')} ${to}</div></div>` +
   `<div class="mb-body">${children}</div>` +
   (foot ? `<div class="mb-foot">${foot}</div>` : '') +
   `</div></div>`;
@@ -1483,22 +1495,6 @@ export const helpCard = ({ title, hint = '', open = '설명 보기', dismiss = n
 };
 
 /**
- * The six kind words, in the four languages a site runs.
- *
- * <p>**The kind word is the first thing read in a message and the last thing translated.** It is
- * the grade - whether this is a notice, a caution or a refusal - and on a worker's phone it sat in
- * Korean above a body written in Tiếng Việt, so the reader met the sentence without knowing how
- * bad it was. The shell already follows `lang` for the tab row and the offline strip; a message
- * head is the third thing always on that screen.
- */
-const MSG_KIND = {
-  ko: { help: '지침', info: '알림', warn: '주의', danger: '위험', error: '오류', example: '예시', legal: '근거' },
-  vi: { help: 'Hướng dẫn', info: 'Thông báo', warn: 'Chú ý', danger: 'Nguy hiểm', error: 'Lỗi', example: 'Ví dụ', legal: 'Căn cứ' },
-  en: { help: 'Guide', info: 'Notice', warn: 'Caution', danger: 'Danger', error: 'Error', example: 'Example', legal: 'Basis' },
-  km: { help: 'ការណែនាំ', info: 'ការជូនដំណឹង', warn: 'ប្រយ័ត្ន', danger: 'គ្រោះថ្នាក់', error: 'កំហុស', example: 'ឧទាហរណ៍', legal: 'មូលដ្ឋាន' },
-};
-
-/**
  * What a list draws when it holds nothing.
  *
  * <p>**An empty state names the next action.** A box that says 「없습니다」 and stops leaves the
@@ -1516,11 +1512,16 @@ export const emptyState = ({ title, body = '', action = '' }) =>
   `${body ? `<div class="empty-b t-body">${body}</div>` : ''}` +
   `${action ? `<div class="empty-a">${action}</div>` : ''}</div>`;
 
+// **The kind word is the first thing read in a message and the last thing translated.** It is the
+// grade - whether this is a notice, a caution or a refusal - and a Korean kind word above a body
+// written in another language leaves the reader meeting the sentence without knowing how bad it
+// is. The shell already follows `lang` for the tab row and the offline strip; a message head is
+// the third thing always on that screen, so the kind word is drawn in `lang` too.
 export const msg = ({
   kind = 'info', title = '', body = '', actions = '', lang = 'ko',
   status = false, dismiss = null,
 }) => {
-  const label = (MSG_KIND[lang] ?? MSG_KIND.ko)[kind];
+  const label = wordIn(lang, 'kinds', kind);
   const closes = !status && OPTIONS.dismissibleNotices && (dismiss ?? kind in NOTICE_KINDS);
   return `<div class="msg ${kind}${status ? ' state' : ''}">` +
     `<span class="mkind">` +
@@ -1561,21 +1562,14 @@ export const msg = ({
  * meaning anything.
  */
 /**
- * The five words in the four languages a site runs. The Korean word stays the API key - it is what
- * `aiWordGate` reads and what keeps the set closed at five - and the spelling follows the reader.
- * A worker signing a TBM has to know the text was machine-translated, which is the one thing the
- * badge exists to say, and it said it in Korean over a Vietnamese sentence.
+ * The badge word is the Korean word in a frame's source - the key `aiWordGate` reads - and the
+ * spelling follows the reader: a board spells it in another language in that language's
+ * `fieldLanguages[].text.aiWords`. A reader signing a text has to know it was machine-translated,
+ * which is the one thing the badge exists to say, and a Korean badge over a sentence in their own
+ * language does not say it to them.
  */
-const AI_WORD_TEXT = {
-  추정: { vi: 'Ước tính', en: 'Estimate', km: 'ការប៉ាន់ស្មាន' },
-  '자동 분류': { vi: 'Tự phân loại', en: 'Auto-classified', km: 'ចាត់ថ្នាក់ស្វ័យប្រវត្តិ' },
-  자동번역: { vi: 'Dịch tự động', en: 'Machine translation', km: 'បកប្រែស្វ័យប្រវត្តិ' },
-  초안: { vi: 'Bản nháp', en: 'Draft', km: 'សេចក្ដីព្រាង' },
-  '사진 판독': { vi: 'Đọc từ ảnh', en: 'Read from photo', km: 'អានពីរូបថត' },
-};
-
 export const aiBadge = (kind, basis = '', lang = 'ko') =>
-  `<span class="aibadge"><span class="ai-mark">◈</span>${AI_WORD_TEXT[kind]?.[lang] ?? kind}` +
+  `<span class="aibadge"><span class="ai-mark">◈</span>${wordIn(lang, 'aiWords', kind) ?? kind}` +
   `${basis ? `<span class="basis">${basis}</span>` : ''}</span>`;
 
 /**

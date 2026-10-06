@@ -144,13 +144,32 @@ export function cases(t) {
   add('refLeakGate', 'a reference in notes is fine',
     ctxWith([screen('x-01-a', "  notes: 'AUTH: x<br>여기서 여는 화면 — {{p-18-change-history}}',\n  body: tSub('변경은 변경 이력에 남습니다'),")]), false);
 
-  add('workerLangGate', 'a Vietnamese body with a Korean shell',
-    ctxWith([screen('x-01-a', "worker_({ title: 'TBM', body: 'Đã hiểu và ký · Chưa hiểu · phổ biến đánh giá rủi ro · Thiếu oxy · Đeo mặt nạ dưỡng khí · Có người giám sát' })")]), true);
+  // The field languages are the board's declaration; the fixture declares one placeholder
+  // language with the letters that identify it, and one that carries words only.
+  const FIELD = [
+    { lang: 'es', name: 'Español', letters: /[ñáéíóú¿¡]/, min: 6 },
+    { lang: 'en', text: {} },
+  ];
+  const fielded = (src, fieldLanguages = FIELD) => ctxWith([screen('x-01-a', src)], { config: { ...config, fieldLanguages } });
+  const ES_BODY = 'Señal de evacuación · Póngase el casco · Oxígeno bajo · Ningún ruido · Atención · ¿Está seguro? · Sí · También';
+  add('workerLangGate', 'a body in a declared language with a Korean shell',
+    fielded(`worker_({ title: 'x', body: '${ES_BODY}' })`), true);
   add('workerLangGate', 'lang is handed to the shell',
-    ctxWith([screen('x-01-a', "worker_({ title: 'TBM', lang: 'vi', body: 'Đã hiểu và ký · Chưa hiểu · phổ biến đánh giá rủi ro · Thiếu oxy · Đeo mặt nạ dưỡng khí' })")]), false);
-  // One Vietnamese word quoted on a Korean screen does not make the body copy Vietnamese.
+    fielded(`worker_({ title: 'x', lang: 'es', body: '${ES_BODY}' })`), false);
+  // Another language's code is not this language's: the shell would draw the wrong words.
+  add('workerLangGate', 'the shell is handed another language',
+    fielded(`worker_({ title: 'x', lang: 'en', body: '${ES_BODY}' })`), true);
+  // One word quoted on a Korean screen does not make the body copy that language.
   add('workerLangGate', 'one quoted word',
-    ctxWith([screen('x-01-a', "worker_({ title: '내 자격', body: '모국어 Tiếng Việt로 나갑니다' })")]), false);
+    fielded("worker_({ title: '내 자격', body: '모국어 Español로 나갑니다' })"), false);
+  // The letters may be declared as a source string as well as a regular expression.
+  add('workerLangGate', 'letters declared as a string',
+    fielded(`worker_({ title: 'x', body: '${ES_BODY}' })`, [{ lang: 'es', letters: '[ñáéíóú¿¡]' }]), true);
+  // No declaration, no vocabulary: the gate holds the board to nothing and doctor names it.
+  add('workerLangGate', 'a board that declares no field languages is not held to any',
+    fielded(`worker_({ title: 'x', body: '${ES_BODY}' })`, []), false);
+  add('workerLangGate', 'a language declared without letters is never recognised',
+    fielded(`worker_({ title: 'x', body: '${ES_BODY}' })`, [{ lang: 'es', text: {} }]), false);
 
   add('twinActionGate', 'two buttons, one name written long',
     ctxWith([screen('x-01-a', "actions: btn('역할·권한', 'ghost') + btn('역할·권한 매트릭스', 'ghost')")]), true);
@@ -209,9 +228,15 @@ export function cases(t) {
   add('labelSentenceGate', '「연결 안 됨」 is a kind',
     ctxWith([screen('x-01-a', "statTile({ label: '연결 안 됨', value: '5' })")]), false);
   add('workerShellLangGate', 'a body in the worker\'s language with a Korean shell',
-    ctxWith([screen('x-01-a', "worker_({ title: 'x', body: tBody('Nồng độ oxy dưới 18%') })")]), true);
+    ctxWith([screen('x-01-a', "worker_({ title: 'x', body: tBody('Oxígeno por debajo del 18%') })")]), true);
+  // Any script other than Hangul is a worker's language; no list of languages is consulted.
+  add('workerShellLangGate', 'a body in a script no board declared',
+    ctxWith([screen('x-01-a', "worker_({ title: 'x', body: tBody('Выберите язык') })")]), true);
   add('workerShellLangGate', 'a language picker writes several languages together',
-    ctxWith([screen('x-01-a', "worker_({ title: 'x', body: tSub('Choose language · Chọn ngôn ngữ · ជ្រើសរើសភាសា') })")]), false);
+    ctxWith([screen('x-01-a', "worker_({ title: 'x', body: tSub('Choose language · Wybierz język · Выберите язык') })")]), false);
+  // Symbols every script shares are not another language: a unit in a Korean body stays Korean.
+  add('workerShellLangGate', 'a Korean body with a unit sign',
+    ctxWith([screen('x-01-a', "worker_({ title: 'x', body: tBody('분진 농도 150µg/m³ · 기준 초과') })")]), false);
   add('aiWordGate', 'a sixth word',
     ctxWith([screen('x-01-a', "aiBadge('예측')")]), true);
   add('aiWordGate', 'one of the five words',
