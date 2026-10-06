@@ -236,15 +236,16 @@ interface AuditData {
   updatedAt?: string;
 }
 
-// On CrudDetail:
+// On CrudDetail (passed through to the footer), and on CrudDetail.AuditFooter itself:
 auditData?: AuditData;
+displayZone?: string; // IANA zone the two stamps render in
 ```
 
 ### Features
 
 - **ID display**: UUID last 12 chars, click to copy full ID to clipboard
 - **Tooltip**: Radix primitive (no Arrow), `bg-popover` for theme support
-- **Date format**: Fixed 24h format `YYYY-MM-DD HH:mm` (locale-independent)
+- **Date format**: locale-aware medium date and short time, `formatDateTime(date, locale, zone)` (`Intl.DateTimeFormat` with `dateStyle: "medium"`, `timeStyle: "short"`), the same format the panel's own date fields use. The zone is the `displayZone` prop, else the app-level default display zone, else the browser zone; a stamp that does not parse is shown as received
 - **Layout**: Single row - ID left, dates right (`ml-auto`)
 - **Design**: `bg-muted/50 rounded-md`, no border
 - **Empty handling**: Returns null when all fields are empty
@@ -334,9 +335,10 @@ Bordered list of `icon? + primary + trailing?` rows. `DetailList` is the `overfl
 
 ### Rule
 
-Read-only status/severity detail field. Renders a tone-driven `StatusBadge` inside the standard `DetailFieldWrapper` with the same `EmptyValueBadge` empty fallback as other `DetailFields.*`. Props: `tone` (resolved `StatusTone`), `value` (translated label), `showDot?`, `icon?`, `appearance?`, `badgeSize?` (default `sm`), `fallback?` (string override of the badge). Use this - NOT `DetailBadgeField` (legacy Badge `variants` map) and NOT a hand-built `DetailFieldWrapper` + `LabeledField` + inline `StatusBadge` - whenever a detail view shows an enum/status with a shared tone map.
+Read-only status/severity detail field. Renders a tone-driven `StatusBadge` inside the standard `DetailFieldWrapper` with the same `EmptyValueBadge` empty fallback as other `DetailFields.*`. Props: `tone` (resolved `StatusTone`), `value` (translated label), `showDot?`, `icon?`, `appearance?`, `badgeSize?` (default `sm`), `fallback?` (string override of the badge). Use this - NOT `DetailBadgeField` (legacy Badge `variants` map) and NOT a hand-built `DetailFieldWrapper` + `LabeledField` + inline `StatusBadge` - whenever a detail view shows an enum/status with a shared tone map. An enum with a Badge variants map and no tone map uses `DetailBadgeField`; SKILL.md invariant #53 holds both.
 
 ```tsx
+const v = resolveBootEnum(displayData.status) || "";
 <DetailFields.DetailStatusField tone={memberStatusToTone[v] ?? "neutral"} value={enumLabel("MemberStatus", v)} showDot layout="inline" />
 ```
 

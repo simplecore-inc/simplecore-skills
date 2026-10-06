@@ -357,9 +357,26 @@ shadows the real table and is reverted instead, with the page importing from the
 (`scaffold/overview.md` § Scaffolding into a module that already has widgets). The audit script (`${CLAUDE_PLUGIN_ROOT}/scripts/audit-frontend.mjs`)
 fails on an ungated `showNew`.
 
-## #53 Detail-row enums go through `DetailBadgeField`, resolved first
+## #53 Detail-row enums go through the field their tone source names, resolved first
 
-The component looks its tone up by the RAW `value` (`variants[value] ?? "default"`), so
+Two framework fields draw an enum on a detail row (`@simplix-react/ui` `fields/detail/`), and
+the source of the tone picks between them:
+
+| Tone source | Field | What it takes |
+|---|---|---|
+| a shared `StatusTone` map in the project UI package (`<enum>ToTone`) | `DetailFields.DetailStatusField` | `tone` (the resolved `StatusTone`), `value` (the translated label) |
+| a Badge variants map (`Record<value, BadgeVariant>`) | `DetailFields.DetailBadgeField` | `value` (the raw value, the variant key), `displayValue` (the label), `variants` |
+
+An enum that has a tone map uses `DetailStatusField`, so the status colour stays the one the
+list and the badges draw. The scaffold emits `DetailBadgeField` with an all-`"default"` variants
+map, which is a placeholder: it is replaced by a real variants map or by `DetailStatusField`,
+never kept.
+
+`DetailStatusField` takes the tone already resolved, so the lookup sits at the call site and
+needs the resolved key: `tone={<enum>ToTone[resolveBootEnum(x) || ""] ?? "neutral"}` beside
+`value={enumLabel("<EnumType>", resolveBootEnum(x) || "")}`.
+
+`DetailBadgeField` looks its tone up by the RAW `value` (`variants[value] ?? "default"`), so
 handing it the boot-enum object the DTO carries makes every lookup miss: the badge renders
 `default` however the variant map is written, while `displayValue` still shows the right
 label. The failure is silent and reads as a broken tone map. Pass
@@ -369,14 +386,16 @@ gives); the scaffold emits the
 unresolved form (`value={displayData.<field>}`), so every generated detail needs this fixed
 at customization time.
 
-**A nullable enum row uses `DetailBadgeField` too, never a bare badge inside
-`DetailFieldWrapper`.** Module badge shells (`StatusBadge` / `EnumBadge` wrappers over
+**A nullable enum row uses one of the two fields too, never a bare badge inside
+`DetailFieldWrapper`.** Module badge shells (`<Domain>StatusBadge` wrappers over
 `resolveBootEnum`) return `null` for an absent value - right in a list cell or an inline
 flex row, but inside a `DetailFieldWrapper` it leaves a silently blank row while every
 sibling `DetailFields.*` row shows the shared no-value badge. For a detail or dialog row
 whose enum can legitimately be absent (a verdict that exists only when something matched),
-render `DetailBadgeField` with `value={resolveBootEnum(x) || null}` so the empty state goes
-through the shared fallback. A row whose enum is always present may keep the
+render the field with an empty value - `DetailBadgeField` with
+`value={resolveBootEnum(x) || null}`, or `DetailStatusField` with an empty `value` - so the
+empty state goes through the shared fallback; both render it when `value` is null, undefined
+or an empty string. A row whose enum is always present may keep the
 wrapper-plus-badge shape.
 
 ## #54 The scaffold emits fields that say nothing

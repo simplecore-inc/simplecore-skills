@@ -117,10 +117,10 @@ const peek = usePeekHost();
 ### Field rows
 
 - **A label–value row** → `DetailFieldWrapper layout="trailing"` puts the label left and the value at the right edge with a blank gap between (no leader rule).
-- **A nullable enum row?** → render it with `DetailFields.DetailBadgeField` (`value={resolveBootEnum(x) || null}` + `displayValue` + the module variant map), never a bare module badge shell inside a `DetailFieldWrapper` - the shell returns `null` for an absent value and leaves a silently blank row while sibling rows show the shared no-value badge.
+- **A nullable enum row?** → render it with the field its tone source names (invariant #53): `DetailFields.DetailStatusField` over a shared tone map, `DetailFields.DetailBadgeField` (`value={resolveBootEnum(x) || null}` + `displayValue` + the module variant map) over a Badge variants map; never a bare module badge shell inside a `DetailFieldWrapper` - the shell returns `null` for an absent value and leaves a silently blank row while sibling rows show the shared no-value badge.
 - **Badge size** → omit `size` on detail badges so they match the list (invariant #43); never enlarge a detail/form badge.
 - **Custom-rendered value?** → `DetailTextField` has no `children`; compose the value inside a `DetailFieldWrapper` (invariant #44).
-- **Audit footer** → pass the panel's `displayZone` (the record's display zone on zone-scoped screens - `datetime-fields.md`); stamps render locale-aware in that zone (invariant #42).
+- **Audit footer** → pass the panel's `displayZone` (the record's display zone on zone-scoped screens - `datetime-fields.md`); stamps render locale-aware, as a medium date and a short time, in that zone, and without it in the app-level default display zone, else the browser zone (invariant #42).
 
 ---
 

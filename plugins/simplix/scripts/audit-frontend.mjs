@@ -2098,7 +2098,7 @@ export function AlertPanel() { return null; }`,
     id: "per-screen-enum-badge",
     invariant: "#22 / #23 / audit: registry first",
     level: "error",
-    desc: "A screen declares its own component to draw an enum as a badge — resolve the boot enum, look the label up, pick a tone. The framework already has that component twice over (`StatusBadge` takes a tone map keyed by the raw value, `EnumBadge` takes one tone for a categorical kind), and every screen that writes its own arrives at a slightly different answer for the absent value, the tone of the default case, and the size of the pill. Six of them in one module is six pills that do not match, and nothing compares them. Pass the module's variant map to the shared component instead",
+    desc: "A screen declares its own component to draw an enum as a badge: resolve the boot enum, look the label up, pick a tone. That is the shared components' job: the framework's `StatusBadge` takes a resolved `tone` from the enum's one tone map and a translated `label`, and a vocabulary several screens share has one `<Domain>StatusBadge` in the project UI package (registry: tones-and-badges.md). Every screen that writes its own arrives at a slightly different answer for the absent value, the tone of the default case, and the size of the pill, so several of them in one module are pills that do not match, and nothing compares them. Draw the shared component from the enum's tone map instead",
     appliesTo: isTsx,
     check: (c) => {
       const lines = c.split("\n");
@@ -2122,30 +2122,31 @@ export function AlertPanel() { return null; }`,
   const kind = resolveBootEnum(row.kind);
   return <Badge variant="warning">{kind ? enumLabel("ThingKind", kind) : "—"}</Badge>;
 }`,
-      fixed: `const KIND_VARIANTS: Record<string, StatusVariant> = { URGENT: "warning", ROUTINE: "outline" };
+      fixed: `import { thingKindToTone } from "@acme/site-ui";
 
 export function ThingList() {
   const { enumLabel } = useEntityTranslation("thing");
   return (
     <CrudList.Column<ThingListDTO> field="kind" header={fieldLabel("kind")}>
-      {({ row }) => (
-        <StatusBadge
-          enumName="ThingKind"
-          value={row.kind}
-          enumLabel={enumLabel}
-          variantMap={KIND_VARIANTS}
-        />
-      )}
+      {({ row }) => {
+        const kind = resolveBootEnum(row.kind) || "";
+        return kind ? (
+          <StatusBadge tone={thingKindToTone[kind] ?? "neutral"} label={enumLabel("ThingKind", kind)} />
+        ) : (
+          <EmptyValue />
+        );
+      }}
     </CrudList.Column>
   );
 }`,
       miss: [
         {
-          note: "the shared component itself, which is where the resolving belongs",
-          source: `export function StatusBadge({ enumName, value, enumLabel, variantMap }: StatusBadgeProps) {
+          note: "the domain's shared badge in the project UI package, which is where the resolving belongs",
+          file: "packages/site-ui/src/thing/thing-kind-badge.tsx",
+          source: `export function ThingKindBadge({ enumName, value, enumLabel }: ThingKindBadgeProps) {
   const resolved = resolveBootEnum(value);
   if (!resolved) return null;
-  return <Badge variant={statusVariant(variantMap, resolved)}>{enumLabel(enumName, resolved)}</Badge>;
+  return <Badge variant={THING_KIND_VARIANT[resolved] ?? "outline"}>{enumLabel(enumName, resolved)}</Badge>;
 }`,
         },
         {
@@ -3754,6 +3755,10 @@ export function ScopePane({ line }: Props) {
         // A credential is write-only on purpose, and a foreign key is the relation the detail
         // renders by name rather than by id - neither is a missing read.
         if (/^(password|secret|token|.*Secret|.*Password)$/i.test(f) || /Ids?$/.test(f)) return false;
+        // A system field the form edits at all is `system-field-exposure`'s finding: the scaffold
+        // draws it on neither surface, so asking the detail to render it as well would ask for a
+        // second copy of the same defect.
+        if (/^(id|sortOrder|displayOrder)$/.test(f)) return false;
         if (new RegExp(`displayData\\.${f}\\b|fieldLabel\\("${f}"\\)`).test(ds)) return false;
         return !new RegExp(`\\b${f}\\b`).test(delegated);
       });
@@ -3782,6 +3787,17 @@ export function ScopePane({ line }: Props) {
 />`,
       },
       miss: [
+        {
+          note: "a system field edited in the form is system-field-exposure's finding, not a missing read",
+          files: {
+            "modules/site/src/widgets/area/detail.tsx": `<DetailFields.DetailTextField label={fieldLabel("name")} value={displayData.name} />`,
+          },
+          source: `<FormFields.NumberField
+  label={fieldLabel("sortOrder")}
+  value={values.sortOrder}
+  onChange={(v) => updateField("sortOrder", v)}
+/>`,
+        },
         {
           note: "a credential is write-only on purpose",
           files: {
@@ -5686,41 +5702,31 @@ const canManage = useCan("manage", SUBJECTS.area);
     id: "system-field-exposure",
     invariant: "audit: system fields",
     level: "review",
-    desc: "id / sortOrder / displayOrder surfaced as a visible field — system fields live in auditData only",
+    desc: "id / sortOrder / displayOrder drawn as a visible detail or form field. The framework's scaffold treats all three as system fields and draws none of them (`SYSTEM_FIELDS` in `@simplix-react/cli`): they stay in the form's values and its submit, the id shows only in the audit strip, and a row order is set by dragging the list's rows",
     appliesTo: (p) => inModules(p) && isTsx(p),
-    // A field the entity's own form edits is a decision the operator makes, not a value the
-    // system maintains - an order that ranks a storefront is chosen, and once it is chosen the
-    // read surfaces have to say what it currently is. Flagging those would put this rule in
-    // direct opposition to `write-only-form-field`, which demands exactly that read.
-    check: (c, rel) => {
-      const form = path.join(ROOT, path.dirname(rel), "form.tsx");
-      const edits = fs.existsSync(form) ? fs.readFileSync(form, "utf8") : "";
-      return lineHits(c, /fieldLabel\("(id|sortOrder|displayOrder)"\)/, (line) => {
-        const m = /fieldLabel\("(id|sortOrder|displayOrder)"\)/.exec(line);
-        return !new RegExp(`updateField\\(\\s*"${m[1]}"`).test(edits);
-      });
-    },
+    // A form that edits one of the three is reported here as well, not exempted: the scaffold
+    // leaves all three out of the form too. `write-only-form-field` skips them for the same
+    // reason, so the two rules never ask for opposite things.
+    check: (c) => lineHits(c, /fieldLabel\("(id|sortOrder|displayOrder)"\)/),
     samples: {
       file: "modules/site/src/widgets/area/detail.tsx",
       broken: {
         files: {
-          "modules/site/src/widgets/area/form.tsx": `<FormFields.TextField label={fieldLabel("name")} value={values.name} onChange={(v) => updateField("name", v)} />`,
+          "modules/site/src/widgets/area/form.tsx": `<FormFields.NumberField label={fieldLabel("sortOrder")} value={values.sortOrder} onChange={(v) => updateField("sortOrder", v)} />`,
         },
         source: `<DetailFields.DetailTextField label={fieldLabel("sortOrder")} value={displayData.sortOrder} />`,
       },
       fixed: {
         files: {
-          "modules/site/src/widgets/area/form.tsx": `<FormFields.TextField label={fieldLabel("name")} value={values.name} onChange={(v) => updateField("name", v)} />`,
+          "modules/site/src/widgets/area/form.tsx": `const [sortOrder] = useState<number>(defaultValues?.sortOrder ?? 0);
+<FormFields.TextField label={fieldLabel("name")} value={values.name} onChange={(v) => updateField("name", v)} />`,
         },
         source: `<DetailFields.DetailTextField label={fieldLabel("name")} value={displayData.name} />`,
       },
       miss: [
         {
-          note: "an order the operator chooses has to be readable back — flagging it would contradict write-only-form-field",
-          files: {
-            "modules/site/src/widgets/area/form.tsx": `<FormFields.NumberField label={fieldLabel("sortOrder")} value={values.sortOrder} onChange={(v) => updateField("sortOrder", v)} />`,
-          },
-          source: `<DetailFields.DetailTextField label={fieldLabel("sortOrder")} value={displayData.sortOrder} />`,
+          note: "a field whose name only begins like a system field",
+          source: `<DetailFields.DetailTextField label={fieldLabel("idCardNumber")} value={displayData.idCardNumber} />`,
         },
       ],
     },
