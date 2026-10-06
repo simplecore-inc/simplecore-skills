@@ -41,6 +41,7 @@ from .config import DeckConfig
 APP_CONNECTION = Path.home() / "Library" / "Application Support" / "com.slideglance.editor" / "mcp.json"
 APP_ENV = "SLIDEGLANCE_APP_MCP"
 BIN_ENV = "SLIDEGLANCE_BIN"
+BINARY_NAMES = ("slideglance", "slideglance.exe")   # the tool's own binary, on any platform
 PROTOCOL = "2025-06-18"
 CLIENT = {"name": "simplecore-deck-checks", "version": "1"}
 
@@ -233,7 +234,7 @@ def binary(deck: DeckConfig) -> str:
     declared = deck.get("tool.binary")
     if declared:
         return str(deck.resolve(declared)) if "/" in declared else declared
-    found = shutil.which("slideglance")
+    found = shutil.which(BINARY_NAMES[0])
     if found:
         return found
     raise DeckUnavailable(f"no app holds the deck and no slideglance binary was found: set ${BIN_ENV} "
