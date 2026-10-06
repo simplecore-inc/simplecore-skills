@@ -15,10 +15,13 @@
   "margin": 28,
   "sideMargin": 28,
 
-  // The type ladder, derived from the body size (see the reference), and the
-  // names the library's helpers draw with.
+  // A placeholder ladder: the starting table in references/document-figures.md,
+  // with each name on the rung that table gives its role (MICRO the dense
+  // micro-label, BODY the body). It is not derived for this placement. Derive
+  // the document's own from its body size and the placed width as that
+  // reference says: at this sample's 0.5017 scale a 10pt body needs 27 units.
   "ladder": [15, 16, 17, 18, 20, 21, 24],
-  "names": { "MICRO": 15, "BODY": 16, "LEAD": 17, "CARD": 18, "SECTION": 20,
+  "names": { "MICRO": 15, "BODY": 17, "LEAD": 18, "CARD": 18, "SECTION": 20,
              "EMPH": 21, "DISPLAY": 24 },
   "steps": { "STEP": 18 },
   "subBodyShareMax": null,
@@ -51,7 +54,10 @@
   "labelForm": {},
   "register": null,
   "sectionNumbers": true,
-  "contrastFloor": 3.0,
+  // WCAG's floor for text under the large-text size, which a label printing
+  // at the document's body size is. 3.0, the library's default, is the
+  // large-text floor.
+  "contrastFloor": 4.5,
   "references": null,
   "plans": null
 }

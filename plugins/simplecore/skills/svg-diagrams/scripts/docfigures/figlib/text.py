@@ -238,13 +238,27 @@ def lines_h(n, size, step):
     return 0.0 if n <= 0 else (n - 1) * step + size * 1.02
 
 
+_HEX_COLOUR = re.compile(r"#(?:[0-9A-Fa-f]{6}|[0-9A-Fa-f]{3})")
+
+
+def _is_colour(value):
+    return isinstance(value, str) and _HEX_COLOUR.fullmatch(value) is not None
+
+
 def _line_spec(spec):
-    """A body line is a string, or (text, colour) or (text, colour, weight)."""
+    """A body line is a string, or (text, colour) or (text, colour, weight).
+
+    svgkit's `Canvas.card` takes a coloured line as (colour, text). Read in
+    this library's order that pair prints the colour as the line and paints
+    with the text, so a pair whose first item is a `#rrggbb` colour and whose
+    second is not is read as (colour, text).
+    """
     if isinstance(spec, str):
         return spec, None, 400
-    if len(spec) == 2:
-        return spec[0], spec[1], 400
-    return spec[0], spec[1], spec[2]
+    text, colour, *rest = spec
+    if _is_colour(text) and not _is_colour(colour):
+        text, colour = colour, text
+    return text, colour, (rest[0] if rest else 400)
 
 
 def use_bullets(items, bullet="auto", titled=False):

@@ -112,6 +112,25 @@ def stroke_width_errors(svgs, cfg):
     return out
 
 
+FILTER_REF = re.compile(r'\bfilter\s*(?:=\s*["\']|:\s*)url\(')
+
+
+def filter_errors(svgs, cfg):
+    """(file, count) for figures with elements that reference an SVG filter.
+
+    PowerPoint's SVG import drops every element that references a `<filter>`:
+    the shape vanishes while its labels stay, and the document validates.
+    `canvas()` draws svgkit's shadows off for that reason; this catches a
+    filter that reaches a figure any other way.
+    """
+    out = []
+    for svg in svgs:
+        n = len(FILTER_REF.findall(_read(svg)))
+        if n:
+            out.append((svg.name, n))
+    return out
+
+
 def dash_pattern_errors(svgs, cfg):
     """(file, patterns) for dashes off the declared patterns.
 

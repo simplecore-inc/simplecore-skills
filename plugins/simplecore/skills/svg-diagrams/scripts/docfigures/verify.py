@@ -7,7 +7,7 @@
 
 One check per property. A check whose vocabulary the config does not declare
 does not run, and the report says so; every other failing check fails the
-run. Four checks are reviews: they list what to look at and fail nothing.
+run. The reviews list what to look at and fail nothing.
 
   width          every figure on a declared board
   type scale     every size on the ladder
@@ -16,6 +16,8 @@ run. Four checks are reviews: they list what to look at and fail nothing.
   max rung       nothing above `maxRung`
   font family    every text in `fontStack`
   stroke         every stroke on the declared ladder, icons excepted
+  filter         no element references an SVG filter, which PowerPoint's
+                 import drops together with the element
   dash           every dash on a declared pattern
   dash legend    where two dash meanings are drawn (every dash with
                  `dashGloss: "every"`), each names its declared meaning
@@ -49,10 +51,11 @@ import figconfig  # noqa: E402
 from figlib.checks_copy import (dash_legend_errors, icon_literals,  # noqa: E402,F401
                                 predicate_labels, register_errors, section_number_errors)
 from figlib.checks_drawing import (bullet_mode, dash_pattern_errors,  # noqa: E402,F401
-                                   font_family_errors, font_size_errors, foot_legends,
-                                   height_reviews, legend_mismatches, legend_past_column,
-                                   max_rung_errors, past_content_edge, stroke_width_errors,
-                                   strip_reviews, sub_body_share, width_errors)
+                                   filter_errors, font_family_errors, font_size_errors,
+                                   foot_legends, height_reviews, legend_mismatches,
+                                   legend_past_column, max_rung_errors, past_content_edge,
+                                   stroke_width_errors, strip_reviews, sub_body_share,
+                                   width_errors)
 from figlib.checks_refs import references  # noqa: E402
 from figlib.svgread import texts, toolkit_dir  # noqa: E402,F401
 
@@ -178,6 +181,9 @@ def run(cfg, prefixes=(), render_dir=None):
             lambda i: f"{i[0]}: {i[1][:60]}")
     r.check("stroke", stroke_width_errors(svgs, cfg), "all on the stroke ladder",
             lambda i: f"{i[0]}: " + ", ".join(f"{w:g}x{n}" for w, n in i[1]))
+    r.check("filter", filter_errors(svgs, cfg), "no element references a filter",
+            lambda i: f"{i[0]}: {i[1]} element(s) reference a filter, which "
+                      "PowerPoint drops with the element - draw on canvas()")
     r.check("dash", dash_pattern_errors(svgs, cfg), "every dash on a declared pattern",
             lambda i: f"{i[0]}: {', '.join(i[1])}")
     r.check("dash legend", dash_legend_errors(svgs, cfg),

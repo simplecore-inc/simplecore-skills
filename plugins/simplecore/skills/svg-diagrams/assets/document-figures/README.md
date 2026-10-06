@@ -39,5 +39,6 @@ Edit the module, never the SVG. A hand-edited SVG is overwritten by the next
 build, and the edit is lost without a trace.
 
 A file the module glob reaches is not run when it is a test (`test_*.py`), a
-helper listed under `helpers`, or named after a library module (`common.py`);
-a project that still carries an old copy of `common.py` can delete it.
+helper listed under `helpers`, or named after a library module (`common.py`).
+The library comes first on the import path, so a project file of that name is
+never imported either: every module draws with the library's.
