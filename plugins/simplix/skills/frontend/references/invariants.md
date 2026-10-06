@@ -58,7 +58,7 @@ A row where exactly one pill is chosen, in 0.3.9 and later, is `ChoiceChips` (`v
 file resolves the multi-select row and stays silent where it resolves the single-select one.
 
 One more sanctioned chip case: **narrowing WITHIN a server-forced scope** - a list locked to
-`field.in: "A,B"`. How the chips narrow it follows the same two modes:
+`field.in: "A,B"`. How the chips narrow it follows the same selection modes:
 
 - **Multi-select.** The chips write `field.in`, which is the forced scope's own key, so they
   cannot sit in the list's filter state beside the scope: two values under one key leave the one
@@ -359,8 +359,8 @@ fails on an ungated `showNew`.
 
 ## #53 Detail-row enums go through the field their tone source names, resolved first
 
-Two framework fields draw an enum on a detail row (`@simplix-react/ui` `fields/detail/`), and
-the source of the tone picks between them:
+`DetailStatusField` and `DetailBadgeField` both draw an enum on a detail row (`@simplix-react/ui`
+`fields/detail/`), and the source of the tone picks between them:
 
 | Tone source | Field | What it takes |
 |---|---|---|
@@ -386,8 +386,8 @@ gives); the scaffold emits the
 unresolved form (`value={displayData.<field>}`), so every generated detail needs this fixed
 at customization time.
 
-**A nullable enum row uses one of the two fields too, never a bare badge inside
-`DetailFieldWrapper`.** Module badge shells (`<Domain>StatusBadge` wrappers over
+**A nullable enum row uses `DetailStatusField` or `DetailBadgeField` too, never a bare badge
+inside `DetailFieldWrapper`.** Module badge shells (`<Domain>StatusBadge` wrappers over
 `resolveBootEnum`) return `null` for an absent value - right in a list cell or an inline
 flex row, but inside a `DetailFieldWrapper` it leaves a silently blank row while every
 sibling `DetailFields.*` row shows the shared no-value badge. For a detail or dialog row

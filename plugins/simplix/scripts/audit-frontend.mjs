@@ -5824,11 +5824,11 @@ const canManage = useCan("manage", SUBJECTS.area);
     id: "system-field-exposure",
     invariant: "audit: system fields",
     level: "review",
-    desc: "id / sortOrder / displayOrder drawn as a visible detail or form field. The framework's scaffold treats all three as system fields and draws none of them (`SYSTEM_FIELDS` in `@simplix-react/cli`): they stay in the form's values and its submit, the id shows only in the audit strip, and a row order is set by dragging the list's rows",
+    desc: "id / sortOrder / displayOrder drawn as a visible detail or form field. The framework's scaffold treats id, sortOrder and displayOrder as system fields and draws none of them (`SYSTEM_FIELDS` in `@simplix-react/cli`): they stay in the form's values and its submit, the id shows only in the audit strip, and a row order is set by dragging the list's rows",
     appliesTo: (p) => inModules(p) && isTsx(p),
-    // A form that edits one of the three is reported here as well, not exempted: the scaffold
-    // leaves all three out of the form too. `write-only-form-field` skips them for the same
-    // reason, so the two rules never ask for opposite things.
+    // A form that edits one of them is reported here as well, not exempted: the scaffold leaves
+    // them out of the form too. `write-only-form-field` skips them for the same reason, so this
+    // rule and that one never ask for opposite things.
     check: (c) => lineHits(c, /fieldLabel\("(id|sortOrder|displayOrder)"\)/),
     samples: {
       file: "modules/site/src/widgets/area/detail.tsx",

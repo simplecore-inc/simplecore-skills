@@ -238,7 +238,7 @@ interface AuditData {
 
 // On CrudDetail (passed through to the footer), and on CrudDetail.AuditFooter itself:
 auditData?: AuditData;
-displayZone?: string; // IANA zone the two stamps render in
+displayZone?: string; // IANA zone the created and updated stamps render in
 ```
 
 ### Features
