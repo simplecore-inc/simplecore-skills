@@ -1,6 +1,6 @@
 ---
 name: bid-proposal
-description: Runs a Korean bid from the issued tender to the submitted package without the user steering each step - tender transcription, score simulation, kickoff decisions asked once, manuscript and figures, wireframe and evidence annexes, persona and Korean review, the SlideGlance proposal deck chapter by chapter, the presentation deck, the quantitative volume, expected Q&A and the packaged deliverables - and keeps a ledger so any session, Claude Code or Codex, resumes where the last one stopped. It orders the work and makes the calls; the standards it applies live in proposal-writing, slide-decks, korean-docs, svg-diagrams, wireframe-boards and slideglance-pptx. Use when starting a bid, resuming one, asking where a bid stands, or running a whole-document pass. Triggers - 입찰 착수, 새 제안서, 제안서 작성 시작, 제안서 이어서, 제안서 진행, 현재 상태, 원고 작성, 덱 조판, 발표본 작성, 계량 제안서, 예상 질의응답, 제출물 패키지, 전체 검토, 전체 교정.
+description: Use when starting a Korean bid from an issued tender, resuming one from its ledger, asking where a bid stands, running a whole-document pass over a bid (Korean and terms, the evaluator panel, cross-document agreement), or taking up a bid's presentation deck, quantitative volume, expected Q&A or submission package. Not for one sentence or one figure fixed on its own, and not for work on the SlideGlance editor itself. Triggers - 입찰 착수, 새 제안서, 제안서 작성 시작, 제안서 이어서, 제안서 진행, 현재 상태, 원고 작성, 덱 조판, 발표본 작성, 계량 제안서, 예상 질의응답, 제출물 패키지, 전체 검토, 전체 교정.
 ---
 
 # Bid proposal
