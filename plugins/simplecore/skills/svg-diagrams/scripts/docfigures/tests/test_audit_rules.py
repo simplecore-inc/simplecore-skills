@@ -71,6 +71,33 @@ class Contrast(unittest.TestCase):
         self.assertEqual(self.found("#ffffff"), [])
 
 
+class LargeTextFloor(unittest.TestCase):
+    # #888888 on white is 3.5:1: under the 4.5 small text needs, over the 3.0
+    # large text needs
+    def found(self, px_per_unit, weight=None, **floors):
+        label = text(60, 90, "판정 통과", fill="#888888")
+        if weight:
+            label = label.replace("<text ", f'<text font-weight="{weight}" ', 1)
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "c.svg"
+            path.write_text(svg(label, w=700, h=160), encoding="utf-8")
+            return [k for k, _m in lintrules.contrast(
+                str(path), audit._render_quiet, audit._text_w,
+                px_per_unit=px_per_unit, **floors)]
+
+    def test_label_printed_small_takes_the_text_floor(self):
+        self.assertEqual(self.found(0.5, floor=4.5, large_floor=3.0), ["LOW-CONTRAST"])
+        self.assertEqual(self.found(0.8, floor=4.5, large_floor=3.0), ["LOW-CONTRAST"])
+
+    def test_label_printed_large_or_bold_and_large_enough_takes_the_large_floor(self):
+        self.assertEqual(self.found(1.0, floor=4.5, large_floor=3.0), [])
+        self.assertEqual(self.found(0.8, weight="700", floor=4.5, large_floor=3.0), [])
+
+    def test_one_floor_holds_every_label_whatever_its_size(self):
+        self.assertEqual(self.found(1.0, floor=4.5), ["LOW-CONTRAST"])
+        self.assertEqual(self.found(0.5, floor=3.0), [])
+
+
 class MarkerDefaults(unittest.TestCase):
     def found(self, source):
         with tempfile.TemporaryDirectory() as tmp:
@@ -86,6 +113,30 @@ class MarkerDefaults(unittest.TestCase):
         self.assertEqual(self.found('c.line(0, 0, 10, 0, marker=None)\n'
                                     'c.path("M 0 0 H 9", marker=c.blue)\n'
                                     'c.line(0, 0, 1, 1, **kw)\n'), [])
+
+
+
+class EdgePills(unittest.TestCase):
+    def found(self, source):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "m.py"
+            path.write_text(source, encoding="utf-8")
+            return [k for k, _m in lintrules.edge_pills(path)]
+
+    def test_label_on_the_toolkit_pill_fails(self):
+        self.assertEqual(self.found('c.edge_label(600, 120, "요청", color=c.blue)\n'
+                                    'c.edge_label(600, 160, "응답", pill=True)\n'
+                                    'c.edge_label(1, 2, "a", "#000", 12, False, True)\n'),
+                         ["EDGE-PILL"] * 3)
+
+    def test_library_label_bare_label_and_unjudged_calls_pass(self):
+        self.assertEqual(self.found('import common\n'
+                                    'edge_label(c, 600, 120, "요청", BLUE)\n'
+                                    'common.edge_label(c, 1, 2, "a", BLUE)\n'
+                                    'c.edge_label(1, 2, "a", pill=False)\n'
+                                    'c.edge_label(1, 2, "a", "#000", 12, False, False)\n'
+                                    'c.edge_label(1, 2, "a", pill=draw)\n'
+                                    'c.edge_label(1, 2, "a", **kw)\n'), [])
 
 
 if __name__ == "__main__":

@@ -6,11 +6,14 @@ rendered picture, one on the generator's source.
 - `line_overlaps(svg)`: two drawn runs that print as one line - a route that
   doubles back on itself (`SELF-DOUBLED`), or two lines of any kind and any
   orientation on top of each other (`COINCIDENT-LINES`)
-- `contrast(svg_path, render, floor)`: a label whose colour disappears into
-  the shape painted under it, measured on a render with the text removed
-  (`LOW-CONTRAST`)
+- `contrast(svg_path, render, text_w, floor, large_floor, px_per_unit)`: a
+  label whose colour disappears into the shape painted under it, measured on
+  a render with the text removed (`LOW-CONTRAST`)
 - `marker_defaults(py_path)`: a `.line()` / `.path()` call that states no
   `marker=`, and so inherits the toolkit's arrowhead (`MARKER-DEFAULT`)
+- `edge_pills(py_path)`: a document-figure module's connector label drawn
+  with the toolkit's `Canvas.edge_label` pill rather than the figure
+  library's `edge_label` (`EDGE-PILL`)
 
 Each returns (kind, message) pairs, the shape `audit.lint()` reports.
 """
@@ -236,11 +239,21 @@ def line_overlaps(svg):
 
 
 # ── LOW-CONTRAST ───────────────────────────────────────────────────────────
-# WCAG's floor for large text, the default. Text under the large-text size
-# needs 4.5, and a document figure's labels, printed at the document's body
-# size, are that small: `--floor 4.5` (verify.py's `contrastFloor`) holds them
-# to it.
+# WCAG's floor for large text, the CLI's default for every label. Text under
+# the large-text size needs 4.5: `--floor 4.5 --large-floor 3.0` holds a label
+# to the ratio its printed size needs, read at `--px-per-unit` (verify.py
+# passes each board's placement).
 CONTRAST_FLOOR = 3.0
+# WCAG's large text: 18pt, or 14pt in bold, in CSS px (1pt = 4/3 px).
+LARGE_PX = 24.0
+LARGE_BOLD_PX = 18.67
+
+
+def is_large(size, weight, px_per_unit=1.0):
+    """Whether a label at `size` units and `weight` prints as WCAG large text."""
+    px = size * px_per_unit
+    bold = weight in ("bold", "bolder") or (weight.isdigit() and int(weight) >= 700)
+    return px >= LARGE_PX or (bold and px >= LARGE_BOLD_PX)
 
 
 def _luminance(rgb):
@@ -265,15 +278,18 @@ def _rgb(value):
     return tuple(int(v[i:i + 2], 16) for i in (0, 2, 4))
 
 
-def contrast(svg_path, render, text_w, floor=CONTRAST_FLOOR, scale=2):
-    """Labels under `floor`:1 against what is painted under them.
+def contrast(svg_path, render, text_w, floor=CONTRAST_FLOOR, scale=2,
+             large_floor=None, px_per_unit=1.0):
+    """Labels under their floor against what is painted under them.
 
     The ground is measured, not inferred: the figure is rendered once with
     every `<text>` removed (`render(svg, png, scale)`), and the most common
     colour inside each label's own box on that image is the ground the reader
     sees the glyphs against. `text_w(text, size, mono)` is the toolkit's width
-    estimate. Raises RuntimeError when the render produced nothing, because a
-    contrast check that could not look has not passed.
+    estimate. Every label is held to `floor`:1, except that with `large_floor`
+    given, a label that prints as large text (`is_large` at `px_per_unit`) is
+    held to that instead. Raises RuntimeError when the render produced nothing,
+    because a contrast check that could not look has not passed.
     """
     from PIL import Image
 
@@ -309,11 +325,15 @@ def contrast(svg_path, render, text_w, floor=CONTRAST_FLOOR, scale=2):
                 continue
             bg = Counter(img.crop(box).getdata()).most_common(1)[0][0]
             ratio = contrast_ratio(fg, bg)
-            if ratio < floor:
+            limit = floor
+            if large_floor is not None and is_large(size, a.get("font-weight", "400"),
+                                                    px_per_unit):
+                limit = large_floor
+            if ratio < limit:
                 out.append(("LOW-CONTRAST",
                             f'"{text[:34]}" {a["fill"]} on '
-                            f'#{bg[0]:02x}{bg[1]:02x}{bg[2]:02x} is {ratio:.1f}:1, '
-                            f'under {floor:g}:1 - take the band\'s own dark tone '
+                            f'#{bg[0]:02x}{bg[1]:02x}{bg[2]:02x} is {ratio:.2f}:1, '
+                            f'under {limit:g}:1 - take the band\'s own dark tone '
                             f'or move the label off the band'))
     return out
 
@@ -343,4 +363,59 @@ def marker_defaults(py_path):
                     f"{Path(py_path).name}:{node.lineno}: .{func.attr}() states no "
                     f"marker= and draws the toolkit's default arrowhead - pass "
                     f"marker=None, or the colour of the head it arrives with"))
+    return out
+
+
+# ── EDGE-PILL ──────────────────────────────────────────────────────────────
+# `Canvas.edge_label(x, y, s, color, size, mono, pill, weight)`: `pill` is the
+# seventh argument after `self`.
+PILL_ARG = 6
+
+
+def _module_names(tree):
+    """Names a plain `import` binds: a call on one of them is a module function."""
+    names = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                names.add(alias.asname or alias.name.split(".")[0])
+    return names
+
+
+def edge_pills(py_path):
+    """Connector labels a document figure draws on the toolkit's pill.
+
+    `Canvas.edge_label` spreads its plate 8 units a side and a third of an em
+    above and below the letters; at a document's type size that plate is taller
+    than the gap an arrow runs in, and it prints over the boxes either side.
+    The figure library's `edge_label(c, x, y, text, accent)` fits the plate to
+    the glyph box, so a figure module calls that. A method call that draws no
+    pill (`pill=False`) passes; one whose `pill` is computed, or that forwards
+    `**kwargs`, cannot be judged from the source and is left alone; a call on
+    a module bound by `import` is a module function, not the method.
+    """
+    src = Path(py_path).read_text(encoding="utf-8")
+    tree = ast.parse(src, filename=str(py_path))
+    modules = _module_names(tree)
+    out = []
+    for node in ast.walk(tree):
+        func = getattr(node, "func", None)
+        if not isinstance(node, ast.Call) or not isinstance(func, ast.Attribute):
+            continue
+        if func.attr != "edge_label":
+            continue
+        if isinstance(func.value, ast.Name) and func.value.id in modules:
+            continue
+        if any(k.arg is None for k in node.keywords):
+            continue
+        pill = next((k.value for k in node.keywords if k.arg == "pill"), None)
+        if pill is None and len(node.args) > PILL_ARG:
+            pill = node.args[PILL_ARG]
+        if pill is not None and not (isinstance(pill, ast.Constant) and pill.value is True):
+            continue
+        out.append(("EDGE-PILL",
+                    f"{Path(py_path).name}:{node.lineno}: .edge_label() draws the "
+                    f"toolkit's pill, which spreads past a tight gap onto the boxes "
+                    f"beside it - call the figure library's edge_label(c, x, y, text, "
+                    f"accent), which fits the plate to the glyph box"))
     return out

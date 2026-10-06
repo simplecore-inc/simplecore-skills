@@ -274,6 +274,120 @@ def bullet_mode(svgs, cfg):
     return out
 
 
+# ── wrapped runs ───────────────────────────────────────────────────────────
+STUB_SHARE = 0.42      # a last line under this share of the run's longest is a stub
+STEP_RANGE = (0.95, 1.5)  # a line step, as a multiple of the type size
+SAME = 0.6             # coordinates this close are the same x, baseline or step
+
+
+def _wrapped_runs(svg):
+    """Lists of (text, size) lines that read as one wrapped string.
+
+    A run is a column of texts with the same x, anchor, size, weight and fill,
+    each one line step below the last, and the step the same down the run. A
+    bullet glyph (「•」) on a line's baseline, to its left, opens a new item,
+    so a list's items are never read as one string's lines.
+    """
+    lines, bullets = [], []
+    for attrs, text in texts(svg):
+        try:
+            x, y = float(_attr(attrs, "x") or "nan"), float(_attr(attrs, "y") or "nan")
+            size = float(_attr(attrs, "font-size") or 0)
+        except ValueError:
+            continue
+        if not text or not size or x != x or y != y:
+            continue
+        if text == "•":
+            bullets.append((x, y))
+            continue
+        key = (round(x / SAME), _attr(attrs, "text-anchor") or "start", size,
+               _attr(attrs, "font-weight") or "400", _attr(attrs, "fill") or "")
+        lines.append((key, x, y, text, size))
+
+    def opens_item(x, y, size):
+        return any(abs(by - y) <= SAME and x - 2 * size <= bx < x for bx, by in bullets)
+
+    columns = {}
+    for key, x, y, text, size in lines:
+        columns.setdefault(key, []).append((y, x, text, size))
+    runs = []
+    for column in columns.values():
+        column.sort()
+        run, step = [], None
+        for y, x, text, size in column:
+            gap = y - run[-1][0] if run else None
+            joins = (gap is not None
+                     and STEP_RANGE[0] * size <= gap <= STEP_RANGE[1] * size
+                     and (step is None or abs(gap - step) <= SAME)
+                     and not opens_item(x, y, size))
+            if joins:
+                step = gap if step is None else step
+                run.append((y, text, size))
+                continue
+            if len(run) >= 2:
+                runs.append(run)
+            run, step = [(y, text, size)], None
+        if len(run) >= 2:
+            runs.append(run)
+    return [[(text, size) for _y, text, size in run] for run in runs]
+
+
+FILL = 0.93            # the share of its width the wrap fills a line to
+WORD = re.compile(r"[ \t\n]+")
+
+
+def _forced_pieces(run, width):
+    """`run` split wherever the column did not force the break.
+
+    The wrap fills a line until the next word does not fit, so at every break
+    it made, the line plus the next line's first word is wider than `FILL` of
+    the longest line. A break where it would have fitted was written by the
+    author (a newline, or the next item of a list set without bullets), and
+    the lines either side of it are not one string's lines.
+    """
+    widths = [width(text, size) for text, size in run]
+    longest = max(widths)
+    cuts = [i + 1 for i in range(len(run) - 1)
+            if width(run[i][0] + " " + WORD.split(run[i + 1][0].strip())[0], run[i][1])
+            <= FILL * longest]
+    if not cuts:
+        return [run]
+    pieces, start = [], 0
+    for cut in cuts + [len(run)]:
+        if cut - start >= 2:
+            pieces += _forced_pieces(run[start:cut], width)
+        start = cut
+    return pieces
+
+
+def stub_lines(svgs, cfg):
+    """(file, last line, share, longest line) for wrapped runs ending on a stub.
+
+    A module writes a sentence and the column decides where it breaks, so a
+    word can end up alone on the last line, where the eye reading the card
+    never looks. A run whose last line is under `stubLine` (0.42) of its
+    longest is one. Only breaks the column forced are read, so an authored
+    newline and a list's items are not. `stubLine: null` turns the check off.
+    """
+    share = cfg.get("stubLine", STUB_SHARE)
+    if share is None:
+        return None
+
+    def width(text, size):
+        return text_width(cfg, text, size)
+
+    out = []
+    for svg in svgs:
+        for candidate in _wrapped_runs(svg):
+            for run in _forced_pieces(candidate, width):
+                widths = [width(text, size) for text, size in run]
+                longest = max(widths)
+                if longest and widths[-1] / longest < float(share):
+                    out.append((svg.name, run[-1][0], widths[-1] / longest,
+                                run[widths.index(longest)][0]))
+    return out
+
+
 # ── reviews ────────────────────────────────────────────────────────────────
 def past_content_edge(svgs, cfg, shared_by=3, floor=0.6, tolerance=2.0):
     """(file, edge, overshoot, share of right margin) for boxes past the line

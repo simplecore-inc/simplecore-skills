@@ -8,6 +8,8 @@
   // Board width in units -> placed width in px. A4 with 25.4mm margins is a
   // 602px text column, so a 1200-unit board placed across it scales by 0.5017.
   // A column board takes the same scale: 300px / 0.5017 = 598 units.
+  // Where a deck places these figures, boards and placeScale name the deck
+  // config that owns them instead ({from, key}, references/document-figures.md).
   "boards": { "1200": 602, "598": 300 },
   "boardNames": { "FULL": 1200, "COLUMN": 598 },
   "columnBoard": 598,
@@ -19,7 +21,8 @@
   // with each name on the rung that table gives its role (MICRO the dense
   // micro-label, BODY the body). It is not derived for this placement. Derive
   // the document's own from its body size and the placed width as that
-  // reference says: at this sample's 0.5017 scale a 10pt body needs 27 units.
+  // reference says: at this sample's 0.5017 scale a 10pt body needs 27 units,
+  // and the tag rung's 6.4pt floor needs 18.
   "ladder": [15, 16, 17, 18, 20, 21, 24],
   "names": { "MICRO": 15, "BODY": 17, "LEAD": 18, "CARD": 18, "SECTION": 20,
              "EMPH": 21, "DISPLAY": 24 },
@@ -54,10 +57,9 @@
   "labelForm": {},
   "register": null,
   "sectionNumbers": true,
-  // WCAG's floor for text under the large-text size, which a label printing
-  // at the document's body size is. 3.0, the library's default, is the
-  // large-text floor.
-  "contrastFloor": 4.5,
+  // contrastFloor is left unset: every label is then held to WCAG's floor for
+  // its printed size, 4.5 under the large-text size and 3.0 at it. A number
+  // holds every label to it; null turns the check off.
   "references": null,
   "plans": null
 }

@@ -5,8 +5,10 @@ Usage:
   audit.py render   <svg> <out.png> [scale]
   audit.py crop     <svg> <x> <y> <w> <h> <out.png> [scale]
   audit.py lint     <svg> [more.svg ...]     # exit 1 when any issue is found
-  audit.py contrast [--floor 3.0] <svg> [more.svg ...]   # labels lost on their ground
+  audit.py contrast [--floor 3.0] [--large-floor R --px-per-unit S] <svg> [more.svg ...]
+                                             # labels lost on their ground
   audit.py markers  <module.py> [more.py ...]  # connector calls with no marker=
+  audit.py pills    <module.py> [more.py ...]  # document-figure labels on the toolkit's pill
   audit.py hotspots <svg> <outdir> [scale]   # zoom-crop every arrow endpoint
 """
 import math
@@ -3009,12 +3011,21 @@ if __name__ == "__main__":
         sys.exit(1 if total else 0)
     elif cmd == "contrast":
         args = sys.argv[2:]
-        floor = lintrules.CONTRAST_FLOOR
-        if args[:1] == ["--floor"]:
-            floor, args = float(args[1]), args[2:]
+        opts = {"--floor": lintrules.CONTRAST_FLOOR, "--large-floor": None,
+                "--px-per-unit": 1.0}
+        while args[:1] and args[0] in opts:
+            if len(args) < 2:
+                _usage_exit()
+            try:
+                opts[args[0]] = float(args[1])
+            except ValueError:
+                _usage_exit()
+            args = args[2:]
         total = 0
         for p in args:
-            found = lintrules.contrast(p, _render_quiet, _text_w, floor=floor)
+            found = lintrules.contrast(p, _render_quiet, _text_w, floor=opts["--floor"],
+                                       large_floor=opts["--large-floor"],
+                                       px_per_unit=opts["--px-per-unit"])
             print(f"=== contrast {os.path.basename(p)} ===")
             for kind, msg in found:
                 print(f"  ✖ {kind}: {msg}")
@@ -3024,6 +3035,13 @@ if __name__ == "__main__":
         total = 0
         for p in sys.argv[2:]:
             for kind, msg in lintrules.marker_defaults(p):
+                print(f"  ✖ {kind}: {msg}")
+                total += 1
+        sys.exit(1 if total else 0)
+    elif cmd == "pills":
+        total = 0
+        for p in sys.argv[2:]:
+            for kind, msg in lintrules.edge_pills(p):
                 print(f"  ✖ {kind}: {msg}")
                 total += 1
         sys.exit(1 if total else 0)

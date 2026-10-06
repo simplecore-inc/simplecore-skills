@@ -61,6 +61,66 @@ class Required(unittest.TestCase):
         p.close()
 
 
+class DeckOwnsPlacement(unittest.TestCase):
+    DECKS = ('{"decks": {"proposal": {"kind": "document", "figures": {'
+             '"boards": {"1200": 681, "520": 300, "520-pair": 327}, "placeScale": 0.9}},'
+             ' "talk": {"kind": "slides", "figures": {"boards": {"1400": 1027}}}}} // note')
+
+    def project(self, **overrides):
+        data = {k: v for k, v in BASE_CONFIG.items()
+                if k not in ("boards", "boardNames", "columnBoard")}
+        data.update(overrides)
+        p = Project()
+        p.config_path.write_text(json.dumps(data), encoding="utf-8")
+        p.write(".claude/slide-decks.json", self.DECKS)
+        return p
+
+    def test_boards_and_place_scale_read_from_the_deck_config(self):
+        p = self.project(
+            boards={"from": ".claude/slide-decks.json", "key": "decks.proposal.figures.boards"},
+            placeScale={"from": ".claude/slide-decks.json",
+                        "key": "decks.proposal.figures.placeScale"})
+        try:
+            cfg = p.cfg()
+            # the deck's second placement of a board is the deck's, not a board
+            self.assertEqual(cfg.boards, {1200: 681.0, 520: 300.0})
+            self.assertEqual(cfg.default_board, 1200)
+            self.assertEqual(cfg.place_scale, 0.9)
+        finally:
+            p.close()
+
+    def test_inline_boards_and_place_scale_keep_loading(self):
+        p = self.project(boards={"1200": 681, "528": 300}, placeScale=0.9)
+        try:
+            cfg = p.cfg()
+            self.assertEqual(cfg.boards, {1200: 681.0, 528: 300.0})
+            self.assertEqual(cfg.place_scale, 0.9)
+        finally:
+            p.close()
+
+    def test_key_the_deck_does_not_declare_is_refused_naming_it(self):
+        p = self.project(
+            boards={"from": ".claude/slide-decks.json", "key": "decks.talk.figures.boards"},
+            placeScale={"from": ".claude/slide-decks.json",
+                        "key": "decks.talk.figures.placeScale"})
+        try:
+            cfg = p.cfg()
+            self.assertEqual(cfg.boards, {1400: 1027.0})
+            with self.assertRaisesRegex(figconfig.ConfigError,
+                                        "slide-decks.json: no key 'decks.talk.figures.placeScale'"):
+                _ = cfg.place_scale
+        finally:
+            p.close()
+
+    def test_missing_boards_names_both_ways_to_declare_them(self):
+        p = self.project()
+        try:
+            with self.assertRaisesRegex(figconfig.ConfigError, "decks.<deck>.figures.boards"):
+                p.cfg()
+        finally:
+            p.close()
+
+
 class Verdict(unittest.TestCase):
     def test_hues_read_from_another_config_by_key(self):
         p = Project(verdict={"from": ".claude/slide-decks.json",

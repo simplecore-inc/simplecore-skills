@@ -7,6 +7,11 @@ vocabularies, the theme, the typeface stack, the icon and accent vocabularies,
 the verdict hues, and the thresholds the checks apply. The library carries no
 project value of its own.
 
+A value another file owns is named rather than copied: `{"from": <file>,
+"key": <dotted key>}` in place of `boards`, `placeScale` or `verdict` reads it
+from that file, so the boards and the print factor a deck config declares for
+the figures it places are declared once, in the deck config.
+
 The file is found in this order:
 
 1. the path in `DOCUMENT_FIGURES_CONFIG`
@@ -80,14 +85,26 @@ def find_config(start=None):
         f"{ENV_CONFIG}")
 
 
-def _dig(data, dotted):
+def _dig(data, dotted, where="the settings"):
     """The value at a dotted key path, or raise ConfigError."""
     node = data
     for part in dotted.split("."):
         if not isinstance(node, dict) or part not in node:
-            raise ConfigError(f"no key {dotted!r}")
+            raise ConfigError(f"{where}: no key {dotted!r}")
         node = node[part]
     return node
+
+
+def is_reference(value):
+    """Whether a value names where it lives (`{from, key}`) instead of holding it."""
+    return isinstance(value, dict) and "from" in value
+
+
+# A board key is its width in units. A deck config may add `<width>-<variant>`
+# for a board's second placement (a pair of column figures); the figures are
+# drawn on the board, so the library reads the width and skips the variant.
+BOARD_KEY = re.compile(r"\d+")
+BOARD_VARIANT = re.compile(r"\d+-[\w-]+")
 
 
 def _hex(value, where):
@@ -118,13 +135,24 @@ class FigureConfig:
         modules = self._require("modules")
         if not isinstance(modules, list) or not modules:
             raise ConfigError(f"{self.path}: 'modules' must be a non-empty list of globs")
-        boards = self._require("boards")
+        if "boards" not in self.data:
+            raise ConfigError(
+                f"{self.path}: required key 'boards' is missing; declare each board "
+                f"width and its placed px, or name the deck config that owns them: "
+                f'{{"from": ".claude/slide-decks.json", "key": "decks.<deck>.figures.boards"}}')
+        boards = self.referenced("boards")
         if not isinstance(boards, dict) or not boards:
             raise ConfigError(f"{self.path}: 'boards' must map a board width to its placed px")
         try:
-            self.boards = {int(w): float(px) for w, px in boards.items()}
+            self.boards = {int(w): float(px) for w, px in boards.items()
+                           if BOARD_KEY.fullmatch(str(w))}
         except (TypeError, ValueError) as err:
-            raise ConfigError(f"{self.path}: 'boards' keys are widths, values px: {err}") from err
+            raise ConfigError(f"{self.path}: 'boards' values are placed px: {err}") from err
+        odd = [str(w) for w in boards if not BOARD_KEY.fullmatch(str(w))
+               and not BOARD_VARIANT.fullmatch(str(w))]
+        if odd or not self.boards:
+            raise ConfigError(f"{self.path}: 'boards' keys are board widths in units, "
+                              f"not {', '.join(odd) or 'variants only'}")
         self.default_board = int(self.data.get("defaultBoard", next(iter(self.boards))))
         if self.default_board not in self.boards:
             raise ConfigError(f"{self.path}: defaultBoard {self.default_board} is not a board")
@@ -157,6 +185,17 @@ class FigureConfig:
             absent = [n for n in STROKE_NAMES if n not in strokes]
             if absent:
                 raise ConfigError(f"{self.path}: 'strokes' lacks {', '.join(absent)}")
+
+    def referenced(self, key, default=None, default_key=None):
+        """The value of `key`, read from the file it names when it is `{from, key}`."""
+        value = self.data.get(key, default)
+        if not is_reference(value):
+            return value
+        source = self.resolve(value["from"])
+        dotted = value.get("key", default_key)
+        if not dotted:
+            raise ConfigError(f"{self.path}: '{key}' names {value['from']} but no 'key' in it")
+        return _dig(read_jsonc(source), dotted, f"{self.path}: '{key}' reads {source}")
 
     # ── paths ──────────────────────────────────────────────────────────────
     def resolve(self, rel):
@@ -220,7 +259,12 @@ class FigureConfig:
 
     @property
     def place_scale(self):
-        return float(self.data.get("placeScale", 1.0))
+        """The factor the document prints every figure at, after the board's placement."""
+        value = self.referenced("placeScale", 1.0)
+        try:
+            return float(value)
+        except (TypeError, ValueError) as err:
+            raise ConfigError(f"{self.path}: 'placeScale' must be a number, not {value!r}") from err
 
     def per_board(self, key, board, default):
         """A value that is one number for every board or a {width: value} map."""
@@ -283,12 +327,9 @@ class FigureConfig:
         naming the object that holds them, so a deck and its figures read one
         declaration.
         """
-        spec = self.data.get("verdict")
+        spec = self.referenced("verdict", default_key="verdict")
         if spec is None:
             return None
-        if "from" in spec:
-            source = self.resolve(spec["from"])
-            spec = _dig(read_jsonc(source), spec.get("key", "verdict"))
         return (_hex(spec.get("pass"), "verdict.pass"),
                 _hex(spec.get("block"), "verdict.block"))
 

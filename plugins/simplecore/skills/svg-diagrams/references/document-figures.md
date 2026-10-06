@@ -134,10 +134,11 @@ one set on type prints at a contrast ratio around 4.0 on white, under the 4.5 a
 small size needs. The library's `save()` promotes any pale-grey `<text>` to the
 neutral grey rather than leaving it to every call site, so a figure cannot
 reintroduce it and a line may still be drawn in the pale grey, where it belongs.
-The contrast check holds every label to `contrastFloor` against the ground
-painted under it. Its default, 3.0, is WCAG's floor for large text; a label
-printed at the document's body size is smaller than that and takes 4.5, which
-the sample settings file sets.
+The contrast check holds every label to WCAG's floor for its printed size,
+against the ground painted under it: 4.5 under the large-text size, which every
+label printed at the document's body size is, and 3.0 for large text (18pt, or
+14pt in bold). The printed size is the label's size times its board's placement
+times `placeScale`. A number in `contrastFloor` holds every label to it.
 
 **The smallest rung is for a short marker and a value looked up, not for the
 figure's own words.** A figure whose every label sits on it has no entry point:
@@ -156,6 +157,15 @@ carried 59~93% of its characters below the body. Every rung under `BODY` counts
 as one; set `subBodyShareMax`
 (0.5 is the usual line) and `verify.py` fails a figure with more than that share
 of its characters below the body rung.
+
+**The tag rung prints at 6.4pt or more.** It is the smallest size a figure
+label may print at, on every board: `CHIP` units × the board's placed px ÷ its
+width in units × `placeScale` × 0.75, which `printed_pt(CHIP)` returns for the
+default board. Derive `CHIP` from it the way `BODY` is derived from the body
+size: at 0.57 px per unit, 15 units prints 6.4pt. A deck that places the
+figures holds its own strings to its own type floor, and a figure's labels
+answer to this one. No check computes a rung's printed size, so the ladder's
+derivation is where the floor is met.
 
 **The figure names the document's body typeface first.** The toolkit's stack
 leads with Latin UI faces, so a document set in another face gets labels whose
@@ -477,6 +487,19 @@ its unit); the drawn line carries plain spaces. A project whose figures set
 such a list between items while every item fits with its separator, and the
 build fails on a break inside an item that would have fit, naming the string.
 
+**A wrapped run never ends on a stub.** The column decides where a sentence
+breaks, so a word can end up alone on the last line, and a reader looking at
+the card never sees its ragged edge. `verify.py` groups each figure's text into
+wrapped runs (the same x, anchor, size, weight and fill, one line step apart,
+the step the same down the run) and fails, as `[stub-line]`, a run whose last
+line is under `stubLine` (0.42) of its longest. A bullet opens a new item, and
+a break where the next word would have fitted (an authored newline, the next
+item of a list) ends the run, so neither is read as one string's lines. The fix
+is a shorter string or a wider column; an explicit line break belongs only
+where the wording cannot move, as in a formula. A list set without bullets
+whose short last item follows a long one reads as such a run, which is one more
+reason a box bullets its items.
+
 ## Rows and stacks are uniform
 
 One gap per row and per stack, one width per row, one height per row.
@@ -514,6 +537,18 @@ another. Put the label inside the box, or keep it twice as far from everything
 else as from its owner (`LABEL-GROUPING`). A zone whose chip straddles its top
 border rises `CHIP_RISE` above the border, so a zone under a heading starts
 `heading() + CHIP_RISE`: the chip, not the border, keeps the heading gap.
+
+## A connector label sits on a tight plate
+
+A connector label is small type in the gap an arrow runs in, and the plate
+under it must not reach the boxes either side. The toolkit's
+`Canvas.edge_label` spreads its pill 8 units a side and a third of an em above
+and below the letters, which is taller than that gap at a document's type
+size. A figure module calls the library's `edge_label(c, x, y, text, accent)`,
+which fits the plate to the glyph box (6 a side, 3 above and below), or passes
+`pill=False` for a bare label in open paper beside its line. `verify.py` fails a
+module that calls the toolkit's pill as `[edge-pill]` (`EDGE-PILL`). The type
+size does not move to make a label fit: shorten the label or open the gap.
 
 ## Text never crosses a line unmasked
 
@@ -724,6 +759,18 @@ trailing commas. The svg-diagrams scripts are found through
 `SVG_DIAGRAMS_SCRIPTS`, then the `toolkit` key, then the library's own parent
 directory, never through an assumed home-directory path.
 
+**Where a deck places the figures, the deck config owns the boards and the
+print factor.** `.claude/slide-decks.json` declares `figures.boards` and
+`figures.placeScale` per deck, and the deck's figure checks place and measure
+every figure with them. The settings file names them there instead of copying
+them: `"boards": {"from": ".claude/slide-decks.json", "key":
+"decks.<deck>.figures.boards"}`, and the same form ending
+`figures.placeScale` for `placeScale`. The library skips a deck's
+`<width>-<variant>` entry, which is a second placement of a board it already
+reads. A key the deck does not declare is refused, not defaulted: a deck that
+leaves `placeScale` to its kind's default declares it to be read here. A
+project with no deck config declares both values inline.
+
 A figure module imports by name: `from common import card, save, BODY`.
 `save(c, name, board=...)` writes one figure; `width=` is a deprecated alias
 for `board=` and warns. `@figure(plain=True)` on a
@@ -737,12 +784,12 @@ importable as a module constant.
 | `modules` | yes | globs of figure modules the build runs; a test file, a helper and a file named after a library module never run | |
 | `helpers` | | globs of project modules that figure modules import and the build never runs; the source checks read them | `[]` |
 | `toolkit` | | path to the svg-diagrams `scripts/` folder | the library's parent |
-| `boards` | yes | board width in units → placed width in px; the first is the default board | |
+| `boards` | yes | board width in units → placed width in px, the first the default board; or `{from, key}` naming the deck config's `figures.boards` | |
 | `defaultBoard` | | the board `save()` uses when none is named | first of `boards` |
 | `boardNames` | | name → board width, exported as constants (`FULL`, `COLUMN`) | `{}` |
 | `columnBoard` | | the board `column.py` draws on | none |
 | `contentNames` | | name → board width, exported as that board's content width | `{}` |
-| `placeScale` | | the factor the document prints every figure at, for `SCALE` and `printed_pt()` | `1.0` |
+| `placeScale` | | the factor the document prints every figure at, for `SCALE` and `printed_pt()`; or `{from, key}` naming the deck config's `figures.placeScale` | `1.0` |
 | `margin` | | air `save()` leaves above and below the ink; a number or `{width: n}` | `28` |
 | `sideMargin` | | side margin the content width is computed from (`board - 2 * (sideMargin + 10)`); a number or `{width: n}` | `28` |
 | `ladder` | yes | the only type sizes a figure may print | |
@@ -764,6 +811,7 @@ importable as a module constant.
 | `bullets` | | whether titled boxes bullet their items | `true` |
 | `noBreak` | | patterns with two groups whose space must not break a line inside a box | `[]` |
 | `wrapListItems` | | break a spaced 「·」 list between its items and fail the build on a break inside one that fits | `false` |
+| `stubLine` | | share of its run's longest line under which a wrapped run's last line fails as `[stub-line]`; `null` turns the check off | `0.42` |
 | `heightReview` | | height over which a figure is listed for review; a number or `{width: n}` | `840` |
 | `deadMargin` | | side gap that fails, judged per board in place of the lint's 40; a number or `{width: n}` | lint's own |
 | `stripRatio` | | height-to-width ratio under which a full-width figure is listed as a strip | `0.28` |
@@ -772,7 +820,7 @@ importable as a module constant.
 | `labelForm` | | `{allow: [...]}` strings that pass the predicate-ending check, or `false` to turn it off | `{}` |
 | `register` | | `{words, allow}`: the project's working-word pattern and passing strings, for the register check | none |
 | `sectionNumbers` | | `false` turns off the section-number check | `true` |
-| `contrastFloor` | | WCAG ratio every label clears on its own ground: 3.0 is the floor for large text, 4.5 for a label printed at body size; `null` turns it off | `3.0` |
+| `contrastFloor` | | WCAG ratio every label clears on its own ground; unset, a label is held to 4.5 under the large-text size (18pt, or 14pt bold, as printed) and to 3.0 at it; a number holds every label to it; `null` turns it off | 4.5 · 3.0 by printed size |
 | `references` | | `{manuscripts, caption, placements: [{glob, pattern, copies}]}` for the reference check | none |
 | `plans` | | `{manuscripts, blockStart, row, caption, name, pagePad, embed}` for `figplans.py`; `caption` has groups `caption`, `page`, `index` | none |
 
@@ -780,4 +828,4 @@ A key with no default turns its check off rather than guessing, and `verify.py`
 says `not configured` for it, so a quiet report is never mistaken for a pass of
 a check that did not run. A key with a default in the table runs at that default
 until the project sets it: `false` turns off `labelForm`, `sectionNumbers` and
-`bullets`, and `null` turns off `contrastFloor` and `heightReview`.
+`bullets`, and `null` turns off `contrastFloor`, `heightReview` and `stubLine`.

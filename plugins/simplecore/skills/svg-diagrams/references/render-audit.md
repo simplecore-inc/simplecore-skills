@@ -11,7 +11,9 @@ endpoint) and `lint` (static defect scan). `contrast` and `markers` cover what
 a static scan of one SVG cannot see: `contrast` renders each figure with its
 text removed and measures every label against the ground painted under it, and
 `markers` reads a generator's Python source for connector calls that inherit
-the default arrowhead.
+the default arrowhead. `pills` reads a document-figure module the same way, for
+connector labels drawn on the toolkit's pill rather than the figure library's
+`edge_label`.
 
 ## The loop
 
@@ -21,8 +23,9 @@ generate SVG
   → audit.py render <svg> out.png    # full raster, Read it
   → audit.py hotspots <svg> crops/   # auto-crop EVERY arrow endpoint at high zoom, Read them
   → audit.py crop <svg> x y w h …    # zoom any remaining tight spot
-  → audit.py contrast <svg> [more…]  # every label clears the floor (3:1, or --floor) on its own ground
+  → audit.py contrast <svg> [more…]  # every label clears the floor (3:1, or --floor; --large-floor for large text) on its own ground
   → audit.py markers <module.py> …   # every .line()/.path() call states marker=
+  → audit.py pills <module.py> …     # document figures: every connector label is the library's edge_label
   → fix generator
   → repeat until lint is clean AND the endpoint crops look right
 ```
@@ -150,8 +153,9 @@ details that the downscaled overview hides.
 | `COINCIDENT-LINES` | two lines print as one where two were drawn | two stroked runs of any kind and orientation (a divider, a rule, a connector) lie under 2.5px apart for 6px or more; a crow's-foot prong along its relationship line and two unheaded lines meeting end to end where routes merge are the notation and pass, and a pair `PARALLEL-CONNECTORS` already reports is left to it | move one line off, or draw the shared run once |
 | `SELF-DOUBLED` | a route runs back over itself | two segments of one path lie on top of each other - a check that compares different connectors never sees it | draw the route once, without the return leg |
 | `DROP-INTO-GAP` | a vertical arrow points at the paper between two cards | a headed vertical line's lower end lands within 72px above a row of two or more boxes and on none of them - the drop was drawn from a zone's centre onto an even row | land it on one box, or end it on a rail (or fork it into legs) that reaches each box |
-| `LOW-CONTRAST` (`audit.py contrast`) | a label disappears into the band under it | the most common colour inside the label's own box, on a render with every `<text>` removed, gives the label's fill a contrast ratio under the floor: 3:1 by default, `--floor` sets another (`verify.py` passes `contrastFloor`) | take the band's own dark tone for the label, or move the label off the band |
+| `LOW-CONTRAST` (`audit.py contrast`) | a label disappears into the band under it | the most common colour inside the label's own box, on a render with every `<text>` removed, gives the label's fill a contrast ratio under the floor: 3:1 by default and `--floor` sets another; with `--large-floor`, a label that prints as large text (18pt, or 14pt bold, at `--px-per-unit` px per unit) is held to that instead. `verify.py` passes 4.5 and 3.0 at each board's placement, or every label at `contrastFloor` | take the band's own dark tone for the label, or move the label off the band |
 | `MARKER-DEFAULT` (`audit.py markers`) | a route grows an arrowhead on every corner while its source reads as correct | a `.line()` or `.path()` call in a generator states no `marker=` (a call forwarding `**kwargs` is not judged) | pass `marker=None` on every segment but the last, and the head's colour on the one that arrives |
+| `EDGE-PILL` (`audit.py pills`) | a connector label's plate prints over the boxes either side of a tight gap | a document-figure module calls `Canvas.edge_label` with its pill on (the default, or `pill=True`), whose plate spreads 8 units a side and a third of an em above and below the letters (a call on a module bound by `import`, a computed `pill` and a call forwarding `**kwargs` are not judged) | call the figure library's `edge_label(c, x, y, text, accent)`, which fits the plate to the glyph box (6 a side, 3 above and below), or `pill=False` for a bare label in open paper |
 | `SEPARATOR-OFF-CENTRE` | a 「›」 between two boxes leans toward one of them | a separator glyph (`›` `→` `»` `▶` `▸` `‣`) whose centre is more than 1.5px from the midpoint of the gap between the box on its left and the box on its right | anchor the glyph on the gap's midpoint - `(x1 + x2) / 2` from the two boxes' edges, never a fixed offset from one of them |
 
 Decorative rects (a `stroke-dasharray` frame, or a low-`opacity` wash) are

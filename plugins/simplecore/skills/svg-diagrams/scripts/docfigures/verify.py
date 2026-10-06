@@ -26,12 +26,16 @@ run. The reviews list what to look at and fail nothing.
   foot legend    no key line under the drawing
   icon           no Lucide name written at a call site
   bullets        each figure lists all its items or none, as it declares
+  stub-line      no wrapped run ends on a line under `stubLine` of its longest
   label form     no label closes on a predicate
   register       no label carries a clause, particle or working word
   section numbers no document section number in figure text
   markers        every connector call states its marker
+  edge-pill      every connector label is the library's `edge_label`, not
+                 the toolkit's pill
   lint           the toolkit's static lint, with DEAD-MARGIN judged per board
-  contrast       every label clears the contrast floor on its own ground
+  contrast       every label clears the contrast floor on its own ground: 4.5
+                 under the large-text size and 3.0 at it, or `contrastFloor`
   references     every link and placement resolves, captions match, copies
                  are current, nothing is left unplaced
   content edge, legend edge, strip, height    reviews
@@ -54,10 +58,10 @@ from figlib.checks_drawing import (bullet_mode, dash_pattern_errors,  # noqa: E4
                                    filter_errors, font_family_errors, font_size_errors,
                                    foot_legends, height_reviews, legend_mismatches,
                                    legend_past_column, max_rung_errors, past_content_edge,
-                                   stroke_width_errors, strip_reviews, sub_body_share,
-                                   width_errors)
+                                   strip_reviews, stroke_width_errors, stub_lines,
+                                   sub_body_share, width_errors)
 from figlib.checks_refs import references  # noqa: E402
-from figlib.svgread import texts, toolkit_dir  # noqa: E402,F401
+from figlib.svgread import board_of, texts, toolkit_dir  # noqa: E402,F401
 
 
 # ── toolkit passes ─────────────────────────────────────────────────────────
@@ -66,13 +70,27 @@ def _audit(cfg, *args):
                           capture_output=True, text=True)
 
 
-def marker_errors(cfg):
-    """Lines of `audit.py markers` over the project's figure sources."""
+def _source_check(cfg, command):
+    """Failing lines of one `audit.py` source command over the figure sources."""
     files = [str(f) for f in cfg.source_files()]
     if not files:
         return []
-    run = _audit(cfg, "markers", *files)
-    return [ln.strip() for ln in run.stdout.splitlines() if "✖" in ln]
+    run = _audit(cfg, command, *files)
+    found = [ln.strip() for ln in run.stdout.splitlines() if "✖" in ln]
+    if run.returncode and not found:
+        # it could not read the sources, which is not a pass
+        found = [f"audit.py {command} did not run: {run.stderr.strip()[-300:]}"]
+    return found
+
+
+def marker_errors(cfg):
+    """Lines of `audit.py markers` over the project's figure sources."""
+    return _source_check(cfg, "markers")
+
+
+def edge_pill_errors(cfg):
+    """Lines of `audit.py pills`: connector labels on the toolkit's pill."""
+    return _source_check(cfg, "pills")
 
 
 def lint(svgs, cfg):
@@ -115,22 +133,45 @@ def lint(svgs, cfg):
     return out, dead
 
 
+# WCAG's floors: text under the large-text size, and large text.
+CONTRAST_TEXT = 4.5
+CONTRAST_LARGE = 3.0
+
+
 def contrast_errors(svgs, cfg):
-    """Lines of `audit.py contrast`, or None when the config turns it off."""
-    floor = cfg.get("contrastFloor", 3.0)
-    if floor is None:
+    """Lines of `audit.py contrast`, or None when the config turns it off.
+
+    With no `contrastFloor`, a label is held to the floor its printed size
+    needs: 4.5 under WCAG's large-text size, 3.0 at it, judged at each board's
+    placement times `placeScale`. A number holds every label to it.
+    """
+    if "contrastFloor" in cfg.data and cfg.get("contrastFloor") is None:
         return None
-    run = _audit(cfg, "contrast", "--floor", str(floor), *[str(s) for s in svgs])
-    found, current = [], None
-    for ln in run.stdout.splitlines():
-        m = re.match(r"=== contrast (.+?) ===", ln)
-        if m:
-            current = m.group(1)
-        elif "✖" in ln:
-            found.append(f"{current}: {ln.strip().removeprefix('✖ ')}")
-    if run.returncode and not found:
-        # it could not look, which is not a pass
-        found = [f"contrast check did not run: {run.stderr.strip()[-300:]}"]
+    floor = cfg.get("contrastFloor")
+    if floor is None:
+        groups = {}
+        for svg in svgs:
+            board = board_of(svg, cfg) or cfg.default_board
+            groups.setdefault(board, []).append(svg)
+        calls = [(["--floor", f"{CONTRAST_TEXT:g}", "--large-floor", f"{CONTRAST_LARGE:g}",
+                   "--px-per-unit", f"{cfg.boards[board] / board * cfg.place_scale:.6f}"], files)
+                 for board, files in groups.items()]
+    else:
+        calls = [(["--floor", str(floor)], svgs)]
+    found = []
+    for opts, files in calls:
+        run = _audit(cfg, "contrast", *opts, *[str(s) for s in files])
+        lines, current = [], None
+        for ln in run.stdout.splitlines():
+            m = re.match(r"=== contrast (.+?) ===", ln)
+            if m:
+                current = m.group(1)
+            elif "✖" in ln:
+                lines.append(f"{current}: {ln.strip().removeprefix('✖ ')}")
+        if run.returncode and not lines:
+            # it could not look, which is not a pass
+            lines = [f"contrast check did not run: {run.stderr.strip()[-300:]}"]
+        found += lines
     return found
 
 
@@ -199,6 +240,9 @@ def run(cfg, prefixes=(), render_dir=None):
                       + (f"ICON_OF[\"{i[3]}\"]" if i[3] else "register its meaning in 'icons' first"))
     r.check("bullets", bullet_mode(svgs, cfg), "every figure lists all its items or none",
             lambda i: f"{i[0]}: {i[1]}")
+    r.check("stub-line", stub_lines(svgs, cfg), "no wrapped run ends on a stub",
+            lambda i: f"{i[0]}: 「{i[1][:30]}」 is {i[2]:.0%} of 「{i[3][:30]}」 - "
+                      "shorten the string or widen the column")
     r.check("label form", predicate_labels(svgs, cfg), "every label in noun form",
             lambda i: f"{i[0]}: {i[1][:60]}")
     r.check("register", register_errors(svgs, cfg), "every label a 개조식 noun phrase",
@@ -207,6 +251,8 @@ def run(cfg, prefixes=(), render_dir=None):
             lambda i: f"{i[0]}: {', '.join(i[1])}")
     r.check("markers", marker_errors(cfg), "every connector call states its marker",
             lambda line: line)
+    r.check("edge-pill", edge_pill_errors(cfg),
+            "every connector label is the library's edge_label", lambda line: line)
     lint_lines, dead = lint(svgs, cfg)
     r.check("lint", [ln for ln in lint_lines if ln.strip()], "clean", lambda ln: ln,
             "toolkit lint")

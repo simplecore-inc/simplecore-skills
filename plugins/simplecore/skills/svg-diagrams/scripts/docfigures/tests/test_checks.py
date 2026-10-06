@@ -131,6 +131,93 @@ class Dashes(Case):
             p.close()
 
 
+class StubLine(Case):
+    def column(self, *lines, x=40, top=60, gap=30, bullets=False):
+        body = ""
+        for i, s in enumerate(lines):
+            y = top + i * gap
+            if bullets:
+                body += text(x - 14, y, "•")
+            body += text(x, y, s)
+        return body
+
+    def stubs(self, body):
+        return [(n, last) for n, last, _s, _l in verify.stub_lines([self.fig("a", body)], self.cfg)]
+
+    def test_wrapped_run_ending_on_a_stub_fails(self):
+        self.assertEqual(self.stubs(self.column("시험 운영 · 기술이전 시스템 테스트", "후")),
+                         [("a.svg", "후")])
+
+    def test_rebalanced_run_passes(self):
+        self.assertEqual(self.stubs(self.column("시험 운영 · 기술이전", "시스템 테스트 후")), [])
+
+    def test_bullets_keep_a_short_item_out_of_the_run_before_it(self):
+        lines = ("관리 모듈 개발 및 통합 시험 준비", "인수")
+        self.assertEqual(self.stubs(self.column(*lines)), [("a.svg", "인수")])
+        self.assertEqual(self.stubs(self.column(*lines, bullets=True)), [])
+
+    def test_list_whose_breaks_the_column_did_not_force_passes(self):
+        # a timeline's task names: the short last item follows an item it
+        # would have fitted beside, so no wrap put it on its own line
+        tasks = ("Proxy Gateway 클러스터 환경 구축", "클러스터 관리 모듈 개발",
+                 "프로토콜 수집 및 처리 기능 개발", "포인트 매핑 기능 개발", "단위 테스트")
+        self.assertEqual(self.stubs(self.column(*tasks)), [])
+
+    def test_lines_of_another_weight_or_further_apart_are_not_one_run(self):
+        title = text(40, 60, "시험 운영 · 기술이전 시스템 테스트").replace(
+            "<text ", '<text font-weight="700" ', 1)
+        self.assertEqual(self.stubs(title + text(40, 90, "후")), [])
+        self.assertEqual(self.stubs(self.column("시험 운영 · 기술이전 시스템 테스트", "후",
+                                                gap=60)), [])
+
+    def test_null_turns_the_check_off(self):
+        p = Project(stubLine=None)
+        try:
+            f = p.write("figures/a.svg", svg(self.column("시험 운영 · 기술이전 시스템 테스트", "후")))
+            self.assertIsNone(verify.stub_lines([f], p.cfg()))
+        finally:
+            p.close()
+
+
+class SourceChecks(Case):
+    def test_toolkit_pill_in_a_module_fails_and_the_library_label_passes(self):
+        self.p.write("figs/ch1.py", 'c.edge_label(600, 120, "요청")\n')
+        found = verify.edge_pill_errors(self.cfg)
+        self.assertEqual(len(found), 1)
+        self.assertIn("EDGE-PILL: ch1.py:1", found[0])
+        self.p.write("figs/ch1.py", 'edge_label(c, 600, 120, "요청", "#1b4a9c")\n')
+        self.assertEqual(verify.edge_pill_errors(self.cfg), [])
+
+    def test_source_the_check_cannot_read_is_not_a_pass(self):
+        self.p.write("figs/ch1.py", "def broken(:\n")
+        for found in (verify.marker_errors(self.cfg), verify.edge_pill_errors(self.cfg)):
+            self.assertEqual(len(found), 1)
+            self.assertIn("did not run", found[0])
+
+
+class ContrastDefault(unittest.TestCase):
+    # a body label at 3.5:1 on white, on a 1200 board placed at 600 px, so it
+    # prints at 12 px: text, not large text
+    BODY = text(60, 90, "판정 통과", fill="#888888")
+
+    def found(self, **config):
+        p = Project(**config)
+        try:
+            f = p.write("figures/a.svg", svg(self.BODY, w=1200, h=160))
+            return verify.contrast_errors([f], p.cfg())
+        finally:
+            p.close()
+
+    def test_default_holds_a_body_size_label_to_the_text_floor(self):
+        found = self.found()
+        self.assertEqual(len(found), 1)
+        self.assertIn("under 4.5:1", found[0])
+
+    def test_a_number_holds_every_label_to_it_and_null_turns_it_off(self):
+        self.assertEqual(self.found(contrastFloor=3.0), [])
+        self.assertIsNone(self.found(contrastFloor=None))
+
+
 class Strokes(Case):
     def test_stroke_off_the_ladder_fails_and_icon_stroke_passes(self):
         bad = self.fig("bad", '<rect x="40" y="40" width="200" height="60" fill="#fff" '
