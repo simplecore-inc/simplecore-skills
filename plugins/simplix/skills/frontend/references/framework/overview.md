@@ -216,7 +216,7 @@ a silent correctness failure. Regression-test it by loading the module twice
 asserting the other sees it - including a React render whose provider and consumer come from
 different copies.
 
-## Running the workspace - four traps with no error message
+## Running the workspace - traps with no error message
 
 Each of these ends with a correct tree reading as a broken one.
 
@@ -226,13 +226,14 @@ Each of these ends with a correct tree reading as a broken one.
 - **Never build packages one at a time by hand.** Vite's dependency optimizer computes the
   graph from what is present when it starts, so a partial tree gives it a wrong answer and
   it fails on a package that is fine. `pnpm build` at the root, once.
-- **The dev server is HTTPS with a self-signed certificate**, so `curl http://<host>:<port>`
-  connects, receives nothing, and returns `000` with exit 52 - **byte for byte what a
-  stopped server returns**. A healthy server has been restarted on that reading. Probe a
-  real route over TLS instead (`curl -sk https://<host>:<port>/<route>`), and take the
-  origin from the `Local:` line the dev server printed rather than from memory. A browser
-  driver needs its ignore-certificate flag on the session's FIRST command - see the
-  `simplecore:board-to-app` skill's `references/driving-the-product.md`.
+- **Where the dev server is HTTPS with a self-signed certificate** (the project's dev
+  configuration says whether it is), `curl http://<host>:<port>` connects, receives nothing,
+  and returns `000` with exit 52 - **byte for byte what a stopped server returns**. A healthy
+  server has been restarted on that reading. Probe a real route over TLS instead
+  (`curl -sk https://<host>:<port>/<route>`), and take the origin from the `Local:` line the
+  dev server printed rather than from memory. A browser driver needs its ignore-certificate
+  flag on the session's FIRST command - see the `simplix:frontend-e2e` skill's
+  `references/browser-driving.md` § Environment.
 - **`add-domain` writes `workspace:*` for the framework's own extension packages.** When
   those come from the workspace catalogue rather than from `packages/`, `pnpm install`
   cannot resolve the generated line and refuses; change it to `catalog:`. The rest of the
