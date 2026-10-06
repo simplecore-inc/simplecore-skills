@@ -437,7 +437,7 @@ across in the same change. Two screens that genuinely draw the same thing are on
   keys beside it say what is NOT a frame id, because the shape `X-nn` belongs to other numbering
   schemes as well: `notFrames` lists individual ids (a guide number, a visa class), and
   `otherIdScheme` lists whole FILES whose own numbering collides - an entity model with tables
-  `B-02 PrinterModel` · `E-08 ReplaceStatusHistory`. Name the file rather than its ids: a per-id
+  `B-02 <Entity>` · `E-08 <Entity>`. Name the file rather than its ids: a per-id
   list goes stale as that model grows, and it goes stale silently. Every other document gate still
   reads the file.
 

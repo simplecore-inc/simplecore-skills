@@ -55,16 +55,16 @@ export function cases(t) {
   add('docFrameRefGate', 'cites a suffixed id as it is', suffixed('자세한 것은 X-01b를 본다.\n'), false);
   add('docFrameRefGate', 'cites the screen number without the suffix', suffixed('X-01 화면은 상태가 둘이다.\n'), false);
   add('docFrameRefGate', 'cites a state letter that does not exist', suffixed('자세한 것은 X-01c를 본다.\n'), true);
-  // A document numbering its own tables `B-02 PrinterModel` collides with the frame id shape, and
+  // A document numbering its own tables `B-02 <Entity>` collides with the frame id shape, and
   // no per-id list stays right as that model grows - so the board names the file.
   const OTHER = (docs) => withDocs({ 'rm.md': ROADMAP_OK, ...docs },
     { config: { ...config, documents: { scan: ['.'], otherIdScheme: ['model.md'] } } });
   add('docFrameRefGate', 'a document in another numbering scheme is not declared',
-    withDocs({ 'rm.md': ROADMAP_OK, 'model.md': '#### B-02 PrinterModel\n' }), true);
+    withDocs({ 'rm.md': ROADMAP_OK, 'model.md': '#### B-02 SampleEntity\n' }), true);
   add('docFrameRefGate', 'a document in another numbering scheme is declared',
-    OTHER({ 'model.md': '#### B-02 PrinterModel\n' }), false);
+    OTHER({ 'model.md': '#### B-02 SampleEntity\n' }), false);
   add('docFrameRefGate', 'an undeclared document is still checked',
-    OTHER({ 'model.md': '#### B-02 PrinterModel\n', 'note.md': '자세한 것은 X-77을 본다.\n' }), true);
+    OTHER({ 'model.md': '#### B-02 SampleEntity\n', 'note.md': '자세한 것은 X-77을 본다.\n' }), true);
 
   // A board that declares no registry is not held to one: declaring it is what accepts the rule.
   add('docRegistryGate', 'no registry is declared',
