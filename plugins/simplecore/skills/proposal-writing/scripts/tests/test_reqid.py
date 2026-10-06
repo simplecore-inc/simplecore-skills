@@ -2,13 +2,17 @@
 import sys
 import tempfile
 import unittest
+from contextlib import redirect_stdout
+from io import StringIO
 from pathlib import Path
+from unittest import mock
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent))
 sys.path.insert(0, str(HERE.parents[3] / "scripts"))
 
 import reqid  # noqa: E402
+from bidkit import cli  # noqa: E402
 from bidkit.config import ConfigError  # noqa: E402
 from bidkit.tests.support import project, reader, recording  # noqa: E402
 
@@ -47,6 +51,19 @@ class ReqIdTests(unittest.TestCase):
                                 f'refTitle="{deck_text}" /></Fragment>'}
         _, _, bad = reqid.check(reader(self.deck, recording(files=files)), self.deck)
         return bad
+
+    def test_manuscript_only_reads_the_manuscript_and_opens_no_deck(self):
+        (self.root / "proposal" / "01.md").write_text("PER-001~008 을 충족한다.", encoding="utf-8")
+
+        def no_server(*args, **kwargs):
+            raise AssertionError("a deck server was opened")
+
+        out = StringIO()
+        with mock.patch.object(cli, "open_reader", no_server), \
+                mock.patch.object(cli, "deck_config", lambda args: self.deck), redirect_stdout(out):
+            code = reqid.main(["--manuscript-only"])
+        self.assertEqual(code, 1)
+        self.assertIn("proposal/01.md: PER-007 is not an issued id", out.getvalue())
 
     def test_underscore_id_is_issued(self):
         self.assertEqual(self.bad("품질은 QUR_001 로 본다.", "QUR_001"), [])
