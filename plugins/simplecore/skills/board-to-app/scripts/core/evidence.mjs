@@ -313,9 +313,8 @@ export const RETIRED_READER = 'RetiredReaderError';
 export class RetiredReaderError extends Error {
   constructor(reader, replacement) {
     super(
-      `${RETIRED_READER}: ctx.evidence.${reader} is retired. ${replacement} `
-      + '- a project gate calling it read an empty list on every project, which reports the same '
-      + 'nothing as a project with nothing wrong'
+      `${RETIRED_READER}: ctx.evidence.${reader} is retired - on every project it read an empty `
+      + `list, which reports the same nothing as a project with nothing wrong. ${replacement}`
     );
     this.name = RETIRED_READER;
   }
