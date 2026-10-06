@@ -1,4 +1,5 @@
-// Compiling a project's chapter lines into readers, from phrases rather than from regexes.
+// Compiling a line a project declares - `deferredLine`, `placeholderLine` - into a reader, from a
+// phrase rather than from a regex.
 //
 // **A config holding raw regular expressions is a config nobody can read.** It also fails in the
 // worst available way: a pattern with a typo matches nothing, and a check that matches nothing is
@@ -8,8 +9,8 @@
 // **The vocabulary is closed and an unknown token is a hard failure.** Passing one through as a
 // literal produces a regex that can never match - the same silent pass as a typo, arriving the day
 // somebody reaches for a third placeholder. This compiler is itself a reader built from the tokens
-// in use today, and the rule this repository learned about readers applies to it: build from the
-// set of values that may occur, not from the ones you happen to be writing.
+// in use today, and the rule about readers applies to it: build from the set of values that may
+// occur, not from the ones you happen to be writing.
 
 /**
  * Everything a phrase may carry beyond its own words, and whether the check READS it.
@@ -71,23 +72,4 @@ export function compileLine(phrase, key) {
     .join('');
   // A line's trailing whitespace is not part of what it says, so a closed end tolerates it.
   return new RegExp(`${openStart ? '' : '^'}${source}${openEnd ? '' : String.raw`\s*$`}`);
-}
-
-/**
- * Every line reader a project declares, compiled.
- *
- * <p>A role declared `null` is a project stating it writes no such line, and it compiles to
- * nothing - a reader that is absent rather than one that matches nothing. Every check reads these
- * with `?.`, so an absent role skips the clause it governs instead of failing every line against
- * an impossible pattern. A `//<role>` entry alongside carries the reason and is not a role.
- *
- * @param lines the `chapterLines` map
- * @returns role → RegExp, with a role declared absent left out
- */
-export function compileLines(lines) {
-  return Object.fromEntries(
-    Object.entries(lines ?? {})
-      .filter(([role, phrase]) => !role.startsWith('//') && phrase !== null)
-      .map(([role, phrase]) => [role, compileLine(phrase, `chapterLines.${role}`)])
-  );
 }

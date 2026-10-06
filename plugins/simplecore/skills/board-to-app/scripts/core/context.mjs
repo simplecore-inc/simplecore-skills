@@ -7,7 +7,7 @@
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { execFileSync } from 'node:child_process';
-import { compileLine, compileLines } from './grammar.mjs';
+import { compileLine } from './grammar.mjs';
 import { evidenceReaders } from './evidence.mjs';
 
 /** Where a project declares its build, relative to the project root. */
@@ -17,8 +17,8 @@ export const CONFIG_NAME = join('.claude', 'board-to-app.json');
  * The key a project declares its boards under, when it has more than one.
  *
  * <p><b>One board is the ordinary case and stays flat.</b> A project with a single board declares
- * every key at the top level, exactly as before, and nothing here applies to it - this key is
- * absent and the resolution below is a no-op.
+ * every key at the top level, and nothing here applies to it - this key is absent and the
+ * resolution below is a no-op.
  *
  * <p><b>A project with two products drawn on two boards is a different arrangement, not a bigger
  * one.</b> A desktop application and a web console share a repository, a glossary and a set of
@@ -133,78 +133,6 @@ function boardContaining(config, names, cwd, root) {
 }
 
 /**
- * Every key the skill reads, what it names, and what the value has to be.
- *
- * <p>`kind` decides both the type check and what existence means:
- * `dir`/`file` must be there already, `path` is either of the two and must be there, `outdir`
- * is written on first use so it need not exist, `outfile` is appended to so only its parent
- * must exist, `command` is a shell line rather than a path, `list` is an array, `text` is a
- * non-empty string, `headings` is the role → heading map, and `deferrals` is the
- * key → { chapter, whenExists } map naming the optional keys whose subject does not exist yet.
- *
- * <p>`path` is for a key whose subject is one file in one project and, in the next, the
- * directory a family of them lives in - the key names where the thing is, and the project
- * decides whether that is a file or a folder.
- *
- * <p>`many` lets a key be declared once or several times: one string, or an array of them,
- * each held to the same `kind`. It is for a subject a project can genuinely have more than
- * one of, such as a database with several migration lineages.
- *
- * <p><b>`required` and `closing` are different questions and a key can want either.</b> `required`
- * is 「nothing here works without it」; `closing` is 「everything works and no chapter can finish」.
- * Reported as one blank they read the same, and a project reads a page of green while being unable
- * to end anything - which is what happened. An absence of the second kind is a finding rather than
- * a choice, and a project that genuinely does not want it says so in `deferredKeys` with the
- * chapter that will declare it.
- *
- * <p><b>`absent` is what the project pays for not declaring the key, and it lives here because
- * `doctor` has to print it.</b> A report that says only 「not declared」 tells a reader what they
- * already know; what decides whether to go and declare it is the sentence in the config table's
- * last column, and that sentence used to be reachable only by opening `SKILL.md` and finding the
- * row. It is one sentence in one place now: `doctor` prints this string, the config table's last
- * column carries the same string, and `proveKeysAreDocumented` fails the run when the two differ -
- * because two copies of a sentence is one sentence and one copy nobody is reading.
- *
- * <p><b>Each sentence stands alone.</b> `doctor` prints one key at a time, in whatever order the
- * absences fall, so a cost written as 「as above」 lands under a key whose neighbour is declared and
- * says nothing at all.
- */
-/**
- * The lines a chapter writes that a check has to recognise, by role.
- *
- * <p>`persona` opens the line a named role has to prove, `verdict` the line a machine proves
- * instead, and `states` the sentence listing the states hanging off a screen. A project writes
- * each in its own words; nothing here may assume them.
- *
- * <p><b>Each is the line AS WRITTEN, markup and all</b> - `**Test · {text}**…`, not `Test · `.
- * The phrase is compiled straight into the reader that scans a chapter file, so anything the line
- * really starts with belongs in it. This is the opposite of `evidenceLabels` below, and the two
- * being opposite is why both say so here.
- *
- * <p><b>A project that writes no such line declares the role `null`</b>, with the reason in a
- * `//<role>` entry beside it. `states` is the one that is genuinely absent from some projects - a
- * board that gives every state a frame of its own has no sentence listing states - and without a
- * way to say so, the choice is between a config that fails validation and a line declared to
- * satisfy it that no chapter contains.
- */
-export const CHAPTER_LINE_ROLES = ['persona', 'verdict', 'states'];
-
-/**
- * The three labels one evidence section carries, by role.
- *
- * <p>`did` is what was run, `demanded` is the chapter's own sentence copied whole, and `saw` is
- * what was on the screen. `demanded` is the one a check compares against the chapter, so a project
- * that renames it renames what the comparison looks for.
- *
- * <p><b>Each is the WORD alone, with no markup on it</b> - `What was done`, never
- * `**What was done**`. The checks write the emphasis themselves, so a label declared with it
- * carries the markers twice and matches no line in any document - a silence, not an error, which
- * is why `configGate` refuses a label carrying markdown. This is the opposite of `chapterLines`
- * above, and being opposite is the whole reason both say so.
- */
-export const EVIDENCE_LABEL_ROLES = ['did', 'demanded', 'saw'];
-
-/**
  * The three vocabularies that decide whether a rule handed to eyes says who reads it and when.
  *
  * <p>`assigns` is how a sentence says no machine judges this, `reader` is who takes the reading,
@@ -212,22 +140,6 @@ export const EVIDENCE_LABEL_ROLES = ['did', 'demanded', 'saw'];
  * case-insensitively inside one statement.
  */
 export const EYES_PHRASE_ROLES = ['assigns', 'reader', 'moment'];
-
-/**
- * The three cases in which a picture is the only witness, as a project words each of them.
- *
- * <p><b>The roles are fixed because the cases are.</b> `firstSight` is a screen nobody has opened -
- * a route answering 200 with the chrome painted and nothing inside it passes every other check
- * there is. `presence` is a claim about what is drawn, where, and in what words that no response
- * body carries. `transient` is a state that exists only while something is open. Everything else a
- * demand can ask for is settled by what the server answered, and a fenced block is the evidence
- * for it.
- *
- * <p>Each is a list of literal phrases in the project's own language, matched case-insensitively
- * inside one clause of a demand line - the same arrangement as `eyesPhrases`, and for the same
- * reason: what the reason SAYS is the project's, and that one is given is the skill's.
- */
-export const CAPTURE_REASON_ROLES = ['firstSight', 'presence', 'transient'];
 
 /**
  * What one entry of `captureStandard` names: the window a capture is taken in, and the scheme.
@@ -247,7 +159,42 @@ export const STANDARD_FIELDS = ['width', 'height', 'colorScheme'];
  */
 export const COLOR_SCHEMES = ['light', 'dark'];
 
-/** The roles `chapterHeadings` maps, so nothing in the skill has to know one project's wording. */
+/**
+ * Every key the skill reads, what it names, and what the value has to be.
+ *
+ * <p>`kind` decides both the type check and what existence means:
+ * `dir`/`file` must be there already, `path` is either of the two and must be there, `outdir`
+ * is written on first use so it need not exist, `outfile` is appended to so only its parent
+ * must exist, `command` is a shell line rather than a path, `list` is an array, `text` is a
+ * non-empty string, `headings` is the role → heading map, and `deferrals` is the
+ * key → { chapter, whenExists } map naming the optional keys whose subject does not exist yet.
+ *
+ * <p>`path` is for a key whose subject is one file in one project and, in the next, the
+ * directory a family of them lives in - the key names where the thing is, and the project
+ * decides whether that is a file or a folder.
+ *
+ * <p>`many` lets a key be declared once or several times: one string, or an array of them,
+ * each held to the same `kind`. It is for a subject a project can genuinely have more than
+ * one of, such as a database with several migration lineages.
+ *
+ * <p><b>`required` and `closing` are different questions and a key can want either.</b> `required`
+ * is 「nothing here works without it」; `closing` is 「everything works and no chapter can finish」,
+ * and it is given only to a key a closed chapter's gates need. Reported as one blank they read the
+ * same, and a project reads a page of green while being unable to end anything. An absence of the
+ * second kind is a finding rather than a choice, and a project that genuinely does not want it
+ * says so in `deferredKeys` with the chapter that will declare it.
+ *
+ * <p><b>`absent` is what the project pays for not declaring the key, and it lives here because
+ * `doctor` has to print it.</b> A report that says only 「not declared」 tells a reader what they
+ * already know; what decides whether to go and declare it is this sentence. `doctor` prints it,
+ * the 「Absent means」 column of the config table in `references/config.md` carries the same
+ * string, and `proveKeysAreDocumented` fails the run when the two differ - because two copies of a
+ * sentence is one sentence and one copy nobody is reading.
+ *
+ * <p><b>Each sentence stands alone.</b> `doctor` prints one key at a time, in whatever order the
+ * absences fall, so a cost written as 「as above」 lands under a key whose neighbour is declared and
+ * says nothing at all.
+ */
 export const SCHEMA = {
   boardRoot: { kind: 'dir', required: true, absent: 'the build cannot start' },
   boardManifest: { kind: 'file', required: true, absent: 'the build cannot start' },
@@ -260,12 +207,11 @@ export const SCHEMA = {
   // one that fails. Adding a rule then means removing one, or raising the number deliberately and
   // saying in the commit what was tried for removal and why it stayed.
   instructionBudget: { kind: 'budget', absent: 'nothing bounds how large the instructions grow, so they grow past what any agent can hold and every rule in them is one nobody read' },
-  // The labels a result document's provenance line carries - which build, which boot, which data.
-  evidenceProvenance: { kind: 'list', absent: 'a result document says nothing about where its pictures came from, so a reading taken off a stale build, an empty fixture or one zoom level is indistinguishable from one that is right' },
+  // The labels a run record's provenance line carries - which build, which boot, which data.
+  evidenceProvenance: { kind: 'list', absent: 'a run record says nothing about where its pictures came from, so a reading taken off a stale build, an empty fixture or one zoom level is indistinguishable from one that is right' },
   chapterHeadings: { kind: 'headings', absent: 'a section is named by its role rather than by a heading, and an agent that cannot find one stops and reports' },
-  // The words a chapter's own lines begin with, and the word its ledger writes for a closed
-  // chapter. Every check over a chapter's evidence has to read these, and reading them from a
-  // constant is what kept those checks in one repository.
+  // The word the ledger writes for a closed chapter. Every check over a closed chapter's run record
+  // reads it, and reading it from a constant would keep those checks in one repository.
   //
   // **No default, deliberately.** A default in this skill's own language is silently imposed on a
   // project working in another - it would run, find nothing, and report nothing, which is the exact
@@ -277,31 +223,24 @@ export const SCHEMA = {
   // that look like a chapter closed on evidence afterwards, so the ledger says which it was and
   // the evidence checks skip the decided ones rather than reporting their absent verification.
   decidedStatus: { kind: 'text', absent: 'a chapter can only be closed by its verification, so a person who ends one has to either fake the evidence or leave the ledger saying it is still open' },
-  // The role an evidence heading names where a persona would stand, for a check a machine proves.
-  // Its own key rather than `chapterLines.verdict`: that one is a LINE and this is a WORD, and
-  // stripping the markup off the line to guess the word is the kind of derivation that reads fine
-  // and comes out wrong - it did, putting 「**판정**…」 into a heading a person has to match.
-  verdictRole: { kind: 'text', closing: true, absent: 'a foundation chapter\'s sections cannot be matched to the lines they prove' },
-  // The line an evidence section carries when a check RAN and this installation cannot decide it.
-  // Compiled by the same grammar as `chapterLines`, and its `{text}` is the chapter that repays
-  // the debt. Optional: a project that has never met the case declares nothing and the two checks
-  // over it are skipped. **A project that HAS met it and declares nothing writes the marker in
+  // The word a foundation chapter's run record writes in the persona column, for a verification a
+  // machine proves rather than a journey a persona walks. No gate reads it, so it is not `closing`:
+  // `doctor`'s census counts the rows that carry it, and that count is all it feeds.
+  verdictRole: { kind: 'text', absent: 'no gate reads this word, so leaving it out costs no check; doctor\'s census has no word to count in the run records' },
+  // The line a chapter's run record carries when a check RAN and this installation cannot decide it.
+  // Compiled by `compileLine` (`grammar.mjs`), and its `{text}` is the chapter that repays the
+  // debt. Optional: a project that has never met the case declares nothing and the two checks over
+  // it are skipped. **A project that HAS met it and declares nothing writes the marker in
   // prose, where the chapter it names closes with the debt still outstanding** - which is the
   // failure the key exists to stop, and the reason `references/evidence.md` names the key at the
   // moment the case first comes up rather than in a list of options.
   deferredLine: { kind: 'text', absent: 'a project that has met that case writes the marker in prose instead, and the chapter it names closes with the debt outstanding and nothing reading it' },
-  // The line an evidence section carries in place of a picture, when the demand asked for one and
-  // a picture is not the witness for it - the pane behind the tab is the same unbuilt placeholder
-  // the section above already photographed. Its `{text}` is the capture that proves the component.
-  //
-  // **A demand a picture cannot answer is DISCHARGED, never skipped**, and this key is what makes
-  // the difference visible. A taker that correctly shot one placeholder and left the other two is
-  // right, and with nothing to write it leaves two sections showing nothing - which afterwards is
-  // indistinguishable from two panes nobody opened. Compiled by the same grammar as `deferredLine`
-  // and kept beside it, because a check reading a result document reads all of them together.
-  placeholderLine: { kind: 'text', absent: 'a demand a picture cannot answer is met by silence, and afterwards a pane nobody opened and a pane correctly proved by the capture above it read exactly the same' },
-  // Where a chapter's verification result and the captures it cites are written. **Not required to
-  // configure and required to close** - a project builds screens without it and cannot finish a
+  // The line a chapter's run record carries in place of a picture, where the pane behind a tab is
+  // the same unbuilt placeholder another capture already shows; its `{text}` names that capture.
+  // Compiled by `compileLine` like `deferredLine`. No gate reads it: `doctor`'s census counts it.
+  placeholderLine: { kind: 'text', absent: 'no gate reads this line, so leaving it out costs no check; doctor\'s census has no line to count in the run records' },
+  // Where `journeyCommand` writes a chapter's run record and the captures it shows. **Not required
+  // to configure and required to close** - a project builds screens without it and cannot finish a
   // chapter, which is the difference `required` alone could not express and `doctor` reported as an
   // ordinary blank. A board-to-app project that had every key green closed one chapter of
   // thirty-six, on five checks out of six, with no evidence folder at all.
@@ -339,15 +278,15 @@ export const SCHEMA = {
   // decide how somebody else's history is written. The three words are `commitPolicyGate`'s, not
   // this schema's - a value outside them is a decision the build cannot follow, which is a finding
   // rather than a type error.
-  commitPolicy: { kind: 'text', absent: 'whatever the repository\'s own rules say; with neither, the build asks before every commit, cannot run unattended, and the two gates that read commits see nothing until somebody is present → *Whether the build may commit at all*' },
+  commitPolicy: { kind: 'text', absent: 'whatever the repository\'s own rules say; with neither, the build asks before every commit, cannot run unattended, and the two gates that read commits see nothing until somebody is present → `SKILL.md` § *Whether the build may commit at all*' },
   auditScript: { kind: 'path', absent: 'a new rule has nowhere to land, so the project cannot ratchet - report the rule that should have been written rather than inventing a home for it' },
   migrationDir: { kind: 'dir', many: true, absent: 'nothing says where a migration goes or how two of them collide, so backend chapters run one at a time' },
   // What a screen owes beyond working code, and - the half a reader meets late - where a defect the
   // RUNNING PRODUCT showed lands when no frame can draw it: a value derived wrongly from what the
   // system reports, a demand that cannot be answered at the address it is answered at. The list grows
-  // as such defects are found, and `chapterGenerator` emits each sentence per frame so every later
-  // chapter re-asks it. Declared and never emitted, the key reads as coverage and holds nothing -
-  // which is what `everyFrameDeliverableReachesAChapter` exists to say.
+  // as such defects are found. No gate reads the sentences: each one names the mechanism that holds
+  // it - a rule in `auditScript` or a helper the journey tests call - and that mechanism is the
+  // check, so a sentence naming neither is a note and is not declared.
   frameDeliverables: { kind: 'list', absent: 'a screen owes nothing beyond the code and its journeys, so a defect no frame can draw is fixed once on the screen it was found on and met again on every screen built afterwards' },
   factSources: { kind: 'list', absent: 'a value the board draws is built as drawn and left marked, never asserted' },
   storyDocument: { kind: 'file', absent: 'sample data has no single source, and the screens disagree with each other silently → `references/scenario.md`' },
@@ -364,19 +303,9 @@ export const SCHEMA = {
   // errors. A demand of that shape was answered that way while the way back it asked about was not
   // drawn on the screen at all.
   //
-  // **Declared so a machine can tell the two apart.** A journey demand carries this address in its
-  // own words, which makes it recognisable without any new vocabulary, and
-  // `aJourneyIsWalkedInTheRunningApplication` then holds the section that answers it to having
-  // been driven here rather than at a frame address.
+  // **Declared so a machine can tell the two apart.** `journeyTestsDriveTheApplication` reads the
+  // journey tests for the frame route's address, and stays quiet where this one contains it.
   journeyRoute: { kind: 'text', absent: 'a journey test is driven wherever the run happens to be, and one driven at the frame route presses controls that have nowhere to go without anything erroring' },
-  // The words a demand uses to say why a picture is the only witness for the capture it names.
-  //
-  // **A capture demanded with no reason is a habit rather than a judgment**, and it is emitted by
-  // the thousand: a generator that writes one file name per pane per frame produces a chapter
-  // demanding pictures nobody can give a reason for, and - where the panes are unbuilt
-  // placeholders - pictures nobody can take at all. One chapter set asked for 1040 of them and
-  // said of no single one why a picture was owed. Whether the reason is TRUE stays with eyes; that
-  // one was given is what this key lets a machine see.
   // The size and colour scheme every capture is taken at. **Declared rather than left to the
   // driver**, because both are wrong in a way that reads as a correct run: a window that came back
   // narrow files a frame with its lower half missing, and a console in the wrong scheme files a
@@ -406,13 +335,6 @@ export const SCHEMA = {
   // what it picked, which `references/driving-the-product.md` says how to do.
   browserDrivers: { kind: 'list', absent: 'whoever opens a screen picks whatever the environment offers, so two runs of one frame can be shot through different instruments; the run must then name its driver in the return and write it into the handover file, because nothing else records the choice → `references/driving-the-product.md`' },
   deviceDrivers: { kind: 'list', absent: 'whoever opens a screen on a simulator or a handset picks whatever is installed, so two runs of one screen can be shot through different instruments; and where the project ships on a device and declares none, a sweep reaches for the platform\'s own commands with nothing saying that was a choice → `references/driving-the-product.md`' },
-  // Which model each half of the capture split runs on. **The split itself is not configurable** -
-  // whoever shot a picture cannot judge it - and these two say only where the work is procedure
-  // and where it is judgement.
-  //
-  // Each requires the other: half a split named is a project that has thought about one side, and
-  // applying it to one agent while the other inherits whatever the harness gives is the arrangement
-  // silently costing more on the half that was supposed to be cheap.
   // The documents that hand checks to human eyes, and the words they hand them in.
   //
   // **Not `closing`** - a project that declares NEITHER closes chapters perfectly well and simply
@@ -440,6 +362,7 @@ export const SCHEMA = {
   deferredKeys: { kind: 'deferrals', absent: 'an absence waiting on a chapter reads exactly like one the project decided against, and the cost in that key\'s row is paid silently from the day the subject appears' },
 };
 
+/** The roles `chapterHeadings` maps, so nothing in the skill has to know one project's wording. */
 export const HEADING_ROLES = [
   'prerequisites',
   'parallelWith',
@@ -494,7 +417,7 @@ export function loadProject(configPath, options = {}) {
   const { config, error } = readJson(abs);
 
   // Which of the project's boards this run is about. A single-board project resolves to null and
-  // every lookup below falls through to the top level, which is what it did before boards existed.
+  // every lookup below falls through to the top level.
   const { board, names: boards, error: boardError } = resolveBoard(config, {
     board: options.board ?? null,
     cwd: options.cwd ?? process.cwd(),
@@ -573,15 +496,15 @@ export function loadProject(configPath, options = {}) {
     boardError,
     declared,
     raw,
-    // The project's line grammar, compiled once. A gate reads `ctx.lines.persona` and never
+    // The project's declared lines, compiled once. A gate reads `ctx.lines.deferred` and never
     // imports the compiler: a project's own gate file cannot reach into the skill by path - the
     // skill is installed somewhere else on every machine - so what a gate needs arrives here.
     get lines() {
-      // Only the two document lines are compiled now: a chapter's own lines are its structural lines
-      // and its journeys, which the checks read by heading rather than by a declared phrase.
+      // Two lines are compiled, both read off a run record: `deferredLine` and `placeholderLine`,
+      // each absent where the project declares none. A chapter file is read by its headings - a
+      // frame's `## <n>. <frame id>` section, a journey's `### <n>. <persona> - <title>` - rather
+      // than by a declared phrase.
       const lines = {};
-      // Compiled by the same grammar and kept beside the chapter's own lines, because a check
-      // reading a document reads all of them together. Absent where the project declares none.
       const deferred = declared('deferredLine');
       if (deferred) lines.deferred = compileLine(deferred, 'deferredLine');
       const placeholder = declared('placeholderLine');
@@ -602,7 +525,7 @@ export function loadProject(configPath, options = {}) {
     exists: (path) => Boolean(path) && existsSync(path),
     isDir: (path) => Boolean(path) && existsSync(path) && statSync(path).isDirectory(),
     // The bytes a file takes. `read` decodes utf8, and the length of that decoding is not the size
-    // of a binary file - a capture measured that way comes out under any ceiling worth setting.
+    // of a binary file - a capture's density measured that way says nothing about the picture.
     size: (path) => {
       try {
         return statSync(path).size;

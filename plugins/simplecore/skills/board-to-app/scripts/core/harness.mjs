@@ -10,6 +10,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { CONFIG_NAME, SCHEMA, loadProject } from './context.mjs';
 import { GRADES } from './gates.mjs';
+import { vocabularyCensus } from './vocabulary.mjs';
 
 /** The command line whose exit status the severity proof reads. */
 const BTA = fileURLToPath(new URL('../bta.mjs', import.meta.url));
@@ -280,10 +281,8 @@ export function proveMisdeclaredNeeds(project) {
 }
 
 /**
- * The header row that opens the config table, and the anchor the reverse read uses.
- *
- * <p>The table lives in `references/config.md` - split out of `SKILL.md` so a session loads it only
- * when a key is in question. The reverse read follows it there rather than keeping a copy.
+ * The header row that opens the config table in `references/config.md`, and the anchor the
+ * reverse read uses.
  */
 const CONFIG_TABLE_HEADER = '| Key | What the project names with it | Required | Absent means |';
 
@@ -343,8 +342,7 @@ export function undocumentedKeys(keys, inTable, inTemplate, costs = null) {
  *
  * <p>This is the shape the two tables cannot hold: a key added to `SCHEMA` works immediately,
  * `configGate` validates it, `doctor` prints it - and nothing anywhere says it exists, so the only
- * readers who ever meet it are the ones who go through the source. Eight keys reached that state
- * before this ran.
+ * readers who ever meet it are the ones who go through the source.
  *
  * <p><b>Both directions are proved here rather than in a case</b>, because the subject is this
  * skill's own files rather than a project: the comparison is run once against them and twice
@@ -427,6 +425,155 @@ export function proveKeysAreDocumented() {
   const clean = undocumentedKeys(keys, new Set(keys), new Set(keys), agreeing);
   if (clean.length) {
     out.push(`the documentation comparison found ${clean.length} things wrong with a set where every key is documented — it fires on everything`);
+  }
+  return out;
+}
+
+/** The bold lead that opens the register of what a gate holds, in `references/checks-and-eyes.md`. */
+const GATE_REGISTER_LEAD = '**Held by a gate**';
+
+/** A backticked camelCase identifier - the shape of a gate id, and of a config key. */
+const CAMEL_IDENTIFIER = /`([a-z][a-z0-9]*[A-Z][A-Za-z0-9]*)`/g;
+
+/**
+ * Which core gates the register leaves out, and which identifiers it names that no gate and no
+ * key answers to - the comparison alone, so it can be run against the real table and doctored ones.
+ *
+ * @param ids every core gate id
+ * @param named the backticked camelCase identifiers in the register's gate column
+ * @param keys the schema's keys, which that column also names and which are not stale gate names
+ * @returns one string per gate missing from the register or name the register carries for nothing
+ */
+export function unregisteredGates(ids, named, keys) {
+  const out = [];
+  for (const id of ids) {
+    if (!named.has(id)) {
+      out.push(`${id} is a core gate with no row in the 「Held by a gate」 table of references/checks-and-eyes.md - a rule nobody can find is a rule nobody knows is held`);
+    }
+  }
+  for (const name of named) {
+    if (!ids.includes(name) && !keys.includes(name)) {
+      out.push(`the 「Held by a gate」 table names \`${name}\`, which is no core gate and no config key - a gate renamed or retired leaves its row behind, and the row is what everybody reads`);
+    }
+  }
+  return out;
+}
+
+/**
+ * Every core gate has a row in the register of what a gate holds, and every row names a live one.
+ *
+ * <p><b>A gate that is not listed works perfectly and is met by nobody</b>: it fires, its cases
+ * pass, and a reader asking which rules are held reads a table that leaves it out. The comparison is
+ * proved the way `proveKeysAreDocumented` proves its own - against a doctored copy in each
+ * direction, then against a set where everything is listed.
+ *
+ * @param ids every core gate id
+ * @returns one string per expectation that came out the wrong way
+ */
+export function proveGatesAreRegistered(ids) {
+  const text = readFileSync(new URL('../../references/checks-and-eyes.md', import.meta.url), 'utf8');
+  const lines = text.split('\n');
+  const lead = lines.findIndex((line) => line.startsWith(GATE_REGISTER_LEAD));
+  if (lead < 0) {
+    return ['references/checks-and-eyes.md no longer opens a table with 「Held by a gate」 - the register is read from it, and without it a gate left out is invisible'];
+  }
+  const named = new Set();
+  let inTable = false;
+  for (const line of lines.slice(lead + 1)) {
+    if (!line.startsWith('|')) {
+      if (inTable) break;
+      continue;
+    }
+    inTable = true;
+    const cells = line.split('|');
+    if (cells.length < 4 || /^\s*-+\s*$/.test(cells[2]) || cells[1].trim() === 'Rule') continue;
+    for (const [, name] of cells[2].matchAll(CAMEL_IDENTIFIER)) named.add(name);
+  }
+  const keys = Object.keys(SCHEMA);
+  const out = unregisteredGates(ids, named, keys);
+  const found = out.length;
+  if (unregisteredGates(ids, new Set([...named].filter((name) => name !== ids[0])), keys).length !== found + (named.has(ids[0]) ? 1 : 0)) {
+    out.push('the register comparison did not report a core gate the table leaves out - it would stay quiet on every gate');
+  }
+  if (unregisteredGates(ids, new Set([...named, 'gateThatWasRenamedAway']), keys).length !== found + 1) {
+    out.push('the register comparison did not report a row naming a gate that no longer exists');
+  }
+  const clean = unregisteredGates(ids, new Set(ids), keys);
+  if (clean.length) {
+    out.push(`the register comparison found ${clean.length} things wrong with a table naming every gate - it fires on everything`);
+  }
+  return out;
+}
+
+/** A project declaring every word the census reads, with a document that writes each one. */
+function censusProject(words) {
+  return {
+    config: {
+      chapterDir: 'chapters',
+      evidenceDir: 'docs/evidence',
+      stateLedger: 'tracking/STATE.md',
+      eyesDocuments: ['docs/eyes.md'],
+      ...words,
+    },
+    files: {
+      'chapters/w01-base.md': '# W01\n',
+      'chapters/w02-screens.md': '# W02\n',
+      'tracking/STATE.md': '| chapter | state |\n| --- | --- |\n| w01 | closed |\n| w02 | open |\n',
+      'docs/evidence/w01-base.md':
+        '# W01 - run\n\n| journey | persona | test | result |\n| --- | --- | --- | --- |\n'
+        + '| 1 | verdict | tests/w01.spec.ts › schema | pass |\n\n**Deferred to W02** - the role is installed there\n',
+      'docs/evidence/w02-screens.md':
+        '# W02 - run\n\n| journey | persona | test | result |\n| --- | --- | --- | --- |\n'
+        + '| 1 | operator | tests/w02.spec.ts › list | pass |\n\n**Same component as w02-screens/a-01.webp** - the second pane\n',
+      'docs/eyes.md': 'Whether the picture is the frame stays with eyes: the coordinator reads it before the ledger row is written.\n',
+    },
+  };
+}
+
+/**
+ * The census `doctor` prints counts every declared word where it is written, and a word declared
+ * wrongly counts nothing.
+ *
+ * <p><b>No gate reads the census, so no case reaches it</b> - which is the shape in which it can stop
+ * working and leave every case green. So it is proved here, on one fixture declaring every word the
+ * census reads, both ways: the right words each match, and the same documents under wrong words
+ * match none.
+ *
+ * @param project the fixture builder
+ * @returns one string per expectation that came out the wrong way
+ */
+export function proveCensusReads(project) {
+  const right = {
+    closedStatus: 'closed',
+    verdictRole: 'verdict',
+    deferredLine: '**Deferred to {text}**…',
+    placeholderLine: '**Same component as {text}**…',
+    eyesPhrases: { assigns: ['stays with eyes'], reader: ['the coordinator'], moment: ['before '] },
+  };
+  const wrong = {
+    closedStatus: 'shut',
+    verdictRole: 'judge',
+    deferredLine: '**Postponed to {text}**…',
+    placeholderLine: '**Like {text}**…',
+    eyesPhrases: { assigns: ['a person decides'], reader: ['the reviewer'], moment: ['after the close'] },
+  };
+  const out = [];
+  let census;
+  try {
+    const spec = censusProject(right);
+    census = vocabularyCensus(project(spec));
+  } catch (err) {
+    return [`the census threw on a project declaring every word it reads: ${err instanceof Error ? err.message : String(err)}`];
+  }
+  const labels = ['closedStatus', 'verdictRole', 'deferredLine', 'placeholderLine', 'eyesPhrases.assigns', 'eyesPhrases.reader', 'eyesPhrases.moment'];
+  for (const label of labels) {
+    const item = census.find((entry) => entry.label === label);
+    if (!item) out.push(`the census printed no line for ${label}, which the fixture declares`);
+    else if (item.matched === 0) out.push(`the census counted nothing for ${label} over a document that writes it`);
+  }
+  const misdeclared = vocabularyCensus(project(censusProject(wrong)));
+  for (const item of misdeclared) {
+    if (item.matched > 0) out.push(`the census counted ${item.matched} for ${item.label} declared as a word no document writes`);
   }
   return out;
 }

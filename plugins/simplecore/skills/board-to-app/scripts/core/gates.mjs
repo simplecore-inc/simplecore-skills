@@ -25,23 +25,17 @@
 // rewritten by the next project that needs it. The test is whether it would still be right in
 // somebody else's repository.
 //
-// **A worked example of the test, because the line is easy to draw in the wrong place.** The
-// checks over a chapter's evidence came up together, and only three of the five moved. What a
-// result document has to look like - a section per demanded line, three labels, a picture or what
-// was run, a quote that is part of the chapter's own sentence, one capture per frame a closed
-// chapter placed - is true wherever chapters are built from a board, so `evidence.mjs` holds it
-// and the project declares the words. Two stayed behind:
+// **A worked example of the test, because the line is easy to draw in the wrong place.** What a
+// closed chapter's run record has to hold - a passing row for every journey the chapter names, a
+// capture for every frame it places - is true wherever chapters are built from a board, so
+// `evidence.mjs` holds it and the project declares only the words. Whether the frame a picture
+// shows can be pointed at again is not: it can only be asked where the project keeps a table of
+// frames and addresses, and a project that reaches its screens by clicking has no such table and
+// no such question, so a skill carrying that check would carry one console's capture arrangement
+// everywhere. It is a project gate.
 //
-//   · one asks whether the frame a picture shows can be pointed at again, and it can only ask
-//     that where the project keeps a table of frames and addresses. A project that reaches its
-//     screens by clicking has no such table and no such question, so a skill carrying the check
-//     would be carrying one console's capture arrangement everywhere.
-//   · one hunts the phrasings that hand a check to human eyes, and those phrasings are one
-//     repository's sentences. It moves when they become a declared list rather than a constant.
-//
-// **The test that separated them was not size and not usefulness** - both are useful anywhere in
-// the abstract. It was whether the check can be RUN in a repository that declares this skill's
-// keys and nothing more. Three can; two need a file the skill has no name for.
+// **The test is not size and not usefulness** - both are useful anywhere in the abstract. It is
+// whether the check can be RUN in a repository that declares this skill's keys and nothing more.
 import { pathToFileURL } from 'node:url';
 import { BOARDS_KEY, BOARD_OWN_KEYS, COLOR_SCHEMES, HEADING_ROLES, SCHEMA, STANDARD_FIELDS, boardNames, isPathKey } from './context.mjs';
 import { NARRATIVE_PHRASES, hasHeading, onlyQuoted, proseLines, sectionUnder } from './prose.mjs';
@@ -641,17 +635,26 @@ export const ledgerGate = {
  * <p><b>The shape of the name is this gate's to hold; the format is not.</b> A project that fits
  * its pictures under a size bound encodes to `webp`, and naming one container refuses the pictures
  * of every project that chose another - reporting a whole round as unplaceable over the three
- * letters after the dot. `evidence.mjs` accepts `.webp` for the same pictures once they are
- * curated, so a single container here made one skill demand two names for one file.
+ * letters after the dot. `evidence.mjs` holds a run record's captures to `.webp`, so a single
+ * container here would make one skill demand two names for one file.
  *
  * <p><b>The frame id may carry a state letter after its digits</b> - `N-02a`, `N-02k` - because a
  * board gives every state of a screen its own frame. Without it the artefact of such a frame is
- * refused as unplaceable, which is the same defect `evidence.mjs` carried in the other direction.
+ * refused as unplaceable, which is the defect `evidence.mjs`'s capture name guards against too.
  */
 const CAPTURE_NAME = /^\d{8}-\d{4}-[A-Za-z]{1,4}-\d{1,3}[a-z]?(-[a-z0-9-]+)?\.(?:png|webp|jpe?g|avif)$/;
 
 /**
- * Captures are placed the one way: one folder per language, and a name a reader can parse.
+ * A chapter, with whatever a sweep of it was narrowed to.
+ *
+ * <p>`w02`, and `w02-n` where one sweep covered the N cluster of it - the suffix says which part,
+ * the same way a capture's own name carries a variant.
+ */
+const CHAPTER_FOLDER = /^[a-z]\d{2}(?:-[a-z0-9-]+)?$/;
+
+/**
+ * A capture in `capturesDir` is placed one way: one folder deep, in a folder named for a declared
+ * language or for a chapter, under a name a reader can parse.
  *
  * <p>The shape is not the project's to choose: a picture nobody can place is discovered months
  * after the agent who took it has gone.
@@ -670,19 +673,11 @@ const CAPTURE_NAME = /^\d{8}-\d{4}-[A-Za-z]{1,4}-\d{1,3}[a-z]?(-[a-z0-9-]+)?\.(?
  * change has to be read off the product rather than written down, or a flipped default leaves
  * every picture named for the state it is not with nothing disagreeing.
  *
- * <p>What IS held here beyond the shape: the folder is one of the languages the project declared.
- * Those are already in the config, so a picture under a folder that is not a language - a width, a
- * frame, a date - is placeable-looking and unfindable, and no project should have to write that
- * check itself.
+ * <p>What IS held here beyond the shape: the folder is a language the project declared or a
+ * chapter - the two things a capture is grouped by, and the two the config already knows. A
+ * picture under a folder that is neither - a width, a frame, a date - is placeable-looking and
+ * unfindable, and no project should have to write that check itself.
  */
-/**
- * A chapter, with whatever a sweep of it was narrowed to.
- *
- * <p>`w02`, and `w02-n` where one sweep covered the N cluster of it - the suffix says which part,
- * the same way a capture's own name carries a variant.
- */
-const CHAPTER_FOLDER = /^[a-z]\d{2}(?:-[a-z0-9-]+)?$/;
-
 export const capturesGate = {
   id: 'capturesGate',
   title: 'a capture nobody can place',
@@ -702,7 +697,7 @@ export const capturesGate = {
     for (const entry of entries) {
       const parts = entry.split('/');
       if (parts.length === 1) {
-        findings.push(`${entry}: the language is the only folder — a capture sits in <language>/`);
+        findings.push(`${entry}: a capture sits one folder deep, in its language's folder or its chapter's - <language>/ or <chapter>/`);
         continue;
       }
       if (parts.length > 2) {
@@ -724,7 +719,7 @@ export const capturesGate = {
         continue;
       }
       if (!CAPTURE_NAME.test(name)) {
-        findings.push(`${entry}: the name is <YYYYMMDD-HHMM>-<frame-id>[-<variant>].png`);
+        findings.push(`${entry}: the name is <YYYYMMDD-HHMM>-<frame-id>[-<variant>], ending .png, .webp, .jpg or .avif`);
       }
     }
     return findings;
@@ -1264,11 +1259,10 @@ export const CORE_GATES = [
   // longest thing here and they read documents rather than configuration.
   ...EVIDENCE_GATES,
   ...EYES_GATES,
-  // The words the project declared, against the documents that write them. It sits after the
-  // gates that READ those words, because it is the one that says whether they read anything.
+  // The words the project declared are counted by `doctor`'s census, and no gate of theirs runs.
   ...VOCABULARY_GATES,
-  // What keeps the instructions readable: a ceiling per file, a rule taught in one place, a result
-  // document that says where its pictures came from, and no instruction written twice.
+  // What keeps the instructions readable: a ceiling per file, a rule taught in one place, a run
+  // record that says where its pictures came from, and no instruction written twice.
   ...BUDGET_GATES,
 ];
 

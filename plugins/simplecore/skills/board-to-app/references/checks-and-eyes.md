@@ -1,6 +1,3 @@
-<!-- Split out of SKILL.md so a session loads it only when its subject comes up. The skill's
-     own section of this name is a routing stub pointing here. -->
-
 # Every rule here is held by a machine or marked as needing eyes
 
 **There is no third category.** A rule that is neither checked nor marked reads as though
@@ -18,26 +15,38 @@ node "${CLAUDE_PLUGIN_ROOT}/skills/board-to-app/scripts/bta.mjs" check
 | Rule | The gate |
 | --- | --- |
 | the config is complete, well typed, and every declared path is there | `configGate` |
+| a project declaring several boards gives each one its own progress files, and every board declares something of its own | `boardsGate` - two boards sharing a ledger, a chapter folder or an evidence folder run one build whose rows are about whichever board wrote last |
 | a key promised to a chapter is declared once that chapter has created its subject | `deferredKeyGate` |
 | the commit policy is one of the three words the build knows how to follow | `commitPolicyGate` - a fourth word reads as a decision and is followed by nobody |
 | the handover file states facts, never a point of view | `handoverGate` |
 | a parked line sits under the declared heading - matched exactly, never by fragment - and carries its three parts, the first of them one unbroken token | `openItemsGate` |
 | every chapter is named in the state ledger | `ledgerGate` |
-| a capture sits under a declared language and its name parses | `capturesGate` - it holds the PLACE and the SHAPE. The variant is 「lower case, digits and hyphens」 and nothing more, so every word a project layers into it - a theme, a width, a state - passes here whatever it says. **A convention naming a project's own vocabulary is that project's checker to hold**, and one whose default can change is read off the product rather than written down: a project declaring 「bare means the default scheme」 had a run write `-dark-` into a name, and this gate was green over both spellings |
+| a capture in `capturesDir` sits one folder deep, under a declared language or a chapter, and its name parses | `capturesGate` - it holds the PLACE and the SHAPE. The variant is 「lower case, digits and hyphens」 and nothing more, so every word a project layers into it - a theme, a width, a state - passes here whatever it says. **A convention naming a project's own vocabulary is that project's checker to hold**, and one whose default can change is read off the product rather than written down: a project declaring 「bare means the default scheme」 had a run write `-dark-` into a name, and this gate was green over both spellings |
 | a capture was taken through the window the project declared, and is a picture a reader can measure at all | `everyCaptureIsAtADeclaredWidth` - the file's own header states the canvas it was encoded from, which is the one half of the standard a picture still remembers; a whole multiple passes, because a device pixel ratio of two is a right window and a wide file |
 | a capture was taken in the colour scheme the project declared | `everyCaptureIsInTheDeclaredScheme` - **a warning while a backlog stands**, promoted in the change that drives it to zero. The scheme is in the pixels and nowhere else, so it decodes each capture small and reads its luma; a scheme is not settled with certainty that way and does not have to be, because what separates the two in an application UI is the whole range rather than a margin. A decoder it cannot run is reported rather than passed |
 | a capture holds more than an empty canvas of its size would | `everyCaptureIsDenserThanAnEmptyCanvas` - **a warning**, because what it raises is 「open this one」, and the reading it narrows the pile for is the coordinator's row in the table below. It measures bytes against the canvas rather than bytes, since quality and device pixel ratio are both undeclared and an absolute count reads a blank 2×-ratio shot as a fuller screen; an empty canvas costs about 1,900 bytes per megapixel at any quality and any size, and the sparsest real screen 3,900. Failing on it would leave one way to green a correct picture - re-encode it larger - which silences the check for the next one that really is blank |
-| a closed chapter has a run record whose rows cover every journey the chapter names, each passing - or skipped with the parked line that releases it | `closedChapterHasAJourneyRun` - it matches rows to journeys by number and persona, so a record that renumbered its journeys reports rather than passes |
+| a closed chapter has a run record whose rows cover every journey the chapter names, each passing - or skipped with the parked line that releases it | `closedChapterHasAJourneyRun` - it matches rows to journeys by number and persona, so a record that renumbered its journeys reports rather than passes; it reads the journeys off their `### <n>. <persona> - <title>` headings → `references/demands.md` |
+| a closed chapter's run record shows a capture of every frame the chapter places | `everyPlacedFrameIsCaptured` - a frame no journey photographed is a screen nobody opened; a frame drawn on another is covered by its base's picture, and a shared pattern with no address of its own owes none |
+| captures in a chapter's folder have the run record beside them | `evidenceKeepsPaceWithItsCaptures` - **a warning**: a folder of captures with no record is a run of the journey tests that `journeyCommand` did not finish, and the answer is the command, never a hand-written record |
+| a check deferred in a run record names a chapter that exists, and not the chapter deferring it | `deferredCheckNamesAChapter` - it reads `deferredLine`; a debt naming itself or nothing is a check nobody will run |
+| the chapter a deferred check is owed to does not close while the line stands | `chapterOwedACheckDoesNotClose` - the debt is paid by running the deferring chapter's journeys again, so its record carries what was seen in place of the line |
+| a run record says which build, boot and data its pictures came off | `evidenceSaysWhereItCameFrom` - **a warning**, reading the labels `evidenceProvenance` declares |
 | a journey test drives the running application rather than the frame route | `journeyTestsDriveTheApplication` - it reads the tests under `journeyTestsDir` for the frame route's address, because a control whose destination is another screen has nowhere to go there and nothing errors |
 | two captures in one chapter are not the same picture, so a state frame that came back as its base is reported rather than looked past | `noTwoCapturesAreTheSamePicture` |
 | every commit says which chapter it belongs to, and one that belongs to none says `setup` | `trailerGate` - it takes any word, so which word is fixed here rather than per project, and it takes its answer from `%(trailers)` rather than from the look of the message, because a block git discarded reads exactly like one it parsed |
 | a census counts both sides, and names the sites that do not reach the mechanism | `censusCountsBothSides` - it reads the counts by position and not by word, so a project writes the line in its own language |
 | a commit adding an import of a file the repository does not have | `importsTravelWithTheirCommit` - `--only` holds back a file nobody named, not somebody else's edit inside a file that was named |
+| a generated artefact the working tree holds is the one HEAD carries | `generatedArtefactsMatchHead` - it reads only what `generatedArtefacts` names, since a tree mid-task is dirty for ordinary reasons, and a row matching nothing git tracks is reported too |
+| a rule a project's own documents hand to eyes names its reader and its moment in one statement | `eyesRuleNamesItsReader` - it reads the documents `eyesDocuments` names, by the words `eyesPhrases` declares |
+| an instruction file stays inside the ceiling its project declared | `instructionFitsItsBudget` - a ceiling set at what the file measures the day it is declared, so the next append is the one that fails |
+| a check's reasoning is written out once, in its own message | `aGateIsTaughtOnce` - **a warning**: a routing line naming the check is right, and only a reader can tell it from a second copy of the reasoning |
+| one instruction is written in one file | `noInstructionIsWrittenTwice` - **a warning**: it names the pair and both paths, and a reader decides which is the routing line and which the fork |
 | a parked line that says it blocks a chapter does not survive that chapter closing | the project's own gate - the marker is that project's word and so is its ledger's word for a closed chapter, so nothing generic can read either |
 | the frames, counts and copy a chapter builds to | the board's own gates (`simplecore:wireframe-boards`) |
 | whatever `frameDeliverables` declares is TRUE of the screen | the mechanism each sentence names - a rule in the project's `auditScript`, or a helper its journey tests call; a sentence naming neither is a note, and it is not declared |
 | the code's own defect types | the project's `auditScript` - every new detection rule goes there, whether that key names one script or the directory a family of them lives in |
-| every key this skill reads has a row in the config table above and a line in the copyable template, and the cost that row states is the sentence `doctor` prints | `bta.mjs gates` - a self-check rather than a gate, because its subject is this skill's own two documents rather than any project's → `references/checks.md` |
+| every key this skill reads has a row in the key table of `config.md` and a line in the copyable template, and the cost that row states is the sentence `doctor` prints | `bta.mjs gates` - a self-check rather than a gate, because its subject is this skill's own two documents rather than any project's → `references/checks.md` |
+| every core gate has a row in this table, and every row names a gate that exists | `bta.mjs gates` - the same kind of self-check, reading this table |
 
 **Held by eyes** - no machine can judge these, and saying so is the point. **Each row names
 whose eyes and at which moment**, for the reason the next paragraph gives:
@@ -47,7 +56,7 @@ whose eyes and at which moment**, for the reason the next paragraph gives:
 | the agents this skill's procedure names were dispatched, rather than the coordinator building in its own context | **the coordinator**, at the session's first unit of work and again at every chapter | a session's own tool use leaves no trace in the repository - a chapter built by six agents and one built by the coordinator alone produce the same tree, the same commits and the same ledger row, so the difference is visible only to the party making the choice |
 | which driver took a capture, and that one instrument took every capture being compared | **whoever takes the capture**, naming it in the return, and **the coordinator** whenever it holds two runs against each other | a picture carries no record of what shot it, and two drivers differ in device pixel ratio, fonts and scrollbar width - so an instrument change and a screen change read identically → `references/driving-the-product.md` |
 | the server signed into is this build's own development server | **whoever signs in**, reading the address before the first credential is typed | nothing in the repository records which host a run drove, and a capture of a staging screen and a capture of a local one are the same picture |
-| a credential reached nothing but the process that signed in | **whoever writes a report, the handover file or a result document**, before it leaves their hands | a password has no shape that separates it from an account name or an identifier, so a pattern wide enough to catch one fires on every persona row in the ledger |
+| a credential reached nothing but the process that signed in | **whoever writes a report, the handover file or the journey command that writes the run record**, before it leaves their hands | a password has no shape that separates it from an account name or an identifier, so a pattern wide enough to catch one fires on every persona row in the ledger |
 | a finding written back into this skill went into a checkout rather than an installed copy | **whoever writes it**, in the change that writes it | an installed copy and a checkout are the same bytes at the same path, and the difference shows only when the next install of the plugin deletes one of them |
 | a screen carries the structure its frame draws, and the capture shows that screen rather than an empty shell of it | **the coordinator**, opening each of the chapter's captures before writing the ledger row that closes it - never the agent that took them | a picture is the only witness, and the party that shot it is the party that cannot see past what it expected → `references/judging-frames.md` |
 | a global change owed a census, and the sample was drawn from the rest rather than from the same context as the screens walked in full | **the coordinator**, before the commit that lands the change is written | which screens carry the context differences is a reading of what the change means; the census counts sites through a mechanism and cannot say which of them differ, and a sample drawn from the directly-related screens measures the mechanism twice and the rest never |
@@ -59,7 +68,7 @@ whose eyes and at which moment**, for the reason the next paragraph gives:
 | two chapters may run at once | **the coordinator**, before each dispatch | a resource judgment, made per dispatch against facts that change |
 | what a wave shares outside the repository being built | **the agent it blocks**, in the turn it blocks them | no diff in this repository shows a plugin checkout, a global setting or a shared script - and the agent one of them blocks is the only agent that can unblock it |
 | whether a brief carried what its own checks need, the design chapter that governs the work, and **through which channel each thing it asks for is to reach you** - a named agent sends its report, an unnamed subagent has only its run log | **the coordinator**, reading the brief back against itself before sending it | a prompt leaves no artifact, so the only reading of a brief is the one the coordinator takes before sending it - a gate can hold that a chapter file cites a design chapter, never that a brief did. Both ways of getting the channel wrong read as an agent that went quiet: one wrote its report into the void, the other was asked for step reports it had no way to send |
-| a second coordinating position is on this checkout | **whoever opens a session**, reading the ledger's plan section at step 2 of *Opening a session* - the same reading that says which chapter is open | commits from another position read as 「somebody committed」, which is ordinary; what is not ordinary is a plan naming agents you did not dispatch, and only somebody who knows what they sent can see it |
+| a second coordinating position is on this checkout | **whoever opens a session**, reading the ledger's plan section at step 2 of `../SKILL.md` § *Opening a session* - the same reading that says which chapter is open | commits from another position read as 「somebody committed」, which is ordinary; what is not ordinary is a plan naming agents you did not dispatch, and only somebody who knows what they sent can see it |
 | a rule that became a checker was reached in this run | **whoever added the checker**, in the same change | four ways it is not, all four reading as a passing run - a checker cannot report on the comparison it never made |
 | how much a red gate command left unmeasured | **whoever ran it**, off its log, before reporting the result | the exit status is honest and says only that the run stopped; how far a chained command got is read off its log by somebody |
 | which of two commands a step's proof is read off | **whoever writes the step down** | a report and a gate both exit zero on a healthy project, so only somebody who knows which one can fail can say whether a proof was taken → `references/checks.md` |
@@ -69,7 +78,7 @@ whose eyes and at which moment**, for the reason the next paragraph gives:
 | how many agents may extend the migrations at once | **the coordinator**, when the wave is planned | it follows from the project's scheme - a range divides, a parent chain does not - and the scheme is read off `migrationDir` per wave |
 | a sentence standing beside a chip filter is one the chip choice changes, or a page note in the wrong place | **the coordinator**, reading the frame before dispatching the chapter that builds it - never the agent that drew it | 「Does this sentence change when the chip changes?」 is answered by reading the sentence; the board's gate sees a block between the chip row and the list and cannot see which side of that question it falls on → `simplecore:wireframe-boards` |
 | the documents, the board and the code agree in meaning | **whoever moves one of the three**, in the same change | a checker holds that a frame is referenced, never that two sentences say the same thing |
-| an agent is stalled rather than inside something long | **the coordinator**, at each check on a quiet agent | the three readings, and they need somebody to take them |
+| an agent is stalled rather than inside something long | **the coordinator**, at each check on a quiet agent | the readings of the stall test in `../SKILL.md` § *An agent that ends, and an agent that only paused*, and they need somebody to take them |
 | a parked decision genuinely qualifies | **whoever is about to honour the line**, against today's sources | the default is to decide, and only a person can say the design ran out |
 | a path carried over from a retired arrangement still names it | **whoever opens the document** | only somebody who knows the project moved can tell a live document from a leftover → `references/migrating-from-a-walk.md` |
 | a document about to be deleted is opened by a program | **whoever deletes it**, before deleting | this skill reads no path that is being retired; what holds it is the project's own gate, run after the deletion rather than before → `references/migrating-from-a-walk.md` |
@@ -128,7 +137,7 @@ thing - and **all four come out of a run looking like a pass**:
 | The shape | What it is |
 | --- | --- |
 | **no command runs it** | the checker is in the repository and in no entry of `gates`. Somebody greps, finds it, and reads the rule as covered |
-| **an earlier failure in the same command hid it** | one `gates` entry is a chain, and the checkers after the one that failed did not run at all → *Closing a chapter* |
+| **an earlier failure in the same command hid it** | one `gates` entry is a chain, and the checkers after the one that failed did not run at all → `../SKILL.md` § *Closing a chapter* |
 | **its own precondition did not hold** | it compares three things and skips, silently, whatever is missing one of them |
 | **its pattern matches anything** | it runs, compares, and every comparison passes because the pattern it compiled accepts any string |
 
@@ -137,14 +146,14 @@ the most damage for a reason that has nothing to do with machines: a checker tha
 a rule that is held, so nobody has a reason to look. A rule with no checker at all is the honest
 version of the same coverage.
 
-Two things narrow it, and the second is here because the first is not enough:
+These narrow it, each because the one before it is not enough:
 
 1. **A checker says how many comparisons it made, not only how many failed.** 「0 findings」 and
    「paired 186 of 193」 are one line to an exit status and two different sentences to a reader -
    only the second shows the seven it never reached. `bta.mjs doctor` prints that count for the
    one subject where it is the whole answer: what each declared word matched in the documents it
-   governs, `✔ chapterLines.persona matched 1675 — 35 chapter files, 10286 compared` beside
-   `○ evidenceLabels.did nothing to match against yet — 0 result documents`. The first says the
+   governs - a `✔ closedStatus` line giving the ledger rows it matched and how many it compared,
+   beside a `○ deferredLine` line saying there is nothing to match against yet. The first says the
    comparison reached something; the second says a project has not written anything for it to
    reach; and a gate reporting nothing says neither.
 2. **A pattern with a placeholder in it is tested for what it matches.** The count stays honest

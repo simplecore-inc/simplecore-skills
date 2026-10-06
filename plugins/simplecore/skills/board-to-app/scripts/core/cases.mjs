@@ -5,7 +5,6 @@
 import { cleanProject } from './harness.mjs';
 import { cases as evidenceCases } from './evidence.mjs';
 import { cases as eyesCases } from './eyes.mjs';
-import { cases as vocabularyCases } from './vocabulary.mjs';
 import { cases as budgetCases } from './budget.mjs';
 
 /** Merge an override into the clean project without mutating it. */
@@ -29,7 +28,6 @@ export function cases(t) {
   const add = (gate, name, spec, shouldFire) => t.add(gate, name, t.project(variant(spec)), shouldFire);
   evidenceCases(t);
   eyesCases(t);
-  vocabularyCases(t);
   budgetCases(t);
 
   // configGate - the gate that makes "never guess a path" mechanical.
