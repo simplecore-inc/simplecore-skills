@@ -226,82 +226,25 @@ by itself.
 
 ## The unit of work is a chapter, and one agent takes one chapter
 
-→ `references/dispatch.md`.
+→ `references/dispatch.md`, read before writing a brief or dispatching an agent.
 
 ## The wave: parallel backends, one restart, then the screens
 
-Judging six rows per dispatch is right and it is also a lot of coordination. **One
-arrangement makes most of that judgment unnecessary**, because it separates the work
-that collides from the work that does not.
-
-```text
-wave n
-  ① backends in parallel   several agents, a database each, nobody runs a server
-  ② the barrier            all report → the coordinator restarts once and runs the integration pass
-  ③ the screens            screens need a running server — parallel where slots exist, otherwise in turn
-```
-
-**Why it holds.** Backend work is code, migrations and its own tests; nothing in it
-needs a **shared** running server, so the restart collision cannot happen in ①. An
-agent may run its own process on its own port to test against its own database -
-what it must not do is touch an instance on somebody else's slot. The one restart lives at
-②, where exactly one actor runs it. By ③ the contract is fixed, so the screens no
-longer move under each other.
-
-**A screen agent's instrument is the browser, not the port.** Where ③ runs in turn
-because there is one server, the agent taking its turn drives that server through a
-browser - taking turns is what stops two agents writing over each other's rows, and it
-is never a reason for any of them to finish without opening a screen. **A screen half
-split among several agents is still ③**: each of them needs the browser, so either they
-take turns at it or they get a profile each, and a split that hands them the building
-while keeping the looking is a split that cannot close.
-
-**The coordinator has three jobs and no others**: dispatch ①, run ② itself, dispatch
-③. Everything else is the agents'.
-
-**What still collides inside ①, and what to do about it:**
-
-| Collision | The arrangement |
-| --- | --- |
-| migrations - two agents extend the same lineage at once | read the project's scheme off `migrationDir`, then give each agent its share in the brief (below) |
-| generated API clients - each regeneration overwrites the last | nobody regenerates in ①; the coordinator regenerates once at ② |
-| registries, barrels, locale catalogues | one owner per file, named in the brief; the others report the line they would have added |
-| the git index - commits sweeping each other | separate checkouts, or agents stage nothing and the coordinator commits at ② |
-| entity order - one chapter's table references another's | the wave is ordered by entity, not only by chapter: an agent whose table references one being created in the same wave waits for that agent's migration and says so |
-| the state ledger - several agents close at once | **in a wave the coordinator writes every row at ②**; the agents report and do not touch it |
-
-**How migrations are shared out depends on how the project orders them, and there are two
-schemes.** Read which one it is off `migrationDir` before the wave is briefed - the directory
-holds the answer, because the file names are the scheme:
-
-| The project's scheme | What the brief hands out |
-| --- | --- |
-| **numbered** - a migration's position is a number in its name | a number range per agent, so two agents cannot claim the same position |
-| **a parent chain** - a migration names its predecessor and the order is the chain (Alembic, and anything shaped like it) | **one agent extends a head at a time.** There is no range to divide: two agents each adding to the same head fork it, and the next agent to run them is refused. The others report the migration they would have written, and it is applied after the barrier |
-
-**Where `migrationDir` names several lineages, the lineage is the unit** - a database with its
-own audit or vault schema is several chains, and one agent per chain extends them at once.
-
-**A parent chain refusing loudly is the arrangement working, not a worse case.** Numbers collide
-silently - two migrations at position 0042 both apply, in whichever order the runner walks them -
-so the range exists to prevent something nothing would report. A forked head stops the runner with
-both heads named, which is why the discipline for it can be as thin as "one at a time".
-
-**A wave is one chapter's backend, or several chapters' backends together** - the
-chapters in a wave are the ones whose `prerequisites` are all already closed. That
-set is readable from the state ledger, which is what makes the wave decidable rather
-than a judgment call.
-
-**The prerequisite list is derived and therefore incomplete.** It is computed from the
-frames' cross-references, which capture what the screens say about each other - not
-every entity one chapter's tables need from another's. **An agent that finds a
-dependency the list does not name stops, reports it, and does not invent the table.**
-The coordinator adds it to the owning chapter's `creates` section and regenerates, so
-the next wave is assembled from a graph that has learned.
-
-**When a wave cannot be assembled cleanly, run the chapter whole and alone.** The
-arrangement is worth it for a wave of three or more; for two it costs more
-coordination than it saves.
+**Backends are built in parallel, the coordinator restarts once at the barrier, and the screens
+come after it.** Backend work needs no shared running server, so the restart collision cannot
+happen while it runs, and by the screens the contract is fixed. **The coordinator dispatches the
+backends, runs the barrier itself, and dispatches the screens**; everything else is the agents'.
+**A screen agent's instrument is the browser**, so screens taken in turn are still opened by each
+agent that takes them. **A wave is the chapters whose prerequisites have all closed**, which the
+state ledger states, so the wave is decided rather than judged. **An agent that finds a dependency
+the prerequisite list does not name stops and reports it** rather than inventing the table: the
+list is derived from the frames' cross-references, and the graph learns only when the owning
+chapter's `creates` section names it and the set is regenerated. **A wave that cannot be
+assembled cleanly runs its chapters whole and alone, one at a time**: the arrangement pays for
+itself at three chapters or more, and for two it costs more coordination than it saves.
+→ `references/dispatch.md` § *The wave: parallel backends, one restart, then the screens*, read
+when a wave is planned - what still collides inside the backends, and how migrations are shared
+out under each scheme.
 
 ## What the chapter already knows about the future
 
@@ -322,153 +265,27 @@ and the rule for it is the same: stop, report, let the graph learn.
 
 ## Touching a chapter that already closed
 
-Work sometimes has to change something an earlier chapter built - an entity gains a
-column, a screen gains a state, a rule turns out to be wrong. **Do not reopen that
-chapter and do not edit its file.** A closed chapter is a record of what was true
-when it closed; editing it destroys the history this build exists to leave behind.
-
-Instead, in the chapter you are in now:
-
-1. **Write it under the `touchedEarlier` section** - that section is hand-authored and
-   the generator preserves it. Name what changed, in which chapter it was built, and
-   why.
-2. **Find who else uses it, in both directions.** Backwards: which closed chapters
-   read this entity or screen - their persona tests must still pass, so re-run the
-   ones that touch it. Forwards: **which chapters not yet built already depend on it** -
-   the chapter files say so, and a change made without reading them is a change the
-   later chapter will have to undo. Adjust once, now, for what is coming.
-3. **Say it in the commit**, so the history can be read as a tree: a trailer naming
-   this chapter and every chapter the change reaches.
-
-**A change to a closed chapter's code that is not written down is the one thing this
-arrangement cannot survive** - the next agent reads a chapter file that no longer
-describes the code, believes it, and builds on a fiction.
-
-### A frame the board gains later goes at the END of the closed chapter's list
-
-The one thing that cannot follow the rule above. A new frame belongs to whichever chapter
-owns its subject, and that chapter's `creates` section is the only placement declaration
-there is - so a frame added after that chapter closed has to be written into a closed
-chapter's file after all. **Append it; never insert it in subject order.**
-
-`chapterGenerator` numbers the per-frame sections from that list's order, so a frame
-slipped into the middle shifts every section after it by one. Nothing warns, because each
-renumbered section is individually correct - what breaks is everything OUTSIDE the file
-that cites a section number: a note saying 「§9 is the one that failed」, a review comment, a
-plan. One insertion moved twenty-nine
-headings at once and turned a clean tree red in a way that read as twenty-nine separate
-defects.
-
-Appended, the frame takes the next free number and every earlier section keeps its own.
-**Write the reason on the line as a forward rule** - 「a screen added to a closed chapter is
-written at the end so the earlier sections keep their numbers」 - so the next person does not
-tidy it back into subject order.
-
-**Expect the chapter to stay red on that frame, and say so.** It is placed but not built,
-not verified and not captured, and `closedChapterHasAJourneyRun` and `everyPlacedFrameIsCaptured`
-say exactly that - what to do about it is `references/evidence.md` § *When a closed chapter gains
-a screen*, and the answer there is that the chapter is not closed. That finding is true and is not the placement's fault: clearing it means
-building the screen, running its lines and capturing it. **An agent that cannot do those -
-no server, no browser, no ledger of its own - reports the finding with its cause rather
-than placing the frame somewhere it does not belong to make a gate quiet.**
-
-### A change that reaches many screens is verified by a sample and a census
-
-A shared component gains a prop, a dialog's close button gets a label, a date is formatted one way
-everywhere. **Walking forty-five screens in a browser to watch one mechanism work forty-five times
-is not verification, it is the same measurement repeated** - and it costs so much that the honest
-outcome is that nobody takes it. So the change is verified in two halves, and the second half is
-the one that is new:
-
-1. **The sample.** Every screen the change is directly about, in full - and **one** of the rest.
-   Then the remaining affected screens are done.
-2. **The census.** Count the sites that reach the mechanism and the sites that do not, **by name**.
-
-**The sample half holds because a global change has one mechanism.** If it works on one instance it
-works on all of them; they are the same code path. What varies per screen is context, and the
-screens the change is directly about are where the context differences live - which is why they are
-the ones walked in full and the further one is drawn from the rest.
-
-**What a sample cannot prove is that every site goes through the mechanism.** A dialog that
-hand-rolls its own close button is untouched by a fix to the shared dialog component: the mechanism
-is sound, that site still says the wrong thing, and no amount of sampling finds it reliably -
-sampling looks at instances of the mechanism and this is a site that has none.
-
-**The census is a search, not a browser, and it is cheap.** Run on a real change it read 26 files
-through the framework component, zero hand-rolled and zero bypassing, after which one browser check
-settled 45 call sites. **How it is searched is the project's** - the import graph, the component
-name, the helper - so it is written wherever the project keeps `auditScript`, not here.
-
-**What is here is that a census reports both sides.** 「26 reach it」 and 「26 reach it, 0 do not」
-are two different sentences, and only the second says the search looked for the negative - the same
-thing `references/checks-and-eyes.md` § *The third category comes back as a checker that did not
-run* says of every count in this skill. And where the second number is not zero, **the names are the finding**: 「3 do not reach it」
-gives nobody anything to do.
-
-So it goes in the commit, beside the two trailers that are already there, in that order - the count
-that reaches the mechanism first, the count that does not second, and its names after them:
-
-```
-Chapter: W22
-Touches: W11 W12 W17
-Census: the shared confirm dialog — 26 through, 2 outside: DocumentPurgeDialog PermitRevokeDialog
-```
-
-**The whole line is one line, and the cost of wrapping it is not the census.** The census gate reads the trailer line by line and takes the names after the colon from the same line as the second count, so a list wrapped onto the next line reads as no names at all and the commit is refused for a census that is in fact complete. Two agents met this from different directions on one afternoon: the fix each reached for was to shorten the census, and what was wrong was the wrapping. Write the names on the count's line however long it runs.
-
-**What it really costs is the chapter.** git reads a trailer block only where it is the message's last paragraph and consists entirely of trailers and lines indented under one, so **one line wrapped at column 0 makes git discard the whole block** - `Chapter:` included. `git log --format='%(trailers:key=Chapter)'` then comes back empty for a commit whose `Chapter:` line any person can read, which is the single thing the trailer exists to provide. `trailerGate` takes its answer from `%(trailers)` for that reason rather than matching `^Chapter:` itself; a line-by-line reader is green over exactly the commit whose trailer answers nobody. Two commits in one repository sat that way with every gate green, and two more had a blank line between `Chapter:` and `Touches:` - which puts `Chapter:` in a paragraph of its own, above the block, so the history kept the edges and lost the node. **Where a line genuinely has to wrap, indent what it wrapped onto**: git folds an indented continuation back onto its trailer and the block parses.
-
-`censusCountsBothSides` reads that line wherever one appears. Whether a change owed a census at
-all, and whether the sample was drawn from the right place, are readings - the *Held by eyes*
-table of `references/checks-and-eyes.md` names whose and when.
+**A closed chapter's file is not edited and the chapter is not reopened**: it records what was
+true when it closed. A change to its ground is written in the open chapter's `touchedEarlier`
+section, read against the closed chapters that use it and the unbuilt ones that already depend on
+it, and named in the commit's `Touches:` trailer. **A change to a closed chapter's code that is not
+written down is the one thing this arrangement cannot survive**: the next agent builds on a chapter
+file that no longer describes the code. **A frame the board gains later is appended to the end of
+the owning chapter's list**, so no earlier section number moves. **A change that reaches many
+screens is verified by a sample and a census**: every screen the change is about plus one other,
+in full, and a search naming the sites that reach the mechanism and the sites that do not.
+→ `references/changing-closed-chapters.md`, read before the open chapter changes anything an
+earlier chapter built.
 
 ## The dependency tree the history leaves behind
 
-Every commit carries the chapter it belongs to, and every cross-chapter change carries
-the chapters it reaches. That is enough to read the build afterwards as a tree: chapter
-by chapter in order, with an edge wherever one chapter changed another's ground.
-
-```
-Chapter: W15
-Touches: W11 W12
-```
-
-Two lines in the commit trailer, and the tree is recoverable with `git log`. Without
-them it is not recoverable at all - a diff shows which files changed, never which
-chapter's contract moved.
-
-### Whether the build may commit at all is the project's answer, given once
-
-Everything above assumes commits happen while the build runs - the trailers are read off them,
-`trailerGate` fails a commit that carries none, and `importsTravelWithTheirCommit` reads what one
-carried. **None of that reaches a build that stops to ask for permission at every close**, and
-whether it may commit is genuinely not this skill's to decide: it is a standing decision about how
-the repository is worked, and it differs per project and per user.
-
-So it is settled once and the build never raises it again:
-
-| `commitPolicy` | The build |
-| --- | --- |
-| `commit` | commits as the work lands, without asking. Pushing still waits for the user |
-| `commitAndPush` | commits as the work lands and pushes, without asking |
-| `ask` | stops before each commit and asks. Safe, and it costs the build its ability to run unattended: a chapter cannot close without somebody present, and the two gates that read commits see nothing until they land |
-
-**A repository whose own rules already answer this has answered it**, and the key does not override
-them - it is for the repository that says nothing, and for a project that would rather have the
-answer in one machine-readable place than in a paragraph somebody has to find. **With neither, the
-build asks**, because a skill installed in somebody else's repository must not take a standing
-permission nobody granted.
-
-**The policy settles permission and nothing else.** What a commit message says beyond the two
-trailers - the subject convention, whose name is on it, what must not appear in it - is the
-repository's own rule and is read there, not guessed from here.
-
-**A commit that belongs to no chapter says `Chapter: setup`.** Wiring the project up is real work
-and it is not a chapter - the config, the state ledger, the chapter set, the generator, this
-arrangement itself - so there has to be a word for it, and the gate takes any non-empty one. That
-is why the word is fixed here: a project left to invent its own invents a different one, and then
-telling a chapter's commits from the setup's is a different `git log` incantation in every
-repository, which is the single thing the trailer exists to prevent.
+**Every commit carries `Chapter:`, and every cross-chapter change carries `Touches:`**, because a
+diff shows which files changed and never which chapter's contract moved. **A commit that belongs
+to no chapter says `Chapter: setup`.** **The trailer block is the message's last paragraph, one
+trailer per line**, because one line wrapped at column 0 makes git discard the whole block.
+**Whether the build may commit at all is answered once** - by the repository's own rules, and by
+`commitPolicy` where they say nothing - and the build follows that answer without raising it again;
+with neither, it asks. → `references/commits.md`, read before the first commit of a session.
 
 ## Development, then the journeys
 
@@ -540,300 +357,43 @@ the open items.
 
 ## Parking is a last resort, and most things do not qualify
 
-**The default is to decide.** An open question is answered by designing the answer -
-**architecture first, then consistency with what the product already does, then
-stability, then performance** - and the decision is applied to the code and the board
-in the same change. Those four are an order, not a list: a fast screen built on the
-wrong shape is a rewrite, and a screen that disagrees with its neighbours is a defect
-no benchmark can see. A build whose open items keep growing is not being careful; it
-is deferring the design work, and every deferred decision makes the next chapter
-harder because it rests on nothing.
-
-**These are never reasons to park:**
-
-| "I can't decide this because…" | What to do instead |
-| --- | --- |
-| it would add screens or states | Add them. Draw the frames, then build them. Scope is not a reason to leave a product incoherent. |
-| it is complex to implement | Complexity is the work. Design it properly and build it. |
-| there are two reasonable options | Pick the one more consistent with the rest of the product, and say why. Two reasonable options is a decision, not a blocker. |
-| the requirement is not written down | Derive it from the design documents and the personas the board names. Write down what you derived. |
-| an external system's behaviour is unknown | Design so the answer does not matter - declare the capability, handle both, reject explicitly what is unsupported. A product that changes shape when a vendor's answer arrives was not designed. |
-
-**In a chapter build, three things genuinely qualify**, and they share a property - no
-amount of design makes the answer derivable:
-
-- **A decision that changes what the product is.** Somebody owns it and it is not the
-  build.
-- **A commercial or legal value nobody can derive** - a price, a contractual term, a
-  retention period a regulator sets. Where `factSources` names a tool that can settle
-  it, that is not parking, it is a lookup. Design everything around it so the value is
-  the only thing missing.
-- **A blocker in the world.** An environment that cannot reach a service, hardware
-  nobody has yet. Build and judge everything that does not depend on it, and park only
-  the part that does.
-
-Even then, park the narrowest thing. "The whole chapter is blocked" is almost always
-"one decision inside it is blocked, and nobody separated it from the rest".
-
-When something does qualify: **do not stop, and do not guess.** Add one line to the
-open items and move to the next screen - which frame · what the choice or blocker is ·
-which side looks stale. A line missing the third part sends the next session back to
-re-derive it, which is the cost parking exists to avoid.
-
-**The first part is one unbroken token** - a frame id, a chapter number, whatever that project
-names the subject with. It is what a reader's eye and the gate both key on, so a phrase there is
-read as the second part having started before the separator arrived. A decision that hangs on a
-chapter rather than on a frame is the case that tempts a phrase, and it is still one token.
-
-```markdown
-- C-07 — board draws a bulk reverse; the API reverses one record at a time.
-  Board looks stale, but the operator does 40 a day. Product decision.
-- D-02 — needs a role that does not exist in any environment yet. Blocked, not stale.
-```
-
-**Write the line before saying it is parked.** A decision announced in a message and
-never written down is one the next session cannot find, and the coordinator is the
-likeliest author of that gap: an agent reports something undecided, the reply
-acknowledges it, and both sides then believe it is recorded. Nothing is. So when an
-agent surfaces a parked decision, write it yourself in the same turn or tell the agent
-to - then say which one happened. "Recorded" is a claim about a file, and the file is
-the only place it is true.
-
-### One kind of parked line does hold a chapter, and it is not a park at all
-
-A decision deferred **because a chapter that has not been built yet would settle it** is a
-dependency written in prose, and prose is read by nobody. The case is concrete: a check that
-cannot be made to hold on the current volume, whose only fix destroys accounts the product cannot
-yet remake, because the chapter that builds the addresses for remaking them has not run.
-「we will do it after 04」 is the right decision and is also a sentence with nothing behind it.
-
-So such a line **names the chapter it blocks, on the line itself**, and the project's own gate
-refuses that chapter's close while the line stands. **The marker is opt-in**, because blocking is
-the rare case: a line without one is an ordinary park, and the default stays exactly what it
-already was - a chapter closes with its parked lines still open.
-
-> **Read it this way and it is wrong**: 「it is agreed and it is written down, so it will be
-> honoured」. Written down where? The line sits in the open items, the chapter closes on its tests,
-> and between the sentence and that close there is nothing that reads the two against each other -
-> the only thing that would have noticed is somebody re-opening a document they had no reason to
-> open.
+**The default is to decide**, and only what no design can derive is parked: narrowly, as one line
+in the open items, written there before anybody is told it is parked. **A line naming the chapter
+it blocks holds that chapter's close**; any other parked line leaves the close alone.
+→ `references/handover.md` § *Parking is a last resort, and most things do not qualify*, read before
+parking anything and before honouring a parked line. `simplecore:board-parity-walk` follows the
+same file.
 
 ## Two kinds of leaving-behind, and only one is shared
 
-Sequential agents must not re-derive what the last one learned. But left to append
-freely they produce a diary with several authors, and the next agent cannot tell a
-confirmed fact from somebody's impression.
+**Facts go to `handoverFile`, in present-state declaratives with no point of view; narrative goes
+to one log per agent under `logDir`, one line per step as it ends.** **A trap an agent worked out
+is in the handover file before that agent stands down**, because a report reaches the
+coordinator's inbox and no further. **A handover file that has grown past being read whole becomes
+an index that routes**, and every check over it follows the routing. → `references/handover.md`,
+read before writing to the handover file and before splitting one.
 
-| | Shared - facts | Not shared - narrative |
-| --- | --- | --- |
-| Where | `handoverFile` - there is exactly one | one file per agent under `logDir` |
-| What | how to stand the system up, known traps, accounts and data standing | what was built, what diverged |
-| How | present state in plain declaratives; **overwrite** when wrong | one line appended per step |
-| Read by | every agent, at the start | its own agent, and whoever is watching |
+## A quiet agent is stalled or inside something long
 
-**The handover file has no room for a point of view.** No "I found that", no "this
-time", no "it used to be". A fact that changes is corrected in place, with no history
-left behind. That is what lets any number of authors maintain it. **Do not create a
-shared narrative file** - several agents stacking their stories in one place produces
-exactly the confusion this split prevents.
-
-**A trap named only in a report is one the next agent walks into.** An agent that loses an hour
-to something and works it out has produced two things - the fix, and the knowledge - and the
-knowledge reaches the next chapter only through the handover file, never through the
-coordinator's inbox. **So the coordinator asks where it landed before that agent stands down**,
-and treats 「I told you」 as unwritten. The same hour is otherwise paid twice: a sign-in endpoint
-that takes HTTP Basic rather than a JSON body was reported to one coordinator and written
-nowhere, and the next agent hit it identically a chapter later - then, because a wrong request
-shape and a wrong password answer with the same 401 and the same sentence, concluded the seed
-was broken and built a task on that.
-
-**A log written afterwards is not a log.** Its whole value is answering "where is this
-now" while the answer is still changing; written at the end it answers a question
-nobody still has, and every hour before that was spent looking silent. Silence reads as
-a stall, and a stall gets a running agent killed - so the cost of skipping the line is
-not tidiness, it is somebody stopping work that was fine. That lands hardest on an
-agent that **dispatches** sub-work rather than building screens itself: its own file
-stays empty because it is not the one touching screens, and it is the only file anybody
-watching can read. An agent that hands out work still writes one line per step it takes -
-briefed, judged, committed - under its own name.
-
-## A handover file grows, and the answer is not another trim
-
-**Every chapter has a reason to add to it and none has a reason to take anything away.** That is
-what the file is for - an agent holding a chapter must not work out again what the last one worked
-out - so it grows by design, and it passes the size where anybody reads it whole without anything
-announcing that it did. **A fact nobody reads is worth what an absent one is worth, with the
-difference that it still looks like coverage.**
-
-**Trimming buys one round and then it grows back.** By the time the file is long, most of what is
-in it is true and cited; what is left to cut is the part that was already dead, and cutting that
-leaves the shape untouched. The shape is the problem: **one file read by every chapter means every
-agent pays for every other chapter's facts** - a chapter's backend map is dead weight to the six
-chapters that load it and never open it.
-
-**So a handover file is allowed to be an index that routes.** `handoverFile` may name a document
-holding the facts, or a **skill's `SKILL.md` whose `references/` hold them by subject** - the
-index says which file answers which question and restates none of it. A project splits when the
-reading, not the writing, is what costs: the test is whether an agent opening it reads past the
-part it needs.
-
-**Two things have to move with the split, or it is worse than not splitting.**
-
-- **The index restates nothing.** A fact in both the index and a reference is the duplication this
-  arrangement bans everywhere else, and the copy that drifts is indistinguishable from the one that
-  did not.
-- **Whatever reads the handover file has to follow the routing.** A check that reads
-  `handoverFile` as one document now reads a table of contents: it goes quiet on every fact in the
-  references and reports the same clean result it reported when it was reading facts. **That
-  silence is the failure mode**, so a gate over the handover file reads the index *and* what it
-  routes to.
-
-**Grouping is by who asks and when, never by where the fact came from.** 「what the migration
-found」 is an origin; 「how a screen reaches its address」 is a question somebody has. Origin
-groupings read fine to whoever wrote them and send everybody else through three files.
-
-### Splitting one, in order
-
-**Group from the file's own section list, not from a template.** Read the headings and ask what
-question each answers; the groups a project needs are its own, and a borrowed set of topic names
-puts a section in the file whose name is closest rather than the file its reader opens.
-
-1. **Move the prose, do not rewrite it.** Each section keeps its own words; what changes is which
-   file it sits in. A split that rewrites is a split nobody can check.
-2. **Count in and count out, and check it by machine.** Re-split both sides, normalise whitespace,
-   and compare every section body - 「61 in, 61 out」 is only worth saying when something compared
-   them. A section that quietly went nowhere leaves no mark afterwards, so the sections are
-   counted in and out before the old file is deleted.
-3. **The index states no fact.** It says which file answers which question, and nothing a reference
-   also says.
-4. **Point `handoverFile` at the index.** That one line is what makes the build use it - the
-   builder is already told to read the handover file, so nothing new has to be written to route it.
-5. **Repoint everything that linked into the old file**, and change the project's own document
-   index and instruction file in the same commit. The old file's deletion and the new files land
-   together, so anything dropped shows in the diff.
-6. **Widen every check that read the handover file** - the skill's own point-of-view sweep does
-   this already; a project's gates over that file are the project's to widen.
-7. **Bring the new tree inside the checks that scope by path.** A locale audit, a glossary check, a
-   prose linter - each reads a declared set of paths, and a tree that has just been created is in
-   none of them. **The references would stand there checked by nothing**, reporting the same clean
-   result as a tree that passes. Declare the new path, then plant a violation and confirm it is
-   reported before removing it.
-
-**Step 7 is the one that gets skipped**, because everything else fails loudly and this fails
-silently: the split lands, every gate is green, and the checks that used to hold the file now hold
-nothing.
-
-## An agent that ends, and an agent that only paused
-
-An agent that has stopped moving does not say so. It announces that it is idle, which
-reads like availability and is indistinguishable from the announcement of an agent
-between two bursts of real work. A coordinator that answers each of those with another
-instruction ends up with a queue nobody is consuming and a build that has not moved.
-
-**Judge by the artifact, never by the signal.** Every dispatched agent writes to a
-file, and its first line says how far it got. That line is the only progress report
-that cannot lie.
-
-**A quiet agent is either stalled or inside something long, and the two look
-identical from outside.** Killing the second kind throws away everything it had
-worked out; waiting on the first kind costs the build a chapter. So the difference is
-established rather than guessed, from what moves while real work happens:
-
-| Read | Working, keep waiting | Stalled, replace it |
-| --- | --- | --- |
-| its step reports | still arriving, each naming a path | stopped arriving, or arriving with no path in them |
-| its artifact - the log's last line | growing; the line names a step that plausibly takes this long - a full gate run, a migration over real data, a suite, a capture sweep | unchanged since the previous check, or the line repeats |
-| the tree and the index | files changing, commits landing, a process of its own still running | nothing has moved |
-| what it says it is doing | it can name the command it is inside and what it is waiting for | it announces availability, or restates its assignment |
-
-**The first two rows together are the test**, and they are why step reports exist:
-quiet **and** a still artifact is a stall, while quiet with a growing artifact is
-something long and is left alone. A long gate produces no commits either, so the
-artifact is what separates it from a stall - and an agent that cannot say what it is
-waiting for is not waiting.
-
-**The threshold is two checks.** When two checks in a row find no step report and no
-change to the artifact - the first made only once the artifact has had time to move, and
-answered by asking rather than by reassigning (`references/dispatch.md`, item 7) - treat
-it as stalled. **A still artifact alone is not a stall**: an agent replaced on a still
-artifact alone was usually inside something long, and everything it had worked out goes
-with it. An idle announcement settles nothing in either direction, because it races the
-work. Then, in one turn:
-
-1. **Tell it to stop** and to stop writing the artifact. Say why, and ask it to send
-   anything unsaved as a message rather than writing it.
-2. **Dispatch a replacement**, starting from the artifact's progress line. This is what
-   the line is for - a replacement resumes at the sentence the file already wrote.
-3. **Never leave both alive over one artifact.** Two writers on one file is the
-   collision this skill spends its length preventing, and a stalled agent that wakes up
-   is still a writer.
-
-**Do not queue more work at a silent agent.** Another instruction to a session that
-consumed neither of the last two is not persistence; it is the coordinator refusing to
-read the artifact.
-
-**A session that ends for an outside reason - a usage limit, a dropped connection - is read,
-waited on or stopped by the rules in `references/harness.md` § *An agent that ends, and an
-agent that only paused*.**
+**Judge by the artifact, never by the signal**: an idle announcement races the work and settles
+nothing. **Two checks in a row with no step report and no change to the artifact are a stall; a
+still artifact alone is not**, because an agent replaced on a still artifact was usually inside
+something long. **Then stop it, dispatch a replacement from the artifact's progress line, and never
+leave both alive over one artifact. Do not queue more work at a silent agent.**
+→ `references/dispatch.md` § *A quiet agent is stalled or inside something long*, read at each
+check on a quiet agent. A session that ended for an outside reason is `references/harness.md`
+§ *An agent that ends, and an agent that only paused*.
 
 ## Letting a person watch, without paying for it
 
-An agent returns conclusions, which leaves a question: where does everything else go,
-and how does a person see progress without reading it?
-
-**Into files whose paths are the report.** Builders write their run log to `logDir` and
-their captures to `capturesDir`, and hand back paths. The coordinator - and the user -
-can open one, and neither pays for it by default.
-
-| Watch | Answers |
-| --- | --- |
-| `logDir`, filtered to the step words | *is it moving, and where is it* |
-| `capturesDir`, for new image files | *what does the screen actually look like* |
-
-**`costLog` is the third of those files and answers a different question - what the arrangement
-cost** - with the wall-clock span and the consumption of each chapter appended as it closes,
-measured against a start stamped when that chapter's first agent went out →
-`references/dispatch.md` § *The dispatch is planned, written down, and then made*. **What earns the file is that it separates a run that
-bought something from one that bought nothing.** A capture run taken through the wrong window is
-spend like any other and is taken again from the start; a record that carries only the second
-makes the arrangement's cost look like the sum of its useful work, and the waste leaves no trace
-in any total. One such run cost 157,540 tokens and produced not one usable picture, which is a
-figure nothing that omitted it could ever have shown - and it is the figure that argues for the
-pre-flight a capture run makes before its first picture.
-
-**Arm both watches in the same turn the agent is dispatched**, not afterwards. A
-coordinator is busy between events and two turns is an hour, so "I will check the log"
-is the failure, every time.
-
-**A watch dies quietly, and a watch that was never alive is quieter still** - both
-produce exactly what a working watch produces on a quiet minute. So prove every watch
-the moment you arm it, in the same turn: make it fire once, then watch it go silent.
-Read silence as suspect rather than as reassurance, and re-arm at once →
-`references/harness.md` § A watch is a check.
-
-Saving context and hiding the work are different things. Three ways the build stays
-visible while the coordinating context stays empty:
-
-1. **The agent's own work streams to the client.** What it clicked and captured can be
-   expanded in the conversation. The coordinator never receives it, so it costs nothing.
-2. **Captures go to files; the coordinator forwards them the moment they appear**, by
-   path and **without opening the file**. Forward them as they are shot, not at the end
-   of the chapter - a person following a build wants to see the screen while it is
-   still the subject. Say which frame and which locale in one line, and send the
-   language a person reads rather than the pseudo-locale, which is an instrument →
-   `references/driving-the-product.md`.
-3. **Progress goes into the builder's own log, one line per step** - a line per
-   *screen* is a heartbeat every thirty minutes, which from outside is
-   indistinguishable from an agent that has stalled.
-
-**Never put an image in a report.** A few of those and the session is dry. Captures and
-logs are byproducts - keep them out of the repository.
-
-**A screen that changed is shown, not described.** "The tab strip is in place and the
-activity pane fills the rest" is equally true of a screen that works and one that draws
-its rows in the wrong order, off the edge, or in the wrong language. The three
-different reasons a screen gets photographed, and why none substitutes for another →
-`references/frame-artefacts.md`.
+**Progress goes into files whose paths are the report** - run logs under `logDir`, captures under
+`capturesDir`, what each chapter cost under `costLog` - so the coordinator and the user can open
+one and neither pays for it by default. **Arm both watches in the turn the agent is dispatched,
+and prove each fires before trusting its silence**: a watch that died, or never lived, produces
+what a working one produces on a quiet minute. **Forward captures by path, unopened, as they are
+shot; never put an image in a report; show a changed screen rather than describing it.**
+→ `references/dispatch.md` § *Letting a person watch, without paying for it*, read in the turn an
+agent is dispatched.
 
 ## What a chapter owes besides working code
 
@@ -913,77 +473,23 @@ opens the ledger, reads the first open chapter and dispatches has already answer
 
 ### Design the answer; scope is not a reason to take the worse one
 
-An open question is designed rather than asked, in the order *Parking is a last resort* sets
-out - architecture, consistency, stability, performance.
-
-**A wider refactor is not a reason to decline the better structure.** The cost is said out loud -
-which chapters it reaches, which persona lines have to be re-run, what has to be regenerated - and
-then the right shape is built. What is never done is quietly taking the smaller worse option and
-reporting it as the choice: a screen built on the wrong shape is a rewrite that arrives three
-chapters later, when it costs everything built on top of it as well.
-
-**Design against the code that will implement it, not against the documents alone.** The board and
-the design document agree with each other far more readily than either agrees with the branches
-already standing in the server, so a contract settled from the two of them is settled from a
-picture of the product rather than from the product. Read what will hold the contract - the
-branches it already takes, the states it distinguishes, what it does when the value is absent -
-and design against that. A contract designed from the documents alone is wrong in exactly one
-place: where the code carries a third case neither document drew.
-
-Where the wide change genuinely belongs to somebody else's decision, that is the first of the
-questions reserved above - ask it as a decision with its cost attached, not as a preference.
+**A wider refactor is not a reason to decline the better structure**: say its cost, then build the
+right shape, because the smaller worse option comes back three chapters later as a rewrite of
+everything built on it. **Design against the code that will implement it, not against the
+documents alone**: the board and the design document agree with each other more readily than
+either agrees with the branches already in the server. → `references/judging-frames.md`
+§ *Design the answer; scope is not a reason to take the worse one*.
 
 ## The documents, the board and the code say the same thing
 
-Three artifacts describe one product: the design documents decide behaviour, the board renders
-that as screens and states and flow, the code implements it. **A change updates all three in the
-same change.** Two out of three is the state that reads as agreement and is not - the reader who
-opens the odd one out has no way to tell it is stale.
-
-| The change starts in | What moves with it |
-| --- | --- |
-| a design document | the frames that draw the behaviour, then the screens built from them |
-| the board | the design document that decided it, then the code - and the chapter is regenerated |
-| the code, because building found the board wrong | the frame first, then the document behind it; never the code alone |
-
-**Where they genuinely cannot agree, the disagreement is written down** - in the open items or the
-project's own tracking document, naming which two disagree, which side is stale, and what has to
-happen for them to meet. An undocumented gap is indistinguishable from an oversight, and the next
-session resolves it by guessing which artifact to believe.
-
-**Never resolve a disagreement by editing whichever is cheapest to edit.** The board is the
-contract for what a screen holds; the documents are the contract for why. Cheapness is not
-authority.
-
-### What is authority - date them, then rank them
-
-**Saying what is not authority and stopping there is what produces two lanes fixing each other.**
-Every disagreement then gets adjudicated from scratch, so the same pair comes out one way on
-Tuesday and the other way on Wednesday, and whoever spoke last wins. One chapter had two judges
-return opposite verdicts on the same picture, and a label fixed in one layer put back by the
-generator that owns it - neither agent disobeyed anything.
-
-**Date both sides first, because most disagreements are not disagreements.** `git log -S` on each
-sentence says which was written when, and a side written before the other, on a subject the older
-side has a document behind it for, is not a peer - it is the stale one. Four commands settle more
-of these than any ranking does.
-
-**Where dating leaves them level, this order decides, and no reading is taken twice:**
-
-| | Beats everything below it because |
-| --- | --- |
-| 1. a source `factSources` names - a statute, a price list, a published table | nothing in the repository can make that source say something else |
-| 2. the design document | it is the record of a decision somebody made, and the rest are renderings of it |
-| 3. the board | it is the contract for what a screen holds, and it was drawn to be held against code |
-| 4. the code | it is the newest and the least reviewed, so it is evidence of what happens rather than of what should |
-| 5. a capture, a transcription, a report | it describes one boot of one build, and it is right only until the next one |
-
-**The bottom row is the one that surprises people.** A picture feels like the hardest evidence in
-the room, and it is the softest claim about the contract: it says what one screen did once. It
-settles nothing against the board, and a finding that reads 「the board is wrong because the screen
-does this」 has the ladder upside down - the board is wrong when the *design document* says so.
-
-**Where a rung genuinely has to move, the change starts at the rung above it and comes down.**
+**A change updates the design documents, the board and the code in the same change**, because two
+out of three reads as agreement and is not. **Where they cannot agree, the disagreement is written
+down** with which side is stale, and **it is never resolved by editing whichever is cheapest**:
+cheapness is not authority. **Date both sides before ranking them**, since most disagreements are
+one stale side; where dating leaves them level, a source `factSources` names beats the design
+document, which beats the board, which beats the code, which beats a capture.
+→ `references/judging-frames.md` § *The documents, the board and the code say the same thing*,
+read before resolving a disagreement between them.
 
 ## Every rule here is held by a machine or marked as needing eyes
 
@@ -991,52 +497,14 @@ does this」 has the ladder upside down - the board is wrong when the *design do
 
 ## What is learned goes back into the instructions, in the same change
 
-A defect fixed once and walked past grows back next session, so the finding is worth more than
-the fix. **Never end with only the work corrected.**
-
-**And this rule is the one most likely to destroy the thing it protects, so it comes with a
-ceiling.** Written without one it says only 「add」, and every session adds; one repository reached
-about 1.1 million characters of reachable instruction that way - more than a context window, so no
-agent could hold the rules it was judged by, and every repeat it suffered had a paragraph
-forbidding it that nobody had read. **`instructionBudget` is what stops that**: a ceiling per file,
-declared at what the file measures the day it arrives, so nothing is red on arrival and the next
-append is the one that fails. Adding then means trading, and `instructionFitsItsBudget` says so at
-the moment of the append rather than a year later.
-
-**A rule that gets a check gives up its paragraph in the same change.** The reasoning belongs in
-the check's own message, where a reader meets it at the moment it fires; what stays behind is one
-sentence naming the check. Carrying both is how machine coverage and prose grow together, and
-`aGateIsTaughtOnce` reports it. **The instinct to keep the essay 「so people understand why」 is
-exactly the instinct to guard against** - nobody reads a file looking for a rule they do not yet
-know they are breaking, and everybody reads a message that just fired at them.
-
-| The finding is | Where it goes |
-| --- | --- |
-| a defect type a regex or a tree walk can judge | a detection rule in `auditScript`, run across the whole tree, and what it finds is fixed now |
-| something about how the build is coordinated - a brief that misled, a report that never arrived, a rule with a hole | this skill, or the brief every agent of that kind receives |
-| a convention or trap that needs eyes | this skill or the project's instruction file, with the misreading printed beside the rule |
-| a path, a list, or a policy true only of this project | the project's config or instructions - never this skill |
-
-Three things make it stick, and skipping any one of them means nothing happened:
-
-1. **In the same change as the work**, not deferred to a cleanup that never comes.
-2. **Proved to fire.** A gate is run against the broken form and then the fixed form
-   (`bta.mjs gates` does exactly this); a written rule names the case it now catches. A rule
-   added without that is a claim, and it converts *nobody has checked* into *something is
-   checking* - which is much harder to doubt.
-3. **Said out loud.** These files live outside the repository being built, so name which file
-   changed; otherwise nobody sees the change that was the point.
-
-**Write it into the checkout, not into the installed copy.** A skill reached through a plugin
-directory is replaced wholesale by the next install of that plugin, so a finding written there is
-deleted by a command nobody connects to it - and it fails the way this whole section exists to
-prevent, silently and later. Where the skill is installed rather than checked out, **say the
-finding and where it belongs instead of writing it into a copy that will not survive**; nobody can
-be told afterwards what a reinstall removed. Committing in that checkout follows its own rules, not
-`commitPolicy`, which is about the repository being built.
-
-**"I will be careful next time" is not a fix.** Memory ends with the session, and the same
-misreading grows back. If no sentence and no gate changed, the finding was not recorded.
+**Never end with only the work corrected**: a defect fixed once and walked past grows back next
+session. **The finding lands in the same change, proved to fire, and named out loud** - a rule in
+`auditScript`, this skill or the brief for something about coordination, the project's own config
+for what is true only there. **`instructionBudget` puts a ceiling on every instruction file**, so
+adding a rule means trading one, and **a rule that gets a check gives up its paragraph to the
+check's message**. **Write it into the checkout, never into an installed copy**, which the next
+install deletes. → `references/checks-and-eyes.md` § *What is learned goes back into the
+instructions, in the same change*, read whenever a finding is about to be recorded.
 
 ## Closing a chapter
 
@@ -1070,7 +538,6 @@ open chapter:
 leaves it open; the other word is the owner's to spend, and an agent writing it because a round got
 long has forged the one signature in the ledger that is not its own.
 
-
 A chapter closes when every screen in it works, every journey passes, and the findings of one
 look are fixed rather than listed. Before saying so:
 
@@ -1083,94 +550,58 @@ look are fixed rather than listed. Before saying so:
    what the look finds in one round** → `references/evidence.md` § *One look per screen-state,
    and one round*. A third round is a new chapter's work, or the owner's decision to end this
    one → *The product's owner can end a chapter*.
-3. **Sweep each defect type across the chapter's code once**, by search, and fix what it finds;
+3. **In a simplix-react project, the journey run is the browser pass for the chapter's screens, and
+   the close-out invokes `simplix:frontend-e2e` for its censuses.** The journeys already drove every
+   screen the chapter places through a real browser as its personas, so a second walk of the same
+   screens repeats that measurement; what the journeys do not take is the e2e skill's mandatory
+   censuses and its cross-screen agreement censuses, run over the chapter's screens and fixed in the
+   same round as the look.
+4. **Sweep each defect type across the chapter's code once**, by search, and fix what it finds;
    report the sweep per type, including 「0 others」. A type a machine can see becomes a rule in
    `auditScript` in the same change, run across the whole tree.
-4. **Audit the chapter's code with a read-only agent while nothing else is running**, and act on
+5. **Audit the chapter's code with a read-only agent while nothing else is running**, and act on
    every finding in the same session: the same logic in two places, a file whose parts stopped
    belonging together, one idea under two names, a convention nothing holds. Each finding leaves as
    a refactor done now or a check written now - a check is code in `auditScript` or a helper the
    journey tests call, never a sentence somebody re-reads - and a finding worth neither is closed
    with its reason rather than deferred.
-5. **Run every command in `gates`**, all of them, green, each read by its exit status rather than by
+6. **Run every command in `gates`**, all of them, green, each read by its exit status rather than by
    the tail of its log → `references/harness.md`. `bta.mjs check` is one of them, run with
    `--range <the commit the chapter started from>..HEAD` so the gates that read commits read
    every commit the chapter made rather than HEAD alone, and `bta.mjs gates` runs whenever a gate
    was added or changed. **This run happens after the builder has
    returned, never beside it**; a killed run (`143`) is neither red nor green and is run again from
    clean, with the residue cleared and said so.
-6. **Sync the board in the same change** where the product was right and the board was stale -
+7. **Sync the board in the same change** where the product was right and the board was stale -
    the structural layer only, and the wording the product deliberately chose →
    `references/judging-frames.md`.
-7. **Fold what the chapter learned back into the graph, then regenerate.** A dependency the
+8. **Fold what the chapter learned back into the graph, then regenerate.** A dependency the
    prerequisite list did not name, an entity that turned out to belong elsewhere, a table the
    chapter had to create - each goes into the owning chapter's `entities` or `creates` section, and
    `chapterGenerator` runs before the chapter is called closed.
-8. **Declare what this chapter brought into existence.** A key `deferredKeys` promised to this
+9. **Declare what this chapter brought into existence.** A key `deferredKeys` promised to this
    chapter is declared now and its promise deleted in the same change.
-9. **Write the chapter's row in the state ledger**, and say what closed and what the next chapter
-   is. The closed word is the coordinator's to write, here and nowhere earlier: the builder reports
-   the chapter ready to close and writes no closed word. **Do not edit the chapter file to mark it
-   done** - its state is the system's state.
+10. **Write the chapter's row in the state ledger**, and say what closed and what the next chapter
+    is. The closed word is the coordinator's to write, here and nowhere earlier: the builder reports
+    the chapter ready to close and writes no closed word. **Do not edit the chapter file to mark it
+    done** - its state is the system's state.
 
 A chapter closes with its parked lines still open if nobody could settle them. Say which they are;
 do not close them by choosing for the user. **A line naming this chapter as the one it blocks is
 the exception** - that one is settled, or explicitly released on the line, before the chapter
-closes → *One kind of parked line does hold a chapter*.
+closes → `references/handover.md` § *One kind of parked line does hold a chapter, and it is not a
+park at all*.
 
 ## Waste does not announce itself - the check that passed is the one to suspect
 
-**Almost every hour this arrangement wastes is spent on a proxy.** Something was checked, the check
-passed, and what the check was for was never looked at. Nobody notices, because a passing check and
-a sound thing are the same green.
-
-**The test, and it takes one sentence: what would have to be true for this check to pass while the
-thing it protects is broken?** If the answer comes easily, the check is a proxy. One chapter's
-round produced these, and every one answers instantly:
-
-| The check | Passes while |
-| --- | --- |
-| the seed produces the figure the board draws | the figure is one a wireframe author typed and describes nothing |
-| the empty-data fixture returned a response | it returned a shape the server has no way to return |
-| the generated package typechecks | every module importing it is broken |
-| the capture came out at a width | it is not the declared width, and the chapter now holds two instruments |
-| no findings in this file | three sit under a per-file threshold |
-| the rule's examples pass | its stated boundary is in the prose and not in the pattern |
-| the judge read the board | it read one of the two frames that draw the screen |
-| the picture is named for its frame | it is the sign-in screen at the right width in the right container |
-
-**The proxy is never obviously wrong when it is written.** Each of those was a reasonable thing to
-check; what makes it a proxy is that something else - a sketch, a fixture, a package, a threshold -
-stands between the check and the subject, and the check cannot see past it.
-
-### The question a chapter closes with
-
-**Before the ledger row is written, ask what this round did twice.**
-
-> Which work was undone, redone, or withdrawn - and what would have had to be different for it
-> never to have been done at all?
-
-The answer names a proxy nearly every time, and it is the cheapest finding available because the
-evidence is already in the round's own messages. **A round that redid nothing has not proved it
-wastes nothing** - it has usually not looked.
-
-**Three answers are not proxies and should not be recorded as waste.** Work redone because the
-product genuinely changed underneath it; a finding withdrawn because a judge read the evidence and
-was right to; and an investigation that came back empty on a real question. Those are the
-arrangement working.
-
-**What is waste, and each of these happened**: a lane sent to a screen a second lane was already
-shooting. An observation about a file another lane was mid-edit in, relayed as a fact and dated
-nowhere. A brief that named one artifact where two govern. A demand asking for a picture the
-existing captures already contain. **The common half is that the coordinator held both sides and
-compared neither.**
-
-### Fix the mechanism, not the instance
-
-**A waste found and fixed once is a waste that returns next chapter.** So the finding lands where
-the proxy lives - the check's own definition, the brief's template, the script that inherited what
-it should have set - and the report says which of the three it was. A round that lists what it
-wasted and changes nothing has produced a confession rather than a repair.
+**Almost every hour this arrangement wastes is spent on a proxy**: something was checked, the check
+passed, and what it was for was never looked at. **Ask of every check what would have to be true
+for it to pass while the thing it protects is broken**; an answer that comes easily makes it a
+proxy. **Before the ledger row is written, ask what the round did twice**, and land the answer
+where the proxy lives - the check's definition, the brief's template, the script that inherited
+it - rather than fixing the instance. → `references/checks-and-eyes.md` § *Waste does not announce
+itself - the check that passed is the one to suspect*, read before the ledger row that closes a
+chapter.
 
 ## What the coordinator reports
 
@@ -1179,21 +610,21 @@ left, and git holds what happened. Aggregate the builders' returns into this sha
 consecutive sessions are comparable:
 
 ```text
-CHAPTER: <id and name> — closed / still open
+CHAPTER: <id and name> - closed / still open
 BUILT: <one line per screen: frame id, what now exists>
 JOURNEYS: <per persona: journeys run, journeys that failed and what was done>
 LOOKED AT: <frame ids the coordinator opened and looked at / frame ids nobody opened>
 FIXED: <grouped by defect type, one line per instance, and which round found it>
 CROSS-SWEEP: <per defect type, other instances found and fixed, including "0 others">
-CHAPTER AUDIT: <what the read-only pass found — then every finding under one of:>
+CHAPTER AUDIT: <what the read-only pass found - then every finding under one of:>
   REFACTORED: <the code was wrong; what changed>
   NOW CHECKED: <the code was right by habit; which check now holds it>
-  CLOSED:     <neither, with the reason — never "later">
+  CLOSED:     <neither, with the reason - never "later">
 RULES ADDED: <defect type → where the detection rule now lives, or "none">
-BOARD SYNCED: <frames corrected and the chapter regenerated, or "nothing — the code was wrong every time">
+BOARD SYNCED: <frames corrected and the chapter regenerated, or "nothing - the code was wrong every time">
 GRAPH: <what the chapter taught the prerequisite graph, and that it was regenerated>
 STILL TRUE: <standing prose an agent read against what it guards and did not have to
-             change — which document, what it stands over, or "none — nothing was re-read">
+             change - which document, what it stands over, or "none - nothing was re-read">
 PARKED, STILL OPEN: <one line each, with what decision it needs and from whom>
 VERIFICATION: <each gate and its result>
 LEDGER: <the row written, and the next chapter>
@@ -1221,10 +652,9 @@ agent is dispatched.** A builder's return lands in one place - the coordinator's
 is the one place in the arrangement guaranteed not to survive: a summary keeps the shape of a
 report and drops its items, and the agent that produced them is gone. So a defect the return names
 in another chapter's ground, a surface it says it could not verify, a fix it deferred - each goes
-to the ledger or the open items **on reading the report**, not at the end of the round. Measured:
-a report naming seven pre-existing defects in other chapters' ground was read, acknowledged, and
-left in context; what survived to the next window was the number seven and not one of the seven,
-and recovering them means running that cluster again.
+to the ledger or the open items **on reading the report**, not at the end of the round: a summary
+keeps the count and drops the items → `references/dispatch.md` § *What a return names survives only
+in a file*.
 
 **A count is what survives, and a count reads as a record while being none.** 「seven defects in
 other chapters' ground」 tells the chapter that owns them nothing it can act on, which is why the
@@ -1244,93 +674,15 @@ written.
 **A reading that contradicts a report is a clock before it is a defect** - take the reading out of a
 commit, never off the working tree → `references/harness.md`.
 
-**A brief owes the same reading, and owes it harder.** Whoever holds a file has been working since
-it was last opened, so an instruction written off an hours-old copy directs work against reasoning
-the file already answers - and it arrives with the authority of an instruction rather than as a
-claim the reader knows to check. Open the file at the moment the brief is written, not at the
-moment you last had a reason to.
-
-**Brief against the command, never against the reading it produced.** A measurement handed over as
-an expectation - 「that gate is red and it is not yours」, 「the suite has two known failures」, 「the
-server is already up」 - is true when written and silently false afterwards, and it is worse than
-saying nothing: **it disarms the one check the agent would otherwise have made.** An agent told in
-advance that a gate is red reports a genuinely new failure as the known one, in good faith, having
-run the command and read its output correctly. Hand over the command and let the agent take its own
-reading; where a state genuinely has to travel, mark it as a reading with its age on it, and say
-which command re-takes it.
-
-**Withdraw such a sentence the moment it goes stale, in its own message.** A correction folded into
-the next instruction arrives as background and is read as background. This is not hypothetical: one
-brief here named a red gate as somebody else's problem, that session fixed it four minutes later,
-and the agent went on holding a briefing that told it to discount the one signal that would have
-caught its own breakage.
-
-**The same failure has a second half, and it is the one that feels like diligence.** A stale
-measurement is a claim whose verification has expired; **a diagnosis inferred from reading is a
-claim that never had one.** Both travel with the authority of a finding, and the second is easier
-to send because working it out from the source feels like the careful version of guessing. It is
-not - running it is. Where a reading is cheap, take it before the sentence leaves; a gate whose
-message says it could not read the board is one command away from telling you exactly why, and two
-lines of source will hand you a mechanism that is plausible, specific, and wrong.
-
-**A file-name search answers which files contain a word, never which files do the thing.** `grep -l`
-and its cousins match a comment that denies the behaviour exactly as they match the behaviour, so a
-brief built from a hit list states as fact what the file may say the opposite of - 「that component
-already draws on canvas」, from a file whose comment reads *drawn on a canvas-free grid of spans*.
-It is the cheapest possible mistake to make and it arrives with an instruction's authority: the
-agent builds on it, and the correction costs a round trip. **Open the hit before writing it into a
-brief**, or hand over the search and let the agent read it.
-
-**Send it anyway when the reading is not yours to take**, and mark which half it is. 「the anchor
-is doubled」 and 「it fails here, and here are the two lines I would look at」 cost the reader very
-differently when the mechanism turns out wrong: the first has to be disproved, the second is
-already an invitation. A diagnosis into somebody else's file is worth sending unverified **and is
-worth labelling as unverified** - what is never worth it is the confident mechanism, because the
-reader spends their first command confirming your story rather than reading their own.
-
-**A sentence in a report becomes a sentence in a document, and no gate reads a report.** The
-coordinator writes the ledger and the tracking documents out of what agents send up, so an agent's
-phrasing arrives there unaltered - which makes the report the one surface with no check behind it.
-Two things follow, and both belong to whoever writes the sentence rather than to whoever copies it:
-
-- **Write a defect so its direction survives being copied.** Name what is missing, not the order of
-  two verbs: 「the link is written without being read first」 cannot invert, while 「reads before
-  writing」 can - and inverted it names the correct behaviour instead of the fault, and reads
-  perfectly either way.
-- **A phrase worth quoting is written to the project's prose standard in the report**, not cleaned
-  up later in the file it lands in. Whoever copies a report's sentence into a document owns what it
-  now says, and runs that project's prose checks over the result.
-
-**The hop that defeats both is a sentence drafted for somebody else's file**, and it has three
-hands rather than two. An agent writes a paragraph for a document it does not own, a coordinator
-relays it, a third party pastes it in - and **not one of them is writing a file at the moment they
-handle it.** The rule above addresses the first and the last; the relay is where it falls through.
-
-**The rule that closes all three is that the check belongs to the WRITE, not to the authorship.**
-Whoever's edit puts the prose into a file runs the project's checks over it, whatever its
-provenance. Say it that way rather than by naming roles, because the temptation is different at
-each hand and each one feels like a reason:
-
-| Hand | What it tells itself |
-| --- | --- |
-| the drafter | it is going into somebody else's file, so it is a proposal rather than a document |
-| the relayer | it is text in a message, and a message is not a file |
-| **the writer** | **it arrived looking reviewed, from a careful source, so it read as already checked** |
-
-**The third is the one to put in front of people**, because it is the only hand where somebody
-actually ran a command and was reassured by it - a document checker came back clean while the
-sentence rule that would have refused the paragraph was never run. **A pass is only a pass for the
-question it asked.**
-
-This is not hypothetical: a paragraph drafted in one agent's report, relayed verbatim, and pasted
-by a third session broke two rules of that project's prose standard and turned a gate red that had
-been green when the work started.
-
-**And verifying the fix has its own version of the same trap.** A prose checker that enumerates
-through version control never sees a scratch file outside the repository, so it returns zero for a
-draft it never opened - **the same character as a pass**, and 「I checked it first」 becomes true
-and worthless. The procedure, not the anecdote: put the draft inside the tree, `git add -N` so the
-enumeration reaches it, run the check, read the count, remove it.
+**A brief is written against the file as it stands and against the command, never against a
+reading.** Open the file at the moment the brief is written; hand over the command rather than the
+reading it produced, because a reading handed over as an expectation disarms the check the agent
+would otherwise make; withdraw a stale sentence in a message of its own; and mark a diagnosis that
+was inferred rather than run as unverified. **The check belongs to the write, not to the
+authorship**: whoever's edit puts prose into a file runs the project's checks over it, whatever
+its provenance. → `references/dispatch.md` § *A brief owes the reading the file gives at the moment
+it is written*, read before writing a brief, and `references/dispatch.md` § *A sentence in a report
+becomes a sentence in a document*, read before copying a report's sentence into a document.
 
 ## Generating and regenerating the chapters
 
@@ -1374,15 +726,18 @@ with the project** - it reads that project's board layout, so it does not belong
 
 Each of these is long, and only one of them is needed at a time - which is why they sit
 beside this document rather than inside it. Read the one the moment calls for rather than
-rediscovering it:
+rediscovering it. Commands in this skill's references are written from the plugin root, which is ${CLAUDE_PLUGIN_ROOT}.
 
 | When | Read |
 | --- | --- |
-| you are writing a brief, dispatching an agent, deciding what may run alongside, or judging whether one has stalled | `references/dispatch.md` - what a brief names and what it must never demand, the resource slots, the git index as a shared resource, what a report owes |
-| you are adding a rule anywhere, or asking whether a rule is actually being held | `references/checks-and-eyes.md` - the two tables of what no machine can judge, who takes each reading and when, and proving a rule in both directions |
+| you are writing a brief, dispatching an agent, planning a wave, deciding what may run alongside, arming a watch, or judging whether one has stalled | `references/dispatch.md` - what a brief names and what it must never demand, the resource slots, the wave, the git index as a shared resource, the stall test, the watches, what a report owes |
+| the open chapter has to change something an earlier chapter built, or one change reaches many screens | `references/changing-closed-chapters.md` - the `touchedEarlier` record, a frame appended to a closed chapter, the sample and the census |
+| you are about to commit, or writing a trailer | `references/commits.md` - `Chapter:` and `Touches:`, the trailer block git can read, and `commitPolicy` |
+| you are parking a decision, honouring a parked line, writing to the handover file, or splitting one | `references/handover.md` - the parking rule and the handover rules, shared with `simplecore:board-parity-walk` |
+| you are adding a rule anywhere, recording what a round learned, or asking whether a rule is actually being held | `references/checks-and-eyes.md` - the register of what a gate holds and the table of what needs eyes, who takes each reading and when, proving a rule in both directions, what is learned and where it lands, and waste |
 | you are wiring a project, or a key you need is not declared | `references/config.md` - every key, what it buys, and what its absence costs |
 | a rule needs a check, or a project needs its own gates wired in | `references/checks.md` - where a gate belongs, the context it reads, and what makes one trustworthy |
-| a screen disagrees with its frame and you are deciding which is wrong | `references/judging-frames.md` - the lenses, the locale and layout rules, the anchor every finding needs |
+| a screen disagrees with its frame and you are deciding which is wrong, or the documents, the board and the code disagree | `references/judging-frames.md` - the lenses, the locale and layout rules, the anchor every finding needs, designing the answer, and which artifact is authority |
 | a screen owes something besides working code and you are listing what | `references/frame-artefacts.md` - the standing checks a screen owes (`frameDeliverables`), what a capture owes, and the reasons a screen is photographed |
 | you are reading a chapter's run record, deciding what a journey test may assert, or a closed chapter gained a screen | `references/evidence.md` - the run record, the captures it shows, the one look, and what happens when a closed chapter gains a frame |
 | you are about to drive the product - browser, simulator, device | `references/driving-the-product.md`, which also says where a low-level command beats the tool |

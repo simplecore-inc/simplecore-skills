@@ -217,3 +217,24 @@ things to watch when writing those rules: **aim at the metaphor, not the word**,
 ordinary verb is innocent and only the pairing is wrong, and **record the exceptions you
 deliberately allow** next to the rule, or the next person removes the rule instead of the
 exception.
+
+## The cases behind the walk's rules
+
+What the rules above, the main document's and the `simplecore:board-walker` agent's cost when they
+were missed. The rules stay short where they are written, and the account stays here.
+
+- **A report written and never sent** - the walker's *Return conclusions, never contents*, and
+  the main document's *The unit of work is a cluster, and one agent takes one cluster*, item 4. Two
+  named walkers in one session each cost three rounds of asking, both believing they had reported
+  and neither having sent anything.
+- **Paths split between agents in one tree** - the main document's *The unit of work is a
+  cluster, and one agent takes one cluster*, item 3. Three agents on paths that genuinely did not
+  overlap, and one commit carried off a translation key another had just added; both reported
+  success independently. Six split the same way produced, in one session, seven commits that swept
+  somebody else's uncommitted work, two agents each hunting through source for a failure that was
+  the other one's test writing to the same hardware, and a checker whose forty-minute run reported
+  a defect that had been fixed while it ran.
+- **A guarding sentence nobody could report as still true** - the walker's *Leave two kinds of
+  trace, and only one is shared*, and its `STILL TRUE` field. One such sentence was guarding four
+  components and had already gone stale for two of them, unnoticed, because every walker who read
+  it and found it fine had nowhere to say so.

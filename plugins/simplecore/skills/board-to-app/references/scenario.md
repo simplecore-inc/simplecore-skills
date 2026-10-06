@@ -50,7 +50,8 @@ that made it.
 **And every check stays green while it happens**, which is what makes this the most expensive proxy
 in the set: a seed made to produce the figure a frame draws answers to a number that came from the
 same hand that drew the frame, and 「the screen shows the figure」 passes while the figure describes
-nothing → `../SKILL.md` § *Waste does not announce itself*. **The seed pins nothing to the board.**
+nothing → `references/checks-and-eyes.md` § *Waste does not announce itself - the check that passed
+is the one to suspect*. **The seed pins nothing to the board.**
 It makes the story's relations true - the records the journeys need, connected as the entity model
 says, in the states the frames draw - and its values are its own; a screen whose total is not the
 drawing's is the seed saying what it says.

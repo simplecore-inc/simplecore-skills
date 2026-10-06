@@ -568,8 +568,9 @@ export const handoverGate = {
     // **The handover file may be an index that routes**, and then the facts this rule was written
     // for are not in it - they are in `references/` beside it. Reading the declared file alone
     // there covers a table of contents and reports the same clean result it reported while it was
-    // reading facts, which is the one failure mode a split introduces → *A handover file grows,
-    // and the answer is not another trim*. So the sweep follows the routing where there is any.
+    // reading facts, which is the one failure mode a split introduces → `references/handover.md`
+    // § *A handover file grows, and the answer is not another trim*. So the sweep follows the
+    // routing where there is any.
     const dir = declared.includes('/') ? declared.slice(0, declared.lastIndexOf('/')) : '';
     const beside = (ctx.list(`${dir}/references`) ?? [])
       .filter((name) => name.endsWith('.md'))

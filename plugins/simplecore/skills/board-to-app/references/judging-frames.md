@@ -325,3 +325,79 @@ Two habits keep this from recurring once it has bitten:
   Reading an absent result as a value is how a correction gets applied to the case it was
   never meant for. Where a derived rule cannot be established, the underived default is
   what ships - it was already right, or it would have been reported long ago.
+
+## Design the answer; scope is not a reason to take the worse one
+
+An open question is designed rather than asked, in the order `references/handover.md` § *Parking
+is a last resort, and most things do not qualify* sets out - architecture, consistency, stability,
+performance.
+
+**A wider refactor is not a reason to decline the better structure.** The cost is said out loud -
+which chapters it reaches, which persona lines have to be re-run, what has to be regenerated - and
+then the right shape is built. What is never done is quietly taking the smaller worse option and
+reporting it as the choice: a screen built on the wrong shape is a rewrite that arrives three
+chapters later, when it costs everything built on top of it as well.
+
+**Design against the code that will implement it, not against the documents alone.** The board and
+the design document agree with each other far more readily than either agrees with the branches
+already standing in the server, so a contract settled from the two of them is settled from a
+picture of the product rather than from the product. Read what will hold the contract - the
+branches it already takes, the states it distinguishes, what it does when the value is absent -
+and design against that. A contract designed from the documents alone is wrong in exactly one
+place: where the code carries a third case neither document drew.
+
+Where the wide change genuinely belongs to somebody else's decision, that is the first of the
+questions `../SKILL.md` § *Running without stopping to ask* reserves for a person - ask it as a
+decision with its cost attached, not as a preference.
+
+## The documents, the board and the code say the same thing
+
+Three artifacts describe one product: the design documents decide behaviour, the board renders
+that as screens and states and flow, the code implements it. **A change updates all three in the
+same change.** Two out of three is the state that reads as agreement and is not - the reader who
+opens the odd one out has no way to tell it is stale.
+
+| The change starts in | What moves with it |
+| --- | --- |
+| a design document | the frames that draw the behaviour, then the screens built from them |
+| the board | the design document that decided it, then the code - and the chapter is regenerated |
+| the code, because building found the board wrong | the frame first, then the document behind it; never the code alone |
+
+**Where they genuinely cannot agree, the disagreement is written down** - in the open items or the
+project's own tracking document, naming which two disagree, which side is stale, and what has to
+happen for them to meet. An undocumented gap is indistinguishable from an oversight, and the next
+session resolves it by guessing which artifact to believe.
+
+**Never resolve a disagreement by editing whichever is cheapest to edit.** The board is the
+contract for what a screen holds; the documents are the contract for why. Cheapness is not
+authority.
+
+### What is authority - date them, then rank them
+
+**Saying what is not authority and stopping there is what produces two lanes fixing each other.**
+Every disagreement then gets adjudicated from scratch, so the same pair comes out one way on
+Tuesday and the other way on Wednesday, and whoever spoke last wins. One chapter had two judges
+return opposite verdicts on the same picture, and a label fixed in one layer put back by the
+generator that owns it - neither agent disobeyed anything.
+
+**Date both sides first, because most disagreements are not disagreements.** `git log -S` on each
+sentence says which was written when, and a side written before the other, on a subject the older
+side has a document behind it for, is not a peer - it is the stale one. Four commands settle more
+of these than any ranking does.
+
+**Where dating leaves them level, this order decides, and no reading is taken twice:**
+
+| | Beats everything below it because |
+| --- | --- |
+| 1. a source `factSources` names - a statute, a price list, a published table | nothing in the repository can make that source say something else |
+| 2. the design document | it is the record of a decision somebody made, and the rest are renderings of it |
+| 3. the board | it is the contract for what a screen holds, and it was drawn to be held against code |
+| 4. the code | it is the newest and the least reviewed, so it is evidence of what happens rather than of what should |
+| 5. a capture, a transcription, a report | it describes one boot of one build, and it is right only until the next one |
+
+**The bottom row is the one that surprises people.** A picture feels like the hardest evidence in
+the room, and it is the softest claim about the contract: it says what one screen did once. It
+settles nothing against the board, and a finding that reads 「the board is wrong because the screen
+does this」 has the ladder upside down - the board is wrong when the *design document* says so.
+
+**Where a rung genuinely has to move, the change starts at the rung above it and comes down.**

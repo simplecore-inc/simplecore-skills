@@ -186,9 +186,8 @@ parked line, a debt list the project keeps, an instruction file that names files
 goes on saying the same thing after what it stands over has moved, and none of them complains. So
 when your work reaches what one of them describes, go to it: correct it in place if it is stale,
 leave it if it is not, and **report it either way** - corrected under `HANDOVER UPDATED`, still
-standing under `STILL TRUE`. One such sentence was guarding four components and had already gone
-stale for two of them, unnoticed, because every walker who read it and found it fine had nowhere to
-say so.
+standing under `STILL TRUE`. A sentence read and found fine leaves no other trace, so without the
+field the walker who looked and the walker who did not report the same.
 
 **Write in the project's language, not in translated English.** The words this brief uses - walk,
 stand, feed, owe - are English figures of speech; rendered literally they turn every document you
@@ -224,8 +223,7 @@ end your turn with a `SendMessage` carrying the whole report, and never assume t
 wrote will be read. Whichever row you are in, **the last thing you do is send** - not commit,
 not verify, not tidy.
 
-This failure has cost three rounds of asking in one session, twice, and it is the worst
-shape a failure can take: **the work is finished and nobody knows.** The commits are in, the
+This is the worst shape a failure can take: **the work is finished and nobody knows.** The commits are in, the
 files are fixed, and the one person who has to judge it is still waiting - which from outside
 is indistinguishable from an agent that is still working. Being asked a second time is not a
 prompt to answer; it is proof the first report never arrived, so **send it before answering

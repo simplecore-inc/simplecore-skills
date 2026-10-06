@@ -205,8 +205,8 @@ ledger, the handover file, the wave decision, and the barrier work the wave give
 
    **They also make the stall test decidable**: an agent that stops sending steps *and*
    whose artifact has not moved is stalled; one that is quiet while its artifact grows
-   is inside something long and is left alone → `../SKILL.md` § *An agent that ends, and an
-   agent that only paused*, where the threshold is two checks.
+   is inside something long and is left alone → § *A quiet agent is stalled or inside something
+   long*, below, where the threshold is two checks.
 
    **Give the artifact time to move before reading it as stalled.** A build, a rebuild of a
    workspace package, a long typecheck - each leaves the tree untouched for many minutes
@@ -474,8 +474,8 @@ does, and only while the reflog still reaches it.
 
 **Every parallel agent is tracked by its artifact.** The plan says which file each
 agent writes and what its progress line looks like, and progress is read from that
-file. An agent's own announcement is not progress → `../SKILL.md` § *An agent that ends, and
-an agent that only paused*.
+file. An agent's own announcement is not progress → § *A quiet agent is stalled or inside
+something long*, below.
 
 ### Two coordinating positions on one checkout, and how the plan is what shows it
 
@@ -506,7 +506,7 @@ repository:
 | nothing - and it is said rather than asked | **the holder cannot close the other session.** Only the person who opened it can, and saying so to them beats leaving a second position quietly alive |
 
 **A stopped peer still announces itself as available, and answering that is how a finished
-position goes on costing turns** → `../SKILL.md` § *An agent that ends, and an agent that only paused*.
+position goes on costing turns** → § *A quiet agent is stalled or inside something long*, below.
 
 ### Judge the overlap before every parallel dispatch - then parallelise
 
@@ -621,3 +621,290 @@ stall is invisible from both ends → `references/harness.md`.
 **Where two chapters really did run apart, they join before either is tested** - the
 persona run walks between screens that live on both sides, so a chapter tested alone
 has tested half of itself.
+
+### The wave: parallel backends, one restart, then the screens
+
+Judging the overlap table per dispatch is right and it is also a lot of coordination. **One
+arrangement makes most of that judgment unnecessary**, because it separates the work
+that collides from the work that does not.
+
+```text
+wave n
+  ① backends in parallel   several agents, a database each, nobody runs a server
+  ② the barrier            all report → the coordinator restarts once and runs the integration pass
+  ③ the screens            screens need a running server - parallel where slots exist, otherwise in turn
+```
+
+**Why it holds.** Backend work is code, migrations and its own tests; nothing in it
+needs a **shared** running server, so the restart collision cannot happen in ①. An
+agent may run its own process on its own port to test against its own database -
+what it must not do is touch an instance on somebody else's slot. The one restart lives at
+②, where exactly one actor runs it. By ③ the contract is fixed, so the screens no
+longer move under each other.
+
+**A screen agent's instrument is the browser, not the port.** Where ③ runs in turn
+because there is one server, the agent taking its turn drives that server through a
+browser - taking turns is what stops two agents writing over each other's rows, and it
+is never a reason for any of them to finish without opening a screen. **A screen half
+split among several agents is still ③**: each of them needs the browser, so either they
+take turns at it or they get a profile each, and a split that hands them the building
+while keeping the looking is a split that cannot close.
+
+**The coordinator has three jobs and no others**: dispatch ①, run ② itself, dispatch
+③. Everything else is the agents'.
+
+**What still collides inside ①, and what to do about it:**
+
+| Collision | The arrangement |
+| --- | --- |
+| migrations - two agents extend the same lineage at once | read the project's scheme off `migrationDir`, then give each agent its share in the brief (below) |
+| generated API clients - each regeneration overwrites the last | nobody regenerates in ①; the coordinator regenerates once at ② |
+| registries, barrels, locale catalogues | one owner per file, named in the brief; the others report the line they would have added |
+| the git index - commits sweeping each other | separate checkouts, or agents stage nothing and the coordinator commits at ② |
+| entity order - one chapter's table references another's | the wave is ordered by entity, not only by chapter: an agent whose table references one being created in the same wave waits for that agent's migration and says so |
+| the state ledger - several agents close at once | **in a wave the coordinator writes every row at ②**; the agents report and do not touch it |
+
+**How migrations are shared out depends on how the project orders them: by number, or by a
+parent chain.** Read which one it is off `migrationDir` before the wave is briefed - the directory
+holds the answer, because the file names are the scheme:
+
+| The project's scheme | What the brief hands out |
+| --- | --- |
+| **numbered** - a migration's position is a number in its name | a number range per agent, so two agents cannot claim the same position |
+| **a parent chain** - a migration names its predecessor and the order is the chain (Alembic, and anything shaped like it) | **one agent extends a head at a time.** There is no range to divide: two agents each adding to the same head fork it, and the next agent to run them is refused. The others report the migration they would have written, and it is applied after the barrier |
+
+**Where `migrationDir` names several lineages, the lineage is the unit** - a database with its
+own audit or vault schema is several chains, and one agent per chain extends them at once.
+
+**A parent chain refusing loudly is the arrangement working, not a worse case.** Numbers collide
+silently - two migrations at position 0042 both apply, in whichever order the runner walks them -
+so the range exists to prevent something nothing would report. A forked head stops the runner with
+both heads named, which is why the discipline for it can be as thin as "one at a time".
+
+**A wave is one chapter's backend, or several chapters' backends together** - the
+chapters in a wave are the ones whose `prerequisites` are all already closed. That
+set is readable from the state ledger, which is what makes the wave decidable rather
+than a judgment call.
+
+**The prerequisite list is derived and therefore incomplete.** It is computed from the
+frames' cross-references, which capture what the screens say about each other - not
+every entity one chapter's tables need from another's. **An agent that finds a
+dependency the list does not name stops, reports it, and does not invent the table.**
+The coordinator adds it to the owning chapter's `creates` section and regenerates, so
+the next wave is assembled from a graph that has learned.
+
+**When a wave cannot be assembled cleanly, run the chapter whole and alone.** The
+arrangement is worth it for a wave of three or more; for two it costs more
+coordination than it saves.
+
+### A quiet agent is stalled or inside something long
+
+An agent that has stopped moving does not say so. It announces that it is idle, which
+reads like availability and is indistinguishable from the announcement of an agent
+between two bursts of real work. A coordinator that answers each of those with another
+instruction ends up with a queue nobody is consuming and a build that has not moved.
+
+**Judge by the artifact, never by the signal.** Every dispatched agent writes to a
+file, and its first line says how far it got. That line is the only progress report
+that cannot lie.
+
+**A quiet agent is either stalled or inside something long, and the two look
+identical from outside.** Killing the second kind throws away everything it had
+worked out; waiting on the first kind costs the build a chapter. So the difference is
+established rather than guessed, from what moves while real work happens:
+
+| Read | Working, keep waiting | Stalled, replace it |
+| --- | --- | --- |
+| its step reports | still arriving, each naming a path | stopped arriving, or arriving with no path in them |
+| its artifact - the log's last line | growing; the line names a step that plausibly takes this long - a full gate run, a migration over real data, a suite, a capture sweep | unchanged since the previous check, or the line repeats |
+| the tree and the index | files changing, commits landing, a process of its own still running | nothing has moved |
+| what it says it is doing | it can name the command it is inside and what it is waiting for | it announces availability, or restates its assignment |
+
+**The first two rows together are the test**, and they are why step reports exist:
+quiet **and** a still artifact is a stall, while quiet with a growing artifact is
+something long and is left alone. A long gate produces no commits either, so the
+artifact is what separates it from a stall - and an agent that cannot say what it is
+waiting for is not waiting.
+
+**The threshold is two checks.** When two checks in a row find no step report and no
+change to the artifact - the first made only once the artifact has had time to move, and
+answered by asking rather than by reassigning (item 7 above) - treat
+it as stalled. **A still artifact alone is not a stall**: an agent replaced on a still
+artifact alone was usually inside something long, and everything it had worked out goes
+with it. An idle announcement settles nothing in either direction, because it races the
+work. Then, in one turn:
+
+1. **Tell it to stop** and to stop writing the artifact. Say why, and ask it to send
+   anything unsaved as a message rather than writing it.
+2. **Dispatch a replacement**, starting from the artifact's progress line. This is what
+   the line is for - a replacement resumes at the sentence the file already wrote.
+3. **Never leave both alive over one artifact.** Two writers on one file is the
+   collision this skill spends its length preventing, and a stalled agent that wakes up
+   is still a writer.
+
+**Do not queue more work at a silent agent.** Another instruction to a session that
+consumed neither of the last two is not persistence; it is the coordinator refusing to
+read the artifact.
+
+**A session that ends for an outside reason - a usage limit, a dropped connection - is read,
+waited on or stopped by the rules in `references/harness.md` § *An agent that ends, and an
+agent that only paused*.**
+
+### Letting a person watch, without paying for it
+
+An agent returns conclusions, which leaves a question: where does everything else go,
+and how does a person see progress without reading it?
+
+**Into files whose paths are the report.** Builders write their run log to `logDir` and
+their captures to `capturesDir`, and hand back paths. The coordinator - and the user -
+can open one, and neither pays for it by default.
+
+| Watch | Answers |
+| --- | --- |
+| `logDir`, filtered to the step words | *is it moving, and where is it* |
+| `capturesDir`, for new image files | *what does the screen actually look like* |
+
+**`costLog` is the third of those files and answers a different question - what the arrangement
+cost** - with the wall-clock span and the consumption of each chapter appended as it closes,
+measured against a start stamped when that chapter's first agent went out →
+§ *The dispatch is planned, written down, and then made*, above. **What earns the file is that it separates a run that
+bought something from one that bought nothing.** A capture run taken through the wrong window is
+spend like any other and is taken again from the start; a record that carries only the second
+makes the arrangement's cost look like the sum of its useful work, and the waste leaves no trace
+in any total. One such run cost 157,540 tokens and produced not one usable picture, which is a
+figure nothing that omitted it could ever have shown - and it is the figure that argues for the
+pre-flight a capture run makes before its first picture.
+
+**Arm both watches in the same turn the agent is dispatched**, not afterwards. A
+coordinator is busy between events and two turns is an hour, so "I will check the log"
+is the failure, every time.
+
+**A watch dies quietly, and a watch that was never alive is quieter still** - both
+produce exactly what a working watch produces on a quiet minute. So prove every watch
+the moment you arm it, in the same turn: make it fire once, then watch it go silent.
+Read silence as suspect rather than as reassurance, and re-arm at once →
+`references/harness.md` § A watch is a check.
+
+Saving context and hiding the work are different things. Three ways the build stays
+visible while the coordinating context stays empty:
+
+1. **The agent's own work streams to the client.** What it clicked and captured can be
+   expanded in the conversation. The coordinator never receives it, so it costs nothing.
+2. **Captures go to files; the coordinator forwards them the moment they appear**, by
+   path and **without opening the file**. Forward them as they are shot, not at the end
+   of the chapter - a person following a build wants to see the screen while it is
+   still the subject. Say which frame and which locale in one line, and send the
+   language a person reads rather than the pseudo-locale, which is an instrument →
+   `references/driving-the-product.md`.
+3. **Progress goes into the builder's own log, one line per step** - a line per
+   *screen* is a heartbeat every thirty minutes, which from outside is
+   indistinguishable from an agent that has stalled.
+
+**Never put an image in a report.** A few of those and the session is dry. Captures and
+logs are byproducts - keep them out of the repository.
+
+**A screen that changed is shown, not described.** "The tab strip is in place and the
+activity pane fills the rest" is equally true of a screen that works and one that draws
+its rows in the wrong order, off the edge, or in the wrong language. The three
+different reasons a screen gets photographed, and why none substitutes for another →
+`references/frame-artefacts.md`.
+
+### A brief owes the reading the file gives at the moment it is written
+
+**A brief owes the same reading, and owes it harder.** Whoever holds a file has been working since
+it was last opened, so an instruction written off an hours-old copy directs work against reasoning
+the file already answers - and it arrives with the authority of an instruction rather than as a
+claim the reader knows to check. Open the file at the moment the brief is written, not at the
+moment you last had a reason to.
+
+**Brief against the command, never against the reading it produced.** A measurement handed over as
+an expectation - 「that gate is red and it is not yours」, 「the suite has two known failures」, 「the
+server is already up」 - is true when written and silently false afterwards, and it is worse than
+saying nothing: **it disarms the one check the agent would otherwise have made.** An agent told in
+advance that a gate is red reports a genuinely new failure as the known one, in good faith, having
+run the command and read its output correctly. Hand over the command and let the agent take its own
+reading; where a state genuinely has to travel, mark it as a reading with its age on it, and say
+which command re-takes it.
+
+**Withdraw such a sentence the moment it goes stale, in its own message.** A correction folded into
+the next instruction arrives as background and is read as background. This is not hypothetical: one
+brief here named a red gate as somebody else's problem, that session fixed it four minutes later,
+and the agent went on holding a briefing that told it to discount the one signal that would have
+caught its own breakage.
+
+**The same failure has a second half, and it is the one that feels like diligence.** A stale
+measurement is a claim whose verification has expired; **a diagnosis inferred from reading is a
+claim that never had one.** Both travel with the authority of a finding, and the second is easier
+to send because working it out from the source feels like the careful version of guessing. It is
+not - running it is. Where a reading is cheap, take it before the sentence leaves; a gate whose
+message says it could not read the board is one command away from telling you exactly why, and two
+lines of source will hand you a mechanism that is plausible, specific, and wrong.
+
+**A file-name search answers which files contain a word, never which files do the thing.** `grep -l`
+and its cousins match a comment that denies the behaviour exactly as they match the behaviour, so a
+brief built from a hit list states as fact what the file may say the opposite of - 「that component
+already draws on canvas」, from a file whose comment reads *drawn on a canvas-free grid of spans*.
+It is the cheapest possible mistake to make and it arrives with an instruction's authority: the
+agent builds on it, and the correction costs a round trip. **Open the hit before writing it into a
+brief**, or hand over the search and let the agent read it.
+
+**Send it anyway when the reading is not yours to take**, and mark which half it is. 「the anchor
+is doubled」 and 「it fails here, and here are the two lines I would look at」 cost the reader very
+differently when the mechanism turns out wrong: the first has to be disproved, the second is
+already an invitation. A diagnosis into somebody else's file is worth sending unverified **and is
+worth labelling as unverified** - what is never worth it is the confident mechanism, because the
+reader spends their first command confirming your story rather than reading their own.
+
+### A sentence in a report becomes a sentence in a document
+
+**A sentence in a report becomes a sentence in a document, and no gate reads a report.** The
+coordinator writes the ledger and the tracking documents out of what agents send up, so an agent's
+phrasing arrives there unaltered - which makes the report the one surface with no check behind it.
+Two things follow, and both belong to whoever writes the sentence rather than to whoever copies it:
+
+- **Write a defect so its direction survives being copied.** Name what is missing, not the order of
+  two verbs: 「the link is written without being read first」 cannot invert, while 「reads before
+  writing」 can - and inverted it names the correct behaviour instead of the fault, and reads
+  perfectly either way.
+- **A phrase worth quoting is written to the project's prose standard in the report**, not cleaned
+  up later in the file it lands in. Whoever copies a report's sentence into a document owns what it
+  now says, and runs that project's prose checks over the result.
+
+**The hop that defeats both is a sentence drafted for somebody else's file**, and it has three
+hands rather than two. An agent writes a paragraph for a document it does not own, a coordinator
+relays it, a third party pastes it in - and **not one of them is writing a file at the moment they
+handle it.** The rule above addresses the first and the last; the relay is where it falls through.
+
+**The rule that closes all three is that the check belongs to the WRITE, not to the authorship.**
+Whoever's edit puts the prose into a file runs the project's checks over it, whatever its
+provenance. Say it that way rather than by naming roles, because the temptation is different at
+each hand and each one feels like a reason:
+
+| Hand | What it tells itself |
+| --- | --- |
+| the drafter | it is going into somebody else's file, so it is a proposal rather than a document |
+| the relayer | it is text in a message, and a message is not a file |
+| **the writer** | **it arrived looking reviewed, from a careful source, so it read as already checked** |
+
+**The third is the one to put in front of people**, because it is the only hand where somebody
+actually ran a command and was reassured by it - a document checker came back clean while the
+sentence rule that would have refused the paragraph was never run. **A pass is only a pass for the
+question it asked.**
+
+This is not hypothetical: a paragraph drafted in one agent's report, relayed verbatim, and pasted
+by a third session broke two rules of that project's prose standard and turned a gate red that had
+been green when the work started.
+
+**And verifying the fix has its own version of the same trap.** A prose checker that enumerates
+through version control never sees a scratch file outside the repository, so it returns zero for a
+draft it never opened - **the same character as a pass**, and 「I checked it first」 becomes true
+and worthless. The procedure, not the anecdote: put the draft inside the tree, `git add -N` so the
+enumeration reaches it, run the check, read the count, remove it.
+
+### What a return names survives only in a file
+
+**A returned item that nobody but the coordinator holds is lost at the next summary** →
+`../SKILL.md` § *What the coordinator reports*. Measured: a report naming seven pre-existing
+defects in other chapters' ground was read, acknowledged, and left in context; what survived to
+the next window was the number seven and not one of the seven, and recovering them means running
+that cluster again.
