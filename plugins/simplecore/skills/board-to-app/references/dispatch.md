@@ -431,6 +431,12 @@ project that leaves that field empty still records the span, which is the half n
 the arrangement remembers. What is never honest is skipping the line: a chapter with no entry
 reads as a chapter that cost nothing.
 
+**Derive the rest from git when it is asked for**, rather than maintaining it: commits, lines
+changed and file counts are already recorded there. What git cannot recover is time and
+consumption, so those are the two written down at the moment they are known - and both are asked
+for eventually ("how long did this take?", "was the rewrite worth it?"), most of all for work that
+spans weeks and several sessions.
+
 > **Read it this way and it is wrong**: 「it is written down in the file, so the next session will
 > read it」. A chapter's own entry carried a note asking the next session to stamp the start at
 > dispatch, and nobody read it - `costLog` is data, and nothing in *Opening a session* sends

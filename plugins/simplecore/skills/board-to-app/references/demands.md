@@ -1,13 +1,11 @@
-<!-- Split out of SKILL.md so a session loads it only when its subject comes up. The skill's own
-     section of this name is a routing stub pointing here. -->
-
 # What the generator writes - the structural line, the journeys, the seed relations
 
-**A chapter is derived from the board, and it holds four things: one structural line per frame,
-the journeys that prove the chapter, the relations the seed must make true, and - for a chapter
-that places foundation - the verdict lines.** Nothing in it is written by hand, and nothing in it
-quotes a value, a count, a sample row or an exact message. What a chapter says is what a journey
-test can assert with no number known in advance.
+**A chapter is derived from the board: one structural line per frame, the journeys that prove the
+chapter, the relations the seed must make true, and - for a chapter that places foundation - the
+verdict lines.** Nothing the generator derives is written by hand. Two parts are: the
+`touchedEarlier` section, which the generator preserves, and a chapter that places no frames, which
+the generator leaves alone. Nothing in a chapter quotes a value, a count, a sample row or an exact
+message - what it says is what a journey test can assert with no number known in advance.
 
 **A journey is something somebody does, not something they see.** 「the tile reads 119」 describes a
 screen being looked at; 「the tile counts what the list holds」 is a relation a test asserts on any
@@ -66,6 +64,21 @@ visits. `journeyCommand` runs them all and writes the chapter's run record → `
 promise.** The chapter's `promises` section already names the destination; the test asserts the
 control exists and that pressing it lands on the promised address, and no further.
 
+## The headings the checks read
+
+**Two headings in a chapter file are read by machine, so the generator writes them exactly.**
+
+| Heading | What reads it |
+| --- | --- |
+| `## <n>. <frame id> <title>` - one per frame the chapter places, numbered in the chapter's order. The frame id is one capital letter, a hyphen, two or more digits, and the state letter where the frame has one (`## 3. F-01a <title>`) | `everyPlacedFrameIsCaptured`, which holds a closed chapter's record to a capture of every frame placed this way |
+| `### <n>. <persona> - <title>` - one per journey, numbered from 1 in the chapter, with the persona written exactly as the run record's persona column writes it. The separator is a spaced hyphen; a spaced em dash is read too | `closedChapterHasAJourneyRun`, which matches each journey to a row of the record by number and persona |
+
+**A heading in another shape is not read at all, and nothing says so.** A chapter whose journeys are
+headed some other way names no journey to the gate, and a record holding any rows passes it. A
+foundation chapter names no journey either, so its record is held to exist and nothing more.
+Everything else the generator writes - a structural line, a seed relation, a verdict line - is read
+by people and by the journey tests, never by a gate.
+
 ## What a journey asserts, and what it never asserts
 
 **A wireframe's number is not a specification.** Somebody typed 1,358 into a tile to show what a
@@ -117,6 +130,12 @@ refused. **It lists relations and states, never quantities or names.** How many 
 the story's → `scenario.md`, and a value comes into existence only by the path the product uses →
 `scenario.md` § *A value a capture shows is produced by the path the product uses*.
 
+**A handoff between two personas is two journeys here, never one.** The seed puts the record in the
+state the second persona starts from - a request awaiting its approver - by the product's own path,
+so each journey proves one persona's own work. Walking the handoff itself, one persona's
+submission reaching the next persona's screen through the interface, is a lifecycle audit, and it
+belongs to the project's own e2e skill.
+
 ## Everything on the list comes off the board, and nothing else
 
 **A demand nobody can satisfy is worse than a missing one.** An invented expectation - a field the
@@ -145,18 +164,10 @@ address it is answered at」. Both were found by a person using the built produc
 went green and a chapter closed, and neither has a frame to be drawn as: the frames were already
 there and already right.
 
-**So the family has a place of its own, and it is `frameDeliverables`** - what a screen owes beyond
-working code, one checkable sentence each, declared in the project's config →
-`references/frame-artefacts.md`. Two things make it a check rather than a note:
-
-- **Each entry names the mechanism that holds it** - a rule in `auditScript`, or a helper every
-  journey test calls. A sentence a person would have to re-read per screen is a note, not a check,
-  and it is not declared: the whole point of the family is that the defect is caught on every
-  screen built afterwards without anybody remembering the sentence exists.
-- **The list GROWS as defects are found.** A defect met in the running product is fixed, and then
-  its shape is added here with the check that catches it - otherwise it is fixed once, on the
-  screen it was found on, and met again on every surface built afterwards. A project that ratchets
-  is one whose list is longer than it was.
+**So the family has a place of its own, and it is `frameDeliverables`** - one checkable sentence
+per standing check, each naming the mechanism that holds it, in a list that grows as such defects
+are found → `frame-artefacts.md` § *A standing check is held by code, and the list names what holds
+it*. What this file adds is how an entry is told from an invented expectation.
 
 ### A standing check was observed; an invented expectation never was
 
@@ -244,29 +255,30 @@ back. Neither is irreversible in the table's sense: no record was destroyed, not
 and the third row's confirmation walk does not apply because the verb is not dangerous. **Both are
 still writes, and the demands that count are downstream of them.**
 
-**This is invisible inside one section and invisible inside one screen.** The write is demand 10 of
-one screen and the count is demand 2 of another, often built by different agents on different days,
-and each line is correct on its own. What fails is the pair. Measured on one chapter: 「시험 발송」
-on the rules screen put the history screen's five tab figures two above what its own chapter
-demanded, and 「모두 읽음」 on the notification centre consumed the only unread row the phone screen
-was asked to show a reader - so two screens reported failures that were the verification's own
-doing, and one of them had to be shot again.
+**This is invisible inside one journey and invisible inside one screen.** The write is a step of one
+journey and the count is a step of another, often written by different agents on different days,
+and each is correct on its own. What fails is the pair. Measured on one chapter: 「시험 발송」 on the
+rules screen put the history screen's five tab figures two above what its own chapter asked for,
+and 「모두 읽음」 on the notification centre consumed the only unread row the phone screen was asked
+to show a reader - so two screens reported failures that were the run's own doing, and one of them
+had to be shot again.
 
-**So a chapter's demands are ordered by what they touch, not only by screen.** Two rules, and the
+**So a chapter's journeys are ordered by what they touch, not only by screen.** Two rules, and the
 second is the one a generator can hold:
 
-- **Within a chapter, every demand that COUNTS is read before any demand that WRITES to the same
-  set.** The figures come off the seed, and the seed is the specification - so they are read while
-  the data is still the data the seed made.
-- **A demand that writes says what it moves.** 「시험 발송」 moves the day's total and the history's
+- **A journey that COUNTS runs before any journey that WRITES to the same set, or every journey that
+  writes restores what it wrote before the next one starts.** The seed is the specification, so a
+  count is read while the data is still the data the seed made.
+- **A journey that writes says what it moves.** 「시험 발송」 moves the day's total and the history's
   tabs; 「모두 읽음」 moves the unread census. The generator knows this the moment it knows which
   aggregate a screen's tiles and tabs are computed from, which it already reads off the frame to
-  write the count demands in the first place.
+  write the counting journeys in the first place.
 
-**Where the order cannot be arranged - the write is on screen three and the count on screen one -
-the count demand carries the value it expects AND the reading is taken first.** What is never
-right is the shape this was found in: a run that presses everything in section order, then reads a
-tally, then reports the tally as a defect.
+**Where the order cannot be arranged, the counting journey reads the figure at its own start and
+asserts the relation against that reading** - the count grew by the one record it made, never a
+figure fixed in advance. What is never right is the shape this was found in: a run that presses
+everything in the order the screens come, then reads a tally, then reports the tally as a
+defect.
 
 > **Read it this way and it is wrong**: 「the seed is insert-only, so a persona run cannot damage
 > it」. Insert-only protects what the seed WROTE; it says nothing about what a run ADDS beside it,
@@ -304,7 +316,8 @@ something deliberate.
 
 ## Written in the project's own words
 
-Every label in a chapter file - what a persona line opens with, what a machine verdict is called,
-how a state list reads - is declared as `chapterLines` and `verdictRole` and is not this file's to
-choose. Write the generator against those, so that a project working in another language gets
-demands rather than a template it has to translate.
+Every label a chapter file writes - the kinds a structural line names, a journey's title, what a
+verdict line is called - is the project's own wording and not this file's to choose. The checks
+read a chapter by its two headings alone (*The headings the checks read*, above), so write the
+generator in the language the project's documents use, and a project working in another language
+gets chapters rather than a template it has to translate.

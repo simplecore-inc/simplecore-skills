@@ -7,28 +7,45 @@ what makes one trustworthy.
 ## Running them
 
 ```bash
-node "${CLAUDE_PLUGIN_ROOT}/skills/board-to-app/scripts/bta.mjs" check    # every gate against this project
-node "${CLAUDE_PLUGIN_ROOT}/skills/board-to-app/scripts/bta.mjs" gates    # every gate against the defect it exists to catch
-node "${CLAUDE_PLUGIN_ROOT}/skills/board-to-app/scripts/bta.mjs" doctor   # what this project declares, and what it owes
+node "${CLAUDE_PLUGIN_ROOT}/skills/board-to-app/scripts/bta.mjs" check                       # every gate against this project
+node "${CLAUDE_PLUGIN_ROOT}/skills/board-to-app/scripts/bta.mjs" check --range <rev-range>   # the commit gates read every commit in the range
+node "${CLAUDE_PLUGIN_ROOT}/skills/board-to-app/scripts/bta.mjs" check --warnings            # every warning in full, not one and a count
+node "${CLAUDE_PLUGIN_ROOT}/skills/board-to-app/scripts/bta.mjs" gates                       # every gate against the defect it exists to catch
+node "${CLAUDE_PLUGIN_ROOT}/skills/board-to-app/scripts/bta.mjs" doctor                      # what this project declares, and what it owes
 ```
 
 The config is found by walking up from the current directory for `.claude/board-to-app.json`;
-`--config <path>` names one directly. `check` exits non-zero on any **error-grade** finding, so it
-belongs in the project's own `gates` list and runs at every chapter close. Warnings are printed
-under `⚠`, counted on their own line, and ignored by the exit status.
+`--config <path>` names one directly, and `--board <name>` names the board on a project that
+declares several. `check` exits non-zero on any **error-grade** finding, so it belongs in the
+project's own `gates` list and runs at every chapter close. Warnings are printed under `⚠` - one
+finding and a count per gate, all of them with `--warnings` - and ignored by the exit status.
 
-**`gates` also proves three things no case can reach**, because their subject is the harness rather
-than a project: that a fired warning leaves the exit status alone while a fired error does not,
-that a project gate answering to a core gate's id is refused unless the core one is turned off, and
-that **every key `SCHEMA` reads has a row in the config table and a line in the copyable template,
-with the same cost sentence on both sides**. The last of those holds a shape both gate tables are
-blind to: a key added to the schema works immediately - `configGate` validates it, `doctor` prints
-it - and nothing anywhere says it exists, so the only people who ever meet it are the ones who read
-the source. **Its cost sentence is held the same way and for a sharper reason**: `SKILL.md` is what
-a person edits and `doctor` prints `SCHEMA[key].absent`, so the two are one sentence in two files
-and drift in exactly one direction - the correction goes into the table and the report goes on
-saying the old thing. Each of the three is proved in both directions the same way a gate is,
-against a doctored copy and then against the real one.
+**The gates that read commits read HEAD alone unless `--range` names more.** `trailerGate`,
+`censusCountsBothSides` and `importsTravelWithTheirCommit` read the one commit `check` runs on, so
+a chapter that landed in several commits is read one commit at a time unless its range is named.
+At a close, `check --range <the commit the chapter started from>..HEAD` reads every commit the
+chapter made.
+
+**`gates` runs every case in both directions.** It registers the core cases - `scripts/core/cases.mjs`,
+which pulls in the `cases()` of each module under `scripts/core/` that holds gates - and the
+`cases()` of every `projectGates` module the project declares, one per board, then runs each case
+and names every gate missing its firing or its quiet half.
+
+**It also proves what no case can reach**, because the subject is the harness or this skill's own
+documents rather than a project: that a fired warning leaves the exit status alone while a fired
+error does not; that a project gate answering to a core gate's id is refused unless the core one is
+turned off; that a gate whose `needs` names a non-key is refused by name; that **every key `SCHEMA`
+reads has a row in the config table of `references/config.md` and a line in the copyable template,
+with the same cost sentence on both sides**; that every core gate has a row in the register of
+`references/checks-and-eyes.md`, and every row there names a gate; and that the census `doctor`
+prints counts each declared word where it is written. The key check holds a shape both gate tables
+are blind to: a key added to the schema works immediately - `configGate` validates it, `doctor`
+prints it - and nothing anywhere says it exists, so the only people who ever meet it are the ones
+who read the source. **Its cost sentence is held the same way and for a sharper reason**:
+`references/config.md` is what a person edits and `doctor` prints `SCHEMA[key].absent`, so the two
+are one sentence in two files and drift in exactly one direction - the correction goes into the
+table and the report goes on saying the old thing. Each of these is proved in both directions the
+same way a gate is, against a doctored copy and then against the real one.
 
 **`check` and `gates` are read by their exit status; `doctor` is read.** A report exits zero on
 anything it prints - only a config it cannot find at all stops it, at 2 - so nothing about a
@@ -45,7 +62,7 @@ Two levels, and choosing between them is the whole design decision:
 
 | Level | True of | Where it lives |
 | --- | --- | --- |
-| **core** | any project that builds from a board - the config's shape, the two documents' discipline, the capture name, the commit trailers | `scripts/core/gates.mjs` in this skill, with its cases in `scripts/core/cases.mjs` |
+| **core** | any project that builds from a board - the config's shape, the two documents' discipline, the capture name, the commit trailers | a module under `scripts/core/` in this skill - `gates.mjs`, `evidence.mjs`, `eyes.mjs` or `budget.mjs` - registered in `CORE_GATES` in `gates.mjs`, with its cases in that module's own `cases()`, which `scripts/core/cases.mjs` pulls in |
 | **project** | this product only - a document format this project chose, its own data shapes, a convention its stack has | the module the project declares as `projectGates`, exporting `gates` and `cases` |
 
 **A gate put one level too high fires on projects it does not describe; one level too low is
@@ -79,8 +96,8 @@ export const exampleGate = {
 | `exists(p)` · `isDir(p)` · `rel(p)` | presence, kind, and the path as the repository sees it |
 | `size(p)` · `bytes(p, n)` | a file's length · its first `n` bytes undecoded - the two questions `read` cannot answer about a picture, since the length of a binary file's utf8 decoding is not its size and its header is not text |
 | `git(args)` | git in the project root - `{ ok, out }` |
-| `lines` | the project's chapter lines, compiled from its phrases - `ctx.lines.persona` is a RegExp, and a role the project declared absent is simply not there |
-| `evidence` | the readers over the evidence folder - the chapter files, the closed chapters, the frames a chapter places and demands, a result document's sections |
+| `lines` | the project's declared lines, compiled - `ctx.lines.deferred` from `deferredLine` and `ctx.lines.placeholder` from `placeholderLine`, each a RegExp and each absent where the project declares none |
+| `evidence` | the readers over the evidence folder - the folder (`dir`), the chapter files and the chapter a file name carries (`chapterFiles`, `chapterOf`), the closed chapters (`closedChapters`), the frames a chapter places (`framesPlaced`), and the capture name grammar and suffix (`captureName`, `captureSuffix`) |
 | `options` | what the command line passed, such as `range` |
 
 The last two are on `ctx` for the same reason everything else is: **a project's own gate cannot
@@ -262,16 +279,17 @@ has become worthless.
   that reads the first as the second is the silence it was written to break. So the pair is four:
   the misdeclaration, a word nobody writes, a freshly-wired project, and a project mid-build whose
   documents of one kind exist and whose documents of the other do not - the last is the one that
-  is easy to leave out and is where the boundary actually sits. `declaredWordsMatchTheDocuments`
-  is the worked example, and it says in each finding which of the two states it established.
+  is easy to leave out and is where the boundary actually sits. The census `doctor` prints draws
+  the same boundary per word - `✖` where something independent says the documents hold the word,
+  `⚠` where nothing does, `○` where there was nothing to compare against - and says in each line
+  which of them it established.
 - **Where a zero has two meanings, the second one is a warning rather than a widened error.**
   「I compared and nothing matched」 is a defect; 「there was nothing to compare against」 is a
   project that has not written the documents yet, and a gate covering both fails every repository
   on the day it is wired. They are two gates because a gate answers one question - and the pair is
   what makes silence mean something: with only the error, a run says nothing both when the check
-  passed and when it never ran. `declaredWordsMatchTheDocuments` and
-  `declaredWordsHaveBeenCompared` are that pair, and neither can speak about an entry the other
-  is speaking about, so one defect is never reported twice under two ids.
+  passed and when it never ran. Split that way, neither may speak about an entry the other is
+  speaking about, so one defect is never reported twice under two ids.
 - **A defect in one checker is looked for in every checker that reads the same shape, and the
   noisy one is not the dangerous one.** Two gates over the same document parsed a layer out of a
   heading with a single-digit pattern. On a heading naming two layers - `3계층과 4계층` - the first

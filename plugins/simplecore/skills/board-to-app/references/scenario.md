@@ -29,7 +29,7 @@ Coverage - every frame the story feeds appearing in the document, every step nam
 exist - is a check a project can write as a gate of its own, against its own board and its own
 document format; until it writes one, nothing is holding it, and a story document naming no frame
 at all stands there saying nothing. Whether the steps still add up is nobody's check: that is the
-agent's judgement. Both halves are marked in the skill's *Held by eyes* table, because a sentence
+agent's judgement. Both halves are marked in the *Held by eyes* table of `checks-and-eyes.md`, because a sentence
 saying what a checker *could* do is read as one somebody already wrote - which is the third
 category this skill spends a section refusing.
 
@@ -42,7 +42,7 @@ more than every other mistake here combined.
 
 **Why it is absolute.** A capture exists to show what the product does. A capture of a screen fed
 hand-written values shows what somebody wrote down, arranged to look like what the board drew - and
-it is indistinguishable from the real thing in every check, in the result document, and to whoever
+it is indistinguishable from the real thing in every check, in the run record, and to whoever
 opens it a year later. It does not merely fail to prove the product works. **It produces evidence
 that the product works when nothing has been shown to**, and that evidence outlives the session
 that made it.
@@ -62,29 +62,32 @@ decides every case, and it is the only judgment this rule needs:
 
 | | What it is | Allowed |
 | --- | --- | --- |
-| a recorded or edited response from the device or service the product reads - an SNMP walk, an HTTP fixture, a message on a queue | a test double for the world | ✔ |
+| a recorded or edited response from the device or service the product reads - a recorded protocol exchange, an HTTP fixture, a message on a queue | a test double for the world | ✔ |
 | a row written straight into the store, or a domain object composed and handed to the layer above the collector | a forged reading | ✖ |
 
 **The product's own decoding, mapping, arithmetic and parsing must run.** They are usually most of
-what the screen displays: a device detail page is that decoding, rendered. Bypass them and the
+what the screen displays: a detail page showing what a device or a service reported is that
+decoding, rendered. Bypass them and the
 capture shows values nobody has shown the product could produce.
 
 ### The three ways a state is legitimately produced
 
-Every device, record and state in a fleet is one of these, and a result document says which:
+Every record and state the screens show is one of these, and the journey test that sets it up says
+which:
 
-1. **A replayed capture of the real thing** - a recorded walk, a saved response, a captured payload,
-   decoded by the product's own path. Deterministic, because the recording is fixed.
+1. **A replayed capture of the real thing** - a recorded exchange, a saved response, a captured
+   payload, decoded by the product's own path. Deterministic, because the recording is fixed.
 2. **An edited capture** - the same recording with the value that state needs changed **at the
-   source**: the OID that carries the supply level, the field in the saved response. Still a test
-   instrument; the product still decodes it.
-3. **An action taken on collected data** - excluding a device, letting a walk time out, stopping an
-   agent. The state is produced by doing the thing, never by writing the row the thing would have
-   produced.
+   source**: the field in the saved response that carries the value. Still a test instrument; the
+   product still decodes it.
+3. **An action taken on collected data** - excluding a record, letting a request time out, stopping
+   a process the product depends on. The state is produced by doing the thing, never by writing the
+   row the thing would have produced.
 
-**A state that fits none of the three is reported as unproduced**, and its demand is answered by
-saying so. That is a smaller loss than it sounds and an honest one: a fleet recorded as 「17 replayed,
-2 edited, 1 by exclusion」 is worth more than 20 composed silently, because a reader can weigh it.
+**A state that fits none of the three is reported as unproduced**, and the journey that needs it is
+answered by saying so. That is a smaller loss than it sounds and an honest one: a set recorded as
+「17 replayed, 2 edited, 1 by exclusion」 is worth more than 20 composed silently, because a reader
+can weigh it.
 
 ### When the real path is awkward to reach
 
@@ -140,15 +143,6 @@ keep that from becoming a different kind of damage:
 
 ## Record what a unit of work cost, or the number is gone
 
-The log format and the watches the coordinator arms on it are in the main document; what
-that log does not carry is the price. Duration, tokens, commits, lines, file sizes - none
-of it can be reconstructed afterwards, and all of it is asked for eventually ("how long did
-this take?", "was the rewrite worth it?"). Work that spans weeks and several sessions is
-exactly the case where nobody remembers.
-
-Append the cheap facts as you go, in a machine-readable file this work owns:
-per unit of work, the wall-clock span and whatever the runtime can tell you about
-consumption. Derive the rest from git when it is asked for, rather than
-maintaining it - commits, lines changed and file counts are already recorded
-there. **What git cannot recover is time and consumption**, so those are the two
-worth writing down at the moment they are known.
+What a unit of work cost - a chapter in a build - is appended to `costLog` as it closes: its
+wall-clock span, stamped from the moment its first agent went out, and whatever the runtime can say
+about consumption → `dispatch.md` § *The dispatch is planned, written down, and then made*.
