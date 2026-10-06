@@ -168,6 +168,10 @@ with 「(미정: …)」.
   number or a table is spoken as what it means.
 - The script follows the screen: the page-head description first, then the body top to bottom and
   left to right, in the words printed there, and the words it speaks are emphasised on the slide.
+- A number in the script is written the way it is read: a counter read with a native Korean
+  numeral in words (「열한 대」, 「여섯 명」, 「네 시간」), one read with a Sino-Korean numeral in digits
+  (「10만 건」, 「15개월 차」, 「1 대 3」). A check lists every digit joined to a native-numeral
+  counter (대 · 명 · 번 · 시간 · 가지 · 곳 · 개) in the notes; a voice reading 「11대」 says 십일 대.
 - Time the script at the speaking rate measured by reading it aloud (one bid read 5,247
   characters in about 15 minutes, 350 a minute), never at an assumed rate; an assumed 300 a minute
   cut a script by a fifth that the talk had room for.
