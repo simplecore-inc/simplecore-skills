@@ -3,9 +3,14 @@
 Read this when a project's `frameDeliverables` is non-empty, or when deciding what one should
 hold, or when deciding what to do with the captures a journey run leaves behind.
 
+**Which parts hold where.** In a chapter build every section here applies. A board-parity walk
+reads this file too: *Three reasons to photograph a screen* and the sections after it hold for the
+walk as written, while the rule that every `frameDeliverables` sentence names the code that holds
+it, and the journey run's captures, are the chapter build's.
+
 ## A standing check is held by code, and the list names what holds it
 
-Some projects require something of every screen beyond working code - a rendered check nothing
+In a chapter build, some projects require something of every screen beyond working code - a rendered check nothing
 can assert from source, a snapshot test, a rule about how a value is derived. Where that is so,
 the config names it, **and every sentence names the mechanism that holds it**:
 
@@ -51,24 +56,25 @@ on and met again on every screen built afterwards.
 ### Three reasons to photograph a screen, and none of them substitutes for another
 
 Pictures get taken for three different purposes. They are confused constantly, because
-all three are files ending in `.png`, and each confusion drops a different rule on the
-floor.
+all three are image files that look alike on disk, and each confusion drops a different
+rule on the floor.
 
 | Picture | Why it is taken | What happens to it |
 | --- | --- | --- |
 | **Looking** - the visual pass | the only gate that catches what no test can fail on: a class the styling engine dropped, a font with no glyph, a label cut at an edge | every frame, in every locale and on every device that frame owes; thrown away when the work is over, never during it |
 | **Showing** - what a change did | prose about a screen is unfalsifiable to the person reading it | the coordinator forwards the path the moment it appears, unopened, in the language a person reads |
-| **Keeping** - figures a document holds onto | kept figures have to be true of **one** version of the product, not of eight months of it | its own naming scheme, outside `capturesDir`, in one run at the end from a finished product |
+| **Keeping** - figures another document holds onto | kept figures have to be true of **one** version of the product, not of eight months of it | its own naming scheme, outside `capturesDir` and `evidenceDir`, in one run at the end from a finished product |
 
 - **Looking is unconditional.** Not a project's to opt out of, not deferrable, not
   satisfied by a green gate → `references/judging-frames.md`.
 - **Showing is owed whenever the work moves what a screen draws** - or moves the frame
   it is drawn against. It costs the coordinator a path, which is exactly why agents
   return paths and never images.
-- **Keeping is nothing this work asks for.** No frame owes a picture that outlives it.
-  A project that keeps figures for a document of its own runs that as its own scheme,
-  on its own schedule, and nothing here waits for it or counts a screen unfinished
-  without it.
+- **Keeping is nothing this work asks for beyond the run record.** The captures a journey
+  run leaves in `evidenceDir` are the record's: tracked, as the grounds the chapter closed
+  on, and replaced by the next run. No frame owes a picture for any other document; a
+  project that keeps figures for one of its own runs that as its own scheme, on its own
+  schedule, and nothing here waits for it or counts a screen unfinished without it.
 
 ### Looking and keeping are different jobs, and only one is expensive
 
@@ -80,10 +86,11 @@ grows with the board - four and a half minutes across thirteen frames, an hour a
 hundred and fifty, paid every time anybody touches a common primitive. They will, for as
 long as the product is being built.
 
-The journey run pays that price every time it runs, by machine, which is what makes keeping
-nothing the right default: the pictures in a chapter's folder are the last run's, they are looked
-at once at the close, and a document that wants a figure to keep takes it from a finished product
-in a known state → *Three reasons to photograph a screen*.
+The journey run pays that price every time it runs, by machine, which is what makes keeping no
+figures the right default: the pictures in a chapter's folder are the last run's, tracked as the
+grounds the chapter closed on, looked at once at the close and replaced by the next run, and a
+document that wants a figure to keep takes it from a finished product in a known state →
+*Three reasons to photograph a screen*.
 
 ### Re-shoot what the change reaches, and one frame either side of it
 

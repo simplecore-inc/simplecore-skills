@@ -16,7 +16,7 @@ statement:
 | `null` | **the file is not there** |
 | a key ending in `/` | an empty directory |
 
-**`null` is what half the cases here need** - a result document that was never written, a capture
+**`null` is what half the cases here need** - a run record that was never written, a capture
 that was cited and never made. Written as `''` instead, the case proves a different defect and
 passes for the wrong reason, so the natural way to say 「absent」 has to mean absent.
 
@@ -300,8 +300,10 @@ simply stands still**, and nothing about that state announces itself.
   agent whose brief does not say how to return will write its findings as its final text, which
   reaches nobody - and from the dispatching side that is identical to having found nothing. Five
   agents in one session did exactly this, each having finished the work. **So the brief says how to
-  return, not only what**: 「send it with the message tool, not as your final text」 costs one line
-  and is the difference between a report and a transcript.
+  return, not only what, and how depends on how the agent was launched**: a named agent sends its
+  report, by name, to whoever dispatched it; an unnamed subagent returns it as its final message,
+  sends it to nobody, and reports its steps in its run log → `dispatch.md`, item 8. One line in
+  the brief is the difference between a report and a transcript.
 - **Ask rather than wait, and ask for the partial.** 「Which captures did you open, what did you
   find, what had you not reached」 recovers a report that was nearly complete; waiting recovers
   nothing.
@@ -538,7 +540,7 @@ settles whether a person meets what you intended.
 
 ## Sharing one working tree, and one machine
 
-The one-agent-at-a-time rule is in the main document. These are the failures that
+The one-agent-at-a-time rule is in `dispatch.md`. These are the failures that
 follow when it is bent, all of which cost real work in a single session.
 
 ### A shared resource arbitrates itself - a coordinator holding the queue is the bug
@@ -615,7 +617,7 @@ the symptom was never about that.
 ### An agent that ends, and an agent that only paused
 
 An agent's session can end for reasons that have nothing to do with the work - a usage
-limit, a dropped connection. Three failures follow, and each has cost a session.
+limit, a dropped connection. These failures follow, and each has cost a session.
 
 **A half-finished tree is read as the existing state.** When an agent dies, read the tree
 rather than guessing: commits landed, uncommitted files half-written, a screen reported
@@ -657,38 +659,19 @@ telling it to stand down can land after the damage. **The moment a unit of work 
 somebody else, stop the agent it was taken from.** Stopping is the only thing that reaches
 it before it wakes.
 
-### Two agents on one surface is the coordinator's mistake, never theirs
+**Only the agent's own 「I am finished」 ends its hold on the tree.** A commit, a clean status,
+an idle notification and a report that reads like a conclusion are all things an agent
+produces mid-assignment. So stop the previous agent before dispatching the next one, every
+time, with the tool that kills it rather than a message asking it to stand down - a message
+arrives after its next write, and stopping an agent that was genuinely finished costs
+nothing.
 
-It happens the same way every time: an agent reports that the API cannot supply what
-a frame draws, the coordinator adds that to that agent's brief, and later dispatches a
-server agent for the same area - having forgotten that the first brief reached into it.
-Nobody involved did anything wrong.
+### Two agents on one surface, and two briefs building one artefact
 
-The guard is to say, in every brief, **which paths belong to this agent** and that
-everything else is somebody's. Write it as two columns - mine, and not mine, each named -
-rather than as a scope stated only in the positive: a brief that says what an agent
-owns and stays silent about the rest reads, to the agent, as permission for anything
-adjacent. An agent that then finds foreign edits knows immediately that it is looking at
-a collision rather than at its own earlier work.
-
-Ask each one to **stand down and report** rather than to resolve it. They cannot see each
-other, and the one who stands down is the one whose scope was wrong - which only the
-coordinator knows. An agent that finds another working the same tree stands down and says
-so without touching the index; that is the correct answer, and the coordinator's job is to
-make it unnecessary.
-
-### The overlap that hides best is not a file - it is a deliverable
-
-Two briefs can name disjoint paths and still ask for the same thing: a checker for the
-same rule, a helper for the same convention, a fixture for the same screen. Neither agent
-can see the duplicate, because what they were told to build is not something the tree
-shows until it exists. It surfaces as two implementations of one idea, or as one agent's
-work vanishing into the other's commit - and by then both are finished and sure.
-
-So before dispatching, read the new brief against every running one and ask what each is
-asked to **produce**, not only what it may touch. Where two would build the same artefact,
-name its owner in both briefs - the one who builds it, and the one who waits for it and is
-told where it will appear.
+Both are the coordinator's to prevent, never the agents', and the rules are in `dispatch.md`,
+item 2: a brief written as two columns, mine and not mine; each new brief read against every
+running one for what it is asked to produce; the owner of a shared artefact named in both
+briefs; and an agent that finds another on its surface standing down and reporting.
 
 ### Stage your own paths, never everything
 
@@ -714,31 +697,37 @@ you are about to name**, and `git add` those first. This is the one case where
 adding before committing is right - the file is yours by construction, since it did
 not exist until you made it.
 
-**Stage by path, and commit in the same call.** A commit looks at the tree rather
-than at the files anybody touched, so stage the paths the brief named and nothing
-else, and run `git add <paths> && git commit` in one call, **after** verification
-rather than before - the index is shared, so staging early to see what you have
-opens a window for somebody else's commit to carry your files under a message that
-says nothing about them. Never `git add -A`, never `git add .`, never `git commit -a`.
+**Commit by pathspec, in the same call as any add.** A bare `git commit` commits the
+whole shared index, so it carries whatever another agent has staged. Name your paths
+instead - `git add <the new files under your paths> && git commit --only <paths>` in one
+call, **after** verification rather than before: the index is shared, so staging early to
+see what you have opens a window for somebody else's commit to carry your files under a
+message that says nothing about them. Never `git add -A`, never `git add .`, never
+`git commit -a`, and never a commit that names no path.
 
 **Path-level staging runs out when the shared thing is a file rather than a
 directory** - a manifest, a config, a barrel that two agents both add a line to.
-`git add <that file>` takes their line too, and the moves that look obvious (wait for
+`git add <that file>` takes their line too, `git commit --only <that file>` commits
+the working-tree copy with their line in it, and the moves that look obvious (wait for
 them, ask them to commit first, commit both lines) each cost somebody their work or
-their authorship. Build the content you want, put *that* in the index, and leave the
-working tree alone:
+their authorship. Build the content you want, and commit *that* from a private index
+the shared one never sees:
 
 ```bash
-git show HEAD:<file> > <scratch>/base        # the committed version, without their line
+git show HEAD:<file> > <scratch>/base               # the committed version, without their line
 #  … apply only your own change to <scratch>/base …
 blob=$(git hash-object -w <scratch>/base)
-git update-index --cacheinfo 100644,"$blob",<file>
-git commit -m "…"                            # commits the index, not the tree
+GIT_INDEX_FILE=<scratch>/index git read-tree HEAD   # a private index, starting from HEAD
+GIT_INDEX_FILE=<scratch>/index git update-index --cacheinfo 100644,"$blob",<file>
+GIT_INDEX_FILE=<scratch>/index git commit -m "…"    # HEAD plus your blob, nothing anybody staged
+git update-index --cacheinfo 100644,"$blob",<file>  # the shared index's entry now matches the new HEAD
 ```
 
-Their edit stays in the working tree, unstaged and untouched, and neither of you
-blocks. Learn it before it is needed; by then every obvious move costs somebody
-their work.
+The last line matters: without it the shared index still holds the old blob for
+`<file>`, so it reads as a staged revert of the commit you just made, and the next
+commit that names that path undoes it. Their edit stays in the working tree, unstaged
+and untouched, and neither of you blocks. Learn it before it is needed; by then every
+obvious move costs somebody their work.
 
 **An agent that finds foreign changes and decides to skip committing altogether** has
 read the situation correctly and reached the wrong answer: its work now survives only

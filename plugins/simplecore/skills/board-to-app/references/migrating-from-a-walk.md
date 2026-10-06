@@ -29,7 +29,7 @@ one project the move is a change, not a period.
 | | Where it lands |
 | --- | --- |
 | **The board** | unchanged - same frames, same permanent ids, same sources. Both skills read the sources and neither reads the built HTML |
-| **Five config keys** | `handoverFile` · `logDir` · `capturesDir` · `narrativePhrases` · `frameDeliverables`, copied verbatim into `.claude/board-to-app.json` |
+| **Config keys** | `handoverFile` · `logDir` · `capturesDir` · `narrativePhrases`, copied verbatim into `.claude/board-to-app.json`, and `frameDeliverables`, carried over and rewritten sentence by sentence - below |
 | **The handover file** | the same file, under the same key, with the same discipline - facts in plain declaratives, corrected in place |
 | **What those paths are called** | renamed wherever the name says the walk. The file and the directory transfer; the retired arrangement's name does not → *The walk leaves more behind than its two documents* |
 | **Captures already taken** | already named the one way. The naming contract is this skill's (`references/driving-the-product.md`) and the walk points at it, so nothing is renamed |
@@ -37,16 +37,17 @@ one project the move is a change, not a period.
 | **The frame list** | nowhere. An open chapter already says which of its frames are not yet built and tested, in the file that also says in what order and who tests them |
 | **What the walk built** | nothing as state → *Work already done is not migrated as state*, below |
 
-The five keys mean in this skill exactly what they meant in the walk, down to the failure each one
-prevents:
+`handoverFile`, `narrativePhrases`, `logDir` and `capturesDir` mean in this skill exactly what they
+meant in the walk, down to the failure each one prevents; `frameDeliverables` keeps its subject and
+holds each sentence to a stricter rule:
 
-| Key | The same in both |
+| Key | In this skill |
 | --- | --- |
 | `handoverFile` | the one shared file of facts every agent reads before it starts. `handoverGate` refuses the point-of-view phrasing the walk's write-time check refused |
 | `narrativePhrases` | the project's additions to that refused list, for a project writing in neither Korean nor English |
 | `logDir` | one agreed, ignored directory, one file per agent, one line appended per step. What it is called is the project's to choose, except where the name says the walk - that one is renamed in step 6; the ignore rule moves with it either way |
-| `capturesDir` | one agreed, ignored directory under the fixed capture name, one folder per language |
-| `frameDeliverables` | what a screen owes beyond working code, one checkable sentence each. The unit it holds up renames: an unmet deliverable kept a frame on the parity list, and here it keeps the chapter from closing |
+| `capturesDir` | one agreed, ignored directory under the fixed capture name, one folder deep - per language or per chapter |
+| `frameDeliverables` | what a screen owes beyond working code - the same subject, under a stricter rule. **Each sentence is rewritten, not copied**: here every sentence names the mechanism that holds it, a rule in `auditScript` or a helper the journey tests call, so a walk's sentence that a walker checked by eye either gains that mechanism or moves to the project's own eyes table → `frame-artefacts.md`. An unmet deliverable kept a frame on the parity list; here it keeps the chapter from closing |
 
 **`parityList` and `parkedSection` are not keys this skill reads, and a leftover one fails the
 config gate by name.** The parked half has a successor - `openItemsFile` with `openItemsHeading` -
@@ -118,22 +119,23 @@ regenerates the graph.
 
 It reads the placement, the board and the persona map, and writes per chapter the header - previous
 chapter, the state it leaves, prerequisites, `parallelWith`, entities, `usedLater`, `promises` - and
-per screen one build line plus one test line per persona, quoting that frame's own tabs, counts,
-messages and primary action. The hand-authored sections it preserves are the chapter's heading, what
-the chapter creates, and `touchedEarlier`.
+then what `demands.md` specifies: a structural line per frame, a journey per persona the chapter's
+screens admit and a negative journey per persona they refuse, the seed relations, and the verdict
+lines of a foundation chapter, with the headings the checks read written exactly. None of it quotes
+a value. The hand-authored sections it preserves are the chapter's heading, what the chapter
+creates, and `touchedEarlier`.
 
 ## Work already done is not migrated as state
 
 **Every chapter starts open**, however many of its screens the walk already built.
 
-A chapter closes on its persona tests, not on its code. A screen the walk built and judged makes a
+A chapter closes on its journeys, not on its code. A screen the walk built and judged makes a
 chapter cheap to close; it does not close it. The distinction is exact rather than cautious: a walk
-judges each frame in character, by the three personas that stand on any board, but **the chapter's
-own persona lines cannot have been run, because they do not exist until the chapter set is
-generated** - one line per persona that reaches the screen, quoting what that frame draws, run
-signed in as that persona with that persona's account.
+judges each frame in character, but **the chapter's own journeys cannot have been run, because they
+do not exist until the chapter set is generated** - one per persona the chapter's screens admit,
+written as a test that signs in with that persona's account.
 
-So the first pass over an already-built chapter is a comparison against the board, then the persona
+So the first pass over an already-built chapter is a comparison against the board, then the journey
 run, then the ordinary close. This is what makes the migration cheap: nothing has to reconcile a
 shrinking list against a growing chapter table, because there is no list.
 
@@ -173,7 +175,7 @@ neither.
 | --- | --- | --- |
 | 1 | The board builds and its gates pass | the board's own kit |
 | 2 | Decide the placement and the entity ownership. Write the chapter overview and the state ledger, every chapter open | the invariant: no chapter uses an entity a later chapter owns |
-| 3 | Write `.claude/board-to-app.json` from `assets/board-to-app.json`. Carry the five keys verbatim; leave out what the project does not have yet rather than inventing a path. **Read `bta.mjs doctor` over it** - the `✖` rows and the deferrals are what says whether it is finished | `bta.mjs check` - `configGate` names every required key that is absent and every declared path that is not there |
+| 3 | Write `.claude/board-to-app.json` from `assets/board-to-app.json`. Carry `handoverFile`, `logDir`, `capturesDir` and `narrativePhrases` verbatim and rewrite `frameDeliverables` sentence by sentence; leave out what the project does not have yet rather than inventing a path. **Read `bta.mjs doctor` over it** - the `✖` rows and the deferrals are what says whether it is finished | `bta.mjs check` - `configGate` names every required key that is absent and every declared path that is not there |
 | 4 | Run `chapterGenerator`, and give every chapter a row in the ledger | `bta.mjs check` - `ledgerGate` names a chapter the ledger does not |
 | 5 | Move the parked decisions into `openItemsFile`, one line each in three parts | `bta.mjs check` - `openItemsGate` reads the heading and the shape |
 | 6 | Point the project's instruction file at this skill, and stop pointing it at the walk. **Rename every transferred path whose name still says the walk** - the handover file and the log directory among them - carrying its config key, its ignore rule and every pointer at it in the same step | a session that starts anywhere in the repository reaches the chapters, and a search for the walk's name returns nothing the project still maintains |
@@ -213,9 +215,10 @@ anything else, since a broken reader there stops the whole repository rather tha
 what neither skill declares; those are the project's and this skill reads none of them.
 
 **A capture the walk left behind is already named correctly or it is nothing.** `capturesGate` reads
-`<language>/<YYYYMMDD-HHMM>-<frame-id>[-variant].png` and fires on anything else, so a directory
-holding older shapes is emptied rather than renamed - captures taken for looking are thrown away
-when the walk that took them is over.
+`<language or chapter>/<YYYYMMDD-HHMM>-<frame-id>[-variant]` with a `.png`, `.webp`, `.jpg` or
+`.avif` suffix and fires on anything else → `driving-the-product.md` § *What to keep, and what to
+show a person*. So a directory holding older shapes is emptied rather than renamed - captures taken
+for looking are thrown away when the walk that took them is over.
 
 ## Retiring the walk
 

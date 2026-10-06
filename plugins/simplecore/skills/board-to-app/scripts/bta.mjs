@@ -17,7 +17,7 @@
 import { pathToFileURL } from 'node:url';
 import { CORE_GATES, applies, gatesFor, gradeOf } from './core/gates.mjs';
 import { HEADING_ROLES, SCHEMA, findConfig, loadProject } from './core/context.mjs';
-import { makeBuilders, misdeclared, proveKeysAreDocumented, proveMisdeclaredNeeds, proveSeverity, proveShadowedIds, runCases, ungraded, unproven } from './core/harness.mjs';
+import { makeBuilders, misdeclared, proveCensusReads, proveGatesAreRegistered, proveKeysAreDocumented, proveMisdeclaredNeeds, proveSeverity, proveShadowedIds, runCases, ungraded, unproven } from './core/harness.mjs';
 import { cases as coreCases } from './core/cases.mjs';
 import { censusLine, vocabularyCensus } from './core/vocabulary.mjs';
 
@@ -49,9 +49,9 @@ function context() {
     process.exit(2);
   }
   const ctx = loadProject(path, { range: opt('range'), board: opt('board') });
-  // A refusal, not a default. Everything this command writes - a chapter, a ledger row, a result
-  // document - lands under one board, and a guess puts all of it somewhere somebody has to find
-  // again to undo.
+  // A refusal, not a default. Everything a run writes - a chapter, a ledger row, a run record -
+  // lands under one board, and a guess puts all of it somewhere somebody has to find again to
+  // undo.
   if (ctx.boardError) {
     console.error(ctx.boardError);
     process.exit(2);
@@ -181,6 +181,7 @@ async function proveGates() {
   const severity = [
     ...proveSeverity(builders.project), ...proveShadowedIds(builders.project), ...proveMisdeclaredNeeds(builders.project),
   ];
+  const census = proveCensusReads(builders.project);
   builders.cleanup();
 
   const missing = unproven(collected, gates);
@@ -205,8 +206,20 @@ async function proveGates() {
   if (!undocumented.length) {
     console.log(`✔ keys: every key the schema reads has a row in the config table and a line in the template`);
   }
+  // A gate nobody listed works perfectly and is known to nobody - the register of what a gate holds
+  // is where a reader looks for it, and the subject is again this skill's own document.
+  const unregistered = proveGatesAreRegistered(CORE_GATES.map((g) => g.id));
+  for (const line of unregistered) console.log(`\n✖ register · ${line}`);
+  if (!unregistered.length) {
+    console.log('✔ register: every core gate has a row in the table of what a gate holds, and every row names a gate');
+  }
+  for (const line of census) console.log(`\n✖ census · ${line}`);
+  if (!census.length) {
+    console.log('✔ census: every declared word is counted where it is written, and a word declared wrongly counts nothing');
+  }
   console.log(bad ? `\n✖ ${bad} of ${collected.length} cases came out the wrong way` : `\n✔ ${collected.length} cases, both directions`);
-  return bad === 0 && missing.length === 0 && mistyped.length === 0 && severity.length === 0 && undocumented.length === 0;
+  return bad === 0 && missing.length === 0 && mistyped.length === 0 && severity.length === 0
+    && undocumented.length === 0 && unregistered.length === 0 && census.length === 0;
 }
 
 async function doctor() {
@@ -253,9 +266,8 @@ async function doctor() {
       // **Every one of them says what the absence costs.** 「not declared」 on its own tells the
       // reader the one thing they already know, and the sentence that decides whether to go and
       // declare it - 「a chapter cannot be regenerated after a board fix」, 「nothing says where a
-      // migration goes, so backend chapters run one at a time」 - sat in a table in `SKILL.md` that
-      // nobody opens while reading a report. It is `SCHEMA[key].absent` now, and the config table
-      // carries the same string under the same proof.
+      // migration goes, so backend chapters run one at a time」 - is `SCHEMA[key].absent`, and the
+      // config table in `references/config.md` carries the same string under the same proof.
       if (spec.required) console.log(`✖ ${key.padEnd(18)} not declared — required: ${spec.absent}`);
       else if (spec.closing) {
         closing += 1;
@@ -285,10 +297,9 @@ async function doctor() {
   //
   // A path is declared right or wrong and `configGate` says which; a WORD is declared right or
   // wrong and nothing says which, because a word that matches nothing produces the same silence as
-  // a repository with nothing wrong. `declaredWordsMatchTheDocuments` speaks where it can prove the
-  // declaration is broken, and that is less than half of what a person wiring a project needs -
-  // the rest is the count. 「0 findings」 and 「1675 lines matched across 35 chapter files」 are one
-  // line to an exit status and two different sentences to a reader.
+  // a repository with nothing wrong. The count is what a person wiring a project needs: 「0
+  // findings」 and a count of what each word matched are one line to an exit status and two
+  // different sentences to a reader.
   const census = vocabularyCensus(ctx);
   if (census.length) {
     console.log('\nvocabulary — what each declared word matched in the documents it governs');

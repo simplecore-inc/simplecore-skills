@@ -286,7 +286,8 @@ const set = (el, v) => {
 
 A frame drawn as an overlay on another frame - a dialog, a drawer, a confirmation - is a
 picture of **two** screens. Re-shoot the one underneath and the overlay's capture is stale
-while nothing about it changed. **Which base each state frame sits on is already written down**
+while nothing about it changed. A journey run takes every capture it shows again, so this
+governs a sweep into `capturesDir`. **Which base each state frame sits on is already written down**
 in the board: the state frame's source imports it. So **re-shoot a base and every frame that
 imports it, in the same change.**
 
@@ -299,8 +300,10 @@ directions at once:
 - **Re-encoding with a different tool changes every byte of an unchanged screen**, so healthy
   pairs are flagged.
 
-**Which is why one encoder makes every capture.** Fix the tool and its settings - one quality
-ladder down to the size ceiling, one binary - and byte-identity for an unchanged screen holds.
+**Which is why one encoder makes every capture**, in a sweep and in the journey tests alike. Fix
+the tool and its settings - one quality, one binary - and byte-identity for an unchanged screen
+holds, which is also what lets `noTwoCapturesAreTheSamePicture` read two identical files as one
+state that never reached the screen.
 Two encoders in one folder produce the same picture at different sizes (the same screen came
 out 18,978 and 19,002 bytes from two of them), and after that nobody can tell a re-encode from
 a re-shoot.
@@ -313,16 +316,18 @@ Two different jobs, and conflating them costs either context or trust.
 config names (`capturesDir`), under one name:
 
 ```text
-<language>/<YYYYMMDD-HHMM>-<frame-id>[-<variant>].png
+<language or chapter>/<YYYYMMDD-HHMM>-<frame-id>[-<variant>].<png | webp | jpg | avif>
 ```
 
-**The language is the only folder.** Judging a frame is looking at it in each
-language side by side, and a pile divided by width, by frame or by run scatters
-the three pictures that have to be compared into three places. Everything else
-that tells two pictures of one frame apart - the width, the state it was driven
-into, how far down the frame it was taken - is a variant on the end of the name,
-because none of it changes where the picture is looked for. Keep the variant to
-lower case, digits and hyphens.
+**One folder deep, and it is the language or the chapter.** Judging a frame is looking
+at it in each language side by side, so a sweep of screens across languages groups by
+language; a sweep of one chapter's frames groups by chapter - `w02`, or `w02-n` for one
+part of it. A pile divided by width, by frame or by run scatters the pictures that have
+to be compared into several places, and `capturesGate` refuses a folder that is neither
+a declared language nor a chapter. Everything else that tells two pictures of one frame
+apart - the width, the state it was driven into, how far down the frame it was taken -
+is a variant on the end of the name, because none of it changes where the picture is
+looked for. Keep the variant to lower case, digits and hyphens.
 
 **The moment is in the name, and the pass never deletes anything.** A frame shot
 again otherwise lands on top of the picture it is being compared with, and then
@@ -335,7 +340,8 @@ the board does not draw - a palette, an index page, a harness screen - has no
 frame to be judged against and no place in the record; it belongs in the
 session's scratch space. Whatever produces a project's **kept** figures is a
 separate scheme with separate names, and the two must not be mixed - which of the
-three jobs a picture is doing is settled in the main document.
+three jobs a picture is doing → `frame-artefacts.md` § *Three reasons to photograph a
+screen*.
 
 Both the directory name and the languages come from the project; the shape does
 not. **Put the name in one function that every capture site calls, and a check

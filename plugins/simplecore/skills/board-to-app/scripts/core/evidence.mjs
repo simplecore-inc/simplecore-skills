@@ -1,38 +1,29 @@
-// What a closed chapter leaves behind: one result document per chapter, a section per line the
-// chapter demands, and the captures those sections show.
+// What a closed chapter leaves behind: one run record per chapter, written by `journeyCommand`,
+// and the captures the record shows, in a folder of the same name beside it.
 //
-// A chapter closes because the agent holding it says its persona lines passed, and nothing behind
-// that claim outlives the session. The result document is what makes the verdict deferrable: one
-// file per chapter, a section per line the chapter demands, and under each section what the persona
-// did, what the chapter demanded, what the screen showed, and the capture of it.
+// A chapter closes because its journeys pass, and nothing behind that claim outlives the session
+// unless something writes it down. The run record is that: one row per journey with its persona,
+// its test and its result, and one capture per screen-state a journey visited. **Nothing in it is
+// written by hand** - the command writes it, and a record fitted to the pictures records a run that
+// did not happen.
 //
-// **It is the residue of running the verification, never the goal of it.** Whether an agent wrote
-// the document first and then made the screens match it is not machine-visible and stays with the
-// coordinator. What is visible is the shape, and that is what these gates hold - a section per
-// demanded line, three labels under each, evidence under that, and every capture on disk.
-//
-// **The naming rule is the capture bound.** An image is named after the frame it shows and, where
-// that frame draws a content tab strip, after the pane of it - so a chapter holds one image per
-// frame it places plus one per further pane the board draws on those frames, and the board is what
-// says how many that is. A chapter that places no frame cites no image at all and carries the
-// command and what came back instead. Everything a sweep produced beyond the cited set stays in
-// `capturesDir`, which the repository ignores.
+// These gates hold the record against the chapter file - every journey the chapter names has a
+// passing row, every frame it places has a capture - and hold each capture to what its own bytes
+// say: the window it was taken through, the scheme, whether anything is drawn on it, and that no
+// two captures of one chapter are the same picture.
 //
 // **The words are the project's and the shapes are the skill's.** Which word a ledger writes for a
-// closed chapter, what a chapter's persona line looks like, what the three labels under a section
-// are called - all declared, all read through `ctx`. What is fixed here is what a project does not
+// closed chapter is declared and read through `ctx`. What is fixed here is what a project does not
 // get to vary without the checks becoming unreadable: one image format, one capture-name grammar,
-// one ceiling on the bytes and one floor under how much of a canvas they cover. A second format
-// would mean a second reader for every name and a ceiling that means something different on each
-// side of it; the day a project genuinely needs one, it becomes a schema key rather than a second
-// regex.
+// and one floor under how much of a canvas a capture covers. A second format would mean a second
+// reader for every name; the day a project genuinely needs one, it becomes a schema key rather
+// than a second regex.
 import { execFileSync } from 'node:child_process';
 
-import { ROUND_PHRASES, onlyQuoted, proseLines, sectionUnder, tableCells } from './prose.mjs';
+import { proseLines, tableCells } from './prose.mjs';
 
-/** The only image format a result document cites, and the bytes one of them may take. */
+/** The only image format a run record shows. */
 const CAPTURE_SUFFIX = '.webp';
-const CAPTURE_BYTES = 150 * 1024;
 
 /**
  * The bytes per megapixel below which a capture holds no more than an empty canvas.
@@ -81,35 +72,12 @@ const CAPTURE_FLOOR_PER_MPX = 2800;
  * variant.</b> A board drawn with `simplecore:wireframe-boards` gives every state of a screen its
  * own frame and its own permanent id - `n-02a` is the overview pane, `n-02k` the one with no
  * vendor profile - so a pattern that stopped at the digits read `n-02a.webp` as no capture name at
- * all. That is the quiet direction: the gate demanding a reason for every capture then found no
- * capture to demand one for, and a board whose every frame carries a letter got a clean run out of
- * a check that had read nothing. The letter goes inside the second group so a caller composing
+ * all. That is the quiet direction: a record showing that capture shows no photograph of the frame
+ * to the gate counting them, and a folder of such captures holds no frame to the gate asking
+ * whether a record was written. The letter goes inside the second group so a caller composing
  * `${g1}-${g2}` still gets the whole id.
  */
 export const CAPTURE_NAME = /^([a-z])-(\d{2,}[a-z]?)(?:-t\d+|-empty|-error)?\.webp$/;
-
-/**
- * The same name found inside a sentence rather than measured whole.
- *
- * <p>A demand names its captures in running prose, usually in backticks, several to a clause. The
- * anchored form above answers 「is this string a capture name」 and this one answers 「which capture
- * names does this line contain」 - two questions, and deriving the second by stripping the anchors
- * off the first is how a reader ends up matching `a-01.webp` inside `data-01.webp`.
- */
-const CAPTURE_IN_TEXT = /\b[a-z]-\d{2,}[a-z]?(?:-t\d+|-empty|-error)?\.webp\b/g;
-
-/**
- * One demand line's clauses.
- *
- * <p><b>The clause is the unit, not the line.</b> A demand line is a run of clauses joined by
- * 「. 」 - open the screen, press the panes, check the empty list, press the row actions - and a
- * line whose empty-list clause gives its reason while its pane clause gives none is precisely the
- * habit the reason exists to break. Read line-wide, that line passes on its neighbour's sentence.
- *
- * <p>A capture name carries a `.` of its own and is never followed by a space at it, so the split
- * cannot fall inside one.
- */
-const clauses = (line) => line.split(/(?<=[.。])\s+/);
 
 /**
  * A frame id as a heading writes it.
@@ -119,27 +87,19 @@ const clauses = (line) => line.split(/(?<=[.。])\s+/);
  * id - `N-02a` is the overview tab and `N-02k` the one with no vendor profile - so a pattern
  * stopping at the digits reads `N-02` out of `N-02k` and then fails the boundary that follows it.
  * What that costs is silence: the chapter places a frame, the check reads no frame placed, and the
- * gate that would have demanded a capture of it reports the same nothing as a chapter with no
+ * gate that would have asked for a capture of it reports the same nothing as a chapter with no
  * screens. It is bounded rather than open - one lowercase letter, and `N-02abc` matches nothing.
  */
 const FRAME_ID = /\b[A-Z]-\d{2,}[a-z]?\b/g;
 
-/** The heading a chapter writes for each base screen it builds. */
-export const BASE_HEADING = /^## \d+\. ([A-Z]-\d{2,}[a-z]?)(?: |$)/;
+/** The heading a chapter file writes for each frame it places: `## <n>. <frame id> <title>`. */
+const BASE_HEADING = /^## \d+\. ([A-Z]-\d{2,}[a-z]?)(?: |$)/;
 
 /** A numbered section of a chapter, as its number and its title. */
-export const CHAPTER_SECTION = /^## (\d+)\. (.+?)\s*$/;
+const CHAPTER_SECTION = /^## (\d+)\. (.+?)\s*$/;
 
-/** A section of an evidence document, as its whole title. */
-export const EVIDENCE_HEADING = /^## (.+?)\s*$/;
-
-/**
- * What separates a section from the role that proves it, in the heading both documents write.
- *
- * <p>Exported because a second reader over the same headings would otherwise carry its own copy of
- * it, and a separator that agrees today is a separator that disagrees the day one of them changes.
- */
-export const ROLE_SEPARATOR = ' · ';
+/** A `## ` section of a document, as its whole title. */
+const EVIDENCE_HEADING = /^## (.+?)\s*$/;
 
 /** The opening or closing line of a fenced block. */
 const FENCE = /^\s*(```|~~~)/;
@@ -158,33 +118,18 @@ const MARKDOWN_IMAGE = /!\[[^\]]*\]\(\s*<?([^)<>\s]+)>?(?:\s+"[^"]*")?\s*\)/g;
 /** Whether a line opens a block of its own rather than continuing the one above it. */
 const BLOCK_START = /^\s*(?:\*\*|[-*+]\s|\d+\.\s|\||>|#)/;
 
-/** What a quote may end with and the chapter line may not, once the quote is cut short. */
-const QUOTE_TAIL = /[.·…—]+$/;
-
-/**
- * The names an EVIDENCE folder's own index takes, which belong to no chapter.
- *
- * <p>`00-` is one of them because an evidence folder's index is conventionally `00-overview.md`,
- * and it is safe on this side: a result document is named after its chapter file, so the sweep
- * exempts it by name before it ever reaches this pattern.
- */
-const INDEX_NAME = /^(00|_|README)/i;
-
 /**
  * The names a CHAPTER folder's own index takes.
  *
  * <p>**`00-` is deliberately not one of them.** A project is free to number its first chapter 00 -
  * a foundation chapter that places no frames is exactly the thing a project numbers 00 - and
  * reserving that prefix on this side does not fail, it goes silent: the chapter is read as the
- * folder's index, its demands are counted by nobody, its result document is opened by nobody, and
+ * folder's index, its journeys are counted by nobody, its run record is opened by nobody, and
  * every gate over it reports the same zero as a chapter with nothing wrong. One project ran that
- * way with its only closed chapter invisible to all nine evidence gates while `check` printed
- * green over it.
+ * way with its only closed chapter invisible to every evidence gate while `check` printed green
+ * over it.
  */
 const CHAPTER_INDEX_NAME = /^(_|README)/i;
-
-/** Every space and line break taken out, which is what makes two wrappings of one sentence equal. */
-const folded = (text) => text.replace(/\s+/g, '');
 
 /**
  * A file in the chapter folder that is a chapter rather than the folder's own index.
@@ -200,9 +145,6 @@ function chapterOf(file) {
   return file.replace(/\.md$/, '').split('-')[0].toUpperCase();
 }
 
-/** A file the folder keeps for itself rather than for one chapter - its index, its readme. */
-const isIndex = (name) => name.endsWith('.md') && INDEX_NAME.test(name);
-
 /** Every chapter the chapter folder holds, by the id its file name carries. */
 function chapterFiles(ctx) {
   const out = new Map();
@@ -210,8 +152,8 @@ function chapterFiles(ctx) {
   // project is free to number its first chapter 00. What settles it is that the project DECLARED
   // that file as its chapter overview, so it is excluded by identity rather than by its name.
   // Without this, a project whose index is `00-overview.md` grows a chapter called `00`, and the
-  // evidence folder's own index - conventionally the same name - becomes that chapter's result
-  // document and is asked to prove lines the index never demands.
+  // evidence folder's own index - conventionally the same name - becomes that chapter's run record
+  // and is held to journeys the index never names.
   const overview = ctx.at('chapterOverview');
   const indexName = overview ? String(overview).split('/').pop() : null;
   for (const file of [...(ctx.list(ctx.at('chapterDir')) ?? [])].sort()) {
@@ -252,8 +194,8 @@ function closedChapters(ctx) {
  * that report to disable the check.
  *
  * <p>So the ledger writes a different word, `decidedStatus`, and the evidence checks skip those
- * chapters while the ledger goes on saying plainly which kind each one was. **Undeclared, nothing
- * changes**: a project that has never closed a chapter this way reads exactly as before.
+ * chapters while the ledger goes on saying plainly which kind each one was. **Undeclared, no
+ * chapter is read as decided**, and every closed row is read as closed on its evidence.
  *
  * @param ctx the project
  * @returns `onEvidence` - closed with verification behind it - and `onDecision`
@@ -280,67 +222,25 @@ function closedRows(ctx) {
   return { onEvidence, onDecision };
 }
 
-/**
- * The headings one chapter demands of its evidence document, in the chapter's own order.
- *
- * <p>A heading is the chapter's section number, that section's title, and the role - a persona
- * where the chapter places screens, and the verdict role where it places foundation a machine
- * proves. The whole string is built and matched whole, so a title carrying its own separator needs
- * no splitting.
- */
-function demandedHeadings(ctx, rel) {
-  const text = ctx.read(rel);
-  if (text === null) return [];
-  const { persona, verdict } = ctx.lines;
-  const role = ctx.declared('verdictRole');
-  const headings = [];
-  const seen = new Set();
-  let section = null;
-  for (const { line } of proseLines(text)) {
-    const named = CHAPTER_SECTION.exec(line);
-    if (named) {
-      section = `${named[1]}. ${named[2]}`;
-      continue;
-    }
-    if (!section) continue;
-    const named_ = persona?.exec(line);
-    const who = named_ ? named_[1] : (verdict?.test(line) ? role : null);
-    if (!who) continue;
-    const heading = `${section}${ROLE_SEPARATOR}${who}`;
-    if (seen.has(heading)) continue;
-    seen.add(heading);
-    headings.push(heading);
-  }
-  return headings;
-}
-
-/** The frames one chapter places - the screens its headings name and the states hanging off them. */
+/** The frames one chapter places - the `## <n>. <frame id>` headings its file writes. */
 function framesPlaced(ctx, rel) {
   const placed = new Set();
   const text = ctx.read(rel);
   if (text === null) return placed;
-  const { states } = ctx.lines;
   for (const { line } of proseLines(text)) {
     const heading = BASE_HEADING.exec(line);
     if (heading) placed.add(heading[1]);
-    // `{text}` is what a states line hands over, and a project may declare that line without one:
-    // a board that draws every state as a frame of its own writes no sentence listing a screen's
-    // states, so its line has nothing to capture and there is nothing hanging off it. Reading
-    // group 1 unguarded turns that declaration into a TypeError, which reaches a person as the
-    // tool being broken rather than as anything they can act on.
-    const hanging = states?.exec(line)?.[1];
-    if (hanging === undefined) continue;
-    for (const [id] of hanging.matchAll(FRAME_ID)) placed.add(id);
   }
   return placed;
 }
 
 /**
- * The frames one chapter places that somebody is told to prove - a base screen whose section
- * carries a persona line, and the states hanging off that same section.
+ * The frames one chapter places under a section a persona line proves, with the states listed on
+ * a states line beside them.
  *
- * <p>A verdict line does not count. That line is proved by a command and what came back, which is
- * a fenced block rather than a picture, and a chapter placing frames never carries one.
+ * <p><b>On every project this returns an empty set.</b> A persona line and a states line are
+ * compiled from no declared key, so `ctx.lines` carries neither and no section reads as proved. It
+ * stays on `ctx.evidence` for a project gate that calls it; such a gate reads nothing through it.
  */
 function demandedFrames(ctx, rel) {
   const demanded = new Set();
@@ -374,11 +274,11 @@ function demandedFrames(ctx, rel) {
 }
 
 /**
- * The frames one result document photographs, as the ids its images are named after.
+ * The frames one run record shows, as the ids its images are named after.
  *
- * <p>Whose section carries the image is not this reader's business - a frame is photographed once
- * per document and any section may be the one that shows it. A pane capture counts as a photograph
- * of its frame: the question is whether a browser was ever opened on the screen, and it was.
+ * <p>Where in the record the image sits is not this reader's business - a frame is shown once per
+ * record, anywhere in it. A pane capture counts as a photograph of its frame: the question is
+ * whether a journey ever opened the screen, and it did.
  */
 function capturedFrames(text, stem) {
   const shown = new Set();
@@ -426,7 +326,6 @@ function drawnOn(ctx) {
   return base;
 }
 
-/** Every frame a capture of this one also stands for - itself, what it is drawn on, and so on up. */
 /**
  * The frames whose module declares no address of its own - no `route` and no `url`.
  *
@@ -451,6 +350,7 @@ function unaddressed(ctx) {
   return out;
 }
 
+/** Every frame a capture of this one also stands for - itself, what it is drawn on, and so on up. */
 function upFrom(id, base) {
   const chain = [id];
   const seen = new Set(chain);
@@ -462,7 +362,11 @@ function upFrom(id, base) {
 }
 
 /**
- * One evidence document read as its sections.
+ * One document read as `## ` sections carrying the three labels `evidenceLabels` names.
+ *
+ * <p><b>The schema declares no `evidenceLabels`</b>, so on any project `configGate` accepts,
+ * `labelsOf` is null and `ctx.evidence.sections` returns no sections without calling this. It
+ * stays on `ctx.evidence` for a project gate that calls it.
  *
  * <p>`proseLines` is not enough here. A section that proves a machine verification carries the
  * command and what came back, and a fenced block is the one thing `proseLines` removes - so a
@@ -560,55 +464,7 @@ function evidenceSections(text, labels, placeholder = null) {
   return sections;
 }
 
-/**
- * One chapter file read as the sections a result document quotes from.
- *
- * <p>`headings` maps the whole heading an evidence section carries to the chapter section it names,
- * built exactly as `demandedHeadings` builds it so the two can never pair differently. `sections`
- * holds each section's lines, folded, with a wrapped line joined back into the one line it is.
- */
-function chapterSections(ctx, rel) {
-  const sections = new Map();
-  const headings = new Map();
-  const text = ctx.read(rel);
-  if (text === null) return { sections, headings };
-  const { persona, verdict } = ctx.lines;
-  const verdictRole = ctx.declared('verdictRole');
-
-  let key = null;
-  let lines = null;
-  let open = null;
-  const flush = () => {
-    if (open !== null && open.trim()) lines.push(folded(open));
-    open = null;
-  };
-
-  for (const { line } of proseLines(text)) {
-    const named = CHAPTER_SECTION.exec(line);
-    if (named) {
-      flush();
-      key = `${named[1]}. ${named[2]}`;
-      lines = [];
-      sections.set(key, lines);
-      continue;
-    }
-    if (key === null) continue;
-
-    if (!line.trim()) flush();
-    else if (BLOCK_START.test(line) || open === null) {
-      flush();
-      open = line;
-    } else open += ` ${line}`;
-
-    const said = persona?.exec(line);
-    const who = said ? said[1] : (verdict?.test(line) ? verdictRole : null);
-    if (who && !headings.has(`${key}${ROLE_SEPARATOR}${who}`)) headings.set(`${key}${ROLE_SEPARATOR}${who}`, key);
-  }
-  flush();
-  return { sections, headings };
-}
-
-/** The three labels a section carries, by role, or null where the project has not named them. */
+/** The three labels a section carries, by role - null on every project, since the schema declares no `evidenceLabels`. */
 function labelsOf(ctx) {
   const declared = ctx.declared('evidenceLabels');
   if (!declared?.did || !declared?.demanded || !declared?.saw) return null;
@@ -616,18 +472,7 @@ function labelsOf(ctx) {
 }
 
 /**
- * The bytes a file takes.
- *
- * <p>`ctx` reads text and answers whether a path is there, and neither answers this - a capture is
- * binary, so the length of its utf8 decoding is not its size.
- */
-function byteSize(ctx, rel) {
-  const path = ctx.inRoot(rel);
-  return ctx.exists(path) ? ctx.size(path) : null;
-}
-
-/**
- * The reader for a demand discharged as 「the same component as this picture」, or null.
+ * The compiled `placeholderLine` - 「the same component as this picture」 - or null.
  *
  * <p>A grammar that will not compile is `configGate`'s finding, not this file's - here it simply
  * means no such line can be recognised, and every check over one is skipped rather than run
@@ -650,6 +495,10 @@ function placeholderOf(ctx) {
  * cannot import this file: the skill is installed somewhere different on every machine. So the
  * readers arrive on `ctx`, one definition, and a project gate never writes a second copy that
  * drifts from this one.
+ *
+ * <p>`demandedFrames` and `sections` read lines and labels no declared key compiles, so both come
+ * back empty on every project; the other readers read the chapter files, the ledger, the record and
+ * the folder as they are.
  */
 export function evidenceReaders(ctx) {
   return {
@@ -669,33 +518,25 @@ export function evidenceReaders(ctx) {
 }
 
 
-// ── The document that has not started while the pictures pile up ────────────
+// ── Captures with no run record beside them ─────────────────────────────────
 //
-// **`closedChapterHasAJourneyRun` reads a chapter's status, so nothing watches a chapter that is
-// still open.** A chapter can run for hours, fill its capture folder, and have no result document
-// at all, and every check in this skill stays green - because each of them asks whether a document
-// that exists is complete, and none of them asks whether one exists yet.
+// **`closedChapterHasAJourneyRun` reads a chapter's status, so nothing else watches a chapter that
+// is still open.** A journey test writes its captures into the chapter's folder as it runs, and
+// `journeyCommand` writes the record beside them when the run ends - so a folder of captures with
+// no record is a run whose record was never written: the tests were run by something other than
+// the command, or the command stopped before the end. Every other check here asks about a record
+// that exists, so this is the one place that state is seen.
 //
-// That silence is where the inversion the result-document rule exists to prevent actually begins.
-// The rule says the document is the residue of running the verification: a section is written when
-// its line has been run and while what was on the screen is still in front of whoever ran it. What
-// takes its place is pictures first and sentences fitted to them afterwards, and the sentences
-// that come out of that are true of nothing - a description of a product somebody then built to
-// match. Nothing downstream catches it: the captures are all there, the sections cite them, and
-// the one property the arrangement depends on is quietly gone.
+// **The answer is always the command, never a hand-written record.** A record written to match
+// the pictures records a run that did not happen, which is the one thing the record exists to
+// rule out.
 //
-// **Two frames is the floor and not an arbitrary one.** Shooting a frame and then writing its
-// section is the correct order, so a single frame with no document is that window and not a
-// finding. A second frame shot with still no document says the first one's section was never
-// written, and that is a state with no legitimate reading.
-//
-// A warning rather than an error, because the gate cannot see a document about to land - what it
-// can do is put the question in front of whoever is holding the chapter, at the point where the
-// answer is still cheap.
+// A warning rather than an error: a run in progress holds exactly this state until it ends, and
+// the gate cannot tell the two apart.
 
 export const evidenceKeepsPaceWithItsCaptures = {
   id: 'evidenceKeepsPaceWithItsCaptures',
-  title: 'captures for several frames with no result document to write them into',
+  title: 'captures in a chapter\'s folder with no run record beside them, so the journey command did not write one',
   grade: 'warning',
   needs: ['chapterDir', 'evidenceDir'],
   run: (ctx) => {
@@ -712,16 +553,14 @@ export const evidenceKeepsPaceWithItsCaptures = {
         const shot = CAPTURE_NAME.exec(image.split('/').pop() ?? '');
         if (shot) frames.add(`${shot[1].toUpperCase()}-${shot[2]}`);
       }
-      if (frames.size < 2) continue;
+      if (!frames.size) continue;
       findings.push(
-        `${dir_}/${stem}/: ${chapter} has captures of ${frames.size} frames `
-        + `(${[...frames].sort().join(' · ')}) and ${dir_}/${file} does not exist. A result `
-        + 'document is what running the verification leaves behind — a section written when its '
-        + 'line has been run, while the screen is still in front of whoever ran it. Two frames '
-        + 'shot with nothing written says the first one\'s section never was, and a section '
-        + 'written afterwards from a cold capture is a description somebody fits the screens to '
-        + 'rather than a record of what was there. Write the sections for what has been shot '
-        + 'before shooting anything else'
+        `${dir_}/${stem}/: ${chapter} has captures of ${frames.size === 1 ? 'one frame' : `${frames.size} frames`} `
+        + `(${[...frames].sort().join(' · ')}) and ${dir_}/${file} does not exist. The journey tests `
+        + 'ran and nothing wrote the record they belong to - they were run by something other than '
+        + '`journeyCommand`, or it stopped before the end. Run `journeyCommand` for the chapter: the '
+        + 'record is its output and is never written by hand, because a record fitted to the '
+        + 'pictures records a run that did not happen'
       );
     }
     return findings;
@@ -731,38 +570,29 @@ export const evidenceKeepsPaceWithItsCaptures = {
 // ── The screen that was built and never opened ──────────────────────────────
 //
 // A chapter can pass every check a machine has - typecheck, lint, the frontend audit, the language
-// audit, every endpoint probed against a running server, every drawn figure traced back to the
-// seed - and still hand over screens that render the application shell and nothing inside it.
-// Every request answers 200, no console error is raised, and the route measures the length of the
-// shell exactly. None of those checks opens a browser, so none of them can tell a built screen
-// apart from an empty one.
+// audit, every endpoint probed against a running server - and still hand over screens that render
+// the application shell and nothing inside it. Every request answers 200, no console error is
+// raised, and the route measures the length of the shell exactly. None of those checks opens a
+// browser, so none of them can tell a built screen apart from an empty one.
 //
-// The result document is where a browser was opened, and the capture is what is left of that. So a
-// closed chapter shows one image per frame it places: a frame photographed nowhere in that
-// document was looked at by nobody, whatever else came out green.
+// A journey opens the browser, and the capture it takes is what is left of that. So a closed
+// chapter's run record shows a capture of every frame the chapter places: a frame shown nowhere in
+// the record was opened by no journey, whatever else came out green.
 //
 // **What this gate deliberately does not catch.** A capture of the right frame showing an empty
 // shell passes it. Whether the picture shows the frame it is named after is a reading for eyes,
-// and no script here judges it. This gate proves a browser was opened and the frame was
-// photographed; it never proves the screen works, and reading it as that proof puts the defect
-// above straight back.
+// and no script here judges it. This gate proves a journey opened the frame; it never proves the
+// screen works, and reading it as that proof puts the defect above straight back.
 //
-// **The unit is the frame, not the section.** A role whose line only proves a scope boundary is
-// evidenced by the address it called and the answer the server gave, so counting sections that
-// carry a picture would fire on a document that is exactly right. A frame needs one capture
-// somewhere in the document, whoever's section shows it.
+// **A frame with no address of its own is outside this.** A shared pattern - drawn inside other
+// screens and opened by no journey on its own - owes no picture under its name, and a frame drawn
+// on top of another is covered by its base's picture. The board's sources say which frames those
+// are, so this needs no list of letters.
 //
-// **A frame whose section demands nobody prove it is outside this.** The other side of the line -
-// a frame with an address must be demanded of somebody - belongs to the check that reads the
-// board, so between the two there is no frame a browser can reach that neither holds. What falls
-// out is the shared-pattern cluster, drawn inside other screens with no address of its own to send
-// a browser to; the chapter files say which frames those are, so this needs no list of letters.
-//
-// It judges only a chapter the ledger records as closed. A walk photographs its frames one at a
-// time over hours, so judging an open chapter would hold the tree red for the whole of it; and the
-// write-time hook fails a write whose own file an error names, which would stop the coordinator
-// writing the very document the captures are cited from. An absent document is left to the gate
-// above, which names it once instead of once per frame.
+// It judges only a chapter the ledger records as closed. A chapter being built takes its captures
+// over hours, so judging an open one would hold the tree red for the whole of it; and a closed
+// chapter with no record at all is `closedChapterHasAJourneyRun`'s finding, named once rather than
+// once per frame.
 
 export const everyPlacedFrameIsCaptured = {
   id: 'everyPlacedFrameIsCaptured',
@@ -804,90 +634,6 @@ export const everyPlacedFrameIsCaptured = {
   },
 };
 
-// ── The rule the section says it proved, against the rule the chapter carries ──
-//
-// The quoted label is copied out of the chapter file, and the chapter file is generated from the
-// board. So a board fix regenerates the chapter and the closed chapter's section goes on quoting a
-// sentence the chapter no longer carries - and the section then reads as a record of somebody
-// verifying a rule that is gone. Nothing about it looks wrong: the labels are all there, the
-// capture is on disk, and the two gates above pass it whole.
-//
-// **What 「quotes」 means here, because a reader has to be able to tell a wrong section from a
-// strict gate.** The section's quote is a contiguous part of one line of the chapter section its
-// heading names, once every space and line break is taken out of both and a trailing full stop is
-// taken off the quote. Four things follow, and each is a shape the documents actually take:
-//
-//   · **Whitespace is removed rather than collapsed.** A language that wraps between characters
-//     breaks one sentence in one place in the chapter and in another in the evidence, and that is
-//     not a difference in the sentence. Collapsing each break to one space would make it one.
-//   · **The quote may be shorter than the rule.** A section that proves the second half of a
-//     two-part demand quotes that half, and dropping the trailing clause is the same thing from
-//     the other end.
-//   · **Any line of that section will do.** A persona often proves one of the board rules the
-//     section lists as bullets rather than the generic demand line above them, and that is the
-//     more useful of the two. Both are the chapter's own writing.
-//   · **The section is the unit, not the file.** A rule that moved from one section to another is
-//     exactly the drift this exists to catch, so a quote is never looked for outside the section
-//     whose heading the evidence document wrote.
-//
-// **A heading that pairs with no line is somebody else's finding.** The gate above already names a
-// section proving a line its chapter does not demand, and reporting it twice would have one defect
-// redden two gates.
-//
-// It judges every result document rather than only a closed chapter's - a wrong quote is wrong
-// while the walk is still running, and the sooner the write-time hook says so the cheaper it is.
-
-/**
- * The chapter tokens and frame ids each parked item names, one entry per item.
- *
- * <p><b>An item is a bullet and the lines under it</b>, because a park is written as a sentence
- * that wraps - the chapter it belongs to is on the first line and the frames it names are usually
- * on the next. Read line by line, a park would only ever match on whichever half happened to
- * carry both.
- */
-function parkedItems(ctx) {
-  const file = ctx.declared('openItemsFile');
-  if (typeof file !== 'string' || !file) return [];
-  const heading = ctx.declared('openItemsHeading');
-  const text = ctx.read(ctx.at('openItemsFile'));
-  if (text === null || typeof heading !== 'string') return [];
-
-  const items = [];
-  for (const { line } of sectionUnder(text, heading) ?? []) {
-    if (/^\s*[-*+]\s+\S/.test(line)) items.push(line);
-    else if (items.length > 0 && line.trim()) items[items.length - 1] += ` ${line.trim()}`;
-  }
-  return items.map((item) => item.toLowerCase());
-}
-
-/**
- * Whether a park says out loud that this section cannot be run yet.
- *
- * <p><b>The gate's own message offers this and the gate has to honour it.</b> A board changes the
- * contract of a screen a closed chapter already built, the chapter that rebuilds it is named and
- * queued, and until it runs there is no product to run the demand against - so the section cannot
- * be rewritten and the finding cannot be cleared. Telling somebody to write that down and then
- * reporting them anyway teaches that writing it down is worthless.
- *
- * <p><b>It takes both names, in one item.</b> The chapter the document belongs to and the frame
- * the section is about: a park that says only 「W03」 would silence every section of that chapter,
- * and one that says only 「a-04」 would silence that frame everywhere. Both together name one
- * section, and a person writing the park has to have looked at it.
- */
-function parkedFor(items, chapter, frame) {
-  if (chapter === null || frame === null) return false;
-  const one = chapter.toLowerCase();
-  const other = frame.toLowerCase();
-  return items.some((item) => item.includes(one) && item.includes(other));
-}
-
-/** The frame a section is about, from its heading - 「1. A-04 · Activity …」 is `A-04`. */
-function frameOf(title) {
-  return /\b([A-Za-z]{1,4}-\d{1,3})\b/.exec(title)?.[1] ?? null;
-}
-
-
-
 // ── A check that ran, and this installation cannot decide ───────────────────
 //
 // **The third outcome, and it is neither of the two everybody plans for.** A verification line is
@@ -902,23 +648,18 @@ function frameOf(title) {
 // carries a boundary nobody has ever seen hold - which is exactly the class of defect the whole
 // evidence arrangement exists to stop.
 //
-// **It is a debt, and a debt names its creditor.** The section records what was run and what came
-// back, exactly as any other section does, and adds one line naming **the chapter that will be
-// able to decide it** - the chapter that installs the role, the second factor, the second tenant.
-// The chapter that met the wall CLOSES: its work was done and the answer it got is the honest one.
-// **The named chapter is the one that cannot close** while the line stands, and settling it is
-// part of that chapter's own run.
+// **It is a debt, and a debt names its creditor.** The run record carries one line, the project's
+// `deferredLine`, naming **the chapter that will be able to decide it** - the chapter that installs
+// the role, the second factor, the second tenant. The chapter that met the wall CLOSES: its work
+// was done and the answer it got is the honest one. **The named chapter is the one that cannot
+// close** while the line stands, and settling it is part of that chapter's own run: once the named
+// chapter has installed what the check needs, the earlier chapter's journeys are run again, and the
+// record that run writes carries what was seen in place of the line.
 //
-// **Then, and only then, the earlier document is edited.** An earlier chapter's result document is
-// otherwise never touched - it records what was true when that chapter closed. This is the one
-// exception, and it is not really one: the document recorded a debt against itself, and paying it
-// is what the document asked for. Remove the line and write what was finally seen, in the same
-// change that settles it.
-//
-// **Why this needs two checks rather than a habit.** The line is written by whoever hit the wall,
-// and read - if anyone reads it - by whoever closes a chapter three weeks later. Nothing connects
-// those two people but the name in the line, and a name nobody checks is a name that goes stale
-// the first time a chapter is renumbered.
+// **Why this needs two checks rather than a habit.** The line is written when the wall is hit, and
+// read - if anyone reads it - by whoever closes a chapter three weeks later. Nothing connects those
+// two moments but the name in the line, and a name nobody checks is a name that goes stale the
+// first time a chapter is renumbered.
 
 export const deferredCheckNamesAChapter = {
   id: 'deferredCheckNamesAChapter',
@@ -987,11 +728,10 @@ export const chapterOwedACheckDoesNotClose = {
         if (owed === chapter || !closed.has(owed)) continue;
         findings.push(
           `${rel}:${no}: ${chapter} deferred a check to ${owed}, and ${owed} reads 「${word}」 in `
-          + `${ctx.declared('stateLedger')} with the line still standing. Either the check was run `
-          + `during ${owed} — in which case this line comes out and what was seen goes in its `
-          + `place, which is the one time an earlier chapter's document is edited — or it was not, `
-          + `and ${owed} is not closed. A debt that survives its own due date is a boundary the `
-          + 'product claims and nobody has ever watched hold'
+          + `${ctx.declared('stateLedger')} with the line still standing. Either the check can be `
+          + `decided now - run ${chapter}'s journeys again, so its record carries what was seen in `
+          + `place of this line - or it cannot, and ${owed} is not closed. A debt that survives its `
+          + 'own due date is a boundary the product claims and nobody has ever watched hold'
         );
       }
     }
@@ -1047,9 +787,9 @@ function webpCanvas(buf) {
  *
  * <p>Named rather than merely refused, because the commonest way a capture becomes unmeasurable is
  * a driver's own screenshot filed under the capture name without being encoded: nine files in one
- * project's evidence folder opened as PNG under a `.webp` name, passing the name check and the size
- * ceiling - neither of which opens a byte - and telling the two gates that do open one nothing at
- * all. 「Not a WebP」 sends the reader looking for corruption; 「this is a PNG」 says what to run.
+ * project's evidence folder opened as PNG under a `.webp` name, passing every check that reads
+ * only a name and telling the gates that open a byte nothing at all. 「Not a WebP」 sends the
+ * reader looking for corruption; 「this is a PNG」 says what to run.
  */
 function looksLike(buf) {
   if (!buf || buf.length < 12) return null;
@@ -1102,9 +842,9 @@ export const everyCaptureIsAtADeclaredWidth = {
         const really = looksLike(head);
         findings.push(
           `${rel}: ${really ? `the bytes open as ${really}, under a ${CAPTURE_SUFFIX} name` : `the bytes do not open as ${CAPTURE_SUFFIX}`}`
-          + ' — so nothing here says what window this was shot through, and a capture nobody can '
-          + 'measure passes the name check and the ceiling by never being opened. '
-          + `${really ? 'Encode it' : 'Take it again'} through the declared driver`
+          + ' - so nothing here says what window this was shot through, and every check that reads '
+          + `only a capture's name passes it. ${really ? 'Encode it' : 'Take it again'} through the `
+          + 'declared driver'
         );
         continue;
       }
@@ -1239,11 +979,10 @@ export const everyCaptureIsInTheDeclaredScheme = {
 // re-encode it larger, which is a change to the file that silences the check for the next capture
 // that really is blank.
 //
-// **The grade sits on the gate, so the floor is a gate of its own.** It travels with the captures
-// a result document shows, and the gate it used to travel inside answers a different question -
-// whether a closed chapter's document has the sections, labels, evidence and files it owes - and
-// answers it in defects. Two kinds of finding under one id would be two rules sharing an id, and
-// no case could be written that pinned either.
+// **The grade sits on the gate, so the floor is a gate of its own.** A gate answers one question,
+// and this one answers 「go and look」 rather than 「this is wrong」. Folded into a gate whose findings
+// are defects, two kinds of finding would share one id, and no case could be written that pinned
+// either.
 
 /**
  * Every capture holds more than an empty canvas of its size would.
@@ -1255,7 +994,7 @@ export const everyCaptureIsInTheDeclaredScheme = {
  * <p><b>What it does not claim.</b> A capture of a built shell with nothing inside it passes here
  * and always will - a shell draws a header, a sidebar and their text, and that is a picture with
  * something on it. Whether the screen in the picture is built is the coordinator's reading before
- * the ledger row is written, and `../SKILL.md`'s second table names it.
+ * the ledger row is written, and the eyes table in `references/checks-and-eyes.md` names it.
  *
  * <p><b>The shape that answers 「the picture is right」 is a long one.</b> A full-page capture whose
  * lower two thirds are legitimately empty dilutes exactly the way a blank one does, and only
@@ -1278,7 +1017,7 @@ export const everyCaptureIsInTheDeclaredScheme = {
  * back is the base screen, shot and filed under the state's name.
  *
  * <p><b>Nothing else in this file can see it.</b> The size is right, the density is fine, the name
- * matches a frame the chapter places, the file is on disk and the document cites it. Every check
+ * matches a frame the chapter places, the file is on disk and the record shows it. Every check
  * passes because each picture is examined alone, and the defect exists only BETWEEN two of them.
  * One real chapter shipped a base screen under 「등록 키트 생성 완료」 that way, and it was noticed
  * because two byte counts happened to print identically - which is not a way of noticing anything.
@@ -1342,8 +1081,8 @@ export const everyCaptureIsDenserThanAnEmptyCanvas = {
       if (bytes === null || canvas === null) {
         findings.push(
           `${rel}: nothing here says what canvas this was encoded from, so how much of it holds `
-          + 'anything went unmeasured — and a capture nobody measured passes the name check and '
-          + 'the ceiling by not being read at all'
+          + 'anything went unmeasured - and a capture nobody measured passes every check that reads '
+          + 'only its name'
         );
         continue;
       }
@@ -1365,67 +1104,21 @@ export const everyCaptureIsDenserThanAnEmptyCanvas = {
   },
 };
 
-// ── A capture demanded out of habit, and one demanded for a reason ──────────
-//
-// A chapter's per-screen half is generated, so the capture names in it are emitted by a rule
-// rather than judged one at a time. That is right for the names - the board says which panes a
-// frame draws - and it produces a demand list nobody can give a reason for: one chapter set asked
-// for 1040 pictures and said of not one of them why a picture was the witness.
-//
-// **Two things follow, and both were met in one week.** A frame whose three panes were unbuilt
-// placeholders had three captures demanded and not one of them could be produced: the tab triggers
-// are disabled and no content is registered behind them. And a taker that correctly shot one of
-// those and left the other two was right, while the chapter went on reading as though it owed
-// three.
-//
-// **The reason is what separates the two.** `references/demands.md` names three cases in which a
-// picture is the only witness and three in which it is not, and a demand that asks for a capture
-// says which of the three it is asking for, in the clause that names the file. **Whether the
-// reason is true stays with eyes** - a claim about the running application is not in the chapter
-// file - and that it was given is what this sees.
+/**
+ * The heading a chapter file writes for each journey: `### <n>. <persona> - <title>`.
+ *
+ * <p>The separator is a spaced hyphen or a spaced em dash. Either is read, so a chapter written to a
+ * prose standard that bans the dash is read as surely as one written before it; and a persona's own
+ * hyphen (`site-manager`) is never taken for the separator, because the separator has a space on
+ * each side.
+ */
+const JOURNEY_HEADING = /^###\s+(\d+)\.\s+(.+?)\s+[-\u2014]\s+/;
 
-
-
-// A chapter section is a unit of work, and what makes it one is that something closes it: a
-// persona proves it by walking the screen, or a machine proves it by holding a rule the whole
-// console has to obey. A section carrying neither has a build line and nothing under it - the
-// screen gets built and the chapter closes on having proved nothing of it.
-//
-// **It reads as a chapter with nothing wrong.** Every gate downstream of this one takes its
-// demands from the persona and verdict lines a section carries, so a section that carries none
-// contributes no demand, no heading and no capture - and `closedChapterHasAJourneyRun` and
-// `everyPlacedFrameIsCaptured` both come out green over a screen
-// nobody ever asked anything of. The absence is what makes them quiet, which is why nothing
-// already here could find it.
-//
-// **The two cases it separates are a generator's, not a person's.** A chapter set is generated
-// from the board, so a frame the persona map resolves to nobody produces a section with a build
-// line and no line beneath it - 43 of them in one chapter, and four more scattered singly through
-// chapters whose other sections were fine. A per-chapter count sees the first and is blind to the
-// second: a chapter reading 8 build lines and 24 persona lines looks healthy while one of its
-// eight sections closes on nothing. The section is the unit, and this is the only reading that
-// takes it.
-//
-// **Which of the two lines closes it is not this gate's question, and the answer is easy to get
-// wrong.** A shared pattern reads as nobody's, so the tempting fix is to label its demands with
-// the verdict word. Read what those demands say first: press the tab, press the row action, open
-// the empty list at its address, leave a capture. Every one of them is a person in a browser, and
-// where the project declares an address that renders one frame, a pattern is opened at its own
-// address like anything else - so it wants the persona the chapter itself names. The verdict word
-// is for a line a MACHINE proves, and labelling browser acts with it makes one word mean two
-// things in the field every check over a chapter's evidence keys on.
-//
-// So this gate takes either line and judges neither. What it refuses is a section with no line at
-// all, which is the only shape that is wrong whichever answer a project reaches.
-
-
-
-
-/** The journeys a chapter names: `### <n>. <persona> - <title>` headings, in order. */
+/** The journeys a chapter names, in order. */
 function journeysOf(text) {
   const out = [];
   for (const { line } of proseLines(text)) {
-    const m = /^###\s+(\d+)\.\s+(.+?)\s+—\s+/.exec(line);
+    const m = JOURNEY_HEADING.exec(line);
     if (m) out.push({ n: m[1], persona: m[2].trim() });
   }
   return out;
@@ -1433,7 +1126,7 @@ function journeysOf(text) {
 
 /** The rows of a run record's table: journey number, persona, test, result and what follows it. */
 const RUN_ROW = /^\|\s*(\d+)\s*\|\s*([^|]+?)\s*\|[^|]*\|\s*(pass|fail|skipped)\b\s*([^|]*)\|/;
-function runRows(text) {
+export function runRows(text) {
   const out = [];
   for (const line of text.split('\n')) {
     const m = RUN_ROW.exec(line);
@@ -1547,11 +1240,10 @@ export const EVIDENCE_GATES = [
 // ── The cases that prove them ───────────────────────────────────────────────
 //
 // **The words below are one project's and the shapes are the skill's.** Every Korean string here
-// arrives through `WORDS`, which is a project's config rather than this file's knowledge - so a
-// case written in another language would exercise exactly the same code, and a reader can tell at
-// a glance which half of a gate is fixed. What the cases pin down is the shape: a section per
-// demanded line, three labels under each, a picture or a fenced block, and a quote that is part of
-// the chapter's own sentence.
+// arrives through `WORDS` or stands for a project's own documents, never for this file's knowledge -
+// so a case written in another language would exercise exactly the same code. What the cases pin
+// down is the shape: a run record's rows against the chapter's journeys, a capture shown for every
+// frame a closed chapter places, and what a capture's own bytes say.
 
 /** One project's vocabulary, declared as a project declares it. */
 const WORDS = {
@@ -1561,15 +1253,9 @@ const WORDS = {
 };
 
 /**
- * A foundation chapter demanding one machine verification, and a screen chapter demanding two
- * persona lines. The screen chapter also places a shared pattern - a frame drawn inside other
- * screens, with no address of its own and nobody told to open it.
- *
- * <p><b>That last section carries a build line and nothing under it on purpose</b>, and it is what
- * a gate over closing lines would fire on. Every gate here reads past it - a section
- * with no persona line and no verdict line contributes no demand, no heading and no capture - so
- * this fixture is the shape of a chapter that reports green while one of its screens was never
- * asked for anything, and the cases below hold it against the section that closes properly.
+ * A foundation chapter, and a screen chapter placing a sign-in frame and a shared pattern - a frame
+ * drawn inside other screens, with no address of its own, for which `everyPlacedFrameIsCaptured`
+ * owes no picture.
  */
 const CHAPTER_TEXT = {
   'chapters/w01-foundation.md':
@@ -1595,24 +1281,11 @@ const CHAPTER_REFUSED_ONLY = CHAPTER_TEXT['chapters/w02-org-shell.md'].replace(
 const LEDGER = (w01, w02) => `# 챕터 상태\n\n| 챕터 | 상태 |\n| --- | --- |\n| W01 | ${w01} |\n| W02 | ${w02} |\n`;
 
 /**
- * The same ledger writing each chapter's name between its number and its state, and a note after
- * it - the shape a project reaches for the moment its table is meant to be read by a person.
+ * The one capture the screen chapter's record shows.
  *
- * <p>The note deliberately contains the closed word inside a sentence, so the reader is held to a
- * whole cell rather than to the row containing the word somewhere.
- */
-const LEDGER_NAMED = (w01, w02) =>
-  '# 챕터 상태\n\n| 챕터 | 이름 | 상태 | 남은 것 |\n| --- | --- | --- | --- |\n'
-  + `| W01 | 개발 기반 | ${w01} | 「닫힘」이라 적기 전에 결과 문서를 쓴다 |\n`
-  + `| W02 | 조직·계정 | ${w02} | |\n`;
-
-/**
- * The one capture the screen chapter's document shows.
- *
- * <p>The body stands in for a picture in the two dimensions the gates over a result document
- * read - it is on disk under a name that parses, and it sits under the size ceiling. It states no
- * canvas, so it is not a fixture for anything that opens a picture: the gates that do are proved
- * against `webpOf`, whose bytes are the real header layout.
+ * <p>It is on disk under a name that parses, and it states no canvas, so it is not a fixture for
+ * anything that opens a picture: the gates that do are proved against `webpOf`, whose bytes are the
+ * real header layout.
  */
 const CAPTURE = (body = `RIFF····WEBP${'\0'.repeat(9 * 1024)}`) => ({ 'docs/evidence/w02-org-shell/a-01.webp': body });
 
@@ -1676,9 +1349,9 @@ const W02_SCOPE_SECTION =
   + '```\nGET /api/sites/9 → 403 SCOPE_DENIED\n```\n\n';
 
 /**
- * The same screen section proved by an endpoint probe instead of by a picture. Every label is
- * there and something was run, so the shape gate above passes it whole - which is the defect this
- * is a fixture of: the server answered and nobody opened a browser.
+ * The same screen section proved by an endpoint probe instead of by a picture. Something was run
+ * and nothing was photographed, which is the defect this is a fixture of: the server answered and
+ * nobody opened a browser.
  */
 const W02_PROBE_SECTION =
   '## 1. A-01 로그인 · 시스템 관리자\n\n'
@@ -1687,157 +1360,8 @@ const W02_PROBE_SECTION =
   + '**본 것** — 서버가 200으로 답한다.\n\n'
   + '```\nPOST /auth/login → 200\n```\n\n';
 
-/** One evidence document, made of the sections given. */
+/** One record, made of the sections given - the gates over it read its images and its lines. */
 const W02_EVIDENCE = (...sections) => `# W02. 조직·계정 — 검증 결과\n\n${sections.join('')}`;
-
-// ── A rule the board moved, against the section that says it proved it ──────
-
-/** The second half of the demand line the first section quotes, and the board fix that replaced it. */
-const TAIL = '「아이디 또는 비밀번호가 올바르지 않습니다」가 표시된다.';
-const RULE = `로그인 화면을 연다. ${TAIL}`;
-const REWORDED = '로그인 화면을 연다. 「로그인하지 못했습니다」가 표시된다.';
-
-/**
- * One chapter section carrying every shape a result document quotes from: a two-part demand line,
- * a demand line long enough to wrap, a demand line with nothing but the generic sentence on it,
- * and the board rules the section lists as bullets under all of them.
- */
-const QUOTED_CHAPTER = (rule) =>
-  '# W02. 조직·계정\n\n## 1. A-01 로그인\n\n'
-  + '`a-01-login` · 데스크톱 · `/login`\n\n'
-  + '**개발** — 보드의 `a-01-login`을 그대로 만든다.\n'
-  + `**테스트 · 시스템 관리자** — ${rule}\n`
-  + '**테스트 · 안전관리자** — 자기 범위의 것만 목록에 보인다. 범위 밖 레코드는 주소로 불러도\n'
-  + '서버가 막는다.\n'
-  + '**테스트 · 보건관리자** — 로그인 화면을 연다.\n\n'
-  + '보드가 이 화면에 건 규칙 — 시험은 이것을 확인한다.\n'
-  + '- 언어 전환이 이 화면에 있다\n'
-  + '- 잠금 상태에는 남은 시간을 표시한다\n';
-
-/**
- * The result document that section leaves behind. Not one of its three quotes is the whole of the
- * line it came from: the first drops the opening clause, the second wraps two lines earlier than
- * the chapter does, and the third quotes a board rule off the bullet list instead of the generic
- * sentence its own demand line carries.
- */
-const QUOTED_EVIDENCE =
-  '# W02. 조직·계정 — 검증 결과\n\n'
-  + '## 1. A-01 로그인 · 시스템 관리자\n\n'
-  + '**한 일** — 로그인 화면을 열고 틀린 비밀번호로 로그인한다.\n'
-  + `**챕터가 정한 것** — ${TAIL}\n`
-  + '**본 것** — 그 한 줄만 표시되고 어느 쪽이 틀렸는지는 없다.\n\n'
-  + '![A-01 로그인](w02-org-shell/a-01.webp)\n\n'
-  + '## 1. A-01 로그인 · 안전관리자\n\n'
-  + '**한 일** — 범위 밖 사업장의 주소를 직접 부른다.\n'
-  + `**챕터가 정한 것** — 자기 범위의 것만 목록에 보인다. 범위 밖\n`
-  + '레코드는 주소로 불러도 서버가 막는다.\n'
-  + '**본 것** — 서버가 403으로 답한다.\n\n'
-  + '```\nGET /api/sites/9 → 403 SCOPE_DENIED\n```\n\n'
-  + '## 1. A-01 로그인 · 보건관리자\n\n'
-  + '**한 일** — 계정을 다섯 번 틀리게 넣어 잠근 뒤 화면을 읽는다.\n'
-  + `**챕터가 정한 것** — 잠금 상태에는 남은 시간을 표시한다.\n`
-  + '**본 것** — 「10분 뒤에 다시 시도할 수 있습니다」가 표시된다.\n\n'
-  + '```\nPOST /auth/login × 6 → 423 ACCOUNT_LOCKED  retryAfter=600\n```\n';
-
-/**
- * The same section with the chapter's demands numbered and the result document quoting them item
- * by item - the shape a chapter takes once its walk outgrows one sentence.
- */
-const LISTED_CHAPTER =
-  '# W02. 조직·계정\n\n## 1. A-01 로그인\n\n'
-  + '`a-01-login` · 데스크톱 · `/login`\n\n'
-  + '**개발** — 보드의 `a-01-login`을 그대로 만든다.\n\n'
-  + '**테스트 · 시스템 관리자**\n\n'
-  + '1. 로그인 화면을 연다.\n'
-  + `2. ${TAIL}\n\n`;
-
-/** The result document that section leaves behind, quoting each demand on its own line. */
-const LISTED_EVIDENCE = (second) =>
-  '# W02. 조직·계정 — 검증 결과\n\n'
-  + '## 1. A-01 로그인 · 시스템 관리자\n\n'
-  + '**한 일**\n\n'
-  + '1. 로그인 화면을 열고 틀린 비밀번호로 로그인한다.\n\n'
-  + '**챕터가 정한 것**\n\n'
-  + '1. 로그인 화면을 연다.\n'
-  + `2. ${second}\n\n`
-  + '**본 것**\n\n'
-  + '1. 그 한 줄만 표시되고 어느 쪽이 틀렸는지는 없다.\n\n'
-  + '![A-01 로그인](w02-org-shell/a-01.webp)\n';
-
-// ── A capture demanded for a reason, and one demanded out of habit ──────────
-
-/** One project's three reason vocabularies, declared as a project declares them. */
-const REASONS = {
-  firstSight: ['아무도 열어 본 적이 없어'],
-  presence: ['응답 본문에 없는 것이라'],
-  transient: ['열려 있는 동안에만 있는 상태라'],
-};
-
-/** A chapter demanding two pane captures and saying nothing about why either is owed. */
-const PANES_UNREASONED =
-  '# W02. 조직·계정\n\n## 1. A-01 로그인\n\n'
-  + '**개발** — 보드의 `a-01-login`을 그대로 만든다.\n'
-  + '**테스트 · 시스템 관리자** — 로그인 화면을 연다. 나머지 두 칸을 눌러 칸마다 캡처를 남긴다 — `a-01-t2.webp` · `a-01-t3.webp`.\n'
-  + '**테스트 · 안전관리자** — 범위 밖 레코드는 주소로 불러도 서버가 막는다.\n';
-
-/**
- * The reason on the clause BESIDE the one that names the files.
- *
- * <p>The shape a line-wide reading passes on its neighbour's sentence, and the shape a generator
- * produces the day one clause is written by hand and the next by a loop over the board's panes.
- */
-const PANES_REASON_NEXT_DOOR =
-  '# W02. 조직·계정\n\n## 1. A-01 로그인\n\n'
-  + '**개발** — 보드의 `a-01-login`을 그대로 만든다.\n'
-  + '**테스트 · 시스템 관리자** — 아무도 열어 본 적이 없어 화면을 먼저 연다. 나머지 두 칸을 눌러 칸마다 캡처를 남긴다 — `a-01-t2.webp` · `a-01-t3.webp`.\n'
-  + '**테스트 · 안전관리자** — 범위 밖 레코드는 주소로 불러도 서버가 막는다.\n';
-
-/**
- * The same unreasoned demand on a frame whose id carries its state letter.
- *
- * <p>A board gives every state of a screen its own frame and its own permanent id, so `a-01k` is
- * as ordinary a frame as `a-01`. A capture pattern that stops at the digits reads this line as
- * naming no capture, and the gate then demands a reason for nothing - going quiet on a whole board
- * in the one direction that reads as a pass.
- */
-const PANES_UNREASONED_STATE_LETTER =
-  '# W02. 조직·계정\n\n## 1. A-01k 로그인 — 사업장 없음 (상태)\n\n'
-  + '**개발** — 보드의 `a-01k-login-no-site`를 그대로 만든다.\n'
-  + '**테스트 · 시스템 관리자** — 로그인 화면을 연다. 캡처를 `a-01k.webp`로 남긴다.\n'
-  + '**테스트 · 안전관리자** — 범위 밖 레코드는 주소로 불러도 서버가 막는다.\n';
-
-/** The same demand, with the reason in the clause that names the files. */
-const PANES_REASONED =
-  '# W02. 조직·계정\n\n## 1. A-01 로그인\n\n'
-  + '**개발** — 보드의 `a-01-login`을 그대로 만든다.\n'
-  + '**테스트 · 시스템 관리자** — 로그인 화면을 연다. 칸마다 든 것이 응답 본문에 없는 것이라 나머지 두 칸을 눌러 캡처를 남긴다 — `a-01-t2.webp` · `a-01-t3.webp`.\n'
-  + '**테스트 · 안전관리자** — 범위 밖 레코드는 주소로 불러도 서버가 막는다.\n';
-
-/** The line this project discharges a demand with, and what its `{text}` carries. */
-const PLACEHOLDER_LINE = '**같은 컴포넌트** — {text}';
-
-/** A section showing a pane capture of its own, so a discharge has something to lean on. */
-const W02_PANE_SECTION =
-  '## 1. A-01 로그인 · 보건관리자\n\n'
-  + '**한 일** — 두 번째 칸을 누른다.\n'
-  + '**챕터가 정한 것** — 칸마다 무엇이 있는지 적는다.\n'
-  + '**본 것** — 아직 자리표시자다.\n\n'
-  + '![A-01 두 번째 칸](w02-org-shell/a-01-t2.webp)\n\n';
-
-/** A section that discharges its demand against the picture named. */
-const W02_DISCHARGE = (proof) =>
-  '## 1. A-01 로그인 · 안전관리자\n\n'
-  + '**한 일** — 세 번째 칸을 누른다.\n'
-  + '**챕터가 정한 것** — 칸마다 무엇이 있는지 적는다.\n'
-  + '**본 것** — 두 번째 칸과 같은 자리표시자 컴포넌트다.\n\n'
-  + `**같은 컴포넌트** — ${proof}\n\n`;
-
-/** A section carrying every label and showing nothing - no picture, no block, no discharge. */
-const W02_SILENT_SECTION =
-  '## 1. A-01 로그인 · 안전관리자\n\n'
-  + '**한 일** — 범위 밖 사업장의 주소를 직접 부른다.\n'
-  + '**챕터가 정한 것** — 범위 밖 레코드는 주소로 불러도 서버가 막는다.\n'
-  + '**본 것** — 서버가 막는다.\n\n';
 
 export function cases(t) {
   // The shared pattern the chapter places has a module with no address and no base, which is
@@ -1863,6 +1387,13 @@ export function cases(t) {
   t.add('closedChapterHasAJourneyRun', 'a run record with every journey passing', run({ 'docs/evidence/w02-org-shell.md': RECORD('pass', 'pass') }), false);
   t.add('closedChapterHasAJourneyRun', 'a skipped journey naming the parked line that releases it', run({ 'docs/evidence/w02-org-shell.md': RECORD('pass', 'skipped — OPEN-ITEMS: A-01 거부 경로는 W04가 만든다') }), false);
   t.add('closedChapterHasAJourneyRun', 'an open chapter with no run record', run({ 'tracking/STATE.md': LEDGER('열림', '열림') }), false);
+  // A chapter written to a prose standard that bans the em dash heads its journeys with a spaced
+  // hyphen. Read only with the dash, such a chapter names no journey, and a record missing one of
+  // them passes.
+  const HYPHENED_CHAPTER = JOURNEY_CHAPTER.replace(/^(###\s+\d+\.\s+\S+)\s+\u2014\s+/gm, '$1 - ');
+  const hyphened = (files) => run({ 'chapters/w02-org-shell.md': HYPHENED_CHAPTER, ...files });
+  t.add('closedChapterHasAJourneyRun', 'a record missing a journey whose heading takes a spaced hyphen', hyphened({ 'docs/evidence/w02-org-shell.md': RECORD('pass', 'pass').replace(/\| 2 \|.*\n/, '') }), true);
+  t.add('closedChapterHasAJourneyRun', 'journeys headed with a spaced hyphen, every one passing in the record', hyphened({ 'docs/evidence/w02-org-shell.md': RECORD('pass', 'pass') }), false);
 
   // ── journeyTestsDriveTheApplication ───────────────────────────────────────
   const tests = (body) => t.project({
@@ -1997,30 +1528,6 @@ export function cases(t) {
     }),
     false,
   );
-  const quoted = (files) =>
-    t.project({
-      config: {
-        ...WORDS,
-        chapterDir: 'chapters',
-        openItemsFile: 'tracking/OPEN.md',
-        openItemsHeading: '열린 항목',
-      },
-      files: { 'chapters/w02-org-shell.md': QUOTED_CHAPTER(REWORDED), ...files },
-    });
-
-
-  // **The escape this gate's message offers, honoured.** A board fix reworded the rule ahead of
-  // the chapter that rebuilds the screen, so the demand cannot be run and the section cannot be
-  // written again until it does. Telling somebody to say that in the open items and then
-  // reporting them anyway teaches that saying it is worthless.
-  const parked = (item) =>
-    quoted({
-      'docs/evidence/w02-org-shell.md': QUOTED_EVIDENCE,
-      'tracking/OPEN.md': `# 사람이 정할 항목\n\n## 열린 항목\n\n${item}\n`,
-    });
-
-
-
   t.add(
     'everyPlacedFrameIsCaptured',
     'both closed, the screen photographed and the shared pattern nobody is sent to left alone',
@@ -2143,15 +1650,6 @@ export function cases(t) {
     shot({ 'docs/evidence/w02-org-shell/a-01.webp': DARK_SHOT }),
     true,
   );
-
-  // The story of the round, written beside the thing the round fixed.
-  const told = (saw) =>
-    evidence({
-      'docs/evidence/w01-foundation.md': W01_EVIDENCE,
-      'docs/evidence/w02-org-shell.md': W02_EVIDENCE(
-        W02_SCREEN_SECTION.replace('**본 것** — 「아이디 또는 비밀번호가 올바르지 않습니다」만 표시된다.', `**본 것** — ${saw}`)
-      ),
-    });
 
   t.add(
     'everyCaptureIsInTheDeclaredScheme',
@@ -2323,71 +1821,49 @@ export function cases(t) {
     false,
   );
 
-  // ── A capture demanded out of habit, and one demanded for a reason ────────
-
-  const demanding = (chapter) => t.project({
-    config: { ...WORDS, chapterDir: 'chapters', stateLedger: 'tracking/STATE.md', captureReasons: REASONS },
-    files: { ...CHAPTER_TEXT, 'chapters/w02-org-shell.md': chapter },
-  });
-
-
-  // ── A section nothing closes, against one a verdict closes ────────────────
-
-  const closing = (chapter) => t.project({
-    config: { ...WORDS, chapterDir: 'chapters' },
-    files: { ...CHAPTER_TEXT, 'chapters/w02-org-shell.md': chapter },
-  });
-
-  /** The pattern section with one line put under its build line, whichever line that is. */
-  const BUILD = '**개발** — 보드의 `p-01-list-pattern`을 그대로 만든다.\n';
-  const PATTERN_CLOSED_BY = (line) =>
-    CHAPTER_TEXT['chapters/w02-org-shell.md'].replace(BUILD, `${BUILD}${line}\n`);
-
-
-  // ── A demand discharged as 「the same component」 ───────────────────────────
-
-  const discharging = (document, extra = {}) => t.project({
-    config: {
-      ...WORDS, chapterDir: 'chapters', stateLedger: 'tracking/STATE.md', placeholderLine: PLACEHOLDER_LINE,
-    },
-    files: {
-      ...CHAPTER_TEXT,
-      'tracking/STATE.md': LEDGER('열림', '닫힘'),
-      'docs/evidence/w02-org-shell.md': document,
-      ...CAPTURE(),
-      ...extra,
-    },
-  });
-
-  // Nothing watched an open chapter before this: every other check here asks whether a document
-  // that exists is complete. The floor is two frames because shooting one and then writing its
-  // section is the right order - the second frame is what says the first section never happened.
+  // ── evidenceKeepsPaceWithItsCaptures ──────────────────────────────────────
+  //
+  // Captures in a chapter's folder and no run record beside them: the journey tests ran and nothing
+  // wrote the record. The fixed form is the same folder with the record the command writes.
   const shooting = (files) => t.project({
     config: { ...WORDS, chapterDir: 'chapters', stateLedger: 'tracking/STATE.md' },
     files: { ...CHAPTER_TEXT, 'tracking/STATE.md': LEDGER('열림', '열림'), ...files },
   });
   const SHOT = `RIFF····WEBP${'\0'.repeat(9 * 1024)}`;
+  const RUN_RECORD = '# W02 - 여정 실행\n\n| journey | persona | test | result |\n| --- | --- | --- | --- |\n'
+    + '| 1 | 시스템 관리자 | journeys/w02.spec.ts › 로그인 | pass |\n\n'
+    + '![A-01](w02-org-shell/a-01.webp)\n![A-02](w02-org-shell/a-02.webp)\n';
 
   t.add(
     'evidenceKeepsPaceWithItsCaptures',
-    'two frames shot into a folder whose result document does not exist',
+    'one frame captured and no run record beside it',
+    shooting({ 'docs/evidence/w02-org-shell/a-01.webp': SHOT }),
+    true
+  );
+  t.add(
+    'evidenceKeepsPaceWithItsCaptures',
+    'two frames captured and no run record beside them',
     shooting({
       'docs/evidence/w02-org-shell/a-01.webp': SHOT,
       'docs/evidence/w02-org-shell/a-02.webp': SHOT,
     }),
     true
   );
+  // A pane and a state of one frame are captures of that frame, so the folder is read by name.
   t.add(
     'evidenceKeepsPaceWithItsCaptures',
-    'one frame shot and nothing written yet, which is the order the rule asks for',
-    shooting({ 'docs/evidence/w02-org-shell/a-01.webp': SHOT }),
-    false
+    'a frame captured in its panes and states and no run record beside it',
+    shooting({
+      'docs/evidence/w02-org-shell/a-01-t2.webp': SHOT,
+      'docs/evidence/w02-org-shell/a-01-empty.webp': SHOT,
+    }),
+    true
   );
   t.add(
     'evidenceKeepsPaceWithItsCaptures',
-    'two frames shot with the document already carrying sections',
+    'the same captures with the run record the command wrote beside them',
     shooting({
-      'docs/evidence/w02-org-shell.md': W02_EVIDENCE(W02_SCREEN_SECTION),
+      'docs/evidence/w02-org-shell.md': RUN_RECORD,
       'docs/evidence/w02-org-shell/a-01.webp': SHOT,
       'docs/evidence/w02-org-shell/a-02.webp': SHOT,
     }),
@@ -2395,98 +1871,8 @@ export function cases(t) {
   );
   t.add(
     'evidenceKeepsPaceWithItsCaptures',
-    'several states of one frame, which is still one frame',
-    shooting({
-      'docs/evidence/w02-org-shell/a-01.webp': SHOT,
-      'docs/evidence/w02-org-shell/a-01-t2.webp': SHOT,
-      'docs/evidence/w02-org-shell/a-01-empty.webp': SHOT,
-    }),
+    'a chapter folder holding no capture yet',
+    shooting({ 'docs/evidence/w02-org-shell/notes.txt': 'kept for the run\n' }),
     false
   );
-
-
-
-  // ── A journey walked in the product, and one answered at a frame address ──
-  //
-  // The two sections below differ in one line each and are otherwise identical: every label is
-  // there, something was pressed, a picture is shown, and the quoted demand is the chapter's own
-  // sentence. That is the whole difficulty - a run driven at `?frame=a-02` and one driven through
-  // the product write down the same destination, and only the address says which happened.
-
-  const JOURNEY = 'http://localhost:5173/';
-  const FRAME = 'http://localhost:5173/?frame=<id>';
-
-  /** One section answering the journey demand, with the line saying where it was driven given. */
-  const WALKED = (did) =>
-    '## 1. A-01 로그인 · 시스템 관리자\n\n'
-    + `**한 일** — ${did}\n`
-    + `**챕터가 정한 것** — 돌아가는 길을 누르고 어느 화면으로 돌아오는지 적는다. ${JOURNEY}에서 확인한다.\n`
-    + '**본 것** — 목록 화면으로 돌아온다.\n\n'
-    + '![A-01 로그인](w02-org-shell/a-01.webp)\n\n';
-
-  const journeying = (document) => t.project({
-    config: {
-      ...WORDS,
-      chapterDir: 'chapters',
-      stateLedger: 'tracking/STATE.md',
-      journeyRoute: JOURNEY,
-      captureRoute: FRAME,
-    },
-    files: { ...CHAPTER_TEXT, 'docs/evidence/w02-org-shell.md': document },
-  });
-
-
-  // **A frame address contains the journey address**, because one is the other with a query on
-  // the end. Read without taking the frame addresses out first, every ordinary capture demand in
-  // the repository names the journey route and this gate reports the whole set - which is how it
-  // read on its first run against a real project: five sections, none of them journeys.
-  const CAPTURING =
-    '## 1. A-01 로그인 · 시스템 관리자\n\n'
-    + '**한 일**\n\n'
-    + `- \`${JOURNEY}?frame=a-01\`을 열고 그림을 남겼다\n`
-    + '- 밝은 외양과 어두운 외양에서 각각 열었다\n\n'
-    + `**챕터가 정한 것** — \`${JOURNEY}?frame=a-01\`에서 열고 \`a-01.webp\`를 남긴다.\n`
-    + '**본 것** — 로그인 화면이 그려진다.\n\n'
-    + '![A-01 로그인](w02-org-shell/a-01.webp)\n\n';
-
-
-  // The label as a heading with the steps bulleted under it, which is where a real document keeps
-  // its addresses. Read as the label line alone, this section names no address at all - and a
-  // walked journey then reads exactly like one nobody drove.
-  const WALKED_IN_BULLETS =
-    '## 1. A-01 로그인 · 시스템 관리자\n\n'
-    + '**한 일**\n\n'
-    + `- \`${JOURNEY}\`을 열어 목록에서 첫 행을 눌렀다\n`
-    + '- 상세 화면에서 돌아가는 길을 눌렀다\n\n'
-    + `**챕터가 정한 것** — 돌아가는 길을 누르고 어느 화면으로 돌아오는지 적는다. ${JOURNEY}에서 확인한다.\n`
-    + '**본 것** — 목록 화면으로 돌아온다.\n\n'
-    + '![A-01 로그인](w02-org-shell/a-01.webp)\n\n';
-
-
-  // **One section pays several demands, and only one of them is the journey.** A screen section
-  // opens its own frame address to compare two locales, takes its pictures there, and then opens
-  // the product to press the way back. Read as one string, the block names a frame address and the
-  // section is called driven at a frame route - which pushed a real document into writing that
-  // address as prose to get past the gate, losing the reader the address they would have copied.
-  const WALKED_BESIDE_FRAME_WORK =
-    '## 1. A-01 로그인 · 시스템 관리자\n\n'
-    + '**한 일**\n\n'
-    + `- \`${JOURNEY}?frame=a-01\`을 \`&lang=en\`과 \`&lang=ko\`로 각각 열어 문구를 대조했다\n`
-    + `- \`${JOURNEY}\`을 열어 목록에서 첫 행을 누르고, 상세에서 돌아가는 길을 눌렀다\n\n`
-    + `**챕터가 정한 것** — 돌아가는 길을 누르고 어느 화면으로 돌아오는지 적는다. ${JOURNEY}에서 확인한다.\n`
-    + '**본 것** — 목록 화면으로 돌아온다.\n\n'
-    + '![A-01 로그인](w02-org-shell/a-01.webp)\n\n';
-
-
-  // The other side of the same line: the frame address is on the journey line itself, so the way
-  // back was pressed where a control has nowhere to go. Opening the product first does not undo it.
-  const WALKED_AT_A_FRAME_AFTER_OPENING_THE_PRODUCT =
-    '## 1. A-01 로그인 · 시스템 관리자\n\n'
-    + '**한 일**\n\n'
-    + `- \`${JOURNEY}\`을 열어 목록을 봤다\n`
-    + `- \`${JOURNEY}?frame=a-01\`에서 돌아가는 길을 눌렀다. ${JOURNEY}에서 확인한 셈이다\n\n`
-    + `**챕터가 정한 것** — 돌아가는 길을 누르고 어느 화면으로 돌아오는지 적는다. ${JOURNEY}에서 확인한다.\n`
-    + '**본 것** — 목록 화면으로 돌아온다.\n\n'
-    + '![A-01 로그인](w02-org-shell/a-01.webp)\n\n';
-
 }

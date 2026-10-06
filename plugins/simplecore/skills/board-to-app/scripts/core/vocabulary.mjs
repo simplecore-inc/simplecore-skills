@@ -1,36 +1,19 @@
 // A word a project declares as its own, held against the documents that are supposed to write it.
 //
-// Eight keys are not paths but this project's own words and markup - `chapterLines`,
-// `evidenceLabels`, `closedStatus`, `verdictRole`, `deferredLine`, `placeholderLine`,
-// `captureReasons` and `eyesPhrases` - and every check over a chapter file or a result document
-// compares against them. **A word declared wrongly does not fail; it matches nothing, and matching
-// nothing is what a repository with nothing wrong also does.** The two markup conventions are opposite on purpose - a `chapterLines` phrase is the
-// line as written, markup and all, and an `evidenceLabels` value is the word alone, because the
-// checks add the emphasis themselves - so the commonest way to get this wrong is to declare one
-// of them the way the other is declared, and the run stays green either way.
+// Some keys name a project's own words rather than paths: `closedStatus` in the state ledger,
+// `verdictRole`, `deferredLine` and `placeholderLine` in the run records, and `eyesPhrases` in the
+// documents `eyesDocuments` names. **A word declared wrongly does not fail; it matches nothing, and
+// matching nothing is what a repository with nothing wrong also does.** So `doctor` prints what each
+// declared word matched, and that count is what tells the two apart.
 //
-// That was held by a sentence in a setup command, which is the third category `SKILL.md` says does
-// not exist: not a gate, not marked as needing eyes, and reading as though something were holding
-// it. This is the gate.
-//
-// **A ninth key is here for the same reason and fails one step earlier.** `frameDeliverables` is
-// not a word a check compares by - it is the sentences a screen owes beyond working code, and what
-// holds them is that a chapter file demands each one of every screen it places. Declared and never
-// emitted, the key reads as coverage and holds nothing: no gate compares it, no chapter carries it,
-// and the run over that chapter set is as green as one where every screen answered it.
-// `everyFrameDeliverableReachesAChapter` is the join, and it sits in this module because the
-// question is this module's - a declaration held against the documents that are supposed to write
-// it.
-//
-// **The whole difficulty is the boundary, and getting it wrong makes the gate worthless in both
-// directions.** A project that has just been wired has no result documents, so zero matches there
-// is correct rather than a defect; a project mid-build has chapter files full of lines nothing
-// matched, and that is a config that has stopped working. So every entry below carries what
-// established which of the two it is, and says so in its own text - a reader is never left
-// guessing whether the comparison ran.
+// **The whole difficulty is the boundary.** A project that has just been wired has no run records,
+// so zero matches there is correct rather than a defect; a project mid-build has documents full of
+// lines nothing matched, and that is a config that has stopped working. So every entry carries what
+// established which of the two it is, and says so in its own text - a reader is never left guessing
+// whether the comparison ran.
 import { compileLine } from './grammar.mjs';
 import { proseLines, tableCells } from './prose.mjs';
-import { BASE_HEADING, CHAPTER_SECTION, EVIDENCE_HEADING, ROLE_SEPARATOR } from './evidence.mjs';
+import { runRows } from './evidence.mjs';
 
 /**
  * The markup a declaration and a document line may differ by while saying the same words.
@@ -46,40 +29,34 @@ const MARKUP = /[*_`~]/g;
 /** One string with its markdown emphasis removed, for the markup-blind comparison. */
 const bare = (text) => String(text).replace(MARKUP, '');
 
-/** A line that leads with a bolded word, which is the shape every evidence label is written in. */
-const BOLD_LEAD = /^\*\*[^*]+\*\*/;
-
-/** The two conventions, named in the finding so the fix is the next thing a reader reads. */
+/** The two conventions a declaration follows, carried on each census entry it produces. */
 const CONVENTIONS = {
-  line: 'the line as written, markup and all — `**Test · {text}**…`, never `Test · `',
-  word: 'the word alone, with no markup on it — the checks write the emphasis themselves',
+  line: 'the line as written, markup and all - `**Deferred to {text}**…`, never `Deferred to `',
+  word: 'the word alone, with no markup on it',
 };
 
 /** Every chapter file, by the chapter its name carries. */
 const chapters = (ctx) => ctx.evidence.chapterFiles();
 
-/** One chapter's file text, or null. */
-const chapterText = (ctx, file) => ctx.read(`${ctx.declared('chapterDir')}/${file}`);
-
-/** One chapter's result document, or null where the verification has not been written. */
-const resultText = (ctx, file) => {
+/** One chapter's run record, or null where the journeys have not been run. */
+const recordText = (ctx, file) => {
   const dir = ctx.declared('evidenceDir');
   return dir === null ? null : ctx.read(`${dir}/${file}`);
 };
 
 /**
- * Every document of one kind, as `{ rel, lines }` with the fenced blocks already gone.
+ * Every run record, as `{ rel, lines }` with the fenced blocks already gone.
  *
- * <p>A fenced block is what a machine verification pastes its command and its output into, and
- * neither is prose a declaration is meant to match - the same reason every other reader here
- * starts from `proseLines`.
+ * <p>A fenced block is where a record pastes a command and its output, and neither is prose a
+ * declaration is meant to match - the same reason every other reader here starts from
+ * `proseLines`.
  */
-function corpus(ctx, kind) {
+function records(ctx) {
   const out = [];
+  const dir = ctx.declared('evidenceDir');
   for (const [, file] of [...chapters(ctx)].sort()) {
-    const text = kind === 'chapter' ? chapterText(ctx, file) : resultText(ctx, file);
+    const text = recordText(ctx, file);
     if (text === null) continue;
-    const dir = kind === 'chapter' ? ctx.declared('chapterDir') : ctx.declared('evidenceDir');
     out.push({ rel: `${dir}/${file}`, file, lines: proseLines(text).map((l) => l.line) });
   }
   return out;
@@ -116,113 +93,12 @@ function countBare(docs, re) {
 }
 
 /**
- * The chapter lines - three roles, one corpus, and a different signal establishing each boundary.
- *
- * <p>**`persona` and `verdict` each have an independent witness in the chapter files themselves.**
- * A chapter that places a frame names the personas that prove it, so a frame heading anywhere in
- * the set means a persona line is owed; a chapter with numbered sections and no frame heading is a
- * foundation chapter, which is proved by machine and writes the verdict line instead. Neither
- * witness reads the declaration, which is what makes it a witness.
- *
- * <p>**`states` has none, and is judged only when the markup-blind reader finds what the strict one
- * missed.** A board that gives every state a frame of its own writes no such sentence, and a small
- * board may have no screen with a state hanging off it - so a bare zero there is a project this
- * gate has nothing to say about, and saying it anyway would be the false positive that takes the
- * two rows beside it down as well.
- */
-function chapterLineEntries(ctx, lines) {
-  const declared = ctx.declared('chapterLines');
-  if (!declared || typeof declared !== 'object' || Array.isArray(declared)) return [];
-  const docs = corpus(ctx, 'chapter');
-  const compared = lineCount(docs);
-
-  let placing = 0;
-  let foundation = 0;
-  for (const doc of docs) {
-    const frames = doc.lines.some((line) => BASE_HEADING.test(line));
-    const sections = doc.lines.some((line) => CHAPTER_SECTION.test(line));
-    if (frames) placing += 1;
-    else if (sections) foundation += 1;
-  }
-
-  const witness = {
-    persona: [
-      placing > 0,
-      `${placing} chapter file(s) place a frame, and a chapter that places a screen names the personas that prove it`,
-    ],
-    verdict: [
-      foundation > 0,
-      `${foundation} chapter file(s) carry numbered sections and place no frame, which is a chapter proved by machine`,
-    ],
-    states: [
-      false,
-      'nothing independent of the declaration says this project has a screen with states hanging off it, so only the markup-blind reader can speak here',
-    ],
-  };
-
-  const out = [];
-  for (const [role, phrase] of Object.entries(declared)) {
-    if (role.startsWith('//') || phrase === null) continue;
-    let loose = null;
-    try {
-      loose = compileLine(bare(phrase), `chapterLines.${role}`);
-    } catch {
-      // A phrase the grammar refuses is `configGate`'s finding, and reporting it twice under two
-      // ids sends somebody to fix it in two places.
-      continue;
-    }
-    const [expects, because] = witness[role] ?? [false, 'this project declares a role the skill does not read'];
-    out.push(entry(
-      `chapterLines.${role}`, phrase, CONVENTIONS.line, 'chapter files',
-      docs.length, compared, countLines(docs, lines[role]), countBare(docs, loose), expects, because
-    ));
-  }
-  return out;
-}
-
-/**
- * The three evidence labels, against the result documents.
- *
- * <p>**The witness is the document's own shape rather than its words**: a result document writes
- * every one of its labels as a bolded lead-in, so a document holding lead-ins and not this one has
- * a label declared as something nobody writes. A document still being written holds no lead-ins
- * yet and establishes nothing, which is the boundary - a chapter halfway through its verification
- * is not a misdeclared config.
- */
-function evidenceLabelEntries(ctx) {
-  const declared = ctx.declared('evidenceLabels');
-  if (!declared || typeof declared !== 'object' || Array.isArray(declared)) return [];
-  const docs = corpus(ctx, 'result');
-  const compared = lineCount(docs);
-  const leads = docs.reduce((n, doc) => n + doc.lines.filter((line) => BOLD_LEAD.test(line)).length, 0);
-
-  const out = [];
-  for (const [role, label] of Object.entries(declared)) {
-    if (role.startsWith('//') || typeof label !== 'string' || !label) continue;
-    let matched = 0;
-    let relaxed = 0;
-    for (const doc of docs) {
-      for (const line of doc.lines) {
-        if (line.startsWith(`**${label}**`)) matched += 1;
-        if (bare(line).startsWith(bare(label))) relaxed += 1;
-      }
-    }
-    out.push(entry(
-      `evidenceLabels.${role}`, label, CONVENTIONS.word, 'result documents',
-      docs.length, compared, matched, relaxed, leads > 0,
-      `${leads} line(s) in the result documents lead with a bolded word, which is the shape every label is written in`
-    ));
-  }
-  return out;
-}
-
-/**
  * The word the ledger writes for a closed chapter.
  *
  * <p>**Judged by the markup-blind reader alone, deliberately.** Nothing independent of this word
  * says a chapter has closed - a build with every chapter open is the normal state of a project
- * halfway through, and a result document sitting beside an open chapter is the normal state of one
- * whose verification has just run and whose ledger row is written next. Any witness for it would be
+ * halfway through, and a run record sitting beside an open chapter is the normal state of one whose
+ * journeys have just run and whose ledger row is written next. Any witness for it would be
  * a threshold somebody picked, and a threshold picked to make a gate speak is how a gate starts
  * crying wolf. The census still prints what it matched, so a person reading `doctor` sees the zero.
  */
@@ -255,48 +131,38 @@ function closedStatusEntry(ctx) {
 }
 
 /**
- * The word an evidence heading writes where a persona name would stand.
+ * The word a foundation chapter's run record writes in the persona column, for a verification row.
  *
- * <p>The witness pairs the two documents: a chapter that carries a verdict line and has a result
- * document with role-suffixed headings is a chapter whose document owes one heading ending in this
- * word. Neither half alone would do - role-suffixed headings appear in every screen chapter's
- * document, so a project with no foundation chapter would be told to declare a word it never uses.
+ * <p><b>No witness, and the markup-blind reader is the whole of what can be said.</b> A project
+ * whose chapters all place screens writes no verification row, which is a project with nothing
+ * wrong - so a zero here says nothing until the relaxed comparison finds the word written another
+ * way.
  */
-function verdictRoleEntry(ctx, lines) {
+function verdictRoleEntry(ctx) {
   const role = ctx.declared('verdictRole');
   if (role === null || ctx.declared('evidenceDir') === null) return [];
-  const suffix = `${ROLE_SEPARATOR}${role}`;
   let documents = 0;
   let compared = 0;
   let matched = 0;
   let relaxed = 0;
-  let owed = 0;
   for (const [, file] of [...chapters(ctx)].sort()) {
-    const result = resultText(ctx, file);
-    if (result === null) continue;
+    const record = recordText(ctx, file);
+    if (record === null) continue;
     documents += 1;
-    const chapter = chapterText(ctx, file);
-    const demandsVerdict = chapter !== null && lines.verdict
-      && proseLines(chapter).some(({ line }) => lines.verdict.test(line));
-    let suffixed = 0;
-    for (const { line } of proseLines(result)) {
-      const heading = EVIDENCE_HEADING.exec(line);
-      if (!heading) continue;
+    for (const { persona } of runRows(record)) {
       compared += 1;
-      if (heading[1].includes(ROLE_SEPARATOR)) suffixed += 1;
-      if (heading[1].endsWith(suffix)) matched += 1;
-      if (bare(heading[1]).endsWith(bare(suffix))) relaxed += 1;
+      if (persona === role) matched += 1;
+      if (bare(persona) === bare(role)) relaxed += 1;
     }
-    if (demandsVerdict && suffixed > 0) owed += 1;
   }
   return [entry(
-    'verdictRole', role, CONVENTIONS.word, 'result document headings', documents, compared, matched, relaxed, owed > 0,
-    `${owed} chapter(s) carry a verdict line and have a result document writing role-suffixed headings`
+    'verdictRole', role, CONVENTIONS.word, 'run records', documents, compared, matched, relaxed, false,
+    'a project whose chapters all place screens writes no verification row, which is a project with nothing wrong'
   )];
 }
 
 /**
- * The line a section carries for a check this installation could not decide.
+ * The line a run record carries for a check this installation could not decide.
  *
  * <p>**No witness, and there never can be one.** A project declares this because it expects to meet
  * the case, and a project that declares it and never meets it is a project with nothing wrong -
@@ -312,21 +178,21 @@ function deferredLineEntry(ctx, lines) {
   } catch {
     return [];
   }
-  const docs = corpus(ctx, 'result');
+  const docs = records(ctx);
   return [entry(
-    'deferredLine', phrase, CONVENTIONS.line, 'result documents',
+    'deferredLine', phrase, CONVENTIONS.line, 'run records',
     docs.length, lineCount(docs), countLines(docs, lines.deferred), countBare(docs, loose), false,
     'a project that has never met the case writes no such line, which is a project with nothing wrong'
   )];
 }
 
 /**
- * The line an evidence section carries in place of a picture.
+ * The line a run record carries in place of a picture.
  *
  * <p>Same shape as the deferral above and the same absence of a witness: a project declares it
  * because it expects to meet unbuilt placeholders behind a tab strip, and one that declares it and
  * never meets them is a project with nothing wrong. The markup-blind count is the whole of what
- * can be said - a declaration written the way `evidenceLabels` is written matches nothing, and the
+ * can be said - a declaration written without the line's own markup matches nothing, and the
  * relaxed reading finding the line is what shows that.
  */
 function placeholderLineEntry(ctx, lines) {
@@ -338,65 +204,12 @@ function placeholderLineEntry(ctx, lines) {
   } catch {
     return [];
   }
-  const docs = corpus(ctx, 'result');
+  const docs = records(ctx);
   return [entry(
-    'placeholderLine', phrase, CONVENTIONS.line, 'result documents',
+    'placeholderLine', phrase, CONVENTIONS.line, 'run records',
     docs.length, lineCount(docs), countLines(docs, lines.placeholder), countBare(docs, loose), false,
     'a project whose panes are all built discharges nothing, which is a project with nothing wrong'
   )];
-}
-
-/**
- * The words a demand says why a picture is the only witness in.
- *
- * <p><b>No boundary is claimed, and the reason is that a hole here cannot be silent.</b> A
- * `transient` list that matches nothing means either that this project's demands never reach a
- * dialog - possible, and a project with nothing wrong - or that the phrases were written
- * differently from the way the generator writes them. The second is not the quiet failure it is
- * everywhere else: `everyCaptureDemandGivesItsReason` reads the same lists and fires once per
- * clause that names a capture, so a vocabulary that misses the generator's wording is the loudest
- * thing in the run rather than a zero nobody meets. It is the argument `eyesPhrases` makes about
- * its second and third lists, arriving through a different gate.
- *
- * <p>So what is left to say is the count, and it is worth saying: a chapter set regenerated before
- * the key was declared holds no reasons at all, and `0 matched` there is a set waiting to be
- * regenerated rather than a declaration that is wrong.
- *
- * <p><b>That loudness is borrowed, and it is worth naming what it is borrowed from.</b> The gate
- * is loud only over clauses it recognises as naming a capture, so its noise rests on the capture
- * pattern reading this board's file names. Where that pattern is the narrow side - it stopped at
- * the digits while every frame of the board carried a state letter - the two holes compose into
- * silence: no clause is seen to name a capture, no reason is demanded, and the census then reports
- * `0 matched` under a paragraph promising that zero cannot be quiet. It happened, on 82 frames of
- * 82. So read a zero here against whether the chapters demand captures at all rather than against
- * this reasoning, and where they do and the gate is still green, suspect the pattern before the
- * declaration.
- */
-function captureReasonEntries(ctx) {
-  const declared = ctx.declared('captureReasons');
-  if (!declared || typeof declared !== 'object' || Array.isArray(declared)) return [];
-  const docs = corpus(ctx, 'chapter');
-  const lines = docs.flatMap((doc) => doc.lines);
-
-  const out = [];
-  for (const [role, phrases] of Object.entries(declared)) {
-    if (role.startsWith('//') || !Array.isArray(phrases) || !phrases.length) continue;
-    const lower = phrases.filter((p) => typeof p === 'string' && p).map((p) => p.toLowerCase());
-    let matched = 0;
-    let relaxed = 0;
-    for (const line of lines) {
-      const text = line.toLowerCase();
-      if (lower.some((p) => text.includes(p))) matched += 1;
-      if (lower.some((p) => bare(text).includes(bare(p)))) relaxed += 1;
-    }
-    out.push(entry(
-      `captureReasons.${role}`, `${lower.length} phrase(s)`, CONVENTIONS.word, 'chapter files',
-      docs.length, lines.length, matched, relaxed, false,
-      'a project whose demands never reach this case writes no such reason, and a chapter set that '
-      + 'has not been regenerated since the key was declared holds none of them yet'
-    ));
-  }
-  return out;
 }
 
 /**
@@ -458,7 +271,7 @@ export function vocabularyCensus(ctx) {
   }
   return [
     ...closedStatusEntry(ctx),
-    ...verdictRoleEntry(ctx, lines),
+    ...verdictRoleEntry(ctx),
     ...deferredLineEntry(ctx, lines),
     ...placeholderLineEntry(ctx, lines),
     ...eyesPhraseEntries(ctx),
@@ -475,88 +288,6 @@ export function censusLine(item) {
 }
 
 
-
-
-// The gates that read a declared vocabulary against result documents are retired with the
-// documents: a chapter's grounds are a run record the journey command writes, and its words are
-// the skill's rather than the project's. The census `doctor` prints still covers the words that
-// survive - the ledger's, the verdict's, the deferred and placeholder lines, the eyes'.
+// No gate reads a declared vocabulary against the documents: the census `doctor` prints is the
+// whole of it, and it reads every word these keys declare.
 export const VOCABULARY_GATES = [];
-
-// ── The cases ──────────────────────────────────────────────────────────────
-//
-// **The boundary is what these are for.** A gate over a vocabulary is easy to write and easy to
-// write worthlessly: one that fires whenever a count is zero reddens every project on the day it
-// is wired, and one that stays quiet whenever a count is zero is the silence it was written to
-// break. So both edges are pinned - a freshly-wired project with no documents at all, and a
-// project mid-build whose result documents have not been written yet, each has to stay quiet
-// while the two misdeclarations fire.
-
-/** One project's vocabulary, declared the way the two conventions ask for. */
-const DECLARED = {
-  chapterDir: 'chapters',
-  evidenceDir: 'docs/evidence',
-  stateLedger: 'tracking/STATE.md',
-  closedStatus: '닫힘',
-  verdictRole: '판정',
-};
-
-/** A foundation chapter proved by machine, and a screen chapter proved by two personas. */
-const CHAPTERS = {
-  'chapters/00-overview.md': '# 챕터\n',
-  'chapters/w01-foundation.md':
-    '# W01. 개발 기반\n\n## 1. 모노레포와 빌드\n\n'
-    + '**개발** — 앱 셋을 한 저장소에 둔다.\n'
-    + '**판정** — 한 명령으로 빌드가 끝난다.\n',
-  'chapters/w02-org-shell.md':
-    '# W02. 조직·계정\n\n## 1. A-01 로그인\n\n'
-    + '**개발** — 보드의 `a-01-login`을 그대로 만든다. 상태 1장이 딸린다 — A-02 잠김.\n'
-    + '**테스트 · 시스템 관리자** — 로그인 화면을 연다.\n'
-    + '**테스트 · 안전관리자** — 범위 밖 레코드는 주소로 불러도 서버가 막는다.\n',
-};
-
-/** The result documents those two chapters leave behind, written in the declared labels. */
-const RESULTS = {
-  'docs/evidence/w01-foundation.md':
-    '# W01. 개발 기반 — 검증 결과\n\n## 1. 모노레포와 빌드 · 판정\n\n'
-    + '**한 일** — 빈 저장소를 받아 한 명령으로 빌드한다.\n'
-    + '**챕터가 정한 것** — 한 명령으로 빌드가 끝난다.\n'
-    + '**본 것** — 앱 셋이 모두 빌드된다.\n\n'
-    + '```\n$ pnpm build\n3 apps built\n```\n',
-  'docs/evidence/w02-org-shell.md':
-    '# W02. 조직·계정 — 검증 결과\n\n## 1. A-01 로그인 · 시스템 관리자\n\n'
-    + '**한 일** — 로그인 화면을 연다.\n'
-    + '**챕터가 정한 것** — 로그인 화면을 연다.\n'
-    + '**본 것** — 화면이 열린다.\n\n'
-    + '![A-01 로그인](w02-org-shell/a-01.webp)\n',
-};
-
-/** One sentence a screen owes beyond working code, in the shape a project actually declares. */
-const DELIVERABLE = '이 화면이 쓰는 문구 키가 en과 ko 자원 파일에 둘 다 있다';
-
-/** The same chapter set with the deliverable emitted into the demand line of the screen it places. */
-const CHAPTERS_DEMANDING = {
-  ...CHAPTERS,
-  'chapters/w02-org-shell.md':
-    '# W02. 조직·계정\n\n## 1. A-01 로그인\n\n'
-    + `**개발** — 보드의 \`a-01-login\`을 그대로 만든다. 상태 1장이 딸린다 — A-02 잠김. ${DELIVERABLE}.\n`
-    + '**테스트 · 시스템 관리자** — 로그인 화면을 연다.\n'
-    + '**테스트 · 안전관리자** — 범위 밖 레코드는 주소로 불러도 서버가 막는다.\n',
-};
-
-/** The ledger, with the foundation chapter closed in the declared word. */
-const LEDGER = (word = '닫힘') => `# 챕터 상태\n\n| 챕터 | 상태 |\n| --- | --- |\n| W01 | ${word} |\n| W02 | 열림 |\n`;
-
-export function cases(t) {
-  const project = (config, files) => t.project({ config: { ...DECLARED, ...config }, files });
-  const whole = { ...CHAPTERS, ...RESULTS, 'tracking/STATE.md': LEDGER() };
-
-  // ── Fires ────────────────────────────────────────────────────────────────
-
-
-  // ── Stays quiet ──────────────────────────────────────────────────────────
-
-
-
-
-}

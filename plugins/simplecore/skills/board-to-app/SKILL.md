@@ -6,10 +6,12 @@ description: >-
   close each chapter. Also for resuming a build across sessions, deciding which
   chapters may run in parallel, and generating or regenerating the chapter set
   from the board - 시나리오 개발 · 챕터 개발 · 단계별 개발 · 개발 순서 · 페르소나 시험 ·
-  병렬 개발 · 어느 챕터부터 · 다음 챕터. Requires a wireframe board and a chapter set
-  derived from it; the application itself need not exist yet. NOT for authoring or
-  syncing the board itself (simplecore:wireframe-boards), and NOT for auditing one
-  feature area in one sitting (the project's own e2e skill).
+  병렬 개발 · 어느 챕터부터 · 다음 챕터. Requires a wireframe board; the chapter set
+  is generated from it when there is none, and the application itself need not exist
+  yet. NOT for a project reconciling its board on a parity walk
+  (simplecore:board-parity-walk), NOT for authoring or syncing the board itself
+  (simplecore:wireframe-boards), and NOT for auditing one feature area in one sitting
+  (the project's own e2e skill).
 ---
 
 # Building from the board, chapter by chapter
@@ -74,9 +76,16 @@ drawn before the code has every screen still to build, and that is what this ski
 is for.
 
 **No chapter set and no other build arrangement in place: generate one before
-starting** (below). Building from the board directly, chapter by chapter in
+starting** (below), where the request named this way of building - chapters, dependency
+order, persona journeys. Building from the board directly, chapter by chapter in
 somebody's head, is the thing this skill exists to replace: the order stops being
 written down, and the second session cannot tell what the first one closed.
+
+**A request that only asks for the screens to be built, on a board with neither this
+skill's config nor a parity walk's, has two answers, and the user picks.** Say what each
+buys - this skill builds the board chapter by chapter in dependency order and closes each
+chapter on its journeys; `simplecore:board-parity-walk` reconciles the frames against a
+running application one cluster at a time - and wire neither until the user has chosen.
 
 **A project already running a different arrangement is the other case, and generating
 a chapter set there is not setup - it is a migration, and a migration starts only when
@@ -96,7 +105,7 @@ to move it.
 
 ## What the project declares - `.claude/board-to-app.json`
 
-**Moved to `references/config.md`, read when you are wiring a project, or a key you need is not declared.** It holds every key, what it buys, what its absence costs, and the rules for editing the file as text rather than through an encoder.
+→ `references/config.md`.
 
 ## One repository, two boards - every run names which one
 
@@ -161,7 +170,8 @@ apart.
 
 ## Opening a session
 
-1. **The config**, read against the table above - a missing required key is reported
+1. **The config**, read against the key table in `references/config.md` - `bta.mjs doctor`
+   prints every absent key with what it costs, and a missing required key is reported
    before anything else happens. **On a project declaring several boards, which board this
    session is about is settled here and named in every line afterwards.**
 2. **The chapter table and the state ledger.** The open chapter is the first one whose
@@ -216,7 +226,7 @@ by itself.
 
 ## The unit of work is a chapter, and one agent takes one chapter
 
-**Moved to `references/dispatch.md`, read when you are writing a brief, dispatching an agent, deciding what may run alongside, or judging whether one has stalled.** It holds the whole dispatch discipline - what a brief names and what it must never demand, the resource slots, the git index as a shared resource, what a report owes, and a stalled agent told from a slow one.
+→ `references/dispatch.md`.
 
 ## The wave: parallel backends, one restart, then the screens
 
@@ -344,8 +354,8 @@ chapter's file after all. **Append it; never insert it in subject order.**
 `chapterGenerator` numbers the per-frame sections from that list's order, so a frame
 slipped into the middle shifts every section after it by one. Nothing warns, because each
 renumbered section is individually correct - what breaks is everything OUTSIDE the file
-that cites a section number: a result document whose headings carry them, a note saying
-「§9 is the one that failed」, a review comment, a plan. One insertion moved twenty-nine
+that cites a section number: a note saying 「§9 is the one that failed」, a review comment, a
+plan. One insertion moved twenty-nine
 headings at once and turned a clean tree red in a way that read as twenty-nine separate
 defects.
 
@@ -391,8 +401,8 @@ name, the helper - so it is written wherever the project keeps `auditScript`, no
 
 **What is here is that a census reports both sides.** 「26 reach it」 and 「26 reach it, 0 do not」
 are two different sentences, and only the second says the search looked for the negative - the same
-thing *The third category comes back as a checker that did not run* says of every count in this
-skill. And where the second number is not zero, **the names are the finding**: 「3 do not reach it」
+thing `references/checks-and-eyes.md` § *The third category comes back as a checker that did not
+run* says of every count in this skill. And where the second number is not zero, **the names are the finding**: 「3 do not reach it」
 gives nobody anything to do.
 
 So it goes in the commit, beside the two trailers that are already there, in that order - the count
@@ -409,8 +419,8 @@ Census: the shared confirm dialog — 26 through, 2 outside: DocumentPurgeDialog
 **What it really costs is the chapter.** git reads a trailer block only where it is the message's last paragraph and consists entirely of trailers and lines indented under one, so **one line wrapped at column 0 makes git discard the whole block** - `Chapter:` included. `git log --format='%(trailers:key=Chapter)'` then comes back empty for a commit whose `Chapter:` line any person can read, which is the single thing the trailer exists to provide. `trailerGate` takes its answer from `%(trailers)` for that reason rather than matching `^Chapter:` itself; a line-by-line reader is green over exactly the commit whose trailer answers nobody. Two commits in one repository sat that way with every gate green, and two more had a blank line between `Chapter:` and `Touches:` - which puts `Chapter:` in a paragraph of its own, above the block, so the history kept the edges and lost the node. **Where a line genuinely has to wrap, indent what it wrapped onto**: git folds an indented continuation back onto its trailer and the block parses.
 
 `censusCountsBothSides` reads that line wherever one appears. Whether a change owed a census at
-all, and whether the sample was drawn from the right place, are readings - the second table below
-names whose and when.
+all, and whether the sample was drawn from the right place, are readings - the *Held by eyes*
+table of `references/checks-and-eyes.md` names whose and when.
 
 ## The dependency tree the history leaves behind
 
@@ -506,7 +516,8 @@ So each screen is **looked at once, in character**, at the chapter's close - by 
 opening the captures the journey run left, as the operator whose work the screen carries. Looking
 is for what no test can fail on: a label cut at an edge, a font with no glyph, a control nobody
 can see, a state frame that came back as its base. **One look per screen-state, and the findings
-of that look are fixed in one round** → *Closing a chapter*. The lenses, the locale and alignment
+of that look are fixed in one round** → `references/evidence.md` § *One look per screen-state, and
+one round*. The lenses, the locale and alignment
 rules, and the anchor every finding needs → `references/judging-frames.md`.
 
 ## When a screen and its frame disagree
@@ -548,8 +559,8 @@ harder because it rests on nothing.
 | the requirement is not written down | Derive it from the design documents and the personas the board names. Write down what you derived. |
 | an external system's behaviour is unknown | Design so the answer does not matter - declare the capability, handle both, reject explicitly what is unsupported. A product that changes shape when a vendor's answer arrives was not designed. |
 
-**Three things genuinely qualify**, and they share a property - no amount of design
-makes the answer derivable:
+**In a chapter build, three things genuinely qualify**, and they share a property - no
+amount of design makes the answer derivable:
 
 - **A decision that changes what the product is.** Somebody owns it and it is not the
   build.
@@ -691,8 +702,8 @@ puts a section in the file whose name is closest rather than the file its reader
    file it sits in. A split that rewrites is a split nobody can check.
 2. **Count in and count out, and check it by machine.** Re-split both sides, normalise whitespace,
    and compare every section body - 「61 in, 61 out」 is only worth saying when something compared
-   them. A section that quietly went nowhere leaves no mark afterwards, which is the whole reason
-   this repository counts items before deleting a file.
+   them. A section that quietly went nowhere leaves no mark afterwards, so the sections are
+   counted in and out before the old file is deleted.
 3. **The index states no fact.** It says which file answers which question, and nothing a reference
    also says.
 4. **Point `handoverFile` at the index.** That one line is what makes the build use it - the
@@ -726,8 +737,7 @@ that cannot lie.
 **A quiet agent is either stalled or inside something long, and the two look
 identical from outside.** Killing the second kind throws away everything it had
 worked out; waiting on the first kind costs the build a chapter. So the difference is
-established rather than guessed, from the four things that move while real work
-happens:
+established rather than guessed, from what moves while real work happens:
 
 | Read | Working, keep waiting | Stalled, replace it |
 | --- | --- | --- |
@@ -742,11 +752,13 @@ something long and is left alone. A long gate produces no commits either, so the
 artifact is what separates it from a stall - and an agent that cannot say what it is
 waiting for is not waiting.
 
-**The threshold is two.** When the readings say stalled - no step report and no change
-to the artifact since the previous check, and the agent has announced idle twice -
-treat it as stalled. **Two of the three is not a stall**: an agent replaced on a still
+**The threshold is two checks.** When two checks in a row find no step report and no
+change to the artifact - the first made only once the artifact has had time to move, and
+answered by asking rather than by reassigning (`references/dispatch.md`, item 7) - treat
+it as stalled. **A still artifact alone is not a stall**: an agent replaced on a still
 artifact alone was usually inside something long, and everything it had worked out goes
-with it. Then, in one turn:
+with it. An idle announcement settles nothing in either direction, because it races the
+work. Then, in one turn:
 
 1. **Tell it to stop** and to stop writing the artifact. Say why, and ask it to send
    anything unsaved as a message rather than writing it.
@@ -760,22 +772,9 @@ with it. Then, in one turn:
 consumed neither of the last two is not persistence; it is the coordinator refusing to
 read the artifact.
 
-A session can also end for reasons that have nothing to do with the work - a usage
-limit, a dropped connection. Three rules cover every such ending, and what each one
-costs when it is skipped is in `references/harness.md` § An agent that ends:
-
-- **Read the tree rather than guessing**, and finish or discard what is half-done
-  **before** dispatching the next agent into it.
-- **Check whether the work is still moving before replacing anybody.** A pause looks
-  exactly like a death, and a replacement dispatched over a live agent puts two on one
-  job. If it is moving, wait: that agent still holds everything it worked out.
-- **Only the agent's own "I am finished" ends its hold on the tree**, and stopping is
-  the only thing that reaches an agent before it wakes. A commit, a clean status, an
-  idle notification and a report that reads like a conclusion are all things an agent
-  produces *mid-assignment*. **Stop the previous agent before dispatching the next one,
-  every time**, with the tool that kills it rather than a message asking it to stand
-  down - a message arrives after its next write. Stopping an agent that was genuinely
-  finished costs nothing.
+**A session that ends for an outside reason - a usage limit, a dropped connection - is read,
+waited on or stopped by the rules in `references/harness.md` § *An agent that ends, and an
+agent that only paused*.**
 
 ## Letting a person watch, without paying for it
 
@@ -793,8 +792,8 @@ can open one, and neither pays for it by default.
 
 **`costLog` is the third of those files and answers a different question - what the arrangement
 cost** - with the wall-clock span and the consumption of each chapter appended as it closes,
-measured against a start stamped when that chapter's first agent went out → *The dispatch is
-planned, written down, and then made*. **What earns the file is that it separates a run that
+measured against a start stamped when that chapter's first agent went out →
+`references/dispatch.md` § *The dispatch is planned, written down, and then made*. **What earns the file is that it separates a run that
 bought something from one that bought nothing.** A capture run taken through the wrong window is
 spend like any other and is taken again from the start; a record that carries only the second
 makes the arrangement's cost look like the sum of its useful work, and the waste leaves no trace
@@ -849,15 +848,9 @@ Working screens are the floor. A chapter also owes, for every screen in it:
   product has a reason not to, and where it has one, sync the board in the same change. A
   paraphrase is never a defect and never fails a gate.
 
-Whatever `frameDeliverables` declares is a standing check every screen must satisfy, and **each
-sentence names the mechanism that holds it** - a rule in `auditScript` or a helper the journey
-tests call. A sentence nothing holds is a note, and it is not declared → `references/frame-artefacts.md`.
-
-**That list is also where a defect the running product showed lands when no frame can draw it** -
-a value derived wrongly from what the system reports, a control whose destination is nowhere. It
-grows as such defects are found, and every entry grows with the check that catches it, so the
-defect is caught on every screen built afterwards without anybody re-reading a sentence →
-`references/demands.md`.
+Whatever `frameDeliverables` declares is a standing check every screen must satisfy, each
+sentence naming the mechanism that holds it, and the list is where a defect the running product
+showed lands when no frame can draw it → `references/frame-artefacts.md`.
 
 ## Running without stopping to ask
 
@@ -879,9 +872,9 @@ things otherwise turn into a question, and none of them has to.
    | --- | --- |
    | **Where** | the development server this build stands up - `localhost`, `127.0.0.1`, `[::1]`, or the development machine's own address. The handover file names the origins this build uses; anything it does not name is not this build's server |
    | **Out of scope** | a remote host - production, staging, a shared environment - the user's own accounts, and any external service. Each of those is asked for, and none of them is on the way to a chapter closing |
-   | **Where a credential comes from** | the project's development configuration, its seed, a `.env`-shaped file, a fixture, or a value the user supplied. **Never invented.** Where none can be found anywhere, that is one of the four things below that waits for a person |
+   | **Where a credential comes from** | the project's development configuration, its seed, a `.env`-shaped file, a fixture, or a value the user supplied. **Never invented.** Where none can be found anywhere, that is one of the questions below that waits for a person |
    | **Where there is no account** | a development server exposing a sign-up screen gets a test account made on it, and the run continues |
-   | **Where a credential must not go** | a reply, a log line, a capture caption, a result document, a commit, or any file. It reaches the process signing in and stops there |
+   | **Where a credential must not go** | a reply, a log line, a capture caption, a run record, a commit, or any file. It reaches the process signing in and stops there |
 3. **What data should exist?** The seed makes the story's relations true against the schema:
    every record the chapter's screens need exists, connected as the entity model says, in every
    state the board draws, for every persona the journeys name. **Its values are its own.** The
@@ -910,10 +903,10 @@ has left - there is no gauge, only the growing weight of what it has already rea
 that lets the next session start without asking anything is written the moment it changes; a
 handoff composed once the context is nearly spent is the one that does not get written.
 
-**Stop and ask only for these four**: a decision that changes what the product is, a term whose
-translation is genuinely undecided, a value no source can settle, and **moving a project off
-another build arrangement onto this one** - plus anything the repository's own rules reserve for
-the user. **Committing and pushing are not a fifth**: it is answered once - by the repository's own
+**Stop and ask only for these**: a decision that changes what the product is, a term whose
+translation is genuinely undecided, a value no source can settle, a development credential no
+project file supplies, and **moving a project off another build arrangement onto this one** - plus
+anything the repository's own rules reserve for the user. **Committing and pushing are not a fifth**: it is answered once - by the repository's own
 rules where they say, and by `commitPolicy` where they do not - and the build follows the answer
 without raising it again → *The dependency tree the history leaves behind*. **Everything else has a written answer here**, and a session that
 opens the ledger, reads the first open chapter and dispatches has already answered "what next".
@@ -937,8 +930,8 @@ branches it already takes, the states it distinguishes, what it does when the va
 and design against that. A contract designed from the documents alone is wrong in exactly one
 place: where the code carries a third case neither document drew.
 
-Where the wide change genuinely belongs to somebody else's decision, that is the first of the four
-reserved above - ask it as a decision with its cost attached, not as a preference.
+Where the wide change genuinely belongs to somebody else's decision, that is the first of the
+questions reserved above - ask it as a decision with its cost attached, not as a preference.
 
 ## The documents, the board and the code say the same thing
 
@@ -979,7 +972,7 @@ of these than any ranking does.
 
 | | Beats everything below it because |
 | --- | --- |
-| 1. the statute, through the statute tool | nothing in the repository can make an article say something else |
+| 1. a source `factSources` names - a statute, a price list, a published table | nothing in the repository can make that source say something else |
 | 2. the design document | it is the record of a decision somebody made, and the rest are renderings of it |
 | 3. the board | it is the contract for what a screen holds, and it was drawn to be held against code |
 | 4. the code | it is the newest and the least reviewed, so it is evidence of what happens rather than of what should |
@@ -994,7 +987,7 @@ does this」 has the ladder upside down - the board is wrong when the *design do
 
 ## Every rule here is held by a machine or marked as needing eyes
 
-**Moved to `references/checks-and-eyes.md`, read when you are adding a rule anywhere, or asking whether a rule is actually being held.** It holds the two tables of what no machine can judge, who takes each reading and at which moment, and how a rule is proved in both directions before it counts as added.
+→ `references/checks-and-eyes.md`.
 
 ## What is learned goes back into the instructions, in the same change
 
@@ -1086,20 +1079,10 @@ look are fixed rather than listed. Before saying so:
    no journey visited is a screen nobody opened, and `everyPlacedFrameIsCaptured` says so. A
    failing journey is fixed in the product and the command is run again; the record is never
    edited by hand.
-2. **Look at every capture once, as the persona.** Three questions per picture, and the third is
-   the one that fails:
-
-   - **Is this the frame it is named after?** A swallowed deep link leaves the previous screen,
-     and `noTwoCapturesAreTheSamePicture` reports a state frame that came back as its base.
-   - **Is the screen in it built, or is it the shell?** Rows, values, content - look for what
-     should be there and is not.
-   - **Does it hold up as a screen?** A label cut at an edge, a control nobody can see, a font with
-     no glyph, the longest language overflowing.
-
-   **What the look finds is fixed in one round.** Fix, re-run the journeys, look again at the
-   screens the fixes reached and one screen they did not. What is still open after that round
-   goes to the open items with the frame id and what it needs - a third round is a new chapter's
-   work, or the owner's decision to end this one → *The product's owner can end a chapter*.
+2. **Look at every capture once, as the persona, then at the chapter's captures together; fix
+   what the look finds in one round** → `references/evidence.md` § *One look per screen-state,
+   and one round*. A third round is a new chapter's work, or the owner's decision to end this
+   one → *The product's owner can end a chapter*.
 3. **Sweep each defect type across the chapter's code once**, by search, and fix what it finds;
    report the sweep per type, including 「0 others」. A type a machine can see becomes a rule in
    `auditScript` in the same change, run across the whole tree.
@@ -1110,8 +1093,10 @@ look are fixed rather than listed. Before saying so:
    journey tests call, never a sentence somebody re-reads - and a finding worth neither is closed
    with its reason rather than deferred.
 5. **Run every command in `gates`**, all of them, green, each read by its exit status rather than by
-   the tail of its log → `references/harness.md`. `bta.mjs check` is one of them, and `bta.mjs
-   gates` runs whenever a gate was added or changed. **This run happens after the builder has
+   the tail of its log → `references/harness.md`. `bta.mjs check` is one of them, run with
+   `--range <the commit the chapter started from>..HEAD` so the gates that read commits read
+   every commit the chapter made rather than HEAD alone, and `bta.mjs gates` runs whenever a gate
+   was added or changed. **This run happens after the builder has
    returned, never beside it**; a killed run (`143`) is neither red nor green and is run again from
    clean, with the residue cleared and said so.
 6. **Sync the board in the same change** where the product was right and the board was stale -
@@ -1124,7 +1109,9 @@ look are fixed rather than listed. Before saying so:
 8. **Declare what this chapter brought into existence.** A key `deferredKeys` promised to this
    chapter is declared now and its promise deleted in the same change.
 9. **Write the chapter's row in the state ledger**, and say what closed and what the next chapter
-   is. **Do not edit the chapter file to mark it done** - its state is the system's state.
+   is. The closed word is the coordinator's to write, here and nowhere earlier: the builder reports
+   the chapter ready to close and writes no closed word. **Do not edit the chapter file to mark it
+   done** - its state is the system's state.
 
 A chapter closes with its parked lines still open if nobody could settle them. Say which they are;
 do not close them by choosing for the user. **A line naming this chapter as the one it blocks is
@@ -1139,7 +1126,7 @@ a sound thing are the same green.
 
 **The test, and it takes one sentence: what would have to be true for this check to pass while the
 thing it protects is broken?** If the answer comes easily, the check is a proxy. One chapter's
-round produced ten of these and every one answers instantly:
+round produced these, and every one answers instantly:
 
 | The check | Passes while |
 | --- | --- |
@@ -1250,8 +1237,9 @@ answer does not come, **verify the few claims that decisions rest on - by runnin
 reading the diff** - and move on rather than chasing.
 
 **Before asking twice, check how that agent's report was supposed to reach you**, and let the
-second ask name the mechanism rather than repeat the request → `references/dispatch.md` (*The unit of work is a chapter, and
-one agent takes one chapter* § 8, where the brief that settles it is written.
+second ask name the mechanism rather than repeat the request → `references/dispatch.md` § *The unit of
+work is a chapter, and one agent takes one chapter*, item 8, where the brief that settles it is
+written.
 
 **A reading that contradicts a report is a clock before it is a defect** - take the reading out of a
 commit, never off the working tree → `references/harness.md`.
@@ -1394,8 +1382,8 @@ rediscovering it:
 | you are adding a rule anywhere, or asking whether a rule is actually being held | `references/checks-and-eyes.md` - the two tables of what no machine can judge, who takes each reading and when, and proving a rule in both directions |
 | you are wiring a project, or a key you need is not declared | `references/config.md` - every key, what it buys, and what its absence costs |
 | a rule needs a check, or a project needs its own gates wired in | `references/checks.md` - where a gate belongs, the context it reads, and what makes one trustworthy |
-| a screen disagrees with its frame and you are deciding which is wrong | `references/judging-frames.md` - the three lenses, the locale and layout rules, the anchor every finding needs |
-| a screen owes something besides working code and you are listing what | `references/frame-artefacts.md` - the three reasons to photograph a screen, capture axes, fingerprints, what a stale artefact costs |
+| a screen disagrees with its frame and you are deciding which is wrong | `references/judging-frames.md` - the lenses, the locale and layout rules, the anchor every finding needs |
+| a screen owes something besides working code and you are listing what | `references/frame-artefacts.md` - the standing checks a screen owes (`frameDeliverables`), what a capture owes, and the reasons a screen is photographed |
 | you are reading a chapter's run record, deciding what a journey test may assert, or a closed chapter gained a screen | `references/evidence.md` - the run record, the captures it shows, the one look, and what happens when a closed chapter gains a frame |
 | you are about to drive the product - browser, simulator, device | `references/driving-the-product.md`, which also says where a low-level command beats the tool |
 | two agents must write one file, or a measurement surprises you, or a check has never fired | `references/harness.md` |

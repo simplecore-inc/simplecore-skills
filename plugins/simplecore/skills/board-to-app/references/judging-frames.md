@@ -1,11 +1,11 @@
 # Judging a frame, and why looking is not optional
 
 Matching the board is the floor. A frame can match the board exactly and still be a screen nobody
-can work in, because the board contracts structure, content, states and flow - it
-cannot say whether the operator has the value they need to decide, or whether the words
-mean anything to the person reading them.
+can work in, because the board contracts structure - the screens and states, the way between them,
+the kinds of control - and it cannot say whether the operator has the value they need to decide,
+or whether the words mean anything to the person reading them.
 
-## The three lenses that stand on any board
+## The lenses every screen is judged through
 
 Every frame is judged as well as compared, in character:
 
@@ -14,6 +14,11 @@ Every frame is judged as well as compared, in character:
 | **UI/UX reviewer** | Does the eye land where the task starts? Is the same thing in the same place on every screen that shows it? Does every state have an exit? | A buried primary action; two screens solving one problem differently; a state with no way out |
 | **The operator** - whose work these screens carry | Can I finish here without asking anyone? Is the value I decide on actually on screen? Could I know what to type in every field? | A decision the screen gives no data for; a lookup that needs another screen; a field whose value the user cannot know |
 | **The end user** - the person the service is for | Do I understand these words? Do I know what happens next? Is anything here that should never be shown to me? | Internal vocabulary, codes or identifiers on a subject-facing screen; an action whose consequence is unstated; an error with no way out |
+| **The language reader** - reads a chapter's captures together, never one at a time | Is one thing called by one name on every screen that shows it? Does a status, an action or a record keep its word from the list to the detail to the dialog? | One record or action named two ways across screens; a status word that changes between two screens; one label meaning two things |
+
+**The language reader reads the set, never one capture**: one thing named two ways is invisible
+inside any single screen. So that reading is taken once per chapter, at the close, over every
+capture the run left, after each screen has had its own look.
 
 The board names the rest: a flow with an approver, a kiosk walk-up or a first-time
 visitor gets that persona too, derived the way the board's `AUTH:` notes already name
@@ -21,20 +26,22 @@ who may enter a screen.
 
 **Where the project has its own screen-audit skill, that skill is the rubric.** A stack
 that ships one has it anchored to that stack's own invariants rather than to taste, which
-is stricter than anything general can be. Load it and judge with it; the three above are
+is stricter than anything general can be. Load it and judge with it; the lenses above are
 the floor for a project that has none.
 
 **Anchor every finding to a frame number and the action it blocked.** A finding with
-neither is an opinion - it goes to the project's parked items as a proposal, never into
-the code.
+neither is an opinion - it goes to the user in the coordinator's report as a proposal,
+never into the code and never into the open items.
 
 The rest of this file is what judging actually costs - the failures that pass every
 gate, the languages that hide them, and the two habits that keep them from coming back.
 
 ## A board contracts structure, not the values in its illustration
 
-Which fields appear, in which state, with which wording keys, and how one screen reaches
-another - those the code owes. The counts, names and dates drawn beside them are there to
+Which fields appear, in which state, and how one screen reaches another - those the code
+owes. In a chapter build a label or a message is the default wording, and a paraphrase is
+never a defect (`../SKILL.md` § *The rules the build runs on*, rule 4); a board-parity walk
+holds the board's wording as its own skill says. The counts, names and dates drawn beside them are there to
 make the picture legible, and asking whether they are contractual is a malformed question:
 it is a wireframe, so of course they are illustration. Two failures follow from confusing
 the two, and both cost a session:
@@ -53,7 +60,8 @@ contradicting itself, and that is a defect whatever the product holds. Judge ill
 against the rest of the illustration, never against the fixture.
 
 So when the board is synced because the code was right and the board was stale, only the
-layer a board contracts moves - screens, content, states, flow, fixed wording. Restyling
+layer a board contracts moves - screens, states, the way between them, the kinds of
+control - and, in a chapter build, the wording the product deliberately chose. Restyling
 and copy-catalogue text never touch it.
 
 ## A screen's header holds what that screen does, and no way to another screen

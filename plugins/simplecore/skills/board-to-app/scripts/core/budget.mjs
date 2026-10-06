@@ -164,13 +164,13 @@ export const aGateIsTaughtOnce = {
 };
 
 /**
- * A result document that does not say which build, which boot and which data it was written off.
+ * A run record that does not say which build, which boot and which data its pictures came off.
  *
  * <p><b>Every judgement invalidated in one chapter was killed by provenance rather than by
  * argument.</b> Six screens' empty-state findings died because the fixture had never answered an
  * empty state; a missing thousands separator died at 400% zoom, where the characters were there; two
  * claims about another lane's files died because they described a tree that had moved. Each cost a
- * round trip, and each would have been settled before it was written if the document had had to say
+ * round trip, and each would have been settled before it was written if the record had had to say
  * where its pictures came from.
  *
  * <p><b>The reason a transcription cannot carry this by itself is that quality says nothing about
@@ -180,12 +180,13 @@ export const aGateIsTaughtOnce = {
  *
  * <p>Warning rather than error: a document being written is incomplete on its way to being
  * complete, and failing every write until the last line lands is how a gate gets turned off. The
- * chapter does not close on it - that reading belongs to whoever writes 닫힘 in the ledger.
+ * chapter does not close on it - that reading belongs to whoever writes the closed word in the
+ * ledger.
  */
 export const evidenceSaysWhereItCameFrom = {
   id: 'evidenceSaysWhereItCameFrom',
   grade: 'warning',
-  title: 'a result document with no line saying which build, boot and data its pictures came off',
+  title: 'a run record with no line saying which build, boot and data its pictures came off',
   needs: ['evidenceDir', 'evidenceProvenance'],
   run: (ctx) => {
     const wanted = ctx.declared('evidenceProvenance');
@@ -371,13 +372,13 @@ export function cases(t) {
   });
   t.add(
     'evidenceSaysWhereItCameFrom',
-    'a result document with no provenance line, which is how an invalidated reading survives',
+    'a run record with no provenance line, which is how an invalidated reading survives',
     evidence({ 'docs/evidence/w01.md': '# 검증 결과\n\n화면을 열었다.\n' }),
     true
   );
   t.add(
     'evidenceSaysWhereItCameFrom',
-    'the same document saying all three, so a later reader can date every picture in it',
+    'the same record saying all three, so a later reader can date every picture in it',
     evidence({ 'docs/evidence/w01.md': '# 검증 결과\n\n빌드 `abc1234` · 기동 09:02 · 자료 이야기 시드.\n' }),
     false
   );
