@@ -47,6 +47,7 @@ korean-docs/
     ├── ui-copy-sweep.md         # the full-sweep procedure
     ├── reading-lens.md · lens.txt  # the lens that turns what rules miss into candidates for a person to read
     ├── lens-cases.json          # the sentences each lens family must surface and must stay quiet on (read by rules --test)
+    ├── cases.md                 # the runs behind the rules (read when a rule looks too strict to keep)
     ├── domain-finance.md        # finance · quant · trading terms; its table loads with audit.domains: [finance]
     └── domain-saas.md           # subscription · billing · licensing terms; its table loads with audit.domains: [saas]
 ```
@@ -65,13 +66,15 @@ The skill description fires on document work only.
 
 ## The link to the global instructions (required)
 
-The global instructions (`~/.claude/CLAUDE.md`) carry two things.
+The global instructions (`~/.claude/CLAUDE.md`) carry the "Global Korean block" of the plugin's
+[templates/claude-md-section.md](../../templates/claude-md-section.md), which owns the block's
+wording; `/simplecore:init` proposes it.
 
-1. **The habits card** - `references/global-korean-card.md` pasted whole, marker comments included.
-   It is the reply standard: it is reloaded after every summary, so the register and the eight
-   questions stay in force for replies that never invoke this skill.
-2. **A routing line** - one sentence saying to invoke `simplecore:korean-docs` when producing or
-   changing a Korean document, and not for ordinary replies.
+1. **The routing sentence** - the block's paragraph, which sends document work to this skill and
+   keeps ordinary replies out of it.
+2. **The habits card** - `references/global-korean-card.md`, pasted whole into the block, marker
+   comments included. It is the reply standard: it is reloaded after every summary, so the register
+   and the eight questions stay in force for replies that never invoke this skill.
 
 ## Starting in a new project
 

@@ -239,9 +239,7 @@ audit:
   project keeps Korean in code against the usual rule that comments are English - most often a
   figure generator, whose docstrings carry each figure's claim in the document's own words and are
   read as that claim during a review. A project in that position names the paths in its own check
-  list and runs them, because the repository sweep will not. One document's generators held
-  thirty-seven findings on their first reading, every one of them in prose a person had reviewed
-  more than once.
+  list and runs them, because the repository sweep will not ([cases.md](cases.md)).
 - It checks only in a project that has a glossary (`.claude/GLOSSARY.md` or `GLOSSARY.md`). No
   glossary means write-time checking is off entirely.
 - A document changed through `Bash` - `node` · `python` · `sed` · a heredoc - never passes the hook.
@@ -428,7 +426,7 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/detect-simplecore.mjs" --json   # globalKore
 - `card` false: replies are written without the reply standard. Paste
   [global-korean-card.md](global-korean-card.md) whole, marker comments included, without
   summarizing it.
-- `present` false: nothing routes document work to the skill. Propose this line.
-  > Invoke `simplecore:korean-docs` when producing or changing a Korean document; an ordinary
-  > reply follows the habits block and does not invoke it.
+- `present` false: nothing routes document work to the skill. Propose the "Global Korean block"
+  of `${CLAUDE_PLUGIN_ROOT}/templates/claude-md-section.md`, which owns the routing sentence, as it
+  is written there.
 - The global instructions are the user's file: do not edit them without being asked.

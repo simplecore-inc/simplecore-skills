@@ -82,8 +82,8 @@ function parseInlineArray(value) {
 // a parser that only knows the single-line form reads the opening bracket as the whole value.
 //
 // **The result is not an error but a silent narrowing**, which is the worst thing a declaration
-// can do: the audit went on reporting 「오류 0건」 while its file count fell from 407 to 86,
-// and nothing on screen distinguished that from a clean run. Adding a glob you never notice is
+// can do: the audit keeps reporting 「오류 0건」 over fewer files, and nothing on screen
+// distinguishes that from a clean run (references/cases.md). Adding a glob you never notice is
 // missing is the same failure the project config warns about, arriving through the formatter.
 //
 // So the value is gathered to its closing bracket, and an unterminated one is refused rather

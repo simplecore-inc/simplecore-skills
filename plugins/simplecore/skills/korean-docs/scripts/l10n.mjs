@@ -308,8 +308,8 @@ function projectExclusions() {
  * **The set is `check`'s own, taken from the function `check` resolves its targets with**:
  * `audit.paths` (the whole project with `--all`), the same directory exclusions, `audit.exclude`,
  * the glossaries left out, and the resources `audit.localeResources` declares. Two enumerations
- * kept in step by hand drift - a tracked `vendor/` file read by one and skipped by the other made
- * the sentence sweep's count disagree with `check`'s - so there is one.
+ * kept in step by hand drift apart, and a file one reads and the other skips makes their two
+ * zeros cover different files, so there is one.
  *
  * @param all ignore `audit.paths`, as `check --all` does
  */
@@ -437,9 +437,8 @@ function discover({ kind, lang, docFallback = false, command, all = false } = {}
   const found = new Map();
   // The glossary's `audit.exclude` reaches a declared kind too. A kind glob is a git pathspec,
   // and git's `*` crosses `/`, so `docs/*.md` takes every document under docs - including the
-  // review records a project excluded because they quote each round's sentences verbatim. One
-  // repository's 278 such files came back as the sentence sweep's largest source of findings,
-  // and every one of them was a file nobody may edit.
+  // review records a project excluded because they quote each round's sentences verbatim, which
+  // nobody may edit (references/cases.md).
   const skip = projectExclusions();
   for (const k of kinds) {
     const spec = CONFIG.kinds[k];
@@ -2042,9 +2041,8 @@ function cmdRulesScan(opts) {
     const perFile = new Map();
     // A rule may name the registers it is written for. 「~할 수 있습니다」 standing in for an
     // instruction is a defect on a screen, where guidance has to say do or does, and the ordinary
-    // way a reference manual states a capability - one such rule fired 467 times on a 119-file
-    // manual, every hit a capability sentence. The register comes from the declared kind; a
-    // document with no kind is "plain".
+    // way a reference manual states a capability (references/cases.md). The register comes from
+    // the declared kind; a document with no kind is "plain".
     const register = CONFIG.kinds[entry.kind]?.register ?? "plain";
     // Errors first, so that within a family the narrow error rule claims a place before the broad
     // warning rule that would report the same words again.

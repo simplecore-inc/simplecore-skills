@@ -12,9 +12,9 @@ read**, so it may be broad, and it has to be broad to stop leaking.
 | Output | 「fix this」 | 「read this」 |
 | What it misses | every form outside the enumeration | almost nothing |
 
-**The skill had rules and nothing else for a long time.** Seventy-two rules returned zero on a
-board, and when a person read it in filename order one cluster alone gave fourteen findings, **none
-of which any rule had caught** - `결재가 올라갑니다` is caught while `알림이 갑니다` is not.
+**A zero from the rules is not a clean board.** A rule catches only the forms registered in it -
+`결재가 올라갑니다` is caught while `알림이 갑니다` is not - and an in-order reading finds what no
+rule registered ([cases.md](cases.md)).
 
 ## How to run it
 
