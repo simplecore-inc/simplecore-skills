@@ -684,8 +684,12 @@ function isNGaEnding(whole, rest) {
 // method names as often as through clothing: 보우타이(Bow-Tie) is a standard risk-assessment
 // technique, so 「보우타이 기법」 reads as 보우타+이 and a correct term is reported as a particle
 // error. 넥타이 · 나비타이 · 타이 are the same word shape.
+// **English letter names spelt in Hangul are the fourth source**: a speaker's script writes an
+// abbreviation as it is read aloud, and the letter names A · I · J · K · V · Y end in 이 (에이 ·
+// 아이 · 제이 · 케이 · 브이 · 와이). 「에스브이 데이터」 and 「알에스브이 30만 건」 read as 에스브+이,
+// and a correct script is reported as a particle error.
 const PARTICLE_TAIL_SKIP =
-  /(레이|플레이|어레이|웨이|페이|메이|타이|효과|초과|평가|전문가|국가|증가|참가|원가|단가|추가|물가|저가|대가|불가|보이|사이|차이|넓이|길이|높이|깊이|먹이|놀이|쓰임새|가까이|같이|굳이|깊숙이|일찍이|나란히|틈틈이|샅샅이|곰곰이|번번이|낱낱이|고이|많이|파이|하노이|상하이|뭄바이|두바이|하와이|시드니)$/;
+  /(에이|아이|제이|케이|브이|와이|레이|플레이|어레이|웨이|페이|메이|타이|효과|초과|평가|전문가|국가|증가|참가|원가|단가|추가|물가|저가|대가|불가|보이|사이|차이|넓이|길이|높이|깊이|먹이|놀이|쓰임새|가까이|같이|굳이|깊숙이|일찍이|나란히|틈틈이|샅샅이|곰곰이|번번이|낱낱이|고이|많이|파이|하노이|상하이|뭄바이|두바이|하와이|시드니)$/;
 
 function hasFinalConsonant(ch) {
   const code = ch.codePointAt(0);
