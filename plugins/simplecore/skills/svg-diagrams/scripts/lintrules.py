@@ -11,6 +11,9 @@ rendered picture, one on the generator's source.
   (`LOW-CONTRAST`)
 - `marker_defaults(py_path)`: a `.line()` / `.path()` call that states no
   `marker=`, and so inherits the toolkit's arrowhead (`MARKER-DEFAULT`)
+- `edge_pills(py_path)`: a document-figure module's connector label drawn
+  with the toolkit's `Canvas.edge_label` pill rather than the figure
+  library's `edge_label` (`EDGE-PILL`)
 
 Each returns (kind, message) pairs, the shape `audit.lint()` reports.
 """
@@ -343,4 +346,59 @@ def marker_defaults(py_path):
                     f"{Path(py_path).name}:{node.lineno}: .{func.attr}() states no "
                     f"marker= and draws the toolkit's default arrowhead - pass "
                     f"marker=None, or the colour of the head it arrives with"))
+    return out
+
+
+# ── EDGE-PILL ──────────────────────────────────────────────────────────────
+# `Canvas.edge_label(x, y, s, color, size, mono, pill, weight)`: `pill` is the
+# seventh argument after `self`.
+PILL_ARG = 6
+
+
+def _module_names(tree):
+    """Names a plain `import` binds: a call on one of them is a module function."""
+    names = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                names.add(alias.asname or alias.name.split(".")[0])
+    return names
+
+
+def edge_pills(py_path):
+    """Connector labels a document figure draws on the toolkit's pill.
+
+    `Canvas.edge_label` spreads its plate 8 units a side and a third of an em
+    above and below the letters; at a document's type size that plate is taller
+    than the gap an arrow runs in, and it prints over the boxes either side.
+    The figure library's `edge_label(c, x, y, text, accent)` fits the plate to
+    the glyph box, so a figure module calls that. A method call that draws no
+    pill (`pill=False`) passes; one whose `pill` is computed, or that forwards
+    `**kwargs`, cannot be judged from the source and is left alone; a call on
+    a module bound by `import` is a module function, not the method.
+    """
+    src = Path(py_path).read_text(encoding="utf-8")
+    tree = ast.parse(src, filename=str(py_path))
+    modules = _module_names(tree)
+    out = []
+    for node in ast.walk(tree):
+        func = getattr(node, "func", None)
+        if not isinstance(node, ast.Call) or not isinstance(func, ast.Attribute):
+            continue
+        if func.attr != "edge_label":
+            continue
+        if isinstance(func.value, ast.Name) and func.value.id in modules:
+            continue
+        if any(k.arg is None for k in node.keywords):
+            continue
+        pill = next((k.value for k in node.keywords if k.arg == "pill"), None)
+        if pill is None and len(node.args) > PILL_ARG:
+            pill = node.args[PILL_ARG]
+        if pill is not None and not (isinstance(pill, ast.Constant) and pill.value is True):
+            continue
+        out.append(("EDGE-PILL",
+                    f"{Path(py_path).name}:{node.lineno}: .edge_label() draws the "
+                    f"toolkit's pill, which spreads past a tight gap onto the boxes "
+                    f"beside it - call the figure library's edge_label(c, x, y, text, "
+                    f"accent), which fits the plate to the glyph box"))
     return out

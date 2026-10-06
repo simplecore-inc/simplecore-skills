@@ -112,7 +112,7 @@ Composite patterns (reusable across diagrams):
 - `row_positions(left, right, n, gap)` → `(xs, w)` - evenly-spaced columns for a row of cards joined by arrows.
 - `node(x,y,w,h, accent, label, sub=)` - flow/state node: centered mono label + muted subtitle, returns `(x,y,w,h)`. Use for state machines and flow steps; `card` reads as a component/spec box instead.
 - `edge_pt(box, side, f=0.5)` - module-level: point on a node's edge (`'L' 'R' 'T' 'B'`, `f` slides along it) to feed `ortho()` so arrows enter perpendicular.
-- `edge_label(x,y, text, color=)` - connector label centered on the edge with a CJK-aware background pill. The pill hides crossing *lines* only - park it in open space, not on a box.
+- `edge_label(x,y, text, color=)` - connector label centered on the edge with a CJK-aware background pill. The pill hides crossing *lines* only - park it in open space, not on a box. A document figure calls the figure library's `edge_label(c, x, y, text, accent)` instead, whose plate fits the glyph box (`EDGE-PILL`).
 - `spec_card(x,y,w,h, accent, title, attrs, footer=)` - attribute/spec card: title + divider + `● key (emphasized) + detail (muted)` rows; `attrs` is `[(key, detail), …]`, `footer` an accent chip. Prefer over `card(lines=…)` for spec lists.
 - `group_frame(x,y,w,h, label, accent, sub=)` - dashed boundary panel with a legend chip (e.g. Edge/Center zones). Draws on the **underlay layer**, so it stays behind nodes regardless of call order (`underlay=False` to force on top).
 - `legend(x,y, [(color, dash, label), …])` - line-style key (dash=None for solid).
@@ -191,9 +191,10 @@ python3 <skill>/scripts/audit.py hotspots diagram.svg crops/ 4   # zoom-crop EVE
 python3 <skill>/scripts/audit.py crop     diagram.svg X Y W H z.png 5   # zoom one spot
 python3 <skill>/scripts/audit.py contrast one.svg [more.svg …]   # labels lost on the band under them
 python3 <skill>/scripts/audit.py markers  module.py [more.py …]  # connector calls with no marker=
+python3 <skill>/scripts/audit.py pills    module.py [more.py …]  # document-figure labels on the toolkit's pill
 ```
 
-Loop: **lint → render → hotspots → fix → repeat** until lint is clean *and* the endpoint crops look right. A full render viewed downscaled hides sub-10px defects (an arrowhead landing on a chip, a label kissing a box); `hotspots` turns "eyeball the overview" into a systematic pass over exactly the places those defects live. Lint is a screen, not the verdict. Every check that `lint`, `contrast` and `markers` report, with its detection rule and its fix, is in the defect catalog of `references/render-audit.md`, beside the prevention rules.
+Loop: **lint → render → hotspots → fix → repeat** until lint is clean *and* the endpoint crops look right. A full render viewed downscaled hides sub-10px defects (an arrowhead landing on a chip, a label kissing a box); `hotspots` turns "eyeball the overview" into a systematic pass over exactly the places those defects live. Lint is a screen, not the verdict. Every check that `lint`, `contrast`, `markers` and `pills` report, with its detection rule and its fix, is in the defect catalog of `references/render-audit.md`, beside the prevention rules.
 
 **CJK / non-Latin text:** width estimation is CJK-aware across the toolchain: `svgkit.tw` and the lint share one per-class table calibrated against Chrome (`scripts/calibrate_tw.py`), and `layout.js` and `graph.js` count a Hangul, Kana or CJK glyph wider than a Latin one. A box or chip auto-sized for Latin will overflow Korean/Japanese if you hardcode a width - size boxes from `tw()`, not by eye. The Mermaid `--svg` path (beautiful-mermaid) sizes its own boxes and can clip CJK labels; lint its output and prefer svgkit/layout.js when labels are CJK-heavy.
 

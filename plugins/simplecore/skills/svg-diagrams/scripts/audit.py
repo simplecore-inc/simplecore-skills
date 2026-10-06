@@ -7,6 +7,7 @@ Usage:
   audit.py lint     <svg> [more.svg ...]     # exit 1 when any issue is found
   audit.py contrast [--floor 3.0] <svg> [more.svg ...]   # labels lost on their ground
   audit.py markers  <module.py> [more.py ...]  # connector calls with no marker=
+  audit.py pills    <module.py> [more.py ...]  # document-figure labels on the toolkit's pill
   audit.py hotspots <svg> <outdir> [scale]   # zoom-crop every arrow endpoint
 """
 import math
@@ -3024,6 +3025,13 @@ if __name__ == "__main__":
         total = 0
         for p in sys.argv[2:]:
             for kind, msg in lintrules.marker_defaults(p):
+                print(f"  ✖ {kind}: {msg}")
+                total += 1
+        sys.exit(1 if total else 0)
+    elif cmd == "pills":
+        total = 0
+        for p in sys.argv[2:]:
+            for kind, msg in lintrules.edge_pills(p):
                 print(f"  ✖ {kind}: {msg}")
                 total += 1
         sys.exit(1 if total else 0)

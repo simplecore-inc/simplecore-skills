@@ -528,6 +528,18 @@ else as from its owner (`LABEL-GROUPING`). A zone whose chip straddles its top
 border rises `CHIP_RISE` above the border, so a zone under a heading starts
 `heading() + CHIP_RISE`: the chip, not the border, keeps the heading gap.
 
+## A connector label sits on a tight plate
+
+A connector label is small type in the gap an arrow runs in, and the plate
+under it must not reach the boxes either side. The toolkit's
+`Canvas.edge_label` spreads its pill 8 units a side and a third of an em above
+and below the letters, which is taller than that gap at a document's type
+size. A figure module calls the library's `edge_label(c, x, y, text, accent)`,
+which fits the plate to the glyph box (6 a side, 3 above and below), or passes
+`pill=False` for a bare label in open paper beside its line. `verify.py` fails a
+module that calls the toolkit's pill as `[edge-pill]` (`EDGE-PILL`). The type
+size does not move to make a label fit: shorten the label or open the gap.
+
 ## Text never crosses a line unmasked
 
 A label a line runs through is unreadable at print size. Either move the label

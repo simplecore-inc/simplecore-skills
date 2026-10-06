@@ -179,6 +179,22 @@ class StubLine(Case):
             p.close()
 
 
+class SourceChecks(Case):
+    def test_toolkit_pill_in_a_module_fails_and_the_library_label_passes(self):
+        self.p.write("figs/ch1.py", 'c.edge_label(600, 120, "요청")\n')
+        found = verify.edge_pill_errors(self.cfg)
+        self.assertEqual(len(found), 1)
+        self.assertIn("EDGE-PILL: ch1.py:1", found[0])
+        self.p.write("figs/ch1.py", 'edge_label(c, 600, 120, "요청", "#1b4a9c")\n')
+        self.assertEqual(verify.edge_pill_errors(self.cfg), [])
+
+    def test_source_the_check_cannot_read_is_not_a_pass(self):
+        self.p.write("figs/ch1.py", "def broken(:\n")
+        for found in (verify.marker_errors(self.cfg), verify.edge_pill_errors(self.cfg)):
+            self.assertEqual(len(found), 1)
+            self.assertIn("did not run", found[0])
+
+
 class Strokes(Case):
     def test_stroke_off_the_ladder_fails_and_icon_stroke_passes(self):
         bad = self.fig("bad", '<rect x="40" y="40" width="200" height="60" fill="#fff" '

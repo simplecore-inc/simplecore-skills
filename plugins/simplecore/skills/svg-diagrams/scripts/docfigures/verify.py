@@ -31,6 +31,8 @@ run. The reviews list what to look at and fail nothing.
   register       no label carries a clause, particle or working word
   section numbers no document section number in figure text
   markers        every connector call states its marker
+  edge-pill      every connector label is the library's `edge_label`, not
+                 the toolkit's pill
   lint           the toolkit's static lint, with DEAD-MARGIN judged per board
   contrast       every label clears the contrast floor on its own ground
   references     every link and placement resolves, captions match, copies
@@ -67,13 +69,27 @@ def _audit(cfg, *args):
                           capture_output=True, text=True)
 
 
-def marker_errors(cfg):
-    """Lines of `audit.py markers` over the project's figure sources."""
+def _source_check(cfg, command):
+    """Failing lines of one `audit.py` source command over the figure sources."""
     files = [str(f) for f in cfg.source_files()]
     if not files:
         return []
-    run = _audit(cfg, "markers", *files)
-    return [ln.strip() for ln in run.stdout.splitlines() if "✖" in ln]
+    run = _audit(cfg, command, *files)
+    found = [ln.strip() for ln in run.stdout.splitlines() if "✖" in ln]
+    if run.returncode and not found:
+        # it could not read the sources, which is not a pass
+        found = [f"audit.py {command} did not run: {run.stderr.strip()[-300:]}"]
+    return found
+
+
+def marker_errors(cfg):
+    """Lines of `audit.py markers` over the project's figure sources."""
+    return _source_check(cfg, "markers")
+
+
+def edge_pill_errors(cfg):
+    """Lines of `audit.py pills`: connector labels on the toolkit's pill."""
+    return _source_check(cfg, "pills")
 
 
 def lint(svgs, cfg):
@@ -211,6 +227,8 @@ def run(cfg, prefixes=(), render_dir=None):
             lambda i: f"{i[0]}: {', '.join(i[1])}")
     r.check("markers", marker_errors(cfg), "every connector call states its marker",
             lambda line: line)
+    r.check("edge-pill", edge_pill_errors(cfg),
+            "every connector label is the library's edge_label", lambda line: line)
     lint_lines, dead = lint(svgs, cfg)
     r.check("lint", [ln for ln in lint_lines if ln.strip()], "clean", lambda ln: ln,
             "toolkit lint")

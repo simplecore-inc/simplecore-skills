@@ -88,5 +88,29 @@ class MarkerDefaults(unittest.TestCase):
                                     'c.line(0, 0, 1, 1, **kw)\n'), [])
 
 
+
+class EdgePills(unittest.TestCase):
+    def found(self, source):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "m.py"
+            path.write_text(source, encoding="utf-8")
+            return [k for k, _m in lintrules.edge_pills(path)]
+
+    def test_label_on_the_toolkit_pill_fails(self):
+        self.assertEqual(self.found('c.edge_label(600, 120, "요청", color=c.blue)\n'
+                                    'c.edge_label(600, 160, "응답", pill=True)\n'
+                                    'c.edge_label(1, 2, "a", "#000", 12, False, True)\n'),
+                         ["EDGE-PILL"] * 3)
+
+    def test_library_label_bare_label_and_unjudged_calls_pass(self):
+        self.assertEqual(self.found('import common\n'
+                                    'edge_label(c, 600, 120, "요청", BLUE)\n'
+                                    'common.edge_label(c, 1, 2, "a", BLUE)\n'
+                                    'c.edge_label(1, 2, "a", pill=False)\n'
+                                    'c.edge_label(1, 2, "a", "#000", 12, False, False)\n'
+                                    'c.edge_label(1, 2, "a", pill=draw)\n'
+                                    'c.edge_label(1, 2, "a", **kw)\n'), [])
+
+
 if __name__ == "__main__":
     unittest.main()
