@@ -203,7 +203,7 @@ A control composed OUTSIDE the field is a defect: wrapping the field and a butto
   }
 />
 
-// ✖ external composition — button bottom-aligns with the description, not the input
+// ✖ external composition - button bottom-aligns with the description, not the input
 <Flex gap="sm" align="end">
   <FormFields.TextField ... description={...} />
   <Button ...>Add</Button>

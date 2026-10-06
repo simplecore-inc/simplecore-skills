@@ -102,13 +102,13 @@ Date/time display goes through a framework component, never an inline `formatDat
 ### Anti-Pattern
 
 ```tsx
-// FORBIDDEN — Custom inline fallback handling in modules
+// FORBIDDEN - Custom inline fallback handling in modules
 {value ? <DetailFields.DetailTextField value={value} /> : <span>—</span>}
 
-// FORBIDDEN — Blanking the value at the call site; pass the raw nullable instead
+// FORBIDDEN - Blanking the value at the call site; pass the raw nullable instead
 <DetailFields.DetailTextField value={String(value ?? "")} />
 
-// REQUIRED — Let the component handle the empty state internally
+// REQUIRED - Let the component handle the empty state internally
 <DetailFields.DetailTextField value={value} />
 ```
 
@@ -238,9 +238,9 @@ Muted dashed-outline badge that explicitly marks a missing value, so a blank fie
 ### Anti-Pattern
 
 ```tsx
-// FORBIDDEN — wrapping a DetailFields value (the field renders the badge internally)
+// FORBIDDEN - wrapping a DetailFields value (the field renders the badge internally)
 {value ? <DetailFields.DetailTextField value={value} /> : <EmptyValueBadge />}
 
-// FORBIDDEN — hand-rolled no-value pill
+// FORBIDDEN - hand-rolled no-value pill
 <Badge variant="outline" className="border-dashed text-muted-foreground">값 없음</Badge>
 ```

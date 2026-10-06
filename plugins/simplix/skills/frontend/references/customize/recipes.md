@@ -140,7 +140,7 @@ function EditorContent({ data, variant, onClose, onSuccess }: ContentProps) {
   return (
     <Stack fill>
       {variant === "panel" && <PanelHeader title={data.name} onClose={handleClose} />}
-      {/* Use the Stack `overflow` prop — never a raw `<div className="...overflow-y-auto">`. */}
+      {/* Use the Stack `overflow` prop - never a raw `<div className="...overflow-y-auto">`. */}
       <Stack flex overflow="auto">
         <Stack gap="md" padded className="px-5">
           {/* Your custom editor UI */}

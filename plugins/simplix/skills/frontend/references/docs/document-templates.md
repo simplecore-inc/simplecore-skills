@@ -33,19 +33,19 @@
 
 ## Key Features
 
-[5 or fewer bullet points — focus on differentiators]
+[5 or fewer bullet points - focus on differentiators]
 
 ## Packages
 
-[Package table — name, description, version]
+[Package table - name, description, version]
 
 ## Quick Start
 
-[End-to-end example under 30 lines — must be copy-paste-runnable]
+[End-to-end example under 30 lines - must be copy-paste-runnable]
 
 ## Documentation
 
-[Doc links — Getting Started, Guides, API Reference]
+[Doc links - Getting Started, Guides, API Reference]
 
 ## Contributing
 
@@ -94,7 +94,7 @@
 
 ## API Overview
 
-[Public API summary — function signatures + one-line descriptions]
+[Public API summary - function signatures + one-line descriptions]
 
 ## Key Concepts
 
@@ -126,7 +126,7 @@ The framework repository's own packages each lead with a different concept. A co
 ## Tutorial
 
 ```markdown
-# [Title — start with verb]
+# [Title - start with verb]
 
 > After completing this tutorial, you will have [concrete result].
 
@@ -138,9 +138,9 @@ The framework repository's own packages each lead with a different concept. A co
 
 [Explanation]
 
-[Code block — copy-paste-runnable]
+[Code block - copy-paste-runnable]
 
-[Expected result — screenshot or output]
+[Expected result - screenshot or output]
 
 ## Step 2: ...
 
@@ -163,7 +163,7 @@ The framework repository's own packages each lead with a different concept. A co
 ```markdown
 # [Problem-focused title]
 
-> [1 sentence — the problem this guide solves]
+> [1 sentence - the problem this guide solves]
 
 ## Before You Begin
 
@@ -175,9 +175,9 @@ The framework repository's own packages each lead with a different concept. A co
 
 ## Variations
 
-### [Variation 1 — different conditions]
+### [Variation 1 - different conditions]
 
-### [Variation 2 — advanced options]
+### [Variation 2 - advanced options]
 
 ## Related
 
@@ -208,7 +208,7 @@ The framework repository's own packages each lead with a different concept. A co
 
 ### Returns
 
-`ReturnType` — [description]
+`ReturnType` - [description]
 
 ### Example
 
@@ -234,13 +234,13 @@ React Query hook that queries the entity list. Three calling conventions: `useLi
 
 | Name | Type | Required | Description |
 | --- | --- | --- | --- |
-| `parentId` | `string` | Only for child entities | Parent entity ID — pass only in the child-entity convention; omit entirely for a top-level entity |
+| `parentId` | `string` | Only for child entities | Parent entity ID - pass only in the child-entity convention; omit entirely for a top-level entity |
 | `params` | `ListParams` | No | Filters/sort/pagination passed to the list query |
 | `options` | `Omit<UseQueryOptions, "queryKey" \| "queryFn">` | No | React Query options passthrough |
 
 ### Returns
 
-`UseQueryResult<z.infer<TSchema>[]>` — TanStack Query query result object
+`UseQueryResult<z.infer<TSchema>[]>` - TanStack Query query result object
 
 ### Automatic Behaviors
 
@@ -276,7 +276,7 @@ React Query hook that queries the entity list. Three calling conventions: `useLi
 
 ## Design Decisions
 
-[Why designed this way — compare with alternatives]
+[Why designed this way - compare with alternatives]
 
 ## Implications
 

@@ -243,12 +243,12 @@ BOARD: <which board - only in a repository that draws more than one>
 CLUSTER: <what it was>
 FRAMES CLEARED: <frame ids deleted from the list>
 BUILT: <frame ids that had no code and now do, with the commit each landed in, or "none">
-FIXED: <one line per divergence — frame id, what was wrong, what changed, commit>
+FIXED: <one line per divergence - frame id, what was wrong, what changed, commit>
 RULES ADDED: <defect type → where the detection rule now lives, or "none">
 PARKED: <one line per parked decision, or "none">
 HANDOVER UPDATED: <what facts you corrected or added, or "nothing">
-STILL TRUE: <a sentence written to guard something — a handover fact, a debt line, a
-             note in an instruction file — that you went and read against what it
+STILL TRUE: <a sentence written to guard something - a handover fact, a debt line, a
+             note in an instruction file - that you went and read against what it
              guards and did not have to change. One line each: which sentence, and
              what it stands over. Only prose whose sole age is the last time somebody
              looked; never a gate, a lint run, or anything you noticed in passing.

@@ -16,8 +16,8 @@ the config names it, **and every sentence names the mechanism that holds it**:
 
 ```json
 "frameDeliverables": [
-  "every list total states the rows its column draws — auditScript: rendered/list-total",
-  "a control's destination resolves — journeys: helper assertDestination()"
+  "every list total states the rows its column draws - auditScript: rendered/list-total",
+  "a control's destination resolves - journeys: helper assertDestination()"
 ]
 ```
 

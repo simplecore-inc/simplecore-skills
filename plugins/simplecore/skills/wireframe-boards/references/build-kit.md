@@ -500,7 +500,7 @@ s.textContent='*{scroll-behavior:auto !important}';document.head.appendChild(s);
 agent-browser --session <name> eval "(()=>{document.querySelector('#s-a-01')\
 .scrollIntoView({block:'center'});return 'ok';})()"
 agent-browser --session <name> screenshot ./board-a-01-after.png
-# once every frame is shot — the session holds a full browser until this runs:
+# once every frame is shot - the session holds a full browser until this runs:
 agent-browser --session <name> close
 ```
 

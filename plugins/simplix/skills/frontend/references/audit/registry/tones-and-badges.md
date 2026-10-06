@@ -27,11 +27,11 @@ import { severityToTone } from "@<scope>/<ui-package>/status";
 ### Anti-Pattern
 
 ```tsx
-// FORBIDDEN — inline enum→color map with hand-written dark: classes
+// FORBIDDEN - inline enum→color map with hand-written dark: classes
 const severityConfig = { CRITICAL: { dot: "bg-red-500", badge: "bg-red-100 dark:bg-red-900 ..." }, ... };
 <Badge variant="outline" className={severityConfig[v].badge}><span className={cn("size-1.5 rounded-full", severityConfig[v].dot)} />{label}</Badge>
 
-// REQUIRED — tone token + StatusBadge + shared map
+// REQUIRED - tone token + StatusBadge + shared map
 <StatusBadge tone={eventSeverityToTone[v] ?? "neutral"} showDot label={label} />
 ```
 
@@ -61,7 +61,7 @@ Tone-tinted inline notice box (icon + title/subtitle/children + optional trailin
 ### Anti-Pattern
 
 ```tsx
-// FORBIDDEN — inline tone box
+// FORBIDDEN - inline tone box
 <Flex className="rounded-md border border-red-200 bg-red-50 px-3 py-2 dark:border-red-900 dark:bg-red-950">
   <AlertTriangleIcon className="text-red-500" /> <span className="text-red-700 dark:text-red-400">{msg}</span>
 </Flex>
@@ -144,10 +144,10 @@ Each status tone is painted from ONE seed CSS variable (`--tone-<name>`). The au
 ### Anti-Pattern
 
 ```tsx
-// FORBIDDEN — static palette-class read bypasses the per-tone seed
+// FORBIDDEN - static palette-class read bypasses the per-tone seed
 <Icon className={STATUS_TONES.success.icon} />
 <div className={done ? STATUS_TONES.success.dot : "bg-border"} />
-// REQUIRED — seed-driven slot class
+// REQUIRED - seed-driven slot class
 <Icon className={toneSlotClass("success", "fg")} />
 <div className={done ? toneSlotClass("success", "dot") : "bg-border"} />
 ```
@@ -166,7 +166,7 @@ A status vocabulary shared by several entities of one domain (a DRAFT/PENDING/AP
 ### Anti-Pattern
 
 ```tsx
-// FORBIDDEN — module-local status pill + duplicated variant map
+// FORBIDDEN - module-local status pill + duplicated variant map
 const REQUEST_STATUS_VARIANT = { DRAFT: "outline", PENDING: "secondary", ... };
 <Badge variant={REQUEST_STATUS_VARIANT[resolved] ?? "outline"}>{enumLabel(name, resolved)}</Badge>
 // REQUIRED

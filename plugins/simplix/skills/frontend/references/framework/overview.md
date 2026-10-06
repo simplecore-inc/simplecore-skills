@@ -310,7 +310,7 @@ export default defineConfig({
     },
   },
   codegen: { header: true },           // Auto-generated file header
-  openapi: [                           // ARRAY — one entry per OpenAPI spec
+  openapi: [                           // ARRAY - one entry per OpenAPI spec
     {
       spec: "openapi.json",            // spec file path or URL (required unless the entry declares `meta`)
       profile: "simplix-boot",         // bundles naming + responseAdapter

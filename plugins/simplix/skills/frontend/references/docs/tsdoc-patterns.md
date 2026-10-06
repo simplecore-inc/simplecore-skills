@@ -74,8 +74,8 @@ Document the public exports most visible in IDE tooltips first. Prioritize by ho
  * const { mutate } = hooks.publishProject.useMutation();
  * ```
  *
- * @see {@link defineApi} — contract creation
- * @see {@link EntityHooks} — shape of entity hook sets
+ * @see {@link defineApi} - contract creation
+ * @see {@link EntityHooks} - shape of entity hook sets
  */
 ```
 
@@ -87,7 +87,7 @@ Document the public exports most visible in IDE tooltips first. Prioritize by ho
  *
  * @remarks
  * `schema` defines the full shape of entities returned by the API.
- * Each operation carries its own `method`, `path`, and `input`/`output` schemas —
+ * Each operation carries its own `method`, `path`, and `input`/`output` schemas -
  * create/update payloads live in the relevant operation's `input`, not on the entity.
  * TypeScript types are inferred automatically via `z.infer<>`.
  *

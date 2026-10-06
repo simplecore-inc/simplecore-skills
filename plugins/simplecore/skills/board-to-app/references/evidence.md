@@ -42,7 +42,7 @@ what `everyPlacedFrameIsCaptured` counts.
 ## The shape of the record
 
 ````markdown
-# <chapter> — <the project's word for a run record>
+# <chapter> - <the project's word for a run record>
 
 <the provenance line the project declares: which build, which boot, which data>
 

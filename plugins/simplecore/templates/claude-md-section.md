@@ -34,9 +34,9 @@ screens / states / flow, the code matches the board. Invoke the `simplecore:wire
 skill before implementing a screen from it, checking code against it, syncing it after a change,
 or drawing new frames.
 
-- `<board path>/src/manifest.mjs` — the table of contents. Find a screen here, then open that
+- `<board path>/src/manifest.mjs` - the table of contents. Find a screen here, then open that
   one screen file. Never read the built HTML.
-- `<board path>/AGENTS.md` — the working rules for this board.
+- `<board path>/AGENTS.md` - the working rules for this board.
 
 A screen, dialog, state, or flow added during development is back-filled as a frame in the same
 change. A design decision that changes needs the design owner's sign-off and updates the spec in
@@ -44,15 +44,15 @@ the same breath.
 
 ## Building the app from the board
 
-Screens are built from the board in dependency order — one chapter at a time, the file order the
+Screens are built from the board in dependency order - one chapter at a time, the file order the
 build order, and a chapter closes on its persona tests rather than on its code. Invoke the
 `simplecore:board-to-app` skill before building a chapter, running its persona tests, deciding
 what may run alongside, or resuming a build. This repository supplies the contents:
 
-- `<chapter directory>` — one file per chapter; the file order is the build order
-- `<state ledger path>` — the one place that says which chapter is open, and each persona's
+- `<chapter directory>` - one file per chapter; the file order is the build order
+- `<state ledger path>` - the one place that says which chapter is open, and each persona's
   development account. Read it first; write to it when a chapter changes state
-- `.claude/board-to-app.json` — every path, command and heading the build reads
+- `.claude/board-to-app.json` - every path, command and heading the build reads
 
 Chapter files are generated from the board, never hand-edited: fix the board and regenerate. A
 chapter runs in a subagent, never in the coordinating session.
@@ -60,13 +60,13 @@ chapter runs in a subagent, never in the coordinating session.
 ## Walking the board against the app
 
 Reconciling implemented screens with the board is a long walk across many sessions. Invoke the
-`simplecore:board-parity-walk` skill before starting or resuming one — it carries the discipline,
+`simplecore:board-parity-walk` skill before starting or resuming one - it carries the discipline,
 and the walk itself runs in a subagent per cluster so the coordinating session never fills up.
 This repository supplies the contents:
 
-- `<parity list path>` — the frames left to walk, and the decisions parked for a human
-- `<handover file path>` — how to start and stop the servers, known traps, accounts and data standing
-- `.claude/board-parity-walk.json` — names those two for the write-time checks
+- `<parity list path>` - the frames left to walk, and the decisions parked for a human
+- `<handover file path>` - how to start and stop the servers, known traps, accounts and data standing
+- `.claude/board-parity-walk.json` - names those two for the write-time checks
 
 ## Korean output
 
@@ -125,6 +125,6 @@ stop to ask each time.
   cannot identify as this project's development server.
 - **Leave the environment as you found it.** Stop the servers this session started once the work
   no longer needs them, and say which are still running and why when you leave one up.
-- **Out of scope**: remote hosts of any kind — production, staging, shared development —
+- **Out of scope**: remote hosts of any kind - production, staging, shared development -
   container orchestrators outside the local machine, and anything serving other people. Ask first.
 ```

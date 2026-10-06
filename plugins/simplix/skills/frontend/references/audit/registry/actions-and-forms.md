@@ -19,7 +19,7 @@
 ### Usage
 
 ```tsx
-// Unlink action — uses framework icon automatically
+// Unlink action - uses framework icon automatically
 const actions: RowActionDef<<Entity>DTO>[] = [
   { type: "unlink", onClick: (row) => handleUnlink(row) },
 ];
@@ -33,10 +33,10 @@ const actions: RowActionDef<<Entity>DTO>[] = [
 ### Anti-Pattern
 
 ```tsx
-// FORBIDDEN — Custom icon override for unlink (use type: "unlink" instead)
+// FORBIDDEN - Custom icon override for unlink (use type: "unlink" instead)
 { type: "edit", icon: <Link2OffIcon />, onClick: (row) => handleUnlink(row) }
 
-// FORBIDDEN — Importing lucide-react icons when framework provides them
+// FORBIDDEN - Importing lucide-react icons when framework provides them
 import { Link2OffIcon } from "lucide-react";
 ```
 
@@ -119,7 +119,7 @@ Unified assignment picker. Use `SearchPopover` with `items` for a flat option li
 ### Anti-Pattern (What NOT to Do)
 
 ```tsx
-// FORBIDDEN — Custom Popover + Command inline implementation
+// FORBIDDEN - Custom Popover + Command inline implementation
 <Popover open={open} onOpenChange={setOpen}>
   <PopoverTrigger asChild>
     <Button size="sm" variant="outline">
@@ -144,7 +144,7 @@ Unified assignment picker. Use `SearchPopover` with `items` for a flat option li
   </PopoverContent>
 </Popover>
 
-// REQUIRED — Use SearchPopover
+// REQUIRED - Use SearchPopover
 <SearchPopover
   triggerText="Assign Level"
   items={items}
@@ -153,7 +153,7 @@ Unified assignment picker. Use `SearchPopover` with `items` for a flat option li
   onSelect={handleSelect}
 />
 
-// FORBIDDEN — DropdownMenu for searchable grouped lists
+// FORBIDDEN - DropdownMenu for searchable grouped lists
 <DropdownMenu>
   <DropdownMenuTrigger asChild><Button>Assign Door</Button></DropdownMenuTrigger>
   <DropdownMenuContent>
@@ -168,7 +168,7 @@ Unified assignment picker. Use `SearchPopover` with `items` for a flat option li
   </DropdownMenuContent>
 </DropdownMenu>
 
-// REQUIRED — Use SearchPopover groups mode
+// REQUIRED - Use SearchPopover groups mode
 <SearchPopover
   triggerText="Assign Door"
   groups={groups.map((g) => ({ label: g.label, items: g.items }))}
@@ -223,7 +223,7 @@ For a table-cell select, use `FormFields.SelectField` with the `compact` prop in
 ### Anti-Pattern
 
 ```tsx
-// FORBIDDEN — Raw Select wrapper for compact usage
+// FORBIDDEN - Raw Select wrapper for compact usage
 <Select value={value} onValueChange={onChange}>
   <SelectTrigger className="h-8 w-40 text-sm">
     <SelectValue placeholder="Select..." />
@@ -235,7 +235,7 @@ For a table-cell select, use `FormFields.SelectField` with the `compact` prop in
   </SelectContent>
 </Select>
 
-// REQUIRED — Use SelectField compact
+// REQUIRED - Use SelectField compact
 <FormFields.SelectField
   compact
   value={value}
@@ -244,10 +244,10 @@ For a table-cell select, use `FormFields.SelectField` with the `compact` prop in
   placeholder="Select..."
 />
 
-// FORBIDDEN — Fixed width on compact select
+// FORBIDDEN - Fixed width on compact select
 <FormFields.SelectField compact className="w-40" ... />
 
-// REQUIRED — Let auto-width handle it (w-auto is built-in)
+// REQUIRED - Let auto-width handle it (w-auto is built-in)
 <FormFields.SelectField compact ... />
 ```
 
@@ -272,12 +272,12 @@ In inline editors (no navigation after save), calling `reset()` before the inval
 In inline editors that reset local state after save, ALWAYS `await invalidate()` before resetting:
 
 ```tsx
-// REQUIRED — Await invalidation in inline editors
+// REQUIRED - Await invalidation in inline editors
 await saveAll.mutateAsync({ data: { items } });
 await invalidate();
 reset();
 
-// REQUIRED — Await in .then() callbacks
+// REQUIRED - Await in .then() callbacks
 mutation.mutateAsync({ data: dto })
   .then(async () => {
     await invalidate();
@@ -294,12 +294,12 @@ mutation.mutateAsync({ data: dto })
 Fire-and-forget patterns (CrudForm, scaffolded code) are unaffected by the type change:
 
 ```tsx
-// OK — Fire-and-forget in onSettled (CrudForm, scaffolded)
+// OK - Fire-and-forget in onSettled (CrudForm, scaffolded)
 adaptOrvalCreate(_create, { onSettled: invalidate })
 adaptOrvalUpdate(_update, "id", { onSettled: invalidate })
 adaptOrvalDelete(_delete, "id", { onSettled: invalidate })
 
-// OK — Fire-and-forget in .mutate() callback
+// OK - Fire-and-forget in .mutate() callback
 updateMutation.mutate(dto, {
   onSuccess: () => { invalidate(); onSuccess?.(); },
   onError: () => invalidate(),
@@ -309,15 +309,15 @@ updateMutation.mutate(dto, {
 ### Anti-Pattern
 
 ```tsx
-// FORBIDDEN — Fire-and-forget invalidate before state reset in inline editor
+// FORBIDDEN - Fire-and-forget invalidate before state reset in inline editor
 await saveAll.mutateAsync({ data: { items } });
-invalidate();  // NOT awaited — stale data flash
+invalidate();  // NOT awaited - stale data flash
 reset();
 
-// REQUIRED — Await invalidation
+// REQUIRED - Await invalidation
 await saveAll.mutateAsync({ data: { items } });
 await invalidate();  // Wait for refetch to complete
-reset();             // Now safe — UI shows fresh server data
+reset();             // Now safe - UI shows fresh server data
 ```
 
 ### HBS Templates
@@ -349,17 +349,17 @@ interface SaveButtonProps extends Omit<ButtonProps, "loading" | "disabled" | "va
 ### Standard Usage
 
 ```tsx
-// CrudForm (edit mode) — useIsDirty for automatic dirty detection
+// CrudForm (edit mode) - useIsDirty for automatic dirty detection
 const initialValues = useRef(values).current;
 const isDirty = useIsDirty(values as Record<string, unknown>, initialValues as Record<string, unknown>);
 <SaveButton type="submit" isDirty={isEdit ? isDirty : undefined} isSaving={isPending}>
   {t("entity.save")}
 </SaveButton>
 
-// CrudForm (create mode) — isDirty omitted = always enabled
+// CrudForm (create mode) - isDirty omitted = always enabled
 <SaveButton type="submit" isSaving={isPending}>{t("entity.create")}</SaveButton>
 
-// Editor — own isDirty computation
+// Editor - own isDirty computation
 <SaveButton isDirty={isDirty} isSaving={isSaving} onClick={handleSave}>
   {t("entity.saveChanges")}
 </SaveButton>
@@ -369,7 +369,7 @@ const isDirty = useIsDirty(values as Record<string, unknown>, initialValues as R
   {t("entity.save")}
 </SaveButton>
 
-// Creator — isDirty omitted
+// Creator - isDirty omitted
 <SaveButton isSaving={isPending} onClick={handleCreate}>{t("entity.create")}</SaveButton>
 ```
 
@@ -427,7 +427,7 @@ EXCEPTION - keep an explicit hardcoded list ONLY when the form deliberately offe
 In hand-rolled mutation `.catch`/`onError` handlers, group server validation errors with the framework helper, NEVER an inline `for (const e of errors) { grouped[e.field] = ... }` loop:
 
 ```tsx
-// FORBIDDEN — inline grouping loop duplicated per widget
+// FORBIDDEN - inline grouping loop duplicated per widget
 const errors = getValidationErrors(error);
 if (errors) { const grouped = {}; for (const e of errors) { grouped[e.field] = ...; } setFieldErrors(grouped); }
 // REQUIRED

@@ -22,7 +22,7 @@ Paths in the recipes are written generically (`modules/`, `apps/`, `<backend>/mo
 1. **The title identifies the record to a human.** Never a UUID or another machine key, never `편집: <id>`. A code the record is known by (a management number) is a human identifier and may stand where the record has no name (`simplix:frontend` #70).
 
    ```bash
-   # header expressions that involve an id — REVIEW each hit, do not bulk-report
+   # header expressions that involve an id - REVIEW each hit, do not bulk-report
    rg -n 'Heading[^>]*>\{[^}]*Id' modules/*/src/widgets/*/{form,detail}.tsx
    rg -n '\{\{ *id *\}\}' modules/*/src/locales
    ```
@@ -50,7 +50,7 @@ Paths in the recipes are written generically (`modules/`, `apps/`, `<backend>/mo
 1. **No hand-typed ids** - every reference to another record is a picker showing names; files use the framework's file field.
 
    ```bash
-   # JSX props span lines — a line-based grep misses this; use ripgrep multiline
+   # JSX props span lines - a line-based grep misses this; use ripgrep multiline
    rg -U --multiline-dotall -n '<FormFields\.(TextField|TextareaField).{0,200}?value=\{[^}]*Id[a-z]*\}' \
      --type-add 'tsx:*.tsx' -t tsx modules apps
    ```

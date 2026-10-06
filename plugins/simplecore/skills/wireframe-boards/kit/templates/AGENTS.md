@@ -46,7 +46,7 @@ belongs in the skill, where every board gets it at once.
 ./dev.sh --port 5000 --open  # another port, and open the browser too
 node wf.mjs build            # board.html + pdf/<name>-<stamp>.pdf
 node wf.mjs build --no-pdf   # HTML only, while iterating on a screen
-node wf.mjs catalog          # _catalog.html — the component storybook
+node wf.mjs catalog          # _catalog.html - the component storybook
 node wf.mjs check            # visual sweep: overflow, sideways scroll, the fold
 node wf.mjs gates            # every gate against the defect it exists to catch
 node wf.mjs doctor           # which contract this board is on, and what it owes
@@ -82,7 +82,7 @@ Point with the **file name** and let the build print that screen's id, so the no
 even if the screen is renamed later:
 
 ```js
-notes: '작업허가({{e-24-permit-issue}})와 다르다 — 이쪽은 반납 확인이다'
+notes: '작업허가({{e-24-permit-issue}})와 달리 이쪽은 반납을 확인한다'
 ```
 
 A slug that matches nothing is left in place as `{{slug?}}` rather than dropped.

@@ -139,7 +139,7 @@ The list's search and filters are tested on every list screen, never skipped as 
    WITHDRAWN: <anything that turned out to be a stale build or a tree artifact>
    VERIFICATION: <each gate and its result>
    DATA LEDGER: <created and kept, removed and why>
-   CAPTURES: <file paths only — never an image in the report>
+   CAPTURES: <file paths only - never an image in the report>
    SERVERS: <what was left running, or "stopped">
    ```
 

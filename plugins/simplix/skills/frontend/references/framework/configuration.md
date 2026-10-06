@@ -27,7 +27,7 @@ export default defineConfig({
 
   // ── API ────────────────────────────────────────────────────
   api: {
-    /** API base path — used for basePath in code generation */
+    /** API base path - used for basePath in code generation */
     baseUrl: "/api",
   },
 

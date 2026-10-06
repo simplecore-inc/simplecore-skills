@@ -465,7 +465,7 @@ Prefer the declarative `format` prop (`format="datetime" displayZone={zone}`). D
 
 ```tsx
 <CrudList.Column<ProductListDTO> field="expiresAt" header={fieldLabel("expiresAt")}>
-  {({ row }) => <InstantText value={row.expiresAt} displayZone={zone} format="date" fallback="—" />}
+  {({ row }) => <InstantText value={row.expiresAt} displayZone={zone} format="date" fallback={t("<module>.noExpiry")} />}
 </CrudList.Column>
 ```
 
@@ -548,7 +548,7 @@ const { fieldLabel, enumLabel } = useEntityTranslation("product");
   return <Badge>{enumLabel("ProductStatus", v)}</Badge>;
 }}
 
-// Custom strings — useTranslation REQUIRES a namespace argument
+// Custom strings - useTranslation REQUIRES a namespace argument
 // (module widget strings live under "<module>/widgets")
 const { t } = useTranslation("product/widgets");
 <CrudList.Column field="isVip" header={t("product.specialFlags")} />

@@ -72,7 +72,7 @@ grep -rn "getTimezoneOffset\|toISOString" --include="*.ts" --include="*.tsx" . |
 # bare-date strings re-interpreted through the local clock
 grep -rn "new Date(" --include="*.tsx" . | grep -v generated
 
-# inline date formatting in a widget — render through a display component instead
+# inline date formatting in a widget - render through a display component instead
 # (InstantText / CalendarDateText / WallClockText / DetailDateField / CrudList.Column format)
 grep -rn "formatDateTime(\|formatDateMedium(" --include="*.tsx" modules | grep -v generated
 ```

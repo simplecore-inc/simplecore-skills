@@ -110,7 +110,7 @@ function CategoryTree() {
   // Subtree rooted at one node: GET /api/v1/category/tree/:id
   const { data: subtree } = useGetCategorySubtree("cat-1");
 
-  // Flat, paginated list (server filter/sort) — feed through adaptOrvalList in a widget
+  // Flat, paginated list (server filter/sort) - feed through adaptOrvalList in a widget
   const { data: flat } = useListCategories();
 
   const createCategory = useCreateCategory();

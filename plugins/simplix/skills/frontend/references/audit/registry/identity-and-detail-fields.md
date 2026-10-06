@@ -18,12 +18,12 @@ All user-facing UI text MUST display human-readable names, NEVER raw UUIDs. This
 Header MUST use entity display name from loaded data, placed AFTER `usePreviousData()` call.
 
 ```tsx
-// REQUIRED — Entity name from loaded data
+// REQUIRED - Entity name from loaded data
 const displayData = usePreviousData(data);
 if (!displayData) return <QueryFallback ... />;
 const header = onClose ? <Heading level={4} tone="muted">{String(displayData.name ?? "")}</Heading> : undefined;
 
-// FORBIDDEN — UUID in header
+// FORBIDDEN - UUID in header
 const header = onClose ? <Heading level={4} tone="muted">{t("entity.detailHeader", { id: String(entityId) })}</Heading> : undefined;
 ```
 
@@ -35,17 +35,17 @@ Header MUST be defined inside inner component (where `name` state lives) for rea
 - **Edit mode**: Live `name` state value (updates as user types)
 
 ```tsx
-// REQUIRED — Inner component pattern
+// REQUIRED - Inner component pattern
 // Outer:
 return <EntityFormInner ... isEdit={isEdit} ... />;
 
 // Inner:
 const header = onClose ? <Heading level={4} tone="muted">{isEdit ? (values.name as string) : t("entity.newHeader")}</Heading> : undefined;
 
-// FORBIDDEN — Static header in outer component with UUID
+// FORBIDDEN - Static header in outer component with UUID
 const header = onClose ? <Heading level={4} tone="muted">{isEdit ? t("entity.editHeader", { id: String(entityId) }) : t("entity.newHeader")}</Heading> : undefined;
 
-// FORBIDDEN — Fallback to "new" title when name is empty in edit mode
+// FORBIDDEN - Fallback to "new" title when name is empty in edit mode
 const header = ... {name || t("entity.newSchedule")} ...;
 ```
 
@@ -74,16 +74,16 @@ When nested object is not available (e.g., form `RootValues` only has ID), pass 
 Delete dialog MUST display entity name, not UUID. When display field is null/undefined, fallback MUST be empty string `""`, NEVER UUID.
 
 ```tsx
-// REQUIRED — name available
+// REQUIRED - name available
 { type: "delete", onClick: (row) => requestDelete({ id: row.id!, name: String(row.name ?? "") }) }
 
-// REQUIRED — no displayNameField (null case)
+// REQUIRED - no displayNameField (null case)
 { type: "delete", onClick: (row) => requestDelete({ id: row.id!, name: "" }) }
 
-// FORBIDDEN — direct UUID
+// FORBIDDEN - direct UUID
 { type: "delete", onClick: (row) => requestDelete({ id: row.id!, name: String(row.id) }) }
 
-// FORBIDDEN — UUID fallback when name is null
+// FORBIDDEN - UUID fallback when name is null
 { type: "delete", onClick: (row) => requestDelete({ id: row.id!, name: String(row.name ?? row.id) }) }
 ```
 
@@ -171,7 +171,7 @@ isSystemField: SYSTEM_FIELDS.includes(name)
 ### Anti-Pattern
 
 ```tsx
-// FORBIDDEN — System field visible in detail view
+// FORBIDDEN - System field visible in detail view
 <DetailFields.DetailTextField
   label={fieldLabel("sortOrder")}
   value={displayData.sortOrder}
@@ -181,21 +181,21 @@ isSystemField: SYSTEM_FIELDS.includes(name)
   value={String(displayData.id ?? "")}
 />
 
-// FORBIDDEN — System field editable in form
+// FORBIDDEN - System field editable in form
 <FormFields.NumberField
   label={fieldLabel("sortOrder")}
   value={sortOrder}
   onChange={(v) => setSortOrder(v ?? 0)}
 />
 
-// FORBIDDEN — Commented-out system field JSX (dead code)
+// FORBIDDEN - Commented-out system field JSX (dead code)
 {/*<FormFields.TextField*/}
 {/*  label={fieldLabel("id")}*/}
 {/*  value={id}*/}
 {/*  onChange={setId}*/}
 {/*/>*/}
 
-// REQUIRED — System field in state but not rendered
+// REQUIRED - System field in state but not rendered
 const [sortOrder] = useState<number>(defaultValues?.sortOrder ?? 0);
 const [id] = useState<string>(defaultValues?.id ?? "");
 // ... these are included in handleSubmit but have no UI
@@ -276,7 +276,7 @@ A detail **with no tabs**:
   <CrudDetail.AuditFooter auditData={...} />
 </CrudDetail>
 
-// REQUIRED — Use auditData prop on CrudDetail
+// REQUIRED - Use auditData prop on CrudDetail
 <CrudDetail auditData={...}>
   <CrudDetail.Section>...</CrudDetail.Section>
 </CrudDetail>
@@ -345,7 +345,7 @@ const v = resolveBootEnum(displayData.status) || "";
 ### Anti-Pattern
 
 ```tsx
-// FORBIDDEN — LabeledField/DetailFieldWrapper + inline StatusBadge, or an inert all-"default" DetailBadgeField variants map
+// FORBIDDEN - LabeledField/DetailFieldWrapper + inline StatusBadge, or an inert all-"default" DetailBadgeField variants map
 <DetailFieldWrapper label={...}><StatusBadge tone={...} label={...} /></DetailFieldWrapper>
 // REQUIRED
 <DetailFields.DetailStatusField tone={...} value={...} />

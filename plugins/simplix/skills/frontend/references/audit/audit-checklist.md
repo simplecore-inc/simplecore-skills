@@ -637,9 +637,9 @@ Expected: for any entity with an approval or closing lifecycle, the edit row act
 ### 4. Server values echoed instead of rendered (invariant #36)
 
 ```bash
-# boot enum handed straight to a select — renders blank, submits an object
+# boot enum handed straight to a select - renders blank, submits an object
 grep -rn 'defaultValues?\.[a-zA-Z]*\(Status\|Type\|Kind\|Unit\|Mode\) ??' modules/*/src/widgets/*/form.tsx | grep -v resolveBootEnum
-# an Instant rendered as a date — the time is silently dropped
+# an Instant rendered as a date - the time is silently dropped
 grep -rn -A 3 "DetailFields.DetailDateField" modules/*/src/widgets/*/detail.tsx | grep -E 'value=\{[^}]*(At|Time)\b' | grep -v 'format='
 # a panel titled with an id
 grep -rn "isEdit ? (values.[a-zA-Z]*Id as string)" modules/*/src/widgets/*/form.tsx
@@ -672,7 +672,7 @@ Expected: 0 each. Every wall-clock field uses `FormFields.TimeField` with the sh
 # the full enum offered as options where the server narrows the set per record
 rg -n 'Object\.values\([A-Z][a-zA-Z]+\)\.map' modules apps --glob '*.tsx'
 
-# two-state presence/status branching — the third state falls into the wrong arm
+# two-state presence/status branching - the third state falls into the wrong arm
 rg -n 'presence === "|status === "' modules apps --glob '*.tsx' | rg -v '\?\?|switch'
 ```
 Review each hit against the server's guard: if a service rejects a value for this record (`visitType.getCheckInChannels().contains(...)`, `if (status == CHECKED_OUT) throw`), the DTO must publish the allowed set / the terminal flag and the UI must respect it. Then drive one rejection per screen in the browser: a desk operator who is refused twice on the default option is the defect this catches.
@@ -684,7 +684,7 @@ Review each hit against the server's guard: if a service rejects a value for thi
 rg -n 'field: "[a-zA-Z]+Id", label: fieldLabel\("[a-zA-Z]+Id"\), operators: \[SearchOperator\.EQUALS\]' modules --glob '*/list.tsx'
 rg -n 'field: "(createdAt|updatedAt)"' modules --glob '*/list.tsx'
 
-# the scaffold's soft-delete toggle — an implementation flag, not an operator axis
+# the scaffold's soft-delete toggle - an implementation flag, not an operator axis
 rg -n 'type: "toggle", field: "deleted"' modules --glob '*/list.tsx'
 
 # a long filter form still rendered as one column

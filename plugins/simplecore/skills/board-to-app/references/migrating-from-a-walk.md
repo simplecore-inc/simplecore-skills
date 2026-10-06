@@ -55,9 +55,9 @@ and the frame list has none, because the chapter set answers it. So the new conf
 `assets/board-to-app.json` rather than edited out of the old one:
 
 ```text
-✖ configGate — the declared config is incomplete, mistyped, or points at nothing
-   parityList is not a key this skill reads — a mistyped key is silent; a note starts with //
-   parkedSection is not a key this skill reads — a mistyped key is silent; a note starts with //
+✖ configGate - the declared config is incomplete, mistyped, or points at nothing
+   parityList is not a key this skill reads - a mistyped key is silent; a note starts with //
+   parkedSection is not a key this skill reads - a mistyped key is silent; a note starts with //
 ```
 
 ## The precondition: a board the kit can still build

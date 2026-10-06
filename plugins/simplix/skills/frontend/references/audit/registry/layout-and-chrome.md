@@ -20,13 +20,13 @@
 ### Usage
 
 ```tsx
-// Default — height fits content (no fixed height)
+// Default - height fits content (no fixed height)
 <ListDetail variant="dialog">
   <ListDetail.List>...</ListDetail.List>
   <ListDetail.Detail>...</ListDetail.Detail>
 </ListDetail>
 
-// Fixed height — internal scrolling when content overflows
+// Fixed height - internal scrolling when content overflows
 <ListDetail variant="dialog" dialogHeight="60vh">
   <ListDetail.List>...</ListDetail.List>
   <ListDetail.Detail>...</ListDetail.Detail>
@@ -36,10 +36,10 @@
 ### Anti-Pattern
 
 ```tsx
-// FORBIDDEN — Overriding dialog height with inline styles or className on DetailPanel
+// FORBIDDEN - Overriding dialog height with inline styles or className on DetailPanel
 <ListDetail.Detail className="h-[500px]">...</ListDetail.Detail>
 
-// REQUIRED — Use dialogHeight prop on ListDetail root
+// REQUIRED - Use dialogHeight prop on ListDetail root
 <ListDetail variant="dialog" dialogHeight="500px">...</ListDetail>
 ```
 

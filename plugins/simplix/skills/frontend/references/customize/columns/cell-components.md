@@ -147,7 +147,7 @@ For simple date display, use the built-in `format` prop.
   format="date"
 />
 
-{/* Date + time — an Instant needs displayZone (site or app zone) */}
+{/* Date + time - an Instant needs displayZone (site or app zone) */}
 <CrudList.Column<ProductListDTO>
   field="createdAt"
   header={fieldLabel("createdAt")}
@@ -173,7 +173,7 @@ When a date cell needs custom empty text, a per-row zone, or an `Instant` shown 
 
 ```tsx
 <CrudList.Column<ProductListDTO> field="expiresAt" header={fieldLabel("expiresAt")}>
-  {({ row }) => <InstantText value={row.expiresAt} displayZone={zone} format="date" fallback="—" />}
+  {({ row }) => <InstantText value={row.expiresAt} displayZone={zone} format="date" fallback={t("<module>.noExpiry")} />}
 </CrudList.Column>
 ```
 

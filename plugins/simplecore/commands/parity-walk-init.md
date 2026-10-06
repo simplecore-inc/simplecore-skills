@@ -81,12 +81,12 @@ repository.
    ## Walking the board against the app
 
    Reconciling implemented screens with the board is a long walk across many sessions. Invoke the
-   `simplecore:board-parity-walk` skill before starting or resuming one — it carries the
+   `simplecore:board-parity-walk` skill before starting or resuming one - it carries the
    discipline. This repository supplies the contents:
 
-   - `<parity list path>` — the frames left to walk, and the decisions parked for a human
-   - `<handover file path>` — how to start the servers, known traps, accounts and data standing
-   - `.claude/board-parity-walk.json` — names those two for the write-time checks
+   - `<parity list path>` - the frames left to walk, and the decisions parked for a human
+   - `<handover file path>` - how to start the servers, known traps, accounts and data standing
+   - `.claude/board-parity-walk.json` - names those two for the write-time checks
 
    The skill comes from the `simplecore` plugin
    (`claude plugin install simplecore@simplecore-skills`). When it is not in the `Skill` tool

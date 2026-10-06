@@ -73,7 +73,7 @@ return <Badge>{enumLabel("entityField", v)}</Badge>;
 // In form defaults
 const initialType = resolveBootEnum(data?.fieldType) || "DEFAULT";
 
-// In update DTO assembly (CRITICAL — for-edit response has enum objects)
+// In update DTO assembly (CRITICAL - for-edit response has enum objects)
 const dto: UpdateDTO = {
   ...form,
   enumField: (resolveBootEnum(form.enumField) || form.enumField) as UpdateDTO["enumField"],
@@ -104,7 +104,7 @@ Timeline:
   Query A (value source)    ──loaded──┐
   Query B (options source)  ─────────loading────loaded──
                                       ↑
-                            SelectField renders: value="uuid-123", options=[{—, NONE}]
+                            SelectField renders: value="uuid-123", options=[{ - , NONE}]
                             → Radix: no matching option → empty trigger
                             → trigger text not refreshed even after options load ✖
 ```
@@ -112,14 +112,14 @@ Timeline:
 **Required pattern: render only after ALL data sources finish loading**
 
 ```tsx
-// ✖ WRONG — only checks the value source
+// ✖ WRONG - only checks the value source
 {itemQuery.isLoading ? (
   <Loading />
 ) : (
   <SelectCard options={categoryOptions} value={assignment.fromCategoryId} />
 )}
 
-// ✔ CORRECT — check BOTH the value source AND the options source
+// ✔ CORRECT - check BOTH the value source AND the options source
 {itemQuery.isLoading || categoryQuery.isLoading ? (
   <Loading />
 ) : (
@@ -132,10 +132,10 @@ Timeline:
 When the SelectField's value is synchronized via `useEffect` → `setState`, the state is empty on the first render, so `undefined` is passed. Provide a fallback directly from the source data:
 
 ```tsx
-// ✖ WRONG — assignment = undefined until useEffect runs → empty Select
+// ✖ WRONG - assignment = undefined until useEffect runs → empty Select
 <SelectCard assignment={localAssignments[item.id!]} />
 
-// ✔ CORRECT — direct fallback from the source data
+// ✔ CORRECT - direct fallback from the source data
 <SelectCard
   assignment={localAssignments[item.id!] ?? {
     fromId: item.policy?.fromId || NONE_VALUE,
@@ -234,12 +234,12 @@ CrudPage
 For complex editing UIs (bit-map editors, LED preset editors, etc.). Use `editor.hbs` template or follow this pattern:
 
 ```
-EntityEditor (outer)           — fetch + loading guard + key-reset
-└── EditorContent (inner)      — all state + UI (remounts on data change)
-    ├── PanelHeader            — panel variant header
-    ├── Content area           — domain-specific UI (scroll body: `<Stack flex overflow="auto">`, never a raw `overflow-y-auto` div)
-    ├── EditorFooter           — save/cancel actions
-    └── useUnsavedChanges      — browser leave + in-app confirmation
+EntityEditor (outer) - fetch + loading guard + key-reset
+└── EditorContent (inner) - all state + UI (remounts on data change)
+    ├── PanelHeader - panel variant header
+    ├── Content area - domain-specific UI (scroll body: `<Stack flex overflow="auto">`, never a raw `overflow-y-auto` div)
+    ├── EditorFooter - save/cancel actions
+    └── useUnsavedChanges - browser leave + in-app confirmation
 ```
 
 Key pattern: `key={data.id}-${data.updatedAt}` on inner component forces remount when server data changes.
@@ -432,7 +432,7 @@ usePageHeader((() => {
   return { title: t("entity.entities"), description: t("entity.description"), actions };
 })());
 
-// Simple — read-only page
+// Simple - read-only page
 usePageHeader({ title: t("entity.title"), description: t("entity.description") });
 ```
 
@@ -488,7 +488,7 @@ export function findNextSlotNumber(existingItems: ProductListDTO[], maxSlots: nu
 
 ```tsx
 interface FormValues {
-  slotNumber: number;   // NOT string — keep as number
+  slotNumber: number;   // NOT string - keep as number
 }
 ```
 

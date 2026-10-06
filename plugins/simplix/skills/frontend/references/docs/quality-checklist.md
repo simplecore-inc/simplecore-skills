@@ -39,10 +39,10 @@ const projectSchema = z.object({
   status: z.enum(["active", "archived"]),
 });
 
-// Exclude id — server generates it
+// Exclude id - server generates it
 const createProjectInput = projectSchema.omit({ id: true });
 
-// All fields optional — partial update support
+// All fields optional - partial update support
 const updateProjectInput = createProjectInput.partial();
 
 const api = defineApi({

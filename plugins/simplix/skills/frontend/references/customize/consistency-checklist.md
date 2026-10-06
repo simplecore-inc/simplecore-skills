@@ -38,7 +38,7 @@ Placeholders: `<Entity>` / `<entity>` (the PascalCase / camelCase entity name), 
 - **A cell references another record?** → render the shared `*PeekLabel` and pass nothing else. The label dispatches to the app-root peek host, which mounts the dialog outside the row; the screen holds no peek state and renders no dialog of its own. A dialog left in the cell is unmounted by the next refetch and closes itself seconds after opening.
 
 ```tsx
-// in a cell — that is the whole wiring
+// in a cell - that is the whole wiring
 <UserPeekLabel userId={id} name={name} />
 ```
 

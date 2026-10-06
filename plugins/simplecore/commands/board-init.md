@@ -87,7 +87,7 @@ The scaffold is generic on purpose. Walk these with the user rather than guessin
 
 - `board.config.mjs` - `headline`, `boardName`, `pdfName`, and `today` (the day every dated frame
   is read against). Delete the `phases` entry if nothing is deferred yet. Every key the kit reads
-  is in the skill's `references/build-kit.md` § What `board.config.mjs` declares.
+  is in `simplecore:wireframe-boards`'s `references/build-kit.md` § What `board.config.mjs` declares.
 - `src/chrome.mjs` - the tabs, the menu tree, which role reaches what. This is the product's
   information architecture; the placeholder one draws two tabs and three clusters.
 - `AGENTS.md` - the region under the marked line is theirs. Everything above it describes the kit
@@ -108,9 +108,9 @@ screens / states / flow, the code matches the board. Invoke the
 `simplecore:wireframe-boards` skill before implementing a screen from it, checking code
 against it, syncing it after a change, or drawing new frames.
 
-- `<board path>/src/manifest.mjs` — the table of contents. Find a screen here, then open
+- `<board path>/src/manifest.mjs` - the table of contents. Find a screen here, then open
   that one screen file. Never read the built HTML.
-- `<board path>/AGENTS.md` — the working rules for this board.
+- `<board path>/AGENTS.md` - the working rules for this board.
 - The board carries no build script. `node wf.mjs <command>` from the board folder; the kit
   lives in the skill.
 

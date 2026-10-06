@@ -662,20 +662,20 @@ sessions are comparable:
 
 ```text
 BOARD: <which board - only in a repository that draws more than one>
-SECTION: <letter and name> — closed / still open
+SECTION: <letter and name> - closed / still open
 CLUSTERS WALKED: <one line each: what it was, frames cleared>
-BUILT: <frames that had no code and now do, or "none — every frame was already built">
+BUILT: <frames that had no code and now do, or "none - every frame was already built">
 FIXED: <grouped by defect type, one line per instance>
 CROSS-SWEEP: <per defect type, other instances found and fixed, including "0 others">
-SECTION AUDIT: <what the read-only pass found — then every finding under one of:>
+SECTION AUDIT: <what the read-only pass found - then every finding under one of:>
   REFACTORED: <the code was wrong; what changed>
   NOW CHECKED: <the code was right by habit; which checker now holds it>
-  CLOSED:     <neither, with the reason — never "later">
-RULES ADDED: <defect type → where the detection rule now lives, or "none" — including any
+  CLOSED:     <neither, with the reason - never "later">
+RULES ADDED: <defect type → where the detection rule now lives, or "none" - including any
               rule the section had been obeying only by habit>
-BOARD SYNCED: <frames back-filled or corrected, or "nothing — the code was wrong every time">
+BOARD SYNCED: <frames back-filled or corrected, or "nothing - the code was wrong every time">
 STILL TRUE: <standing prose a walker read against what it guards and did not have to
-             change — which document, what it stands over, or "none — nothing was re-read">
+             change - which document, what it stands over, or "none - nothing was re-read">
 PARKED, STILL OPEN: <one line each, with what decision it needs and from whom>
 VERIFICATION: <each gate and its result>
 LEFT ON THE LIST: <how many frames, in which sections>

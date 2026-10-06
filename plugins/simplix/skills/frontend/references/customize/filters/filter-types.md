@@ -88,7 +88,7 @@ interface FacetedFilterDef {
   /**
    * Presentation of the option list. "list" (default) renders the searchable
    * checkbox list inline; "dropdown" collapses it behind a combobox-style
-   * trigger — use for long option sets such as entity/user pickers.
+   * trigger - use for long option sets such as entity/user pickers.
    */
   display?: "list" | "dropdown";
 }

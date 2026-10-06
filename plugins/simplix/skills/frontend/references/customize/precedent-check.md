@@ -48,7 +48,7 @@ grep -rln --include="*.tsx" "useCrudList" modules/*/src/widgets/
 # Always-open master-detail boards / pinned-detail pages (shape 4)
 grep -rln --include="*.tsx" 'activePanel="detail"' modules/*/src/pages/
 
-# Tabbed status lists (shape 3) — tabs and list composed in the same widget file
+# Tabbed status lists (shape 3) - tabs and list composed in the same widget file
 grep -rln --include="*.tsx" "<Tabs" modules/*/src/ | xargs grep -ln "useCrudList"
 
 # Reports / aggregation surfaces (shape 5)

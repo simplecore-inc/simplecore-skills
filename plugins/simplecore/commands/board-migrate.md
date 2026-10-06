@@ -57,7 +57,7 @@ from it.
 **What does not change:** every frame, every permanent id, every note, the board's structure, the
 content of `board.html` apart from the intended differences below.
 
-The kit writes contract 4 (`BOARD_CONTRACT` in `kit/core/partials.mjs`), and a board crosses
+The kit writes contract 4 (`BOARD_CONTRACT` in `simplecore:wireframe-boards`'s `kit/core/partials.mjs`), and a board crosses
 every contract between its own and that one. **What changes**, crossing into contract 3:
 
 | | Before | After |

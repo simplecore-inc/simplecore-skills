@@ -22,7 +22,7 @@ grep -rln --include="*.tsx" "use<Entity>List\|use<Entity>Detail\|useGet<Entity>"
 # Every surface that renders its DTO type
 grep -rln --include="*.tsx" "<Entity>ListDTO\|<Entity>DetailDTO" modules/ apps/
 
-# Nav / tab badges counting it (size-1 count queries — see the `simplix:frontend` skill, invariant #48)
+# Nav / tab badges counting it (size-1 count queries - see the `simplix:frontend` skill, invariant #48)
 grep -rn --include="*.ts*" "size: 1" apps/*/src/widgets/nav/ modules/*/src/
 ```
 

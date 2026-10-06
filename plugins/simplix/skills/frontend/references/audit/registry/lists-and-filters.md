@@ -47,9 +47,9 @@ const { options: userOptions } = useUserOptions();
 ### Anti-Pattern
 
 ```tsx
-// FORBIDDEN — raw-id text search over a field the column renders as a name
+// FORBIDDEN - raw-id text search over a field the column renders as a name
 { type: "text", field: "userAccountId", label: fieldLabel("userAccountId"), operators: [SearchOperator.CONTAINS, SearchOperator.EQUALS], defaultOperator: SearchOperator.CONTAINS }
-// FORBIDDEN — inline duplicate of the option mapping inside a module
+// FORBIDDEN - inline duplicate of the option mapping inside a module
 const options = users.map((u) => ({ label: u.nativeName ?? u.username, value: u.userId }));
 ```
 
@@ -76,10 +76,10 @@ const companyId = String((filters.committedValues["companyId.in"] as string[] | 
 ### Anti-Pattern
 
 ```tsx
-// FORBIDDEN — hand-rolled param row beside the standard list tabs
+// FORBIDDEN - hand-rolled param row beside the standard list tabs
 <Flex justify="between"><ListTotalBadge .../><FormFields.SelectField .../><FormFields.DateField .../></Flex>
 
-// REQUIRED — the same search popover as every list screen
+// REQUIRED - the same search popover as every list screen
 <CrudList.FilterBar count={rows.length} filters={[...]} state={useFilterBarState(...)} />
 ```
 

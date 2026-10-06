@@ -39,16 +39,16 @@ Pick whichever is cheapest in the current context:
 `<domain-package>` below is the name the domain package's own `package.json` declares (§ Prerequisites). Recipes B and C read the `orval` layout; on the `meta` path, Recipe A is the one to run, and its change gate also compares the committed `meta.snapshot` (SKILL.md invariant #29).
 
 ```bash
-# Recipe A — run codegen and inspect diff. The codegen is idempotent; empty diff = no change.
+# Recipe A - run codegen and inspect diff. The codegen is idempotent; empty diff = no change.
 pnpm --filter <domain-package> run codegen
 git status packages/domain-<name>/src/generated/        # src/generated-meta/ on the meta path
 
 # Recipe B - compare backend tag list against simplix.config.ts domain mapping (orval: reads `spec`).
 SPEC=$(grep -m1 'spec:' simplix.config.ts | sed -E 's/.*"([^"]+)".*/\1/')
 curl -s "$SPEC" | jq -r '.tags[].name' | sort > /tmp/backend-tags.txt
-# Compare with the tags listed in simplix.config.ts openapi[].domains — new entries mean new scaffolding needed.
+# Compare with the tags listed in simplix.config.ts openapi[].domains - new entries mean new scaffolding needed.
 
-# Recipe C — field snapshot diff (pre vs post codegen).
+# Recipe C - field snapshot diff (pre vs post codegen).
 grep -h "^\s\+\w\+[?:]\?:" packages/domain-<name>/src/generated/model/*DetailDTO.ts \
   | sed 's/[?:].*//' | sort > /tmp/fields-before.txt
 pnpm --filter <domain-package> run codegen
@@ -536,7 +536,7 @@ packages/domain-<domain>/src/
 ├── hooks/        ← REGENERATED (auto)
 ├── mock/
 │   ├── index.ts  ← REGENERATED unless it has custom handler overrides (then PRESERVED)
-│   └── seeds.ts  ← PRESERVED — update manually if new required fields
+│   └── seeds.ts  ← PRESERVED - update manually if new required fields
 └── locales/      ← REGENERATED (auto)
 
 modules/<domain>/src/
@@ -614,10 +614,10 @@ The `adaptOrvalList` hook extracts data from `query.data.content`, expecting the
 **Fix**: Update `packages/domain-<domain>/src/mutator.ts`:
 
 ```ts
-// WRONG — default strategy doesn't unwrap Boot envelope
+// WRONG - default strategy doesn't unwrap Boot envelope
 return getMutator()<T>(url, options);
 
-// CORRECT — the "boot" strategy returns the fetcher the app registered
+// CORRECT - the "boot" strategy returns the fetcher the app registered
 // via configureMutator("boot", ...), which unwraps the { type, body } envelope
 return getMutator("boot")<T>(url, options);
 ```

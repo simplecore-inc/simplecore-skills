@@ -150,13 +150,13 @@ repository.
 
    The board is built chapter by chapter in dependency order. Invoke the
    `simplecore:board-to-app` skill before building a chapter, running its persona tests, planning
-   a wave, or resuming — it carries the coordination discipline. This repository supplies the
+   a wave, or resuming - it carries the coordination discipline. This repository supplies the
    contents:
 
-   - `<chapter dir>/00-overview.md` — the chapter table; the file order is the build order
-   - `<state ledger>` — the one place that says which chapter is open
-   - `<evidence dir>/00-overview.md` — what a chapter's verification leaves behind
-   - `.claude/board-to-app.json` — the paths, and what each chapter passes before it closes
+   - `<chapter dir>/00-overview.md` - the chapter table; the file order is the build order
+   - `<state ledger>` - the one place that says which chapter is open
+   - `<evidence dir>/00-overview.md` - what a chapter's verification leaves behind
+   - `.claude/board-to-app.json` - the paths, and what each chapter passes before it closes
 
    The skill comes from the `simplecore` plugin
    (`claude plugin install simplecore@simplecore-skills`). When it is not in the `Skill` tool
