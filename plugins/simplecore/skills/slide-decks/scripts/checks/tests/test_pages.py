@@ -19,7 +19,7 @@ from bidkit.config import ConfigError  # noqa: E402
 from bidkit.sgmcp import DeckUnavailable  # noqa: E402
 from bidkit.tests.support import body, project, reader, recording, slide  # noqa: E402
 
-SUMMARY = "checked 3 slides · 40 nodes · overlap {o} · outside 0 · escape 0 · empty 0 · tiny 0 · font {f} · diagnostic 0 · ink 0"
+SUMMARY = "checked 3 slides · 40 nodes · overlap {o} · outside 0 · escape 0 · empty 0 · tiny 0 · font {f} · diagnostic 0 · ink 0 · spread 0"
 
 
 def tool_text(text: str, error: bool = False) -> dict:
