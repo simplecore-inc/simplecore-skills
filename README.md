@@ -393,6 +393,14 @@ Notes for symlink users:
 
 - Keep the marketplace registered (`claude plugin marketplace add ./path/to/simplecore-skills`) so `claude plugin validate .` and release testing stay available while you develop against the link.
 - Scripts and reference files are addressed through `${CLAUDE_PLUGIN_ROOT}`, which resolves to `~/.claude/skills/<name>` under a link and to the versioned cache directory under a marketplace install. Do not hardcode either path.
+- Installed from a local folder (`claude plugin marketplace add ./simplecore-skills`), a plugin is already read live from the working tree, so it needs no link to pick up edits. Some paths still go through `~/.claude/skills/simplecore` (the wireframe kit's lookup in `resolve.mjs` and `wf.mjs`, `korean-docs` scripts, global instruction files), and linking the whole plugin there fails with the name-conflict error at every `/reload-plugins`. Make that path a plain folder holding links to the data alone, with no `.claude-plugin/` in it, so it is not loaded as a second plugin:
+
+  ```bash
+  mkdir -p ~/.claude/skills/simplecore
+  ln -s "$(pwd)/plugins/simplecore/skills" ~/.claude/skills/simplecore/skills
+  ln -s "$(pwd)/plugins/simplecore/scripts" ~/.claude/skills/simplecore/scripts
+  ```
+
 - On Windows, creating symlinks requires Developer Mode (or an elevated shell with `mklink /D`). WSL and Linux need no special setup. On Windows, prefer the plugin installation over symlinks unless you are actively editing the skills.
 
 ## Development
