@@ -20,7 +20,7 @@
      whether the board needs migrating, and a board with no stamp is treated as the original
      contract (frame numbers derived from position, rows scrolling sideways) and migrated. -->
 <meta name="wireframe-board-contract" content="4">
-<title>Wireframe — {Product} {Area}</title>
+<title>Wireframe: {Product} {Area}</title>
 <style>
   :root {
     --ink: #1f2430;         /* primary text */
@@ -36,7 +36,7 @@
     --accent-tint: #fdeee7;
     --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     --sans: system-ui, -apple-system, "Segoe UI", "Helvetica Neue", sans-serif;
-    --row-max: 1464px;      /* widest device frame (1440) + one gap — fixes where a row wraps */
+    --row-max: 1464px;      /* widest device frame (1440) + one gap - fixes where a row wraps */
     --frame-zoom: 1;        /* display scale only; stepped down by the media queries below */
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -83,7 +83,7 @@
     border-bottom: 2px solid var(--ink); padding-bottom: 6px; margin-bottom: 16px;
   }
   .flow-title .count { font: 11px var(--mono); color: var(--muted); font-weight: 400; }
-  /* Frames lay out in a WRAPPING grid, never a sideways scroller — reading a board is one
+  /* Frames lay out in a WRAPPING grid, never a sideways scroller - reading a board is one
      continuous vertical scroll, and a frame can never hide past the right edge where a
      reviewer will not find it. The cap is what makes the wrap points a property of the board
      rather than of the reader's window: --row-max is the widest device frame plus one gap, so
@@ -95,7 +95,7 @@
     zoom: var(--frame-zoom);
   }
 
-  /* Display scale only — the design basis stays at true device pixels, so a label that
+  /* Display scale only - the design basis stays at true device pixels, so a label that
      overflows at 390px still overflows here. Stepped down as the window narrows, which is what
      keeps the no-sideways-scroll promise on a laptop as well as on a wide monitor.
      Each step is derived, not guessed: a row needs `--row-max × zoom + 80px` (the body padding),
@@ -121,7 +121,7 @@
   }
   .scroll-x::-webkit-scrollbar-thumb:hover { background: var(--line-strong); }
 
-  /* `[02]A-20` — the visual position, muted because it changes; then the permanent id, because
+  /* `[02]A-20` - the visual position, muted because it changes; then the permanent id, because
      that is the value a note, a parity list, and a reviewer all address the screen by. */
   .frame-label .fseq { font: 700 10px var(--mono); color: var(--muted); margin-right: 3px; }
   .frame-label .fnum { display: inline-block; background: var(--accent); color: var(--screen);
@@ -149,7 +149,7 @@
   .frame-notes { font: 11px var(--mono); color: var(--muted); margin-top: 4px; line-height: 1.6; }
   .frame-notes .open { color: var(--accent); font-weight: 700; }
 
-  /* Fold line — drawn at --vh, so it lands on the viewport bottom however far
+  /* Fold line - drawn at --vh, so it lands on the viewport bottom however far
      page content pushes the frame. Required on every desktop frame. */
   .fold {
     position: absolute; left: 0; right: 0; top: var(--vh); z-index: 2;
@@ -166,7 +166,7 @@
   /* ── Viewport toggle (narrow ⇄ wide) ──────────────────────────── */
   /* CSS-only: the checkbox is the FIRST element in <body>; every rule below
      reaches frames through the sibling (~) combinator. No JavaScript. Only
-     frames tagged .narrow / .wide participate — an untagged frame is always
+     frames tagged .narrow / .wide participate - an untagged frame is always
      visible, which is how single-viewport screens are authored. */
   .view-input { position: absolute; opacity: 0; pointer-events: none; }
   .view-toggle {
@@ -230,7 +230,7 @@
   .nav-item.active { background: var(--fill-deep); color: var(--ink); font-weight: 700; }
   .sidebar.rail { flex-basis: 60px; align-items: center; } /* collapsed at the narrow breakpoint */
   .sidebar.rail .nav-item { justify-content: center; }
-  /* :not(.ic) keeps the glyph — the icon is a span too */
+  /* :not(.ic) keeps the glyph - the icon is a span too */
   .sidebar.rail .brand, .sidebar.rail .nav-group, .sidebar.rail .nav-item span:not(.ic) { display: none; }
   .main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
   .topbar { display: flex; align-items: center; gap: 12px; padding: 10px 16px; border-bottom: 1px solid var(--fill-deep); }
@@ -363,7 +363,7 @@
 <input type="checkbox" id="viewport" class="view-input" aria-label="Viewport width">
 
 <header class="board-header">
-  <h1>{Product} — {Area} Wireframes</h1>
+  <h1>{Product} {Area} Wireframes</h1>
   <span class="tag">WIREFRAME v0.1 · {PHONE | TABLET | DESKTOP}</span>
   <label class="view-toggle" for="viewport"><span class="opt-narrow">Narrow</span><span class="opt-wide">Wide</span></label>
   <span class="dateline">{date} · {390×844 · 768×1024 ⇄ 1024×768 · 1024/1440 fluid} · lo-fi</span>
@@ -487,7 +487,7 @@
       <div class="frame-notes">AUTH: session<br>DATA: GET /me/requests (paged)</div>
     </article>
 
-    <div class="sticky">Tablet pair: one screen×state authored at both viewports, adjacent. Wide reflows to master-detail — never a stretched phone column.</div>
+    <div class="sticky">Tablet pair: one screen×state authored at both viewports, adjacent. Wide reflows to master-detail, never to a stretched phone column.</div>
 
   </div>
 </section>
@@ -602,19 +602,19 @@
      at the foot, after every frame, and the table of contents links to it. Board-specific
      notes are appended after the standing items; a standing item is never edited. -->
 <section class="readme" id="readme">
-  <h2>HOW TO READ THIS BOARD — REQUIRED BEFORE IMPLEMENTING</h2>
+  <h2>HOW TO READ THIS BOARD: REQUIRED BEFORE IMPLEMENTING</h2>
   <ol>
-    <li><strong>This is a low-fidelity wireframe, not a design.</strong> It fixes <em>what is on each screen, in which state, and how the user moves between screens</em> — the minimum needed to start building. It says nothing about how the product should look.</li>
+    <li><strong>This is a low-fidelity wireframe, not a design.</strong> It fixes <em>what is on each screen, in which state, and how the user moves between screens</em>, the minimum needed to start building. It says nothing about how the product should look.</li>
     <li><strong>Never reproduce this board's appearance.</strong> Greyscale fills, 1px borders, corner radii, paddings, the single accent color, device chrome, and this monospaced notation are board notation. Build with the project's own design system and component library, and let it decide color, type, spacing, elevation, and motion.</li>
     <li><strong>Grey bars and boxes are placeholders</strong> (<code>.bar</code>, <code>.img-ph</code>, <code>.qr-ph</code>, <code>.thumb</code>) standing in for real data. They are not grey rectangles in the product.</li>
-    <li><strong>Real text is the specified wording — keep it.</strong> Button labels, screen titles, field labels, tab names, empty-state and error copy are the intended strings. Placeholder bars are not strings.</li>
+    <li><strong>Real text is the specified wording: keep it.</strong> Button labels, screen titles, field labels, tab names, empty-state and error copy are the intended strings. Placeholder bars are not strings.</li>
     <li><strong>Every frame is one screen × one state.</strong> States drawn here (empty, error, loading, expired, terminal, permission-gated, overlay) are requirements; implement all of them, not only the happy path.</li>
-    <li><strong>The frame label reads <code>[position] ID route — screen — state</code>.</strong> The <strong>ID</strong> (<code>A-02</code>) is that screen's permanent name: it never changes, and it is what to use when referring to a screen anywhere — a plan, a ticket, a review note, a message. The bracketed <strong>position</strong> (<code>[02]</code>) is only where the frame currently sits on the board and moves whenever the board is reordered, so never cite it on its own. Notes carry <code>AUTH:</code> (entry precondition), <code>DATA:</code> (source endpoint), <code>OPEN:</code> (unresolved question).</li>
-    <li><strong>An <code>OPEN:</code> note blocks that part of the implementation.</strong> Resolve it with the board's author — never guess, and never let the drawn shape stand in for the missing decision.</li>
-    <li><strong>Device frames are reference viewports, not breakpoints to hard-code.</strong> Phone and tablet frames are fixed device viewports. Desktop frames pin only the width: the page height is fluid, and the dashed <em>fold</em> line marks the smallest supported window — everything the user must act on belongs above it.</li>
+    <li><strong>The frame label reads <code>[position] ID route — screen — state</code>.</strong> The <strong>ID</strong> (<code>A-02</code>) is that screen's permanent name: it never changes, and it is what to use when referring to a screen anywhere: a plan, a ticket, a review note, a message. The bracketed <strong>position</strong> (<code>[02]</code>) is only where the frame currently sits on the board and moves whenever the board is reordered, so never cite it on its own. Notes carry <code>AUTH:</code> (entry precondition), <code>DATA:</code> (source endpoint), <code>OPEN:</code> (unresolved question).</li>
+    <li><strong>An <code>OPEN:</code> note blocks that part of the implementation.</strong> Resolve it with the board's author; never guess, and never let the drawn shape stand in for the missing decision.</li>
+    <li><strong>Device frames are reference viewports, not breakpoints to hard-code.</strong> Phone and tablet frames are fixed device viewports. Desktop frames pin only the width: the page height is fluid, and the dashed <em>fold</em> line marks the smallest supported window, and everything the user must act on belongs above it.</li>
     <li><strong>A narrow/wide pair is one responsive screen, not two screens.</strong> The pair records how the layout reflows between the two viewports; implement a single screen that spans them.</li>
     <li><strong>Arrows, numbered steps, stickies, and fold lines are annotations</strong> describing navigation and intent. Never render them as UI.</li>
-    <li><strong>Visual detail is deliberately unspecified; screens and states are not.</strong> A screen or state missing from this board has not been specified — ask, do not invent. Where this board and the project's frontend conventions disagree about structure or components, the project's conventions win.</li>
+    <li><strong>Visual detail is deliberately unspecified; screens and states are not.</strong> A screen or state missing from this board has not been specified: ask, do not invent. Where this board and the project's frontend conventions disagree about structure or components, the project's conventions win.</li>
   </ol>
 </section>
 
