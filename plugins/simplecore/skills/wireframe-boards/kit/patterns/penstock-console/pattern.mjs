@@ -2,12 +2,11 @@
 // themselves, drawn with the penstock console's shell (title bar · navigator · work pane ·
 // inspector · status bar). For a product that is an APP - installed, or running in a browser as
 // one - rather than a page-scrolling site. The same pattern draws the installed program's own
-// window (`url: 'app:<title>'`) and its tray menu (`url: 'none:'`).
+// window (`chrome: 'app'` with `appTitle`) and its tray menu (`chrome: 'none'`).
 //
-// It was promoted out of the RAG Studio board, where it was drawn first; every product-bound piece
-// (brand, navigation tree, palette, status bar, sample activity) comes from the board's
-// `src/chrome.mjs` through `makeChrome`, so a second product shares the shell without sharing the
-// words.
+// Every product-bound piece (brand, navigation tree, palette, status bar, sample activity) comes
+// from the board's `src/chrome.mjs` through `makeChrome`, so a second product shares the shell
+// without sharing the words.
 export default {
   name: 'penstock-console',
   title: 'penstock 콘솔 셸 — 고정 창의 앱',

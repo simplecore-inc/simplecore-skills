@@ -26,6 +26,8 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { documentSets } from "../hooks/parity-config.mjs";
+import { stepsBetween } from "../skills/wireframe-boards/kit/core/migrations.mjs";
 
 const SKIP_DIRS = new Set([
   "node_modules", "dist", "build", "out", "target", "coverage", "vendor",
@@ -62,15 +64,15 @@ const BOARD_SIGNATURES = ["frame-label", "readme"];
 // its kit writes. Collapsing the two told every board still being drawn to migrate away from the
 // contract it was already on.
 //
-// What each contract changed, and the steps to cross it, are the kit's `core/migrations.mjs`.
-// This number only has to say WHICH contract a board is on.
+// What each contract changed, and the steps to cross it, are the kit's `core/migrations.mjs`, and
+// the migration line below names each crossing from there by its title.
 const CONTRACT_META = /<meta\s+name=["']wireframe-board-contract["']\s+content=["'](\d+)["']/i;
 const KIT_CONTRACT_DECL = /BOARD_CONTRACT\s*=\s*(\d+)/;
 const KIT_SOURCE_BYTES = 16 * 1024;
 
 /** Where this plugin's own kit declares the contract it writes. */
 const KIT_PARTIALS = path.join(
-  import.meta.dirname, "..", "skills", "wireframe-boards", "kit", "core", "partials.mjs"
+  path.dirname(fileURLToPath(import.meta.url)), "..", "skills", "wireframe-boards", "kit", "core", "partials.mjs"
 );
 
 const BOARD_CONTRACT = (() => {
@@ -112,16 +114,19 @@ function readIfPresent(file, maxBytes = 0) {
     } finally {
       fs.closeSync(fd);
     }
-  } catch {
-    return null;
+  } catch (error) {
+    // Absent or unreadable is an answer here; anything that is not a filesystem error is a fault.
+    if (typeof error?.code === "string") return null;
+    throw error;
   }
 }
 
 function entries(dir) {
   try {
     return fs.readdirSync(dir, { withFileTypes: true });
-  } catch {
-    return [];
+  } catch (error) {
+    if (typeof error?.code === "string") return [];
+    throw error;
   }
 }
 
@@ -161,7 +166,7 @@ function findBoard(root) {
     let released = false;
     for (const entry of entries(dir)) {
       if (!entry.isFile() || !entry.name.toLowerCase().endsWith(".html")) continue;
-      if (entry.name.startsWith("_")) continue; // _proof / _catalog are byproducts, not the board
+      if (entry.name.startsWith("_")) continue; // _catalog.html and the like are byproducts, not the board
       released = true;
       const head = readIfPresent(path.join(dir, entry.name), HTML_HEAD_BYTES) ?? "";
       const m = CONTRACT_META.exec(head);
@@ -174,12 +179,13 @@ function findBoard(root) {
    * The contract a kit-built board's own build writes, read from the kit's sources.
    *
    * @remarks
-   * The stamp in the built board is the better answer and is tried first. But `board.html` appears
-   * only once the build's coverage gate is satisfied - every required cluster drawn - which is late
-   * in a board's life, and `_proof.html` is a byproduct {@link stampIn} deliberately skips. So a
-   * board that is halfway through being drawn has no stamped artifact at all, and reading its
-   * absence as "unstamped, therefore contract 1" is wrong in the one direction that costs work: it
-   * proposes a migration away from the contract the board is already on.
+   * The stamp in the built board is the better answer and is tried first. But `board.html` is
+   * written only once every gate passes, the coverage gate among them (every section
+   * `requiredSections` names in the manifest), which is late in a board's life, and an underscore-prefixed
+   * file such as `_catalog.html` is a byproduct {@link stampIn} deliberately skips. So a board that
+   * is halfway through being drawn has no stamped artifact at all, and reading its absence as
+   * "unstamped, therefore contract 1" is wrong in the one direction that costs work: it proposes a
+   * migration away from the contract the board is already on.
    */
   const kitContractIn = (dir) => {
     // Contract 3 moved the kit out of the board, so the number is DECLARED there instead of
@@ -211,8 +217,10 @@ function findBoard(root) {
         file: path.join(dir, "src", "manifest.mjs"),
         contract: stamped ?? fromKit,
         // Where the answer came from, because the three cases are told apart nowhere else:
-        // `built` a released board says so itself · `kit` no release yet, so the kit's own
-        // declaration stands in · `null` neither, which is a genuine contract-1 board.
+        // `built` a released board says so itself · `kit` no release yet, so what the board's
+        // sources declare stands in (`contract:` in `board.config.mjs`, or the `BOARD_CONTRACT` of
+        // its own `src/partials.mjs` before contract 3), and below the current contract that is a
+        // migration like any other · `null` neither, which is a genuine contract-1 board.
         contractFrom: typeof stamped === "number" ? "built" : fromKit != null ? "kit" : null,
       };
     }
@@ -273,7 +281,17 @@ function findBoards(root) {
   return found;
 }
 
-/** The parity-walk config and whether the two documents it names exist. */
+/**
+ * The parity-walk config and whether the documents it names exist.
+ *
+ * @remarks
+ * A config declares one pair of documents at the top level, or one pair per board under `boards`
+ * where a repository draws two products. The shape is read by the hooks' own reader
+ * (`documentSets`), so the detector and the write-time checks cannot disagree about which files a
+ * walk keeps. `boards` holds every pair declared; the top-level names stay for every caller that
+ * reads them and are null on a config that declares only `boards`, because naming one of two
+ * boards there would say the other is fine.
+ */
 function findParityWalk(root) {
   const configFile = path.join(root, PARITY_CONFIG);
   const raw = readIfPresent(configFile);
@@ -282,20 +300,29 @@ function findParityWalk(root) {
   let config;
   try {
     config = JSON.parse(raw);
-  } catch {
-    return { config: PARITY_CONFIG, valid: false, parityList: null, handoverFile: null };
+  } catch (error) {
+    if (!(error instanceof SyntaxError)) throw error;
+    return { config: PARITY_CONFIG, valid: false, parityList: null, handoverFile: null, boards: [] };
   }
 
-  const resolve = (key) =>
-    typeof config[key] === "string" && fs.existsSync(path.join(root, config[key])) ? config[key] : null;
+  const present = (abs, declared) => (abs && fs.existsSync(abs) ? declared : null);
+  const boards = documentSets({ root, config }).map((set) => ({
+    board: set.board,
+    parityList: present(set.parityList, set.declared.parityList),
+    handoverFile: present(set.handoverFile, set.declared.handoverFile),
+    declaredParityList: set.declared.parityList,
+    declaredHandoverFile: set.declared.handoverFile,
+  }));
+  const top = boards.find((one) => one.board === null);
 
   return {
     config: PARITY_CONFIG,
     valid: true,
-    parityList: resolve("parityList"),
-    handoverFile: resolve("handoverFile"),
-    declaredParityList: typeof config.parityList === "string" ? config.parityList : null,
-    declaredHandoverFile: typeof config.handoverFile === "string" ? config.handoverFile : null,
+    parityList: top?.parityList ?? null,
+    handoverFile: top?.handoverFile ?? null,
+    declaredParityList: top?.declaredParityList ?? null,
+    declaredHandoverFile: top?.declaredHandoverFile ?? null,
+    boards,
   };
 }
 
@@ -317,7 +344,8 @@ function findBuild(root) {
   let config;
   try {
     config = JSON.parse(raw);
-  } catch {
+  } catch (error) {
+    if (!(error instanceof SyntaxError)) throw error;
     return { config: BUILD_CONFIG, valid: false, chapterDir: null, stateLedger: null };
   }
 
@@ -501,8 +529,14 @@ export function analyze(root) {
   for (const one of boards) {
     const on = contractOf(one);
     if (on < BOARD_CONTRACT) {
+      // Each crossing by its own title, so the line says what THIS board would gain rather than
+      // what the oldest board ever lacked.
+      const each = stepsBetween(on, BOARD_CONTRACT).map((m) => `contract ${m.contract} (${m.title})`);
+      const crossings = each.length > 1
+        ? `${each.slice(0, -1).join(", ")} and ${each.at(-1)}`
+        : each[0] ?? "contracts the kit's core/migrations.mjs does not record";
       missing.push(
-        `the board at \`${rel(one.dir)}\` was built against board contract ${on} and this skill now writes ${BOARD_CONTRACT} — its frame numbers are derived from position, so they change under anyone who writes one down, and its rows scroll sideways where frames hide past the edge. \`/simplecore:board-migrate\` walks the upgrade`,
+        `the board at \`${rel(one.dir)}\` is on board contract ${on} and this skill writes ${BOARD_CONTRACT}; moving it there crosses ${crossings}. \`/simplecore:board-migrate\` walks the upgrade`,
       );
     }
     if (routedBy["wireframe-boards"] && !routesToDir(resolved, one.dir)) {
@@ -572,15 +606,23 @@ export function analyze(root) {
   if (parityWalk && !parityWalk.valid) {
     missing.push(`\`${PARITY_CONFIG}\` is not valid JSON, so the parity-walk write-time checks are off`);
   }
-  if (parityWalk && parityWalk.valid && !parityWalk.parityList) {
+  if (parityWalk && parityWalk.valid && !parityWalk.boards.length) {
     missing.push(
-      `the parity list the config names (\`${parityWalk.declaredParityList}\`) does not exist, so there is nothing to walk from`,
+      `\`${PARITY_CONFIG}\` names no parity list and no handover file, so there is nothing to walk from`,
     );
   }
-  if (parityWalk && parityWalk.valid && !parityWalk.handoverFile) {
-    missing.push(
-      `the handover file the config names (\`${parityWalk.declaredHandoverFile}\`) does not exist, so each session re-derives what the last one learned`,
-    );
+  for (const one of parityWalk?.valid ? parityWalk.boards : []) {
+    const whose = one.board ? ` for board \`${one.board}\`` : "";
+    if (!one.parityList) {
+      missing.push(
+        `the parity list the config names${whose} (\`${one.declaredParityList ?? "parityList not declared"}\`) does not exist, so there is nothing to walk from`,
+      );
+    }
+    if (!one.handoverFile) {
+      missing.push(
+        `the handover file the config names${whose} (\`${one.declaredHandoverFile ?? "handoverFile not declared"}\`) does not exist, so each session re-derives what the last one learned`,
+      );
+    }
   }
   // Only asked for where the walk actually applies: complaining that nothing routes to a walk
   // that cannot run is noise on top of the real problem.
@@ -674,7 +716,7 @@ function main() {
     if (report.board) {
       const stamp = {
         built: `contract ${report.board.contract}`,
-        kit: `contract ${report.board.contract} (kit says so — no released board.html yet)`,
+        kit: `contract ${report.board.contract} (declared by its sources; no released board.html yet)`,
       }[report.board.contractFrom] ?? `contract ${report.board.contract} (unstamped)`;
       console.log(`\nBoard: ${report.board.dir} (${report.board.kind}, ${stamp}) — read ${report.board.file}`);
       if (report.needsMigration) {
@@ -687,9 +729,12 @@ function main() {
       );
     }
     if (report.parityWalk) {
-      console.log(
-        `Parity walk: ${report.parityWalk.parityList ?? "list MISSING"} / ${report.parityWalk.handoverFile ?? "handover MISSING"}`,
-      );
+      const pairs = report.parityWalk.boards?.length ? report.parityWalk.boards : [report.parityWalk];
+      for (const one of pairs) {
+        console.log(
+          `Parity walk${one.board ? ` (${one.board})` : ""}: ${one.parityList ?? "list MISSING"} / ${one.handoverFile ?? "handover MISSING"}`,
+        );
+      }
     }
     if (report.glossary) console.log(`Glossary: ${report.glossary}`);
     if (report.missing.length) {
@@ -710,8 +755,9 @@ function isMain() {
   if (!process.argv[1]) return false;
   try {
     return import.meta.url === pathToFileURL(fs.realpathSync(process.argv[1])).href;
-  } catch {
-    return false;
+  } catch (error) {
+    if (typeof error?.code === "string") return false;
+    throw error;
   }
 }
 

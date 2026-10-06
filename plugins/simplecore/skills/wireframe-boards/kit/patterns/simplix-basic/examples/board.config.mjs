@@ -11,8 +11,10 @@ export default {
   contract: 3,
 
   // The language the BOARD is drawn in - the index legend, the filter, the viewport toggle, a
-  // section's frame count. The reading contract stays English whatever this says: it is instruction
-  // to whoever builds, not a label on the document. Unknown or absent falls back to English.
+  // section's frame count. The kit's standing reading-contract items stay English whatever this
+  // says: they are instruction to whoever builds, not a label on the document. The items a pattern
+  // or a board adds in its `intro.html` are read in the language that file is written in. Unknown
+  // or absent falls back to English.
   boardLang: 'ko',
 
   headline: 'PRODUCT — 관리 콘솔 · 현장 앱 · 공용 단말',

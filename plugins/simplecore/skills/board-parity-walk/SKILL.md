@@ -2,13 +2,17 @@
 name: board-parity-walk
 description: >-
   Use when reconciling implemented screens against a project's wireframe board
-  frame by frame, when building screens from a board no code reaches yet, when
-  working through or resuming a parity / remaining-screens list, or when setting
-  a project up for such a walk - 보드 대조 · 화면 대조 · 프레임 대조 ·
-  SCREEN-PARITY · 처리할 화면 · 남은 화면 대조 · 한 구역을 처리한다. Requires a project
-  that already has a wireframe board; the application itself need not exist yet.
-  NOT for authoring or syncing a board (simplecore:wireframe-boards), and NOT for
-  auditing one feature area in one sitting (the project's own e2e skill).
+  frame by frame, when working through or resuming a parity / remaining-screens
+  list in a project wired for a walk (.claude/board-parity-walk.json), frames no
+  code reaches yet included, or when setting a project up for such a walk -
+  보드 대조 · 화면 대조 · 프레임 대조 · SCREEN-PARITY · 처리할 화면 · 남은 화면
+  대조 · 한 구역을 처리한다. Requires a project that already has a wireframe
+  board. NOT for building screens from a board in a project wired for neither
+  this walk nor a chapter build - the user picks between the two first
+  (/simplecore:init) - and NOT once the project builds by chapters
+  (simplecore:board-to-app). NOT for authoring or syncing a board
+  (simplecore:wireframe-boards), and NOT for auditing one feature area in one
+  sitting (the project's own e2e skill).
 ---
 
 # Walking a board against the running app
@@ -36,14 +40,20 @@ against. Offer `/simplecore:board-init` and let the board come first. A
 parity-walk config sitting in a project with no board is the same situation
 wearing a hat: report it as wiring that cannot hold rather than walking anyway.
 
-**The application is the opposite case: it does not have to exist yet.** A board
-drawn before the code has no drift to find and every screen still to build, and
-that is a walk - the frames are the same frames, the list empties the same way,
-and the discipline that keeps a 150-frame walk from decaying is exactly what a
-150-frame build needs. Never refuse a walk because the routes are not there yet,
-and never wait for somebody to implement first and reconcile later: that produces
-screens shaped by whatever was easiest, which is the drift this document exists to
-prevent.
+**The application is the opposite case: on a project wired for a walk, it does not
+have to exist yet.** A board drawn before the code has no drift to find and every
+screen still to build, and that is a walk - the frames are the same frames, the list
+empties the same way, and the discipline that keeps a 150-frame walk from decaying is
+exactly what a 150-frame build needs. Never refuse a walk because the routes are not
+there yet, and never wait for somebody to implement first and reconcile later: that
+produces screens shaped by whatever was easiest, which is the drift this document
+exists to prevent.
+
+**With neither a walk nor a chapter build configured, building from the board is the
+user's choice to make, not this skill's.** The walk and `simplecore:board-to-app`'s
+chapter build are alternatives, and `/simplecore:init` presents them that way: say what
+each buys, let the user pick, and wire the walk (`/simplecore:parity-walk-init`) only
+once it is the one picked.
 
 It is a different job from the three it sits between:
 
@@ -77,14 +87,14 @@ list that no longer says what is left.
 | **Only what is left** | The list answers "what remains" and nothing else. | A walked frame is deleted, never marked; **hook** |
 | **A correction becomes an instruction** | The next agent does not repeat what this one was told wrong. | A coordination failure is fixed in this skill, the handover file, or the agent's brief - and the file is named |
 
-The four marked **hook** are checked mechanically - three at write time on the two
-documents, and one at the moment the session tries to end: frames removed from the
-list with no subagent having run blocks the stop once.
+The rules marked **hook** are checked mechanically: at write time on the walk's
+documents, and at the moment the session tries to end, where frames removed from a
+parity list with no subagent having run block the stop once.
 
 ## What the project must supply
 
 This skill carries the discipline, not the contents. Before walking, find the
-project's own four:
+project's own:
 
 1. **The parity list** - which frames still need walking, grouped into sections,
    plus the parked decisions. Frames are named by the board's **permanent id**
@@ -105,7 +115,7 @@ them - copy `assets/board-parity-walk.json`, whose fields are:
 
 | Field | What it holds |
 | --- | --- |
-| `parityList`, `handoverFile` | the two documents, relative to the project root; they start from `assets/parity-list.md` and `assets/handover.md`, and the list is then filled from the board, one line per frame that has a route |
+| `parityList`, `handoverFile` | the two documents, relative to the project root; they start from `assets/parity-list.md` and `assets/handover.md`, and the list is then filled from the board, one line per frame the board draws |
 | `parkedSection` | the heading parked decisions live under, written exactly as that project's document writes it - the check refuses to let the section vanish |
 | `logDir`, `capturesDir` | one agreed, ignored location each, so a walker never invents a place and a reader never hunts for one. What the capture names look like is fixed and not the project's to choose → `simplecore:board-to-app`'s `references/driving-the-product.md`. A project may add a `captures` note beside them for what *is* local - which module builds a name, which command reads names back, which languages it ships |
 | `narrativePhrases` | extends the point-of-view phrasing the handover check refuses, for a project writing in neither Korean nor English |
@@ -128,6 +138,10 @@ of the config stays shared:
   "capturesDir": ".captures"
 }
 ```
+
+The write-time document checks, the walk gate and the detector read every pair the config
+declares, the top-level one and each board's own, so each board's list and handover file are held
+to the rules below exactly as a single board's are.
 
 **The two documents are never shared.** The list holds what is LEFT, and a walk crosses a frame off
 it as the frame lands; one list carrying two products' frames cannot say which product a remaining
@@ -183,11 +197,12 @@ Paths are relative to this skill's own directory.
 | Situation | Read |
 | --- | --- |
 | Inside one cluster - standing the app up, building a frame no code reaches, when to cut a commit, the log line, writing the walk's prose in the project's language | `references/walking-a-cluster.md` |
-| Judging a frame - the three lenses, locale and layout rules, the failures no gate can catch | `simplecore:board-to-app`'s `references/judging-frames.md` |
+| Judging a built frame - the walk's standing lenses, locale and layout rules, the failures no gate can catch | `simplecore:board-to-app`'s `references/judging-frames.md` |
 | A measurement that surprises you, a check that has never fired, a rule about to be written, or more than one agent in one tree or on one machine | `simplecore:board-to-app`'s `references/harness.md` |
 | Opening the product to look at it - which browser driver, which simulator or emulator, how a capture route is built, and how pictures reach the person judging them | `simplecore:board-to-app`'s `references/driving-the-product.md` |
 | A project whose frames owe an artefact beyond code - captures, snapshots - or deciding what `frameDeliverables` should hold | `simplecore:board-to-app`'s `references/frame-artefacts.md` |
-| Sample data, the story the screens live in, and what a cluster cost | `simplecore:board-to-app`'s `references/scenario.md` |
+| Sample data and the story the screens live in | `simplecore:board-to-app`'s `references/scenario.md` |
+| What a cluster cost - its wall-clock span and what the runtime reports it consumed, written as each is known | `simplecore:board-to-app`'s `references/scenario.md` § Record what a unit of work cost, or the number is gone |
 
 ## Opening a session
 
@@ -219,11 +234,14 @@ That failure is the reason this skill exists.
    this plugin and carries the walker's half of the discipline. Dispatch it rather
    than composing a prompt each time - a walker briefed from scratch walks
    differently from the last one, which is the inconsistency this document exists to
-   prevent. Hand it four things and nothing more:
+   prevent. The brief carries these, and nothing the walker can read for itself:
    - the cluster: which frames, and what makes them one cluster
    - the path to `.claude/board-parity-walk.json` (it reads the documents itself)
-   - the personas this area has beyond the standing three, when the board names any
+   - the board, in a repository that draws more than one (§ A repository with two boards)
+   - the personas this area has beyond the walk's standing lenses, when the board names any
    - the section it belongs to, so its log line says where the walk is
+   - the paths it owns, and that everything else is somebody's; the staging rule in the
+     brief's own words; and, for a named walker, how its report travels (all three below)
 
    A cluster is the set of frames that have to be seen together for a disagreement
    among them to show up. Most often that is one record's whole life - born, moved,
@@ -348,9 +366,11 @@ That failure is the reason this skill exists.
    applies to the check's *premise* as much as its logic - where a check asserts
    something about real data, run the real producer over the real data rather than
    comparing the data to itself.
-6. **The coordinator only coordinates.** Picks the next cluster, deletes walked
-   frames from the list, records parked decisions, surfaces capture paths without
-   opening them. It does not open the board, drive the browser, or do the work.
+6. **The coordinator only coordinates.** Picks the next cluster, confirms the frames a
+   walker reports under `FRAMES CLEARED` are gone from the list (the walker deletes each
+   as it finishes it), records the parked decisions a walker surfaced without writing,
+   surfaces capture paths without opening them. It does not open the board, drive the
+   browser, or do the work.
 
    **This holds for every other kind of work in the session, not only for frames.** A
    walk almost never happens alone - there is a backend to build, a document to
@@ -399,7 +419,7 @@ report about who happened to be alone, not about what the discipline held.
 **A walker's session can end for reasons that have nothing to do with the work** - a
 usage limit, a dropped connection. What survives is what it committed, which is why
 committing at every point that stands on its own (`references/walking-a-cluster.md`) is
-also what makes a walker interruptible. Three rules cover every such ending:
+also what makes a walker interruptible. These rules cover every such ending:
 
 - **Read the tree rather than guessing**, and finish or discard what is half-done
   **before** dispatching the next walker into it.
@@ -465,9 +485,11 @@ on the floor.
 ## Parity is the floor, not the verdict
 
 A frame can match the board exactly and still be a screen nobody can work in. So every
-frame is **judged as well as compared**, in character, by the three that stand on any
-board - a UI/UX reviewer, the operator whose work the screens carry, and the end user
-the service is for - plus any persona the board itself names.
+frame is **judged as well as compared**, in character, through the lenses a walk applies
+to every built screen - a UI/UX reviewer, the operator whose work the screens
+carry, and the end user the service is for - plus any persona the board itself names.
+These judge the screen the code draws; the board's own persona review
+(`simplecore:wireframe-boards`) judges the frames, with a standing set of its own.
 
 **A frame is not judged until it has been seen in the longest language it ships in, and
 looking means pressing.** Both halves have failure modes that read as a clean screen: an
@@ -536,9 +558,14 @@ That last row is the one that hides. An unknown about somebody else's API is alm
 a reason to stop drawing a screen; parking it freezes a whole section behind a fact nobody
 is chasing.
 
-**Two things genuinely qualify**, and both share a property - no amount of design makes
+**Three things genuinely qualify**, and they share a property - no amount of design makes
 the answer derivable:
 
+- **A decision that changes what the product does.** A behaviour the board does not draw and
+  the spec does not settle is somebody's to decide, and that somebody is not the walk:
+  deciding it from inside a cluster is designing, and designing from inside a walk is how a
+  board stops being a contract. A small, obvious gap is not this - build it and back-fill
+  the frame (`references/walking-a-cluster.md`).
 - **A commercial or legal decision that is somebody's to make.** A price, a contractual
   term, a retention period a regulator sets. Design everything around it so the value is
   the only thing missing.
@@ -705,25 +732,9 @@ A section is done when every one of its frames is gone from the list. Before say
    but only the layer a board contracts (screens, content, states, flow, fixed wording).
    Restyling and i18n catalogue text never touch it.
 
-**A board contracts structure, not the values in its illustration.** Which fields appear, in
-which state, with which wording keys, and how one screen reaches another - those the code owes.
-The counts, names and dates drawn beside them are there to make the picture legible, and asking
-whether they are contractual is a malformed question: it is a wireframe, so of course they are
-illustration. Two failures follow from confusing the two, and both cost a session here:
-
-- **Bending the product to reach a drawn number.** A plan frame said nine works; the fixture,
-  once its own defect was fixed, honestly produced twenty-eight. Chasing the nine would have
-  meant rewriting the population to fit a drawing. The walker who measured it found the drawing
-  had never been derived from the product at all - it was drawn by hand, and one of its rows
-  named a person the app holds no photograph for.
-- **Making the drawing track the fixture.** The mirror error, and the one to guard against while
-  fixing the first: derive the illustration from live data and every fixture change ripples into
-  the board. A wireframe does not owe that coupling.
-
-**What a board's values do owe is agreement with themselves.** A person drawn as *photograph
-replaced* in one frame and *no photograph* in another is the board contradicting itself, and that
-is a defect whatever the product holds. Judge illustration against the rest of the illustration,
-never against the fixture.
+**What a board contracts and what it only illustrates**, the counts, names and dates drawn beside
+the fields included → `simplecore:board-to-app`'s `references/judging-frames.md` § A board contracts
+structure, not the values in its illustration.
 
 A section closes with its parked lines still open if nobody could settle them. Say which
 they are; do not close them by choosing for the user.
@@ -735,6 +746,7 @@ git holds what happened. Aggregate the walkers' returns into this shape, so two 
 sessions are comparable:
 
 ```text
+BOARD: <which board - only in a repository that draws more than one>
 SECTION: <letter and name> — closed / still open
 CLUSTERS WALKED: <one line each: what it was, frames cleared>
 BUILT: <frames that had no code and now do, or "none — every frame was already built">

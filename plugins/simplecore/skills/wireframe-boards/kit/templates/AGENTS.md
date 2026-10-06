@@ -22,8 +22,8 @@ rendered `board.html` is the artifact humans review; **what you edit is the cont
 
 There is no build script here. The engine, the gates, the exports, the components, the app shells
 and the stylesheet all live in the `simplecore:wireframe-boards` skill, and `wf.mjs` is a
-twenty-line bootstrap that finds them. **Nothing under `src/` is a tool** - a change to how boards
-are built belongs in the skill, where every board gets it at once.
+bootstrap that finds them. **Nothing under `src/` is a tool** - a change to how boards are built
+belongs in the skill, where every board gets it at once.
 
 | Path | Role |
 | ---- | ---- |
@@ -112,8 +112,10 @@ still be right on somebody else's board - that is the whole test.
 A step is a cluster drawn, a pattern added, or a frame changed. It is not finished until these
 three have run, **in this order**:
 
-1. **Korean audit first.** Fixing the words changes the frames, so auditing them after the visual
-   sweep means sweeping twice - and the second sweep is the one that gets skipped.
+1. **The copy audit first, where the board's copy is audited** - on a board drawn in Korean, the
+   sweep in § *A Korean board is audited at every step* below. Fixing the words changes the frames,
+   so auditing them after the visual sweep means sweeping twice - and the second sweep is the one
+   that gets skipped. A board with no copy audit starts at step 2.
 2. **Visual sweep second**, over every frame: `node wf.mjs check`. It exits non-zero on sideways
    overflow, a primary action below the fold, or the board scrolling sideways at 1900 / 1440 /
    1280px. Then **open some of the captures and look** - the script measures geometry and cannot
@@ -121,8 +123,9 @@ three have run, **in this order**:
 3. **Send the captures.** `node wf.mjs shots _shots [idPrefix]`. A step reported without pictures
    is a step nobody can check.
 
-**Stage new screen files before auditing.** The resource sweep enumerates through `git ls-files`,
-so a cluster written and not yet staged is skipped in silence and the audit reports zero.
+**Stage new screen files before auditing.** The Korean resource sweep enumerates through
+`git ls-files`, so a cluster written and not yet staged is skipped in silence and the audit reports
+zero.
 
 ## A responsive pair brings the toggle back
 
@@ -168,14 +171,15 @@ number; it carries no relation to any ordering a document happens to be arguing 
 there at all - a range like that is exactly where the missing number hides. Write the ids the
 sentence means, or name the set some other way.
 
-## Korean is audited at every step, not at the end
+## A Korean board is audited at every step, not at the end
 
-Run the sweep - it runs every check (glossary words, sentence rules, style smells, the resource
-audit when the declaration exists, the lens count) and closes with what reached what, so a check
-that stayed silent is named instead of read as a pass:
+Where the board's copy is Korean, run the `simplecore:korean-docs` sweep - it runs every check
+(glossary words, sentence rules, style smells, the resource audit when the declaration exists, the
+lens count) and closes with what reached what, so a check that stayed silent is named instead of
+read as a pass:
 
 ```bash
-T="$HOME/.claude/skills/simplecore/skills/korean-docs/scripts/l10n.mjs"
+T="$(node wf.mjs where)/skills/korean-docs/scripts/l10n.mjs"   # run from this board folder
 node "$T" sweep
 ```
 

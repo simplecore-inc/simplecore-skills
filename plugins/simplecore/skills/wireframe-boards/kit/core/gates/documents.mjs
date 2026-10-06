@@ -1,9 +1,8 @@
 // Gates that read the documents OUTSIDE this folder - `docs/` decides what exists and `_plans/`
 // decides in what order it gets built, so both drift the moment a frame is added and nobody
-// back-fills. Every check here is one that had already gone wrong silently:
+// back-fills. These had already gone wrong silently before a check held them:
 //
 //   the roadmap claimed 「바탕 화면이 정확히 한 단계씩 들어 있다」 with 49 of them in no phase
-//   the parity list, which may only ever shrink, was 136 frames short of the board
 //   two plans named `N-25`, an id whose screen had moved to `N-71` and left a gap
 //   the IA menu tree was seven entries behind the shell it describes
 //   the board cited five 별지 서식 the statutory-form appendix did not carry
@@ -173,9 +172,12 @@ export const frameManifestGate = {
   },
 };
 
-// The parity list only ever shrinks: a walked frame is deleted from it. So every frame the board
-// draws is in it until somebody walks that frame, and a frame it names that the board no longer
-// draws is a walk aimed at nothing.
+// The parity list only ever shrinks: a walked frame is deleted from it, so a frame the board draws
+// and the list does not name is a frame somebody walked, and nothing here can tell it from one
+// nobody added. What the list must never do is name a frame the board does not draw - that is a
+// walk aimed at nothing. The list's lines are its only count: a section heading carries none
+// (`assets/parity-list.md` in `simplecore:board-parity-walk`), because every walk would have to
+// edit it.
 export const parityListGate = {
   id: 'parityListGate',
   title: '걸어야 할 화면 목록이 보드와 다르다',
@@ -185,24 +187,8 @@ export const parityListGate = {
     if (!doc) return [];
     const ids = boardIds(ctx);
     const named = new Set([...doc.text.matchAll(FRAME_ID)].map((m) => `${m[1]}-${m[2]}`));
-    const bad = [];
-    const missing = [...ids].filter((i) => !named.has(i)).sort();
     const extra = [...named].filter((i) => !ids.has(i)).sort();
-    if (missing.length) {
-      bad.push(`보드에 있는데 목록에 없다 (${missing.length}장): ${missing.slice(0, 8).join(' ')}${missing.length > 8 ? ' …' : ''}`);
-    }
-    if (extra.length) bad.push(`목록에만 있다 — 보드가 그리지 않는다: ${extra.join(' ')}`);
-    // Each section's own heading count, so a back-fill that forgets the heading is caught too.
-    const lines = doc.text.split('\n');
-    for (let i = 0; i < lines.length; i += 1) {
-      const h = /^### ([A-Z])[^(]*\((\d+)장\)/.exec(lines[i]);
-      if (!h) continue;
-      let j = i + 1;
-      while (j < lines.length && !lines[j].startsWith('### ')) j += 1;
-      const n = new Set([...lines.slice(i, j).join('\n').matchAll(FRAME_ID)].map((m) => m[0])).size;
-      if (n !== Number(h[2])) bad.push(`${h[1]} 구역 머리글이 ${h[2]}장인데 실제 ${n}장`);
-    }
-    return bad;
+    return extra.length ? [`목록에만 있다 - 보드가 그리지 않는다: ${extra.join(' ')}`] : [];
   },
 };
 
@@ -369,7 +355,7 @@ export const docRegistryGate = {
   stage: 'built',
   run: (ctx) => {
     const doc = read(ctx, 'registry');
-    if (!doc) return [];                       // 문서 목록을 선언하지 않은 보드에는 걸리지 않는다
+    if (!doc) return [];                       // a board that declares no registry is not held to one
     const bad = [];
     const root = ctx.boardDir;
     const rel = (p) => p.replace(`${root}/`, '').replace(/^(\.\.\/)+/, '');

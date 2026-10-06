@@ -10,7 +10,7 @@ real, and how frames are joined and annotated.
 | `.frame` > `.device` > `.screen` | One device frame; `.frame-label` (mono, `route — screen — state`) and `.frame-notes` sit below the device |
 | `.fold` | Viewport-bottom marker drawn at `--vh`; mandatory on desktop frames |
 | `.view-input` + `.view-toggle` | Board-level narrow ⇄ wide switch: checkbox first in `<body>`, segmented label in the header |
-| `.readme` | Implementation contract rendered above the board - ships on every board |
+| `.readme` | Implementation contract rendered at the foot of the board, after every frame, and linked from its top - ships on every board |
 | **Touch chrome** | |
 | `.statusbar` | Phone status bar with notch (notch auto-hidden on tablets) |
 | `.appbar` | Screen header: back arrow slot, title, trailing chip (e.g. language switch) |
@@ -185,7 +185,7 @@ full screenful of plan to reach the first row, and the same records are drawn tw
 - **The bar is drawn by whichever view is showing.** Leaving it inside the list means the
   drawing view has no switch at all, and a reader who pressed 「도면」 has no way back. Pull
   it into a `bar_(view)` helper both branches call.
-- **A view with no room for a panel opens the record as a dialog** (P-07). A plan fills the
+- **A view with no room for a panel opens the record as a dialog.** A plan fills the
   frame, so pressing a mark opens that record where the question was asked and closes back
   onto the same plan. **Carry the panel's tabs into that dialog** - it is the same record
   read in a different place, so it offers the same way in to its sub-collections.
@@ -222,12 +222,12 @@ keeps the base's two-column shape, and the panes stack down the detail column:
 
 ```
 ┌──────────────┬─┬──────────────────────┐
-│              │ │  [tab strip — 센서]    │
-│              │ │  │  센서 pane       │  │
-│  list        │ │  [tab strip — 침묵]    │
-│  placeholder │ │  │  침묵 pane       │  │
-│              │ │  [tab strip — 사건]    │
-│              │ │  │  사건 pane       │  │
+│              │ │  [tab strip: <tab 1>]│
+│              │ │  │  <tab 1> pane   │  │
+│  list        │ │  [tab strip: <tab 2>]│
+│  placeholder │ │  │  <tab 2> pane   │  │
+│              │ │  [tab strip: <tab 3>]│
+│              │ │  │  <tab 3> pane   │  │
 └──────────────┴─┴──────────────────────┘
 ```
 
@@ -247,10 +247,11 @@ keeps the base's two-column shape, and the panes stack down the detail column:
   and get built as one. `tabPanes` writes it rather than the author, because an author's note goes
   missing and the drawing that lost it still looks finished.
 
-**The name says where the tabs live, not that they were undrawn.** `<screen> — 상세 > 탭` when the
-strip is inside the detail panel, `— 목록 > 탭` when it is the page's own. No tab names and no
-count: both go stale the moment a tab moves, and the frame already draws them. The manifest label
-matches the `screen` exactly.
+**The name says where the tabs live, not that they were undrawn.** `<screen> — <detail> > <tabs>`
+when the strip is inside the detail panel, `— <list> > <tabs>` when it is the page's own, in the
+board's own words for detail, list and tabs (on `simplix-basic`: 상세 · 목록 · 탭). No tab names
+and no count: both go stale the moment a tab moves, and the frame already draws them. The manifest
+label matches the `screen` exactly.
 
 One frame per tabbed screen rather than one per pane. The base keeps its own drawing: the pane it
 opens stays where it is, and the alternative - rewriting every tabbed screen to take its open pane
@@ -275,11 +276,12 @@ missing one.
 **A base whose strip is the PAGE's has no list column to stand for, and the companion must not
 claim one.** A settings screen or a record page draws `head + tabStrip() + …` with no
 `listDetail`, so `regionPh` there is a placeholder for a column that does not exist, and the
-`— 목록 > 탭` suffix names a region the reader will look for and not find. Drop both: the
-companion is one column of panes, and its title ends in `— 탭`. Pass `region: '화면'` so the
-note says 화면의 탭 rather than 상세 패널의 탭 and points at the page's own verbs. The suffix is a
-three-way choice, decided by where the strip sits and nothing else - `— 상세 > 탭` inside a
-list-detail's panel, `— 목록 > 탭` for a strip over the list, `— 탭` when the screen has neither.
+`— <list> > <tabs>` suffix names a region the reader will look for and not find. Drop both: the
+companion is one column of panes, and its title ends in `— <tabs>`. On `simplix-basic` pass
+`region: '화면'` so the note says 화면의 탭 rather than 상세 패널의 탭 and points at the page's own
+verbs. The suffix is a three-way choice, decided by where the strip sits and nothing else -
+`— <detail> > <tabs>` inside a list-detail's panel, `— <list> > <tabs>` for a strip over the list,
+`— <tabs>` when the screen has neither.
 
 **The temptation is that the two-column shape looks like the house style**, so a screen with no
 list gets the placeholder anyway and the frame reads as consistent with its neighbours. What it

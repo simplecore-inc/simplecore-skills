@@ -25,10 +25,11 @@ repository.
    normal starting point for a board-first project: every frame is simply unbuilt, and the walk
    builds it. Wire it exactly the same way.
 
-   **`boards` holding more than one entry means two products, and each walks apart.** Give each
-   board its own `parityList` and `handoverFile` under `boards` and wire both in this one pass. One
-   list carrying two products' frames cannot say which product a remaining line belongs to, and the
-   next session picks up whichever it reads first.
+   **The detector's `boards` holding more than one entry means two products, and each walks
+   apart.** Give each board its own `parityList` and `handoverFile` under the config's `boards` key
+   and wire both in this one pass; the write-time checks, the walk gate and the detector read every
+   pair declared there. One list carrying two products' frames cannot say which product a
+   remaining line belongs to, and the next session picks up whichever it reads first.
 
    Everything else is relative to the project root.
 
@@ -67,7 +68,7 @@ repository.
    all - see the skill's section on what qualifies.
 
    Then fill the parity list from
-   the board: one line per frame that has a route, grouped into sections. Leave the handover file's
+   the board: one line per frame the board draws, grouped into sections. Leave the handover file's
    placeholders for the walker to fill on its first session, but fill in anything you can already
    read from the repository - how the servers start, what the verification commands are.
 

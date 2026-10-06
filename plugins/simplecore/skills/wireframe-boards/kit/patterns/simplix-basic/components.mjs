@@ -934,11 +934,12 @@ export const panelVerbs = (actions) => `<div class="ld-verbs">${actions}</div>`;
 /**
  * The panel in its form state - creating a record, or editing the one the list has open.
  *
- * <p>**An entity's own form opens here and not in a dialog.** license-studio settles this and
- * every entity screen there follows it: the list stays on the left and the detail region switches
- * between 상세 · 새로 만들기 · 편집. The reader keeps the list, the filter and the scroll position
- * they arrived with, and the form is as wide as the panel rather than as wide as a modal - which
- * is what lets a form of a dozen fields sit two to a row instead of stacking.
+ * <p>**An entity's own form opens here and not in a dialog.** The list stays on the left and the
+ * detail region switches between 상세 · 새로 만들기 · 편집. The reader keeps the list, the filter and
+ * the scroll position they arrived with, and the form is as wide as the panel rather than as wide as
+ * a modal - which is what lets a form of a dozen fields sit two to a row instead of stacking. Its
+ * foot carries the committing verb on its last row, which is where `simplix:frontend` (#65) puts a
+ * panel's actions.
  *
  * <p>A dialog is still right for four things and only these: a sub-entity inside a parent's tab,
  * a confirm for something irreversible, a peek at a record another field refers to, and an output.
@@ -1087,13 +1088,16 @@ export const dField = ({ label, value, peek = false, wide = false, top = false }
   // the referenced record. What it opens is the dialog the reading contract describes.
   `<span class="dvalue">${value}${peek ? `<span class="peek out" title="미리 보기">${ROW_ICONS.external}</span>` : ''}</span></div>`;
 
-/** The strip under a panel's body: the record's id, and when it was written. */
 /**
  * The strip under a panel body: what the record is, and when it was written.
  *
- * <p>**The id is whole and copyable.** An outsider reading this to write a report needs the
- * identifier in their notes, and `sub_48112…` truncated with an ellipsis cannot be transcribed
- * - an inspector who cannot name the record cannot cite it.
+ * <p>**The id carries a copy control.** Somebody writing a report or raising a ticket needs the
+ * identifier in their notes, and the copy is what puts the whole of it there. The value drawn is
+ * illustration like any other record value; what the frame specifies is an identifier with its copy
+ * control. simplix-react's `CrudDetail.AuditFooter` shortens a UUID, shows the whole of it on hover
+ * and copies the whole of it, and that satisfies the frame - the short form, the tooltip and the
+ * copy all point at one record (`simplix:frontend` invariant #36). It is never redrawn as a
+ * human-readable code: the name and the code a person knows the record by are already above it.
  *
  * <p>**A record that cannot change says so instead of showing a modified time.** On an immutable
  * record - a signature certificate, an evidence package, an export - 「수정」 beside 「생성」 says

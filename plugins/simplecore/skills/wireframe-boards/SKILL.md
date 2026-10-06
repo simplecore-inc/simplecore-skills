@@ -25,7 +25,7 @@ stay clean greyboxes; only connectors and annotations are loose and informal.
 ## Output contract
 
 One self-contained `.html` file, `<!doctype html>` through `</html>`, all CSS
-inline in one `<style>` block. These six hold on every board:
+inline in one `<style>` block. These hold on every board:
 
 **Past a few hundred frames a board may be split**, and only then: it declares an
 axis in `board.config.mjs` and the build writes one file per part plus an entry
@@ -35,8 +35,8 @@ it renders offline, alone, with no external resource. What does not survive is
 *one file is the whole board*: a reader handed one part has the frames of that
 part, so the entry page states that the files are one set, the reading contract
 gains an item saying so on every one of them, and a link that crosses is written
-`<file>#<anchor>`. A board that declares no axis writes one file, as before, and
-nothing here changes for it.
+`<file>#<anchor>`. A board that declares no axis writes one file, and nothing
+here changes for it.
 
 1. **No external resource** - no images, fonts, or stylesheets; system font
    stack only. The file must render identically offline, attached to a doc, or
@@ -55,9 +55,13 @@ nothing here changes for it.
    the board may change, and no board content may depend on either.** Filtering the
    BOARD would let a reviewer be shown a shorter board than the one that exists,
    and is the line this exception does not cross.
-3. **Greyscale plus exactly ONE accent color**, reserved for connectors,
-   annotation pins, stickies, fold lines, and `OPEN:` markers. A second accent
-   turns the board into a design and reviewers critique colors instead of flows.
+3. **Greyscale plus exactly ONE accent color.** It marks what the board says
+   about the screens - connectors, annotation pins, stickies, fold lines,
+   `OPEN:` markers - and the board's own reading aids: the permanent-id chip, the
+   feature chip, the index entry in view. Inside a frame a pattern may draw one
+   state's emphasis in it - a warning, an unread item, a destructive action -
+   which is the same hue, not a second one. A second accent turns the board into
+   a design and reviewers critique colors instead of flows.
 4. **The `.readme` implementation contract ships on every board, and on every
    file of a split one**, and is never deleted or trimmed - a board reaches its
    reader stripped of the conversation that produced it, and both people and LLMs
@@ -68,8 +72,9 @@ nothing here changes for it.
    conventions outrank anything the board's shapes imply. Board-specific caveats
    are appended as further numbered items, never substituted for the standing
    ones.
-   **It sits at the FOOT of the board**, after every frame, with a link to it in
-   the header. It is read once, before implementing, and at the top it stands
+   **It sits at the FOOT of the board**, after every frame, and the top of the
+   board links to it: the kit's index carries a READ jump, a hand-written board's
+   table of contents a link. It is read once, before implementing, and at the top it stands
    between every later reader and the frames they came for. The PDF does not
    carry it at all: implementing is done from the HTML board, and the PDF is the
    copy that gets read, sent, and printed. On a kit-built board the three layers -
@@ -123,8 +128,9 @@ nothing here changes for it.
      `references/build-kit.md`. The deliverable is identical - every rule here
      still applies - but each frame is authored as a `src/screens/` file composed
      from a **common pattern**'s components, and the machinery stays in this skill
-     (`kit/`) rather than being forked into the project. The board's only script
-     is a twenty-line `wf.mjs` that finds the kit.
+     (`kit/`) rather than being forked into the project. The board's own
+     scripts are `wf.mjs`, a bootstrap that finds the kit, and `dev.sh`, which
+     runs `wf.mjs serve`.
 3. **Organize into flow sections.** One `<section class="flow">` per user flow or
    feature area, with a lettered title (`A. Sign-in`, `B. Checkout`) and a frame
    count. Add a `<nav class="toc">` when the board has more than two sections -
@@ -182,16 +188,19 @@ piece buys.
 
 ## Self-check (before delivering)
 
-Six of these are checked mechanically the moment the board is written - the
-`.readme` contract, external resources, the script rule, frame labels,
-narrow/wide pairing, desktop folds, and the single accent. That check reports at
-write time and reports again on every edit, so treat a finding from it as this
-list speaking early rather than as a separate gate. Everything below that it
-cannot see - overflow at a given width, reading order, step numbering, whether
-the fold sits under the primary action - is still yours to verify by looking.
+Part of this is checked mechanically the moment a board file is written or
+edited (`hooks/check-board.mjs`): the `.readme` contract, external resources, the
+script rule, a label on every frame with its permanent id and bracketed
+position, narrow/wide pairing and the toggle a pair needs, desktop folds, and
+the single accent. Treat a finding from it as this list speaking early rather
+than as a separate gate. A kit-built board is written by its build, which holds
+its own gates. Everything below that neither can see - overflow at a given
+width, reading order, step numbering, whether the fold sits under the primary
+action - is still yours to verify by looking.
 
 - The `.readme` implementation contract is present and complete, at the **foot**
-  of the board, with the header's link reaching it - and absent from the PDF.
+  of the board, with a link from the top of the board reaching it - and absent
+  from the PDF.
 - Frame inventory ⇄ board: every inventory item (and every brief checklist item)
   has exactly one frame - one pair, for paired items; report the final frame
   count per section.
@@ -213,8 +222,7 @@ the fold sits under the primary action - is still yours to verify by looking.
   near-white-on-white regions.
 - Flow reads left-to-right within each row; step numbering is continuous and
   holds in both toggle states.
-- The single accent appears only on connectors, pins, stickies, folds, `OPEN:`
-  notes, and the `.readme` rule.
+- Exactly one accent hue appears, and only where rule 3 places it.
 - The persona review was offered - and, when the user accepted, its findings are
   in the board (new frames, `OPEN:` notes, corrected wording) rather than in the
   conversation, and this checklist ran again after them.

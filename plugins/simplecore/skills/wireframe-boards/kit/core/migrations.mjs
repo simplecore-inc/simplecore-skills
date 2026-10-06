@@ -55,7 +55,7 @@ export const MIGRATIONS = [
     steps: [
       'Delete the board\'s `tools/` directory — every script in it now lives in the kit.',
       'Write `wf.mjs` in the board folder: the bootstrap that resolves the kit and forwards to it.',
-      'Replace `src/components.mjs`, `src/partials.mjs` and `src/styles.css` with the pattern\'s copies; keep only what the board genuinely added, in `src/styles.css` (appended) and `src/local.mjs`.',
+      'Replace `src/components.mjs`, `src/partials.mjs` and `src/styles.css` with the pattern\'s copies. A style the board genuinely added stays in `src/styles.css`, which the kit appends to the pattern\'s; a component or a gate it added goes into the pattern, and a board whose components are mostly its own takes a pattern of its own with `node wf.mjs pattern adopt`.',
       'Split `src/chrome.mjs`: the shells come from the pattern, and the board keeps its own menu tree, roles and purchase as the data it hands the shell factory.',
       'Move the board\'s own gates — the ones that read this product\'s documents — into `board.gates.mjs`.',
       'Declare `pattern:` and `contract: 3` in `board.config.mjs`, and move the document paths under `documents:`.',
@@ -79,7 +79,9 @@ export const MIGRATIONS = [
       'A board switching `dismissibleNotices` on owes the header controls with it — `pageHeader({ notices, drop })` — or its cards close with no way back.',
       'Raise `contract` to 4 in `board.config.mjs`, build, and confirm the board is unchanged apart from those two.',
     ],
-    breaking: false,
+    // A board still declaring 3 is refused by this kit like any board behind it (`loadBoard`), so
+    // not crossing stops the build even though crossing changes nothing a board did not ask for.
+    breaking: true,
   },
 ];
 

@@ -8,12 +8,49 @@
 // pattern's cases and a board's by its own. A gate with no case at all is named at the end: that
 // is the state every gate decays into, and it is invisible from the build.
 import { pathToFileURL, fileURLToPath } from 'node:url';
-import { existsSync, readdirSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { loadBoard } from '../context.mjs';
 import { gatesFor } from '../gates/index.mjs';
+import { BOARD_CONTRACT } from '../partials.mjs';
+import { LATEST } from '../migrations.mjs';
 import { makeBuilders, runCases, untested } from './harness.mjs';
 import { cases as coreCases } from './cases.mjs';
+
+const HERE = dirname(fileURLToPath(import.meta.url));
+
+/** The skill's single-file starting point, which stamps the contract it was written against. */
+const TEMPLATE = join(HERE, '../../../assets/board-template.html');
+
+/**
+ * Every copy of the contract number agrees with `BOARD_CONTRACT`.
+ *
+ * <p>The number has one owner, `core/partials.mjs`, and two copies written by hand: the newest
+ * entry of `core/migrations.mjs`, and the stamp in `assets/board-template.html`. A copy left behind
+ * fails nothing on its own - it tells every board copied from the template that it needs migrating,
+ * or leaves `doctor` reporting a record that stops short of the kit - so it is asked here, with the
+ * other questions about the kit itself.
+ *
+ * @returns `{ bad, unread }` - one line per copy that disagrees, and the copies that could not be
+ *   read on this install (a kit copied into a board carries no `assets/`)
+ */
+function contractCopies() {
+  const bad = [];
+  const unread = [];
+  if (LATEST !== BOARD_CONTRACT) {
+    bad.push(`core/migrations.mjs의 마지막 계약은 ${LATEST}인데 BOARD_CONTRACT는 ${BOARD_CONTRACT}입니다`);
+  }
+  if (existsSync(TEMPLATE)) {
+    const stamp = /<meta\s+name="wireframe-board-contract"\s+content="(\d+)"/.exec(readFileSync(TEMPLATE, 'utf8'));
+    if (!stamp) bad.push('assets/board-template.html에 wireframe-board-contract 표기가 없습니다');
+    else if (Number(stamp[1]) !== BOARD_CONTRACT) {
+      bad.push(`assets/board-template.html은 계약 ${stamp[1]}을 표기하는데 BOARD_CONTRACT는 ${BOARD_CONTRACT}입니다`);
+    }
+  } else {
+    unread.push('assets/board-template.html');
+  }
+  return { bad, unread };
+}
 
 /** Whatever a module exports that IS a gate rather than a helper. */
 const gateShaped = (module) => Object.values(module)
@@ -40,8 +77,7 @@ const gateShaped = (module) => Object.values(module)
  */
 async function unreached(registered, patternDir) {
   const held = new Set(registered.map((g) => g.id));
-  const here = dirname(fileURLToPath(import.meta.url));
-  const folders = [join(here, '../gates'), join(patternDir, 'gates')];
+  const folders = [join(HERE, '../gates'), join(patternDir, 'gates')];
   const found = [];
   for (const folder of folders) {
     if (!existsSync(folder)) continue;
@@ -83,6 +119,12 @@ export async function runGateTests(boardDir) {
     console.log('저장소에 있고 아무것도 실행하지 않습니다 — 찾아본 사람은 규칙이 지켜진다고 읽습니다.');
     console.log('CORE_GATES(kit/core/gates/index.mjs)나 패턴의 gates에 넣습니다.');
   }
+  const copies = contractCopies();
+  if (copies.bad.length) {
+    console.log(`\n계약 번호의 사본이 BOARD_CONTRACT와 다릅니다: ${copies.bad.join(' · ')}`);
+    console.log('BOARD_CONTRACT를 올리는 변경에서 마이그레이션 항목과 템플릿 표기를 함께 고칩니다.');
+  }
+  if (copies.unread.length) console.log(`\n계약 표기를 대조하지 못한 사본: ${copies.unread.join(', ')}`);
   console.log(bad ? `\n${bad}건 실패` : `\n${collected.length}건 모두 통과`);
-  return bad === 0 && missing.length === 0 && orphans.length === 0;
+  return bad === 0 && missing.length === 0 && orphans.length === 0 && copies.bad.length === 0;
 }

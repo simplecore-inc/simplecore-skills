@@ -17,6 +17,8 @@
 //   2  permanent ids from the file name + bracketed board position; rows wrap, no sideways scroll
 //   3  the kit lives in the skill and the board holds only its own content: a declared pattern
 //      supplies the components, the shells and the styles, and the board's `tools/` is gone
+//   4  a pattern capability is off until the board declares it in `patternOptions`, and
+//      simplix-basic's `fNum` width and `listDetail` list gutter change for every board
 import { textFor } from './text.mjs';
 
 export const BOARD_CONTRACT = 4;
@@ -292,14 +294,14 @@ ${parts.map((p) => `    <a class="ep" href="${p.file}">
   // narrow⇄wide toggle keeps working (its rules reach frames via the sibling combinator);
   // pair a `.view-toggle` label in your intro/header to flip it. The only script is a
   // progressive-enhancement navigation aid over the TOC (no external resources): it
-  // highlights the entry of the frame you click or view, and filters the index as you
-  // type. Both act on the SIDEBAR only - every frame stays on the board, no content is
-  // created, and with JS off the board renders whole, the index lists everything and every
-  // anchor still works.
+  // highlights the entry of the frame you click or view, filters the index as you type, and
+  // sets the index's width from its handle. All of it acts on the SIDEBAR only - every frame
+  // stays on the board, no content is created, and with JS off the board renders whole, the
+  // index lists everything and every anchor still works.
   // `readmeHtml` is the last thing in the board, after every frame. It is read once, before
   // implementing, and at the top it would stand between every later reader and the frames they
-  // came for - on a board hundreds of frames long that is a toll paid on every visit. The header
-  // links to it, so «reachable» does not depend on scrolling to the end.
+  // came for - on a board hundreds of frames long that is a toll paid on every visit. The
+  // sidebar's READ jump links to it, so «reachable» does not depend on scrolling to the end.
   // `viewportPairs` decides what the board does with a narrow/wide pair.
   //
   // `narrow-first` · `wide-first` - one member on screen, the header's toggle switching between
@@ -353,9 +355,10 @@ ${readmeHtml}
     if (scroll && a.scrollIntoView) a.scrollIntoView({ block: 'nearest' });
   }
 
-  // The outline on the picked frame. It used to be the :target selector alone, which only ever
-  // fires from the address bar — so the board answered a click in the index and stayed silent on
-  // a click on the frame itself, and the reader could not tell which of two adjacent states.
+  // The outline on the picked frame, set here rather than left to the :target selector, which
+  // only fires from the address bar: a board that answered a click in the index and stayed silent
+  // on a click on the frame itself would leave the reader unable to tell which of two adjacent
+  // states they picked.
   function pick(id) {
     frames.forEach(function (f) { f.classList.remove('is-picked'); });
     var f = document.getElementById(id);

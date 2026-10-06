@@ -22,7 +22,12 @@ part of this the user knows better than you do.
 Skip the ask only for a change that touches no screen - a typo in a note, a TOC
 entry, a build tweak.
 
-## The standing four, plus whoever else the board has
+## The standing four of a board review, plus whoever else the board has
+
+These are the personas that review the BOARD - frames read before or beside the code, for whether
+a person could finish their job on them. Judging a built screen against its frame, in a parity walk
+(`simplecore:board-parity-walk`) or a chapter build (`simplecore:board-to-app`), is a different
+activity with its own lenses, and neither set stands in for the other.
 
 | Persona | Asks | Counts as a defect |
 | --- | --- | --- |
@@ -76,9 +81,10 @@ Three rules keep this honest:
 - **No agent edits the board.** They report; the findings are folded in afterwards,
   once, by the session that owns the board. Several agents rewriting frames in
   parallel produces a board nobody authored.
-- **One persona per agent.** Handing two personas to one agent is how the
-  administrator's knowledge rescues the end user's screen - the exact failure the
-  in-character rule below exists to prevent.
+- **One persona per agent, in this review.** Handing two personas to one agent is how
+  the administrator's knowledge rescues the end user's screen - the exact failure the
+  in-character rule below exists to prevent. A walker applying its walk's lenses to the
+  screens it built does so in one context; that is the walk's rule for its own activity.
 - **Spawn them unnamed.** Where the harness turns a *named* subagent into a teammate, it
   waits for messages instead of returning a report, and its idle pings are indistinguishable
   from work in progress. A full set of named persona agents can return nothing at all while

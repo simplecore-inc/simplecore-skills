@@ -96,7 +96,9 @@ export function makeBuilders(boardConfig = {}) {
     srcOf: (n) => (over.src ?? {})[n] ?? '',
     ...over,
   });
-  const PARITY_OK = '### X 구역 (2장)\n- X-01 `x-01-a` — 하나\n- X-02 `x-02-b` — 둘\n';
+  // The shape `assets/parity-list.md` in `simplecore:board-parity-walk` writes: a lettered
+  // heading with no count, one line per frame left.
+  const PARITY_OK = '### X 구역\n- X-01 `x-01-a` - 하나\n- X-02 `x-02-b` - 둘\n';
   const ROADMAP_OK = '- **화면 2장**\n  - (X) **X-01** 하나 / **X-02** 둘\n';
   const CHROME_SRC = "const MENU = {\n  X: { title: '구역', items: ['하나', '둘'] },\n};\n";
   const ROLES_SRC = "export const ROLES = { sys: '시스템 관리자', gate: '문지기' };\n";

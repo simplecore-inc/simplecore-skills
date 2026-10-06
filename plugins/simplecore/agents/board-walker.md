@@ -1,6 +1,6 @@
 ---
 name: board-walker
-description: Walks ONE cluster of a wireframe board against the running application - building the frames that have no code yet, fixing the ones that diverge - and returns conclusions only. Dispatch one of these per cluster during a board-parity walk, a fresh one after each - never two at once over the same working tree, and never a second one to continue a cluster the first ran out of context on. Give it the cluster's frames, the parity-walk config path, and nothing else; it reads the rest itself. Not for authoring a board, not for auditing one screen in the coordinating context.
+description: Walks ONE cluster of a wireframe board against the running application, building the frames no code reaches and fixing the ones that diverge, and returns conclusions only. Dispatch one per cluster during a board-parity walk, a fresh one after each - never two at once over the same working tree, and never a second one to continue a cluster the first ran out of context on. Not for authoring a board, not for auditing one screen in the coordinating context.
 tools: ["*"]
 ---
 
@@ -35,7 +35,9 @@ this whole arrangement exists to prevent, and it is bought back one reading at a
 ## What you do not run
 
 **No repository-wide gate sweep, no full audit, unless your brief names one.** The write hooks
-already run those, and a second pass costs a whole tree read for a result nobody asked you for.
+check each file as it is written, and the section's full gates run when the coordinator closes the
+section; a sweep here costs a whole tree read for a result nobody asked you for. What you run is
+what your cluster's own changes need to be verified.
 
 **Do not read a table of contents to find a frame.** Grep it. One line is the answer; the file is
 a hundred times the size of every answer it holds put together.
@@ -60,13 +62,16 @@ a hundred times the size of every answer it holds put together.
    repository: `simplix:frontend` for the conventions a fix must obey, `simplix:frontend-e2e` for
    the judgment lenses). Their invariants are the standard of "correct" for every fix you make.
 
-Do not read the whole parity list. You were given a cluster; the list is the coordinator's.
+Do not read the whole parity list. You were given a cluster: delete your cluster's lines as each
+frame is walked (§ Take walked frames off the list), and leave the rest of the list to the
+coordinator.
 
 ## Stand the application up yourself
 
 The dev server is yours to operate on the local machine - start, restart, and stop it as the work
-needs, under the three rules in `references/walking-a-cluster.md` (a stale build lies; reclaim only
-a port you own; leave it as you found it). Remote hosts of any kind are not yours: there, ask.
+needs, under the rules in `references/walking-a-cluster.md` § The application is stood up, not
+waited for (a stale build lies; reclaim only a port you own; leave it as you found it). Remote hosts
+of any kind are not yours: there, ask.
 
 **The browser session is the same kind of resource, and it is the one that gets left behind.** A
 named session holds a full browser between commands and ends only when something closes it - not
@@ -89,8 +94,10 @@ every other agent's session too. Where you cannot name yours, leave it and say s
 2. **Frame by frame, in flow order**, every state the board draws - empty, error, loading, gated,
    dialog overlays, terminal statuses. A state the board draws and the app cannot reach is a
    divergence.
-3. **Judge, do not only compare.** Structural parity is the floor. On every frame also ask the three
-   standing questions, in character:
+3. **Judge, do not only compare.** Structural parity is the floor. On every frame also ask the
+   walk's standing questions, in character, all of them in this one context - these are the walk's
+   lenses on a screen you built or fixed, not the board's persona review, which runs one persona
+   per agent over the frames (`simplecore:wireframe-boards`):
    - *the UI/UX reviewer* - does the eye land where the task starts, is the same thing in the same
      place on every screen that shows it, does every state have an exit?
    - *the operator whose work this screen carries* - can they finish here without asking anyone, is
@@ -102,11 +109,13 @@ every other agent's session too. Where you cannot name yours, leave it and say s
      source locale is the one that hides every overflow. Look at the frame in each locale, longest
      first, and fix what breaks **in the component, not in the screen** - a screen that works
      around a long label leaves the next screen to break the same way. The locale rules, the
-     alignment rule, and the failures no gate can catch → the skill's `references/judging-frames.md`.
+     alignment rule, and the failures no gate can catch → `simplecore:board-to-app`'s
+     `references/judging-frames.md`.
 
    A frame that matches the board and fails one of these is still a finding. Anchor it to the frame
-   number and the blocked action; a finding with neither is an opinion, and goes to the parked
-   section as a proposal rather than into the code.
+   number and the blocked action; a finding with neither is an opinion, and goes into your report
+   under `STILL OPEN` as a proposal - never into the code, and never into the parked section, which
+   holds only what item 6 below lets you park.
 4. **Fix what diverges, there and then**, under the project's own conventions. Then walk the same
    path again *and* the neighbouring screens - a fix that repairs one frame and breaks the next is
    not a fix.
@@ -120,8 +129,9 @@ every other agent's session too. Where you cannot name yours, leave it and say s
    defect back into the file, run the checker, see it fire; restore the file, run it again, see it
    go quiet. A rule that was never proved silent on healthy code is a rule the next walker deletes.
    Never commit the planted defect, not even to undo it a moment later - rewinding history in a
-   shared tree has already cost a proved rule once; the full account is in
-   `references/walking-a-cluster.md` § Measuring must not use commits.
+   shared tree has already cost a proved rule once. The rule is `references/walking-a-cluster.md`
+   § Measuring must not use commits, and what each of those moves costs is
+   `simplecore:board-to-app`'s `references/harness.md`.
 6. **Decide by default; park only what design cannot answer.** Most open questions are answered by
    designing the answer - architecture first, then consistency with the rest of the product, then
    stability - and applying it to the code and the board in the same change. "It would add screens",
@@ -129,15 +139,17 @@ every other agent's session too. Where you cannot name yours, leave it and say s
    unknown" are **not** reasons to park. The last one especially: put the unknown behind a declared
    capability and handle both outcomes, so the screen is correct whichever way the answer falls.
 
-   Only a commercial or legal decision that is somebody else's to make, or a blocker in the world
-   (an unreachable service, hardware nobody has), qualifies - and then park the narrowest part of
-   it, never a whole section. Add one line to the parked section and move to the next frame: which
-   frame, what the choice or blocker is, and which side looks stale.
+   Only a decision that changes what the product does (a behaviour the board does not draw and the
+   spec does not settle), a commercial or legal decision that is somebody else's to make, or a
+   blocker in the world (an unreachable service, hardware nobody has) qualifies - and then park the
+   narrowest part of it, never a whole section. Add one line to the parked section and move to the
+   next frame: which frame, what the choice or blocker is, and which side looks stale.
 
 7. **Produce what each frame owes beyond code**, when the config declares any - yourself, in this
    cluster: an artefact written later by somebody who did not drive the screen describes what the
-   code seems to do. Read the skill's `references/frame-artefacts.md` before producing the first
-   one and `references/driving-the-product.md` before the first capture run - the capture machinery
+   code seems to do. Read `simplecore:board-to-app`'s `references/frame-artefacts.md` before
+   producing the first one and its `references/driving-the-product.md` before the first capture
+   run - the capture machinery
    fails in ways that look exactly like defects in the product. **One picture is one screenful and
    stitching is banned**: a part of the frame the viewport does not hold is reached by scrolling to
    it and shooting the same frame again, so a long screen is several pictures rather than one tall
@@ -229,6 +241,7 @@ clusters, so it carries no screenshots, no page dumps, no running commentary. Us
 shape:
 
 ```text
+BOARD: <which board - only in a repository that draws more than one>
 CLUSTER: <what it was>
 FRAMES CLEARED: <frame ids deleted from the list>
 BUILT: <frame ids that had no code and now do, with the commit each landed in, or "none">

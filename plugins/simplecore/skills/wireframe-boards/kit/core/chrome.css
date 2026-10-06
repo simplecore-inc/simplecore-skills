@@ -29,7 +29,7 @@
     --fill-deep: #d5dae1;   /* deep greybox fill */
     --paper: #f7f8fa;       /* board background */
     --screen: #ffffff;
-    --accent: #e05d38;      /* the ONE accent: arrows, pins, stickies, folds, OPEN */
+    --accent: #e05d38;      /* the ONE accent: arrows, pins, stickies, folds, OPEN, the reading aids */
     --accent-tint: #fdeee7;
     --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     --sans: system-ui, -apple-system, "Segoe UI", "Helvetica Neue", sans-serif;

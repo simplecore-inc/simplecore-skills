@@ -95,21 +95,23 @@ export const tabbar = (tabs) =>
  * The window a desktop frame is drawn in.
  *
  * **The kit's device shell draws exactly one primitive, and this is it** - `frame()` hands every
- * desktop frame its `url` and asks this function for the chrome above `.screen`. Three windows
- * are needed here and the address is what tells them apart, because the address is the only thing
- * the shell passes through:
+ * desktop frame its `url` and the window kind its screen declares, and asks this function for the
+ * chrome above `.screen`. The kind is the kit's own axis (`references/device-frames.md`):
  *
- * - `app.example.com/…`  a browser tab, which is what all but three frames are
- * - `app:<title>`        the installed program's own window - no address bar, because the shell
- *                        picks its own port and the reader never sees a URL
- * - `none:`              no window at all: the tray menu is drawn against the desktop
+ * - `chrome: 'browser'`, the default    a browser tab showing `url`
+ * - `chrome: 'app'` with `appTitle`     the installed program's own window - no address bar,
+ *                                       because the shell picks its own port and the reader never
+ *                                       sees a URL
+ * - `chrome: 'none'`                    no window at all, as the tray menu is drawn against the
+ *                                       desktop; the kit draws no bar and does not call this
  *
- * A screen says which by writing the scheme in front of its address, so a reader of the screen
- * file sees the window kind on the same line as the address rather than in a second field.
+ * The kind written into the address (`url: 'app:<title>'`, `url: 'none:'`) is read as well, so a
+ * screen that declares it there draws the same window.
  */
-export const browserbar = (url) => {
+export const browserbar = (url, { chrome = 'browser', title = '' } = {}) => {
   if (url === 'none:') return ''
   if (url.startsWith('app:')) return appwindow(url.slice(4))
+  if (chrome === 'app') return appwindow(title || url)
   return `<div class="browserbar"><span class="dots"><i></i><i></i><i></i></span><span class="url">${url}</span></div>`
 }
 

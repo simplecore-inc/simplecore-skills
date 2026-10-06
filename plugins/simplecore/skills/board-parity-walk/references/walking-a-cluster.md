@@ -142,7 +142,7 @@ Stage yours, commit yours, and say in the report what you could not attribute.
 delete the probe. Nothing needs to be committed for a rule to fire, and `reset`, `stash`
 and `checkout --` have no place in a measurement at all - in a shared tree they drop
 somebody else's work while every file stays on disk and every check stays green.
-`harness.md` carries what each of these costs.
+`simplecore:board-to-app`'s `references/harness.md` carries what each of these costs.
 
 **The temptation is a checker that disagrees with you, not a file you want to read.** Knowing
 whether a complaint is yours or was already there means running the tool over the file *without*

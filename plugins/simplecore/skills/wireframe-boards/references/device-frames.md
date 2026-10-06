@@ -61,7 +61,8 @@ desktop sections freely.
     arrows. Which one opens is the board's PRIMARY width, not a preference: get it wrong on a board
     that is mostly one width and the other member of every pair is hidden on arrival, and a reader
     who follows an index entry to a frame that is not on the page reports it as **missing**, not as
-    hidden, because nothing there says a toggle is why.
+    hidden, because nothing there says a toggle is why. A console of a hundred desktop screens with
+    one phone pair sets `wide-first`; a product drawn phone-first keeps the default.
   - `stacked` - both members on the page, the narrow one directly under its wide twin, and no
     toggle emitted at all. Right wherever pairs are the exception rather than the rule: the reader
     meets the two widths of one screen together, which is what a pair is for, and there is no
@@ -72,13 +73,6 @@ desktop sections freely.
   how orientation-locked products (kiosk mounts, vehicle docks) and single-width
   admin consoles are drawn. A board with no pairs at all deletes the toggle input
   and label; a control that does nothing erodes trust in the ones that do.
-- **The board opens on its PRIMARY width, and that is a decision, not a preference.**
-  `board.config.mjs` `defaultViewport` takes `'narrow'` (the default) or `'wide'`, and the build
-  stamps the checkbox accordingly. Get it wrong on a board that is mostly one width and the wide
-  member of every pair is hidden on arrival - a reader who follows an index entry to a frame that
-  is not on the page reports it as **missing**, not as hidden, because nothing on the page says a
-  toggle is why. A console of a hundred desktop screens with one phone pair sets `'wide'`; a
-  product drawn phone-first leaves it alone.
 - **Wide is a reflow, not a stretch.** A single phone-shaped column at 1024px is
   itself a wireframe finding: use `.split` master-detail panes, `.grid-2` /
   `.grid-3` / `.grid-4` card grids, a full `.sidebar` where the narrow view showed
