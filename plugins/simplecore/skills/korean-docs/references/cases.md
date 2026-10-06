@@ -74,8 +74,8 @@ work.
   lost 698 lines across 46 files from the sentence commands, while `check` read them.
 - **SVG read as one line of markup** (`scripts/l10n.mjs`, `EXTRACTOR_CASES`): every rule anchored on
   `$` reported 0 over 35 files, and the 0 read as clean.
-- **A lens stem without its family** (`scripts/l10n.mjs`, `rules --test`): 「붙는」 stood in the lens
-  without 붙이 · 붙은 · 붙지 · 붙어, and 126 sites walked past while the lens reported the family as
+- **A lens stem without its family** (`scripts/l10n.mjs`, `rules --test`): `붙는` stood in the lens
+  without `붙이` · `붙은` · `붙지` · `붙어`, and 126 sites walked past while the lens reported the family as
   found.
 - **The untranslated check on markdown and source** (`scripts/l10n.mjs`, `audit`): 132 such hits
   drowned the real findings in one `_plans` tree; one repository that turned `untranslated` off
