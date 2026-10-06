@@ -10,8 +10,8 @@ conversation. Invoke `simplecore:wireframe-boards` first and follow it; this com
 it asks for.
 
 **The board holds content and nothing else.** The engine, the gates, the exports, the components
-and the app shells live in this skill under `kit/`, and `wf.mjs` - twenty lines - finds them. Do
-not write a build script, and do not copy one in.
+and the app shells live in this skill under `kit/`, and `wf.mjs`, a bootstrap, finds them. Do not
+write a build script, and do not copy one in.
 
 ## 1. Find where it goes, and what is already there
 
@@ -61,8 +61,8 @@ Ask **one more thing in the same call**: whether to keep the pattern's starter f
 
 | | What it means |
 | --- | --- |
-| **Keep them** (recommended) | Nine frames - sign-in, a dashboard, a list-detail with its create and empty states, two phone frames, two terminal frames. Each is an answer to a question the board will be asked on its first day. Draw over them. |
-| **Empty board** | Only the scaffolding. Right when the screens are about to be authored from a specification and nine frames about records would be nine frames to delete. |
+| **Keep them** (recommended) | The frames `init` copies from the pattern's `examples/` - on `simplix-basic` a sign-in, a dashboard, a list-detail with its create and empty states, the phone app's home and form, and the terminal's idle and done states; on `penstock-console` the console home. Each is an answer to a question the board will be asked on its first day. Draw over them. |
+| **Empty board** | Only the scaffolding. Right when the screens are about to be authored from a specification and the starter frames would be frames to delete. |
 
 ## 3. Scaffold it
 
@@ -71,9 +71,9 @@ node "${CLAUDE_PLUGIN_ROOT}/skills/wireframe-boards/kit/bin/wfb.mjs" init \
   --board <board dir> --pattern <chosen> --name "<product name>" [--no-examples]
 ```
 
-It writes `wf.mjs`, `.gitignore`, `CLAUDE.md`, `AGENTS.md`, `board.config.mjs`, `src/chrome.mjs`,
-`src/components.mjs`, `src/intro.html`, `src/manifest.mjs` and the starter screens. **Nothing
-already there is overwritten** - it reports what it kept.
+It writes `wf.mjs`, `dev.sh`, `.gitignore`, `CLAUDE.md`, `AGENTS.md`, `board.config.mjs`,
+`src/chrome.mjs`, `src/components.mjs`, `src/intro.html`, `src/manifest.mjs` and the starter
+screens. **Nothing already there is overwritten** - it reports what it kept.
 
 Then prove it works, and show the user:
 
@@ -86,7 +86,8 @@ cd <board dir> && node wf.mjs build --no-pdf && node wf.mjs check
 The scaffold is generic on purpose. Walk these with the user rather than guessing:
 
 - `board.config.mjs` - `headline`, `boardName`, `pdfName`, and `today` (the day every dated frame
-  is read against). Delete the `phases` entry if nothing is deferred yet.
+  is read against). Delete the `phases` entry if nothing is deferred yet. Every key the kit reads
+  is in the skill's `references/build-kit.md` § What `board.config.mjs` declares.
 - `src/chrome.mjs` - the tabs, the menu tree, which role reaches what. This is the product's
   information architecture; the placeholder one draws two tabs and three clusters.
 - `AGENTS.md` - the region under the marked line is theirs. Everything above it describes the kit

@@ -27,8 +27,10 @@ the migration, written when each change was made rather than reconstructed from 
 - `needsMigration: false` → say the board is already current and stop.
 - `board: null` → there is nothing to migrate. Offer `/simplecore:board-init`.
 - `board.contractFrom` says where the number came from: `built` the released board carries the
-  stamp · `kit` nothing is released yet, so the kit's own value stands in - **not** a migration
-  candidate · `null` a released board carries no stamp, which is a genuine contract-1 board.
+  stamp · `kit` nothing is released yet, so the number is the one the board's sources declare
+  (`contract:` in `board.config.mjs`, or the `BOARD_CONTRACT` of its own `src/partials.mjs` on a
+  board from before contract 3), and below the current contract it is a migration like any other ·
+  `null` a released board carries no stamp, which is a genuine contract-1 board.
 
 ## 2. Ask - and say plainly what changes and what does not
 
@@ -55,22 +57,32 @@ from it.
 **What does not change:** every frame, every permanent id, every note, the board's structure, the
 content of `board.html` apart from the intended differences below.
 
-**What changes**, crossing into contract 3:
+The kit writes contract 4 (`BOARD_CONTRACT` in `kit/core/partials.mjs`), and a board crosses
+every contract between its own and that one. **What changes**, crossing into contract 3:
 
 | | Before | After |
 | --- | --- | --- |
-| Where the machinery lives | `tools/` in the board - build, gates, exports, checks | the skill's `kit/`, reached by a 20-line `wf.mjs` |
+| Where the machinery lives | `tools/` in the board - build, gates, exports, checks | the skill's `kit/`, reached by the `wf.mjs` bootstrap |
 | Components, shells, styles | `src/components.mjs`, `src/chrome.mjs`, `src/styles.css` in the board | the declared pattern; the board keeps a one-line shim and its own IA data |
 | The reading contract | one `src/intro.html` holding all of it | three layers - the kit's standing items, the pattern's, then the board's own |
-| Where the contract sits | the top of the board | the **foot** of the board, with a link from the header. The PDF carries none of it |
+| Where the contract sits | the top of the board | the **foot** of the board, reached from the index's READ jump. The PDF carries none of it |
 | Gates | one list in the board | the kit's, then the pattern's, then `board.gates.mjs` for this repository's own |
 | The PDF | one file beside the board, swept each build | `pdf/<name>-<stamp>.pdf`, kept, git-ignored |
-| A paired screen's opening viewport | whatever the board's own markup set | the kit's default, uniformly |
+| A paired screen's opening viewport | whatever the board's own markup set | what `viewportPairs` in `board.config.mjs` declares - `narrow-first` unless the board says otherwise |
 
-**Say the viewport default out loud where the board has narrow/wide pairs.** The kit writes the
-toggle and the rule that reads it, so the side a pair opens on is the kit's from now on - and a
-board that used to open wide opening narrow is a change to what every reviewer sees, arriving with
-nothing in the artifact to say it happened.
+**Say the opening viewport out loud where the board has narrow/wide pairs.** The kit writes the
+toggle and the rule that reads it, and the side a pair opens on is what `viewportPairs` declares
+(`narrow-first`, `wide-first`, or `stacked` to show both members) - so set it to the side the board
+opened on before. Left at the default, a board that opened wide opens narrow, a change to what every
+reviewer sees with nothing in the artifact to say it happened.
+
+**What changes**, crossing into contract 4:
+
+- `board.config.mjs` may declare `patternOptions`. A pattern capability is off until the board names
+  it, so a board that declares none draws what it drew.
+- On `simplix-basic`, two drawings move on every board, behind no switch: an `fNum` takes its width
+  from the digits it holds, and the list column of `listDetail` carries its own bottom gutter. They
+  are the only places the drawing moves.
 
 **What it costs:** the board can no longer be built on a machine without the plugin installed.
 Say this out loud - it is the one real trade, and it decides whether a CI job has to change.
@@ -113,8 +125,9 @@ Follow the `steps` the `migrations` output lists for each contract being crossed
    board that never produced a PDF has no reason to start: declaring it puts a headless browser on
    every build, which on a repository whose only gate is the build is a new way for the gate to
    fail. Leave it out and say so in the config; `node wf.mjs pdf` still renders one on demand.
-9. **Add `contract: 3` and `pattern:` to `board.config.mjs` LAST.** Raising the number is the
-   final act; doing it first makes the build stop reporting what is still undone.
+9. **Add `pattern:` and raise `contract` to the kit's number in `board.config.mjs` LAST** - after
+   the contract-4 steps below, when the board crosses both. Raising the number is the final act;
+   doing it first makes the build stop reporting what is still undone.
 10. `.gitignore` gains `.kit`, and `pdf/` where the board declares a `pdfName`; existing PDFs move
     into `pdf/`.
 11. **Sweep the names the move retired.** `tools/`, `build.mjs`, `catalog.mjs`, `src/partials.mjs`
@@ -123,6 +136,17 @@ Follow the `steps` the `migrations` output lists for each contract being crossed
     retired names registers them there with their successors. The board's own checkers are part of
     this - a script reading `src/components.mjs` or `src/styles.css` is reading a path the move
     emptied, and it will keep passing while reading nothing.
+
+For contract 4, on a board already on contract 3 or after the steps above:
+
+1. **Decide each `patternOptions` capability** the pattern declares and write the ones the board
+   wants. Declaring none is a complete answer and keeps the board as it is.
+2. **A board switching `dismissibleNotices` on owes the header controls with it** -
+   `pageHeader({ notices, drop })` - or its cards close with no way back.
+3. **State `digits` on an `fNum` that must hold more digits than the value it draws**; the default
+   reads the drawn value.
+4. **Raise `contract` to 4**, build, and look at one form frame and one list-detail frame - the
+   two places the drawing moves.
 
 A component or a gate the board added that the pattern lacks goes **into the pattern**, not into a
 local file - that is the whole point of the move, and one component kept beside the board is a
@@ -158,9 +182,10 @@ ids() { grep -o 'article class="frame[^"]*" id="[^"]*"' "$1" | sed 's/.*id="//;s
 diff <(ids /tmp/board-before.html) <(ids board.html) | grep -c '^[<>]'    # must be 0
 ```
 
-**Only three differences are allowed**: the contract stamp, the reading contract moving to the
-foot, and whatever the user asked to change on the way. Anything else is a defect in the
-migration, not a result of it.
+**These differences are allowed, and no others**: the contract stamp; crossing into contract 3,
+the reading contract moving to the foot; crossing into contract 4 on `simplix-basic`, the `fNum`
+widths and the `listDetail` list gutter; and whatever the user asked to change on the way. Anything
+else is a defect in the migration, not a result of it.
 
 Where the build refuses, read the finding before touching it: a gate that fires during a migration
 is usually reporting something the old board had and nobody could see. Fix the board, never the

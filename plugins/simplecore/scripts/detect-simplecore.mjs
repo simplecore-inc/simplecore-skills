@@ -181,7 +181,7 @@ function findBoard(root) {
    * @remarks
    * The stamp in the built board is the better answer and is tried first. But `board.html` is
    * written only once every gate passes, the coverage gate among them (every section
-   * `requiredSections` names drawn), which is late in a board's life, and an underscore-prefixed
+   * `requiredSections` names in the manifest), which is late in a board's life, and an underscore-prefixed
    * file such as `_catalog.html` is a byproduct {@link stampIn} deliberately skips. So a board that
    * is halfway through being drawn has no stamped artifact at all, and reading its absence as
    * "unstamped, therefore contract 1" is wrong in the one direction that costs work: it proposes a
