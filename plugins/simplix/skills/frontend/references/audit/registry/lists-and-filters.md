@@ -2,7 +2,7 @@
 
 # Registry - List toolbars, filters & counts
 
-## ListTotalBadge (standard "Total N" FilterBar leading badge)
+## ListTotalBadge (the "Total N" badge the FilterBar draws)
 
 | Field | Value |
 |-------|-------|
@@ -12,16 +12,14 @@
 
 ### Rule
 
-The leading total-count badge of every list FilterBar is `<ListTotalBadge count={list.pagination.total} />` - never the inline `Badge variant="outline"` + `ListIcon` + `t("list.totalCount")` triple. The component owns the icon and the framework translation. `list.hbs` emits it for scaffolded lists. EXCEPTION: a leading badge with a DIFFERENT label semantics (e.g. a floors-count badge with its own i18n key) keeps its bespoke `Badge`.
+A list's total badge is drawn by the FilterBar's `count` prop, which renders `ListTotalBadge` internally ([[FilterBar count prop (the one total badge)]] below; SKILL.md invariant #41). It never goes through `leading`, and it is never the inline `Badge variant="outline"` + `ListIcon` + `t("list.totalCount")` triple: the component owns the icon and the framework translation. A scaffolded list that carries the badge in `leading` is moved to `count` at customization time. Render `ListTotalBadge` directly only on a surface where no FilterBar draws the total. EXCEPTION: a badge with a DIFFERENT label semantics (e.g. a floors-count badge with its own i18n key) is extra summary content and keeps its bespoke `Badge` in `leading`.
 
 ```tsx
-// FORBIDDEN
-<Badge variant="outline" className="gap-1.5 font-normal">
-  <ListIcon className="size-3.5 text-muted-foreground" />
-  {t("list.totalCount", { count: list.pagination.total })}
-</Badge>
+// FORBIDDEN - a hand-built total, or the shared one handed through leading
+<CrudList.FilterBar leading={<Badge variant="outline">{t("list.totalCount", { count: list.pagination.total })}</Badge>} ... />
+<CrudList.FilterBar leading={<ListTotalBadge count={list.pagination.total} />} ... />
 // REQUIRED
-<ListTotalBadge count={list.pagination.total} />
+<CrudList.FilterBar count={list.pagination.total} ... />
 ```
 
 ## User-select filter (useUserOptions + faceted dropdown)
