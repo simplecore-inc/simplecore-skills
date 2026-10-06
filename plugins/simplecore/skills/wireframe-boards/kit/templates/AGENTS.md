@@ -175,7 +175,7 @@ audit when the declaration exists, the lens count) and closes with what reached 
 that stayed silent is named instead of read as a pass:
 
 ```bash
-T="$HOME/.claude/skills/simplecore/skills/korean-docs/scripts/l10n.mjs"
+T="$(node wf.mjs where)/skills/korean-docs/scripts/l10n.mjs"   # run from this board folder
 node "$T" sweep
 ```
 

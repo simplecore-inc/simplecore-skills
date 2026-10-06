@@ -11,6 +11,7 @@
 //   node wf.mjs pdf [--mask 40%] [--watermark [logo]] [--to "<recipient>"] [--in f] [--out f]
 //   node wf.mjs shots <outDir> [idPfx] [--no-notes]  one PNG per frame
 //   node wf.mjs doctor                  what this board is on, and what it owes
+//   node wf.mjs where                   the plugin directory this kit belongs to
 //
 // One subcommand runs from the KIT rather than from a board, because it is what creates one:
 //
@@ -54,6 +55,7 @@ const HELP = `wireframe-boards — 보드를 빌드하고 점검하는 명령
                                   --no-notes는 프레임의 주석 블록을 빼고 찍습니다
   doctor                          이 보드의 계약 버전과 남은 작업
   migrations                      계약마다 무엇이 바뀌고 무엇을 해야 하는지 (보드 설정 없이도 돕니다)
+  where                           이 킷이 든 플러그인의 디렉터리 (플러그인의 다른 스크립트를 부를 때)
   patterns                        쓸 수 있는 공통패턴
   pattern fork [--into <디렉터리>] [--name <이름>]
                                   지금 패턴을 보드 안으로 복사하고 보드가 그것을 쓰게 합니다
@@ -166,6 +168,15 @@ if (cmd === 'migrations') {
     for (const c of m.changed) console.log(`  바뀐 것 · ${c}`);
     for (const s of m.steps) console.log(`  할 일   · ${s}`);
   }
+  process.exit(0);
+}
+
+// Where the plugin this kit belongs to is installed. A board's instructions reach the plugin's
+// other scripts through it (`$(node wf.mjs where)/skills/korean-docs/scripts/l10n.mjs`), so they
+// hold on every install the bootstrap finds rather than on one machine's layout. Above the config
+// check because it reads nothing off the board.
+if (cmd === 'where') {
+  console.log(resolve(dirname(dirname(fileURLToPath(import.meta.url))), '..', '..', '..'));
   process.exit(0);
 }
 
