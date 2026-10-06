@@ -21,13 +21,13 @@
 ### Required Sections (fixed order)
 
 ```markdown
-# simplix-react
+# <project>
 
-[One-line description — deliver core value proposition]
+[One-line description - deliver core value proposition]
 
 [Badges: npm version (only when the project publishes packages), license, TypeScript, build status]
 
-## What is simplix-react?
+## What is <project>?
 
 [2-3 sentences: what it does, who it's for, core value proposition]
 
@@ -80,7 +80,7 @@
 ### Required Sections (fixed order)
 
 ```markdown
-# @simplix-react/{package-name}
+# <package-name>
 
 [One-line description]
 
@@ -109,7 +109,9 @@
 [Related packages table]
 ```
 
-### Package-Specific Emphasis
+### Package-Specific Emphasis - only when documenting simplix-react itself
+
+The framework repository's own packages each lead with a different concept. A consumer project's packages take the template above without this table.
 
 | Package | Emphasize |
 | --- | --- |
@@ -292,19 +294,18 @@ React Query hook that queries the entity list. Three calling conventions: `useLi
 ## CONTRIBUTING.md
 
 ```markdown
-# Contributing to simplix-react
+# Contributing to <project>
 
 ## Development Setup
 
 ### Prerequisites
 
-- Node.js >= 20
-- pnpm 10.x
+- [The Node.js and pnpm versions the repository declares - `engines` / `packageManager` in its package.json]
 
 ### Getting Started
 
 $ git clone ...
-$ cd simplix-react
+$ cd <project>
 $ pnpm install
 $ pnpm build
 
@@ -326,7 +327,7 @@ $ pnpm test         # Tests
 
 ## Code Style
 
-[Link to CLAUDE.md Code Style section]
+[Link to the project's code style guide]
 
 ## Pull Request Process
 
@@ -358,7 +359,7 @@ Follow [Keep a Changelog](https://keepachangelog.com) format:
 - Changes to existing features
 
 ### Removed
-- Removed features (※ NEVER use Deprecated category)
+- Removed features
 
 ### Fixed
 - Bug fixes
@@ -369,5 +370,5 @@ Follow [Keep a Changelog](https://keepachangelog.com) format:
 
 **Rules:**
 
-- NEVER use `Deprecated` category (project rule: no deprecated, delete immediately)
+- Use a `Deprecated` category only where the project deprecates before removing. simplix-react itself never does - its rule is to delete deprecated code immediately - so its own changelog has none
 - Maintain a per-package CHANGELOG.md **when the project publishes packages** (each independently versioned package gets its own). A single private application keeps one root CHANGELOG.

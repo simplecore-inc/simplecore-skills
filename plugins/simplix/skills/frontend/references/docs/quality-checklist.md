@@ -88,4 +88,4 @@ const api = defineApi({
 | 4 | Cross-package references are complete? | ☐ |
 | 5 | At least 1 tutorial exists? (published library) | ☐ |
 | 6 | CONTRIBUTING.md is up to date? (when accepting external contributions) | ☐ |
-| 7 | All diagrams generated with mermaid-to-ascii? | ☐ |
+| 7 | Every diagram keeps its Mermaid source beside any ASCII rendering? | ☐ |

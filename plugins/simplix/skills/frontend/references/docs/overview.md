@@ -36,7 +36,7 @@ Classify every document into exactly ONE type. Never mix types.
 ## Writing Style
 
 - **2nd person**: "You define a contract" not "The developer defines a contract"
-- **Result first, mechanism later**: "Generates type-safe hooks for all entities" not "Iterates config.entities and..."
+- **Result first, mechanism later**: "Derives type-safe hooks for all entities" not "Iterates config.entities and..."
 - **Active voice**: "defineApi returns a client" not "A client is returned by defineApi"
 - **No colloquial language**: Formal but approachable
 
@@ -49,7 +49,8 @@ Classify every document into exactly ONE type. Never mix types.
 | TSDoc comments | English |
 | Inline code comments | English |
 | CONTRIBUTING.md, CHANGELOG.md | English |
-| Internal docs (CLAUDE.md, .plans/) | Korean |
+| Files an agent reads as instructions (CLAUDE.md, AGENTS.md, skills) | English |
+| Any other internal note | the project's own instructions decide |
 
 ## Markdown Rules
 
@@ -78,7 +79,7 @@ Classify every document into exactly ONE type. Never mix types.
 ## Diagrams
 
 1. Write Mermaid syntax first
-2. Convert with `mermaid-to-ascii` agent
+2. Where the target renders no Mermaid, convert it to ASCII - with the `simplecore:svg-diagrams` skill where it is installed (it covers ASCII and Mermaid), by hand otherwise
 3. Preserve Mermaid source as HTML comment above the ASCII diagram
 
 ## References
