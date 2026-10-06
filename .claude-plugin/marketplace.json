@@ -33,7 +33,7 @@
     {
       "name": "simplix",
       "source": "./plugins/simplix",
-      "description": "Development handbooks for the SimpliX stack — Spring Boot backend conventions with YAML-driven code generation, simplix-react frontend conventions with OpenAPI-driven scaffolding, and a browser-driven end-to-end usability audit",
+      "description": "Development handbooks for the SimpliX stack - Spring Boot backend conventions with YAML-driven code generation, simplix-react frontend conventions with OpenAPI-driven scaffolding, and a browser-driven end-to-end usability audit",
       "keywords": [
         "simplix",
         "spring-boot",

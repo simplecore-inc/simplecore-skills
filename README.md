@@ -213,7 +213,7 @@ The plugin recognizes a SimpliX project from its markers rather than from config
 
 | Stack | Markers |
 | --- | --- |
-| Backend | a `.simplix/` generator directory, or a Gradle root whose `settings.gradle` / `build.gradle` / `gradle.properties` declares a simplix dependency |
+| Backend | a `.simplix/` generator directory, or a Gradle root whose `settings.gradle` / `build.gradle` / `gradle.properties` names simplix outside a comment |
 | Frontend | a `simplix.config.{ts,mts,js,mjs}`, or a `package.json` depending on `@simplix-react/*` |
 
 The scan reads directory entries two levels deep, skips dependency and build output directories, and stops descending as soon as a directory matches - so a monorepo reports its subproject roots, not every Gradle module or workspace package. A repository that publishes under the `@simplix-react/` scope is recognized as the framework itself, where the consumer handbooks do not apply.
@@ -232,11 +232,11 @@ Exit code 0 means at least one SimpliX subproject was found, 1 means none.
 
 At session start the plugin runs the detector against the working directory. When it matches, Claude receives a note naming each subproject, its markers, and the skill that gates it. A repository with no SimpliX marker produces no output at all, and a detector failure is silent - a hook must never be the reason a session cannot start.
 
-The note also reports whether any `CLAUDE.md` / `AGENTS.md` in the project already routes to the skills. When none does, Claude offers `/simplix:init` once and then continues with your task.
+The note also reports whether any `CLAUDE.md` / `AGENTS.md` in the project, up to the repository root, already routes to the skills. When none does, Claude offers `/simplix:init` once and then continues with your task.
 
 ### Skill-gate hook
 
-The handbooks encode conventions that diverge from the stock framework, so an edit written from memory produces defects a reviewer then has to catch. The instruction file already says "invoke the skill first"; this hook makes it hold when that instruction is skimmed. It denies a write to a source file until one of the gated skills has been invoked in the session.
+The handbooks encode conventions that diverge from the stock framework, so an edit written from memory produces defects a reviewer then has to catch. The instruction file already says "invoke the skill first"; this hook makes it hold when that instruction is skimmed. It denies a Write, Edit or MultiEdit of a source file until one of the gated skills has been invoked in the session, through the Skill tool or by typing its slash command; an edit made through Bash is outside it.
 
 Scope guard: nothing is gated until a project declares it in `.claude/simplix.json`, discovered by walking up from the edited file. Directory layout is the project's to state, never the hook's to assume.
 
@@ -254,7 +254,7 @@ In a monorepo each subproject carries its own file, so a frontend edit asks for 
 
 ### Completion gate
 
-The skill gate guards the moment of editing. This one guards the moment of claiming done, because that is where verification is actually skipped: the build is green, the diff reads correctly, and nobody opened the page or ran the audit. A `Stop` hook refuses to end a session that changed UI files without `simplix:frontend-e2e` having been invoked, or without the convention audit script having run - naming both omissions in one message so a session is interrupted once rather than twice.
+The skill gate guards the moment of editing. This one guards the moment of claiming done, because that is where verification is actually skipped: the build is green, the diff reads correctly, and nobody opened the page or ran the audit. A `Stop` hook refuses to end a session that changed UI files without `simplix:frontend-e2e` having been invoked, or without the convention audit having run in full (a `node` run of `audit-frontend.mjs`, not `--list`, `--selftest` or `--rule=`) - naming both omissions in one message so a session is interrupted once rather than twice.
 
 It fires **at most once per session**. The gate exists to make an omission visible, not to trap a session that has a good reason - a refactor with no reachable screen, a user who asked for code only. Claude answers the objection and stops again. `SIMPLIX_E2E_GATE=off` lifts it entirely.
 
@@ -316,7 +316,7 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/audit-backend.mjs"            # machine-chec
 node "${CLAUDE_PLUGIN_ROOT}/scripts/audit-backend.mjs" --selftest # prove every rule both ways
 ```
 
-It carries the mechanically visible subset of the handbook's invariants - `@PreAuthorize` and `@Operation` on every endpoint, permission group and action shape, the SearchDTO primary-key contract, scope forcing on both `search` overloads, the date/time and timezone rules, DTO and repository shape. Exit 1 on any error-level hit.
+It carries the mechanically visible subset of the handbook's invariants - `@PreAuthorize` and `@Operation` on every endpoint, permission group and action shape, the SearchDTO primary-key contract, scope forcing on both `search` overloads, the date/time and timezone rules, DTO and repository shape. Exit 1 on any error-level hit. It reads `src/main/java` at the root and under `modules/`, `packages/`, `apps/` and `tools/`, and exits 2 when it finds no Java source. The helpers that force a search to the caller's scope, beyond a `force*(` call, come from the `audit` section of `.claude/simplix.json` (`scopeForcingCalls`).
 
 **No rule counts as added until `--selftest` proves it fires on the broken form and stays silent on the fixed one**, so every rule carries both samples and the selftest fails on a rule that omits either. A genuine exception is marked at the line with `// simplix-audit-ignore[<rule-id>]: <reason>`; the reason is required, and each run reports how many lines were suppressed. Nothing about a particular repository - no path, class name or exception list - is baked into the script.
 
