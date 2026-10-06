@@ -19,7 +19,9 @@ standard accumulates from one task to the next.
 - **AI tells in their Korean form** - the structural habits that survive a clean audit (staging a
   claim, a closing line that repeats, inflated significance, borrowed authority, chat residue) are
   catalogued in `references/ai-tells.md` with the 번역투 each English pattern turns into.
-- **Domain terminology** - the settled terms of finance, quant, and trading are built in.
+- **Domain terminology** - the settled terms of finance, quant, and trading, and the banned
+  transliterations of subscription billing, are built in. A project glossary turns a field on with
+  `audit.domains`.
 
 ## Layout
 
@@ -45,7 +47,8 @@ korean-docs/
     ├── ui-copy-sweep.md         # the full-sweep procedure
     ├── reading-lens.md · lens.txt  # the lens that turns what rules miss into candidates for a person to read
     ├── lens-cases.json          # the sentences each lens family must surface and must stay quiet on (read by rules --test)
-    └── domain-finance.md        # finance · quant · trading terms (only for work in that field)
+    ├── domain-finance.md        # finance · quant · trading terms; its table loads with audit.domains: [finance]
+    └── domain-saas.md           # subscription · billing · licensing terms; its table loads with audit.domains: [saas]
 ```
 
 ## How it works
@@ -101,6 +104,9 @@ does not offer to create one. When the user asks, create it with `check --init`.
   `## 기본 규칙 예외` table disables base rules one at a time (for example `레버리지` in a finance
   project). The same table can turn off a warning-level built-in check by name (`heading-form` ·
   `repeat` · `untranslated`).
+- **Domains**: `audit.domains` in the front matter loads a field's table
+  (`references/domain-<name>.md`) on top of the base glossary and the rule pack's scope of the same
+  name.
 - **Levels**: a banned spelling is `오류` (the audit fails); a banned expression is `오류` / `경고` /
   `경고(N+)` (reported only at N or more occurrences in one file).
 - **What is counted**: `경고(N+)` and the rule pack's `minPerFile` count only what the author

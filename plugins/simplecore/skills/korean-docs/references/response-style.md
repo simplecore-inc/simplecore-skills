@@ -244,6 +244,8 @@ that are not in its list.
 
 - Project terms are decided by the project glossary (`.claude/GLOSSARY.md`), which wins over this
   file when they conflict.
-- Finance, quant, and trading add [domain-finance.md](domain-finance.md).
+- Finance, quant, and trading add [domain-finance.md](domain-finance.md); subscription, billing, and
+  licensing products add [domain-saas.md](domain-saas.md). A project glossary that names the field
+  under `audit.domains` has the audit apply that file's table.
 - Screen copy adds [ui-copy.md](ui-copy.md); proofreading and review add the pattern catalogue in
   [korean-style.md](korean-style.md) and the structural catalogue in [ai-tells.md](ai-tells.md).

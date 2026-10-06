@@ -5,19 +5,27 @@ comments in finance, quant, or trading. Do not read it for other work. Do not bu
 expression by transliterating or literally translating an English term: use what Korean financial
 practice and academia have settled on, and where nothing is settled, write it out.
 
-### No gratuitous transliteration
+**The audit applies the table below in a project whose glossary declares the field**: `domains:
+[finance]` under `audit:` in its front matter. Elsewhere the rows load nowhere, since a word only
+this field writes would be a rule every other project carries for nothing. The table has the base
+glossary's format (`GLOSSARY.base.md`), and a project turns one row off through its own
+`## 기본 규칙 예외` table.
 
-| Banned | Replacement |
-| ---- | ---- |
-| `브레드스` (breadth) | 시장 폭 |
-| `험프` (hump) | (유동성 깊이) 정점 |
-| `프린트` (print, a trade record) | 체결값, 체결 기록 |
-| `틸트` (tilt) | 비중 기울임, 비중 확대 |
-| `리더` (leading stocks) | 주도주 |
-| `헤드라인` (a headline figure) | 대표 수치, 전체 |
-| `오버레이` (analysis overlay) | 보조분석 |
-| `레짐` (regime) | 국면 (시장 국면, 급락 국면, 국면 단절, 국면 게이트) |
-| `드로다운` (drawdown) | 낙폭, 급락 |
+## 금지 표현
+
+No gratuitous transliteration.
+
+| 금지 | 대체 | 수준 | 비고 |
+| ---- | ---- | ---- | ---- |
+| 브레드스 | 시장 폭 | 오류 | a transliterated "breadth" |
+| 험프 | 정점 | 오류 | a transliterated "hump" - the peak of liquidity depth (유동성 깊이 정점). A document about road humps (「험프형 과속방지턱」) disables it with a base-rule exception |
+| 레짐 | 국면 | 오류 | a transliterated "regime" - 시장 국면 · 급락 국면 · 국면 단절 · 국면 게이트 |
+| 드로다운 | 낙폭, 급락 | 오류 | a transliterated "drawdown" |
+| 체결 프린트 | 체결값, 체결 기록 | 오류 | a literal "print" (a trade record). **The bare 「프린트」 is not registered** - printing is a legitimate sense and letters alone do not separate them. Only its pairing with 체결 is caught |
+| 비중 틸트, 가치 틸트, 팩터 틸트, 모멘텀 틸트 | 비중 기울임, 비중 확대 | 오류 | a transliterated "tilt". **The bare 「틸트」 is not registered** - a camera's 「팬·틸트」 is settled |
+| 리더 종목 | 주도주 | 오류 | a literal "leading stocks". **The bare 「리더」 is not registered** - a team leader and a card reader are legitimate |
+| 헤드라인 수치, 헤드라인 지표 | 대표 수치, 전체 | 오류 | a literal "headline number". **The bare 「헤드라인」 is not registered** - a news headline is legitimate |
+| 분석 오버레이 | 보조분석 | 오류 | a literal "analysis overlay". **The bare 「오버레이」 is not registered** - a screen or graphics overlay is settled |
 
 **Registered as words**: `브레드스` · `험프` · `레짐` · `드로다운`. The rest have a legitimate
 meaning outside finance (printing, a camera's pan and tilt, a team leader and a card reader, a news
@@ -27,7 +35,7 @@ the word that does decide: `체결 프린트` · `비중 틸트` · `가치 틸�
 person judges it** - meeting one of them alone in a financial document, confirm what it refers to
 and fix it to the replacement above.
 
-### Literal translations that are banned or need care
+## Literal translations that are banned or need care
 
 - **`모사(模寫)` is banned** - `simulation` is 「시뮬레이션」, or the settled 「모의」 (모의투자,
   모의 체결). `체결 모사` → 「체결 시뮬레이션」.
@@ -52,7 +60,7 @@ and fix it to the replacement above.
   「선형 합산」, `비중복분` (incremental / non-overlapping part) →
   「중복되지 않는 부분, 추가 기여분」.
 
-### Settled terms stay (no over-correction)
+## Settled terms stay (no over-correction)
 
 엣지, 슬리피지, 레이턴시, 커버리지, 바스켓, 포지션, 프록시, 리밸런스, 잔차, 직교, 괴리, 편입/편출,
 내재 변동성, 음의 자기상관, 실효 레버리지, 페어/스탯아브, 페이드 (in a trading context), 게이트 and

@@ -17,7 +17,9 @@ guidance and is English.
   allowed); anything else is a literal. Do not write `|` inside a cell (separate items instead of
   using alternation) and do not write `,` inside a regex (it collides with the item separator).
 - Only rules agreed on regardless of project and domain live here. Domain concepts are registered in
-  each project's glossary.
+  each project's glossary. A field's own bans (finance, subscription billing) live in
+  `references/domain-<field>.md`, in this file's table format, and load only in a project whose
+  glossary names the field under `audit.domains`.
 - **A product's proper name is registered in every project glossary whose documents write it**:
   the product's own repository, and any other project that names it in a design document, a
   meeting note or an integration guide. This file keeps only the names every project writes
@@ -187,18 +189,3 @@ standard is in `references/response-style.md`.
 | 전제 위에 | 전제를 바탕으로 | 오류 | a literal "build on the premise". A premise is a ground, not the base of a structure |
 | 붙는 위치, 붙이는 위치 | 적용 위치, 연결 지점 | 오류 | a literal "where it hooks". Write what applies where, and what is connected to what |
 | 정밀도와 회수율, 회수율과 정밀도 | 재현율 | 오류 | a literal "recall". **The bare 「회수율」 is not registered** - 채권 회수율 · 설문 회수율 · 자원 회수율 are formal terms and letters alone do not separate them. Only its pairing with precision is caught |
-| 프로레이션 | 일할 계산 | 오류 | a transliterated "proration" |
-| 캐리오버 | 이월 | 오류 | a transliterated "carryover" |
-| /더닝(?!.?크루거)/ | 재청구 | 오류 | a transliterated "dunning". 「더닝 크루거」·「더닝-크루거」·「더닝크루거」 are a personal name and are excluded |
-| 리펀드 | 환불 | 오류 | a transliterated "refund" |
-| 서브스크립션 | 구독 | 오류 | a transliterated "subscription" |
-| /오더(?![라니군냐])/ | 주문 | 오류 | a transliterated "order". 「워크오더」·「오더링」 are the same family. **The connective forms of 「오다」 are excluded by the following syllable** - 오더라도·오더라·오더니·오더군·오더냐 are the verb, not a transliteration |
-| 브레드스 | 시장 폭 | 오류 | a transliterated "breadth" |
-| 험프 | 정점 | 오류 | a transliterated "hump" - the peak of liquidity depth. A document about road humps (「험프형 과속방지턱」) disables it with a base-rule exception |
-| 레짐 | 국면 | 오류 | a transliterated "regime" - 시장 국면 · 급락 국면 · 국면 단절 · 국면 게이트 |
-| 드로다운 | 낙폭, 급락 | 오류 | a transliterated "drawdown" |
-| 체결 프린트 | 체결값, 체결 기록 | 오류 | a literal "print" (a trade record). **The bare 「프린트」 is not registered** - printing is a legitimate sense and letters alone do not separate them. Only its pairing with 체결 is caught |
-| 비중 틸트, 가치 틸트, 팩터 틸트, 모멘텀 틸트 | 비중 기울임, 비중 확대 | 오류 | a transliterated "tilt". **The bare 「틸트」 is not registered** - a camera's 「팬·틸트」 is settled |
-| 리더 종목 | 주도주 | 오류 | a literal "leading stocks". **The bare 「리더」 is not registered** - a team leader and a card reader are legitimate |
-| 헤드라인 수치, 헤드라인 지표 | 대표 수치, 전체 | 오류 | a literal "headline number". **The bare 「헤드라인」 is not registered** - a news headline is legitimate |
-| 분석 오버레이 | 보조분석 | 오류 | a literal "analysis overlay". **The bare 「오버레이」 is not registered** - a screen or graphics overlay is settled |

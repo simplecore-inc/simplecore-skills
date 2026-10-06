@@ -8,7 +8,9 @@
  *
  * Rule sources, merged in this order:
  *   1. The base glossary bundled with the skill (../GLOSSARY.base.md).
- *   2. The project glossary, discovered by walking up from a start directory
+ *   2. The domain tables the project glossary opts into with `audit.domains`
+ *      (references/domain-<name>.md), merged into the base before the project.
+ *   3. The project glossary, discovered by walking up from a start directory
  *      and checking <dir>/.claude/GLOSSARY.md then <dir>/GLOSSARY.md. The
  *      directory that holds it becomes the project root.
  *
@@ -16,7 +18,7 @@
  * screen-only rules, the 기본 규칙 예외 table) is implemented here once.
  */
 
-import {readFileSync, existsSync, statSync} from 'node:fs';
+import {readFileSync, existsSync, statSync, readdirSync} from 'node:fs';
 import {join, resolve, dirname, basename} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {homedir} from 'node:os';
@@ -25,6 +27,7 @@ export const SKILL_DIR = dirname(dirname(dirname(fileURLToPath(import.meta.url))
 export const BASE_GLOSSARY_PATH = join(SKILL_DIR, 'GLOSSARY.base.md');
 export const BASE_RULE_PACK_PATH = join(SKILL_DIR, 'RULES.base.json');
 export const TEMPLATE_PATH = join(SKILL_DIR, 'templates', 'GLOSSARY.md');
+export const REFERENCES_DIR = join(SKILL_DIR, 'references');
 
 // ---------------------------------------------------------------------------
 // Glossary discovery
@@ -98,7 +101,7 @@ function gatherFlowSequence(first, lines, from, where) {
 }
 
 export function parseGlossaryConfig(markdown) {
-  const config = {paths: [], exclude: [], localeResources: [], localeAnnotationKeys: [], resolvedPlaceholders: [], untranslated: false};
+  const config = {paths: [], exclude: [], localeResources: [], localeAnnotationKeys: [], resolvedPlaceholders: [], domains: [], untranslated: false};
   const lines = markdown.split(/\r?\n/);
   if (lines[0]?.trim() !== '---') return {config, body: markdown};
   let end = -1;
@@ -119,7 +122,7 @@ export function parseGlossaryConfig(markdown) {
       continue;
     }
     if (!inAudit) continue;
-    const kv = line.match(/^\s+(paths|exclude|localeResources|localeAnnotationKeys|resolvedPlaceholders|untranslated)\s*:\s*(.*)$/);
+    const kv = line.match(/^\s+(paths|exclude|localeResources|localeAnnotationKeys|resolvedPlaceholders|domains|untranslated)\s*:\s*(.*)$/);
     if (kv) {
       const [, key, rest] = kv;
       let value = rest.trim();
@@ -375,6 +378,80 @@ export const FIXED_CHECKS = new Map([
   ['reference-particle', 'particle after a reference'],
 ]);
 
+// ---------------------------------------------------------------------------
+// Domain tables (opt-in through audit.domains)
+// ---------------------------------------------------------------------------
+//
+// A ban that is true only inside one field - a finance transliteration, a billing term - would
+// be noise everywhere else, and a word nobody outside that field writes still costs every
+// project a rule. So each field keeps its table in its own reference file, the same
+// `## 용어 대역표` · `## 금지 표현` format the base glossary uses, and a project glossary names the
+// fields it writes in under `audit.domains`. The table loads only then, merged into the base, so
+// the project's `## 기본 규칙 예외` reaches a domain row exactly as it reaches a base row.
+//
+// The same name switches on the rule pack's scope of that name, so one declaration turns on a
+// field's words and its sentence rules together.
+
+/** The reference file holding a domain's table. */
+export function domainGlossaryPath(name) {
+  return join(REFERENCES_DIR, `domain-${name}.md`);
+}
+
+/** Domain names with a table in references/ (`domain-<name>.md`). */
+function domainTableNames() {
+  if (!existsSync(REFERENCES_DIR)) return [];
+  return readdirSync(REFERENCES_DIR)
+    .map((f) => f.match(/^domain-([a-z0-9-]+)\.md$/)?.[1])
+    .filter(Boolean)
+    .sort();
+}
+
+/** Scope names the base rule pack uses besides `universal`. */
+function basePackScopes() {
+  if (!existsSync(BASE_RULE_PACK_PATH)) return [];
+  const pack = JSON.parse(readFileSync(BASE_RULE_PACK_PATH, 'utf8'));
+  return [...new Set((pack.rules ?? []).map((r) => r.scope).filter((x) => x && x !== 'universal'))].sort();
+}
+
+/**
+ * Every domain a project may declare: a table in references/, a scope in the base rule pack, or
+ * both.
+ */
+export function knownDomains() {
+  return [...new Set([...domainTableNames(), ...basePackScopes()])].sort();
+}
+
+/**
+ * Parses the base glossary and merges the declared domain tables into it.
+ *
+ * **A declared domain that names nothing is refused**, never skipped: a misspelt name would load
+ * no rule and every later run would read clean over the field the project said it writes in.
+ *
+ * @param noBase leave the base glossary out (the domains still load)
+ * @param domains the names under the project glossary's `audit.domains`
+ * @returns the merged glossary, in the shape parseGlossary returns
+ */
+export function loadBaseGlossary({noBase = false, domains = []} = {}) {
+  let base = emptyGlossary();
+  if (!noBase) {
+    if (!existsSync(BASE_GLOSSARY_PATH)) throw new Error(`The base glossary is missing: ${BASE_GLOSSARY_PATH}`);
+    base = parseGlossary(readFileSync(BASE_GLOSSARY_PATH, 'utf8'), 'base', BASE_GLOSSARY_PATH);
+  }
+  const known = knownDomains();
+  for (const name of domains) {
+    if (!known.includes(name)) {
+      throw new Error(`audit.domains names an unknown domain: ${name} (known: ${known.join(' · ') || 'none'})`);
+    }
+    const path = domainGlossaryPath(name);
+    if (!existsSync(path)) continue;
+    const table = parseGlossary(readFileSync(path, 'utf8'), `domain:${name}`, path);
+    for (const [key, term] of table.terms) base.terms.set(key, term);
+    for (const [key, rule] of table.expressions) base.expressions.set(key, rule);
+    base.keepOriginal.push(...table.keepOriginal);
+  }
+  return base;
+}
+
 /** Merges base and project rules into a flat, deduplicated rule list. */
 export function mergeGlossaries(base, project) {
   const terms = new Map(base.terms);
@@ -469,7 +546,7 @@ export function loadRuleSet({glossaryPath = null, noBase = false, startDir = pro
   }
 
   let project = null;
-  let config = {paths: [], exclude: [], localeResources: [], localeAnnotationKeys: [], untranslated: false};
+  let config = {paths: [], exclude: [], localeResources: [], localeAnnotationKeys: [], domains: [], untranslated: false};
   let root = resolve(startDir);
   if (discovered) {
     const parsed = parseGlossaryConfig(readFileSync(discovered.path, 'utf8'));
@@ -478,11 +555,7 @@ export function loadRuleSet({glossaryPath = null, noBase = false, startDir = pro
     root = discovered.root;
   }
 
-  let base = emptyGlossary();
-  if (!noBase) {
-    if (!existsSync(BASE_GLOSSARY_PATH)) throw new Error(`The base glossary is missing: ${BASE_GLOSSARY_PATH}`);
-    base = parseGlossary(readFileSync(BASE_GLOSSARY_PATH, 'utf8'), 'base', BASE_GLOSSARY_PATH);
-  }
+  const base = loadBaseGlossary({noBase, domains: config.domains});
 
   const {rules, terms, deadExceptions, disabledChecks} = mergeGlossaries(base, project);
   const keepOriginal = [...base.keepOriginal, ...(project?.keepOriginal ?? [])];
@@ -503,7 +576,8 @@ export function loadRuleSet({glossaryPath = null, noBase = false, startDir = pro
  * so an error-level hit blocks that write.
  *
  * `scopes` filters by rule scope: 'universal' rules always apply; any other
- * scope applies only when listed (a project opts into its domains).
+ * scope applies only when listed - the project glossary's `audit.domains`, and
+ * `ruleScopes` in `.claude/l10n.json`, which the callers pass together.
  *
  * Returns `{active, all, disabled, except, retired}`. `retired` maps each retired
  * base rule id a project pack still disables or narrows to where its ban lives

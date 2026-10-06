@@ -6,6 +6,9 @@ audit:
                       # `*` does not cross `/` (unlike a git pathspec) - use `**/` to reach subdirectories.
                       # A pattern matching no file at all is an error and makes check exit 1.
   untranslated: false # true warns about leftover English sentences (for translation projects)
+  domains: []        # Fields this project writes in, whose bans load on top of the base glossary. e.g. [saas]
+                     # Each name loads references/domain-<name>.md of the skill and the rule pack's scope of that name.
+                     # Known: finance (finance · quant · trading), saas (subscription · billing · licensing). An unknown name is an error.
 ---
 
 # Korean glossary - <project>

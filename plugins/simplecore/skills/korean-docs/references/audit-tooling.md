@@ -74,7 +74,13 @@ form written down and misses every other ending.
 - After registering, compare with `--list-rules` to confirm the row produces the pattern and level
   you intended. The script only reports regex errors, level spelling, and shifted columns.
 - Front matter settings: `audit.paths` · `audit.exclude` · `audit.localeResources` ·
-  `audit.untranslated` · `audit.resolvedPlaceholders`.
+  `audit.untranslated` · `audit.resolvedPlaceholders` · `audit.domains`.
+- `audit.domains` names the fields the project writes in. Each name loads that field's table from
+  the skill's `references/domain-<name>.md` (`finance` · `saas`) on top of the base glossary, and
+  switches on the rule pack's scope of the same name, so one declaration loads a field's words and
+  its sentence rules. A domain row answers to `## 기본 규칙 예외` exactly as a base row does. `check`
+  names the loaded domains on its first line, and a name with neither a table nor a pack scope is
+  refused as a configuration error.
 - `audit.exclude` reaches a named file as well as a scan: `check` and the sentence commands skip it
   and print `skipped by audit.exclude: <path>`, all of them through one matcher (a pattern with no
   `/` matches any path segment, `**/` spans zero or more directories). The glossary file itself is
@@ -291,7 +297,8 @@ layout.
 
 Every rule carries `id` · `scope` · `severity` · `reason` · `find` · `replace` · `hit` · `miss`, and
 is verified with `rules --test`. The `universal` scope always applies; a domain scope (`saas` and
-the like) applies when the project opts in through `ruleScopes` in `.claude/l10n.json`. A rule
+the like) applies when the project glossary names it under `audit.domains`. `ruleScopes` in
+`.claude/l10n.json` opts into a scope as well and is read together with it. A rule
 written for one register names it in `registers` (`screen` · `manual` · `spoken` · `plain`; a
 document with no declared kind is `plain`) and is skipped elsewhere - 「~할 수 있습니다」 replacing an instruction is
 a defect on a screen and the ordinary capability sentence of a reference manual, and a rule that

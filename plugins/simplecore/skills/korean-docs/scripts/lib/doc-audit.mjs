@@ -16,7 +16,7 @@ import {
   rootFromGlossaryPath,
   parseGlossaryConfig,
   parseGlossary,
-  emptyGlossary,
+  loadBaseGlossary,
   mergeGlossaries,
   escapeRegExp,
   isOriginalScriptBan,
@@ -1408,10 +1408,12 @@ const L10N_TEMPLATE = {
     'register: "screen" = screen copy (합니다체), "manual" = reader-facing 합니다체 prose,',
     '"spoken" = a speaker script, where a name is written as it is pronounced, omitted = a -다체',
     'working document. Checks that mean something in one register are gated on it.',
+    '',
+    "A field the project writes in (finance, saas) is declared in the glossary's audit.domains,",
+    'which loads its glossary table and its sentence rules together.',
   ],
   languages: ['ko', 'en'],
   defaultLanguage: 'ko',
-  ruleScopes: [],
   domainHint: null,
   properNouns: [],
   samplePatterns: [],
@@ -1494,7 +1496,7 @@ export function runDocAudit(args, cliPath) {
   }
 
   let project = null;
-  let config = {paths: [], exclude: [], localeResources: [], localeAnnotationKeys: [], untranslated: false};
+  let config = {paths: [], exclude: [], localeResources: [], localeAnnotationKeys: [], domains: [], untranslated: false};
   let root = process.cwd();
   if (discovered) {
     const parsed = parseGlossaryConfig(readFileSync(discovered.path, 'utf8'));
@@ -1503,25 +1505,25 @@ export function runDocAudit(args, cliPath) {
     root = discovered.root;
   }
 
-  let base = emptyGlossary();
-  if (!args.noBase) {
-    if (!existsSync(BASE_GLOSSARY_PATH)) throw new Error(`The base glossary is missing: ${BASE_GLOSSARY_PATH}`);
-    base = parseGlossary(readFileSync(BASE_GLOSSARY_PATH, 'utf8'), 'base', BASE_GLOSSARY_PATH);
-  }
+  const base = loadBaseGlossary({noBase: args.noBase, domains: config.domains});
 
   const {rules, deadExceptions, disabledChecks} = mergeGlossaries(base, project);
 
   if (args.listRules) {
     for (const r of rules) {
-      console.log(`[${r.origin === 'base' ? 'base' : 'project'}] [${r.level}${r.threshold > 1 ? ` ${r.threshold}+` : ''}] ${r.source} → ${r.suggestion} (${r.label})`);
+      const origin = r.origin.startsWith('domain:') ? `domain ${r.origin.slice(7)}` : r.origin;
+      console.log(`[${origin}] [${r.level}${r.threshold > 1 ? ` ${r.threshold}+` : ''}] ${r.source} → ${r.suggestion} (${r.label})`);
     }
     console.log(`\n${rules.length} rules loaded.`);
     return 0;
   }
 
+  // The domains a project opted into are named on every run: a field's table that loaded is a
+  // different audit from one that did not, and the rule count alone cannot tell them apart.
+  const domains = config.domains.length ? ` + domains ${config.domains.join(' · ')}` : '';
   if (discovered) {
     const shown = relative(process.cwd(), discovered.path) || discovered.path;
-    console.log(`glossary: ${shown}${args.noBase ? '' : ' + the base glossary'} (${rules.length} rules)`);
+    console.log(`glossary: ${shown}${args.noBase ? '' : ' + the base glossary'}${domains} (${rules.length} rules)`);
   } else {
     console.log('No project glossary - checking with the base glossary alone.');
     console.log('To create one (the default location is .claude/GLOSSARY.md):');

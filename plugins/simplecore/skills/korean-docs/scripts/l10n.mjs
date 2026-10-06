@@ -124,7 +124,8 @@ const DEFAULT_CONFIG = {
   /** Regexes over a catalogue key or value; a match is a value nobody translates - a unit,
    *  a language name shown in its own language, a file list, a formula of identifiers. */
   untranslatedAllow: [],
-  /** Domain scopes of RULES.base.json the project opts into (universal always applies). */
+  /** Domain scopes of RULES.base.json the project opts into (universal always applies). The project
+   *  glossary's `audit.domains` opts in as well, and loads the domain's glossary table with it. */
   ruleScopes: [],
   /** Names the domain in the suspects guidance, e.g. "라이선스·구독·결제". */
   domainHint: null,
@@ -1191,9 +1192,16 @@ function ruleSet() {
 
 let RULE_PACKS = null;
 
-/** Style-rule packs (skill base pack + project pack), loaded once. */
+/**
+ * Style-rule packs (skill base pack + project pack), loaded once.
+ *
+ * The scopes are the project glossary's `audit.domains` and `.claude/l10n.json`'s `ruleScopes`
+ * together, so the declaration that loads a field's glossary table also loads that field's
+ * sentence rules, and a project that declared the scope in `ruleScopes` keeps it.
+ */
 function rulePacks() {
-  RULE_PACKS ??= loadRulePacks({ root: ROOT, scopes: CONFIG.ruleScopes ?? [] });
+  const scopes = [...new Set([...(CONFIG.ruleScopes ?? []), ...(ruleSet().config?.domains ?? [])])];
+  RULE_PACKS ??= loadRulePacks({ root: ROOT, scopes });
   return RULE_PACKS;
 }
 
