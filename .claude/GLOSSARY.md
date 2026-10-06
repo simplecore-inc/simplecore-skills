@@ -27,18 +27,20 @@ audit:
 
 # simplecore-skills glossary
 
-What this repository ships is the skill itself. Every word decision lives in
+What this repository ships is the skill itself. Every word decision true in any project lives in
 `plugins/simplecore/skills/korean-docs/GLOSSARY.base.md` - copying one here makes the two disagree
-with nothing to decide which is right.
+with nothing to decide which is right. This file holds only what is true of this repository: the
+exclusion list above, and the product names its documents write that the base glossary does not
+carry.
 
-**This file exists for two reasons.** It declares the exclusion list above, and it switches on the
-write-time hook: the hook runs only in a repository that has a project glossary, so without this
-file nothing would check an edit to the skill's documents.
+**Without this file nothing would check an edit to the skill's documents**: the write-time hook
+runs only in a repository that has a project glossary.
 
 ## 용어 대역표
 
 | 영어 | 한국어 | 금지 표기 | 비고 |
 | ---- | ------ | --------- | ---- |
+| SimpliX | SimpliX | 심플릭스 | a product name; do not transliterate. **Lowercase `simplix` is correct and is not caught** - the package `simplix-react`, the config file `simplix.config.ts`, the skill name `simplix:frontend`. This row looks only for the Hangul transliteration |
 
 ## 기본 규칙 예외
 

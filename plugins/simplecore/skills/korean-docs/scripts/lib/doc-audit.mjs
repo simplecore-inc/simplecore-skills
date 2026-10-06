@@ -413,7 +413,7 @@ function stripLines(content) {
 // quiet one DSN name. Text outside the span is never touched, so the sentence a value sits in is
 // read in full.
 //
-// What this gives up is a misspelling inside a literal - a `AccessCore` written in a mono span
+// What this gives up is a misspelling inside a literal - a `Kubernates` written in a mono span
 // goes unread, exactly as it does inside backticks today. That is the price of the code-span
 // contract and not a new hole.
 

@@ -329,8 +329,8 @@ export function emptyGlossary() {
 // stand down and nothing else does.
 //
 // **The ban is recognised by its replacement, not by a list.** A rule whose banned text holds
-// Hangul and whose replacement is Latin with no Hangul in it (`도커 → Docker`, `심플릭스 →
-// SimpliX`) exists to keep a name in its original script, and a script cannot. A replacement
+// Hangul and whose replacement is Latin with no Hangul in it (`도커 → Docker`, `쿠버네티스 →
+// Kubernetes`) exists to keep a name in its original script, and a script cannot. A replacement
 // with Hangul in it (`디폴트 → 기본값`, `디렉토리 → 디렉터리`) is a Korean word or spelling the
 // script says too, so that rule keeps reporting there. A project's own name rows qualify by
 // the same test, so no table has to be kept in step with this one.

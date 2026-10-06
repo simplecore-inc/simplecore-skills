@@ -154,7 +154,7 @@ bans stop in writing. The author marks the script, with a reason beside the mark
 
 - Inside the span, a rule stands down when its banned text holds Hangul and its replacement is
   Latin with no Hangul in it: a ban that keeps a name in its original script (`도커 → Docker` ·
-  `심플릭스 → SimpliX`, and a project's own name rows by the same test). Every other rule still
+  `쿠버네티스 → Kubernetes`, and a project's own name rows by the same test). Every other rule still
   applies, a loanword spelling included (`디렉토리 → 디렉터리`: the script says that word too, and
   it has one Hangul spelling), and so does a ban whose replacement is a Korean word
   (`디폴트 → 기본값`).

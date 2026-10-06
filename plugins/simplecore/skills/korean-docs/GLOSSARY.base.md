@@ -18,10 +18,11 @@ guidance and is English.
   using alternation) and do not write `,` inside a regex (it collides with the item separator).
 - Only rules agreed on regardless of project and domain live here. Domain concepts are registered in
   each project's glossary.
-- **Unlike a domain concept, a product's proper name lives here.** A product's name does not appear
-  only in that product's repository - design documents, meeting notes, and another product's
-  integration documents all write it, and a transliteration or a wrong capitalization is wrong in
-  every project. A lowercase package, directory, or file name is correct, and each row's note draws
+- **A product's proper name is registered in every project glossary whose documents write it**:
+  the product's own repository, and any other project that names it in a design document, a
+  meeting note or an integration guide. This file keeps only the names every project writes
+  (Docker · Kubernetes · Java and the like, in the keep-original table and the transliteration bans
+  below). A lowercase package, directory, or file name is correct, and the project row's note draws
   that boundary. The instruction on spelling is §4 (Choosing a word) of
   `references/response-style.md`.
 
@@ -82,10 +83,6 @@ Standard spellings from the loanword orthography and for widely shared technical
 | checkbox | 확인란 | 체크박스, 체크 박스, 선택 상자 | the square a person ticks, and the marker a list draws as ☑ · ☐. The tick itself is 「확인 표시」 and the state is 「선택됨 · 선택 안 됨」, so 「확인란」 names the element alone. Hit: 「완료 여부를 확인란으로 표시합니다」. Miss: the code identifier `checkbox` and the HTML `type="checkbox"`, which stay as written |
 | hyphen | 붙임표 | 하이픈, /(?<![가-힣])대시(?!보드)/ | the `-` character, by its orthographic name, for a list marker or a range in Korean text. The em dash `—` is a different character and is refused outright by the rule `em-dash`; 「대시보드」 is a different word and is not caught, and neither is a word whose 「대」 and 「시」 belong to other syllables (「중대시민재해」 · 「확대시」), which the preceding Hangul syllable filters out. Hit: 「대시(-)로 표시합니다」. Miss: 「대시보드에 표시합니다」, 「중대시민재해 예방」, a CLI flag such as `--only`, and an English range such as `pages 3-5` |
 | rail (layout) | 곁줄 | 레일 칸, 레일 영역, 레일 폭 | the narrow column beside the body of a page, holding a note, a legend or a running summary. A real rail (안전 레일 · 가이드레일) and a screen's navigation area (사이드바) are different things and are not caught. Hit: 「곁줄 칸의 폭입니다」. Miss: 「가이드레일을 설치한다」, 「사이드바에서 메뉴를 고릅니다」, and the code identifier `rail`, which stays as written |
-| AccessCORE | AccessCORE | AccessCore, Accesscore, ACCESSCORE, 액세스코어 | a product name; only the last four letters are capitalized. **A lowercase identifier is correct and is not caught** - the package `dev.accesscore`, the directory `accesscore-license-admin`, the file `accesscore-logo.tsx`. The rule is case-sensitive, so lowercase `accesscore` matches none of the four patterns. Write an all-caps code name (a constant, an environment variable) inside a code span, which is excluded from checking and so never matches `ACCESSCORE`. **Screen copy cannot use backticks, so mark that place with `<code>` or a `mono` class** - its inside, holding no Hangul, is excluded like inline code (`references/audit-tooling.md`), which is why no project-level exception is needed here |
-| SimpliX | SimpliX | 심플릭스 | a product name; do not transliterate. **Lowercase `simplix` is correct and is not caught** - the package `simplix-react`, the config file `simplix.config.ts`, the skill name `simplix:frontend`. This row looks only for the Hangul transliteration |
-| PACS Studio | PACS Studio | 팩스 스튜디오 | a product name. **「팩스」 on its own is not caught** - the fax that sends documents is a different word, so only the two-word `팩스 스튜디오` is matched |
-| NICEPAY | 나이스페이 | 나이스페이먼츠, NICE페이 | the name of a payment gateway. **`NICE`·`nice`·「나이스」 alone are not this company and are not caught** - the English word nice, the credit-rating agency 나이스, and the grade NICE are all different things, so only `나이스페이먼츠`·`NICE페이` are matched |
 
 ## 원문 유지 용어
 
