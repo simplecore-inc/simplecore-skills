@@ -112,6 +112,8 @@ A restart is required for updates to take effect.
 
 ## simplecore: Detection, Commands and Hooks
 
+The commands below run from a shell, where `<plugin-root>` stands for the installed plugin's directory: the working tree under a local-folder install, `~/.claude/skills/<plugin>` under a link, and the versioned directory under `~/.claude/plugins/cache/` under a marketplace install.
+
 ### Skill detection
 
 The plugin recognizes what a project needs from its markers rather than from configuration you maintain:
@@ -126,9 +128,9 @@ The plugin recognizes what a project needs from its markers rather than from con
 The board scan reads directory entries three levels deep, skips dependency and build output directories, and opens only the head of a bounded number of HTML files, so finding a board never costs a full-tree read.
 
 ```bash
-node "${CLAUDE_PLUGIN_ROOT}/scripts/detect-simplecore.mjs"           # human-readable
-node "${CLAUDE_PLUGIN_ROOT}/scripts/detect-simplecore.mjs" --json    # machine-readable
-node "${CLAUDE_PLUGIN_ROOT}/scripts/detect-simplecore.mjs" --root=../other-repo
+node "<plugin-root>/scripts/detect-simplecore.mjs"           # human-readable
+node "<plugin-root>/scripts/detect-simplecore.mjs" --json    # machine-readable
+node "<plugin-root>/scripts/detect-simplecore.mjs" --root=../other-repo
 ```
 
 Exit code 0 means at least one skill binds, 1 means none.
@@ -213,17 +215,17 @@ The plugin recognizes a SimpliX project from its markers rather than from config
 
 | Stack | Markers |
 | --- | --- |
-| Backend | a `.simplix/` generator directory, or a Gradle root whose `settings.gradle` / `build.gradle` / `gradle.properties` names simplix outside a comment |
+| Backend | a `.simplix/` generator directory, or a Gradle root whose `settings.gradle` / `build.gradle` / `gradle.properties` / `gradle/libs.versions.toml` names the framework group `dev.simplecore.simplix` outside a comment |
 | Frontend | a `simplix.config.{ts,mts,js,mjs}`, or a `package.json` depending on `@simplix-react/*` |
 
-The scan reads directory entries two levels deep, skips dependency and build output directories, and stops descending as soon as a directory matches - so a monorepo reports its subproject roots, not every Gradle module or workspace package. A repository that publishes under the `@simplix-react/` scope is recognized as the framework itself, where the consumer handbooks do not apply.
+The scan reads directory entries two levels deep, skips dependency and build output directories, and stops descending as soon as a directory matches - so a monorepo reports its subproject roots, not every Gradle module or workspace package. A repository that publishes under the `@simplix-react/` scope, or whose own Gradle group is `dev.simplecore.simplix`, is recognized as the framework itself, where the consumer handbooks do not apply.
 
 Run it directly at any time:
 
 ```bash
-node "${CLAUDE_PLUGIN_ROOT}/scripts/detect-simplix.mjs"           # human-readable
-node "${CLAUDE_PLUGIN_ROOT}/scripts/detect-simplix.mjs" --json    # machine-readable
-node "${CLAUDE_PLUGIN_ROOT}/scripts/detect-simplix.mjs" --root=../other-repo
+node "<plugin-root>/scripts/detect-simplix.mjs"           # human-readable
+node "<plugin-root>/scripts/detect-simplix.mjs" --json    # machine-readable
+node "<plugin-root>/scripts/detect-simplix.mjs" --root=../other-repo
 ```
 
 Exit code 0 means at least one SimpliX subproject was found, 1 means none.
@@ -274,8 +276,8 @@ Declared beside the skill gate, and inactive without it:
 `/simplix:init` writes both gates, and the detector reports which are armed:
 
 ```bash
-node "${CLAUDE_PLUGIN_ROOT}/scripts/detect-simplix.mjs"          # per subproject: gate armed / OFF
-node "${CLAUDE_PLUGIN_ROOT}/scripts/detect-simplix.mjs" --json   # `wired` is true when nothing is missing
+node "<plugin-root>/scripts/detect-simplix.mjs"          # per subproject: gate armed / OFF
+node "<plugin-root>/scripts/detect-simplix.mjs" --json   # `wired` is true when nothing is missing
 ```
 
 ### `/simplix:init` command
@@ -294,12 +296,12 @@ Both blocks live in [`plugins/simplix/templates/claude-md-section.md`](plugins/s
 The `frontend` and `frontend-e2e` skills route to scripts that ship with the plugin. Run the source-reading ones from the frontend project root, or point them at it with `--root=<dir>`:
 
 ```bash
-node "${CLAUDE_PLUGIN_ROOT}/scripts/audit-frontend.mjs"             # machine-checkable convention rules
-node "${CLAUDE_PLUGIN_ROOT}/scripts/audit-frontend.mjs" --selftest  # prove every rule both ways
-node "${CLAUDE_PLUGIN_ROOT}/scripts/screen-inventory.mjs"           # every screen classified by shape
-node "${CLAUDE_PLUGIN_ROOT}/scripts/check-duplicate-contexts.mjs"   # one physical copy per context-owning package
-node "${CLAUDE_PLUGIN_ROOT}/scripts/check-interpolation-types.mjs"  # formatted catalogue placeholders handed a number
-node "${CLAUDE_PLUGIN_ROOT}/scripts/audit-rendered.mjs" --url <address>  # boxes and rows on a rendered page
+node "<plugin-root>/scripts/audit-frontend.mjs"             # machine-checkable convention rules
+node "<plugin-root>/scripts/audit-frontend.mjs" --selftest  # prove every rule both ways
+node "<plugin-root>/scripts/screen-inventory.mjs"           # every screen classified by shape
+node "<plugin-root>/scripts/check-duplicate-contexts.mjs"   # one physical copy per context-owning package
+node "<plugin-root>/scripts/check-interpolation-types.mjs"  # formatted catalogue placeholders handed a number
+node "<plugin-root>/scripts/audit-rendered.mjs" --url <address>  # boxes and rows on a rendered page
 ```
 
 `audit-frontend.mjs` exits 1 when an error-level rule has hits; review-level rules print candidates that need human judgment and never fail the run. It reads the `audit` section of `.claude/simplix.json` for the handful of policies that are a property of the product rather than of the framework - which route directories are open to anybody, for one - so nothing about a particular repository's layout is baked into the script.
@@ -313,8 +315,8 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/audit-rendered.mjs" --url <address>  # boxes
 The `backend` skill ships one, run the same way - from the backend project root, or with `--root=<dir>`:
 
 ```bash
-node "${CLAUDE_PLUGIN_ROOT}/scripts/audit-backend.mjs"            # machine-checkable invariants
-node "${CLAUDE_PLUGIN_ROOT}/scripts/audit-backend.mjs" --selftest # prove every rule both ways
+node "<plugin-root>/scripts/audit-backend.mjs"            # machine-checkable invariants
+node "<plugin-root>/scripts/audit-backend.mjs" --selftest # prove every rule both ways
 ```
 
 It carries the mechanically visible subset of the handbook's invariants - `@PreAuthorize` and `@Operation` on every endpoint, permission group and action shape, the SearchDTO primary-key contract, scope forcing on both `search` overloads, the date/time and timezone rules, DTO and repository shape. Exit 1 on any error-level hit. It reads `src/main/java` at the root and under `modules/`, `packages/`, `apps/` and `tools/`, and exits 2 when it finds no Java source. The helpers that force a search to the caller's scope, beyond a `force*(` call, come from the `audit` section of `.claude/simplix.json` (`scopeForcingCalls`).
