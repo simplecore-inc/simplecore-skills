@@ -172,9 +172,10 @@ with 「(미정: …)」.
   numeral in words (「열한 대」, 「여섯 명」, 「네 시간」), one read with a Sino-Korean numeral in digits
   (「10만 건」, 「15개월 차」, 「1 대 3」). A check lists every digit joined to a native-numeral
   counter (대 · 명 · 번 · 시간 · 가지 · 곳 · 개) in the notes; a voice reading 「11대」 says 십일 대.
-- A name in Latin letters is written in the script as it is spoken (「Apache Ignite 3」 → 「아파치
-  이그나이트 쓰리」), and an abbreviation as its meaning or its letters in Hangul; the slide keeps
-  the written form. The same check lists any Latin letter left in a note.
+- Every English term in the script is written in Hangul as it is pronounced (「Apache Ignite 3」 →
+  「아파치 이그나이트 쓰리」, 「IMDG」 → 「아이엠디지」), with the meaning said at the first mention
+  where the listener cannot know it; the slide keeps the written form. The same check lists any
+  Latin letter left in a note.
 - Time the script at the speaking rate measured by reading it aloud (one bid read 5,247
   characters in about 15 minutes, 350 a minute), never at an assumed rate; an assumed 300 a minute
   cut a script by a fifth that the talk had room for.
