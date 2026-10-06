@@ -2,6 +2,8 @@
 
 Select the template matching your diagram type. Each provides a canvas size, ASCII wireframe, color assignments, and layout tips.
 
+**These layouts are for a standalone picture shown in a browser**: each sets its own canvas width and the Tokyo Night colours. A figure that goes in a document takes the set's one width, its type ladder and its theme from `scripts/docfigures/` (`references/document-figures.md`) and borrows only the topology from here.
+
 ## Template Selection Guide
 
 | Request | Template | Canvas |
@@ -135,6 +137,8 @@ Deploy: [Stage] ──► [E2E] ──► [Approve] ──► [Prod]
   ●(end)
 ```
 
+Draw it with the `state()` builder (`c.state(...)`), which carries the type's budget and draws each transition's guard on its arrow (`references/visual-types.md`); the layout above is for one placed by hand.
+
 - Start/end: circle node, `#7aa2f7` fill
 - Error state: `#db4b4b` border
 - Transitions: edge labels
@@ -165,7 +169,7 @@ Deploy: [Stage] ──► [E2E] ──► [Approve] ──► [Prod]
 
 **Canvas:** 600xN (dynamic height)
 
-Sequence diagrams from text are quickest via Mermaid `sequenceDiagram` (`scripts/convert.js`); for a hand-crafted SVG use this layout:
+Draw it with the `sequence()` builder (`c.sequence(...)`), which carries the type's budget (`references/visual-types.md`). From text, Mermaid `sequenceDiagram` renders through `scripts/convert.js --svg`, which needs the optional `beautiful-mermaid` package (SKILL.md, Mermaid auto-layout). For one placed by hand, use this layout:
 
 ```
 Headers (y=30): [Client]  [Gateway]  [Service]  [DB]

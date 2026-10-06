@@ -2,10 +2,14 @@
 
 A box is as tall as its wrapped text plus even padding and a row is as tall
 as its tallest box, so a row of cards ends where its tallest text ends.
+
+Running text - a card's or a note's body - defaults to the body rung. A rung
+below it is for tags, badges and arrow labels, and a helper that set its body
+there would print every card below the paragraph beside it.
 """
 from figlib.marks import BADGE_H, badge_, badge_then_label, badge_top
-from figlib.settings import (BODY, CARD, CHIP, HAIRLINE, ICON_SIZE, ICON_SW, MICRO,
-                             SANS, SECTION, STROKE, Canvas, tw)
+from figlib.settings import (BODY, CARD, CHIP, HAIRLINE, ICON_SIZE, ICON_SW, SANS,
+                             SECTION, STROKE, Canvas, tw)
 from figlib.text import (BAND_PAD, BULLET_IND, CHIP_RISE, PAD, PAD_Y, TITLE_GAP,
                          _line_spec, baseline_for_top, centered_baseline, draw_bullet,
                          glyph_bottom, item_lines, lines_h, step_for, use_bullets, wrap)
@@ -24,7 +28,7 @@ def icon_title_w(text, size=CARD, gap=12):
     return ICON_SIZE + gap + tw(text, size, mono=False)
 
 
-def card_h(w, title=None, lines=(), *, title_size=CARD, size=MICRO, step=None,
+def card_h(w, title=None, lines=(), *, title_size=CARD, size=BODY, step=None,
            pad=PAD, pad_y=PAD_Y, band=False, title_gap=TITLE_GAP,
            bullet="auto", align="start"):
     """The height `card()` will give a box of width `w` with this content."""
@@ -46,7 +50,7 @@ def card_h(w, title=None, lines=(), *, title_size=CARD, size=MICRO, step=None,
 
 
 def card(c, x, y, w, accent, title=None, lines=(), *, h=None, icon=None,
-         tag=None, badge=None, band=False, title_size=CARD, size=MICRO,
+         tag=None, badge=None, band=False, title_size=CARD, size=BODY,
          step=None, pad=PAD, pad_y=PAD_Y, fill=None, rx=10, sw=HAIRLINE,
          dash=None, title_color=None, color=None, align="start",
          title_gap=TITLE_GAP, stripe=None, opacity=None, wash=False,
@@ -170,7 +174,7 @@ def pill(c, x, y, w, h, text, accent, *, size=BODY, fill=None, rx=None,
     return (x, y, w, h)
 
 
-def note(c, x, y, w, text, accent, *, size=MICRO, step=None, pad=PAD, pad_y=12,
+def note(c, x, y, w, text, accent, *, size=BODY, step=None, pad=PAD, pad_y=12,
          weight=600, align="middle", opacity=0.08, color=None, rx=9):
     """A tinted band holding one or two lines, sized to them. Returns the box."""
     step = step_for(size, step)
@@ -296,15 +300,15 @@ def zone(c, x, y, w, h, accent, label, tag=None, dash=None, fill=None,
         badge_then_label(c, x + 18, y + 5, label, badge_kind, size=BODY)
         chip_bottom = badge_top(y + 5, BODY) + BADGE_H
     else:
-        isz = round(BODY * 1.05)
-        lw = tw(label, BODY, False) + 26 + (isz + 8 if icon else 0)
+        # the set's one icon size and stroke, as every other helper draws it
+        lw = tw(label, BODY, False) + 26 + (ICON_SIZE + 8 if icon else 0)
         c.rrect(x + 18, y - chip_h / 2, lw, chip_h, rx=7, fill=c.t["bg"],
                 stroke=accent, sw=HAIRLINE)
         base = centered_baseline(y - chip_h / 2, chip_h, BODY)
         if icon:
-            c.icon(icon, x + 31 + isz / 2, y, size=isz, color=accent,
-                   sw=max(1.6, BODY / 12))
-            c.text(x + 31 + isz + 8, base, label, size=BODY, color=accent,
+            c.icon(icon, x + 31 + ICON_SIZE / 2, y, size=ICON_SIZE, color=accent,
+                   sw=ICON_SW)
+            c.text(x + 31 + ICON_SIZE + 8, base, label, size=BODY, color=accent,
                    family=SANS, weight=700)
         else:
             c.text(x + 18 + lw / 2, base, label, size=BODY, color=accent,

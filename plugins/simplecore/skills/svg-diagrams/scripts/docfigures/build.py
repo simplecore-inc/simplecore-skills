@@ -5,8 +5,8 @@
     python3 <skill>/scripts/docfigures/build.py --config path/to/document-figures.json
 
 Run from the project (or name its config with `--config`). The figure modules
-are the files the config's `modules` globs match. Three kinds of file are
-never run even when a glob matches them: a test file (`test_*.py`,
+are the files the config's `modules` globs match. These files are never run
+even when a glob matches them: a test file (`test_*.py`,
 `*_test.py`), a helper the config lists under `helpers`, and a file named
 after one of this library's own modules, which would shadow it. Each module
 draws its figures at import time and calls `save()` for each.

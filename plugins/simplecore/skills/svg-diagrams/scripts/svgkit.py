@@ -78,7 +78,7 @@ _ARROW_ROLES = ["blue", "green", "orange", "purple", "cyan", "teal", "red",
                 "muted", "fg", "yellow"]
 _ARROW_NAMES = set(_ARROW_ROLES)
 
-# --- Module-level Tokyo Night constants (backward compatible imports) -------
+# --- Module-level Tokyo Night constants, for code drawn in that theme only ---
 _T = THEMES[DEFAULT_THEME]
 BG, BG_DEEP, PANEL = _T["bg"], _T["bg_deep"], _T["panel"]
 BOX, BOX_HI, LINE = _T["box"], _T["box_hi"], _T["line"]
@@ -242,9 +242,9 @@ def tw(s, size, mono=True):
     the SANS stack resolves to (Inter · Apple SD Gothic Neo · Pretendard)
     Hangul sets at ~0.86 em, lowercase ~0.47, capitals ~0.64, digits ~0.57,
     the space and thin punctuation ~0.25 - the numbers here sit a few
-    percent above each so a box sized from them never clips, without the
-    quarter-width slack the old flat 1.03 / 0.55 table left, which made
-    every label look wider than it printed. A mono face sets every glyph at
+    percent above each so a box sized from them never clips. A flat
+    1.03 / 0.55 table leaves a quarter-width slack instead, which makes every
+    label look wider than it prints. A mono face sets every glyph at
     0.6 em and CJK at ~1 em. audit.py carries the same table - generator and
     lint must measure identically. Re-run the calibration on a machine whose
     fonts differ and move both tables together.
@@ -367,7 +367,7 @@ class Canvas:
         # underlay layer: (area, markup) entries rendered BEFORE body and
         # sorted by area descending, so group frames land behind nodes and
         # outer frames land behind inner ones - z-order never depends on
-        # call order (a frame drawn after its content used to paint over it)
+        # call order, so a frame drawn after its content never paints over it
         self.under = []
         # theme-specific color -> marker-name map (so marker=c.blue resolves)
         self._c2m = {self.t[a]: a for a in _ACCENTS}
@@ -1276,6 +1276,13 @@ def _bind_viztypes():
     except ImportError:                      # pragma: no cover
         return                               # primitives still work alone
     for _name, _fn in BUILDERS.items():
+        # A builder named like a primitive would replace it on every canvas,
+        # and each caller of the primitive would get the builder instead.
+        bound = Canvas.__dict__.get(_name)
+        if bound is not None and bound is not _fn:
+            raise RuntimeError(
+                f"viztypes builder {_name!r} has the name of Canvas.{_name}; "
+                "name the builder after its type instead")
         setattr(Canvas, _name, _fn)
 
 

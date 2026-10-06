@@ -20,7 +20,10 @@ BASE_CONFIG = {
     "boardNames": {"FULL": 1200, "COLUMN": 528},
     "columnBoard": 528,
     "ladder": [21, 24, 26, 28],
-    "names": {"CHIP": 21, "MICRO": 24, "BODY": 24, "LEAD": 24, "CARD": 24,
+    # MICRO is the smallest rung, below BODY, as in the sample config and the
+    # reference's ladder table: a helper that set running text there would
+    # print below the body rung, and these fixtures can tell the two apart.
+    "names": {"CHIP": 21, "MICRO": 21, "BODY": 24, "LEAD": 24, "CARD": 24,
               "SECTION": 26, "EMPH": 26, "DISPLAY": 28},
     "strokes": {"HAIRLINE": 1.4, "STROKE": 1.9, "THICK": 2.8},
     "dashes": {"DASH_OUTSIDE": {"pattern": "5 4", "words": ["범위 밖"]}},

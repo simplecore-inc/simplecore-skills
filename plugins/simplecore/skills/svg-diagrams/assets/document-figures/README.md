@@ -1,8 +1,9 @@
 # Wiring a project to the document-figure library
 
 The drawing layer, the build and the checks live in this skill at
-`scripts/docfigures/` and are imported, never copied. A project keeps two kinds
-of file and nothing else:
+`scripts/docfigures/` and are imported, never copied. A project keeps its
+settings file, its figure modules and the SVGs they generate, and nothing of the
+library itself:
 
 ```
 .claude/document-figures.json   every value this document decides
@@ -39,5 +40,6 @@ Edit the module, never the SVG. A hand-edited SVG is overwritten by the next
 build, and the edit is lost without a trace.
 
 A file the module glob reaches is not run when it is a test (`test_*.py`), a
-helper listed under `helpers`, or named after a library module (`common.py`);
-a project that still carries an old copy of `common.py` can delete it.
+helper listed under `helpers`, or named after a library module (`common.py`).
+The library comes first on the import path, so a project file of that name is
+never imported either: every module draws with the library's.

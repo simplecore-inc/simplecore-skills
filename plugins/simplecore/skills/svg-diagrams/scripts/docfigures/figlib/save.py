@@ -43,8 +43,15 @@ def figure(*, plain=False):
 
 
 def canvas(w, h):
-    """A canvas for one figure, with the project's theme and verdict hues."""
-    c = Canvas(w, h, theme=THEME)
+    """A canvas for one figure, with the project's theme and verdict hues.
+
+    svgkit draws a drop shadow under `node()` and `card()` with an SVG
+    `<filter>`, and PowerPoint's SVG import drops every element that
+    references one: the shape vanishes while its labels stay. A document
+    figure may be placed in such a file, so its canvas draws no shadow, and
+    `verify.py` fails a figure that references a filter all the same.
+    """
+    c = Canvas(w, h, theme=THEME, shadow=False)
     if VERDICT_PASS:
         # The theme's own green and red land close enough to a deck's declared
         # verdict hues to be indistinguishable at projection distance, so a
@@ -94,8 +101,8 @@ def save(c, name, board=None, margin=None, *, width=None):
     `board` decides the slot the document puts the figure in, so it is
     declared here rather than inferred: a landscape drawing saved on a column
     board would print its labels at a fraction of the intended size, and no
-    check further down the pipeline can see that. `width=` is the older name
-    for the same argument and is accepted while modules move over.
+    check further down the pipeline can see that. `width=` is a deprecated
+    alias for `board=` and warns.
     """
     if width is not None:
         warnings.warn("save(width=) is deprecated; pass board=", DeprecationWarning,

@@ -28,7 +28,7 @@ at `1200` units and placed at 50% prints at exactly that column. The number
 itself is a project decision; **the invariant is that one number governs the
 whole set.**
 
-Three rules follow, and each is violated in a way that looks deliberate:
+The rules that follow are each violated in a way that looks deliberate:
 
 - **Do not compensate.** A figure with less to say does not get smaller type,
   thinner strokes or tighter cards so it can be drawn on a narrower canvas.
@@ -76,9 +76,10 @@ an explanation panel.
 **The ladder is derived from the document's body size, not chosen.** A figure is
 placed at a fraction of the page, so a label's drawn size and its printed size
 are different numbers, and only the printed one matters. The floor is that
-**the figure's smallest label prints at the document's body size**: a reader who
-can read the paragraph can read every word in the picture beside it. Work
-backwards from the placed width:
+**the figure's body rung prints at the document's body size**: a reader who can
+read the paragraph can read the picture's words beside it. Only a tag rung for
+chips, codes and requirement ids sits below it, never the figure's running text
+(see below). Work backwards from the placed width:
 
 ```
 scale  = placed width in px / board width in units
@@ -133,6 +134,10 @@ one set on type prints at a contrast ratio around 4.0 on white, under the 4.5 a
 small size needs. The library's `save()` promotes any pale-grey `<text>` to the
 neutral grey rather than leaving it to every call site, so a figure cannot
 reintroduce it and a line may still be drawn in the pale grey, where it belongs.
+The contrast check holds every label to `contrastFloor` against the ground
+painted under it. Its default, 3.0, is WCAG's floor for large text; a label
+printed at the document's body size is smaller than that and takes 4.5, which
+the sample settings file sets.
 
 **The smallest rung is for a short marker and a value looked up, not for the
 figure's own words.** A figure whose every label sits on it has no entry point:
@@ -143,11 +148,12 @@ neither is a matter of judgement at review time.
 
 **A rung below the body size is never a helper's default for running text.** A
 document may keep a tag rung under its body size for chips, codes and requirement
-ids. Once it does, every box helper's body default has to point at the body rung:
-left on the smallest rung, every card and note body prints below the paragraph
-beside it while every size is still on the ladder, so the ladder check passes. One
-set of 34 figures carried 59~93% of its characters on such a rung before the
-default moved. Every rung under `BODY` counts as one; set `subBodyShareMax`
+ids. The library's box helpers (`card`, `note`, `column.panel`) set their body
+on `BODY` for that reason: a helper whose body sat on the smallest rung prints
+every card and note below the paragraph beside it while every size is still on
+the ladder, so the ladder check passes, and one set of 34 figures drawn that way
+carried 59~93% of its characters below the body. Every rung under `BODY` counts
+as one; set `subBodyShareMax`
 (0.5 is the usual line) and `verify.py` fails a figure with more than that share
 of its characters below the body rung.
 
@@ -184,8 +190,9 @@ tall figure down: every extra unit of height shrinks the printed type of that
 figure against its neighbours. **Minimising height is not a target to clear
 once; it is a pass to make on every figure before saving it**, including a
 figure that already fits. 720 units on a 1200-unit canvas is the number to stay
-under and 840 is a failure - but a figure that lands at 700 and could have
-landed at 520 is still wrong.
+under. Past `heightReview` (840 by default) `verify.py` lists the figure for a
+decision to split it or keep it tall, and fails nothing. A figure that lands at
+700 and could have landed at 520 is still wrong.
 
 Make the pass in this order, and re-measure after each:
 
@@ -354,20 +361,27 @@ the rendered labels from the viewpoint of a first-time evaluator, especially
 units, asset names, status words and screen-field names.
 
 - On first use in a figure, write the plain meaning before a field term only
-  when it is not issued copy: `교체 전선 길이(긍장, C-km)`. A field name,
-  screen label, requirement name or other term printed by the tender remains
-  character for character. Explain it in a separate key such as
-  `전산화번호: 배전설비 한 기를 구분하는 식별번호`; never replace the label
-  itself with the gloss.
+  when it is not issued copy: `교체 전선 길이(긍장, C-km)`.
+- When a terminology guide replaces an English word or abbreviation with a
+  plain-language term, print the preferred term as
+  `plain-language term(English source)`, even when the guide's preferred-term
+  cell omits the parenthetical: `에너지 저장장치(ESS)`, `대정전(Blackout)`. Copy
+  the English word or abbreviation from the guide's current-term cell; do not
+  reconstruct or translate it from memory.
 - When two field terms form a calculation, state what each counts instead of
   joining the unexplained names: `교체 구간 수(경간)` rather than `경간`, and
   name the numerator and denominator in the verdict.
 - Decode abbreviations in Korean, not only in English. `Health Index` beside a
   number still asks the reader to translate it; `설비 건전도 지수(H.I)` says
   what the value means.
-- A formal field, screen or requirement name remains character for character.
-  Put its gloss in a subtitle, key or note rather than rewriting the quoted
-  name or inserting a synonym into the field slot.
+- A field name, screen label, requirement name or other term printed by the
+  tender remains character for character, and neither form above overrides it.
+  Put its gloss beside the label it explains, in a subtitle line under it or a
+  note next to it (`전산화번호: 배전설비 한 기를 구분하는 식별번호`); never
+  rewrite the quoted name, insert a synonym into the field slot or replace the
+  label with the gloss. A row of term-and-gloss pairs set apart under the
+  drawing is a key the reader has to carry back up, the defect the section "No
+  key line under the drawing" names.
 - Repeat the gloss when a figure must stand alone. A definition in an earlier
   figure or in body copy is not visible to a panel reading this figure first.
 
@@ -427,7 +441,7 @@ A box is as tall as the text inside it plus even padding, and a row is as tall
 as its tallest box. Nothing else decides a height. A fixed height is how a row
 of cards ends with a band of paper under every label, how the one card with
 three lines spills past its edge, how a note sits high in its band - and each
-of those is a defect the lint now reports (`ROW-PADDING-UNEVEN`,
+of those the lint reports (`ROW-PADDING-UNEVEN`,
 `BOX-PADDING-UNEVEN`, `WRAP-SLACK`, `TIGHT-BOTTOM`).
 
 The library (`from common import ...`) carries the layer that makes the rule
@@ -435,10 +449,10 @@ automatic:
 
 | Helper | What it sizes |
 |---|---|
-| `card(c, x, y, w, accent, title, lines, …)` | a titled card from its wrapped lines; `h=` forces a taller box and `valign="middle"` keeps the padding even; `band=True` for a header band, `icon=` / `tag=` for the title line, `wash=` for a tint under the outline |
+| `card(c, x, y, w, accent, title, lines, …)` | a titled card from its wrapped lines, set on `BODY`; a line is a string, `(text, colour)` or `(text, colour, weight)`, and svgkit's `(colour, text)` order reads the same; `h=` forces a taller box and `valign="middle"` keeps the padding even; `band=True` for a header band, `icon=` / `tag=` for the title line, `wash=` for a tint under the outline |
 | `cards_row(c, xs, y, w, items, accents)` | a row of cards at one height, the tallest content's |
 | `pill(…)` / `pill_h(size, pad_y)` | a one-line box and the height it needs |
-| `note(c, x, y, w, text, accent)` | a tinted band sized to its one or two lines |
+| `note(c, x, y, w, text, accent)` | a tinted band sized to its one or two lines, set on `BODY` |
 | `zone(c, x, y, w, h, accent, label, tag)` | a boundary panel with its name in a chip on the top border; returns where content starts so the inset under the chip equals the sides |
 | `step_row(c, xs, cw, y, items, accent, sep=)` | numbered step cards at one height joined by arrows or chevrons |
 | `segment_bar(…)` | a proportional strip whose narrow segments are named together under one bracket |
@@ -522,7 +536,7 @@ Drawn as two rounded boxes side by side it is not one cell. The two outlines
 meet at four arcs with a sliver of paper between them, and at print size the
 pair reads as two things touching - which is the wrong claim, because the label
 means nothing without the content beside it. One set of 132 figures carried 45
-such pairs before this was named.
+such pairs.
 
 **Draw it as two halves whose facing corners are square.** `Canvas.band(x, y,
 w, h, rx, color, side=)` rounds only the corners that follow the cell's own
@@ -631,6 +645,22 @@ turns into decoration.
 
 - **One icon per card at most**, and only where the card's kind is worth marking.
   A set where every card carries an icon says nothing, because nothing stands out.
+- **One size and one stroke across the set.** `size=20, sw=1.6` sits with 17-unit
+  body text on a 1200-unit canvas; a header icon beside 18-unit type takes
+  `size=22`. Changing either per figure reproduces the mismatch that the shared
+  width and type ladder exist to prevent.
+- **Take the icon's colour from what it marks** - the card's accent, or
+  `t["fg_dim"]` for a neutral mark. An icon in its own colour reads as a third
+  signal the figure never defined.
+- **An icon is ink.** It is emitted as plain shapes rather than a `<g transform>`
+  so `trim` and `ink_box` see it, which means an icon placed outside its card
+  widens the figure and an icon crowding a label fails the overflow lint. Leave
+  the icon's half-size plus 8 units between it and the text it precedes.
+
+Icon names change between Lucide releases. `scripts/fetch_icons.py` regenerates
+`scripts/lucide.py` from `lucide-static`; a name that disappears upstream raises
+at draw time with the near-matches listed, so a stale name never renders blank.
+
 ### The AI pass - run it on every figure
 
 **Before saving any figure, go through its elements and ask which of them a
@@ -653,6 +683,7 @@ and what the model does is the arrow between them: the decomposition, the
 clustering. Marking the boxes there says the *data* is AI, which is wrong and
 reads as careless. Ask what the element **is** before marking it: a thing a
 model produced, or the act of producing it. Mark the act.
+
 - **Decide it by what the component does, never by whether its label says "AI".**
   Go through the figure's items one at a time and ask *does a model do this work*.
   Classification, ranking, retrieval and re-ranking, extraction, clustering,
@@ -671,21 +702,6 @@ model produced, or the act of producing it. Mark the act.
   Mark the one element that names the AI subject so the reader still sees what
   the figure is about, or leave the figure unmarked and say why in the module.
   A set where the mark is on most items has stopped carrying information.
-- **One size and one stroke across the set.** `size=20, sw=1.6` sits with 17-unit
-  body text on a 1200-unit canvas; a header icon beside 18-unit type takes
-  `size=22`. Changing either per figure reproduces the mismatch that the shared
-  width and type ladder exist to prevent.
-- **Take the icon's colour from what it marks** - the card's accent, or
-  `t["fg_dim"]` for a neutral mark. An icon in its own colour reads as a third
-  signal the figure never defined.
-- **An icon is ink.** It is emitted as plain shapes rather than a `<g transform>`
-  so `trim` and `ink_box` see it, which means an icon placed outside its card
-  widens the figure and an icon crowding a label fails the overflow lint. Leave
-  the icon's half-size plus 8 units between it and the text it precedes.
-
-Icon names change between Lucide releases. `scripts/fetch_icons.py` regenerates
-`scripts/lucide.py` from `lucide-static`; a name that disappears upstream raises
-at draw time with the near-matches listed, so a stale name never renders blank.
 
 ## The library and the project's settings file
 
@@ -709,8 +725,8 @@ trailing commas. The svg-diagrams scripts are found through
 directory, never through an assumed home-directory path.
 
 A figure module imports by name: `from common import card, save, BODY`.
-`save(c, name, board=...)` writes one figure; `width=` is the older name for
-`board=` and still works, with a deprecation warning. `@figure(plain=True)` on a
+`save(c, name, board=...)` writes one figure; `width=` is a deprecated alias
+for `board=` and warns. `@figure(plain=True)` on a
 figure function declares a figure with no list. Any name the settings file
 declares (a board name, a rung name, a dash name, a content-width name) is
 importable as a module constant.
@@ -756,10 +772,12 @@ importable as a module constant.
 | `labelForm` | | `{allow: [...]}` strings that pass the predicate-ending check, or `false` to turn it off | `{}` |
 | `register` | | `{words, allow}`: the project's working-word pattern and passing strings, for the register check | none |
 | `sectionNumbers` | | `false` turns off the section-number check | `true` |
-| `contrastFloor` | | WCAG ratio every label clears on its own ground; `null` turns it off | `3.0` |
+| `contrastFloor` | | WCAG ratio every label clears on its own ground: 3.0 is the floor for large text, 4.5 for a label printed at body size; `null` turns it off | `3.0` |
 | `references` | | `{manuscripts, caption, placements: [{glob, pattern, copies}]}` for the reference check | none |
 | `plans` | | `{manuscripts, blockStart, row, caption, name, pagePad, embed}` for `figplans.py`; `caption` has groups `caption`, `page`, `index` | none |
 
-A key left out turns its check off rather than guessing, and `verify.py` says
-`not configured` for it, so a quiet report is never mistaken for a pass of a
-check that did not run.
+A key with no default turns its check off rather than guessing, and `verify.py`
+says `not configured` for it, so a quiet report is never mistaken for a pass of
+a check that did not run. A key with a default in the table runs at that default
+until the project sets it: `false` turns off `labelForm`, `sectionNumbers` and
+`bullets`, and `null` turns off `contrastFloor` and `heightReview`.

@@ -2,6 +2,8 @@
 
 Hand-crafted SVG is a first-class technique for precise architecture/flow diagrams - often the default. Use these XML templates for copy-paste authoring, or import `scripts/svgkit.py` for a programmatic builder (glyph-width box sizing, perpendicular orthogonal connectors, safe markers). All templates use the **Tokyo Night** palette; canonical primary text is `#c0caf5`.
 
+**These templates are for a standalone picture rendered in a browser.** The header loads a web font with `@import` and colours through CSS `var()` and `color-mix()`, all outside the SVG 1.1 that `references/render-audit.md` holds a figure bound for another renderer to, and their stroke and type sizes sit on no document's ladder. A figure that goes in a document is drawn with `scripts/docfigures/` (`references/document-figures.md`).
+
 > Pick ONE convention per file: these templates use a single marker `id="ah"`; `svgkit.py` uses per-color `arr-<name>` markers. Do not mix the two in one SVG.
 
 ## Contents
@@ -218,4 +220,4 @@ i=20: sin=0.000
 10. Minimum 40px gap between connected nodes for bend visibility
 11. Outer subgroup height must include all arrow bend paths (bottom + 30px margin)
 12. Emit subgroup/frame rects BEFORE the node rects they enclose - document order is z-order, and a frame written after its nodes paints over them
-13. Size boxes for CJK text at ~1 em per Hangul/Kana/CJK glyph (Latin ≈ 0.55 em); a width tuned for a Latin label clips its Korean/Japanese counterpart
+13. Size boxes for CJK text from the glyph widths `svgkit.tw` gives (the lint measures with the same table); a width tuned for a Latin label clips its Korean/Japanese counterpart
