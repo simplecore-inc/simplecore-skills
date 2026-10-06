@@ -31,7 +31,12 @@ const CHROMATIC_SATURATION = 0.3;
 /** Hue bucket width in degrees. A tint and its base land in one bucket; a second accent does not. */
 const HUE_BUCKET = 30;
 
-const FRAME_OPEN = /<article[^>]*\bclass="([^"]*\bframe\b[^"]*)"/g;
+// `frame` as a whole class token: `ov-frame` (the kit's overview card) and `frame-label` share the
+// word and are not frames.
+const FRAME_OPEN = /<article[^>]*\bclass="([^"]*(?<![\w-])frame(?![\w-])[^"]*)"/g;
+
+/** Every frame label's inner markup, so a chip is counted only where a label carries it. */
+const FRAME_LABEL = /<(\w+)[^>]*\bclass="[^"]*(?<![\w-])frame-label(?![\w-])[^"]*"[^>]*>([\s\S]*?)<\/\1>/g;
 
 function countMatches(text, re) {
   return (text.match(re) ?? []).length;
@@ -113,8 +118,10 @@ function audit(html) {
     );
   }
 
+  // A data URI is inside the file, which is how the kit carries a board's logo; any other image
+  // source is a fetch.
   const externals = [
-    [/<img\b/i, 'an `<img>`'],
+    [/<img\b(?![^>]*\bsrc\s*=\s*["']?data:)/i, 'an `<img>`'],
     [/<iframe\b/i, 'an `<iframe>`'],
     [/<link\b(?![^>]*\brel="?(?:canonical|alternate)\b)/i, 'a `<link>`'],
     [/@import\b/i, 'a CSS `@import`'],
@@ -133,11 +140,14 @@ function audit(html) {
 
   const scripts = countMatches(html, /<script\b/gi);
   if (/<script\b[^>]*\bsrc=/i.test(html)) {
-    errors.push('a `<script src=…>` — the only script a board may carry is the inline scroll-spy.');
+    errors.push(
+      'a `<script src=…>` - a board carries one script block and it is inline: the index aids ' +
+        '(the scroll-spy, the filter and the width handle).',
+    );
   } else if (scripts > 1) {
     errors.push(
-      `${scripts} \`<script>\` blocks — a board carries at most one, the inline scroll-spy that ` +
-        'highlights the table-of-contents entry in view. Layout, content, and states are ' +
+      `${scripts} \`<script>\` blocks - a board carries at most one, inline, holding the index ` +
+        'aids (the scroll-spy, the filter and the width handle). Layout, content, and states are ' +
         'HTML/CSS and must render with scripts off.',
     );
   }
@@ -160,15 +170,26 @@ function audit(html) {
         'in one of the two toggle states.',
     );
   }
-  if (narrow + wide > 0 && !/type="checkbox"/i.test(html)) {
+  // The toggle is judged by its visible half, the `.view-toggle` label. Without the checkbox both
+  // members of every pair are on the page, which is the stacked arrangement and is legitimate; a
+  // checkbox with no label is what the kit writes on a board with no pairs and switches nothing.
+  const toggleInput = /<input\b[^>]*\bclass="[^"]*\bview-input\b/i.test(html);
+  const toggleLabel = /class="[^"]*\bview-toggle\b/.test(html);
+  if (narrow + wide > 0 && toggleLabel && !toggleInput) {
     errors.push(
-      'the board has narrow/wide pairs but no viewport toggle — the pure-CSS checkbox is what ' +
-        'shows exactly one half of each pair.',
+      'the viewport toggle has no checkbox - the pure-CSS `.view-input` is what shows exactly one ' +
+        'half of each pair, so the label switches nothing.',
     );
   }
-  if (narrow + wide === 0 && /type="checkbox"/i.test(html)) {
+  if (narrow + wide > 0 && toggleInput && !toggleLabel) {
+    errors.push(
+      'the board hides one half of every narrow/wide pair and draws no `.view-toggle` label to ' +
+        'switch it - draw the label, or remove the checkbox to show both halves stacked.',
+    );
+  }
+  if (narrow + wide === 0 && toggleLabel) {
     reviews.push(
-      'a viewport toggle is present but no frame is tagged `.narrow` / `.wide` — delete the ' +
+      'a viewport toggle is drawn but no frame is tagged `.narrow` / `.wide` - delete the ' +
         'toggle on a board with no pairs.',
     );
   }
@@ -176,8 +197,9 @@ function audit(html) {
   // A frame nobody can name is a frame nobody can report on. The id is what a plan, a parity
   // list, and a message to a person all use, and it is meant to outlive every reorder - so a
   // board whose labels carry only a position is one where every reference goes stale silently.
-  const idChips = countMatches(html, /class="[^"]*\bfnum\b/g);
-  const seqChips = countMatches(html, /class="[^"]*\bfseq\b/g);
+  const labelsHtml = [...html.matchAll(FRAME_LABEL)].map((m) => m[2]).join('\n');
+  const idChips = countMatches(labelsHtml, /class="[^"]*\bfnum\b/g);
+  const seqChips = countMatches(labelsHtml, /class="[^"]*\bfseq\b/g);
   if (frames.length > 0 && idChips < frames.length) {
     reviews.push(
       `${frames.length} frames but ${idChips} permanent ids in the labels — every frame's label ` +
@@ -216,8 +238,9 @@ function main() {
   let payload;
   try {
     payload = JSON.parse(readFileSync(0, 'utf8'));
-  } catch {
-    return 0; // no parseable hook input; nothing to audit
+  } catch (error) {
+    if (error instanceof SyntaxError) return 0; // no parseable hook input; nothing to audit
+    throw error;
   }
 
   const filePath = payload?.tool_input?.file_path;
@@ -230,8 +253,9 @@ function main() {
   let html;
   try {
     html = readFileSync(abs, 'utf8');
-  } catch {
-    return 0;
+  } catch (error) {
+    if (typeof error?.code === 'string') return 0; // gone or unreadable since the write
+    throw error;
   }
 
   // A board, not just any HTML: the signature is the SAME shape the audit
