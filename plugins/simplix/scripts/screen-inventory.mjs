@@ -13,6 +13,11 @@
  *   node "${CLAUDE_PLUGIN_ROOT}/scripts/screen-inventory.mjs" --shape=board   # one shape
  *   node "${CLAUDE_PLUGIN_ROOT}/scripts/screen-inventory.mjs" --module=<module>
  *
+ * The shape ids are the `id`s in SHAPES below, printed beside each shape in
+ * precedent-check.md's Step 1 table. An unrecognised option, a shape id that is not one
+ * of them, and a root holding neither `modules/` nor `apps/` each stop the run with exit
+ * 2: an empty table from a misspelt flag reads exactly like a project with no screens.
+ *
  * Classification is marker-based (framework composition signatures), never a
  * hand-maintained list - a new screen appears here as soon as it exists.
  */
@@ -21,11 +26,38 @@ import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 
-// Project root: --root=<dir> wins, else the current working directory. The script
-// ships inside a plugin, so it must never resolve the root from its own location.
-const ROOT = path.resolve(
-  process.argv.find((a) => a.startsWith("--root="))?.slice("--root=".length) ?? process.cwd(),
-);
+// Every option this script knows. A valued option is written `--name=value` or `--name value`,
+// so the walk has to take the value that follows the second form.
+const VALUED_OPTIONS = ["root", "shape", "module"];
+
+function parseOptions(argv) {
+  const values = {};
+  const unknown = [];
+  for (let i = 0; i < argv.length; i++) {
+    const a = argv[i];
+    const name = VALUED_OPTIONS.find((n) => a === `--${n}` || a.startsWith(`--${n}=`));
+    if (!name) {
+      unknown.push(a);
+    } else if (a === `--${name}`) {
+      if (i + 1 < argv.length) values[name] = argv[++i];
+      else unknown.push(`${a} (no value)`);
+    } else {
+      values[name] = a.slice(name.length + 3);
+    }
+  }
+  return { values, unknown };
+}
+
+const { values: options, unknown } = parseOptions(process.argv.slice(2));
+if (unknown.length) {
+  console.error(`\u2716 unrecognised option: ${unknown.join(" ")}`);
+  console.error(`  known options: ${VALUED_OPTIONS.map((n) => `--${n}=<value>`).join("  ")}`);
+  process.exit(2);
+}
+
+// Project root: --root wins, else the current working directory. The script ships inside a
+// plugin, so it must never resolve the root from its own location.
+const ROOT = path.resolve(options.root ?? process.cwd());
 const EXCLUDE_DIRS = new Set(["node_modules", "dist", "generated", ".turbo", "build"]);
 
 // Ordered by specificity - the FIRST matching shape wins.
@@ -36,6 +68,7 @@ const SHAPES = [
   { id: "calendar", label: "Calendar board", test: (c) => /<Calendar(Shell|Provider)\b/.test(c) },
   { id: "editor", label: "Custom editor", test: (c) => c.includes("EditorFooter") },
   { id: "report", label: "Report / aggregation", test: (c) => c.includes("useFilterBarState") },
+  { id: "dashboard", label: "Dashboard", test: (c) => /<Stat(?:us)?Card\b/.test(c) && !c.includes("useCrudList") },
   { id: "tabbed-list", label: "Tabbed status list", test: (c) => c.includes("useCrudList") && /<Tabs\b|TabsContent/.test(c) },
   { id: "crud-list", label: "Standard CRUD list", test: (c) => c.includes("useCrudList") },
   { id: "list-detail", label: "List-detail composition (no CrudList)", test: (c) => c.includes("<ListDetail") },
@@ -68,12 +101,24 @@ function gitDate(rel) {
   }
 }
 
-const args = process.argv.slice(2);
-const shapeFilter = args.find((a) => a.startsWith("--shape="))?.slice(8);
-const moduleFilter = args.find((a) => a.startsWith("--module="))?.slice(9);
+const shapeFilter = options.shape;
+const moduleFilter = options.module;
+
+if (shapeFilter && !SHAPES.some((s) => s.id === shapeFilter)) {
+  console.error(`\u2716 no such shape: ${shapeFilter}`);
+  console.error(`  shapes: ${SHAPES.map((s) => s.id).join(" ")}`);
+  process.exit(2);
+}
+
+const bases = ["modules", "apps"].filter((b) => fs.existsSync(path.join(ROOT, b)));
+if (bases.length === 0) {
+  console.error(`\u2716 neither modules/ nor apps/ exists under ${ROOT}`);
+  console.error("  run from the frontend project root, or point at it with --root=<dir>");
+  process.exit(2);
+}
 
 const files = [];
-for (const base of ["modules", "apps"]) walk(path.join(ROOT, base), files);
+for (const base of bases) walk(path.join(ROOT, base), files);
 
 const rows = [];
 for (const abs of files) {

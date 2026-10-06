@@ -16,19 +16,21 @@ Not required for: single-field edits, label / i18n changes, bug fixes that keep 
 
 Assign the new screen to exactly one shape. "None of these" is almost never true - decompose a hybrid into its dominant shape plus additions.
 
-| # | Shape | Signature composition |
-| --- | --- | --- |
-| 1 | Standard CRUD list (panel) | `ListDetail` + `CrudList` + `CrudForm` / `CrudDetail`, `variant="panel"` |
-| 2 | Standard CRUD list (page) | Same widgets, `variant="page"`, view-driven `usePageHeader` titles |
-| 3 | Tabbed status list | Status `Tabs` over one shared searchable list, tab counts from `totalElements` |
-| 4 | Always-open master-detail board | `ListDetail` with constant `activePanel="detail"` + `listWidth`, auto-select (invariant #49) |
-| 5 | Report / aggregation | Standalone `useFilterBarState` FilterBar + aggregate tables / charts (invariant #41) |
-| 6 | Dashboard | Status-card strip + summary widgets, no per-tab aggregates |
-| 7 | Custom editor | Loading-guard outer + stateful inner + `EditorFooter` (`overview.md` §3b) |
-| 8 | Tree CRUD | `CrudTree` + move / reorder dialogs + form/detail panel |
-| 9 | Map page | `MapProvider` + markers + optional sidebar list |
-| 10 | Calendar board | Calendar composition + legends + fixed header / inner scroll |
-| 11 | Wizard / dialog flow | Multi-step dialog driven from a header action or row action |
+| # | Shape | Signature composition | Inventory id |
+| --- | --- | --- | --- |
+| 1 | Standard CRUD list (panel) | `ListDetail` + `CrudList` + `CrudForm` / `CrudDetail`, `variant="panel"` | `crud-list` |
+| 2 | Standard CRUD list (page) | Same widgets, `variant="page"`, view-driven `usePageHeader` titles | `crud-list` |
+| 3 | Tabbed status list | Status `Tabs` over one shared searchable list, tab counts from `totalElements` | `tabbed-list` |
+| 4 | Always-open master-detail board | `ListDetail` with constant `activePanel="detail"` + `listWidth`, auto-select (invariant #49) | `board` |
+| 5 | Report / aggregation | Standalone `useFilterBarState` FilterBar + aggregate tables / charts (invariant #41) | `report` |
+| 6 | Dashboard | Status-card strip + summary widgets, no per-tab aggregates | `dashboard` |
+| 7 | Custom editor | Loading-guard outer + stateful inner + `EditorFooter` (`overview.md` §3b) | `editor` |
+| 8 | Tree CRUD | `CrudTree` + move / reorder dialogs + form/detail panel | `tree` |
+| 9 | Map page | `MapProvider` + markers + optional sidebar list | `map` |
+| 10 | Calendar board | Calendar composition + legends + fixed header / inner scroll | `calendar` |
+| 11 | Wizard / dialog flow | Multi-step dialog driven from a header action or row action | `wizard` |
+
+The inventory id is what `screen-inventory.mjs --shape=<id>` takes. Shapes 1 and 2 share `crud-list`, because their widget files are the same; the crud-page's `variant` tells them apart. The inventory has one more group, `list-detail`: a `ListDetail` with no `CrudList`, which is not a shape of its own but a hand-built list beside a detail - classify it as the shape it should be (usually 1 or 2), and where its rows grow it is the list invariant #32 rules out.
 
 ## Step 2 - Locate TWO precedents
 
@@ -70,7 +72,7 @@ Read the full widget set of BOTH precedents: `crud-page.tsx`, `list.tsx`, `form.
 | Page chrome | `usePageHeader` title / description / actions wiring, view-dependent titles (#31) |
 | Root layout | `Stack flex` root, scroll-ownership chain, no extra `Container` (#31d–e) |
 | Filters | Types, ordering, pruning of UUID / audit filters, `maxBadges={3}`, popover columns (#13–17, #39) |
-| Columns | Order, hidden set, alignment, badge / cell components, i18n labels (#18–21) |
+| Columns | Order, the fields removed from source, alignment, badge / cell components, i18n labels (#18–21, #54) |
 | Detail | Section layout, `Detail*Field` kinds, block fields, badge size, audit footer |
 | Form | Single `FormValues` state, field kinds (Time / Date / Select / Switch), pickers for ids (#34, #37) |
 | Mutations | `useCrudFormSubmit` / `adaptOrval*` wiring, invalidation, unsaved-changes guard |
@@ -78,7 +80,7 @@ Read the full widget set of BOTH precedents: `crud-page.tsx`, `list.tsx`, `form.
 | Empty / loading / error | Registry shared components only (#22) |
 | Badges & tones | Shared tone maps, `StatusBadge` wrappers, red-badge semantics (#43, #48) |
 | Enums & dates | `resolveBootEnum` in all four contexts (#10), semantic-kind date handling (#42) |
-| i18n | Key naming shape, en / ko / ja parity |
+| i18n | Key naming shape, parity across every locale in `simplix.config.ts` `i18n.locales` |
 | Navigation | Route file pattern, sidebar entry, nav / tab count wiring (`../scaffold/patterns.md`) |
 
 ## Step 4 - Implement by cloning
@@ -99,6 +101,6 @@ Read the full widget set of BOTH precedents: `crud-page.tsx`, `list.tsx`, `form.
 | --- | --- |
 | "This screen is unique - no precedent applies" | Shapes are few. At minimum chrome, filters, columns, mutations, delete, and empty states have precedents. Classify, don't exempt. |
 | "The scaffold already generated the structure" | Scaffold output is generic. Project decisions - pruned filters, badge tones, panel wiring - live in customized precedents. |
-| "I remember how the sibling screens look" | Memory drifts across sessions, and conventions move with every promoted learning. Read the files. |
+| "I remember how the sibling screens look" | Memory drifts across sessions, and conventions change as rules are added to the references. Read the files. |
 | "I'll align it with the siblings once it works" | Post-hoc alignment happens after the structure is sunk and shows up as review churn. Precedents come first. |
 | "Reading two full screens is too slow" | Divergent screens get reworked screen by screen; the reading amortizes across every screen that follows. |
