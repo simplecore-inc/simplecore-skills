@@ -3,7 +3,7 @@
  * Graph auto-layout engine (dagre backend) for arbitrary directed graphs.
  *
  * Where layout.js stacks a hand-authored layer hierarchy, this engine takes a
- * flat node+edge spec and derives ranks from the edges themselves — so a graph
+ * flat node+edge spec and derives ranks from the edges themselves - so a graph
  * with branches, joins, and back-references places by topology instead of being
  * flattened into one column. Node sizes are measured CJK-aware and fed to dagre
  * as input, and the result is drawn through the shared svgcommon primitives, so
@@ -179,7 +179,7 @@ function renderGraphSVG(spec, layout) {
   const lines = [];
   lines.push(...svgHeader(canvasW, canvasH, theme));
 
-  // Groups (underlay) — panel + a left-anchored label tab. A full-width header
+  // Groups (underlay) - panel + a left-anchored label tab. A full-width header
   // band would be struck through by every edge dropping into a node inside the
   // group (ARROW-THROUGH-BOX); a tab sized to the label sits in the group's
   // left padding gutter, clear of the node columns.

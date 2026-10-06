@@ -3,15 +3,15 @@
  * SessionStart hook: tell Claude which simplecore skills bind to this working directory, where
  * the project's own contents live, and which wiring is missing.
  *
- * Without this, every one of these skills depends on its description firing — which it does when
+ * Without this, every one of these skills depends on its description firing - which it does when
  * the user names the work in the right words, and does not when they ask for a screen. A board
  * nobody is routed to goes stale, a build or a walk nobody can find is restarted from scratch, and
  * a Korean document written without the style baseline reads as a translation.
  *
- * A directory that matches no marker produces no output at all — projects that use none of these
+ * A directory that matches no marker produces no output at all - projects that use none of these
  * skills never see this hook.
  *
- * Exit codes: 0 always. A detector failure is silent — a broken hook must not be the reason a
+ * Exit codes: 0 always. A detector failure is silent - a broken hook must not be the reason a
  * session cannot start.
  */
 
@@ -21,7 +21,7 @@ function buildContext(report) {
   const lines = [];
   const binds = (skill) => report.skills.includes(`simplecore:${skill}`);
 
-  // A project can have wiring worth reporting while no skill binds — a parity walk configured
+  // A project can have wiring worth reporting while no skill binds - a parity walk configured
   // against a board that does not exist, for one. Say that on its own rather than announcing
   // skills that do not apply.
   if (!report.skills.length) {
@@ -85,7 +85,7 @@ function buildContext(report) {
 }
 
 function main() {
-  // The SessionStart payload carries nothing this hook needs, so stdin is left unread — reading
+  // The SessionStart payload carries nothing this hook needs, so stdin is left unread - reading
   // it would block when the hook is run by hand from a TTY.
   let report;
   try {

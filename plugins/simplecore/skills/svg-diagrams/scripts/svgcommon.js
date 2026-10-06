@@ -30,7 +30,7 @@ const THEMES = {
 // Latin-only per-char constant makes Korean/Japanese titles overflow their
 // boxes, so width estimation must count wide glyphs at wide width.
 //
-// Keep isWide in sync with svgkit._is_wide and audit.py._is_wide — the
+// Keep isWide in sync with svgkit._is_wide and audit.py._is_wide - the
 // generators and the linter must measure text identically.
 
 function isWide(ch) {

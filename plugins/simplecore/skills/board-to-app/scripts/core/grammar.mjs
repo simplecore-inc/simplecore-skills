@@ -6,7 +6,7 @@
 // as it writes it, with two placeholders and one mark for 「more text here」, and this compiles it.
 //
 // **The vocabulary is closed and an unknown token is a hard failure.** Passing one through as a
-// literal produces a regex that can never match — the same silent pass as a typo, arriving the day
+// literal produces a regex that can never match - the same silent pass as a typo, arriving the day
 // somebody reaches for a third placeholder. This compiler is itself a reader built from the tokens
 // in use today, and the rule this repository learned about readers applies to it: build from the
 // set of values that may occur, not from the ones you happen to be writing.
@@ -18,7 +18,7 @@
  * half the answer and whether anybody reads it is the other half. `{n}` marks 「a number belongs
  * here」 and is stepped over; `{text}` marks a value the check takes. Compiled the other way the
  * pattern still matched every line it should and handed back the count where the caller expected
- * the list — the match was right and the reading was wrong, which no run of the check would show.
+ * the list - the match was right and the reading was wrong, which no run of the check would show.
  *
  * <p>A check that needs the number wants a third token rather than a re-reading of `{n}`, and the
  * closed set below makes the day it is added loud.
@@ -28,7 +28,7 @@ const PLACEHOLDERS = {
   '{text}': String.raw`(.+?)`,
 };
 
-/** 「more of the line, unread」 — at the front, the back, or both. */
+/** 「more of the line, unread」 - at the front, the back, or both. */
 const ELLIPSIS = '…';
 
 const ESCAPE = /[.*+?^${}()|[\]\\]/g;
@@ -37,7 +37,7 @@ const ESCAPE = /[.*+?^${}()|[\]\\]/g;
  * One line's reader, from the phrase a project writes it with.
  *
  * <p><b>Anchoring is what the phrase says, not what the caller remembers.</b> A phrase is a whole
- * line unless it starts or ends with `…`, and every anchor comes from that — a config that writes
+ * line unless it starts or ends with `…`, and every anchor comes from that - a config that writes
  * `^` and `$` is a config writing regexes again. Getting this wrong is not visible: a pattern that
  * lost its end anchor goes on matching, mid-line, and drags in the neighbouring sentence.
  *
@@ -77,7 +77,7 @@ export function compileLine(phrase, key) {
  * Every line reader a project declares, compiled.
  *
  * <p>A role declared `null` is a project stating it writes no such line, and it compiles to
- * nothing — a reader that is absent rather than one that matches nothing. Every check reads these
+ * nothing - a reader that is absent rather than one that matches nothing. Every check reads these
  * with `?.`, so an absent role skips the clause it governs instead of failing every line against
  * an impossible pattern. A `//<role>` entry alongside carries the reason and is not a role.
  *

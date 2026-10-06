@@ -2,7 +2,7 @@
 //
 // A board declares in `board.config.mjs` the contract it was last brought up to (`contract: 3`),
 // and the kit declares the one it writes (`BOARD_CONTRACT` in `partials.mjs`). When the two
-// differ, this file is the answer to «what do I actually have to change» — written down at the
+// differ, this file is the answer to «what do I actually have to change» - written down at the
 // moment the change is made, while the reason is still in hand, rather than reconstructed later
 // from a diff by somebody who was not there.
 //
@@ -18,9 +18,9 @@
  *
  * @property contract the number a board carries once this migration is done
  * @property title one line naming what the version is about
- * @property changed what is different about the kit — read to decide whether the move matters
+ * @property changed what is different about the kit - read to decide whether the move matters
  * @property steps what a board must do, in order, to be on this contract. Imperative, concrete,
- *   and naming files — this is executed, not summarised
+ *   and naming files - this is executed, not summarised
  * @property breaking a board that does NOT migrate stops building against this kit
  */
 export const MIGRATIONS = [
@@ -89,7 +89,7 @@ export const LATEST = MIGRATIONS[MIGRATIONS.length - 1].contract;
 /**
  * Every migration a board on `from` has to cross to reach `to`.
  *
- * <p>A board on contract 1 moving to 3 gets both entries in order, because the steps compose —
+ * <p>A board on contract 1 moving to 3 gets both entries in order, because the steps compose -
  * skipping the middle one is how a board ends up half-migrated with nothing saying so.
  */
 export function stepsBetween(from, to = LATEST) {

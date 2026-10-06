@@ -12,7 +12,7 @@
 //
 // A project drawing two products declares both under `boards`, and every command is about ONE of
 // them: `--board <name>`, or the board whose folder the command was run inside. Declaring several
-// and naming none is refused rather than defaulted — a build that picks writes chapters, ledger
+// and naming none is refused rather than defaulted - a build that picks writes chapters, ledger
 // rows and evidence into whichever board it guessed.
 import { pathToFileURL } from 'node:url';
 import { CORE_GATES, applies, gatesFor, gradeOf } from './core/gates.mjs';
@@ -49,8 +49,8 @@ function context() {
     process.exit(2);
   }
   const ctx = loadProject(path, { range: opt('range'), board: opt('board') });
-  // A refusal, not a default. Everything this command writes — a chapter, a ledger row, a result
-  // document — lands under one board, and a guess puts all of it somewhere somebody has to find
+  // A refusal, not a default. Everything this command writes - a chapter, a ledger row, a result
+  // document - lands under one board, and a guess puts all of it somewhere somebody has to find
   // again to undo.
   if (ctx.boardError) {
     console.error(ctx.boardError);
@@ -95,7 +95,7 @@ async function check() {
     const findings = gate.run(ctx);
     if (!findings.length) continue;
     // The marker carries the grade, so the two channels are told apart by eye and by anything
-    // parsing this output — the write-time hook reads exactly this line.
+    // parsing this output - the write-time hook reads exactly this line.
     const advisory = gradeOf(gate) === 'warning';
     if (advisory) warnings += findings.length;
     else errors += findings.length;
@@ -103,7 +103,7 @@ async function check() {
     // **An error is printed whole; a warning is printed as one and a count.**
     //
     // A warning is a prompt to re-read, so what it needs to convey is which gate fired and roughly
-    // how much — the text of the eightieth one changes nothing about what the reader does next. On
+    // how much - the text of the eightieth one changes nothing about what the reader does next. On
     // a live repository this block ran to forty-three thousand characters against a run whose
     // verdict was 「no errors」, and every agent that ran the command paid for all of it, as did
     // every write that tripped the hook. `--warnings` prints them in full for the pass where
@@ -147,7 +147,7 @@ async function proveGates() {
   //
   // **Every board's module, not the one this run happened to resolve to.** A project that declares
   // several boards has a project gate module per board, and a load with no board named resolves to
-  // none of them — so the command proved the core cases alone and reported 「both directions」, which
+  // none of them - so the command proved the core cases alone and reported 「both directions」, which
   // is a green run over rules nobody ran. That is the same silence this command exists to break.
   const declaredConfig = opt('config') ?? findConfig();
   let gates = CORE_GATES;
@@ -199,7 +199,7 @@ async function proveGates() {
     console.log('✔ needs: a gate whose needs names a non-key is refused by name, not counted as skipped');
   }
   // A key nobody documented works perfectly and is met by nobody, which is a shape no gate over a
-  // project can see — the subject is this skill's own two documents.
+  // project can see - the subject is this skill's own two documents.
   const undocumented = proveKeysAreDocumented();
   for (const line of undocumented) console.log(`\n✖ keys · ${line}`);
   if (!undocumented.length) {
@@ -252,8 +252,8 @@ async function doctor() {
       //
       // **Every one of them says what the absence costs.** 「not declared」 on its own tells the
       // reader the one thing they already know, and the sentence that decides whether to go and
-      // declare it — 「a chapter cannot be regenerated after a board fix」, 「nothing says where a
-      // migration goes, so backend chapters run one at a time」 — sat in a table in `SKILL.md` that
+      // declare it - 「a chapter cannot be regenerated after a board fix」, 「nothing says where a
+      // migration goes, so backend chapters run one at a time」 - sat in a table in `SKILL.md` that
       // nobody opens while reading a report. It is `SCHEMA[key].absent` now, and the config table
       // carries the same string under the same proof.
       if (spec.required) console.log(`✖ ${key.padEnd(18)} not declared — required: ${spec.absent}`);
@@ -286,7 +286,7 @@ async function doctor() {
   // A path is declared right or wrong and `configGate` says which; a WORD is declared right or
   // wrong and nothing says which, because a word that matches nothing produces the same silence as
   // a repository with nothing wrong. `declaredWordsMatchTheDocuments` speaks where it can prove the
-  // declaration is broken, and that is less than half of what a person wiring a project needs —
+  // declaration is broken, and that is less than half of what a person wiring a project needs -
   // the rest is the count. 「0 findings」 and 「1675 lines matched across 35 chapter files」 are one
   // line to an exit status and two different sentences to a reader.
   const census = vocabularyCensus(ctx);
@@ -318,7 +318,7 @@ if (!RUN[cmd]) {
   console.error(`unknown command: ${cmd}\n\n${HELP}`);
   process.exit(2);
 }
-// A refusal is a sentence somebody has to act on — which gate, which file, what to do instead. A
+// A refusal is a sentence somebody has to act on - which gate, which file, what to do instead. A
 // stack trace buries it under twenty lines of node internals and reads as the tool being broken
 // rather than as the tool having something to say.
 try {

@@ -1,4 +1,4 @@
-# Non-Negotiable Invariants — the full forms
+# Non-Negotiable Invariants - the full forms
 
 SKILL.md states every invariant's normative claim; this file carries the full mechanism,
 failure story, and code for the ones compressed there, under the **same numbers**. Read an
@@ -10,12 +10,12 @@ or implementing the pattern it names for the first time. Paths are relative to t
 
 API calls go through each domain's `src/mutator.ts`, which uses `getMutator("boot")` (the
 `simplix-boot` profile). The full Boot envelope is `{ type: string; message: string; body:
-T; timestamp: string; errorCode?: string | null; errorDetail?: ErrorDetail | null }` —
+T; timestamp: string; errorCode?: string | null; errorDetail?: ErrorDetail | null }` -
 `type` is a **free string** (the success marker is the literal `"SUCCESS"`, NOT a closed
 enum), and the DTO payload lives in `body`. The boot mutator unwraps this envelope (returns
 `.body`) so React Query `data` is the plain DTO directly; `adaptOrvalList` then reads the
 already-unwrapped `.body.content` for list hooks. Any envelope whose `type !== "SUCCESS"`
-throws `ApiResponseError`. Never bypass the mutator or hand-roll fetch — and never re-access
+throws `ApiResponseError`. Never bypass the mutator or hand-roll fetch - and never re-access
 `data.body` after unwrap (it resolves to `undefined`). See `scaffold/overview.md` Common
 Issues for the one-time `getMutator("boot")` fix.
 
@@ -23,9 +23,9 @@ Issues for the one-time `getMutator("boot")` fix.
 
 NEVER hand-assemble query strings. In the hand-authored contract path, use the framework's
 `simpleQueryBuilder` (unless custom pagination is required). In the Orval-codegen path (the
-CLI default), list/sort/pagination params are produced by the generated request params —
+CLI default), list/sort/pagination params are produced by the generated request params -
 `simpleQueryBuilder` is not used (see `framework/overview.md`). Either way, no ad-hoc query
-string assembly. Paged list reads send `page` and `size` TOGETHER — some searchable-params
+string assembly. Paged list reads send `page` and `size` TOGETHER - some searchable-params
 parsers reject a lone `{ size }`; confirm the pagination contract from the spec rather than
 assuming `size` is independently optional.
 
@@ -33,23 +33,23 @@ assuming `size` is independently optional.
 
 Gate rendering on both value AND options loading state. Never render with incomplete
 options. Mechanism: a Radix-backed select whose options arrive AFTER first render does not
-refresh its closed trigger — a value with no matching option renders an empty trigger and
+refresh its closed trigger - a value with no matching option renders an empty trigger and
 stays empty even once options load. Gate the whole select on EVERY contributing query
 (`aQuery.isLoading || bQuery.isLoading ? <Loading /> : …`), and derive a fallback selection
 from the row's own data rather than an effect-populated map (effect state is empty on the
 first render).
 
-## #15 Chip filters — the sanctioned cases
+## #15 Chip filters - the sanctioned cases
 
 `ChipFilter` is for bitmask fields or visual distinction; standard enum / FK uses
 `type: "faceted"`. One more sanctioned chip case: **narrowing WITHIN a server-forced
-scope** — a list locked to `field.in: "A,B"` takes a single-select `CrudList.ChipFilter` on
+scope** - a list locked to `field.in: "A,B"` takes a single-select `CrudList.ChipFilter` on
 `field.equals` (the params AND together: no chip = whole scope, chip = one state inside
 it). Requires the backend `@SearchableField` to allow BOTH `EQUALS` and `IN` on that
-field — with only one allowed, the combination fails disguised as an empty result.
+field - with only one allowed, the combination fails disguised as an empty result.
 
 **And a fourth: a narrowing that reaches past the list.** A faceted filter lives inside
-`CrudList.FilterBar`, so its value reaches exactly one request — the list's own. Where the
+`CrudList.FilterBar`, so its value reaches exactly one request - the list's own. Where the
 same narrowing also has to reach the tab counts, a census, a sibling list, or a set of
 tiles above the list, it belongs on its own `useFilterBarState` held by the page and
 rendered as a chip row, because that is the only state both the list and its neighbours can
@@ -63,10 +63,10 @@ read this filter's committed value? A page that passes it into a census hook, in
 `useCrudList`, or into a `narrowed` flag that withholds the tab counts has answered yes.
 Where the answer is no, it is a plain axis and it becomes a facet.
 
-## #18 Column order — the one domain exception
+## #18 Column order - the one domain exception
 
 A narrow domain exception to the mandatory column order is allowed only when a hidden
-category IS the entity's primary data — e.g. an audit-log entity whose
+category IS the entity's primary data - e.g. an audit-log entity whose
 actor/timestamp/field-change columns are the whole point of the list; surface those rather
 than hiding them. The default ordering still applies to every other entity.
 
@@ -75,21 +75,21 @@ than hiding them. The default ordering still applies to every other entity.
 Every routed page starts from the crud-page shape (copy an existing scaffolded page and
 strip what does not apply; never author a page from a blank file):
 
-a. Page title/description registered via `usePageHeader({ title, description })` — NEVER a
+a. Page title/description registered via `usePageHeader({ title, description })` - NEVER a
    local `Heading` rendered as the page title.
 b. Primary create action ("add X", "new request") lives in `usePageHeader`'s `actions`
-   slot — never a local button row above the list. For tabbed pages, the header action
+   slot - never a local button row above the list. For tabbed pages, the header action
    drives the active tab's create dialog through props.
-c. No ad-hoc padding on the page root (`className="p-4"` etc.) — the app layout owns page
+c. No ad-hoc padding on the page root (`className="p-4"` etc.) - the app layout owns page
    padding.
-d. Panel-style list-detail pages render the `Stack flex` root directly — an extra
+d. Panel-style list-detail pages render the `Stack flex` root directly - an extra
    `Container` breaks the flex height chain and un-pins the detail footer.
 e. **Whatever `ListDetail.Detail` renders owns the scroll.** `ListDetail.Detail` is
-   `overflow-hidden` by design — it never scrolls its own content. Its child MUST supply
+   `overflow-hidden` by design - it never scrolls its own content. Its child MUST supply
    the scroll container, and there are exactly two ways to do that:
    - **Read/edit surfaces → `CrudDetail` / `CrudForm`** (header slot / `overflow-auto` body
      slot / pinned footer). This is the default for ANY panel showing entity data,
-     including operator consoles and action panels — a panel that runs actions is still a
+     including operator consoles and action panels - a panel that runs actions is still a
      detail surface.
    - **Custom editors (canvas, bitmap, timeline)** → `Stack fill` root + `Stack flex
      overflow="auto"` body, reproducing the same chain by hand.
@@ -97,7 +97,7 @@ e. **Whatever `ListDetail.Detail` renders owns the scroll.** `ListDetail.Detail`
    A panel whose root is a bare `Stack` / `Card` / `Section` (no `fill` + `overflow`) is a
    DEFECT even when today's data happens to fit: the content is silently clipped at the
    panel's height with no scrollbar, so actions below the fold become unreachable. It also
-   drifts visually — hand-rolled title rows and close buttons instead of the standard
+   drifts visually - hand-rolled title rows and close buttons instead of the standard
    detail chrome.
 
 Exceptions: standalone screens outside the app layout (login), and thin wrapper pages that
@@ -108,23 +108,23 @@ looks different from its siblings is a defect.
 ## #32 List screens are paged searchable
 
 Before building ANY screen that renders a list, judge whether its row count can grow
-(accumulating records, per-user histories, request queues — when in doubt, assume it
+(accumulating records, per-user histories, request queues - when in doubt, assume it
 grows). If it can: (1) the backend exposes a standardized template-based paged searchable
 endpoint (self-scoped/aggregated surfaces force scope conditions server-side on the same
-searchable params); (2) the frontend is CLI-generated then customized — `useCrudList` +
+searchable params); (2) the frontend is CLI-generated then customized - `useCrudList` +
 `adaptOrvalList` with `CrudList.Table` / `CrudList.FilterBar` / `CrudList.Pagination`. A
 hand-built table over an unpaged array endpoint is NOT an acceptable list screen; a plain
 `Table` is reserved for provably bounded, small collections.
 
-**Filtering, sorting and tab counts are the server's too — there is no small-enough
+**Filtering, sorting and tab counts are the server's too - there is no small-enough
 exception.** Not a fixed set, not a set that fits on one screen, not a condition the server
 has no column for. Where the server cannot express the condition, that is **backend work**,
-and until it is done the tab is disabled with the reason on it — the screen does not stand
+and until it is done the tab is disabled with the reason on it - the screen does not stand
 in.
 
 Filtering a page in the browser gets **three things wrong at once**: the row count, the
 total, and the second page. All three are invisible while the whole set fits in one page,
-and all three appear together the moment it does not — by which time the screen has been
+and all three appear together the moment it does not - by which time the screen has been
 photographed, reviewed and approved.
 
 - **A condition with no column is resolved to identifiers before the query, not filtered
@@ -154,17 +154,17 @@ entity's downstream behaviour the record is born broken (a visit whose participa
 unwritable can never be checked in). Compare `FormValues` against the generated
 `*CreateDTO` / `*UpdateDTO` and account for every field: edited, deliberately server-owned,
 or deliberately out of scope. Ids the user cannot know (an `attachmentFileId`, an entity
-reference) are never plain text inputs — they come from a picker or the framework file
+reference) are never plain text inputs - they come from a picker or the framework file
 field.
 
 ## #36 Server values are rendered, never echoed
 
 A boot-enum object (`{type,value,label}`) fed into a `SelectField` renders blank and
-submits an object (`??` never fires — the object is truthy; use
+submits an object (`??` never fires - the object is truthy; use
 `resolveBootEnum(x) || "DEFAULT"`). **`??` fails at the other end of the same call too**:
 `resolveBootEnum` answers an **empty string** for an absent value, which `??` also passes
 through, so the select's value matches no option and the trigger renders blank. One
-operator covers both — `||`, never `??`, on anything that comes out of `resolveBootEnum`. An `Instant` field rendered with the default
+operator covers both - `||`, never `??`, on anything that comes out of `resolveBootEnum`. An `Instant` field rendered with the default
 `DetailDateField` / `datePart` silently drops the time an approver needs. A raw id or ISO
 stamp shown to a user is a machine value leaking through. Resolve enums, format instants
 with `format="datetime"`, and title panels with an identifying value (a name), never an id.
@@ -173,7 +173,7 @@ with `format="datetime"`, and title panels with an identifying value (a name), n
 an exception somebody keeps finding.** `CrudDetail.AuditFooter` shortens a UUID, offers the whole
 of it in the tooltip and copies the whole of it on a press: the short form, the tooltip and the
 copy all point at one thing, and the control exists precisely so a reader raising a support ticket
-can pick the identifier up. Everything a person recognises the record by — its name, its code — is
+can pick the identifier up. Everything a person recognises the record by - its name, its code - is
 already above, in the title and the fields.
 
 **It has now been replaced with a human-readable code three times**, each time by somebody applying
@@ -192,7 +192,7 @@ letting the server reject the pick is a defect: the operator has no way to know 
 would have worked, and the rejection message is the only feedback. Same rule for a resource
 pool (cards, seats): the picker offers only what is actually assignable, and an auto-pick
 that hits an unusable candidate retries rather than failing at the first one. And a state
-that ends the flow (checked out, cancelled, closed) hides the form that drives it —
+that ends the flow (checked out, cancelled, closed) hides the form that drives it -
 `presence === "X" ? A : B` is a two-state assumption that silently offers a dead action for
 every third state.
 
@@ -203,7 +203,7 @@ The scaffold emits a filter per searchable field, including the entity's UUID an
 axis the persona actually searches by (the person's name, not just the owner's), and lay
 the survivors out in 2–3 columns (`popoverColumns` + `columnBreak`) once the form scrolls.
 When the search axis is a field of an internalized child (a participant's name on a visit),
-give the SearchDTO a `@SearchableField` over a read-only association on the parent — and
+give the SearchDTO a `@SearchableField` over a read-only association on the parent - and
 NEVER name that association the same as a DTO collection the entity's create/update path
 maps (ModelMapper will bind transient children onto it and the save fails at flush).
 
@@ -212,7 +212,7 @@ maps (ModelMapper will bind transient children onto it and the save fails at flu
 A user-facing exception carries a message key (`"{error.<module>.<case>}"`), resolved at
 the HTTP layer, with every locale filled; a literal English string thrown from a service
 reaches the user's dialog verbatim. Enum labels resolve through the enum resolver
-(`LabeledEnum#getLabel` / `EnumMessageResolver`), not the application `MessageSource` — the
+(`LabeledEnum#getLabel` / `EnumMessageResolver`), not the application `MessageSource` - the
 `messages/enums` bundles are not on its basename list. And the dialog leads with the
 server's concrete reason; a generic per-code line is a fallback for a message-less error,
 never a companion to one.
@@ -224,26 +224,26 @@ Every screen-level query condition renders through the standard FilterBar: list 
 required-param queries) via the standalone `useFilterBarState` hook with params derived
 from `committedValues`. An inline `FormFields.*` row acting as a report's search conditions
 is a defect. The total badge is the FilterBar `count` prop (it renders the shared
-`ListTotalBadge`) — never a hand-placed badge in `leading`, which is reserved for extra
+`ListTotalBadge`) - never a hand-placed badge in `leading`, which is reserved for extra
 summary content (aggregate totals, a pending-count badge). On a page with a status-card
-strip, tab bodies carry no `StatusCard`s of their own — tab aggregates live on this toolbar
+strip, tab bodies carry no `StatusCard`s of their own - tab aggregates live on this toolbar
 line. Detection recipes → `audit/audit-checklist.md` § 11.
 
 ## #43 Badge density parity
 
 Badges on detail/form surfaces render at the SAME size as the list's. `StatusBadge` (and
-domain wrappers built on it) defaults to `size="sm"` (`text-xs`) — omit `size` and the
+domain wrappers built on it) defaults to `size="sm"` (`text-xs`) - omit `size` and the
 three surfaces align; base `Badge` already matches. Explicit `size="xs"` only in genuinely
 denser contexts (legend, live strip, high-density status table). Never enlarge a
 detail/form badge (`size="default"`, `text-sm`/`text-base` classNames).
 
-## #44 The component's real prop contract — recurring traps
+## #44 The component's real prop contract - recurring traps
 
 `DetailTextField` has no `children` (custom-rendered detail values use
 `DetailFieldWrapper`); `Flex`/`Stack` `wrap` is a boolean (`wrap`, not `wrap="wrap"`);
 `ConfirmDialog` supports neither `children` nor `hideConfirm` (custom-content dialogs
 compose `Dialog`/`DialogContent` directly). A prop you expected but cannot find means read
-the component source — never typecast past it.
+the component source - never typecast past it.
 
 ## #45 Peek dialogs are host-mounted
 
@@ -259,21 +259,21 @@ tree once in the app's provider stack. Labels take no `onPeek` prop and hold no 
   `peek.open({ render: ({ open, onOpenChange }) => <XPeekDialog … /> })`. The host is
   kind-agnostic, so a module's own entity needs no registration.
 - Hand-rolled peeks (`usePeekTarget` + `DetailPeekDialog` at a widget root) remain valid
-  for a one-off trigger that is not a reusable reference label — the state is already
+  for a one-off trigger that is not a reusable reference label - the state is already
   outside the row. Never place one inside a cell render or a `.map()` callback.
 
 ## #46 Delete is cloned, gated, and human-named
 
 Wire deletion by cloning an existing `useCrudDeleteWired` + `adaptOrvalDelete` +
-`{deleteDialog}` page, on EVERY crud-page variant (page AND panel — one-variant wiring
+`{deleteDialog}` page, on EVERY crud-page variant (page AND panel - one-variant wiring
 makes deletability depend on screen shape). A detail's `onDelete` activates only when
-`onDeleted` exists (`onDelete={onDeleted ? del.requestDelete : undefined}` — no dead
+`onDeleted` exists (`onDelete={onDeleted ? del.requestDelete : undefined}` - no dead
 buttons on callback-less renders). The dialog names the record with a human-readable value
 (a resolver or a related entity's name, readable fallback), never a raw id. An irreversible
 purge (anonymization / PII erasure) is a visually distinct action (own icon/tone) with a
 type-the-name confirmation the server re-validates, and its dialog states the
 delete-vs-purge difference and scope. Server-side blocks (referential/legal) surface their
-SPECIFIC message key — what references it and how many — never a generic integrity phrase.
+SPECIFIC message key - what references it and how many - never a generic integrity phrase.
 
 ## #47 A widened operator read never crosses the trust boundary
 
@@ -292,7 +292,7 @@ A red notification badge (`Badge variant="destructive"`, round) counts ONLY a se
 viewer must act on; informational counts (totals, per-status tab distribution) are muted
 `tabular-nums` spans. Nav, sidebar, and tab badges counting the same set share the same
 query figure and the same red treatment, and demote to muted at 0 (no red zero). The screen
-a badge leads to opens BY DEFAULT on exactly the set the badge counts — a badge of N
+a badge leads to opens BY DEFAULT on exactly the set the badge counts - a badge of N
 landing on a default view showing 0 rows is a wiring defect. Tab/nav counts read
 `totalElements` from a `size: 1` list query (cache-shared with the list).
 
@@ -300,21 +300,21 @@ landing on a default view showing 0 rows is a wiring defect. Tab/nav counts read
 
 An operator board whose detail must never close composes `ListDetail` with a constant
 `activePanel="detail"` + `listWidth` (fixed list column, detail fills the rest), and the
-detail panel component's `onClose` is optional and omitted — with no `onClose`, no close
+detail panel component's `onClose` is optional and omitted - with no `onClose`, no close
 affordance renders. Select the first item on entry; when the selected item leaves the list
 (processed), fall back to the new first item, and when the list empties, clear the
 selection and swap to a full-width `EmptyState`. Judge selection survival by item id, never
-by index — index survival silently selects a different record on refetch.
+by index - index survival silently selects a different record on refetch.
 
 ## #50 Reference cards vs workstation cards
 
-A read-only reference card on a detail panel (screening verdicts, declared items, vehicles
-— "read it if present" data) renders nothing when it has no rows; a card holding only a
+A read-only reference card on a detail panel (screening verdicts, declared items, vehicles -
+"read it if present" data) renders nothing when it has no rows; a card holding only a
 "none" line is noise. A card that carries actions (an assignment workstation) always
 renders, holding its empty-state line plus the hint that explains why its action is
 currently unavailable. Custom row-action buttons outside the framework action column match
 the row-action size (`size="xs"`) and join into ONE segmented group (`gap="none"`, `-ml-px`
-neighbor overlap, outer-corner-only rounding, `whitespace-nowrap`) — a run of individual
+neighbor overlap, outer-corner-only rounding, `whitespace-nowrap`) - a run of individual
 `size="sm"` buttons inflates row height and wraps.
 
 ## #52 Every action affordance is permission-gated
@@ -322,13 +322,13 @@ neighbor overlap, outer-corner-only rounding, `whitespace-nowrap`) — a run of 
 A button that leads to a call the server will refuse must not render. Read the group from
 the module's `src/shared/auth/subjects.ts` (`SUBJECTS.<screenKey>`), mirroring the
 backend's `hasPermission('<group>', '<action>')`, and gate with
-`useCan("<action>", SUBJECTS.<screenKey>)` from `@simplix-react/access/react` — never a
+`useCan("<action>", SUBJECTS.<screenKey>)` from `@simplix-react/access/react` - never a
 group literal inline, so a screen's gate and the server's rule move together. Create
-affordances: the page-header create button on BOTH header variants (page and panel — gating
+affordances: the page-header create button on BOTH header variants (page and panel - gating
 one leaves the other open), a tree's per-row `add-child`, and any create button composed
 into an action group (drop the button out of the group, not the whole `actions` entry). The
 scaffold emits the gate and the CLI creates an empty `subjects.ts` when a module has none,
-so a missing entry is a compile error on the generated page — supply the real group, never
+so a missing entry is a compile error on the generated page - supply the real group, never
 a plausible one. The audit script (`${CLAUDE_PLUGIN_ROOT}/scripts/audit-frontend.mjs`)
 fails on an ungated `showNew`.
 
@@ -345,7 +345,7 @@ at customization time.
 
 **A nullable enum row uses `DetailBadgeField` too, never a bare badge inside
 `DetailFieldWrapper`.** Module badge shells (`StatusBadge` / `EnumBadge` wrappers over
-`resolveBootEnum`) return `null` for an absent value — right in a list cell or an inline
+`resolveBootEnum`) return `null` for an absent value - right in a list cell or an inline
 flex row, but inside a `DetailFieldWrapper` it leaves a silently blank row while every
 sibling `DetailFields.*` row shows the shared no-value badge. For a detail or dialog row
 whose enum can legitimately be absent (a verdict that exists only when something matched),
@@ -361,7 +361,7 @@ information: a soft-deleted row is filtered out of the list, so the flag always 
 and the stamp always reads `-1`. Strip them from the column set, the `cardContent` block,
 the detail section, the form, and the filter set, then clean up the imports left unused.
 Same treatment for the entity PK and the audit quartet (`createdAt` / `createdBy` /
-`updatedAt` / `updatedBy`) — `CrudDetail`'s `auditData` slot already carries those. The
+`updatedAt` / `updatedBy`) - `CrudDetail`'s `auditData` slot already carries those. The
 framework has no declarative "hidden by default": `hiddenColumns` is a runtime toggle the
 operator can open, so hiding means removing from source.
 
@@ -383,40 +383,40 @@ render the address it just told them to use?
 package, and pnpm answers two importers with two copies whenever their peer sets
 differ: an app declaring `simplix-react` and a module declaring `@simplix-react/ui` is
 enough. The provider one copy renders is then invisible to the consumer that imported
-the other, and **nothing throws** — the consumer silently takes its default. A page
+the other, and **nothing throws** - the consumer silently takes its default. A page
 served from a `modules/*` package registers its title through `usePageHeader` while the
 shell reads an empty provider, so the screen renders with no heading and no create
 button and every line of the source is correct; the same split produces "No QueryClient
 set", a toast that never appears, and a translation that stays a key.
 
 The list in the project's bundler config (`resolve.dedupe`) must name the FRAMEWORK
-packages — `@simplix-react/ui` first — not only `react` and TanStack, because a
+packages - `@simplix-react/ui` first - not only `react` and TanStack, because a
 workspace that consumed the framework through a single local checkout could never hit
 this and the list written under those conditions does not name them.
 
 - **Run `node "${CLAUDE_PLUGIN_ROOT}/scripts/check-duplicate-contexts.mjs"` after ANY
-  change to dependency resolution** — a version bump, a new dependency, switching a
+  change to dependency resolution** - a version bump, a new dependency, switching a
   local-link profile to the registry, any `pnpm install` that rewrites the lockfile. It
   reports same-version copies of directly-depended packages whose code creates a context
   and which the dedupe list does not name; different major versions living side by side
   are ordinary resolution and are not reported.
 - **Missing chrome has TWO causes, and WHICH pages lost it tells them apart before you
-  touch anything.** Duplication takes out every page past the package boundary — the
+  touch anything.** Duplication takes out every page past the package boundary - the
   app's own pages keep their header while every `modules/*` page loses it. When only
   SOME pages lose it with no boundary in common, the cause is in the hook rather than in
   resolution: a cleanup that empties the store without forgetting what it installed
   loses the second publish of React's development remount rehearsal, so only pages whose
   title and description never change after mount render nothing. Run this audit first
   because it is one command, then read the installed hook's source and compare against a
-  sibling project on a different framework version. Report neither from reasoning alone —
+  sibling project on a different framework version. Report neither from reasoning alone -
   in the DOM, an ABSENT header element means no title ever reached the store, a PRESENT
   but blank one means it arrived empty.
 - Findings under React Native / Expo names are real duplicates too, but Metro bundles
-  those — the Vite dedupe list does not reach them, so fix them in the RN toolchain.
+  those - the Vite dedupe list does not reach them, so fix them in the RN toolchain.
 - **How the second copy arrived decides the fix.** A peer-hash split of one registry
   version (what the script reports) is fixed in the dedupe list. A **linked local
   checkout** answering its own peer imports beside registry copies is fixed in the
-  install — link the whole framework scope or none of it; the diagnosis by loaded
+  install - link the whole framework scope or none of it; the diagnosis by loaded
   resources and the leftover-symlink sweep are in `framework/overview.md` § One physical
   copy per framework package, together with the framework-side `globalThis` anchoring
   rule that keeps a duplicate copy from becoming a correctness failure.
@@ -425,7 +425,7 @@ this and the list written under those conditions does not name them.
   is a different declaration from the `Ref<T>` the framework component's props were
   declared against. An OBJECT ref crosses that boundary because it is structural
   (`{ current: T | null }`); a CALLBACK ref does not, because its return type reaches
-  `VoidOrUndefinedOnly`, which is nominal — so `tsc` refuses the assignment with "Two
+  `VoidOrUndefinedOnly`, which is nominal - so `tsc` refuses the assignment with "Two
   different types with this name exist, but they are unrelated" naming a type the author
   never wrote. **A shared component that forwards a ref to a framework primitive declares
   that prop as `RefObject<T | null>`, not `Ref<T>`**: it is what a caller reading the
@@ -436,13 +436,13 @@ this and the list written under those conditions does not name them.
 
 A hook runs wherever it is written. Gating only what a component *renders* leaves the
 request it makes untouched, so a screen that correctly hides a feature it did not buy
-still calls the endpoint that feature owns — and the server refuses. What the user sees
+still calls the endpoint that feature owns - and the server refuses. What the user sees
 is a bare "access denied" dialog over a panel showing nothing that could explain it, on
 a screen that is otherwise entirely theirs to use. The half that did the hiding believes
 it is finished, because from inside that component the affordance really is gone.
 
 **Put the condition where the request is.** The hook's own `enabled`, or the shared
-factory's `useEnabled` — not the route, not the parent that composes the widget. A gate
+factory's `useEnabled` - not the route, not the parent that composes the widget. A gate
 at the composing layer is a rule the NEXT caller has to remember; a gate inside the hook
 is one they cannot get wrong. When the same read is offered as several primitives (a
 picker, a facet, a name lookup over one roster), route all of them through one predicate
@@ -454,7 +454,7 @@ those keeps the gate one line and keeps hook order stable, which a conditional c
 would not.
 
 **Drop the affordance as well as the request.** A filter or picker left standing with an
-empty option list reads as "failed to load", not as "your tier does not include this" —
+empty option list reads as "failed to load", not as "your tier does not include this" -
 the reader retries, then reports a bug against a screen that is behaving exactly as
 designed. Remove the control, or replace it with a sentence naming what is missing.
 
@@ -470,15 +470,15 @@ Three shapes this takes, all found in one afternoon on one product:
 **The chrome row is the worst of the four, because it fires for everybody.** A shell reads
 the signed-in account and whatever it needs to draw itself; the moment one of those reads
 comes from an administrative endpoint, **every role without that permission meets a
-refusal dialog on the first screen after signing in** — before touching anything. The rule
+refusal dialog on the first screen after signing in** - before touching anything. The rule
 generalizes past hooks: **a surface hidden from a role is not requested on that role's
-behalf either.** Chrome takes its data from reads no role can be refused — the account's
+behalf either.** Chrome takes its data from reads no role can be refused - the account's
 own permission set, and whatever the shell's own endpoint returns for the caller. Where the
 shell needs a list, the read that serves it returns the caller's own scope rather than the
 administrator's.
 
-**Detecting this mechanically is left undone on purpose.** The shape — "a hook whose
-value is used only inside a conditional" — describes far more legitimate code than
+**Detecting this mechanically is left undone on purpose.** The shape - "a hook whose
+value is used only inside a conditional" - describes far more legitimate code than
 defective code (loading states, empty states, every optional panel), and the part that
 makes it a defect is that the endpoint is gated, which no static rule can see without
 the project's own gate vocabulary. A rule that fires on the correct cases teaches the
@@ -491,11 +491,11 @@ A detail field, a list cell or a panel row whose value is the NAME of another re
 renders that name plus the peek trigger, and the trigger opens that record's detail in a
 host-mounted dialog (#45). The dialog's go-to action is the only way out of the screen the
 reader is on. A viewer with no grant to read the referenced record keeps the name and
-loses the trigger — never a control that comes back refused.
+loses the trigger - never a control that comes back refused.
 
 **What goes wrong is not that the reader cannot get there. It is that they arrive.**
 Somebody reading a record presses the name of a thing it refers to, to check one value,
-and the record they were reading is gone — its tab, its scroll position, its filters, and
+and the record they were reading is gone - its tab, its scroll position, its filters, and
 whatever they had half-decided. Nothing errors and the label was correct, so the only
 thing that noticed is the reader's own memory of where they were.
 
@@ -504,9 +504,9 @@ thing that noticed is the reader's own memory of where they were.
 | Shape | What it does |
 | --- | --- |
 | `<Link>` (or a `variant="link"` button wrapping one) inside a detail field | leaves the screen |
-| a link-styled button wired to the panel's own `onSelect` / `showDetail` | replaces the record under the reader — same panel, same chrome, different subject |
+| a link-styled button wired to the panel's own `onSelect` / `showDetail` | replaces the record under the reader - same panel, same chrome, different subject |
 
-**A link is right when the destination is a screen rather than a record** — a canvas, a
+**A link is right when the destination is a screen rather than a record** - a canvas, a
 register, a wizard, a filtered roster. Those belong in the panel's action row, not in a
 field: a field's value is a value, and a control sitting where a value belongs is read as
 that value.
@@ -517,16 +517,16 @@ steps down a tree and pressing 「close」 drops the reader to the bottom of the
 
 **The failure mode this invariant exists for is disuse, not misuse.** On one product the
 peek host, the trigger button and the dialog were built, reviewed and wired into the app
-root — and then exactly ONE label used them. Every screen written in the months after
+root - and then exactly ONE label used them. Every screen written in the months after
 reached for a router link instead, because a link is what a reference looks like
 everywhere else on the web, and nothing failed when they did. By the time anybody counted,
 the wireframe board drew 225 reference fields and the code held one. **A convention that
 has to be remembered at each field is kept the day it is written and broken every day
-after** — so the moment the machinery exists, the rule that every reference goes through
+after** - so the moment the machinery exists, the rule that every reference goes through
 it needs a detector, not a paragraph.
 
 **Which value gets one is decided by the domain model, not by the label.** A field is a
-reference when it carries a foreign key — when its value identifies a record of another
+reference when it carries a foreign key - when its value identifies a record of another
 entity, or another record of the same entity. The generated DTO types are the evidence,
 because they are what the server actually sends. Three cases decide themselves once that
 is the test:
@@ -537,14 +537,14 @@ is the test:
 | the parent of the same entity | yes | a different record, and the reader is walking a tree |
 | a denormalized name snapshot (`actorUsername`, 「그때 그렇게 읽혔다」) | no | it records what was true then; today's record may not match, and opening it would answer a question nobody asked |
 | an enum | no | a value, not a record |
-| a count (`21명`) | no | it names no record — it points at the list that does |
+| a count (`21명`) | no | it names no record - it points at the list that does |
 
 **The two shapes, and one question decides which: does the trigger stand alone in its own
-region, or does it sit at the end of a value?** Standing alone — a card, a footer action
-row — it takes `appearance="inline"`, an outline button carrying the label and the icon,
+region, or does it sit at the end of a value?** Standing alone - a card, a footer action
+row - it takes `appearance="inline"`, an outline button carrying the label and the icon,
 because nothing precedes it to say what it opens and nothing beside it for a word to crowd.
-Sitting at the end of a value — a detail field, a list column, a detail-list row, a section
-header's trailing slot — it takes `appearance="icon"`, because the word takes the width the
+Sitting at the end of a value - a detail field, a list column, a detail-list row, a section
+header's trailing slot - it takes `appearance="icon"`, because the word takes the width the
 value needs: a bordered button at the end of a two-column detail row truncated the name the
 row exists to show to 「대한건설…」 while the control for opening it stayed whole, and a
 column of them left the panel with two right edges.
@@ -560,10 +560,10 @@ trigger written without thinking about its place is right rather than loud.
 
 **An icon-only trigger names what it opens.** With the label gone, `aria-label` is all a
 screen reader has, and a detail panel or a list column holds several triggers whose label
-is the same word — pass `target` so the name is 「남부현장 보기」 rather than the fourth
+is the same word - pass `target` so the name is 「남부현장 보기」 rather than the fourth
 「보기」 on the screen.
 
-**A dialog holds the referenced record's whole detail, tabs included** — not a summary
+**A dialog holds the referenced record's whole detail, tabs included** - not a summary
 somebody chose six fields for. A summary is a second description of the record that drifts
 from the first, and the reader who opened it to check one thing usually needs the next
 thing too. This makes each peek cost what that entity's detail component costs: where none
@@ -571,8 +571,8 @@ exists yet, the reference waits for the chapter that builds one rather than gett
 hand-written card.
 
 **That detector belongs to the project, not to this script.** The shape is mechanically
-plain — a `<Link>`, or a call to the surrounding panel's selector, inside a
-`DetailFieldWrapper` — but the fix names components (`PeekTriggerButton`, `usePeekHost`)
+plain - a `<Link>`, or a call to the surrounding panel's selector, inside a
+`DetailFieldWrapper` - but the fix names components (`PeekTriggerButton`, `usePeekHost`)
 that live in the project's own UI package and are absent from a project that has not built
 them. `audit-frontend.mjs` runs against projects with no peek machinery at all, where the
 finding would name a component that does not exist. Put the rule in the project's own gate
@@ -580,22 +580,22 @@ script, and prove it on the broken form and the fixed form there.
 
 ## #70 A sentence holding a value that can be absent is judged by the value, not by the record
 
-`t("closure.confirmTitle", { site: site?.siteName ?? "" })` against 「사업장 종료 — {{site}}」
+`t("closure.confirmTitle", { site: site?.siteName ?? "" })` against `사업장 종료 — {{site}}`
 renders an em dash with nothing after it. Nothing throws, the type is satisfied, and the build is
-green — `?? ""` is what makes it typecheck and it is also what makes the hole. **Everybody meets
+green - `?? ""` is what makes it typecheck and it is also what makes the hole. **Everybody meets
 it, not only a reader whose scope withholds the value**: the value arrives with a fetch, so the
 first paint of every one of these is the broken one.
 
-**Guard the value, never the record.** `record ? <p>{t(…)}</p> : null` is the wrong test — it is
+**Guard the value, never the record.** `record ? <p>{t(…)}</p> : null` is the wrong test - it is
 already true in the case that ships, where the record loaded and the field came back null. The
 condition names `record?.fieldName`.
 
 **Two shapes, and the sentence decides which.** Read what is left once the value is substituted
 away:
 
-- **The sentence means nothing without it** — 「{{version}} 버전을 설치합니다」. Do not render that
+- **The sentence means nothing without it** - 「{{version}} 버전을 설치합니다」. Do not render that
   clause until the value is there. Narrow the condition to the clause, not to the panel around it.
-- **The sentence stands without it** — 「번역률 {{rate}}%」 still says what it says with a name
+- **The sentence stands without it** - 「번역률 {{rate}}%」 still says what it says with a name
   missing from the front. Give it a paired key with no interpolation (`title` / `titleUnnamed`),
   and pick between them at the call site.
 
@@ -604,9 +604,9 @@ rebuilt afterwards.
 
 **Never apply one shape across the whole finding list.** Twenty-five call sites sorted by which of
 the two they are produce twenty-five sentences somebody meant; twenty-five given the same treatment
-produce a screen nobody designed. Where a value has a second-best form — an equipment record with
+produce a screen nobody designed. Where a value has a second-best form - an equipment record with
 no name but a management number, on a confirmation the operator reads to check what is about to be
-destroyed (#46) — the fallback is that value, not the paired key.
+destroyed (#46) - the fallback is that value, not the paired key.
 
 ## #71 A collection inside a panel or a tab is one of two shapes, and paging decides which
 
@@ -614,11 +614,11 @@ destroyed (#46) — the fallback is that value, not the paired key.
 
 | The set | What it renders as | What it must NOT have |
 | --- | --- | --- |
-| Fixed — a catalogue, an enum, a matrix, the four sharing modes | a bordered card table (`CrudDetail.Table` with no pager, or the project's zero-argument `TableCard`) | a pager, which promises a second page that does not exist |
-| Growing — a history, the accounts holding a role, sessions, grants, anything a person adds to | `CrudList`, the same compound the list screen uses | nothing; it carries the total, the search, the filters, sortable headers and the pager |
+| Fixed - a catalogue, an enum, a matrix, the four sharing modes | a bordered card table (`CrudDetail.Table` with no pager, or the project's zero-argument `TableCard`) | a pager, which promises a second page that does not exist |
+| Growing - a history, the accounts holding a role, sessions, grants, anything a person adds to | `CrudList`, the same compound the list screen uses | nothing; it carries the total, the search, the filters, sortable headers and the pager |
 
 **A pager under a bordered row list is the shape this rule exists to remove.** `CrudDetail.List`
-and `CrudDetail.Table` hand a growing collection its pages and nothing else — so a reader who can
+and `CrudDetail.Table` hand a growing collection its pages and nothing else - so a reader who can
 see there are 240 rows has no way to find one. They reach for the search box the list screen has,
 the column header they sorted by there, and the total that told them how many; a tab gives them
 page 7 of 12 and a scroll.
@@ -636,7 +636,7 @@ const list = useCrudList<HolderRow>({
 });
 ```
 
-**The tab's count and the list's total are the same number** — read the total off the list rather
+**The tab's count and the list's total are the same number** - read the total off the list rather
 than firing a second count, or the two disagree the moment a filter is committed.
 
 **What the panel's width costs, and what it does not.** A `CrudList` in a 560px panel draws fewer
@@ -660,12 +660,12 @@ Detected by `audit-strip-outside-the-first-tab` in `audit-frontend.mjs`.
 
 ## #73 Every standing message is a card; only a transient failure stays a banner
 
-**Two kinds of message look identical and behave oppositely — and the line between them is not
+**Two kinds of message look identical and behave oppositely - and the line between them is not
 what the message says, it is whether it survives the reader doing nothing.**
 
 | | A standing message | A transient failure |
 | --- | --- | --- |
-| Still there a minute later, untouched | yes | no — it answers something the reader just did |
+| Still there a minute later, untouched | yes | no - it answers something the reader just did |
 | Example | 「계정과 근로자는 따로입니다」 · 「정책이 없는 안전구역이 1개 있습니다」 | 「코드가 틀렸습니다」 on a sign-in panel · 「연결하지 못했습니다」 after a test button |
 | Drawn with | the notice card, closable, on the header control for its kind | a bare `AlertBanner`, left where it is |
 
@@ -674,7 +674,7 @@ below the fold is the rows they came for. So it is drawn with the notice compone
 bare banner, which gives it two things a banner does not have: the reader can put it away,
 remembered for them across sessions, and the way back is a header control that is in the same
 place on every route. There is one control per kind (help · warning · info · danger), each with
-**its own glyph AND its own tint** — colour alone does not reach a reader who cannot separate the
+**its own glyph AND its own tint** - colour alone does not reach a reader who cannot separate the
 two tints, and a glyph alone does not reach one scanning the page without reading it. The card's
 own button (「설명 보기」) is drawn inside that control too, so the explanation it opens stays one
 press away after the card has been put away.
@@ -689,26 +689,26 @@ one of that kind is standing. That is the argument the notice kinds already make
 it is true of all four.
 
 **The test before writing either**: does this message survive the reader doing nothing? If it is
-still there a minute later, it stands, and it closes. If it is the answer to a press — a read that
-failed, a submit the server refused, a field rejecting the value being typed — it is transient and
+still there a minute later, it stands, and it closes. If it is the answer to a press - a read that
+failed, a submit the server refused, a field rejecting the value being typed - it is transient and
 it stays a banner.
 
 **Two shapes sit next to the transient one and are not it.** A banner that is the ONLY thing its
-pane renders in that state — a pane's empty state, the other arm of the ternary that draws the
-table — is the pane's content rather than a message standing over content, and putting it away
+pane renders in that state - a pane's empty state, the other arm of the ternary that draws the
+table - is the pane's content rather than a message standing over content, and putting it away
 would leave the reader a blank pane, which #76 forbids. A banner drawn once per row of a
 collection is a data row wearing a banner, and a per-row dismissal key is a key that moves. Both
 stay banners; neither is an excuse for a message that genuinely stands beside content.
 
 **Every message passes `icon`, card or banner.** `AlertBanner` draws no glyph unless the caller
 gives it one, and half the banners in a console reach only the readers who can separate the two
-tints — the rule about a glyph AND a tint is about every message, not only about cards. A card
+tints - the rule about a glyph AND a tint is about every message, not only about cards. A card
 takes its glyph from `kind`, so converting a banner to a card fixes it by construction; a banner
 that stays needs the glyph passed by hand, mapped from its tone (danger · warning → the triangle,
 info · neutral → the info circle, success → the check).
 
 **The rule is read in one direction far more often than the other, and the direction that gets
-skipped is the standing message's.** A transient failure wearing a card is visible — somebody
+skipped is the standing message's.** A transient failure wearing a card is visible - somebody
 presses the ✕ and meets the wrong behaviour. A standing sentence drawn as a loose caption is
 invisible, because a muted sentence under the page header looks like every other muted sentence on
 the screen and nothing about it says it was supposed to be something else. So it accumulates: a
@@ -724,8 +724,8 @@ costs one press and the sentence costs the same room every day forever. Such a c
 `noticeKey` from the caller rather than fixing one, because the card belongs to the screen it
 stands on and the header control lists that screen's cards.
 
-**One key per message, never one per branch.** A screen that draws the same sentence two ways — a
-phone body and a desktop panel, two arms of a layout switch — is one message in two places, and it
+**One key per message, never one per branch.** A screen that draws the same sentence two ways - a
+phone body and a desktop panel, two arms of a layout switch - is one message in two places, and it
 takes one `noticeKey`. Splitting it feels safe, because each branch then owns its own dismissal and
 nothing leaks between them; what it actually does is make the operator put the card down twice. The
 dismissal is kept per operator on the server **so that it follows them between devices**, which is
@@ -734,18 +734,18 @@ dismiss it at their desk and meet it again on the phone.
 
 **Watch what that reason is not.** 「A phone-only key would be restorable from nowhere, because the
 header lists only the keys the current screen registers」 is a true sentence about a header that
-draws no control on that width, and it stops being true the moment the header is fixed — which is a
+draws no control on that width, and it stops being true the moment the header is fixed - which is a
 one-line change somebody will make. A reason that rests on a defect expires when the defect is
 repaired, and it expires silently, still written down and still being copied. The durable reason is
 the one above, which never depended on the header at all.
 
 **The board does not settle it by which primitive it drew.** A board can carry three vocabularies
-for a standing sentence — a page note, a sub-caption, a message — and only the message records
+for a standing sentence - a page note, a sub-caption, a message - and only the message records
 whether it closes. Where the board drew a caption, or marked a message as drawing no close
 control, and the message stands, the board is the thing that moves.
 
 **Detecting it**: a banner standing where nothing guards it is mechanically decidable and belongs
-in a gate — walk the JSX, skip any banner contained in a dialog / sheet / help card / notice card
+in a gate - walk the JSX, skip any banner contained in a dialog / sheet / help card / notice card
 or in a file that is a sign-in surface end to end, and report the rest. A banner drawn under a
 condition is NOT decidable that way: a state and a transient failure have the same shape, so the
 gate holds the unconditional half and the conditional half is read by whoever writes the screen.
@@ -753,8 +753,8 @@ Say so where the gate is declared rather than leaving the silence to read as cov
 
 ## #74 One value's state is changed in one place, on every screen that shows it
 
-A record's active / suspended / closed state is moved by an **action** — a row action on the list,
-a button in the detail panel's footer — with the confirmation and the reason prompt that belong to
+A record's active / suspended / closed state is moved by an **action** - a row action on the list,
+a button in the detail panel's footer - with the confirmation and the reason prompt that belong to
 it. It is not also a switch inside the edit form: two ways to make the same change are two audit
 trails, two confirmation behaviours and two answers to 「어디서 끄나요」, and the form's switch is
 the one that skips the reason.
@@ -767,7 +767,7 @@ carry it and the edit form still may not.
 
 A select moves from one option to another and nothing else, so an optional field becomes permanent
 the moment somebody picks a value. The rank set on the wrong account, the parent chosen for a node
-that belongs at the top level, the zone type applied to an area that turned out not to be one —
+that belongs at the top level, the zone type applied to an area that turned out not to be one -
 each can be changed and none can be taken off, and the route back is a database column the screen
 does not offer.
 
@@ -775,22 +775,22 @@ does not offer.
 has declared the empty string legal; a control that cannot produce the empty string contradicts it
 in the same file. That pairing is what `optional-select-cannot-be-emptied` reads.
 
-Pass `clearable` on those selects. It puts an entry at the top of the list — the framework's word
+Pass `clearable` on those selects. It puts an entry at the top of the list - the framework's word
 for an empty choice, or `clearLabel` where the absence has a name of its own (`사업장 바로 아래`
-for a node with no parent) — and hands `""` back through `onChange`. A sentinel carries it inside
+for a node with no parent) - and hands `""` back through `onChange`. A sentinel carries it inside
 the component because Radix refuses an item valued at the empty string, which is also why a
 hand-rolled `{ value: "", label: … }` option does not work: it throws when the list opens.
 
 `required` withholds the entry however the caller asked, since a required field has no empty state
 to return to.
 
-The same question is asked of every other control an optional field can use — a combobox, a tree
-select, a date field — and the answer is the same: what the DTO accepts as absent, the screen can
+The same question is asked of every other control an optional field can use - a combobox, a tree
+select, a date field - and the answer is the same: what the DTO accepts as absent, the screen can
 set to absent.
 
 ## #76 A pane a reader reached by pressing something owes them words in every state it can reach
 
-`return null` is right in a dozen places — a cell with no value, a badge whose enum resolved to
+`return null` is right in a dozen places - a cell with no value, a badge whose enum resolved to
 nothing, a banner nobody armed, a reference card with no rows. What separates those from a defect
 is not the statement, it is **where the statement runs**. A tab strip is a promise the reader can
 see being made: pressing this shows what is behind it. A pane that answers a press with nothing has
@@ -807,8 +807,8 @@ if (!draft) {
 }
 ```
 
-Everything else on the screen is correct — the header, the tiles, the banner saying the record is
-missing, the four tabs with their counts — so the screen reads as populated right up to the strip
+Everything else on the screen is correct - the header, the tiles, the banner saying the record is
+missing, the four tabs with their counts - so the screen reads as populated right up to the strip
 and then stops. `document.body.innerText` ends at the last tab's label.
 
 **A spinner is the same defect wearing a different face, and the harder one to see.** A pane held
@@ -819,14 +819,14 @@ const roleId = catalogue.idOfCode(AUDITOR_ROLE);   // undefined WHILE READING, a
 {roleId ? <List forced={{ "roleIds.in": roleId }} /> : <QueryFallback isLoading />}
 ```
 
-`undefined` there is two different facts — the catalogue has not answered yet, and the catalogue
-answered and holds no such role — and only the first is a wait. Written as one condition the second
+`undefined` there is two different facts - the catalogue has not answered yet, and the catalogue
+answered and holds no such role - and only the first is a wait. Written as one condition the second
 spins for ever. Read the lookup's own `isLoading` to separate them; a lookup that does not expose
 one is the thing to fix.
 
 **What the pane owes.** A title and a sentence saying what this pane holds and what makes it
 appear, through the project's shared empty-state component (registry: `EmptyState`, and whatever
-panel wrapper the project keeps around it). Not the banner's sentence again — a banner above the
+panel wrapper the project keeps around it). Not the banner's sentence again - a banner above the
 strip has already said the record is absent, and what the reader still cannot tell is what they
 would have been looking at.
 
@@ -840,7 +840,7 @@ the gate and a green build is not.
 
 A screen that previews before it commits usually grows one request builder, because the preview and
 the submit send the same DTO. The builder refuses to produce anything until every required field is
-filled, which is right for the submit and is the whole defect for the preview — as soon as one of
+filled, which is right for the submit and is the whole defect for the preview - as soon as one of
 those fields is required *because of what the preview says*, the gate and the answer that justifies
 it close a cycle.
 
@@ -855,7 +855,7 @@ const canSubmit = Boolean(exportRequestOf(values));    // correct
 ```
 
 **Nothing throws, and every screen inside the cycle is individually correct.** The tiles draw an
-em-dash over 「조건을 채우면 계산합니다」, which is true — nobody counted. The column preview says
+em-dash over 「조건을 채우면 계산합니다」, which is true - nobody counted. The column preview says
 「목적과 대상과 기간을 채우면 …」, which is the hint it was written with. The journey rail shows the
 first step live, which is what an uncounted scope means. Each of those sentences is honest about a
 measurement nobody took, and together they describe a screen that cannot count fields it is looking
@@ -880,18 +880,18 @@ export function exportRequestOf(values: Values): RequestDTO | undefined {
 **The server splits with it, or the fix is only half made.** A preview endpoint typed to the full
 request DTO still validates the field it never reads, so the narrowed client call comes back 400 and
 the screen is as blank as before. Give the preview its own DTO carrying the scope, and let the
-request DTO extend it with what only a submit needs — the same shape the backend handbook's
+request DTO extend it with what only a submit needs - the same shape the backend handbook's
 `UpdateDTO extends CreateDTO` already uses. See `simplix:backend` #19.
 
 **The tell, when you are looking for it rather than at it: a required field whose requirement is
 stated by a sentence the screen has not been able to render yet.** 「개인정보가 포함되므로 받는
 사람을 반드시 지정합니다」 is a warning the preview produces, and 받는 사람 was the gate on the
-preview — the rule stood behind the field it makes mandatory. Any time a form explains why a field
+preview - the rule stood behind the field it makes mandatory. Any time a form explains why a field
 is required, ask where that explanation comes from, and whether the field gates it.
 
 **No script rule.** A builder returning `undefined` and feeding two callers is the ordinary shape of
 every preview-then-submit screen, so a check over it is almost all false positives, and what
-separates the defect from the pattern is a semantic fact — that one gated field's requirement is
+separates the defect from the pattern is a semantic fact - that one gated field's requirement is
 decided downstream. It is caught by asking the question of a gated read, which is why it lives here
 and not in `audit-frontend.mjs`.
 

@@ -129,7 +129,7 @@ import {basePackage}.domain.enums.<%= enumPackage %>.<%= enumName %>;
 
 ---
 
-> **The real templates are the source of truth.** The snippets below mirror the actual generator templates (`.simplix/templates/controller/rest/EntityRestController.java.template`, `.simplix/templates/service/EntityService.java.template`). When in doubt, read those files — do not trust a snippet that diverges from them.
+> **The real templates are the source of truth.** The snippets below mirror the actual generator templates (`.simplix/templates/controller/rest/EntityRestController.java.template`, `.simplix/templates/service/EntityService.java.template`). When in doubt, read those files - do not trust a snippet that diverges from them.
 
 ## Controller Template Example
 
@@ -199,7 +199,7 @@ public class <%= entityName %>Service extends SimpliXBaseService<<%= entityName 
 
 ## DTO Template Example
 
-> Illustrative structure only. Lombok annotations are per DTO role — a SearchDTO MUST be `@Getter @Setter` (never `@Data`, per invariant 6), and Create/Update DTO fields carry `@FieldLabel`. Follow `../review/dto-type-reference.md` (the authoritative 8-role spec) for the exact per-role annotations, `extends` relationships, and field rules; the real template is `.simplix/templates/dto/EntityDTOs.java.template`.
+> Illustrative structure only. Lombok annotations are per DTO role - a SearchDTO MUST be `@Getter @Setter` (never `@Data`, per invariant 6), and Create/Update DTO fields carry `@FieldLabel`. Follow `../review/dto-type-reference.md` (the authoritative 8-role spec) for the exact per-role annotations, `extends` relationships, and field rules; the real template is `.simplix/templates/dto/EntityDTOs.java.template`.
 
 ```ejs
 package {basePackage}.web.<%= modulePath.replace(/\//g, '.') %>.dto;

@@ -15,12 +15,12 @@ When a child entity should NOT be exposed as a separate REST API, internalize it
 
 - Child CRUD is handled entirely within the parent's Service. Do **not** create a separate `ChildService` or `ChildRestController`.
 - Parent Service injects `ChildRepository` directly.
-- **Update uses the reconcile pattern** (diff-based), not full-replace. Full-replace churns entity events unnecessarily — diff-based writes only what changed.
+- **Update uses the reconcile pattern** (diff-based), not full-replace. Full-replace churns entity events unnecessarily - diff-based writes only what changed.
 - DTO semantics for update:
   - `children == null` → "no change" (do nothing)
   - `children == []` → "delete all children"
   - `children == [...]` → reconcile against current set
-- Parent delete → child delete first (cascade at service level, not JPA level — keeps event emission under your control).
+- Parent delete → child delete first (cascade at service level, not JPA level - keeps event emission under your control).
 - Use `buildDetailDTO()` for manual composition of nested child lists. SimpliX projection does **not** auto-populate nested lists.
 
 ## What Gets Kept / Deleted
@@ -62,7 +62,7 @@ public static class ChildItemDTO {
 }
 ```
 
-- NO `scheduleId` / `parentId` field — parent sets it from its own context
+- NO `scheduleId` / `parentId` field - parent sets it from its own context
 - NO audit fields (createdBy, updatedAt, etc.)
 
 ### Response DTO (DetailDTO pattern)
@@ -110,7 +110,7 @@ public static class ParentListDTO {
 
 ## Service Pattern
 
-### Constructor — inject child repository
+### Constructor - inject child repository
 
 ```java
 public ParentService(
@@ -125,9 +125,9 @@ public ParentService(
 }
 ```
 
-No separate ChildService needed — parent service uses child repository directly.
+No separate ChildService needed - parent service uses child repository directly.
 
-### Create — save parent, then children
+### Create - save parent, then children
 
 ```java
 @Transactional
@@ -152,7 +152,7 @@ public ParentDetailDTO create(ParentCreateDTO createDTO) {
 }
 ```
 
-### Update — reconcile pattern (diff-based)
+### Update - reconcile pattern (diff-based)
 
 ```java
 @Transactional
@@ -210,7 +210,7 @@ private void reconcileChildren(String parentId, List<ChildItemDTO> items) {
 - `children == []` → delete all children
 - `children == [...]` → reconcile (create/update/delete-orphans)
 
-### Delete — cascade children first
+### Delete - cascade children first
 
 ```java
 @Transactional
@@ -228,7 +228,7 @@ public void batchDelete(List<String> ids) {
 }
 ```
 
-### Projection — manual composition (buildDetailDTO)
+### Projection - manual composition (buildDetailDTO)
 
 SimpliXBaseService `findById(id, DtoClass.class)` does NOT auto-populate nested lists.
 Manual composition is required:
@@ -248,7 +248,7 @@ public ParentDetailDTO buildDetailDTO(String parentId) {
 }
 ```
 
-### Controller — use buildDetailDTO for GET
+### Controller - use buildDetailDTO for GET
 
 ```java
 @GetMapping("/{id}")

@@ -169,7 +169,7 @@ Demonstrates: the timezone and country custom filter types alongside text and da
 ### Key Observations
 
 - ★ `timezone` and `country` types need only `field` and `label`
-- ★ No operators or options needed — the component handles selection internally
+- ★ No operators or options needed - the component handles selection internally
 
 ---
 
@@ -192,7 +192,7 @@ const list = useCrudList(adaptOrvalList(useFilteredList), {
 
 ### Key Observations
 
-- ★ FK filter is NOT added to FilterBar — it is injected at the API level
+- ★ FK filter is NOT added to FilterBar - it is injected at the API level
 - ★ This ensures the parent FK filter is always applied regardless of user interaction
 - ★ The `mergedParams` pattern spreads user params and adds the FK constraint
 - ★ Used when a list is always scoped to a parent entity (master-detail)
@@ -266,4 +266,4 @@ Demonstrates: multiple individual text filters (no unified-text), each scoped to
 - ★ Each text field is a separate `type: "text"` filter (not unified-text)
 - ★ All text filters support both CONTAINS and EQUALS operators
 - ★ CONTAINS is the default operator for text search
-- ★ Faceted filter with empty options array — options populated dynamically or from the generated enum
+- ★ Faceted filter with empty options array - options populated dynamically or from the generated enum

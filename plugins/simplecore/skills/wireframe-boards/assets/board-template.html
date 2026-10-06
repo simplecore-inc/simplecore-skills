@@ -3,13 +3,13 @@
 <head>
 <!--
   ┌──────────────────────────────────────────────────────────────────────────┐
-  │  READ FIRST — anyone (human or LLM) turning this board into real UI       │
+  │  READ FIRST - anyone (human or LLM) turning this board into real UI       │
   │  MUST read the "HOW TO READ THIS BOARD" block rendered at the top of      │
   │  <body> before writing a single line of code. It is the implementation    │
   │  contract for this file.                                                  │
   │                                                                          │
   │  The one-line version: this is a LOW-FIDELITY WIREFRAME. It specifies     │
-  │  screens, content, states, and flow — NOT appearance. Reproducing its     │
+  │  screens, content, states, and flow - NOT appearance. Reproducing its     │
   │  greys, borders, spacing, or device chrome as a design is a defect.       │
   └──────────────────────────────────────────────────────────────────────────┘
 -->
@@ -355,7 +355,7 @@
 </head>
 <body>
 
-<!-- Viewport toggle state — keep ONLY on boards that pair frames with
+<!-- Viewport toggle state - keep ONLY on boards that pair frames with
      .narrow / .wide (delete input + label otherwise). Must stay the FIRST
      element in <body>: the CSS reaches frames via the sibling combinator. Add
      the `checked` attribute to make the wide view the default. -->
@@ -368,7 +368,7 @@
   <span class="dateline">{date} · {390×844 · 768×1024 ⇄ 1024×768 · 1024/1440 fluid} · lo-fi</span>
 </header>
 
-<!-- IMPLEMENTATION CONTRACT — ships with every board, never deleted, never
+<!-- IMPLEMENTATION CONTRACT - ships with every board, never deleted, never
      trimmed. Adjust only items 11+ (board-specific notes). -->
 <section class="readme">
   <h2>HOW TO READ THIS BOARD — REQUIRED BEFORE IMPLEMENTING</h2>
@@ -391,11 +391,11 @@
   <a href="#flow-a">A. Sign-in (2)</a>
   <a href="#flow-t">T. Requests · tablet (1 screen · 2 frames)</a>
   <a href="#flow-w">W. Console · desktop (1 screen · 2 frames)</a>
-  <!-- one link per flow section: "{letter}. {name} ({frame count})" — a narrow/wide pair is
+  <!-- one link per flow section: "{letter}. {name} ({frame count})" - a narrow/wide pair is
        one screen, so count "{n} screens · {m} frames" when a section holds pairs -->
 </nav>
 
-<!-- EXAMPLE PHONE SECTION — delete after copying; it only demonstrates the vocabulary. -->
+<!-- EXAMPLE PHONE SECTION - delete after copying; it only demonstrates the vocabulary. -->
 <section class="flow" id="flow-a">
   <div class="flow-title">A. Sign-in <span class="count">2 frames · phone 390×844</span></div>
   <div class="row">
@@ -448,7 +448,7 @@
   </div>
 </section>
 
-<!-- EXAMPLE TABLET SECTION — delete after copying. Each tablet screen×state is
+<!-- EXAMPLE TABLET SECTION - delete after copying. Each tablet screen×state is
      an adjacent narrow(portrait) + wide(landscape) pair sharing one label; the
      board-level toggle shows exactly one of the pair. -->
 <section class="flow" id="flow-t">
@@ -509,7 +509,7 @@
   </div>
 </section>
 
-<!-- EXAMPLE DESKTOP SECTION — delete after copying. Desktop frames pin the
+<!-- EXAMPLE DESKTOP SECTION - delete after copying. Desktop frames pin the
      width and let the page height grow; the .fold marks the smallest supported
      window. The narrow(1024) + wide(1440) pair documents the breakpoint
      reflow: full sidebar ⇄ icon rail, 4-up ⇄ 2-up cards. -->

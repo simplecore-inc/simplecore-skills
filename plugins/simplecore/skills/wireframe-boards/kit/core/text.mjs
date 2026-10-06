@@ -1,11 +1,11 @@
 // Every word the kit writes onto a board that a READER reads.
 //
 // **Two kinds of English were mixed up here, and only one of them was right.** The reading contract
-// is instruction — an implementer, human or otherwise, is told what a wireframe fixes and what it
-// does not — so it is English wherever the board is drawn, the same as every other file an agent
+// is instruction - an implementer, human or otherwise, is told what a wireframe fixes and what it
+// does not - so it is English wherever the board is drawn, the same as every other file an agent
 // executes rather than reads as prose. The navigation chrome is not instruction: the index's legend,
 // the filter's placeholder, the viewport toggle's two words and a section's frame count are labels
-// on a document, and a Korean board that says `filter — id or name` over a Korean index is simply a
+// on a document, and a Korean board that says `filter - id or name` over a Korean index is simply a
 // board with English on it.
 //
 // So the chrome comes from here, keyed by the board's `boardLang`, and the contract does not. A
@@ -13,7 +13,7 @@
 // rather than failing, because a board is worth building in a language nobody has translated yet.
 //
 // **`boardLang` is the language of the DRAWING, and it is not `site.languages`.** The second is what
-// the product ships in — the list C-17 renders and a language switcher offers — and the two answer
+// the product ships in - the list C-17 renders and a language switcher offers - and the two answer
 // different questions: a board drawn in Korean can specify a product that runs in eleven languages,
 // and a board drawn in English can specify one that runs only in Korean. The names are kept apart
 // because a single word `lang` sitting beside `site.languages` reads as the same axis.
@@ -43,13 +43,13 @@ const en = {
   screensAndFrames: (s, f) => `${s} screen${s === 1 ? '' : 's'} · ${f} frame${f === 1 ? '' : 's'}`,
   /** A section a split has cut: what is in this file, and what the section holds in all. */
   framesOfWhole: (n, whole) => `${n} of ${whole} frames`,
-  /** The day every dated frame is drawn against — `config.today`, said in the header. */
+  /** The day every dated frame is drawn against - `config.today`, said in the header. */
   asOf: (day) => `as of ${day}`,
   /** The three places outside the frame list a reader goes to. */
   jumpIa: 'Information architecture',
   jumpUser: 'Users and roles',
   jumpReadme: 'Reading contract',
-  /** The index's width handle — a dimension of the reading tool, not of the board. */
+  /** The index's width handle - a dimension of the reading tool, not of the board. */
   widthLabel: 'Index width',
   widthHint: 'Drag to resize · arrow keys adjust · double-click resets',
   /** A board written into several files: the way back to the entry page, and what it says. */

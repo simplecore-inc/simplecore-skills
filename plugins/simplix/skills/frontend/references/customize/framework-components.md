@@ -2,7 +2,7 @@
 
 Complete catalog of `@simplix-react/ui` components, hooks, and utilities available for widget customization.
 
-> **Scope.** This catalog covers only the framework-generic primitives in `@simplix-react/ui`. Project-/domain-specific shared UI (composites tied to your entities, branded cards, domain badges) does NOT live here — it belongs in the project's own shared UI package (e.g. `@<prefix>/<name>-ui`). Don't add domain widgets to `@simplix-react/ui`; import them from the project package and only commonize truly generic pieces upstream.
+> **Scope.** This catalog covers only the framework-generic primitives in `@simplix-react/ui`. Project-/domain-specific shared UI (composites tied to your entities, branded cards, domain badges) does NOT live here - it belongs in the project's own shared UI package (e.g. `@<prefix>/<name>-ui`). Don't add domain widgets to `@simplix-react/ui`; import them from the project package and only commonize truly generic pieces upstream.
 
 ## Layout Primitives
 
@@ -21,7 +21,7 @@ Complete catalog of `@simplix-react/ui` components, hooks, and utilities availab
 
 **Justify values**: `start`, `center`, `end`, `between`, `around`
 
-**`overflow` prop** (Stack/Flex): `auto` | `hidden` | `visible` | `scroll` — e.g. `<Stack flex overflow="auto">` for a scrollable region, so a raw `<div className="...overflow-y-auto">` is never needed.
+**`overflow` prop** (Stack/Flex): `auto` | `hidden` | `visible` | `scroll` - e.g. `<Stack flex overflow="auto">` for a scrollable region, so a raw `<div className="...overflow-y-auto">` is never needed.
 
 **Boolean layout props** (Stack/Flex):
 
@@ -35,8 +35,8 @@ Complete catalog of `@simplix-react/ui` components, hooks, and utilities availab
 ### Overflow and scroll geometry (invariant #58)
 
 CSS computes an `overflow-x` of `auto`/`scroll` paired with an `overflow-y` of `visible` as
-`auto` on **both** axes. A wrapper that only ever wanted sideways scrolling — a preset row, a
-tab strip, a toolbar too wide for a narrow panel — therefore paints a vertical scrollbar the
+`auto` on **both** axes. A wrapper that only ever wanted sideways scrolling - a preset row, a
+tab strip, a toolbar too wide for a narrow panel - therefore paints a vertical scrollbar the
 moment anything inside it overflows the block direction by one pixel.
 
 The element reporting the overflow is often not the one the reader points at, so locate it
@@ -50,15 +50,15 @@ before touching anything:
 ```
 
 The overflow itself usually comes from a **fixed-height track whose padding leaves less room
-than the child it holds** — `outer height − borders − vertical padding ≥ child height` has to
+than the child it holds** - `outer height − borders − vertical padding ≥ child height` has to
 hold, and a bordered `h-<n>` track with symmetric padding often misses it by a pixel or two.
 `items-center` splits the leftover above and below, so the layout looks right at every width
 and only the bottom half scrolls; it also means shrinking the vertical padding to make the
 arithmetic legal re-renders identically, since the centring was already placing the child
 where the too-large padding claimed to.
 
-Prove it with numbers — `clientHeight` / `scrollHeight`, the track's outer height, the child's
-offset and height, before and after — never by eye. Never reach for `scrollbar-width: none`,
+Prove it with numbers - `clientHeight` / `scrollHeight`, the track's outer height, the child's
+offset and height, before and after - never by eye. Never reach for `scrollbar-width: none`,
 `::-webkit-scrollbar { display: none }`, or an `overflow-y: hidden` patch: the content still
 overflows and is now clipped with no way to reach it. For a framework component, the geometry
 is wrong in the framework, not in the consumer that merely made the symptom visible.
@@ -73,14 +73,14 @@ the strip offers its own height first, so on a page that stacks status cards, a 
 description above the tabs the leftover height squeezes it to **6px** and its
 `overflow-x-auto` clips the triggers that no longer fit. The labels are still in the DOM, so
 reading the page as text finds them all and only a capture shows the strip sliced in half.
-Measure it rather than judging by eye — the last `[role=tablist]`'s
+Measure it rather than judging by eye - the last `[role=tablist]`'s
 `getBoundingClientRect().height` reads 36 when it is right and 6 when it is not. Put the
 strip in one shared component and let pages compose that, so no page reaches for `TabsList`
 directly.
 
 **A record page's `Tabs` must NOT take `flex-1 min-h-0`.** That class pair belongs to a
-list-detail screen, where the panel owns the scroll. On a page that scrolls as a page — a
-record view, a settings screen, a matrix — it compresses the tab box to the remaining height
+list-detail screen, where the panel owns the scroll. On a page that scrolls as a page - a
+record view, a settings screen, a matrix - it compresses the tab box to the remaining height
 while the body inside keeps its natural height, and the overflow **draws on top of whatever
 follows the tabs**: a paragraph appears through the middle of another paragraph, with no
 error and no warning. Let the page's `main` own the scroll, and give the constraint to the
@@ -124,8 +124,8 @@ tab body only where that body genuinely scrolls itself (a list panel inside a ta
 | `SettingSwitch` | `label`, `description`, `checked`, `onCheckedChange` | Label + description + switch |
 | `PanelHeader` | `title`, `description?`, `onClose?`, `thumbnail?`, `trailing?`, `children?`, `borderVariant?` | Panel/sheet header; `trailing` slot renders a control (Badge, Button, ...) after `children` and before the close button |
 | `ConfirmDialog` | `open`, `title`, `description`, `variant`, `onConfirm`, `isPending` | Generic confirmation |
-| `ScrollBox` | `maxHeight?` (default 288px), `children` | A bordered box for reading a long passage through — terms, a log, a change list. **Not a layout scroll**: give it forty items and a third of them show with the rest behind a scrollbar inside a page that had room. A column that should scroll with the page is `<Stack flex overflow="auto">` |
-| `MenuLink` | `href`, `linkTarget?`, `className?`, `children` | Navigation link. **It accepts nothing else** — any other prop is dropped rather than forwarded to the DOM, and **the type checker passes**, so a marker attached to find the element later fails with no error anywhere. Find the current entry by its address instead: `a[href="${pathname}"]` |
+| `ScrollBox` | `maxHeight?` (default 288px), `children` | A bordered box for reading a long passage through - terms, a log, a change list. **Not a layout scroll**: give it forty items and a third of them show with the rest behind a scrollbar inside a page that had room. A column that should scroll with the page is `<Stack flex overflow="auto">` |
+| `MenuLink` | `href`, `linkTarget?`, `className?`, `children` | Navigation link. **It accepts nothing else** - any other prop is dropped rather than forwarded to the DOM, and **the type checker passes**, so a marker attached to find the element later fails with no error anywhere. Find the current entry by its address instead: `a[href="${pathname}"]` |
 
 ### Dialog & Sheet
 
@@ -148,7 +148,7 @@ tab body only where that body genuinely scrolls itself (a list panel inside a ta
 **A dialog that was open when you edited a shared component keeps the old code.** HMR does
 not re-render an already-mounted dialog, so a width or a layout fixed in
 `@simplix-react/ui` or in a project shared component is still absent when the same address
-is opened again — the fix has to be navigated away from and back to before the new module
+is opened again - the fix has to be navigated away from and back to before the new module
 loads. Not knowing this reads the applied fix as one that did not take, and the next move
 is usually to change something that was already right.
 
@@ -163,7 +163,7 @@ is usually to change something that was already right.
 | `TextField` | `string` | `label`, `value`, `onChange`, `type?` (email/url) |
 | `NumberField` | `number` | `label`, `value`, `onChange`, `min?`, `max?` |
 | `TextareaField` | `string` | `label`, `value`, `onChange` |
-| `SwitchField` | `boolean` | `label`, `value`, `onChange` — defaults to `layout="trailing"`: switch right-aligned with a dashed leader line from the label, description below at the label's left edge. Keep the default so toggle columns line up; pass `layout="inline"` only inside dense grids (e.g. a permission matrix dialog) |
+| `SwitchField` | `boolean` | `label`, `value`, `onChange` - defaults to `layout="trailing"`: switch right-aligned with a dashed leader line from the label, description below at the label's left edge. Keep the default so toggle columns line up; pass `layout="inline"` only inside dense grids (e.g. a permission matrix dialog) |
 | `CheckboxField` | `boolean` | `label`, `value`, `onChange` |
 | `SelectField` | `string` | `label`, `value`, `onChange`, `options: {label, value}[]` |
 | `MultiSelectField` | `string[]` | `label`, `value`, `onChange`, `options` |
@@ -178,12 +178,12 @@ is usually to change something that was already right.
 | `TimezoneField` | `string` | `label`, `value`, `onChange` |
 | `LocationPickerField` | `{lat, lng}` | `label`, `value`, `onChange` |
 | `TreeSelectField<T>` | `string \| null` | `label`, `value`, `onChange`, `treeData`, `config` |
-| `PlateEditorField` | `string` (serialized Plate JSON) | `label`, `value`, `onChange`, `variant` (basic/standard/advanced), `defaultHeight?`, `minHeight?`, `maxHeight?`, `resizable?` — WYSIWYG rich-text editor (Plate.js). `basic` = bold/italic/underline/strike, H1–H3, blockquote, lists, link; `standard` adds image/code; `advanced` adds font styles/align/tables. Emits `""` when the document is emptied; a stored plain-text value loads as paragraphs (legacy fallback). Display stored values with `PlateViewer` and flatten them for list cells with `plateValueToText` — both from the `@simplix-react/ui/plate-editor` subpath |
+| `PlateEditorField` | `string` (serialized Plate JSON) | `label`, `value`, `onChange`, `variant` (basic/standard/advanced), `defaultHeight?`, `minHeight?`, `maxHeight?`, `resizable?` - WYSIWYG rich-text editor (Plate.js). `basic` = bold/italic/underline/strike, H1–H3, blockquote, lists, link; `standard` adds image/code; `advanced` adds font styles/align/tables. Emits `""` when the document is emptied; a stored plain-text value loads as paragraphs (legacy fallback). Display stored values with `PlateViewer` and flatten them for list cells with `plateValueToText` - both from the `@simplix-react/ui/plate-editor` subpath |
 | `PlateEditorI18nField` | `Record<lang, string>` | Multi-language rich-text variant (language tabs); helpers `convertPlateI18nToJson` / `parsePlateI18nFromJson` live on the same subpath |
 
 ### Input-row adornments (`prefixControl` / `suffixControl`)
 
-Every `FormFields.*` field accepts `prefixControl` and `suffixControl` — a control rendered on the SAME row as the input (add button, IconPicker, ColorPicker, unit label). The field keeps the control vertically centered with the input while `description` and `error` render below at full width.
+Every `FormFields.*` field accepts `prefixControl` and `suffixControl` - a control rendered on the SAME row as the input (add button, IconPicker, ColorPicker, unit label). The field keeps the control vertically centered with the input while `description` and `error` render below at full width.
 
 A control composed OUTSIDE the field is a defect: wrapping the field and a button in `Flex align="end"` bottom-aligns the button against the whole field INCLUDING its description/error, so the button drifts off the input row the moment a description exists (and jumps when a validation error appears).
 
@@ -228,13 +228,13 @@ A control composed OUTSIDE the field is a defect: wrapping the field and a butto
 | `DetailTimezoneField` | Timezone name | `label`, `value` |
 | `DetailNoteField` | Rich text/HTML | `label`, `value` |
 | `DetailFieldWrapper` | Label + slot wrapper | `label?`, `labelKey?`, `layout?` (top/left/inline/hidden), `children` |
-| `PlateViewer` | Rich-text content (Plate) | `value` (serialized JSON \| plain text \| parsed `Value`), `variant?` (basic/standard/advanced), `className?` — from `@simplix-react/ui/plate-editor`; borderless read-only renderer for `PlateEditorField` content. Wrap in `DetailFieldWrapper layout="top"`; plain-text values render as paragraphs |
+| `PlateViewer` | Rich-text content (Plate) | `value` (serialized JSON \| plain text \| parsed `Value`), `variant?` (basic/standard/advanced), `className?` - from `@simplix-react/ui/plate-editor`; borderless read-only renderer for `PlateEditorField` content. Wrap in `DetailFieldWrapper layout="top"`; plain-text values render as paragraphs |
 
-`DetailFieldWrapper` is the shared label/layout wrapper that all `DetailFields.*` build on — wrap a custom read-only value in it to match the standard label treatment instead of re-implementing the label row.
+`DetailFieldWrapper` is the shared label/layout wrapper that all `DetailFields.*` build on - wrap a custom read-only value in it to match the standard label treatment instead of re-implementing the label row.
 
 ### Inline date/time text (cell · card · caption)
 
-For a date/time value rendered as raw text — a list cell, a card row, a caption — where a full `DetailDateField` row does not fit, use these inline components (from `@simplix-react/ui`) instead of calling `formatDateTime` / `formatDateMedium` by hand. Never wrap a value in `new Date(...)` and format it inline; these components own the parsing and zone math.
+For a date/time value rendered as raw text - a list cell, a card row, a caption - where a full `DetailDateField` row does not fit, use these inline components (from `@simplix-react/ui`) instead of calling `formatDateTime` / `formatDateMedium` by hand. Never wrap a value in `new Date(...)` and format it inline; these components own the parsing and zone math.
 
 | Component | Renders | Props |
 | --- | --- | --- |
@@ -242,7 +242,7 @@ For a date/time value rendered as raw text — a list cell, a card row, a captio
 | `CalendarDateText` | A zone-neutral `LocalDate` | `value`, `fallback?` |
 | `WallClockText` | A `LocalTime` (`HH:mm[:ss]`) | `value`, `fallback?` |
 
-`InstantText format="date"` is the only way to print an `Instant` as its zone-local calendar date — `DetailDateField format="date"` and `CrudList.Column format="date"` are zone-neutral. Full kind → component matrix (detail row · inline text · list column) → `customize/datetime-fields.md`.
+`InstantText format="date"` is the only way to print an `Instant` as its zone-local calendar date - `DetailDateField format="date"` and `CrudList.Column format="date"` are zone-neutral. Full kind → component matrix (detail row · inline text · list column) → `customize/datetime-fields.md`.
 
 ### Date / time field selection
 
@@ -254,9 +254,9 @@ This section covers form INPUT; for read-only DISPLAY use the field rows and inl
 | Timestamp (`Instant`, `OffsetDateTime`) | `FormFields.DateTimeField` | `Date` |
 | Wall-clock time of day (`LocalTime`) | `FormFields.TimeField` | server string, converted at the field |
 
-A time-of-day input is ALWAYS `FormFields.TimeField`. A `TextField` with `inputProps={{ type: "time" }}` (browser-native, renders differently per browser) or a free-text `placeholder="HH:mm"` (no validation) is a defect — replace both on sight.
+A time-of-day input is ALWAYS `FormFields.TimeField`. A `TextField` with `inputProps={{ type: "time" }}` (browser-native, renders differently per browser) or a free-text `placeholder="HH:mm"` (no validation) is a defect - replace both on sight.
 
-`TimeField` reads and emits `TimeValue` (`{ hours, minutes }`), while a `LocalTime` DTO field travels as `"HH:mm"` / `"HH:mm:ss"`. Convert with the ONE shared helper pair in the project's shared UI package (its `date` module — the same place the date encoding helpers live). Never re-implement the conversion per module:
+`TimeField` reads and emits `TimeValue` (`{ hours, minutes }`), while a `LocalTime` DTO field travels as `"HH:mm"` / `"HH:mm:ss"`. Convert with the ONE shared helper pair in the project's shared UI package (its `date` module - the same place the date encoding helpers live). Never re-implement the conversion per module:
 
 ```tsx
 <FormFields.TimeField
@@ -273,9 +273,9 @@ Read-only detail rows render the same value with the shared `displayLocalTime` h
 Rules that follow from how the picker behaves:
 
 1. **12-hour is the default.** Leave `hour12` alone (the AM/PM toggle is the standard look). Only pass `hour12={false}` when a screen has a specific reason for a 24-hour clock, and then apply it to every time field on that screen.
-2. **The picker always shows a clock value** — a `null` value renders as `12:00 AM`, it has no empty state. So an OPTIONAL time must be gated by something that expresses "unset": an existing mode select, or a `SwitchField` you add for the pair (`coreStartTime`/`coreEndTime`, an access window). When the gate is off, write `undefined` to the DTO; when it is on, seed a concrete default so what is displayed is what is submitted. Never leave a form that displays `12:00 AM` while submitting nothing.
-3. **Width and height are owned by the framework** (a fixed, non-shrinking control that matches the standard input height). Do not stretch it with `flex-1` or squeeze it into a narrow grid cell — in a tight panel let the row wrap (`Flex … className="flex-wrap"`) instead.
-4. **A LocalTime DTO field is a string on the wire.** The generated model may declare it as an object (`{ hour, minute }`) — that is the OpenAPI schema's naive view of `java.time.LocalTime`. Submit `"HH:mm"`; the shared parser accepts both shapes when reading.
+2. **The picker always shows a clock value** - a `null` value renders as `12:00 AM`, it has no empty state. So an OPTIONAL time must be gated by something that expresses "unset": an existing mode select, or a `SwitchField` you add for the pair (`coreStartTime`/`coreEndTime`, an access window). When the gate is off, write `undefined` to the DTO; when it is on, seed a concrete default so what is displayed is what is submitted. Never leave a form that displays `12:00 AM` while submitting nothing.
+3. **Width and height are owned by the framework** (a fixed, non-shrinking control that matches the standard input height). Do not stretch it with `flex-1` or squeeze it into a narrow grid cell - in a tight panel let the row wrap (`Flex … className="flex-wrap"`) instead.
+4. **A LocalTime DTO field is a string on the wire.** The generated model may declare it as an object (`{ hour, minute }`) - that is the OpenAPI schema's naive view of `java.time.LocalTime`. Submit `"HH:mm"`; the shared parser accepts both shapes when reading.
 
 ---
 
@@ -365,14 +365,14 @@ Rules that follow from how the picker behaves:
 </CrudDetail>
 ```
 
-**Footer** — pass one of these as `footer`:
+**Footer** - pass one of these as `footer`:
 
 | Component | Shape | Use when |
 | --- | --- | --- |
 | `CrudDetail.DefaultActions` | Single row: Close/Back + Delete / children / Edit | No domain lifecycle actions |
 | `CrudDetail.ActionFooter` | Two-tier: a wrapping row of domain lifecycle `actions` above the standard row, with a divider between the tiers | The entity has lifecycle actions (submit, review, cancel, resend, renew, …) |
 
-Both share the same standard-row props. A domain or Edit/Delete action that does not apply to the record's current state stays **visible but disabled** with a `title` reason (`editDisabled` / `deleteDisabled` + `*DisabledReason`, or `disabled` + `title` on a domain action button), never hidden — the action bar is stable across states.
+Both share the same standard-row props. A domain or Edit/Delete action that does not apply to the record's current state stays **visible but disabled** with a `title` reason (`editDisabled` / `deleteDisabled` + `*DisabledReason`, or `disabled` + `title` on a domain action button), never hidden - the action bar is stable across states.
 
 ---
 
@@ -401,7 +401,7 @@ Options for `useCrudList`:
 | Hook | Signature | Returns |
 | --- | --- | --- |
 | `useCrudFormSubmit<T>` | `({ entityId?, create, update, onSuccess })` | `{ isEdit, handleSubmit, isPending }` |
-| `useCrudDeleteWired` | `({ deleteMutation, labels, onDeleted? })` | `{ requestDelete, deleteDialog }` — wires `useCrudDeleteList` state + `CrudDelete` rendering into one hook; call `requestDelete(target)` and render `deleteDialog` instead of hand-managing `open`/`onOpenChange` |
+| `useCrudDeleteWired` | `({ deleteMutation, labels, onDeleted? })` | `{ requestDelete, deleteDialog }` - wires `useCrudDeleteList` state + `CrudDelete` rendering into one hook; call `requestDelete(target)` and render `deleteDialog` instead of hand-managing `open`/`onOpenChange` |
 | `adaptOrvalCreate` | `(mutation, options?)` | Adapted create mutation |
 | `adaptOrvalUpdate` | `(mutation, pathParam?, options?)` | Adapted update mutation |
 | `adaptOrvalDelete` | `(mutation, pathParam)` | Adapted delete mutation |
@@ -421,15 +421,15 @@ Options for `useCrudList`:
 | Hook | Signature | Returns |
 | --- | --- | --- |
 | `useUnsavedChanges` | `({ isDirty })` | `{ guardedNavigate, dialog }` |
-| `useBeforeUnload` | `(enabled: boolean)` | (no return — registers beforeunload listener) |
+| `useBeforeUnload` | `(enabled: boolean)` | (no return - registers beforeunload listener) |
 | `useIsDirty` | `(current, initial)` | `boolean` |
 
 ### Translation Hooks
 
 | Hook | Signature | Returns |
 | --- | --- | --- |
-| `useTranslation` | `(namespace)` | `{ t }` — translate by key |
-| `useEntityTranslation` | `(entityName)` | `{ fieldLabel, enumLabel }` — entity-specific |
+| `useTranslation` | `(namespace)` | `{ t }` - translate by key |
+| `useEntityTranslation` | `(entityName)` | `{ fieldLabel, enumLabel }` - entity-specific |
 
 ---
 
@@ -476,7 +476,7 @@ same cluster.
 cannot take an action leaves it out, so the column's contents differ down the table and the reader
 has to read each row before they know where to press. Declared, `disabled` draws it dead and
 `disabledReason` puts the sentence on the control they pressed. Size the head with
-`getActionColumnWidth(actions, variant)` — the count is what the table declares, including actions
+`getActionColumnWidth(actions, variant)` - the count is what the table declares, including actions
 some rows disable, or the column changes width down the table.
 
 ### An action's glyph is a static import, never `<Icon name="…">`
@@ -487,13 +487,13 @@ name in an effect through a second dynamic import, returning `null` while `iconN
 name the build cannot resolve stays `null` forever, reported only to `console.error`.
 
 That is fine where a label carries the meaning and the glyph decorates it. It is not fine where the
-**glyph is the whole control** — the `icon` variant of a row-action cluster, an icons-only button —
+**glyph is the whole control** - the `icon` variant of a row-action cluster, an icons-only button -
 because "not painted yet", "name did not resolve" and "this control has no icon" are one picture.
 Import the component (`import { Undo2Icon } from "lucide-react"`) and the glyph is in the first
 paint.
 
-`<Icon name={value}>` with a **variable** name is the component's real purpose — an icon chosen by
-stored data, an icon-picker value — and stays.
+`<Icon name={value}>` with a **variable** name is the component's real purpose - an icon chosen by
+stored data, an icon-picker value - and stays.
 
 **A screenshot is where this surfaces.** A capture taken the moment a screen settles can catch an
 icons-only cluster mid-hop and show empty rectangles, which reads as a screen that drew no icons.

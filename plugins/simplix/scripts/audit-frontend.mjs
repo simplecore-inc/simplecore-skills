@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Frontend convention audit — machine-checkable subset of the `simplix:frontend`
+ * Frontend convention audit - machine-checkable subset of the `simplix:frontend`
  * skill's invariants and audit checklist (its references/audit/).
  *
  * Run from the frontend project root, or point at it with --root=<dir>.
@@ -13,7 +13,7 @@
  *   node "${CLAUDE_PLUGIN_ROOT}/scripts/audit-frontend.mjs" --selftest  # prove every rule both ways
  *
  * An unrecognised flag stops the run. A misspelt `--selftest` that fell through to a scan
- * reported `0 files scanned, 0 findings`, which is what a clean tree reports — the one output an
+ * reported `0 files scanned, 0 findings`, which is what a clean tree reports - the one output an
  * audit must never produce for a reason other than cleanliness.
  *
  * Exit code 1 when any error-level rule has hits. "review"-level rules print
@@ -24,16 +24,16 @@
  * the second. A rule proved in one direction has not been proved: a check that can never fire is
  * indistinguishable from a clean tree, and a clean tree is what a green run invites you to read.
  * Where the invariant states an exception, or the pattern has a legitimate near-neighbour, the
- * rule also carries `miss` samples — a rule that fires on its own exception is worse than no
+ * rule also carries `miss` samples - a rule that fires on its own exception is worse than no
  * rule, because the first reader to meet one learns that this audit cries wolf. Add no rule
  * without both directions; the selftest fails on a rule that omits either.
  *
  * Rules that need judgment (persona fit, precedent parity, lifecycle reachability)
- * stay in the audit checklist document — do not port them here.
+ * stay in the audit checklist document - do not port them here.
  *
  * **This audit reads source files and never opens a browser.** A rule about what a page looks
- * like once it is painted — a list total stating N rows over a column that draws none, two
- * pieces of text in one rectangle — cannot be written here, however tempting the file's name
+ * like once it is painted - a list total stating N rows over a column that draws none, two
+ * pieces of text in one rectangle - cannot be written here, however tempting the file's name
  * makes it: it would either need a runtime this script does not have, or it would answer from
  * the source and pass on every broken screen. Those rules live in `audit-rendered.mjs` beside
  * this file, which requires a browser and exits non-zero when it cannot reach one.
@@ -41,7 +41,7 @@
  * Scope: a project that CONSUMES simplix-react. Most rules say "reach for the framework
  * rather than hand-rolling it" (use Flex/Stack/Grid, use the shared component, use the
  * derived hook), so pointing this at the framework's own repository reports its
- * implementations as violations — the package that defines Flex cannot import it. A large
+ * implementations as violations - the package that defines Flex cannot import it. A large
  * hit count from such a run means the wrong repository, not a broken framework.
  */
 
@@ -53,7 +53,7 @@ import path from "node:path";
 // ships inside a plugin, so it must never resolve the root from its own location.
 //
 // Reassignable because the self-test points the whole audit at a fixture tree it writes and
-// throws away — a rule that reads a sibling file, a generated model or a locale catalogue can
+// throws away - a rule that reads a sibling file, a generated model or a locale catalogue can
 // only be proved against a tree, and a rule proved against a hand-made stub of its own reader
 // is proving the stub.
 let ROOT = path.resolve(
@@ -61,7 +61,7 @@ let ROOT = path.resolve(
 );
 // `packages` belongs here as much as the other two: a simplix-react project is package-first, and
 // the conventions actively push shared UI out of `modules`/`apps` and into a package. Leaving it out
-// made the audit blindest exactly where the rules send code — and blind to the framework's own
+// made the audit blindest exactly where the rules send code - and blind to the framework's own
 // packages when pointed at one. Codegen output is already excluded by name below, so widening the
 // roots does not drag `src/generated` in.
 const SRC_ROOTS = ["modules", "apps", "packages"];
@@ -114,7 +114,7 @@ function lineHits(content, re, filter) {
  * A `lineHits` filter that drops lines which are only a comment.
  *
  * Pass it to rules whose pattern is a piece of code that documentation about that code will also
- * contain — an anti-pattern named in a TSDoc block, a defect explained in the comment above the
+ * contain - an anti-pattern named in a TSDoc block, a defect explained in the comment above the
  * fix. Without it those rules fire hardest on the files that took the trouble to explain
  * themselves, and the explanation is the thing that gets deleted to silence the audit.
  *
@@ -123,7 +123,7 @@ function lineHits(content, re, filter) {
  *
  * <p><b>A block comment is tracked across the file, not guessed from the line.</b> Reading only
  * the line start misses the continuation of a wrapped block whose next line does not begin with
- * `*` — a JSX comment explaining a prop, which is exactly where an explained anti-pattern is
+ * `*` - a JSX comment explaining a prop, which is exactly where an explained anti-pattern is
  * written out in full. `lineHits` hands the filter the whole file and the index, so the state is
  * available; scanning from the top is cheap beside reading the file at all.
  *
@@ -211,7 +211,7 @@ function rowActionArrays(content) {
  *
  * <p>`when: () => canEdit` is asked once for the whole table and takes its action off every row at
  * once, which is a permission and not this. What this finds is a predicate whose parameter appears
- * in its body — the shape whose answer differs line to line.
+ * in its body - the shape whose answer differs line to line.
  *
  * @param body the array's source
  * @returns one entry per row-reading predicate, with its offset inside `body`
@@ -235,7 +235,7 @@ function rowReadingWhens(body) {
     const arrow = body.indexOf("=>", i);
     if (arrow < 0) continue;
     // The body up to the property's own comma, which is the first one outside every bracket it
-    // opened — an object literal or a call in the predicate carries commas of its own.
+    // opened - an object literal or a call in the predicate carries commas of its own.
     let d = 0;
     let j = arrow + 2;
     for (; j < body.length; j += 1) {
@@ -253,13 +253,13 @@ function rowReadingWhens(body) {
 }
 
 // ---------------------------------------------------------------------------
-// JSX shape — a tag scanner for rules that must ask what an element CONTAINS
+// JSX shape - a tag scanner for rules that must ask what an element CONTAINS
 // ---------------------------------------------------------------------------
 
 /**
  * The whole JSX open tag beginning at `start`, up to and including its `>`.
  *
- * <p>A regex cannot find that `>`: attribute values carry them routinely — inside a string
+ * <p>A regex cannot find that `>`: attribute values carry them routinely - inside a string
  * (`className="[&>svg]:h-4"`), inside an arrow body (`onClick={() => setOpen(true)}`), and inside a
  * whole element passed as a prop (`trigger={<button>…</button>}`). The scan therefore tracks quote
  * state and brace depth and accepts only a `>` that sits outside both.
@@ -328,7 +328,7 @@ function jsxChildren(content, name, openEnd) {
  *
  * <p>`<Popover trigger={<button aria-label="x" />}>` carries an `aria-label` that belongs to the
  * trigger, not to the Popover. Asking about the Popover's own attributes means stopping at the
- * embedded element — and only at an element: `disabled={page <= 1}` has a `<` that opens nothing,
+ * embedded element - and only at an element: `disabled={page <= 1}` has a `<` that opens nothing,
  * and cutting there would hide every attribute written after it.
  */
 function tagAttrs(tag) {
@@ -344,7 +344,7 @@ const MARK_COMPONENT = /(?:Icon|Mark|Glyph|Spinner|Loader|Chevron|Caret|Arrow|Gr
  *
  * @returns `"empty"` when there are no children at all, `"marks"` when every child is a bare mark
  *          (an `<svg>` or an icon component), `"label"` when the children carry hidden label text,
- *          and null when they carry anything else — text, a slot, a nested element with content
+ *          and null when they carry anything else - text, a slot, a nested element with content
  */
 function childContent(children) {
   if (/\bsr-only\b|VisuallyHidden|ScreenReaderOnly/.test(children)) return "label";
@@ -385,7 +385,7 @@ function childContent(children) {
 }
 
 /**
- * The card slots of a `CrudList.Table` — everything a reader sees when the table falls back to
+ * The card slots of a `CrudList.Table` - everything a reader sees when the table falls back to
  * cards, which is the whole row for them.
  *
  * @param content the widget source
@@ -418,7 +418,7 @@ function columnBlocks(content) {
 }
 
 // ---------------------------------------------------------------------------
-// Rules — { id, invariant, level: "error"|"review", desc, appliesTo(relPath), check(content, relPath) }
+// Rules - { id, invariant, level: "error"|"review", desc, appliesTo(relPath), check(content, relPath) }
 // ---------------------------------------------------------------------------
 
 const inModules = (p) => p.startsWith("modules/");
@@ -433,11 +433,11 @@ const isSource = (p) => p.endsWith(".ts") || p.endsWith(".tsx");
  * Identifiers that end in `Id` and name something OUTSIDE this system.
  *
  * <p>Every rule that objects to a hand-typed id is objecting to a reference into this system's own
- * tables — the user cannot know a UUID, so typing one is a guess and the picker exists to prevent
+ * tables - the user cannot know a UUID, so typing one is a guess and the picker exists to prevent
  * it. An identifier issued somewhere else inverts that: the operator reads `clientId` off the
  * identity provider's console and `machineId` off the licence, this system holds no set for a
  * picker to list, and a text box is the only control that can exist. Excluded by name because the
- * vocabulary is small and stable — OAuth/OIDC registration, tenancy, licensing — where the internal
+ * vocabulary is small and stable - OAuth/OIDC registration, tenancy, licensing - where the internal
  * side grows an entity at a time.
  */
 const FOREIGN_ID_NAMES =
@@ -446,14 +446,14 @@ const FOREIGN_ID_NAMES =
 /**
  * Whether anything in this file could be holding a value the server sent.
  *
- * <p>Several rules here key on a variable NAME — `row`, `values`, `displayData` — as their evidence
+ * <p>Several rules here key on a variable NAME - `row`, `values`, `displayData` - as their evidence
  * that a value came off a DTO, because a regex cannot follow where a binding came from. That
  * heuristic is right in a widget and wrong in a file with no server data in it at all: a static
  * reference table rendered as rows binds `row` too, and its `row.type` is a string literal the
  * author wrote three lines above.
  *
  * <p>A generated DTO can only reach a file through a domain package, an Orval adapter, or the boot
- * envelope readers — so a file that names none of the three has no boot enum to mishandle, whatever
+ * envelope readers - so a file that names none of the three has no boot enum to mishandle, whatever
  * it calls its variables. Checked on the import surface rather than on the call site, which is the
  * part a rename cannot quietly move.
  *
@@ -498,7 +498,7 @@ function modelIndex() {
 /**
  * @param relPath a widget file, whose directory names the entity the scaffold generated it for
  * @returns every property the entity's detail and list projections carry, or null when neither
- *          model is present — an unknown contract is not evidence of a defect
+ *          model is present - an unknown contract is not evidence of a defect
  */
 function projectionProps(relPath) {
   const dir = path.basename(path.dirname(relPath));
@@ -569,10 +569,10 @@ const localeKeyCache = new Map();
 
 /**
  * @param ns   a translation namespace as a call site names it
- * @param file the calling file, repository-relative — several deployables ship a catalogue under
+ * @param file the calling file, repository-relative - several deployables ship a catalogue under
  *             the same bare namespace, so the namespace alone does not say which one governs
  * @returns every key the governing catalogues define in any language, flattened to dotted paths,
- *          or null when the catalogue is not one this repository owns — a framework namespace is
+ *          or null when the catalogue is not one this repository owns - a framework namespace is
  *          not ours to judge, and treating an absent file as an empty catalogue would flag every
  *          call
  *
@@ -610,7 +610,7 @@ function localeKeys(ns, file = "") {
       }
     }
   }
-  // A directory whose every language file failed to parse is unreadable, not empty — reporting it
+  // A directory whose every language file failed to parse is unreadable, not empty - reporting it
   // as empty would name every key in the file that reads it.
   const result = read ? out : null;
   localeKeyCache.set(cacheKey, result);
@@ -629,7 +629,7 @@ function localeKeys(ns, file = "") {
  * @remarks
  * <b>A project's own wrapper round the hook is still the hook.</b> A console that needs a falling
  * back lookup writes one (`useOptionalTranslation("<domain>/<catalogue>")`) and every screen binds
- * through it, so a scan anchored on the framework's exact name reads none of those files — and
+ * through it, so a scan anchored on the framework's exact name reads none of those files - and
  * the anchor fails silently, because a file with no binding is skipped rather than reported. In
  * one console that left seventeen bindings across sixteen screens unchecked while the rule stood
  * green. Any hook whose name ends in `Translation` and takes a namespace string is one, which is
@@ -648,7 +648,7 @@ function translatorBindings(content) {
 /**
  * The top-level property names of the object literal whose `{` sits at `open`.
  *
- * <p><b>Why this cannot be a regex.</b> The obvious pattern — an identifier followed by a colon —
+ * <p><b>Why this cannot be a regex.</b> The obvious pattern - an identifier followed by a colon -
  * reads the middle of a ternary as a property: in `{ permission: ok ? a : b }` the run ` a :`
  * matches it exactly as well as `permission:` does, so a scanner built that way invents a value
  * named `a` and reports a placeholder nobody passed. The same pattern is defeated by a colon
@@ -656,7 +656,7 @@ function translatorBindings(content) {
  *
  * <p>So the object is split the way a parser splits it: walk the text tracking quote, template and
  * nesting state, cut at commas that sit at the object's own depth, and read a name only where a
- * property can begin — at the start of a segment. A ternary then lives inside a segment and is
+ * property can begin - at the start of a segment. A ternary then lives inside a segment and is
  * never mistaken for one.
  *
  * <p><b>A spread is reported rather than ignored.</b> `{ ...rest }` hides names this function
@@ -691,7 +691,7 @@ function objectLiteralProperties(content, open) {
     }
     if (ch === "`") {
       // A template's `${…}` holds ordinary code, braces and all, so it is tracked rather than
-      // skipped to the next backtick — a nested object inside one would otherwise close the scan.
+      // skipped to the next backtick - a nested object inside one would otherwise close the scan.
       i++;
       let inner = 0;
       while (i < content.length) {
@@ -754,7 +754,7 @@ function objectLiteralProperties(content, open) {
       values.push(seg.slice(quoted[0].length).trim());
       continue;
     }
-    // `name:` and the shorthand `name` alike — the shorthand is how most values are passed.
+    // `name:` and the shorthand `name` alike - the shorthand is how most values are passed.
     const plain = seg.match(/^([A-Za-z_$][\w$]*)\s*(?::|$)/);
     if (plain) {
       names.push(plain[1]);
@@ -775,7 +775,7 @@ let catalogueIndexCache = null;
  * <p>A namespace is resolved from the framework's own registration rather than guessed from the
  * directory name: a `locales/index.ts` that declares one (`buildModuleTranslations({ namespace })`,
  * conventionally through an exported constant) makes its sibling component directories
- * `<namespace>/<component>`, and a `locales/` with no such file — the shape an app uses — makes
+ * `<namespace>/<component>`, and a `locales/` with no such file - the shape an app uses - makes
  * them bare `<component>`. Both are in use in one repository, and a package's namespace is
  * frequently nothing like its folder.
  *
@@ -872,8 +872,8 @@ function catalogueLanguages(dir) {
  *
  * <p>Several deployables ship a `common`, so a namespace alone does not say which catalogue a call
  * site reads. The one that shares the longest path with the calling file does: a screen inside an
- * app is answered by that app's copy, and only shared code — which shares no path with any of them
- * — is answered by all of them, because shared code really does render under each.
+ * app is answered by that app's copy, and only shared code - which shares no path with any of them
+ * - is answered by all of them, because shared code really does render under each.
  *
  * @param ns   the namespace a translator is bound to
  * @param file the calling file, repository-relative
@@ -898,7 +898,7 @@ function catalogueDirsFor(ns, file) {
  *
  * <p>{@link translatorBindings} reads a literal argument. A package that publishes its own
  * catalogue names it once as a constant and writes `useTranslation(PACKAGE_NAMESPACE + "/features")`
- * at every call site, which is not a literal — so a rule built on the literal form alone is blind
+ * at every call site, which is not a literal - so a rule built on the literal form alone is blind
  * to whole shared packages, and shared packages are where one dropped value reaches every screen
  * that mounts the component.
  *
@@ -952,7 +952,7 @@ function translatorNamespaces(content, file) {
  *
  * <p>A screen that composes a sentence out of a counted one writes
  * `const counted = (n: number) => t(countKey, { count: n })` and passes `counted(x)` into the
- * outer key. The value is a rendered string, and nothing about the name says so — which is why a
+ * outer key. The value is a rendered string, and nothing about the name says so - which is why a
  * rule reading only the expression text calls it numeric while a rule reading only the catalogue
  * calls the outer entry unformatted. Both are wrong about the same call, in opposite directions,
  * and both fired that way on four correct entries before this existed.
@@ -1007,7 +1007,7 @@ const I18NEXT_RESERVED = new Set([
 
 /** Whether a name is i18next's rather than a value the sentence is meant to substitute. */
 function isReservedTranslationOption(name) {
-  // `defaultValue_one`, `defaultValue_other` — a default per plural form is still a default.
+  // `defaultValue_one`, `defaultValue_other` - a default per plural form is still a default.
   return I18NEXT_RESERVED.has(name) || /^defaultValue_/.test(name);
 }
 
@@ -1016,8 +1016,8 @@ function isReservedTranslationOption(name) {
  *
  * A back-office screen declares the permission its server-side surface enforces, so a typed
  * address does not open a page the operator may not read. A customer-facing page has no
- * operator and no grants to check — the person it exists for is the licence server's customer,
- * not one of its users — so the guard that protects the rest of the app cannot apply to it.
+ * operator and no grants to check - the person it exists for is the licence server's customer,
+ * not one of its users - so the guard that protects the rest of the app cannot apply to it.
  * Add a directory here only when nothing behind it is read on an operator's authority.
  */
 /**
@@ -1055,15 +1055,15 @@ function settings() {
  *
  * @remarks
  * A label lookup takes the enum's name as a string, so a name that no longer matches any model
- * fails silently — the screen falls back to printing the key. Reading the names off the codegen
+ * fails silently - the screen falls back to printing the key. Reading the names off the codegen
  * output is what lets that be caught mechanically instead of by eye.
  */
 /**
  * The apps whose providers raise a dialog for a mutation nobody handled.
  *
  * @remarks
- * Not every app in a workspace installs one — a public storefront reports its own failures inline
- * and mounts no such cache — and in those a screen catching its own refusal is the whole of the
+ * Not every app in a workspace installs one - a public storefront reports its own failures inline
+ * and mounts no such cache - and in those a screen catching its own refusal is the whole of the
  * reporting rather than half of it. Read from the code instead of asked of the project, because
  * the file that installs it is the fact and a setting would drift from it.
  *
@@ -1134,7 +1134,7 @@ function publicRouteDirs() {
  * Whether the app owning this route already guards every address at its root.
  *
  * A root route with a `beforeLoad` redirect admits nobody without a session before a single
- * screen mounts, which is the stronger form of the same protection — flagging its children for
+ * screen mounts, which is the stronger form of the same protection - flagging its children for
  * missing a per-route wrapper would be asking for the check to be written twice.
  */
 function guardedAtRoot(file) {
@@ -1154,7 +1154,7 @@ function guardedAtRoot(file) {
  *
  * `Button` composes the spinner AHEAD of its children and swaps them out only when `loadingText`
  * is supplied. A button that leads with an icon therefore draws two circles side by side the
- * moment it is pressed, and the pair is wider than the icon was — so a segmented row-action group
+ * moment it is pressed, and the pair is wider than the icon was - so a segmented row-action group
  * grows under the pointer at the instant of the click, moving its neighbours out from under it.
  * Handing the label to `loadingText` gives the spinner the mark's own seat and the width holds.
  *
@@ -1640,7 +1640,7 @@ export function AssignDialog() { return null; }`,
         // A panel has a width. Without this the rule also reports a centred spinner or a
         // decorative mark, neither of which has content that can outgrow the window.
         if (!/\bmax-w-|\bw-full\b/.test(tag)) continue;
-        // The ceiling, wherever in the tag it is written — a literal class, a `cn(…)` argument,
+        // The ceiling, wherever in the tag it is written - a literal class, a `cn(…)` argument,
         // or a template the wrapper interpolates. Any of the three bounds the panel.
         if (/\bmax-h-/.test(tag)) continue;
         const line = lineOfIndex(c, m.index);
@@ -1728,7 +1728,7 @@ export function AlertPanel() { return null; }`,
           if (/\bBounded:/.test(above)) return false;
           if (/<CrudDetail\.(Table|List)\b|onPageChange=|<CrudList\b/.test(above)) return false;
           // A pager can also stand UNDER the table it pages, which is where `CrudList.Pagination`
-          // goes inside a `TableCard` — the frame wraps both, so the paging is a sibling after the
+          // goes inside a `TableCard` - the frame wraps both, so the paging is a sibling after the
           // rows rather than a parent around them. Reading only upward called that arrangement
           // unpaged and asked for a `Bounded:` claim that would have been false.
           const close = lines.findIndex((l, at) => at > i && /<\/Table>/.test(l));
@@ -1817,7 +1817,7 @@ export function AlertPanel() { return null; }`,
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
         // A pager on a panel frame, or the hook that computes one. `onPageChange` alone is not
-        // enough — a bounded `CrudDetail.Table` takes none, and that is the case this rule leaves
+        // enough - a bounded `CrudDetail.Table` takes none, and that is the case this rule leaves
         // alone.
         const framed = /<CrudDetail\.(?:List|Table)\b/.test(line);
         const paged = framed
@@ -1899,7 +1899,7 @@ export function AlertPanel() { return null; }`,
       lines.forEach((line, i) => {
         if (/<(?:TabsContent|PageTabPanel)\b/.test(line)) panels.push(i);
       });
-      // One panel is not a tabbed detail — there is no other tab for the strip to be under.
+      // One panel is not a tabbed detail - there is no other tab for the strip to be under.
       if (panels.length < 2) return [];
       const hits = [];
       lines.forEach((line, i) => {
@@ -1965,7 +1965,7 @@ export function AlertPanel() { return null; }`,
       if (tabKeys.size === 0) return [];
       const hits = [];
       const lines = c.split("\n");
-      // Only a SECTION's title, never any prop spelt `title` — a button's tooltip is `title` too,
+      // Only a SECTION's title, never any prop spelt `title` - a button's tooltip is `title` too,
       // and a header control called 「도움말」 beside a tab called 「도움말」 is two right answers.
       const SECTION = /<(?:\w+\.)?Section(?:Shell)?\b/;
       lines.forEach((line, i) => {
@@ -2127,14 +2127,14 @@ export function ThingList() {
       const hits = [];
       for (let i = 0; i < lines.length; i += 1) {
         if (!/new Date\(\)|Date\.now\(\)/.test(lines[i])) continue;
-        // Held in state, a memo or a ref — the frozen forms. The opener may be a line or two above.
+        // Held in state, a memo or a ref - the frozen forms. The opener may be a line or two above.
         const opener = lines.slice(Math.max(0, i - 2), i + 1).join("\n");
         if (/useState\(|useMemo\(|useRef\(|useCallback\(/.test(opener)) continue;
         const block = lines.slice(Math.max(0, i - 8), i + 9).join("\n");
         // A server filter key: what makes this a request parameter rather than a value.
         if (!/\.(equals|between|greaterThan|lessThan|greaterThanOrEqualTo|lessThanOrEqualTo)"\s*:/.test(block)) continue;
         // A READ built during render is what goes stale. The same parameter assembled inside a
-        // callback — a save, a submit — is read once when the press happens, and a callback is
+        // callback - a save, a submit - is read once when the press happens, and a callback is
         // where a genuine 「지금」 belongs. The read path names the hook that will carry it.
         if (!/\badaptForcedList\b|\buseList\w+\s*\(|\buseCrudList\b/.test(block)) continue;
         hits.push({ line: i + 1, excerpt: lines[i].trim().slice(0, 120) });
@@ -2183,14 +2183,14 @@ const all = useListUserAccessLogs({ "loginAt.greaterThan": since, page: 0, size:
     appliesTo: (path) => isTsx(path) || /\.ts$/.test(path),
     check: (c) => {
       const hits = [];
-      // The compute-once hooks. `useMemo` counts only with an empty dependency list — a memo that
+      // The compute-once hooks. `useMemo` counts only with an empty dependency list - a memo that
       // re-runs when its inputs move re-runs when the catalogue arrives too, because the render
       // that follows reads it again.
       const opener = /\b(useState|useRef|useMemo)\s*(?:<[^(]*?>)?\s*\(/g;
       let m;
       while ((m = opener.exec(c)) !== null) {
         // The hook's own argument list, read to its matching bracket rather than over a fixed
-        // window — a `t(…)` three lines below an unrelated `useState(…)` is a different statement.
+        // window - a `t(…)` three lines below an unrelated `useState(…)` is a different statement.
         let depth = 1;
         let end = m.index + m[0].length;
         while (end < c.length && depth > 0) {
@@ -2254,7 +2254,7 @@ return key ? <AlertBanner title={t(key)} /> : null;`,
       // different family with its own delivery argument and is not judged here.
       const TOKEN = "accessToken|access_token|refreshToken|refresh_token|idToken|id_token";
       // Which half of the address a set of params was built over. Naming `location.search`
-      // somewhere in the file is NOT the test — the correct shape reads the fragment and then
+      // somewhere in the file is NOT the test - the correct shape reads the fragment and then
       // preserves the search while cleaning the address, so a file-wide test reports the fix.
       const QUERY = /\blocation\s*\.\s*(?:search|href)\b/;
       const hits = [];
@@ -2349,7 +2349,7 @@ window.history.replaceState(null, "", window.location.pathname + window.location
         if (!/variant="ghost"/.test(lines[i])) continue;
         // Inside a table cell rather than in a footer or a toolbar. The window alone is not enough:
         // a short table puts its dialog's own footer within twelve lines of the last cell, and a
-        // `닫기` there is not a row action. So the nearest opening cell has to still be open — a
+        // `닫기` there is not a row action. So the nearest opening cell has to still be open - a
         // closing tag between it and the button means this control is somewhere else entirely.
         const before = lines.slice(Math.max(0, i - 12), i).join("\n");
         const opened = before.lastIndexOf("<TableCell");
@@ -2514,7 +2514,7 @@ window.history.replaceState(null, "", window.location.pathname + window.location
       if (!/\badaptForcedList\s*\(/.test(c)) return [];
       const hits = [];
       for (const m of c.matchAll(/\badaptForcedList\s*\(/g)) {
-        // The options object of the `useCrudList` this feeds — the narrowing and the page state
+        // The options object of the `useCrudList` this feeds - the narrowing and the page state
         // are declared in one call, so the whole thing is inside a few hundred characters.
         const window = c.slice(Math.max(0, m.index - 300), m.index + 900);
         if (/\bscopeKey\b/.test(window)) continue;
@@ -2843,7 +2843,7 @@ return <CrudList.Table list={list} emptyReason={list.emptyReason} />;`,
         return names.some((n) => !known.has(n));
       }),
     samples: (() => {
-      // The generated enum, as Orval writes it — both the const and the type alias, because the
+      // The generated enum, as Orval writes it - both the const and the type alias, because the
       // index reads either shape.
       const codegen = {
         "packages/domain-site/src/generated/model/areaStatus.ts": `export const AreaStatus = {
@@ -2955,14 +2955,14 @@ export type AreaStatus = (typeof AreaStatus)[keyof typeof AreaStatus];
     // the screens written by hand and seen least often: two apps were printing ten raw `error.*`
     // keys apiece on their access-denied page, the same message a third app had already fixed.
     //
-    // **And a shared package's screens too — the same hole one root further out.** A package that
+    // **And a shared package's screens too - the same hole one root further out.** A package that
     // publishes its own catalogue is covered by namespace whatever the scope, so the roots looked
     // complete; what they missed is a shared component reading the CONSUMING app's namespace
     // (`useTranslation("common")` inside `packages/`), which is every piece of chrome a package
     // draws over somebody else's screen. A help panel mounted on every screen of a console printed
     // eight raw `manual.*` keys to operators with this rule green, because the file it lived in was
     // in none of the two roots named here. The lesson is the one the paragraph above already
-    // records: name the family — anything that renders a screen — rather than the roots that
+    // records: name the family - anything that renders a screen - rather than the roots that
     // happened to hold one.
     //
     // A package cannot know which deployable mounts it, so a bare namespace resolves to the union
@@ -2980,7 +2980,7 @@ export type AreaStatus = (typeof AreaStatus)[keyof typeof AreaStatus];
         const call = new RegExp(`\\b${alias}\\(\\s*"([a-zA-Z0-9_.]+)"`, "g");
         // A key handed to a helper is still a key. `countedFigure(t, value, "unit.accountCount")`
         // never writes `t("…")`, so a reader watching only for the translator's own call sees
-        // nothing — and that is how a tile came to print `tile.unitAccount` on a screen until a
+        // nothing - and that is how a tile came to print `tile.unitAccount` on a screen until a
         // person noticed. The translator being passed as an argument is what marks the string
         // arguments beside it: a call that hands `t` to something is handing it keys.
         const viaHelper = new RegExp(
@@ -3225,7 +3225,7 @@ addToast({ message: t("area.moved", { name: row.name ? row.name : fallback }) })
     desc: "A catalogue entry filled through i18next's `count` whose placeholder carries no format — `\"{{count}}건\"` renders 「1358건」 where the design says 「1,358건」, in every language at once. Nothing errors and nothing looks wrong in the source: the value is a number, the sentence is complete, the build is green, and the separator is simply never applied. Write the entry as `{{count, number}}` and i18next runs the value through `Intl.NumberFormat` for the resolved language (built in since v21, no configuration). The number stays a number, so `_one` / `_other` selection is untouched — which is why the fix belongs in the string and never at the call site: handing `count` a pre-formatted string groups the digits and silently breaks the plural in every language that has one",
     // Only `count` is judged, and that is the whole of what a catalogue can decide. i18next reserves
     // `count` for plural selection, so a value arriving under that name is a number by the library's
-    // own contract — no type information needed. Every other placeholder would need one: `{{days}}`
+    // own contract - no type information needed. Every other placeholder would need one: `{{days}}`
     // holds a duration and `{{year}}` holds a year, and the two are the same characters in the same
     // position of the same sentence. A rule that guessed at them would put a comma in 2026.
     appliesTo: (p) => (inModules(p) || inApps(p) || inPackages(p)) && /\.tsx?$/.test(p),
@@ -3240,7 +3240,7 @@ addToast({ message: t("area.moved", { name: row.name ? row.name : fallback }) })
         // Two ways a key is filled with a count. The translator's own call carries `count` in its
         // options object; a helper (`countedFigure(t, figure, "unit.itemCount")`) writes the name
         // itself and hands over only the key, which is how the majority of a console's counted
-        // strings are reached — a rule watching for `count:` alone sees none of them.
+        // strings are reached - a rule watching for `count:` alone sees none of them.
         const called = new Map();
         const wrappers = translatorWrappers(c);
         const call = new RegExp(`\\b${alias}\\(\\s*"([a-zA-Z0-9_.\\-]+)"\\s*,\\s*\\{`, "g");
@@ -3268,13 +3268,13 @@ addToast({ message: t("area.moved", { name: row.name ? row.name : fallback }) })
             for (const [lang, entries] of catalogueLanguages(dir)) {
               for (const [entryKey, text] of entries) {
                 // A plural catalogue writes `unit.dutyCount_one` and the call site names
-                // `unit.dutyCount`, so an exact lookup reads none of the plural languages — which
+                // `unit.dutyCount`, so an exact lookup reads none of the plural languages - which
                 // are precisely the ones where the format has to be right in two forms.
                 if (entryKey !== key && entryKey.replace(plural, "") !== key) continue;
                 // A sentence that pluralises without printing the number is correct and has no
                 // placeholder to format.
                 if (!/\{\{\s*count\b/.test(text)) continue;
-                // Already formatted — with `number`, or with whatever formatter the project named.
+                // Already formatted - with `number`, or with whatever formatter the project named.
                 if (/\{\{\s*count\s*,/.test(text)) continue;
                 // A percentage is never grouped, and a helper that hardcodes `count` is how one
                 // arrives under this name. Decidable from the string, so it is a miss rather than
@@ -3542,7 +3542,7 @@ const counted = (n: number) => t("unit.areaCount", { count: n });
         const values = [...m[2].matchAll(/:\s*"([A-Za-z0-9_.]+)"/g)].map((e) => e[1]);
         // **Three entries and two of them naming a subtree is the corroboration, and it is the
         // whole rule.** Without it this fires on every `Record<string, string>` in the repository
-        // whose values happen to collide with a catalogue's top-level names — a table of tones, a
+        // whose values happen to collide with a catalogue's top-level names - a table of tones, a
         // map of icon names. With it, the table has to look like prefixes before one of them is
         // called dead.
         if (values.length < 3) continue;
@@ -3647,7 +3647,7 @@ export function ScopePane({ line }: Props) {
         // server resolves it into, so the detail is searched for the base.
         const f = m[1].replace(/I18n$/, "");
         // A credential is write-only on purpose, and a foreign key is the relation the detail
-        // renders by name rather than by id — neither is a missing read.
+        // renders by name rather than by id - neither is a missing read.
         if (/^(password|secret|token|.*Secret|.*Password)$/i.test(f) || /Ids?$/.test(f)) return false;
         if (new RegExp(`displayData\\.${f}\\b|fieldLabel\\("${f}"\\)`).test(ds)) return false;
         return !new RegExp(`\\b${f}\\b`).test(delegated);
@@ -3740,7 +3740,7 @@ export function ScopePane({ line }: Props) {
     appliesTo: isTsx,
     check: (c) =>
       // A file with no server data in it cannot be holding a boot enum, however it names its
-      // variables — see `readsServerData`.
+      // variables - see `readsServerData`.
       readsServerData(c)
         ? lineHits(
             c,
@@ -3818,7 +3818,7 @@ export function ScopePane({ line }: Props) {
     desc: "A boot enum read by casting the field to the envelope's shape — `as unknown as { value }` is `resolveBootEnum` written so nothing can check it, and the day the envelope gains a field or the DTO stops wrapping one, the comparison is silently false on every row",
     appliesTo: isTsx,
     // `notCommentLine`, because the comment that explains this defect beside its fix contains
-    // the defect — and a rule without it fires hardest on the files that took the trouble to say
+    // the defect - and a rule without it fires hardest on the files that took the trouble to say
     // why, which is the sentence that then gets deleted to quieten the audit.
     check: (c) => lineHits(c, /as\s+unknown\s+as\s*\{[^}]*\bvalue\b/, notCommentLine),
     samples: {
@@ -3845,8 +3845,8 @@ export function ScopePane({ line }: Props) {
     level: "error",
     desc: "A boot enum wrapped in `String()` and defaulted with `??` — the server sends `{type,value,label}`, which is neither null nor undefined, so the fallback never fires and `String()` answers the literal `[object Object]`. The control then matches no option and draws blank, and the save comes back 400 on a field the operator can see is filled. It shows only on EDIT: on create the value really is absent, the default really does fire, and the same line is correct — which is why the create form works and its edit form does not",
     appliesTo: isTsx,
-    // Scanned with balanced parens rather than a line regex, because the wrapped form —
-    // `String(\n  loaded.x ?? Enum.MEMBER,\n)` — is what prettier writes as soon as the enum
+    // Scanned with balanced parens rather than a line regex, because the wrapped form -
+    // `String(\n  loaded.x ?? Enum.MEMBER,\n)` - is what prettier writes as soon as the enum
     // member is long, and a line rule goes quiet on exactly the longest-named enums.
     check: (c) => {
       const hits = [];
@@ -3913,8 +3913,8 @@ export function ScopePane({ line }: Props) {
     check: (c, rel) => {
       const own = projectionProps(rel);
       if (!own) return [];
-      // A panel routinely embeds a list of ANOTHER entity — a grant table inside an account's
-      // detail — and inside that column's render `row` is the other entity's row. So every DTO
+      // A panel routinely embeds a list of ANOTHER entity - a grant table inside an account's
+      // detail - and inside that column's render `row` is the other entity's row. So every DTO
       // this file names as a generic argument contributes its own projection; a property that is
       // on none of them is still phantom, and one that is on the embedded entity is not.
       const props = new Set(own);
@@ -4011,18 +4011,18 @@ export interface AreaDetailDTO {
     desc: "Control with nothing to announce — its children are bare marks, or it has no children at all, and it carries no aria-label, aria-labelledby, title, or sr-only text. Assistive technology reads it as an unlabelled button. A tooltip does not fix this: Radix describes an open tooltip's trigger, it never names it. Add aria-label with the same word the tooltip carries",
     appliesTo: isTsx,
     // Structural, not textual: the shape being judged is "what does this control CONTAIN", and the
-    // markup that produces it varies far more than a pattern can enumerate — a raw <svg> instead of
+    // markup that produces it varies far more than a pattern can enumerate - a raw <svg> instead of
     // an icon component, a <span role="button"> instead of a <button>, a design-system component
     // whose only cue is a tooltip, a control with no children at all. Each of those is the same
     // defect and none of them look alike in source.
     //
     // Known gaps, deliberately left uncaught rather than guessed at:
-    //   · children that arrive through an expression — <Button>{icon}</Button>, <Button>{children}</Button>.
+    //   · children that arrive through an expression - <Button>{icon}</Button>, <Button>{children}</Button>.
     //     What renders is not in this file.
     //   · a tag that spreads props ({...props}). The name may arrive from the caller, so a component
     //     definition is not evidence of a defect at its own definition site.
     //   · a mark component whose name ends in none of MARK_COMPONENT's words. It is read as content,
-    //     which is the safe direction — a missed defect, never a false accusation.
+    //     which is the safe direction - a missed defect, never a false accusation.
     //   · an icon-only control assembled across files, where the wrapper renders <button> and the
     //     caller passes the mark.
     check: (c) => {
@@ -4031,7 +4031,7 @@ export interface AreaDetailDTO {
         const name = m[1];
         const { tag, end } = jsxOpenTag(c, m.index);
         const attrs = tagAttrs(tag);
-        // A declared control — its name or its role says a screen reader will announce it as one.
+        // A declared control - its name or its role says a screen reader will announce it as one.
         const declared =
           /(?:^|\.)(?:button|\w*Button|\w*Trigger|\w*Toggle|\w*Close)$/.test(name) ||
           /\brole=(?:"button"|'button'|\{"button"\})/.test(attrs);
@@ -4047,8 +4047,8 @@ export interface AreaDetailDTO {
         if (children === null) continue;
         const content = childContent(children);
         // Nothing at all inside is evidence only for a host element, and only when nothing arrives
-        // from outside either. `<FieldClearButton label={…} />` is empty here and full on screen —
-        // a component renders its own children — and a forwarder writes `<button {...props} />`
+        // from outside either. `<FieldClearButton label={…} />` is empty here and full on screen -
+        // a component renders its own children - and a forwarder writes `<button {...props} />`
         // where both the name and the children come from its caller. A body of bare marks is
         // evidence regardless: no spread turns a mark into a word, and the spreads that reach a
         // control this way (drag listeners, Radix slot props) carry description, never a name.
@@ -4383,7 +4383,7 @@ const confirmOptions = [
         ? []
         : lineHits(c, /\bsize:\s*(\d+)\s*,/g, (line) => {
             const size = Number(/\bsize:\s*(\d+)/.exec(line)?.[1]);
-            // A read of one row is a count, not a list — the total is what it is after.
+            // A read of one row is a count, not a list - the total is what it is after.
             return Number.isFinite(size) && size > 1;
           }),
     samples: {
@@ -4507,7 +4507,7 @@ return <Badge>{data?.totalElements ?? 0}</Badge>;`,
     appliesTo: isTsx,
     // What the invariant is about is an id naming a record in THIS system: the user cannot know a
     // UUID, so typing one is a guess and the picker exists to stop it. An identifier issued by
-    // somebody else is the opposite case — an operator copies `clientId` out of the provider's
+    // somebody else is the opposite case - an operator copies `clientId` out of the provider's
     // console and `machineId` off the licence, no picker can list them because this system does not
     // hold the set, and a text box is the only control there is. Excluded by name rather than by
     // guessing, because the vocabulary is small and stable.
@@ -4631,12 +4631,12 @@ return <Badge>{data?.totalElements ?? 0}</Badge>;`,
       "Forced narrowing (a tab, a chip row, a scope from the address) merged inside transformFilters — the list state machine only sends a `filters` object once the reader has committed one, so on the first view the transform never runs and the request goes out unnarrowed. Merge into the request params instead",
     appliesTo: isSource,
     check: (c) =>
-      // A transform that only rewrites what it was handed (date formats, operator names — the
+      // A transform that only rewrites what it was handed (date formats, operator names - the
       // documented use) spreads its own parameter and nothing else. One that spreads anything
       // ELSE is carrying a narrowing in, and that narrowing is the half that silently disappears.
       //
-      // KNOWN GAP: only the SPREAD form. A narrowing written as a plain key — `siteId,` or
-      // `status: TAB_STATUS[tab],` beside the spread of the parameter — disappears on the first
+      // KNOWN GAP: only the SPREAD form. A narrowing written as a plain key - `siteId,` or
+      // `status: TAB_STATUS[tab],` beside the spread of the parameter - disappears on the first
       // view in exactly the same way and is not reported. Closing it means reading each key's
       // value and asking whether it mentions the transform's own parameter, which is a wider
       // change than a pattern: `sort:` and `size:` keys would start being reported too, and
@@ -4719,8 +4719,8 @@ return <Badge>{data?.totalElements ?? 0}</Badge>;`,
     desc: "onDone callback — use onSuccess for save/submit completion (non-CRUD completions like animation ends are OK)",
     appliesTo: isTsx,
     check: (c) => lineHits(c, /\bonDone\s*[=:{]/),
-    // No `miss` sample: the exception this rule names — a non-CRUD completion such as an
-    // animation end — is not visible in the prop name, which is why the rule is graded review
+    // No `miss` sample: the exception this rule names - a non-CRUD completion such as an
+    // animation end - is not visible in the prop name, which is why the rule is graded review
     // and hands the reader a candidate rather than a verdict.
     samples: {
       file: "modules/site/src/widgets/area/wizard.tsx",
@@ -4821,7 +4821,7 @@ return <Badge>{data?.totalElements ?? 0}</Badge>;`,
     desc: "Manual Loader2 / animate-spin — Button handles its own spinner (standalone overlays are OK)",
     appliesTo: (p) => inModules(p) && isTsx(p),
     check: (c) => lineHits(c, /\bLoader2\b|animate-spin/),
-    // No `miss` for the exception the description names — a standalone overlay spinner looks
+    // No `miss` for the exception the description names - a standalone overlay spinner looks
     // exactly like a hand-rolled button spinner in source. That is the judgment the review grade
     // hands to the reader.
     samples: {
@@ -4879,7 +4879,7 @@ return <Badge>{data?.totalElements ?? 0}</Badge>;`,
       /Record</.test(c) ? lineHits(c, /dark:bg-(red|green|emerald|amber|blue|orange|slate)-\d/) : [],
     // No `miss` for the description's categorical-palette exception: what separates a status map
     // from a category palette is what the keys MEAN, and the words that would tell them apart are
-    // each project's own vocabulary — which is exactly what must not be baked in here. The review
+    // each project's own vocabulary - which is exactly what must not be baked in here. The review
     // grade is where that judgment lives.
     samples: {
       file: "modules/site/src/widgets/area/list.tsx",
@@ -4929,7 +4929,7 @@ return <Badge>{data?.totalElements ?? 0}</Badge>;`,
     desc: "Inline cursor-col-resize edge grip — use <ResizeHandle /> (canvas vertex handles are OK)",
     appliesTo: (p) => inModules(p) && isTsx(p),
     check: (c) => lineHits(c, /cursor-col-resize/),
-    // No `miss` for the canvas-vertex exception the description names — a vertex handle and an
+    // No `miss` for the canvas-vertex exception the description names - a vertex handle and an
     // edge grip carry the same class, and only what they sit on tells them apart.
     samples: {
       file: "modules/site/src/widgets/schedule/bar.tsx",
@@ -5075,7 +5075,7 @@ return <Badge>{data?.totalElements ?? 0}</Badge>;`,
     level: "error",
     desc: "Visible native file input — its label follows the browser's locale, not the app's; hide it and drive it from an app-owned button",
     appliesTo: isTsx,
-    // A file input is exempt only when it is hidden behind a trigger the app labels — by the
+    // A file input is exempt only when it is hidden behind a trigger the app labels - by the
     // platform's own `hidden` attribute or by a utility class. **Both, because a project may
     // forbid one of them.** Written to accept only the class, this rule and a project rule that
     // refuses a raw `className` on a screen cannot both be satisfied, and the agent caught between
@@ -5280,17 +5280,17 @@ export function printAreaCode(code: string) {
     // file that owns one is exempt; what this catches is the button standing alone.
     //
     // <p><b>A create no permission gates is exempt, and has to say so.</b> The rule's premise is
-    // that the server would refuse — 「a user without create … gets a 403」 — and on a surface
+    // that the server would refuse - 「a user without create … gets a 403」 - and on a surface
     // every signed-in account may write to there is no such user and no group to name. A screen
     // forced to invent one gates the button on a permission that is not the one the endpoint
     // checks, which is worse than not gating it: the affordance then disappears for readers the
-    // server would have answered. So the exemption is a sentence rather than a flag — the file
-    // says which endpoint is open and why — and a file that merely forgot the gate cannot claim
+    // server would have answered. So the exemption is a sentence rather than a flag - the file
+    // says which endpoint is open and why - and a file that merely forgot the gate cannot claim
     // it by accident.
     check: (c) =>
       // Case-insensitive on purpose: the exemption is a sentence, so it is written at the start
       // of a comment and every writer capitalises it there. An anchor spelled in the one form the
-      // sentence never takes reads as a rule with an exemption and is a rule with none — a screen
+      // sentence never takes reads as a rule with an exemption and is a rule with none - a screen
       // that wrote the sentence, and then had a later edit capitalise it, silently lost its
       // exemption and was reported as a permission hole.
       /\buseCan\("create"/.test(c) || /no permission gates this create:\s*\S/i.test(c)
@@ -5335,7 +5335,7 @@ usePageHeader({
     desc: "A tab's count is blanked by a permission flag while the tab itself still renders — the affordance survives the gate and opens onto a panel that can only say the read was refused, which reads as a screen that failed rather than as a permission this account does not hold. Gate the tab and its panel on the same flag and explain the absence once, where the figure it replaces would have been",
     appliesTo: isTsx,
     // Anchored on the tab, not on the ternary: a readout blanking its own value behind the same
-    // flag (a tile drawing an em dash, a column cell left empty) is the right shape — a count
+    // flag (a tile drawing an em dash, a column cell left empty) is the right shape - a count
     // nobody was allowed to take is absent rather than zero. What is wrong here is that the
     // control leading to it is still pressable.
     // `blockHits`, not `lineHits`: a tab with three attributes is written over four lines, and the
@@ -5403,7 +5403,7 @@ usePageHeader({
         return [];
       }
       // Only a read that DECIDES. Passing `policy.user` on to a child, or printing it, cannot
-      // strand a screen — the branch is what does.
+      // strand a screen - the branch is what does.
       const names = [...c.matchAll(/const\s+(\w+)\s*=\s*useAccess\(\)/g)].map((m) => m[1]);
       if (names.length === 0) {
         return [];
@@ -5585,7 +5585,7 @@ const canManage = useCan("manage", SUBJECTS.area);
     desc: "id / sortOrder / displayOrder surfaced as a visible field — system fields live in auditData only",
     appliesTo: (p) => inModules(p) && isTsx(p),
     // A field the entity's own form edits is a decision the operator makes, not a value the
-    // system maintains — an order that ranks a storefront is chosen, and once it is chosen the
+    // system maintains - an order that ranks a storefront is chosen, and once it is chosen the
     // read surfaces have to say what it currently is. Flagging those would put this rule in
     // direct opposition to `write-only-form-field`, which demands exactly that read.
     check: (c, rel) => {
@@ -5678,7 +5678,7 @@ const canManage = useCan("manage", SUBJECTS.area);
     appliesTo: isTsx,
     check: (c) =>
       // A file holding no server data cannot be holding a boot enum, whatever it names its
-      // fields — the same guard `unresolved-boot-enum-label` uses. Without it this fires on
+      // fields - the same guard `unresolved-boot-enum-label` uses. Without it this fires on
       // every local literal union called `kind`, and a rule that cries wolf takes the real
       // ones beside it down.
       readsServerData(c)
@@ -5910,7 +5910,7 @@ const canManage = useCan("manage", SUBJECTS.area);
       if (!/catch\s*\([\s\S]{0,400}?\bset(?:Error|SubmitError|Failure)\b|failures\.push\(/.test(c)) return [];
       if (/suppressErrorDialog|handledByForm|handlesConflict/.test(c)) return [];
       // And only the hook whose result is the one being awaited. Every other zero-argument hook
-      // in the file — a navigator, a clipboard, a read — has nothing to do with this dialog, and
+      // in the file - a navigator, a clipboard, a read - has nothing to do with this dialog, and
       // reporting them is how an audit stops being read.
       const awaited = new Set([...c.matchAll(/\b(\w+)\s*\.\s*mutateAsync\b/g)].map((m) => m[1]));
       if (awaited.size === 0) return [];
@@ -6011,7 +6011,7 @@ async function run() {
       const hits = [];
       // A branch entered by two or more statuses whose body never mentions the status again:
       // every one of them is then handed the same sentence. A body that does look at the status
-      // — a second comparison, a key chosen into a variable — is the fix, so it is not reported.
+      // - a second comparison, a key chosen into a variable - is the fix, so it is not reported.
       const guard = /if\s*\([^)]*\b(?:status|state|phase)\s*===\s*"[A-Z_]+"[^)]*\|\|[^)]*===\s*"[A-Z_]+"[^)]*\)\s*\{([\s\S]{0,1200}?)\n\s{0,4}\}/g;
       for (const m of c.matchAll(guard)) {
         const body = m[1];
@@ -6048,7 +6048,7 @@ async function run() {
     appliesTo: isTsx,
     check: (c) => {
       const hits = [];
-      // The row element, then its own props — a value that declares it will wrap is a value the
+      // The row element, then its own props - a value that declares it will wrap is a value the
       // row was never sized for. Bounded so the next element's props are not read as this one's.
       const row = /<(DetailListRow|LabeledField)\b([\s\S]{0,600}?)\/>/g;
       for (const m of c.matchAll(row)) {
@@ -6086,7 +6086,7 @@ async function run() {
     appliesTo: isTsx,
     check: (c) => {
       // Only the shape that traps. `isLoading || !data` is correct wherever the falling-through
-      // case terminates in something — the framework's QueryFallback says "not found", an error
+      // case terminates in something - the framework's QueryFallback says "not found", an error
       // state says why. A raw skeleton says neither and never stops saying it.
       // The `<` is SHARED with the Skeleton rather than demanding one before it: written
       // `<[\s\S]{0,400}?<Skeleton`, the pattern needed a wrapper element and so could not see
@@ -6098,7 +6098,7 @@ async function run() {
       if (trapping.length === 0) {
         return [];
       }
-      // Any settled-failure branch anywhere in the file counts — the point is that the screen
+      // Any settled-failure branch anywhere in the file counts - the point is that the screen
       // stops drawing a wait it will never end, not which component says so.
       if (/isError|isLoadingError|QueryFallback|ErrorState|\.error\b/.test(c)) {
         return [];
@@ -6170,7 +6170,7 @@ return <AreaPanel area={area.data} />;`,
     appliesTo: isTsx,
     check: (c) => {
       // The single-condition guard specifically. `isLoading || !data` traps in the skeleton and
-      // is the previous rule's business; a bare `isLoading` falls THROUGH, which is worse — the
+      // is the previous rule's business; a bare `isLoading` falls THROUGH, which is worse - the
       // screen answers confidently out of nothing instead of visibly waiting.
       const guards = [...c.matchAll(
         /if\s*\(\s*([A-Za-z_$][\w$]*)\.isLoading\s*\)\s*\{?\s*return\s*\(?\s*<(?:[\s\S]{0,500}?<)?Skeleton\b/g,
@@ -6179,7 +6179,7 @@ return <AreaPanel area={area.data} />;`,
         return [];
       }
       // Per query, not per file. A file-wide escape lets ONE read's failure branch vouch for
-      // every other read in the file — which is exactly how a screen came to have a careful
+      // every other read in the file - which is exactly how a screen came to have a careful
       // "could not be read" line for its quota table and none for the verdict deciding whether
       // it announced the deployment had no licence at all.
       const aliases = (base) =>
@@ -6287,7 +6287,7 @@ return (
         return [];
       }
       // Only a failure branch counts. A pending branch draws a skeleton and then falls into the
-      // same empty state, so `isPending` protects nothing here — and matching it file-wide let a
+      // same empty state, so `isPending` protects nothing here - and matching it file-wide let a
       // mutation's own pending flag silence the rule for every read in the file.
       const HANDLES = /isError|isLoadingError|\.error\b|QueryFallback|ErrorState/;
       if (HANDLES.test(c)) {
@@ -6351,7 +6351,7 @@ return (
       if (!/\.mutateAsync\(|\.mutate\(/.test(c)) {
         return [];
       }
-      // Any failure branch counts, wherever it stands — the point is that the screen refuses to
+      // Any failure branch counts, wherever it stands - the point is that the screen refuses to
       // draw a form it cannot fill, not which component says so.
       if (/isError|isLoadingError|ErrorState/.test(c)) {
         return [];
@@ -6429,7 +6429,7 @@ return (
     desc: "Screen acts on a one-time link token without reading the link first — a spent, expired or unknown link is offered as live, the visitor agrees to something, and the refusal only arrives after the click; the same read is what lets the screen name whose record it is about instead of asking about \"this address\"",
     appliesTo: isTsx,
     check: (c) => {
-      // Only a screen whose whole authority is a token that arrived from outside — in the
+      // Only a screen whose whole authority is a token that arrived from outside - in the
       // address or handed down from the route that read it. A token the app itself holds
       // (a session, a CSRF value) is not a link.
       const CARRIES_LINK_TOKEN = /\btoken\b\s*[:?]?\s*string|useSearch\(\)[\s\S]{0,80}\btoken\b|search\.token\b/;
@@ -6455,7 +6455,7 @@ return (
       // branch gates the button on what it parked, and a screen that only knows the token is
       // non-empty is the one that cannot tell a live link from a dead one.
       //
-      // A hook the token is passed to is the second, and it is the shape to prefer — the answer
+      // A hook the token is passed to is the second, and it is the shape to prefer - the answer
       // arrives as query state rather than as a piece of component state an effect has to keep in
       // step, and React's development double-mount cannot leave it unsettled. `useX(token)` is
       // unambiguous here because the acting call spends the token inside a `data:` payload, never
@@ -6545,7 +6545,7 @@ return <Button onClick={() => refresh.mutateAsync({ data: { accessToken } })}>{t
     appliesTo: isTsx,
     check: (c) => {
       // The handler body from the awaited mutation to the end of the arrow function. A handler
-      // that says nothing is indistinguishable, on screen, from a button that did nothing —
+      // that says nothing is indistinguishable, on screen, from a button that did nothing -
       // which is how an operator retries a charge they have already made.
       const hits = [];
       for (const m of c.matchAll(/onClick=\{[\s\S]{0,600}?\}\}/g)) {
@@ -6630,7 +6630,7 @@ return <Button onClick={() => refresh.mutateAsync({ data: { accessToken } })}>{t
         }
         return out;
       };
-      // The call's own argument text, read to its balanced close paren — a fixed slice runs into
+      // The call's own argument text, read to its balanced close paren - a fixed slice runs into
       // the next call and reports the two branches as one.
       const argsAt = (from) => {
         let depth = 0;
@@ -6662,7 +6662,7 @@ return <Button onClick={() => refresh.mutateAsync({ data: { accessToken } })}>{t
         // constant is what that looks like: an enum member, a boolean, a number.
         const decl = new RegExp(`\\b${id}\\s*=\\s*\\{`).exec(c);
         if (!decl) continue;
-        // The declaration's own braces, not a slice — a fixed window runs past the object into
+        // The declaration's own braces, not a slice - a fixed window runs past the object into
         // the create branch below it, where the create-time constants correctly are, and the rule
         // then fires on the very shape it exists to accept.
         const open = c.indexOf("{", decl.index);
@@ -6736,7 +6736,7 @@ return <Button onClick={() => refresh.mutateAsync({ data: { accessToken } })}>{t
     check: (c) => {
       // The contract, read from the generated model the update hook names. An endpoint whose DTO
       // is not on hand is an unknown contract, and an unknown contract is not evidence of a
-      // defect — a body that names every field the DTO declares is complete and is left alone.
+      // defect - a body that names every field the DTO declares is complete and is left alone.
       const index = modelIndex();
       // The contract of ONE update hook, or null where this repository has no DTO of that name.
       const contractOf = (hookEntity) => {
@@ -6744,7 +6744,7 @@ return <Button onClick={() => refresh.mutateAsync({ data: { accessToken } })}>{t
         if (!index.has(entity + "UpdateDTO")) return null;
         const shape = index.get(entity + "UpdateDTO");
         // What the endpoint's own read answers with. A field the write accepts and the read never
-        // returns is written per save and stored nowhere — a reason, an idempotency key — so
+        // returns is written per save and stored nowhere - a reason, an idempotency key - so
         // leaving it out blanks nothing and is not this defect.
         const held =
           index.get(entity + "UpdateFormDTO")
@@ -6755,8 +6755,8 @@ return <Button onClick={() => refresh.mutateAsync({ data: { accessToken } })}>{t
         return { dto: shape, stored: held };
       };
       // Which contract each `mutateAsync` receiver is bound to. One file routinely holds several
-      // update endpoints over one record — a settings save, a security-sensitive save, a child
-      // collection's save — and each takes a DTO of its own. Resolved file-wide, every body in
+      // update endpoints over one record - a settings save, a security-sensitive save, a child
+      // collection's save - and each takes a DTO of its own. Resolved file-wide, every body in
       // such a file is measured against whichever DTO happened to be found first, and a body that
       // is complete for its own endpoint is reported as blanking fields that endpoint never took.
       const byReceiver = new Map();
@@ -6787,7 +6787,7 @@ return <Button onClick={() => refresh.mutateAsync({ data: { accessToken } })}>{t
         }
         return c.slice(from, from + 4000);
       };
-      // The body's own members, counted by the commas that separate them — a nested object's keys
+      // The body's own members, counted by the commas that separate them - a nested object's keys
       // are that value's business, and a shorthand property (`orgId,`) is a member with no colon
       // to count. Counting colons instead reads a complete body as one field short and fires on it.
       const topLevelMembers = (text) => {
@@ -6823,12 +6823,12 @@ return <Button onClick={() => refresh.mutateAsync({ data: { accessToken } })}>{t
         );
       // What the edit read answered with, by the names this file bound it to. A body that spreads
       // form state (`...values`) spreads what the person typed, which is exactly the set that
-      // leaves the rest of the record out — so the test is not "is there a spread" but "is the
+      // leaves the rest of the record out - so the test is not "is there a spread" but "is the
       // RECORD spread".
       const recordNames = new Set();
       // A window rather than the line, because a formatter breaks the binding away from the type
       // it names: `adaptOrvalGet<\n  XUpdateFormDTO,\n  typeof q\n>(q)` puts `data: loaded` three
-      // lines above `UpdateFormDTO`, and read a line at a time the record's name is never found —
+      // lines above `UpdateFormDTO`, and read a line at a time the record's name is never found -
       // so a body that DOES spread the record is reported as enumerating it. The window reaches
       // backwards only: the destructuring always precedes the type argument.
       for (const m of c.matchAll(/^[^\n]*UpdateFormDTO[^\n]*$/gm)) {
@@ -6840,8 +6840,8 @@ return <Button onClick={() => refresh.mutateAsync({ data: { accessToken } })}>{t
         const prop = /\breadonly\s+([A-Za-z_$][\w$]*)\??\s*:/.exec(line);
         if (prop) recordNames.add(prop[1]);
       }
-      // The binding a formatter has broken away from the type it names. A wrapped generic —
-      // `adaptOrvalGet<\n  XUpdateFormDTO,\n  typeof q\n>(q)` — puts `data: loaded` three lines
+      // The binding a formatter has broken away from the type it names. A wrapped generic -
+      // `adaptOrvalGet<\n  XUpdateFormDTO,\n  typeof q\n>(q)` - puts `data: loaded` three lines
       // above `UpdateFormDTO`, and read a line at a time the record's name is never found, so a
       // body that DOES spread it is reported as enumerating it. Anchored on the binding and
       // reaching forward to the type, with no `;` allowed between them so it cannot cross into
@@ -6871,7 +6871,7 @@ return <Button onClick={() => refresh.mutateAsync({ data: { accessToken } })}>{t
         const dropped = [...shape].filter((field) => !named.has(field) && held.has(field));
         if (dropped.length === 0) return;
         // A body that also spreads form state carries fields this scan cannot see, so the report
-        // names the ones the file never mentions at all — those are certainly gone, and a list
+        // names the ones the file never mentions at all - those are certainly gone, and a list
         // that includes a field the reader can point at in the same file reads as a false alarm.
         const certain = dropped.filter((field) => !new RegExp(`\\b${field}\\b`).test(c));
         const named4 = (certain.length ? certain : dropped).slice(0, 4);
@@ -6888,7 +6888,7 @@ return <Button onClick={() => refresh.mutateAsync({ data: { accessToken } })}>{t
         const contract = byReceiver.has(m[1]) ? byReceiver.get(m[1]) : undefined;
         if (contract === null) continue;
         // The call's OWN arguments, read to the balanced close paren. A fixed window runs past
-        // `data: body` into whatever call comes next — the create branch beside it — and the rule
+        // `data: body` into whatever call comes next - the create branch beside it - and the rule
         // then reports the create's literal as an update body.
         const open = c.indexOf("(", m.index + m[0].length - 1);
         let depth = 0;
@@ -7106,7 +7106,7 @@ const saveContacts = async (contacts: ContactItemDTO[]) => {
       for (const m of c.matchAll(/\b\w+\.data\??\.find\s*\(/g)) {
         hits.push({ line: lineOfIndex(c, m.index), excerpt: c.slice(m.index, m.index + 120).replace(/\s+/g, " ") });
       }
-      // The same lookup moved into a helper — the page hands its loaded rows across.
+      // The same lookup moved into a helper - the page hands its loaded rows across.
       for (const m of c.matchAll(/\w+\(\s*\w*[Ll]ist\.data\s*,/g)) {
         hits.push({ line: lineOfIndex(c, m.index), excerpt: m[0].replace(/\s+/g, " ") });
       }
@@ -7249,7 +7249,7 @@ const saveContacts = async (contacts: ContactItemDTO[]) => {
     desc: "A screen names ListDetail's `variant` as a literal — whether a record opens in a panel beside the list or in a drawer over it is one decision for the installation, declared once on UIProvider's `defaults.detailPresentation`. A screen that hardcodes it takes the choice away from every installation, and seventeen screens hardcoding it mean the setting does nothing at all",
     appliesTo: isTsx,
     // `variant={variant}` is a widget forwarding what it was handed, and `"dialog"` is a real
-    // per-screen decision — a centred modal claims the record is an interruption rather than the
+    // per-screen decision - a centred modal claims the record is an interruption rather than the
     // thing being worked on, which no installation-wide switch should be able to turn on.
     check: (c) =>
       lineHits(
@@ -7288,7 +7288,7 @@ const saveContacts = async (contacts: ContactItemDTO[]) => {
     appliesTo: isTsx,
     // The prop is the component's own switch: CrudDetail.ActionFooter draws 삭제 when `onDelete`
     // is defined, a verb row draws a button when its handler is. Optional chaining inside a
-    // wrapper reads as safety and is the opposite — it swallows the absence the caller was using
+    // wrapper reads as safety and is the opposite - it swallows the absence the caller was using
     // to say 「this reader may not do this」, which is how a gate applied at the page arrives at
     // the panel as a button that looks live and does nothing.
     // A lifecycle notification is exempt: `onSuccess`, `onError` and their kin name a moment
@@ -7585,13 +7585,13 @@ const saveContacts = async (contacts: ContactItemDTO[]) => {
  *
  * <p><b>The dev server then serves that subpath from `dist/`, and a source edit reaches nothing.</b>
  * Vite resolves workspace packages through `resolve.conditions: ["source"]`; an entry without it
- * falls through to `import`, which is the built output. Nothing errors — the screen renders, HMR
+ * falls through to `import`, which is the built output. Nothing errors - the screen renders, HMR
  * reports a successful update, and the browser keeps showing the code as it was at the last build.
  * A session can spend an hour re-editing a file, re-reading it to confirm the change is there, and
  * measuring a page that never received it.
  *
  * <p><b>It is written this way by the generator, not by hand.</b> `simplix scaffold` appends the
- * `./pages` entry after generating a page, and it appends `types` and `import` only — so a module
+ * `./pages` entry after generating a page, and it appends `types` and `import` only - so a module
  * whose other three entries are correct acquires exactly one that is not, at the moment somebody
  * adds the first page to it. That is why this is a rule rather than a note: the file it appears in
  * is one nobody edited.
@@ -7615,7 +7615,7 @@ function packageExportFindings() {
       const exports = parsed.exports;
       if (!exports || typeof exports !== "object") continue;
       // A package that declares `bin` is a command-line tool. Node resolves its exports and
-      // Node has no `source` condition, so nothing about a dev server reaches it — the whole
+      // Node has no `source` condition, so nothing about a dev server reaches it - the whole
       // failure this rule describes cannot happen there, and shipping `src` would grow the
       // tarball to satisfy a reader that never looks.
       if (parsed.bin) continue;
@@ -7744,7 +7744,7 @@ function koCatalogues() {
  *
  * <p>Korean picks 을/를, 이/가, 은/는, 와/과 by whether the preceding syllable ends in a
  * consonant, so a particle written straight after `{{...}}` is right for some values and wrong
- * for the rest — "5을", "3.2를". The repair is to let the particle attach to a fixed noun
+ * for the rest - "5을", "3.2를". The repair is to let the particle attach to a fixed noun
  * instead of to the value ("{{allowed}}대 중", "{{release}} 릴리스를"), which also supplies the
  * counter word a bare number is missing.
  */
@@ -7756,9 +7756,9 @@ function koParticleFindings() {
   // `로` belongs in the set for the same reason as the rest: it is `으로` after a consonant that
   // is not ㄹ, so a sentence welding `로` to a value is wrong for most of the values it will ever
   // hold. Its hedge is written `(으)로`, where the bracket falls BEFORE the particle and so never
-  // matches this pattern at all — no lookahead needed for it.
+  // matches this pattern at all - no lookahead needed for it.
   //
-  // A closing quote or bracket may sit between the value and the particle — a name is usually
+  // A closing quote or bracket may sit between the value and the particle - a name is usually
   // wrapped before it is spoken about (`「{{plan}}」은`, `"{{name}}"이`). The wrapper is silent,
   // so the particle still has to agree with the VALUE's last syllable and the sentence is wrong
   // for half the values exactly as before. Skipping one such character is what makes the rule
@@ -7793,12 +7793,12 @@ function koParticleFindings() {
  * Scaffold placeholder copy left in a locale catalogue.
  *
  * <p>The CRUD scaffold emits a create-panel header it cannot name for you, and every locale gets
- * a bare "new". It survives translation passes because it IS translated — "신규" is a correct
+ * a bare "new". It survives translation passes because it IS translated - "신규" is a correct
  * rendering of a placeholder that should never have reached a screen. What the operator reads at
  * the top of the panel is then a word that names no entity, while the button that opened it and
  * the page it sits on both say what is being created.
  *
- * <p>The repair is the entity's own noun, the same one the create button uses — "운영자 추가" /
+ * <p>The repair is the entity's own noun, the same one the create button uses - "운영자 추가" /
  * "Add operator".
  *
  * <p>Scoped to the create header on purpose. `detailHeader` / `editHeader` carry `{{id}}` from
@@ -7851,12 +7851,12 @@ function scaffoldHeaderFindings() {
  *
  * <p>The adapter is configured not to return empty strings, so a key whose value is `""` is treated
  * as absent and resolved against the fallback locale instead. An English console then reads
- * 「31대」 — the Korean value, in the middle of an English screen — and nothing errors, because as
+ * 「31대」 - the Korean value, in the middle of an English screen - and nothing errors, because as
  * far as every check is concerned the key is present in both catalogues.
  *
  * <p><b>It is almost always a counter word.</b> A tile handed a figure and a separate unit needs
  * that unit in every language, and English has none for a machine or a case; the entry is left
- * empty and falls straight through. The repair is not a space — a space is a translation that says
+ * empty and falls straight through. The repair is not a space - a space is a translation that says
  * the value is a space, and it satisfies every missing-translation check while rendering a stray
  * gap. It is to put the counter word inside the counted string, one per language
  * (`{{count}}대` · `{{count}}` · `{{count}}台`), so no entry is empty to fall back from.
@@ -7900,7 +7900,7 @@ function emptyLocaleValueFindings() {
 }
 
 // ---------------------------------------------------------------------------
-// Collection rules — the ones that read a tree rather than a file
+// Collection rules - the ones that read a tree rather than a file
 //
 // Same shape as RULES minus `appliesTo`/`check`: `collect()` walks the project itself and
 // returns findings. They were once wired straight into the runner, which is how four rules came
@@ -8192,7 +8192,7 @@ const COLLECTION_RULES = [
 const ALL_RULES = [...RULES, ...COLLECTION_RULES];
 
 // ---------------------------------------------------------------------------
-// Self-test — every rule against the broken form, the fixed form, and the near-neighbours it
+// Self-test - every rule against the broken form, the fixed form, and the near-neighbours it
 // must stay silent on
 // ---------------------------------------------------------------------------
 
@@ -8221,7 +8221,7 @@ function writeFixture(root, rel, body) {
 }
 
 /**
- * A sample is either a bare source string — the content of `samples.file` — or an object that
+ * A sample is either a bare source string - the content of `samples.file` - or an object that
  * also lays down the neighbouring files the rule reads: a sibling `detail.tsx`, a generated
  * model, a locale catalogue, a `package.json`. A rule that reads a tree can only be proved
  * against a tree.
@@ -8242,12 +8242,12 @@ function normalizeSample(sample, rule) {
  * Run one rule against one sample in a throwaway project tree.
  *
  * <p>`appliesTo` is asked inside that tree, never outside it: several of them read the project to
- * answer — the route directories a product declares public, an app that already guards every
- * address at its root — and asking from the real working directory answers about this repository
+ * answer - the route directories a product declares public, an app that already guards every
+ * address at its root - and asking from the real working directory answers about this repository
  * instead of about the sample.
  *
  * @returns whether the rule applied at all, its hits, and whether the scan's own file collection
- *          would have reached the sample — a rule whose sample sits where `collectSources` never
+ *          would have reached the sample - a rule whose sample sits where `collectSources` never
  *          looks is one the audit cannot fire in a real run, however well its regex matches.
  */
 function runSample(rule, sample) {
@@ -8467,7 +8467,7 @@ const args = process.argv.slice(2);
 
 // An unrecognised option stops the run rather than falling through to a scan. `--self-test`
 // against a script that only knows `--selftest` scanned nothing and printed
-// "0 source files scanned — 0 error hit(s)", which is exactly what a clean project prints.
+// "0 source files scanned - 0 error hit(s)", which is exactly what a clean project prints.
 const FLAGS = ["--list", "--selftest", "--errors-only"];
 const VALUED_FLAGS = ["--root=", "--rule="];
 const unknownArgs = args.filter(

@@ -1,4 +1,4 @@
-// Content and chrome components — the reusable primitives a screen body is composed
+// Content and chrome components - the reusable primitives a screen body is composed
 // FROM. Each maps to a class in styles.css (the same greybox vocabulary the single-
 // file board-template.html teaches), so a screen file calls these instead of hand-
 // writing HTML and the vocabulary stays consistent. Every component registers an
@@ -15,27 +15,27 @@ const cls = (base, variant) => (variant ? `${base} ${variant}` : base);
  * the output of boards nobody looked at, in a repository where the board is the contract a screen
  * is built from.
  *
- * <p>`dismissibleNotices` — the notice cards ({@link msg}'s help · warn · info, and
+ * <p>`dismissibleNotices` - the notice cards ({@link msg}'s help · warn · info, and
  * {@link helpCard}) draw a close control, and the page header draws the controls that bring a
  * closed one back. A board switching this on owes the header controls too: a card that closes with
  * no way back has been deleted rather than dismissed, so the two arrive together or neither does.
  *
- * <p>`noticeKindMarks` — {@link msg}'s three notice kinds carry a glyph beside their word, so the
+ * <p>`noticeKindMarks` - {@link msg}'s three notice kinds carry a glyph beside their word, so the
  * grade of a message is read by shape before it is read by letters. Worth switching on wherever the
  * product is read on cheap screens in daylight; it widens the kind label, so a board with tight
  * phone frames looks at those before saying yes.
  *
- * <p>`chipClearControl` — a {@link chips} filter row draws the control that clears the selection as
+ * <p>`chipClearControl` - a {@link chips} filter row draws the control that clears the selection as
  * soon as a second chip is lit. It is what says the row narrows rather than chooses, and it is the
  * one control that undoes a selection built up one chip at a time.
  *
- * <p>`listViewToggle` — a {@link filterBar} draws the 목록 · 격자 switch. **Off unless a board
+ * <p>`listViewToggle` - a {@link filterBar} draws the 목록 · 격자 switch. **Off unless a board
  * actually draws a grid**: a control that appears on every list and changes nothing on any of them
  * teaches the reader that the board's controls are decoration, and a reviewer who presses it and
  * gets the same list has been told the product does something it does not. A board with a genuine
  * card or tile view switches it on and draws that view as its own frame.
  *
- * <p>`tableGroupsAsFilters` — legacy {@link groupRow} bands are normalized into a `분류` column
+ * <p>`tableGroupsAsFilters` - legacy {@link groupRow} bands are normalized into a `분류` column
  * and a chip filter before the table. The band label is record data, so repeating it as a full-width
  * row wastes vertical scanning space and makes sorting ambiguous. Kept opt-in because it changes
  * both the table schema and its height on every screen that used grouped rows.
@@ -51,7 +51,7 @@ const OPTIONS = {
 /**
  * Take this board's answers. Called once by the kit, before any screen module is imported.
  *
- * <p>An unknown key is kept rather than refused — the pattern a board carries may be ahead of or
+ * <p>An unknown key is kept rather than refused - the pattern a board carries may be ahead of or
  * behind the kit reading this file, and a declaration for a capability that is not here yet is a
  * board that upgraded first, not a board that is wrong.
  */
@@ -69,13 +69,13 @@ export const imgPh = (extra = '') => `<div class="img-ph${extra ? ' ' + extra : 
 /**
  * A picture the screen actually shows, with the name of what it is.
  *
- * <p>`imgPh` is an unlabelled grey box and takes a CSS class, not a caption — right for a row
+ * <p>`imgPh` is an unlabelled grey box and takes a CSS class, not a caption - right for a row
  * thumbnail, wrong wherever the picture IS the content. A pictogram named in text and never drawn
  * cannot be judged: the reader cannot tell whether the asset exists, what it depicts, or whether
  * the one they are looking for is the one on the screen.
  *
  * @param size sm (a thumbnail beside a row) · md (a preview in a panel) · lg (the picture is the
- *   screen — a literacy-support screen leads with it)
+ *   screen - a literacy-support screen leads with it)
  * @param center center the picture and its caption inside a comparison cell
  */
 export const mediaPh = ({ label, size = 'md', note = '', center = false }) =>
@@ -104,12 +104,12 @@ export const chip = (text, active = false) => `<span class="chip${active ? ' act
  * one list and with a mark in the next reads as two different kinds of thing, and the reader stops
  * scanning the column for a face. Wrapping the pair removes the choice from every call site.
  *
- * <p>The mark carries the name's first character rather than a photo — that is what the product
+ * <p>The mark carries the name's first character rather than a photo - that is what the product
  * renders when there is no picture, and a wireframe that drew an empty circle everywhere would say
  * that every account has no photo. It is a placeholder for the picture, not a design for it.
  *
  * @param name the person's name, as the product would show it
- * @param sub the mono aside that rides after the name — the role, the account, the organisation
+ * @param sub the mono aside that rides after the name - the role, the account, the organisation
  */
 export const person = (name, sub = '') =>
   `<span class="person"><span class="p-av">${name.slice(0, 1)}</span><span>${name}</span>` +
@@ -144,26 +144,26 @@ export const permissionToggle = (allowed = true) =>
  * between the three: a tile row, an explanation card or a message band pushed in there separates
  * the control from what it controls, and the reader stops reading the three as one act.
  *
- * `note` is the one sentence that depends on WHICH chip is chosen — 「연동 방식에 따라 준비 사항이
+ * `note` is the one sentence that depends on WHICH chip is chosen - 「연동 방식에 따라 준비 사항이
  * 다릅니다」. It rides the right end of the same row, because a line of its own below the chips is
  * the very block this arrangement forbids. Keep it to a clause.
  *
  * <p>**The test is one question: does this sentence change when the chip changes?** If it does not
- * — a note on where a field's values come from, on what the tiles counted — it is a page fact and
+ * - a note on where a field's values come from, on what the tiles counted - it is a page fact and
  * belongs above the tabs, beside the help card and the warning band. That question is answered by
  * reading the sentence, so it is not one the gate can take: it sees a block standing between the
  * chip row and the list, and stops there.
  *
  * <p>**A chip FILTER narrows; it does not choose.** Several are lit at once, and the row says so as
  * soon as a second one is: it counts its own lit chips and draws the control that clears them. A
- * filter row where exactly one chip may ever be lit is a tab strip wearing a costume — draw
+ * filter row where exactly one chip may ever be lit is a tab strip wearing a costume - draw
  * {@link listTabs} instead, or make the request carry the set. **That rule reaches `filter` rows
  * only**: a period picker on a dashboard is single-valued because a week and a month are not one
  * period, and marking it `select: 'value'` is what says so rather than leaving it to look like a filter that
  * forgot how to take two.
  *
  * @param select `filter` narrows a list below it and gets the clear control. `value` is a row whose
- *   lit chips ARE a value rather than a narrowing of something — the chips inside a
+ *   lit chips ARE a value rather than a narrowing of something - the chips inside a
  *   {@link fMulti}, or a row that picks what the page itself draws. There each chip carries its own
  *   removal, clearing them all means «print nothing» rather than «show everything», and a count
  *   beside 「＋ 추가」 says nothing the row is not already showing
@@ -195,17 +195,17 @@ export function field({ label, value, hint, select = false }) {
  * A QR and what it is for, in the one arrangement they take.
  *
  * <p>A QR is a square, and a square dropped into a column of prose leaves the width beside it
- * empty — 150px of code and 400px of nothing, with the sentence that says what to scan pushed
+ * empty - 150px of code and 400px of nothing, with the sentence that says what to scan pushed
  * under it where it reads as a caption for the whole page. So the code takes the left, the line
- * naming it sits **under the code** where the two are read as one object, and everything else —
- * what the scan opens, who it identifies, what expires — fills the region to its right.
+ * naming it sits **under the code** where the two are read as one object, and everything else -
+ * what the scan opens, who it identifies, what expires - fills the region to its right.
  *
  * <p>On paper this is the difference between a credential that fits its card and one that runs off
  * the page: the right-hand region is where the fields go, not below the code.
  *
  * @param caption the one line saying what scanning does, drawn under the code
  * @param children what the code is about, in the region beside it
- * @param size `sm` where the paper is narrow — a poster column, a card
+ * @param size `sm` where the paper is narrow - a poster column, a card
  */
 export const qrBlock = ({ label = 'QR', caption = '', children = '', size = '' }) =>
   `<div class="qrblock${size ? ' ' + size : ''}">` +
@@ -217,7 +217,7 @@ export const qrBlock = ({ label = 'QR', caption = '', children = '', size = '' }
  * A bordered box that stacks what is put in it.
  *
  * <p><b>`pad: 'lg'` is for a box that is the page's whole content rather than one card among
- * several</b> — an empty state, a lock notice, a read-only banner. Frames used to reach for
+ * several</b> - an empty state, a lock notice, a read-only banner. Frames used to reach for
  * `<div class="table" style="padding:26px">` to get one, which borrows a table's border, leaves the
  * blocks inside it touching, and puts a measurement in a frame where the stylesheet cannot move it.
  */
@@ -232,7 +232,7 @@ export function listCard({ thumb = true, lines, trail }) {
  *
  * <p>**These exist so a screen never writes a raw `<div>`.** A classless block inherits the
  * BOARD's base size rather than its neighbours', so it draws larger than everything around it
- * and nothing in the source says why — that is how one card's value line ended up at 16px inside
+ * and nothing in the source says why - that is how one card's value line ended up at 16px inside
  * a panel written at 12.5px. `classlessGate` refuses them now, and these two are what a screen
  * reaches for instead.
  *
@@ -245,7 +245,7 @@ export function listCard({ thumb = true, lines, trail }) {
 export const inlineRow = (children, { gap = 'md', align = 'center', wrap = false } = {}) =>
   `<div class="lrow g-${gap} a-${align}${wrap ? ' wrap' : ''}">${children}</div>`;
 
-/** @param top sm · md · lg — how much air sits above the block. */
+/** @param top sm · md · lg - how much air sits above the block. */
 export const stack = (children, { top = 'md' } = {}) =>
   `<div class="lstack t-${top}">${children}</div>`;
 
@@ -257,8 +257,8 @@ export const grid = (n, children) => `<div class="grid-${n}">${children.join('')
 /**
  * The column template, read out of the header's own width classes.
  *
- * <p>**A table is ONE grid, not a stack of independent rows.** Laid out row by row — which is
- * what flexbox does — a column sizes itself to whatever that row happens to hold, so a narrow
+ * <p>**A table is ONE grid, not a stack of independent rows.** Laid out row by row - which is
+ * what flexbox does - a column sizes itself to whatever that row happens to hold, so a narrow
  * badge in the last cell of one row widens every cell before it and that row alone slides out of
  * line. It is invisible until two rows are compared, and it was true of 53 tables on this board.
  *
@@ -266,7 +266,7 @@ export const grid = (n, children) => `<div class="grid-${n}">${children.join('')
  */
 const columnTemplate = (head) => head.map((h) => {
   // **Whole class tokens, never a word boundary.** A hyphen ends a word, so `\bfix\b` matches
-  // inside `fix-s` and any other name built on a known one — the stylesheet has no rule for that
+  // inside `fix-s` and any other name built on a known one - the stylesheet has no rule for that
   // class and skips it, while this reads it as the column it is not. The two then disagree about
   // a width, and the only mark is a column squeezed to nothing in a narrow frame: the header
   // still draws its own text, and no check above this sees anything.
@@ -334,22 +334,22 @@ export const statusbar = () => `<div class="statusbar"><span>9:41</span><span>�
 export const appbar = ({ back = false, title, trail }) => `<div class="appbar">${back ? '<span class="back">←</span> ' : ''}${title}${trail ? `<span class="trail">${trail}</span>` : ''}</div>`;
 export const bodyCol = (children) => `<div class="body">${children}</div>`;
 export const cta = (children) => `<div class="cta">${children}</div>`;
-// A tab may carry an unread count. It is said in one place per width — the phone's tab bar,
-// the wide screen's navigation column — so two badges cannot disagree about the same set.
+// A tab may carry an unread count. It is said in one place per width - the phone's tab bar,
+// the wide screen's navigation column - so two badges cannot disagree about the same set.
 export const tabbar = (tabs) => `<div class="tabbar">${tabs.map((t) => `<div class="tab${t.active ? ' active' : ''}"><div class="ic"></div>${t.label}${t.unread ? `<span class="dot">${t.unread}</span>` : ''}</div>`).join('')}</div>`;
 
 /**
  * Where a worker's work is being kept, and how much of it the server has not seen yet.
  *
  * <p>A field app signs and submits while offline, and the record it made looks finished either
- * way — so the screen has to say which it is at all times rather than only when something fails.
+ * way - so the screen has to say which it is at all times rather than only when something fails.
  * A worker who cannot tell the two apart has no reason to stay in range long enough to sync,
  * and a legally required signature sits on one handset until the battery dies.
  *
  * @param queued how many records are waiting to reach the server
  * @param offline whether the handset currently has no connection
  */
-// The strip a worker reads to tell a signature the server has from one only their phone has —
+// The strip a worker reads to tell a signature the server has from one only their phone has -
 // which is the whole reason it is always there. It is also the one line on the screen that
 // nobody translated: a frame whose body is entirely Tiếng Việt drew a Korean bar above it and
 // a Korean tab row below, so the two states this bar distinguishes were unreadable to the person
@@ -374,18 +374,18 @@ export const offlineBar = ({ queued = 0, offline = false, lang = 'ko' }) => {
 //
 // The console window is three layers: the bar across the top picks an AREA, the column on the
 // left holds that area's own menu, and the strip along the bottom carries what keeps running
-// while the reader works. Nothing else is window-level chrome — there is no breadcrumb and no
+// while the reader works. Nothing else is window-level chrome - there is no breadcrumb and no
 // global search, because a screen is named by its tab, its menu entry, and its page header.
 /**
  * The window a desktop frame sits in.
  *
  * <p>`chrome: 'browser'` is a page loaded at an address, and the bar shows it. `chrome: 'app'` is
  * an installed program's own window: it has a title where the address would be, because a program
- * that was installed is not reached by typing a URL — and drawing an address bar over one tells
+ * that was installed is not reached by typing a URL - and drawing an address bar over one tells
  * every reader it is a web page.
  *
  * @param url the address, for a browser window
- * @param chrome `browser` (default) or `app`. `none` never reaches here — the kit draws no bar
+ * @param chrome `browser` (default) or `app`. `none` never reaches here - the kit draws no bar
  * @param title the program's window title, for `app`
  */
 export const browserbar = (url, { chrome = 'browser', title = '' } = {}) => (chrome === 'app'
@@ -395,13 +395,13 @@ export const browserbar = (url, { chrome = 'browser', title = '' } = {}) => (chr
 /**
  * The bar across the top of the console.
  *
- * <p>The tabs pick an area and nothing else — what is inside that area is the column on the
+ * <p>The tabs pick an area and nothing else - what is inside that area is the column on the
  * left. They cluster by the kind of work they carry (preparing, doing, recording, gated), and a
  * rule separates one cluster from the next.
  *
  * <p>The tail belongs to the reader rather than to the page: the site being worked in, unread
  * notifications, theme, language, the account, and the `⋮` that opens administration. **The site
- * selector is here and not on a page** because its value governs every figure on every screen —
+ * selector is here and not on a page** because its value governs every figure on every screen -
  * dates, deadlines and 「오늘」 are read in that site's time zone and against its shift calendar,
  * so a reader who cannot see which site they are in reads every number wrong.
  *
@@ -409,7 +409,7 @@ export const browserbar = (url, { chrome = 'browser', title = '' } = {}) => (chr
  * @param wrapped the row of tabs did not fit and moved down into {@link menuBar}, so the bar
  *   itself carries only the mark and the reader's own controls
  * @param sitePick the reader may move between sites. An account granted one site draws the name
- *   without the caret — a caret is an offer, and one that opens onto a list of one is a boundary
+ *   without the caret - a caret is an offer, and one that opens onto a list of one is a boundary
  *   the account only discovers by pressing it
  */
 export const topNav = ({
@@ -422,7 +422,7 @@ export const topNav = ({
   (wrapped ? '' : `<div class="tn-tabs">${tabRow(groups)}</div>`) +
   `<span class="spacer"></span>` +
   // A console with a hundred destinations needs a way in that is not the tree. What a reader
-  // arrives holding is a name, an article number or a record id — none of which the menu knows.
+  // arrives holding is a name, an article number or a record id - none of which the menu knows.
   (search ? `<span class="tn-find"><span class="ic">⌕</span><span class="ph">${search}</span></span>` : '') +
   `<span class="chip site">${site}${sitePick ? ' ▼' : ''}</span>` +
   `<span class="tn-rule"></span>` +
@@ -430,7 +430,7 @@ export const topNav = ({
   `<span class="tn-act">테마</span><span class="tn-act">언어</span>` +
   `<span class="tn-act avatar"></span>` +
   // Administration has no tab, so when the reader is inside it the `⋮` is the only thing that
-  // can say where they are — without this the tab row reads as "nowhere".
+  // can say where they are - without this the tab row reads as "nowhere".
   (admin ? `<span class="tn-act more${adminActive ? ' active' : ''}">⋮</span>` : '') +
   `</div>`;
 
@@ -444,7 +444,7 @@ const tabRow = (groups) => groups.map((group, i) =>
 /**
  * The row the tabs move into when the top bar is too narrow to hold them.
  *
- * <p>All of them move, or none — a row that keeps some tabs and drops the rest makes the missing
+ * <p>All of them move, or none - a row that keeps some tabs and drops the rest makes the missing
  * ones look unavailable rather than merely elsewhere. This row is the one place on the console
  * that may scroll sideways, and it says so by keeping its scrollbar.
  */
@@ -454,7 +454,7 @@ export const menuBar = (groups) => `<div class="menubar scroll-x">${tabRow(group
  * The column on the left: the menu of whichever area the top bar's tab picked.
  *
  * <p>Two levels, and the first one folds. A group is the cluster the entries under it belong to
- * and is a toggle rather than a destination — pressing it opens or shuts the branch, it never
+ * and is a toggle rather than a destination - pressing it opens or shuts the branch, it never
  * navigates. Only the branch holding the current screen stands open, so a column carrying five
  * clusters still shows one screenful.
  *
@@ -463,7 +463,7 @@ export const menuBar = (groups) => `<div class="menubar scroll-x">${tabRow(group
  * the accent. A reader who reads the first as the second goes looking for work that does not
  * exist.
  *
- * <p>`rail` collapses the column to icons — one icon per group, its entries reached through the
+ * <p>`rail` collapses the column to icons - one icon per group, its entries reached through the
  * flyout, and any waiting work rolled up into a mark. A number cannot be read at that width, and
  * a mark that says only "something is here" beats a number nobody can see.
  *
@@ -473,13 +473,13 @@ export const menuBar = (groups) => `<div class="menubar scroll-x">${tabRow(group
  * @param flyout the group opened beside the rail: `{label, items}`
  */
 export const sectionNav = ({ title, groups = [], rail = false, flyout = null }) => {
-  // Up to three levels: the group, its entries, and — where a cluster carries more entries than
-  // one column can show — a level under those. The third level is for splitting a long list into
+  // Up to three levels: the group, its entries, and - where a cluster carries more entries than
+  // one column can show - a level under those. The third level is for splitting a long list into
   // the things it is actually made of, never for burying a screen one press deeper than it needs
   // to be: an entry that would be alone under a parent belongs at the parent's level.
   // The caret keeps its place whether or not this entry has one. Without that the label of an
   // entry that folds and the label of one that does not start at different x, and a reader
-  // scanning the column cannot tell a level from a level — the indent stops meaning anything.
+  // scanning the column cannot tell a level from a level - the indent stops meaning anything.
   const entry = (it, sub = false) =>
     `<div class="sn-item${sub ? ' sub' : ''}${it.active ? ' active' : ''}${it.locked ? ' locked' : ''}">` +
     (sub ? '' : `<span class="car">${it.children ? (it.open ? '⌄' : '›') : ''}</span>`) +
@@ -525,12 +525,12 @@ export const sectionNav = ({ title, groups = [], rail = false, flyout = null }) 
  * The strip along the bottom: what keeps running while the reader works on something else.
  *
  * <p>Everything here belongs to no single screen and has to be watched anyway, and every segment
- * is a way into the screen that owns it. What flows on the left is only what needs acting on —
+ * is a way into the screen that owns it. What flows on the left is only what needs acting on -
  * everything else piles up in the bell, and merging the two would make the strip a feed nobody
  * reads.
  *
  * @param ticker the event currently passing, or the words standing in for an empty run
- * @param segments `[{label, tone}]` — `tone` is `''` · `warn` · `ok`
+ * @param segments `[{label, tone}]` - `tone` is `''` · `warn` · `ok`
  * @param health the product's own standing, opened for the detail behind it
  */
 export const statusBar = ({ powered = '', ticker = '', segments = [], health = null, agent = null }) =>
@@ -548,7 +548,7 @@ export const statusBar = ({ powered = '', ticker = '', segments = [], health = n
 
 /**
  * The panel the status bar sits on. A shared terminal or an installed console can open a pane
- * above the strip — the processing queue, a live log — and drag it taller.
+ * above the strip - the processing queue, a live log - and drag it taller.
  */
 export const bottomPanel = (statusBarHtml, pane = '') =>
   (pane ? `<div class="bp-grip"></div><div class="bp-pane">${pane}</div>` : '') + statusBarHtml;
@@ -556,21 +556,21 @@ export const bottomPanel = (statusBarHtml, pane = '') =>
 
 /**
  * The page header inside the content column: the screen's name, the line under it, and the
- * screen's own actions. There is no breadcrumb and no global search — the tree is the only
+ * screen's own actions. There is no breadcrumb and no global search - the tree is the only
  * place a screen is named.
  *
  * <p>`back` is the exception, and it is not a breadcrumb: one control naming the list this page
- * was opened from. The tree cannot do this job — it says where you ARE, and pressing the menu
+ * was opened from. The tree cannot do this job - it says where you ARE, and pressing the menu
  * entry opens that list fresh, losing the filter, the page and the scroll position the reader
  * left behind. A reader who came from 「기한 지남 4건」 wants those four back, not all 214. So a
  * full page reached from a list carries one, above the title where a return is looked for, and
  * the pattern is settled rather than improvised as a 「목록으로」 button at the bottom of a page
  * long enough that nobody scrolls back to it.
  *
- * <p>It names the list — 「사업장 목록」, not 「뒤로」. Back-in-history is the browser's control and
+ * <p>It names the list - 「사업장 목록」, not 「뒤로」. Back-in-history is the browser's control and
  * says nothing about where it lands; a named list is a promise the page can keep.
  *
- * <p>`notices` is the action area's leading group — {@link noticeIcons} — and it leads because a
+ * <p>`notices` is the action area's leading group - {@link noticeIcons} - and it leads because a
  * card the reader closed is reached from nowhere else. `drop` is the {@link noticeDrop} one of
  * them has open; the header positions it, so a frame drawing the open state passes it here rather
  * than placing a panel of its own under the header.
@@ -587,18 +587,18 @@ export const pageHeader = ({
   `${drop}</div>`;
 
 /**
- * The actions a list row offers. Icons rather than words — a row is read by its data, not by
+ * The actions a list row offers. Icons rather than words - a row is read by its data, not by
  * its buttons.
  *
  * <p>**Every row draws every action, always, in the same place, and every row has the same
  * number of them.** One that cannot be used on this row right now is drawn disabled, never
  * removed. Which actions exist is a property of the screen, not of the row: a column whose
  * buttons shift from line to line cannot be run down with the eye, and a control that appears
- * and vanishes leaves a reader doubting what they saw a moment ago — then hunting for it on
+ * and vanishes leaves a reader doubting what they saw a moment ago - then hunting for it on
  * the row where it matters.
  *
  * <p>One button may stand for more than one thing by **changing its own icon or label in
- * place** — a toggle, a state that flips. What it must not do is move, or leave a gap.
+ * place** - a toggle, a state that flips. What it must not do is move, or leave a gap.
  *
  * @param actions `[{label, disabled}]`, or a bare label for one always available
  * @param more collapses the rest behind 더보기; it too is drawn on every row
@@ -663,7 +663,7 @@ export const rowActions = (actions, more = false) =>
 
 /**
  * Tabs over a list. A list gets these when its rows split into kinds somebody works through
- * separately — a status, a decision, a record type. Everything else is a filter: a tab that
+ * separately - a status, a decision, a record type. Everything else is a filter: a tab that
  * only narrows by one value is a filter wearing a costume.
  */
 export const listTabs = (items) =>
@@ -672,7 +672,7 @@ export const listTabs = (items) =>
 
 /**
  * The language switch that rides a field kept per language. It goes on what a worker reads in
- * their own tongue — the safety knowledge, the forms, the notices — and not on the ledger the
+ * their own tongue - the safety knowledge, the forms, the notices - and not on the ledger the
  * office keeps in the deployment's own language.
  */
 export const langTabs = (langs, active = 0) =>
@@ -691,7 +691,7 @@ export const formSection = (title, children, { one = false } = {}) =>
  * The mark that says a field cannot be left blank, in the reader's language.
  *
  * <p>A worker accepting an invitation reads the whole form in Tiếng Việt and met this one word in
- * Korean — and it is the word that decides whether they may press the button, so it is exactly
+ * Korean - and it is the word that decides whether they may press the button, so it is exactly
  * the kind that has to be readable.
  */
 const REQ_MARK = { ko: '필수', vi: 'Bắt buộc', en: 'Required', km: 'ចាំបាច់' };
@@ -707,7 +707,7 @@ export const fText = ({ label, value = '', hint = '', wide = false, required = f
  * <p>The value the reader sees is the entry for their own language; a language left blank falls
  * back to the first one filled, and the field shows that fallback as its placeholder so the
  * writer can tell what an empty language will actually print. One selector serves the whole
- * screen — every multilingual field on a screen moves to the same language together.
+ * screen - every multilingual field on a screen moves to the same language together.
  */
 export const fI18n = ({ label, value = '', lang = '한국어', hint = '', wide = false, required = false, reqLang = 'ko' }) =>
   `<div class="ffield${wide ? ' wide' : ''}"><span class="label">${label}${req(required, reqLang)}` +
@@ -729,13 +729,13 @@ export const fSelect = ({ label, value = '', hint = '', wide = false, required =
  * A number, with the stepper a number input carries.
  *
  * <p>**The box is as wide as the value it takes, never as wide as the column.** A field taking two
- * digits, stretched to the width a sentence needs, stops saying what goes in it — the reader meets
+ * digits, stretched to the width a sentence needs, stops saying what goes in it - the reader meets
  * 400px of empty box and has to read the label to find out it wants 「3」. So the box is sized from
  * the digits and the label above it keeps the column's width.
  *
  * @param digits how many digits the value may run to. Read off `value` when it is not given, which
  *   is right wherever the drawn value is a realistic one; state it where the drawn value is
- *   shorter than what the field accepts — a percentage showing 「8」 still has to hold 「100」
+ *   shorter than what the field accepts - a percentage showing 「8」 still has to hold 「100」
  */
 export const fNum = ({
   label, value = '', hint = '', unit = '', wide = false, required = false, lang = 'ko', digits = 0,
@@ -753,7 +753,7 @@ export const fArea = ({ label, value = '', hint = '', rows = 3, required = false
   `<span class="area" style="height:${18 + rows * 17}px">${value}</span>` +
   `${hint ? `<span class="fhint">${hint}</span>` : ''}</div>`;
 
-/** Many values at once — chips, a picker, a small table. Full width. */
+/** Many values at once - chips, a picker, a small table. Full width. */
 export const fMulti = ({ label, value, hint = '' }) =>
   `<div class="ffield wide"><span class="label">${label}</span>` +
   `<span class="multi">${value}</span>${hint ? `<span class="fhint">${hint}</span>` : ''}</div>`;
@@ -762,16 +762,16 @@ export const fMulti = ({ label, value, hint = '' }) =>
  * The controls a document editor puts above the page it is editing.
  *
  * <p>A page of editable prose with no toolbar says the text can be read, not that it can be
- * written — and the reviewer has no way to tell which of the editor's abilities the product is
+ * written - and the reviewer has no way to tell which of the editor's abilities the product is
  * committing to. The board fixes WHICH controls exist and how they cluster; the design system
  * decides what each one looks like.
  *
  * <p>**The clusters are the point.** Undo, the paragraph level, the character run, the lists, what
- * gets inserted, and the search — a reader finds a control by the group it belongs to, so a flat
+ * gets inserted, and the search - a reader finds a control by the group it belongs to, so a flat
  * run of twenty icons is a toolbar nobody learns. A rule separates one cluster from the next, the
  * way the console's tab row separates its own.
  *
- * @param groups `[[label, …], …]` — one array per cluster
+ * @param groups `[[label, …], …]` - one array per cluster
  * @param trail what rides the right end: the save state, the word count, the reader's own controls
  */
 export const editorBar = (groups = [], trail = '') =>
@@ -791,7 +791,7 @@ export const tabList = (children) => `<div class="tabbody">${children}</div>`;
  * One row of a tab that holds records, with the lines that belong under it.
  *
  * <p>A parent line carrying its own badges and one action, and beneath it the rows that only
- * mean something in its company — a work type and the tasks under it, an inspection and its
+ * mean something in its company - a work type and the tasks under it, an inspection and its
  * findings. `sub` empty is drawn as a sentence rather than as nothing, because "none yet" is
  * a state somebody comes here to read.
  *
@@ -820,7 +820,7 @@ export const drawer = ({ title, children }) =>
 /**
  * A mail as it lands in somebody's inbox.
  *
- * <p>Outgoing messages are screens too — a work-stop notice read on a phone at 22:40 is the
+ * <p>Outgoing messages are screens too - a work-stop notice read on a phone at 22:40 is the
  * product's most consequential surface and the one nobody wireframes. The chrome here is the mail
  * client's, drawn so the reviewer sees what the recipient sees: who it claims to be from, what the
  * subject line says before it is opened, and how much of it survives a preview pane.
@@ -843,7 +843,7 @@ export const mailFrame = ({ subject, from, to, children, foot = '', lang = 'ko' 
 };
 
 /**
- * A message as it lands in a messenger — 알림톡 · LINE · SMS.
+ * A message as it lands in a messenger - 알림톡 · LINE · SMS.
  *
  * <p>Drawn at phone width because that is the only width it is ever read at, and with the app's
  * own name on it because the recipient's trust in the message comes from the channel before it
@@ -872,7 +872,7 @@ export const split = (listHtml, detailHtml) => `<div class="split"><div class="p
  * Pass no detail for the closed state.
  *
  * <p>**The two states differ in the panel and in nothing else.** The gutter under the list is the
- * same open or closed — a list that gains or loses space beneath its rows reads as having moved,
+ * same open or closed - a list that gains or loses space beneath its rows reads as having moved,
  * and the reader who was half way down goes looking for the line they were on. The list column
  * carries that gutter itself rather than inheriting whatever the taller column leaves over.
  */
@@ -890,7 +890,7 @@ export const pageDetail = (children) => `<div class="page-detail">${children}</d
 /** Short peer sections on a wide dedicated page; tables and timelines stay outside at full width. */
 export const pageColumns = (items) => `<div class="page-cols">${items.join('')}</div>`;
 
-/** The panel's header — the record's own name, optional availability state, and close. */
+/** The panel's header - the record's own name, optional availability state, and close. */
 export const panelHead = (title, state = '') =>
   `<div class="ld-head"><span class="ph-title sm">${title}</span>` +
   `${state ? `<span class="badge outline panel-state">${state}</span>` : ''}<span class="ld-close" title="닫기">${ROW_ICONS.close}</span></div>`;
@@ -914,37 +914,37 @@ export const levelGauge = (value, { tone = '' } = {}) => {
 export const aiMark = () => `<span class="wf-ai" title="와이어프레임 식별용 · 실제 UI 요소 아님" aria-hidden="true">[AI]</span>`;
 
 /**
- * The panel's footer — the record's own actions. Delete keeps one fixed place.
+ * The panel's footer - the record's own actions. Delete keeps one fixed place.
  *
  * <p>**닫기 is a plain button here, never a ghost one.** Closing the panel is the one way back out
  * of this screen, and a control the reader has to hunt for along the footer's left edge is a way
  * out that is not obviously there. Ghost is for a secondary act; leaving is not one. A form panel
- * ends in 취소 rather than 닫기, and 취소 IS secondary — it stays ghost beside 저장.
+ * ends in 취소 rather than 닫기, and 취소 IS secondary - it stays ghost beside 저장.
  */
 export const panelFoot = (actions) => `<div class="ld-foot">${actions}</div>`;
 
 /**
  * The verbs the open tab asks for, on the row above {@link panelFoot}. They divide the row
  * between them, so what the tab offers is read without opening a menu. Switching tabs changes
- * this row and leaves the one below it alone — what is done to the record does not depend on
+ * this row and leaves the one below it alone - what is done to the record does not depend on
  * which of its tabs is open.
  */
 export const panelVerbs = (actions) => `<div class="ld-verbs">${actions}</div>`;
 
 /**
- * The panel in its form state — creating a record, or editing the one the list has open.
+ * The panel in its form state - creating a record, or editing the one the list has open.
  *
  * <p>**An entity's own form opens here and not in a dialog.** license-studio settles this and
  * every entity screen there follows it: the list stays on the left and the detail region switches
  * between 상세 · 새로 만들기 · 편집. The reader keeps the list, the filter and the scroll position
- * they arrived with, and the form is as wide as the panel rather than as wide as a modal — which
+ * they arrived with, and the form is as wide as the panel rather than as wide as a modal - which
  * is what lets a form of a dozen fields sit two to a row instead of stacking.
  *
  * <p>A dialog is still right for four things and only these: a sub-entity inside a parent's tab,
  * a confirm for something irreversible, a peek at a record another field refers to, and an output.
- * The test is the subject — if 저장 writes the row the list is showing, it belongs in this panel.
+ * The test is the subject - if 저장 writes the row the list is showing, it belongs in this panel.
  *
- * @param mode 새로 만들기 · 편집 — drawn beside the title, because an empty form and a loaded one
+ * @param mode 새로 만들기 · 편집 - drawn beside the title, because an empty form and a loaded one
  *   are otherwise told apart only by whether the fields happen to have values
  */
 export const panelForm = ({ title, mode = '새로 만들기', children, foot }) =>
@@ -962,11 +962,11 @@ export const tabs = (items) =>
  * A record page's phases as a rail down the left, with that phase's content beside it.
  *
  * <p>{@link tabs} is for the detail panel, where three to five phases fit across one line. A
- * record that earned its own page carries more — six phases put across the top truncate their
+ * record that earned its own page carries more - six phases put across the top truncate their
  * own names, and the reader cannot tell how many there are. Standing them down the left keeps
  * every name whole and turns the count into something read at a glance.
  *
- * @param items same shape as {@link tabs} — { label, active, count }
+ * @param items same shape as {@link tabs} - { label, active, count }
  * @param children what the active phase shows
  */
 export const recordTabs = (items, children) =>
@@ -977,13 +977,13 @@ export const recordTabs = (items, children) =>
 /**
  * The list column of a companion frame, standing in for what the base already draws there.
  *
- * <p>A companion keeps the base's two-column shape — list on the left, detail on the right — so a
+ * <p>A companion keeps the base's two-column shape - list on the left, detail on the right - so a
  * reader arriving from the base sees the same structure and reads the stacked panes as that
  * panel's tabs. This fills the list column; the moment it draws rows instead, the same records
  * live in two frames and only one of them gets corrected.
  *
  * @param label what stands here on the real screen
- * @param ref the NAME of the screen that draws it — never its frame id. This renders inside the
+ * @param ref the NAME of the screen that draws it - never its frame id. This renders inside the
  *   device frame, and a frame number that reaches a reader is the one thing a board never puts
  *   in a drawing; a screen's name is also what somebody building from the board can act on.
  */
@@ -1001,22 +1001,22 @@ export const regionPh = ({ label, ref }) =>
  *
  * <p>**The strip is the base's, drawn again per pane with that pane open.** Passing the base's
  * exported `tabStrip` rather than re-declaring the tabs is what keeps one drawing: a tab added or
- * relabelled moves in both places at once. It is also what keeps a capture census honest — a
+ * relabelled moves in both places at once. It is also what keeps a capture census honest - a
  * demand counted off literal `tabs([…])` declarations sees one strip, in the base, rather than two.
  *
  * <p>**The note it writes at the top is half of what the frame is for.** Without it, stacked panes
- * read as one long page and get built as one — a scrolling screen where a tab strip belongs.
+ * read as one long page and get built as one - a scrolling screen where a tab strip belongs.
  *
  * @param strip the base's `tabStrip(open)`, which draws the real strip with `open` active
  * @param open the pane the base frame draws, named so a reader knows why it is absent here
- * @param ref the base screen's NAME, never its frame id — see {@link regionPh}
+ * @param ref the base screen's NAME, never its frame id - see {@link regionPh}
  * @param of how many tabs the strip names, when that is more than these panes plus the open one.
- *   Sibling frames sometimes open panes of their own — a designer whose preview has a frame — so
+ *   Sibling frames sometimes open panes of their own - a designer whose preview has a frame - so
  *   the companion carries only what is left, and the note must not shrink the strip to fit it.
  * @param rail true where the base draws its phases with {@link recordTabs} rather than a top
- *   strip — that primitive takes the pane's body as its second argument and draws it beside the
+ *   strip - that primitive takes the pane's body as its second argument and draws it beside the
  *   rail, so the pane is handed over whole instead of being stacked under the strip
- * @param region where the strip sits — 「상세 패널」 for a strip inside a list-detail's panel,
+ * @param region where the strip sits - 「상세 패널」 for a strip inside a list-detail's panel,
  *   「화면」 for a page's own strip on a screen that draws neither a list column nor a panel
  * @param panes `{ label, verbs, body }` in the strip's order, the open one omitted
  */
@@ -1038,8 +1038,8 @@ export const tabPanes = ({
  * A block inside a detail section that takes the whole width rather than one field column.
  *
  * <p>`.fields` is two columns because a detail is mostly label-and-value pairs, and a `dField` can
- * already span both with `wide`. What had no way to say it is a block that is not a field at all —
- * a tree, a table, a chart — which lands in column one and is read as the left half of a pair that
+ * already span both with `wide`. What had no way to say it is a block that is not a field at all -
+ * a tree, a table, a chart - which lands in column one and is read as the left half of a pair that
  * has no right half.
  */
 export const full = (children) => `<div class="d-full">${children}</div>`;
@@ -1049,12 +1049,12 @@ export const full = (children) => `<div class="d-full">${children}</div>`;
  *
  * <p>A detail whose subject is a physical thing opens with the thing. Stacking the photo above a
  * two-column field grid pushes the values that answer 「is this the one」 below the fold, and a
- * photo alone answers nothing — the pair is what the reader checks against what they are holding.
+ * photo alone answers nothing - the pair is what the reader checks against what they are holding.
  *
  * <p>It spans the section's full width, so the fields beside the picture are a column of their own
  * rather than half of the outer grid.
  *
- * @param media a `mediaPh` — `size: 'lg'` unless the panel is unusually narrow
+ * @param media a `mediaPh` - `size: 'lg'` unless the panel is unusually narrow
  * @param fields the `dField`s that identify the record. The rest of the record stays in the
  *   sections below; this is the answer to 「which one is this」, not a summary of everything
  */
@@ -1065,7 +1065,7 @@ export const section = (title, children) =>
   `<div class="sect">${title ? `<div class="sect-t">${title}</div>` : ''}<div class="fields">${children}</div></div>`;
 
 /**
- * A section heading for a block that is not fields — a lifecycle rail, an attachment grid, a
+ * A section heading for a block that is not fields - a lifecycle rail, an attachment grid, a
  * chart inside a panel.
  *
  * <p>{@link section} carries its own heading, but only around a grid of fields. A rail dropped
@@ -1076,14 +1076,14 @@ export const section = (title, children) =>
 export const sectHead = (title) => `<div class="sect-t sect-head">${title}</div>`;
 
 /**
- * One read-only field: its label, its value, and — when the value names another record —
+ * One read-only field: its label, its value, and - when the value names another record -
  * the external-link control that peeks at it.
  */
 export const dField = ({ label, value, peek = false, wide = false, top = false }) =>
   `<div class="dfield${wide ? ' wide' : ''}${top ? ' top' : ''}"><span class="dlabel">${label}</span>` +
   // The control is an arrow, not a word. It stands after a value on every reference in a detail,
   // so a label repeated down a panel becomes a column of the same word read as text; the arrow is
-  // read as a control at a glance and says which way the reader is about to go — out and up, into
+  // read as a control at a glance and says which way the reader is about to go - out and up, into
   // the referenced record. What it opens is the dialog the reading contract describes.
   `<span class="dvalue">${value}${peek ? `<span class="peek out" title="미리 보기">${ROW_ICONS.external}</span>` : ''}</span></div>`;
 
@@ -1093,16 +1093,16 @@ export const dField = ({ label, value, peek = false, wide = false, top = false }
  *
  * <p>**The id is whole and copyable.** An outsider reading this to write a report needs the
  * identifier in their notes, and `sub_48112…` truncated with an ellipsis cannot be transcribed
- * — an inspector who cannot name the record cannot cite it.
+ * - an inspector who cannot name the record cannot cite it.
  *
  * <p>**A record that cannot change says so instead of showing a modified time.** On an immutable
- * record — a signature certificate, an evidence package, an export — 「수정」 beside 「생성」 says
+ * record - a signature certificate, an evidence package, an export - 「수정」 beside 「생성」 says
  * the thing changed after it was fixed, which is exactly what the screen elsewhere promises never
  * happens. Pass `updated` as `null` and the strip prints 「고칠 수 없음」 in its place.
  *
  * <p>**It is drawn under the FIRST tab and hidden under the others.** The strip sits at the foot of
  * the panel, so under a tab holding a rule table or an equipment list it reads as belonging to what
- * that tab is showing — the reader takes `ID sub_48112` for the identifier of the rule they were
+ * that tab is showing - the reader takes `ID sub_48112` for the identifier of the rule they were
  * reading rather than of the record the panel is about. The first tab is the record itself, and
  * there the strip says what it means.
  */
@@ -1115,7 +1115,7 @@ export const auditFoot = (created, updated) =>
 /**
  * A dialog, in the one shape every dialog takes: a titled head, the body, and the actions.
  *
- * <p>The head and the foot are separated by rules that run the **full width** — no inset. What
+ * <p>The head and the foot are separated by rules that run the **full width** - no inset. What
  * they divide is not decoration: the head says what record this is about, the foot says what
  * will be done to it, and a reader must be able to find both without reading the middle. A rule
  * that stops short of the edge reads as a divider inside the content instead.
@@ -1150,7 +1150,7 @@ export const peekDialog = ({ title, state = '', children }) =>
  *
  * <p>Three things sit in one control because they are one question. The **range** says exactly
  * which window is on screen, down to the minute. The **grain** row picks how wide that window is
- * — five minutes to a month — so the same control serves "what happened in the last five
+ * - five minutes to a month - so the same control serves "what happened in the last five
  * minutes" and "what happened this month". The **track** shows where the events actually are,
  * as density, before anything is filtered.
  *
@@ -1158,7 +1158,7 @@ export const peekDialog = ({ title, state = '', children }) =>
  * incident does not know when it happened; they know it was busy. The blocks say where to look,
  * and the arrows step the window by its own width so scanning backwards is one repeated press.
  *
- * <p>The now line stays drawn even when the window does not contain it — otherwise a reader
+ * <p>The now line stays drawn even when the window does not contain it - otherwise a reader
  * scrolled back three days cannot tell which direction the present is in.
  *
  * @param blocks density bands as `[left%, width%]`, in track coordinates
@@ -1196,17 +1196,17 @@ export const timeScrubber = ({
  * <p>**The view switch is where a calendar belongs.** Records that fall on dates can be read as
  * rows or as the month they land on, and drawing BOTH on one page costs the reader the whole
  * first screenful before the first row while saying the same thing twice. So the page draws one
- * of them and this segment says which — from here rather than from the page header, because the
+ * of them and this segment says which - from here rather than from the page header, because the
  * bar carries the total and the committed filters and those survive the switch. Somebody who
  * narrowed to 「허가 없음」 and then pressed 「달력」 gets those six on the month, not all 84.
  *
- * @param views the segment's labels — `['목록', '격자']` where nothing falls on a date
+ * @param views the segment's labels - `['목록', '격자']` where nothing falls on a date
  * @param view which of them is showing
  */
 export const filterBar = ({ total, applied = [], hidden = 0, columns = true,
   views = ['목록', '격자'], view = '목록', search = '' }) =>
   `<div class="filterbar"><span class="total">${total}</span>` +
-  // A list somebody arrives at holding a query — an article number, a record id — needs the box
+  // A list somebody arrives at holding a query - an article number, a record id - needs the box
   // in its own bar. Sending them to the global search loses the filters they came in with.
   (search ? `<span class="fb-find"><span class="ph">${search}</span></span>` : '') +
   (OPTIONS.listViewToggle && views.length
@@ -1218,7 +1218,7 @@ export const filterBar = ({ total, applied = [], hidden = 0, columns = true,
 
 /**
  * A column heading. Every column of a searchable list can be sorted, so the wireframe marks
- * only the one the list is actually ordered by — the affordance on the rest appears on hover
+ * only the one the list is actually ordered by - the affordance on the rest appears on hover
  * and is not a wireframe concern.
  */
 export const th = (label, { w = '', dir = '' } = {}) =>
@@ -1226,27 +1226,27 @@ export const th = (label, { w = '', dir = '' } = {}) =>
   `${dir ? `<span class="ar">${dir === 'asc' ? '↑' : '↓'}</span>` : ''}</span>`;
 
 /**
- * A tree that IS the list — the shape the framework gives a hierarchy somebody works through: a
+ * A tree that IS the list - the shape the framework gives a hierarchy somebody works through: a
  * header row, ordinary columns, and a first column carrying the indent, the caret and the label.
- * Everything a flat list has, it has — a sorted header, a status column, the row's own verbs.
+ * Everything a flat list has, it has - a sorted header, a status column, the row's own verbs.
  *
  * <p>**A tree without a header is a navigation aid; a tree with one is a list.** Drawn as a bare
  * outline beside the panel it can carry none of those, so the status and the actions get drawn a
- * second time as a table above the region — and then the same records stand in two places on one
+ * second time as a table above the region - and then the same records stand in two places on one
  * page and neither reads as the list.
  *
  * <p>What the hierarchy costs is width, because the first column spends it on indentation. Beside
  * a 720px panel that leaves room for two further columns, so everything else about the selected
  * node goes into the panel where it belongs.
  *
- * <p>The further columns and the action column are `.td.tight` — they take what they hold and no
+ * <p>The further columns and the action column are `.td.tight` - they take what they hold and no
  * more. `.fix` takes the width of the joined icon group, so the action column stays against the
  * list edge and the name column keeps the width that would otherwise be empty padding.
  *
- * @param rows `[{label, depth, open, leaf, active, badge, count, cells, actions}]` — `cells` are
+ * @param rows `[{label, depth, open, leaf, active, badge, count, cells, actions}]` - `cells` are
  *   pre-classed `.td` strings for the further columns, `actions` becomes the trailing column
  */
-// A tree that IS the list is still a table, and its columns still have to line up across rows —
+// A tree that IS the list is still a table, and its columns still have to line up across rows -
 // the same grid, from the same header. Without it the four boards that draw one had their second
 // column start at a different x on every row, because the first column sized to each label.
 export const treeTable = ({ head, rows, wrap = false }) =>
@@ -1266,7 +1266,7 @@ export const treeTable = ({ head, rows, wrap = false }) =>
 
 /**
  * The tree list's own bar. A flat list's bar carries the total and the committed filters; a tree
- * carries those and one thing more — whether the whole hierarchy is open. Without it somebody
+ * carries those and one thing more - whether the whole hierarchy is open. Without it somebody
  * looking for a node three levels down opens every branch by hand.
  */
 export const treeBar = ({ total, expanded = true, applied = [], hidden = 0, search = '' }) =>
@@ -1283,8 +1283,8 @@ export const treeBar = ({ total, expanded = true, applied = [], hidden = 0, sear
  * One value a reader types straight into the table.
  *
  * <p>Drawn as a box rather than as text so a column that can be edited says so before anyone
- * clicks it. An empty box is a value nobody has entered yet — different from a zero, which is
- * an entered value — so it is dashed rather than blank.
+ * clicks it. An empty box is a value nobody has entered yet - different from a zero, which is
+ * an entered value - so it is dashed rather than blank.
  *
  * @param value the value, or null when the row has none
  * @param unit the unit shown beside it, omitted when the column header already carries it
@@ -1295,7 +1295,7 @@ export const cellInput = ({ value = null, unit = '', bad = false } = {}) =>
   `${value == null ? '값 없음' : value}${unit ? `<span class="unit">${unit}</span>` : ''}</span>`;
 
 /**
- * A line the page says before its content — where the rest of this record's work is done, most
+ * A line the page says before its content - where the rest of this record's work is done, most
  * often. Aligned with the page header rather than with whatever follows, because it is the
  * page speaking and not the list.
  */
@@ -1309,8 +1309,8 @@ export const modal = (children) => `<div class="dim"></div><div class="modal">${
 /**
  * Where an applied period, deadline, count or retention term came from.
  *
- * <p>Three layers can set one of these — what the statute fixes, what the industry pack
- * proposes, what the site configured — and the number alone says nothing about which won. An
+ * <p>Three layers can set one of these - what the statute fixes, what the industry pack
+ * proposes, what the site configured - and the number alone says nothing about which won. An
  * operator asked to defend a schedule to an inspector needs the article it rests on, so the
  * badge rides every such value and opens the reading of all three.
  *
@@ -1325,7 +1325,7 @@ export const sourceBadge = (source, basis = '') =>
  * A message the page says in place, as opposed to a toast that passes or a dialog that blocks.
  *
  * <p>**The kind is drawn, never left to colour alone.** This board is greyscale with one accent,
- * and the product will be read by people in the field on cheap screens in daylight — a message
+ * and the product will be read by people in the field on cheap screens in daylight - a message
  * whose only difference from the next one is a hue is a message nobody sorts. Each kind carries
  * its word.
  *
@@ -1345,7 +1345,7 @@ export const sourceBadge = (source, basis = '') =>
  * card's CONTENT changes with what is on the site right now.** If it does, the card stays:
  * dismissal is remembered per person and for good, while the state it describes changes daily, so
  * whoever closed 「정책이 없는 안전구역이 1개 있습니다」 today is not shown tomorrow's zone losing
- * its policy. A standing fact — how the screen is used, what the rule is, what may not be edited —
+ * its policy. A standing fact - how the screen is used, what the rule is, what may not be edited -
  * is the same sentence every day and closes.
  *
  * <p>Read the two apart by trying to write the sentence for an empty site. 「배정 기록에서 매일
@@ -1354,13 +1354,13 @@ export const sourceBadge = (source, basis = '') =>
  *
  * @param kind help · info · warn · error · example · legal
  * @param status the card's content depends on the site's current state, so it does not close
- * @param dismiss overrides the kind's own answer — `false` where the page has no notice header to
+ * @param dismiss overrides the kind's own answer - `false` where the page has no notice header to
  *   bring the card back from, which is every screen outside the console. It cannot override the
  *   board: where `dismissibleNotices` is off no card closes, because a close with no header behind
  *   it deletes the card rather than dismissing it
  */
 /**
- * The kinds of notice card a page carries — the ones that close.
+ * The kinds of notice card a page carries - the ones that close.
  *
  * <p>A notice card takes a row of the page for as long as the page exists, so every one of them
  * closes, and the header keeps the way back with one control per kind. **The bound on the set is
@@ -1369,7 +1369,7 @@ export const sourceBadge = (source, basis = '') =>
  * they cannot find a closed card under.
  *
  * <p>`error` is not among them. A message saying the reader is blocked right now is the answer to
- * something they just did, gone on the next attempt, and it survives nothing — the test is whether
+ * something they just did, gone on the next attempt, and it survives nothing - the test is whether
  * it is still there a minute later with the reader doing nothing. A standing hazard is a different
  * message and is `danger`, which closes like the rest. `example` and `legal` are reference beside a
  * field rather than notices about the page, and they do not close either.
@@ -1377,12 +1377,12 @@ export const sourceBadge = (source, basis = '') =>
 export const NOTICE_KINDS = { help: '?', warn: '!', info: 'i', danger: '!' };
 
 /**
- * The mark beside every kind's word — including the kinds that do not close.
+ * The mark beside every kind's word - including the kinds that do not close.
  *
  * <p><b>Which kinds close and which kinds are marked are two questions, and one table answering
  * both is how the second one gets lost.</b> A mark looked up in {@link NOTICE_KINDS} draws nothing
  * beside 오류 · 예시 · 근거, so the three kinds a reader most needs to tell apart at a glance are
- * separated by colour alone — and colour alone does not reach a reader who cannot separate two
+ * separated by colour alone - and colour alone does not reach a reader who cannot separate two
  * tints, which is the thing the marks exist for. **A message that does not close still has to say
  * what kind of message it is.**
  *
@@ -1396,15 +1396,15 @@ export const NOTICE_MARKS = { ...NOTICE_KINDS, error: '!', example: '▷', legal
 export const noticeClose = () => `<span class="n-close" title="닫기">${ROW_ICONS.close}</span>`;
 
 /**
- * The notice controls in a page header's action area — one per kind of card the page carries.
+ * The notice controls in a page header's action area - one per kind of card the page carries.
  *
  * <p>**A control stays whether or not its cards are showing.** It is the only way back to a card
  * the reader closed, and dismissal is remembered per person, so a control drawn only while a card
  * is open would vanish exactly when it is needed. The count on it is how many of that kind the
  * page has; the mark says some of them are closed right now.
  *
- * <p>Pressing one opens {@link noticeDrop} below the header. What a card offers — 「설명 보기」 and
- * the like — is pressed from there, so closing a card never puts its dialog out of reach.
+ * <p>Pressing one opens {@link noticeDrop} below the header. What a card offers - 「설명 보기」 and
+ * the like - is pressed from there, so closing a card never puts its dialog out of reach.
  *
  * @param kinds `[{ kind, n, hidden }]` in the order help · warn · info, kinds the page has only
  */
@@ -1426,17 +1426,17 @@ export const noticeIcons = (kinds) =>
  * rather than with a close it does not have.
  *
  * <p>**What it lists are the cards, drawn as cards.** Each row is the same {@link msg} the page
- * draws — its kind's mark and colour, its background, border, corners and padding — because what
+ * draws - its kind's mark and colour, its background, border, corners and padding - because what
  * the reader came here for is a card they saw and hid, and a menu row of the same words does not
  * look like the thing they are looking for. Its own buttons come with it: 「설명 보기」 is pressed
  * from here, or closing a card would put its explanation out of reach. The control that puts the
  * card back is the panel's and stands beside it rather than inside it.
  *
- * <p>**The panel is as wide as the cards need**, not as wide as a menu — the title and the body's
+ * <p>**The panel is as wide as the cards need**, not as wide as a menu - the title and the body's
  * first line do not fold. Squeezed to a menu's width a one-line notice becomes three, and a
  * dropdown harder to read than the card it stands for is one nobody opens twice.
  *
- * @param title what the reader pressed — 「주의 2건」
+ * @param title what the reader pressed - 「주의 2건」
  * @param items `[{ kind, title, body, hint, hidden, fixed, action }]`; `hidden` marks a card the
  *   reader closed, `fixed` a status card, which neither closes nor comes back
  */
@@ -1454,18 +1454,18 @@ export const noticeDrop = ({ title, items }) =>
  * The card an entity's explanation lives behind.
  *
  * A legend of the states a record moves through, a table of what each grade requires, a
- * walkthrough of how to read the screen — drawn inline, that material pushes the actual work
+ * walkthrough of how to read the screen - drawn inline, that material pushes the actual work
  * below the fold and is read once in a reviewer's life. It is reference, not the page's job.
  * So the page keeps a one-line card that says what the explanation answers, and pressing it
- * opens the explanation as a dialog. The card goes where reference belongs — under the list,
- * over the list-detail, or at the top of a detail tab — and the work stays where it was.
+ * opens the explanation as a dialog. The card goes where reference belongs - under the list,
+ * over the list-detail, or at the top of a detail tab - and the work stays where it was.
  *
  * <p>It is a 도움말 notice card, so it closes like one and the header's `?` brings it back. Pass
- * `dismiss: false` where the card is not on a page with that header — a wizard step, a dialog —
+ * `dismiss: false` where the card is not on a page with that header - a wizard step, a dialog -
  * and closing it would put the explanation out of reach.
  *
  * <p><b>The control says 「설명 보기」 rather than 「펼쳐 보기」.</b> What it opens is a dialog, and
- * 「펼쳐」 promises the opposite — that the material unfolds where the card stands, which is the very
+ * 「펼쳐」 promises the opposite - that the material unfolds where the card stands, which is the very
  * shape this component exists to replace. A board drawing the other word contradicts its own screens
  * one label at a time, and the chapter generator copies that word into every demand it writes.
  */
@@ -1482,7 +1482,7 @@ export const helpCard = ({ title, hint = '', open = '설명 보기', dismiss = n
  * The six kind words, in the four languages a site runs.
  *
  * <p>**The kind word is the first thing read in a message and the last thing translated.** It is
- * the grade — whether this is a notice, a caution or a refusal — and on a worker's phone it sat in
+ * the grade - whether this is a notice, a caution or a refusal - and on a worker's phone it sat in
  * Korean above a body written in Tiếng Việt, so the reader met the sentence without knowing how
  * bad it was. The shell already follows `lang` for the tab row and the offline strip; a message
  * head is the third thing always on that screen.
@@ -1498,14 +1498,14 @@ const MSG_KIND = {
  * What a list draws when it holds nothing.
  *
  * <p>**An empty state names the next action.** A box that says 「없습니다」 and stops leaves the
- * reader to work out for themselves whether the list is broken, filtered, or simply new — three
+ * reader to work out for themselves whether the list is broken, filtered, or simply new - three
  * different situations that look identical when only the absence is drawn.
  *
  * <p>Filtered-to-zero and never-had-anything are DIFFERENT screens and each is its own frame:
  * the first offers 「필터 지우기」 and the second offers the create verb. Drawing one for both is
  * how a reader ends up clearing a filter that was never applied.
  *
- * @param action the button that resolves it — the create verb, or clearing the filter
+ * @param action the button that resolves it - the create verb, or clearing the filter
  */
 export const emptyState = ({ title, body = '', action = '' }) =>
   `<div class="empty"><div class="empty-t">${title}</div>` +
@@ -1532,7 +1532,7 @@ export const msg = ({
  * A capability the installation cannot reach, and why.
  *
  * <p>An air-gapped site loses AI translation, AI drafting, external timestamping and outside
- * certificate checks — and none of that is an edition it failed to buy. The two look identical
+ * certificate checks - and none of that is an edition it failed to buy. The two look identical
  * once a control is merely greyed, so an operator raises a support ticket for something no
  * purchase can fix, or waits for a network that is deliberately absent. This badge is what
  * keeps them apart from the 「라이선스」 lock the navigation column draws (설계서 5.5절).
@@ -1542,23 +1542,23 @@ export const msg = ({
 /**
  * A value a calculation or a model produced, rather than a person or a rule.
  *
- * <p>The reader's question at every value is the same — can I sign this as it stands. A number a
+ * <p>The reader's question at every value is the same - can I sign this as it stands. A number a
  * person typed, a number a statute fixed and a number a model guessed all render as digits, so
  * the screen has to say which. `sourceBadge` answers a different question (what DECIDED this
  * value: a statute, the site's setting, an industry pack); this one answers how it was MADE.
  *
- * <p>**The words are five and closed** — 추정 (a calculation's forecast) · 자동 분류 (a model's
+ * <p>**The words are five and closed** - 추정 (a calculation's forecast) · 자동 분류 (a model's
  * label) · 자동번역 · 초안 (generated prose) · 사진 판독 (vision). A sixth word would be a sixth
  * thing the reader has to learn, and `aiWordGate` refuses one.
  *
  * <p>**A reviewed value carries no badge.** The badge marks what has not been through a person
- * yet, exactly as machine translation does today — so it disappears on review rather than turning
+ * yet, exactly as machine translation does today - so it disappears on review rather than turning
  * into 「검수함」, which would leave the screen with a badge on every value and none of them
  * meaning anything.
  */
 /**
- * The five words in the four languages a site runs. The Korean word stays the API key — it is what
- * `aiWordGate` reads and what keeps the set closed at five — and the spelling follows the reader.
+ * The five words in the four languages a site runs. The Korean word stays the API key - it is what
+ * `aiWordGate` reads and what keeps the set closed at five - and the spelling follows the reader.
  * A worker signing a TBM has to know the text was machine-translated, which is the one thing the
  * badge exists to say, and it said it in Korean over a Vietnamese sentence.
  */
@@ -1577,7 +1577,7 @@ export const aiBadge = (kind, basis = '', lang = 'ko') =>
 /**
  * What on this screen a model made, and what happens on an installation where it is off.
  *
- * <p>Placed where the screen's work depends on a feature that can be absent — the form generator,
+ * <p>Placed where the screen's work depends on a feature that can be absent - the form generator,
  * the incident classifier, the photo reader. It is not put on a screen that merely shows one
  * estimated number, because the badge already says that and a card there would cost the list a
  * row for nothing.
@@ -1611,16 +1611,16 @@ export const lockNote = (basis, until) =>
   `<span>${basis}</span><span class="spacer"></span><span class="mono">${until}</span></div>`;
 
 /**
- * A page as it will be printed or exported — the paper, not the screen.
+ * A page as it will be printed or exported - the paper, not the screen.
  *
  * <p>**The paper keeps its real proportion, and it ends where the page ends.** A box that grows to
  * whatever was put in it is not a preview of anything: content ran past the bottom of the page and
  * kept drawing, which reads as a broken frame rather than as 「this is page 2's worth」. So the
- * sheet takes its aspect ratio from the paper it claims to be, and clips — the viewer's `marks`
+ * sheet takes its aspect ratio from the paper it claims to be, and clips - the viewer's `marks`
  * and `status` are what say a page was cut, and `inspect.mjs` reports a sheet whose content does
  * not fit, which is the signal that the page needs less on it or more pages.
  *
- * @param ratio the paper's shape, normally read off `size` — `port` A4/A5 upright · `land`
+ * @param ratio the paper's shape, normally read off `size` - `port` A4/A5 upright · `land`
  *   sideways · `card` a credential 86×54mm, which has no page after it
  */
 export const printSheet = ({ title, children, size = 'A4 세로', ratio = '' }) => {
@@ -1634,7 +1634,7 @@ export const printSheet = ({ title, children, size = 'A4 세로', ratio = '' }) 
  *
  * <p>A credential is not a document with pages to step through, but it does have two sides, and a
  * sheet that draws one while its caption promises the other 「뒷면에 QR이 인쇄됩니다」 is a preview
- * of half the artefact — the side carrying the QR, the emergency number and the terms is the side
+ * of half the artefact - the side carrying the QR, the emergency number and the terms is the side
  * nobody checked. Two faces of a card are read at once rather than paged, so they are drawn at
  * once; a viewer's rail would be the wrong control for something that has no page 3.
  */
@@ -1644,7 +1644,7 @@ export const sheetRow = (sheets) => `<div class="sheet-row">${sheets.join('')}</
  * The window of pages the rail shows.
  *
  * <p>The rail is short, so it holds the pages around the one being read rather than the first
- * six — a reader on page 9 of 11 needs 8, 9 and 10 beside them, and a rail that always starts
+ * six - a reader on page 9 of 11 needs 8, 9 and 10 beside them, and a rail that always starts
  * at 1 shows none of those.
  */
 // The three fits draw three different pictures, and a viewer that draws one of them under all
@@ -1664,7 +1664,7 @@ const railWindow = (pages, page, max = 6) => {
  *
  * <p>**One page drawn at one size is not a viewer.** The reader cannot reach page 7, cannot see
  * that page 7 is where the table breaks, and cannot enlarge the print far enough to check a
- * figure before it goes to an office — and those are the three things somebody opens a preview
+ * figure before it goes to an office - and those are the three things somebody opens a preview
  * to do. So the toolbar carries the page step, the zoom, the fit and the find; the rail carries
  * every page as a thumbnail and marks the ones with a problem; and the status line states the
  * paper the document is on.
@@ -1672,13 +1672,13 @@ const railWindow = (pages, page, max = 6) => {
  * <p>**The viewer owns how a document is read, never what it is made of.** Page, zoom, fit,
  * find and which language is drawn belong here. Paper, margins, copies and which languages are
  * printed at all stay on the page or in the print form, because those change the output rather
- * than the view — put them in the toolbar and a reader who only wanted a closer look has
+ * than the view - put them in the toolbar and a reader who only wanted a closer look has
  * changed the document.
  *
- * @param sheet  the paper — {@link printSheet}
+ * @param sheet  the paper - {@link printSheet}
  * @param marks  page numbers the rail flags, for what will be cut or is missing
  * @param note   the strip under the toolbar: the one thing wrong with this render
- * @param noteActions the ways out of what the note names — they belong beside it, not in a
+ * @param noteActions the ways out of what the note names - they belong beside it, not in a
  *   separate message under the viewer, where a reader has already sent the job to the printer
  */
 export const docViewer = ({
@@ -1689,7 +1689,7 @@ export const docViewer = ({
   `<div class="dv"><div class="dv-bar">` +
   `<span class="dv-step"><span class="dv-b">‹</span>` +
   // The parts are separate elements because `.dv-pg` is a flex container, and a flex container
-  // strips the whitespace around a bare text run — 「3 / 4」 came out as 「3/ 4」.
+  // strips the whitespace around a bare text run - 「3 / 4」 came out as 「3/ 4」.
   `<span class="dv-pg"><b>${page}</b><span>/</span><span>${pages}</span></span>` +
   `<span class="dv-b">›</span></span>` +
   `<span class="dv-step"><span class="dv-b">−</span><span class="dv-pg">${zoom}</span>` +
@@ -1721,7 +1721,7 @@ export const docViewer = ({
  * The dialog a 「출력 미리 보기」 control opens: the whole document in a {@link docViewer},
  * over the screen it was reached from.
  *
- * <p>The foot carries what leaves the screen — the file and the printer — while the toolbar
+ * <p>The foot carries what leaves the screen - the file and the printer - while the toolbar
  * carries what only changes the view, so a reader who zoomed in has not altered what prints.
  */
 // The viewer's keys are repeated here rather than gathered with a rest element: a rest hides the
@@ -1801,7 +1801,7 @@ export const CATALOG = [
  *
  * <p>A number alone is not a fact a person can act on: 12 is good or terrible depending on last
  * month, on the target, and on what the law requires. So a tile carries its comparison, and the
- * comparison is drawn — an arrow with no baseline is decoration.
+ * comparison is drawn - an arrow with no baseline is decoration.
  *
  * <p>**Not every measure deserves a tile.** A tile is for a figure somebody steers by; the rest
  * belong in a table where they can be read against their neighbours.
@@ -1827,7 +1827,7 @@ export const statTile = ({ label, value, unit = '', trend = '', basis = '', tone
  * <p>「지난달보다 5% 늘었다」 answers what changed between two points and hides everything between
  * them: a figure that fell for three weeks and jumped in the last two days reads the same as one
  * that climbed steadily, and only one of those is a problem. **A tile whose measure has a series
- * behind it carries that series** — where it does not (a count of what is true right now), it
+ * behind it carries that series** - where it does not (a count of what is true right now), it
  * carries none rather than a made-up one.
  *
  * <p>No axis, no gridlines, no labels: it is the shape, not a chart. The number above it is what
@@ -1842,21 +1842,21 @@ export const sparkline = (kind = 'line') =>
       `<polyline points="0,26 20,22 40,24 60,14 80,17 100,8 120,6"/></svg>`;
 
 /**
- * A chart's PLACE and its form — not its pixels.
+ * A chart's PLACE and its form - not its pixels.
  *
  * <p>The board fixes which question the figure answers, because that decides the form: change
  * over time is a line, magnitude across categories is a bar, parts of one whole is a stack,
  * progress toward a target is a bar with the target marked, a spread is a distribution. The
  * design system decides colour, type and motion; it does not get to decide that a trend is a pie.
  *
- * <p>Two rules ride along and are drawn here because they are broken so often: **one axis** —
- * two measures of different scale are two charts, never two y-scales on one — and **a legend
+ * <p>Two rules ride along and are drawn here because they are broken so often: **one axis** -
+ * two measures of different scale are two charts, never two y-scales on one - and **a legend
  * whenever there is more than one series**, since identity must never rest on colour alone.
  *
  * @param kind line · bar · stack · progress · dist
  */
 /** `progress` draws ONE bar against a target. A legend of several series beside a single mark
- *  says the picture shows something it does not — comparing categories is `bar`, and parts of one
+ *  says the picture shows something it does not - comparing categories is `bar`, and parts of one
  *  whole is `stack`. The mismatch is invisible in a greybox, so the component refuses it. */
 export const chartPh = ({
   kind = 'line', title = '', legend = [], note = '', height = 132, goal = '목표 80%', x = '', y = '',
@@ -1869,14 +1869,14 @@ export const chartPh = ({
 };
 
 /**
- * @param x what the horizontal axis runs over — 「2026-08 · 사업소」, 「최근 12개월」
- * @param y what the height means, with its unit — 「사용 수량(개)」, 「잔량(%)」
+ * @param x what the horizontal axis runs over - 「2026-08 · 사업소」, 「최근 12개월」
+ * @param y what the height means, with its unit - 「사용 수량(개)」, 「잔량(%)」
  */
 const chartBody = ({ kind, title, legend, note, height, goal, x = '', y = '' }) => {
   const body = {
     // One line per named series, so a chart of four slots does not draw two. The legend is the
     // count: a placeholder showing fewer lines than the legend names is read as a chart that lost
-    // some, and the reader cannot tell which. Four paths is the cap — beyond that a line chart is
+    // some, and the reader cannot tell which. Four paths is the cap - beyond that a line chart is
     // the wrong picture and the board should say so rather than draw a thicket.
     line: (() => {
       const paths = [
@@ -1909,17 +1909,17 @@ const chartBody = ({ kind, title, legend, note, height, goal, x = '', y = '' }) 
 // ── patterns that need a shape of their own ────────────────────────────────
 
 /**
- * A month a person plans work in. Not a picture of dates — a surface things are put on.
+ * A month a person plans work in. Not a picture of dates - a surface things are put on.
  *
  * <p>What a day cell must carry is decided by what people come here to answer: is anything
  * running, does anything need me, and is this day workable at all. So a cell shows the count,
  * the two or three that matter by name, and whether the day is a holiday or a shift the site
- * does not run — a plan made onto a day nobody works is the failure this prevents.
+ * does not run - a plan made onto a day nobody works is the failure this prevents.
  *
  * @param days `[{n, marks:[{label, tone}], today, off, more}]`
  */
 /** The keys a calendar and a day understand. A call written with `month`/`today`/`marks` at the
- *  top level — the shape a person expects — renders the weekday strip and an EMPTY grid: the
+ *  top level - the shape a person expects - renders the weekday strip and an EMPTY grid: the
  *  content was written, nothing drew, and every check upstream passes because the markup is
  *  balanced and no value leaked. So the component refuses instead, and the build names the file. */
 const CAL_KEYS = new Set(['month', 'head', 'days']);
@@ -1956,8 +1956,8 @@ export const calendar = (opts) => {
  * language × field.
  *
  * <p>**The axes are named on the grid, not above it.** A matrix whose meaning lives in a
- * paragraph is a matrix people fill in wrong. Where the cell value carries a rule — a score
- * that crosses into 「높음」, a permission that grants more than the role above it — the rule is
+ * paragraph is a matrix people fill in wrong. Where the cell value carries a rule - a score
+ * that crosses into 「높음」, a permission that grants more than the role above it - the rule is
  * drawn in the cell, because that is where the decision is made.
  *
  * <p>**Where the row axis is a hierarchy, the hierarchy lives in this grid rather than in a tree
@@ -1986,7 +1986,7 @@ export const matrix = ({ corner = '', cols = [], rows = [] }) =>
  * to, and what happens next. A progress bar answers only the first, and the person who needs to
  * chase somebody is left to find out who by asking.
  *
- * @param steps `[{label, who, at, state}]` — done · now · wait · reject
+ * @param steps `[{label, who, at, state}]` - done · now · wait · reject
  */
 export const approvalFlow = (steps) =>
   `<div class="aflow">${steps.map((s) =>
@@ -1997,33 +1997,33 @@ export const approvalFlow = (steps) =>
     `${s.at ? `<span class="af-at">${s.at}</span>` : ''}</span></div>`).join('')}</div>`;
 
 /**
- * The Korean approval block — the stamp grid that sits at the top right of a document.
+ * The Korean approval block - the stamp grid that sits at the top right of a document.
  *
  * <p>Every approval form in this country carries it and every reader looks there first: one column
  * per position in the line, the position named across the top, and the cell beneath it holding the
- * signature. Empty means it has not been signed yet, which is the whole point — the shape says at a
+ * signature. Empty means it has not been signed yet, which is the whole point - the shape says at a
  * glance how far the document has got without anybody reading a word of it.
  *
  * <p>**It goes at the top right, always.** Placed in document order it is met after the thing it
  * qualifies, and the reader has already read the form before learning who has to sign it. On a page
  * with a detail panel the panel is already the right column, so the box stands at the head of that
  * panel. On a page with no panel it goes in a row with whatever else the page puts on its top line
- * — a steps rail, a filter — and hugs the right edge from there.
+ * - a steps rail, a filter - and hugs the right edge from there.
  *
  * <p>**Not floated.** A float only pushes INLINE content aside; the bordered blocks this pattern is
  * made of draw straight through it, so the page ends up either overlapping the box or clearing
  * below it, and both look like a mistake. A row is what actually puts two things on one line.
  *
- * <p>{@link approvalFlow} answers a different question — 「what happens next and who is it waiting
- * on」 — and belongs in the body of a record that is still moving. This one answers 「who has
+ * <p>{@link approvalFlow} answers a different question - 「what happens next and who is it waiting
+ * on」 - and belongs in the body of a record that is still moving. This one answers 「who has
  * signed」. A screen that needs both draws this at the top and that below; most need only this.
  *
- * @param steps `[{label, who, at, state}]` — the same shape {@link approvalFlow} takes.
+ * @param steps `[{label, who, at, state}]` - the same shape {@link approvalFlow} takes.
  *   `state`: done · now · wait · reject
  */
 export const signBox = (steps) => {
   // The header carries the state, not the signature cell. A reader checks this box to answer 「어디
-  //까지 왔나」, and that answer belongs beside the position's name — put it in the cell below and it
+  //까지 왔나」, and that answer belongs beside the position's name - put it in the cell below and it
   // reads as part of the signature, which is a different claim.
   const MARK = { done: '✔', reject: '✖', now: '대기', wait: '' };
   return `<div class="signbox">` +
@@ -2046,7 +2046,7 @@ export const signBox = (steps) => {
 /**
  * The rail of a multi-step setup, and the only place its shape is written.
  *
- * <p>A row of separate pills reads as a set of choices, and a wizard is not one — it is an order.
+ * <p>A row of separate pills reads as a set of choices, and a wizard is not one - it is an order.
  * So the steps are joined by a line, solid up to where the reader has got to and dashed after, and
  * how far along they are can be seen without counting. `now` is 1-based.
  */
@@ -2074,10 +2074,10 @@ export const tree = (nodes) =>
  * and a signature is worth nothing without who signed and on what. So each item carries its
  * provenance beside it, and the ones that failed to upload say so rather than disappearing.
  *
- * @param items `[{kind, label, meta, failed}]` — photo · file · sign
+ * @param items `[{kind, label, meta, failed}]` - photo · file · sign
  */
 /**
- * @param add what adding one is called, as the slot that does it — 「사진 찍기」 on a screen filled
+ * @param add what adding one is called, as the slot that does it - 「사진 찍기」 on a screen filled
  *   in beside the machine, 「파일 첨부」 at a desk. **The affordance belongs in the grid**: a button
  *   row under it is a fifth region the reader has to find, and on a phone it lands past the fold.
  *   Omit it where the evidence arrives from somewhere else and this screen only reads it.
@@ -2101,22 +2101,22 @@ export const hit = ({ title, snippet, meta }) =>
  * the detail each stage carries hanging off it.
  *
  * <p>**A rail is not a prettier list.** What it adds is that the reader sees, without counting,
- * how far along the thing is and what is left — the line between two dots is the claim that one
+ * how far along the thing is and what is left - the line between two dots is the claim that one
  * follows the other, which a stack of cards does not make.
  *
- * <p>**A lane forks beside it** for a process that runs inside one stage — an approval chain
+ * <p>**A lane forks beside it** for a process that runs inside one stage - an approval chain
  * under 「승인」, a screening under 「접수」. It is tied back to the rail by its elbows, so it reads
  * as part of that stage rather than as a stage of its own. Nesting the whole chain into the main
  * rail instead would say those steps are stages, and then a rejected approval would look like a
  * lifecycle that went backwards.
  *
  * <p>Four states and each one is a different fact: `done` it happened, `active` it is happening
- * now, `pending` it has not started, `skip` **it will never run** — a cancelled visit's check-in
+ * now, `pending` it has not started, `skip` **it will never run** - a cancelled visit's check-in
  * is not pending forever, and drawing it as pending leaves a reader waiting for it.
  *
  * @param nodes `[{label, state, trail, body, lane}]`; `lane` is `{title, body}`
  */
-/** The keys a rail node understands. A node carrying anything else lost that content silently —
+/** The keys a rail node understands. A node carrying anything else lost that content silently -
  *  it was written, it rendered nothing, and no check upstream could see the difference. So the
  *  component refuses instead, and the build stops with the file name. */
 const JOURNEY_KEYS = new Set(['label', 'trail', 'body', 'lane', 'state']);
@@ -2128,7 +2128,7 @@ export const journey = (nodes) =>
       throw new Error(`journey node 「${n.label}」 — 모르는 키 ${stray.join(', ')} ` +
         `(쓸 수 있는 키: ${[...JOURNEY_KEYS].join(', ')})`);
     }
-    // The last stage draws no line down — there is nothing after it. But a lane hanging off that
+    // The last stage draws no line down - there is nothing after it. But a lane hanging off that
     // last stage ties back to the rail with two elbows, and with no line to meet they ended in
     // empty space: the fork read as a block that had come loose from the rail. So the line is
     // drawn when the node has a lane, and stops at the node's own floor rather than reaching on.
@@ -2152,7 +2152,7 @@ export const journey = (nodes) =>
  * <p>Four regions and none is optional. The **toolbar** says which tool is in hand, because a
  * canvas with no mode indicator leaves a reader clicking to find out. The **palette** holds what
  * can be placed. The **canvas** carries the drawing and what is on it. The **property panel**
- * edits what is selected — putting those fields in a dialog would hide the very thing being
+ * edits what is selected - putting those fields in a dialog would hide the very thing being
  * positioned.
  *
  * <p>A minimap belongs where the drawing is bigger than the window, which for a floor plan it
@@ -2160,11 +2160,11 @@ export const journey = (nodes) =>
  *
  * <p>**What is not on the drawing yet belongs in the palette, not in a table under it.** The
  * palette's subject already is "what can be placed", so a second list beneath the canvas counts
- * the same absence a second time and pushes the drawing — the thing being worked on — up out of
+ * the same absence a second time and pushes the drawing - the thing being worked on - up out of
  * reach. A sectioned palette carries them where they are dragged from: `palette` takes plain
  * strings, or `{title, count, items}` sections whose items may be `{label, note, tone}`.
  *
- * @param actions controls that act on the whole drawing rather than picking a tool — they ride
+ * @param actions controls that act on the whole drawing rather than picking a tool - they ride
  *   the right of the toolbar, beside the zoom, because they are not modes
  */
 const palItem = (it) => {
@@ -2202,7 +2202,7 @@ export const canvasPh = ({ tools = [], palette = [], marks = [], selected = '', 
  * The manual read beside the screen it explains, in the panel the 도움말 control opens.
  *
  * <p>A page is five sections and the reader arrived with one question, so what they need first
- * is which of the five answers it — and the panel is too narrow to give that list a column, so
+ * is which of the five answers it - and the panel is too narrow to give that list a column, so
  * it sits across the top.
  *
  * <p>`fallback` is said when the page does not exist in the reader's language. An operator
@@ -2224,12 +2224,12 @@ export const manualPanel = ({ title, toc = [], active = 0, fallback = '', childr
  * what stands on it, what it does, and which requirement it answers.
  *
  * <p>**Derived from the frame, never written beside it.** Four lines authored per screen would be
- * right on the day they were typed and wrong at the next edit — the composition is what the frame
+ * right on the day they were typed and wrong at the next edit - the composition is what the frame
  * actually draws, and only the frame knows it. So 화면구성 is read out of the rendered body, 동작
  * out of the buttons on it, 상태 out of the frame's own `state`, and 대응 요구사항 out of the
  * citations the notes already carry. A frame overrides any of them by declaring `spec`.
  *
- * <p>`용도` is the exception and comes from the page header's own description — the sentence the
+ * <p>`용도` is the exception and comes from the page header's own description - the sentence the
  * screen already says about itself to its reader. Where a frame has no header (a signed-out card,
  * a phone shell) it declares `spec.용도`.
  */
@@ -2300,15 +2300,15 @@ export function frameSpec(screen, { reqs = [] } = {}) {
   // no inventory, the citations are all there is.
   const cited = [...new Set(notes.match(REQ) ?? [])];
   const answered = reqs.length ? reqs : cited;
-  // Stop at the number. `\S*` swallowed the markup that follows a citation — 「화면 목록 5.2」
+  // Stop at the number. `\S*` swallowed the markup that follows a citation - 「화면 목록 5.2」
   // came back as `화면 목록 5.2)</strong>`, and an unclosed tag in a derived line breaks the frame
   // it was meant to describe.
   const docs = [...new Set([...notes.matchAll(/(?:화면 목록|메뉴 구조|알림 연계 가이드|SSO 가이드)\s?[\d.]+(?:장|절)?/g)]
     .map((m) => m[0].replace(/[.]$/, '')))];
   const 요구사항 = own['대응 요구사항'] ?? [...answered, ...docs].join(' · ');
 
-  // `AUTH:` and `DATA:` are the same kind of line as the four — a fact about the frame, not an
-  // argument about it — and while they sat at the head of the notes the reader met six lines of
+  // `AUTH:` and `DATA:` are the same kind of line as the four - a fact about the frame, not an
+  // argument about it - and while they sat at the head of the notes the reader met six lines of
   // one shape in two different blocks and could not tell where the list ended.
   const 권한 = own['권한'] ?? (/AUTH:\s*([^<]*)/.exec(notes)?.[1] ?? '').trim();
   const 자료 = own['자료'] ?? (/DATA:\s*([^<]*)/.exec(notes)?.[1] ?? '').trim();

@@ -1,6 +1,6 @@
 # Hand-Crafted SVG Templates
 
-Hand-crafted SVG is a first-class technique for precise architecture/flow diagrams — often the default. Use these XML templates for copy-paste authoring, or import `scripts/svgkit.py` for a programmatic builder (glyph-width box sizing, perpendicular orthogonal connectors, safe markers). All templates use the **Tokyo Night** palette; canonical primary text is `#c0caf5`.
+Hand-crafted SVG is a first-class technique for precise architecture/flow diagrams - often the default. Use these XML templates for copy-paste authoring, or import `scripts/svgkit.py` for a programmatic builder (glyph-width box sizing, perpendicular orthogonal connectors, safe markers). All templates use the **Tokyo Night** palette; canonical primary text is `#c0caf5`.
 
 > Pick ONE convention per file: these templates use a single marker `id="ah"`; `svgkit.py` uses per-color `arr-<name>` markers. Do not mix the two in one SVG.
 
@@ -145,7 +145,7 @@ color is `c.yellow` (there is no `c.gold`).
 
 ## Waveform / Curve Drawing
 
-### Sine Wave — Use `<polyline>`, NOT `<path>` Bezier
+### Sine Wave - Use `<polyline>`, NOT `<path>` Bezier
 
 SVG `<path>` Bezier curves (`C` command) produce **asymmetric, visually wrong** sine waves because control points are extremely difficult to calculate correctly for trigonometric curves. Always use `<polyline>` with mathematically computed points.
 
@@ -198,8 +198,8 @@ i=20: sin=0.000
 
 ### Common Pitfalls
 
-1. **Never use `<path>` Bezier for sine waves** — control points produce asymmetric curves
-2. **When iteratively editing SVG, always remove old elements** — overlapping old/new paths create ghost artifacts
+1. **Never use `<path>` Bezier for sine waves** - control points produce asymmetric curves
+2. **When iteratively editing SVG, always remove old elements** - overlapping old/new paths create ghost artifacts
 3. **20 points per cycle is the minimum** for visually smooth curves at typical SVG sizes (200-400px per cycle)
 4. **Axis labels (0V, +Vpk, -Vpk)** should use `text-anchor="end"` and be placed left of the y-axis
 5. **Window brackets** (measurement indicators) use 3 lines: left vertical + horizontal + right vertical
@@ -217,5 +217,5 @@ i=20: sin=0.000
 9. Prefer horizontal layout when subgroup width / node count > 160px
 10. Minimum 40px gap between connected nodes for bend visibility
 11. Outer subgroup height must include all arrow bend paths (bottom + 30px margin)
-12. Emit subgroup/frame rects BEFORE the node rects they enclose — document order is z-order, and a frame written after its nodes paints over them
+12. Emit subgroup/frame rects BEFORE the node rects they enclose - document order is z-order, and a frame written after its nodes paints over them
 13. Size boxes for CJK text at ~1 em per Hangul/Kana/CJK glyph (Latin ≈ 0.55 em); a width tuned for a Latin label clips its Korean/Japanese counterpart

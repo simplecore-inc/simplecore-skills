@@ -8,7 +8,7 @@
 
 ## Where to Create the Entity File
 
-Before writing the entity class, decide which domain Gradle module owns it. Entities are **not** centralized in a single `packages/domain` module — they live in aggregate-specific sub-modules.
+Before writing the entity class, decide which domain Gradle module owns it. Entities are **not** centralized in a single `packages/domain` module - they live in aggregate-specific sub-modules.
 
 ### Path convention
 
@@ -40,11 +40,11 @@ cat settings.gradle.kts | grep domain
 | `domain-<area>-runtime` | Runtime event / message entities of the same area (events, device state, sync payloads) |
 | `domain-user` | User and organization entities (accounts, roles, organizations) |
 
-Cross-cutting foundations (`domain-core`, `domain-audit`, `domain-auth`, `domain-file`, `domain-system`) ship with the stack — reuse them only when the entity genuinely belongs to that concern. Read the project's own `settings.gradle` for the modules it actually has.
+Cross-cutting foundations (`domain-core`, `domain-audit`, `domain-auth`, `domain-file`, `domain-system`) ship with the stack - reuse them only when the entity genuinely belongs to that concern. Read the project's own `settings.gradle` for the modules it actually has.
 
 ### When no existing module fits
 
-If the new entity does not belong to any existing `domain-*` module, do **not** force-fit it into the closest one. A new Gradle module may be required. Pause and **coordinate with the project owner** before creating a new module — module boundaries affect dependency graphs, build times, and publishing.
+If the new entity does not belong to any existing `domain-*` module, do **not** force-fit it into the closest one. A new Gradle module may be required. Pause and **coordinate with the project owner** before creating a new module - module boundaries affect dependency graphs, build times, and publishing.
 
 ---
 
@@ -146,14 +146,14 @@ private String searchIndex;
 >     private Long deletedTimestamp = -1L;
 > }
 > ```
-> The `@FilterDef` is declared on `BaseEntity` — individual entities do NOT need it. DTO validation uses `softDeleteField = "deleted"` with `SoftDeleteType.BOOLEAN` in `@UniqueFields`.
+> The `@FilterDef` is declared on `BaseEntity` - individual entities do NOT need it. DTO validation uses `softDeleteField = "deleted"` with `SoftDeleteType.BOOLEAN` in `@UniqueFields`.
 
 ### How It Works
 
 - `@SQLDelete` overrides `DELETE` SQL → sets `deleted = true` and `deleted_timestamp = epoch millis`
 - `@Filter` hides deleted records by default (Hibernate session filter)
-- `@FilterDef` is declared once on `BaseEntity` — individual entities do NOT need it
-- Service-layer soft delete is handled by `deleteById(id)` / `deleteAllByIds(ids)` from `SimpliXBaseService` — no manual `setDeleted()` needed
+- `@FilterDef` is declared once on `BaseEntity` - individual entities do NOT need it
+- Service-layer soft delete is handled by `deleteById(id)` / `deleteAllByIds(ids)` from `SimpliXBaseService` - no manual `setDeleted()` needed
 
 ---
 

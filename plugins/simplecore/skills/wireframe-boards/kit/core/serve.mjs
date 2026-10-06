@@ -4,13 +4,13 @@
 //
 // **The board on disk never learns it was served.** The live-reload client is spliced into the
 // HTTP RESPONSE and into nothing else, so `board.html` stays the one-file, script-free artifact
-// the contract demands — opened from the file system it is exactly what the build wrote. That is
+// the contract demands - opened from the file system it is exactly what the build wrote. That is
 // also why reloading runs over an EventSource instead of rewriting the board with a poller.
 //
 // **Every rebuild is a CHILD PROCESS of `wfb.mjs build`.** A screen file is an ES module and Node
 // caches modules by URL for the life of a process, so rebuilding inside this one would go on
-// drawing whatever was on disk when `serve` started. That failure is silent — the board rebuilds,
-// reports the same screen count, and shows yesterday's frame — which is the reason a spawn is
+// drawing whatever was on disk when `serve` started. That failure is silent - the board rebuilds,
+// reports the same screen count, and shows yesterday's frame - which is the reason a spawn is
 // worth more here than the milliseconds an in-process call would save.
 import { spawn } from 'node:child_process';
 import { createReadStream, existsSync, readFileSync, statSync, watch } from 'node:fs';
@@ -55,7 +55,7 @@ const escapeHtml = (s) => String(s).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<
  * The live-reload client, spliced into every HTML response and written to no file.
  *
  * <p>It restores the scroll position across a reload by hand. A board is one long page of several
- * hundred frames, so a reload that lands at the top costs the reader the frame they were editing —
+ * hundred frames, so a reload that lands at the top costs the reader the frame they were editing -
  * and the browser's own restoration gives up as soon as the document's height changes, which is
  * what every rebuild does.
  */
@@ -131,7 +131,7 @@ function statusPage({ title, detail }) {
 /**
  * Run one build, as a child process, and collect what it said.
  *
- * @returns `{ ok, output }` — the output is stdout and stderr interleaved, which is what a reader
+ * @returns `{ ok, output }` - the output is stdout and stderr interleaved, which is what a reader
  *   staring at a failed gate needs to see in one piece
  */
 function runBuild(boardDir, { pdf }) {
@@ -150,7 +150,7 @@ function runBuild(boardDir, { pdf }) {
   });
 }
 
-/** A change with no usable name is rebuilt for rather than skipped — missing one is the worse half. */
+/** A change with no usable name is rebuilt for rather than skipped - missing one is the worse half. */
 function interesting(name) {
   if (!name) return true;
   const base = String(name).split(/[\\/]/).pop();
@@ -184,7 +184,7 @@ function listen(server, { host, port, tries = 20 }) {
  * @param host the interface to bind. Loopback by default: a board is a local artifact and the
  *   dev server has no notion of who is asking
  * @param watchSources rebuild on change. False serves whatever the one opening build produced
- * @param pdf render the PDF on every rebuild. Off by default — it is the slow half of a build and
+ * @param pdf render the PDF on every rebuild. Off by default - it is the slow half of a build and
  *   nothing the browser is showing comes from it
  */
 export async function serveBoard(boardDir, {
@@ -239,7 +239,7 @@ export async function serveBoard(boardDir, {
     if (!existsSync(path) || statSync(path).isDirectory()) {
       const missingEntry = built.has(rel);
       res.writeHead(missingEntry ? 200 : 404, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' });
-      // The entry page missing means the build has not produced it yet — which the reader should
+      // The entry page missing means the build has not produced it yet - which the reader should
       // see as the build error it is, on a page that reloads itself once the build goes green.
       res.end(missingEntry
         ? injectDevClient(statusPage({
@@ -304,7 +304,7 @@ export async function serveBoard(boardDir, {
 
     // The board folder itself is watched WITHOUT recursion and filtered down to the two files that
     // decide how it is drawn. Watching it whole would see `board.html` land and rebuild because of
-    // the build that just wrote it — a loop with nothing to stop it.
+    // the build that just wrote it - a loop with nothing to stop it.
     const settings = new Set(['board.config.mjs', 'board.gates.mjs']);
     watchers.push(watch(boardDir, { recursive: false }, (_event, name) => {
       if (name && settings.has(String(name))) bump();

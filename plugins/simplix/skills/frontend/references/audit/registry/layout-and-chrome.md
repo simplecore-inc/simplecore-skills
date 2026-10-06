@@ -1,6 +1,6 @@
-> Commonization registry — **Layout primitives, chrome & structural composition**. Detail file of `../registry.md` (the index); sections verbatim. Check the index first, then read only the section you need.
+> Commonization registry - **Layout primitives, chrome & structural composition**. Detail file of `../registry.md` (the index); sections verbatim. Check the index first, then read only the section you need.
 
-# Registry — Layout primitives, chrome & structural composition
+# Registry - Layout primitives, chrome & structural composition
 
 ## ListDetail Dialog Height Control
 
@@ -53,12 +53,12 @@
 
 ### Rule
 
-These are project-specific composition patterns (domain-agnostic but not generic enough for the framework — see [[framework-only-generic-components]]). They live in `@<scope>/<ui-package>/layout`, NOT `@simplix-react/ui`.
+These are project-specific composition patterns (domain-agnostic but not generic enough for the framework - see [[framework-only-generic-components]]). They live in `@<scope>/<ui-package>/layout`, NOT `@simplix-react/ui`.
 
-- **SectionHeaderBar** — title + optional count Badge + optional action/trailing, `variant: "bar" | "card" | "plain"`. Replaces ad-hoc `Flex justify-between border-b bg-muted/50` header strips, dashboard card-title rows, and uppercase micro-labels.
-- **PanelList<T>** — header + loading(Skeleton)/empty(EmptyState)/list state machine for side panels.
-- **SelectableListItem** — selectable/draggable row, `tone: "tint" | "inverted" | "card"`. Replaces `<button className="... bg-primary/10 ...">` selectable rows.
-- **IndentedSubsection** — labeled, left-ruled indented group (`border-l-2 border-border/50 pl-4`). Replaces the raw indented `<div>` editor idiom.
+- **SectionHeaderBar** - title + optional count Badge + optional action/trailing, `variant: "bar" | "card" | "plain"`. Replaces ad-hoc `Flex justify-between border-b bg-muted/50` header strips, dashboard card-title rows, and uppercase micro-labels.
+- **PanelList<T>** - header + loading(Skeleton)/empty(EmptyState)/list state machine for side panels.
+- **SelectableListItem** - selectable/draggable row, `tone: "tint" | "inverted" | "card"`. Replaces `<button className="... bg-primary/10 ...">` selectable rows.
+- **IndentedSubsection** - labeled, left-ruled indented group (`border-l-2 border-border/50 pl-4`). Replaces the raw indented `<div>` editor idiom.
 
 ## ContextBreadcrumb (@<scope>/<ui-package>/spatial)
 
@@ -125,10 +125,10 @@ Every read-only `CrudDetail.Section` uses `variant="flat"`; every write `CrudFor
 
 ### Rule
 
-- `HardwareEditorActions` — standardized editor footer (Back/Cancel + optional aria-labelled Delete + `SaveButton`) inside `EditorFooter`. Adopted across the 4 hardware editors + sio-creator.
-- `CapacityBadge` — interval-count badge whose tone derives from `count/max` ratio (no magic literal; replaced `getIntervalBadgeVariant`).
-- `GridControls` — undo/redo/delete icon-button cluster shared between the schedule editor panel header and toolbar.
-- Module-local commonization (a `modules/<m>/src/shared/ui/` component) is correct when reuse is WITHIN one module; promote to `@<scope>/<ui-package>` only when 2+ modules need it. A single-consumer "shared" component (e.g. a reader-port row that lives in exactly one editor) must NOT be extracted — that is a speculative abstraction.
+- `HardwareEditorActions` - standardized editor footer (Back/Cancel + optional aria-labelled Delete + `SaveButton`) inside `EditorFooter`. Adopted across the 4 hardware editors + sio-creator.
+- `CapacityBadge` - interval-count badge whose tone derives from `count/max` ratio (no magic literal; replaced `getIntervalBadgeVariant`).
+- `GridControls` - undo/redo/delete icon-button cluster shared between the schedule editor panel header and toolbar.
+- Module-local commonization (a `modules/<m>/src/shared/ui/` component) is correct when reuse is WITHIN one module; promote to `@<scope>/<ui-package>` only when 2+ modules need it. A single-consumer "shared" component (e.g. a reader-port row that lives in exactly one editor) must NOT be extracted - that is a speculative abstraction.
 
 ## ResizeHandle (shared drag-on-track edge resize affordance)
 
@@ -145,7 +145,7 @@ Edge resize affordance for absolutely-positioned draggable bars on a track (bit-
 
 Props: `side: "left" | "right"`, `onPointerDown`, `disabled?`, `className?`.
 
-Project-specific drag-on-track editor primitive (not generic enough for the framework — see [[framework-only-generic-components]]); promoted to `@<scope>/<ui-package>` because 2 modules need it (device-settings card-format + schedule). Grip is hardcoded white because both hosts sit on saturated colored bars.
+Project-specific drag-on-track editor primitive (not generic enough for the framework - see [[framework-only-generic-components]]); promoted to `@<scope>/<ui-package>` because 2 modules need it (device-settings card-format + schedule). Grip is hardcoded white because both hosts sit on saturated colored bars.
 
 ### Anti-Pattern
 

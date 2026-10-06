@@ -59,7 +59,7 @@ yo simplix:generate CmsContentLink --force
 yo simplix:promote CmsContentLink --force
 ```
 
-It reports one `From` / `To` pair per artefact — service, controller, DTOs, service test — and a
+It reports one `From` / `To` pair per artefact - service, controller, DTOs, service test - and a
 count. Four promoted files is the normal shape for an entity with no optional parts.
 
 ## Before generating: the collision check (MANDATORY)
@@ -67,7 +67,7 @@ count. Four promoted files is the normal shape for an entity with no optional pa
 **`yo simplix:promote` OVERWRITES `src/` files silently.** Before generating an entity `X`,
 verify no hand-authored `X{Service,RestController,DTOs}` already exists in the target
 `modulePath` package. `yo simplix:generate X` + `promote` will clobber a same-named
-hand-written `XService` — a lifecycle or action service, say — with a generated CRUD one and
+hand-written `XService` - a lifecycle or action service, say - with a generated CRUD one and
 delete its logic.
 
 On a clash, either **rename the hand-authored class to a role-specific name**
@@ -78,8 +78,8 @@ every `promote`, re-compile and confirm no pre-existing service was overwritten.
 ## Trimming a generated controller is manual, and verified after each cut
 
 Never bulk-delete endpoint methods with a fragile script: a mis-parse silently eats the
-constructor or leaves a dangling body. Remove one endpoint method at a time — Javadoc,
-annotations and body as a unit — and compile after each.
+constructor or leaves a dangling body. Remove one endpoint method at a time - Javadoc,
+annotations and body as a unit - and compile after each.
 
 For an append-only audit or history entity, trim the writes down to a read surface (keep `get`
 + `search`). Re-apply `@RequiresFeature` and a real `@Tag` description after any
@@ -89,7 +89,7 @@ re-generation; regeneration wipes both.
 
 The promoted `*ServiceTest` references the generated CRUD DTOs and methods. If the service is
 converted to non-CRUD, or generated DTOs are deleted, **delete or rewrite that test in the same
-step** — a stale generated test fails for a reason that has nothing to do with the change
+step** - a stale generated test fails for a reason that has nothing to do with the change
 being made.
 
 ## Post-Promote Verification

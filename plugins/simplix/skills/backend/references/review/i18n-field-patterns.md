@@ -225,34 +225,34 @@ private String {baseFieldName};
 
 ---
 
-## Which Value a Surface Writes — the Reader Test
+## Which Value a Surface Writes - the Reader Test
 
-`@I18nTrans` covers serialized DTO fields. Every OTHER place a name reaches an output — a
+`@I18nTrans` covers serialized DTO fields. Every OTHER place a name reaches an output - a
 service assembling an aggregation DTO by hand, an export writer, a stored record, a signed
-payload — decides for itself, and the two wrong answers fail in opposite directions. Decide by
+payload - decides for itself, and the two wrong answers fail in opposite directions. Decide by
 asking **who reads this, and when**:
 
 | The output | Which value | Why |
 | --- | --- | --- |
 | A screen, or a DTO a screen renders | **Resolved** to the request locale | It has a reader, present at the moment it is produced. Two screens showing one record under different names are read as two records. |
-| A file the user downloads (CSV/XLSX export, generated report) | **Base column** | It has no reader. It leaves the person who made it, gets shared, compared, and set beside other exports of the same list — and two exports that name one record differently cannot be read against each other. |
+| A file the user downloads (CSV/XLSX export, generated report) | **Base column** | It has no reader. It leaves the person who made it, gets shared, compared, and set beside other exports of the same list - and two exports that name one record differently cannot be read against each other. |
 | A stored record (an order line, a ledger row, an audit entry) | **Base column** | It outlives the session that wrote it. Resolved, the receipt, the invoice and the ledger row each keep whichever language happened to be asking. |
 | A signed or hashed payload | **Base column**, always | The bytes are the identity. A payload that reads differently per reader is not the same payload, and a signature over it verifies for one reader and not another. |
 
 The same axis governs timezone (display in the reader's zone, day-boundary arithmetic in the
-deployment's) — it is one rule about who a value is for, applied to two kinds of value.
+deployment's) - it is one rule about who a value is for, applied to two kinds of value.
 
 **Aggregation services are the trap.** A hand-built DTO looks like the list DTO beside it and
 is populated with `entity.getName()`, so the screen it feeds silently prints base values while
 every generated list beside it prints resolved ones. Resolve explicitly there, through whatever
 shared helper the project keeps for it, and **say in a comment why the export next door does
-not** — otherwise the next reader "fixes" the export to match.
+not** - otherwise the next reader "fixes" the export to match.
 
 **And keep the base column worth searching.** A pattern operator cannot run against a Map, so a
 name search runs on the base column; if that column holds a different language than the map the
 screen renders, an operator types the words on the row and gets nothing back. Fill the base
 column from the map on save, in the service rather than in each client, using the deployment's
-configured language — and backfill the rows written before that rule existed.
+configured language - and backfill the rows written before that rule existed.
 
 ---
 
@@ -476,7 +476,7 @@ private Map<String, String> titleI18n;  // No @NotNull
 
 ## Aggregation / Projection DTOs Carry the Pair Too
 
-The `@I18nTrans` + `@JsonIgnore` pair applies to EVERY read-path DTO that copies an i18n-backed field — not just the entity's own Detail/List DTOs. Aggregation, projection, self-service, and report DTOs (e.g. a balance summary carrying a type name, a report row carrying a holiday name) are the common blind spot: they hand-copy `entity.getName()` and silently ship the untranslated default.
+The `@I18nTrans` + `@JsonIgnore` pair applies to EVERY read-path DTO that copies an i18n-backed field - not just the entity's own Detail/List DTOs. Aggregation, projection, self-service, and report DTOs (e.g. a balance summary carrying a type name, a report row carrying a holiday name) are the common blind spot: they hand-copy `entity.getName()` and silently ship the untranslated default.
 
 **Rule**: any DTO field populated from an entity field that has an `*I18n` map pair MUST declare `@I18nTrans(source = "...I18n")`, carry the `@JsonIgnore` map, and have the mapper copy the map alongside the base value.
 
@@ -490,13 +490,13 @@ Search/Create/Update DTO `name` fields are write-path input and are exempt.
 ## Two Paths `@I18nTrans` Never Reaches
 
 The paired-annotation rule above covers DTO fields Jackson serializes from a DTO. Two other read
-paths carry an i18n-backed name and are not DTO fields, so the pattern above never fires on them —
+paths carry an i18n-backed name and are not DTO fields, so the pattern above never fires on them -
 and the console then shows one record under two different names, depending on which screen the
 reader is on.
 
 **① A reference field serializes the ENTITY, not a DTO.** A DTO that points at another entity with
 `@JsonIncludeProperties({"xId", "xCode", "xName", "xNameI18n"})` ships the entity's own `xName`
-column. Annotating the referencing DTO does nothing — there is no field to annotate. Put
+column. Annotating the referencing DTO does nothing - there is no field to annotate. Put
 `@I18nTrans(source = "<field>I18n")` on the **entity's** base field: it is a Jackson field
 annotation (`@JacksonAnnotationsInside` over `@JsonSerialize`), so it is inert for JPA and
 ModelMapper and fixes every reference surface at once.
@@ -510,7 +510,7 @@ private String positionName;
 **② A service assembling a String by hand.** Self-service profiles, "who am I" endpoints, export
 rows, and notification payloads set the value with `dto.setName(entity.getName())`. No Jackson
 annotation participates. Resolve through ONE shared helper that reads the locale map by language
-code and falls back to the base value — never a private copy per service, and never the raw column.
+code and falls back to the base value - never a private copy per service, and never the raw column.
 
 ```java
 dto.setPositionName(LocalizedNames.pick(p.getPositionNameI18n(), p.getPositionName()));

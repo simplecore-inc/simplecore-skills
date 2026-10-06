@@ -71,7 +71,7 @@ THEMES = {
 }
 DEFAULT_THEME = "tokyo-night"
 
-# Accent roles (caller-facing) and arrowhead marker order (do not reorder —
+# Accent roles (caller-facing) and arrowhead marker order (do not reorder -
 # keeps marker output stable). The "fg" marker uses the fg_dim color.
 _ACCENTS = ("blue", "cyan", "teal", "green", "purple", "red", "orange", "yellow")
 _ARROW_ROLES = ["blue", "green", "orange", "purple", "cyan", "teal", "red",
@@ -90,8 +90,8 @@ ORANGE, YELLOW = _T["orange"], _T["yellow"]
 # Korean families follow the Latin ones so Latin glyphs still come from Inter
 # where it is installed, while Hangul resolves to a real Korean face instead of
 # whatever the viewer's default happens to be. This matters wherever the SVG is
-# handed to a renderer that does its own font resolution — a browser, or an
-# <asvg:svgBlip> embedded in a .pptx — because none of the Latin families above
+# handed to a renderer that does its own font resolution - a browser, or an
+# <asvg:svgBlip> embedded in a .pptx - because none of the Latin families above
 # carry Hangul, and the fallback then differs per machine.
 SANS = ("'Inter','SF Pro Display',system-ui,-apple-system,'Segoe UI',Roboto,"
         "'Pretendard','Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',"
@@ -130,7 +130,7 @@ def _is_wide(ch):
 # Which parameters of each path command are x, which are y, and which are
 # neither. An arc's radii scale with the drawing; its rotation does not, and
 # its two flags are single digits that may be written with no separator at all
-# — `a2 2 0 0022 17` is rx=2 ry=2 rot=0 large-arc=0 sweep=0 x=22 y=17. Reading
+# - `a2 2 0 0022 17` is rx=2 ry=2 rot=0 large-arc=0 sweep=0 x=22 y=17. Reading
 # those flags with a number scanner swallows `0022` as one value, drops a
 # parameter, and turns a rounded corner into a stray loop.
 _PATH_ARGS = {
@@ -188,7 +188,7 @@ def _scale_path(d, ox, oy, k):
         upper = cmd.upper()
         absolute = cmd.isupper()
         # A path whose first command is a relative moveto starts from (0,0),
-        # so SVG reads that one moveto as absolute — but only the moveto. The
+        # so SVG reads that one moveto as absolute - but only the moveto. The
         # pairs that follow it are still relative linetos, and promoting them
         # too scatters the rest of the icon across the canvas.
         was_relative = cmd.islower()
@@ -241,11 +241,11 @@ def tw(s, size, mono=True):
     renders sample runs through Chrome and reads the ink back. On the fonts
     the SANS stack resolves to (Inter · Apple SD Gothic Neo · Pretendard)
     Hangul sets at ~0.86 em, lowercase ~0.47, capitals ~0.64, digits ~0.57,
-    the space and thin punctuation ~0.25 — the numbers here sit a few
+    the space and thin punctuation ~0.25 - the numbers here sit a few
     percent above each so a box sized from them never clips, without the
     quarter-width slack the old flat 1.03 / 0.55 table left, which made
     every label look wider than it printed. A mono face sets every glyph at
-    0.6 em and CJK at ~1 em. audit.py carries the same table — generator and
+    0.6 em and CJK at ~1 em. audit.py carries the same table - generator and
     lint must measure identically. Re-run the calibration on a machine whose
     fonts differ and move both tables together.
     """
@@ -274,7 +274,7 @@ def path_points(d):
     A flat scan for number pairs is wrong the moment a path holds an arc:
     `A rx ry rot large sweep x y` has seven arguments and only the last two
     are a position, so the radii and the two flags get read as coordinates
-    near the origin — which silently drags any bounding box computed that way
+    near the origin - which silently drags any bounding box computed that way
     to (0, 0). Relative commands are skipped rather than guessed at; nothing
     in this kit emits them.
     """
@@ -345,7 +345,7 @@ def edge_pt(box, side, f=0.5):
 
 class Canvas:
     # Drop shadows are drawn with an SVG `<filter>`, and PowerPoint's SVG
-    # import drops every element that references one — the shape vanishes
+    # import drops every element that references one - the shape vanishes
     # while its labels stay, so a diagram embedded in a .pptx loses all its
     # cards and nothing reports it. A board destined for Office sets this to
     # False; the picture reads the same on paper without it.
@@ -366,7 +366,7 @@ class Canvas:
         self.body = []
         # underlay layer: (area, markup) entries rendered BEFORE body and
         # sorted by area descending, so group frames land behind nodes and
-        # outer frames land behind inner ones — z-order never depends on
+        # outer frames land behind inner ones - z-order never depends on
         # call order (a frame drawn after its content used to paint over it)
         self.under = []
         # theme-specific color -> marker-name map (so marker=c.blue resolves)
@@ -382,15 +382,15 @@ class Canvas:
 
     def _mk(self, marker):
         """Resolve a marker arg to a defined marker name. Accepts a role name
-        ('blue') or a theme color value (c.blue) — never a dead url(#arr-<hex>).
+        ('blue') or a theme color value (c.blue) - never a dead url(#arr-<hex>).
         """
         if marker in self._roles:
             return marker
         return self._c2m.get(marker, "muted")
 
     def add_accent(self, name, color):
-        """Register a colour the theme does not carry — a client's brand, an
-        institution's assigned colour — as a first-class accent.
+        """Register a colour the theme does not carry - a client's brand, an
+        institution's assigned colour - as a first-class accent.
 
         Afterwards `c.<name>` and `c.t[name]` hold the colour, and a line or
         path drawn with `marker=c.<name>` (or `marker="<name>"`) gets an
@@ -411,8 +411,8 @@ class Canvas:
     # -- primitives ---------------------------------------------------------
     def rrect(self, x, y, w, h, rx=10, fill=_DEF, stroke=_DEF, sw=1.5,
               shadow=False, dash=None, opacity=None, measure=None):
-        """A rectangle. `measure` names the dimension that carries a value —
-        "width" for a bar or a proportional strip, "height" for a column —
+        """A rectangle. `measure` names the dimension that carries a value -
+        "width" for a bar or a proportional strip, "height" for a column -
         so the lint's row and stack checks leave it out: a bar that differs
         from its neighbour is the content, not a slip."""
         fill = self.t["box"] if fill is _DEF else fill
@@ -442,7 +442,7 @@ class Canvas:
         of the drawing. The elements are emitted as plain rect/circle/line/path
         rather than wrapped in a `<g transform>`, because `trim` and `ink_box`
         read coordinates off the markup and a transform would be invisible to
-        both — the figure would then trim to the wrong box.
+        both - the figure would then trim to the wrong box.
 
         Every Lucide icon is bundled; `Canvas.icons("keyword")` searches the
         names, and https://lucide.dev browses them.
@@ -490,7 +490,7 @@ class Canvas:
 
     @staticmethod
     def icons(keyword=""):
-        """Bundled icon names containing `keyword` — 2,000+ of them, so search."""
+        """Bundled icon names containing `keyword` - 2,000+ of them, so search."""
         from lucide import ICONS as _LUCIDE
         return sorted(n for n in _LUCIDE if keyword in n)
 
@@ -499,7 +499,7 @@ class Canvas:
         """A tinted band on the edge of a card: outer corners round, inner square.
 
         Drawing a card's header as a rounded rectangle rounds its bottom corners
-        too, and the card's straight body butts against them — the header then
+        too, and the card's straight body butts against them - the header then
         reads as a separate chip resting on the card rather than as its top.
         Only the corners that follow the card's own outline are rounded, and
         the lint reports a rounded `rect` on a box edge as BAND-CORNERS.
@@ -508,7 +508,7 @@ class Canvas:
         body, "left" for a label band at the start of a row, "right" and
         "bottom" for their mirrors. `rx` is the card's own corner radius, so
         the two outlines meet without a step. `(x, y, w, h)` is the band's own
-        box — the same corner of the card for "top" and "left"; for "right"
+        box - the same corner of the card for "top" and "left"; for "right"
         the band's x is the card's right edge minus w, for "bottom" its y is
         the card's bottom minus h.
         """
@@ -575,7 +575,7 @@ class Canvas:
              mask_pad=3):
         """One line of text. `mask=True` paints a paper-coloured rect behind
         the glyphs first, sized from tw(), so a label that has to sit on a
-        line — a boundary's name on its border, a value on an axis — reads
+        line - a boundary's name on its border, a value on an axis - reads
         with the line broken behind it instead of cutting through the
         letters. The lint reports the unmasked case as TEXT-ON-LINE and
         recognises this mask as the fix."""
@@ -600,7 +600,7 @@ class Canvas:
     # -- content-first sizing -------------------------------------------------
     def capture(self, draw):
         """Run `draw()` with the body redirected, and return what it emitted
-        together with its ink box — (markup, (x0, y0, x1, y1)) — without
+        together with its ink box - (markup, (x0, y0, x1, y1)) - without
         adding anything to the canvas. Underlay entries made inside `draw`
         are kept on the canvas (a frame has to stay behind everything)."""
         saved, self.body = self.body, []
@@ -618,8 +618,8 @@ class Canvas:
                 min_h=0, **rrect_kw):
         """A box sized from what is drawn inside it.
 
-        `draw(cx, cy, cw)` receives the content origin — the box's top-left
-        moved in by the padding — and the content width, draws the content
+        `draw(cx, cy, cw)` receives the content origin - the box's top-left
+        moved in by the padding - and the content width, draws the content
         there, and returns nothing. The box is then emitted *under* the
         content with a height of `pad_top + content height + pad_bottom`,
         so the air above and below the content is equal by construction
@@ -638,7 +638,7 @@ class Canvas:
 
     def fit_row(self, xs, y, w, draws, pad=16, pad_top=None, pad_bottom=None,
                 min_h=0, **rrect_kw):
-        """A row of boxes at one height — the height of the tallest content.
+        """A row of boxes at one height - the height of the tallest content.
 
         `xs` are the column x-positions (row_positions() gives them), `draws`
         one callback per column with the same signature as fit_box's. Every
@@ -667,7 +667,7 @@ class Canvas:
     @staticmethod
     def frame_around(boxes, pad=16, pad_top=None):
         """The (x, y, w, h) of a frame that holds every box in `boxes` with
-        one inset on all four sides — `pad_top` widens only the top, for the
+        one inset on all four sides - `pad_top` widens only the top, for the
         room a title chip on the border needs. Boxes are (x, y, w, h)."""
         x0 = min(b[0] for b in boxes)
         y0 = min(b[1] for b in boxes)
@@ -716,7 +716,7 @@ class Canvas:
         """Horizontal-ish cubic bezier between two points.
 
         Both control points sit at the endpoints' y, so the curve arrives
-        horizontally — only valid when entering a vertical (left/right) edge.
+        horizontally - only valid when entering a vertical (left/right) edge.
         For top/bottom entry use ortho(); for any box edge ortho() is safest.
         """
         dx = (x2 - x1) * bow
@@ -802,7 +802,7 @@ class Canvas:
         """Dashed boundary panel with a legend chip.
 
         Drawn on the underlay layer by default, so it renders BEHIND nodes
-        and behind any smaller (nested) frame, whatever the call order —
+        and behind any smaller (nested) frame, whatever the call order -
         underlay entries are sorted by area at render time. Pass
         underlay=False only when the frame must sit on top of everything.
         """
@@ -841,7 +841,7 @@ class Canvas:
         """Flow/state node: role-colored border, centered mono label,
         optional muted subtitle. Returns (x, y, w, h) for edge_pt().
 
-        Prefer this over card() for state machines and flow diagrams —
+        Prefer this over card() for state machines and flow diagrams -
         centered labels read as states/steps, while card() (top-left title,
         badge, body lines) reads as a component/spec box.
         """
@@ -865,7 +865,7 @@ class Canvas:
         """Free-floating connector label, centered on (x, y), with a subtle
         background pill sized from CJK-aware tw().
 
-        The pill hides crossing LINES only — it does not license parking the
+        The pill hides crossing LINES only - it does not license parking the
         label on a box (the lint flags that as LABEL-OCCLUSION). Place at an
         edge midpoint in open space, or move to the clear band above/below
         the arrow when the gap between boxes is narrow.
@@ -909,7 +909,7 @@ class Canvas:
                   badge=None, title_size=19, row_start=96, row_step=34):
         """A "spec card": title + divider + accent-dot two-tone attribute rows.
 
-        attrs: list of (key, detail) pairs — key is emphasized (FG), detail is
+        attrs: list of (key, detail) pairs - key is emphasized (FG), detail is
         muted mono; pass a bare string or ('key', '') for a key-only row.
         footer: optional accent chip pinned bottom-left (e.g. 'Edge · On-site').
         Prefer this over card(lines=...) for attribute/spec lists.
@@ -955,14 +955,14 @@ class Canvas:
 
     def matrix(self, x, y, rows, cols, marks, label_w=260, col_w=116,
                row_h=36, header_h=30):
-        """Labeled dependency / coverage matrix — a grid of rows x columns
+        """Labeled dependency / coverage matrix - a grid of rows x columns
         with filled cells. Good for dependency, coverage, RACI, or feature
         comparison tables where each cell is present/absent.
 
-        rows:  list — each item is a name str, or an (id, name) tuple (id
+        rows:  list - each item is a name str, or an (id, name) tuple (id
                renders as a leading chip, colored by the row's first mark).
-        cols:  list of (label, color) — column headers (solid accent chips).
-        marks: iterable of (row_idx, col_idx) or (row_idx, col_idx, color) —
+        cols:  list of (label, color) - column headers (solid accent chips).
+        marks: iterable of (row_idx, col_idx) or (row_idx, col_idx, color) -
                filled cells; color defaults to the column's color. An empty
                column stays blank (reads as 'no dependency in that column').
 
@@ -1033,7 +1033,7 @@ class Canvas:
         for name in self._roles:
             col = self._arrow_color(name)
             # orient="auto", never "auto-start-reverse". The SVG 2 value adds
-            # nothing here — nothing in this toolkit emits marker-start — and a
+            # nothing here - nothing in this toolkit emits marker-start - and a
             # renderer that does not know it falls back to the initial orient
             # of 0, which draws every arrowhead pointing +x whatever direction
             # its connector runs. That reaches the reader as a downward arrow
@@ -1063,9 +1063,9 @@ class Canvas:
 
         Reads the emitted markup rather than tracking geometry as it is
         drawn, so it also sees whatever a caller added with raw add(). The
-        <defs> block is not part of the body, so marker artwork — whose
+        <defs> block is not part of the body, so marker artwork - whose
         coordinates sit a few pixels from the origin and mean nothing on the
-        canvas — cannot drag the box to (0, 0).
+        canvas - cannot drag the box to (0, 0).
         """
         body = "".join(s for _, s in self.under) + "".join(self.body)
         xs, ys = [], []
@@ -1087,7 +1087,7 @@ class Canvas:
                 continue
             txt = re.sub(r'<[^>]+>', '', inner)
             anchor = (re.search(r'text-anchor="(\w+)"', a) or [None, "start"])[1]
-            # measure with the face the text is set in — a proportional label
+            # measure with the face the text is set in - a proportional label
             # measured as mono comes out a tenth wider, and the board then
             # trims to ink that is not there
             fam = (re.search(r'font-family="([^"]*)"', a) or [None, ""])[1]
@@ -1136,7 +1136,7 @@ class Canvas:
         Treating a `d` as a flat run of (x, y) pairs works only while the
         generator emits M, L and Q. The first arc turns the radii and the two
         flags of an `A` into coordinates, and the path silently stops drawing
-        — the arrowhead still lands, so the damage reads as a missing line
+ - the arrowhead still lands, so the damage reads as a missing line
         rather than as corruption.
         """
         toks = re.findall(r'[MLHVQCSTAZmlhvqcstaz]|-?[\d.]+', d)
@@ -1183,7 +1183,7 @@ class Canvas:
     def _shift_markup(self, s, dx, dy):
         """Move every canvas coordinate in one emitted element by (dx, dy).
 
-        Only the attributes that name a position are touched — width, height,
+        Only the attributes that name a position are touched - width, height,
         r, rx, stroke-width, font-size and stroke-dasharray are lengths and
         must not move.
         """
@@ -1215,17 +1215,17 @@ class Canvas:
 
         A board is declared before its content is laid out, so its size is a
         guess, and both ways of being wrong cost something. Too large reserves
-        a band of page the figure never draws on — the figure is placed at a
+        a band of page the figure never draws on - the figure is placed at a
         fixed width, so nothing in the drawing grows to fill it. Too tight has
         the viewBox halve a stroke, and what survives lands in the page margin.
 
         The content is moved rather than the viewBox origin, so the board
-        still reads `viewBox="0 0 W H"` — several checks and build steps match
+        still reads `viewBox="0 0 W H"` - several checks and build steps match
         that exact form and an offset origin would defeat them silently.
         Idempotent: trimming an already-fitted board moves nothing.
 
         `min_w` / `max_w` clamp the finished width. Some destinations decide
-        the on-page type size from the board width — a figure placed at a
+        the on-page type size from the board width - a figure placed at a
         fixed column width is scaled by column/board, so the board width sets
         how small the labels print. Where that band exists, the horizontal
         margin gives way to it and pads or tightens symmetrically; a drawing
@@ -1268,7 +1268,7 @@ class Canvas:
 # They are bound here rather than imported there-and-back so that anyone who
 # imports svgkit gets the full vocabulary: `import viztypes` on its own would
 # leave a caller with a Canvas that silently lacks half its methods. The
-# import sits at the bottom on purpose — svgkit is already in sys.modules by
+# import sits at the bottom on purpose - svgkit is already in sys.modules by
 # then, so viztypes can import the helpers it needs from it.
 def _bind_viztypes():
     try:

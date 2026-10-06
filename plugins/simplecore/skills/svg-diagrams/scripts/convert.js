@@ -122,7 +122,7 @@ function mermaidToLayoutSpec(mermaidCode, options = {}) {
       continue;
     }
 
-    // Style lines — skip
+    // Style lines - skip
     if (/^style\s/i.test(line) || /^classDef\s/i.test(line) || /^class\s/i.test(line)) continue;
 
     // Edges: A --> B, A -->|label| B, A --> B --> C

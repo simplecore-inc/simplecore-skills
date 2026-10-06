@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 /**
- * SimpliX stack detector — decides whether a directory tree holds a SimpliX
+ * SimpliX stack detector - decides whether a directory tree holds a SimpliX
  * Spring Boot backend, a simplix-react frontend, or both, and where.
  *
  * Detection is marker-based and cheap: it reads directory entries down to a
  * bounded depth, skipping dependency and build output directories, and opens
  * only the few manifest files a marker points at. Nothing is scanned
  * recursively through sources, and a directory that matches is never
- * descended into — the subproject root is the answer, not its modules.
+ * descended into - the subproject root is the answer, not its modules.
  *
  * Usage:
  *   node "${CLAUDE_PLUGIN_ROOT}/scripts/detect-simplix.mjs"          # human-readable
@@ -112,12 +112,12 @@ function frontendMarkers(dir) {
 /**
  * Which code generator a frontend subproject runs, read from its `simplix.config.ts`.
  *
- * `meta`  — the config declares an `openapi[].meta` block. The project generates from SimpliX
+ * `meta` - the config declares an `openapi[].meta` block. The project generates from SimpliX
  *           Meta: `simplix meta`, output in `src/generated-meta/`.
- * `orval` — it declares an `openapi` entry with a `spec` and no `meta` block. `simplix openapi`,
+ * `orval` - it declares an `openapi` entry with a `spec` and no `meta` block. `simplix openapi`,
  *           output in `src/generated/`.
- * `both`  — it declares both, which is what a migration in progress looks like.
- * `none`  — no `openapi` entry at all; the domains are hand-written.
+ * `both` - it declares both, which is what a migration in progress looks like.
+ * `none` - no `openapi` entry at all; the domains are hand-written.
  *
  * Read as text rather than imported: the config is TypeScript and importing it would need the
  * project's own resolution. The two markers are unambiguous enough for a mode, and every command
@@ -206,7 +206,7 @@ function detect(root) {
     const backend = backendMarkers(dir);
     const frontend = frontendMarkers(dir);
 
-    // A directory that matched both is reported as two entries — a repository
+    // A directory that matched both is reported as two entries - a repository
     // can hold one subproject that is genuinely both, but keeping the kinds
     // separate reads more honestly than merging them.
     if (backend.length) results.push({ kind: "backend", dir, markers: backend });

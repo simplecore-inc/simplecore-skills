@@ -166,7 +166,7 @@ Typical usage:
 }
 ```
 
-※ Every filter def also accepts `columnBreak: true` — in a multi-column popover
+※ Every filter def also accepts `columnBreak: true` - in a multi-column popover
 (`popoverColumns` on the FilterBar), the flagged filter starts the next column.
 See `overview.md` § Popover Columns.
 

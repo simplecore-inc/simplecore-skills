@@ -1,8 +1,8 @@
-  /* simplix-basic — what a SCREEN is drawn from: the device shells, the console window, the layout
+  /* simplix-basic - what a SCREEN is drawn from: the device shells, the console window, the layout
      primitives and every control a frame puts inside them.
      ──────────────────────────────────────────────────────────────────────────────────────────────
-     The board's own chrome — sidebar index, flow sections, frame label, fold, viewport toggle,
-     reading contract — is styled by the kit (`core/chrome.css`), because the kit is what writes
+     The board's own chrome - sidebar index, flow sections, frame label, fold, viewport toggle,
+     reading contract - is styled by the kit (`core/chrome.css`), because the kit is what writes
      that markup. The design tokens are declared there too; override whichever this pattern wants
      in a `:root` block here and it wins, since this layer is concatenated after the kit's.
 
@@ -35,7 +35,7 @@
   .lstack { font-size: 12.5px; }
   .lstack.t-sm { margin-top: 6px; } .lstack.t-md { margin-top: 12px; } .lstack.t-lg { margin-top: 18px; }
 
-  /* A picture the screen shows, with what it is written under it. Greybox like everything else —
+  /* A picture the screen shows, with what it is written under it. Greybox like everything else -
      what it fixes is that the asset is DRAWN at all, not what it looks like. */
   /* Left, like everything else on a panel. Centred, a lone preview reads as adrift rather than
      as this record's picture. `sm` is the exception: beside a row it is just the mark. */
@@ -73,8 +73,8 @@
   .appbar .back { color: var(--muted); font-weight: 400; }
   .appbar .trail { margin-left: auto; }
   .body { flex: 1; display: flex; flex-direction: column; gap: 10px; padding: 14px; }
-  /* The phone's pinned action strip. A pair sits on ONE row — a ghost beside a primary, a
-     「Đóng」 beside a danger — because stacking gives the secondary the same weight as the act,
+  /* The phone's pinned action strip. A pair sits on ONE row - a ghost beside a primary, a
+     「Đóng」 beside a danger - because stacking gives the secondary the same weight as the act,
      and it costs 49px of a 844px phone, which is the difference between the button being
      reachable and being below the fold. A label too long to share the row wraps to its own
      line on its own, so the exception needs no flag. */
@@ -83,7 +83,7 @@
   .tabbar { display: flex; border-top: 1.5px solid var(--line-strong); margin-top: auto; }
   .tab { flex: 1; text-align: center; padding: 8px 0 10px; font-size: 11px; color: var(--muted); }
   .tab .ic { width: 18px; height: 18px; border: 1.5px solid currentColor; border-radius: 5px; margin: 0 auto 3px; position: relative; }
-  /* The unread count, said once per width — here on a phone, in the navigation column on a
+  /* The unread count, said once per width - here on a phone, in the navigation column on a
      wide screen. It sits on the destination it counts, never on a bell of its own. */
   .tab { position: relative; }
   .tab .dot { position: absolute; top: 4px; left: 50%; margin-left: 4px; min-width: 14px; height: 14px;
@@ -103,7 +103,7 @@
   .browserbar .dots i { width: 9px; height: 9px; border-radius: 50%; background: var(--fill-deep); border: 1px solid var(--line); }
   .browserbar .url { flex: 1; background: var(--screen); border: 1px solid var(--line); border-radius: 999px; padding: 4px 12px; }
   /* An installed program's window. The title takes the address's place and is centred, the way a
-     window title is — a pill there would read as an address bar with a name typed into it. */
+     window title is - a pill there would read as an address bar with a name typed into it. */
   .browserbar .wtitle { flex: 1; text-align: center; font-weight: 600; color: var(--ink); }
   .browserbar.is-app { background: var(--fill-deep); }
   /* ── The console window: top bar → (menu bar) → section column + content → status strip ──
@@ -120,7 +120,7 @@
   .tn-brand { font: 700 15px var(--sans); letter-spacing: -0.02em; flex: none; }
   .tn-tabs { display: flex; align-items: center; height: 100%; min-width: 0; overflow: hidden; margin-left: 8px; }
   .tn-div { width: 1px; height: 14px; background: var(--line); margin: 0 7px; flex: none; }
-  /* A tab is marked by weight and by the rule under it — the same two marks at every width, so
+  /* A tab is marked by weight and by the rule under it - the same two marks at every width, so
      the active area reads the same in the bar and in the menu row it falls into. */
   .tn-tab { display: flex; align-items: center; gap: 5px; height: 100%; padding: 0 10px; flex: none;
             font: 600 13px var(--sans); color: var(--muted); white-space: nowrap;
@@ -173,7 +173,7 @@
                background: var(--screen); font: 11px/1 var(--mono); color: var(--muted); }
   .sn-list { flex: 1; min-height: 0; overflow: hidden; padding: 8px; display: flex;
              flex-direction: column; gap: 1px; }
-  /* A group is the cluster its entries belong to, and a toggle rather than a destination — the
+  /* A group is the cluster its entries belong to, and a toggle rather than a destination - the
      caret leads because what it does is fold, not navigate. */
   .sn-group { display: flex; align-items: center; gap: 7px; padding: 7px 10px 7px 6px;
               border-radius: 6px; font-size: 13px; color: var(--muted); }
@@ -186,7 +186,7 @@
                   font: 500 9px/15px var(--mono); color: var(--ink-3); }
   .sn-sub { display: flex; flex-direction: column; gap: 1px; padding: 1px 0 4px 0; }
 
-  /* Each level steps in by the same amount, measured from where its ICON starts — the caret
+  /* Each level steps in by the same amount, measured from where its ICON starts - the caret
      column is reserved on every row that can hold one, so an entry that folds and one that
      does not begin at the same x. */
   .sn-item { display: flex; align-items: center; gap: 7px; padding: 6px 10px 6px 22px;
@@ -196,9 +196,9 @@
   .sn-item .sn-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .sn-item .sn-ai { flex: none; margin-left: 0; font-size: 8px; line-height: 11px; }
   .sn-item.active { background: var(--fill-deep); color: var(--ink); font-weight: 600; }
-  /* How many records are there — plain, because it is not asking for anything. */
+  /* How many records are there - plain, because it is not asking for anything. */
   .sn-count { margin-left: auto; font: 500 10px var(--mono); color: var(--ink-3); }
-  /* How many wait for this reader — the accent, because it is. */
+  /* How many wait for this reader - the accent, because it is. */
   .sn-item .dot { margin-left: auto; min-width: 16px; height: 16px; padding: 0 4px; box-sizing: border-box;
                   border-radius: 8px; background: var(--accent); font: 600 9px/14px var(--mono);
                   color: #fff; text-align: center; }
@@ -214,7 +214,7 @@
   .secnav.rail { flex-basis: 56px; }
   .secnav.rail .sn-head { justify-content: center; padding: 0; }
   .secnav.rail .sn-toggle { margin-left: 0; }
-  /* The flyout stands beside the rail, which means it stands OUTSIDE the column — so the list
+  /* The flyout stands beside the rail, which means it stands OUTSIDE the column - so the list
      that holds it must stop clipping while the rail is on, or the one thing that makes a
      collapsed rail usable gets cut off at 52px. */
   .secnav.rail .sn-list { padding: 8px 6px; gap: 3px; position: relative; overflow: visible; }
@@ -223,7 +223,7 @@
   .secnav.rail .sn-group .ic { width: 18px; height: 18px; }
   .secnav.rail .sn-group.here { background: var(--fill-deep); }
   .secnav.rail .sn-group.here .ic { border-color: var(--ink); border-width: 2px; }
-  /* Collapsed, a count cannot be read — a mark saying only "work is waiting" replaces it. */
+  /* Collapsed, a count cannot be read - a mark saying only "work is waiting" replaces it. */
   .secnav.rail .pip { position: absolute; top: 5px; right: 8px; width: 7px; height: 7px;
                       border-radius: 50%; background: var(--accent); }
   /* The only place a name appears while the column is collapsed. */
@@ -234,7 +234,7 @@
   .fly-item { font-size: 12px; color: var(--muted); padding: 5px 8px; border-radius: 4px; }
   .fly-item.active { background: var(--fill-deep); color: var(--ink); font-weight: 600; }
 
-  /* The content column keeps one gutter and everything inside it lines up on that gutter —
+  /* The content column keeps one gutter and everything inside it lines up on that gutter -
      the page header, the list, the detail panel. A list that draws its own margin drifts out
      of line with the title above it the moment either one is changed. */
   .main { flex: 1; min-width: 0; display: flex; flex-direction: column; overflow: hidden;
@@ -242,7 +242,7 @@
 
   /* The page header inside the content column: the screen's name, its line, its actions. */
   /* The back control sits ABOVE the title, so the row of title and actions is unchanged and the
-     return is where a reader looks for one — before the page, not after it. It wraps the whole
+     return is where a reader looks for one - before the page, not after it. It wraps the whole
      header so it spans the full width rather than squeezing into the title column. */
   .pagehead { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; padding: 16px 0 8px;
               border-bottom: 1px solid var(--line); margin: 0; }
@@ -271,7 +271,7 @@
      the reader acts on. */
   .noticons .nic.hidden-some::after { content: ""; width: 5px; height: 5px; border-radius: 50%;
                                       background: var(--accent); }
-  /* Wide enough that a card's title and its body's first line do not fold — a menu's width turns
+  /* Wide enough that a card's title and its body's first line do not fold - a menu's width turns
      a one-line notice into three and makes the panel harder to read than the card it stands for.
      `max-content` takes its width from the longest card rather than from a number nobody re-checks
      when the copy changes, and the cap is where the page itself starts to lose the panel's edge. */
@@ -282,7 +282,7 @@
   .noticedrop .nd-head { padding: 9px 12px; border-bottom: 1px solid var(--line);
                          font-size: 12px; font-weight: 700; color: var(--ink); }
   /* The row holds the page's own card and the control that puts it back. The card is NOT restyled
-     here — same background, border, corners and padding as on the page, because the reader is
+     here - same background, border, corners and padding as on the page, because the reader is
      looking for a thing they saw. What the row adds is around it. */
   .noticedrop .nd-item { display: flex; align-items: center; flex-wrap: wrap; gap: 8px;
                          padding: 10px 12px; border-bottom: 1px solid var(--line); }
@@ -314,7 +314,7 @@
                    border-radius: 2px; }
   /* The one thing on the strip that is a destination rather than a reading. It stands on every
      console screen because the answer to 「이 다음에 뭘 하지」 has to be reachable from wherever
-     the person got stuck, and the ordering behind it is arithmetic — so the button works on an
+     the person got stuck, and the ordering behind it is arithmetic - so the button works on an
      installation with every model switched off. */
   .sb-agent { display: flex; align-items: center; gap: 5px; flex: none; padding: 2px 7px;
               border: 1px dotted var(--line-strong); border-radius: 4px; background: var(--screen);
@@ -347,13 +347,13 @@
   .notice.unread { border-left: 3px solid var(--accent); }
   .notice .when { font: 500 9px/1 var(--mono); color: var(--ink-3); }
 
-  /* Live toast stack — what a push actually looks like on a screen in use. */
+  /* Live toast stack - what a push actually looks like on a screen in use. */
   .toasts { position: absolute; right: 14px; bottom: 40px; z-index: 3; display: flex;
             flex-direction: column; gap: 8px; width: 300px; }
   .toast { border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: 4px;
            background: var(--paper); padding: 8px 10px; box-shadow: 0 2px 6px rgba(31,36,48,.10); }
   /* A toast floats over the screen's bottom-right corner, so a screen that shows one keeps that
-     corner clear — otherwise the stack lands on whatever the screen ends with and the frame
+     corner clear - otherwise the stack lands on whatever the screen ends with and the frame
      shows two things in one place, which is not what either of them does. */
   .screen:has(.toasts) { padding-bottom: 96px; }
   .frame.desktop .body { padding: 14px 16px 18px; gap: 12px; }
@@ -422,15 +422,15 @@
      between them so what a record can be done to is read without opening anything. */
   .ld-verbs { display: flex; gap: 8px; margin-top: auto; padding-top: 10px; border-top: 1px solid var(--line); }
   .ld-verbs .btn { flex: 1; padding: 6px 12px; font-size: 12px; }
-  /* Each tier keeps its own rule. The two rows answer different questions — what this tab asks
-     for, and what is done to the record — and switching tabs changes only the upper one, so a
+  /* Each tier keeps its own rule. The two rows answer different questions - what this tab asks
+     for, and what is done to the record - and switching tabs changes only the upper one, so a
      line between them is what says the lower row did not move. */
   .ld-verbs + .ld-foot { margin-top: 8px; padding-top: 8px; }
 
   /* Tabs across the panel: the record's own surfaces, counts riding the labels.
 
-     **Underlined, not boxed.** These are navigation inside the record — the same record seen from
-     another side — and a boxed segmented row reads as a control that changes a value. The boxed
+     **Underlined, not boxed.** These are navigation inside the record - the same record seen from
+     another side - and a boxed segmented row reads as a control that changes a value. The boxed
      shape belongs over a LIST, where the tabs really do switch which rows are being counted. */
   .tabs { display: flex; gap: 2px; margin: 0; border-bottom: 1px solid var(--line); }
   .tabs .tab { flex: none; text-align: left; padding: 7px 12px; font-size: 12px; color: var(--muted);
@@ -447,12 +447,12 @@
                  display: flex; align-items: center; gap: 6px; }
   .stabs .stab.active { background: var(--screen); color: var(--ink); font-weight: 600; border: 1px solid var(--line); }
   .stabs .stab .n { margin-left: auto; font: 10px var(--mono); color: var(--faint); }
-  /* The record's own column stacks page-level blocks — a filter bar, a table, a message, a
-     section — so it is spaced the way the content column is. A block that draws its own margin
+  /* The record's own column stacks page-level blocks - a filter bar, a table, a message, a
+     section - so it is spaced the way the content column is. A block that draws its own margin
      instead drifts out of line with the side tabs beside it. */
   .rec > .rec-b { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 14px; }
 
-  /* A titled group of read-only fields. Two to a row — one value per line runs off-screen
+  /* A titled group of read-only fields. Two to a row - one value per line runs off-screen
      long before it runs out of fields. */
   .sect { margin-bottom: 6px; }
   .sect:last-of-type { margin-bottom: 0; }
@@ -463,12 +463,12 @@
      list column's generic block gap so the two controls read as one compact filter cluster. */
   .filterbar + .table:has(> .table-group-filters) { margin-top: -3px; }
   /* A rail or a grid gets the same section heading as a field group, with the gap a
-     block needs above it — dropped straight after fields it reads as their last row. */
+     block needs above it - dropped straight after fields it reads as their last row. */
   .sect-t.sect-head { margin-top: 14px; }
   .fields { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 28px; }
   .dfield { display: flex; align-items: baseline; gap: 10px; min-width: 0; padding-bottom: 7px; border-bottom: 1px solid var(--fill-deep); }
   .dfield.wide { grid-column: 1 / -1; }
-  /* A block that is not a field — a tree, a table, a chart — takes both columns. */
+  /* A block that is not a field - a tree, a table, a chart - takes both columns. */
   .d-full { grid-column: 1 / -1; min-width: 0; }
   /* The picture and the values that identify the record, side by side. One column beside the
      photo rather than two: the panel is already the narrow half of the page. */
@@ -506,7 +506,7 @@
   .ract .ic { width: 14px; height: 14px; border: 0; border-radius: 0; display: inline-flex; }
   .ract .ic svg { width: 14px; height: 14px; display: block; }
   .ract.more { width: auto; padding: 0 6px; font-size: 10px; color: var(--muted); white-space: nowrap; }
-  /* Unavailable on this row, and drawn anyway — the column has the same buttons in the same
+  /* Unavailable on this row, and drawn anyway - the column has the same buttons in the same
      places on every line, so it can be run down with the eye. Dashed as well as faded, because
      fading alone would not survive the greyscale the board is drawn in. */
   .ract.off { background: transparent; color: var(--faint); }
@@ -541,12 +541,12 @@
                    font-size: 12px; color: var(--faint); }
   .ffield .input.sel .car { margin-left: auto; font-size: 8px; color: var(--muted); }
   /* The box is as wide as the digits it takes. Stretched to the column, a two-digit field stops
-     saying what goes in it — the label above keeps the column's width instead. */
+     saying what goes in it - the label above keeps the column's width instead. */
   .ffield .input.num { justify-content: flex-start; width: max-content; max-width: 100%; }
   .ffield .input.num .nval { display: inline-block; min-width: calc(var(--nd, 4) * 1ch); text-align: right; }
   /* The unit keeps its distance from the stepper's border. The box is `max-content`, so
      `margin-left: auto` on the stepper has no free space to push into and the two sat against
-     each other — 「년」 and the arrows overlapped at the field's own font size. */
+     each other - 「년」 and the arrows overlapped at the field's own font size. */
   .ffield .input.num .unit { margin-left: 6px; margin-right: 12px; color: var(--muted); }
   .ffield .input.num .spin { margin-left: auto; display: flex; flex-direction: column;
                              border-left: 1px solid var(--line); height: 100%; }
@@ -559,7 +559,7 @@
                    background: var(--screen); }
   .ffield .fhint { font-size: 11px; color: var(--faint); }
 
-  /* The list column of a companion frame. Empty on purpose — the moment it grows content a
+  /* The list column of a companion frame. Empty on purpose - the moment it grows content a
      reader starts reading it as the screen, and the two drawings diverge. */
   .region-ph { display: flex; flex-direction: column; gap: 8px; height: 100%; min-height: 220px;
     padding: 16px 14px; border: 1px dashed var(--line); border-radius: 6px; background: var(--fill); }
@@ -568,7 +568,7 @@
 
   /* The panes the base does not draw, down the detail column. Each carries the base's own strip
      with that pane open, so the drawing says "this is what pressing that tab shows" rather than
-     leaving it to the note. No box around a pane — a card would stop it reading as the panel. */
+     leaving it to the note. No box around a pane - a card would stop it reading as the panel. */
   .tpanes { display: flex; flex-direction: column; gap: 18px; }
   .tp-note { padding: 8px 12px; font-size: 12px; line-height: 1.55;
     border-left: 3px solid var(--accent); background: var(--accent-tint); }
@@ -595,7 +595,7 @@
   .ld-detail > .audit ~ .ld-verbs,
   .ld-detail > .audit ~ .ld-foot { margin-top: 8px; }
   /* An outsider transcribing this into a report needs the whole id, so it is copyable rather
-     than elided — a record nobody can name is a record nobody can cite. */
+     than elided - a record nobody can name is a record nobody can cite. */
   .audit .au-copy { border: 1px solid var(--line); border-radius: 4px; padding: 0 5px;
                     color: var(--muted); font: 9px var(--mono); }
 
@@ -610,7 +610,7 @@
   .modal.peek.viewer .pk-body { max-height: none; padding: 14px; }
   /* A viewer inside a dialog must not be squeezed shorter than the page it is drawing. Left to
      shrink as an ordinary flex child it clipped the paper at an arbitrary line that is not a page
-     break — which is the one thing a print preview may never do. It keeps its height and the
+     break - which is the one thing a print preview may never do. It keeps its height and the
      dialog body scrolls, with the scrollbar pinned. */
   .pk-body > .dv { flex: 0 0 auto; }
   /* The rules run the full width of the dialog. Inset, they would read as dividers inside the
@@ -619,7 +619,7 @@
              border-bottom: 1px solid var(--line); }
   /* A dialog is as tall as what it holds, and stops at the frame rather than at a number. The
      old cap was a flat 360px with `overflow: hidden`, which cut 90 blocks across the board without
-     a scrollbar, an ellipsis or any other mark — a reference table that ends mid-row reads as a
+     a scrollbar, an ellipsis or any other mark - a reference table that ends mid-row reads as a
      table with fewer rows, and the reviewer cannot tell the difference. Capped against `--vh` the
      dialog grows to fit, and where it genuinely cannot the body scrolls with the scrollbar pinned,
      the same promise `.scroll-x` makes sideways: what scrolls has to LOOK like it scrolls, because
@@ -640,10 +640,10 @@
   .filterbar .spacer { flex: 1; }
   .filterbar .total { font: 600 11px var(--mono); color: var(--muted); border: 1px solid var(--line);
                       border-radius: 6px; padding: 4px 8px; background: var(--fill); }
-  /* The segmented switch belongs to whatever bar holds it — the list's filter bar and the
+  /* The segmented switch belongs to whatever bar holds it - the list's filter bar and the
      viewer's toolbar draw the same control, so it is defined once for both.
      `line-height` is fixed because the segment's own text decides its height otherwise, and a
-     language switch carries scripts whose glyphs are taller than Latin or Hangul — ភាសាខ្មែរ
+     language switch carries scripts whose glyphs are taller than Latin or Hangul - ភាសាខ្មែរ
      grew the box and left that one control standing above its neighbours in the bar. */
   .filterbar .seg, .dv-bar .seg { display: inline-flex; align-items: stretch;
                     border: 1px solid var(--line); border-radius: 6px;
@@ -697,7 +697,7 @@
   /* A row reads at the same size as a menu entry and a field label. Left to inherit the body
      size it came out larger than everything around it, which made the list shout. */
   /* One grid for the whole table, so a column is the same width on every row. `subgrid` is what
-     lets the rows keep their own borders and backgrounds while sharing the parent's columns —
+     lets the rows keep their own borders and backgrounds while sharing the parent's columns -
      `display: contents` would give the columns and take the row away.
      Where the browser has no subgrid, or a table declared no columns (no header), the flex rules
      below still apply and the table renders as it did: misaligned in the same places, never
@@ -721,7 +721,7 @@
   .td { flex: 1; min-width: 0; }
   /* A cell holding controls spaces them, the way every other row of controls on the board is
      spaced. Two buttons written one after the other used to be drawn edge to edge, which reads
-     as one wide control with a line through it — and in a narrow column they wrap and stack. */
+     as one wide control with a line through it - and in a narrow column they wrap and stack. */
   .td:has(> .btn) { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
   .td:has(> .rowact) { display: flex; align-items: center; justify-content: flex-end; }
   .td.w2 { flex: 2; }
@@ -753,8 +753,8 @@
      cannot, because the reader's eye is on a branch and not on the top of the list. */
   .trow.tsel { background: var(--fill-deep); }
   .trow.tsel .tr-label { font-weight: 600; color: var(--ink); }
-  /* A tree whose first column holds SENTENCES, not names. The ellipsis is right for a name —
-     「A동 3층」 cut to 「A동 3…」 is still findable — and wrong for 「정기·채용 시·변경 시·특별
+  /* A tree whose first column holds SENTENCES, not names. The ellipsis is right for a name -
+     「A동 3층」 cut to 「A동 3…」 is still findable - and wrong for 「정기·채용 시·변경 시·특별
      교육을 한다」, where what got cut is the requirement itself and the row stops saying
      anything. Rows grow instead; the caret and the indent stay pinned to the first line. */
   .tt-wrap .trow { align-items: flex-start; }
@@ -829,7 +829,7 @@
   .aibadge .basis { padding-left: 5px; border-left: 1px dotted var(--line); color: var(--muted); }
 
   /* What a model made on this screen, and what is left when it is off. Sits where helpCard sits
-     and is deliberately not it — the question mark explains the domain, the ◈ explains the
+     and is deliberately not it - the question mark explains the domain, the ◈ explains the
      machine, and a reader who learned one should not read the other as the same thing. */
   .aicard { display: flex; gap: 10px; align-items: center; padding: 8px 12px; border-radius: 6px;
     border: 1px dotted var(--line-strong); background: var(--fill); }
@@ -911,7 +911,7 @@
   /* A control the reader's role cannot use is drawn disabled, never removed: an absent button
      reads as a screen that has no such action, and sends somebody looking for it elsewhere. */
   .btn.off { color: var(--faint); border-color: var(--line); border-style: dotted; }
-  /* Destructive by colour, not by position — a row that is reordered keeps the warning. */
+  /* Destructive by colour, not by position - a row that is reordered keeps the warning. */
   .btn.danger { color: var(--accent); border-color: var(--accent); }
 
   .field { display: flex; flex-direction: column; gap: 4px; }
@@ -948,7 +948,7 @@
   .chip-filter-group .chip { padding: 3px 10px; }
   .chips .chips-note { margin-left: auto; padding-left: 12px; font-size: 12px; color: var(--muted); }
   /* Appears as soon as a second chip is lit, which is what says the row narrows rather than
-     chooses — and is the one control that undoes a selection built up one chip at a time. */
+     chooses - and is the one control that undoes a selection built up one chip at a time. */
   .chips .chips-clear { margin-left: 4px; padding: 3px 9px; border: 1px dashed var(--line-strong);
                         border-radius: 999px; font-size: 11px; color: var(--muted); }
 
@@ -1000,7 +1000,7 @@
   /* First-run setup: a stepper, a fixed content width, and one action row per step. */
   .body.setup { max-width: 860px; margin: 0 auto; padding: 40px 24px 32px; gap: 18px; }
   /* The steps are joined by a line: a row of separate pills reads as a set of choices, and a
-     wizard is not one — it is an order. The line before a step that is done or current is drawn
+     wizard is not one - it is an order. The line before a step that is done or current is drawn
      solid, the rest dashed, so how far along the reader is can be seen without counting. */
   .setup-steps { display: flex; align-items: center; gap: 0; width: 100%; flex: none;
                  margin-bottom: 4px; }
@@ -1025,12 +1025,12 @@
   /* Tabs over a list: the kinds an operator works through separately.
 
      **Boxed, not underlined.** Each one is a different count over the same table, so the row is a
-     switch between filters rather than navigation — and a segmented control says that. The
+     switch between filters rather than navigation - and a segmented control says that. The
      underline belongs inside a record, where the tabs move between one record's surfaces. */
   .ltabs { display: flex; gap: 0; margin: 0; border: 1px solid var(--line); border-radius: 8px;
            background: var(--fill); padding: 3px; }
   /* A row of tabs stretches every tab to the height of the tallest, and a board may run scripts of
-     very different line heights — ភាសាខ្មែរ sets the row's height and 한국어 beside it then sat at
+     very different line heights - ភាសាខ្មែរ sets the row's height and 한국어 beside it then sat at
      the top of its box with the difference below, which reads as a stray gap inside the control.
      Centring costs nothing where the scripts match and is the whole fix where they do not. */
   .ltab { display: inline-flex; align-items: center; justify-content: center; flex: 1;
@@ -1040,7 +1040,7 @@
   .ltab .n { margin-left: 5px; font: 10px var(--mono); color: var(--faint); }
 
   /* The language picker is its own shape and predates the boxed list tabs above it, so it
-     resets the box rather than inheriting it — its buttons carry their own joined border. */
+     resets the box rather than inheriting it - its buttons carry their own joined border. */
   .ltabs.lang { border: 0; border-radius: 0; background: none; padding: 0; gap: 0; margin-bottom: 6px; }
   .ltabs.lang .ltab { flex: none; border-radius: 0; }
   .ltabs.lang .ltab { padding: 3px 9px; font-size: 11px; border: 1px solid var(--line); border-right: 0;
@@ -1049,7 +1049,7 @@
   .ltabs.lang .ltab:last-child { border-right: 1px solid var(--line); border-radius: 0 5px 5px 0; }
   .ltabs.lang .ltab.active { background: var(--screen); color: var(--ink); border-bottom-color: var(--line); }
 
-  /* At the narrow breakpoint the panel covers the list — see the reading contract. */
+  /* At the narrow breakpoint the panel covers the list - see the reading contract. */
   .frame.desktop.narrow .ld-list { display: none; }
   .frame.desktop.narrow .ld-divider { display: none; }
   .frame.desktop.narrow .ld-detail { flex: 1 1 auto; }
@@ -1058,7 +1058,7 @@
   /* ── An icon's PLACE is filled, not outlined ──────────────────────
      An empty outlined square is exactly what a checkbox looks like, and readers have read these
      as checkboxes. The board reserves the room an icon will take and says nothing about its
-     shape — so the placeholder is a filled block, the way every other placeholder here is. */
+     shape - so the placeholder is a filled block, the way every other placeholder here is. */
   .ic { background: var(--fill-deep); }
   .sn-item.active .ic, .tn-tab.active .ic, .sn-group.open .ic { background: var(--line); }
   .sn-item.locked .ic, .sn-group.locked .ic, .tn-tab.locked .ic { background: transparent; }
@@ -1084,7 +1084,7 @@
 
   /* A notice card takes a row of the page for as long as the page exists, so every one of the
      three notice kinds closes. The control is the same mark everywhere it appears, at the card's
-     own right edge — after the card's actions, because leaving the card is not one of them. */
+     own right edge - after the card's actions, because leaving the card is not one of them. */
   .n-close { flex: none; align-self: flex-start; margin-left: 8px; padding: 0 4px;
              font: 11px/18px var(--mono); color: var(--muted); }
   .n-close svg { width: 13px; height: 13px; display: block; }
@@ -1096,11 +1096,11 @@
   .msg .mkind { flex: none; min-width: 30px; padding: 1px 6px; border-radius: 3px;
                 border: 1px solid var(--line-strong); background: var(--screen);
                 font: 700 10px/16px var(--mono); text-align: center; }
-  /* The kind is read by its mark before its word — a message met in daylight on a cheap screen
+  /* The kind is read by its mark before its word - a message met in daylight on a cheap screen
      is sorted by shape, and the three notice kinds are the three shapes. */
   .msg .mkind i { font-style: normal; margin-right: 3px; opacity: .75; }
   .msg .mbody { min-width: 0; flex: 1; }
-  /* The way out of the message, not part of what it says — right, on one line. */
+  /* The way out of the message, not part of what it says - right, on one line. */
   .msg .mact { align-self: center; display: flex; gap: 8px; flex: none; }
   .msg .mact .btn { padding: 5px 10px; font-size: 12px; }
   .msg .mtitle { font-weight: 700; color: var(--ink); }
@@ -1124,7 +1124,7 @@
 
   /* ── Figures ──────────────────────────────────────────────────────
      A chart here is a PLACE and a FORM, never pixels: the board fixes which question the figure
-     answers, and the design system decides how it looks. Greyscale on purpose — a wireframe that
+     answers, and the design system decides how it looks. Greyscale on purpose - a wireframe that
      picked series colours would be picking them for the product. */
   .stat { border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; background: var(--screen);
           display: flex; flex-direction: column; gap: 2px; min-width: 0; }
@@ -1133,7 +1133,7 @@
   .st-unit { font-size: 13px; font-weight: 600; color: var(--muted); margin-left: 3px; }
   .st-trend { font: 600 11px var(--mono); color: var(--muted); }
   .st-basis { font-size: 10px; color: var(--ink-3); }
-  /* The shape behind the number. No axis and no labels — it says whether the value is where it
+  /* The shape behind the number. No axis and no labels - it says whether the value is where it
      has been heading, which a month-over-month arrow cannot. */
   .st-main { display: flex; align-items: flex-end; gap: 10px; }
   .st-num { min-width: 0; flex: 1; }
@@ -1154,7 +1154,7 @@
   .ch-title { font-size: 12px; font-weight: 600; }
   .ch-plot { position: relative; border-bottom: 1px solid var(--line); border-left: 1px solid var(--line);
              border-left: 1px solid var(--line); }
-  /* The axes. A plot with neither name is a shape — the reader can see a rise and cannot say a
+  /* The axes. A plot with neither name is a shape - the reader can see a rise and cannot say a
      rise in what, over what. The vertical name sits above the plot's left edge rather than rotated
      down it: turned text at this size is read twice, and a wireframe is read once. */
   .ch-y { font-size: 10px; color: var(--muted); margin-bottom: 2px; }
@@ -1171,7 +1171,7 @@
   .cv { width: 100%; height: 100%; fill: none; stroke: var(--line-strong); stroke-width: 2;
         stroke-linejoin: round; stroke-linecap: round; }
   .cv .dim { stroke: var(--line); stroke-dasharray: 4 3; }
-  /* Series are told apart by stroke rather than colour — the board carries one accent and it is
+  /* Series are told apart by stroke rather than colour - the board carries one accent and it is
      spent on connectors. The legend swatches below use the same four. */
   .cv .s0 { stroke: var(--line-strong); }
   .cv .s1 { stroke: var(--line); stroke-dasharray: 4 3; }
@@ -1181,7 +1181,7 @@
   .cbars i { flex: 1; background: var(--fill-deep); border: 1px solid var(--line);
              border-radius: 4px 4px 0 0; display: flex; align-items: flex-end; }
   /* Only the DATA END is rounded. Where a mark meets the baseline, or meets the segment under
-     it, the corner is square — a rounded edge there reads as a gap that is not in the data. */
+     it, the corner is square - a rounded edge there reads as a gap that is not in the data. */
   .cbars.stack i b { display: block; width: 100%; background: var(--line-strong); border-radius: 0; }
   .cbars.dist i { border-radius: 3px 3px 0 0; }
   .cprog { position: relative; height: 22px; margin-top: 40px; border: 1px solid var(--line);
@@ -1192,7 +1192,7 @@
               color: var(--accent); border-left: 1px dashed var(--accent); padding-left: 4px; height: 42px; }
 
   /* The window a history list is read over: the range, the grain, and where the events actually
-     are. The density band is the point — an operator hunting an incident does not know when it
+     are. The density band is the point - an operator hunting an incident does not know when it
      happened, only that it was busy. */
   .scrub { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px 8px;
            background: var(--screen); display: flex; flex-direction: column; gap: 8px; }
@@ -1241,7 +1241,7 @@
   .cd-mark.warn { border-color: var(--accent); color: var(--accent); }
   .cd-more { font-size: 9px; color: var(--ink-3); }
 
-  /* Same as .table — the clip was for the corner and it was cutting the last row. */
+  /* Same as .table - the clip was for the corner and it was cutting the last row. */
   .mx { border: 1px solid var(--line); border-radius: 8px; background: var(--screen); }
   .mx > *:first-child { border-top-left-radius: 7px; border-top-right-radius: 7px; }
   .mx > *:last-child { border-bottom-left-radius: 7px; border-bottom-right-radius: 7px; }
@@ -1254,7 +1254,7 @@
   .mx-label, .mx-corner { flex: 0 0 190px; text-align: left; font-size: 12px; color: var(--muted);
                           display: flex; align-items: center; gap: 5px; }
   .mx-in { flex: none; }
-  /* The band naming what the rows beneath it belong to — the row axis's hierarchy, drawn in the
+  /* The band naming what the rows beneath it belong to - the row axis's hierarchy, drawn in the
      grid rather than as a tree above it that says the same names a second time. */
   .mx-band { background: var(--fill); }
   .mx-band .mx-label { flex: 1; font-weight: 700; color: var(--ink); padding: 6px 8px; }
@@ -1320,7 +1320,7 @@
   .hit-meta { font: 10px var(--mono); color: var(--ink-3); }
 
   /* ── The lifecycle rail ───────────────────────────────────────────
-     The line between two dots is a claim that one follows the other — which is exactly what a
+     The line between two dots is a claim that one follows the other - which is exactly what a
      stack of cards cannot say. A lane forks beside the rail for a process running INSIDE one
      stage, tied back by its elbows so it does not read as a stage of its own. */
   .jn { display: flex; flex-direction: column; }
@@ -1354,7 +1354,7 @@
   .jn-node.active .jn-label { color: var(--ink); font-weight: 700; }
   .jn-node.pending .jn-dot { border-style: solid; background: var(--fill); }
   .jn-node.pending .jn-label { color: var(--ink-3); }
-  /* Never going to run — not pending forever. */
+  /* Never going to run - not pending forever. */
   .jn-node.skip .jn-dot { border-style: dashed; background: var(--fill); }
   .jn-node.skip .jn-label { color: var(--ink-3); text-decoration: line-through; }
   .jn-node.reject .jn-dot { background: var(--accent); border-color: var(--accent); }
@@ -1363,7 +1363,7 @@
   .jn-lane { position: relative; margin: 8px 0 4px; padding: 10px 12px; border-radius: 6px;
              border: 1px solid var(--line); background: var(--fill); display: flex;
              flex-direction: column; gap: 8px; }
-  /* Where the lane leaves the rail and where it rejoins it, each marked by a small ring — the
+  /* Where the lane leaves the rail and where it rejoins it, each marked by a small ring - the
      same way the rail marks a stage. A bare tee would read as the line having been cut. */
   .jn-tie { position: absolute; left: -17px; width: 17px; height: 1px; background: var(--line); }
   .jn-tie::before { content: ''; position: absolute; left: -4px; top: -4px; width: 9px; height: 9px;
@@ -1387,7 +1387,7 @@
   .ed-tool.off { color: var(--faint); }
   .ed-div { width: 1px; align-self: stretch; margin: 2px 5px; background: var(--line); }
   .ed-trail { font: 10px var(--mono); color: var(--ink-3); white-space: nowrap; }
-  /* The page under the bar joins it — two rounded boxes stacked read as two separate things. */
+  /* The page under the bar joins it - two rounded boxes stacked read as two separate things. */
   .edbar + .table.bounded { border-radius: 0 0 8px 8px; }
 
   /* ── A canvas that is worked on ───────────────────────────────────── */
@@ -1400,26 +1400,26 @@
   .cvs-tool.active { background: var(--screen); border-color: var(--line-strong); color: var(--ink);
                      font-weight: 600; }
   .cvs-zoom { font: 10px var(--mono); color: var(--ink-3); }
-  /* 340px where the palette carries sections: at 260px the third one — the drawing's own files —
+  /* 340px where the palette carries sections: at 260px the third one - the drawing's own files -
      sat entirely below the fold of a column nobody knew scrolled. */
   .cvs-main { display: flex; height: 260px; }
   .cvs:has(.cvs-pal.grouped) .cvs-main { height: 340px; }
   /* The palette is a column inside a body of fixed height, so a kit with more field types than
-     260px holds has to scroll rather than be cut — a palette that ends early reads as a product
+     260px holds has to scroll rather than be cut - a palette that ends early reads as a product
      with fewer field types. */
   .cvs-pal { flex: 0 0 132px; border-right: 1px solid var(--line); padding: 8px; display: flex;
              flex-direction: column; gap: 4px; background: var(--fill); overflow-y: auto; }
   .cvs-pi { display: flex; align-items: center; gap: 6px; padding: 5px 7px; border-radius: 5px;
             font-size: 11px; color: var(--muted); background: var(--screen);
             border: 1px solid var(--line); }
-  /* A control that acts on the whole drawing, not a tool that changes what a click does — it sits
+  /* A control that acts on the whole drawing, not a tool that changes what a click does - it sits
      with the zoom rather than in the tool run, so a mode and an action never read as the same row. */
   .cvs-act { padding: 3px 8px; border-radius: 4px; font-size: 11px; color: var(--ink-2);
     border: 1px solid var(--line); background: var(--screen); white-space: nowrap; }
   /* Sectioned palette: what still has to be placed, what is already on the drawing, and the files
-     the drawing came from — all in the column they are dragged from. It needs more width than a
+     the drawing came from - all in the column they are dragged from. It needs more width than a
      bare name list, and each entry carries the one line saying why it is still here. */
-  /* The column scrolls, and it has to LOOK like it scrolls — macOS hides an overlay scrollbar
+  /* The column scrolls, and it has to LOOK like it scrolls - macOS hides an overlay scrollbar
      until something moves, so a palette three sections deep reads as one that ends at the canvas
      floor and the file section under it is never found. */
   .cvs-pal.grouped { flex: 0 0 196px; gap: 2px;
@@ -1462,7 +1462,7 @@
                 border-radius: 8px; }
   .sheet-meta { font: 10px var(--mono); color: var(--ink-3); align-self: flex-end; }
   /* Paper has a shape, and a page ends. A sheet that grew to fit whatever was put on it drew its
-     content past its own bottom edge, which reads as a broken frame rather than as a second page —
+     content past its own bottom edge, which reads as a broken frame rather than as a second page -
      so the ratio is the paper's and the overflow is clipped. What gets cut is reported by
      inspect.mjs and said in the viewer's status line; it is never left for the reader to notice. */
   .sheet-paper { width: 420px; background: var(--screen); padding: 22px 26px; overflow: hidden;
@@ -1474,13 +1474,13 @@
   .sheet-paper.pp-card { aspect-ratio: 86 / 54; }
   .sheet-h { font-size: 15px; font-weight: 700; padding-bottom: 8px;
              border-bottom: 2px solid var(--ink); }
-  /* Both faces of one card, read at once — it has two sides, not pages to step through. */
+  /* Both faces of one card, read at once - it has two sides, not pages to step through. */
   .sheet-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-start; }
   .sheet-row .sheet-wrap { flex: 1 1 300px; min-width: 0; }
   .sheet-row .sheet-paper { width: 100%; }
 
   /* ── The document viewer: paper, and the controls for reading it ──── */
-  /* The stage is already the grey field the paper sits on, so the wrap gives up its own — two
+  /* The stage is already the grey field the paper sits on, so the wrap gives up its own - two
      nested fields read as a frame around a frame and shrink the page for nothing. */
   .dv { display: flex; flex-direction: column; border: 1px solid var(--line-strong);
         border-radius: 8px; overflow: hidden; background: var(--screen); }
@@ -1530,7 +1530,7 @@
   /* A fixed stage, not one that shrinks to its content: a page whose box ends where the text ran
      out is not a page, and the whole point of a preview is seeing where the paper ends. */
   /* The stage decides how large the paper is drawn, and at 480px an upright A4 came out 317px
-     wide — narrower than a phone, which is not a preview of anything a person will print. The
+     wide - narrower than a phone, which is not a preview of anything a person will print. The
      page is drawn big enough to read, and what a page cannot hold is a page-count problem rather
      than a rendering one. */
   .dv-stage { flex: 1; min-width: 0; display: flex; justify-content: center; gap: 16px;
@@ -1545,22 +1545,22 @@
   .dv-stage .sheet-wrap { background: none; border: 0; border-radius: 0; padding: 0; flex: none; }
   .dv-stage .sheet-meta { display: none; }
   /* The paper now has a height, so its blocks must keep their own instead of being squeezed to
-     fit it — a photo placeholder compressed to a stripe is not what will come out of the printer.
+     fit it - a photo placeholder compressed to a stripe is not what will come out of the printer.
      What runs past the bottom edge is clipped, which is exactly what the page break does. */
   .dv-stage .sheet-paper { padding: 26px 30px; justify-content: flex-start; }
   .dv-stage .sheet-paper > * { flex: 0 0 auto; }
   /* Fit to width: the page is drawn wide enough to read and KEEPS ITS FULL HEIGHT, so the stage
-     scrolls down it — which is what fitting to width means. Squeezing it to the stage's height
+     scrolls down it - which is what fitting to width means. Squeezing it to the stage's height
      instead cut the paper at a line that is not a page break, and the reader had no way to reach
      what was under it. */
   .dv-stage.fit-width .sheet-paper { width: 700px; }
-  /* One whole page, at the proportion of the paper it is — which the sheet's own pp-* class says,
+  /* One whole page, at the proportion of the paper it is - which the sheet's own pp-* class says,
      so a landscape report and a credential are not both drawn as upright A4. */
   .dv-stage.fit-page .sheet-wrap,
   .dv-stage.fit-two .sheet-wrap { height: 100%; }
   .dv-stage.fit-page .sheet-paper,
   .dv-stage.fit-two .sheet-paper { width: auto; height: 100%; min-height: 0; }
-  /* The page after the one being read — its content is not this frame's subject, its edge is. */
+  /* The page after the one being read - its content is not this frame's subject, its edge is. */
   .dv-next { flex: none; height: 100%; aspect-ratio: 1 / 1.414; background: var(--screen);
              border: 1px solid var(--line-strong); box-shadow: 2px 3px 0 rgba(31,36,48,.08); }
   .dv-foot { display: flex; align-items: center; gap: 10px; padding: 7px 12px;
@@ -1588,7 +1588,7 @@
               flex-direction: column; gap: 10px; }
   .man-body .img-ph { width: 100%; height: 120px; }
 
-  /* The property panel is narrow by design — it sits beside the drawing, not over it — so its
+  /* The property panel is narrow by design - it sits beside the drawing, not over it - so its
      fields stack rather than putting label and value on one line and wrapping the value. */
   .cvs-prop .dfield { flex-direction: column; align-items: stretch; gap: 2px; padding-bottom: 6px; }
   .cvs-prop .dlabel { flex: none; }
@@ -1615,11 +1615,11 @@
   .auth-f .spacer { flex: 1; }
 
 /* The approval stamp grid. Right-aligned wherever it stands, because the top right is where a
-   Korean approval form has carried it for as long as anyone has been signing them — a reader looks
+   Korean approval form has carried it for as long as anyone has been signing them - a reader looks
    there before reading anything else, and moving it costs them that glance.
 
    **A cell never wraps.** Squeezed narrow it breaks a name down the middle, one character per
-   line, and a box read at a glance stops being readable at all — so the cell is wide enough for a
+   line, and a box read at a glance stops being readable at all - so the cell is wide enough for a
    name and a date, and the row grows rather than the text folding. */
   .signbox { align-self: flex-end; margin: 0 0 4px auto; width: max-content; max-width: 100%;
              border: 1px solid var(--line); border-radius: 7px; overflow: hidden;

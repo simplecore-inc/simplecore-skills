@@ -1,14 +1,14 @@
 #!/usr/bin/env node
 /**
- * Completion gate — a session that changed screens does not end without those screens having
+ * Completion gate - a session that changed screens does not end without those screens having
  * been driven in a browser, nor without the convention audit having run.
  *
  * The other gate in this plugin guards the moment of editing. This one guards the moment of
  * claiming done, because that is where both checks are actually skipped: the build is green,
  * the diff reads correctly, and nobody opened the page or ran the audit. A screen whose states
  * have never been walked by hand is unverified no matter how green the build is, and the defects
- * that hides — a dead filter, an empty state that never renders, a dialog that cannot be
- * dismissed — are exactly the ones a type checker cannot see. The audit script covers the other
+ * that hides - a dead filter, an empty state that never renders, a dialog that cannot be
+ * dismissed - are exactly the ones a type checker cannot see. The audit script covers the other
  * half: the machine-checkable conventions that a reviewer would otherwise catch by eye, one of
  * which (an ungated action affordance) is a permission hole rather than a style problem.
  *
@@ -22,7 +22,7 @@
  * a session is interrupted once rather than twice.
  *
  * It blocks AT MOST ONCE per session. The gate exists to make an omission visible, not to trap
- * a session that has a good reason — a pure refactor, a change with no reachable screen, a user
+ * a session that has a good reason - a pure refactor, a change with no reachable screen, a user
  * who asked for code only. Claude answers the objection and stops again.
  *
  * Scope guard: nothing is gated until a project declares `e2eGate` in `.claude/simplix.json`:

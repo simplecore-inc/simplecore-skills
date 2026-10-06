@@ -66,7 +66,7 @@ Boolean fields MUST use `type: "toggle"`, NEVER `type: "faceted"` with true/fals
 
 ### ★ maxBadges: ALWAYS 3
 
-Every `CrudList.FilterBar` you create or touch MUST set `maxBadges={3}` — active-filter badges beyond 3 collapse to `+N`, keeping the badge bar scannable. This is a prescriptive standard: apply it whenever you add or modify a FilterBar, even if neighbouring lists predate the rule and lack it.
+Every `CrudList.FilterBar` you create or touch MUST set `maxBadges={3}` - active-filter badges beyond 3 collapse to `+N`, keeping the badge bar scannable. This is a prescriptive standard: apply it whenever you add or modify a FilterBar, even if neighbouring lists predate the rule and lack it.
 
 ```tsx
 <CrudList.FilterBar maxBadges={3} filters={[...]} state={list.filters} />
@@ -74,7 +74,7 @@ Every `CrudList.FilterBar` you create or touch MUST set `maxBadges={3}` — acti
 
 ### ★ Entity/User Reference Filter: Faceted Dropdown, Never Raw-ID Text
 
-A filter on an entity-reference field (user account, FK id) MUST be a `faceted` filter with `display: "dropdown"`, built from a batch-loaded option list — NEVER a `text` filter over the raw id. Raw-id text search cannot match what the column displays (the resolved name), so it reads as broken to the user. This presentation is system-wide: every entity/user picker filter uses the same collapsed dropdown.
+A filter on an entity-reference field (user account, FK id) MUST be a `faceted` filter with `display: "dropdown"`, built from a batch-loaded option list - NEVER a `text` filter over the raw id. Raw-id text search cannot match what the column displays (the resolved name), so it reads as broken to the user. This presentation is system-wide: every entity/user picker filter uses the same collapsed dropdown.
 
 ```tsx
 // Options come from the project's shared option hook (label = display name, value = id)
@@ -83,7 +83,7 @@ const { options: userOptions } = useUserOptions();
 { type: "faceted", field: "userAccountId", label: fieldLabel("userAccountId"), options: userOptions, display: "dropdown" }
 ```
 
-The backend SearchDTO field must allow `EQUALS, IN` (faceted serializes to `field.in`); drop `CONTAINS` from id fields — partial match on an opaque id is meaningless. This is a full-stack pre-condition, not a suggestion: a `faceted` filter over a SearchDTO field whose `@SearchableField(operators = {...})` OMITS `IN` sends `field.in=` to a field that rejects the operator, and the searchable layer returns an EMPTY result set with no error — the filter looks functional but silently shows nothing. Before wiring any faceted filter, confirm the backend field lists `IN`; if it does not, add `IN` to that field's operators (backend change + OpenAPI regen) as part of the same task.
+The backend SearchDTO field must allow `EQUALS, IN` (faceted serializes to `field.in`); drop `CONTAINS` from id fields - partial match on an opaque id is meaningless. This is a full-stack pre-condition, not a suggestion: a `faceted` filter over a SearchDTO field whose `@SearchableField(operators = {...})` OMITS `IN` sends `field.in=` to a field that rejects the operator, and the searchable layer returns an EMPTY result set with no error - the filter looks functional but silently shows nothing. Before wiring any faceted filter, confirm the backend field lists `IN`; if it does not, add `IN` to that field's operators (backend change + OpenAPI regen) as part of the same task.
 
 ### ★ ChipFilter: Special Cases Only
 
@@ -95,20 +95,20 @@ For standard enum/FK filtering, use `type: "faceted"` inside `FilterBar`.
 
 **`ChipFilter` has no width of its own.** It lays its chips out on a grid, so dropped into a
 `Flex` beside other controls it takes the narrowest column the row will give it and each
-label breaks one character to a line. Put it in a cell that can grow — a `Stack` with a
-minimum width and `flex-1` — whenever it shares a row; alone on its own line it needs
+label breaks one character to a line. Put it in a cell that can grow - a `Stack` with a
+minimum width and `flex-1` - whenever it shares a row; alone on its own line it needs
 nothing.
 
 ### ★ A condition the screen forces goes in the request params, never in `transformFilters`
 
-A tab, a chip row, a scope taken from the address — anything the screen decides rather than
-the reader — is merged into the request params. `transformFilters` keeps its documented job:
+A tab, a chip row, a scope taken from the address - anything the screen decides rather than
+the reader - is merged into the request params. `transformFilters` keeps its documented job:
 reshaping values the reader actually committed.
 
 **The list state machine only sends a `filters` object once the reader has committed a
 condition**, and `transformFilters` runs only when that object exists. So the first view
 requests without the narrowing and the whole set comes back, while the tab above it goes on
-printing its own count. There is no error and no log line — and **committing any filter at
+printing its own count. There is no error and no log line - and **committing any filter at
 all makes it start working**, which is why it survives a test pass: whoever is testing
 filters the list.
 
@@ -118,7 +118,7 @@ reach the condition to remove it.
 
 `audit-frontend.mjs`'s `forced-narrowing-in-transform-filters` reports the spread form. **A
 narrowing written as a plain key inside the same object is the same defect and is not
-reported** — that gap is stated in the rule itself, and it is the shape to look for by eye.
+reported** - that gap is stated in the rule itself, and it is the shape to look for by eye.
 
 ### ★ Leading Badge: Total Count Only When Data Exists
 
@@ -186,7 +186,7 @@ Older frameworks required `insertFilterSeparators()` (distributing 4 per row) fo
 
 ### Popover Columns (`popoverColumns` + `columnBreak`)
 
-When a list has many filters, the popover form can lay them out in multiple **fully independent columns** (each column is its own vertical stack — a tall field such as a calendar never stretches or fragments its neighbors). A vertical divider line renders between columns automatically.
+When a list has many filters, the popover form can lay them out in multiple **fully independent columns** (each column is its own vertical stack - a tall field such as a calendar never stretches or fragments its neighbors). A vertical divider line renders between columns automatically.
 
 | Setting | Behavior |
 | --- | --- |
@@ -195,7 +195,7 @@ When a list has many filters, the popover form can lay them out in multiple **fu
 | `popoverColumns={2}` | Always two columns in a 560px popover |
 | `popoverColumns={3}` | Always three columns in an 800px popover |
 
-Column boundaries follow `columnBreak: true` flags on the filter definitions (up to columns − 1 flags, in order); without flags the filters split evenly, column-major. Group by control kind for scannability — e.g. text inputs and toggles on the left, calendars (`dateRange`) in their own right-hand column:
+Column boundaries follow `columnBreak: true` flags on the filter definitions (up to columns − 1 flags, in order); without flags the filters split evenly, column-major. Group by control kind for scannability - e.g. text inputs and toggles on the left, calendars (`dateRange`) in their own right-hand column:
 
 ```tsx
 <CrudList.FilterBar
@@ -341,11 +341,11 @@ export function EntityList() {
 | ----------- | ----------------- | ---------------- |
 | `text` | CONTAINS, EQUALS | CONTAINS |
 | `number` | EQUALS | EQUALS |
-| `faceted` | (none needed — uses IN internally) | — |
-| `toggle` | (none needed — uses IS_TRUE/IS_FALSE) | — |
-| `dateRange` | (none needed — uses BETWEEN internally) | — |
-| `timezone` | (none needed) | — |
-| `country` | (none needed) | — |
+| `faceted` | (none needed - uses IN internally) | - |
+| `toggle` | (none needed - uses IS_TRUE/IS_FALSE) | - |
+| `dateRange` | (none needed - uses BETWEEN internally) | - |
+| `timezone` | (none needed) | - |
+| `country` | (none needed) | - |
 
 ---
 
@@ -416,7 +416,7 @@ const statusOptions = Object.values(ProductStatus).map((v) => ({
 { type: "faceted", field: "status", label: fieldLabel("status"), options: statusOptions }
 ```
 
-Note: `resolveBootEnum(value)` normalizes a SINGLE enum value to a string — it does NOT return an options array, so it cannot build the `options` list. A project may wrap the `Object.values(...).map(...)` pattern in a local helper, but that helper is not a framework API.
+Note: `resolveBootEnum(value)` normalizes a SINGLE enum value to a string - it does NOT return an options array, so it cannot build the `options` list. A project may wrap the `Object.values(...).map(...)` pattern in a local helper, but that helper is not a framework API.
 
 ---
 

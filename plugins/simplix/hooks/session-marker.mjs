@@ -1,8 +1,8 @@
 /**
  * Per-session markers shared by this plugin's gate hooks.
  *
- * A gate has to know what already happened in the session — which skill was invoked, whether any
- * UI file was touched — and hooks are separate processes with no memory between them. A file in
+ * A gate has to know what already happened in the session - which skill was invoked, whether any
+ * UI file was touched - and hooks are separate processes with no memory between them. A file in
  * the temp directory, keyed by session, is the whole mechanism.
  *
  * A marker never outlives its usefulness in a way that matters: a stale one only means a gate

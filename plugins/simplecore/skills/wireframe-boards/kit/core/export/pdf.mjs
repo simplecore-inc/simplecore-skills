@@ -4,7 +4,7 @@
 //   node wf.mjs pdf             → board.html → <pdfName>-<YYYYMMDD-HHmm>.pdf
 //   node wf.mjs pdf --in <in.html> --out <out.pdf>
 //
-// A share copy — the size of the board and how finished it is, without every screen:
+// A share copy - the size of the board and how finished it is, without every screen:
 //
 //   node wf.mjs pdf --mask 40%              → …-share40.pdf
 //   node wf.mjs pdf --mask 40% --watermark  → the same, stamped
@@ -14,7 +14,7 @@
 // by hand, because the board's own PDF is the one implementation reads from.
 //
 // The reading contract (`.readme`) is deliberately NOT printed. It is the instruction to
-// whoever implements from the board, and implementing is done from the HTML board — the PDF
+// whoever implements from the board, and implementing is done from the HTML board - the PDF
 // is the copy that gets read, sent, and printed.
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
@@ -25,7 +25,7 @@ import { launchBrowser } from '../browser.mjs';
 
 // ── Naming ────────────────────────────────────────────────────────────────────
 // `pdf/<pdfName>-<YYYYMMDD-HHmm>.pdf`, from `board.config.mjs`. The stamp is what tells two
-// copies apart once they have left this folder — a PDF sent to somebody else carries no build
+// copies apart once they have left this folder - a PDF sent to somebody else carries no build
 // log, so the name has to say when it was made.
 //
 // **Every build's PDF is kept, in a folder of its own.** Earlier ones are not deleted: a copy
@@ -57,7 +57,7 @@ const availH = Math.floor((PAGE.heightIn - PAGE.marginIn.top - PAGE.marginIn.bot
 
 // A frame page is two columns: the drawing, and a fixed column on the right holding the frame's
 // label and notes. Fixed, because the frame is scaled to fit its page and the notes must not be
-// — text that shrinks with a 1440px desktop frame becomes unreadable exactly where there is most
+// - text that shrinks with a 1440px desktop frame becomes unreadable exactly where there is most
 // to read. It also gives the tall phone frames the full page height instead of sharing it.
 const SIDE_W = 250;
 const SIDE_GAP = 18;
@@ -82,7 +82,7 @@ function paginate(opt) {
   // position, permanent id, label and anchor, one entry per screen (a responsive pair
   // is one entry, as it is one screen).
   //
-  // Walk it by SELECTOR in document order, never by child position — the sidebar wraps its
+  // Walk it by SELECTOR in document order, never by child position - the sidebar wraps its
   // head and each section in containers so the index filter can hide them, and a `.children`
   // walk sees those wrappers instead of the entries and prints a table of contents with
   // nothing in it.
@@ -225,7 +225,7 @@ function paginate(opt) {
   pages.className = 'pdf-doc';
   // Attached before anything is measured: a detached element reports every size as zero,
   // and a zero line height silently lays the whole table of contents into one column that
-  // then runs off the bottom of page one — a build that looks like it worked.
+  // then runs off the bottom of page one - a build that looks like it worked.
   d.body.appendChild(pages);
   const addPage = (cls) => {
     const p = d.createElement('div');
@@ -244,13 +244,13 @@ function paginate(opt) {
     (boardTag ? `<div class="pdf-cover-tag">${esc(boardTag)}</div>` : '') +
     `<div class="pdf-cover-sub">${flows.length} sections · ${frameTotal} frames</div>`;
 
-  // 2. The opening overview — one landscape page per card, before the table of contents.
+  // 2. The opening overview - one landscape page per card, before the table of contents.
   //
   // It goes into the PDF while the reading contract does not, and the two are different kinds of
   // thing: the contract instructs whoever implements, and implementing is done from the HTML
   // board; this is what a reader needs before a wall of screens means anything, and most readers
   // meet the board as the PDF. Each card is authored at the printable area's own ratio, so it
-  // lands on a page without being reshaped — and a card that outgrew it is scaled down with the
+  // lands on a page without being reshaped - and a card that outgrew it is scaled down with the
   // same transform the frames use rather than being cut.
   const overview = d.querySelector('.board-overview');
   const overviewPages = [];
@@ -262,7 +262,7 @@ function paginate(opt) {
     }
     overview.remove();
     // A card taller than the page is SCALED, never clipped. Clipping removes rows from the
-    // middle of a table with nothing on the page saying so — the reader counts twelve feature
+    // middle of a table with nothing on the page saying so - the reader counts twelve feature
     // keys and believes that is all there are. Scaled, the page is harder to read and honest.
     for (const { page, card } of overviewPages) {
       const room = page.clientHeight;
@@ -276,7 +276,7 @@ function paginate(opt) {
     }
   }
 
-  // 3. Table of contents — how many pages it takes is decided from a measured line
+  // 3. Table of contents - how many pages it takes is decided from a measured line
   // height, because the page numbers it prints depend on that count.
   const lines = [];
   for (const sec of sections) {
@@ -332,8 +332,8 @@ function paginate(opt) {
   // 3. One page per frame, behind its section's cover page.
   //
   // The running header names the board, the section, and the screen. The board's own title
-  // carries the three apps after an em dash — too long to repeat on 532 pages, and the cover
-  // already states it in full — so the header takes what stands before that dash.
+  // carries the three apps after an em dash - too long to repeat on 532 pages, and the cover
+  // already states it in full - so the header takes what stands before that dash.
   const headProject = boardTitle.split(/\s+—\s+/)[0].trim() || boardTitle;
   const framePages = [];
   for (const flow of flows) {
@@ -359,7 +359,7 @@ function paginate(opt) {
       const side = d.createElement('div');
       side.className = 'pdf-side';
       // The label becomes the page's heading, which is what Chrome turns into a
-      // PDF bookmark — the frame keeps printing exactly the label it printed before.
+      // PDF bookmark - the frame keeps printing exactly the label it printed before.
       const label = q('.frame-label', art);
       // Read for the header BEFORE the label is moved into the heading below.
       const headSeq = label ? q('.fseq', label)?.textContent.trim() ?? '' : '';
@@ -398,24 +398,24 @@ function paginate(opt) {
     }
   }
 
-  // Everything the frames were lifted out of goes now — the board's own scrolling layout,
+  // Everything the frames were lifted out of goes now - the board's own scrolling layout,
   // its sidebar, and the viewport checkbox.
   for (const node of Array.from(d.body.children)) if (node !== pages) node.remove();
 
   // 3b. The share copy's cover. A reader gets to see how big the board is and how finished it
   // is without being given every screen, so the drawing of a share of the frames is NOT DRAWN
-  // AT ALL — it never reaches the PDF, and no text extraction or vector-editing tool recovers
+  // AT ALL - it never reaches the PDF, and no text extraction or vector-editing tool recovers
   // what was never written. Everything else about the page stays: the running header, the id,
   // the label, the notes, the table of contents, the page count.
   //
   // WHICH frames go is decided by hashing the screen's permanent id and covering it when that
-  // score falls under the ratio. Every screen's fate is therefore settled by its own id alone —
-  // not by how many neighbours it has, not by where it sits in a list — and three things follow:
+  // score falls under the ratio. Every screen's fate is therefore settled by its own id alone -
+  // not by how many neighbours it has, not by where it sits in a list - and three things follow:
   // the same ratio always covers the same screens, a larger ratio only ever ADDS to what a
   // smaller one covered, and **a screen once covered stays covered however far the board
   // grows**. That last one is why this is a threshold and not a per-section quota. A quota has
   // to count the section, so inserting frames raises the target, and a screen sitting on the
-  // boundary gets pushed out and revealed — a copy sent in June would hand over screens that
+  // boundary gets pushed out and revealed - a copy sent in June would hand over screens that
   // April's copy withheld.
   //
   // The price is that a section's own share is approximate rather than exact: it lands near the
@@ -424,11 +424,11 @@ function paginate(opt) {
   const masked = [];
   const bySection = new Map();
   if (maskRatio > 0) {
-    // FNV-1a, then an avalanche step — and the second half is not optional. FNV's final
+    // FNV-1a, then an avalanche step - and the second half is not optional. FNV's final
     // multiply dominates the high bits, so ids that differ in their last character score in a
     // straight line: `A-01` 0.8556, `A-02` 0.8517, `A-03` 0.8478, each exactly 0.0039 lower.
     // Sorting by that is sorting by screen number, so "a random 40%" silently becomes "the
-    // tail of every section" — a pattern the reader of a share copy can see and extrapolate.
+    // tail of every section" - a pattern the reader of a share copy can see and extrapolate.
     // The three shift-multiply rounds below are murmur3's finalizer, and they cost nothing.
     const hash32 = (s) => {
       let h = 0x811c9dc5;
@@ -449,7 +449,7 @@ function paginate(opt) {
       return score.get(id);
     };
 
-    // Judged by SCREEN, so a responsive pair — one screen, one id, two frames — is covered or
+    // Judged by SCREEN, so a responsive pair - one screen, one id, two frames - is covered or
     // left alone as a whole and never cut in half.
     const chosen = framePages.filter((fp) => scoreOf(fp.id) < maskRatio);
     const chosenSet = new Set(chosen);
@@ -506,7 +506,7 @@ function paginate(opt) {
   //
   // Measured off the STAGE, not off the page: the running header takes a strip of the page
   // height, and a scale computed from the full page would push every frame that much past the
-  // bottom edge — cropping the frames silently, which is how a page of a wireframe loses its
+  // bottom edge - cropping the frames silently, which is how a page of a wireframe loses its
   // tab bar without anything reporting it.
   const zooms = framePages.map(({ art, stage }) => {
     const r = art.getBoundingClientRect();
@@ -520,7 +520,7 @@ function paginate(opt) {
 
   // 5. Notes that do not fit their column are shrunk until they do. Five frames carry close to
   // a thousand characters, and a note cut off at the page edge takes the reader's answer with it
-  // — silently, because a clipped column looks exactly like a short one.
+  // - silently, because a clipped column looks exactly like a short one.
   const tight = [];
   const overflow = framePages
     .map(({ side, art }) => ({ side, art, over: side.scrollHeight > side.clientHeight + 1 }))
@@ -582,7 +582,7 @@ export async function renderPdf({
 
     const title = await page.evaluate('document.title');
     const pdf = await page.pdf({
-      // NOT `landscape: true` — that flag swaps paperWidth and paperHeight, so asking for a
+      // NOT `landscape: true` - that flag swaps paperWidth and paperHeight, so asking for a
       // landscape page with landscape dimensions gets a portrait one. The dimensions below
       // ARE the landscape page.
       printBackground: true,
@@ -608,7 +608,7 @@ export async function renderPdf({
     if (stats?.unresolved) {
       console.error(`warning: ${stats.unresolved} table-of-contents entries found no frame page`);
     }
-    // A cluster that went entirely, or stayed entirely, is the threshold's one failure mode —
+    // A cluster that went entirely, or stayed entirely, is the threshold's one failure mode -
     // said out loud so it is a decision to accept rather than something the recipient finds.
     for (const s of stats?.maskBySection ?? []) {
       if (s.total && s.hidden === s.total) console.error(`warning: 「${s.title}」 구역이 통째로 가려졌다 (${s.total}장)`);
@@ -654,14 +654,14 @@ export function parseMaskRatio(raw) {
 // ── Watermark ─────────────────────────────────────────────────────────────────
 // Handed to Python because stamping an image onto every page of a finished PDF needs a PDF
 // library, and this folder's rule is that the BOARD builds with nothing installed. The board,
-// its checks, and the plain PDF all still run on Node alone; only the share copy — asked for
-// by hand, when a PDF is about to leave — reaches for the script beside this file.
+// its checks, and the plain PDF all still run on Node alone; only the share copy - asked for
+// by hand, when a PDF is about to leave - reaches for the script beside this file.
 /**
  * Stamp the mark, and the line naming who the copy is for, onto every page.
  *
  * @param to who this copy is for. Drawn under the mark with the time it was made; omitted
  *   entirely when not given, because a stamp that says nothing is one people learn to ignore
- * @param out written beside `src` rather than over it — the plain PDF stays, so a stamped copy
+ * @param out written beside `src` rather than over it - the plain PDF stays, so a stamped copy
  *   for one recipient never becomes the only copy anybody has
  */
 export function stampWatermark({ logo, src, out, opacity, widthRatio, to = '' }) {
@@ -677,5 +677,5 @@ export function stampWatermark({ logo, src, out, opacity, widthRatio, to = '' })
 }
 
 // ── CLI ───────────────────────────────────────────────────────────────────────
-// The command line lives in `bin/wfb.mjs` — one entry point, so a flag means the same thing
+// The command line lives in `bin/wfb.mjs` - one entry point, so a flag means the same thing
 // whichever artifact it is asked for.

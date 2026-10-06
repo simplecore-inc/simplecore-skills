@@ -1,7 +1,7 @@
 """Visual-type builders bound onto svgkit's Canvas.
 
-The layout grammar of each type — proportions, what carries meaning, the
-budget past which it stops being readable — follows the diagram-design skill
+The layout grammar of each type - proportions, what carries meaning, the
+budget past which it stops being readable - follows the diagram-design skill
 by Cathryn Lavery (MIT). See NOTICE in the skill root. The code is written
 against svgkit's theme and primitives; nothing is copied verbatim.
 
@@ -12,7 +12,7 @@ a Canvas method at the bottom of svgkit. They share three conventions:
   a type can be placed like any other block.
 * Colour is looked up from the canvas theme by role, never hardcoded, so a
   figure re-themes with the canvas.
-* The return value is the geometry a caller needs next — usually the
+* The return value is the geometry a caller needs next - usually the
   bounding box (x, y, w, h) so a legend or a caption can sit under it.
 """
 from svgkit import tw, MONO, SANS, _DEF  # noqa: E402  (bound after Canvas)
@@ -33,8 +33,8 @@ def swimlane(c, x, y, w, lanes, phases, cards, lane_h=96, header_h=34,
     `cards` the work: (lane_index, phase_index, title, sub). A card spanning
     two phases takes (lane, (first, last), title, sub).
 
-    The handoff is the point of this type — a card in one lane followed by a
-    card in another says a person handed work over — so lanes stay few. Past
+    The handoff is the point of this type - a card in one lane followed by a
+    card in another says a person handed work over - so lanes stay few. Past
     five rows the reader stops tracking who is who and it becomes a table.
     """
     if len(lanes) > 5:
@@ -85,7 +85,7 @@ def quadrant(c, x, y, size, x_axis, y_axis, names=None, items=(),
 
     `items` are (label, fx, fy) with fx/fy in 0..1 from the low end of each
     axis. `names` optionally labels the four cells, clockwise from top-left.
-    `focal` is the set of item labels drawn in the accent colour — the type
+    `focal` is the set of item labels drawn in the accent colour - the type
     exists to say which quadrant a thing is in, and accenting everything says
     nothing.
     """
@@ -134,7 +134,7 @@ def pyramid(c, x, y, w, h, layers, funnel=False, gap=6):
     `layers` are (title, sub) from the top down. The two differ only in which
     end is wide: a pyramid narrows upward because the top is the few, a
     funnel narrows downward because each stage loses some of the previous.
-    Everything else — the trapezoid stack, the labels inside — is shared.
+    Everything else - the trapezoid stack, the labels inside - is shared.
     """
     if len(layers) > 6:
         raise ValueError("pyramid: %d layers; past 6 the top band is too "
@@ -168,7 +168,7 @@ def pyramid(c, x, y, w, h, layers, funnel=False, gap=6):
 def venn(c, x, y, r, sets, overlaps=()):
     """Overlap between two or three sets.
 
-    `sets` are (name, sub) and `overlaps` are (indices, label) — indices as a
+    `sets` are (name, sub) and `overlaps` are (indices, label) - indices as a
     tuple, so (0, 1) labels the lens between the first two and (0, 1, 2) the
     centre. Circles are outlined and unfilled: a fill makes the reader judge
     area, and these areas mean nothing.
@@ -197,7 +197,7 @@ def venn(c, x, y, r, sets, overlaps=()):
             ly = cy - r * 0.34
         # A paper mask under the name. A set label belongs in the lune that
         # belongs to that set, and the lune is bounded by the very stroke the
-        # label then sits on — so the two cross by construction, and a name
+        # label then sits on - so the two cross by construction, and a name
         # laid straight over a circle's edge is read letter by letter. The
         # mask stops the stroke behind the words and nothing else.
         mw = max(tw(name, 13, False), tw(sub, 11.5, False) if sub else 0) + 14
@@ -233,7 +233,7 @@ def loop(c, cx, cy, r, steps, hub=None, bw=168, bh=64):
     """A reinforcing cycle: the last step feeds the first.
 
     Drawn as boxes on a ring with arcs between them, because the thing that
-    distinguishes a loop from a process is that it has no end — a row of
+    distinguishes a loop from a process is that it has no end - a row of
     boxes with an arrow curving back reads as a process with an exception.
     `hub` is the state the cycle accumulates, named in the middle.
     """
@@ -264,7 +264,7 @@ def loop(c, cx, cy, r, steps, hub=None, bw=168, bh=64):
 
     # The arcs ride a ring INSIDE the boxes. Drawn at the boxes' own radius
     # they have to squeeze through the gap between two boxes, and at four
-    # steps that gap is a few degrees — what renders is an arrowhead and no
+    # steps that gap is a few degrees - what renders is an arrowhead and no
     # arc. The clearance is angular, not linear: a box of width bw at radius
     # r covers atan(bw/2 / r) either side of its centre, so the arc starts
     # past that and stops short of the next one by the same amount.
@@ -298,11 +298,11 @@ def bar(c, x, y, w, h, items, unit="", horizontal=True, focal=(),
     """Quantitative comparison across categories. `items` are (label, value).
 
     Horizontal by default: category names are words, and words read along a
-    row without turning the page. A value axis is not drawn — each bar
+    row without turning the page. A value axis is not drawn - each bar
     carries its own number, which is what a reader actually looks up, and the
     axis line would be a second way of saying the same thing.
 
-    `stacked=True` draws one bar split into named segments instead — a budget
+    `stacked=True` draws one bar split into named segments instead - a budget
     and what spends it, a total and what makes it up. `total` sets the budget
     where it is larger than the parts, so the remainder shows as slack rather
     than being silently absorbed. This mode exists because the alternative is
@@ -435,7 +435,7 @@ def sequence(c, x, y, actors, messages, lane=150, head_h=44, step=44):
 
     `messages` are (from_index, to_index, label, kind) where kind is "call",
     "return" (dashed) or "self". The lifeline is what makes this type worth
-    its space — it says an actor is still there between messages — so it runs
+    its space - it says an actor is still there between messages - so it runs
     the full height even where nothing happens.
     """
     if len(actors) > 5:
@@ -481,7 +481,7 @@ def timeline(c, x, y, w, span, marks, bands=(), unit="", rail_h=18):
 
     The axis being to scale is the whole point. A row of boxes with months
     written inside them puts equal space between 4 and 9 as between 15 and
-    22, which is the one thing a schedule figure must not do — the reader
+    22, which is the one thing a schedule figure must not do - the reader
     takes the spacing as the claim and the numbers as its caption.
     """
     if len(marks) > 9:
@@ -508,7 +508,7 @@ def timeline(c, x, y, w, span, marks, bands=(), unit="", rail_h=18):
         ly = mid - 46 if up else mid + 46
         # The dot sits on the rail edge its label leaves from, not on the
         # centre line. A band carries its own name down the middle of the
-        # rail, and a dot placed there lands on those letters — which is a
+        # rail, and a dot placed there lands on those letters - which is a
         # collision no amount of spacing prevents, because both belong to
         # the rail.
         dy = mid - rail_h / 2 if up else mid + rail_h / 2
@@ -540,7 +540,7 @@ BUILDERS = {
 }
 
 
-# ── entity / table / class — the compartment node ───────────────────────────
+# ── entity / table / class - the compartment node ───────────────────────────
 def entity(c, x, y, w, name, sections, sub=None, accent=None, row_h=22,
            head_h=38):
     """One box divided into compartments. ER entity, SQL table, UML class.
@@ -550,9 +550,9 @@ def entity(c, x, y, w, name, sections, sub=None, accent=None, row_h=22,
     types differ in what goes in the compartments, not in the shape, so one
     builder serves all three and the caller decides:
 
-    * ER — one compartment of attributes, the key first
-    * database schema — one compartment of column/type pairs
-    * UML class — attributes then operations, two compartments
+    * ER - one compartment of attributes, the key first
+    * database schema - one compartment of column/type pairs
+    * UML class - attributes then operations, two compartments
 
     Returns (box, row_y) where `row_y` maps each row's index to the y of its
     centre, so a column-level foreign key can leave the exact row it lives on
@@ -595,7 +595,7 @@ def entity(c, x, y, w, name, sections, sub=None, accent=None, row_h=22,
 def relate(c, a, b, kind="1-n", label=None, ay=None, by=None):
     """A relationship between two compartment nodes, with its cardinality.
 
-    `kind` is two ends joined by a hyphen, each one of `1`, `n` or `0` —
+    `kind` is two ends joined by a hyphen, each one of `1`, `n` or `0` -
     `1-n` is one-to-many, `0-n` optional-to-many. The notation is drawn as a
     glyph at each end rather than as an arrowhead: a relationship has no
     direction, and an arrow claims one.
@@ -726,7 +726,7 @@ def scatter(c, x, y, w, h, points, x_axis, y_axis, focal=(), max_r=18):
 
     `points` are (label, px, py) or (label, px, py, weight) with px/py in
     0..1. `x_axis`/`y_axis` are (name, low_label, high_label). A weighted
-    point is drawn as a disc whose AREA is proportional to the weight —
+    point is drawn as a disc whose AREA is proportional to the weight -
     scaling the radius instead triples the apparent difference, which is the
     one mistake this chart is famous for.
     """
@@ -737,7 +737,7 @@ def scatter(c, x, y, w, h, points, x_axis, y_axis, focal=(), max_r=18):
     plot_h = h - 30
     # Inset by the largest disc's radius. A point at 1.0 on either axis is a
     # real data position, and without the inset its disc is cut by the plot
-    # edge — which reads as a smaller value than the one it stands for.
+    # edge - which reads as a smaller value than the one it stands for.
     weights0 = [p[3] for p in points if len(p) > 3]
     pad = max_r if weights0 else 6
     px0, py0 = x + pad, y + pad
@@ -782,12 +782,12 @@ def scatter(c, x, y, w, h, points, x_axis, y_axis, focal=(), max_r=18):
 
 # ── polar / radial lollipop ────────────────────────────────────────────────
 def polar(c, cx, cy, r, categories, values, focal=(), unit=""):
-    """One measure around a cycle of categories — hours, months, weekdays.
+    """One measure around a cycle of categories - hours, months, weekdays.
 
     Drawn as radial lollipops rather than filled wedges. A wedge's area grows
     with the square of its value, so a doubled value looks quadrupled; a
     stick's length is the value. Reach for this only when the categories are
-    genuinely cyclic — otherwise a bar chart says the same thing and is
+    genuinely cyclic - otherwise a bar chart says the same thing and is
     easier to read.
     """
     if len(categories) > 8:
@@ -829,7 +829,7 @@ BUILDERS.update({
 
 
 def _dogleg(x0, y0, x1, y1, lane, r=8):
-    """Down, across, down — with the two corners rounded.
+    """Down, across, down - with the two corners rounded.
 
     A square corner is a different drawing convention from the rest of this
     kit, and mixing the two inside one document reads as two authors. The
@@ -853,7 +853,7 @@ def state(c, x, y, states, transitions, w=176, h=64, gap=64,
 
     `states` are (name, sub); `transitions` are (from, to, guard) and a
     transition whose two ends are the same state draws as a self-loop above
-    it. The guard is not decoration — a transition without one says the
+    it. The guard is not decoration - a transition without one says the
     machine changes state for no stated reason, which is the defect this type
     exists to expose.
 
@@ -904,7 +904,7 @@ def state(c, x, y, states, transitions, w=176, h=64, gap=64,
 
     # A state with two outgoing transitions has to send them from two points.
     # Leaving both from the centre of the bottom edge stacks the strokes for
-    # their whole first leg, and only the last colour drawn survives there —
+    # their whole first leg, and only the last colour drawn survives there -
     # which is how a machine with two exits reads as a machine with one.
     down = {}
     for a, b, _g in transitions:
@@ -926,7 +926,7 @@ def state(c, x, y, states, transitions, w=176, h=64, gap=64,
             exit_f[(a, targets[k])] = 0.32 if len(targets) == 1 else \
                 0.28 + 0.44 * rank / max(len(targets) - 1, 1)
             # 26px between lanes, not 16: each lane carries a guard, and a
-            # guard's mask is 20px tall — lanes closer than that print the
+            # guard's mask is 20px tall - lanes closer than that print the
             # two guards on top of each other.
             exit_lane[(a, targets[k])] = 26 + 26 * (len(targets) - 1 - rank)
     for b, sources in into.items():
@@ -936,7 +936,7 @@ def state(c, x, y, states, transitions, w=176, h=64, gap=64,
                 0.34 + 0.32 * rank / max(len(sources) - 1, 1)
     # Where the two states share a column the drop is made straight: both ends
     # take the exit's fraction. Fanning them apart there throws away the one
-    # thing a shared column buys — a plumb line the reader follows in a single
+    # thing a shared column buys - a plumb line the reader follows in a single
     # move, where an elbow reads as a detour.
     for key in list(land_f):
         if abs(boxes[key[0]][0] - boxes[key[1]][0]) < 2:
@@ -1006,7 +1006,7 @@ def treemap(c, x, y, w, h, items, focal=(), unit=""):
     # A treemap shows a part of a whole by area, so a part that rounds to
     # nothing has no area to be shown in. Below about 2% the cell is a sliver
     # that cannot hold its own name, and the figure then says only that the
-    # largest item is large — which a bar chart says without pretending the
+    # largest item is large - which a bar chart says without pretending the
     # others were drawn.
     smallest = min(v for _, v in items)
     if smallest / total < 0.02:
@@ -1018,8 +1018,8 @@ def treemap(c, x, y, w, h, items, focal=(), unit=""):
             % (smallest / total * 100))
     roles = ["blue", "teal", "purple", "cyan", "green", "yellow", "red",
              "orange"]
-    # Squarified layout. The naive alternative — slice off one cell at a
-    # time along the same axis — gives every cell the full height of the
+    # Squarified layout. The naive alternative - slice off one cell at a
+    # time along the same axis - gives every cell the full height of the
     # rectangle, and a tall thin cell of a given area reads as smaller than a
     # square one of the same area. That defeats the only thing this chart is
     # for, so the row is grown only while the worst aspect ratio in it keeps
@@ -1140,7 +1140,7 @@ def sankey(c, x, y, w, h, stages, flows, node_w=18, gap=14, unit=""):
 
     # Names are placed after every node is sized. A node's height is its
     # throughput, so a small one is a thin band and two of them side by side
-    # print their names on top of each other — the band already carries the
+    # print their names on top of each other - the band already carries the
     # quantity, and the name is what tells the reader which band it is.
     for si in range(len(stages)):
         col = sorted((l for l in labels if l[0] == si), key=lambda l: l[1])
@@ -1177,7 +1177,7 @@ def fishbone(c, x, y, w, h, effect, bones):
 
     `bones` are (category, [causes]) placed alternately above and below the
     spine. The effect goes in the box at the head and is stated as something
-    observed — 「적재 지연 3초」, not 「성능」 — because a category as the
+    observed - 「적재 지연 3초」, not 「성능」 - because a category as the
     effect makes every cause fit and the analysis stops discriminating.
     """
     if len(bones) > 6:
@@ -1215,7 +1215,7 @@ def fishbone(c, x, y, w, h, effect, bones):
 
 # ── wardley map ────────────────────────────────────────────────────────────
 def wardley(c, x, y, w, h, components, links=(), moves=()):
-    """Value chain against evolution — what to build, buy, and what is moving.
+    """Value chain against evolution - what to build, buy, and what is moving.
 
     `components` are (name, visibility 0..1, evolution 0..1); visibility is
     how close to the user it sits, evolution how settled the thing is. The
@@ -1270,7 +1270,7 @@ def journey(c, x, y, w, h, stages, rows, pains=()):
     """What a person does across an experience, and how it feels.
 
     `stages` are the ordered stage names. `rows` are (row_name, [cell per
-    stage]) — 행위, 접점, 생각 — and the last row is the feeling, given as
+    stage]) - 행위, 접점, 생각 - and the last row is the feeling, given as
     numbers from -1 to 1, drawn as a line. `pains` names the stages to mark:
     the low points are what the work is for, so they are called out rather
     than left for the reader to find on the curve.

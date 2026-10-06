@@ -6,7 +6,7 @@
  * consistent with the documents they illustrate.
  *
  * Two runs, because the two engines answer different questions. The glossary
- * check judges words — spellings, transliterations, banned phrases — and the
+ * check judges words - spellings, transliterations, banned phrases - and the
  * rule pack judges sentences: personification, metaphors standing in for real
  * names, AI tells. For a long time only the first ran here, and every sentence
  * rule bit only when somebody asked for an audit; a document could be written
@@ -24,8 +24,8 @@
  * **What counts as auditable is the project's answer, not an extension list.**
  * A project declaring audit.localeResources says those files hold screen copy,
  * and screen copy is what this hook exists to catch at the moment it is typed.
- * Gating on the extension list first meant the declared resources — a whole
- * board's worth of Korean strings — had no write-time gate at all, and the
+ * Gating on the extension list first meant the declared resources - a whole
+ * board's worth of Korean strings - had no write-time gate at all, and the
  * silence read exactly like a pass. So the glossary is discovered first and its
  * declaration widens what is auditable.
  *
@@ -53,7 +53,7 @@ function isDeclaredResource(glossaryPath, abs) {
     ({config} = parseGlossaryConfig(readFileSync(glossaryPath, 'utf8')));
   } catch {
     // A malformed declaration is the audit's finding to report, not the hook's
-    // reason to drop the file — leave it to the extension list this time.
+    // reason to drop the file - leave it to the extension list this time.
     return false;
   }
   if (config.localeResources.length === 0) return false;
@@ -64,7 +64,7 @@ function isDeclaredResource(glossaryPath, abs) {
  * Whether `.claude/l10n.json` at the glossary root declares this file as a resource kind.
  *
  * The sentence rules read a kind's files by that kind's format and register, and a project that
- * declared its kinds there — and not in the glossary's `audit.localeResources` — had no
+ * declared its kinds there - and not in the glossary's `audit.localeResources` - had no
  * write-time run of the sentence rules on any of them. The two declarations answer different
  * commands (`check` reads the first, `rules` the second), so the hook reads both. `{lang}` is a
  * wildcard here as it is there.
@@ -116,7 +116,7 @@ function main() {
   const given = resolve(payload.cwd || process.cwd(), filePath);
   if (!existsSync(given)) return 0;
   // Canonical, because the two runs decide "inside the project" with relative() against a
-  // physical cwd — a logical spelling through a symlink (/tmp on macOS, a linked workspace)
+  // physical cwd - a logical spelling through a symlink (/tmp on macOS, a linked workspace)
   // reads as outside, and a screen file loses the kind that gives it its register.
   const abs = realpathSync(given);
 
@@ -126,7 +126,7 @@ function main() {
   if (resolve(glossary) === abs || basename(abs) === 'GLOSSARY.md') return 0;
   // The glossary check reads documents and the resources the glossary declares; the sentence
   // rules read those and every kind `.claude/l10n.json` declares. A resource file known only to
-  // the second gets the second run alone — the word check would read its keys as prose.
+  // the second gets the second run alone - the word check would read its keys as prose.
   const auditable = AUDIT_EXTENSIONS.has(extname(abs).toLowerCase()) || isDeclaredResource(glossary, abs);
   if (!auditable && !isDeclaredKind(glossary, abs)) return 0;
 
@@ -144,13 +144,13 @@ function main() {
       env: {...process.env, NO_COLOR: '1'},
     });
     if (result.error || result.status === null) {
-      // An infrastructure failure must not block the session — but it is said, so a
+      // An infrastructure failure must not block the session - but it is said, so a
       // silent run is never mistaken for a clean one.
       process.stderr.write(`korean-docs hook: the ${name} check did not run (${result.error?.message ?? 'timeout'})\n`);
       continue;
     }
     if (result.status === 0) continue;
-    // status 1 = findings, status 2 = glossary/config error — both actionable.
+    // status 1 = findings, status 2 = glossary/config error - both actionable.
     reports.push(`[${name}]\n${`${result.stdout ?? ''}${result.stderr ?? ''}`.trim()}`);
   }
   if (reports.length === 0) return 0;

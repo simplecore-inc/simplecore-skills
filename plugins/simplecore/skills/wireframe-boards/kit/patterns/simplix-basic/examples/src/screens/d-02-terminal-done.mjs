@@ -1,5 +1,5 @@
 // D-02 · The terminal after one act. Drawn as its own frame because it is where the screen
-// actually spends its attention — and because what it must NOT show is as specified as what it
+// actually spends its attention - and because what it must NOT show is as specified as what it
 // must: the next person is already standing there.
 import { kiosk_ } from '../chrome.mjs';
 import { tTitle, tSub, msg } from '../components.mjs';

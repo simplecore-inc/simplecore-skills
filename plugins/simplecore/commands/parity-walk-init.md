@@ -1,5 +1,5 @@
 ---
-description: Wire this project for a board-parity walk — config, the two documents, and the instruction-file pointer
+description: Wire this project for a board-parity walk - config, the two documents, and the instruction-file pointer
 argument-hint: "[--parity-list <path>] [--handover <path>]"
 ---
 
@@ -10,7 +10,7 @@ by a session that has none of this conversation. Invoke `simplecore:board-parity
 follow it; this command is the setup it asks for.
 
 Report what already exists before writing anything, then write only what is missing. Show the user
-each file you are about to create and get agreement — these are durable documents in their
+each file you are about to create and get agreement - these are durable documents in their
 repository.
 
 1. **Find the project root and confirm there is a board.** Run
@@ -18,7 +18,7 @@ repository.
 
    **`board: null` means stop.** A parity walk measures the app against frames somebody drew; with
    no board there is nothing to walk against, and wiring the walk anyway leaves two documents
-   nobody can fill. Say so in one sentence and offer `/simplecore:board-init` instead —
+   nobody can fill. Say so in one sentence and offer `/simplecore:board-init` instead -
    the board comes first, always. Do not write any of the files below.
 
    **An application with no screens yet is not that case.** A board drawn before the code is the
@@ -35,14 +35,14 @@ repository.
 2. **Check what is already there** and tell the user, one line each:
    - `.claude/board-parity-walk.json`
    - the parity list and handover file it names (or, when there is no config, any plausible
-     existing pair — a remaining-screens list, a walker's notes file)
+     existing pair - a remaining-screens list, a walker's notes file)
    - a wireframe board, and its source directory
    - a pointer to this skill in `CLAUDE.md` / `AGENTS.md`
    - the project's verification commands (test, typecheck, lint, convention audit)
 
 3. **Write `.claude/board-parity-walk.json`** when it is missing. Copy
    `${CLAUDE_PLUGIN_ROOT}/skills/board-parity-walk/assets/board-parity-walk.json` and set the two
-   paths to where the documents live — the arguments if given, otherwise the existing documents you
+   paths to where the documents live - the arguments if given, otherwise the existing documents you
    found, otherwise `_plans/SCREEN-PARITY.md` and `_plans/WALK-NOTES.md`. Set `parkedSection` to
    the heading the parity list actually uses for parked decisions, written exactly, in whatever
    language the document is written in.
@@ -51,7 +51,7 @@ repository.
    somebody remembers them.
 
    `logDir` and `capturesDir` keep their template values unless the project already has somewhere
-   for them. Both are byproducts, so **add both to the project's ignore file in this step** — a
+   for them. Both are byproducts, so **add both to the project's ignore file in this step** - a
    walk that has to invent a location writes its logs and pictures somewhere the next session
    cannot find, and a walk whose byproducts are tracked commits them.
 
@@ -59,17 +59,17 @@ repository.
    `${CLAUDE_PLUGIN_ROOT}/skills/board-parity-walk/assets/parity-list.md` and `.../handover.md`.
    Write them in the language the project's other documents use.
 
-   Where the project already keeps its own list of open questions — an inventory's table of
-   undecided points is the usual place — carry those into the parked section, and **write each
+   Where the project already keeps its own list of open questions - an inventory's table of
+   undecided points is the usual place - carry those into the parked section, and **write each
    line yourself.** A generated third clause ("which side looks stale") comes out identical on
    every line, and uniform text says nothing: the next session re-derives the context anyway. A
    question that does not deserve a real third clause probably does not deserve to be parked at
-   all — see the skill's section on what qualifies.
+   all - see the skill's section on what qualifies.
 
    Then fill the parity list from
    the board: one line per frame that has a route, grouped into sections. Leave the handover file's
    placeholders for the walker to fill on its first session, but fill in anything you can already
-   read from the repository — how the servers start, what the verification commands are.
+   read from the repository - how the servers start, what the verification commands are.
 
 5. **Add the pointer to the instruction file.** This is the step that matters most, because the
    description trigger alone does not survive a fresh session that starts somewhere else in the
@@ -98,7 +98,7 @@ repository.
    ratchet a repeated defect into a rule; where `frameDeliverables` names a capture, no way to
    reach an arbitrary frame in an arbitrary state with the moving parts pinned, without which every
    re-capture is a change nobody can read. Name them; do not invent substitutes. Having no screens
-   built yet is not a debt — it is the walk's work.
+   built yet is not a debt - it is the walk's work.
 
 Do not start walking as part of this command. Setup and walking are separate, and the walk belongs
 to a subagent.

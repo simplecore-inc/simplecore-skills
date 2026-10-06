@@ -7,9 +7,9 @@
 //
 // Three layers, in this order, and each may only append:
 //
-//   core     the items below — what a wireframe is and is not, how to read a frame label
-//   pattern  `patterns/<name>/intro.html` — what is true of every board drawn that way
-//   board    `<board>/src/intro.html` — this product's own rules
+//   core     the items below - what a wireframe is and is not, how to read a frame label
+//   pattern  `patterns/<name>/intro.html` - what is true of every board drawn that way
+//   board    `<board>/src/intro.html` - this product's own rules
 //
 // Each of the two files holds bare `<li>` elements and nothing else. Handing them a fragment
 // rather than a document is what makes «never trim items 1–13» structural instead of a comment
@@ -36,18 +36,18 @@ const STANDING = [
 ];
 
 /**
- * The board header, and the reading contract — returned apart because they sit apart.
+ * The board header, and the reading contract - returned apart because they sit apart.
  *
  * <p>**The header goes on top and the contract goes at the foot of the board.** The contract is
  * read once, before implementing, and then never again; at the top it stands between every
  * later reader and the frames they came for, on a board hundreds of frames long. At the foot it
  * is still in the artifact, still complete, and still the first thing a table of contents can
- * point at — it simply stops being a toll on every visit.
+ * point at - it simply stops being a toll on every visit.
  *
  * <p>The PDF does not carry it at all (`renderPdf({ hideReadme })`): implementing is done from
  * the HTML board, and the PDF is the copy that gets read, sent, and printed.
  *
- * @param config the board's settings — `boardName`, `headline`, `tag`, `logo`
+ * @param config the board's settings - `boardName`, `headline`, `tag`, `logo`
  * @param patternItems `<li>` elements the pattern contributes, as one HTML string
  * @param boardItems `<li>` elements the board contributes
  * @param hasPairs whether any frame is half of a narrow/wide pair. The viewport toggle is drawn
@@ -70,11 +70,11 @@ export function renderIntro({ config, patternItems = '', boardItems = '', hasPai
   // The day every frame stands on, said where a reader meets it. `config.today` already existed
   // and every dated frame was drawn against it; it was simply invisible, so a reader working out
   // what 「30일 남음」 counts from had to open the config. **It is the board's declared basis and
-  // never the build's clock** — a board rebuilt on Tuesday is not a board redrawn on Tuesday, and a
+  // never the build's clock** - a board rebuilt on Tuesday is not a board redrawn on Tuesday, and a
   // stamp that moved every build would say the opposite of what it appears to.
   const dateline = config.today ? `<span class="dateline">${text.asOf(config.today)}</span>` : '';
-  // Two rows: the board's name alone on the first, and everything that is ABOUT the board —
-  // what kind of drawing it is, the viewport toggle, the way to the reading contract — on the
+  // Two rows: the board's name alone on the first, and everything that is ABOUT the board -
+  // what kind of drawing it is, the viewport toggle, the way to the reading contract - on the
   // second. On one line the title competed with four controls and read as the first of five
   // labels rather than as the name of the thing.
   const header = `<header class="board-header">

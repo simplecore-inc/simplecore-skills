@@ -1,4 +1,4 @@
-// The example board's information architecture — deliberately generic. Two tabs, four clusters,
+// The example board's information architecture - deliberately generic. Two tabs, four clusters,
 // three roles. Replace every string here with the product's own; the SHAPE is what to keep.
 import {
   makeConsole, makeWorker, makeKiosk, makeAuth, makeConsolePhone, pattern_,

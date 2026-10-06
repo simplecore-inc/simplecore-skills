@@ -1,31 +1,31 @@
 // Giving a board a pattern of its own, started from the one it is already drawn in.
 //
 // **The rule this exists beside, not against.** A component the pattern does not have goes INTO
-// the pattern — never into a file inside the board — because a component added to the pattern
+// the pattern - never into a file inside the board - because a component added to the pattern
 // reaches every board drawn that way and one added to a board reaches one. That rule assumes the
 // product and the pattern are the same shape.
 //
 // **Where they are not, the rule has nowhere to send anybody.** A product whose component
-// vocabulary is mostly its own — most of its names absent from every shipped pattern — cannot put
+// vocabulary is mostly its own - most of its names absent from every shipped pattern - cannot put
 // them in a shipped pattern, because they would be dead weight in every other board on it. Before
 // this command the only remaining move was to keep the board outside the contract, where no gate
 // reaches it and the kit cannot build it at all. That is the worst of the three outcomes and it
 // was the only one available.
 //
 // **So: fork the closest pattern into the board, and own it.** What the board gets is a real
-// pattern — `pattern.mjs`, `components.mjs`, `styles.css`, `intro.html` and the gates — sitting in
+// pattern - `pattern.mjs`, `components.mjs`, `styles.css`, `intro.html` and the gates - sitting in
 // the repository, and `board.config.mjs` pointing at it by path.
 //
 // **The cost, said once and out loud.** A forked pattern stops receiving the kit's improvements to
 // the pattern it came from: a component added there, a gate tightened there, a stylesheet fix
 // there, none of them arrive. The board owns all of it from that moment. **So this is the last
-// resort and not the first** — a component that would be right in a second product drawn the same
+// resort and not the first** - a component that would be right in a second product drawn the same
 // way still belongs in the shipped pattern, and one or two of those is not a reason to fork.
 import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, realpathSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join, relative, resolve } from 'node:path';
 import { patternDirFor } from './context.mjs';
 
-/** What a pattern is made of. `examples/` is deliberately not among them — the board exists. */
+/** What a pattern is made of. `examples/` is deliberately not among them - the board exists. */
 const PARTS = ['pattern.mjs', 'components.mjs', 'styles.css', 'intro.html', 'gates'];
 
 /** A relative specifier, in each of the ways one is written. */
@@ -46,7 +46,7 @@ function sources(dir, out = []) {
  *
  * <p>A pattern in the kit reaches the kit's own core by climbing out of its folder
  * (`../../../core/ids.mjs`). Copied into a board, that specifier climbs out of the board instead
- * and the build stops on a module that is not there — which is a failure the fork has to fix
+ * and the build stops on a module that is not there - which is a failure the fork has to fix
  * rather than leave for whoever runs the next build to diagnose.
  *
  * <p>The rewrite goes through the board's `.kit` link, exactly as the components shim already
@@ -142,7 +142,7 @@ export function forkPattern(boardDir, { into = 'pattern', name = null } = {}) {
 
   // The screen files import `../components.mjs`, and that shim is what decides where the
   // primitives come from. Left pointing through `.kit`, the fork would sit in the repository and
-  // nothing would read it — a copy nobody uses is worse than no copy, because it looks live.
+  // nothing would read it - a copy nobody uses is worse than no copy, because it looks live.
   const shimPath = join(boardDir, SHIM);
   const shimSrc = existsSync(shimPath) ? readFileSync(shimPath, 'utf8') : '';
   const shim = shimSrc.replace(
@@ -156,7 +156,7 @@ export function forkPattern(boardDir, { into = 'pattern', name = null } = {}) {
 
   // Real paths on both sides: the pattern is reached through the board's `.kit` symlink, and a
   // specifier resolved against the link and one resolved against the kit itself are different
-  // strings for one directory — comparing them would call every kit import 「outside the kit」.
+  // strings for one directory - comparing them would call every kit import 「outside the kit」.
   const fromReal = realpathSync(from);
   const repointed = repoint(fromReal, to, resolve(fromReal, '..', '..'), boardDir);
 
@@ -167,7 +167,7 @@ export function forkPattern(boardDir, { into = 'pattern', name = null } = {}) {
 //
 // **The other direction, and the one a board being migrated actually needs.** `forkPattern` above
 // starts from a pattern the kit ships, which is right for a board already drawn in one. A board
-// coming from before the contract has no shipped pattern behind it at all — its components, its
+// coming from before the contract has no shipped pattern behind it at all - its components, its
 // stylesheet and its reading-contract items are sitting in `src/`, written for this product. Told
 // to 「put the component in the pattern」, its author has 94 of them and no pattern to put them in,
 // and forking a shipped one would hand them a hundred primitives they do not draw and still leave
@@ -184,7 +184,7 @@ const PROMOTED = ['components.mjs', 'styles.css', 'intro.html'];
 /**
  * What a board carries in `src/` that the kit now owns, and that nothing will read again.
  *
- * <p>`src/partials.mjs` is a board's own copy of the frame, the sidebar and the page — the three
+ * <p>`src/partials.mjs` is a board's own copy of the frame, the sidebar and the page - the three
  * the kit writes. After the promotion nothing imports it: the kit's `core/partials.mjs` is what
  * builds the board, and the copy sits in the repository looking live. **A stale file read as
  * current is worse than an absent one**, and this one is worse still, because a person editing it
@@ -200,14 +200,14 @@ const ORPHANED = ['partials.mjs'];
  * Whether a promoted `intro.html` is a document rather than the list items the kit expects.
  *
  * <p>The reading contract is assembled from three layers and each of the two files contributes
- * bare `<li>` elements into one `<ol>` — which is what makes «never trim the standing items»
+ * bare `<li>` elements into one `<ol>` - which is what makes «never trim the standing items»
  * structural rather than a comment. A board from before the contract wrote its whole contract into
  * that file: a heading, sections, and its own copy of the standing items. Promoted unchanged it
  * lands inside the kit's `<ol>`, and the board renders a heading and a `<section>` between two list
  * items with no error anywhere.
  *
- * <p>The test is what it holds ABOVE list level. Anything block-shaped outside an `<li>` — a
- * heading, a section, a paragraph, a list of its own — is a document.
+ * <p>The test is what it holds ABOVE list level. Anything block-shaped outside an `<li>` - a
+ * heading, a section, a paragraph, a list of its own - is a document.
  */
 function looksLikeDocument(html) {
   const outsideItems = html.replace(/<li\b[\s\S]*?<\/li>/gi, ' ');

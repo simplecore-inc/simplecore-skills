@@ -1,9 +1,9 @@
 // Build the board from data: read the manifest, import each screen's bespoke body, wrap it in the
-// pattern's chrome, number it, and write the self-contained HTML humans review — plus the PDF
+// pattern's chrome, number it, and write the self-contained HTML humans review - plus the PDF
 // that gets sent on.
 //
 // **One file, unless the board declares an axis to split along.** A second «preview» file used to
-// be written by default, on the theory that work in progress needs somewhere lenient to land — but
+// be written by default, on the theory that work in progress needs somewhere lenient to land - but
 // the two came out byte-identical, so all that produced was a second copy going stale beside the
 // real one. What a board MAY ask for is different in kind: `split` in `board.config.mjs` names a
 // module that answers which part a frame belongs to, and the build writes one file per part plus
@@ -28,7 +28,7 @@ import { textFor } from './text.mjs';
  * a volume gathers several parts and a PDF is one document, so `wf.mjs pdf` has to assemble the
  * same pages the build did. Two assemblers would be two answers to what the board says.
  *
- * @returns `{ ctx, documents, volumeDocs }` — `documents` in write order, entry page first
+ * @returns `{ ctx, documents, volumeDocs }` - `documents` in write order, entry page first
  */
 export async function assembleBoard(boardDir) {
   const ctx = await loadBoard(boardDir);
@@ -50,7 +50,7 @@ export async function assembleBoard(boardDir) {
   }
   ctx.byId = byId;
 
-  // Notes reference a screen by its FILE NAME — `{{d-04-contract-detail}}` — and the build
+  // Notes reference a screen by its FILE NAME - `{{d-04-contract-detail}}` - and the build
   // resolves that to the screen's permanent id. An unknown slug is left visible as `{{slug?}}`
   // rather than dropped, so a bad reference fails loudly instead of disappearing.
   //
@@ -64,7 +64,7 @@ export async function assembleBoard(boardDir) {
   // The anchor and the two inherited axes are settled here rather than while rendering a section,
   // because a split board renders the same frame list into different groupings and all three have
   // to come out the same however it is grouped. The anchor especially: it is derived from the
-  // permanent id, so a link into the board survives a reorder — and now a split as well.
+  // permanent id, so a link into the board survives a reorder - and now a split as well.
   const flat = [];
   const anchored = new Set();
   for (const sec of ctx.sections) {
@@ -103,7 +103,7 @@ export async function assembleBoard(boardDir) {
   }
 
   /**
-   * Render one group of frames — a section on the page and a group in the index.
+   * Render one group of frames - a section on the page and a group in the index.
    *
    * <p>The sequence counts SCREENS, not frames: a responsive pair occupies one position because
    * it is one screen. Assigned by first appearance, so it always reads in the order drawn.
@@ -137,7 +137,7 @@ export async function assembleBoard(boardDir) {
     const screenCount = seqOf.size;
     const frameCount = g.entries.length;
     // A section a split has cut in two is still a section, and its heading is still the honest
-    // name of what is under it — but the count beside that heading would read as the section's
+    // name of what is under it - but the count beside that heading would read as the section's
     // size when it is the size of the part in view. Naming the whole is what stops a reader
     // taking a fragment for the lot; nothing else about the section changes.
     const caption = g.count
@@ -164,7 +164,7 @@ ${frames.join('\n')}
     };
   }
 
-  /** The board's own clusters, as groups — what an unsplit board has always drawn. */
+  /** The board's own clusters, as groups - what an unsplit board has always drawn. */
   const clusterGroups = (entries) => {
     const out = [];
     for (const sec of ctx.sections) {
@@ -191,7 +191,7 @@ ${frames.join('\n')}
    *
    * <p>The order is the declared one where the axis has an order to declare, and first appearance
    * otherwise. A frame the axis places nowhere keeps its cluster, so nothing can fall out of the
-   * file it belongs to — `splitPlacementGate` is what reports it.
+   * file it belongs to - `splitPlacementGate` is what reports it.
    */
   const axisGroups = (entries) => {
     const seen = [];
@@ -225,7 +225,7 @@ ${frames.join('\n')}
     };
   };
 
-  // The toggle is drawn only where a pair exists — a control that changes nothing reads as a
+  // The toggle is drawn only where a pair exists - a control that changes nothing reads as a
   // broken one, and a board draws its first pair long after it is started. Asked of the FILE
   // rather than of the board: on a split board a pair may live entirely in one part, and the
   // other parts would otherwise carry a switch that flips nothing they draw.
@@ -235,9 +235,9 @@ ${frames.join('\n')}
   const overviewHtml = renderOverview(ctx);
   // Only what was actually drawn: a link to a card the overview did not render is a dead entry,
   // and a board with no role matrix legitimately has no 사용자 구성 card. On a split board the
-  // overview sits on the entry page alone — it is the map of the WHOLE board, and one copy per
+  // overview sits on the entry page alone - it is the map of the WHOLE board, and one copy per
   // file would be four copies of the same drawing saying different things about where the reader
-  // is — so the jumps to it cross files, which is what `doc` is for.
+  // is - so the jumps to it cross files, which is what `doc` is for.
   const overviewDoc = split ? split.entry.file : '';
   const jumps = [
     ...(overviewHtml.includes('id="ov-ia"') ? [{ href: 'ov-ia', tag: 'IA', label: ctx.text.jumpIa, doc: overviewDoc }] : []),
@@ -262,7 +262,7 @@ ${frames.join('\n')}
       sidebarHtml: sidebar(doc.sidebarSections, { boardName: config.boardName, jumps, file: 'board.html' }),
     });
   } else {
-    // One file per declared part, then the entry page — in that order, because the entry page's
+    // One file per declared part, then the entry page - in that order, because the entry page's
     // index is the parts' own index entries rather than a second listing computed beside them.
     // Two listings of one board is how the position beside a frame comes to differ between the
     // page a reader searched and the page they landed on.
@@ -291,7 +291,7 @@ ${frames.join('\n')}
     }
     // The entry page. It draws no frame, so what it owes a reader is the two things a frame list
     // cannot give them: that these files are one board, and which file holds what. The index of
-    // EVERY frame is its sidebar, where the filter is — which is what keeps 「one search finds any
+    // EVERY frame is its sidebar, where the filter is - which is what keeps 「one search finds any
     // frame」 true of a board that has been split.
     const indexSections = partDocs.map(({ part, sidebarSections }) => ({
       letter: '',
@@ -339,8 +339,8 @@ ${frames.join('\n')}
         headerHtml: introFor(mine.flatMap((d) => d.mine)).header,
         overviewHtml,
         sectionsHtml: mine.map((d) => d.sectionsHtml).join('\n\n'),
-        // Anchors inside the volume, so the paginator's table of contents — which it reads off
-        // this index — finds every frame on a page of its own document.
+        // Anchors inside the volume, so the paginator's table of contents - which it reads off
+        // this index - finds every frame on a page of its own document.
         sidebarHtml: sidebar(sections, { boardName: config.boardName, jumps: [], file: '' }),
       });
     }
@@ -364,12 +364,12 @@ ${frames.join('\n')}
   for (const doc of volumeDocs) doc.html = html(doc);
 
   // What the `built` gates read. Every gate that reads it walks the board's frames one article at
-  // a time, so the whole board is every file's frames end to end — a gate must not go quiet on a
+  // a time, so the whole board is every file's frames end to end - a gate must not go quiet on a
   // frame because of which file it was written into.
   ctx.html = documents.map((d) => d.html).join('\n');
   await runGates(ctx, 'built');
 
-  // Entry page first, whatever order they were assembled in — it is the one a reader opens.
+  // Entry page first, whatever order they were assembled in - it is the one a reader opens.
   const ordered = split
     ? [documents[documents.length - 1], ...documents.slice(0, -1)]
     : documents;
@@ -381,7 +381,7 @@ ${frames.join('\n')}
  *
  * @param boardDir the board folder
  * @param pdf write the PDF beside the HTML. False while iterating on a screen
- * @returns `{ html, out, outs, screens, sections }` — `out` is the entry page and `outs` every
+ * @returns `{ html, out, outs, screens, sections }` - `out` is the entry page and `outs` every
  *   file written, which are the same single name on a board that declares no split
  */
 export async function buildBoard(boardDir, { pdf = true } = {}) {

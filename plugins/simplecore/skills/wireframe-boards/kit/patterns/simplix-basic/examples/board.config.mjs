@@ -3,14 +3,14 @@
 // carrying a phone, a terminal in a lobby.
 //
 // **Replace the words, keep the shapes.** Every frame here is an answer to a question a real
-// board will be asked on its first day — where does a create form open, what does an empty list
-// look like, what does the phone show when it is offline — so a screen drawn over one of these
+// board will be asked on its first day - where does a create form open, what does an empty list
+// look like, what does the phone show when it is offline - so a screen drawn over one of these
 // starts from a decision that has already been made rather than from a blank file.
 export default {
   pattern: 'simplix-basic',
   contract: 3,
 
-  // The language the BOARD is drawn in — the index legend, the filter, the viewport toggle, a
+  // The language the BOARD is drawn in - the index legend, the filter, the viewport toggle, a
   // section's frame count. The reading contract stays English whatever this says: it is instruction
   // to whoever builds, not a label on the document. Unknown or absent falls back to English.
   boardLang: 'ko',
@@ -31,7 +31,7 @@ export default {
   },
 
   // The day every frame is standing on. Frames carry dates, D-n badges and 「N일째」 counters, and
-  // each is only readable against a fixed today — a reader who meets 「D-5」 beside a date is doing
+  // each is only readable against a fixed today - a reader who meets 「D-5」 beside a date is doing
   // arithmetic, and so is the gate that checks it. Left undeclared, each frame quietly picks its
   // own. Moving this date is a board-wide edit, not a setting.
   // It is drawn in the header, so a reader doing that arithmetic can see what it counts from.

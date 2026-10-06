@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Backend convention audit — machine-checkable subset of the `simplix:backend`
+ * Backend convention audit - machine-checkable subset of the `simplix:backend`
  * skill's Non-Negotiable Invariants.
  *
  * Run from the backend project root, or point at it with --root=<dir>.
@@ -17,7 +17,7 @@
  *
  * **--selftest is the half that keeps this file honest.** Every rule carries a `broken` and a
  * `fixed` sample; the selftest asserts the rule fires on the first and stays silent on the
- * second. A rule proved in one direction has not been proved — a check that can never fire is
+ * second. A rule proved in one direction has not been proved - a check that can never fire is
  * indistinguishable from a clean tree, and it is the reading that a green run invites. Add no
  * rule without both samples; the selftest fails on a rule that omits either.
  *
@@ -25,12 +25,12 @@
  * a given searchable id is an endpoint's OWN primary key, and whether a list filter resolves
  * selections against it. The first is recovered here by reading the entity's `@Id` field and
  * matching the DTO container's name, which is exact rather than approximate. The second lives in
- * the frontend and stays out. What genuinely needs a started server — the two verification
- * requests in `review/searchable-field-patterns.md` — is not attempted here and is still run by
+ * the frontend and stays out. What genuinely needs a started server - the two verification
+ * requests in `review/searchable-field-patterns.md` - is not attempted here and is still run by
  * hand against the published OpenAPI document.
  *
  * Scope: a project that CONSUMES SimpliX. Pointing it at the framework's own repository reports
- * its base classes as violations — the module that defines SimpliXBaseRepository cannot extend it.
+ * its base classes as violations - the module that defines SimpliXBaseRepository cannot extend it.
  */
 
 import fs from "node:fs";
@@ -81,7 +81,7 @@ function collectSources() {
  *
  * Without this, a JavaDoc `<pre>{@code @RequiredArgsConstructor ...}</pre>` example reads as the
  * annotation it documents, and the file that explains a convention is reported for breaking it.
- * That false positive is not hypothetical — it is the first thing this audit hit.
+ * That false positive is not hypothetical - it is the first thing this audit hit.
  */
 function stripCommentsAndStrings(src) {
   let out = "";
@@ -114,7 +114,7 @@ function stripCommentsAndStrings(src) {
   return out;
 }
 
-/** Same as above but keeps string CONTENTS — for rules that read a literal (zone ids, tags). */
+/** Same as above but keeps string CONTENTS - for rules that read a literal (zone ids, tags). */
 function stripComments(src) {
   let out = "";
   let i = 0;
@@ -163,7 +163,7 @@ function isDevProfileOnly(src) {
   if (!m) return false;
   const profiles = [...m[1].matchAll(/"([^"]+)"/g)].map((x) => x[1].trim());
   if (!profiles.length) return false;
-  // A negated profile ("!prod") is an exclusion, not a dev binding — it still loads elsewhere.
+  // A negated profile ("!prod") is an exclusion, not a dev binding - it still loads elsewhere.
   if (profiles.some((p) => p.startsWith("!"))) return false;
   const DEV = new Set(["local", "dev", "test", "development", "it", "integration"]);
   return profiles.every((p) => DEV.has(p));
@@ -172,10 +172,10 @@ function isDevProfileOnly(src) {
 /**
  * Line numbers a `simplix-audit-ignore` marker suppresses for this rule.
  *
- * Shape: `// simplix-audit-ignore[<rule-id>]: <reason>` — the reason is required, because a bare
+ * Shape: `// simplix-audit-ignore[<rule-id>]: <reason>` - the reason is required, because a bare
  * opt-out is how a gate quietly stops holding anything.
  *
- * The marker suppresses its own line and the whole STATEMENT that follows it — skipping the
+ * The marker suppresses its own line and the whole STATEMENT that follows it - skipping the
  * comment and blank lines between, then running to the line that ends it. Two windows are wrong
  * here and both fail silently, which is why neither is used: a window of literally two lines
  * stops covering the statement the moment the reason wraps onto a second line, and a window of
@@ -283,7 +283,7 @@ let _fieldIndex = null;
  * Which fields each class in this repository declares, by its simple name.
  *
  * <p>Nested classes are indexed under their own simple name rather than `Outer.Inner`, because that
- * is how a mapper writes them — a DTO container's inner class is imported and used bare. Two
+ * is how a mapper writes them - a DTO container's inner class is imported and used bare. Two
  * classes sharing a simple name merge, which widens what a rule reading this considers "declared on
  * both sides" and never narrows it; the rules built on it fire only when a name is on both sides
  * and skipped, so a merge can hide a defect and cannot invent one.
@@ -322,7 +322,7 @@ function fieldIndex(files) {
  * can ask where the value came from.
  *
  * @param body a brace-balanced method body, braces included
- * @returns one entry per set — the field name with its first letter lowered, and the argument text
+ * @returns one entry per set - the field name with its first letter lowered, and the argument text
  */
 function topLevelSets(body) {
   const out = [];
@@ -374,7 +374,7 @@ let _emptyDefaultIndex = null;
  * Which of each entity's String fields hold the empty string as a real value.
  *
  * <p>A column declared `nullable = false` and initialised to `""` is one where empty MEANS
- * something — 「every workplace」 for a scope key, 「no pack raised it」 for a provenance id. The
+ * something - 「every workplace」 for a scope key, 「no pack raised it」 for a provenance id. The
  * field is not optional and it is not blank-forbidding; it is neither, and only the entity says so.
  *
  * @param files every Java source in the project
@@ -388,7 +388,7 @@ function emptyDefaultIndex(files) {
     try { src = fs.readFileSync(abs, "utf8"); } catch { continue; }
     if (!src.includes('""')) continue;
     // The stripper blanks a literal's CONTENTS and keeps its quotes, so `= ""` survives as
-    // itself while `= "x"` becomes `= " "` — the match below therefore reads the empty default
+    // itself while `= "x"` becomes `= " "` - the match below therefore reads the empty default
     // and nothing that merely looks like one.
     const clean = stripCommentsAndStrings(src);
     if (!/@Entity\b/.test(clean)) continue;
@@ -405,8 +405,8 @@ let _overwriteIndex = null;
  * Which fields each entity's service writes over whatever the request sent.
  *
  * <p><b>Read from the service, because that is where the decision lives.</b> A field the service
- * fills in itself — a caller forced onto the record, a state read off two dates, a name looked up
- * from an account — is one the form has no control for and no way to grow one. Nothing in the DTO
+ * fills in itself - a caller forced onto the record, a state read off two dates, a name looked up
+ * from an account - is one the form has no control for and no way to grow one. Nothing in the DTO
  * says so, which is exactly why the constraint on it survives review.
  *
  * <p>A set whose argument reads the field's OWN value is a normalization rather than an overwrite
@@ -419,10 +419,10 @@ let _overwriteIndex = null;
  *
  * @param files every Java source in the project
  * <p>Kept per method rather than merged. A field the CREATE path forces (the account named in the
- * path, not in the body) can still be a field the UPDATE path reads and compares — merging the two
+ * path, not in the body) can still be a field the UPDATE path reads and compares - merging the two
  * reports that one as unrequirable, and it is the shape a scaffolded `UpdateDTO` takes.
  *
- * @returns entity simple name → `{ create, update, hasUpdate }` — the fields each write path
+ * @returns entity simple name → `{ create, update, hasUpdate }` - the fields each write path
  *          overwrites, and whether the service has an update path at all
  */
 function serviceOverwriteIndex(files) {
@@ -473,9 +473,9 @@ let _i18nIndex = null;
  * the column instead answers every caller in the seed's language.
  *
  * @param files every Java source in the project
- * @returns `entityBases` — entity class simple name to the base names IT declares the map for,
+ * @returns `entityBases` - entity class simple name to the base names IT declares the map for,
  *          kept per class because two entities sharing a field name do not share its translation;
- *          `dtoCarries` — DTO class simple name to the base names that class declares the map for
+ *          `dtoCarries` - DTO class simple name to the base names that class declares the map for
  */
 function i18nIndex(files) {
   if (_i18nIndex) return _i18nIndex;
@@ -620,7 +620,7 @@ const RULES = [
         const paths = overwrites.get(cls[1]);
         if (!paths) continue;
         // A field declared on the CREATE DTO is inherited by the update body, so it is only
-        // unrequirable when BOTH write paths overwrite it — one that create forces and update
+        // unrequirable when BOTH write paths overwrite it - one that create forces and update
         // reads is a field the request still decides.
         const written = cls[2] === "Update"
           ? paths.update
@@ -820,7 +820,7 @@ const RULES = [
       const declared = new Map();
       for (const m of clean.matchAll(/\b(\w+DTO)\s+(\w+)\s*=\s*new\s+\1\s*\(/g)) declared.set(m[2], m[1]);
       if (!declared.size) return [];
-      // The SOURCE's own type decides whether that field is translated at all — two entities can
+      // The SOURCE's own type decides whether that field is translated at all - two entities can
       // share a field name while only one of them keeps a map for it, and a rule keyed on the name
       // alone rewrites the other into a call that does not compile.
       const typeOf = (name) => {
@@ -1319,7 +1319,7 @@ public class AreaService extends SimpliXBaseService<Area, String> {
     check: (c, rel, ctx) => {
       const entity = path.basename(rel).replace(/DTOs?\.java$/, "");
       const pk = ctx?.entityIds?.get(entity);
-      if (!pk) return []; // no entity of that name in this project — nothing to assert against
+      if (!pk) return []; // no entity of that name in this project - nothing to assert against
       const clean = stripComments(c);
       const m = clean.match(/\bclass\s+\w*SearchDTO\b/);
       if (!m) return [];
@@ -1370,7 +1370,7 @@ public class AreaService extends SimpliXBaseService<Area, String> {
       if (!known) return [];
       const clean = stripCommentsAndStrings(c);
       const out = [];
-      // `Dto row = new Dto(); row.setX(src.getX()); … return row;` — the shape a promoted service
+      // `Dto row = new Dto(); row.setX(src.getX()); … return row;` - the shape a promoted service
       // reaches for when a projection cannot express the row.
       const re = /(\w+)\s+(\w+)\s*=\s*new\s+\1\s*\(\s*\)\s*;/g;
       let m;
@@ -1499,7 +1499,7 @@ public class ApprovalInboxService {
       const clean = stripCommentsAndStrings(c);
       const FORCE = /\bforce\w*\(|ScopedSearchParams|requireVisible|forceVisible/;
       // Handing the whole call to the overload that IS narrowed is the third way to be narrowed,
-      // and it is the shape a service reaches for when the two doors answer the same question —
+      // and it is the shape a service reaches for when the two doors answer the same question -
       // `return search(Map.of());`. Read as a body with no marker in it, it fails a service that
       // cannot return an unscoped row, and the fix a reader then applies is to copy the narrowing
       // into the second overload, where it is a second copy of one rule.
@@ -1657,7 +1657,7 @@ public class PublicContentRestController {
 ];
 
 // ---------------------------------------------------------------------------
-// Self-test — every rule against the broken form and the fixed form
+// Self-test - every rule against the broken form and the fixed form
 // ---------------------------------------------------------------------------
 
 /**
@@ -1779,7 +1779,7 @@ function selftest() {
 const args = process.argv.slice(2);
 
 // An unrecognised option stops the run rather than falling through to a scan. A misspelt
-// `--selftest` that scanned instead printed "0 file(s) scanned — 0 error hit(s)", which is
+// `--selftest` that scanned instead printed "0 file(s) scanned - 0 error hit(s)", which is
 // what a clean project prints; the two are indistinguishable to whoever reads the tail.
 const FLAGS = ["--list", "--selftest", "--errors-only"];
 const VALUED_FLAGS = ["--root=", "--rule="];

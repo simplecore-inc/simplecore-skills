@@ -1,8 +1,8 @@
-> **AUDIT** category reference inside this skill. Loaded via the Task Router after any CUSTOMIZE work touches existing modules (MANDATORY — parent skill invariants 22–23). Sibling files: `registry.md`, `audit-checklist.md`.
+> **AUDIT** category reference inside this skill. Loaded via the Task Router after any CUSTOMIZE work touches existing modules (MANDATORY - parent skill invariants 22–23). Sibling files: `registry.md`, `audit-checklist.md`.
 
 # Commonization Audit (AUDIT overview)
 
-Tracks and enforces UI / code commonization across the project. Ensures that shared patterns extracted into shared packages — framework-generic ones in `@simplix-react/ui`, project-/domain-specific ones in the project's own shared UI package — are consistently applied across all modules, and prevents regression to custom inline implementations.
+Tracks and enforces UI / code commonization across the project. Ensures that shared patterns extracted into shared packages - framework-generic ones in `@simplix-react/ui`, project-/domain-specific ones in the project's own shared UI package - are consistently applied across all modules, and prevents regression to custom inline implementations.
 
 ## Purpose
 
@@ -15,7 +15,7 @@ Tracks and enforces UI / code commonization across the project. Ensures that sha
 
 ### When a New Pattern is Commonized
 
-1. Register it in the index-plus-detail shape described in `registry.md` § Adding a new pattern — in the project's own reference when the pattern is the project's, contributed upstream to this skill when it holds for any simplix-react project
+1. Register it in the index-plus-detail shape described in `registry.md` § Adding a new pattern - in the project's own reference when the pattern is the project's, contributed upstream to this skill when it holds for any simplix-react project
 2. Give it audit criteria with grep patterns that detect violations, alongside the recipes in `audit-checklist.md`
 
 ### When Adding New Modules or Pages
@@ -36,13 +36,13 @@ Tracks and enforces UI / code commonization across the project. Ensures that sha
 - NEVER write custom inline empty states, status cards, or other registered patterns when a shared component exists
 - ALWAYS check this skill's registry before implementing UI patterns that display empty/error/loading states
 - When a shared component's API changes, update all entries in the registry and re-audit affected files
-- Shared components live in a shared package and are imported from there — framework-generic patterns in `@simplix-react/ui`, project-/domain-specific shared UI in the project's own shared UI package (e.g. `@<scope>/<ui-package>`) — never re-inlined in `modules/` or `apps/` (parent skill invariant #23)
+- Shared components live in a shared package and are imported from there - framework-generic patterns in `@simplix-react/ui`, project-/domain-specific shared UI in the project's own shared UI package (e.g. `@<scope>/<ui-package>`) - never re-inlined in `modules/` or `apps/` (parent skill invariant #23)
 
 ## Two audit scripts, and only one of them can see a painted page
 
 `${CLAUDE_PLUGIN_ROOT}/scripts/audit-frontend.mjs` reads source and runs with nothing
 started. `${CLAUDE_PLUGIN_ROOT}/scripts/audit-rendered.mjs` asks about boxes and rows on a
-live page, and **the defects it catches are invisible to the source audit** — the component
+live page, and **the defects it catches are invisible to the source audit** - the component
 is imported, the props typecheck, the request answers 200, and the screen is unusable. Two
 of them today: two text boxes painted into the same rectangle, and a list that prints a
 total and draws no rows.
@@ -60,12 +60,12 @@ node "$A" --print <check-id> > <scratch>/check.js
 ```
 
 Each snippet is one self-contained expression returning `{ compared, findings }`, so any
-driver can run it. **Read `compared` as well as `findings`** — zero findings out of zero
+driver can run it. **Read `compared` as well as `findings`** - zero findings out of zero
 comparisons is a check that reached nothing, and it prints the same exit status as a clean
 screen.
 
 ## Registered Patterns
 
-See [registry.md](registry.md) — the index of all commonized components; full contracts live in the `registry/` detail files it points to. Scan the index first, then Read only the matching detail file.
+See [registry.md](registry.md) - the index of all commonized components; full contracts live in the `registry/` detail files it points to. Scan the index first, then Read only the matching detail file.
 
 See [audit-checklist.md](audit-checklist.md) for automated audit patterns.

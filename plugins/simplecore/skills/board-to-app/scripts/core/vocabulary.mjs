@@ -1,12 +1,12 @@
 // A word a project declares as its own, held against the documents that are supposed to write it.
 //
-// Eight keys are not paths but this project's own words and markup — `chapterLines`,
+// Eight keys are not paths but this project's own words and markup - `chapterLines`,
 // `evidenceLabels`, `closedStatus`, `verdictRole`, `deferredLine`, `placeholderLine`,
-// `captureReasons` and `eyesPhrases` — and every check over a chapter file or a result document
+// `captureReasons` and `eyesPhrases` - and every check over a chapter file or a result document
 // compares against them. **A word declared wrongly does not fail; it matches nothing, and matching
-// nothing is what a repository with nothing wrong also does.** The two markup conventions are opposite on purpose — a `chapterLines` phrase is the
+// nothing is what a repository with nothing wrong also does.** The two markup conventions are opposite on purpose - a `chapterLines` phrase is the
 // line as written, markup and all, and an `evidenceLabels` value is the word alone, because the
-// checks add the emphasis themselves — so the commonest way to get this wrong is to declare one
+// checks add the emphasis themselves - so the commonest way to get this wrong is to declare one
 // of them the way the other is declared, and the run stays green either way.
 //
 // That was held by a sentence in a setup command, which is the third category `SKILL.md` says does
@@ -14,19 +14,19 @@
 // it. This is the gate.
 //
 // **A ninth key is here for the same reason and fails one step earlier.** `frameDeliverables` is
-// not a word a check compares by — it is the sentences a screen owes beyond working code, and what
+// not a word a check compares by - it is the sentences a screen owes beyond working code, and what
 // holds them is that a chapter file demands each one of every screen it places. Declared and never
 // emitted, the key reads as coverage and holds nothing: no gate compares it, no chapter carries it,
 // and the run over that chapter set is as green as one where every screen answered it.
 // `everyFrameDeliverableReachesAChapter` is the join, and it sits in this module because the
-// question is this module's — a declaration held against the documents that are supposed to write
+// question is this module's - a declaration held against the documents that are supposed to write
 // it.
 //
 // **The whole difficulty is the boundary, and getting it wrong makes the gate worthless in both
 // directions.** A project that has just been wired has no result documents, so zero matches there
 // is correct rather than a defect; a project mid-build has chapter files full of lines nothing
 // matched, and that is a config that has stopped working. So every entry below carries what
-// established which of the two it is, and says so in its own text — a reader is never left
+// established which of the two it is, and says so in its own text - a reader is never left
 // guessing whether the comparison ran.
 import { compileLine } from './grammar.mjs';
 import { proseLines, tableCells } from './prose.mjs';
@@ -38,7 +38,7 @@ import { BASE_HEADING, CHAPTER_SECTION, EVIDENCE_HEADING, ROLE_SEPARATOR } from 
  * <p>Stripping it from both sides is how the two conventions are told apart from a word that is
  * simply wrong: when the strict comparison finds nothing and the markup-blind one finds the line,
  * the words are in the document and the declaration's markup is not what the document writes.
- * **That is a finding with no false positive available to it** — the corpus is holding up the
+ * **That is a finding with no false positive available to it** - the corpus is holding up the
  * matching line.
  */
 const MARKUP = /[*_`~]/g;
@@ -71,7 +71,7 @@ const resultText = (ctx, file) => {
  * Every document of one kind, as `{ rel, lines }` with the fenced blocks already gone.
  *
  * <p>A fenced block is what a machine verification pastes its command and its output into, and
- * neither is prose a declaration is meant to match — the same reason every other reader here
+ * neither is prose a declaration is meant to match - the same reason every other reader here
  * starts from `proseLines`.
  */
 function corpus(ctx, kind) {
@@ -85,14 +85,14 @@ function corpus(ctx, kind) {
   return out;
 }
 
-/** How many lines a corpus holds — the comparisons a line-by-line reader actually made. */
+/** How many lines a corpus holds - the comparisons a line-by-line reader actually made. */
 const lineCount = (docs) => docs.reduce((n, doc) => n + doc.lines.length, 0);
 
 /**
  * One declaration's census entry.
  *
  * <p>`expects` is the boundary and `because` is the sentence that established it. A `false` there
- * is not a gap in the gate — it is the gate saying there is nothing yet to match against, which is
+ * is not a gap in the gate - it is the gate saying there is nothing yet to match against, which is
  * the state a freshly-wired project is correctly in.
  */
 function entry(label, declared, convention, corpusName, docs, compared, matched, relaxed, expects, because) {
@@ -116,7 +116,7 @@ function countBare(docs, re) {
 }
 
 /**
- * The chapter lines — three roles, one corpus, and a different signal establishing each boundary.
+ * The chapter lines - three roles, one corpus, and a different signal establishing each boundary.
  *
  * <p>**`persona` and `verdict` each have an independent witness in the chapter files themselves.**
  * A chapter that places a frame names the personas that prove it, so a frame heading anywhere in
@@ -126,7 +126,7 @@ function countBare(docs, re) {
  *
  * <p>**`states` has none, and is judged only when the markup-blind reader finds what the strict one
  * missed.** A board that gives every state a frame of its own writes no such sentence, and a small
- * board may have no screen with a state hanging off it — so a bare zero there is a project this
+ * board may have no screen with a state hanging off it - so a bare zero there is a project this
  * gate has nothing to say about, and saying it anyway would be the false positive that takes the
  * two rows beside it down as well.
  */
@@ -186,7 +186,7 @@ function chapterLineEntries(ctx, lines) {
  * <p>**The witness is the document's own shape rather than its words**: a result document writes
  * every one of its labels as a bolded lead-in, so a document holding lead-ins and not this one has
  * a label declared as something nobody writes. A document still being written holds no lead-ins
- * yet and establishes nothing, which is the boundary — a chapter halfway through its verification
+ * yet and establishes nothing, which is the boundary - a chapter halfway through its verification
  * is not a misdeclared config.
  */
 function evidenceLabelEntries(ctx) {
@@ -220,7 +220,7 @@ function evidenceLabelEntries(ctx) {
  * The word the ledger writes for a closed chapter.
  *
  * <p>**Judged by the markup-blind reader alone, deliberately.** Nothing independent of this word
- * says a chapter has closed — a build with every chapter open is the normal state of a project
+ * says a chapter has closed - a build with every chapter open is the normal state of a project
  * halfway through, and a result document sitting beside an open chapter is the normal state of one
  * whose verification has just run and whose ledger row is written next. Any witness for it would be
  * a threshold somebody picked, and a threshold picked to make a gate speak is how a gate starts
@@ -239,8 +239,8 @@ function closedStatusEntry(ctx) {
   for (const { line } of proseLines(text)) {
     const cells = tableCells(line);
     if (!cells || cells.length < 2 || !known.has(cells[0].toUpperCase())) continue;
-    // The state's column is the project's — a name or what is left to do may sit between the
-    // chapter and its state — so the row is read whole, exactly as `closedChapters` reads it. A
+    // The state's column is the project's - a name or what is left to do may sit between the
+    // chapter and its state - so the row is read whole, exactly as `closedChapters` reads it. A
     // census taken on a fixed column reports a zero that belongs to this reader and prints it as
     // though it belonged to the ledger.
     const rest = cells.slice(1);
@@ -259,7 +259,7 @@ function closedStatusEntry(ctx) {
  *
  * <p>The witness pairs the two documents: a chapter that carries a verdict line and has a result
  * document with role-suffixed headings is a chapter whose document owes one heading ending in this
- * word. Neither half alone would do — role-suffixed headings appear in every screen chapter's
+ * word. Neither half alone would do - role-suffixed headings appear in every screen chapter's
  * document, so a project with no foundation chapter would be told to declare a word it never uses.
  */
 function verdictRoleEntry(ctx, lines) {
@@ -299,7 +299,7 @@ function verdictRoleEntry(ctx, lines) {
  * The line a section carries for a check this installation could not decide.
  *
  * <p>**No witness, and there never can be one.** A project declares this because it expects to meet
- * the case, and a project that declares it and never meets it is a project with nothing wrong —
+ * the case, and a project that declares it and never meets it is a project with nothing wrong -
  * which is exactly what a bare zero here means. The markup-blind reader is the whole of what can
  * be said.
  */
@@ -326,7 +326,7 @@ function deferredLineEntry(ctx, lines) {
  * <p>Same shape as the deferral above and the same absence of a witness: a project declares it
  * because it expects to meet unbuilt placeholders behind a tab strip, and one that declares it and
  * never meets them is a project with nothing wrong. The markup-blind count is the whole of what
- * can be said — a declaration written the way `evidenceLabels` is written matches nothing, and the
+ * can be said - a declaration written the way `evidenceLabels` is written matches nothing, and the
  * relaxed reading finding the line is what shows that.
  */
 function placeholderLineEntry(ctx, lines) {
@@ -351,7 +351,7 @@ function placeholderLineEntry(ctx, lines) {
  *
  * <p><b>No boundary is claimed, and the reason is that a hole here cannot be silent.</b> A
  * `transient` list that matches nothing means either that this project's demands never reach a
- * dialog — possible, and a project with nothing wrong — or that the phrases were written
+ * dialog - possible, and a project with nothing wrong - or that the phrases were written
  * differently from the way the generator writes them. The second is not the quiet failure it is
  * everywhere else: `everyCaptureDemandGivesItsReason` reads the same lists and fires once per
  * clause that names a capture, so a vocabulary that misses the generator's wording is the loudest
@@ -364,8 +364,8 @@ function placeholderLineEntry(ctx, lines) {
  *
  * <p><b>That loudness is borrowed, and it is worth naming what it is borrowed from.</b> The gate
  * is loud only over clauses it recognises as naming a capture, so its noise rests on the capture
- * pattern reading this board's file names. Where that pattern is the narrow side — it stopped at
- * the digits while every frame of the board carried a state letter — the two holes compose into
+ * pattern reading this board's file names. Where that pattern is the narrow side - it stopped at
+ * the digits while every frame of the board carried a state letter - the two holes compose into
  * silence: no clause is seen to name a capture, no reason is demanded, and the census then reports
  * `0 matched` under a paragraph promising that zero cannot be quiet. It happened, on 82 frames of
  * 82. So read a zero here against whether the chapters demand captures at all rather than against
@@ -403,7 +403,7 @@ function captureReasonEntries(ctx) {
  * The phrasings that hand a check to human eyes.
  *
  * <p>Only `assigns` is judged. `reader` and `moment` are consulted inside a block `assigns` has
- * already matched, so a hole in either fires `eyesRuleNamesItsReader` on every such block — loudly,
+ * already matched, so a hole in either fires `eyesRuleNamesItsReader` on every such block - loudly,
  * and with somebody's attention. A hole in `assigns` is the silent one: the gate reads every
  * declared document, finds nothing to judge, and reports the same zero as a repository whose eyes
  * rules all name a reader. The census carries all three counts.
@@ -480,7 +480,7 @@ export function censusLine(item) {
 // The gates that read a declared vocabulary against result documents are retired with the
 // documents: a chapter's grounds are a run record the journey command writes, and its words are
 // the skill's rather than the project's. The census `doctor` prints still covers the words that
-// survive — the ledger's, the verdict's, the deferred and placeholder lines, the eyes'.
+// survive - the ledger's, the verdict's, the deferred and placeholder lines, the eyes'.
 export const VOCABULARY_GATES = [];
 
 // ── The cases ──────────────────────────────────────────────────────────────
@@ -488,7 +488,7 @@ export const VOCABULARY_GATES = [];
 // **The boundary is what these are for.** A gate over a vocabulary is easy to write and easy to
 // write worthlessly: one that fires whenever a count is zero reddens every project on the day it
 // is wired, and one that stays quiet whenever a count is zero is the silence it was written to
-// break. So both edges are pinned — a freshly-wired project with no documents at all, and a
+// break. So both edges are pinned - a freshly-wired project with no documents at all, and a
 // project mid-build whose result documents have not been written yet, each has to stay quiet
 // while the two misdeclarations fire.
 

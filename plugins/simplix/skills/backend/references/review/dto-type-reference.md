@@ -1,6 +1,6 @@
 # DTO Type Reference
 
-Role and shape of each of the 8 DTO types. Use this as a **router** — it tells you which DTO type you need and where the detailed rules live. Do not treat this file as authoritative for annotation-level rules.
+Role and shape of each of the 8 DTO types. Use this as a **router** - it tells you which DTO type you need and where the detailed rules live. Do not treat this file as authoritative for annotation-level rules.
 
 > **Scope (canonical):** when to include each DTO type, its Lombok shape, inheritance, and what concerns go into it. For deep rules, follow the pointer at the end of each section. For actual field-by-field entity → DTO mapping, see `entity-to-dto-mapping.md`.
 
@@ -38,10 +38,10 @@ All eight are **static inner classes** of `{Entity}DTOs`. A SimpliX-generated CR
 
 **Role:** filter + sort parameters for `GET /search` and `POST /search` endpoints.
 
-- **Lombok:** `@Getter @Setter` (NOT `@Data` — equals/hashCode is wasteful here)
+- **Lombok:** `@Getter @Setter` (NOT `@Data` - equals/hashCode is wasteful here)
 - **Extends:** nothing
 - **Required annotations per field:** `@Schema`, `@FieldLabel`, `@SearchableField`
-- **No validation annotations** — search inputs are permissive by design
+- **No validation annotations** - search inputs are permissive by design
 
 Detail → `searchable-field-patterns.md` (entityField paths, operator choice by type, URL parameter format, 20 operators).
 
@@ -67,7 +67,7 @@ Detail → `validation-patterns.md` (every validation annotation, `@UniqueFields
 
 - **Lombok:** `@Data @EqualsAndHashCode(callSuper = true)`
 - **Extends:** `CreateDTO`
-- **Adds:** ID field with `@NotBlank(message = "ID is required")` — or `@NotNull` for non-String composite IDs
+- **Adds:** ID field with `@NotBlank(message = "ID is required")` - or `@NotNull` for non-String composite IDs
 
 Detail → `validation-patterns.md` (ID field patterns, composite-ID support, how `@UniqueFields` defined on CreateDTO flows through inheritance).
 
@@ -75,7 +75,7 @@ Detail → `validation-patterns.md` (ID field patterns, composite-ID support, ho
 
 ## 4. UpdateFormDTO
 
-**Role:** payload for `GET /{id}/edit` — same shape as UpdateDTO plus read-only audit fields so the form can display "created by X at Y".
+**Role:** payload for `GET /{id}/edit` - same shape as UpdateDTO plus read-only audit fields so the form can display "created by X at Y".
 
 - **Lombok:** `@Data @EqualsAndHashCode(callSuper = true)`
 - **Extends:** `UpdateDTO`
@@ -87,12 +87,12 @@ No validation is added at this layer (inherits from UpdateDTO). The audit fields
 
 ## 5. BatchUpdateDTO
 
-**Role:** payload for `PATCH /batch` — apply a partial set of field changes to many entities at once.
+**Role:** payload for `PATCH /batch` - apply a partial set of field changes to many entities at once.
 
 - **Lombok:** `@Data`
 - **Extends:** nothing
 - **Fields:** `Set<String> entityIds` (the target list) + a **subset** of updatable fields
-- **All fields nullable by design** — a null field means "don't change this field". No `@NotNull` / `@NotBlank`.
+- **All fields nullable by design** - a null field means "don't change this field". No `@NotNull` / `@NotBlank`.
 
 Include a field only if bulk-updating it makes sense: status, active flags, sort order. Exclude unique-valued fields (code, name), references, and anything that would break uniqueness when applied identically to many rows.
 
@@ -119,7 +119,7 @@ Detail → `reference-field-patterns.md` (`@JsonIncludeProperties` rules, FK vs 
 - **Lombok:** `@Data`
 - **Extends:** nothing
 - **Shape:** same annotations as DetailDTO, typically a slimmer field subset
-- **Tree entities:** add `private List<{Self}ListDTO> children;` — enables hierarchical rendering
+- **Tree entities:** add `private List<{Self}ListDTO> children;` - enables hierarchical rendering
 
 Tree detection (add `children` field when any of these hold):
 
@@ -131,7 +131,7 @@ Tree detection (add `children` field when any of these hold):
 
 ## 8. OrderUpdateDTO
 
-**Role:** payload for `PATCH /order` — only for entities with a sort-order field.
+**Role:** payload for `PATCH /order` - only for entities with a sort-order field.
 
 - **Lombok:** `@Data`
 - **Extends:** nothing
@@ -146,14 +146,14 @@ The controller receives `List<OrderUpdateDTO>` and the service applies changes p
 
 | DTO | Lombok | Extends | Purpose | Always generated? |
 |---|---|---|---|---|
-| SearchDTO | `@Getter @Setter` | — | filter/sort params | ☑ |
-| CreateDTO | `@Data` | — | create payload | ☑ |
+| SearchDTO | `@Getter @Setter` | - | filter/sort params | ☑ |
+| CreateDTO | `@Data` | - | create payload | ☑ |
 | UpdateDTO | `@Data @EqualsAndHashCode(callSuper=true)` | CreateDTO | update payload (+ ID) | ☑ |
 | UpdateFormDTO | `@Data @EqualsAndHashCode(callSuper=true)` | UpdateDTO | edit form (+ audit display) | ☑ |
-| BatchUpdateDTO | `@Data` | — | bulk partial update | conditional |
-| DetailDTO | `@Data` | — | single-entity response | ☑ |
-| ListDTO | `@Data` | — | paged list row | ☑ |
-| OrderUpdateDTO | `@Data` | — | reorder | only if entity has order field |
+| BatchUpdateDTO | `@Data` | - | bulk partial update | conditional |
+| DetailDTO | `@Data` | - | single-entity response | ☑ |
+| ListDTO | `@Data` | - | paged list row | ☑ |
+| OrderUpdateDTO | `@Data` | - | reorder | only if entity has order field |
 
 ---
 
@@ -164,4 +164,4 @@ The controller receives `List<OrderUpdateDTO>` and the service applies changes p
 - **Add OrderUpdateDTO** only when the entity has `sortOrder` / `displayOrder` / `orderIndex`.
 - **Add `children` field to ListDTO** when the entity is a tree ([§7](#7-listdto)).
 
-The generator infers these from `.simplix/entity/{Entity}.yml` — see `../entity/yml-configuration.md` for the YML keys that drive each choice.
+The generator infers these from `.simplix/entity/{Entity}.yml` - see `../entity/yml-configuration.md` for the YML keys that drive each choice.

@@ -1,6 +1,6 @@
-> Commonization registry — **Actions, saves, selects & validation**. Detail file of `../registry.md` (the index); sections verbatim. Check the index first, then read only the section you need.
+> Commonization registry - **Actions, saves, selects & validation**. Detail file of `../registry.md` (the index); sections verbatim. Check the index first, then read only the section you need.
 
-# Registry — Actions, saves, selects & validation
+# Registry - Actions, saves, selects & validation
 
 ## Row Action Standardization
 
@@ -217,7 +217,7 @@ interface SelectFieldProps<T extends string = string> extends CommonFieldProps {
 ### Design Decisions
 
 - **No FieldWrapper**: `compact` mode skips label, error, description rendering entirely
-- **Auto-width**: Uses `w-auto` instead of fixed width — trigger width matches content
+- **Auto-width**: Uses `w-auto` instead of fixed width - trigger width matches content
 - **Height**: Fixed `h-8` for table cell alignment
 - **Accessibility**: `aria-label` set from `label ?? placeholder` when compact
 - **Options format**: Same `{ label, value }` array as standard mode
@@ -271,7 +271,7 @@ For a table-cell select, use `FormFields.SelectField` with the `compact` prop in
 
 ### Rationale
 
-In inline editors (no navigation after save), calling `reset()` before the invalidation's refetch completes shows a brief flash of stale cached data — so the reset must wait for invalidation (see Usage Rule).
+In inline editors (no navigation after save), calling `reset()` before the invalidation's refetch completes shows a brief flash of stale cached data - so the reset must wait for invalidation (see Usage Rule).
 
 ### Usage Rule
 
@@ -403,7 +403,7 @@ const isDirty = useIsDirty(values as Record<string, unknown>, initialValues as R
 
 `form.hbs` and `editor.hbs` use SaveButton with useIsDirty automatically.
 
-## Enum SelectField options — derive from the generated enum, not a hardcoded array
+## Enum SelectField options - derive from the generated enum, not a hardcoded array
 
 | Field | Value |
 |-------|-------|
@@ -412,14 +412,14 @@ const isDirty = useIsDirty(values as Record<string, unknown>, initialValues as R
 
 ### Rule
 
-When a `SelectField` offers the FULL set of an enum's values, derive options from the generated domain enum constant (the single source of truth), NOT a hardcoded `[{value:"X"},...]` array — so a backend regen that adds a value flows through automatically:
+When a `SelectField` offers the FULL set of an enum's values, derive options from the generated domain enum constant (the single source of truth), NOT a hardcoded `[{value:"X"},...]` array - so a backend regen that adds a value flows through automatically:
 
 ```tsx
 import { CredentialStatus } from "@<scope>/domain-<domain>";
 options={Object.values(CredentialStatus).map((v) => ({ label: enumLabel("CredentialStatus", v), value: v }))}
 ```
 
-EXCEPTION — keep an explicit hardcoded list ONLY when the form deliberately offers a SUBSET (e.g. audit-log/form `action` exposes INSERT/UPDATE/DELETE but NOT the system-only SYNC_EXECUTE/FULL_DOWNLOAD of the 5-value `ConfigChangeAction`). Annotate why. Adopted across several generated forms in the reference project.
+EXCEPTION - keep an explicit hardcoded list ONLY when the form deliberately offers a SUBSET (e.g. audit-log/form `action` exposes INSERT/UPDATE/DELETE but NOT the system-only SYNC_EXECUTE/FULL_DOWNLOAD of the 5-value `ConfigChangeAction`). Annotate why. Adopted across several generated forms in the reference project.
 
 ## groupValidationErrors (no inline validation-error grouping loops)
 
@@ -441,7 +441,7 @@ const grouped = groupValidationErrors(error);
 if (grouped) setFieldErrors(grouped);
 ```
 
-Note: the boot mutator UNWRAPS the response envelope, so a create success callback's argument IS the created DTO — read `created.id` directly (typed), never `resp?.data?.id` (dead post-unwrap) behind an `as any`. Use `useCrudFormSubmit` for standard create/update forms; keep the hand-rolled `mutateAsync().then()` flow only when you need the created id in `onSuccess` (e.g. navigate-to-new-entity), since `useCrudFormSubmit.onSuccess` is `() => void`.
+Note: the boot mutator UNWRAPS the response envelope, so a create success callback's argument IS the created DTO - read `created.id` directly (typed), never `resp?.data?.id` (dead post-unwrap) behind an `as any`. Use `useCrudFormSubmit` for standard create/update forms; keep the hand-rolled `mutateAsync().then()` flow only when you need the created id in `onSuccess` (e.g. navigate-to-new-entity), since `useCrudFormSubmit.onSuccess` is `() => void`.
 
 ## createEntityOptions (FK options loader factory)
 
@@ -452,4 +452,4 @@ Note: the boot mutator UNWRAPS the response envelope, so a create success callba
 
 ### Rule
 
-An FK entity's `{ label, value }` options — shared by its `EntityCombobox` picker and any faceted filter over the same directory — come from ONE `useXOptions` hook built with `createEntityOptions`, never a hand-rolled `useListX({ size: 1000 }) → adaptOrvalGet → .filter(id).map({label,value})` pipeline repeated per combobox. Annotate the row in `getValue` (`(x: NonNullable<ListX200Body["content"]>[number]) => x.id`) so the item type binds to the real list body. The concrete `useXOptions` lives next to its domain package (a module `shared/ui`, or the shared UI package for cross-domain entities like site/org/user); React Query dedupes the one batch request across the combobox and every filter. Options are icon-free (the combobox and faceted filter type their optional `icon` incompatibly). A server-searched picker (paged, not batch-1000) does NOT fit this factory and stays hand-written.
+An FK entity's `{ label, value }` options - shared by its `EntityCombobox` picker and any faceted filter over the same directory - come from ONE `useXOptions` hook built with `createEntityOptions`, never a hand-rolled `useListX({ size: 1000 }) → adaptOrvalGet → .filter(id).map({label,value})` pipeline repeated per combobox. Annotate the row in `getValue` (`(x: NonNullable<ListX200Body["content"]>[number]) => x.id`) so the item type binds to the real list body. The concrete `useXOptions` lives next to its domain package (a module `shared/ui`, or the shared UI package for cross-domain entities like site/org/user); React Query dedupes the one batch request across the combobox and every filter. Options are icon-free (the combobox and faceted filter type their optional `icon` incompatibly). A server-searched picker (paged, not batch-1000) does NOT fit this factory and stays hand-written.

@@ -1,6 +1,6 @@
 // Loading one board: its settings, the pattern it is drawn in, and every screen module.
 //
-// Everything downstream — the build, the gates, the catalog, the checks, the exports — reads the
+// Everything downstream - the build, the gates, the catalog, the checks, the exports - reads the
 // context this file produces and never reaches into the board folder itself. That is what lets a
 // gate written here judge any board: it is handed the board rather than importing one.
 import { readFileSync, existsSync, statSync } from 'node:fs';
@@ -23,7 +23,7 @@ const optional = async (path) =>
  * What a board's `board.config.mjs` means when it does not say.
  *
  * <p>A default is only written here when there is one answer every board would give. `pdfName`,
- * `documents` and `requiredSections` are absent on purpose — a board that has not declared them
+ * `documents` and `requiredSections` are absent on purpose - a board that has not declared them
  * gets no PDF name of its own, no document gates, and no coverage requirement, which is the
  * correct behaviour for a board being started rather than a reason to guess.
  */
@@ -33,7 +33,7 @@ const CONFIG_DEFAULTS = {
   features: {},
   requiredSections: [],
   // What this board switches on in the pattern it is drawn in. Empty is the answer for a board
-  // that has declared nothing, and that board draws exactly what it drew before — a capability
+  // that has declared nothing, and that board draws exactly what it drew before - a capability
   // the pattern gains is off until a board asks for it by name.
   patternOptions: {},
 };
@@ -52,14 +52,14 @@ const CONFIG_DEFAULTS = {
  * <p><b>Two kinds, and the difference is a decision rather than a convenience.</b> A NAME is a
  * pattern the kit ships: it resolves through the board's own `.kit` link rather than from this
  * file's location, so a board pinned to a checkout by `WIREFRAME_KIT` loads that checkout's
- * pattern too — one answer to 「which kit」 rather than one for the engine and another for the
+ * pattern too - one answer to 「which kit」 rather than one for the engine and another for the
  * components. A PATH beginning with `.` is a pattern the BOARD carries, resolved from the board
  * folder and committed with it.
  *
  * <p><b>A board carries its own only when the shipped ones are the wrong vocabulary.</b> A
  * component that would be right in a second product drawn the same way belongs in the shipped
  * pattern, where the second product gets it. A product whose component set is mostly its own has
- * nothing to share, and without this it is outside the contract altogether — no gate reaches it
+ * nothing to share, and without this it is outside the contract altogether - no gate reaches it
  * and the board cannot be built by the kit at all. The cost is stated where the procedure is: a
  * board with its own pattern stops receiving the kit's improvements to that pattern, and owns the
  * gates that came with it.
@@ -78,7 +78,7 @@ export function patternDirFor(boardDir, pattern) {
  * Which requirement each SCREEN answers, read from the board's own frame inventory.
  *
  * <p>A frame's notes cite requirements as it argues about them, and a state frame that rewrites its
- * notes loses the citations its base carried — so the notes are not where 「이 화면이 답하는 요구
+ * notes loses the citations its base carried - so the notes are not where 「이 화면이 답하는 요구
  * 사항」 lives. The inventory's trace table is: one row per requirement naming the screens that
  * answer it, maintained because the proposal is scored against it.
  *
@@ -124,13 +124,13 @@ export async function loadBoard(boardDir, { screens = true } = {}) {
   config.title ??= `Wireframe — ${config.boardName}`;
 
   // Which contract this board was last brought up to. A board that predates the declaration is
-  // read as 1 — the contract that had no stamp — rather than as «current», because assuming
+  // read as 1 - the contract that had no stamp - rather than as «current», because assuming
   // current is the reading that silently skips a migration the board genuinely owes.
   config.contract ??= 1;
   if (config.contract < BOARD_CONTRACT) {
     // Refused, not warned. The steps between two contracts change what a screen file may say and
     // where the components live, so a build that keeps going produces a board drawn half one way
-    // and half the other — and nothing in the artifact would show which halves.
+    // and half the other - and nothing in the artifact would show which halves.
     throw new Error(
       `${migrationReport(config.contract, BOARD_CONTRACT)}\n\n` +
       `board.config.mjs의 contract를 ${BOARD_CONTRACT}로 올리는 것은 마이그레이션의 마지막 단계입니다.`
@@ -155,11 +155,11 @@ export async function loadBoard(boardDir, { screens = true } = {}) {
   const pattern = (await import(pathToFileURL(join(patternDir, 'pattern.mjs')).href)).default;
   const components = await import(pathToFileURL(join(patternDir, 'components.mjs')).href);
   // A capability the pattern draws only when a board asks for it. This runs BEFORE any screen
-  // module is imported — a screen's body is built at import time, so a switch thrown afterwards
+  // module is imported - a screen's body is built at import time, so a switch thrown afterwards
   // would reach the gates and not the drawing. Every command comes through here, so `catalog`,
   // `check` and `shots` see the same board `build` does.
   //
-  // **The pattern names the capability; the board answers yes or no.** The kit holds neither —
+  // **The pattern names the capability; the board answers yes or no.** The kit holds neither -
   // it knows only that a pattern may take a declaration and where that declaration lives.
   components.configure?.(config.patternOptions ?? {});
 
@@ -186,7 +186,7 @@ export async function loadBoard(boardDir, { screens = true } = {}) {
   }
 
   const styles = [
-    // The kit's own — the opening overview, which every board has whatever it is drawn in. It
+    // The kit's own - the opening overview, which every board has whatever it is drawn in. It
     // goes FIRST so a pattern can override it without having to restate what it agrees with.
     readFileSync(join(kitCoreDir, 'overview.css'), 'utf8'),
     // The chrome the kit's own markup needs. Second, and never a pattern's job: a pattern that a
@@ -200,7 +200,7 @@ export async function loadBoard(boardDir, { screens = true } = {}) {
   ].join('\n');
 
   // The reading contract's three layers. The pattern and the board contribute `<li>` items and
-  // the kit renders the standing ones above them — so neither can drop the standing contract,
+  // the kit renders the standing ones above them - so neither can drop the standing contract,
   // which is exactly what must never happen (SKILL.md rule 4).
   const introParts = {
     patternItems: existsSync(join(patternDir, 'intro.html'))
@@ -210,7 +210,7 @@ export async function loadBoard(boardDir, { screens = true } = {}) {
   };
 
   // The axis this board's output is split along, or null. Loaded HERE rather than in the build
-  // because every command that reads a built board has to know how many files there are — the
+  // because every command that reads a built board has to know how many files there are - the
   // visual sweep, the screenshots and the PDF all ask, and a second answer computed in each of
   // them is a second answer that can disagree.
   const split = await loadSplit(boardDir, config.split);

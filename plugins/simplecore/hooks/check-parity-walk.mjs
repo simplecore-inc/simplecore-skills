@@ -6,7 +6,7 @@
  * shape no single walker may bend:
  *
  *   - the parity list holds what is LEFT. A walked frame is deleted, never
- *     marked — a list that accumulates completion markers stops answering the
+ *     marked - a list that accumulates completion markers stops answering the
  *     one question it exists to answer, and it also keeps the parked decisions
  *     the next session must read first.
  *   - the handover file holds FACTS. A walker's impressions belong in its own
@@ -31,8 +31,8 @@ import {CONFIG_NAME, documentPath, findParityConfig} from './parity-config.mjs';
  * A completion marker is a LIST STRUCTURE, never a word.
  *
  * @remarks
- * Words meaning "done" are ordinary state names on a wireframe frame — a setup wizard's last
- * step, a checkout success screen — so matching the vocabulary would flag the list's own
+ * Words meaning "done" are ordinary state names on a wireframe frame - a setup wizard's last
+ * step, a checkout success screen - so matching the vocabulary would flag the list's own
  * contents. What never belongs in a list of remaining work is a checked box, a struck-through
  * item, or a tick standing where the bullet goes.
  *
@@ -56,7 +56,7 @@ const COMPLETION_MARKERS = [
  * quoting the very phrases it bans.
  *
  * This list is the Korean/English default. A project whose documents are written in another
- * language adds its own phrases through `narrativePhrases` in the config — the two are
+ * language adds its own phrases through `narrativePhrases` in the config - the two are
  * concatenated, so the defaults keep working for the mixed-language case.
  */
 const NARRATIVE_PHRASES = [
@@ -91,7 +91,7 @@ function fencedLines(lines) {
  *
  * @remarks
  * A rule stated about a phrase is not a use of it. Both ways of marking a phrase as being
- * talked about — quotation marks and a markdown code span — are removed before the check.
+ * talked about - quotation marks and a markdown code span - are removed before the check.
  */
 function onlyQuoted(line, phrase) {
   const stripped = line

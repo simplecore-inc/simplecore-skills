@@ -75,7 +75,7 @@
 
 ## Package README.md
 
-> Applies **when the project publishes packages** — author a README per package that is published or public. A project that ships a single application (no published packages) does not need per-package READMEs; this template is the standard to follow once a package becomes public.
+> Applies **when the project publishes packages** - author a README per package that is published or public. A project that ships a single application (no published packages) does not need per-package READMEs; this template is the standard to follow once a package becomes public.
 
 ### Required Sections (fixed order)
 
@@ -184,7 +184,7 @@
 
 **Rules:**
 
-- Minimize background — reader already has context
+- Minimize background - reader already has context
 - Code is primary, prose is secondary
 - Do NOT include "why it works this way" (Explanation's role)
 
@@ -255,7 +255,7 @@ React Query hook that queries the entity list. Three calling conventions: `useLi
 - List ALL parameters, return values, and types
 - Specify defaults
 - Separate automatic behaviors (auto-invalidation, etc.) into their own section
-- Minimize prose — tables and code are primary
+- Minimize prose - tables and code are primary
 
 ---
 

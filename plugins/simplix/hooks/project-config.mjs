@@ -2,7 +2,7 @@
  * The one project-declared config this plugin reads: `.claude/simplix.json`.
  *
  * Sections: `audit` (the convention audit script), `skillGate` (the handbook gate), `e2eGate`
- * (the browser-audit gate). A project that declares none of them is never gated — directory
+ * (the browser-audit gate). A project that declares none of them is never gated - directory
  * layout, which skills bind, and what counts as a UI file are the project's to state, never
  * this plugin's to assume.
  */

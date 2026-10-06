@@ -171,11 +171,11 @@ For simple date display, use the built-in `format` prop.
 />
 ```
 
-`format="date"` is zone-neutral (for a `LocalDate`); `format="datetime"` renders an `Instant` and needs `displayZone` (a string, or `(row) => zone` for a per-row site zone). An `Instant` shown date-only cannot use `format="date"` (zone-neutral) — use `InstantText` (below).
+`format="date"` is zone-neutral (for a `LocalDate`); `format="datetime"` renders an `Instant` and needs `displayZone` (a string, or `(row) => zone` for a per-row site zone). An `Instant` shown date-only cannot use `format="date"` (zone-neutral) - use `InstantText` (below).
 
 ---
 
-## Date / Time Cells — custom (inline components)
+## Date / Time Cells - custom (inline components)
 
 When a date cell needs custom empty text, a per-row zone, or an `Instant` shown as its zone-local date, drop to a cell render with a framework inline component instead of the `format` prop:
 
@@ -186,7 +186,7 @@ When a date cell needs custom empty text, a per-row zone, or an `Instant` shown 
 ```
 
 **Key points:**
-- NEVER call `formatDateTime` / `formatDateMedium` (or wrap a value in `new Date(...)`) inline in a cell — `InstantText` / `CalendarDateText` / `WallClockText` (from `@simplix-react/ui`) own the parsing and zone math.
+- NEVER call `formatDateTime` / `formatDateMedium` (or wrap a value in `new Date(...)`) inline in a cell - `InstantText` / `CalendarDateText` / `WallClockText` (from `@simplix-react/ui`) own the parsing and zone math.
 - Read the typed value from `row.<field>`, not the untyped `value` argument.
 - Full kind → component matrix (detail row · inline text · list column) → `customize/datetime-fields.md`.
 

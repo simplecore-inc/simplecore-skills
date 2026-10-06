@@ -6,10 +6,10 @@
 //
 // `--no-notes` is for a capture that goes into a document which carries its own write-up. The
 // annotations are written for a reader looking at the board, and at a document's placed width
-// they are too small to read while still being large enough to look like the description — so
+// they are too small to read while still being large enough to look like the description - so
 // the page ends up carrying two descriptions, one of them illegible. Everything the board draws
-// under a frame goes with the flag — the label line, the role strip, the derived spec block and
-// the notes — because each of them is a description, and a capture that drops the prose while
+// under a frame goes with the flag - the label line, the role strip, the derived spec block and
+// the notes - because each of them is a description, and a capture that drops the prose while
 // keeping the spec rows still hands the document a second, illegible write-up. The desktop
 // frame's fold line goes with them: the contract lists fold lines among the annotations, and a
 // dashed red line with a 「fold · 1440×900」 tag across a placed capture reads as part of the
@@ -45,7 +45,7 @@ const frameRects = (pre) => {
 /**
  * Capture each frame of a built board.
  *
- * @param boardDir the board folder — every file its settings say it writes is read from it
+ * @param boardDir the board folder - every file its settings say it writes is read from it
  * @param outDir where the PNGs go
  * @param prefix capture only the frames whose anchor contains this (`p-` for one cluster)
  * @param opts `notes: false` drops each frame's annotation block from the capture

@@ -7,7 +7,7 @@
 //   node wf.mjs catalog                 the component storybook → _catalog.html
 //   node wf.mjs check [--frames <pfx>]  visual sweep of the built board
 //   node wf.mjs gates                   every gate against the defect it exists to catch
-//   node wf.mjs coverage                board ⇄ code — the frames no route reaches
+//   node wf.mjs coverage                board ⇄ code - the frames no route reaches
 //   node wf.mjs pdf [--mask 40%] [--watermark [logo]] [--to "<recipient>"] [--in f] [--out f]
 //   node wf.mjs shots <outDir> [idPfx] [--no-notes]  one PNG per frame
 //   node wf.mjs doctor                  what this board is on, and what it owes
@@ -92,7 +92,7 @@ if (cmd === 'pattern') {
       + '  fork   킷이 싣고 다니는 패턴을 보드 안으로 복사합니다 — 이미 그 패턴으로 그려진 보드용\n'
       + '  adopt  src/가 갖고 있는 컴포넌트·스타일을 이 보드의 패턴으로 승격합니다 — 계약 이전 보드용');
   }
-  // A refusal here is a sentence somebody has to read — which pattern is already there, which
+  // A refusal here is a sentence somebody has to read - which pattern is already there, which
   // folder is in the way. A stack trace buries it under twenty lines of node internals.
   const refuse = (err) => die(err instanceof Error ? err.message : String(err));
 
@@ -157,8 +157,8 @@ if (cmd === 'init') {
 
 // What every contract changed, for somebody deciding whether a move is worth making.
 //
-// **Above the config check on purpose.** A board being migrated has no `board.config.mjs` — that
-// file arrives WITH the contract this command describes — so requiring one would refuse the
+// **Above the config check on purpose.** A board being migrated has no `board.config.mjs` - that
+// file arrives WITH the contract this command describes - so requiring one would refuse the
 // command to exactly the board it is for. It reads nothing off the board and needs nothing from it.
 if (cmd === 'migrations') {
   for (const m of MIGRATIONS) {
@@ -217,7 +217,7 @@ switch (cmd) {
     const { renderPdf, pdfPathFor, stampWatermark } = await import('../core/export/pdf.mjs');
     const { loadBoard } = await import('../core/context.mjs');
     const { config, split } = await loadBoard(boardDir, { screens: false });
-    // `--mask` takes `40%` or `0.4`; a bare `40` is refused rather than guessed at — the two
+    // `--mask` takes `40%` or `0.4`; a bare `40` is refused rather than guessed at - the two
     // readings differ by a factor of a hundred and one of them hands over the whole board.
     const maskRaw = opt('mask');
     let maskRatio = 0;
@@ -246,7 +246,7 @@ switch (cmd) {
 
     // A board that declares volumes has no single file to render: a volume gathers several of the
     // files the split wrote, so the pages are assembled the way the build assembled them. `--in`
-    // is still the explicit override — one named file in, one named file out — because that is
+    // is still the explicit override - one named file in, one named file out - because that is
     // what somebody rendering a page by hand asked for.
     if (split?.volumes.length && !opt('in')) {
       if (outArg) die('--out은 파일 하나를 지정합니다 — 부가 여럿인 보드에서는 --in과 함께 씁니다');

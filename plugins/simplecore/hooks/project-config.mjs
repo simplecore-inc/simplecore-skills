@@ -3,7 +3,7 @@
  *
  * Every gate here is on by default, because a defect it catches is a defect in the artifact
  * regardless of which repository holds it. This file is where a project turns one off, or narrows
- * what it looks at — never where it has to opt in.
+ * what it looks at - never where it has to opt in.
  *
  * Recognized keys:
  *

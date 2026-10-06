@@ -2,8 +2,8 @@
 //
 // **The kit holds the mechanism and never the axis.** It learns that a board may name a module
 // answering 「which part does this screen belong to」, how many parts there are, what each part's
-// file is called and what a reader is to call it. What the parts ARE — what the axis measures,
-// what its values mean, which of them belong in one volume — is every word a board supplies, so
+// file is called and what a reader is to call it. What the parts ARE - what the axis measures,
+// what its values mean, which of them belong in one volume - is every word a board supplies, so
 // the second product to split its board changes `board.config.mjs` and nothing here.
 //
 // **A board that declares nothing builds exactly as before**: one file, the same name, the same
@@ -21,7 +21,7 @@ import { existsSync } from 'node:fs';
 import { resolve, isAbsolute } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-/** The entry page's name when a board does not choose one — the name an unsplit board writes. */
+/** The entry page's name when a board does not choose one - the name an unsplit board writes. */
 export const DEFAULT_ENTRY = 'board.html';
 
 /**
@@ -62,7 +62,7 @@ function callable(mod, spec, what, modulePath) {
 /**
  * Bind a board's `split` declaration to the module that answers it.
  *
- * @param boardDir the board folder — `split.module` is resolved from it
+ * @param boardDir the board folder - `split.module` is resolved from it
  * @param decl the board's `split` settings
  * @returns the axis, ready to place a frame: `{ parts, entry, files, partOf, groupOf, volumes }`,
  *   or null where the board declares no split
@@ -121,7 +121,7 @@ export async function loadSplit(boardDir, decl) {
     /** The part a frame belongs to, as a key, or null when the placer claims none. */
     partOf: (frameId) => keyOf(partFn(frameId)),
     /**
-     * The group a frame belongs to inside its file — the second axis.
+     * The group a frame belongs to inside its file - the second axis.
      *
      * <p>`key` names the group, `label` is what a reader sees and `mark` is what stands where a
      * section letter stands. All three are field names the board supplies, because the placer's
@@ -140,7 +140,7 @@ export async function loadSplit(boardDir, decl) {
           label: String(decl.group.label ? got[decl.group.label] ?? key : key),
           mark: decl.group.mark ? String(got[decl.group.mark] ?? '') : '',
           // What the groups are sorted by inside one file. Absent, they stand in the order their
-          // first frame is drawn — which is right when nothing outside the board decides an order
+          // first frame is drawn - which is right when nothing outside the board decides an order
           // and wrong the moment something does: a mark that says 「third of five」 beside a group
           // sitting first reads as a mistake in the board rather than as an ordering it never
           // claimed.
@@ -152,13 +152,13 @@ export async function loadSplit(boardDir, decl) {
      * A chip the frame itself carries, or null.
      *
      * <p><b>An axis a reader does not navigate by is still an axis somebody needs.</b> Splitting
-     * the files by one answer and grouping inside them by another leaves a third — the one the
-     * placing module knows and neither of the two shows — with nowhere to appear, and the reader
+     * the files by one answer and grouping inside them by another leaves a third - the one the
+     * placing module knows and neither of the two shows - with nowhere to appear, and the reader
      * who needs it is the one building the screen rather than the one looking for it. A chip on
      * the frame is where it goes: beside the id, in the index and on the frame label both, the
      * way every other per-frame axis already rides.
      *
-     * <p>`mark` is the chip's text and `label` is what a reader gets on hover — short enough to
+     * <p>`mark` is the chip's text and `label` is what a reader gets on hover - short enough to
      * sit beside an id, and named enough to mean something when it does not.
      */
     tagOf: tagFn

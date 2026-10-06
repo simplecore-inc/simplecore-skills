@@ -2,8 +2,8 @@
 //
 // **This gate exists because the failure is invisible.** The rules for the sidebar index, the flow
 // sections, the frame label, the fold and the viewport toggle used to live in the shipped pattern.
-// A board drawn in that pattern was fine; a board that brought its own — `wf.mjs pattern adopt`
-// promotes what the board's screens draw with, and a board never wrote the sidebar — built green
+// A board drawn in that pattern was fine; a board that brought its own - `wf.mjs pattern adopt`
+// promotes what the board's screens draw with, and a board never wrote the sidebar - built green
 // with no rule for `.is-off`, which is the class the index filter hides a non-matching entry with.
 // The filter then counted matches and hid nothing: a control that is present, that responds to
 // typing, and that does not do the one thing it is for. Nothing on the board said so, and no gate
@@ -26,7 +26,7 @@ const WRITERS = ['partials.mjs', 'build.mjs', 'contract.mjs', 'overview.mjs'];
  *
  * <p>Three shapes, because the kit writes them three ways: a literal `class="a b"`, a literal
  * prefix before a template hole (`class="fr ${...}"`), and a class the sidebar's script toggles
- * (`classList.add('is-picked')`). Only bare kebab-case identifiers are taken — a hole's contents
+ * (`classList.add('is-picked')`). Only bare kebab-case identifiers are taken - a hole's contents
  * are the board's data, not the kit's vocabulary.
  */
 function classesWritten(src) {
@@ -43,13 +43,13 @@ function classesWritten(src) {
 }
 
 /**
- * Classes the sidebar's script reaches by name — a handle, not something anybody sees.
+ * Classes the sidebar's script reaches by name - a handle, not something anybody sees.
  *
  * <p>These are the one honest exemption, and it is a rule rather than a list: a class the script
  * QUERIES is how it gets hold of an element (`.sb-group`, `.sb-input`), and a container that is
- * only ever a container has no appearance to give it. A class the script TOGGLES is the opposite —
+ * only ever a container has no appearance to give it. A class the script TOGGLES is the opposite -
  * `is-off` and `is-picked` do nothing at all unless a rule reads them, which is exactly the defect
- * this gate was written for — so toggling is not an exemption and is not looked for here.
+ * this gate was written for - so toggling is not an exemption and is not looked for here.
  *
  * <p>The boundary it cannot see: a class that is both a handle and a visible thing would be
  * excused by being queryable. Nothing in the kit is both today, and a chrome class that becomes
@@ -67,7 +67,7 @@ function scriptHandles(src) {
  * Every class the kit writes has a rule in the assembled stylesheet.
  *
  * <p>Runs at `built` rather than `preflight` because it reads `ctx.styles`, which is the three
- * layers already concatenated — the kit's, the pattern's, and the board's own. That is the right
+ * layers already concatenated - the kit's, the pattern's, and the board's own. That is the right
  * thing to read: it does not matter WHICH layer carries the rule, only that one of them does.
  */
 export const chromeStyledGate = {

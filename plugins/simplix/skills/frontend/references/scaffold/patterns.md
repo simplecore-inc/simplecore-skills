@@ -30,7 +30,7 @@ function ProductsRoute() {
 }
 ```
 
-(`<prefix>` is the package prefix derived from the root `package.json` name — see `framework/configuration.md`.)
+(`<prefix>` is the package prefix derived from the root `package.json` name - see `framework/configuration.md`.)
 
 Key rules:
 - `createFileRoute` path must match the file system path with trailing slash
@@ -60,7 +60,7 @@ import { Boxes, Package, Tags } from "lucide-react";
 },
 ```
 
-The sidebar is pre-configured — the `href` values define where routes must be created.
+The sidebar is pre-configured - the `href` values define where routes must be created.
 
 ## Mock Registration Pattern
 
@@ -87,7 +87,7 @@ async function enableMocking() {
 ```
 
 Rules:
-- All mock imports are dynamic (inside `enableMocking()`) — they only load in dev mode
+- All mock imports are dynamic (inside `enableMocking()`) - they only load in dev mode
 - Domain mocks are called with no arguments: `create<PascalDomain>Mock()`
 - Only `authMock` receives arguments (`{ users: MOCK_USERS }`)
 - Import from `@<prefix>/domain-<domain>/mock` subpath
@@ -105,7 +105,7 @@ Add both domain package AND UI module:
 }
 ```
 
-Add the two new entries anywhere in `dependencies` — ordering is not significant (your package manager / formatter will normalize it; do not hand-sort).
+Add the two new entries anywhere in `dependencies` - ordering is not significant (your package manager / formatter will normalize it; do not hand-sort).
 
 ## CrudPage Props Interface
 
@@ -178,11 +178,11 @@ packages/domain-<domain>/src/
     └── ja.json
 ```
 
-Note: there is no `contract.ts` and no flat `hooks.ts` on the OpenAPI/Orval path — hooks live in a `hooks/` directory (per-entity files behind an `index.ts` barrel), and the domain's public surface is the top-level `index.ts` barrel. (A `constants.ts` may also appear when a domain has shared enums/constants.)
+Note: there is no `contract.ts` and no flat `hooks.ts` on the OpenAPI/Orval path - hooks live in a `hooks/` directory (per-entity files behind an `index.ts` barrel), and the domain's public surface is the top-level `index.ts` barrel. (A `constants.ts` may also appear when a domain has shared enums/constants.)
 
 ## CLI Command Reference
 
-> **On a project whose `codegen` is `meta`, this command is `npx simplix meta -d <domain>`** —
+> **On a project whose `codegen` is `meta`, this command is `npx simplix meta -d <domain>`** -
 > no spec argument, and the output lands in `src/generated-meta/`. Read the mode from the
 > detector rather than assuming; the handbook's Scaffolding table carries both rows.
 

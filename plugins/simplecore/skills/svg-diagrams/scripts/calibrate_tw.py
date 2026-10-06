@@ -7,7 +7,7 @@ The width estimator in svgkit.tw and audit._text_w is a table of per-class
 em widths. It is measured rather than guessed: this script renders a sample
 run of each class through Chrome (the same renderer audit.py uses) and reads
 the ink extent back, so the table can be checked on any machine whose fonts
-differ from the one it was tuned on. Move both tables together — a generator
+differ from the one it was tuned on. Move both tables together - a generator
 that sizes a box with one table and a lint that measures it with another
 report defects that are not there, or miss the ones that are.
 

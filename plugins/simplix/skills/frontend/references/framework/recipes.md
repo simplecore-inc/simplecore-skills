@@ -1,6 +1,6 @@
 # Recipes
 
-Project-side recipes for working with generated domain packages. A CLI-scaffolded project does **not** hand-write `defineApi` contracts — every domain package is produced by the `openapi` CLI (Orval codegen), and the application consumes the generated Orval hooks. The recipes below show that real flow. For the underlying simplix-react framework contract mechanics (`defineApi`, `deriveEntityHooks`, `deriveEntityFormHooks`, `deriveMockHandlers`, full type signatures), see the simplix-react framework documentation rather than re-deriving them here.
+Project-side recipes for working with generated domain packages. A CLI-scaffolded project does **not** hand-write `defineApi` contracts - every domain package is produced by the `openapi` CLI (Orval codegen), and the application consumes the generated Orval hooks. The recipes below show that real flow. For the underlying simplix-react framework contract mechanics (`defineApi`, `deriveEntityHooks`, `deriveEntityFormHooks`, `deriveMockHandlers`, full type signatures), see the simplix-react framework documentation rather than re-deriving them here.
 
 ## Basic CRUD
 
@@ -8,11 +8,11 @@ A domain package re-exports Orval-generated hooks; the application consumes them
 
 ### 1. Generate the Domain Package
 
-Codegen comes from the `openapi` CLI (Orval v8), driven by `simplix.config.ts`. The generated output lands under `packages/domain-<name>/src/generated/` (model DTOs, endpoint hooks, mock handlers). Do not hand-write these files — they are overwritten on the next codegen (#30). For the full Initial / Update workflow see `../scaffold/overview.md`.
+Codegen comes from the `openapi` CLI (Orval v8), driven by `simplix.config.ts`. The generated output lands under `packages/domain-<name>/src/generated/` (model DTOs, endpoint hooks, mock handlers). Do not hand-write these files - they are overwritten on the next codegen (#30). For the full Initial / Update workflow see `../scaffold/overview.md`.
 
 ### 2. Re-export the Generated Hooks
 
-Each entity's hook file simply re-exports the Orval endpoint module — no `deriveEntityHooks` call on this path.
+Each entity's hook file simply re-exports the Orval endpoint module - no `deriveEntityHooks` call on this path.
 
 ```ts
 // packages/domain-inventory/src/hooks/product.ts
@@ -28,7 +28,7 @@ export * from "./generated/model";
 
 > Some domain packages add an extra `export * from "./constants";` line to this barrel when the package ships hand-authored constants (enum value lists, role maps, etc.) alongside the generated output. Include it only when a `src/constants.ts` exists; it is not part of the codegen output.
 
-Every domain `src/mutator.ts` routes through the **boot** profile so the Boot envelope (`{ type: "SUCCESS", body: { content: [...] } }`) is unwrapped before it reaches React Query — see `../scaffold/overview.md` Common Issues:
+Every domain `src/mutator.ts` routes through the **boot** profile so the Boot envelope (`{ type: "SUCCESS", body: { content: [...] } }`) is unwrapped before it reaches React Query - see `../scaffold/overview.md` Common Issues:
 
 ```ts
 // packages/domain-inventory/src/mutator.ts
@@ -41,7 +41,7 @@ export async function customFetch<T>(url: string, options: RequestInit): Promise
 
 ### 3. Use in a Widget
 
-Generated Orval hooks (`useListProducts`, `useCreateProduct`, `useOrderProduct`, …) are wired into framework widgets via adapters such as `adaptOrvalList`. The list hook's `data` is already the unwrapped Boot `.body.content` thanks to the boot mutator. (`<prefix>` is the package prefix derived from the root `package.json` name — see `framework/configuration.md`.)
+Generated Orval hooks (`useListProducts`, `useCreateProduct`, `useOrderProduct`, …) are wired into framework widgets via adapters such as `adaptOrvalList`. The list hook's `data` is already the unwrapped Boot `.body.content` thanks to the boot mutator. (`<prefix>` is the package prefix derived from the root `package.json` name - see `framework/configuration.md`.)
 
 ```tsx
 // modules/inventory/src/widgets/product/list.tsx
@@ -68,7 +68,7 @@ export function useProductList() {
 
 ## Hierarchical (Self-Referencing) Entities
 
-On the codegen path, hierarchy is modeled on the backend and surfaced through the OpenAPI spec, so Orval codegen produces it directly — there is no framework `parent` config to hand-write. A self-referencing entity (e.g. `category`) carries a `parentId` FK on its DTO and exposes dedicated **tree-role** endpoints that codegen turns into hooks.
+On the codegen path, hierarchy is modeled on the backend and surfaced through the OpenAPI spec, so Orval codegen produces it directly - there is no framework `parent` config to hand-write. A self-referencing entity (e.g. `category`) carries a `parentId` FK on its DTO and exposes dedicated **tree-role** endpoints that codegen turns into hooks.
 
 ### Generated DTO and Hooks
 
@@ -122,7 +122,7 @@ function CategoryTree() {
 }
 ```
 
-Mutation argument shapes (`{ data: ... }`, path params) come straight from Orval's generated hook signatures — read the generated endpoint module for the exact mutation variables rather than assuming a framework convention.
+Mutation argument shapes (`{ data: ... }`, path params) come straight from Orval's generated hook signatures - read the generated endpoint module for the exact mutation variables rather than assuming a framework convention.
 
 ---
 
@@ -130,7 +130,7 @@ Mutation argument shapes (`{ data: ... }`, path params) come straight from Orval
 
 File upload, batch delete, RPC-style calls.
 
-> On the codegen path custom operations (upload, batch delete, order, …) arrive as ordinary OpenAPI endpoints and are produced by Orval codegen — e.g. `useOrderProduct`, `useBatchDeleteProducts`. The hand-written `defineApi` / `OperationDefinition` form below is the framework primitive these endpoints build on; see the simplix-react framework documentation for its full contract. The snippet is kept for orientation, not because the project hand-writes operations.
+> On the codegen path custom operations (upload, batch delete, order, …) arrive as ordinary OpenAPI endpoints and are produced by Orval codegen - e.g. `useOrderProduct`, `useBatchDeleteProducts`. The hand-written `defineApi` / `OperationDefinition` form below is the framework primitive these endpoints build on; see the simplix-react framework documentation for its full contract. The snippet is kept for orientation, not because the project hand-writes operations.
 
 ### Define an Operation
 
@@ -429,9 +429,9 @@ const api = defineApi(config, { fetchFn: fetchWithRefresh });
 
 ### No Envelope (API returns JSON directly)
 
-> **The codegen path does NOT use this.** A codegen project talks to a `simplix-boot` backend that wraps every response in the Boot envelope (`{ type: "SUCCESS", body: { content: [...] } }`). Each domain `src/mutator.ts` calls `getMutator("boot")`, whose `bootMutator` unwraps the envelope (and throws `ApiResponseError` on non-`SUCCESS`) before the data reaches React Query — so widgets never see the envelope or a bare `{ data }` wrapper. The snippet below is the framework-level no-envelope override, kept only for the rare case of a non-boot backend; see the simplix-react framework documentation for `defaultFetch` / `FetchFn` contract details.
+> **The codegen path does NOT use this.** A codegen project talks to a `simplix-boot` backend that wraps every response in the Boot envelope (`{ type: "SUCCESS", body: { content: [...] } }`). Each domain `src/mutator.ts` calls `getMutator("boot")`, whose `bootMutator` unwraps the envelope (and throws `ApiResponseError` on non-`SUCCESS`) before the data reaches React Query - so widgets never see the envelope or a bare `{ data }` wrapper. The snippet below is the framework-level no-envelope override, kept only for the rare case of a non-boot backend; see the simplix-react framework documentation for `defaultFetch` / `FetchFn` contract details.
 
-Set `Content-Type` only for body-bearing, non-`FormData` requests (this is what `defaultFetch` does — never stamp it on GET/DELETE or `FormData` uploads, where it breaks multipart boundaries):
+Set `Content-Type` only for body-bearing, non-`FormData` requests (this is what `defaultFetch` does - never stamp it on GET/DELETE or `FormData` uploads, where it breaks multipart boundaries):
 
 ```ts
 import { defineApi, ApiError, type FetchFn } from "@simplix-react/contract";
@@ -583,7 +583,7 @@ const { adapter, i18nReady } = createI18nConfig({
 
 Setting up MSW + in-memory stores for development and testing.
 
-> **Framework-primitive path — not the codegen default.** The `deriveMockHandlers(<api>.config)` / `setupMockWorker` snippets below derive MSW handlers from a hand-written `defineApi` contract (`@simplix-react/contract` → `@simplix-react/mock`). That is the **contract-deriver** path. The **common path in an Orval-codegen project** is different: each `packages/domain-<name>/src/mock/index.ts` builds an in-memory store with `createMockEntityStore(seeds)` (also from `@simplix-react/mock`) and registers the Orval-generated `create<Entity>Handlers` (from `../generated/mock/handlers`, which wrap responses with `wrapEnvelope` from the boot-auth ext), returning a `MockDomainConfig` `{ name, handlers }`. See `overview.md` ("Mock layer") for that flow; the `deriveMockHandlers` snippets here are kept for orientation on the framework primitive, not because a codegen project hand-derives handlers.
+> **Framework-primitive path - not the codegen default.** The `deriveMockHandlers(<api>.config)` / `setupMockWorker` snippets below derive MSW handlers from a hand-written `defineApi` contract (`@simplix-react/contract` → `@simplix-react/mock`). That is the **contract-deriver** path. The **common path in an Orval-codegen project** is different: each `packages/domain-<name>/src/mock/index.ts` builds an in-memory store with `createMockEntityStore(seeds)` (also from `@simplix-react/mock`) and registers the Orval-generated `create<Entity>Handlers` (from `../generated/mock/handlers`, which wrap responses with `wrapEnvelope` from the boot-auth ext), returning a `MockDomainConfig` `{ name, handlers }`. See `overview.md` ("Mock layer") for that flow; the `deriveMockHandlers` snippets here are kept for orientation on the framework primitive, not because a codegen project hand-derives handlers.
 
 ### Basic Mock Setup
 
@@ -665,7 +665,7 @@ bootstrap();
 
 Setting up the mock layer for unit and integration tests.
 
-> **Contract-deriver path — adapt for Orval codegen.** The examples below pass a hand-written `defineApi` contract's `.config` / `.queryKeys` (e.g. `createMockClient(<api>.config, …)`, `<api>.queryKeys.<entity>.lists()`) to `@simplix-react/testing` / `@simplix-react/mock`. Those helpers (`createMockClient`, `createTestQueryClient`, `createTestWrapper`, `waitForQuery`, `seedEntityStore`, `resetStore`) are real framework exports, but an **Orval-codegen project has no `<api>.config` / `<api>.queryKeys` object** — it seeds the generated in-memory store (`createMockEntityStore` + the generated `create<Entity>Handlers`, see Mock Layer Setup and `overview.md`) and asserts against the React Query keys produced by the generated `use<Verb><Entity>` hooks. Treat the snippets here as the framework-primitive shape and substitute the generated store/hooks when testing a codegen domain.
+> **Contract-deriver path - adapt for Orval codegen.** The examples below pass a hand-written `defineApi` contract's `.config` / `.queryKeys` (e.g. `createMockClient(<api>.config, …)`, `<api>.queryKeys.<entity>.lists()`) to `@simplix-react/testing` / `@simplix-react/mock`. Those helpers (`createMockClient`, `createTestQueryClient`, `createTestWrapper`, `waitForQuery`, `seedEntityStore`, `resetStore`) are real framework exports, but an **Orval-codegen project has no `<api>.config` / `<api>.queryKeys` object** - it seeds the generated in-memory store (`createMockEntityStore` + the generated `create<Entity>Handlers`, see Mock Layer Setup and `overview.md`) and asserts against the React Query keys produced by the generated `use<Verb><Entity>` hooks. Treat the snippets here as the framework-primitive shape and substitute the generated store/hooks when testing a codegen domain.
 
 ### Unit Test with Mock Client
 

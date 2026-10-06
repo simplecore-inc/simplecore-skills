@@ -4,11 +4,11 @@
 // styles all live in this skill. Two things have to find them.
 //
 //   - `wf.mjs` in the board folder, which needs the kit's CLI before it can run anything.
-//   - every screen file, which imports `../components.mjs` — and an ESM re-export needs a STATIC
+//   - every screen file, which imports `../components.mjs` - and an ESM re-export needs a STATIC
 //     specifier, so it cannot resolve a path at run time the way `wf.mjs` can.
 //
 // The second is what decides the design. The board keeps a machine-local symlink `.kit` beside
-// `src/`, and the committed shim says `../.kit/patterns/<pattern>/components.mjs` — a stable,
+// `src/`, and the committed shim says `../.kit/patterns/<pattern>/components.mjs` - a stable,
 // checked-in path over a pointer that is never committed. `wf.mjs` re-points it on every run, so
 // a checkout on another machine, a moved skill, or a plugin upgrade all heal on the next build
 // rather than needing anyone to know the link exists.
@@ -16,14 +16,14 @@ import { existsSync, readdirSync, lstatSync, rmSync, symlinkSync, mkdirSync } fr
 import { homedir } from 'node:os';
 import { join, resolve } from 'node:path';
 
-/** The link name inside a board folder. Never committed — `.gitignore` carries it. */
+/** The link name inside a board folder. Never committed - `.gitignore` carries it. */
 export const KIT_LINK = '.kit';
 
 /**
  * Every place the kit is looked for, in order.
  *
  * <p>`WIREFRAME_KIT` comes first so a checkout of the skill under development wins over the
- * installed copy — that is the one case where the answer has to be overridable, and an env var
+ * installed copy - that is the one case where the answer has to be overridable, and an env var
  * is the only channel that reaches a build nobody edited.
  */
 export function kitCandidates(env = process.env) {
@@ -50,7 +50,7 @@ const isKit = (dir) => existsSync(join(dir, 'bin/wfb.mjs')) && existsSync(join(d
  * The kit directory, or null when the skill is not installed on this machine.
  *
  * <p>Returning null rather than throwing is deliberate: `wf.mjs` turns it into the one message
- * that actually helps — the install command — and a thrown stack trace would bury it.
+ * that actually helps - the install command - and a thrown stack trace would bury it.
  */
 export function findKit(env = process.env) {
   for (const dir of kitCandidates(env)) {
@@ -63,7 +63,7 @@ export function findKit(env = process.env) {
  * Point `<boardDir>/.kit` at the kit, replacing whatever was there.
  *
  * <p>Always rewritten rather than checked: a link left over from a moved skill still resolves as
- * a path and still imports — it just imports the OLD kit, which is the one failure mode nobody
+ * a path and still imports - it just imports the OLD kit, which is the one failure mode nobody
  * would suspect, because every command keeps working and only the behaviour is stale.
  *
  * @returns the kit directory it now points at
@@ -78,7 +78,7 @@ export function linkKit(boardDir, kitDir) {
     lstatSync(link);
     rmSync(link, { recursive: true, force: true });
   } catch {
-    // nothing there — the ordinary first-run case
+    // nothing there - the ordinary first-run case
   }
   symlinkSync(kitDir, link, 'dir');
   return kitDir;

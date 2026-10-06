@@ -2,14 +2,14 @@
 //
 // A gate that has gone quiet is indistinguishable from a board with nothing wrong with it, which
 // is the whole reason the gates exist. **A gate added to `core/gates/` gets its cases here in the
-// same change** — `node wf.mjs gates` reports any gate that has none.
+// same change** - `node wf.mjs gates` reports any gate that has none.
 import { readFileSync } from 'node:fs';
 
 export function cases(t) {
   const { add, config, base, screen, ctxWith,
     withDocs, DOCS, PARITY_OK, ROADMAP_OK, ROLES_SRC } = t;
 
-  // The kit's own chrome. The broken board is one whose stylesheet carries nothing for it — which
+  // The kit's own chrome. The broken board is one whose stylesheet carries nothing for it - which
   // is precisely what `pattern adopt` produces, since a board's own `src/` never held rules for a
   // sidebar the board never wrote. The passing board is the kit's two layers ALONE: whatever
   // pattern sits on top of them, the chrome has to work without it.
@@ -42,7 +42,7 @@ export function cases(t) {
   add('roadmapPlacementGate', '두 단계에 놓임',
     withDocs({ 'rm.md': '- **화면 2장**\n  - (X) **X-01** 하나 / **X-02** 둘\n\n## 다음\n- **화면 1장**\n  - (X) **X-01** 또 하나\n' }), true);
   add('roadmapPlacementGate', '한 단계씩 담고 있다', withDocs({ 'rm.md': ROADMAP_OK }), false);
-  // The two summary tables under the phase lists — checked apart from the ids, because the ids were
+  // The two summary tables under the phase lists - checked apart from the ids, because the ids were
   // right the whole time the tables said 400.
   const RM_TBL = (dist, total, stage) => '### W2. 하나\n- **화면 2장**\n  - (X) **X-01** 하나 / **X-02** 둘\n\n'
     + `# 배치 검산\n\n| 클러스터 | 총 | 배치 |\n| --- | --- | --- |\n| X ${total} | ${total} | W2 ${dist} |\n| **합계** | **2** | |\n\n| W2 | ${stage} |\n`;
@@ -56,7 +56,7 @@ export function cases(t) {
   add('docFrameRefGate', 'KOSHA P-94는 프레임이 아니다',
     withDocs({ 'rm.md': ROADMAP_OK, 'note.md': 'KOSHA GUIDE P-94 작업허가서.\n' }), false);
   // A cluster that runs past 99 numbers into three digits, and the id reader has to widen with it.
-  // Reading two digits only does not make `X-100` a wrong id — it makes it no id at all, and this
+  // Reading two digits only does not make `X-100` a wrong id - it makes it no id at all, and this
   // gate then reports zero on a reference nobody resolved.
   const WIDE = [{ file: 'x-01-a' }, { file: 'x-02-b' }, { file: 'x-100-c' }];
   add('docFrameRefGate', '세 자리 아이디를 부르는데 보드에 없다',
@@ -75,7 +75,7 @@ export function cases(t) {
   add('docFrameRefGate', '접미를 뗀 화면 번호를 부른다', suffixed('X-01 화면은 상태가 둘이다.\n'), false);
   add('docFrameRefGate', '없는 상태 letter를 부른다', suffixed('자세한 것은 X-01c를 본다.\n'), true);
   // A document numbering its own tables `B-02 PrinterModel` collides with the frame id shape, and
-  // no per-id list stays right as that model grows — so the board names the file.
+  // no per-id list stays right as that model grows - so the board names the file.
   const OTHER = (docs) => withDocs({ 'rm.md': ROADMAP_OK, ...docs },
     { config: { ...config, documents: { scan: ['.'], otherIdScheme: ['model.md'] } } });
   add('docFrameRefGate', '다른 번호 체계를 쓰는 문서를 선언하지 않았다',
@@ -85,7 +85,7 @@ export function cases(t) {
   add('docFrameRefGate', '선언하지 않은 문서는 그대로 검사한다',
     OTHER({ 'model.md': '#### B-02 PrinterModel\n', 'note.md': '자세한 것은 X-77을 본다.\n' }), true);
 
-  // 문서 목록을 선언하지 않은 보드에는 걸리지 않는다 — 선언이 곧 이 규율을 받겠다는 뜻이다.
+  // 문서 목록을 선언하지 않은 보드에는 걸리지 않는다 - 선언이 곧 이 규율을 받겠다는 뜻이다.
   add('docRegistryGate', '문서 목록을 선언하지 않았다',
     withDocs({ 'a.md': '# a\n', 'b.md': '# b\n' }), false);
   add('docRegistryGate', '문서 목록에 없는 문서',
@@ -148,7 +148,7 @@ export function cases(t) {
     ctxWith([screen('x-01-a', "import { btn, btnRow } from '../components.mjs';\nbtn('저장')")]), true);
   add('deadImportGate', '전부 쓰는 import',
     ctxWith([screen('x-01-a', "import { btn, btnRow } from '../components.mjs';\nbtnRow(btn('저장'))")]), false);
-  // A name appearing only in a comment is not a use — without that distinction, what should be deleted survives.
+  // A name appearing only in a comment is not a use - without that distinction, what should be deleted survives.
   add('deadImportGate', '주석에만 있는 이름',
     ctxWith([screen('x-01-a', "import { btn, divider } from '../components.mjs';\n// divider()를 쓸까 했다\nbtn('저장')")]), true);
 
@@ -166,12 +166,12 @@ export function cases(t) {
   add('slotGate', '바탕의 첫 인자가 오버레이',
     slotted("import base, { screenBody, help } from './x-01-a.mjs';\nexport default { body: screenBody(help) };",
       "export const help = dialog({ title: 'x' });\nexport const screenBody = (overlay = '') => ``;"), false);
-  // A form belongs in the detail slot — what is not a dialog must stay quiet.
+  // A form belongs in the detail slot - what is not a dialog must stay quiet.
   add('slotGate', '패널 폼은 상세 자리가 맞다',
     slotted("import base, { screenBody, form } from './x-01-a.mjs';\nexport default { body: screenBody(form) };",
       "export const form = panelForm({ title: 'x' });\nexport const screenBody = (detail = panel, overlay = '') => ``;"), false);
   // The mirror, and the one that reached a person: a panel form handed to an overlay-first base
-  // draws over the whole device. Nothing throws — a string is what that slot takes.
+  // draws over the whole device. Nothing throws - a string is what that slot takes.
   add('slotGate', '패널 폼이 오버레이 자리로',
     slotted("import base, { screenBody } from './x-01-a.mjs';\nexport const form = panelForm({ title: 'x' });\nexport default { body: screenBody(form) };",
       "export const screenBody = (overlay = '', detail = panel) => ``;"), true);
@@ -246,7 +246,7 @@ export function cases(t) {
     screen('x-02-b', "  route: '/checks'\n  current: '점검'", { notes: '' }),
     screen('x-01-a', "  route: '/checks/:id'\n  current: '점검'", { notes: '' }),
   ]), false);
-  // No parameter-free route under the entry at all — a missing list or a parameter a global
+  // No parameter-free route under the entry at all - a missing list or a parameter a global
   // control settles, and neither is this gate's call to make.
   add('landingIsTheListGate', '항목 아래에 목록이 없다', ctxWith([
     screen('x-01-a', "  route: '/sites/:id/areas'\n  current: '구역'", { notes: '' }),
@@ -316,7 +316,7 @@ export function cases(t) {
     base({ config: { ...config, requiredSections: [] }, manifest: [] }), false);
 
   // The declared split. The fixture stands in for `core/split.mjs`'s loader rather than calling
-  // it, because what the gate judges is the ANSWER — a placer that leaves a frame unplaced, and a
+  // it, because what the gate judges is the ANSWER - a placer that leaves a frame unplaced, and a
   // declared part nothing answers with. Building a real module on disk to say `null` would test
   // the loader.
   const splitOf = (answers, parts = [{ key: '1', file: 'one.html' }, { key: '2', file: 'two.html' }]) => ({
@@ -351,7 +351,7 @@ export function cases(t) {
   add('crudGate', 'NON_ENTITY에 사유와 함께 있다',
     crudCtx({ loaded: drawn([{ num: 'X-09', file: 'x-09-a', label: '화면', mod: { route: '/login' } }]) }), false);
 
-  // A panel whose entity has a page of its own says 「열기」, never 「편집」 — labelling it 편집
+  // A panel whose entity has a page of its own says 「열기」, never 「편집」 - labelling it 편집
   // sends a reader who came to READ through an edit verb onto a page showing more than the panel.
   const withFoot = (verb) => crudCtx({ loaded: [
     { num: 'X-01', file: 'x-01-a', label: '화면', mod: { route: '/records',

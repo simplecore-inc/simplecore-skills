@@ -1,5 +1,5 @@
 // Feed each gate the defect it exists to catch, then feed it a clean board. A gate that stays
-// quiet on the first, or fires on the second, is a gate that no longer works — and a build whose
+// quiet on the first, or fires on the second, is a gate that no longer works - and a build whose
 // gates have gone quiet looks exactly like a board with nothing wrong with it.
 //
 //   node wf.mjs gates
@@ -22,13 +22,13 @@ const gateShaped = (module) => Object.values(module)
 /**
  * A gate written and never registered, so nothing ever runs it.
  *
- * <p><b>The order of `CORE_GATES` is load-bearing, so that list stays hand-written</b> — cheapest
+ * <p><b>The order of `CORE_GATES` is load-bearing, so that list stays hand-written</b> - cheapest
  * refusals first, and the three that read the rendered HTML last. The cost of writing it by hand
  * is exactly this defect: a gate added to `markup.mjs` and not added to the array is in the
  * repository, greppable, and reached by nothing. Somebody finds it, reads the rule as held, and
  * has no reason to look further.
  *
- * <p><b>It is asked here rather than as a gate of its own</b>, beside 「a gate with no case」 —
+ * <p><b>It is asked here rather than as a gate of its own</b>, beside 「a gate with no case」 -
  * the same question from the other side, about the same set, answered in the one command anybody
  * runs after writing a gate. The pattern's own list is derived from its module rather than
  * written out, so nothing there can fall off; this scan covers it anyway, because the next

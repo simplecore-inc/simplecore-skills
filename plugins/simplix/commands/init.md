@@ -24,8 +24,8 @@ the two you did.
    Pass `--root=<path>` when `$ARGUMENTS` names a directory other than the current one.
 
 2. Report what it found in one short paragraph: the matched subprojects with their paths
-   and markers, which skills therefore apply, and — from `routedBy` and each match's
-   `skillGate` / `e2eGate` — which of the two halves is already in place.
+   and markers, which skills therefore apply, and - from `routedBy` and each match's
+   `skillGate` / `e2eGate` - which of the two halves is already in place.
 
    - `frameworkRepo: true` → this IS simplix-react, not a project using it. Say so and
      stop; the consumer handbooks do not apply here.
@@ -43,15 +43,15 @@ the two you did.
 
 4. Ask the user where to write it, unless `$ARGUMENTS` already decided:
 
-   - **`--project`** (default) — the project block, into `.claude/CLAUDE.md`, or into the
+   - **`--project`** (default) - the project block, into `.claude/CLAUDE.md`, or into the
      repository's existing instruction file when it keeps one elsewhere (`CLAUDE.md`,
      `AGENTS.md`). Fill the table with the detected paths and delete rows for stacks the
      repository does not have.
-   - **`--global`** — the path-free block, into `~/.claude/CLAUDE.md`, under whatever
+   - **`--global`** - the path-free block, into `~/.claude/CLAUDE.md`, under whatever
      chapter covers skill usage.
 
-   In a monorepo, the project block goes in the repository root's instruction file — one
-   table listing every subproject — not one block per subproject.
+   In a monorepo, the project block goes in the repository root's instruction file - one
+   table listing every subproject - not one block per subproject.
 
 5. Show the exact text you intend to insert and where, then write it only after the user
    agrees. Merge rather than overwrite: when the target file already has a SimpliX
@@ -60,7 +60,7 @@ the two you did.
 
 6. **Arm the gates.** For every matched subproject whose `skillGate` (or, for a frontend, whose
    `e2eGate`) is false, write `<subproject>/.claude/simplix.json`. Merge into an existing file
-   rather than replacing it — the `audit` section, if present, belongs to the convention audit
+   rather than replacing it - the `audit` section, if present, belongs to the convention audit
    script and must survive.
 
    ```json
@@ -78,9 +78,9 @@ the two you did.
 
    - `skills` are the skills whose invocation opens the edit gate: the subproject's handbook,
      plus `simplix:frontend-e2e` for a frontend since a browser audit reads and fixes the same
-     files. A backend gets `["simplix:backend"]` and no `e2eGate` — it serves no screens.
-   - `sourceDirs` and `uiDirs` are project-relative prefixes. **Read them off the repository**
-     — the source roots the detector's markers point at, the Gradle `settings.gradle` includes,
+     files. A backend gets `["simplix:backend"]` and no `e2eGate` - it serves no screens.
+   - `sourceDirs` and `uiDirs` are project-relative prefixes. **Read them off the repository** -
+     the source roots the detector's markers point at, the Gradle `settings.gradle` includes,
      the pnpm workspace globs. Never copy the example: a layout this plugin assumed rather than
      observed gates the wrong files, or nothing at all.
    - Show the file and get agreement before writing, the same as the routing block.
@@ -90,8 +90,8 @@ the two you did.
    end a session that changed screens without any of them being opened in a browser. Both have
    escape hatches (`SIMPLIX_SKILL_GATE=off`, `SIMPLIX_E2E_GATE=off`) for scripted migrations.
 
-7. Verify by re-running the detector — `routedBy` must name the file you wrote and `wired` must
-   be true — and report the result. Tell the user the routing applies immediately to anyone
+7. Verify by re-running the detector - `routedBy` must name the file you wrote and `wired` must
+   be true - and report the result. Tell the user the routing applies immediately to anyone
    reading the instruction file, while the gates take effect for new sessions.
 
 Do not commit. Report; the user commits.

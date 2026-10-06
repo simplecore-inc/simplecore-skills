@@ -6,11 +6,11 @@
 
 A CLI-scaffolded project is a **framework user**, not a re-implementer. It does NOT hand-call the
 generic simplix-react derivation primitives (`defineApi`, `deriveEntityHooks`,
-`deriveMockHandlers`, `simpleQueryBuilder` — grep = 0 across `packages/`, `apps/`,
+`deriveMockHandlers`, `simpleQueryBuilder` - grep = 0 across `packages/`, `apps/`,
 `modules/`). Instead it derives its API layer through **Orval codegen** wired to the
 `simplix-boot` profile. For the generic framework contract mechanics (full
 `defineApi` / `deriveEntityHooks` / `deriveMockHandlers` signatures and type
-derivation), **see the simplix-react framework documentation** — those signatures live there and are
+derivation), **see the simplix-react framework documentation** - those signatures live there and are
 maintained there, so this handbook does not re-document them.
 
 ## Architecture (as wired on the codegen path)
@@ -38,11 +38,11 @@ OpenAPI spec (backend)  ──orval codegen──>  packages/domain-<name>/src/g
 ## How the codegen path derives its API layer
 
 Generic framework signatures (`defineApi`, `deriveEntityHooks`, `deriveMockHandlers`)
-are documented and maintained by the **simplix-react framework documentation** — consult it before
+are documented and maintained by the **simplix-react framework documentation** - consult it before
 hand-rolling any contract code. This section documents only what the codegen path actually
 does, because it derives through Orval rather than hand-calling those primitives.
 
-### Hooks — Orval re-exports (not `deriveEntityHooks`)
+### Hooks - Orval re-exports (not `deriveEntityHooks`)
 
 The hook deriver in the framework is **`deriveEntityHooks`** (return type
 `DerivedEntityHooksResult`), and the form deriver is `deriveEntityFormHooks`. **This
@@ -58,7 +58,7 @@ export * from "../generated/endpoints/inventory-product/inventory-product";
 provide the `useGet…` / `useGetList…` / `useCreate…` / `useUpdate…` / `useDelete…`
 React Query hooks; consume those, do not re-derive.
 
-### Mutator — `getMutator("boot")`
+### Mutator - `getMutator("boot")`
 
 Every domain's `src/mutator.ts` routes requests through the boot mutator so the
 simplix-boot envelope is unwrapped before React Query:
@@ -72,14 +72,14 @@ export async function customFetch<T>(url: string, options: RequestInit): Promise
 }
 ```
 
-The full boot envelope is `{ type: string; message: string; body: T; timestamp: string; errorCode?: string | null; errorDetail?: ErrorDetail | null }` — here, for a list, `body` is the `PagedResult` (so `body.content` is the rows). `type` is a plain string whose success literal is `"SUCCESS"` (NOT an enum); the list adapter `adaptOrvalList` reads the already-unwrapped `.body.content`. A non-`SUCCESS` type throws `ApiResponseError` (which carries `status` / `type` / `errorMessage` / `timestamp` / `errorCode` / `errorDetail`). If `mutator.ts` uses the default `getMutator()` instead of
-`getMutator("boot")`, lists render empty — see `scaffold/overview.md` Common Issues.
+The full boot envelope is `{ type: string; message: string; body: T; timestamp: string; errorCode?: string | null; errorDetail?: ErrorDetail | null }` - here, for a list, `body` is the `PagedResult` (so `body.content` is the rows). `type` is a plain string whose success literal is `"SUCCESS"` (NOT an enum); the list adapter `adaptOrvalList` reads the already-unwrapped `.body.content`. A non-`SUCCESS` type throws `ApiResponseError` (which carries `status` / `type` / `errorMessage` / `timestamp` / `errorCode` / `errorDetail`). If `mutator.ts` uses the default `getMutator()` instead of
+`getMutator("boot")`, lists render empty - see `scaffold/overview.md` Common Issues.
 
-### Mock layer — `createMockEntityStore` + generated handlers
+### Mock layer - `createMockEntityStore` + generated handlers
 
 The mock layer uses `createMockEntityStore` (from `@simplix-react/mock`) plus the
 generated `create<Entity>Handlers` and `wrapEnvelope` (from
-`@simplix-react-ext/simplix-boot-auth`) — NOT `deriveMockHandlers`:
+`@simplix-react-ext/simplix-boot-auth`) - NOT `deriveMockHandlers`:
 
 ```ts
 // packages/domain-<name>/src/mock/index.ts
@@ -101,7 +101,7 @@ and sort is dot-encoded `field.direction`.
 > Note: the framework's own `deriveMockHandlers` uses a numeric auto-increment id and
 > stamps a camelCase `updatedAt`; the UUID-id mock behaviour belongs to a *different*
 > export, `createMockClient` (from `@simplix-react/testing`). The codegen path uses neither
-> on the generated path — its handlers come from Orval + `createMockEntityStore`.
+> on the generated path - its handlers come from Orval + `createMockEntityStore`.
 
 ### i18n
 
@@ -140,12 +140,12 @@ import { createTestQueryClient, createTestWrapper, createMockClient, waitForQuer
   hand-written query-string assembly (the framework's `simpleQueryBuilder` is not used here)
 - The boot mutator (`getMutator("boot")`) unwraps `{ type: "SUCCESS", body }` and throws
   `ApiResponseError` on a non-`SUCCESS` type. (The framework's `defaultFetch` separately
-  unwraps a `{ data: T }` envelope and throws `ApiError` — see the simplix-react framework documentation —
+  unwraps a `{ data: T }` envelope and throws `ApiError` - see the simplix-react framework documentation -
   but the generated path goes through the boot mutator, not `defaultFetch`.)
 
 ### Orval Code Generation Gotchas
 
-- **MSW aggregate function**: Match `= () => [` pattern, not `get*Mock`. Per-endpoint response mocks (e.g., `getUpdatePetResponseMock`) also match `get*Mock` — the aggregate returns an array of handlers.
+- **MSW aggregate function**: Match `= () => [` pattern, not `get*Mock`. Per-endpoint response mocks (e.g., `getUpdatePetResponseMock`) also match `get*Mock` - the aggregate returns an array of handlers.
 - **Type name conflicts**: `schemas.ts` (Zod inferred) vs `generated/model/` (Orval interfaces) produce duplicate names. Solution: export only Zod schema constants from `schemas.ts`, let `generated/model/` provide TypeScript interfaces.
 - **Split mode no barrel**: Orval split mode generates files in `generated/endpoints/` without `index.ts`. Import specific files: `./generated/endpoints/swaggerPetstoreOpenAPI30`.
 - **Mutation adapter types**: `adaptOrvalCreate`/`Update`/`Delete` use `OrvalMutationLike` with `...args: any[]` at the adapter boundary. Orval's concrete `mutate` signatures conflict with generic types due to function parameter contravariance.
@@ -153,10 +153,10 @@ import { createTestQueryClient, createTestWrapper, createMockClient, waitForQuer
 
 ### Form API Gotchas
 
-- **`setFieldMeta` updater**: Don't annotate the param type — let TanStack Form infer `AnyFieldMetaBase`. Writing `(meta: Record<string, unknown>)` causes TS2345.
+- **`setFieldMeta` updater**: Don't annotate the param type - let TanStack Form infer `AnyFieldMetaBase`. Writing `(meta: Record<string, unknown>)` causes TS2345.
 - **`mapServerErrorsToForm`**: Duck-types error objects, exploring `error.errorDetail` → `error.data.errorDetail` → `error.data.errors` → `JSON.parse(error.body)` in order. Works with all error classes (`ApiError`, `HttpError`, `ApiResponseError`). No `@simplix-react/contract` import needed.
 
-## One physical copy per framework package — a second copy fails silently
+## One physical copy per framework package - a second copy fails silently
 
 **Symptom.** Framework UI strings (`list.totalCount`, `filter.label`, `list.rows`,
 `common.close` / `delete` / `edit`) render as the raw key on every screen, while app and
@@ -174,7 +174,7 @@ peer-dependency resolution, and a **linked local checkout answers its own peer i
 its own workspace**. The worst shape is a partial link: one framework package pointed at a
 checkout while the rest come from the registry. A leftover
 `apps/<app>/node_modules/@simplix-react/<pkg>` symlink does exactly that and survives
-installs — a package manager does not prune a package-level link when the override that
+installs - a package manager does not prune a package-level link when the override that
 created it is removed. A build that shells out through another tool can also re-install
 behind you: a packaging task passing its own link-profile environment variable outranks the
 checked-in per-developer config and reverts the tree before building, so pass the profile
@@ -182,7 +182,7 @@ explicitly on that path too.
 
 **Count what the page LOADED, never what sits in `dist/assets`.** A build that does not
 empty its output directory leaves earlier chunks beside the current ones, and those stale
-files count as duplicates nothing ever requests — a false positive that reads exactly like
+files count as duplicates nothing ever requests - a false positive that reads exactly like
 the real defect.
 
 ```js
@@ -200,23 +200,23 @@ done
 ```
 
 **How the copy arrived decides where the fix goes.** A **linked local checkout** answering
-its own peer imports is fixed in the install — link the whole framework scope or none of
+its own peer imports is fixed in the install - link the whole framework scope or none of
 it, and confirm with the loaded-resource count above. A **peer-hash split** of one registry
 version (two `.pnpm` entries, same version, different `_hash` suffixes) is fixed in the
-bundler's `resolve.dedupe` list, which must name the framework packages themselves — and
+bundler's `resolve.dedupe` list, which must name the framework packages themselves - and
 `node "${CLAUDE_PLUGIN_ROOT}/scripts/check-duplicate-contexts.mjs"` detects exactly that
 case (invariant #60, full form in `invariants.md`).
 
 **The framework-side rule this implies**, for work inside the framework packages themselves:
-state a package keeps at module level — a registry, a listener set, a `createContext` — is
+state a package keeps at module level - a registry, a listener set, a `createContext` - is
 anchored on `globalThis` under a versioned `Symbol.for` key, so two copies share one
 instance. Module-level state is what turns a duplicate copy from a bundle-size problem into
 a silent correctness failure. Regression-test it by loading the module twice
 (`vi.resetModules()` between two dynamic imports), registering through one copy and
-asserting the other sees it — including a React render whose provider and consumer come from
+asserting the other sees it - including a React render whose provider and consumer come from
 different copies.
 
-## Running the workspace — four traps with no error message
+## Running the workspace - four traps with no error message
 
 Each of these ends with a correct tree reading as a broken one.
 
@@ -227,11 +227,11 @@ Each of these ends with a correct tree reading as a broken one.
   graph from what is present when it starts, so a partial tree gives it a wrong answer and
   it fails on a package that is fine. `pnpm build` at the root, once.
 - **The dev server is HTTPS with a self-signed certificate**, so `curl http://<host>:<port>`
-  connects, receives nothing, and returns `000` with exit 52 — **byte for byte what a
+  connects, receives nothing, and returns `000` with exit 52 - **byte for byte what a
   stopped server returns**. A healthy server has been restarted on that reading. Probe a
   real route over TLS instead (`curl -sk https://<host>:<port>/<route>`), and take the
   origin from the `Local:` line the dev server printed rather than from memory. A browser
-  driver needs its ignore-certificate flag on the session's FIRST command — see the
+  driver needs its ignore-certificate flag on the session's FIRST command - see the
   `simplecore:board-to-app` skill's `references/driving-the-product.md`.
 - **`add-domain` writes `workspace:*` for the framework's own extension packages.** When
   those come from the workspace catalogue rather than from `packages/`, `pnpm install`
@@ -243,13 +243,13 @@ Each of these ends with a correct tree reading as a broken one.
 
 Two arrangements answer `@simplix-react/*`: the published versions the workspace catalogue
 pins, and a checkout of the framework beside the product. **Switching between them changes
-nothing that is committed** — put the switch in a gitignored file, keep a tracked sample
+nothing that is committed** - put the switch in a gitignored file, keep a tracked sample
 beside it, and let the repository commit the registry profile as the default. Then no
 revert commit exists to forget, and the switch reaches neither another machine nor CI.
 
 **The catalogue is the registry arrangement's value and never carries the local one.** A
 snapshot version is not published, so pointing the catalogue at it makes `pnpm install`
-resolve nothing. Rewrite the scope instead — a `.pnpmfile.cjs` hook that maps the whole
+resolve nothing. Rewrite the scope instead - a `.pnpmfile.cjs` hook that maps the whole
 `@simplix-react` / `@simplix-react-ext` scope to `link:<path>` follows the framework as it
 gains packages, which a hand-maintained list does not.
 
@@ -259,25 +259,25 @@ somebody choosing that.
 
 Four things to do around the switch, in order:
 
-1. **Take the same measurements before and after** — the pass counts from build and
+1. **Take the same measurements before and after** - the pass counts from build and
    typecheck, and the audit script's error count. Anything that moves is a change the
    framework made between the two, and that is worth knowing before the work that prompted
    the switch begins.
 2. **Build the framework package after editing its source.** The link gives Vite the
    source through the `source` condition; `tsc` reads that package's `dist/`. So the
    typecheck immediately after adding a prop to a framework component **names product files
-   and says the prop does not exist** — and the product is not where it is wrong. Run the
+   and says the prop does not exist** - and the product is not where it is wrong. Run the
    framework package's own build, then typecheck again.
 3. **Run `check-duplicate-contexts.mjs` immediately** (invariant #60). Linking IS the
    resolution change that invariant is about, so it matters more here than at a version
    bump: a split copy takes the chrome off every page while the build stays green.
 4. **Open a few screens.** A link installs the framework's next version, so the product's
-   stale assumptions surface then and only then — a select that rejected an empty-string
+   stale assumptions surface then and only then - a select that rejected an empty-string
    value rendered fine on the published version and threw on the linked one. The defect was
    in the product; the link made it visible. Build and typecheck see none of this class.
 
 **Read what changed between the two.** `git log v<tag>..HEAD` in the framework checkout is
-that list, and it is short enough to read — every entry in it is a behaviour some screen in
+that list, and it is short enough to read - every entry in it is a behaviour some screen in
 the product may be relying on.
 
 ## Project Configuration
@@ -310,7 +310,7 @@ export default defineConfig({
 ```
 
 > Valid top-level keys are `plugins` / `api` / `queryBuilder` / `packages` / `http` /
-> `codegen` / `i18n` / `openapi`. There is **NO** top-level `mock` key — mock-layer
+> `codegen` / `i18n` / `openapi`. There is **NO** top-level `mock` key - mock-layer
 > behaviour comes from the per-spec `profile` (and from `src/mock/`), not config. The
 > `openapi` value is an **array** of per-spec configs (each needs `spec` + `domains`;
 > `profile` / `naming` / `responseAdapter` / `crud` are optional), never an object.
@@ -331,7 +331,7 @@ Load `framework/*.md` when:
 
 For the generic framework contract APIs (`defineApi`, `deriveEntityHooks`,
 `deriveEntityFormHooks`, `deriveMockHandlers`, `EntityDefinition` /
-`OperationDefinition` shapes), consult the **simplix-react framework documentation** — the codegen path
+`OperationDefinition` shapes), consult the **simplix-react framework documentation** - the codegen path
 does not hand-call them, and their signatures are maintained there.
 
 ## References
@@ -344,5 +344,5 @@ does not hand-call them, and their signatures are maintained there.
 
 This is the **DESIGN** category entry point inside this skill. After defining contracts and configuring the framework, move to:
 
-1. **SCAFFOLD** — `../scaffold/overview.md` — CLI scaffolding, route wiring, mock registration, API update propagation
-2. **CUSTOMIZE** — `../customize/overview.md` — post-scaffold widget customization, framework component composition, custom editors
+1. **SCAFFOLD** - `../scaffold/overview.md` - CLI scaffolding, route wiring, mock registration, API update propagation
+2. **CUSTOMIZE** - `../customize/overview.md` - post-scaffold widget customization, framework component composition, custom editors

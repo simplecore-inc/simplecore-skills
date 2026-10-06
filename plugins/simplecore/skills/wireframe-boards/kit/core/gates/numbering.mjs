@@ -28,7 +28,7 @@ export const idGate = {
     for (const [id, group] of byId) {
       if (group.length === 1) continue;
       const files = group.map((e) => e.file).join(', ');
-      // Two files may share an id only as one screen's narrow and wide halves — the viewport toggle
+      // Two files may share an id only as one screen's narrow and wide halves - the viewport toggle
       // shows one at a time, so they are one screen×state, not two.
       const variants = group.map((e) => e.mod.variant);
       const isPair =
@@ -45,7 +45,7 @@ export const idGate = {
 
 // Slug gate: `resolveRefs` turns `{{f-12-foreign-basic}}` into "F-12" by reading the number and
 // nothing else, so a note that names an EXISTING id with the wrong tail resolves silently and
-// points the reader at a different screen — worse than the visible `{{slug?}}`, because it looks
+// points the reader at a different screen - worse than the visible `{{slug?}}`, because it looks
 // right. A reference whose number is drawn must match that frame's file name exactly; a number
 // that is not drawn yet is a forward reference and stays allowed.
 export const slugGate = {
@@ -59,7 +59,7 @@ export const slugGate = {
       for (const m of String(s.mod.notes ?? '').matchAll(/\{\{([a-z]-\d{2,}[a-z]?-[a-z0-9-]+)\}\}/g)) {
         const slug = m[1];
         const id = idOf(slug);
-        if (!id || !fileById.has(id)) continue;     // not drawn yet — a forward reference
+        if (!id || !fileById.has(id)) continue;     // not drawn yet - a forward reference
         if (fileById.get(id) !== slug) {
           wrongSlugs.push(`${s.file}: {{${slug}}} → ${id}는 ${fileById.get(id)}다`);
         }
@@ -69,8 +69,8 @@ export const slugGate = {
   },
 };
 
-// Forward-reference gate: a note may point at a frame that is not drawn yet — the whole point of
-// drawing clusters in order — and the build leaves it visible as `{{slug?}}` so it fails loudly
+// Forward-reference gate: a note may point at a frame that is not drawn yet - the whole point of
+// drawing clusters in order - and the build leaves it visible as `{{slug?}}` so it fails loudly
 // rather than disappearing. What it cannot see on its own is TWO notes naming the same future
 // screen by different numbers (`j-04-evidence-package` and `j-09-evidence-package`): both render
 // as an honest-looking unresolved marker, and only one of them will be right when that cluster is

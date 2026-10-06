@@ -1,11 +1,11 @@
-// Visual sweep of a built board — the checks a build cannot make because they need layout.
+// Visual sweep of a built board - the checks a build cannot make because they need layout.
 // Run after a build, before reporting a step done.
 //
 //   node wf.mjs check [--frames <id-prefix>]
 //
 // **Every file the board writes is swept, and the report is one.** A board that declares an
 // axis to split along writes several, and a sweep that stopped at the first would go quiet on
-// everything after it — which reads exactly like a clean board.
+// everything after it - which reads exactly like a clean board.
 import { existsSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import { basename, join } from 'node:path';
@@ -14,7 +14,7 @@ import { loadBoard } from '../context.mjs';
 import { outputFiles } from '../split.mjs';
 
 /**
- * What one built page measures about itself — the findings a browser can see and a build
+ * What one built page measures about itself - the findings a browser can see and a build
  * cannot. Module level rather than inline, because a split board runs it once per file and a
  * callback rebuilt inside that loop is a callback that can drift between the files it judges.
  */
@@ -22,7 +22,7 @@ const measureFrames = (pre) => {
   const errors = [];
   const notes = [];
   for (const f of document.querySelectorAll('article.frame')) {
-    // Narrowing is for iterating on one cluster. The sideways pass below is never narrowed —
+    // Narrowing is for iterating on one cluster. The sideways pass below is never narrowed -
     // the board's promise is about the whole board, and a cluster cannot answer for it.
     if (pre && !f.id.includes(pre)) continue;
     const label = f.querySelector('.frame-label')?.textContent?.trim().slice(0, 34) ?? f.id;
@@ -42,7 +42,7 @@ const measureFrames = (pre) => {
       }
     }
 
-    // A bounded box can overflow ITSELF while sitting well inside the screen — the installer's
+    // A bounded box can overflow ITSELF while sitting well inside the screen - the installer's
     // step rail ran 17px past its card's edge and the screen-level check above saw nothing, because
     // the screen is 1440px and the card is 420. Anything that draws its own border is a promise
     // about where its content ends, so each is measured against what it holds.
@@ -68,7 +68,7 @@ const measureFrames = (pre) => {
     // Sideways scroll is allowed only inside a region that declares itself wider than the screen.
     // `overflow: hidden` is two different things and only one of them is a defect: with
     // `text-overflow: ellipsis` it is a name deliberately cut short, and the 「…」 tells the reader
-    // so — a tree's label column is exactly that. Without the ellipsis the same clip drops the end
+    // so - a tree's label column is exactly that. Without the ellipsis the same clip drops the end
     // of the text and leaves no mark, which is the silent kind and still fails here.
     for (const el of screen.querySelectorAll('*')) {
       if (el.classList.contains('scroll-x')) continue;
@@ -82,7 +82,7 @@ const measureFrames = (pre) => {
 
     // A component called with the wrong option shape renders its wrapper and no content: a
     // calendar with `month`/`marks` at the top level draws the weekday strip over an empty grid,
-    // a matrix without `rows` draws its header alone. Nothing upstream can see it — the markup is
+    // a matrix without `rows` draws its header alone. Nothing upstream can see it - the markup is
     // balanced, no value leaked, the frame is there. Only the emptiness gives it away, so that is
     // what is measured: a container whose whole job is to hold rows, holding none.
     const MUST_HOLD = {
@@ -98,8 +98,8 @@ const measureFrames = (pre) => {
     }
 
     // Two boxes drawn edge to edge fuse into one shape with a line through it. It is a container
-    // that causes it rather than either box — a stack whose parent sets no `gap` and whose blocks
-    // set no margin — so one missing rule empties the space under every table on every frame that
+    // that causes it rather than either box - a stack whose parent sets no `gap` and whose blocks
+    // set no margin - so one missing rule empties the space under every table on every frame that
     // container draws, and nothing errors. It reached 42 places on this board before a person
     // looked at a screen and said the message under the table was stuck to it.
     //
@@ -129,8 +129,8 @@ const measureFrames = (pre) => {
     for (const above of drawn) {
       for (const below of drawn) {
         if (above === below) continue;
-        // A box inside another shares its edge by construction — a panel's foot sits on the
-        // panel's own border — and that is not two boxes meeting.
+        // A box inside another shares its edge by construction - a panel's foot sits on the
+        // panel's own border - and that is not two boxes meeting.
         if (above.el.contains(below.el) || below.el.contains(above.el)) continue;
         if (Math.abs(below.r.top - above.r.bottom) > 0.6) continue;
         // Same column and same width: two blocks in one stack. A box that merely happens to end
@@ -144,7 +144,7 @@ const measureFrames = (pre) => {
     if (fused) issues.push(`붙음:${fused} — 두 상자가 맞닿아 한 덩어리로 그려진다. 담은 컨테이너에 gap이 없다`);
 
     // Something that was never copy, rendered as copy. A frame concatenated its own header
-    // FUNCTION instead of calling it — `head +` where `head() +` was meant — and JavaScript did
+    // FUNCTION instead of calling it - `head +` where `head() +` was meant - and JavaScript did
     // what it is asked to: it turned the function into its own source and drew it across the
     // middle of three frames. Nothing errors on that. It is not a syntax error, the module loads,
     // every gate passes and the board builds; the only thing wrong with it is what a person sees.
@@ -152,7 +152,7 @@ const measureFrames = (pre) => {
     // missing, and as a template literal that never ran.
     //
     // **A board may draw code on purpose, and it says so in monospace.** That is what separates a
-    // deliberate sample from an accident here — a frame showing a snippet puts it in `<code>` or a
+    // deliberate sample from an accident here - a frame showing a snippet puts it in `<code>` or a
     // monospace class, and an accident lands in whatever element was being built.
     //
     // **A `{{…}}` is NOT read as a defect**: the product may draw merge fields of its own, and a
@@ -180,19 +180,19 @@ const measureFrames = (pre) => {
     }
     if (notCopy) issues.push(`문구가 아님:${notCopy}`);
 
-    // A desktop screen may run past its fold — it scrolls — but its primary action may not.
+    // A desktop screen may run past its fold - it scrolls - but its primary action may not.
     // The primary action is the emphasised button in the page header; a screen whose main act is
     // destructive has a `danger` there and no `primary` at all. Only when the header carries
     // neither does an emphasised button elsewhere count.
     //
     // "Elsewhere" excludes three places, because a button there belongs to the thing that holds
-    // it rather than to the screen — and each of the three is BELOW THE FOLD BY CONSTRUCTION, so
+    // it rather than to the screen - and each of the three is BELOW THE FOLD BY CONSTRUCTION, so
     // counting it reports a defect that no layout could avoid:
     //   .msg     a message's own action (「12개월로 되돌리기」 on B-04, 「첫 칸으로」 on G-12)
     //   .ld-foot the detail panel's footer, pinned to the floor of a list-detail region that the
     //            board's layout rule puts LAST on the page (J-12 · J-38)
     //   .modal   a dialog's action; a dialog is an overlay with its own reading order (J-29)
-    //   .dv-note the viewer's note strip — it acts on what the viewer is drawing, and the viewer
+    //   .dv-note the viewer's note strip - it acts on what the viewer is drawing, and the viewer
     //            sits wherever the page put it (G-12)
     const desktop = f.classList.contains('desktop') || sb.width >= 1000;
     const NOT_THE_SCREENS = '.msg, .ld-foot, .modal, .dv-note';
@@ -214,7 +214,7 @@ const measureFrames = (pre) => {
     }
 
     // The same clip, downwards. Only the sideways version was ever measured, and a dialog capped
-    // at a flat 360px cut 90 blocks across the board without a scrollbar or any other mark — a
+    // at a flat 360px cut 90 blocks across the board without a scrollbar or any other mark - a
     // reference table that ends mid-row reads as a table with fewer rows, and no reviewer can tell
     // the difference. A box that scrolls is fine and a box that hides is not, so the test is the
     // same one the sideways check makes: `auto`/`scroll` passes, `hidden` fails.
@@ -228,7 +228,7 @@ const measureFrames = (pre) => {
     }
 
     // On a list-detail page the list IS the page, so a reader who opens it and sees no row has
-    // been handed a dashboard. The region may run past the fold — it scrolls — but the first row
+    // been handed a dashboard. The region may run past the fold - it scrolls - but the first row
     // may not, and everything above the region is what pushes it there: a card that must stay
     // visible is one thing, a second table and a rule matrix and a fourth message are another.
     // The four homes exist precisely so that pile has somewhere else to go.
@@ -266,7 +266,7 @@ const measureFrames = (pre) => {
 /**
  * Measure a built board and report what a person would have to look for by eye.
  *
- * @param boardDir the board folder — every file its settings say it writes is read from it
+ * @param boardDir the board folder - every file its settings say it writes is read from it
  * @param framePrefix restrict the per-frame pass to one cluster
  * @returns the number of findings; zero means the geometry is clean, never that the board is
  */
@@ -283,14 +283,14 @@ export async function inspectBoard(boardDir, { framePrefix = '' } = {}) {
   }
 
   const browser = await launchBrowser();
-  // **One page, navigated between passes** — never two held open at once. A second target
+  // **One page, navigated between passes** - never two held open at once. A second target
   // becomes the foreground tab the moment it is created, and a backgrounded tab runs no
   // `requestAnimationFrame`; every `goto` waits on one to settle, so the first page's next
   // navigation never returns. It hangs rather than failing, which is the worst way to find out.
   //
   // Navigating is also what the two passes need from each other: the frame pass injects
   // `--frame-zoom: 1` to measure content at true device pixels, and the sideways pass must see
-  // that step doing its job — a fresh document is what drops the injected style.
+  // that step doing its job - a fresh document is what drops the injected style.
   const page = await browser.newPage({ width: 1900, height: 1200 });
   const errors = [];
   const notes = [];
@@ -298,7 +298,7 @@ export async function inspectBoard(boardDir, { framePrefix = '' } = {}) {
 
   for (const board of files) {
     const url = pathToFileURL(board).href;
-    // Which file a finding came from, said only where there is more than one — an unsplit
+    // Which file a finding came from, said only where there is more than one - an unsplit
     // board reads exactly as it did.
     const where = files.length > 1 ? `${basename(board)} · ` : '';
     await page.setViewport({ width: 1900, height: 1200 });

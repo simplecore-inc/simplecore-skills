@@ -2,7 +2,7 @@
 
 Grep patterns to detect violations of commonized patterns. Run these against the frontend modules directory to find regressions or missed migrations.
 
-**Run the automated subset FIRST**: `node "${CLAUDE_PLUGIN_ROOT}/scripts/audit-frontend.mjs"` (from the frontend project root) executes the machine-checkable rules — error-level rules must be 0, review-level candidates are judged against each rule's stated exceptions. This document then covers what the script cannot: context-dependent patterns, multiline/judgment sections, and the Usability Audit. When a NEW defect type proves regex-detectable, add it as a rule in the script (not only here) — a recipe that only lives in prose gets run less often than one wired into the script.
+**Run the automated subset FIRST**: `node "${CLAUDE_PLUGIN_ROOT}/scripts/audit-frontend.mjs"` (from the frontend project root) executes the machine-checkable rules - error-level rules must be 0, review-level candidates are judged against each rule's stated exceptions. This document then covers what the script cannot: context-dependent patterns, multiline/judgment sections, and the Usability Audit. When a NEW defect type proves regex-detectable, add it as a rule in the script (not only here) - a recipe that only lives in prose gets run less often than one wired into the script.
 
 ## Page Chrome Violations (local page titles / ad-hoc page padding)
 
@@ -10,7 +10,7 @@ Grep patterns to detect violations of commonized patterns. Run these against the
 
 Run from: `modules/`
 
-**Pattern 1 — Local Heading used as a page title (high confidence)**
+**Pattern 1 - Local Heading used as a page title (high confidence)**
 ```bash
 # Page components must delegate the title to usePageHeader; a level-1/2 Heading in a pages/ file is a page title
 grep -rnE "<Heading level=\{[12]\}" --include="*.tsx" modules/*/src/pages/
@@ -18,7 +18,7 @@ grep -rnE "<Heading level=\{[12]\}" --include="*.tsx" modules/*/src/pages/
 Expected: 0 results
 Exception: Headings inside a detail/form header slot (e.g. `header={<Heading …>}`) are panel chrome, not page titles; level ≥3 headings are in-content section titles
 
-**Pattern 2 — Page missing usePageHeader (high confidence)**
+**Pattern 2 - Page missing usePageHeader (high confidence)**
 ```bash
 # Every routed page component registers its title with the layout
 grep -rLn "usePageHeader" --include="*-page.tsx" modules/*/src/pages/*/
@@ -26,7 +26,7 @@ grep -rLn "usePageHeader" --include="*-page.tsx" modules/*/src/pages/*/
 Expected: 0 results (every page file registers a header)
 Exceptions: standalone screens outside the app layout (login); thin wrapper pages that delegate to a view/crud component which itself calls `usePageHeader` (verify the delegate before marking a violation)
 
-**Pattern 3 — Ad-hoc page padding wrapper (medium confidence)**
+**Pattern 3 - Ad-hoc page padding wrapper (medium confidence)**
 ```bash
 # The app layout owns page padding; pages must not add their own
 grep -rn 'className="[^"]*p-4' --include="*.tsx" modules/*/src/pages/
@@ -34,7 +34,7 @@ grep -rn 'className="[^"]*p-4' --include="*.tsx" modules/*/src/pages/
 Expected: 0 results
 Exception: Padding on inner cards/sections (verify the class is not on the page root)
 
-**Pattern 4 — Create button outside the header actions slot (medium confidence)**
+**Pattern 4 - Create button outside the header actions slot (medium confidence)**
 ```bash
 # The primary "add/new" button belongs in usePageHeader({ actions }); a local button row above a list is a violation
 grep -rn "PlusIcon" --include="*.tsx" modules/*/src/pages/ modules/*/src/widgets/ | grep "Button"
@@ -42,7 +42,7 @@ grep -rn "PlusIcon" --include="*.tsx" modules/*/src/pages/ modules/*/src/widgets
 Expected: every match is a constant passed into `usePageHeader`'s `actions` (or a row-level action)
 Exception: secondary in-content actions that are not the page's primary create action
 
-**Pattern 5 — Detail panel without a scroll container (high confidence, silent defect)**
+**Pattern 5 - Detail panel without a scroll container (high confidence, silent defect)**
 ```bash
 # Every component rendered inside <ListDetail.Detail> must own the scroll (invariant #31e):
 # CrudDetail / CrudForm, or a custom editor built as `Stack fill` + `Stack flex overflow="auto"`.
@@ -57,14 +57,14 @@ grep -rn 'Stack fill\|overflow="auto"' --include="*.tsx" modules/<module>/src/wi
 ```
 Expected: every panel component matches one of the two skeletons.
 Violation smell (and what the operator sees): a hand-rolled `<Flex>` title row with its own `XIcon` close button instead of `CrudDetail`'s header/close, content cut off at the panel's bottom edge, and a primary action (submit, check-in) below the fold that cannot be reached by scrolling.
-Verify in the browser — a bare panel reports `scrollHeight > clientHeight` while `overflowY: hidden`:
+Verify in the browser - a bare panel reports `scrollHeight > clientHeight` while `overflowY: hidden`:
 ```js
 const d = document.querySelector('article.md\\:order-3');  // ListDetail.Detail
 ({ clipped: d.scrollHeight > d.clientHeight, overflowY: getComputedStyle(d).overflowY,
    innerScrollable: [...d.querySelectorAll('*')].some(e => ['auto','scroll'].includes(getComputedStyle(e).overflowY) && e.scrollHeight > e.clientHeight) })
 // clipped:true + innerScrollable:false → defect
 ```
-Note: passing today proves nothing — short seed data fits the panel. Judge by structure, not by whether it currently overflows.
+Note: passing today proves nothing - short seed data fits the panel. Judge by structure, not by whether it currently overflows.
 
 ### Verification After Audit
 
@@ -72,7 +72,7 @@ For each violation found:
 1. Move the title (and a description key) into `usePageHeader({ title, description })`
 2. Remove the local `Heading` and any page-root padding wrapper
 3. Move the primary create button into `usePageHeader`'s `actions`; for tabbed pages, drive the active tab's create dialog through props
-4. Rebuild a bare detail panel on `CrudDetail` (`header` = title + status badge, `CrudDetail.Section` per group, `footer` = `CrudDetail.DefaultActions`) — drop the hand-rolled title row and close button, since `CrudDetail` renders the close affordance from `onClose`
+4. Rebuild a bare detail panel on `CrudDetail` (`header` = title + status badge, `CrudDetail.Section` per group, `footer` = `CrudDetail.DefaultActions`) - drop the hand-rolled title row and close button, since `CrudDetail` renders the close affordance from `onClose`
 4. Confirm the page renders the standard level-1 header from the layout
 5. For panel-style list-detail pages, confirm the root is `Stack flex` with no extra `Container`
 
@@ -82,15 +82,15 @@ For each violation found:
 
 Run from: `modules/`
 
-**Pattern 1 — Custom icon-in-circle empty state (high confidence)**
+**Pattern 1 - Custom icon-in-circle empty state (high confidence)**
 ```bash
 # Detects the rounded-full bg-muted icon wrapper pattern
 grep -rn "rounded-full bg-muted p-4 text-muted-foreground" --include="*.tsx" modules/
 ```
 Expected: 0 results (all should use EmptyState now)
-Exception: None — this pattern should only exist inside EmptyState component itself
+Exception: None - this pattern should only exist inside EmptyState component itself
 
-**Pattern 2 — Flex column centered with py-16 (medium confidence)**
+**Pattern 2 - Flex column centered with py-16 (medium confidence)**
 ```bash
 # Detects centered column layout with large vertical padding (common empty state pattern)
 grep -rn 'direction="column" align="center".*py-16' --include="*.tsx" modules/
@@ -98,13 +98,13 @@ grep -rn 'direction="column" align="center".*py-16' --include="*.tsx" modules/
 Expected: 0 results
 Exception: Non-empty-state centered layouts (verify context)
 
-**Pattern 3 — Font-semibold + text-muted-foreground pair (low confidence, verify context)**
+**Pattern 3 - Font-semibold + text-muted-foreground pair (low confidence, verify context)**
 ```bash
 # Detects title + description text pattern used in old empty states
 grep -rn 'text-base font-semibold' --include="*.tsx" modules/ | grep -v "EmptyState"
 ```
 Expected: 0 results in empty state context
-Exception: May match legitimate non-empty-state headings — verify each match
+Exception: May match legitimate non-empty-state headings - verify each match
 
 ### Verification After Audit
 
@@ -121,7 +121,7 @@ For each violation found:
 
 Run from: `modules/`
 
-**Pattern 1 — Inline ternary fallback for detail fields (high confidence)**
+**Pattern 1 - Inline ternary fallback for detail fields (high confidence)**
 ```bash
 # Detects custom null checks wrapping DetailFields instead of using built-in fallback
 grep -rn 'value.*?.*DetailFields\|DetailFields.*value.*?' --include="*.tsx" modules/
@@ -129,7 +129,7 @@ grep -rn 'value.*?.*DetailFields\|DetailFields.*value.*?' --include="*.tsx" modu
 Expected: 0 results
 Exception: Legitimate conditional rendering not related to fallback
 
-**Pattern 2 — Manual String() conversion hiding null values (medium confidence)**
+**Pattern 2 - Manual String() conversion hiding null values (medium confidence)**
 ```bash
 # Detects String(value ?? "") which converts null to empty string, bypassing fallback
 grep -rn 'String(.*??\s*"")' --include="*.tsx" modules/
@@ -137,7 +137,7 @@ grep -rn 'String(.*??\s*"")' --include="*.tsx" modules/
 Expected: 0 results in DetailFields context
 Exception: May match legitimate string conversions in non-detail contexts
 
-**Pattern 3 — Hardcoded em-dash outside framework (medium confidence)**
+**Pattern 3 - Hardcoded em-dash outside framework (medium confidence)**
 ```bash
 # Detects hardcoded em-dash fallback that should use DetailFields built-in fallback
 grep -rn '??\s*"\\u2014"\|??\s*"—"\|??\s*"—"' --include="*.tsx" modules/
@@ -160,7 +160,7 @@ For each violation found:
 
 Run from: `modules/`
 
-**Pattern 1 — UUID in detail/form header via translation key (high confidence)**
+**Pattern 1 - UUID in detail/form header via translation key (high confidence)**
 ```bash
 # Detects t("xxx.detailHeader", { id: ... }) or t("xxx.editHeader", { id: ... }) pattern
 grep -rn 'detailHeader.*id:\|editHeader.*id:' --include="*.tsx" modules/
@@ -168,22 +168,22 @@ grep -rn 'detailHeader.*id:\|editHeader.*id:' --include="*.tsx" modules/
 Expected: 0 results
 Exception: detail/form widgets of not-yet-implemented modules
 
-**Pattern 2 — Delete confirm using row.id for display name (high confidence)**
+**Pattern 2 - Delete confirm using row.id for display name (high confidence)**
 ```bash
 # Detects requestDelete with name: String(row.id) or name: row.id
 grep -rn 'requestDelete.*name.*row\.id' --include="*.tsx" modules/
 ```
 Expected: 0 results
 
-**Pattern 2-1 — Delete confirm with UUID fallback when name is null (high confidence)**
+**Pattern 2-1 - Delete confirm with UUID fallback when name is null (high confidence)**
 ```bash
 # Detects requestDelete where name falls back to row.id or any .id when display field is null
 grep -rn 'requestDelete.*?? row\.id\|requestDelete.*?? .*\.id)' --include="*.tsx" modules/
 ```
 Expected: 0 results
-Exception: None — name fallback must be empty string `""`, never UUID
+Exception: None - name fallback must be empty string `""`, never UUID
 
-**Pattern 3 — FK field displaying raw UUID instead of nested object name (medium confidence)**
+**Pattern 3 - FK field displaying raw UUID instead of nested object name (medium confidence)**
 ```bash
 # Detects String(displayData.xxxId) in detail views (potential UUID exposure)
 grep -rn 'String(displayData\.\w*Id)' --include="*.tsx" modules/
@@ -191,14 +191,14 @@ grep -rn 'String(displayData\.\w*Id)' --include="*.tsx" modules/
 Expected: 0 results in user-facing display context
 Exception: Internal API call parameters (not displayed to user)
 
-**Pattern 4 — ID fallback in displayName/header variables (medium confidence)**
+**Pattern 4 - ID fallback in displayName/header variables (medium confidence)**
 ```bash
 # Detects patterns like ?? String(entityId) used as display name fallback
 grep -rn 'displayName.*String.*Id)\|levelName.*String.*Id)\|areaName.*String.*Id)' --include="*.tsx" modules/
 ```
 Expected: 0 results
 
-**Pattern 5 — Form header with ReactNode prop instead of isEdit (medium confidence)**
+**Pattern 5 - Form header with ReactNode prop instead of isEdit (medium confidence)**
 ```bash
 # Detects FormInner interfaces still using header?: ReactNode pattern
 grep -rn 'header?: ReactNode' --include="*.tsx" modules/
@@ -206,7 +206,7 @@ grep -rn 'header?: ReactNode' --include="*.tsx" modules/
 Expected: 0 results (all forms should use isEdit pattern for live title)
 Exception: Components that are NOT Outer/Inner form pattern
 
-**Pattern 6 — Fallback to UUID when nested object is unavailable (medium confidence)**
+**Pattern 6 - Fallback to UUID when nested object is unavailable (medium confidence)**
 ```bash
 # Detects ?? data.xxx.xxxId or ?? data.xxxId patterns used as fallback display
 grep -rn '?? data\.\w*\.\w*Id\|?? root\.\w*Id' --include="*.tsx" modules/
@@ -231,29 +231,29 @@ For each violation found:
 
 Run from: `modules/`
 
-**Pattern 1 — System field rendered in detail view (high confidence)**
+**Pattern 1 - System field rendered in detail view (high confidence)**
 ```bash
 # Detects DetailFields displaying id, sortOrder, or displayOrder
 grep -rn 'fieldLabel("id")\|fieldLabel("sortOrder")\|fieldLabel("displayOrder")' --include="*.tsx" modules/ | grep -i "detail"
 ```
 Expected: 0 results
-Exception: None — these fields should only exist in `auditData`, never as visible `DetailFields`
+Exception: None - these fields should only exist in `auditData`, never as visible `DetailFields`
 
-**Pattern 2 — System field rendered as editable form field (high confidence)**
+**Pattern 2 - System field rendered as editable form field (high confidence)**
 ```bash
 # Detects FormFields for system fields (id, sortOrder, displayOrder)
 grep -rn 'fieldLabel("id")\|fieldLabel("sortOrder")\|fieldLabel("displayOrder")' --include="*.tsx" modules/ | grep -i "form"
 ```
 Expected: 0 results
-Exception: None — system fields must never be editable
+Exception: None - system fields must never be editable
 
-**Pattern 3 — Commented-out system field JSX (medium confidence)**
+**Pattern 3 - Commented-out system field JSX (medium confidence)**
 ```bash
 # Detects commented-out system field form inputs (dead code)
 grep -rn '{/\*.*fieldLabel("id")\|{/\*.*fieldLabel("sortOrder")\|{/\*.*fieldLabel("displayOrder")' --include="*.tsx" modules/
 ```
 Expected: 0 results
-Exception: None — commented-out code should be removed, not left as dead code
+Exception: None - commented-out code should be removed, not left as dead code
 
 ### Verification After Audit
 
@@ -271,15 +271,15 @@ For each violation found:
 
 Run from: `modules/`
 
-**Pattern 1 — Custom Popover+Command inline (high confidence)**
+**Pattern 1 - Custom Popover+Command inline (high confidence)**
 ```bash
 # Detects direct imports of Command primitives in module widgets (should use SearchPopover)
 grep -rn "import.*CommandInput\|import.*CommandItem\|import.*CommandList" --include="*.tsx" modules/
 ```
 Expected: 0 results (all should use SearchPopover now)
-Exception: None — modules should never import Command primitives for assignment patterns
+Exception: None - modules should never import Command primitives for assignment patterns
 
-**Pattern 2 — DropdownMenu for item assignment (high confidence)**
+**Pattern 2 - DropdownMenu for item assignment (high confidence)**
 ```bash
 # Detects DropdownMenu paired with PlusIcon or "assign" pattern
 grep -rn "DropdownMenuTrigger" --include="*.tsx" modules/ | grep -i "assign\|add\|<assignment-target>"
@@ -287,19 +287,19 @@ grep -rn "DropdownMenuTrigger" --include="*.tsx" modules/ | grep -i "assign\|add
 Expected: 0 results
 Exception: DropdownMenu used for non-search context menus (right-click, action menus)
 
-**Pattern 3 — Manual Popover+Command open state management (medium confidence)**
+**Pattern 3 - Manual Popover+Command open state management (medium confidence)**
 ```bash
 # Detects manual Popover open/close state for search popovers
 grep -rn "PopoverTrigger.*Button.*PlusIcon\|PopoverTrigger.*Button.*Plus" --include="*.tsx" modules/
 ```
 Expected: 0 results
-Exception: None — SearchPopover manages its own open state
+Exception: None - SearchPopover manages its own open state
 
 ### Verification After Audit
 
 For each violation found:
 1. Confirm it is a searchable assignment pattern (not a context menu or other dropdown)
-2. Replace with `SearchPopover` — use `items` for flat lists, `groups` for grouped lists
+2. Replace with `SearchPopover` - use `items` for flat lists, `groups` for grouped lists
 3. Ensure `onSelect` receives the full item object
 4. Remove all Popover/Command/DropdownMenu primitive imports that become unused
 5. Verify trigger button text matches the original via i18n key
@@ -310,23 +310,23 @@ For each violation found:
 
 Run from: `modules/`
 
-**Pattern 1 — Raw Select with compact styling (high confidence)**
+**Pattern 1 - Raw Select with compact styling (high confidence)**
 ```bash
 # Detects raw SelectTrigger with h-8 compact class (should use SelectField compact)
 grep -rn "SelectTrigger.*h-8\|SelectTrigger.*w-40\|SelectTrigger.*text-sm" --include="*.tsx" modules/
 ```
 Expected: 0 results
-Exception: None — all compact selects should use FormFields.SelectField compact
+Exception: None - all compact selects should use FormFields.SelectField compact
 
-**Pattern 2 — Direct Select import for non-form usage (medium confidence)**
+**Pattern 2 - Direct Select import for non-form usage (medium confidence)**
 ```bash
 # Detects direct import of Select primitives (SelectTrigger, SelectContent, etc.)
 grep -rn "import.*SelectTrigger\|import.*SelectContent\|import.*SelectItem" --include="*.tsx" modules/
 ```
 Expected: 0 results (modules should use FormFields.SelectField)
-Exception: None in modules — raw Select is only for framework internals
+Exception: None in modules - raw Select is only for framework internals
 
-**Pattern 3 — Fixed width on compact selects (medium confidence)**
+**Pattern 3 - Fixed width on compact selects (medium confidence)**
 ```bash
 # Detects fixed width class applied to SelectField for table cells
 grep -rn 'SelectField.*className.*w-\d\|SelectField.*w-40\|SelectField.*w-48' --include="*.tsx" modules/
@@ -340,7 +340,7 @@ For each violation found:
 2. Replace with `FormFields.SelectField compact`
 3. Convert options to `{ label, value }` format if needed
 4. Remove raw Select/SelectTrigger/SelectContent/SelectItem imports
-5. Do NOT apply fixed width — let `w-auto` handle sizing
+5. Do NOT apply fixed width - let `w-auto` handle sizing
 
 ## Awaitable Cache Invalidation Violations (Inline Editor Stale Flash)
 
@@ -348,27 +348,27 @@ For each violation found:
 
 Run from: `modules/`
 
-**Pattern 1 — Fire-and-forget invalidate before state reset (high confidence)**
+**Pattern 1 - Fire-and-forget invalidate before state reset (high confidence)**
 ```bash
 # Detects invalidate() followed by reset() without await
 grep -rn "invalidate();" --include="*.tsx" modules/ | grep -v "await invalidate"
 ```
 Expected: Only matches in `.mutate()` callbacks (fire-and-forget is OK there)
-Exception: `onSuccess`/`onError` callbacks in `.mutate()` options — these are fire-and-forget by design
+Exception: `onSuccess`/`onError` callbacks in `.mutate()` options - these are fire-and-forget by design
 
-**Pattern 2 — Non-awaited invalidate after mutateAsync in try block (high confidence)**
+**Pattern 2 - Non-awaited invalidate after mutateAsync in try block (high confidence)**
 ```bash
 # Detects await mutateAsync followed by non-awaited invalidate in same block
 grep -B2 "invalidate();" --include="*.tsx" modules/ | grep "mutateAsync"
 ```
 Expected: 0 results (all mutateAsync + invalidate combos should use await)
 
-**Pattern 3 — Non-async .then callback with invalidate (medium confidence)**
+**Pattern 3 - Non-async .then callback with invalidate (medium confidence)**
 ```bash
 # Detects .then(() => { invalidate() }) without async
 grep -rn "\.then((" --include="*.tsx" modules/ | grep -v "async"
 ```
-Expected: Review each match — if invalidate() is called inside, callback should be async
+Expected: Review each match - if invalidate() is called inside, callback should be async
 
 ### Verification After Audit
 
@@ -475,26 +475,26 @@ For each violation found:
 
 Run from: `modules/`
 
-**Pattern 1 — Inline enum→Tailwind-color map with dark: classes (high confidence)**
+**Pattern 1 - Inline enum→Tailwind-color map with dark: classes (high confidence)**
 ```bash
 # A Record<...> literal in a widget that hand-writes dark: status colors -> should be a project UI-package tone map + StatusBadge/StatusDot
 grep -rlnE "Record<[^>]*>\s*=\s*\{" --include="*.tsx" modules/ | xargs grep -lE "dark:bg-(red|green|emerald|amber|blue|orange|slate)-[0-9]" 2>/dev/null
 ```
 Expected: 0 (status maps live in the project-local UI package, e.g. `@<scope>/<ui-package>/{status,...}`)
-Exception: categorical (non-status) palettes — `CATEGORY_COLORS`, `<ENTITY>_TYPE_COLORS`, `TYPE_ICONS`, page-level entity icon-color maps. Verify the map encodes STATUS/SEVERITY, not arbitrary category hues.
+Exception: categorical (non-status) palettes - `CATEGORY_COLORS`, `<ENTITY>_TYPE_COLORS`, `TYPE_ICONS`, page-level entity icon-color maps. Verify the map encodes STATUS/SEVERITY, not arbitrary category hues.
 
-**Pattern 2 — Resurrected named status maps (high confidence)**
+**Pattern 2 - Resurrected named status maps (high confidence)**
 ```bash
 # Replace the alternation with the project's actual resurrected status/severity map names
 grep -rnE "STATUS_COLORS|SEVERITY_COLORS|severityConfig|<status-map-name>" --include="*.tsx" modules/
 ```
 Expected: 0 (all replaced by the project-local shared tone maps)
 
-**Pattern 3 — Raw status dot span (medium confidence)**
+**Pattern 3 - Raw status dot span (medium confidence)**
 ```bash
 grep -rnE "rounded-full (bg-(emerald|red|amber|blue|slate)-[0-9])" --include="*.tsx" modules/
 ```
-Expected: 0 — use `<StatusDot tone=... />`. Exception: documented `{/* raw layout: ... */}` bitmap chips.
+Expected: 0 - use `<StatusDot tone=... />`. Exception: documented `{/* raw layout: ... */}` bitmap chips.
 
 ## AlertBanner Violations (inline tone notice boxes)
 
@@ -502,7 +502,7 @@ Expected: 0 — use `<StatusDot tone=... />`. Exception: documented `{/* raw lay
 # rounded tone box with dark: border/bg -> should be AlertBanner
 grep -rnE 'rounded-md border.*(border-(red|amber|blue|emerald|orange)-200).*(bg-(red|amber|blue|emerald|orange)-50)' --include="*.tsx" modules/
 ```
-Expected: 0 — use `<AlertBanner tone=... density=... />`. Also: `grep -rn "AlarmCallout\|InfoHint\|WarningHint" modules/` should be 0 (promoted to AlertBanner).
+Expected: 0 - use `<AlertBanner tone=... density=... />`. Also: `grep -rn "AlarmCallout\|InfoHint\|WarningHint" modules/` should be 0 (promoted to AlertBanner).
 
 ## StatCard Tint Violations
 
@@ -510,7 +510,7 @@ Expected: 0 — use `<AlertBanner tone=... density=... />`. Also: `grep -rn "Ala
 # conditional className tint ternary on a StatCard -> should be tone + highlighted
 grep -rnE "StatCard" --include="*.tsx" modules/ -A6 | grep -E "className=\{.*\?.*(border-|bg-).*(50|950)"
 ```
-Expected: 0 — use `tone=... highlighted={cond}`.
+Expected: 0 - use `tone=... highlighted={cond}`.
 
 ## Project Layout Composition Violations (SectionHeaderBar / PanelList / SelectableListItem / IndentedSubsection)
 
@@ -524,7 +524,7 @@ grep -rnE 'border-l-2 border-border/50 pl-4' --include="*.tsx" modules/
 # Hand-rolled side-panel state machine (inline <Skeleton> loading list under a panel header) -> PanelList
 grep -rnE '(Array\.from\([^)]*\)|\.map\([^)]*\))[^;]*<Skeleton' --include="*.tsx" modules/
 ```
-Expected: 0 — adopt the project-local layout primitives (e.g. `SectionHeaderBar` / `PanelList` / `SelectableListItem` / `IndentedSubsection`) from the project UI package's `layout` entry (`@<scope>/<ui-package>/layout`). Exception: documented raw-layout exemptions (e.g. a `PanelList` whose loading/empty branches are not a header + list state machine).
+Expected: 0 - adopt the project-local layout primitives (e.g. `SectionHeaderBar` / `PanelList` / `SelectableListItem` / `IndentedSubsection`) from the project UI package's `layout` entry (`@<scope>/<ui-package>/layout`). Exception: documented raw-layout exemptions (e.g. a `PanelList` whose loading/empty branches are not a header + list state machine).
 
 ## LabeledField Violations (re-inlined label + control settings row)
 
@@ -544,7 +544,7 @@ grep -rnE 'overflow-hidden rounded-lg border' --include="*.tsx" modules/
 # Hand-written fixed-height bordered rows (the DetailListRow idiom)
 grep -rnE 'h-10[^"]*border-b[^"]*px-4|border-b[^"]*last:border-b-0' --include="*.tsx" modules/
 ```
-Expected: 0 — use `DetailList` / `DetailListRow` from `@simplix-react/ui`. Exception: `CrudList` tables / form field groups (different primitive).
+Expected: 0 - use `DetailList` / `DetailListRow` from `@simplix-react/ui`. Exception: `CrudList` tables / form field groups (different primitive).
 
 ## ActivityList Violations (hand-rolled recent-activity / event-feed lists)
 
@@ -554,7 +554,7 @@ grep -rnE '(function|const) format(Relative|Absolute)Time' --include="*.tsx" --i
 # Hand-rolled recent-events / recent-activity / entity-feed markup
 grep -rnE 'recent-?events|recent-?activity|activity-feed|EntityFeed' --include="*.tsx" modules/
 ```
-Expected: 0 — use the project-local activity-list primitive (e.g. `ActivityList` from `@<scope>/<ui-package>/activity`), which owns its relative-time formatter and empty state and renders rows from a shared row model. Exception: feeds with bespoke per-row interaction not expressible via that shared row model.
+Expected: 0 - use the project-local activity-list primitive (e.g. `ActivityList` from `@<scope>/<ui-package>/activity`), which owns its relative-time formatter and empty state and renders rows from a shared row model. Exception: feeds with bespoke per-row interaction not expressible via that shared row model.
 
 ## ContextBreadcrumb Violations (inline site/building/floor location strips)
 
@@ -564,7 +564,7 @@ grep -rnE '(<Level1>|<Level2>|<Level3>)[^<]*</[^>]*>[^<]*[/›»·]' --include="
 # Manual separator literal between hierarchy segments
 grep -rnE 'className="[^"]*text-border[^"]*">\s*[/·›»]\s*</span>' --include="*.tsx" modules/
 ```
-Expected: 0 — use the project-local breadcrumb primitive and its segment builder (e.g. `ContextBreadcrumb` + `buildSpatialSegments` from `@<scope>/<ui-package>/spatial`), with a standardized separator (e.g. `ChevronRight`). Exception: non-hierarchy breadcrumbs (router path, category trees).
+Expected: 0 - use the project-local breadcrumb primitive and its segment builder (e.g. `ContextBreadcrumb` + `buildSpatialSegments` from `@<scope>/<ui-package>/spatial`), with a standardized separator (e.g. `ChevronRight`). Exception: non-hierarchy breadcrumbs (router path, category trees).
 
 ## Raw Layout Div Violations (#8)
 
@@ -586,11 +586,11 @@ Expected: only documented parity-coverage handle exceptions (e.g. a single grid 
 # Local DRAG_THRESHOLD_PX redefinition (should import from the project-local UI package)
 grep -rn "const DRAG_THRESHOLD_PX" --include="*.tsx" modules/
 ```
-Expected: 0 — import `DRAG_THRESHOLD_PX` from `@<scope>/<ui-package>` so the tap-vs-drag boundary stays unified.
+Expected: 0 - import `DRAG_THRESHOLD_PX` from `@<scope>/<ui-package>` so the tap-vs-drag boundary stays unified.
 
 ---
 
-## Usability Audit — the screen must be usable, not merely render
+## Usability Audit - the screen must be usable, not merely render
 
 These checks catch the class of defect a compiler cannot: a screen that renders perfectly and still cannot be used. Run them after any CUSTOMIZE task, and whenever a module's backend contract changed.
 
@@ -620,7 +620,7 @@ Expected: every DTO field is edited, deliberately server-owned, or deliberately 
 # An id the user cannot possibly know, typed by hand
 grep -rn 'FormFields.TextField' -B 2 modules/*/src/widgets/*/form.tsx | grep -iE 'fileId|attachmentId|[a-z]+Id"'
 ```
-Expected: 0 — ids come from a picker; files come from the framework file field (`FormFields.FileField` + `createFileFieldApi`).
+Expected: 0 - ids come from a picker; files come from the framework file field (`FormFields.FileField` + `createFileFieldApi`).
 
 ### 3. Edit offered on frozen content (invariant #35)
 
@@ -648,7 +648,7 @@ Expected: 0 each. Enum defaults go through `resolveBootEnum(x) || "DEFAULT"`; in
 # a literal English message thrown from a service reaches the user's dialog verbatim
 grep -rnoE '(conflict|badRequest|notFound|forbidden)\("[^{][^"]*"\)' ../<backend>/modules/*/src/main/java
 ```
-Expected: 0 — every user-facing throw carries `"{error.<module>.<case>}"` with ko/en/ja filled. Then trigger one failure per screen and confirm the dialog's primary line is the server's reason, not a generic per-code sentence.
+Expected: 0 - every user-facing throw carries `"{error.<module>.<case>}"` with ko/en/ja filled. Then trigger one failure per screen and confirm the dialog's primary line is the server's reason, not a generic per-code sentence.
 
 ### 6. Time-of-day inputs (invariant #37)
 
@@ -660,7 +660,7 @@ grep -rn 'placeholder="HH:mm"' --include="*.tsx" modules/ apps/
 # a per-module copy of the LocalTime <-> TimeValue conversion
 grep -rn "function .*[Ll]ocalTime\|function timeString" --include="*.tsx" modules/ apps/
 ```
-Expected: 0 each. Every wall-clock field uses `FormFields.TimeField` with the shared `parseLocalTime` / `formatLocalTime` (detail rows: `displayLocalTime`) from the project's shared UI package. Then open each form and confirm an OPTIONAL time has a gate (mode select or `SwitchField`) — a picker showing `12:00 AM` while the DTO carries nothing is the defect this catches.
+Expected: 0 each. Every wall-clock field uses `FormFields.TimeField` with the shared `parseLocalTime` / `formatLocalTime` (detail rows: `displayLocalTime`) from the project's shared UI package. Then open each form and confirm an OPTIONAL time has a gate (mode select or `SwitchField`) - a picker showing `12:00 AM` while the DTO carries nothing is the defect this catches.
 
 ---
 
@@ -696,11 +696,11 @@ rg -n 'type: "toggle", field: "deleted"' modules --glob '*/list.tsx'
 # a long filter form still rendered as one column
 rg -L 'popoverColumns' modules --glob '*/list.tsx' | xargs rg -c '\{ type: "' | rg ':[6-9]|:[0-9]{2}'
 ```
-Expected: 0, 0, 0, and no long-form single-column lists. Then open the popover and read it as the persona — the axis they search by every day must be the first field. When pruning leaves a screen without its natural axis (the work date, the leave type), ADD that axis (dateRange on the domain date, faceted over the reference's names) — pruning alone is half the fix.
+Expected: 0, 0, 0, and no long-form single-column lists. Then open the popover and read it as the persona - the axis they search by every day must be the first field. When pruning leaves a screen without its natural axis (the work date, the leave type), ADD that axis (dateRange on the domain date, faceted over the reference's names) - pruning alone is half the fix.
 
 ### 9. Ungated admin API calls in shared hooks (permission-blind fetches)
 
-A shared name-resolver / options hook that unconditionally calls an admin batch list (`/admin/**` search) turns every non-admin screen that embeds it into a 403 error dialog for ordinary users — even though the DTOs already carry server-enriched names.
+A shared name-resolver / options hook that unconditionally calls an admin batch list (`/admin/**` search) turns every non-admin screen that embeds it into a 403 error dialog for ordinary users - even though the DTOs already carry server-enriched names.
 
 ```bash
 # shared hooks calling an admin list without a permission gate
@@ -710,7 +710,7 @@ Review each hit: if the endpoint is `@PreAuthorize hasPermission(...)`-gated and
 
 ### 10. Calendar-board legend / empty-state / editor-guard violations
 
-A board offering both month and gantt views draws two different color vocabularies (day-status colors vs the gantt bar language), so one static legend misreads in the other family — a late worker's blue work bar decodes as "present" against the status legend. And a grid editor whose default tool is destructive, or whose unsaved edits vanish on navigation, destroys work silently.
+A board offering both month and gantt views draws two different color vocabularies (day-status colors vs the gantt bar language), so one static legend misreads in the other family - a late worker's blue work bar decodes as "present" against the status legend. And a grid editor whose default tool is destructive, or whose unsaved edits vanish on navigation, destroys work silently.
 
 ```bash
 # a board with gantt views whose legend never switches to the bar legend
@@ -726,7 +726,7 @@ Expected: 0 hits each. Then drive the board in the browser: switch month → gan
 
 ### 11. Search-form uniformity violations (hand-rolled params, filter order, count badge)
 
-Every screen-level query condition — a list's filters AND an aggregation report's parameters (a company + period, an as-of preset) — renders through the ONE search form: `CrudList.FilterBar`. Non-CrudList surfaces drive it with the standalone `useFilterBarState` hook; the total badge comes from the FilterBar `count` prop (which renders the shared `ListTotalBadge`), never a hand-placed badge or a bespoke box.
+Every screen-level query condition - a list's filters AND an aggregation report's parameters (a company + period, an as-of preset) - renders through the ONE search form: `CrudList.FilterBar`. Non-CrudList surfaces drive it with the standalone `useFilterBarState` hook; the total badge comes from the FilterBar `count` prop (which renders the shared `ListTotalBadge`), never a hand-placed badge or a bespoke box.
 
 ```bash
 # aggregation/report surfaces still rendering query params as inline form fields
@@ -747,11 +747,11 @@ for path in glob.glob("modules/*/src/**/*.tsx", recursive=True):
             print(path, types)
 PY
 ```
-Expected: 0 hits for the first two. The order sweep lists candidates — review each against invariant #16 before reordering (some option-first layouts were user-approved; do not bulk-rewrite without confirmation). Then verify in the browser: every tab of the audited page opens its conditions behind the same 검색 button, applied conditions appear as removable chips, and the total badge is the same pill on every tab.
+Expected: 0 hits for the first two. The order sweep lists candidates - review each against invariant #16 before reordering (some option-first layouts were user-approved; do not bulk-rewrite without confirmation). Then verify in the browser: every tab of the audited page opens its conditions behind the same 검색 button, applied conditions appear as removable chips, and the total badge is the same pill on every tab.
 
 ## Scaffold Locale Default Violations (untranslated widget locale sections)
 
-The scaffold CLI seeds every locale (`modules/<m>/src/locales/widgets/{ko,ja}.json`) with English default strings ("Add New EntityName", "No entityNames found"). A section left untranslated renders an English page title, header action, and empty state on a localized screen — and a `git checkout` of a locale file can silently drop a scaffold-added section entirely, making the app fall back to English.
+The scaffold CLI seeds every locale (`modules/<m>/src/locales/widgets/{ko,ja}.json`) with English default strings ("Add New EntityName", "No entityNames found"). A section left untranslated renders an English page title, header action, and empty state on a localized screen - and a `git checkout` of a locale file can silently drop a scaffold-added section entirely, making the app fall back to English.
 
 ### Detection Patterns
 
@@ -776,7 +776,7 @@ print('untranslated scaffold defaults:', hits)
 PY
 ```
 
-Also diff section presence across locales — a section existing in `en.json` but missing from `ko.json`/`ja.json` is the git-restore variant of this defect:
+Also diff section presence across locales - a section existing in `en.json` but missing from `ko.json`/`ja.json` is the git-restore variant of this defect:
 
 ```bash
 python3 - <<'PY'

@@ -8,11 +8,11 @@
 //
 // **It is the residue of running the verification, never the goal of it.** Whether an agent wrote
 // the document first and then made the screens match it is not machine-visible and stays with the
-// coordinator. What is visible is the shape, and that is what these gates hold — a section per
+// coordinator. What is visible is the shape, and that is what these gates hold - a section per
 // demanded line, three labels under each, evidence under that, and every capture on disk.
 //
 // **The naming rule is the capture bound.** An image is named after the frame it shows and, where
-// that frame draws a content tab strip, after the pane of it — so a chapter holds one image per
+// that frame draws a content tab strip, after the pane of it - so a chapter holds one image per
 // frame it places plus one per further pane the board draws on those frames, and the board is what
 // says how many that is. A chapter that places no frame cites no image at all and carries the
 // command and what came back instead. Everything a sweep produced beyond the cited set stays in
@@ -20,7 +20,7 @@
 //
 // **The words are the project's and the shapes are the skill's.** Which word a ledger writes for a
 // closed chapter, what a chapter's persona line looks like, what the three labels under a section
-// are called — all declared, all read through `ctx`. What is fixed here is what a project does not
+// are called - all declared, all read through `ctx`. What is fixed here is what a project does not
 // get to vary without the checks becoming unreadable: one image format, one capture-name grammar,
 // one ceiling on the bytes and one floor under how much of a canvas they cover. A second format
 // would mean a second reader for every name and a ceiling that means something different on each
@@ -38,26 +38,26 @@ const CAPTURE_BYTES = 150 * 1024;
  * The bytes per megapixel below which a capture holds no more than an empty canvas.
  *
  * <p><b>A blank capture is consistent with everything except the file.</b> The taker read the
- * screen, the screen was right, and what landed on disk is a white rectangle — nothing in the run
+ * screen, the screen was right, and what landed on disk is a white rectangle - nothing in the run
  * disagrees with anything else, and the sentence written beside it reads correctly. Only the bytes
  * know: a screenshot of text and borders does not compress, and an empty one has nothing to
  * compress.
  *
  * <p><b>The measure is bytes against the canvas, because bytes alone measure the window and the
  * encoder as much as the screen.</b> Two things vary that nobody declares. Encoding quality moves
- * the same pixels by a third — one sign-in frame runs 5,048 bytes at q40 and 7,848 at q95 — and
+ * the same pixels by a third - one sign-in frame runs 5,048 bytes at q40 and 7,848 at q95 - and
  * the canvas moves them by the area, so a blank shot at a device pixel ratio of two costs four
  * times a blank shot at one. Against an absolute count both read as a fuller screen, and the
  * second passes a blank 2880×1800 capture outright at 9,320 bytes.
  *
  * <p><b>Density is flat across both, which is what makes it the right measure.</b> An empty canvas
  * costs a near-fixed number of bytes per macroblock, so it lands at 1,800 to 2,000 bytes per
- * megapixel at every quality and every canvas — 2,394 bytes at q95 and 2,398 at q40 for the same
+ * megapixel at every quality and every canvas - 2,394 bytes at q95 and 2,398 at q40 for the same
  * white 1440×900, 1,798 per megapixel for the same page at twice the ratio, 2,017 on a phone
  * canvas. The sparsest legitimate screen sits well above: a sign-in form on a plain ground, about
  * as little as a real screen ever draws, measures 3,895 at q40 and 6,056 at q95, and the console
  * screens beside it 4,660 and 5,452 at that same floor quality. This number is the geometric
- * middle of that gap — 39% above the highest blank reading and 28% under the lowest real one — so
+ * middle of that gap - 39% above the highest blank reading and 28% under the lowest real one - so
  * a project encoding anywhere in the usual range has room on both sides, and re-encoding a
  * picture larger buys nothing.
  */
@@ -65,12 +65,12 @@ const CAPTURE_FLOOR_PER_MPX = 2800;
 
 
 /**
- * A capture's file name: the frame it shows, and — where the frame draws a content tab strip —
+ * A capture's file name: the frame it shows, and - where the frame draws a content tab strip -
  * which pane of that strip, or which of the states navigation cannot reach.
  *
  * <p><b>The name is the bound.</b> `a-17.webp` is the frame as the board draws it, with the pane
  * the strip marks open; `a-17-t3.webp` is that frame's third pane. A frame therefore holds exactly
- * as many images as the board draws panes for it, and a frame with no strip holds one — so the
+ * as many images as the board draws panes for it, and a frame with no strip holds one - so the
  * repository ceiling stays a number read off the board rather than a number that grows with how
  * thorough somebody felt.
  *
@@ -79,8 +79,8 @@ const CAPTURE_FLOOR_PER_MPX = 2800;
  *
  * <p><b>The frame id carries its state letter, and it belongs to the id rather than to the
  * variant.</b> A board drawn with `simplecore:wireframe-boards` gives every state of a screen its
- * own frame and its own permanent id — `n-02a` is the overview pane, `n-02k` the one with no
- * vendor profile — so a pattern that stopped at the digits read `n-02a.webp` as no capture name at
+ * own frame and its own permanent id - `n-02a` is the overview pane, `n-02k` the one with no
+ * vendor profile - so a pattern that stopped at the digits read `n-02a.webp` as no capture name at
  * all. That is the quiet direction: the gate demanding a reason for every capture then found no
  * capture to demand one for, and a board whose every frame carries a letter got a clean run out of
  * a check that had read nothing. The letter goes inside the second group so a caller composing
@@ -93,7 +93,7 @@ export const CAPTURE_NAME = /^([a-z])-(\d{2,}[a-z]?)(?:-t\d+|-empty|-error)?\.we
  *
  * <p>A demand names its captures in running prose, usually in backticks, several to a clause. The
  * anchored form above answers 「is this string a capture name」 and this one answers 「which capture
- * names does this line contain」 — two questions, and deriving the second by stripping the anchors
+ * names does this line contain」 - two questions, and deriving the second by stripping the anchors
  * off the first is how a reader ends up matching `a-01.webp` inside `data-01.webp`.
  */
 const CAPTURE_IN_TEXT = /\b[a-z]-\d{2,}[a-z]?(?:-t\d+|-empty|-error)?\.webp\b/g;
@@ -102,7 +102,7 @@ const CAPTURE_IN_TEXT = /\b[a-z]-\d{2,}[a-z]?(?:-t\d+|-empty|-error)?\.webp\b/g;
  * One demand line's clauses.
  *
  * <p><b>The clause is the unit, not the line.</b> A demand line is a run of clauses joined by
- * 「. 」 — open the screen, press the panes, check the empty list, press the row actions — and a
+ * 「. 」 - open the screen, press the panes, check the empty list, press the row actions - and a
  * line whose empty-list clause gives its reason while its pane clause gives none is precisely the
  * habit the reason exists to break. Read line-wide, that line passes on its neighbour's sentence.
  *
@@ -116,11 +116,11 @@ const clauses = (line) => line.split(/(?<=[.。])\s+/);
  *
  * <p><b>The trailing letter is part of the id, not a suffix on it.</b> A board drawn with
  * `simplecore:wireframe-boards` gives every state of a screen its own frame and its own permanent
- * id — `N-02a` is the overview tab and `N-02k` the one with no vendor profile — so a pattern
+ * id - `N-02a` is the overview tab and `N-02k` the one with no vendor profile - so a pattern
  * stopping at the digits reads `N-02` out of `N-02k` and then fails the boundary that follows it.
  * What that costs is silence: the chapter places a frame, the check reads no frame placed, and the
  * gate that would have demanded a capture of it reports the same nothing as a chapter with no
- * screens. It is bounded rather than open — one lowercase letter, and `N-02abc` matches nothing.
+ * screens. It is bounded rather than open - one lowercase letter, and `N-02abc` matches nothing.
  */
 const FRAME_ID = /\b[A-Z]-\d{2,}[a-z]?\b/g;
 
@@ -173,8 +173,8 @@ const INDEX_NAME = /^(00|_|README)/i;
 /**
  * The names a CHAPTER folder's own index takes.
  *
- * <p>**`00-` is deliberately not one of them.** A project is free to number its first chapter 00 —
- * a foundation chapter that places no frames is exactly the thing a project numbers 00 — and
+ * <p>**`00-` is deliberately not one of them.** A project is free to number its first chapter 00 -
+ * a foundation chapter that places no frames is exactly the thing a project numbers 00 - and
  * reserving that prefix on this side does not fail, it goes silent: the chapter is read as the
  * folder's index, its demands are counted by nobody, its result document is opened by nobody, and
  * every gate over it reports the same zero as a chapter with nothing wrong. One project ran that
@@ -191,7 +191,7 @@ const folded = (text) => text.replace(/\s+/g, '');
  *
  * <p>Read by shape, exactly as `ledgerGate` reads it: a markdown file directly in the folder, and
  * its chapter is the first segment of its name. A project naming chapters `w01-…` gets `W01` and
- * one naming them `stage-1-…` gets `STAGE`, which is why the two readers have to agree — a chapter
+ * one naming them `stage-1-…` gets `STAGE`, which is why the two readers have to agree - a chapter
  * the ledger names and these gates do not is a chapter nothing holds.
  */
 function chapterOf(file) {
@@ -200,17 +200,17 @@ function chapterOf(file) {
   return file.replace(/\.md$/, '').split('-')[0].toUpperCase();
 }
 
-/** A file the folder keeps for itself rather than for one chapter — its index, its readme. */
+/** A file the folder keeps for itself rather than for one chapter - its index, its readme. */
 const isIndex = (name) => name.endsWith('.md') && INDEX_NAME.test(name);
 
 /** Every chapter the chapter folder holds, by the id its file name carries. */
 function chapterFiles(ctx) {
   const out = new Map();
-  // The chapter folder's own index is not a chapter, and `00-` cannot say so on this side — a
+  // The chapter folder's own index is not a chapter, and `00-` cannot say so on this side - a
   // project is free to number its first chapter 00. What settles it is that the project DECLARED
   // that file as its chapter overview, so it is excluded by identity rather than by its name.
   // Without this, a project whose index is `00-overview.md` grows a chapter called `00`, and the
-  // evidence folder's own index — conventionally the same name — becomes that chapter's result
+  // evidence folder's own index - conventionally the same name - becomes that chapter's result
   // document and is asked to prove lines the index never demands.
   const overview = ctx.at('chapterOverview');
   const indexName = overview ? String(overview).split('/').pop() : null;
@@ -227,12 +227,12 @@ function chapterFiles(ctx) {
  *
  * <p>A row whose first cell is a chapter this folder holds and one of whose later cells is the
  * project's word for closed. The word is declared; without it nothing is closed, every gate here
- * goes quiet, and `doctor` says which key is why — which is the whole point of grading that key
+ * goes quiet, and `doctor` says which key is why - which is the whole point of grading that key
  * `closing`.
  *
  * <p>**Which column carries the state is the project's, not this reader's.** A ledger that writes
  * the chapter's name beside its number, or what is left to do beside its state, is an ordinary
- * shape and a legible one — and a reader anchored on the second cell does not fail on it, it goes
+ * shape and a legible one - and a reader anchored on the second cell does not fail on it, it goes
  * silent, which is the state every gate downstream inherits. The comparison is against a whole
  * cell, so a row whose prose happens to contain the word is not read as a closed chapter.
  */
@@ -244,8 +244,8 @@ function closedChapters(ctx) {
  * The chapters the ledger records as closed, split by what closed them.
  *
  * <p><b>A person can close a chapter, and that is a different fact from a chapter closing on its
- * evidence.</b> Whoever owns the product may decide a chapter is done — the screens are good
- * enough, the round has cost more than it is worth, the work has moved on — and the build has no
+ * evidence.</b> Whoever owns the product may decide a chapter is done - the screens are good
+ * enough, the round has cost more than it is worth, the work has moved on - and the build has no
  * standing to refuse that. What it does have is a duty not to let the two look alike afterwards: a
  * chapter closed by decision has no verification behind it, and every check that reads a closed
  * chapter's evidence would otherwise report its absence as a defect, which teaches whoever meets
@@ -256,7 +256,7 @@ function closedChapters(ctx) {
  * changes**: a project that has never closed a chapter this way reads exactly as before.
  *
  * @param ctx the project
- * @returns `onEvidence` — closed with verification behind it — and `onDecision`
+ * @returns `onEvidence` - closed with verification behind it - and `onDecision`
  */
 function closedRows(ctx) {
   const onEvidence = new Set();
@@ -283,7 +283,7 @@ function closedRows(ctx) {
 /**
  * The headings one chapter demands of its evidence document, in the chapter's own order.
  *
- * <p>A heading is the chapter's section number, that section's title, and the role — a persona
+ * <p>A heading is the chapter's section number, that section's title, and the role - a persona
  * where the chapter places screens, and the verdict role where it places foundation a machine
  * proves. The whole string is built and matched whole, so a title carrying its own separator needs
  * no splitting.
@@ -314,7 +314,7 @@ function demandedHeadings(ctx, rel) {
   return headings;
 }
 
-/** The frames one chapter places — the screens its headings name and the states hanging off them. */
+/** The frames one chapter places - the screens its headings name and the states hanging off them. */
 function framesPlaced(ctx, rel) {
   const placed = new Set();
   const text = ctx.read(rel);
@@ -336,7 +336,7 @@ function framesPlaced(ctx, rel) {
 }
 
 /**
- * The frames one chapter places that somebody is told to prove — a base screen whose section
+ * The frames one chapter places that somebody is told to prove - a base screen whose section
  * carries a persona line, and the states hanging off that same section.
  *
  * <p>A verdict line does not count. That line is proved by a command and what came back, which is
@@ -376,7 +376,7 @@ function demandedFrames(ctx, rel) {
 /**
  * The frames one result document photographs, as the ids its images are named after.
  *
- * <p>Whose section carries the image is not this reader's business — a frame is photographed once
+ * <p>Whose section carries the image is not this reader's business - a frame is photographed once
  * per document and any section may be the one that shows it. A pane capture counts as a photograph
  * of its frame: the question is whether a browser was ever opened on the screen, and it was.
  */
@@ -395,8 +395,8 @@ function capturedFrames(text, stem) {
 /**
  * Which frame each frame is drawn on top of, as the board's own source records it.
  *
- * <p>A board draws a state, a dialog or a companion pane-set by importing the frame it sits on —
- * `import base, { head } from './b-02-site-detail.mjs'` — and that import is the only place the
+ * <p>A board draws a state, a dialog or a companion pane-set by importing the frame it sits on -
+ * `import base, { head } from './b-02-site-detail.mjs'` - and that import is the only place the
  * relationship is written down. It is the same kind of board knowledge this file already carries
  * in `CAPTURE_NAME`, which spells a pane as `<frame>-t<pane>`.
  *
@@ -408,7 +408,7 @@ function capturedFrames(text, stem) {
  */
 function drawnOn(ctx) {
   // Its own pattern rather than `FRAME_ID`: board sources name a frame in lower case, and that
-  // constant is both upper-case-only and global — an `exec` against a global regex carries its
+  // constant is both upper-case-only and global - an `exec` against a global regex carries its
   // `lastIndex` into the next call, so reusing it here would read every other file correctly.
   const STEM = /^([a-z]-\d{2,})(?:-[a-z0-9-]+)?$/;
   const declared = ctx.declared('boardRoot');
@@ -426,9 +426,9 @@ function drawnOn(ctx) {
   return base;
 }
 
-/** Every frame a capture of this one also stands for — itself, what it is drawn on, and so on up. */
+/** Every frame a capture of this one also stands for - itself, what it is drawn on, and so on up. */
 /**
- * The frames whose module declares no address of its own — no `route` and no `url`.
+ * The frames whose module declares no address of its own - no `route` and no `url`.
  *
  * <p>A frame with no address and no base is a shared pattern: a list shape or a confirm dialog
  * drawn inside other screens, which no journey can open on its own and no picture is owed for.
@@ -465,12 +465,12 @@ function upFrom(id, base) {
  * One evidence document read as its sections.
  *
  * <p>`proseLines` is not enough here. A section that proves a machine verification carries the
- * command and what came back, and a fenced block is the one thing `proseLines` removes — so a
+ * command and what came back, and a fenced block is the one thing `proseLines` removes - so a
  * document made entirely of those would read as a document with no evidence in it at all.
  *
  * <p>The quoted rule is carried whole rather than as its first line. A rule long enough to wrap
  * wraps wherever the sentence happens to reach the margin, and two documents wrap it in different
- * places — so a reader that stopped at the newline would hand the quote check half a sentence and
+ * places - so a reader that stopped at the newline would hand the quote check half a sentence and
  * call the other half missing.
  */
 function evidenceSections(text, labels, placeholder = null) {
@@ -504,7 +504,7 @@ function evidenceSections(text, labels, placeholder = null) {
     if (!current) return;
     // A demand met by 「the same component as this picture」 rather than by a picture of its own.
     // Collected here rather than in a reader of its own, because a section's evidence is one
-    // question — what does this section show — and three answers to it read together.
+    // question - what does this section show - and three answers to it read together.
     const stood = placeholder?.exec(line);
     if (stood) current.discharged.push({ proof: (stood[1] ?? '').trim(), no: i + 1 });
     const said = quoted.exec(line);
@@ -525,7 +525,7 @@ function evidenceSections(text, labels, placeholder = null) {
       current.quotes.push({ text: listed[1], no: i + 1 });
     } else {
       quoting = false;
-      // A blank line inside a list does not end it — an ordered list with a blank between items
+      // A blank line inside a list does not end it - an ordered list with a blank between items
       // is one list, and the markdown renderer reads it that way too.
       if (line.trim()) listing = false;
     }
@@ -533,12 +533,12 @@ function evidenceSections(text, labels, placeholder = null) {
       if (line.startsWith(`**${label}**`)) current.labels.add(label);
     }
     // What was operated, kept as its own text. A section's addresses are written here and
-    // nowhere else — 「본 것」 says what was on the screen and the quote is the chapter's own
-    // sentence — so a gate asking WHERE a run was driven reads this and not the section.
+    // nowhere else - 「본 것」 says what was on the screen and the quote is the chapter's own
+    // sentence - so a gate asking WHERE a run was driven reads this and not the section.
     //
     // **Both shapes the label takes.** It is either a sentence on the label's own line or a
     // heading with the steps bulleted under it, and in the second the addresses are in the
-    // bullets — so a reader that takes the label line alone comes back with the word 「조작」 and
+    // bullets - so a reader that takes the label line alone comes back with the word 「조작」 and
     // nothing else, which is indistinguishable from a section that named no address.
     //
     // **`steps` keeps what `text` folds away.** The joined text answers 「did this section name an
@@ -618,7 +618,7 @@ function labelsOf(ctx) {
 /**
  * The bytes a file takes.
  *
- * <p>`ctx` reads text and answers whether a path is there, and neither answers this — a capture is
+ * <p>`ctx` reads text and answers whether a path is there, and neither answers this - a capture is
  * binary, so the length of its utf8 decoding is not its size.
  */
 function byteSize(ctx, rel) {
@@ -629,7 +629,7 @@ function byteSize(ctx, rel) {
 /**
  * The reader for a demand discharged as 「the same component as this picture」, or null.
  *
- * <p>A grammar that will not compile is `configGate`'s finding, not this file's — here it simply
+ * <p>A grammar that will not compile is `configGate`'s finding, not this file's - here it simply
  * means no such line can be recognised, and every check over one is skipped rather than run
  * against a pattern nobody can trust.
  */
@@ -645,8 +645,8 @@ function placeholderOf(ctx) {
 /**
  * What a project's own gates read out of the evidence folder, bound to one repository.
  *
- * <p>A project keeps gates of its own over the same documents — whether the frame a capture shows
- * can be reached again, whether every pane the board draws was photographed — and those gates
+ * <p>A project keeps gates of its own over the same documents - whether the frame a capture shows
+ * can be reached again, whether every pane the board draws was photographed - and those gates
  * cannot import this file: the skill is installed somewhere different on every machine. So the
  * readers arrive on `ctx`, one definition, and a project gate never writes a second copy that
  * drifts from this one.
@@ -673,14 +673,14 @@ export function evidenceReaders(ctx) {
 //
 // **`closedChapterHasAJourneyRun` reads a chapter's status, so nothing watches a chapter that is
 // still open.** A chapter can run for hours, fill its capture folder, and have no result document
-// at all, and every check in this skill stays green — because each of them asks whether a document
+// at all, and every check in this skill stays green - because each of them asks whether a document
 // that exists is complete, and none of them asks whether one exists yet.
 //
 // That silence is where the inversion the result-document rule exists to prevent actually begins.
 // The rule says the document is the residue of running the verification: a section is written when
 // its line has been run and while what was on the screen is still in front of whoever ran it. What
 // takes its place is pictures first and sentences fitted to them afterwards, and the sentences
-// that come out of that are true of nothing — a description of a product somebody then built to
+// that come out of that are true of nothing - a description of a product somebody then built to
 // match. Nothing downstream catches it: the captures are all there, the sections cite them, and
 // the one property the arrangement depends on is quietly gone.
 //
@@ -689,7 +689,7 @@ export function evidenceReaders(ctx) {
 // finding. A second frame shot with still no document says the first one's section was never
 // written, and that is a state with no legitimate reading.
 //
-// A warning rather than an error, because the gate cannot see a document about to land — what it
+// A warning rather than an error, because the gate cannot see a document about to land - what it
 // can do is put the question in front of whoever is holding the chapter, at the point where the
 // answer is still cheap.
 
@@ -730,9 +730,9 @@ export const evidenceKeepsPaceWithItsCaptures = {
 
 // ── The screen that was built and never opened ──────────────────────────────
 //
-// A chapter can pass every check a machine has — typecheck, lint, the frontend audit, the language
+// A chapter can pass every check a machine has - typecheck, lint, the frontend audit, the language
 // audit, every endpoint probed against a running server, every drawn figure traced back to the
-// seed — and still hand over screens that render the application shell and nothing inside it.
+// seed - and still hand over screens that render the application shell and nothing inside it.
 // Every request answers 200, no console error is raised, and the route measures the length of the
 // shell exactly. None of those checks opens a browser, so none of them can tell a built screen
 // apart from an empty one.
@@ -752,8 +752,8 @@ export const evidenceKeepsPaceWithItsCaptures = {
 // carry a picture would fire on a document that is exactly right. A frame needs one capture
 // somewhere in the document, whoever's section shows it.
 //
-// **A frame whose section demands nobody prove it is outside this.** The other side of the line —
-// a frame with an address must be demanded of somebody — belongs to the check that reads the
+// **A frame whose section demands nobody prove it is outside this.** The other side of the line -
+// a frame with an address must be demanded of somebody - belongs to the check that reads the
 // board, so between the two there is no frame a browser can reach that neither holds. What falls
 // out is the shared-pattern cluster, drawn inside other screens with no address of its own to send
 // a browser to; the chapter files say which frames those are, so this needs no list of letters.
@@ -787,8 +787,8 @@ export const everyPlacedFrameIsCaptured = {
       const shown = capturedFrames(text, stem);
 
       for (const id of [...framesPlaced(ctx, `${dir}/${file}`)].sort()) {
-        // A frame the board draws on top of another has no screen of its own — opening it lands on
-        // the base's address and draws the base's panes — so the base's picture is its picture.
+        // A frame the board draws on top of another has no screen of its own - opening it lands on
+        // the base's address and draws the base's panes - so the base's picture is its picture.
         if (upFrom(id, base).some((at) => shown.has(at))) continue;
         // A frame with no address and no base is drawn inside other screens; the journey that
         // opens the screen it lives in is the one that sees it, and no picture is owed under its name.
@@ -808,7 +808,7 @@ export const everyPlacedFrameIsCaptured = {
 //
 // The quoted label is copied out of the chapter file, and the chapter file is generated from the
 // board. So a board fix regenerates the chapter and the closed chapter's section goes on quoting a
-// sentence the chapter no longer carries — and the section then reads as a record of somebody
+// sentence the chapter no longer carries - and the section then reads as a record of somebody
 // verifying a rule that is gone. Nothing about it looks wrong: the labels are all there, the
 // capture is on disk, and the two gates above pass it whole.
 //
@@ -834,14 +834,14 @@ export const everyPlacedFrameIsCaptured = {
 // section proving a line its chapter does not demand, and reporting it twice would have one defect
 // redden two gates.
 //
-// It judges every result document rather than only a closed chapter's — a wrong quote is wrong
+// It judges every result document rather than only a closed chapter's - a wrong quote is wrong
 // while the walk is still running, and the sooner the write-time hook says so the cheaper it is.
 
 /**
  * The chapter tokens and frame ids each parked item names, one entry per item.
  *
  * <p><b>An item is a bullet and the lines under it</b>, because a park is written as a sentence
- * that wraps — the chapter it belongs to is on the first line and the frames it names are usually
+ * that wraps - the chapter it belongs to is on the first line and the frames it names are usually
  * on the next. Read line by line, a park would only ever match on whichever half happened to
  * carry both.
  */
@@ -865,7 +865,7 @@ function parkedItems(ctx) {
  *
  * <p><b>The gate's own message offers this and the gate has to honour it.</b> A board changes the
  * contract of a screen a closed chapter already built, the chapter that rebuilds it is named and
- * queued, and until it runs there is no product to run the demand against — so the section cannot
+ * queued, and until it runs there is no product to run the demand against - so the section cannot
  * be rewritten and the finding cannot be cleared. Telling somebody to write that down and then
  * reporting them anyway teaches that writing it down is worthless.
  *
@@ -881,7 +881,7 @@ function parkedFor(items, chapter, frame) {
   return items.some((item) => item.includes(one) && item.includes(other));
 }
 
-/** The frame a section is about, from its heading — 「1. A-04 · Activity …」 is `A-04`. */
+/** The frame a section is about, from its heading - 「1. A-04 · Activity …」 is `A-04`. */
 function frameOf(title) {
   return /\b([A-Za-z]{1,4}-\d{1,3})\b/.exec(title)?.[1] ?? null;
 }
@@ -891,7 +891,7 @@ function frameOf(title) {
 // ── A check that ran, and this installation cannot decide ───────────────────
 //
 // **The third outcome, and it is neither of the two everybody plans for.** A verification line is
-// run rather than reasoned about — that is the whole rule — and sometimes running it answers
+// run rather than reasoned about - that is the whole rule - and sometimes running it answers
 // 「not here」: the boundary the line proves is not enforced by THIS installation, and no amount of
 // running it again will change that. A database whose application connects as a superuser cannot
 // demonstrate row ownership; a deployment with no second factor cannot demonstrate a challenge; a
@@ -899,24 +899,24 @@ function frameOf(title) {
 //
 // **It is not 「did not happen」 and it is not 「passed」.** Recorded as the first, it reads as work
 // somebody skipped and the chapter cannot close over it. Recorded as the second, the product
-// carries a boundary nobody has ever seen hold — which is exactly the class of defect the whole
+// carries a boundary nobody has ever seen hold - which is exactly the class of defect the whole
 // evidence arrangement exists to stop.
 //
 // **It is a debt, and a debt names its creditor.** The section records what was run and what came
 // back, exactly as any other section does, and adds one line naming **the chapter that will be
-// able to decide it** — the chapter that installs the role, the second factor, the second tenant.
+// able to decide it** - the chapter that installs the role, the second factor, the second tenant.
 // The chapter that met the wall CLOSES: its work was done and the answer it got is the honest one.
 // **The named chapter is the one that cannot close** while the line stands, and settling it is
 // part of that chapter's own run.
 //
 // **Then, and only then, the earlier document is edited.** An earlier chapter's result document is
-// otherwise never touched — it records what was true when that chapter closed. This is the one
+// otherwise never touched - it records what was true when that chapter closed. This is the one
 // exception, and it is not really one: the document recorded a debt against itself, and paying it
 // is what the document asked for. Remove the line and write what was finally seen, in the same
 // change that settles it.
 //
 // **Why this needs two checks rather than a habit.** The line is written by whoever hit the wall,
-// and read — if anyone reads it — by whoever closes a chapter three weeks later. Nothing connects
+// and read - if anyone reads it - by whoever closes a chapter three weeks later. Nothing connects
 // those two people but the name in the line, and a name nobody checks is a name that goes stale
 // the first time a chapter is renumbered.
 
@@ -1003,7 +1003,7 @@ export const chapterOwedACheckDoesNotClose = {
 //
 // A capture carries no record of the window it was shot in, and that is the whole difficulty: a
 // run whose browser came back at 1280 where the board measures at 1440 writes files of a plausible
-// size, transcribes the page correctly, and reports nothing — while a tree's first data row, four
+// size, transcribes the page correctly, and reports nothing - while a tree's first data row, four
 // of nine table rows and an entire panel form sit below the fold in none of the pictures. The
 // judging that follows spends its findings on 「no capture covers this」, one per screen, and the
 // run has to be taken again from the start.
@@ -1016,8 +1016,8 @@ export const chapterOwedACheckDoesNotClose = {
 /**
  * The pixel canvas a WebP states in its own header, or null when the bytes do not say.
  *
- * <p>Three encodings and all three appear in practice — `VP8 ` from a plain lossy encode, `VP8L`
- * from a lossless one, `VP8X` the moment alpha or metadata is present — so a reader that knew only
+ * <p>Three encodings and all three appear in practice - `VP8 ` from a plain lossy encode, `VP8L`
+ * from a lossless one, `VP8X` the moment alpha or metadata is present - so a reader that knew only
  * the first would go quiet on whichever half of a project's captures carried transparency.
  */
 function webpCanvas(buf) {
@@ -1048,7 +1048,7 @@ function webpCanvas(buf) {
  * <p>Named rather than merely refused, because the commonest way a capture becomes unmeasurable is
  * a driver's own screenshot filed under the capture name without being encoded: nine files in one
  * project's evidence folder opened as PNG under a `.webp` name, passing the name check and the size
- * ceiling — neither of which opens a byte — and telling the two gates that do open one nothing at
+ * ceiling - neither of which opens a byte - and telling the two gates that do open one nothing at
  * all. 「Not a WebP」 sends the reader looking for corruption; 「this is a PNG」 says what to run.
  */
 function looksLike(buf) {
@@ -1074,12 +1074,12 @@ function standardsOf(ctx) {
  * Every capture on disk was taken at a width the project declared.
  *
  * <p>A whole multiple of a declared width passes, because a run at a device pixel ratio of two
- * writes a file twice as wide from a window that was exactly right — the CSS pixels are the
+ * writes a file twice as wide from a window that was exactly right - the CSS pixels are the
  * standard and the file records the device ones.
  *
  * <p><b>「I could not tell」 is a finding rather than a silence.</b> A capture whose header does not
  * parse is one this gate has said nothing about, and a gate that goes quiet on what it could not
- * read is indistinguishable from one that read everything and found it sound — which is the exact
+ * read is indistinguishable from one that read everything and found it sound - which is the exact
  * shape of the failure it exists to end.
  */
 export const everyCaptureIsAtADeclaredWidth = {
@@ -1124,7 +1124,7 @@ export const everyCaptureIsAtADeclaredWidth = {
 // ── The other half of the standard ─────────────────────────────────────────
 //
 // **The header records the window and says nothing about the scheme, so this one reads the
-// pixels.** That is a real cost — a decoder has to run — and it buys the half of `captureStandard`
+// pixels.** That is a real cost - a decoder has to run - and it buys the half of `captureStandard`
 // that was declared, described in the config as the thing that goes wrong, and held by nobody: six
 // captures in one project were taken in dark mode where the board measures in light, and the run
 // reported nothing. Two more reached a chapter's evidence folder five days after the console they
@@ -1134,7 +1134,7 @@ export const everyCaptureIsAtADeclaredWidth = {
 // separates the two cases in an application UI is the whole range: one console's captures measure
 // 12–14 in dark and 248 in light. The band below is set far wider than that gap on both sides, so
 // what fires is a screen shot in the wrong scheme rather than a screen with a lot of dark content
-// in it — and a frame that genuinely sits between the two says nothing, which is the right answer
+// in it - and a frame that genuinely sits between the two says nothing, which is the right answer
 // for a picture whose scheme its own pixels do not settle.
 
 /** Where a capture stops being merely dark-ish and starts contradicting a declared scheme. */
@@ -1165,19 +1165,19 @@ function captureLuma(path) {
  * Every capture on disk is in the colour scheme the project declared.
  *
  * <p><b>It judges only where the project said one thing.</b> Standards that name different schemes,
- * or a scheme of `no-preference`, leave nothing to hold against — a board that is genuinely drawn
+ * or a scheme of `no-preference`, leave nothing to hold against - a board that is genuinely drawn
  * both ways has declared exactly that, and a gate that picked one of them would redden on frames
  * that are right.
  *
  * <p><b>A decoder it cannot run is a finding rather than a silence.</b> `dwebp` ships beside the
  * `cwebp` that wrote these files, so its absence means the captures were encoded somewhere this
- * check has never run — and a gate that goes quiet there is indistinguishable from one that read
+ * check has never run - and a gate that goes quiet there is indistinguishable from one that read
  * every picture and found them sound.
  *
  * <p><b>Why it is a warning.</b> A rule written after captures already exist finds a backlog, and
  * the backlog belongs to whichever chapters took those pictures rather than to the chapter that
  * happens to be closing. Reddening the tree would hold that chapter hostage to somebody else's
- * debt. **It is promoted to `error` in the change that drives the count to zero** — which arrives
+ * debt. **It is promoted to `error` in the change that drives the count to zero** - which arrives
  * on its own, because an open chapter re-takes its captures when it runs.
  */
 export const everyCaptureIsInTheDeclaredScheme = {
@@ -1231,7 +1231,7 @@ export const everyCaptureIsInTheDeclaredScheme = {
 // is a white rectangle. Nothing disagrees with anything, which is why only the bytes can raise it.
 //
 // **What it raises is 「open this one」, and that is a warning rather than an error.** The reading
-// it points at — is the screen in this picture built, or is it the shell — is one this skill has
+// it points at - is the screen in this picture built, or is it the shell - is one this skill has
 // already given to a person by name, and the byte count neither takes that reading nor stands in
 // for it. What it does is narrow the pile that reading starts from. A rule that is right to fire
 // and wrong to fail on is what the warning grade is for, and failing here has a specific cost
@@ -1240,8 +1240,8 @@ export const everyCaptureIsInTheDeclaredScheme = {
 // that really is blank.
 //
 // **The grade sits on the gate, so the floor is a gate of its own.** It travels with the captures
-// a result document shows, and the gate it used to travel inside answers a different question —
-// whether a closed chapter's document has the sections, labels, evidence and files it owes — and
+// a result document shows, and the gate it used to travel inside answers a different question -
+// whether a closed chapter's document has the sections, labels, evidence and files it owes - and
 // answers it in defects. Two kinds of finding under one id would be two rules sharing an id, and
 // no case could be written that pinned either.
 
@@ -1253,13 +1253,13 @@ export const everyCaptureIsInTheDeclaredScheme = {
  * once → `CAPTURE_FLOOR_PER_MPX`.
  *
  * <p><b>What it does not claim.</b> A capture of a built shell with nothing inside it passes here
- * and always will — a shell draws a header, a sidebar and their text, and that is a picture with
+ * and always will - a shell draws a header, a sidebar and their text, and that is a picture with
  * something on it. Whether the screen in the picture is built is the coordinator's reading before
  * the ledger row is written, and `../SKILL.md`'s second table names it.
  *
  * <p><b>The shape that answers 「the picture is right」 is a long one.</b> A full-page capture whose
  * lower two thirds are legitimately empty dilutes exactly the way a blank one does, and only
- * somebody opening it can part those — which is the same reason the grade is a warning rather than
+ * somebody opening it can part those - which is the same reason the grade is a warning rather than
  * a reason to widen the number until nothing fires.
  *
  * <p><b>「I could not measure it」 is a finding rather than a silence.</b> A file whose header will
@@ -1274,17 +1274,17 @@ export const everyCaptureIsInTheDeclaredScheme = {
  *
  * <p>A board draws every state of a screen as its own frame, so a chapter's folder holds the base and
  * each state beside it. When the run opens a state by its address and the screen does not enter that
- * state — the flag it reads was never set, the action that produces it was never taken — what comes
+ * state - the flag it reads was never set, the action that produces it was never taken - what comes
  * back is the base screen, shot and filed under the state's name.
  *
  * <p><b>Nothing else in this file can see it.</b> The size is right, the density is fine, the name
  * matches a frame the chapter places, the file is on disk and the document cites it. Every check
  * passes because each picture is examined alone, and the defect exists only BETWEEN two of them.
  * One real chapter shipped a base screen under 「등록 키트 생성 완료」 that way, and it was noticed
- * because two byte counts happened to print identically — which is not a way of noticing anything.
+ * because two byte counts happened to print identically - which is not a way of noticing anything.
  *
  * <p>Identical bytes are never legitimate. Two frames drawing the same screen still differ somewhere
- * — a marked tab, an open dialog, a banner — or the board would not draw them twice; and a state a
+ * - a marked tab, an open dialog, a banner - or the board would not draw them twice; and a state a
  * frame draws over a base that is genuinely indistinguishable is a frame the board should not have.
  */
 export const noTwoCapturesAreTheSamePicture = {
@@ -1368,8 +1368,8 @@ export const everyCaptureIsDenserThanAnEmptyCanvas = {
 // ── A capture demanded out of habit, and one demanded for a reason ──────────
 //
 // A chapter's per-screen half is generated, so the capture names in it are emitted by a rule
-// rather than judged one at a time. That is right for the names — the board says which panes a
-// frame draws — and it produces a demand list nobody can give a reason for: one chapter set asked
+// rather than judged one at a time. That is right for the names - the board says which panes a
+// frame draws - and it produces a demand list nobody can give a reason for: one chapter set asked
 // for 1040 pictures and said of not one of them why a picture was the witness.
 //
 // **Two things follow, and both were met in one week.** A frame whose three panes were unbuilt
@@ -1381,26 +1381,26 @@ export const everyCaptureIsDenserThanAnEmptyCanvas = {
 // **The reason is what separates the two.** `references/demands.md` names three cases in which a
 // picture is the only witness and three in which it is not, and a demand that asks for a capture
 // says which of the three it is asking for, in the clause that names the file. **Whether the
-// reason is true stays with eyes** — a claim about the running application is not in the chapter
-// file — and that it was given is what this sees.
+// reason is true stays with eyes** - a claim about the running application is not in the chapter
+// file - and that it was given is what this sees.
 
 
 
 // A chapter section is a unit of work, and what makes it one is that something closes it: a
 // persona proves it by walking the screen, or a machine proves it by holding a rule the whole
-// console has to obey. A section carrying neither has a build line and nothing under it — the
+// console has to obey. A section carrying neither has a build line and nothing under it - the
 // screen gets built and the chapter closes on having proved nothing of it.
 //
 // **It reads as a chapter with nothing wrong.** Every gate downstream of this one takes its
 // demands from the persona and verdict lines a section carries, so a section that carries none
-// contributes no demand, no heading and no capture — and `closedChapterHasAJourneyRun` and
+// contributes no demand, no heading and no capture - and `closedChapterHasAJourneyRun` and
 // `everyPlacedFrameIsCaptured` both come out green over a screen
 // nobody ever asked anything of. The absence is what makes them quiet, which is why nothing
 // already here could find it.
 //
 // **The two cases it separates are a generator's, not a person's.** A chapter set is generated
 // from the board, so a frame the persona map resolves to nobody produces a section with a build
-// line and no line beneath it — 43 of them in one chapter, and four more scattered singly through
+// line and no line beneath it - 43 of them in one chapter, and four more scattered singly through
 // chapters whose other sections were fine. A per-chapter count sees the first and is blind to the
 // second: a chapter reading 8 build lines and 24 persona lines looks healthy while one of its
 // eight sections closes on nothing. The section is the unit, and this is the only reading that
@@ -1411,7 +1411,7 @@ export const everyCaptureIsDenserThanAnEmptyCanvas = {
 // the verdict word. Read what those demands say first: press the tab, press the row action, open
 // the empty list at its address, leave a capture. Every one of them is a person in a browser, and
 // where the project declares an address that renders one frame, a pattern is opened at its own
-// address like anything else — so it wants the persona the chapter itself names. The verdict word
+// address like anything else - so it wants the persona the chapter itself names. The verdict word
 // is for a line a MACHINE proves, and labelling browser acts with it makes one word mean two
 // things in the field every check over a chapter's evidence keys on.
 //
@@ -1421,7 +1421,7 @@ export const everyCaptureIsDenserThanAnEmptyCanvas = {
 
 
 
-/** The journeys a chapter names: `### <n>. <persona> — <title>` headings, in order. */
+/** The journeys a chapter names: `### <n>. <persona> - <title>` headings, in order. */
 function journeysOf(text) {
   const out = [];
   for (const { line } of proseLines(text)) {
@@ -1508,7 +1508,7 @@ export const journeyTestsDriveTheApplication = {
   run: (ctx) => {
     const route = String(ctx.declared('captureRoute') ?? '');
     const stem = route.includes('<') ? route.slice(0, route.indexOf('<')) : route;
-    // A frame route that is not an address — a test's name on a desktop product — renders nothing a
+    // A frame route that is not an address - a test's name on a desktop product - renders nothing a
     // journey could be driven at, so there is nothing to read the tests for.
     if (!stem.trim() || !/^(?:https?:\/\/|\/)/.test(stem.trim())) return [];
     const journey = ctx.declared('journeyRoute');
@@ -1547,7 +1547,7 @@ export const EVIDENCE_GATES = [
 // ── The cases that prove them ───────────────────────────────────────────────
 //
 // **The words below are one project's and the shapes are the skill's.** Every Korean string here
-// arrives through `WORDS`, which is a project's config rather than this file's knowledge — so a
+// arrives through `WORDS`, which is a project's config rather than this file's knowledge - so a
 // case written in another language would exercise exactly the same code, and a reader can tell at
 // a glance which half of a gate is fixed. What the cases pin down is the shape: a section per
 // demanded line, three labels under each, a picture or a fenced block, and a quote that is part of
@@ -1562,12 +1562,12 @@ const WORDS = {
 
 /**
  * A foundation chapter demanding one machine verification, and a screen chapter demanding two
- * persona lines. The screen chapter also places a shared pattern — a frame drawn inside other
+ * persona lines. The screen chapter also places a shared pattern - a frame drawn inside other
  * screens, with no address of its own and nobody told to open it.
  *
  * <p><b>That last section carries a build line and nothing under it on purpose</b>, and it is what
- * a gate over closing lines would fire on. Every gate here reads past it — a section
- * with no persona line and no verdict line contributes no demand, no heading and no capture — so
+ * a gate over closing lines would fire on. Every gate here reads past it - a section
+ * with no persona line and no verdict line contributes no demand, no heading and no capture - so
  * this fixture is the shape of a chapter that reports green while one of its screens was never
  * asked for anything, and the cases below hold it against the section that closes properly.
  */
@@ -1596,7 +1596,7 @@ const LEDGER = (w01, w02) => `# 챕터 상태\n\n| 챕터 | 상태 |\n| --- | --
 
 /**
  * The same ledger writing each chapter's name between its number and its state, and a note after
- * it — the shape a project reaches for the moment its table is meant to be read by a person.
+ * it - the shape a project reaches for the moment its table is meant to be read by a person.
  *
  * <p>The note deliberately contains the closed word inside a sentence, so the reader is held to a
  * whole cell rather than to the row containing the word somewhere.
@@ -1610,7 +1610,7 @@ const LEDGER_NAMED = (w01, w02) =>
  * The one capture the screen chapter's document shows.
  *
  * <p>The body stands in for a picture in the two dimensions the gates over a result document
- * read — it is on disk under a name that parses, and it sits under the size ceiling. It states no
+ * read - it is on disk under a name that parses, and it sits under the size ceiling. It states no
  * canvas, so it is not a fixture for anything that opens a picture: the gates that do are proved
  * against `webpOf`, whose bytes are the real header layout.
  */
@@ -1622,7 +1622,7 @@ const CAPTURE = (body = `RIFF····WEBP${'\0'.repeat(9 * 1024)}`) => ({ 'docs/
  * <p><b>The bytes are the real layout rather than a stand-in</b>, because the thing under test is
  * a reader of those bytes: a fixture that agreed with the reader by construction would pass
  * whatever the reader did with an actual file. `lossy` writes the `VP8 ` header a plain encode
- * produces, and the `VP8X` form is what appears the moment alpha or metadata is present — both
+ * produces, and the `VP8X` form is what appears the moment alpha or metadata is present - both
  * are met in a real evidence folder, and a reader that knew one would go silent on the other.
  */
 function webpOf(width, height, { form = 'lossy', bytes = 9 * 1024 } = {}) {
@@ -1677,7 +1677,7 @@ const W02_SCOPE_SECTION =
 
 /**
  * The same screen section proved by an endpoint probe instead of by a picture. Every label is
- * there and something was run, so the shape gate above passes it whole — which is the defect this
+ * there and something was run, so the shape gate above passes it whole - which is the defect this
  * is a fixture of: the server answered and nobody opened a browser.
  */
 const W02_PROBE_SECTION =
@@ -1741,7 +1741,7 @@ const QUOTED_EVIDENCE =
 
 /**
  * The same section with the chapter's demands numbered and the result document quoting them item
- * by item — the shape a chapter takes once its walk outgrows one sentence.
+ * by item - the shape a chapter takes once its walk outgrows one sentence.
  */
 const LISTED_CHAPTER =
   '# W02. 조직·계정\n\n## 1. A-01 로그인\n\n'
@@ -1797,7 +1797,7 @@ const PANES_REASON_NEXT_DOOR =
  *
  * <p>A board gives every state of a screen its own frame and its own permanent id, so `a-01k` is
  * as ordinary a frame as `a-01`. A capture pattern that stops at the digits reads this line as
- * naming no capture, and the gate then demands a reason for nothing — going quiet on a whole board
+ * naming no capture, and the gate then demands a reason for nothing - going quiet on a whole board
  * in the one direction that reads as a pass.
  */
 const PANES_UNREASONED_STATE_LETTER =
@@ -1832,7 +1832,7 @@ const W02_DISCHARGE = (proof) =>
   + '**본 것** — 두 번째 칸과 같은 자리표시자 컴포넌트다.\n\n'
   + `**같은 컴포넌트** — ${proof}\n\n`;
 
-/** A section carrying every label and showing nothing — no picture, no block, no discharge. */
+/** A section carrying every label and showing nothing - no picture, no block, no discharge. */
 const W02_SILENT_SECTION =
   '## 1. A-01 로그인 · 안전관리자\n\n'
   + '**한 일** — 범위 밖 사업장의 주소를 직접 부른다.\n'
@@ -1876,7 +1876,7 @@ export function cases(t) {
 
   // A board that gives every state of a screen its own frame writes ids with a state letter on
   // them, which is what `simplecore:wireframe-boards` draws. A pattern stopping at the digits reads
-  // no frame out of such a heading, and this gate then demands nothing — the same silence as a
+  // no frame out of such a heading, and this gate then demands nothing - the same silence as a
   // chapter with no screens.
   t.add(
     'everyPlacedFrameIsCaptured',
@@ -1932,7 +1932,7 @@ export function cases(t) {
     false
   );
 
-  // A companion frame — the panes a base's strip names and its own frame does not draw. Opening it
+  // A companion frame - the panes a base's strip names and its own frame does not draw. Opening it
   // lands on the base's address and draws the base's panes, so the base's picture is its picture.
   // Holding out for a file under its own id buys a byte-for-byte copy of a sibling; one project
   // filed exactly that, and in the folder it read like a second observation.
@@ -1985,7 +1985,7 @@ export function cases(t) {
     }),
     true,
   );
-  // A dialog drawn on a companion, which is drawn on the base. The chain is walked to the top —
+  // A dialog drawn on a companion, which is drawn on the base. The chain is walked to the top -
   // stopping at one step would redden the second storey of a board that stacks them.
   t.add(
     'everyPlacedFrameIsCaptured',
@@ -2083,7 +2083,7 @@ export function cases(t) {
   );
 
 
-  // everyCaptureIsAtADeclaredWidth — the one half of the capture standard a file still remembers.
+  // everyCaptureIsAtADeclaredWidth - the one half of the capture standard a file still remembers.
   const shot = (files, standard = STANDARD) =>
     t.project({ config: { ...WORDS, captureStandard: standard }, files });
 
@@ -2122,7 +2122,7 @@ export function cases(t) {
     true,
   );
   // Alpha or metadata moves the canvas into a `VP8X` chunk. A reader that knew only the plain
-  // lossy header would report every such capture as unmeasurable — or, worse, measure none of them.
+  // lossy header would report every such capture as unmeasurable - or, worse, measure none of them.
   t.add(
     'everyCaptureIsAtADeclaredWidth',
     'a capture carrying alpha, whose canvas sits in the extended chunk',
@@ -2130,7 +2130,7 @@ export function cases(t) {
     false,
   );
 
-  // everyCaptureIsInTheDeclaredScheme — the half no header carries, so these fixtures are real
+  // everyCaptureIsInTheDeclaredScheme - the half no header carries, so these fixtures are real
   // encoded pixels rather than a hand-built header. A synthetic one would decode to nothing and
   // the gate would go quiet on every case, which is the state it exists to end.
   const DARK_SHOT = Buffer.from('UklGRhoAAABXRUJQVlA4TA4AAAAvB8ABAAcQEf0PRET/Aw==', 'base64');
@@ -2225,7 +2225,7 @@ export function cases(t) {
   // **Both edges of this one are measured rather than argued**, because the gap between them is
   // narrow and every number in it belongs to a real encode: `blank` is a white 1440×900 canvas at
   // q80 and `sparse` is the sparsest real screen a board draws, a sign-in form on a plain ground,
-  // taken through the same window and the same encoder. The second is the edge that matters — a
+  // taken through the same window and the same encoder. The second is the edge that matters - a
   // floor set anywhere above it turns a correct picture red, and the only way to green one is to
   // re-encode it larger, which is a change to the file that silences the check for the next one
   // that really is blank.
@@ -2261,7 +2261,7 @@ export function cases(t) {
     true,
   );
   // A phone canvas pays the fixed header cost over a fifth of the pixels, which lifts an empty
-  // canvas nearer the floor than a desktop one — the direction that narrows the margin.
+  // canvas nearer the floor than a desktop one - the direction that narrows the margin.
   t.add(
     'everyCaptureIsDenserThanAnEmptyCanvas',
     'a blank phone canvas, where the fixed cost is the largest share of the file',
@@ -2312,7 +2312,7 @@ export function cases(t) {
     false,
   );
   // Two chapters photographing the same unbuilt placeholder are two folders, and a folder is where a
-  // frame's siblings live — so the comparison stays inside one.
+  // frame's siblings live - so the comparison stays inside one.
   t.add(
     'noTwoCapturesAreTheSamePicture',
     'identical pictures in two different chapters',
@@ -2361,7 +2361,7 @@ export function cases(t) {
 
   // Nothing watched an open chapter before this: every other check here asks whether a document
   // that exists is complete. The floor is two frames because shooting one and then writing its
-  // section is the right order — the second frame is what says the first section never happened.
+  // section is the right order - the second frame is what says the first section never happened.
   const shooting = (files) => t.project({
     config: { ...WORDS, chapterDir: 'chapters', stateLedger: 'tracking/STATE.md' },
     files: { ...CHAPTER_TEXT, 'tracking/STATE.md': LEDGER('열림', '열림'), ...files },
@@ -2410,7 +2410,7 @@ export function cases(t) {
   //
   // The two sections below differ in one line each and are otherwise identical: every label is
   // there, something was pressed, a picture is shown, and the quoted demand is the chapter's own
-  // sentence. That is the whole difficulty — a run driven at `?frame=a-02` and one driven through
+  // sentence. That is the whole difficulty - a run driven at `?frame=a-02` and one driven through
   // the product write down the same destination, and only the address says which happened.
 
   const JOURNEY = 'http://localhost:5173/';
@@ -2438,7 +2438,7 @@ export function cases(t) {
 
   // **A frame address contains the journey address**, because one is the other with a query on
   // the end. Read without taking the frame addresses out first, every ordinary capture demand in
-  // the repository names the journey route and this gate reports the whole set — which is how it
+  // the repository names the journey route and this gate reports the whole set - which is how it
   // read on its first run against a real project: five sections, none of them journeys.
   const CAPTURING =
     '## 1. A-01 로그인 · 시스템 관리자\n\n'
@@ -2451,7 +2451,7 @@ export function cases(t) {
 
 
   // The label as a heading with the steps bulleted under it, which is where a real document keeps
-  // its addresses. Read as the label line alone, this section names no address at all — and a
+  // its addresses. Read as the label line alone, this section names no address at all - and a
   // walked journey then reads exactly like one nobody drove.
   const WALKED_IN_BULLETS =
     '## 1. A-01 로그인 · 시스템 관리자\n\n'
@@ -2466,7 +2466,7 @@ export function cases(t) {
   // **One section pays several demands, and only one of them is the journey.** A screen section
   // opens its own frame address to compare two locales, takes its pictures there, and then opens
   // the product to press the way back. Read as one string, the block names a frame address and the
-  // section is called driven at a frame route — which pushed a real document into writing that
+  // section is called driven at a frame route - which pushed a real document into writing that
   // address as prose to get past the gate, losing the reader the address they would have copied.
   const WALKED_BESIDE_FRAME_WORK =
     '## 1. A-01 로그인 · 시스템 관리자\n\n'

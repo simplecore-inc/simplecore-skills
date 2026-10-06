@@ -1,5 +1,5 @@
 // C-02 · Filling one thing in on a phone. The confirming verb sits in the fixed bar at the
-// bottom because there is no page header to hang it on — that absence is exactly what tells the
+// bottom because there is no page header to hang it on - that absence is exactly what tells the
 // two cases apart.
 import { worker_ } from '../chrome.mjs';
 import { formGrid, fText, fSelect, fArea, btn, msg } from '../components.mjs';

@@ -12,7 +12,7 @@
     --accent-tint: #fdeee7;
     --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     --sans: system-ui, -apple-system, "Segoe UI", "Helvetica Neue", sans-serif;
-    --row-max: 1464px;      /* widest device frame (1440) + one gap — fixes where a row wraps */
+    --row-max: 1464px;      /* widest device frame (1440) + one gap - fixes where a row wraps */
     --frame-zoom: 1;        /* display scale only; stepped down by the media queries below */
   }
 
@@ -49,7 +49,7 @@
 
 
 
-  /* Display scale only — the design basis stays at true device pixels, so a label that
+  /* Display scale only - the design basis stays at true device pixels, so a label that
      overflows at 390px still overflows here. Stepped down as the window narrows, which is what
      keeps the no-sideways-scroll promise on a laptop as well as on a wide monitor.
      Each step is derived, not guessed: a row needs `--row-max × zoom + 254px` (the sidebar and
@@ -153,7 +153,7 @@
   }
   .sidebar .brand { font-size: 13px; font-weight: 800; padding: 4px 8px 10px; }
   /* A heading, not a caption: the tree opens with every group shut, so on a navigator nobody has
-     touched these five lines are the whole of it — set below the rows they open onto, they read as
+     touched these five lines are the whole of it - set below the rows they open onto, they read as
      a footnote to an empty pane. The twisty and the mark lead, and the rows below indent to sit
      under the mark. */
   .nav-group { display: flex; align-items: center; gap: 6px; font: 12px var(--mono); color: var(--faint); letter-spacing: 0.04em; padding: 12px 8px 4px; }
@@ -164,7 +164,7 @@
   .nav-item.active { background: var(--fill-deep); color: var(--ink); font-weight: 700; }
   .sidebar.rail { flex-basis: 60px; align-items: center; } /* collapsed at the narrow breakpoint */
   .sidebar.rail .nav-item { justify-content: center; }
-  /* :not(.ic) keeps the glyph — the icon is a span too */
+  /* :not(.ic) keeps the glyph - the icon is a span too */
   .sidebar.rail .brand, .sidebar.rail .nav-group, .sidebar.rail .nav-item span:not(.ic) { display: none; }
   .main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
   .topbar { display: flex; align-items: center; gap: 12px; padding: 10px 16px; border-bottom: 1px solid var(--fill-deep); }
@@ -189,8 +189,8 @@
   .trow:first-child { border-top: 0; }
   .trow.thead { background: var(--fill); font: 600 11px var(--mono); color: var(--muted); letter-spacing: 0.04em; }
   /* `overflow-wrap` is what stops a cell painting over its neighbour. A flex column with
-     `min-width: 0` shrinks below its content, and a word with nowhere to break — a host name, a
-     key, an identifier — then draws straight across the column beside it. Nothing overflows the
+     `min-width: 0` shrinks below its content, and a word with nowhere to break - a host name, a
+     key, an identifier - then draws straight across the column beside it. Nothing overflows the
      BOX, so no scrollbar appears and nothing is clipped; two facts simply occupy the same pixels.
      `anywhere` also lets the column report a smaller minimum, which is what keeps the rest of the
      row where it belongs. */
@@ -199,7 +199,7 @@
   .td.fix { flex: 0 0 110px; }
   .td.right { text-align: right; }
   /* A cell holding a proper noun. `.td` breaks anywhere so a long value cannot escape its column,
-     which turns 「OpenDataLoader PDF 2.5.0」 into 「OpenDataLoade / r PDF 2.5.0」 — a name split
+     which turns 「OpenDataLoader PDF 2.5.0」 into 「OpenDataLoade / r PDF 2.5.0」 - a name split
      mid-word reads as a rendering fault rather than as a name. Wraps at spaces instead. */
   .td.name { overflow-wrap: normal; }
   .pagination { display: flex; align-items: center; gap: 6px; padding: 2px; font: 11px var(--mono); color: var(--muted); }
@@ -245,7 +245,7 @@
   .btn.primary { background: var(--fill-deep); }
   .btn.ghost { border-style: dashed; color: var(--muted); }
   /* A blocked step. Without it a board writes `btn('다음', '')` and gets the ordinary filled
-     button — heavier than the enabled ghost beside it — so the one control the reader may NOT
+     button - heavier than the enabled ghost beside it - so the one control the reader may NOT
      press is the one their eye lands on. Drawn as the palest fill with a hollow mark, which
      reads as unavailable at a glance and still reads in one accent colour. */
   .btn.off { background: none; border-style: dotted; color: var(--faint); }
@@ -339,14 +339,14 @@
 
   /* ══ Product primitives ═══════════════════════════════════════════
      Confidence grades, source tiers, and health states are encoded by
-     LIGHTNESS, BORDER STYLE, and WORDS — never by hue. The board keeps
+     LIGHTNESS, BORDER STYLE, and WORDS - never by hue. The board keeps
      exactly one accent, reserved for connectors, stickies, folds, and
      OPEN notes, so a reviewer argues about flow rather than color. */
 
   /* ── app shell ────────────────────────────────────────────────────
      This product is an app in a browser, not a scrolling page: the window
      height is fixed and every pane scrolls inside itself. Three panes at
-     once — answer/source/evidence, or list/detail/activity — only work that
+     once - answer/source/evidence, or list/detail/activity - only work that
      way; a page scroll would carry the answer off screen the moment the
      reader reached for its evidence. The fold therefore lands exactly on
      the window bottom and nothing is drawn below it. */
@@ -373,7 +373,7 @@
     color: var(--muted); background: var(--screen); white-space: nowrap; }
   .tb-btn.on { background: var(--fill-deep); border-color: var(--line-strong); color: var(--ink); }
   /* The unread count sits INSIDE the chip. A badge hung outside the box overflows it,
-     and on this board an overflow is a finding — a decoration must not raise one. */
+     and on this board an overflow is a finding - a decoration must not raise one. */
   .tb-chip.bell.on { background: var(--fill-deep); border-color: var(--line-strong); color: var(--ink); font-weight: 700; }
 
   /* work area: navigation · work · inspection */
@@ -383,7 +383,7 @@
   .ws .pane.work { flex: 1; }
   .ws .pane.insp { flex: 0 0 340px; border-left: 1px solid var(--line); background: var(--paper); }
   .ws .pane.insp.lg { flex-basis: 430px; }
-  /* collapsed pane — a rail keeps the toggle discoverable instead of hiding it */
+  /* collapsed pane - a rail keeps the toggle discoverable instead of hiding it */
   .prail { flex: 0 0 34px; border-right: 1px solid var(--line); background: var(--paper);
     display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 8px 0; }
   .prail.right { border-right: 0; border-left: 1px solid var(--line); }
@@ -398,11 +398,11 @@
     font: 11px var(--mono); color: var(--faint); background: var(--screen); margin-bottom: 4px; }
   .ws .nav-group { font-size: 11px; padding: 5px 6px 2px; }
   .ws .nav-group .ic { width: 12px; height: 12px; }
-  /* 25 items in five groups have to fit a 900px window without clipping — the navigator
+  /* 25 items in five groups have to fit a 900px window without clipping - the navigator
      is the one pane whose content cannot scroll out of sight, since it is how every other
      screen is reached. Density is the lever; dropping items is not. */
   .ws .nav-item { padding: 2px 6px; font-size: 12px; }
-  /* The guide runs under the heading's mark and the rows sit inside it — a column of rows level
+  /* The guide runs under the heading's mark and the rows sit inside it - a column of rows level
      with the thing that opens them says nothing about belonging to it. */
   .ws .nav-rows { margin-left: 12px; padding-left: 10px; border-left: 1px solid var(--line); }
   .ws .nav-group { padding: 5px 6px 1px; }
@@ -414,7 +414,7 @@
   .ws .toolbar { padding: 7px 10px; flex: 0 0 auto; border-bottom: 1px solid var(--line); background: var(--screen); }
   .ws .toolbar .actions { align-items: center; gap: 6px; }
 
-  /* One control scale for the whole window — see the block under 「데스크톱 창의 컨트롤 크기」. */
+  /* One control scale for the whole window - see the block under 「데스크톱 창의 컨트롤 크기」. */
 
   /* A strip at the head of a pane body spans the pane and carries the boundary itself. */
   .ws .pane-body > .tabs { margin: -12px -12px 0; padding: 8px 12px 0; background: var(--fill);
@@ -438,7 +438,7 @@
   .appstatus .sbl, .appstatus .sbr { display: flex; align-items: center; gap: 12px; }
   .appstatus .sbr { margin-left: auto; }
   /* The board's fold badge sits over the bottom-right corner of every desktop frame. The
-     status bar stops short of it so board annotation never covers product content — a
+     status bar stops short of it so board annotation never covers product content - a
      collision here reads as a truncated status message, which is a defect that is not there. */
   .frame.desktop .appstatus .sbr { padding-right: 128px; }
   .appstatus .seg { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
@@ -446,7 +446,7 @@
   .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--ink); flex: 0 0 auto; }
   .dot.off { background: transparent; border: 1.5px solid var(--line); }
 
-  /* command palette — 62 screens are not findable through a menu alone */
+  /* command palette - 62 screens are not findable through a menu alone */
   .palette { position: absolute; left: 50%; top: 74px; transform: translateX(-50%); z-index: 2; width: 520px;
     background: var(--screen); border: 1.5px solid var(--line-strong); border-radius: 10px; overflow: hidden;
     box-shadow: 4px 6px 0 rgba(31,36,48,.12); }
@@ -562,7 +562,7 @@
   .stg.wait { color: var(--faint); border-style: dashed; }
   .stg.wait .sdot { border-color: var(--faint); }
   .stg.fail { border-width: 2px; border-style: dotted; font-weight: 700; }
-  /* Held: stopped at this step with nothing wrong with it — a quarantined document, a queue an
+  /* Held: stopped at this step with nothing wrong with it - a quarantined document, a queue an
      allowance stopped. Solid and bold like `run` so it reads as a step something is sitting at,
      with the dot half-empty rather than sweeping, which is what tells the two apart. */
   .stg.hold { border-color: var(--line-strong); border-width: 2px; padding: 2px 8px; font-weight: 700; }
@@ -606,7 +606,7 @@
   .tabs .tb { font: 600 10.5px var(--mono); color: var(--muted); border: 1px solid transparent; border-bottom: 0;
     border-radius: 5px 5px 0 0; padding: 4px 10px; background: transparent; white-space: nowrap; }
   .tabs .tb.on { background: var(--screen); color: var(--ink); border-color: var(--line); }
-  /* the ask surface has no left nav — a slim brand bar carries project + account */
+  /* the ask surface has no left nav - a slim brand bar carries project + account */
   .askbar { display: flex; align-items: center; gap: 10px; padding: 9px 16px; border-bottom: 1px solid var(--fill-deep); }
   .askbar .mark { width: 18px; height: 18px; border: 1.5px solid var(--line-strong); border-radius: 5px; }
   .askbar .brand { font-size: 13px; font-weight: 800; }
@@ -623,7 +623,7 @@
      The touch-sized defaults belong to a phone and to the entry surfaces (signing in, activating),
      where a control is the only thing on screen. Inside an application window the same button sits
      in a toolbar, a card, a table cell and a dialog, and three heights in one row read as three
-     different kinds of control — which is why this is scoped to the FRAME rather than to the work
+     different kinds of control - which is why this is scoped to the FRAME rather than to the work
      area: a dialog is an overlay outside `.ws`, and scoping it there left every dialog at the
      touch scale beside a window drawn at the window scale. */
   .frame.desktop .btn { border-width: 1px; border-radius: 6px; padding: 4px 10px; font-size: 11px; }
@@ -632,7 +632,7 @@
   .frame.desktop .label { font-size: 11px; }
   .frame.desktop .chip { padding: 2px 9px; font-size: 11px; }
   .frame.desktop .field { gap: 3px; }
-  /* The line under a field explains the box above it, so it is smaller than the label — at body
+  /* The line under a field explains the box above it, so it is smaller than the label - at body
      size it reads as a paragraph the form is making rather than as a note about one box. */
   .frame.desktop .field .t-sub, .frame.desktop .modal .hint { font-size: 10.5px; line-height: 1.45; }
   .frame.desktop .modal { padding: 14px; gap: 9px; border-radius: 10px; }
@@ -673,7 +673,7 @@
   .empty .t-title { font-size: 15px; }
   .empty .actions { display: flex; gap: 8px; margin-top: 3px; }
 
-  /* Two columns INSIDE one pane — a tree beside its list, a form beside its preview.
+  /* Two columns INSIDE one pane - a tree beside its list, a form beside its preview.
      Not `.pane` again: panes are the window's own division and carry their own borders. */
   .psplit { flex: 1; min-height: 0; display: flex; gap: 12px; }
   .psplit > .pl { flex: 0 0 224px; min-width: 0; overflow: hidden; display: flex; flex-direction: column; gap: 6px; }
@@ -691,7 +691,7 @@
   .tnode .cnt { margin-left: auto; font: 10px var(--mono); color: var(--faint); }
   .tnode.on { background: var(--fill-deep); color: var(--ink); font-weight: 700; }
 
-  /* a suggested question — a row the reader can take as written */
+  /* a suggested question - a row the reader can take as written */
   .suggest { display: flex; align-items: center; gap: 9px; border: 1px solid var(--line);
     border-radius: 8px; padding: 9px 11px; font-size: 13px; background: var(--screen); }
   .suggest .qm { font: 700 10px var(--mono); color: var(--muted); border: 1px solid var(--line);
@@ -705,7 +705,7 @@
   .askbox { border: 1.5px solid var(--line-strong); border-radius: 10px; background: var(--screen);
     padding: 13px 14px; display: flex; flex-direction: column; gap: 11px; }
   .askbox .ph { font-size: 14px; color: var(--faint); }
-  /* NOT `.row` — that class belongs to the board's own frame rows and carries
+  /* NOT `.row` - that class belongs to the board's own frame rows and carries
      `zoom: var(--frame-zoom)`, which would scale a frame's contents a second time. */
   .hrow { display: flex; align-items: center; gap: 8px; }
   /* A form row. Top-aligned because a one-line input beside a multi-line one is centred by
@@ -716,18 +716,18 @@
   .hrow .grow { flex: 1; }
 
   /* The kit ships grid-2/3/4. Quality measurement reports five numbers that are read
-     against each other, so they need one row of five — without this rule `grid(5, …)`
+     against each other, so they need one row of five - without this rule `grid(5, …)`
      silently stacks and the comparison it exists for is lost. */
   .grid-5 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
 
   /* Content in a pane keeps its natural height and the pane overflows. Without this the
-     flex column SHRINKS its children, and a table — which clips inside its own
-     `overflow: hidden` for the rounded corner — loses rows with no scrollbar and no sign
+     flex column SHRINKS its children, and a table - which clips inside its own
+     `overflow: hidden` for the rounded corner - loses rows with no scrollbar and no sign
      that anything is missing. Overflow is a finding on this board; silent shrinkage is not. */
   .pane-body > * { flex-shrink: 0; }
   .pane-body > .mdview, .pane-body > .psplit, .pane-body > .graphview { flex-shrink: 1; }
 
-  /* Table bodies carry real values on this board — query results, rate tables — and at
+  /* Table bodies carry real values on this board - query results, rate tables - and at
      the body's default size they tower over the 11px mono header and the surrounding
      key-value rows. Sized here rather than in the base table rules, which stay as the kit
      writes them. */
@@ -736,7 +736,7 @@
   /* ── AI assistance mark ───────────────────────────────────────────
      Every place the product proposes something rather than knowing it carries this
      mark, so a reader can tell a fact from a suggestion at a glance. Distinguished by
-     DOTTED BORDER and the glyph, never by colour — the board keeps one accent and it
+     DOTTED BORDER and the glyph, never by colour - the board keeps one accent and it
      is reserved for connectors, pins, folds and OPEN notes. */
   .ai { display: inline-flex; align-items: center; gap: 4px; vertical-align: 1px;
     border: 1px dotted var(--line-strong); border-radius: 4px; padding: 1px 6px;
@@ -749,11 +749,11 @@
   .aibox > .ai { align-self: flex-start; }
 
   /* A sentence in somebody's file that speaks TO the model. It shows up in the same
-     places as the AI mark, so it is SOLID where that one is dotted — a reader must never
+     places as the AI mark, so it is SOLID where that one is dotted - a reader must never
      confuse the product proposing something with an outside file giving orders. */
   /* ── installed program: window chrome and tray ─────────────────────
      The desktop build is a program, not a tab. It has a title bar and no address bar,
-     and when its window is closed it stays in the tray — so the tray menu is drawn
+     and when its window is closed it stays in the tray - so the tray menu is drawn
      against the desktop rather than inside a window. */
   .appwindow { display: flex; align-items: center; gap: 10px; padding: 7px 12px;
     border-bottom: 1px solid var(--line); background: var(--fill); }
@@ -802,7 +802,7 @@
      Collapsed to one line each: the thread is context for the question
      being asked now, not something to re-read in full. */
   /* One turn's question inside a thread view. The question bar stays at the top of
-     the ask surface — this is for reading a whole conversation back, where each turn
+     the ask surface - this is for reading a whole conversation back, where each turn
      needs its own question above the answer it produced. */
   .uturn { align-self: flex-start; max-width: 92%; background: var(--fill-deep);
     border: 1px solid var(--line); border-radius: 10px 10px 10px 3px;
@@ -816,12 +816,12 @@
   /* what a follow-up inherited, stated rather than implied */
   .carry { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; font: 10.5px var(--mono); color: var(--muted); }
 
-  /* a round still running — the fourth state of .round */
+  /* a round still running - the fourth state of .round */
   .round.run { border-left-color: var(--line-strong); border-left-style: solid; border-left-width: 4px; background: var(--fill); }
   .round.run .rd-n { background: var(--ink); color: var(--screen); }
 
   /* a step-up authentication that has been granted: it expires, and the
-     remaining time is the point — an unmask is not a mode you stay in */
+     remaining time is the point - an unmask is not a mode you stay in */
   .grant { display: flex; align-items: center; gap: 8px; border: 1px solid var(--line-strong);
     border-radius: 6px; padding: 6px 10px; font: 10.5px var(--mono); background: var(--fill); }
   .grant .left { margin-left: auto; font-weight: 700; }
@@ -829,7 +829,7 @@
   /* ══ Kit chrome ═══════════════════════════════════════════════════
      What the kit's own document markup needs, which this stylesheet predates. The kit renders
      the header, the table of contents and the reading contract; the pattern styles them. Rules
-     for markup this board never emits — the phase band, the feature chip, the role strip — are
+     for markup this board never emits - the phase band, the feature chip, the role strip - are
      left out on purpose: the build refuses a phase or feature key that is not in
      board.config.mjs, so none of it can appear without somebody declaring it first. */
 
@@ -840,7 +840,7 @@
   .bh-meta { display: flex; align-items: center; gap: 16px; }
 
   /* A fixed head over a scrolling list, so the filter stays reachable from anywhere in an index
-     168 entries long — a search box that scrolls away with its results is one nobody uses twice. */
+     168 entries long - a search box that scrolls away with its results is one nobody uses twice. */
   .wf-sidebar { display: flex; flex-direction: column; overflow: hidden; }
   .wf-sidebar .sb-head { flex: 0 0 auto; }
   .wf-sidebar .sb-list { flex: 1 1 auto; overflow-y: auto; margin: 0 -12px; padding: 0 12px; }
@@ -866,7 +866,7 @@
   .wf-sidebar .sb-find:not(.has-q) .sb-clear { visibility: hidden; }
   .wf-sidebar .sb-count { font: 10px var(--mono); color: var(--muted); margin: -6px 0 10px; }
 
-  /* The filter hides index entries and nothing else — the board itself is never narrowed, so no
+  /* The filter hides index entries and nothing else - the board itself is never narrowed, so no
      reviewer can be shown a shorter board than the one that exists. */
   .wf-sidebar .is-off { display: none; }
 
@@ -874,7 +874,7 @@
      from the address bar, so a click on the frame itself left the board silent. */
   .frame.is-picked > .device { outline: 3px solid var(--accent); outline-offset: 4px; }
 
-/* ── measurement placeholders — chart, level bars, countdown ──────────────── */
+/* ── measurement placeholders - chart, level bars, countdown ──────────────── */
 .chart-ph { position: relative; border: 1px dashed #b9bdc4; border-radius: 6px; background: #f7f8fa;
   display: flex; align-items: flex-end; overflow: hidden; color: #6b7280; }
 .chart-ph .lbl { position: absolute; top: 6px; left: 8px; font-size: 11px; color: #5f6672; }

@@ -1,14 +1,14 @@
 // The opening pages: what this board is made of, before the first frame.
 //
 // A board reaches most of its readers as a wall of screens. What it never says on its own is the
-// shape behind them — how the product is divided, what has to be bought before a screen opens,
+// shape behind them - how the product is divided, what has to be bought before a screen opens,
 // and who each screen is drawn for. Those three answers are already in the board's own data
 // (`src/manifest.mjs`, `board.config.mjs`, `src/chrome.mjs`, `src/roles.mjs`), so they are
 // rendered rather than written: a section added tomorrow appears here the same day, and nothing
 // here can disagree with the frames.
 //
-// **It carries into the PDF.** Unlike the reading contract — which is the instruction to whoever
-// implements, and is read from the HTML — this is what a reader needs before the first page of
+// **It carries into the PDF.** Unlike the reading contract - which is the instruction to whoever
+// implements, and is read from the HTML - this is what a reader needs before the first page of
 // screens makes sense, and most readers meet the board as the PDF.
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
@@ -41,7 +41,7 @@ function sectionCounts(ctx) {
   });
 }
 
-/** How many frames each device class holds — the reader's first question about scope. */
+/** How many frames each device class holds - the reader's first question about scope. */
 function deviceMix(ctx) {
   const n = {};
   for (const s of ctx.loaded) {
@@ -54,7 +54,7 @@ function deviceMix(ctx) {
 /**
  * The information architecture, where the board declares one.
  *
- * <p>Read from the board's own `src/chrome.mjs` — the same data the shells draw from — so the map
+ * <p>Read from the board's own `src/chrome.mjs` - the same data the shells draw from - so the map
  * here and the menu inside every frame cannot disagree. A board that exports no `MENU` simply
  * gets the cluster list, which is the honest answer for a product with no menu tree.
  */
@@ -96,7 +96,7 @@ function iaBlock(ctx, counts, scaleHtml, gateHtml) {
   const entryCount = (m) => [...(m.items ?? []), ...(m.packItems ?? [])]
     .reduce((n, i) => n + (typeof i === 'string' ? 1 : (i.children?.length ?? 1)), 0);
 
-  // A cluster the board DRAWS but the console menu does not carry — the phone app, the shared
+  // A cluster the board DRAWS but the console menu does not carry - the phone app, the shared
   // terminal, the pattern cluster. Left out, the map says the product is only the console, and
   // the reader who opens L or M finds screens the overview never mentioned.
   const outside = counts.filter((c) => !menu[c.letter]);
@@ -169,7 +169,7 @@ function gateBlock(ctx, counts) {
  *
  * <p>Rendered from the board's own matrix, so it answers the same question the frames answer. A
  * cluster the matrix deliberately does not cover is listed with its reason rather than left as an
- * empty row — an empty row and a decision look identical, and only one of them is finished.
+ * empty row - an empty row and a decision look identical, and only one of them is finished.
  */
 function userBlock(ctx, counts) {
   const roles = ctx.roles;
@@ -208,7 +208,7 @@ function scaleStrip(ctx, counts) {
   const screens = new Set(ctx.loaded.map((s) => s.num)).size;
   const mix = deviceMix(ctx);
   const DEV = { desktop: '데스크톱', tablet: '태블릿', phone: '폰' };
-  // 화면 and 프레임 are different counts — one permanent id against one drawing — and they part
+  // 화면 and 프레임 are different counts - one permanent id against one drawing - and they part
   // only where a screen is drawn at two viewport widths. The pair count is shown rather than
   // explained: two identical figures with no third number read as a mistake.
   const pairs = ctx.loaded.length - screens;
@@ -226,7 +226,7 @@ function scaleStrip(ctx, counts) {
 /**
  * The whole opening section.
  *
- * @returns the HTML, or '' when the board has nothing to say yet — a board of three frames does
+ * @returns the HTML, or '' when the board has nothing to say yet - a board of three frames does
  *   not need a map, and an overview of nothing reads as a broken page
  */
 export function renderOverview(ctx) {

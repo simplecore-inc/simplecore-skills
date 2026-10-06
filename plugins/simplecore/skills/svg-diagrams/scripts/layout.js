@@ -47,7 +47,7 @@ function computeLayout(spec) {
   const pad = C.canvasPadding || C.padding || 30;
 
   // Auto-grow the canvas when a node label cannot fit at the requested
-  // width — a clipped/overflowing label is worse than a wider picture.
+  // width - a clipped/overflowing label is worse than a wider picture.
   function maxTextNeed(layer, depth) {
     let need = 0;
     for (const n of layer.nodes || []) {
@@ -91,7 +91,7 @@ function computeLayout(spec) {
 
       if (direction === 'row') {
         // Horizontal layout. Node width must fit the widest title AND
-        // subtitle (CJK-aware) — wrap onto as many rows as that requires,
+        // subtitle (CJK-aware) - wrap onto as many rows as that requires,
         // and never shrink below the text width even if the row overflows
         // (the audit lint reports the overflow; clipped text would hide it).
         const minNodeW = Math.max(C.minNodeWidth, ...layer.nodes.map(n =>
@@ -122,7 +122,7 @@ function computeLayout(spec) {
         }
         curY += rowCount * nodeH + (rowCount - 1) * C.nodeGapV;
       } else {
-        // Vertical layout — same width, centered
+        // Vertical layout - same width, centered
         const maxLabelLen = Math.max(...layer.nodes.map(n =>
           Math.max(textW(n.title, 8, 13.7), textW(n.subtitle, 6.2, 11.4)) + 40));
         const nodeW = Math.min(Math.max(maxLabelLen, C.minNodeWidth), nodeArea);
@@ -200,7 +200,7 @@ function renderSVG(spec, layout) {
     lines.push(...renderNodeBox(n));
   }
 
-  // Render edges — group fan-outs for clean routing
+  // Render edges - group fan-outs for clean routing
   if (spec.edges) {
     // Group edges by source node
     const fanOutGroups = new Map(); // fromId -> [{to, label}]
@@ -216,11 +216,11 @@ function renderSVG(spec, layout) {
       if (!from) continue;
 
       if (edges.length === 1) {
-        // Single edge — render normally
+        // Single edge - render normally
         const to = nodes.get(edges[0].to);
         if (to) renderEdge(lines, from, to, edges[0].label);
       } else {
-        // Fan-out group — shared trunk + individual branches
+        // Fan-out group - shared trunk + individual branches
         renderFanOut(lines, from, edges, nodes);
       }
     }
@@ -243,7 +243,7 @@ function renderEdge(lines, from, to, label) {
     lines.push(`<line x1="${from.x + from.w}" y1="${from.cy}" x2="${to.x}" y2="${to.cy}" stroke="var(--_line)" stroke-width="1" marker-end="url(#ah)"/>`);
   } else {
     // L-shaped. Clamp the bend so the FINAL vertical segment into the target
-    // is >=18px — otherwise a row-crossing edge with the default node gap
+    // is >=18px - otherwise a row-crossing edge with the default node gap
     // leaves only a head-length stub (SHORT-ARROW).
     const midY = Math.max(from.y + from.h + 4,
       Math.min(from.y + from.h + Math.max(gap / 2, (to.y - from.y - from.h) / 3),

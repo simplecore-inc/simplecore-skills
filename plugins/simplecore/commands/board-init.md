@@ -1,5 +1,5 @@
 ---
-description: Start a wireframe board here — pick the common pattern, scaffold it, and wire the project to it
+description: Start a wireframe board here - pick the common pattern, scaffold it, and wire the project to it
 argument-hint: "[board directory]"
 ---
 
@@ -10,7 +10,7 @@ conversation. Invoke `simplecore:wireframe-boards` first and follow it; this com
 it asks for.
 
 **The board holds content and nothing else.** The engine, the gates, the exports, the components
-and the app shells live in this skill under `kit/`, and `wf.mjs` — twenty lines — finds them. Do
+and the app shells live in this skill under `kit/`, and `wf.mjs` - twenty lines - finds them. Do
 not write a build script, and do not copy one in.
 
 ## 1. Find where it goes, and what is already there
@@ -31,7 +31,7 @@ Report in one line each: whether a board directory exists, whether it has `board
 - **A single-file board** → it can be migrated rather than restarted; say so and offer
   `/simplecore:board-migrate`.
 
-## 2. Ask which common pattern — this is the one question
+## 2. Ask which common pattern - this is the one question
 
 ```bash
 node "${CLAUDE_PLUGIN_ROOT}/skills/wireframe-boards/kit/bin/wfb.mjs" patterns
@@ -39,12 +39,12 @@ node "${CLAUDE_PLUGIN_ROOT}/skills/wireframe-boards/kit/bin/wfb.mjs" patterns
 
 Put the list in front of the user with **AskUserQuestion** and let them choose. A pattern decides
 the components, the app shells, the stylesheet, the reading-contract items and the gates every
-frame is held to, so it is not a default to slip past them — and changing it later means redrawing
+frame is held to, so it is not a default to slip past them - and changing it later means redrawing
 every frame.
 
 **A subagent has nobody to ask.** Where the dispatch that sent it here named the pattern, that is
 the answer and it goes on, writing the choice and its grounds into the report. Where nothing named
-one, it stops with the list and what each pattern is for — scaffolding a board on a guessed pattern
+one, it stops with the list and what each pattern is for - scaffolding a board on a guessed pattern
 is the one thing here that cannot be undone cheaply.
 
 Say what each one is for, in one line, from the `patterns` output. `simplix-basic` is the SimpliX
@@ -52,7 +52,7 @@ admin shape: a list-detail console, the phone app its users carry, and the share
 three in one pattern because they are one product.
 
 **Say the third option too, once, and do not recommend it.** Where none of the installed patterns
-is the product's shape, a board can carry its own — start on the closest one and run
+is the product's shape, a board can carry its own - start on the closest one and run
 `node wf.mjs pattern fork` later. It is the last resort rather than a choice at this step: a
 forked pattern stops receiving the kit's improvements, and a product that shares most of its
 component vocabulary with a shipped pattern is better off adding the two or three it lacks.
@@ -61,7 +61,7 @@ Ask **one more thing in the same call**: whether to keep the pattern's starter f
 
 | | What it means |
 | --- | --- |
-| **Keep them** (recommended) | Nine frames — sign-in, a dashboard, a list-detail with its create and empty states, two phone frames, two terminal frames. Each is an answer to a question the board will be asked on its first day. Draw over them. |
+| **Keep them** (recommended) | Nine frames - sign-in, a dashboard, a list-detail with its create and empty states, two phone frames, two terminal frames. Each is an answer to a question the board will be asked on its first day. Draw over them. |
 | **Empty board** | Only the scaffolding. Right when the screens are about to be authored from a specification and nine frames about records would be nine frames to delete. |
 
 ## 3. Scaffold it
@@ -73,7 +73,7 @@ node "${CLAUDE_PLUGIN_ROOT}/skills/wireframe-boards/kit/bin/wfb.mjs" init \
 
 It writes `wf.mjs`, `.gitignore`, `CLAUDE.md`, `AGENTS.md`, `board.config.mjs`, `src/chrome.mjs`,
 `src/components.mjs`, `src/intro.html`, `src/manifest.mjs` and the starter screens. **Nothing
-already there is overwritten** — it reports what it kept.
+already there is overwritten** - it reports what it kept.
 
 Then prove it works, and show the user:
 
@@ -85,11 +85,11 @@ cd <board dir> && node wf.mjs build --no-pdf && node wf.mjs check
 
 The scaffold is generic on purpose. Walk these with the user rather than guessing:
 
-- `board.config.mjs` — `headline`, `boardName`, `pdfName`, and `today` (the day every dated frame
+- `board.config.mjs` - `headline`, `boardName`, `pdfName`, and `today` (the day every dated frame
   is read against). Delete the `phases` entry if nothing is deferred yet.
-- `src/chrome.mjs` — the tabs, the menu tree, which role reaches what. This is the product's
+- `src/chrome.mjs` - the tabs, the menu tree, which role reaches what. This is the product's
   information architecture; the placeholder one draws two tabs and three clusters.
-- `AGENTS.md` — the region under the marked line is theirs. Everything above it describes the kit
+- `AGENTS.md` - the region under the marked line is theirs. Everything above it describes the kit
   and the pattern and is replaced wholesale on the next migration, so a rule written above the
   marker is a rule that will be lost.
 
@@ -126,7 +126,7 @@ When such a section already exists, correct it in place rather than adding a sec
 
 ## 6. Offer the parity walk when the code already serves frames
 
-Reconciling them is its own long job with its own wiring — say so once and point at
+Reconciling them is its own long job with its own wiring - say so once and point at
 `/simplecore:parity-walk-init`.
 
 Do not draw product frames as part of this command. Setup and authoring are separate.

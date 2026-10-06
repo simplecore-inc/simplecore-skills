@@ -2,7 +2,7 @@
 
 This document provides comprehensive guidance for configuring `@SearchableField` annotation in SearchDTO based on the Searchable JPA library.
 
-> **Scope**: DTO-side validation of `@SearchableField` — how entity field types map to operators, path syntax for joins, and URL parameter format. For the underlying Searchable JPA framework itself (configuration, query composition, OR conditions), see `../../../../references/searchable-jpa/` at the project root.
+> **Scope**: DTO-side validation of `@SearchableField` - how entity field types map to operators, path syntax for joins, and URL parameter format. For the underlying Searchable JPA framework itself (configuration, query composition, OR conditions), see `../../../../references/searchable-jpa/` at the project root.
 
 ## Contents
 
@@ -50,7 +50,7 @@ public static class EntitySearchDTO {
 }
 ```
 
-### PK Contract — sortable AND `IN` (MANDATORY on every SearchDTO)
+### PK Contract - sortable AND `IN` (MANDATORY on every SearchDTO)
 
 The entity-ID field of EVERY SearchDTO MUST be declared sortable and MUST accept `IN`:
 
@@ -62,31 +62,31 @@ private String entityId;
 Both halves are cross-subproject contracts, not style choices, and the scaffold satisfies
 neither on its own.
 
-**`sortable = true`** — the frontend CLI scaffolds every list screen with
+**`sortable = true`** - the frontend CLI scaffolds every list screen with
 `defaultSort: { field: "<entityId>", direction: "desc" }` (UUID v7 IDs are time-ordered, so
 ID-desc means newest-first), and the framework sends it as `sort=<entityId>.desc` on the very
 first page load. A SearchDTO whose PK lacks `sortable = true` fails that initial request with
-a search error ("정렬할 수 없습니다") — the scaffolded list screen is broken before any
+a search error ("정렬할 수 없습니다") - the scaffolded list screen is broken before any
 customization happens.
 
-**`IN`** — a list filter that picks this entity resolves the labels of what is selected by
+**`IN`** - a list filter that picks this entity resolves the labels of what is selected by
 asking its OWN search endpoint for those ids in one read (`<entityId>.in=a,b,c`). Left at
 `{EQUALS}`, the whole request is refused the moment a value is picked
 (`연산자 <entityId>.IN는 허용되지 않습니다`) and the filter is dead on every list that offers
-it — including lists in other modules, since the filter is shared. Note the asymmetry that
+it - including lists in other modules, since the filter is shared. Note the asymmetry that
 hides this: the SAME id declared as a FOREIGN key on another entity's SearchDTO is routinely
 written `{EQUALS, IN}` and works, so the defect appears only where the entity is filtered on
 its own list, which is the one place the scaffold's `{EQUALS}` survives review.
 
 Checklist when authoring or reviewing a SearchDTO:
-1. PK field: `operators = {EQUALS, IN}, sortable = true` — never omit either.
+1. PK field: `operators = {EQUALS, IN}, sortable = true` - never omit either.
 2. Every field the frontend renders as a sortable column also needs `sortable = true`.
 3. Verify with the exact requests the frontend issues:
    - `GET /{entity}/search?page=0&size=10&sort=<entityId>.desc` → must be `SUCCESS`.
      (Sort syntax is dot-separated `field.direction`; `field,direction` is rejected.)
    - `GET /{entity}/search?page=0&size=1&<entityId>.in=<some id>` → must be `SUCCESS`.
 
-Sweep a whole service at once from the published OpenAPI document rather than file by file —
+Sweep a whole service at once from the published OpenAPI document rather than file by file -
 every `/search` operation that declares `<x>.equals` and no `<x>.in` is a candidate, and the
 ones where `<x>` is that endpoint's own PK are defects:
 
@@ -111,7 +111,7 @@ PY
 
 The reason a static scan looked impossible is worth keeping, because it is what makes the rule
 precise rather than noisy. A scan that flagged every searchable id omitting `IN` would report
-every FK that omits it for good reason, and an audit that cries wolf gets muted — worse than not
+every FK that omits it for good reason, and an audit that cries wolf gets muted - worse than not
 having one. What removes the guesswork is that the entity's own primary key IS in the source: the
 audit indexes every `@Entity` class's `@Id` field, matches `{Entity}DTOs` to `{Entity}`, and
 asserts the contract on that one field alone. Foreign keys on the same DTO are never touched.
@@ -182,10 +182,10 @@ Operators must match the field's **semantic purpose**, not just its Java type. T
 |-----------------|----------|-----------------------|-------|
 | ID / FK | `id`, `siteId` | `EQUALS`, `IN` | Exact lookup only |
 | Name / title | `name`, `title` | `EQUALS`, `CONTAINS` | Exact + partial match |
-| Description / address (free-form) | `description`, `address` | `CONTAINS` | No EQUALS — prose text is never searched by exact match |
+| Description / address (free-form) | `description`, `address` | `CONTAINS` | No EQUALS - prose text is never searched by exact match |
 | Short code | `country` (ISO), `code` | `EQUALS`, `IN` | Exact match, multi-select filter. No CONTAINS on short codes |
 | URL / file path | `floorPlanUrl`, `imageUrl` | `CONTAINS` | Partial match only. No EQUALS |
-| Coordinates | `latitude`, `longitude` | `GTE`, `LTE`, `BETWEEN` | Range/bounding-box queries. No EQUALS — exact coordinate match is meaningless |
+| Coordinates | `latitude`, `longitude` | `GTE`, `LTE`, `BETWEEN` | Range/bounding-box queries. No EQUALS - exact coordinate match is meaningless |
 | Monetary / numeric | `price`, `viewCount` | `EQUALS`, `GT`, `LT`, `BETWEEN` | Range queries |
 | Date/time | `createdAt`, `publishAt` | `GTE`, `LTE`, `BETWEEN` | Inclusive range queries |
 | Boolean | `active`, `deleted` | `EQUALS` | True/false only |
@@ -684,8 +684,8 @@ GET /api/items?tagEntryIds.in=id1,id2
 
 ### Issue: An `IN` list whose empty element carries meaning loses it
 
-Where a key's **empty string** is itself a value — an installation-wide row keyed by `""`
-beside rows keyed by a site id — the comma list has to be built with that element **first**.
+Where a key's **empty string** is itself a value - an installation-wide row keyed by `""`
+beside rows keyed by a site id - the comma list has to be built with that element **first**.
 The parser keeps a leading empty element and discards a trailing one:
 
 ```bash
@@ -694,7 +694,7 @@ GET /api/items?siteKey.in=,<siteId>     # asks for the installation AND the site
 ```
 
 **Nothing reports the difference.** There is no error and no sign that anything was filtered
-out — a caller scoped to one site simply stops seeing every installation-wide row, and the
+out - a caller scoped to one site simply stops seeing every installation-wide row, and the
 list looks like a list with fewer rows in it. When a query narrows by two ranges and one of
 them is the wide one, **put the wide one first.**
 

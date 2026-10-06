@@ -1,9 +1,9 @@
-// simplix-basic — the pattern a SimpliX-shaped admin product is drawn in.
+// simplix-basic - the pattern a SimpliX-shaped admin product is drawn in.
 //
 // It covers all three device classes in one pattern on purpose. A console, the phone app its
 // users carry, and the shared terminal in the lobby are one product: they share the components,
 // the copy register, the control vocabulary and the CRUD discipline, and splitting them into
-// separate patterns would mean deciding, for every gate, which of the three it belongs to —
+// separate patterns would mean deciding, for every gate, which of the three it belongs to -
 // a boundary the product itself does not have.
 //
 //   desktop  console      list-detail over a three-layer shell
@@ -14,8 +14,8 @@
 // **What is in the pattern and what is in the board.** The pattern owns everything that would be
 // the same in a second product drawn this way: the primitives, the shells, the stylesheet, the
 // standing reading contract, and the gates that hold the discipline. The board owns its own
-// information architecture — the tab list, the menu tree, the roles, the CRUD ledger, what the
-// installation bought — and hands them to the shell factories in its `src/chrome.mjs`.
+// information architecture - the tab list, the menu tree, the roles, the CRUD ledger, what the
+// installation bought - and hands them to the shell factories in its `src/chrome.mjs`.
 import * as gates from './gates/content.mjs';
 
 export default {
@@ -36,7 +36,7 @@ export default {
    * The gates every board in this pattern runs, on top of the kit's core gates.
    *
    * <p>Every one of these came from a defect found twice. They are the pattern's rather than the
-   * kit's because each judges something only a board drawn THIS way can be wrong about — a
+   * kit's because each judges something only a board drawn THIS way can be wrong about - a
    * register, a list-detail layout, the words its controls share.
    */
   gates: Object.values(gates).filter((g) => g && typeof g.run === 'function'),

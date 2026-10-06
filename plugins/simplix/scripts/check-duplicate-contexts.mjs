@@ -3,8 +3,8 @@
  * Duplicate React-context package audit.
  *
  * A package that calls `createContext` at module scope has one context object per physical
- * copy of that package. When pnpm answers two importers with two copies — an app declaring
- * `simplix-react` and a module declaring `@simplix-react/ui`, say — the provider one side
+ * copy of that package. When pnpm answers two importers with two copies - an app declaring
+ * `simplix-react` and a module declaring `@simplix-react/ui`, say - the provider one side
  * renders is not the context the other side reads. Nothing throws. The provider stays empty,
  * the consumer falls back to its default, and the screen renders with a piece silently
  * missing: a page with no title and no create button, a query client that "is not set", a
@@ -213,7 +213,7 @@ const errors = [];
 const reviews = [];
 
 for (const [name, copies] of [...byName].sort(([a], [b]) => a.localeCompare(b))) {
-  // Two copies of DIFFERENT versions is an ordinary resolution — a dependency asked for a
+  // Two copies of DIFFERENT versions is an ordinary resolution - a dependency asked for a
   // major this workspace does not use. The accident this audit is about is one version split
   // into several physical copies by differing peer sets, which no manifest asked for.
   const splitVersions = [...new Set(copies.map((c) => c.version))].filter(

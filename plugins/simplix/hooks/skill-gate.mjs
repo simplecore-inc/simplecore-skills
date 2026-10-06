@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Skill gate — refuse a source edit until the handbook skill for that subproject has been
+ * Skill gate - refuse a source edit until the handbook skill for that subproject has been
  * invoked in this session.
  *
  * The handbooks encode conventions that diverge from the stock framework, so an edit written

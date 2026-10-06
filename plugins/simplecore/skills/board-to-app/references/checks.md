@@ -22,16 +22,16 @@ than a project: that a fired warning leaves the exit status alone while a fired 
 that a project gate answering to a core gate's id is refused unless the core one is turned off, and
 that **every key `SCHEMA` reads has a row in the config table and a line in the copyable template,
 with the same cost sentence on both sides**. The last of those holds a shape both gate tables are
-blind to: a key added to the schema works immediately — `configGate` validates it, `doctor` prints
-it — and nothing anywhere says it exists, so the only people who ever meet it are the ones who read
+blind to: a key added to the schema works immediately - `configGate` validates it, `doctor` prints
+it - and nothing anywhere says it exists, so the only people who ever meet it are the ones who read
 the source. **Its cost sentence is held the same way and for a sharper reason**: `SKILL.md` is what
 a person edits and `doctor` prints `SCHEMA[key].absent`, so the two are one sentence in two files
-and drift in exactly one direction — the correction goes into the table and the report goes on
+and drift in exactly one direction - the correction goes into the table and the report goes on
 saying the old thing. Each of the three is proved in both directions the same way a gate is,
 against a doctored copy and then against the real one.
 
 **`check` and `gates` are read by their exit status; `doctor` is read.** A report exits zero on
-anything it prints — only a config it cannot find at all stops it, at 2 — so nothing about a
+anything it prints - only a config it cannot find at all stops it, at 2 - so nothing about a
 project's completeness can be taken off `doctor`'s status, and a step that names it as a proof is
 claiming something the command does not offer. What proves a config is `check`.
 
@@ -45,13 +45,13 @@ Two levels, and choosing between them is the whole design decision:
 
 | Level | True of | Where it lives |
 | --- | --- | --- |
-| **core** | any project that builds from a board — the config's shape, the two documents' discipline, the capture name, the commit trailers | `scripts/core/gates.mjs` in this skill, with its cases in `scripts/core/cases.mjs` |
-| **project** | this product only — a document format this project chose, its own data shapes, a convention its stack has | the module the project declares as `projectGates`, exporting `gates` and `cases` |
+| **core** | any project that builds from a board - the config's shape, the two documents' discipline, the capture name, the commit trailers | `scripts/core/gates.mjs` in this skill, with its cases in `scripts/core/cases.mjs` |
+| **project** | this product only - a document format this project chose, its own data shapes, a convention its stack has | the module the project declares as `projectGates`, exporting `gates` and `cases` |
 
 **A gate put one level too high fires on projects it does not describe; one level too low is
 rewritten by the next project that needs it.** The test is whether it would still be right in
 somebody else's repository. A path that is valid only under this repository's layout, an
-exception list somebody would need to vary, a framework name compared directly — each of those
+exception list somebody would need to vary, a framework name compared directly - each of those
 is a project gate however general it feels while writing it.
 
 ## Writing one
@@ -69,7 +69,7 @@ export const exampleGate = {
 };
 ```
 
-`ctx` is the project, and a gate uses nothing else — it never joins a path itself:
+`ctx` is the project, and a gate uses nothing else - it never joins a path itself:
 
 | `ctx` | Gives |
 | --- | --- |
@@ -77,10 +77,10 @@ export const exampleGate = {
 | `at(key)` | the absolute path a declared key resolves to, or null |
 | `read(path)` · `list(dir)` | the file's text or null · every file under a directory, or null |
 | `exists(p)` · `isDir(p)` · `rel(p)` | presence, kind, and the path as the repository sees it |
-| `size(p)` · `bytes(p, n)` | a file's length · its first `n` bytes undecoded — the two questions `read` cannot answer about a picture, since the length of a binary file's utf8 decoding is not its size and its header is not text |
-| `git(args)` | git in the project root — `{ ok, out }` |
-| `lines` | the project's chapter lines, compiled from its phrases — `ctx.lines.persona` is a RegExp, and a role the project declared absent is simply not there |
-| `evidence` | the readers over the evidence folder — the chapter files, the closed chapters, the frames a chapter places and demands, a result document's sections |
+| `size(p)` · `bytes(p, n)` | a file's length · its first `n` bytes undecoded - the two questions `read` cannot answer about a picture, since the length of a binary file's utf8 decoding is not its size and its header is not text |
+| `git(args)` | git in the project root - `{ ok, out }` |
+| `lines` | the project's chapter lines, compiled from its phrases - `ctx.lines.persona` is a RegExp, and a role the project declared absent is simply not there |
+| `evidence` | the readers over the evidence folder - the chapter files, the closed chapters, the frames a chapter places and demands, a result document's sections |
 | `options` | what the command line passed, such as `range` |
 
 The last two are on `ctx` for the same reason everything else is: **a project's own gate cannot
@@ -98,8 +98,8 @@ export function cases(t) {
 }
 ```
 
-`t.project()` builds a real directory with a real config in it — never a hand-made context
-object — so a gate that quietly stopped resolving paths cannot pass its own case. Pass
+`t.project()` builds a real directory with a real config in it - never a hand-made context
+object - so a gate that quietly stopped resolving paths cannot pass its own case. Pass
 `commits: ['…']` to make the fixture a git repository, and end a `files` key with `/` to make
 an empty directory.
 
@@ -109,25 +109,25 @@ A finding is one of two things, and the exit status is the difference:
 
 | `grade` | What a finding of it is | `check` | The write-time hook |
 | --- | --- | --- | --- |
-| `error` — the default, and what a gate declaring nothing is judged at | a defect: something is wrong, and the finding says what to change | `✖`, counted, exits non-zero | blocks the write when the finding names the file just written |
+| `error` - the default, and what a gate declaring nothing is judged at | a defect: something is wrong, and the finding says what to change | `✖`, counted, exits non-zero | blocks the write when the finding names the file just written |
 | `warning` | a prompt: go and re-read what this names, because it may already be settled | `⚠`, counted on its own line, exit status unchanged | shown in full, blocks nothing |
 
 **The grade belongs to the rule, not to the string it returned.** A gate answers one question, so
 the kind of its findings is fixed when it is written: a gate whose findings differ in kind is two
 rules sharing an id, and it is split into two gates that each carry their own pair of cases.
-Grading each returned string would leave the harness nothing to hold — a case is judged per gate,
+Grading each returned string would leave the harness nothing to hold - a case is judged per gate,
 so a gate that quietly downgraded one finding among nine would pass both its cases, and no case
 could be written that pins it.
 
 **A warning is for a rule that is right to fire and wrong to fail on.** The case it exists for is a
 finding whose resolution is often 「the line stands」: a parked decision naming the statute article
-nobody could settle names a source that may already answer it, and no gate can tell whether it does
-— only a person re-reading the article can. Failing there trains everybody to ignore the gate, and
+nobody could settle names a source that may already answer it, and no gate can tell whether it does -
+only a person re-reading the article can. Failing there trains everybody to ignore the gate, and
 a gate that cries wolf takes the real ones beside it down with it.
 
 **The second case is a gate that measures a proxy, where the only route to green is to change the
 artifact.** A picture's bytes stand in for whether anything is drawn on it, and the two are not the
-same thing — so a correct picture can land under the number, and the one move that clears it is to
+same thing - so a correct picture can land under the number, and the one move that clears it is to
 re-encode the picture larger, which disables the check for the next capture that really is blank.
 **Ask of any threshold: what does somebody do when it fires on something right?** Where the answer
 is 「edit the artifact until the number moves」, an error grade is a rule that teaches people to
@@ -135,11 +135,11 @@ defeat it, and the finding belongs in the channel that says 「go and look」.
 `everyCaptureIsDenserThanAnEmptyCanvas` is that shape.
 
 **It is not a way to keep a rule that fires wrongly.** A gate whose findings are mostly noise is too
-wide and gets narrowed. The grade says what a *correct* finding is, never how sure the gate is —
+wide and gets narrowed. The grade says what a *correct* finding is, never how sure the gate is -
 downgrading to quieten a false positive leaves the defect in the rule and buries the evidence of it.
 **Nor does the grade excuse a threshold nobody measured.** A number is calibrated against both
-edges before it is written down — the artifact the rule exists to catch and the sparsest legitimate
-one — and where the two are close, the case for each edge carries the measurement that set it.
+edges before it is written down - the artifact the rule exists to catch and the sparsest legitimate
+one - and where the two are close, the case for each edge carries the measurement that set it.
 
 A grade the harness does not read is refused rather than defaulted: `check` and `gates` both fail on
 a gate declaring one, because `grade: 'advisory'` otherwise reads as advisory in the source and is
@@ -148,7 +148,7 @@ counted as an error in the run.
 ### A gate reads the tree; a chapter closes on the commit
 
 Every gate in a project's `gates` list answers a question about the **working tree**, and a chapter
-closes on what they said — which is a claim about the **commit**. Those are different questions, and
+closes on what they said - which is a claim about the **commit**. Those are different questions, and
 a run's output does not distinguish them, so a generated artifact can be right here and absent or
 stale in what anybody would clone, with every gate green over it. Three sightings in one afternoon,
 all the same shape: a pseudo-locale catalogue was regenerated and `pseudo:locale:check` answered
@@ -158,39 +158,39 @@ carrying its eight source fixes; twenty generated client files sat modified for 
 run against an older backend, waiting to ride into whatever commit next named a directory.
 
 **What makes this invisible is that the gate is right.** It is not a broken check and its answer is
-not wrong — it answered the question it was asked, about the tree in front of it. The person reading
+not wrong - it answered the question it was asked, about the tree in front of it. The person reading
 the output has no way to see the difference, and **the fix is what produces the green**: somebody
 regenerates, the gate goes green, and regenerating is exactly the step that leaves the artifact
 uncommitted. So the ordinary loop of noticing something stale and putting it right *is* the loop
-that hides this, which is why nobody catches it in review and why it leaves no trace afterwards —
+that hides this, which is why nobody catches it in review and why it leaves no trace afterwards -
 what a tree held at a past commit is unrecoverable from anywhere.
 
 `generatedArtefactsMatchHead` holds it, and two things about its shape are the rule rather than the
 implementation:
 
 - **The subject is what a command writes, never every dirty file.** An agent mid-task has
-  uncommitted work by construction, so a rule over the whole tree fires on ordinary work — and
+  uncommitted work by construction, so a rule over the whole tree fires on ordinary work - and
   under a write-time hook that fails a write when an error names the file just written, it would
   fail every write at the moment it happened. `generatedArtefacts` is a census a project keeps by
   hand for the same reason: nothing on disk says which files a command wrote.
 - **It runs at every gate run rather than at a close, because a close is not a moment a gate can
   see.** A ledger's closed word is a standing set and not an event, so conditioning on it would
-  fire from the first closed chapter onward — every bit as often — while staying silent on a
+  fire from the first closed chapter onward - every bit as often - while staying silent on a
   project that has closed nothing, which is precisely the project forming the habit.
 
 A row that matches nothing git has ever carried is itself a finding. A census entry is only worth
-what it checks, and one whose pathspec has gone stale — the generator writes elsewhere now, or its
-output is ignored and never travels in a commit — reads as coverage while holding nothing, which is
+what it checks, and one whose pathspec has gone stale - the generator writes elsewhere now, or its
+output is ignored and never travels in a commit - reads as coverage while holding nothing, which is
 the state the whole key exists to end.
 
 ### What `check` prints is a contract, not a layout
 
-A write-time hook does not call the harness — it runs `check` and reads the grades out of the text,
+A write-time hook does not call the harness - it runs `check` and reads the grades out of the text,
 because that is the only interface a hook process has. Two shapes carry all of it: a gate heading is
 `<marker> <id> — <title>` where the marker is `✖` or `⚠` and the separator is a spaced em dash after
 one unbroken token, and each finding under it is indented by exactly three spaces. **Changing either
 is a breaking change**, and it breaks in the worst available direction: the hook goes blind, decides
-the tree is clean, and stops blocking writes it exists to block — with no error anywhere, because a
+the tree is clean, and stops blocking writes it exists to block - with no error anywhere, because a
 parse that matches nothing looks exactly like a repository with nothing wrong with it.
 
 Nothing in this skill can hold that, because the consumer lives in the project. So a project that
@@ -198,7 +198,7 @@ installs such a hook owes it a proof of its own, run as one of its `gates`: driv
 fixtures whose gates fire on demand, assert the exit status **and** what the hook actually printed,
 and then run the same cases again against a `check` whose output has been deliberately mangled in
 each of those two ways, requiring the suite to go red. Asserting only the exit status proves far
-less than it appears to — `check` exiting non-zero with nothing parseable behind it is reported as a
+less than it appears to - `check` exiting non-zero with nothing parseable behind it is reported as a
 gate that failed, so a blind hook still exits 2 on an error and the status agrees while the report
 has become worthless.
 
@@ -214,7 +214,7 @@ has become worthless.
 - **Sweep the whole tree, then report the count.** Zero costs nothing and proves coverage;
   non-zero is the rule earning itself immediately. A checker written against the two files that
   had the bug is a checker for a bug that is already fixed.
-- **The first sweep is evidence about the gate, not only about the tree — and the distribution
+- **The first sweep is evidence about the gate, not only about the tree - and the distribution
   says more than the count.** The bullet above catches an implausible *total*: a number so large
   it sends you to measure the rule against writing that had nothing to do with it. **Nothing
   catches an implausible finding hiding inside a total that looks right**, and that is the shape
@@ -226,15 +226,15 @@ has become worthless.
   four times the size of its neighbours is read as the most serious thing found, when it is the
   least believable thing found.**
 - **Noticing an anomaly and explaining it away is what walking past it looks like from inside.**
-  The report that carried that finding also carried the tell — another screen listed as 「zero
-  form components but thirteen bundle labels, so its controls are drawn another way」 — written by
+  The report that carried that finding also carried the tell - another screen listed as 「zero
+  form components but thirteen bundle labels, so its controls are drawn another way」 - written by
   the same agent, in the same paragraph, without the question that sentence answers being asked of
   the screen beside it. So the guard is not 「look harder」: it is to treat any explanation offered
   for why a count is strange as a hypothesis about the gate, and to open one of the files.
 - **A census of source constructs is not a census of what the screen draws.** The three bullets
   above name the symptom; this names the mechanism, and it produced every one of them. A component
   **rendered N times**, a label **computed from a key**, and a form **imported from elsewhere** all
-  read as absent to a reader of source text — so the count a gate takes is of constructs written,
+  read as absent to a reader of source text - so the count a gate takes is of constructs written,
   never of controls drawn. One `NumberField` is ten: a policy form declaring a local
   `` const number = (field, label, unit, hint) => `` and calling it ten times has one occurrence
   and ten controls. One page folder is not the screen: the form is declared in a widget the page
@@ -245,10 +245,10 @@ has become worthless.
 - **The guard is one line of context above the number being read.** 「Nine numeric inputs cannot
   hide under other names」 is a true sentence, and it was half-written about a screen holding ten of
   them. Nothing about the count said so; the line directly above it did. So a count that is about
-  to become a finding is read **with its neighbourhood**, not on its own — the same discipline as
+  to become a finding is read **with its neighbourhood**, not on its own - the same discipline as
   opening the accused file, applied one screenful earlier.
 - **A reach fix is judged by what it does NOT move.** After the fix that screen went from eleven
-  to one and the other sixteen findings stood exactly where they were — which is what establishes
+  to one and the other sixteen findings stood exactly where they were - which is what establishes
   that the sixteen were never reach, and is worth more than the eleven. A fix that moves everything
   has told you nothing about which findings were real.
 - **A pattern with a placeholder in it is tested for what it matches**, not only for what it
@@ -261,20 +261,20 @@ has become worthless.
   gate that reads the second as the first reddens every project on the day it is wired while one
   that reads the first as the second is the silence it was written to break. So the pair is four:
   the misdeclaration, a word nobody writes, a freshly-wired project, and a project mid-build whose
-  documents of one kind exist and whose documents of the other do not — the last is the one that
+  documents of one kind exist and whose documents of the other do not - the last is the one that
   is easy to leave out and is where the boundary actually sits. `declaredWordsMatchTheDocuments`
   is the worked example, and it says in each finding which of the two states it established.
 - **Where a zero has two meanings, the second one is a warning rather than a widened error.**
   「I compared and nothing matched」 is a defect; 「there was nothing to compare against」 is a
   project that has not written the documents yet, and a gate covering both fails every repository
-  on the day it is wired. They are two gates because a gate answers one question — and the pair is
+  on the day it is wired. They are two gates because a gate answers one question - and the pair is
   what makes silence mean something: with only the error, a run says nothing both when the check
   passed and when it never ran. `declaredWordsMatchTheDocuments` and
   `declaredWordsHaveBeenCompared` are that pair, and neither can speak about an entry the other
   is speaking about, so one defect is never reported twice under two ids.
 - **A defect in one checker is looked for in every checker that reads the same shape, and the
   noisy one is not the dangerous one.** Two gates over the same document parsed a layer out of a
-  heading with a single-digit pattern. On a heading naming two layers — `3계층과 4계층` — the first
+  heading with a single-digit pattern. On a heading naming two layers - `3계층과 4계층` - the first
   reported four findings that were all false and was fixed within the hour; the second matched
   nothing at all, so a two-layer claim went unjudged and **no run ever said so**. Same defect, one
   visible. **A checker that fails loudly gets reported by whoever it annoys; a checker that fails
@@ -282,9 +282,9 @@ has become worthless.
   for the second. The fix belongs at the family: one reader that takes *every* layer a piece of
   prose names, called by both, rather than the same regex corrected twice.
 - **A gate that blanks a source file before reading it is judged on the file that breaks the
-  blanking, not on the file it was written for.** Comments and string bodies have to go — a
+  blanking, not on the file it was written for.** Comments and string bodies have to go - a
   `trail:` inside a comment explaining why there is none counts as one, and a brace inside a string
-  unbalances every region after it — so any gate that matches structure starts by masking. The
+  unbalances every region after it - so any gate that matches structure starts by masking. The
   masker is then the part that fails, and it fails **silently**: what comes out is a syntactically
   plausible file in which the thing being looked for is simply not there, so the gate reports
   「could not find it」 or nothing at all, and both read as a file with nothing wrong with it. The
@@ -292,19 +292,19 @@ has become worthless.
   on the first `${…}`'s closing brace and the second one never matches, the literal's own closing
   backtick then reads as the start of another literal, and several hundred lines are blanked with
   their braces. One entry per open literal, dropped by the backtick and never by a substitution.
-  **Put that file in the cases** — a clean subject sitting below a two-substitution literal, which
-  must stay silent — because a masker is exercised by every file in the repository and proved by
+  **Put that file in the cases** - a clean subject sitting below a two-substitution literal, which
+  must stay silent - because a masker is exercised by every file in the repository and proved by
   none of them.
 - **A case cannot vary what the gate imports, and saying so is part of the gate.** Where a gate
-  reads a declaration out of a module — the chapter set, the pack table — a fixture can vary the
+  reads a declaration out of a module - the chapter set, the pack table - a fixture can vary the
   files but not the declaration: no case can make a pack lose its chapter, because the case builds
   a project and the declaration is compiled in. That is not a hole to paper over with a case that
   proves something else; it is a boundary, and the comment says which half the cases reach. A gate
   that calls the module's own functions rather than restating them then inherits every judgement
-  those functions gain, with no case and no line of its own changing — which is the reason to call
+  those functions gain, with no case and no line of its own changing - which is the reason to call
   them, and the reason the boundary is affordable.
 - **An escape a reader can see and question.** A project turns a core gate off with
-  `disabledGates: [{ "id": "…", "reason": "…" }]` — the reason is required, because an exception
+  `disabledGates: [{ "id": "…", "reason": "…" }]` - the reason is required, because an exception
   nobody can question is an omission wearing a config key.
 - **Some rules are correctly rejected**, and the rejection is worth as much as the rule. Write
   down the ones you closed and why, or the next agent rediscovers the same tempting rule and
@@ -312,7 +312,7 @@ has become worthless.
 
 ## Proving the check that is prose
 
-Most of what this skill states cannot be a gate — whether a screen holds up for the person
+Most of what this skill states cannot be a gate - whether a screen holds up for the person
 whose work it carries is settled by looking. A rule that needs eyes is **marked** as such in
 the skill rather than left ambiguous, and the marking is what stops it being read as an
 unwritten check.

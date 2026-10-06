@@ -1,13 +1,13 @@
 // B-01 · The standard page of this pattern: a list, and the record beside it in a panel where
 // adding and editing happen. The closed panel and the open one are TWO FRAMES of ONE screen, so
-// they share one drawing — `screenBody(panel)` below is what the state frames call.
+// they share one drawing - `screenBody(panel)` below is what the state frames call.
 import { console_ } from '../chrome.mjs';
 import {
   pageHeader, filterBar, table, th, btn, badge, rowActions, pagination, listDetail,
   panelHead, panelFoot, panelVerbs, dField, sectHead, helpCard,
 } from '../components.mjs';
 
-// The list beside a panel is drawn for what is left after it — three columns at most. A time and
+// The list beside a panel is drawn for what is left after it - three columns at most. A time and
 // an owner ride the title cell as a `mono` sub-line rather than taking columns of their own.
 // **A row's action count is not capped**; what is capped is the COLUMNS.
 const row = (id, when, who, state, tone) => [

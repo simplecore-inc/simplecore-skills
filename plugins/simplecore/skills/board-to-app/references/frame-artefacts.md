@@ -5,7 +5,7 @@ hold, or when deciding what to do with the captures a journey run leaves behind.
 
 ## A standing check is held by code, and the list names what holds it
 
-Some projects require something of every screen beyond working code — a rendered check nothing
+Some projects require something of every screen beyond working code - a rendered check nothing
 can assert from source, a snapshot test, a rule about how a value is derived. Where that is so,
 the config names it, **and every sentence names the mechanism that holds it**:
 
@@ -25,7 +25,7 @@ a helper the journey tests call runs on every journey.
 name the screen derived wrongly from what the system reported, a control whose destination is
 nowhere: neither is something a board can draw, and both were found by a person using the built
 product. So the list **grows** as such defects are found, each entry with the check that catches
-it, and the sentence carries the pointer to where it was seen — an entry that cannot name a
+it, and the sentence carries the pointer to where it was seen - an entry that cannot name a
 sighting is an invented expectation → `references/demands.md` § *A defect the running product
 showed, that no frame can draw, is a standing check*.
 
@@ -39,12 +39,12 @@ the run reaches everything the journeys reach. What a capture owes is only this:
 - **One picture is one screenful.** A viewport holds a fraction of most screens, so a screen whose
   actions sit below the fold gets a second picture scrolled to them, never a taller image stitched
   out of several → `references/driving-the-product.md`.
-- **The data and the display are pinned to the same instant** where the screen draws a time — a
+- **The data and the display are pinned to the same instant** where the screen draws a time - a
   frozen clock over timestamps taken from the real one gives a number that is stable and wrong.
 - **It is taken through the window the project declared**, at the width and in the scheme the
   capture gates read → `references/config.md`.
 
-A project that declares no `frameDeliverables` owes nothing beyond the code and its journeys — and
+A project that declares no `frameDeliverables` owes nothing beyond the code and its journeys - and
 a defect no frame can draw then has nowhere to land, so it is fixed once on the screen it was found
 on and met again on every screen built afterwards.
 
@@ -56,13 +56,13 @@ floor.
 
 | Picture | Why it is taken | What happens to it |
 | --- | --- | --- |
-| **Looking** — the visual pass | the only gate that catches what no test can fail on: a class the styling engine dropped, a font with no glyph, a label cut at an edge | every frame, in every locale and on every device that frame owes; thrown away when the work is over, never during it |
-| **Showing** — what a change did | prose about a screen is unfalsifiable to the person reading it | the coordinator forwards the path the moment it appears, unopened, in the language a person reads |
-| **Keeping** — figures a document holds onto | kept figures have to be true of **one** version of the product, not of eight months of it | its own naming scheme, outside `capturesDir`, in one run at the end from a finished product |
+| **Looking** - the visual pass | the only gate that catches what no test can fail on: a class the styling engine dropped, a font with no glyph, a label cut at an edge | every frame, in every locale and on every device that frame owes; thrown away when the work is over, never during it |
+| **Showing** - what a change did | prose about a screen is unfalsifiable to the person reading it | the coordinator forwards the path the moment it appears, unopened, in the language a person reads |
+| **Keeping** - figures a document holds onto | kept figures have to be true of **one** version of the product, not of eight months of it | its own naming scheme, outside `capturesDir`, in one run at the end from a finished product |
 
 - **Looking is unconditional.** Not a project's to opt out of, not deferrable, not
   satisfied by a green gate → `references/judging-frames.md`.
-- **Showing is owed whenever the work moves what a screen draws** — or moves the frame
+- **Showing is owed whenever the work moves what a screen draws** - or moves the frame
   it is drawn against. It costs the coordinator a path, which is exactly why agents
   return paths and never images.
 - **Keeping is nothing this work asks for.** No frame owes a picture that outlives it.
@@ -72,11 +72,11 @@ floor.
 
 ### Looking and keeping are different jobs, and only one is expensive
 
-The visual pass catches what nothing else can — a styling engine that dropped a class,
+The visual pass catches what nothing else can - a styling engine that dropped a class,
 a font with no glyph for a script, a label cut off at an edge. That has to happen on
 every frame, always. **Keeping** the images is the part that costs: a change to a shared
 component invalidates every frame that renders it, so re-shooting is a fixed price that
-grows with the board — four and a half minutes across thirteen frames, an hour across a
+grows with the board - four and a half minutes across thirteen frames, an hour across a
 hundred and fifty, paid every time anybody touches a common primitive. They will, for as
 long as the product is being built.
 
@@ -87,35 +87,35 @@ in a known state → *Three reasons to photograph a screen*.
 
 ### Re-shoot what the change reaches, and one frame either side of it
 
-After a fix, "re-shoot everything" is not thoroughness — it is **not having decided what
+After a fix, "re-shoot everything" is not thoroughness - it is **not having decided what
 the change reaches.** The set is derivable: a fix to one screen reaches that screen, a fix
 to a shared primitive reaches every frame that renders it, and a fix to the capture
 pipeline reaches every frame the broken part applied to. A bar drawn only on a tab's first
 screen cannot have mis-measured a screen that never had it.
 
 So before re-shooting, name the set and say what puts a frame in it. Then shoot that set,
-plus **one frame known to be outside it** — the regression check that proves the fix did
+plus **one frame known to be outside it** - the regression check that proves the fix did
 not move something it had no business moving. Two frames of evidence beat a hundred
 frames of hope, and the difference is where the simulator hours go.
 
-Where the set is genuinely the whole board — a token, a font, a layout primitive every
-screen sits on — say so, and shoot it all. The rule is not "shoot less". It is that the
+Where the set is genuinely the whole board - a token, a font, a layout primitive every
+screen sits on - say so, and shoot it all. The rule is not "shoot less". It is that the
 scope is a judgment somebody made, rather than a question nobody asked.
 
-### One story, kept consistent — not a pile of per-screen fixtures
+### One story, kept consistent - not a pile of per-screen fixtures
 
 Sample data invented beside each screen disagrees with itself. The reader on the list
 becomes a different reader on the detail page, and no test can see it because each screen
 is internally fine. The fix is a single document holding the product's sample data **as a
 narrative**, each step naming the frames it feeds, and **the step is written before the
-screen** — written afterwards, the story is reverse-engineered from whatever the screens
+screen** - written afterwards, the story is reverse-engineered from whatever the screens
 happened to show, which is the disagreement it exists to prevent. The rest of it →
 `references/scenario.md`.
 
 ### Sample data is in every capture, in every language
 
 Copy is translated; the data on top of it is not. A reader named `정문`, a customer
-called `홍길동`, a note written in Korean — each appears **verbatim in every locale's
+called `홍길동`, a note written in Korean - each appears **verbatim in every locale's
 capture**, so sample data is the one thing on a screen that cannot be right in all of
 them at once.
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Screen inventory — scans modules/ and apps/ sources and classifies every
+ * Screen inventory - scans modules/ and apps/ sources and classifies every
  * screen-bearing file into the shape taxonomy of the `simplix:frontend` skill's
  * customize/precedent-check.md (Step 1). Output: a markdown table per shape,
  * newest-modified first, so precedent selection (Step 2) starts from data
@@ -14,7 +14,7 @@
  *   node "${CLAUDE_PLUGIN_ROOT}/scripts/screen-inventory.mjs" --module=<module>
  *
  * Classification is marker-based (framework composition signatures), never a
- * hand-maintained list — a new screen appears here as soon as it exists.
+ * hand-maintained list - a new screen appears here as soon as it exists.
  */
 
 import { execFileSync } from "node:child_process";
@@ -28,7 +28,7 @@ const ROOT = path.resolve(
 );
 const EXCLUDE_DIRS = new Set(["node_modules", "dist", "generated", ".turbo", "build"]);
 
-// Ordered by specificity — the FIRST matching shape wins.
+// Ordered by specificity - the FIRST matching shape wins.
 const SHAPES = [
   { id: "board", label: "Always-open master-detail board", test: (c) => c.includes('activePanel="detail"') },
   { id: "tree", label: "Tree CRUD", test: (c) => c.includes("CrudTree") },

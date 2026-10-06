@@ -1,4 +1,4 @@
-// Frame chrome + document assembly — defined ONCE, rendered for every screen. A
+// Frame chrome + document assembly - defined ONCE, rendered for every screen. A
 // screen file carries only its bespoke body (composed from the pattern's components)
 // plus a little metadata; frame() wraps it in the right device shell. This is the same
 // greybox vocabulary the single-file board-template.html teaches, split into a build.
@@ -11,7 +11,7 @@
 // The board contract this kit writes. Stamped into every built board so a later session can
 // tell what a board was built against without inferring it from the markup, and migrate it when
 // the skill has moved on. Bump it ONLY when the contract changes in a way that needs a
-// migration — a new class, a new note prefix, a restyle do not.
+// migration - a new class, a new note prefix, a restyle do not.
 //
 //   1  original: frame numbers derived from manifest position; rows scrolled sideways
 //   2  permanent ids from the file name + bracketed board position; rows wrap, no sideways scroll
@@ -24,7 +24,7 @@ export const BOARD_CONTRACT = 4;
 /**
  * Bind the frame renderers to one board's pattern and role matrix.
  *
- * @param components the pattern's component module — `browserbar` is the one primitive
+ * @param components the pattern's component module - `browserbar` is the one primitive
  *   the device shell itself draws, so it is the only thing read out of it here
  * @param roles the board's `src/roles.mjs`, or null where the board settles no roles
  * @returns `{ frame, sidebar, page }`
@@ -37,17 +37,17 @@ export function makePartials({ components, roles = null, lang = 'en', reqsById =
 
   // frame(screen, id, seq, file): wraps one device frame. `device` is 'phone' (default),
   // 'tablet', or 'desktop'; `variant` is 'narrow' or 'wide' for a responsive pair.
-  // The body (composed from components — statusbar/appbar/tabbar for touch,
+  // The body (composed from components - statusbar/appbar/tabbar for touch,
   // shell/sidebar/main for desktop) IS the screen content; frame() only adds the
   // device shell, the desktop browser bar + fold, the label, and the notes.
   //
-  // `id` (A-20) is the screen's PERMANENT number, from its file name — what everyone
+  // `id` (A-20) is the screen's PERMANENT number, from its file name - what everyone
   // addresses it by. `seq` (02) is its position in the board's visual order this build.
   // `anchor` is supplied by the build, which owns uniqueness across a responsive pair.
   function frame(s, id, seq, file = '', anchor = `s-${id.toLowerCase()}`) {
     const arrow = s.arrowBefore ? `\n    ${s.arrowBefore}\n` : '';
-    // A frame that is not being built now says so THREE times — a band over the drawing, a chip
-    // in the label, a chip opening the notes — because each of the three is the only one a given
+    // A frame that is not being built now says so THREE times - a band over the drawing, a chip
+    // in the label, a chip opening the notes - because each of the three is the only one a given
     // reader gets. The section title says it once, at the top of thirty-five frames, and a PNG or
     // a PDF page or a link into the board arrives without it.
     const ph = s.phase && s.phase.tag ? s.phase : null;
@@ -56,12 +56,12 @@ export function makePartials({ components, roles = null, lang = 'en', reqsById =
       : '';
     // What has to be BOUGHT before this frame is reachable. It is drawn as one chip beside the id
     // and NOT as a band: the screen exists and is drawn: what is conditional is reaching it. A band
-    // would say the same thing `phase` says — that the drawing is not there — and the two states
+    // would say the same thing `phase` says - that the drawing is not there - and the two states
     // are different. Nothing goes inside the device either; the locked state is P-11's frame, and a
     // badge inside a normal frame leaves the implementer guessing whether it is screen content.
     // The chip's WORD is not its meaning. 「Connected」 beside an id tells a reader who already
-    // knows the catalogue and nobody else, and a frame reaches most of its readers alone — a PNG,
-    // one PDF page, a link — where a `title` attribute does not exist. So the notes open with the
+    // knows the catalogue and nobody else, and a frame reaches most of its readers alone - a PNG,
+    // one PDF page, a link - where a `title` attribute does not exist. So the notes open with the
     // chip, the exact key an implementer needs, and the sentence saying what buying it opens. The
     // phase band does the same job for its own axis, above the device.
     const ft = s.feature && s.feature.tag ? s.feature : null;
@@ -73,7 +73,7 @@ export function makePartials({ components, roles = null, lang = 'en', reqsById =
     const prose = frameNotesBody ? frameNotesBody(noteBody) : noteBody;
     // The four things a reader wants before anybody's judgment: what the screen is for, what
     // stands on it, what it does and which state this is, and which requirement it answers. The
-    // pattern derives them from the frame itself — written beside the frame instead, they would be
+    // pattern derives them from the frame itself - written beside the frame instead, they would be
     // right the day they were typed and wrong at the next edit.
     const spec = frameSpec ? frameSpec(s, { reqs: reqsById[id.replace(/[a-z]$/, '')] ?? [] }) : null;
     const specRows = spec
@@ -85,7 +85,7 @@ export function makePartials({ components, roles = null, lang = 'en', reqsById =
     const specBlock = specRows ? `\n      <div class="frame-spec">${specRows}</div>` : '';
     const notes = prose ? `\n      <div class="frame-notes">\n        ${prose}\n      </div>` : '';
     // Who reaches this frame. The cluster decides it and the frame overrides only where it
-    // departs — an override is drawn emphasised, because a departure is the thing worth reading.
+    // departs - an override is drawn emphasised, because a departure is the thing worth reading.
     const verdicts = rolesOf(id.split('-')[0], s.roles);
     const roleStrip = verdicts
       ? `\n      <div class="frame-roles">${Object.entries(ROLES)
@@ -101,14 +101,14 @@ export function makePartials({ components, roles = null, lang = 'en', reqsById =
     if (ph) classes.push('deferred');
     const isDesktop = device === 'desktop';
     // What kind of window a desktop frame sits in. Three answers and the kit only rules out the
-    // third: `browser` (the default — a page loaded at a URL), `app` (an installed program's own
-    // window, which has a title and no address), `none` (no window at all — a bare desktop, an
+    // third: `browser` (the default - a page loaded at a URL), `app` (an installed program's own
+    // window, which has a title and no address), `none` (no window at all - a bare desktop, an
     // installer, a screen that IS the machine). The pattern draws the first two, because a
     // titlebar is a drawing and the kit does not draw.
     //
     // **It is an axis rather than a prefix on the URL.** A board that had to say `app:설치본` in
     // the address field got its three frames drawn correctly and made every reader of that file
-    // parse a string to find out what kind of window it was — and no gate could see it, because
+    // parse a string to find out what kind of window it was - and no gate could see it, because
     // a URL is free text.
     const chrome = s.chrome ?? 'browser';
     if (!['browser', 'app', 'none'].includes(chrome)) {
@@ -118,12 +118,12 @@ export function makePartials({ components, roles = null, lang = 'en', reqsById =
       ? `${browserbar(s.url || 'app.example.com', { chrome, title: s.appTitle })}\n        `
       : '';
     const fold = isDesktop ? `\n          <div class="fold"><span>fold · ${s.fold || 'smallest window'}</span></div>` : '';
-    // `[02]A-20` — the visual position first, so a reader scanning the board can see where they
+    // `[02]A-20` - the visual position first, so a reader scanning the board can see where they
     // are, then the permanent id, which is what they were actually given. The file name is NOT
     // shown: the id IS the number in the file name, so `A-20` already locates `a-20-*.mjs`.
     // A third axis, where the board declares one: what the split's module knows about this frame
     // beyond which file it went in. It is not what the board is arranged by, so it appears only
-    // here, beside the id — and beside the id is where it has to be, because the reader it is for
+    // here, beside the id - and beside the id is where it has to be, because the reader it is for
     // meets a frame one at a time.
     const ax = s.axisTag ?? null;
     const label =
@@ -143,39 +143,39 @@ export function makePartials({ components, roles = null, lang = 'en', reqsById =
   }
 
   // sidebar(sections): the fixed table of contents. sections = [{letter, title,
-  // screens:[{id, seq, label, anchor}]}]. Two lines per entry — position + permanent id, then
+  // screens:[{id, seq, label, anchor}]}]. Two lines per entry - position + permanent id, then
   // the label. The file name is not listed: the id is the number the file is named for.
   //
   // The sidebar is a fixed HEAD (title, legend, filter) over a scrolling LIST, so the filter
-  // stays reachable from anywhere in a table of contents hundreds of entries long — a search
+  // stays reachable from anywhere in a table of contents hundreds of entries long - a search
   // box that scrolls away with the results is a search box nobody uses twice.
   //
   // Each section is wrapped in `.sb-group` so the filter can hide a whole section, header and
   // all, when nothing in it matches. Anything reading this markup walks it by SELECTOR
   // (`.sb-sec`, `a[href^="#"]`), never by child position.
   /**
-   * @param jumps the places outside the frame list a reader goes to — the opening overview and
+   * @param jumps the places outside the frame list a reader goes to - the opening overview and
    *   the reading contract. They ride the fixed HEAD rather than the scrolling list so they are
    *   reachable from anywhere in a table of contents hundreds of entries long, and so the filter
    *   never hides them: they are not screens and nothing a reader types should make them vanish.
    * @param file the document this sidebar is being written into. An entry or a jump carrying a
-   *   `doc` that is not this file is linked as `<file>#<anchor>` rather than as a bare anchor —
+   *   `doc` that is not this file is linked as `<file>#<anchor>` rather than as a bare anchor -
    *   which is the whole of what a split board needs from the index, and what an unsplit board
    *   never triggers because nothing it lists carries a `doc` at all
    */
   function sidebar(sections, { boardName = 'board', jumps = [], file = '' } = {}) {
     // `#anchor` while the target is in this file, `<file>#anchor` while it is not. A bare anchor
     // is kept rather than always writing the file name, because that is the link that survives
-    // the page being opened from a different path — an attachment, a copy, a served folder.
+    // the page being opened from a different path - an attachment, a copy, a served folder.
     const href = (doc, anchor) => `${doc && doc !== file ? doc : ''}#${anchor}`;
     const text = textFor(lang);
     // Each section carries its screen count and the top carries the board's, because a reader
     // scrolling a table of contents this long has no other way to tell whether the section they
-    // are in is four screens or forty — and "how big is this board" is the first question anyone
+    // are in is four screens or forty - and "how big is this board" is the first question anyone
     // asks of it.
     const total = sections.reduce((n, sec) => n + sec.screens.length, 0);
     // The declared axis, gathered into a picker. The text filter already reaches the mark, but
-    // only a reader who knows the marks can type one — and the whole reason the axis is on the
+    // only a reader who knows the marks can type one - and the whole reason the axis is on the
     // board is that it groups frames by something the board is NOT arranged by. A list of its
     // values is how that grouping becomes reachable by somebody meeting the board for the first
     // time. Sorted by mark so the order is the axis's own, not the order frames happen to fall in.
@@ -198,7 +198,7 @@ export function makePartials({ components, roles = null, lang = 'en', reqsById =
       sec.screens.map((sc) =>
         // The third axis rides the id line rather than the label line: it belongs to the frame's
         // identity rather than to what the frame is, and it is short. It is inside the entry's
-        // text, so the filter reaches it — typing the mark narrows the index to that axis, which
+        // text, so the filter reaches it - typing the mark narrows the index to that axis, which
         // is the only way a reader can see one of its values gathered on a board arranged by
         // something else.
         `      <a href="${href(sc.doc, sc.anchor)}" title="${sc.id} · ${sc.label}">` +
@@ -248,12 +248,12 @@ ${jumps.map((j) => `      <a href="${href(j.doc, j.href)}"><span class="num">${j
   /**
    * The row that moves a reader between the files one split board is written into.
    *
-   * <p>Drawn only on a split board — an unsplit one has nowhere to go and a row of one entry
+   * <p>Drawn only on a split board - an unsplit one has nowhere to go and a row of one entry
    * reads as a broken control. The current file is marked rather than unlinked, so the row is
    * the same shape on every file and a reader can see where they are without counting.
    *
    * @param items `{ file, label, count }`, entry page first
-   * @param file the document being written — the item naming it is the one marked
+   * @param file the document being written - the item naming it is the one marked
    */
   function nav(items, file) {
     if (!items.length) return '';
@@ -268,11 +268,11 @@ ${items.map((it) => `  <a class="bn${it.file === file ? ' is-here' : ''}" href="
    * The entry page's own content: what the set is, and the way into each file of it.
    *
    * <p>The page draws no frame, so what it owes a reader is the two things a frame list cannot
-   * give them — that these files are one board, and which file holds what. The index of every
+   * give them - that these files are one board, and which file holds what. The index of every
    * frame is the sidebar beside it, where the filter is.
    *
    * @param note the sentence saying the files are one set
-   * @param parts `{ file, label, count, groups }` — one card each
+   * @param parts `{ file, label, count, groups }` - one card each
    */
   function entry(note, parts) {
     return `<section class="entry" id="entry">
@@ -293,22 +293,22 @@ ${parts.map((p) => `    <a class="ep" href="${p.file}">
   // pair a `.view-toggle` label in your intro/header to flip it. The only script is a
   // progressive-enhancement navigation aid over the TOC (no external resources): it
   // highlights the entry of the frame you click or view, and filters the index as you
-  // type. Both act on the SIDEBAR only — every frame stays on the board, no content is
+  // type. Both act on the SIDEBAR only - every frame stays on the board, no content is
   // created, and with JS off the board renders whole, the index lists everything and every
   // anchor still works.
   // `readmeHtml` is the last thing in the board, after every frame. It is read once, before
   // implementing, and at the top it would stand between every later reader and the frames they
-  // came for — on a board hundreds of frames long that is a toll paid on every visit. The header
+  // came for - on a board hundreds of frames long that is a toll paid on every visit. The header
   // links to it, so «reachable» does not depend on scrolling to the end.
   // `viewportPairs` decides what the board does with a narrow/wide pair.
   //
-  // `narrow-first` · `wide-first` — one member on screen, the header's toggle switching between
+  // `narrow-first` · `wide-first` - one member on screen, the header's toggle switching between
   // them. Which one opens is the board's PRIMARY width, not a preference: a board of a hundred
   // desktop screens and one phone pair that opens narrow hides two desktop frames, and the
   // reader reports them as MISSING rather than as hidden, because nothing on the page says a
   // toggle is why.
   //
-  // `stacked` — both members on the page, the narrow one directly under its wide twin, and no
+  // `stacked` - both members on the page, the narrow one directly under its wide twin, and no
   // toggle at all. Right wherever the pair is the exception rather than the rule: the reader
   // sees the two widths of one screen together, which is what a pair is for, and never has to
   // discover a control to find a frame the index promised.

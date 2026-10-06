@@ -96,11 +96,11 @@ Provided by `SimpliXBaseService` / underlying Spring Data. Use these; do not rei
 | Helper | Purpose |
 |---|---|
 | `findById(id)` | `Optional<E>` lookup |
-| `findById(id, DTO.class)` | projection lookup — loads and maps to DTO in one step |
+| `findById(id, DTO.class)` | projection lookup - loads and maps to DTO in one step |
 | `existsById(id)` | boolean existence check (use in delete) |
 | `findAllById(ids)` / `findAll(...)` | bulk lookups |
 | `findAllWithSearch(sc, ListDTO.class)` | Searchable JPA search → `Page<ListDTO>` |
-| `saveAndFlush(entity)` | save + flush — returns the persisted entity |
+| `saveAndFlush(entity)` | save + flush - returns the persisted entity |
 | `saveAll(entities)` | bulk save |
 | `deleteById(id)` / `deleteAllByIds(ids)` | delete helpers |
 | `modelMapper` | field-injected, use for DTO ↔ entity mapping |
@@ -122,6 +122,6 @@ What the service MUST implement (per entity, NOT inherited):
 | `multiUpdate(Set<UpdateDTO>)` | when `PATCH /` endpoint exists | iterates and calls `update` |
 | `batchUpdate(BatchUpdateDTO)` | when `PATCH /batch` endpoint exists | null-guarded field application + `saveAll` |
 | `updateOrder` / `updateOrders` | when entity has `displayOrder` | `@Transactional`; sets `displayOrder` via `saveAndGetProjection` |
-| `buildDetailDTO(id)` | **only when enrichment needed** | wraps `findById(id, DetailDTO.class)` + custom enrichment. When the entity has no post-load enrichment, the controller calls `service.findById(id, DetailDTO.class)` directly (generator default — see `EntityRestController.java.template`). Do NOT add this wrapper as boilerplate. |
-| `buildUpdateFormDTO(id)` | **only when enrichment needed** | same rule as above — base helper is called directly from the controller unless enrichment is required |
+| `buildDetailDTO(id)` | **only when enrichment needed** | wraps `findById(id, DetailDTO.class)` + custom enrichment. When the entity has no post-load enrichment, the controller calls `service.findById(id, DetailDTO.class)` directly (generator default - see `EntityRestController.java.template`). Do NOT add this wrapper as boilerplate. |
+| `buildUpdateFormDTO(id)` | **only when enrichment needed** | same rule as above - base helper is called directly from the controller unless enrichment is required |
 | `saveAndGetProjection(entity, fkId)` | always (private helper) | save + FK resolution + projection lookup; called by create/update/updateOrder |

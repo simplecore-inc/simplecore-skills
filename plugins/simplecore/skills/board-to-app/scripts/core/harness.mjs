@@ -1,7 +1,7 @@
 // Building a project for a gate to be proved against, and the runner that judges the result.
 //
 // A case is `{ gate, name, ctx, shouldFire }`. The fixture is a real directory with a real
-// config in it — never a hand-made context object — so a gate is proved against the same
+// config in it - never a hand-made context object - so a gate is proved against the same
 // reader it uses in a repository, and a gate that quietly stopped resolving paths cannot pass.
 import { execFileSync, spawnSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
@@ -45,19 +45,19 @@ export function cleanProject() {
  * A fixture factory and the cleanup that removes every directory it made.
  *
  * <p>`files` maps a repository-relative path to its contents; a key ending in `/` makes an
- * empty directory, `''` makes an empty file, and **`null` means the file is not there** — the
+ * empty directory, `''` makes an empty file, and **`null` means the file is not there** - the
  * case for a document that was never written. `undefined` is refused: it is what a renamed
  * constant leaves behind, and reading it as absence would drop a file nobody meant to drop. `commits` is a list of commits, which turns the fixture into a git repository:
  * a plain string is a message and makes an empty commit, and `{ message, files }` writes those
  * files and commits exactly them. The second form is what a gate reading a commit's CONTENT needs
- * — a fixture whose history is all empty commits can prove a rule about messages and nothing about
+ * - a fixture whose history is all empty commits can prove a rule about messages and nothing about
  * what a commit carried.
  *
  * <p>`dirty` is written AFTER the commits and committed by nothing, which is the one state `files`
  * cannot produce: `files` is written first and any commit naming the same path overwrites it, so a
  * fixture built from those two alone always ends with a tree matching HEAD. A gate comparing the
- * working tree against the commit has nothing to see there — it would pass its 「fires」 case for
- * the wrong reason or not at all — so the difference between the two is spelled rather than
+ * working tree against the commit has nothing to see there - it would pass its 「fires」 case for
+ * the wrong reason or not at all - so the difference between the two is spelled rather than
  * arranged.
  */
 export function makeBuilders() {
@@ -69,11 +69,11 @@ export function makeBuilders() {
 
     for (const [rel, body] of Object.entries(files)) {
       // `null` is the case saying THIS FILE IS NOT THERE, which half the gates here exist to
-      // find — an absent result document, a capture that was cited and never written. Writing it
+      // find - an absent result document, a capture that was cited and never written. Writing it
       // as an empty file instead proves a different defect and passes for the wrong reason, so
       // the natural notation has to mean absence.
       if (body === null) continue;
-      // `undefined` is a name that did not resolve — a constant renamed, a typo in the key. It
+      // `undefined` is a name that did not resolve - a constant renamed, a typo in the key. It
       // reads as `null` and would silently drop the file, so it stops the run instead.
       if (body === undefined) {
         throw new Error(
@@ -107,7 +107,7 @@ export function makeBuilders() {
           paths.push(rel);
         }
         // Staged by explicit path, so a commit carries what the case said it carries and nothing
-        // the fixture happens to have lying beside it — which is the very distinction under test.
+        // the fixture happens to have lying beside it - which is the very distinction under test.
         if (paths.length) git(['add', '--', ...paths]);
         git([
           '-c', 'user.name=case',
@@ -118,7 +118,7 @@ export function makeBuilders() {
     }
 
     // After the commits, so the tree and HEAD genuinely disagree. `null` deletes the path instead,
-    // which is the other half of that disagreement — a committed artefact the tree no longer has.
+    // which is the other half of that disagreement - a committed artefact the tree no longer has.
     for (const [rel, body] of Object.entries(dirty ?? {})) {
       const target = join(root, rel);
       if (body === null) {
@@ -200,7 +200,7 @@ export function unproven(cases, gates) {
  * The gates whose declared grade is not one the runner reads.
  *
  * <p>A mistyped grade is the quietest failure this channel has. The gate keeps working, its cases
- * keep passing, and it is counted in the channel nobody chose — so a rule written to prompt a
+ * keep passing, and it is counted in the channel nobody chose - so a rule written to prompt a
  * re-read reddens the tree while the word in its source says otherwise. It is reported rather
  * than defaulted for the same reason a missing case is: silence and correctness look identical.
  *
@@ -225,7 +225,7 @@ export function ungraded(gates) {
  *
  * <p>`applies` skips a gate when a key it needs is not declared, which is right for a key the
  * project chose not to declare. A gate that lists a file path or an invented name there is
- * skipped by the same test and never runs at all — and the summary counts it among 「the keys they
+ * skipped by the same test and never runs at all - and the summary counts it among 「the keys they
  * read are not declared」, where it reads as a project choice rather than a gate that can never
  * fire. Six project gates sat that way for a build, each proving nothing. So a need that is not a
  * key of the schema is refused by name, not folded into the skipped count.
@@ -282,7 +282,7 @@ export function proveMisdeclaredNeeds(project) {
 /**
  * The header row that opens the config table, and the anchor the reverse read uses.
  *
- * <p>The table lives in `references/config.md` — split out of `SKILL.md` so a session loads it only
+ * <p>The table lives in `references/config.md` - split out of `SKILL.md` so a session loads it only
  * when a key is in question. The reverse read follows it there rather than keeping a copy.
  */
 const CONFIG_TABLE_HEADER = '| Key | What the project names with it | Required | Absent means |';
@@ -291,14 +291,14 @@ const CONFIG_TABLE_HEADER = '| Key | What the project names with it | Required |
 const TABLE_KEY = /^\|\s*`([A-Za-z][A-Za-z0-9]*)`\s*\|/;
 
 /**
- * Where a key is documented and where it is not — the comparison alone, so it can be run against
+ * Where a key is documented and where it is not - the comparison alone, so it can be run against
  * the real files and against doctored ones.
  *
  * <p>`costs` maps a key to the sentence the config table's last column gives it, and it is held
  * against `SCHEMA[key].absent` character for character. **The two are one sentence in two files,
  * which is a shape that only ever drifts one way**: the table is what a person edits and
  * `doctor` prints the schema, so a cost corrected in the table reaches nobody and the report goes
- * on saying the old thing. Neither file can read the other, so the equality is what holds them —
+ * on saying the old thing. Neither file can read the other, so the equality is what holds them -
  * and a key whose schema entry carries no cost at all is the same failure arriving earlier,
  * because `doctor` would print `undefined` beside it.
  *
@@ -342,7 +342,7 @@ export function undocumentedKeys(keys, inTable, inTemplate, costs = null) {
  * Every key the skill reads is documented where a project would look for it.
  *
  * <p>This is the shape the two tables cannot hold: a key added to `SCHEMA` works immediately,
- * `configGate` validates it, `doctor` prints it — and nothing anywhere says it exists, so the only
+ * `configGate` validates it, `doctor` prints it - and nothing anywhere says it exists, so the only
  * readers who ever meet it are the ones who go through the source. Eight keys reached that state
  * before this ran.
  *
@@ -371,7 +371,7 @@ export function proveKeysAreDocumented() {
     inTable.add(found[1]);
     // `| key | what it names | required | absent means |` splits into six, the empty ends
     // included. A row that splits into anything else has a cell carrying a pipe of its own, and
-    // reading the fourth field of that row would compare half a sentence — so it is left out of
+    // reading the fourth field of that row would compare half a sentence - so it is left out of
     // the cost comparison and reported by the row below instead.
     const cells = line.split('|');
     if (cells.length === 6) costs.set(found[1], cells[4].trim());
@@ -388,7 +388,7 @@ export function proveKeysAreDocumented() {
   const out = undocumentedKeys(Object.keys(SCHEMA), inTable, inTemplate, costs);
   // Two baselines rather than one. The presence probes are measured without the cost comparison,
   // so a sentence that has drifted in the table cannot move the yardstick a probe about a missing
-  // row is read against — one real defect would otherwise report as three.
+  // row is read against - one real defect would otherwise report as three.
   const found = undocumentedKeys(Object.keys(SCHEMA), inTable, inTemplate).length;
   const costBaseline = out.length;
 
@@ -404,7 +404,7 @@ export function proveKeysAreDocumented() {
   }
 
   // The cost half, proved the same way. A sentence edited in the table and not in the schema is
-  // the whole failure mode — the table is what a person corrects and `doctor` prints the schema —
+  // the whole failure mode - the table is what a person corrects and `doctor` prints the schema -
   // and a key whose schema entry carries no cost at all is that failure arriving one step earlier.
   const keys = Object.keys(SCHEMA);
   const drifted = new Map(costs);
@@ -462,7 +462,7 @@ const ERROR_GATE = {
  * What `check` does with each grade, read off its exit status rather than argued about.
  *
  * <p>The grade is worth nothing unless the two channels part company at the exit code, and no
- * case in `runCases` can see an exit code — it judges a gate's findings, not a process. So the
+ * case in `runCases` can see an exit code - it judges a gate's findings, not a process. So the
  * proof is a real project with a real `projectGates` module in it, and a real `bta.mjs check`
  * over it.
  *
@@ -474,8 +474,8 @@ const ERROR_GATE = {
  * A project gate answering to a core gate's id is refused, and saying so is the whole point.
  *
  * <p>Two directions, because the door matters as much as the refusal: a project that copied a core
- * gate before the core owned it must be stopped, and a project that deliberately replaces one —
- * `disabledGates` naming the core id with a reason — must be let through. Without the second half
+ * gate before the core owned it must be stopped, and a project that deliberately replaces one -
+ * `disabledGates` naming the core id with a reason - must be let through. Without the second half
  * the rule would be «a project may never own a gate the skill also has», which is a different rule
  * and the wrong one.
  *
@@ -484,7 +484,7 @@ const ERROR_GATE = {
  */
 export function proveShadowedIds(project) {
   const CORE_ID = 'trailerGate';
-  /** The words the refusal is recognised by — it fires or it does not, and nothing else says this. */
+  /** The words the refusal is recognised by - it fires or it does not, and nothing else says this. */
   const REFUSAL = '코어 게이트와 같은 아이디';
   const base = cleanProject();
   const shadow = gatesModule([{ id: CORE_ID, finding: 'notes/OPEN.md:1: the copy' }]);
@@ -502,7 +502,7 @@ export function proveShadowedIds(project) {
   };
 
   // **Assert on the refusal's own words, not on the id.** The fixture gate always fires, so its
-  // finding names the id and `check` exits nonzero whether or not the refusal exists — an assertion
+  // finding names the id and `check` exits nonzero whether or not the refusal exists - an assertion
   // on either of those passes with the rule switched off, which is a proof of nothing. Switching
   // the rule off is the only way that shows, and it is worth doing to every proof written here.
   const shadowed = run({ projectGates: 'gates/project-gates.mjs' });

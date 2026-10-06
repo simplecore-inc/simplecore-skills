@@ -1,6 +1,6 @@
 # Configuration Reference
 
-`simplix.config.ts` is the central configuration file for simplix-react projects. It is loaded at project root by the CLI and controls code generation, HTTP environments, and OpenAPI integration. For the framework-level type signatures behind each option, see the simplix-react framework documentation — this reference documents how a project configures the CLI.
+`simplix.config.ts` is the central configuration file for simplix-react projects. It is loaded at project root by the CLI and controls code generation, HTTP environments, and OpenAPI integration. For the framework-level type signatures behind each option, see the simplix-react framework documentation - this reference documents how a project configures the CLI.
 
 Valid top-level keys are: `plugins`, `api`, `queryBuilder`, `packages`, `http`, `codegen`, `i18n`, and `openapi`. There is no top-level `mock` key.
 
@@ -106,7 +106,7 @@ The package **scope** is a separate concern: it is always taken from the root `p
 
 Generated packages follow the pattern: `{scope}/{prefix}-domain-{name}`, where `{scope}` comes from the root `package.json` name. If the root name has no `@scope/`, the package is unscoped (`{prefix}-domain-{name}`).
 
-`prefix` may also be an **empty string** (`prefix: ""`). In that case the prefix segment is omitted entirely — packages become `{scope}/domain-{name}` (note: no leading dash) — but the scope is still applied from the root `package.json` name.
+`prefix` may also be an **empty string** (`prefix: ""`). In that case the prefix segment is omitted entirely - packages become `{scope}/domain-{name}` (note: no leading dash) - but the scope is still applied from the root `package.json` name.
 
 ### http
 
@@ -120,10 +120,10 @@ Each environment defines a `baseUrl` used in generated `.http` test files.
 
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
-| `locales` | `string[]` | — | Locales for which message catalogs are generated/maintained |
+| `locales` | `string[]` | - | Locales for which message catalogs are generated/maintained |
 | `defaultLocale` | `string` | first locale | Fallback locale |
 
-> **Note — no `mock` key.** `simplix.config.ts` has no top-level mock configuration. Mock list page sizing is a per-handler concern of `deriveMockHandlers` (its `MockEntityConfig` argument), not a global config option. On the codegen path the mock layer is built from `createMockEntityStore` + generated `create<Entity>Handlers` + `wrapEnvelope` rather than `deriveMockHandlers` — see `scaffold/overview.md`. Refer to the simplix-react framework documentation for the `MockEntityConfig` contract.
+> **Note - no `mock` key.** `simplix.config.ts` has no top-level mock configuration. Mock list page sizing is a per-handler concern of `deriveMockHandlers` (its `MockEntityConfig` argument), not a global config option. On the codegen path the mock layer is built from `createMockEntityStore` + generated `create<Entity>Handlers` + `wrapEnvelope` rather than `deriveMockHandlers` - see `scaffold/overview.md`. Refer to the simplix-react framework documentation for the `MockEntityConfig` contract.
 
 ### codegen
 
@@ -146,9 +146,9 @@ When `true`, generated files include a header like:
 | `spec` | `string` | yes | URL or path to the OpenAPI document |
 | `domains` | `Record<string, string[]>` | yes | Domain name → operation/tag identifiers grouped into that package |
 | `profile` | `string` | no | Spec profile registered by a plugin (SimpliX backends use `"simplix-boot"`) |
-| `naming` | — | no | Naming overrides for generated symbols |
-| `responseAdapter` | — | no | Response envelope adapter |
-| `crud` | — | no | CRUD generation options |
+| `naming` | - | no | Naming overrides for generated symbols |
+| `responseAdapter` | - | no | Response envelope adapter |
+| `crud` | - | no | CRUD generation options |
 
 Each value in `domains` lists the fully-qualified identifiers grouped into that package:
 
@@ -165,12 +165,12 @@ openapi: [
 ];
 ```
 
-When running `simplix openapi` or `simplix meta`, operations are grouped into domain packages based on these identifiers — the two read the same `domains` map. See the simplix-react framework documentation for the full `OpenAPISpecConfig` field reference.
+When running `simplix openapi` or `simplix meta`, operations are grouped into domain packages based on these identifiers - the two read the same `domains` map. See the simplix-react framework documentation for the full `OpenAPISpecConfig` field reference.
 
 ## The config has no slot for a UI module
 
-`SimplixConfig` carries seven keys — `plugins` · `api` · `packages` · `http` · `codegen` ·
-`i18n` · `openapi` — and none of them names a module. `openapi[].domains` looks like the
+`SimplixConfig` carries seven keys - `plugins` · `api` · `packages` · `http` · `codegen` ·
+`i18n` · `openapi` - and none of them names a module. `openapi[].domains` looks like the
 place and is not: what it points at is `packages/domain-*`, the API side, and a UI module
 under `modules/` is registered somewhere else entirely.
 
@@ -207,7 +207,7 @@ It simply returns the config object as-is. Its only purpose is TypeScript type i
 | `simplix init` | Generates the config file |
 | `simplix add-domain` | `api.baseUrl` for basePath computation |
 | `simplix openapi` | `api.baseUrl`, `openapi[].spec`, `openapi[].domains`, `openapi[].profile`, `codegen.header` |
-| `simplix meta` | `api.baseUrl`, `openapi[].meta`, `openapi[].domains`, `openapi[].profile`, `codegen.header` — no `spec` |
+| `simplix meta` | `api.baseUrl`, `openapi[].meta`, `openapi[].domains`, `openapi[].profile`, `codegen.header` - no `spec` |
 | `simplix validate` | Validates against config constraints |
 
 ## Common Patterns
@@ -248,7 +248,7 @@ export default defineConfig({
 
 ### Multiple specs in one project
 
-`openapi` being an array means several OpenAPI documents can be wired in a single config — each entry has its own `spec`, `profile`, and `domains`:
+`openapi` being an array means several OpenAPI documents can be wired in a single config - each entry has its own `spec`, `profile`, and `domains`:
 
 ```ts
 export default defineConfig({

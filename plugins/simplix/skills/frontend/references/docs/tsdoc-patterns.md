@@ -4,7 +4,7 @@
 
 | Tag | Purpose | Where |
 | --- | --- | --- |
-| (first line) | Summary — one sentence describing "what this is" | All public exports |
+| (first line) | Summary - one sentence describing "what this is" | All public exports |
 | `@remarks` | Detailed explanation after summary | Complex functions/types |
 | `@typeParam` | Generic parameter description | Generic functions/types |
 | `@param` | Function parameter description | All public functions |
@@ -15,18 +15,18 @@
 
 ## Forbidden Tags
 
-- `@deprecated` — project rule: delete deprecated code immediately
-- `@author` — use git blame
-- `@since` — use CHANGELOG
+- `@deprecated` - project rule: delete deprecated code immediately
+- `@author` - use git blame
+- `@since` - use CHANGELOG
 
 ## Writing Rules
 
 1. Start summary with 3rd-person present-tense verb: "Derives...", "Defines...", "Creates..."
-2. `@example` code MUST be executable — include all imports, no omissions
+2. `@example` code MUST be executable - include all imports, no omissions
 3. Explain "why", not "what": `@param config` → "Configuration defining API structure" (O) / "config object" (X)
-4. Only comment non-obvious behavior — do not repeat what type signatures already show
+4. Only comment non-obvious behavior - do not repeat what type signatures already show
 5. Use `@see` for cross-package references: contract ↔ react ↔ mock
-6. Never use `@` tags in inline comments — TSDoc tags only in block comments (`/** */`)
+6. Never use `@` tags in inline comments - TSDoc tags only in block comments (`/** */`)
 
 ## Priority Order
 

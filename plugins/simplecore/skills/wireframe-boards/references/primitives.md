@@ -1,6 +1,6 @@
 # Primitives, fidelity, connectors, annotations
 
-Read when composing a frame's content — which class to reach for, what text is
+Read when composing a frame's content - which class to reach for, what text is
 real, and how frames are joined and annotated.
 
 ## Primitive vocabulary
@@ -10,7 +10,7 @@ real, and how frames are joined and annotated.
 | `.frame` > `.device` > `.screen` | One device frame; `.frame-label` (mono, `route — screen — state`) and `.frame-notes` sit below the device |
 | `.fold` | Viewport-bottom marker drawn at `--vh`; mandatory on desktop frames |
 | `.view-input` + `.view-toggle` | Board-level narrow ⇄ wide switch: checkbox first in `<body>`, segmented label in the header |
-| `.readme` | Implementation contract rendered above the board — ships on every board |
+| `.readme` | Implementation contract rendered above the board - ships on every board |
 | **Touch chrome** | |
 | `.statusbar` | Phone status bar with notch (notch auto-hidden on tablets) |
 | `.appbar` | Screen header: back arrow slot, title, trailing chip (e.g. language switch) |
@@ -24,18 +24,18 @@ real, and how frames are joined and annotated.
 | `.topbar` | Global header: search, spacer, user chip / `.avatar` |
 | `.crumb` / `.toolbar` > `.actions` | Breadcrumb line; page title row with right-aligned actions |
 | `.table` > `.trow` / `.trow.thead` / `.td` | Data table; `.td.w2` / `.td.fix` / `.td.right` size and align cells |
-| A tree that IS the list | **a table with a header row** — first column carries indent + caret + label, the rest are ordinary columns, row actions trail. A tree drawn as a bare outline can hold neither a status nor a row's verbs, so both get drawn a second time as a table above the region and the same records stand in two places. Beside a panel the further columns take what they hold (`min-width` around 72px, not the 110px an action column reserves at full width) |
+| A tree that IS the list | **a table with a header row** - first column carries indent + caret + label, the rest are ordinary columns, row actions trail. A tree drawn as a bare outline can hold neither a status nor a row's verbs, so both get drawn a second time as a table above the region and the same records stand in two places. Beside a panel the further columns take what they hold (`min-width` around 72px, not the 110px an action column reserves at full width) |
 | `.pagination` > `.pg` / `.pg.active` | Page controls under a table |
 | **Layout** | |
 | `.split` > `.pane` / `.pane.list` | Master-detail: fixed list pane + detail pane (replaces `.body`) |
 | `.grid-2` / `.grid-3` / `.grid-4` | Multi-column card grid inside `.body` or a `.pane` |
 | **Content** | |
-| `.img-ph` | Image placeholder — rect with diagonal X |
-| `.qr-ph` | QR/barcode placeholder — checker pattern + label |
-| A document read as paper | **a viewer, not one page at one size** — toolbar (page step, zoom, fit, find, which language is drawn), a rail of page thumbnails that marks the pages with a problem, a fixed-height stage the paper is cut off by, and a status line naming the paper. See § A preview of a document is a viewer |
+| `.img-ph` | Image placeholder - rect with diagonal X |
+| `.qr-ph` | QR/barcode placeholder - checker pattern + label |
+| A document read as paper | **a viewer, not one page at one size** - toolbar (page step, zoom, fit, find, which language is drawn), a rail of page thumbnails that marks the pages with a problem, a fixed-height stage the paper is cut off by, and a status line naming the paper. See § A preview of a document is a viewer |
 | `.bar` + `.w25/.w40/.w60/.w80/.w100` | Placeholder text lines of varying width |
 | `.t-title` / `.t-sub` / `.t-body` | Real text: screen titles, guidance copy |
-| `.btn` / `.btn.primary` / `.btn.ghost` | Buttons — primary is a filled greybox, ghost is dashed |
+| `.btn` / `.btn.primary` / `.btn.ghost` | Buttons - primary is a filled greybox, ghost is dashed |
 | `.field` > `.label` + `.input` | Form field with label; append `▾` inside `.input` for selects |
 | `.chip` / `.badge` / `.badge.outline` | Filter chips and status badges |
 | `.card` / `.list-card` + `.thumb` | Content card; list row with thumbnail |
@@ -50,23 +50,23 @@ real, and how frames are joined and annotated.
 
 - **Structural text is real; data content is bars.** Buttons, screen titles, tab
   and nav labels, field labels, table headers, and status/guidance messages carry
-  their actual wording in the product's UI language — reviewers must be able to
+  their actual wording in the product's UI language - reviewers must be able to
   validate flow and wording. Names, descriptions, prices, and other record data
   are `.bar` placeholders; rendering them real drags the review into content.
   Never use lorem ipsum: it is noise pretending to be signal.
 - **A frame whose language switch is set to a language draws that language.** On a
   multilingual product the switch is drawn set to Tiếng Việt or ភាសាខ្មែរ and then every
-  string under it is written in the deployment's own language — because the author writes
+  string under it is written in the deployment's own language - because the author writes
   in theirs and the switch looks like it has done the work. It has not: the frame now
   claims a translation that does not exist, and the review it was drawn for passes.
-  What has to be in the reader's language is what they must **act** on — the instruction,
+  What has to be in the reader's language is what they must **act** on - the instruction,
   the field labels, the button that signs, the sentence saying what happens if they refuse.
   A title in their language over content in yours is the worst of the three, because it
   reads as translated to everyone who does not speak it.
   The same holds for paper: a sheet drawn under 「함께 실을 언어 = Tiếng Việt」 prints its
   field names in that language too, not just its values.
 - CJK text runs wider than Latin at the same character count; keep labels on one
-  line at the frame's width or shorten them — a wrapped button label is a
+  line at the frame's width or shorten them - a wrapped button label is a
   finding, not a styling problem. On viewport pairs, check both: a label that fits
   at 1440px can still wrap inside a 280px `.pane.list` or a 60px `.sidebar.rail`.
 - Every block needs a visible grey fill or border. A region that renders
@@ -86,10 +86,10 @@ decides where everything else on the page can go.
 - **Nothing may sit under the two columns.** A block appended after the list-detail lands
   under a panel that has already reached the floor: the reader sees the record's actions,
   then more page beneath them, and the footer stops meaning "this is the end of this
-  record". Make this mechanical — a gate that refuses a build when anything follows the
+  record". Make this mechanical - a gate that refuses a build when anything follows the
   list-detail call pays for itself the first time somebody appends a note.
 - **The list column is narrow.** With a fixed-width panel beside it the list gets what is
-  left — often barely a third of the frame. A five-column table cannot go there. Size the
+  left - often barely a third of the frame. A five-column table cannot go there. Size the
   list to three columns (title with a mono sub-line, one status, two row actions) and put
   anything wider elsewhere.
 
@@ -97,15 +97,15 @@ Four destinations, and choosing between them is the design decision:
 
 | What it is | Where it goes |
 | --- | --- |
-| Must stay visible whatever the list is doing — warnings, counts, the page's own note | **above** the list-detail; that region shrinks with the list, so a card over it survives |
-| A value of the **selected record** | **inside the panel** — never above, where it reads as a page fact about nothing |
+| Must stay visible whatever the list is doing - warnings, counts, the page's own note | **above** the list-detail; that region shrinks with the list, so a card over it survives |
+| A value of the **selected record** | **inside the panel** - never above, where it reads as a page fact about nothing |
 | A reference block about the **whole list** that is narrow enough | tail of the **list column** |
-| An always-available cross-link or export | the **page header's action area**, right of the title — not a button row in the flow |
+| An always-available cross-link or export | the **page header's action area**, right of the title - not a button row in the flow |
 
 ### The tabs, the chip filter and the list stand together
 
 Picking a tab, narrowing it with a chip and reading the rows is ONE act, and **nothing may
-sit between the three** — not a tile row, not a warning band, not an explanation card, not
+sit between the three** - not a tile row, not a warning band, not an explanation card, not
 a section title. Wedge something in and the reader chooses a tab, crosses a screenful of
 other material, and meets rows with nothing left saying those rows are the answer to what
 they chose. The tile row is the wedge that recurs, because it looks like a summary of the
@@ -113,30 +113,30 @@ list and is really a summary of the page.
 
 - **The order is tabs → chip filter → list**, and the list begins at the bar that counts
   it. A chip row drawn under that bar narrows a total the reader has not chosen yet.
-- **What was in the chain goes ABOVE the tabs** — the first of the four homes above. The
+- **What was in the chain goes ABOVE the tabs** - the first of the four homes above. The
   controls then end up next to what they control, and the figures read as the page's own.
 - **A note that depends on WHICH chip is chosen rides the chip row's right end.** A line of
   its own under the chips is the very block this forbids. **The test is one question: does
-  this sentence change when the chip changes?** Changes — the chip row's right end. Does not
-  — it is a page note and goes above the tabs, beside the help card and the warning band. A
+  this sentence change when the chip changes?** Changes - the chip row's right end. Does not -
+  it is a page note and goes above the tabs, beside the help card and the warning band. A
   sentence saying where a field's values come from, or what the tiles counted, reads the same
   whichever chip is picked and is one of those.
 - **Which side of that question a sentence falls on needs eyes**, so name whose. A gate can
-  see that something stands between the chip row and the list and no further — a regex reads
+  see that something stands between the chip row and the list and no further - a regex reads
   the sentence the same either way. The reader is somebody who did not draw the frame, at a
   moment the work cannot pass without; drawing it and judging it in one head produces the
   answer the author already had.
 - **A list's tabs and a record's content tabs are different things.** The first splits a
   list into kinds somebody works through separately; the second switches what one record
   shows. Only the first is in this rule.
-- **A chip row that is not a list filter declares itself** — a dashboard's period, the
+- **A chip row that is not a list filter declares itself** - a dashboard's period, the
   method the screen IS, the paper a preview is drawn on. One sentence naming what the chips
   pick instead, the same bargain the page-form and page-calendar declarations strike.
   Writing the sentence is the check, and an empty reason is not one.
 
 **Entity explanation and lifecycle material is a card, not a block.** A legend of the
 states a record moves through, a table of what each grade requires, a "how to read this
-screen" walkthrough — inline, these push the actual work below the fold and are read once
+screen" walkthrough - inline, these push the actual work below the fold and are read once
 in the reviewer's life. Put a compact card where it belongs (list bottom, above the
 list-detail, or at the top inside a detail tab) and let pressing it open a dialog. The
 explanation stays reachable and stops competing with the list.
@@ -155,7 +155,7 @@ whole page slot rather than to the obvious candidates only:
 
 **The left column goes behind the card; the right column stays on the page.** A page that
 opens on today's numbers tells a reader what to do; a page that opens on a statute makes
-them scroll past it every visit to reach the same six rows. A legal ground is not exempt —
+them scroll past it every visit to reach the same six rows. A legal ground is not exempt -
 it is the most reliable member of the left column, since an article number never changes
 with the data.
 
@@ -165,8 +165,8 @@ the closed page. Give the card the question the explanation answers (「조건�
 
 ### A record's own material never sits above the region
 
-The components that carry one record — a progress rail, an approval flow, an attachment
-grid, a retention lock, a field list — belong in the panel even when the page has room.
+The components that carry one record - a progress rail, an approval flow, an attachment
+grid, a retention lock, a field list - belong in the panel even when the page has room.
 Above the region they read as page facts about nothing: the reader picks a different row
 and the picture stays where it was, describing the row they left.
 
@@ -180,14 +180,14 @@ When a page carries both a list and a plan/calendar of **the same records**, the
 screen's two views, not two regions stacked on one page. Stacked, the reader crosses a
 full screenful of plan to reach the first row, and the same records are drawn twice.
 
-- **The view switch rides the bar above the list** — the total and the committed filters are
+- **The view switch rides the bar above the list** - the total and the committed filters are
   there, and those are exactly what has to survive a switch.
 - **The bar is drawn by whichever view is showing.** Leaving it inside the list means the
   drawing view has no switch at all, and a reader who pressed 「도면」 has no way back. Pull
   it into a `bar_(view)` helper both branches call.
 - **A view with no room for a panel opens the record as a dialog** (P-07). A plan fills the
   frame, so pressing a mark opens that record where the question was asked and closes back
-  onto the same plan. **Carry the panel's tabs into that dialog** — it is the same record
+  onto the same plan. **Carry the panel's tabs into that dialog** - it is the same record
   read in a different place, so it offers the same way in to its sub-collections.
 - Share one drawing of the record between panel and dialog (`const detailBody = …`), the
   same way the closed and open states share one drawing of the page.
@@ -201,19 +201,19 @@ rather than screen by screen.
 
 **So a screen rendered as a drawer is not a divergence from the board, and the board is not
 redrawn as one.** Redrawing it picks a side: the same frame means both shapes, and drawing one
-makes the other read as wrong. What a reviewer checks is the three the frame settles — it opens,
-it holds that, it closes back — and not the fourth.
+makes the other read as wrong. What a reviewer checks is the three the frame settles - it opens,
+it holds that, it closes back - and not the fourth.
 
 ### Every tab is drawn, and one companion frame carries the ones the base does not
 
-A tab strip names its panes and draws only the open one. **The names are not a contract** — a
+A tab strip names its panes and draws only the open one. **The names are not a contract** - a
 pane's columns, its actions and its empty state are unspecified, so the screen built from that
 frame is invented by whoever builds it. Boards accumulate this quietly: count the panes a board
 declares against the panes it draws and the gap is usually most of them.
 
 Drawing each pane as its own frame is the obvious fix and the wrong one. The pane is a strip
-inside a page, so a frame for it has to redraw the page — the header, the list beside it, the
-footer — and now **the same list exists in two frames and only one of them gets corrected.** The
+inside a page, so a frame for it has to redraw the page - the header, the list beside it, the
+footer - and now **the same list exists in two frames and only one of them gets corrected.** The
 divergence the board exists to prevent is the divergence the fix introduces, multiplied by the
 number of panes.
 
@@ -234,11 +234,11 @@ keeps the base's two-column shape, and the panes stack down the detail column:
 - **The title area is drawn the same** as the base, and nothing else is.
 - **The left column stands in for the list** the base draws, and the vertical divider is the base's
   own. A reader arriving from the base sees the same structure and reads the right column as that
-  panel — which is what says "these are its tabs" without a sentence saying so.
+  panel - which is what says "these are its tabs" without a sentence saying so.
 - **Each pane carries the base's real tab strip above it, with that pane open.** Twelve panes means
   twelve strips. A label over a pane says a tab exists; the strip shows what pressing it gives you.
 - **The strip is the base's own drawing, not a copy.** The base exports
-  `export function tabStrip(open) { return tabs([…]); }` and the companion calls it — the same
+  `export function tabStrip(open) { return tabs([…]); }` and the companion calls it - the same
   idiom as `head` and `panel(tab)`. A tab added or relabelled then moves in both places at once.
 - **Do not wrap a pane in a card.** A bordered box around the strip and its body stops the column
   reading as the panel and starts it reading as a list of cards.
@@ -253,23 +253,23 @@ count: both go stale the moment a tab moves, and the frame already draws them. T
 matches the `screen` exactly.
 
 One frame per tabbed screen rather than one per pane. The base keeps its own drawing: the pane it
-opens stays where it is, and the alternative — rewriting every tabbed screen to take its open pane
-as a parameter — is what this avoids.
+opens stays where it is, and the alternative - rewriting every tabbed screen to take its open pane
+as a parameter - is what this avoids.
 
-**The companion's layout is the base's layout** — never a fixed shape applied to every base. Read
+**The companion's layout is the base's layout** - never a fixed shape applied to every base. Read
 the base's body first and match it, because a companion is drawing panes the base already owns a
 place for, not adding a region the product does not have.
 
 | The base draws | The companion draws |
 | --- | --- |
 | `listDetail(list, detail)` | `regionPh` in the list column, a divider, the panes stacked in the detail column |
-| a full-width record screen — `pageHeader` + `tabs`/`recordTabs`, no `listDetail` | the panes at full width, **no placeholder** |
+| a full-width record screen - `pageHeader` + `tabs`/`recordTabs`, no `listDetail` | the panes at full width, **no placeholder** |
 
 **`simplix-basic` carries the pieces** for the first row, so a board on that pattern composes the
 frame rather than inventing it: `regionPh({ label, ref })` for the list column and
 `tabPanes({ strip, open, ref, panes })` for the detail column, wrapped in the pattern's own
 `listDetail(list, detail)`. The second row is `head + tabPanes({ …, region: '화면' })` and nothing
-else. `companionFollowsBaseLayoutGate` holds both directions — an invented placeholder and a
+else. `companionFollowsBaseLayoutGate` holds both directions - an invented placeholder and a
 missing one.
 
 **A base whose strip is the PAGE's has no list column to stand for, and the companion must not
@@ -278,32 +278,32 @@ claim one.** A settings screen or a record page draws `head + tabStrip() + …` 
 `— 목록 > 탭` suffix names a region the reader will look for and not find. Drop both: the
 companion is one column of panes, and its title ends in `— 탭`. Pass `region: '화면'` so the
 note says 화면의 탭 rather than 상세 패널의 탭 and points at the page's own verbs. The suffix is a
-three-way choice, decided by where the strip sits and nothing else — `— 상세 > 탭` inside a
+three-way choice, decided by where the strip sits and nothing else - `— 상세 > 탭` inside a
 list-detail's panel, `— 목록 > 탭` for a strip over the list, `— 탭` when the screen has neither.
 
 **The temptation is that the two-column shape looks like the house style**, so a screen with no
 list gets the placeholder anyway and the frame reads as consistent with its neighbours. What it
 actually says is that a column exists in the product and this frame chose not to draw it, which
-is a claim about the base that is false — and a reader who trusts the board goes looking for a
+is a claim about the base that is false - and a reader who trusts the board goes looking for a
 list nobody built.
 
 **`ref` is the base screen's NAME, never its frame id.** Both pieces render inside the device
-frame, so an id there is a frame number reaching the reader — the thing a board never puts in a
+frame, so an id there is a frame number reaching the reader - the thing a board never puts in a
 drawing. A name is also the more useful pointer: somebody building from the board recognises
 「사업장 상세」 and has to go looking for B-02. The base's notes still cite the companion by slug,
 which is where a frame reference belongs and where the build resolves it into a link.
 
-**The base does have to export its title area** — one line, `export const head = pageHeader({…})`,
+**The base does have to export its title area** - one line, `export const head = pageHeader({…})`,
 used by the base's own body and imported by the companion. Copying the title instead is the one
 shortcut that fails silently: two drawings of one title diverge the first time either is edited.
 
 **Export the strip and the header as function DECLARATIONS where a gate reads the file's first
 `export const X = (` as its factory.** An exported arrow above `screenBody` takes that role over
-and the checks that key on the factory's parameters go quiet — they stop reporting rather than
+and the checks that key on the factory's parameters go quiet - they stop reporting rather than
 start failing, which is the worse direction.
 
 **A companion must not declare a `tabs([…])` strip of its own.** Wherever capture demands are
-counted off the board one per pane, a literal strip on the companion demands every pane twice —
+counted off the board one per pane, a literal strip on the companion demands every pane twice -
 once against the base and once against the companion. Calling the base's `tabStrip` draws the real
 strip and declares nothing, so the census still sees one strip, in the base.
 
@@ -311,18 +311,18 @@ strip and declares nothing, so the census still sees one strip, in the base.
 The line is whether the pattern settles the *content* or only the *shape*: a pattern that says a
 sub-collection tab is a real list with row actions and pagination has not said which columns
 stand, so that pane is still drawn; a pattern that names the columns has, so that pane is a
-citation. The same tab label can fall on either side — a record's field-change log is settled by
+citation. The same tab label can fall on either side - a record's field-change log is settled by
 the change-history pattern, while a domain event log carries different columns per screen.
 
 **A sibling frame that opens a pane has drawn it, and the companion carries only what is left.**
-Some screens were already split — a form designer whose preview, validation and matrix each earned
-a frame — so most of that strip is drawn and one pane is not. Count coverage across the whole
+Some screens were already split - a form designer whose preview, validation and matrix each earned
+a frame - so most of that strip is drawn and one pane is not. Count coverage across the whole
 screen rather than per frame, or the companion restates four panes that already exist. Tell
 `tabPanes` how many tabs the strip really names (`of`), because a note that infers the strip from
 the panes it was handed will shrink a five-tab strip to two and be wrong on the page.
 
 **Judge every undrawn pane citation-or-drawing BEFORE drawing any of them, and a screen whose
-undrawn panes are all citations gets no companion frame at all** — the citations belong in the
+undrawn panes are all citations gets no companion frame at all** - the citations belong in the
 base's notes, and a companion holding nothing but a title and a placeholder is a blank page with a
 frame id. Counting the tabbed screens gives an upper bound on the companions, never the number of
 them. Taking the panes in the order the strip names them and drawing as you go inverts this: the
@@ -337,8 +337,8 @@ of them fails the same check at once.
 
 ## A preview of a document is a viewer
 
-Wherever a screen's job is to read or print a document — a print preview, a kept render, a
-certificate, a statutory form — **one page drawn at one size is not a preview.** The reader
+Wherever a screen's job is to read or print a document - a print preview, a kept render, a
+certificate, a statutory form - **one page drawn at one size is not a preview.** The reader
 cannot reach page 7, cannot see that page 7 is the one whose table breaks, and cannot enlarge
 the print far enough to check a figure before it goes to an office. Those three are exactly
 what somebody opened the preview to do.
@@ -350,12 +350,12 @@ what somebody opened the preview to do.
   "something is cut" sends them through the whole document to find it.
 - **The stage has a fixed height and cuts the paper off.** A page whose box ends where the text
   ran out is not a page, and seeing where the paper ends is the whole point.
-- **A status line names the paper** — size, page count, margin — and states in one sentence what
+- **A status line names the paper** - size, page count, margin - and states in one sentence what
   is wrong with this render, or that nothing is.
 
 **The viewer owns how a document is read, never what it is made of.** Page, zoom, fit, find and
 which language is drawn belong in the toolbar. Paper, margins, copies and which languages are
-printed at all stay on the page or in the print form — put those in the toolbar and a reader who
+printed at all stay on the page or in the print form - put those in the toolbar and a reader who
 only wanted a closer look has changed the document.
 
 **What is cut is said inside the viewer, beside the ways out of it.** A warning under the viewer
@@ -368,7 +368,7 @@ and the one after it. A viewer that draws one picture under all three labels tel
 nothing about what pressing the segment does.
 
 **Inside a detail panel the paper is a thumbnail, and needs a way out to the viewer.** A panel is
-about a third of the frame, so a three-page document lands there as the top of page 1 — no page
+about a third of the frame, so a three-page document lands there as the top of page 1 - no page
 step, no legible text. Give the panel a 「크게 보기」 verb that opens the same render in a viewer
 dialog, and make that dialog a state frame.
 
@@ -377,17 +377,17 @@ dialog, and make that dialog a state frame.
 - **Connectors join adjacent frames in the same row.** Each `.arrow` carries a
   numbered, verb-first `.step` label describing the action that advances the flow
   ("① tap Sign in", "② submit form"). Between rows or sections, continue the
-  numbering inside step labels instead of drawing long arrows — arrows that cross
+  numbering inside step labels instead of drawing long arrows - arrows that cross
   rows turn the board into spaghetti. On rows with viewport pairs, arrows sit
   between pairs (never inside one), so numbering holds in both toggle states.
 - **A row wraps, so the step numbers carry the flow, not the arrows.** Frames flow
   left to right and continue on the next line, which means an arrow can land at the
   end of a line with its target below rather than beside it. The numbered `.step`
-  labels are what make the order unambiguous wherever the line breaks — so number
+  labels are what make the order unambiguous wherever the line breaks - so number
   every step, and never rely on a frame's left-right neighbour to imply sequence.
 - **`.frame-notes` carry machine-checkable context** as short mono lines with
   fixed prefixes: `AUTH:` (entry/token precondition), `DATA:` (endpoint or
-  source), `OPEN:` (unresolved question — accent-colored). When the source
+  source), `OPEN:` (unresolved question - accent-colored). When the source
   document does not settle a decision, write an `OPEN:` note instead of inventing
   an answer; a wireframe that silently invents scope pollutes the spec it was
   drawn from.

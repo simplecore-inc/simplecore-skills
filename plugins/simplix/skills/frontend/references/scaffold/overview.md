@@ -10,7 +10,7 @@ A screen already in the repository that does not come from the scaffold is not m
 transcribed. **Scaffold the entity, read the old screen for what it does, customise the generated
 one, then delete the old.**
 
-**Read it, do not copy it.** The old screen answers *what this screen is for* — its columns, its
+**Read it, do not copy it.** The old screen answers *what this screen is for* - its columns, its
 filters, its verdicts, the conditions it narrows on. It does not answer *how any of that is
 written*, because the reason it is being rebuilt is that its shape is wrong. Copying it forward
 carries the shape and the rebuild produces the same file in a new folder.
@@ -21,7 +21,7 @@ old screen's disagreement is one of the things the rebuild is for.
 **Delete what you replaced in the same change.** Two files that draw one screen leave the next
 reader to guess which one runs.
 
-**Nothing is finished while the generated widget still holds the scaffold's placeholders** — the
+**Nothing is finished while the generated widget still holds the scaffold's placeholders** - the
 mock list, the TODO, the emitted filters over identifiers and audit stamps. The scaffold's output
 is a starting shape, not a delivery.
 
@@ -29,8 +29,8 @@ is a starting shape, not a delivery.
 
 This workflow runs in **two situations**, both with BLOCKING priority over any CUSTOMIZE task (see `SKILL.md` invariant #29):
 
-1. **Backend API changed (most common in mature projects)** — the server added / removed / renamed fields, endpoints, enum values, or tags. Use the **Update path** — jump to §[Updating an Existing Domain (API Changed)](#updating-an-existing-domain-api-changed) below. This is Update Steps 1~7 (snapshot → regenerate → build → widget update → mock seeds → locales → verify).
-2. **New domain does not exist yet** — a feature area has no corresponding `packages/domain-<name>/`. Use the **Initial path** — §[Workflow Steps](#workflow-steps) Steps 0~8 below, starting with `simplix.config.ts` registration.
+1. **Backend API changed (most common in mature projects)** - the server added / removed / renamed fields, endpoints, enum values, or tags. Use the **Update path** - jump to §[Updating an Existing Domain (API Changed)](#updating-an-existing-domain-api-changed) below. This is Update Steps 1~7 (snapshot → regenerate → build → widget update → mock seeds → locales → verify).
+2. **New domain does not exist yet** - a feature area has no corresponding `packages/domain-<name>/`. Use the **Initial path** - §[Workflow Steps](#workflow-steps) Steps 0~8 below, starting with `simplix.config.ts` registration.
 
 ### Detection recipes (how to know backend changed)
 
@@ -63,14 +63,14 @@ CUSTOMIZE-category tasks (widget composition, column restyling, filter design) a
 - `resolveBootEnum` lookup fails because a new enum value was added server-side but the generated locale was not regenerated.
 - Form submission sends a DTO missing a newly-required field → 400 only at runtime, passes all TypeScript checks because the generated DTO interface is stale.
 
-The Scaffold Update path regenerates `generated/` in place and surfaces the diff as TypeScript compile errors — the fastest path to correctness.
+The Scaffold Update path regenerates `generated/` in place and surfaces the diff as TypeScript compile errors - the fastest path to correctness.
 
 ## Prerequisites
 
 Before starting, read `simplix.config.ts` at the project root. It defines:
-- **`openapi[].spec`** — the API spec URL (use this exact URL for the `openapi` CLI command)
-- **`openapi[].domains`** — domain name → tag list mapping
-- **`openapi[].profile`** — API profile (e.g., `simplix-boot`)
+- **`openapi[].spec`** - the API spec URL (use this exact URL for the `openapi` CLI command)
+- **`openapi[].domains`** - domain name → tag list mapping
+- **`openapi[].profile`** - API profile (e.g., `simplix-boot`)
 
 All CLI commands derive their configuration from this file.
 
@@ -100,16 +100,16 @@ openapi: [
 
 **Decisions captured in this file**:
 
-- **Domain name**: kebab-case (e.g., `inventory`). Must match what you pass to `add-domain` in Step 1 and to `add-module` in Step 4. Used to derive the package names `@<prefix>/domain-<name>` and `@<prefix>/<name>` (`<prefix>` is the package prefix derived from the root `package.json` name — see `framework/configuration.md`).
+- **Domain name**: kebab-case (e.g., `inventory`). Must match what you pass to `add-domain` in Step 1 and to `add-module` in Step 4. Used to derive the package names `@<prefix>/domain-<name>` and `@<prefix>/<name>` (`<prefix>` is the package prefix derived from the root `package.json` name - see `framework/configuration.md`).
 - **Tag list**: the exact tag strings the backend emits in its OpenAPI spec. Fetch the `spec` URL and inspect `tags[]` (or `paths[*].<method>.tags`):
   ```bash
   curl -s "<spec-url>" | jq -r '.tags[].name' | grep "<expected-prefix>"
   ```
   Copy strings verbatim. Wrong tags → `add-domain` creates an empty domain package ("No operations found"); `openapi` generates zero hooks.
 
-**Verify**: `simplix.config.ts` still parses — run `pnpm exec tsc --noEmit` at the project root, or reload the dev server. If the new domain appears in `openapi[].domains`, Step 1 can proceed.
+**Verify**: `simplix.config.ts` still parses - run `pnpm exec tsc --noEmit` at the project root, or reload the dev server. If the new domain appears in `openapi[].domains`, Step 1 can proceed.
 
-**Skip this step only for the Update path** — an existing domain is already registered; jump to §[Updating an Existing Domain](#updating-an-existing-domain-api-changed) Update Step 1. **Exception**: when the backend change introduces a NEW tag (a new controller/resource), the existing domain's tag list in `simplix.config.ts` must gain that tag BEFORE regenerating — see the tag allow-list warning at the top of the Update path.
+**Skip this step only for the Update path** - an existing domain is already registered; jump to §[Updating an Existing Domain](#updating-an-existing-domain-api-changed) Update Step 1. **Exception**: when the backend change introduces a NEW tag (a new controller/resource), the existing domain's tag list in `simplix.config.ts` must gain that tag BEFORE regenerating - see the tag allow-list warning at the top of the Update path.
 
 ### Step 1: Domain Package Scaffolding
 
@@ -125,7 +125,7 @@ Creates `packages/domain-<domain-name>/` with the full package skeleton.
 
 Use the **exact spec URL** from `simplix.config.ts`:
 
-> **On a project whose `codegen` is `meta`, this command is `npx simplix meta -d <domain>`** —
+> **On a project whose `codegen` is `meta`, this command is `npx simplix meta -d <domain>`** -
 > no spec argument, and the output lands in `src/generated-meta/`. Read the mode from the
 > detector rather than assuming; the handbook's Scaffolding table carries both rows.
 
@@ -140,30 +140,30 @@ npx simplix openapi <spec-url-from-config> -d <domain-name> -y
 > This script uses the spec URL from `simplix.config.ts`, so you do not need to specify the URL directly.
 
 This generates into `packages/domain-<domain-name>/src/`:
-- `generated/endpoints/` — Orval-generated React Query hooks
-- `generated/model/` — TypeScript interfaces from OpenAPI schemas
-- `hooks/` — Re-exported hooks for consumer use
-- `mock/` — MSW mock handlers + seed data (entity stores)
-- `locales/` — i18n translation files
+- `generated/endpoints/` - Orval-generated React Query hooks
+- `generated/model/` - TypeScript interfaces from OpenAPI schemas
+- `hooks/` - Re-exported hooks for consumer use
+- `mock/` - MSW mock handlers + seed data (entity stores)
+- `locales/` - i18n translation files
 
 **Critical**: Never use a local JSON file if the config points to a live API URL. The tag names in the live API may differ from a local snapshot.
 
 **A spec URL that is not the configured one rewrites domains you did not name.** The command maps
 tags to domains through the config, so pointing it at a different server makes it fall back to
-handling the spec generically — and it can rewrite every domain package on its way to failing. When
+handling the spec generically - and it can rewrite every domain package on its way to failing. When
 the server you need is not the one in the config, change the config for the length of the run and
 change it back, rather than passing a URL past it. In a repository where more than one person or
 session is generating, that window belongs to whoever coordinates: two runs against different specs
 leave a tree where each package was generated from a different backend, and nothing announces it.
 
 **Generated code is restored by regenerating it, never by `git checkout`.** On finding that a run
-overwrote work, the reflex is to revert the folder — but `HEAD` is the last commit, not the state
+overwrote work, the reflex is to revert the folder - but `HEAD` is the last commit, not the state
 before the overwrite, and an uncommitted regeneration somebody else had just made lives between the
 two. Reverting throws that away and the loss surfaces later as a type error naming a field the
 backend clearly serves. Regenerate from the right spec instead: it is idempotent, and it cannot
 destroy anything a commit was holding.
 
-**Before any command that writes broadly, record what was already dirty** — `git status --porcelain
+**Before any command that writes broadly, record what was already dirty** - `git status --porcelain
 packages/` costs nothing and is the only thing that answers "was this mine?" afterwards. File
 timestamps do not: they show who wrote last, which is exactly what an overwrite makes true whether
 or not the file was clean beforehand.
@@ -179,7 +179,7 @@ The package prefix comes from the root `package.json` name field (e.g., `@<prefi
 
 **Verify**: Build succeeds with `dist/index.js` and `dist/mock.js` output.
 
-**MANDATORY CHECK**: Verify that `package.json` exports include the `"source"` condition for every entry. This is required for Vite dev server HMR — without it, changes to source files are not reflected until the package is rebuilt.
+**MANDATORY CHECK**: Verify that `package.json` exports include the `"source"` condition for every entry. This is required for Vite dev server HMR - without it, changes to source files are not reflected until the package is rebuilt.
 
 ```json
 "exports": {
@@ -205,14 +205,14 @@ npx simplix add-module <domain-name> -y
 ```
 
 Creates `modules/<domain-name>/` with FSD layer structure:
-- `src/features/` — feature logic
-- `src/widgets/` — reusable UI components
-- `src/pages/` — page-level components (added by scaffold)
-- `src/shared/` — shared utilities
-- `src/locales/` — module-level translations
+- `src/features/` - feature logic
+- `src/widgets/` - reusable UI components
+- `src/pages/` - page-level components (added by scaffold)
+- `src/shared/` - shared utilities
+- `src/locales/` - module-level translations
 
 **Screens are built inside `modules/<name>/`, and what stays in an app's `widgets/` is only
-what that app alone uses** — its shell, its error screens, the layout patterns its pages
+what that app alone uses** - its shell, its error screens, the layout patterns its pages
 share, its route files. Moving a widget out of an app into a module afterwards does not give
 it what the generator gives a module: the `source` conditions in `package.json`, the
 manifest, the locale wiring, the barrels, and the widget shape the scaffold writes. **Start
@@ -220,7 +220,7 @@ from what `simplix scaffold <entity> --module <name>` produced and edit that**, 
 producing something elsewhere and relocating it.
 
 **Which module an entity belongs to is decided by what the screen is about, and the backend
-has usually already decided it** — the module that owns the endpoints owns the screens. Where
+has usually already decided it** - the module that owns the endpoints owns the screens. Where
 counting imports does not separate two candidates, that question does. **Never put product
 screens in a module copied in unchanged from another repository**: it is neutral only for as
 long as nothing product-specific is in it, and one screen ends that.
@@ -248,7 +248,7 @@ Also updates: `widgets/index.ts`, `pages/index.ts`, `src/index.ts`, `locales/`, 
 #### The entity name is the hook file's name, and a wrong one produces a widget instead of an error
 
 `scaffold <entity>` looks the entity up by the file name in the domain package's
-`src/hooks/` — `packages/domain-<name>/src/hooks/userAccount.ts` means
+`src/hooks/` - `packages/domain-<name>/src/hooks/userAccount.ts` means
 `simplix scaffold userAccount`. A name that matches nothing (`user-account`, `UserAccount`,
 a table name) **does not fail**: the CLI falls back to a generic skeleton, emits widgets
 carrying mock data, and prints `Fields detected: id, name` with **no `Domain package:` line
@@ -262,7 +262,7 @@ not to fix the widget.
 
 The **folder** names come from the same string: `roleScopeGrant` writes
 `widgets/role-scope-grant/` and `pages/role-scope-grant/`. When the module already keeps
-that screen under a different folder, move the generated files and delete the new folder —
+that screen under a different folder, move the generated files and delete the new folder -
 the CLI has no way to be told where they belong.
 
 ### Scaffolding into a module that already has widgets
@@ -272,7 +272,7 @@ widgets it does two surprising things, and neither is announced.
 
 **Existing widget files are not overwritten.** `list.tsx` / `form.tsx` / `detail.tsx` /
 `index.ts` are printed under `Generated files` and then skipped where a file is already
-there — the widgets do not change by one character, and nothing on screen says so. **To
+there - the widgets do not change by one character, and nothing on screen says so. **To
 start from the generated shape, delete those four first, then run.** For a hierarchical
 entity (`parentId` / `path` / `depth` present) the list file is `tree.tsx`, so that is the
 name to delete instead of `list.tsx`.
@@ -291,7 +291,7 @@ after the run:
 
 **A single-record settings entity gets nothing usable from the scaffold.** An entity the
 product exposes as one form over one row (a security policy, a feature toggle set) has no
-list, no detail and no create — the generated three draw a screen that does not exist. Read
+list, no detail and no create - the generated three draw a screen that does not exist. Read
 what came out, then throw it away and hand-author the form; say in the commit that the
 generated set was discarded and why, so the next reader does not assume it was never run.
 
@@ -304,7 +304,7 @@ pnpm --filter @<prefix>/<domain-name> run build
 
 **Verify**: Build succeeds with `dist/pages/index.js` and `dist/widgets/index.js`.
 
-**MANDATORY CHECK**: Same as Step 3 — verify `"source"` condition exists in every `package.json` export entry:
+**MANDATORY CHECK**: Same as Step 3 - verify `"source"` condition exists in every `package.json` export entry:
 
 ```json
 "exports": {
@@ -320,7 +320,7 @@ Without `"source"`, Vite's `resolve.conditions: ["source"]` cannot resolve to Ty
 
 **`./pages` is the entry that arrives without it.** `scaffold` adds that subpath to
 `package.json` when it puts the module's first page there, and it writes only `types` and
-`import` — the other four entries are correct, so one hand-untouched file has one wrong
+`import` - the other four entries are correct, so one hand-untouched file has one wrong
 line in it. Vite then serves that subpath out of `dist/`, and the failure has no error in
 it: **the source is edited, the file re-reads as edited, HMR reports success, and the
 browser keeps drawing the last build.** An hour goes into the screen before anybody
@@ -414,7 +414,7 @@ pnpm --filter <app-name> run build
 
 When the server-side API changes (fields added/removed/renamed, new endpoints, etc.), the domain package and its consuming UI module must be updated.
 
-> **Tag allow-list gate (silent-drop trap)**: `openapi[].domains` in `simplix.config.ts` is an ALLOW-LIST — codegen emits hooks/DTOs ONLY for tags in the domain's list. A new backend endpoint under a NEW tag (a new controller/resource) that is not added to the list is **silently dropped**: no endpoint folder, no hook, no DTO model, no warning anywhere in the codegen log (the tag simply never appears in its "Entities:" line). Symptom: the endpoint answers over curl and shows in the spec, yet regeneration produces nothing for it. Before regenerating for a change that adds a tag, add the exact tag string to the domain's array first. (An endpoint added under an EXISTING listed tag needs no config change.)
+> **Tag allow-list gate (silent-drop trap)**: `openapi[].domains` in `simplix.config.ts` is an ALLOW-LIST - codegen emits hooks/DTOs ONLY for tags in the domain's list. A new backend endpoint under a NEW tag (a new controller/resource) that is not added to the list is **silently dropped**: no endpoint folder, no hook, no DTO model, no warning anywhere in the codegen log (the tag simply never appears in its "Entities:" line). Symptom: the endpoint answers over curl and shows in the spec, yet regeneration produces nothing for it. Before regenerating for a change that adds a tag, add the exact tag string to the domain's array first. (An endpoint added under an EXISTING listed tag needs no config change.)
 
 ### Update Step 1: Snapshot Current Fields
 
@@ -426,7 +426,7 @@ grep -h "^\s\+\w\+[?:]\?:" packages/domain-<domain>/src/generated/model/*DetailD
   sed 's/[?:].*//' | sort > /tmp/fields-before.txt
 ```
 
-Or read the `FormValues` interface in `modules/<domain>/src/widgets/<entity>/form.tsx` — it lists all fields the UI currently uses.
+Or read the `FormValues` interface in `modules/<domain>/src/widgets/<entity>/form.tsx` - it lists all fields the UI currently uses.
 
 ### Update Step 2: Regenerate Domain Package
 
@@ -438,7 +438,7 @@ pnpm --filter @<prefix>/domain-<domain-name> run codegen
 
 Or specify it directly:
 
-> **On a project whose `codegen` is `meta`, this command is `npx simplix meta -d <domain>`** —
+> **On a project whose `codegen` is `meta`, this command is `npx simplix meta -d <domain>`** -
 > no spec argument, and the output lands in `src/generated-meta/`. Read the mode from the
 > detector rather than assuming; the handbook's Scaffolding table carries both rows.
 
@@ -447,17 +447,17 @@ npx simplix openapi <spec-url-from-config> -d <domain-name> -y
 ```
 
 This overwrites:
-- `src/generated/` — endpoints + model types (always regenerated)
-- `src/hooks/` — re-exported hooks (always regenerated)
-- `src/generated/mock/handlers.ts` — MSW handler factories (always regenerated)
-- `src/locales/` — domain-level i18n keys (always regenerated)
-- `src/schemas.ts`, `src/translations.ts`, `src/mutator.ts` — support files
+- `src/generated/` - endpoints + model types (always regenerated)
+- `src/hooks/` - re-exported hooks (always regenerated)
+- `src/generated/mock/handlers.ts` - MSW handler factories (always regenerated)
+- `src/locales/` - domain-level i18n keys (always regenerated)
+- `src/schemas.ts`, `src/translations.ts`, `src/mutator.ts` - support files
 
 This regenerates only when not customized:
-- `src/mock/index.ts` — store wiring + generated-handler spreads; regenerated to stay in sync with `handlers.ts` UNLESS it has custom handler overrides (the `// Add custom handler overrides here` region is non-empty), in which case it is preserved untouched.
+- `src/mock/index.ts` - store wiring + generated-handler spreads; regenerated to stay in sync with `handlers.ts` UNLESS it has custom handler overrides (the `// Add custom handler overrides here` region is non-empty), in which case it is preserved untouched.
 
 This preserves:
-- `src/mock/seeds.ts` — only generated on first creation, customizable
+- `src/mock/seeds.ts` - only generated on first creation, customizable
 
 ### Update Step 3: Build Domain Package & Detect Changes
 
@@ -473,7 +473,7 @@ grep -h "^\s\+\w\+[?:]\?:" packages/domain-<domain>/src/generated/model/*DetailD
 diff /tmp/fields-before.txt /tmp/fields-after.txt
 ```
 
-Alternatively, build the UI module — TypeScript errors will point directly to removed/renamed fields.
+Alternatively, build the UI module - TypeScript errors will point directly to removed/renamed fields.
 
 ### Update Step 4: Update UI Module Widgets
 
@@ -492,7 +492,7 @@ These files need the new field:
 
 #### Removed fields
 
-Remove from the same locations. TypeScript build errors guide you — every reference to the deleted field will fail compilation.
+Remove from the same locations. TypeScript build errors guide you - every reference to the deleted field will fail compilation.
 
 #### Changed field types
 
@@ -574,9 +574,9 @@ When unsure, ask the user which entities should have standalone pages.
 ### "Domain not found in spec config"
 
 The CLI couldn't match the domain name to tags in the provided spec. Possible causes:
-- **Wrong spec URL** — make sure to use the exact URL from `simplix.config.ts`, not a local JSON file
-- **Tag mismatch** — the live API may use different tag names than a local snapshot
-- **Server not running** — if the spec URL points to a live server, ensure it's accessible
+- **Wrong spec URL** - make sure to use the exact URL from `simplix.config.ts`, not a local JSON file
+- **Tag mismatch** - the live API may use different tag names than a local snapshot
+- **Server not running** - if the spec URL points to a live server, ensure it's accessible
 
 ### scaffold command `ReferenceError: path is not defined`
 
@@ -588,14 +588,14 @@ Every scaffolded list starts with `defaultSort: { field: "<entityId>", direction
 
 **Symptoms**: the list renders its error empty-state on first load; the network tab shows the `/search?page=0&size=10&sort=<entityId>.desc` request returning a search error whose detail names the id field ("정렬할 수 없습니다: <entityId>" or a sort-format error).
 
-**Fix**: on the BACKEND, add `sortable = true` to the SearchDTO's PK `@SearchableField` (see the `simplix:backend` skill's `review/searchable-field-patterns.md` § PK Sortable Contract). Do NOT work around it by changing the frontend `defaultSort` — ID-desc is the standard newest-first ordering (UUID v7 is time-ordered) and every other module relies on it.
+**Fix**: on the BACKEND, add `sortable = true` to the SearchDTO's PK `@SearchableField` (see the `simplix:backend` skill's `review/searchable-field-patterns.md` § PK Sortable Contract). Do NOT work around it by changing the frontend `defaultSort` - ID-desc is the standard newest-first ordering (UUID v7 is time-ordered) and every other module relies on it.
 
 **Verify (per entity, before customizing)**:
 ```bash
 curl -s -H "Authorization: Bearer $TOKEN" \
   "$API/api/v1/<entity-path>/search?page=0&size=10&sort=<entityId>.desc" | jq .type   # → "SUCCESS"
 ```
-Also confirm every column the widget marks `sortable` maps to a SearchDTO field with `sortable = true` — a non-sortable column header click fails the same way at runtime.
+Also confirm every column the widget marks `sortable` maps to a SearchDTO field with `sortable = true` - a non-sortable column header click fails the same way at runtime.
 
 ### List page shows no data despite successful API response
 
@@ -622,7 +622,7 @@ return getMutator("boot")<T>(url, options);
 
 ### Build errors after scaffold
 
-Run `pnpm install` before building — scaffold may add new dependencies to the module's `package.json`.
+Run `pnpm install` before building - scaffold may add new dependencies to the module's `package.json`.
 
 ### Codegen after a backend contract change shows none of the new fields (stale served spec)
 
@@ -634,7 +634,7 @@ When a full-stack change modifies the backend contract (a new field, endpoint, e
 curl -s "$API/api-docs/all-apis" | grep -c '<new-field-or-endpoint-symbol>'   # must be > 0
 ```
 
-Only after that count is non-zero, run codegen. Use the **headless** form — `npx simplix openapi "$API/api-docs/all-apis" -d <domain> -y -f`, or `npx simplix meta -d <domain> -f` where the project's `codegen` is `meta` — because the package.json `codegen` script may prompt interactively (Y/n) and blocks when its output is redirected. Backend restart is a delegated/authorized step; do not start a second backend on another port (a stale duplicate spec is worse than a restart).
+Only after that count is non-zero, run codegen. Use the **headless** form - `npx simplix openapi "$API/api-docs/all-apis" -d <domain> -y -f`, or `npx simplix meta -d <domain> -f` where the project's `codegen` is `meta` - because the package.json `codegen` script may prompt interactively (Y/n) and blocks when its output is redirected. Backend restart is a delegated/authorized step; do not start a second backend on another port (a stale duplicate spec is worse than a restart).
 
 ### "No changes detected" has three causes, and two of them blame the screen
 
@@ -643,25 +643,25 @@ nothing changed or it failed to see what changed, and the two need opposite resp
 
 | Cause | What it looks like | Answer |
 | --- | --- | --- |
-| The snapshot genuinely matches the contract | the package is skipped whole, so **a file the run fills in late stays empty** — `src/mock/seeds.ts` is the one that does this, and the index that imports it then names exports that are not there | delete `src/mock/seeds.ts` and re-run with `-f`; the file's own header says it is written once and not overwritten, but it IS rewritten when absent, and there is nothing to lose unless it was hand-edited |
+| The snapshot genuinely matches the contract | the package is skipped whole, so **a file the run fills in late stays empty** - `src/mock/seeds.ts` is the one that does this, and the index that imports it then names exports that are not there | delete `src/mock/seeds.ts` and re-run with `-f`; the file's own header says it is written once and not overwritten, but it IS rewritten when absent, and there is nothing to lose unless it was hand-edited |
 | The contract moved and the comparison missed it | a DTO that only **gained properties** slips past `-d <domain>`; the widget then typechecks against the stale client and **every error names the widget** | verify against the served spec, then re-run with `-f` |
-| Only a **search operator** moved | `@SearchableField(operators = …)` gained one and nothing else changed. The snapshot compares an entity's **properties**, not the operators on them, so a spec that already serves the new operator is read as unchanged — and the widget goes on sending one the server does not accept | `-d <domain> -f`, which regenerates that domain whatever the snapshot thinks |
+| Only a **search operator** moved | `@SearchableField(operators = …)` gained one and nothing else changed. The snapshot compares an entity's **properties**, not the operators on them, so a spec that already serves the new operator is read as unchanged - and the widget goes on sending one the server does not accept | `-d <domain> -f`, which regenerates that domain whatever the snapshot thinks |
 
-**The second is the worse one, and the sentence is identical — so read the spec rather than
+**The second is the worse one, and the sentence is identical - so read the spec rather than
 the log:**
 
 ```bash
 curl -s "<spec-url>" | grep -c '<new-field>'   # > 0 while codegen says "No changes detected" ⇒ second cause
 ```
 
-**`-f` regenerates every domain, and that width is part of what it buys** — a package
+**`-f` regenerates every domain, and that width is part of what it buys** - a package
 nobody regenerated after the contract moved comes along with it. **A package that was not
 regenerated gives no sign of being stale**, so the wide run is the only thing that finds
 one.
 
 ### Codegen printed "Generated ✔" but the hooks vanished (degenerate output)
 
-A spec-resolution failure — most commonly a binary endpoint (`ResponseEntity<byte[]>` / an octet-stream response) that breaks `$ref` resolution — can wipe the generated React Query hooks and leave only the MSW mock files, **while the run still prints a trailing success line**. Trusting "Generated ✔" then ships a domain package whose components import hooks that no longer exist.
+A spec-resolution failure - most commonly a binary endpoint (`ResponseEntity<byte[]>` / an octet-stream response) that breaks `$ref` resolution - can wipe the generated React Query hooks and leave only the MSW mock files, **while the run still prints a trailing success line**. Trusting "Generated ✔" then ships a domain package whose components import hooks that no longer exist.
 
 **Fix**: after every codegen, scroll the WHOLE log for `Validation failed` (it appears mid-log, before the success line), and positively verify the expected hooks still exist rather than assuming they were written:
 
@@ -669,19 +669,19 @@ A spec-resolution failure — most commonly a binary endpoint (`ResponseEntity<b
 grep -rl 'useGet<Entity>\|useList<Entity>' packages/domain-<domain>/src/generated/   # must hit real endpoint files, not just mock/
 ```
 
-If the output is degenerate, STOP — do not commit it. The usual root cause is a backend binary endpoint that should carry `@Hidden` (or be split off the domain tag) so it stays out of the codegen'd surface.
+If the output is degenerate, STOP - do not commit it. The usual root cause is a backend binary endpoint that should carry `@Hidden` (or be split off the domain tag) so it stays out of the codegen'd surface.
 
 ### A new backend enum value's frontend label is missing (or a manual edit keeps reverting)
 
-Server enum translations flow into the domain package's `locales/*.json` via codegen's "Applied server i18n translations" overlay — they are NOT hand-authored on the frontend. A manual edit to a frontend enum locale is overwritten by the next codegen.
+Server enum translations flow into the domain package's `locales/*.json` via codegen's "Applied server i18n translations" overlay - they are NOT hand-authored on the frontend. A manual edit to a frontend enum locale is overwritten by the next codegen.
 
-**Fix**: set the label in the BACKEND `messages/enums/*.properties` (every locale; `EnumMessageTranslationTest` gates this), then regenerate — the label lands in the frontend locale automatically. Symmetrically, after any regeneration spot-check that the enum count in `locales/en.json` did not shrink (an overlay failure can pass typecheck while dropping enums — see Notes & Gotchas).
+**Fix**: set the label in the BACKEND `messages/enums/*.properties` (every locale; `EnumMessageTranslationTest` gates this), then regenerate - the label lands in the frontend locale automatically. Symmetrically, after any regeneration spot-check that the enum count in `locales/en.json` did not shrink (an overlay failure can pass typecheck while dropping enums - see Notes & Gotchas).
 
 ## File Map
 
 | Purpose | Location |
 | --- | --- |
-| simplix.config.ts | Project root — all domain/spec configuration |
+| simplix.config.ts | Project root - all domain/spec configuration |
 | Domain package | `packages/domain-<domain>/` |
 | UI module | `modules/<domain>/` |
 | App entry (mock) | `apps/<app>/src/main.tsx` |
@@ -691,15 +691,15 @@ Server enum translations flow into the domain package's `locales/*.json` via cod
 
 ## References
 
-- [Route & Widget patterns](patterns.md) — Detailed code patterns for routes, pages, widgets
-- [Props conventions](props-conventions.md) — Widget callback props, editor props, usePageHeader patterns, ListDetail sizing
+- [Route & Widget patterns](patterns.md) - Detailed code patterns for routes, pages, widgets
+- [Props conventions](props-conventions.md) - Widget callback props, editor props, usePageHeader patterns, ListDetail sizing
 
 ## Workflow placement
 
 This is the **SCAFFOLD** category entry point inside this skill. It sits between framework setup and widget customization:
 
-1. Upstream — **DESIGN** — `../framework/overview.md` — framework API (`defineApi`, `deriveEntityHooks`, `setupMockWorker`, `simplix.config.ts`)
-2. Downstream — **CUSTOMIZE** — `../customize/overview.md` — post-scaffold widget customization, framework component composition, custom editors
+1. Upstream - **DESIGN** - `../framework/overview.md` - framework API (`defineApi`, `deriveEntityHooks`, `setupMockWorker`, `simplix.config.ts`)
+2. Downstream - **CUSTOMIZE** - `../customize/overview.md` - post-scaffold widget customization, framework component composition, custom editors
 
 ## Notes & Gotchas
 
@@ -707,9 +707,9 @@ This is the **SCAFFOLD** category entry point inside this skill. It sits between
 - The CLI's programmatic Orval (`orval.generate()`) can fail silently for a package whose `src/generated/` was produced in single-file output mode. Delete the stale `src/generated/` directory and re-run to resolve.
 - When a generated update hook has no path parameter (a body-only update), the form template falls back to wrapping `{ data: dto }` only (`adaptOrvalCreate(_update)`). Account for this when wiring update mutations for body-only updates.
 - `scaffold` has no `-y` flag (unlike `add-domain` / `openapi`); it runs without interactive prompts.
-- `openapi` regeneration uses `.openapi-snapshot.json` to detect spec changes and skips when nothing changed ("No changes detected"). Pass `--force` to bypass the snapshot and regenerate unconditionally — needed when only a naming-strategy / plugin change occurred while the spec itself is identical.
+- `openapi` regeneration uses `.openapi-snapshot.json` to detect spec changes and skips when nothing changed ("No changes detected"). Pass `--force` to bypass the snapshot and regenerate unconditionally - needed when only a naming-strategy / plugin change occurred while the spec itself is identical.
 - Running codegen from inside a package (`pnpm --filter <pkg> run codegen`) still resolves the project root by searching upward for `simplix.config.ts` / `pnpm-workspace.yaml`, so it works from a subdirectory.
 - An OpenAPI `operationId` containing an underscore (e.g. `EntityRest_create`) is recorded verbatim into `crud.config.ts`, but Orval strips underscores and PascalCases the hook name (`useEntityRestCreate`). If a scaffolded widget imports a non-existent `use…_…` hook, fix the hook name in `crud.config.ts` by hand (already-generated config files are not regenerated).
-- Read-only entities (no create/update) can confuse field extraction if a `*SearchBody` schema (the search request body: `conditions`, `page`, `size`) is mistaken for entity fields — verify the scaffolded field set against the real DTO when scaffolding a read-only entity.
+- Read-only entities (no create/update) can confuse field extraction if a `*SearchBody` schema (the search request body: `conditions`, `page`, `size`) is mistaken for entity fields - verify the scaffolded field set against the real DTO when scaffolding a read-only entity.
 - After regeneration, spot-check that server enum translations were not silently truncated (e.g. compare the enum count in a domain's `locales/en.json` before/after). An i18n overlay failure can pass typecheck/build while dropping enums.
-- The i18n overlay is a **rewrite, not a merge**: a full regen replaces `packages/domain-<name>/src/locales/*.json` with what the backend properties provide. Any enum block that exists only on the frontend disappears, and raw keys (`SomeEnum.VALUE`) leak into every badge/label that used it. After each regen, run `git diff packages/domain-<name>/src/locales/` — if enum blocks vanished, `git restore` the three files (the overlay's own changes are usually trivial reorderings). The durable fix is to add those enum labels to the backend `messages/enums/*.properties` so the overlay carries them.
+- The i18n overlay is a **rewrite, not a merge**: a full regen replaces `packages/domain-<name>/src/locales/*.json` with what the backend properties provide. Any enum block that exists only on the frontend disappears, and raw keys (`SomeEnum.VALUE`) leak into every badge/label that used it. After each regen, run `git diff packages/domain-<name>/src/locales/` - if enum blocks vanished, `git restore` the three files (the overlay's own changes are usually trivial reorderings). The durable fix is to add those enum labels to the backend `messages/enums/*.properties` so the overlay carries them.

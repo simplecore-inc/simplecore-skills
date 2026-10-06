@@ -1,6 +1,6 @@
-> Commonization registry — **Empty / loading / fallback states**. Detail file of `../registry.md` (the index); sections verbatim. Check the index first, then read only the section you need.
+> Commonization registry - **Empty / loading / fallback states**. Detail file of `../registry.md` (the index); sections verbatim. Check the index first, then read only the section you need.
 
-# Registry — Empty / loading / fallback states
+# Registry - Empty / loading / fallback states
 
 ## EmptyState
 
@@ -33,7 +33,7 @@ interface EmptyStateProps {
 />
 ```
 
-**Page-level empty boxes are uniform**: every empty/error box that replaces a page's main content area (list table area, tabbed panel body, prompt-to-select screens) is a FULL-WIDTH bordered box with the standard `min-h-[280px]` and an icon, so all such boxes share one height and rhythm. `CrudList` applies this internally to its empty/error/no-filter states; custom panels pass `className="min-h-[280px]"` and an `icon`. Compact contexts (side panels, form sub-sections, popovers) keep the content-driven default — do NOT add the min-height there.
+**Page-level empty boxes are uniform**: every empty/error box that replaces a page's main content area (list table area, tabbed panel body, prompt-to-select screens) is a FULL-WIDTH bordered box with the standard `min-h-[280px]` and an icon, so all such boxes share one height and rhythm. `CrudList` applies this internally to its empty/error/no-filter states; custom panels pass `className="min-h-[280px]"` and an `icon`. Compact contexts (side panels, form sub-sections, popovers) keep the content-driven default - do NOT add the min-height there.
 
 ```tsx
 // Page-level custom panel (tab body, prompt screen)
@@ -71,7 +71,7 @@ interface EmptyStateProps {
 
 ### Rule
 
-All `DetailFields.*` components MUST render the shared `EmptyValueBadge` (muted dashed-outline "No value" pill, framework-translated via the `field.noValue` key) when value is null, undefined, or empty string `""`. This makes "the server sent no value" unmistakable — a silently blank row is indistinguishable from a rendering error. An explicitly passed `fallback` string overrides the badge only where a domain-specific empty label reads better (e.g. an "Unlimited" capacity).
+All `DetailFields.*` components MUST render the shared `EmptyValueBadge` (muted dashed-outline "No value" pill, framework-translated via the `field.noValue` key) when value is null, undefined, or empty string `""`. This makes "the server sent no value" unmistakable - a silently blank row is indistinguishable from a rendering error. An explicitly passed `fallback` string overrides the badge only where a domain-specific empty label reads better (e.g. an "Unlimited" capacity).
 
 ### Fallback Behavior by Component
 
@@ -92,8 +92,8 @@ All `DetailFields.*` components MUST render the shared `EmptyValueBadge` (muted 
 | DetailNoteField | `string \| null \| undefined` | Returns null (by design) | `value ?? fallback` |
 | DetailImageField | `string \| null \| undefined` | Placeholder SVG | Visual placeholder |
 | DetailField | `children` | None (generic wrapper) | Caller responsibility |
-| I18nText (list-cell helper) | i18n map | Empty string (cell context — see `EmptyValue`) | resolved check |
-| InstantText (inline instant — cell/card/caption) | `DateLike \| null` | `fallback` prop (default: nothing) | parseDate handles |
+| I18nText (list-cell helper) | i18n map | Empty string (cell context - see `EmptyValue`) | resolved check |
+| InstantText (inline instant - cell/card/caption) | `DateLike \| null` | `fallback` prop (default: nothing) | parseDate handles |
 | CalendarDateText (inline `LocalDate`) | `DateLike \| null` | `fallback` prop | parseDate handles |
 | WallClockText (inline `LocalTime`) | `string \| null` | `fallback` prop | value check |
 
@@ -206,7 +206,7 @@ All 3 scaffold templates (`form.hbs`, `detail.hbs`, `editor.hbs`) enforce this p
 
 ### Rule
 
-Muted em-dash placeholder (`children` default `—`) for "no value" in COMPACT contexts where neither a `DetailFields.*` component (which renders the shared `EmptyValueBadge` internally) nor a standalone `EmptyValueBadge` applies — table cells, editor summaries, dense inline displays where a pill would be visual noise. Replaces raw `<span>—</span>` and inline `?? "—"` literals so empty rendering stays centralized. For `DetailFields.*` values, still pass the raw nullable value (do NOT wrap with `EmptyValue` — the field handles it internally). For i18n label fallbacks that must be a `string` (e.g. a filter-option `label`), keep a string fallback — `EmptyValue` is a node.
+Muted em-dash placeholder (`children` default `—`) for "no value" in COMPACT contexts where neither a `DetailFields.*` component (which renders the shared `EmptyValueBadge` internally) nor a standalone `EmptyValueBadge` applies - table cells, editor summaries, dense inline displays where a pill would be visual noise. Replaces raw `<span>—</span>` and inline `?? "—"` literals so empty rendering stays centralized. For `DetailFields.*` values, still pass the raw nullable value (do NOT wrap with `EmptyValue` - the field handles it internally). For i18n label fallbacks that must be a `string` (e.g. a filter-option `label`), keep a string fallback - `EmptyValue` is a node.
 
 ## EmptyValueBadge (no-value pill for detail-style displays)
 
@@ -228,7 +228,7 @@ interface EmptyValueBadgeProps {
 
 ### Rule
 
-Muted dashed-outline badge that explicitly marks a missing value, so a blank field reads as "no value" rather than a rendering error. Every `DetailFields.*` component renders it as the default empty fallback (see [[DetailFields Fallback Standardization]]) — do NOT wrap `DetailFields.*` values with it. Use it directly ONLY in custom detail-style displays that bypass `DetailFields.*` (hand-built `DetailFieldWrapper` bodies, summary panels). Table cells and dense inline contexts keep `EmptyValue` (em-dash).
+Muted dashed-outline badge that explicitly marks a missing value, so a blank field reads as "no value" rather than a rendering error. Every `DetailFields.*` component renders it as the default empty fallback (see [[DetailFields Fallback Standardization]]) - do NOT wrap `DetailFields.*` values with it. Use it directly ONLY in custom detail-style displays that bypass `DetailFields.*` (hand-built `DetailFieldWrapper` bodies, summary panels). Table cells and dense inline contexts keep `EmptyValue` (em-dash).
 
 ```tsx
 // Custom detail-style display without a matching DetailFields component

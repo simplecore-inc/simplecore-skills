@@ -1,13 +1,13 @@
 // Gates on how a reader moves: the CRUD ledger every route is accounted for in, whether a
 // frame can be reached at all, and the words the controls use to say the same act.
 import { idOf } from '../ids.mjs';
-// The ledger is the BOARD's, not the kit's — it names that product's entities. It arrives on
+// The ledger is the BOARD's, not the kit's - it names that product's entities. It arrives on
 // ctx so a gate written here judges any board, and a board that keeps no ledger simply skips
 // the three gates that read it rather than failing to import.
 const ledgerOf = (ctx) => ({ LEDGER: ctx.crud?.LEDGER ?? null, NON_ENTITY: ctx.crud?.NON_ENTITY ?? {} });
 
 // CRUD gate: a board grows one screen at a time, and the screen that gets drawn is the
-// interesting one — the detail with the gate, the form with the legal trap. The list nobody
+// interesting one - the detail with the gate, the form with the legal trap. The list nobody
 // argues about, the edit that is "just a form", and the delete that "we'll figure out later" go
 // missing silently, because a board full of good screens looks finished. So every route is
 // accounted for in `src/crud.mjs`: either it belongs to an entity whose five verbs each name a
@@ -40,8 +40,8 @@ export const crudGate = {
           if (!frameIds.has(at)) crudErrors.push(`${entity}.${verb} — ${at} 프레임이 없다`);
         }
       }
-      // A route is accounted for when some frame the ledger names carries it — the verb entries and
-      // the `also` list together are the entity's frames — or when NON_ENTITY says why it has none.
+      // A route is accounted for when some frame the ledger names carries it - the verb entries and
+      // the `also` list together are the entity's frames - or when NON_ENTITY says why it has none.
       const ledgerFrames = new Set();
       for (const row of Object.values(LEDGER)) {
         for (const verb of VERBS) if (typeof row[verb] === 'string' && row[verb] !== 'generic') ledgerFrames.add(row[verb]);
@@ -69,13 +69,13 @@ export const crudGate = {
 // View-switch vocabulary gate. Two things the persona review found once the switch existed on five
 // screens, both of which read as trivia and both of which cost a reader a guess every time.
 //
-// 1. `?view=` already means ONE thing on this board — the record picked out of the list, across
+// 1. `?view=` already means ONE thing on this board - the record picked out of the list, across
 //    ninety frames (`?view=cti_0119`). The first cut of the calendar switch borrowed the same key
 //    for the view mode (`?view=month`), copying it from the pattern frame, so one parameter meant
 //    a record on one frame and a layout on the next. The view mode is `?mode=`.
 // 2. A segment control that offers the same two things in a different order on a different screen
 //    is two controls to learn. E-05 drew 「달력 · 목록」 while the other four drew 「목록 · 달력」,
-//    because its default view is the calendar — but the DEFAULT is `view`, not the order.
+//    because its default view is the calendar - but the DEFAULT is `view`, not the order.
 export const viewSwitchGate = {
   id: 'viewSwitchGate',
   title: '보기 전환이 화면마다 다르게 말한다',
@@ -108,7 +108,7 @@ export const viewSwitchGate = {
 };
 
 // Reachability gate: the tree names ONE screen per menu entry, and that is where pressing the
-// entry lands. Every other frame under the same entry has to be reachable from something — and
+// entry lands. Every other frame under the same entry has to be reachable from something - and
 // on a board, what records that is a note pointing at it. A frame nobody points at and the tree
 // does not land on is a screen a reader can only find by scrolling the board, which is not a way
 // anybody navigates the product. Two shapes of this were live: sixteen frames added without an
@@ -132,7 +132,7 @@ export const reachabilityGate = {
         // this check off, and a check that can be switched off by an unrelated edit is not a check.
         let src = ctx.srcOf(s.file);
         // A state frame spreads its base (`...base`) and so carries no `current` of its own. Following
-        // the import is what keeps it inside this check instead of quietly outside it — the 48 dialog
+        // the import is what keeps it inside this check instead of quietly outside it - the 48 dialog
         // frames were outside it for exactly one build.
         const from = /from '\.\/([a-z0-9-]+)\.mjs'/.exec(src)?.[1];
         if (!/current: '/.test(src) && from) src = ctx.srcOf(from);
@@ -155,7 +155,7 @@ export const reachabilityGate = {
 };
 
 // A button that names where it leads names a frame that exists. The target is read by whatever
-// derives flow from the built board — a chapter generator walking a persona through the screens —
+// derives flow from the built board - a chapter generator walking a persona through the screens -
 // and a reader that meets an id no frame carries does not error: it falls back to guessing from
 // the label, and the walk it produces reads exactly like one derived from a correct target. So a
 // typo in `btn('탐지', 'primary', 'P-4b 탐지')` is a silent defect, and silent is the whole reason
@@ -197,14 +197,14 @@ export const targetGate = {
   },
 };
 
-// The tree lands on the FIRST frame under an entry, and a state frame has no address of its own —
+// The tree lands on the FIRST frame under an entry, and a state frame has no address of its own -
 // it is a dialog, a panel form or a role-scoped variant that spreads its base. When one of those
 // sorts first, pressing the entry opens a screen that cannot be opened directly, and on a board
 // where the header no longer carries cross-links the tree is the only way in. Three entries were
 // in this state at once (a panel form, an auditor's read-only variant, a fax dialog) and nothing
 // said so: `reachabilityGate` was satisfied, because every frame in the group was pointed at.
 //
-// The fix is free — the manifest's order is the board's reading order and ids live in file names,
+// The fix is free - the manifest's order is the board's reading order and ids live in file names,
 // so moving the state behind its base changes the brackets and nothing else.
 export const landingIsAddressableGate = {
   id: 'landingIsAddressableGate',
@@ -237,12 +237,12 @@ export const landingIsAddressableGate = {
 // The landing frame is where the tree puts a reader who has picked nothing yet, so its route must
 // be openable with nothing in hand. A route carrying a path parameter (`/workers/:id/exposure`,
 // `/loto/:permitId`) needs a record chosen first, and pressing the entry then opens a record the
-// reader never picked — usually the seed's first row, which reads as the screen working.
+// reader never picked - usually the seed's first row, which reads as the screen working.
 //
 // **Judging that in general takes eyes**, because a parameter a global control settles is fine:
 // a console with a site selector opens `/sites/:id/areas` for the site already on screen. What a
 // machine CAN settle is the case where the entry's own group already holds a parameter-free route
-// and merely sorts it later — then the list exists, the tree lands past it, and the fix is free.
+// and merely sorts it later - then the list exists, the tree lands past it, and the fix is free.
 // The other shape (no parameter-free frame under the entry at all) is a missing list or a settled
 // singleton, and `references/living-contract.md` carries the four-way judgement for it.
 //
@@ -295,7 +295,7 @@ export const controlVocabularyGate = {
         const src = ctx.srcOf(sc.file);
         const id = idOf(sc.file);
 
-        // 1. A row's first action opens what the row is, and the board calls that 「보기」 — 266 rows
+        // 1. A row's first action opens what the row is, and the board calls that 「보기」 - 266 rows
         //    already do. 「상세」 is a noun standing in a verb's slot, and 「열기」 was used for the same
         //    act on 23 rows: three words for one thing, which a reader has to learn as three.
         for (const m of src.matchAll(/rowActions\(\[\s*'(상세|열기)'/g)) {
@@ -313,7 +313,7 @@ export const controlVocabularyGate = {
         }
 
         // 3. A confirming verb belongs in the page header. Destructive and escape acts sit at the
-        //    bottom on purpose — away from the primary — but 저장·제출·발급 only at the bottom of a
+        //    bottom on purpose - away from the primary - but 저장·제출·발급 only at the bottom of a
         //    long page means the screen's main act is where nobody looks.
         const head = /pageHeader\(\{[\s\S]*?actions:\s*([\s\S]*?)\n\s*\}\)/.exec(src)?.[1] ?? '';
         const tail = [...src.matchAll(/btnRow\(([\s\S]*?)\),\n/g)].map((m) => m[1]).join(' ');
@@ -331,7 +331,7 @@ export const controlVocabularyGate = {
 
 // Panel-verb gate: where a record has a page of its own, the list panel's main button must say
 // 「열기」 and not 「편집」. Labelling it 「편집」 sends a reader who came to READ through an edit
-// verb, and lands them on a page that shows MORE than the panel did — the peek and the record
+// verb, and lands them on a page that shows MORE than the panel did - the peek and the record
 // swap places, and the screen stops explaining itself. Which lists have a page behind them is not
 // a judgement: the ledger says so when an entity's `read` is a frame other than its `list`.
 export const panelVerbGate = {
@@ -366,7 +366,7 @@ export const panelVerbGate = {
 };
 
 // Back-control gate: a full page opened from a list has to say which list it came from. The tree
-// on the left cannot do that job — it says where you ARE, and pressing its entry reopens the list
+// on the left cannot do that job - it says where you ARE, and pressing its entry reopens the list
 // fresh, losing the filter and the page the reader left behind. Which frames owe one is not a
 // judgement call: the CRUD ledger already names each entity's list, so any create/read/update/
 // remove frame that is a page of its own owes a `back` naming it.

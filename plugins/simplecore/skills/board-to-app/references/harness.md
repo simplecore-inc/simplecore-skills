@@ -16,18 +16,18 @@ statement:
 | `null` | **the file is not there** |
 | a key ending in `/` | an empty directory |
 
-**`null` is what half the cases here need** — a result document that was never written, a capture
+**`null` is what half the cases here need** - a result document that was never written, a capture
 that was cited and never made. Written as `''` instead, the case proves a different defect and
 passes for the wrong reason, so the natural way to say 「absent」 has to mean absent.
 
 **`undefined` is refused, loudly.** It is what a renamed constant leaves behind, and reading it as
-absence would drop a file nobody meant to drop — a case that then proves whatever is left.
+absence would drop a file nobody meant to drop - a case that then proves whatever is left.
 
 ## The harness lies, and it lies in the shape of an answer
 
 This work runs on instruments: a screenshot pipeline, a dev server, a checker, a
 gate. Each one turns the running product into something a person can judge. When
-one of them is wrong it does not go quiet — **it returns a plausible answer**, and
+one of them is wrong it does not go quiet - **it returns a plausible answer**, and
 plausible answers get acted on.
 
 Everything below is the same failure wearing different clothes: *something
@@ -45,7 +45,7 @@ pipeline: a reloaded bundle redrew part of the screen a second time, so the pict
 grew while the screen did not. Four of five findings from that gate were the
 instrument rather than the product.
 
-**A length read off a picture is the harness's number, not the screen's** — the
+**A length read off a picture is the harness's number, not the screen's** - the
 viewport decides it, the bundle can inflate it, and the device changes it. Judge a
 screen by looking at it, and leave measurement to what can actually be measured.
 
@@ -59,7 +59,7 @@ The tells, none of which require knowing the cause:
   before reporting the finding.
 
 **Fix the instrument first, then re-measure, then act.** A gate whose readings
-cannot be reproduced must not send anybody anywhere — a checker that sends someone
+cannot be reproduced must not send anybody anywhere - a checker that sends someone
 to fix a non-problem is worse than no checker, because they will do it.
 
 When a fix makes the instrument deterministic, **put it in the tool, not in a
@@ -69,14 +69,14 @@ the next agent will not know about.
 ### A claim about WHO did something is the one claim with nothing to check it against
 
 **Every other claim in a wave can be verified before it is sent.** Counts, findings, whether a file
-is clean, whether a gate fires — each is a command away, and that is why the checks catch things.
+is clean, whether a gate fires - each is a command away, and that is why the checks catch things.
 **「Which agent did this」 is not**: the repository cannot answer it. Every agent commits as the same
 author, `git blame` names the human on every line, and the trailers carry a chapter rather than a
 hand. The only record is who said so in a message.
 
 **So a misread message is the whole distance between a fact and its opposite, with nothing standing
 in the way.** One agent read 「the gate moved twice UNDER me」 as 「BY me」, turned the reporter into
-the author, and asserted it back to them — with their 「I never touched that file」 in the same
+the author, and asserted it back to them - with their 「I never touched that file」 in the same
 paragraph. Of everything that agent claimed that day it was the only claim it could not have
 checked, and the only one it got wrong.
 
@@ -85,7 +85,7 @@ checked, and the only one it got wrong.
   whole fix.
 - **A correction about authorship goes to both parties**, because the one who was misnamed cannot
   see the message that misnamed them.
-- **Where a project wants it answerable, that is a trailer naming the agent** — a decision for
+- **Where a project wants it answerable, that is a trailer naming the agent** - a decision for
   whoever owns the commit conventions, not for a wave to adopt on its own.
 
 ### A path list you generated is a directory in disguise, and the list gets long exactly when you stop reading it
@@ -98,7 +98,7 @@ directory query wearing a list's clothes, and `--only` then takes each named fil
 tree, including whatever arrived while the work was being done.
 
 It happened to an agent who had avoided the same collision three times that day by checking. **The
-check was not what failed** — it had been running all along. What failed was reading the list, on
+check was not what failed** - it had been running all along. What failed was reading the list, on
 the twenty-fifth file of a change where the first twenty-four had made typing them feel like
 ceremony.
 
@@ -111,18 +111,18 @@ ceremony.
 
 ### Git cannot tell two agents apart, so a commit that carried somebody's work says so or nothing does
 
-**Every agent in a wave commits as the same author.** The trailers name a chapter, not a hand — so
+**Every agent in a wave commits as the same author.** The trailers name a chapter, not a hand - so
 `git log` can say what changed and when, and never who. **That is fine until a commit carries work
 that arrived in one of its files while it was being written**, and then the history is not merely
 silent: it is wrong, and confidently.
 
 There is no way to correct it in place. A reset or an amend takes whatever landed on top, which in
-a shared tree is somebody else's commit — so the record has to be made **forward**:
+a shared tree is somebody else's commit - so the record has to be made **forward**:
 
 - **A commit that says what it carried, named as its own change.** What rode in, what it does, and
   who caused it. That is a fact on disk, which a message between two agents is not.
 - **And a message to the agent whose work it was**, because they are the only one who can say
-  whether the content is right — the commit's author saw a diff and thought it correct, which is a
+  whether the content is right - the commit's author saw a diff and thought it correct, which is a
   weaker claim than it looks.
 - **Never a reset to tidy it.** The instruction against rewriting exists for exactly this tree, and
   the receiving agent reporting the sweep rather than fixing it is the behaviour to expect.
@@ -135,14 +135,14 @@ the next reader's ability to ask why a rule changed, of the person who changed i
 **A call site written before its import compiles for nobody**, and in a tree several agents share
 that window is not private: whoever runs a build during it gets a failure naming a file they have
 never opened and a symbol they have never used. Four times in one session, from three different agents, the same
-shape — a component or a tone table referenced a few seconds before its import line landed. **The
+shape - a component or a tone table referenced a few seconds before its import line landed. **The
 third peer is what settles it**: this is not one agent's habit, it is what an arrangement of several
 agents editing one tree produces, and the count is the only thing that could have told the two
 apart.
 
 **None of them was a break and every one cost somebody the same minutes**: read the failure, doubt
 your own work, check whether the file is yours, discover it is not. The third was handled the way
-they all should be — reported rather than re-run, with the two files checked as uncommitted rather
+they all should be - reported rather than re-run, with the two files checked as uncommitted rather
 than committed broken, and the reporter's own packages typechecked in isolation first to prove the
 cause was elsewhere.
 
@@ -152,13 +152,13 @@ cause was elsewhere.
   the file is modified-uncommitted before debugging anything; a committed break and somebody's
   half-finished edit look identical in a compiler's output.
 - **Report it rather than re-running it away.** A tree that fails for a reason nobody records is
-  how a real break gets attributed to a race — and the count is what turned this from noise into a
+  how a real break gets attributed to a race - and the count is what turned this from noise into a
   shape specific enough to name.
 
 ### A check that nothing was lost is not a check that the right thing moved
 
 **The two are different claims and only one of them is easy.** Comparing a file's sorted lines
-before and after proves a bulk move was lossless — nothing dropped, nothing rewritten. It says
+before and after proves a bulk move was lossless - nothing dropped, nothing rewritten. It says
 nothing about whether the lines went where they were meant to, and a move that puts a card in the
 wrong region passes it cleanly.
 
@@ -178,14 +178,14 @@ and moved line ranges they had read themselves.
 
 **An edit script's 「ok」 is a claim that it wrote something, never a claim that it wrote it where you
 meant.** `replace(old, new)` with a count of one takes the FIRST match, and an anchor like
-`      )}\n\n` occurs everywhere in a React screen — so a script that lifts four blocks and
+`      )}\n\n` occurs everywhere in a React screen - so a script that lifts four blocks and
 re-inserts them at that anchor lands them somewhere else, reports success, and the blocks it lifted
 are simply gone. That happened twice in one session: once to a coordinator whose regex sweep
 stripped trailing commas from 694 files, and once to an agent moving three cards out of a screen
 that then had none.
 
 **Both were caught by reading the result and neither by the tool.** A diff, a re-read, a count of
-what changed — the check is always the same and it is always after the write, because the write is
+what changed - the check is always the same and it is always after the write, because the write is
 where the tool stops being able to help.
 
 - **Assert the anchor before writing**: it appears exactly once, or the script stops. A helper that
@@ -202,7 +202,7 @@ session builds exactly the confidence that lets an ad-hoc one through unexamined
 **A case described from a distance is always stronger than the code.** 「A `.map` painting several
 cards whose kinds differ」 became an IIFE returning one card with a four-way kind; the replacement
 specimen became one producer with a hardcoded kind. Three descriptions, each weaker than the last,
-each corrected by whoever opened the file — **and none of the corrections went the other way.**
+each corrected by whoever opened the file - **and none of the corrections went the other way.**
 
 That asymmetry is the rule. A description is built from what the reader expected to find, so it
 carries the shape the rule wants; the file carries only what somebody wrote. **So a specimen cited
@@ -212,14 +212,14 @@ without being opened is an argument, and a rule justified by one is justified by
   as a fact about the code is the same failure as claiming who wrote a commit.
 - **When the strongest case for a rule keeps shrinking, the rule may be answering a shape the
   product does not have.** That is worth knowing before more is built on it.
-- **A rule whose only justification is an unexercised case is still allowed** — but say so, and say
+- **A rule whose only justification is an unexercised case is still allowed** - but say so, and say
   which real case does justify it. A structural argument, one the other instrument cannot have at
   all, is worth more than a vivid case nobody has met.
 
 ### A fixture written from the rule cannot test the rule's contact with the product
 
 **A rule has a boundary the fixtures never touch if the fixtures were written from the rule.** One
-check had to decide what counts as a region — too wide and it asks a form's three sections to be
+check had to decide what counts as a region - too wide and it asks a form's three sections to be
 reordered, too narrow and it finds nothing at all, because the component wraps each card in a box of
 its own to scroll a restored one into view. **Every fixture passed either way**, and 「compared 0」 on
 a four-card page reads exactly like a clean one.
@@ -237,7 +237,7 @@ product actually renders. The rule was correct in the abstract and had never met
 ### A check that inverts certifies the defect
 
 **A rule that has been reversed is not merely wrong; it vouches for the broken state.** It reports
-every page that obeys the new rule and stays silent on every page that breaks it — so the tree reads
+every page that obeys the new rule and stays silent on every page that breaks it - so the tree reads
 as covered, the count reads as progress, and the pages somebody has to fix are the ones it calls
 clean. **A check nobody wrote is safer than a check pointing the other way**, because the first
 leaves the question open and the second answers it wrongly with authority.
@@ -247,7 +247,7 @@ So a rule change is a change to every instrument that asserts it, in the same br
 - **Turn the check round with the rule, and rewrite its fixtures.** A fixture set that still passes
   after the rule inverted is a fixture set proving the old rule under the new rule's name.
 - **The exemptions usually survive and the assertion does not.** A tab pane's cards, a panel's, a
-  table's cells — those are about what a region is, and a reversal of the order does not touch them.
+  table's cells - those are about what a region is, and a reversal of the order does not touch them.
 - **Say which instruments assert the rule before changing it.** Two source gates and a rendered
   check asserted this one, and only one of them was inverted on the day the rule turned round.
 
@@ -261,7 +261,7 @@ once in each direction, and **both times every rule was followed.**
 It cannot be closed by reading harder. What is left is to make the window small and the record
 honest:
 
-- **Read and commit as one motion**, with nothing between them — no second verification pass, no
+- **Read and commit as one motion**, with nothing between them - no second verification pass, no
   re-run of a gate, no message written in between.
 - **When it happens, record it forward and tell the other agent.** Neither of them can correct it in
   place, and the commit that swept it is the only place the fact can live.
@@ -272,7 +272,7 @@ honest:
 
 **A run that takes twenty minutes across a tree several agents are writing to reads its last route
 against a different codebase from its first.** The number it prints is right about what it read and
-wrong about what exists, and **nothing in the output says which** — the findings look identical
+wrong about what exists, and **nothing in the output says which** - the findings look identical
 whether the file still says that or was fixed while the sweep was passing another route.
 
 It is the intermediate-state reading at a different scale. A gate reading a file mid-edit produces a
@@ -283,7 +283,7 @@ other arrives as a report.
 - **Record the commit the sweep started from**, in the output rather than in somebody's memory.
 - **Re-measure anything it finds before acting on it**, and re-measure the whole thing before
   quoting its count as the state.
-- **This applies to every long reading, not only to checks** — a capture run, a persona walk, an
+- **This applies to every long reading, not only to checks** - a capture run, a persona walk, an
   audit across a hundred screens. Whatever the run is doing, it is doing it to a tree that moved
   underneath it.
 - **The reading is still worth having.** What it is not is current, and saying which commit it is
@@ -292,13 +292,13 @@ other arrives as a report.
 ### An agent that stops without reporting is indistinguishable from one that found nothing
 
 **A wave's idle notice says an agent stopped; it never says whether it finished.** Three judges in
-one round went idle having returned nothing, and each time the coordinator had to ask — because a
+one round went idle having returned nothing, and each time the coordinator had to ask - because a
 missing report and a clean report look identical from where the work is dispatched. **The chapter
 simply stands still**, and nothing about that state announces itself.
 
 - **The commonest cause is that the agent DID report, into prose the coordinator never sees.** An
   agent whose brief does not say how to return will write its findings as its final text, which
-  reaches nobody — and from the dispatching side that is identical to having found nothing. Five
+  reaches nobody - and from the dispatching side that is identical to having found nothing. Five
   agents in one session did exactly this, each having finished the work. **So the brief says how to
   return, not only what**: 「send it with the message tool, not as your final text」 costs one line
   and is the difference between a report and a transcript.
@@ -316,7 +316,7 @@ simply stands still**, and nothing about that state announces itself.
 ### A check's silence covers what it reached, and what it reached is how it was run
 
 **A rule can be correct, exempt nothing it should not, and still say nothing about half its
-subject** — because the run never met that half. A sweep that loads each route bare never mounts a
+subject** - because the run never met that half. A sweep that loads each route bare never mounts a
 detail panel, so the cards inside one were not exempted; they were **never seen**. The output is
 identical either way and reads as a verdict.
 
@@ -326,12 +326,12 @@ named. When somebody asks whether a class of thing is clean, the honest answer i
 not reach it」, and saying so is worth more than the three findings.
 
 - **Name the population in the same breath as the count.** Bare routes, no row selected, signed in
-  as one account, one viewport — each of those is a boundary of the claim.
+  as one account, one viewport - each of those is a boundary of the claim.
 - **The account is the axis that gets left out, and it is the one a source rule does not have.** A
   rule reading files reads every screen regardless of who could open one; a rendered check reads
   what its persona is allowed to see, and a route the persona is refused returns a permission panel
   that reports 「reached nothing」. A sweep run as one role reported 「all sixteen closed」 and 「the
-  two instruments agree」 — true over what that role could open, and the routes it could not were
+  two instruments agree」 - true over what that role could open, and the routes it could not were
   exactly where the source rule's last findings were. **Sweep for refusals first, then re-run as
   whatever role each refusal names.**
 - **A finding you cannot see is not a finding you cleared.** Adding an exclusion for a shape the run
@@ -344,14 +344,14 @@ not reach it」, and saying so is worth more than the three findings.
 
 A capture guard was written to catch pictures whose screen moved mid-shot. It
 never threw. That was read as the captures being clean; it was the guard
-measuring the wrong thing — it re-navigated to the screen before comparing, so its
+measuring the wrong thing - it re-navigated to the screen before comparing, so its
 comparison passed no matter what had happened.
 
 **Silence from a check means one of two things and you cannot tell which by
 looking at it.** Prove it in both directions before trusting it:
 
 1. **It fires on the defect.** Reproduce the defect deliberately and watch it
-   fail. If you cannot provoke it cheaply, say so — do not report the quiet half
+   fail. If you cannot provoke it cheaply, say so - do not report the quiet half
    as the whole.
 2. **It is silent on the fix**, and on healthy code elsewhere.
 
@@ -361,14 +361,14 @@ into *something is checking*, and the second is much harder to doubt.
 ### A wait that was already true before the press measures nothing
 
 **A window writes off its own thread, so pressing 저장 starts the write rather than finishing it.** A
-journey that waits for what the write produced is doing the right thing — until the same key is
+journey that waits for what the write produced is doing the right thing - until the same key is
 written a second time. The key is in the store before the press, the wait returns before the write
 does, and the step after it runs against the value being replaced.
 
 A field-trip journey saved one credential twice on purpose: a wrong community to reach the 「nothing
 answered」 screen, then the right one. Both times it waited with 「the store holds this name」. The
 first wait was real. The second returned at once, the sweep went out with the wrong community still
-stored, and the screen it then asserted against — no responders — **is exactly the screen the
+stored, and the screen it then asserted against - no responders - **is exactly the screen the
 previous step had deliberately produced.** The failure read as 「the printers did not answer」, which
 is a sentence about the network, and the defect was in the wait.
 
@@ -388,12 +388,12 @@ suite, where it is one red line among many and reads as flake.
 **The harness refuses a gate with only one direction proved, and that refusal is what makes the
 second failure invisible.** A case set with a hit and a miss reads as complete: the tooling is
 satisfied, the count goes up, and nobody looks again. What nothing checks is whether the case
-asserts the right answer — and a case written from the same misreading that produced the gate
+asserts the right answer - and a case written from the same misreading that produced the gate
 asserts it confidently in the direction the misreading requires.
 
 It is not hypothetical. A rule enforcing an invariant carried a case saying
 `{clash ? <Table/> : <Banner/>}` must be reported, while the invariant it enforced exempted that
-exact shape in so many words — 「the other arm of the ternary that draws the table」. Both directions
+exact shape in so many words - 「the other arm of the ternary that draws the table」. Both directions
 were proved. The gate then fired on four screens written exactly as the invariant says to write
 them, and the only route to a green tree was to break a second invariant.
 
@@ -404,19 +404,19 @@ the case that decides the boundary; a case with no such sentence beside it is as
 its author invented.
 
 **The tell that this has happened is a gate firing on code somebody wrote carefully.** A finding
-whose fix would break a different rule is never a finding — it is the gate disagreeing with the
+whose fix would break a different rule is never a finding - it is the gate disagreeing with the
 rulebook, and the rulebook wins until somebody changes it deliberately.
 
 ### A value you re-derived is checked against rows nobody changed
 
-Recovering a value the product generated — reproducing a language's random sequence in
-another language, recomputing a hash, replaying a formula — produces something that **looks
+Recovering a value the product generated - reproducing a language's random sequence in
+another language, recomputing a hash, replaying a formula - produces something that **looks
 right on arrival and has no witness**. It goes into rows that are then indistinguishable from
 correct ones, and nobody opens them again.
 
 **Run the derivation over rows you are NOT changing first, and compare.** They already hold
 the answer, so a mismatch is free and immediate. One re-implementation of a random name
-generator was wrong on its first attempt — a signed/unsigned difference in one step — and the
+generator was wrong on its first attempt - a signed/unsigned difference in one step - and the
 three untouched rows caught it in a second. Without them the wrong names would have been
 written and never looked at again.
 
@@ -426,12 +426,12 @@ untouched neighbours are the oracle, and they are free.
 ### A watch is a check, and the same proof is owed
 
 The rule above is about checkers. It holds unchanged for the **watches a
-coordinator arms** — the log tail, the capture directory — and that is exactly
+coordinator arms** - the log tail, the capture directory - and that is exactly
 where it gets skipped, because a watch emits nothing while the work is quiet and
 nothing while it is broken. From outside those are the same observation.
 
 **Arm it, then make it fire.** Drop one file, append one line, confirm the event
-arrives — then confirm it goes quiet when nothing happens. Both halves, one
+arrives - then confirm it goes quiet when nothing happens. Both halves, one
 command each. That is the only thing separating *nobody is capturing* from
 *nobody is watching*.
 
@@ -439,12 +439,12 @@ So read silence as suspect rather than as reassurance. A coordinator whose captu
 watch stayed quiet across two units of work read it as the agents not having shot
 anything; fourteen captures had landed and the watch had never once worked. The
 the run survived on agents reporting their own paths, which is the fallback, not
-the mechanism — the watch existed to get those pictures to a person *while the
+the mechanism - the watch existed to get those pictures to a person *while the
 screen was still the subject*.
 
 **The failure was the quiet kind.** The watch matched new files by relative time
 (`find … -newermt '-70 seconds'`), and BSD `find` on macOS does not read relative
-strings the way GNU does. It does not error; it returns an empty answer — which is
+strings the way GNU does. It does not error; it returns an empty answer - which is
 byte for byte what a working watch returns on a quiet minute. Prefer a form with
 no date parsing in it at all: list the directory and emit the difference from the
 previous list.
@@ -452,7 +452,7 @@ previous list.
 **Run the watch's own query by hand over two windows of different widths.** That
 is the measurement that exposes this class, and it is cheap. Here the relative
 form found ten files across six hours while an absolute cutoff found fifteen
-across the last fifty minutes — and a window enclosed by another cannot hold more
+across the last fifty minutes - and a window enclosed by another cannot hold more
 than it, so the number was not counting time at all.
 
 ### Scope a rule to the defect, not to where the defect happened to be
@@ -464,10 +464,10 @@ two source files where a bad call had been found.
 
 - **Sweep the whole tree**, then report the count. Zero costs nothing and proves
   coverage; non-zero is the rule earning itself immediately.
-- **A hardcoded list of the current repository's paths is the thing to avoid** —
+- **A hardcoded list of the current repository's paths is the thing to avoid** -
   the same rule as anywhere else, and it applies inside a test as much as a
   library.
-- **Give it an escape that a reader can see and question** — a marker at the call
+- **Give it an escape that a reader can see and question** - a marker at the call
   site, not an omission from a list at the top of the file nobody re-reads.
 - **Failing on an empty scan** catches the scan that quietly stopped matching
   anything.
@@ -478,7 +478,7 @@ Two candidate rules were written and closed the same day: one fired on four
 healthy pages, another could not read exclusive branches and would have called a
 working screen broken.
 
-The project's discipline is that a finding becomes a refactor **or** a checker —
+The project's discipline is that a finding becomes a refactor **or** a checker -
 not that everything becomes a checker. **Write the rejected ones down, with the
 reason.** Otherwise the next agent rediscovers the same tempting rule and ships
 it, and now a gate is wrong.
@@ -493,13 +493,13 @@ a gate nobody is running.
 
 **The pipe is reached for to protect the context, which is why the rule keeps
 breaking.** A gate that takes ten minutes has to run in the background, and its
-log is thousands of lines an agent must not read — so `| tail -25` looks like the
+log is thousands of lines an agent must not read - so `| tail -25` looks like the
 careful move rather than the careless one, and it is the exact move that throws
 the verdict away. It has now cost an agent a run reported as green that had two
 failing tests in it, and the pass was believed because the *last* twenty-five
 lines were a passing checker.
 
-Redirect and record the status instead — the log stays on disk, unread, and the
+Redirect and record the status instead - the log stays on disk, unread, and the
 one line that matters is the one written last:
 
 ```bash
@@ -509,16 +509,16 @@ one line that matters is the one written last:
 Then `grep` for `EXIT=` and for the failure lines. **Never conclude from the tail
 of a log that the run passed**, and never from a background task's own exit code
 either: a task wrapping a pipeline reports the *pipeline's* status, which is the
-last stage's — `tail` always succeeds.
+last stage's - `tail` always succeeds.
 
 **A semicolon does what the pipe does, and it wears the rule's own clothes.**
-Writing `<gate> > gate.log 2>&1; echo "EXIT=$?"` looks like obeying this section —
-the redirect is there, the status is computed — but the status goes to stdout,
+Writing `<gate> > gate.log 2>&1; echo "EXIT=$?"` looks like obeying this section -
+the redirect is there, the status is computed - but the status goes to stdout,
 which for a background task is *the log nobody reads*, and the exit the harness
 then reports is `echo`'s. `echo` always succeeds. The three steps are redirect,
 **append the status into the log**, and **grep the log**; doing two of them is
 doing none, because what the first two produce is a number nobody looks at. A
-coordinator did exactly this and told the user a red gate was green — having
+coordinator did exactly this and told the user a red gate was green - having
 written the `echo` specifically to avoid that mistake. So: `>> gate.log` on the
 echo, and a second command that greps. If a report says a gate passed, the words
 `EXIT=0` were read out of a file, or the claim is not evidence.
@@ -526,7 +526,7 @@ echo, and a second command that greps. If a report says a gate passed, the words
 ### A path that exists is not a screen anybody has seen
 
 Refusal copy existed in three locales, was reachable in code, passed every check,
-and had **never rendered once** — no sample data produced the state it belonged
+and had **never rendered once** - no sample data produced the state it belonged
 to. The agent reported it as working because the code path was right.
 
 **If a state needs data to exist, that data is part of the frame.** Empty states,
@@ -541,17 +541,17 @@ settles whether a person meets what you intended.
 The one-agent-at-a-time rule is in the main document. These are the failures that
 follow when it is bent, all of which cost real work in a single session.
 
-### A shared resource arbitrates itself — a coordinator holding the queue is the bug
+### A shared resource arbitrates itself - a coordinator holding the queue is the bug
 
 Two agents driving one simulator, browser, or device produce **captures of the
-wrong screen that look entirely correct** — a real screen, properly drawn, at the
+wrong screen that look entirely correct** - a real screen, properly drawn, at the
 right path, under the right name. One came back showing another section's dialog,
 because the other agent had opened it between the deep link and the shutter.
 Nothing in the image says it is wrong. So the resource genuinely must be used by
 one agent at a time.
 
 **The test database is one of these, and it lies in a worse way.** Two suites
-running at once collide over rows and report a unique-key violation on an email —
+running at once collide over rows and report a unique-key violation on an email -
 which reads as a defect in the code under test, not as two runs in one place. A
 wrong capture at least looks like a screen; this looks like a bug, and whoever
 receives it starts reading the wrong file. It cost half an hour of reading a
@@ -563,7 +563,7 @@ run is already in it.**
 wrong.** It was tried for a full session and failed four times: every run becomes a
 message round trip, and a message that crosses or is dropped leaves an agent
 sitting on a permission it already had. The longest stall was half an hour, and it
-is invisible from both ends — the agent believes it is waiting, the coordinator
+is invisible from both ends - the agent believes it is waiting, the coordinator
 believes it is working. Standing reservations do not fix it either, because a
 coordinator with two agents ends up relaying one agent's permission to the other's
 sub-agent, and that is one more hop to lose it on.
@@ -575,7 +575,7 @@ so nobody can be left waiting for an answer that was already sent.
 Three things that make such a lock trustworthy rather than another trap:
 
 - **A stale lock is cleared, not honoured.** A run killed mid-flight leaves its file
-  behind, and a lock nobody holds must never become permanent — that replaces a
+  behind, and a lock nobody holds must never become permanent - that replaces a
   collision with a deadlock, which is worse because it looks like the rule working.
   Record the pid and check whether it is alive.
 - **Refuse loudly and say who holds it**, with what they are doing. "Resource busy"
@@ -587,25 +587,25 @@ Three things that make such a lock trustworthy rather than another trap:
 **Checking `ps` is not a substitute for a lock.** Two runs can both be between steps
 at the same instant, and the check reads clear.
 
-A resource the machine cannot arbitrate — a physical handset somebody is holding,
-a shared account, a lab device — still goes through a person. The rule is not "never
+A resource the machine cannot arbitrate - a physical handset somebody is holding,
+a shared account, a lab device - still goes through a person. The rule is not "never
 coordinate"; it is that **anything a lock can arbitrate should not be arbitrated by
 messages**, because the messages are the part that fails.
 
 ### A port fixed on purpose is still a shared resource, and the socket blames the product
 
-A capture has to be the same picture every run, so a port a screen prints is fixed rather than picked
-— which is right. What it also does is make that port a resource the run hands from one rendering to
+A capture has to be the same picture every run, so a port a screen prints is fixed rather than picked -
+which is right. What it also does is make that port a resource the run hands from one rendering to
 the next, and a rendering that takes it before the one before it has let go fails on the bind.
 
 **The failure arrives wearing the product's stack.** `BindException: Address already in use` is
 thrown from inside the server the screen was starting, so the trace names the product's file and line
 and reads as a defect in it. A session spent an afternoon there: it found a real defect on the way (a
-server that never shut down the executor it had set), fixed it, and the symptom did not move — because
+server that never shut down the executor it had set), fixed it, and the symptom did not move - because
 the symptom was never about that.
 
 - **Wait for the resource where it is taken**, and fail with its name: 「port N could not be taken in
-  10s — something outside this run holds it」 sends the next reader to `lsof`, and 「Address already in
+  10s - something outside this run holds it」 sends the next reader to `lsof`, and 「Address already in
   use」 sends them into the product.
 - **Prove the wait in both directions.** Hold the port from a shell, run the frame, and read the
   sentence; then let go and watch it pass. A wait nobody has seen fire is a wait nobody can trust.
@@ -614,7 +614,7 @@ the symptom was never about that.
 
 ### An agent that ends, and an agent that only paused
 
-An agent's session can end for reasons that have nothing to do with the work — a usage
+An agent's session can end for reasons that have nothing to do with the work - a usage
 limit, a dropped connection. Three failures follow, and each has cost a session.
 
 **A half-finished tree is read as the existing state.** When an agent dies, read the tree
@@ -625,32 +625,32 @@ what was there all along and builds on it.
 
 **A pause looks exactly like a death.** A usage limit suspends every agent at once and
 resumes them when it lifts, so an agent reported as failed can be mid-sentence rather than
-gone — and dispatching a replacement puts two agents on one job. They will not notice each
+gone - and dispatching a replacement puts two agents on one job. They will not notice each
 other: both read the same tree, both stage, and the first `git add` folds the other's staged
 files into a commit neither of them meant to make. So before replacing an agent that ended
-for an outside reason, check whether the work is still moving — the last commit's timestamp,
+for an outside reason, check whether the work is still moving - the last commit's timestamp,
 the file it was writing, its log. If it is, wait; that agent still holds everything it had
 worked out, and a replacement starts from nothing. If a replacement is already running when
 the original wakes, stop the replacement rather than the one with the context.
 
 **An agent whose output is a judgment leaves nothing when it ends.** One that edits
 code leaves its work in the tree, so a report that never arrives costs a look at the
-diff and nothing more. One that produces a *judgment* — a contract, an audit, a
-comparison, a decision between two designs — has it only in its head until it speaks,
+diff and nothing more. One that produces a *judgment* - a contract, an audit, a
+comparison, a decision between two designs - has it only in its head until it speaks,
 and agents end for reasons that have nothing to do with the work. Dispatch those with
 a file to write and tell them to **write as they go**, a section at a time, with a
 line at the top saying how far they got.
 
 **So a read-only agent still needs `Write`.** Reaching for a review or auditor
-subagent is the right instinct — it cannot edit the tree it is judging — but the ones
+subagent is the right instinct - it cannot edit the tree it is judging - but the ones
 that ship with a tool list usually drop `Write` along with `Edit`, and then the agent
 has nowhere to put its judgment except a final message that may never arrive.
 Read-only means *it does not touch the subject*, not *it produces nothing*. Check the
 tool list before dispatching, and give it a scratch file outside the tree it reads.
 
 **When the work has already moved on, a waking agent is more dangerous than a dead one.** A
-dead agent does nothing. A woken one resumes from the tree it remembers — which may be
-dozens of commits stale — and treats that memory as the current state: it writes files that
+dead agent does nothing. A woken one resumes from the tree it remembers - which may be
+dozens of commits stale - and treats that memory as the current state: it writes files that
 have since been split, rebuilds what somebody else already judged, and commits over work it
 cannot see. The wake arrives with no warning and its first act may be a write, so a message
 telling it to stand down can land after the damage. **The moment a unit of work is handed to
@@ -661,33 +661,33 @@ it before it wakes.
 
 It happens the same way every time: an agent reports that the API cannot supply what
 a frame draws, the coordinator adds that to that agent's brief, and later dispatches a
-server agent for the same area — having forgotten that the first brief reached into it.
+server agent for the same area - having forgotten that the first brief reached into it.
 Nobody involved did anything wrong.
 
 The guard is to say, in every brief, **which paths belong to this agent** and that
-everything else is somebody's. Write it as two columns — mine, and not mine, each named
-— rather than as a scope stated only in the positive: a brief that says what an agent
+everything else is somebody's. Write it as two columns - mine, and not mine, each named -
+rather than as a scope stated only in the positive: a brief that says what an agent
 owns and stays silent about the rest reads, to the agent, as permission for anything
 adjacent. An agent that then finds foreign edits knows immediately that it is looking at
 a collision rather than at its own earlier work.
 
 Ask each one to **stand down and report** rather than to resolve it. They cannot see each
-other, and the one who stands down is the one whose scope was wrong — which only the
+other, and the one who stands down is the one whose scope was wrong - which only the
 coordinator knows. An agent that finds another working the same tree stands down and says
 so without touching the index; that is the correct answer, and the coordinator's job is to
 make it unnecessary.
 
-### The overlap that hides best is not a file — it is a deliverable
+### The overlap that hides best is not a file - it is a deliverable
 
 Two briefs can name disjoint paths and still ask for the same thing: a checker for the
 same rule, a helper for the same convention, a fixture for the same screen. Neither agent
 can see the duplicate, because what they were told to build is not something the tree
 shows until it exists. It surfaces as two implementations of one idea, or as one agent's
-work vanishing into the other's commit — and by then both are finished and sure.
+work vanishing into the other's commit - and by then both are finished and sure.
 
 So before dispatching, read the new brief against every running one and ask what each is
 asked to **produce**, not only what it may touch. Where two would build the same artefact,
-name its owner in both briefs — the one who builds it, and the one who waits for it and is
+name its owner in both briefs - the one who builds it, and the one who waits for it and is
 told where it will appear.
 
 ### Stage your own paths, never everything
@@ -702,7 +702,7 @@ you did not touch.
 
 **`--only <directory>` stages what git already tracks and drops what it does not,
 in silence.** A new file under that directory is untracked, so a commit naming the
-directory does not carry it — the commit lands, the tree is clean-looking, and the
+directory does not carry it - the commit lands, the tree is clean-looking, and the
 change is half in history. It bites hardest on exactly the work that creates files:
 a new module, a package being split out, a reader and its fixture. Measured on one
 such change, **five commits imported twenty files that were in none of them**, and
@@ -711,18 +711,18 @@ that added it, not anything a person noticed.
 
 So before every commit by path, **read `git status --short` for `??` under the paths
 you are about to name**, and `git add` those first. This is the one case where
-adding before committing is right — the file is yours by construction, since it did
+adding before committing is right - the file is yours by construction, since it did
 not exist until you made it.
 
 **Stage by path, and commit in the same call.** A commit looks at the tree rather
 than at the files anybody touched, so stage the paths the brief named and nothing
 else, and run `git add <paths> && git commit` in one call, **after** verification
-rather than before — the index is shared, so staging early to see what you have
+rather than before - the index is shared, so staging early to see what you have
 opens a window for somebody else's commit to carry your files under a message that
 says nothing about them. Never `git add -A`, never `git add .`, never `git commit -a`.
 
 **Path-level staging runs out when the shared thing is a file rather than a
-directory** — a manifest, a config, a barrel that two agents both add a line to.
+directory** - a manifest, a config, a barrel that two agents both add a line to.
 `git add <that file>` takes their line too, and the moves that look obvious (wait for
 them, ask them to commit first, commit both lines) each cost somebody their work or
 their authorship. Build the content you want, put *that* in the index, and leave the
@@ -748,19 +748,19 @@ attribute.
 
 **Measuring must not use commits.** Plant the probe in the working tree, run the
 check, delete the probe. Nothing needs to be committed for a rule to fire, and
-`reset`, `stash` and `checkout --` have no place in a measurement at all — in a shared
+`reset`, `stash` and `checkout --` have no place in a measurement at all - in a shared
 tree they drop somebody else's work while every file stays on disk and every check
 stays green.
 
 The mirror of it: **uncommitted work in a shared tree is not private.** It is a
-broken build every other agent inherits without being able to see why — a red
+broken build every other agent inherits without being able to see why - a red
 typecheck they must reason past before they can trust their own run. Commit at every
 point that stands on its own, never once per unit of work.
 
 **Read `git status` for deletions you did not mean, and read it before you believe a
 green gate.** Staging is about what you add; the file you destroyed is not in that
 list. Writing to a path you did not first read, or renaming onto one, removes whatever
-was there — and when what was there is a test file, **the gate goes green because those
+was there - and when what was there is a test file, **the gate goes green because those
 tests are not running.** One agent overwrote a 294-line test file that way and its
 first full-gate run passed with eighteen tests absent; the count in the gate's own
 output was the only witness, and nobody compares counts between runs. A vanished
@@ -768,7 +768,7 @@ suite and a passing suite look identical from the outside, which is why this is 
 check rather than a caution: `git status` before the gate, and account for every
 deletion in it.
 
-### Say what you cannot attribute — and do not read attribution off a commit
+### Say what you cannot attribute - and do not read attribution off a commit
 
 With more than one agent in a tree, a gate can be red for somebody else's reason.
 An agent that reports "gates green" after only running the ones it could attribute
@@ -779,18 +779,18 @@ coordinator is the only one who can see all of them at once.
 
 **The same holds for authorship, because the index is shared.** One agent stages by
 path and another commits in the gap, and the second author's name goes on both. Do not
-read `git show --stat` as attribution, and do not assign follow-up work from it — ask
+read `git show --stat` as attribution, and do not assign follow-up work from it - ask
 the agents. Getting this wrong sends the next brief to the wrong one, which is how a
 collision outlives the collision.
 
 ### A reading that contradicts a report is a clock before it is a defect
 
-Measuring rather than taking an agent's word earns its keep — but a file read one
+Measuring rather than taking an agent's word earns its keep - but a file read one
 commit behind the agent who just fixed it yields line numbers for a defect already
 gone, with both sides right. So before returning anything a report contradicts, **look
 for the hashes it named** (an agent puts one on every claim of a change): absent is
 work that has not landed, present is a reading taken in front of it. Then argue what
-the file says, never where it says it — a fix that adds a line moves every number
+the file says, never where it says it - a fix that adds a line moves every number
 under it.
 
 **Take the reading out of a commit, never off the working tree.**
@@ -800,8 +800,8 @@ git show HEAD:<path> | grep <what you are checking for>   # or the hash the repo
 ```
 
 While an agent is in the tree, the tree is not any moment at all. Proving a new rule
-means planting the defect back into the file and taking it out again — in the working
-tree and never in a commit — so a `grep` that lands in that window reads a file
+means planting the defect back into the file and taking it out again - in the working
+tree and never in a commit - so a `grep` that lands in that window reads a file
 mid-repair and reports finished work as missing. One session paid for exactly that
 twice, both times as "it did not go in, I measured it", and both times the agent
 answered with a `git show` of a hash its report had already named. A commit holds

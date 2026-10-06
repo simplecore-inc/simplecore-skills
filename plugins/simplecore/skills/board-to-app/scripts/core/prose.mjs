@@ -28,12 +28,12 @@ export const NARRATIVE_PHRASES = [
  *
  * <p><b>Separate from `NARRATIVE_PHRASES` because it governs a different set of files.</b> Those
  * turn a facts file into a diary and are checked in the handover; these turn a record of what was
- * on a screen into a record of what a round changed, and belong to every result document — 「this
+ * on a screen into a record of what a round changed, and belong to every result document - 「this
  * line appeared in this round」 says nothing a reader of the screen needs, and it is false the day
  * the next round runs.
  *
  * <p><b>Every entry carries a demonstrative on purpose.</b> A round is a real thing in some
- * domains — a workplace-measurement round, an inspection round — so the bare word is a screen
+ * domains - a workplace-measurement round, an inspection round - so the bare word is a screen
  * label rather than a trace. `이번 회차 측정값` is a field on a real screen in one project and
  * `이 회차에 만든` is a session trace in the same repository; only the demonstrative-plus-round
  * pairing separates them, and quoted spans are stripped before matching so the label survives
@@ -72,7 +72,7 @@ export function fencedLines(lines) {
  * Whether a phrase appears on this line only as quoted or code-span text.
  *
  * <p>A rule stated about a phrase is not a use of it, and both ways of marking a phrase as
- * being talked about — quotation marks and a code span — are removed before the test.
+ * being talked about - quotation marks and a code span - are removed before the test.
  */
 export function onlyQuoted(line, phrase) {
   const stripped = line
@@ -94,7 +94,7 @@ export function proseLines(text) {
  * <p>**Exactly, and never by containment.** A key such as `openItemsHeading` declares the
  * heading's text, so a declaration that is merely a fragment of a real heading would satisfy
  * every reader here while naming no heading the project actually wrote. A pattern that accepts
- * more than it should makes every comparison pass, and the comparisons are still counted — so it
+ * more than it should makes every comparison pass, and the comparisons are still counted - so it
  * reads as a rule that is held right up to the day a second heading contains the same fragment,
  * and then it silently reads the wrong section, with nothing having changed.
  *
@@ -114,7 +114,7 @@ export function hasHeading(text, heading) {
 /**
  * The lines under a heading, up to the next heading of any level.
  *
- * <p>It finds the heading with the same predicate `hasHeading` uses — otherwise a gate locates a
+ * <p>It finds the heading with the same predicate `hasHeading` uses - otherwise a gate locates a
  * heading by one rule and reads the section under it by another, and the second heading it lands
  * on is nobody's mistake to find.
  *

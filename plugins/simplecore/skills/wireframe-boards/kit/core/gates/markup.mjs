@@ -3,7 +3,7 @@
 import { idOf } from '../ids.mjs';
 import { splitTop } from './util.mjs';
 
-// Overlay gate: `overlay` on the module is what the frame PROMISES — the hollow-dialog check
+// Overlay gate: `overlay` on the module is what the frame PROMISES - the hollow-dialog check
 // above reads it, and the manifest label names it. Drawing it is a separate act: the shell takes
 // its own `overlay` argument. Declaring one and forgetting to pass it leaves a frame whose label
 // and state both say "dialog" and whose picture has none, and every check upstream passes.
@@ -19,7 +19,7 @@ export const overlayGate = {
 };
 
 // Dead-import gate. An import a screen no longer uses is invisible: it costs nothing at runtime,
-// changes no pixel, and the build stays green — so it accumulates. 360 of them across 225 files
+// changes no pixel, and the build stays green - so it accumulates. 360 of them across 225 files
 // had built up before anybody counted, and by then the import block of a screen said almost
 // nothing about what the screen actually draws, which is the one thing it is good for.
 //
@@ -50,7 +50,7 @@ export const deadImportGate = {
 };
 
 // Option-key gate. A component destructures the options it knows and ignores the rest, so a call
-// written with the shape a person expects — `calendar({month, today, marks})` — renders its
+// written with the shape a person expects - `calendar({month, today, marks})` - renders its
 // wrapper and NO CONTENT: the markup is balanced, no value leaked, the frame is there, and only
 // the emptiness gives it away. It hit `journey` across 13 files, `chartPh` across 4 and `calendar`
 // across 5 before each grew its own throw. Three sightings of one defect is where you stop writing
@@ -67,7 +67,7 @@ export const optionKeyGate = {
       const comps = ctx.componentsSrc;
       const keysOf = new Map();
       for (const m of comps.matchAll(/export const ([a-zA-Z]+) = \(\{([\s\S]*?)\}\)/g)) {
-        // Split the destructuring on its own top-level commas — a regex with a consuming separator
+        // Split the destructuring on its own top-level commas - a regex with a consuming separator
         // silently drops every other key (`label, value = '', hint` yields label and hint), and a gate
         // that reports two-thirds of the keys as unknown is worse than no gate.
         const keys = new Set(splitTop(m[2]).map((part) => /^\s*([a-zA-Z_][\w]*)/.exec(part)?.[1]).filter(Boolean));
@@ -93,7 +93,7 @@ export const optionKeyGate = {
 
 // Duplicate-key gate. `console_({ overlay, tab, current, overlay: issue })` is valid JavaScript:
 // the last key wins, silently. That one line made a screen's ORDINARY state draw its dialog, so
-// the closed frame and the open frame became the same picture — and every check upstream passed,
+// the closed frame and the open frame became the same picture - and every check upstream passed,
 // because the markup is balanced, the overlay is declared, the label matches, and the frame is
 // there. Only a reader comparing two frames that should differ can see it, which is why it
 // survived until a persona review walked the pair.
@@ -106,7 +106,7 @@ export const dupKeyGate = {
     for (const sc of ctx.screens) {
       const src = ctx.srcOf(sc.file);
       // A regex cannot do this: the option object of a screen shell nests dozens of levels deep, and
-      // an expression that stops at one level silently skips exactly the biggest calls — the ones
+      // an expression that stops at one level silently skips exactly the biggest calls - the ones
       // where a duplicated key hides best. So the braces are counted.
       for (const m of src.matchAll(/\b([a-zA-Z_]\w*)\(\{/g)) {
         const open = src.indexOf('{', m.index);
@@ -132,14 +132,14 @@ export const dupKeyGate = {
   },
 };
 
-// Structure gate: one unclosed tag inside a component silently swallows everything after it —
+// Structure gate: one unclosed tag inside a component silently swallows everything after it -
 // a status bar lands inside a pane, a fixed height stops applying, panes nest inside each
 // other. The frame still renders, still counts, and still reads as covered, so nothing but a
 // person looking at the board catches it. That is precisely the failure a gate exists for.
 // Checked per frame so the message names the screen; void elements never close, so they are
 // skipped. A board with nested panes is not
 // something to iterate on.
-// A body writes no raw tags — and a raw tag with no class is the shape that gets past a reading.
+// A body writes no raw tags - and a raw tag with no class is the shape that gets past a reading.
 // It renders, the markup balances, every other gate passes, and the only sign is that the line
 // draws at the BOARD's base size instead of its neighbours', because it inherited what nothing
 // gave it. Three cards on one frame did exactly that.
@@ -199,7 +199,7 @@ export const structureGate = {
   },
 };
 
-// Empty-value gate: a missing argument does not throw in a template literal — it is coerced
+// Empty-value gate: a missing argument does not throw in a template literal - it is coerced
 // and printed. `undefined` lands in the frame as visible text, reads as a screen label, and
 // survives every other gate here because the markup around it is perfectly well formed.
 export const leakedValueGate = {
@@ -220,11 +220,11 @@ export const leakedValueGate = {
 
 // Slot gate: an argument that lands in the wrong parameter of a shared drawing.
 //
-// A state frame calls its base's `screenBody(...)`, and the parameters differ by base — some take
+// A state frame calls its base's `screenBody(...)`, and the parameters differ by base - some take
 // `(overlay)`, some `(detail, overlay)`, some `(detail)`. Pass a help dialog where the DETAIL slot
 // is and three things happen at once: the dialog renders inside the panel, the panel disappears,
 // and the overlay is empty. None of it throws, and `overlayGate` passes because it only asks
-// whether the body contains the overlay string — which it does, in the wrong place.
+// whether the body contains the overlay string - which it does, in the wrong place.
 //
 // Found by hand twice; the sweep that followed found four. That gap is why this is a gate: the
 // shape is invisible in a screenshot of the frame alone, because a dialog in a panel still looks
@@ -275,7 +275,7 @@ function screenBodyArgs(src) {
  *
  * <p><b>The other gate reads what was passed; this one reads what the frame says it is.</b> They
  * miss different things. N-68 declared its form with `dialog(` and put it in the overlay, which is
- * where a dialog belongs — every type check passes and the slot check has nothing to object to.
+ * where a dialog belongs - every type check passes and the slot check has nothing to object to.
  * What was wrong was the frame's own `state`: 「패널 폼 열림」, a panel, drawn as a dialog. Only the
  * declared state says so.
  *
@@ -325,13 +325,13 @@ export const slotGate = {
       const imp = /import\s+base\s*,\s*\{[^}]*\}\s+from\s+'\.\/([a-z0-9-]+)\.mjs'/.exec(s);
       if (!imp) continue;
       // The argument list is read with the parens balanced. `[^)]*` stopped at the first `)`, so a
-      // frame passing a CALL — `screenBody(panel('센서'))`, which is how a base parameterised by its
-      // open tab is spread — handed this gate the fragment `panel('센서'` and the RegExp built from
+      // frame passing a CALL - `screenBody(panel('센서'))`, which is how a base parameterised by its
+      // open tab is spread - handed this gate the fragment `panel('센서'` and the RegExp built from
       // it threw. A gate that crashes takes the whole build with it and says nothing about why.
       const call = screenBodyArgs(s);
       if (!call) continue;
       // Both arguments, not just the first. The gate used to check the first only, and a base
-      // whose signature is `(overlay, detail)` swallowed `screenBody(undefined, help)` in silence —
+      // whose signature is `(overlay, detail)` swallowed `screenBody(undefined, help)` in silence -
       // the dialog rendered into the panel's slot, so the explanation never opened AND the record's
       // panel disappeared. Three frames shipped that way. What matters is which SLOT the dialog
       // lands in, so each argument is matched to the parameter at its position.
@@ -346,8 +346,8 @@ export const slotGate = {
         const slot = params[i];
         if (!slot) return;
         // The other direction, and it is the invisible one. A base parameterised by its open tab
-        // exports `panel(tab)`, and where the base's overlay parameter comes FIRST — which it does
-        // whenever the detail slot was added to an existing `screenBody(overlay)` — the natural
+        // exports `panel(tab)`, and where the base's overlay parameter comes FIRST - which it does
+        // whenever the detail slot was added to an existing `screenBody(overlay)` - the natural
         // call `screenBody(panel('센서'))` puts the whole panel into the overlay. The frame then
         // draws the page with its default panel and the requested tab nowhere, and the board says
         // the tab is drawn. Nothing throws and the picture looks like a screen.
@@ -356,19 +356,19 @@ export const slotGate = {
           bad.push(`${e.num}: screenBody(${arg}) — ${arg}는 상세 패널인데 ${i + 1}번째 인자라 「overlay」 자리로 들어간다. screenBody(${fixed.join(', ')})로 쓴다 (${order})`);
           return;
         }
-        // Only a bare identifier can name an exported dialog. Anything else — a call, a template
-        // string, a ternary — is not what the check below is about, and interpolating it into a
+        // Only a bare identifier can name an exported dialog. Anything else - a call, a template
+        // string, a ternary - is not what the check below is about, and interpolating it into a
         // RegExp is how the crash noted above happened.
         if (!/^[A-Za-z_$][\w$]*$/.test(arg)) return;
         // Declared in the frame as often as in the base. A state frame that draws its own form
-        // exports it beside its `body:`, and reading the base alone went quiet on five frames —
+        // exports it beside its `body:`, and reading the base alone went quiet on five frames -
         // four handing a panel form to the overlay and one whose form was a dialog to begin with.
         const declaredIn = new RegExp(`(?:export )?const ${arg}\\s*=\\s*(\\w+)\\(`);
         const declares = (text) => declaredIn.exec(text)?.[1];
         const kind = declares(s) ?? declares(baseSrc);
         // The mirror of the case below, and the one that reached a person. A panel form handed to
-        // the overlay draws over the whole device — form below the status strip, outside the phone
-        // — and nothing throws, because a string in the overlay slot is exactly what that slot
+        // the overlay draws over the whole device - form below the status strip, outside the phone
+        // - and nothing throws, because a string in the overlay slot is exactly what that slot
         // takes. 「레이아웃이 깨짐」 is how it was reported, which is all a reader can say.
         if (slot === 'overlay' && kind === 'panelForm') {
           const fixed = params.map((pp) => (pp === 'overlay' ? 'undefined' : arg));

@@ -42,7 +42,7 @@ def build_mark(logo_path: Path, opacity: float) -> bytes:
 def stamp(logo: Path, src: Path, out: Path, opacity: float, width_ratio: float,
           line: str = "") -> None:
     mark = build_mark(logo, opacity)
-    # Droid Sans Fallback — bundled with PyMuPDF, and the only built-in that has Hangul, Han and
+    # Droid Sans Fallback - bundled with PyMuPDF, and the only built-in that has Hangul, Han and
     # Kana. Loaded once and shared, so 777 pages embed one font rather than 777 copies.
     font = fitz.Font("cjk") if line else None
     mark_w, mark_h = Image.open(logo).size
@@ -56,7 +56,7 @@ def stamp(logo: Path, src: Path, out: Path, opacity: float, width_ratio: float,
         h = w * aspect
         box = fitz.Rect((pw - w) / 2, (ph - h) / 2, (pw + w) / 2, (ph + h) / 2)
         # Reuse the first inserted image object, so every page shares one XObject. Inserting the
-        # stream again per page puts one copy of the logo in the PDF per page — on a 600-page
+        # stream again per page puts one copy of the logo in the PDF per page - on a 600-page
         # board that is the difference between a megabyte and a hundred.
         if xref:
             page.insert_image(box, xref=xref, overlay=True)
@@ -69,12 +69,12 @@ def stamp(logo: Path, src: Path, out: Path, opacity: float, width_ratio: float,
         #
         # **The same opacity as the logo, not a multiple of it.** The mark bakes `opacity` into
         # its alpha channel; the text was drawn at 3.2× that and came out visibly darker, so the
-        # stamp read as two things — a faint logo with a caption printed over it.
+        # stamp read as two things - a faint logo with a caption printed over it.
         if line:
             size = max(9.0, min(16.0, w * 0.045))
             # A TextWriter with a CJK font, NOT `insert_textbox(fontname="helv")`. The base-14
             # fonts carry no Hangul, so a Korean recipient drew NOTHING and the call reported
-            # nothing either — the stamp came out looking like one that had never been asked for.
+            # nothing either - the stamp came out looking like one that had never been asked for.
             # Centred by measuring the string, since a writer places text at a point.
             tw = fitz.TextWriter(page.rect)
             tw.append(

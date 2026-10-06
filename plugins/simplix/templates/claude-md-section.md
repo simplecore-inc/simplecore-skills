@@ -4,7 +4,7 @@ Two blocks. The **project block** names this repository's subprojects and belong
 project's own instruction file. The **global block** is path-free and belongs in
 `~/.claude/CLAUDE.md`, where it covers every SimpliX project on the machine.
 
-Writing either one is what makes the routing durable — the plugin's SessionStart hook
+Writing either one is what makes the routing durable - the plugin's SessionStart hook
 announces the same thing, but a hook only fires where the plugin is installed, while an
 instruction file travels with the repository.
 

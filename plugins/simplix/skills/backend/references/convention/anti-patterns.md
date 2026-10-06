@@ -58,7 +58,7 @@ public class EntityNameRestController extends SimpliXBaseController<EntityName, 
 }
 ```
 
-**Why**: CRUD controllers/services extending `SimpliXBaseController`/`SimpliXBaseService` require `super(service)` in the constructor — `@RequiredArgsConstructor` cannot generate `super()` calls. For non-CRUD controllers (no `super()`), explicit constructors are used for consistency so all controllers follow the same pattern.
+**Why**: CRUD controllers/services extending `SimpliXBaseController`/`SimpliXBaseService` require `super(service)` in the constructor - `@RequiredArgsConstructor` cannot generate `super()` calls. For non-CRUD controllers (no `super()`), explicit constructors are used for consistency so all controllers follow the same pattern.
 
 ---
 
@@ -104,7 +104,7 @@ public static class EntityNameSearchDTO {
 }
 ```
 
-**Why**: Lombok `@Data` generates `equals()`/`hashCode()` based on all fields. SearchDTO fields are nullable filter parameters — two SearchDTOs with all-null fields would be `equals()`, causing issues with Spring's parameter binding and caching. `@Getter @Setter` uses identity-based equality, avoiding these problems.
+**Why**: Lombok `@Data` generates `equals()`/`hashCode()` based on all fields. SearchDTO fields are nullable filter parameters - two SearchDTOs with all-null fields would be `equals()`, causing issues with Spring's parameter binding and caching. `@Getter @Setter` uses identity-based equality, avoiding these problems.
 
 ---
 
@@ -210,7 +210,7 @@ private String name;
 | Entity-backed field (maps to a column on this DTO's entity) | `{entities.<Entity>.<field>}` | `{entities.AccessPointHardware.strikeOutput}` |
 | Genuinely generic, entity-agnostic field | `{field.<name>}` | `{field.id}`, `{field.email}` |
 
-**Virtual / derived / projection fields** — a DTO field with no column of its own, populated from a *real* field on another entity (e.g. a paired/slave record, an aggregate, a join) — MUST reuse that **source entity's existing label key**, NOT invent a new `{field.*}` key:
+**Virtual / derived / projection fields** - a DTO field with no column of its own, populated from a *real* field on another entity (e.g. a paired/slave record, an aggregate, a join) - MUST reuse that **source entity's existing label key**, NOT invent a new `{field.*}` key:
 
 ```java
 // WRONG — a domain-specific virtual field parked in the generic field.* bucket.
@@ -225,7 +225,7 @@ private Integer exitAcrNumber;
 private Integer exitAcrNumber;
 ```
 
-Why: `{field.*}` is reserved for truly generic field names. A virtual field that mirrors `SomeEntity.someField` already has a translated label at `{entities.SomeEntity.someField}` in every locale — reuse it. This avoids a duplicate key, an i18n gap (the generic `{field.*}` namespace is frequently missing the non-default locale bundles), and a misclassified domain term in the generic bucket. To find the source field, follow the populating mapper/service (e.g. `populateExitFieldsFromSlave` → `slave.getAcrNumber()` ⇒ `{entities.AccessPoint.acrNumber}`).
+Why: `{field.*}` is reserved for truly generic field names. A virtual field that mirrors `SomeEntity.someField` already has a translated label at `{entities.SomeEntity.someField}` in every locale - reuse it. This avoids a duplicate key, an i18n gap (the generic `{field.*}` namespace is frequently missing the non-default locale bundles), and a misclassified domain term in the generic bucket. To find the source field, follow the populating mapper/service (e.g. `populateExitFieldsFromSlave` → `slave.getAcrNumber()` ⇒ `{entities.AccessPoint.acrNumber}`).
 
 ---
 
@@ -543,7 +543,7 @@ public SimpliXApiResponse<Dto> get(@PathVariable String id) { ... }
 public SimpliXApiResponse<Dto> get(@PathVariable String id) { ... }
 ```
 
-**Why**: the generator templates — both `EntityRestController.java.template` and the Non-CRUD examples in `non-crud-controller.md` — never emit `@ApiResponses`. `@Operation` is the single source of truth; HTTP status codes are derived from the response wrapper's `success`/`failure` variants and from `ErrorCode` (via the global exception handler). An explicit `@ApiResponses` block both duplicates that contract and risks drift between the annotation and the actual error envelope.
+**Why**: the generator templates - both `EntityRestController.java.template` and the Non-CRUD examples in `non-crud-controller.md` - never emit `@ApiResponses`. `@Operation` is the single source of truth; HTTP status codes are derived from the response wrapper's `success`/`failure` variants and from `ErrorCode` (via the global exception handler). An explicit `@ApiResponses` block both duplicates that contract and risks drift between the annotation and the actual error envelope.
 
 ---
 
@@ -559,7 +559,7 @@ public SimpliXApiResponse<Dto> get(@PathVariable String id) { ... }
 @RequestMapping("/facility/control")
 ```
 
-**Why**: generator templates produce `@RequestMapping("/<%= templatePath %>")` — a single path segment. The `/api/v1/` prefix belongs to `spring.mvc.servlet.path` or a server-level context, so it can be versioned or rebased without touching every controller. Hardcoding it inside `@RequestMapping` couples the class to a specific deployment layout and makes refactors noisy.
+**Why**: generator templates produce `@RequestMapping("/<%= templatePath %>")` - a single path segment. The `/api/v1/` prefix belongs to `spring.mvc.servlet.path` or a server-level context, so it can be versioned or rebased without touching every controller. Hardcoding it inside `@RequestMapping` couples the class to a specific deployment layout and makes refactors noisy.
 
 ---
 
@@ -581,7 +581,7 @@ public class XxxController {  // no @SimpliXStandardApi, no extends SimpliXBaseC
 public class XxxController {
 ```
 
-**Why**: SimpliX applies its response envelope and error-handling filters based on two markers — `extends SimpliXBaseController` (CRUD) **or** `@SimpliXStandardApi` (non-CRUD). A non-CRUD controller missing both is invisible to the middleware and behaves like a raw Spring MVC controller, undoing the project's convention uniformly. See `non-crud-controller.md` §Class Declaration Template.
+**Why**: SimpliX applies its response envelope and error-handling filters based on two markers - `extends SimpliXBaseController` (CRUD) **or** `@SimpliXStandardApi` (non-CRUD). A non-CRUD controller missing both is invisible to the middleware and behaves like a raw Spring MVC controller, undoing the project's convention uniformly. See `non-crud-controller.md` §Class Declaration Template.
 
 ---
 
@@ -618,9 +618,9 @@ public class XxxConfig {
 }
 ```
 
-**Why**: the canonical generator output is **one public explicit constructor** per class. A second package-private constructor for tests (1) breaks that shape, (2) trips IntelliJ's Spring plugin into "Class doesn't contain a matching constructor for autowiring" false-positive warnings, and (3) hides the service's full dependency list from the DI graph. If a test needs to substitute a non-bean value (clock, cache, ticker), expose it as a `@Bean` and let the test construct the service with a custom instance directly — no second constructor required.
+**Why**: the canonical generator output is **one public explicit constructor** per class. A second package-private constructor for tests (1) breaks that shape, (2) trips IntelliJ's Spring plugin into "Class doesn't contain a matching constructor for autowiring" false-positive warnings, and (3) hides the service's full dependency list from the DI graph. If a test needs to substitute a non-bean value (clock, cache, ticker), expose it as a `@Bean` and let the test construct the service with a custom instance directly - no second constructor required.
 
-**Rule of thumb**: if you find yourself writing a second constructor "just for tests," stop — make the thing a bean, then construct the class with any value in the test.
+**Rule of thumb**: if you find yourself writing a second constructor "just for tests," stop - make the thing a bean, then construct the class with any value in the test.
 
 ## AP-27: String Column for an Offset-Carrying Date/Time
 
@@ -639,7 +639,7 @@ private String activationDate;
 private Instant activationDate;
 ```
 
-**Why**: searchable-jpa derives SQL semantics from the entity attribute type — a String column gets lexicographic VARCHAR comparison, which is chronologically wrong the moment stored offsets or formats vary (mixed `+09:00`/`Z`, DST zones, fractional seconds). A String date column also loses input validation (any garbage reaches the DB and can fail open in expiry checks), loses the OpenAPI `format: date-time` hint the frontend codegen needs, and cannot serve multi-zone sync — one string carries one offset, but unscoped entities (holidays, schedules) sync to controllers in several site timezones that each need their own offset. Store the semantic type (invariant #18, `../entity/field-types.md` § Date/Time Fields) and format at the transmission boundary.
+**Why**: searchable-jpa derives SQL semantics from the entity attribute type - a String column gets lexicographic VARCHAR comparison, which is chronologically wrong the moment stored offsets or formats vary (mixed `+09:00`/`Z`, DST zones, fractional seconds). A String date column also loses input validation (any garbage reaches the DB and can fail open in expiry checks), loses the OpenAPI `format: date-time` hint the frontend codegen needs, and cannot serve multi-zone sync - one string carries one offset, but unscoped entities (holidays, schedules) sync to controllers in several site timezones that each need their own offset. Store the semantic type (invariant #18, `../entity/field-types.md` § Date/Time Fields) and format at the transmission boundary.
 
 ## AP-28: JVM-Default-Zone APIs in Domain Logic
 
@@ -654,7 +654,7 @@ LocalDate today = LocalDate.now(zone);
 Instant dayStart = date.atStartOfDay(zone).toInstant();
 ```
 
-**Why**: date attribution ("which day does this punch/visit/review belong to") must follow the SITE's clock, not the server container's. Argless `now()` and `ZoneId.systemDefault()` silently change results between deployments (cloud containers default to UTC) and are wrong for every site whose timezone differs from the server's. `Instant.now()` is zone-free and always fine. This rule binds ALL Java code including schedulers and infrastructure — invariant #18 is not covered by the infra exemption. Zone hierarchy and the timezone-literal ban: `../entity/field-types.md` § Zone handling in services.
+**Why**: date attribution ("which day does this punch/visit/review belong to") must follow the SITE's clock, not the server container's. Argless `now()` and `ZoneId.systemDefault()` silently change results between deployments (cloud containers default to UTC) and are wrong for every site whose timezone differs from the server's. `Instant.now()` is zone-free and always fine. This rule binds ALL Java code including schedulers and infrastructure - invariant #18 is not covered by the infra exemption. Zone hierarchy and the timezone-literal ban: `../entity/field-types.md` § Zone handling in services.
 
 ## AP-29: Entity Mutation Discarded by a `clearAutomatically` Bulk Op
 
@@ -673,7 +673,7 @@ entityManager.flush();                                   // the queued removes a
 syncDeliveryRepository.deleteAllByControllerId(id);      // safe: context clear discards nothing pending
 ```
 
-**Why**: `@Modifying(clearAutomatically = true)` runs `EntityManager.clear()` after its bulk statement. Any entity mutation queued earlier in the SAME transaction but not yet flushed — `repository.delete(entity)` / `deleteById` (both `em.remove`), a `save`, or a dirty-check update — is detached by that clear and silently dropped: no SQL is issued and no error is raised. Entity mutations are deferred to the flush, while `@Modifying @Query` bulk ops execute immediately, so a clearing bulk op sitting between the two loses the deferred work. Relying on the outermost commit flush does not save it — the context is already cleared, and a framework transaction manager that flushes only at `prepareForCommit` makes the window wider. Rule: when one transaction mixes entity mutations with a `@Modifying(clearAutomatically = true)` bulk op, call `entityManager.flush()` before the bulk op (or convert the entity mutations to bulk `@Query` DELETE/UPDATE). Symptom is a delete/save that "runs" (method returns, transaction commits) yet the row survives. Audit: `grep -rn "clearAutomatically" packages modules --include="*.java"`, then for each hit confirm every caller that also mutates entities in the same transaction flushes first.
+**Why**: `@Modifying(clearAutomatically = true)` runs `EntityManager.clear()` after its bulk statement. Any entity mutation queued earlier in the SAME transaction but not yet flushed - `repository.delete(entity)` / `deleteById` (both `em.remove`), a `save`, or a dirty-check update - is detached by that clear and silently dropped: no SQL is issued and no error is raised. Entity mutations are deferred to the flush, while `@Modifying @Query` bulk ops execute immediately, so a clearing bulk op sitting between the two loses the deferred work. Relying on the outermost commit flush does not save it - the context is already cleared, and a framework transaction manager that flushes only at `prepareForCommit` makes the window wider. Rule: when one transaction mixes entity mutations with a `@Modifying(clearAutomatically = true)` bulk op, call `entityManager.flush()` before the bulk op (or convert the entity mutations to bulk `@Query` DELETE/UPDATE). Symptom is a delete/save that "runs" (method returns, transaction commits) yet the row survives. Audit: `grep -rn "clearAutomatically" packages modules --include="*.java"`, then for each hit confirm every caller that also mutates entities in the same transaction flushes first.
 
 ## AP-30: Broadened Operator-Facing Read Reaching a Data-Subject Caller
 
@@ -696,7 +696,7 @@ public Readiness readiness(String applicantId) { ... }     // operator controlle
 public List<String> selfServiceMissingSteps(String applicantId) { ... }
 ```
 
-**Why**: a read method broadened to serve an operator (full gates: background check, identity SPI, compliance, capacity) must not be shared by data-subject-facing callers (self-service portal, public surface, or any per-row listing). Sharing it produces three distinct failures: **(1) privacy** — an internal verdict (`"flagged by background check"`, `"ID document missing"`) is rendered on the subject's own screen; **(2) semantic flip** — `ready()`/`isEmpty()` now goes false for conditions the subject cannot fix, so a self-service flow dead-ends or loops (re-issuing a token for a block the applicant can never clear); **(3) cost + side-effect** — a listing that calls the broad method per candidate fires the identity SPI and the background check N× per page. Rule: when you broaden a read to add operator-only gates, `grep` its callers and give every subject-facing caller a narrow variant that emits only subject-actionable items. Audit: for the broad method, confirm the ONLY caller is the operator controller (`grep -rn "\.readiness(" modules --include=*.java`).
+**Why**: a read method broadened to serve an operator (full gates: background check, identity SPI, compliance, capacity) must not be shared by data-subject-facing callers (self-service portal, public surface, or any per-row listing). Sharing it produces three distinct failures: **(1) privacy** - an internal verdict (`"flagged by background check"`, `"ID document missing"`) is rendered on the subject's own screen; **(2) semantic flip** - `ready()`/`isEmpty()` now goes false for conditions the subject cannot fix, so a self-service flow dead-ends or loops (re-issuing a token for a block the applicant can never clear); **(3) cost + side-effect** - a listing that calls the broad method per candidate fires the identity SPI and the background check N× per page. Rule: when you broaden a read to add operator-only gates, `grep` its callers and give every subject-facing caller a narrow variant that emits only subject-actionable items. Audit: for the broad method, confirm the ONLY caller is the operator controller (`grep -rn "\.readiness(" modules --include=*.java`).
 
 ## AP-31: Fail-Open Jurisdiction / Scope Resolution
 
@@ -718,7 +718,7 @@ public ScopeView resolve() {
 }
 ```
 
-**Why**: a null-means-unlimited contract **fails open** — the absence of a grant reads as unlimited access, so a mis-seeded or newly-created scoped account silently gains company-wide visibility. Scope resolution must fail CLOSED: no grant → empty set → sees nothing. The all-sites bypass belongs to a distinct, heavier permission (`manage`, held by admin/system), registered in the catalog, **not** to the default `view`. Converting a fail-open resolver to fail-closed is **not a local edit**: `grep` the source accessor symbol repo-wide and convert EVERY consumer — prerequisite work grows the caller count beyond any number the task names, and each un-migrated caller keeps a fail-open path. Removing the old accessor and confirming zero references (`grep -rn "permittedSiteIds" modules packages | grep -v /build/` → 0) is what proves the sweep is complete. Add a test that a `manage`-holder still sees all sites (the conversion must not break the admin path) and a no-grant account sees nothing.
+**Why**: a null-means-unlimited contract **fails open** - the absence of a grant reads as unlimited access, so a mis-seeded or newly-created scoped account silently gains company-wide visibility. Scope resolution must fail CLOSED: no grant → empty set → sees nothing. The all-sites bypass belongs to a distinct, heavier permission (`manage`, held by admin/system), registered in the catalog, **not** to the default `view`. Converting a fail-open resolver to fail-closed is **not a local edit**: `grep` the source accessor symbol repo-wide and convert EVERY consumer - prerequisite work grows the caller count beyond any number the task names, and each un-migrated caller keeps a fail-open path. Removing the old accessor and confirming zero references (`grep -rn "permittedSiteIds" modules packages | grep -v /build/` → 0) is what proves the sweep is complete. Add a test that a `manage`-holder still sees all sites (the conversion must not break the admin path) and a no-grant account sees nothing.
 
 ## AP-32: Delete Without a Reference Guard, or a Guard/Side-Effect That Runs Too Late
 
@@ -749,7 +749,7 @@ private void rejectIfInUse(String id) {
 }
 ```
 
-**Why**: four rules converge here. **(1) "If there is no reason to block, ALLOW."** A delete guard exists only where a real reference or a legal/audit reason blocks it; "just in case" is not a reason — a screen missing its delete because nobody wired it is a defect, not caution. **(2) Concrete reason, not generic.** The block message names WHAT references it and HOW MANY (`"signed by {0} members and required by {1} plan types"`), args-bearing, resolved via `messageSource.getMessage` at throw time (clone the established `rejectIfInUse` precedent), every locale filled — a generic integrity message strands the operator. **(3) Order — before the delete.** A reference guard, a token revoke, and the audit record all read the row or its ids; after `em.remove`/`deleteById` those values are gone, so the revoke/audit targets a vanished row and silently no-ops or NPEs. Guard and record BEFORE `deleteById`; `forEach(rejectIfInUse)` BEFORE `deleteAllByIds`. **(4) A record that must never be user-deleted** (a legal signature, an audit row) removes its DELETE endpoint entirely — full removal only via the anonymization/purge path — rather than guarding a delete that should not exist. Symptom of a too-late side-effect: the delete succeeds but the token stays live / the audit trail has no removal event.
+**Why**: four rules converge here. **(1) "If there is no reason to block, ALLOW."** A delete guard exists only where a real reference or a legal/audit reason blocks it; "just in case" is not a reason - a screen missing its delete because nobody wired it is a defect, not caution. **(2) Concrete reason, not generic.** The block message names WHAT references it and HOW MANY (`"signed by {0} members and required by {1} plan types"`), args-bearing, resolved via `messageSource.getMessage` at throw time (clone the established `rejectIfInUse` precedent), every locale filled - a generic integrity message strands the operator. **(3) Order - before the delete.** A reference guard, a token revoke, and the audit record all read the row or its ids; after `em.remove`/`deleteById` those values are gone, so the revoke/audit targets a vanished row and silently no-ops or NPEs. Guard and record BEFORE `deleteById`; `forEach(rejectIfInUse)` BEFORE `deleteAllByIds`. **(4) A record that must never be user-deleted** (a legal signature, an audit row) removes its DELETE endpoint entirely - full removal only via the anonymization/purge path - rather than guarding a delete that should not exist. Symptom of a too-late side-effect: the delete succeeds but the token stays live / the audit trail has no removal event.
 
 ## AP-33: Orphaned i18n Keys on Entity/Enum Removal; Unsafe Homonym Deletion
 
@@ -767,7 +767,7 @@ grep -rEn 'DeliveryRecord|deliveryRecord|delivery_records|[Dd]eliveryMatcher' \
   --include='*.java' --include='*.properties' | grep -vE '/build/|/generated/'
 ```
 
-**Why**: the orphan-key translation tests treat every `entities.*` / `enums.*` key with no backing `@FieldLabel` / enum value as an orphan and fail the build. So a removal that splits the Java change (entity/enum class) from the message-bundle change into separate commits cannot produce a green intermediate — it violates "never commit a broken build". Fold the bundle removal into the same commit as the class deletion; symmetrically, a NEW enum value needs its `enums/*.properties` label in every locale in the same commit that adds the value, or `EnumMessageTranslationTest` fails. For feature removal, a polysemous identifier (a word used by several features) makes a bare `grep -ri` report false positives from siblings; use a symbol-precise `grep -E` (never `-i`), exclude `/build/` `/generated/` and plan docs, and enumerate the homonyms to KEEP before deleting — the only safe basis for judging "fully removed" is a pattern that matches the target and nothing else.
+**Why**: the orphan-key translation tests treat every `entities.*` / `enums.*` key with no backing `@FieldLabel` / enum value as an orphan and fail the build. So a removal that splits the Java change (entity/enum class) from the message-bundle change into separate commits cannot produce a green intermediate - it violates "never commit a broken build". Fold the bundle removal into the same commit as the class deletion; symmetrically, a NEW enum value needs its `enums/*.properties` label in every locale in the same commit that adds the value, or `EnumMessageTranslationTest` fails. For feature removal, a polysemous identifier (a word used by several features) makes a bare `grep -ri` report false positives from siblings; use a symbol-precise `grep -E` (never `-i`), exclude `/build/` `/generated/` and plan docs, and enumerate the homonyms to KEEP before deleting - the only safe basis for judging "fully removed" is a pattern that matches the target and nothing else.
 
 ## AP-34: A `@NaturalId` Column the Update Path Still Accepts
 
@@ -786,14 +786,14 @@ if (dto.getXCode() != null && !Objects.equals(entity.getXCode(), dto.getXCode())
 }
 ```
 
-**Why**: `@NaturalId` defaults to immutable, so Hibernate refuses the write at flush — as a
+**Why**: `@NaturalId` defaults to immutable, so Hibernate refuses the write at flush - as a
 `GEN_INTERNAL_SERVER_ERROR` naming no field. The generated CRUD service has no guard for it and
 the generated form renders the column as an ordinary editable text field, so an operator who
 retypes a code gets an internal error with nothing on screen saying which field caused it. Every
 `@NaturalId` column therefore needs three things in the same change: the service guard above, a
 message key in every locale, and the field **disabled on edit** in the form with that reason as
 its `description` (a create form leaves it open and required). The generated happy-path service
-test also has to stop changing the code — it sets a different value by default and will start
+test also has to stop changing the code - it sets a different value by default and will start
 failing the moment the guard lands.
 
 **Detection** (run from the repository root):
@@ -821,17 +821,17 @@ grep -rn "Immutable}" --include='*Service.java' modules
 ```
 
 **Why**: Hibernate knows each engine's types and writes DDL for the one it finds; these four
-annotations bypass that and hand it text to copy. The failures are quiet and late — the schema
+annotations bypass that and hand it text to copy. The failures are quiet and late - the schema
 tool logs a warning and carries on, so the server starts against a database missing tables and
 dies on the first query, and `ddl-auto: validate` passes because the columns that do exist have
 the right names. An apostrophe is the sharpest of them: an ordinary English possessive in a
 `@Comment` closes the SQL string it sits inside, and on the engines that carry comments inline
-(MySQL) the whole `CREATE TABLE` around it is refused. This bites a single-engine project too —
+(MySQL) the whole `CREATE TABLE` around it is refused. This bites a single-engine project too -
 the day it is pointed at a second engine, or the day a comment gains a possessive.
 
 Soft delete is the exception that cannot be fixed this way: `@SQLDelete` takes a compile-time
 constant, so the statement cannot read which engine it is about to run on. Each engine needs its
-own clause, paired with `@DialectOverride.SQLDelete` — and an entity missing one deletes fine
+own clause, paired with `@DialectOverride.SQLDelete` - and an entity missing one deletes fine
 everywhere but there.
 
 **Detection** (run from the repository root):
@@ -847,7 +847,7 @@ grep -rc "@DialectOverride.SQLDelete" --include='*.java' packages modules | grep
 
 A project that supports more than one engine should carry these as a test over its own sources
 rather than a grep anyone has to remember, and one probe per engine that boots, writes, reads and
-**soft-deletes** — booting alone reports an engine as supported while every delete on it dies.
+**soft-deletes** - booting alone reports an engine as supported while every delete on it dies.
 
 ---
 
@@ -870,7 +870,7 @@ public enum OrgType implements LabeledEnum {
 **never revisits it**. So the Java enum, the API contract, the generated client and the screen
 all accept the new value while the database alone refuses it. Compilation passes, the
 translation tests pass (the label was added), and the failure is a constraint violation at the
-**first write of that value** — on a development machine that is a seed, on an installed
+**first write of that value** - on a development machine that is a seed, on an installed
 customer database it is a user pressing save.
 
 **What makes this one slip past**: adding an enum constant reads as a code change, so nobody
@@ -882,7 +882,7 @@ is absent** (an installation created before the column carried one), and **skip 
 that write no check constraint at all** (SQLite under Hibernate).
 
 **Detection**: for each enum used as a persisted column, compare its constant set against the
-constraint the database holds. There is no source-only form of this check — the answer is in
+constraint the database holds. There is no source-only form of this check - the answer is in
 the database, which is exactly why it is missed.
 
 ---
@@ -904,7 +904,7 @@ class UserAvatarRestController {
 
 **Why**: the frontend client generator derives a hook name from the tag's entity, not from the
 operation. Two reads under one tag therefore produce **the same hook name twice** and the
-generated package does not build — in the frontend repository, from a decision made here.
+generated package does not build - in the frontend repository, from a decision made here.
 `operationId` does not help: the name comes from the tag.
 
 **One tag, one read** is the shape that survives generation. A tag may carry writes alongside
@@ -931,7 +931,7 @@ private Boolean enabled;
 ```
 
 **Why**: the paging query aggregates the sort column as `max(<column>)`, and there is no
-`max(boolean)` on PostgreSQL. The endpoint answers **500** the moment anybody sorts by it — and
+`max(boolean)` on PostgreSQL. The endpoint answers **500** the moment anybody sorts by it - and
 `sortable = true` is what puts the sort arrow in the list header, so the defect ships as a
 control that exists in order to fail. Where that column is also the list's default sort, the
 screen breaks on open.
@@ -957,7 +957,7 @@ coverage.saveAll(submitted.stream().filter(s -> !current.contains(key(s))).toLis
 ```
 
 **Why**: the persistence context orders its flush by operation type, not by the order the
-statements were written — **inserts go before deletes**. So a row that was not changed at all is
+statements were written - **inserts go before deletes**. So a row that was not changed at all is
 deleted and re-inserted in the same transaction, the insert runs first, and it collides with the
 row still sitting there under the unique constraint. Every save on that screen fails, including
 the ones that changed nothing about the colliding row.
@@ -987,7 +987,7 @@ it, and a pattern whose controller belonged to a module that did not come across
 reaches a handler, no check fires, no log line appears. The next person to put a controller at
 that path is publishing an unauthenticated endpoint and has no way to know it.
 
-The comment beside such a line is the most misleading part — it describes a guard that existed
+The comment beside such a line is the most misleading part - it describes a guard that existed
 in the source application and does not exist here.
 
 **On copying a foundation, resolve every `permit-all` pattern to what answers it**, and delete
@@ -1021,16 +1021,16 @@ public CaseDTO read(String caseId) {
 ```
 
 **Why**: a permission group is installation-wide. It answers "may this account handle cases at
-all" and **cannot answer "which cases"** — that is a property of the record, not of the account.
+all" and **cannot answer "which cases"** - that is a property of the record, not of the account.
 So a second account holding the same role reads a case it was never assigned to, and **every
 check passes**: the permission is genuinely granted, the endpoint is genuinely authorized, and
 no log records a refusal that did not happen.
 
-This is the shape wherever a record names its handler — an investigation, an escalation, a
+This is the shape wherever a record names its handler - an investigation, an escalation, a
 grievance, a case with a named owner. Removing the group from a role's wildcard grant restricts
 who can be given it; it does nothing about which record a holder can then read. **The read is
 the only place the second half can live.**
 
-**Detection**: there is no source pattern for it — an endpoint that checks the assignment and one
+**Detection**: there is no source pattern for it - an endpoint that checks the assignment and one
 that does not are the same shape minus one call. Write the condition as an assertion in the test
 that owns the role catalogue, so what has to be true is stated somewhere a person will read.

@@ -2,7 +2,7 @@
 // do it can be trusted.
 
 /**
- * Split a source fragment on its TOP-LEVEL commas — the ones outside every bracket and string.
+ * Split a source fragment on its TOP-LEVEL commas - the ones outside every bracket and string.
  *
  * <p>A regex with a consuming separator silently drops every other key (`label, value = '',
  * hint` yields label and hint), and a gate that reports two-thirds of the keys as unknown is

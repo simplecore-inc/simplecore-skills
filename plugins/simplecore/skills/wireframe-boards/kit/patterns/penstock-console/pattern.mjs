@@ -1,7 +1,7 @@
-// penstock-console — the application-window pattern: a fixed window whose panes scroll inside
+// penstock-console - the application-window pattern: a fixed window whose panes scroll inside
 // themselves, drawn with the penstock console's shell (title bar · navigator · work pane ·
-// inspector · status bar). For a product that is an APP — installed, or running in a browser as
-// one — rather than a page-scrolling site. The same pattern draws the installed program's own
+// inspector · status bar). For a product that is an APP - installed, or running in a browser as
+// one - rather than a page-scrolling site. The same pattern draws the installed program's own
 // window (`url: 'app:<title>'`) and its tray menu (`url: 'none:'`).
 //
 // It was promoted out of the RAG Studio board, where it was drawn first; every product-bound piece
@@ -23,7 +23,7 @@ export default {
    *
    * <p>Empty to begin with, and that is honest rather than finished: the core gates already hold
    * the permanent id, balanced markup, reachability and the documents. A rule true of every frame
-   * drawn THIS way — a copy register, a layout discipline, a control vocabulary — belongs here,
+   * drawn THIS way - a copy register, a layout discipline, a control vocabulary - belongs here,
    * and each one added is a defect that cannot come back.
    */
   gates: [],

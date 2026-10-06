@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * SimpleCORE detector — decides which of this plugin's skills bind to a directory tree, and
+ * SimpleCORE detector - decides which of this plugin's skills bind to a directory tree, and
  * which of the wiring each one needs is already in place.
  *
  * The skills carry discipline; the project carries the contents. Between the two sits wiring
@@ -11,7 +11,7 @@
  *
  * Detection is marker-based, so nothing has to be configured before it works. Every marker is
  * a structural signature of an artifact these skills produce (a board's own class vocabulary,
- * the build kit's file pair, a glossary at one of the two documented locations) — never a
+ * the build kit's file pair, a glossary at one of the two documented locations) - never a
  * directory name that happens to be this or that repository's habit.
  *
  * Usage:
@@ -38,7 +38,7 @@ const MAX_DEPTH = 3;
 
 // Reading every HTML file in a repository would be the expensive way to find one board, so the
 // scan is bounded on both axes: how many files it opens, and how much of each it reads. A
-// board's signature sits in its head — the reading contract and the first frame labels.
+// board's signature sits in its head - the reading contract and the first frame labels.
 const MAX_HTML_FILES = 40;
 const HTML_HEAD_BYTES = 64 * 1024;
 
@@ -53,11 +53,11 @@ const BOARD_SIGNATURES = ["frame-label", "readme"];
 // two values; since the kit moved into this plugin they are one fact with one owner, and a second
 // copy of it can only ever be right until the day the kit moves. It went wrong exactly that way:
 // the kit reached 4, this line still said 3, and the detector answered `needsMigration: false`
-// over a board whose build was refusing to run. **A stale copy here does not fail** — it reports
+// over a board whose build was refusing to run. **A stale copy here does not fail** - it reports
 // a project as current, which is indistinguishable from a project that is.
 //
 // **A board with no stamp is not the same thing as a board with no built HTML.** The first is
-// genuinely contract 1 — stamping did not exist when it was made. The second is a kit-built board
+// genuinely contract 1 - stamping did not exist when it was made. The second is a kit-built board
 // that has not been released yet, which is most of a board's life, and its contract is whatever
 // its kit writes. Collapsing the two told every board still being drawn to migrate away from the
 // contract it was already on.
@@ -137,7 +137,7 @@ function subdirs(dir) {
  * @remarks
  * Two shapes count. A kit-built board is a directory holding `wf.mjs` (or, before contract 3,
  * `build.mjs`) beside
- * `src/manifest.mjs` — that pair is the kit's signature and needs no file read. A hand-written
+ * `src/manifest.mjs` - that pair is the kit's signature and needs no file read. A hand-written
  * board is one HTML file carrying the board class vocabulary in its head.
  *
  * @returns `{dir, kind, file}` for the first board found, or null.
@@ -150,7 +150,7 @@ function findBoard(root) {
    *
    * @remarks
    * Read from the built board rather than the sources, because that is the artifact a reader
-   * actually opens, and because a kit-built board's stamp comes from the kit that built it —
+   * actually opens, and because a kit-built board's stamp comes from the kit that built it -
    * which is the version the board genuinely conforms to, whatever the sources now say.
    */
   // `undefined` and `null` mean different things here and the difference is the whole point:
@@ -175,7 +175,7 @@ function findBoard(root) {
    *
    * @remarks
    * The stamp in the built board is the better answer and is tried first. But `board.html` appears
-   * only once the build's coverage gate is satisfied — every required cluster drawn — which is late
+   * only once the build's coverage gate is satisfied - every required cluster drawn - which is late
    * in a board's life, and `_proof.html` is a byproduct {@link stampIn} deliberately skips. So a
    * board that is halfway through being drawn has no stamped artifact at all, and reading its
    * absence as "unstamped, therefore contract 1" is wrong in the one direction that costs work: it
@@ -183,7 +183,7 @@ function findBoard(root) {
    */
   const kitContractIn = (dir) => {
     // Contract 3 moved the kit out of the board, so the number is DECLARED there instead of
-    // being read out of a copied source file — which is the better answer anyway: it says what
+    // being read out of a copied source file - which is the better answer anyway: it says what
     // the board has been brought up to rather than what happens to be sitting beside it.
     const cfg = readIfPresent(path.join(dir, "board.config.mjs"), KIT_SOURCE_BYTES) ?? "";
     const declared = /\bcontract:\s*(\d+)/.exec(cfg);
@@ -196,13 +196,13 @@ function findBoard(root) {
 
   const visit = (dir, depth) => {
     // A kit-built board is a directory holding `src/manifest.mjs` beside the thing that builds
-    // it — which is `wf.mjs` from contract 3 on, and was `build.mjs` before. Both are looked for,
+    // it - which is `wf.mjs` from contract 3 on, and was `build.mjs` before. Both are looked for,
     // because a board that has not been migrated yet still has to be FOUND in order to be told
     // that it needs migrating.
     const buildsHere = fs.existsSync(path.join(dir, "wf.mjs")) || fs.existsSync(path.join(dir, "build.mjs"));
     if (buildsHere && fs.existsSync(path.join(dir, "src", "manifest.mjs"))) {
       const stamped = stampIn(dir);
-      // A released board answers for itself, whatever the sources now say — it is the artifact
+      // A released board answers for itself, whatever the sources now say - it is the artifact
       // people open. The kit stands in only when there is nothing released to ask.
       const fromKit = stamped === undefined ? kitContractIn(dir) : null;
       return {
@@ -251,7 +251,7 @@ function findBoard(root) {
  * Every board in a tree, not just the first.
  *
  * @remarks
- * A repository can draw two products — a desktop application and a web console — and reporting one
+ * A repository can draw two products - a desktop application and a web console - and reporting one
  * of them is worse than reporting neither: the routing note, the migration prompt and the 「wired to
  * nothing」 line all name a board, and naming the first one silently says the second is fine. A
  * board never contains another board, so a directory that IS one is not descended into.
@@ -305,7 +305,7 @@ function findParityWalk(root) {
  * @remarks
  * A board reaches code one of two ways, and they are alternatives rather than stages: a build in
  * dependency order, chapter by chapter, or a walk over the frames of a running app. Only the two
- * files a session needs to answer 「what is open」 are resolved here — the chapter directory and
+ * files a session needs to answer 「what is open」 are resolved here - the chapter directory and
  * the state ledger. Every other declared path is the build skill's own gate to check
  * (`bta.mjs doctor`), and duplicating that here would put the same rule in two places.
  */
@@ -380,7 +380,7 @@ function routing(root, extraDirs) {
  * Naming the SKILL is one fact about a repository; naming a BOARD is one fact per board, and with
  * two of them the difference is the whole question. An instruction file that routes to the skill
  * and then walks a session to one of the two boards leaves the other reachable only by somebody who
- * already knew it was there — and the routing check, which asks only about the skill, reads green.
+ * already knew it was there - and the routing check, which asks only about the skill, reads green.
  */
 function routesToDir(root, dir) {
   const wanted = path.relative(root, dir);
@@ -428,14 +428,14 @@ function globalKoreanInstruction() {
   const file = path.join(os.homedir(), ".claude", "CLAUDE.md");
   const content = readIfPresent(file);
   if (!content) return { file, present: false, card: false, cardStale: false };
-  // `present` is the routing — a line that names the skill or its style file. `card` is the
+  // `present` is the routing - a line that names the skill or its style file. `card` is the
   // habits block itself. The two are different things and the second is the one that works:
   // a pointer survives a long session while the file it points at does not, so a global
   // instruction can route correctly and still produce the register it forbids. The marker is
   // written by the block; the heading is accepted too, for a file that was edited by hand.
   //
   // `cardStale` compares the block with the skill's copy. The card grows as the skill learns,
-  // and a pasted copy keeps the habits of the day it was pasted — with nothing else reporting
+  // and a pasted copy keeps the habits of the day it was pasted - with nothing else reporting
   // it, the global file drifts from the skill and the drift reads as compliance.
   const card = /simplecore:korean-habits|#### The Korean habits/.test(content);
   const skillCard = readIfPresent(KOREAN_CARD_FILE);
@@ -496,7 +496,7 @@ export function analyze(root) {
 
   const missing = [];
   // Every line here names ONE board, so each is asked of every board. Asking only the first says
-  // nothing about the second while reading exactly like a clean report — which is the whole reason
+  // nothing about the second while reading exactly like a clean report - which is the whole reason
   // a repository drawing two products was described by one of them.
   for (const one of boards) {
     const on = contractOf(one);
@@ -616,7 +616,7 @@ export function analyze(root) {
      * Every board in the repository.
      *
      * A project drawing two products has two, and which one a build or a walk is about is that
-     * command's to name — `board` below is the first of these and is kept for every caller that
+     * command's to name - `board` below is the first of these and is kept for every caller that
      * predates the second one.
      */
     boards: boards.map((one) => ({

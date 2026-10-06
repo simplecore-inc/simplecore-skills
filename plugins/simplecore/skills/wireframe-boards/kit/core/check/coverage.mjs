@@ -18,7 +18,7 @@ import { loadBoard } from '../context.mjs';
  * Compare a board against the code that serves it.
  *
  * <p>**Where the front ends live is the BOARD's to declare**, in `board.config.mjs` under
- * `code.appRoots` — paths relative to the board folder. Naming a repository's layout in here
+ * `code.appRoots` - paths relative to the board folder. Naming a repository's layout in here
  * would make the tool right about one project and quietly wrong about every other, reporting a
  * whole board as unreachable because it looked for apps in a directory that does not exist.
  */
@@ -34,8 +34,8 @@ export async function reportCoverage(boardDir, { onlyMissing = false, section = 
   /**
    * A frame that draws a state rather than a destination.
    *
-   * <p>The 공통 패턴 cluster is not made of screens — it fixes how an empty list, a locked record
-   * or a blocked gate is drawn wherever those happen — so its frames carry no route and are not
+   * <p>The 공통 패턴 cluster is not made of screens - it fixes how an empty list, a locked record
+   * or a blocked gate is drawn wherever those happen - so its frames carry no route and are not
    * something a route could ever reach. Counting them as unreachable would leave a number that
    * can never fall to zero, which is the same as having no number.
    */
@@ -61,7 +61,7 @@ export async function reportCoverage(boardDir, { onlyMissing = false, section = 
         walk(routesDir, routesDir, own);
         // An app's routes are relative to where it is mounted. The board writes the address a
         // person types, so a route file only matches once the app's own mount path is in front
-        // of it — without this every app but the one mounted at "/" reads as unbuilt.
+        // of it - without this every app but the one mounted at "/" reads as unbuilt.
         const base = basePathOf(join(appsDir, app));
         for (const path of own) {
           found.add(base === '/' ? path : (path === '/' ? base : base + path));
@@ -112,11 +112,11 @@ function walk(dir, base, out) {
  *
  * <p>Parameter segments are dropped and everything else is kept in order. Dropping them is what
  * lets a board route and a route file meet when they disagree only on how the selection travels
- * — `/sites/{id}` against a screen at `/sites` that carries the id in the query string.
+ * - `/sites/{id}` against a screen at `/sites` that carries the id in the query string.
  * Keeping everything else is what stops two different screens from collapsing into one:
  * `/sites/{id}/areas` is not the screen at `/sites`, and a matcher that stopped at the first
  * parameter would report the second as serving the first and count an unbuilt screen as
- * reachable — the one thing this script exists to notice.
+ * reachable - the one thing this script exists to notice.
  *
  * @param path the path to reduce
  * @param isParameter whether a segment names a parameter rather than a screen
@@ -132,7 +132,7 @@ function fixedPart(path, isParameter) {
  *
  * <p>The board writes path parameters the way a REST resource reads (`/sites/{id}`), while
  * these apps carry the selection in the query string instead. So both sides are reduced to the
- * segments that name a screen and compared as a whole — see {@link fixedPart}.
+ * segments that name a screen and compared as a whole - see {@link fixedPart}.
  *
  * @param route the route a frame declares
  * @param served every path the apps serve, already reduced

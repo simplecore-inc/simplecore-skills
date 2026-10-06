@@ -1,8 +1,8 @@
-> **DOCUMENT** (cross-cutting) category reference inside this skill. Loaded whenever the task produces or modifies any documentation surface — README, TSDoc on public exports, tutorials, how-to guides, reference docs, explanations, CONTRIBUTING, CHANGELOG, or any `*.md` artifact. Sibling files: `document-templates.md`, `tsdoc-patterns.md`, `quality-checklist.md`.
+> **DOCUMENT** (cross-cutting) category reference inside this skill. Loaded whenever the task produces or modifies any documentation surface - README, TSDoc on public exports, tutorials, how-to guides, reference docs, explanations, CONTRIBUTING, CHANGELOG, or any `*.md` artifact. Sibling files: `document-templates.md`, `tsdoc-patterns.md`, `quality-checklist.md`.
 
 # simplix-react Documentation Guidelines (DOCUMENT overview)
 
-Principle: "Define once, derive everything" — applies to documentation too.
+Principle: "Define once, derive everything" - applies to documentation too.
 
 ## Document Classification (Diataxis)
 
@@ -22,7 +22,7 @@ Classify every document into exactly ONE type. Never mix types.
 3. **For TSDoc** → follow patterns in [tsdoc-patterns.md](tsdoc-patterns.md)
 4. **Validate** using [quality-checklist.md](quality-checklist.md)
 
-## Terminology (strict — no synonyms)
+## Terminology (strict - no synonyms)
 
 | Official Term | DO NOT use |
 | --- | --- |

@@ -5,7 +5,7 @@
  * A board reaches its reader stripped of the conversation that produced it, so the contract is
  * what makes it readable at all: it renders offline, it carries the implementation contract that
  * stops a reader reproducing the greyboxes as a design, every frame says which route and state it
- * is, and every responsive pair has both halves. Each of those fails silently — a missing font
+ * is, and every responsive pair has both halves. Each of those fails silently - a missing font
  * loads as a fallback, a dropped label reads as a frame nobody labelled, an unpaired `.narrow`
  * simply never appears.
  *
@@ -87,7 +87,7 @@ function saturationAndHue([r, g, b]) {
  *
  * @remarks
  * The contract allows one accent, and an accent legitimately appears as a tint and a shade of
- * itself — so hues are bucketed rather than compared exactly. Two buckets means two accents, and
+ * itself - so hues are bucketed rather than compared exactly. Two buckets means two accents, and
  * a board with two accents gets reviewed for its colours instead of its flows.
  */
 function accentHues(html) {
@@ -174,7 +174,7 @@ function audit(html) {
   }
 
   // A frame nobody can name is a frame nobody can report on. The id is what a plan, a parity
-  // list, and a message to a person all use, and it is meant to outlive every reorder — so a
+  // list, and a message to a person all use, and it is meant to outlive every reorder - so a
   // board whose labels carry only a position is one where every reference goes stale silently.
   const idChips = countMatches(html, /class="[^"]*\bfnum\b/g);
   const seqChips = countMatches(html, /class="[^"]*\bfseq\b/g);
@@ -235,7 +235,7 @@ function main() {
   }
 
   // A board, not just any HTML: the signature is the SAME shape the audit
-  // reads — an <article> carrying the frame class. A bare `class="frame"` on
+  // reads - an <article> carrying the frame class. A bare `class="frame"` on
   // any element is not it: page templates use `frame` for the outer wrapper
   // (diagram-design's does), and gating on the looser pattern reported the
   // whole board contract against a file with no frames in it at all. Keep this

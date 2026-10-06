@@ -1,4 +1,4 @@
-/* The stylesheet for the markup the KIT itself emits — the board's chrome, not a screen's inside.
+/* The stylesheet for the markup the KIT itself emits - the board's chrome, not a screen's inside.
    ────────────────────────────────────────────────────────────────────────────────────────────
    Every class below is written by `core/partials.mjs`, `core/build.mjs` or `core/contract.mjs`:
    the sidebar index and its filter, the flow sections, the device frame and its label, the fold,
@@ -8,14 +8,14 @@
    rules used to live in the shipped pattern, which held for a board drawn in that pattern and
    failed silently for a board that brought its own: `node wf.mjs pattern adopt` promotes what the
    board draws with, which never included rules for chrome the board never wrote. The board then
-   built, every gate passed, and the index filter counted matches without hiding anything — a
+   built, every gate passed, and the index filter counted matches without hiding anything - a
    control that is there and does not work, with nothing on the board saying so.
 
    **The tokens are declared here as defaults, not as the palette.** A pattern's own `:root` comes
    later in the cascade and overrides whichever it wants, so a pattern still chooses its accent and
    its greys; what it can no longer do is leave them undefined and take the chrome down with them.
 
-   A rule for something a SCREEN draws — a control, a shell, a layout primitive — belongs in the
+   A rule for something a SCREEN draws - a control, a shell, a layout primitive - belongs in the
    pattern. The test is who writes the markup: if the answer is a file under `core/`, the rule is
    here. */
 
@@ -33,7 +33,7 @@
     --accent-tint: #fdeee7;
     --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     --sans: system-ui, -apple-system, "Segoe UI", "Helvetica Neue", sans-serif;
-    --row-max: 1464px;      /* widest device frame (1440) + one gap — fixes where a row wraps */
+    --row-max: 1464px;      /* widest device frame (1440) + one gap - fixes where a row wraps */
     --frame-zoom: 1;        /* display scale only; stepped down by the media queries below */
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -90,7 +90,7 @@
     border-bottom: 2px solid var(--ink); padding-bottom: 6px; margin-bottom: 16px;
   }
   .flow-title .count { font: 11px var(--mono); color: var(--muted); font-weight: 400; }
-  /* Frames lay out in a WRAPPING grid, never a sideways scroller — reading a board is one
+  /* Frames lay out in a WRAPPING grid, never a sideways scroller - reading a board is one
      continuous vertical scroll, and a frame can never hide past the right edge where a
      reviewer will not find it. The cap is what makes the wrap points a property of the board
      rather than of the reader's window: --row-max is the widest device frame plus one gap, so
@@ -102,7 +102,7 @@
     zoom: var(--frame-zoom);
   }
 
-  /* Display scale only — the design basis stays at true device pixels, so a label that
+  /* Display scale only - the design basis stays at true device pixels, so a label that
      overflows at 390px still overflows here. Stepped down as the window narrows, which is what
      keeps the no-sideways-scroll promise on a laptop as well as on a wide monitor.
      Each step is derived, not guessed: a row needs `--row-max × zoom + 254px` (the 214px sidebar
@@ -152,8 +152,8 @@
   .frame-notes { font: 11px var(--mono); color: var(--muted); margin-top: 10px; line-height: 1.6; }
   /* Who reaches this frame. Greyscale like the phase chip: this is a decided fact, not an open
      question, and the accent is for what is unresolved. A role the cluster does not admit is not
-     drawn at all — an empty slot would read as a verdict nobody made. */
-  /* What a frame IS — 용도 · 화면구성 · 동작과 상태 · 대응 요구사항 · 권한 · 자료 — set apart from
+     drawn at all - an empty slot would read as a verdict nobody made. */
+  /* What a frame IS - 용도 · 화면구성 · 동작과 상태 · 대응 요구사항 · 권한 · 자료 - set apart from
      the notes, which are what somebody THINKS about it. The two ran together while both were grey
      11px prose under the same label, and a reader could not see where the list of facts ended.
 
@@ -180,15 +180,15 @@
     border: 1px solid var(--line); border-radius: 4px; background: var(--fill);
     font: 10px var(--mono); color: var(--muted); line-height: 1.5; }
   .frame-roles .fr b { color: var(--ink); font-weight: 700; }
-  /* An override — this frame departs from its cluster. */
+  /* An override - this frame departs from its cluster. */
   .frame-roles .fr.own { border-color: var(--line-strong); background: var(--fill-deep); color: var(--ink); }
   .frame-notes .open { color: var(--accent); font-weight: 700; }
 
   /* ── A frame that is not being built now ──────────────────────── */
   /* Greyscale, all of it: the accent means "unresolved" (OPEN, pins, folds) and a deferred
-     frame is not unresolved — it is decided and scheduled. The hatch says "not this build"
+     frame is not unresolved - it is decided and scheduled. The hatch says "not this build"
      the way a hatched area on a drawing does, and it sits ABOVE the device so nothing on the
-     screen is covered — a marker that hides content makes the frame harder to review, and a
+     screen is covered - a marker that hides content makes the frame harder to review, and a
      deferred frame still has to be reviewable. */
   .phase-band {
     display: flex; align-items: center; gap: 8px; margin-bottom: 8px; padding: 5px 12px;
@@ -223,7 +223,7 @@
   }
   .fft { margin-right: 8px; }
   .frame-notes .ft-tag { margin-right: 6px; }
-  /* The key and what buying it opens, beside the chip — a frame arrives alone and the chip's word
+  /* The key and what buying it opens, beside the chip - a frame arrives alone and the chip's word
      is not its meaning. */
   .ft-why { display: inline; margin-right: 8px; font-style: normal; font-size: 11px;
             color: var(--accent); }
@@ -238,7 +238,7 @@
     font: 400 10px var(--mono); padding: 0 5px; letter-spacing: .03em; margin-right: 8px;
   }
 
-  /* Fold line — drawn at --vh, so it lands on the viewport bottom however far
+  /* Fold line - drawn at --vh, so it lands on the viewport bottom however far
      page content pushes the frame. Required on every desktop frame. */
   .fold {
     position: absolute; left: 0; right: 0; top: var(--vh); z-index: 2;
@@ -247,7 +247,7 @@
   /* Label sits ABOVE the line so it stays inside the frame when the page is
      shorter than --vh and the fold lands on the bottom edge.
      It is a board marker, not screen content, so it must never make a word or a
-     button underneath it unreadable — wherever the fold happens to land, something
+     button underneath it unreadable - wherever the fold happens to land, something
      of the screen is behind it. Hence the muted weight and the see-through ground. */
   .fold span {
     position: absolute; right: 10px; bottom: 5px;
@@ -260,7 +260,7 @@
   /* ── Viewport toggle (narrow ⇄ wide) ──────────────────────────── */
   /* CSS-only: the checkbox is the FIRST element in <body>; every rule below
      reaches frames through the sibling (~) combinator. No JavaScript. Only
-     frames tagged .narrow / .wide participate — an untagged frame is always
+     frames tagged .narrow / .wide participate - an untagged frame is always
      visible, which is how single-viewport screens are authored. */
   .view-input { position: absolute; opacity: 0; pointer-events: none; }
   .view-toggle {
@@ -281,7 +281,7 @@
   html { scroll-behavior: smooth; }
   /* A fixed head over a scrolling list, rather than one scrolling column: the filter and the
      board's total have to stay put, or a reader four hundred entries down has to scroll back
-     to the top to narrow the list — which is the moment they stop using the filter. */
+     to the top to narrow the list - which is the moment they stop using the filter. */
   /* `--sb-w` is the reading tool's width, and 214px is what it stands at with scripts off. The
      handle at the sidebar's edge sets it on the root element; nothing on the board is drawn
      from it, so a wider index changes what a reader can read and not what the board says. */
@@ -292,13 +292,13 @@
   .wf-sidebar .sb-list { flex: 1 1 auto; overflow-y: auto; padding: 2px 12px 40px; }
   .wf-sidebar h2 { font: 800 13px var(--sans); letter-spacing: -.01em;
                    display: flex; align-items: baseline; gap: 6px; }
-  /* The counts are the reader's sense of scale — how big the board is, and how big the section
+  /* The counts are the reader's sense of scale - how big the board is, and how big the section
      they are standing in. Recessive, because they are context and not the entry itself. */
   .wf-sidebar .sb-total { margin-left: auto; font: 600 10px var(--mono); color: var(--muted); }
   .wf-sidebar .sb-n { float: right; font-weight: 600; color: var(--faint); letter-spacing: 0; }
   .wf-sidebar .sb-sub { font: 10px var(--mono); color: var(--muted); margin: 3px 0 12px; }
   .wf-sidebar .sb-sec { font: 700 10.5px var(--mono); color: var(--muted); letter-spacing: .05em; margin: 13px 0 4px; }
-  /* TWO lines per entry — position + permanent id, then the label — so the index scans as a
+  /* TWO lines per entry - position + permanent id, then the label - so the index scans as a
      list rather than as a wall of wrapped text. At this column width a Korean label wraps
      mid-word and an entry sprawls to five lines, which makes neighbouring screens impossible to
      compare; each part therefore stays on one line and truncates, with the full label on hover. */
@@ -308,11 +308,11 @@
   .wf-sidebar a:hover { background: var(--fill); }
   .wf-sidebar a:target, .wf-sidebar a.on { border-left-color: var(--accent); background: var(--fill); }
   .wf-sidebar a .num { font: 700 10px var(--mono); color: var(--accent); }
-  /* A third axis, where the board declares one — the one the files are not arranged by. It sits
+  /* A third axis, where the board declares one - the one the files are not arranged by. It sits
      on the id line because it belongs to the frame's identity rather than to what the frame is,
      and it is inside the entry's text so the index filter reaches it. */
   /* The axis picker sits under the search box, because its values are the one thing on this board
-     a reader cannot guess — a text filter needs the mark already known. **It takes the search
+     a reader cannot guess - a text filter needs the mark already known. **It takes the search
      box's own measurements**: the head already pads both, so the picker adds no padding of its
      own, and the same width and the same box make the two read as one control in two parts
      rather than as two controls that happen to be near each other. */
@@ -357,7 +357,7 @@
     cursor: col-resize; z-index: 51; background: transparent; }
   .wf-sidebar .sb-resize:hover, .wf-sidebar .sb-resize:focus-visible,
   .wf-sidebar .sb-resize.is-dragging { background: var(--accent); opacity: .55; outline: none; }
-  /* While dragging, the pointer belongs to the handle — without this the drag selects the
+  /* While dragging, the pointer belongs to the handle - without this the drag selects the
      index's text and the reader ends up with a highlighted table of contents. */
   body.is-resizing { cursor: col-resize; user-select: none; }
   .wf-board { margin-left: var(--sb-w, 214px); }
@@ -395,12 +395,12 @@
   /* keep an anchor-jumped frame below the sticky title */
   .frame { scroll-margin: 64px 24px; }
   .frame > .device { transition: outline-color .2s; }
-  /* Picked — by a click on the frame, by a click in the index, or by a link into the board.
+  /* Picked - by a click on the frame, by a click in the index, or by a link into the board.
      `:target` stays for a scriptless read, where the address bar is the only way to point. */
   .frame:target > .device,
   .frame.is-picked > .device { outline: 3px solid var(--accent); outline-offset: 4px; }
   .frame { cursor: default; }
-  /* `[02]A-20` — the visual position, muted because it changes; then the permanent id in the
+  /* `[02]A-20` - the visual position, muted because it changes; then the permanent id in the
      accent chip, because that is the value everyone addresses the screen by. */
   .frame-label .fseq { font: 700 10px var(--mono); color: var(--muted); margin-right: 3px; }
   .frame-label .fnum { display: inline-block; background: var(--accent); color: var(--screen);

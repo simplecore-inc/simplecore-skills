@@ -1,7 +1,7 @@
 // A screen has TWO numbers, and conflating them is what makes a board unusable to talk about.
 //
 //   - Its ID (A-20) is PERMANENT. It comes from the file name, is assigned once when the screen
-//     is born, and never changes — not when a screen is inserted above it, not when the board is
+//     is born, and never changes - not when a screen is inserted above it, not when the board is
 //     reordered, not when a neighbour is deleted. It is what a person, a note, a parity list, and
 //     an agent all address the screen by.
 //   - Its SEQUENCE ([02]) is the frame's position in the board's visual order, recomputed on every

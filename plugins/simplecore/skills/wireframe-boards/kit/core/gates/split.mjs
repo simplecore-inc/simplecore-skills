@@ -2,12 +2,12 @@
 // is drawn.
 //
 // **The failure this catches empties a file in silence.** The axis is answered by a module the
-// board points at, and that module is maintained beside the board rather than by it — a frame
+// board points at, and that module is maintained beside the board rather than by it - a frame
 // added to the manifest and not to the placer answers `null`, which is a perfectly ordinary
 // answer, and the frame then lands in whichever file the fallback puts it in without anything
 // being wrong anywhere. Nothing in the artifact says so: the file renders, the index is complete
 // for what it holds, and the reader looking for that frame simply does not find it where they
-// expected. The same shape the other way round — a declared part no frame answers with — writes
+// expected. The same shape the other way round - a declared part no frame answers with - writes
 // a file with an empty index and a nav entry promising screens that are not there.
 
 /** Every frame the board draws is placed by the declared axis, and no part comes out empty. */

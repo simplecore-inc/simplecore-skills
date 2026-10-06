@@ -1,7 +1,7 @@
-// penstock-console — the composition kit every board drawn in this pattern composes from.
+// penstock-console - the composition kit every board drawn in this pattern composes from.
 //
 // A fixed application window: title bar, navigator, work pane, inspector, status bar, each pane
-// scrolling inside itself. The primitives here are pure — a screen body is built FROM them. The
+// scrolling inside itself. The primitives here are pure - a screen body is built FROM them. The
 // pieces that carry a product's own words (its brand, its navigation tree, its palette, its status
 // bar, its sample activity) are bound once per board by `makeChrome` in `chrome.mjs`, and a board's
 // `src/chrome.mjs` is where those words live.
@@ -21,11 +21,11 @@ export const bar = (w = 'w60', light = false) =>
   `<div class="bar${light ? ' light' : ''} ${w}"></div>`
 export const imgPh = (extra = '') => `<div class="img-ph${extra ? ' ' + extra : ''}"></div>`
 export const qrPh = (label = 'QR') => `<div class="qr-ph"><span>${label}</span></div>`
-// ''·primary·ghost·off — `off` is a control the reader may not press yet. It exists because the
+// ''·primary·ghost·off - `off` is a control the reader may not press yet. It exists because the
 // bare variant is the ordinary FILLED button: a frame writing `btn('다음', '')` for a blocked step
 // draws it heavier than the enabled ghost beside it, and the board then shows the one control that
 // does nothing as the one the eye lands on.
-// `target` names the frame a button leads to — `'<id> <title>'`, the id first — so a reader of the
+// `target` names the frame a button leads to - `'<id> <title>'`, the id first - so a reader of the
 // built board (a chapter generator deriving a walk, a gate) can follow the flow without guessing
 // from the label. A button that stays on its screen names nothing, and nothing is drawn for it.
 export const btn = (text, variant = '', target = '') =>
@@ -40,10 +40,10 @@ export const badges = (items) => `<div class="badges">${items.join('')}</div>`
 // toast is gone before the reader looks up from the input that caused it.
 // `value` is what somebody CHOSE or typed; `placeholder` is the example standing in an empty box.
 // The two are different states of the same field and a frame that draws one for the other is a
-// contract nobody can build to — a wizard's address box is empty when its step opens, because the
+// contract nobody can build to - a wizard's address box is empty when its step opens, because the
 // address is the thing being asked for.
 export function field({ label, value, hint, select = false, error, placeholder }) {
-  // A value carrying newlines is drawn as the several lines it is — see `.input.multi`.
+  // A value carrying newlines is drawn as the several lines it is - see `.input.multi`.
   const multi = typeof value === 'string' && value.includes('\n') ? ' multi' : ''
   const input =
     value != null
@@ -94,13 +94,13 @@ export const tabbar = (tabs) =>
 /**
  * The window a desktop frame is drawn in.
  *
- * **The kit's device shell draws exactly one primitive, and this is it** — `frame()` hands every
+ * **The kit's device shell draws exactly one primitive, and this is it** - `frame()` hands every
  * desktop frame its `url` and asks this function for the chrome above `.screen`. Three windows
  * are needed here and the address is what tells them apart, because the address is the only thing
  * the shell passes through:
  *
  * - `app.example.com/…`  a browser tab, which is what all but three frames are
- * - `app:<title>`        the installed program's own window — no address bar, because the shell
+ * - `app:<title>`        the installed program's own window - no address bar, because the shell
  *                        picks its own port and the reader never sees a URL
  * - `none:`              no window at all: the tray menu is drawn against the desktop
  *
@@ -116,7 +116,7 @@ export const browserbar = (url) => {
 /**
  * A native application window rather than a browser tab. The desktop build ships as an
  * installed program, and drawing it with an address bar would tell the reader to expect a
- * URL they never see — the shell picks its own port and opens its own window.
+ * URL they never see - the shell picks its own port and opens its own window.
  */
 export const appwindow = (title) =>
   `<div class="appwindow"><span class="dots"><i></i><i></i><i></i></span><span class="wt">${title}</span></div>`
@@ -162,7 +162,7 @@ export const split = (listHtml, detailHtml) =>
 export const sheet = (children) => `<div class="dim"></div><div class="sheet">${children}</div>`
 // `wide` is for a dialog whose body is a comparison across every choice rather than a form: three
 // parser columns beside their capability names do not fit 460px, and squeezing them wraps every
-// row label to four lines. A form never takes it — a wide field is harder to read, not easier.
+// row label to four lines. A form never takes it - a wide field is harder to read, not easier.
 export const modal = (children, size = '') =>
   `<div class="dim"></div><div class="modal${size ? ' ' + size : ''}">${children}</div>`
 
@@ -174,7 +174,7 @@ export const modal = (children, size = '') =>
 
 /**
  * The notification bell. Screen notifications need somewhere to arrive, and that place has
- * to be on every screen — an inbox reachable only from settings is an inbox nobody opens.
+ * to be on every screen - an inbox reachable only from settings is an inbox nobody opens.
  * The count is what a person scans for, so it sits in the mark rather than beside it.
  */
 export const bell = (unread = 0) =>
@@ -216,7 +216,7 @@ export const search = (t = '검색') => `<span class="input search">${t}</span>`
 
 // ── answer, confidence, evidence ────────────────────────────────────────────
 // A generated answer is shown sentence by sentence, because confidence is judged
-// per sentence — not per answer. `grade` is ok | part | none.
+// per sentence - not per answer. `grade` is ok | part | none.
 export const GRADE_LABEL = { ok: '뒷받침됨', part: '일부만', none: '근거 없음' }
 export function sentence({ text, grade = 'ok', refs = [], active = false }) {
   const marks = refs.map((r) => `<span class="ref">${r}</span>`).join('')
@@ -240,8 +240,8 @@ export const scorebar = (pct) =>
  * One evidence card.
  *
  * `meta` is optional, and its absence draws no row at all. A card whose subject may not say how
- * much material stands behind it — a community summary, where the count itself tells a reader
- * the size of what their scope hides — passes no meta, and the line has to vanish rather than
+ * much material stands behind it - a community summary, where the count itself tells a reader
+ * the size of what their scope hides - passes no meta, and the line has to vanish rather than
  * print the missing value as a label.
  */
 export function evidence({
@@ -255,7 +255,7 @@ export function evidence({
   //
   // On the card and not only in the passage, because the list is what a reader scans: told that an
   // answer leaned on such a sentence, the card is where they find out WHICH of four it was. The
-  // mark is solid like `masked`, never the dashed AI mark — one is somebody else's file giving an
+  // mark is solid like `masked`, never the dashed AI mark - one is somebody else's file giving an
   // order and the other is this product proposing something.
   planted: hasPlanted = false,
   active = false,
@@ -288,7 +288,7 @@ export function mdBlocks(blocks) {
     .join('')}</div>`
 }
 
-/** PDF side: a page with absolutely-placed boxes — the same block coordinates. */
+/** PDF side: a page with absolutely-placed boxes - the same block coordinates. */
 export function pdfPage({ page = 1, of = 1, boxes = [] }) {
   const rects = boxes
     .map(
@@ -302,7 +302,7 @@ export function pdfPage({ page = 1, of = 1, boxes = [] }) {
 // ── iterative search rounds ─────────────────────────────────────────────────
 /**
  * One round of the search loop: what it asked, what it found, what it judged missing.
- * `verdict` is ok | part | none | run — `run` is the round in flight, which the reader
+ * `verdict` is ok | part | none | run - `run` is the round in flight, which the reader
  * watches while the answer is still being written.
  */
 const ROUND_LABEL = { ...GRADE_LABEL, run: '찾는 중' }
@@ -352,7 +352,7 @@ export const centerPage = ({ width = 'sm', top = false, children }) =>
   `<div class="centerpage${top ? ' top' : ''}"><div class="cwrap ${width}">${children}</div></div>`
 
 /**
- * Two columns inside one pane — a tree beside its list, a form beside its preview.
+ * Two columns inside one pane - a tree beside its list, a form beside its preview.
  * Only in the WORK pane. The inspector is 340px and a modal 460px, and neither holds two
  * columns: the left one alone is 224px (320px when `wide`), so the right one overflows.
  */
@@ -360,7 +360,7 @@ export const paneSplit = (left, right, wide = false) =>
   `<div class="psplit"><div class="pl${wide ? ' wide' : ''}">${left}</div><div class="pr">${right}</div></div>`
 
 /**
- * A folder tree. nodes: [{depth, label, count, on, open}] — `open` draws the twisty,
+ * A folder tree. nodes: [{depth, label, count, on, open}] - `open` draws the twisty,
  * `depth` is drawn as indent so a deep node is not a taller node.
  */
 export const tree = (nodes) =>
@@ -374,11 +374,11 @@ export const tree = (nodes) =>
     )
     .join('')}</div>`
 
-/** Nothing here yet — say what the space is for and what to do first, then stop. */
+/** Nothing here yet - say what the space is for and what to do first, then stop. */
 export const emptyState = ({ title, body, actions }) =>
   `<div class="empty">${tTitle(title)}${body ? tSub(body) : ''}${actions ? `<div class="actions">${actions}</div>` : ''}</div>`
 
-/** A question the reader can take as written — the answer to "what do I ask this?" */
+/** A question the reader can take as written - the answer to "what do I ask this?" */
 export const suggest = (items) =>
   items
     .map((one) => (typeof one === 'string' ? { q: one } : one))
@@ -389,7 +389,7 @@ export const suggest = (items) =>
     )
     .join('')
 
-/** An inline row inside a frame. Never the class `row` — that one is the board's own. */
+/** An inline row inside a frame. Never the class `row` - that one is the board's own. */
 export const hrow = (children) => `<div class="hrow">${children}</div>`
 
 /**
@@ -401,13 +401,13 @@ export const hrow = (children) => `<div class="hrow">${children}</div>`
  * equal share of the width, and lets a field that needs the whole row take it (`wide`).
  *
  * A field whose value carries newlines is drawn as the several lines it is, so it belongs on a row
- * of its own — put it in `frow(field(…), 'wide')` or leave it outside a row entirely.
+ * of its own - put it in `frow(field(…), 'wide')` or leave it outside a row entirely.
  */
 export const frow = (children, extra = '') => `<div class="${cls('frow', extra)}">${children}</div>`
 
 /**
  * A labelled set of choices, shown as chips rather than a dropdown. Used where every
- * option has to be visible at once — a scope the reader is about to search under is
+ * option has to be visible at once - a scope the reader is about to search under is
  * not something to discover by opening a menu.
  * options: [{label, on}]
  */
@@ -425,14 +425,14 @@ export const askBox = ({ placeholder = '무엇이든 물어보세요', left = ''
 // ── AI assistance mark ──────────────────────────────────────────────────────
 /**
  * Marks anything the product PROPOSES rather than knows. Every assisted feature carries
- * it, so a reader can tell a suggestion from a fact without reading the sentence — and so
+ * it, so a reader can tell a suggestion from a fact without reading the sentence - and so
  * the places that deliberately have NO assistance (permissions, audit reasons, licence
  * gates) are visibly different rather than merely unbuilt.
  * Never coloured: the board's one accent belongs to connectors, pins, folds and OPEN.
  */
 export const ai = (label = 'AI') => `<span class="ai"><span class="gl">◈</span>${label}</span>`
 
-/** A block whose whole content is a proposal — carries the mark at its top-left. */
+/** A block whose whole content is a proposal - carries the mark at its top-left. */
 export const aiBox = (children, label = 'AI 추천') =>
   `<div class="aibox">${ai(label)}${children}</div>`
 
@@ -447,7 +447,7 @@ export const planted = (label = '자료 속 지시') =>
 // ── validity periods ────────────────────────────────────────────────────────
 /**
  * One fact's periods laid on a single track. A value that changed is not two conflicting
- * facts; it is one fact with two periods, and only a track shows that at a glance — in a
+ * facts; it is one fact with two periods, and only a track shows that at a glance - in a
  * list the two rows read as a defect. spans: [{label, from, to, left, width, on, open}]
  * where left/width are percentages of the track and `open` leaves the right edge unbounded.
  */
@@ -474,7 +474,7 @@ export const snippet = (text, out = false) =>
  */
 export const scrollX = (children) => `<div class="scroll-x">${children}</div>`
 
-/** A figure cited as evidence — the picture and the caption travel together. */
+/** A figure cited as evidence - the picture and the caption travel together. */
 export const figure = ({ caption, meta }) =>
   `<div class="card">${imgPh()}${caption ? tBody(caption) : ''}${meta ? tSub(meta) : ''}</div>`
 
@@ -497,14 +497,14 @@ export const grant = ({ text, left }) =>
 // ── measurement placeholders (charts, level bars, countdowns) ───────────────
 /**
  * A chart stands in for data the product draws from a series: a bar chart of counts, a line of a
- * value over time, a histogram of levels. The board says WHICH chart and WHAT it plots — the shape
- * and the label — and never the numbers, so a reviewer judges whether the chart belongs and what it
+ * value over time, a histogram of levels. The board says WHICH chart and WHAT it plots - the shape
+ * and the label - and never the numbers, so a reviewer judges whether the chart belongs and what it
  * is called, not its values. `kind` is bar · line · hist.
  *
  * **Drawn as a shape rather than as a hatch.** A placeholder has to be recognisable as the chart it
  * stands for: a crossed box reads as a picture that failed to load, and a reviewer cannot tell a
- * trend that belongs on the screen from one that does not. The geometry is inline SVG — no file, no
- * font, nothing fetched — and the values in it are arbitrary on purpose.
+ * trend that belongs on the screen from one that does not. The geometry is inline SVG - no file, no
+ * font, nothing fetched - and the values in it are arbitrary on purpose.
  */
 const CHART_SHAPE = {
   bar: '<g fill="currentColor" opacity=".5">' +
@@ -524,7 +524,7 @@ export const chartPh = ({ kind = 'bar', label = '', h = 120 }) =>
   `<svg class="glyph" viewBox="0 0 100 40" preserveAspectRatio="none" aria-hidden="true">${CHART_SHAPE[kind] ?? CHART_SHAPE.bar}</svg></div>`
 
 /**
- * Level bars: one row per named quantity with how full it is. A toner set, a tray, a buffer —
+ * Level bars: one row per named quantity with how full it is. A toner set, a tray, a buffer -
  * anything read as 「how much is left」. `items` are `{ k, pct, v }`; `v` is the text after the bar
  * and defaults to the percentage. Below `low` the bar is drawn hollow so a reviewer sees the
  * threshold the product acts on without a second colour.
@@ -538,7 +538,7 @@ export const levels = (items, low = 20) =>
     .join('')}</div>`
 
 /**
- * A countdown cell: time until something the product expects — the next report, the next poll.
+ * A countdown cell: time until something the product expects - the next report, the next poll.
  * `late` is the state after the moment passed with nothing arriving, which is what an operator
  * scans a table for, so it is drawn heavier rather than in a colour.
  */

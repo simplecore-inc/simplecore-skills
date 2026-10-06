@@ -4,14 +4,14 @@
  * SimpliX backend, a simplix-react frontend, or both, and tell Claude which
  * handbook skills bind before it touches a file.
  *
- * A repository with no SimpliX marker produces no output at all — projects
+ * A repository with no SimpliX marker produces no output at all - projects
  * that do not use the stack never see this hook.
  *
  * When nothing in the project's own instruction files routes to the skills,
  * the injected context also asks Claude to offer `/simplix:init` once, so the
  * routing ends up written down instead of depending on this hook firing.
  *
- * Exit codes: 0 always. A detector failure is silent — a broken hook must not
+ * Exit codes: 0 always. A detector failure is silent - a broken hook must not
  * be the reason a session cannot start.
  */
 
@@ -62,7 +62,7 @@ function buildContext(report) {
 
 function main() {
   // The SessionStart payload carries nothing this hook needs, so stdin is left
-  // unread — reading it would block when the hook is run by hand from a TTY.
+  // unread - reading it would block when the hook is run by hand from a TTY.
   let report;
   try {
     report = analyze(process.cwd());

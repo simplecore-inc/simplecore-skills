@@ -6,7 +6,7 @@ Rules and patterns for customizing scaffolded code and composing framework compo
 
 ## Related references within this skill
 
-1. Precedent check — MANDATORY before building a new or reshaped screen (invariant #51) → `precedent-check.md`
+1. Precedent check - MANDATORY before building a new or reshaped screen (invariant #51) → `precedent-check.md`
 2. Framework components catalog → `framework-components.md`
 3. Customization recipes (step-by-step) → `recipes.md`
 4. CRUD page consistency checklist (list/detail/card/cross-cutting layout standard) → `consistency-checklist.md`
@@ -61,7 +61,7 @@ Boot API returns enums as `{ type, value, label }` objects. Always use `resolveB
 - List column rendering
 - Form initial values
 - Detail field display
-- **Update DTO assembly (for-edit → update conversion)** — failing to resolve causes `HttpMessageNotReadableException: Cannot deserialize value from Object value` server error
+- **Update DTO assembly (for-edit → update conversion)** - failing to resolve causes `HttpMessageNotReadableException: Cannot deserialize value from Object value` server error
 
 ```tsx
 import { resolveBootEnum } from "@simplix-react-ext/simplix-boot-utils";
@@ -89,13 +89,13 @@ When adding UI elements (action buttons, footers, headers, toolbars, etc.), **al
 - **Panel header** → Read `PanelHeader` source for `children` slot usage
 - **Delete confirmation** → Read `CrudDelete` + `useCrudDeleteDetail` for the standard wiring
 
-Never guess at button placement or layout — the framework defines the pattern, and all pages must be consistent.
+Never guess at button placement or layout - the framework defines the pattern, and all pages must be consistent.
 
-This rule scales with scope: for a single UI element, read the framework component source (above); for a whole NEW screen or a structural reshape, run the full precedent check — classify the screen's shape, read TWO same-shape precedent screens end to end, and clone their structure (`precedent-check.md`, invariant #51).
+This rule scales with scope: for a single UI element, read the framework component source (above); for a whole NEW screen or a structural reshape, run the full precedent check - classify the screen's shape, read TWO same-shape precedent screens end to end, and clone their structure (`precedent-check.md`, invariant #51).
 
-### Rule 6: SelectField with Async-Loaded Options — MUST Gate on Loading
+### Rule 6: SelectField with Async-Loaded Options - MUST Gate on Loading
 
-※ **CRITICAL** — when a Radix Select has a `value` set but no matching option exists at that moment, it shows an empty trigger, and **even after the options load later, it does not refresh the trigger text while closed.**
+※ **CRITICAL** - when a Radix Select has a `value` set but no matching option exists at that moment, it shows an empty trigger, and **even after the options load later, it does not refresh the trigger text while closed.**
 
 This problem occurs in the pattern where **multiple independent queries** load data in parallel and feed the SelectField's `value` and `options` separately:
 
@@ -169,7 +169,7 @@ After running `npx simplix scaffold <entity> --module <domain>`, the generated c
 
 ### Step 1: List Widget (`list.tsx`)
 
-- [ ] Remove unnecessary columns (comment out, don't delete — easier to restore)
+- [ ] Remove unnecessary columns (comment out, don't delete - easier to restore)
 - [ ] Add enum badge rendering for enum columns (replace `display="badge"`)
 - [ ] Add card view content (`cardTitle`, `cardContent` props)
 - [ ] Tune filter types (`faceted` for enums, `number` for numeric, `dateRange` for dates)
@@ -243,7 +243,7 @@ EntityEditor (outer)           — fetch + loading guard + key-reset
 
 Key pattern: `key={data.id}-${data.updatedAt}` on inner component forces remount when server data changes.
 
-**EditorFooter standard layout** — mirrors `CrudDetail.DefaultActions`:
+**EditorFooter standard layout** - mirrors `CrudDetail.DefaultActions`:
 
 ```
 ┌─────────────────────────────────────┐
@@ -252,8 +252,8 @@ Key pattern: `key={data.id}-${data.updatedAt}` on inner component forces remount
 └─────────────────────────────────────┘
 ```
 
-- `EditorFooter` uses `justify-between` — left side for cancel/back, right side for action group
-- Right-side actions wrapped in `<Flex gap="sm">`: delete icon button (`variant="outline"`, `size="icon-sm"`) + the framework `SaveButton` (self-contains dirty/saving/validation state via `isDirty` / `isSaving` / `fieldErrors`) — do not hand-roll a `<Button variant="primary" disabled={...}>` for save
+- `EditorFooter` uses `justify-between` - left side for cancel/back, right side for action group
+- Right-side actions wrapped in `<Flex gap="sm">`: delete icon button (`variant="outline"`, `size="icon-sm"`) + the framework `SaveButton` (self-contains dirty/saving/validation state via `isDirty` / `isSaving` / `fieldErrors`) - do not hand-roll a `<Button variant="primary" disabled={...}>` for save
 - Delete button only shown when `isEdit` is true
 - This matches `CrudDetail.DefaultActions` pattern exactly
 
@@ -310,7 +310,7 @@ Gap values: `none`, `xs`, `sm`, `md`, `lg`, `xl`
 | `fill` | `h-full` | Root container that fills parent height |
 | `flex` | `flex-1 min-h-0` | Flex child that grows and allows overflow |
 | `padded` | `pt-4 pb-8` | Content area above a footer (editor/form body) |
-| `overflow` | `overflow-auto` / `-hidden` / `-visible` / `-scroll` | Scrollable region — e.g. `overflow="auto"` on a `flex` body so a raw `overflow-y-auto` div is never needed |
+| `overflow` | `overflow-auto` / `-hidden` / `-visible` / `-scroll` | Scrollable region - e.g. `overflow="auto"` on a `flex` body so a raw `overflow-y-auto` div is never needed |
 | `wrap` | `flex-wrap` | Allow items to wrap to next line |
 
 ### List Columns
@@ -514,7 +514,7 @@ const slotOptions = useMemo(
 ```
 
 **Key rules:**
-- Used numbers are **disabled**, not hidden — user can see what's taken
+- Used numbers are **disabled**, not hidden - user can see what's taken
 - `excludeId` in Editor prevents current value from being disabled
 - Max range comes from domain model (e.g., `parent.maxSlots`), never hardcoded
 - The same pattern applies to any other numbered resource that must be unique within a scope
@@ -561,8 +561,8 @@ const slotOptions = useMemo(
 | Guessing button layout in footer/header | Read `CrudDetail.DefaultActions` source for the standard pattern first |
 | Local `enumStr()` / `resolveEnum()` | Use `resolveBootEnum` from `@simplix-react-ext/simplix-boot-utils` |
 | Raw `<section>` / `<div>` as card | Use `<Card padding="...">` |
-| Passing for-edit enum fields directly to update DTO | Use `resolveBootEnum(form.field)` — enum objects cause server deserialization error |
-| Empty `.filter(e => e.id)` in save handler | Consider initial empty state — new items have no server ID yet |
+| Passing for-edit enum fields directly to update DTO | Use `resolveBootEnum(form.field)` - enum objects cause server deserialization error |
+| Empty `.filter(e => e.id)` in save handler | Consider initial empty state - new items have no server ID yet |
 | **SelectField rendered before async options finish loading** | **Must check `isLoading` on BOTH the value source and options source queries (Rule 6)** |
 | Relying only on useEffect-based state synchronization | Provide a fallback directly from the source data (Rule 6) |
 

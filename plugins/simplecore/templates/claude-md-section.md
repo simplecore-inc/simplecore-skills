@@ -7,10 +7,10 @@ project on the machine.
 
 Writing them is what makes the routing durable. The plugin's SessionStart hook announces the same
 thing, but a hook only fires where the plugin is installed, while an instruction file travels with
-the repository — and a global block covers the sessions that never touch a marked project at all.
+the repository - and a global block covers the sessions that never touch a marked project at all.
 
-`/simplecore:init` writes them. The deeper setup each skill needs — installing the board build
-kit, writing the board folder's reading contract, filling the parity list from the board — belongs
+`/simplecore:init` writes them. The deeper setup each skill needs - installing the board build
+kit, writing the board folder's reading contract, filling the parity list from the board - belongs
 to `/simplecore:board-init` and `/simplecore:parity-walk-init`.
 
 ---
@@ -100,7 +100,7 @@ document, screen copy, or glossary entry. Where a project keeps its own glossary
 ## Global local-server block
 
 Insert into `~/.claude/CLAUDE.md`. Screen verification needs a running application, and a session
-that has to ask before every restart cannot walk a whole feature area — so the authority is stated
+that has to ask before every restart cannot walk a whole feature area - so the authority is stated
 once, globally, with its boundary drawn at the local machine.
 
 ```markdown

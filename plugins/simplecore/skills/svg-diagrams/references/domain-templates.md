@@ -179,7 +179,7 @@ Activation: thin rect on lifeline (width=12, opacity=0.3)
 
 ## 9. Dependency / Coverage Matrix
 
-**Canvas:** (label_w + ncols·col_w) x (~header + nrows·row_h) — size from `matrix()`'s return
+**Canvas:** (label_w + ncols·col_w) x (~header + nrows·row_h) - size from `matrix()`'s return
 
 A grid of rows × columns with a filled cell where a relation holds. Use for dependency ("which phase unlocks which"), coverage ("service × environment"), RACI, or feature-comparison tables. Prefer this over a bipartite arrow diagram when each row maps to one or a few columns and you want the *gaps* to be legible (an empty column reads as "not covered / no dependency").
 
@@ -190,7 +190,7 @@ A grid of rows × columns with a filled cell where a relation holds. Use for dep
    R3 name   │      │        │        │   ●    │     ← muted id chip when row has no accent mark
 ```
 
-Use the `matrix()` composite in `svgkit.py` — do not hand-place cells:
+Use the `matrix()` composite in `svgkit.py` - do not hand-place cells:
 
 ```python
 c = Canvas(940, 560, theme="tokyo-night")
@@ -201,7 +201,7 @@ marks = [(0, 1), (1, 3), (2, 1)]          # (row_idx, col_idx[, color])
 c.matrix(44, 96, rows, cols, marks, label_w=280, col_w=116, row_h=36)
 ```
 
-- `rows`: `str` (name only) or `(id, name)` — the id chip is colored by the row's first mark, muted if none.
-- `cols`: `(label, color)` — solid header chips; give an "n/a"/"독립" column a muted color for rows with no dependency.
-- `marks`: `(r, c)` or `(r, c, color)` — one filled cell per relation; leave a column empty to show it has no consumer.
-- Keep it generic: never bake a project's specific row/column names into a reusable helper — pass them in as data.
+- `rows`: `str` (name only) or `(id, name)` - the id chip is colored by the row's first mark, muted if none.
+- `cols`: `(label, color)` - solid header chips; give an "n/a"/"독립" column a muted color for rows with no dependency.
+- `marks`: `(r, c)` or `(r, c, color)` - one filled cell per relation; leave a column empty to show it has no consumer.
+- Keep it generic: never bake a project's specific row/column names into a reusable helper - pass them in as data.

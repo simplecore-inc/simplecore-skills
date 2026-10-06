@@ -1,11 +1,11 @@
-// penstock-console — the shell factory. A board hands this its own words once, in `src/chrome.mjs`,
+// penstock-console - the shell factory. A board hands this its own words once, in `src/chrome.mjs`,
 // and receives the chrome components bound to them: the title bar with its brand, the navigator
 // with its tree, the ask bar with its project chip, the inspector with its sample activity, the
 // application shell with its default status bar, the command palette with its query.
 //
 // The pure primitives live in `components.mjs`; nothing here draws a shape of its own. What lives
 // here is exactly the set of components that used to carry one product's name and tree inside the
-// pattern — moved out so the second product drawn this way brings its own.
+// pattern - moved out so the second product drawn this way brings its own.
 import { bell, appStatus } from './components.mjs';
 
 const cnt = (n) => `<span class="badge cnt">${n}</span>`;
@@ -14,14 +14,14 @@ const cnt = (n) => `<span class="badge cnt">${n}</span>`;
  * makeChrome(options) → the bound chrome.
  *
  * @param brand     the product's mark text in the title bar and the entry-surface mark
- * @param nav       the navigator tree — `[{ group, items: [name, …] }]`; `navPane(active)` names an item
+ * @param nav       the navigator tree - `[{ group, items: [name, …] }]`; `navPane(active)` names an item
  * @param project   the project chip the ask bar shows when a screen names none
  * @param lang      the language chip
- * @param palette   `{ label, ask, query }` — the palette control's label on the console bar, its
+ * @param palette   `{ label, ask, query }` - the palette control's label on the console bar, its
  *                  prompt on the ask bar, and the query the open palette is drawn holding
- * @param ask       `{ back, history }` — the ask bar's two ways out: back to the console, past questions
- * @param status    the status bar a screen gets when it passes none — `{ left: [{ t, alert }], right }`
- * @param activity  the sample events the inspector's activity pane draws when a frame passes none —
+ * @param ask       `{ back, history }` - the ask bar's two ways out: back to the console, past questions
+ * @param status    the status bar a screen gets when it passes none - `{ left: [{ t, alert }], right }`
+ * @param activity  the sample events the inspector's activity pane draws when a frame passes none -
  *                  `[{ when, text }]`
  * @param notifications  draw the notification mark. `false` for a product that raises none.
  * @param account   draw the account mark. `false` for a product nobody signs in to.
@@ -32,8 +32,8 @@ const cnt = (n) => `<span class="badge cnt">${n}</span>`;
  *                  settings screen, where a chip on every frame is a second place for one setting.
  *
  * <p>**The last four default to drawn and are turned off per product, never per frame.** A mark in
- * the title bar is a promise on every screen at once — an account mark says there is a sign-in, a
- * notification mark says something arrives here — and a single-operator tool that has neither
+ * the title bar is a promise on every screen at once - an account mark says there is a sign-in, a
+ * notification mark says something arrives here - and a single-operator tool that has neither
  * spends its whole board offering two controls that open nothing. The default stays on because a
  * product that has them and forgets to say so loses a control somebody can see is missing, while
  * the other way round the board promises something nobody will find.
@@ -72,7 +72,7 @@ export function makeChrome({
    *
    * **A group heading opens and shuts, and its mark sits at the trailing edge.** A tree nobody has
    * touched opens with every group shut, so those headings are the whole navigator until somebody
-   * presses one — a heading drawn as a caption with no mark would be a word where every row beneath
+   * presses one - a heading drawn as a caption with no mark would be a word where every row beneath
    * it has a picture. The mark goes at the trailing edge rather than in front: the rows below start
    * with an icon, and a caret ahead of the heading's own icon puts two glyphs where the eye looks
    * for one, so the heading stops reading as a word.
@@ -82,7 +82,7 @@ export function makeChrome({
    * it nowhere. The shut state belongs to the product's first minute, not to the contract.
    *
    * The rows of a group sit in a block of their own, and a guide runs down it from under the
-   * heading's mark. A shut group has no block and therefore no guide — a line under a heading with
+   * heading's mark. A shut group has no block and therefore no guide - a line under a heading with
    * nothing beneath it claims rows that are not on screen.
    */
   function navPane(active, badges = {}) {
@@ -108,12 +108,12 @@ export function makeChrome({
    * titlebar(crumbs, tb): brand, breadcrumb, command palette, pane toggles, account.
    *
    * **Whether there is a way out is decided here; where it is drawn is not.** The control itself
-   * goes against the screen's own title, at the head of the work pane's control strip — see
+   * goes against the screen's own title, at the head of the work pane's control strip - see
    * `appShell`, which is the one place holding both this bar and that strip. In the trail it read as
    * one more piece of navigation furniture: the eye files the whole strip as "where am I" and skips
    * it, which is how a control on every screen can still leave people with no way out they notice.
    *
-   * It applies BY DEFAULT on any screen sitting under something more than its project — one press
+   * It applies BY DEFAULT on any screen sitting under something more than its project - one press
    * back to the layer it came out of, which the trail beside it can only give by being read first.
    *
    * **The default draws it, and that direction is deliberate.** A frame drawn later and saying
@@ -129,7 +129,7 @@ export function makeChrome({
     const l = tb.left === false ? '' : ' on';
     const r = tb.right === false ? '' : ' on';
     // Everything before the bold piece is a layer above. Counted that way round because a folder
-    // path is one place written with slashes — `기술기준 / 08 작업안전` is where the screen IS, not two
+    // path is one place written with slashes - `기술기준 / 08 작업안전` is where the screen IS, not two
     // layers it came through, and splitting on the separator first makes every folder look deep.
     const layers = crumbs.split('<b>')[0].split('/').filter((piece) => piece.trim() !== '').length;
     // Carried as a mark rather than as a control, because the bar is composed before the panes are
@@ -143,7 +143,7 @@ export function makeChrome({
   }
 
   /**
-   * The ask surface uses the same bar with the navigator stripped — asking needs no tree.
+   * The ask surface uses the same bar with the navigator stripped - asking needs no tree.
    * Stripped is not the same as trapped: the project chip goes back to the project list and the
    * back chip goes to the console, so the two ways out are always on screen. `console: false`
    * draws the bar a reader sees who has no console to go to.
@@ -181,7 +181,7 @@ export function makeChrome({
     `<div class="pane-body scrolls">${body}</div>${activityPane({ events, collapsed })}</div>`;
 
   /** appShell: titlebar + work area + status bar. `panes` is already-composed pane HTML.
-   *  `bar` is optional — setup and activation windows carry no application chrome above the
+   *  `bar` is optional - setup and activation windows carry no application chrome above the
    *  work area, so they pass panes alone.
    *
    *  It is also where the way out of the screen lands. `titlebar` decides whether there is one and
@@ -189,7 +189,7 @@ export function makeChrome({
    *  the mark becomes a control at the head of the work pane's strip, against the title.
    *
    *  A screen that wants one and has no strip to put it in stops the build rather than losing it.
-   *  A frame drawn with no way out looks finished — that is the entire failure, and it may not be
+   *  A frame drawn with no way out looks finished - that is the entire failure, and it may not be
    *  reachable by forgetting a toolbar. */
   const appShell = ({ bar = '', panes, status: s }) => {
     const wantsBack = bar.includes('<div class="titlebar" data-back>');

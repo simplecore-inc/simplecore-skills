@@ -5,12 +5,12 @@ Orientation for simplix-react package APIs **as used on the codegen path**.
 > Posture: this is the PROJECT handbook, written from the perspective of a framework USER.
 > For the authoritative, full type signatures of generic framework mechanics (`defineApi`,
 > `deriveEntityHooks`, `deriveMockHandlers`, `EntityDefinition`, etc.), defer to the
-> **simplix-react framework documentation** — those signatures evolve in the framework repo and rot if
+> **simplix-react framework documentation** - those signatures evolve in the framework repo and rot if
 > duplicated here. The summaries below exist only to orient; where a framework name or fact
 > appears it must be correct, but do not treat this file as the source of truth for signatures.
 >
 > What the codegen path actually uses (see "How the codegen path wires the API" at the bottom):
-> Orval codegen + `getMutator("boot")` + `createMockEntityStore` + `adaptOrval*` — NOT
+> Orval codegen + `getMutator("boot")` + `createMockEntityStore` + `adaptOrval*` - NOT
 > hand-authored `defineApi` / `deriveEntityHooks` / `deriveMockHandlers` / `simpleQueryBuilder`
 > (grep for those in this repo returns zero hits).
 
@@ -55,7 +55,7 @@ interface EntityDefinition<TSchema, TOperations> {
 There is no `path` / `createSchema` / `updateSchema` on the entity itself. Create/update
 payloads live in each operation's `input` schema, and the URL path lives in each operation's
 `path`. See the simplix-react framework documentation for the full `EntityDefinition` / `EntityOperationDef`
-contract — the codegen path does not hand-author these (it uses Orval codegen; see below).
+contract - the codegen path does not hand-author these (it uses Orval codegen; see below).
 
 ### EntityParent
 
@@ -194,7 +194,7 @@ interface QueryBuilder {
 }
 ```
 
-Built-in: `simpleQueryBuilder` (framework default — see the simplix-react framework documentation for its exact
+Built-in: `simpleQueryBuilder` (framework default - see the simplix-react framework documentation for its exact
 serialization). The codegen path does NOT use `simpleQueryBuilder`; its boot/Orval list adapter
 emits **dot-separated** sort tokens `field.direction` (e.g. `sort=name.asc`), not the framework
 default's `field:direction`. See "How the codegen path wires the API" below.
@@ -220,7 +220,7 @@ async function defaultFetch<T>(path: string, options?: RequestInit): Promise<T>;
 - Throws `ApiError` for non-2xx responses
 - Unwraps `{ data: T }` only when `data` is defined
 
-Note: codegen domain packages do not call `defaultFetch` directly — they route through
+Note: codegen domain packages do not call `defaultFetch` directly - they route through
 Orval-generated clients and a `getMutator("boot")` mutator (see the Orval + boot section below).
 
 ### ApiError
@@ -265,7 +265,7 @@ function deriveEntityHooks<TEntities, TOperations>(
 ```
 
 The form deriver is `deriveEntityFormHooks` (`@simplix-react/form`). For the full mechanics of
-these derivers, defer to the simplix-react framework documentation — the codegen path does not call them directly
+these derivers, defer to the simplix-react framework documentation - the codegen path does not call them directly
 (its hooks re-export Orval-generated hooks; see below).
 
 ### Entity Hook Signatures
@@ -389,8 +389,8 @@ Generates MSW handlers for each entity:
 - `DELETE :id` -- remove by id
 
 This `deriveMockHandlers` path is distinct from the testing `createMockClient` path (which uses
-UUID ids — see @simplix-react/testing below). Do not conflate the two. Note: the codegen path's mock
-layer is neither of these — it uses `createMockEntityStore` + generated handlers + `wrapEnvelope`
+UUID ids - see @simplix-react/testing below). Do not conflate the two. Note: the codegen path's mock
+layer is neither of these - it uses `createMockEntityStore` + generated handlers + `wrapEnvelope`
 (see the Orval + boot section below).
 
 ### MockEntityConfig
@@ -644,7 +644,7 @@ Polls every 10ms until query leaves "pending" status. Throws on timeout.
 ## How the codegen path wires the API (Orval + boot)
 
 The signatures above describe the framework surface. The codegen path does **not** hand-author
-contracts or call the derivers — it generates clients with **Orval** and routes them through the
+contracts or call the derivers - it generates clients with **Orval** and routes them through the
 **simplix-boot** profile. This is the path you will actually read and edit.
 
 ### Generated clients + boot mutator
@@ -654,7 +654,7 @@ contracts or call the derivers — it generates clients with **Orval** and route
 - Every domain's `src/mutator.ts` returns `getMutator("boot")<T>(url, options)` (simplix-boot
   profile). `bootMutator` unwraps the Boot envelope `{ type: "SUCCESS", body: { content: [...] } }`;
   a non-`SUCCESS` envelope throws `ApiResponseError`.
-- Because the mutator already unwraps, a React Query hook's `data` is the DTO directly — multi-step
+- Because the mutator already unwraps, a React Query hook's `data` is the DTO directly - multi-step
   access like `query.data?.data?.body` resolves to `undefined`. Orval's response type
   (`{ data: GetXxx200; status: 200 }`) exists only at the type level.
 
@@ -664,7 +664,7 @@ contracts or call the derivers — it generates clients with **Orval** and route
   domain's `mutator.ts` still uses the default `getMutator()` instead of `getMutator("boot")`,
   `content` is `undefined` and the list renders empty. (See `scaffold/overview.md` for the
   diagnosis/fix.) The read-side (detail) counterpart is `adaptOrvalGet`, which re-types a
-  boot-unwrapped `useGet*` query so `data` is the plain DTO (`T | undefined`) — it is runtime-safe
+  boot-unwrapped `useGet*` query so `data` is the plain DTO (`T | undefined`) - it is runtime-safe
   (returns the same query object, only the static type narrows). Companion mutation adapters:
   `adaptOrvalCreate` / `adaptOrvalUpdate` / `adaptOrvalDelete` / `adaptOrvalOrder`.
 - Sort tokens are **dot-separated**: `field.direction` (e.g. `name.asc`), not `field:direction`
@@ -694,19 +694,19 @@ interface PagedResult<T> {
 
 The route guard renders a screen only when the access-policy snapshot holds a **user**, and
 the adapter's default extraction reaches into the nested envelope for the permission map
-alone — the user is left behind. Give the adapter a `transformResponse` that flattens the
+alone - the user is left behind. Give the adapter a `transformResponse` that flattens the
 envelope into the four keys the guard reads (`permissions`, `roles`, `isSuperAdmin`, `user`).
 
 **Without it every request is 200, the console is clean, and the shell renders with nothing
 inside it.** The permission map did arrive, so `useCan` answers correctly and the side nav
-filters correctly — the two layers anybody would check are the two that work. Only opening
+filters correctly - the two layers anybody would check are the two that work. Only opening
 the application in a browser shows the empty frame; a route that answers 200 on every probe
 and paints the shell is what this looks like from below.
 
 ### A hook that reads a governed endpoint carries its own permission
 
 A shared hook that takes its permission from whatever screen called it asks for whatever
-that screen is allowed — which is the wrong question, because the endpoint's rule is fixed
+that screen is allowed - which is the wrong question, because the endpoint's rule is fixed
 and the screen's is not. A change-history hook wired that way put a permission-refused
 dialog over a correctly-rendered record for one role: the screen opened, the record drew,
 and nothing said which request had been turned down.
@@ -719,12 +719,12 @@ different permissions starts using it.
 
 React runs effects twice on a development mount, so an effect that opens something with a
 `POST` sends it twice. Where the server has a uniqueness rule one of the two is refused, and
-**the screen receives a success and a failure for the same action** — an error dialog over a
+**the screen receives a success and a failure for the same action** - an error dialog over a
 screen that also worked.
 
 The fix is in two places and both are needed:
 
-- **The server treats the second call as the same call** — catch the constraint violation
+- **The server treats the second call as the same call** - catch the constraint violation
   and return the row that already exists, so the operation is idempotent for any client.
 - **The screen requests once per target**, guarded by a `useRef` keyed on that target.
 
@@ -743,4 +743,4 @@ Boot envelope the real API does. The store exposes `listPaged(page, size, sort)`
 `PagedResult`.
 
 For the framework-level mechanics behind any of the names above, defer to the `simplix-react`
-skill — this section documents only how the codegen path composes them.
+skill - this section documents only how the codegen path composes them.

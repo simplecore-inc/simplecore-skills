@@ -2,7 +2,7 @@
 //
 // A build states that every rule it holds is checked by a machine or marked as needing eyes, and
 // that there is no third category. **A rule marked as needing eyes with no reader and no moment is
-// that third category wearing the second category's label** — it reads as covered, it survives
+// that third category wearing the second category's label** - it reads as covered, it survives
 // every audit of the two lists, and the reading it describes is taken by nobody, because a duty
 // addressed to everyone is a duty whose turn never arrives.
 //
@@ -16,7 +16,7 @@ import { proseLines } from './prose.mjs';
 //
 // This repository states that every rule is held by a script or marked as needing eyes, and
 // that there is no third category. **A rule marked as needing eyes with no reader and no
-// moment is that third category wearing the second category's label** — it reads as covered,
+// moment is that third category wearing the second category's label** - it reads as covered,
 // it survives every audit of the two lists, and the reading it describes is taken by nobody,
 // because a duty addressed to everyone is a duty whose turn never arrives.
 //
@@ -37,13 +37,13 @@ import { proseLines } from './prose.mjs';
 // screens away for the name has the same problem as one who finds no name at all.
 //
 // The three vocabularies below are the whole of the gate's judgment and are meant to be
-// extended — a phrasing that assigns a check to eyes and is not in `ASSIGNS_TO_EYES` is not
+// extended - a phrasing that assigns a check to eyes and is not in `ASSIGNS_TO_EYES` is not
 // an exception to the rule, it is a row this list is missing.
 
 /**
  * The three vocabularies, as this project declares them.
  *
- * <p><b>Literal phrases, matched case-insensitively inside a statement — not patterns.</b> A
+ * <p><b>Literal phrases, matched case-insensitively inside a statement - not patterns.</b> A
  * project writes what its documents say, and a list of phrases is a thing a person adds a row to
  * without knowing a regex dialect. It also closed a hole: the pattern this replaced anchored one
  * Korean phrase with `\b`, and `\b` in JavaScript is ASCII-only, so that row matched nothing in
@@ -70,7 +70,7 @@ const said = (list, text) => list.find((phrase) => text.toLowerCase().includes(p
  * anybody. 「사람이 판정할 수 없는 아이디」 says a person CANNOT read it, which is the opposite of
  * an assignment; 「사람이 읽다가 나왔다」 recounts a reading somebody already did; and only
  * 「사람이 판정한다」 asks for one. A substring test cannot separate them, so it reported two
- * paragraphs that assign nothing — and a gate that fires on the negation of its own subject
+ * paragraphs that assign nothing - and a gate that fires on the negation of its own subject
  * teaches the people reading it that the gate is noise, which costs more than the two findings
  * were worth.
  *
@@ -78,7 +78,7 @@ const said = (list, text) => list.find((phrase) => text.toLowerCase().includes(p
  * sentence punctuation: a following sentence recounting something in the past says nothing
  * about whether this one assigns a reading.
  *
- * `기계가 판정하지 못` is itself a phrase on the assigning list and is unaffected — the negation
+ * `기계가 판정하지 못` is itself a phrase on the assigning list and is unaffected - the negation
  * there is part of the phrase rather than something following it, and what follows it is 「한다」.
  */
 const NOT_ASSIGNING = /^[^.。\n]{0,6}?(수\s*없|지\s*못|지\s*않|다가|았다|었다|였다|나왔)/;
@@ -101,7 +101,7 @@ const assigned = (list, text) => {
  * **Window-wide matching is what a loose pattern walks through.** Asked only whether a reader
  * appears somewhere near a moment, this gate passed a paragraph that named the coordinator
  * with no moment at all, because the paragraph after it happened to contain 「before writing
- * one」 about something else — the comparison count stayed honest and the comparison stopped
+ * one」 about something else - the comparison count stayed honest and the comparison stopped
  * meaning anything. Requiring both in one statement is also what the rule actually asks for:
  * say who and when in the same breath.
  *
@@ -130,7 +130,7 @@ function statementsIn(lines) {
 /**
  * A block is the run of non-blank prose lines between blank ones, carrying its first line
  * number. Fenced blocks and inline code are dropped first, because **the document that
- * teaches this rule is the one most likely to trip it** — a paragraph explaining that
+ * teaches this rule is the one most likely to trip it** - a paragraph explaining that
  * `사람이 본다` needs a reader is not itself assigning anything, and a gate that reads its own
  * specimen as a violation trains everybody to ignore the gate. A specimen therefore goes in
  * backticks, which is where this repository's Korean standard already puts one.
@@ -261,7 +261,7 @@ const EYES_NAMED = `# 검증 결과
 /**
  * A reader and a moment that never meet. Both vocabularies are satisfied somewhere in the
  * window and no statement carries the pair, which is the shape a window-wide match walks
- * straight through — it is here because this gate did exactly that before it was narrowed.
+ * straight through - it is here because this gate did exactly that before it was narrowed.
  */
 const EYES_SPLIT = `# 검증 결과
 
@@ -312,7 +312,7 @@ const CLAUDE_NAMED = `# 프로젝트
 written 닫힘, never by the agent that took the captures.
 `;
 
-/** A person is named as UNABLE to read the value — the opposite of handing them a reading. */
+/** A person is named as UNABLE to read the value - the opposite of handing them a reading. */
 const EYES_NEGATED = `# 검증 결과
 
 ## 축이 가리키는 것의 이름
@@ -321,7 +321,7 @@ const EYES_NEGATED = `# 검증 결과
 데다 어느 축의 값인지도 알려 주지 않는다.
 `;
 
-/** A reading that already happened, recounted — not one being assigned to anybody. */
+/** A reading that already happened, recounted - not one being assigned to anybody. */
 const EYES_RECOUNTED = `# 검증 결과
 
 ## 프롭으로 다니는 번역 키

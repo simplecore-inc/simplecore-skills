@@ -1,6 +1,6 @@
 // Stand up a new board: the bootstrap, the folder contract, and the pattern's starter frames.
 //
-// Everything written here is CONTENT — screens, a manifest, an information architecture, the
+// Everything written here is CONTENT - screens, a manifest, an information architecture, the
 // rules for this board. No tool is copied, because there is no tool to copy: the engine stays in
 // the skill and `wf.mjs` finds it.
 //
@@ -15,7 +15,7 @@ import { BOARD_CONTRACT } from './partials.mjs';
 
 const kitDir = dirname(dirname(fileURLToPath(import.meta.url)));
 
-/** The board's only script — a copy of the kit's bootstrap, with nothing board-specific in it. */
+/** The board's only script - a copy of the kit's bootstrap, with nothing board-specific in it. */
 const BOOTSTRAP = join(kitDir, 'templates/wf.mjs');
 
 /** The one-line wrapper that starts the development server, so the loop is `./dev.sh` and no more. */
@@ -61,7 +61,7 @@ contract, where the frames come from, the source layout, and how to build.
 /**
  * The starter config, stamped with the contract this kit writes.
  *
- * <p>A board created now is on the current contract by definition — there is no step between it
+ * <p>A board created now is on the current contract by definition - there is no step between it
  * and the kit for a migration to carry out. The example file states a number like any other
  * board's config does, so without this it states whatever contract was current the day it was
  * last edited, and every bump of `BOARD_CONTRACT` leaves `init` producing a board that refuses to
@@ -115,7 +115,7 @@ function put(path, body, report, { mode } = {}) {
 /**
  * Set up `boardDir` as a board drawn in `pattern`.
  *
- * @param name what the product is called — substituted into the starter files
+ * @param name what the product is called - substituted into the starter files
  * @param examples copy the pattern's starter frames. False for a board whose screens are about
  *   to be authored from a specification, where nine frames about records would be nine frames
  *   somebody has to delete
@@ -152,7 +152,7 @@ export function initBoard(boardDir, { pattern = 'simplix-basic', name = '<PRODUC
   put(join(boardDir, 'board.config.mjs'), onContract(fill(readFileSync(join(ex, 'board.config.mjs'), 'utf8'))), report);
   // An empty board still has to build, so it gets an empty manifest rather than the starter one
   // pointing at screens that were not copied. It is chosen HERE, before the write, so that a
-  // manifest already in the folder is kept like every other file and reported once — writing the
+  // manifest already in the folder is kept like every other file and reported once - writing the
   // empty one afterwards overwrote a board's own table of contents and said `manifest.mjs` twice.
   const EMPTY_MANIFEST =
     '// The table of contents and the build order. One entry per screen, in board order.\n' +

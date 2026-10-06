@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Rendered-screen audit — the defects that exist only once the page is painted.
+ * Rendered-screen audit - the defects that exist only once the page is painted.
  *
  * Its sibling `audit-frontend.mjs` reads source files and can therefore run with nothing
  * started. Everything here is a question about boxes and rows on a live page, so **it needs
@@ -16,21 +16,21 @@
  *   node audit-rendered.mjs --selftest              # both directions, against generated fixtures
  *
  * An unrecognised option stops the run. `--selftest` is spelt the same way in all three audit
- * scripts, and a misspelling that fell through to a normal run reported nothing wrong — which
+ * scripts, and a misspelling that fell through to a normal run reported nothing wrong - which
  * is what a clean run reports.
  *
  * Exit code 1 when an error-grade check has findings, 2 when the browser could not be driven.
- * **A run that could not reach a browser never exits 0** — a check nobody can prove fired is
+ * **A run that could not reach a browser never exits 0** - a check nobody can prove fired is
  * worth nothing, and a silent pass here is the exact substitution this file exists to stop.
  *
  * Driving: `agent-browser` (the default), or `--print` the snippet and evaluate it through
- * whatever the session already has open — Claude in Chrome's javascript_tool, Playwright's
+ * whatever the session already has open - Claude in Chrome's javascript_tool, Playwright's
  * `page.evaluate`, a devtools console. Each snippet is one self-contained expression that
  * returns `{ compared, findings }` and touches nothing on the page.
  *
  * Every check reports how many comparisons it made, not only how many failed. 「0 findings」
  * and 「compared 186 elements」 are one line to an exit status and two different sentences to
- * a reader — only the second shows a check that ran and reached nothing.
+ * a reader - only the second shows a check that ran and reached nothing.
  *
  * Vocabulary (what counts as a row, what a total reads like, what an empty state says) is
  * options with documented defaults, never constants: a product that writes its totals
@@ -43,7 +43,7 @@ import os from "node:os";
 import path from "node:path";
 
 // ---------------------------------------------------------------------------
-// Defaults — the vocabulary, in one place, overridable per project
+// Defaults - the vocabulary, in one place, overridable per project
 // ---------------------------------------------------------------------------
 
 const DEFAULTS = {
@@ -75,7 +75,7 @@ const DEFAULTS = {
    * How far a region has to overflow before it counts as scrolling rather than as a box a
    * scrollbar shortened. A region scrolling sideways has its own horizontal bar taking height
    * off `clientHeight`, and on a platform that draws that bar inside the box the vertical
-   * overflow it invents is about fifteen pixels — under this, and never near a real one.
+   * overflow it invents is about fifteen pixels - under this, and never near a real one.
    */
   strandedScrollSlackPx: 8,
 
@@ -108,7 +108,7 @@ const DEFAULTS = {
    * What a list's own row total reads like. This is deliberately narrower than 「any number
    * on the page」: a stat tile drawing 「14」 under the label 「적용 법령」 is not claiming that
    * fourteen rows are about to be drawn, and a check that reads it as one fires on every
-   * dashboard. A toolbar total names its own set — 「전체 14건」 — and that is the shape here.
+   * dashboard. A toolbar total names its own set - 「전체 14건」 - and that is the shape here.
    */
   totalPatterns: [
     "^\\s*(?:전체|총|합계)\\s*([\\d,]+)\\s*(?:건|개|명|행)\\s*$",
@@ -123,7 +123,7 @@ const DEFAULTS = {
    * A row stops being a `<tr>` below a list's card breakpoint: the same list draws each record as
    * a card, and every selector above it is written for a table. Left at those five, the check
    * reports 「states N rows and its column draws none」 on every list narrow enough to have gone to
-   * cards — the one reading where the rows are most certainly there, because a card is what the
+   * cards - the one reading where the rows are most certainly there, because a card is what the
    * list drew on purpose. The framework marks both shapes with the same testid, so the last
    * selector is what makes this check mean the same thing at both widths.
    */
@@ -159,7 +159,7 @@ const DEFAULTS = {
   /**
    * What may not appear inside a `<p>`. Tag names rather than computed display, because
    * `display: inline` on a `<div>` makes the box behave and leaves the markup invalid all the
-   * same — and because a flex child's computed display says nothing about what it is.
+   * same - and because a flex child's computed display says nothing about what it is.
    */
   blockTags: [
     "div", "p", "section", "article", "header", "footer", "aside", "nav", "main",
@@ -190,7 +190,7 @@ const DEFAULTS = {
   /**
    * Where an identifier on the screen is the point rather than a defect.
    *
-   * <p>Code, a shell line, a file name a reader is meant to type — all of them are ASCII
+   * <p>Code, a shell line, a file name a reader is meant to type - all of them are ASCII
    * identifiers on purpose, and a screen that shows one is not a screen that failed to translate.
    * `data-allow-identifier` is the escape hatch for a value the product genuinely displays raw.
    */
@@ -235,13 +235,13 @@ const DEFAULTS = {
    * How much of a control has to survive its ancestors' clipping before it is judged at all.
    *
    * <p>A control scrolled out of its panel still reports a rectangle on screen, and the hit test
-   * at that spot answers with whatever is painted there instead — which reads exactly like being
+   * at that spot answers with whatever is painted there instead - which reads exactly like being
    * covered. Below this share the control is not on screen to be pressed and is nobody's defect.
    *
    * <p><b>Setting this to 0 does not turn the clipping off.</b> A control an ancestor has cut away
    * entirely fails the empty-rectangle guard before any ratio is taken, so it stays excluded at
    * every value. Anybody comparing against the behaviour from before clipping was read has to
-   * restore the old measurement, not lower this — the ratio route reports the same count twice and
+   * restore the old measurement, not lower this - the ratio route reports the same count twice and
    * reads as 「there were never any false positives here」.
    */
   minVisibleRatio: 0.5,
@@ -259,14 +259,14 @@ const DEFAULTS = {
   settleIntervalMs: 400,
 
   /**
-   * What counts as a pane — a region a reader reached by pressing something, which therefore
+   * What counts as a pane - a region a reader reached by pressing something, which therefore
    * owes them content.
    *
    * <p>`tabpanel` is the whole of the default on purpose. It is the one region whose contract
    * is unambiguous: a tab strip promises that pressing a tab shows what is behind it, so a
    * panel that paints nothing has broken a promise the reader can see being made. A card, a
-   * section or a sidebar may legitimately render nothing — a reference card with no rows is
-   * supposed to disappear — and a check that read those as panes would fire on every screen
+   * section or a sidebar may legitimately render nothing - a reference card with no rows is
+   * supposed to disappear - and a check that read those as panes would fire on every screen
    * that hides an empty card correctly.
    *
    * <p>A product with its own pane primitive adds its selector here rather than editing the
@@ -287,8 +287,8 @@ const DEFAULTS = {
   /**
    * How wide a pane has to be laid out before its emptiness is judged.
    *
-   * <p><b>Width and never height.</b> A blank pane's height IS the symptom — the one this check
-   * was written from painted 16px of its own `pt-4` and nothing else — so a height floor would
+   * <p><b>Width and never height.</b> A blank pane's height IS the symptom - the one this check
+   * was written from painted 16px of its own `pt-4` and nothing else - so a height floor would
    * skip exactly the defect. Width says something different: a pane the layout never gave a
    * column to has not been asked to draw anything yet.
    */
@@ -300,7 +300,7 @@ const DEFAULTS = {
    * <p><b>Roles rather than component names, and the difference is the whole point.</b> Every
    * source rule about these messages was keyed to the component that drew one, and each went
    * blind the moment a message was drawn some other way. A role is what the element publishes
-   * to anything reading the page — it is what the message DRAWS, in the only tree that is not
+   * to anything reading the page - it is what the message DRAWS, in the only tree that is not
    * an implementation detail. `status` is here because a live region is a message too; what
    * keeps a toast out is that it floats rather than standing in the column.
    */
@@ -310,7 +310,7 @@ const DEFAULTS = {
    * Surfaces the reader opened, whose content is not taking the page.
    *
    * <p>A message inside a dialog, a menu or a popover is what the reader asked for, and the
-   * header control's own drop draws every hidden card again inside a `menu` — reading those as
+   * header control's own drop draws every hidden card again inside a `menu` - reading those as
    * cards on the page reports each hidden card as a card with no close.
    */
   openedSurfaceSelector:
@@ -321,7 +321,7 @@ const DEFAULTS = {
    * How far into the trailing edge of a message a control has to sit to be its close.
    *
    * <p>Geometry rather than a label, because a label is a translated string and this has to hold
-   * in every locale the console ships. A message's own action — 「설명 보기」, a legal badge —
+   * in every locale the console ships. A message's own action - 「설명 보기」, a legal badge -
    * carries words; the close is the wordless control at the end of the band.
    */
   closeTrailingRatio: 0.25,
@@ -359,7 +359,7 @@ const DEFAULTS = {
   /**
    * What a message does not contain.
    *
-   * <p>A card holding content holds structure — a heading, fields, a table, a list. A message
+   * <p>A card holding content holds structure - a heading, fields, a table, a list. A message
    * holds a sentence. This is what stops the un-roled recogniser reporting every `Card` on a
    * settings screen.
    */
@@ -383,13 +383,13 @@ const DEFAULTS = {
    * a card region reads in is the order the header control lists its kinds, and that is a product's
    * decision rather than this rule's.
    *
-   * <p><b>`glyph` is matched against what the message's own icon draws</b> — its class and its path
-   * data, either one — because a component library changes a class before it changes the shape, and
+   * <p><b>`glyph` is matched against what the message's own icon draws</b> - its class and its path
+   * data, either one - because a component library changes a class before it changes the shape, and
    * a check keyed on the component's NAME goes blind the day a message is drawn by something else.
    *
    * <p><b>`role` is there because a glyph does not always separate two kinds, and sometimes must
    * not.</b> Where 「something is wrong」 is meant to separate from 「this is an explanation」 by shape,
-   * the two wrong kinds share one glyph on purpose — so the louder of the pair is told from the
+   * the two wrong kinds share one glyph on purpose - so the louder of the pair is told from the
    * quieter by whether the message announces itself as an interruption. An entry with no `role`
    * matches whatever role the message carries.
    */
@@ -415,7 +415,7 @@ const DEFAULTS = {
  * A list total that says N rows, over a column that draws none.
  *
  * The defect it exists to catch: a screen states 「전체 14건」 in its toolbar, repeats 14 in
- * its tab and 14 in a tile, and paints no row at all — while a record stays selected in the
+ * its tab and 14 in a tile, and paints no row at all - while a record stays selected in the
  * detail panel beside it, so the screen looks populated. Every request answered 200 and the
  * numbers are honest; the rows are what never arrived.
  *
@@ -443,8 +443,8 @@ const countedListDrawsNoRows = {
       return s.visibility !== "hidden" && s.display !== "none" && Number(s.opacity) !== 0;
     };
     // The text this element owns, rather than everything under it. Counting element children
-    // is the wrong test: a label with an inline icon — 「<svg/>전체 14건」, which is what every
-    // badge and most buttons in a component library look like — has a child and would be read
+    // is the wrong test: a label with an inline icon - 「<svg/>전체 14건」, which is what every
+    // badge and most buttons in a component library look like - has a child and would be read
     // as owning nothing, so the check walks past the totals it exists to find.
     const own = (el) => {
       let text = "";
@@ -474,11 +474,11 @@ const countedListDrawsNoRows = {
     );
     // A row painted where nothing can reach it is not a drawn row.
     //
-    // An ancestor that CLIPS — `overflow: hidden` or `clip`, which no gesture undoes — and whose
+    // An ancestor that CLIPS - `overflow: hidden` or `clip`, which no gesture undoes - and whose
     // box the row's rectangle falls entirely outside of hides that row from the reader as
     // completely as a row that never rendered: the rectangles are real, `visible()` says yes, and
     // the screen under the total is blank. That is how a list screen whose tiles, banners and
-    // help cards outgrow the fold arrives — the framework hands the tab body the leftover height,
+    // help cards outgrow the fold arrives - the framework hands the tab body the leftover height,
     // the leftover is thirty pixels, and forty-two rows lay themselves out below the clip.
     //
     // A SCROLLABLE ancestor is the opposite case and is left alone. Rows below the fold of an
@@ -559,7 +559,7 @@ const countedListDrawsNoRows = {
  * The defect it exists to catch: two tables render into one area, so a section heading lands
  * on top of the filter bar, every row shows two records superimposed, and the pagination
  * control is drawn inside a table row. Nothing throws, nothing fails to type-check, every
- * string on the screen is correct — and the screen cannot be read.
+ * string on the screen is correct - and the screen cannot be read.
  *
  * **What is deliberately not a finding.** Overlap is how a dialog, a tooltip, a popover and a
  * sticky header are supposed to work, so anything inside one, or positioned `fixed`/`sticky`,
@@ -575,7 +575,7 @@ const textBoxesOverlap = {
     const findings = [];
 
     /**
-     * Which raised layer the element sits on, as the element that raises it — `null` for text in
+     * Which raised layer the element sits on, as the element that raises it - `null` for text in
      * the ordinary flow.
      *
      * <p>A boolean is not enough: a sticky header and a modal are both raised and are two
@@ -598,8 +598,8 @@ const textBoxesOverlap = {
       return r.width > 0 && r.height > 0;
     };
     // The text this element owns, rather than everything under it. Counting element children
-    // is the wrong test: a label with an inline icon — 「<svg/>전체 14건」, which is what every
-    // badge and most buttons in a component library look like — has a child and would be read
+    // is the wrong test: a label with an inline icon - 「<svg/>전체 14건」, which is what every
+    // badge and most buttons in a component library look like - has a child and would be read
     // as owning nothing, so the check walks past the totals it exists to find.
     const own = (el) => {
       let text = "";
@@ -613,7 +613,7 @@ const textBoxesOverlap = {
     const clip = (t) => (t.length > 40 ? t.slice(0, 40) + "…" : t);
 
     // What of an element a reader can actually see. `getBoundingClientRect` reports where the
-    // layout put it, not what survives its ancestors' clipping — a table row scrolled past the
+    // layout put it, not what survives its ancestors' clipping - a table row scrolled past the
     // bottom of an `overflow: auto` panel still reports a rectangle down there, and two of those
     // intersect happily while the screen shows neither. Every page with a scrolling list under a
     // footer reports the same pair, so the check that is meant to find one real collision comes
@@ -654,7 +654,7 @@ const textBoxesOverlap = {
     for (const el of leaves) {
       const r = onScreen(el);
       // Which layer the text belongs to, rather than whether it is on one. Dropping raised text
-      // altogether was the safe-looking reading and it takes the dialogs with it — and a help
+      // altogether was the safe-looking reading and it takes the dialogs with it - and a help
       // table with a squeezed column is exactly the kind of thing that only shows up inside one.
       // Comparing within a layer keeps the modal-over-page pair quiet and the two-texts-inside-
       // one-modal pair loud.
@@ -694,13 +694,13 @@ const textBoxesOverlap = {
  * A block element rendered inside a paragraph.
  *
  * The defect it exists to catch: a component library's text primitive renders `<p>`, a screen
- * puts a composed label into its slot — a name, a badge and an icon button laid out with the
- * library's own row primitive, which renders `<div>` — and the paragraph now contains a block.
+ * puts a composed label into its slot - a name, a badge and an icon button laid out with the
+ * library's own row primitive, which renders `<div>` - and the paragraph now contains a block.
  * The className the primitive wrote on that paragraph (`flex-1`, `truncate`, a weight) stops
  * governing the content, so the label neither truncates nor shares the row's width, and a long
  * name pushes the trailing value off the row.
  *
- * **Why the DOM has it at all.** Writing `<p><div>` in an HTML file cannot produce this — the
+ * **Why the DOM has it at all.** Writing `<p><div>` in an HTML file cannot produce this - the
  * parser closes the paragraph and the block becomes its sibling. A framework that builds the
  * tree with `createElement`/`appendChild` bypasses the parser, so the invalid nesting is really
  * there. That is also why the only warning is one line in a development console, next to the
@@ -708,7 +708,7 @@ const textBoxesOverlap = {
  * answered, and a screenshot shows a row that merely looks a little wide.
  *
  * **Where the fix belongs.** In the component that wraps the slot, not in the screen that filled
- * it — one element name there fixes every caller, and a screen that routes around it grows a
+ * it - one element name there fixes every caller, and a screen that routes around it grows a
  * hand-rolled box the library exists to prevent.
  */
 const blockInsideParagraph = {
@@ -765,7 +765,7 @@ const blockInsideParagraph = {
  * the spacer does not reach.
  *
  * **Why nothing else finds it.** The strings are right, the handlers are wired, the typecheck is
- * green, and the covering element is transparent — so it leaves no mark on a screenshot and no
+ * green, and the covering element is transparent - so it leaves no mark on a screenshot and no
  * mark on the eye. A verification round photographs the panel, reads the footer, and records that
  * the controls are there, because they are. It is found by pressing, and a round that presses
  * every control on every screen is not a round anybody runs. **This is the class of defect a
@@ -776,7 +776,7 @@ const blockInsideParagraph = {
  * control itself, or something inside it? When it is neither, the press goes elsewhere, and the
  * check says what caught it.
  *
- * **What it deliberately does not report.** A control behind an open dialog is inert on purpose —
+ * **What it deliberately does not report.** A control behind an open dialog is inert on purpose -
  * that is a modal working. A disabled control is meant not to answer. A control whose coverer sets
  * `pointer-events: none` never comes up at all, because the browser's own hit test walks past it,
  * which is the same test a reader's finger takes.
@@ -799,7 +799,7 @@ const pressableControlsTakeThePress = {
 
     // What of the control a reader can actually see, after every ancestor that scrolls has cut
     // it down. `getBoundingClientRect` reports where the layout put it, not what survives the
-    // clipping — a row action scrolled past the bottom of an `overflow: auto` panel still reports
+    // clipping - a row action scrolled past the bottom of an `overflow: auto` panel still reports
     // a rectangle on screen, and `elementFromPoint` at that spot honestly answers with whatever
     // IS painted there. Read without this, the check calls every off-screen control covered and
     // buries the one real finding: a sweep of eight screens returned seventeen, and fourteen were
@@ -846,7 +846,7 @@ const pressableControlsTakeThePress = {
       return false;
     };
 
-    /** The topmost open modal, if one is open — everything outside it is inert on purpose. */
+    /** The topmost open modal, if one is open - everything outside it is inert on purpose. */
     const modal = [...document.querySelectorAll('[role="dialog"], [role="alertdialog"], dialog')]
       .filter((d) => visible(d) && d.getAttribute("aria-hidden") !== "true")
       .pop() ?? null;
@@ -871,7 +871,7 @@ const pressableControlsTakeThePress = {
       const r = onScreen(el);
       if (r === null) continue;
       // Five probes rather than one, so the report can say whether the control is wholly buried
-      // or merely clipped along one edge — which is the difference between a control nobody can
+      // or merely clipped along one edge - which is the difference between a control nobody can
       // press and one that answers if you aim carefully.
       const inset = Math.max(2, Math.min(o.probeInsetPx, r.width / 4, r.height / 4));
       const points = [
@@ -916,24 +916,24 @@ const pressableControlsTakeThePress = {
 };
 
 /**
- * An open pane that paints nothing — the reader pressed a tab and got a blank rectangle.
+ * An open pane that paints nothing - the reader pressed a tab and got a blank rectangle.
  *
  * The defect it exists to catch: a settings screen draws its header, its tiles, a notice and a
  * four-tab strip, and below the strip there is only the page footer. The pane's own component
  * ends in `if (!record) return null;`, so the one state where the reader most needs a sentence
  * is the state that renders nothing at all. Every string on the screen is correct, every
- * request answered, the build is green — and the tab the reader pressed answers with a gap.
+ * request answered, the build is green - and the tab the reader pressed answers with a gap.
  *
  * **Why it survives every other check.** `countedListDrawsNoRows` needs a total to compare
  * against and a blank pane states none; `textBoxesOverlap` needs two boxes and there is one;
- * a source audit sees a `return null` that is correct in a dozen other places — a cell with no
+ * a source audit sees a `return null` that is correct in a dozen other places - a cell with no
  * value, a badge with no enum, a banner nobody armed. What separates those from this is not the
  * statement, it is where the statement runs: **a region a reader reached by pressing something
  * owes them content, and nothing else does.** That is a fact about the painted page, so it is
  * only decidable here.
  *
  * **Read as blank means blank to a reader**, not merely textless: a pane holding one chart, one
- * map or one canvas is a pane that drew something. Hidden panes are already out — a tab set
+ * map or one canvas is a pane that drew something. Hidden panes are already out - a tab set
  * hides the panes behind the tabs nobody pressed, and those are supposed to be empty.
  */
 const openPaneDrawsNothing = {
@@ -945,7 +945,7 @@ const openPaneDrawsNothing = {
     const findings = [];
 
     // Shown rather than merely present. A tab set keeps every pane in the tree and hides all but
-    // one, so reading presence would report every screen's unopened tabs as blank — which is what
+    // one, so reading presence would report every screen's unopened tabs as blank - which is what
     // they are supposed to be.
     const shown = (el) => {
       if (el.hasAttribute("hidden")) return false;
@@ -985,7 +985,7 @@ const openPaneDrawsNothing = {
     for (const pane of panes) {
       compared += 1;
       if ((pane.innerText || "").trim().length > 0) continue;
-      // A pane can be wordless and still full — one chart, one map, one signature canvas. Judged
+      // A pane can be wordless and still full - one chart, one map, one signature canvas. Judged
       // on text alone those would be this check's first false positive, and a rendered audit that
       // cries once is a rendered audit nobody reads again.
       const drawn = [...pane.querySelectorAll(o.wordlessContentSelector)].some((el) => {
@@ -1011,11 +1011,11 @@ const openPaneDrawsNothing = {
 /**
  * A region crushed to a sliver of what it holds.
  *
- * <p><b>The list is there, the requests answered, every string right — and the reader sees
+ * <p><b>The list is there, the requests answered, every string right - and the reader sees
  * twenty-one pixels of it.</b> A page laid out as one column that must fit the fold hands its
  * flexible child whatever the fixed content above it left over, and `min-h-0` lets that be
  * almost nothing. Nothing errors, nothing is missing, and the page cannot be scrolled to reveal
- * the rest because nothing overflows — the child shrank instead.
+ * the rest because nothing overflows - the child shrank instead.
  *
  * <p><b>It is invisible to every other check.</b> The rows are in the accessibility tree, so a
  * tree reading finds them all; the total says 31 and the column draws 31; the pane paints
@@ -1049,7 +1049,7 @@ const regionCrushedToASliver = {
 
       const shown = el.clientHeight;
       const held = el.scrollHeight;
-      // Zero is a region deliberately closed — an accordion, a collapsed panel — and only when it
+      // Zero is a region deliberately closed - an accordion, a collapsed panel - and only when it
       // clips. A region that SCROLLS carries a promise the reader can reach what is in it, so zero
       // there is the worst crush this check exists to catch rather than an exemption from it: a
       // detail body measuring 0px over 1927px of a panel somebody just opened reported nothing,
@@ -1091,14 +1091,14 @@ const regionCrushedToASliver = {
  *
  * <p>A list panel is given `overflow-auto` so that a long list stays inside its column while a
  * detail stands beside it. **Beside an open detail that is right, and on its own it is the
- * defect** — the reader works down a 1769px list through a 690px window while the tiles, the tab
+ * defect** - the reader works down a 1769px list through a 690px window while the tiles, the tab
  * strip and the page's own header stand still around it, and nothing on the screen says the rest
  * of the page is not what is moving.
  *
  * <p><b>It is invisible to a source audit, and it is invisible to a screenshot.</b> The class is
  * on a framework component that every list in the console shares, so no screen file carries a
  * mark; and a picture of a scrolling list looks exactly like a picture of a scrolling page. What
- * separates them is one comparison — which box's `scrollHeight` exceeds its `clientHeight` — and
+ * separates them is one comparison - which box's `scrollHeight` exceeds its `clientHeight` - and
  * that is a question only the live page answers.
  *
  * <p><b>What makes it decidable is what stands beside the region, not what the region is called.</b>
@@ -1158,7 +1158,7 @@ const pageFrozenAroundAScrollingRegion = {
 
       // **The page behind one, too.** A modal freezes the document and marks everything under it
       // `aria-hidden` or `inert`, so the screen's own regions become the only things that move and
-      // every one of them reads as a strip in a frozen page — on a screen that passes this check
+      // every one of them reads as a strip in a frozen page - on a screen that passes this check
       // the moment the dialog closes. The reader cannot reach any of it, which is the point of a
       // modal and is why this is not a finding about the screen.
       if (el.closest('[aria-hidden="true"], [inert]')) continue;
@@ -1273,7 +1273,7 @@ const pageFrozenAroundAScrollingRegion = {
  * A standing message the reader cannot put away, or cannot see the kind of.
  *
  * The defect it exists to catch: a screen draws two cards with closes, then its figures, then
- * 「원본 파일이 없는 회차가 2건 있습니다」 in red with no close at all — a sentence that is true
+ * 「원본 파일이 없는 회차가 2건 있습니다」 in red with no close at all - a sentence that is true
  * every day, taking the same band of the page on every visit, with nothing the reader can do
  * about it. Both source rules were green on that screen.
  *
@@ -1284,25 +1284,25 @@ const pageFrozenAroundAScrollingRegion = {
  * it. A message with no close cannot hide from the page it is painted on.
  *
  * **What makes a close owed.** The `main` landmark, which is the console shell. A sign-in panel,
- * a kiosk body and a phone screen draw none — and on those there is no header control to bring a
+ * a kiosk body and a phone screen draw none - and on those there is no header control to bring a
  * closed message back, so a close would delete it rather than move it. The same question the
  * board's own gate asks of its frames, and for the same reason; nothing here needs to know which
  * screens those are, because the page says so itself.
  *
  * **It reads a page nobody has acted on, and that is what makes the question answerable.** A
- * transient failure — a submit the server refused, a field rejecting what is being typed — is the
+ * transient failure - a submit the server refused, a field rejecting what is being typed - is the
  * answer to a press, so it is not on a page that has only been loaded. Drive the screen past a
  * submit first and this check will report the refusal, correctly by its own lights and wrongly by
  * the rule: the exemption lives in when it is run, not in what it can see.
  *
  * **And a message that closes may draw nothing at all for a moment, which reads exactly like a
  * screen that has none.** Where the dismissals are remembered per operator on the server, the
- * component holding one draws nothing until that read has answered — so a page caught during the
+ * component holding one draws nothing until that read has answered - so a page caught during the
  * refetch has no messages on it, and a check reading once reports a clean pass over a screen it
  * never read. Nothing distinguishes that from a screen that is genuinely clean. The settle loop
  * around this file is what handles it: `compared` counts the messages found, so the run keeps
  * reading until that number stops moving. **Anybody reading these screens by hand has no such
- * loop** — read twice, and believe the count only once it repeats.
+ * loop** - read twice, and believe the count only once it repeats.
  */
 const standingMessageDrawsNoClose = {
   id: "standingMessageDrawsNoClose",
@@ -1340,12 +1340,12 @@ const standingMessageDrawsNoClose = {
       }
       return false;
     };
-    // What the message says, with its controls' own words taken out — a band whose only text is
+    // What the message says, with its controls' own words taken out - a band whose only text is
     // on a button is a toolbar.
     const prose = (el) => {
       let text = "";
       // The element itself as well as its descendants: a message whose sentence is a direct text
-      // node of the band — which is what a plain tinted div looks like — owns text that a walk
+      // node of the band - which is what a plain tinted div looks like - owns text that a walk
       // over `querySelectorAll("*")` never visits, so the band is read as holding no prose and
       // the finding quotes an empty string.
       for (const node of [el, ...el.querySelectorAll("*")]) {
@@ -1375,7 +1375,7 @@ const standingMessageDrawsNoClose = {
 
     // **Two recognisers, and the second is the answer to the first one's blindness.** A role is
     // what the element publishes to anything reading the page, and every message component worth
-    // the name sets one — but a tinted band with no role reaches neither this check nor a screen
+    // the name sets one - but a tinted band with no role reaches neither this check nor a screen
     // reader, so it is found by its shape instead: a band the width of its column, rounded and
     // tinted apart from the ground behind it, holding a sentence and no structure. A card that
     // holds content holds a heading, fields, a table; a message holds a sentence.
@@ -1402,7 +1402,7 @@ const standingMessageDrawsNoClose = {
       if (r.height > o.messageMaxHeightPx) continue;
       // **Measured across the column, never against the parent, and that is what keeps a badge
       // out.** A pill is tinted, rounded and holds a sentence, and the flex box around it
-      // shrink-wraps it — so a width test against the parent passes every badge in the console,
+      // shrink-wraps it - so a width test against the parent passes every badge in the console,
       // and a rendered audit that cries once is one nobody runs again. What the reader reads
       // across is the column, so that is what a band has to span.
       if (column.width <= 0 || r.width < o.messageBandWidthRatio * column.width) continue;
@@ -1417,7 +1417,7 @@ const standingMessageDrawsNoClose = {
       const r = el.getBoundingClientRect();
       const trailing = r.right - o.closeTrailingRatio * r.width;
       // The close is the wordless control at the end of the band. A message's own action carries
-      // words — 「설명 보기」, a destination — and a label would tie this to one locale.
+      // words - 「설명 보기」, a destination - and a label would tie this to one locale.
       const close = [...el.querySelectorAll('button, [role="button"]')].find((b) => {
         if (b.textContent.trim()) return false;
         const q = b.getBoundingClientRect();
@@ -1457,7 +1457,7 @@ const standingMessageDrawsNoClose = {
  * cards come directly under the row, and the period strip and the tab strip under them.
  *
  * **This rule was written the other way round first, and the reversal is why it says all that.**
- * A rule that inverts does not merely stop finding the defect — it reports every page that obeys
+ * A rule that inverts does not merely stop finding the defect - it reports every page that obeys
  * the new reading and stays silent on every page that breaks it, so a check nobody has re-read
  * against the document it enforces is a check that certifies what it was built to catch. What
  * settled it was somebody looking at a folded strip, which no rule here could have seen.
@@ -1508,7 +1508,7 @@ const theFigureRowSitsAgainstTheHeader = {
     const prose = (el) => {
       let text = "";
       // The element itself as well as its descendants: a message whose sentence is a direct text
-      // node of the band — which is what a plain tinted div looks like — owns text that a walk
+      // node of the band - which is what a plain tinted div looks like - owns text that a walk
       // over `querySelectorAll("*")` never visits, so the band is read as holding no prose and
       // the finding quotes an empty string.
       for (const node of [el, ...el.querySelectorAll("*")]) {
@@ -1521,13 +1521,13 @@ const theFigureRowSitsAgainstTheHeader = {
     };
 
     // **A message belongs to whatever opened the region it is in.** A tab's footnote sits under
-    // the rows it annotates, and a detail panel's message is about the record open in the panel —
+    // the rows it annotates, and a detail panel's message is about the record open in the panel -
     // neither is the page's, and hoisting either to the top of the screen would put it over
     // content it is not true of.
     //
     // **The panel is found by the scroll it owns, and that is a reading only a painted page
-    // affords.** A list-detail panel owns its own scroll — that is what keeps its actions off the
-    // fold — so an ancestor between the message and `main` with `overflow-y: auto | scroll` is a
+    // affords.** A list-detail panel owns its own scroll - that is what keeps its actions off the
+    // fold - so an ancestor between the message and `main` with `overflow-y: auto | scroll` is a
     // region showing something the reader opened. `main` itself is excluded because the page's own
     // scrollport is every message's ancestor, and a climb that counted it would empty the rule.
     const insideAnOpenedRegion = (el) => {
@@ -1570,7 +1570,7 @@ const theFigureRowSitsAgainstTheHeader = {
       if (r.height > o.messageMaxHeightPx) continue;
       // **Measured across the column, never against the parent, and that is what keeps a badge
       // out.** A pill is tinted, rounded and holds a sentence, and the flex box around it
-      // shrink-wraps it — so a width test against the parent passes every badge in the console,
+      // shrink-wraps it - so a width test against the parent passes every badge in the console,
       // and a rendered audit that cries once is one nobody runs again. What the reader reads
       // across is the column, so that is what a band has to span.
       if (column.width <= 0 || r.width < o.messageBandWidthRatio * column.width) continue;
@@ -1581,7 +1581,7 @@ const theFigureRowSitsAgainstTheHeader = {
 
     // A row of figures: siblings of one height, side by side, each carrying a number. A line of a
     // table matches every one of those tests, so a table is out by containment rather than by
-    // size — its cells are the same shape as tiles and only the table says which they are.
+    // size - its cells are the same shape as tiles and only the table says which they are.
     const rows = [];
     for (const parent of main.querySelectorAll("*")) {
       if (parent.closest('table, [role="table"], [role="grid"], [role="rowgroup"]')) continue;
@@ -1636,20 +1636,20 @@ const theFigureRowSitsAgainstTheHeader = {
  *
  * The defect it exists to catch: a screen draws 「들어가지 못한 행이 112행 남아 있습니다」 in amber
  * above 「원본 파일이 없는 회차가 2건 있습니다」 in red, so the first thing the reader meets is the
- * second thing they have to deal with. The region's order is the header control's — 위험 · 경고 ·
- * 알림 · 도움말 — and a reader who works down the page top to bottom is working down it in the
+ * second thing they have to deal with. The region's order is the header control's - 위험 · 경고 ·
+ * 알림 · 도움말 - and a reader who works down the page top to bottom is working down it in the
  * wrong order.
  *
  * **Why this cannot be read from the source.** A card's kind is an expression as often as it is a
  * literal: `kind={outstanding > 0 ? "warning" : "info"}` decides at the tag, `kind={isSubject ?
  * "warning" : undetermined ? "help" : "info"}` decides three ways, and a card drawn inside a `.map`
  * paints several kinds from one tag at once. A source rule reads the loudest arm of the ternary
- * because that is the one a reader meets on the day it matters — **only the page knows which one
+ * because that is the one a reader meets on the day it matters - **only the page knows which one
  * is drawn today.**
  *
  * **What it keys on, and the wrinkle.** The glyph, because it is per-kind rather than per-theme and
  * a component library changes a class before it changes what it draws. But this product's kinds are
- * three glyphs for four kinds **on purpose** — `danger` and `warning` share the triangle, so that
+ * three glyphs for four kinds **on purpose** - `danger` and `warning` share the triangle, so that
  * 「something is wrong」 separates from 「this is an explanation」 by SHAPE, and red from amber inside
  * that pair by colour. So the glyph cannot split that one pair, and the split is read off the role
  * instead: a message that announces itself as an interruption is the warning. Both live in
@@ -1709,8 +1709,8 @@ const theCardRegionReadsLoudestFirst = {
     // grouping by the pane they share would ask for the SECTIONS to be reordered.
     //
     // **Anything narrower finds no run at all**, which is the quiet half. A message component may
-    // wrap its own banner in a box of its own — to scroll it into view, to measure it, to animate
-    // it — so the element carrying the role has a parent nobody wrote and no siblings. Taking the
+    // wrap its own banner in a box of its own - to scroll it into view, to measure it, to animate
+    // it - so the element carrying the role has a parent nobody wrote and no siblings. Taking the
     // parent as the region then puts every card in a region of one, the rule compares nothing, and
     // 「compared 0」 on a screen with four cards on it reads exactly like a screen with none.
     const regionOf = (el) => {
@@ -1831,17 +1831,17 @@ const theCardRegionReadsLoudestFirst = {
  *
  * <p><b>Its source-reading sibling covers only the keys written as literals.</b>
  * `missing-translation-key` in `audit-frontend.mjs` reads `t("a.b")` out of the file and compares
- * it against the catalogue, which is most keys and not the dangerous ones — a key BUILT at runtime
+ * it against the catalogue, which is most keys and not the dangerous ones - a key BUILT at runtime
  * (`` t(`form.${field}`) ``, `t(`tab.${key}`)`) has no literal to read, and the set of values it can
  * take is decided by a server response or by a list somewhere else. That is exactly the case where
- * the catalogue is incomplete, and it is invisible to any file reader — one console carries 305 of
+ * the catalogue is incomplete, and it is invisible to any file reader - one console carries 305 of
  * those call sites, which is the size of what the source rule cannot see. The two rules read as
  * though they overlap and they do not: deleting either leaves half the family uncovered.
  *
  * <p><b>So it is decided from the painted page, where the answer is unambiguous.</b> Whatever the
  * key was built from, what reached the screen is either a sentence or an identifier.
  *
- * <p><b>What is deliberately an identifier stays quiet.</b> Code, a file name, a host, a version —
+ * <p><b>What is deliberately an identifier stays quiet.</b> Code, a file name, a host, a version -
  * each has the shape and none of the meaning, and a rendered audit that cries once is one nobody
  * runs again. The test that separates them: a key's last segment is a word rather than an
  * extension or a TLD, or it carries an inner capital, or it has three segments.
@@ -1939,7 +1939,7 @@ export function snippet(check, options = {}) {
 
 /**
  * `agent-browser` is the driver of record. The session name is its own so a run here never
- * takes over the tab another agent is signed into — two runs sharing one profile produce
+ * takes over the tab another agent is signed into - two runs sharing one profile produce
  * captures and readings of the wrong screen that look entirely correct.
  */
 function agentBrowser(session, args) {
@@ -1958,7 +1958,7 @@ function pause(ms) {
  * Whether a daemon is already serving this session name.
  *
  * <p>A named session holds a full browser between commands and ends only when something closes
- * it — not when this process exits. So the run has to know whether it opened the session or
+ * it - not when this process exits. So the run has to know whether it opened the session or
  * joined one, because closing a session the caller is mid-audit in takes their signed-in state
  * with it, and leaving one this run opened leaves a browser resident with nobody to reclaim it.
  */
@@ -1977,7 +1977,7 @@ function sessionIsRunning(session) {
  * Closes one session by name.
  *
  * <p>Never `close --all`: the daemon is shared, so that flag ends every other agent's session
- * too. Failure here is reported and not thrown — a browser left open is worth a line on stderr
+ * too. Failure here is reported and not thrown - a browser left open is worth a line on stderr
  * and never worth losing the audit's own result over.
  */
 function closeSession(session) {
@@ -1999,7 +1999,7 @@ function evaluateOnce(session, check, options) {
  *
  * <p><b>A list fetches its rows after the document loads, so evaluating at `open` measures the
  * shell.</b> The total badge is not painted yet, the table body is empty, and every check reports
- * `compared 0` — which prints beside a `✔` and reads exactly like a screen with nothing wrong. The
+ * `compared 0` - which prints beside a `✔` and reads exactly like a screen with nothing wrong. The
  * defect this file exists to catch lives in the state that arrives a few hundred milliseconds
  * later, so the measurement waits for it.
  *
@@ -2023,18 +2023,18 @@ function evaluate(session, url, check, options) {
 }
 
 // ---------------------------------------------------------------------------
-// The fixtures the self-test drives — generated, never kept
+// The fixtures the self-test drives - generated, never kept
 // ---------------------------------------------------------------------------
 
 /**
  * Per check: the defect it exists to catch, and the pages it must stay quiet on. They are
  * written to a temporary directory and deleted, because a fixture left on disk beside real
- * pages cannot be told from one — both are files, both look shot.
+ * pages cannot be told from one - both are files, both look shot.
  *
  * **The clean side carries more than one page on purpose.** A check that fires on everything
  * and a check that fires on nothing both pass a single pair, and the way this family fires on
  * everything is specific and predictable: reading any number as a row total, or any overlap
- * as a collision. So each `quiet` page is a shape that tempts exactly that — a dashboard of
+ * as a collision. So each `quiet` page is a shape that tempts exactly that - a dashboard of
  * stat tiles, a list that is honestly empty, a dialog over a page, a sticky header scrolled
  * across content.
  */
@@ -2042,8 +2042,8 @@ const FIXTURES = {
   theCardRegionReadsLoudestFirst: {
     broken: {
       // **The shape the product actually paints, and the one a fixture written from the rule's
-      // imagination leaves out.** The card component wraps its own banner in a box of its own — to
-      // scroll a restored card into view — so the element carrying the role has a parent nobody
+      // imagination leaves out.** The card component wraps its own banner in a box of its own - to
+      // scroll a restored card into view - so the element carrying the role has a parent nobody
       // wrote and no siblings. A rule taking that parent as the region puts every card in a region
       // of one and compares nothing, and 「compared 0」 on a page with three cards reads exactly
       // like a page with none. Written flat, every other fixture here passes either way.
@@ -2056,7 +2056,7 @@ const FIXTURES = {
         <div class=wrap><div role=note class="msg danger"><svg class="lucide lucide-triangle-alert" width=16 height=16><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg><span>원본 파일이 없는 회차가 2건 있습니다</span><button><svg width=12 height=12><path d="M1 1 L11 11"/></svg></button></div></div>
         </main>`,
       // A tab pane whose explanation stands above its warning. The pane's cards are not the
-      // page's — the placement rule leaves them alone for that reason — but the reader works down
+      // page's - the placement rule leaves them alone for that reason - but the reader works down
       // this column exactly as they work down the page, so the order is judged inside the pane.
       "cards inside a tab pane, out of order":
         `<style>body{margin:0;font:14px sans-serif}main{padding:16px;width:1000px}
@@ -2070,7 +2070,7 @@ const FIXTURES = {
           <div role=alert class="msg warn"><svg class="lucide lucide-triangle-alert" width=16 height=16><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg><span>자정을 넘기는 교대가 1개 있습니다</span><button><svg width=12 height=12><path d="M1 1 L11 11"/></svg></button></div>
         </div></main>`,
       // The same inside a detail panel. It belongs to the record open in the panel and it is
-      // still read top to bottom, so its own cards are ordered against each other — never against
+      // still read top to bottom, so its own cards are ordered against each other - never against
       // the page's, which is what grouping by region buys.
       "cards inside a detail panel that owns its scroll":
         `<style>html,body{margin:0;height:100%;font:14px sans-serif}
@@ -2095,7 +2095,7 @@ const FIXTURES = {
         <div role=note class="msg danger"><svg class="lucide lucide-triangle-alert" width=16 height=16><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg><span>원본 파일이 없는 회차가 2건 있습니다</span><button><svg width=12 height=12><path d="M1 1 L11 11"/></svg></button></div>
         </main>`,
       // The two wrong kinds share a glyph on purpose, so this pair is the one a check keyed on the
-      // shape alone cannot see at all — it is the role that separates them.
+      // shape alone cannot see at all - it is the role that separates them.
       "an explanation above both of the kinds that name something wrong":
         `<style>body{margin:0;font:14px sans-serif}main{padding:16px;width:1000px}
         .msg{border:1px solid #ccc;border-radius:6px;padding:8px 12px;display:flex;gap:8px;align-items:center;margin-bottom:8px}
@@ -2193,7 +2193,7 @@ const FIXTURES = {
   standingMessageDrawsNoClose: {
     broken: {
       // The screen this was written from: two messages that close, the figures, then a red one
-      // with no close at all. Both source rules were green on it — one read the first message and
+      // with no close at all. Both source rules were green on it - one read the first message and
       // asked what stood in front of it, the other exempted the red one as a ternary arm.
       "a red message with no close, under two that have one":
         `<style>body{margin:0;font:14px sans-serif}main{padding:16px;width:1000px}
@@ -2206,7 +2206,7 @@ const FIXTURES = {
         <div class=figs><div class=fig>가져온 회차<br>34건</div><div class=fig>실패<br>2건</div></div>
         <div role=alert class=msg style="background:#fef2f2"><svg width=16 height=16><path d="M8 1 L15 14 H1 Z"/></svg><span class=body>원본 파일이 없는 회차가 2건 있습니다</span></div>
         </main>`,
-      // The message drawn as a plain tinted band with no role at all — invisible to a rule keyed
+      // The message drawn as a plain tinted band with no role at all - invisible to a rule keyed
       // on a role, and to a screen reader. Found by the band it draws.
       "a tinted band holding a sentence, with no role and no close":
         `<style>body{margin:0;font:14px sans-serif}main{padding:16px;width:1000px}
@@ -2250,7 +2250,7 @@ const FIXTURES = {
         <div role=status class=toast><svg width=16 height=16><path d="M2 8 L6 12 L14 3"/></svg> 저장했습니다</div>`,
       // The header control's own drop, which draws every hidden message again with 「다시 보이기」
       // beside it rather than a close. Read as cards on the page, each hidden message is reported
-      // as a message with no close — which is the one outcome this whole mechanism exists to stop.
+      // as a message with no close - which is the one outcome this whole mechanism exists to stop.
       "the header control's drop, holding the messages that were put away":
         `<style>body{margin:0;font:14px sans-serif}main{padding:16px;width:1000px}
         .drop{position:absolute;right:16px;top:40px;width:420px;border:1px solid #ddd;border-radius:8px;padding:12px;background:#fff}
@@ -2261,7 +2261,7 @@ const FIXTURES = {
             <button>다시 보이기</button></div>
         </div></main>`,
       // A settings card. It is tinted, rounded and the width of its column, and it is not a
-      // message — a card that holds content holds structure, and this one holds a heading and
+      // message - a card that holds content holds structure, and this one holds a heading and
       // fields. A shape rule without that test reports every settings screen.
       "a settings card the width of its column":
         `<style>body{margin:0;font:14px sans-serif}main{padding:16px;width:1000px}
@@ -2269,7 +2269,7 @@ const FIXTURES = {
         <main><div class=card><h3>알림 정책</h3>
         <label>재시도 횟수 <input value="3"></label></div></main>`,
       // Badges in a list, and a date-range pill in a toolbar. Every one of them is tinted,
-      // rounded and holds a sentence, and the flex box around each shrink-wraps it — so a width
+      // rounded and holds a sentence, and the flex box around each shrink-wraps it - so a width
       // measured against the parent reads all of them as bands the width of their column. This is
       // not hypothetical: the first run of this check over the console reported eighteen of them,
       // 「가져올 수 없음」 · 「법정 최소 기준 미달」 · 「도달 확인 필요」 four rows at a time.
@@ -2285,7 +2285,7 @@ const FIXTURES = {
         <tr><td>2026-08-02 반입</td><td><span class=badge>가져올 수 없음</span></td></tr>
         <tr><td>2026-08-03 반입</td><td><span class=badge>도달 확인 필요</span></td></tr>
         </tbody></table></main>`,
-      // A pressed control painted like a message — tinted, rounded, a few words. What separates
+      // A pressed control painted like a message - tinted, rounded, a few words. What separates
       // the two is that one of them is pressed, and the console draws one on its retention screen.
       "a tinted button the width of its own box":
         `<style>body{margin:0;font:14px sans-serif}main{padding:16px;width:1000px}
@@ -2303,7 +2303,7 @@ const FIXTURES = {
   theFigureRowSitsAgainstTheHeader: {
     broken: {
       // The same defect inside a scrolling page. The page's own scrollport is every message's
-      // ancestor, so the region exemption must not reach it — a climb that counted `main` would
+      // ancestor, so the region exemption must not reach it - a climb that counted `main` would
       // exempt every card on every screen and this rule would report nothing for ever.
       "a card between the header and the row, with main scrolling":
         `<style>html,body{margin:0;height:100%;font:14px sans-serif}
@@ -2313,7 +2313,7 @@ const FIXTURES = {
         <main><div role=alert class=msg><svg width=16 height=16><path d="M8 1 L15 14 H1 Z"/></svg> 법정 최소 기준에 미달하는 정책이 2건 있습니다
         <button><svg width=12 height=12><path d="M1 1 L11 11"/></svg></button></div>
         <div class=figs><div class=fig>보존 정책<br>12건</div><div class=fig>법정 미달<br>2건</div></div></main>`,
-      // Two cards between the header and the row. Both are findings — a rule reporting only the
+      // Two cards between the header and the row. Both are findings - a rule reporting only the
       // one nearest the row would leave the other in place and read as having cleared the page.
       "two cards between the header and the row":
         `<style>body{margin:0;font:14px sans-serif}main{padding:16px;width:1000px}
@@ -2325,7 +2325,7 @@ const FIXTURES = {
         <div class=figs><div class=fig>안전검사 대상<br>31대</div><div class=fig>기한 지남<br>2대</div></div></main>`,
       // The shape this rule exists to catch: a card wedged between the page header and the
       // figure row. The row folds behind the header's rule, so the card severs the fold from the
-      // thing it folds behind — and this was the CORRECT arrangement under the rule's first
+      // thing it folds behind - and this was the CORRECT arrangement under the rule's first
       // reading, which is why it sits here as the broken one rather than being deleted.
       "a message above the tile row":
         `<style>body{margin:0;font:14px sans-serif}main{padding:16px;width:1000px}
@@ -2347,7 +2347,7 @@ const FIXTURES = {
         <div role=alert class=msg><svg width=16 height=16><path d="M8 1 L15 14 H1 Z"/></svg> 기한이 지난 설비 2대가 있습니다
         <button><svg width=12 height=12><path d="M1 1 L11 11"/></svg></button></div></main>`,
       // Cards a long way down the page, under a sheet, with the row still against the header.
-      // Distance below the row is not the subject — only what stands between the row and the
+      // Distance below the row is not the subject - only what stands between the row and the
       // header is.
       "messages at the foot of a long page, under the sheet":
         `<style>body{margin:0;font:14px sans-serif}main{padding:16px;width:1000px}
@@ -2383,8 +2383,8 @@ const FIXTURES = {
           <div role=note class=msg><svg width=16 height=16><circle cx=8 cy=8 r=7/></svg> 야간 근무는 시작한 날의 영업일로 셉니다
           <button><svg width=12 height=12><path d="M1 1 L11 11"/></svg></button></div>
         </div></main>`,
-      // A table under the message. Its rows are the same shape as a tile row — siblings of one
-      // height, side by side, each carrying a number — and only the table says which they are, so
+      // A table under the message. Its rows are the same shape as a tile row - siblings of one
+      // height, side by side, each carrying a number - and only the table says which they are, so
       // a rule reading size alone reads every list as a row of figures and reports the message
       // above it.
       "a message above a table whose cells look like figures":
@@ -2397,7 +2397,7 @@ const FIXTURES = {
         <tr><td>박근로</td><td>2024-03-01</td><td>148</td></tr>
         <tr><td>김작업</td><td>2024-05-11</td><td>149</td></tr></tbody></table></main>`,
       // A detail panel's own message, about the record open in the panel. It sits several hundred
-      // pixels below the figures on the painted page and it is not the page's to hoist — putting it
+      // pixels below the figures on the painted page and it is not the page's to hoist - putting it
       // at the top of the screen would say it is true of every row, when it is true of one. The
       // panel is found by the scroll it owns, which no source rule can read.
       "a message inside a detail panel that owns its scroll":
@@ -2474,7 +2474,7 @@ const FIXTURES = {
         <div class=panelbody><p>01. 야간 당직 인수인계 사항</p><p>02. 야간 당직 인수인계 사항</p><p>03. 야간 당직 인수인계 사항</p><p>04. 야간 당직 인수인계 사항</p><p>05. 야간 당직 인수인계 사항</p><p>06. 야간 당직 인수인계 사항</p><p>07. 야간 당직 인수인계 사항</p><p>08. 야간 당직 인수인계 사항</p><p>09. 야간 당직 인수인계 사항</p><p>10. 야간 당직 인수인계 사항</p><p>11. 야간 당직 인수인계 사항</p><p>12. 야간 당직 인수인계 사항</p><p>13. 야간 당직 인수인계 사항</p><p>14. 야간 당직 인수인계 사항</p></div>
         <div class=panelfoot>닫기 · 되돌리기</div></div></div></div>`,
       // A modal over the page this check was written from. The document is frozen and the app
-      // root is `aria-hidden`, so the page's own list becomes the only thing that moves — and it
+      // root is `aria-hidden`, so the page's own list becomes the only thing that moves - and it
       // is a region behind a modal, which the reader cannot reach at all. The same screen with
       // the modal closed is the `broken` page above, so a check that fires here is answering
       // 「is a dialog open」 rather than 「is this screen stuck」.
@@ -2521,7 +2521,7 @@ const FIXTURES = {
         p{margin:0;padding:10px;border-bottom:1px solid #eee}</style>
         <div role=dialog aria-modal=true class=dlg><h2>야간 당직 인수인계</h2>
         <div class=body><p>01. 야간 당직 인수인계 사항</p><p>02. 야간 당직 인수인계 사항</p><p>03. 야간 당직 인수인계 사항</p><p>04. 야간 당직 인수인계 사항</p><p>05. 야간 당직 인수인계 사항</p><p>06. 야간 당직 인수인계 사항</p><p>07. 야간 당직 인수인계 사항</p><p>08. 야간 당직 인수인계 사항</p><p>09. 야간 당직 인수인계 사항</p><p>10. 야간 당직 인수인계 사항</p><p>11. 야간 당직 인수인계 사항</p><p>12. 야간 당직 인수인계 사항</p><p>13. 야간 당직 인수인계 사항</p><p>14. 야간 당직 인수인계 사항</p><p>15. 야간 당직 인수인계 사항</p><p>16. 야간 당직 인수인계 사항</p><p>17. 야간 당직 인수인계 사항</p><p>18. 야간 당직 인수인계 사항</p><p>19. 야간 당직 인수인계 사항</p><p>20. 야간 당직 인수인계 사항</p><p>21. 야간 당직 인수인계 사항</p><p>22. 야간 당직 인수인계 사항</p><p>23. 야간 당직 인수인계 사항</p><p>24. 야간 당직 인수인계 사항</p><p>25. 야간 당직 인수인계 사항</p><p>26. 야간 당직 인수인계 사항</p><p>27. 야간 당직 인수인계 사항</p><p>28. 야간 당직 인수인계 사항</p><p>29. 야간 당직 인수인계 사항</p><p>30. 야간 당직 인수인계 사항</p><p>31. 야간 당직 인수인계 사항</p><p>32. 야간 당직 인수인계 사항</p><p>33. 야간 당직 인수인계 사항</p><p>34. 야간 당직 인수인계 사항</p><p>35. 야간 당직 인수인계 사항</p><p>36. 야간 당직 인수인계 사항</p><p>37. 야간 당직 인수인계 사항</p><p>38. 야간 당직 인수인계 사항</p><p>39. 야간 당직 인수인계 사항</p><p>40. 야간 당직 인수인계 사항</p></div></div>`,
-      // A navigation column. It is narrow, it is tall and it scrolls its own entries — and the
+      // A navigation column. It is narrow, it is tall and it scrolls its own entries - and the
       // content area standing beside it is what says the reader is not stuck.
       "a navigation column scrolling beside the content":
         `<style>html,body{margin:0;height:100%;overflow:hidden;font:14px sans-serif}
@@ -2547,7 +2547,7 @@ const FIXTURES = {
         <div class=row><div class=nav></div>
         <main><h1>비상 연락처</h1><table><tbody><tr><td>119 종합상황실</td><td>02-000-1000</td></tr><tr><td>관할 소방서</td><td>02-000-1001</td></tr><tr><td>관할 경찰서</td><td>02-000-1002</td></tr><tr><td>협력 병원</td><td>02-000-1003</td></tr><tr><td>환경청 상황실</td><td>02-000-1004</td></tr><tr><td>안전보건공단</td><td>02-000-1005</td></tr><tr><td>한국가스안전공사</td><td>02-000-1006</td></tr><tr><td>한국전기안전공사</td><td>02-000-1007</td></tr><tr><td>관할 지방고용노동관서</td><td>02-000-1008</td></tr><tr><td>야간 당직 안전담당</td><td>02-000-1009</td></tr><tr><td>사업장 안전보건관리책임자</td><td>02-000-1010</td></tr><tr><td>협력사 현장대리인</td><td>02-000-1011</td></tr><tr><td>가스 공급사 비상연락</td><td>02-000-1012</td></tr><tr><td>전기 수전실 당직</td><td>02-000-1013</td></tr><tr><td>폐수처리 위탁사</td><td>02-000-1014</td></tr><tr><td>산업보건의</td><td>02-000-1015</td></tr><tr><td>보건관리자</td><td>02-000-1016</td></tr><tr><td>소방안전관리자</td><td>02-000-1017</td></tr><tr><td>방재실</td><td>02-000-1018</td></tr><tr><td>정문 경비</td><td>02-000-1019</td></tr></tbody></table></main></div></div>`,
       // A control that scrolls its own value. It is wide, it is tall, and the page around it is
-      // frozen — every test but the one that matters says this is the defect.
+      // frozen - every test but the one that matters says this is the defect.
       "a long note in a text box the reader scrolls":
         `<style>html,body{margin:0;height:100%;overflow:hidden;font:14px sans-serif}</style>
         <textarea style="width:600px;height:300px">01. 야간 당직 인수인계 사항\n02. 야간 당직 인수인계 사항\n03. 야간 당직 인수인계 사항\n04. 야간 당직 인수인계 사항\n05. 야간 당직 인수인계 사항\n06. 야간 당직 인수인계 사항\n07. 야간 당직 인수인계 사항\n08. 야간 당직 인수인계 사항\n09. 야간 당직 인수인계 사항\n10. 야간 당직 인수인계 사항\n11. 야간 당직 인수인계 사항\n12. 야간 당직 인수인계 사항\n13. 야간 당직 인수인계 사항\n14. 야간 당직 인수인계 사항\n15. 야간 당직 인수인계 사항\n16. 야간 당직 인수인계 사항\n17. 야간 당직 인수인계 사항\n18. 야간 당직 인수인계 사항\n19. 야간 당직 인수인계 사항\n20. 야간 당직 인수인계 사항\n21. 야간 당직 인수인계 사항\n22. 야간 당직 인수인계 사항\n23. 야간 당직 인수인계 사항\n24. 야간 당직 인수인계 사항\n25. 야간 당직 인수인계 사항\n26. 야간 당직 인수인계 사항\n27. 야간 당직 인수인계 사항\n28. 야간 당직 인수인계 사항\n29. 야간 당직 인수인계 사항\n30. 야간 당직 인수인계 사항\n31. 야간 당직 인수인계 사항\n32. 야간 당직 인수인계 사항\n33. 야간 당직 인수인계 사항\n34. 야간 당직 인수인계 사항\n35. 야간 당직 인수인계 사항\n36. 야간 당직 인수인계 사항\n37. 야간 당직 인수인계 사항\n38. 야간 당직 인수인계 사항\n39. 야간 당직 인수인계 사항\n40. 야간 당직 인수인계 사항</textarea>`,
@@ -2558,7 +2558,7 @@ const FIXTURES = {
       // A list-detail screen: the toolbar says fourteen, the list draws none, and the detail
       // panel on the right holds a table with rows in it. Counting rows anywhere in the page
       // would read that panel's rows as the list's and go quiet on exactly this screen.
-      // The same defect with the total written the way a component library writes it — an inline
+      // The same defect with the total written the way a component library writes it - an inline
       // icon in front of the words. Reading 「owns text」 as 「has no element children」 walks past
       // this one, and the check then reports 「compared 0」 on every screen of such a product.
       "a total of 14 in a badge with a leading icon, over an empty column":
@@ -2585,7 +2585,7 @@ const FIXTURES = {
           <div class=empty>표시할 법령이 없습니다</div></div>`,
       // The narrow shape of the same defect. Below its card breakpoint the list draws cards
       // rather than a table, so a check looking only for table rows has to keep finding the
-      // absence here too — otherwise it goes quiet on every phone-width list.
+      // absence here too - otherwise it goes quiet on every phone-width list.
       "a total of 14 in card layout, over a column that draws no cards":
         `<style>body{margin:0;font:14px sans-serif}.pane{width:400px}
         .bar{padding:8px 16px}.cards{display:flex;flex-direction:column;gap:8px;padding:8px}</style>
@@ -2594,7 +2594,7 @@ const FIXTURES = {
       // The rows are all there and the reader can see none of them: the region that holds them is
       // squeezed to the height its siblings left over and clips what does not fit, with nothing in
       // the chain that scrolls. Every string is right, the request answered, the rectangles are
-      // real — and the screen under 「전체 42건」 is a filter bar and white space.
+      // real - and the screen under 「전체 42건」 is a filter bar and white space.
       "a list clipped to nothing by a region that cannot scroll":
         `<style>body{margin:0;font:14px sans-serif}
         .page{height:120px;display:flex;flex-direction:column}
@@ -2612,7 +2612,7 @@ const FIXTURES = {
     },
     quiet: {
       // The same squeeze, with the region allowed to scroll. The rows below the fold are one
-      // gesture away, which is what every long list on every screen looks like — a check that
+      // gesture away, which is what every long list on every screen looks like - a check that
       // fired here would fire on all of them.
       "a list taller than its region, in a region that scrolls":
         `<style>body{margin:0;font:14px sans-serif}
@@ -2747,7 +2747,7 @@ const FIXTURES = {
     // Built with script rather than written as markup on purpose: the HTML parser closes a
     // paragraph in front of a block, so a fixture written the plain way produces siblings and
     // proves nothing. A framework builds its tree through the DOM API, which is why the invalid
-    // nesting reaches a real screen — and the fixture has to arrive the same way.
+    // nesting reaches a real screen - and the fixture has to arrive the same way.
     broken: {
       "a composed label appended into a paragraph slot":
         `<style>body{margin:0;font:14px sans-serif}.row{display:flex;gap:12px;padding:8px 16px}
@@ -2852,7 +2852,7 @@ const FIXTURES = {
         </div>
         <div class=foot>전체 4건</div>`,
       // The coverer declares it is not there for the pointer, so the browser's own hit test walks
-      // past it — which is the same test a reader's finger takes.
+      // past it - which is the same test a reader's finger takes.
       "a decorative layer that lets the pointer through":
         `<style>body{margin:0;font:14px sans-serif}
         .foot{position:relative;display:flex;gap:8px;padding:12px 16px}button{padding:8px 14px}
@@ -2864,7 +2864,7 @@ const FIXTURES = {
     broken: {
       // The screen this check was written from: tiles, a banner, a reference table and a page note
       // above a list, all inside a column told to fit the fold. The list is the only child that can
-      // give, so it gives everything — twenty-one pixels of a thirty-one-row list, and no scrollbar
+      // give, so it gives everything - twenty-one pixels of a thirty-one-row list, and no scrollbar
       // anywhere, because nothing overflowed.
       "a list region left twenty-one pixels of six hundred":
         `<style>body{margin:0;font:14px sans-serif}
@@ -2880,7 +2880,7 @@ const FIXTURES = {
         <tr><td>관할 지방고용노동관서</td></tr><tr><td>야간 당직 안전담당</td></tr>
         </tbody></table></div></div>`,
       // The same crush taken all the way. The panel's scrolling body is handed nothing at all, so
-      // it measures zero over nineteen hundred pixels — and a scrolling region at zero is not a
+      // it measures zero over nineteen hundred pixels - and a scrolling region at zero is not a
       // closed accordion, it is the reader pressing a row and being shown a title and two buttons.
       "a scrolling panel body left nothing of nineteen hundred":
         `<style>body{margin:0;font:14px sans-serif}
@@ -2910,7 +2910,7 @@ const FIXTURES = {
         <tr><td>관할 지방고용노동관서</td></tr><tr><td>야간 당직 안전담당</td></tr>
         </tbody></table></div>`,
       // A region closed on purpose. It measures nothing because the reader closed it, and it says
-      // so — the control above it is the way back.
+      // so - the control above it is the way back.
       "a collapsed accordion holding its content at zero":
         `<style>body{margin:0;font:14px sans-serif}
         .fold{height:0;width:900px;overflow:hidden}p{margin:0;padding:10px}</style>
@@ -2919,7 +2919,7 @@ const FIXTURES = {
         <p>한도를 넘지는 않았습니다.</p><p>사업장 설정이 정합니다.</p><p>박관리 · 한설비</p>
         <p>금·토·일</p><p>이레 내내</p><p>연속 당직 한도 3일</p><p>토요일 야간</p><p>보건 당직</p></div>`,
       // A chip row that scrolls sideways. It is short because chips are short, and it holds
-      // exactly its own height — the overflow is on the other axis.
+      // exactly its own height - the overflow is on the other axis.
       "a chip row scrolling sideways at its own height":
         `<style>body{margin:0;font:14px sans-serif}
         .chips{width:900px;height:36px;overflow-x:auto;overflow-y:hidden;white-space:nowrap}
@@ -2977,7 +2977,7 @@ const FIXTURES = {
           <p class=mono>gate.form.graceUnit</p>
           <code>t("gate.form.notify")</code>
         </div>`,
-      // A page with no text nodes of that shape at all — the check has to say it compared plenty
+      // A page with no text nodes of that shape at all - the check has to say it compared plenty
       // and found none, rather than inventing a finding out of the chrome.
       "an ordinary screen":
         `<style>body{margin:0;font:14px sans-serif}</style>
@@ -2998,7 +2998,7 @@ const FIXTURES = {
         </div>
         <div role=tabpanel aria-labelledby=t1 class=pane></div>
         <div role=tabpanel aria-labelledby=t2 class=pane hidden>전체 0건 · 열려 있는 세션이 없습니다</div>`,
-      // The same gap with the pane's children present but every one of them rendering nothing —
+      // The same gap with the pane's children present but every one of them rendering nothing -
       // a wrapper `Stack` around a conditional that took the branch with no arm.
       "an open pane whose children are all empty wrappers":
         `<style>body{margin:0;font:14px sans-serif}.pane{padding:16px;width:900px}</style>
@@ -3027,7 +3027,7 @@ const FIXTURES = {
           <svg width="640" height="220"><path d="M0 200 L120 140 L240 160 L360 60" /></svg>
         </div>`,
       // Every pane behind a tab nobody pressed. They are empty because they are hidden, which is
-      // how a tab set works — a check reading presence rather than paint fires on every screen.
+      // how a tab set works - a check reading presence rather than paint fires on every screen.
       "a tab set whose unopened panes are empty":
         `<style>body{margin:0;font:14px sans-serif}.pane{padding:16px;width:900px}</style>
         <div role=tablist>
@@ -3051,7 +3051,7 @@ const FIXTURES = {
  * Both directions, against generated fixtures.
  *
  * <p>`selected` narrows to `--check <id>`, because iterating on one check should not mean sitting
- * through every other check's pages — and because a flag the run accepts and then ignores is the
+ * through every other check's pages - and because a flag the run accepts and then ignores is the
  * thing this file refuses an unrecognised option in order to avoid.
  */
 function selfTest(session, options, selected = checks) {
@@ -3159,7 +3159,7 @@ function main() {
   }
   // Everything below here drives a browser. A session this run opens is this run's to close, on
   // every path out including a thrown one; a session that was already serving belongs to whoever
-  // opened it and is left exactly as found. `--keep-session` holds one open on purpose — for a
+  // opened it and is left exactly as found. `--keep-session` holds one open on purpose - for a
   // caller that runs this script several times against the same screen and pays the browser
   // start-up once.
   const keepSession = process.argv.includes("--keep-session");
@@ -3195,7 +3195,7 @@ function run(session, options, selected) {
       return 2;
     }
     // A check that compared nothing is not a check that passed. It reaches nothing on a screen
-    // this check has no subject on — a form, a dashboard with no list — and it reaches nothing
+    // this check has no subject on - a form, a dashboard with no list - and it reaches nothing
     // just as silently when the screen it was pointed at never finished arriving. Both are the
     // reader's to judge, and neither is a `✔`.
     const reachedNothing = out.compared === 0;
@@ -3218,7 +3218,7 @@ function run(session, options, selected) {
 }
 
 // `realpathSync` on both sides, because the plugin is installed as a symlink into
-// `~/.claude/skills/` — comparing the raw argv path against `import.meta.url` makes the
+// `~/.claude/skills/` - comparing the raw argv path against `import.meta.url` makes the
 // script exit silently with status 0 when it is run through that link, which is the same
 // picture on screen as a run that found nothing wrong.
 const invokedDirectly =

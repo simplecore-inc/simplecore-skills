@@ -74,7 +74,7 @@ public FullDownloadResult triggerFullDownload(String controllerId) { ... }
 
 1. Summary sentence (first sentence, ends with period)
 2. `<p>` paragraphs for additional context
-3. `@param` — one per parameter, in declaration order
-4. `@return` — what the method returns (skip for `void`)
-5. `@throws` / `@exception` — with `ErrorCode` context for `SimpliXGeneralException`
-6. `@see` — cross-references (sparingly)
+3. `@param` - one per parameter, in declaration order
+4. `@return` - what the method returns (skip for `void`)
+5. `@throws` / `@exception` - with `ErrorCode` context for `SimpliXGeneralException`
+6. `@see` - cross-references (sparingly)

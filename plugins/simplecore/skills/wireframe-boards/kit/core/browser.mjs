@@ -1,4 +1,4 @@
-// One local Chrome, driven over the DevTools protocol — the browser every tool here shares.
+// One local Chrome, driven over the DevTools protocol - the browser every tool here shares.
 //
 // This exists instead of a browser-automation package because the board folder has no
 // `package.json` and no `node_modules`, and keeping it that way is what makes every tool
@@ -17,7 +17,7 @@ import { homedir, tmpdir } from 'node:os';
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-// The installed browser first, then the ones playwright or puppeteer downloaded — a machine
+// The installed browser first, then the ones playwright or puppeteer downloaded - a machine
 // that has ever run either has one on disk, and asking for an install that is already there
 // is a way to fail a build for no reason.
 export function findChrome() {
@@ -171,7 +171,7 @@ class Page {
   }
 
   // evaluate(fn, arg) or evaluate('expression'). The function runs in the page, so it may
-  // only use what the page has — no closures over anything out here.
+  // only use what the page has - no closures over anything out here.
   async evaluate(fnOrExpression, arg) {
     const expression = typeof fnOrExpression === 'function'
       ? `(${fnOrExpression.toString()})(${arg === undefined ? '' : JSON.stringify(arg)})`
@@ -209,7 +209,7 @@ class Page {
 
   async pdf(options) {
     const { stream } = await this.send('Page.printToPDF', { ...options, transferMode: 'ReturnAsStream' });
-    // The stream belongs to this page's session — reading it without one answers
+    // The stream belongs to this page's session - reading it without one answers
     // "Invalid stream handle", which reads like a printing failure and is not.
     const chunks = [];
     for (;;) {

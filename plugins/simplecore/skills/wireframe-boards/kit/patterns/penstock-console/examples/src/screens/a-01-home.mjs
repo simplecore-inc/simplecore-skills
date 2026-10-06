@@ -1,6 +1,6 @@
 // A-01 · The console shell every screen of a penstock-console product reuses: title bar with
 // breadcrumb and command palette, navigator, work pane, inspector (selection above, activity
-// below), status bar. Draw over it — the words are placeholders, the shape is the contract.
+// below), status bar. Draw over it - the words are placeholders, the shape is the contract.
 import {
   appShell, titlebar, navPane, workPane, workToolbar, inspPane, grid, stat, banner, chips, chip,
   table, pagination, kv, tabs, badge, btn, bar, hint,

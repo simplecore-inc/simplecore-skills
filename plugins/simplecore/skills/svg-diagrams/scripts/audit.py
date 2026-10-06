@@ -49,7 +49,7 @@ CHROME = _find_chrome()
 
 def _is_wide(ch):
     """CJK / fullwidth glyph → ~1 em wide. Keep in sync with svgkit._is_wide
-    and layout.js isWide — generator and linter must measure identically."""
+    and layout.js isWide - generator and linter must measure identically."""
     o = ord(ch)
     return (0x1100 <= o <= 0x11FF or 0x3000 <= o <= 0x303F
             or 0x3040 <= o <= 0x30FF or 0x3130 <= o <= 0x318F
@@ -65,7 +65,7 @@ _CAPS = set("ABCDEFGHJKLMNOPQRSTUVWXYZ")
 
 
 def _text_w(txt, size, mono):
-    """CJK-aware estimated text width (mirrors svgkit.tw — keep the two
+    """CJK-aware estimated text width (mirrors svgkit.tw - keep the two
     tables identical, or the generator sizes a box the lint then measures
     differently). The proportional numbers come from `calibrate_tw.py`:
     Hangul 0.92 em, lowercase 0.52, capitals 0.66, digits 0.58, the space
@@ -93,7 +93,7 @@ def _iter_texts(svg):
 
     Handles tspan children (mermaid/d3 output): the widest tspan run is
     measured, approximating the longest rendered line. Texts positioned via
-    transform are skipped — their x/y are not literal canvas coordinates, so
+    transform are skipped - their x/y are not literal canvas coordinates, so
     every geometric judgment about them would be wrong.
     """
     for m in re.finditer(r'<text\b([^>]*)>(.*?)</text>', svg, re.S):
@@ -179,8 +179,8 @@ def _rel_path_points(d):
 def _path_points(d):
     """Real (x, y) points of an absolute path. Mirrors svgkit.path_points.
 
-    The two scripts do not import each other — audit.py has to run against an
-    SVG produced by anything, not only by this kit — so the parser is stated
+    The two scripts do not import each other - audit.py has to run against an
+    SVG produced by anything, not only by this kit - so the parser is stated
     twice on purpose. Keep them in step: an arc read as coordinate pairs puts
     the bounding box at the origin and disables the margin checks silently.
     """
@@ -310,7 +310,7 @@ def lint(svg_path):
     issues = []
 
     # 0) excessively wide canvas: a long single row reads poorly and shrinks
-    #    when embedded — wrap the nodes onto two rows instead
+    #    when embedded - wrap the nodes onto two rows instead
     if W > 1200 and W / H > 4.5:
         issues.append(("WIDE-CANVAS",
                        f'aspect {W / H:.1f}:1 (w={W:.0f}) — wrap nodes onto '
@@ -353,7 +353,7 @@ def lint(svg_path):
             return float(mm.group(1)) if mm else d
         x = gv("x"); y = gv("y"); size = gv("font-size", 13)
         if x is None or y is None:
-            continue  # positioned by ancestor/transform — not judgeable
+            continue  # positioned by ancestor/transform - not judgeable
         anchor = (re.search(r'text-anchor="(\w+)"', a) or [None, "start"])[1]
         fam = a
         mono = ("mono" in fam.lower() or "Menlo" in fam or "JetBrains" in fam
@@ -475,7 +475,7 @@ def lint(svg_path):
             continue
         t = last_tangent(dm.group(1))
         d_ = dm.group(1)
-        # An arc-only connector ends tangentially by construction — a ring's
+        # An arc-only connector ends tangentially by construction - a ring's
         # arrowhead follows the circle and meets no box edge to be square to.
         # Demanding a right angle there asks for something the shape cannot do.
         arc_only = ("A" in re.findall(r'[A-Z]', d_)
@@ -585,7 +585,7 @@ def lint(svg_path):
                 and i[1] + i[3] <= o[1] + o[3] + tol)
 
     def same_rect(a, b, tol=3):
-        """Two rects occupying the same place — one is the other's paper mask.
+        """Two rects occupying the same place - one is the other's paper mask.
 
         A node is commonly drawn twice: an opaque rect that stops arrows
         bleeding through a translucent fill, then the styled rect on top. The
@@ -599,28 +599,28 @@ def lint(svg_path):
     solids = [r for r in rmeta if not r[4]]
 
     # container rects = layout chrome (subgroup/layer boxes, canvas
-    # backgrounds), not nodes — arrows legitimately run inside them and
+    # backgrounds), not nodes - arrows legitimately run inside them and
     # labels may straddle their borders. Two signals:
     #   - covers nearly the whole canvas (background), or
     #   - fully contains at least one SUBSTANTIAL solid rect. Substantial =
     #     node-sized (height >= 34px, badges/chips are <= ~30px tall) and not
-    #     negligible relative to the parent (>= 5% of its area) — this keeps
+    #     negligible relative to the parent (>= 5% of its area) - this keeps
     #     a card that contains only its own badge/footer chips classified as
     #     a node, while a frame around even a single node is a container.
     def _has_substantial_child(r):
         # a rect on the same footprint is the node's own mask or outline,
-        # not something it contains — two rects drawn for one box must not
+        # not something it contains - two rects drawn for one box must not
         # turn that box into a frame
         ra = r[2] * r[3]
         inner = [o for o in solids if o is not r and not same_rect(r, o)
                  and contains(r, o) and o[3] >= 26]
         # one node-sized child, or a row of small ones that together fill
-        # the box — a wide zone over five short pills is a container too
+        # the box - a wide zone over five short pills is a container too
         return (any(o[2] * o[3] >= 0.05 * ra for o in inner)
                 or sum(o[2] * o[3] for o in inner) >= 0.15 * ra)
     # A plot area is a container too, though it holds no rects: a quadrant's
     # panel, a Wardley map's field, a chart's frame. Its marks are dots, lines
-    # and labels, so the substantial-child test cannot see it — but it covers
+    # and labels, so the substantial-child test cannot see it - but it covers
     # most of the canvas and carries several labels, and nothing that is
     # really a node does both.
     def _is_plot_area(r):
@@ -636,13 +636,13 @@ def lint(svg_path):
                   or _has_substantial_child(r) or _is_plot_area(r)}
 
     # label masks: the small rect that sits behind an arrow label so the line
-    # does not bleed through the glyphs. Two shapes are in use — a translucent
-    # stroked pill and a flat opaque rect — so the test is geometric rather
+    # does not bleed through the glyphs. Two shapes are in use - a translucent
+    # stroked pill and a flat opaque rect - so the test is geometric rather
     # than stylistic: short, carries a text baseline, encloses no other rect.
     # Without this a mask reads as a node, and every check that asks "does a
     # connector cross a box" answers wrongly about the label of that very
     # connector.
-    # corner radius per rect: svgkit pills are rx=6, nodes rx>=10 — height
+    # corner radius per rect: svgkit pills are rx=6, nodes rx>=10 - height
     # alone cannot separate a one-line node (h 24) from a pill, and a node
     # misread as a mask silently leaves node_rects, so arrows pass through
     # it unreported.
@@ -676,7 +676,7 @@ def lint(svg_path):
                  for m in label_masks}
     def _inner_ring(x, y, w, h):
         """True when (x, y, w, h) is itself the second, inset edge of a
-        larger box — judged as part of that box, never on its own."""
+        larger box - judged as part of that box, never on its own."""
         for (ox, oy, ow, oh, _) in solids:
             if (ox, oy, ow, oh) == (x, y, w, h) or ow < w or oh < h:
                 continue
@@ -701,8 +701,8 @@ def lint(svg_path):
             if cw >= w - 2 and ch >= h - 2:
                 continue  # same-ish size / not a child
             # A rect inset evenly on all four sides is a second edge on the
-            # same shape — a state machine's terminal state, a pressed
-            # control — not content sitting inside a box. Reading it as
+            # same shape - a state machine's terminal state, a pressed
+            # control - not content sitting inside a box. Reading it as
             # content reports every double edge as cramped.
             insets = (cx - x, cy - y, x + w - cx - cw, y + h - cy - ch)
             if max(insets) - min(insets) <= 1.5 and max(insets) <= 10:
@@ -837,14 +837,14 @@ def lint(svg_path):
         texts_full.append((x, y, x0, y0, x1, y1, txt))
 
     # node-like boxes = solid content rects; dashed/translucent decorations
-    # and container (subgroup/layer) rects are excluded — arrows and labels
+    # and container (subgroup/layer) rects are excluded - arrows and labels
     # inside a container are normal, arrows through a NODE are not
     node_rects = [r for r in solids if id(r) not in containers
                   and (round(r[0]), round(r[1]), round(r[2]), round(r[3]))
                   not in mask_keys]
 
     # 7) label occlusion: a text whose anchor is NOT inside a node box, but whose
-    #    glyph box overlaps one — a free/edge label bleeding onto a neighbor box.
+    #    glyph box overlaps one - a free/edge label bleeding onto a neighbor box.
     for (tx, ty, x0, y0, x1, y1, txt) in texts_full:
         for nb in node_rects:
             if (nb[0] - 2 <= tx <= nb[0] + nb[2] + 2
@@ -861,8 +861,8 @@ def lint(svg_path):
     # 7a-2) a label sitting on a circle's outline with nothing behind it.
     #     LABEL-OCCLUSION only knows rects, so a Venn's set name, a ring
     #     label or a dial's tick could lie straight across a stroke and the
-    #     lint stayed quiet. The name is unreadable there — the stroke cuts
-    #     the letters — and the fix is a paper mask, which is also what makes
+    #     lint stayed quiet. The name is unreadable there - the stroke cuts
+    #     the letters - and the fix is a paper mask, which is also what makes
     #     the defect machine-visible: the mask has to cover the glyph box and
     #     be drawn after the circle.
     _circles = []
@@ -946,7 +946,7 @@ def lint(svg_path):
                 break
 
     # 7b) label pill (semi-transparent bg rect) overlapping a node box.
-    #     Pills are LOW (height-gated) — width varies with the label text.
+    #     Pills are LOW (height-gated) - width varies with the label text.
     label_pills = [r for r in rmeta if r[4] and r[3] <= 44]
     for (px, py, pw, ph, _) in label_pills:
         for nb in node_rects:
@@ -960,7 +960,7 @@ def lint(svg_path):
                                f'[{nb[0]:.0f},{nb[1]:.0f}] {ox:.0f}x{oy:.0f}px'))
                 break
 
-    # 7c) text-text collision: two labels overlapping each other — unreadable
+    # 7c) text-text collision: two labels overlapping each other - unreadable
     #     regardless of what sits underneath. Capped so a systemic layout
     #     error doesn't flood the report.
     _pair_hits = 0
@@ -980,7 +980,7 @@ def lint(svg_path):
 
     # 7d) frame drawn over nodes: a frame-sized decorative rect (dashed panel
     #     or wash) that appears AFTER a solid rect it overlaps paints over
-    #     that node. Document order is z-order in SVG — frames must be
+    #     that node. Document order is z-order in SVG - frames must be
     #     emitted before the nodes they enclose.
     _framed = set()
     for idx in range(len(rmeta)):
@@ -988,8 +988,8 @@ def lint(svg_path):
         if not fdec or fh <= 44:
             continue  # low decorations are label pills (7b), not frames
         # A dashed border is not proof of a frame. Editorial grammars use it
-        # on a NODE to mark something outside the system's own boundary — an
-        # external consumer, an optional step — and such a node encloses only
+        # on a NODE to mark something outside the system's own boundary - an
+        # external consumer, an optional step - and such a node encloses only
         # its own paper mask. A frame is what encloses somebody else: require
         # a strictly smaller solid rect inside before judging z-order.
         if not any(not same_rect((fx, fy, fw, fh), o)
@@ -1105,7 +1105,7 @@ def lint(svg_path):
 
     # 8b) arrow endpoint buried in a box: a connector must START and END on a
     #     box edge. An endpoint strictly INSIDE some box means the head (or
-    #     tail) lands on a foreign element — e.g. an arrow into a frame top
+    #     tail) lands on a foreign element - e.g. an arrow into a frame top
     #     landing on the frame's title chip.
     def _strictly_inside(pt, r, inset=3.0):
         return (r[0] + inset < pt[0] < r[0] + r[2] - inset
@@ -1129,7 +1129,7 @@ def lint(svg_path):
 
     # 8c) plain separator/divider line crossing a box: markerless lines are
     #     not arrows, but one that PARTIALLY crosses a node (enters and
-    #     exits) strikes through its content — e.g. a dashed boundary line
+    #     exits) strikes through its content - e.g. a dashed boundary line
     #     running through a frame's title chip. Lines fully inside a box
     #     (card dividers, legend samples) are intentional and skipped.
     seen_strike = set()
@@ -1145,7 +1145,7 @@ def lint(svg_path):
         if seg_len < 20:
             continue
         for nb in node_rects:
-            # A line whose two ends sit on the outline divides that box —
+            # A line whose two ends sit on the outline divides that box -
             # a quadrant's axes, a card's rule, a chart's baseline. It is
             # only a strike when the line arrives from outside and leaves
             # again, which is what the length test below asks.
@@ -1169,11 +1169,11 @@ def lint(svg_path):
                                    f'it or move it'))
                 break
 
-    # 9) connector grammar — the six mandatory rules of the diagram-design
+    # 9) connector grammar - the six mandatory rules of the diagram-design
     #    skill, ported. Two were already here under other names: transit
     #    behind a non-endpoint box is ARROW-THROUGH-BOX (8) and a label mask
     #    landing on a later node is LABEL-OCCLUSION (7b). That rule's
-    #    dashed-transit exemption is deliberately NOT ported — it exists for
+    #    dashed-transit exemption is deliberately NOT ported - it exists for
     #    the case where rerouting is geometrically impossible, and as a
     #    blanket exemption it would wave through ordinary routing errors.
     #
@@ -1240,7 +1240,7 @@ def lint(svg_path):
                         kind = "arc"
                     elif c == "A":
                         # Seven arguments, and only the last two are a point.
-                        # Omitting this case did not mis-read an arc — it made
+                        # Omitting this case did not mis-read an arc - it made
                         # the parser stop at the first one, so every check
                         # built on these segments went blind to a ring, a
                         # self-loop and everything drawn after them.
@@ -1261,7 +1261,7 @@ def lint(svg_path):
         e = _conn_ends.setdefault(_cid, [_p, _q])
         e[1] = _q
 
-    # 9a) rule 1 — orthogonal routing. A connector between two boxes that
+    # 9a) rule 1 - orthogonal routing. A connector between two boxes that
     #     share neither x nor y turns with a right angle; a slanted run
     #     between them reads as a sketch. The final segment is already
     #     OBLIQUE-ARROW above; this covers every segment before it.
@@ -1292,7 +1292,7 @@ def lint(svg_path):
                                f'corner arc is r=6~12; this is a freehand '
                                f'curve, not an elbow'))
 
-    # 9b) rule 4 — two connectors may not enter or leave a box at one point.
+    # 9b) rule 4 - two connectors may not enter or leave a box at one point.
     #     Overlapping heads read as a single connection and hide how many
     #     things actually reach the box. Spread the attach points along the
     #     edge; the crowding limit relaxes on a short edge that cannot hold
@@ -1369,7 +1369,7 @@ def lint(svg_path):
 
     # 9b-2) a connector must begin and end ON an edge. ARROWHEAD-IN-BOX (8b)
     #     catches an endpoint buried inside a box; this catches the other
-    #     half — an endpoint hanging in open canvas a few pixels off the box
+    #     half - an endpoint hanging in open canvas a few pixels off the box
     #     it was meant to touch. Hand-written waypoints produce it constantly
     #     and it is invisible at page scale: the stroke simply starts a
     #     little late, and the reader reads a line that comes from nowhere.
@@ -1423,11 +1423,11 @@ def lint(svg_path):
         if box and box[2] > 8 and box[3] > 8:
             _all_rects.append(box)
 
-    # A ring of arcs — a flywheel's cycle — rides a circle inside the nodes
+    # A ring of arcs - a flywheel's cycle - rides a circle inside the nodes
     # and touches none of them, and that is the grammar rather than a mistake:
     # arcs drawn between the boxes say the cycle has no end, where arrows
     # touching each box say four separate steps. The test is narrow so it
-    # cannot excuse an ordinary stray line — every segment of the connector
+    # cannot excuse an ordinary stray line - every segment of the connector
     # must be an arc, and its two ends the same distance from the centre the
     # nodes are arranged around.
     # The centre is taken from the arcs' own endpoints, not from the nodes: a
@@ -1464,7 +1464,7 @@ def lint(svg_path):
         p1, p2 = (_lv("x1"), _lv("y1")), (_lv("x2"), _lv("y2"))
         if None not in p1 + p2:
             _anchor_lines.append((p1, p2))
-    # A path stroked without an arrowhead is a drawn surface too — a bracket,
+    # A path stroked without an arrowhead is a drawn surface too - a bracket,
     # an axis, the visible shoulder of a sheet lying behind a box. It is as
     # visible to the reader as a <line>, so an endpoint landing on one is
     # attached to something, and reading only <line> here reported those as
@@ -1524,7 +1524,7 @@ def lint(svg_path):
                            f'leaves from or arrives at'))
 
     # 9b-3) an arrowhead says a route ARRIVES here. A route drawn as several
-    #     elements — a drop, a rail, a branch — puts a head on every one of
+    #     elements - a drop, a rail, a branch - puts a head on every one of
     #     them unless each segment is told not to draw one, and `line()` and
     #     `path()` draw one by default. The reader then follows a connector
     #     that arrives three times before it gets anywhere, and the source
@@ -1532,7 +1532,7 @@ def lint(svg_path):
     #     is geometric: a head whose tip is the endpoint of another connector
     #     that carries on from it in a different direction. Only <line>
     #     endpoints count as the continuation, so an arrow landing on a
-    #     lifeline, an axis or a rail — which it crosses rather than ends at —
+    #     lifeline, an axis or a rail - which it crosses rather than ends at -
     #     is not this defect.
     def _path_end(d):
         """The point a path finishes at, tracking H and V properly."""
@@ -1644,7 +1644,7 @@ def lint(svg_path):
                            f'space the arrivals or join the routes before the '
                            f'box'))
 
-    # 9c) rule 3 — no two connectors run on top of each other. Parallel and
+    # 9c) rule 3 - no two connectors run on top of each other. Parallel and
     #     close reads as one thick line, and the reader cannot follow either
     #     to its end. Only runs that actually overlap along their shared axis
     #     count; two lines that merely share a coordinate while sitting in
@@ -1698,7 +1698,7 @@ def lint(svg_path):
                 _pairs += 1
                 break
 
-    # 9d) rule 2 — a label mask erases the line behind its glyphs, which is
+    # 9d) rule 2 - a label mask erases the line behind its glyphs, which is
     #     what it is for. Two placements break that bargain. A mask over a
     #     bend or an endpoint deletes the information the reader needs to
     #     follow the route, and a mask covering runs of two different
@@ -1711,7 +1711,7 @@ def lint(svg_path):
         """Does the connector actually change direction at segs[k]'s end?
 
         A router that emits a fixed corner template writes a vertex even
-        where the path runs straight through — `V 170 Q 628,160 628,150`
+        where the path runs straight through - `V 170 Q 628,160 628,150`
         bends by nothing. Counting those as corners reports a label sitting
         in the middle of a long straight run, which is exactly where a label
         belongs, so the test is the direction change and not the vertex.
@@ -1737,7 +1737,7 @@ def lint(svg_path):
                 vert_hit = vert_hit or q
             # The arrowhead is not the endpoint alone: the marker triangle
             # runs ~10px back along the final segment, so a pill that spares
-            # the tip can still swallow the body — the head then reads as a
+            # the tip can still swallow the body - the head then reads as a
             # bare line ending under the label. Probe the marker body's
             # midpoint; the tip-covered case is already the corner check's.
             if (kind == "line" and not _pt_in(m, q)
@@ -1748,7 +1748,7 @@ def lint(svg_path):
                             q[1] - (q[1] - p[1]) / seg_len * 10.0)
                     if _pt_in(m, body):
                         head_hit = head_hit or q
-        # A mask may erase the run of stroke behind its own glyphs — that is
+        # A mask may erase the run of stroke behind its own glyphs - that is
         # what it is for. It may not erase the connector. Where the gap
         # between two boxes is narrower than the label, the mask swallows the
         # whole line and what survives is an arrowhead floating in a gutter:
@@ -1789,15 +1789,15 @@ def lint(svg_path):
                            f'only cover the one it labels'))
 
     # 9e) an empty band between two stacked boxes. Distance between boxes is
-    #     not itself a defect — a routing channel, a lane of edge labels or a
+    #     not itself a defect - a routing channel, a lane of edge labels or a
     #     zone border all need room. What is a defect is distance with
     #     nothing in it: the reader crosses a hand's width of blank paper and
     #     arrives at the next box having learned nothing, and every figure on
     #     the page is shrunk to make space for it.
     #
     #     So the test is occupancy, not size. A vertical connector passing
-    #     straight through does not count as an occupant — that is exactly
-    #     the shape the defect takes — but a horizontal run, a label or
+    #     straight through does not count as an occupant - that is exactly
+    #     the shape the defect takes - but a horizontal run, a label or
     #     another box does.
     # h >= 48 excludes the legend strip and any key or caption bar. Those
     # are not nodes: a legend sits wherever there is room, so the space
@@ -1838,7 +1838,7 @@ def lint(svg_path):
                        for (_tx, ty, _x0, y0, _x1, y1, _t) in texts_full)
         if not busy:
             # a box of the same size that ends inside the band is the same
-            # row set at another height — a stair, a ladder — so the air
+            # row set at another height - a stair, a ladder - so the air
             # under the higher step is the stair's shape, not a gap
             busy = any(o is not a and abs(o[2] - a[2]) <= 2
                        and abs(o[3] - a[3]) <= 2
@@ -1856,7 +1856,7 @@ def lint(svg_path):
                 # span of its x-range: a ring's arc clips a corner of the
                 # band, and an x-range test reads that as barely touching.
                 #
-                # Anything but a plain vertical drop is using the band — a
+                # Anything but a plain vertical drop is using the band - a
                 # horizontal lane, an elbow's leg, an arc. The drop is the one
                 # shape that crosses without occupying, which is exactly the
                 # shape this check is looking for.
@@ -1876,7 +1876,7 @@ def lint(svg_path):
                        f'— nothing is drawn in it; close the gap or put the '
                        f'routing and its labels there'))
 
-    # 11) interior geometry — the checks above ask whether the picture is
+    # 11) interior geometry - the checks above ask whether the picture is
     #     well-formed; these ask whether it is tight and whether its parts
     #     group the way the reader will group them. Every one names something
     #     a reader takes as carelessness before reading a single label: a row
@@ -1895,7 +1895,7 @@ def lint(svg_path):
     #     once the figure is scaled down onto the page that half-pixel lands
     #     in the text margin. The intended margin here is 24px.
     #
-    #     Measure ink from the body only — <defs> holds marker artwork whose
+    #     Measure ink from the body only - <defs> holds marker artwork whose
     #     coordinates are a few pixels from the origin and have nothing to do
     #     with the canvas. Reading them puts the top-left of every drawing at
     #     (0,1) and quietly disables both halves of this check.
@@ -1978,7 +1978,7 @@ def lint(svg_path):
 def _interior_checks(svg, W, H, rmeta, solids, containers, node_rects,
                      mask_keys, texts_full, texts_xy, contains, same_rect):
     """Padding, row and stack uniformity, frame padding, band corners, labels
-    lying on lines, and label grouping — the defects of a picture that is
+    lying on lines, and label grouping - the defects of a picture that is
     well-formed but loose. Returns (kind, message) pairs.
 
     Everything here reads geometry the generator already emitted, so a
@@ -2137,7 +2137,7 @@ def _interior_checks(svg, W, H, rmeta, solids, containers, node_rects,
     def _contents(box, own_pos=None):
         """Bounding boxes of what sits inside `box`: texts anchored in it,
         rects fully inside that are content rather than a band or a second
-        edge, dots and icons. Connectors are not content — they start and
+        edge, dots and icons. Connectors are not content - they start and
         end on the edges."""
         x, y, w, h = box
         cont = []
@@ -2238,7 +2238,7 @@ def _interior_checks(svg, W, H, rmeta, solids, containers, node_rects,
 
     def _is_ring(r):
         """A rect inset by one even margin inside another rect is that box's
-        second outline — a terminal state, an emphasised card — and is judged
+        second outline - a terminal state, an emphasised card - and is judged
         as part of it, never as a box of its own."""
         for o in rinfo:
             if o is r or o["canvas"]:
@@ -2320,7 +2320,7 @@ def _interior_checks(svg, W, H, rmeta, solids, containers, node_rects,
 
     # 11b) a wrap forced by side padding. Two consecutive lines of one text
     #      block that would fit on one line at the standard 16px side
-    #      padding were wrapped by a narrower wrap width — the box is one
+    #      padding were wrapped by a narrower wrap width - the box is one
     #      line taller than its text needs.
     for r in pad_boxes:
         box = _box(r)
@@ -2373,10 +2373,10 @@ def _interior_checks(svg, W, H, rmeta, solids, containers, node_rects,
     #      one fill are read as a row of equals; a height or width that
     #      differs by a few pixels, or an uneven gap between them, reads as a
     #      slip rather than a distinction. A real distinction is larger than
-    #      the tolerances here — a 2:1 span, a label column beside a value
-    #      column — and is not reported.
-    # A rect whose width or height carries a quantity — a bar, a treemap
-    # cell, a proportional strip — declares it with data-measure, and is
+    #      the tolerances here - a 2:1 span, a label column beside a value
+    #      column - and is not reported.
+    # A rect whose width or height carries a quantity - a bar, a treemap
+    # cell, a proportional strip - declares it with data-measure, and is
     # not a peer of anything: its size is the content.
     measured = {}
     for m in re.finditer(r'<rect\b([^>]*)/?>', svg):
@@ -2418,7 +2418,7 @@ def _interior_checks(svg, W, H, rmeta, solids, containers, node_rects,
         return comps
 
     def _split_groups(sorted_items, gap_of):
-        """Cut a run of peers where a gap is a separator — at least 1.8× the
+        """Cut a run of peers where a gap is a separator - at least 1.8× the
         smallest gap and 8px wider, or 60px and more outright. The wider gap
         is the distance between two groups, and sizes need agree only within
         a group."""
@@ -2595,7 +2595,7 @@ def _interior_checks(svg, W, H, rmeta, solids, containers, node_rects,
     #      shares a whole edge with its box follows the box's outline on
     #      that edge and meets the box's body square on the other; a rect
     #      rounds all four corners, so the band reads as a chip resting on
-    #      the box. The mirror case — a square band on a rounded box — pokes
+    #      the box. The mirror case - a square band on a rounded box - pokes
     #      its corners past the outline.
     for A in rinfo:
         if A["canvas"] or _key(A) in mask_keys:
@@ -2642,8 +2642,8 @@ def _interior_checks(svg, W, H, rmeta, solids, containers, node_rects,
                             f'with band(side="{edge}")'))
             break
 
-    # 11g) a label with a line through it. Every stroke in the drawing —
-    #      connectors, dividers, a box outline, a boundary — cuts the
+    # 11g) a label with a line through it. Every stroke in the drawing -
+    #      connectors, dividers, a box outline, a boundary - cuts the
     #      letters it passes under unless a paper mask sits between them.
     #      The lint sees the mask as an opaque rect drawn after the stroke
     #      that covers the glyph box; without one the label is unreadable.
@@ -2733,7 +2733,7 @@ def _interior_checks(svg, W, H, rmeta, solids, containers, node_rects,
                 if ox - 1 <= t["x"] <= ox + ow + 1 and oy - 1 <= t["y"] <= oy + oh + 1:
                     # the label's own box: a left/right crossing is
                     # TEXT-OVERFLOW's finding, a top/bottom one is a label
-                    # that has slid onto the edge — report the latter only
+                    # that has slid onto the edge - report the latter only
                     if abs(p[0] - q[0]) <= 0.01:
                         continue
             if _seg_len_in(p, q, gb) <= 1.0:
@@ -2782,7 +2782,7 @@ def _interior_checks(svg, W, H, rmeta, solids, containers, node_rects,
             best = d if best is None or d < best else best
         return best
 
-    # a text inside any rect — a box, a pill, a badge plate — is that
+    # a text inside any rect - a box, a pill, a badge plate - is that
     # shape's label, and so is a text level with a rect just beside it (a
     # row's name left of its bar, a value right of it); only a text on bare
     # paper is free
@@ -2901,7 +2901,7 @@ def _interior_checks(svg, W, H, rmeta, solids, containers, node_rects,
     # middle, so its x is where the eye reads the gap's centre. A generator
     # that places it a fixed distance before the next box is right for the
     # gap it was written against and drifts toward that box on every row
-    # with a wider gap — one deck carried it 7px off centre in 22px gaps and
+    # with a wider gap - one deck carried it 7px off centre in 22px gaps and
     # nobody saw it until a reader did. Measured against the two boxes the
     # glyph stands between; a glyph with a box on one side only is a label.
     SEP_GLYPHS = {"›", "→", "»", "▶", "▸", "‣"}
@@ -2939,7 +2939,7 @@ def hotspots(svg_path, outdir, scale=4):
 
     A full render downscaled for viewing hides sub-10px defects (an
     arrowhead landing on a chip, a label kissing a box). Endpoints are where
-    those defects live — cropping each one at high scale turns "eyeball the
+    those defects live - cropping each one at high scale turns "eyeball the
     overview" into a systematic pass. Read the produced PNGs after render.
     """
     with open(svg_path) as f:

@@ -2,7 +2,7 @@
 
 A board tells you what each screen holds. It does not tell you *whose* front gate
 is on the list, or how many people are behind the number, or what happened before
-this screen. Left to each frame, those get invented at the screen — and the
+this screen. Left to each frame, those get invented at the screen - and the
 moment they are, the front gate on the list and the front gate on the detail page
 quietly become different machines. Nothing fails; the two just disagree.
 
@@ -12,25 +12,25 @@ from it, and captures are taken against it.**
 
 That one document then does two jobs at once: it is the source every fixture
 derives from, and it is the script the final capture run follows. Once its steps
-can actually be executed it does a third — a capture taken at step four is a
+can actually be executed it does a third - a capture taken at step four is a
 capture of a system that genuinely went through steps one to three.
 
 ## Keep the story honest as the product grows
 
-The story is not an appendix. When a frame changes what came before it — a screen
-that registers people changes where the existing people came from — **fix the
+The story is not an appendix. When a frame changes what came before it - a screen
+that registers people changes where the existing people came from - **fix the
 earlier step there and then.** Appending only, with the earlier steps untouched,
 leaves the story contradicting itself, and the contradiction is invisible until
 somebody puts two screens side by side. Ask both questions per frame: which moment
 does this show, and which already-written moment does this change?
 
 **This skill ships no checker for any of it, and 「a checker could hold that」 is not one.**
-Coverage — every frame the story feeds appearing in the document, every step naming frames that
-exist — is a check a project can write as a gate of its own, against its own board and its own
+Coverage - every frame the story feeds appearing in the document, every step naming frames that
+exist - is a check a project can write as a gate of its own, against its own board and its own
 document format; until it writes one, nothing is holding it, and a story document naming no frame
 at all stands there saying nothing. Whether the steps still add up is nobody's check: that is the
 agent's judgement. Both halves are marked in the skill's *Held by eyes* table, because a sentence
-saying what a checker *could* do is read as one somebody already wrote — which is the third
+saying what a checker *could* do is read as one somebody already wrote - which is the third
 category this skill spends a section refusing.
 
 ## A value a capture shows is produced by the path the product uses
@@ -41,7 +41,7 @@ This is the rule the rest of this file assumes, and it is stated first because b
 more than every other mistake here combined.
 
 **Why it is absolute.** A capture exists to show what the product does. A capture of a screen fed
-hand-written values shows what somebody wrote down, arranged to look like what the board drew — and
+hand-written values shows what somebody wrote down, arranged to look like what the board drew - and
 it is indistinguishable from the real thing in every check, in the result document, and to whoever
 opens it a year later. It does not merely fail to prove the product works. **It produces evidence
 that the product works when nothing has been shown to**, and that evidence outlives the session
@@ -51,8 +51,8 @@ that made it.
 in the set: a seed made to produce the figure a frame draws answers to a number that came from the
 same hand that drew the frame, and 「the screen shows the figure」 passes while the figure describes
 nothing → `../SKILL.md` § *Waste does not announce itself*. **The seed pins nothing to the board.**
-It makes the story's relations true — the records the journeys need, connected as the entity model
-says, in the states the frames draw — and its values are its own; a screen whose total is not the
+It makes the story's relations true - the records the journeys need, connected as the entity model
+says, in the states the frames draw - and its values are its own; a screen whose total is not the
 drawing's is the seed saying what it says.
 
 ### Where the fake is allowed to sit
@@ -62,7 +62,7 @@ decides every case, and it is the only judgment this rule needs:
 
 | | What it is | Allowed |
 | --- | --- | --- |
-| a recorded or edited response from the device or service the product reads — an SNMP walk, an HTTP fixture, a message on a queue | a test double for the world | ✔ |
+| a recorded or edited response from the device or service the product reads - an SNMP walk, an HTTP fixture, a message on a queue | a test double for the world | ✔ |
 | a row written straight into the store, or a domain object composed and handed to the layer above the collector | a forged reading | ✖ |
 
 **The product's own decoding, mapping, arithmetic and parsing must run.** They are usually most of
@@ -73,12 +73,12 @@ capture shows values nobody has shown the product could produce.
 
 Every device, record and state in a fleet is one of these, and a result document says which:
 
-1. **A replayed capture of the real thing** — a recorded walk, a saved response, a captured payload,
+1. **A replayed capture of the real thing** - a recorded walk, a saved response, a captured payload,
    decoded by the product's own path. Deterministic, because the recording is fixed.
-2. **An edited capture** — the same recording with the value that state needs changed **at the
+2. **An edited capture** - the same recording with the value that state needs changed **at the
    source**: the OID that carries the supply level, the field in the saved response. Still a test
    instrument; the product still decodes it.
-3. **An action taken on collected data** — excluding a device, letting a walk time out, stopping an
+3. **An action taken on collected data** - excluding a device, letting a walk time out, stopping an
    agent. The state is produced by doing the thing, never by writing the row the thing would have
    produced.
 
@@ -89,8 +89,8 @@ saying so. That is a smaller loss than it sounds and an honest one: a fleet reco
 ### When the real path is awkward to reach
 
 **Make it reachable.** Move the fixtures, add a shared test module, invert the dependency that is
-backwards. Report the cost if it is large — that is a real finding and somebody may decide
-differently — but **do not route around it**, because routing around it produces exactly the
+backwards. Report the cost if it is large - that is a real finding and somebody may decide
+differently - but **do not route around it**, because routing around it produces exactly the
 evidence this rule exists to prevent, and produces it silently.
 
 **Most projects already have the path and are not using it.** The recorded responses were captured
@@ -101,12 +101,12 @@ them to the screens. Look before concluding it has to be built.
 
 **The seed that skips a row it already finds is the default shape, and it has one property
 that undoes it: a value corrected in the source never reaches a database that already
-exists.** New machines are right, working machines are wrong, and **neither says anything** —
+exists.** New machines are right, working machines are wrong, and **neither says anything** -
 a skipped insert leaves a row indistinguishable from a correctly planted one. The story
 document, the source and the board then all state one value while the screen draws another,
 and whoever reads them has no way to tell which is stale.
 
-**So the seed converges on every start** — it reads what is stored, compares it with what it
+**So the seed converges on every start** - it reads what is stored, compares it with what it
 declares, and rewrites what has drifted, naming what it rewrote in one log line. Four rules
 keep that from becoming a different kind of damage:
 
@@ -118,30 +118,30 @@ keep that from becoming a different kind of damage:
   everything quietly undoes repairs somebody made deliberately.
 - **Passwords converge too, and only outside production.** An account created before the
   configured password changed keeps the old hash for ever, and nothing announces it. Converge
-  only on the profiles where **every** account was written by the seed — elsewhere a hash that
+  only on the profiles where **every** account was written by the seed - elsewhere a hash that
   differs is somebody's decision, not drift. Two limits: skip accounts with no hash at all
   (writing one accepts an invitation the product was supposed to test), and converge only the
   accounts that actually sign in, because a password comparison is expensive per row.
 - **Never write a clock-derived value through an insert-only path.** `now() − 41 days`
   computed because the board draws 「running 41 days」 is calculated once, on the first start,
   and is an absolute moment from then on: the screen's number drifts one day per day away from
-  the board, and **reading the source shows nothing** — it says 41 and it means 41. Only the
+  the board, and **reading the source shows nothing** - it says 41 and it means 41. Only the
   calendar makes it wrong. A literal date recording something that actually happened is not
   this: it means the same thing on any day. **The test is where the value came from, not what
   it looks like.**
 - **A seed reads the installation's timezone, never the machine's.** "Today" taken from the
   host shifts by a day around midnight and by a year around new year, and the board's drawn
-  figures are the seed's specification — so a zone the deployment did not choose moves every
+  figures are the seed's specification - so a zone the deployment did not choose moves every
   derived date off the contract. Resolve the zone from the installation's own setting, fall
   back explicitly and log the fallback, and pin fixed past dates through the same resolver so
   the start of that day is the installation's. A stack that already holds this rule for its
   application code usually does not hold it for its seeds, and that is where it is most often
-  forgotten — a seed reads like setup rather than like domain logic.
+  forgotten - a seed reads like setup rather than like domain logic.
 
 ## Record what a unit of work cost, or the number is gone
 
 The log format and the watches the coordinator arms on it are in the main document; what
-that log does not carry is the price. Duration, tokens, commits, lines, file sizes — none
+that log does not carry is the price. Duration, tokens, commits, lines, file sizes - none
 of it can be reconstructed afterwards, and all of it is asked for eventually ("how long did
 this take?", "was the rewrite worth it?"). Work that spans weeks and several sessions is
 exactly the case where nobody remembers.
@@ -149,6 +149,6 @@ exactly the case where nobody remembers.
 Append the cheap facts as you go, in a machine-readable file this work owns:
 per unit of work, the wall-clock span and whatever the runtime can tell you about
 consumption. Derive the rest from git when it is asked for, rather than
-maintaining it — commits, lines changed and file counts are already recorded
+maintaining it - commits, lines changed and file counts are already recorded
 there. **What git cannot recover is time and consumption**, so those are the two
 worth writing down at the moment they are known.

@@ -21,14 +21,14 @@ mutation into exactly that callback, so it is wired directly as `onReorder`.
   order mutation (e.g. `useOrder<Entity>`) into an `onReorder(items)` handler that issues the
   batch order update. Imported from `@simplix-react/ui`.
 - **Conditional drag handles**: the framework shows drag handles only when the list is sorted
-  by the order field ascending — it manages this internally.
+  by the order field ascending - it manages this internally.
 
 ---
 
 ## CrudList.Table Reorder Support
 
 `reorder` takes three keys: `orderField`, `idField`, and `onReorder`. Wire
-`adaptOrvalOrder()` straight into `onReorder` — do NOT hand-roll a `mutateAsync` loop.
+`adaptOrvalOrder()` straight into `onReorder` - do NOT hand-roll a `mutateAsync` loop.
 
 ```tsx
 import { adaptOrvalOrder, useInvalidateEntity } from "@simplix-react/ui";
@@ -50,7 +50,7 @@ const invalidate = useInvalidateEntity("/api/v1/product");
 
 > The `reorder` key is **`orderField`** (not `field`); `idField` is optional and
 > defaults to `"id"`, but pass it explicitly (as the examples do) for clarity.
-> `adaptOrvalOrder` takes four positional arguments — `(mutation, idField, orderField, options)` —
+> `adaptOrvalOrder` takes four positional arguments - `(mutation, idField, orderField, options)` -
 > and returns the `onReorder` callback itself; you do not call `.mutateAsync` yourself.
 
 ---
@@ -74,7 +74,7 @@ so the list refetches once the server confirms.
 
 ## Conditional Drag-Drop
 
-Drag-and-drop only makes sense when the list is sorted by the order field ascending —
+Drag-and-drop only makes sense when the list is sorted by the order field ascending -
 manual reordering against a filtered or differently-sorted view is ambiguous.
 
 ### Why Conditional
@@ -92,7 +92,7 @@ Drag handles automatically appear/hide based on the current sort state.
 
 ## Sorting and Filters Coexist with Drag
 
-Reorderable lists keep `sortable` columns and a `CrudList.FilterBar` — the framework gates
+Reorderable lists keep `sortable` columns and a `CrudList.FilterBar` - the framework gates
 the drag affordance on the active sort instead of forcing you to strip sorting/filtering.
 The older "always-on drag handle → remove `sortable` from every column and drop the FilterBar"
 approach is NOT how reorderable lists are built here; do not disable sorting or filtering just

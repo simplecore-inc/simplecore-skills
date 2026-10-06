@@ -1,8 +1,8 @@
 // The two cases every simplix-basic gate is held to: one board that must trip it, one that must
 // not. They live beside the gates rather than in the kit, because they describe what is wrong on
-// a board drawn THIS way — a register, a list-detail layout, the words its controls share.
+// a board drawn THIS way - a register, a list-detail layout, the words its controls share.
 //
-// **A gate added to `gates/content.mjs` gets its cases here in the same change** —
+// **A gate added to `gates/content.mjs` gets its cases here in the same change** -
 // `node wf.mjs gates` reports any gate that has none.
 export function cases(t) {
   const { add, config, base, screen, ctxWith } = t;
@@ -12,10 +12,10 @@ export function cases(t) {
     ctxWith([screen('x-01-a', "pageHeader({\n  title: '기록을 저장한다',")]), true);
   add('titleFormGate', '화면 이름이 명사형',
     ctxWith([screen('x-01-a', "pageHeader({\n  title: '저장 내역',")]), false);
-  // tTitle is not a judged slot — this board writes a heading inside an explanation as the rule it states.
+  // tTitle is not a judged slot - this board writes a heading inside an explanation as the rule it states.
   add('titleFormGate', 'tTitle은 대상이 아니다',
     ctxWith([screen('x-01-a', "tTitle('갈음 관계 — 한 기록이 두 의무를 채운다')")]), false);
-  // The title gate reads two slots only — a page's name and a dialog's name. A help dialog states
+  // The title gate reads two slots only - a page's name and a dialog's name. A help dialog states
   // the rule it explains, which is this board's convention, and `msg`/`emptyState` titles are the
   // product speaking to a user, so neither was ever in scope.
   add('titleFormGate', '다이얼로그 이름이 합니다체',
@@ -24,13 +24,13 @@ export function cases(t) {
     ctxWith([screen('x-01-a', "export const help = dialog({\n  title: '자리마다 보고 기한이 다르다',")]), false);
   add('titleFormGate', '메시지 제목은 문장이 정상',
     ctxWith([screen('x-01-a', "msg({\n  kind: 'warn',\n  title: '게시할 수 없습니다',")]), false);
-  // A closed list of endings let 「읽힌다」 and 「뗀다」 through — any 「~다」 ending is read now.
+  // A closed list of endings let 「읽힌다」 and 「뗀다」 through - any 「~다」 ending is read now.
   add('titleFormGate', '목록에 없던 어미',
     ctxWith([screen('x-01-a', "const peek = dialog({\n  title: '오늘 적은 값이 30년 뒤에 읽힌다',")]), true);
 
   add('registerGate', '화면 문구가 -다체', ctxWith([screen('x-01-a', 'class="t-body">서명을 받는다<')]), true);
   add('registerGate', '화면 문구가 합니다체', ctxWith([screen('x-01-a', 'class="t-body">서명을 받습니다<')]), false);
-  // A value is the larger surface — eight sat here, one inside a template literal where a quoted-string sweep could not see it.
+  // A value is the larger surface - eight sat here, one inside a template literal where a quoted-string sweep could not see it.
   add('registerGate', '값이 -다체', ctxWith([screen('x-01-a', "dField({ label: '허용', value: '표에 행을 넣는다' })")]), true);
   add('registerGate', '템플릿 리터럴 값도 본다',
     ctxWith([screen('x-01-a', 'dField({ label: \'기록\', value: `접속 건수가 남는다 ${badge(\'법정\')}` })')]), false || true);
@@ -38,7 +38,7 @@ export function cases(t) {
   // A noun or adverb that merely ends in 「다」 is not the plain register.
   add('registerGate', '다로 끝나는 부사', ctxWith([screen('x-01-a', "fSelect({ label: '주기', value: '30분마다' })")]), false);
   add('registerGate', '다로 끝나는 명사', ctxWith([screen('x-01-a', "statTile({ label: '한 사람이 대리한 최다', value: '4건' })")]), false);
-  // An explanation states its rule as the heading and answers in 합니다체 underneath — that heading is not judged.
+  // An explanation states its rule as the heading and answers in 합니다체 underneath - that heading is not judged.
   add('registerGate', '넓은 필드의 라벨은 설명 제목이다',
     ctxWith([screen('x-01-a', "dField({ label: '주기는 사업장이 고르지 않는다', value: '직전 결과가 정합니다', wide: true })")]), false);
   add('registerGate', '도움말 카드의 주제 목록',
@@ -53,7 +53,7 @@ export function cases(t) {
     ctxWith([screen('x-01-a', "  notes: '<strong>목록을 보인다</strong> 상세는 패널에 표시합니다.',\n  body: '',")]), true);
   add('notesRegisterGate', 'notes가 -다체',
     ctxWith([screen('x-01-a', "  notes: '<strong>목록을 보인다</strong> 상세는 패널에 표시한다.',\n  body: '',")]), false);
-  // The ending that closes on a cross-reference, not a period — the shape that hid 36 of them.
+  // The ending that closes on a cross-reference, not a period - the shape that hid 36 of them.
   add('notesRegisterGate', '참조로 끝나는 합니다체',
     ctxWith([screen('x-01-a', "  notes: '상세는 패널에 표시합니다({{p-04-list-detail}}).',\n  body: '',")]), true);
   // Copy quoted from the screen keeps the screen's register.
@@ -69,7 +69,7 @@ export function cases(t) {
   // The D in 「AUD-2026」 is not a D-day.
   add('dDayGate', '앞 글자가 붙은 D',
     ctxWith([screen('x-01-a', "'AUD-2026-02 · 2026-06-15 실시'")]), false);
-  // D-n counts toward a day still to come — a past date elsewhere in the same window is not its pair.
+  // D-n counts toward a day still to come - a past date elsewhere in the same window is not its pair.
   add('dDayGate', '창 안의 지난 날짜',
     ctxWith([screen('x-01-a', "'사유 종료 2026-08-06'\n'기한 2026-08-16 · D-4'")]), false);
 
@@ -246,7 +246,7 @@ export function cases(t) {
   add('dotSpacingGate', '낱말 목록은 다 붙임',
     ctxWith([screen('x-01-a', "screen: '재해율 지표 (도수율·강도율·연천인율)',")]), false);
   // A compound term declared in board.config.mjs is one item, so the point inside it is not a
-  // list separator — without this the gate reads 「시정·예방조치 보드」 as two items and asks for
+  // list separator - without this the gate reads 「시정·예방조치 보드」 as two items and asks for
   // a space inside a word.
   add('dotSpacingGate', '선언한 합성어는 한 낱말',
     ctxWith([screen('x-01-a', "screen: '시정·예방조치 보드',")],
@@ -286,7 +286,7 @@ export function cases(t) {
     ctxWith([screen('x-01-a', NO_PH), LD_BASE]), true);
   add('companionFollowsBaseLayoutGate', '목록·상세 바탕은 왼쪽에 자리를 둔다',
     ctxWith([screen('x-01-a', WITH_PH), LD_BASE]), false);
-  // Only a companion is judged — an ordinary screen drawing a list-detail imports no base.
+  // Only a companion is judged - an ordinary screen drawing a list-detail imports no base.
   add('companionFollowsBaseLayoutGate', '동반이 아닌 화면은 대상이 아니다',
     ctxWith([screen('x-01-a', "listDetail(list, detail)"), LD_BASE]), false);
 
@@ -346,13 +346,13 @@ export function cases(t) {
   add('phaseGate', '설명은 단계를 말하는데 선언이 없음',
     phased([{ letter: 'X', title: 'x', screens: [{ file: 'x-01-a' }] }], '',
       [{ num: 'X-01', file: 'x-01-a', mod: { notes: '<strong>3단계다</strong> — 나중에 만든다' } }]), true);
-  // 「2단계 인증」 is an MFA screen's subject matter, not a schedule — keying on the bare word catches it.
+  // 「2단계 인증」 is an MFA screen's subject matter, not a schedule - keying on the bare word catches it.
   add('phaseGate', '내용으로서의 2단계',
     phased([{ letter: 'A', title: 'a', screens: [{ file: 'a-05-a' }] }], '',
       [{ num: 'A-05', file: 'a-05-a', mod: { notes: '<strong>2단계 인증</strong>을 요구한다' } }]), false);
 
   // Role verdicts. The matrix arrives on ctx, so the fixture states it outright rather than
-  // pointing at a real board — which is what let these two cases pass against whatever the
+  // pointing at a real board - which is what let these two cases pass against whatever the
   // repository happened to contain instead of against a case they control.
   const ROLE_MATRIX = {
     ROLES: { sys: '시스템 관리자', partner: '협력사 관리자' },
@@ -389,7 +389,7 @@ export function cases(t) {
   add('roleGate', '매트릭스에 없는 구역',
     roled([], [{ letter: 'Y', title: 'y', screens: [] }]), true);
   // The names are the board's, so a board with its own keys is judged by its own vocabulary
-  // rather than by a table in the pattern — which used to report every frame and name the role
+  // rather than by a table in the pattern - which used to report every frame and name the role
   // `undefined`.
   const OWN = {
     ROLES: { admin: '시스템 관리자', branch: '본부 담당자' },
@@ -409,11 +409,11 @@ export function cases(t) {
 
   // The list-detail region is the LAST thing on the page: the panel is a full-height column whose
   // footer is pinned to the floor, so a block appended after the two columns lands under a panel
-  // that has already ended — the reader sees the record's actions and then more page beneath them.
+  // that has already ended - the reader sees the record's actions and then more page beneath them.
   //
   // The gate walks forward from the call to the bracket that CLOSES the enclosing expression, so
   // the fixture has to have one. Without it the walk runs off the end of the source and the gate
-  // reports nothing — which is what a first attempt at these cases did, passing for no reason.
+  // reports nothing - which is what a first attempt at these cases did, passing for no reason.
   const tail = (after) => ctxWith([screen('x-01-a',
     'export default { body: console_({ main: pageHeader({}) + listDetail(list, panel)' + after + ' }) };')]);
   add('panelTailGate', '목록·상세 아래에 블록이 더 있다', tail(" + section('더', 'x')"), true);
@@ -432,13 +432,13 @@ export function cases(t) {
   // a filter over the total rather than the thing the total is counting.
   add('filterChainGate', '칩 필터가 목록 바 뒤에 있다',
     chain(TABS + '<div class="filterbar"></div>' + CHIPS + '<div class="table"></div>'), true);
-  // A chip row that picks what the whole page IS — a dashboard's period, an assessment method, the
-  // paper a preview draws on — is not a list filter, and the frame says so in one sentence.
+  // A chip row that picks what the whole page IS - a dashboard's period, an assessment method, the
+  // paper a preview draws on - is not a list filter, and the frame says so in one sentence.
   add('filterChainGate', '칩이 목록 필터가 아니라고 밝힌다',
     chain(CHIPS + TILES + '<div class="table"></div>', { pageChips: '대시보드 전체의 기간이다' }), false);
   add('filterChainGate', 'pageChips에 사유가 없다',
     chain(CHIPS + TILES + '<div class="table"></div>', { pageChips: '' }), true);
-  // A chip row with no list under it is a set of tags, not a filter — the chain is only a chain
+  // A chip row with no list under it is a set of tags, not a filter - the chain is only a chain
   // once it reaches a list.
   add('filterChainGate', '목록이 없는 칩 줄', chain(CHIPS + '<div class="attach"></div>'), false);
   // The language switch picks which language a kept field is read in; it narrows no list, so it is
@@ -454,7 +454,7 @@ export function cases(t) {
   // 취소 IS the secondary act beside 저장, so a form panel keeps it ghost.
   add('panelCloseIsPlainGate', '폼 패널의 취소는 그대로다',
     ctxWith([screen('x-01-a', "panelForm({ title: 'x', children: '', foot: btn('취소', 'ghost') + btn('저장', 'primary') })")]), false);
-  // A dialog closes over a dimmed page and carries its own ✖ — the rule is about the panel.
+  // A dialog closes over a dimmed page and carries its own ✖ - the rule is about the panel.
   add('panelCloseIsPlainGate', '다이얼로그의 닫기는 대상이 아니다',
     ctxWith([screen('x-01-a', "dialog({ title: 'x', children: '', foot: btn('닫기', 'ghost') })")]), false);
 
@@ -467,7 +467,7 @@ export function cases(t) {
   add('auditFootFirstTabGate', '탭이 없는 패널은 대상이 아니다',
     ctxWith([screen('x-01-a', "auditFoot({ id: 'a1', at: '2026-01-01' }, null)")]), false);
 
-  // The gate asks a different question of each kind of board, so both kinds are proved — and both
+  // The gate asks a different question of each kind of board, so both kinds are proved - and both
   // are stated rather than inherited, because a case that leans on the harness's default proves
   // whichever way that default happens to fall rather than the mode it is named after.
   const on = { config: { ...config, patternOptions: { dismissibleNotices: true } } };
@@ -494,7 +494,7 @@ export function cases(t) {
   add('aStandingCardClosesWhenItCanGate', '수를 말하지 않는 카드',
     ctxWith([screen('x-01-a', "msg({ kind: 'help', status: true, title: '이 화면에서 하는 일' })")], on), false);
   // **The built page rather than the source.** Every source rule about these cards has been
-  // narrower than the rule — one never read the `dismiss` values, one wrote its exemption from a
+  // narrower than the rule - one never read the `dismiss` values, one wrote its exemption from a
   // shape, one read only the first card on a page. This one asks what the reader is shown.
   const withHeader = '<span class="noticons"><span class="nic warn"></span></span>';
   const card = (extra = '') =>

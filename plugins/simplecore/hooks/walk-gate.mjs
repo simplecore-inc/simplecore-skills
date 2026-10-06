@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Walk gate — a session that walked frames off the parity list does not end without the walking
+ * Walk gate - a session that walked frames off the parity list does not end without the walking
  * having happened in a subagent.
  *
  * This is the one rule the board-parity-walk skill names as its reason for existing: the walk is
@@ -15,7 +15,7 @@
  *   Stop                                         : walk-gate.mjs check
  *
  * "mark-agent" records that a subagent ran. "touch" records that frames were REMOVED from the
- * parity list — which is what walking a frame does, and what neither filling the list from the
+ * parity list - which is what walking a frame does, and what neither filling the list from the
  * board nor settling a parked decision does. "check" blocks once when frames left the list and no
  * subagent ever ran.
  *
@@ -48,8 +48,8 @@ function countItems(text) {
  * Net list items removed by one edit, or by every edit of a MultiEdit.
  *
  * @remarks
- * The list only shrinks when a frame is walked. It grows from the other side — a route that did
- * not exist when the list was written, a frame back-filled while syncing the board — and it is
+ * The list only shrinks when a frame is walked. It grows from the other side - a route that did
+ * not exist when the list was written, a frame back-filled while syncing the board - and it is
  * edited in place when a parked decision is recorded. Counting the net change is what separates
  * the one case this gate cares about from the three it must not fire on. A whole-file `Write`
  * carries no before-state, so it never counts as walking.

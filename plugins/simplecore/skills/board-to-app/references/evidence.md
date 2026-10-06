@@ -2,14 +2,14 @@
 
 **The grounds a chapter closed on live in `evidenceDir`, and `journeyCommand` writes them.** One
 record per chapter, and the captures the record shows sit in a folder of the same name beside it.
-The record is the residue of running the chapter's journeys — one row per journey with its
-persona, its test and its result, one capture per screen-state a journey visited — and **nothing
+The record is the residue of running the chapter's journeys - one row per journey with its
+persona, its test and its result, one capture per screen-state a journey visited - and **nothing
 in it is written by hand.** A record written first and then made true inverts the whole
 arrangement; a record edited afterwards records a run that did not happen.
 
 **A chapter closes because its journeys pass, and the record lets somebody who was not there open
 one file and read which persona finished which piece of work, and look at the screens as they
-were.** The reading that stays with a person is the look — one per screen-state, at the close →
+were.** The reading that stays with a person is the look - one per screen-state, at the close →
 below.
 
 This file is the specification. A project keeps its own worked examples and its own tooling
@@ -19,7 +19,7 @@ commands in the index of its own evidence folder.
 
 | Not here | Why |
 | --- | --- |
-| `chapterDir` | the generator owns it — a result written there disappears at the next generation |
+| `chapterDir` | the generator owns it - a result written there disappears at the next generation |
 | the tracking folder | progress lives there. A result is not progress; it is the grounds for a chapter being in the state it is in, and which chapter is open is written in the state ledger alone |
 | `capturesDir` | untracked. It holds what one session swept and threw away, so nobody can open it once that session ends |
 
@@ -51,8 +51,8 @@ carries one row for the folder rather than one per chapter.
 record whose rows cover every journey the chapter names, each reading `pass`; `everyPlacedFrameIsCaptured`
 holds it to a capture for every frame the chapter placed; `noTwoCapturesAreTheSamePicture` holds
 two captures apart, so a state frame that came back as its base is reported rather than looked
-past; `evidenceSaysWhereItCameFrom` holds the provenance line. The capture-shape gates — width,
-scheme, density — read the pictures as they always have.
+past; `evidenceSaysWhereItCameFrom` holds the provenance line. The capture-shape gates - width,
+scheme, density - read the pictures as they always have.
 
 **The result words are `pass`, `fail` and `skipped`, written by the command.** A `fail` row is a
 chapter that is not closed; a `skipped` row names, after the word, the parked line that releases
@@ -62,7 +62,7 @@ it, and a skip naming nothing is a fail.
 
 **The record proves the journeys; it cannot prove the screen holds up.** So the coordinator opens
 every capture once at the close, as the persona whose work the screen carries, and asks three
-questions — is this the frame it is named after, is the screen in it built or the shell, does it
+questions - is this the frame it is named after, is the screen in it built or the shell, does it
 hold up as a screen a person works in → `../SKILL.md` § *Closing a chapter*. Its findings are
 fixed in one round: fix, run `journeyCommand` again, look again at the screens the fixes reached
 and one they did not. What is still open after that round is written to the open items with the
@@ -70,15 +70,15 @@ frame id and what it needs; a third round is a new chapter's work or the owner's
 this one.
 
 **Data is never a reason to look again.** A seed that changed, a count that moved, a name that is
-different — the journeys assert relations, so a re-run answers all of that, and the capture it
+different - the journeys assert relations, so a re-run answers all of that, and the capture it
 leaves is the one to look at. A structural change is a reason: a state added, a control moved, a
-way between screens redrawn — and the journey that reaches it is what changed, so the run reaches
+way between screens redrawn - and the journey that reaches it is what changed, so the run reaches
 it too.
 
 ## Captures that are not tracked
 
 Everything else a sweep shot stays in `capturesDir` and is untracked. Only what a document shows
-moves into `evidenceDir` — a capture left in the folder that no section cites is reported by
+moves into `evidenceDir` - a capture left in the folder that no section cites is reported by
 `closedChapterHasAJourneyRun`.
 
 ## What is not written here
@@ -89,7 +89,7 @@ moves into `evidenceDir` — a capture left in the folder that no section cites 
 | what a person has to decide before it can proceed | the open-items file |
 | the date a chapter closed | the ledger's own column |
 | how many attempts it took, what was different at first | the commit body |
-| an assessment of the quality of the work | nowhere — it is reported in conversation |
+| an assessment of the quality of the work | nowhere - it is reported in conversation |
 
 **Present tense, and only what was checked and what was on the screen.** A sentence opening with
 "this time", "running it again" or "originally", and a status column, are not the shape of this
@@ -110,20 +110,20 @@ which case it is.**
 | a journey only the chapter has | a journey was added | below |
 | both | a journey changed | the next run answers the new one |
 
-**Where a journey was added there is one answer — that chapter is not closed.** Put its state back to
+**Where a journey was added there is one answer - that chapter is not closed.** Put its state back to
 open in the ledger and name the newly placed frame among what is left. There is no path where the
 screen is absent and the document is filled in, and it is not an open-items entry either: that file
-holds what waits on a person, and here nothing is waiting — the screen has simply not been built.
+holds what waits on a person, and here nothing is waiting - the screen has simply not been built.
 
 **Every other journey stays green.** What grew is the new frame's journey, so that test is written
-and the command runs — and running it runs the others too, which costs nothing and proves nothing
+and the command runs - and running it runs the others too, which costs nothing and proves nothing
 moved under them.
 
 
 ## What the checks judge
 
 `closedChapterHasAJourneyRun` judges: that a chapter the ledger marks closed has a record; that
-the record carries a row for every journey the chapter names — matched by number and persona —
+the record carries a row for every journey the chapter names - matched by number and persona -
 and that every row reads `pass`, or `skipped` with the parked line that releases it. **Every
 finding of it is a defect.**
 
@@ -147,7 +147,7 @@ generating into a throwaway `git worktree` at the commit the chapters were last 
 copy the changed files in, link the board's `.kit`, generate, `git diff --stat` that board's
 chapters against the commit, remove the worktree. No tree anybody is working in is touched, and
 the diff is what the other board's next regeneration will change, journey by journey. Generate twice to
-separate the fix's share from board drift — once with the committed generator, which shows the
+separate the fix's share from board drift - once with the committed generator, which shows the
 lines the board moved on its own since the chapters were written, and once with the changed one;
 what differs between the two runs is the fix. A line that moved on its own is the board's
 change whichever fix lands, and it is found here rather than after regenerating, when the first
@@ -156,7 +156,7 @@ minutes go to blaming the fix for it.
 ## When what a chapter demands of a screen grows
 
 **Re-run the demand that was added, not the section that carried it.** A chapter whose lines gain a
-new requirement — a capture per content tab, an empty list, the row actions pressed — does not
+new requirement - a capture per content tab, an empty list, the row actions pressed - does not
 thereby invalidate what its sections already recorded. The tiles counted are still the tiles
 counted; the dialog's wording is still its wording. What is missing is an answer to the new
 sentence, and that is what the run produces.
@@ -189,10 +189,10 @@ says which case it is.**
 | a section only the chapter has | the demand grew | below |
 | both | the demand changed | delete what is gone, and treat what is new as below |
 
-**Where the demand grew there is one answer — that chapter is not closed.** Put its state back to
+**Where the demand grew there is one answer - that chapter is not closed.** Put its state back to
 open in the ledger and name the newly placed frame among what is left. There is no path where the
 screen is absent and the document is filled in, and it is not an open-items entry either: that file
-holds what waits on a person, and here nothing is waiting — the screen has simply not been built.
+holds what waits on a person, and here nothing is waiting - the screen has simply not been built.
 
 **Every other section stays closed.** What grew is the new frame's lines, so those lines are run
 and that section is written. A section already verified is not run again; the screen it verified
@@ -204,7 +204,7 @@ has not moved.
 there is a section per line the chapter demands; that each section carries the three labels and
 evidence; that each capture a document shows is on disk with a name, format and size the table
 above allows; and that no capture is left in the folder that no section shows. **Every finding of
-it is a defect**, which is why the floor under a capture's density is not one of them — that
+it is a defect**, which is why the floor under a capture's density is not one of them - that
 question is answered 「go and look」 rather than 「this is wrong」, and a gate answers one question.
 
 **It does not tell a capture from a code block.** One capture, one fenced block **or** one
@@ -214,7 +214,7 @@ already photographed. So nothing here separates a section written by looking at 
 written out of a run log, and that reading is assigned to eyes.
 
 **`dischargedDemandNamesItsProof` judges the discharge itself.** The line names a capture, that
-capture is on disk in this chapter's folder, and this document shows it — a discharge leaning on a
+capture is on disk in this chapter's folder, and this document shows it - a discharge leaning on a
 picture nobody can open is a skip wearing a rule's clothes, and it reads in the file exactly like
 one that holds. Whether the component is still unbuilt is not in the bytes and stays with eyes.
 
@@ -226,7 +226,7 @@ picture is the only witness*.
 
 **`everyPlacedFrameIsCaptured` judges the other direction.** Among the frames a closed chapter
 places and tells somebody to open, it names by frame id the ones with no capture. **A frame nothing
-photographed is a screen nobody opened** — a build has shipped nine screens drawing the shell and
+photographed is a screen nobody opened** - a build has shipped nine screens drawing the shell and
 nothing else with a green build and every request answering 200, and the only party who would have
 seen it was the party that opened a browser. The ceiling above stops a frame having more than its
 panes; this check makes sure it has at least one.
@@ -236,40 +236,40 @@ own, is one nobody is told to open and there is no screen to shoot.
 
 **`everyCaptureIsAtADeclaredWidth` judges the picture rather than the document.** Every capture in
 the folder is opened as bytes, its stated canvas is read out of the header, and a width the project
-did not declare in `captureStandard` is a finding — as is a file whose header will not open at all.
+did not declare in `captureStandard` is a finding - as is a file whose header will not open at all.
 **Two of the checks here read a byte of a capture and the rest read around it**: the name check
 reads a name and the ceiling reads a length, so a driver's own screenshot filed under the capture
 suffix without ever being encoded passes both. Nine such files sat in one project's evidence
-folder, and the same run's real defect — every capture shot through a window 160 pixels too narrow,
-with a tree's first row and an entire panel form below the fold — was invisible in exactly the same
+folder, and the same run's real defect - every capture shot through a window 160 pixels too narrow,
+with a tree's first row and an entire panel form below the fold - was invisible in exactly the same
 way. **The width is all a file remembers**; the colour scheme and whether the fold ate anything stay
 with eyes, and `../SKILL.md`'s second table names whose.
 
 **`everyCaptureIsDenserThanAnEmptyCanvas` is the second, and it is a warning.** It holds a capture's
 bytes against the canvas the same header states, because a shot taken before the page painted is
-the one defect in an evidence folder that agrees with every other artifact in the run — the name
+the one defect in an evidence folder that agrees with every other artifact in the run - the name
 parses, the width is right, the taker's sentence describes what was on the screen, and the file is
 a white rectangle. **Bytes alone cannot ask that question**: encoding quality moves one screen by a
 third and a device pixel ratio of two moves it by four, so an absolute count reads a blank 2×-ratio
-capture as a fuller screen than a real 1× one. Density does not move — an empty canvas costs about
+capture as a fuller screen than a real 1× one. Density does not move - an empty canvas costs about
 1,900 bytes per megapixel at any quality and any size, where the sparsest real screen a board draws
-costs 3,900 — and the floor sits in the middle of that gap.
+costs 3,900 - and the floor sits in the middle of that gap.
 
 **It raises 「open this one」 and claims nothing more.** A capture of a built shell with nothing
 inside it passes it and always will; so does a long full-page capture whose lower half is
 legitimately empty, and both are answered by a person saying so rather than by widening the number.
-**The one answer that is never right is re-encoding the picture larger** — quality moves a real
+**The one answer that is never right is re-encoding the picture larger** - quality moves a real
 screen and leaves a blank one where it is, so a bigger file clears the floor for this capture and
 hides the next one that really is blank. That is also why the grade is a warning: an error would
 leave that as the only route to green.
 
 **A project's own check repeats that judgment one layer under the tabs**, reading the board's tab
 strips and asking, for each frame a closed chapter opens, whether every pane but the open one was
-photographed — and the other direction too: a picture named for a pane the board does not draw, a
+photographed - and the other direction too: a picture named for a pane the board does not draw, a
 second name for the pane already open, a pane picture on a frame with no strip.
 
 **What stays with eyes over a result document is in `../SKILL.md` § *Closing a chapter*,** which is
-the one register of every rule this skill hands to a person — whether the capture shows the frame
+the one register of every rule this skill hands to a person - whether the capture shows the frame
 it is named after, whether the `saw` line is what was actually there, whether the document was
 written out of the verification rather than before it. **The project names whose eyes and at which
 moment**, in the index of its own evidence folder, because that is a staffing decision. What

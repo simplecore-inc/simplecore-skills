@@ -3,11 +3,11 @@
 // A gate is `{ id, title, stage, run(ctx) → string[] }`. It finds and describes; it never prints
 // and never exits, so a gate can be run from anywhere and its findings counted.
 //
-//   stage 'preflight' — runs before the board is rendered (the render itself depends on it)
-//   stage 'built'     — runs on the finished board
+//   stage 'preflight' - runs before the board is rendered (the render itself depends on it)
+//   stage 'built' - runs on the finished board
 //
 // **Every finding refuses the build.** There used to be a second, lenient mode writing a second
-// file — the idea being that work in progress should still be previewable — and it earned nothing:
+// file - the idea being that work in progress should still be previewable - and it earned nothing:
 // the two files came out byte-identical, so the only thing the split produced was a stale copy of
 // the board sitting beside the real one for anything that read the wrong name. A gate worth
 // writing is worth obeying now, and the board is drawn by fixing what a gate says rather than by
@@ -15,16 +15,16 @@
 //
 // **The gates come from three places, and which place a gate belongs in is the design decision.**
 //
-//   core     — true of any board: the permanent id, balanced markup, a value leaked as text,
+//   core - true of any board: the permanent id, balanced markup, a value leaked as text,
 //              whether a frame can be reached, whether a declared document agrees with the board
-//   pattern  — true of every board drawn in that pattern: the register its copy is written in,
+//   pattern - true of every board drawn in that pattern: the register its copy is written in,
 //              the list-detail discipline, the vocabulary its controls share
-//   board    — true of this product only: a gate that parses a document format this project
+//   board - true of this product only: a gate that parses a document format this project
 //              chose, or knows this product's own data shapes. `board.gates.mjs`
 //
 // A gate put one level too high fires on boards it does not describe; one level too low is
 // rewritten by the next project that needs it. When in doubt, ask whether it would still be
-// right on somebody else's board — that is the whole test.
+// right on somebody else's board - that is the whole test.
 //
 // ctx carries: boardDir · patternDir · config · pattern · components · roles · crud · styles ·
 //              intro · partials · manifest · sections · screens · loaded · byId · srcOf(file) ·
@@ -90,7 +90,7 @@ export const CORE_GATES = [
 /**
  * Every gate this board runs: the core, then its pattern's, then its own.
  *
- * <p>Later entries never replace earlier ones — a pattern cannot switch off a core gate and a
+ * <p>Later entries never replace earlier ones - a pattern cannot switch off a core gate and a
  * board cannot switch off its pattern's. What a board disagrees with, it changes; a gate that
  * can be turned off is a gate that will be, on the build where it was inconvenient.
  */
@@ -106,7 +106,7 @@ export function gatesFor(ctx) {
  * Run the gates of one stage. Anything found stops the build.
  *
  * <p>Async because a gate may need to import the board's own data rather than re-derive it. A
- * synchronous runner would take the promise, find no `.length`, and skip the gate in silence —
+ * synchronous runner would take the promise, find no `.length`, and skip the gate in silence -
  * which looks exactly like a gate that found nothing.
  */
 export async function runGates(ctx, stage) {

@@ -42,14 +42,14 @@
   .ov-tbl .ov-c { text-align: center; white-space: nowrap; }
   .ov-matrix th.ov-c { font-size: 10.5px; }
   /* The legend and the clusters the matrix does not cover are two footnotes to the same table,
-     so they share one strip under it — a heading in the same shape the card's other headings
+     so they share one strip under it - a heading in the same shape the card's other headings
      use, then the items in a row rather than as a bulleted list nobody reads. */
   .ov-foot { display: grid; grid-template-columns: auto 1fr; gap: 8px 22px; margin-top: 10px;
     padding-top: 9px; border-top: 1px solid var(--line); align-items: start; }
   .ov-foot > * { min-width: 0; }
   .ov-foot-h { display: block; font-size: 10.5px; font-weight: 700; color: var(--muted);
     letter-spacing: 0.04em; margin-bottom: 4px; }
-  /* The two groups sit side by side, so their chips share one set of box metrics — height,
+  /* The two groups sit side by side, so their chips share one set of box metrics - height,
      padding, radius, gap. Left to their own, the legend's chips ran taller than the ones beside
      them and the two rows read as two different kinds of thing. */
   .ov-legend, .ov-nc ul {
@@ -64,14 +64,14 @@
     border: 1px solid var(--line); border-radius: 3px; background: var(--paper);
   }
   /* Dashed, because these are clusters the matrix deliberately leaves out rather than values in
-     it — the one difference between the two rows that carries meaning. */
+     it - the one difference between the two rows that carries meaning. */
   .ov-nc li { border-style: dashed; background: none; }
   .ov-lg b { font-size: 12px; }
   .ov-nc li b { font: 700 10.5px var(--mono); color: var(--accent); }
   .ov-nc li span { color: var(--muted); }
 
   /* One overview frame reads as ONE landscape A4 page, because that is what it becomes in the
-     PDF. The ratio is the printable area — the page minus its margins — not the paper, so what
+     PDF. The ratio is the printable area - the page minus its margins - not the paper, so what
      fits here fits there. Height is a floor rather than a cap: a board with forty clusters gets
      a taller card and the PDF scales it down, which is honest, where clipping would not be. */
   .ov-frame { width: 100%; margin: 0 0 18px; display: flex; flex-direction: column; }
@@ -87,9 +87,9 @@
   .ov-label .ov-sub-l { margin-left: auto; }
 
   /* The IA tree: a branch label on the left, its clusters flowing right. The accent rule down
-     the left is the connector — a tab and what it opens, drawn as one thing. */
+     the left is the connector - a tab and what it opens, drawn as one thing. */
   /* Two columns, because the stage is a landscape page and one column of full-width rows leaves
-     half of it empty. A branch is never split across the break — a tab and the clusters it opens
+     half of it empty. A branch is never split across the break - a tab and the clusters it opens
      are one thing, and reading half of it at the foot of one column is worse than a shorter page. */
   .ov-cols {
     display: grid; grid-template-columns: 4fr 6fr; gap: 0 20px; align-items: start;
@@ -159,7 +159,7 @@
   .ov-gates { padding-left: 20px; border-left: 1px solid var(--line); }
   .ov-axis + .ov-axis { margin-top: 14px; }
 
-  /* The mark sits at the top right of the board and is decoration rather than notation — so it
+  /* The mark sits at the top right of the board and is decoration rather than notation - so it
      carries no alt text and never enters the greybox vocabulary. Its height comes from the two
      rows beside it, so it grows with the header instead of being a number to keep in step. */
   .board-logo {
@@ -172,7 +172,7 @@
      mark held at the right across both. Overrides the pattern's single-row rule, which is why it
      is here rather than there: the layout is the kit's, the colours stay the pattern's. */
   /* `stretch`, so the mark is as tall as the two rows beside it rather than centred against
-     them — the title row and the badge row read as one block, and the mark holds that block's
+     them - the title row and the badge row read as one block, and the mark holds that block's
      full height. */
   .board-header { display: flex; align-items: stretch; gap: 18px; }
   .bh-main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 7px; }
@@ -181,7 +181,7 @@
   .bh-meta .view-toggle { margin-left: 0; }
 
   /* The first group in the table of contents: where to go that is not a screen. Drawn as the
-     screen entries are — the pattern's own `a` rule does the work — and separated from the first
+     screen entries are - the pattern's own `a` rule does the work - and separated from the first
      real section by a rule. It never takes the scroll-spy's state and the filter never hides it,
      so a reader who typed a word can still reach the map and the contract. */
   .sb-fixed { margin-bottom: 6px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }

@@ -3,14 +3,14 @@
  * PostToolUse hook: lint an SVG the moment it is written.
  *
  * Valid SVG XML is not a correct picture. A marker that resolves to nothing, an arrowhead buried
- * inside the box it points at, a Korean label overflowing a box sized for Latin — none of these
+ * inside the box it points at, a Korean label overflowing a box sized for Latin - none of these
  * are visible in the source, and all of them survive a careful read of the diff. The svg-diagrams
  * skill says to run the lint before delivering; this is what makes that hold when the file looks
  * finished.
  *
  * It runs the same static scan the skill documents (`audit.py lint`), so a project gets one
  * verdict whether the lint was run by hand or by this hook. The lint is a screen, not the whole
- * audit — render and hotspot passes still belong to the skill.
+ * audit - render and hotspot passes still belong to the skill.
  *
  * Scope guard: a PostToolUse write is by definition a file this session authored or edited, which
  * is exactly the file worth linting. A project turns the check off with

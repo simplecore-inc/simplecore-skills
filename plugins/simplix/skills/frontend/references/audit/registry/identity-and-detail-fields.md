@@ -1,6 +1,6 @@
-> Commonization registry — **Identity, detail fields & user labels**. Detail file of `../registry.md` (the index); sections verbatim. Check the index first, then read only the section you need.
+> Commonization registry - **Identity, detail fields & user labels**. Detail file of `../registry.md` (the index); sections verbatim. Check the index first, then read only the section you need.
 
-# Registry — Identity, detail fields & user labels
+# Registry - Identity, detail fields & user labels
 
 ## ID/UUID Exposure Prevention
 
@@ -98,8 +98,8 @@ value={data.parent?.category?.name ?? "—"}
 value={data.parent?.category?.name ?? data.parent?.categoryId}
 ```
 
-**Exception — picker option labels**: select/picker
-OPTION labels may fall back to the id (`item.name ?? item.id ?? ""` — the SearchPopover pattern),
+**Exception - picker option labels**: select/picker
+OPTION labels may fall back to the id (`item.name ?? item.id ?? ""` - the SearchPopover pattern),
 since a picker item must remain identifiable and selectable even when unnamed. Table cells,
 detail fields, and headers still follow the em-dash rule above.
 
@@ -242,7 +242,7 @@ auditData?: AuditData;
 - **ID display**: UUID last 12 chars, click to copy full ID to clipboard
 - **Tooltip**: Radix primitive (no Arrow), `bg-popover` for theme support
 - **Date format**: Fixed 24h format `YYYY-MM-DD HH:mm` (locale-independent)
-- **Layout**: Single row — ID left, dates right (`ml-auto`)
+- **Layout**: Single row - ID left, dates right (`ml-auto`)
 - **Design**: `bg-muted/50 rounded-md`, no border
 - **Empty handling**: Returns null when all fields are empty
 
@@ -327,7 +327,7 @@ Bordered list of `icon? + primary + trailing?` rows. `DetailList` is the `overfl
 
 ### Rule
 
-Read-only status/severity detail field. Renders a tone-driven `StatusBadge` inside the standard `DetailFieldWrapper` with the same `EmptyValueBadge` empty fallback as other `DetailFields.*`. Props: `tone` (resolved `StatusTone`), `value` (translated label), `showDot?`, `icon?`, `appearance?`, `badgeSize?` (default `sm`), `fallback?` (string override of the badge). Use this — NOT `DetailBadgeField` (legacy Badge `variants` map) and NOT a hand-built `DetailFieldWrapper` + `LabeledField` + inline `StatusBadge` — whenever a detail view shows an enum/status with a shared tone map.
+Read-only status/severity detail field. Renders a tone-driven `StatusBadge` inside the standard `DetailFieldWrapper` with the same `EmptyValueBadge` empty fallback as other `DetailFields.*`. Props: `tone` (resolved `StatusTone`), `value` (translated label), `showDot?`, `icon?`, `appearance?`, `badgeSize?` (default `sm`), `fallback?` (string override of the badge). Use this - NOT `DetailBadgeField` (legacy Badge `variants` map) and NOT a hand-built `DetailFieldWrapper` + `LabeledField` + inline `StatusBadge` - whenever a detail view shows an enum/status with a shared tone map.
 
 ```tsx
 <DetailFields.DetailStatusField tone={memberStatusToTone[v] ?? "neutral"} value={enumLabel("MemberStatus", v)} showDot layout="inline" />
@@ -355,12 +355,12 @@ Read-only status/severity detail field. Renders a tone-driven `StatusBadge` insi
 
 Every render of a user account's display name carries the user's avatar. The public avatar endpoint 404s for users without an uploaded photo, so all avatar rendering goes through these components (they handle the failure fallback to the app default image):
 
-1. **`UserLabel userId name`** — the one inline user label (compact avatar + truncating name) for list columns, card titles, board/panel rows, and dialog lines. Surrounding typography is passed via `className` (and `avatarClassName="size-4"` for caption-size rows).
-2. **`UserHeading userId name`** — detail-panel header for person-attributed records (avatar + muted level-4 `Heading`). Replaces a bare `Heading level={4} tone="muted"` titled by a person's name.
-3. **`UserAvatar userId name`** — avatar only, when the name renders elsewhere (dialog titles, custom compositions).
-4. **`useCurrentUserAvatar()`** — the signed-in user's `{ userId, version, avatarUrl }` (cache-busted by the avatar attachment id). The ONLY way to render the current user's avatar; never re-implement the auth + avatar-query + URL assembly inline.
+1. **`UserLabel userId name`** - the one inline user label (compact avatar + truncating name) for list columns, card titles, board/panel rows, and dialog lines. Surrounding typography is passed via `className` (and `avatarClassName="size-4"` for caption-size rows).
+2. **`UserHeading userId name`** - detail-panel header for person-attributed records (avatar + muted level-4 `Heading`). Replaces a bare `Heading level={4} tone="muted"` titled by a person's name.
+3. **`UserAvatar userId name`** - avatar only, when the name renders elsewhere (dialog titles, custom compositions).
+4. **`useCurrentUserAvatar()`** - the signed-in user's `{ userId, version, avatarUrl }` (cache-busted by the avatar attachment id). The ONLY way to render the current user's avatar; never re-implement the auth + avatar-query + URL assembly inline.
 
-Calendar/gantt resources get avatars centrally via the shared calendar adapters (`avatarUrl` + `avatarFallbackUrl` on `CalendarResource`) — never per-screen.
+Calendar/gantt resources get avatars centrally via the shared calendar adapters (`avatarUrl` + `avatarFallbackUrl` on `CalendarResource`) - never per-screen.
 
 ### Standard Usage
 
@@ -392,7 +392,7 @@ const url = userId && avatar?.attachmentId ? getUserAvatarUrl(userId, { size: "s
 
 ### Rule
 
-A cross-detail reference opens the referenced record in a `DetailPeekDialog`; its trigger is always `PeekTriggerButton`, never a hand-rolled `<Button>` with a `stopPropagation` closure. Two forms via the `appearance` prop, and **one question decides which: does the trigger stand alone in its own region, or sit at the end of a value?** Standing alone — a card, a `CrudDetail.ActionFooter` action row — it takes `"inline"` (outline button carrying the label and the icon), because nothing precedes it to say what it opens. At the end of a value — `DetailFieldWrapper`, `CrudList.Column`, `DetailListRow`, a `CrudDetail.Section` header `trailing` slot — it takes the default `"icon"` (icon-only ghost button, label as tooltip and accessible name), because the word takes the width the value needs and truncates the name the row exists to show. Both misreadings have been made: 「the label is for cards」 leaves a footer of identical glyphs nobody can tell apart, and 「the label is for anything with a label beside it」 puts a button at the end of every detail row. A separate `tight` prop decides whether the control hugs the value in front of it; it defaults to the shape (`"icon"` hugs, `"inline"` does not) and is overridden only for an icon in a trailing slot, where nothing precedes it. Every trigger passes `target` — what it opens, as a person reads it — and an icon-only one must: with the label gone, `aria-label` is all a screen reader has, and one panel holds several triggers whose label is the same word. The name becomes 「남부현장 보기」 rather than the fourth 「보기」 on the screen. Both draw the external-link icon — the dialog is a window onto another record, and an eye says 「read-only」, which is a different promise — and both stop row-click propagation. A module-local icon-only peek button is a duplicate — use `appearance="icon"`.
+A cross-detail reference opens the referenced record in a `DetailPeekDialog`; its trigger is always `PeekTriggerButton`, never a hand-rolled `<Button>` with a `stopPropagation` closure. Two forms via the `appearance` prop, and **one question decides which: does the trigger stand alone in its own region, or sit at the end of a value?** Standing alone - a card, a `CrudDetail.ActionFooter` action row - it takes `"inline"` (outline button carrying the label and the icon), because nothing precedes it to say what it opens. At the end of a value - `DetailFieldWrapper`, `CrudList.Column`, `DetailListRow`, a `CrudDetail.Section` header `trailing` slot - it takes the default `"icon"` (icon-only ghost button, label as tooltip and accessible name), because the word takes the width the value needs and truncates the name the row exists to show. Both misreadings have been made: 「the label is for cards」 leaves a footer of identical glyphs nobody can tell apart, and 「the label is for anything with a label beside it」 puts a button at the end of every detail row. A separate `tight` prop decides whether the control hugs the value in front of it; it defaults to the shape (`"icon"` hugs, `"inline"` does not) and is overridden only for an icon in a trailing slot, where nothing precedes it. Every trigger passes `target` - what it opens, as a person reads it - and an icon-only one must: with the label gone, `aria-label` is all a screen reader has, and one panel holds several triggers whose label is the same word. The name becomes 「남부현장 보기」 rather than the fourth 「보기」 on the screen. Both draw the external-link icon - the dialog is a window onto another record, and an eye says 「read-only」, which is a different promise - and both stop row-click propagation. A module-local icon-only peek button is a duplicate - use `appearance="icon"`.
 
 ## usePeekTarget (peek open/close state machine)
 
@@ -405,7 +405,7 @@ A cross-detail reference opens the referenced record in a `DetailPeekDialog`; it
 
 The open/close state a widget-root `DetailPeekDialog` needs comes from `usePeekTarget`, never a hand-rolled `useState(false)` + manual `onOpenChange` closure. It returns `{ target, isOpen, open, close, onOpenChange }`: a boolean single-target peek uses the default `T` (`open()` / `isOpen`); a nullable multi-kind peek passes a target object (`open({ kind, id, title })`) and reads `target?.kind` at the mount gate. Wire `open={peek.isOpen}` and `onOpenChange={peek.onOpenChange}` straight through. Label lookup and `goToHref` assembly stay with the caller (domain- and i18n-scoped).
 
-**A reference label does NOT use this hook** — `*PeekLabel` components dispatch to the app-root peek host (`usePeekHost`, registry entry below), so the dialog mounts outside the row. Reach for `usePeekTarget` only when the trigger is screen-specific and its state already sits outside every cell and `.map()` callback (invariant #45).
+**A reference label does NOT use this hook** - `*PeekLabel` components dispatch to the app-root peek host (`usePeekHost`, registry entry below), so the dialog mounts outside the row. Reach for `usePeekTarget` only when the trigger is screen-specific and its state already sits outside every cell and `.map()` callback (invariant #45).
 
 ## usePeekHost / PeekHost (app-root peek mounting)
 
@@ -416,4 +416,4 @@ The open/close state a widget-root `DetailPeekDialog` needs comes from `usePeekT
 
 ### Rule
 
-`PeekHost` wraps the routed tree once in the app's provider stack and owns the mounted peek dialog. A peek label never holds open state and never renders a dialog inline: its trigger calls `peek.open({ render: ({ open, onOpenChange }) => <XPeekDialog … /> })`, and the host mounts that element at the app root. The host is kind-agnostic — the caller supplies the dialog, so a module's own entity peek needs no registration. A dialog left inside the subtree that opened it is unmounted by that subtree's next refetch and closes itself seconds later, which is the defect this replaces. Labels expose no `onPeek` escape hatch: one way in, one mount point.
+`PeekHost` wraps the routed tree once in the app's provider stack and owns the mounted peek dialog. A peek label never holds open state and never renders a dialog inline: its trigger calls `peek.open({ render: ({ open, onOpenChange }) => <XPeekDialog … /> })`, and the host mounts that element at the app root. The host is kind-agnostic - the caller supplies the dialog, so a module's own entity peek needs no registration. A dialog left inside the subtree that opened it is unmounted by that subtree's next refetch and closes itself seconds later, which is the defect this replaces. Labels expose no `onPeek` escape hatch: one way in, one mount point.

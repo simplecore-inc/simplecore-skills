@@ -5,7 +5,7 @@
 //
 // **A board that declares no required cluster is not judged, empty manifest included.** That is
 // the state `/simplecore:board-init --no-examples` leaves behind and the state
-// `requiredSections: []` documents — the screens are about to be authored from a specification,
+// `requiredSections: []` documents - the screens are about to be authored from a specification,
 // and the board has to build before the first of them exists or nobody can prove the scaffold
 // works. Refusing it made `init` contradict itself: it writes an empty manifest so the board
 // «still has to build», and this gate then refused every build until a frame was drawn.

@@ -1,5 +1,5 @@
 // A-01 · The first screen anyone sees. It has to work before the product knows anything about
-// who is looking at it — including which language they read.
+// who is looking at it - including which language they read.
 import { auth_ } from '../chrome.mjs';
 import { fText, btn, btnRow, msg, divider, formGrid } from '../components.mjs';
 

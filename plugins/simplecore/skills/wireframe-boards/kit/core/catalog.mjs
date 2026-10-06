@@ -1,6 +1,6 @@
 // Build the component catalog (storybook): render every entry in the pattern's CATALOG with its
 // name, live example, and note, grouped by category. This is the reference an author consults
-// BEFORE writing a screen — the kit they compose from. Adding a component to the pattern (and
+// BEFORE writing a screen - the kit they compose from. Adding a component to the pattern (and
 // registering it in CATALOG) makes it show up here automatically.
 //
 //   node wf.mjs catalog   → writes _catalog.html
@@ -13,7 +13,7 @@ const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, 
 /**
  * Render the storybook for whichever pattern this board is drawn in.
  *
- * <p>The catalog is the pattern's, not the board's — two boards on one pattern get the same
+ * <p>The catalog is the pattern's, not the board's - two boards on one pattern get the same
  * page. It is written into the board folder anyway, because that is where somebody drawing a
  * screen is standing when they need it.
  */

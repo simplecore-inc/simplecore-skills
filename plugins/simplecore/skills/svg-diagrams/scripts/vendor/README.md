@@ -7,7 +7,7 @@ Third-party code committed to the repository so the skill runs with zero install
 
 - Source: `@dagrejs/dagre` (npm), `dist/dagre.esm.js`
 - Version: 3.0.0
-- License: MIT — full notice in `dagre.esm.js.LEGAL.txt`
+- License: MIT - full notice in `dagre.esm.js.LEGAL.txt`
 - Used by: `../graph.js` (directed-graph auto-layout backend)
 
 Self-contained ESM bundle (includes graphlib); no runtime dependencies. Update by

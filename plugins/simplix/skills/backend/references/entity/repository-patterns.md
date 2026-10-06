@@ -23,9 +23,9 @@ public interface {EntityName}Repository extends SimpliXBaseRepository<{EntityNam
 }
 ```
 
-### Composite Keys — FORBIDDEN
+### Composite Keys - FORBIDDEN
 
-`@IdClass` and `@EmbeddedId` composite keys are **prohibited**. Every entity — including junction tables, time-series points, sync-state tuples, monitoring snapshots, and history tables — uses a single `@Id String id` (UUID v7) and expresses the business uniqueness of the composite columns as a `@Table(uniqueConstraints = @UniqueConstraint(columnNames = {...}))`.
+`@IdClass` and `@EmbeddedId` composite keys are **prohibited**. Every entity - including junction tables, time-series points, sync-state tuples, monitoring snapshots, and history tables - uses a single `@Id String id` (UUID v7) and expresses the business uniqueness of the composite columns as a `@Table(uniqueConstraints = @UniqueConstraint(columnNames = {...}))`.
 
 ```java
 // CORRECT — single String id + unique composite index
@@ -53,7 +53,7 @@ public interface UserGroupMemberRepository
 }
 ```
 
-**Why**: SKILL.md:133 mandates `<String>` ID for every entity. Composite keys break `SimpliXBaseService<E, String>` and `SimpliXBaseController<E, String>`, which cannot be specialized to a composite id class. The only exception is a **framework-imposed** alternative (e.g., Hibernate Envers `@RevisionEntity` requires `Long`) — and even that is confined to audit infrastructure.
+**Why**: SKILL.md:133 mandates `<String>` ID for every entity. Composite keys break `SimpliXBaseService<E, String>` and `SimpliXBaseController<E, String>`, which cannot be specialized to a composite id class. The only exception is a **framework-imposed** alternative (e.g., Hibernate Envers `@RevisionEntity` requires `Long`) - and even that is confined to audit infrastructure.
 
 ### Tree Repository (Hierarchical Entities)
 

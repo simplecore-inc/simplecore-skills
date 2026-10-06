@@ -89,7 +89,7 @@ public SimpliXApiResponse<SyncExecutionResult> execute(
 
 1. `@XxxMapping` (HTTP method + path)
 2. `@Operation` (OpenAPI documentation)
-3. `@PreAuthorize` (Security — MANDATORY)
+3. `@PreAuthorize` (Security - MANDATORY)
 4. Method signature
 
 ---

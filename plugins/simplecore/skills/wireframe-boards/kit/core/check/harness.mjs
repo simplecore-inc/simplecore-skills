@@ -2,7 +2,7 @@
 //
 // Every gate gets two: one board that must trip it, one that must not. A gate that has gone
 // quiet is indistinguishable from a board with nothing wrong with it, which is the whole reason
-// the gates exist — so the cases are the only thing standing between «the gate works» and
+// the gates exist - so the cases are the only thing standing between «the gate works» and
 // «nobody has looked».
 //
 // **The cases live beside the gates they test**, in three files that mirror the three places a
@@ -25,7 +25,7 @@ import { idOf } from '../ids.mjs';
  *
  * <p>**A gate's own test may not read the board's settings.** A case built on `config.today` or
  * on the site's language list passes on the board that happened to declare those values and
- * fails on every other — so `node wf.mjs gates` would answer a different question in each
+ * fails on every other - so `node wf.mjs gates` would answer a different question in each
  * repository, which is the opposite of what a self-test is for. The fixture states what the
  * cases need; a case that wants something else overrides it in its own `over`.
  */
@@ -49,7 +49,7 @@ export const FIXTURE_CONFIG = {
 export function makeBuilders(boardConfig = {}) {
   const config = FIXTURE_CONFIG;
   const docRoots = [];
-  // The document gates read real files, so their fixtures are a real tree — a throwaway one
+  // The document gates read real files, so their fixtures are a real tree - a throwaway one
   // whose paths the ctx points at. Faking the reader instead would test the fake.
   const docCtx = (files, over = {}) => {
     const dir = mkdtempSync(join(tmpdir(), 'board-docs-'));

@@ -4,7 +4,7 @@ SimpliX generator YML (`/.simplix/entity/*.yml`).
 
 > **Generator version anchor**: This YML schema is valid for `yo simplix:*` generators of the SimpliX 2.x generation. When the generator is upgraded, re-audit this file for new keys or renamed fields.
 
-> **Scope (canonical):** every YML key — `entity`, `modulePath`, `idField`, `nameField`, `defaultSortField`, `defaultSortDirection`, `fields.*` (views, sortable, searchOperators, reference, required, unique, maxLength). For generator CLI commands and promote workflow, see `../generator/`; for template hacking see `../generator/template-customization.md`.
+> **Scope (canonical):** every YML key - `entity`, `modulePath`, `idField`, `nameField`, `defaultSortField`, `defaultSortDirection`, `fields.*` (views, sortable, searchOperators, reference, required, unique, maxLength). For generator CLI commands and promote workflow, see `../generator/`; for template hacking see `../generator/template-customization.md`.
 
 ---
 
@@ -249,7 +249,7 @@ fields:
 |----------|------|-------------|
 | `entity` | String | Related entity class name |
 | `idField` | String | Related entity ID field |
-| `idType` | String | ID type (`String`, `Long`, etc.). Always `String` in SimpliX projects — see CRUD Layer Stack in SKILL.md. |
+| `idType` | String | ID type (`String`, `Long`, etc.). Always `String` in SimpliX projects - see CRUD Layer Stack in SKILL.md. |
 | `nameField` | String | Display field for dropdown |
 | `multiple` | Boolean | `false` for ManyToOne, `true` for ManyToMany |
 
@@ -387,7 +387,7 @@ yo simplix:generate CmsContent CmsChannel CmsCategory
 
 | Type | Generated Output | Promoted Location |
 |------|------------------|-------------------|
-| Repository | (manual — not generated) | `modules/domain/.../repository/{module}/` |
+| Repository | (manual - not generated) | `modules/domain/.../repository/{module}/` |
 | Service | `generated/main/java/.../web/{modulePath}/service/` | `modules/{promoteModule}/src/main/java/.../web/{modulePath}/service/` |
 | Controller | `generated/main/java/.../web/{modulePath}/controller/rest/` | `modules/{promoteModule}/src/main/java/.../web/{modulePath}/controller/rest/` |
 | DTOs | `generated/main/java/.../web/{modulePath}/dto/` | `modules/{promoteModule}/src/main/java/.../web/{modulePath}/dto/` |

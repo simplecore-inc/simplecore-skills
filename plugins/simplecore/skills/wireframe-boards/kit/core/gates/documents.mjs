@@ -1,4 +1,4 @@
-// Gates that read the documents OUTSIDE this folder — `docs/` decides what exists and `_plans/`
+// Gates that read the documents OUTSIDE this folder - `docs/` decides what exists and `_plans/`
 // decides in what order it gets built, so both drift the moment a frame is added and nobody
 // back-fills. Every check here is one that had already gone wrong silently:
 //
@@ -8,7 +8,7 @@
 //   the IA menu tree was seven entries behind the shell it describes
 //   the board cited five 별지 서식 the statutory-form appendix did not carry
 //
-// None of these can be seen from inside the board, and none of them makes a screen look wrong —
+// None of these can be seen from inside the board, and none of them makes a screen look wrong -
 // which is exactly why they survived. Each one refuses the build.
 //
 // Reading is by explicit path from `board.config.mjs`, never by glob: a glob that stops matching
@@ -16,7 +16,7 @@
 import { readFileSync, existsSync, readdirSync, statSync } from 'node:fs';
 import { join, dirname, resolve } from 'node:path';
 
-// A declared document may be one file or a directory of them — a plan that grew past one file is
+// A declared document may be one file or a directory of them - a plan that grew past one file is
 // still one plan, and the gates that read it must not force it back into a single page.
 const read = (ctx, key) => {
   const rel = ctx.config.documents?.[key];
@@ -54,7 +54,7 @@ const idOfFile = (f) => {
 const boardIds = (ctx) => new Set(ctx.manifest.flatMap((s) => s.screens.map((e) => idOfFile(e.file))));
 
 /**
- * The SCREEN ids behind those frames — a frame id with its state letter taken off.
+ * The SCREEN ids behind those frames - a frame id with its state letter taken off.
  *
  * <p>A board may number its frames `B-01a` · `B-01b` · `B-01c`, in which case `B-01` is not a
  * frame but the screen those three are states of, and the documents name it constantly: the
@@ -68,7 +68,7 @@ const boardIds = (ctx) => new Set(ctx.manifest.flatMap((s) => s.screens.map((e) 
 const boardScreenIds = (ctx) => new Set([...boardIds(ctx)].map((id) => id.replace(/[a-z]$/, '')));
 
 // A state frame spreads its base or imports the base's drawing. It rides in the base's phase, so
-// the roadmap places base screens only — counting states there would demand 310 more entries that
+// the roadmap places base screens only - counting states there would demand 310 more entries that
 // say nothing about build order.
 const isState = (src) => /\.\.\.base/.test(src) || /^import base from/m.test(src) || /from '\.\/[a-z]-\d+-/.test(src);
 
@@ -80,7 +80,7 @@ const baseIds = (ctx) => new Set(
 
 // The state letter is part of the id and has to be READ as part of it. Stopping at the digits
 // turns every `B-01a` in a document into a citation of `B-01`, which on a suffixed board is not a
-// frame — so the gate reports the document as wrong for writing the id correctly.
+// frame - so the gate reports the document as wrong for writing the id correctly.
 const FRAME_ID = /(?<![A-Za-z0-9-])([A-Z])-(\d{2,}[a-z]?)(?![0-9A-Za-z-])/g;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -101,7 +101,7 @@ export const frameManifestGate = {
       mine[L] = (mine[L] ?? 0) + sec.screens.length;
     }
     const theirs = {};
-    // 「**K. 출입 연동 (D · 40 — 2단계 구역)** — 항목 / 항목 / …」 — the count in the heading is
+    // 「**K. 출입 연동 (D · 40 - 2단계 구역)** - 항목 / 항목 / …」 - the count in the heading is
     // prose that drifts, so what is compared is the ITEMS, which are the list itself.
     for (const m of doc.text.matchAll(/^\*\*([A-Z])(?:-?\d)?\.[^\n]*?\*\*\s*—\s*(.*)$/gm)) {
       const items = m[2].split(' / ').filter((x) => x.trim()).length;
@@ -112,7 +112,7 @@ export const frameManifestGate = {
         bad.push(`${L}: §4.2가 ${theirs[L] ?? 0}개 · manifest가 ${mine[L] ?? 0}개 — 프레임을 더하면 둘 다 고친다`);
       }
     }
-    // The heading's own number — 「(D 75 · T 8 = 83)」 — is not the list, and it drifts alone. Four
+    // The heading's own number - 「(D 75 · T 8 = 83)」 - is not the list, and it drifts alone. Four
     // headings carried a desktop count from before their cluster grew while the total beside it and
     // the items after it had both moved on, so the line disagreed with itself.
     for (const m of doc.text.matchAll(/^\*\*([A-Z](?:-?\d)?)\.[^\n(]*\(([^)]*)\)\*\*\s*—\s*(.*)$/gm)) {
@@ -126,7 +126,7 @@ export const frameManifestGate = {
       }
     }
     // §4.3 is the split a reader quotes, and it is prose: its total sat at 703 while the list above
-    // it had grown to 747. Three things have to agree — each row against the clusters named in it,
+    // it had grown to 747. Three things have to agree - each row against the clusters named in it,
     // the rows against the total, and the total against what the board draws.
     const s43 = doc.text.split(/^### 4\.3[^\n]*$/m)[1];
     if (s43) {
@@ -218,7 +218,7 @@ export const roadmapPlacementGate = {
     const base = baseIds(ctx);
     const ids = boardIds(ctx);
     const bad = [];
-    // A placement is an emphasised id — `**A-01** 로그인` — which is how every phase list writes
+    // A placement is an emphasised id - `**A-01** 로그인` - which is how every phase list writes
     // one. A bare id in prose is a cross-reference, not a placement.
     const placed = [...doc.text.matchAll(/\*\*([A-Z]-\d{2,})\*\*/g)].map((m) => m[1]);
     const seen = new Set();
@@ -253,7 +253,7 @@ export const roadmapPlacementGate = {
       }
     }
     // The two tables that COUNT the placement above. Every id sat in exactly one phase and both
-    // tables still said 400 while 437 were placed — the ids are checked frame by frame, the tables
+    // tables still said 400 while 437 were placed - the ids are checked frame by frame, the tables
     // are prose, and prose does not move when a phase list gains a line.
     const placedBy = {};   // 「(A)|W2」 → n, the distribution the 배치 검산 table restates
     const perGroup = {};   // 「(A)」 → n
@@ -311,10 +311,10 @@ export const docFrameRefGate = {
     const bad = [];
     // Two shapes read like a frame id and are not: a KOSHA guide number (`P-94`) and the E-9
     // 체류자격. Both are followed or preceded by their own context, so they are named rather than
-    // pattern-matched — a pattern loose enough to exclude them would also excuse a real defect.
+    // pattern-matched - a pattern loose enough to exclude them would also excuse a real defect.
     // A board adds its own with `documents.notFrames`.
     const NOT_A_FRAME = new Set(['P-94', 'E-9', ...(ctx.config.documents?.notFrames ?? [])]);
-    // A WHOLE document may number things in a scheme that collides with this one — an entity model
+    // A WHOLE document may number things in a scheme that collides with this one - an entity model
     // whose tables are `B-02 PrinterModel` · `E-08 ReplaceStatusHistory`. Listing its ids one by
     // one is a list that grows with the model and goes stale silently, so the board names the file
     // instead: everything in it belongs to the other scheme, and every OTHER document gate still
@@ -331,8 +331,8 @@ export const docFrameRefGate = {
         if (!known && !NOT_A_FRAME.has(id)) miss.add(id);
       }
       // The fix travels with the finding. A document asserting that an id is ABSENT trips this
-      // gate identically to one citing it — the scan reads the id and cannot read the polarity of
-      // the sentence around it — and the person who meets the refusal has no way to know that from
+      // gate identically to one citing it - the scan reads the id and cannot read the polarity of
+      // the sentence around it - and the person who meets the refusal has no way to know that from
       // the message alone. Saying it here beats a rule in a file they have to already know about.
       if (miss.size) bad.push(`${f.split('/').slice(-2).join('/')}: ${[...miss].sort().join(' ')} — 없는 번호를 가리키는 문장이면 아이디 대신 양옆의 번호로 적는다`);
     }
@@ -390,7 +390,7 @@ export const docRegistryGate = {
       if (/[*{}]/.test(path)) continue;
       if (seen.has(path.split('/').pop())) continue;
       // A registry names paths as the repository sees them, and the board sits somewhere inside
-      // that repository — so every ancestor of the board is a candidate base.
+      // that repository - so every ancestor of the board is a candidate base.
       const bases = [join(doc.path, '..'), root];
       for (let d = root; d !== dirname(d); d = dirname(d)) bases.push(d);
       if (bases.some((base) => existsSync(join(base, path)))) continue;

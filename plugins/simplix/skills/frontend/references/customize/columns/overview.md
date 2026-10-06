@@ -103,7 +103,7 @@ Identify fields that should be hidden by default (see Column Order Guidelines). 
 ### Step 4: Apply Rendering Patterns
 
 Select appropriate rendering for each column based on field type:
-- For **enum** columns, PREFER children render `{({ value }) => <Badge variant={COLORMAP[resolveBootEnum(value)] ?? "outline"}>{enumLabel(...)}</Badge>}` — this is the project convention (it unwraps the boot enum and applies `enumLabel` i18n)
+- For **enum** columns, PREFER children render `{({ value }) => <Badge variant={COLORMAP[resolveBootEnum(value)] ?? "outline"}>{enumLabel(...)}</Badge>}` - this is the project convention (it unwraps the boot enum and applies `enumLabel` i18n)
 - Use children render `{({ row, value }) => ...}` for any complex / relational / i18n rendering
 - `display` prop is the simple built-in for the no-i18n case (`"boolean"` for booleans; `"badge"` ALSO available, optionally with the `variants` color map, but it skips `resolveBootEnum`/`enumLabel`)
 - Use `format` prop for date formatting (`"date"`, `"datetime"`, `"relative"`)
@@ -119,7 +119,7 @@ Apply alignment according to [Alignment Guidelines](#alignment-guidelines-mandat
 
 ---
 
-## How Many Columns — Which Fields Earn One (MANDATORY)
+## How Many Columns - Which Fields Earn One (MANDATORY)
 
 The ordering rules below say where a column goes. They do not say whether it exists, and a list
 that never asks that question comes out at the two or three columns a wireframe had room to
@@ -128,25 +128,25 @@ every one of them.
 
 **A wireframe's column count is a floor, never a ceiling.** A board is drawn on a page far
 narrower than a screen: what it draws is what must be there, not all that may be. A list-detail
-page lays no grid at all while the detail is closed, so the list has the whole page — read the
+page lays no grid at all while the detail is closed, so the list has the whole page - read the
 frame as a ceiling and every list in the product stops at the width of a sketch.
 
 **A field earns a column when all five hold.** Anything failing one waits in the detail panel.
 
-1. **A reader uses it to pick a row or to scan the list** — the name they search by, the status
+1. **A reader uses it to pick a row or to scan the list** - the name they search by, the status
    they act on, the date they are chasing. Not a value somebody reads once they have already
    decided which record to open.
 2. **The value differs across rows.** A tab strip or a forced scope that pins a field makes that
    field a constant inside the tab; a column of one repeated value is furniture.
-3. **It reads at a glance** — a badge, a bounded number, a date, a short name. A paragraph is a
+3. **It reads at a glance** - a badge, a bounded number, a date, a short name. A paragraph is a
    panel field, not a column.
 4. **Most rows have a value.** A field set on three rows in fourteen is an annotation on the
    identity cell (a badge beside the name), not a column blank eleven times.
 5. **The reader is allowed to see it.** A value behind a different permission group renders as
-   nothing for half the audience — gate the column, or leave it out.
+   nothing for half the audience - gate the column, or leave it out.
 
 **Always out, whatever the five say**: the UUID primary key, `deleted` / `deletedTimestamp`, the
-audit quartet (`CrudDetail`'s `auditData` already carries it — invariant #54), and raw FK ids
+audit quartet (`CrudDetail`'s `auditData` already carries it - invariant #54), and raw FK ids
 (render the related name instead).
 
 **Calibrate against sibling lists in the same product, not against the DTO.** A mature console
@@ -157,22 +157,22 @@ copied the DTO. Count the columns on two lists a reviewer already accepted befor
 
 A list-detail screen loses most of its width the moment a row opens. `CrudList.Column`'s
 `minTableWidth` is the framework's answer: below that many pixels **of the table's own width** the
-column is not rendered at all — no header, no cells, no entry in the columns dropdown.
+column is not rendered at all - no header, no cells, no entry in the columns dropdown.
 
 - **Only a value the detail panel also shows may carry one.** A column that disappears takes its
   value with it and there is no "show anyway"; the arrangement works because the thing that took
   the width is the panel carrying the value. A value that lives nowhere else stays in the table
   however narrow it gets.
 - **One threshold for the product, declared once.** A per-list threshold answers per screen a
-  question the reader asks once — "is this list wide enough to read across".
+  question the reader asks once - "is this list wide enough to read across".
 - **The threshold has three bounds**: above the widest pinned list pane, at or below the narrowest
   full-page list container the product targets, and **at or above what each wide set actually
   measures**. Miss the third and the set switches on inside a table that then scrolls sideways
-  with the row actions past the right edge — the failure the prop exists to prevent, caused by the
+  with the row actions past the right edge - the failure the prop exists to prevent, caused by the
   prop. Sum each wide set's declared `width` / `minWidth`, add the cell padding per column and the
   row-action column, and keep the total under the threshold.
 - **The secondary line under a row's name is the narrow form of those columns.** Where a board
-  stacks 「code · rank · source」 into a caption, those become columns when there is room — and the
+  stacks 「code · rank · source」 into a caption, those become columns when there is room - and the
   caption has to drop what the columns took, or every row prints its values twice. Measure the
   list root (`<CrudList ref={…}>` + `useContainerWidth`) to decide what the caption still carries.
 
@@ -200,7 +200,7 @@ This section defines the standard column order and default visibility for data t
 | 13 | **Actions** | Action buttons | `actions` | ✔ |
 
 **The action column is never a declared `CrudList.Column`.** Row actions reach the table through
-its `actions` prop (`RowActionDef[]`) or, for custom buttons, its `slots.rowActions` render —
+its `actions` prop (`RowActionDef[]`) or, for custom buttons, its `slots.rowActions` render -
 either way the framework emits its own `_actions` column and keeps it out of the column-visibility
 menu. A hand-declared column standing in for it (`<CrudList.Column field="…" header="">`) is
 registered in that menu by its header, so an empty header lands there as a **nameless checkbox
@@ -389,7 +389,7 @@ function MyList() {
 | `header` | `string` | Column header text (use `fieldLabel()`) |
 | `sortable` | `boolean` | Enable column sorting |
 | `width` | `number` | Fixed column width in pixels |
-| `minWidth` | `number` | The column's floor rather than its allowance — free text ellipsizes and the table spends leftover width here. Ignored when `width` is set |
+| `minWidth` | `number` | The column's floor rather than its allowance - free text ellipsizes and the table spends leftover width here. Ignored when `width` is set |
 | `minTableWidth` | `number` | The narrowest table worth drawing this column in. Below it the column is not rendered at all. Only for a value the detail panel also shows |
 | `display` | `"badge" \| "boolean"` | Built-in display mode |
 | `format` | `"date" \| "datetime" \| "relative"` | Date formatting mode |
@@ -475,7 +475,7 @@ const STATUS_COLORS: Record<string, string> = {
 
 ### Date / Time (custom cell)
 
-Prefer the declarative `format` prop (`format="datetime" displayZone={zone}`). Drop to a cell render with an inline component (`InstantText` / `CalendarDateText` / `WallClockText` from `@simplix-react/ui`) only for custom empty text, a per-row zone, or an `Instant` shown as its zone-local date. Never format inline with `formatDateMedium(new Date(...))` — the component owns the parsing and zone math.
+Prefer the declarative `format` prop (`format="datetime" displayZone={zone}`). Drop to a cell render with an inline component (`InstantText` / `CalendarDateText` / `WallClockText` from `@simplix-react/ui`) only for custom empty text, a per-row zone, or an `Instant` shown as its zone-local date. Never format inline with `formatDateMedium(new Date(...))` - the component owns the parsing and zone math.
 
 ```tsx
 <CrudList.Column<ProductListDTO> field="expiresAt" header={fieldLabel("expiresAt")}>
@@ -590,7 +590,7 @@ See [i18n Reference](i18n.md) for complete i18n guide.
 
 **For Which Columns Exist (MANDATORY):**
 - [ ] Every field on the row passed the five tests; the ones that failed are named in the panel
-- [ ] The list is not stopped at its wireframe's count — the frame is a floor
+- [ ] The list is not stopped at its wireframe's count - the frame is a floor
 - [ ] Column count is calibrated against two accepted sibling lists, not against the DTO
 - [ ] PK, `deleted`, the audit quartet and raw FK ids are out
 - [ ] Any `minTableWidth` column's value is also in the detail panel, and the wide set's declared
@@ -613,7 +613,7 @@ See [i18n Reference](i18n.md) for complete i18n guide.
 **For Rendering (MANDATORY):**
 - [ ] Enum fields use `resolveBootEnum()` + `Badge` with `enumLabel()`
 - [ ] FK relation fields show related entity name (not raw ID)
-- [ ] Date/time fields use the `format` prop or an inline component (`InstantText` / `CalendarDateText` / `WallClockText`) — never inline `formatDateMedium(new Date(...))`
+- [ ] Date/time fields use the `format` prop or an inline component (`InstantText` / `CalendarDateText` / `WallClockText`) - never inline `formatDateMedium(new Date(...))`
 - [ ] Existing boolean fields keep current rendering (typically `display="boolean"`)
 - [ ] NEW boolean fields use Badge rendering pattern
 - [ ] Column headers use `fieldLabel()` or `t()` for i18n
@@ -622,8 +622,8 @@ See [i18n Reference](i18n.md) for complete i18n guide.
 **For Alignment (MANDATORY):**
 - [ ] Fixed-length fields (name, label, email, code, date) are center-aligned
 - [ ] Long text fields (title, description, summary) are left-aligned
-- [ ] Bounded-range numbers (bitCount, level, priority — known min~max, short digits) are center-aligned
-- [ ] Unbounded/large numbers (totalAmount, fileSize, revenue — variable length, decimals) are right-aligned
+- [ ] Bounded-range numbers (bitCount, level, priority - known min~max, short digits) are center-aligned
+- [ ] Unbounded/large numbers (totalAmount, fileSize, revenue - variable length, decimals) are right-aligned
 - [ ] All other fields (badges, status, enum, boolean) are center-aligned
 
 **For Verification:**

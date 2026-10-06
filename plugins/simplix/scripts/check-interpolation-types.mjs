@@ -9,8 +9,8 @@
  * defect appears only where somebody looks at that one screen in that one state.
  *
  * Two shapes produce it and neither is visible in the entry alone. A value already turned into
- * words somewhere else — an inner `t(...)`, a `toLocaleString`, a `join`, a `toFixed` — and a
- * fallback for an absent value (`?? "—"`), which is the worse of the two because it only shows
+ * words somewhere else - an inner `t(...)`, a `toLocaleString`, a `join`, a `toFixed` - and a
+ * fallback for an absent value (`?? " - "`), which is the worse of the two because it only shows
  * on the empty record. `audit-frontend.mjs` carries a regex rule,
  * `number-format-on-a-value-that-is-not-a-number`, that catches the shapes visible in the
  * expression text. It cannot catch a value that reaches the call through a local helper or a
@@ -87,8 +87,8 @@ function formattedPairs() {
  * Whether a type is one the number formatter can accept.
  *
  * <p>`number | undefined` passes: absent is how a caller says nothing counted, and the
- * interpolation is simply not performed. A union carrying a string does not — that is the
- * `?? "—"` shape, and it is a defect precisely in the arm nobody looks at.
+ * interpolation is simply not performed. A union carrying a string does not - that is the
+ * `?? " - "` shape, and it is a defect precisely in the arm nobody looks at.
  */
 function isNumeric(type, ts) {
   if (type.flags & (ts.TypeFlags.Number | ts.TypeFlags.NumberLiteral)) return true;

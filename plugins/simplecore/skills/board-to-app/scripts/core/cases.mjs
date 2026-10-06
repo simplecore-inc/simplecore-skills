@@ -32,7 +32,7 @@ export function cases(t) {
   vocabularyCases(t);
   budgetCases(t);
 
-  // configGate — the gate that makes "never guess a path" mechanical.
+  // configGate - the gate that makes "never guess a path" mechanical.
   add('configGate', 'a required key is not declared', { config: { boardRoot: undefined } }, true);
   add('configGate', 'a declared path that is not there', { config: { stateLedger: 'chapters/GONE.md' } }, true);
   add('configGate', 'a heading map missing a role', { config: { chapterHeadings: { prerequisites: 'Before' } } }, true);
@@ -104,7 +104,7 @@ export function cases(t) {
     { config: { eyesDocuments: ['docs/OVERVIEW.md'], eyesPhrases: { assigns: ['stays with eyes'], reader: ['the coordinator'], moment: ['before '] } } },
     false,
   );
-  // An open vocabulary — the roles are the project's, so no name is refused, and the emptiness
+  // An open vocabulary - the roles are the project's, so no name is refused, and the emptiness
   // checks still hold. Without the first of these a project's own words are refused one by one
   // as roles the skill does not know, which is what sent them to a file the config gate never read.
   add(
@@ -129,7 +129,7 @@ export function cases(t) {
   // The capture standard. The template ships its three fields as `<…>` placeholders on purpose:
   // a number left in place would become somebody's standard in silence, where a string is refused
   // here and named. A third colour scheme is refused for the same reason a fourth commit policy
-  // is — it reads as a decision and nothing can be set to it or read back as it.
+  // is - it reads as a decision and nothing can be set to it or read back as it.
   add(
     'configGate',
     'the capture standard with its template placeholders still in it',
@@ -161,7 +161,7 @@ export function cases(t) {
     },
     false,
   );
-  // An empty array is not «this project has no standard» — that is said by leaving the key out,
+  // An empty array is not «this project has no standard» - that is said by leaving the key out,
   // and the difference is a cost stated in a row against a cost paid in silence.
   add('configGate', 'the standard declared as an empty array', { config: { captureStandard: [] } }, true);
   add(
@@ -170,7 +170,7 @@ export function cases(t) {
     { config: { captureStandard: { width: 1440, height: 1200, colorScheme: 'light', scale: 2 } } },
     true,
   );
-  // What drives a browser is an ORDER, so it is a list — one name declared as a bare string is a
+  // What drives a browser is an ORDER, so it is a list - one name declared as a bare string is a
   // project that has named a driver and said nothing about what happens when it cannot express
   // the task, which is the whole reason the key is ordered.
   add('configGate', 'a driver order declared as one name rather than a list', { config: { browserDrivers: 'agent-browser' } }, true);
@@ -182,7 +182,7 @@ export function cases(t) {
   );
   add('configGate', 'everything declared and everything there', {}, false);
 
-  // commitPolicyGate — whether the build may commit is the project's answer, and a word outside
+  // commitPolicyGate - whether the build may commit is the project's answer, and a word outside
   // the three reads as an answer while being followed by nobody.
   add('commitPolicyGate', 'a policy word the build cannot act on', { config: { commitPolicy: 'yes' } }, true);
   add('commitPolicyGate', 'a policy that only differs in case', { config: { commitPolicy: 'Commit' } }, true);
@@ -250,7 +250,7 @@ export function cases(t) {
     true
   );
 
-  // A key a project can genuinely hold more than one of — a database with several lineages.
+  // A key a project can genuinely hold more than one of - a database with several lineages.
   add(
     'configGate',
     'every migration lineage declared, and every one of them there',
@@ -313,7 +313,7 @@ export function cases(t) {
     false
   );
 
-  // boardsGate — two boards, one build. The pair a project with several boards stands or falls on.
+  // boardsGate - two boards, one build. The pair a project with several boards stands or falls on.
   add(
     'boardsGate',
     'two boards write their progress into one ledger',
@@ -395,7 +395,7 @@ export function cases(t) {
     false
   );
 
-  // deferredKeyGate — the subject exists, so the key is owed now.
+  // deferredKeyGate - the subject exists, so the key is owed now.
   add(
     'deferredKeyGate',
     'the subject is on disk and the key is still absent',
@@ -424,7 +424,7 @@ export function cases(t) {
     false
   );
 
-  // handoverGate — facts, never somebody's account of finding them.
+  // handoverGate - facts, never somebody's account of finding them.
   add(
     'handoverGate',
     'a fact written from a point of view',
@@ -443,7 +443,7 @@ export function cases(t) {
     false
   );
 
-  // openItemsGate — a parked line the next session can act on.
+  // openItemsGate - a parked line the next session can act on.
   const parked = {
     config: { openItemsFile: 'notes/OPEN.md', openItemsHeading: 'Parked decisions' },
   };
@@ -501,7 +501,7 @@ export function cases(t) {
     false
   );
   // The declaration carries the heading's text, and a fragment of it names no heading anybody
-  // wrote — accepted, it would satisfy the gate while pointing at whichever heading happens to
+  // wrote - accepted, it would satisfy the gate while pointing at whichever heading happens to
   // contain the fragment.
   add(
     'openItemsGate',
@@ -517,7 +517,7 @@ export function cases(t) {
   );
   // The same rule read from the other side: a document holding two headings, one of which
   // contains the other. The exact declaration reads the section it named, not the earlier
-  // heading that merely spans it — which is the half `sectionUnder` decides rather than
+  // heading that merely spans it - which is the half `sectionUnder` decides rather than
   // `hasHeading`.
   add(
     'openItemsGate',
@@ -532,7 +532,7 @@ export function cases(t) {
     false
   );
 
-  // ledgerGate — a chapter the ledger does not name is built twice or not at all.
+  // ledgerGate - a chapter the ledger does not name is built twice or not at all.
   add('ledgerGate', 'a chapter with no row', { files: { 'chapters/w02-people.md': '# W02\n' } }, true);
   add(
     'ledgerGate',
@@ -546,7 +546,7 @@ export function cases(t) {
     false
   );
 
-  // capturesGate — where a picture sits and the shape of its name. Not what the name SAYS: the
+  // capturesGate - where a picture sits and the shape of its name. Not what the name SAYS: the
   // variant's words are the project's own vocabulary and its own checker's to hold.
   const shots = { config: { capturesDir: 'shots' } };
   const spoken = { config: { capturesDir: 'shots', locales: ['ko', 'en'], pseudoLocale: 'en-XA' } };
@@ -587,7 +587,7 @@ export function cases(t) {
     true
   );
   // The container is the project's, not this gate's. A project encoding to fit a size bound writes
-  // `webp`, and `evidence.mjs` accepts `webp` for the very same pictures once they are curated —
+  // `webp`, and `evidence.mjs` accepts `webp` for the very same pictures once they are curated -
   // so naming one format here made one skill demand two names for one file.
   add(
     'capturesGate',
@@ -634,7 +634,7 @@ export function cases(t) {
     false
   );
 
-  // trailerGate — the history is read as a tree or not at all.
+  // trailerGate - the history is read as a tree or not at all.
   add('trailerGate', 'a commit that names no chapter', { commits: ['feat(screens): the roster list'] }, true);
   add(
     'trailerGate',
@@ -650,7 +650,7 @@ export function cases(t) {
   );
   // The defect a line-by-line reader is green over: a census whose names ran past the margin and
   // wrapped at column 0. git discards the WHOLE block, so `%(trailers:key=Chapter)` is empty for a
-  // commit whose `Chapter:` line any person can read — and the trailer's one job is to answer that
+  // commit whose `Chapter:` line any person can read - and the trailer's one job is to answer that
   // query. Two commits in one repository sat this way with every gate green over both.
   add(
     'trailerGate',
@@ -664,7 +664,7 @@ export function cases(t) {
     },
     true
   );
-  // The same census, wrapped under an indent — git folds it back onto its trailer, so the block
+  // The same census, wrapped under an indent - git folds it back onto its trailer, so the block
   // parses and the chapter is readable. Without this case the fix reads as 「refuse long censuses」,
   // which is the wrong lesson and the one both agents who met this reached for first.
   add(
@@ -680,7 +680,7 @@ export function cases(t) {
     false
   );
   // A line whose key carries a space is not a trailer either, and it ends the block exactly as a
-  // column-0 wrap does — same defect, different-looking message.
+  // column-0 wrap does - same defect, different-looking message.
   add(
     'trailerGate',
     'a measurement line whose key has spaces in it',
@@ -704,7 +704,7 @@ export function cases(t) {
     },
     true
   );
-  // A `Touches:` that fell outside the block while the `Chapter:` is fine — the node keeps its
+  // A `Touches:` that fell outside the block while the `Chapter:` is fine - the node keeps its
   // place in the tree and loses its edges, which is the half a reader would otherwise not be told.
   add(
     'trailerGate',
@@ -717,7 +717,7 @@ export function cases(t) {
     true
   );
 
-  // censusCountsBothSides — a global change is verified by a sample plus a census, and a census
+  // censusCountsBothSides - a global change is verified by a sample plus a census, and a census
   // that counted only the sites it expected to find is the half that never happened. The sample
   // proves the mechanism; only the census reaches a site that has no instance of the mechanism at
   // all, which is exactly the site a hand-rolled dialog is.
@@ -765,7 +765,7 @@ export function cases(t) {
     false
   );
 
-  // importsTravelWithTheirCommit — the registry two people edit, and the module only one of them
+  // importsTravelWithTheirCommit - the registry two people edit, and the module only one of them
   // committed. The broken form is not hypothetical: it is what a real commit here did, and the
   // reason a pull could not load the gate set it had just been handed.
   const REGISTRY = "import * as one from './gates/one.mjs';\nexport const gates = [one];\n";
@@ -787,7 +787,7 @@ export function cases(t) {
     },
     false
   );
-  // A module committed earlier is in the tree and resolves — the rule reads the tree at the
+  // A module committed earlier is in the tree and resolves - the rule reads the tree at the
   // commit, never the commit's own list of files.
   add(
     'importsTravelWithTheirCommit',
@@ -846,7 +846,7 @@ export function cases(t) {
     },
     false
   );
-  // generatedArtefactsMatchHead — every gate reads the working tree, and a chapter closes on the
+  // generatedArtefactsMatchHead - every gate reads the working tree, and a chapter closes on the
   // commit. The census is the subject, so the pair below is really two pairs: the artefact, and
   // the boundary that keeps the rule off every file a person is in the middle of editing.
   const ARTEFACT = [{ path: 'build/board.html', by: 'npm run build' }];
@@ -884,7 +884,7 @@ export function cases(t) {
     true,
   );
   // A row that matches nothing git has ever carried reads as coverage and holds nothing, which is
-  // the state the whole key exists to end — so it is a finding rather than an inherited pass.
+  // the state the whole key exists to end - so it is a finding rather than an inherited pass.
   add(
     'generatedArtefactsMatchHead',
     'a row naming a path git has never carried',
@@ -903,7 +903,7 @@ export function cases(t) {
     },
     false,
   );
-  // The escape, exercised while the file is genuinely dirty — a lock file a local-link step
+  // The escape, exercised while the file is genuinely dirty - a lock file a local-link step
   // rewrites is dirty on every machine that ran it, and a gate with no way to say so is one
   // somebody turns off within a day.
   add(
@@ -923,7 +923,7 @@ export function cases(t) {
     false,
   );
   // The boundary, and the case that makes the gate affordable at all: an agent mid-task has
-  // uncommitted work by construction. A rule over every dirty file would fire on all of it — and
+  // uncommitted work by construction. A rule over every dirty file would fire on all of it - and
   // under a write-time hook that fails a write when an error names the file just written, it would
   // fail every write the moment it happened.
   add(

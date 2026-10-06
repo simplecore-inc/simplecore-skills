@@ -11,14 +11,14 @@
 // A gate answers one question, so the kind of its findings is a property of the rule: a gate whose
 // findings differ in kind is two rules sharing an id, and it is split into two gates that each
 // carry their own pair of cases. Grading each returned string instead would leave the harness
-// nothing to hold — a case is judged per gate, so a gate that quietly downgraded one finding among
+// nothing to hold - a case is judged per gate, so a gate that quietly downgraded one finding among
 // nine would pass both its cases and no case could be written that pins it.
 //
 // **Which level a gate belongs to is the design decision, and there are two levels here:**
 //
-//   core     — true of any project that builds from a board: the config's own shape, the two
+//   core - true of any project that builds from a board: the config's own shape, the two
 //              documents' discipline, the fixed capture name, the commit trailers
-//   project  — true of this product only: a gate that parses a document format this project
+//   project - true of this product only: a gate that parses a document format this project
 //              chose, or knows its own data shapes → the module `projectGates` names
 //
 // A gate put one level too high fires on projects it does not describe; one level too low is
@@ -27,9 +27,9 @@
 //
 // **A worked example of the test, because the line is easy to draw in the wrong place.** The
 // checks over a chapter's evidence came up together, and only three of the five moved. What a
-// result document has to look like — a section per demanded line, three labels, a picture or what
+// result document has to look like - a section per demanded line, three labels, a picture or what
 // was run, a quote that is part of the chapter's own sentence, one capture per frame a closed
-// chapter placed — is true wherever chapters are built from a board, so `evidence.mjs` holds it
+// chapter placed - is true wherever chapters are built from a board, so `evidence.mjs` holds it
 // and the project declares the words. Two stayed behind:
 //
 //   · one asks whether the frame a picture shows can be pointed at again, and it can only ask
@@ -39,7 +39,7 @@
 //   · one hunts the phrasings that hand a check to human eyes, and those phrasings are one
 //     repository's sentences. It moves when they become a declared list rather than a constant.
 //
-// **The test that separated them was not size and not usefulness** — both are useful anywhere in
+// **The test that separated them was not size and not usefulness** - both are useful anywhere in
 // the abstract. It was whether the check can be RUN in a repository that declares this skill's
 // keys and nothing more. Three can; two need a file the skill has no name for.
 import { pathToFileURL } from 'node:url';
@@ -53,7 +53,7 @@ import { BUDGET_GATES } from './budget.mjs';
 /** What a finding of a gate is: a defect to fix, or a line to go and re-read. */
 export const GRADES = ['error', 'warning'];
 
-/** What a gate that declares no grade is judged at — a rule is a defect unless it says otherwise. */
+/** What a gate that declares no grade is judged at - a rule is a defect unless it says otherwise. */
 export const DEFAULT_GRADE = 'error';
 
 /**
@@ -61,7 +61,7 @@ export const DEFAULT_GRADE = 'error';
  *
  * <p>An unknown grade is returned exactly as declared rather than quietly corrected to the
  * default: `ungraded` in the harness reports it and the run fails, because a grade nobody reads
- * would otherwise land in whichever channel the reader happened to assume — and the author of a
+ * would otherwise land in whichever channel the reader happened to assume - and the author of a
  * gate that says `advisory` reads the word in the source and believes it is advisory.
  */
 export function gradeOf(gate) {
@@ -88,7 +88,7 @@ const TYPE_OF = {
 /**
  * What is wrong with one declared path, given the kind its key was declared as.
  *
- * <p>`label` is what the finding calls it — the key, or the key and the index when the key
+ * <p>`label` is what the finding calls it - the key, or the key and the index when the key
  * was declared several times over. A `path` key is satisfied by a file or a directory: it
  * names where the thing is, and whether that is one file or the folder its family lives in
  * is the project's to decide.
@@ -239,7 +239,7 @@ export const configGate = {
           continue;
         }
         // `roles: null` says the roles are the PROJECT's to name. A vocabulary a project's own
-        // gate reads has no role this skill could know — it is the reason such a vocabulary was
+        // gate reads has no role this skill could know - it is the reason such a vocabulary was
         // homeless, and a schema that can only describe its own roles pushes every project into
         // keeping one somewhere the config gate never reads.
         const open = spec.roles === null;
@@ -342,7 +342,7 @@ export const configGate = {
         });
         continue;
       }
-      // A `many` key is declared once or several times — a project with more than one
+      // A `many` key is declared once or several times - a project with more than one
       // migration lineage names them all under the one key, and each is held to the same kind.
       if (spec.many && Array.isArray(value)) {
         value.forEach((entry, i) => {
@@ -409,7 +409,7 @@ export const deferredKeyGate = {
  * <p>A project drawing two products declares them under `boards`, and the whole point of doing so
  * is that each one has its own chapters, its own ledger and its own evidence. **A key that carries
  * progress and is shared between two boards does not give one build twice; it gives one set of
- * rows about whichever board wrote last**, and nothing on disk says which — so 「어느 챕터까지
+ * rows about whichever board wrote last**, and nothing on disk says which - so 「어느 챕터까지
  * 갔는가」 has no answer for either product, which is the one question the ledger exists to answer.
  *
  * <p>It also refuses a board that declares nothing of its own. An entry under `boards` with no
@@ -522,7 +522,7 @@ export const handoverGate = {
     const phrases = [...NARRATIVE_PHRASES, ...extra.filter((p) => typeof p === 'string' && p)];
 
     // **The handover file may be an index that routes**, and then the facts this rule was written
-    // for are not in it — they are in `references/` beside it. Reading the declared file alone
+    // for are not in it - they are in `references/` beside it. Reading the declared file alone
     // there covers a table of contents and reports the same clean result it reported while it was
     // reading facts, which is the one failure mode a split introduces → *A handover file grows,
     // and the answer is not another trim*. So the sweep follows the routing where there is any.
@@ -553,7 +553,7 @@ export const handoverGate = {
 /**
  * A parked item that begins after something else on the same line.
  *
- * <p>The stray marker alone is not enough — a hyphen inside prose is one. What makes it an item is
+ * <p>The stray marker alone is not enough - a hyphen inside prose is one. What makes it an item is
  * the shape that follows it: a token, a dash, and text.
  */
 const MID_LINE_ITEM = /\S\s*[-*+]\s+\S+\s+[—-]{1,2}\s+\S/;
@@ -588,7 +588,7 @@ export const openItemsGate = {
     for (const { line, no } of sectionUnder(text, heading) ?? []) {
       // An item that does not begin its own line is on no list. Checking the shape of the lines
       // that start with a bullet says nothing about an item fused onto the tail of the one before
-      // it — which is what a file appended to without a closing newline produces, and it leaves no
+      // it - which is what a file appended to without a closing newline produces, and it leaves no
       // mark: the gate stays quiet and the item is gone. So the item shape is looked for mid-line
       // too, and found there it is a finding rather than a pass. The shape is demanded after the
       // stray marker so that a hyphen inside prose, a date, or a kebab-case identifier is not one.
@@ -610,7 +610,7 @@ export const openItemsGate = {
  * Every chapter is named in the state ledger.
  *
  * <p>The ledger is the only place the build's progress lives, so a chapter it does not name
- * is one the next session cannot see — it will be built again, or skipped.
+ * is one the next session cannot see - it will be built again, or skipped.
  */
 export const ledgerGate = {
   id: 'ledgerGate',
@@ -640,11 +640,11 @@ export const ledgerGate = {
  *
  * <p><b>The shape of the name is this gate's to hold; the format is not.</b> A project that fits
  * its pictures under a size bound encodes to `webp`, and naming one container refuses the pictures
- * of every project that chose another — reporting a whole round as unplaceable over the three
+ * of every project that chose another - reporting a whole round as unplaceable over the three
  * letters after the dot. `evidence.mjs` accepts `.webp` for the same pictures once they are
  * curated, so a single container here made one skill demand two names for one file.
  *
- * <p><b>The frame id may carry a state letter after its digits</b> — `N-02a`, `N-02k` — because a
+ * <p><b>The frame id may carry a state letter after its digits</b> - `N-02a`, `N-02k` - because a
  * board gives every state of a screen its own frame. Without it the artefact of such a frame is
  * refused as unplaceable, which is the same defect `evidence.mjs` carried in the other direction.
  */
@@ -658,27 +658,27 @@ const CAPTURE_NAME = /^\d{8}-\d{4}-[A-Za-z]{1,4}-\d{1,3}[a-z]?(-[a-z0-9-]+)?\.(?
  *
  * <p><b>This holds where a picture sits and the SHAPE of its name. It holds nothing about what
  * the parts of that name mean.</b> The variant is 「lower case, digits and hyphens」 and that is
- * the whole of it, so every word a project layers on top of it — a theme, a width, a state —
+ * the whole of it, so every word a project layers on top of it - a theme, a width, a state -
  * passes here whatever it says. That boundary is real and it is also the way this gate gets
  * misread: its title promises placeability and a reader takes it for the naming rule entire.
  *
  * <p>The case that made it worth writing down: a project declared 「a picture with no theme in its
  * name is the console's own scheme and one ending `-light` is the other」, and a run wrote
  * `-dark-` into a name. Three spellings for two states, the document describing it wrong, and this
- * gate green over both — because `dark` is lower case, digits and hyphens. **A convention that
+ * gate green over both - because `dark` is lower case, digits and hyphens. **A convention that
  * names a project's own vocabulary is the project's checker to hold**, and one whose default can
  * change has to be read off the product rather than written down, or a flipped default leaves
  * every picture named for the state it is not with nothing disagreeing.
  *
  * <p>What IS held here beyond the shape: the folder is one of the languages the project declared.
- * Those are already in the config, so a picture under a folder that is not a language — a width, a
- * frame, a date — is placeable-looking and unfindable, and no project should have to write that
+ * Those are already in the config, so a picture under a folder that is not a language - a width, a
+ * frame, a date - is placeable-looking and unfindable, and no project should have to write that
  * check itself.
  */
 /**
  * A chapter, with whatever a sweep of it was narrowed to.
  *
- * <p>`w02`, and `w02-n` where one sweep covered the N cluster of it — the suffix says which part,
+ * <p>`w02`, and `w02-n` where one sweep covered the N cluster of it - the suffix says which part,
  * the same way a capture's own name carries a variant.
  */
 const CHAPTER_FOLDER = /^[a-z]\d{2}(?:-[a-z0-9-]+)?$/;
@@ -710,7 +710,7 @@ export const capturesGate = {
         continue;
       }
       const [folder, name] = parts;
-      // A language OR a chapter — the two things a capture is grouped by, and the two the config
+      // A language OR a chapter - the two things a capture is grouped by, and the two the config
       // already knows. `capturesDir` is a generic key: a project sweeping one screen in ten
       // languages groups by language, and one sweeping a chapter's frames groups by chapter, and
       // both are placeable. Holding it to languages alone reported every capture in a repository
@@ -732,7 +732,7 @@ export const capturesGate = {
 };
 
 /**
- * A trailer line as git recognises one — a token with no whitespace in it, then the separator.
+ * A trailer line as git recognises one - a token with no whitespace in it, then the separator.
  *
  * <p>Used to SAY WHY git rejected a block, never to decide whether it did. The decision is git's,
  * taken from `%(trailers)` in the same `log` call; a second implementation of the rule here would
@@ -744,8 +744,8 @@ const TRAILER_LINE = /^[^\s:]+:(\s|$)/;
 /**
  * The one thing git reads past inside a trailer block: a line that begins with whitespace.
  *
- * <p>Which is the whole of the defect. A census, a list of names, a measurement — anything long
- * enough to wrap — is written on one line or folded under an indent, and folded at column 0 it ends
+ * <p>Which is the whole of the defect. A census, a list of names, a measurement - anything long
+ * enough to wrap - is written on one line or folded under an indent, and folded at column 0 it ends
  * the block for git while looking, to a person and to any line-by-line pattern, exactly like a
  * trailer block that parses.
  */
@@ -756,7 +756,7 @@ const CONTINUATION = /^\s/;
  *
  * <p>Both answers name a line, because 「git cannot read it」 with nothing to act on sends the
  * reader off to re-derive git's rules from the documentation. The block is the message's LAST
- * paragraph — a `Chapter:` line above one is outside the block altogether, which is the other way
+ * paragraph - a `Chapter:` line above one is outside the block altogether, which is the other way
  * this fails and is indistinguishable from the first by any line-by-line search.
  */
 function whyGitReadsNoTrailers(body, key) {
@@ -795,8 +795,8 @@ function whyGitReadsNoTrailers(body, key) {
  * <p><b>Read the way git reads, not the way the message looks.</b> The trailer exists so that
  * `git log --format='%(trailers:key=Chapter)'` answers, and git reads a trailer block only where it
  * is the message's last paragraph and consists entirely of trailers and indented continuations. One
- * line wrapped at column 0 — a census whose names ran past the margin, a measurement folded onto a
- * second line — makes git discard <b>the whole block</b>, silently. A gate matching `^Chapter:`
+ * line wrapped at column 0 - a census whose names ran past the margin, a measurement folded onto a
+ * second line - makes git discard <b>the whole block</b>, silently. A gate matching `^Chapter:`
  * line by line is green over exactly that commit, which is the one commit whose trailer answers
  * nobody: two in one repository carried a `Chapter:` line any person could read while
  * `%(trailers:key=Chapter)` came back empty for both, and every gate in that repository was green.
@@ -810,7 +810,7 @@ export const trailerGate = {
     // git parses; this reads what git made of it. `unfold` joins an indented continuation back onto
     // its trailer, so a legitimately folded `Touches:` reaches the shape check as one line.
     // `only=true` for Touches keeps the KEY in the output, which is the one way to tell 「git read
-    // the trailer and its value is empty」 from 「git read no trailer block at all」 — two different
+    // the trailer and its value is empty」 from 「git read no trailer block at all」 - two different
     // defects that `valueonly` returns the same empty string for.
     const format =
       '--format=%H%x1e%B%x1e%(trailers:key=Chapter,valueonly=true,unfold=true)'
@@ -838,7 +838,7 @@ export const trailerGate = {
             : `${short}: no "Chapter:" trailer \u2014 the build's history is read as a tree or not at all`
         );
       }
-      // A `Touches:` git DID read, judged on its shape — including the empty one, which claims an
+      // A `Touches:` git DID read, judged on its shape - including the empty one, which claims an
       // edge and names none. A `Touches:` git could NOT read is the wrapping defect above and is
       // named separately: a commit whose `Chapter:` is fine and whose `Touches:` fell outside the
       // block keeps its node in the tree and loses its edges.
@@ -859,7 +859,7 @@ export const trailerGate = {
 };
 
 /**
- * A whole number anywhere in a line, with where it sits — the census is read by position.
+ * A whole number anywhere in a line, with where it sits - the census is read by position.
  *
  * <p><b>By position rather than by word</b>, because the words are the project's. A gate that
  * anchored on 「through」 and 「outside」 would read every English census and nothing else, and a
@@ -871,14 +871,14 @@ const WHOLE_NUMBER = /\d+/g;
 /**
  * A census that counted both sides, and named the sites that fall outside the mechanism.
  *
- * <p>A change reaching many screens is verified by a sample plus a census — the sample because a
+ * <p>A change reaching many screens is verified by a sample plus a census - the sample because a
  * global change has one mechanism, and the census because <b>a sample cannot prove that every site
  * goes through that mechanism</b>. A dialog that hand-rolls its own close button is untouched by a
  * fix to the shared dialog component: the mechanism is sound, the site still says the wrong thing,
  * and sampling looks at instances of a mechanism this site has none of.
  *
  * <p><b>So a census that reports one number is not a census.</b> 「26 reach it」 and 「26 reach it,
- * 2 do not」 are one line to an exit status and two different sentences to a reader — only the
+ * 2 do not」 are one line to an exit status and two different sentences to a reader - only the
  * second says the search looked for the negative, which is the whole reason the census was worth
  * taking. And where the second is not zero the names are the finding: 「2 do not reach it」 gives
  * nobody anything to do.
@@ -955,7 +955,7 @@ function treeAt(ctx, hash) {
   return ok ? new Set(out.split('\n').filter(Boolean)) : null;
 }
 
-/** `a/b/../c` → `a/c`, with no filesystem touched — the commit is not checked out. */
+/** `a/b/../c` → `a/c`, with no filesystem touched - the commit is not checked out. */
 function resolveFrom(file, specifier) {
   const parts = file.split('/').slice(0, -1).concat(specifier.split('/'));
   const out = [];
@@ -977,8 +977,8 @@ function resolves(tree, base) {
  *
  * <p><b>Backticks and not quotes.</b> The specifier this rule reads sits inside quotes, so blanking
  * those would erase the very thing it looks for; a template literal is the opposite case, and it is
- * where a false finding comes from. A file holding specimen source — a gate's own case fixtures, a
- * scaffold's templates, a documentation example — writes it in backticks, and the import inside
+ * where a false finding comes from. A file holding specimen source - a gate's own case fixtures, a
+ * scaffold's templates, a documentation example - writes it in backticks, and the import inside
  * that specimen names a file the repository has no reason to have. Read raw, this rule reports the
  * file that teaches it, which is the fastest way to teach everybody to scroll past a gate. It
  * happened on the first run: a case fixture holding `import … from "./detail-body"` came back
@@ -1013,7 +1013,7 @@ function withoutTemplatesOrComments(text) {
       while (j < text.length && text[j] !== ch && text[j] !== '\n') j += text[j] === '\\' ? 2 : 1;
       // Kept rather than blanked: the specifier of a real import IS a quoted string, and blanking
       // it would leave nothing to resolve. The interior is recorded instead, so a `from` written
-      // INSIDE a string can be told from one written in code — see `quoted` below.
+      // INSIDE a string can be told from one written in code - see `quoted` below.
       strings.push([i + 1, j]);
       i = j + 1;
     } else {
@@ -1027,14 +1027,14 @@ function withoutTemplatesOrComments(text) {
  * Whether an offset falls inside the contents of a quoted string.
  *
  * <p><b>What this separates, and why nothing else can.</b> A case fixture is source written as a
- * string — `'x.ts': "import { y } from './y';"` — and every character of that import is inside a
+ * string - `'x.ts': "import { y } from './y';"` - and every character of that import is inside a
  * string literal of the file that carries it. Read as code it is a commit importing a module the
  * repository does not have, which is exactly this gate's finding and exactly wrong: the fixture
  * imports nothing, it describes a file that will be written into a temporary directory.
  *
  * <p>The keyword is the discriminant. A real import writes `from` · `import(` · `require(` in
  * code and its specifier in quotes; a fixture writes both inside one string. So a match whose
- * KEYWORD begins inside a string is not an import — and a real specifier is never mistaken for
+ * KEYWORD begins inside a string is not an import - and a real specifier is never mistaken for
  * one, because the keyword before it is not in a string.
  */
 const quoted = (strings, at) => strings.some(([from, to]) => at >= from && at < to);
@@ -1066,8 +1066,8 @@ function addedLines(diff) {
 /**
  * A commit that adds an import of a file the commit does not carry.
  *
- * <p><b>This is the one defect that nobody involved caused.</b> Two people edit a registry — a
- * barrel, an index, a table of modules — because that is what a registry is for. The first writes
+ * <p><b>This is the one defect that nobody involved caused.</b> Two people edit a registry - a
+ * barrel, an index, a table of modules - because that is what a registry is for. The first writes
  * its entry and has not yet committed the module it points at; the second commits the registry to
  * land their own entry, correctly, by explicit path. The commit is now a file importing a module
  * the repository does not have, and **`--only` cannot prevent it**: what that flag holds back is a
@@ -1163,7 +1163,7 @@ function porcelain(out) {
  * A generated artefact the working tree holds and HEAD does not.
  *
  * <p><b>Every gate a chapter closes on reads the working tree, and the close is about the
- * commit.</b> Those are different questions and nothing in a gate's output tells them apart —
+ * commit.</b> Those are different questions and nothing in a gate's output tells them apart -
  * which is what makes this invisible rather than merely unchecked. A pseudo-locale catalogue was
  * regenerated, `pseudo:locale:check` answered 「every catalogue is current」, and the regenerated
  * file was never committed; a board build passed because `wf.mjs build` rebuilds before it checks,
@@ -1174,13 +1174,13 @@ function porcelain(out) {
  *
  * <p><b>The subject is what a command writes, never every dirty file.</b> A tree with uncommitted
  * work in it is what an agent mid-task always has, so a gate over all of it fires on ordinary work
- * — and under a write-time hook that fails a write when an error names the file just written, it
+ * - and under a write-time hook that fails a write when an error names the file just written, it
  * would fail every write the moment it happened. `generatedArtefacts` is therefore a census a
  * project keeps by hand: nothing on disk says which files a command wrote.
  *
  * <p><b>It runs at every gate run rather than at a close, because a close is not a moment a gate
  * can see.</b> The ledger's closed word is a standing set and not an event, so conditioning on it
- * would fire from the first closed chapter onward — every bit as often — while staying silent on a
+ * would fire from the first closed chapter onward - every bit as often - while staying silent on a
  * project that has closed nothing, which is exactly the project forming the habit. And the state
  * is unrecoverable afterwards: what a tree held at a past commit leaves no trace anywhere, which
  * is the whole reason nobody has ever caught this in review.
@@ -1214,7 +1214,7 @@ export const generatedArtefactsMatchHead = {
       const dirty = porcelain(status.out);
       if (!dirty.length) {
         // Silence has two meanings and git says them the same way: the artefact is committed and
-        // current, or the pathspec matches nothing git has ever carried — a typo, a generator that
+        // current, or the pathspec matches nothing git has ever carried - a typo, a generator that
         // writes somewhere else now, or output that is ignored and never travels in a commit. The
         // second is a row that reads as coverage and holds nothing, which is the state this whole
         // key exists to end, so it is separated here rather than inherited as a pass.
@@ -1292,8 +1292,8 @@ export async function gatesFor(ctx) {
   // A project gate answering to a core gate's id is refused, not merged.
   //
   // **Two gates under one id is a gate that has gone quiet without anybody choosing it.** Both run,
-  // so a finding cannot be attributed to either; and every lookup by id — the self-test's above all
-  // — takes the last one written, which is the project's. A project that copied a core gate before
+  // so a finding cannot be attributed to either; and every lookup by id - the self-test's above all
+  // - takes the last one written, which is the project's. A project that copied a core gate before
   // the core owned it therefore proves its own stale copy while reporting the core gate's name, and
   // the report says the gate passed. Three of them sat like that in one repository, each reporting
   // ✔ against an implementation the skill had already replaced.
@@ -1315,7 +1315,7 @@ export async function gatesFor(ctx) {
   return { gates: [...core, ...project], disabled: off, projectModule: modulePath };
 }
 
-/** Whether every key a gate needs is declared — a gate with nothing to read is skipped, not failed. */
+/** Whether every key a gate needs is declared - a gate with nothing to read is skipped, not failed. */
 export function applies(gate, ctx) {
   return (gate.needs ?? []).every((key) => ctx.declared(key) !== null);
 }

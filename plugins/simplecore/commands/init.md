@@ -5,7 +5,7 @@ argument-hint: "[--project | --global] [path]"
 
 # SimpleCORE Init
 
-Wire this repository — and, when it is missing, the machine — for the simplecore skills that
+Wire this repository - and, when it is missing, the machine - for the simplecore skills that
 actually bind here. Nothing is written without agreement, and nothing is written for a skill the
 repository shows no sign of needing.
 
@@ -31,13 +31,13 @@ Two halves, and most projects need both:
    config and its two documents, the glossary or Korean documents), what `routedBy` already
    covers, and every line of `missing`.
 
-   **A board reaches code one of two ways and a project has picked one** — `build` and
+   **A board reaches code one of two ways and a project has picked one** - `build` and
    `parityWalk` in the report say which. Route to the one it has; never propose the other as
    something it is missing, and never write both blocks.
 
    **`boards` with more than one entry is a repository drawing two products, and the routing block
-   names both.** Each board gets its own line — where its manifest is, where its working rules are,
-   and which product it draws — because a session that reads one line goes to that board and writes
+   names both.** Each board gets its own line - where its manifest is, where its working rules are,
+   and which product it draws - because a session that reads one line goes to that board and writes
    the other product's screens from nothing. `board` in the report is the first of them and is
    there for callers that predate the second; **read `boards`**, and where a `missing` line names a
    board directory, that line is about that board alone.
@@ -66,21 +66,21 @@ Two halves, and most projects need both:
    the ones a project cannot supply for itself, so say plainly what each buys and let the user
    decide:
 
-   - **Korean style baseline** — when `globalKorean.present` is false and this project writes
+   - **Korean style baseline** - when `globalKorean.present` is false and this project writes
      Korean. Without it, an ordinary Korean answer is written without the style baseline, and the
      korean-docs skill only fires when a task sounds like document work.
-   - **Korean habits block** — when `globalKorean.present` is true but `globalKorean.card` is
+   - **Korean habits block** - when `globalKorean.present` is true but `globalKorean.card` is
      false. Routing alone leaves the rules in force only while the file it points at is still in
-     context, and a long session keeps the pointer while losing the file — a state that cannot be
+     context, and a long session keeps the pointer while losing the file - a state that cannot be
      told apart from following them. Offer
      `skills/korean-docs/references/global-korean-card.md` **whole**; summarising it on the way
      recreates the pointer this replaces. It carries its own `<!-- simplecore:korean-habits -->`
      marker, which is what the detector reads next time.
-   - **Korean habits block, stale** — when `globalKorean.cardStale` is true. The card grows as the
+   - **Korean habits block, stale** - when `globalKorean.cardStale` is true. The card grows as the
      skill learns, and the pasted copy keeps the habits of the day it was pasted. Replace the block
-     from the marker to the next heading with the file, whole — the same offer as above, shown as
+     from the marker to the next heading with the file, whole - the same offer as above, shown as
      a diff of the two blocks so the user sees what changed.
-   - **Local development servers** — always worth offering when the repository serves screens (a
+   - **Local development servers** - always worth offering when the repository serves screens (a
      board, a parity walk, or a frontend). Without it, every restart during a screen walk is a
      question, and a walk that has to ask cannot cover a feature area. Say where the boundary
      sits: the local machine only, never a remote host.
@@ -96,7 +96,7 @@ Two halves, and most projects need both:
    - **a board wired to nothing that builds it** → the two ways are alternatives, so say what each
      buys and let the user pick one rather than writing either. `simplecore:board-to-app` builds
      the board chapter by chapter in dependency order and closes each chapter on its persona
-     tests, and it needs a chapter set plus `.claude/board-to-app.json` — invoke the skill and
+     tests, and it needs a chapter set plus `.claude/board-to-app.json` - invoke the skill and
      follow its precondition. `/simplecore:parity-walk-init` wires a walk that reconciles the
      frames against a running app. Both need a board and are offered only where one exists.
    - a chapter set or state ledger the build config names that does not exist →
@@ -115,6 +115,6 @@ Two halves, and most projects need both:
    immediately to anyone reading the instruction file while the SessionStart note changes only for
    new sessions.
 
-**Committing follows the project, not this command.** Where the project states its own rule —
-standing permission to commit, a branch policy, an instruction file that settles it — that rule
+**Committing follows the project, not this command.** Where the project states its own rule -
+standing permission to commit, a branch policy, an instruction file that settles it - that rule
 wins. Where it states nothing, report and leave the commit to the user.

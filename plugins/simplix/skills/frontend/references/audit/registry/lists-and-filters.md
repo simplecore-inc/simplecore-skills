@@ -1,6 +1,6 @@
-> Commonization registry — **List toolbars, filters & counts**. Detail file of `../registry.md` (the index); sections verbatim. Check the index first, then read only the section you need.
+> Commonization registry - **List toolbars, filters & counts**. Detail file of `../registry.md` (the index); sections verbatim. Check the index first, then read only the section you need.
 
-# Registry — List toolbars, filters & counts
+# Registry - List toolbars, filters & counts
 
 ## ListTotalBadge (standard "Total N" FilterBar leading badge)
 
@@ -12,7 +12,7 @@
 
 ### Rule
 
-The leading total-count badge of every list FilterBar is `<ListTotalBadge count={list.pagination.total} />` — never the inline `Badge variant="outline"` + `ListIcon` + `t("list.totalCount")` triple. The component owns the icon and the framework translation. `list.hbs` emits it for scaffolded lists. EXCEPTION: a leading badge with a DIFFERENT label semantics (e.g. a floors-count badge with its own i18n key) keeps its bespoke `Badge`.
+The leading total-count badge of every list FilterBar is `<ListTotalBadge count={list.pagination.total} />` - never the inline `Badge variant="outline"` + `ListIcon` + `t("list.totalCount")` triple. The component owns the icon and the framework translation. `list.hbs` emits it for scaffolded lists. EXCEPTION: a leading badge with a DIFFERENT label semantics (e.g. a floors-count badge with its own i18n key) keeps its bespoke `Badge`.
 
 ```tsx
 // FORBIDDEN
@@ -34,9 +34,9 @@ The leading total-count badge of every list FilterBar is `<ListTotalBadge count=
 
 ### Rule
 
-Every list filter over a user-account reference field (`userAccountId`, `delegatorId`, actor ids, …) is a `faceted` filter fed by `useUserOptions()` with `display: "dropdown"` — the same batch user list that `useUserNames()` resolves display names from, exposed as `{ label: displayName, value: userId }` options. NEVER a raw-id `text` filter, and NEVER a module-local re-implementation of the options mapping. The backend SearchDTO field allows `EQUALS, IN` (faceted serializes to `field.in`).
+Every list filter over a user-account reference field (`userAccountId`, `delegatorId`, actor ids, …) is a `faceted` filter fed by `useUserOptions()` with `display: "dropdown"` - the same batch user list that `useUserNames()` resolves display names from, exposed as `{ label: displayName, value: userId }` options. NEVER a raw-id `text` filter, and NEVER a module-local re-implementation of the options mapping. The backend SearchDTO field allows `EQUALS, IN` (faceted serializes to `field.in`).
 
-**Form-side user selection is `UserCombobox` (server search + full-search dialog), never a client-filtered option dump.** `UserCombobox` debounce-searches the dedicated case-insensitive lookup endpoint (`useUserSearch`), always resolves the selected id's label, and its expand affordance opens `UserPickerDialog` — the standard paged searchable list with per-row select actions. NEVER feed a user list into a plain `EntityCombobox`/`ComboboxField`, and NEVER re-build a module-local user search dialog.
+**Form-side user selection is `UserCombobox` (server search + full-search dialog), never a client-filtered option dump.** `UserCombobox` debounce-searches the dedicated case-insensitive lookup endpoint (`useUserSearch`), always resolves the selected id's label, and its expand affordance opens `UserPickerDialog` - the standard paged searchable list with per-row select actions. NEVER feed a user list into a plain `EntityCombobox`/`ComboboxField`, and NEVER re-build a module-local user search dialog.
 
 ### Standard Usage
 
@@ -65,7 +65,7 @@ const options = users.map((u) => ({ label: u.nativeName ?? u.username, value: u.
 
 ### Rule
 
-A surface whose query is NOT a `useCrudList` list (an aggregation report, a dashboard section, a custom endpoint with required params) still renders its conditions through the standard `CrudList.FilterBar` — driven by this standalone hook, which implements the same deferred-apply `CrudListFilters` contract. Derive the query params from `committedValues` (faceted single-select values may arrive as a one-element array). NEVER render query params as an inline `FormFields.*` row next to the content.
+A surface whose query is NOT a `useCrudList` list (an aggregation report, a dashboard section, a custom endpoint with required params) still renders its conditions through the standard `CrudList.FilterBar` - driven by this standalone hook, which implements the same deferred-apply `CrudListFilters` contract. Derive the query params from `committedValues` (faceted single-select values may arrive as a one-element array). NEVER render query params as an inline `FormFields.*` row next to the content.
 
 ```tsx
 const filters = useFilterBarState({ defaultFilters: { "checkedInAt.greaterThanOrEqualTo": from } });
@@ -94,7 +94,7 @@ const companyId = String((filters.committedValues["companyId.in"] as string[] | 
 
 ### Rule
 
-The "전체 N건" badge comes from the FilterBar's `count` prop, which renders the shared `ListTotalBadge` internally — one shape everywhere. Do not pass `<ListTotalBadge>` through `leading` (reserve `leading` for extra summary content: aggregate text, a pending-count `Badge`).
+The "전체 N건" badge comes from the FilterBar's `count` prop, which renders the shared `ListTotalBadge` internally - one shape everywhere. Do not pass `<ListTotalBadge>` through `leading` (reserve `leading` for extra summary content: aggregate text, a pending-count `Badge`).
 
 ## StatusCard placement (page-level status strip only)
 
@@ -105,4 +105,4 @@ The "전체 N건" badge comes from the FilterBar's `count` prop, which renders t
 
 ### Rule
 
-On a page with an always-visible status strip (summary `StatusCard`s under the page header), tab bodies must NOT render their own `StatusCard`s — two rows of identical card shapes read as a broken layout, and a half-filled card row leaves dead space. Tab-level aggregates live in the FilterBar toolbar line instead: totals as `leading` text/badges next to the `count` badge. Strip cards may take `onClick` to drill into a tab with the matching filter committed.
+On a page with an always-visible status strip (summary `StatusCard`s under the page header), tab bodies must NOT render their own `StatusCard`s - two rows of identical card shapes read as a broken layout, and a half-filled card row leaves dead space. Tab-level aggregates live in the FilterBar toolbar line instead: totals as `leading` text/badges next to the `count` badge. Strip cards may take `onClick` to drill into a tab with the matching filter committed.

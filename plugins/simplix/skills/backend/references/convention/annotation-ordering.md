@@ -115,7 +115,7 @@ public SimpliXApiResponse<EntityNameDetailDTO> create(
     @RequestBody @Validated EntityNameCreateDTO createDto) {
 ```
 
-**Order update (special case — adds @SimpliXStandardApi):**
+**Order update (special case - adds @SimpliXStandardApi):**
 ```java
 @PatchMapping("/order")                               // 1
 @Operation(summary = "Update EntityName Orders",      // 2
@@ -138,7 +138,7 @@ public SimpliXApiResponse<List<EntityNameDetailDTO>> updateOrder(...)
 public class PurposeController {
 ```
 
-`@SimpliXStandardApi` marks endpoints for automatic Swagger schema generation — it tells SimpliX to include standard request/response schemas in the OpenAPI documentation.
+`@SimpliXStandardApi` marks endpoints for automatic Swagger schema generation - it tells SimpliX to include standard request/response schemas in the OpenAPI documentation.
 
 Note: `@SimpliXStandardApi` is at **class level** for non-CRUD controllers, but at **method level** (only on special endpoints) for CRUD controllers.
 

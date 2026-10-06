@@ -2,7 +2,7 @@
 
 All field-type patterns for SimpliX JPA entities.
 
-> **Scope (canonical):** per-type annotations and patterns — ID (UUID v7), String, Boolean, Enum, i18n Map, JSON, Encrypted (PII), Date/Time, Numeric, Search index, Sort order. For entity-level cross-cutting concerns (audit, soft delete, events) see **base-entity-patterns.md**; for FK handling see **relationship-patterns.md**; for encryption detail see **entity-security-patterns.md**.
+> **Scope (canonical):** per-type annotations and patterns - ID (UUID v7), String, Boolean, Enum, i18n Map, JSON, Encrypted (PII), Date/Time, Numeric, Search index, Sort order. For entity-level cross-cutting concerns (audit, soft delete, events) see **base-entity-patterns.md**; for FK handling see **relationship-patterns.md**; for encryption detail see **entity-security-patterns.md**.
 
 ## Contents
 
@@ -418,13 +418,13 @@ private String emailLast4;
 
 ## Date/Time Fields
 
-Every temporal field belongs to exactly ONE semantic kind (skill invariant #18). Decide the kind FIRST — it fixes the Java type, column type, JSON shape, and search behavior.
+Every temporal field belongs to exactly ONE semantic kind (skill invariant #18). Decide the kind FIRST - it fixes the Java type, column type, JSON shape, and search behavior.
 
 | Semantic kind | Meaning | Java type | Column | JSON |
 |---|---|---|---|---|
-| **Absolute instant** | One global point in time — same moment in every zone | `Instant` | TIMESTAMP (UTC-normalized) | RFC 3339 with offset |
-| **Calendar date** | "That date in that locale" — not a point in time until a zone is applied | `LocalDate` | DATE | `yyyy-MM-dd` |
-| **Wall-clock time** | "That time of day in that locale" — recurs daily | `LocalTime` | TIME | `HH:mm[:ss]` |
+| **Absolute instant** | One global point in time - same moment in every zone | `Instant` | TIMESTAMP (UTC-normalized) | RFC 3339 with offset |
+| **Calendar date** | "That date in that locale" - not a point in time until a zone is applied | `LocalDate` | DATE | `yyyy-MM-dd` |
+| **Wall-clock time** | "That time of day in that locale" - recurs daily | `LocalTime` | TIME | `HH:mm[:ss]` |
 | **Calendar period** | Year-month / year bucket | fixed-width String `yyyy-MM` + `@Pattern` validation | VARCHAR | `yyyy-MM` |
 
 ```java
@@ -443,20 +443,20 @@ private LocalTime shiftStart;
 
 ### Forbidden
 
-- **String columns holding an offset-carrying or variable-format date/time** (RFC 3339 etc.) — they lose input validation, chronological search/sort (searchable-jpa compares VARCHAR lexicographically), OpenAPI `format` hints, and cannot serve controllers in different site timezones (one string carries one offset). Wire/SDK string formats are produced at the transmission boundary (SU mappers, site timezone) — never stored. See AP-27.
-- **`LocalDateTime` / `OffsetDateTime` / `ZonedDateTime` entity fields** — SimpliX's auto-applied JPA converters UTC-normalize them, so they cannot preserve an original offset; an absolute point in time is `Instant`, a zone-free value is `LocalDate`/`LocalTime`.
+- **String columns holding an offset-carrying or variable-format date/time** (RFC 3339 etc.) - they lose input validation, chronological search/sort (searchable-jpa compares VARCHAR lexicographically), OpenAPI `format` hints, and cannot serve controllers in different site timezones (one string carries one offset). Wire/SDK string formats are produced at the transmission boundary (SU mappers, site timezone) - never stored. See AP-27.
+- **`LocalDateTime` / `OffsetDateTime` / `ZonedDateTime` entity fields** - SimpliX's auto-applied JPA converters UTC-normalize them, so they cannot preserve an original offset; an absolute point in time is `Instant`, a zone-free value is `LocalDate`/`LocalTime`.
 
 ### Timezone configuration fields
 
-Fields that hold a timezone (e.g. `Site.timezone`) store **IANA zone IDs** (`"Asia/Seoul"`), never fixed offsets (`"+09:00"`) — offsets shift with DST; compute the offset at use time from the zone ID.
+Fields that hold a timezone (e.g. `Site.timezone`) store **IANA zone IDs** (`"Asia/Seoul"`), never fixed offsets (`"+09:00"`) - offsets shift with DST; compute the offset at use time from the zone ID.
 
 ### Zone handling in services
 
-Never call argless `LocalDate.now()` / `LocalTime.now()` / `OffsetDateTime.now()` / `Year.now()` / `YearMonth.now()`, `ZoneId.systemDefault()`, or `TimeZone.getDefault()` in main code — the container's TZ must never decide a domain result. `Instant.now()` is zone-free and unrestricted. Resolve the `ZoneId` explicitly, in this order:
+Never call argless `LocalDate.now()` / `LocalTime.now()` / `OffsetDateTime.now()` / `Year.now()` / `YearMonth.now()`, `ZoneId.systemDefault()`, or `TimeZone.getDefault()` in main code - the container's TZ must never decide a domain result. `Instant.now()` is zone-free and unrestricted. Resolve the `ZoneId` explicitly, in this order:
 
-1. **Site timezone** — `Site.timezone` (IANA ID), for anything attributed to a physical site: work-date attribution, visit dates, kiosk "today", policy windows, site-scoped day boundaries.
-2. **Domain operation-policy default zone** — when no site applies (e.g. `defaultTimeZone` on the domain's operation policy).
-3. **App timezone** — the single configured fallback. Never hardcode a zone literal (`ZoneId.of("Asia/Seoul")`) — inject it from configuration. Sole exception: `ZoneOffset.UTC` where the storage contract itself is UTC (statistics buckets, retention batches), with a justifying comment on the constant.
+1. **Site timezone** - `Site.timezone` (IANA ID), for anything attributed to a physical site: work-date attribution, visit dates, kiosk "today", policy windows, site-scoped day boundaries.
+2. **Domain operation-policy default zone** - when no site applies (e.g. `defaultTimeZone` on the domain's operation policy).
+3. **App timezone** - the single configured fallback. Never hardcode a zone literal (`ZoneId.of("Asia/Seoul")`) - inject it from configuration. Sole exception: `ZoneOffset.UTC` where the storage contract itself is UTC (statistics buckets, retention batches), with a justifying comment on the constant.
 
 Every `Instant ↔ LocalDate`/`LocalTime` conversion names its zone in code: `instant.atZone(zone).toLocalDate()`, `date.atStartOfDay(zone).toInstant()`. Time-sensitive components (schedulers, evaluators) take an injected `java.time.Clock` through their single explicit constructor (see AP-26). User/browser timezones are display-only and never influence stored values. Anti-pattern: AP-28. These zone rules bind ALL Java code including schedulers and infrastructure.
 

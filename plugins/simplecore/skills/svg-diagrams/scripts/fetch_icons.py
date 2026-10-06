@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Regenerate `lucide.py` — the bundled Lucide icon set.
+"""Regenerate `lucide.py` - the bundled Lucide icon set.
 
 Lucide (https://lucide.dev, ISC) draws every icon on a 24×24 grid with a round
 stroke, which is exactly the shape `Canvas.icon()` renders, so its markup is
-kept as-is rather than redrawn. The whole set is bundled — an author should not have to
+kept as-is rather than redrawn. The whole set is bundled - an author should not have to
 regenerate the data to reach for an icon mid-drawing.
 
     python3 fetch_icons.py                      # npm pack lucide-static
@@ -12,7 +12,7 @@ regenerate the data to reach for an icon mid-drawing.
 
 The generated file holds the elements verbatim (tag plus numeric attributes);
 `svgkit` applies the translate-and-scale at draw time. Nothing here runs when a
-diagram is drawn — this is a maintenance script.
+diagram is drawn - this is a maintenance script.
 """
 from __future__ import annotations
 

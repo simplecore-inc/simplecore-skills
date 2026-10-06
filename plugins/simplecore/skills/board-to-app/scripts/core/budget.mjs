@@ -3,12 +3,12 @@
 // **The rule that makes a build learn is the rule that makes it unreadable.** 「A finding belongs
 // in a skill, in the same change」 has no ceiling and no deletion clause, so every session appends
 // and nothing ever removes. One repository reached about 1.1 million characters of reachable
-// instruction across its skills, its own instruction file and its ledger — more than a context
+// instruction across its skills, its own instruction file and its ledger - more than a context
 // window, which means **no agent could hold the rules it was being judged by.** Every repeat it
 // suffered had a paragraph forbidding it, and every one of those paragraphs went unread.
 //
 // **A ceiling is not a style preference; it is what turns adding into trading.** With the ceiling
-// declared at the file's current size, nothing is red today and the next append fails — so a rule
+// declared at the file's current size, nothing is red today and the next append fails - so a rule
 // enters only when a rule leaves, or when somebody raises the number deliberately and says in the
 // commit what they tried to remove and why it stayed. That visibility is the whole mechanism.
 //
@@ -31,7 +31,7 @@ const CEILING = (value) => (Number.isInteger(value) && value > 0 ? value : null)
  * <p><b>Error rather than warning, and safe to make an error because of how the ceilings are
  * set.</b> A project declares each ceiling at or just above what the file measures on the day it
  * is declared, so the tree is green at the moment the gate arrives; what fails is the growth after
- * it. A warning here would be read the way every warning is read — later — and the file would go
+ * it. A warning here would be read the way every warning is read - later - and the file would go
  * on growing while the gate reported it, which is the state this replaces.
  */
 export const instructionFitsItsBudget = {
@@ -81,7 +81,7 @@ export const instructionFitsItsBudget = {
 
 /**
  * Every check id this build can run, read out of the sources that declare them rather than
- * imported. Importing the registry here would be a cycle — the registry imports this module — and
+ * imported. Importing the registry here would be a cycle - the registry imports this module - and
  * a second hand-kept list of ids is a list that goes stale the first time a gate is renamed.
  */
 function gateIds(ctx) {
@@ -107,7 +107,7 @@ function gateIds(ctx) {
     let text;
     try { text = readFileSync(path, 'utf8'); } catch { continue; }
     // **camelCase is the discriminant, and without it this reads domain names as check ids.**
-    // A gate id is several words run together — `evidenceQuotesTheChapter` — while a bare lowercase
+    // A gate id is several words run together - `evidenceQuotesTheChapter` - while a bare lowercase
     // word (`safety`, `identity`, `integration`) is a module, a locale namespace or a persona, and
     // matching those reported seven files for sharing the word 「safety」.
     for (const m of text.matchAll(/\bid:\s*'([a-z][A-Za-z0-9]*[A-Z][A-Za-z0-9]{4,})'/g)) ids.add(m[1]);
@@ -129,7 +129,7 @@ const CITED = (text, id) => {
  * <p><b>Warning, because the second copy is sometimes the right one.</b> An index that routes to a
  * reference legitimately names what it routes to, and a project's own instruction file legitimately
  * names a check it turns on. What this catches is the paragraph that explains a check's reasoning
- * a second time somewhere else — and only a reader can tell those apart, which is why it prompts a
+ * a second time somewhere else - and only a reader can tell those apart, which is why it prompts a
  * re-read rather than failing a write.
  */
 export const aGateIsTaughtOnce = {
@@ -174,13 +174,13 @@ export const aGateIsTaughtOnce = {
  * where its pictures came from.
  *
  * <p><b>The reason a transcription cannot carry this by itself is that quality says nothing about
- * provenance.</b> The more detailed a reading is, the more trustworthy it reads — a tree carrying
+ * provenance.</b> The more detailed a reading is, the more trustworthy it reads - a tree carrying
  * control names and required markers says 「this person cannot not have looked at the screen」, and
  * that is true. It says nothing whatever about which build they looked at.
  *
  * <p>Warning rather than error: a document being written is incomplete on its way to being
  * complete, and failing every write until the last line lands is how a gate gets turned off. The
- * chapter does not close on it — that reading belongs to whoever writes 닫힘 in the ledger.
+ * chapter does not close on it - that reading belongs to whoever writes 닫힘 in the ledger.
  */
 export const evidenceSaysWhereItCameFrom = {
   id: 'evidenceSaysWhereItCameFrom',
@@ -223,12 +223,12 @@ export const evidenceSaysWhereItCameFrom = {
  *
  * <p><b>A duplicated paragraph is not redundancy; it is a fork.</b> Two copies of one rule drift,
  * and afterwards the stale copy and the current one are the same characters to anybody reading
- * either alone — which is why a project ends up with a rule that is true in one file and false in
+ * either alone - which is why a project ends up with a rule that is true in one file and false in
  * the file beside it, and no reader can tell which they have.
  *
  * <p><b>Contradiction is caught through the same reading, at one remove.</b> Where a directive
  * verb sits against one subject in one file and its opposite sits against the same subject in
- * another, an agent obeys whichever it loaded — and both obediences look like discipline. It is
+ * another, an agent obeys whichever it loaded - and both obediences look like discipline. It is
  * how a build gets two lanes fixing each other's work: neither is disobeying anything.
  *
  * <p>Warning, because separating a genuine restatement from a fork needs a reader. An index that
@@ -273,7 +273,7 @@ export const noInstructionIsWrittenTwice = {
 /** Sentences long enough to be an instruction rather than a heading or a table cell. */
 function sentencesOf(text) {
   const out = [];
-  // A comment is provenance a tool wrote — 「written by /simplecore:board-init in its routed form」 —
+  // A comment is provenance a tool wrote - 「written by /simplecore:board-init in its routed form」 -
   // and every routed board carries the same one by template. It is not an instruction and does not
   // drift, so it is taken out before the sentences are compared.
   const lines = text.replace(/<!--[\s\S]*?-->/g, (block) => block.replace(/[^\n]/g, '')).split('\n');
@@ -282,8 +282,8 @@ function sentencesOf(text) {
     if (/^\s*```/.test(line)) { fenced = !fenced; return; }
     if (fenced) return;
     if (/^\s*#/.test(line)) return;
-    // A parenthetical note in its own italics is a marker a file repeats per section — 「this
-    // section is English, the rest is Korean」 — and repeating it is what it is for.
+    // A parenthetical note in its own italics is a marker a file repeats per section - 「this
+    // section is English, the rest is Korean」 - and repeating it is what it is for.
     if (/^\*?\(/.test(line.trim())) return;
     for (const raw of line.split(/(?<=[.。])\s+/)) {
       const body = raw.trim();
@@ -413,7 +413,7 @@ export function cases(t) {
   );
 
   // `aGateIsTaughtOnce` reads the ids out of this skill's own gate sources, so the id it is proved
-  // with is one that really exists — a made-up id would prove a regex rather than the gate.
+  // with is one that really exists - a made-up id would prove a regex rather than the gate.
   const taught = (files) => t.project({
     config: { instructionBudget: Object.fromEntries(Object.keys(files).map((f) => [f, 100000])) },
     files,

@@ -2,7 +2,7 @@
 // and the two layouts a screen must not stack on one page.
 import { idOf } from '../../../core/ids.mjs';
 
-// Content gate: a section can be present while a frame has quietly lost what it promises —
+// Content gate: a section can be present while a frame has quietly lost what it promises -
 // a refactor or a bad merge leaves the label intact and the drawing gone, and a gate that
 // counts sections passes it. The manifest label is the frame's contract, so a frame the
 // label calls a dialog has to draw one. Checked against the screen module rather than the
@@ -20,7 +20,7 @@ export const hollowDialogGate = {
 };
 
 // A badge is a fact ABOUT a field; the input is where the field's value goes. Put one inside a
-// single-line input and the two fight for a 30px box — 「켬」 and 「환경 제약 · 자동번역」 sat on top
+// single-line input and the two fight for a 30px box - 「켬」 and 「환경 제약 · 자동번역」 sat on top
 // of the select's caret, and a reader cannot tell which part of that box is the value they are
 // choosing. It belongs in the hint under the input, or beside the label. Multi-value fields are
 // the exception and the reason the check names the components rather than the word `value`:
@@ -64,7 +64,7 @@ export const fieldBadgeGate = {
 };
 
 // The panel's two rows carry different things: the upper is what the OPEN TAB asks for, the lower
-// is what is done to the RECORD. A verb standing in both says neither — 「세션 열기」 above and
+// is what is done to the RECORD. A verb standing in both says neither - 「세션 열기」 above and
 // 「세션 열기」 below leaves no way to tell which one is this record's主 action, and it cost the
 // lower row's emphasis on 32 screens before anybody counted them.
 export const panelDupVerbGate = {
@@ -99,11 +99,11 @@ export const panelDupVerbGate = {
 };
 
 // A frame says on its face what has to be BOUGHT before anyone reaches it. Q and R carry no
-// `phase` — they are built in 1단계 — and yet none of their 39 frames opens without
+// `phase` - they are built in 1단계 - and yet none of their 39 frames opens without
 // `PACK_CONSTRUCTION`, which the board stated nowhere at all until this gate existed. Filling
 // the frames once is not the job: the job is that the next cluster cannot land empty.
 //
-// Three things are checked, and the first reads the BUILT HTML rather than the declaration —
+// Three things are checked, and the first reads the BUILT HTML rather than the declaration -
 // a declaration that never reached a drawing is exactly the failure a declaration cannot see.
 export const featureGate = {
   id: 'featureGate',
@@ -118,7 +118,7 @@ export const featureGate = {
         if (key) declared.set(idOf(sc.file), key);
       }
     }
-    // 1) Did the declaration reach the drawing — does the built HTML's chip count match it?
+    // 1) Did the declaration reach the drawing - does the built HTML's chip count match it?
     const drawn = (ctx.html.match(/class="fft"/g) ?? []).length;
     if (drawn !== declared.size) {
       bad.push(`선언한 화면 ${declared.size}개인데 칩이 그려진 프레임은 ${drawn}개다 — ` +
@@ -127,7 +127,7 @@ export const featureGate = {
     for (const sc of ctx.screens) {
       const id = idOf(sc.file);
       const src = ctx.srcOf(sc.file);
-      // 「기능 키 X」 must not be read out of a table cell inside the screen — N-63 carried those
+      // 「기능 키 X」 must not be read out of a table cell inside the screen - N-63 carried those
       // words in a device row and passed while its notes never named the key once. Only the notes
       // string is read.
       const notes = (src.match(/\n  notes: ([\s\S]*?)\n  (?:body|device|route|screen|state|pageForm|pageList|pageCanvas|pageCalendar|offLanguages|roles):/) ?? [])[1] ?? '';
@@ -136,7 +136,7 @@ export const featureGate = {
       // `notes: base.notes + '…'` inherits the base screen's line verbatim, so a key written there
       // is written here too. Only a frame carrying notes of its own is asked.
       const ownNotes = /\n  notes: /.test(src) && !/notes: base\.notes/.test(src);
-      // 2) Did the drawing reach the declaration — read from both sides.
+      // 2) Did the drawing reach the declaration - read from both sides.
       if (auth && !key) bad.push(`${id} — notes는 「기능 키 ${auth}」인데 manifest가 선언하지 않았다`);
       else if (auth && key && auth !== key) bad.push(`${id} — notes ${auth} ≠ manifest ${key}`);
       else if (key && !auth && ownNotes) {
@@ -153,8 +153,8 @@ export const featureGate = {
 };
 
 // Korean title gate: a title is a NAME, so it takes a noun form. 「~한다」/「~다」 there reads as a
-// sentence cut in half, and 「~하는 것」 is translationese. A regex over prose cannot judge this —
-// the same 「~한다」 is correct in a sentence — but the board knows which strings are titles,
+// sentence cut in half, and 「~하는 것」 is translationese. A regex over prose cannot judge this -
+// the same 「~한다」 is correct in a sentence - but the board knows which strings are titles,
 // because they are the arguments of tTitle() and the `title` of a page header.
 export const titleFormGate = {
   id: 'titleFormGate',
@@ -162,11 +162,11 @@ export const titleFormGate = {
   stage: 'built',
   run: (ctx) => {
     // Judged at two call sites only: the name of a page and the name of a dialog. `tTitle` is NOT
-    // one of them — this board writes a help heading as the rule it explains (「갈음 관계 — 한 기록이
+    // one of them - this board writes a help heading as the rule it explains (「갈음 관계 - 한 기록이
     // 두 의무를 채운다」), and that is the convention, not a defect. `msg` and `emptyState` titles
     // are the product speaking to a user and are sentences on purpose.
     const TITLE_CALL = /([\s\S]{0,80})title:\s*'([^']+)'/g;
-    // Any 「~다」 ending, not a list of them — a closed list let 「읽힌다」·「뗀다」·「잡힌다」 past.
+    // Any 「~다」 ending, not a list of them - a closed list let 「읽힌다」·「뗀다」·「잡힌다」 past.
     // 「~니다」 is the polite register and is judged separately below.
     const SENTENCE_END = /[가-힣]다$/;
     const badTitles = [];
@@ -177,7 +177,7 @@ export const titleFormGate = {
         const text = (m[2] ?? '').trim();
         if (!/[가-힣]/.test(text)) continue;
         if (!/(dialog|pageHeader)\(\s*\{[^}]*$/.test(before)) continue;
-        // A help dialog's title states the rule it explains — 「자리마다 보고 기한이 다르다」 is the
+        // A help dialog's title states the rule it explains - 「자리마다 보고 기한이 다르다」 is the
         // board's convention for the thing behind a help card, and the card's own title matches it.
         // The name it is bound to is what separates the two: `help` explains, everything else acts.
         if (/(const|let)\s+help\s*=\s*dialog\(\s*\{[^}]*$/.test(before)) continue;
@@ -197,7 +197,7 @@ export const titleFormGate = {
 };
 
 // Register gate: a `.t-body` line is drawn INSIDE the screen, so a reader takes it for product
-// copy — and product copy is 합니다체. A frame's `notes` are the board talking about the screen
+// copy - and product copy is 합니다체. A frame's `notes` are the board talking about the screen
 // and stay -다체, which is why this looks at the one marker that only ever wraps screen copy
 // instead of at the file. The l10n rule pack cannot see it: its readers strip HTML markup, and
 // the marker is the markup.
@@ -216,10 +216,10 @@ export const dDayGate = {
   stage: 'built',
   run: (ctx) => {
     // Every dated value on a board is only readable against a fixed today, and a board that
-    // has not declared one has nothing to compare against. Skipping is right — inventing a
+    // has not declared one has nothing to compare against. Skipping is right - inventing a
     // today would judge the frames against a date nobody chose.
     if (!ctx.config.today) return [];
-    // 「기한 2026-08-16 · D-5」 — the badge and the date it counts to sit within a few characters
+    // 「기한 2026-08-16 · D-5」 - the badge and the date it counts to sit within a few characters
     // of each other, which is what makes this checkable at all. Three narrowings were needed:
     // 「AUD-2026-02」 is not a D-day (a letter runs into the D), a date already past is not what a
     // D-n counts to (「사유 종료 2026-08-06」 sat in the same cell as a badge counting to the
@@ -256,7 +256,7 @@ export const clockGate = {
   stage: 'built',
   run: (ctx) => {
     // Every dated value on a board is only readable against a fixed today, and a board that
-    // has not declared one has nothing to compare against. Skipping is right — inventing a
+    // has not declared one has nothing to compare against. Skipping is right - inventing a
     // today would judge the frames against a date nobody chose.
     if (!ctx.config.today) return [];
     // `auditFoot` stamps when a record was last written, so its date is by definition in the past.
@@ -264,11 +264,11 @@ export const clockGate = {
     // in August, and one drew a training session that had already ended a week from now.
     // Two shapes carry a time that has already happened: the audit stamp at the foot of a record,
     // and a step in an `approvalFlow`/`journey` marked 「done」. A step drawn as finished on a date
-    // that has not arrived was found twice — one report written three days from now, one receipt
+    // that has not arrived was found twice - one report written three days from now, one receipt
     // acknowledged the day after tomorrow.
     const STAMP = /auditFoot\([^)]*?at: '(\d{4}-\d{2}-\d{2})|at: '(\d{4}-\d{2}-\d{2})[^']*',\s*state: 'done'|trail: '(\d{4}-\d{2}-\d{2})[^']*',[^}]*state: 'done'/g;
     // 「4일 전」·「114일 전」 beside the date it counts from. Seven were out by one, all in the
-    // same direction — the writer counted the days between two dates and forgot one end.
+    // same direction - the writer counted the days between two dates and forgot one end.
     const ELAPSED = /(\d{4})-(\d{2})-(\d{2})(?:[^<>']{0,40}?)(\d{1,4})일 전|(\d{1,4})일 전(?:[^<>']{0,40}?)(\d{4})-(\d{2})-(\d{2})/g;
     const today = dayNum(ctx.config.today);
     const bad = [];
@@ -298,17 +298,17 @@ export const labelFormGate = {
     // A label is where a NAME goes. Four shapes had drifted into that slot and each was found by
     // reading, then verified against the whole board before being written here.
     //
-    //  ① a `dField` label that is a -다 sentence — the value beneath it is 합니다체, so one field
+    //  ① a `dField` label that is a -다 sentence - the value beneath it is 합니다체, so one field
     //     carries two registers.
-    //  ② a `dField` label that is a bare conditional (「끊기면」) — a sentence cut off before it says
+    //  ② a `dField` label that is a bare conditional (「끊기면」) - a sentence cut off before it says
     //     anything. 「석면」 is a noun that ends the same way, hence the lookbehind.
     //  ③ a `badge` that is a finished clause with a subject (「이름이 같음」) rather than a state.
-    //     「허가 없음」 and 「리더 없음」 are the standard shape and must stay quiet — noun plus
-    //     existence — which is why the subject particle has to follow at least two syllables.
+    //     「허가 없음」 and 「리더 없음」 are the standard shape and must stay quiet - noun plus
+    //     existence - which is why the subject particle has to follow at least two syllables.
     //  ④ a `statTile` label that names an action instead of what its number counts: 「확인함」 over
     //     118 leaves the reader to guess what 118 is. 「개인정보 포함」 ends the same way and is a
-    //     noun, hence `(?<!포)`. 「연결 안 됨」 is the same standard shape as badge's 노운+없음 — a
-    //     category name (an unconnected zone), not a report of what happened to one — hence
+    //     noun, hence `(?<!포)`. 「연결 안 됨」 is the same standard shape as badge's 노운+없음 - a
+    //     category name (an unconnected zone), not a report of what happened to one - hence
     //     `(?<!안 )`.
     const RULES = [
       [/dField\(\{\s*label:\s*'([^']*(?:없다|있다|이다|아니다|다르다|한다|된다|막힌다|않다|는다))'/g, 'dField 라벨이 -다체 문장이다'],
@@ -332,14 +332,14 @@ export const notesRegisterGate = {
   title: 'notes가 -다체다',
   stage: 'built',
   run: (ctx) => {
-    // `registerGate` reads the other direction only — screen copy that slipped into the plain
+    // `registerGate` reads the other direction only - screen copy that slipped into the plain
     // register. Nothing read the notes themselves, and 합니다체 had spread to 63 files: the board
     // describing a screen in the voice the product uses to address its user. A note in that voice
     // reads as copy to implement, which is the confusion `registerGate` exists to stop, arriving
     // from the far side. **A register rule stated in one direction gets a check in both.**
     //
     // Two narrowings. 「」 holds copy quoted FROM the screen, and a quotation keeps its own
-    // register — 「저장했습니다」 inside a note is the screen speaking, not the board. And the
+    // register - 「저장했습니다」 inside a note is the screen speaking, not the board. And the
     // ending is anchored on what closes a clause rather than on a period alone: 「…표시합니다
     // ({{p-04-list-detail}}).」 and 「…표시합니다<br>」 escaped a period-only anchor, which is how
     // 36 of the 111 stayed hidden through the first sweep.
@@ -365,7 +365,7 @@ export const notesRegisterGate = {
  *
  * <p><b>A comment is not screen copy, and a check that reads one refuses a build over a sentence no
  * user will ever see.</b> A frame's comments talk about the board, and the vocabulary they talk
- * about it in is frame references — which is exactly what this gate exists to keep out of the
+ * about it in is frame references - which is exactly what this gate exists to keep out of the
  * product's own words. Read together, the two make the gate refuse the frames that documented
  * themselves best.
  *
@@ -386,7 +386,7 @@ export const refLeakGate = {
   title: '보드 참조가 화면 문구에 없다',
   stage: 'built',
   run: (ctx) => {
-    // `{{slug}}` is how a frame's NOTES point at another frame — the build turns it into that
+    // `{{slug}}` is how a frame's NOTES point at another frame - the build turns it into that
     // frame's number for the reader of the board. In the body it does the same thing, so a user
     // of the product would read 「P-18」 in a sentence meant for them. Thirteen frames had one.
     const bad = [];
@@ -411,7 +411,7 @@ export const workerLangGate = {
   title: '근로자 앱 셸이 그 화면의 말을 쓴다',
   stage: 'built',
   run: (ctx) => {
-    // The two things always on a worker's screen — the tab row and the offline strip — come from
+    // The two things always on a worker's screen - the tab row and the offline strip - come from
     // the shell, and fifteen frames whose entire body was Tiếng Việt drew both in Korean. A person
     // who cannot read the strip cannot tell a signature the server has from one only their phone
     // has, which is the single thing that strip exists to say. The shell takes `lang`; a frame
@@ -436,8 +436,8 @@ export const twinActionGate = {
   title: '한 헤더에 같은 곳으로 가는 버튼이 둘이 아니다',
   stage: 'built',
   run: (ctx) => {
-    // Eight headers carried two ghost buttons a single word apart — 「역할·권한」 beside 「역할·권한
-    // 매트릭스」, 「웹훅」 beside 「아웃바운드 웹훅」 — and the shorter one matched no screen's name.
+    // Eight headers carried two ghost buttons a single word apart - 「역할·권한」 beside 「역할·권한
+    // 매트릭스」, 「웹훅」 beside 「아웃바운드 웹훅」 - and the shorter one matched no screen's name.
     // A reader cannot tell which of the two goes where, and the answer is that both go to the same
     // place. Adjacency is the test: two labels where one contains the other, side by side.
     const bad = [];
@@ -464,12 +464,12 @@ export const languageSetGate = {
   stage: 'built',
   run: (ctx) => {
     // This site runs four languages and every list of them says the same four. Seven frames had
-    // drifted — one added 태국어, three swapped in नेपाली or မြန်မာ (which nobody at this site
+    // drifted - one added 태국어, three swapped in नेपाली or မြန်မာ (which nobody at this site
     // speaks), and two wrote 「베트남어 · 크메르어」 in Korean where every other frame writes the
     // language in its own script. A language switch that offers a language the site has not
     // switched on is a promise the product cannot keep.
     const KNOWN = new Set(ctx.config.site?.languages ?? []);
-    // Some switches legitimately carry a non-language option — 「전체 언어」 filters, 「나란히」 and
+    // Some switches legitimately carry a non-language option - 「전체 언어」 filters, 「나란히」 and
     // 「이중 언어」 print both at once, and a translation screen names a direction (「한국어 → …」).
     // C-16 is the one frame that legitimately names a language the site has NOT switched on: it
     // draws what a worker who speaks it would get, which is pictograms and nothing else. It says so
@@ -497,7 +497,7 @@ export const paginationGate = {
   run: (ctx) => {
     // `pagination(labels, total, rows)` draws the labels it is handed, so the last page number is
     // written by hand and drifts silently. Fourteen frames were wrong at once, one of them by a
-    // whole digit — 48,210 records at ten a page ended on 「482」, which was the neighbouring
+    // whole digit - 48,210 records at ten a page ended on 「482」, which was the neighbouring
     // screen's number for a list a tenth the size.
     const P = /pagination\(\s*\[([^\]]*)\]\s*,\s*'([\d,]+)'\s*,\s*(\d+)/g;
     const bad = [];
@@ -522,7 +522,7 @@ export const badgeFormGate = {
   title: '배지가 상태 이름이다',
   stage: 'built',
   run: (ctx) => {
-    // A badge names a state in a cell the width of a word — 「고정」, 「이상 없음」, 「43일 남음」.
+    // A badge names a state in a cell the width of a word - 「고정」, 「이상 없음」, 「43일 남음」.
     // Eighteen were sentences instead (「먼저 닫아야 합니다」, 「현장에 들어갈 수 없습니다」),
     // and a sentence in that cell wraps to three lines or is cut. 「~ㅁ」 endings are the board's
     // badge vocabulary and are not judged; a finished sentence is.
@@ -546,7 +546,7 @@ export const recordIdGate = {
   run: (ctx) => {
     // A frame's address names the record it is showing and its `auditFoot` stamps that same
     // record. Three frames named two: one drew ses_0142 and stamped ses_0244, and the edit state
-    // beside it followed the stamp — so 「이 세션」 meant a different session on each of three
+    // beside it followed the stamp - so 「이 세션」 meant a different session on each of three
     // frames of one screen. A truncated hash in the address is the same record, not a second one.
     const bad = [];
     for (const sc of ctx.screens) {
@@ -555,8 +555,8 @@ export const recordIdGate = {
       if (!u) continue;
       const ids = [...u[1].matchAll(/\b([a-z]{2,5}_[0-9a-z]{3,})\b/g)].map((m) => m[1]);
       if (!ids.length) continue;
-      // One file can hold more than one panel — a scoped state draws a different record with its
-      // own stamp — so the address has to match ONE of the stamps, not the first one written.
+      // One file can hold more than one panel - a scoped state draws a different record with its
+      // own stamp - so the address has to match ONE of the stamps, not the first one written.
       const stamps = [...src.matchAll(/auditFoot\(\{\s*id:\s*'([a-z]+_[0-9a-z]+)'/g)].map((m) => m[1]);
       if (!stamps.length) continue;
       const fits = stamps.some((st) => ids.some((id) => id === st || id.startsWith(st) || st.startsWith(id)));
@@ -572,7 +572,7 @@ export const newModeGate = {
   stage: 'built',
   run: (ctx) => {
     // `?view=` is the record picked out of the list and `?mode=new` is the empty form. Carrying
-    // both says the form opened with somebody else's values in it — five frames drew exactly that,
+    // both says the form opened with somebody else's values in it - five frames drew exactly that,
     // and one of them was a 「사고 등록」 pre-filled with an already-registered incident.
     const bad = [];
     for (const sc of ctx.screens) {
@@ -592,27 +592,27 @@ export const registerGate = {
   title: '화면 문구가 -다체다',
   stage: 'built',
   run: (ctx) => {
-    // `.t-body` was the only marker this read, and a field's value is the larger surface — eight
+    // `.t-body` was the only marker this read, and a field's value is the larger surface - eight
     // strings sat in the plain register there, one of them inside a template literal where a
     // quoted-string sweep could not see it. Both quoting styles are read here for that reason.
     //
     // What is NOT read is as deliberate: this board explains itself by stating a rule as a HEADING
     // in the plain register and answering it in 합니다체 underneath. That convention holds a help
     // dialog's title (titleFormGate steps around it), a `helpCard` hint, a wide `dField` whose label
-    // is that heading (twelve of twelve — no exceptions), and the `sectHead` above such a block
+    // is that heading (twelve of twelve - no exceptions), and the `sectHead` above such a block
     // (six of six). Judging those sites would report the convention as a defect, so they are not
-    // judged, and the value beneath them is judged instead — which is where the defects were.
+    // judged, and the value beneath them is judged instead - which is where the defects were.
     const VALUE = /value: (?:'((?:[^'\\]|\\.)*)'|`((?:[^`\\]|\\.)*)`)/g;
     // Three more call sites carry sentences the reader meets as product copy, and they had stayed
     // in the plain register because none of them renders as `.t-body`: the caption under a table,
     // a card's own subtitle, and a chart's note. `sectHead` above an explanation block is still not
-    // read — that is the heading convention described above.
+    // read - that is the heading convention described above.
     //
     // **The P cluster is exempt from those three, and only from those three.** Its frames are the
     // pattern catalogue: a `tSub` there is sometimes specimen copy a real screen would show
     // (「추가 등록은 되지만 곧 막힙니다」) and sometimes the board captioning the pattern for whoever
     // implements it (「탭을 바꾸면 동작 행의 윗단만 바뀐다」). Both registers are correct in that
-    // cluster, for different strings, and no pattern can tell them apart — judging them would
+    // cluster, for different strings, and no pattern can tell them apart - judging them would
     // report half the catalogue as a defect either way. `.t-body`, values and tile labels are still
     // judged there, because those ARE the specimen.
     const PATTERN_ONLY = new Set(['tSub', 'sub', 'note']);
@@ -624,7 +624,7 @@ export const registerGate = {
       [/\bsub:\s*(?:'((?:[^'\\]|\\.)*)'|`((?:[^`\\]|\\.)*)`)/g, '카드 부제', 'sub'],
       [/\bnote:\s*(?:'((?:[^'\\]|\\.)*)'|`((?:[^`\\]|\\.)*)`)/g, '차트 주석', 'note'],
     ];
-    // Any 「~다」 ending — a closed list let 「읽힌다」·「뗀다」·「잡힌다」 through. 「~니다」 is the
+    // Any 「~다」 ending - a closed list let 「읽힌다」·「뗀다」·「잡힌다」 through. 「~니다」 is the
     // register being asked FOR, and a noun or adverb that merely ends in 「다」 is not the register
     // at all: 「30분마다」 and 「한 사람이 대리한 최다」 are both nouns.
     const PLAIN_END = /[가-힣]다\.?$/;
@@ -632,14 +632,14 @@ export const registerGate = {
     const badRegister = [];
     for (const sc of ctx.screens) {
       const src = ctx.srcOf(sc.file);
-      // Cut the notes and the pageForm declaration — both talk about the screen, not to its user.
+      // Cut the notes and the pageForm declaration - both talk about the screen, not to its user.
       const body = src.replace(/notes:[\s\S]*?(?=\n {2}\w+:)/g, '').replace(/pageForm:\s*'[^']*'/g, '');
       const isPattern = sc.file.startsWith('p-');
       for (const [re, where, key] of SOURCES) {
         if (isPattern && key && PATTERN_ONLY.has(key)) continue;
         for (const m of body.matchAll(re)) {
           const raw = m[1] !== undefined ? m[1] : (m[2] !== undefined ? m[2] : m[3]);
-          // A `${…}` interpolation carries a badge, not a sentence — the ending sits before it.
+          // A `${…}` interpolation carries a badge, not a sentence - the ending sits before it.
           const text = raw.replace(/\$\{[^}]*\}/g, '').trim().replace(/\s*—.*$/, '').replace(/[—·]$/, '').trim();
           if (!/[가-힣]/.test(text)) continue;
           if (/니다\.?$/.test(text) || NOT_A_VERB.test(text)) continue;
@@ -653,7 +653,7 @@ export const registerGate = {
   },
 };
 
-// A list beside a 760px panel gets what is left — about 600px — and that pays for three columns:
+// A list beside a 760px panel gets what is left - about 600px - and that pays for three columns:
 // the title (`w2`), one status (`fix`) and the row's actions (`fix`). A fourth column starts folding
 // the title one character at a time. What a fourth column carried belongs in the title cell as a
 // `mono` sub-line, which is where a time, an owner or a cycle already sits on the lists that fit.
@@ -671,7 +671,7 @@ export const listColumnGate = {
       if (!m) continue;
       const head = /head:\s*\[([\s\S]*?)\]\s*,\n/.exec(m[1]);
       if (!head) continue;
-      // `th(` at the top level of the head array — nested calls cannot appear in a header cell.
+      // `th(` at the top level of the head array - nested calls cannot appear in a header cell.
       const n = (head[1].match(/\bth\(/g) ?? []).length;
       if (n > 3) bad.push(`${sc.file}: 목록이 ${n}열 — 패널 옆은 제목 · 상태 · 액션 셋뿐이고, 나머지는 제목 칸의 mono 보조줄로 내린다`);
     }
@@ -681,7 +681,7 @@ export const listColumnGate = {
 
 // Cross-links, exports and 「…로 가기」 belong right of the title, where they sit in the same place
 // on every screen. A row of them in the flow is a fifth region the reader has to find, and on a
-// list-detail page it lands under a panel that has already reached the floor — 170 frames drew one.
+// list-detail page it lands under a panel that has already reached the floor - 170 frames drew one.
 // `btnRow` survives for the primary action of a form that IS the page: a login, a kiosk step, a
 // phone screen with no title bar to hang actions on. Those frames have no `pageHeader`, which is
 // how the two cases tell themselves apart without a declaration.
@@ -691,7 +691,7 @@ export const pageActionGate = {
   stage: 'built',
   run: (ctx) => ctx.screens
     .filter((sc) => {
-      // The pattern catalogue is exempt: a `btnRow` there is the specimen — the actions an empty
+      // The pattern catalogue is exempt: a `btnRow` there is the specimen - the actions an empty
       // state, a lock card, a conflict notice or a job tray carries as part of the pattern being
       // drawn, not a row of page links. Six frames, and every one of them is illustrating the
       // component that owns those buttons.
@@ -702,10 +702,10 @@ export const pageActionGate = {
     .map((sc) => `${sc.file}: btnRow는 제목 옆 actions로 — 흐름 안의 버튼 줄은 읽는 사람이 찾아야 하는 다섯째 영역이다`),
 };
 
-// A source badge says which layer a value came from, and the reader learns those layers once —
+// A source badge says which layer a value came from, and the reader learns those layers once -
 // P-13 draws them. Fourteen different words had reached the badge (「이 사업장」 beside 「사업장
 // 설정」, 「팩 기본」 beside 「산업 팩」, and three that named a date, a roadmap phase and an
-// aggregation), so the same layer read as several and 「설치 기본」 — sixty-eight of them — was in
+// aggregation), so the same layer read as several and 「설치 기본」 - sixty-eight of them - was in
 // no table at all. The vocabulary is closed: four layers plus the three narrower sources that
 // genuinely differ from them.
 export const sourceWordGate = {
@@ -727,14 +727,14 @@ export const sourceWordGate = {
 
 // A 가운뎃점 joins single words with no space around it; when any item of the list it builds is
 // itself a phrase carrying a space, every point in THAT list is spaced instead, so the eye finds
-// the breaks — 「도수율·강도율·연천인율」 against 「교육 세션 · 참석 · 서명 · 이해도」. **The unit is
+// the breaks - 「도수율·강도율·연천인율」 against 「교육 세션 · 참석 · 서명 · 이해도」. **The unit is
 // the list, not the point.** Mixing the two inside one list is what made 67 frame names and 65
 // manifest labels disagree with each other, and a state frame whose prefix spaced its points
 // differently from its base read as a different screen.
 //
 // **A compound term whose own name carries a 가운뎃점 is one item, not two.** 「시정·예방조치」 is
 // the settled Korean for CAPA and 「전력·가스」 names one pack, so splitting them turns one word
-// into a list and then demands spaces inside it — which is how 「시정·예방조치 보드」 came out as
+// into a list and then demands spaces inside it - which is how 「시정·예방조치 보드」 came out as
 // 「시정 · 예방조치 보드」, a phrase that reads as two things. The terms are the product's, so they
 // are declared in `board.config.mjs` → `compoundTerms` rather than guessed at here; a kit that
 // carried the list would be carrying one project's vocabulary into every other project's board.
@@ -743,7 +743,7 @@ export const dotSpacingGate = {
   title: '가운뎃점 띄어쓰기가 한 목록 안에서 갈린다',
   stage: 'built',
   run: (ctx) => {
-    // A list runs between the separators that are NOT 가운뎃점 — the em dash and the parentheses.
+    // A list runs between the separators that are NOT 가운뎃점 - the em dash and the parentheses.
     const bad = [];
     const compound = (ctx.config?.compoundTerms ?? []).filter((t) => t.includes('·'));
     // Masking keeps a compound term whole through the split and puts it back before the report,
@@ -755,7 +755,7 @@ export const dotSpacingGate = {
       for (const chunk of text.split(/ — |[()]/)) {
         if (!chunk.includes('·')) continue;
         const items = chunk.split(/\s*·\s*/).map((x) => x.trim());
-        // A point sitting against the boundary has its other operand outside this chunk —
+        // A point sitting against the boundary has its other operand outside this chunk -
         // 「위원회 구성 (동수 검증) · 개최 일정」 joins the parenthesised phrase to what follows,
         // and the list it belongs to is the outer one, which this chunk cannot see.
         if (items[0] === '' || items[items.length - 1] === '') continue;
@@ -776,7 +776,7 @@ export const dotSpacingGate = {
 // A frame's `state:` already says what kind of frame it is, so `screen:` must not repeat it.
 // 71 frames appended 「(다이얼로그)」 to their name and 60 did not, and the reader scanning the
 // board could not tell whether a missing suffix meant a different kind of frame. The manifest
-// LABEL is the opposite case and keeps the word — hollowDialogGate reads it to prove that a
+// LABEL is the opposite case and keeps the word - hollowDialogGate reads it to prove that a
 // frame the table of contents calls a dialog actually draws a modal.
 export const screenKindGate = {
   id: 'screenKindGate',
@@ -791,7 +791,7 @@ export const screenKindGate = {
 };
 
 // Dialog-title gate: a dialog names itself once, on the dialog. Wrapping a page form in one
-// leaves 「구역 추가」 over 「새 구역」 — the same thing said twice, one line apart — and it happened
+// leaves 「구역 추가」 over 「새 구역」 - the same thing said twice, one line apart - and it happened
 // on both batches of this conversion, which is what makes it a rule rather than a slip.
 export const dialogTitleGate = {
   id: 'dialogTitleGate',
@@ -809,13 +809,13 @@ export const dialogTitleGate = {
   },
 };
 
-// List-and-form gate: the standard page is the CRUD list-detail — the list, and the record beside
+// List-and-form gate: the standard page is the CRUD list-detail - the list, and the record beside
 // it in a panel where adding and editing happen (P-04). Where that will not fit, the form goes in
 // a dialog. What it must never do is sit UNDER the list on the same page: the reader scrolls past
 // records to reach fields that belong to no visible row, the page has two subjects, and 「저장」
 // down there is ambiguous about which one it saves. Forty-six frames had drifted into it.
 //
-// A record list announces itself with a filterBar or a pagination row — a reference table on a
+// A record list announces itself with a filterBar or a pagination row - a reference table on a
 // form page has neither, which is what keeps this from firing on 「이 허가 유형의 조건」.
 export const listFormGate = {
   id: 'listFormGate',
@@ -829,8 +829,8 @@ export const listFormGate = {
         // Only a page that also draws a TABLE is ambiguous: a pure form screen with no list needs no
         // declaration, because there is nothing for the form to be confused with.
         if (!/\btable\(\{/.test(src)) continue;
-        // A page form is legitimate where the form IS the page — a create screen, a record page, a
-        // procedure — and those frames say so in `pageForm`, one sentence naming why the table beside
+        // A page form is legitimate where the form IS the page - a create screen, a record page, a
+        // procedure - and those frames say so in `pageForm`, one sentence naming why the table beside
         // it is context rather than a list of the same thing. The declaration is the point: the
         // machine cannot tell 「이 허가 유형의 조건」 from 「휴게시설 등록」, but a person writing that
         // sentence has to decide which one they are drawing.
@@ -839,7 +839,7 @@ export const listFormGate = {
           listFormErrors.push(`${idOf(sc.file)} — pageForm에 사유가 없다`);
           continue;
         }
-        // Spans of every dialog(...) and panelForm(...) — a form inside either is exactly where it
+        // Spans of every dialog(...) and panelForm(...) - a form inside either is exactly where it
         // belongs. The panel is now the ordinary home for an entity's own create and edit, so a
         // `formSection` inside `panelForm({...})` is the pattern rather than the defect; a dialog
         // keeps its span because the four cases that are still dialogs (sub-entity, confirm, peek,
@@ -866,19 +866,19 @@ export const listFormGate = {
 
 // Calendar-and-list gate: a month grid and a list of the SAME records, stacked on one page, costs
 // the reader the whole first screenful before the first row and says the same thing twice. Thirteen
-// frames had drifted into it. On six of them the calendar carried two or three marks — most of a
-// screenful of empty grid for dates the stat tiles already named — and on three of those the very
+// frames had drifted into it. On six of them the calendar carried two or three marks - most of a
+// screenful of empty grid for dates the stat tiles already named - and on three of those the very
 // thing the screen leads with was not on the calendar at all: 「빠뜨린 주」 was in July while the
 // grid drew August, 「기한 지남」 was in the past, 「배치일 지남」 had no cell.
 //
 // The two shapes are one screen's two views, and the switch rides the bar above the list
 // (`filterBar({ views })`) so the total and the committed filters survive it. A file that draws
 // both legitimately therefore says `views:` somewhere. A calendar beside a list of something ELSE
-// — 실시 일정 under a 대상자 표 — is a judgement no regex can make, so that frame declares it in
+// - 실시 일정 under a 대상자 표 - is a judgement no regex can make, so that frame declares it in
 // one sentence naming what the calendar shows that the list does not. Writing that sentence is the
 // check, exactly as it is for `pageForm` above.
 // The AI badge's vocabulary is five words and no more. A sixth is a sixth thing every reader of
-// every screen has to learn, and the whole value of the mark is that it means one settled thing —
+// every screen has to learn, and the whole value of the mark is that it means one settled thing -
 // 「사람을 아직 거치지 않았다」. `sourceBadge` is closed the same way and for the same reason.
 // Five rules the persona review wrote regexes for. Each is the same defect wearing a different
 // component: a name that stopped being a name. A label is what a value is called, so a sentence
@@ -891,21 +891,21 @@ export const labelSentenceGate = {
     const bad = [];
     for (const sc of ctx.screens) {
       const src = ctx.srcOf(sc.file);
-      // G1 — a -다체 clause where a field's name belongs.
+      // G1 - a -다체 clause where a field's name belongs.
       for (const m of src.matchAll(/dField\(\{\s*label:\s*(['"`])([^'"`]*(?:없다|있다|이다|아니다|다르다|한다|된다|막힌다|않다|는다))\1/g)) {
         bad.push(`${idOf(sc.file)} — dField 라벨 「${m[2]}」이 문장이다. 무엇인지를 밝히는 이름으로 쓴다`);
       }
-      // G2 — a conditional clause as a name. 「석면」 is a material, not 「~면」.
+      // G2 - a conditional clause as a name. 「석면」 is a material, not 「~면」.
       for (const m of src.matchAll(/dField\(\{\s*label:\s*(['"`])([가-힣]{2,7}(?<!석)면)\1/g)) {
         bad.push(`${idOf(sc.file)} — dField 라벨 「${m[2]}」이 조건절이다. 그 조건이 무엇을 정하는지를 이름으로 쓴다`);
       }
-      // G3 — a badge carrying a whole sentence. A badge is a state, read at a glance.
+      // G3 - a badge carrying a whole sentence. A badge is a state, read at a glance.
       for (const m of src.matchAll(/badge\(\s*(['"`])([^'"`]*[가-힣]{2,}[이가은는] ?[^'"`]*(?:힘|침|겹침|같음|찾음|살아 있음|둘 이상|다름))\1/g)) {
         bad.push(`${idOf(sc.file)} — badge 「${m[2]}」가 문장이다. 배지는 한눈에 읽는 상태다`);
       }
-      // G4 — a stat tile's label has to name what is being counted, not what happened to it.
+      // G4 - a stat tile's label has to name what is being counted, not what happened to it.
       // 「개인정보 포함」 is a kind of record, so the exclusion is on 포함 rather than on 함.
-      // 「연결 안 됨」 is a category of zone, the same shape as badge's 노운+없음 — the exclusion
+      // 「연결 안 됨」 is a category of zone, the same shape as badge's 노운+없음 - the exclusion
       // is on the 안 됨 pair rather than on 됨 alone.
       for (const m of src.matchAll(/statTile\(\{\s*label:\s*(['"`])([^'"`]*(?:(?<!포)함|(?<!안 )됨|짐))\1/g)) {
         bad.push(`${idOf(sc.file)} — statTile 라벨 「${m[2]}」이 값의 이름이 아니다. 무엇을 세는지를 쓴다`);
@@ -916,7 +916,7 @@ export const labelSentenceGate = {
 };
 
 // The worker's shell draws its tab row in one language, and `lang` is what picks it. A Korean
-// screen needs neither — `ko` is the default — so the defect is narrower than "no lang": a frame
+// screen needs neither - `ko` is the default - so the defect is narrower than "no lang": a frame
 // whose BODY is in a worker's own language while the shell around it stays Korean. That frame
 // looks bilingual by accident in the one place this product cannot afford it, and the reviewer
 // found it by reading, not by grepping for a missing key.
@@ -932,14 +932,14 @@ export const workerShellLangGate = {
       if (!/\bworker_\(\{/.test(src)) return false;
       if (/^import base/m.test(src)) return false;
       if (/\blang:\s*/.test(src) || /\btabs:\s*/.test(src)) return false;
-      // Language names laid out to be chosen from are not body copy — L-01's picker and L-20's
+      // Language names laid out to be chosen from are not body copy - L-01's picker and L-20's
       // language chips are that. Only what a person reads is judged: body lines, description
       // lines, and the body of a message.
       const body = src.slice(src.indexOf('worker_({'));
       const prose = [...body.matchAll(/\b(?:tBody|tSub)\(\s*(['"`])((?:[^'"`\\]|\\.)*)\1/g)].map((m) => m[2])
         .concat([...body.matchAll(/\bbody:\s*(['"`])((?:[^'"`\\]|\\.)*)\1/g)].map((m) => m[2]));
       // A line written in several languages at once, inviting a choice, is a picker rather than
-      // body copy in any one of them — L-01's 「Choose language · Chọn ngôn ngữ · ជ្រើសរើសភាសា」 is
+      // body copy in any one of them - L-01's 「Choose language · Chọn ngôn ngữ · ជ្រើសរើសភាសា」 is
       // that line, and writing it that way is correct.
       const families = (t) => [/[À-ǿḀ-ỿ]/, /[฀-๿]/, /[ក-៿]/, /[ऀ-ॿ]/].filter((re) => re.test(t)).length;
       return prose.some((t) => FOREIGN.test(t) && families(t) < 2);
@@ -968,7 +968,7 @@ export const aiWordGate = {
 };
 
 // The tier is the reader's answer to 「왜 내 화면에는 없지」, so a card that names one that does not
-// exist answers nothing. One, two, three — always on, model pack, GPU or LLM.
+// exist answers nothing. One, two, three - always on, model pack, GPU or LLM.
 export const aiTierGate = {
   id: 'aiTierGate',
   title: 'AI 카드가 없는 갈래를 말한다',
@@ -980,7 +980,7 @@ export const aiTierGate = {
       for (const m of src.matchAll(/\baiCard\(\{[\s\S]{0,400}?\btier:\s*(\d+)/g)) {
         if (!['1', '2', '3'].includes(m[1])) bad.push(`${idOf(sc.file)} — aiCard tier ${m[1]} — 갈래는 1·2·3뿐이다`);
       }
-      // Tier 1 cannot be switched off, so a card has nothing to say — only the badge stands.
+      // Tier 1 cannot be switched off, so a card has nothing to say - only the badge stands.
       if (/\baiCard\(\{[\s\S]{0,400}?\btier:\s*1\b/.test(src)) {
         bad.push(`${idOf(sc.file)} — 1형에 aiCard를 붙였다. 끌 수 없는 계산이라 카드가 말할 것이 없고, 배지만 선다`);
       }
@@ -991,7 +991,7 @@ export const aiTierGate = {
 
 // A `filterBar` says 「this is a list」, and a list whose rows open nowhere leaves the reader with
 // no way to read one. Twenty-three frames had one; four of them genuinely needed a panel and got
-// it, and the other nineteen are right without one for reasons a machine cannot see — the grid IS
+// it, and the other nineteen are right without one for reasons a machine cannot see - the grid IS
 // the input surface, the matrix is the unit being read, the row's destination is another screen,
 // or the record opens as a dialog because it is a print or a one-press decision. So the frame
 // says which, the way a page with a table and a form says why.
@@ -1017,7 +1017,7 @@ export const listPanelGate = {
   },
 };
 
-// A plan of the same records is not page furniture above the list — it is the list's other view,
+// A plan of the same records is not page furniture above the list - it is the list's other view,
 // on the calendar's rule. Five frames drew one beside a table with neither a switch nor a reason,
 // and every one of them turned out legitimate: the drawing and the table hold different records
 // (what is NOT yet placed, who is at the muster point, who receives the notice) or the canvas is
@@ -1051,12 +1051,12 @@ export const calendarListGate = {
     for (const sc of ctx.screens) {
       const src = ctx.srcOf(sc.file);
       if (!/\bcalendar\(\{/.test(src)) continue;
-      // A plain `table({` is a list too. The list-and-form gate above learned this the hard way —
-      // its first cut looked only for a filterBar or a pagination row and let nineteen frames past —
+      // A plain `table({` is a list too. The list-and-form gate above learned this the hard way -
+      // its first cut looked only for a filterBar or a pagination row and let nineteen frames past -
       // and the first cut of THIS gate repeated it on the very same file (F-21, whose measurement
       // table carries neither).
       if (!/\btable\(\{|\blistDetail\(/.test(src)) continue;
-      if (/\bviews:\s*\[/.test(src)) continue;          // a view switch — two states, not a stack
+      if (/\bviews:\s*\[/.test(src)) continue;          // a view switch - two states, not a stack
       if (/\n  pageCalendar: '[^']+'/.test(src)) continue;
       calListErrors.push(/\n  pageCalendar: ''/.test(src)
         ? `${idOf(sc.file)} — pageCalendar에 사유가 없다`
@@ -1069,25 +1069,25 @@ export const calendarListGate = {
 // Panel-tail gate: in a list-detail screen, nothing may sit BELOW the two columns. The detail
 // panel is a full-height column and its footer is pinned to the bottom of the remaining screen,
 // so anything appended after listDetail(...) lands under a panel that has already reached the
-// floor — the reader sees the record's actions, then more page beneath them, and the footer
+// floor - the reader sees the record's actions, then more page beneath them, and the footer
 // stops meaning "the end of this record". Content that used to live under the list belongs
 // either at the tail of the LIST column or inside the PANEL, and choosing between those two is
 // the point: a note about the whole list goes in the list column, a note about the selected
 // record goes in the panel.
 // Filter-chain gate: 목록 탭 → 칩 필터 → 목록 is one act, and the three sit together. A tile row,
 // an explanation card or a warning band pushed between them separates the control from the thing
-// it controls — the reader chooses a tab, crosses a screenful of something else, and meets rows
+// it controls - the reader chooses a tab, crosses a screenful of something else, and meets rows
 // with no visible reason to read them as the answer. The wedge that recurs is the stat tile row:
 // it belongs ABOVE the tabs, where the page's own figures are, rather than inside the chain.
 //
 // Read off the rendered frame rather than the source, because the surface a screen draws is often
-// a branch — `(partner ? listTabs(a) : listTabs(b))`, `(view === '목록' ? listDetail(…) : …)` — and
+// a branch - `(partner ? listTabs(a) : listTabs(b))`, `(view === '목록' ? listDetail(…) : …)` - and
 // a source sweep sees the condition's variable where the list is.
 //
 // A chip row that is NOT a list filter is the one call a machine cannot make: 「오늘 · 이번 주 ·
 // 이번 달」 over a whole dashboard, 「빈도·강도법 · 체크리스트법 · OPS」 picking which assessment the
 // screen IS, 「A4 세로 · A3」 setting the paper a preview draws on. Those frames declare it in
-// `pageChips`, one sentence naming what the chips pick instead — the same bargain `pageForm` and
+// `pageChips`, one sentence naming what the chips pick instead - the same bargain `pageForm` and
 // `pageCalendar` strike, and writing the sentence is the check.
 export const filterChainGate = {
   id: 'filterChainGate',
@@ -1096,7 +1096,7 @@ export const filterChainGate = {
   run: (ctx) => {
     const BODY = new Set(['listdetail', 'table', 'treetable', 'mx', 'cal', 'tree', 'cvs', 'hit']);
     // The language switch is read out of the sequence altogether. It is a filter of the same
-    // family — 「전체 언어 · 한국어 · Tiếng Việt」 over a result list — so it does not break the
+    // family - 「전체 언어 · 한국어 · Tiếng Việt」 over a result list - so it does not break the
     // reading of tab → chip → list the way a tile row or an explanation card does; and it is not a
     // member of the triple either, because a screen may keep it beside a document instead.
     const rank = (cls) => {
@@ -1142,7 +1142,7 @@ export const filterChainGate = {
           if (r === 2 && declared) continue;
           let j = -1;
           for (let k = i + 1; k < kids.length; k++) if (kids[k].rank >= 1) { j = k; break; }
-          // A chip row with no list under it anywhere is not this chain's business — a set of tags
+          // A chip row with no list under it anywhere is not this chain's business - a set of tags
           // beside an attachment, a legend. The chain is only a chain once it reaches a list.
           if (j < 0) continue;
           if (j !== i + 1) {
@@ -1200,7 +1200,7 @@ export const panelTailGate = {
           end = close;
         }
         // Walk forward through the expression that CONTAINS the call. Depth goes negative at the
-        // bracket that closes the enclosing object or call — that is where the page body ends.
+        // bracket that closes the enclosing object or call - that is where the page body ends.
         let depth = 0, tail = '';
         for (let j = end; j < src.length; j++) {
           const ch = src[j];
@@ -1222,13 +1222,13 @@ export const panelTailGate = {
 };
 
 // Phase gate: a frame the roadmap defers must say so ON ITS FACE. The section title says it
-// once, at the top of thirty-five frames — and a frame reaches most of its readers alone: as a
+// once, at the top of thirty-five frames - and a frame reaches most of its readers alone: as a
 // PNG in a message, as one page of the PDF, as an anchor somebody was linked to. None of those
 // carry the section title, so a reader meets a finished-looking screen with nothing telling
 // them it is not being built now, and asks for it.
 //
 // Two halves, because the marker can be lost from either end. The declaration can stop being
-// drawn (someone edits the frame chrome), or a deferred screen can be written without one —
+// drawn (someone edits the frame chrome), or a deferred screen can be written without one -
 // a new frame in a cluster that is not itself deferred, the way L-21 sits inside worker PWA.
 export const phaseGate = {
   id: 'phaseGate',
@@ -1242,7 +1242,7 @@ export const phaseGate = {
         if (sc.phase ?? sec.phase) declared.add(sc.file);
       }
     }
-    // Half one — what is declared is drawn. Read the built HTML, not the declaration: the
+    // Half one - what is declared is drawn. Read the built HTML, not the declaration: the
     // declaration is what we already know, and the whole point is that it reached the page.
     let banded = 0;
     for (const [, cls, frameHtml] of ctx.html.matchAll(/<article class="(frame[^"]*)" id="[^"]+">([\s\S]*?)<\/article>/g)) {
@@ -1251,7 +1251,7 @@ export const phaseGate = {
     if (declared.size !== banded) {
       bad.push(`단계를 선언한 화면 ${declared.size}장, 띠를 두른 프레임 ${banded}장 — 선언이 그림에 닿지 않았다`);
     }
-    // Half two — what says it is deferred is declared. Keyed on the emphasised assertion rather
+    // Half two - what says it is deferred is declared. Keyed on the emphasised assertion rather
     // than on the bare word: 「2단계 인증」 (MFA) and 「2단계 결재」 are that screen's subject
     // matter, not its schedule.
     for (const e of ctx.loaded) {
@@ -1266,7 +1266,7 @@ export const phaseGate = {
 
 // Role gate: the visibility matrix and the frame's own words must agree.
 //
-// §9 of the screen design fills the matrix in per CLUSTER, which is as far as a table can go — it
+// §9 of the screen design fills the matrix in per CLUSTER, which is as far as a table can go - it
 // cannot say which of E's sixty-five frames 「관리감독자 ✔(담당 구역)」 means. `src/roles.mjs` holds
 // that table as data and a frame overrides it only where it departs. What this gate catches is the
 // disagreement between the two statements a frame makes about who may be there: the matrix, and the
@@ -1274,13 +1274,13 @@ export const phaseGate = {
 //
 // A frame whose AUTH names a role its cluster does not admit is one of two things, and both need
 // fixing: the matrix is wrong for that cluster, or the frame is a departure that never declared
-// itself. Neither is visible without this check — sixteen J frames were written for an outside
+// itself. Neither is visible without this check - sixteen J frames were written for an outside
 // auditor while §9 had no column for one at all.
 /**
  * The console says this product's name, not the placeholder.
  *
  * <p>`topNav` has to default its brand to something, and whatever that something is will be drawn
- * on every board that forgets to pass one. The failure is silent and total — the name is in the
+ * on every board that forgets to pass one. The failure is silent and total - the name is in the
  * top left of every desktop frame, so a board can be built, exported and sent with another
  * product's name on all of it, and nothing about the drawing looks wrong.
  *
@@ -1292,7 +1292,7 @@ export const phaseGate = {
  * A chart names both of its axes.
  *
  * <p>Without them the plot is a shape: the reader sees a rise and cannot say a rise in what, over
- * what — and the implementer builds the axis they assumed. The title does not stand in for it,
+ * what - and the implementer builds the axis they assumed. The title does not stand in for it,
  * because a title names the picture and an axis names the scale: 「월별 비용 추이」 leaves open
  * whether the height is 원, 천 원 or 건.
  *
@@ -1337,7 +1337,7 @@ export const roleGate = {
   title: '역할 판정과 AUTH 줄이 어긋난다',
   stage: 'preflight',
   run: async (ctx) => {
-    // The matrix is the BOARD's, and it arrives on ctx already imported — reading it by path
+    // The matrix is the BOARD's, and it arrives on ctx already imported - reading it by path
     // would tie this gate to one folder layout and would re-import the file on every run. A
     // board that settles no roles simply has no matrix to disagree with.
     if (!ctx.roles) return [];
@@ -1352,12 +1352,12 @@ export const roleGate = {
     }
     // **The names come from the board's own `ROLES`, never from a table in here.** A list of role
     // names written into the pattern is one product's vocabulary in shared code: it matches
-    // nothing on the next board — whose keys are its own — and the failure is not silent but
+    // nothing on the next board - whose keys are its own - and the failure is not silent but
     // wrong, reporting every frame while naming the role `undefined`.
     //
     // A role's own name is normally unambiguous enough to search for. Where it is not, or where a
     // board writes a role two ways, the board declares the extra spellings in `ROLE_ALIASES`
-    // (`{ <key>: [<word>, …] }`) and they are searched alongside the name — 「경비」 on its own
+    // (`{ <key>: [<word>, …] }`) and they are searched alongside the name - 「경비」 on its own
     // would match 「경비실」, so a short alias is the board's call rather than the pattern's.
     const NAMED = Object.fromEntries(Object.entries(ROLES).map(
       ([key, name]) => [key, [name, ...(ALIASES[key] ?? [])]]));
@@ -1380,10 +1380,10 @@ export const roleGate = {
   },
 };
 
-// A helpCard's two slots are the one place `registerGate` cannot look — the title states a rule in
+// A helpCard's two slots are the one place `registerGate` cannot look - the title states a rule in
 // the plain register on purpose, and the hint is a fragment list rather than prose. That exemption
 // left both free to drift into whatever shape the author reached for, and 24 of 126 had: titles
-// answering the question instead of asking it, hints written as sentences. The shape is the point —
+// answering the question instead of asking it, hints written as sentences. The shape is the point -
 // a reader scanning a wall of cards reads titles as questions and hints as contents.
 const DECL = /[가-힣](?<!마)(?<!보)다$/;   // 「6개월마다」·「그보다」는 서술어가 아니다
 const ASKS = /는가|은가|인가|무엇|어디|어떻게|왜|얼마|까$/;
@@ -1416,7 +1416,7 @@ export const helpShapeGate = {
 // A companion frame draws the panes its base's tab strip names and the base does not open, and it
 // draws them WHERE THE BASE PUTS THEM. On a list-detail base the panes belong in the detail column,
 // so the companion stands a `regionPh` in the list column to say the list is the base's to draw. On
-// a full-width record screen — `pageHeader` + `recordTabs`, no list anywhere — that placeholder is
+// a full-width record screen - `pageHeader` + `recordTabs`, no list anywhere - that placeholder is
 // a column the product does not have, invented because the two-column shape looks like the house
 // style. Thirteen companions did exactly that before this gate existed.
 //
@@ -1451,7 +1451,7 @@ export const companionFollowsBaseLayoutGate = {
 };
 
 // board.config.mjs draws the phase band and the feature chip side by side and insists neither can
-// stand in for the other. Two tags spelling the same string make that claim unreadable — the frame
+// stand in for the other. Two tags spelling the same string make that claim unreadable - the frame
 // prints one word twice and a reader has no way to tell schedule from entitlement.
 export const tagCollisionGate = {
   id: 'tagCollisionGate',
@@ -1473,8 +1473,8 @@ export const tagCollisionGate = {
 };
 
 // Closing the detail panel is the one way back out of the screen, so its control cannot be the
-// quietest thing in the footer. `ghost` is the variant for a secondary act — 취소 beside 저장,
-// 인쇄 beside 발급 — and leaving is not secondary. A reader who has to scan the footer's left edge
+// quietest thing in the footer. `ghost` is the variant for a secondary act - 취소 beside 저장,
+// 인쇄 beside 발급 - and leaving is not secondary. A reader who has to scan the footer's left edge
 // for the way out is a reader the layout has trapped. 취소 in a form panel keeps ghost: that IS
 // the secondary act, and 저장 is the one the reader came for.
 export const panelCloseIsPlainGate = {
@@ -1542,13 +1542,13 @@ export const auditFootFirstTabGate = {
 };
 
 // **Whether a standing card may be closed turns on whether a closed one can be found again**, and
-// that is what `dismissibleNotices` declares — the kit ties the close and the header controls that
+// that is what `dismissibleNotices` declares - the kit ties the close and the header controls that
 // bring one back into one capability, so a board cannot have the first without the second. This
 // gate therefore asks a different question of each kind of board, and both questions are the same
 // question underneath: is a reader who puts this message away losing it?
 //
 // **Where the option is off, a dismissal is a deletion**, and a card whose words describe what is
-// on the site right now must not offer one — whoever closed 「정책이 없는 안전구역이 1개 있습니다」
+// on the site right now must not offer one - whoever closed 「정책이 없는 안전구역이 1개 있습니다」
 // today would never be shown tomorrow's zone losing its policy. The server cannot tell a standing
 // fact from a live one, so the screen declares it: `status: true` because it is, or `dismiss`
 // because the author looked and decided otherwise.
@@ -1556,18 +1556,18 @@ export const auditFootFirstTabGate = {
 // **Where the option is on, that reason is gone and `status: true` is the defect.** The header
 // control for a kind is marked while one of its cards is hidden, so putting one away moves the
 // message rather than losing it, and withholding the close buys nothing while costing the reader
-// a screen they cannot quieten. A live count in the title is no exception — it is the shape that
+// a screen they cannot quieten. A live count in the title is no exception - it is the shape that
 // used to justify `status`, and under a recoverable dismissal it justifies nothing.
 //
-// **What never closes in either kind of board is a transient failure** — the answer to something
+// **What never closes in either kind of board is a transient failure** - the answer to something
 // the reader just did, gone on the next attempt. The test is whether the message survives the
 // reader doing nothing: still there a minute later, it stands. `error` is that kind and is not a
 // notice card, which is why it is skipped rather than judged.
 //
 // **This gate reads the cards that name a number, which is about two status cards in five.**
 // Measured on the board it was written for: 233 cards were status cards and the count test reached
-// 96 of them. The rest say what is on the site without naming a number — 「대형 재고가 없습니다」,
-// 「한 곳이 아직 v3을 들고 있습니다」 — and no regex separates those from a standing rule, because
+// 96 of them. The rest say what is on the site without naming a number - 「대형 재고가 없습니다」,
+// 「한 곳이 아직 v3을 들고 있습니다」 - and no regex separates those from a standing rule, because
 // both are ordinary sentences and the difference is what they are ABOUT. **So a green result here
 // does not mean the cards have been judged**, and the danger is that it reads as though it does.
 export const aStandingCardClosesWhenItCanGate = {
@@ -1627,7 +1627,7 @@ export const aStandingCardClosesWhenItCanGate = {
 // one, because a source rule carries a model of the code and the model is what goes stale.
 //
 // **This one carries no model.** It opens the built page, finds the messages, and asks whether the
-// close control is there — which is the same question the reader answers by looking. A screen whose
+// close control is there - which is the same question the reader answers by looking. A screen whose
 // header draws the controls that bring a closed card back is a screen where every closing kind
 // closes; a sign-in panel and a phone body draw no such header, and on those a close would delete
 // the message rather than move it, so they are not asked. Nothing here needs to know which screens
