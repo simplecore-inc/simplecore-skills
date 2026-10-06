@@ -178,13 +178,27 @@ export const CONFIG_CHANGES = [
       'Declare `site: { languages: [\'<language as the tab writes it>\', …], notLanguages: [\'<tab label that is not a language>\', …] }`, or leave it out to switch the gate off.',
     ],
   },
+  {
+    id: "pattern: 'penstock-console'",
+    applies: (c) => c.pattern === 'penstock-console',
+    title: 'penstock-console carries no answer-and-evidence primitives',
+    changed: [
+      'The primitives one retrieval product drew its answers with left the shipped pattern: `GRADE_LABEL` with `sentence` and `round`, `TIER_LABEL` with `tier` and `evidence`, `graphCanvas`, `askBox`, `planted`, and `pdfPage` (the PDF page with coordinate boxes), with their styles and catalogue entries.',
+    ],
+    steps: [
+      'A board whose screens import none of them owes nothing.',
+      'A board whose screens import one of them takes a pattern of its own: `node wf.mjs pattern fork`, then add those definitions and their styles to the forked `components.mjs` and `styles.css`, and build. The board then owns them.',
+    ],
+  },
 ];
 
 /** The entries of {@link CONFIG_CHANGES} that apply to one board's config. */
 export const configChangesFor = (config) => CONFIG_CHANGES.filter((c) => c.applies(config));
 
 /** The exports a shipped pattern no longer carries, so a failed screen import can name its step. */
-export const REMOVED_EXPORTS = {};
+export const REMOVED_EXPORTS = {
+  'penstock-console': ['GRADE_LABEL', 'sentence', 'round', 'TIER_LABEL', 'tier', 'evidence', 'graphCanvas', 'askBox', 'planted', 'pdfPage'],
+};
 
 /**
  * Every migration a board on `from` has to cross to reach `to`.

@@ -132,7 +132,7 @@ function reqTrace(boardDir, config) {
  * Import one screen module, naming the step when it imports a piece its pattern no longer ships.
  *
  * <p>The engine's own message names the missing export and the importing file, which is accurate
- * and says nothing about why a board that built yesterday stopped. The recorded change does.
+ * and says nothing about why the pattern lacks it. The recorded change does.
  */
 async function importScreen(path, config) {
   try {

@@ -161,6 +161,11 @@ bar, sample activity) comes from the board's `src/chrome.mjs` through `makeChrom
 both from one place. Pick it for a desktop tool or a browser app that behaves as one; pick
 `simplix-basic` for a page-scrolling console with a phone app and a terminal beside it.
 
+Its primitives are the window's and nothing more. A vocabulary only one product draws - graded
+answer sentences, evidence cards with a source tier, a knowledge-graph canvas, a PDF page with
+coordinate boxes, an instruction planted in a source - lives in that product's own pattern
+(§ A board may carry its own pattern), where a second product drawing a window never meets it.
+
 `node <kit>/bin/wfb.mjs patterns` lists what is installed.
 
 ### A board may carry its own pattern, and that is the last resort
