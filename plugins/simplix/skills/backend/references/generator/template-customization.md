@@ -14,12 +14,18 @@ Customizing SimpliX generator `.java.template` files.
 │   └── rest/
 │       └── EntityRestController.java.template
 ├── service/
-│   └── EntityService.java.template
+│   ├── EntityService.java.template
+│   └── EntityTreeService.java.template      # tree entities
 ├── dto/
 │   └── EntityDTOs.java.template
-└── repository/
-    └── EntityRepository.java.template
+├── repository/
+│   └── EntityRepository.java.template      # rendered only when the config names a repository target
+└── test/
+    ├── EntityServiceTest.java.template
+    └── EntityTreeServiceTest.java.template
 ```
+
+The generator renders a template only for a component that `.simplix/generator-simplix.json` names under `target.targetPath` (`service`, `controllerRest`, `controllerWeb`, `dto`, `repository`), and takes each template's path from the `template` map of the same file. A config whose `targetPath` names no `repository`, as the generator's own documented configuration does, never renders `EntityRepository.java.template`: the repository is written by hand beside the entity (`../entity/repository-patterns.md` § File Location), and the generator only computes its package so that the generated service can import it (`../entity/base-entity-patterns.md` § Path convention).
 
 ---
 
@@ -193,9 +199,20 @@ public class <%= entityName %>Service extends SimpliXBaseService<<%= entityName 
         return saveAndGetProjection(entity);
     }
 
-    // ... update (with ID-mismatch guard), delete, batchDelete, search(Map), search(SearchCondition), [optional] multiUpdate/batchUpdate/updateOrder
+    @Transactional
+    public <%= entityName %>DetailDTO update(<%= entityName %> entity, <%= entityName %>UpdateDTO updateDto) {
+        if (!Objects.equals(entity.get<%= capitalizeFirstLetter(ymlConfig.idField) %>(), updateDto.get<%= capitalizeFirstLetter(ymlConfig.idField) %>())) {
+            throw new SimpliXGeneralException(ErrorCode.GEN_CONFLICT, "{error.<domain>.idCannotChange}", null);
+        }
+        modelMapper.map(updateDto, entity);
+        return saveAndGetProjection(entity);
+    }
+
+    // ... delete, batchDelete, search(Map), search(SearchCondition), [optional] multiUpdate/batchUpdate/updateOrder
 }
 ```
+
+> The shipped service template resolves the ID-mismatch message at throw time: `messageSource.getMessage("error.id.cannot.change", null, "ID cannot be changed", LocaleContextHolder.getLocale())`. A message with no arguments is the `{error.<domain>.<key>}` placeholder that SKILL.md #3 has resolved at the HTTP layer, and a bare key passed to `MessageSource` is one the translation-coverage test cannot see, so the text above throws the placeholder. `promote-workflow.md` § After promoting rewrites the guard in the promoted service, as it rewrites the permission target; a project can instead make its copy of the template throw the placeholder.
 
 ---
 

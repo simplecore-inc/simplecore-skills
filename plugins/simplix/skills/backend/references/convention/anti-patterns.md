@@ -233,8 +233,9 @@ Why: `{field.*}` is reserved for truly generic field names. A virtual field that
 // WRONG — writing CRUD manually
 // Claude: "I'll create the service, controller, and DTOs for you..."
 
-// CORRECT - generate, promote, then customize, in the step order that
-// ../entity/yml-configuration.md § Creating YML Configuration owns
+// CORRECT - write the entity and its repository by hand, then generate,
+// promote and customize the service, controller and DTOs, in the step order
+// that ../entity/yml-configuration.md § Creating YML Configuration owns
 // (the promote half: ../generator/promote-workflow.md)
 ```
 
@@ -558,8 +559,8 @@ public SimpliXApiResponse<Dto> get(@PathVariable String id) { ... }
 ## AP-25: Missing `@SimpliXStandardApi` on Non-CRUD Controller
 
 ```java
-// WRONG — non-CRUD without the marker; SimpliX middleware can't
-// recognize it for standard-response post-processing
+// WRONG - non-CRUD without the marker; its OpenAPI operations lose the
+// standard 200/400/500 responses every other controller documents
 @RestController
 @RequestMapping("/path")
 @Tag(name = "...")
@@ -573,7 +574,7 @@ public class XxxController {  // no @SimpliXStandardApi, no extends SimpliXBaseC
 public class XxxController {
 ```
 
-**Why**: SimpliX applies its response envelope and error-handling filters based on two markers - `extends SimpliXBaseController` (CRUD) **or** `@SimpliXStandardApi` (non-CRUD). A non-CRUD controller missing both is invisible to the middleware and behaves like a raw Spring MVC controller, undoing the project's convention uniformly. See `non-crud-controller.md` §Class Declaration Template.
+**Why**: a CRUD controller inherits `@SimpliXStandardApi` from `SimpliXBaseController`, and a non-CRUD controller declares it, so every controller documents the same standard responses. What the annotation does, and what a controller without it loses: `non-crud-controller.md` § What `@SimpliXStandardApi` does.
 
 ---
 

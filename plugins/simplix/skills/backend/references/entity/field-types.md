@@ -158,43 +158,36 @@ private ContentStatus status = ContentStatus.DRAFT;
 All enums MUST implement `LabeledEnum` for i18n support:
 
 ```java
-package {basePackage}.domain.enums.cms;
+package {basePackage}.domain.{module}.enums;   // module-first layout (§ Enum File Location)
 
-import dev.simplecore.simplix.<package>.LabeledEnum;   // the framework's interface; take the exact package from the framework jar
+import dev.simplecore.simplix.core.enums.LabeledEnum;
 
 public enum ContentStatus implements LabeledEnum {
     DRAFT,
     PUBLISHED,
     SCHEDULED,
-    ARCHIVED;
-
-    @Override
-    public String getLabel() {
-        return name();
-    }
+    ARCHIVED
 }
 ```
+
+`LabeledEnum` supplies `getLabel()` itself: it resolves `enums.{SimpleName}.{CONSTANT}` from the `messages/enums/**` bundles in the request locale, and the enum serializes as `{"value": ..., "label": ...}`. Never override `getLabel()`, since an override returning `name()` or a literal bypasses the bundles and every locale shows the same text. Never give a constant a class body (`ACTIVE { ... }`): the key is built from the runtime class's simple name, which for such a constant is its anonymous subclass, so its label is never found.
 
 ### Enum File Location
 
 ```
-packages/domain-{aggregate}/src/main/java/{basePackage}/domain/enums/{module}/{EnumName}.java
+{basePackage}/domain/{module}/enums/{EnumName}.java     # module-first layout
+{basePackage}/domain/enums/{module}/{EnumName}.java     # type-first layout
 ```
 
-The owning module and its bundle layout: `base-entity-patterns.md` § Where to Create the Entity File.
+The owning module, the layout and the bundle location: `base-entity-patterns.md` § Where to Create the Entity File.
 
-**Package Structure:**
-- `enums/cms/` - CMS related enums
-- `enums/user/` - User related enums
-- `enums/org/` - Organization related enums
-- `enums/audit/` - Audit related enums
-- `enums/auth/` - Authentication/Authorization related enums
+**Package Structure:** one enums package per `{module}`, named as the layout gives it; the module names come from the project's existing packages.
 
 ### Enum i18n Messages (MANDATORY)
 
-**File Location:**
+**File Location** (in the enum's domain module; `base-entity-patterns.md` § Enums and message bundles):
 ```
-packages/domain-{aggregate}/src/main/resources/messages/enums/{module}/enums-{module}-messages.properties
+src/main/resources/messages/enums/[{module}/]enums-{module}-messages.properties
 ```
 
 **Message Format** (the `enums.{SimpleName}.{CONSTANT}` key is invariant #16's, merged across the classpath):
@@ -231,7 +224,7 @@ enums.ContentStatus.ARCHIVED=보관됨
 |------------|---------|
 | Enum class | PascalCase: `ContentStatus`, `UserRole` |
 | Enum values | UPPER_SNAKE_CASE: `DRAFT`, `IN_PROGRESS` |
-| Package | lowercase: `enums/cms/`, `enums/user/` |
+| Package | lowercase: `{module}/enums/` or `enums/{module}/`, by the layout |
 | i18n key | `enums.{EnumName}.{VALUE}` (SKILL.md #16) |
 
 ### Common Enum Patterns
@@ -352,6 +345,10 @@ private void generateSearchIndex() {
 ---
 
 ## JSON Fields
+
+**Map a JSON column with Hypersistence Utils `@Type(JsonType.class)`** (`io.hypersistence.utils.hibernate.type.json.JsonType`, with `org.hibernate.annotations.Type`). It is the mapping the framework names: its own `JsonMapConverter` is deprecated in favour of it. The framework pins `io.hypersistence:hypersistence-utils-hibernate-60` in its dependency management but no framework module brings it onto the classpath, so the application module declares it. Hibernate's own `@JdbcTypeCode(SqlTypes.JSON)` (`org.hibernate.annotations.JdbcTypeCode`, `org.hibernate.type.SqlTypes`) maps the same column without the extra dependency; a project whose entities already map JSON that way keeps it, and one project uses one mapping. Neither the generator nor the framework's runtime reads the annotation, so the choice changes nothing else. Never map a JSON column with the deprecated `JsonMapConverter` or with a hand-written `AttributeConverter`.
+
+This section is the owner of the JSON mapping; the i18n map fields above (§ i18n Fields) and in `../review/i18n-field-patterns.md` use the same annotation.
 
 ### Map Type
 

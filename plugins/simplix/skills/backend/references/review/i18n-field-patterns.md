@@ -11,7 +11,7 @@ SimpliX supports multilingual content through paired fields in entities:
 | Entity Field Type | Field Pattern | Purpose |
 |-------------------|---------------|---------|
 | Base field | `String {name}` | Default language value |
-| I18n field | `Map<String, String> {name}I18n` | Translations by locale |
+| I18n field | `Map<String, String> {name}I18n` | Translations by locale, mapped as a JSON column (`../entity/field-types.md` § JSON Fields owns the annotation) |
 
 ---
 
@@ -27,7 +27,7 @@ public class CmsContent {
     private String title;
 
     // I18n field - translations
-    @Convert(converter = StringMapConverter.class)
+    @Type(JsonType.class)
     @Column(name = "title_i18n")
     private Map<String, String> titleI18n;
 }
@@ -295,12 +295,12 @@ public class CmsTagGroup {
     @Column(nullable = false, length = 100)
     private String name;
 
-    @Convert(converter = StringMapConverter.class)
+    @Type(JsonType.class)
     private Map<String, String> nameI18n;
 
     private String description;
 
-    @Convert(converter = StringMapConverter.class)
+    @Type(JsonType.class)
     private Map<String, String> descriptionI18n;
 }
 ```

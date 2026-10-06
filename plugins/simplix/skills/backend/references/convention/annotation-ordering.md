@@ -139,9 +139,9 @@ public SimpliXApiResponse<List<EntityNameDetailDTO>> updateOrder(...)
 public class PurposeController {
 ```
 
-`@SimpliXStandardApi` marks endpoints for automatic Swagger schema generation - it tells SimpliX to include standard request/response schemas in the OpenAPI documentation.
+What `@SimpliXStandardApi` does, and why a non-CRUD controller declares it: `non-crud-controller.md` § What `@SimpliXStandardApi` does.
 
-Note: `@SimpliXStandardApi` is at **class level** for non-CRUD controllers, but at **method level** (only on special endpoints) for CRUD controllers.
+A non-CRUD controller declares it at **class level**. A CRUD controller inherits it at class level from `SimpliXBaseController`, and the controller template adds it at **method level** on the `/order` endpoints only.
 
 ---
 

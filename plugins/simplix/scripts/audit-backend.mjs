@@ -1779,6 +1779,88 @@ public class PublicContentRestController {
 }`,
     },
   },
+  {
+    id: "labeled-enum-label-bypass",
+    invariant: "#16",
+    level: "error",
+    desc: "A LabeledEnum overrides getLabel(), or declares a constant with a class body. LabeledEnum's own getLabel() resolves enums.{SimpleName}.{CONSTANT} from the enums bundles in the request locale; an override bypasses the bundles, and a constant with a body resolves against its anonymous subclass's name, so either way every locale shows the same text and no translation test notices",
+    appliesTo: (p) => /\.java$/.test(p) && !/src\/test\//.test(p),
+    check: (c) => {
+      const clean = stripCommentsAndStrings(c);
+      if (!/\benum\s+\w+\s+implements\s+[\w.,\s]*\bLabeledEnum\b/.test(clean)) return [];
+      const override = lineHits(clean, /\bString\s+getLabel\s*\(/);
+      // A constant with a class body: an UPPER_SNAKE name, optional constructor arguments, then `{`.
+      const body = lineHits(clean, /^\s*[A-Z][A-Z0-9_]*\s*(?:\([^)]*\))?\s*\{/);
+      return [...override, ...body].sort((a, b) => a.line - b.line);
+    },
+    samples: {
+      file: "packages/domain-site/src/main/java/app/domain/site/enums/AreaStatus.java",
+      broken: `public enum AreaStatus implements LabeledEnum {
+    OPEN,
+    CLOSED;
+
+    @Override
+    public String getLabel() {
+        return name();
+    }
+}`,
+      fixed: `public enum AreaStatus implements LabeledEnum {
+    OPEN,
+    CLOSED
+}`,
+      hit: [
+        {
+          note: "a constant with a class body",
+          source: `public enum AreaStatus implements LabeledEnum {
+    OPEN {
+        boolean accepts() { return true; }
+    },
+    CLOSED;
+}`,
+        },
+        {
+          note: "an override of the locale-taking form",
+          source: `public enum AreaStatus implements LabeledEnum {
+    OPEN, CLOSED;
+    @Override
+    public String getLabel(Locale locale) { return name(); }
+}`,
+        },
+      ],
+      miss: [
+        {
+          note: "constants with constructor arguments and a field, no class body",
+          source: `public enum AreaStatus implements LabeledEnum {
+    OPEN("O"),
+    CLOSED("C");
+
+    private final String code;
+
+    AreaStatus(String code) { this.code = code; }
+
+    public String getCode() { return code; }
+}`,
+        },
+        {
+          note: "an enum that is not a LabeledEnum",
+          source: `public enum Direction {
+    UP {
+        Direction flip() { return DOWN; }
+    },
+    DOWN;
+    public String getLabel() { return name(); }
+}`,
+        },
+        {
+          note: "a call to getLabel(), not a declaration",
+          source: `public enum AreaStatus implements LabeledEnum {
+    OPEN, CLOSED;
+    public String describe() { return "status " + getLabel(); }
+}`,
+        },
+      ],
+    },
+  },
 ];
 
 // ---------------------------------------------------------------------------
