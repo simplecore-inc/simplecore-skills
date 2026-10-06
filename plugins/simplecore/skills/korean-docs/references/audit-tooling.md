@@ -296,7 +296,9 @@ layout.
 ## Writing a rule pack
 
 Every rule carries `id` · `scope` · `severity` · `reason` · `find` · `replace` · `hit` · `miss`, and
-is verified with `rules --test`. The `universal` scope always applies; a domain scope (`saas` and
+is verified with `rules --test`. Rules that judge one defect share a `family` name (`stand`: the
+서다 family). A place one member reported is not reported again by another member, errors first,
+so a sentence the narrow error rule caught is not printed a second time by the broad warning rule. The `universal` scope always applies; a domain scope (`saas` and
 the like) applies when the project glossary names it under `audit.domains`. `ruleScopes` in
 `.claude/l10n.json` opts into a scope as well and is read together with it. A rule
 written for one register names it in `registers` (`screen` · `manual` · `spoken` · `plain`; a

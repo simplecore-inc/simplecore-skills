@@ -2029,12 +2029,21 @@ function cmdRulesScan(opts) {
     // manual, every hit a capability sentence. The register comes from the declared kind; a
     // document with no kind is "plain".
     const register = CONFIG.kinds[entry.kind]?.register ?? "plain";
-    const applicable = active.filter((r) => !r.registers || r.registers.includes(register));
+    // Errors first, so that within a family the narrow error rule claims a place before the broad
+    // warning rule that would report the same words again.
+    const applicable = active
+      .filter((r) => !r.registers || r.registers.includes(register))
+      .sort((a, b) => (severityOf(a) === severityOf(b) ? 0 : severityOf(a) === "error" ? -1 : 1));
     for (const seg of segments) {
+      // Rules that share a `family` judge one defect. A place one member reported is not reported
+      // again by another, or one sentence prints under two names and a reader learns to skip both.
+      const claimed = new Map();
       for (const rule of applicable) {
         for (const re of ruleMatchers(rule)) {
           const m = matchSegment(re, seg);
           if (!m) continue;
+          const span = [m.index, m.index + m[0].length];
+          if (rule.family && (claimed.get(rule.family) ?? []).some(([s, e]) => span[0] < e && s < span[1])) continue;
           // Only a frequency rule is thresholded on a per-file count, so only a frequency rule
           // is misled by a catalogue. A rule that fires on the first hit still reports there.
           if (rule.minPerFile) {
@@ -2048,6 +2057,7 @@ function cmdRulesScan(opts) {
           // The spoken-script boundary is the same in both engines: a rule that only keeps a name in its
           // original script stands down on a speaker script, whichever file holds the rule.
           if (isSpoken(entry, seg) && isOriginalScriptBan({ source: rule.find.join(" "), suggestion: rule.replace })) continue;
+          if (rule.family) claimed.set(rule.family, [...(claimed.get(rule.family) ?? []), span]);
           if (!perFile.has(rule.id)) perFile.set(rule.id, []);
           perFile.get(rule.id).push({
             file: entry.file,

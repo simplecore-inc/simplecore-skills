@@ -41,6 +41,9 @@
     "The same holds across the two engines: a ban the glossary already holds is not repeated here,",
     "or `sweep` and both hook runs report the sentence twice. A spelling stays in the glossary; a",
     "pattern that conjugates or needs an exception lives here, and no glossary row repeats it.",
+    "Rules that judge one defect name it as their `family` (`stand`: the 서다 family). A place one",
+    "member reported is not reported again by another member, errors first, so a sentence the",
+    "family's narrow error rule caught is not printed a second time by its broad warning rule.",
     "",
     "`retired` names a rule id no longer in this pack and where its ban lives. A project pack that",
     "still disables or narrows that id is told so on every run instead of failing to load.",
@@ -118,6 +121,7 @@
       "id": "stand-for-display",
       "scope": "universal",
       "severity": "error",
+      "family": "stand",
       "reason": "A literal English `stand`. What appears on a screen 「표시된다」. **Compounds of 서다 mean something else and are excluded** - 앞서다·넘어서다·나서다·맞서다·들어서다·물러서다·마주서다·가로서다·앞장서다 speak of order and opposition, not placement. Rewriting 「평소 수신 거부보다 앞섭니다」 as 「표시됩니다」 loses the meaning. The prefixed stems are excluded with a lookbehind that also allows a space between them - letting the spaced form through would block only half the family",
       "find": [
         "(?<=[가-힣])(?<!앞 ?)(?<!나 ?)(?<!맞 ?)(?<!넘어 ?)(?<!들어 ?)(?<!물러 ?)(?<!마주 ?)(?<!가로 ?)(?<!앞장 ?) ?섭니다",
@@ -148,6 +152,7 @@
       "id": "stand-for-place",
       "scope": "universal",
       "severity": "error",
+      "family": "stand",
       "reason": "A literal English `stand`/`put`. Placing something on a screen is 「둔다·배치한다·표시한다」. 「계획을 세운다」 is legitimate, so the pattern is narrowed to phrases whose object is a screen element",
       "find": [
         "줄로 세운다",
@@ -1632,7 +1637,8 @@
       "id": "thing-stands-there",
       "scope": "universal",
       "severity": "warn",
-      "reason": "The metaphor of writing placement as 「선다」. A thing is not standing but placed, so write 「놓인다·나온다·붙는다·표시된다」. The base rule /[이가로] 선다/ fires only with a particle, so 「위에 선다」·「넷만 선다」·「따로 선다」 escape. The conjugation and the particle escape together - 「아래에도 서고」 has the particle 도 and the ending 서고, and 「정책은 선다」 has the particle 은, so neither falls into the two branches above. **The 「~(으)로」 of manner is another branch** - 「한 줄로 서고」·「세 층으로 서고」·「「수동 확인」으로 서고」 have a manner phrase rather than a particle in front and are not caught by the particle branch. So each branch carries the same bundle of conjugations. 을·이·가 would drag in 「줄을 선다」·「칼날이 선다」, so only 은·는·도 are matched. 「문 앞에 서」 is a person waiting their turn and is filtered out by the preceding word - it is not the placement of a thing. 「일렬로」·「똑바로」·「거꾸로」 describe a person really standing and are left out of the manner branch's word list. 「서므로」 has no preceding word in any branch - an adverbial phrase precedes it, as in 「쌓여야 서므로」 - so the ending itself is matched and only subjects that are people really standing are filtered out by the preceding word. **「서면」 is left out of the conjugation bundle** - the 서면 of 「서면 요건」·「서면 통지」 is a noun meaning a written document, and matching the ending would catch statutory documents wholesale. **When the character before 「서므로」 is Hangul it is not examined at all** - 앞서다 · 나서다 · 맞서다 · 들어서다 · 넘어서다 · 물러서다 are different words whose stem ends in 「서」, and a lookbehind enumerating person nouns and adverbs cannot reach that family, which is how 「일주일 앞서므로」 was reported as a placement metaphor. A real placement has a space before it, as in 「쌓여야 서므로」, so requiring a non-Hangul preceding character removes the whole family at once",
+      "family": "stand",
+      "reason": "The metaphor of writing placement as 「선다」. A thing is not standing but placed, so write 「놓인다·나온다·붙는다·표시된다」. The rule `stands-after-particle` fires only after 이 · 가 · 로, so 「위에 선다」·「넷만 선다」·「따로 선다」 escape it. The conjugation and the particle escape together - 「아래에도 서고」 has the particle 도 and the ending 서고, and 「정책은 선다」 has the particle 은, so neither falls into the two branches above. **The 「~(으)로」 of manner is another branch** - 「한 줄로 서고」·「세 층으로 서고」·「「수동 확인」으로 서고」 have a manner phrase rather than a particle in front and are not caught by the particle branch. So each branch carries the same bundle of conjugations. 을·이·가 would drag in 「줄을 선다」·「칼날이 선다」, so only 은·는·도 are matched. 「문 앞에 서」 is a person waiting their turn and is filtered out by the preceding word - it is not the placement of a thing. 「일렬로」·「똑바로」·「거꾸로」 describe a person really standing and are left out of the manner branch's word list. 「서므로」 has no preceding word in any branch - an adverbial phrase precedes it, as in 「쌓여야 서므로」 - so the ending itself is matched and only subjects that are people really standing are filtered out by the preceding word. **「서면」 is left out of the conjugation bundle** - the 서면 of 「서면 요건」·「서면 통지」 is a noun meaning a written document, and matching the ending would catch statutory documents wholesale. **When the character before 「서므로」 is Hangul it is not examined at all** - 앞서다 · 나서다 · 맞서다 · 들어서다 · 넘어서다 · 물러서다 are different words whose stem ends in 「서」, and a lookbehind enumerating person nouns and adverbs cannot reach that family, which is how 「일주일 앞서므로」 was reported as a placement metaphor. A real placement has a space before it, as in 「쌓여야 서므로」, so requiring a non-Hangul preceding character removes the whole family at once",
       "find": [
         "/(?<!문 )(위|안|옆|아래|앞|뒤|맨 위|맨 앞)에도?\\s*(선다|서고|서며|서므로|섰다|섰고|섭니다)/",
         "/[가-힣]만\\s*(선다|서고|서며|서므로|섰다|섰고|섭니다)/",
@@ -3140,9 +3146,10 @@
       "id": "bodyless-stands",
       "scope": "universal",
       "severity": "warn",
-      "reason": "Writing that something with no legs 「선다」. A build, a path, a demo, a pipeline, a server do not stand - they hold, are made, finish, come into being. 「빌드가 성립하는지」 rather than 「빌드가 서는지」, 「4개월에 끝낸다」 rather than 「4개월에 서고」, 「하나씩 생기고」 rather than 「파이프라인이 하나씩 서고」. **This family appears most readily right after an audit passes** - a session that fixed 829 findings in files wrote 「서버 절반이 섰습니다」 in the report on that very work. **A person, a queue, or a building as the subject is legitimate, so a person judges what is caught** - this rule does not fix, it selects places to read. **The 「서」 of 「~에서는」·「확인서는」 is part of a word and is separated by requiring a space after the particle.** **Up to two words of adverbial material are allowed between the subject and the verb** - 「파이프라인이 하나씩 서고」 has no verb immediately after the particle, and a regex matching only adjacency misses that sentence. **「앞에 서다」 is not excluded** - it is a settled expression about precedence, but with an inanimate subject (「컨설팅이 앞에 서는 방식」) it is the same personification and is fixed to 「앞세우는」. A person really standing in front is caught and judged by a person.",
+      "family": "stand",
+      "reason": "Writing that something with no legs 「선다」. A build, a path, a demo, a pipeline, a server do not stand - they hold, are made, finish, come into being. 「빌드가 성립하는지」 rather than 「빌드가 서는지」, 「4개월에 끝낸다」 rather than 「4개월에 서고」, 「하나씩 생기고」 rather than 「파이프라인이 하나씩 서고」. **This family appears most readily right after an audit passes** - a session that fixed 829 findings in files wrote 「서버 절반이 섰습니다」 in the report on that very work. **A person, a queue, or a building as the subject is legitimate, so a person judges what is caught** - this rule does not fix, it selects places to read. **The 「서」 of 「~에서는」·「확인서는」 is part of a word and is separated by requiring a space after the particle.** **Up to two words of adverbial material are allowed between the subject and the verb** - 「파이프라인이 하나씩 서고」 has no verb immediately after the particle, and a regex matching only adjacency misses that sentence. **「서는 곳」 is released** - where a bus or a train stops is a real place. **「앞에 서다」 is not excluded** - it is a settled expression about precedence, but with an inanimate subject (「컨설팅이 앞에 서는 방식」) it is the same personification and is fixed to 「앞세우는」. A person really standing in front is caught and judged by a person.",
       "find": [
-        "/[가-힣]{2,}[이가] (?:[가-힣]+ ){0,2}(서는|섰다|섰습니다|선다|서고|서서)(?![비운류히])/"
+        "/[가-힣]{2,}[이가] (?:[가-힣]+ ){0,2}(서는(?! 곳)|섰다|섰습니다|선다|서고|서서)(?![비운류히])/"
       ],
       "replace": "성립한다 · 만들어진다 · 생긴다 · 끝낸다",
       "hit": [
@@ -3156,7 +3163,38 @@
         "신용평가 등급 확인서는 유효기간 안의 것",
         "정상 상태에서는 경보를 내지 않는다",
         "구간에서는 3 × V × I 형태",
-        "잔량이 서서히 증가하는 상태"
+        "잔량이 서서히 증가하는 상태",
+        "버스가 서는 곳에서 기다린다"
+      ]
+    },
+    {
+      "id": "stands-after-particle",
+      "scope": "universal",
+      "severity": "warn",
+      "family": "stand",
+      "reason": "A literal English `stand` after a subject or a manner particle. A screen, a rule, or a value that 「선다」 is translation-ese: it 「있다 · 표시된다 · 배치된다 · 만들어졌다」. A person, a car, or a building really does stand, and 「서다」 also means coming into being (질서가 선다), so this is a warning that selects a sentence for a person to read. **Conjugation changes the syllable block** - matching only `선다` lets `섰다` · `섰습니다` · `서 있다` · `서는` through, and the particle arrives as `로` (「영어로 선다」) as well as `이` · `가`. 「서는 곳」 (where a bus stops) is released by the word that follows. A place another rule of the `stand` family already reported is not reported again.",
+      "find": [
+        "/[이가로] 선다/",
+        "/[이가로] 섰/",
+        "/[이가] 서 있/",
+        "/[이가로] 서는 (?!곳)/",
+        "/[이가로] 설 것/"
+      ],
+      "replace": "있다 · 표시된다 · 배치된다 · 만들어졌다",
+      "hit": [
+        "값이 선다",
+        "팩 두 개로 선다",
+        "규칙이 섰고 나머지는 남았다",
+        "배지가 서 있다",
+        "두 팩으로 서는 이유",
+        "규칙이 설 것이다"
+      ],
+      "miss": [
+        "버스가 서는 곳에서 기다린다",
+        "줄을 선다",
+        "현장에 먼저 섰다",
+        "가로 선을 긋는다",
+        "이 화면에서는 고칠 수 없다"
       ]
     },
     {
