@@ -26,7 +26,7 @@ the row for a subproject the repository does not have.
 ## SimpliX skill routing (MANDATORY)
 
 This repository is built on the SimpliX stack. Each subproject below has a handbook skill
-that is a **first-touch gate** — invoke it with the Skill tool before the first read,
+that is a **first-touch gate**: invoke it with the Skill tool before the first read,
 write, review, or explanation of a file in that subproject, and never work from memory of
 what it contains. Once invoked in a session it does not need re-invoking.
 
@@ -40,14 +40,14 @@ Rules that follow from the gate:
 - **Invoke before the edit, not after.** An edit made before the routed reference is read
   is a violation, not a head start.
 - **Cross-subproject work loads both.** A change that spans the API contract invokes both
-  skills in the same session and is implemented end to end — backend first, then the
+  skills in the same session and is implemented end to end: backend first, then the
   frontend codegen, then the UI.
 - **List screens are a fixed full-stack recipe.** Backend paged searchable endpoint first,
   then the CLI-generated list. Details live in the skills.
 - **Before a frontend feature is called complete**, drive its screens in a browser under
   `simplix:frontend-e2e`, and run the convention audit. A feature whose screens have never
   been walked by hand is unverified no matter how green the build is. The unit is the
-  cluster — every surface that shows or moves the record — not the one screen that was
+  cluster (every surface that shows or moves the record), not the one screen that was
   edited.
 - **The browser pass is delegated.** Anything past a single screen goes to one
   `simplix:screen-auditor` subagent per cluster, a fresh one after each, returning
@@ -65,7 +65,7 @@ stopped once, at its end, when it neither drove them in a browser nor ran the co
 instead.
 
 Install: `claude plugin install simplix@simplecore-skills`. Without the plugin these
-skills are unavailable — say so rather than approximating them.
+skills are unavailable. Say so rather than approximating them.
 ```
 
 ---
@@ -78,20 +78,22 @@ paths, so it applies to every SimpliX repository on the machine.
 ```markdown
 ### SimpliX projects
 
-When a repository is built on the SimpliX stack, its handbook skill is a first-touch gate —
+When a repository is built on the SimpliX stack, its handbook skill is a first-touch gate:
 invoke it with the Skill tool before reading, writing, reviewing, or explaining any file it
 covers, and follow it rather than memory.
 
-- **`simplix:backend`** — a Spring Boot repository whose classes extend
+- **`simplix:backend`**: a Spring Boot repository whose classes extend
   `SimpliXBaseController` / `SimpliXBaseService` / `SimpliXBaseRepository`, whose endpoints
-  return `SimpliXApiResponse`, or that carries a `.simplix/` generator directory.
-- **`simplix:frontend`** — a React repository with a `simplix.config.ts` or
+  return `SimpliXApiResponse`, whose Gradle build depends on the framework group
+  `dev.simplecore.simplix`, or that carries a `.simplix/` generator directory.
+- **`simplix:frontend`**: a React repository with a `simplix.config.ts` or
   `@simplix-react/*` dependencies.
-- **`simplix:frontend-e2e`** — before declaring any frontend feature complete, and whenever
+- **`simplix:frontend-e2e`**: before declaring any frontend feature complete, and whenever
   a task asks to walk a feature as a user, check screens against each other, or find what is
   confusing, missing, or unusable.
 
 In a monorepo the marker sits in the subproject, so the gate applies per subproject and a
-cross-subproject task invokes both skills. Neither skill applies to the simplix-react
-framework repository itself — that one is the framework, not a project using it.
+cross-subproject task invokes both skills. Neither skill applies to a framework repository
+itself (SimpliX, whose own Gradle group is `dev.simplecore.simplix`, or simplix-react, which
+publishes under `@simplix-react/`): those are the frameworks, not projects using them.
 ```
