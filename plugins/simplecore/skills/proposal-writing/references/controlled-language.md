@@ -109,6 +109,8 @@ The presentation must work both when projected and when read without the present
   `오른쪽`, `위`, `아래`, `이 도식` or a visible arrow.
 - Do not introduce a technical abbreviation only in a diagram. Expand it at the first
   meaningful use in the title explanation, body or note, then use the same abbreviation.
+  A gloss inside the figure itself follows `simplecore:svg-diagrams` references/document-figures.md,
+  「Decode domain terms inside the figure」.
 - When a demonstration figure is not to be spoken, keep the number out of the notes and
   explain only the capability and verified state permitted by the user.
 - During a wording-only edit, preserve slide order and diagram meaning. Treat the user's

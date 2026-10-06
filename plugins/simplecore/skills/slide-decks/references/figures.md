@@ -98,9 +98,9 @@ A slide board is the placed width divided by the scale that prints the ladder's 
 step at the slide's declared body size (an 11px body, 8.25pt, against a 15-unit ladder minimum
 is 0.7333 px per unit);
 the document's boards are for paper and are not placed on a slide. **A slide figure uses
-the ladder's three lowest steps** - MICRO and BODY for labels, LEAD for its headings -
-because the slide's own region heading is one step over its body and a figure heading at
-SECTION prints larger than anything on the page: the slide deck's figure settings declare
+MICRO and BODY for labels, LEAD for headings**, because the slide's own region heading is
+one step over its body and a figure heading at SECTION prints larger than anything on the
+page: the slide deck's figure settings declare
 `maxRung: "LEAD"`, so the figure checks fail text over LEAD, and a module passes `size=LEAD`
 to the library's `heading()`, which defaults to SECTION. **And it runs across the board before it stacks**:
 the rows beside a figure pay for its height, so a relation that reads left to right is laid
@@ -135,11 +135,14 @@ belongs in (the widest board across the text block, the next in the wide column 
 asymmetric layout, and so on), and a figure is placed at `board × scale`, never at the
 width of the slot; the wide column is sized to the placed width, not the other way round.
 A document deck, whose boards differ less, keeps its own near-uniform pair. The scale is
-chosen so the ladder's smallest step meets the figure floor `simplecore:svg-diagrams` sets,
-after the deck's `placeScale`; the project's `figures.boards` carries the widths. **Height is
-the only dimension a figure may spend**: a document figure's height budget is
-`simplecore:svg-diagrams`' (and its `heightReview`); on a slide board the budget is what the
-slide leaves after its head, so a slide figure is short and wide.
+chosen so the figure meets the floor `simplecore:svg-diagrams` sets after the deck's
+`placeScale` (references/document-figures.md, 「One type scale for the whole set」: the
+figure's body rung prints at the document's body size); the project's `figures.boards`
+carries the widths. **Height is the only dimension a figure may spend**: a document figure's
+height budget, and the `heightReview` number past which a figure is listed for a decision
+rather than failed, are `simplecore:svg-diagrams`' (references/document-figures.md, 「Height
+is the scarce axis」); on a slide board the budget is what the slide leaves after its head,
+so a slide figure is short and wide.
 
 ## A page whose body is one figure
 
@@ -184,8 +187,8 @@ word ends up alone on a line and nobody sees it - the eye reads the card, not it
 ragged edge, and a page-by-page review passes every one of them. It is
 mechanically visible: group the finished SVG's text elements into wrapped runs
 (same x, same size, one step apart), and a run whose last line is under about 42 % of
-its longest is the stub. No shipped check groups the runs, so read the rendered figures
-for it (`verify.py --render`) before a figure is placed. The fix is a shorter string or a
+its longest is the stub. The figure checks of `simplecore:svg-diagrams` report it as
+`[stub-line]`; run them before a figure is placed. The fix is a shorter string or a
 wider column; an explicit line break belongs only where the wording cannot move, as in a
 formula.
 
@@ -196,7 +199,8 @@ spreads 8 units a side and a third of an em above and below the letters; on a sl
 board that plate is taller than the gap the arrow runs in, and three figures in one
 round printed it over the cards either side. The figure library's `edge_label` fits the
 plate to the glyph box (6 a side, 3 above and below), and a module calls it rather than the
-toolkit's pill; no check reads a module for which one it called, so this is on the author. The
+toolkit's pill; the figure checks of `simplecore:svg-diagrams` report a connector label drawn
+with the toolkit's pill as `[edge-pill]`. The
 type size does not move: the ladder's smallest step is already the deck's body size
 and the 8pt floor leaves no room under it, so a label that reads too large is made
 **shorter** - 「업무 DB 직접 접속 없음」 → 「DB 직접 접속 없음」 next to the DB it names,
@@ -248,9 +252,11 @@ prunes is the next thing to rot.
 deck enforces is over the strings *it* draws - a check that reads the deck's styles,
 components and pages cannot see inside a bitmap or an SVG, and should not try. A figure's
 smallest label is set by the figure's own type ladder times the placement scale, and that
-product is held to the figure floor `simplecore:svg-diagrams` sets, by the figure checks:
-pick the scale so the ladder's smallest step still clears it, and say in the deck's
-instructions which floor a figure answers to. Without that a reviewer measures a diagram
+product is held to the figure floor `simplecore:svg-diagrams` sets, by the figure checks
+(references/document-figures.md, 「One type scale for the whole set」: the body rung prints at
+the document's body size, and only a tag rung for chips, codes and ids sits below it): pick
+the scale so the body rung still reaches it, and say in the deck's instructions which floor a
+figure answers to. Without that a reviewer measures a diagram
 label, finds it under the deck's floor, and reports a violation of a rule that never applied
 to it.
 
@@ -371,7 +377,10 @@ its slot.
   verifier fails the Arabic shape, and a Roman reference is on the author.
 - **Carry a title inside the drawing.** The figure's name and its one line belong to the
   document caption, or on a slide to the title and the claim above it.
-- **Draw a shadow.** PowerPoint drops every element that references a `<filter>`.
+- **Draw a shadow.** PowerPoint drops every element that references a `<filter>`; how a
+  figure is drawn without one, and the check that fails one that has it, are in
+  `simplecore:svg-diagrams` references/render-audit.md, 「The renderer that ships the figure is
+  not the one you author in」.
 - **Be scaled to fit.** Re-lay out the primitives on the board the slot wants. The one
   scale applied after the board's is the deck's `placeScale`, the same for every figure,
   or its `oversizeScale` on a figure that does not fit its slot at placeScale.

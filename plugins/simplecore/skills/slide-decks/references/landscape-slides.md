@@ -163,8 +163,8 @@ below sets out.
 obvious wrapper - the figure's own placed width with centring on it - is a no-op, and a
 600px drawing then sits against the left edge of a 680px column while every reader reads
 the gap on the right as a mistake. Give the wrapper the region's measure. The cost to
-watch for is a figure sharing a row with a panel: it now claims the whole row unless the
-chapter gives it a column of its own.
+watch for is a figure sharing a row with a panel: a wrapper at the region's measure claims
+the whole row unless the chapter gives the figure a column of its own.
 
 **A progress band under the head is three tones, in this order.** A deck that runs twenty
 minutes can say where it is without the speaker saying it: a thin full-bleed strip under

@@ -756,7 +756,7 @@ the ear:
   「15개월 차」, 「3초」, the ratio 「1 대 3」); every English term is in Hangul as pronounced
   (「아파치 이그나이트 쓰리」, 「아이엠디지」), with the meaning said at the first mention where the
   listener cannot know it. The slide keeps the written form. `notespeech` lists every digit joined
-  to a native-numeral counter and every Latin letter left in a note.
+  to a native-numeral counter and every Latin letter left in a note. Mark the script as spoken so the transliteration bans stand down there ([`simplecore:korean-docs`, 「A speaker script - `l10n:spoken`」](../korean-docs/references/audit-tooling.md#a-speaker-script---l10nspoken)).
 - **Unpacked, not compounded.** A noun stack the slide can afford is unpacked into a clause the
   ear can follow: 「멱등 저장」 → 「멱등성을 보장해 저장합니다」, 「무유실 전달」 → 「잃는 데이터 없이
   전달합니다」. The slide keeps the short label; the note says what it does.
@@ -811,7 +811,9 @@ printed deck.
 - **No bare abbreviation list.** A row of term-and-expansion pairs under a figure or at a
   page's foot, standing on its own as a 「범례」, reads as filler and is cut even when the
   manuscript carries it. Expand an abbreviation at its first use in the page's text and keep the
-  full list in the annex glossary.
+  full list in the annex glossary. A gloss inside a figure is the figure's own:
+  `simplecore:svg-diagrams` references/document-figures.md, 「Decode domain terms inside the
+  figure」.
 - **No fake-perfect numbers.** A number keeps its source, meaning and unit
   (`simplecore:proposal-writing`, 「What the document may claim」).
 

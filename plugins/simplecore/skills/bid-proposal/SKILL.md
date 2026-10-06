@@ -30,10 +30,10 @@ and not for work on the SlideGlance editor itself.
 | Company and staff facts: overview, credit rating, founding date, track record, staff careers, owned assets and tools, certificates, logo | the folder `companyDir` names, a private repository, never the public skill repository. Who bids and who is staffed differs per bid and may be undecided until late |
 | Facts the user gives in chat | written into the ledger in the same turn |
 | Ledger | `.claude/proposal-ledger.md` in the bid repository |
-| Deck configuration: deck folders, kit, checks, figure scale | `.claude/slide-decks.json` in the bid repository |
+| Deck configuration: deck folders, kit, checks, figure boards and placement scale | `.claude/slide-decks.json` in the bid repository, the one owner of the boards and the scale |
 | Kit | the kit the deck binds (`build.kit.dir` in the deck's `slideglance.json`); a new deck binds the kit the reference bid's deck binds |
 | Term standard | `.claude/GLOSSARY.md` and `.claude/l10n.json` in the bid repository |
-| Figure set: output folder, boards, type ladder, placement scale | `.claude/document-figures.json` in the bid repository, read by the figure library in `svg-diagrams/scripts/docfigures/` |
+| Figure set: output folder, type ladder | `.claude/document-figures.json` in the bid repository, read by the figure library in `svg-diagrams/scripts/docfigures/`, which takes the boards and the placement scale from the deck configuration |
 | Shared checks | `slide-decks/scripts/check.py` runs the checks a deck declares; manuscript checks live in `proposal-writing/scripts/`. A bid keeps only its own checks (`checks.local`) and baselines (`checks.baselines`) |
 | Reference bid: the standard for conventions, page ids, figure numbering, manuscript form and deck setup | the repository `referenceBid` names, written into the ledger at kickoff |
 | Earlier bids, reference only; where one differs from the reference bid, the reference bid wins | the repositories `earlierBids` lists |
@@ -176,7 +176,8 @@ question waits for step 8. When the company folder does not exist yet, create it
   without the screen, in the screen's order and its printed words, numbers and English terms
   written as they are read, compounds unpacked, and timed at the rate measured by reading it
   aloud. `notespeech` lists what a voice would misread, with the counters `checks.notespeech.counters`
-  sets.
+  sets. Mark the script as spoken so the transliteration bans stand down there
+  ([`korean-docs`, 「A speaker script - `l10n:spoken`」](../korean-docs/references/audit-tooling.md#a-speaker-script---l10nspoken)).
 
 **Numbers and evidence**
 
