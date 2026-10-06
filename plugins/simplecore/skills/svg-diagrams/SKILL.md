@@ -1,6 +1,6 @@
 ---
 name: svg-diagrams
-description: Create diagrams as SVG (also ASCII) - flowcharts, sequence/state/class/ER, system and architecture diagrams, pipelines, network and infrastructure layouts. Use when asked to draw, render, or diagram a system, flow, or structure. Covers hand-crafted SVG and JSON-spec auto-layout for precise architecture pictures, Mermaid auto-layout for structured diagrams from text, and SVG checks that catch missing or oblique arrowheads, text overflow, and clipped content before delivery. Also covers figures embedded in a document - one canvas width and one type scale across the whole set, with the generator versioned in the project rather than written to a scratch directory, and bundles the full Lucide icon set for marking a component inside a figure (an AI part especially). Triggers on "draw diagram", "create flowchart", "show architecture", "system diagram", "visualize flow", "SVG diagram", "ASCII diagram", "mermaid", "다이어그램", "아키텍처 그림", "도식화", "구성도", "그림 그려", "문서에 넣을 그림", "그림 규격 통일", "아이콘 넣어", "AI 아이콘".
+description: Use when asked to draw, render, or diagram a system, flow, or structure as SVG or ASCII - flowcharts, sequence, state, class and ER diagrams, system and architecture diagrams, pipelines, network and infrastructure layouts; when a figure goes into a document (a proposal, a design document, a manual, a README) or a set of figures must be made uniform; when an icon is wanted inside a figure; or when an SVG diagram must be checked for broken arrowheads, overflowing text or clipped content before delivery. Triggers on "draw diagram", "create flowchart", "show architecture", "system diagram", "visualize flow", "SVG diagram", "ASCII diagram", "mermaid", "다이어그램", "아키텍처 그림", "도식화", "구성도", "그림 그려", "문서에 넣을 그림", "그림 규격 통일", "아이콘 넣어", "AI 아이콘".
 ---
 
 # SVG Diagrams
@@ -75,8 +75,9 @@ laying out the first figure of a set.
 | Architecture, protocol stack, pipeline, network/infra - precise & spatial | **Hand-crafted SVG** (default) | `scripts/svgkit.py` (import) or `references/svg-templates.md` (XML) |
 | Layered box diagram (explicit stacked bands), want auto-placement | **JSON-spec layered layout** | `scripts/layout.js` |
 | Branching graph / arbitrary topology, want auto-placement - themed, CJK-safe, zero install | **JSON-spec graph layout (dagre)** | `scripts/graph.js` |
-| Flowchart / sequence / state / class / ER from text | **Mermaid auto-layout** | `scripts/convert.js` |
-| Terminal / markdown / quick text output | **ASCII** (Mermaid-fed only) | `scripts/convert.js` |
+| Flowchart from text | **Mermaid auto-layout** | `scripts/convert.js` |
+| Sequence / state / class / ER from text | **Mermaid auto-layout**, `--svg` only, which needs the optional `beautiful-mermaid` (below); without it, svgkit's `sequence()`, `state()` and `entity()` builders | `scripts/convert.js` |
+| Terminal / markdown / quick text output | **ASCII** (Mermaid-fed only; needs the optional `beautiful-mermaid`) | `scripts/convert.js` |
 
 Default for spatially demanding pictures is hand-crafted SVG. **Mermaid is one technique, not a prerequisite** - most architecture diagrams never touch it.
 
@@ -91,7 +92,7 @@ import sys
 sys.path.insert(0, "<skill>/scripts")          # <skill> = base dir shown at load
 from svgkit import Canvas
 
-c = Canvas(900, 320, theme="tokyo-night")       # nord · catppuccin · gruvbox · one-dark
+c = Canvas(900, 320, theme="tokyo-night")       # paper (white page) · nord · catppuccin · gruvbox · one-dark
 c.card(48, 90, 200, 96, c.blue, badge="01", title="Ingest",
        lines=["Connector", (c.t["muted"], "byte[] · ts")])
 c.card(320, 90, 200, 96, c.cyan, badge="02", title="Dispatch", lines=["Parser"])
@@ -100,9 +101,11 @@ c.save("pipeline.svg")
 # verify:  python3 <skill>/scripts/audit.py lint pipeline.svg
 ```
 
-**Theme** with `Canvas(w, h, theme=…)`: `tokyo-night` (default), `nord`, `catppuccin`, `gruvbox`, `one-dark`. Reference accents as `c.blue c.cyan c.teal c.green c.purple c.red c.orange c.yellow` and chrome as `c.t["muted"|"line"|"bg"|…]` - passing these (not literal hex) lets a diagram re-theme by changing one arg. Chrome (bg/box/line/muted/fg) resolves from the theme automatically. (Module constants `BLUE`, `MUTED`, … remain for Tokyo-Night-only code.) A colour the theme lacks - a client's brand, an institution's assigned colour - is registered once with `c.add_accent("brown", "#7a4b23")`: it becomes `c.brown` with its own arrowhead marker, so `marker=c.brown` resolves like any theme accent instead of falling back to the muted head.
+**Theme** with `Canvas(w, h, theme=…)`: `paper` for a figure placed on a white page (the usual case), `tokyo-night` (the default when none is named), `nord`, `catppuccin`, `gruvbox`, `one-dark`. Reference accents as `c.blue c.cyan c.teal c.green c.purple c.red c.orange c.yellow` and chrome as `c.t["muted"|"line"|"bg"|…]` - passing these (not literal hex) lets a diagram re-theme by changing one arg. Chrome (bg/box/line/muted/fg) resolves from the theme automatically. (Module constants `BLUE`, `MUTED`, … hold the Tokyo Night values, for code drawn in that theme only.) A colour the theme lacks - a client's brand, an institution's assigned colour - is registered once with `c.add_accent("brown", "#7a4b23")`: it becomes `c.brown` with its own arrowhead marker, so `marker=c.brown` resolves like any theme accent instead of falling back to the muted head.
 
 Helpers: `rrect · text · line · path · ortho · elbow · bez · dot · chip · card · spec_card · node · edge_label · group_frame · title · legend · matrix · band · icon · row_positions · tw · edge_pt · capture · fit_box · fit_row · frame_around`. `text(..., mask=True)` paints a paper plate under a label that a line has to pass behind; `band(..., side="top"|"left"|…)` rounds only the corners on the box's outline; `rrect(..., measure="width")` marks a rect whose size is a quantity so the row and frame checks leave it alone; `fit_box`/`fit_row` size a box from a drawing callback with even padding.
+
+**Shadows.** `card` and `node` draw a drop shadow with an SVG `<filter>`, and PowerPoint's SVG import drops every element that references one: the shape vanishes while its labels stay. A figure bound for a .pptx or a .docx is drawn on `Canvas(w, h, theme="paper", shadow=False)`; the document-figure library's `canvas()` does that.
 
 Composite patterns (reusable across diagrams):
 - `title(text, sub)` - diagram heading (bold title + muted subtitle).
@@ -117,16 +120,16 @@ Composite patterns (reusable across diagrams):
 
 **Icons.** `c.icon(name, x, y, size=20, color=…, sw=1.6)` draws a Lucide line icon
 centred on `(x, y)`; the whole set is bundled, so `Canvas.icons("brain")` searches
-the 2,050 names offline and https://lucide.dev browses them. An icon is ink like
+the whole set offline and https://lucide.dev browses them. An icon is ink like
 any other primitive - it counts toward `trim` and the overflow lint, so place it
 inside the box that owns it. **A diagram that has an AI component marks it with
 an icon** (`brain-circuit` · `cpu` · `sparkles` · `bot`), so a reader can tell at
 a glance which part of the picture a model drives. Sizing and set discipline:
 `references/document-figures.md`.
 
-Sub-route: programmatic / most diagrams → import `svgkit.py`; quick copy-paste one-off → `references/svg-templates.md` XML. **Pick ONE convention per file** - do not mix svgkit markers (`arr-<name>`) and template markers (`ah`) in the same SVG; lint checks markers per file and will not catch a mixed file.
+Sub-route: programmatic / most diagrams → import `svgkit.py`; a quick copy-paste one-off shown in a browser → `references/svg-templates.md` XML; a figure for a document → `scripts/docfigures/`. **Pick ONE convention per file** - do not mix svgkit markers (`arr-<name>`) and template markers (`ah`) in the same SVG; lint checks markers per file and will not catch a mixed file.
 
-Canvas sizes and domain wireframes: `references/domain-templates.md`.
+Layout patterns per domain, with canvas sizes for a standalone picture: `references/domain-templates.md`.
 
 ## JSON-spec layered layout (Mermaid NOT required)
 
@@ -162,9 +165,9 @@ node <skill>/scripts/convert.js diagram.mmd --layout                   # render 
 
 For a branching graph, prefer **`--dagre`** (edge-ranked topology through our themes/CJK sizing/audit, no npm install) or **`--svg`** (beautiful-mermaid; needs the global install and sizes its own boxes, so lint for CJK clipping). `--to-json`/`--layout` route through `layout.js`, which stacks nodes into layered boxes: great for explicitly layered structure, but it flattens arbitrary graphs into a single column and can place edge labels on borders, so always render-and-check `--layout` output. `--to-graph` emits the flat node+edge+cluster spec that `graph.js` consumes.
 
-Types: flowchart (`graph TD|LR|BT|RL`), `sequenceDiagram`, `stateDiagram-v2`, `classDiagram`, `erDiagram` - for `--svg`/ASCII. **`--to-json`/`--layout` parse flowchart/graph syntax only** (other types error out; render them with `--svg`).
+Types: flowchart (`graph TD|LR|BT|RL`), `sequenceDiagram`, `stateDiagram-v2`, `classDiagram`, `erDiagram` - for `--svg`/ASCII. **`--to-json`, `--layout`, `--to-graph` and `--dagre` parse flowchart/graph syntax only** (other types error out; render them with `--svg`).
 Syntax: shapes `[rect] (rounded) {diamond} [[sub]] [(db)] ((circle))`; edges `-->` `---` `-.->` `==>` `-->|label|`.
-Prerequisite for `--svg`/ASCII only: `npm install -g beautiful-mermaid` (`--to-json`/`--layout` run without it).
+**`--svg` and ASCII need the `beautiful-mermaid` npm package, which a plugin install does not provide** (the installer copies files and runs no package manager); install it with `npm install -g beautiful-mermaid`. Without it `convert.js` exits with `Error: beautiful-mermaid is not installed.` `--dagre`, `--to-graph`, `--to-json` and `--layout` run without it, and a sequence, state, class or ER diagram is then drawn with svgkit's `sequence()`, `state()` or `entity()` and `relate()` builders.
 
 ## ASCII / text output
 
@@ -173,54 +176,45 @@ node <skill>/scripts/convert.js diagram.mmd            # Unicode box-drawing
 node <skill>/scripts/convert.js diagram.mmd --ascii    # pure ASCII (+-|)
 ```
 
-ASCII is reachable **only via the Mermaid path** - there is no ASCII route for hand-crafted SVG or JSON specs. If you need ASCII, express the diagram in Mermaid.
+ASCII is reachable **only via the Mermaid path** - there is no ASCII route for hand-crafted SVG or JSON specs. If you need ASCII, express the diagram in Mermaid; the ASCII renderer is the optional `beautiful-mermaid` package (above).
 
 ## Verify before delivering (REQUIRED for any SVG)
 
 Valid SVG XML is not a correct picture. Missing/oblique arrowheads, text overflow, head-only arrows, occluded labels, and content jammed against an edge are invisible in the source - render and inspect first. Applies to SVG from **any** technique above.
 
-**The lint runs itself on every SVG written or edited in a session** - a write-time hook ships with this plugin and reports the same findings as the command below, so a defect surfaces at the moment it is introduced rather than at delivery. That covers the static half only: `render` and `hotspots` are still yours to run, because a static scan cannot see an arrowhead landing on a chip or a label kissing a box. A project turns the hook off with `{"svgLint": false}` in `.claude/simplecore.json` - and a diagram whose lint was silenced still needs the pass below.
+**A write-time hook lints an SVG written or edited with the Write, Edit or MultiEdit tool** and reports the same findings as the command below, so a defect in a hand-written SVG surfaces at the moment it is introduced. It never sees an SVG a script writes (svgkit's `save()`, `layout.js`, `graph.js`, `convert.js`, the document-figure build): run `audit.py lint` on those yourself, as `verify.py` does for document figures. It skips an SVG with neither a `<text>` nor a `<marker>` (an icon, a logo), and it covers the static half only: `render` and `hotspots` are still yours to run, because a static scan cannot see an arrowhead landing on a chip or a label kissing a box. A project turns the hook off with `{"svgLint": false}` in `.claude/simplecore.json`, and a diagram whose lint was silenced still needs the pass below.
 
 ```bash
 python3 <skill>/scripts/audit.py lint     one.svg [more.svg …]   # static defect scan (multi-file; exit 1 on any issue)
-python3 <skill>/scripts/audit.py render   diagram.svg out.png 2  # full raster — Read it
-python3 <skill>/scripts/audit.py hotspots diagram.svg crops/ 4   # zoom-crop EVERY arrow endpoint — Read them
+python3 <skill>/scripts/audit.py render   diagram.svg out.png 2  # full raster, then Read it
+python3 <skill>/scripts/audit.py hotspots diagram.svg crops/ 4   # zoom-crop EVERY arrow endpoint, then Read them
 python3 <skill>/scripts/audit.py crop     diagram.svg X Y W H z.png 5   # zoom one spot
 python3 <skill>/scripts/audit.py contrast one.svg [more.svg …]   # labels lost on the band under them
 python3 <skill>/scripts/audit.py markers  module.py [more.py …]  # connector calls with no marker=
 ```
 
-Loop: **lint → render → hotspots → fix → repeat** until lint is clean *and* the endpoint crops look right. A full render viewed downscaled hides sub-10px defects (an arrowhead landing on a chip, a label kissing a box); `hotspots` turns "eyeball the overview" into a systematic pass over exactly the places those defects live. Lint is a screen, not the verdict. Checks: `UNRESOLVED-MARKER`, `OBLIQUE-ARROW`, `SHORT-ARROW`, `TEXT-OVERFLOW`, `TEXT-COLLISION`, `COLLAPSED-SPACE`, `TIGHT-BOTTOM`, `OVERLAP`, `NEAR-OVERLAP`, `HAIRLINE-GAP`, `SLIVER-RECT`, `LABEL-OCCLUSION`, `ARROW-THROUGH-BOX`, `ARROWHEAD-IN-BOX`, `ARROWHEAD-AT-BEND`, `CROWDED-ARRIVAL`, `LINE-THROUGH-BOX`, `FRAME-OVER-NODE`, `OFFCANVAS-TEXT`, `OFFCANVAS-RECT`, `MARKER-NO-ORIENT`, `MARKER-ORIENT-UNSUPPORTED`, `WIDE-CANVAS`, and the box-geometry set (`ROW-PADDING-UNEVEN`, `BOX-PADDING-UNEVEN`, `WRAP-SLACK`, `ROW-HEIGHT-MISMATCH`, `ROW-WIDTH-MISMATCH`, `ROW-GAP-UNEVEN`, `STACK-GAP-UNEVEN`, `FRAME-PADDING-UNEVEN`, `BAND-CORNERS`, `TEXT-ON-LINE`, `LABEL-GROUPING`, `EMPTY-STACK-GAP`) and the connector set, `PARALLEL-CONNECTORS`, `COLLINEAR-CONNECTORS`, `COINCIDENT-LINES`, `SELF-DOUBLED`, `DROP-INTO-GAP`, `SEPARATOR-OFF-CENTRE`; `contrast` reports `LOW-CONTRAST` and `markers` reports `MARKER-DEFAULT`. Full catalog, fixes, prevention rules: `references/render-audit.md`.
+Loop: **lint → render → hotspots → fix → repeat** until lint is clean *and* the endpoint crops look right. A full render viewed downscaled hides sub-10px defects (an arrowhead landing on a chip, a label kissing a box); `hotspots` turns "eyeball the overview" into a systematic pass over exactly the places those defects live. Lint is a screen, not the verdict. Every check that `lint`, `contrast` and `markers` report, with its detection rule and its fix, is in the defect catalog of `references/render-audit.md`, beside the prevention rules.
 
-**CJK / non-Latin text:** width estimation is CJK-aware across the toolchain (`svgkit.tw`, `layout.js`, and the lint all count Hangul/Kana/CJK glyphs at ~1 em, Latin at ~0.55 em). A box or chip auto-sized for Latin will overflow Korean/Japanese if you hardcode a width - size boxes from `tw()`, not by eye. The Mermaid `--svg` path (beautiful-mermaid) sizes its own boxes and can clip CJK labels; lint its output and prefer svgkit/layout.js when labels are CJK-heavy.
+**CJK / non-Latin text:** width estimation is CJK-aware across the toolchain: `svgkit.tw` and the lint share one per-class table calibrated against Chrome (`scripts/calibrate_tw.py`), and `layout.js` and `graph.js` count a Hangul, Kana or CJK glyph wider than a Latin one. A box or chip auto-sized for Latin will overflow Korean/Japanese if you hardcode a width - size boxes from `tw()`, not by eye. The Mermaid `--svg` path (beautiful-mermaid) sizes its own boxes and can clip CJK labels; lint its output and prefer svgkit/layout.js when labels are CJK-heavy.
 
 **Read it as somebody who has never seen the system (the pass no lint replaces).** A clean lint means the picture is well-formed, not that it explains anything. Once the crops look right, look at the full render once more as a first-time reader and answer: what is this a picture *of*; where does the eye start; who acts or decides; what is always true; what changes only after a choice or condition; what remains when an option is not applied; and whether every line style, colour, and shape difference has a stated meaning. Every label must use a term the reader knows rather than an internal identifier or an abbreviation only the author expands. A diagram that fails one of these is redrawn, not re-linted - and an unexplained visual distinction is the most common failure, because the author knows what it meant.
 
-**Keep the English source when a terminology guide replaces it with a plain-language term.** If
-the guide's current-term cell is an English word or an English abbreviation, print the preferred
-term as `plain-language term(English source)` in the diagram, even when the guide's preferred-term
-cell omits the parenthetical: `에너지 저장장치(ESS)`, `대정전(Blackout)`. Copy the English
-word or abbreviation from the source's current-term cell; do not reconstruct or translate it from
-memory. This readability form does not override a tender's exact field, screen or requirement name:
-keep an issued name unchanged and put the expanded form in the adjacent note, legend or caption.
+**Glossing a term inside a figure** (a plain-language term with its English source, an issued name kept character for character): `references/document-figures.md`, Decode domain terms inside the figure.
 
-**Two placement rules prevent most of the checks above at generation time:** place edge labels in open space above or below the arrow rather than in a narrow gap between boxes, and route connectors around any box that is neither their source nor their target - including a frame's own title chip, which counts as a box. Every check's detection rule and fix is in `references/render-audit.md`.
+**Two placement rules prevent most of the lint's findings at generation time:** place edge labels in open space above or below the arrow rather than in a narrow gap between boxes, and route connectors around any box that is neither their source nor their target - including a frame's own title chip, which counts as a box. Every check's detection rule and fix is in `references/render-audit.md`.
 
 ## Pick the visual type first
 
-There are thirty-nine of them and the choice is not cosmetic: it decides what
-the reader can take away. `references/visual-types.md` maps the question a
-reader is asking to the type that answers it.
+The choice is not cosmetic: it decides what the reader can take away.
+`references/visual-types.md` maps the question a reader is asking to the type
+that answers it.
 
-Twenty builders cover the types whose geometry primitives cannot express -
-`swimlane` `quadrant` `pyramid` `venn` `loop` `bar` `radar` `sequence`
-`entity` `relate` `linechart` `scatter` `polar` `state` `treemap` `sankey`
-`fishbone` `wardley` `journey` `itstate`, all `Canvas` methods. The rest are
-assembled from primitives that already carry their grammar: `frame` for a
-boundary, `flow` for an ordered row, `matrix` for a grid, `gantt` for a
-schedule. Each builder carries its type's complexity budget and **raises past
-it** rather than drawing a figure nobody can read - an over-budget call is a
-message naming the rule, not a silently unreadable picture.
+The types whose geometry primitives cannot express have a dedicated builder,
+a `Canvas` method listed there with its budget; the rest are assembled from
+svgkit's primitives, and the same table names the calls. Each builder carries
+its type's complexity budget and **raises past it** rather than drawing a figure
+nobody can read - an over-budget call is a message naming the rule, not a
+silently unreadable picture.
 
 Reach for it before choosing a canvas size. Picking "architecture" for
 something that is really a sequence costs a redraw, and the wrong type is the
@@ -233,7 +227,7 @@ real question is often layered - "how does the number come about, does it
 clear the bar, and what is the verdict" is a derivation, a comparison, and a
 judgement in one figure. Compose them as storeys on one board: a flow of
 nodes feeding a threshold, a bullet chart under it, one accented verdict band
-at the foot. Three rules keep a composition honest:
+at the foot. These rules keep a composition honest:
 
 - **Geometry carries the claim.** A margin is a filled zone past a threshold
   line, a budget is a bar length, a share is an area - the reader takes the
@@ -258,9 +252,9 @@ pass/fail, reach for the quantitative registers and compose.
 | File | Contents | When to Read |
 |------|----------|--------------|
 | `references/render-audit.md` | Render/crop/lint workflow, defect catalog with fixes, generation-time prevention rules | Before delivering ANY SVG; debugging arrowheads, overflow, spacing |
-| `references/svg-templates.md` | SVG header, node/edge/subgroup XML templates, palette, layout rules | Hand-crafting SVG by XML, or fixing layout |
-| `references/visual-types.md` | The 39 visual types, what each is for, which have a dedicated builder, and the budget each one enforces | Choosing what kind of picture this is - read BEFORE laying anything out |
+| `references/svg-templates.md` | SVG header, node/edge/subgroup XML templates, palette, layout rules, for a standalone picture in a browser | Hand-crafting SVG by XML, or fixing layout |
+| `references/visual-types.md` | The visual types, what each is for, which have a dedicated builder, and the budget each one enforces | Choosing what kind of picture this is - read BEFORE laying anything out |
 | `references/document-figures.md` | Uniform width across a figure set, the type ladder, height economy, composition variety, redraw rules | Before the first figure of anything that goes in a document |
 | `scripts/docfigures/` | The document-figure library a project imports: `common.py` (drawing layer), `build.py`, `verify.py`, `figplans.py`, configured by the project's `.claude/document-figures.json` | Drawing, building or checking figures that go in a document |
 | `assets/document-figures/` | A sample `document-figures.json` and an example figure module, plus a README on wiring a project to the library | Setting a project up to draw its own figures |
-| `references/domain-templates.md` | 8 domain layouts (architecture, pipeline, microservice, CI/CD, network, state machine, infra, sequence) with canvas sizes and color assignments | Choosing a layout pattern / canvas size |
+| `references/domain-templates.md` | Domain layouts (architecture, pipeline, microservice, CI/CD, network, state machine, infra, sequence, dependency / coverage matrix) with canvas sizes and color assignments for a standalone picture | Choosing a layout pattern |

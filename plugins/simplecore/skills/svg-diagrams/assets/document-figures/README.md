@@ -1,8 +1,9 @@
 # Wiring a project to the document-figure library
 
 The drawing layer, the build and the checks live in this skill at
-`scripts/docfigures/` and are imported, never copied. A project keeps two kinds
-of file and nothing else:
+`scripts/docfigures/` and are imported, never copied. A project keeps its
+settings file, its figure modules and the SVGs they generate, and nothing of the
+library itself:
 
 ```
 .claude/document-figures.json   every value this document decides

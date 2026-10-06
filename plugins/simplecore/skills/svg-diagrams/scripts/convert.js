@@ -1,6 +1,12 @@
 #!/usr/bin/env node
 /**
- * Mermaid to ASCII/SVG converter using beautiful-mermaid library
+ * Mermaid to ASCII/SVG converter.
+ *
+ * The default text output, --ascii and --svg run on the beautiful-mermaid npm package, which a
+ * plugin install does not provide (`npm install -g beautiful-mermaid`); they render every
+ * Mermaid type. --dagre, --to-graph, --to-json and --layout need no install: they parse here and
+ * render through graph.js on the vendored dagre bundle, or through layout.js, and they accept
+ * flowchart/graph syntax only.
  *
  * Usage:
  *   node convert.js <input-file> [options]
@@ -10,6 +16,8 @@
  * Options:
  *   --ascii           Use ASCII characters instead of Unicode box-drawing
  *   --svg             Output SVG via beautiful-mermaid (auto layout)
+ *   --dagre           Output SVG via the dagre graph engine (topology layout)
+ *   --to-graph        Convert Mermaid to dagre graph JSON (for manual editing)
  *   --layout          Output SVG via layout engine (precise coordinate control)
  *   --to-json         Convert Mermaid to layout JSON (for manual editing)
  *   --theme <name>    Use built-in theme (tokyo-night, dracula, nord, etc.)

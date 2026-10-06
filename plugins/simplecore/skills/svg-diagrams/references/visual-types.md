@@ -4,7 +4,7 @@ Pick the type from what the reader has to take away, not from what the data
 looks like. The table is ordered by that question. Vocabulary and budgets
 derive from the diagram-design skill (MIT) - see `NOTICE`.
 
-**Three rules hold for every type.** A budget is a readability ceiling, not a
+**Every type keeps the same rules.** A budget is a readability ceiling, not a
 suggestion: past it the drawing still renders and stops being read, so a
 builder raises rather than draw a figure nobody can use. A figure earns its
 place only against the alternative - if a three-column table says the same
@@ -16,49 +16,51 @@ yet.
 
 | The reader has to take away | Type | How to draw it |
 |---|---|---|
-| What the parts are and what talks to what | Architecture | `box` + `arrow`/`route` + `frame` |
+| What the parts are and what talks to what | Architecture | `card` / `node` + `ortho` + `group_frame` |
 | What the landscape looks like *before* a modernisation | **IT current-state** | `itstate()` |
-| Which branch a decision takes | Flowchart | `box` + `arrow` |
+| Which branch a decision takes | Flowchart | `node` + `ortho`, or `graph.js` |
 | Who sent what to whom, in order | **Sequence** | `sequence()` |
 | Which states exist and what moves between them | **State machine** | `state()` |
 | Which entities exist and how they relate | **ER / data model** | `entity()` + `relate()` |
 | Physical tables, their columns and their keys | **Database schema** | `entity()` + `relate()` |
 | Classes with attributes and operations | **UML class** | `entity()` (two compartments) |
-| When things happened | Timeline | `line` + `dot` + `text` |
+| When things happened | **Timeline** | `timeline()` |
 | Who does what, in what order, across teams | **Swimlane** | `swimlane()` |
 | Where things sit on two axes | **Quadrant** | `quadrant()` |
 | How several entities score on the same criteria | **Radar** | `radar()` |
 | One series around a cycle of categories | **Polar** | `polar()` |
 | A cycle whose last step feeds the first | **Loop / flywheel** | `loop()` |
-| That one thing is inside another | Nested | `frame` inside `frame` |
-| Parent → children | Tree · Org chart | `box` + `arrow`, or `graph.js` |
-| Stacked levels of abstraction | Layer stack | stacked `box` / `frame` |
+| That one thing is inside another | Nested | `group_frame` inside `group_frame` |
+| Parent → children | Tree · Org chart | `node` + `ortho`, or `graph.js` |
+| Stacked levels of abstraction | Layer stack | stacked `card` / `band`, or `layout.js` |
 | What two or three sets share | **Venn** | `venn()` |
 | A ranked few over a broad many, or a drop-off | **Pyramid / funnel** | `pyramid(funnel=)` |
 | How much, across categories | **Bar** | `bar()` |
 | Part of a whole, where the sizes are the story | **Treemap** | `treemap()` |
 | A trend, or a change between two states | **Line · slopegraph** | `linechart()` |
-| What runs when, over months | Gantt | `gantt()` |
+| What runs when, over months | Gantt | `rrect(..., measure="width")` bars on a to-scale axis, one row per item |
 | How two measures relate, or three with area | **Scatter · bubble** | `scatter()` |
-| The whole data stack on one cluster | High-level | `frame` + `box` |
-| A multi-actor process with data handoffs | Process | `flow()` |
-| Storage tiers and their quality levels | Medallion | `frame` per tier |
-| Who does what at each pipeline step | Data flow | `box` + `arrow` |
-| Sources → core → consumers | DP integration | `frame` + `box` + `arrow` |
+| The whole data stack on one cluster | High-level | `group_frame` + `card` |
+| A multi-actor process with data handoffs | Process | `row_positions` + `card` + `ortho` |
+| Storage tiers and their quality levels | Medallion | `group_frame` per tier |
+| Who does what at each pipeline step | Data flow | `card` + `ortho` |
+| Sources → core → consumers | DP integration | `group_frame` + `card` + `ortho` |
 | Who may reach what | DP security matrix | `matrix()` |
 | A quantity splitting and merging | **Sankey** | `sankey()` |
 | What causes one observed effect | **Fishbone** | `fishbone()` |
 | What to build, what to buy, what is moving | **Wardley map** | `wardley()` |
-| Work in progress by state | Kanban | columns of `box` |
+| Work in progress by state | Kanban | columns of `card` at `row_positions` |
 | What a person does across an experience | **User journey** | `journey()` |
-| Where software runs | Deployment | `frame` + `box` |
+| Where software runs | Deployment | `group_frame` + `card` |
 | What depends on what, with cycles | Dependency graph | `graph.js` (dagre) |
-| A narrative sliced into releases | Story map | rows of `flow` |
+| A narrative sliced into releases | Story map | rows of `card` at `row_positions` |
 
-Bold names have a dedicated builder. The rest are assembled from primitives
-that already carry the grammar - `frame` for a boundary, `flow` for an ordered
-row, `matrix` for a grid, `gantt` for a schedule - so nothing on the list has
-to be improvised from rectangles.
+Bold names have a dedicated builder. The rest are assembled from svgkit
+primitives that already carry the grammar: `group_frame` for a boundary,
+`row_positions` and `card` for an ordered row, `ortho` for a connector that
+arrives square, `matrix` for a grid, and `rrect(..., measure="width")` for a bar
+whose length is the quantity. `graph.js` and `layout.js` place a tree or a layer
+stack from a JSON spec.
 
 ## The builders
 
@@ -70,6 +72,7 @@ past its budget with the reason in the message.
 | Call | Budget | The rule the budget protects |
 |---|---|---|
 | `swimlane(x, y, w, lanes, phases, cards)` | 5 lanes | The handoff is the content. Past five rows a reader stops tracking who is who. |
+| `timeline(x, y, w, span, marks, bands, unit)` | 9 marks | The axis is to scale. A row of boxes puts as much space between months 4 and 9 as between 15 and 22, and the reader takes the spacing as the claim. |
 | `quadrant(x, y, size, x_axis, y_axis, names, items, focal)` | 12 items | Position is the content, and crowded labels destroy position. |
 | `pyramid(x, y, w, h, layers, funnel=False)` | 6 layers | The narrow end has to hold its own label. |
 | `venn(x, y, r, sets, overlaps)` | 2–3 sets | A fourth circle cannot meet the other three at once. |
@@ -93,7 +96,7 @@ past its budget with the reason in the message.
 ## What the lint knows about these
 
 `audit.py lint` reads the finished SVG, so it judges a built type the same way
-it judges a hand-drawn one. Six checks carry exceptions these types need.
+it judges a hand-drawn one. These checks carry exceptions the types need.
 
 - **`FLOATING-ENDPOINT`** accepts an endpoint on a box edge *or* on a drawn
   line - a sequence message lands on a lifeline. A drawn line is a `<line>`
@@ -118,15 +121,16 @@ it judges a hand-drawn one. Six checks carry exceptions these types need.
 ## Adding a builder
 
 Put it in `scripts/viztypes.py` and add it to `BUILDERS`; svgkit binds the
-dict onto `Canvas` at import. Five things make it fit:
+dict onto `Canvas` at import. What makes it fit:
 
 1. **Take the figure's top-left**, so the type places like any other block.
 2. **Look colour up by theme role** (`c.t["blue"]`), never a literal.
 3. **Raise past the budget**, with the reason - a caller who is over it needs
    to know which rule they are about to break, not that a number was exceeded.
-4. **Name it so it does not shadow a primitive.** `Canvas` already has `line`,
-   `text`, `path`, `dot`, `card`, `node`, `matrix`, `frame`, `box` and `flow`;
-   that is why the line chart is `linechart`.
+4. **Name it after its type, never after a primitive.** `Canvas` already has
+   `line`, `text`, `path`, `dot`, `card`, `node` and `matrix` among others,
+   which is why the line chart is `linechart`; svgkit refuses at import a
+   builder whose name a `Canvas` primitive holds.
 5. **Emit only absolute path commands.** `trim()` and `ink_box()` parse a path
    by command arity, and both know M, L, H, V, Q, S, C, A and Z. A relative
    command is skipped rather than guessed, so a path built from them will not
