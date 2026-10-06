@@ -167,7 +167,8 @@ question waits for step 8. When the company folder does not exist yet, create it
   part-divider lede and nowhere else, -다체 in the body and the judgment cells, noun phrases in
   titles, labels and captions. The description and the lede state the proposer's claim and what
   the client gains, never how the page is organised.
-- Copy never counts items, never sets a bare abbreviation list, and never contains an em dash.
+- Copy never counts items, never sets a bare abbreviation list (`slide-decks`' tell checklist), and
+  never contains an em dash.
 
 **Presentation script**
 
