@@ -6,12 +6,13 @@ many exactly where the finding matters. The widths come from the font's own
 `cmap` and `hmtx` tables, read with the standard library (TrueType and
 OpenType, `cmap` formats 4 and 12).
 
-Which file: the face a check asks for by role (`body`, `bold`) is named by the
-deck's `type.faces.<role>` or the kit vocabulary's `fonts.<role>`, as a font
-file stem (`Pretendard-Regular`), and found among the fonts the server builds
-the deck with (the `fonts=` option of `sg://deck`). A face that cannot be
-found or read is an error: a check that measures with a guess instead reads
-like one that measured.
+Which file: a check asks for a face by role (`sans`, `serif`) and weight
+(`Regular`, `Bold`). The deck's `type.faces.<role>`, else the kit vocabulary's
+`fonts.<role>`, names the family (`Pretendard`), a font file stem or a font
+path, and the file is found among the fonts the server builds the deck with
+(the `fonts=` option of `sg://deck`): the stem `<family>-<weight>` with spaces
+dropped, else the family itself. A face that cannot be found or read is an
+error: a check that measures with a guess instead reads like one that measured.
 """
 from __future__ import annotations
 

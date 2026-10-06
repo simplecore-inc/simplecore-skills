@@ -1,6 +1,9 @@
 """notespeech: numbers and names in speaker notes are written as they are read."""
 import unittest
 
+# fixtures puts the checks and the plugin's scripts on sys.path
+import fixtures  # noqa: F401
+
 import notespeech as ns
 
 NATIVE = ns.native_pattern(ns.COUNTERS)

@@ -43,6 +43,14 @@ A whole run owns its copy folders: a file carrying the title that the run did
 not write is removed. The folder is measured against `submission.pdfLimitMB`
 after every run.
 
+The blind copy's document properties are read once it is written: the pptx's
+`docProps` parts and the PDF's information and XMP packet. A proposer name
+another copy's `identity` declares, found in any of them, fails the run; a
+person or company field that carries anything (`dc:creator`,
+`cp:lastModifiedBy`, `Company`, `Manager`, the PDF's author) is printed, since
+a blind copy names nobody there. Without PyMuPDF the PDF's properties are not
+read, and the run says so.
+
 The build: a deck's `render` command, or `submission.build`, a command
 template over `{render}`, `{copy}` and `{deck}`, which a submission with more
 than one copy must declare, since one render command cannot print two copies.
@@ -61,6 +69,7 @@ import tempfile
 import zipfile
 from argparse import ArgumentParser
 from dataclasses import dataclass
+from html import unescape
 from importlib import import_module
 from io import BytesIO
 from pathlib import Path
@@ -271,12 +280,14 @@ def figure_font(volume: Volume, s: Settings) -> str | None:
 
 
 class Deliverer:
-    """The steps, with the process runner and the PDF post-processing injectable."""
+    """The steps, with the process runner, the PDF post-processing and the PDF property reader injectable."""
 
     def __init__(self, project: Project, s: Settings, run: Runner = subprocess.run,
-                 shrink: Callable[[Path, int, int], int] | None = None, log: Callable[[str], None] = print):
+                 shrink: Callable[[Path, int, int], int] | None = None, log: Callable[[str], None] = print,
+                 properties: Callable[[Path], dict | None] | None = None):
         self.project, self.s, self.run, self.log = project, s, run, log
         self.shrink = shrink or shrink_images
+        self.properties = properties or pdf_properties
 
     def _run(self, argv: list[str] | str, **kw: Any) -> subprocess.CompletedProcess:
         try:
@@ -427,6 +438,70 @@ def shrink_images(pdf: Path, dpi: int, quality: int) -> int:
     return pages
 
 
+# The fields of a pptx's document properties that name a person or a company.
+PERSON_FIELDS = re.compile(r"<(dc:creator|cp:lastModifiedBy|Company|Manager)>([^<]*)</\1>")
+
+
+def pptx_properties(pptx: Path) -> dict[str, str]:
+    """{part: xml} for the document-property parts of a pptx (`docProps/*.xml`)."""
+    with zipfile.ZipFile(pptx) as z:
+        return {n: z.read(n).decode("utf-8", "replace") for n in z.namelist()
+                if n.startswith("docProps/") and n.endswith(".xml")}
+
+
+def pdf_properties(pdf: Path) -> dict[str, str] | None:
+    """{field: value} of a PDF's information and its XMP packet, None when PyMuPDF is missing."""
+    try:
+        fitz = import_module("fitz")
+    except ImportError:
+        return None
+    try:
+        doc = fitz.open(pdf)
+    except fitz.FileDataError as e:
+        raise DeliveryError(f"{pdf.name} cannot be read to check its properties: {e}") from e
+    try:
+        out = {k: v for k, v in (doc.metadata or {}).items() if isinstance(v, str) and v}
+        xmp = doc.get_xml_metadata()
+        if xmp:
+            out["xmp"] = xmp
+    finally:
+        doc.close()
+    return out
+
+
+def proposer_names(project: Project) -> list[str]:
+    """The proposer names the copies other than the blind one print (`identity.<copy>.name`)."""
+    sub = project.data.get("submission") or {}
+    blind = sub.get("blindCopy")
+    out: list[str] = []
+    for copy, fields in (sub.get("identity") or {}).items():
+        name = str(fields.get("name") or "").strip() if isinstance(fields, dict) else ""
+        if copy != blind and name and name not in out:
+            out.append(name)
+    return out
+
+
+def blind_properties(volume: Volume, names: list[str],
+                     read_pdf: Callable[[Path], dict | None]) -> tuple[list[str], list[str]]:
+    """(a proposer name the blind copy's properties carry, a person or company field carrying anything)."""
+    found, notes = [], []
+    for part, xml in pptx_properties(volume.pptx).items():
+        text = unescape(xml)
+        found += [f"{volume.pptx.name} {part} carries 「{name}」" for name in names if name in text]
+        notes += [f"{volume.pptx.name} {part} {field} 「{unescape(value.strip())}」"
+                  for field, value in PERSON_FIELDS.findall(xml) if value.strip()]
+    props = read_pdf(volume.pdf)
+    if props is None:
+        notes.append(f"{volume.pdf.name}: the PDF's properties were not read (PyMuPDF is missing)")
+        return found, notes
+    for key, value in props.items():
+        found += [f"{volume.pdf.name} {key} carries 「{name}」" for name in names if name in value]
+    author = str(props.get("author", "")).strip()
+    if author:
+        notes.append(f"{volume.pdf.name} author 「{author}」")
+    return found, notes
+
+
 def stale_files(project: Project, written: list[Volume], whole: bool) -> list[Path]:
     """Deliverables this run supersedes."""
     sub = project.data["submission"]
@@ -492,7 +567,16 @@ def deliver(project: Project, args: Any, d: Deliverer) -> int:
     for p in stale_files(project, volumes, whole=not args.volume):
         p.unlink()
         d.log(f"removed {p.relative_to(project.root)}")
-    return 0 if within_limits(project, d.log) else 1
+    blind, names, leaks = sub.get("blindCopy"), proposer_names(project), []
+    for v in volumes:
+        if blind and v.copy == blind:
+            found, notes = blind_properties(v, names, d.properties)
+            leaks += found
+            for note in notes:
+                d.log(f"  ⚠ blind copy: {note}; a blind copy names nobody in its properties")
+    for line in leaks:
+        d.log(f"  ✖ blind copy: {line}, the proposer the blind evaluation must not see")
+    return 0 if within_limits(project, d.log) and not leaks else 1
 
 
 def main(argv: list[str] | None = None) -> int:

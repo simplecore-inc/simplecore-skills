@@ -54,14 +54,16 @@ deck through the server and the kit vocabulary, so none of them reads page files
 | absolute paths | `abspath`, in pre-flight, because the deck builds and renders on the machine whose home directory is in the path and nowhere else | both |
 | equal row height | `rowheight`, over the built `.pptx` | both |
 | a narrow column wrapping inside a word (「학 / 력」, 「R / HEL」) or stranding a scrap of a short label (「전 / 구간」) | `wordbreak`, the renderer's wrap replayed over the built `.pptx` with the server's measurer | both |
-| renderer version | `renderer`, first in the after group and in front of the render | both |
+| renderer version | `renderer`, in the pre-flight group and first in the after group, so the version is read before the render and again after it | both |
 | catalogue | the kit: its `<Template kind doc use>` declarations, its generated components document and the tool's library search. A deck on templates of its own writes a catalogue check under `checks.local` | both |
 | list rows, typed bullets, an index in a label column, a page that draws its own stack | `listrow` | both |
-| label column: a caveat row in one slot beside a key row, starting its value left of the key-row values above it | no shared check; `checks.local` | slides |
+| label column: a caveat row in one slot beside a key row, starting its value left of the key-row values above it | no shared check; `checks.local` | both |
+| label/value runs: two label/value components in one run, so the value column steps sideways mid-list | no shared check; `checks.local` (`listrow` reads an index in a label column, not the mix) | both |
 | page shape | `pageshape`. Its simulate mode, which recommended a shape from one deck's templates, is not shared: a kit needs its own recommendation table | both |
 | rhythm and the per-part component census | `rhythm` | document |
-| a figure box the size of the picture it prints | `figbox` | document |
+| a figure box the size of the picture it prints | `figbox` | both |
 | a body page ending well above its folio | `foothole` | document |
+| foot-band values: the ink height of every rendered foot band, where a value that wraps prints over the band's edge | no shared check; `checks.local` (`foothole` measures the paper above the band, not the band's own values) | both |
 | a column ending well above its neighbour, or a hole inside a column | `colgap` | both |
 | a speaker note a voice would misread: a digit joined to a native-numeral counter, a Latin letter | `notespeech` | slides |
 | figure numbering, and a figure drawn and never placed | `fignum`, the second with `checks.fignum.idle` | document |
@@ -86,14 +88,15 @@ deck through the server and the kit vocabulary, so none of them reads page files
 | table totals and uniform columns | `coltotal`, `samecol` | both |
 | page budget and volume | `budget`, `volume` | document |
 | shared facts and scoring coverage | `sharedvalues`, `evaluation` | document |
-| reference pages: a slide deck's head cites a document page that moved | no shared check; `checks.local` | slides |
+| cross-deck citation: a slide deck's head cites a document chapter or section the document deck no longer has | no shared check; `checks.local` | slides |
 | plan coverage: an evaluation item or requirement id a slide deck's plan does not know | no shared check; `checks.local`. A document deck's coverage of the scoring table is `evaluation` | slides |
 | sequence census, verdict, density | no shared check; `checks.local`, declared under `checks.census`, `checks.verdict`, `checks.density` | slides |
 | fill and column fill | on a document deck, `grade` measures both on the server's layout; a slide deck's preview-image fill and column fill (`checks.colfill`) are `checks.local` | both |
-| figure snapshot | no shared check; `checks.local` (`figures.upstream`) | slides |
+| figure snapshot: a document figure copied into the slide deck's own figure directories, where [figures.md](figures.md#a-document-figure-on-a-slide-is-redrawn-never-reused) expects none | no shared check; `checks.local` (`figures.upstream`) | slides |
+| reproduced volume: one picture per body page at the offset and extent measured from the source, and a page count equal to the front matter plus the source's pages | no shared check; `checks.local` | document |
 | capture floor: a screen capture placed so small its text falls under the figure floor | no shared check; `checks.local`. A project that reads a capture as evidence a screen exists, not as text the room reads, leaves it out and says so in the deck's instructions | slides |
-| figure verify | the figure checks of `simplecore:svg-diagrams`, run by the `figures.verify` command | both |
-| Korean audit | `simplecore:korean-docs` over the paths in `korean.audit`, wired into the build | both |
+| figure verify | the figure checks of `simplecore:svg-diagrams` (`scripts/docfigures/verify.py`), run by the `figures.verify` command | both |
+| Korean audit | `simplecore:korean-docs` over the paths in `korean.audit`, wired into the project's build | both |
 
 **A line count is measured by wrapping, never by dividing widths.** A generator that
 asks how tall a cell or a paragraph will be is tempted to divide the run's total
@@ -153,11 +156,13 @@ everything before the checks.
 **The Korean audit belongs in the build, not in a habit.** It is the one check a
 person has to remember to run, so it is the one that goes stale: a deck reported a
 clean audit, took an edit afterwards that collided with the glossary, and carried the
-error through a whole review round. The build runs the audit over the paths in
+error through a whole review round. The project's build runs the audit over the paths in
 `korean.audit` before compiling and fails on an error, reading the list from the
-declaration so the build and the manual command cannot disagree. The declared paths carry
-globs, and a build that spawns the audit without a shell expands them itself rather than
-handing the audit a literal `*`.
+declaration so the build and the manual command cannot disagree; no shared script runs it.
+The declared paths carry globs, and a build that spawns the audit without a shell expands
+them itself rather than handing the audit a literal `*`. A directory is read as
+`simplecore:korean-docs` expands one, which decides whether the deck's own source files are
+among what it reads.
 
 A post-layout diagnostic (an overflow past the parent, a horizontal text overflow) may
 carry no source line, so the build prints its node path and measured context (box width,
@@ -193,8 +198,8 @@ saved.
 | `mdorder` | `slide-decks/scripts/checks/` | the import order and every body page's declared manuscript | a body page's declared source comes before the source of the page in front of it | `manuscript.declaration` |
 | `pageshape` | `slide-decks/scripts/checks/` | the kind each component declares on its `<Template>`, and the source tree for column slots | a body page has no shape and no table, a list outruns its shapes, a list has one row, or a numbered sequence is dealt evenly into the columns of a column layout | vocabulary `kinds`, `roles`, `checks.pageshape` (optional) |
 | `rhythm` | `slide-decks/scripts/checks/` | each body page's layout family, read from where its figure stands, and the content components per part | the same family three pages in a row, a side figure on the same side twice, the same family with the same dominant component twice; a plain stack of full-width blocks (no columns, side figure, pair or rail) three pages in a row or on more than half a part; one component past a share of a part's uses, or fewer kinds than the part has pages | vocabulary `kinds`, `roles`, `checks.rhythm` (optional) |
-| `figbox` | `slide-decks/scripts/checks/` | every figure use whose `src` is an `.svg` on a declared board | a box whose `w` or `h` differs, past `tolerance` (1.5px), from the placed width × `placeScale` and the viewBox height scaled the same, or, for a figure whose box at placeScale does not fit its slot (`figures.slots`), from the same × `oversizeScale`; a file named in `exceptions` is skipped | `figures.boards`, `kind`, `figures.placeScale`, `figures.oversizeScale`, `figures.slots`, `dir`, `checks.figbox.tolerance` · `exceptions` (optional) |
-| `foothole` | `slide-decks/scripts/checks/` | every body page PNG of the full render (`previews`) | an empty band above the foot band taller than `max` (0.08 of the page height); judged pages retire in `foothole.json` with the hole as measure | `previews`, `checks.foothole` (optional: `masters`, `footBand`, `max`, `ink`, `pattern`) |
+| `figbox` | `slide-decks/scripts/checks/` | every figure use (`roles.figures`) whose `src` is an `.svg` or a `.png` capture | a box whose `w` or `h` differs, past `tolerance` (1.5px), from the placed width × `placeScale` and the viewBox height scaled the same (any placement of the board: `520` or `520-pair`), or, for a figure whose box at placeScale does not fit its slot (`figures.slots`), from the same × `oversizeScale`; a placed file that does not exist, an SVG with no viewBox or on no declared board, a capture it cannot read. A file named in `exceptions` is skipped, a use with no `w` and `h` is counted as not measured, and the summary names how many figures were measured | `figures.boards`, `kind`, `figures.placeScale`, `figures.oversizeScale`, `figures.slots`, `dir`, `checks.figbox.tolerance` · `exceptions` (optional) |
+| `foothole` | `slide-decks/scripts/checks/` | the PNG of every page the reader counts as body or annex (`pages.masters`, or the `checks.foothole.masters` regex) in the full render (`previews`) | an empty band above the foot band taller than `max` (0.08 of the page height), or no ink above it at all; judged pages retire in `foothole.json` with the hole as measure. A deck on which no page is measured exits 2 | `previews`, `pages`, `checks.foothole` (optional: `masters`, `footBand`, `footBands`, `max`, `ink`, `pattern`) |
 | `colgap` | `slide-decks/scripts/checks/` | every slide's layout tree (`slide_tree`) | in a row of two or more boxes at least `minColumn` (0.2) of the page wide on one line, a column whose drawn content ends more than `max` (0.08 of the page height) above the lowest column's (`bottom`), an uncovered run taller than `max` inside a column (`hole`), or every column stopping more than `max` above the box the row was given (`foot`); judged slides retire in `colgap.json` with the gap as measure | `checks.colgap` (optional: `masters`, `max`, `minColumn`) |
 | `notespeech` | `slide-decks/scripts/checks/` | every slide's speaker notes (`sg://deck/content`) | a digit joined to a counter read with a native Korean numeral (`11대`, `6명`, `4시간`; a ratio `1 대 3` and `개월` are exempt) or any Latin letter, both of which a voice reads wrongly | `checks.notespeech` (optional: `counters`, `latin`) |
 | `grade` | `slide-decks/scripts/checks/` | every body page's composition and its fill on the server's layout (`sg://slide/{n}/space`), and the findings of the checks it folds in | a page still has a reason, in tiers: a defect, a page to look at, or a judgement recorded with its reason (printed, never failing) | `grade.tableOfRecord`, `checks.grade` (optional), `checks.baselines` |
@@ -216,12 +221,12 @@ saved.
 | `proof` | `slide-decks/scripts/checks/` | the deck's source files and the evidence table | a cited item is not defined, a defined item is cited by no page (pending while every page listed for it is in a chapter not yet typeset), a cell cites by number without the tag, or pages cite while the table is missing. A count (「증빙 3건」) and a range (「증빙 1~9」) are not citations | `evidence`, `pages.numerals` with `evidence.pagesColumn` |
 | `coltotal` | `slide-decks/scripts/checks/` | every printed table, a table continued onto the next page read as one | a total row's number differs from the sum of the numeric column above it | `checks.coltotal` (optional) |
 | `samecol` | `slide-decks/scripts/checks/` | every printed table, continued tables joined | every body cell of a column holds one value, judged over the whole table so a column that varies on its first page is not reported for its last; a retired column whose value changes fires again | `checks.baselines`, `checks.samecol` (optional) |
-| `deliver` | `slide-decks/scripts/checks/` | `submission`, each deck's `output`, `render`, `previews`, `page.w`, `deliverable` | not a check: builds and writes the deliverables; exit 1 when the folder passes `submission.pdfLimitMB`, 2 when a step cannot be completed | `submission` |
-| `reqid` | `proposal-writing/scripts/` | the deck's source files (comments stripped) and every manuscript file | an id the digest's headings do not issue is cited, a range included (`PER-001~008` over a never-issued `PER-007`); a sentence matching `requirements.absence` may name a missing id | `requirements`, `manuscript` |
+| `deliver` | `slide-decks/scripts/checks/` | `submission`, each deck's `output`, `render`, `previews`, `page.w`, `deliverable` | not a check: builds and writes the deliverables; exit 1 when the folder passes `submission.pdfLimitMB` or the blind copy's document properties (the pptx's `docProps`, the PDF's information and XMP) carry a proposer name another copy's `identity` declares, 2 when a step cannot be completed | `submission` |
+| `reqid` | `proposal-writing/scripts/` | the deck's source files (comments stripped) and every manuscript file; with `--manuscript-only` the manuscript alone | an id the digest's headings do not issue is cited, a range included (`PER-001~008` over a never-issued `PER-007`); a sentence matching `requirements.absence` may name a missing id | `requirements`, `manuscript` |
 | `rfpwords` | `proposal-writing/scripts/` | each requirement's quoted detail and the manuscript (or the deck with `--against-deck`) | a noun the requirement names is written nowhere, unless retired with a reason | `requirements`, `checks.rfpwords` (optional), `checks.baselines` |
 | `rfpcite` | `proposal-writing/scripts/` | the transcribed tender and the manuscript (and `rfp.scan`) | a cited tender chapter or section does not exist, or a cited section name is in another chapter; a name in no chapter is a warning | `rfp.dir` |
-| `annexref` | `proposal-writing/scripts/` | the deck's sources, the manuscript outside the annex, and the files that define each kind of annex item | a reference names an annex item its definition does not carry | `annex.references` |
-| `evaluation` | `proposal-writing/scripts/` | the scoring table, the lookup table (Markdown or as the deck prints it), the deck's folios and heads, and an optional requirement lookup | a scoring item or element has no row, a row answers nothing scored, rows run out of scoring order, a printed folio differs from the page id beside it, a head names an unscored item or one whose row does not cite the page, a requirement row is unissued, repeated, misnamed, or cites a page that does not print the id | `evaluation.scoring`, `evaluation.lookup` |
+| `annexref` | `proposal-writing/scripts/` | the deck's sources, the manuscript outside the annex, and the files that define each kind of annex item; with `--manuscript-only` no deck | a reference names an annex item its definition does not carry | `annex.references` |
+| `evaluation` | `proposal-writing/scripts/` | the scoring table, the lookup table (Markdown or as the deck prints it), the deck's folios and heads, and an optional requirement lookup; with `--manuscript-only` the rows alone | a scoring item or element has no row, a row answers nothing scored, rows run out of scoring order, a printed folio differs from the page id beside it, a head names an unscored item or one whose row does not cite the page, a requirement row is unissued, repeated, misnamed, or cites a page that does not print the id | `evaluation.scoring`, `evaluation.lookup` |
 | `budget` | `proposal-writing/scripts/` | the deck's folios | more numbered pages than `budget.maxNumbered`; the finding cites `budget.clause` | `budget.maxNumbered`, `pages` |
 | `volume` | `proposal-writing/scripts/` | every printed manuscript page, its figure links and their SVG widths | a printed page holds more than its capacity (`budget.charsPerPage.figure` with a full-width figure, else `.text`) times `budget.pageTolerance`; a part prints more pages than `budget.parts` gives it; a figure link resolves to no file | `manuscript`, `budget.charsPerPage` |
 | `mdtwice` | `proposal-writing/scripts/` | the printed prose of every manuscript file | two sentences in different files share at least `threshold` of the shorter one's words, unless retired with a reason | `manuscript`, `checks.mdtwice` (optional), `checks.baselines` |
@@ -309,7 +314,7 @@ node drawn from a JSON item list is routed by the server to the list item (`setF
 the item's value is then a string (`"7"` where the source held `7`). Writing the page file instead
 would put the disk ahead of a model the application is still holding.
 
-**Where two forks differed, the default is the reference bid's behaviour and the other is a key.**
+**Each opt-in behaviour is off by default, and a key turns it on.**
 `twice` compares whole printed strings of 42 characters or more; `checks.twice.sentences` splits
 them into sentences first and is used with a lower `minLen` (28 found six repeated instructions of
 31 to 35 characters in one deck). `echo` reads the explanation, captions and prose; `checks.echo.cards`
@@ -382,6 +387,16 @@ Exit codes are 0 clean, 1 findings, 2 a check that could not reach its input (a 
 server holding the deck, a deck that contradicts the declaration). Every shared check prints one
 line saying what it read and what it found.
 
+**The runner passes a check `--deck` and nothing else**, so a check's own options are given by
+running its script directly from inside the project (`python3 <skills>/slide-decks/scripts/checks/<name>.py`
+or `<skills>/proposal-writing/scripts/<name>.py`): `--bless` on a check that keeps a baseline,
+`contents --write`, `figtext --condense`, `grade --queue` · `--page <id>` · `--json <file>`,
+`rfpwords --against-deck`, `mdtwice --same`, `claims --dry-run`, `layout --slides <range>`,
+`deliver --copy` · `--volume` · `--no-build` · `--raster` · `--scale`, and `--help` on any of them.
+**Before the deck exists**, while a bid writes its manuscript, `reqid`, `annexref` and `evaluation`
+run that way with `--manuscript-only`, which opens no deck server; every other check reads the deck
+and waits for it.
+
 A shared check is added with tests that build its broken form and its fixed form
 (`scripts/bidkit/tests/`, `slide-decks/scripts/checks/tests/`,
 `proposal-writing/scripts/tests/`, standard-library `unittest`), and fire on the first and
@@ -406,13 +421,14 @@ Baselines live in the directory `checks.baselines` names, one `<check>.json` per
 never beside a check's script. An entry is `"finding": "reason"`, or
 `{"reason": …, "measure": …}` when the judgement holds only at one measure (an overlap
 ratio, a set of values); `""` is retired with the reason still owed and fails. A legacy file
-(a list of findings, a bare measure, an object without a reason) loads as grandfathered
-entries that stay retired while their measure is unchanged. `--bless` rewrites the file
+(a list of findings, a bare measure, an object without a reason, or an object carrying its
+reason under 「사유」 and its measure under 「값」) loads as grandfathered entries that stay
+retired while their measure is unchanged. `--bless` rewrites the file
 with today's findings, keeps the reason of every entry found unchanged, writes the rest
 blank, and prints the ones that still owe a reason. The shared checks that keep a baseline
 take `--bless`: `period`, `dangle`, `markecho`, `echo`, `twice`, `samefact`, `figtext`,
-`carry`, `fignum`, `secref`, `samecol`, `finetype`, `wordbreak`, `grade`, `mdtwice` and `rfpwords`;
-`generated` keeps its record of digests in the same directory.
+`carry`, `fignum`, `secref`, `samecol`, `finetype`, `wordbreak`, `grade`, `colgap`, `foothole`,
+`mdtwice` and `rfpwords`; `generated` keeps its record of digests in the same directory.
 
 ## A check that cannot reach its input says so instead of passing
 
@@ -507,14 +523,16 @@ one pixel.
 
 The order is fixed:
 
-1. **Pre-flight**, inside the build: `abspath`, `typefloor`, `contents`, `chapter_pages`, the
-   source rules the project declares, the Korean audit, and on a slide deck the project's
-   reference pages, plan coverage and figure snapshot. A failure stops the build.
-2. **The render**, all pages. Error 0 and warning 0 is the bar.
+1. **Pre-flight**, inside the build: `abspath`, `renderer`, `typefloor`, `contents`,
+   `chapter_pages`, the source rules the project declares, the Korean audit, and on a slide deck
+   the project's cross-deck citation, plan coverage and figure snapshot checks. A failure stops
+   the build.
+2. **The render**, all pages. Error 0, and every warning accounted for as SKILL.md (「The loop is
+   not optional」) defines it, is the bar.
 3. **`layout`**, the deck tool's own checks with every kind named, ink and package included,
    and the deck's declared rules.
 4. **The after group**: `renderer` first, then `rowheight` and every other declared check; on a
-   slide deck the project's sequence census, density, verdict and column fill.
+   slide deck the project's own sequence census, density, verdict and column fill checks.
 5. **Figure verify**, over the figure directory.
 6. **The delivery**, `check.py run deliver`, when the deliverables are due.
 

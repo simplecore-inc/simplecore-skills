@@ -22,12 +22,15 @@ PAGE = ('<svg xmlns="http://www.w3.org/2000/svg"><text>본문</text><image x="10
         f'href="data:image/svg+xml;base64,{base64.b64encode(FIGURE.encode()).decode()}"/></svg>')
 
 
-def pptx(path: Path, slides: int) -> None:
+def pptx(path: Path, slides: int, creator: str = "", company: str = "") -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with zipfile.ZipFile(path, "w") as z:
         for i in range(1, slides + 1):
             z.writestr(f"ppt/slides/slide{i}.xml", "<p:sld/>")
         z.writestr("ppt/presentation.xml", "<p:presentation/>")
+        z.writestr("docProps/core.xml", f"<cp:coreProperties><dc:title>사업 제안서</dc:title>"
+                                        f"<dc:creator>{creator}</dc:creator></cp:coreProperties>")
+        z.writestr("docProps/app.xml", f"<Properties><Company>{company}</Company></Properties>")
 
 
 class FakeRunner:
@@ -84,7 +87,8 @@ class DeliverTests(unittest.TestCase):
                            "build": "{render} --copy {copy}", "pdfLimitMB": {"file": 50, "total": 180},
                            "pdf": {"engine": "slideglance", "imageDpi": 150, "jpegQuality": 88},
                            "copies": {"평가본": {"volumes": ["proposal"]},
-                                      "원본": {"volumes": ["proposal", "presentation"]}}}}
+                                      "원본": {"volumes": ["proposal", "presentation"]}},
+                           "identity": {"원본": {"name": "(주)가나다정보"}, "평가본": {"name": "\u00a0"}}}}
         self.write()
 
     def tearDown(self):
@@ -96,13 +100,52 @@ class DeliverTests(unittest.TestCase):
                                                                 encoding="utf-8")
         self.project = Project.load(self.root)
 
-    def run_delivery(self, runner=None, pages=2, raster=False, **kw):
+    def run_delivery(self, runner=None, pages=2, raster=False, pdf_props=None, **kw):
         runner = runner or FakeRunner()
         log = []
         d = deliver.Deliverer(self.project, deliver.settings(self.project, raster), runner,
-                              shrink=lambda pdf, dpi, q: pages, log=log.append)
+                              shrink=lambda pdf, dpi, q: pages, log=log.append,
+                              properties=pdf_props or (lambda pdf: {"producer": "rsvg"}))
         code = deliver.deliver(self.project, args(**kw), d)
         return code, runner, log
+
+    def test_the_proposer_s_name_in_the_blind_copy_s_properties_fails(self):
+        pptx(self.root / "proposal" / "out" / "main.pptx", 2, creator="(주)가나다정보")
+        code, _, log = self.run_delivery()
+        self.assertEqual(code, 1)
+        self.assertTrue(any("✖ blind copy: 사업_제안서(평가본_비계량).pptx docProps/core.xml carries 「(주)가나다정보」"
+                            in line for line in log), log)
+
+    def test_the_proposer_s_name_in_the_blind_pdf_fails_and_the_original_is_not_read(self):
+        def props(pdf):
+            return {"author": "(주)가나다정보"} if "평가본" in pdf.name else {"author": "anyone"}
+        code, _, log = self.run_delivery(pdf_props=props)
+        self.assertEqual(code, 1)
+        self.assertTrue(any("(평가본_비계량).pdf author carries 「(주)가나다정보」" in line for line in log), log)
+        self.assertFalse(any("원본" in line and "blind copy" in line for line in log), log)
+
+    def test_a_person_field_that_names_no_proposer_is_printed_and_passes(self):
+        pptx(self.root / "proposal" / "out" / "main.pptx", 2, creator="편집자", company="")
+        code, _, log = self.run_delivery()
+        self.assertEqual(code, 0)
+        self.assertTrue(any("⚠ blind copy:" in line and "dc:creator 「편집자」" in line for line in log), log)
+
+    def test_unread_pdf_properties_are_said_so(self):
+        code, _, log = self.run_delivery(pdf_props=lambda pdf: None)
+        self.assertEqual(code, 0)
+        self.assertTrue(any("PDF's properties were not read" in line for line in log), log)
+
+    def test_the_real_reader_reads_a_pdf_s_author(self):
+        if importlib.util.find_spec("fitz") is None:
+            self.skipTest("PyMuPDF is not installed")
+        import fitz
+        pdf = self.root / "a.pdf"
+        doc = fitz.open()
+        doc.new_page()
+        doc.set_metadata({"author": "(주)가나다정보", "title": "제안서"})
+        doc.save(pdf)
+        doc.close()
+        self.assertEqual(deliver.pdf_properties(pdf).get("author"), "(주)가나다정보")
 
     def test_every_copy_is_written_and_the_blind_copy_is_built_last(self):
         code, runner, _ = self.run_delivery()
@@ -188,12 +231,12 @@ class VersionedTests(unittest.TestCase):
         pptx(d / "out" / "main.pptx", 2)
         (self.root / "tools").mkdir()
         (self.root / "tools" / "version.txt").write_text("0.2\n", encoding="utf-8")
-        for old in ("[KDN] 제안서 v0.1.pdf", "[KDN] 제안서 v0.1.pptx", "제안서.pdf", "[KDN] 다른 문서 v0.1.pdf"):
+        for old in ("[발주기관] 제안서 v0.1.pdf", "[발주기관] 제안서 v0.1.pptx", "제안서.pdf", "[발주기관] 다른 문서 v0.1.pdf"):
             (self.root / old).write_bytes(b"old")
         config = {"decks": {"proposal": {"dir": "deck", "kind": "document", "render": "render deck",
                                          "output": "deck/out/main.pptx", "previews": "deck/out",
                                          "page": {"w": 794}, "tool": {"binary": "slideglance"}}},
-                  "submission": {"versioned": {"deck": "proposal", "name": "[KDN] 제안서 v{version}",
+                  "submission": {"versioned": {"deck": "proposal", "name": "[발주기관] 제안서 v{version}",
                                                "versionFile": "tools/version.txt", "dir": ".",
                                                "legacy": ["제안서.pdf"]},
                                  "pdf": {"imageDpi": 150, "jpegQuality": 88}}}
@@ -210,7 +253,7 @@ class VersionedTests(unittest.TestCase):
                               shrink=lambda pdf, dpi, q: 2, log=lambda s: None)
         self.assertEqual(deliver.deliver(self.project, args(), d), 0)
         names = sorted(p.name for p in self.root.iterdir() if p.is_file())
-        self.assertEqual(names, ["[KDN] 다른 문서 v0.1.pdf", "[KDN] 제안서 v0.2.pdf", "[KDN] 제안서 v0.2.pptx"])
+        self.assertEqual(names, ["[발주기관] 다른 문서 v0.1.pdf", "[발주기관] 제안서 v0.2.pdf", "[발주기관] 제안서 v0.2.pptx"])
 
     def test_version_file_must_hold_a_version(self):
         (self.root / "tools" / "version.txt").write_text("next one\n", encoding="utf-8")

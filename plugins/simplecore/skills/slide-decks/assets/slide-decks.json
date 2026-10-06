@@ -2,6 +2,8 @@
   // The decks this repository typesets, read by the slide-decks skill and by each deck's
   // own checks. Paths are relative to the repository root. Edit as text:
   // a JSON round-trip drops these comments and the per-key layout.
+  // A value in <angle brackets> is this bid's to fill; a check that reads one refuses
+  // to run on it rather than printing another tender's value.
   "decks": {
     "proposal": {
       "dir": "pptx",
@@ -35,9 +37,10 @@
       "rfp": { "dir": "docs/rfp/md" },
       // the evidence notation; null when the deck cites no evidence items
       "evidence": { "tag": "증빙", "table": "proposal/00-서식/07-평가항목-조견표.md", "pagesColumn": -1 },
-      // the numbered-page ceiling, the tender clause it comes from, and the capacity
-      // estimate the volume check reads
-      "budget": { "maxNumbered": 100, "clause": "제안요청서 「나. 서류 제출방법 3)」", "plan": "docs/page-plan.md",
+      // the tender clause the page limit comes from, and the capacity estimate the volume
+      // check reads. The limit itself is this tender's: add "maxNumbered": <the page limit>
+      // here, and until it is declared the budget check exits 2 naming it.
+      "budget": { "clause": "<제안요청서의 쪽수 제한 조항>", "plan": "docs/page-plan.md",
                   "charsPerPage": { "figure": 650, "text": 1150 }, "pageTolerance": 1.1 },
       // the tender's scoring table and the proposal's lookup table as the deck prints it
       "evaluation": { "scoring": { "file": "docs/rfp/md/05-평가.md", "section": "## 평가 항목",
@@ -54,8 +57,10 @@
       "figures": {
         "sources": ["proposal/diagrams"],
         "generator": "tools/diagrams",
-        "verify": "tools/diagrams/verify",
-        // board width in drawing units -> placed width in page px
+        // the figure checks of the svg-diagrams skill, over the project's .claude/document-figures.json
+        "verify": "python3 <svg-diagrams>/scripts/docfigures/verify.py",
+        // board width in drawing units -> placed width in page px; a -pair entry is the
+        // same board's second placement
         "boards": { "1200": 682, "520": 300, "520-pair": 327 },
         // the printed figure number: the body series and an annex's own series
         "numbering": { "caption": "그림 {part}-{n}", "annex": "그림 별첨{a}-{n}" }
@@ -64,17 +69,17 @@
       // <local>/<name>.py first, then to the shared check of that name. The delivery
       // is run on demand (check.py run deliver), never declared in a phase.
       "checks": {
-        "preflight": ["abspath", "typefloor", "contents", "chapter_pages", "evaluation"],
+        "preflight": ["abspath", "renderer", "typefloor", "contents", "chapter_pages", "evaluation"],
         "after": ["renderer", "layout", "rowheight", "finetype", "pageshape", "rhythm", "grade",
                   "listrow", "period", "dangle", "naming", "markecho", "echo", "twice", "samefact",
                   "figures", "figtext", "parity", "carry", "mdorder", "fignum", "secref", "reqid",
                   "reqbadge", "rfpwords", "rfpcite", "proof", "coltotal", "samecol", "budget",
                   "volume", "mdtwice"],
-        "local": "tools/deck",
-        // one <check>.json per check: {finding: reason}
+        // one <check>.json per check: {finding: reason}; create the directory before the
+        // first run, since a check that keeps a baseline exits 2 without it. The project's
+        // own checks, once it writes one, go in a directory named by "local", with every
+        // script there declared in a phase or listed in "excluded" with its reason.
         "baselines": "tools/deck/baselines",
-        // a local script that is not a check, and why
-        "excluded": { "deckio": "the reader the local checks import" },
         // options a deck sets away from the shared defaults
         "twice": { "sentences": true, "minLen": 28 },
         "abspath": { "generated": ["pptx/out/**"] }
@@ -89,74 +94,43 @@
       "kind": "slides",
       "tool": { "name": "slideglance", "skill": "slideglance-pptx", "server": "slideglance-presentation" },
       "page": { "w": 1123, "h": 794, "textBlock": 1027 },
-      // the manuscript a slide deck is built from: the presentation plan, one section per slide
-      "plan": "proposal/11-요약서/01-20분-발표스크립트-슬라이드계획.md",
-      // the document deck whose sections the running head cites (「본 제안서 Ⅳ-2 · 57~101쪽」)
+      // The sizes a slide deck is set at are settled by reading it on the screen it is
+      // shown on, then declared here as "type" (floor, heading, codeLabel). The type-floor
+      // check joins pre-flight once the deck also declares its "vocabulary" and "pages".
+      // the plan a slide deck is built from: one section per slide, with its script
+      "plan": "proposal/presentation-plan.md",
+      // the document deck whose chapters and sections the running head cites by name
+      // (「본 제안서 Ⅳ-2 기능 요구사항 · <절 이름>」), never by page
       "references": { "deck": "proposal" },
       "instructions": ["pptx-presentation/AGENTS.md", "pptx-presentation/README.md"],
       "render": "cd pptx-presentation && npm run render",
       "output": "pptx-presentation/out/제안발표.pptx",
       "previews": "pptx-presentation/out/png",
+      "renderer": { "command": "slideglance", "minVersion": "0.2.0" },
       "deliverable": { "label": "요약서", "pdfScale": 1.0 },
       "screens": "pptx-presentation/assets/screens",
       "figures": {
-        // The reused figures are a snapshot this deck owns, not a live read of
-        // the document deck's directory: the figure snapshot check is the only
-        // writer and reports the drift when it is not run.
-        "sources": ["<slides.dir>/assets/figures", "<slides.dir>/diagrams"],
-        "upstream": "<document.dir-relative figure directory>",
+        // A document figure is redrawn for the slide, never placed as it is, so the
+        // sources are this deck's own directories only.
+        "sources": ["pptx-presentation/diagrams"],
         "generator": "pptx-presentation/tools/diagrams",
-        "verify": "pptx-presentation/tools/diagrams/verify",
-        // One scale for every board so type inside a diagram is the same size on
-        // every page. A slide deck takes no width variants: a chapter that wants a
-        // figure wider is asking for a different board.
-        "scale": 0.5666,
-        "boards": { "1800": 1020, "1200": 680, "880": 499, "520": 295 }
+        "verify": "python3 <svg-diagrams>/scripts/docfigures/verify.py --config <the slide figures' document-figures.json>",
+        // One scale for every board so type inside a diagram is the same size on every
+        // slide: the scale prints the ladder's smallest step at the slide's body size (an
+        // 11px body over a 15-unit ladder minimum is 0.7333), and each board is a placed
+        // width divided by it. A slide deck takes no width variants: a chapter that wants
+        // a figure wider is asking for a different board.
+        "scale": 0.7333,
+        "boards": { "1400": 1027, "873": 640, "640": 469, "378": 277 }
       },
-      // refpages, coverage, census, density, verdict and colfill are this deck's own
-      // checks under checks.local; no shared check holds those properties
+      // A slide deck's cross-deck citation, plan coverage, sequence census, density,
+      // verdict and column fill are the project's own checks (references/checks.md): when
+      // the project writes them, it declares "local", adds them to a phase, and declares
+      // the keys they read (references/config.md).
       "checks": {
-        "preflight": ["abspath", "typefloor", "refpages", "coverage"],
-        "after": ["rowheight", "census", "density", "verdict", "colfill"],
-        "local": "pptx-presentation/tools",
-        "baselines": "pptx-presentation/tools/baselines",
-        "census": { "sequences": ["process-strip", "flow-row", "stage-strip", "flow-down"],
-                    "sequenceRows": ["step-row", "ladder-step", "stage-detail"], "maxShare": 0.34,
-                    // The rows a slide closes a region on. One of them on nearly
-                    // every body slide makes the run read as one slide mirrored,
-                    // and no sequence rule reaches it.
-                    "closers": ["arrow-pair", "ruled-note", "delta-row"],
-                    "maxCloserShare": 0.75 },
-        "density": { "maxChars": 1300, "maxShapes": 24 },
-        // The judgement pair: the two hexes, the shapes that may carry them and
-        // which slot of each holds the block and the pass label, and the words
-        // each slot may print. A pair that is neither takes a neutral twin.
-        "verdict": {
-          "block": "B6382B",
-          "pass": "507C39",
-          "templates": {
-            "trigger-card": { "blockSlot": "aLabel", "passSlot": "bLabel" },
-            "verdict-row": { "blockSlot": "endLabel", "passSlot": "midLabel" }
-          },
-          "blockWords": ["차단", "오류", "통제", "제한", "보류", "반려", "실패", "위반", "누락"],
-          "passWords": ["통과", "허용", "처리", "보존", "적합", "충족", "완료", "승인", "정상"]
-        },
-        // A column layout is measured per column: the page-level fill number is
-        // met by whichever column runs longest. Each layout gives its columns'
-        // x ranges inside the text block, measured from its left edge.
-        "colfill": {
-          "maxGap": 0.15,
-          // A gap rule alone passes a page whose columns are both short, so the
-          // floor is declared beside it.
-          "minFill": 0.80,
-          "textBlock": { "x": 48, "top": 150, "bottom": 752 },
-          "layouts": {
-            "cols-wide-left":  [[0, 680], [708, 1027]],
-            "cols-wide-right": [[0, 319], [347, 1027]],
-            "cols2":           [[0, 507], [520, 1027]],
-            "cols3":           [[0, 333], [347, 680], [694, 1027]]
-          }
-        }
+        "preflight": ["abspath", "renderer"],
+        "after": ["renderer", "layout", "rowheight", "colgap", "notespeech"],
+        "baselines": "pptx-presentation/tools/baselines"
       },
       "korean": {
         "audit": ["pptx-presentation/chapters", "pptx-presentation/templates",
@@ -167,7 +141,8 @@
   "submission": {
     "dir": "제출물",
     "title": "<사업명>_제안서",
-    "date": "2026년 9월 15일",
+    // every cover's {{submission.date}}
+    "date": "<제출일>",
     "pdfLimitMB": { "file": 50, "total": 180 },
     "pdf": { "engine": "slideglance", "imageDpi": 150, "jpegQuality": 88 },
     // the blind copy is built last; with two copies, one render command per copy
@@ -179,7 +154,7 @@
     },
     "identity": {
       "원본":   { "name": "<제안사 상호>", "label": "제안사", "logo": "docs/reference/logo.svg" },
-      "평가본": { "name": "\u00a0", "label": "\u00a0" }
+      "평가본": { "name": " ", "label": " " }
     }
   }
 }

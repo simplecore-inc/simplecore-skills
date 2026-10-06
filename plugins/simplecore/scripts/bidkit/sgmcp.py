@@ -258,7 +258,7 @@ class Session:
             # overwritten by the app's model, or lost, while reporting success.
             raise DeckUnavailable(f"{connection} exists but the app's server for {self.path} could not be "
                                   "reached; a write never falls back to the disk server. Open the deck in "
-                                  "the app, or quit the app, and run again")
+                                  "the app, or ask the user to close the app, and run again")
         if t is None:
             t = StdioTransport([binary(deck), "mcp", str(self.path)])
             handshake(t)

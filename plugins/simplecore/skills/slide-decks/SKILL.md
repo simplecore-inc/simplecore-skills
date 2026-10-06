@@ -1,6 +1,6 @@
 ---
 name: slide-decks
-description: The typesetting standard for a deck compiled to PowerPoint - a portrait document volume such as a proposal, a technical document or an annex, and a landscape presentation summary. Carries the design contract, the page and slide rhythm, components and their catalogue, the running head, page fill and budget, figure boards and placement, the checks a deck must pass, and how editorial judgments are made and confirmed. Tool-independent; how a deck is written in its tool (markup, server, builder) is that tool's own skill, for SlideGlance the slideglance-pptx skill and its MCP server. Reads every path, board and check from the project's `.claude/slide-decks.json`. Use before editing anything under a deck directory, adding or allocating pages or slides, placing or redrawing a figure, fixing a cluttered or repetitive deck, or setting a new deck up. Triggers - 조판, 제안서, 발표본, 슬라이드, 요약본, 페이지 배분, 러닝헤드, 레이아웃, 도식 삽입, 발표자 노트, PPTX, sgx, slideglance.
+description: Use before editing anything under a deck directory that compiles to PowerPoint (a portrait proposal, technical document or annex volume, or a landscape presentation summary), adding or allocating pages or slides, placing or redrawing a figure, writing a speaker script, fixing a cluttered or repetitive deck, running a deck's checks, or setting a new deck up. Not for how the deck tool itself is driven (its own skill, slideglance-pptx for SlideGlance) and not for what a string says (proposal-writing). Triggers - 조판, 제안서, 발표본, 슬라이드, 요약본, 페이지 배분, 러닝헤드, 레이아웃, 도식 삽입, 발표자 노트, PPTX, sgx, slideglance.
 ---
 
 # Slide decks
@@ -21,7 +21,8 @@ and 1123×794 landscape), and every width in the layout components is derived fr
 claims, how a requirement is answered in the panel's own words, the controlled language
 of a title, a table cell, a figure label and a speaker note, enumerations, references and
 annex naming, and the evaluator-persona review are that skill's; this one decides where
-the string is set and how the page reads. A deck is typeset from copy that skill has
+the string is set and how the page reads, and how a speaker script is written for the ear
+([The script is heard, not read](#the-script-is-heard-not-read)). A deck is typeset from copy that skill has
 already settled, and a wording-only pass runs under its scope rule, not this one's.
 
 **Invoke `simplecore:korean-docs` for the Korean sentence standard and the glossary** -
@@ -179,7 +180,8 @@ label green and one red at a fixed position hands those colours to whatever the 
 in the slots, so a page that reached for the *shape* ends up printing a neutral word in the
 colour the deck taught the panel to read as a verdict - and the same word can come out red
 on one page and green on the next. Two things stop it. The deck names, beside the shapes,
-the vocabulary each slot may print, and a check reads every use against it. And every such
+the vocabulary each slot may print, and a project's own check (`checks.local`, from
+`checks.verdict`) reads every use against it. And every such
 shape gets a neutral twin - same box, same badge, the labels in the inline accent and the
 grey ramp - so a pair that is not a judgement has somewhere to go. A conclusion, an
 outcome, a chosen option and a deliverable are not passes.
@@ -194,11 +196,13 @@ above it carry the hierarchy - never reach below it to win a line back, never lo
 size to fit a page; a page that will not fit is split, rebalanced, or has a block moved.
 The one exception is a code value standing as a label (a requirement id in a badge or a
 bar's stub, an evidence number, a frame id), looked up rather than read. The type-floor
-check reads the floor by style class, so that exemption does not drown its findings. **A slide deck is set for the room, not for paper**, and the sizes it is set
+check holds the code-label components the kit vocabulary names (`roles.codeLabels`) to a
+floor of their own, so that exemption does not drown its findings. **A slide deck is set for the room, not for paper**, and the sizes it is set
 at are a judgement about one deck's audience and one room, so the deck declares them
 (`type` in the config: the floor prose is held to, the region heading, and the lower floor
-a looked-up code value may print at) and the type-floor check reads them rather than
-carrying numbers of its own. Settle
+a looked-up code value may print at). The type-floor check holds prose to the floor and code
+labels to theirs rather than carrying numbers of its own; the region heading is a size the
+typesetter applies, and no check reads it. Settle
 them by reading the deck on the screen it will be shown on: one deck could not be read at
 7.2pt and read as too large for what a slide carries at 10pt, and settled at 8.25pt body
 with 9.75pt region headings. A slide then carries about half the characters a document
@@ -216,8 +220,8 @@ there instead: three sentences of its own argument, 8pt grey at the foot of a 32
 five lines of fine print that a panel reads as an aside. It is the same move as lowering a
 size to fit a page, made one step earlier, and every other check stays quiet through it -
 the box does not overflow, the page measures full, the words are the manuscript's own.
-A check measures it on the rendered box, because the same string is two lines at the
-full measure and five in a column.
+`finetype` measures it on the built file with the deck's own face, because the same
+string is two lines at the full measure and five in a column.
 
 **Two families.** A Korean serif for display (cover, dividers, page title, contents), a
 sans for everything else; the sans is the one the tool measures with, so wrap widths come
@@ -264,28 +268,22 @@ Where the text may run to two lines the surface is not this shape - give it a ca
 whose running head names requirement ids nests them: every region bar and sub-section
 heading carries the ids that block answers, a badge's ids are a subset of the page's, the
 page's a subset of the manuscript section's. A region that answers none of the page's ids
-does not belong on the page. **A requirement is answered in the panel's own words, on the
-page** - a requirement answered in different words reads as unanswered; where the deck
-writes a word differently on purpose, the pair goes into a baseline with the reason.
+does not belong on the page. That the page answers in the panel's own words is
+`simplecore:proposal-writing`'s rule, and `rfpwords` reads it.
 
-**A card's two rows split one claim, and the row the reader finishes on closes on a
-predicate.** A row ending in 「~하고」 · 「~하며」 hands the predicate to a clause that never
-comes. The same holds for a lone accent line, a `keyrow`'s value, a paragraph and a
-table cell.
+**A card's closing row and a sentence's full stop are copy rules**
+(`simplecore:proposal-writing`, 「Enumerations as simple lists」): the row the reader
+finishes on closes on a predicate, and a sentence takes the stop while a name never does.
+The deck has to write them the same way on every page - one deck ran 185 values with the
+stop and 192 without, so the same shape read as finished on one page and unfinished on the
+next while every page passed its own review. `dangle` and `period` read every sentence slot
+and table cell for them, and a name that closes on a predicate is `naming`'s.
 
-**A sentence closes with a full stop and a name never takes one.** A card row, a table
-cell, a note and a paragraph carry both kinds of string, and the deck has to write them
-the same way on every page - one deck ran 185 values with the stop and 192 without, so
-the same shape read as finished on one page and unfinished on the next while every page
-passed its own review. The test is the ending, not a judgement: a string that closes on
-a predicate is a sentence and takes the stop, with the stop outside a trailing reference
-(「~확인한다(부록 C).」); a head, a label, a bar's key and a column head are names
-whatever they end in. A name that closes on a predicate is a different defect and belongs
-in the name check, not this one. A check reads it and can write the missing stops.
-
-**A figure never draws the words the page already prints.** Ten or more characters
-standing verbatim in both, three times on one page, is the figure redrawing the block
-beside it; cut whichever side is weaker, never both.
+**A figure never draws the words the page already prints.** A figure whose labels stand
+verbatim in the copy printed beside it is redrawing that copy: `figtext` compares each
+figure's labels with every page drawn from the same source file, at the length and count
+its options set (`checks.figtext.minLen`, `limit`). Cut whichever side is weaker, never
+both.
 
 **A list is one shape, and the deck has one of it.** Its mark is drawn, not typed - a
 `•` or a `-` in the text run is the same thing as a `·` standing in for a bullet. The
@@ -297,7 +295,7 @@ different component.** A label/value row fixes its label column so the labels
 align down the page - which is what a one-glyph number does not want: 92px spent
 on 「1」 prints 100px of white before the sentence, and nine such rows read as two
 columns. An index goes in the list row whose mark column is as wide as the mark,
-and a check reads every label/value row for a bare index. **The
+and `listrow` reads every label/value row for a bare index. **The
 row gap belongs to the list container and to nothing else** - a run of rows dropped
 straight into a section's slot takes that section's gap, so the same list stands at 2px
 on one page and 13px on the next while every page passes its own review. Two list
@@ -316,14 +314,16 @@ no horizontal padding it cannot afford: padding is what makes the longest labels
 wrapped label grows every row it is in until a column overflows its parent. The second defect
 is mixing: two label/value components in one run set their label columns at different widths,
 so the value column steps sideways mid-list and the minority row reads as one the layout
-dropped. Write the whole run as one component, and let a check read it.
+dropped. Write the whole run as one component; no shared check reads the mix, so a deck
+that has been bitten by it writes one under `checks.local`.
 
 **A caveat or a note standing in a run of label/value rows takes the rows' label column.**
 A plain caveat or note sets its mark in a column of their own, narrower than a
 label/value row's, so one of them dropped under a run of keyrows starts its value 30px to the left
 of the values above it and the column reads ragged - invisible page by page, because each
 row is right on its own. An aligned twin of each is the form for that
-place, and a check reads every caveat beside a label/value row.
+place, and a project's own check (`checks.local`) reads every caveat beside a label/value
+row.
 
 **Two things on one row share a line, not a bounding box.** A box model has no baseline
 alignment, so centring a 24px numeral against its 10.67px unit floats the unit seven
@@ -405,7 +405,7 @@ file the copy's identity declares; the copy that declares none draws nothing the
 same ground says something false by carrying it, and the contents' own count then has to
 be read without it.
 
-**The foot band's pairs are sized per page, and a check reads the render.** The band
+**The foot band's pairs are sized per page, and the render decides.** The band
 carries two label/value pairs to the left of the folio, and the two longest values
 never share a page - one deck's longest item is 206px and its longest id list 228px,
 against 370px of band after the labels. Give the first pair the width its own value
@@ -413,8 +413,9 @@ needs (measured in the deck's face and written into the chapter as `evalW`) and 
 second take the rest; fixed columns wide enough for each longest value do not fit
 together, and a value that wraps prints its second line over the band's edge where the
 panel reads it as a caption that slipped. The tool's width estimate is not the
-verdict either way - it over-measures Hangul and under-measures a run of ids - so a
-check reads the ink height of every rendered band.
+verdict either way - it over-measures Hangul and under-measures a run of ids - so the ink
+height of every rendered band is read off the render, by a project's own check under
+`checks.local`: `foothole` measures the paper above the band, not the band's values.
 
 Either way **a page passes its head values and nothing else**, and
 a field the page has nothing for takes 「해당 없음」 or 「 - 」 - a head that changes shape
@@ -426,11 +427,10 @@ between pages is the thing the component exists to prevent.
 - **The meta pair carries no box.** The panel already bounds it.
 - **What the two rows name is the deck's decision** - an evaluation item and the
   requirement ids, a screen id and its requirements - and the deck's instructions say so.
-  A score or a weight is never printed: the deck answers the item, it does not quote
-  the weight back at the panel.
+  A score or a weight is never printed (`simplecore:proposal-writing`).
 - **A cross-reference is computed, never typed.** A page number in a contents page or a
   조견표 is derived from the deck's own import order by a check that fails when it is
-  stale.
+  stale (`contents` for the contents page, `evaluation` for the lookup table's folios).
 - **A cross-reference into *another* deck names its chapter and section, never its
   page.** Computing the page number does not save it: the other deck is still being
   written, and a page added anywhere before the target moves every reference after it.
@@ -477,7 +477,8 @@ as a page the author had nothing to say on, and in a bid document that is the im
 the panel takes away. Measure it ([references/checks.md](references/checks.md#running-them));
 anything short of the bottom needs more on it, in this order and never by padding:
 
-1. bring back what the manuscript already has (the parity check's `--coverage`);
+1. bring back what the manuscript already has (the `carry` check names the declared
+   sections a page under-prints);
 2. merge two thin pages into one;
 3. restore what volume trimming took out (the commits are per part);
 4. split a wide table into two narrower ones.
@@ -486,16 +487,18 @@ anything short of the bottom needs more on it, in this order and never by paddin
 names its manuscript in a `<!-- md: -->` comment above itself, and that declaration is a
 promise; a page may declare two sections and carry one of them, and nothing on the page
 shows it, because the page that results is full, shaped and passing every check. So the
-short page beside it is filled from a section already assigned to it - a check names
-the sections and the pages that owe them. Where the section is too big for the page's
+short page beside it is filled from a section already assigned to it - `carry` names the
+sections and the source files that owe them. Where the section is too big for the page's
 remainder, it gets a page of its own rather than a paragraph of itself.
 
-**A page whose content is one picture is still placed at the deck's figure
-width.** A capture prints at its slot's placed width times the deck's
-`placeScale` like every diagram, and `figbox` holds it there; a
-capture grown to the full measure reads heavier than every figure around it. The
-room under it goes to the page's own write-up (the screen's states, actions and
-the requirements it answers), not to a bigger picture.
+**On a document deck, a page whose content is one picture is still placed at the deck's
+figure width.** A capture prints at its slot's placed width times the deck's
+`placeScale` like every diagram ([figures.md](references/figures.md#each-deck-sets-the-share-of-its-board-placement-a-figure-prints-at)),
+and `figbox` holds it there; a capture grown to the full measure reads heavier than every
+figure around it. The room under it goes to the page's own write-up (the screen's states,
+actions and the requirements it answers), not to a bigger picture. A slide whose body is
+one drawing is a different case, set out in
+[figures.md](references/figures.md#a-page-whose-body-is-one-figure).
 
 **A section whose body is a table opens a page of its own.** Two tables of
 different content sharing a page read as one table with a heading dropped into
@@ -528,7 +531,8 @@ honest picture of how long the table is.
 
 **Never fill with spacers, blank rows, inflated line-height or a bigger figure.** A column
 layout is measured per column: both columns reach the bottom - **and measured means
-measured, by a check that reads the columns' own x ranges.** A page-level fill number is
+measured, by a check that reads the columns' own x ranges** (`grade` and `colgap` on the
+server's layout). A page-level fill number is
 met by whichever column runs longest, so a page whose wide column is full and whose
 narrow column stops half way passes every reading of that number; one deck carried ten
 such pages while its page fill read 90 % at worst, and each of them reads to a panel as
@@ -578,11 +582,12 @@ moved.
   preserve aspect, so an assumed pair stretches a certificate silently. Fit the
   page by height, fall back to width where its proportions are wider than the
   box, and centre it in what is left.
-- **One check reads the built file, because nothing else can.** A media path
-  that fails to resolve prints a page with a hole where the picture was and the
-  build stays green. Read the `.pptx`: one picture per body page, at the offset
+- **A check of the project's own reads the built file, because nothing else can.**
+  A media path that fails to resolve prints a page with a hole where the picture was
+  and the build stays green. Read the `.pptx`: one picture per body page, at the offset
   and extent that were measured, and a page count matching the front matter plus
-  the source.
+  the source. No shared check does this; the volume's generator and its check live
+  under `checks.local` ([checks.md](references/checks.md#where-each-property-is-held)).
 - **The fill rule does not apply to these pages** - the picture is the page -
   and neither does the shape census, the component rhythm or the running-head
   contract. What does apply is the deck's own two pages, which follow the design
@@ -657,12 +662,13 @@ second, and sixteen of one deck's declarations did on the first run.
 
 **A body page needs a shape that is not a paragraph and not a list**, and the
 page-shape check measures it: a page whose body is prose and bullets under every
-heading, and a 「list」 of one row, both fail. Run as a simulation, it reads every
-list run, says what the content's own form asks for - 「라벨: 값」 twice is a
-labelled pair, an ordinal in half the rows is a numbered row - and then **picks
-under the rhythm rules**, so the deck does not trade one monotony for another: no
-component the page before it leaned on, none past a third of its 부, one dark
-surface per page. Run it before rewriting a page, never after.
+heading, and a 「list」 of one row, both fail. The shared check reports and does not
+choose. Choosing is a judgment step ([below](#every-judgment-step-has-a-first-pass-and-a-confirmation)),
+made before a page is rewritten: read every list run for what the content's own form
+asks for - 「라벨: 값」 twice is a labelled pair, an ordinal in half the rows is a numbered
+row - and **pick under the rhythm rules**, so the deck does not trade one monotony for
+another: no component the page before it leaned on, none past a third of its part, one
+dark surface per page.
 
 ## Every judgment step has a first pass and a confirmation
 
@@ -699,8 +705,9 @@ column layout and the procedure from manuscript page to deck page are in
 [references/body-pages.md](references/body-pages.md); the slide layouts and their rhythm
 are in [references/landscape-slides.md](references/landscape-slides.md). A slide deck
 has a sequence census instead - one sequence shape per slide, none on two consecutive
-slides, none on more than a third of the body slides - and a density check, which keeps a
-full slide from becoming a crammed one.
+slides, none on more than a third of the body slides - and a density ceiling, which keeps a
+full slide from becoming a crammed one; no shared check holds either, so the project
+writes both under `checks.local` ([checks.md](references/checks.md#where-each-property-is-held)).
 
 ## Figures
 
@@ -709,9 +716,11 @@ and placed by the build at the width the board decides; the chapter file cannot 
 landscape drawing into a column. Each deck sets its own factor (`figures.placeScale`): a document
 deck prints every figure at 90% of that placement and a slide deck at 100%, centred, the
 same factor on every page; a figure that does not fit its slot at that factor may print
-at `figures.oversizeScale` (about 95% on a slide deck) and no smaller. A slide deck reads the document deck's figures as they
-are and adds its own re-laid or new ones on slide boards; the rules for reuse, re-layout
-and replacing prose with a drawing are in [references/figures.md](references/figures.md).
+at `figures.oversizeScale` (about 95% on a slide deck) and no smaller. A slide deck places
+no document figure as it is: each is redrawn on a slide board from the document's, and the
+rules for re-layout and for replacing prose with a drawing are in
+[references/figures.md](references/figures.md). The rules of the drawing itself (the canvas,
+the type scale, the smallest label, the height budget) are `simplecore:svg-diagrams`'.
 Diagrams are drawn on the paper theme; a dark figure on a white page reads as a block
 that arrived from somewhere else.
 
@@ -803,8 +812,8 @@ printed deck.
   page's foot, standing on its own as a 「범례」, reads as filler and is cut even when the
   manuscript carries it. Expand an abbreviation at its first use in the page's text and keep the
   full list in the annex glossary.
-- **No fake-perfect numbers.** Every figure is traceable to the source or to a
-  measurement; an invented round number is worse than no number.
+- **No fake-perfect numbers.** A number keeps its source, meaning and unit
+  (`simplecore:proposal-writing`, 「What the document may claim」).
 
 **The em dash is never written**, in a deck's copy or in these files: the Korean
 standard's rule pack bans the character outright, and a Korean serif has no U+2014
@@ -818,8 +827,9 @@ stands in; the build still fails on one it finds in a display slot.
 Run every line. A failure means the page is not done.
 
 1. The deck is saved, the tool reports no problem, the project render returns
-   `error 0 · warn 0`, and the tool's catalogue names no live component without a
-   declaration.
+   `error 0` with every warning accounted for as
+   [The loop is not optional](#the-loop-is-not-optional) defines it, and the tool's
+   catalogue names no live component without a declaration.
 2. Every page PNG has been looked at, from a project render of the whole deck rather
    than from the pages the editing loop happened to draw.
 3. No sentence continues onto the next page; no page has a hole in the middle; every
@@ -831,21 +841,24 @@ Run every line. A failure means the page is not done.
    its stub, table header rows, a layered table's lane cells. Nothing else. Every heading
    and item head carries an icon; no `·`, `-` or `•` stands in as a bullet. Every coloured
    surface is that part's colour or the declared third system's, and no other - and a
-   check reads every hex a hand-written source writes against the declared inventory,
+   project's own check (`checks.local`, from `checks.palette`) reads every hex a
+   hand-written source writes against the declared inventory,
    because an undeclared family arrives through a component's fixed slot rather than
    through anybody's decision. Every list row sits in the list container at one indent,
    one mark gap and one row gap; every plate is the shape its name says; two sizes on
    one row stand on one baseline.
 7. Every figure is at a placed width its board decides, printed at the deck's
    `placeScale` (0.9 on a document deck, 1.0 on a slide deck), or at its
-   `oversizeScale` only where it does not fit its slot, and centred, and its caption carries a number.
+   `oversizeScale` only where it does not fit its slot, and centred; on a document deck its
+   caption carries a number.
 8. The Korean audit reports zero errors over the deck's sources.
 9. The tool's layout checks (overflow, overlap, text outside its box, row height, the
    package as shipped) report no finding, and its rules check (sheet count, palette,
    type floor, notes) reports 0 failed.
-10. The rhythm check (document) reports 0 on both counts; for a slide deck, the coverage
-    check names nothing the plan does not know, the cross-reference check reports no
-    stale reference, and the sequence census and the density check report 0.
+10. The rhythm check (document) reports 0 on both counts; for a slide deck, the project's
+    own checks (`checks.local`) report 0: plan coverage names nothing the plan does not
+    know, the cross-deck citation names no chapter or section the document lacks, and the
+    sequence census and the density ceiling have no departure.
 11. Enumerations are checked in the manuscript, typesetting source and rendered page.
     Independent items are not buried in a long paragraph. Set them as a simple list
     in one or two columns; use numbered items when order affects the result.

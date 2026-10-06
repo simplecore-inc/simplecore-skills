@@ -23,7 +23,11 @@ Config (`requirements`):
 
 The separator is part of the prefix, so a tender that writes `QUR_001` beside
 `PER-001` is read as issued. The deck's source files (comments stripped) and
-every manuscript file are read.
+every manuscript file are read; with `--manuscript-only` the manuscript alone,
+so a bid that has no deck yet checks its manuscript before the deck exists.
+
+    reqid.py                     # the deck and the manuscript
+    reqid.py --manuscript-only   # the manuscript, no deck server opened
 """
 from __future__ import annotations
 
@@ -124,11 +128,16 @@ def check(reader: DeckReader | None, deck: DeckConfig,
 
 @cli.guarded
 def main(argv: list[str] | None = None) -> int:
-    args = cli.parser(__doc__.splitlines()[0]).parse_args(argv)
+    ap = cli.parser(__doc__.splitlines()[0])
+    ap.add_argument("--manuscript-only", action="store_true", help="read no deck (a bid with no deck yet)")
+    args = ap.parse_args(argv)
     deck = cli.deck_config(args)
     prepared = prepare(deck)
-    with cli.open_reader(deck) as reader:
-        issued, texts, bad = check(reader, deck, prepared)
+    if args.manuscript_only:
+        issued, texts, bad = check(None, deck, prepared)
+    else:
+        with cli.open_reader(deck) as reader:
+            issued, texts, bad = check(reader, deck, prepared)
     print(f"reqid: {issued} ids issued, {len(texts)} files read, {len(bad)} ids the tender does not have")
     for where, name, ranged in bad:
         how = "a range claims it" if ranged else "written directly"

@@ -235,7 +235,7 @@ FACTS = """# 안내
 """
 
 
-def kepco_page(n: int, text: str) -> str:
+def marked_page(n: int, text: str) -> str:
     return f"# 장\n\n## 인쇄 원고\n\n> 쪽 {n} · 평가항목\n\n{text}\n"
 
 
@@ -250,16 +250,16 @@ class SharedValuesTests(Base):
         self.md("README.md", FACTS)
 
     def test_value_missing_from_a_page_and_copied_onto_another(self):
-        self.md("01/a.md", kepco_page(3, "점검대상 1,288,418건."))
-        self.md("01/b.md", kepco_page(5, "점검대상은 따로 적는다."))
-        self.md("01/c.md", kepco_page(7, "합계 1,288,418건."))
+        self.md("01/a.md", marked_page(3, "점검대상 1,288,418건."))
+        self.md("01/b.md", marked_page(5, "점검대상은 따로 적는다."))
+        self.md("01/c.md", marked_page(7, "합계 1,288,418건."))
         _, _, bad = sharedvalues.check(self.deck, None)
         self.assertEqual(bad, ["점검대상: 1,288,418 is not on page 5",
                                "점검대상: 1,288,418 is on page 7, which the row does not assign"])
 
     def test_assigned_pages_carry_it_and_section_numbers_are_not_distinctive(self):
-        self.md("01/a.md", kepco_page(3, "점검대상 1,288,418건. 2.5절."))
-        self.md("01/b.md", kepco_page(5, "1,288,418건.") + "\n## 검토\n\n1,288,418\n")
+        self.md("01/a.md", marked_page(3, "점검대상 1,288,418건. 2.5절."))
+        self.md("01/b.md", marked_page(5, "1,288,418건.") + "\n## 검토\n\n1,288,418\n")
         self.assertEqual(sharedvalues.check(self.deck, None)[2], [])
 
     def test_deck_pages_by_page_id(self):

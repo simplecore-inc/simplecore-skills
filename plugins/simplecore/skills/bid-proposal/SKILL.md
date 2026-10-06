@@ -1,6 +1,6 @@
 ---
 name: bid-proposal
-description: Runs a Korean bid from the issued tender to the submitted package without the user steering each step - tender transcription, score simulation, kickoff decisions asked once, manuscript and figures, wireframe and evidence annexes, persona and Korean review, the SlideGlance proposal deck chapter by chapter, the presentation deck, the quantitative volume, expected Q&A and the packaged deliverables - and keeps a ledger so any session, Claude Code or Codex, resumes where the last one stopped. It orders the work and makes the calls; the standards it applies live in proposal-writing, slide-decks, korean-docs, svg-diagrams, wireframe-boards and slideglance-pptx. Use when starting a bid, resuming one, asking where a bid stands, or running a whole-document pass. Triggers - 입찰 착수, 새 제안서, 제안서 작성 시작, 제안서 이어서, 제안서 진행, 현재 상태, 원고 작성, 덱 조판, 발표본 작성, 계량 제안서, 예상 질의응답, 제출물 패키지, 전체 검토, 전체 교정.
+description: Use when starting a Korean bid from an issued tender, resuming one from its ledger, asking where a bid stands, running a whole-document pass over a bid (Korean and terms, the evaluator panel, cross-document agreement), or taking up a bid's presentation deck, quantitative volume, expected Q&A or submission package. Not for one sentence or one figure fixed on its own, and not for work on the SlideGlance editor itself. Triggers - 입찰 착수, 새 제안서, 제안서 작성 시작, 제안서 이어서, 제안서 진행, 현재 상태, 원고 작성, 덱 조판, 발표본 작성, 계량 제안서, 예상 질의응답, 제출물 패키지, 전체 검토, 전체 교정.
 ---
 
 # Bid proposal
@@ -44,10 +44,12 @@ the documents); rules the user gave during the bid; and one row per step below w
 and the next action. It is a working file, so it carries state; the documents never do.
 
 Another bid's tender-specific content is never copied. A competitor's proposal is never a source.
-When `~/.claude/bid-proposal.json` is missing, ask for `companyDir` and `referenceBid` in the
-step 8 question and write the file. When the company folder does not exist yet, create its
-folders (overview, staff, assets, evidence, logo) empty, tell the user what to fill, and carry on
-with 「(미정: …)」.
+When `~/.claude/bid-proposal.json` is missing, ask for `companyDir` and `referenceBid` before
+step 1, in one message, and write the file: step 1 follows the reference bid's setup and step 5
+reads the company folder, so the step 8 question comes too late for them. Every other kickoff
+question waits for step 8. When the company folder does not exist yet, create its folders
+(overview, staff, assets, evidence, logo) empty, tell the user what to fill, and carry on with
+「(미정: …)」.
 
 ## Steps
 
@@ -55,9 +57,12 @@ with 「(미정: …)」.
 
 1. Set up the bid folder: tender, manuscript, figures, deck, ledger, glossary, and the two
    settings files the shared checks and the figure drawing library read, started from the
-   samples the skills ship. Nothing is copied from an earlier bid except kit blocks.
-2. Copy the tender into Markdown word for word, one file per topic, plus one list holding only
-   the requirement numbers and names. Leave nothing out; describe every picture.
+   samples the skills ship. Nothing is copied from an earlier bid except kit blocks. A check
+   no shared check holds (a slide deck's plan coverage or sequence census) is written under
+   the deck's `checks.local` when the bid needs it.
+2. Copy the tender into Markdown word for word, split and indexed as `proposal-writing`'s
+   references/rfp-transcription.md sets out, with the requirement digest the id checks read.
+   Leave nothing out; describe every picture.
 3. Read out of the tender, with the clause for each: the scoring table, the page limit, the
    presentation time and slide limit, the blind-evaluation rules, the writing instructions, the
    forms, the file names and size limits for submission. Write them into the ledger.
@@ -78,7 +83,8 @@ with 「(미정: …)」.
 10. Write every page in full at about one and a half times its page share, with a plan for each
     figure it needs and a source for each number.
 11. Draw the figures.
-12. When screens are asked for or scored, draw them as a wireframe board and attach it as an annex.
+12. When screens are asked for or scored, draw them as a wireframe board and attach it as an annex,
+    each frame placed from the board's own per-frame export (`node wf.mjs shots <dir> --no-notes`).
 13. Write the evidence annex: the tests done before the bid, their conditions, measured results
     and limits.
 14. Cut the manuscript to about 1.1 times the page budget. Compare every cut with the text before
@@ -139,12 +145,14 @@ with 「(미정: …)」.
   screen files included, for the old and the new wording.
 - If a scope item is dropped, remove every reference to it.
 - If a page or figure is cited, cite it by id and name (「Ⅳ-1 15 외부 장치 요청 처리」,
-  「그림 Ⅳ-2-1 …」); the presentation cites the proposal by chapter, never by page number.
+  「그림 Ⅳ-2-1 …」); the presentation cites the proposal by chapter and section name, never by
+  page number.
 
 **Content**
 
-- The tender's terms come before ours. Requirement names are copied verbatim. 「원문」 alone is never
-  written; write 제안요청서 or 요구사항.
+- The tender's terms come before ours, and requirement names are copied verbatim (`proposal-writing`).
+  「원문」 alone is never written: a citation names the clause, the article, or the requirement id
+  and its issued name (`proposal-writing`, 「Every external basis is named where the claim is made」).
 - If a claim cannot be proven (track record, a certificate), leave it out; state the field of work only.
 - If the tender is blind-evaluated, the evaluation copy carries no company name, staff name, logo
   or wording that identifies the bidder, and staff experience is given without full project names.
@@ -155,32 +163,20 @@ with 「(미정: …)」.
   the client's own requirement, never as blame, and never cite press reports.
 - If something already built answers a requirement, show the real screen labelled 「제안사 구현
   사례」 with the relevant area marked, rather than a description.
-- The page-head description (`sub`) and the part-divider lede are 합니다체 and state the proposer's
-  claim and what the client gains, never how the page is organised. Body and judgment cells are
-  -다체; titles, labels and captions are noun phrases. 합니다체 never spreads past those two places.
-- Copy never counts items, never sets a bare abbreviation list, and never contains an em dash.
+- The register is `proposal-writing`'s: 합니다체 in the page-head description (`sub`) and the
+  part-divider lede and nowhere else, -다체 in the body and the judgment cells, noun phrases in
+  titles, labels and captions. The description and the lede state the proposer's claim and what
+  the client gains, never how the page is organised.
+- Copy never counts items, never sets a bare abbreviation list (`slide-decks`' tell checklist), and
+  never contains an em dash.
 
 **Presentation script**
 
-- The script is understood by a listener who never sees the screen. A phrase that leans on the
-  slide or on knowledge the listener lacks is spelled out: 「보유 수신 기술」 says whose
-  technology, what it is and how it was proven; an abbreviation, a requirement code, a figure
-  number or a table is spoken as what it means.
-- The script follows the screen: the page-head description first, then the body top to bottom and
-  left to right, in the words printed there, and the words it speaks are emphasised on the slide.
-- A number in the script is written the way it is read: a counter read with a native Korean
-  numeral in words (「열한 대」, 「여섯 명」, 「네 시간」), one read with a Sino-Korean numeral in digits
-  (「10만 건」, 「15개월 차」, 「1 대 3」). A check lists every digit joined to a native-numeral
-  counter (대 · 명 · 번 · 시간 · 가지 · 곳 · 개) in the notes; a voice reading 「11대」 says 십일 대.
-- Every English term in the script is written in Hangul as it is pronounced (「Apache Ignite 3」 →
-  「아파치 이그나이트 쓰리」, 「IMDG」 → 「아이엠디지」), with the meaning said at the first mention
-  where the listener cannot know it; the slide keeps the written form. The same check lists any
-  Latin letter left in a note.
-- A compound term the slide uses as a label is unpacked in the script into what it does
-  (「멱등 저장」 → 「멱등성을 보장해 저장합니다」).
-- Time the script at the speaking rate measured by reading it aloud (one bid read 5,247
-  characters in about 15 minutes, 350 a minute), never at an assumed rate; an assumed 300 a minute
-  cut a script by a fifth that the talk had room for.
+- The script is written by `slide-decks`' rules (「The script is heard, not read」): understood
+  without the screen, in the screen's order and its printed words, numbers and English terms
+  written as they are read, compounds unpacked, and timed at the rate measured by reading it
+  aloud. `notespeech` lists what a voice would misread, with the counters `checks.notespeech.counters`
+  sets.
 
 **Numbers and evidence**
 
@@ -198,10 +194,10 @@ with 「(미정: …)」.
 - Before writing text onto a page, check whether a figure already says it.
 - Edit the generator, never the picture. No legend along the bottom; every arrow has a target;
   labels are noun phrases.
-- Place every figure at its deck's `figures.placeScale` in `.claude/slide-decks.json`: 0.9 on
-  the proposal document, 1.0 on the presentation deck. A figure that does not fit its slot at
-  that scale may take the deck's `oversizeScale` (about 0.95); a page that still cannot hold it
-  is split or condensed, never given a smaller figure.
+- Place every figure at its deck's `figures.placeScale` in `.claude/slide-decks.json`, and a
+  figure that does not fit its slot at that scale at the deck's `figures.oversizeScale`
+  (`slide-decks` references/figures.md); a page that still cannot hold it is split or
+  condensed, never given a smaller figure.
 - A figure the task did not name is never changed.
 
 **Deck**
@@ -209,7 +205,10 @@ with 「(미정: …)」.
 - Decks are edited only through the editor's tool server, never by writing the deck's files.
   Find a node again after every edit, because node ids change between builds.
 - If no kit block fits, add one to the kit without asking, kept generic: no chapter names, no logo,
-  no fonts. Before each chapter, list the blocks not used so far and prefer them where they fit.
+  no fonts. In the same change, declare its name, sentence and mark slots in the kit vocabulary
+  (`slide-decks` assets/kits/<kit>.json) or in the deck's `vocabulary.override`, since the slot
+  checks read a block's strings only through it. Before each chapter, list the blocks not used
+  so far and prefer them where they fit.
   The same block on consecutive pages for different kinds of content is a defect.
 - Block choice: Jev gives the first pass and Claude confirms it; without Jev, Claude decides.
 - If a page has an empty bottom, bring in more of the manuscript, change the block, or merge with a
@@ -224,16 +223,24 @@ with 「(미정: …)」.
 
 **Copy passes**
 
+These are the bid's copy pass when the user names no exclusion. When the user excludes diagrams or
+layout, the pass runs under `proposal-writing`'s wording-only scope instead, which takes
+precedence over these.
+
 - Allowed: lengthening where meaning was lost, as long as nothing overflows; enlarging boxes and
   margins; changing figure text in the generator; changing a figure's shape when the new wording no
   longer fits it, reporting each such figure.
 - Not allowed: swapping blocks, reordering or merging pages, redesigning a figure whose wording fits.
-- Figure text and wireframe screen copy are always in scope.
+- Figure text and wireframe screen copy are in scope.
 - Read the whole page with its figures before changing a sentence; judge by meaning, not by pattern.
 - If an awkward word is replaced, search every tree for it and its family in the same pass.
 
 **Review**
 
+- The bid's review prompt (`review.prompt` in `.claude/slide-decks.json`) carries the panel, the
+  grades, the stop rule and the record rules below; `proposal-writing`'s
+  references/persona-review.md carries the rest of the workflow, and a prompt overrides its
+  defaults by its own rule.
 - Panel: three client evaluators, two external evaluators, a typesetting expert and a requirements
   engineer; the presentation adds a speech coach and an announcer. One agent per persona, in parallel.
 - Findings go to a file, graded 상·중·하. Fix every 상 and 중, apply the 하 once, and review again.
@@ -251,9 +258,12 @@ with 「(미정: …)」.
   instruction file in the same change.
 - If another session or tool (a second agent, Codex) edits the bid repository at the same time,
   a deck written whole from a generator overwrites what it changed. Before every whole-deck
-  write, diff the deck's files and the generator's inputs against the last commit and fold any
-  change you did not make into the generator first; edit by exact replacement of the lines you
-  mean, never by writing back a copy read earlier; commit only your own paths.
+  write, read the current source of every file it replaces: through the tool server for a deck
+  the editor holds (`slide-decks`: the disk can lag the open deck, so a diff against the last
+  commit misses what the app has not saved), and as a diff against the last commit for the
+  generator's inputs and any source outside the tool. Fold any change you did not make into the
+  generator first; edit by exact replacement of the lines you mean, never by writing back a copy
+  read earlier; commit only your own paths.
 
 **Which standard to load**
 
@@ -281,12 +291,14 @@ The bid is done when, in addition:
 
 - every scoring item and every requirement number is on a page of the proposal, and every scoring
   item is on a slide of the presentation, shown by a check's count;
-- the figure checks pass, and all three Korean audit commands report zero;
+- the figure checks pass, and the Korean audit (`sweep` of `korean-docs`) reports zero errors over
+  the bid's sources;
 - the panel's last round has no 상 or 중;
 - schedules, figures, requirement numbers and page citations agree across proposal, presentation,
   annexes, figures, script and Q&A;
 - no own-test figure appears outside the annex, and every number has a source;
-- the evaluation copy meets the blind-evaluation rules;
+- the evaluation copy meets the blind-evaluation rules, its document properties included
+  (`check.py run deliver` reads them);
 - the open list is empty, or the user has seen what remains on it;
 - the package has the tender's names and folders, stays under its size limits, exports to PDF, and
   every PowerPoint file opens without a repair prompt;

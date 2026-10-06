@@ -4,6 +4,7 @@ import unittest
 from pathlib import Path
 
 from fixtures import page, project, reader, recording, use
+from runmain import run
 
 import figbox
 
@@ -37,6 +38,59 @@ class FigboxTests(unittest.TestCase):
 
     def test_a_box_the_size_of_the_picture(self):
         self.assertEqual(self.found(("a.svg", "613", "255"), ("c.svg", "270", "306")), [])
+
+
+class FigboxUnreadTests(unittest.TestCase):
+    """A figure the check cannot measure is reported, and the summary counts what it measured."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        root = Path(self.tmp.name)
+        assets = root / "deck" / "assets"
+        assets.mkdir(parents=True)
+        (assets / "a.svg").write_text('<svg viewBox="0 0 1200 500"></svg>')
+        (assets / "c.svg").write_text('<svg viewBox="0 0 520 600"></svg>')
+        (assets / "wide.svg").write_text('<svg viewBox="0 0 880 400"></svg>')
+        (assets / "bare.svg").write_text('<svg width="10" height="10"></svg>')
+        self.deck = project(root, {"dir": "deck", "figures": {
+            "boards": {"1200": 682, "520": 300, "520-pair": 327}, "placeScale": 0.9}})
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def survey(self, *figs):
+        uses = [use("figure", {"src": f"assets/{s}", **({"w": w, "h": h} if w else {})}) for s, w, h in figs]
+        return figbox.survey(reader(self.deck, recording([page(1, *uses)])), self.deck)
+
+    def test_a_missing_file_and_a_figure_on_no_board_are_findings(self):
+        s = self.survey(("a.svg", "614", "256"), ("gone.svg", "614", "256"),
+                        ("wide.svg", "614", "279"), ("bare.svg", "614", "256"))
+        self.assertEqual(s.measured, 1)
+        self.assertEqual(s.bad, [])
+        self.assertEqual(s.missing, [("Ⅲ-1 01", "assets/gone.svg")])
+        self.assertEqual([(n, why.split(",")[0]) for _, n, why in s.unplaced],
+                         [("wide.svg", "its viewBox is 880 wide"), ("bare.svg", "no viewBox")])
+
+    def test_a_clean_deck_and_an_unread_one_print_different_lines(self):
+        code, out = run(figbox, self.deck, recording([page(1, use("figure", {"src": "assets/a.svg",
+                                                                              "w": "614", "h": "256"}))]))
+        self.assertEqual(code, 0)
+        self.assertIn("1 figures measured, 0 whose box", out)
+        code, out = run(figbox, self.deck, recording([page(1, use("figure", {"src": "assets/gone.svg",
+                                                                              "w": "614", "h": "256"}))]))
+        self.assertEqual(code, 1)
+        self.assertIn("0 figures measured", out)
+        self.assertIn("assets/gone.svg is placed and does not exist", out)
+
+    def test_a_use_with_no_box_is_counted_as_not_measured(self):
+        s = self.survey(("a.svg", None, None))
+        self.assertEqual((s.measured, s.unsized, s.bad), (0, [("Ⅲ-1 01", "a.svg")], []))
+
+    def test_a_board_variant_is_a_second_placement_of_the_same_board(self):
+        # 520 units at 300 px or, beside a partner, at 327 px; 0.9 of either is the box
+        s = self.survey(("c.svg", "270", "311"), ("c.svg", "294.3", "339.6"), ("c.svg", "300", "346"))
+        self.assertEqual(s.measured, 3)
+        self.assertEqual([found for _, _, found, _ in s.bad], ["300×346"])
 
 
 class FigboxPerDeckScaleTests(unittest.TestCase):
