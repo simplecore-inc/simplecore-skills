@@ -634,7 +634,7 @@ private String activationDate;
 @SearchableField(entityField = "activationDate", operators = {BETWEEN, GREATER_THAN, LESS_THAN}, sortable = true)
 private String activationDate;
 
-// CORRECT — semantic type stored; the wire string is produced at the SU mapper
+// CORRECT - semantic type stored; the wire string is produced by the outbound mapper
 @Column(name = "activation_date")
 private Instant activationDate;
 ```
@@ -648,13 +648,13 @@ private Instant activationDate;
 LocalDate today = LocalDate.now();
 Instant dayStart = date.atStartOfDay(ZoneId.systemDefault()).toInstant();
 
-// CORRECT — resolve the zone from the hierarchy (site → policy → app timezone)
+// CORRECT - resolve the zone from the narrowest owner the project models, falling back to the app timezone
 ZoneId zone = policyResolver.resolveTimeZone(userAccountId);
 LocalDate today = LocalDate.now(zone);
 Instant dayStart = date.atStartOfDay(zone).toInstant();
 ```
 
-**Why**: date attribution ("which day does this punch/visit/review belong to") must follow the SITE's clock, not the server container's. Argless `now()` and `ZoneId.systemDefault()` silently change results between deployments (cloud containers default to UTC) and are wrong for every site whose timezone differs from the server's. `Instant.now()` is zone-free and always fine. This rule binds ALL Java code including schedulers and infrastructure - invariant #18 is not covered by the infra exemption. Zone hierarchy and the timezone-literal ban: `../entity/field-types.md` § Zone handling in services.
+**Why**: date attribution ("which day does this punch/visit/review belong to") must follow the clock of the place the record belongs to (a site, where the project models one), not the server container's. Argless `now()` and `ZoneId.systemDefault()` silently change results between deployments (cloud containers default to UTC) and are wrong for every place whose timezone differs from the server's. `Instant.now()` is zone-free and always fine. This rule binds ALL Java code including schedulers and infrastructure - invariant #18 is not covered by the infra exemption. Zone hierarchy and the timezone-literal ban: `../entity/field-types.md` § Zone handling in services.
 
 ## AP-29: Entity Mutation Discarded by a `clearAutomatically` Bulk Op
 

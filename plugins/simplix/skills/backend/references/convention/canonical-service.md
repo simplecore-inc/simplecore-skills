@@ -125,3 +125,12 @@ What the service MUST implement (per entity, NOT inherited):
 | `buildDetailDTO(id)` | **only when enrichment needed** | wraps `findById(id, DetailDTO.class)` + custom enrichment. When the entity has no post-load enrichment, the controller calls `service.findById(id, DetailDTO.class)` directly (generator default - see `EntityRestController.java.template`). Do NOT add this wrapper as boilerplate. |
 | `buildUpdateFormDTO(id)` | **only when enrichment needed** | same rule as above - base helper is called directly from the controller unless enrichment is required |
 | `saveAndGetProjection(entity, fkId)` | always (private helper) | save + FK resolution + projection lookup; called by create/update/updateOrder |
+
+---
+
+## Hand-written Results
+
+A search override that answers early, and a row assembled by hand, leave the generated shape; the audit checks both.
+
+- **An empty page carries the request it answers**: `new PageImpl<>(List.of(), pageRequest, 0)`, never `new PageImpl<>(List.of())`. The one-argument form holds `Pageable.unpaged()`, whose `getPageNumber()` / `getPageSize()` throw when the response is serialized, so the caller gets a 500 on the branch a new account takes first. Audit: `empty-page-with-no-pageable`.
+- **A row built by hand copies every field the source and the DTO both declare** (`Dto row = new Dto(); row.setX(src.getX()); ... return row;`). Prefer the projection (`findById(id, DTO.class)`, `findAllWithSearch`) wherever it can express the row: a hand-written mapper is the one place a field added to the entity does not reach. Audit: `hand-written-row-drops-a-field` (review level).

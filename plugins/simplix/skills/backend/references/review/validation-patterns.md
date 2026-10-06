@@ -34,6 +34,11 @@ Rules for translating entity constraints into DTO validation annotations.
 | `@Email` | `@Email` | String |
 | `@Size(min, max)` | `@Size(min, max)` | Collection |
 
+Exceptions to the table, each failed by the audit as an error:
+
+- **A non-null String the entity initialises to `""`** (`@Column(nullable = false) private String siteKey = "";`). The empty string is one of the field's values (a scope key whose empty case is the whole installation), so the DTO takes `@NotNull`, never `@NotBlank`: `@NotBlank` refuses every write of exactly those records. Audit: `not-blank-on-a-meaningfully-empty-field`.
+- **A field the entity's service writes over whatever the request sent** (the caller forced onto the record, a state derived from other fields, a name looked up from an account). The create and update DTOs carry no `@NotNull` / `@NotBlank` on it: bean validation runs before the service is entered, so the constraint refuses every request while the form has no control for the field. Keep the field and mark it server-owned in a comment. Audit: `required-field-the-service-overwrites`.
+
 ---
 
 ## @ValidateWith (Class-Level Custom Validation)

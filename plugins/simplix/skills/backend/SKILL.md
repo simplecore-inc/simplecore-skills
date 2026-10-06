@@ -51,7 +51,7 @@ Apply and enforce these on every controller, service, repository, and DTO you to
    - **Message = `{error.<domain>.<key>}` placeholder, resolved ONLY at the HTTP layer.** The dominant convention passes the literal placeholder (e.g. `"{error.channel.publishNotAllowed}"`); `GlobalExceptionHandler` (app-core) resolves it to the request locale when building the response envelope. The exception constructor performs NO resolution, so `getMessage()` carries the raw key **by design** - everywhere below the HTTP layer, including logs and tests.
    - **Error key bundles** live in `apps/<app>/src/main/resources/messages/errors*.properties` - add every new key to EVERY locale the project ships. `ExceptionMessageTranslationTest` (in the app module) scans source for `"{error.*}"` literals and `MessageUtils.get(...)` calls and fails the build on any key missing a translation or any cross-locale bundle drift - it is the single owner of message-text coverage.
    - **Unit tests assert the message KEY, never resolved English prose** - `hasMessageContaining("error.channel.publishNotAllowed")`, not `hasMessageContaining("Publish")`. Mockito service tests have no Spring context: `{key}` placeholders stay raw, and `MessageUtils.get(key, args)` returns the code itself with args dropped (its static `MessageSource` is never initialized). English-prose assertions are valid ONLY for the minority pattern where the service resolves at throw time via an injected `MessageSource` that the test stubs (`when(messageSource.getMessage(...)).thenReturn(...)`).
-4. **Repository** - `extends SimpliXBaseRepository<E, String>`. Never plain `JpaRepository`.
+4. **Repository** - `extends SimpliXBaseRepository<E, String>` (`SimpliXTreeRepository<E, String>` for a tree entity). Never plain `JpaRepository`, nor another `*JpaRepository` base such as `SearchableJpaRepository`.
 5. **DTOs** - entity-backed DTOs MUST be static inner classes of `{Entity}DTOs` (one container file per entity). **Exception for DTOs with no matching `.simplix/entity/*.yml`** (projections, statistics, aggregation results, inter-service payloads): MAY be defined either (a) as separate top-level DTO files or (b) grouped in a feature container `{Feature}DTOs`. Prefer the container when the DTOs share a feature and lifecycle; use separate files when they are independent or reused across features.
 6. **SearchDTO Lombok** - `@Getter @Setter`. Never `@Data` (SearchDTO is a search-condition container, not an identity-bearing object; `@Data` generates equals/hashCode that cause framework-internal comparison issues on large DTOs).
 7. **Boolean in DTO** - `Boolean` wrapper. Never primitive `boolean` (getter-naming breaks framework lookups - `isXxx()` vs expected `getXxx()`).
@@ -81,14 +81,14 @@ Apply and enforce these on every controller, service, repository, and DTO you to
 16. **i18n mandatory** - every entity (for labels) and every LabeledEnum (for values) has properties files in every locale the project ships, before domain tests pass. **LabeledEnum message keys are `enums.{SimpleName}.{CONSTANT}` and are merged globally across the classpath, so every LabeledEnum simple class name MUST be globally unique** - two enums sharing a simple name (even in different packages/modules) collide on the merged key and silently mistranslate. Resolve any collision by renaming one enum (and migrating its keys in every locale) or, if both model the same concept, merging into a single enum.
 17. **Match generator shape, even when writing by hand** - any controller, service, repository, or DTO authored manually MUST be indistinguishable in shape from what `yo simplix:generate` would have produced:
     a. Extend correct base class: CRUD → `extends SimpliXBaseController<E, String>`; Non-CRUD → `@SimpliXStandardApi` at class level
-    b. Annotation order: `@RestController → @RequestMapping → @Tag → class`
+    b. Annotation order: class `@RestController → @RequestMapping → @Tag → class`; endpoint `@XxxMapping → @Operation → @PreAuthorize → method` (full order: `convention/annotation-ordering.md`)
     c. URL shape: no `/api/v1/` prefix on `@RequestMapping`
     d. `@PreAuthorize("hasPermission('<FEATURE_AREA>', '<action>')")` - the feature-area group from #9, never the entity name the template emits
     e. `@PathVariable String` - never `UUID` or `Long`
     f. Return type: `SimpliXApiResponse<T>` (or documented binary/202-async exceptions only)
     g. No `@ApiResponses` block
     h. Unexplained deviation → one-line class-level JavaDoc required
-18. **Date/time semantic typing** - every temporal field belongs to exactly one semantic kind, and the kind fixes the Java type: absolute instant → `Instant`, calendar date → `LocalDate`, wall-clock time → `LocalTime`, calendar period → fixed-width `yyyy-MM` String (validated). NEVER a String column carrying an offset/RFC 3339 datetime, and never `LocalDateTime`/`OffsetDateTime`/`ZonedDateTime` entity fields (SimpliX's auto-applied converters UTC-normalize them). SearchDTOs use the same temporal types - range operators and `sortable` on a String date column are forbidden (VARCHAR comparison is lexicographic, not chronological). Wire/SDK date strings are produced at the transmission boundary (SU mappers, site timezone), never stored. Timezone-dependent logic never reads the JVM default zone (argless `LocalDate.now()`, `ZoneId.systemDefault()`, …) - resolve a `ZoneId` explicitly in this order: site (`Site.timezone`, IANA ID) → domain operation-policy default zone → app timezone (configured; never a hardcoded zone literal). This zone rule applies to ALL Java code including schedulers/infra. Field patterns and the full zone-resolution rules: `entity/field-types.md` § Date/Time Fields; violations catalogued as AP-27/AP-28.
+18. **Date/time semantic typing** - every temporal field belongs to exactly one semantic kind, and the kind fixes the Java type: absolute instant → `Instant`, calendar date → `LocalDate`, wall-clock time → `LocalTime`, calendar period → fixed-width `yyyy-MM` String (validated). NEVER a String column carrying an offset/RFC 3339 datetime, and never `LocalDateTime`/`OffsetDateTime`/`ZonedDateTime` entity fields (SimpliX's auto-applied converters UTC-normalize them). SearchDTOs use the same temporal types - range operators and `sortable` on a String date column are forbidden (VARCHAR comparison is lexicographic, not chronological). Wire/SDK date strings are produced at the transmission boundary (the mapper that serializes for an external system, in the zone of the place the value belongs to), never stored. Timezone-dependent logic never reads the JVM default zone (argless `LocalDate.now()`, `ZoneId.systemDefault()`, …) - resolve a `ZoneId` explicitly from the narrowest owner the project models (a site's own timezone, then a domain policy's default zone, where the project has them), falling back to the configured app timezone; never a hardcoded zone literal. This zone rule applies to ALL Java code including schedulers/infra. Field patterns and the full zone-resolution rules: `entity/field-types.md` § Date/Time Fields; violations catalogued as AP-27/AP-28.
 
 19. **Precedent-first for everything past the generator - customization and hand-authored surfaces are cloned from the newest same-shape precedent, never designed from memory.** The generator fixes the CRUD shape (#15/#17); this invariant fixes everything the generator does not: trimming a generated controller into an action/read surface, adding lifecycle endpoints, a self-scoped searchable, a readiness/preview endpoint, an aggregation/report controller, an approval-flow integration, an SSE/activity channel. Before writing one, locate TWO precedent surfaces of the same shape in this codebase (grep the pattern: `@SimpliXStandardApi` non-CRUD controllers, forced-scope `search(params)` overrides, existing `/{id}/<action>` groups), prefer the most recently modified, read them end to end (controller + service + DTOs + messages), and clone their structure - naming, error keys, permission mapping, DTO roles, test shape. Divergence is justified only by a domain difference; a precedent that violates an invariant is fixed or flagged, never copied. The completion report names both precedent classes and every justified divergence. This mirrors the frontend skill's invariant #51 - the two ends of one contract must drift-proof the same way.
 
@@ -276,8 +276,10 @@ After writing:
 ## The audit script, and what it cannot see
 
 `${CLAUDE_PLUGIN_ROOT}/scripts/audit-backend.mjs` holds the machine-checkable subset of the
-invariants above. Run it from the backend project root, or point it with `--root=<dir>`; it exits
-1 on any error-level hit and prints review candidates without failing.
+invariants above. Run it from the backend project root, or point it with `--root=<dir>`. It reads
+`src/main/java` at the root and under `modules/`, `packages/`, `apps/` and `tools/`; it exits 1 on
+any error-level hit, prints review candidates without failing, and exits 2 when it finds no Java
+source at all, because a scan that read nothing prints what a clean project prints.
 
 ```bash
 node "${CLAUDE_PLUGIN_ROOT}/scripts/audit-backend.mjs"            # every rule
@@ -288,8 +290,12 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/audit-backend.mjs" --selftest # prove every 
 **A rule enters it only once `--selftest` proves it in both directions.** Each rule carries a
 `broken` and a `fixed` sample and the selftest asserts it fires on the first and stays silent on
 the second - a rule proved one way has not been proved, because a check that can never fire
-reports exactly what a clean tree reports. The selftest also proves the two escape hatches, for
-the same reason.
+reports exactly what a clean tree reports. A rule that covers more than one broken shape lists
+each further shape, and the selftest asserts each one fires. It also proves the escape hatches, for
+the same reason: the line marker below, and the dev-profile exemption - a class whose `@Profile`
+names only non-production profiles (`local`, `dev`, `test`, `development`, `it`, `integration`)
+is skipped by `banned-exception-type` and `undocumented-response-entity`, the rules whose defect is
+a bad response to a production client. The security rules still apply to such a class.
 
 **Where a genuine exception exists, mark the line rather than widen the rule**:
 
@@ -302,12 +308,15 @@ The reason is required - a marker with an empty reason suppresses nothing, becau
 is how a gate quietly stops holding anything. The marker covers its own line and the whole
 statement after it, and every run prints how many lines were suppressed.
 
-**Three things it deliberately does not do.** It never hardcodes a project's paths, class names or
-exception lists - a rule true only of one repository belongs in that project's own gates, never
-here. It does not judge what needs a person: generator-first (#15①), precedent parity (#19), scope
+**What it deliberately does not do.** It never hardcodes a project's paths, class names or
+exception lists. A name only the product knows comes from the `audit` section of the backend's
+`.claude/simplix.json`: `scopeForcingCalls` lists the helpers, beyond a `force*(` call, that force a
+search to the caller's scope, for `unforced-searchcondition-overload`
+(`{ "audit": { "scopeForcingCalls": ["<scopeHelper>"] } }`). A rule true only of one repository
+belongs in that project's own gates, never here. It does not judge what needs a person: generator-first (#15①), precedent parity (#19), scope
 guarding (#20 - the guard is usually a helper call one or two frames down, so a body regex is all
 false positives; verify it with a request instead), and
 whether a permission group is the *right* group are read by eyes. And it does not start a server,
-so the two verification requests in `review/searchable-field-patterns.md` § PK Contract are still
-run by hand; what it does recover statically is the entity's own `@Id` field, which makes the PK
+so the verification requests in `review/searchable-field-patterns.md` § PK Contract are run by
+hand; what it does recover statically is the entity's own `@Id` field, which makes the PK
 rule exact rather than a guess.

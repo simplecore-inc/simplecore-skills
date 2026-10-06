@@ -12,8 +12,12 @@
  *   node "${CLAUDE_PLUGIN_ROOT}/scripts/audit-backend.mjs" --list      # list rules
  *   node "${CLAUDE_PLUGIN_ROOT}/scripts/audit-backend.mjs" --selftest  # prove every rule both ways
  *
- * Exit code 1 when any error-level rule has hits. "review"-level rules print
+ * Exit code 1 when any error-level rule has hits, 2 when no Java main source was found (a scan
+ * that read nothing would print what a clean project prints). "review"-level rules print
  * candidates that need human judgment and never fail the run.
+ *
+ * Sources: `src/main/java` at the root and under `modules/`, `packages/`, `apps/` and `tools/`.
+ * Product policies come from the `audit` section of the root's `.claude/simplix.json`.
  *
  * **--selftest is the half that keeps this file honest.** Every rule carries a `broken` and a
  * `fixed` sample; the selftest asserts the rule fires on the first and stays silent on the
@@ -34,6 +38,7 @@
  */
 
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 
 const ROOT = path.resolve(
@@ -64,12 +69,62 @@ function walk(dir, out) {
   return out;
 }
 
-function collectSources() {
+/**
+ * Every main-source Java file of the backend at `root`: its own `src/` (a single-module build)
+ * and every module under the multi-module source roots.
+ *
+ * @param root the backend project root
+ * @returns absolute paths of the `src/main/java` sources
+ */
+function collectSources(root = ROOT) {
   const files = [];
-  for (const root of SRC_ROOTS) walk(path.join(ROOT, root), files);
+  walk(path.join(root, "src"), files);
+  for (const dir of SRC_ROOTS) walk(path.join(root, dir), files);
   // Test sources are exempt from every invariant here (the handbook says so for logging,
   // exceptions and constructors alike), so they never enter the scan.
   return files.filter((f) => f.includes(`${path.sep}src${path.sep}main${path.sep}java${path.sep}`));
+}
+
+/**
+ * The `audit` section of the project's `.claude/simplix.json`: the product's own policies, which
+ * this script never guesses. A missing file or section is the empty policy.
+ *
+ * @example
+ * { "audit": { "scopeForcingCalls": ["<scopeHelper>", "<ScopedParamsType>"] } }
+ *
+ * @param root the backend project root
+ * @returns the declared `audit` object, or `{}`
+ */
+function auditSettings(root = ROOT) {
+  const file = path.join(root, ".claude", "simplix.json");
+  if (!fs.existsSync(file)) return {};
+  try {
+    const parsed = JSON.parse(fs.readFileSync(file, "utf8"));
+    return parsed && typeof parsed.audit === "object" && parsed.audit !== null ? parsed.audit : {};
+  } catch (e) {
+    if (!(e instanceof SyntaxError)) throw e;
+    console.error(`⚠ ${file} is not valid JSON - auditing with the empty policy.`);
+    return {};
+  }
+}
+
+/**
+ * The pattern that marks a search body as forced to the caller's scope.
+ *
+ * A call to a `force*` method is the one name that says so in any project. Every other forcing
+ * helper is named by the product, in `audit.scopeForcingCalls`, because a list of one project's
+ * helper names written here reads every other project's forced search as unforced, and the rule
+ * built on it as silent.
+ *
+ * @param names identifiers the project declares as forcing a scope
+ * @returns a pattern matching the generic call or any declared name
+ */
+function forcingPattern(names) {
+  const declared = (Array.isArray(names) ? names : [])
+    .filter((n) => typeof n === "string" && /^[A-Za-z_$][\w$]*$/.test(n));
+  return declared.length
+    ? new RegExp(`\\bforce\\w*\\(|\\b(?:${declared.join("|")})\\b`)
+    : /\bforce\w*\(/;
 }
 
 // ---------------------------------------------------------------------------
@@ -520,9 +575,9 @@ function resetIndexes() { _entityIdIndex = null; _i18nIndex = null; }
 const RULES = [
   {
     id: "not-blank-on-a-meaningfully-empty-field",
-    invariant: "#5 / frontend #34",
+    invariant: "validation-patterns / frontend #34",
     level: "error",
-    desc: "A create/update DTO field carrying `@NotBlank` whose entity counterpart is a non-null column initialised to `\"\"` — the empty string is one of that field's values, not the absence of one. A scope key whose empty case means 「the whole installation」 is the shape this takes, and the constraint then refuses every write of exactly those records while every workplace-scoped one saves: the screen works on some rows and not others, and the refusal names a field no form draws. `@NotNull` is the constraint that was meant — the column still refuses null",
+    desc: "A create/update DTO field carrying `@NotBlank` whose entity counterpart is a non-null column initialised to `\"\"`: the empty string is one of that field's values, not the absence of one. A scope key whose empty case means 「the whole installation」 is the shape this takes, and the constraint then refuses every write of exactly those records while every workplace-scoped one saves: the screen works on some rows and not others, and the refusal names a field no form draws. `@NotNull` is the constraint that was meant, since the column still refuses null",
     appliesTo: (p) => /DTOs?\.java$/.test(p) && !/src\/test\//.test(p),
     check: (c, file, ctx) => {
       const defaults = ctx?.emptyDefaults;
@@ -607,9 +662,9 @@ const RULES = [
   },
   {
     id: "required-field-the-service-overwrites",
-    invariant: "#5 / frontend #34",
+    invariant: "validation-patterns / frontend #34",
     level: "error",
-    desc: "A create/update DTO field carrying `@NotNull` or `@NotBlank` that the entity's own service writes over whatever the request sent — the caller forced onto the record, a state read off the dates, a name looked up from an account. Bean validation runs BEFORE the service is entered, so the constraint refuses every request the form can send while the field it names has no control on the screen and cannot grow one: the reader is told to correct something that is not there. It typechecks, it passes the service's own unit tests (they call the service directly and never meet validation), and the save can never succeed. Drop the constraint — the field stays, tolerated and ignored, and the service's tests keep proving it is overwritten",
+    desc: "A create/update DTO field carrying `@NotNull` or `@NotBlank` that the entity's own service writes over whatever the request sent: the caller forced onto the record, a state read off the dates, a name looked up from an account. Bean validation runs BEFORE the service is entered, so the constraint refuses every request the form can send while the field it names has no control on the screen and cannot grow one: the reader is told to correct something that is not there. It typechecks, it passes the service's own unit tests (they call the service directly and never meet validation), and the save can never succeed. Drop the constraint: the field stays, tolerated and ignored, and the service's tests keep proving it is overwritten",
     appliesTo: (p) => /DTOs?\.java$/.test(p) && !/src\/test\//.test(p),
     check: (c, file, ctx) => {
       const overwrites = ctx?.overwrites;
@@ -746,9 +801,9 @@ const RULES = [
   },
   {
     id: "empty-page-with-no-pageable",
-    invariant: "#1 / #15\u2462",
+    invariant: "#15\u2462 / canonical-service",
     level: "error",
-    desc: "`new PageImpl<>(List.of())` \u2014 a Page built with no `Pageable`. The one-argument constructor fills in `Pageable.unpaged()`, whose `getPageNumber()` and `getPageSize()` THROW `UnsupportedOperationException`, so Jackson cannot serialize the response and the caller gets a 500 where the screen was expecting an empty list. The branch that builds it is the early return for 「this caller has nothing」, which is exactly the path nobody exercises while developing against seeded data and every new account takes on its first request. Pass the request being answered \u2014 `new PageImpl<>(List.of(), pageRequest, 0)`",
+    desc: "`new PageImpl<>(List.of())`, a Page built with no `Pageable`. The one-argument constructor fills in `Pageable.unpaged()`, whose `getPageNumber()` and `getPageSize()` THROW `UnsupportedOperationException`, so Jackson cannot serialize the response and the caller gets a 500 where the screen was expecting an empty list. The branch that builds it is the early return for 「this caller has nothing」, which is exactly the path nobody exercises while developing against seeded data and every new account takes on its first request. Pass the request being answered: `new PageImpl<>(List.of(), pageRequest, 0)`",
     appliesTo: (p) => /\.java$/.test(p) && !/src\/test\//.test(p),
     check: (c) => {
       const clean = stripCommentsAndStrings(c);
@@ -808,9 +863,9 @@ const RULES = [
   },
   {
     id: "i18n-label-read-from-column",
-    invariant: "#36",
+    invariant: "i18n-field-patterns",
     level: "error",
-    desc: "A hand-assembled DTO takes its name from the plain column while the entity carries a `<name>I18n` map — the caller is answered in the language the record was seeded in, whatever language they asked for. Resolve the map (the project's `LocalizedNames.pick`-style helper), or declare the map on the DTO and let `@I18nTrans` serialize it",
+    desc: "A hand-assembled DTO takes its name from the plain column while the entity carries a `<name>I18n` map: the caller is answered in the language the record was seeded in, whatever language they asked for. Resolve the map (the project's `LocalizedNames.pick`-style helper), or declare the map on the DTO and let `@I18nTrans` serialize it",
     appliesTo: (p) => /\.java$/.test(p) && !isDtoContainer(p),
     check: (c, _rel, ctx) => {
       const index = ctx?.i18n;
@@ -1066,13 +1121,15 @@ public class AreaRestController {
     id: "repository-not-simplix-base",
     invariant: "#4",
     level: "error",
-    desc: "Repository extends plain JpaRepository instead of SimpliXBaseRepository — the searchable/projection machinery every list endpoint relies on lives on the SimpliX base, so the entity gets no search surface",
+    desc: "Repository extends a JpaRepository base that is not SimpliX's (plain `JpaRepository`, `SearchableJpaRepository`) instead of SimpliXBaseRepository / SimpliXTreeRepository: the searchable/projection machinery every list endpoint relies on lives on the SimpliX base, so the entity gets no search surface",
     appliesTo: isRepository,
     check: (c) => {
       const clean = stripCommentsAndStrings(c);
       if (!/\binterface\s+\w+/.test(clean)) return [];
       if (/SimpliXBaseRepository|SimpliXTreeRepository/.test(clean)) return [];
-      return lineHits(clean, /\binterface\s+\w+\s+extends\s+[\w<>, ]*\bJpaRepository\b/);
+      // Any `*JpaRepository` base: a library's own searchable base is as far from the SimpliX
+      // one as Spring's plain interface is.
+      return lineHits(clean, /\binterface\s+\w+\s+extends\s+[\w<>, ]*?\b\w*JpaRepository\b/);
     },
     samples: {
       file: "packages/domain-site/src/main/java/app/domain/site/AreaRepository.java",
@@ -1080,6 +1137,20 @@ public class AreaRestController {
 }`,
       fixed: `public interface AreaRepository extends SimpliXBaseRepository<Area, String> {
 }`,
+      hit: [
+        {
+          note: "a searchable-JPA base that is not the SimpliX one",
+          source: `public interface AreaTreeRepository extends SearchableJpaRepository<Area, String> {
+}`,
+        },
+      ],
+      miss: [
+        {
+          note: "a tree entity on the SimpliX tree base",
+          source: `public interface AreaTreeRepository extends SimpliXTreeRepository<Area, String> {
+}`,
+        },
+      ],
     },
   },
   {
@@ -1269,17 +1340,27 @@ public class AreaService extends SimpliXBaseService<Area, String> {
     id: "jvm-default-zone",
     invariant: "#18",
     level: "error",
-    desc: "Timezone-dependent value read from the JVM default zone — argless LocalDate.now() / LocalDateTime.now() / LocalTime.now(), or ZoneId.systemDefault(). The answer then depends on the machine the server happens to run on: near midnight the day, and near New Year the year, differ from the installation's. Resolve a zone explicitly — site (Site.timezone) → domain operation-policy default → the configured app timezone — and pass it in",
+    desc: "Timezone-dependent value read from the JVM default zone: argless LocalDate.now() / LocalDateTime.now() / LocalTime.now() / OffsetDateTime.now() / ZonedDateTime.now() / Year.now() / YearMonth.now(), ZoneId.systemDefault() or TimeZone.getDefault(). The answer then depends on the machine the server happens to run on: near midnight the day, and near New Year the year, differ from the installation's. Resolve the zone explicitly from the narrowest owner the project models (a site's own timezone, for example), falling back to the configured app timezone, and pass it in",
     appliesTo: (p) => p.endsWith(".java"),
     check: (c) =>
       lineHits(
         stripCommentsAndStrings(c),
-        /\b(?:LocalDate|LocalDateTime|LocalTime|Year|YearMonth)\.now\(\s*\)|\bZoneId\.systemDefault\s*\(\s*\)/,
+        /\b(?:LocalDate|LocalDateTime|LocalTime|OffsetDateTime|ZonedDateTime|Year|YearMonth)\.now\(\s*\)|\bZoneId\.systemDefault\s*\(\s*\)|\bTimeZone\.getDefault\s*\(\s*\)/,
       ),
     samples: {
       file: "apps/safety-server/src/main/java/app/safetyserver/seed/InstallationSeed.java",
       broken: `        int year = LocalDate.now().getYear();`,
       fixed: `        int year = LocalDate.now(zone.resolve()).getYear();`,
+      hit: [
+        { note: "an argless OffsetDateTime.now()", source: `        OffsetDateTime stamp = OffsetDateTime.now();` },
+        { note: "an argless ZonedDateTime.now()", source: `        ZonedDateTime stamp = ZonedDateTime.now();` },
+        { note: "the legacy default-zone accessor", source: `        TimeZone tz = TimeZone.getDefault();` },
+      ],
+      miss: [
+        { note: "OffsetDateTime.now with the injected clock", source: `        OffsetDateTime stamp = OffsetDateTime.now(clock);` },
+        { note: "ZonedDateTime.now with a resolved zone", source: `        ZonedDateTime stamp = ZonedDateTime.now(zone.resolve());` },
+        { note: "Instant.now(), which is zone-free", source: `        Instant stamp = Instant.now();` },
+      ],
     },
   },
   {
@@ -1361,7 +1442,7 @@ public class AreaService extends SimpliXBaseService<Area, String> {
   },
   {
     id: "hand-written-row-drops-a-field",
-    invariant: "#17",
+    invariant: "#17 / canonical-service",
     level: "review",
     desc: "A hand-written mapper that skips a field BOTH sides declare — the source has it, the DTO has it, and the method that carries one into the other does not mention it. Nothing fails: the column is written, the DTO serializes, and the field is simply absent from the answer, so the screen draws a value that is there as a value that is not. This is where a field added to an entity goes missing, because the mapper is the one place the addition does not reach and the compiler has nothing to say about it",
     appliesTo: isService,
@@ -1493,11 +1574,11 @@ public class ApprovalInboxService {
     id: "unforced-searchcondition-overload",
     invariant: "#15③",
     level: "error",
-    desc: "A service forces its scope in search(Map) but not in the search(SearchCondition) overload — the controller opens GET /search and POST /search over the same list, so posting the same query returns rows the GET refuses. The two are one door and are narrowed the same way",
+    desc: "A service forces its scope in search(Map) but not in the search(SearchCondition) overload: the controller opens GET /search and POST /search over the same list, so posting the same query returns rows the GET refuses. The two are one door and are narrowed the same way. A body reads as forced when it calls a `force*` method or a name the project lists in `.claude/simplix.json` `audit.scopeForcingCalls`",
     appliesTo: isService,
-    check: (c) => {
+    check: (c, _rel, ctx) => {
       const clean = stripCommentsAndStrings(c);
-      const FORCE = /\bforce\w*\(|ScopedSearchParams|requireVisible|forceVisible/;
+      const FORCE = forcingPattern(ctx?.audit?.scopeForcingCalls);
       // Handing the whole call to the overload that IS narrowed is the third way to be narrowed,
       // and it is the shape a service reaches for when the two doors answer the same question -
       // `return search(Map.of());`. Read as a body with no marker in it, it fails a service that
@@ -1548,6 +1629,22 @@ public class ApprovalInboxService {
                 .orElseGet(() -> userAccountScope.emptyPage(searchCondition));
     }
 }`,
+      hit: [
+        {
+          note: "a scope helper the project declares in audit.scopeForcingCalls",
+          ctx: { audit: { scopeForcingCalls: ["requireVisible"] } },
+          source: `public class UserNoteService {
+    public Page<UserNoteListDTO> search(Map<String, String> params) {
+        Map<String, String> scoped = sites.requireVisible(params, "siteId");
+        return findAllWithSearch(parse(scoped), UserNoteListDTO.class);
+    }
+
+    public Page<UserNoteListDTO> search(SearchCondition<UserNoteSearchDTO> searchCondition) {
+        return findAllWithSearch(searchCondition, UserNoteListDTO.class);
+    }
+}`,
+        },
+      ],
       miss: [
         {
           note: "the SearchCondition overload handing the whole call to the narrowed one",
@@ -1560,6 +1657,34 @@ public class ApprovalInboxService {
 
     public Page<UserNoteListDTO> search(SearchCondition<UserNoteSearchDTO> searchCondition) {
         return search(Map.of());
+    }
+}`,
+        },
+        {
+          note: "a project's own scope helper with no audit.scopeForcingCalls entry - the default knows only force*( and no product's names",
+          ctx: {},
+          source: `public class UserNoteService {
+    public Page<UserNoteListDTO> search(Map<String, String> params) {
+        Map<String, String> scoped = sites.requireVisible(params, "siteId");
+        return findAllWithSearch(parse(scoped), UserNoteListDTO.class);
+    }
+
+    public Page<UserNoteListDTO> search(SearchCondition<UserNoteSearchDTO> searchCondition) {
+        return findAllWithSearch(searchCondition, UserNoteListDTO.class);
+    }
+}`,
+        },
+        {
+          note: "both overloads narrowed through the declared helper",
+          ctx: { audit: { scopeForcingCalls: ["requireVisible"] } },
+          source: `public class UserNoteService {
+    public Page<UserNoteListDTO> search(Map<String, String> params) {
+        Map<String, String> scoped = sites.requireVisible(params, "siteId");
+        return findAllWithSearch(parse(scoped), UserNoteListDTO.class);
+    }
+
+    public Page<UserNoteListDTO> search(SearchCondition<UserNoteSearchDTO> searchCondition) {
+        return findAllWithSearch(sites.requireVisible(searchCondition, "siteId"), UserNoteListDTO.class);
     }
 }`,
         },
@@ -1709,6 +1834,30 @@ function selftestMechanisms() {
       name: "comment stripping: an annotation inside a JavaDoc example is not code",
       pass: () => !/@RequiredArgsConstructor/.test(stripCommentsAndStrings(`/**\n * <pre>{@code\n * @RequiredArgsConstructor\n * }</pre>\n */\npublic class X {}`)),
     },
+    {
+      name: "collection: a single-module src/main/java and a module's are both read, test sources are not",
+      pass: () => withTree({
+        "src/main/java/app/web/AreaRestController.java": "class A {}",
+        "modules/site/src/main/java/app/web/SiteRestController.java": "class B {}",
+        "src/test/java/app/web/AreaRestControllerTest.java": "class C {}",
+      }, (dir) => {
+        const found = collectSources(dir).map((f) => path.relative(dir, f)).sort();
+        return found.length === 2
+          && found[0] === path.join("modules", "site", "src", "main", "java", "app", "web", "SiteRestController.java")
+          && found[1] === path.join("src", "main", "java", "app", "web", "AreaRestController.java");
+      }),
+    },
+    {
+      name: "collection: a directory holding no backend reads as zero sources, which the runner refuses",
+      pass: () => withTree({ "README.md": "not a backend" }, (dir) => collectSources(dir).length === 0),
+    },
+    {
+      name: "settings: the audit section of .claude/simplix.json is read, and a missing file is the empty policy",
+      pass: () =>
+        withTree({ ".claude/simplix.json": `{ "audit": { "scopeForcingCalls": ["requireVisible"] } }` },
+          (dir) => auditSettings(dir).scopeForcingCalls?.[0] === "requireVisible")
+        && withTree({}, (dir) => Object.keys(auditSettings(dir)).length === 0),
+    },
   ];
   let bad = 0;
   for (const c of cases) {
@@ -1720,10 +1869,32 @@ function selftestMechanisms() {
   return bad;
 }
 
+/**
+ * Run `fn` against a scratch directory holding `files`, then remove that directory.
+ *
+ * @param files relative path to contents
+ * @param fn called with the directory's absolute path
+ * @returns what `fn` returned
+ */
+function withTree(files, fn) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "audit-backend-selftest-"));
+  try {
+    for (const [rel, body] of Object.entries(files)) {
+      const abs = path.join(dir, rel);
+      fs.mkdirSync(path.dirname(abs), { recursive: true });
+      fs.writeFileSync(abs, body);
+    }
+    return fn(dir);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+}
+
 function selftest() {
   let failed = selftestMechanisms();
   let passed = 0;
   let nearby = 0;
+  let further = 0;
   console.log("");
   for (const rule of RULES) {
     const s = rule.samples;
@@ -1748,10 +1919,17 @@ function selftest() {
       for (const near of s.miss ?? []) {
         const hits = rule.check(near.source, near.file ?? s.file, near.ctx ?? sampleCtx);
         if (hits.length) {
-          problems.push(`fired on a near-neighbour that is not the defect — ${near.note}`);
+          problems.push(`fired on a near-neighbour that is not the defect: ${near.note}`);
         }
       }
       nearby += (s.miss ?? []).length;
+      // The other shapes of the defect a rule claims. A rule widened to a second broken form is
+      // proved on the first alone unless the second is written down here and asserted to fire.
+      for (const extra of s.hit ?? []) {
+        const hits = rule.check(extra.source, extra.file ?? s.file, extra.ctx ?? sampleCtx);
+        if (!hits.length) problems.push(`did NOT fire on another broken form: ${extra.note}`);
+      }
+      further += (s.hit ?? []).length;
     }
     if (problems.length) {
       console.log(`✖ ${rule.id}\n    ${problems.join("\n    ")}`);
@@ -1759,14 +1937,17 @@ function selftest() {
     } else {
       passed++;
       const misses = (rule.samples.miss ?? []).length;
+      const extras = (rule.samples.hit ?? []).length;
       console.log(
         `✔ ${rule.id.padEnd(34)} fires on broken, silent on fixed`
+          + (extras ? `  · fires on ${extras} further broken form(s)` : "")
           + (misses ? `  · silent on ${misses} near-neighbour(s)` : ""),
       );
     }
   }
   console.log(
     `\n${passed} rule(s) proved both ways, ${failed} not proved`
+      + (further ? `, ${further} further broken form(s) caught` : "")
       + (nearby ? `, ${nearby} near-neighbour(s) left silent.` : "."),
   );
   return failed === 0 ? 0 : 1;
@@ -1808,7 +1989,15 @@ const errorsOnly = args.includes("--errors-only");
 const ruleFilter = args.find((a) => a.startsWith("--rule="))?.slice(7).split(",");
 
 const files = collectSources();
-const ctx = { entityIds: entityIdIndex(files), fields: fieldIndex(files), i18n: i18nIndex(files), overwrites: serviceOverwriteIndex(files), emptyDefaults: emptyDefaultIndex(files) };
+// A scan that read nothing prints what a clean project prints, so it stops instead: the usual
+// cause is a run from the directory above the backend.
+if (files.length === 0) {
+  console.error(`✖ no Java main source under ${ROOT}`);
+  console.error(`  looked in src/main/java and in ${SRC_ROOTS.map((d) => `${d}/**/src/main/java`).join(", ")}`);
+  console.error("  run from the backend project root, or pass --root=<dir>");
+  process.exit(2);
+}
+const ctx = { entityIds: entityIdIndex(files), fields: fieldIndex(files), i18n: i18nIndex(files), overwrites: serviceOverwriteIndex(files), emptyDefaults: emptyDefaultIndex(files), audit: auditSettings() };
 const results = new Map();
 let suppressedCount = 0;
 

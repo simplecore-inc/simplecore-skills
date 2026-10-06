@@ -443,7 +443,7 @@ private LocalTime shiftStart;
 
 ### Forbidden
 
-- **String columns holding an offset-carrying or variable-format date/time** (RFC 3339 etc.) - they lose input validation, chronological search/sort (searchable-jpa compares VARCHAR lexicographically), OpenAPI `format` hints, and cannot serve controllers in different site timezones (one string carries one offset). Wire/SDK string formats are produced at the transmission boundary (SU mappers, site timezone) - never stored. See AP-27.
+- **String columns holding an offset-carrying or variable-format date/time** (RFC 3339 etc.) - they lose input validation, chronological search/sort (searchable-jpa compares VARCHAR lexicographically), OpenAPI `format` hints, and cannot serve controllers in different site timezones (one string carries one offset). Wire/SDK string formats are produced at the transmission boundary (the mapper that serializes for the external system, in the zone of the place the value belongs to) - never stored. See AP-27.
 - **`LocalDateTime` / `OffsetDateTime` / `ZonedDateTime` entity fields** - SimpliX's auto-applied JPA converters UTC-normalize them, so they cannot preserve an original offset; an absolute point in time is `Instant`, a zone-free value is `LocalDate`/`LocalTime`.
 
 ### Timezone configuration fields
@@ -452,11 +452,11 @@ Fields that hold a timezone (e.g. `Site.timezone`) store **IANA zone IDs** (`"As
 
 ### Zone handling in services
 
-Never call argless `LocalDate.now()` / `LocalTime.now()` / `OffsetDateTime.now()` / `Year.now()` / `YearMonth.now()`, `ZoneId.systemDefault()`, or `TimeZone.getDefault()` in main code - the container's TZ must never decide a domain result. `Instant.now()` is zone-free and unrestricted. Resolve the `ZoneId` explicitly, in this order:
+Never call argless `LocalDate.now()` / `LocalDateTime.now()` / `LocalTime.now()` / `OffsetDateTime.now()` / `ZonedDateTime.now()` / `Year.now()` / `YearMonth.now()`, `ZoneId.systemDefault()`, or `TimeZone.getDefault()` in main code - the container's TZ must never decide a domain result, and the audit's `jvm-default-zone` fails each. `Instant.now()` is zone-free and unrestricted. Resolve the `ZoneId` explicitly, from the narrowest owner the project models:
 
-1. **Site timezone** - `Site.timezone` (IANA ID), for anything attributed to a physical site: work-date attribution, visit dates, kiosk "today", policy windows, site-scoped day boundaries.
-2. **Domain operation-policy default zone** - when no site applies (e.g. `defaultTimeZone` on the domain's operation policy).
-3. **App timezone** - the single configured fallback. Never hardcode a zone literal (`ZoneId.of("Asia/Seoul")`) - inject it from configuration. Sole exception: `ZoneOffset.UTC` where the storage contract itself is UTC (statistics buckets, retention batches), with a justifying comment on the constant.
+1. **The narrowest owner's zone** - for example a site's own `timezone` field (IANA ID), for anything attributed to a physical place: work-date attribution, visit dates, a kiosk's "today", policy windows, place-scoped day boundaries.
+2. **A broader owner's default zone** - when the project models one and no narrower owner applies (for example a `defaultTimeZone` on a domain policy).
+3. **App timezone** - the single configured fallback, and the whole order in a project that models no zone of its own. Never hardcode a zone literal (`ZoneId.of("Asia/Seoul")`) - inject it from configuration. Sole exception: `ZoneOffset.UTC` where the storage contract itself is UTC (statistics buckets, retention batches), with a justifying comment on the constant.
 
 Every `Instant ↔ LocalDate`/`LocalTime` conversion names its zone in code: `instant.atZone(zone).toLocalDate()`, `date.atStartOfDay(zone).toInstant()`. Time-sensitive components (schedulers, evaluators) take an injected `java.time.Clock` through their single explicit constructor (see AP-26). User/browser timezones are display-only and never influence stored values. Anti-pattern: AP-28. These zone rules bind ALL Java code including schedulers and infrastructure.
 
