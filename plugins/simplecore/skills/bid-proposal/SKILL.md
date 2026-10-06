@@ -215,7 +215,7 @@ with 「(미정: …)」.
 - Panel: three client evaluators, two external evaluators, a typesetting expert and a requirements
   engineer; the presentation adds a speech coach and an announcer. One agent per persona, in parallel.
 - Findings go to a file, graded 상·중·하. Fix every 상 and 중, apply the 하 once, and review again.
-  Stop when no 상 or 중 is left; delete the round files once applied.
+  Stop when no 상 or 중 is left; delete a round's files once the next round has read them (the next round checks each finding against them), and the last round's once it is applied.
 - If the same finding returns in two rounds, write a check that finds it and fix everything it finds.
 - Before reporting a pass complete, run the check that proves it covered everything (every page
   id, every figure, every board screen) and quote its count.
@@ -298,6 +298,6 @@ Each of these happened in an earlier bid; the rule after the arrow keeps it from
   it reads and is proven on a known defect before it is trusted.
 - A table titled 「요구사항 61건」 had 62 rows → counts are computed, never typed.
 - A different diagram was placed than the one asked for → cite figures by number and title.
-- Persona round files piled up across rounds → delete each round once applied.
+- Persona round files piled up across rounds → delete each round once the next round has read it; a round deleted before the next review left that review nothing to check its fixes against.
 - Figures ended up in two folders → one generator, one output folder.
 - Codex used Claude Code's Korean audit skill → use the standard that tool has installed.
