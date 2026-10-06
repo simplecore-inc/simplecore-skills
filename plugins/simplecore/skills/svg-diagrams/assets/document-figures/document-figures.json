@@ -56,10 +56,9 @@
   "labelForm": {},
   "register": null,
   "sectionNumbers": true,
-  // WCAG's floor for text under the large-text size, which a label printing
-  // at the document's body size is. 3.0, the library's default, is the
-  // large-text floor.
-  "contrastFloor": 4.5,
+  // contrastFloor is left unset: every label is then held to WCAG's floor for
+  // its printed size, 4.5 under the large-text size and 3.0 at it. A number
+  // holds every label to it; null turns the check off.
   "references": null,
   "plans": null
 }

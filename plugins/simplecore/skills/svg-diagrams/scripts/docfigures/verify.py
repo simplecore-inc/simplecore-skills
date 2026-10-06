@@ -34,7 +34,8 @@ run. The reviews list what to look at and fail nothing.
   edge-pill      every connector label is the library's `edge_label`, not
                  the toolkit's pill
   lint           the toolkit's static lint, with DEAD-MARGIN judged per board
-  contrast       every label clears the contrast floor on its own ground
+  contrast       every label clears the contrast floor on its own ground: 4.5
+                 under the large-text size and 3.0 at it, or `contrastFloor`
   references     every link and placement resolves, captions match, copies
                  are current, nothing is left unplaced
   content edge, legend edge, strip, height    reviews
@@ -60,7 +61,7 @@ from figlib.checks_drawing import (bullet_mode, dash_pattern_errors,  # noqa: E4
                                    strip_reviews, stroke_width_errors, stub_lines,
                                    sub_body_share, width_errors)
 from figlib.checks_refs import references  # noqa: E402
-from figlib.svgread import texts, toolkit_dir  # noqa: E402,F401
+from figlib.svgread import board_of, texts, toolkit_dir  # noqa: E402,F401
 
 
 # ── toolkit passes ─────────────────────────────────────────────────────────
@@ -132,22 +133,45 @@ def lint(svgs, cfg):
     return out, dead
 
 
+# WCAG's floors: text under the large-text size, and large text.
+CONTRAST_TEXT = 4.5
+CONTRAST_LARGE = 3.0
+
+
 def contrast_errors(svgs, cfg):
-    """Lines of `audit.py contrast`, or None when the config turns it off."""
-    floor = cfg.get("contrastFloor", 3.0)
-    if floor is None:
+    """Lines of `audit.py contrast`, or None when the config turns it off.
+
+    With no `contrastFloor`, a label is held to the floor its printed size
+    needs: 4.5 under WCAG's large-text size, 3.0 at it, judged at each board's
+    placement times `placeScale`. A number holds every label to it.
+    """
+    if "contrastFloor" in cfg.data and cfg.get("contrastFloor") is None:
         return None
-    run = _audit(cfg, "contrast", "--floor", str(floor), *[str(s) for s in svgs])
-    found, current = [], None
-    for ln in run.stdout.splitlines():
-        m = re.match(r"=== contrast (.+?) ===", ln)
-        if m:
-            current = m.group(1)
-        elif "✖" in ln:
-            found.append(f"{current}: {ln.strip().removeprefix('✖ ')}")
-    if run.returncode and not found:
-        # it could not look, which is not a pass
-        found = [f"contrast check did not run: {run.stderr.strip()[-300:]}"]
+    floor = cfg.get("contrastFloor")
+    if floor is None:
+        groups = {}
+        for svg in svgs:
+            board = board_of(svg, cfg) or cfg.default_board
+            groups.setdefault(board, []).append(svg)
+        calls = [(["--floor", f"{CONTRAST_TEXT:g}", "--large-floor", f"{CONTRAST_LARGE:g}",
+                   "--px-per-unit", f"{cfg.boards[board] / board * cfg.place_scale:.6f}"], files)
+                 for board, files in groups.items()]
+    else:
+        calls = [(["--floor", str(floor)], svgs)]
+    found = []
+    for opts, files in calls:
+        run = _audit(cfg, "contrast", *opts, *[str(s) for s in files])
+        lines, current = [], None
+        for ln in run.stdout.splitlines():
+            m = re.match(r"=== contrast (.+?) ===", ln)
+            if m:
+                current = m.group(1)
+            elif "✖" in ln:
+                lines.append(f"{current}: {ln.strip().removeprefix('✖ ')}")
+        if run.returncode and not lines:
+            # it could not look, which is not a pass
+            lines = [f"contrast check did not run: {run.stderr.strip()[-300:]}"]
+        found += lines
     return found
 
 

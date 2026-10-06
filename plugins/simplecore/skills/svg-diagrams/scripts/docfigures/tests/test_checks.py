@@ -195,6 +195,29 @@ class SourceChecks(Case):
             self.assertIn("did not run", found[0])
 
 
+class ContrastDefault(unittest.TestCase):
+    # a body label at 3.5:1 on white, on a 1200 board placed at 600 px, so it
+    # prints at 12 px: text, not large text
+    BODY = text(60, 90, "판정 통과", fill="#888888")
+
+    def found(self, **config):
+        p = Project(**config)
+        try:
+            f = p.write("figures/a.svg", svg(self.BODY, w=1200, h=160))
+            return verify.contrast_errors([f], p.cfg())
+        finally:
+            p.close()
+
+    def test_default_holds_a_body_size_label_to_the_text_floor(self):
+        found = self.found()
+        self.assertEqual(len(found), 1)
+        self.assertIn("under 4.5:1", found[0])
+
+    def test_a_number_holds_every_label_to_it_and_null_turns_it_off(self):
+        self.assertEqual(self.found(contrastFloor=3.0), [])
+        self.assertIsNone(self.found(contrastFloor=None))
+
+
 class Strokes(Case):
     def test_stroke_off_the_ladder_fails_and_icon_stroke_passes(self):
         bad = self.fig("bad", '<rect x="40" y="40" width="200" height="60" fill="#fff" '

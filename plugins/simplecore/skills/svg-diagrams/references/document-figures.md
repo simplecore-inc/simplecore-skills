@@ -134,10 +134,11 @@ one set on type prints at a contrast ratio around 4.0 on white, under the 4.5 a
 small size needs. The library's `save()` promotes any pale-grey `<text>` to the
 neutral grey rather than leaving it to every call site, so a figure cannot
 reintroduce it and a line may still be drawn in the pale grey, where it belongs.
-The contrast check holds every label to `contrastFloor` against the ground
-painted under it. Its default, 3.0, is WCAG's floor for large text; a label
-printed at the document's body size is smaller than that and takes 4.5, which
-the sample settings file sets.
+The contrast check holds every label to WCAG's floor for its printed size,
+against the ground painted under it: 4.5 under the large-text size, which every
+label printed at the document's body size is, and 3.0 for large text (18pt, or
+14pt in bold). The printed size is the label's size times its board's placement
+times `placeScale`. A number in `contrastFloor` holds every label to it.
 
 **The smallest rung is for a short marker and a value looked up, not for the
 figure's own words.** A figure whose every label sits on it has no entry point:
@@ -810,7 +811,7 @@ importable as a module constant.
 | `labelForm` | | `{allow: [...]}` strings that pass the predicate-ending check, or `false` to turn it off | `{}` |
 | `register` | | `{words, allow}`: the project's working-word pattern and passing strings, for the register check | none |
 | `sectionNumbers` | | `false` turns off the section-number check | `true` |
-| `contrastFloor` | | WCAG ratio every label clears on its own ground: 3.0 is the floor for large text, 4.5 for a label printed at body size; `null` turns it off | `3.0` |
+| `contrastFloor` | | WCAG ratio every label clears on its own ground; unset, a label is held to 4.5 under the large-text size (18pt, or 14pt bold, as printed) and to 3.0 at it; a number holds every label to it; `null` turns it off | 4.5 · 3.0 by printed size |
 | `references` | | `{manuscripts, caption, placements: [{glob, pattern, copies}]}` for the reference check | none |
 | `plans` | | `{manuscripts, blockStart, row, caption, name, pagePad, embed}` for `figplans.py`; `caption` has groups `caption`, `page`, `index` | none |
 

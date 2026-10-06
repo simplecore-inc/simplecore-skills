@@ -6,9 +6,9 @@ rendered picture, one on the generator's source.
 - `line_overlaps(svg)`: two drawn runs that print as one line - a route that
   doubles back on itself (`SELF-DOUBLED`), or two lines of any kind and any
   orientation on top of each other (`COINCIDENT-LINES`)
-- `contrast(svg_path, render, floor)`: a label whose colour disappears into
-  the shape painted under it, measured on a render with the text removed
-  (`LOW-CONTRAST`)
+- `contrast(svg_path, render, text_w, floor, large_floor, px_per_unit)`: a
+  label whose colour disappears into the shape painted under it, measured on
+  a render with the text removed (`LOW-CONTRAST`)
 - `marker_defaults(py_path)`: a `.line()` / `.path()` call that states no
   `marker=`, and so inherits the toolkit's arrowhead (`MARKER-DEFAULT`)
 - `edge_pills(py_path)`: a document-figure module's connector label drawn
@@ -239,11 +239,21 @@ def line_overlaps(svg):
 
 
 # ── LOW-CONTRAST ───────────────────────────────────────────────────────────
-# WCAG's floor for large text, the default. Text under the large-text size
-# needs 4.5, and a document figure's labels, printed at the document's body
-# size, are that small: `--floor 4.5` (verify.py's `contrastFloor`) holds them
-# to it.
+# WCAG's floor for large text, the CLI's default for every label. Text under
+# the large-text size needs 4.5: `--floor 4.5 --large-floor 3.0` holds a label
+# to the ratio its printed size needs, read at `--px-per-unit` (verify.py
+# passes each board's placement).
 CONTRAST_FLOOR = 3.0
+# WCAG's large text: 18pt, or 14pt in bold, in CSS px (1pt = 4/3 px).
+LARGE_PX = 24.0
+LARGE_BOLD_PX = 18.67
+
+
+def is_large(size, weight, px_per_unit=1.0):
+    """Whether a label at `size` units and `weight` prints as WCAG large text."""
+    px = size * px_per_unit
+    bold = weight in ("bold", "bolder") or (weight.isdigit() and int(weight) >= 700)
+    return px >= LARGE_PX or (bold and px >= LARGE_BOLD_PX)
 
 
 def _luminance(rgb):
@@ -268,15 +278,18 @@ def _rgb(value):
     return tuple(int(v[i:i + 2], 16) for i in (0, 2, 4))
 
 
-def contrast(svg_path, render, text_w, floor=CONTRAST_FLOOR, scale=2):
-    """Labels under `floor`:1 against what is painted under them.
+def contrast(svg_path, render, text_w, floor=CONTRAST_FLOOR, scale=2,
+             large_floor=None, px_per_unit=1.0):
+    """Labels under their floor against what is painted under them.
 
     The ground is measured, not inferred: the figure is rendered once with
     every `<text>` removed (`render(svg, png, scale)`), and the most common
     colour inside each label's own box on that image is the ground the reader
     sees the glyphs against. `text_w(text, size, mono)` is the toolkit's width
-    estimate. Raises RuntimeError when the render produced nothing, because a
-    contrast check that could not look has not passed.
+    estimate. Every label is held to `floor`:1, except that with `large_floor`
+    given, a label that prints as large text (`is_large` at `px_per_unit`) is
+    held to that instead. Raises RuntimeError when the render produced nothing,
+    because a contrast check that could not look has not passed.
     """
     from PIL import Image
 
@@ -312,11 +325,15 @@ def contrast(svg_path, render, text_w, floor=CONTRAST_FLOOR, scale=2):
                 continue
             bg = Counter(img.crop(box).getdata()).most_common(1)[0][0]
             ratio = contrast_ratio(fg, bg)
-            if ratio < floor:
+            limit = floor
+            if large_floor is not None and is_large(size, a.get("font-weight", "400"),
+                                                    px_per_unit):
+                limit = large_floor
+            if ratio < limit:
                 out.append(("LOW-CONTRAST",
                             f'"{text[:34]}" {a["fill"]} on '
-                            f'#{bg[0]:02x}{bg[1]:02x}{bg[2]:02x} is {ratio:.1f}:1, '
-                            f'under {floor:g}:1 - take the band\'s own dark tone '
+                            f'#{bg[0]:02x}{bg[1]:02x}{bg[2]:02x} is {ratio:.2f}:1, '
+                            f'under {limit:g}:1 - take the band\'s own dark tone '
                             f'or move the label off the band'))
     return out
 
