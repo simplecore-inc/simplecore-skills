@@ -1,6 +1,6 @@
 # DTO Type Reference
 
-Role and shape of each of the 8 DTO types. Use this as a **router** - it tells you which DTO type you need and where the detailed rules live. Do not treat this file as authoritative for annotation-level rules.
+Role and shape of each DTO type. Use this as a **router** - it tells you which DTO type you need and where the detailed rules live. Do not treat this file as authoritative for annotation-level rules.
 
 > **Scope (canonical):** when to include each DTO type, its Lombok shape, inheritance, and what concerns go into it. For deep rules, follow the pointer at the end of each section. For actual field-by-field entity → DTO mapping, see `entity-to-dto-mapping.md`.
 
@@ -30,7 +30,7 @@ Input (write) side                   Output (read) side
   SearchDTO          (standalone)     (paired with ListDTO via findAllWithSearch)
 ```
 
-All eight are **static inner classes** of `{Entity}DTOs`. A SimpliX-generated CRUD module always has Search/Create/Update/UpdateForm/Detail/List; BatchUpdate/OrderUpdate are conditional (see [Which DTO Types Does My Entity Need?](#which-dto-types-does-my-entity-need)).
+All of them are **static inner classes** of `{Entity}DTOs`. A SimpliX-generated CRUD module always has Search/Create/Update/UpdateForm/Detail/List; BatchUpdate/OrderUpdate are conditional (see [Which DTO Types Does My Entity Need?](#which-dto-types-does-my-entity-need)).
 
 ---
 
@@ -43,7 +43,7 @@ All eight are **static inner classes** of `{Entity}DTOs`. A SimpliX-generated CR
 - **Required annotations per field:** `@Schema`, `@FieldLabel`, `@SearchableField`
 - **No validation annotations** - search inputs are permissive by design
 
-Detail → `searchable-field-patterns.md` (entityField paths, operator choice by type, URL parameter format, 20 operators).
+Detail → `searchable-field-patterns.md` (entityField paths, operator choice by type, URL parameter format, the operator reference).
 
 ---
 
@@ -159,7 +159,7 @@ The controller receives `List<OrderUpdateDTO>` and the service applies changes p
 
 ## Which DTO Types Does My Entity Need?
 
-- **Always:** SearchDTO, CreateDTO, UpdateDTO, UpdateFormDTO, DetailDTO, ListDTO (six)
+- **Always:** SearchDTO, CreateDTO, UpdateDTO, UpdateFormDTO, DetailDTO, ListDTO
 - **Add BatchUpdateDTO** if the module exposes `PATCH /batch`. Choose subset fields per the guidance in [§5](#5-batchupdatedto).
 - **Add OrderUpdateDTO** only when the entity has `sortOrder` / `displayOrder` / `orderIndex`.
 - **Add `children` field to ListDTO** when the entity is a tree ([§7](#7-listdto)).

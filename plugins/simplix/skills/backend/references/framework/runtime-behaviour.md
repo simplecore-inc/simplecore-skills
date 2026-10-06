@@ -1,8 +1,8 @@
 # What the framework does that the code does not show
 
-Behaviours of the SimpliX runtime that no file in the project states, and that each cost a
-session to work out. They are not conventions to follow - they are facts to know before
-reading a symptom.
+Behaviours of the SimpliX runtime that no file in the project states, and whose symptoms point
+somewhere else. They are not conventions to follow - they are facts to know before reading a
+symptom.
 
 ## Contents
 

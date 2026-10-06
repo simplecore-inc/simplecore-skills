@@ -2,12 +2,12 @@
 
 This document provides comprehensive guidance for configuring `@SearchableField` annotation in SearchDTO based on the Searchable JPA library.
 
-> **Scope**: DTO-side validation of `@SearchableField` - how entity field types map to operators, path syntax for joins, and URL parameter format. For the underlying Searchable JPA framework itself (configuration, query composition, OR conditions), see `../../../../references/searchable-jpa/` at the project root.
+> **Scope**: DTO-side validation of `@SearchableField` - how entity field types map to operators, path syntax for joins, and URL parameter format. For the underlying Searchable JPA framework itself (configuration, query composition, OR conditions), see any searchable-JPA reference the project keeps under its own `.claude/`.
 
 ## Contents
 
 - [@SearchableField Annotation](#searchablefield-annotation)
-- [SearchOperator - All 20 Operators](#searchoperator---all-20-operators)
+- [SearchOperator Reference](#searchoperator-reference)
 - [Entity Field Type to Operator Mapping](#entity-field-type-to-operator-mapping)
 - [entityField Path Patterns](#entityfield-path-patterns)
 - [sortField Priority](#sortfield-priority)
@@ -106,28 +106,25 @@ for path, item in spec["paths"].items():
 PY
 ```
 
-**Both halves are now carried by `${CLAUDE_PLUGIN_ROOT}/scripts/audit-backend.mjs`** as the rule
+**Both halves are carried by `${CLAUDE_PLUGIN_ROOT}/scripts/audit-backend.mjs`** as the rule
 `searchdto-pk-contract`, which reads a checkout and needs nothing started.
 
-The reason a static scan looked impossible is worth keeping, because it is what makes the rule
-precise rather than noisy. A scan that flagged every searchable id omitting `IN` would report
-every FK that omits it for good reason, and an audit that cries wolf gets muted - worse than not
-having one. What removes the guesswork is that the entity's own primary key IS in the source: the
-audit indexes every `@Entity` class's `@Id` field, matches `{Entity}DTOs` to `{Entity}`, and
-asserts the contract on that one field alone. Foreign keys on the same DTO are never touched.
+The rule is exact because it asserts the contract on the entity's own primary key alone: it
+indexes every `@Entity` class's `@Id` field, matches `{Entity}DTOs` to `{Entity}`, and never
+touches the foreign keys on the same DTO, which may omit `IN` for good reason. A rule that flagged
+every searchable id omitting `IN` would report those foreign keys too, and an audit that reports
+what is not a defect gets muted.
 
-**One fact still is not in the source, and stays out**: whether a list filter actually resolves
-its selections against this endpoint. That lives in the frontend's facet definitions, and the
-contract is required regardless of whether a filter exists today.
-
-**The two verification requests below are still run by hand** against a started server. A static
-rule proves the annotation says the right thing; only the request proves the server agrees.
+It has two limits. Whether a list filter actually resolves its selections against this endpoint
+lives in the frontend's facet definitions, outside the source it reads; the contract is required
+regardless. And a static rule proves the annotation says the right thing, while only the
+verification requests above, run by hand against a started server, prove the server agrees.
 
 ---
 
-## SearchOperator - All 18 Operators
+## SearchOperator Reference
 
-### Comparison Operators (6)
+### Comparison Operators
 
 | Operator | Name | SQL Equivalent | Use Case |
 |----------|------|----------------|----------|
@@ -138,7 +135,7 @@ rule proves the annotation says the right thing; only the request proves the ser
 | `LESS_THAN` | lessThan | `< value` | Less than |
 | `LESS_THAN_OR_EQUAL_TO` | lessThanOrEqualTo | `<= value` | Less or equal |
 
-### LIKE Operators (6)
+### LIKE Operators
 
 | Operator | Name | SQL Equivalent | Use Case |
 |----------|------|----------------|----------|
@@ -149,21 +146,21 @@ rule proves the annotation says the right thing; only the request proves the ser
 | `ENDS_WITH` | endsWith | `LIKE '%value'` | Suffix match |
 | `NOT_ENDS_WITH` | notEndsWith | `NOT LIKE '%value'` | Exclude suffix |
 
-### NULL Check Operators (2)
+### NULL Check Operators
 
 | Operator | Name | SQL Equivalent | Use Case |
 |----------|------|----------------|----------|
 | `IS_NULL` | isNull | `IS NULL` | Check null |
 | `IS_NOT_NULL` | isNotNull | `IS NOT NULL` | Check not null |
 
-### Collection Operators (2)
+### Collection Operators
 
 | Operator | Name | SQL Equivalent | Use Case |
 |----------|------|----------------|----------|
 | `IN` | in | `IN (value1, value2, ...)` | Multiple values |
 | `NOT_IN` | notIn | `NOT IN (value1, value2, ...)` | Exclude multiple |
 
-### Range Operators (2)
+### Range Operators
 
 | Operator | Name | SQL Equivalent | Use Case |
 |----------|------|----------------|----------|
@@ -494,7 +491,7 @@ GET /api/items?title.contains=Spring&status.equals=PUBLISHED&sort=createdAt.desc
 @Setter
 public static class BasicEntitySearchDTO {
 
-    @SearchableField(operators = {EQUALS})
+    @SearchableField(operators = {EQUALS, IN}, sortable = true)
     private String entityId;
 
     @SearchableField(operators = {EQUALS, CONTAINS}, sortable = true)
@@ -521,7 +518,7 @@ public static class BasicEntitySearchDTO {
 @Setter
 public static class CmsContentSearchDTO {
 
-    @SearchableField(operators = {EQUALS})
+    @SearchableField(operators = {EQUALS, IN}, sortable = true)
     private String contentId;
 
     // @ManyToOne reference
@@ -568,7 +565,7 @@ public static class CmsContentSearchDTO {
 @Setter
 public static class CategorySearchDTO {
 
-    @SearchableField(operators = {EQUALS})
+    @SearchableField(operators = {EQUALS, IN}, sortable = true)
     private String categoryId;
 
     @SearchableField(operators = {EQUALS, CONTAINS}, sortable = true)
@@ -599,7 +596,7 @@ public static class CategorySearchDTO {
 @Setter
 public static class UserAccountSearchDTO {
 
-    @SearchableField(operators = {EQUALS})
+    @SearchableField(operators = {EQUALS, IN}, sortable = true)
     private String userId;
 
     // Hashed field search (if using hash index)

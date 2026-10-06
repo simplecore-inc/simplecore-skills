@@ -196,10 +196,9 @@ private String name;
 private String name;
 ```
 
-`@FieldLabel` is required on:
+`@FieldLabel` is required on (invariant #12, checked by the audit's `missing-field-label`):
 - SearchDTO fields (after `@Schema`)
-- CreateDTO fields (after `@Schema`)
-- BatchUpdateDTO fields (after `@Schema`)
+- CreateDTO fields (after `@Schema`), which the UpdateDTO and UpdateFormDTO inherit
 
 ### Which message key to use
 
@@ -755,7 +754,7 @@ private void rejectIfInUse(String id) {
 
 ```bash
 # WRONG — delete the entity/enum Java in one commit, its message bundles in the next:
-#   EntityMessageTranslationTest / EnumMessageTranslationTest go RED the instant the class is
+#   the translation-coverage tests (e.g. EntityMessageTranslationTest / EnumMessageTranslationTest) go RED the instant the class is
 #   gone while entities.X.* / enums.Y.* keys remain (orphan keys), so the intermediate commit
 #   cannot build.
 # WRONG — a feature-removal grep of a polysemous term matches unrelated features:
@@ -767,7 +766,7 @@ grep -rEn 'DeliveryRecord|deliveryRecord|delivery_records|[Dd]eliveryMatcher' \
   --include='*.java' --include='*.properties' | grep -vE '/build/|/generated/'
 ```
 
-**Why**: the orphan-key translation tests treat every `entities.*` / `enums.*` key with no backing `@FieldLabel` / enum value as an orphan and fail the build. So a removal that splits the Java change (entity/enum class) from the message-bundle change into separate commits cannot produce a green intermediate - it violates "never commit a broken build". Fold the bundle removal into the same commit as the class deletion; symmetrically, a NEW enum value needs its `enums/*.properties` label in every locale in the same commit that adds the value, or `EnumMessageTranslationTest` fails. For feature removal, a polysemous identifier (a word used by several features) makes a bare `grep -ri` report false positives from siblings; use a symbol-precise `grep -E` (never `-i`), exclude `/build/` `/generated/` and plan docs, and enumerate the homonyms to KEEP before deleting - the only safe basis for judging "fully removed" is a pattern that matches the target and nothing else.
+**Why**: the orphan-key translation tests treat every `entities.*` / `enums.*` key with no backing `@FieldLabel` / enum value as an orphan and fail the build. So a removal that splits the Java change (entity/enum class) from the message-bundle change into separate commits cannot produce a green intermediate - it violates "never commit a broken build". Fold the bundle removal into the same commit as the class deletion; symmetrically, a NEW enum value needs its `enums/*.properties` label in every locale in the same commit that adds the value, or the project's enum translation test (e.g. `EnumMessageTranslationTest`) fails. For feature removal, a polysemous identifier (a word used by several features) makes a bare `grep -ri` report false positives from siblings; use a symbol-precise `grep -E` (never `-i`), exclude `/build/` `/generated/` and plan docs, and enumerate the homonyms to KEEP before deleting - the only safe basis for judging "fully removed" is a pattern that matches the target and nothing else.
 
 ## AP-34: A `@NaturalId` Column the Update Path Still Accepts
 

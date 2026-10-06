@@ -301,25 +301,25 @@ private String code;
 | `property` | **Yes** | DTO property name (usually same as field) |
 | `idField` | UpdateDTO | Entity `@Id` field name (for excluding self) |
 | `idProperty` | UpdateDTO | DTO ID property name (for excluding self) |
-| `softDeleteField` | Conditional | Required only if entity has `@SoftDelete` |
-| `softDeleteType` | Conditional | `BOOLEAN` (with @SoftDelete) or omit if no soft delete |
+| `softDeleteField` | Conditional | Required only if the entity soft-deletes (§ Soft Delete Type Detection) |
+| `softDeleteType` | Conditional | `BOOLEAN` when the entity soft-deletes, omitted otherwise |
 
 ### Soft Delete Configuration
 
-**CRITICAL**: The soft delete setting depends on whether the entity uses `@SoftDelete`:
+**CRITICAL**: The soft delete setting depends on whether the entity soft-deletes (§ Soft Delete Type Detection):
 
 | Entity Has | softDeleteField | softDeleteType |
 |------------|-----------------|----------------|
-| `@SoftDelete(columnName = "deleted")` | `"deleted"` | `SoftDeleteType.BOOLEAN` |
-| No `@SoftDelete` | Do NOT set | Do NOT set |
+| `implements SoftDeletable` (or Hibernate's `@SoftDelete`) | `"deleted"` | `SoftDeleteType.BOOLEAN` |
+| Neither | Do NOT set | Do NOT set |
 
-**With @SoftDelete** (most entities - uses Hibernate's hidden boolean column):
+**Soft-deleting entity** (most entities - the `deleted` flag of `SoftDeletable`):
 ```java
 @UniqueField(entity = UserRole.class, field = "roleCode", property = "roleCode",
         softDeleteField = "deleted", softDeleteType = SoftDeleteType.BOOLEAN)
 ```
 
-**Without @SoftDelete** (hard delete only - no soft delete parameters):
+**Hard-deleting entity** (no soft delete parameters):
 ```java
 @UniqueField(entity = CmsChannel.class, field = "channelCode", property = "channelCode")
 ```
@@ -370,13 +370,12 @@ public static class CmsChannelUpdateDTO extends CmsChannelCreateDTO {
 
 ### With Soft Delete
 
-When entity uses `@SoftDelete(columnName = "deleted")`, include soft delete parameters:
+When the entity soft-deletes, include soft delete parameters:
 
 ```java
-// Entity with @SoftDelete
+// Entity that soft-deletes
 @Entity
-@SoftDelete(columnName = "deleted")
-public class UserRole { ... }
+public class UserRole extends BaseEntity<String> implements SoftDeletable { ... }
 
 // DTO - use "deleted" field with BOOLEAN type
 @UniqueFields({
@@ -390,18 +389,17 @@ public class UserRole { ... }
 
 | Type | When to Use | Example |
 |------|-------------|---------|
-| `BOOLEAN` | Entity has `@SoftDelete(columnName = "deleted")` | Hibernate manages hidden boolean column |
-| `NONE` | Entity has no `@SoftDelete` | Hard delete only - omit softDeleteField entirely |
+| `BOOLEAN` | The entity soft-deletes | the `deleted` flag `SoftDeletable` declares |
+| `NONE` | The entity does not soft-delete | Hard delete only - omit softDeleteField entirely |
 
 ### Multiple Unique Fields
 
 Check entity for multiple unique constraints:
 
 ```java
-// Entity with @SoftDelete
+// Entity that soft-deletes
 @Entity
-@SoftDelete(columnName = "deleted")
-public class User {
+public class User extends BaseEntity<String> implements SoftDeletable {
     @Id
     private String userId;
 
@@ -414,7 +412,7 @@ public class User {
 ```
 
 ```java
-// CreateDTO - WITH idField/idProperty for proper inheritance (entity has @SoftDelete)
+// CreateDTO - WITH idField/idProperty for proper inheritance (the entity soft-deletes)
 @UniqueFields({
     @UniqueField(entity = User.class, field = "email", property = "email",
             idField = "userId", idProperty = "userId",
@@ -474,8 +472,8 @@ public class Employee {
 | `properties` | **Yes** | Array of DTO property names (same order as fields) |
 | `idField` | UpdateDTO | Entity `@Id` field name (for excluding self) |
 | `idProperty` | UpdateDTO | DTO ID property name (for excluding self) |
-| `softDeleteField` | Conditional | Required only if entity has `@SoftDelete` - use `"deleted"` |
-| `softDeleteType` | Conditional | `BOOLEAN` (with @SoftDelete) or omit if no soft delete |
+| `softDeleteField` | Conditional | Required only if the entity soft-deletes - use `"deleted"` |
+| `softDeleteType` | Conditional | `BOOLEAN` when the entity soft-deletes, omitted otherwise |
 
 ### CreateDTO vs UpdateDTO Inheritance Pattern
 
@@ -522,14 +520,13 @@ public static class EmployeeUpdateDTO extends EmployeeCreateDTO {
 ### Multiple Composite Constraints
 
 ```java
-// Entity with @SoftDelete and multiple composite unique constraints
+// Entity that soft-deletes, with multiple composite unique constraints
 @Entity
-@SoftDelete(columnName = "deleted")
 @Table(uniqueConstraints = {
     @UniqueConstraint(name = "uk_user_provider", columnNames = {"user_id", "provider"}),
     @UniqueConstraint(name = "uk_provider_id", columnNames = {"provider", "provider_id"})
 })
-public class UserSocialConnection {
+public class UserSocialConnection extends BaseEntity<String> implements SoftDeletable {
     @Id
     private String connectionId;
     // ... other fields
@@ -606,46 +603,45 @@ public static class UserSocialConnectionUpdateDTO extends UserSocialConnectionCr
 
 ## Soft Delete Type Detection
 
-### Check Entity for @SoftDelete Annotation
+### Check Whether the Entity Soft-Deletes
 
-**CRITICAL**: entities use Hibernate's `@SoftDelete` annotation, which creates a hidden `deleted` boolean column managed automatically by Hibernate.
+**CRITICAL**: an entity soft-deletes when it implements `SoftDeletable` (`../entity/base-entity-patterns.md` § Soft Delete owns how soft delete is built): `@SQLDelete` sets its `deleted` flag and `@Filter` hides the row. An entity carrying Hibernate's own `@SoftDelete` annotation soft-deletes too, through a `deleted` column Hibernate manages. Either way the unique check must ignore deleted rows, or re-creating a deleted code is refused as a duplicate.
 
 ```java
-// Entity WITH @SoftDelete - use "deleted"/BOOLEAN in DTOs
+// Entity that soft-deletes - use "deleted"/BOOLEAN in DTOs
 @Entity
-@SoftDelete(columnName = "deleted")
-public class UserRole {
-    // Note: No visible "deleted" field in entity!
-    // Hibernate manages it automatically.
+public class UserRole extends BaseEntity<String> implements SoftDeletable {
+    @Builder.Default
+    private Boolean deleted = false;
 }
 
-// DTO for entity with @SoftDelete
+// DTO for an entity that soft-deletes
 @UniqueField(entity = UserRole.class, field = "roleCode", property = "roleCode",
         softDeleteField = "deleted", softDeleteType = SoftDeleteType.BOOLEAN)
 ```
 
 ```java
-// Entity WITHOUT @SoftDelete - do NOT set softDeleteField in DTOs
+// Entity that hard-deletes (no SoftDeletable) - do NOT set softDeleteField in DTOs
 @Entity
 public class CmsChannel {
     // No soft delete support
 }
 
-// DTO for entity without @SoftDelete
+// DTO for an entity that hard-deletes
 @UniqueField(entity = CmsChannel.class, field = "channelCode", property = "channelCode")
 ```
 
 ### Quick Decision Guide
 
-1. **Check entity class** for `@SoftDelete(columnName = "deleted")` annotation
-2. If **present**: use `softDeleteField = "deleted"`, `softDeleteType = SoftDeleteType.BOOLEAN`
-3. If **absent**: do NOT set `softDeleteField` or `softDeleteType`
+1. **Check the entity class**: does it implement `SoftDeletable` (or carry `@SoftDelete`)?
+2. If **yes**: use `softDeleteField = "deleted"`, `softDeleteType = SoftDeleteType.BOOLEAN`
+3. If **no**: do NOT set `softDeleteField` or `softDeleteType`
 
 ---
 
 ## Complete Entity to DTO Example
 
-### Entity WITHOUT @SoftDelete (Hard Delete Only)
+### Entity That Hard-Deletes
 
 ```java
 @Entity
@@ -675,12 +671,12 @@ public class CmsChannel {
 }
 ```
 
-### CreateDTO (Entity without @SoftDelete)
+### CreateDTO (Entity That Hard-Deletes)
 
 ```java
 @Data
 @UniqueFields({
-    // NO softDeleteField since entity has no @SoftDelete
+    // NO softDeleteField since the entity hard-deletes
     // ALWAYS include idField/idProperty - UpdateDTO will use it via inheritance
     @UniqueField(entity = CmsChannel.class, field = "channelCode", property = "channelCode",
             idField = "channelId", idProperty = "channelId")
@@ -716,7 +712,7 @@ public static class CmsChannelCreateDTO {
 }
 ```
 
-### UpdateDTO (Entity without @SoftDelete)
+### UpdateDTO (Entity That Hard-Deletes)
 
 ```java
 @Data
@@ -730,12 +726,11 @@ public static class CmsChannelUpdateDTO extends CmsChannelCreateDTO {
 }
 ```
 
-### Entity WITH @SoftDelete Example
+### Entity That Soft-Deletes
 
 ```java
 @Entity
-@SoftDelete(columnName = "deleted")
-public class UserRole {
+public class UserRole extends BaseEntity<String> implements SoftDeletable {
     @Id
     private String roleId;
 
@@ -744,12 +739,12 @@ public class UserRole {
 }
 ```
 
-### CreateDTO (Entity with @SoftDelete)
+### CreateDTO (Entity That Soft-Deletes)
 
 ```java
 @Data
 @UniqueFields({
-    // WITH softDeleteField="deleted" since entity has @SoftDelete
+    // WITH softDeleteField="deleted" since the entity soft-deletes
     // ALWAYS include idField/idProperty - UpdateDTO will use it via inheritance
     @UniqueField(entity = UserRole.class, field = "roleCode", property = "roleCode",
             idField = "roleId", idProperty = "roleId",
@@ -762,7 +757,7 @@ public static class UserRoleCreateDTO {
 }
 ```
 
-### UpdateDTO (Entity with @SoftDelete)
+### UpdateDTO (Entity That Soft-Deletes)
 
 ```java
 @Data
@@ -809,14 +804,14 @@ private Integer count;  // Use @NotNull
 
 **Entity Check**:
 1. Verify `@Column(unique = true)` exists
-2. Check if entity has `@SoftDelete(columnName = "deleted")` annotation
+2. Check whether the entity soft-deletes (implements `SoftDeletable`, or carries `@SoftDelete`)
 3. Verify ID field name matches
 
 **DTO Check**:
 1. `@UniqueFields` on class (not field)
 2. All parameter names match entity
-3. If entity has `@SoftDelete`: use `softDeleteField = "deleted"`, `softDeleteType = SoftDeleteType.BOOLEAN`
-4. If entity has no `@SoftDelete`: do NOT set `softDeleteField`/`softDeleteType`
+3. If the entity soft-deletes: use `softDeleteField = "deleted"`, `softDeleteType = SoftDeleteType.BOOLEAN`
+4. If it hard-deletes: do NOT set `softDeleteField`/`softDeleteType`
 
 ### Issue: Length validation not working
 

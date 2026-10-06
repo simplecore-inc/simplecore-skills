@@ -35,7 +35,7 @@ Carry over unchanged:
 | Type | Notes |
 |---|---|
 | `String` | straight copy |
-| `Instant`, `LocalDate`, `LocalDateTime`, `OffsetDateTime` | straight copy; UpdateFormDTO adds `@DateTimeFormat` on audit fields |
+| `Instant`, `LocalDate`, `LocalTime` | straight copy; UpdateFormDTO adds `@DateTimeFormat` on audit fields. The type follows the field's semantic kind (`../entity/field-types.md` § Date/Time Fields); `LocalDateTime` / `OffsetDateTime` / `ZonedDateTime` are banned (#18) |
 | `BigDecimal`, `BigInteger` | straight copy |
 | `Enum` | same enum type (SimpliX resolves labels via `LabeledEnum`) |
 | `Map<String, String>` | used for i18n pairs - see [i18n Pair Handling](#i18n-pair-handling) |
