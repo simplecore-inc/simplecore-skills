@@ -43,26 +43,41 @@ public class PurposeController {
 | Aspect | CRUD Controller | Non-CRUD Controller |
 |--------|----------------|---------------------|
 | Inheritance | `extends SimpliXBaseController<E, ID>` | No inheritance |
-| `@SimpliXStandardApi` | Method-level (on specific endpoints) | **Class-level** |
+| `@SimpliXStandardApi` | Inherited from `SimpliXBaseController`; the template adds it on the `/order` endpoints | **Class-level**, declared |
 | Constructor | `super(service); this.service = service;` | `this.service = service;` only |
 | Lombok | NO `@RequiredArgsConstructor` | Explicit constructor preferred |
 
 ### `@SimpliXStandardApi` Placement Rule:
 
 ```java
-// CRUD Controller — method level only (on special endpoints like updateOrder)
+// CRUD controller: inherited at class level from SimpliXBaseController; the template adds it on the /order endpoints
 @PatchMapping("/order")
 @SimpliXStandardApi
 @PreAuthorize("hasPermission('<FEATURE_AREA>', 'edit')")
 public SimpliXApiResponse<...> updateOrder(...)
 
-// Non-CRUD Controller — class level
+// Non-CRUD controller: declared at class level
 @RestController
 @RequestMapping("/path")
 @Tag(...)
 @SimpliXStandardApi          // HERE
 public class SomeController {
 ```
+
+### What `@SimpliXStandardApi` does
+
+`@SimpliXStandardApi` is an OpenAPI documentation marker and nothing else. It carries an
+`@ApiResponses` block documenting the standard `SimpliXApiResponse` envelope for 200, 400 and 500,
+with an example of each. It is retained at runtime, targets types and methods, and is
+`@Inherited`, so every `SimpliXBaseController` subclass already carries it at class level. No
+framework code reads it at runtime: response wrapping, exception handling and security apply to a
+controller whether or not it carries the annotation. The framework's OpenAPI customizer, which
+rewrites each operation's 200 schema, keeps the examples the annotation contributes.
+
+A non-CRUD controller declares it at class level so that its operations document the same
+standard responses as a CRUD controller's (SKILL.md #17a). Leaving it off changes nothing a request
+can observe, which is why the omission survives review; what loses the standard responses is the
+OpenAPI document for that controller.
 
 ---
 
@@ -169,10 +184,10 @@ public class MonitoringDashboardService {
         this.healthStateManager = healthStateManager;
     }
 
-    // Read methods — inherit class-level @Transactional(readOnly = true)
+    // Read methods - inherit class-level @Transactional(readOnly = true)
     public DashboardSnapshot getSnapshot() { ... }
 
-    // Write methods — explicit @Transactional
+    // Write methods - explicit @Transactional
     @Transactional
     public void acknowledge(String alarmId) { ... }
 }
@@ -194,7 +209,7 @@ NEVER on:
 ### Action Trigger Controller
 
 ```java
-// SyncExecutionController — triggers sync pipeline
+// SyncExecutionController - triggers sync pipeline
 @RestController
 @RequestMapping("/sync")
 @Tag(name = "facility.sync.SyncExecution", description = "Sync execution pipeline operations")
@@ -212,7 +227,7 @@ public class SyncExecutionController {
 ### Dashboard/Aggregation Controller
 
 ```java
-// MonitoringDashboardController — aggregates multiple data sources
+// MonitoringDashboardController - aggregates multiple data sources
 @RestController
 @RequestMapping("/monitoring/dashboard")
 @Tag(name = "facility.monitoring.Dashboard", description = "Monitoring dashboard")
@@ -229,7 +244,7 @@ public class MonitoringDashboardController {
 ### User-Self Controller
 
 ```java
-// CurrentUserRestController — different auth pattern (self-access)
+// CurrentUserRestController - different auth pattern (self-access)
 @RestController
 @RequestMapping("/me")
 @Tag(name = "user.self.CurrentUser", description = "Current user operations")
@@ -246,7 +261,7 @@ public class CurrentUserRestController {
 ### Dev/Test Controller
 
 ```java
-// ErrorTestRestController — dev environment only
+// ErrorTestRestController - dev environment only
 @RestController
 @RequestMapping("/dev/test/errors")
 @Tag(name = "dev.ErrorTest", description = "Error handling test endpoints")

@@ -34,7 +34,7 @@ yo simplix:config CmsContent --force
 The command generates a YML file by analyzing the existing entity class and extracting field information automatically.
 
 **Workflow** (the step order SKILL.md #15 points to; the promote half is owned by `../generator/promote-workflow.md`):
-1. Create the entity class (`base-entity-patterns.md`)
+1. Create the entity class and its repository (`base-entity-patterns.md`, `repository-patterns.md` § File Location); the generator writes neither
 2. Write its message bundles in every locale the project ships: entity labels and enum values (SKILL.md #16)
 3. Run domain module tests: `./gradlew :packages:domain-<aggregate>:test`
    - **MANDATORY**: Tests validate entity and enum i18n translations
@@ -390,7 +390,7 @@ yo simplix:generate CmsContent CmsChannel CmsCategory
 
 | Type | Generated Output | Promoted Location (`../generator/promote-workflow.md` § File Mapping) |
 |------|------------------|-------------------|
-| Repository | not in promote's output | `repository-patterns.md` § File Location |
+| Repository | not generated; written by hand before `yo simplix:config` | `repository-patterns.md` § File Location |
 | Service | `generated/main/java/.../web/{modulePath}/service/` | `src/main/java/.../web/{modulePath}/service/` |
 | Controller | `generated/main/java/.../web/{modulePath}/controller/rest/` | `src/main/java/.../web/{modulePath}/controller/rest/` |
 | DTOs | `generated/main/java/.../web/{modulePath}/dto/` | `src/main/java/.../web/{modulePath}/dto/` |
@@ -429,14 +429,17 @@ reference:
 
 ### Wrong Import in Generated Code
 
-**Check**: modulePath matches entity package structure
+**Check**: `modulePath` is the one the entity's package gives (`base-entity-patterns.md` § Path convention). In the type-first layout the repository import is built from `modulePath`, so a `modulePath` that differs from the entity's package imports a repository package that does not exist:
+
 ```yaml
-# Entity at: domain/entity/cms/channel/CmsChannel.java
+# Entity at: {basePackage}/domain/entity/cms/channel/CmsChannel.java
 modulePath: cms/channel  # Correct
 
-# Wrong - will generate incorrect imports
-modulePath: cms  # Wrong
+# Wrong: the generated service imports {basePackage}.domain.repository.cms.CmsChannelRepository
+modulePath: cms
 ```
+
+In the module-first layout (`repository.deriveFromEntity: true`) the repository import follows the entity's package, and `modulePath` decides only where the service, controller and DTOs are written.
 
 ---
 

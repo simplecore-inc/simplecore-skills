@@ -32,7 +32,10 @@ Move generated CRUD code from `generated/` to `src/` after verification.
 | Service | `generated/main/java/.../service/` | `src/main/java/.../service/` |
 | Controller | `generated/main/java/.../controller/` | `src/main/java/.../controller/` |
 | DTOs | `generated/main/java/.../dto/` | `src/main/java/.../dto/` |
+| TreeService (tree entities) | `generated/main/java/.../service/` | `src/main/java/.../service/` |
 | Service Test | `generated/test/java/.../service/` | `src/test/java/.../service/` |
+
+The repository is not in the mapping: the generator does not write it (`template-customization.md` § Template Files).
 
 ## Usage
 
@@ -95,7 +98,7 @@ converted to non-CRUD, or generated DTOs are deleted, **delete or rewrite that t
 step** - a stale generated test fails for a reason that has nothing to do with the change
 being made.
 
-## After promoting: the permission target and the tag
+## After promoting: the permission target, the ID-mismatch message and the tag
 
 The controller template emits the entity name as the permission target
 (`hasPermission('<Entity>', '<action>')`). Invariant #9 forbids a per-entity target, and the
@@ -104,6 +107,11 @@ the feature-area group the related controllers already share: grep the existing 
 targets, and where the project keeps its own group table, that table wins. A project can instead
 make its copy of `.simplix/templates/controller/rest/EntityRestController.java.template` emit its
 group.
+
+The service template's `update` guard resolves its message at throw time through the injected
+`MessageSource`, with an English default. Rewrite it to throw the `{error.<domain>.idCannotChange}`
+placeholder (SKILL.md #3; the shape is in `template-customization.md` § Service Template Example)
+and add the key to the error bundle of every locale the project ships.
 
 Check the generated `@Tag(name)` in the same pass: it is the domain namespace
 `{module}.{subdomain}.{Entity}` with no `web` segment (#10; the audit's
@@ -129,6 +137,7 @@ find generated -name "EntityName*" -type f
 - [ ] Run `yo simplix:promote EntityName --force`
 - [ ] Verify no files remain in `generated/` for the entity
 - [ ] Every `hasPermission` target rewritten to the feature-area group (#9), and the `@Tag` free of a `web` segment (#10)
+- [ ] The service's ID-mismatch guard throws the `{error.<domain>.idCannotChange}` placeholder (#3)
 - [ ] `node "${CLAUDE_PLUGIN_ROOT}/scripts/audit-backend.mjs"` reports 0 error-level hits on the promoted files
 - [ ] Build passes (no duplicate class errors)
 - [ ] Tests pass

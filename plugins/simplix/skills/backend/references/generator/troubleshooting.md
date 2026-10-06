@@ -26,10 +26,10 @@ yo simplix:config EntityName --force
 
 ## Import Errors in Generated Code
 
-**Cause**: `modulePath` in YML doesn't match entity location.
+**Cause**: `modulePath` in the yml is not the one the entity's package gives, in a layout that builds the repository import from it (`../entity/yml-configuration.md` § Wrong Import in Generated Code; both layouts: `../entity/base-entity-patterns.md` § Path convention).
 
 ```yaml
-# Entity at: domain/entity/cms/channel/CmsChannel.java
+# Entity at: {basePackage}/domain/entity/cms/channel/CmsChannel.java
 modulePath: cms/channel  # Must mirror the package path
 ```
 
@@ -62,7 +62,7 @@ If the package doesn't match, the generated import will be wrong.
 private Boolean active;  // → getActive()
 
 // Wrong
-private boolean active;  // → isActive()  — breaks framework lookups
+private boolean active;  // → isActive()  - breaks framework lookups
 ```
 
 ## A JSON Column Holding a List of Domain POJOs
@@ -72,14 +72,14 @@ the declared type and a `List<T>` looks to it like a relation, while the i18n te
 `field.getType()` and see `java.util.List`.
 
 ```java
-@JdbcTypeCode(SqlTypes.JSON)
-@Column(name = "basis_factors")
-private List<ObligationBasisFactor> basisFactors;   // a value object, not an entity
+@Type(JsonType.class)
+@Column(name = "steps")
+private List<StepSpec> steps;   // a value object, not an entity
 ```
 
 **① The generator emits a service and a test for a repository that does not exist.** It reads
-`ObligationBasisFactor` as a referenced entity and injects an
-`ObligationBasisFactorService`. Removing the `reference:` block from the yml does not stop it -
+`StepSpec` as a referenced entity and injects a
+`StepSpecService`. Removing the `reference:` block from the yml does not stop it -
 the type is re-inferred from the field. **Delete the injection by hand after promoting**, and
 expect it back after every regeneration.
 

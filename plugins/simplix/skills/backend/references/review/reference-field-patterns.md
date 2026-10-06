@@ -269,7 +269,7 @@ copied. The two paths therefore disagree, and the nested one fails **silently**:
 null, the key is simply absent from the JSON, and the screen renders its fallback forever.
 
 ```java
-// ✗ silently absent — maskedProductKey is a @Transient getter on the entity
+// ✗ silently absent - maskedProductKey is a @Transient getter on the entity
 @JsonIncludeProperties({"licenseId", "productKeyHash", "maskedProductKey", "status"})
 private License license;
 

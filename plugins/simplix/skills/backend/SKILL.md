@@ -77,8 +77,8 @@ Apply and enforce these on every controller, service, repository, and DTO you to
     **③ Contract rules that bind every generated surface:**
     - **List-serving endpoints must be paged searchable.** Any endpoint that feeds a frontend list whose row count can grow (accumulating records, per-user histories, request queues - when in doubt, assume it grows) MUST expose the standard searchable surface from the controller template: `@SearchableParams(SearchDTO.class) Map<String, String>` → `service.search(params)` → `Page<ListDTO>`. Self-scoped or aggregated surfaces keep the same shape and force their scope conditions server-side on top of the client params (overwrite the scoped keys; client filters may only narrow). Returning an unpaged `List<T>` for such data is a defect - the frontend pairs every list screen with CLI-scaffolded `CrudList` pagination/filtering, which requires this contract. This backend-first, template-based path is ALWAYS the first implementation method considered for list screens.
     - **SearchDTO PK must be sortable AND accept `IN`.** Every SearchDTO's entity-ID field MUST carry `@SearchableField(operators = {EQUALS, IN}, sortable = true)`, and the scaffold emits neither half. Without `sortable` the scaffolded list's very first request fails, because the frontend's default list sort is `<entityId>.desc`. Without `IN` the list's own filter for that entity is dead: it resolves the labels of what is selected by asking the entity's own search endpoint for those ids at once (`<entityId>.in=a,b,c`), and the whole request is refused the moment a value is picked - on every list that offers the filter, including other modules', since the filter is shared. The asymmetry that hides it: the same id declared as a FOREIGN key elsewhere is routinely `{EQUALS, IN}` and works, so only the entity's own list carries the defect. Details, both verification requests, and a spec-wide sweep → `review/searchable-field-patterns.md` § PK Contract.
-16. **i18n mandatory** - every entity (for labels) and every LabeledEnum (for values) has properties files in every locale the project ships, before domain tests pass. **LabeledEnum message keys are `enums.{SimpleName}.{CONSTANT}` and are merged globally across the classpath, so every LabeledEnum simple class name MUST be globally unique** - two enums sharing a simple name (even in different packages/modules) collide on the merged key and silently mistranslate. Resolve any collision by renaming one enum (and migrating its keys in every locale) or, if both model the same concept, merging into a single enum.
-17. **Match generator shape, even when writing by hand** - any controller, service, repository, or DTO authored manually MUST be indistinguishable in shape from what `yo simplix:generate` would have produced:
+16. **i18n mandatory** - every entity (for labels) and every LabeledEnum (for values) has properties files in every locale the project ships, before domain tests pass. **LabeledEnum message keys are `enums.{SimpleName}.{CONSTANT}` and are merged globally across the classpath, so every LabeledEnum simple class name MUST be globally unique** - two enums sharing a simple name (even in different packages/modules) collide on the merged key and silently mistranslate. Resolve any collision by renaming one enum (and migrating its keys in every locale) or, if both model the same concept, merging into a single enum. A LabeledEnum never overrides `getLabel()` and never gives a constant a class body: either one stops the label resolving from the bundles (`entity/field-types.md` § LabeledEnum Interface; the audit's `labeled-enum-label-bypass`).
+17. **Match generator shape, even when writing by hand** - any controller, service, or DTO authored manually MUST be indistinguishable in shape from what `yo simplix:generate` would have produced, and the repository, which is always written by hand, follows `entity/repository-patterns.md`:
     a. Extend correct base class: CRUD → `extends SimpliXBaseController<E, String>`; Non-CRUD → `@SimpliXStandardApi` at class level
     b. Annotation order: class `@RestController → @RequestMapping → @Tag → class`; endpoint `@XxxMapping → @Operation → @PreAuthorize → method` (full order: `convention/annotation-ordering.md`)
     c. URL shape: no `/api/v1/` prefix on `@RequestMapping`
@@ -99,17 +99,13 @@ Apply and enforce these on every controller, service, repository, and DTO you to
 
     **A count leaks as much as a record.** Judge by what the answer tells the caller, not by whether entities cross the boundary: 「220 people are registered at that workplace」 is information about a workplace the caller was not granted, and no list-scoping test on any screen will ever see it. The figure that hides longest is the one on a tile whose neighbours are all correctly narrowed - a number right in five places and wrong in the sixth reads as a scoped screen.
 
-    **Where a static rule CAN reach this, it is comparative - two neighbours over one subject disagreeing about whether to check.** An absolute rule (「a read taking a scope identifier must check it」) drowns, because whether a given read should be scoped is a product question: a shared catalogue is the installation's and everyone reads all of it. But a class that already narrows one read has imported the range, named it, and decided which axis the subject sits on - so a second read in the same class taking the same kind of identifier and never mentioning it is one decision left half-applied. That rule judges nothing about what is legitimate; it only asks why two neighbours disagree, which is why it can be written at all. **Its exclusions make the difference between usable and useless**, and each is a false-positive class somebody will otherwise re-derive by widening the rule: overloads (a name-keyed call graph resolves a short form's call to its long form back to the caller itself), controllers (they reach the range through the service by design), and the scope classes themselves (they define the vocabulary rather than call it).
-
-    **Give the read side its own vocabulary rather than the write side's.** A write refuses ONE record, so it always ends at a `require…`; a read far more often BOUNDS A SET and lets the caller's identifier narrow inside it. A rule that inherits the write vocabulary calls every correctly bounded count a defect. And drop any bare `narrow*`-shaped word from the read list: on a write path it is nearly always the range, while on a read path it is routinely a filter resolver, and a class holding one reads as scope-aware while it resolves every value against a caller-named identifier with no range anywhere in the file.
-
-    **The blind spot ships with the rule, as its own warning.** A rule comparing a class against itself is silent on a class that never heard of scope - and that is where the worst instance lives, because there is no neighbour to disagree with. Report it separately and grade it a warning, since a legitimate class produces the same finding and only a person settles it. Green over the hole the rule cannot see is worse than no rule at all: everybody stops looking.
+    **A static rule can reach this defect only by comparison, and its design is in `review/scope-guards.md`**: why an absolute rule drowns, the exclusions that keep the comparison usable, the read side's own vocabulary, and the blind spot the rule reports as a warning.
 
 ---
 
 ## Task Router
 
-Identify the task, Read the referenced file(s), then work. Do not preload everything - lazy-load on demand. All file paths below are relative to this skill's own `references/` directory.
+Identify the task, Read the referenced file(s), then work. Do not preload everything - lazy-load on demand. All file paths below are relative to this skill's own `references/` directory. Commands in this skill's references are written from the plugin root, which is ${CLAUDE_PLUGIN_ROOT}.
 
 ※ **New entity with CRUD API**: follow DESIGN → GENERATE → WRITE in order.
 ※ **Multi-category task**: identify all relevant Router entries first, then batch-Read all files in a single parallel call.
@@ -146,6 +142,7 @@ Identify the task, Read the referenced file(s), then work. Do not preload everyt
    - FK / entity ref (`@JsonIncludeProperties`) → `review/reference-field-patterns.md`
    - i18n pairs (`@I18nTrans`, `@JsonIgnore`) → `review/i18n-field-patterns.md`
    - `@SearchableField` on SearchDTO → `review/searchable-field-patterns.md`
+   - A static rule over reads that take a scope identifier from the caller (#20) → `review/scope-guards.md`
    - "Something is wrong" - triage → `review/common-issues-checklist.md`
 
 5. **CHECK** - Convention or quality lookup
@@ -167,8 +164,8 @@ Identify the task, Read the referenced file(s), then work. Do not preload everyt
 
 | Layer | Base class | Package |
 |---|---|---|
-| Entity | `extends BaseEntity<String>` | `{basePackage}.domain.{aggregate}` |
-| Repository | `extends SimpliXBaseRepository<E, String>` | `{basePackage}.domain.{aggregate}` |
+| Entity | `extends BaseEntity<String>` | `{basePackage}.domain.{module}.entity` or `{basePackage}.domain.entity.{module}`, by the project's layout (`entity/base-entity-patterns.md` § Path convention) |
+| Repository | `extends SimpliXBaseRepository<E, String>`, written by hand | the matching `repository` package (same section) |
 | Service | `extends SimpliXBaseService<E, String>` | `{basePackage}.web.{feature}` |
 | Controller | `extends SimpliXBaseController<E, String>` | `{basePackage}.web.{feature}` |
 | DTOs container | `public class {Entity}DTOs {` | `{basePackage}.web.{feature}.dto` |
@@ -185,7 +182,7 @@ Example names in this handbook (`CmsChannel`, `Building`, `facility.identity.Cre
 
 The generator produces the canonical shapes. Manual controllers and services must be indistinguishable from generated code (invariant 17). Full annotated code → lazy-loaded references below.
 
-> **Authoritative source of truth**: the generator templates at `.simplix/templates/**/*.template`. When this doc diverges from the template, the template wins - update the doc, not the generated output. Controller template: `.simplix/templates/controller/rest/EntityRestController.java.template`. One departure is deliberate: the template names the permission target after the entity, #9 requires the feature-area group, and promote rewrites it (`generator/promote-workflow.md` § After promoting).
+> **Authoritative source of truth**: the generator templates at `.simplix/templates/**/*.template`. When this doc diverges from the template, the template wins - update the doc, not the generated output. Controller template: `.simplix/templates/controller/rest/EntityRestController.java.template`. These departures are deliberate, and promote rewrites both (`generator/promote-workflow.md` § After promoting): the controller template names the permission target after the entity where #9 requires the feature-area group, and the service template resolves its ID-mismatch message at throw time where #3 requires the placeholder.
 
 ### Controller shape skeleton
 
@@ -201,7 +198,7 @@ The generator produces the canonical shapes. Manual controllers and services mus
     6. GET    /{id}/edit        updateForm
     7. PATCH  /batch            batchUpdate
     8. DELETE /batch            batchDelete
-    9. PATCH  /order            updateOrder    (optional — only entities with displayOrder)
+    9. PATCH  /order            updateOrder    (optional - only entities with displayOrder)
     10. GET   /search           simpleSearch
     11. POST  /search           search
   Every endpoint: @XxxMapping → @Operation(summary, description) → @PreAuthorize("hasPermission('<FEATURE_AREA>', '<action>')")
@@ -217,7 +214,7 @@ The generator produces the canonical shapes. Manual controllers and services mus
   constructor: super(repository, entityManager); + related repos + messageSource
   Required: create, update (ID-mismatch check mandatory), delete, batchDelete, search(Map), search(SearchCondition)
   Optional: multiUpdate, batchUpdate, updateOrder, buildDetailDTO (only when enrichment needed)
-  Private: saveAndGetProjection(entity, fkId) — save + FK resolution + projection lookup
+  Private: saveAndGetProjection(entity, fkId) - save + FK resolution + projection lookup
 ```
 
 For full annotated code with every endpoint, existence-check patterns, `@Validated` placement, base-class helpers, and required method signatures → Read `convention/canonical-controller.md` and `convention/canonical-service.md` via the Task Router above

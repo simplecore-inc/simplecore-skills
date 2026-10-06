@@ -30,8 +30,10 @@ the two you did.
    `e2eGateMissing` name the keys a declared gate lacks, and such a gate refuses nothing.
    `routedBy` may name a file above the scanned directory, up to the repository root.
 
-   - `frameworkRepo: true` → this IS simplix-react, not a project using it. Say so and
-     stop; the consumer handbooks do not apply here.
+   - `frameworkRepo: true` → this IS a framework repository, not a project using it:
+     `framework` names which (`simplix`, the Spring framework whose own Gradle group is
+     `dev.simplecore.simplix`, or `simplix-react`, which publishes under `@simplix-react/`).
+     Say so and stop; the consumer handbooks do not apply here.
    - No matches → say so and stop. Do not write a routing block into a repository that
      has no SimpliX marker; offer instead to re-run against a subdirectory.
    - `routedBy` already set → the routing exists in that file. Read it, report whether it

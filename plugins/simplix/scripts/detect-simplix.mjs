@@ -36,9 +36,21 @@ const FRONTEND_CONFIGS = [
   "simplix.config.ts", "simplix.config.mts", "simplix.config.js", "simplix.config.mjs",
 ];
 
-const GRADLE_FILES = [
-  "settings.gradle", "settings.gradle.kts", "build.gradle", "build.gradle.kts", "gradle.properties",
-];
+const SETTINGS_FILES = ["settings.gradle", "settings.gradle.kts"];
+const BUILD_FILES = ["build.gradle", "build.gradle.kts"];
+const PROPERTIES_FILE = "gradle.properties";
+const VERSION_CATALOG = path.join("gradle", "libs.versions.toml");
+
+// The Maven group every SimpliX framework module is published under: the framework's root
+// build.gradle sets `projectGroup = 'dev.simplecore.simplix'` and applies it to every module
+// through `allprojects { group = projectGroup }`. A consumer names it in a dependency
+// coordinate or a version catalog entry; the framework names it as its own group.
+const FRAMEWORK_GROUP = "dev.simplecore.simplix";
+
+// The group as a whole token: `dev.simplecore.simplix:simplix-core` and a quoted
+// `"dev.simplecore.simplix"` match, a group that only starts with it
+// (`dev.simplecore.simplix.demo`) does not.
+const FRAMEWORK_GROUP_TOKEN = new RegExp(`(?<![\\w.])${FRAMEWORK_GROUP.replace(/\./g, "\\.")}(?![\\w.])`);
 
 // The framework's own npm scope. A workspace publishing under it IS
 // simplix-react, so the consumer handbooks do not apply there.
@@ -74,14 +86,108 @@ function subdirs(dir) {
 }
 
 /**
- * Gradle or properties text with its comments removed: block comments, line comments (a `//` that
- * is not part of a `://` URL), and `#` comment lines.
+ * Groovy or Kotlin build script text with its comments removed: block comments, and line
+ * comments (a `//` that is not part of a `://` URL).
  */
-function withoutBuildComments(text) {
+function withoutScriptComments(text) {
+  return text.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/[^\n]*/g, "$1");
+}
+
+/** Java properties text with its `#` and `!` comment lines removed. */
+function withoutPropertiesComments(text) {
+  return text.replace(/^\s*[#!][^\n]*/gm, "");
+}
+
+/**
+ * TOML text with its comments removed: a `#` outside a quoted string starts a comment that runs
+ * to the end of the line.
+ */
+function withoutTomlComments(text) {
   return text
-    .replace(/\/\*[\s\S]*?\*\//g, "")
-    .replace(/(^|[^:])\/\/[^\n]*/g, "$1")
-    .replace(/^\s*#[^\n]*/gm, "");
+    .split("\n")
+    .map((line) => {
+      let quote = null;
+      for (let i = 0; i < line.length; i++) {
+        const c = line[i];
+        if (quote) {
+          if (c === "\\" && quote === '"') i++;
+          else if (c === quote) quote = null;
+        } else if (c === '"' || c === "'") {
+          quote = c;
+        } else if (c === "#") {
+          return line.slice(0, i);
+        }
+      }
+      return line;
+    })
+    .join("\n");
+}
+
+/**
+ * The Gradle files of a directory that can name the framework, each with its comments removed:
+ * a note that mentions the framework declares nothing.
+ *
+ * @param dir a candidate Gradle root
+ * @returns `[{name, text, kind}]` for the files present, `kind` being `script`, `properties`
+ *          or `catalog`
+ */
+function gradleTexts(dir) {
+  const read = (name, kind, strip) => {
+    const raw = readIfPresent(path.join(dir, name));
+    return raw === null ? null : { name, kind, text: strip(raw) };
+  };
+  return [
+    ...SETTINGS_FILES.map((n) => read(n, "script", withoutScriptComments)),
+    ...BUILD_FILES.map((n) => read(n, "script", withoutScriptComments)),
+    read(PROPERTIES_FILE, "properties", withoutPropertiesComments),
+    read(VERSION_CATALOG, "catalog", withoutTomlComments),
+  ].filter(Boolean);
+}
+
+/**
+ * The value a quoted literal, or a name another statement in the same files assigns a quoted
+ * literal to, stands for. `null` when it is neither.
+ */
+function resolveLiteral(expr, texts) {
+  const literal = expr.match(/^(['"])([^'"]*)\1$/);
+  if (literal) return literal[2];
+  const name = expr.match(/^[A-Za-z_]\w*$/)?.[0];
+  if (!name) return null;
+  for (const { kind, text } of texts) {
+    const assigned =
+      kind === "properties"
+        ? text.match(new RegExp(`^\\s*${name}\\s*[=:]\\s*(\\S+)\\s*$`, "m"))?.[1]
+        : text.match(new RegExp(`(?:^|[{;])\\s*${name}\\s*=\\s*(['"])([^'"]*)\\1`, "m"))?.[2];
+    if (assigned) return assigned;
+  }
+  return null;
+}
+
+/**
+ * True when the directory is the SimpliX framework itself: its own group, set in a build script
+ * (`group = '...'`, or `group = <name>` with `<name>` assigned the literal, as the framework's
+ * `projectGroup` is) or in `gradle.properties` (`group=...`), is exactly the framework group.
+ *
+ * @param texts the directory's {@link gradleTexts}
+ */
+function isFrameworkGroup(texts) {
+  for (const { kind, text } of texts) {
+    if (kind === "catalog") continue;
+    if (kind === "properties") {
+      if (text.match(/^\s*group\s*[=:]\s*(\S+)\s*$/m)?.[1] === FRAMEWORK_GROUP) return true;
+      continue;
+    }
+    for (const m of text.matchAll(/(?:^|[{;])\s*(?:project\.)?group\s*=\s*([^\n;}]+)/gm)) {
+      if (resolveLiteral(m[1].trim(), texts) === FRAMEWORK_GROUP) return true;
+    }
+  }
+  return false;
+}
+
+/** True when `dir` is a Gradle root (it carries a settings script) of the SimpliX framework. */
+function isBackendFramework(dir) {
+  if (!SETTINGS_FILES.some((n) => fs.existsSync(path.join(dir, n)))) return false;
+  return isFrameworkGroup(gradleTexts(dir));
 }
 
 /** Backend markers, strongest first. Empty when the directory is not one. */
@@ -92,15 +198,14 @@ function backendMarkers(dir) {
     found.push(".simplix/ generator directory");
   }
 
-  const settings = GRADLE_FILES.slice(0, 2).find((n) => fs.existsSync(path.join(dir, n)));
-  if (settings) {
-    // Only a Gradle ROOT (one that carries settings.gradle) counts, so the
-    // submodules below it are never reported as separate subprojects. Comments are
-    // dropped first: a note that mentions the framework declares nothing.
-    const declaresSimplix = GRADLE_FILES.some((n) =>
-      /simplix/i.test(withoutBuildComments(readIfPresent(path.join(dir, n)) ?? "")),
-    );
-    if (declaresSimplix) found.push(`${settings} declares a simplix dependency`);
+  // Only a Gradle ROOT (one that carries a settings script) counts, so the submodules below it
+  // are never reported as separate subprojects.
+  if (SETTINGS_FILES.some((n) => fs.existsSync(path.join(dir, n)))) {
+    const texts = gradleTexts(dir);
+    const naming = texts.find((t) => FRAMEWORK_GROUP_TOKEN.test(t.text));
+    if (naming && !isFrameworkGroup(texts)) {
+      found.push(`${naming.name} names the framework group ${FRAMEWORK_GROUP}`);
+    }
   }
 
   return found;
@@ -203,7 +308,7 @@ function orvalLeftovers(dir) {
 }
 
 /** True when the tree IS simplix-react rather than a project consuming it. */
-function isFrameworkRepo(root) {
+function isSimplixReactRepo(root) {
   for (const dir of [root, ...subdirs(root)]) {
     for (const child of subdirs(dir)) {
       const pkg = readJson(path.join(child, "package.json"));
@@ -213,11 +318,26 @@ function isFrameworkRepo(root) {
   return false;
 }
 
+/**
+ * Which framework the tree IS, rather than a project consuming one: `simplix` for the Spring
+ * framework (its own Gradle group is {@link FRAMEWORK_GROUP}), `simplix-react` for the frontend
+ * framework (it publishes under {@link FRAMEWORK_SCOPE}), `null` for anything else.
+ */
+function frameworkOf(root) {
+  if (isBackendFramework(root)) return "simplix";
+  if (isSimplixReactRepo(root)) return "simplix-react";
+  return null;
+}
+
 /** Walk root and its subdirectories to MAX_DEPTH, stopping at each match. */
 function detect(root) {
   const results = [];
 
   const visit = (dir, depth) => {
+    // The framework's own tree is neither a subproject nor a parent of one: its modules are the
+    // framework too, so nothing below it is visited.
+    if (isBackendFramework(dir)) return;
+
     const backend = backendMarkers(dir);
     const frontend = frontendMarkers(dir);
 
@@ -321,8 +441,10 @@ function gatesOf(dir) {
 
 /**
  * Analyze a directory tree. Returns
- * `{ root, frameworkRepo, matches: [{kind, dir, markers, skillGate, e2eGate}], skills, routedBy, wired }`
- * with every `dir` relative to `root`. A match also carries `skillGateMissing` / `e2eGateMissing`
+ * `{ root, frameworkRepo, framework, matches: [{kind, dir, markers, skillGate, e2eGate}], skills, routedBy, wired }`
+ * with every `dir` relative to `root`. `frameworkRepo` is true, and `framework` names it
+ * (`simplix` or `simplix-react`), when the root is a framework repository itself; it then has no
+ * matches. A match also carries `skillGateMissing` / `e2eGateMissing`
  * (the keys a declared gate lacks) and `gateConfigInvalid` (its `.claude/simplix.json` does not
  * parse) when they apply. `routedBy` may point above `root`, up to the repository root. `wired`
  * is true when the routing document exists and every subproject has armed the gates that apply
@@ -330,7 +452,8 @@ function gatesOf(dir) {
  */
 export function analyze(root) {
   const resolved = path.resolve(root);
-  const frameworkRepo = isFrameworkRepo(resolved);
+  const framework = frameworkOf(resolved);
+  const frameworkRepo = framework !== null;
   const matches = frameworkRepo ? [] : detect(resolved);
   const routing = matches.length
     ? routingDocument(resolved, [...new Set(matches.map((m) => m.dir))])
@@ -359,6 +482,7 @@ export function analyze(root) {
   return {
     root: resolved,
     frameworkRepo,
+    framework,
     matches: reported,
     skills,
     routedBy: routing ? path.relative(resolved, routing) : null,
@@ -374,7 +498,7 @@ function main() {
     console.log(JSON.stringify(report, null, 2));
   } else if (report.frameworkRepo) {
     console.log(
-      `${report.root} is the simplix-react framework itself, not a project using it — ` +
+      `${report.root} is the ${report.framework} framework itself, not a project using it: ` +
         "the simplix handbooks describe consumer conventions and do not apply here.",
     );
   } else if (!report.matches.length) {
@@ -395,7 +519,7 @@ function main() {
       for (const one of m.orvalLeftovers) console.log(`  · ${one}`);
       console.log(
         "  Each one keeps the old path alive without saying so. Finishing the move is the " +
-          "project's call — nothing here requires it.",
+          "project's call, and nothing here requires it.",
       );
     }
     console.log(`\nSkills that apply: ${report.skills.join(", ")}`);
@@ -412,7 +536,7 @@ function main() {
     console.log(
       report.routedBy
         ? `Routed from: ${report.routedBy}`
-        : "No CLAUDE.md routes to these skills yet — run /simplix:init to add the routing block.",
+        : "No CLAUDE.md routes to these skills yet. Run /simplix:init to add the routing block.",
     );
   }
 

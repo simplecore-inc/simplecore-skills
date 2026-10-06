@@ -631,7 +631,7 @@ const RULES = [
 }`,
       miss: [
         {
-          note: "a required field whose entity has no empty default — blank really is absent there",
+          note: "a required field whose entity has no empty default - blank really is absent there",
           ctx: { emptyDefaults: new Map([["Thing", new Set(["siteKey"])]]) },
           source: `public class ThingDTOs {
 
@@ -769,7 +769,7 @@ const RULES = [
 }`,
         },
         {
-          note: "an id the CREATE path takes from the URL and the UPDATE path reads and compares — found as a false positive in a real repository, which is why the index keeps the two write paths apart",
+          note: "an id the CREATE path takes from the URL and the UPDATE path reads and compares - found as a false positive in a real repository, which is why the index keeps the two write paths apart",
           ctx: { overwrites: new Map([["Thing", { create: new Set(["ownerId"]), update: new Set(), hasUpdate: true }]]) },
           source: `public class ThingDTOs {
 
@@ -894,7 +894,7 @@ const RULES = [
         if (index.dtoCarries.get(type)?.has(targetBase)) continue;
         hits.push({
           line: clean.slice(0, m.index).split("\n").length,
-          excerpt: `${target}.set${setter}(${source}.get${getter}()) — ${type} does not declare ${targetBase}I18n, and ${sourceType} keeps ${sourceBase}I18n`,
+          excerpt: `${target}.set${setter}(${source}.get${getter}()) - ${type} does not declare ${targetBase}I18n, and ${sourceType} keeps ${sourceBase}I18n`,
         });
       }
       return hits;
@@ -925,14 +925,14 @@ const RULES = [
     id: "endpoint-without-preauthorize",
     invariant: "#2",
     level: "error",
-    desc: "Endpoint carries no @PreAuthorize — the method is reachable by anyone the filter chain lets through. Public is written `permitAll()` and user-self `isAuthenticated()`; an absent annotation says neither, and a dev/test profile is not a substitute",
+    desc: "Endpoint carries no @PreAuthorize - the method is reachable by anyone the filter chain lets through. Public is written `permitAll()` and user-self `isAuthenticated()`; an absent annotation says neither, and a dev/test profile is not a substitute",
     appliesTo: isController,
     check: (c) => {
       const clean = stripCommentsAndStrings(c);
       if (!/@RestController/.test(clean)) return [];
       return endpointsOf(clean)
         .filter((e) => !/@PreAuthorize/.test(e.text))
-        .map((e) => ({ line: e.startLine, excerpt: `${e.name}() — ${e.excerpt}` }));
+        .map((e) => ({ line: e.startLine, excerpt: `${e.name}() - ${e.excerpt}` }));
     },
     samples: {
       file: "modules/site/src/main/java/app/web/site/controller/AreaRestController.java",
@@ -955,14 +955,14 @@ public class AreaRestController {
     id: "endpoint-without-operation",
     invariant: "#11",
     level: "error",
-    desc: "Endpoint carries no @Operation — it reaches the OpenAPI document with no summary, and the frontend's generated client names it from the path",
+    desc: "Endpoint carries no @Operation - it reaches the OpenAPI document with no summary, and the frontend's generated client names it from the path",
     appliesTo: isController,
     check: (c) => {
       const clean = stripCommentsAndStrings(c);
       if (!/@RestController/.test(clean)) return [];
       return endpointsOf(clean)
         .filter((e) => !/@Operation/.test(e.text))
-        .map((e) => ({ line: e.startLine, excerpt: `${e.name}() — ${e.excerpt}` }));
+        .map((e) => ({ line: e.startLine, excerpt: `${e.name}() - ${e.excerpt}` }));
     },
     samples: {
       file: "modules/site/src/main/java/app/web/site/controller/AreaRestController.java",
@@ -985,7 +985,7 @@ public class AreaRestController {
     id: "endpoint-annotation-order",
     invariant: "#17b",
     level: "error",
-    desc: "Endpoint annotations are out of order — the shape is @XxxMapping → @Operation → (@SimpliXStandardApi) → @PreAuthorize. Order is how a reader finds the guard without reading the method",
+    desc: "Endpoint annotations are out of order - the shape is @XxxMapping → @Operation → (@SimpliXStandardApi) → @PreAuthorize. Order is how a reader finds the guard without reading the method",
     appliesTo: isController,
     check: (c) => {
       const clean = stripCommentsAndStrings(c);
@@ -997,7 +997,7 @@ public class AreaRestController {
         const iPre = e.text.indexOf("@PreAuthorize");
         if (iOp < 0 || iPre < 0) continue; // absence is the two rules above, not this one
         if (!(iMap < iOp && iOp < iPre)) {
-          out.push({ line: e.startLine, excerpt: `${e.name}() — mapping/@Operation/@PreAuthorize out of order` });
+          out.push({ line: e.startLine, excerpt: `${e.name}() - mapping/@Operation/@PreAuthorize out of order` });
         }
       }
       return out;
@@ -1024,7 +1024,7 @@ public class AreaRestController {
     id: "permission-target-not-group",
     invariant: "#9",
     level: "error",
-    desc: "hasPermission target is not an UPPER_SNAKE feature-area group — a per-entity PascalCase target splits one feature area into as many permissions as it has tables, and none of them is the one an administrator was granted",
+    desc: "hasPermission target is not an UPPER_SNAKE feature-area group - a per-entity PascalCase target splits one feature area into as many permissions as it has tables, and none of them is the one an administrator was granted",
     appliesTo: isController,
     check: (c) =>
       lineHits(stripComments(c), /hasPermission\(\s*'([^']+)'/, (line) => {
@@ -1041,7 +1041,7 @@ public class AreaRestController {
     id: "permission-action-unknown",
     invariant: "#9",
     level: "error",
-    desc: "hasPermission action is not one the evaluator resolves — only list/view/create/edit/delete/export/import/approve/manage can ever be granted, so any other verb is a permission nobody can hold and an endpoint nobody can reach",
+    desc: "hasPermission action is not one the evaluator resolves - only list/view/create/edit/delete/export/import/approve/manage can ever be granted, so any other verb is a permission nobody can hold and an endpoint nobody can reach",
     appliesTo: isController,
     check: (c) => {
       const ACTIONS = new Set(["list", "view", "create", "edit", "delete", "export", "import", "approve", "manage"]);
@@ -1060,7 +1060,7 @@ public class AreaRestController {
     id: "tag-java-package-namespace",
     invariant: "#10",
     level: "error",
-    desc: "@Tag name is built from the Java package instead of the domain — the OpenAPI namespace then leaks the base package, and the frontend's generated client is grouped by folder rather than by subject",
+    desc: "@Tag name is built from the Java package instead of the domain - the OpenAPI namespace then leaks the base package, and the frontend's generated client is grouped by folder rather than by subject",
     appliesTo: isController,
     check: (c) =>
       lineHits(stripComments(c), /@Tag\(\s*name\s*=\s*"([^"]+)"/, (line) => {
@@ -1077,7 +1077,7 @@ public class AreaRestController {
     id: "api-v1-prefix-on-mapping",
     invariant: "#17c",
     level: "error",
-    desc: "@RequestMapping carries an /api/v1/ prefix — the servlet context already supplies it, so the endpoint lands at /api/v1/api/v1/... and every generated client calls an address that is not there",
+    desc: "@RequestMapping carries an /api/v1/ prefix - the servlet context already supplies it, so the endpoint lands at /api/v1/api/v1/... and every generated client calls an address that is not there",
     appliesTo: isController,
     check: (c) => lineHits(stripComments(c), /@RequestMapping\(\s*"[^"]*\/api\/v\d+\//),
     samples: {
@@ -1090,7 +1090,7 @@ public class AreaRestController {
     id: "path-variable-not-string",
     invariant: "#17e",
     level: "error",
-    desc: "@PathVariable is typed something other than String — every entity id in this stack is a UUID v7 stored as VARCHAR, and a UUID/Long parameter refuses ids the database accepts",
+    desc: "@PathVariable is typed something other than String - every entity id in this stack is a UUID v7 stored as VARCHAR, and a UUID/Long parameter refuses ids the database accepts",
     appliesTo: isController,
     check: (c) =>
       lineHits(stripCommentsAndStrings(c), /@PathVariable(?:\([^)]*\))?\s+(?:final\s+)?([A-Za-z][\w.]*)\s+\w+/, (line) => {
@@ -1107,7 +1107,7 @@ public class AreaRestController {
     id: "api-responses-block",
     invariant: "#17g",
     level: "error",
-    desc: "@ApiResponses block on an endpoint — the envelope is uniform and the generator emits none, so a hand-written block documents a response shape the framework does not produce",
+    desc: "@ApiResponses block on an endpoint - the envelope is uniform and the generator emits none, so a hand-written block documents a response shape the framework does not produce",
     appliesTo: isController,
     check: (c) => lineHits(stripCommentsAndStrings(c), /@ApiResponses\b/),
     samples: {
@@ -1157,7 +1157,7 @@ public class AreaRestController {
     id: "searchdto-data-annotation",
     invariant: "#6",
     level: "error",
-    desc: "SearchDTO annotated @Data — it generates equals/hashCode over a large search-condition container, which the framework compares internally. @Getter @Setter is the shape",
+    desc: "SearchDTO annotated @Data - it generates equals/hashCode over a large search-condition container, which the framework compares internally. @Getter @Setter is the shape",
     appliesTo: isDtoContainer,
     check: (c) => {
       const clean = stripCommentsAndStrings(c);
@@ -1194,7 +1194,7 @@ public class AreaRestController {
     id: "primitive-boolean-dto",
     invariant: "#7",
     level: "error",
-    desc: "DTO field declared primitive `boolean` — Lombok then emits isXxx() where the framework's field lookups expect getXxx(), and an absent field in a request body silently reads as false instead of null. Declare the wrapper `Boolean`",
+    desc: "DTO field declared primitive `boolean` - Lombok then emits isXxx() where the framework's field lookups expect getXxx(), and an absent field in a request body silently reads as false instead of null. Declare the wrapper `Boolean`",
     appliesTo: isDtoContainer,
     check: (c) => lineHits(stripCommentsAndStrings(c), /^\s*private\s+boolean\s+\w+\s*;/),
     samples: {
@@ -1215,7 +1215,7 @@ public class AreaRestController {
     id: "sortable-boolean-searchable-field",
     invariant: "AP-38",
     level: "error",
-    desc: "A Boolean SearchDTO field declared `sortable = true` — the paging query aggregates the sort column as max(<column>), and there is no max(boolean) on PostgreSQL, so the endpoint answers 500 the moment anybody sorts by it. `sortable = true` is what puts the sort arrow in the list header, so the defect ships as a control that exists in order to fail; where the column is the list's default sort the screen breaks on open. Filter on a boolean, never sort",
+    desc: "A Boolean SearchDTO field declared `sortable = true` - the paging query aggregates the sort column as max(<column>), and there is no max(boolean) on PostgreSQL, so the endpoint answers 500 the moment anybody sorts by it. `sortable = true` is what puts the sort arrow in the list header, so the defect ships as a control that exists in order to fail; where the column is the list's default sort the screen breaks on open. Filter on a boolean, never sort",
     appliesTo: isDtoContainer,
     // Anchored on the annotation, then read forward to the declaration it belongs to, so a
     // sortable String standing beside a plain Boolean is not reported. Reading forward rather
@@ -1279,7 +1279,7 @@ public class AreaRestController {
     id: "field-injection-in-web",
     invariant: "#8",
     level: "error",
-    desc: "@Autowired field injection or @RequiredArgsConstructor on a web-layer controller/service — the generator emits an explicit constructor calling super(...), and Lombok's cannot. Infrastructure (config, scheduler, listener, factory, helper, stream) is exempt",
+    desc: "@Autowired field injection or @RequiredArgsConstructor on a web-layer controller/service - the generator emits an explicit constructor calling super(...), and Lombok's cannot. Infrastructure (config, scheduler, listener, factory, helper, stream) is exempt",
     appliesTo: (p) =>
       p.includes(`${path.sep}web${path.sep}`)
       && (isController(p) || isService(p))
@@ -1301,7 +1301,7 @@ public class AreaService extends SimpliXBaseService<Area, String> {
     id: "banned-exception-type",
     invariant: "#3",
     level: "error",
-    desc: "A web-layer controller/service throws IllegalArgumentException / RuntimeException / ResponseStatusException — the global handler only builds the standard envelope from SimpliXGeneralException, so the client gets an untranslated 500 with a stack-trace message",
+    desc: "A web-layer controller/service throws IllegalArgumentException / RuntimeException / ResponseStatusException - the global handler only builds the standard envelope from SimpliXGeneralException, so the client gets an untranslated 500 with a stack-trace message",
     appliesTo: (p) => p.includes(`${path.sep}web${path.sep}`) && (isController(p) || isService(p)),
     // A class production never loads cannot hand a production client a bad envelope, and a dev
     // fixture that exists to PRODUCE each error shape would otherwise be reported for doing its job.
@@ -1323,7 +1323,7 @@ public class AreaService extends SimpliXBaseService<Area, String> {
     id: "debug-log-in-web-layer",
     invariant: "#14",
     level: "error",
-    desc: "log.debug/info in a web-layer controller or service — the global handler logs errors and these do not, so the line is noise at best. A credential-adjacent flow logging an identifier or a length is a data leak even at DEBUG. Business events are recorded as an AuditEvent, not a log line",
+    desc: "log.debug/info in a web-layer controller or service - the global handler logs errors and these do not, so the line is noise at best. A credential-adjacent flow logging an identifier or a length is a data leak even at DEBUG. Business events are recorded as an AuditEvent, not a log line",
     appliesTo: (p) =>
       p.includes(`${path.sep}web${path.sep}`)
       && (isController(p) || isService(p))
@@ -1367,7 +1367,7 @@ public class AreaService extends SimpliXBaseService<Area, String> {
     id: "hardcoded-zone-literal",
     invariant: "#18",
     level: "error",
-    desc: "A zone id written as a literal — ZoneId.of(\"Asia/Seoul\") and friends. The installation's zone is configuration, so a literal is right for one deployment and silently wrong for the next, and the value it shifts is a date somebody reads off a screen",
+    desc: "A zone id written as a literal - ZoneId.of(\"Asia/Seoul\") and friends. The installation's zone is configuration, so a literal is right for one deployment and silently wrong for the next, and the value it shifts is a date somebody reads off a screen",
     appliesTo: (p) => p.endsWith(".java"),
     check: (c) =>
       lineHits(stripComments(c), /\bZoneId\.of\(\s*"[A-Za-z]+\/[A-Za-z_+\-0-9]+"\s*\)/),
@@ -1381,7 +1381,7 @@ public class AreaService extends SimpliXBaseService<Area, String> {
     id: "banned-temporal-entity-type",
     invariant: "#18",
     level: "error",
-    desc: "Entity/DTO field typed LocalDateTime / OffsetDateTime / ZonedDateTime — SimpliX's auto-applied converters UTC-normalize these, so the offset the field appears to carry is not the one that comes back. An absolute instant is `Instant`; a calendar date is `LocalDate`; a wall-clock time is `LocalTime`",
+    desc: "Entity/DTO field typed LocalDateTime / OffsetDateTime / ZonedDateTime - SimpliX's auto-applied converters UTC-normalize these, so the offset the field appears to carry is not the one that comes back. An absolute instant is `Instant`; a calendar date is `LocalDate`; a wall-clock time is `LocalTime`",
     appliesTo: (p) => p.endsWith(".java"),
     check: (c) =>
       lineHits(stripCommentsAndStrings(c), /^\s*private\s+(?:LocalDateTime|OffsetDateTime|ZonedDateTime)\s+\w+\s*;/),
@@ -1395,7 +1395,7 @@ public class AreaService extends SimpliXBaseService<Area, String> {
     id: "searchdto-pk-contract",
     invariant: "#15③",
     level: "error",
-    desc: "SearchDTO's entity-ID field is missing `sortable = true` or the `IN` operator. Without sortable the scaffolded list's FIRST request fails, because the frontend's default sort is `<entityId>.desc`. Without IN the list's own filter is dead the moment a value is picked, since it resolves selected labels with `<entityId>.in=a,b,c` — and it is dead on every list that offers the filter, including other modules'. The scaffold emits neither half",
+    desc: "SearchDTO's entity-ID field is missing `sortable = true` or the `IN` operator. Without sortable the scaffolded list's FIRST request fails, because the frontend's default sort is `<entityId>.desc`. Without IN the list's own filter is dead the moment a value is picked, since it resolves selected labels with `<entityId>.in=a,b,c` - and it is dead on every list that offers the filter, including other modules'. The scaffold emits neither half",
     appliesTo: isDtoContainer,
     check: (c, rel, ctx) => {
       const entity = path.basename(rel).replace(/DTOs?\.java$/, "");
@@ -1420,7 +1420,7 @@ public class AreaService extends SimpliXBaseService<Area, String> {
       const miss = [];
       if (!/sortable\s*=\s*true/.test(head)) miss.push("sortable = true");
       if (!/\bIN\b/.test(head)) miss.push("IN");
-      return miss.length ? [{ line, excerpt: `${pk}: missing ${miss.join(" + ")} — ${head.slice(0, 90)}` }] : [];
+      return miss.length ? [{ line, excerpt: `${pk}: missing ${miss.join(" + ")} - ${head.slice(0, 90)}` }] : [];
     },
     samples: {
       file: "modules/site/src/main/java/app/web/site/dto/AreaDTOs.java",
@@ -1444,7 +1444,7 @@ public class AreaService extends SimpliXBaseService<Area, String> {
     id: "hand-written-row-drops-a-field",
     invariant: "#17 / canonical-service",
     level: "review",
-    desc: "A hand-written mapper that skips a field BOTH sides declare — the source has it, the DTO has it, and the method that carries one into the other does not mention it. Nothing fails: the column is written, the DTO serializes, and the field is simply absent from the answer, so the screen draws a value that is there as a value that is not. This is where a field added to an entity goes missing, because the mapper is the one place the addition does not reach and the compiler has nothing to say about it",
+    desc: "A hand-written mapper that skips a field BOTH sides declare - the source has it, the DTO has it, and the method that carries one into the other does not mention it. Nothing fails: the column is written, the DTO serializes, and the field is simply absent from the answer, so the screen draws a value that is there as a value that is not. This is where a field added to an entity goes missing, because the mapper is the one place the addition does not reach and the compiler has nothing to say about it",
     appliesTo: isService,
     check: (c, _file, ctx) => {
       const known = ctx?.fields;
@@ -1695,7 +1695,7 @@ public class ApprovalInboxService {
     id: "missing-field-label",
     invariant: "#12",
     level: "error",
-    desc: "A SearchDTO/CreateDTO field carries no @FieldLabel — a validation error on it then names the Java field instead of the translated label, in every locale. Audit fields (createdBy/createdAt/updatedBy/updatedAt) are BaseEntity-managed and exempt",
+    desc: "A SearchDTO/CreateDTO field carries no @FieldLabel - a validation error on it then names the Java field instead of the translated label, in every locale. Audit fields (createdBy/createdAt/updatedBy/updatedAt) are BaseEntity-managed and exempt",
     appliesTo: isDtoContainer,
     check: (c) => {
       const AUDIT = new Set(["createdBy", "createdAt", "updatedBy", "updatedAt", "deletedBy", "deletedAt"]);
@@ -1713,7 +1713,7 @@ public class ApprovalInboxService {
           if (!seg.includes("@FieldLabel")) {
             out.push({
               line: clean.slice(0, offset + fm.index).split("\n").length + 1,
-              excerpt: `${name}.${fm[1]} — no @FieldLabel`,
+              excerpt: `${name}.${fm[1]} - no @FieldLabel`,
             });
           }
         }
@@ -1741,7 +1741,7 @@ public class ApprovalInboxService {
     id: "double-wrapped-response",
     invariant: "#1",
     level: "error",
-    desc: "Endpoint returns ResponseEntity<SimpliXApiResponse<...>> — the envelope is already the response, so this wraps it twice and the client reads a body whose fields are one level deeper than the contract says. Legitimate only for a 202-Accepted async command returning a Location header",
+    desc: "Endpoint returns ResponseEntity<SimpliXApiResponse<...>> - the envelope is already the response, so this wraps it twice and the client reads a body whose fields are one level deeper than the contract says. Legitimate only for a 202-Accepted async command returning a Location header",
     appliesTo: isController,
     check: (c) => lineHits(stripCommentsAndStrings(c), /ResponseEntity<\s*SimpliXApiResponse\s*</),
     samples: {
@@ -1754,7 +1754,7 @@ public class ApprovalInboxService {
     id: "undocumented-response-entity",
     invariant: "#1",
     level: "review",
-    desc: "Endpoint returns a bare ResponseEntity with no class-level JavaDoc saying why — binary streaming is the documented exception, and an undocumented one reads the same from outside. Confirm it streams bytes and record the reason, or return SimpliXApiResponse",
+    desc: "Endpoint returns a bare ResponseEntity with no class-level JavaDoc saying why - binary streaming is the documented exception, and an undocumented one reads the same from outside. Confirm it streams bytes and record the reason, or return SimpliXApiResponse",
     appliesTo: isController,
     check: (c) => {
       const clean = stripCommentsAndStrings(c);
@@ -1777,6 +1777,88 @@ public class ApprovalInboxService {
 public class PublicContentRestController {
     public ResponseEntity<Resource> stream(@PathVariable String id) { return null; }
 }`,
+    },
+  },
+  {
+    id: "labeled-enum-label-bypass",
+    invariant: "#16",
+    level: "error",
+    desc: "A LabeledEnum overrides getLabel(), or declares a constant with a class body. LabeledEnum's own getLabel() resolves enums.{SimpleName}.{CONSTANT} from the enums bundles in the request locale; an override bypasses the bundles, and a constant with a body resolves against its anonymous subclass's name, so either way every locale shows the same text and no translation test notices",
+    appliesTo: (p) => /\.java$/.test(p) && !/src\/test\//.test(p),
+    check: (c) => {
+      const clean = stripCommentsAndStrings(c);
+      if (!/\benum\s+\w+\s+implements\s+[\w.,\s]*\bLabeledEnum\b/.test(clean)) return [];
+      const override = lineHits(clean, /\bString\s+getLabel\s*\(/);
+      // A constant with a class body: an UPPER_SNAKE name, optional constructor arguments, then `{`.
+      const body = lineHits(clean, /^\s*[A-Z][A-Z0-9_]*\s*(?:\([^)]*\))?\s*\{/);
+      return [...override, ...body].sort((a, b) => a.line - b.line);
+    },
+    samples: {
+      file: "packages/domain-site/src/main/java/app/domain/site/enums/AreaStatus.java",
+      broken: `public enum AreaStatus implements LabeledEnum {
+    OPEN,
+    CLOSED;
+
+    @Override
+    public String getLabel() {
+        return name();
+    }
+}`,
+      fixed: `public enum AreaStatus implements LabeledEnum {
+    OPEN,
+    CLOSED
+}`,
+      hit: [
+        {
+          note: "a constant with a class body",
+          source: `public enum AreaStatus implements LabeledEnum {
+    OPEN {
+        boolean accepts() { return true; }
+    },
+    CLOSED;
+}`,
+        },
+        {
+          note: "an override of the locale-taking form",
+          source: `public enum AreaStatus implements LabeledEnum {
+    OPEN, CLOSED;
+    @Override
+    public String getLabel(Locale locale) { return name(); }
+}`,
+        },
+      ],
+      miss: [
+        {
+          note: "constants with constructor arguments and a field, no class body",
+          source: `public enum AreaStatus implements LabeledEnum {
+    OPEN("O"),
+    CLOSED("C");
+
+    private final String code;
+
+    AreaStatus(String code) { this.code = code; }
+
+    public String getCode() { return code; }
+}`,
+        },
+        {
+          note: "an enum that is not a LabeledEnum",
+          source: `public enum Direction {
+    UP {
+        Direction flip() { return DOWN; }
+    },
+    DOWN;
+    public String getLabel() { return name(); }
+}`,
+        },
+        {
+          note: "a call to getLabel(), not a declaration",
+          source: `public enum AreaStatus implements LabeledEnum {
+    OPEN, CLOSED;
+    public String describe() { return "status " + getLabel(); }
+}`,
+        },
+      ],
     },
   },
 ];
@@ -1900,12 +1982,12 @@ function selftest() {
     const s = rule.samples;
     const problems = [];
     if (!s || typeof s.broken !== "string" || typeof s.fixed !== "string" || !s.file) {
-      console.log(`✖ ${rule.id}: no broken/fixed samples — a rule with one direction proved is not proved`);
+      console.log(`✖ ${rule.id}: no broken/fixed samples - a rule with one direction proved is not proved`);
       failed++;
       continue;
     }
     if (!rule.appliesTo(s.file)) {
-      problems.push(`appliesTo() rejects the sample path ${s.file} — the rule could never run on it`);
+      problems.push(`appliesTo() rejects the sample path ${s.file} - the rule could never run on it`);
     } else {
       const sampleCtx = rule.ctxSample ? { ...(s.ctx ?? {}), i18n: rule.ctxSample } : s.ctx;
       const onBroken = rule.check(s.broken, s.file, sampleCtx);
@@ -2024,7 +2106,7 @@ let reviewCount = 0;
 for (const { rule, hits } of results.values()) {
   if (errorsOnly && rule.level !== "error") continue;
   const mark = rule.level === "error" ? "✖" : "◐";
-  console.log(`\n${mark} [${rule.level}] ${rule.id} (${rule.invariant}) — ${rule.desc}`);
+  console.log(`\n${mark} [${rule.level}] ${rule.id} (${rule.invariant}) - ${rule.desc}`);
   for (const h of hits) console.log(`  ${h.file}${h.line ? `:${h.line}` : ""}  ${h.excerpt}`);
   if (rule.level === "error") errorCount += hits.length;
   else reviewCount += hits.length;
@@ -2032,13 +2114,13 @@ for (const { rule, hits } of results.values()) {
 
 console.log(
   `\n${files.length} Java source file(s) scanned, ${ctx.entityIds.size} entity id(s) indexed`
-  + ` — ${errorCount} error hit(s), ${reviewCount} review candidate(s)`
+  + ` - ${errorCount} error hit(s), ${reviewCount} review candidate(s)`
   + `, ${suppressedCount} suppressed by an in-file marker.`,
 );
 if (suppressedCount) {
-  console.log("A suppressed line carries its reason beside it — read those before trusting a clean run.");
+  console.log("A suppressed line carries its reason beside it - read those before trusting a clean run.");
 }
 if (reviewCount && !errorsOnly) {
-  console.log("Review candidates need judgment against the invariant's stated exceptions — fix or justify, do not bulk-rewrite.");
+  console.log("Review candidates need judgment against the invariant's stated exceptions - fix or justify, do not bulk-rewrite.");
 }
 process.exit(errorCount > 0 ? 1 : 0);

@@ -11,7 +11,7 @@ Spring Data JPA repositories in SimpliX.
 ### Standard Repository
 
 ```java
-package {basePackage}.domain.{module}.repository;
+package {basePackage}.domain.{module}.repository;   // module-first layout (§ File Location)
 
 import {basePackage}.domain.{module}.entity.{EntityName};
 import dev.simplecore.simplix.core.repository.SimpliXBaseRepository;
@@ -28,7 +28,7 @@ public interface {EntityName}Repository extends SimpliXBaseRepository<{EntityNam
 `@IdClass` and `@EmbeddedId` composite keys are **prohibited**. Every entity - including junction tables, time-series points, sync-state tuples, monitoring snapshots, and history tables - uses a single `String` primary key (`{entityName}Id`, UUID v7; `field-types.md` § ID Field) and expresses the business uniqueness of the composite columns as a `@Table(uniqueConstraints = @UniqueConstraint(columnNames = {...}))`.
 
 ```java
-// CORRECT — single String id + unique composite index
+// CORRECT - single String id + unique composite index
 @Entity
 @Table(
     name = "user_group_member",
@@ -63,7 +63,7 @@ For entities implementing `TreeEntity` interface:
 package {basePackage}.domain.{module}.repository;
 
 import {basePackage}.domain.{module}.entity.{EntityName};
-import dev.simplecore.simplix.core.repository.SimpliXTreeRepository;
+import dev.simplecore.simplix.core.tree.repository.SimpliXTreeRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -314,12 +314,14 @@ List<AuditEvent> findEntityHistory(
 
 ## File Location
 
+The repository is written by hand, beside its entity in the same domain module; the generator does not write it (`../generator/template-customization.md` § Template Files). Its package follows the project's layout (`base-entity-patterns.md` § Path convention):
+
 ```
-packages/domain-{aggregate}/src/main/java/{basePackage}/domain/{module}/repository/{EntityName}Repository.java
-packages/domain-{aggregate}/src/main/java/{basePackage}/domain/{module}/repository/{EntityName}TreeRepository.java
+{basePackage}/domain/{module}/repository/{EntityName}Repository.java     # module-first layout
+{basePackage}/domain/repository/{module}/{EntityName}Repository.java     # type-first layout
 ```
 
-**Package Structure**: one `{module}/repository/` package per domain module (the `{module}` segment precedes `repository`, mirroring the entity package). Read the project's existing `repository` packages for its modules.
+A tree repository (`{EntityName}TreeRepository.java`) sits in the same package. Read the project's existing `repository` packages for its modules, and write the repository before running `yo simplix:config`: the command looks the repository up to record a `repositoryModulePath` when it sits apart from the entity, and the generated service imports it.
 
 ---
 

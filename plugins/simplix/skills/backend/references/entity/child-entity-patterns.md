@@ -55,7 +55,7 @@ public static class ChildItemDTO {
     @NotNull
     private Integer someField;
     // ... child-specific fields only
-    // NO parentId — comes from parent context
+    // NO parentId - comes from parent context
 }
 ```
 
@@ -77,7 +77,7 @@ public static class ChildDetailDTO {
 ### Parent DTOs
 
 ```java
-// Parent CreateDTO — include @Valid child list
+// Parent CreateDTO - include @Valid child list
 @Data
 public static class ParentCreateDTO {
     // ... parent fields ...
@@ -85,20 +85,20 @@ public static class ParentCreateDTO {
     private List<ChildItemDTO> children;
 }
 
-// Parent UpdateDTO — inherits children from CreateDTO
+// Parent UpdateDTO - inherits children from CreateDTO
 @Data
 public static class ParentUpdateDTO extends ParentCreateDTO {
     @NotBlank private String id;
 }
 
-// Parent DetailDTO — include child detail list
+// Parent DetailDTO - include child detail list
 @Data
 public static class ParentDetailDTO {
     // ... parent fields ...
     private List<ChildDetailDTO> children;
 }
 
-// Parent ListDTO — NO children (list view doesn't need them)
+// Parent ListDTO - NO children (list view doesn't need them)
 @Data
 public static class ParentListDTO {
     // ... parent fields only ...

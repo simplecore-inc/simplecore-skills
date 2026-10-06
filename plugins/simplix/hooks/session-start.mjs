@@ -24,11 +24,11 @@ function buildContext(report) {
   lines.push("");
   for (const m of report.matches) {
     const where = m.dir === "." ? "this directory" : `\`${m.dir}/\``;
-    lines.push(`- ${where} — ${m.kind} (${m.markers.join("; ")}) → invoke the \`simplix:${m.kind}\` skill`);
+    lines.push(`- ${where}: ${m.kind} (${m.markers.join("; ")}) → invoke the \`simplix:${m.kind}\` skill`);
   }
   lines.push("");
   lines.push(
-    "Invoke the matching skill with the Skill tool on the FIRST read, write, review, or explanation of a file in that subproject — before the first edit, not after. Once invoked in a session it does not need re-invoking.",
+    "Invoke the matching skill with the Skill tool on the FIRST read, write, review, or explanation of a file in that subproject, before the first edit, not after. Once invoked in a session it does not need re-invoking.",
   );
 
   if (report.skills.includes("simplix:frontend-e2e")) {
@@ -67,7 +67,7 @@ function buildContext(report) {
     }
     lines.push("");
     lines.push(
-      `This project is only partly wired for these skills: ${missing.join("; ")}. Say this once, early in the session, in one sentence per missing piece, and offer \`/simplix:init\` — it writes the routing block and arms the gates. Then continue with the user's task. Do not write anything without being asked, and do not raise it again this session.`,
+      `This project is only partly wired for these skills: ${missing.join("; ")}. Say this once, early in the session, in one sentence per missing piece, and offer \`/simplix:init\`, which writes the routing block and arms the gates. Then continue with the user's task. Do not write anything without being asked, and do not raise it again this session.`,
     );
   }
 

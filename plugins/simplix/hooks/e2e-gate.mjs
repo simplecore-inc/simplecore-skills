@@ -34,6 +34,7 @@
  */
 import {readFileSync} from 'node:fs';
 import {dirname, relative, resolve} from 'node:path';
+import {fileURLToPath} from 'node:url';
 import {findProjectConfig, underAny} from './project-config.mjs';
 import {hasMarker, readMarker, setMarker} from './session-marker.mjs';
 
@@ -41,6 +42,13 @@ const DEFAULT_UI_EXTENSIONS = ['.tsx'];
 
 /** The convention audit this plugin ships. Recognized by script name, wherever it is invoked from. */
 const AUDIT_SCRIPT = 'audit-frontend.mjs';
+
+/**
+ * The audit's absolute path, resolved from this hook's own location. The message that names it is
+ * read by Claude and run through Bash, where `${CLAUDE_PLUGIN_ROOT}` is not set, so the path is
+ * written out rather than left as the variable.
+ */
+const AUDIT_PATH = fileURLToPath(new URL(`../scripts/${AUDIT_SCRIPT}`, import.meta.url));
 
 /**
  * Whether a Bash command ran the convention audit over the project.
@@ -113,17 +121,17 @@ if (mode === 'check') {
     omissions.push(
       `${skill} was never invoked, so no changed screen has been driven in a browser. A screen ` +
         `whose states have not been walked by hand is unverified, however green the build is. ` +
-        `Either invoke ${skill} and walk the changed screens and the ones either side of them — ` +
-        `anything past a single screen goes to one simplix:screen-auditor per cluster — or state ` +
+        `Either invoke ${skill} and walk the changed screens and the ones either side of them ` +
+        `(anything past a single screen goes to one simplix:screen-auditor per cluster), or state ` +
         `plainly why this change needs no browser pass (a pure refactor with no reachable screen, ` +
         `or the user asked for code only).`,
     );
   }
   if (!hasMarker('audit-ran', input.session_id)) {
     omissions.push(
-      `the convention audit never ran, so the machine-checkable rules are unverified — including ` +
+      `the convention audit never ran, so the machine-checkable rules are unverified, including ` +
         `the ungated action affordance, which is a permission hole rather than a style problem. ` +
-        `Run \`node "\${CLAUDE_PLUGIN_ROOT}/scripts/${AUDIT_SCRIPT}"\` from the frontend project ` +
+        `Run \`node "${AUDIT_PATH}"\` from the frontend project ` +
         `root and drive it to zero error-level hits.`,
     );
   }

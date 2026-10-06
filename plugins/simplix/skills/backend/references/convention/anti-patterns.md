@@ -41,7 +41,7 @@ public SimpliXApiResponse<EntityNameDetailDTO> get(@PathVariable String id) {
 @RequiredArgsConstructor
 public class EntityNameRestController extends SimpliXBaseController<EntityName, String> {
     private final EntityNameService service;
-    // Missing super(service) call — will not compile
+    // Missing super(service) call - will not compile
 }
 
 // CORRECT
@@ -86,14 +86,14 @@ public SimpliXApiResponse<EntityNameDetailDTO> create(@RequestBody @Validated En
 ## AP-4: @Data on SearchDTO
 
 ```java
-// WRONG — generates equals/hashCode which breaks search conditions
+// WRONG - generates equals/hashCode which breaks search conditions
 @Data
 public static class EntityNameSearchDTO {
     @SearchableField(...)
     private String name;
 }
 
-// CORRECT — @Getter @Setter only
+// CORRECT - @Getter @Setter only
 @Getter
 @Setter
 public static class EntityNameSearchDTO {
@@ -111,12 +111,12 @@ public static class EntityNameSearchDTO {
 ## AP-5: Separate DTO Files
 
 ```java
-// WRONG — separate files per DTO type
+// WRONG - separate files per DTO type
 // EntityNameCreateDTO.java
 // EntityNameUpdateDTO.java
 // EntityNameDetailDTO.java
 
-// CORRECT — all DTOs as inner classes in a single file
+// CORRECT - all DTOs as inner classes in a single file
 // EntityNameDTOs.java
 public class EntityNameDTOs {
     public static class EntityNameSearchDTO { ... }
@@ -168,10 +168,10 @@ throw new SimpliXGeneralException(ErrorCode.GEN_CONFLICT,
 ## AP-8: Primitive boolean in DTOs
 
 ```java
-// WRONG — generates isActive() getter, breaks ModelMapper
+// WRONG - generates isActive() getter, breaks ModelMapper
 private boolean active;
 
-// CORRECT — generates getActive() getter
+// CORRECT - generates getActive() getter
 private Boolean active;
 ```
 
@@ -182,12 +182,12 @@ This applies to ALL DTOs, and entities use the wrapper too (`../entity/field-typ
 ## AP-9: Missing @FieldLabel
 
 ```java
-// WRONG — no i18n label
+// WRONG - no i18n label
 @Schema(description = "Name")
 @NotBlank
 private String name;
 
-// CORRECT — includes @FieldLabel for validation error i18n
+// CORRECT - includes @FieldLabel for validation error i18n
 @Schema(description = "Name")
 @FieldLabel("{entities.EntityName.name}")
 @NotBlank
@@ -211,13 +211,13 @@ private String name;
 **Virtual / derived / projection fields** - a DTO field with no column of its own, populated from a *real* field on another entity (e.g. a paired/slave record, an aggregate, a join) - MUST reuse that **source entity's existing label key**, NOT invent a new `{field.*}` key:
 
 ```java
-// WRONG — a domain-specific virtual field parked in the generic field.* bucket.
+// WRONG - a domain-specific virtual field parked in the generic field.* bucket.
 // Forces a brand-new key + a translation per locale AND pollutes the generic namespace.
 @Schema(description = "Virtual field: slave ACR number for paired reader")
 @FieldLabel("{field.exitAcrNumber}")
 private Integer exitAcrNumber;
 
-// CORRECT — point at the real source field's existing entity key.
+// CORRECT - point at the real source field's existing entity key.
 // exitAcrNumber is populated from the slave AccessPoint.acrNumber, so reuse its label.
 @FieldLabel("{entities.AccessPoint.acrNumber}")
 private Integer exitAcrNumber;
@@ -230,11 +230,12 @@ Why: `{field.*}` is reserved for truly generic field names. A virtual field that
 ## AP-10: Skipping Generator for CRUD Entity
 
 ```java
-// WRONG — writing CRUD manually
+// WRONG - writing CRUD manually
 // Claude: "I'll create the service, controller, and DTOs for you..."
 
-// CORRECT - generate, promote, then customize, in the step order that
-// ../entity/yml-configuration.md § Creating YML Configuration owns
+// CORRECT - write the entity and its repository by hand, then generate,
+// promote and customize the service, controller and DTOs, in the step order
+// that ../entity/yml-configuration.md § Creating YML Configuration owns
 // (the promote half: ../generator/promote-workflow.md)
 ```
 
@@ -243,7 +244,7 @@ Why: `{field.*}` is reserved for truly generic field names. A virtual field that
 ## AP-11: Debug Logs by Default
 
 ```java
-// WRONG — adding logs without being asked
+// WRONG - adding logs without being asked
 @Slf4j
 @Service
 public class EntityNameService extends SimpliXBaseService<EntityName, String> {
@@ -258,7 +259,7 @@ public class EntityNameService extends SimpliXBaseService<EntityName, String> {
     }
 }
 
-// CORRECT — no logs unless explicitly requested
+// CORRECT - no logs unless explicitly requested
 @Service
 @Transactional(readOnly = true)
 public class EntityNameService extends SimpliXBaseService<EntityName, String> {
@@ -277,7 +278,7 @@ public class EntityNameService extends SimpliXBaseService<EntityName, String> {
 ## AP-12: Missing @Tag on Controller
 
 ```java
-// WRONG — no @Tag
+// WRONG - no @Tag
 @RestController
 @RequestMapping("/entity-name")
 public class EntityNameController { ... }
@@ -301,7 +302,7 @@ public class EntityNameController {
     private EntityNameService service;
 }
 
-// CORRECT — constructor injection
+// CORRECT - constructor injection
 @RestController
 @RequestMapping("/entity-name")
 @Tag(name = "{module}.{subdomain}.EntityName", description = "...")
@@ -319,13 +320,13 @@ public class EntityNameRestController {
 ## AP-14: Verbose @Schema Descriptions
 
 ```java
-// WRONG — too verbose, includes constraints
+// WRONG - too verbose, includes constraints
 @Schema(description = "Required. The name of the site. Maximum 100 characters.")
 @NotBlank
 @Length(max = 100)
 private String name;
 
-// CORRECT — concise, constraints are in annotations
+// CORRECT - concise, constraints are in annotations
 @Schema(description = "Site name")
 @FieldLabel("{entities.Site.name}")
 @NotBlank
@@ -352,7 +353,7 @@ private String name;
 // CORRECT (audit field separator in DTOs)
 //----------
 
-// CORRECT (in Entity only — entity-specific style)
+// CORRECT (in Entity only - entity-specific style)
 // ==================== Soft Delete ====================
 ```
 
@@ -361,7 +362,7 @@ private String name;
 ## AP-16: Missing @Operation on Endpoint
 
 ```java
-// WRONG — no OpenAPI documentation
+// WRONG - no OpenAPI documentation
 @GetMapping("/{id}")
 @PreAuthorize("hasPermission('<FEATURE_AREA>', 'view')")
 public SimpliXApiResponse<EntityNameDetailDTO> get(@PathVariable String id) { ... }
@@ -378,13 +379,13 @@ public SimpliXApiResponse<EntityNameDetailDTO> get(@PathVariable String id) { ..
 ## AP-17: Wrong Annotation Order on Methods
 
 ```java
-// WRONG — @PreAuthorize before @Operation
+// WRONG - @PreAuthorize before @Operation
 @GetMapping("/{id}")
 @PreAuthorize("hasPermission('<FEATURE_AREA>', 'view')")
 @Operation(summary = "Get EntityName")
 public SimpliXApiResponse<EntityNameDetailDTO> get(@PathVariable String id) { ... }
 
-// CORRECT — @XxxMapping → @Operation → @PreAuthorize
+// CORRECT - @XxxMapping → @Operation → @PreAuthorize
 @GetMapping("/{id}")
 @Operation(summary = "Get EntityName", description = "Retrieves EntityName by ID")
 @PreAuthorize("hasPermission('<FEATURE_AREA>', 'view')")
@@ -433,13 +434,13 @@ public static class EntityNameDetailDTO {
 ## AP-19: @JsonIncludeProperties Missing on Entity References
 
 ```java
-// WRONG — exposes all lazy fields, risks LazyInitializationException
+// WRONG - exposes all lazy fields, risks LazyInitializationException
 @Data
 public static class EntityNameDetailDTO {
     private ParentEntity parent;    // Dangerous: all fields serialized
 }
 
-// CORRECT — project standard
+// CORRECT - project standard
 @Data
 public static class EntityNameDetailDTO {
     @JsonIncludeProperties({"parentId", "parentName"})
@@ -454,7 +455,7 @@ Include contextually useful fields (ID + name + any fields the frontend needs fo
 ## AP-20: Wrong UpdateDTO Inheritance
 
 ```java
-// WRONG — UpdateDTO does not extend CreateDTO
+// WRONG - UpdateDTO does not extend CreateDTO
 @Data
 public static class EntityNameUpdateDTO {
     private String entityNameId;
@@ -463,7 +464,7 @@ public static class EntityNameUpdateDTO {
     // Duplicates all CreateDTO fields
 }
 
-// CORRECT — extends CreateDTO, adds only ID
+// CORRECT - extends CreateDTO, adds only ID
 @Data
 @EqualsAndHashCode(callSuper = true)
 public static class EntityNameUpdateDTO extends EntityNameCreateDTO {
@@ -479,11 +480,11 @@ public static class EntityNameUpdateDTO extends EntityNameCreateDTO {
 ## AP-21: hasRole() Instead of hasPermission()
 
 ```java
-// WRONG — role-based guard, breaks the project's permission model
+// WRONG - role-based guard, breaks the project's permission model
 @PreAuthorize("hasRole('ADMIN')")
 public SimpliXApiResponse<AuditEntryDTO> getAuditEntry(...)
 
-// WRONG — arbitrary authority string
+// WRONG - arbitrary authority string
 @PreAuthorize("hasAuthority('SUPER_USER')")
 
 // CORRECT - the feature-area group permission (invariant #9)
@@ -499,14 +500,14 @@ public SimpliXApiResponse<AuditEntryDTO> getAuditEntry(...)
 ## AP-22: Non-String @PathVariable Type
 
 ```java
-// WRONG — breaks ID convention (UUID v7 stored as String)
+// WRONG - breaks ID convention (UUID v7 stored as String)
 @GetMapping("/{commandId}/audit")
 public SimpliXApiResponse<AuditEntryDTO> getAuditEntry(@PathVariable UUID commandId) { ... }
 
 @GetMapping("/{id}")
 public SimpliXApiResponse<Dto> get(@PathVariable Long id) { ... }
 
-// CORRECT — String everywhere, parse internally if a typed form is needed
+// CORRECT - String everywhere, parse internally if a typed form is needed
 @GetMapping("/{commandId}/audit")
 public SimpliXApiResponse<AuditEntryDTO> getAuditEntry(@PathVariable String commandId) { ... }
 ```
@@ -518,7 +519,7 @@ public SimpliXApiResponse<AuditEntryDTO> getAuditEntry(@PathVariable String comm
 ## AP-23: `@ApiResponses` Block Alongside `@Operation`
 
 ```java
-// WRONG — verbose, not produced by any SimpliX template
+// WRONG - verbose, not produced by any SimpliX template
 @GetMapping("/{id}")
 @Operation(summary = "Get entity")
 @PreAuthorize("hasPermission('<FEATURE_AREA>', 'view')")
@@ -528,7 +529,7 @@ public SimpliXApiResponse<AuditEntryDTO> getAuditEntry(@PathVariable String comm
 })
 public SimpliXApiResponse<Dto> get(@PathVariable String id) { ... }
 
-// CORRECT — @Operation alone; the global ResponseEntityExceptionHandler documents errors
+// CORRECT - @Operation alone; the global ResponseEntityExceptionHandler documents errors
 @GetMapping("/{id}")
 @Operation(summary = "Get entity", description = "Retrieves entity by ID")
 @PreAuthorize("hasPermission('<FEATURE_AREA>', 'view')")
@@ -542,11 +543,11 @@ public SimpliXApiResponse<Dto> get(@PathVariable String id) { ... }
 ## AP-24: URL Prefix Hardcoded on `@RequestMapping`
 
 ```java
-// WRONG — prefix baked into every controller; generator never emits this
+// WRONG - prefix baked into every controller; generator never emits this
 @RequestMapping("/api/v1/admin/control")
 @RequestMapping("/api/v1/facility/control")
 
-// CORRECT — short resource path; the /api/v1/ prefix lives in Spring config
+// CORRECT - short resource path; the /api/v1/ prefix lives in Spring config
 @RequestMapping("/admin/control")
 @RequestMapping("/facility/control")
 ```
@@ -558,14 +559,14 @@ public SimpliXApiResponse<Dto> get(@PathVariable String id) { ... }
 ## AP-25: Missing `@SimpliXStandardApi` on Non-CRUD Controller
 
 ```java
-// WRONG — non-CRUD without the marker; SimpliX middleware can't
-// recognize it for standard-response post-processing
+// WRONG - non-CRUD without the marker; its OpenAPI operations lose the
+// standard 200/400/500 responses every other controller documents
 @RestController
 @RequestMapping("/path")
 @Tag(name = "...")
 public class XxxController {  // no @SimpliXStandardApi, no extends SimpliXBaseController
 
-// CORRECT — non-CRUD must declare @SimpliXStandardApi at class level
+// CORRECT - non-CRUD must declare @SimpliXStandardApi at class level
 @RestController
 @RequestMapping("/path")
 @Tag(name = "module.subdomain.Xxx")
@@ -573,26 +574,26 @@ public class XxxController {  // no @SimpliXStandardApi, no extends SimpliXBaseC
 public class XxxController {
 ```
 
-**Why**: SimpliX applies its response envelope and error-handling filters based on two markers - `extends SimpliXBaseController` (CRUD) **or** `@SimpliXStandardApi` (non-CRUD). A non-CRUD controller missing both is invisible to the middleware and behaves like a raw Spring MVC controller, undoing the project's convention uniformly. See `non-crud-controller.md` §Class Declaration Template.
+**Why**: a CRUD controller inherits `@SimpliXStandardApi` from `SimpliXBaseController`, and a non-CRUD controller declares it, so every controller documents the same standard responses. What the annotation does, and what a controller without it loses: `non-crud-controller.md` § What `@SimpliXStandardApi` does.
 
 ---
 
 ## AP-26: Dual Constructors for Test Overrides
 
 ```java
-// WRONG — two constructors, test-only hook drifts away from generator shape
+// WRONG - two constructors, test-only hook drifts away from generator shape
 @Service
 public class XxxService {
-    public XxxService(Dep a, Dep b) {            // production — inlines the variable dependency
+    public XxxService(Dep a, Dep b) {            // production - inlines the variable dependency
         this(a, b, Clock.systemUTC());
     }
-    XxxService(Dep a, Dep b, Clock clock) {      // test hook — package-private
+    XxxService(Dep a, Dep b, Clock clock) {      // test hook - package-private
         this.clock = clock;
         ...
     }
 }
 
-// CORRECT — single explicit constructor; externalize the variable dependency as a @Bean
+// CORRECT - single explicit constructor; externalize the variable dependency as a @Bean
 @Service
 public class XxxService {
     public XxxService(Dep a, Dep b, Clock clock) {
@@ -617,7 +618,7 @@ public class XxxConfig {
 ## AP-27: String Column for an Offset-Carrying Date/Time
 
 ```java
-// WRONG — RFC 3339 string stored verbatim, with range search declared on it
+// WRONG - RFC 3339 string stored verbatim, with range search declared on it
 @Column(name = "activation_date")
 @Comment("RFC 3339 with client offset")
 private String activationDate;
@@ -636,7 +637,7 @@ private Instant activationDate;
 ## AP-28: JVM-Default-Zone APIs in Domain Logic
 
 ```java
-// WRONG — the container's TZ decides "today" and the day boundary
+// WRONG - the container's TZ decides "today" and the day boundary
 LocalDate today = LocalDate.now();
 Instant dayStart = date.atStartOfDay(ZoneId.systemDefault()).toInstant();
 
@@ -651,14 +652,14 @@ Instant dayStart = date.atStartOfDay(zone).toInstant();
 ## AP-29: Entity Mutation Discarded by a `clearAutomatically` Bulk Op
 
 ```java
-// WRONG — entity removes are queued (em.remove, not yet flushed); the next bulk op clears the
+// WRONG - entity removes are queued (em.remove, not yet flushed); the next bulk op clears the
 // persistence context and silently drops them, so the DELETE/soft-delete never reaches the DB
-accessControlUnitRepository.delete(controller);          // em.remove — deferred to the flush
-controllerSyncStateRepository.deleteById(controllerId);  // em.remove — deferred to the flush
+accessControlUnitRepository.delete(controller);          // em.remove - deferred to the flush
+controllerSyncStateRepository.deleteById(controllerId);  // em.remove - deferred to the flush
 syncDeliveryRepository.deleteAllByControllerId(id);      // @Modifying(clearAutomatically = true)
                                                          //   → EntityManager.clear() detaches the two removes above
 
-// CORRECT — flush the entity mutations BEFORE the clearing bulk op
+// CORRECT - flush the entity mutations BEFORE the clearing bulk op
 accessControlUnitRepository.delete(controller);
 controllerSyncStateRepository.deleteById(controllerId);
 entityManager.flush();                                   // the queued removes are issued now
@@ -670,7 +671,7 @@ syncDeliveryRepository.deleteAllByControllerId(id);      // safe: context clear 
 ## AP-30: Broadened Operator-Facing Read Reaching a Data-Subject Caller
 
 ```java
-// WRONG — one readiness() computes operator-only verdicts (background check, identity,
+// WRONG - one readiness() computes operator-only verdicts (background check, identity,
 // compliance, capacity) AND is called by subject-facing self-service and per-row listings
 public Readiness readiness(String applicantId) {
     ...
@@ -681,7 +682,7 @@ public Readiness readiness(String applicantId) {
 }
 // self-service portal + candidate listing both call readiness().ready() / .blockers()
 
-// CORRECT — the broad read stays operator-only; the subject-facing path gets a narrow read
+// CORRECT - the broad read stays operator-only; the subject-facing path gets a narrow read
 public Readiness readiness(String applicantId) { ... }     // operator controller ONLY
 
 /** Steps the applicant can act on: approval, agreement, training. No SPI, no background check. */
@@ -693,15 +694,15 @@ public List<String> selfServiceMissingSteps(String applicantId) { ... }
 ## AP-31: Fail-Open Jurisdiction / Scope Resolution
 
 ```java
-// WRONG — null means "all sites"; a manager with no active scope row falls into the null
+// WRONG - null means "all sites"; a manager with no active scope row falls into the null
 // branch and sees EVERYTHING
 public Set<String> permittedSiteIds() {
     List<ManagerScope> scopes = repo.findByManagerAndActiveTrue(actor());
     return scopes.isEmpty() ? null : scopes.stream().map(ManagerScope::getSiteId).collect(toSet());
 }
-if (permittedSiteIds() == null) { /* no filter — all sites */ }
+if (permittedSiteIds() == null) { /* no filter - all sites */ }
 
-// CORRECT — resolve to an explicit view; absence of a grant means NOTHING (fail-closed)
+// CORRECT - resolve to an explicit view; absence of a grant means NOTHING (fail-closed)
 public ScopeView resolve() {
     if (permissionEvaluator.hasPermission(auth(), RESOURCE, "manage")) return ScopeView.allSites();
     Set<String> sites = repo.findByManagerAndActiveTrue(actor()).stream()
@@ -715,14 +716,14 @@ public ScopeView resolve() {
 ## AP-32: Delete Without a Reference Guard, or a Guard/Side-Effect That Runs Too Late
 
 ```java
-// WRONG — no reference check (dangles FKs), OR the guard/side-effect runs AFTER the delete
+// WRONG - no reference check (dangles FKs), OR the guard/side-effect runs AFTER the delete
 public void delete(String id) {
     deleteById(id);                          // orphans references; or…
-    revokeToken(findById(id)...);            // row is GONE — findById empty, revoke no-ops/NPEs
+    revokeToken(findById(id)...);            // row is GONE - findById empty, revoke no-ops/NPEs
     auditRecorder.record(DELETE, ...);       // records against a vanished row
 }
 
-// CORRECT — guard + irreversible side-effects BEFORE the row is removed
+// CORRECT - guard + irreversible side-effects BEFORE the row is removed
 public void delete(String id) {
     rejectIfInUse(id);                        // concrete reason, message key, before delete
     revokeTokenIfPresent(findById(id));       // token id unrecoverable once the row is gone
@@ -746,14 +747,14 @@ private void rejectIfInUse(String id) {
 ## AP-33: Orphaned i18n Keys on Entity/Enum Removal; Unsafe Homonym Deletion
 
 ```bash
-# WRONG — delete the entity/enum Java in one commit, its message bundles in the next:
+# WRONG - delete the entity/enum Java in one commit, its message bundles in the next:
 #   the translation-coverage tests (e.g. EntityMessageTranslationTest / EnumMessageTranslationTest) go RED the instant the class is
 #   gone while entities.X.* / enums.Y.* keys remain (orphan keys), so the intermediate commit
 #   cannot build.
-# WRONG — a feature-removal grep of a polysemous term matches unrelated features:
+# WRONG - a feature-removal grep of a polysemous term matches unrelated features:
 grep -ri delivery         # hits sync "delivery", email "delivered", push "delivery failed" …
 
-# CORRECT — precise, symbol-scoped pattern with an explicit keep-list; bundle removal in the
+# CORRECT - precise, symbol-scoped pattern with an explicit keep-list; bundle removal in the
 # SAME commit as the Java deletion
 grep -rEn 'DeliveryRecord|deliveryRecord|delivery_records|[Dd]eliveryMatcher' \
   --include='*.java' --include='*.properties' | grep -vE '/build/|/generated/'
@@ -764,7 +765,7 @@ grep -rEn 'DeliveryRecord|deliveryRecord|delivery_records|[Dd]eliveryMatcher' \
 ## AP-34: A `@NaturalId` Column the Update Path Still Accepts
 
 ```java
-// WRONG — the generated update maps the whole DTO onto the entity, natural id included:
+// WRONG - the generated update maps the whole DTO onto the entity, natural id included:
 @Transactional
 public XDetailDTO update(X entity, XUpdateDTO dto) {
     if (!Objects.equals(entity.getXId(), dto.getXId())) { /* id guard only */ }
@@ -772,7 +773,7 @@ public XDetailDTO update(X entity, XUpdateDTO dto) {
     return saveAndGetProjection(entity);
 }
 
-// CORRECT — refuse the change before the mapper, with a key that names the field
+// CORRECT - refuse the change before the mapper, with a key that names the field
 if (dto.getXCode() != null && !Objects.equals(entity.getXCode(), dto.getXCode())) {
     throw new SimpliXGeneralException(ErrorCode.GEN_CONFLICT, "{error.<domain>.xCodeImmutable}", null);
 }
@@ -798,13 +799,13 @@ grep -rn "Immutable}" --include='*Service.java' modules
 ## AP-35: An Entity Mapping Only One Database Engine Can Build
 
 ```java
-// WRONG — each of these is one engine's SQL, written where the schema tool copies it verbatim:
+// WRONG - each of these is one engine's SQL, written where the schema tool copies it verbatim:
 @Comment("Why, in the operator's own words")          // the quote ends the SQL literal early
 @Column(columnDefinition = "boolean default false")   // no boolean, no false, on some engines
 @Check(constraints = "active IN (true, false)")       // same literal, and it constrains nothing
 @Lob @Column(name = "search_index")                   // a CLOB cannot be an argument to lower()
 
-// CORRECT — say the intent and let Hibernate write it for whichever engine is under it:
+// CORRECT - say the intent and let Hibernate write it for whichever engine is under it:
 @Comment("Why, in the words the operator wrote")
 @ColumnDefault("false")
 @DialectOverride.ColumnDefault(dialect = SQLServerDialect.class, override = @ColumnDefault("0"))
@@ -846,14 +847,14 @@ rather than a grep anyone has to remember, and one probe per engine that boots, 
 ## AP-36: A New Enum Value Without a Schema Step for Its Check Constraint
 
 ```java
-// WRONG — the value is added to the enum and nowhere else:
+// WRONG - the value is added to the enum and nowhere else:
 public enum OrgType implements LabeledEnum {
     COMPANY, DEPARTMENT, PARTNER,
     SITE,          // added; the database still refuses it
     CONTRACTOR
 }
 
-// CORRECT — the enum change travels with a schema step that widens the constraint:
+// CORRECT - the enum change travels with a schema step that widens the constraint:
 //   drop the check constraint, recreate it with the full value set,
 //   do nothing where no constraint exists, and skip engines that write none.
 ```
@@ -882,14 +883,14 @@ the database, which is exactly why it is missed.
 ## AP-37: Two Read Endpoints Under One `@Tag`
 
 ```java
-// WRONG — one tag, two reads:
+// WRONG - one tag, two reads:
 @Tag(name = "identity.user.Avatar")
 class UserAvatarRestController {
     @GetMapping("/{id}")          ...   // the full image
     @GetMapping("/{id}/thumbnail") ...  // the thumbnail
 }
 
-// CORRECT — the second read gets its own tag:
+// CORRECT - the second read gets its own tag:
 @Tag(name = "identity.user.Avatar")          class UserAvatarRestController { ... }
 @Tag(name = "identity.user.AvatarThumbnail") class UserAvatarThumbnailRestController { ... }
 ```
@@ -917,7 +918,7 @@ grep -rn -B20 "@GetMapping" --include='*.java' packages modules | grep "@Tag(nam
 @SearchableField(operators = {EQUALS}, sortable = true)
 private Boolean enabled;
 
-// CORRECT — a boolean is filtered, not sorted:
+// CORRECT - a boolean is filtered, not sorted:
 @SearchableField(operators = {EQUALS})
 private Boolean enabled;
 ```
@@ -938,11 +939,11 @@ without a sort works.
 ## AP-39: Replacing a Child Collection by Deleting Then Re-inserting
 
 ```java
-// WRONG — clear and refill:
+// WRONG - clear and refill:
 coverage.deleteAllByZoneId(zoneId);
 coverage.saveAll(submitted);
 
-// CORRECT — write the difference:
+// CORRECT - write the difference:
 var current = coverage.findAllByZoneId(zoneId);
 coverage.deleteAll(current.stream().filter(c -> !submitted.contains(key(c))).toList());
 coverage.saveAll(submitted.stream().filter(s -> !current.contains(key(s))).toList());
@@ -968,9 +969,9 @@ grep -rn -A10 "deleteAllBy" --include='*.java' packages modules | grep "saveAll"
 ## AP-40: An Inherited `permit-all` Pattern With Nothing Behind It
 
 ```yaml
-# WRONG — copied from the source application, whose controller for it was not copied:
+# WRONG - copied from the source application, whose controller for it was not copied:
 permit-all-patterns:
-  - /api/v1/system/setup/**    # "the framework guards this" — the framework module is not here
+  - /api/v1/system/setup/**    # "the framework guards this" - the framework module is not here
 ```
 
 **Why**: a foundation lifted from another application brings its security configuration with
@@ -997,13 +998,13 @@ grep -rn -A20 "permit-all-patterns" --include='application*.yml' apps
 ## AP-41: A Permission Group Treated as Sufficient for a Record
 
 ```java
-// WRONG — the group is the whole check:
+// WRONG - the group is the whole check:
 @PreAuthorize("hasPermission('SAFETY_HARASSMENT_CASE', 'view')")
 public CaseDTO read(String caseId) {
     return mapper.map(repository.findById(caseId).orElseThrow(...));
 }
 
-// CORRECT — the group admits the caller; the record's own assignment decides which one:
+// CORRECT - the group admits the caller; the record's own assignment decides which one:
 @PreAuthorize("hasPermission('SAFETY_HARASSMENT_CASE', 'view')")
 public CaseDTO read(String caseId) {
     var found = repository.findById(caseId).orElseThrow(...);

@@ -13,14 +13,14 @@ The generator produces this shape. Manual controllers must match it. **The stand
 ```java
 @RestController                                              // rule: class-level annotation order
 @RequestMapping("/building")                                 //   @RestController → @RequestMapping → @Tag → class
-@Tag(name = "facility.spatial.Building",                         // invariant 10 — domain-based namespace
+@Tag(name = "facility.spatial.Building",                         // invariant 10 - domain-based namespace
      description = "Building within a site. Host-only")
 public class BuildingRestController
         extends SimpliXBaseController<Building, String> {    // ID type = String (UUID v7)
 
     private final BuildingService service;
 
-    public BuildingRestController(BuildingService service) { // invariant 8 — explicit constructor, super()
+    public BuildingRestController(BuildingService service) { // invariant 8 - explicit constructor, super()
         super(service);
         this.service = service;
     }
@@ -29,7 +29,7 @@ public class BuildingRestController
     @PostMapping("/create")
     @Operation(summary = "Create Building", description = "Creates a new Building")
     @PreAuthorize("hasPermission('<FEATURE_AREA>', 'create')") // invariant 2, 9 - the feature-area group, never the entity name
-    public SimpliXApiResponse<BuildingDetailDTO> create(     // invariant 1 — SimpliXApiResponse
+    public SimpliXApiResponse<BuildingDetailDTO> create(     // invariant 1 - SimpliXApiResponse
             @RequestBody @Validated BuildingCreateDTO dto) { // invariant 13 - @Validated on body
         return SimpliXApiResponse.success(service.create(dto));
     }
@@ -115,7 +115,7 @@ public class BuildingRestController
         return SimpliXApiResponse.success(null, "Buildings deleted successfully");
     }
 
-    //---------------------------------- Order update (optional — only entities with displayOrder)
+    //---------------------------------- Order update (optional - only entities with displayOrder)
     @PatchMapping("/order")
     @Operation(summary = "Update Building Orders",
             description = "Updates the order of multiple Building entities")
@@ -126,7 +126,7 @@ public class BuildingRestController
         return SimpliXApiResponse.success(service.updateOrders(dtos), "Building orders updated successfully");
     }
 
-    //---------------------------------- Search (GET — browser-friendly URL params)
+    //---------------------------------- Search (GET - browser-friendly URL params)
     @GetMapping("/search")
     @Operation(summary = "Search Building list (GET)",
             description = "Searches Building with various conditions using GET method")
@@ -137,7 +137,7 @@ public class BuildingRestController
         return SimpliXApiResponse.success(service.search(params));
     }
 
-    //---------------------------------- Search (POST — complex conditions, sorting, paging)
+    //---------------------------------- Search (POST - complex conditions, sorting, paging)
     @PostMapping("/search")
     @Operation(summary = "Search Building list (POST)",
             description = "Searches Building with various conditions using POST method")

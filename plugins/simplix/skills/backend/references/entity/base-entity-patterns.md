@@ -8,29 +8,34 @@
 
 ## Where to Create the Entity File
 
-Before writing the entity class, decide which domain Gradle module owns it. Entities are **not** centralized in a single `packages/domain` module - they live in aggregate-specific sub-modules.
+Before writing the entity class, decide which domain Gradle module owns it. A project either splits its domain into aggregate modules (`packages/domain-{aggregate}`) or keeps one domain module (for example `modules/domain`); its `settings.gradle` says which, and a new entity goes where the project's existing entities are.
 
 ### Path convention
 
-```
-packages/domain-{aggregate}/src/main/java/{basePackage}/domain/{module}/entity/{EntityName}.java
-```
+The generator reads the entity and never writes it. The entity and its repository are written by hand in the domain module; `yo simplix:config` derives the yml's `modulePath` from the entity's package, and `yo simplix:generate` writes the service, controller and DTOs under the `target` paths of `.simplix/generator-simplix.json` with that `modulePath` substituted. The generator recognizes two package layouts, and `generator-simplix.json` records which one a project uses:
 
-- `{aggregate}` is the Gradle module suffix (e.g. `facility-config`, `facility-runtime`, `user`).
-- `{module}` is the Java package segment under `{basePackage}.domain` for the same aggregate (e.g. `facilityconfig`, `facilityruntime`, `user`). Keep it aligned with the Gradle module name, minus the hyphens.
+| Layout | Entity | Repository | Enum | `generator-simplix.json` |
+|---|---|---|---|---|
+| Module first | `{basePackage}/domain/{module}/entity/{EntityName}.java` | `{basePackage}/domain/{module}/repository/{EntityName}Repository.java` | `{basePackage}/domain/{module}/enums/{EnumName}.java` | `repository.deriveFromEntity: true`: the repository package is the entity package with its last `.entity` replaced by `.repository` |
+| Type first | `{basePackage}/domain/entity/{module}/{EntityName}.java` | `{basePackage}/domain/repository/{module}/{EntityName}Repository.java` | `{basePackage}/domain/enums/{module}/{EnumName}.java` | `repository.basePackage` set: the repository package is that package followed by `modulePath` (or by the yml's `repositoryModulePath` when the repository sits elsewhere) |
+
+- Each path is relative to the domain module's `src/main/java/`.
+- `{aggregate}` is the Gradle module suffix of an aggregate module (e.g. `facility-config`, `facility-runtime`, `user`).
+- `modulePath` is the package segments after `.domain.` with the `entity` segment removed, so both layouts give the same `modulePath` for the same module: `{module}`, or `{module}/{subdomain}` one package deeper.
+- `{module}` is the Java package segment for the aggregate (e.g. `facilityconfig`, `user`). With aggregate modules, keep it aligned with the Gradle module name, minus the hyphens.
 - `{EntityName}` is the PascalCase entity class name.
+- Read `generator-simplix.json` and one existing entity before creating the file, and use the layout they show. Mixing the two in one project breaks the generator's repository import for the entities that do not match its config.
 
 ### Enums and message bundles
 
-They live in the same `packages/domain-{aggregate}` module as the entities that use them, so that module's domain tests (SKILL.md #16) see them:
+Enums live in the same domain module as the entities that use them, in the package the layout above gives them, so that module's domain tests (SKILL.md #16) see them. Message bundles live in the same module's resources:
 
 ```
-packages/domain-{aggregate}/src/main/java/{basePackage}/domain/enums/{module}/{EnumName}.java
-packages/domain-{aggregate}/src/main/resources/messages/entities/{module}/entities-{module}-messages*.properties
-packages/domain-{aggregate}/src/main/resources/messages/enums/{module}/enums-{module}-messages*.properties
+src/main/resources/messages/entities/[{module}/]entities-{module}-messages*.properties
+src/main/resources/messages/enums/[{module}/]enums-{module}-messages*.properties
 ```
 
-Read the module's existing bundles before adding one; a project that keeps its bundles elsewhere follows its own layout.
+The framework reads enum bundles from `classpath*:messages/enums/**`, so the subdirectory is the project's choice. Read the module's existing bundles before adding one; a project that keeps its bundles elsewhere follows its own layout.
 
 ### Discovering existing modules
 
