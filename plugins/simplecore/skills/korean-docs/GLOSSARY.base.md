@@ -17,11 +17,14 @@ guidance and is English.
   allowed); anything else is a literal. Do not write `|` inside a cell (separate items instead of
   using alternation) and do not write `,` inside a regex (it collides with the item separator).
 - Only rules agreed on regardless of project and domain live here. Domain concepts are registered in
-  each project's glossary.
-- **Unlike a domain concept, a product's proper name lives here.** A product's name does not appear
-  only in that product's repository - design documents, meeting notes, and another product's
-  integration documents all write it, and a transliteration or a wrong capitalization is wrong in
-  every project. A lowercase package, directory, or file name is correct, and each row's note draws
+  each project's glossary. A field's own bans (finance, subscription billing) live in
+  `references/domain-<field>.md`, in this file's table format, and load only in a project whose
+  glossary names the field under `audit.domains`.
+- **A product's proper name is registered in every project glossary whose documents write it**:
+  the product's own repository, and any other project that names it in a design document, a
+  meeting note or an integration guide. This file keeps only the names every project writes
+  (Docker · Kubernetes · Java and the like, in the keep-original table and the transliteration bans
+  below). A lowercase package, directory, or file name is correct, and the project row's note draws
   that boundary. The instruction on spelling is §4 (Choosing a word) of
   `references/response-style.md`.
 
@@ -39,8 +42,8 @@ Standard spellings from the loanword orthography and for widely shared technical
 | architecture | 아키텍처 | 아키텍쳐 | loanword spelling |
 | transaction | 트랜잭션 | 트랜젝션 | loanword spelling |
 | cache | 캐시 | 캐쉬 | loanword spelling |
-| face (font face, typeface) | 서체 | | the field's term; a font file's instance is a 서체, and 「얼굴」 is the everyday sense of the English word, which the field never uses. Registered from a user correction |
-| font family | 글꼴 패밀리 | 글꼴 가족, 서체 가족, 글꼴가족, 서체가족, 폰트 가족, 폰트가족, /font\s*가족/, 서체군 | the settled loanword in CSS and OS documentation; 「가족」 is the kinship word, and where it names any other group of things the rule `kinship-for-grouping` reads it. Registered from a user correction; 「서체군」 was the other candidate, was not chosen, and is banned with the rest |
+| face (font face, typeface) | 서체 | | the field's term; a font file's instance is a 서체, and 「얼굴」 is the everyday sense of the English word, which the field never uses |
+| font family | 글꼴 패밀리 | 글꼴 가족, 서체 가족, 글꼴가족, 서체가족, 폰트 가족, 폰트가족, /font\s*가족/, 서체군 | the settled loanword in CSS and OS documentation; 「가족」 is the kinship word, and where it names any other group of things the rule `kinship-for-grouping` reads it |
 | data | 데이터 | 데이타 | loanword spelling |
 | content | 콘텐츠 | 컨텐츠 | loanword spelling |
 | business | 비즈니스 | 비지니스 | loanword spelling |
@@ -82,10 +85,6 @@ Standard spellings from the loanword orthography and for widely shared technical
 | checkbox | 확인란 | 체크박스, 체크 박스, 선택 상자 | the square a person ticks, and the marker a list draws as ☑ · ☐. The tick itself is 「확인 표시」 and the state is 「선택됨 · 선택 안 됨」, so 「확인란」 names the element alone. Hit: 「완료 여부를 확인란으로 표시합니다」. Miss: the code identifier `checkbox` and the HTML `type="checkbox"`, which stay as written |
 | hyphen | 붙임표 | 하이픈, /(?<![가-힣])대시(?!보드)/ | the `-` character, by its orthographic name, for a list marker or a range in Korean text. The em dash `—` is a different character and is refused outright by the rule `em-dash`; 「대시보드」 is a different word and is not caught, and neither is a word whose 「대」 and 「시」 belong to other syllables (「중대시민재해」 · 「확대시」), which the preceding Hangul syllable filters out. Hit: 「대시(-)로 표시합니다」. Miss: 「대시보드에 표시합니다」, 「중대시민재해 예방」, a CLI flag such as `--only`, and an English range such as `pages 3-5` |
 | rail (layout) | 곁줄 | 레일 칸, 레일 영역, 레일 폭 | the narrow column beside the body of a page, holding a note, a legend or a running summary. A real rail (안전 레일 · 가이드레일) and a screen's navigation area (사이드바) are different things and are not caught. Hit: 「곁줄 칸의 폭입니다」. Miss: 「가이드레일을 설치한다」, 「사이드바에서 메뉴를 고릅니다」, and the code identifier `rail`, which stays as written |
-| AccessCORE | AccessCORE | AccessCore, Accesscore, ACCESSCORE, 액세스코어 | a product name; only the last four letters are capitalized. **A lowercase identifier is correct and is not caught** - the package `dev.accesscore`, the directory `accesscore-license-admin`, the file `accesscore-logo.tsx`. The rule is case-sensitive, so lowercase `accesscore` matches none of the four patterns. Write an all-caps code name (a constant, an environment variable) inside a code span, which is excluded from checking and so never matches `ACCESSCORE`. **Screen copy cannot use backticks, so mark that place with `<code>` or a `mono` class** - its inside, holding no Hangul, is excluded like inline code (`references/audit-tooling.md`), which is why no project-level exception is needed here |
-| SimpliX | SimpliX | 심플릭스 | a product name; do not transliterate. **Lowercase `simplix` is correct and is not caught** - the package `simplix-react`, the config file `simplix.config.ts`, the skill name `simplix:frontend`. This row looks only for the Hangul transliteration |
-| PACS Studio | PACS Studio | 팩스 스튜디오 | a product name. **「팩스」 on its own is not caught** - the fax that sends documents is a different word, so only the two-word `팩스 스튜디오` is matched |
-| NICEPAY | 나이스페이 | 나이스페이먼츠, NICE페이 | the name of a payment gateway. **`NICE`·`nice`·「나이스」 alone are not this company and are not caught** - the English word nice, the credit-rating agency 나이스, and the grade NICE are all different things, so only `나이스페이먼츠`·`NICE페이` are matched |
 
 ## 원문 유지 용어
 
@@ -114,7 +113,7 @@ standard is in `references/response-style.md`.
 | 금지 | 대체 | 수준 | 비고 |
 | ---- | ---- | ---- | ---- |
 | /것을 허용/ | ~할 수 있습니다 (화면 문구: ~합니다 · ~하려면 ~하세요) | 오류 | a literal "allows you to". Screen copy says what happens or what to do rather than what is possible, and the rule pack's `can-instead-of-does` reports 「~할 수 있습니다」 there |
-| /(?<![가-힣])꼴(?![찌불사])/ | 형태 · 경우 · 표현 · 방식 · 문장 | 오류 | a colloquial noun meaning 「모양」, which reads as low register in technical writing. **The replacement is decided by context, not fixed** - 「등재된 꼴만 본다」 is **형태**, 「~가 앞에 오는 꼴만 본다」 is **경우**, 「그 꼴을 허락한다」 is **표현**, 「새는 꼴 하나」 is **예문**. **A compound with Hangul in front of it is legitimate and is not caught** - 글꼴·사다리꼴·세모꼴·네모꼴·마름모꼴, and one repository held thirty-nine occurrences of 「글꼴」 alone. 「꼴찌·꼴불견·꼴사납다」 are different words too |
+| /(?<![가-힣])꼴(?![찌불사])/ | 형태 · 경우 · 표현 · 방식 · 문장 | 오류 | a colloquial noun meaning 「모양」, which reads as low register in technical writing. **The replacement is decided by context, not fixed** - 「등재된 꼴만 본다」 is **형태**, 「~가 앞에 오는 꼴만 본다」 is **경우**, 「그 꼴을 허락한다」 is **표현**, 「새는 꼴 하나」 is **예문**. **A compound with Hangul in front of it is legitimate and is not caught** - 글꼴·사다리꼴·세모꼴·네모꼴·마름모꼴. 「꼴찌·꼴불견·꼴사납다」 are different words too |
 | /(?<![가-힣])산문/ | 글 · 본문 · 설명문 · 서술 | 오류 | a literal `prose`. Korean 「산문」 is a literary term, the opposite of verse, so it misses when it is meant as 「writing that is not code」. **The replacement is decided by context** - 「커밋 인접 산문」 is **커밋 메시지 주변의 글**, 「합니다체 산문」 is **설명문**, 「설명 산문」 is **설명하는 문장**, 「문서의 산문」 is **본문**. **A compound with Hangul in front is not caught** - the 「산문」 of 「등산문화」 is a different word. A project that discusses literature and pairs it with verse turns this off through `## 기본 규칙 예외` |
 | /것을 가능하게/ | ~할 수 있게 합니다 | 오류 | a literal "enables" |
 | 할 수 있게 해줍니다 | ~할 수 있습니다 (화면 문구: ~합니다 · ~하려면 ~하세요) | 오류 | a literal "lets you". Screen copy says what happens or what to do rather than what is possible, and the rule pack's `can-instead-of-does` reports 「~할 수 있습니다」 there |
@@ -130,7 +129,6 @@ standard is in `references/response-style.md`.
 | /소비(?!자)/ | 사용, 사용량 | 오류 | a literal "consume". **Excluding 「소비자」 here does not mean it is allowed** - the word splits into two meanings that a word-level rule cannot judge, and the rule pack's `software-consumer` catches calling an API or event consumer a 「소비자」 (the economics 소비자 of 소비자물가 · 소비자 보호 is legitimate and stays). A messaging domain where it is settled disables this with an exception |
 | /이벤트[를을] ?방출/, /이벤트 방출/, /값[을를] ?방출/, /신호[를을] ?방출/, /스트림[을를] ?방출/, /방출하는 이벤트/ | 내보내기, 발생 | 오류 | a literal "emit". **The word alone does not separate them, so it is registered with the preceding word** - 「압력 방출」·「폭연방출구」·「방출량」·「방출밸브」·「방사선 방출」·「대기 방출」·「열 방출」 are formal terms in industrial safety, chemical engineering, environment, and physics, and banning the bare word turns every document in those fields into errors. A place with no preceding word is judged by a person |
 | /커밋[을를] 세[운우워웠]/, /빌드[을를] 세[운우워웠]/, /서버[을를] 세[운우워웠]/, /컨테이너[을를] 세[운우워웠]/, /이미지[을를] 세[운우워웠]/ | 커밋한다, 빌드한다, 띄운다, 만든다 | 오류 | a literal "build"·"stand up". 「계획을 세운다」·「규칙을 세운다」 are legitimate, so the pattern is not widened: only objects with no legitimate use are named. **Conjugation changes the syllable block, so the stem 「세우」 alone catches neither `세운다` nor `세워`** - open the final consonant for a verb that takes one or contracts. A vertical bar splits the table column even when escaped, so the items are separated by commas instead of regex alternation |
-| /[이가로] 선다/, /[이가로] 섰/, /[이가] 서 있/, /[이가로] 서는 (?!곳)/, /[이가로] 설 것/ | 있다, 표시된다, 배치된다, 만들어졌다 | 경고 | a literal "stand". A screen, a rule, or a value that 「선다」 is translation-ese. A person, a car, or a building really does stand, so this is a warning rather than an error. **Conjugation changes the syllable block** - matching only `선다` lets `섰다`·`섰습니다`·`서 있다`·`서는` through, and the particle arrives as `로` (「영어로 선다」) as well as `이`·`가` |
 | /구워 ?넣/, /구워져/, /구워 있/, /구워진/, /구워집/, /구워 ?내보내/, /구워 ?낸/, /구운 파일/ | 이미지에 넣기, 빌드에 들어 있음, 새겨 넣기, 적용해 저장하기, 포함 | 경고 | a literal "baked into"·"burned in". Neither writing a value into an image or a build nor burning a mask or subtitles into a file is 「굽는다」. **Conjugation changes the syllable block** - matching only `구워져` lets `구워진 파일`·`구워집니다`·`구워 내보낸다` through. 「CD를 굽는다」 is settled and cooking is legitimate, so the stem is not widened to 「굽」. A document about cooking disables this with a base-rule exception |
 | 본질적으로 | (삭제 또는 구체 서술) | 오류 | a literal "essentially" |
 | 표면 | 문맥에 맞게: 엔드포인트, 조회 주소, 맡은 범위, 영역, 구성 | 오류 | a literal "surface". The replacement depends on what is meant - the set of addresses an API opens is "엔드포인트", one address answering a list or a detail is "조회 주소", the share an agent or a team takes on ("서버 표면"·"화면 표면"·"작업 표면") is "맡은 범위"·"서버 쪽"·"건드리는 곳", and the kinds and placement of documents is "문서 구성". **A window a screen is drawn in** (a popover, a separate window, full screen) is "창", easily confused with "화면 표면" above - the question that separates them is whether it has pixel dimensions. With dimensions it is a window; without, it is about who takes on what, and therefore "맡은 범위". A document about physical surfaces (pipe surface temperature, coating, surface treatment) disables this through `## 기본 규칙 예외` - **that exception switches off the whole repository, quieting the software sense too.** Where both senses live in one repository, the rule pack's `software-surface` keeps catching the software one |
@@ -172,13 +170,13 @@ standard is in `references/response-style.md`.
 | 위상 순서 | 의존성 순서 | 오류 | topological order - the execution order of a sorted dependency graph. Parent → child direction |
 | 위상 정렬 | 의존성 정렬 | 오류 | topological sort - the algorithm that orders a dependency graph |
 | 위상 그래프 | 그래프 구조 | 오류 | a literal "topology". **The bare word 「위상」 is not registered** - a signal's phase, mathematical topology, and 「국제적 위상」 are all legitimate, and letters alone do not separate them. Only the compounds diverge in software, so the machine catches these rows and a person judges the remaining 「위상」 in context |
-| /(?<!표현의 )(?<!표현 )충실성/ | 원문 충실도 | 오류 | a literal "fidelity". Accounting's 「표현의 충실성」 (faithful representation) is a formal term and is excluded by the preceding words. An accounting document that repeats it disables the rule with a base-rule exception |
+| /번역(의)? ?충실성/, /원문(의)? ?충실성/, /원문에 대한 충실성/ | 번역 충실도, 원문 충실도 | 오류 | a literal "fidelity" in the translation sense: how closely a translation keeps its source is 「충실도」. **Only the translation compounds are matched**, so the word on its own stays: an evaluation item's 「충실성」 (내용의 충실성 · 계획의 충실성 · 충실성 평가) and accounting's 「표현의 충실성」 (faithful representation) are formal terms. Hit: 「번역 충실성을 높인다」, 「원문의 충실성을 지킨다」. Miss: 「제안 내용의 충실성」, 「표현의 충실성」 |
 | 거버너 | 감시기, 품질 감시기 | 오류 | a transliterated "governor". A mechanical speed governor is not transliterated either - it is 「조속기」. 「거버넌스」 differs by a syllable (넌 ≠ 너) and is not caught |
 | /(?<!논리적 )(?<![가-힣])함의(?![하한할함해])/ | 뒷받침, 담고 있음 | 오류 | a literal "implication". **Logic's 함의 is used as a predicate, so it is excluded by the following syllable** - 「p가 q를 함의한다」·「함의하는」·「함의할」·「함의함」 are legitimate and 「논리적 함의」 is excluded by a lookbehind. **When the preceding character is Hangul it is not the word but 「…함」 plus the particle 「의」** - 결함의·포함의·정함의 are all that shape, and without excluding them every document about defects is caught. What is left is the noun use, 「정책적 함의」·「함의를 담다」. Finance's implied is 「내재」 (내재 변동성) |
 | /동치(?![관류])/ | 일치 | 오류 | a literal "equivalent". Mathematics and logic have the formal 「동치관계」·「동치류」, excluded by the following syllable. A mathematics document about equivalent propositions disables it with a base-rule exception |
 | /휴리스틱(?! 평가)/ | 경험 규칙 | 오류 | a transliterated "heuristic". HCI's 「휴리스틱 평가」 (Nielsen) is settled and is excluded by a lookahead |
 | 정련 | 정제 | 오류 | a literal "refine". Metallurgical and textile 정련 are formal process terms, so those documents disable it with a base-rule exception |
-| /다치 술어/, /다중값 술어/ | 다중값 조건 | 오류 | a literal "multi-valued predicate". **A predicate that narrows a query is 「조건」** - 「술어」·「서술어」 are grammar terms, and nobody calls a list filter that. This row once fixed 「다치」 while leaving 「술어」, which endorsed the mistranslation. **The 「서술어」 of grammar stays** - subject-predicate agreement is a subject this skill returns to constantly. **The bare 「다치」 is not caught** - it overlaps with 「다치다」 |
+| /다치 술어/, /다중값 술어/ | 다중값 조건 | 오류 | a literal "multi-valued predicate". **A predicate that narrows a query is 「조건」** - 「술어」·「서술어」 are grammar terms, and nobody calls a list filter that. Fixing 「다치」 alone would leave 「술어」 standing and endorse the mistranslation, so the row matches the two words together. **The 「서술어」 of grammar stays** - subject-predicate agreement is a subject this skill returns to constantly. **The bare 「다치」 is not caught** - it overlaps with 「다치다」 |
 | /가역(?!\s?[반과])/ | 되돌릴 수 있는, 되돌릴 수 없는 | 오류 | a literal "reversible". Chemistry and thermodynamics have the formal 「가역 반응」·「가역과정」, excluded by the following syllable. What is left is software use such as 「가역 작업」·「비가역적 변경」. A thermodynamics document that also writes 「가역 기관」·「가역 단열」 disables it with a base-rule exception |
 | 독립확증 | 독립 출처 확인 | 오류 | a coinage: 「독립」 and 「확증」 stuck together, absent from the dictionary |
 | /(?<![이꾸])미지(?![수급불지원정근명])(?!\s*[않말못])/ | 낯선, 처음 보는 | 오류 | a literal "unknown". **Words that merely share the syllables are excluded on both sides** - after it 미지수·미지급·미지불·미지지(未支持)·미지원·미지정·미지근·**미지명** (not yet named), and before it **이미지**. Without excluding the front, a document about photographs or builds is caught at every 「이미지」, and that noise buries the real findings. **A verb's conjugation is caught separately** - 「꾸미지 않게」 is the stem 「꾸미」 plus the connective 「지」, not the word 미지. 「꾸미다」 is practically the only stem ending in 「미」, so the front is excluded, and a following negative auxiliary (않·말·못) is excluded with it to cover other stems. The spaced 「이 미지의 값」 has whitespace in front and is still caught. What is left is 「미지의 값」·「미지 영역」 |
@@ -190,18 +188,3 @@ standard is in `references/response-style.md`.
 | 전제 위에 | 전제를 바탕으로 | 오류 | a literal "build on the premise". A premise is a ground, not the base of a structure |
 | 붙는 위치, 붙이는 위치 | 적용 위치, 연결 지점 | 오류 | a literal "where it hooks". Write what applies where, and what is connected to what |
 | 정밀도와 회수율, 회수율과 정밀도 | 재현율 | 오류 | a literal "recall". **The bare 「회수율」 is not registered** - 채권 회수율 · 설문 회수율 · 자원 회수율 are formal terms and letters alone do not separate them. Only its pairing with precision is caught |
-| 프로레이션 | 일할 계산 | 오류 | a transliterated "proration" |
-| 캐리오버 | 이월 | 오류 | a transliterated "carryover" |
-| /더닝(?!.?크루거)/ | 재청구 | 오류 | a transliterated "dunning". 「더닝 크루거」·「더닝-크루거」·「더닝크루거」 are a personal name and are excluded |
-| 리펀드 | 환불 | 오류 | a transliterated "refund" |
-| 서브스크립션 | 구독 | 오류 | a transliterated "subscription" |
-| /오더(?![라니군냐])/ | 주문 | 오류 | a transliterated "order". 「워크오더」·「오더링」 are the same family. **The connective forms of 「오다」 are excluded by the following syllable** - 오더라도·오더라·오더니·오더군·오더냐 are the verb, not a transliteration |
-| 브레드스 | 시장 폭 | 오류 | a transliterated "breadth" |
-| 험프 | 정점 | 오류 | a transliterated "hump" - the peak of liquidity depth. A document about road humps (「험프형 과속방지턱」) disables it with a base-rule exception |
-| 레짐 | 국면 | 오류 | a transliterated "regime" - 시장 국면 · 급락 국면 · 국면 단절 · 국면 게이트 |
-| 드로다운 | 낙폭, 급락 | 오류 | a transliterated "drawdown" |
-| 체결 프린트 | 체결값, 체결 기록 | 오류 | a literal "print" (a trade record). **The bare 「프린트」 is not registered** - printing is a legitimate sense and letters alone do not separate them. Only its pairing with 체결 is caught |
-| 비중 틸트, 가치 틸트, 팩터 틸트, 모멘텀 틸트 | 비중 기울임, 비중 확대 | 오류 | a transliterated "tilt". **The bare 「틸트」 is not registered** - a camera's 「팬·틸트」 is settled |
-| 리더 종목 | 주도주 | 오류 | a literal "leading stocks". **The bare 「리더」 is not registered** - a team leader and a card reader are legitimate |
-| 헤드라인 수치, 헤드라인 지표 | 대표 수치, 전체 | 오류 | a literal "headline number". **The bare 「헤드라인」 is not registered** - a news headline is legitimate |
-| 분석 오버레이 | 보조분석 | 오류 | a literal "analysis overlay". **The bare 「오버레이」 is not registered** - a screen or graphics overlay is settled |

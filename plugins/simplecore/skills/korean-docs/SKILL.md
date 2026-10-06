@@ -66,9 +66,8 @@ not offer to create it.
   `references/ui-copy-sweep.md`. A rule sees only the forms registered in it.
 - **The sweep's closing line is the verdict of the checks that judge, not of the lens.** `sweep`
   prints the lens candidates above and then `Clean on every check that ran` below, and the
-  attractive misreading is to take that last line as the result of the whole run. One coordinator
-  swept eight reports in a day, read `Clean` eight times, and never opened the ten candidates
-  listed above it; `가족` for a font family was among them every time, and it reached the user.
+  attractive misreading is to take that last line as the result of the whole run
+  ([references/cases.md](references/cases.md) has the run that produced this rule).
   **A lens candidate is read the moment it is printed**, and a reply is not sent while one stands
   unread. The summary's lens row and the closing line say how many stand; when the sweep lists
   only the first of them, `lens` with the same paths lists every one.
@@ -98,7 +97,8 @@ before it goes out.
 
 Flags, the hook, the declaration files, how to write a rule, and how to confirm somebody else's
 finding are in [references/audit-tooling.md](references/audit-tooling.md). Read it when running the
-audit or when creating or changing a rule.
+audit or when creating or changing a rule. Commands in this skill's references are written from the
+plugin root, which is ${CLAUDE_PLUGIN_ROOT}.
 
 ## Term decisions
 

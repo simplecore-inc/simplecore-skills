@@ -12,9 +12,9 @@ read**, so it may be broad, and it has to be broad to stop leaking.
 | Output | 「fix this」 | 「read this」 |
 | What it misses | every form outside the enumeration | almost nothing |
 
-**The skill had rules and nothing else for a long time.** Seventy-two rules returned zero on a
-board, and when a person read it in filename order one cluster alone gave fourteen findings, **none
-of which any rule had caught** - `결재가 올라갑니다` is caught while `알림이 갑니다` is not.
+**A zero from the rules is not a clean board.** A rule catches only the forms registered in it -
+`결재가 올라갑니다` is caught while `알림이 갑니다` is not - and an in-order reading finds what no
+rule registered ([cases.md](cases.md)).
 
 ## How to run it
 
@@ -48,7 +48,7 @@ the lens is for.
 
 **Hands** `쥐고` · `쥐는` · `(?<!제)품고` · `(?<!제)품는` · `(?<!제)품은` · `(?<!제)품지` · `싣` · `실어` · `잡는` · `잡고` · `잡습` · `잡지` · `잡았` · `잡아` · `갖는다` · `가진다` · `갖습니다` · `가집니다` · `갖는` · `가진` ·
 `얹` · `박아` · `박은` · `손대` · `손댄` · `손댈` · `손댑` · `손댔` · `씌우` · `씌운` · `조임` · `조인다` · `넣습` · `넣는다` · `쌓이` · `쌓인` ·
-`쌓였` · `앉는다` · `앉은` · `앉습` · `내려앉` · `세운다` · `세웁` · `세우는` · `선다` · `서고` · `서며` · `서므로` · `서는지` · `섰다` · `섰고` · `섰습` · `섭니다` · `서 있` · `(?<!만)들고,` · `(?<!만)들고)` · `(?<!만)들지` · `(?<!만)든다` · `(?<!만)듭니다`
+`쌓였` · `앉는다` · `앉은` · `앉습` · `내려앉` · `세운다` · `세웁` · `세우는` · `선다` · `서고` · `서며` · `서므로` · `서는지` · `(?<![가-힣])서는(?= )` · `(?<![가-힣])설 것` · `섰다` · `섰고` · `섰습` · `섭니다` · `서 있` · `(?<!만)들고,` · `(?<!만)들고)` · `(?<!만)들지` · `(?<!만)든다` · `(?<!만)듭니다`
 
 **Absorbing a difference** `차이 수용` · `차이를 수용` · `차이는 수용` · `로 수용` · `에서 수용` ·
 `없이 수용` · `설정 수용` · `변경 수용` · `흡수`

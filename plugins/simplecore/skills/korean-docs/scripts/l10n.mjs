@@ -67,6 +67,10 @@ import {
   BASE_GLOSSARY_PATH,
 } from "./lib/glossary.mjs";
 import {
+  DEFAULT_EXCLUDE_DIRS,
+  documentTargets,
+  walkTargets,
+  makeLocaleResourceMatcher,
   initGlossary,
   initL10n,
   runDocAudit,
@@ -124,7 +128,8 @@ const DEFAULT_CONFIG = {
   /** Regexes over a catalogue key or value; a match is a value nobody translates - a unit,
    *  a language name shown in its own language, a file list, a formula of identifiers. */
   untranslatedAllow: [],
-  /** Domain scopes of RULES.base.json the project opts into (universal always applies). */
+  /** Domain scopes of RULES.base.json the project opts into (universal always applies). The project
+   *  glossary's `audit.domains` opts in as well, and loads the domain's glossary table with it. */
   ruleScopes: [],
   /** Names the domain in the suspects guidance, e.g. "라이선스·구독·결제". */
   domainHint: null,
@@ -202,9 +207,12 @@ function gitFiles(pattern) {
   return findFiles(pattern);
 }
 
-const PRUNED = new Set([".git", "node_modules", "build", "dist", "target", ".gradle", ".next", "vendor"]);
-
-/** Glob against the filesystem, honouring only the subset of glob syntax used here. */
+/**
+ * Glob against the filesystem, honouring only the subset of glob syntax used here.
+ *
+ * It prunes the directories `check` prunes (`DEFAULT_EXCLUDE_DIRS`). A dot-directory is skipped
+ * too, except `.claude` and `.plans`, where a declared kind may keep its files.
+ */
 function findFiles(pattern) {
   // `**/` spans zero or more directories; a lone `*` stops at a separator. Every glob character
   // becomes a placeholder before any regex is written, because the regex for `**/` carries a `?`
@@ -230,7 +238,7 @@ function findFiles(pattern) {
     }
     for (const e of entries) {
       if (e.name.startsWith(".") && e.name !== ".claude" && e.name !== ".plans") continue;
-      if (PRUNED.has(e.name)) continue;
+      if (DEFAULT_EXCLUDE_DIRS.has(e.name)) continue;
       const child = rel ? `${rel}/${e.name}` : e.name;
       if (e.isDirectory()) walk(join(dir, e.name), child);
       else if (re.test(child)) out.push(child);
@@ -267,10 +275,20 @@ function formatOf(kind, file) {
  * A glossary is a page of banned spellings and is never judged by them - `check` skips both, so
  * the sentence sweep skips both too.
  */
-function projectExclusions() {
+/** The project glossary and its `audit` front matter, read once. */
+let PROJECT_GLOSSARY = null;
+function projectGlossary() {
+  if (PROJECT_GLOSSARY) return PROJECT_GLOSSARY;
   const g = discoverGlossary(START);
-  const patterns = g ? (parseGlossaryConfig(readFileSync(g.path, "utf8")).config?.exclude ?? []) : [];
-  const glossaries = new Set([g?.path, BASE_GLOSSARY_PATH].filter(Boolean).map((x) => resolve(x)));
+  const config = g ? parseGlossaryConfig(readFileSync(g.path, "utf8")).config : { paths: [], exclude: [], localeResources: [] };
+  PROJECT_GLOSSARY = { path: g?.path ?? null, config };
+  return PROJECT_GLOSSARY;
+}
+
+function projectExclusions() {
+  const g = projectGlossary();
+  const patterns = g.config.exclude ?? [];
+  const glossaries = new Set([g.path, BASE_GLOSSARY_PATH].filter(Boolean).map((x) => resolve(x)));
   const matchers = patterns.map(makeExcludeMatcher);
   return {
     excluded: (file) => {
@@ -286,22 +304,21 @@ function projectExclusions() {
  *
  * Without this the sentence sweeps would need a `kinds` declaration that the word check does
  * not, and a project with only documents would get `check`'s zero while no sentence rule ran.
- * Both `*.md` and `**\/*.md` are listed so that both enumerations reach the whole tree: git's
- * pathspec `*` crosses `/` while `**\/*.md` needs a separator, and the filesystem fallback's `*`
- * stops at one.
+ *
+ * **The set is `check`'s own, taken from the function `check` resolves its targets with**:
+ * `audit.paths` (the whole project with `--all`), the same directory exclusions, `audit.exclude`,
+ * the glossaries left out, and the resources `audit.localeResources` declares. Two enumerations
+ * kept in step by hand drift apart, and a file one reads and the other skips makes their two
+ * zeros cover different files, so there is one.
+ *
+ * @param all ignore `audit.paths`, as `check --all` does
  */
-function docEntries() {
-  const found = new Map();
-  const skip = projectExclusions();
-  for (const ext of ["md", "mdx", "svg"]) {
-    for (const glob of [`*.${ext}`, `**/*.${ext}`]) {
-      for (const file of gitFiles(glob)) {
-        if (skip.excluded(file) || skip.isGlossary(file)) continue;
-        found.set(file, { kind: "docs", lang: CONFIG.defaultLanguage, file, format: formatOf(null, file) });
-      }
-    }
-  }
-  return [...found.values()].sort((a, b) => a.file.localeCompare(b.file));
+function docEntries({ all = false } = {}) {
+  const g = projectGlossary();
+  return documentTargets({ root: ROOT, config: g.config, glossaryPath: g.path, all })
+    .map((abs) => relative(ROOT, abs).split(sep).join("/"))
+    .map((file) => ({ kind: "docs", lang: CONFIG.defaultLanguage, file, format: formatOf(null, file) }))
+    .sort((a, b) => a.file.localeCompare(b.file));
 }
 
 /**
@@ -361,9 +378,10 @@ function pathEntries(paths, command) {
     if (statSync(abs).isDirectory()) {
       if (!inside) throw new Error(`A directory has to be inside the project: ${p}`);
       const dir = rel.split(sep).join("/");
-      for (const ext of ["md", "mdx", "svg"]) {
-        for (const glob of [`${dir}/*.${ext}`, `${dir}/**/*.${ext}`]) for (const f of gitFiles(glob)) add(f);
-      }
+      // The documents beneath it are the ones `check` reads beneath it - its walk, its
+      // directory exclusions, and the resources the glossary declares.
+      const isLocaleResource = makeLocaleResourceMatcher(projectGlossary().config.localeResources ?? [], ROOT);
+      for (const f of walkTargets(abs, isLocaleResource)) add(relative(ROOT, f).split(sep).join("/"));
       for (const entry of declaredUnder(dir)) add(entry.file, entry);
     } else {
       add(inside ? rel : abs);
@@ -411,17 +429,16 @@ function defaultKinds(command) {
   return Object.keys(CONFIG.kinds).filter((k) => !optedOut(CONFIG.kinds[k].optIn, command));
 }
 
-function discover({ kind, lang, docFallback = false, command } = {}) {
-  if (docFallback && !kind && !Object.keys(CONFIG.kinds).length) return docEntries();
+function discover({ kind, lang, docFallback = false, command, all = false } = {}) {
+  if (docFallback && !kind && !Object.keys(CONFIG.kinds).length) return docEntries({ all });
   requireKinds();
   const kinds = kind ? [kind] : defaultKinds(command);
   const langs = lang ? [lang] : [CONFIG.defaultLanguage];
   const found = new Map();
   // The glossary's `audit.exclude` reaches a declared kind too. A kind glob is a git pathspec,
   // and git's `*` crosses `/`, so `docs/*.md` takes every document under docs - including the
-  // review records a project excluded because they quote each round's sentences verbatim. One
-  // repository's 278 such files came back as the sentence sweep's largest source of findings,
-  // and every one of them was a file nobody may edit.
+  // review records a project excluded because they quote each round's sentences verbatim, which
+  // nobody may edit (references/cases.md).
   const skip = projectExclusions();
   for (const k of kinds) {
     const spec = CONFIG.kinds[k];
@@ -468,13 +485,12 @@ function discover({ kind, lang, docFallback = false, command } = {}) {
  * begins inside `text`, so the extra context is read and never reported.
  *
  * **A trailing negative lookahead is vacuously satisfied at the end of a string**, so a
- * segment that stops one character early turns a correct word into a finding: `…W17에
- * 있어 \`StatutoryReport\`` was cut at 있어 and the ban on 「~에 있어서」 fired, because
- * the space it declines on had been trimmed off the tail. The pattern was right and the
- * string it was handed was short. Every rule that ends in `(?!…)` carries the same hole,
- * and none of their authors can see it from the pattern - one project's merged glossary
- * and rule pack held 57 of them - which is why it is closed here rather than one
- * lookahead at a time.
+ * segment that stops one character early turns a correct word into a finding: cut at 있어,
+ * `…W17에 있어 \`StatutoryReport\`` fires the ban on 「~에 있어서」, because the space it
+ * declines on is trimmed off the tail. The pattern is right and the string it is handed is
+ * short. Every rule that ends in `(?!…)` carries the same hole, and none of their authors
+ * can see it from the pattern (references/cases.md), which is why it is closed here rather
+ * than one lookahead at a time.
  *
  * **`after` is empty at a real end, and that is the whole of the judgement.** A value
  * that ends, a line that ends, a label that ends: nothing follows, `$` anchors hold, and
@@ -684,9 +700,9 @@ function segmentsMarkdown(src) {
   // Anchored to any line instead - `/^---$[\s\S]*?^---$/gm` - the rules pair off two by
   // two and each pair swallows the prose between them. It has no symptom: the text is
   // never handed to a rule, so `rules`, `grep` and `suspects` report nothing and the
-  // silence reads exactly like a clean document. One repository lost 698 lines across 46
-  // files that way. `check` was never affected - doc-audit.mjs and glossary.mjs both
-  // require line 0 - so the two passes disagreed about what the file even contained.
+  // silence reads exactly like a clean document (references/cases.md). `check` requires
+  // line 0 too - doc-audit.mjs and glossary.mjs both do - so the anchor keeps the two
+  // passes agreeing on what the file contains.
   const front = /^---[ \t]*\r?\n[\s\S]*?^---[ \t]*$/m.exec(src);
   if (front && front.index === 0) blocked.push([0, front[0].length]);
 
@@ -1191,9 +1207,16 @@ function ruleSet() {
 
 let RULE_PACKS = null;
 
-/** Style-rule packs (skill base pack + project pack), loaded once. */
+/**
+ * Style-rule packs (skill base pack + project pack), loaded once.
+ *
+ * The scopes are the project glossary's `audit.domains` and `.claude/l10n.json`'s `ruleScopes`
+ * together, so the declaration that loads a field's glossary table also loads that field's
+ * sentence rules, and a project that declared the scope in `ruleScopes` keeps it.
+ */
 function rulePacks() {
-  RULE_PACKS ??= loadRulePacks({ root: ROOT, scopes: CONFIG.ruleScopes ?? [] });
+  const scopes = [...new Set([...(CONFIG.ruleScopes ?? []), ...(ruleSet().config?.domains ?? [])])];
+  RULE_PACKS ??= loadRulePacks({ root: ROOT, scopes });
   return RULE_PACKS;
 }
 
@@ -1714,8 +1737,9 @@ const EXTRACTOR_CASES = [
   {
     // The whole point of the SVG extractor: a rule anchored on `$` has to be able to reach a
     // label. Read as one line of markup - which is what a rendered diagram is - no label sits
-    // at the end of anything, so every such rule reported 0 over 35 files and the 0 read as
-    // clean. `loud` proves the anchor lands; `silent` proves the attribute soup is not prose.
+    // at the end of anything, so every such rule would report 0 and the 0 would read as clean
+    // (references/cases.md). `loud` proves the anchor lands; `silent` proves the attribute
+    // soup is not prose.
     what: "SVG: only rendered labels become segments; markup does not",
     of: () => segmentsSvg,
     src:
@@ -1893,9 +1917,9 @@ function cmdRulesTest(opts) {
       if (!["screen", "manual", "plain", "spoken"].includes(reg)) problems.push(["unknown register in registers", `${reg} - screen · manual · plain · spoken`]);
     }
     if (!(rule.miss ?? []).length) problems.push(["no miss example", "nothing guards against false positives"]);
-    // The lens knowing a family HALF is the defect - 「붙는」 stood in it without
-    // 붙이·붙은·붙지·붙어, so the lens reported finding the family while 126 sites walked
-    // past. A rule's examples are all of one family, so a lens that matches some of them
+    // The lens knowing a family HALF is the defect - a stem such as 「붙는」 without
+    // 붙이·붙은·붙지·붙어 reports the family as found while its other forms walk past
+    // (references/cases.md). A rule's examples are all of one family, so a lens that matches some of them
     // and loses the rest has an incomplete stem, and this says which example it lost.
     //
     // Matching NONE is not judged: the lens has no interest in that family, which is the
@@ -2017,16 +2041,24 @@ function cmdRulesScan(opts) {
     const perFile = new Map();
     // A rule may name the registers it is written for. 「~할 수 있습니다」 standing in for an
     // instruction is a defect on a screen, where guidance has to say do or does, and the ordinary
-    // way a reference manual states a capability - one such rule fired 467 times on a 119-file
-    // manual, every hit a capability sentence. The register comes from the declared kind; a
-    // document with no kind is "plain".
+    // way a reference manual states a capability (references/cases.md). The register comes from
+    // the declared kind; a document with no kind is "plain".
     const register = CONFIG.kinds[entry.kind]?.register ?? "plain";
-    const applicable = active.filter((r) => !r.registers || r.registers.includes(register));
+    // Errors first, so that within a family the narrow error rule claims a place before the broad
+    // warning rule that would report the same words again.
+    const applicable = active
+      .filter((r) => !r.registers || r.registers.includes(register))
+      .sort((a, b) => (severityOf(a) === severityOf(b) ? 0 : severityOf(a) === "error" ? -1 : 1));
     for (const seg of segments) {
+      // Rules that share a `family` judge one defect. A place one member reported is not reported
+      // again by another, or one sentence prints under two names and a reader learns to skip both.
+      const claimed = new Map();
       for (const rule of applicable) {
         for (const re of ruleMatchers(rule)) {
           const m = matchSegment(re, seg);
           if (!m) continue;
+          const span = [m.index, m.index + m[0].length];
+          if (rule.family && (claimed.get(rule.family) ?? []).some(([s, e]) => span[0] < e && s < span[1])) continue;
           // Only a frequency rule is thresholded on a per-file count, so only a frequency rule
           // is misled by a catalogue. A rule that fires on the first hit still reports there.
           if (rule.minPerFile) {
@@ -2040,6 +2072,7 @@ function cmdRulesScan(opts) {
           // The spoken-script boundary is the same in both engines: a rule that only keeps a name in its
           // original script stands down on a speaker script, whichever file holds the rule.
           if (isSpoken(entry, seg) && isOriginalScriptBan({ source: rule.find.join(" "), suggestion: rule.replace })) continue;
+          if (rule.family) claimed.set(rule.family, [...(claimed.get(rule.family) ?? []), span]);
           if (!perFile.has(rule.id)) perFile.set(rule.id, []);
           perFile.get(rule.id).push({
             file: entry.file,
@@ -2497,7 +2530,7 @@ function cmdSweep(opts) {
   run("lens", () => cmdLens({ ...opts, json: false, listLimit: SWEEP_LENS_LIST }));
 
   banner("sweep");
-  const entries = paths.length ? pathEntries(paths, "rules").entries : discover({ docFallback: true, command: "rules" });
+  const entries = paths.length ? pathEntries(paths, "rules").entries : discover({ docFallback: true, command: "rules", all: opts.all });
   console.log(
     `files in the sentence sweep: ${entries.length} · glossary rules: ${ruleSet().rules.length}` +
       ` · sentence rules: ${rulePacks().active.length} · lens: ${readLens() ? "loaded" : "missing"}`,
@@ -2651,17 +2684,16 @@ function cmdAudit(opts) {
       const line = () => src.slice(0, seg.start).split("\n").length;
       // Markdown has no untranslated concept: a Korean document legitimately carries
       // English identifiers, table cells, link text and code, and every one of them
-      // reads as a missing translation. Reporting them buries the findings that matter
-      // - 132 such hits once drowned the real ones in `_plans`.
+      // reads as a missing translation. Reporting them buries the findings that matter.
       // The glossary's `## 기본 규칙 예외` table switches built-in checks off, and `check`
-      // honours it. `audit` reading its own list meant one repository turned `untranslated`
-      // off, watched `check` fall silent, and still got 114 hits here - URLs, routes, device
-      // labels and protocol names in a single-language tree, which buried the two real
-      // particle errors in the same output. One list, both commands.
+      // honours it. `audit` reads the same list: with a list of its own, a project that turned
+      // `untranslated` off would watch `check` fall silent and still get URLs, routes, device
+      // labels and protocol names here, burying the real particle errors in the same output.
+      // One list, both commands.
       // A file the plain-line fallback reads (a typesetting XML, a Python figure module, a
-      // build script) is source, not a catalogue: every line without Hangul is code, and one
-      // deck's 47 chapter files reported 12,833 of them while its real findings sat in the
-      // sentence sweep. The same reasoning as markdown, one extractor further down.
+      // build script) is source, not a catalogue: every line without Hangul is code, and read
+      // as a catalogue every one of them would be reported (references/cases.md). The same
+      // reasoning as markdown, one extractor further down.
       const skipUntranslated =
         DISABLED_CHECKS.has("untranslated") ||
         CONFIG.kinds[entry.kind]?.format === "markdown" ||

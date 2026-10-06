@@ -16,7 +16,7 @@ import {
   rootFromGlossaryPath,
   parseGlossaryConfig,
   parseGlossary,
-  emptyGlossary,
+  loadBaseGlossary,
   mergeGlossaries,
   escapeRegExp,
   isOriginalScriptBan,
@@ -25,7 +25,9 @@ import {
 // Directories never scanned by default. Dot-directories (.git, .claude,
 // .docusaurus, ...) are skipped as well. Explicit path arguments bypass this
 // for the argument itself, so any of these can still be audited on demand.
-const DEFAULT_EXCLUDE_DIRS = new Set(['node_modules', 'dist', 'build', 'out', 'target', 'coverage', 'vendor']);
+// Exported because the sentence commands read the same set: a directory one
+// command skips and another reads makes their two zeros cover different files.
+export const DEFAULT_EXCLUDE_DIRS = new Set(['node_modules', 'dist', 'build', 'out', 'target', 'coverage', 'vendor']);
 
 // ---------------------------------------------------------------------------
 // Target file resolution
@@ -35,7 +37,14 @@ const DEFAULT_EXCLUDE_DIRS = new Set(['node_modules', 'dist', 'build', 'out', 't
  * Collects auditable files under `dir`. Markdown, MDX and SVG are auditable by
  * extension; locale resource files are auditable because the project declared
  * their paths, so `isLocaleResource` decides them regardless of extension.
+ *
+ * Exported as `walkTargets` for the sentence commands, which expand a named
+ * directory into exactly the files `check` reads under it.
  */
+export function walkTargets(dir, isLocaleResource = () => false) {
+  return walk(dir, isLocaleResource);
+}
+
 function walk(dir, isLocaleResource = () => false) {
   const found = [];
   for (const entry of readdirSync(dir, {withFileTypes: true})) {
@@ -201,6 +210,24 @@ function findPath(p, root, label) {
  * that path; this reports what it skipped so the answer stays visible. The
  * glossary file itself is never audited (it lists banned terms by definition).
  */
+/**
+ * The files `check` reads when no path is named: `audit.paths` (or the whole project with `all`),
+ * walked with the default directory exclusions, less `audit.exclude` and the glossaries.
+ *
+ * The sentence commands take their document set from here, so `check` and `rules` judge one file
+ * set by construction rather than by two enumerations kept in step by hand.
+ *
+ * @param root the project root
+ * @param config the project glossary's `audit` front matter
+ * @param glossaryPath the project glossary, never judged by itself
+ * @param all ignore `audit.paths` and take the whole project
+ * @returns absolute paths, sorted
+ */
+export function documentTargets({root, config, glossaryPath = null, all = false}) {
+  const isLocaleResource = makeLocaleResourceMatcher(config.localeResources ?? [], root);
+  return resolveTargets({paths: [], all}, {exclude: [], paths: [], ...config}, root, glossaryPath, isLocaleResource).files;
+}
+
 function resolveTargets(args, config, root, glossaryPath, isLocaleResource) {
   const direct = [];
   const scanned = [];
@@ -413,7 +440,7 @@ function stripLines(content) {
 // quiet one DSN name. Text outside the span is never touched, so the sentence a value sits in is
 // read in full.
 //
-// What this gives up is a misspelling inside a literal - a `AccessCore` written in a mono span
+// What this gives up is a misspelling inside a literal - a `Kubernates` written in a mono span
 // goes unread, exactly as it does inside backticks today. That is the price of the code-span
 // contract and not a new hole.
 
@@ -442,9 +469,8 @@ export function blankLiteralMarkup(lines) {
 //
 // A style catalogue is written as `금지 → 대체` rows, so the phrasings it tells people to write
 // are printed in it as many times as it has rows. A frequency rule counts them as the author
-// repeating a tic and reports the file for saying the very thing it prescribes - one document
-// here drew eleven warnings for 「수 있습니다」 and every one of them sat on the right of an
-// arrow, line 281 being 「조회 가능합니다 → 조회할 수 있습니다」.
+// repeating a tic and reports the file for saying the very thing it prescribes, every warning
+// sitting on the right of an arrow (references/cases.md).
 //
 // Exempting that one file would leave the next catalogue somebody writes to hit it again, so
 // the count is what changes: **the recommended side of a contrast row does not feed a frequency
@@ -819,10 +845,9 @@ function checkParticles(lines) {
 //
 // **Annotations are skipped only where the value is still unknown.** A note addressed to
 // whoever maintains the file (audit.localeAnnotationKeys) is prose whose tokens are usually
-// cross-references a build resolves to a fixed string, and skipping the whole note used to
-// stand in for saying so - the same missing family, wearing a second disguise. Now that a
-// resolved reference is judged rather than excused, the skip applies to the undecidable
-// branch alone: declare the shape and a wrong particle inside a note is reported like any
+// cross-references a build resolves to a fixed string, and skipping the whole note would stand
+// in for saying so - the same missing family, wearing a second disguise. A resolved reference
+// is judged rather than excused, so the skip applies to the undecidable branch alone: declare the shape and a wrong particle inside a note is reported like any
 // other, which is where most of them are.
 const INTERPOLATION_PARTICLE_RE =
   /(?<!\$\{[^{}]{0,80})(\}\}|\}|%[sd]|%\d+\$[sd])(이|가|을|를|은|는|과|와|으로|로|이라|라)(?=[\s.,·)\]'"]|$)/g;
@@ -1408,10 +1433,12 @@ const L10N_TEMPLATE = {
     'register: "screen" = screen copy (합니다체), "manual" = reader-facing 합니다체 prose,',
     '"spoken" = a speaker script, where a name is written as it is pronounced, omitted = a -다체',
     'working document. Checks that mean something in one register are gated on it.',
+    '',
+    "A field the project writes in (finance, saas) is declared in the glossary's audit.domains,",
+    'which loads its glossary table and its sentence rules together.',
   ],
   languages: ['ko', 'en'],
   defaultLanguage: 'ko',
-  ruleScopes: [],
   domainHint: null,
   properNouns: [],
   samplePatterns: [],
@@ -1494,7 +1521,7 @@ export function runDocAudit(args, cliPath) {
   }
 
   let project = null;
-  let config = {paths: [], exclude: [], localeResources: [], localeAnnotationKeys: [], untranslated: false};
+  let config = {paths: [], exclude: [], localeResources: [], localeAnnotationKeys: [], domains: [], untranslated: false};
   let root = process.cwd();
   if (discovered) {
     const parsed = parseGlossaryConfig(readFileSync(discovered.path, 'utf8'));
@@ -1503,25 +1530,25 @@ export function runDocAudit(args, cliPath) {
     root = discovered.root;
   }
 
-  let base = emptyGlossary();
-  if (!args.noBase) {
-    if (!existsSync(BASE_GLOSSARY_PATH)) throw new Error(`The base glossary is missing: ${BASE_GLOSSARY_PATH}`);
-    base = parseGlossary(readFileSync(BASE_GLOSSARY_PATH, 'utf8'), 'base', BASE_GLOSSARY_PATH);
-  }
+  const base = loadBaseGlossary({noBase: args.noBase, domains: config.domains});
 
   const {rules, deadExceptions, disabledChecks} = mergeGlossaries(base, project);
 
   if (args.listRules) {
     for (const r of rules) {
-      console.log(`[${r.origin === 'base' ? 'base' : 'project'}] [${r.level}${r.threshold > 1 ? ` ${r.threshold}+` : ''}] ${r.source} → ${r.suggestion} (${r.label})`);
+      const origin = r.origin.startsWith('domain:') ? `domain ${r.origin.slice(7)}` : r.origin;
+      console.log(`[${origin}] [${r.level}${r.threshold > 1 ? ` ${r.threshold}+` : ''}] ${r.source} → ${r.suggestion} (${r.label})`);
     }
     console.log(`\n${rules.length} rules loaded.`);
     return 0;
   }
 
+  // The domains a project opted into are named on every run: a field's table that loaded is a
+  // different audit from one that did not, and the rule count alone cannot tell them apart.
+  const domains = config.domains.length ? ` + domains ${config.domains.join(' · ')}` : '';
   if (discovered) {
     const shown = relative(process.cwd(), discovered.path) || discovered.path;
-    console.log(`glossary: ${shown}${args.noBase ? '' : ' + the base glossary'} (${rules.length} rules)`);
+    console.log(`glossary: ${shown}${args.noBase ? '' : ' + the base glossary'}${domains} (${rules.length} rules)`);
   } else {
     console.log('No project glossary - checking with the base glossary alone.');
     console.log('To create one (the default location is .claude/GLOSSARY.md):');

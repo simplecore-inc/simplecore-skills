@@ -30,6 +30,7 @@ node "$T" check [paths...]       # document audit - audit.paths, or the whole pr
 node "$T" audit [--kind K]       # resource audit - missing translations · banned spellings · particles · paired language files
 node "$T" rules --test           # verify the rule pack against its own hit/miss examples
 node "$T" rules [paths...] [--scope S] [--explain] [--strict]  # sentence-rule sweep (changes nothing); errors set the exit code, --strict adds warnings
+  --all             # list every hit, and ignore audit.paths as check --all does
 node "$T" suspects [paths...] [--json]  # rank the sentences that read as translated
 node "$T" lens [paths...] [--count] [--json]  # the reading lens over the same files, or over a draft outside the project
 node "$T" grep <pattern> [--regex]  # search the copy values of the resources
@@ -74,7 +75,13 @@ form written down and misses every other ending.
 - After registering, compare with `--list-rules` to confirm the row produces the pattern and level
   you intended. The script only reports regex errors, level spelling, and shifted columns.
 - Front matter settings: `audit.paths` · `audit.exclude` · `audit.localeResources` ·
-  `audit.untranslated` · `audit.resolvedPlaceholders`.
+  `audit.untranslated` · `audit.resolvedPlaceholders` · `audit.domains`.
+- `audit.domains` names the fields the project writes in. Each name loads that field's table from
+  the skill's `references/domain-<name>.md` (`finance` · `saas`) on top of the base glossary, and
+  switches on the rule pack's scope of the same name, so one declaration loads a field's words and
+  its sentence rules. A domain row answers to `## 기본 규칙 예외` exactly as a base row does. `check`
+  names the loaded domains on its first line, and a name with neither a table nor a pack scope is
+  refused as a configuration error.
 - `audit.exclude` reaches a named file as well as a scan: `check` and the sentence commands skip it
   and print `skipped by audit.exclude: <path>`, all of them through one matcher (a pattern with no
   `/` matches any path segment, `**/` spans zero or more directories). The glossary file itself is
@@ -154,7 +161,7 @@ bans stop in writing. The author marks the script, with a reason beside the mark
 
 - Inside the span, a rule stands down when its banned text holds Hangul and its replacement is
   Latin with no Hangul in it: a ban that keeps a name in its original script (`도커 → Docker` ·
-  `심플릭스 → SimpliX`, and a project's own name rows by the same test). Every other rule still
+  `쿠버네티스 → Kubernetes`, and a project's own name rows by the same test). Every other rule still
   applies, a loanword spelling included (`디렉토리 → 디렉터리`: the script says that word too, and
   it has one Hangul spelling), and so does a ban whose replacement is a Korean word
   (`디폴트 → 기본값`).
@@ -232,9 +239,7 @@ audit:
   project keeps Korean in code against the usual rule that comments are English - most often a
   figure generator, whose docstrings carry each figure's claim in the document's own words and are
   read as that claim during a review. A project in that position names the paths in its own check
-  list and runs them, because the repository sweep will not. One document's generators held
-  thirty-seven findings on their first reading, every one of them in prose a person had reviewed
-  more than once.
+  list and runs them, because the repository sweep will not ([cases.md](cases.md)).
 - It checks only in a project that has a glossary (`.claude/GLOSSARY.md` or `GLOSSARY.md`). No
   glossary means write-time checking is off entirely.
 - A document changed through `Bash` - `node` · `python` · `sed` · a heredoc - never passes the hook.
@@ -267,7 +272,10 @@ layout.
   name shown in its own language (`English`), a file list, a formula of identifiers. Both lists
   are the project's; the skill ships neither.
 - With no declaration at all, `rules` · `suspects` · `grep` · `list` still run over the document set
-  `check` reads (`.md` · `.mdx` · `.svg`). Only `audit` requires the declaration.
+  `check` reads, produced by the function `check` resolves its targets with: `audit.paths` (the
+  whole project with `--all`), the `.md` · `.mdx` · `.svg` files and the declared
+  `audit.localeResources` beneath it, `audit.exclude` and the glossaries left out. Only `audit`
+  requires the declaration.
 - **`.claude/l10n.json` is only consulted when an audit was requested.** When it is missing, say in
   one line what cannot be checked and do not offer to create it. If the user asks, create it with
   `check --init-l10n` and confirm with `list` that the files are actually caught.
@@ -276,10 +284,15 @@ layout.
 
 - `git ls-files`'s `**` means one or more path segments, so `locales/**/ko.json` does not match
   `locales/ko.json`. When both shapes exist, write two globs.
-- **A file `.gitignore` covers is not in the enumeration.** The sentence commands list files with
-  `git ls-files --cached --others --exclude-standard`, so a new file is read before it is staged
-  and an ignored one is not, while `check` walks the filesystem and reads it. Compare the file
-  count `list` prints against the real one.
+- **The document set skips the same directories in every command.** `check` and the sentence
+  commands walk the filesystem past `node_modules` · `dist` · `build` · `out` · `target` ·
+  `coverage` · `vendor` and every dot-directory (`.claude` included), so a tracked `vendor/` file
+  is read by neither. A path named on the command line is read whatever directory holds it, and a
+  directory named there is walked the same way beneath it.
+- **A declared kind is enumerated through git.** A kind's globs go to
+  `git ls-files --cached --others --exclude-standard`, so a new file is read before it is staged and
+  a file `.gitignore` covers is not; a kind may name a dot-directory (`.claude/chapters/*.md`)
+  because its globs are explicit. Compare the file count `list` prints against the real one.
 - Globs in `audit.localeResources` are relative to the repository root, and `*` does not cross `/`.
   To include subdirectories write `src/**/*.mjs`. A pattern matching no file at all makes `check`
   exit with an error.
@@ -290,8 +303,11 @@ layout.
 ## Writing a rule pack
 
 Every rule carries `id` · `scope` · `severity` · `reason` · `find` · `replace` · `hit` · `miss`, and
-is verified with `rules --test`. The `universal` scope always applies; a domain scope (`saas` and
-the like) applies when the project opts in through `ruleScopes` in `.claude/l10n.json`. A rule
+is verified with `rules --test`. Rules that judge one defect share a `family` name (`stand`: the
+서다 family). A place one member reported is not reported again by another member, errors first,
+so a sentence the narrow error rule caught is not printed a second time by the broad warning rule. The `universal` scope always applies; a domain scope (`saas` and
+the like) applies when the project glossary names it under `audit.domains`. `ruleScopes` in
+`.claude/l10n.json` opts into a scope as well and is read together with it. A rule
 written for one register names it in `registers` (`screen` · `manual` · `spoken` · `plain`; a
 document with no declared kind is `plain`) and is skipped elsewhere - 「~할 수 있습니다」 replacing an instruction is
 a defect on a screen and the ordinary capability sentence of a reference manual, and a rule that
@@ -410,7 +426,7 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/detect-simplecore.mjs" --json   # globalKore
 - `card` false: replies are written without the reply standard. Paste
   [global-korean-card.md](global-korean-card.md) whole, marker comments included, without
   summarizing it.
-- `present` false: nothing routes document work to the skill. Propose this line.
-  > Invoke `simplecore:korean-docs` when producing or changing a Korean document; an ordinary
-  > reply follows the habits block and does not invoke it.
+- `present` false: nothing routes document work to the skill. Propose the "Global Korean block"
+  of `${CLAUDE_PLUGIN_ROOT}/templates/claude-md-section.md`, which owns the routing sentence, as it
+  is written there.
 - The global instructions are the user's file: do not edit them without being asked.
