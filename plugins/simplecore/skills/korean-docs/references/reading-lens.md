@@ -30,7 +30,8 @@ node "$T" lens --json            # sorted by file - the input for an in-order re
 never surface: what surfaces is what a reader would read. **A reply is a valid argument.** A chat
 reply passes through no check at all, and the habits the lens exists to catch survive there long
 after the repository is clean - write the draft to the scratch directory and point the lens at it
-before it goes out. `sweep` prints the count only; the list is this command's.
+before it goes out. `sweep` lists the first candidates and how many stand; this command lists
+every one.
 
 **How much it narrows**: 27,830 pieces of screen copy → **around two thousand**. That is an amount a
 person can read cluster by cluster, and reading those candidates to find the real violations is what

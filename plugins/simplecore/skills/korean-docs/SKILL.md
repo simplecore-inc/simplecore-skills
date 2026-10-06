@@ -54,10 +54,11 @@ not offer to create it.
 **An audit that was asked for is finished in one go.** 「감사해 줘」 means 「find it and fix it」.
 
 - Run `sweep`. It verifies the rule pack, then runs every check - `check` · `rules` · `suspects` ·
-  `audit` when resource kinds are declared · the lens count - and closes with what reached what: the file count, the glossary
-  and sentence rule counts, and whether the lens loaded. Read that line before reading any zero as
-  a pass; a zero over zero files is not a pass. When running one command on its own, insert a
-  deliberate violation, confirm the check reaches it, and delete it.
+  `audit` when resource kinds are declared · the lens, listing its first candidates - and closes
+  with what reached what: the file count, the glossary and sentence rule counts, and whether the
+  lens loaded. Read that line before reading any zero as a pass; a zero over zero files is not a
+  pass. When running one command on its own, insert a deliberate violation, confirm the check
+  reaches it, and delete it.
 - Fix each finding when it is found, then report. Do not stop because the count is large, because
   the types are varied, because a new rule has to be registered, or because the skill repository
   has to be edited. Do not end a turn with 「진행할까요」 · 「어느 쪽으로 할까요」.
@@ -69,7 +70,8 @@ not offer to create it.
   swept eight reports in a day, read `Clean` eight times, and never opened the ten candidates
   listed above it; `가족` for a font family was among them every time, and it reached the user.
   **A lens candidate is read the moment it is printed**, and a reply is not sent while one stands
-  unread.
+  unread. The summary's lens row and the closing line say how many stand; when the sweep lists
+  only the first of them, `lens` with the same paths lists every one.
 - A type you find goes into the rule pack or the lens in the same change, and the sweep runs again
   across the repository.
 - Drive errors to zero; fix warnings one by one or write down why each stays. Re-check the

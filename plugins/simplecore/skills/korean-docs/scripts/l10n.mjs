@@ -1115,6 +1115,10 @@ const PLACEHOLDER = /\{\{[^}]+\}\}|\{[0-9A-Za-z_.]+\}|\$\{[^}]+\}|%(\d+\$)?[sd]/
 // about here so the summary can say so.
 let LAST_WARNINGS = 0;
 
+// The lens judges nothing and always exits 0, so its candidates are counted apart from the
+// warnings: the sweep's summary names them as reading still owed, never as a clean step.
+let LAST_LENS_CANDIDATES = 0;
+
 /**
  * A file path a reader can act on, relative to the run's root.
  *
@@ -2290,18 +2294,25 @@ function cmdLens(opts) {
     }
   }
   const files = new Set(hits.map((h) => h.file)).size;
+  LAST_LENS_CANDIDATES = hits.length;
   if (opts.json) {
     console.log(JSON.stringify({ count: hits.length, files, candidates: hits }, null, 2));
     return 0;
   }
   if (!opts.count) {
+    // `listLimit` is the sweep's: it prints the first candidates where the reader already is, and
+    // says how many more `lens` itself lists, so a long list cannot bury the other checks.
+    const shown = opts.listLimit ? hits.slice(0, opts.listLimit) : hits;
     let current = null;
-    for (const h of hits) {
+    for (const h of shown) {
       if (h.file !== current) {
         current = h.file;
         console.log(`\n${C.cyan(h.file)}`);
       }
       console.log(`  ${C.dim(`${h.line}:`)} ${C.yellow(h.stems.join(" · "))}  ${h.text.slice(0, 100)}`);
+    }
+    if (shown.length < hits.length) {
+      console.log(C.dim(`\n  … and ${hits.length - shown.length} more - \`lens\` with the same paths lists every one`));
     }
   }
   console.log(
@@ -2321,8 +2332,12 @@ function cmdLens(opts) {
  * three that ran says so. One command that runs them all removes the forgetting, and the
  * closing summary is the deliberate-violation test in another form - it names the file count,
  * the rule counts and the lens, so a zero over zero files or zero rules cannot pass as clean.
- * It does not remove the reading: the lens candidates and the in-order pass stay with the person.
+ * It does not remove the reading: the lens candidates and the in-order pass stay with the person,
+ * so the lens lists its first candidates here and its row in the summary says how many stand -
+ * a lens row marked clean beside candidates nobody opened reads as a pass on all of them.
  */
+const SWEEP_LENS_LIST = 40;
+
 function cmdSweep(opts) {
   const paths = opts.paths ?? [];
   const banner = (name) => console.log(`\n${C.bold(`── ${name} ${"─".repeat(Math.max(0, 66 - name.length))}`)}`);
@@ -2331,13 +2346,14 @@ function cmdSweep(opts) {
     banner(name);
     let code;
     LAST_WARNINGS = 0;
+    LAST_LENS_CANDIDATES = 0;
     try {
       code = fn();
     } catch (err) {
       console.error(C.red(`✖ ${err.message}`));
       code = 2;
     }
-    steps.push([name, code, code === 2 ? 0 : LAST_WARNINGS]);
+    steps.push([name, code, code === 2 ? 0 : LAST_WARNINGS, code === 2 ? 0 : LAST_LENS_CANDIDATES]);
   };
 
   // The pack first: a rule that no longer catches its own example, or a lens that lost half a
@@ -2374,7 +2390,7 @@ function cmdSweep(opts) {
     console.log(C.dim("skipped - no resource kinds declared in .claude/l10n.json (check --init-l10n declares them)"));
     steps.push(["audit", null]);
   }
-  run("lens", () => cmdLens({ ...opts, json: false, count: true }));
+  run("lens", () => cmdLens({ ...opts, json: false, listLimit: SWEEP_LENS_LIST }));
 
   banner("sweep");
   const entries = paths.length ? pathEntries(paths, "rules").entries : discover({ docFallback: true, command: "rules" });
@@ -2382,14 +2398,16 @@ function cmdSweep(opts) {
     `files in the sentence sweep: ${entries.length} · glossary rules: ${ruleSet().rules.length}` +
       ` · sentence rules: ${rulePacks().active.length} · lens: ${readLens() ? "loaded" : "missing"}`,
   );
-  for (const [name, code, warns] of steps) {
+  for (const [name, code, warns, candidates] of steps) {
     const mark =
       code === null
         ? C.dim("– skipped")
         : code === 0
           ? warns
             ? C.yellow(`⚠ ${warns} ${warns === 1 ? "warning" : "warnings"}`)
-            : C.green("✔ clean")
+            : candidates
+              ? C.yellow(`ℹ ${candidates} ${candidates === 1 ? "candidate" : "candidates"} to read`)
+              : C.green("✔ clean")
           : code === 1
             ? C.red("✖ findings")
             : C.red("✖ did not run");
@@ -2397,15 +2415,24 @@ function cmdSweep(opts) {
   }
   const worst = Math.max(0, ...steps.map(([, code]) => code ?? 0));
   const warned = steps.reduce((n, [, , w]) => n + (w ?? 0), 0);
+  const candidates = steps.reduce((n, [, , , c]) => n + (c ?? 0), 0);
+  // The closing line is the verdict of the checks that judge. The lens judges nothing, so its
+  // candidates are named as reading still owed rather than folded into either verdict.
+  const owed = candidates
+    ? ` ${candidates} lens ${candidates === 1 ? "candidate stands" : "candidates stand"} above unjudged:` +
+      " read each sentence before reporting (references/reading-lens.md)."
+    : "";
   console.log(
     worst
-      ? C.red("\nNot clean - fix the findings above, re-check the sentences you rewrote, then sweep again.")
+      ? C.red(`\nNot clean - fix the findings above, re-check the sentences you rewrote, then sweep again.${owed}`)
       : warned
         ? C.yellow(
             `\nNo errors, but ${warned} ${warned === 1 ? "warning is" : "warnings are"} a place to read above:` +
-              " a warned term is wrong unless the sentence is quoting one. Fix or record each, then sweep again.",
+              ` a warned term is wrong unless the sentence is quoting one. Fix or record each, then sweep again.${owed}`,
           )
-        : C.green("\nClean on every check that ran. The lens candidates and the in-order reading are still the reader's."),
+        : candidates
+          ? C.yellow(`\nClean on every check that ran.${owed} The in-order reading is still the reader's.`)
+          : C.green("\nClean on every check that ran. The in-order reading is still the reader's."),
   );
   return worst;
 }

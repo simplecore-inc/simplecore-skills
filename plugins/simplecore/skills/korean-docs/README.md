@@ -114,7 +114,7 @@ does not offer to create one. When the user asks, create it with `check --init`.
 ## The audit tool at a glance
 
 ```
-l10n.mjs sweep [paths...]  # every check in one run - check · rules · suspects · audit (when declared) · lens count - closed by what reached what
+l10n.mjs sweep [paths...]  # every check in one run - check · rules · suspects · audit (when declared) · lens (first candidates) - closed by what reached what
 l10n.mjs check [paths...]  # document audit. With no paths: audit.paths, else the whole project
   --all            # ignore audit.paths and take the whole project
   --strict         # treat warnings as failures

@@ -16,7 +16,7 @@ One script, `scripts/l10n.mjs`, checks documents and locale resources with the s
 
 ```bash
 T="$HOME/.claude/skills/simplecore/skills/korean-docs/scripts/l10n.mjs"
-node "$T" sweep [paths...]       # rules --test, then check · rules · suspects · audit (when declared) · lens count, then what reached what
+node "$T" sweep [paths...]       # rules --test, then check · rules · suspects · audit (when declared) · lens (first candidates), then what reached what
   --all --strict --explain --untranslated   # passed through to the commands that take them
 node "$T" check [paths...]       # document audit - audit.paths, or the whole project (same judgement as the hook)
   --all             # ignore audit.paths and take the whole project
