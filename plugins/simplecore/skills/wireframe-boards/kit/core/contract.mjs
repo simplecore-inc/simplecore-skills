@@ -12,8 +12,8 @@
 //   board    `<board>/src/intro.html` - this product's own rules
 //
 // Each of the two files holds bare `<li>` elements and nothing else. Handing them a fragment
-// rather than a document is what makes «never trim items 1–13» structural instead of a comment
-// somebody has to obey.
+// rather than a document is what makes «never trim the standing items» structural instead of a
+// comment somebody has to obey.
 
 import { textFor } from './text.mjs';
 
@@ -86,8 +86,8 @@ export function renderIntro({ config, patternItems = '', boardItems = '', hasPai
   </div>
   ${config.logoData ? `<img class="board-logo" src="${config.logoData}" alt="">` : ''}
 </header>`;
-  // `id="readme"` so anything that wants to send somebody here has an anchor to name, even
-  // though the header no longer carries a link of its own.
+  // `id="readme"` so anything that wants to send somebody here has an anchor to name. The header
+  // carries no link to it; the sidebar's READ jump is the one that does.
   // Written from the split rather than from a board's own words: what a reader needs here is the
   // number of files, their names and where the index is, and all three are facts about the
   // arrangement the kit produced.

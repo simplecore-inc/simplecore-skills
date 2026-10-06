@@ -6,12 +6,10 @@
 //   stage 'preflight' - runs before the board is rendered (the render itself depends on it)
 //   stage 'built' - runs on the finished board
 //
-// **Every finding refuses the build.** There used to be a second, lenient mode writing a second
-// file - the idea being that work in progress should still be previewable - and it earned nothing:
-// the two files came out byte-identical, so the only thing the split produced was a stale copy of
-// the board sitting beside the real one for anything that read the wrong name. A gate worth
-// writing is worth obeying now, and the board is drawn by fixing what a gate says rather than by
-// looking at a build that was allowed to keep the defect.
+// **Every finding refuses the build.** There is no lenient mode and no second, previewable file:
+// a second file would be a stale copy of the board beside the real one for anything that read the
+// wrong name. A gate worth writing is worth obeying now, and the board is drawn by fixing what a
+// gate says rather than by looking at a build that was allowed to keep the defect.
 //
 // **The gates come from three places, and which place a gate belongs in is the design decision.**
 //
@@ -80,8 +78,8 @@ export const CORE_GATES = [
   // The kit's own chrome, styled by the kit. Reads the assembled stylesheet rather than a screen,
   // so it is the one gate whose subject is the board's frame instead of what is inside it.
   chromeStyledGate,
-  // Structural last: they read the rendered HTML, so they are the only two that need the board
-  // to have been drawn already, and a finding here is about the drawing rather than the source.
+  // Structural last: they read the rendered HTML, so they are the ones that need the board to have
+  // been drawn already, and a finding here is about the drawing rather than the source.
   classlessGate,
   structureGate,
   leakedValueGate,

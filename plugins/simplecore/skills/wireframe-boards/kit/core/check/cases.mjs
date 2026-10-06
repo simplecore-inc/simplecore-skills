@@ -29,11 +29,15 @@ export function cases(t) {
   add('frameManifestGate', '§4.3 행 합이 합계와 다름', withDocs({ 'fm.md': FM_43(2, 1) }), true);
   add('frameManifestGate', '§4.3이 보드와 같다', withDocs({ 'fm.md': FM_43(2, 2) }), false);
 
-  add('parityListGate', '보드에 있는데 목록에 없다',
-    withDocs({ 'pa.md': '### X 구역 (1장)\n- X-01 `x-01-a` — 하나\n' }), true);
+  // The list only shrinks: a frame the board draws and the list no longer names was walked.
+  add('parityListGate', '걸은 프레임이 목록에서 지워졌다',
+    withDocs({ 'pa.md': '### X 구역\n- X-01 `x-01-a` - 하나\n' }), false);
   add('parityListGate', '목록에만 있는 프레임',
-    withDocs({ 'pa.md': `${PARITY_OK}- X-99 \`x-99-z\` — 없는 것\n` }), true);
+    withDocs({ 'pa.md': `${PARITY_OK}- X-99 \`x-99-z\` - 없는 것\n` }), true);
   add('parityListGate', '목록과 보드가 같다', withDocs({ 'pa.md': PARITY_OK }), false);
+  // A section heading carries no count, so one left over from an older list is not compared.
+  add('parityListGate', '머리글의 장 수는 목록이 아니다',
+    withDocs({ 'pa.md': '### X 구역 (5장)\n- X-01 `x-01-a` - 하나\n' }), false);
 
   add('roadmapPlacementGate', '어느 단계에도 없는 바탕 화면',
     withDocs({ 'rm.md': '- **화면 1장**\n  - (X) **X-01** 하나\n' }), true);
@@ -85,7 +89,7 @@ export function cases(t) {
   add('docFrameRefGate', '선언하지 않은 문서는 그대로 검사한다',
     OTHER({ 'model.md': '#### B-02 PrinterModel\n', 'note.md': '자세한 것은 X-77을 본다.\n' }), true);
 
-  // 문서 목록을 선언하지 않은 보드에는 걸리지 않는다 - 선언이 곧 이 규율을 받겠다는 뜻이다.
+  // A board that declares no registry is not held to one: declaring it is what accepts the rule.
   add('docRegistryGate', '문서 목록을 선언하지 않았다',
     withDocs({ 'a.md': '# a\n', 'b.md': '# b\n' }), false);
   add('docRegistryGate', '문서 목록에 없는 문서',

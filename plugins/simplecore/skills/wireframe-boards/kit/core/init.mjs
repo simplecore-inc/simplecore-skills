@@ -15,7 +15,7 @@ import { BOARD_CONTRACT } from './partials.mjs';
 
 const kitDir = dirname(dirname(fileURLToPath(import.meta.url)));
 
-/** The board's only script - a copy of the kit's bootstrap, with nothing board-specific in it. */
+/** The board's bootstrap - a copy of the kit's, with nothing board-specific in it. */
 const BOOTSTRAP = join(kitDir, 'templates/wf.mjs');
 
 /** The one-line wrapper that starts the development server, so the loop is `./dev.sh` and no more. */
@@ -117,8 +117,8 @@ function put(path, body, report, { mode } = {}) {
  *
  * @param name what the product is called - substituted into the starter files
  * @param examples copy the pattern's starter frames. False for a board whose screens are about
- *   to be authored from a specification, where nine frames about records would be nine frames
- *   somebody has to delete
+ *   to be authored from a specification, where the starter frames would be frames somebody has to
+ *   delete
  */
 export function initBoard(boardDir, { pattern = 'simplix-basic', name = '<PRODUCT>', examples = true } = {}) {
   const patternDir = join(kitDir, 'patterns', pattern);
