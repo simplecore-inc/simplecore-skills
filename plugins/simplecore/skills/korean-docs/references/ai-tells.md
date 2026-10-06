@@ -1,7 +1,7 @@
 # AI tells - staging instead of stating
 
 Structural habits that make Korean prose read as machine-written. Read this when writing,
-proofreading, or reviewing any Korean output; the sentence standard is
+proofreading, or reviewing any Korean document; the sentence standard is
 [response-style.md](response-style.md) and the translation-ese catalogue is
 [korean-style.md](korean-style.md). This file owns the shapes that survive a clean audit.
 

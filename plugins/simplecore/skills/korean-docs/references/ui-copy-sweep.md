@@ -46,7 +46,7 @@ When the volume is large, pull candidates with the lens ([reading-lens.md](readi
 those in filename order first, then sweep what the lens did not catch. The lens is a stem list, not
 a check, so everything gets read in the end.
 
-Judge each sentence on ten questions.
+Judge each sentence on these questions.
 
 1. Does a first-time reader get the meaning in one pass?
 2. Is this what business software actually says?

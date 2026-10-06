@@ -6,16 +6,17 @@ carries a severity and a prescription. Read it before proofreading or review wor
 How it divides with its neighbours:
 
 - **Vocabulary and spelling** (banned literal translations and transliterations, Sino-Korean
-  replacements, loanword spelling, what counts as settled, finance and quant terms) live in
-  [response-style.md](response-style.md), the file that applies at all times. Apply it alongside
-  this catalogue, always.
+  replacements, loanword spelling) are registered in `GLOSSARY.base.md` and `RULES.base.json`,
+  where the audit catches them; how a word is chosen and what counts as settled is §4 of
+  [response-style.md](response-style.md), the sentence standard; finance and quant terms are
+  [domain-finance.md](domain-finance.md). Apply them alongside this catalogue, always.
 - **Structural AI habits** - staging a claim instead of stating it, a closing line that repeats,
   three of everything, inflated significance, borrowed authority, chat residue - live in
   [ai-tells.md](ai-tells.md). They carry no banned word, so the audit stays silent on them and the
   reader is the only check.
-- **Machine-checkable patterns** are registered in the base glossary (`GLOSSARY.base.md`) and the
-  project glossary, where the audit script catches them. This catalogue holds the sentence-level
-  judgement the audit cannot make.
+- **Machine-checkable patterns** are registered in the glossaries and the rule packs (the skill's
+  `GLOSSARY.base.md` · `RULES.base.json` and the project's own), where the audit catches them. This
+  catalogue holds the sentence-level judgement the audit cannot make.
 - **Copy that goes on a screen** (i18n resources, message bundles, wireframe board sources) adds
   [ui-copy.md](ui-copy.md). A sentence that passes the document standard can still fail on a screen
   - one more test applies there: 「does business software actually say this?」
@@ -49,7 +50,7 @@ Severity: **S1** = fix on one sighting. **S2** = fix when it repeats (roughly th
 | `~할 것입니다` (literal *will*) | S2 | A statement of fact is present tense, 「~합니다」 |
 | `~할 수 있습니다` (*can*) everywhere | S2 | Assert where you can: 「~합니다」. Describing a capability is fine |
 | Transliteration everywhere: `디폴트`, `레버리지`, `이슈` (meaning a problem), the `노트` of `릴리즈 노트` | S1 | 기본값, 활용, 문제, 참고 |
-| Awkward Sino-Korean: `함의`, `동치`, `정련`, `가역`, `미지의` | S2 | 뒷받침, 일치, 정제, 되돌릴 수 있는, 낯선 (the full replacement list is in response-style.md) |
+| Awkward Sino-Korean: `함의`, `동치`, `정련`, `가역`, `미지의` | S2 | 뒷받침, 일치, 정제, 되돌릴 수 있는, 낯선 (the registered rows and their replacements are in GLOSSARY.base.md) |
 
 ## B. Bilingual notation and terms
 
@@ -86,5 +87,5 @@ line that repeats, a 줄표, a three-item series, and a bold label.
 - A formal source stays formal in the result.
 - Do not add a metaphor, a flourish, or content that is not in the source in the name of polish.
   Fidelity to the source outranks fluency.
-- Settled loanwords and settled technical terms stay - judge them by the over-correction section of
-  response-style.md.
+- Settled loanwords and settled technical terms stay - judge them by §4 of response-style.md
+  (Choosing a word), and finance terms by the settled-terms list of domain-finance.md.

@@ -19,7 +19,7 @@ of which any rule had caught** - `결재가 올라갑니다` is caught while `�
 ## How to run it
 
 ```bash
-T="$HOME/.claude/skills/simplecore/skills/korean-docs/scripts/l10n.mjs"
+T="${CLAUDE_PLUGIN_ROOT}/skills/korean-docs/scripts/l10n.mjs"
 node "$T" lens                   # the document set, or the declared resources
 node "$T" lens docs/manual       # a directory, or a file
 node "$T" lens /tmp/draft.md     # a draft outside the project

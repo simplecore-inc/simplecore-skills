@@ -192,17 +192,14 @@ function findPath(p, root, label) {
  * dropped, so naming a file can never silently report "clean" because a glob
  * filtered it out.
  *
- * Naming a file used to override the exclusion, on the reasoning that a
- * catalogue of banned spellings reads clean anyway because its specimens sit in
- * code spans. **A verbatim transcription is the case that reasoning never
- * addressed**: a project's copy of an issued tender reproduces the tender's own
- * spellings as running prose, on purpose, and correcting them would destroy the
- * thing the copy exists to be. Every write to such a file was blocked by the
- * write-time hook, and the only ways out were to corrupt the transcription or to
- * switch the hook off. A project that declares a path excluded has answered the
- * question for that path; this reports what it skipped so the answer stays
- * visible. The glossary file itself is never audited (it lists banned terms by
- * definition).
+ * The exclusion reaches a named file because of a verbatim transcription: a
+ * project's copy of an issued tender reproduces the tender's own spellings as
+ * running prose, on purpose, and correcting them would destroy the thing the copy
+ * exists to be. Judged when named, every write to such a file would be blocked by
+ * the write-time hook, leaving only corrupting the transcription or switching the
+ * hook off. A project that declares a path excluded has answered the question for
+ * that path; this reports what it skipped so the answer stays visible. The
+ * glossary file itself is never audited (it lists banned terms by definition).
  */
 function resolveTargets(args, config, root, glossaryPath, isLocaleResource) {
   const direct = [];
@@ -224,9 +221,9 @@ function resolveTargets(args, config, root, glossaryPath, isLocaleResource) {
   }
 
   const excludes = config.exclude.map(makeExcludeMatcher);
-  // A glossary is by definition a page of banned spellings, so it is never judged by them. The
-  // project's own was already skipped; the base one sat inside the skill and was not, so a repo
-  // that holds the skill got 163 findings that were every row of the table quoting itself.
+  // A glossary is by definition a page of banned spellings, so it is never judged by them - the
+  // project's own and the base one alike, or a repository that holds the skill would get every
+  // row of the base table reported as quoting itself.
   const glossaries = new Set([glossaryPath, BASE_GLOSSARY_PATH].filter(Boolean).map((p) => resolve(p)));
   const files = [];
   let excludedCount = 0;
@@ -1365,7 +1362,7 @@ export function initGlossary(cliPath) {
   console.log('Next:');
   console.log('  1. Fill in the project name at the top, and register terms as you work.');
   console.log('  2. Set the default audit scope in audit.paths in the front matter (e.g. [docs]).');
-  console.log(`  3. Run the audit: node ${cliPath} [paths...]`);
+  console.log(`  3. Run every check: node ${l10nCommand(cliPath).replace(/ check$/, '')} sweep [paths...]`);
 }
 
 /**

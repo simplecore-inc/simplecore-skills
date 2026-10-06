@@ -15,7 +15,7 @@ One script, `scripts/l10n.mjs`, checks documents and locale resources with the s
 | Lens | `references/lens.txt` | widens what narrow rules miss into candidates for a person to read | `lens` |
 
 ```bash
-T="$HOME/.claude/skills/simplecore/skills/korean-docs/scripts/l10n.mjs"
+T="${CLAUDE_PLUGIN_ROOT}/skills/korean-docs/scripts/l10n.mjs"
 node "$T" sweep [paths...]       # rules --test, then check · rules · suspects · audit (when declared) · lens (first candidates), then what reached what
   --all --strict --explain --untranslated   # passed through to the commands that take them
 node "$T" check [paths...]       # document audit - audit.paths, or the whole project (same judgement as the hook)
@@ -168,14 +168,25 @@ bans stop in writing. The author marks the script, with a reason beside the mark
 - Only the script is marked. A slide's text, a caption and a manuscript sentence keep the written
   form, `Docker` included.
 
-### The two built-in checks
+### The built-in checks
 
-They run regardless of the glossary.
+`check` runs these regardless of the glossary, each under the name `## 기본 규칙 예외` uses.
 
-- **Particle disagreement** (이/가 · 을/를 · 과/와): an error. It judges only after a word that can
-  appear as a replacement in the glossary or the rule pack. A particle after an unregistered word is
-  read by a person. 은/는 overlaps with the adnominal ending and is not checked.
-- **The same word twice in a row** (`같은 같은`): a warning. Only adjacent words count.
+- `particle` (error): 이/가 · 을/를 · 과/와 after a Hangul word of two syllables or more. Verb
+  stems, adnominal endings and words that merely end in those syllables are skipped. 은/는 overlaps
+  with the adnominal ending, so it is judged only right after a closing 」 or 』.
+- `interpolated-particle` (error): a particle right after a placeholder whose value is unknown
+  when the sentence is written (`{{name}}` · `{name}` · `%s` · `%1$s`).
+- `reference-particle` (error): a particle after a placeholder `audit.resolvedPlaceholders`
+  declares, judged against the value the build renders (below).
+- `repeat` (warning): the same word twice in a row (`같은 같은`); only adjacent words count.
+- `heading-form` (warning): a Markdown heading written as a sentence.
+- `untranslated` (warning): leftover English prose lines, only with `--untranslated` or
+  `audit.untranslated`.
+
+The warning-level ones can be turned off in the project glossary; the error-level ones cannot.
+`audit` judges resource values more narrowly: a particle only after a noun the glossary or the
+rule pack writes as a replacement, and after a number and a counter.
 
 ### Placeholders the build resolves to a fixed value
 
@@ -227,11 +238,10 @@ audit:
 - It checks only in a project that has a glossary (`.claude/GLOSSARY.md` or `GLOSSARY.md`). No
   glossary means write-time checking is off entirely.
 - A document changed through `Bash` - `node` · `python` · `sed` · a heredoc - never passes the hook.
-  When a script edited a document, run `check` on that file directly, chained onto the script
-  command with `&&` so it is one call.
+  When a script edited a document, run `sweep` on that file, chained onto the script command with
+  `&&` so it is one call; `check` alone would skip the sentence rules the hook runs.
 - If you doubt the hook is running, do not go digging through settings files: write one banned
   spelling into a file and save it. Delete that line immediately afterwards.
-- It also fires on the resource files declared in `audit.localeResources`.
 
 ## Resource declaration - `.claude/l10n.json`
 
@@ -273,8 +283,9 @@ layout.
 - Globs in `audit.localeResources` are relative to the repository root, and `*` does not cross `/`.
   To include subdirectories write `src/**/*.mjs`. A pattern matching no file at all makes `check`
   exit with an error.
-- `check` prints the resource file count as `자원 파일 N개 (이번 검사 범위 M개)`. A run naming a
-  single file is normal with M at zero; a broken declaration is N at zero.
+- `check` prints the resource file count as
+  `audit.localeResources: N resource files (M in this run's scope)`. A run naming a single file is
+  normal with M at zero; a broken declaration is N at zero.
 
 ## Writing a rule pack
 
@@ -343,7 +354,7 @@ add one stem, add its final, adnominal, connective, and nominal forms with it. T
 [reading-lens.md](reading-lens.md).
 
 ```bash
-T="$HOME/.claude/skills/simplecore/skills/korean-docs/scripts/l10n.mjs"
+T="${CLAUDE_PLUGIN_ROOT}/skills/korean-docs/scripts/l10n.mjs"
 node "$T" lens                   # the document set, or the declared resources
 node "$T" lens docs/manual       # one directory
 node "$T" lens /tmp/draft.md     # a draft outside the project - a reply before it is sent
@@ -393,7 +404,7 @@ This skill applies to Korean documents only. Replies follow the habits card that
 Bring it up only when the user says 「스킬이 안 걸린다」 · 「전역 설정을 걸어 달라」.
 
 ```bash
-node "$HOME/.claude/skills/simplecore/scripts/detect-simplecore.mjs" --json   # globalKorean.present · card
+node "${CLAUDE_PLUGIN_ROOT}/scripts/detect-simplecore.mjs" --json   # globalKorean.present · card
 ```
 
 - `card` false: replies are written without the reply standard. Paste

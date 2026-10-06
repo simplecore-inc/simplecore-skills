@@ -19,13 +19,13 @@ practice and academia have settled on, and where nothing is settled, write it ou
 | `레짐` (regime) | 국면 (시장 국면, 급락 국면, 국면 단절, 국면 게이트) |
 | `드로다운` (drawdown) | 낙폭, 급락 |
 
-**Only four are registered as words** - `브레드스` · `험프` · `레짐` · `드로다운`. The other five
-have a legitimate meaning outside finance (printing, a camera's pan and tilt, a team leader and a
-card reader, a news headline, a screen overlay), so the word alone cannot decide, and they are
-registered together with the word that does decide: `체결 프린트` · `비중 틸트` · `가치 틸트` ·
-`팩터 틸트` · `모멘텀 틸트` · `리더 종목` · `헤드라인 수치` · `헤드라인 지표` · `분석 오버레이`.
-**Where that preceding word is absent, a person judges it** - meeting one of these five in a
-financial document, confirm what it refers to and fix it to the replacement above.
+**Registered as words**: `브레드스` · `험프` · `레짐` · `드로다운`. The rest have a legitimate
+meaning outside finance (printing, a camera's pan and tilt, a team leader and a card reader, a news
+headline, a screen overlay), so the word alone cannot decide, and they are registered together with
+the word that does decide: `체결 프린트` · `비중 틸트` · `가치 틸트` · `팩터 틸트` · `모멘텀 틸트` ·
+`리더 종목` · `헤드라인 수치` · `헤드라인 지표` · `분석 오버레이`. **Where that word is absent, a
+person judges it** - meeting one of them alone in a financial document, confirm what it refers to
+and fix it to the replacement above.
 
 ### Literal translations that are banned or need care
 

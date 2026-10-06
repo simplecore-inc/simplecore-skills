@@ -1,6 +1,6 @@
 ---
 audit:
-  # `rules` reads this list with the matcher `check` uses, so the two commands judge one file set.
+  # `rules` reads this list with the matcher `check` uses, so it removes the same files from both.
   #
   # Three reference files are catalogues of the very phrasings they ban. Their banned SPELLINGS
   # sit in code spans, so the glossary check reads all three clean - what cannot go into a code

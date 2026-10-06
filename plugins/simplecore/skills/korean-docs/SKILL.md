@@ -83,7 +83,7 @@ not offer to create it.
 There is one tool.
 
 ```bash
-T="$HOME/.claude/skills/simplecore/skills/korean-docs/scripts/l10n.mjs"
+T="${CLAUDE_PLUGIN_ROOT}/skills/korean-docs/scripts/l10n.mjs"
 node "$T" sweep [paths...]   # every check in one run, closed by what reached what
 node "$T" check [paths...]   # glossary audit alone (the write-time hook's first run)
 node "$T" rules [paths...]   # sentence-rule sweep alone (the hook's second run); --test verifies the pack
@@ -114,9 +114,9 @@ Register a term in the project glossary **immediately** when any of these holds:
 
 **Glossary or rule pack.** If the thing to ban conjugates, or if an exception separating it from
 legitimate use has to be written down, it belongs in the rule pack (hit/miss examples required);
-otherwise it belongs in the glossary. After registering, compare the result with `--list-rules`,
-and when a standard translation changed or a banned spelling was added, re-run the full audit in the
-same session.
+otherwise it belongs in the glossary. After registering, compare a glossary row with
+`check --list-rules` and prove a pack rule with `rules --test`, and when a standard translation
+changed or a banned spelling was added, re-run the full audit in the same session.
 
 **Do not decide alone when it is uncertain.** That means two or more candidates with neither
 settled, an unfamiliar domain convention, or a change to a standard already registered. Apply the

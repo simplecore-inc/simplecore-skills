@@ -1,9 +1,9 @@
 # korean-docs - the standard for Korean output
 
-A general-purpose skill that applies consistent terminology and natural Korean to everything Claude
-Code produces in Korean: replies, documents, translations, proofreading, and review. It works in any
-project, and used together with a project glossary the terminology standard accumulates from one
-task to the next.
+A general-purpose skill that applies consistent terminology and natural Korean to the Korean
+documents Claude Code writes: design documents, manuals, translations, proofreading, review, and
+screen copy. It works in any project, and used together with a project glossary the terminology
+standard accumulates from one task to the next.
 
 ## What it gives you
 
@@ -25,7 +25,7 @@ task to the next.
 
 ```
 korean-docs/
-├── SKILL.md                     # the skill body - the two modes, the workflow, how to run the audit
+├── SKILL.md                     # the skill body - the scope, document mode, the audit, term decisions
 ├── README.md                    # this file (for people)
 ├── GLOSSARY.base.md             # the base glossary - project-independent spelling and translation-ese rules (always applied)
 ├── RULES.base.json              # the base sentence rule pack - regex rules with hit/miss examples (used by `rules`)
@@ -36,7 +36,7 @@ korean-docs/
 ├── templates/
 │   └── GLOSSARY.md              # the project glossary template (created by check --init)
 └── references/
-    ├── response-style.md        # the always-on standard - register table · eight questions · how a word is chosen (read before every reply)
+    ├── response-style.md        # the sentence standard - register table · eight questions · what a sentence carries · how a word is chosen (read before writing a document)
     ├── ai-tells.md              # structural AI habits in their Korean form (staging, closers, inflation, residue)
     ├── global-korean-card.md    # the block pasted verbatim into the global CLAUDE.md (the habits that survive a summary)
     ├── audit-tooling.md         # audit tooling - the hook · declaration files · writing rules · confirming findings
@@ -44,6 +44,7 @@ korean-docs/
     ├── ui-copy.md               # judging screen copy (angles A through AA)
     ├── ui-copy-sweep.md         # the full-sweep procedure
     ├── reading-lens.md · lens.txt  # the lens that turns what rules miss into candidates for a person to read
+    ├── lens-cases.json          # the sentences each lens family must surface and must stay quiet on (read by rules --test)
     └── domain-finance.md        # finance · quant · trading terms (only for work in that field)
 ```
 
@@ -131,9 +132,9 @@ l10n.mjs apply --patch f   # apply sentences rewritten after reading the context
 ```
 
 The write-time hook makes two runs on every file written in a project that has a glossary:
-`check-glossary.mjs <file>` (the glossary words - the same engine and flags as `check`) and
-`l10n.mjs rules <file>` (the sentence pack). Calling either directly gives the same judgement the
-hook gives.
+`check-glossary.mjs <file>` (the glossary words - the same engine and flags as `check`, less
+`--init-l10n`) and `l10n.mjs rules <file>` (the sentence pack). Calling either directly gives the
+same judgement the hook gives.
 
 - `audit.exclude` reaches a named file too: `check` and `rules` skip it and print
   `skipped by audit.exclude: <path>`, and the hook passes an edit to it silently. Code blocks,
