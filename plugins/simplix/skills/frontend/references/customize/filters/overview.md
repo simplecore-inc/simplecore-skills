@@ -28,7 +28,7 @@ You MUST:
 - Creating faceted filters with enum or FK options
 - Adding toggle filters for boolean fields
 - Adding date range, timezone, or country filters
-- Implementing `CrudList.ChipFilter` for special cases (bitmask, visual distinction)
+- Implementing `CrudList.ChipFilter` for the special cases invariant #15 sanctions
 - Injecting FK filters at the API level (master-detail)
 - Syncing external state into filter state
 
@@ -87,9 +87,13 @@ The backend SearchDTO field must allow `EQUALS, IN` (faceted serializes to `fiel
 
 ### ★ ChipFilter: Special Cases Only
 
-`CrudList.ChipFilter` is for special cases only:
-- Bitmask fields requiring visual distinction
-- Cases where chip-style selection provides meaningfully better UX
+`CrudList.ChipFilter` is for these cases only:
+- Bitmask fields
+- Visual distinction the chip row carries better than a dropdown
+- Narrowing WITHIN a server-forced scope (a list locked to `field.in: "A,B"`)
+- A narrowing that also has to reach the tab counts, a census, a sibling list or the tiles above the list - held on the page's own `useFilterBarState`; converting this one to a facet is the defect it looks like a fix for
+
+The test for the last case, and the backend `@SearchableField` the forced-scope case needs, are invariant #15 (`../../invariants.md`), which owns the list.
 
 For standard enum/FK filtering, use `type: "faceted"` inside `FilterBar`.
 
@@ -120,18 +124,13 @@ reach the condition to remove it.
 narrowing written as a plain key inside the same object is the same defect and is not
 reported** - that gap is stated in the rule itself, and it is the shape to look for by eye.
 
-### ★ Leading Badge: Total Count Only When Data Exists
+### ★ The Total Badge Is the `count` Prop
 
-The `leading` prop shows total count. Only render when data is available:
+The list total is the FilterBar's `count` prop, which renders the shared `ListTotalBadge` - never a badge placed by hand in `leading` (invariant #41). `leading` is for extra summary content: an aggregate total, a pending-count badge.
 
 ```tsx
 <CrudList.FilterBar
-  leading={
-    <Badge variant="outline" className="gap-1.5 font-normal">
-      <ListIcon className="size-3.5 text-muted-foreground" />
-      {t("list.totalCount", { count: list.pagination.total })}
-    </Badge>
-  }
+  count={list.pagination.total}
   maxBadges={3}
   filters={[...]}
   state={list.filters}
@@ -147,7 +146,7 @@ The `leading` prop shows total count. Only render when data is available:
 
 ## FilterBar Layout Architecture
 
-`CrudList.FilterBar` uses a completely different structure from the inline filter layout of older admin frameworks.
+`CrudList.FilterBar` draws a badge bar over the table and puts the filters themselves in a popover.
 
 ### Structure
 
@@ -176,13 +175,14 @@ The `leading` prop shows total count. Only render when data is available:
 | **Badge Bar** | Laid out horizontally above the table. Summarizes active filters as Badges |
 | **maxBadges** | Collapses to `+N` when there are more than 3 Badges |
 | **Filter Popover** | Opens when the "Filter" button is clicked. 320px-wide vertical stack by default; widens to multi-column when configured or on overflow (see below) |
-| **leading** | Shows extra info such as the total count on the left of the Badge Bar |
+| **count** | The list total, drawn as the shared `ListTotalBadge` at the left of the Badge Bar (invariant #41) |
+| **leading** | Extra summary content beside the total (an aggregate total, a pending-count badge) - never the total itself |
 | **popoverColumns** | Column layout of the popover form: `"auto"` (default), `1`, `2` (560px), `3` (800px) |
 | **columnBreak** | Per-filter flag that starts a new popover column at that filter |
 
-### ※ No Separator / Row-Placement Rules Needed
+### ※ No Separator / Row-Placement Rules
 
-Older frameworks required `insertFilterSeparators()` (distributing 4 per row) for an inline filter UI. The current design is Popover-based, so **row-placement rules are not needed**. The framework arranges filters automatically in a vertical Stack.
+The FilterBar arranges filters in its popover, so no row-placement rules apply; the framework stacks them vertically.
 
 ### Popover Columns (`popoverColumns` + `columnBreak`)
 
@@ -195,19 +195,20 @@ When a list has many filters, the popover form can lay them out in multiple **fu
 | `popoverColumns={2}` | Always two columns in a 560px popover |
 | `popoverColumns={3}` | Always three columns in an 800px popover |
 
-Column boundaries follow `columnBreak: true` flags on the filter definitions (up to columns − 1 flags, in order); without flags the filters split evenly, column-major. Group by control kind for scannability - e.g. text inputs and toggles on the left, calendars (`dateRange`) in their own right-hand column:
+Column boundaries follow `columnBreak: true` flags on the filter definitions (up to columns − 1 flags, in order); without flags the filters split evenly, column-major. The columns follow the category order (String → Date → Number → Attribute, invariant #16), so breaking at each category boundary also groups by control kind - the calendars (`dateRange`) get a column of their own and never stretch the text inputs:
 
 ```tsx
 <CrudList.FilterBar
+  count={list.pagination.total}
   maxBadges={3}
   popoverColumns={3}
   filters={[
     { type: "text", field: "code", label: fieldLabel("code"), ... },
-    { type: "faceted", field: "type", label: fieldLabel("type"), options },
-    { type: "toggle", field: "active", label: fieldLabel("active"), columnBreak: true }, // column 2
-    { type: "toggle", field: "useCreate", label: fieldLabel("useCreate") },
-    { type: "dateRange", field: "createdAt", label: fieldLabel("createdAt"), columnBreak: true }, // column 3
-    { type: "dateRange", field: "updatedAt", label: fieldLabel("updatedAt") },
+    { type: "text", field: "name", label: fieldLabel("name"), ... },
+    { type: "dateRange", field: "openedAt", label: fieldLabel("openedAt"), columnBreak: true }, // column 2
+    { type: "dateRange", field: "closedAt", label: fieldLabel("closedAt") },
+    { type: "faceted", field: "type", label: fieldLabel("type"), options, columnBreak: true }, // column 3
+    { type: "toggle", field: "active", label: fieldLabel("active") },
   ]}
   state={list.filters}
 />
@@ -217,7 +218,7 @@ Column boundaries follow `columnBreak: true` flags on the filter definitions (up
 
 ---
 
-## Filter Classification (4 Categories)
+## Filter Classification
 
 | Category | Data Type | Filter Types |
 | -------- | --------- | ------------ |
@@ -275,14 +276,9 @@ filters={[
 
 ```tsx
 import { CrudList, SearchOperator } from "@simplix-react/ui";
-import { Badge } from "@simplix-react/ui";
-import { ListIcon } from "lucide-react";
 
 export function EntityList() {
   const { fieldLabel } = useEntityTranslation("entity");
-  // `list.totalCount` is a framework string → the framework "simplix/ui" namespace.
-  // Module-specific widget strings use useTranslation("<module>/widgets").
-  const { t } = useTranslation("simplix/ui");
 
   const list = useCrudList(adaptOrvalList(useListEntities), {
     // ... options
@@ -290,12 +286,7 @@ export function EntityList() {
 
   return (
     <CrudList.FilterBar
-      leading={
-        <Badge variant="outline" className="gap-1.5 font-normal">
-          <ListIcon className="size-3.5 text-muted-foreground" />
-          {t("list.totalCount", { count: list.pagination.total })}
-        </Badge>
-      }
+      count={list.pagination.total}
       maxBadges={3}
       filters={[
         {
@@ -353,7 +344,7 @@ export function EntityList() {
 
 ### 1. ChipFilter (Special Cases Only)
 
-Use only for bitmask fields or cases requiring visual chip-style distinction:
+Use only for the cases invariant #15 sanctions - bitmask, visual distinction, narrowing within a server-forced scope, and a narrowing that reaches past the list (§ ChipFilter above):
 
 ```tsx
 <CrudList.ChipFilter
@@ -367,15 +358,13 @@ Use only for bitmask fields or cases requiring visual chip-style distinction:
 
 ### 2. FK Filter Injection at API Level
 
-For master-detail patterns where a parent ID must always be applied:
+For master-detail patterns where a parent ID must always be applied, bind the list with a forced request parameter - `adaptForcedList` puts it into the request and the query key, outside the filter state (invariant #71):
 
 ```tsx
-const useFilteredList = (params?: any, options?: any) => {
-  const mergedParams = { ...params, "categoryId.equals": categoryId };
-  return (useListProducts as any)(mergedParams, options);
-};
-
-const list = useCrudList(adaptOrvalList(useFilteredList), { ... });
+const list = useCrudList(
+  adaptForcedList(useListProducts, { "categoryId.equals": categoryId }),
+  { stateMode: "server" },
+);
 ```
 
 ### 3. External Filter Sync
@@ -446,14 +435,12 @@ All filter labels MUST use i18n functions:
 
 ```tsx
 const { fieldLabel, enumLabel } = useEntityTranslation("entityName");
-const { t } = useTranslation("simplix/ui");          // framework UI strings (e.g. list.totalCount)
-// module-specific widget strings: useTranslation("<module>/widgets")
+// module-specific widget strings: useTranslation("<module>/widgets"); framework strings live in "simplix/ui"
 
 // Field labels
 label: fieldLabel("name")
 
-// Leading badge text (framework key in the "simplix/ui" namespace)
-t("list.totalCount", { count: list.pagination.total })
+// The total badge needs no key of its own: `count` renders ListTotalBadge with the framework's string
 ```
 
 ---
@@ -472,15 +459,9 @@ t("list.totalCount", { count: list.pagination.total })
 
 ```
 [Filter Design Complete]
-        ↓
+        ↓ (always - invariant #17)
 ┌─────────────────────────────────────────┐
-│ Step 1: Ask if user wants DTO verify    │
-│ - Proceed (Recommended)                │
-│ - Skip                                  │
-└─────────────────────────────────────────┘
-        ↓ (Proceed)
-┌─────────────────────────────────────────┐
-│ Step 2: Confirm backend path            │
+│ Step 1: Confirm backend path            │
 │ - Show detected paths if available      │
 │ - Allow manual input                    │
 │ - MUST verify folder exists             │
@@ -488,7 +469,7 @@ t("list.totalCount", { count: list.pagination.total })
 └─────────────────────────────────────────┘
         ↓
 ┌─────────────────────────────────────────┐
-│ Step 3: Find SearchDTO file             │
+│ Step 2: Find SearchDTO file             │
 │ - Read generated endpoints for API path │
 │ - Map to backend controller/DTO path    │
 │ - Verify file exists                    │
@@ -496,14 +477,14 @@ t("list.totalCount", { count: list.pagination.total })
 └─────────────────────────────────────────┘
         ↓
 ┌─────────────────────────────────────────┐
-│ Step 4: Execute full comparison         │
+│ Step 3: Execute full comparison         │
 │ - Compare ALL items automatically       │
 │   (field names, types, operators)       │
 │ - No user selection at this stage       │
 └─────────────────────────────────────────┘
         ↓
 ┌─────────────────────────────────────────┐
-│ Step 5: Show comparison results         │
+│ Step 4: Show comparison results         │
 │ - Frontend only fields                  │
 │ - Backend only fields                   │
 │ - Type mismatches                       │
@@ -512,7 +493,7 @@ t("list.totalCount", { count: list.pagination.total })
 └─────────────────────────────────────────┘
         ↓
 ┌─────────────────────────────────────────┐
-│ Step 6: Select items to fix             │
+│ Step 5: Select items to fix             │
 │ - Field names (add/remove fields)       │
 │ - Types (fix type mismatches)           │
 │ - Operators (fix operator mismatches)   │
@@ -520,14 +501,14 @@ t("list.totalCount", { count: list.pagination.total })
 └─────────────────────────────────────────┘
         ↓
 ┌─────────────────────────────────────────┐
-│ Step 7: Select sync direction           │
+│ Step 6: Select sync direction           │
 │ - Frontend-based (modify backend)       │
 │ - Backend-based (modify frontend)       │
 │ - Skip                                  │
 └─────────────────────────────────────────┘
         ↓
 ┌─────────────────────────────────────────┐
-│ Step 8: Execute sync and report         │
+│ Step 7: Execute sync and report         │
 │ - Directly modify selected files        │
 │ - Report modified files and changes     │
 └─────────────────────────────────────────┘
@@ -582,9 +563,10 @@ t("list.totalCount", { count: list.pagination.total })
 | customField | text / CONTAINS | - | ⚠ Frontend only |
 ```
 
+Verification itself is not a question: invariant #17 makes it mandatory after every filter design, so no step asks whether to run it. The one choice put to the user is the sync direction (Step 6).
+
 ### Verification Checklist
 
-- ☐ User prompted for verification
 - ☐ Backend path verified (folder exists, re-ask if not)
 - ☐ SearchDTO file path confirmed by user
 - ☐ Full comparison executed (field names, types, operators)
@@ -613,7 +595,7 @@ t("list.totalCount", { count: list.pagination.total })
 **For All FilterBar Implementations:**
 
 - ☐ `maxBadges={3}` set on FilterBar
-- ☐ `leading` badge shows total count
+- ☐ The total badge is the `count` prop, not a badge in `leading` (invariant #41)
 - ☐ All labels use `fieldLabel()` from `useEntityTranslation`
 - ☐ Boolean fields use `type: "toggle"` (NEVER faceted)
 - ☐ Filters sorted by category: String → Date → Number → Attribute
@@ -627,25 +609,16 @@ t("list.totalCount", { count: list.pagination.total })
 
 **For ChipFilter (Special Cases Only):**
 
-- ☐ Verified that ChipFilter is justified (bitmask or visual distinction)
+- ☐ Verified that ChipFilter is one of the cases invariant #15 sanctions (bitmask, visual distinction, narrowing within a forced scope, a narrowing that reaches past the list)
 - ☐ Field uses `"field.operator"` format
 - ☐ `state` connected to `list.filters`
 
 **For FK / External Filters:**
 
-- ☐ FK injection done at API level (merged params)
+- ☐ FK injection done at the request level (`adaptForcedList`, invariant #71)
 - ☐ External sync uses `commitValue` in `useEffect`
 
-**For Backend DTO Verification (MANDATORY):**
-
-- ☐ User prompted for verification
-- ☐ Backend path verified (folder exists, re-ask if not)
-- ☐ SearchDTO file path confirmed by user
-- ☐ Full comparison executed (field names, types, operators)
-- ☐ Comparison results displayed in table format
-- ☐ Items to fix selected by user (after viewing results)
-- ☐ Sync direction selected or skipped
-- ☐ Changes applied and reported (if sync selected)
+**For Backend DTO Verification (MANDATORY):** every item of § Backend DTO Verification → Verification Checklist above.
 
 ---
 

@@ -1,6 +1,8 @@
 # Date/Time Fields - Encoding, Decoding, Display Timezone
 
-Rules for every widget, form, and filter that reads or writes a temporal value. Deployments span sites in different timezones, and the operator's browser is often NOT on the site's clock - no stored value may depend on where the operator happens to sit. This file is self-contained: the rules below are complete for frontend work.
+Rules for every widget, form, and filter that reads or writes a temporal value. A deployment can span places in different timezones, and the operator's browser is often NOT on the clock of the record being edited - no stored value may depend on where the operator happens to sit. This file is self-contained: the rules below are complete for frontend work.
+
+Below, a record's **display zone** is the IANA timezone the project ties that record to - a site's, a branch's, the installation's. The project names where it comes from; the site examples here are one such model, and their hooks belong to that project, not to the framework.
 
 ## Semantic kinds (decide first)
 
@@ -19,7 +21,7 @@ The generated types and `format` hints tell you the kind. When ambiguous, ask: d
 ## Encoding (writing to the API)
 
 1. **Calendar date → bare `yyyy-MM-dd`.** Serialize with the framework `serializeCalendarDate` (string) or `asPlainDate` (a tagged `Date` whose `toJSON` emits the bare date). NEVER serialize a picked date as local midnight plus an offset (`2026-08-15T00:00:00+09:00`) OR as a UTC-midnight datetime (`2026-08-15T00:00:00Z`): both are the same defect - read in another zone the string designates a different date, and a UTC-midnight datetime sent to a `format:date` column shifts a day for any app zone at or west of UTC (it only "works" east of UTC). This applies to EVERY calendar-date field, not just policy dates - a person's birth/hire/termination date is a calendar date. A hand-rolled UTC-midnight encoder for date-carrying fields is banned; there is no such helper in the shared UI package.
-2. **Absolute instant on a site-scoped field** (validity windows, visit schedules, access-level activation) → build the instant **from the site timezone**: interpret the picked wall-clock value in the site's IANA timezone (the site API's `timezone` field), then emit RFC 3339 with that offset. The operator's browser zone must never change the stored instant - two admins in Seoul and LA saving "8/15 09:00" for the same site must produce the same value.
+2. **Absolute instant on a zone-scoped field** (validity windows, visit schedules, activation times) → build the instant **from the record's display zone**: interpret the picked wall-clock value in that IANA zone (in the site example, the site API's `timezone` field), then emit RFC 3339 with that offset. The operator's browser zone must never change the stored instant - two admins in Seoul and LA saving "8/15 09:00" for the same record must produce the same value.
 3. **Absolute instant anchored to "now"** (client-side timestamps) → any offset denotes the same instant; the browser offset is acceptable.
 4. **Wall-clock time → `HH:mm[:ss]`** exactly as picked. No date, no offset.
 5. **Inclusive end dates: send what the user picked.** The exclusive-boundary conversion (+1 day for date windows, −1 minute for schedule ends) is the server's contract - never pre-shift on the client. A client-side shift double-applies the moment the server implements its side.
@@ -27,12 +29,12 @@ The generated types and `format` hints tell you the kind. When ambiguous, ask: d
 ## Decoding (reading API values into pickers and cells)
 
 1. **Calendar date / wall-clock time → parse the string's own components** (split `2026-08-15` / `09:00` textually). NEVER pass a bare date into `new Date(...)` and read it back through local getters (`getFullYear`/`getMonth`/`getDate`) - local re-interpretation shows a different date to viewers in other zones, and an edit round-trip (open form → save) then silently shifts the stored value by a day.
-2. **Absolute instant → parse as an instant, then convert to an explicit display zone** (site timezone on site-scoped screens; the user's preference elsewhere). Never rely on the implicit browser zone for site-scoped fields.
+2. **Absolute instant → parse as an instant, then convert to an explicit display zone** (the record's display zone on zone-scoped screens; the user's preference elsewhere). Never rely on the implicit browser zone for zone-scoped fields.
 
 ## Display & filters
 
-1. **Site-scoped screens render times in the site timezone and label it** (e.g. "사이트 시간 · Asia/Seoul"). An unlabeled time on a multi-zone deployment is ambiguous data.
-2. **Date-range filters over site-scoped data**: convert the picked from/to dates to instants at the **site timezone's** day boundaries and send offset-carrying values. Browser-zone boundaries filter a different day than the site's - up to a full day of rows appears or disappears depending on where the operator sits.
+1. **Zone-scoped screens render times in the record's display zone and label it** (e.g. "사이트 시간 · Asia/Seoul"). An unlabeled time on a multi-zone deployment is ambiguous data.
+2. **Date-range filters over zone-scoped data**: convert the picked from/to dates to instants at the **display zone's** day boundaries and send offset-carrying values. Browser-zone boundaries filter a different day than the record's zone - up to a full day of rows appears or disappears depending on where the operator sits.
 3. **Never format a temporal value inline in a widget.** `formatDateTime(new Date(x), …)` / `formatDateMedium(new Date(x), …)` in a list cell, card, caption, or field is a defect - the `new Date(x)` + locale + zone plumbing is repeated per call and drifts, and `new Date()` on a bare date shifts it by a viewer's offset. Render through the framework display components (next section); those components wrap the formatters, so the raw formatters never appear in a widget. A raw ISO string reaching the user is a machine value leaking through (invariant #36).
 
 ## Display by kind (detail · list cell · card · caption)
@@ -56,8 +58,8 @@ The picker follows the semantic kind. The framework owns the zone math - never h
 
 1. **Calendar date** - form: `FormFields.DateField` + `serializeCalendarDate` on submit, `parseDate` / `decodeCalendarDate` on load.
 2. **Wall-clock time** - form: `FormFields.TimeField` + the shared `parseLocalTime` / `formatLocalTime` pair (`@<scope>/<ui-package>/date`), seeded with a concrete default (`|| "00:00"`).
-3. **Site-scoped absolute instant** - form: `FormFields.DateTimeField displayZone={siteZone} displayZoneLabel={…}`; its `onChange` yields a zone-tagged `Date` - store `serializeInstant(v, siteZone)`, NEVER `v.toISOString()` (which stamps the browser offset). Resolve `siteZone` from the record's site via `useSiteTimeZones().zoneOf(siteId)`, falling back to `useAppTimeZone()` until the site (or its zone) is known. In a list, pass the SAME zone to the column / `InstantText` `displayZone`, the date-range filter `displayZone`, and the detail - one zone per row (`displayZone={(row) => zoneOf(row.siteId) ?? appZone}`) - so the cell, filter, and detail all read the same time. A cell on the browser zone while filter/detail use the site zone is a defect: the field then reads three different times.
-4. **App-anchored instant (non-site-scoped)** - a globally-synced record with no single site (e.g. a schedule activation time) anchors to `useAppTimeZone()` and labels it; there is no site to resolve. A "now"-stamped instant (a punch, a client timestamp) may use the browser offset - any offset denotes the same moment.
+3. **Zone-scoped absolute instant** - form: `FormFields.DateTimeField displayZone={zone} displayZoneLabel={…}`; its `onChange` yields a zone-tagged `Date` - store `serializeInstant(v, zone)`, NEVER `v.toISOString()` (which stamps the browser offset). Resolve `zone` the way the project ties the record to one - in the site example, `useSiteTimeZones().zoneOf(siteId)`, falling back to the installation's zone (`useAppTimeZone()`) until the site (or its zone) is known. In a list, pass the SAME zone to the column / `InstantText` `displayZone`, the date-range filter `displayZone`, and the detail - one zone per row (`displayZone={(row) => zoneOf(row.siteId) ?? appZone}` in the site example) - so the cell, filter, and detail all read the same time. A cell on the browser zone while filter/detail use the record's zone is a defect: the field then reads three different times.
+4. **App-anchored instant (not zone-scoped)** - a globally-synced record with no zone of its own (e.g. a schedule activation time) anchors to the installation's zone (`useAppTimeZone()` in the site example) and labels it; there is no record zone to resolve. A "now"-stamped instant (a punch, a client timestamp) may use the browser offset - any offset denotes the same moment.
 
 ## Verification greps
 

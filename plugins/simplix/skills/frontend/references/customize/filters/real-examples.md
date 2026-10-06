@@ -6,18 +6,32 @@ Representative `CrudList.FilterBar` implementations, organized by the pattern ea
 
 ## 1. Example: List with Diverse Filter Types
 
-Demonstrates: text, number, faceted, toggle, and dateRange filters together in one FilterBar.
+Demonstrates: text, dateRange, number, faceted, and toggle filters together in one FilterBar, in the mandatory category order (invariant #16: String → Date → Number → Attribute, then table column order).
 
 ```tsx
 <CrudList.FilterBar
-  leading={
-    <Badge variant="outline" className="gap-1.5 font-normal">
-      <ListIcon className="size-3.5 text-muted-foreground" />
-      {t("list.totalCount", { count: list.pagination.total })}
-    </Badge>
-  }
+  count={list.pagination.total}
   maxBadges={3}
   filters={[
+    // String
+    {
+      type: "text",
+      field: "name",
+      label: fieldLabel("name"),
+      operators: [SearchOperator.CONTAINS, SearchOperator.EQUALS],
+      defaultOperator: SearchOperator.CONTAINS,
+    },
+    // Date
+    {
+      type: "dateRange",
+      field: "releasedAt",
+      label: fieldLabel("releasedAt"),
+    },
+    {
+      type: "dateRange",
+      field: "restockedAt",
+      label: fieldLabel("restockedAt"),
+    },
     // Number
     {
       type: "number",
@@ -26,29 +40,6 @@ Demonstrates: text, number, faceted, toggle, and dateRange filters together in o
       operators: [SearchOperator.EQUALS],
       defaultOperator: SearchOperator.EQUALS,
     },
-    // Faceted (enum)
-    {
-      type: "faceted",
-      field: "status",
-      label: fieldLabel("status"),
-      options: statusOptions,
-    },
-    // Text
-    {
-      type: "text",
-      field: "name",
-      label: fieldLabel("name"),
-      operators: [SearchOperator.CONTAINS, SearchOperator.EQUALS],
-      defaultOperator: SearchOperator.CONTAINS,
-    },
-    // Faceted (enum)
-    {
-      type: "faceted",
-      field: "category",
-      label: fieldLabel("category"),
-      options: categoryOptions,
-    },
-    // Number
     {
       type: "number",
       field: "quantity",
@@ -56,19 +47,6 @@ Demonstrates: text, number, faceted, toggle, and dateRange filters together in o
       operators: [SearchOperator.EQUALS],
       defaultOperator: SearchOperator.EQUALS,
     },
-    // Toggle (boolean)
-    {
-      type: "toggle",
-      field: "isEnabled",
-      label: fieldLabel("isEnabled"),
-    },
-    // Toggle (boolean)
-    {
-      type: "toggle",
-      field: "isFeatured",
-      label: fieldLabel("isFeatured"),
-    },
-    // Number
     {
       type: "number",
       field: "weight",
@@ -76,17 +54,29 @@ Demonstrates: text, number, faceted, toggle, and dateRange filters together in o
       operators: [SearchOperator.EQUALS],
       defaultOperator: SearchOperator.EQUALS,
     },
-    // DateRange
+    // Attribute: faceted (enum)
     {
-      type: "dateRange",
-      field: "createdAt",
-      label: fieldLabel("createdAt"),
+      type: "faceted",
+      field: "status",
+      label: fieldLabel("status"),
+      options: statusOptions,
     },
-    // DateRange
     {
-      type: "dateRange",
-      field: "updatedAt",
-      label: fieldLabel("updatedAt"),
+      type: "faceted",
+      field: "category",
+      label: fieldLabel("category"),
+      options: categoryOptions,
+    },
+    // Attribute: toggle (boolean)
+    {
+      type: "toggle",
+      field: "isEnabled",
+      label: fieldLabel("isEnabled"),
+    },
+    {
+      type: "toggle",
+      field: "isFeatured",
+      label: fieldLabel("isFeatured"),
     },
   ]}
   state={list.filters}
@@ -96,7 +86,9 @@ Demonstrates: text, number, faceted, toggle, and dateRange filters together in o
 ### Key Observations
 
 - ★ `maxBadges={3}` always set
-- ★ Leading badge with total count
+- ★ The total comes from the `count` prop, never a badge in `leading` (invariant #41)
+- ★ Filters in category order, then table column order (invariant #16)
+- ★ No filter on an audit stamp (`createdAt` / `updatedAt`) - nobody searches by those (invariant #39)
 - ★ Boolean fields (`isEnabled`, `isFeatured`) use `type: "toggle"`
 - ★ Number filters use `SearchOperator.EQUALS` as default
 - ★ Text filter supports both CONTAINS and EQUALS
@@ -147,6 +139,11 @@ Demonstrates: the timezone and country custom filter types alongside text and da
       defaultOperator: SearchOperator.CONTAINS,
     },
     {
+      type: "dateRange",
+      field: "openedAt",
+      label: fieldLabel("openedAt"),
+    },
+    {
       type: "timezone",
       field: "timezone",
       label: fieldLabel("timezone"),
@@ -156,11 +153,6 @@ Demonstrates: the timezone and country custom filter types alongside text and da
       field: "country",
       label: fieldLabel("country"),
     },
-    {
-      type: "dateRange",
-      field: "createdAt",
-      label: fieldLabel("createdAt"),
-    },
   ]}
   state={list.filters}
 />
@@ -168,33 +160,26 @@ Demonstrates: the timezone and country custom filter types alongside text and da
 
 ### Key Observations
 
-- ★ `timezone` and `country` types need only `field` and `label`
+- ★ `timezone` and `country` types need only `field` and `label`, and sort with the Attribute category (invariant #16)
 - ★ No operators or options needed - the component handles selection internally
 
 ---
 
 ## 4. Example: FK Filter Injection at API Level
 
-Demonstrates: injecting a parent FK filter at the API hook level for master-detail patterns, so the constraint is always applied.
+Demonstrates: binding a list to its parent with a forced request parameter for master-detail patterns, so the constraint is always applied (invariant #71).
 
 ```tsx
-// Create a filtered version of the list hook that always includes categoryId
-const useFilteredList = (params?: any, options?: any) => {
-  const mergedParams = { ...params, "categoryId.equals": categoryId };
-  return (useListProducts as any)(mergedParams, options);
-};
-
-// Use the filtered hook with useCrudList
-const list = useCrudList(adaptOrvalList(useFilteredList), {
-  defaultSort: { field: "name", direction: "asc" },
-});
+const list = useCrudList(
+  adaptForcedList(useListProducts, { "categoryId.equals": categoryId }),
+  { stateMode: "server", defaultSort: { field: "name", direction: "asc" } },
+);
 ```
 
 ### Key Observations
 
-- ★ FK filter is NOT added to FilterBar - it is injected at the API level
-- ★ This ensures the parent FK filter is always applied regardless of user interaction
-- ★ The `mergedParams` pattern spreads user params and adds the FK constraint
+- ★ FK filter is NOT added to FilterBar - it is forced into the request
+- ★ `adaptForcedList` puts the parent id into the request and the query key, outside the filter state, so the first view is already narrowed; `transformFilters` would not be, because it runs only once the reader commits a filter
 - ★ Used when a list is always scoped to a parent entity (master-detail)
 
 ---

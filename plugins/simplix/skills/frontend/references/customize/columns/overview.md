@@ -30,7 +30,7 @@ You MUST:
 - Displaying FK relation data
 - Adding custom render children to `CrudList.Column`
 - **Reordering columns** in source code
-- **Setting default column visibility**
+- **Deciding which fields are columns at all** (the framework has no hidden-by-default state - invariant #54)
 
 ---
 
@@ -44,7 +44,7 @@ You MUST:
 2. **Present findings** to the user with the following categories:
    - Column Order: Current vs. Recommended order
    - Cell Alignment: Fields with incorrect alignment
-   - Default Visibility: Fields that should be hidden
+   - Columns to Remove: Fields that earn no column ([How Many Columns](#how-many-columns---which-fields-earn-one-mandatory)) - removed from source, since nothing is hidden by default
    - Cell Rendering: Fields that could use better rendering (Badge, format prop, custom children)
 
 3. **Ask user for each category**:
@@ -66,10 +66,10 @@ Options:
 ```
 
 ```
-Question: "Default Visibility - hide the following fields by default? [field list]"
+Question: "Columns to Remove - remove the following fields from the list? [field list]"
 Options:
-- "Apply all" - hide all
-- "Keep visible" - keep current
+- "Apply all" - remove all
+- "Keep" - keep current
 - "Select specific" - choose individually
 ```
 
@@ -96,16 +96,16 @@ Rearrange `CrudList.Column` elements according to [Column Order Guidelines](#col
 
 Within each group, sort fields according to the intra-group rules (e.g., `title` before `name`, `active` before `*Enabled`).
 
-### Step 3: Set Default Visibility
+### Step 3: Remove What Earns No Column
 
-Identify fields that should be hidden by default (see Column Order Guidelines). Visibility is typically managed at the `CrudList.Table` level or via framework configuration.
+The framework has no declarative hidden-by-default: `hiddenColumns` is a runtime toggle the operator opens, so a field that should not be a column is removed from source, and the imports it leaves unused go with it (invariant #54). Which fields earn a column is [How Many Columns](#how-many-columns---which-fields-earn-one-mandatory) - the PK, raw FK ids and the audit quartet never do.
 
 ### Step 4: Apply Rendering Patterns
 
 Select appropriate rendering for each column based on field type:
-- For **enum** columns, PREFER children render `{({ value }) => <Badge variant={COLORMAP[resolveBootEnum(value)] ?? "outline"}>{enumLabel(...)}</Badge>}` - this is the project convention (it unwraps the boot enum and applies `enumLabel` i18n)
+- For **enum** columns, use a children render that resolves the boot enum and draws `StatusBadge` with the enum's ONE shared tone map from the project UI package and the `enumLabel` text (`../../audit/registry/tones-and-badges.md`). A module-local status color map is what the audit's `status-map-resurrect` fails; only a categorical palette stays local
 - Use children render `{({ row, value }) => ...}` for any complex / relational / i18n rendering
-- `display` prop is the simple built-in for the no-i18n case (`"boolean"` for booleans; `"badge"` ALSO available, optionally with the `variants` color map, but it skips `resolveBootEnum`/`enumLabel`)
+- `display` prop is the simple built-in for the no-i18n case (`"boolean"` for booleans; `"badge"` ALSO available, optionally with the `variants` map, but it skips `resolveBootEnum`/`enumLabel`)
 - Use `format` prop for date formatting (`"date"`, `"datetime"`, `"relative"`)
 
 ### Step 5: Apply Alignment Rules
@@ -178,26 +178,24 @@ column is not rendered at all - no header, no cells, no entry in the columns dro
 
 ## Column Order Guidelines
 
-This section defines the standard column order and default visibility for data tables.
+This section defines the standard column order for data tables (invariant #18). Whether a field is a column at all is [How Many Columns](#how-many-columns---which-fields-earn-one-mandatory); nothing is hidden by default, because the framework has no such state (invariant #54).
 
 ### Column Group Order
 
-| Order | Group | Description | Example Fields | Default Visible |
-
-|-------|-------|-------------|----------------|-----------------|
-| 1 | **Drag Handle** | Drag reorder handle | `displayOrder` | ✔ (when used) |
-| 2 | **Selection** | Row selection checkbox | (built-in) | ✔ |
-| 3 | **Identifier** | PK, unique identifiers | `entityId`, `code`, `slug` | ✖ Hidden |
-| 4 | **Relations** | FK relation fields | `categoryId`, `ownerId` | ✖ Hidden |
-| 5 | **Type/Category** | Enum types, classification | `type`, `status`, `category` | ✔ |
-| 6 | **Primary Text** | Main text (clickable) | `title`, `name`, `label` | ✔ |
-| 7 | **Description** | Description, summary text | `description`, `summary`, `content` | ✔ |
-| 8 | **Attributes** | Boolean attributes | `active`, `enabled`, `isVip`, `isEnabled` | ✔ |
-| 9 | **Metrics** | Numbers, order, statistics | `sortOrder`, `count`, `viewCount`, `level` | ✔ |
-| 10 | **Price/Amount** | Currency, quantity | `*Price`, `*Amount`, `quantity`, `total*` | ✔ |
-| 11 | **Schedule** | Date/time fields | `publishAt`, `expireAt`, `dueDate`, `*At` | △ Partial |
-| 12 | **Audit** | Audit fields | `createdAt`, `createdBy`, `updatedAt`, `updatedBy` | ✖ Hidden |
-| 13 | **Actions** | Action buttons | `actions` | ✔ |
+| Order | Group | Description | Example Fields |
+|-------|-------|-------------|----------------|
+| 1 | **Drag Handle** | Drag reorder handle | `displayOrder` (when used) |
+| 2 | **Selection** | Row selection checkbox | (built-in) |
+| 3 | **Identifier** | The human identifier the row is known by - the PK is never a column | `code`, `slug` |
+| 4 | **Relations** | The referenced record's name - never the raw FK id | `category?.name`, `owner?.name` |
+| 5 | **Type/Category** | Enum types, classification | `type`, `status`, `category` |
+| 6 | **Primary Text** | Main text (clickable) | `title`, `name`, `label` |
+| 7 | **Description** | Description, summary text | `description`, `summary`, `content` |
+| 8 | **Attributes** | Boolean attributes | `active`, `enabled`, `isVip`, `isEnabled` |
+| 9 | **Metrics** | Numbers, order, statistics, amounts | `sortOrder`, `count`, `viewCount`, `level`, `*Price`, `*Amount`, `quantity`, `total*` |
+| 10 | **Schedule** | Date/time fields | `publishAt`, `expireAt`, `dueDate`, `*At` |
+| 11 | **Audit** | Only under the domain exception of invariant #18 - otherwise removed, since `auditData` carries it | `createdAt`, `createdBy`, `updatedAt`, `updatedBy` |
+| 12 | **Actions** | Action buttons | `actions` |
 
 **The action column is never a declared `CrudList.Column`.** Row actions reach the table through
 its `actions` prop (`RowActionDef[]`) or, for custom buttons, its `slots.rowActions` render -
@@ -212,18 +210,17 @@ The audit script fails on this shape (`row-actions-as-nameless-column`).
 #### Identifier
 
 ```
-1. entityId (PK)
-2. code (unique code)
-3. slug (URL slug)
+1. code (unique code)
+2. slug (URL slug)
 ```
 
 #### Relations
 
 ```
-1. parentId / parent (parent relation)
-2. categoryId / category (primary category)
-3. ownerId / owner (owner)
-4. Other FKs (alphabetical)
+1. parent (parent relation)
+2. category (primary category)
+3. owner (owner)
+4. Other references (alphabetical)
 ```
 
 #### Type/Category
@@ -268,47 +265,40 @@ The audit script fails on this shape (`row-actions-as-nameless-column`).
 2. level / depth (hierarchy)
 3. *Count (counts - alphabetical)
 4. *Size (sizes)
-```
-
-#### Price/Amount
-
-```
-1. regularPrice / originalPrice (regular price)
-2. discountedPrice / salePrice (discounted price)
-3. actualPrice / finalPrice (actual/final price)
-4. *Amount (amounts - alphabetical)
-5. quantity / qty (quantity)
-6. total* (totals - alphabetical)
+5. regularPrice / originalPrice (regular price)
+6. discountedPrice / salePrice (discounted price)
+7. actualPrice / finalPrice (actual/final price)
+8. *Amount (amounts - alphabetical)
+9. quantity / qty (quantity)
+10. total* (totals - alphabetical)
 ```
 
 #### Schedule
 
-Schedule fields are organized into 4 sub-groups, with **visible fields prioritized** within each sub-group.
+Schedule fields are organized into sub-groups. Which of them earn a column is [How Many Columns](#how-many-columns---which-fields-earn-one-mandatory); the ones that do are ordered:
 
 ```
-[1] Publishing (visible first)
-    1. publishAt           ✔ Visible
+[1] Publishing
+    1. publishAt
 
-[2] Period (visible first)
-    2. startAt             ✔ Visible
-    3. endAt               ✔ Visible
+[2] Period
+    2. startAt
+    3. endAt
 
-[3] Deadline (visible first)
-    4. expireAt            ✔ Visible
-    5. dueDate             ✔ Visible
-    6. pinnedExpireAt      ✖ Hidden
+[3] Deadline
+    4. expireAt
+    5. dueDate
+    6. pinnedExpireAt
 
-[4] Milestone (visible first)
-    7. answeredAt          ✔ Visible
-    8. assignedAt          ✖ Hidden
-    9. resolvedAt          ✖ Hidden
-    10. acceptedAt         ✖ Hidden
-    11. completedAt        ✖ Hidden
+[4] Milestone
+    7. answeredAt
+    8. assignedAt
+    9. resolvedAt
+    10. acceptedAt
+    11. completedAt
 ```
 
-**Sub-group Priority**:
-1. Publishing → Period → Deadline → Milestone
-2. Within each sub-group: Visible fields first, then hidden fields
+**Sub-group Priority**: Publishing → Period → Deadline → Milestone
 
 #### Audit
 
@@ -357,11 +347,11 @@ function MyList() {
         format="date"
       />
 
-      {/* Enum badge — PROJECT CONVENTION is the children-render below
-          (resolveBootEnum + COLORMAP + enumLabel); see "Enum Badge with
-          resolveBootEnum" in Advanced Pattern. The built-in display="badge"
-          + variants is ALSO AVAILABLE but cannot unwrap the boot enum or
-          apply enumLabel i18n, so prefer children-render for real enums. */}
+      {/* Enum badge - a real boot enum takes the children render in
+          "Enum Badge with resolveBootEnum" (Advanced Pattern): resolveBootEnum
+          + StatusBadge with the shared tone map + enumLabel. The built-in
+          display="badge" + variants cannot unwrap the boot enum or apply
+          enumLabel i18n, so it is for a plain string value only. */}
       <CrudList.Column<MyEntityListDTO>
         field="status"
         header={fieldLabel("status")}
@@ -429,21 +419,17 @@ See [Cell Render Recipes](cell-components.md) for the complete recipe catalog.
 
 ### Enum Badge with resolveBootEnum
 
+The enum's ONE tone map lives in the project UI package (`../../audit/registry/tones-and-badges.md`); a module-local status color map is what the audit's `status-map-resurrect` fails.
+
 ```tsx
-const STATUS_COLORS: Record<string, string> = {
-  ACTIVE: "success",
-  INACTIVE: "secondary",
-  ARCHIVED: "destructive",
-};
+import { productStatusToTone } from "@<scope>/<ui-package>/<domain>";
 
 <CrudList.Column<ProductListDTO> field="status" header={fieldLabel("status")}>
   {({ value }) => {
-    const v = resolveBootEnum(value) as string;
-    return (
-      <Badge variant={STATUS_COLORS[v] ?? "secondary"}>
-        {enumLabel("ProductStatus", v)}
-      </Badge>
-    );
+    const v = resolveBootEnum(value);
+    return v
+      ? <StatusBadge tone={productStatusToTone[v] ?? "neutral"} label={enumLabel("ProductStatus", v)} />
+      : <EmptyValue />;
   }}
 </CrudList.Column>
 ```
@@ -532,8 +518,8 @@ Prefer the declarative `format` prop (`format="datetime" displayZone={zone}`). D
 | Category | Example Fields | Alignment | Reason |
 
 |----------|----------------|-----------|--------|
-| **Fixed-length fields** | name, label, email, code, slug, date | `center` | Predictable width, visual balance |
-| **Long text/sentences** | title, description, summary, content | `left` | Natural reading direction |
+| **Fixed-length fields** | code, slug, date | `center` | Predictable width, visual balance |
+| **Variable-length text** | name, label, email, title, description, summary, content | `left` | Natural reading direction |
 | **Bounded-range numbers** | bitCount, level, priority (known min~max, short digits) | `center` | Narrow value range, visual balance over decimal alignment |
 | **Unbounded/large numbers** | totalAmount, fileSize, revenue (variable length, decimals) | `right` | Decimal point alignment, digit comparison |
 | **Action buttons** | actions | `center` or `right` | Visual balance / prevent layout shift |
@@ -541,7 +527,7 @@ Prefer the declarative `format` prop (`format="datetime" displayZone={zone}`). D
 
 ### Empty Value Display (MANDATORY)
 
-**Rule**: Empty or null values MUST be displayed as `-` (or empty string), with consistent alignment per column type.
+**Rule**: An empty or null cell renders the shared `EmptyValue` (`../../audit/registry/states-and-fallbacks.md`), with consistent alignment per column type - never a hand-written dash literal.
 
 ---
 
@@ -578,7 +564,7 @@ See [i18n Reference](i18n.md) for complete i18n guide.
 
 |-------|-------|----------|
 | Column not showing | `field` typo | Match DTO field name exactly |
-| Badge color missing | colorMap not set | Add an inline `COLORMAP[resolveBootEnum(value)]` in the children render (convention); the built-in `variants` prop also works for the no-i18n case |
+| Badge color missing | No tone for the resolved value | Render `StatusBadge` with the enum's shared tone map over `resolveBootEnum(value)` in the children render; the built-in `variants` prop is for a plain string value only |
 | Enum shows raw value | Missing `resolveBootEnum` | Use `resolveBootEnum(value)` before display |
 | Date not formatted | No `format` prop | Add `format="date"` or use manual formatting |
 | FK shows ID not name | Using `field` directly | Use children render to access `row.category?.name` |
@@ -602,16 +588,15 @@ See [i18n Reference](i18n.md) for complete i18n guide.
 - [ ] Columns follow group order (Drag > Select > Identifier > Relations > Type > Text > Desc > Attr > Metrics > Schedule > Audit > Actions)
 - [ ] Intra-group sorting follows rules (e.g., title before name)
 - [ ] Schedule fields follow sub-group order (Publishing > Period > Deadline > Milestone)
-- [ ] Within Schedule sub-groups, visible fields come before hidden fields
 
-**For Visibility (MANDATORY):**
-- [ ] **Identifier** group hidden: `entityId`, `code`, `slug`
-- [ ] **Relations** group hidden: FK IDs (show relation name via children render instead)
-- [ ] **Schedule** group partial hidden: `pinnedExpireAt`, `assignedAt`, `resolvedAt`, `acceptedAt`, `completedAt`
-- [ ] **Audit** group hidden: `createdAt`, `createdBy`, `updatedAt`, `updatedBy`
+**For Removed Fields (MANDATORY):**
+- [ ] The PK is not a column; the row's human identifier (`code` / `slug`) is, where it passes the five tests
+- [ ] No raw FK id is a column; the relation shows the referenced record's name instead
+- [ ] The audit quartet is not a column, except under invariant #18's domain exception
+- [ ] Every field removed from the list is removed from source with its now-unused imports - nothing is "hidden by default" (invariant #54)
 
 **For Rendering (MANDATORY):**
-- [ ] Enum fields use `resolveBootEnum()` + `Badge` with `enumLabel()`
+- [ ] Enum fields use `resolveBootEnum()` + `StatusBadge` with the shared tone map and `enumLabel()`
 - [ ] FK relation fields show related entity name (not raw ID)
 - [ ] Date/time fields use the `format` prop or an inline component (`InstantText` / `CalendarDateText` / `WallClockText`) - never inline `formatDateMedium(new Date(...))`
 - [ ] Existing boolean fields keep current rendering (typically `display="boolean"`)
@@ -620,8 +605,8 @@ See [i18n Reference](i18n.md) for complete i18n guide.
 - [ ] Long text fields have truncation when appropriate
 
 **For Alignment (MANDATORY):**
-- [ ] Fixed-length fields (name, label, email, code, date) are center-aligned
-- [ ] Long text fields (title, description, summary) are left-aligned
+- [ ] Fixed-length fields (code, slug, date) are center-aligned
+- [ ] Variable-length text (name, label, email, title, description, summary) is left-aligned
 - [ ] Bounded-range numbers (bitCount, level, priority - known min~max, short digits) are center-aligned
 - [ ] Unbounded/large numbers (totalAmount, fileSize, revenue - variable length, decimals) are right-aligned
 - [ ] All other fields (badges, status, enum, boolean) are center-aligned

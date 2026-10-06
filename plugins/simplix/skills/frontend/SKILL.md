@@ -247,7 +247,7 @@ These invariants apply to **every** frontend file you touch. Treat each as invio
 
 41. **One search form everywhere - `CrudList.FilterBar`, even off-list** - every screen-level query condition renders through the standard FilterBar (`useCrudList` on lists, `useFilterBarState` elsewhere); the total badge is the `count` prop, never a hand-placed badge in `leading`. → `invariants.md` #41, detection → `audit/audit-checklist.md` § 11.
 
-42. **Date/time values follow the semantic-kind contract** - every temporal field is exactly one of absolute instant, calendar date, wall-clock time. Encode by kind (site timezone, never the browser's), decode from the string's own components (never local `Date` getters), display through the framework date components (`InstantText format="date"` is the ONLY zone-local instant date). Full rules, per-kind tables and greps → `customize/datetime-fields.md`.
+42. **Date/time values follow the semantic-kind contract** - every temporal field is exactly one of absolute instant, calendar date, wall-clock time. Encode by kind (the record's display zone, never the browser's), decode from the string's own components (never local `Date` getters), display through the framework date components (`InstantText format="date"` is the ONLY zone-local instant date). Full rules, per-kind tables and greps → `customize/datetime-fields.md`.
 
 43. **Badge density parity** - detail/form badges render at the list's size: omit `size` on `StatusBadge` (defaults `sm`), never enlarge; explicit `size="xs"` only in genuinely denser contexts. → `invariants.md` #43.
 

@@ -13,20 +13,18 @@ Step-by-step patterns for common post-scaffold customization tasks.
 <CrudList.Column<Entity> field="status" header={fieldLabel("status")} sortable />
 ```
 
-**After** (customized):
+**After** (customized) - the enum's ONE tone map lives in the project UI package, never in the module (`../audit/registry/tones-and-badges.md`; the audit's `status-map-resurrect` fails a module-local status map):
 ```tsx
 import { resolveBootEnum } from "@simplix-react-ext/simplix-boot-utils";
-
-const STATUS_COLORS: Record<string, BadgeVariants["variant"]> = {
-  ACTIVE: "default",
-  INACTIVE: "secondary",
-  PENDING: "outline",
-};
+import { StatusBadge, EmptyValue } from "@simplix-react/ui";
+import { entityStatusToTone } from "@<scope>/<ui-package>/<domain>";
 
 <CrudList.Column<Entity> field="status" header={fieldLabel("status")} sortable>
   {({ value }) => {
     const v = resolveBootEnum(value);
-    return <Badge variant={STATUS_COLORS[v] ?? "outline"}>{enumLabel("entityStatus", v)}</Badge>;
+    return v
+      ? <StatusBadge tone={entityStatusToTone[v] ?? "neutral"} label={enumLabel("entityStatus", v)} />
+      : <EmptyValue />;
   }}
 </CrudList.Column>
 ```
@@ -72,8 +70,10 @@ const actions: RowActionDef<Entity>[] = [
   { type: "delete", onClick: (row) => handleDelete(row.id) },
 ];
 
-<CrudList.Table actions={actions} actionVariant="dropdown" ... />
+<CrudList.Table actions={actions} ... />
 ```
+
+How the actions draw (`actionVariant`) is the product's default, set once on `UIProvider`'s `defaults` - a screen does not name it (invariant #67; the audit's `screen-picks-action-variant`).
 
 ---
 
@@ -148,9 +148,11 @@ function EditorContent({ data, variant, onClose, onSuccess }: ContentProps) {
       </Stack>
       <EditorFooter>
         <Button size="sm" variant="outline" onClick={handleClose}>{t("common.cancel")}</Button>
-        <Button size="sm" variant="primary" onClick={handleSave} disabled={!isDirty || updateMutation.isPending}>
-          {updateMutation.isPending ? t("common.saving") : t("common.save")}
-        </Button>
+        <Flex gap="sm">
+          <SaveButton isDirty={isDirty} isSaving={updateMutation.isPending} onClick={handleSave}>
+            {t("common.save")}
+          </SaveButton>
+        </Flex>
       </EditorFooter>
       {unsavedDialog}
     </Stack>
@@ -180,14 +182,16 @@ export { EntityEditor } from "./editor";
 
 **When**: Generated form includes read-only fields (id, createdAt) that shouldn't be editable.
 
+A field the update DTO carries stays in the form's state even when no control edits it: `id` (and any system field the DTO requires, such as `displayOrder`) is kept in `FormValues`, the initial state and the submit payload (`../audit/registry/identity-and-detail-fields.md` § System Field Exclusion; invariant #34). Only what the DTO does not accept leaves the state.
+
 ### Step 1: Remove from FormValues interface
 
 ```tsx
-// REMOVE these fields from the interface
 export interface EntityFormValues {
+  id?: string;          // KEPT: the update DTO needs it; no control edits it
   name: string;
   description: string;
-  // DELETE: id, createdAt, updatedAt
+  // DELETE: createdAt, updatedAt (server-owned, not in the DTO)
 }
 ```
 
@@ -197,13 +201,14 @@ export interface EntityFormValues {
 const [values, setValues] = useState<Partial<EntityFormValues>>({
   name: defaultValues?.name ?? "",
   description: defaultValues?.description ?? "",
-  // DELETE: id, createdAt, updatedAt entries
+  id: defaultValues?.id,
+  // DELETE: createdAt, updatedAt entries
 });
 ```
 
 ### Step 3: Remove form fields
 
-Delete the corresponding `<FormFields.*>` JSX elements.
+Delete the corresponding `<FormFields.*>` JSX elements - for `id`, the control only; the value stays in the state above.
 
 ---
 
@@ -215,7 +220,8 @@ Delete the corresponding `<FormFields.*>` JSX elements.
 <CrudDetail.Section title={t("entity.section")}>
   <DetailField label={fieldLabel("name")} value={data.name} layout="inline" />
   <DetailField label={fieldLabel("description")} value={data.description} layout="inline" />
-  <DetailBadgeField label={fieldLabel("status")} value={enumLabel("entityStatus", resolveBootEnum(data.status))} variant="default" layout="inline" />
+  {/* the RAW resolved value keys the tone; the label goes in displayValue (invariant #53) */}
+  <DetailBadgeField label={fieldLabel("status")} value={resolveBootEnum(data.status) || ""} displayValue={enumLabel("entityStatus", resolveBootEnum(data.status) || "")} variants={entityStatusVariants} layout="inline" />
   <DetailBooleanField label={fieldLabel("isActive")} value={data.isActive} layout="inline" />
   <DetailDateField label={fieldLabel("createdAt")} value={data.createdAt} layout="inline" />
 </CrudDetail.Section>
@@ -227,20 +233,20 @@ Delete the corresponding `<FormFields.*>` JSX elements.
 
 **When**: Generated detail uses hardcoded delete messages.
 
-```tsx
-import { useCrudDeleteDetail } from "@simplix-react/ui";
+Clone the wiring from a precedent page on EVERY crud-page variant (invariant #46); the shape is `useCrudDeleteWired` + `adaptOrvalDelete` + `{deleteDialog}`:
 
-const { deleteProps } = useCrudDeleteDetail({
-  mutation: adaptOrvalDelete(useDeleteEntity(), "entityId"),
-  entityId: data.id,
+```tsx
+import { useCrudDeleteWired, adaptOrvalDelete } from "@simplix-react/ui";
+
+const del = useCrudDeleteWired({
+  deleteMutation: adaptOrvalDelete(useDeleteEntity(), "entityId"),
+  labels, // the confirmation's title and description, naming the record by a human value - as the precedent passes them
   onDeleted,
 });
 
-<CrudDelete
-  title={t("entity.deleteConfirmTitle")}
-  description={t("entity.deleteConfirmDescription", { name: data.name })}
-  {...deleteProps}
-/>
+// onDelete activates only when onDeleted exists - no dead button on a callback-less render
+<EntityDetail entityId={entityId} onDelete={onDeleted ? del.requestDelete : undefined} />
+{del.deleteDialog}
 ```
 
 Locale keys:
@@ -320,16 +326,12 @@ function CategoryCrudPage({ externalList, ...props }: CategoryCrudPageProps) {
 
 **When**: Default panel width doesn't fit your content.
 
-```tsx
-// Standard: detail panel on right
-<ListDetail detailWidth={480}>
-  ...
-</ListDetail>
+The detail's width is the product's, not the screen's: the panel, the drawer and the dialog share one measure (invariant #69), and a product that needs another changes it once at the app root (`UIProvider`'s `defaults`, invariant #67). A screen passes a width only with the reason written beside it:
 
-// Compact list with wide editor
+```tsx
+// Compact list beside a wide editor - the reason is recorded where the screen departs (#67)
+{/* departs from the generated shape: the editor's canvas needs the width */}
 <ListDetail listWidth={380}>
   ...
 </ListDetail>
 ```
-
-Default detail width is framework-defined. Only override when content requires it.
