@@ -23,7 +23,7 @@ import { existsSync } from 'node:fs';
 import { resolve, join, isAbsolute, dirname } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { BOARD_CONTRACT } from '../core/partials.mjs';
-import { LATEST, migrationReport, MIGRATIONS } from '../core/migrations.mjs';
+import { LATEST, migrationReport, MIGRATIONS, CONFIG_CHANGES, configChangesFor } from '../core/migrations.mjs';
 
 const argv = process.argv.slice(2);
 const cmd = argv[0] ?? 'help';
@@ -39,30 +39,29 @@ const boardDir = resolve(opt('board', process.cwd()));
 
 const die = (msg) => { console.error(msg); process.exit(1); };
 
-const HELP = `wireframe-boards — 보드를 빌드하고 점검하는 명령
-  build [--no-pdf]                보드와 PDF를 함께 만듭니다
+const HELP = `wireframe-boards - build and check a board
+  build [--no-pdf]                build the board, and the PDF beside it
   serve [--port 4173] [--host 127.0.0.1] [--open] [--no-watch] [--pdf]
-                                  보드를 빌드해 HTTP로 제공하고, 소스가 바뀌면 다시 빌드해
-                                  열려 있는 브라우저를 새로 고칩니다
-  catalog                         컴포넌트 스토리북 → _catalog.html
-  check [--frames <접두>]          빌드된 보드의 레이아웃 점검 — 넘침·가로 스크롤·폴드
-  gates                           게이트가 제 결함을 잡는지 검증합니다
-  coverage                        보드 ⇄ 코드 — 라우트가 없는 프레임
-  pdf [--mask 40%] [--watermark [로고]] [--to <수신자>] [--in f] [--out f]
-                                  --to를 주면 로고 아래에 만든 시각과 수신자를 적습니다
-  shots <디렉터리> [id접두] [--no-notes]
-                                  프레임마다 PNG 한 장을 저장합니다 —
-                                  --no-notes는 프레임의 주석 블록을 빼고 찍습니다
-  doctor                          이 보드의 계약 버전과 남은 작업
-  migrations                      계약마다 무엇이 바뀌고 무엇을 해야 하는지 (보드 설정 없이도 돕니다)
-  where                           이 킷이 든 플러그인의 디렉터리 (플러그인의 다른 스크립트를 부를 때)
-  patterns                        쓸 수 있는 공통패턴
-  pattern fork [--into <디렉터리>] [--name <이름>]
-                                  지금 패턴을 보드 안으로 복사하고 보드가 그것을 쓰게 합니다
-  pattern adopt [--into <디렉터리>] [--name <이름>]
-                                  src/의 컴포넌트·스타일을 이 보드의 패턴으로 승격합니다
-  init --pattern <이름> --name <제품>   새 보드를 세웁니다 (킷에서 직접 실행)
-공통: --board <디렉터리> (기본값은 현재 디렉터리)`;
+                                  build the board, serve it over HTTP, rebuild when a source
+                                  changes and reload the open browser
+  catalog                         the component storybook → _catalog.html
+  check [--frames <prefix>]       layout sweep of the built board - overflow, sideways scroll, fold
+  gates                           prove every gate still catches the defect it exists for
+  coverage                        board ⇄ code - the frames no route reaches
+  pdf [--mask 40%] [--watermark [logo]] [--to <recipient>] [--in f] [--out f]
+                                  --to writes the time of making and the recipient under the logo
+  shots <dir> [idPrefix] [--no-notes]
+                                  one PNG per frame; --no-notes leaves the notes block out
+  doctor                          this board's contract, what it owes, and the gates it has not configured
+  migrations                      what each contract and each config change asks of a board (needs no board)
+  where                           the directory of the plugin this kit belongs to (to call its other scripts)
+  patterns                        the patterns the kit ships
+  pattern fork [--into <dir>] [--name <name>]
+                                  copy the current pattern into the board and point the board at it
+  pattern adopt [--into <dir>] [--name <name>]
+                                  promote the components and styles in src/ to this board's pattern
+  init --pattern <name> --name <product>   start a new board (run from the kit)
+common: --board <dir> (default: the current directory)`;
 
 if (cmd === 'help' || flag('help')) {
   console.log(HELP);
@@ -78,11 +77,11 @@ if (cmd === 'patterns') {
     for (const [k, v] of Object.entries(p.devices ?? {})) console.log(`    ${k.padEnd(8)} ${v}`);
   }
   console.log(
-    '\n보드가 제 패턴을 가질 수도 있습니다 — board.config.mjs에 경로로 적습니다'
-    + " (pattern: './pattern').\n  쓰는 컴포넌트가 대부분 위 패턴에 없을 때의 길이고,"
-    + ' node wf.mjs pattern fork 가 지금 패턴을 복사해 그렇게 바꿔 줍니다.\n'
-    + '  하나 둘 모자란 것은 포크할 일이 아니라 패턴에 더할 일입니다 — 포크한 뒤에는'
-    + ' 킷이 그 패턴을 고쳐도 이 보드에 오지 않습니다.'
+    '\nA board may carry a pattern of its own, written as a path in board.config.mjs'
+    + " (pattern: './pattern').\n  That is for a board whose components are mostly not in the patterns above;"
+    + ' node wf.mjs pattern fork copies the current pattern and points the board at the copy.\n'
+    + '  One or two missing components are an addition to the pattern, not a reason to fork - once'
+    + ' forked, the kit\'s fixes to that pattern no longer reach the board.'
   );
   process.exit(0);
 }
@@ -90,9 +89,9 @@ if (cmd === 'patterns') {
 if (cmd === 'pattern') {
   const how = positional[0];
   if (how !== 'fork' && how !== 'adopt') {
-    die('pattern 뒤에는 fork 또는 adopt가 옵니다.\n'
-      + '  fork   킷이 싣고 다니는 패턴을 보드 안으로 복사합니다 — 이미 그 패턴으로 그려진 보드용\n'
-      + '  adopt  src/가 갖고 있는 컴포넌트·스타일을 이 보드의 패턴으로 승격합니다 — 계약 이전 보드용');
+    die('pattern takes fork or adopt.\n'
+      + '  fork   copy a pattern the kit ships into the board - for a board already drawn in it\n'
+      + '  adopt  promote the components and styles src/ holds to this board\'s pattern - for a board from before the contract');
   }
   // A refusal here is a sentence somebody has to read - which pattern is already there, which
   // folder is in the way. A stack trace buries it under twenty lines of node internals.
@@ -104,26 +103,26 @@ if (cmd === 'pattern') {
     try {
       report = adoptPattern(boardDir, { into: opt('into', 'pattern'), name: opt('name', null) });
     } catch (err) { refuse(err); }
-    console.log(`src/의 ${report.moved.join(' · ')}을 ${report.into}/로 옮기고 '${report.name}' 패턴으로 만들었습니다.`);
+    console.log(`moved ${report.moved.join(' · ')} from src/ to ${report.into}/ as the '${report.name}' pattern.`);
     for (const f of report.moved) console.log(`  → ${report.into}/${f}`);
     console.log(`  + ${report.into}/pattern.mjs`);
-    console.log(`  ~ src/components.mjs  재수출 → ../${report.into}/components.mjs`);
+    console.log(`  ~ src/components.mjs  re-exports ../${report.into}/components.mjs`);
     console.log(report.config
       ? `  ~ board.config.mjs  pattern: './${report.into}'`
-      : `  ! board.config.mjs가 없습니다 — 만들 때 pattern: './${report.into}'을 적습니다`);
+      : `  ! no board.config.mjs - write pattern: './${report.into}' in it when it is made`);
     // Two things the promotion cannot do for anybody, said here because this is the only moment
     // somebody is looking at the board's `src/` and knows why it changed.
     if (report.introIsDocument) {
-      console.log(`\n  ! ${report.into}/intro.html이 목록 항목이 아니라 문서입니다`
-        + '\n    읽기 계약은 킷의 <ol> 안으로 들어가므로 이 파일에는 <li>만 남깁니다.'
-        + '\n    머리글·절·표준 항목은 킷과 패턴이 이미 그리므로 지웁니다 — 다시 적으면 두 번 나옵니다.');
+      console.log(`\n  ! ${report.into}/intro.html is a document, not a list of items`
+        + '\n    The reading contract goes inside the kit\'s <ol>, so this file keeps only <li> elements.'
+        + '\n    Delete the heading, the sections and the standing items: the kit and the pattern draw them, and written again they appear twice.');
     }
     for (const f of report.orphaned) {
-      console.log(`\n  ! src/${f}을 이제 아무도 읽지 않습니다 — 킷의 core/${f}가 보드를 짓습니다`
-        + `\n    남겨 두면 고쳐도 아무 일이 일어나지 않고, 그것을 알 방법이 없습니다.`
-        + `\n    옮길 것이 있으면 ${report.into}/로 옮기고, 없으면 지웁니다.`);
+      console.log(`\n  ! nothing reads src/${f} now - the kit's core/${f} builds the board`
+        + `\n    Left in place, an edit to it changes nothing, and nothing says so.`
+        + `\n    Move what it still holds to ${report.into}/, or delete it.`);
     }
-    console.log('\n다음: node wf.mjs build --no-pdf 로 킷이 이 보드를 지을 수 있는지 봅니다.');
+    console.log('\nnext: node wf.mjs build --no-pdf shows whether the kit can build this board.');
     process.exit(0);
   }
   const { forkPattern } = await import('../core/fork-pattern.mjs');
@@ -131,14 +130,14 @@ if (cmd === 'pattern') {
   try {
     report = forkPattern(boardDir, { into: opt('into', 'pattern'), name: opt('name', null) });
   } catch (err) { refuse(err); }
-  console.log(`${report.from} 패턴을 ${report.into}/ 로 복사하고 '${report.name}'으로 이름을 바꿨습니다.`);
+  console.log(`copied the ${report.from} pattern to ${report.into}/ and named it '${report.name}'.`);
   for (const f of report.files) console.log(`  + ${report.into}/${f}`);
   console.log(`  ~ board.config.mjs  pattern: './${report.into}'`);
-  console.log(`  ~ src/components.js 재수출 → ../${report.into}/components.mjs`);
+  console.log(`  ~ src/components.mjs  re-exports ../${report.into}/components.mjs`);
   console.log(
-    '\n이제 이 보드가 그 패턴의 주인입니다 — 컴포넌트도 게이트도 스타일도 여기서 고칩니다.'
-    + '\n킷이 원래 패턴을 고쳐도 이 복사본에는 오지 않습니다.'
-    + '\n다음: node wf.mjs build --no-pdf 로 그대로 그려지는지 봅니다.'
+    '\nThis board now owns that pattern - its components, gates and styles are fixed here.'
+    + '\nA fix the kit makes to the original pattern does not reach this copy.'
+    + '\nnext: node wf.mjs build --no-pdf shows whether it draws as before.'
   );
   process.exit(0);
 }
@@ -150,10 +149,10 @@ if (cmd === 'init') {
     name: opt('name', '<PRODUCT>'),
     examples: !flag('no-examples'),
   });
-  console.log(`${report.pattern} 패턴으로 보드를 세웠습니다 — ${boardDir}`);
+  console.log(`started a board in the ${report.pattern} pattern - ${boardDir}`);
   for (const p of report.written) console.log(`  + ${p.slice(boardDir.length + 1)}`);
-  for (const p of report.kept) console.log(`  · 그대로 둠 ${p.slice(boardDir.length + 1)}`);
-  console.log('\n다음: node wf.mjs build --no-pdf 로 시작 프레임이 그려지는지 봅니다.');
+  for (const p of report.kept) console.log(`  · kept ${p.slice(boardDir.length + 1)}`);
+  console.log('\nnext: node wf.mjs build --no-pdf shows whether the starting frames draw.');
   process.exit(0);
 }
 
@@ -164,9 +163,15 @@ if (cmd === 'init') {
 // command to exactly the board it is for. It reads nothing off the board and needs nothing from it.
 if (cmd === 'migrations') {
   for (const m of MIGRATIONS) {
-    console.log(`\n계약 ${m.contract} — ${m.title}${m.breaking ? ' (빌드가 멈춥니다)' : ''}`);
-    for (const c of m.changed) console.log(`  바뀐 것 · ${c}`);
-    for (const s of m.steps) console.log(`  할 일   · ${s}`);
+    console.log(`\ncontract ${m.contract} - ${m.title}${m.breaking ? ' (the build stops until it is crossed)' : ''}`);
+    for (const c of m.changed) console.log(`  changed · ${c}`);
+    for (const s of m.steps) console.log(`  step    · ${s}`);
+  }
+  console.log('\nConfig changes - none stops a build; doctor names the ones a board carries:');
+  for (const m of CONFIG_CHANGES) {
+    console.log(`\n${m.id} - ${m.title}`);
+    for (const c of m.changed) console.log(`  changed · ${c}`);
+    for (const s of m.steps) console.log(`  step    · ${s}`);
   }
   process.exit(0);
 }
@@ -181,7 +186,7 @@ if (cmd === 'where') {
 }
 
 if (!existsSync(join(boardDir, 'board.config.mjs'))) {
-  die(`${boardDir}에 board.config.mjs가 없습니다 — 보드 폴더에서 실행하거나 --board로 지정합니다.`);
+  die(`${boardDir} has no board.config.mjs - run from a board folder or name one with --board.`);
 }
 
 switch (cmd) {
@@ -193,7 +198,7 @@ switch (cmd) {
   case 'serve': {
     const { serveBoard } = await import('../core/serve.mjs');
     const port = Number(opt('port', 4173));
-    if (!Number.isInteger(port) || port < 1 || port > 65535) die(`--port 값이 포트 번호가 아닙니다 (받은 값: ${opt('port')})`);
+    if (!Number.isInteger(port) || port < 1 || port > 65535) die(`--port takes a port number (got: ${opt('port')})`);
     await serveBoard(boardDir, {
       port,
       host: opt('host', '127.0.0.1'),
@@ -235,7 +240,7 @@ switch (cmd) {
     if (maskRaw !== undefined) {
       if (/^\d+(\.\d+)?%$/.test(maskRaw)) maskRatio = parseFloat(maskRaw) / 100;
       else if (/^0?\.\d+$/.test(maskRaw)) maskRatio = parseFloat(maskRaw);
-      else die(`--mask 값은 40% 또는 0.4 형식입니다 (받은 값: ${maskRaw})`);
+      else die(`--mask takes 40% or 0.4 (got: ${maskRaw})`);
     }
     const suffix = maskRatio ? `-share${Math.round(maskRatio * 100)}` : '';
     const outArg = opt('out');
@@ -244,7 +249,7 @@ switch (cmd) {
     const stamp = (pdfPath) => {
       if (!flag('watermark')) return;
       const logo = opt('watermark') ?? config.watermark?.logo;
-      if (!logo) die('--watermark: 로고 경로를 지정하거나 board.config.mjs의 watermark.logo를 채웁니다');
+      if (!logo) die('--watermark: name a logo path, or fill watermark.logo in board.config.mjs');
       stampWatermark({
         src: pdfPath,
         out: pdfPath.replace(/\.pdf$/, '-watermarked.pdf'),
@@ -260,7 +265,7 @@ switch (cmd) {
     // is still the explicit override - one named file in, one named file out - because that is
     // what somebody rendering a page by hand asked for.
     if (split?.volumes.length && !opt('in')) {
-      if (outArg) die('--out은 파일 하나를 지정합니다 — 부가 여럿인 보드에서는 --in과 함께 씁니다');
+      if (outArg) die('--out names one file - on a board with several volumes it goes with --in');
       const { assembleBoard } = await import('../core/build.mjs');
       const { renderVolumes } = await import('../core/export/volume.mjs');
       const { volumeDocs } = await assembleBoard(boardDir);
@@ -282,15 +287,15 @@ switch (cmd) {
   }
   case 'shots': {
     const outDir = positional[0];
-    if (!outDir) die('shots: 내보낼 디렉터리를 지정합니다 — node wf.mjs shots _shots [id접두]');
+    if (!outDir) die('shots: name the output directory - node wf.mjs shots _shots [idPrefix]');
     const { shootFrames } = await import('../core/export/shot.mjs');
     await shootFrames(boardDir, resolve(boardDir, outDir), positional[1], { notes: !flag('no-notes') });
     break;
   }
   case 'doctor': {
     const { loadBoard } = await import('../core/context.mjs');
-    console.log(`킷      ${dirname(dirname(fileURLToPath(import.meta.url)))}`);
-    console.log(`계약    킷 ${BOARD_CONTRACT} · 마이그레이션 기록 ${LATEST}`);
+    console.log(`kit       ${dirname(dirname(fileURLToPath(import.meta.url)))}`);
+    console.log(`contract  kit ${BOARD_CONTRACT} · migration record ${LATEST}`);
     let ctx;
     try {
       ctx = await loadBoard(boardDir, { screens: false });
@@ -299,20 +304,37 @@ switch (cmd) {
       process.exit(1);
     }
     const { config, pattern } = ctx;
-    console.log(`보드    ${config.boardName} · 계약 ${config.contract}`);
-    console.log(`패턴    ${pattern.name} — ${pattern.title}`);
+    console.log(`board     ${config.boardName} · contract ${config.contract}`);
+    console.log(`pattern   ${pattern.name} - ${pattern.title}`);
     const missing = Object.entries(pattern.requires ?? {})
       .filter(([p]) => !existsSync(join(boardDir, p)));
-    for (const [p, why] of missing) console.log(`  ✖ 없음  ${p} — ${why}`);
+    for (const [p, why] of missing) console.log(`  ✖ missing   ${p} - ${why}`);
     for (const [p, why] of Object.entries(pattern.optional ?? {})) {
-      if (!existsSync(join(boardDir, p))) console.log(`  · 선택  ${p} — ${why}`);
+      if (!existsSync(join(boardDir, p))) console.log(`  · optional  ${p} - ${why}`);
+    }
+    // A gate whose vocabulary the board has not declared holds it to nothing. Named here so a
+    // gate is never off without a line saying so.
+    const { unconfiguredGates } = await import('../core/gates/index.mjs');
+    const idle = unconfiguredGates(ctx);
+    if (idle.length) {
+      console.log('\ngates not configured - each runs once its key is declared in board.config.mjs:');
+      for (const g of idle) console.log(`  · ${g.id}  ${g.configuredBy.key} - ${g.configuredBy.what}`);
+    }
+    const changes = configChangesFor(config);
+    if (changes.length) {
+      console.log('\nconfig changes this board carries a key for (none stops the build):');
+      for (const m of changes) {
+        console.log(`  ${m.id} - ${m.title}`);
+        for (const s of m.steps) console.log(`    · ${s}`);
+      }
+      console.log('  node wf.mjs build names every declared document no gate read.');
     }
     const report = migrationReport(config.contract, BOARD_CONTRACT);
     if (report) console.log(`\n${report}`);
-    else console.log('\n계약은 최신입니다.');
+    else console.log('\nThe contract is current.');
     if (missing.length) process.exit(1);
     break;
   }
   default:
-    die(`알 수 없는 명령 「${cmd}」\n\n${HELP}`);
+    die(`unknown command 「${cmd}」\n\n${HELP}`);
 }

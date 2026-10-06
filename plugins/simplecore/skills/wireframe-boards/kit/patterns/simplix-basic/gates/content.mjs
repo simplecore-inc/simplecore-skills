@@ -458,31 +458,33 @@ export const twinActionGate = {
   },
 };
 
+// Every list of the site's languages says the same languages. A language switch that offers a
+// language the site has not switched on is a promise the product cannot keep, and one that writes a
+// language under a second name (in the board's language rather than in its own script) reads as a
+// different language.
+//
+// **Which languages, and which tab labels are not languages at all, are the board's**: `site.languages`
+// and `site.notLanguages` in `board.config.mjs`. A tab naming a direction (「A → B」) is never a
+// language, whatever the board declares. A frame whose subject IS a language the site has not
+// switched on says so in its own `offLanguages:` line rather than the gate carrying an exception.
 export const languageSetGate = {
   id: 'languageSetGate',
-  title: '언어 목록이 이 사업장의 것이다',
+  title: 'a language switch offers a language this site does not run',
   stage: 'built',
+  configuredBy: { key: 'site.languages', what: 'the languages the product ships in, as a language tab writes each one' },
   run: (ctx) => {
-    // This site runs four languages and every list of them says the same four. Seven frames had
-    // drifted - one added 태국어, three swapped in नेपाली or မြန်မာ (which nobody at this site
-    // speaks), and two wrote 「베트남어 · 크메르어」 in Korean where every other frame writes the
-    // language in its own script. A language switch that offers a language the site has not
-    // switched on is a promise the product cannot keep.
-    const KNOWN = new Set(ctx.config.site?.languages ?? []);
-    // Some switches legitimately carry a non-language option - 「전체 언어」 filters, 「나란히」 and
-    // 「이중 언어」 print both at once, and a translation screen names a direction (「한국어 → …」).
-    // C-16 is the one frame that legitimately names a language the site has NOT switched on: it
-    // draws what a worker who speaks it would get, which is pictograms and nothing else. It says so
-    // on its face, so the frame declares the departure rather than the gate carrying an exception.
-    const NOT_A_LANGUAGE = /^(전체 언어|나란히|이중 언어|원본|한국어 원본)$|→/;
+    const languages = ctx.config.site?.languages ?? [];
+    if (!languages.length) return [];
+    const KNOWN = new Set(languages);
+    const NOT_A_LANGUAGE = new Set(ctx.config.site?.notLanguages ?? []);
     const bad = [];
     for (const sc of ctx.screens) {
       const src = ctx.srcOf(sc.file);
       if (/\n  offLanguages: '[^']+'/.test(src)) continue;   // the frame says why it names one
       for (const m of src.matchAll(/langTabs\(\[([^\]]*)\]/g)) {
         for (const t of [...m[1].matchAll(/'([^']*)'/g)].map((x) => x[1])) {
-          if (NOT_A_LANGUAGE.test(t) || KNOWN.has(t)) continue;
-          bad.push(`${sc.file}: langTabs에 「${t}」 — 이 사업장의 언어는 ${[...KNOWN].join(' · ')} 넷이다`);
+          if (t.includes('→') || NOT_A_LANGUAGE.has(t) || KNOWN.has(t)) continue;
+          bad.push(`${sc.file}: langTabs offers 「${t}」 - this site's languages are ${languages.join(' · ')}`);
         }
       }
     }
@@ -702,23 +704,25 @@ export const pageActionGate = {
     .map((sc) => `${sc.file}: btnRow는 제목 옆 actions로 — 흐름 안의 버튼 줄은 읽는 사람이 찾아야 하는 다섯째 영역이다`),
 };
 
-// A source badge says which layer a value came from, and the reader learns those layers once -
-// P-13 draws them. Fourteen different words had reached the badge (「이 사업장」 beside 「사업장
-// 설정」, 「팩 기본」 beside 「산업 팩」, and three that named a date, a roadmap phase and an
-// aggregation), so the same layer read as several and 「설치 기본」 - sixty-eight of them - was in
-// no table at all. The vocabulary is closed: four layers plus the three narrower sources that
-// genuinely differ from them.
+// A source badge says which layer a value came from, and the reader learns those layers once. The
+// vocabulary is closed: a second word for the same layer reads as a second layer, and a word that
+// names something else (a date, a plan phase) is not a source at all.
+//
+// **The words are the board's**, declared as `sourceWords` in `board.config.mjs` - the layers and
+// the narrower sources this product distinguishes. A board that declares none is not held to a list.
 export const sourceWordGate = {
   id: 'sourceWordGate',
-  title: '출처 배지가 정해진 낱말 밖으로 나간다',
+  title: 'a source badge carries a word outside the declared vocabulary',
   stage: 'built',
+  configuredBy: { key: 'sourceWords', what: 'every word a source badge may carry' },
   run: (ctx) => {
-    const ALLOWED = new Set(['법정 기본', '설치 기본', '산업 팩', '사업장 설정',
-      '법규 팩', '문서 유형 정책', '고시 권고']);
+    const words = ctx.config.sourceWords ?? [];
+    if (!words.length) return [];
+    const ALLOWED = new Set(words);
     const bad = [];
     for (const sc of ctx.screens) {
       for (const m of ctx.srcOf(sc.file).matchAll(/sourceBadge\('([^']*)'/g)) {
-        if (!ALLOWED.has(m[1])) bad.push(`${sc.file}: 「${m[1]}」 — ${[...ALLOWED].join(' · ')} 가운데 하나여야 한다`);
+        if (!ALLOWED.has(m[1])) bad.push(`${sc.file}: 「${m[1]}」 - a source badge carries one of ${words.join(' · ')}`);
       }
     }
     return bad;

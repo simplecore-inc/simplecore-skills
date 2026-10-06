@@ -160,16 +160,25 @@ export function cases(t) {
   add('twinActionGate', '겹치지 않는 둘',
     ctxWith([screen('x-01-a', "actions: btn('내보내기', 'ghost') + btn('등록', 'primary')")]), false);
 
-  add('languageSetGate', '이 사업장에 없는 언어',
-    ctxWith([screen('x-01-a', "langTabs(['한국어', 'Tiếng Việt', 'नेपाली'], 0)")]), true);
-  add('languageSetGate', '넷을 그대로 쓴다',
-    ctxWith([screen('x-01-a', "langTabs(['한국어', 'English', 'Tiếng Việt', 'ភាសាខ្មែរ'], 0)")]), false);
-  // 「전체 언어」, 「나란히」 and 「한국어 → English」 are not language names.
-  add('languageSetGate', '언어가 아닌 항목',
-    ctxWith([screen('x-01-a', "langTabs(['전체 언어', '한국어', '나란히', '한국어 → English'], 0)")]), false);
+  // The site's languages are the board's declaration; the fixture declares four placeholders
+  // and one tab label that is not a language.
+  const SITE = { languages: ['한국어', 'English', 'Español', 'Français'], notLanguages: ['전체 언어', '나란히'] };
+  const sited = (src, site = SITE) => ctxWith([screen('x-01-a', src)], { config: { ...config, site } });
+  add('languageSetGate', 'offers a language the site does not run',
+    sited("langTabs(['한국어', 'Español', 'Deutsch'], 0)"), true);
+  add('languageSetGate', 'offers exactly the site\'s languages',
+    sited("langTabs(['한국어', 'English', 'Español', 'Français'], 0)"), false);
+  // A declared non-language label and a direction are not language names.
+  add('languageSetGate', 'a declared non-language tab and a direction',
+    sited("langTabs(['전체 언어', '한국어', '나란히', '한국어 → English'], 0)"), false);
+  add('languageSetGate', 'an undeclared non-language tab is read as a language',
+    sited("langTabs(['전체 언어', '한국어'], 0)", { languages: SITE.languages }), true);
   // A screen deliberately drawing a language the installation has not enabled declares why.
-  add('languageSetGate', '선언한 프레임은 조용하다',
-    ctxWith([screen('x-01-a', "\n  offLanguages: '켜지 않은 언어가 무엇을 받는지가 이 화면의 주제다',\n  langTabs(['한국어', 'नेपाली'], 0)")]), false);
+  add('languageSetGate', 'a frame that declares the departure is quiet',
+    sited("\n  offLanguages: '켜지 않은 언어가 무엇을 받는지가 이 화면의 주제다',\n  langTabs(['한국어', 'Deutsch'], 0)"), false);
+  // No declaration, no vocabulary: the gate holds the board to nothing and doctor names it.
+  add('languageSetGate', 'a board that declares no languages is not held to any',
+    sited("langTabs(['한국어', 'Deutsch'], 0)", {}), false);
 
   add('paginationGate', '마지막 쪽이 틀렸다',
     ctxWith([screen('x-01-a', "pagination(['1', '2', '…', '482'], '48,210', 10)")]), true);
@@ -235,10 +244,15 @@ export function cases(t) {
     ctxWith([screen('x-01-a', "pageHeader({ title: 'x' }) + btnRow(btn('가기'))")]), true);
   add('pageActionGate', '제목 없는 폼의 주 버튼',
     ctxWith([screen('x-01-a', "btnRow(btn('로그인', 'primary'))")]), false);
-  add('sourceWordGate', '정해지지 않은 낱말',
-    ctxWith([screen('x-01-a', "sourceBadge('이 사업장', '어쩌고')")]), true);
-  add('sourceWordGate', '네 층 가운데 하나',
-    ctxWith([screen('x-01-a', "sourceBadge('사업장 설정', '어쩌고')")]), false);
+  // The vocabulary is the board's declaration; the fixture's words are placeholders.
+  const WORDS = ['법정 기본', '설치 기본', '현장 설정'];
+  const badged = (src, sourceWords = WORDS) => ctxWith([screen('x-01-a', src)], { config: { ...config, sourceWords } });
+  add('sourceWordGate', 'a word outside the declared vocabulary',
+    badged("sourceBadge('이 현장', '근거')"), true);
+  add('sourceWordGate', 'one of the declared words',
+    badged("sourceBadge('현장 설정', '근거')"), false);
+  add('sourceWordGate', 'a board that declares no vocabulary is not held to one',
+    badged("sourceBadge('이 현장', '근거')", []), false);
   add('dotSpacingGate', '한 목록에서 갈림',
     ctxWith([screen('x-01-a', "screen: '교육 세션 · 참석·서명·이해도',")]), true);
   add('dotSpacingGate', '구절 목록은 다 띄움',

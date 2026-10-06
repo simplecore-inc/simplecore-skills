@@ -2262,10 +2262,16 @@ const REGION_NAMES = [
   ['modal', '대화상자'],
 ];
 
-/** Requirement citations this product's documents use, in the order a reader expects them. */
-const REQ = /\b(?:SFR|PER|SER|DAR|COR|QUR|TER|SIR|UIR|PMR|PSR)-\d{3}\b/g;
-
-export function frameSpec(screen, { reqs = [] } = {}) {
+/**
+ * The four facts a reader wants before anybody's judgment, derived from the frame itself.
+ *
+ * <p>The requirement line reads the board's `requirements` declaration: `id` is the regular
+ * expression a requirement id matches, and `documents` the document names a note cites by section.
+ * A board that declares neither draws no requirement line - which numbering a project's
+ * requirements use is that project's decision, and a pattern guessing one would read another
+ * project's ids into this board.
+ */
+export function frameSpec(screen, { reqs = [], requirements = null } = {}) {
   const own = screen.spec ?? {};
   const body = screen.body ?? '';
   const notes = screen.notes ?? '';
@@ -2302,13 +2308,17 @@ export function frameSpec(screen, { reqs = [] } = {}) {
   // The trace table decides which requirement a SCREEN answers; the notes' own citations are the
   // frame arguing about one and belong to the sentence, not to this line. Where the board declares
   // no inventory, the citations are all there is.
-  const cited = [...new Set(notes.match(REQ) ?? [])];
+  const req = requirements?.id ? new RegExp(`\\b(?:${requirements.id})\\b`, 'g') : null;
+  const cited = req ? [...new Set(notes.match(req) ?? [])] : [];
   const answered = reqs.length ? reqs : cited;
-  // Stop at the number. `\S*` swallowed the markup that follows a citation - 「화면 목록 5.2」
-  // came back as `화면 목록 5.2)</strong>`, and an unclosed tag in a derived line breaks the frame
-  // it was meant to describe.
-  const docs = [...new Set([...notes.matchAll(/(?:화면 목록|메뉴 구조|알림 연계 가이드|SSO 가이드)\s?[\d.]+(?:장|절)?/g)]
-    .map((m) => m[0].replace(/[.]$/, '')))];
+  // Stop at the number. `\S*` swallowed the markup that follows a citation - 「<document> 5.2」
+  // came back as `<document> 5.2)</strong>`, and an unclosed tag in a derived line breaks the
+  // frame it was meant to describe.
+  const names = (requirements?.documents ?? []).map((n) => n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+  const docs = names.length
+    ? [...new Set([...notes.matchAll(new RegExp(`(?:${names.join('|')})\\s?[\\d.]+(?:장|절)?`, 'g'))]
+      .map((m) => m[0].replace(/[.]$/, '')))]
+    : [];
   const 요구사항 = own['대응 요구사항'] ?? [...answered, ...docs].join(' · ');
 
   // `AUTH:` and `DATA:` are the same kind of line as the four - a fact about the frame, not an

@@ -20,6 +20,11 @@
 //   board - true of this product only: a gate that parses a document format this project
 //              chose, or knows this product's own data shapes. `board.gates.mjs`
 //
+// **A gate whose vocabulary is the board's declares where it reads it** - `configuredBy` names the
+// `board.config.mjs` key (`'sourceWords'`, `'site.languages'`). Where the board declares nothing
+// there, the gate holds the board to nothing and returns no finding; `node wf.mjs doctor` names it
+// as not configured, so a gate is never switched off without a line saying so.
+//
 // A gate put one level too high fires on boards it does not describe; one level too low is
 // rewritten by the next project that needs it. When in doubt, ask whether it would still be
 // right on somebody else's board - that is the whole test.
@@ -36,7 +41,8 @@ import {
 import { sectionCoverageGate } from './coverage.mjs';
 import { splitPlacementGate } from './split.mjs';
 import { chromeStyledGate } from './chrome.mjs';
-import { frameManifestGate, parityListGate, roadmapPlacementGate, docFrameRefGate, docLinkGate, docRegistryGate, roleDocGate, featureKeyDocGate } from './documents.mjs';
+import { parityListGate, docFrameRefGate, docLinkGate, docRegistryGate, roleDocGate, featureKeyDocGate } from './documents.mjs';
+import { unreadDocumentNotices } from '../document-reads.mjs';
 
 /**
  * The gates that hold on every board, whatever it draws and whatever pattern it is in.
@@ -67,9 +73,7 @@ export const CORE_GATES = [
   controlVocabularyGate,
   panelVerbGate,
   backControlGate,
-  frameManifestGate,
   parityListGate,
-  roadmapPlacementGate,
   docFrameRefGate,
   docLinkGate,
   docRegistryGate,
@@ -101,11 +105,31 @@ export function gatesFor(ctx) {
 }
 
 /**
+ * The value at a dotted `board.config.mjs` path - `'site.languages'` → `config.site.languages`.
+ *
+ * <p>An empty list counts as undeclared: a vocabulary of nothing would refuse every word, which is
+ * not what a board that wrote `[]` meant.
+ */
+export function configured(config, path) {
+  const value = path.split('.').reduce((v, k) => (v == null ? v : v[k]), config);
+  return Array.isArray(value) ? value.length > 0 : value != null && value !== '';
+}
+
+/** The gates this board runs that read a vocabulary the board has not declared. */
+export function unconfiguredGates(ctx) {
+  return gatesFor(ctx).filter((g) => g.configuredBy && !configured(ctx.config, g.configuredBy.key));
+}
+
+/**
  * Run the gates of one stage. Anything found stops the build.
  *
  * <p>Async because a gate may need to import the board's own data rather than re-derive it. A
  * synchronous runner would take the promise, find no `.length`, and skip the gate in silence -
  * which looks exactly like a gate that found nothing.
+ *
+ * <p>After the last stage, every declared document no gate read is named. It is printed before the
+ * refusals end the process, because a board that is refused for something else is the board most
+ * likely to be read as fully checked once that something is fixed.
  */
 export async function runGates(ctx, stage) {
   let fatal = 0;
@@ -113,8 +137,11 @@ export async function runGates(ctx, stage) {
     if ((gate.stage ?? 'built') !== stage) continue;
     const messages = (await gate.run(ctx)) ?? [];
     if (!messages.length) continue;
-    console.error(`refusing to build — ${gate.title}:\n  ${[...new Set(messages)].join('\n  ')}`);
+    console.error(`refusing to build - ${gate.title}:\n  ${[...new Set(messages)].join('\n  ')}`);
     fatal += 1;
+  }
+  if (stage === 'built') {
+    for (const line of unreadDocumentNotices(ctx.documentReads)) console.error(line);
   }
   if (fatal) process.exit(1);
 }

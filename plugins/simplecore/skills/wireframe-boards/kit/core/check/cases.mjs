@@ -18,17 +18,6 @@ export function cases(t) {
   add('chromeStyledGate', '패턴이 킷의 크롬을 스타일하지 않는다', base({ styles: '' }), true);
   add('chromeStyledGate', '킷의 두 층만으로 크롬이 선다', base({ styles: KIT_CSS }), false);
 
-  add('frameManifestGate', '§4.2가 한 장 적게 센다',
-    withDocs({ 'fm.md': '**X. 구역 (D · 2)** — 하나\n' }), true);
-  add('frameManifestGate', '§4.2와 manifest가 같다',
-    withDocs({ 'fm.md': '**X. 구역 (D · 2)** — 하나 / 둘\n' }), false);
-  const FM_43 = (total, row) => `**X. 구역 (D · 2)** — 하나 / 둘\n\n### 4.3 합계\n\n| 구분 | 프레임 |\n| --- | --- |\n| 1단계 (X ${row}) | ${row} |\n| **합계** | **${total}** (그린 것 ${total}) |\n`;
-  add('frameManifestGate', '머리글의 수가 항목과 다름',
-    withDocs({ 'fm.md': '**X. 구역 (D · 3)** — 하나 / 둘\n' }), true);
-  add('frameManifestGate', '§4.3 합계가 보드와 다름', withDocs({ 'fm.md': FM_43(3, 2) }), true);
-  add('frameManifestGate', '§4.3 행 합이 합계와 다름', withDocs({ 'fm.md': FM_43(2, 1) }), true);
-  add('frameManifestGate', '§4.3이 보드와 같다', withDocs({ 'fm.md': FM_43(2, 2) }), false);
-
   // The list only shrinks: a frame the board draws and the list no longer names was walked.
   add('parityListGate', '걸은 프레임이 목록에서 지워졌다',
     withDocs({ 'pa.md': '### X 구역\n- X-01 `x-01-a` - 하나\n' }), false);
@@ -39,26 +28,14 @@ export function cases(t) {
   add('parityListGate', '머리글의 장 수는 목록이 아니다',
     withDocs({ 'pa.md': '### X 구역 (5장)\n- X-01 `x-01-a` - 하나\n' }), false);
 
-  add('roadmapPlacementGate', '어느 단계에도 없는 바탕 화면',
-    withDocs({ 'rm.md': '- **화면 1장**\n  - (X) **X-01** 하나\n' }), true);
-  add('roadmapPlacementGate', '단계의 「화면 N장」이 어긋남',
-    withDocs({ 'rm.md': '- **화면 5장**\n  - (X) **X-01** 하나 / **X-02** 둘\n' }), true);
-  add('roadmapPlacementGate', '두 단계에 놓임',
-    withDocs({ 'rm.md': '- **화면 2장**\n  - (X) **X-01** 하나 / **X-02** 둘\n\n## 다음\n- **화면 1장**\n  - (X) **X-01** 또 하나\n' }), true);
-  add('roadmapPlacementGate', '한 단계씩 담고 있다', withDocs({ 'rm.md': ROADMAP_OK }), false);
-  // The two summary tables under the phase lists - checked apart from the ids, because the ids were
-  // right the whole time the tables said 400.
-  const RM_TBL = (dist, total, stage) => '### W2. 하나\n- **화면 2장**\n  - (X) **X-01** 하나 / **X-02** 둘\n\n'
-    + `# 배치 검산\n\n| 클러스터 | 총 | 배치 |\n| --- | --- | --- |\n| X ${total} | ${total} | W2 ${dist} |\n| **합계** | **2** | |\n\n| W2 | ${stage} |\n`;
-  add('roadmapPlacementGate', '배치 검산이 실제와 다름', withDocs({ 'rm.md': RM_TBL(1, 2, 2) }), true);
-  add('roadmapPlacementGate', '클러스터 총계가 실제와 다름', withDocs({ 'rm.md': RM_TBL(3, 3, 2) }), true);
-  add('roadmapPlacementGate', '단계별 화면 수가 실제와 다름', withDocs({ 'rm.md': RM_TBL(2, 2, 3) }), true);
-  add('roadmapPlacementGate', '두 표가 배치와 같다', withDocs({ 'rm.md': RM_TBL(2, 2, 2) }), false);
-
   add('docFrameRefGate', '없는 프레임을 부른다',
     withDocs({ 'rm.md': ROADMAP_OK, 'note.md': '자세한 것은 X-77을 본다.\n' }), true);
-  add('docFrameRefGate', 'KOSHA P-94는 프레임이 아니다',
-    withDocs({ 'rm.md': ROADMAP_OK, 'note.md': 'KOSHA GUIDE P-94 작업허가서.\n' }), false);
+  // An id of another numbering scheme is exempt only where the board names it: the gate carries
+  // no list of its own, because a guide number one project cites is a missing frame on another.
+  const NOT_FRAMES = (notFrames) => withDocs({ 'rm.md': ROADMAP_OK, 'note.md': 'GUIDE P-94 work permit.\n' },
+    { config: { ...config, documents: { ...DOCS, notFrames } } });
+  add('docFrameRefGate', 'another scheme\'s id the board does not name is a missing frame', NOT_FRAMES([]), true);
+  add('docFrameRefGate', 'another scheme\'s id named in documents.notFrames is not a frame', NOT_FRAMES(['P-94']), false);
   // A cluster that runs past 99 numbers into three digits, and the id reader has to widen with it.
   // Reading two digits only does not make `X-100` a wrong id - it makes it no id at all, and this
   // gate then reports zero on a reference nobody resolved.

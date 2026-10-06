@@ -88,20 +88,28 @@ default named here, or switches its feature off.
 | `split` | the axis the output is written along → § Splitting a board along a declared axis |
 | `code.appRoots` | the front-end apps, relative to the board folder, whose routes `wf.mjs coverage` compares with the board |
 | `watermark` | `{ logo, opacity, widthRatio }` for `wf.mjs pdf --watermark` |
-| `site.languages` | the languages the product ships in; simplix-basic's language-list gate holds every language switch a frame draws to it |
+| `site.languages` · `site.notLanguages` | the languages the product ships in, and the language-tab labels that are not languages (an all-languages filter, a side-by-side view); simplix-basic's `languageSetGate` holds every language switch a frame draws to them, and runs only where `site.languages` is declared |
+| `sourceWords` | every word a source badge may carry; simplix-basic's `sourceWordGate` refuses any other, and runs only where the list is declared |
 | `compoundTerms` | terms written with a middle dot that are one term (simplix-basic's middle-dot spacing gate keeps them whole) |
+| `requirements` | `{ id, outside, documents }` - the regular expression a requirement id matches, the heading of the inventory section listing screens beyond the requirements, and the documents a note cites by section; the requirement trace and simplix-basic's frame spec read them, and draw no requirement line without `id` |
 | `documents.scan` | directories whose `.md` files are read for frame ids and links (`docFrameRefGate`, `docLinkGate`, `docRegistryGate`) |
 | `documents.notFrames` · `documents.otherIdScheme` | ids, and whole files, whose `X-nn` numbering is not a frame id → § What the gates catch that reading would not |
-| `documents.frameManifest` | the design document's list of what exists; `frameManifestGate` holds each cluster's items to the manifest |
 | `documents.parity` | a parity walk's list of frames left; `parityListGate` refuses a line naming a frame the board does not draw |
-| `documents.roadmap` | the plan placing every base screen in one phase (`roadmapPlacementGate`) |
 | `documents.registry` | the register of documents `docRegistryGate` holds to the scanned files |
 | `documents.personas` | the document every role in `src/roles.mjs` must appear in (`roleDocGate`) |
 | `documents.pricing` | the price list every `features` key must appear in (`featureKeyDocGate`) |
-| `documents.frameInventory` | the inventory whose trace table names the requirements each screen answers; a pattern's frame spec draws them where it has one |
+| `documents.frameInventory` | the inventory whose trace table names the requirements each screen answers, read with `requirements.id`; a pattern's frame spec draws them where it has one |
+| `documents.<key>` | any other document a gate in `board.gates.mjs` reads - a design document's frame list, a roadmap, an IA tree. A format one project chose is parsed by that project's gate |
 
 A `documents` path may name one file or a directory of `.md` files, and a path that does not exist
 switches that gate off rather than failing it.
+
+**The build names every declared document no gate read**, after the last gates run and before a
+refusal ends the build. A key nothing reads holds the board to nothing, and a misspelled key or a
+document whose gate is not there looks exactly like a document that agrees with the board.
+`node wf.mjs doctor` names a pattern gate whose vocabulary the board has not declared, and every
+recorded config change the board carries a key for (`CONFIG_CHANGES` in `kit/core/migrations.mjs`;
+`node wf.mjs migrations` lists them all). None of these stops the build.
 
 ## Drawing with the board open: `./dev.sh`
 
