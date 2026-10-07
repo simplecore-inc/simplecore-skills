@@ -438,6 +438,9 @@ def _walk(node: dict, slide: Page, head_component: str, use: str | None = None,
                 _walk(child, slide, head_component, tag, depth)
             return
         slide.uses.append(Use(tag, attrs, node.get("key", ""), depth, use))
+        # A component that prints its own argument (a prose paragraph, a heading, a
+        # note) is a leaf `use` carrying the printed string itself.
+        _collect_text(node, slide, tag)
         for child in node.get("children", []):
             _walk(child, slide, head_component, tag, depth + 1)
         return
@@ -448,11 +451,15 @@ def _walk(node: dict, slide: Page, head_component: str, use: str | None = None,
         slide.texts.extend(cells)
         slide.spans.extend(Span(c, use, "cell", table) for c in cells)
     elif role in ("text", "title"):
-        runs = node.get("runs")
-        text = "".join(r.get("text", "") for r in runs) if runs else node.get("text", "")
-        if text.strip():
-            slide.texts.append(text)
-            origin = str(node.get("origin", "")).lstrip("←").strip()
-            slide.spans.append(Span(text, use, origin, node.get("key", "")))
+        _collect_text(node, slide, use)
     for child in node.get("children", []):
         _walk(child, slide, head_component, use, depth)
+
+
+def _collect_text(node: dict, slide: Page, use: str | None) -> None:
+    runs = node.get("runs")
+    text = "".join(r.get("text", "") for r in runs) if runs else node.get("text", "")
+    if text.strip():
+        slide.texts.append(text)
+        origin = str(node.get("origin", "")).lstrip("←").strip()
+        slide.spans.append(Span(text, use, origin, node.get("key", "")))

@@ -114,6 +114,21 @@ class SyntheticTests(unittest.TestCase):
         r = reader(self.deck, recording(slides=[a, b]))
         self.assertEqual(len(list(r.tables(join_continued=True))), 2)
 
+    def test_text_a_leaf_component_prints_is_read(self):
+        # A kit component that prints its own argument (a prose paragraph, a heading)
+        # arrives as a `use` node carrying `text` or `runs` and no children.
+        page = body(1, 4, 4, texts=("본문",))
+        page["blocks"][0]["children"] += [
+            {"role": "use", "key": "node#11", "tag": "prose", "attrs": {},
+             "text": "참조 캡처 재생으로 확인한다([증빙 1])."},
+            {"role": "use", "key": "node#12", "tag": "sg-tone-head", "attrs": {},
+             "runs": [{"text": "2) "}, {"text": "특허"}, {"text": "(증빙 7)"}]},
+        ]
+        p = reader(self.deck, recording(slides=[page])).body_pages()[0]
+        self.assertIn("참조 캡처 재생으로 확인한다([증빙 1]).", p.texts)
+        self.assertIn("2) 특허(증빙 7)", p.texts)
+        self.assertEqual([s.component for s in p.spans if "증빙" in s.text], ["prose", "sg-tone-head"])
+
     def test_entry_importing_a_file_the_server_lacks_is_an_error(self):
         rec = recording(files={"pages/a.xml": "<Fragment/>"})
         rec["resources"]["sg://deck/markup"] = rec["resources"]["sg://deck/markup"].replace(

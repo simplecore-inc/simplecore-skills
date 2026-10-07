@@ -22,7 +22,13 @@ Config (`evidence`, required; `null` when the deck uses no such notation):
     }
 
 With `pagesColumn`, an uncited item whose listed pages are all in chapters not
-yet typeset is reported as pending rather than as a defect.
+yet typeset is reported as pending rather than as a defect, and the column is held
+to the body pages that print each item: a listed page that does not print it, a
+page that prints it and is not listed, and a page listed twice are each a finding.
+A reader turns to the listed page to find the citation, so a stale list sends them
+to a page that never mentions the item. A listed id written as a part numeral and
+an ordinal (「Ⅰ 04」, for a part whose pages carry no chapter in citations) names
+that part's n-th body page.
 """
 from __future__ import annotations
 
@@ -79,6 +85,59 @@ def planned_pages(table: str, tag: str, column: int, numerals: list[str]) -> dic
     return out
 
 
+def listed_cells(table: str, tag: str, column: int) -> dict[int, list[str]]:
+    """{item: [page id as written]} from the column that lists the citing pages."""
+    row = re.compile(rf"^\|\s*{re.escape(tag)}\s*(\d+)\s*\|(.*)\|\s*$", re.M)
+    out: dict[int, list[str]] = {}
+    for m in row.finditer(table):
+        cells = [c.strip() for c in m.group(2).split("|")]
+        cell = cells[column] if -len(cells) <= column < len(cells) else ""
+        out[int(m.group(1))] = [x.strip() for x in re.split(r"[,、]", cell) if x.strip()]
+    return out
+
+
+def resolve(written: str, pages: dict, by_part: dict) -> str | None:
+    """The page id a written id names: itself, or 「<part> NN」 as the part's NN-th page."""
+    key = re.sub(r"\s+", " ", written).strip()
+    if key in pages:
+        return key
+    m = re.fullmatch(r"(\S+) (\d{2})", key)
+    if m and m.group(1) in by_part and 0 < int(m.group(2)) <= len(by_part[m.group(1)]):
+        return by_part[m.group(1)][int(m.group(2)) - 1]
+    return None
+
+
+def listing_findings(reader: DeckReader, table: str, tag: str, column: int,
+                     cited_rx: re.Pattern, table_rel: str) -> list[tuple[str, str]]:
+    """The citing-pages column against the body pages that print each item."""
+    pages = {p.page_id: p for p in reader.body_pages()}
+    by_part: dict[str, list[str]] = {}
+    for p in reader.body_pages():
+        by_part.setdefault(p.part or "", []).append(p.page_id)
+    printed: dict[int, set[str]] = {}
+    for pid, p in pages.items():
+        for m in cited_rx.finditer(" ".join(p.texts)):
+            for part in re.split(r"[·,]", m.group(1)):
+                if part.strip().isdigit():
+                    printed.setdefault(int(part.strip()), set()).add(pid)
+    bad = []
+    for n, written in sorted(listed_cells(table, tag, column).items()):
+        seen: set[str] = set()
+        for w in written:
+            pid = resolve(w, pages, by_part)
+            if pid is None:
+                continue                      # a page not typeset yet: pending, not judged
+            if pid in seen:
+                bad.append((table_rel, f"{tag} {n} lists {w} twice"))
+                continue
+            seen.add(pid)
+            if pid not in printed.get(n, set()):
+                bad.append((table_rel, f"{tag} {n} lists {w}, which does not print {tag} {n}"))
+        for pid in sorted(printed.get(n, set()) - seen):
+            bad.append((table_rel, f"{tag} {n} is printed on {pid}, which its row does not list"))
+    return bad
+
+
 def settings(deck: DeckConfig) -> dict | None:
     """The `evidence` declaration, or None when the deck declares the notation unused."""
     if not deck.has("evidence"):
@@ -126,6 +185,8 @@ def check(reader: DeckReader, deck: DeckConfig) -> tuple[list[str], list[tuple[s
             typeset.add(p.part or "")
             if p.chapter_key:
                 typeset.add(p.chapter_key)
+    if column is not None:
+        bad += listing_findings(reader, table, tag, int(column), cited_rx, table_rel)
     pending = []
     for n in sorted(defined - set(cited)):
         if planned.get(n) and not planned[n] & typeset:

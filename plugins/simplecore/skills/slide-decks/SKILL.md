@@ -688,6 +688,10 @@ agent makes both**, with the same questions, the same shortlists and the same co
 Before the first such step in a session, read
 [references/decisions.md](references/decisions.md): how availability is checked, the steps and
 their candidates, why a shortlist and not the catalogue, and how the report names who decided.
+Before auditing the references that send a reader to another page (contents, lookup table,
+page-id, annex, evidence and frame citations), read
+[references/crossref-audit.md](references/crossref-audit.md): the machine checks come first, and
+Jev judges a citation by its whole row or sentence, in two stages.
 
 ## A run of pages must not read as one page repeated
 

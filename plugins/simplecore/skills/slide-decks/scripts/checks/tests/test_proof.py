@@ -34,7 +34,7 @@ class ProofTests(unittest.TestCase):
         self.tmp.cleanup()
 
     def run_on(self, text: str, slides=None):
-        rec = recording(files={"pages/a.xml": page(text)}, slides=slides or [body(1, 3, 1)])
+        rec = recording(files={"pages/a.xml": page(text)}, slides=slides or [body(1, 3, 1, texts=(text,))])
         return proof.check(reader(self.deck, rec), self.deck)
 
     def test_bare_citation_of_an_undefined_item(self):
@@ -65,16 +65,39 @@ class ProofTests(unittest.TestCase):
         lines, bad, code = self.run_on("[증빙 1] · [증빙 2]")
         self.assertEqual((bad, code), ([], 0))
         self.assertIn("not typeset yet: 3", lines[0])
-        slides = [body(1, 3, 1), body(2, 4, 2)]
+        slides = [body(1, 3, 1, texts=("[증빙 1] · [증빙 2]",)), body(2, 4, 2)]
         _, bad, code = self.run_on("[증빙 1] · [증빙 2]", slides)
         self.assertEqual(bad, [("evidence.md", "증빙 3 is cited by no page")])
 
     def test_shorthand_number_without_the_tag(self):
         raw = page("[증빙 1] [증빙 2] [증빙 3]").replace(
             "/>", 'rows=\'[["근거", "[2·5]"]]\' />')
-        rec = recording(files={"pages/a.xml": raw}, slides=[body(1, 3, 1), body(2, 4, 2)])
+        rec = recording(files={"pages/a.xml": raw},
+                        slides=[body(1, 3, 1, texts=("[증빙 1] [증빙 2]",)), body(2, 4, 2)])
         _, bad, _ = proof.check(reader(self.deck, rec), self.deck)
         self.assertEqual(bad, [("a.xml", "「[2·5]」 cites by number without 「증빙」")])
+
+    def test_listed_pages_held_to_the_pages_that_print_the_item(self):
+        table = ("| 번호 | 이름 | 인용 쪽 |\n| --- | --- | --- |\n"
+                 "| 증빙 1 | 시험 결과 | Ⅲ-1 01, Ⅲ-1 02 |\n| 증빙 2 | 실측 | Ⅲ-1 01, Ⅲ-1 01 |\n")
+        (self.root / "evidence.md").write_text(table, encoding="utf-8")
+        slides = [body(1, 3, 1, texts=("[증빙 1·2]",)), body(2, 3, 1, texts=("본문",)),
+                  body(3, 3, 1, texts=("증빙 1로 낸다.",))]
+        _, bad, _ = self.run_on("[증빙 1·2]", slides)
+        self.assertEqual(bad, [("evidence.md", "증빙 1 lists Ⅲ-1 02, which does not print 증빙 1"),
+                               ("evidence.md", "증빙 1 is printed on Ⅲ-1 03, which its row does not list"),
+                               ("evidence.md", "증빙 2 lists Ⅲ-1 01 twice")])
+
+    def test_a_part_ordinal_names_the_parts_nth_page(self):
+        table = "| 번호 | 이름 | 인용 쪽 |\n| --- | --- | --- |\n| 증빙 1 | 시험 결과 | Ⅲ 02 |\n"
+        (self.root / "evidence.md").write_text(table, encoding="utf-8")
+        slides = [body(1, 3, 1, texts=("본문",)), body(2, 3, 2, texts=("[증빙 1]",))]
+        _, bad, _ = self.run_on("[증빙 1]", slides)
+        self.assertEqual(bad, [])
+        slides = [body(1, 3, 1, texts=("[증빙 1]",)), body(2, 3, 2, texts=("본문",))]
+        _, bad, _ = self.run_on("[증빙 1]", slides)
+        self.assertEqual(bad, [("evidence.md", "증빙 1 lists Ⅲ 02, which does not print 증빙 1"),
+                               ("evidence.md", "증빙 1 is printed on Ⅲ-1 01, which its row does not list")])
 
     def test_notation_declared_unused_and_undeclared(self):
         self.deck.data["evidence"] = None

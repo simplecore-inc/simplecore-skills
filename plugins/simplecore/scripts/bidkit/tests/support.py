@@ -58,9 +58,20 @@ def body(n: int, part: int, chapter: int, tables: list | None = None, texts: tup
                  tables, texts)
 
 
+def listing(slides: list) -> str:
+    """`sg://deck` as the server prints it: one `N master=NAME` line per slide."""
+    lines = []
+    for s in slides:
+        master = next((b.get("key", "").removeprefix("master:") for b in s.get("blocks", [])
+                       if b.get("role") == "master"), "")
+        lines.append(f"{s['slide']} master={master}" if master else str(s["slide"]))
+    return "\n".join(lines) + "\n"
+
+
 def recording(files: dict[str, str] | None = None, slides: list | None = None) -> dict:
     return {"resources": {"sg://deck/markup": markup(files or {}),
-                          "sg://deck/content?format=json": json.dumps(slides or [], ensure_ascii=False)}}
+                          "sg://deck/content?format=json": json.dumps(slides or [], ensure_ascii=False),
+                          "sg://deck": listing(slides or [])}}
 
 
 def reader(deck: DeckConfig, rec: dict) -> DeckReader:
