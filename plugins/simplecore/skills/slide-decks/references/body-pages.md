@@ -93,7 +93,7 @@ Every page carries, beside its body:
   that the deck's chapter list is the only place its absence shows. When
   one page-file becomes three deck pages, all three carry the same declaration.
 - **The head values**: the folio, the part, the chapter line, the title, the claim line and the
-  deck's two meta fields. Never drop one - print 「해당 없음」 or a hyphen. The deck's instructions
+  deck's two meta fields. A meta field the page has nothing for is passed empty, never as a placeholder word; the component draws no pair for it. The deck's instructions
   hold what each means. The chapter line is 「장 번호. 장 이름 · 이 쪽의 주제」, and it stays the
   same across the deck pages of one page-file while the title and the claim change.
 

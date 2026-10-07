@@ -424,8 +424,9 @@ height of every rendered band is read off the render, by a project's own check u
 `checks.local`: `foothole` measures the paper above the band, not the band's values.
 
 Either way **a page passes its head values and nothing else**, and
-a field the page has nothing for takes 「해당 없음」 or 「 - 」 - a head that changes shape
-between pages is the thing the component exists to prevent.
+a field the page has nothing for is left empty and the component draws no pair for it, with no
+placeholder word and no separator left over - a placeholder prints as a pair that says nothing, and
+the component is what keeps the remaining pairs laid out the same on every page.
 
 - **The first row is `0` + the part number + the part's name.** The leading zero is the
   lightest neutral and the digit is that part's colour, so the character that changes
