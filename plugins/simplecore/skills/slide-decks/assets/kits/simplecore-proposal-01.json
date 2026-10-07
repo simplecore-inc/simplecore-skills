@@ -64,6 +64,9 @@
       "stat-grid": ["items[].label"],
       "deflist": ["items[].term"],
       "evidence-stat": ["claim"],
+      "org-people": ["top", "groups[].head"],
+      "profile": ["name", "role", "facts[].label"],
+      "career-line": ["head", "rows[].label"],
       "table": ["rows[0][]"],
       // A tender form page: the form number and the form name it prints as issued.
       "form-page": ["label", "name"],
@@ -208,7 +211,8 @@
     "steps": [["items[].head", "items[].body"]], "timeline": [["items[].head", "items[].body"]],
     "key-summary": [["items[].head", "items[].body"]], "fig-column": [["notes[].head", "notes[].body"]],
     "flow": [["steps[].head", "steps[].note"]], "value-chain": [["items[].a", "items[].b"]],
-    "risk-response": [["items[].risk", "items[].detail"]]
+    "risk-response": [["items[].risk", "items[].detail"]],
+    "profile": [["facts[].label", "facts[].value"]]
   },
 
   // The inks fine print is set in: lead, caption, footnote (doc.inkMuted). The body ink
