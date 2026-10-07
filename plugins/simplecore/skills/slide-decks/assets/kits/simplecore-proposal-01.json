@@ -89,7 +89,7 @@
     "furniture": ["title", "sub", "caption", "chapter", "part", "refTitle", "badge", "notes",
                   "description", "no", "name", "kicker", "locator", "lede", "cells"],
     // Layout and data that are not printed copy.
-    "layout": ["template", "src", "alt", "tone", "icon", "w", "h", "variant", "size", "master",
+    "layout": ["template", "src", "photo", "alt", "tone", "icon", "w", "h", "variant", "size", "master",
                "termW", "labelW", "figW", "aGrow", "bGrow", "stretch", "marker", "numbered",
                "lastTotal", "level", "code", "folioPrefix", "folioRestart", "columns", "when",
                "frame", "align", "valign"],
