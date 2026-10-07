@@ -22,6 +22,9 @@ Vocabulary (the kit's `contents` entry, or a project override):
     "contents": { "part":    { "number": "ch.no", "page": "ch.page" },
                   "chapter": { "number": "it.no", "page": "it.page" } }
 
+A contents page that stands after the first annex page is an annex's own and is
+not read: its numbers are on the annex series, which a project check holds.
+
 Each name is the data field a printed contents node is bound to: the content
 reading marks a node drawn from a JSON item list as `←row[i].<field>`. A
 divider's part is the number its master name ends with (`PART-3`).
@@ -102,8 +105,13 @@ def entries(reader: DeckReader, deck: DeckConfig) -> list[Entry]:
     except json.JSONDecodeError as e:
         raise DeckError("sg://deck/content?format=json is not JSON") from e
     numerals = set(reader.pages_config.numerals)
+    # A contents page standing among the annexes lists an annex's own documents on the
+    # annex series, not the body's parts; the body's contents come before any annex page.
+    annex_from = next((s.n for s in reader.slides() if reader.pages_config.is_("annex", s.master)), None)
     out: list[Entry] = []
     for item in data:
+        if annex_from is not None and item["slide"] > annex_from:
+            continue
         nodes: list = []
         for block in item.get("blocks", []):
             _texts(block, nodes)

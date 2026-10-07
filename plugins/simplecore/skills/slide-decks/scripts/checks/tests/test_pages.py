@@ -167,6 +167,14 @@ class ContentsTests(unittest.TestCase):
         self.assertEqual([i["text"] for i in args["items"]], ["1", "4"])
         self.assertTrue(all(i["key"].startswith("node#2") for i in args["items"]))
 
+    def test_a_contents_page_inside_an_annex_is_not_the_body_s(self):
+        slides = [slide(1, "COVER-ART"), toc_slide(2, [("Ⅰ", "1", [("1.", "2")])]), slide(3, "PART-1"),
+                  body(4, 1, 1), slide(5, "ANNEX-PLAIN"), toc_slide(6, [("Ⅰ", "2", [("1.", "7")])])]
+        rec = recording(slides=slides)
+        rec["resources"]["sg://deck"] = "generation 4  revision 9  root main.sgx"
+        wrong, pending = contents.judge(contents.entries(reader(self.deck, rec), self.deck))
+        self.assertEqual(([e.slide for e in wrong], [e.slide for e in pending]), ([], []))
+
     def test_refused_write_is_an_error(self):
         r = self.deck_with([("Ⅰ", "9", [])])
         r.session.t.tools["set_texts"] = {"content": [{"type": "text", "text": "stale"}], "isError": True}
