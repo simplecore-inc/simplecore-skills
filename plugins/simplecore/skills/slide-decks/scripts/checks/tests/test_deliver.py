@@ -2,12 +2,14 @@
 import base64
 import importlib.util
 import json
+import shutil
 import subprocess
 import sys
 import tempfile
 import unittest
 import zipfile
 from argparse import Namespace
+from io import BytesIO
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -384,6 +386,47 @@ class VersionedTests(unittest.TestCase):
         (self.root / "tools" / "version.txt").write_text("next one\n", encoding="utf-8")
         with self.assertRaises(ConfigError):
             deliver.plan(self.project, None, None)
+
+
+@unittest.skipUnless(importlib.util.find_spec("fitz") and importlib.util.find_spec("PIL")
+                     and shutil.which("rsvg-convert"), "needs PyMuPDF, Pillow and rsvg-convert")
+class ShrinkTests(unittest.TestCase):
+    """The image rewrite on a PDF rsvg-convert drew: gradient text beside a picture to resample."""
+
+    def setUp(self):
+        from PIL import Image
+        self.tmp = tempfile.TemporaryDirectory()
+        root = Path(self.tmp.name)
+        buf = BytesIO()
+        Image.new("RGB", (1200, 1200), (200, 30, 30)).save(buf, "PNG")
+        svg = ('<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300"><defs>'
+               '<linearGradient id="g" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="40" '
+               'spreadMethod="repeat"><stop offset="0" stop-color="#123"/><stop offset="1" stop-color="#48c"/>'
+               '</linearGradient></defs><text x="10" y="40" font-size="32" fill="url(#g)">제목</text>'
+               '<image x="10" y="60" width="100" height="100" href="data:image/png;base64,'
+               f'{base64.b64encode(buf.getvalue()).decode()}"/></svg>')
+        (root / "page.svg").write_text(svg, encoding="utf-8")
+        self.pdf = root / "page.pdf"
+        subprocess.run(["rsvg-convert", "-f", "pdf", "-o", str(self.pdf), str(root / "page.svg")], check=True)
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def test_gradient_text_keeps_its_pattern_through_the_image_rewrite(self):
+        import fitz
+        self.assertEqual(deliver.shrink_images(self.pdf, 150, 88), 1)
+        doc = fitz.open(self.pdf)
+        self.assertEqual(deliver.undefined_resources(doc), [])
+        self.assertNotEqual(doc.xref_get_key(doc[0].xref, "Resources/Pattern")[0], "null")
+
+    def test_a_pattern_the_page_names_and_lacks_is_reported(self):
+        import fitz
+        doc = fitz.open(self.pdf)
+        self.assertEqual(deliver.undefined_resources(doc), [])
+        doc.xref_set_key(doc[0].xref, "Resources/Pattern", "null")
+        lost = deliver.undefined_resources(doc)
+        self.assertEqual(len(lost), 1)
+        self.assertTrue(lost[0].startswith("page 1: Pattern /"), lost)
 
 
 class VersionedWithCopiesTests(unittest.TestCase):

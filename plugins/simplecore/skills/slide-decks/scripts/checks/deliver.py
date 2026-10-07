@@ -561,12 +561,48 @@ def write_raster(files: list[Path], out: Path, page_w: float, scale: float) -> i
     return len(pages)
 
 
+# Resource categories a page's content names by key and the image rewrite has no reason to
+# change. MuPDF's rewrite rebuilds a page's resource dictionary and can drop one (a pattern
+# that fills gradient text is lost while the content still names it, so the text vanishes
+# from the page without an error), so each is put back when the rewrite leaves it out.
+KEPT_RESOURCES = ("Pattern", "Shading", "ExtGState", "ColorSpace", "Font", "Properties")
+# Content operators naming a pattern or a shading, checked against the page's resources.
+RESOURCE_USES = {"Pattern": re.compile(rb"/([^\s/\[\]<>(){}%]+)\s+(?:scn|SCN)\b"),
+                 "Shading": re.compile(rb"/([^\s/\[\]<>(){}%]+)\s+sh\b")}
+
+
+def undefined_resources(doc: Any) -> list[str]:
+    """`page n: Category /name` for every pattern or shading a page's content names and its resources lack."""
+    out = []
+    for page in doc:
+        content = b"".join(doc.xref_stream(x) or b"" for x in page.get_contents())
+        for category, use in RESOURCE_USES.items():
+            named = {m.decode("latin-1") for m in use.findall(content)}
+            kind, value = doc.xref_get_key(page.xref, f"Resources/{category}")
+            if kind == "xref":
+                value = doc.xref_object(int(value.split()[0]))
+            have = (set(re.findall(r"/([^\s/\[\]<>(){}%]+)(?=[\s<\[/(])", value))
+                    if kind in ("dict", "xref") else set())
+            out += [f"page {page.number + 1}: {category} /{n}" for n in sorted(named - have)]
+    return out
+
+
 def shrink_images(pdf: Path, dpi: int, quality: int) -> int:
     """Resample every picture to `dpi` where it is placed, re-encode at `quality`, subset
     the faces; the text and the vector drawing are untouched. Returns the page count."""
     fitz = need("fitz")
     doc = fitz.open(pdf)
+    kept = [{c: doc.xref_get_key(page.xref, f"Resources/{c}") for c in KEPT_RESOURCES} for page in doc]
     doc.rewrite_images(dpi_threshold=dpi + 1, dpi_target=dpi, quality=quality, lossy=True, lossless=True)
+    for page, before in zip(doc, kept):
+        for category, (kind, value) in before.items():
+            if kind != "null" and doc.xref_get_key(page.xref, f"Resources/{category}")[0] == "null":
+                doc.xref_set_key(page.xref, f"Resources/{category}", value)
+    lost = undefined_resources(doc)
+    if lost:
+        doc.close()
+        raise DeliveryError(f"{pdf.name}: the image rewrite left names the pages use undefined, so what "
+                            f"they draw would vanish: {', '.join(lost[:8])}{' …' if len(lost) > 8 else ''}")
     doc.subset_fonts()
     tmp = pdf.with_suffix(".tmp.pdf")
     doc.save(tmp, garbage=4, deflate=True)
