@@ -325,9 +325,14 @@ class DeckReader:
             data = json.loads(self.session.read("sg://deck/content?format=json"))
         except json.JSONDecodeError as e:
             raise DeckError("sg://deck/content?format=json is not JSON") from e
+        # A master that draws nothing (a bare form master) has no block in the
+        # content answer, so the slide's master is taken from the deck listing too;
+        # without it such a page reads as masterless and is counted as a folio.
+        listed = {int(n): m for n, m in
+                  re.findall(r"(?m)^(\d+)\s+master=(\S+)", self.session.read("sg://deck"))}
         out = []
         for item in data:
-            s = Page(n=item["slide"], master="", head={}, texts=[])
+            s = Page(n=item["slide"], master=listed.get(item["slide"], ""), head={}, texts=[])
             for block in item.get("blocks", []):
                 if block.get("role") == "master":
                     s.master = block.get("key", "").removeprefix("master:")
