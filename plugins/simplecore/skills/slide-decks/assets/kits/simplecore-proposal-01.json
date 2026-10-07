@@ -90,7 +90,7 @@
                   "description", "no", "name", "kicker", "locator", "lede", "cells"],
     // Layout and data that are not printed copy.
     "layout": ["template", "src", "photo", "alt", "tone", "icon", "w", "h", "variant", "size", "master",
-               "termW", "labelW", "figW", "aGrow", "bGrow", "stretch", "marker", "numbered",
+               "termW", "labelW", "periodW", "railW", "steps", "figW", "aGrow", "bGrow", "stretch", "marker", "numbered",
                "lastTotal", "level", "code", "folioPrefix", "folioRestart", "columns", "when",
                "frame", "align", "valign"],
     // Plain arguments holding a sentence of the document's own.
