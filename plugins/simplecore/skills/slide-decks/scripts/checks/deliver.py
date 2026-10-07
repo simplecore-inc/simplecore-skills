@@ -21,11 +21,16 @@ built pptx is copied and its PDF written at
 and `{ext}` (`pptx` or `pdf`), `{copy}/{ext}` when absent, and empty for one
 flat folder. Two volumes the templates give one path is a configuration error.
 
-A submission that ships one versioned pair instead declares
-`submission.versioned` (`deck`, `name` with `{version}`, `versionFile`, `dir`,
-`legacy`): the pair is written as `<dir>/<name>.pdf` and `.pptx`, and every
-file carrying the same name with another version, and every legacy file, is
-removed, so a version bump leaves exactly one pair.
+A submission that ships one versioned pair declares `submission.versioned`
+(`deck`, `name` with `{version}`, `versionFile`, `dir`, `legacy`): the pair is
+written as `<dir>/<name>.pdf` and `.pptx`, and every file carrying the same
+name with another version, and every legacy file, is removed, so a version
+bump leaves exactly one pair. Declared without `copies`, the pair is the whole
+submission. Declared beside `copies`, one run writes both: the pair is
+assembled from the same build as its deck's volume in `versioned.copy` (the
+first declared copy carrying the deck when absent), so the deck is not built
+twice, and a run limited by `--copy` or `--volume` writes the pair only when
+the limit includes that volume.
 
 The PDF keeps the type as text. `submission.pdf.engine` names what draws it:
 
@@ -148,6 +153,7 @@ class Volume:
     pptx: Path
     pdf: Path
     blind: bool = False    # the copy the panel reads, whose properties are cleared
+    versioned: bool = False  # the versioned pair rather than a volume of a copy
 
 
 NAME = "{title}({copy}_{label})"
@@ -271,15 +277,19 @@ def plan(project: Project, only_copy: str | None, only_volume: str | None) -> li
     if not isinstance(sub, dict):
         raise ConfigError(f"{project.path} declares no top-level `submission`")
     versioned = sub.get("versioned")
+    pair = None
     if versioned:
         if not isinstance(versioned, dict) or not versioned.get("deck") or "{version}" not in versioned.get("name", ""):
             raise ConfigError("`submission.versioned` needs `deck` and a `name` carrying {version}")
         deck = project.deck(versioned["deck"])
-        if only_volume and only_volume != versioned["deck"]:
-            raise ConfigError(f"--volume {only_volume}: the versioned submission carries {versioned['deck']} only")
         stem = versioned["name"].replace("{version}", version(project, versioned))
         out_dir = project.root / versioned.get("dir", ".")
-        return [Volume("", versioned["deck"], deck, out_dir / f"{stem}.pptx", out_dir / f"{stem}.pdf")]
+        pair = Volume("", versioned["deck"], deck, out_dir / f"{stem}.pptx", out_dir / f"{stem}.pdf",
+                      versioned=True)
+        if not sub.get("copies"):
+            if only_volume and only_volume != versioned["deck"]:
+                raise ConfigError(f"--volume {only_volume}: the versioned submission carries {versioned['deck']} only")
+            return [pair]
     for key in ("dir", "title", "copies"):
         if not sub.get(key):
             raise ConfigError(f"`submission.{key}` is not declared")
@@ -311,6 +321,17 @@ def plan(project: Project, only_copy: str | None, only_volume: str | None) -> li
             raise ConfigError(f"`submission.name` and `submission.layout` write {seen[path][0]} · {seen[path][1]} "
                               f"and {copy} · {name} to the same file {path.relative_to(project.root)}")
         seen[path] = (copy, name)
+    if pair is not None:
+        carrying = [c for c in copies if pair.name in copies[c].get("volumes", [])]
+        source = versioned.get("copy") or (carrying[0] if carrying else None)
+        if source not in carrying:
+            raise ConfigError(f"`submission.versioned` is assembled from {pair.name} in "
+                              f"{source or 'a declared copy'}, and no such copy carries it "
+                              f"(copies carrying it: {' · '.join(carrying) or 'none'})")
+        pair.copy, pair.blind = source, blind is not None and source == blind
+        at = next((i for i, v in enumerate(out) if v.copy == source and v.name == pair.name), None)
+        if at is not None:
+            out.insert(at + 1, pair)
     return out
 
 
@@ -693,20 +714,19 @@ def stale_files(project: Project, written: list[Volume], whole: bool) -> list[Pa
     sub = project.data["submission"]
     keep = {v.pptx for v in written} | {v.pdf for v in written}
     versioned = sub.get("versioned")
-    if versioned:
+    out = []
+    if versioned and any(v.versioned for v in written):
         out_dir = project.root / versioned.get("dir", ".")
         pattern = re.compile("^" + re.escape(versioned["name"]).replace(re.escape("{version}"), r"[\w.+-]+")
                              + r"\.(pdf|pptx)$")
-        stale = [p for p in out_dir.iterdir() if p.is_file() and pattern.match(p.name) and p not in keep]
-        stale += [out_dir / n for n in versioned.get("legacy", []) if (out_dir / n).is_file()]
-        return stale
-    if not whole:
-        return []
+        out += [p for p in out_dir.iterdir() if p.is_file() and pattern.match(p.name) and p not in keep]
+        out += [out_dir / n for n in versioned.get("legacy", []) if (out_dir / n).is_file()]
+    if not whole or not sub.get("copies"):
+        return out
     naming = Naming.of(project)
     if not naming.root.is_dir():
-        return []
-    patterns = [naming.written_by(copy) for copy in dict.fromkeys(v.copy for v in written)]
-    out = []
+        return out
+    patterns = [naming.written_by(copy) for copy in dict.fromkeys(v.copy for v in written if not v.versioned)]
     for p in sorted(naming.root.rglob("*")):
         rel = p.relative_to(naming.root).as_posix()
         if p.is_file() and p not in keep and any(rx.match(rel) for rx in patterns):
@@ -721,11 +741,11 @@ def glob_escape(s: str) -> str:
 def within_limits(project: Project, log: Callable[[str], None] = print) -> bool:
     sub = project.data["submission"]
     limit = sub.get("pdfLimitMB")
-    if sub.get("versioned"):
-        pdfs = [v for v in (project.root / sub["versioned"].get("dir", ".")).glob("*.pdf")]
-    else:
+    if sub.get("copies"):
         naming = Naming.of(project)
         pdfs = sorted(naming.root.glob(naming.pdf_glob()))
+    else:
+        pdfs = [v for v in (project.root / sub["versioned"].get("dir", ".")).glob("*.pdf")]
     total = sum(p.stat().st_size for p in pdfs) / 1e6
     log(f"PDF size: {len(pdfs)} files, {total:.1f} MB together")
     if not limit:
@@ -745,10 +765,11 @@ def within_limits(project: Project, log: Callable[[str], None] = print) -> bool:
 def deliver(project: Project, args: Any, d: Deliverer) -> int:
     volumes = plan(project, args.copy, args.volume)
     sub = project.data["submission"]
-    if args.no_build and len(sub.get("copies") or {}) > 1 and not args.copy and not sub.get("versioned"):
+    if args.no_build and len(sub.get("copies") or {}) > 1 and not args.copy:
         raise ConfigError("--no-build cannot tell which copy each deck's output holds; give --copy")
     for v in volumes:
-        if not args.no_build:
+        # the versioned pair follows its source volume and is assembled from the same build
+        if not args.no_build and not (v.versioned and sub.get("copies")):
             d.log(f"build {v.copy or v.name} · {v.name}")
             d.build(v)
         pages = d.assemble(v, args.scale)

@@ -386,6 +386,71 @@ class VersionedTests(unittest.TestCase):
             deliver.plan(self.project, None, None)
 
 
+class VersionedWithCopiesTests(unittest.TestCase):
+    """`versioned` beside `copies`: one run writes the submission folder and the pair."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.root = Path(self.tmp.name)
+        for name in ("proposal", "quant"):
+            d = self.root / name
+            (d / "fonts").mkdir(parents=True)
+            (d / "fonts" / "Sans.ttf").write_bytes(b"face")
+            pptx(d / "out" / "main.pptx", 2)
+        (self.root / "tools").mkdir()
+        (self.root / "tools" / "version.txt").write_text("0.3\n", encoding="utf-8")
+        for old in ("[발주기관] 제안서 v0.2.pdf", "[발주기관] 제안서 v0.2.pptx"):
+            (self.root / old).write_bytes(b"old")
+        self.config = {
+            "decks": {name: {"dir": name, "kind": "document", "render": f"render {name}",
+                             "output": f"{name}/out/main.pptx", "previews": f"{name}/out", "page": {"w": 794},
+                             "deliverable": {"label": label}, "tool": {"binary": "slideglance"}}
+                      for name, label in (("proposal", "비계량"), ("quant", "계량"))},
+            "submission": {"dir": "제출물", "title": "사업_제안서", "name": "{title}({label})", "layout": "{ext}",
+                           "pdf": {"imageDpi": 150, "jpegQuality": 88},
+                           "copies": {"제출본": {"volumes": ["quant", "proposal"]}},
+                           "versioned": {"deck": "proposal", "name": "[발주기관] 제안서 v{version}",
+                                         "versionFile": "tools/version.txt", "dir": "."}}}
+        self.write()
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def write(self):
+        (self.root / ".claude").mkdir(exist_ok=True)
+        (self.root / ".claude" / "slide-decks.json").write_text(json.dumps(self.config, ensure_ascii=False),
+                                                                encoding="utf-8")
+        self.project = Project.load(self.root)
+
+    def run_delivery(self, **kw):
+        runner = FakeRunner()
+        d = deliver.Deliverer(self.project, deliver.settings(self.project, False), runner,
+                              shrink=lambda pdf, dpi, q: 2, log=lambda s: None)
+        return deliver.deliver(self.project, args(**kw), d), runner
+
+    def test_one_run_writes_the_folder_and_the_pair_building_each_deck_once(self):
+        code, runner = self.run_delivery()
+        self.assertEqual(code, 0)
+        self.assertEqual([c for c in runner.calls if isinstance(c, str)], ["render quant", "render proposal"])
+        for rel in ("제출물/pdf/사업_제안서(계량).pdf", "제출물/pptx/사업_제안서(비계량).pptx",
+                    "[발주기관] 제안서 v0.3.pdf", "[발주기관] 제안서 v0.3.pptx"):
+            self.assertTrue((self.root / rel).is_file(), rel)
+        self.assertFalse((self.root / "[발주기관] 제안서 v0.2.pdf").exists())
+
+    def test_a_volume_limit_excluding_the_pair_s_deck_leaves_the_pair_alone(self):
+        code, runner = self.run_delivery(volume="quant")
+        self.assertEqual(code, 0)
+        self.assertEqual([c for c in runner.calls if isinstance(c, str)], ["render quant"])
+        self.assertTrue((self.root / "[발주기관] 제안서 v0.2.pdf").exists())
+        self.assertFalse((self.root / "[발주기관] 제안서 v0.3.pdf").exists())
+
+    def test_the_pair_s_source_copy_must_carry_its_deck(self):
+        self.config["submission"]["versioned"]["copy"] = "평가본"
+        self.write()
+        with self.assertRaises(ConfigError):
+            deliver.plan(self.project, None, None)
+
+
 @unittest.skipUnless(importlib.util.find_spec("PIL") and importlib.util.find_spec("img2pdf"),
                      "the raster route needs Pillow and img2pdf")
 class RasterTests(unittest.TestCase):
