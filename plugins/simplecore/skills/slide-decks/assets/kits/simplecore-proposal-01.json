@@ -65,6 +65,7 @@
       "deflist": ["items[].term"],
       "evidence-stat": ["claim"],
       "org-people": ["top", "groups[].head"],
+      "org-columns": ["groupHead", "members[].role", "members[].projectsHead"],
       "profile": ["name", "role", "facts[].label"],
       "career-line": ["head", "rows[].label"],
       "table": ["rows[0][]"],
@@ -165,6 +166,8 @@
     "figurePair": ["fig-pair"],
     "rails": ["rail"],
     "columnLayouts": ["cols2", "cols3", "span-cols"],
+    // Spacing-only vertical wrappers preserve their children's layout family.
+    "transparentStacks": ["stack"],
     // Components that number a sequence, with the argument holding the number.
     "numbered": { "step-row": "no", "num-step": "no", "stage-cell": "no", "stage-detail": "no",
                   "panel-row": "no", "marker-band": "no" },
