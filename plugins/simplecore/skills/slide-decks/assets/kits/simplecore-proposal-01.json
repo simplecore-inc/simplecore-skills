@@ -23,7 +23,7 @@
     "masters": {
       "body": ["BODY"],
       "divider": ["PART"],
-      "folioless": ["COVER", "TOC", "PLAIN"],
+      "folioless": ["COVER", "TOC", "PLAIN", "FORM-BARE"],
       // Masters that never print a folio and are never counted, wherever they stand (the
       // closing page after the annexes).
       "unnumbered": ["END"],
@@ -64,7 +64,10 @@
       "stat-grid": ["items[].label"],
       "deflist": ["items[].term"],
       "evidence-stat": ["claim"],
-      "table": ["rows[0][]"]
+      "table": ["rows[0][]"],
+      // A tender form page: the form number and the form name it prints as issued.
+      "form-page": ["label", "name"],
+      "form-title": ["text"]
     },
     // Prose blocks: a paragraph of the page's own argument.
     "prose": {
