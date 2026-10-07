@@ -6,6 +6,7 @@ from pathlib import Path
 from PIL import Image, ImageDraw
 
 from fixtures import page, project, reader, recording
+from bidkit.tests.support import PAGES
 from runmain import run
 
 import foothole
@@ -91,3 +92,33 @@ class FootholeDeckTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+
+class FootholeReproductionTests(unittest.TestCase):
+    """An issued original or a tender form ends where the original ends, so it is not measured."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.root = Path(self.tmp.name)
+        self.png = self.root / "out"
+        self.png.mkdir()
+        (self.root / "baselines").mkdir()
+        page_png(self.png / "main-1.png", 880)       # a short annex page
+        page_png(self.png / "main-2.png", 600)       # a short original in the annex
+        self.slides = [page(1, master="ANNEX-1"), page(2, master="ANNEX-REPRO")]
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def measure(self, extra: dict):
+        deck = project(self.root, {"previews": "out", "checks": {"baselines": "baselines"}, **extra})
+        measured, found = foothole.measure_pages(reader(deck, recording(self.slides)), deck)
+        return measured, [label for label, *_ in found]
+
+    def test_the_kit_s_reproduction_master_is_not_measured(self):
+        self.assertEqual(self.measure({}), (1, ["slide 1"]))
+
+    def test_with_no_reproduction_class_the_original_is_measured(self):
+        pages = {**PAGES, "masters": {"reproduction": []}}
+        self.assertEqual(self.measure({"pages": pages}), (2, ["slide 1", "slide 2"]))

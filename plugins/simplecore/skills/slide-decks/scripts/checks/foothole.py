@@ -19,7 +19,9 @@ hole grows.
 A body page is one whose master the deck reader counts as a body or an annex
 page (the `body` and `annex` prefixes of `pages.masters`, over the kit
 vocabulary's), or, where the deck declares `masters`, one whose master matches
-that regex. The summary says how many pages were measured, and a deck on which
+that regex. A page on a `reproduction` master (`pages.masters.reproduction`: an
+issued original or a tender form set as the tender lays it out) is never measured,
+because where its ink ends is the original's, not the typesetting's. The summary says how many pages were measured, and a deck on which
 no page is measured exits 2: the check read nothing, which is not a pass.
 
 Read the PNGs of a full render: a partial render leaves stale pages.
@@ -75,7 +77,8 @@ def is_body(reader: DeckReader, cfg: dict) -> Callable[[str], bool]:
         rx = re.compile(str(cfg["masters"]))
         return lambda master: bool(rx.search(master))
     pages = reader.pages_config
-    return lambda master: pages.is_("body", master) or pages.is_("annex", master)
+    return lambda master: ((pages.is_("body", master) or pages.is_("annex", master))
+                           and not pages.is_("reproduction", master))
 
 
 def measure_pages(reader: DeckReader, deck: DeckConfig) -> tuple[int, list[tuple[str, int, int, bool]]]:

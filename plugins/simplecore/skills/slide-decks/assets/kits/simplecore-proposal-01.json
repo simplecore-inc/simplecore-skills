@@ -28,6 +28,9 @@
       // closing page after the annexes).
       "unnumbered": ["END"],
       "annex": ["ANNEX"],
+      // Pages that carry an issued original or a tender form as issued (repro, repro-missing
+      // and form-page): their layout is the original's, so layout measures skip them.
+      "reproduction": ["REPRO", "ANNEX-REPRO", "FORM"],
       "fullBleed": ["COVER", "TOC", "PART", "ANNEX-END", "END"]
     },
     // The page components a source file opens a page with.
