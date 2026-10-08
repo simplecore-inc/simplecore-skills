@@ -63,7 +63,8 @@ its line; moves a group whole to the next line before breaking inside it, and
 then only at a separator; and breaks an item wider than its line only at a word
 space inside it, most evenly (R1-R4 in `references/document-figures.md`). A
 tight dot (「하드웨어·소프트웨어」) binds only the words touching it; a spaced
-one separates phrases. An authored newline obeys the same rule, and the build
+one separates phrases, and a first or last phrase of more than three words is
+the surrounding prose, bound only at the word touching the dot. An authored newline obeys the same rule, and the build
 fails on one that does not.
 `verify.py` checks the saved figures as `[line break]`;
 `scripts/docfigures/linebreaks.py <svg>...` runs that check over any SVG with a

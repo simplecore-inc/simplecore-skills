@@ -206,11 +206,11 @@ print("VALUE" + json.dumps({expr}, ensure_ascii=False))
         self.assertEqual(run.returncode, 0, run.stdout + run.stderr)
 
     def test_r4_over_wide_item_breaks_at_a_space_and_is_listed(self):
-        # 「데이터 수집 경로 설계」 cannot be held whole at 0.93 x 175: it breaks
-        # at its space, the other items stay whole, and the build lists it
-        # without failing
-        lines, run = self.lines("데이터 수집 경로 설계 · 시험 운영 · 가", 175)
-        self.assertEqual(lines, ["데이터 수집", "경로 설계 ·", "시험 운영 · 가"])
+        # the middle item 「데이터 수집 경로 설계」 cannot be held whole at
+        # 0.93 x 175: it starts its own line and breaks at its space, the other
+        # items stay whole, and the build lists it without failing
+        lines, run = self.lines("가 · 데이터 수집 경로 설계 · 시험 운영", 175)
+        self.assertEqual(lines, ["가 ·", "데이터 수집", "경로 설계 ·", "시험 운영"])
         self.assertEqual(run.returncode, 0, run.stdout + run.stderr)
         self.assertIn("R4: over-wide item 「데이터 수집 경로 설계」", run.stdout)
 

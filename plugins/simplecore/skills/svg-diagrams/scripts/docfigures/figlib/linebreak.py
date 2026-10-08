@@ -16,7 +16,10 @@ The rule a Korean document sets for its figure labels:
 
 The separator stays at the end of its line (「결함 수정 ·」 / 「강의」). A run of
 items is the text between two run edges: a comma, a colon, a semicolon, a full
-stop before a space, a parenthesis, or the text's edge. A dot written tight
+stop before a space, a parenthesis, or the text's edge. The first or the last
+item of a spaced run that would run more than `EDGE_WORDS` words to its edge
+is prose the list sits in (「…측정하고, 4 · 9개월 차 시연으로 … 인도한다」):
+only the word touching the dot is bound, and the rest breaks by word. A dot written tight
 (「구성·크기」) binds only the words touching it: a line may break after it,
 with no space, and the spaces around the compound are ordinary word breaks.
 Outside runs and groups a phrase breaks by word.
@@ -25,7 +28,6 @@ This module measures nothing itself. Every layout takes `fits(line)`, the
 caller's own measure, so the wrap and the check over a saved figure judge a
 line the same way.
 """
-import re
 from dataclasses import dataclass
 
 DOT = "·"
@@ -106,23 +108,47 @@ def _depth0(match, i):
     return not any(o <= i <= c for o, c in match.items())
 
 
-# A spaced separator: a dot with a space on either side. A tight dot binds only
-# the words touching it (「하드웨어·소프트웨어」), so a space is never inside one
-# of its items; a spaced one separates phrases (「결함 수정 · 강의」), whose items
-# run to the run's edges.
-SPACED_DOT = re.compile(r"[ \u00a0]·|·[ \u00a0]")
 SPACES = " \u00a0"
+
+# An edge item longer than this many words is prose, not a list item.
+EDGE_WORDS = 3
+
+
+def _is_spaced_dot(text, j):
+    """A spaced separator: a dot with a space on either side.
+
+    A tight dot binds only the words touching it (「하드웨어·소프트웨어」), so a
+    space is never inside one of its items; a spaced one separates phrases
+    (「결함 수정 · 강의」), whose items run toward the run's edges.
+    """
+    return text[j] == DOT and ((j > 0 and text[j - 1] in SPACES)
+                               or (j + 1 < len(text) and text[j + 1] in SPACES))
 
 
 def _segment_has_list(text, match, i):
-    """Whether the run of depth-0 text around i holds a spaced separator."""
+    """Whether the space at i falls inside an item of a spaced run.
+
+    The run is the depth-0 text between edges around i. A middle item binds
+    every word in it; a first or last item binds them only while it holds at
+    most `EDGE_WORDS` words, and past that only the word touching the dot,
+    which holds no space.
+    """
     lo = i
     while lo > 0 and _depth0(match, lo - 1) and not _is_edge(text, lo - 1):
         lo -= 1
     hi = i
     while hi < len(text) and _depth0(match, hi) and not _is_edge(text, hi):
         hi += 1
-    return SPACED_DOT.search(text[lo:hi]) is not None
+    seps = [j for j in range(lo, hi) if _is_spaced_dot(text, j)]
+    if not seps:
+        return False
+    before = [j for j in seps if j < i]
+    after = [j for j in seps if j > i]
+    if before and after:
+        return True                       # a middle item
+    start = before[-1] + 1 if before else lo
+    end = after[0] if after else hi
+    return len(text[start:end].split()) <= EDGE_WORDS
 
 
 def opportunities(text):
@@ -312,8 +338,7 @@ def _item_at(text, match, i):
         if not _depth0(match, j) or _is_edge(text, j):
             return True
         # a spaced separator ends an item; a tight dot is inside one
-        return text[j] == DOT and ((j > 0 and text[j - 1] in SPACES)
-                                   or (j + 1 < len(text) and text[j + 1] in SPACES))
+        return _is_spaced_dot(text, j)
     lo = i
     while lo > 0 and not stops(lo - 1):
         lo -= 1

@@ -496,7 +496,12 @@ be held to the same expectations:
   「결함 수정」 / 「· 강의」 (PowerPoint, measured, ends Korean lines on the dot
   too). A spaced separator (「a · b」) separates phrases, and an item runs to
   the run's edge: a comma, a colon, a semicolon, a full stop before a space, a
-  parenthesis or the text's edge, so 「결함 수정」 is one item. A tight dot
+  parenthesis or the text's edge, so 「결함 수정」 is one item. A first or last
+  item that would run more than three words to its edge is the prose the list
+  sits in, not an item: only the word touching the dot is bound, so in
+  「…측정하고, 4 · 9개월 차 시연으로 진척을 확인하고 인도한다.」 the words after
+  「9개월」 break freely, while an edge item of up to three words
+  (「분석 · 설계 산출물 확정」) and any middle item stay bound. A tight dot
   (「하드웨어·소프트웨어」) binds only the words touching it: its items stop at
   the nearest space, so 「운영 체계」 / 「하드웨어·소프트웨어」 is a word break,
   while 「하드웨어 · 소프트웨어」 / 「구성」 splits the spaced item 「소프트웨어

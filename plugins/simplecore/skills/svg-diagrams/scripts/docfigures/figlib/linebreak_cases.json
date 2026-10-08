@@ -1,5 +1,5 @@
 {
-  "about": "Cases for the label line-break rule (R1-R4) in linebreak.py, stated without a font. Width rule: a wide East Asian character (Unicode East_Asian_Width W or F) counts 2, every other character 1; a line fits when its width is at most `width`. `layout` cases give the text and the lines the rule sets it on; `overwide` lists the items broken under R4. `check` cases give lines already set and the findings expected over their breaks, in order. `forced` cases add the measure of the box drawn round the lines: an R1 break is reported only where the line before it could not take the next line's first word at that measure.",
+  "about": "Cases for the label line-break rule (R1-R4) in linebreak.py, stated without a font. Width rule: a wide East Asian character (Unicode East_Asian_Width W or F) counts 2, every other character 1; a line fits when its width is at most `width`. `layout` cases give the text and the lines the rule sets it on; `overwide` lists the items broken under R4. `check` cases give lines already set and the findings expected over their breaks, in order. `forced` cases add the measure of the box drawn round the lines: an R1 break is reported only where the line before it could not take the next line's first word at that measure. A first or last item of a spaced run with more than three words is prose: only the word touching its dot is bound.",
   "layout": [
     {"id": "R1 breaks after a separator", "text": "가나 다라 · 마바 사아 · 자차", "width": 12,
      "lines": ["가나 다라 ·", "마바 사아 ·", "자차"], "overwide": []},
@@ -19,8 +19,10 @@
      "lines": ["가나", "다라마(1회)"], "overwide": []},
     {"id": "R4 over-wide item starts its own line and breaks most evenly", "text": "가나 · 다라 마바 사아자 · 차", "width": 12,
      "lines": ["가나 ·", "다라 마바", "사아자 · 차"], "overwide": ["다라 마바 사아자"]},
-    {"id": "R4 last item", "text": "가나 · 다라 마바 사아 자차카", "width": 12,
-     "lines": ["가나 ·", "다라 마바", "사아 자차카"], "overwide": ["다라 마바 사아 자차카"]}
+    {"id": "R4 middle item of many words", "text": "가나 · 다라 마바 사아 자차카 · 타", "width": 12,
+     "lines": ["가나 ·", "다라", "마바 사아", "자차카 · 타"], "overwide": ["다라 마바 사아 자차카"]},
+    {"id": "edge item of more than three words is prose", "text": "가나다, 4 · 9개월 차 시연으로 진척을 확인하고 인도한다.", "width": 22,
+     "lines": ["가나다, 4 · 9개월 차", "시연으로 진척을", "확인하고 인도한다."], "overwide": []}
   ],
   "check": [
     {"id": "R1 break inside a spaced item", "lines": ["가나 · 다라", "마바 사아"], "width": 14, "findings": ["R1"]},
@@ -32,7 +34,13 @@
     {"id": "R3 break at a separator when moving adds a line", "lines": ["가나다 (라마 ·", "바사 · 아자)"], "width": 16, "findings": []},
     {"id": "R3 break inside the group off a separator", "lines": ["가나다 (라마 · 바", "사 · 아자)"], "width": 16, "findings": ["R3"]},
     {"id": "separator opening a line inside a group", "lines": ["가나다 (라마 · 바사", "· 아자)"], "width": 22, "findings": ["separator"]},
-    {"id": "R4 over-wide item broken at a space is information", "lines": ["가나 ·", "다라 마바", "사아자차"], "width": 10, "findings": ["R4"]}
+    {"id": "R4 over-wide item broken at a space is information", "lines": ["가나 ·", "다라 마바", "사아자차"], "width": 10, "findings": ["R4"]},
+    {"id": "last item of three words still binds", "lines": ["가나 · 다라 마바", "사아"], "width": 14, "findings": ["R1"]},
+    {"id": "first item of two words still binds", "lines": ["가나 다라", "마바 · 자차"], "width": 14, "findings": ["R1"]},
+    {"id": "last item of four words is prose", "lines": ["가나 · 다라 마바", "사아 자차"], "width": 14, "findings": []},
+    {"id": "first item of four words is prose", "lines": ["가나 다라 마바", "사아 · 자차"], "width": 14, "findings": []},
+    {"id": "prose after a list closes on its sentence", "lines": ["가나다, 4 · 9개월 차", "시연으로 진척을 확인하고 인도한다."], "width": 22, "findings": []},
+    {"id": "middle item binds however long", "lines": ["가나 · 다라 마바", "사아 자차 · 타"], "width": 22, "findings": ["R1"]}
   ],
   "forced": [
     {"id": "forced R1 break is reported", "lines": ["가나 · 다라", "마바 사아"], "box": 14, "findings": ["R1"]},
