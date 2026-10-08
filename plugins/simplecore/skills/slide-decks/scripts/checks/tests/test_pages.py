@@ -19,7 +19,7 @@ from bidkit.config import ConfigError  # noqa: E402
 from bidkit.sgmcp import DeckUnavailable  # noqa: E402
 from bidkit.tests.support import body, project, reader, recording, slide  # noqa: E402
 
-SUMMARY = "checked 3 slides · 40 nodes · overlap {o} · outside 0 · escape 0 · empty 0 · tiny 0 · font {f} · diagnostic 0 · ink 0 · spread 0"
+SUMMARY = "checked 3 slides · 40 nodes · overlap {o} · outside 0 · escape 0 · empty 0 · tiny 0 · font {f} · diagnostic 0 · ink 0 · spread 0 · breaks 0"
 
 
 def tool_text(text: str, error: bool = False) -> dict:
@@ -62,6 +62,23 @@ class LayoutTests(unittest.TestCase):
     def test_tool_error_is_reported(self):
         (_, _, failed), _ = self.run_on("no deck", error=True)
         self.assertTrue(failed)
+
+    def test_a_tool_without_the_breaks_kind_is_asked_again_without_it(self):
+        # The first answer refuses the kind, the second is the summary without it.
+        answers = [({"isError": True, "content": [{"type": "text", "text": "kinds has no kind breaks"}]}),
+                   ({"content": [{"type": "text", "text": SUMMARY.format(o=1, f=0).replace(" · breaks 0", "")}]})]
+        asked = []
+
+        class Session:
+            def call(self, name, args):
+                asked.append(list(args["kinds"]))
+                return answers[len(asked) - 1]
+
+        text, found, failed = layout.check(Session(), self.deck)
+        self.assertEqual((found["overlap"], "breaks" in found, failed), (1, False, False))
+        self.assertEqual(asked[0], layout.KINDS)
+        self.assertNotIn("breaks", asked[1])
+        self.assertIn("no `breaks` kind", text)
 
     def test_kinds_are_configurable(self):
         self.deck.data["checks"] = {"layout": {"kinds": ["overlap"]}}

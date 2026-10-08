@@ -30,6 +30,14 @@ requirement names, requirement IDs, product names and legally fixed terms.
   (`총자산 100백만원 · 자기자본 62백만원 · 결손 없음`) rather than prose (`…이며 … 유지된다`),
   and full sentences stay for the actions, conditions, controls and decisions whose
   relationship would otherwise be lost.
+- **A 「·」 list is written so it can stay whole across lines.** Put a spaced dot between items
+  that are phrases (`결함 수정 · 강의`) and a tight dot only inside a compound
+  (`하드웨어·소프트웨어`); keep each item short enough to sit on one line of the box it goes in,
+  because the typesetting never breaks inside an item. A list closing a sentence
+  (`개발 · 시험 · 운영 지원을 … 수행합니다`) binds only the word next to the dot, so a list whose
+  last item must stay whole is written as its own phrase rather than run into the clause. Where
+  the lines fall is the typesetting's job (`simplecore:slide-decks`, references/body-pages.md),
+  never a line break typed into the words.
 - **A vague pointer at the head of a printed explanation** (`이 범위`, `이 운영 기반`, `그 장비`
   beside the standard's own list) is replaced by the business, the system, the record, the
   condition or the preceding action it stands for.

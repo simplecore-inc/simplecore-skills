@@ -503,6 +503,34 @@ the cure is chosen by what it does to the rest of the paragraph:
 A line that ends within about 5px of the measure is also where a renderer that keeps the break
 space prints it at the start of the next line, so tune the wording until no line ends there.
 
+### Middle-dot items and parentheses across a line end
+
+A 「·」 list and a parenthesised group are kept whole across lines, on every page, in every text
+box and table cell:
+
+- **R1.** A line breaks only at a separator, never inside an item, and the dot ends its line
+  (`결함 수정 ·` / `강의`). A spaced dot (`결함 수정 · 강의`) separates items that run to the
+  next separator, and at either end of the run to its edge (a comma, a semicolon, a full stop or
+  colon before a space, a parenthesis, the text's edge), unless that makes an edge item more than
+  three words, which is prose and binds only its word next to the dot. A tight dot
+  (`하드웨어·소프트웨어`) binds only the words touching it.
+- **R2.** A group that would break inside moves whole to the next line, the break going before
+  its `(` (`개발 파트` / `(구현 · 결함 수정 · 강의)`).
+- **R3.** Only where R2 would add a line does the break go inside the parentheses, and then only
+  at a separator.
+- **R4.** An item wider than its line on its own starts a line and breaks at the word spaces that
+  leave its lines most even, never inside a word; it is reported as information.
+
+The deck renderer breaks Korean between words and has no such rule, so the rule is carried as
+forced line breaks, and a forced break is right only for the width it was set at. The loop is
+therefore: write the words, render, let the deck tool set the breaks, check. With SlideGlance
+that is `layout_check kinds=["breaks"]` (the shared `layout` check asks for it), then
+`breaks_fix`, which takes its earlier breaks out and sets what the rule needs now; run both again
+after any edit to the words or to a box's width. Never type the breaks by hand, and never join an
+item with no-break spaces to the same end: a forced break the tool did not set is one it cannot
+take back when the column changes. A text the tool reports it cannot write is fixed by hand where
+the words are held, then checked again.
+
 ## Where the layouts live
 
 The layouts - the column figure left and right, the side-by-side pair, the stacked pair with its

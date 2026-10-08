@@ -3,8 +3,10 @@
 
 Overlap (a table drawn over the shape below it), a block spilling past its
 parent or the page (a line run past the text block into the margin), an empty
-or collapsed container, type below the deck's floor and what the renderer
-actually drew are the tool's readings over the open deck. This check asks for
+or collapsed container, type below the deck's floor, what the renderer
+actually drew and a line broken inside a middle-dot item or a parenthesised
+group (the `breaks` kind, which the tool's `breaks_fix` repairs) are the
+tool's readings over the open deck. This check asks for
 them and fails on any finding. It measures nothing itself: two measurements of
 one thing is how a deck ships the bug one of them fixed.
 
@@ -27,7 +29,12 @@ from bidkit import cli  # noqa: E402
 from bidkit.config import ConfigError, DeckConfig  # noqa: E402
 from bidkit.sgmcp import DeckUnavailable, Session  # noqa: E402
 
-KINDS = ["overlap", "outside", "escape", "empty", "tiny", "font", "diagnostic", "ink", "spread"]
+KINDS = ["overlap", "outside", "escape", "empty", "tiny", "font", "diagnostic", "ink", "spread",
+         "breaks"]
+
+# A deck tool built before the `breaks` kind refuses it by this message; the
+# default list is then asked again without it, and the run says so.
+NO_BREAKS_KIND = "kinds has no kind breaks"
 
 
 def arguments(deck: DeckConfig, slides: str | None) -> dict:
@@ -62,6 +69,12 @@ def check(session: Session, deck: DeckConfig, slides: str | None = None) -> tupl
     result = session.call("layout_check", args)
     content = result.get("content") or []
     text = "\n".join(c.get("text", "") for c in content if isinstance(c, dict))
+    if result.get("isError") and NO_BREAKS_KIND in text and "kinds" not in deck.section("checks.layout"):
+        args["kinds"] = [k for k in args["kinds"] if k != "breaks"]
+        result = session.call("layout_check", args)
+        content = result.get("content") or []
+        text = "\n".join(c.get("text", "") for c in content if isinstance(c, dict))
+        text += "\n  ℹ the deck tool has no `breaks` kind; rebuild it to check middle-dot line breaks"
     if result.get("isError"):
         return text, {}, True
     return text, counts(text, args["kinds"]), False
