@@ -249,7 +249,8 @@ def bullet_mode(svgs, cfg):
     A figure either lists (its titled boxes bullet every item) or is declared
     plain with `@figure(plain=True)`, which `save()` records on the root
     element. A plain figure with a bullet, or a listing figure in which no box
-    holds two bullets, is declared in the wrong mode.
+    holds two bullets, is declared in the wrong mode. A bullet outside every
+    box belongs to the list drawn at its x (a lane's items under its name).
     """
     if not cfg.get("bullets", True):
         return None
@@ -264,9 +265,8 @@ def bullet_mode(svgs, cfg):
                 continue
             bx, by = float(_attr(attrs, "x") or 0), float(_attr(attrs, "y") or 0)
             inside = [r for r in rects if r[0] <= bx <= r[0] + r[2] and r[1] <= by <= r[1] + r[3]]
-            if inside:
-                r = min(inside, key=lambda r: r[2] * r[3])
-                per[r] = per.get(r, 0) + 1
+            key = min(inside, key=lambda r: r[2] * r[3]) if inside else round(bx)
+            per[key] = per.get(key, 0) + 1
         if plain and per:
             out.append((svg.name, "declared plain but draws bullets"))
         elif not plain and per and max(per.values()) <= 1:
