@@ -483,7 +483,7 @@ full width. A box's items are glued before they wrap: every `noBreak` pattern
 binds its two groups (a page id and its number, a number and its unit); the
 drawn line carries plain spaces.
 
-**A label breaks only where its 「·」 list and its parentheses allow (R1-R3).**
+**A label breaks only where its 「·」 list and its parentheses allow (R1-R4).**
 Every label goes through these rules, in `figlib/linebreak.py`:
 
 - **R1.** A line breaks only at a middle-dot separator, never inside an item.
@@ -492,27 +492,38 @@ Every label goes through these rules, in `figlib/linebreak.py`:
   too). A spaced separator (「a · b」) separates phrases, and an item runs to
   the run's edge: a comma, a colon, a semicolon, a full stop before a space, a
   parenthesis or the text's edge, so 「결함 수정」 is one item. A tight dot
-  (「하드웨어·소프트웨어」) binds only the words touching it: the spaces around
-  the compound are ordinary word breaks, and a break after the dot (no space)
-  is taken only when no space breaks the line.
+  (「하드웨어·소프트웨어」) binds only the words touching it: its items stop at
+  the nearest space, so 「제2장 1-바」 / 「하드웨어·소프트웨어」 and 「C37.118」 /
+  「SOC·FRACSEC」 are word breaks, while 「하드웨어 · 소프트웨어」 / 「구성」 splits
+  the spaced item 「소프트웨어 구성」. A break right after either kind of dot
+  is a separator break; after a tight dot (no space) it is taken only when no
+  space breaks the line. A deck-side check imports this definition from
+  `figlib/linebreak.py` rather than restating it.
 - **R2.** A parenthesised group that would break inside moves whole to the
   next line, the break going right before its opening parenthesis even where it
   touches the word before it: 「개발 파트」 / 「(구현 · 결함 수정 · 강의)」.
 - **R3.** Only when R2 adds a line does the break go inside the group, and then
   only at a separator (R1 holds inside): 「개발 파트 (구현 ·」 / 「결함 수정 · 강의)」.
+- **R4.** An item wider than its line on its own starts a line of its own,
+  after the separator before it, and breaks inside, but only at a word space
+  within it: never inside a word, and inside parentheses only where the
+  spaces outside them cannot hold it. Of the cuts that give the fewest lines,
+  the one whose widest line is narrowest is taken: 「개발 파트 ·」 / 「자기
+  산출물」 / 「승인 불가」. The build and `verify.py` list such an item as
+  information (`[over-wide item]`), not as a failure; shortening it keeps it
+  whole.
 
 Outside lists and groups a phrase breaks by word, and Korean breaks between
 words, never between syllables. A separator closing a line is held to the full
 width, the 93% limit applying to the line without it. A word or a tight
 compound wider than the limit and within the full width keeps its line rather
-than splitting. An item no line of the box can hold whole has no line under
-R1: the label is set by the plain word wrap and the build reports it, and the
-cure is a shorter item or a wider box, never a hand-placed newline inside the
-item.
+than splitting. A hand-placed newline inside an item is never the cure for an
+over-wide one: R4 places the break, and a shorter item or a wider box removes
+it.
 
 **The build fails on a label that breaks against R1-R3**, naming the string:
-an item or group no line holds whole, and an authored newline inside an item or
-a group (「성능 실측 · 장애\n시나리오 시험」, written 「성능 실측 ·\n장애
+a word wider than its line, and an authored newline inside an item or a group
+that is not an R4 break (「성능 실측 · 장애\n시나리오 시험」, written 「성능 실측 ·\n장애
 시나리오 시험」). The build sees an authored newline only in a string that
 reaches `wrap()` whole: a module helper that splits on the newline itself and
 wraps each part (a `*_lines(text, width, size)` wrapper) passes the build

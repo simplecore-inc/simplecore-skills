@@ -25,11 +25,11 @@ WRAP_SAFETY = 0.93
 # opens a list, so every such mark stays at the end of the line it came from.
 JOINING = ("·", "↔", "→", "←", "~", "/", "&", "+")
 
-# Every label that breaks against R1-R3 (figlib/linebreak.py): a wrap that
-# found no line holding a 「·」 item or a group whole, and an authored newline
-# that falls inside an item or a group. Only wrap() holds the source phrase and
-# the line boundaries at once, so it collects them here and `build.py` reports
-# them and fails the run.
+# Every label that breaks against R1-R3 (figlib/linebreak.py): a word wider
+# than its line, and an authored newline that falls inside an item or a group;
+# and every over-wide item broken at a space under R4, as information. Only
+# wrap() holds the source phrase and the line boundaries at once, so it
+# collects them here and `build.py` reports them, failing the run on R1-R3.
 BREAK_FINDINGS = []
 _FINDINGS_SEEN = set()
 
@@ -37,10 +37,11 @@ _FINDINGS_SEEN = set()
 def wrap(text, width, size):
     """Break a phrase onto lines that fit `width` at `size`.
 
-    The lines follow R1-R3 (figlib/linebreak.py): a 「·」 list breaks only at
+    The lines follow R1-R4 (figlib/linebreak.py): a 「·」 list breaks only at
     its separators, which stay at the end of their line; a parenthesised group
     moves whole to the next line, and breaks inside, at a separator, only when
-    moving it whole adds a line. Elsewhere a phrase breaks by word, each line
+    moving it whole adds a line; an item wider than its line breaks at a word
+    space inside it, most evenly. Elsewhere a phrase breaks by word, each line
     filled as far as the safety limit allows. An authored newline is kept as a
     line boundary and checked against the same rules.
     """
@@ -69,17 +70,19 @@ def wrap(text, width, size):
     text = re.sub(" {2,}", " ", text).strip(" ")
     if not text:
         return []
-    # a label no layout keeps whole is set by the plain word wrap, which
-    # holds every line, closing separator included, to the safety limit; a
-    # word or a tight compound within the full width keeps its line whole
+    # a word or a tight compound within the full width keeps its line whole
     # rather than splitting after its dot or before its parenthesis
     laid = linebreak.layout(text, fits,
-                            plain_fits=lambda line: tw(line, size, False) <= limit,
-                            whole_fits=lambda line: tw(line, size, False) <= width)
+                            whole_fits=lambda line: tw(line, size, False) <= width,
+                            measure=lambda line: tw(line, size, False))
     lines = _raise_marks(laid.lines, width, size)
-    if laid.unfixable and _rule_applies(text):
-        _note(text, lines, [linebreak.Finding(
-            "R1", -1, "no line holds every 「·」 item or group whole", False)])
+    if _rule_applies(text):
+        found = [linebreak.Finding("R4", -1, f"over-wide item 「{item}」, broken at a "
+                                   "space", True) for item in laid.overwide]
+        if laid.unfixable:
+            found.append(linebreak.Finding(
+                "R1", -1, "a word is wider than the line", False))
+        _note(text, lines, found)
     return lines
 
 

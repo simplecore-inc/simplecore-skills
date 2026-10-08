@@ -8,6 +8,11 @@ The rule a Korean document sets for its figure labels:
       the parenthesis touches the word before it (「개발 파트」 / 「(구현 · 강의)」)
   R3  only when R2 adds a line does the break go inside the parentheses, and
       then only at a separator (R1 holds inside as well)
+  R4  an item wider than its line on its own may break inside, but only at a
+      word space within it (never inside a word, and inside parentheses only
+      where its spaces outside them cannot hold it), at the spaces that leave
+      its lines most even; it starts a line of its own after the separator
+      before it
 
 The separator stays at the end of its line (「결함 수정 ·」 / 「강의」). A run of
 items is the text between two run edges: a comma, a colon, a semicolon, a full
@@ -35,8 +40,8 @@ EDGE_BEFORE_SPACE = ".:。："
 # dot written tight, or before a group that cannot break inside, either of
 # which splits a compound) only where no FREE break fits;
 # INNER (a separator inside parentheses) only where moving the group whole adds
-# a line; LAST (inside an item, or inside parentheses off a separator) only
-# when nothing else fits, and the label is then reported as unfixable.
+# a line; LAST (a space inside an item, or inside parentheses off a separator)
+# only for an item no line holds whole (R4).
 FREE, TIGHT, INNER, LAST = 0, 1, 2, 3
 
 
@@ -50,7 +55,8 @@ class Opportunity:
 @dataclass(frozen=True)
 class Layout:
     lines: list
-    unfixable: bool  # a break fell inside an item, or a line overflows
+    unfixable: bool        # a line overflows: a word wider than the line
+    overwide: tuple = ()   # items broken at a space under R4
 
 
 def groups(text):
@@ -105,6 +111,7 @@ def _depth0(match, i):
 # of its items; a spaced one separates phrases (「결함 수정 · 강의」), whose items
 # run to the run's edges.
 SPACED_DOT = re.compile(r"[ \u00a0]·|·[ \u00a0]")
+SPACES = " \u00a0"
 
 
 def _segment_has_list(text, match, i):
@@ -164,19 +171,20 @@ def opportunities(text):
     return out
 
 
-def _fill(text, opps, fits, tiers, whole=None):
+def _fill(text, opps, fits, tiers, whole=None, measure=len):
     """Greedy lines: each takes the farthest break of the first tier that fits.
 
     `whole` is the looser measure a word or a tight compound is held to before
-    it is split at a TIGHT break: one that passes it keeps its line.
+    it is split at a TIGHT break: one that passes it keeps its line. An item no
+    line holds whole is broken under R4 (`_split_overwide`).
     """
-    lines, start, unfixable = [], 0, False
+    lines, start, unfixable, overwide = [], 0, False, []
     while True:
         rest = text[start:].strip(" ")
         later = [o for o in opps if o.end > start]
         if not later or fits(rest):
             lines.append(rest)
-            return Layout(lines, unfixable or not fits(rest))
+            return Layout(lines, unfixable or not fits(rest), tuple(overwide))
         chosen = None
         for tier in tiers:
             if whole and FREE not in tier:
@@ -189,50 +197,130 @@ def _fill(text, opps, fits, tiers, whole=None):
                         return Layout(lines, unfixable)
                     chosen = word
                     break
+            if LAST in tier:
+                pieces = _split_overwide(text, opps, start, fits, measure)
+                if pieces:
+                    item, cuts = pieces
+                    overwide.append(item)
+                    for cut in cuts:
+                        lines.append(text[start:cut.end].strip(" "))
+                        start = cut.next
+                    chosen = False
+                    break
             ok = [o for o in later if o.rank in tier and fits(text[start:o.end].strip(" "))]
             if ok:
                 chosen = max(ok, key=lambda o: o.end)
                 break
+        if chosen is False:
+            continue
         if chosen is None:
             # nothing fits: the line overflows at the nearest break
             chosen, unfixable = min(later, key=lambda o: o.end), True
-        if chosen.rank == LAST:
-            unfixable = True
         lines.append(text[start:chosen.end].strip(" "))
         start = chosen.next
 
 
-def layout(text, fits, plain_fits=None, whole_fits=None):
-    """Lines of `text` under R1-R3, measured by `fits`.
+def _split_overwide(text, opps, start, fits, measure):
+    """R4: the item opening at `start` that no line holds, cut at its spaces.
+
+    The item runs to the first break that is not inside an item. It is cut into
+    the fewest lines that fit, at the spaces whose lines are most even (the
+    widest line the narrowest), using spaces outside parentheses where those
+    alone can hold it. Returns (item, cuts) with the last piece left to run
+    on, or None when no set of spaces holds it.
+    """
+    ends = [o.end for o in opps if o.rank != LAST and o.end > start]
+    stop = min(ends) if ends else len(text)
+    item = text[start:stop].strip(SPACES + DOT)
+    match = groups(text)
+    inner = [o for o in opps if o.rank == LAST and start < o.end < stop]
+    outside = [o for o in inner if _depth0(match, o.end)]
+    for spaces in (outside, inner):
+        cuts = _even_cuts(text, start, stop, spaces, fits, measure)
+        if cuts:
+            return item, cuts
+    return None
+
+
+def _even_cuts(text, start, stop, spaces, fits, measure):
+    """The fewest cuts at `spaces` whose pieces all fit, most even; or None."""
+    for n in range(2, len(spaces) + 2):
+        best = None
+        for combo in _combinations(range(len(spaces)), n - 1):
+            cuts = [spaces[i] for i in combo]
+            pieces, at = [], start
+            for cut in cuts:
+                pieces.append(text[at:cut.end].strip(" "))
+                at = cut.next
+            pieces.append(text[at:stop].strip(" "))
+            if not all(fits(pc) for pc in pieces):
+                continue
+            widest = max(measure(pc) for pc in pieces)
+            if best is None or widest < best[0]:
+                best = (widest, cuts)
+        if best:
+            return best[1]
+    return None
+
+
+def _combinations(pool, k):
+    """Index combinations in order; a label holds few enough spaces to try all."""
+    pool = list(pool)
+    if k == 0:
+        yield ()
+        return
+    for i, first in enumerate(pool):
+        for rest in _combinations(pool[i + 1:], k - 1):
+            yield (first,) + rest
+
+
+def layout(text, fits, whole_fits=None, measure=len):
+    """Lines of `text` under R1-R4, measured by `fits`.
 
     Two layouts are made: R2's, which breaks inside a group only when even its
     own line cannot hold it, and R3's, which may break at any separator inside
-    a group. R3's is taken only when it has fewer lines. Where neither keeps
-    every item whole, the plain word wrap is taken unless it has more lines:
-    the label breaks inside an item either way and is reported, and the word
-    wrap fills each line rather than leaving a separator's line short.
-    `plain_fits` measures that word wrap where it differs from `fits`, and
-    `whole_fits` the word or tight compound kept whole on its own line rather
-    than split after its dot.
+    a group. R3's is taken only when it has fewer lines. `whole_fits` is the
+    measure a word or tight compound is kept whole to on its own line rather
+    than split after its dot, and `measure` the width R4 evens lines by.
     """
     opps = opportunities(text)
-    whole = _fill(text, opps, fits, ({FREE}, {TIGHT}, {INNER}, {LAST}), whole_fits)
-    inner = _fill(text, opps, fits, ({FREE, INNER}, {TIGHT}, {LAST}), whole_fits)
-    best = inner if len(inner.lines) < len(whole.lines) else whole
-    if best.unfixable:
-        plain = _fill(text, opps, plain_fits or fits, ({FREE, TIGHT, INNER, LAST},))
-        if len(plain.lines) <= len(best.lines):
-            return Layout(plain.lines, True)
-    return best
+    whole = _fill(text, opps, fits, ({FREE}, {TIGHT}, {INNER}, {LAST}), whole_fits,
+                  measure)
+    inner = _fill(text, opps, fits, ({FREE, INNER}, {TIGHT}, {LAST}), whole_fits,
+                  measure)
+    return inner if len(inner.lines) < len(whole.lines) else whole
 
 
 # ── the check over lines already set ────────────────────────────────────────
 @dataclass(frozen=True)
 class Finding:
-    rule: str      # "R1", "R2", "R3" or "separator"
+    rule: str      # "R1", "R2", "R3", "separator", or "R4" (information)
     line: int      # the break falls after lines[line]
     detail: str
     fixable: bool  # whether a layout under the rule exists at this measure
+
+    @property
+    def info(self):
+        """An over-wide item broken at a space (R4) is reported, not failed."""
+        return self.rule == "R4"
+
+
+def _item_at(text, match, i):
+    """The item of a spaced run around index i: from the spaced separator,
+    edge or group before it to the one after it."""
+    def stops(j):
+        if not _depth0(match, j) or _is_edge(text, j):
+            return True
+        # a spaced separator ends an item; a tight dot is inside one
+        return text[j] == DOT and ((j > 0 and text[j - 1] in SPACES)
+                                   or (j + 1 < len(text) and text[j + 1] in SPACES))
+    lo = i
+    while lo > 0 and not stops(lo - 1):
+        lo -= 1
+    hi = i
+    while hi < len(text) and not stops(hi):
+        hi += 1
+    return text[lo:hi].strip(SPACES)
 
 
 def _join(lines):
@@ -251,7 +339,8 @@ def _join(lines):
 
 
 def break_findings(lines, fits):
-    """Every break between `lines` that R1-R3 or the separator rule forbids.
+    """Every break between `lines` that R1-R3 or the separator rule forbids,
+    and every break inside an item no line holds whole (R4, `Finding.info`).
 
     `fits` measures a line as the wrap did; over a saved figure it is the
     widest line of the label, which a moved group may not pass.
@@ -284,7 +373,12 @@ def break_findings(lines, fits):
         if text[b] in OPENS and b in match:
             continue
         if _segment_has_list(text, match, a):
-            out.append(Finding("R1", k, f"{here}: inside a 「·」 item", fixable))
+            item = _item_at(text, match, a)
+            if item and not fits(item):
+                out.append(Finding("R4", k, f"{here}: over-wide item 「{item}」, broken "
+                                   "at a space", True))
+            else:
+                out.append(Finding("R1", k, f"{here}: inside a 「·」 item", fixable))
     return out
 
 

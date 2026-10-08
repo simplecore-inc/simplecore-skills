@@ -12,8 +12,9 @@ after one of this library's own modules, which would shadow it. Each module
 draws its figures at import time and calls `save()` for each.
 
 The run fails when a label breaks against R1-R3 (figlib/linebreak.py): an
-authored newline inside a 「·」 item or a parenthesised group, or an item or a
-group no line of its box can hold whole.
+authored newline inside a 「·」 item or a parenthesised group, or a word wider
+than its line. An item wider than its line broken at a space (R4) is listed
+and does not fail the run.
 """
 import argparse
 import os
@@ -62,17 +63,20 @@ def select_modules(cfg, wanted=()):
 
 
 def report_break_findings(findings):
-    """Print every label that breaks against R1-R3; 1 if any."""
+    """Print every label that breaks against R1-R3 (1 if any) and every
+    over-wide item broken at a space under R4 (information)."""
+    failed = 0
     for text, lines, found in findings:
-        print(f"  ✖ 「{text}」 -> 「{' / '.join(lines)}」")
+        bad = [f for f in found if not f.info]
+        failed += bool(bad)
+        print(f"  {'✖' if bad else 'ℹ'} 「{text}」 -> 「{' / '.join(lines)}」")
         for f in found:
             print(f"      {f.rule}: {f.detail}"
-                  + ("" if f.fixable else " (no line holds it whole: shorten "
-                     "the item or widen the box)"))
-    if findings:
-        print(f"line breaks against R1-R3: {len(findings)} - move an authored "
-              "newline to a separator or before the group, or let the wrap break it")
-    return 1 if findings else 0
+                  + ("" if f.fixable else " (shorten the word or widen the box)"))
+    if failed:
+        print(f"line breaks against R1-R3: {failed} - move an authored newline to a "
+              "separator or before the group, or let the wrap break it")
+    return 1 if failed else 0
 
 
 def main(argv):

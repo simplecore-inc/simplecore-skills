@@ -205,15 +205,26 @@ print("VALUE" + json.dumps({expr}, ensure_ascii=False))
         self.assertEqual(lines, ["개발 파트 (구현 ·", "결함 수정 · 강의)"])
         self.assertEqual(run.returncode, 0, run.stdout + run.stderr)
 
-    def test_item_wider_than_the_line_is_reported(self):
-        # 「데이터 수집 경로 설계」 cannot be held whole at 0.93 x 175, so no
-        # layout keeps every item whole: the label is set by the word wrap,
-        # which fills each line, and reported
+    def test_r4_over_wide_item_breaks_at_a_space_and_is_listed(self):
+        # 「데이터 수집 경로 설계」 cannot be held whole at 0.93 x 175: it breaks
+        # at its space, the other items stay whole, and the build lists it
+        # without failing
         lines, run = self.lines("데이터 수집 경로 설계 · 시험 운영 · 가", 175)
-        self.assertEqual(lines, ["데이터 수집", "경로 설계 · 시험", "운영 · 가"])
-        self.assertNotEqual(run.returncode, 0)
-        self.assertIn("「데이터 수집 경로 설계 · 시험 운영 · 가」", run.stdout)
-        self.assertIn("no line holds it whole", run.stdout)
+        self.assertEqual(lines, ["데이터 수집", "경로 설계 ·", "시험 운영 · 가"])
+        self.assertEqual(run.returncode, 0, run.stdout + run.stderr)
+        self.assertIn("R4: over-wide item 「데이터 수집 경로 설계」", run.stdout)
+
+    def test_r4_picks_the_most_even_space(self):
+        # 「설계 산출물 확정」 at 0.93 x 158: one cut holds it, and of the two
+        # spaces the one whose longer line is shorter is taken
+        lines, _ = self.lines("설계 산출물 확정", 158)
+        self.assertEqual(lines, ["설계 산출물", "확정"])
+
+    def test_r4_leaves_a_group_that_can_break_to_r2(self):
+        # the item ends at the parenthesis, so the group moves whole (R2)
+        # rather than R4 cutting the item before it
+        lines, _ = self.lines("가 · 사용자 정의 수신기(Data Streamer)", 290)
+        self.assertEqual(lines, ["가 · 사용자 정의 수신기", "(Data Streamer)"])
 
     def test_authored_newline_inside_an_item_is_reported(self):
         lines, run = self.lines("성능 실측 · 장애\n시나리오 시험", 1000)
@@ -246,7 +257,7 @@ print("VALUE" + json.dumps({expr}, ensure_ascii=False))
         rows, run = self.value(
             '[r[0] for r in item_lines(["본 사업용 개발 · 시험"], 158, 24, False)]')
         self.assertEqual(rows, ["본 사업용", "개발 · 시험"])
-        self.assertIn("no line holds it whole", run.stdout)
+        self.assertIn("R4: over-wide item 「본 사업용 개발」", run.stdout)
 
     def test_item_glue_keeps_a_number_with_its_unit(self):
         plain, _ = self.value('wrap("처리 목표 30만 건/초 유지", 200, 24)')

@@ -1,5 +1,7 @@
-"""R1-R3: the rule over set lines, and the `[line break]` check over a saved
+"""R1-R4: the rule over set lines, and the `[line break]` check over a saved
 figure, each red on its broken form and quiet on the fixed one."""
+import contextlib
+import io
 import unittest
 
 from helpers import TOOLKIT, Project, svg, text  # noqa: F401
@@ -29,8 +31,15 @@ class Rule(unittest.TestCase):
         self.assertEqual(rules(["성능 실측", "· 장애 시나리오 시험"]), ["separator"])
 
     def test_tight_compound_breaks_as_a_word(self):
+        # a tight dot binds only the words touching it: its items stop at the
+        # nearest space, so the spaces around the compound are word breaks
         self.assertEqual(rules(["제2장 1-바", "하드웨어·소프트웨어"]), [])
+        self.assertEqual(rules(["C37.118", "SOC·FRACSEC"]), [])
         self.assertEqual(rules(["운영 레코드 구성·", "크기·주기 승인"]), [])
+
+    def test_spaced_run_item_split_at_an_inner_space_fails(self):
+        # a spaced run's item runs to the edge: 「소프트웨어 구성」 is one item
+        self.assertEqual(rules(["하드웨어 · 소프트웨어", "구성"]), ["R1"])
 
     def test_plain_phrase_breaks_by_word(self):
         self.assertEqual(rules(["수신 버퍼 폐기", "0건(제안 기준)"]), [])
@@ -87,12 +96,51 @@ class Check(unittest.TestCase):
         return [(i[0], i[1]) for i in verify.line_break_errors([f], self.cfg)]
 
     def test_wrapped_break_inside_an_item_fails(self):
-        # the box cannot take 「시나리오」 after 「성능 실측 · 장애」: the wrap forced it
-        self.assertEqual(self.found(["성능 실측 · 장애", "시나리오 시험"], 200),
+        # the box (212 at the fill) cannot take 「시나리오」 after 「성능 실측 ·
+        # 장애」 (254), and holds the item 「장애 시나리오 시험」 (190) whole
+        self.assertEqual(self.found(["성능 실측 · 장애", "시나리오 시험"], 260),
                          [("a.svg", "R1")])
 
     def test_wrapped_break_at_the_separator_passes(self):
-        self.assertEqual(self.found(["성능 실측 ·", "장애 시나리오 시험"], 200), [])
+        self.assertEqual(self.found(["성능 실측 ·", "장애 시나리오 시험"], 260), [])
+
+    def test_over_wide_item_broken_at_a_space_is_r4(self):
+        # at 200 (156 at the fill) 「장애 시나리오 시험」 fits no line: information
+        self.assertEqual(self.found(["성능 실측 ·", "장애 시나리오", "시험"], 200),
+                         [("a.svg", "R4")])
+
+    def test_r4_alone_passes_the_cli_and_is_counted_apart(self):
+        self.fig(["성능 실측 ·", "장애 시나리오", "시험"], 200)
+        run = self.p.run("linebreaks.py", "--counts")
+        self.assertEqual(run.returncode, 0, run.stdout + run.stderr)
+        self.assertIn("0  a.svg  (R4 1)", run.stdout)
+        self.assertIn("0 break(s) against R1-R3", run.stdout)
+        self.assertIn("1 over-wide item(s) broken at a space (R4)", run.stdout)
+
+    def test_r1_fails_the_cli(self):
+        self.fig(["성능 실측 · 장애", "시나리오 시험"], 260)
+        run = self.p.run("linebreaks.py", "--counts")
+        self.assertEqual(run.returncode, 1, run.stdout + run.stderr)
+        self.assertIn("1  a.svg", run.stdout)
+
+    def verify_out(self):
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            verify.run(self.cfg)
+        return out.getvalue()
+
+    def test_r4_alone_is_a_review_in_verify_not_a_failure(self):
+        self.fig(["성능 실측 ·", "장애 시나리오", "시험"], 200)
+        out = self.verify_out()
+        self.assertIn("[line break] no break inside", out)
+        self.assertIn("[over-wide item] 1 ", out)
+        self.assertIn("a.svg: 「장애 시나리오」 / 「시험」: over-wide item", out)
+
+    def test_r1_fails_verify(self):
+        self.fig(["성능 실측 · 장애", "시나리오 시험"], 260)
+        out = self.verify_out()
+        self.assertIn("[line break] 1", out)
+        self.assertNotIn("[over-wide item]", out)
 
     def test_two_labels_stacked_in_a_wide_box_pass(self):
         # 「시나리오」 would fit after the first line: two strings, not a wrap

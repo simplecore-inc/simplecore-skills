@@ -28,7 +28,8 @@ run. The reviews list what to look at and fail nothing.
   bullets        each figure lists all its items or none, as it declares
   stub-line      no wrapped run ends on a line under `stubLine` of its longest
   line break     no line breaks inside a 「·」 item or a parenthesised group
-                 against R1-R3, and no separator opens a line
+                 against R1-R3, and no separator opens a line; an item wider
+                 than its line broken at a space (R4) is listed as a review
   label form     no label closes on a predicate
   register       no label carries a clause, particle or working word
   section numbers no document section number in figure text
@@ -40,7 +41,7 @@ run. The reviews list what to look at and fail nothing.
                  under the large-text size and 3.0 at it, or `contrastFloor`
   references     every link and placement resolves, captions match, copies
                  are current, nothing is left unplaced
-  content edge, legend edge, strip, height    reviews
+  over-wide item, content edge, legend edge, strip, height    reviews
 
 None of them replaces looking at the rendered figure.
 """
@@ -246,7 +247,8 @@ def run(cfg, prefixes=(), render_dir=None):
     r.check("stub-line", stub_lines(svgs, cfg), "no wrapped run ends on a stub",
             lambda i: f"{i[0]}: 「{i[1][:30]}」 is {i[2]:.0%} of 「{i[3][:30]}」 - "
                       "shorten the string or widen the column")
-    r.check("line break", line_break_errors(svgs, cfg),
+    breaks = line_break_errors(svgs, cfg)
+    r.check("line break", None if breaks is None else [i for i in breaks if i[1] != "R4"],
             "no break inside a 「·」 item or a group",
             lambda i: f"{i[0]}: {i[1]} {i[3]}"
                       + ("" if i[4] else " - no line holds it whole"))
@@ -276,6 +278,10 @@ def run(cfg, prefixes=(), render_dir=None):
                 f"{links} manuscript links · {placed} placed only in a deck · "
                 f"{nfiles} files, none broken or unplaced", lambda p: p,
                 f"{len(problems)} problem(s) over {nfiles} files")
+    r.review("over-wide item", [i for i in breaks or () if i[1] == "R4"],
+             "items wider than their line, broken at a space (R4) - shorten one "
+             "to keep it whole",
+             lambda i: f"{i[0]}: {i[3]}")
     r.review("content edge", past_content_edge(svgs, cfg),
              "with a box past the line the rest line up on - look, then keep or pull it in",
              lambda i: f"{i[0]}: {i[2]:g} units past the edge at {i[1]:g}, "

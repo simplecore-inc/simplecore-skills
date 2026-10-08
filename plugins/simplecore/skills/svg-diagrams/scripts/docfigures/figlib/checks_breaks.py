@@ -1,4 +1,4 @@
-"""The line-break check over saved figures: R1-R3 (figlib/linebreak.py).
+"""The line-break check over saved figures: R1-R4 (figlib/linebreak.py).
 
 A saved figure carries one <text> per line, so a label is read back as a
 wrapped run (`placed_runs`: the same x, anchor, size, weight and fill, one
@@ -13,7 +13,8 @@ Two labels stacked one step apart read back as one run, so an R1 break is
 reported only where the wrap was forced: the line before it could not take
 the next line's first word at that measure. An authored newline inside an item is
 not forced and is left to the build, which reads it in the source string
-(`build.py`, through `wrap()`).
+(`build.py`, through `wrap()`). A break inside an item that no line at that
+measure holds whole is R4, reported as information rather than as a failure.
 """
 from figlib.checks_drawing import FILL, placed_runs
 from figlib.linebreak import DOT, OPENS, break_findings
@@ -63,7 +64,8 @@ def run_findings(lines, size, width, measure=None):
 
 
 def line_break_errors(svgs, cfg):
-    """(file, rule, lines, detail, fixable) for every break against R1-R3.
+    """(file, rule, lines, detail, fixable) for every break against R1-R3, and
+    every over-wide item broken at a space (rule "R4", information).
 
     `lineBreaks: false` turns the check off. `lineBreaks.allow` lists runs
     that are separate labels stacked one step apart, each written as its lines
