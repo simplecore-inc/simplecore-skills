@@ -479,13 +479,52 @@ it lands where the browser breaks the line.
 that absorbs `tw()` running a few percent short on mixed Hangul and Latin. An
 authored newline is a line boundary, and a joining mark (「·」 「→」 「~」 「/」)
 that would open a line moves up to the end of the line before when it fits the
-full width. A box's items are glued before they wrap: a no-break space binds a
-spaced middle dot to the word before it, so no line opens on the dot, and every
-`noBreak` pattern binds its two groups (a page id and its number, a number and
-its unit); the drawn line carries plain spaces. A project whose figures set
-「·」 lists inside running labels can set `wrapListItems`: the wrap then breaks
-such a list between items while every item fits with its separator, and the
-build fails on a break inside an item that would have fit, naming the string.
+full width. A box's items are glued before they wrap: every `noBreak` pattern
+binds its two groups (a page id and its number, a number and its unit); the
+drawn line carries plain spaces.
+
+**A label breaks only where its 「·」 list and its parentheses allow (R1-R3).**
+Every label goes through these rules, in `figlib/linebreak.py`:
+
+- **R1.** A line breaks only at a middle-dot separator, never inside an item.
+  The separator stays at the end of its line: 「결함 수정 ·」 / 「강의」, never
+  「결함 수정」 / 「· 강의」 (PowerPoint, measured, ends Korean lines on the dot
+  too). A spaced separator (「a · b」) separates phrases, and an item runs to
+  the run's edge: a comma, a colon, a semicolon, a full stop before a space, a
+  parenthesis or the text's edge, so 「결함 수정」 is one item. A tight dot
+  (「하드웨어·소프트웨어」) binds only the words touching it: the spaces around
+  the compound are ordinary word breaks, and a break after the dot (no space)
+  is taken only when no space breaks the line.
+- **R2.** A parenthesised group that would break inside moves whole to the
+  next line, the break going right before its opening parenthesis even where it
+  touches the word before it: 「개발 파트」 / 「(구현 · 결함 수정 · 강의)」.
+- **R3.** Only when R2 adds a line does the break go inside the group, and then
+  only at a separator (R1 holds inside): 「개발 파트 (구현 ·」 / 「결함 수정 · 강의)」.
+
+Outside lists and groups a phrase breaks by word, and Korean breaks between
+words, never between syllables. A separator closing a line is held to the full
+width, the 93% limit applying to the line without it. A word or a tight
+compound wider than the limit and within the full width keeps its line rather
+than splitting. An item no line of the box can hold whole has no line under
+R1: the label is set by the plain word wrap and the build reports it, and the
+cure is a shorter item or a wider box, never a hand-placed newline inside the
+item.
+
+**The build fails on a label that breaks against R1-R3**, naming the string:
+an item or group no line holds whole, and an authored newline inside an item or
+a group (「성능 실측 · 장애\n시나리오 시험」, written 「성능 실측 ·\n장애
+시나리오 시험」). `verify.py` checks the saved figures as `[line break]`, and
+`python3 <skill>/scripts/docfigures/linebreaks.py [svg ...]` runs the same
+check over any SVG, a deck's copies included, with a count per file. The check
+reads each wrapped run (as `[stub-line]` does) and judges every break between
+its lines at the box drawn round the run, the smallest rect holding it less
+the padding at the 93% fill, or at the run's widest line where no box holds
+it. Two labels stacked one step apart read as one run, so an R1 break is
+reported only where the box forced the wrap; an authored newline is left to
+the build, which reads the source string. A run that is two labels by design
+goes in `lineBreaks.allow`, written as its lines joined by 「 / 」; a list set
+without bullets whose second item could be read as the first item's tail is
+better given bullets or reworded than allowed.
 
 **A wrapped run never ends on a stub.** The column decides where a sentence
 breaks, so a word can end up alone on the last line, and a reader looking at
@@ -810,7 +849,7 @@ importable as a module constant.
 | `verdict` | | `{pass, block}` hues, or `{from, key}` naming the file and dotted key that hold them (a deck's `checks.verdict`) | theme's own |
 | `bullets` | | whether titled boxes bullet their items | `true` |
 | `noBreak` | | patterns with two groups whose space must not break a line inside a box | `[]` |
-| `wrapListItems` | | break a spaced 「·」 list between its items and fail the build on a break inside one that fits | `false` |
+| `lineBreaks` | | `false` turns the `[line break]` check off; `{allow: [...]}` lists runs that are separate labels, as lines joined by 「 / 」 | on |
 | `stubLine` | | share of its run's longest line under which a wrapped run's last line fails as `[stub-line]`; `null` turns the check off | `0.42` |
 | `heightReview` | | height over which a figure is listed for review; a number or `{width: n}` | `840` |
 | `deadMargin` | | side gap that fails, judged per board in place of the lint's 40; a number or `{width: n}` | lint's own |

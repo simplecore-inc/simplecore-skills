@@ -27,6 +27,8 @@ run. The reviews list what to look at and fail nothing.
   icon           no Lucide name written at a call site
   bullets        each figure lists all its items or none, as it declares
   stub-line      no wrapped run ends on a line under `stubLine` of its longest
+  line break     no line breaks inside a 「·」 item or a parenthesised group
+                 against R1-R3, and no separator opens a line
   label form     no label closes on a predicate
   register       no label carries a clause, particle or working word
   section numbers no document section number in figure text
@@ -60,6 +62,7 @@ from figlib.checks_drawing import (bullet_mode, dash_pattern_errors,  # noqa: E4
                                    legend_past_column, max_rung_errors, past_content_edge,
                                    strip_reviews, stroke_width_errors, stub_lines,
                                    sub_body_share, width_errors)
+from figlib.checks_breaks import line_break_errors  # noqa: E402
 from figlib.checks_refs import references  # noqa: E402
 from figlib.svgread import board_of, texts, toolkit_dir  # noqa: E402,F401
 
@@ -243,6 +246,10 @@ def run(cfg, prefixes=(), render_dir=None):
     r.check("stub-line", stub_lines(svgs, cfg), "no wrapped run ends on a stub",
             lambda i: f"{i[0]}: 「{i[1][:30]}」 is {i[2]:.0%} of 「{i[3][:30]}」 - "
                       "shorten the string or widen the column")
+    r.check("line break", line_break_errors(svgs, cfg),
+            "no break inside a 「·」 item or a group",
+            lambda i: f"{i[0]}: {i[1]} {i[3]}"
+                      + ("" if i[4] else " - no line holds it whole"))
     r.check("label form", predicate_labels(svgs, cfg), "every label in noun form",
             lambda i: f"{i[0]}: {i[1][:60]}")
     r.check("register", register_errors(svgs, cfg), "every label a 개조식 noun phrase",

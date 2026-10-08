@@ -281,7 +281,12 @@ SAME = 0.6             # coordinates this close are the same x, baseline or step
 
 
 def _wrapped_runs(svg):
-    """Lists of (text, size) lines that read as one wrapped string.
+    """Lists of (text, size) lines that read as one wrapped string."""
+    return [[(text, size) for _y, text, size in run] for _x, _a, run in placed_runs(svg)]
+
+
+def placed_runs(svg):
+    """(x, anchor, [(y, text, size)]) for each run of lines read as one string.
 
     A run is a column of texts with the same x, anchor, size, weight and fill,
     each one line step below the last, and the step the same down the run. A
@@ -309,12 +314,12 @@ def _wrapped_runs(svg):
 
     columns = {}
     for key, x, y, text, size in lines:
-        columns.setdefault(key, []).append((y, x, text, size))
+        columns.setdefault(key, []).append((y, x, text, size, key[1]))
     runs = []
     for column in columns.values():
         column.sort()
         run, step = [], None
-        for y, x, text, size in column:
+        for y, x, text, size, anchor in column:
             gap = y - run[-1][0] if run else None
             joins = (gap is not None
                      and STEP_RANGE[0] * size <= gap <= STEP_RANGE[1] * size
@@ -322,14 +327,14 @@ def _wrapped_runs(svg):
                      and not opens_item(x, y, size))
             if joins:
                 step = gap if step is None else step
-                run.append((y, text, size))
+                run.append((y, text, size, x, anchor))
                 continue
             if len(run) >= 2:
-                runs.append(run)
-            run, step = [(y, text, size)], None
+                runs.append((run[0][3], run[0][4], [r[:3] for r in run]))
+            run, step = [(y, text, size, x, anchor)], None
         if len(run) >= 2:
-            runs.append(run)
-    return [[(text, size) for _y, text, size in run] for run in runs]
+            runs.append((run[0][3], run[0][4], [r[:3] for r in run]))
+    return runs
 
 
 FILL = 0.93            # the share of its width the wrap fills a line to

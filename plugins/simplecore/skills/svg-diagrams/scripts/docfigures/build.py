@@ -11,8 +11,9 @@ even when a glob matches them: a test file (`test_*.py`,
 after one of this library's own modules, which would shadow it. Each module
 draws its figures at import time and calls `save()` for each.
 
-With `wrapListItems` on, the run fails when a wrap fell inside one item of a
-「·」 list that fits whole.
+The run fails when a label breaks against R1-R3 (figlib/linebreak.py): an
+authored newline inside a 「·」 item or a parenthesised group, or an item or a
+group no line of its box can hold whole.
 """
 import argparse
 import os
@@ -60,14 +61,18 @@ def select_modules(cfg, wanted=()):
     return modules, skipped
 
 
-def report_split_items(split_items):
-    """Print every wrap that fell inside one item of a 「·」 list; 1 if any."""
-    for text, lines in split_items:
-        print(f"  ✖ line broken inside a list item: 「{text}」 -> 「{' / '.join(lines)}」")
-    if split_items:
-        print(f"split list items: {len(split_items)} - shorten the string or "
-              "widen the box")
-    return 1 if split_items else 0
+def report_break_findings(findings):
+    """Print every label that breaks against R1-R3; 1 if any."""
+    for text, lines, found in findings:
+        print(f"  ✖ 「{text}」 -> 「{' / '.join(lines)}」")
+        for f in found:
+            print(f"      {f.rule}: {f.detail}"
+                  + ("" if f.fixable else " (no line holds it whole: shorten "
+                     "the item or widen the box)"))
+    if findings:
+        print(f"line breaks against R1-R3: {len(findings)} - move an authored "
+              "newline to a separator or before the group, or let the wrap break it")
+    return 1 if findings else 0
 
 
 def main(argv):
@@ -95,7 +100,7 @@ def main(argv):
         print(f"--- {m.stem} ---")
         runpy.run_path(str(m), run_name="__main__")
     import common
-    return report_split_items(common.SPLIT_ITEMS)
+    return report_break_findings(common.BREAK_FINDINGS)
 
 
 if __name__ == "__main__":

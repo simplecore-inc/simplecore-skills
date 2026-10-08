@@ -24,7 +24,7 @@ declares.
 from figlib.settings import *  # noqa: F401,F403
 from figlib.settings import CFG, LIBRARY, toolkit_dir  # noqa: F401
 from figlib.text import *  # noqa: F401,F403
-from figlib.text import SPLIT_ITEMS  # noqa: F401
+from figlib.text import BREAK_FINDINGS  # noqa: F401
 from figlib.save import *  # noqa: F401,F403
 from figlib.boxes import *  # noqa: F401,F403
 from figlib.marks import *  # noqa: F401,F403

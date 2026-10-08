@@ -57,6 +57,15 @@ height. Draw with those rather than with a number: a fixed height is what
 leaves a band of paper under a row's text, and the lint's box-geometry checks
 report exactly that.
 
+**A label never breaks inside a 「·」 item or a parenthesised group.** The
+library's `wrap()` breaks a list only at a separator, which stays at the end of
+its line; moves a group whole to the next line before breaking inside it, and
+then only at a separator (R1-R3 in `references/document-figures.md`). An
+authored newline obeys the same rule, and the build fails on one that does not.
+`verify.py` checks the saved figures as `[line break]`;
+`scripts/docfigures/linebreaks.py <svg>...` runs that check over any SVG with a
+count per file.
+
 **Minimise height on every figure, not only on the ones that overflow.** Width
 is fixed, so the page scales a tall figure down and its type prints smaller
 than its neighbours'. Before saving, squeeze the repeating unit, fold

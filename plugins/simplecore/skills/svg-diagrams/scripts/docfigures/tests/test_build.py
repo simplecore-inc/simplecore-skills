@@ -132,7 +132,8 @@ fig_listing()
 
 
 class Wrap(unittest.TestCase):
-    """The default wrap: by word, with the glue binding what must stay together."""
+    """The wrap: by word, with the glue binding what must stay together, and
+    R1-R3 (figlib/linebreak.py) for 「·」 lists and parenthesised groups."""
 
     CONFIG = {"noBreak": ["([0-9][0-9,.]*만?) (건|행|ms|초)"]}
 
@@ -161,18 +162,69 @@ print("VALUE" + json.dumps({expr}, ensure_ascii=False))
         lines, _ = self.lines("기술·교육 지원", 1000)
         self.assertEqual(lines, ["기술·교육 지원"])
 
-    def test_tight_dot_is_not_a_break(self):
-        # a compound joined by a tight dot is one word to the wrap
-        lines, _ = self.lines("전력계통·배전설비 운영", 220)
+    def test_tight_compound_breaks_as_a_word(self):
+        # a tight dot binds the words touching it; the space after the
+        # compound is an ordinary word break
+        lines, run = self.lines("전력계통·배전설비 운영", 220)
         self.assertEqual(lines, ["전력계통·배전설비", "운영"])
-
-    def test_spaced_list_breaks_by_word_and_passes(self):
-        # the word wrap fills each line; a list item may break, and that is
-        # not a build failure unless the project asks for list-item wraps
-        lines, run = self.lines("본 사업용 개발 · 수정 부분 · 시험", 260)
-        self.assertEqual(lines, ["본 사업용 개발 · 수정", "부분 · 시험"])
         self.assertEqual(run.returncode, 0, run.stdout + run.stderr)
-        self.assertNotIn("line broken inside a list item", run.stdout)
+
+    def test_tight_dot_is_a_break_when_the_compound_does_not_fit(self):
+        # 「전력계통·배전설비」 is wider than 0.93 x 150: the break goes after
+        # the dot, never inside a word
+        lines, _ = self.lines("전력계통·배전설비", 150)
+        self.assertEqual(lines, ["전력계통·", "배전설비"])
+
+    def test_tight_compound_within_the_full_width_keeps_its_line(self):
+        # wider than the 93% limit, inside the full width: kept whole, as a
+        # word that long is
+        lines, run = self.value(
+            'wrap("하드웨어·소프트웨어", __import__("common").tw("하드웨어·소프트웨어", 24, False)'
+            ' / 0.96, 24)')
+        self.assertEqual(lines, ["하드웨어·소프트웨어"])
+        self.assertEqual(run.returncode, 0, run.stdout + run.stderr)
+
+    def test_r1_list_breaks_at_a_separator_never_inside_an_item(self):
+        # the word wrap would give 「본 사업용 개발 · 수정」 / 「부분 · 시험」
+        lines, run = self.lines("본 사업용 개발 · 수정 부분 · 시험", 260)
+        self.assertEqual(lines, ["본 사업용 개발 ·", "수정 부분 · 시험"])
+        self.assertEqual(run.returncode, 0, run.stdout + run.stderr)
+
+    def test_r2_group_moves_whole_to_the_next_line(self):
+        lines, run = self.lines("개발 파트 (구현 · 결함 수정 · 강의)", 320)
+        self.assertEqual(lines, ["개발 파트", "(구현 · 결함 수정 · 강의)"])
+        self.assertEqual(run.returncode, 0, run.stdout + run.stderr)
+
+    def test_r2_moves_a_group_touching_the_word_before_it(self):
+        lines, _ = self.lines("개발 파트(구현 · 결함 수정 · 강의)", 320)
+        self.assertEqual(lines, ["개발 파트", "(구현 · 결함 수정 · 강의)"])
+
+    def test_r3_breaks_inside_the_group_at_a_separator_when_moving_adds_a_line(self):
+        # moved whole the group needs two lines of its own, three in all
+        lines, run = self.lines("개발 파트 (구현 · 결함 수정 · 강의)", 250)
+        self.assertEqual(lines, ["개발 파트 (구현 ·", "결함 수정 · 강의)"])
+        self.assertEqual(run.returncode, 0, run.stdout + run.stderr)
+
+    def test_item_wider_than_the_line_is_reported(self):
+        # 「데이터 수집 경로 설계」 cannot be held whole at 0.93 x 175, so no
+        # layout keeps every item whole: the label is set by the word wrap,
+        # which fills each line, and reported
+        lines, run = self.lines("데이터 수집 경로 설계 · 시험 운영 · 가", 175)
+        self.assertEqual(lines, ["데이터 수집", "경로 설계 · 시험", "운영 · 가"])
+        self.assertNotEqual(run.returncode, 0)
+        self.assertIn("「데이터 수집 경로 설계 · 시험 운영 · 가」", run.stdout)
+        self.assertIn("no line holds it whole", run.stdout)
+
+    def test_authored_newline_inside_an_item_is_reported(self):
+        lines, run = self.lines("성능 실측 · 장애\n시나리오 시험", 1000)
+        self.assertEqual(lines, ["성능 실측 · 장애", "시나리오 시험"])
+        self.assertNotEqual(run.returncode, 0)
+        self.assertIn("R1: 「성능 실측 · 장애」 / 「시나리오 시험」", run.stdout)
+
+    def test_authored_newline_at_a_separator_passes(self):
+        lines, run = self.lines("성능 실측 ·\n장애 시나리오 시험", 1000)
+        self.assertEqual(lines, ["성능 실측 ·", "장애 시나리오 시험"])
+        self.assertEqual(run.returncode, 0, run.stdout + run.stderr)
 
     def test_no_break_space_is_kept_in_the_separator(self):
         lines, _ = self.lines("A\u00a0· B", 1000)
@@ -182,11 +234,19 @@ print("VALUE" + json.dumps({expr}, ensure_ascii=False))
         lines, _ = self.lines("화면 44 · 프레임 162\n엔터티 112", 1000, 14)
         self.assertEqual(lines, ["화면 44 · 프레임 162", "엔터티 112"])
 
-    def test_item_glue_keeps_a_dot_with_the_word_before_it(self):
-        # 「본 사업용 개발」 fits the 148.8 limit and 「본 사업용 개발 ·」 does not,
-        # so without the glue the second line would open on the dot
+    def test_closing_separator_is_held_to_the_full_width(self):
+        # 「본 사업용 개발」 (145.9) fits the 148.8 limit and 「본 사업용 개발 ·」
+        # (159.4) the full 160: the item stays whole with its separator
         rows, _ = self.value('[r[0] for r in item_lines(["본 사업용 개발 · 시험"], 160, 24, False)]')
+        self.assertEqual(rows, ["본 사업용 개발 ·", "시험"])
+
+    def test_closing_separator_past_the_full_width_moves_the_break(self):
+        # at 158 「본 사업용 개발 ·」 passes the full width: the item cannot be
+        # held whole, so it breaks by word and no line opens on the dot
+        rows, run = self.value(
+            '[r[0] for r in item_lines(["본 사업용 개발 · 시험"], 158, 24, False)]')
         self.assertEqual(rows, ["본 사업용", "개발 · 시험"])
+        self.assertIn("no line holds it whole", run.stdout)
 
     def test_item_glue_keeps_a_number_with_its_unit(self):
         plain, _ = self.value('wrap("처리 목표 30만 건/초 유지", 200, 24)')
@@ -194,20 +254,6 @@ print("VALUE" + json.dumps({expr}, ensure_ascii=False))
         rows, _ = self.value(
             '[r[0] for r in item_lines(["처리 목표 30만 건/초 유지"], 200, 24, False)]')
         self.assertEqual(rows, ["처리 목표", "30만 건/초 유지"])
-
-
-class ListItemWrap(Wrap):
-    """`wrapListItems`: a 「·」 list breaks between items, and a break inside
-    one fails the build."""
-
-    CONFIG = dict(Wrap.CONFIG, wrapListItems=True)
-
-    def test_spaced_list_breaks_by_word_and_passes(self):
-        lines, run = self.lines("본 사업용 개발 · 수정 부분 · 시험", 260)
-        for item in ("본 사업용 개발", "수정 부분"):
-            self.assertTrue(any(item in ln for ln in lines), (item, lines))
-        self.assertEqual(run.returncode, 0, run.stdout + run.stderr)
-        self.assertNotIn("line broken inside a list item", run.stdout)
 
     def test_lone_trailing_mark_rides_up(self):
         # 「공동 검증 1:3 ·」 is 149.8 wide, inside 158
@@ -217,24 +263,6 @@ class ListItemWrap(Wrap):
     def test_lone_mark_too_wide_to_ride_up_stays(self):
         lines, _ = self.value('_raise_marks(["공동 검증 1:3", "·"], 140, 24)')
         self.assertEqual(lines, ["공동 검증 1:3", "·"])
-
-    def test_item_too_wide_with_its_separator_is_not_reported(self):
-        # 「본 사업용 개발」 is 145.9 wide, 159.4 with 「 ·」: inside the 153.5
-        # limit alone and over it with the separator, so the list wrap cannot
-        # hold it and the word wrap breaks it. One measure for both: it is an
-        # item too wide to keep whole, not a split to report.
-        lines, run = self.lines("가 · 본 사업용 개발 · 시험", 165)
-        self.assertEqual(run.returncode, 0, run.stdout + run.stderr)
-        self.assertNotIn("line broken inside a list item", run.stdout)
-
-    def test_short_item_broken_by_the_word_fallback_is_reported(self):
-        # the first item cannot be held whole, so the word wrap runs and breaks
-        # 「시험 운영」, which fits with its separator: that break is reported
-        lines, run = self.lines("데이터 수집 경로 설계 · 시험 운영 · 가", 175)
-        self.assertEqual(lines, ["데이터 수집", "경로 설계 · 시험", "운영 · 가"])
-        self.assertNotEqual(run.returncode, 0)
-        self.assertIn("line broken inside a list item: 「데이터 수집 경로 설계 · 시험 운영 · 가」",
-                      run.stdout)
 
 
 if __name__ == "__main__":
