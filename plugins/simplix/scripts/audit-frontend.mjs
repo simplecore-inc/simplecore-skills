@@ -7882,6 +7882,42 @@ function packageExportFindings() {
   return findings;
 }
 
+/**
+ * Entries whose `types` name a file other than their `source`. `tsc` and the editor then read the
+ * package's build output, so a type change in one package is invisible to its consumers until that
+ * package is rebuilt.
+ */
+function packageTypesFindings() {
+  const findings = [];
+  for (const base of ["modules", "packages"]) {
+    const root = path.join(ROOT, base);
+    if (!fs.existsSync(root)) continue;
+    for (const name of fs.readdirSync(root)) {
+      const manifest = path.join(root, name, "package.json");
+      if (!fs.existsSync(manifest)) continue;
+      let parsed;
+      try {
+        parsed = JSON.parse(fs.readFileSync(manifest, "utf8"));
+      } catch {
+        continue;
+      }
+      const exports = parsed.exports;
+      if (!exports || typeof exports !== "object" || parsed.bin) continue;
+      for (const [subpath, entry] of Object.entries(exports)) {
+        if (!entry || typeof entry !== "object") continue;
+        if (typeof entry.source !== "string" || typeof entry.types !== "string") continue;
+        if (entry.types === entry.source) continue;
+        findings.push({
+          file: path.relative(ROOT, manifest),
+          excerpt: `"${subpath}" types ${entry.types} is not its source ${entry.source} — `
+            + "run simplix validate --fix (CLI 0.3.11+)",
+        });
+      }
+    }
+  }
+  return findings;
+}
+
 // ---------------------------------------------------------------------------
 // Locale rules (JSON-based, separate collection)
 // ---------------------------------------------------------------------------
@@ -8284,7 +8320,7 @@ const COLLECTION_RULES = [
     id: "package-export-without-source",
     invariant: "#5",
     level: "error",
-    desc: "A package's export entry carries no `source` condition — the dev server then serves that subpath from `dist/`, every source edit under it is invisible in the browser while HMR reports success, and the screen shows the code as it was at the last build (`simplix scaffold` writes the `./pages` entry this way) — or it names a `source` file that `files` does not publish, which resolves in this checkout and throws ERR_MODULE_NOT_FOUND for anyone who installs the package from a registry",
+    desc: "A package's export entry carries no `source` condition — the dev server then serves that subpath from `dist/`, every source edit under it is invisible in the browser while HMR reports success, and the screen shows the code as it was at the last build (`simplix scaffold` before 0.3.11 wrote the `./pages` entry this way) — or it names a `source` file that `files` does not publish, which resolves in this checkout and throws ERR_MODULE_NOT_FOUND for anyone who installs the package from a registry",
     collect: packageExportFindings,
     samples: {
       broken: {
@@ -8304,8 +8340,8 @@ const COLLECTION_RULES = [
           "modules/site/package.json": `{
   "name": "@acme/site",
   "exports": {
-    ".": { "source": "./src/index.ts", "types": "./dist/index.d.ts", "import": "./dist/index.js" },
-    "./pages": { "source": "./src/pages.ts", "types": "./dist/pages.d.ts", "import": "./dist/pages.js" }
+    ".": { "source": "./src/index.ts", "types": "./src/index.ts", "import": "./dist/index.js" },
+    "./pages": { "source": "./src/pages.ts", "types": "./src/pages.ts", "import": "./dist/pages.js" }
   }
 }
 `,
@@ -8368,6 +8404,64 @@ const COLLECTION_RULES = [
           note: "a package that declares no exports map at all",
           files: {
             "modules/site/package.json": `{ "name": "@acme/site", "main": "./dist/index.js" }
+`,
+          },
+        },
+      ],
+    },
+  },
+  {
+    id: "package-types-not-source",
+    invariant: "#5",
+    level: "review",
+    desc: "An export entry's `types` names a file other than its `source`, so tsc and the editor read the package's build output and a type change reaches its consumers only after that package is rebuilt — run `simplix validate --fix` (CLI 0.3.11+), which points `types` at the source",
+    collect: packageTypesFindings,
+    samples: {
+      broken: {
+        files: {
+          "modules/site/package.json": `{
+  "name": "@acme/site",
+  "exports": {
+    ".": { "source": "./src/index.ts", "types": "./dist/index.d.ts", "import": "./dist/index.js" }
+  }
+}
+`,
+        },
+      },
+      fixed: {
+        files: {
+          "modules/site/package.json": `{
+  "name": "@acme/site",
+  "exports": {
+    ".": { "source": "./src/index.ts", "types": "./src/index.ts", "import": "./dist/index.js" }
+  }
+}
+`,
+        },
+      },
+      miss: [
+        {
+          note: "a command-line tool, whose exports Node resolves and Node has no source condition",
+          files: {
+            "packages/cli/package.json": `{
+  "name": "@acme/cli",
+  "bin": { "acme": "./dist/bin.js" },
+  "exports": {
+    ".": { "source": "./src/index.ts", "types": "./dist/index.d.ts", "import": "./dist/index.js" }
+  }
+}
+`,
+          },
+        },
+        {
+          note: "an entry without a source, which package-export-without-source reports",
+          files: {
+            "modules/site/package.json": `{
+  "name": "@acme/site",
+  "exports": {
+    ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" }
+  }
+}
 `,
           },
         },

@@ -171,7 +171,7 @@ These invariants apply to **every** frontend file you touch. Treat each as invio
 >
 > **New-screen consistency** - post-scaffold customization of a new screen starts with the precedent check (two same-shape precedent screens read end to end); invariant #51 → `customize/precedent-check.md`.
 
-5. **package.json `source` export** - every export entry in a generated package MUST carry a `"source"` condition, and its `"types"` MUST name the same file. Verify after every `add-module` / `scaffold`.
+5. **package.json `source` export** - every export entry in a generated package MUST carry a `"source"` condition, and its `"types"` MUST name the same file; `simplix validate --fix` repairs either. Verify after every `add-module` / `scaffold`.
 6. **Snapshot before regenerate** - before regenerating from OpenAPI, snapshot the current field set (entity fields, enum values). Diff after regenerate drives widget updates.
 7. **Live API over local JSON** - when `simplix.config.ts` points at a live API URL, never substitute a stale local JSON: tag names and schemas can differ silently.
 
