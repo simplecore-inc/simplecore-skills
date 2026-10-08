@@ -181,26 +181,26 @@ pnpm --filter <domain-package> run build
 
 The package name comes from the domain package's own `package.json` (§ Prerequisites, Package names).
 
-**Verify**: Build succeeds with `dist/index.js` and `dist/mock.js` output.
+**Verify**: `pnpm --filter <domain-package> typecheck` passes.
 
-**MANDATORY CHECK**: Verify that `package.json` exports include the `"source"` condition for every entry. This is required for Vite dev server HMR - without it, changes to source files are not reflected until the package is rebuilt.
+**MANDATORY CHECK**: Every `package.json` export entry carries `"source"`, and its `"types"` names the same file.
 
 ```json
 "exports": {
   ".": {
     "source": "./src/index.ts",      ← MUST EXIST
-    "types": "./dist/index.d.ts",
+    "types": "./src/index.ts",       ← SAME FILE
     "import": "./dist/index.js"
   },
   "./mock": {
     "source": "./src/mock/index.ts",  ← MUST EXIST
-    "types": "./dist/mock.d.ts",
+    "types": "./src/mock/index.ts",   ← SAME FILE
     "import": "./dist/mock.js"
   }
 }
 ```
 
-If `"source"` is missing, add it manually. The CLI template includes it, but packages generated with older CLI versions may lack it.
+If either differs, run `simplix validate --fix`.
 
 ### Step 4: UI Module Scaffolding
 
@@ -307,26 +307,25 @@ pnpm install
 pnpm --filter <module-package> run build
 ```
 
-**Verify**: Build succeeds with `dist/pages/index.js` and `dist/widgets/index.js`.
+**Verify**: `pnpm --filter <module-package> typecheck` passes.
 
-**MANDATORY CHECK**: Same as Step 3 - verify `"source"` condition exists in every `package.json` export entry:
+**MANDATORY CHECK**: Same as Step 3 - verify `"source"` and `"types"` in every `package.json` export entry:
 
 ```json
 "exports": {
-  ".":          { "source": "./src/index.ts", ... },
-  "./features": { "source": "./src/features/index.ts", ... },
-  "./widgets":  { "source": "./src/widgets/index.ts", ... },
-  "./locales":  { "source": "./src/locales/index.ts", ... },
-  "./pages":    { "source": "./src/pages/index.ts", ... }
+  ".":          { "source": "./src/index.ts", "types": "./src/index.ts", ... },
+  "./features": { "source": "./src/features/index.ts", "types": "./src/features/index.ts", ... },
+  "./widgets":  { "source": "./src/widgets/index.ts", "types": "./src/widgets/index.ts", ... },
+  "./locales":  { "source": "./src/locales/index.ts", "types": "./src/locales/index.ts", ... },
+  "./pages":    { "source": "./src/pages/index.ts", "types": "./src/pages/index.ts", ... }
 }
 ```
 
 Without `"source"`, Vite's `resolve.conditions: ["source"]` cannot resolve to TypeScript source, and HMR will not work for this module.
 
-**`./pages` is the entry that arrives without it.** `scaffold` adds that subpath to
-`package.json` when it puts the module's first page there, and it writes only `types` and
-`import` - the other four entries are correct, so one hand-untouched file has one wrong
-line in it. Vite then serves that subpath out of `dist/`, and the failure has no error in
+**`./pages` is the entry that arrives without it.** `scaffold` before 0.3.11 added that
+subpath without `source` - the other four entries are correct, so one hand-untouched file
+has one wrong line in it. Vite then serves that subpath out of `dist/`, and the failure has no error in
 it: **the source is edited, the file re-reads as edited, HMR reports success, and the
 browser keeps drawing the last build.** An hour goes into the screen before anybody
 suspects the export map.

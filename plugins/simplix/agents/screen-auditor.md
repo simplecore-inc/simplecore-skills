@@ -31,11 +31,11 @@ The dev server and its API are yours to operate on the local machine. Start, res
 as the work needs - commands from the project, never from memory, and the port read from the
 server's own output rather than assumed.
 
-**A stale build lies.** After a change to a workspace package's public surface, the consuming app
-needs that package rebuilt before the browser shows anything; a hot reload does not cover it. When
-the screen disagrees with the source, rebuild or restart and look again *before* writing anything
-down as a defect. When a port is held by a development server from an earlier session of this same
-project, stop that process and start a fresh one.
+**A stale build lies.** A change to a workspace package shows through a hot reload; when it does
+not, check that entry's `"source"`. When the screen disagrees with the source, restart the dev
+server and look again *before* writing anything down as a defect. When a port is held by a
+development server from an earlier session of this same project, stop that process and start a
+fresh one.
 
 Say in your report what you left running.
 
