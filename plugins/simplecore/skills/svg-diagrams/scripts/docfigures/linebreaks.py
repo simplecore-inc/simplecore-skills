@@ -9,7 +9,7 @@ parenthesised group that would break inside moves whole to the next line.
 R3: only when that adds a line does it break inside, and then at a separator.
 R4: an item wider than its line breaks at a space inside it, listed, not failed.
 A separator never opens a line. `verify.py` runs the same check as
-`[line break]`; this command reads any SVG, a deck's copies included.
+`[line break]`; this command reads any SVG, copies placed elsewhere included.
 """
 import argparse
 import sys

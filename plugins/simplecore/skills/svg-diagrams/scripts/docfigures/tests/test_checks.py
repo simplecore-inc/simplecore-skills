@@ -59,11 +59,11 @@ class LabelForm(Case):
         self.assertEqual(self.labels("제출", "사업소별 설치 호스트 불필요", "수집 개요",
                                      "주요 연혁", "승인 시 반영"), [])
 
-    def test_kdn_form_alone_misses_the_polite_ending(self):
+    def test_syllable_list_form_alone_misses_the_polite_ending(self):
         # the broken form this replaces: a 「~X다」 list without 「니다」
         import re
-        kdn = re.compile(r"(?:[한된이있없했였였겠는않본진른난준낸간온친킨운렸었았]다)$")
-        self.assertIsNone(kdn.search("제출합니다"))
+        syllable_list = re.compile(r"(?:[한된이있없했였였겠는않본진른난준낸간온친킨운렸었았]다)$")
+        self.assertIsNone(syllable_list.search("제출합니다"))
         self.assertEqual(self.labels("제출합니다"), ["제출합니다"])
 
 

@@ -1,0 +1,41 @@
+{
+  "about": "Cases for the label line-break rule (R1-R4) in linebreak.py, stated without a font. Width rule: a wide East Asian character (Unicode East_Asian_Width W or F) counts 2, every other character 1; a line fits when its width is at most `width`. `layout` cases give the text and the lines the rule sets it on; `overwide` lists the items broken under R4. `check` cases give lines already set and the findings expected over their breaks, in order. `forced` cases add the measure of the box drawn round the lines: an R1 break is reported only where the line before it could not take the next line's first word at that measure.",
+  "layout": [
+    {"id": "R1 breaks after a separator", "text": "가나 다라 · 마바 사아 · 자차", "width": 12,
+     "lines": ["가나 다라 ·", "마바 사아 ·", "자차"], "overwide": []},
+    {"id": "R1 no break when the label fits", "text": "가나 다라 · 마바 사아 · 자차", "width": 30,
+     "lines": ["가나 다라 · 마바 사아 · 자차"], "overwide": []},
+    {"id": "R2 group moves whole", "text": "가나다 (라마 · 바사 · 아자)", "width": 22,
+     "lines": ["가나다", "(라마 · 바사 · 아자)"], "overwide": []},
+    {"id": "R2 group touching its word moves whole", "text": "가나다(라마 · 바사 · 아자)", "width": 22,
+     "lines": ["가나다", "(라마 · 바사 · 아자)"], "overwide": []},
+    {"id": "R3 inside the group at a separator when moving adds a line", "text": "가나다 (라마 · 바사 · 아자)", "width": 18,
+     "lines": ["가나다 (라마 ·", "바사 · 아자)"], "overwide": []},
+    {"id": "tight compound kept, the space after it breaks", "text": "가나다라·마바사아 자차", "width": 18,
+     "lines": ["가나다라·마바사아", "자차"], "overwide": []},
+    {"id": "tight compound split after its dot only when it cannot fit", "text": "가나다라·마바사아", "width": 12,
+     "lines": ["가나다라·", "마바사아"], "overwide": []},
+    {"id": "group that cannot break stays with its word", "text": "가나 다라마(1회)", "width": 12,
+     "lines": ["가나", "다라마(1회)"], "overwide": []},
+    {"id": "R4 over-wide item starts its own line and breaks most evenly", "text": "가나 · 다라 마바 사아자 · 차", "width": 12,
+     "lines": ["가나 ·", "다라 마바", "사아자 · 차"], "overwide": ["다라 마바 사아자"]},
+    {"id": "R4 last item", "text": "가나 · 다라 마바 사아 자차카", "width": 12,
+     "lines": ["가나 ·", "다라 마바", "사아 자차카"], "overwide": ["다라 마바 사아 자차카"]}
+  ],
+  "check": [
+    {"id": "R1 break inside a spaced item", "lines": ["가나 · 다라", "마바 사아"], "width": 14, "findings": ["R1"]},
+    {"id": "R1 break at the separator", "lines": ["가나 ·", "다라 마바 사아"], "width": 14, "findings": []},
+    {"id": "separator opening a line", "lines": ["가나", "· 다라"], "width": 14, "findings": ["separator"]},
+    {"id": "tight compound: the space before it is a word break", "lines": ["가나다", "라마·바사"], "width": 14, "findings": []},
+    {"id": "spaced item split at an inner space", "lines": ["가나 · 다라", "마바"], "width": 14, "findings": ["R1"]},
+    {"id": "R2 group broken where it fits whole on the next line", "lines": ["가나다 (라마 ·", "바사 · 아자)"], "width": 22, "findings": ["R2"]},
+    {"id": "R3 break at a separator when moving adds a line", "lines": ["가나다 (라마 ·", "바사 · 아자)"], "width": 16, "findings": []},
+    {"id": "R3 break inside the group off a separator", "lines": ["가나다 (라마 · 바", "사 · 아자)"], "width": 16, "findings": ["R3"]},
+    {"id": "separator opening a line inside a group", "lines": ["가나다 (라마 · 바사", "· 아자)"], "width": 22, "findings": ["separator"]},
+    {"id": "R4 over-wide item broken at a space is information", "lines": ["가나 ·", "다라 마바", "사아자차"], "width": 10, "findings": ["R4"]}
+  ],
+  "forced": [
+    {"id": "forced R1 break is reported", "lines": ["가나 · 다라", "마바 사아"], "box": 14, "findings": ["R1"]},
+    {"id": "unforced break reads as two labels", "lines": ["가나 · 다라", "마바 사아"], "box": 30, "findings": []}
+  ]
+}

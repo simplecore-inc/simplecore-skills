@@ -484,7 +484,12 @@ binds its two groups (a page id and its number, a number and its unit); the
 drawn line carries plain spaces.
 
 **A label breaks only where its 「·」 list and its parentheses allow (R1-R4).**
-Every label goes through these rules, in `figlib/linebreak.py`:
+The rule holds for any label with middle-dot lists and parentheses, in Korean
+or another CJK script. It is defined here; another tool that sets such labels
+implements the same rule from this text. Every label goes through it, in
+`figlib/linebreak.py`, and `figlib/linebreak_cases.json` states its cases
+without a font (a per-character width rule), so an implementation elsewhere can
+be held to the same expectations:
 
 - **R1.** A line breaks only at a middle-dot separator, never inside an item.
   The separator stays at the end of its line: 「결함 수정 ·」 / 「강의」, never
@@ -493,12 +498,10 @@ Every label goes through these rules, in `figlib/linebreak.py`:
   the run's edge: a comma, a colon, a semicolon, a full stop before a space, a
   parenthesis or the text's edge, so 「결함 수정」 is one item. A tight dot
   (「하드웨어·소프트웨어」) binds only the words touching it: its items stop at
-  the nearest space, so 「제2장 1-바」 / 「하드웨어·소프트웨어」 and 「C37.118」 /
-  「SOC·FRACSEC」 are word breaks, while 「하드웨어 · 소프트웨어」 / 「구성」 splits
-  the spaced item 「소프트웨어 구성」. A break right after either kind of dot
-  is a separator break; after a tight dot (no space) it is taken only when no
-  space breaks the line. A deck-side check imports this definition from
-  `figlib/linebreak.py` rather than restating it.
+  the nearest space, so 「운영 체계」 / 「하드웨어·소프트웨어」 is a word break,
+  while 「하드웨어 · 소프트웨어」 / 「구성」 splits the spaced item 「소프트웨어
+  구성」. A break right after either kind of dot is a separator break; after a
+  tight dot (no space) it is taken only when no space breaks the line.
 - **R2.** A parenthesised group that would break inside moves whole to the
   next line, the break going right before its opening parenthesis even where it
   touches the word before it: 「개발 파트」 / 「(구현 · 결함 수정 · 강의)」.
@@ -508,8 +511,8 @@ Every label goes through these rules, in `figlib/linebreak.py`:
   after the separator before it, and breaks inside, but only at a word space
   within it: never inside a word, and inside parentheses only where the
   spaces outside them cannot hold it. Of the cuts that give the fewest lines,
-  the one whose widest line is narrowest is taken: 「개발 파트 ·」 / 「자기
-  산출물」 / 「승인 불가」. The build and `verify.py` list such an item as
+  the one whose widest line is narrowest is taken: 「점검 ·」 / 「분기별 정기」 /
+  「보안 취약점 진단」. The build and `verify.py` list such an item as
   information (`[over-wide item]`), not as a failure; shortening it keeps it
   whole.
 
@@ -523,15 +526,15 @@ it.
 
 **The build fails on a label that breaks against R1-R3**, naming the string:
 a word wider than its line, and an authored newline inside an item or a group
-that is not an R4 break (「성능 실측 · 장애\n시나리오 시험」, written 「성능 실측 ·\n장애
-시나리오 시험」). The build sees an authored newline only in a string that
+that is not an R4 break (「결함 수정 · 회귀\n시험」, written 「결함 수정 ·\n회귀
+시험」). The build sees an authored newline only in a string that
 reaches `wrap()` whole: a module helper that splits on the newline itself and
 wraps each part (a `*_lines(text, width, size)` wrapper) passes the build
 nothing to judge, so such a helper hands the whole string to `wrap()`, and
 a newline that separates two bulleted fields rather than wrapping one label is
 not a line break at all. `verify.py` checks the saved figures as `[line break]`, and
 `python3 <skill>/scripts/docfigures/linebreaks.py [svg ...]` runs the same
-check over any SVG, a deck's copies included, with a count per file. The check
+check over any SVG, copies placed elsewhere included, with a count per file. The check
 reads each wrapped run (as `[stub-line]` does) and judges every break between
 its lines at the box drawn round the run, the smallest rect holding it less
 the padding at the 93% fill, or at the run's widest line where no box holds

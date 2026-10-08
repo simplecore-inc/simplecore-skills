@@ -1,81 +1,57 @@
-"""R1-R4: the rule over set lines, and the `[line break]` check over a saved
-figure, each red on its broken form and quiet on the fixed one."""
+"""R1-R4: the rule over set lines, read from the case table beside
+linebreak.py, and the `[line break]` check over a saved figure, each red on its
+broken form and quiet on the fixed one."""
 import contextlib
 import io
+import json
+import unicodedata
 import unittest
+from pathlib import Path
 
-from helpers import TOOLKIT, Project, svg, text  # noqa: F401
+from helpers import LIBRARY, TOOLKIT, Project, svg, text  # noqa: F401
 
+from figlib.checks_breaks import run_findings  # noqa: E402
 from figlib.linebreak import break_findings, layout  # noqa: E402
-from svgkit import tw  # noqa: E402
 
 import verify  # noqa: E402
 
-
-def at(width, size=24):
-    return lambda line: tw(line, size, False) <= width
+CASES = json.loads((LIBRARY / "figlib" / "linebreak_cases.json").read_text(encoding="utf-8"))
 
 
-def rules(lines, width=400):
-    return [f.rule for f in break_findings(lines, at(width))]
+def cells(line, _size=None):
+    """The table's width rule: a wide East Asian character counts 2, others 1."""
+    return sum(2 if unicodedata.east_asian_width(c) in "WF" else 1 for c in line)
 
 
-class Rule(unittest.TestCase):
-    def test_r1_break_inside_an_item_fails(self):
-        self.assertEqual(rules(["성능 실측 · 장애", "시나리오 시험"]), ["R1"])
+def at(width):
+    return lambda line: cells(line) <= width
 
-    def test_r1_break_at_the_separator_passes(self):
-        self.assertEqual(rules(["성능 실측 ·", "장애 시나리오 시험"]), [])
 
-    def test_separator_opening_a_line_fails(self):
-        self.assertEqual(rules(["성능 실측", "· 장애 시나리오 시험"]), ["separator"])
-
-    def test_tight_compound_breaks_as_a_word(self):
-        # a tight dot binds only the words touching it: its items stop at the
-        # nearest space, so the spaces around the compound are word breaks
-        self.assertEqual(rules(["제2장 1-바", "하드웨어·소프트웨어"]), [])
-        self.assertEqual(rules(["C37.118", "SOC·FRACSEC"]), [])
-        self.assertEqual(rules(["운영 레코드 구성·", "크기·주기 승인"]), [])
-
-    def test_spaced_run_item_split_at_an_inner_space_fails(self):
-        # a spaced run's item runs to the edge: 「소프트웨어 구성」 is one item
-        self.assertEqual(rules(["하드웨어 · 소프트웨어", "구성"]), ["R1"])
-
-    def test_plain_phrase_breaks_by_word(self):
-        self.assertEqual(rules(["수신 버퍼 폐기", "0건(제안 기준)"]), [])
-
-    def test_r2_group_broken_where_it_fits_whole_on_the_next_line_fails(self):
-        self.assertEqual(rules(["개발 파트 (구현 ·", "결함 수정 · 강의)"], 320), ["R2"])
-
-    def test_r2_group_moved_whole_passes(self):
-        self.assertEqual(rules(["개발 파트", "(구현 · 결함 수정 · 강의)"], 320), [])
-
-    def test_r3_break_inside_the_group_off_a_separator_fails(self):
-        self.assertEqual(rules(["개발 파트 (구현 · 결함", "수정 · 강의)"], 230), ["R3"])
-
-    def test_r3_break_at_a_separator_passes_when_moving_adds_a_line(self):
-        # at 230 the group moved whole needs two lines of its own, three in all
-        self.assertEqual(rules(["개발 파트 (구현 ·", "결함 수정 · 강의)"], 230), [])
-
-    def test_layout_breaks_at_a_space_before_splitting_a_tight_compound(self):
-        width = tw("재전송 데이터 보존·", 24, False)
-        self.assertEqual(layout("재전송 데이터 보존·인수", at(width)).lines,
-                         ["재전송 데이터", "보존·인수"])
-
-    def test_layout_keeps_an_unbreakable_group_with_its_word(self):
-        # 「(1회)」 cannot break inside, so R2 has nothing to move
-        width = tw("착수 보고 회의", 24, False)
-        self.assertEqual(layout("착수 보고 회의(1회)", at(width)).lines,
-                         ["착수 보고", "회의(1회)"])
+class Table(unittest.TestCase):
+    def test_layout(self):
+        for case in CASES["layout"]:
+            with self.subTest(case["id"]):
+                laid = layout(case["text"], at(case["width"]), measure=cells)
+                self.assertEqual(laid.lines, case["lines"])
+                self.assertEqual(list(laid.overwide), case["overwide"])
 
     def test_layout_meets_its_own_check(self):
-        for text_, width in (("개발 파트 (구현 · 결함 수정 · 강의)", 300),
-                             ("개발 파트 (구현 · 결함 수정 · 강의)", 230),
-                             ("본 사업용 개발 · 수정 부분 · 시험", 242),
-                             ("3만 건/초 · 99백분위 지연 100ms 이내(단계 제안 기준)", 300)):
-            laid = layout(text_, at(width))
-            self.assertFalse(laid.unfixable, laid)
-            self.assertEqual(break_findings(laid.lines, at(width)), [], laid)
+        for case in CASES["layout"]:
+            with self.subTest(case["id"]):
+                found = break_findings(case["lines"], at(case["width"]))
+                self.assertEqual([f.rule for f in found if not f.info], [])
+
+    def test_check(self):
+        for case in CASES["check"]:
+            with self.subTest(case["id"]):
+                found = break_findings(case["lines"], at(case["width"]))
+                self.assertEqual([f.rule for f in found], case["findings"])
+
+    def test_forced(self):
+        for case in CASES["forced"]:
+            with self.subTest(case["id"]):
+                found = run_findings(case["lines"], 1, cells, case["box"])
+                self.assertEqual([f.rule for f in found], case["findings"])
 
 
 class Check(unittest.TestCase):
