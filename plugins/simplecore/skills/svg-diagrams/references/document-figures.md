@@ -513,7 +513,12 @@ item.
 **The build fails on a label that breaks against R1-R3**, naming the string:
 an item or group no line holds whole, and an authored newline inside an item or
 a group (「성능 실측 · 장애\n시나리오 시험」, written 「성능 실측 ·\n장애
-시나리오 시험」). `verify.py` checks the saved figures as `[line break]`, and
+시나리오 시험」). The build sees an authored newline only in a string that
+reaches `wrap()` whole: a module helper that splits on the newline itself and
+wraps each part (a `*_lines(text, width, size)` wrapper) passes the build
+nothing to judge, so such a helper hands the whole string to `wrap()`, and
+a newline that separates two bulleted fields rather than wrapping one label is
+not a line break at all. `verify.py` checks the saved figures as `[line break]`, and
 `python3 <skill>/scripts/docfigures/linebreaks.py [svg ...]` runs the same
 check over any SVG, a deck's copies included, with a count per file. The check
 reads each wrapped run (as `[stub-line]` does) and judges every break between
