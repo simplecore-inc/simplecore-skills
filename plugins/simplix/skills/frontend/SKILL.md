@@ -171,7 +171,7 @@ These invariants apply to **every** frontend file you touch. Treat each as invio
 >
 > **New-screen consistency** - post-scaffold customization of a new screen starts with the precedent check (two same-shape precedent screens read end to end); invariant #51 → `customize/precedent-check.md`.
 
-5. **package.json `source` export** - every export entry in a generated package MUST carry a `"source"` condition for Vite dev HMR to work. Verify after every `add-module` / `scaffold`.
+5. **package.json `source` export** - every export entry in a generated package MUST carry a `"source"` condition, and its `"types"` MUST name the same file. Verify after every `add-module` / `scaffold`.
 6. **Snapshot before regenerate** - before regenerating from OpenAPI, snapshot the current field set (entity fields, enum values). Diff after regenerate drives widget updates.
 7. **Live API over local JSON** - when `simplix.config.ts` points at a live API URL, never substitute a stale local JSON: tag names and schemas can differ silently.
 
@@ -540,7 +540,7 @@ Trigger: writing or editing README, TSDoc on public exports, tutorials, how-to g
 - [ ] **New or reshaped screen? Precedent check done (#51)** - shape classified, TWO same-shape precedent screens read end to end, comparison sheet extracted (`customize/precedent-check.md`)
 - [ ] Task Router references for this task's triggers Read BEFORE the first edit
 - [ ] Decided: Scaffold path (generated artifacts - #30) or Customize-only path (application layer)?
-- [ ] Scaffold path - OpenAPI spec URL reachable? field snapshot taken (#6)? `package.json` `"source"` exports verified (#5)? `mutator.ts` uses `getMutator("boot")` for `simplix-boot` profile?
+- [ ] Scaffold path - OpenAPI spec URL reachable? field snapshot taken (#6)? `package.json` entries' `"source"` and `"types"` verified (#5)? `mutator.ts` uses `getMutator("boot")` for `simplix-boot` profile?
 - [ ] Customize-only path - framework component doesn't already solve it (#9)? registry doesn't already have the pattern (#22)? no generated artifact hand-shadowed (#30)?
 
 After writing:

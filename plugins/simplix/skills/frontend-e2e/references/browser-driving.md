@@ -16,9 +16,9 @@ The browser is the instrument. Everything below is about keeping it honest and k
 
 Then, before trusting anything on screen:
 
-6. **Confirm the build is current.** The app is served from workspace packages; a failed or stale build serves old output, and old output looks exactly like a missing translation, a vanished column, or an unstyled control. When the screen disagrees with the source, rebuild or restart and look again *before* writing it down as a defect.
+6. **Confirm the build is current.** The app is served from workspace packages; a failed or stale build serves old output, and old output looks exactly like a missing translation, a vanished column, or an unstyled control. When the screen disagrees with the source, restart the dev server and look again *before* writing it down as a defect.
 7. **Confirm the API is up** (a readiness probe against the backend) - an area that renders empty because the API is down is not an empty-state defect.
-8. After a change to a workspace package's public surface, the consuming app needs that package rebuilt before the browser shows the change (see the `simplix:frontend` skill's verification rules). A hot reload does not cover it.
+8. A change to a workspace package reaches the browser through a hot reload. When it does not, check that entry's `"source"`.
 
 ---
 
