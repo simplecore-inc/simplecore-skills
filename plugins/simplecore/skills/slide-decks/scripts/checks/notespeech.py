@@ -6,13 +6,16 @@ A script is heard, and a voice or a reader takes the written form literally: 「
 all. So a counter read with a native Korean numeral is written in words (「열한 대」, 「여섯 명」,
 「네 시간」), a counter read with a Sino-Korean numeral keeps its digits (「10만 건」, 「15개월 차」,
 「3초」, the ratio 「1 대 3」), and every English term is written in Hangul as it is pronounced
-(「아파치 이그나이트 쓰리」, 「아이엠디지」). This check lists, per slide, every digit joined to a
-native-numeral counter and every Latin letter left in a note.
+(「아파치 이그나이트 쓰리」, 「피티피」). This check lists, per slide, every digit joined to a
+native-numeral counter, every Latin letter and every phrase the project bans from speech left in a
+note.
 
 Reads the notes from the deck's server (`sg://deck/content?format=json`).
 
 Config (`checks.notespeech`, optional): `counters` (the native-numeral counters, default
-대 · 명 · 번 · 시간 · 가지 · 곳 · 벌 · 군데 · 차례 · 줄 · 칸 · 개 · 살 · 마리 · 척), `latin` (true).
+대 · 명 · 번 · 시간 · 가지 · 곳 · 벌 · 군데 · 차례 · 줄 · 칸 · 개 · 살 · 마리 · 척), `latin` (true), `banned` (a
+map from a phrase never spoken to the wording said instead, e.g. an abbreviation read by its
+letters → the full term; default none).
 
     notespeech.py
 """
@@ -39,10 +42,13 @@ def native_pattern(counters: list[str]) -> re.Pattern:
     return re.compile(rf"(?<![\d.,])\d{{1,3}}(?:,\d{{3}})*(?:{machine}\s?(?:{rest}))")
 
 
-def findings(note: str, native: re.Pattern, latin: bool = True) -> list[str]:
+def findings(note: str, native: re.Pattern, latin: bool = True,
+             banned: dict[str, str] | None = None) -> list[str]:
     out = [m.group(0) for m in native.finditer(note)]
     if latin:
         out += [m.group(0) for m in LATIN.finditer(note)]
+    for phrase, instead in (banned or {}).items():
+        out += [f"{phrase}」 → 「{instead}"] * note.count(phrase)
     return out
 
 
@@ -73,9 +79,10 @@ def main(argv: list[str] | None = None) -> int:
     cfg = deck.section("checks.notespeech")
     native = native_pattern(list(cfg.get("counters", COUNTERS)))
     latin = bool(cfg.get("latin", True))
+    banned = dict(cfg.get("banned", {}))
     with cli.open_reader(deck, with_vocabulary=False) as reader:
         content = json.loads(reader.session.read("sg://deck/content?format=json"))
-    found = [(n, f) for n, note in sorted(notes_of(content).items()) for f in findings(note, native, latin)]
+    found = [(n, f) for n, note in sorted(notes_of(content).items()) for f in findings(note, native, latin, banned)]
     print(f"notespeech: {len(found)} phrases a voice would misread in the speaker notes")
     for n, phrase in found:
         print(f"  ✖ slide {n}: 「{phrase}」")

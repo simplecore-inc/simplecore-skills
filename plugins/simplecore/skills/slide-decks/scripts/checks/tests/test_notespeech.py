@@ -22,6 +22,13 @@ class NoteSpeechTests(unittest.TestCase):
         self.assertEqual(ns.findings("Apache Ignite 3를 쓴다", NATIVE), ["Apache Ignite 3"])
         self.assertEqual(ns.findings("아파치 이그나이트 쓰리를 쓴다", NATIVE), [])
 
+    def test_a_banned_spoken_phrase_is_found_and_its_replacement_passes(self):
+        banned = {"에이비씨": "전체 용어"}
+        self.assertEqual(ns.findings("에이비씨 저장까지", NATIVE, banned=banned),
+                         ["에이비씨」 → 「전체 용어"])
+        self.assertEqual(ns.findings("전체 용어 저장까지", NATIVE, banned=banned), [])
+        self.assertEqual(ns.findings("에이비씨 저장까지", NATIVE), [])
+
     def test_notes_are_collected_per_slide(self):
         content = [{"slide": 1, "blocks": [{"role": "use", "children": [{"role": "notes", "text": "가"}]}]},
                    {"slide": 2, "blocks": []}]
