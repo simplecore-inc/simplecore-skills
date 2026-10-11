@@ -6,7 +6,7 @@ The glyph model matches the lint's: a line of text at `size` occupies
 import re
 
 from figlib import linebreak
-from figlib.settings import (BODY, CHIP, CHIP_STEP, CONTENT_W, FIGURE, LIST_BULLETS,
+from figlib.settings import (BODY, CFG, CHIP, CHIP_STEP, CONTENT_W, FIGURE, LIST_BULLETS,
                              NO_BREAK, SANS, SECTION, STEP, tw)
 
 def row(n, gap, width=CONTENT_W, x0=0.0):
@@ -260,7 +260,14 @@ def item_lines(texts, inner, size, bullet, wrapper=None):
 
 def draw_bullet(c, x, base, size, color):
     """The bullet glyph set on a text baseline."""
-    c.text(x, base, "•", size=size, color=color, family=SANS, weight=700)
+    gap_em = CFG.get("bulletGapEm")
+    if gap_em is None:
+        c.text(x, base, "•", size=size, color=color, family=SANS, weight=700)
+    else:
+        # The existing body x and wrapping width stay fixed. Right-align the
+        # bullet before an explicit, font-relative gap to its hanging indent.
+        c.text(x + BULLET_IND - size * gap_em, base, "•", size=size,
+               color=color, family=SANS, weight=700, anchor="end")
 
 
 def draw_items(c, x, top, rows, size, step, color, accent, bullet,

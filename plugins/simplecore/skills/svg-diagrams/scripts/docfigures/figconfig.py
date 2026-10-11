@@ -25,6 +25,7 @@ The file may carry `//` and `/* */` comments and trailing commas. Comment
 markers inside a string are data: `"http://127.0.0.1:7333/mcp"` survives. It
 is read by `bidkit.config`, the plugin's one JSONC reader.
 """
+import math
 import os
 import re
 import sys
@@ -180,6 +181,11 @@ class FigureConfig:
             raise ConfigError(
                 f"{self.path}: dashGloss must be one of {', '.join(DASH_GLOSS_MODES)}, "
                 f"not {self.dash_gloss!r}")
+        gap = self.data.get("bulletGapEm")
+        if gap is not None and (isinstance(gap, bool)
+                                or not isinstance(gap, (int, float))
+                                or not math.isfinite(gap) or gap <= 0):
+            raise ConfigError(f"{self.path}: bulletGapEm must be a positive finite number")
         strokes = self.data.get("strokes")
         if strokes is not None:
             absent = [n for n in STROKE_NAMES if n not in strokes]
