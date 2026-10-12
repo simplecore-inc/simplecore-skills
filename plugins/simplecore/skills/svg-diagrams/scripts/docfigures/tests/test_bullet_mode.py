@@ -34,6 +34,16 @@ class BulletMode(unittest.TestCase):
                 + box(400, 20) + text(420, 60, "•"))
         self.assertEqual(len(self.found(body)), 1)
 
+    def test_single_bullets_pass_where_the_project_bullets_every_item(self):
+        body = (box(20, 20) + text(40, 60, "•")
+                + box(400, 20) + text(420, 60, "•"))
+        p = Project(bulletSingle=True)
+        try:
+            f = p.write("figures/a.svg", svg(body))
+            self.assertEqual(verify.bullet_mode([f], p.cfg()), [])
+        finally:
+            p.close()
+
     def test_list_outside_every_box_counts_by_its_x(self):
         # a lane's two items under its name, beside boxes holding one each
         body = (text(40, 60, "•") + text(40, 90, "•")

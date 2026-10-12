@@ -251,6 +251,8 @@ def bullet_mode(svgs, cfg):
     element. A plain figure with a bullet, or a listing figure in which no box
     holds two bullets, is declared in the wrong mode. A bullet outside every
     box belongs to the list drawn at its x (a lane's items under its name).
+    A project whose rule is that every item in a box carries a bullet, one
+    item or several, sets `bulletSingle` and the one-item case passes.
     """
     if not cfg.get("bullets", True):
         return None
@@ -269,7 +271,7 @@ def bullet_mode(svgs, cfg):
             per[key] = per.get(key, 0) + 1
         if plain and per:
             out.append((svg.name, "declared plain but draws bullets"))
-        elif not plain and per and max(per.values()) <= 1:
+        elif not plain and per and max(per.values()) <= 1 and not cfg.get("bulletSingle"):
             out.append((svg.name, "no box lists two items - declare it @figure(plain=True)"))
     return out
 

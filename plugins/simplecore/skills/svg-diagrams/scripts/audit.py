@@ -1510,6 +1510,21 @@ def lint(svg_path):
                 return True
         return False
 
+    # A numbered disc on a rail is a node like any box: an endpoint on its
+    # outline is attached to it.
+    _end_circles = []
+    for cm in re.finditer(r'<circle\b([^>]*)/?>', svg):
+        ca = cm.group(1)
+        try:
+            _end_circles.append(tuple(float(re.search(rf'\b{k}="([-0-9.]+)"', ca).group(1))
+                                      for k in ("cx", "cy", "r")))
+        except (AttributeError, ValueError):
+            continue
+
+    def _on_circle(pt, tol=3.0):
+        return any(abs(math.hypot(pt[0] - cx, pt[1] - cy) - r) <= tol
+                   for cx, cy, r in _end_circles)
+
     _float = set()
     _ends_by_conn = {}
     _segs_by_conn = {}
@@ -1522,6 +1537,7 @@ def lint(svg_path):
             continue
         for pt, which in ((p, "start"), (q, "end")):
             if any(_on_edge(pt, r) for r in _all_rects) \
+                    or _on_circle(pt) \
                     or _on_line(pt, own=_segs_by_conn.get(cid, ())):
                 continue
             key = (round(pt[0]), round(pt[1]))

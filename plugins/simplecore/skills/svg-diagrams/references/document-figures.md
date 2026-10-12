@@ -872,6 +872,7 @@ importable as a module constant.
 | `badges` | | kind → `{icon, text, accent}` for `badge()` and its family | `{}` |
 | `verdict` | | `{pass, block}` hues, or `{from, key}` naming the file and dotted key that hold them (a deck's `checks.verdict`) | theme's own |
 | `bullets` | | whether titled boxes bullet their items | `true` |
+| `bulletSingle` | | a box holding one item bullets it too, so the `[bullets]` check stops asking for `plain=True` there | `false` |
 | `bulletGapEm` | | positive, finite gap in em between a right-aligned bullet advance box and its body; wrapping and hanging indents stay fixed | unset: legacy start-aligned bullet |
 | `noBreak` | | patterns with two groups whose space must not break a line inside a box | `[]` |
 | `lineBreaks` | | `false` turns the `[line break]` check off; `{allow: [...]}` lists runs that are separate labels, as lines joined by 「 / 」 | on |

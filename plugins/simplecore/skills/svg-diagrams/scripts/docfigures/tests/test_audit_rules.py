@@ -141,3 +141,26 @@ class EdgePills(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class EndpointOnDisc(unittest.TestCase):
+    """A connector ending on a numbered disc's outline is attached to it."""
+
+    def lint(self, body):
+        with tempfile.TemporaryDirectory() as d:
+            p = Path(d) / "a.svg"
+            p.write_text(svg(body), encoding="utf-8")
+            return [kind for kind, _msg in audit.lint(str(p))]
+
+    DISCS = ('<circle cx="100" cy="100" r="17" fill="#1b4a9c"/>'
+             '<circle cx="100" cy="200" r="17" fill="#1b4a9c"/>')
+
+    def test_arrow_between_discs_passes(self):
+        arrow = ('<line x1="100" y1="117" x2="100" y2="183" stroke="#000" '
+                 'stroke-width="1.9" marker-end="url(#arr-muted)"/>')
+        self.assertNotIn("FLOATING-ENDPOINT", self.lint(self.DISCS + arrow))
+
+    def test_arrow_stopping_short_of_a_disc_fails(self):
+        arrow = ('<line x1="100" y1="117" x2="100" y2="160" stroke="#000" '
+                 'stroke-width="1.9" marker-end="url(#arr-muted)"/>')
+        self.assertIn("FLOATING-ENDPOINT", self.lint(self.DISCS + arrow))
