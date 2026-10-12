@@ -82,6 +82,17 @@ class SectionNumbers(Case):
         self.assertEqual(verify.section_number_errors([f], self.cfg), [])
 
 
+    def test_a_decimal_with_a_unit_is_a_quantity(self):
+        f = self.fig("a", text(40, 60, "21.8 GB") + text(40, 90, "0.277 MB: 계수")
+                     + text(40, 120, "1.5초"))
+        self.assertEqual(verify.section_number_errors([f], self.cfg), [])
+
+    def test_a_unit_after_a_multi_point_number_still_fails(self):
+        f = self.fig("a", text(40, 60, "4.1.2 GB") + text(40, 90, "3.2 절"))
+        self.assertEqual(verify.section_number_errors([f], self.cfg),
+                         [("a.svg", ["3.2", "4.1.2"])])
+
+
 class Dashes(Case):
     def test_dash_off_the_declared_patterns_fails(self):
         f = self.fig("a", '<line x1="40" y1="60" x2="300" y2="60" stroke="#000" '

@@ -154,6 +154,14 @@ SECTION_NUMBER = re.compile(r"^([0-9]+(?:\.[0-9]+)+(?:[·~][0-9]+(?:\.[0-9]+)+)*
 
 PLAIN_NUMBER = re.compile(r"^-?[0-9]+(?:[.,][0-9]+)*%?$")
 
+# A decimal with one point followed by a unit of measure is a quantity
+# (「21.8 GB」, 「0.277 MB」, 「1.5 초」), never a section number; a number with
+# two or more points (「4.1.2」) stays a reference whatever follows it.
+QUANTITY = re.compile(
+    r"^-?[0-9]+\.[0-9]+\s*(?:[kKMGTP]i?B|B|bps|[kKMG]bps|ms|us|ns|s|[kKMG]?Hz"
+    r"|px|pt|mm|cm|m|km|V|kV|A|W|kW|MW|%|배|초|분|시간|일|건|행|개|대|명|원)"
+    r"(?=$|[\s:·,;/)\]])")
+
 
 def section_number_errors(svgs, cfg):
     """(file, numbers) for labels that open on a document section number.
@@ -177,7 +185,7 @@ def section_number_errors(svgs, cfg):
         found = set()
         for y, t in items:
             m = SECTION_NUMBER.match(t)
-            if not m:
+            if not m or QUANTITY.match(t):
                 continue
             if PLAIN_NUMBER.match(t) and rows.get(y, 0) >= 3:
                 continue
