@@ -60,6 +60,8 @@ MIN_LEN = 6
 PROSE, CELL, HEAD, ATTR, FURNITURE = "prose", "cell", "head", "attribute", "furniture"
 WORD = re.compile(r"[0-9A-Za-z가-힣.]+")
 PAGE_NUMBERS = re.compile(r"[\d~\s]+")
+# A bullet glyph opening a cell is typesetting, not a manuscript word.
+CELL_BULLET = re.compile(r"^[•‣◦▪]\s*")
 FENCE = re.compile(r"```.*?```", re.S)
 FIGURE_LINK = re.compile(r"!\[[^\]]*\]\([^)]*\)")
 
@@ -170,6 +172,8 @@ class Parity:
         end = self.deck.get("lang.sentenceEnd", "다.")
         out = []
         for kind, text in self.strings(raw):
+            if kind == CELL:
+                text = CELL_BULLET.sub("", text)
             if len(text) < self.min_len:
                 continue
             if kind == CELL and PAGE_NUMBERS.fullmatch(text):
