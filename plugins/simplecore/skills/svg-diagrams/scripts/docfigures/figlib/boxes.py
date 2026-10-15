@@ -28,6 +28,9 @@ def icon_title_w(text, size=CARD, gap=12):
     return ICON_SIZE + gap + tw(text, size, mono=False)
 
 
+TAG_GAP = 12      # least air between a card title and its right-aligned tag
+
+
 def card_h(w, title=None, lines=(), *, title_size=CARD, size=BODY, step=None,
            pad=PAD, pad_y=PAD_Y, band=False, title_gap=TITLE_GAP,
            bullet="auto", align="start"):
@@ -117,6 +120,13 @@ def card(c, x, y, w, accent, title=None, lines=(), *, h=None, icon=None,
         if badge:
             badge_(c, end + 6, badge_top(base, title_size), badge)
         if tag:
+            # the tag is right-aligned on the title's line, so a narrow card
+            # would draw it over the title; refuse rather than overlap
+            start = x + w - pad - tw(tag, CHIP, False)
+            if start - end < TAG_GAP:
+                raise ValueError(
+                    f"card tag {tag!r} runs into the title {title!r}: needs "
+                    f"{end + TAG_GAP - start:.1f} more units of width")
             c.text(x + w - pad, base, tag, size=CHIP, color=accent,
                    family=SANS, weight=600, anchor="end")
         cursor = (y + band_h + pad_y + shift) if band else \

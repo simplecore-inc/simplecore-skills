@@ -139,3 +139,24 @@ save(c, "nodes")
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class CardTag(Built):
+    """A tag shares the title's line, so a card too narrow for both is
+    refused at build time instead of drawing one over the other."""
+
+    SOURCE = """from common import canvas, card, save, FULL
+c = canvas(1200, 200)
+card(c, 24, 24, {w}, c.blue, "ooxml-derive", ["derive(Ooxml)"], tag="syn")
+save(c, "tagged", board=FULL)
+"""
+
+    def test_wide_card_keeps_title_and_tag(self):
+        _, markup = self.build(self.SOURCE.format(w=260), "tagged")
+        self.assertIn(">syn</text>", markup)
+
+    def test_narrow_card_is_refused(self):
+        self.p.write("figs/case.py", self.SOURCE.format(w=180))
+        run = self.p.run("build.py")
+        self.assertNotEqual(run.returncode, 0)
+        self.assertIn("runs into the title", run.stdout + run.stderr)
