@@ -11,6 +11,7 @@ Usage:
   audit.py pills    <module.py> [more.py ...]  # document-figure labels on the toolkit's pill
   audit.py hotspots <svg> <outdir> [scale]   # zoom-crop every arrow endpoint
 """
+import html
 import math
 import re
 import shutil
@@ -102,11 +103,14 @@ def _iter_texts(svg):
         a, inner = m.group(1), m.group(2)
         if 'transform=' in a:
             continue
-        spans = re.findall(r'<tspan[^>]*>([^<]*)</tspan>', inner)
+        # Entities are decoded before measuring: `&lt;` prints one glyph,
+        # and counting its four characters reports code labels as overflowing.
+        spans = [html.unescape(s)
+                 for s in re.findall(r'<tspan[^>]*>([^<]*)</tspan>', inner)]
         if spans:
             txt = max(spans, key=lambda s: _text_w(s, 10, False))
         else:
-            txt = re.sub(r'<[^>]+>', '', inner)
+            txt = html.unescape(re.sub(r'<[^>]+>', '', inner))
         if txt.strip():
             yield a, txt
 
@@ -919,7 +923,7 @@ def lint(svg_path):
             a, inner = tm.group(1), tm.group(2)
             if 'transform=' in a:
                 continue
-            txt = re.sub(r'<[^>]+>', '', inner).strip()
+            txt = html.unescape(re.sub(r'<[^>]+>', '', inner)).strip()
             if not txt:
                 continue
             def _tv(k, d=None):

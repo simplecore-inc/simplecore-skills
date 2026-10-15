@@ -164,3 +164,10 @@ class EndpointOnDisc(unittest.TestCase):
         arrow = ('<line x1="100" y1="117" x2="100" y2="160" stroke="#000" '
                  'stroke-width="1.9" marker-end="url(#arr-muted)"/>')
         self.assertIn("FLOATING-ENDPOINT", self.lint(self.DISCS + arrow))
+
+
+class EscapedText(unittest.TestCase):
+    def test_an_entity_is_measured_as_the_glyph_it_prints(self):
+        body = '<text x="10" y="20" font-size="15">&lt;P&gt;&lt;R&gt;Q3&lt;/R&gt;&lt;/P&gt;</text>'
+        found = [t for _a, t in audit._iter_texts(svg(body))]
+        self.assertEqual(found, ["<P><R>Q3</R></P>"])
