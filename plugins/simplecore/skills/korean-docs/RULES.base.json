@@ -3869,6 +3869,29 @@
         "수",
         "곳"
       ]
+    },
+    {
+      "id": "delivery-messaging",
+      "scope": "universal",
+      "severity": "error",
+      "reason": "delivery as a per-target unit in a messaging or synchronization pipeline is 「전송」. 「배송」 is a parcel, so the rule fires only where a messaging noun names what is delivered; a parcel's 「배송」 stays",
+      "find": [
+        "/(메시지|이벤트|알림|웹훅|큐|구독자|동기화|페이로드|브로커)[^.\\n]{0,15}배송/",
+        "/배송 ?(보장|의미론)/"
+      ],
+      "replace": "전송",
+      "hit": [
+        "메시지 배송이 실패하면 다시 보냅니다",
+        "웹훅 배송 기록을 남긴다",
+        "이벤트를 구독자에게 배송한다",
+        "최소 한 번 배송 보장"
+      ],
+      "miss": [
+        "주문한 물건의 배송이 늦어집니다",
+        "배송 알림을 보냅니다",
+        "지역별 배송 비용",
+        "납기와 배송 일정을 맞춘다"
+      ]
     }
   ]
 }

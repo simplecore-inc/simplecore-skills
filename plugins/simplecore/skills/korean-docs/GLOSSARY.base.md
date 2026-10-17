@@ -72,7 +72,7 @@ Standard spellings from the loanword orthography and for widely shared technical
 | best practices | 모범 사례 | 베스트 프랙티스 | |
 | default | 기본값, 기본 | | the transliteration "디폴트" is caught by the banned-expression table |
 | frontend (UI 계층 지칭) | 프론트엔드 | 프런트엔드, 프런트 | The National Institute of Korean Language's standard is 「프런트」 (as in a hotel front desk), but 「프론트엔드」 is the overwhelmingly settled usage in software. Do not shorten it to 「프런트」 on its own |
-| delivery (메시징·동기화 전달 단위) | 전송 | 배송 | delivery as a per-target unit in a messaging or synchronization pipeline is 「전송」. A delivery that really is a parcel is 「배송」 and this rule does not apply to it (that domain disables the rule through the project glossary). A `delivery` in a code identifier is not translated |
+| delivery (메시징·동기화 전달 단위) | 전송 | | delivery as a per-target unit in a messaging or synchronization pipeline is 「전송」. A delivery that really is a parcel is 「배송」. The ban on 「배송」 in the messaging sense is the sentence rule `delivery-messaging` in RULES.base.json, because only the messaging noun beside it tells the two senses apart. A `delivery` in a code identifier is not translated |
 | stuck | 정체 | 고착 | a state transition that has stopped making progress (정체된 작업, 정체 복구). Before a concrete noun write 「정체된 X」; before a general noun such as 복구 or 판정 write 「정체 X」 |
 | drop | 드롭 | 드랍 | loanword spelling |
 | gateway | 게이트웨이 | 게이트웨어 | loanword spelling |
