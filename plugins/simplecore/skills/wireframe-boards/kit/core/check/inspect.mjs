@@ -256,6 +256,92 @@ const measureFrames = (pre) => {
       }
     }
 
+    // Text drawn under something opaque is text nobody can read, and the frame still looks finished.
+    // The floating-layer pass above sees only the layers the kit names; this one sees anything:
+    // a status badge laid over a heading, a tag set over the label of the box it names, a second
+    // label positioned onto the first. Each was drawn on purpose and each hid a word, and only the
+    // pixels show it. **The test is what the screen paints at the word**, sampled on a grid across
+    // the line's ink rather than at its centre, because a tag covering the lower half of a line
+    // hides it as surely as one covering all of it. A dialog or sheet over the page covers the page
+    // by design, so text under one of those is not reported, and the board's own marks (the fold
+    // label, a sticky, a connector) sit over the screen see-through on purpose and are not screen text.
+    const LAYERS = '.dim, .modal, .sheet, .toasts, .flyout';
+    const MARKS = '.fold, .sticky, .arrow, .step';
+    const hit = document.createElement('style');
+    hit.textContent = '* { pointer-events: auto !important; }';
+    document.head.appendChild(hit);
+    const solid = (el) => {
+      const m = getComputedStyle(el).backgroundColor.match(/[\d.]+/g);
+      if (!m || (m.length === 4 && Number(m[3]) < 0.9)) return false;
+      for (let x = el; x && x !== document.body; x = x.parentElement) if (Number(getComputedStyle(x).opacity) < 0.9) return false;
+      return true;
+    };
+    const clippedAway = (el, r) => {
+      for (let a = el.parentElement; a && a !== screen; a = a.parentElement) {
+        const cs = getComputedStyle(a);
+        if (cs.overflowX === 'visible' && cs.overflowY === 'visible') continue;
+        const ab = a.getBoundingClientRect();
+        if (r.left < ab.left - 1 || r.right > ab.right + 1 || r.top < ab.top - 1 || r.bottom > ab.bottom + 1) return true;
+      }
+      return false;
+    };
+    // `elementFromPoint` answers only inside the window, and most frames sit below its first
+    // screenful, so each line is scrolled into view before it is sampled - instantly, because the
+    // board scrolls smoothly and a smooth scroll has not moved yet when the next line runs. Boxes
+    // are kept in page coordinates for the pairwise test, which scrolling must not change.
+    const lines = [];
+    const words = document.createTreeWalker(screen, NodeFilter.SHOW_TEXT);
+    const boxesOf = (node) => { const range = document.createRange(); range.selectNodeContents(node); return [...range.getClientRects()]; };
+    let hidden = null;
+    for (let node = words.nextNode(); node; node = words.nextNode()) {
+      if (!node.nodeValue.trim()) continue;
+      const el = node.parentElement;
+      if (el.closest(MARKS)) continue;
+      const cs = getComputedStyle(el);
+      if (cs.visibility === 'hidden') continue;
+      let qs = boxesOf(node);
+      if (qs.some((q) => q.top < 0 || q.bottom > innerHeight)) { el.scrollIntoView({ block: 'center', behavior: 'instant' }); qs = boxesOf(node); }
+      for (const q of qs) {
+        if (q.width < 1 || q.height < 1 || clippedAway(el, q)) continue;
+        // Glyph ink is about 0.72 em tall around the line box's middle; the line box itself is
+        // taller and overlaps its neighbours without any glyph touching.
+        const ink = Math.min(q.height, parseFloat(cs.fontSize) * 0.72 * (screen.getBoundingClientRect().width / screen.offsetWidth || 1));
+        const mid = (q.top + q.bottom) / 2;
+        const r = { left: q.left, right: q.right, top: mid - ink / 2, bottom: mid + ink / 2 };
+        lines.push({ node, el, r: { left: r.left + scrollX, right: r.right + scrollX, top: r.top + scrollY, bottom: r.bottom + scrollY } });
+        if (hidden || el.closest(LAYERS)) continue;
+        for (const fx of [0.02, 0.5, 0.98]) {
+          for (const fy of [0.15, 0.5, 0.85]) {
+            const top = document.elementFromPoint(r.left + (r.right - r.left) * fx, r.top + (r.bottom - r.top) * fy);
+            // What answers outside the frame is the board's own chrome (the index), not the screen.
+            if (!top || !screen.contains(top) || top === el || top.contains(el) || el.contains(top)) continue;
+            for (let x = top; x && x !== screen; x = x.parentElement) {
+              if (x.contains(el)) break;
+              if (x.closest(LAYERS) || x.closest(MARKS)) break;
+              if (solid(x)) { hidden = `「${el.textContent.trim().slice(0, 16)}」 under ${named(x)}`; break; }
+            }
+            if (hidden) break;
+          }
+          if (hidden) break;
+        }
+      }
+    }
+    scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    // Two labels positioned onto each other read as neither, whatever is opaque.
+    let crossed = null;
+    for (let i = 0; i < lines.length && !crossed; i++) {
+      for (let j = i + 1; j < lines.length; j++) {
+        const a = lines[i], b = lines[j];
+        if (a.node === b.node) continue;
+        const w = Math.min(a.r.right, b.r.right) - Math.max(a.r.left, b.r.left);
+        const h = Math.min(a.r.bottom, b.r.bottom) - Math.max(a.r.top, b.r.top);
+        if (w > 2 && h > 2) { crossed = `「${a.node.nodeValue.trim().slice(0, 12)}」 on 「${b.node.nodeValue.trim().slice(0, 12)}」`; break; }
+      }
+    }
+    hit.remove();
+    if (hidden) issues.push(`covered: ${hidden} - text drawn under an opaque box`);
+    if (crossed) issues.push(`text on text: ${crossed}`);
+
     if (issues.length) errors.push(`${label} - ${issues.join(' · ')}`);
     else if (sb.height > fold + 1) notes.push(`${label} - fold +${Math.round(sb.height - fold)}px (scrolls)`);
   }

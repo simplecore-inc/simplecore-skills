@@ -219,7 +219,8 @@ action - is still yours to verify by looking.
   a laptop width. A phone row holds three frames per line. Any `.scroll-x` region
   shows its scrollbar without being scrolled.
 - No label overflow at any frame's width in either viewport; no
-  near-white-on-white regions.
+  near-white-on-white regions; no word hidden under a badge, a tag or another
+  label (on a kit-built board `wf.mjs check` reports covered and overlapping text).
 - Flow reads left-to-right within each row; step numbering is continuous and
   holds in both toggle states.
 - Exactly one accent hue appears, and only where rule 3 places it.

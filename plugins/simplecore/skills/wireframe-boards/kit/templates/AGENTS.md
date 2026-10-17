@@ -47,7 +47,7 @@ belongs in the skill, where every board gets it at once.
 node wf.mjs build            # board.html + pdf/<name>-<stamp>.pdf
 node wf.mjs build --no-pdf   # HTML only, while iterating on a screen
 node wf.mjs catalog          # _catalog.html - the component storybook
-node wf.mjs check            # visual sweep: overflow, sideways scroll, the fold
+node wf.mjs check            # visual sweep: overflow, sideways scroll, the fold, text covered or overlapped
 node wf.mjs gates            # every gate against the defect it exists to catch
 node wf.mjs doctor           # which contract this board is on, and what it owes
 node wf.mjs shots _shots     # one PNG per frame
@@ -117,8 +117,8 @@ three have run, **in this order**:
    so auditing them after the visual sweep means sweeping twice - and the second sweep is the one
    that gets skipped. A board with no copy audit starts at step 2.
 2. **Visual sweep second**, over every frame: `node wf.mjs check`. It exits non-zero on sideways
-   overflow, a primary action below the fold, or the board scrolling sideways at 1900 / 1440 /
-   1280px. Then **open some of the captures and look** - the script measures geometry and cannot
+   overflow, a primary action below the fold, text hidden under an opaque box or drawn onto other
+   text, or the board scrolling sideways at 1900 / 1440 / 1280px. Then **open some of the captures and look** - the script measures geometry and cannot
    see a wrong word.
 3. **Send the captures.** `node wf.mjs shots _shots [idPrefix]`. A step reported without pictures
    is a step nobody can check.

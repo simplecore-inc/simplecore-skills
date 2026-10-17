@@ -45,7 +45,7 @@ const HELP = `wireframe-boards - build and check a board
                                   build the board, serve it over HTTP, rebuild when a source
                                   changes and reload the open browser
   catalog                         the component storybook → _catalog.html
-  check [--frames <prefix>]       layout sweep of the built board - overflow, sideways scroll, fold
+  check [--frames <prefix>]       layout sweep of the built board - overflow, sideways scroll, fold, covered text
   gates                           prove every gate still catches the defect it exists for
   coverage                        board ⇄ code - the frames no route reaches
   pdf [--mask 40%] [--watermark [logo]] [--to <recipient>] [--in f] [--out f]
