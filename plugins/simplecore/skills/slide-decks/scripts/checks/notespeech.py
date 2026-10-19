@@ -15,7 +15,9 @@ Reads the notes from the deck's server (`sg://deck/content?format=json`).
 Config (`checks.notespeech`, optional): `counters` (the native-numeral counters, default
 대 · 명 · 번 · 시간 · 가지 · 곳 · 벌 · 군데 · 차례 · 줄 · 칸 · 개 · 살 · 마리 · 척), `latin` (true), `banned` (a
 map from a phrase never spoken to the wording said instead, e.g. an abbreviation read by its
-letters → the full term; default none).
+letters → the full term; default none), `allow` (Latin terms the project keeps in its notes on
+purpose, each one a recorded decision that the voice and the speaker say it as written; default
+none, and every other Latin letter is still reported).
 
     notespeech.py
 """
@@ -43,10 +45,14 @@ def native_pattern(counters: list[str]) -> re.Pattern:
 
 
 def findings(note: str, native: re.Pattern, latin: bool = True,
-             banned: dict[str, str] | None = None) -> list[str]:
+             banned: dict[str, str] | None = None, allow: tuple[str, ...] = ()) -> list[str]:
     out = [m.group(0) for m in native.finditer(note)]
     if latin:
-        out += [m.group(0) for m in LATIN.finditer(note)]
+        # an allowed term is taken out whole, so a letter next to it is still read
+        kept = note
+        for term in allow:
+            kept = re.sub(rf"(?<![A-Za-z]){re.escape(term)}(?![A-Za-z])", " ", kept)
+        out += [m.group(0) for m in LATIN.finditer(kept)]
     for phrase, instead in (banned or {}).items():
         out += [f"{phrase}」 → 「{instead}"] * note.count(phrase)
     return out
@@ -80,9 +86,10 @@ def main(argv: list[str] | None = None) -> int:
     native = native_pattern(list(cfg.get("counters", COUNTERS)))
     latin = bool(cfg.get("latin", True))
     banned = dict(cfg.get("banned", {}))
+    allow = tuple(cfg.get("allow", ()))
     with cli.open_reader(deck, with_vocabulary=False) as reader:
         content = json.loads(reader.session.read("sg://deck/content?format=json"))
-    found = [(n, f) for n, note in sorted(notes_of(content).items()) for f in findings(note, native, latin, banned)]
+    found = [(n, f) for n, note in sorted(notes_of(content).items()) for f in findings(note, native, latin, banned, allow)]
     print(f"notespeech: {len(found)} phrases a voice would misread in the speaker notes")
     for n, phrase in found:
         print(f"  ✖ slide {n}: 「{phrase}」")

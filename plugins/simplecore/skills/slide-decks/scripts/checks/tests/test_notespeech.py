@@ -29,6 +29,13 @@ class NoteSpeechTests(unittest.TestCase):
         self.assertEqual(ns.findings("전체 용어 저장까지", NATIVE, banned=banned), [])
         self.assertEqual(ns.findings("에이비씨 저장까지", NATIVE), [])
 
+    def test_an_allowed_term_passes_and_other_latin_is_still_found(self):
+        allow = ("IMDG",)
+        self.assertEqual(ns.findings("IMDG 3노드의 평균", NATIVE, allow=allow), [])
+        self.assertEqual(ns.findings("IMDG와 PTP를 쓴다", NATIVE, allow=allow), ["PTP"])
+        self.assertEqual(ns.findings("IMDGX 저장", NATIVE, allow=allow), ["IMDGX"])
+        self.assertEqual(ns.findings("IMDG 저장", NATIVE), ["IMDG"])
+
     def test_notes_are_collected_per_slide(self):
         content = [{"slide": 1, "blocks": [{"role": "use", "children": [{"role": "notes", "text": "가"}]}]},
                    {"slide": 2, "blocks": []}]
