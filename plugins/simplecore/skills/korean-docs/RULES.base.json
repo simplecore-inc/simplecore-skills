@@ -3938,6 +3938,36 @@
         "홈 · 삽입 · 디자인",
         "40곳을 고쳤습니다. 실행 취소 한 번으로 되돌릴 수 있습니다"
       ]
+    },
+    {
+      "id": "copy-item-count",
+      "scope": "universal",
+      "severity": "warn",
+      "reason": "A document's copy stating how many items, chapters, topics, features or steps there are (「7개 항목」·「네 목차와 18개 세부 주제」·「다섯 상위 주제」·「두 제품」·「7대 특징」·「네 가지 방안」). The count adds nothing the list does not show, goes stale the moment an item is added or dropped, and reads as padding: name the things instead (「제품·단선도·송전망 항목으로 구성한다」) or drop the count (「목차와 각 목차의 세부 주제를 제공한다」). **A number that is a measurement, a specification, a limit or a period stays** (「유실 0건」·「24개월」·「최대 5개 항목까지」), and a numeral that is part of a name stays (「두 사람 승인」). The lens already reads spelled numerals as candidates; this rule adds the digit-and-counter form it missed (「7개 항목」 went through a sweep untouched).",
+      "find": [
+        "/(?<![0-9,.가-힣])(?<!(?:최대|최소|상한|하한|최고|최저) )[0-9]+개 (?:세부 |상위 )?(?:항목|목차|주제|기능|섹션|단계|요구사항)/",
+        "/(?<![가-힣])(?:두|세|네|다섯|여섯|일곱|여덟|아홉|열) (?:가지|항목|목차|(?:상위 |세부 )?주제|제품|기능|단계|섹션)/",
+        "/(?<![0-9,.])[0-9]+대 (?:특징|원칙|기능|과제)/"
+      ],
+      "replace": null,
+      "hit": [
+        "상세는 제품·단선도·송전망·문서 비교의 7개 항목이다",
+        "공고 탐색, 사업검토, 관리의 네 목차와 18개 세부 주제를 제공한다",
+        "다섯 상위 주제에 주요 화면을 구성한다",
+        "두 제품을 보안 분야에 별도로 등록한다",
+        "7대 특징을 소개한다",
+        "네 가지 방안을 검토한다"
+      ],
+      "miss": [
+        "두 사람 승인·감사·기본 거부는 명령 확장 팩의 기능이다",
+        "최대 5개 항목까지 선택한다",
+        "유실 0건을 목표로 한다",
+        "로그는 24개월 보관한다",
+        "기존 전라남도 46과 광주 29를 합쳐 표시한다",
+        "목차와 각 목차의 세부 주제를 제공한다",
+        "세 번째 항목을 연다",
+        "제품·단선도·송전망 항목으로 구성한다"
+      ]
     }
   ]
 }

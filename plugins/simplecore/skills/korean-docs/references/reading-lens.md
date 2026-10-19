@@ -87,6 +87,8 @@ the lens is for.
 
 **Planting · seeds** 씨앗 · 심는 · 심은 · 심어 · 심을 · 심기 - `seed` rendered as 「씨앗」 and loading sample data rendered as 「심는다」. A random-number seed is 「시드」 too. 「중심은」 · 「핵심은」 coming along for the ride is reading material
 
+**Counting items in digits** `[0-9]+개 항목` · `[0-9]+개 목차` · `[0-9]+개 주제` · `[0-9]+개 세부 주제` · `[0-9]+개 상위 주제` · `[0-9]+개 기능` · `[0-9]+개 섹션` · `[0-9]+개 단계` · `[0-9]+개 요구사항` · `[0-9]+대 특징` · `[0-9]+대 원칙` · `[0-9]+대 과제` - a document's copy stating how many items, chapters, topics or features there are (「7개 항목」 · 「18개 세부 주제」 · 「7대 특징」). The list already shows them and the count goes stale when one is added, so name the items or drop the number. A limit, a specification or a measurement stays (「최대 5개 항목까지」), which is why this is read rather than ruled outright; the rule `copy-item-count` catches the plain count.
+
 **Counting with native numerals** `(?<![가-힣])두(?= )(?! 번)(?! 배)` · `(?<![가-힣])세(?= )(?! 번)(?! 배)` · `(?<![가-힣])네(?= )(?! 번)(?! 배)` · `다섯(?= )` · `여섯(?= )` · `일곱(?= )` · `여덟(?= )` · `아홉(?= )` - a place where the name is already written beside it and a number covers it (「탐지 네 판정」 · 「사본 두 벌」). With a name present, delete the number; where it is a value to check, write it in digits. 「둘」 · 「셋」 · 「넷」 are left out because of 「둘 다」 and the verb 「두다」. A numeral glued to the syllable before it is part of another word (「모두」·「명세」·「태세」·「부가세」·「하네」), an ordinal or a repetition (「세 번째」·「두 번을 넘기지 않는다」) states an order or a fixed limit, and a multiplier (「두 배」) is a ratio, so none of those surface
 
 
