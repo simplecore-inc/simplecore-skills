@@ -211,3 +211,19 @@ class StackInsideFrame(unittest.TestCase):
 
     def test_frame_measured_to_the_box_alone_fails(self):
         self.assertIn("FRAME-PADDING-UNEVEN", _lint(self.FRAME + self.sheet(False) + self.BOX))
+
+
+class DeclaredUnderline(unittest.TestCase):
+    """An underline drawn as a line is part of its words, once it says so."""
+
+    HEAD = '<text x="28" y="40" font-size="26" font-weight="700">단계 완료 기준 · 판정</text>'
+    BOX = '<rect x="28" y="56" width="400" height="80" rx="8" fill="#eef2fa" stroke="#1b4a9c" stroke-width="1.9"/>'
+
+    def test_undeclared_underline_reads_as_what_the_label_sits_on(self):
+        line = '<line x1="90" y1="44.4" x2="190" y2="44.4" stroke="#14161c" stroke-width="1.9"/>'
+        self.assertIn("LABEL-GROUPING", _lint(self.HEAD + line + self.BOX))
+
+    def test_declared_underline_is_part_of_the_words(self):
+        line = ('<line x1="90" y1="44.4" x2="190" y2="44.4" stroke="#14161c" stroke-width="1.9" '
+                'data-underline="1"/>')
+        self.assertNotIn("LABEL-GROUPING", _lint(self.HEAD + line + self.BOX))

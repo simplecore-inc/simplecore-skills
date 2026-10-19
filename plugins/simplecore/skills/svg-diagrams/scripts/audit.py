@@ -320,6 +320,11 @@ def lint(svg_path):
     # strip XML comments first: commented-out draft markup must not be linted
     # as real elements (phantom flags / crashes on partial fragments)
     svg = re.sub(r'<!--.*?-->', '', svg, flags=re.S)
+    # an underline belongs to the words over it, not to the picture: a figure
+    # bound for a .pptx draws it as <line data-underline> because the EMF
+    # fallback drops text-decoration, and every geometry check below would
+    # otherwise read it as a connector touching the label
+    svg = re.sub(r'<line\b[^>]*\bdata-underline="[^"]*"[^>]*/>', '', svg)
     W, H = _root_dims(svg)
     issues = []
 

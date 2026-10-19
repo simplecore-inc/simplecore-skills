@@ -246,6 +246,10 @@ bakes them in:
 - **Declare quantities.** A rect whose width or height is the value - a bar, a
   strip segment, a treemap cell - carries `measure="width"|"height"|"both"`
   (`data-measure`), so the row and frame checks measure nothing against it.
+- **Declare underlines.** A word underlined for emphasis in a figure placed in a
+  .pptx is drawn as a `<line>` under its glyphs, since the EMF fallback drops
+  `text-decoration`; the line carries `data-underline="1"`, so lint reads it as
+  part of the words and never as a connector or an owner the label sits on.
 
 ## Tokyo Night palette (svgkit values)
 
