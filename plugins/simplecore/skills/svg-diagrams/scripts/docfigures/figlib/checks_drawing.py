@@ -32,11 +32,21 @@ def sub_body_share(svgs, cfg):
     sit there beyond that share fails too, because its running text prints
     below the paragraph beside it while every size is still on the ladder.
     Counted in characters, so many short chips beside a few body lines pass.
+
+    `subBodyShareMax` may be one share or a {board: share} map. A slide board
+    is derived so that the ladder's smallest rung prints at the slide's body
+    size, so on that board a rung below BODY is not text printed below the
+    paragraph beside it, and the project may allow it a larger share there.
     """
     body = cfg.names["BODY"]
     limit = cfg.get("subBodyShareMax")
     out = []
     for svg in svgs:
+        if isinstance(limit, dict):
+            board = board_of(svg, cfg)
+            share_max = cfg.per_board("subBodyShareMax", board, None) if board else None
+        else:
+            share_max = limit
         small = total = 0
         for attrs, text in texts(svg):
             size = _attr(attrs, "font-size")
@@ -48,7 +58,7 @@ def sub_body_share(svgs, cfg):
         if not total:
             continue
         share = small / total
-        if small == total or (limit is not None and share > float(limit)):
+        if small == total or (share_max is not None and share > float(share_max)):
             out.append((svg.name, share))
     return out
 

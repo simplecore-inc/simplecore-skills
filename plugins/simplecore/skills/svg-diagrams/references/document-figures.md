@@ -858,7 +858,7 @@ importable as a module constant.
 | `ladder` | yes | the only type sizes a figure may print | |
 | `names` | yes | rung name → size, each on the ladder; must define `MICRO` `BODY` `LEAD` `CARD` `SECTION` `EMPH` `DISPLAY`; `CHIP`, the tag rung, defaults to the smallest | |
 | `steps` | | `STEP` (baseline step for body text) and `CHIP_STEP` (for lines on the tag rung) | `18`, `STEP` |
-| `subBodyShareMax` | | largest share of a figure's characters below `BODY`; a figure with every character there always fails | none |
+| `subBodyShareMax` | | largest share of a figure's characters below `BODY`, one share or a `{board: share}` map (a slide board whose smallest rung prints at the slide's body size may allow more); a figure with every character there always fails | none |
 | `maxRung` | | name of the largest rung a figure may print | none |
 | `strokes` | | `HAIRLINE` `STROKE` `THICK`; with none declared the stroke check does not run | none |
 | `dashes` | | dash name → `{pattern, words}`; the pattern is the only gap for that meaning, the words its gloss | none |

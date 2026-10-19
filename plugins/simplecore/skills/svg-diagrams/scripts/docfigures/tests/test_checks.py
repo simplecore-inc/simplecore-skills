@@ -42,6 +42,29 @@ class SubBodyShare(Case):
         self.assertEqual(verify.sub_body_share([f], self.cfg), [])
 
 
+class SubBodySharePerBoard(unittest.TestCase):
+    """A {board: share} map holds each board to its own share."""
+
+    def setUp(self):
+        self.p = Project(subBodyShareMax={"1200": 0.5, "528": 0.9})
+        self.cfg = self.p.cfg()
+
+    def tearDown(self):
+        self.p.close()
+
+    def test_same_share_fails_on_the_strict_board_and_passes_on_the_lenient(self):
+        body = text(40, 60, "x" * 70, size=21) + text(40, 90, "y" * 30)
+        wide = self.p.write("figures/wide.svg", svg(body, w=1200))
+        column = self.p.write("figures/column.svg", svg(body, w=528))
+        self.assertEqual([n for n, _s in verify.sub_body_share([wide, column], self.cfg)],
+                         ["wide.svg"])
+
+    def test_every_word_below_body_still_fails_on_any_board(self):
+        f = self.p.write("figures/column.svg", svg(text(40, 60, "tag tag", size=21), w=528))
+        self.assertEqual([n for n, _s in verify.sub_body_share([f], self.cfg)],
+                         ["column.svg"])
+
+
 class LabelForm(Case):
     def labels(self, *strings):
         f = self.fig("a", "".join(text(40, 40 + 30 * i, s) for i, s in enumerate(strings)))
