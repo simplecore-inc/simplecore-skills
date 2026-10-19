@@ -171,3 +171,43 @@ class EscapedText(unittest.TestCase):
         body = '<text x="10" y="20" font-size="15">&lt;P&gt;&lt;R&gt;Q3&lt;/R&gt;&lt;/P&gt;</text>'
         found = [t for _a, t in audit._iter_texts(svg(body))]
         self.assertEqual(found, ["<P><R>Q3</R></P>"])
+
+
+def _lint(body):
+    with tempfile.TemporaryDirectory() as d:
+        p = Path(d) / "a.svg"
+        p.write_text(svg(body), encoding="utf-8")
+        return [kind for kind, _msg in audit.lint(str(p))]
+
+
+class NumberOnDisc(unittest.TestCase):
+    """A filled disc drawn over a line backs the number set in it."""
+
+    LINE = '<line x1="40" y1="100" x2="400" y2="100" stroke="#333" stroke-width="2"/>'
+    DISC = ('<circle cx="200" cy="100" r="16" fill="#1b4a9c"/>'
+            '<text x="200" y="107" font-size="21" fill="#fff" text-anchor="middle">4</text>')
+
+    def test_disc_drawn_after_the_line_passes(self):
+        self.assertNotIn("TEXT-ON-LINE", _lint(self.LINE + self.DISC))
+
+    def test_line_drawn_after_the_disc_fails(self):
+        self.assertIn("TEXT-ON-LINE", _lint(self.DISC + self.LINE))
+
+
+class StackInsideFrame(unittest.TestCase):
+    """The sheets of stack_behind() are ink inside the frame that holds the box."""
+
+    FRAME = '<path d="M 100 100 H 500 V 320 H 100 Z" fill="none" stroke="#1b4a9c" stroke-width="1.9"/>'
+    BOX = ('<rect x="120" y="134" width="360" height="166" fill="#fff" stroke="#1b4a9c" '
+           'stroke-width="1.9"/><text x="140" y="170" font-size="21">Proxy G/W</text>')
+
+    def sheet(self, tagged):
+        tag = 'data-stack="1" ' if tagged else ''
+        return (f'<path {tag}d="M 134 134 V 120 H 466 V 134" fill="none" stroke="#1b4a9c" '
+                f'stroke-width="1.4"/>')
+
+    def test_frame_measured_to_the_tagged_sheets_passes(self):
+        self.assertNotIn("FRAME-PADDING-UNEVEN", _lint(self.FRAME + self.sheet(True) + self.BOX))
+
+    def test_frame_measured_to_the_box_alone_fails(self):
+        self.assertIn("FRAME-PADDING-UNEVEN", _lint(self.FRAME + self.sheet(False) + self.BOX))

@@ -475,6 +475,16 @@ arithmetic. `tw()` measures a run with a calibrated per-class table - Hangul
 0.92 em, lowercase 0.52, capitals 0.66, digits 0.58 - so a wrap computed with
 it lands where the browser breaks the line.
 
+**Size a box by `wrap()`, never by `tw()` alone, and measure the result.**
+`wrap()` breaks at `WRAP_SAFETY` (0.93) of the width it is given, so a string
+`tw()` says fits can still wrap (a 313-unit line in 326 units of room takes two
+lines), and a box sized from `tw()` then grows a line the layout did not
+budget for. The lint's `TEXT-OVERFLOW` estimates widths, ignores the weight and
+allows a 4-unit pad, so a bold title sitting on its border passes it.
+`scripts/docfigures/insets.py <svg>...` reads what the browser draws: it
+reports every label whose left or right inset inside its box is under 8 units
+(`TOUCH`) or negative (`OVER`). Run it on the saved set before placing it.
+
 `wrap()` breaks by word and fills each line to 93% of the width, the margin
 that absorbs `tw()` running a few percent short on mixed Hangul and Latin. An
 authored newline is a line boundary, and a joining mark (「·」 「→」 「~」 「/」)
@@ -621,6 +631,14 @@ after the line it has to pass behind (`TEXT-ON-LINE`). Document order is paint
 order: a plate drawn before the line hides nothing. `heading(..., mask=True)`
 does the same for a section heading that a leader drops past; compute the
 section's top with `section_top()` first, draw the leaders, then the heading.
+
+**A disc that cannot avoid overlapping a box or a line is cut out of it.** A
+numbered disc on a cluster's edge, or a gate mark between two stacked stages,
+touches the shape under it and reads as a blot stuck to that edge. Move it into
+open paper first; where it has to overlap, draw it with a paper ring -
+`disc(..., halo=3)` or `num_disc(..., halo=3)` - so a thin white gap separates
+the disc from the outline it crosses. On open paper the ring is invisible, so a
+figure whose discs sit on shapes may pass it to every disc.
 
 ## Two halves of one cell are joined, not set near each other
 

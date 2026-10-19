@@ -2104,6 +2104,17 @@ def _interior_checks(svg, W, H, rmeta, solids, containers, node_rects,
                        "measured": "data-measure=" in a,
                        "band": "data-band=" in a})
 
+    # -- the sheets of a stack drawn behind a box (stack_behind) -------------
+    #    An open path, so it is no rectangle above; it is still ink inside
+    #    whatever frame holds the box, and a frame's inset is measured to it.
+    stack_boxes = []
+    for m in re.finditer(r'<path\b([^>]*data-stack=[^>]*)/?>', svg):
+        dm = re.search(r'\bd="([^"]+)"', m.group(1))
+        pts = _path_points(dm.group(1)) if dm else []
+        if pts:
+            xs, ys = [p[0] for p in pts], [p[1] for p in pts]
+            stack_boxes.append((min(xs), min(ys), max(xs), max(ys)))
+
     # -- texts as records ---------------------------------------------------
     T = []
     texts_style = []                      # (fill, weight), one per texts_full
@@ -2230,6 +2241,9 @@ def _interior_checks(svg, W, H, rmeta, solids, containers, node_rects,
                 continue
             if _inside(bb, box, 0.5):
                 cont.append(bb)
+        for sb in stack_boxes:
+            if _inside(sb, box, TOL):
+                cont.append(sb)
         return cont
 
     def _band_bottom(box, own_pos=None):
@@ -2744,6 +2758,20 @@ def _interior_checks(svg, W, H, rmeta, solids, containers, node_rects,
               if r["fill"] not in ("none", "transparent")
               and not r["fill"].startswith("url(") and r["op"] >= 0.9
               and not r["canvas"]]
+    # a filled disc drawn over an outline backs the number set in it, as a
+    # paper mask does; a line drawn after the disc still runs over the number
+    for m in re.finditer(r'<circle\b([^>]*)/?>', svg):
+        a = m.group(1)
+        vals = {k: re.search(rf'\b{k}="([\-\d.]+)"', a) for k in ("cx", "cy", "r", "opacity")}
+        fm = re.search(r'\bfill="([^"]+)"', a)
+        if None in (vals["cx"], vals["cy"], vals["r"]) or not fm \
+                or fm.group(1) in ("none", "transparent") or fm.group(1).startswith("url("):
+            continue
+        if vals["opacity"] and float(vals["opacity"].group(1)) < 0.9:
+            continue
+        cx, cy, cr = (float(vals[k].group(1)) for k in ("cx", "cy", "r"))
+        opaque.append({"pos": m.start(), "x": cx - cr, "y": cy - cr, "w": 2 * cr, "h": 2 * cr,
+                       "fill": fm.group(1).lower(), "op": 1.0, "canvas": False})
 
     def _seg_len_in(p, q, box):
         """Length of segment p→q inside box=(x0,y0,x1,y1)."""

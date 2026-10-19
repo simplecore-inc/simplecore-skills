@@ -248,7 +248,8 @@ def stack_behind(c, x, y, w, h, color, *, depth=2, off=7, rx=10, side="right",
     `side="right"` offsets each sheet up and to the right; `side="up"` insets
     each sheet on both flanks, for a box already flush with the content
     margin. Returns the rectangle the whole stack occupies, so a connector
-    arriving from outside lands on the topmost sheet.
+    arriving from outside lands on the topmost sheet. Each sheet carries
+    `data-stack`, so the lint counts it as content of the frame it sits in.
     """
     if side not in ("right", "up"):
         raise ValueError(f"side must be 'right' or 'up', not {side!r}")
@@ -258,6 +259,7 @@ def stack_behind(c, x, y, w, h, color, *, depth=2, off=7, rx=10, side="right",
             c.path(f"M {x + d:.1f} {y:.1f} V {y - d:.1f} "
                    f"H {x + w + d:.1f} V {y + h - d:.1f} "
                    f"H {x + w:.1f}", color=color, sw=sw, marker=None)
+            c.body[-1] = c.body[-1].replace("<path ", '<path data-stack="1" ', 1)
         else:
             x1, x2, yy = x + d, x + w - d, y - d
             c.path(f"M {x1:.1f} {y:.1f} V {yy + rx:.1f} "
@@ -265,16 +267,22 @@ def stack_behind(c, x, y, w, h, color, *, depth=2, off=7, rx=10, side="right",
                    f"H {x2 - rx:.1f} "
                    f"A {rx} {rx} 0 0 1 {x2:.1f} {yy + rx:.1f} "
                    f"V {y:.1f}", color=color, sw=sw, marker=None)
+            c.body[-1] = c.body[-1].replace("<path ", '<path data-stack="1" ', 1)
     d = off * depth
     if side == "right":
         return (x, y - d, w + d, h + d)
     return (x + d, y - d, w - 2 * d, h + d)
 
 
-def disc(c, cx, cy, r, fill, stroke=None, sw=HAIRLINE):
+def disc(c, cx, cy, r, fill, stroke=None, sw=HAIRLINE, halo=0):
     """One circle. svgkit has no circle primitive: an arc path lints as a
     diameter line and a fully rounded rect lints as OVERLAP when two discs
-    overlap, so the element is emitted directly."""
+    overlap, so the element is emitted directly. With `halo`, a paper ring
+    that wide is drawn under it, so a disc set over a box edge or a line is
+    cut out of what it overlaps instead of touching it."""
+    if halo:
+        c.add(f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="{r + halo:.1f}" '
+              f'fill="{c.t["bg"]}" stroke="none"/>')
     c.add(f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="{r:.1f}" fill="{fill}" '
           f'stroke="{stroke or fill}" stroke-width="{sw}"/>')
 
@@ -284,11 +292,12 @@ def num_disc_r(n, size=CHIP):
     return max(size * 0.62 + 3, tw(str(n), size, True) / 2 + 5)
 
 
-def num_disc(c, cx, cy, n, accent, *, ink="#ffffff", size=CHIP, sw=None):
+def num_disc(c, cx, cy, n, accent, *, ink="#ffffff", size=CHIP, sw=None, halo=0):
     """A numbered disc whose radius comes from the label, so the digits stay
-    inside the outline at any ladder. Returns the radius."""
+    inside the outline at any ladder. `halo` is disc()'s paper ring, for a
+    disc that overlaps a box or a line. Returns the radius."""
     r = num_disc_r(n, size)
-    disc(c, cx, cy, r, accent, sw=sw or HAIRLINE)
+    disc(c, cx, cy, r, accent, sw=sw or HAIRLINE, halo=halo)
     c.text(cx, cy + size * 0.36, str(n), size=size, color=ink, family=SANS,
            weight=700, anchor="middle")
     return r
