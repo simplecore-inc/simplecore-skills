@@ -55,7 +55,11 @@ What carries over from tool to tool, and so stays here:
 - **A deck is changed through its tool, never as files behind its back.** Where the tool
   offers an editing server, every read and write goes through it; a file edited around it
   is a write the tool cannot check, and a deck edited by hand stops being evidence of what
-  the tool writes. A generated file is changed in its generator and regenerated.
+  the tool writes. A generated file is changed in its generator and regenerated. **An asset
+  is part of the deck**: a figure or image a script copies into the deck folder while an app
+  holds the deck is drawn at the size the app cached, so a figure whose height changed comes
+  out stretched on every slide that places it, while the markup's box and the file both read
+  correct. Write it through the tool's asset call, or reload the deck before judging a render.
 - **Which host holds which deck is declared, never guessed.** One host per deck; when an
   application has the deck open, work through the connection it offers rather than a
   second host on the same files.
