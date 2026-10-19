@@ -174,6 +174,11 @@ bans stop in writing. The author marks the script, with a reason beside the mark
   file `check` reads is marked with the span.
 - Only the script is marked. A slide's text, a caption and a manuscript sentence keep the written
   form, `Docker` included.
+- A source file that holds a script - a generator's table of speaker notes beside the slide copy
+  it writes - marks it with the same marker written as a line comment (`# <!-- l10n:spoken 노트 -->`
+  in Python, `// …` in JavaScript, `-- …` in SQL). Unmarked, every spoken name in the generator is
+  reported as a banned transliteration while the manuscript it writes passes, and the two disagree
+  about the same sentence. The quotation marker takes a comment the same way.
 
 ### The built-in checks
 

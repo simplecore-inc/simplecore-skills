@@ -311,8 +311,8 @@ function blank(match) {
 // 「오류 0건」 over text nobody read, and that output is identical to a clean document. The
 // same reasoning makes `check` name the skipped line count on every run: silence is what the
 // marker buys, and silence is indistinguishable from a check that passed.
-const QUOTE_OPEN = /^\s*<!--\s*l10n:quote\b(.*?)-->\s*$/;
-const QUOTE_CLOSE = /^\s*<!--\s*l10n:\/quote\s*-->\s*$/;
+const QUOTE_OPEN = /^\s*(?:#|\/\/|--)?\s*<!--\s*l10n:quote\b(.*?)-->\s*$/;
+const QUOTE_CLOSE = /^\s*(?:#|\/\/|--)?\s*<!--\s*l10n:\/quote\s*-->\s*$/;
 
 // A speaker script, marked the same way. Its lines are read in full - it is this repository's
 // writing - and only the bans that keep a name in its original script stand down there
@@ -323,8 +323,11 @@ const QUOTE_CLOSE = /^\s*<!--\s*l10n:\/quote\s*-->\s*$/;
 //     <!-- l10n:spoken 발표 대본 -->
 //     ... 들리는 대로 적은 대본 ...
 //     <!-- l10n:/spoken -->
-const SPOKEN_OPEN = /^\s*<!--\s*l10n:spoken\b(.*?)-->\s*$/;
-const SPOKEN_CLOSE = /^\s*<!--\s*l10n:\/spoken\s*-->\s*$/;
+//
+// A source file that holds a script or a quotation (a generator's table of speaker notes)
+// writes the same marker as a line comment (`# <!-- l10n:spoken ... -->`, `// ...`, `-- ...`).
+const SPOKEN_OPEN = /^\s*(?:#|\/\/|--)?\s*<!--\s*l10n:spoken\b(.*?)-->\s*$/;
+const SPOKEN_CLOSE = /^\s*(?:#|\/\/|--)?\s*<!--\s*l10n:\/spoken\s*-->\s*$/;
 
 /**
  * The lines between an opening and a closing marker, markers included.
