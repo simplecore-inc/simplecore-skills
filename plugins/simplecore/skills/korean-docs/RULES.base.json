@@ -3662,7 +3662,7 @@
       "severity": "error",
       "reason": "A literal English `close` - finishing a work unit, a stage or a register entry written as 「닫는다」. 「닫다」 is the verb for a door, a window, a file or a connection; a stage is 종료한다, a unit is 완료 판정한다, a risk entry is 종결한다, and 「자동시험으로 닫는다」 hides which of those it means. Two shapes are caught: a work noun as the object (단위 · 단계 · 분석 · 기준선 · 결함 …) and 「~(으)로 닫다」 with a means in front (시험 · 식별자 · 인수 · 증빙 · 승인 …), which is never how a door closes. 「회차를 닫는다」 and 「이슈를 닫는다」 are left to the lens: a product that gives a collection run an open/closed state and an issue tracker whose own button says 「닫기」 share the letters with the calque, and a rule cannot tell them apart. The words between the object and 「닫다」 may not carry a full stop or a tag, so a dialog closed in the next sentence is not read as the stage before it being closed.",
       "find": [
-        "/(단위|항목|단계|결함|사업|기준선|분석|설계|구현|과제|시험|위험 대장)[을를] ([^ .。<>]+ ){0,3}닫(는다|습니다|는|아|고|으면|음|힌다|힙니다)/",
+        "/(단위|항목|결정|승인|요청|제보|단계|결함|사업|기준선|분석|설계|구현|과제|시험|위험 대장)[을를] ([^ .。<>]+ ){0,3}닫(는다|습니다|는|아|고|으면|음|힌다|힙니다)/",
         "/(시험|테스트|식별자|인수|증빙|판정|승인|보고|검토|시연|배포|결재)[으]?로 닫(는다|습니다|는|아|고|으면|음|힌다|힙니다)/"
       ],
       "replace": "완료 판정한다 · 종료한다 · 종결한다 · 마친다",
@@ -3672,7 +3672,9 @@
         "12주차에 완료 보고와 인수로 닫습니다",
         "종료 증빙으로 닫음",
         "분석을 닫는 품질점검보고서",
-        "단계를 자동시험으로 닫는다"
+        "단계를 자동시험으로 닫는다",
+        "해석 승인을 닫는 명령은 이것 하나다",
+        "결정을 닫는 명령은 approve다"
       ],
       "miss": [
         "창을 닫는다",
@@ -3682,7 +3684,8 @@
         "이슈를 닫고 결과를 코드에 반영한다",
         "연결을 닫는다",
         "밸브를 손으로 닫는다",
-        "위자드의 검증 단계를 이어간다. 닫으면 작성 중인 작업은 임시 저장한다"
+        "위자드의 검증 단계를 이어간다. 닫으면 작성 중인 작업은 임시 저장한다",
+        "자동 닫기 설정을 바꾼다"
       ]
     },
     {
