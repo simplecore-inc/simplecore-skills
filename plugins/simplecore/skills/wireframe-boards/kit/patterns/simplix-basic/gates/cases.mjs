@@ -74,9 +74,9 @@ export function cases(t) {
     ctxWith([screen('x-01-a', "'사유 종료 2026-08-06'\n'기한 2026-08-16 · D-4'")]), false);
 
   add('clockGate', 'the audit stamp is in the future',
-    ctxWith([screen('x-01-a', "auditFoot({ id: 'a_1', at: '2026-09-01 10:00' }, '미해소')")]), true);
+    ctxWith([screen('x-01-a', "auditFoot({ id: '22bc12802e55', key: 'a_1', at: '2026-09-01 10:00' }, '미해소')")]), true);
   add('clockGate', 'the audit stamp is in the past',
-    ctxWith([screen('x-01-a', "auditFoot({ id: 'a_1', at: '2026-08-01 10:00' }, '미해소')")]), false);
+    ctxWith([screen('x-01-a', "auditFoot({ id: '22bc12802e55', key: 'a_1', at: '2026-08-01 10:00' }, '미해소')")]), false);
   // A step drawn as finished must carry a date already past.
   add('clockGate', 'a finished step is in the future',
     ctxWith([screen('x-01-a', "{ label: '작성', who: '김안전', at: '2026-08-20', state: 'done' }")]), true);
@@ -99,12 +99,12 @@ export function cases(t) {
     ctxWith([screen('x-01-a', "  url: 'x.example.com/incidents?view=inc_0312&mode=edit',")]), false);
 
   add('recordIdGate', 'the address and the stamp name different records',
-    ctxWith([screen('x-01-a', "  url: 'x.example.com/sessions/ses_0142',\n  auditFoot({ id: 'ses_0244', at: '2026-08-01 10:00' }, '')")]), true);
+    ctxWith([screen('x-01-a', "  url: 'x.example.com/sessions/ses_0142',\n  auditFoot({ id: 'c93f26a4867a', key: 'ses_0244', at: '2026-08-01 10:00' }, '')")]), true);
   add('recordIdGate', 'the address and the stamp agree',
-    ctxWith([screen('x-01-a', "  url: 'x.example.com/sessions/ses_0142',\n  auditFoot({ id: 'ses_0142', at: '2026-08-01 10:00' }, '')")]), false);
+    ctxWith([screen('x-01-a', "  url: 'x.example.com/sessions/ses_0142',\n  auditFoot({ id: 'dd7eda076f81', key: 'ses_0142', at: '2026-08-01 10:00' }, '')")]), false);
   // A truncated hash in the address is not a different record.
   add('recordIdGate', 'the hash in the address is shortened',
-    ctxWith([screen('x-01-a', "  url: 'x.example.com/sig/sig_9f2ca',\n  auditFoot({ id: 'sig_9f2ca81b4d7e', at: '2026-08-01 10:00' }, '')")]), false);
+    ctxWith([screen('x-01-a', "  url: 'x.example.com/sig/sig_9f2ca',\n  auditFoot({ id: 'c126fdcbd8ad', key: 'sig_9f2ca81b4d7e', at: '2026-08-01 10:00' }, '')")]), false);
 
   add('badgeFormGate', 'a badge is a sentence',
     ctxWith([screen('x-01-a', "badge('먼저 닫아야 합니다')")]), true);
@@ -525,13 +525,13 @@ export function cases(t) {
     ctxWith([screen('x-01-a', "dialog({ title: 'x', children: '', foot: btn('닫기', 'ghost') })")]), false);
 
   add('auditFootFirstTabGate', 'draws the audit line with the second pane open',
-    ctxWith([screen('x-01-a', "tabs([{ label: '개요' }, { label: '서명', active: true }])\nauditFoot({ id: 'a1', at: '2026-01-01' }, null)")]), true);
+    ctxWith([screen('x-01-a', "tabs([{ label: '개요' }, { label: '서명', active: true }])\nauditFoot({ id: '53d11c7dff83', at: '2026-01-01' }, null)")]), true);
   add('auditFootFirstTabGate', 'draws the audit line on the first pane',
-    ctxWith([screen('x-01-a', "tabs([{ label: '개요', active: true }, { label: '서명' }])\nauditFoot({ id: 'a1', at: '2026-01-01' }, null)")]), false);
+    ctxWith([screen('x-01-a', "tabs([{ label: '개요', active: true }, { label: '서명' }])\nauditFoot({ id: '53d11c7dff83', at: '2026-01-01' }, null)")]), false);
   add('auditFootFirstTabGate', 'a companion frame draws the audit line',
-    ctxWith([screen('x-01-a', "tabPanes({ strip, open: '개요', ref: 'x', panes: [] })\nauditFoot({ id: 'a1', at: '2026-01-01' }, null)")]), true);
+    ctxWith([screen('x-01-a', "tabPanes({ strip, open: '개요', ref: 'x', panes: [] })\nauditFoot({ id: '53d11c7dff83', at: '2026-01-01' }, null)")]), true);
   add('auditFootFirstTabGate', 'a panel without tabs is not judged',
-    ctxWith([screen('x-01-a', "auditFoot({ id: 'a1', at: '2026-01-01' }, null)")]), false);
+    ctxWith([screen('x-01-a', "auditFoot({ id: '53d11c7dff83', at: '2026-01-01' }, null)")]), false);
 
   // The gate asks a different question of each kind of board, so both kinds are proved - and both
   // are stated rather than inherited, because a case that leans on the harness's default proves

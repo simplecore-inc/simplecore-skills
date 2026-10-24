@@ -1104,11 +1104,19 @@ export const dField = ({ label, value, peek = false, wide = false, top = false }
  * The strip under a panel body: what the record is, and when it was written.
  *
  * <p>**The id carries a copy control.** Somebody writing a report or raising a ticket needs the
- * identifier in their notes, and the copy is what puts the whole of it there. The value drawn is
- * illustration like any other record value; what the frame specifies is an identifier with its copy
- * control. simplix-react's `CrudDetail.AuditFooter` shortens a UUID, shows the whole of it on hover
- * and copies the whole of it, and that satisfies the frame - the short form, the tooltip and the
- * copy all point at one record (`simplix:frontend` invariant #36). It is never redrawn as a
+ * identifier in their notes, and the copy is what puts the whole of it there.
+ *
+ * <p>**The id is the record's UUID, drawn as its last 12 hex digits.** simplix-react's
+ * `CrudDetail.AuditFooter` shows exactly that tail, the whole UUID on hover, and copies the whole
+ * UUID, so the short form, the tooltip and the copy all point at one record (`simplix:frontend`
+ * invariant #36). Pass the 12-digit tail (`'298ad0feface'`). A prefixed code such as `usr_0031` is
+ * not what the product shows and is refused: a board drawn with one sends the implementer looking
+ * for a field that does not exist.
+ *
+ * <p>**`key` names the record the way the frame's address does.** A board writes readable record
+ * keys in its addresses (`?view=ses_0142`), and the shown tail cannot be compared with them, so a
+ * stamp whose frame has an address carries that key as `key: 'ses_0142'`. `recordIdGate` checks the
+ * key against the address, which is how a frame that draws one record and stamps another is caught. It is never redrawn as a
  * human-readable code: the name and the code a person knows the record by are already above it.
  *
  * <p>**A record that cannot change says so instead of showing a modified time.** On an immutable
@@ -1122,11 +1130,16 @@ export const dField = ({ label, value, peek = false, wide = false, top = false }
  * reading rather than of the record the panel is about. The first tab is the record itself, and
  * there the strip says what it means.
  */
-export const auditFoot = (created, updated) =>
-  `<div class="audit"><span class="mono">ID ${created.id}</span>` +
+const UUID_TAIL = /^[0-9a-f]{12}$/;
+export const auditFoot = (created, updated) => {
+  if (!UUID_TAIL.test(created.id)) {
+    throw new Error(`auditFoot: id '${created.id}' is not a UUID tail. Pass the record's UUID as its last 12 hex digits (e.g. '298ad0feface'), which is what CrudDetail.AuditFooter shows.`);
+  }
+  return `<div class="audit"><span class="mono">ID ${created.id}</span>` +
   `<span class="au-copy">복사</span><span class="spacer"></span>` +
   `<span>생성 ${created.at}</span>` +
   `<span>${updated == null ? '고칠 수 없음' : `수정 ${updated}`}</span></div>`;
+};
 
 /**
  * A dialog, in the one shape every dialog takes: a titled head, the body, and the actions.
@@ -1775,7 +1788,7 @@ export const CATALOG = [
   { cat: 'data', name: 'filterBar({total, applied, hidden, views, view}) · th(label, {dir})', note: '목록 위의 바 · 정렬 중인 열 머리글. 날짜에 놓이는 기록은 세그먼트가 목록·달력을 가르고, 걸린 필터는 보기를 바꿔도 그대로 남는다. 그래서 전환이 페이지 머리가 아니라 이 바에 있다', ex: `${filterBar({ total: '31', applied: [{ k: '분류', op: '=', v: '일반' }], hidden: 2 })}${filterBar({ total: '84건', views: ['목록', '달력'], view: '달력', applied: [{ k: '월', op: '=', v: '2026-08' }] })}${table({ head: [th('기록', { w: 'w2' }), th('상태', { dir: 'desc' })], rows: [['<span class="td w2">' + bar('w80') + '</span>', '<span class="td">' + badge('진행', 'outline') + '</span>']] })}` },
   { cat: 'data', name: 'rowActions(actions, more)', note: '모든 줄에 전부·같은 자리·같은 개수. 못 쓰는 버튼은 지우지 않고 비활성으로 둔다. 줄마다 달라지면 열을 눈으로 훑을 수 없다', ex: table({ head: [th('기록', { w: 'w2' }), th('상태', { w: 'fix' }), th('', { w: 'fix' })], rows: [['<span class="td w2">REC-1042</span>', `<span class="td fix">${badge('검토 대기', 'outline')}</span>`, `<span class="td fix">${rowActions(['보기', '승인', '반려'], true)}</span>`], ['<span class="td w2">REC-1041</span>', `<span class="td fix">${badge('완료')}</span>`, `<span class="td fix">${rowActions(['보기', { label: '승인', disabled: true }, { label: '반려', disabled: true }], true)}</span>`]] }) },
   { cat: 'detail panel', name: 'detailStats(items)', note: '상세 제목 바로 아래에서 현재 규모나 상태를 먼저 읽는 소형 카드. 연결된 목록이나 기록이 있으면 카드에 peek를 두고, 같은 정보를 여는 하단 동작은 반복하지 않는다', ex: detailStats([{ label: '하위 조직', value: '12', unit: '곳' }, { label: '소속 장비', value: '412', unit: '대', peek: true }, { label: '권한 사용자', value: '3', unit: '명', peek: true }]) },
-  { cat: 'detail panel', name: 'tabs · section · dField · auditFoot · panelFoot', note: '패널의 탭 줄, 2단 필드 묶음, 필드 하나(peek는 다른 기록을 가리킨다), 감사줄, 동작 행', ex: `${tabs([{ label: '개요', active: true }, { label: '구성원', count: 3 }])}${section('조직', dField({ label: '상태', value: badge('운영 중', 'outline') }) + dField({ label: '조직 코드', value: 'ORG-01' }) + dField({ label: '분류', value: '일반', peek: true }) + dField({ label: '주소', value: bar('w80'), wide: true, top: true }))}${auditFoot({ id: 'a1b2…9z', at: '2026-01-04' }, '2026-07-12')}` },
+  { cat: 'detail panel', name: 'tabs · section · dField · auditFoot · panelFoot', note: '패널의 탭 줄, 2단 필드 묶음, 필드 하나(peek는 다른 기록을 가리킨다), 감사줄, 동작 행', ex: `${tabs([{ label: '개요', active: true }, { label: '구성원', count: 3 }])}${section('조직', dField({ label: '상태', value: badge('운영 중', 'outline') }) + dField({ label: '조직 코드', value: 'ORG-01' }) + dField({ label: '분류', value: '일반', peek: true }) + dField({ label: '주소', value: bar('w80'), wide: true, top: true }))}${auditFoot({ id: 'fa236dad78eb', at: '2026-01-04' }, '2026-07-12')}` },
   { cat: 'detail panel', name: 'sectHead(title)', note: '필드가 아닌 블록의 절 제목. 레일·첨부·차트가 앞 절의 마지막 줄로 읽히지 않게 구분한다', ex: `${section('알림', dField({ label: '도달', value: '승격 2회 뒤 응답' }))}${sectHead('승격 내역')}${bar('w80')}${bar('w60', true)}` },
   { cat: 'detail panel', name: 'panelVerbs(actions) · panelFoot(actions)', note: '두 단 동작 행. 윗단은 열린 탭이 요구하는 것, 아랫단은 레코드에 하는 것. 파괴적인 것은 위치가 아니라 색(danger)으로 구분한다', ex: `${panelVerbs(btn('구성원 추가') + btn('가져오기') + btn('내보내기'))}${panelFoot(btn('닫기', 'ghost') + '<span class="spacer"></span>' + btn('삭제', 'danger') + btn('편집', 'primary'))}` },
   { cat: 'detail panel', name: 'panelForm({title, mode, children, foot})', note: '패널이 폼이 된 상태. 엔티티의 등록·편집은 다이얼로그가 아니라 여기서 연다. 목록·필터·스크롤 위치가 그대로 남고, 폼이 모달 폭이 아니라 패널 폭으로 열린다', ex: panelForm({ title: '분류 등록', children: formSection('', fText({ label: '이름', value: '일반 기록', required: true }) + fSelect({ label: '상위 분류', value: '전체', required: true })), foot: `${btn('취소', 'ghost')}<span class="spacer"></span>${btn('저장', 'primary')}` }) },

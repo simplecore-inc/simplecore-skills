@@ -582,7 +582,8 @@ export const recordIdGate = {
       if (!ids.length) continue;
       // One file can hold more than one panel - a scoped state draws a different record with its
       // own stamp - so the address has to match ONE of the stamps, not the first one written.
-      const stamps = [...src.matchAll(/auditFoot\(\{\s*id:\s*'([a-z]+_[0-9a-z]+)'/g)].map((m) => m[1]);
+      // The stamp shows a UUID tail; the record key the address uses is the stamp's `key`.
+      const stamps = [...src.matchAll(/auditFoot\(\{[^}]*?\bkey:\s*'([a-z]+_[0-9a-z]+)'/g)].map((m) => m[1]);
       if (!stamps.length) continue;
       const fits = stamps.some((st) => ids.some((id) => id === st || id.startsWith(st) || st.startsWith(id)));
       if (!fits) bad.push(`${sc.file}: the address names ${ids[0]} and the audit stamp ${stamps.join(' · ')}`);
