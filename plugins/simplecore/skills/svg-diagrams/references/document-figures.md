@@ -490,8 +490,11 @@ that absorbs `tw()` running a few percent short on mixed Hangul and Latin. An
 authored newline is a line boundary, and a joining mark (「·」 「→」 「~」 「/」)
 that would open a line moves up to the end of the line before when it fits the
 full width. A box's items are glued before they wrap: every `noBreak` pattern
-binds its two groups (a page id and its number, a number and its unit); the
-drawn line carries plain spaces.
+binds its two groups (a page id and its number, a number and its unit, a
+product and its release number); the drawn line carries plain spaces. A
+release number wrapped away from its product opens a line with a bare
+「2.31.0」, which the reader takes for a section number and `verify.py` reports
+as one, so the sample settings bind the pair from the start.
 
 **A label breaks only where its 「·」 list and its parentheses allow (R1-R4).**
 The rule holds for any label with middle-dot lists and parentheses, in Korean

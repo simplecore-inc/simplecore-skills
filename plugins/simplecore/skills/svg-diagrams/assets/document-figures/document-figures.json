@@ -47,7 +47,9 @@
   "badges": {},
   "verdict": null,
   "bullets": true,
-  "noBreak": [],
+  // A product name and its release number stay on one line: split, the
+  // number opens a line alone and reads as a section number (「2.31.0」).
+  "noBreak": ["([A-Za-z][A-Za-z.]*) ([0-9]+\\.[0-9]+(?:\\.[0-9]+)?)"],
 
   "heightReview": { "1200": 840, "598": 1400 },
   "deadMargin": null,

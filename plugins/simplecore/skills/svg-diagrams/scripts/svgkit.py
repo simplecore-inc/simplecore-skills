@@ -312,6 +312,103 @@ def path_points(d):
     return pts
 
 
+def _arc_samples(x1, y1, rx, ry, phi, large, sweep, x2, y2, n=24):
+    """Points along an elliptical arc, endpoints included (SVG 1.1 F.6.5).
+
+    An arc bulges past both of its endpoints - a circle written as two half
+    arcs has endpoints on its horizontal diameter only - so an extent read
+    from the endpoints alone cuts the top and the bottom of the circle off.
+    """
+    if rx == 0 or ry == 0 or (x1, y1) == (x2, y2):
+        return [(x2, y2)]
+    rx, ry = abs(rx), abs(ry)
+    c, s = math.cos(math.radians(phi)), math.sin(math.radians(phi))
+    dx, dy = (x1 - x2) / 2, (y1 - y2) / 2
+    xp, yp = c * dx + s * dy, -s * dx + c * dy
+    lam = xp * xp / (rx * rx) + yp * yp / (ry * ry)
+    if lam > 1:
+        rx, ry = rx * math.sqrt(lam), ry * math.sqrt(lam)
+    num = rx * rx * ry * ry - rx * rx * yp * yp - ry * ry * xp * xp
+    den = rx * rx * yp * yp + ry * ry * xp * xp
+    k = math.sqrt(max(num, 0.0) / den) if den else 0.0
+    if large == sweep:
+        k = -k
+    cxp, cyp = k * rx * yp / ry, -k * ry * xp / rx
+    cx = c * cxp - s * cyp + (x1 + x2) / 2
+    cy = s * cxp + c * cyp + (y1 + y2) / 2
+
+    def ang(ux, uy, vx, vy):
+        a = math.atan2(ux * vy - uy * vx, ux * vx + uy * vy)
+        return a
+
+    t1 = ang(1, 0, (xp - cxp) / rx, (yp - cyp) / ry)
+    dt = ang((xp - cxp) / rx, (yp - cyp) / ry, (-xp - cxp) / rx, (-yp - cyp) / ry)
+    if not sweep and dt > 0:
+        dt -= 2 * math.pi
+    elif sweep and dt < 0:
+        dt += 2 * math.pi
+    out = []
+    for j in range(1, n + 1):
+        t = t1 + dt * j / n
+        ex, ey = rx * math.cos(t), ry * math.sin(t)
+        out.append((c * ex - s * ey + cx, s * ex + c * ey + cy))
+    return out
+
+
+def path_extent_points(d):
+    """Points that bound a path as drawn: absolute and relative commands, and
+    the curve of every arc, not only its endpoints.
+
+    `path_points` returns the vertices a path names, which is what a check of
+    segments wants; a bounding box wants the ink, and an arc's ink reaches
+    past its endpoints. Bezier control points bound their curve, so they are
+    kept as they are.
+    """
+    toks = re.findall(r'[MLHVQCSTAZmlhvqcstaz]|-?\d*\.?\d+(?:[eE][-+]?\d+)?', d)
+    arity = {"M": 2, "L": 2, "T": 2, "Q": 4, "S": 4, "C": 6,
+             "H": 1, "V": 1, "A": 7, "Z": 0}
+    pts, i, cmd = [], 0, "M"
+    cur = start = (0.0, 0.0)
+    while i < len(toks):
+        if re.match(r'[A-Za-z]', toks[i]):
+            cmd = toks[i]
+            i += 1
+            if cmd.upper() == "Z":
+                cur = start
+                continue
+        up = cmd.upper()
+        n = arity.get(up, 2)
+        if n == 0 or i + n > len(toks):
+            break
+        try:
+            args = [float(v) for v in toks[i:i + n]]
+        except ValueError:
+            break
+        i += n
+        rel = cmd.islower()
+        ox, oy = cur if rel else (0.0, 0.0)
+        if up == "H":
+            cur = (args[0] + ox, cur[1])
+            pts.append(cur)
+        elif up == "V":
+            cur = (cur[0], args[0] + oy)
+            pts.append(cur)
+        elif up == "A":
+            end = (args[5] + ox, args[6] + oy)
+            pts += _arc_samples(cur[0], cur[1], args[0], args[1], args[2],
+                                int(args[3]), int(args[4]), end[0], end[1])
+            cur = end
+        else:
+            for k in range(0, n, 2):
+                pts.append((args[k] + ox, args[k + 1] + oy))
+            cur = pts[-1]
+        if up == "M":
+            start = cur
+            # further pairs after M are implicit L
+            cmd = "l" if rel else "L"
+    return pts
+
+
 def row_positions(left, right, n, gap):
     """Evenly spaced column x-positions across [left, right] for n boxes.
 
@@ -1107,9 +1204,17 @@ class Canvas:
                 mm = re.search(rf'\b{k}="([\-\d.]+)"', a)
                 if mm:
                     ys.append(float(mm.group(1)))
+            rm = re.search(r'\br="([\-\d.]+)"', a)
+            cxm = re.search(r'\bcx="([\-\d.]+)"', a)
+            cym = re.search(r'\bcy="([\-\d.]+)"', a)
+            if rm and cxm and cym:
+                r_, cx_, cy_ = (float(rm.group(1)), float(cxm.group(1)),
+                                float(cym.group(1)))
+                xs += [cx_ - r_, cx_ + r_]
+                ys += [cy_ - r_, cy_ + r_]
             dm = re.search(r'\bd="([^"]+)"', a)
             if dm:
-                for px, py in path_points(dm.group(1)):
+                for px, py in path_extent_points(dm.group(1)):
                     xs.append(px)
                     ys.append(py)
             pm = re.search(r'\bpoints="([^"]+)"', a)
