@@ -185,6 +185,7 @@ standard is in `references/response-style.md`.
 | 비싼 작업, 비싼 신호, /(?<!비)싼 신호/ | 비용이 큰 …, 비용이 적은 … | 오류 | a literal "expensive"·"cheap". The cost is high, not the price. **「싼 신호」 is the tail of 「비싼 신호」, so a lookbehind keeps one place from being reported twice.** 「싼 요금제」 about a real price is legitimate, so the following noun is written in to narrow it |
 | 나쁜 정보 | 잘못된 정보 | 오류 | a literal "bad information". Information is not morally good or bad |
 | /답변에 ?안? ?떠오르/ | 답변에 나오지 않게 | 오류 | a literal "surface in the answer". Write plainly what does and does not appear in the answer |
+| /입력 없이 지나/ | 미입력 | 오류 | a literal "passed without entry" for a form cell left empty past its stage. A stage does not walk past a cell; screen copy names the cell's state, and the warning tone carries that the stage has passed |
 | 전제 위에 | 전제를 바탕으로 | 오류 | a literal "build on the premise". A premise is a ground, not the base of a structure |
 | 붙는 위치, 붙이는 위치 | 적용 위치, 연결 지점 | 오류 | a literal "where it hooks". Write what applies where, and what is connected to what |
 | 정밀도와 회수율, 회수율과 정밀도 | 재현율 | 오류 | a literal "recall". **The bare 「회수율」 is not registered** - 채권 회수율 · 설문 회수율 · 자원 회수율 are formal terms and letters alone do not separate them. Only its pairing with precision is caught |
