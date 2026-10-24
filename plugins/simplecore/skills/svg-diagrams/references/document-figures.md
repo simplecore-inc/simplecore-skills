@@ -886,6 +886,7 @@ importable as a module constant.
 | `dashWord` | | the word a figure uses for a dash (「점선」); turns on the dash-gloss check and the figure-plan dash check | none |
 | `dashGloss` | | `several`: a figure drawing two or more dash meanings glosses each; `every`: every dashed figure glosses its dash | `several` |
 | `theme` | | svgkit theme | `paper` |
+| `themeColors` | | colours that replace roles of `theme` (`blue`, `fg`, `line` …) so figures match the document's palette; an unknown role stops the build | none |
 | `fontStack` | | the document's typeface stack, written in place of the toolkit's | none |
 | `icon` | | `{size, sw}` for every icon in the set | from `BODY` |
 | `icons` | | meaning → Lucide name, exported as `ICON_OF`; turns on the icon-literal check | none |

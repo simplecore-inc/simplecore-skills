@@ -140,3 +140,36 @@ class Verdict(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ThemeColors(unittest.TestCase):
+    """`themeColors` replaces roles of the chosen theme; an unknown role is refused."""
+
+    PROBE = ("import sys; sys.path[:0] = [{lib!r}, {figlib!r}, {toolkit!r}]; "
+             "import settings, svgkit; print(svgkit.THEMES[settings.THEME]['blue'])")
+
+    def probe(self, **overrides):
+        import os
+        import subprocess
+        import sys
+        from helpers import LIBRARY, TOOLKIT
+        p = Project(**overrides)
+        env = dict(os.environ, PYTHONDONTWRITEBYTECODE="1")
+        env.pop("DOCUMENT_FIGURES_CONFIG", None)
+        code = self.PROBE.format(lib=str(LIBRARY), figlib=str(LIBRARY / "figlib"), toolkit=str(TOOLKIT))
+        out = subprocess.run([sys.executable, "-c", code], cwd=p.root, env=env, capture_output=True, text=True)
+        p.close()
+        return out
+
+    def test_named_role_replaces_the_theme_colour(self):
+        out = self.probe(theme="paper", themeColors={"blue": "#123456"})
+        self.assertEqual(out.stdout.strip(), "#123456", out.stderr)
+
+    def test_without_the_key_the_theme_keeps_its_colour(self):
+        out = self.probe(theme="paper")
+        self.assertEqual(out.stdout.strip(), "#1b4a9c", out.stderr)
+
+    def test_unknown_role_is_refused(self):
+        out = self.probe(theme="paper", themeColors={"bleu": "#123456"})
+        self.assertNotEqual(out.returncode, 0)
+        self.assertIn("bleu", out.stderr)

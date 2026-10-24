@@ -41,11 +41,22 @@ def toolkit_dir():
 
 sys.path.insert(0, str(toolkit_dir()))
 
+import svgkit  # noqa: E402
 from svgkit import Canvas, tw, edge_pt, row_positions, SANS, MONO  # noqa: E402,F401
 
 # ── project settings, all from the config ─────────────────────────────────
 OUT = CFG.out
 THEME = CFG.get("theme", "paper")
+
+# A document set in its own palette names the colours that replace the theme's
+# roles (`"themeColors": {"blue": "#08796A", "fg": "#101C21"}`). Unknown roles
+# are refused rather than ignored, so a misspelt role cannot leave a figure in
+# the default colour while the config reads as applied.
+_OVERRIDE = CFG.get("themeColors", {}) or {}
+_UNKNOWN = sorted(set(_OVERRIDE) - set(svgkit.THEMES[THEME]))
+if _UNKNOWN:
+    raise figconfig.ConfigError(f"themeColors names roles the theme '{THEME}' lacks: {', '.join(_UNKNOWN)}")
+svgkit.THEMES[THEME].update(_OVERRIDE)
 
 # The boards this document draws on and where each one is placed, in px. One
 # placement ratio across every board means one type ladder serves them all,
