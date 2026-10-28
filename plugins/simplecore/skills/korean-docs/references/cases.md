@@ -12,6 +12,15 @@ One coordinator swept eight reports in a day, read `Clean` eight times, and neve
 candidates listed above it. `가족` for a font family was among them every time, and it reached the
 user.
 
+## A lens list flooded by the subject
+
+Rule: `references/reading-lens.md` - a lens list flooded by a document's own subject is filtered, never skimmed.
+
+A beacon report swept after a term fix printed 153 lens candidates, most of them 「천장」·「축」·「바닥」 in their
+literal sense. The stems were tallied, the list was called literal, and 「자리」(「같은 자리에 겹친 비콘」),
+「세」(「다음 세 장」) and 「하나의」(「비콘 하나의 수신 세기」) went out in the customer report until the user
+asked for the personification and the counting to be removed.
+
 ## A zero from the rules on a board
 
 Rule: `references/reading-lens.md` - a rule catches only the forms registered in it, so the lens

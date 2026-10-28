@@ -189,3 +189,4 @@ standard is in `references/response-style.md`.
 | 전제 위에 | 전제를 바탕으로 | 오류 | a literal "build on the premise". A premise is a ground, not the base of a structure |
 | 붙는 위치, 붙이는 위치 | 적용 위치, 연결 지점 | 오류 | a literal "where it hooks". Write what applies where, and what is connected to what |
 | 정밀도와 회수율, 회수율과 정밀도 | 재현율 | 오류 | a literal "recall". **The bare 「회수율」 is not registered** - 채권 회수율 · 설문 회수율 · 자원 회수율 are formal terms and letters alone do not separate them. Only its pairing with precision is caught |
+| /(?<![가-힣])자홍/ | 분홍 · 자주색 · 보라 (보이는 색 그대로) | 경고 | the printing name of magenta (CMYK), which readers outside print and colour work do not use for a colour they see. Name the colour as it looks: a light pink-violet render is **분홍**, a deep red-purple such as #b0268f is **자주색**. A document about print or colour models turns this off through `## 기본 규칙 예외` |

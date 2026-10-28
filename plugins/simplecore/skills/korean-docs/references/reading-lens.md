@@ -16,6 +16,11 @@ read**, so it may be broad, and it has to be broad to stop leaking.
 `결재가 올라갑니다` is caught while `알림이 갑니다` is not - and an in-order reading finds what no
 rule registered ([cases.md](cases.md)).
 
+**A lens list flooded by a document's own subject is filtered, never skimmed.** A building report hits
+「천장」·「바닥」·「축」 hundreds of times in their literal sense, and a tally of stems makes the whole list read as
+literal while the few figurative hits sit among them. Drop the stems that are literal throughout the document,
+then read every line that remains ([cases.md](cases.md)).
+
 ## How to run it
 
 ```bash
