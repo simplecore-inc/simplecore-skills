@@ -62,6 +62,8 @@ the lens is for.
 `보여 준` · `보여 줍` · `기억한` · `기억합` · `기다린` · `기다립` · `스스로` · `대신하` · `대신합` · `불려` · `불러 낸` · `따라온` ·
 `따라와` · `이끌` · `이끈다` · `이끄는` · `이끕`
 
+**Hearing a radio signal** `들리는` · `들리지` · `들리고` · `들리며` · `들리면` · `들린` · `들릴` · `들려` · `들립` · `(?<![가-힣])듣고` · `(?<![가-힣])듣는` · `(?<![가-힣])듣지` - a beacon, an AP or a signal said to be heard; a radio signal is received (수신된다). The rule `radio-signal-heard` judges the phrases tied to a beacon, a signal or a count of them; the lens lists the bare stems because 「소리가 들린다」 is the only legitimate sense and a person tells the two apart in one look.
+
 **Household metaphors** `세간(?!의)` · `가재도구` · `살림` - code, files, and modules called somebody's household goods. 「세간의 관심」 is 世間 and a different word.
 
 **A technical noun by its everyday sense** `얼굴` - a font face called a face; the field's word is 서체. The rule `font-face-as-face` judges it inside a font context; the lens lists the bare word because a document about fonts rarely has a person's face in it.
