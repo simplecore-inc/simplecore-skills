@@ -9,6 +9,17 @@ not know, a field only an insider could fill, a screen that answers a question
 nobody asked. Catching them on a board costs a frame; catching them in code
 costs a rebuild.
 
+## Machine pre-pass before the personas
+
+Before the persona agents read the screens, run two Jev passes (see the global instructions on Jev)
+and hand each persona only what survives: an image pass over every rendered frame or capture
+(overlapping, covered or clipped text, empty or broken screens, chrome drawn over content), and a
+text pass over each screen's visible words in every language (an action whose label does not say
+what it does, one thing named two ways, the two languages disagreeing). A flag is a candidate, not
+a finding: it is confirmed by looking at the enlarged capture before it goes into a persona's list.
+The personas then spend their reading on flows, decisions and what a person in their role cannot
+know, which no pre-pass sees.
+
 ## Offer it - do not run it silently, and do not skip it
 
 **After authoring a new board, adding frames, or changing a screen's structure,
