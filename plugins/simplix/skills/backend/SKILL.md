@@ -257,6 +257,7 @@ Exhaustive ordering + rationale → `references/convention/annotation-ordering.m
 After writing:
 
 - [ ] `node "${CLAUDE_PLUGIN_ROOT}/scripts/audit-backend.mjs"` clean - 0 error-level hits; review candidates judged against the rule's stated exceptions, not bulk-rewritten
+- [ ] An error message key, its text, or the condition that throws it changed this task? → `node "${CLAUDE_PLUGIN_ROOT}/scripts/jev-triage.mjs" errors` and read every flagged site; a message bundle changed in any locale? → `jev-triage.mjs catalog` over the backend root (§ Judgments a regex cannot make). Exit 3 means Jev is not configured: note the skip and go on
 - [ ] All Non-Negotiable Invariants hold - the audit covers the mechanically visible subset, never all of them
 - [ ] Completion report names the precedent classes cloned from, with justified divergences (#19 - customization / hand-authored surfaces)
 - [ ] Annotation ordering matches `references/convention/annotation-ordering.md`
@@ -313,3 +314,28 @@ whether a permission group is the *right* group are read by eyes. And it does no
 so the verification requests in `review/searchable-field-patterns.md` § PK Contract are run by
 hand; what it does recover statically is the entity's own `@Id` field, which makes the PK
 rule exact rather than a guess.
+
+## Judgments a regex cannot make
+
+Two review questions turn on meaning and are asked of Jev through
+`${CLAUDE_PLUGIN_ROOT}/scripts/jev-triage.mjs`, run from the backend root or with `--root=<dir>`:
+
+| Command | Asks of every item | What it sends |
+| --- | --- | --- |
+| `jev-triage.mjs errors` | does the message a `throw` carries describe the condition the code checks | the message text and the ten source lines around the throw |
+| `jev-triage.mjs catalog` | does each locale's text of a `.properties` key say what the base text says | the key and both texts |
+
+- **The script gates itself.** It runs only when `jev-decide` is on PATH after `source ~/.zshenv`
+  and `jev-decide setup` reports a key. Otherwise it prints one line naming the reason and exits 3
+  having sent nothing; the step is skipped and the rest of the handbook applies unchanged.
+- **A flag is a line to read, never a defect.** Every item is asked in two phrasings and only the
+  items both flag are printed, each run with one statistics line per phrasing. Open each flagged
+  site, confirm the mismatch against the code or the base text, and only then change the message.
+  An item near 0.5 can flip between runs, so a clean run does not clear the bundle.
+- **What it is good at**: a message that names a different condition than the check (a
+  "reservation closed" text on an amount check), a message covering one arm of an `||`, and a
+  translation that drops a unit, a limit or a consequence. **What it is not for**: whether an
+  `@Operation` summary names its endpoint, which a token comparison of the summary with the path
+  and method name answers without a model.
+- Run `--list` first on a new project to see exactly what will be sent. Never point it at a
+  directory holding credentials or personal data.

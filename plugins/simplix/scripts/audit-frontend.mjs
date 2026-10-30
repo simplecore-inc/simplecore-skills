@@ -5377,11 +5377,15 @@ return <Badge>{data?.totalElements ?? 0}</Badge>;`,
     appliesTo: isSource,
     // Cache-key prefixes are literal by contract (useInvalidateEntity takes the prefix, not a
     // URL), and a public asset endpoint with no generated operation has no helper to import.
-    // What this catches is a literal path handed to fetch, an <a href>, or a transport.
+    // What this catches is a literal path handed to fetch, an <a href>, or a transport. A file
+    // the codegen writes (its banner says not to edit it) is where the helpers are defined, so
+    // the literal there is the source every caller should import, never a twin of it.
     check: (c) =>
-      lineHits(c, /["'`]\/api\/v\d+\/[^"'`]*["'`]/).filter(
-        (h) => !/useInvalidateEntity|invalidateEntity|queryKey/.test(h.excerpt),
-      ),
+      /^\s*\/\*[\s\S]{0,300}?(Generated from SimpliX Meta|Do not edit manually)/.test(c)
+        ? []
+        : lineHits(c, /["'`]\/api\/v\d+\/[^"'`]*["'`]/).filter(
+            (h) => !/useInvalidateEntity|invalidateEntity|queryKey/.test(h.excerpt),
+          ),
     samples: {
       file: "modules/site/src/widgets/area/export.ts",
       broken: `const response = await fetch("/api/v1/areas/" + areaId + "/export");`,
@@ -5394,6 +5398,10 @@ return <Badge>{data?.totalElements ?? 0}</Badge>;`,
         {
           note: "the same literal standing in a query key",
           source: `const options = { queryKey: ["/api/v1/areas", areaId] };`,
+        },
+        {
+          note: "the codegen's own endpoint file, which defines the helper callers import",
+          source: `/**\n * Generated from SimpliX Meta. Do not edit manually.\n */\nexport const getExportAreaUrl = (areaId: string): string => \`/api/v1/areas/\${areaId}/export\`;`,
         },
       ],
     },
