@@ -5407,6 +5407,29 @@ return <Badge>{data?.totalElements ?? 0}</Badge>;`,
     },
   },
   {
+    id: "outward-action-without-confirmation",
+    invariant: "#46",
+    level: "error",
+    desc: "A mutation that leaves the screen and cannot be called back (an email sent, a code or a password reset, a token revoked, a record purged or anonymized) fires from a press with no confirmation - the file uses the hook and never mounts a confirmation. A misplaced tap sends the mail; nothing undoes it. Ask through ConfirmDialog, naming who or what it reaches, and call the mutation from onConfirm",
+    appliesTo: isSource,
+    check: (c) => {
+      const outward = /const\s+(\w+)\s*=\s*use\w*(?:SetupEmail|Send|Resend|Reset|Revoke|Purge|Anonymi[sz]e)\w*\(/;
+      if (!outward.test(c) || /onConfirm\s*[=:]/.test(c)) return [];
+      return lineHits(c, outward);
+    },
+    samples: {
+      file: "modules/<module>/src/widgets/<entity>/detail.tsx",
+      broken: `const setupEmail = useSetupEmailUserAccount();\n<Button onClick={() => void setupEmail.mutateAsync({ userId })}>Send</Button>`,
+      fixed: `const setupEmail = useSetupEmailUserAccount();\n<ConfirmDialog open={asking} onConfirm={() => void setupEmail.mutateAsync({ userId })} />`,
+      miss: [
+        {
+          note: "a save of what the reader just edited is its own confirmation",
+          source: `const update = useUpdateUserAccount();\n<Button onClick={() => void update.mutateAsync({ userId, data })}>Save</Button>`,
+        },
+      ],
+    },
+  },
+  {
     id: "mock-seed-missing",
     invariant: "#30",
     level: "error",
