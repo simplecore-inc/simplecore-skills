@@ -7929,6 +7929,29 @@ function localeFindingsMemo() {
   return localeFindingsCache;
 }
 
+/**
+ * The locales every catalogue directory owes besides `en`: the project's declared
+ * `i18n.locales` in `simplix.config.ts`, joined with every locale a scanned directory already
+ * holds, so a directory missing one its siblings carry is reported even where the config is
+ * unreadable. Never a fixed list - a project shipping English and Korean owes no Japanese file.
+ */
+function expectedCatalogueLocales(dirs) {
+  const locales = new Set();
+  const configFile = path.join(ROOT, "simplix.config.ts");
+  if (fs.existsSync(configFile)) {
+    const declared = /\bi18n\s*:\s*\{[^}]*?\blocales\s*:\s*\[([^\]]*)\]/s.exec(fs.readFileSync(configFile, "utf8"));
+    for (const m of declared?.[1].matchAll(/["']([A-Za-z-]+)["']/g) ?? []) locales.add(m[1]);
+  }
+  for (const d of dirs) {
+    for (const f of fs.readdirSync(d)) {
+      const m = /^([a-z]{2}(?:-[A-Za-z]+)?)\.json$/.exec(f);
+      if (m) locales.add(m[1]);
+    }
+  }
+  locales.delete("en");
+  return [...locales].sort();
+}
+
 function localeFindings() {
   const errors = [];
   const reviews = [];
@@ -7944,6 +7967,7 @@ function localeFindings() {
     }
   }
   const hasCjk = (s) => /[가-힣ぁ-んァ-ヶ一-龯]/.test(s);
+  const expected = expectedCatalogueLocales(dirs);
   for (const d of dirs) {
     const rel = path.relative(ROOT, d);
     const load = (loc) => {
@@ -7951,7 +7975,7 @@ function localeFindings() {
       return fs.existsSync(p) ? JSON.parse(fs.readFileSync(p, "utf8")) : null;
     };
     const en = load("en");
-    for (const loc of ["ko", "ja"]) {
+    for (const loc of expected) {
       const data = load(loc);
       if (!data) {
         errors.push({ file: rel, line: 0, excerpt: `${loc}.json missing` });
@@ -8215,18 +8239,28 @@ const COLLECTION_RULES = [
     samples: {
       broken: {
         files: {
+          "simplix.config.ts": `export default defineConfig({ i18n: { locales: ["en", "ko", "ja"], defaultLocale: "en" } });`,
           "modules/site/src/locales/widgets/en.json": `{ "area": { "title": "Area" } }`,
           "modules/site/src/locales/widgets/ko.json": `{ "area": { "title": "구역" } }`,
         },
       },
       fixed: {
         files: {
+          "simplix.config.ts": `export default defineConfig({ i18n: { locales: ["en", "ko", "ja"], defaultLocale: "en" } });`,
           "modules/site/src/locales/widgets/en.json": `{ "area": { "title": "Area" } }`,
           "modules/site/src/locales/widgets/ko.json": `{ "area": { "title": "구역" } }`,
           "modules/site/src/locales/widgets/ja.json": `{ "area": { "title": "エリア" } }`,
         },
       },
       miss: [
+        {
+          note: "a project declaring English and Korean owes no Japanese catalogue",
+          files: {
+            "simplix.config.ts": `export default defineConfig({ i18n: { locales: ["en", "ko"], defaultLocale: "en" } });`,
+            "modules/site/src/locales/widgets/en.json": `{ "area": { "title": "Area" } }`,
+            "modules/site/src/locales/widgets/ko.json": `{ "area": { "title": "구역" } }`,
+          },
+        },
         {
           note: "a directory with no en.json to compare against is not a catalogue this rule reads",
           files: {
