@@ -32,11 +32,11 @@ state; a question without its evidence in the state comes back near 0.5 for ever
 
 | Pass | Trigger | State per item | Question (two phrasings each) |
 | --- | --- | --- | --- |
-| State coverage | before a review round; after stories or a spec change | one spec item's listed states + the whole story index (long context) | for each state, which story draws it, or none |
+| State coverage | before a review round; after stories or a spec change | one spec item's listed states + the stories' visible text, not only their names (a state drawn inside a story is invisible in an index of names) | for each state, which story draws it, or none |
 | Capture defects | after any capture run (visual, board, deck) | one capture + the story's intent (what overlaps by design) | text overlapping, covered or clipped; empty or broken screen; chrome over content |
 | Reference comparison | after any capture run that has a reference (demo, board frame) | the capture + the reference at the same width | same / partly different / different in structure, wording, state |
 | Variant pairs | after a capture run | the two captures of one screen in two languages, or two themes | one side alone wraps, clips, or loses contrast |
-| Copy catalog | after copy changes; before a review round | one message key: every language's value + where it is used | same meaning across languages; grammar and particles; one thing named two ways (with the catalog's other names in the state) |
+| Copy catalog | after copy changes; before a review round | one message key: every language's value + where it is used; templates rendered with a consonant-final and a vowel-final sample | same meaning across languages; English grammar; one thing named two ways (with the catalog's other names in the state). Korean particles are not asked: Jev misses a fixed particle after a placeholder, so a deterministic check flags a particle that does not fit the sample before it |
 | Context fit | before a review round | a screen's visible text + its host, device and plan | does each sentence fit this device or plan (no "your computer" on a tablet) |
 | Fix confirmation | when a fix lands, before the next review round | the finding text + the before and after captures or text | resolved / partly / not |
 | Check-output grouping | when a check prints many lines | the lines + the code they point at | which lines share one root cause |
