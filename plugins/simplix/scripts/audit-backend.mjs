@@ -333,6 +333,33 @@ function entityIdIndex(files) {
   _entityIdIndex = map;
   return map;
 }
+let _encryptedFieldIndex = null;
+/**
+ * Which fields of each entity are stored encrypted, by the entity's simple name.
+ *
+ * <p>A field counts as encrypted when its own annotations carry a JPA converter whose class name
+ * contains "Encrypt". The converters in use encrypt with a fresh IV each time, so the stored value
+ * of the same input differs from row to row and from the search value.
+ */
+function encryptedFieldIndex(files) {
+  if (_encryptedFieldIndex) return _encryptedFieldIndex;
+  const map = new Map();
+  for (const abs of files) {
+    let src;
+    try { src = fs.readFileSync(abs, "utf8"); } catch { continue; }
+    if (!src.includes("@Entity") || !/Encrypt/.test(src)) continue;
+    // Strings go too: a column comment such as "(encrypted - LDAP DN, etc.)" holds a parenthesis
+    // that would otherwise end the annotation early and hide the converter.
+    const clean = stripCommentsAndStrings(src);
+    const held = new Set();
+    for (const f of clean.matchAll(/((?:@[\w.]+(?:\([^)]*\))?\s*)+)private\s+[\w<>,\s[\]]+?\s+(\w+)\s*;/g)) {
+      if (/@Convert\s*\(\s*converter\s*=\s*\w*Encrypt\w*\.class/.test(f[1])) held.add(f[2]);
+    }
+    if (held.size) map.set(path.basename(abs, ".java"), held);
+  }
+  _encryptedFieldIndex = map;
+  return map;
+}
 let _fieldIndex = null;
 /**
  * Which fields each class in this repository declares, by its simple name.
@@ -1441,6 +1468,53 @@ public class AreaService extends SimpliXBaseService<Area, String> {
     },
   },
   {
+    id: "search-on-encrypted-column",
+    invariant: "#15③",
+    level: "error",
+    desc: "A SearchDTO field searches or sorts a column the entity stores encrypted. The converter encrypts with a fresh IV, so EQUALS, IN, CONTAINS and every other value operator compare ciphertexts that never match, and sorting orders by ciphertext: the filter answers with an empty page and the sort scrambles the list, with no error anywhere. Only IS_NULL and IS_NOT_NULL mean something there; search an exact value through a hash column instead",
+    appliesTo: isDtoContainer,
+    check: (c, rel, ctx) => {
+      const entity = path.basename(rel).replace(/DTOs?\.java$/, "");
+      const encrypted = ctx?.encrypted?.get(entity);
+      if (!encrypted) return [];
+      const clean = stripComments(c);
+      const out = [];
+      for (const m of clean.matchAll(/@SearchableField\s*\(([^)]*)\)\s*(?:@[\w.]+(?:\([^)]*\))?\s*)*private\s+[\w<>,\s[\]]+?\s+(\w+)\s*;/g)) {
+        const args = m[1].replace(/\s+/g, " ");
+        const target = (args.match(/entityField\s*=\s*"([\w.]+)"/) ?? [null, m[2]])[1];
+        if (!encrypted.has(target)) continue;
+        const ops = (args.match(/operators\s*=\s*\{([^}]*)\}/) ?? [null, ""])[1]
+          .split(",").map((o) => o.trim().replace(/^SearchOperator\./, "")).filter(Boolean);
+        const bad = ops.filter((o) => o !== "IS_NULL" && o !== "IS_NOT_NULL");
+        if (/sortable\s*=\s*true/.test(args)) bad.push("sortable");
+        if (!bad.length) continue;
+        out.push({ line: clean.slice(0, m.index).split("\n").length,
+          excerpt: `${target} is encrypted: ${bad.join(", ")} can never match or order` });
+      }
+      return out;
+    },
+    samples: {
+      file: "modules/member/src/main/java/app/web/member/dto/MemberDTOs.java",
+      broken: `public class MemberDTOs {
+    public static class MemberSearchDTO {
+        @SearchableField(entityField = "email", operators = {EQUALS, CONTAINS}, sortable = true)
+        private String email;
+    }
+}`,
+      fixed: `public class MemberDTOs {
+    public static class MemberSearchDTO {
+        @SearchableField(entityField = "emailHashed", operators = {EQUALS})
+        private String email;
+
+        @SearchableField(entityField = "phone", operators = {IS_NULL, IS_NOT_NULL})
+        private String phone;
+    }
+}`,
+      // The rule needs to know which of Member's fields are encrypted.
+      ctx: { encrypted: new Map([["Member", new Set(["email", "phone"])]]) },
+    },
+  },
+  {
     id: "hand-written-row-drops-a-field",
     invariant: "#17 / canonical-service",
     level: "review",
@@ -2079,7 +2153,7 @@ if (files.length === 0) {
   console.error("  run from the backend project root, or pass --root=<dir>");
   process.exit(2);
 }
-const ctx = { entityIds: entityIdIndex(files), fields: fieldIndex(files), i18n: i18nIndex(files), overwrites: serviceOverwriteIndex(files), emptyDefaults: emptyDefaultIndex(files), audit: auditSettings() };
+const ctx = { entityIds: entityIdIndex(files), encrypted: encryptedFieldIndex(files), fields: fieldIndex(files), i18n: i18nIndex(files), overwrites: serviceOverwriteIndex(files), emptyDefaults: emptyDefaultIndex(files), audit: auditSettings() };
 const results = new Map();
 let suppressedCount = 0;
 

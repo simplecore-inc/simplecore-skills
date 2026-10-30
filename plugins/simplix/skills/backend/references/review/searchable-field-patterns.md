@@ -229,6 +229,17 @@ public static class ComprehensiveSearchDTO {
 
 ---
 
+### Encrypted columns
+
+A field stored through an encryption converter (`@Convert(converter = AesEncryptionConverter.class)`)
+is encrypted with a fresh IV on every write, so no value operator can match it and sorting orders by
+ciphertext. On such a field declare only `IS_NULL` / `IS_NOT_NULL`, never `sortable`. An exact-value
+search goes through the field's hash column (`entityField = "emailHashed"`, `EQUALS`), whose
+converter hashes the search value the way it hashed the stored one; normalise both the same way
+(trim, lower-case) inside that converter. A partial match on an encrypted value is not possible;
+offer it through a plain column that holds a searchable form, when one may be stored. The audit's
+`search-on-encrypted-column` fails the field otherwise.
+
 ## entityField Path Patterns
 
 ### Direct Field Mapping
