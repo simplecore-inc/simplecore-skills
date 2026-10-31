@@ -1,8 +1,44 @@
-# Screen workflow: cases behind invariant #79
+# Screen workflow (invariant #79)
 
-Read this before planning a screen through the template, scaffold, customise and board steps,
-and before dispatching agents to do it. Each case names what went wrong, why it was easy to miss,
-and the check that now prevents it. Add a case whenever the workflow produces a mistake.
+Read this before planning a screen or dispatching agents for screen work.
+
+## Rules
+
+1. **Four steps, in order.** Template on the kit, then scaffold, then customise to the board, then
+   bring the board into agreement. A gap at any step is closed at that step's layer, not worked
+   around in a later one.
+2. **Customisation is tracked, not forbidden.** A scaffolded file or generated story may be
+   edited. The CLI rewrites a generated file only while it is untouched, and the generated-state
+   report lists every edited one, so a template change is reviewed against each instead of being
+   skipped. Block files hold the decisions that belong to one screen only.
+3. **Existing screens are rewritten, never patched toward the workflow.** Read the old files as a
+   list of behaviours to keep: data, filters, columns, actions, confirmations, permissions, copy.
+   Re-apply them on the regenerated screen, then delete the old files.
+4. **Where a change belongs:**
+   - composition and wiring in the template
+   - a look or behaviour that more than one screen reuses in the kit
+   - behaviour independent of product and design (data, state, accessibility) in the framework
+   - contract information the template lacks (field types, enums, permissions, labels) in the
+     backend's SimpliX Meta. Start with screens whose backend is ready.
+5. **A requested change is lifted, then swept.** Once it works on the screen it was asked for,
+   apply it at the first layer of 4 that owns it, census every screen it reaches, fix each, and
+   check each before calling the request done.
+6. **Agreement is measured.** Compare app screen and board frame by rendered metrics per control
+   role (height, gap, radius, font, variant). Report how much of each screen stays customised. An
+   item customised on a second screen is the signal to lift it.
+7. **The fence is mechanical.** The kit lists the framework parts that screens must not import
+   directly, and the project lint refuses them.
+8. **A gap is closed in the generator.** A screen with no page kind or no overridable template
+   gets a generic one in the CLI, with tests and no product names. A hand-built screen is the last
+   resort, and a comment states why no generator change could serve it.
+9. **The shell belongs to the app.** The kit gives the shell parts and a generic `app-shell`
+   start. Each app generates it once and owns the result.
+10. **The trap.** Hand-composing one screen from kit parts looks equivalent and is faster once.
+    It is the drift #67 describes: the next screen copies the hand-built one, not the template.
+11. **Every mistake the workflow produces becomes a case below, and a check where a machine can
+    see it**, added in the same change, with every instance the check finds fixed.
+
+## Cases
 
 ## The app and the design reference ran on different copies of the same kit
 - **What happened.** The app consumed the kit through a vendored submodule; the Storybook board
