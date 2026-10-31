@@ -286,6 +286,30 @@ first row may be the development account, and a grouped list opens nothing on it
 locale pass answers the account read (`/user/me`) as the locale under test, matching
 `"locale"\s*:` since the body may be pretty-printed, and aborts every non-GET.
 
+The account's saved locale decides the language, not the browser's storage: a pass that sets only
+`localStorage["i18n:locale"]` measures one language twice. Set it through the account
+(`PATCH /api/v1/user/me/locale`) or answer the account read as above, and let
+`compare-rendered.mjs`'s language warning confirm it.
+
+Several responses of one endpoint can arrive on one screen (a tab count asks with `size=1`), so a
+driver that keeps the last response reads the wrong page; keep every response's content and pick
+by its query. A filter result is asserted against the operator's case semantics: `contains` is
+case-insensitive, so `ownerName.contains=Credits` also returns `e2e-credits-a`.
+
+A presentation the reader picked is remembered only while "remember in this browser" is on. With it
+off, a reload returns to the installation's default presentation, so a proof that a width is not
+remembered picks the presentation again before reading the width.
+
+A scratch driver or helper derives every repository path from one root (`git rev-parse
+--show-toplevel`, or one constant), so a folder rename breaks one line and fails loudly; an absolute
+path to a moved folder fails with `ENOENT` before the first page opens. Its log names the framework
+commit and the helper version on its first line, so a run that spans a fix cannot pass for a fresh
+one.
+
+A development server on a self-signed certificate (`https://localhost:<port>`) is refused by
+ego-browser with `ERR_CERT_AUTHORITY_INVALID`, and no override is documented; drive it with
+Playwright and `ignoreHTTPSErrors: true`, and say the instrument changed.
+
 ## A charting library's defaults read as a broken component
 
 A chart legend that draws and does nothing, a slice that will not hide, a series that will not
@@ -344,6 +368,10 @@ The audit runs against a live development database, and every flow you complete 
 3. **Only erroneous data is removed.** Delete (through the UI) records that carry wrong input, were half-created by a failed submit, or were stranded mid-flow by a defect. If such a record cannot be removed through the UI, the missing delete/cancel affordance is itself a finding.
 4. **Report the ledger.** List what was created and kept (per flow), and what was removed and why.
 5. **A scripted write asserts its target first.** Before a script saves, it checks that the record it is about to change is one the audit created or one of its own test accounts, and aborts otherwise. A picker is chosen by the option's exact name, and the pick is read back before the write. Never "the first option": a search that does not narrow puts a real account first. In one audit, a holder probe filed a protected operator account into a test position this way, through a picker that ignored the typed text. Both the probe and the picker were defects.
+6. **A seeded row in a table every server polls is out of your hands.** Every API server on the
+   machine works the same queue table, so an older build claims and fails a queued job seeded for
+   the pass within minutes. When the pass only needs a queued row, seed it with a future `run_at` or
+   a type no worker handles.
 
 ---
 

@@ -121,6 +121,71 @@ Read this before planning a screen or dispatching agents for screen work.
     back on the next run (`pnpm lint` runs it), with its barrel export. Delete the record in the
     same change, by name.
 
+23. **An install in a worktree writes the framework links at the worktree's depth.** A linked
+    framework (`link:` paths in the lockfile) is resolved relative to where `pnpm install` ran, and
+    a lockfile committed from a worktree counts as current in the main checkout while it resolves
+    nothing there. Run the install that writes the committed lockfile from the main checkout.
+    Example: `link:../../../../../../simplix-react/packages/mock` left `@simplix-react/mock` unresolved and no dev server started.
+24. **A fence pattern names subpaths.** A `no-restricted-imports` group entry `<scope>/*` refuses
+    `<scope>/api` and accepts `<scope>/api/core`, the usual import form. Write `<scope>/**`, and give
+    the fence's self-test a hit case for a subpath.
+    Example: `@tauri-apps/*` let `import { invoke } from "@tauri-apps/api/core"` through.
+25. **An unbroken value inside a flex row wraps with `wrap-anywhere`.** `break-words` does not lower
+    the min-content width, so a long token in a flex child runs past the edge (and is clipped by a
+    dialog). A fit check that passed before such a fix is re-run after it.
+    Example: a 40-character id in a detail section body overflowed with `break-words` and wrapped with `wrap-anywhere`.
+26. **A configured directory the CLI cannot find is skipped, not reported.** After any move or
+    rename, check that every path in `simplix.config.ts` (`templates.storiesDir`, the template
+    roots) resolves, and that the recorded bases under `.simplix/generated/` sit under paths that
+    still exist; `simplix generated` stays green over a stories directory that is gone.
+    Example: `storiesDir` pointing at a pre-move path kept every board story out of the report until it was fixed, which surfaced one `no base`.
+27. **A generator run is followed by a package and locale check.** After `add-module`, `scaffold` or
+    `add-page`, compare the module's `package.json` with a sibling's: dependency versions use the
+    workspace `catalog:`, and the module declares the kit and the domain its generated widgets
+    import. A page reads `<module>/pages` strings, so the module has a `pages` locale catalogue
+    registered in its `locales/index.ts`, and the route that imports the page also imports
+    `<module>/locales`, or the strings render as keys. Each such gap is closed in the CLI when found.
+    Example: `"react": "^19.2.4"` beside siblings' `"react": "catalog:"`, and a page drawing `pages.title` as its key.
+28. **A lint warning in a generated page is a defect.** A warning never fails `pnpm lint`, so a
+    template that emits unused variables survives on every screen it renders. Read the warnings of
+    a fresh render, and fix the template.
+    Example: `const canCreate = useAllowed(undefined) && false` in every read-only crud page.
+29. **A template helper set has one source.** A kit test that renders templates registers the CLI's
+    Handlebars helpers from the CLI, never a copied list, or a template using a helper the CLI ships
+    fails only in the kit test.
+    Example: a template using `or` passed in the CLI and failed `tests/template-typecheck.ts`.
+30. **Generated hook names are read after a Meta refresh.** SimpliX Meta pluralises an operation
+    tag that is already plural; name the tag in the singular in the backend before the frontend
+    imports the hook.
+    Example: tag `Credits` produced `useGetAllCreditss`.
+31. **A command that confirms uses the kit's confirm, one per direction.** Panels in an app use the
+    kit's `useActionConfirm` (the board refuses framework imports, so a framework dialog has no
+    frame); its label is fixed per confirm, so a grant/revoke pair takes two.
+32. **A whole-project regeneration touches every agent's screens.** `simplix generated --all`
+    re-renders every recorded screen in the tree, other agents' uncommitted ones included, and
+    `--write-conflicts` writes markers into all of them. In a shared tree run it only when the
+    generated files hold your own change, and resolve one conflicting file by hand rather than
+    through the project-wide flag. A template change makes every screen rendered from the old
+    template stale at once: the author tells whoever has an uncommitted screen to re-scaffold.
+    Example: one agent's gate run reported a conflict on another agent's `credit-ledger-entry.stories.tsx`.
+33. **A list's columns are built from the fields the blocks draw.** `contract.columns(...)` over
+    every field sums `minTableWidth` for columns that are never drawn, so the later columns never
+    appear; pass only the drawn fields.
+34. **A clean typecheck is proved from an export beside the checkout.** A `git archive` export in a
+    scratch directory breaks the lockfile's relative framework links; extract it as a sibling of the
+    checkout (same depth) and include every workspace package it imports.
+35. **A Meta refresh takes its translations from a live server.** `simplix meta --offline` still
+    reads labels from the meta source's origin, so a run against a stale or wrong server writes its
+    labels (English in the Korean slot, say) into every locale. Refresh while the server built from
+    your tree answers on the configured origin, and diff the label files before committing. A
+    document fetched by hand is unwrapped from its `SimpliXApiResponse` envelope (`body`) before it
+    is compared, and two snapshots are compared by name, never by lines.
+    Example: a raw curl into `openapi/meta.json` read as 22k changed lines and false removals.
+36. **A board frame draws every row action the generated page adds.** The list falls back to cards
+    when its columns plus the row-action strip outgrow the pane, so a frame without the page's row
+    actions draws a table where the app draws cards, and the comparison reports the whole table as
+    missing.
+
 ## Cases
 
 ## The app and the design reference ran on different copies of the same kit
