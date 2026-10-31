@@ -379,6 +379,15 @@ A join entity whose rows only map one record to another carries `@MappingEntity`
 (`dev.simplecore.simplix.core.entity.annotation`), so Meta never lists it as a holder of either
 end and the detail screen draws no tab of raw mapping rows.
 
+The field a record is named by on a screen carries `@NameField`
+(`dev.simplecore.simplix.core.annotation`): one per entity, on the entity field. Meta publishes it
+as the entity's `nameField`, and a scaffolded list draws it as the first column, in the delete
+confirmation and as the detail title. Without a mark the scaffold guesses from the field names, so
+an entity whose first text field is a note names its records by the note. The yml's `nameField` is
+the generator's input and `yo simplix:config` seeds it from the mark; `yo simplix:entity` warns
+when the yml names another field than the mark, and Meta follows the mark. Leave an entity with no
+natural name (a log row, a join row) unmarked rather than marking its key.
+
 ### Multiple i18n Fields
 
 ```java

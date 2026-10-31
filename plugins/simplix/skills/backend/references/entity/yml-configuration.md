@@ -89,7 +89,7 @@ fields:
 | `entity` | String | Entity class name. The yml's file name is the class prefix of everything generated (`<Name>Service`, `<Name>DTOs`, the `@Tag`); the two differ only for a second surface over an entity that already has one (§ A second surface over one entity) | Yes |
 | `modulePath` | String | Package path (e.g., `cms/channel`) | Yes |
 | `idField` | String | Primary key field name | Yes |
-| `nameField` | String | Display name field | Yes |
+| `nameField` | String | Display name field. `config` seeds it from the entity's `@NameField` mark; a yml that names another field than the mark is warned about, since Meta publishes the mark (`field-types.md` § Entity name, plural and description) | Yes |
 | `thymeleafBaseDir` | String | Template directory path, and the REST path: the controller template writes `@RequestMapping("/" + thymeleafBaseDir)`. Set it to the URL the controller must serve (`admin/billing/credit-hold`) | Optional |
 | `defaultSortField` | String | Default sort field | Optional |
 | `defaultSortDirection` | String | `asc` or `desc` | Optional |
