@@ -506,6 +506,28 @@ const DEFAULTS = {
   offTokenMax: 0,
   /** How many property=value groups the report lists. */
   offTokenReportGroups: 25,
+
+  /**
+   * `textContrastBelowMinimum`: the contrast ratio painted text has to reach against the ground
+   * it is read on (WCAG 1.4.3 level AA).
+   */
+  contrastMinText: 4.5,
+  /** The same for large text: at least `contrastLargePx`, or `contrastLargeBoldPx` at weight 700 and above. */
+  contrastMinLargeText: 3,
+  contrastLargePx: 24,
+  contrastLargeBoldPx: 18.66,
+  /** The ratio an icon (an SVG stroke or fill) has to reach against its ground (WCAG 1.4.11). */
+  contrastMinIcon: 3,
+  /** Judge icons as well as text. */
+  contrastCheckIcons: true,
+  /** A vector larger than this many pixels on a side is an illustration or a chart, not an icon. */
+  contrastIconMaxPx: 64,
+  /** Subtrees not judged (a user's own content, a decorative illustration, a swatch). */
+  contrastIgnoreSelector: "",
+  /** How many marks under the minimum the page may paint before the check fails; it only goes down. */
+  contrastMax: 0,
+  /** How many colour-on-ground groups the report lists. */
+  contrastReportGroups: 25,
 };
 
 // ---------------------------------------------------------------------------
@@ -2400,6 +2422,153 @@ const valueOffTheTokenSet = {
   },
 };
 
+/**
+ * Text or an icon painted in a colour too close to the ground behind it to be read.
+ *
+ * The defect it exists to catch: a theme that gives the navigation column a dark ground while the
+ * column's labels keep the page's own foreground. The ground and the text colour are each a correct
+ * token, every class compiles, a screenshot taken in dark mode looks right, and in light mode the
+ * labels are ink on near-black at 1.06:1 - eight of the eleven rows invisible, while the one row
+ * that draws its own pair (the current row) reads fine and makes the column look finished. No
+ * source check can see it, because the two colours are never written in the same place.
+ *
+ * **What the rule asks.** For every visible element that holds its own text, the colour the
+ * browser fills the glyphs with (`-webkit-text-fill-color`, so a gradient-clipped heading is not
+ * judged as its `color`), composited with every ancestor's opacity over the ground it stands on:
+ * the ancestors' backgrounds laid over one another until one is opaque, with the canvas as white
+ * when none is. A ground that is an image or a gradient cannot be measured and is counted as
+ * `skippedOverImage`, never judged. Text meets `contrastMinText`, or `contrastMinLargeText` when
+ * it is large (24px, or 18.66px bold); an icon (an SVG whose stroke or fill is painted, up to
+ * `contrastIconMaxPx`) meets `contrastMinIcon`. A control that is `disabled` or `aria-disabled` is
+ * exempt, as WCAG exempts an inactive component; a row that merely explains why it leads nowhere
+ * is not disabled and is judged.
+ *
+ * **Judge it in every theme.** The defect above is invisible in the theme the author looked at, so
+ * a run that read one mode has not read the other: switch the mode and run it again.
+ */
+const textContrastBelowMinimum = {
+  id: "textContrastBelowMinimum",
+  grade: "error",
+  title: "text or an icon painted in a colour too close to its ground to be read - the colour and the ground are each a token and are never written together",
+  page: (o) => {
+    const findings = [];
+    const canvas = document.createElement("canvas");
+    canvas.width = canvas.height = 1;
+    const g = canvas.getContext("2d", { willReadFrequently: true });
+    // Any CSS colour the browser understands (oklch, color-mix, a variable already resolved) as sRGB.
+    const rgba = (value) => {
+      g.clearRect(0, 0, 1, 1);
+      g.fillStyle = "#000";
+      g.fillStyle = value;
+      g.fillRect(0, 0, 1, 1);
+      const d = g.getImageData(0, 0, 1, 1).data;
+      return [d[0], d[1], d[2], d[3] / 255];
+    };
+    const over = (top, under) => {
+      const a = top[3] + under[3] * (1 - top[3]);
+      if (a === 0) return [0, 0, 0, 0];
+      return [0, 1, 2].map((i) => (top[i] * top[3] + under[i] * under[3] * (1 - top[3])) / a).concat(a);
+    };
+    const lum = ([r, gr, b]) => {
+      const f = (v) => {
+        const c = v / 255;
+        return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+      };
+      return 0.2126 * f(r) + 0.7152 * f(gr) + 0.0722 * f(b);
+    };
+    const ratio = (a, b) => {
+      const hi = Math.max(lum(a), lum(b));
+      const lo = Math.min(lum(a), lum(b));
+      return (hi + 0.05) / (lo + 0.05);
+    };
+    const hex = (c) => "#" + c.slice(0, 3).map((v) => Math.round(v).toString(16).padStart(2, "0")).join("");
+    const visible = (el) => {
+      const r = el.getBoundingClientRect();
+      if (r.width === 0 || r.height === 0) return false;
+      for (let n = el; n && n !== document.documentElement; n = n.parentElement) {
+        const s = getComputedStyle(n);
+        if (s.visibility === "hidden" || s.display === "none" || Number(s.opacity) === 0) return false;
+      }
+      return true;
+    };
+    /** The ground behind an element: ancestors' backgrounds composited until one is opaque, or null over an image. */
+    const groundOf = (el) => {
+      const layers = [];
+      let reachedOpaque = false;
+      for (let n = el; n; n = n.parentElement) {
+        const s = getComputedStyle(n);
+        if (s.backgroundImage !== "none") return null;
+        const c = rgba(s.backgroundColor);
+        if (c[3] > 0) layers.push(c);
+        if (c[3] === 1) { reachedOpaque = true; break; }
+      }
+      let acc = reachedOpaque ? layers.pop() : [255, 255, 255, 1];
+      while (layers.length > 0) acc = over(layers.pop(), acc);
+      return acc;
+    };
+    const opacityOf = (el) => {
+      let a = 1;
+      for (let n = el; n; n = n.parentElement) a *= Number(getComputedStyle(n).opacity);
+      return a;
+    };
+    const exempt = (el) => !!el.closest(":disabled, [disabled], [aria-disabled='true']");
+    const ignored = (el) => o.contrastIgnoreSelector && el.closest(o.contrastIgnoreSelector);
+    const label = (el, own) => {
+      const t = (own || el.closest("a,button,[role='menuitem'],[role='tab']")?.innerText || el.getAttribute("aria-label") || "").replace(/\s+/g, " ").trim();
+      return t.length > 32 ? t.slice(0, 32) + "…" : t || `<${el.tagName.toLowerCase()}>`;
+    };
+    const groups = new Map();
+    let compared = 0;
+    let below = 0;
+    let skippedOverImage = 0;
+    const judge = (el, kind, fill, own, need) => {
+      const ground = groundOf(el);
+      if (!ground) { skippedOverImage += 1; return; }
+      const ink = rgba(fill);
+      const shown = over([ink[0], ink[1], ink[2], ink[3] * opacityOf(el)], ground);
+      if (ink[3] === 0) return;
+      compared += 1;
+      const r = ratio(shown, ground);
+      if (r >= need) return;
+      below += 1;
+      const key = `${kind} ${hex(shown)} on ${hex(ground)}`;
+      const gr = groups.get(key) ?? { n: 0, worst: r, need, sample: label(el, own), slot: el.closest("[data-slot]")?.getAttribute("data-slot") ?? el.tagName.toLowerCase() };
+      gr.n += 1;
+      groups.set(key, gr);
+    };
+    for (const el of document.body.querySelectorAll("*")) {
+      if (ignored(el) || exempt(el)) continue;
+      if (el instanceof SVGSVGElement) {
+        if (!o.contrastCheckIcons) continue;
+        const r = el.getBoundingClientRect();
+        if (r.width > o.contrastIconMaxPx || r.height > o.contrastIconMaxPx || !visible(el)) continue;
+        const s = getComputedStyle(el);
+        const stroked = s.stroke !== "none" && parseFloat(s.strokeWidth) > 0;
+        const fill = stroked ? s.stroke : s.fill !== "none" ? s.fill : null;
+        if (fill) judge(el, "icon", fill, "", o.contrastMinIcon);
+        continue;
+      }
+      if (el.closest("svg")) continue;
+      const own = [...el.childNodes].filter((n) => n.nodeType === 3 && n.textContent.trim()).map((n) => n.textContent.trim()).join(" ");
+      if (!own || ["SCRIPT", "STYLE", "NOSCRIPT", "OPTION"].includes(el.tagName) || !visible(el)) continue;
+      const s = getComputedStyle(el);
+      // Glyphs painted from a background (a clipped gradient) have no text colour to read.
+      if (s.backgroundClip === "text" || s.webkitBackgroundClip === "text") continue;
+      const px = parseFloat(s.fontSize);
+      const large = px >= o.contrastLargePx || (px >= o.contrastLargeBoldPx && Number(s.fontWeight) >= 700);
+      judge(el, "text", s.webkitTextFillColor || s.color, own, large ? o.contrastMinLargeText : o.contrastMinText);
+    }
+    if (below > o.contrastMax) {
+      findings.push(`${below} marks below the minimum contrast (max ${o.contrastMax}) in ${groups.size} colour-on-ground groups, of ${compared} judged`);
+      const sorted = [...groups.entries()].sort((a, b) => a[1].worst - b[1].worst).slice(0, o.contrastReportGroups);
+      for (const [key, gr] of sorted) {
+        findings.push(`${key} = ${gr.worst.toFixed(2)}:1, needs ${gr.need}:1, ×${gr.n} (first "${gr.sample}" in ${gr.slot})`);
+      }
+    }
+    return { compared, below, skippedOverImage, findings };
+  },
+};
+
 export const checks = [
   countedListDrawsNoRows,
   standingMessageDrawsNoClose,
@@ -2416,6 +2585,7 @@ export const checks = [
   pageLanguageFollowsTheLocale,
   buttonWithoutBackground,
   valueOffTheTokenSet,
+  textContrastBelowMinimum,
 ];
 
 /** One self-contained expression, ready for any driver's evaluate call. */
@@ -3488,6 +3658,50 @@ const FIXTURES = {
         `<style>:root{--fs-md:14px;--fw-regular:400;--spacing:4px;--ink:#12201f}
         body{margin:0;font-size:var(--fs-md);font-weight:var(--fw-regular);color:var(--ink);line-height:normal}
         html{ .bar{display:flex;width:600px} .end{margin-left:auto} }</style><div class=bar><span>Brand</span><span class=end>English</span></div>`,
+    },
+  },
+  textContrastBelowMinimum: {
+    broken: {
+      // The column this check was written from: a dark ground set for the navigation column, and
+      // labels that keep the page's own dark foreground. The current row draws its own pair and reads.
+      "dark labels on a dark navigation column":
+        `<style>body{margin:0;font:14px sans-serif;color:#12201f;background:#fff}
+        nav{width:240px;padding:8px;background:#14252a}a{display:block;padding:6px;color:inherit}
+        a.current{background:#ddf1ee;color:#075c57}</style>
+        <nav><a>Overview</a><a>People</a><a class=current>Users</a><a>Billing</a></nav>`,
+      // An icon in the same pair: a muted stroke on the dark ground, the label beside it fine.
+      "a muted icon on a dark column beside a readable label":
+        `<style>body{margin:0;font:14px sans-serif}nav{width:240px;padding:8px;background:#14252a;color:#7ef0e0}
+        a{display:flex;gap:8px;align-items:center}svg{color:#566765}</style>
+        <nav><a><svg width=16 height=16 viewBox="0 0 24 24" fill=none stroke=currentColor stroke-width=2><circle cx=12 cy=12 r=9 /></svg>Overview</a></nav>`,
+      // Text faded by an ancestor's opacity: the colour is a token, the painted result is not.
+      "text faded to the ground by an ancestor's opacity":
+        `<style>body{margin:0;font:14px sans-serif;color:#12201f;background:#fff}.dim{opacity:.25}</style>
+        <div class=dim><p>Last sign-in</p></div>`,
+      // A translucent ground does not rescue the pair: it is laid over the dark ancestor.
+      "dark text on a translucent white wash over a dark panel":
+        `<style>body{margin:0;font:14px sans-serif;background:#14252a}.wash{background:rgba(255,255,255,.04);padding:12px;color:#12201f}</style>
+        <div class=wash>Hover row</div>`,
+    },
+    quiet: {
+      "the same column with light labels":
+        `<style>body{margin:0;font:14px sans-serif;color:#12201f;background:#fff}
+        nav{width:240px;padding:8px;background:#14252a;color:#7ef0e0}a{display:block;padding:6px;color:inherit}
+        a.muted{color:#78aaa6}a.current{background:#ddf1ee;color:#075c57}</style>
+        <nav><a>Overview</a><a class=muted>People</a><a class=current>Users</a><a>Billing</a></nav>`,
+      // The same low-contrast pair on a control that is switched off: inactive components are exempt.
+      "a disabled button in a washed-out colour":
+        `<style>body{margin:0;font:14px sans-serif;background:#fff}button{border:0;background:#e3e9e9;color:#a9b7b6}</style>
+        <button disabled>Save</button>`,
+      // Large text takes the lower minimum: 3.4:1 passes at 32px and would fail at 14px.
+      "a large heading at 3.4:1":
+        `<style>body{margin:0;background:#fff}h1{margin:0;font:700 32px sans-serif;color:#8a8a8a}</style><h1>Overview</h1>`,
+      // A ground that is an image cannot be measured, so nothing is judged there.
+      "text over a gradient":
+        `<style>body{margin:0;font:14px sans-serif}.hero{background:linear-gradient(90deg,#14252a,#f4f7f7);color:#8a8a8a;padding:16px}</style>
+        <div class=hero>Welcome back</div>`,
+      "ordinary ink on white":
+        `<style>body{margin:0;font:14px sans-serif;color:#12201f;background:#fff}</style><p>Account lifecycle</p>`,
     },
   },
   pressableControlClippedByItsContainer: {

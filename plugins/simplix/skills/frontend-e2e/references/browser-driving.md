@@ -127,6 +127,7 @@ everywhere except the pixels:
 | two pieces of text painted into one rectangle | every string on the screen is the right string |
 | an open pane painting nothing - the reader pressed a tab and got a blank rectangle | a `return null` that is correct in a dozen other places, and a build with nothing wrong in it |
 | a list scrolling inside itself while the page around it cannot move | the rows are all there, the layout classes read correctly, and a screenshot of it is a screenshot of a scrolling list |
+| text or an icon painted in a colour too close to the ground behind it | the colour is a token, the ground is a token, and the two are never written in the same place; the theme the author looked at reads fine |
 
 **That table is what the defects feel like, and `--list` is what the script actually runs.**
 Enumerating the checks in prose is how a reader ends up running a subset and reporting the rest
@@ -138,6 +139,12 @@ screen has to be opened with the reads emptied (a `?data=empty`-style harness, a
 installation, a record nobody created) before the check has anything to report. Run it in
 those states as well as the populated one - `compared 0` on a screen with tabs means the run
 never reached a pane and proves nothing.
+
+**The contrast check needs one run per theme.** A column given a dark ground while its labels keep
+the page's own foreground reads fine in the theme where that foreground is light and draws ink on
+near-black in the other, so a run in one theme has read half the pairs. Switch the mode (the class
+or attribute the product's theme reads), run `textContrastBelowMinimum` again, and read the
+findings of both; a ground that is an image is reported as `skippedOverImage` and is not judged.
 
 They live in `${CLAUDE_PLUGIN_ROOT}/scripts/audit-rendered.mjs`, **not** in
 `audit-frontend.mjs` - that one reads source files and runs with nothing started, and these
