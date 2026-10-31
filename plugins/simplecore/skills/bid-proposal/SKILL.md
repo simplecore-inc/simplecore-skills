@@ -87,8 +87,8 @@ question waits for step 8. When the company folder does not exist yet, create it
 10. Write every page in full at about one and a half times its page share, with a plan for each
     figure it needs and a source for each number.
 11. Draw the figures.
-12. When screens are asked for or scored, draw them as a wireframe board and attach it as an annex,
-    each frame placed from the board's own per-frame export (`node wf.mjs shots <dir> --no-notes`).
+12. When screens are asked for or scored, draw them as wireframes and attach them as an annex,
+    each frame placed as its own cropped image.
 13. Write the evidence annex: the tests done before the bid, their conditions, measured results
     and limits.
 14. Cut the manuscript to about 1.1 times the page budget. Compare every cut with the text before
@@ -286,7 +286,6 @@ precedence over these.
 | Tender transcription, claims, enumerations, evaluator review | `proposal-writing` |
 | Korean copy and terms | `korean-docs` in Claude Code; in Codex, the Korean standard Codex has installed, never Claude Code's audit hook |
 | Figures | `svg-diagrams` |
-| Screens | `wireframe-boards` |
 | Deck typesetting | `slide-decks`, plus the bid repository's own typesetting skill when it has one |
 | The editor and its server | `slideglance-pptx` and the server's `sg://guide` |
 | Many judgments by meaning (claims without evidence, block choice, figure text) | Jev first pass, each flagged item confirmed by reading it |

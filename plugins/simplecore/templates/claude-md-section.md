@@ -1,7 +1,6 @@
 # Routing blocks for `simplecore` skills
 
-The **project block** names this repository's board, the way that board reaches code, and the
-glossary, and belongs in the project's own instruction file. The **global Korean block** and the
+The **project block** names this repository's glossary and belongs in the project's own instruction file. The **global Korean block** and the
 **global local-server block** are path-free and belong in `~/.claude/CLAUDE.md`, where they cover
 every project on the machine.
 
@@ -9,10 +8,7 @@ Writing them is what makes the routing durable. The plugin's SessionStart hook a
 thing, but a hook only fires where the plugin is installed, while an instruction file travels with
 the repository - and a global block covers the sessions that never touch a marked project at all.
 
-`/simplecore:init` writes them. The deeper setup each skill needs - installing the board build
-kit, writing the board folder's reading contract, writing the build config and its tracking files,
-filling the parity list from the board - belongs to `/simplecore:board-init`,
-`/simplecore:board-to-app-init` and `/simplecore:parity-walk-init`.
+`/simplecore:init` writes them.
 
 ---
 
@@ -21,58 +17,8 @@ filling the parity list from the board - belongs to `/simplecore:board-init`,
 Insert into the project's `CLAUDE.md` (or `.claude/CLAUDE.md`, or `AGENTS.md` when the project
 keeps its instructions there). Delete the sections the repository does not have, keep the closing
 install line whichever sections stay, and replace every path with what the detector reported.
-`/simplecore:board-init`, `/simplecore:board-to-app-init` and `/simplecore:parity-walk-init` write
-their own section of this block the same way.
-
-**A board reaches code one of two ways and a project runs one of them**, so exactly one of
-「Building the app from the board」 and 「Walking the board against the app」 is written. The
-detector says which: `build` for the first, `parityWalk` for the second.
 
 ```markdown
-## The wireframe board is the screen contract
-
-Screens are built from the board: the spec decides behavior, the board renders it as
-screens / states / flow, the code matches the board. Invoke the `simplecore:wireframe-boards`
-skill before implementing a screen from it, checking code against it, syncing it after a change,
-or drawing new frames.
-
-- `<board path>/src/manifest.mjs` - the table of contents. Find a screen here, then open that
-  one screen file. Never read the built HTML.
-- `<board path>/AGENTS.md` - the working rules for this board.
-- The board carries no build script. `node wf.mjs <command>` from the board folder; the kit
-  lives in the skill.
-
-A screen, dialog, state, or flow added during development is back-filled as a frame in the same
-change. A design decision that changes needs the design owner's sign-off and updates the spec in
-the same breath.
-
-## Building the app from the board
-
-Screens are built from the board in dependency order - one chapter at a time, the file order the
-build order, and a chapter closes on its persona tests rather than on its code. Invoke the
-`simplecore:board-to-app` skill before building a chapter, running its persona tests, deciding
-what may run alongside, or resuming a build. This repository supplies the contents:
-
-- `<chapter directory>` - one file per chapter; the file order is the build order
-- `<state ledger path>` - the one place that says which chapter is open, and each persona's
-  development account. Read it first; write to it when a chapter changes state
-- `<evidence dir>/00-overview.md` - what a chapter's verification leaves behind
-- `.claude/board-to-app.json` - every path, command and heading the build reads
-
-Chapter files are generated from the board, never hand-edited: fix the board and regenerate. A
-chapter runs in a subagent, never in the coordinating session.
-
-## Walking the board against the app
-
-Reconciling implemented screens with the board is a long walk across many sessions. Invoke the
-`simplecore:board-parity-walk` skill before starting or resuming one - it carries the discipline,
-and the walk itself runs in a subagent per cluster so the coordinating session never fills up.
-This repository supplies the contents:
-
-- `<parity list path>` - the frames left to walk, and the decisions parked for a human
-- `<handover file path>` - how to start and stop the servers, known traps, accounts and data standing
-- `.claude/board-parity-walk.json` - names those two for the write-time checks
-
 ## Korean output
 
 This project's documents are Korean. Invoke `simplecore:korean-docs` when writing, translating,

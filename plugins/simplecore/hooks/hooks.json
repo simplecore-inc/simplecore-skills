@@ -1,5 +1,5 @@
 {
-  "description": "Session-start detection of a wireframe board, a board build, a board-parity walk, or Korean documents, plus write-time gates on the artifacts these skills produce. Detection is silent where no marker matches. The Korean audit (the glossary word check and the sentence-rule pack) runs on each written file in projects that have a project glossary (.claude/GLOSSARY.md or GLOSSARY.md); the parity-walk document checks and the walk delegation gate run in projects that have .claude/board-parity-walk.json; the SVG lint and board contract checks run on the files themselves. The SVG lint, the board contract check and the walk gate are turned off per project in .claude/simplecore.json.",
+  "description": "Session-start detection of Korean documents, plus write-time gates on the artifacts these skills produce. Detection is silent where no marker matches. The Korean audit (the glossary word check and the sentence-rule pack) runs on each written file in projects that have a project glossary (.claude/GLOSSARY.md or GLOSSARY.md); the SVG lint runs on the files themselves and is turned off per project in .claude/simplecore.json.",
   "hooks": {
     "SessionStart": [
       {
@@ -23,44 +23,8 @@
           },
           {
             "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/check-parity-walk.mjs\"",
-            "timeout": 30
-          },
-          {
-            "type": "command",
             "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/check-svg-render.mjs\"",
             "timeout": 30
-          },
-          {
-            "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/check-board.mjs\"",
-            "timeout": 30
-          },
-          {
-            "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/walk-gate.mjs\" touch",
-            "timeout": 10
-          }
-        ]
-      },
-      {
-        "matcher": "Task|Agent",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/walk-gate.mjs\" mark-agent",
-            "timeout": 10
-          }
-        ]
-      }
-    ],
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/walk-gate.mjs\" check",
-            "timeout": 10
           }
         ]
       }

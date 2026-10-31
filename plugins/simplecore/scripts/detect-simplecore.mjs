@@ -4,14 +4,13 @@
  * which of the wiring each one needs is already in place.
  *
  * The skills carry discipline; the project carries the contents. Between the two sits wiring
- * the user has no reason to know about: a pointer in an instruction file, a board folder's
- * reading contract, a glossary, the config that says how the board reaches code. Without it a
- * session that starts anywhere in the repository never learns any of this exists. This script is what lets a
- * session say which half is missing instead of assuming.
+ * the user has no reason to know about: a pointer in an instruction file, a glossary, the global
+ * Korean habits block. Without it a session that starts anywhere in the repository never learns
+ * any of this exists. This script is what lets a session say which half is missing instead of
+ * assuming.
  *
- * Detection is marker-based, so nothing has to be configured before it works. Every marker is
- * a structural signature of an artifact these skills produce (a board's own class vocabulary,
- * the build kit's file pair, a glossary at one of the two documented locations) - never a
+ * Detection is marker-based, so nothing has to be configured before it works: a glossary at one
+ * of the two documented locations, or Hangul in the instruction file or the README - never a
  * directory name that happens to be this or that repository's habit.
  *
  * Usage:
@@ -26,78 +25,10 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { documentSets } from "../hooks/parity-config.mjs";
-import { stepsBetween } from "../skills/wireframe-boards/kit/core/migrations.mjs";
 
-const SKIP_DIRS = new Set([
-  "node_modules", "dist", "build", "out", "target", "coverage", "vendor",
-  "tmp", "temp", "logs", "uploads", ".git", ".idea", ".vscode",
-]);
+// How much of an instruction file or README is read when looking for Hangul.
+const HEAD_BYTES = 64 * 1024;
 
-// How far below the root a board may sit. Boards live with the planning documents, which in
-// practice is one or two directories down (`_plans/board/`, `docs/wireframes/`).
-const MAX_DEPTH = 3;
-
-// Reading every HTML file in a repository would be the expensive way to find one board, so the
-// scan is bounded on both axes: how many files it opens, and how much of each it reads. A
-// board's signature sits in its head - the reading contract and the first frame labels.
-const MAX_HTML_FILES = 40;
-const HTML_HEAD_BYTES = 64 * 1024;
-
-// The class vocabulary every board of this kind is authored in. Two of them together, because
-// either alone is a plausible coincidence in unrelated markup.
-const BOARD_SIGNATURES = ["frame-label", "readme"];
-
-// The board contract this skill currently writes. A board on a lower contract needs migrating.
-//
-// **Read out of the kit rather than written down here.** Before contract 3 the kit was copied
-// into each project, so the skill's "what I expect now" and a board's "what I am on" really were
-// two values; since the kit moved into this plugin they are one fact with one owner, and a second
-// copy of it can only ever be right until the day the kit moves. It went wrong exactly that way:
-// the kit reached 4, this line still said 3, and the detector answered `needsMigration: false`
-// over a board whose build was refusing to run. **A stale copy here does not fail** - it reports
-// a project as current, which is indistinguishable from a project that is.
-//
-// **A board with no stamp is not the same thing as a board with no built HTML.** The first is
-// genuinely contract 1 - stamping did not exist when it was made. The second is a kit-built board
-// that has not been released yet, which is most of a board's life, and its contract is whatever
-// its kit writes. Collapsing the two told every board still being drawn to migrate away from the
-// contract it was already on.
-//
-// What each contract changed, and the steps to cross it, are the kit's `core/migrations.mjs`, and
-// the migration line below names each crossing from there by its title.
-const CONTRACT_META = /<meta\s+name=["']wireframe-board-contract["']\s+content=["'](\d+)["']/i;
-const KIT_CONTRACT_DECL = /BOARD_CONTRACT\s*=\s*(\d+)/;
-const KIT_SOURCE_BYTES = 16 * 1024;
-
-/** Where this plugin's own kit declares the contract it writes. */
-const KIT_PARTIALS = path.join(
-  path.dirname(fileURLToPath(import.meta.url)), "..", "skills", "wireframe-boards", "kit", "core", "partials.mjs"
-);
-
-const BOARD_CONTRACT = (() => {
-  let src;
-  try {
-    src = fs.readFileSync(KIT_PARTIALS, "utf8").slice(0, KIT_SOURCE_BYTES);
-  } catch {
-    throw new Error(
-      `detect-simplecore: cannot read the kit's own contract at ${KIT_PARTIALS} — this plugin's `
-      + 'kit is missing or has moved, and guessing the number here is how a project gets told it '
-      + 'is current while its board build refuses'
-    );
-  }
-  const declared = KIT_CONTRACT_DECL.exec(src);
-  if (!declared) {
-    throw new Error(
-      `detect-simplecore: ${KIT_PARTIALS} declares no BOARD_CONTRACT — the one place that number `
-      + 'lives has been renamed, and every migration prompt this script writes depends on it'
-    );
-  }
-  return Number(declared[1]);
-})();
-
-const PARITY_CONFIG = path.join(".claude", "board-parity-walk.json");
-const BUILD_CONFIG = path.join(".claude", "board-to-app.json");
 const GLOSSARY_LOCATIONS = [path.join(".claude", "GLOSSARY.md"), "GLOSSARY.md"];
 const INSTRUCTION_FILES = ["CLAUDE.md", path.join(".claude", "CLAUDE.md"), "AGENTS.md"];
 
@@ -121,247 +52,6 @@ function readIfPresent(file, maxBytes = 0) {
   }
 }
 
-function entries(dir) {
-  try {
-    return fs.readdirSync(dir, { withFileTypes: true });
-  } catch (error) {
-    if (typeof error?.code === "string") return [];
-    throw error;
-  }
-}
-
-function subdirs(dir) {
-  return entries(dir)
-    .filter((e) => e.isDirectory() && !e.name.startsWith(".") && !SKIP_DIRS.has(e.name))
-    .map((e) => path.join(dir, e.name));
-}
-
-/**
- * Find the wireframe board in a tree, preferring the built kit over a single file.
- *
- * @remarks
- * Two shapes count. A kit-built board is a directory holding `wf.mjs` (or, before contract 3,
- * `build.mjs`) beside
- * `src/manifest.mjs` - that pair is the kit's signature and needs no file read. A hand-written
- * board is one HTML file carrying the board class vocabulary in its head.
- *
- * @returns `{dir, kind, file}` for the first board found, or null.
- */
-function findBoard(root) {
-  let htmlBudget = MAX_HTML_FILES;
-
-  /**
-   * The contract stamp of whichever built HTML sits in a board directory.
-   *
-   * @remarks
-   * Read from the built board rather than the sources, because that is the artifact a reader
-   * actually opens, and because a kit-built board's stamp comes from the kit that built it -
-   * which is the version the board genuinely conforms to, whatever the sources now say.
-   */
-  // `undefined` and `null` mean different things here and the difference is the whole point:
-  // `undefined` no released board exists yet · `null` one exists and carries no stamp, which is a
-  // genuine contract-1 board. Returning one value for both is what made a board mid-authoring
-  // indistinguishable from a board authored before stamping existed.
-  const stampIn = (dir) => {
-    let released = false;
-    for (const entry of entries(dir)) {
-      if (!entry.isFile() || !entry.name.toLowerCase().endsWith(".html")) continue;
-      if (entry.name.startsWith("_")) continue; // _catalog.html and the like are byproducts, not the board
-      released = true;
-      const head = readIfPresent(path.join(dir, entry.name), HTML_HEAD_BYTES) ?? "";
-      const m = CONTRACT_META.exec(head);
-      if (m) return Number(m[1]);
-    }
-    return released ? null : undefined;
-  };
-
-  /**
-   * The contract a kit-built board's own build writes, read from the kit's sources.
-   *
-   * @remarks
-   * The stamp in the built board is the better answer and is tried first. But `board.html` is
-   * written only once every gate passes, the coverage gate among them (every section
-   * `requiredSections` names in the manifest), which is late in a board's life, and an underscore-prefixed
-   * file such as `_catalog.html` is a byproduct {@link stampIn} deliberately skips. So a board that
-   * is halfway through being drawn has no stamped artifact at all, and reading its absence as
-   * "unstamped, therefore contract 1" is wrong in the one direction that costs work: it proposes a
-   * migration away from the contract the board is already on.
-   */
-  const kitContractIn = (dir) => {
-    // Contract 3 moved the kit out of the board, so the number is DECLARED there instead of
-    // being read out of a copied source file - which is the better answer anyway: it says what
-    // the board has been brought up to rather than what happens to be sitting beside it.
-    const cfg = readIfPresent(path.join(dir, "board.config.mjs"), KIT_SOURCE_BYTES) ?? "";
-    const declared = /\bcontract:\s*(\d+)/.exec(cfg);
-    if (declared) return Number(declared[1]);
-    // Contract 2 and earlier: the board carried its own `partials.mjs`.
-    const src = readIfPresent(path.join(dir, "src", "partials.mjs"), KIT_SOURCE_BYTES) ?? "";
-    const m = KIT_CONTRACT_DECL.exec(src);
-    return m ? Number(m[1]) : null;
-  };
-
-  const visit = (dir, depth) => {
-    // A kit-built board is a directory holding `src/manifest.mjs` beside the thing that builds
-    // it - which is `wf.mjs` from contract 3 on, and was `build.mjs` before. Both are looked for,
-    // because a board that has not been migrated yet still has to be FOUND in order to be told
-    // that it needs migrating.
-    const buildsHere = fs.existsSync(path.join(dir, "wf.mjs")) || fs.existsSync(path.join(dir, "build.mjs"));
-    if (buildsHere && fs.existsSync(path.join(dir, "src", "manifest.mjs"))) {
-      const stamped = stampIn(dir);
-      // A released board answers for itself, whatever the sources now say - it is the artifact
-      // people open. The kit stands in only when there is nothing released to ask.
-      const fromKit = stamped === undefined ? kitContractIn(dir) : null;
-      return {
-        dir,
-        kind: "built",
-        file: path.join(dir, "src", "manifest.mjs"),
-        contract: stamped ?? fromKit,
-        // Where the answer came from, because the three cases are told apart nowhere else:
-        // `built` a released board says so itself · `kit` no release yet, so what the board's
-        // sources declare stands in (`contract:` in `board.config.mjs`, or the `BOARD_CONTRACT` of
-        // its own `src/partials.mjs` before contract 3), and below the current contract that is a
-        // migration like any other · `null` neither, which is a genuine contract-1 board.
-        contractFrom: typeof stamped === "number" ? "built" : fromKit != null ? "kit" : null,
-      };
-    }
-
-    for (const entry of entries(dir)) {
-      if (!entry.isFile() || !entry.name.toLowerCase().endsWith(".html")) continue;
-      if (htmlBudget <= 0) break;
-      htmlBudget -= 1;
-      const head = readIfPresent(path.join(dir, entry.name), HTML_HEAD_BYTES) ?? "";
-      if (BOARD_SIGNATURES.every((sig) => head.includes(sig))) {
-        const m = CONTRACT_META.exec(head);
-        return {
-          dir,
-          kind: "single-file",
-          file: path.join(dir, entry.name),
-          contract: m ? Number(m[1]) : null,
-          // A hand-written board has no kit to fall back on: the file in hand IS the board, so an
-          // unstamped one is genuinely contract 1.
-          contractFrom: m ? "built" : null,
-        };
-      }
-    }
-
-    if (depth >= MAX_DEPTH) return null;
-    for (const child of subdirs(dir)) {
-      const found = visit(child, depth + 1);
-      if (found) return found;
-    }
-    return null;
-  };
-
-  return visit(root, 0);
-}
-
-/**
- * Every board in a tree, not just the first.
- *
- * @remarks
- * A repository can draw two products - a desktop application and a web console - and reporting one
- * of them is worse than reporting neither: the routing note, the migration prompt and the 「wired to
- * nothing」 line all name a board, and naming the first one silently says the second is fine. A
- * board never contains another board, so a directory that IS one is not descended into.
- *
- * @returns every board found, in directory order; empty where there is none.
- */
-function findBoards(root) {
-  const found = [];
-  const visit = (dir, depth) => {
-    const here = findBoard(dir);
-    if (here && here.dir === dir) {
-      found.push(here);
-      return;
-    }
-    if (depth >= MAX_DEPTH) return;
-    for (const child of subdirs(dir)) visit(child, depth + 1);
-  };
-  visit(root, 0);
-  return found;
-}
-
-/**
- * The parity-walk config and whether the documents it names exist.
- *
- * @remarks
- * A config declares one pair of documents at the top level, or one pair per board under `boards`
- * where a repository draws two products. The shape is read by the hooks' own reader
- * (`documentSets`), so the detector and the write-time checks cannot disagree about which files a
- * walk keeps. `boards` holds every pair declared; the top-level names stay for every caller that
- * reads them and are null on a config that declares only `boards`, because naming one of two
- * boards there would say the other is fine.
- */
-function findParityWalk(root) {
-  const configFile = path.join(root, PARITY_CONFIG);
-  const raw = readIfPresent(configFile);
-  if (raw === null) return null;
-
-  let config;
-  try {
-    config = JSON.parse(raw);
-  } catch (error) {
-    if (!(error instanceof SyntaxError)) throw error;
-    return { config: PARITY_CONFIG, valid: false, parityList: null, handoverFile: null, boards: [] };
-  }
-
-  const present = (abs, declared) => (abs && fs.existsSync(abs) ? declared : null);
-  const boards = documentSets({ root, config }).map((set) => ({
-    board: set.board,
-    parityList: present(set.parityList, set.declared.parityList),
-    handoverFile: present(set.handoverFile, set.declared.handoverFile),
-    declaredParityList: set.declared.parityList,
-    declaredHandoverFile: set.declared.handoverFile,
-  }));
-  const top = boards.find((one) => one.board === null);
-
-  return {
-    config: PARITY_CONFIG,
-    valid: true,
-    parityList: top?.parityList ?? null,
-    handoverFile: top?.handoverFile ?? null,
-    declaredParityList: top?.declaredParityList ?? null,
-    declaredHandoverFile: top?.declaredHandoverFile ?? null,
-    boards,
-  };
-}
-
-/**
- * The chapter-build config and whether the two files a session resumes from exist.
- *
- * @remarks
- * A board reaches code one of two ways, and they are alternatives rather than stages: a build in
- * dependency order, chapter by chapter, or a walk over the frames of a running app. Only the two
- * files a session needs to answer 「what is open」 are resolved here - the chapter directory and
- * the state ledger. Every other declared path is the build skill's own gate to check
- * (`bta.mjs doctor`), and duplicating that here would put the same rule in two places.
- */
-function findBuild(root) {
-  const configFile = path.join(root, BUILD_CONFIG);
-  const raw = readIfPresent(configFile);
-  if (raw === null) return null;
-
-  let config;
-  try {
-    config = JSON.parse(raw);
-  } catch (error) {
-    if (!(error instanceof SyntaxError)) throw error;
-    return { config: BUILD_CONFIG, valid: false, chapterDir: null, stateLedger: null };
-  }
-
-  const resolve = (key) =>
-    typeof config[key] === "string" && fs.existsSync(path.join(root, config[key])) ? config[key] : null;
-
-  return {
-    config: BUILD_CONFIG,
-    valid: true,
-    chapterDir: resolve("chapterDir"),
-    stateLedger: resolve("stateLedger"),
-    declaredChapterDir: typeof config.chapterDir === "string" ? config.chapterDir : null,
-    declaredStateLedger: typeof config.stateLedger === "string" ? config.stateLedger : null,
-  };
-}
-
 /** The project glossary, at whichever of the two documented locations holds it. */
 function findGlossary(root) {
   return GLOSSARY_LOCATIONS.find((rel) => fs.existsSync(path.join(root, rel))) ?? null;
@@ -378,46 +68,26 @@ function findGlossary(root) {
 function writesKorean(root, glossary) {
   if (glossary) return true;
   for (const rel of [...INSTRUCTION_FILES, "README.md"]) {
-    const head = readIfPresent(path.join(root, rel), HTML_HEAD_BYTES);
+    const head = readIfPresent(path.join(root, rel), HEAD_BYTES);
     if (head && HANGUL.test(head)) return true;
   }
   return false;
 }
 
 /** Which skills an instruction file at or under root already routes to. */
-function routing(root, extraDirs) {
+function routing(root) {
   const routed = {};
-  const dirs = [root, ...extraDirs];
   const candidates = new Set();
-  for (const dir of dirs) for (const rel of INSTRUCTION_FILES) candidates.add(path.join(dir, rel));
+  for (const rel of INSTRUCTION_FILES) candidates.add(path.join(root, rel));
 
   for (const file of candidates) {
     const content = readIfPresent(file);
     if (!content) continue;
-    for (const skill of ["wireframe-boards", "board-to-app", "board-parity-walk", "korean-docs", "svg-diagrams"]) {
+    for (const skill of ["korean-docs", "svg-diagrams"]) {
       if (!routed[skill] && content.includes(`simplecore:${skill}`)) routed[skill] = file;
     }
   }
   return routed;
-}
-
-/**
- * Whether any instruction file names this board's own directory.
- *
- * @remarks
- * Naming the SKILL is one fact about a repository; naming a BOARD is one fact per board, and with
- * two of them the difference is the whole question. An instruction file that routes to the skill
- * and then walks a session to one of the two boards leaves the other reachable only by somebody who
- * already knew it was there - and the routing check, which asks only about the skill, reads green.
- */
-function routesToDir(root, dir) {
-  const wanted = path.relative(root, dir);
-  if (!wanted || wanted.startsWith("..")) return true;
-  for (const rel of INSTRUCTION_FILES) {
-    const content = readIfPresent(path.join(root, rel));
-    if (content && content.includes(wanted)) return true;
-  }
-  return false;
 }
 
 /**
@@ -480,155 +150,23 @@ function globalKoreanInstruction() {
 /**
  * Analyze a directory tree.
  *
- * @returns `{root, board, build, parityWalk, glossary, korean, routedBy, globalKorean, skills, missing, wired}`
- * with every path relative to `root`. `missing` holds one plain-language line per piece of
- * wiring that is absent, which is what a session reads out to the user before offering to fix it.
+ * @returns `{root, glossary, korean, routedBy, globalKorean, skills, missing, wired}` with every
+ * path relative to `root`. `missing` holds one plain-language line per piece of wiring that is
+ * absent, which is what a session reads out to the user before offering to fix it.
  */
 export function analyze(root) {
   const resolved = path.resolve(root);
-  const boards = findBoards(resolved);
-  // The first board keeps the singular name every caller already reads. `boards` is what a project
-  // drawing two products is described by, and every per-board line below walks it.
-  const board = boards[0] ?? null;
-  const parityWalk = findParityWalk(resolved);
-  const build = findBuild(resolved);
   const glossary = findGlossary(resolved);
   const korean = writesKorean(resolved, glossary);
-  const routedBy = routing(resolved, boards.map((one) => one.dir));
+  const routedBy = routing(resolved);
   const globalKorean = globalKoreanInstruction();
 
   const rel = (p) => (p ? path.relative(resolved, p) || "." : null);
 
-  // Both ways of reaching code from a board bind ONLY where a board exists. Config alone is not
-  // enough: without a board there is nothing to build or walk against, and reporting the skill as
-  // applicable would send a session looking for frames that were never drawn.
   const skills = [];
-  if (board) skills.push("simplecore:wireframe-boards");
-  if (board && build) skills.push("simplecore:board-to-app");
-  if (board && parityWalk) skills.push("simplecore:board-parity-walk");
   if (korean) skills.push("simplecore:korean-docs");
 
-  const boardContract = board
-    ? {
-        agentsMd: fs.existsSync(path.join(board.dir, "AGENTS.md")),
-        folderClaudeMd: fs.existsSync(path.join(board.dir, "CLAUDE.md")),
-      }
-    : null;
-
-  // A board that answers neither way is an original-contract board: stamping did not exist when it
-  // was made, and it has no kit whose sources could say otherwise.
-  const boardOn = board ? (board.contract ?? 1) : null;
-  const contractOf = (one) => one.contract ?? 1;
-  // Any board below the current contract needs the migration, not merely the first one found.
-  const needsMigration = boards.some((one) => contractOf(one) < BOARD_CONTRACT);
-
   const missing = [];
-  // Every line here names ONE board, so each is asked of every board. Asking only the first says
-  // nothing about the second while reading exactly like a clean report - which is the whole reason
-  // a repository drawing two products was described by one of them.
-  for (const one of boards) {
-    const on = contractOf(one);
-    if (on < BOARD_CONTRACT) {
-      // Each crossing by its own title, so the line says what THIS board would gain rather than
-      // what the oldest board ever lacked.
-      const each = stepsBetween(on, BOARD_CONTRACT).map((m) => `contract ${m.contract} (${m.title})`);
-      const crossings = each.length > 1
-        ? `${each.slice(0, -1).join(", ")} and ${each.at(-1)}`
-        : each[0] ?? "contracts the kit's core/migrations.mjs does not record";
-      missing.push(
-        `the board at \`${rel(one.dir)}\` is on board contract ${on} and this skill writes ${BOARD_CONTRACT}; moving it there crosses ${crossings}. \`/simplecore:board-migrate\` walks the upgrade`,
-      );
-    }
-    if (routedBy["wireframe-boards"] && !routesToDir(resolved, one.dir)) {
-      missing.push(
-        `the instruction files name the board skill but never the board at \`${rel(one.dir)}\`, so a session that starts elsewhere reaches the other board and writes this product's UI without one`,
-      );
-    }
-    if (
-      one.kind === "built"
-      && !(fs.existsSync(path.join(one.dir, "AGENTS.md")) && fs.existsSync(path.join(one.dir, "CLAUDE.md")))
-    ) {
-      missing.push(
-        `the board folder \`${rel(one.dir)}\` has no reading contract, so the next agent opens the built HTML and floods its context`,
-      );
-    }
-  }
-  if (boards.length && !routedBy["wireframe-boards"]) {
-    missing.push(
-      boards.length === 1
-        ? `no instruction file points at the board at \`${rel(boards[0].dir)}\`, so a session that starts elsewhere writes UI without it`
-        : `no instruction file points at either board (${boards.map((one) => `\`${rel(one.dir)}\``).join(", ")}), so a session that starts elsewhere writes UI without them`,
-    );
-  }
-  // A board reaches code one of two ways, and a project picks one. Naming only the walk here told
-  // a project that had picked the other that it was missing wiring, and pointed a fresh session at
-  // a skill that project had deliberately retired.
-  if (board && !parityWalk && !build) {
-    missing.push(
-      "the board is wired to nothing that builds it, so neither the order its frames are built in nor which of them still disagree with the code is written anywhere — `simplecore:board-to-app` builds it chapter by chapter in dependency order (a chapter set and `" +
-        BUILD_CONFIG +
-        "`), and `/simplecore:parity-walk-init` walks it frame by frame against a running app",
-    );
-  }
-  if (board && parityWalk && build) {
-    missing.push(
-      `both \`${BUILD_CONFIG}\` and \`${PARITY_CONFIG}\` are declared — a project runs one of the two, and with both in place two documents claim to say what is left. Delete the config of the one this project is leaving`,
-    );
-  }
-  if (!board && build) {
-    missing.push(
-      `a chapter build is configured (\`${BUILD_CONFIG}\`) but this project has no wireframe board — the build renders a board's frames as screens, so it has nothing to build. Draw the board first, or remove the config`,
-    );
-  }
-  if (build && !build.valid) {
-    missing.push(`\`${BUILD_CONFIG}\` is not valid JSON, so nothing routes to the build and its gates are off`);
-  }
-  if (build && build.valid && (!build.chapterDir || !build.stateLedger)) {
-    const absent = [
-      !build.chapterDir ? `the chapter set (\`${build.declaredChapterDir ?? "chapterDir not declared"}\`)` : null,
-      !build.stateLedger ? `the state ledger (\`${build.declaredStateLedger ?? "stateLedger not declared"}\`)` : null,
-    ].filter(Boolean);
-    missing.push(
-      `${absent.join(" and ")} named by \`${BUILD_CONFIG}\` ${absent.length > 1 ? "do" : "does"} not exist, so a session cannot tell which chapter is open — \`bta.mjs doctor\` reports every declared path`,
-    );
-  }
-  // Only asked for where the build actually applies, on the same reasoning as the walk below.
-  if (board && build && !routedBy["board-to-app"]) {
-    missing.push(
-      "no instruction file points at the chapter build, so a session that starts elsewhere builds screens without it",
-    );
-  }
-  if (!board && parityWalk) {
-    missing.push(
-      `a parity walk is configured (\`${PARITY_CONFIG}\`) but this project has no wireframe board — the walk reconciles code against a board's frames, so it has nothing to walk. Draw the board first, or remove the config`,
-    );
-  }
-  if (parityWalk && !parityWalk.valid) {
-    missing.push(`\`${PARITY_CONFIG}\` is not valid JSON, so the parity-walk write-time checks are off`);
-  }
-  if (parityWalk && parityWalk.valid && !parityWalk.boards.length) {
-    missing.push(
-      `\`${PARITY_CONFIG}\` names no parity list and no handover file, so there is nothing to walk from`,
-    );
-  }
-  for (const one of parityWalk?.valid ? parityWalk.boards : []) {
-    const whose = one.board ? ` for board \`${one.board}\`` : "";
-    if (!one.parityList) {
-      missing.push(
-        `the parity list the config names${whose} (\`${one.declaredParityList ?? "parityList not declared"}\`) does not exist, so there is nothing to walk from`,
-      );
-    }
-    if (!one.handoverFile) {
-      missing.push(
-        `the handover file the config names${whose} (\`${one.declaredHandoverFile ?? "handoverFile not declared"}\`) does not exist, so each session re-derives what the last one learned`,
-      );
-    }
-  }
-  // Only asked for where the walk actually applies: complaining that nothing routes to a walk
-  // that cannot run is noise on top of the real problem.
-  if (board && parityWalk && !routedBy["board-parity-walk"]) {
-    missing.push("no instruction file points at the parity walk, so a session cannot find it to resume");
-  }
   if (korean && !glossary) {
     missing.push(
       "there is no project glossary, so the same term is translated differently from one document to the next and the write-time audit stays off",
@@ -652,44 +190,6 @@ export function analyze(root) {
 
   return {
     root: resolved,
-    boardContractExpected: BOARD_CONTRACT,
-    needsMigration,
-    /**
-     * Every board in the repository.
-     *
-     * A project drawing two products has two, and which one a build or a walk is about is that
-     * command's to name - `board` below is the first of these and is kept for every caller that
-     * predates the second one.
-     */
-    boards: boards.map((one) => ({
-      dir: rel(one.dir),
-      kind: one.kind,
-      file: rel(one.file),
-      contract: contractOf(one),
-      stamped: one.contractFrom === "built",
-      contractFrom: one.contractFrom,
-      agentsMd: fs.existsSync(path.join(one.dir, "AGENTS.md")),
-      folderClaudeMd: fs.existsSync(path.join(one.dir, "CLAUDE.md")),
-    })),
-    board: board
-      ? {
-          dir: rel(board.dir),
-          kind: board.kind,
-          file: rel(board.file),
-          contract: boardOn,
-          stamped: board.contractFrom === "built",
-          contractFrom: board.contractFrom,
-          ...boardContract,
-        }
-      : null,
-    parityWalk: parityWalk
-      ? {
-          ...parityWalk,
-          parityList: parityWalk.parityList,
-          handoverFile: parityWalk.handoverFile,
-        }
-      : null,
-    build,
     glossary,
     korean,
     routedBy: Object.fromEntries(Object.entries(routedBy).map(([k, v]) => [k, rel(v)])),
@@ -712,29 +212,6 @@ function main() {
     console.log(`simplecore skills that bind to ${report.root}:`);
     for (const skill of report.skills) {
       console.log(`  ${skill.padEnd(32)} routed from ${report.routedBy[skill.split(":")[1]] ?? "nothing yet"}`);
-    }
-    if (report.board) {
-      const stamp = {
-        built: `contract ${report.board.contract}`,
-        kit: `contract ${report.board.contract} (declared by its sources; no released board.html yet)`,
-      }[report.board.contractFrom] ?? `contract ${report.board.contract} (unstamped)`;
-      console.log(`\nBoard: ${report.board.dir} (${report.board.kind}, ${stamp}) — read ${report.board.file}`);
-      if (report.needsMigration) {
-        console.log(`  ⚠ needs migration to contract ${report.boardContractExpected} → /simplecore:board-migrate`);
-      }
-    }
-    if (report.build) {
-      console.log(
-        `Chapter build: ${report.build.chapterDir ?? "chapters MISSING"} / ${report.build.stateLedger ?? "ledger MISSING"}`,
-      );
-    }
-    if (report.parityWalk) {
-      const pairs = report.parityWalk.boards?.length ? report.parityWalk.boards : [report.parityWalk];
-      for (const one of pairs) {
-        console.log(
-          `Parity walk${one.board ? ` (${one.board})` : ""}: ${one.parityList ?? "list MISSING"} / ${one.handoverFile ?? "handover MISSING"}`,
-        );
-      }
     }
     if (report.glossary) console.log(`Glossary: ${report.glossary}`);
     if (report.missing.length) {

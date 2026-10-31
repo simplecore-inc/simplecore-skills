@@ -221,9 +221,8 @@ its size.
 
 **A capture is placed whole by default, and cut to one band only when the user names
 that band.** A wireframe frame or a running-software capture goes on the slide as the
-whole image the board or the program produced; a frame comes from the board's own
-per-frame export (`node wf.mjs shots <dir> --no-notes`, `simplecore:wireframe-boards`),
-which crops each frame to its own rectangle and leaves its annotations behind. A crop the
+whole image the board or the program produced; a frame comes from a per-frame
+export that crops each frame to its own rectangle and leaves its annotations behind. A crop the
 deck chooses on its own, to the
 one band that proves the point, reads to a panel as a picture nobody could reproduce and
 hides what the screen's own arrangement says. The user may name the band - 「경보 부문만

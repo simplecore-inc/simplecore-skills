@@ -8,9 +8,7 @@
  * Recognized keys:
  *
  *   {
- *     "svgLint": false,                      // stop linting SVG files at write time
- *     "boardCheck": false,                   // stop checking board HTML at write time
- *     "walkGate": false                      // stop the parity-walk delegation gate
+ *     "svgLint": false                       // stop linting SVG files at write time
  *   }
  */
 import {existsSync, readFileSync} from 'node:fs';

@@ -11,9 +11,6 @@ Before starting any task, check whether an installed skill matches it. If a skil
 The skills from the `simplecore-skills` marketplace are designed for proactive use - invoke them without waiting for the user to name them:
 
 - **svg-diagrams** - invoke for ANY diagram or visualization request: architecture pictures, flowcharts, sequence/state/class/ER diagrams, pipelines, network and infrastructure layouts, ASCII diagrams, Mermaid. Trigger even when the user only says "draw", "visualize", "show the structure", or uses Korean phrases such as 다이어그램, 구성도, 도식화, 그림 그려. Always run the bundled render audit before delivering an SVG.
-- **wireframe-boards** - invoke before implementing a screen from a board, checking code against one, syncing one after a change, or drawing new frames; propose a board when substantial new UI has none. On a board, screens are addressed by their permanent id (`A-02`), never by the bracketed position beside it.
-- **board-to-app** - invoke before building an application from a board chapter by chapter, running a chapter's persona journeys, deciding which chapters may run alongside each other, or resuming a build. Like the walk below, it applies only where a board exists.
-- **board-parity-walk** - invoke when reconciling a whole board's frames against the running app across sessions. It applies **only** where a wireframe board already exists; with no board, draw one first.
 - **proposal-writing**, **slide-decks** and **bid-proposal** - the proposal set: what a Korean bid document says, how the decks it is submitted as are typeset, and the runner that takes one bid from the issued tender to the submitted package. Invoke the runner to start or resume a bid, and the two standards when writing or typesetting any of its documents.
 - **korean-docs** - when the [Korean Output Environment](#optional-korean-output-environment) chapter below is active, invoke for document writing, translation, proofreading, review, screen copy, and glossary work. Ordinary answers do not invoke it.
 
@@ -42,7 +39,7 @@ For a development server on the local machine (`localhost`, `127.0.0.1`, `[::1]`
 
 ### Delegate context-hungry verification
 
-Browser-driven screen audits and long parity walks are made of screenshots, accessibility trees, and console logs - the things that fill a context fastest. Run them in a subagent, one per screen cluster, a fresh one after each, returning conclusions rather than contents. Never put an image in a subagent's report: surface the file path instead, so it renders for the reader without entering the coordinating context.
+Browser-driven screen audits are made of screenshots, accessibility trees, and console logs - the things that fill a context fastest. Run them in a subagent, one per screen cluster, a fresh one after each, returning conclusions rather than contents. Never put an image in a subagent's report: surface the file path instead, so it renders for the reader without entering the coordinating context.
 
 ## Communication & Reporting
 

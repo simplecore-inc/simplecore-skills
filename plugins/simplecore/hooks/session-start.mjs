@@ -4,9 +4,8 @@
  * the project's own contents live, and which wiring is missing.
  *
  * Without this, every one of these skills depends on its description firing - which it does when
- * the user names the work in the right words, and does not when they ask for a screen. A board
- * nobody is routed to goes stale, a build or a walk nobody can find is restarted from scratch, and
- * a Korean document written without the style baseline reads as a translation.
+ * the user names the work in the right words, and does not otherwise. A Korean document written
+ * without the style baseline reads as a translation.
  *
  * A directory that matches no marker produces no output at all - projects that use none of these
  * skills never see this hook.
@@ -21,9 +20,8 @@ function buildContext(report) {
   const lines = [];
   const binds = (skill) => report.skills.includes(`simplecore:${skill}`);
 
-  // A project can have wiring worth reporting while no skill binds - a parity walk configured
-  // against a board that does not exist, for one. Say that on its own rather than announcing
-  // skills that do not apply.
+  // A project can have wiring worth reporting while no skill binds. Say that on its own rather
+  // than announcing skills that do not apply.
   if (!report.skills.length) {
     return (
       `This project has simplecore wiring that does not hold together: ${report.missing.join('; ')}. ` +
@@ -35,31 +33,6 @@ function buildContext(report) {
   lines.push('simplecore skills bind to this working directory:');
   lines.push('');
 
-  if (report.board) {
-    const how =
-      report.board.kind === 'built'
-        ? `read \`${report.board.file}\` to find a screen, then that one screen file — NEVER the built HTML`
-        : `read \`${report.board.file}\``;
-    lines.push(
-      `- \`${report.board.dir}/\` holds a wireframe board (${report.board.kind}) → invoke \`simplecore:wireframe-boards\` before implementing a screen from it, checking code against it, syncing it, or drawing frames. To locate a screen, ${how}.`,
-    );
-  }
-  if (binds('board-to-app')) {
-    const docs = [report.build.chapterDir, report.build.stateLedger].filter(Boolean);
-    lines.push(
-      `- that board is built chapter by chapter in dependency order${docs.length ? ` (\`${docs.join('`, `')}\`)` : ''} → invoke \`simplecore:board-to-app\` before building a chapter, running its persona tests, deciding what may run alongside, or resuming. The state ledger says which chapter is open; a chapter runs in a subagent, never in this context.`,
-    );
-  }
-  if (binds('board-parity-walk')) {
-    // A two-board config leaves the top-level fields null and names each pair under `boards`.
-    const pairs = report.parityWalk.boards?.length ? report.parityWalk.boards : [report.parityWalk];
-    const docs = pairs.flatMap((one) =>
-      [one.parityList, one.handoverFile].filter(Boolean).map((doc) => (one.board ? `${doc} (${one.board})` : doc)),
-    );
-    lines.push(
-      `- a board-parity walk is wired against that board${docs.length ? ` (\`${docs.join('`, `')}\`)` : ''} → invoke \`simplecore:board-parity-walk\` before starting or resuming one. It runs in a subagent per cluster, never in this context.`,
-    );
-  }
   if (binds('korean-docs')) {
     lines.push(
       `- this project's documents are written in Korean${report.glossary ? ` and it keeps a glossary (\`${report.glossary}\`)` : ''} → invoke \`simplecore:korean-docs\` when writing, translating, proofreading or reviewing a Korean document, screen copy or glossary entry. Ordinary replies follow the Korean habits block in the global instructions and do not invoke it.`,
