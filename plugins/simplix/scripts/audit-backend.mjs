@@ -713,6 +713,49 @@ function generatorInputFiles(root = ROOT) {
 }
 
 /**
+ * The Gradle settings script at the backend root, as an absolute path, so a rule can judge the
+ * subprojects it includes. Empty for a build without one.
+ *
+ * @param root the backend project root
+ * @returns the settings script, when there is one
+ */
+function gradleSettingsFiles(root = ROOT) {
+  return ["settings.gradle", "settings.gradle.kts"].map((n) => path.join(root, n)).filter((f) => fs.existsSync(f));
+}
+
+/**
+ * Whether the build gives each subproject a group derived from its own path, which keeps two
+ * subprojects of one name apart. Read from the root build script and the convention plugins
+ * (`buildSrc/`, `gradle/build-logic/`): a `group =` assignment that reads the project's path or
+ * parent counts.
+ *
+ * @param root the backend project root
+ * @returns true when such an assignment exists
+ */
+function gradleGroupFromPath(root = ROOT) {
+  const scripts = [];
+  for (const n of ["build.gradle", "build.gradle.kts"]) scripts.push(path.join(root, n));
+  const visit = (dir) => {
+    let entries;
+    try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch { return; }
+    for (const e of entries) {
+      if (e.isDirectory() && e.name !== "build" && e.name !== ".gradle") visit(path.join(dir, e.name));
+      else if (/\.gradle(\.kts)?$/.test(e.name)) scripts.push(path.join(dir, e.name));
+    }
+  };
+  visit(path.join(root, "buildSrc"));
+  visit(path.join(root, "gradle", "build-logic"));
+  return scripts.some((f) => {
+    let c;
+    try { c = fs.readFileSync(f, "utf8"); } catch { return false; }
+    return GRADLE_GROUP_FROM_PATH.test(c);
+  });
+}
+
+/** A `group` assignment whose value is built from the project's path or its parent. */
+const GRADLE_GROUP_FROM_PATH = /\bgroup\s*=[^\n]*\b(path|parent|parentPath)\b|\b(path|parent)\b[^\n]*\n[^\n]*\bgroup\s*=/;
+
+/**
  * The module groups of a grouped multi-module backend (`modules/<group>/<module>`), as the project
  * lists them in `.claude/simplix.json` `audit.moduleGroups`. Which directories are groups is the
  * project's layout to state, so with no list every rule reading this stays silent.
@@ -867,6 +910,49 @@ const RULES = [
           source: `@SimpliXStandardApi\npublic class ThingReportRestController {\n}`,
           ctx: { generatorInputs: new Map() },
         },
+      ],
+    },
+  },
+  {
+    id: "gradle-subprojects-share-a-name",
+    invariant: "build/module-coordinates",
+    level: "error",
+    desc: "Two included Gradle subprojects end in the same name (`:modules:admin:<x>` and `:modules:common:<x>`) while every subproject takes one shared group. Their coordinates (group:name) are equal, so Gradle resolves them as a single module and the application's classpath carries only one of them: the other compiles and passes its own tests while its controllers answer 404 on the running server. Derive the group from the project's path in the convention plugin (`group = rootGroup + parentPath`), name library jars after the full path so the boot archive does not overwrite one with the other, or rename one subproject",
+    appliesTo: (p) => /^settings\.gradle(\.kts)?$/.test(p.split(path.sep).join("/")),
+    check: (c, _rel, ctx) => {
+      if (ctx?.gradleGroupFromPath) return [];
+      const seen = new Map();
+      const out = [];
+      c.split("\n").forEach((l, i) => {
+        if (/^\s*\/\//.test(l) || !/^\s*include\b/.test(l)) return;
+        for (const m of l.matchAll(/["'](:?[\w.-]+(?::[\w.-]+)*)["']/g)) {
+          const projectPath = m[1].startsWith(":") ? m[1] : `:${m[1]}`;
+          const name = projectPath.split(":").pop();
+          const first = seen.get(name);
+          if (first && first.path !== projectPath) {
+            out.push({ line: i + 1, excerpt: `${projectPath} and ${first.path} (line ${first.line}) are both named "${name}"` });
+          } else if (!first) {
+            seen.set(name, { path: projectPath, line: i + 1 });
+          }
+        }
+      });
+      return out;
+    },
+    samples: {
+      file: "settings.gradle",
+      ctx: { gradleGroupFromPath: false },
+      broken: `rootProject.name = 'shop'\ninclude ':modules:admin:order'\ninclude ':modules:common:order'\n`,
+      fixed: `rootProject.name = 'shop'\ninclude ':modules:admin:order'\ninclude ':modules:common:order-feed'\n`,
+      hit: [
+        { note: "Kotlin DSL with several projects on one line", source: `include(":a:report", ":b:report")\n` },
+      ],
+      miss: [
+        {
+          note: "a build whose convention plugin derives the group from the path",
+          source: `include ':modules:admin:order'\ninclude ':modules:common:order'\n`,
+          ctx: { gradleGroupFromPath: true },
+        },
+        { note: "a commented-out include", source: `include ':a:order'\n// include ':b:order'\n` },
       ],
     },
   },
@@ -3108,9 +3194,9 @@ if (files.length === 0) {
   console.error("  run from the backend project root, or pass --root=<dir>");
   process.exit(2);
 }
-const ctx = { entityIds: entityIdIndex(files), encrypted: encryptedFieldIndex(files), fields: fieldIndex(files), i18n: i18nIndex(files), overwrites: serviceOverwriteIndex(files), createMapping: createMappingIndex(files), emptyDefaults: emptyDefaultIndex(files), audit: auditSettings(), generatorInputs: generatorInputIndex(), bundles: entityBundleIndex(), moduleGroups: moduleGroupIndex(auditSettings()) };
+const ctx = { entityIds: entityIdIndex(files), encrypted: encryptedFieldIndex(files), fields: fieldIndex(files), i18n: i18nIndex(files), overwrites: serviceOverwriteIndex(files), createMapping: createMappingIndex(files), emptyDefaults: emptyDefaultIndex(files), audit: auditSettings(), generatorInputs: generatorInputIndex(), bundles: entityBundleIndex(), moduleGroups: moduleGroupIndex(auditSettings()), gradleGroupFromPath: gradleGroupFromPath() };
 // The generator ymls are scanned too, after the Java indexes are built from the Java files alone.
-const scanned = [...files, ...generatorInputFiles()];
+const scanned = [...files, ...generatorInputFiles(), ...gradleSettingsFiles()];
 const results = new Map();
 let suppressedCount = 0;
 

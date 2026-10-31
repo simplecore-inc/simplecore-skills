@@ -168,9 +168,21 @@ accounts in parallel, and a per-user limit with one user spending from several a
 
 ## Two Gradle subprojects never share a leaf name
 
-`:modules:<a>:<name>` and `:modules:<b>:<name>` both publish `<group>:<name>`, and Gradle's conflict
-resolution silently substitutes one for the other on a consumer's classpath: the build fails with
-"package does not exist" for the one that was dropped. Give every subproject a unique last segment.
+`:modules:<a>:<name>` and `:modules:<b>:<name>` both publish `<group>:<name>` when every subproject
+takes one shared group, and Gradle's conflict resolution silently substitutes one for the other on a
+consumer's classpath. Where the consumer imports a type from the dropped one, the build fails with
+"package does not exist". **Where it imports nothing, which is the application module depending on
+feature modules, the build stays green**: the dropped module compiles, its own tests pass (they run
+inside it), and its controllers answer 404 "No static resource" on the running server, missing from
+the OpenAPI document and SimpliX Meta as well. Library jars named after the bare project name collide
+the same way inside the boot archive.
+
+Either give every subproject a unique last segment, or make the coordinates unique in the
+convention plugin: derive `group` from the project's parent path and name each library jar after
+the full path. `audit-backend.mjs` rule `gradle-subprojects-share-a-name` reads `settings.gradle` and
+fails on a repeated last segment unless a build script assigns `group` from the path. A test in the
+application module that loads every `@RestController` found in the included modules' sources catches
+the classpath half whatever its cause.
 
 ## A bare body is served bare, and the documents still say enveloped
 
