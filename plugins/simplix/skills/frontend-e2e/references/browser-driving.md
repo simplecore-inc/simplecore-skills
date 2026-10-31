@@ -324,6 +324,7 @@ The audit runs against a live development database, and every flow you complete 
 2. **Valid test data stays.** A record you created correctly and drove through its flow is left in place - it documents the walked scenario and serves as reference data for later sessions. Give created records recognizable, realistic names so they read as scenario data, not garbage.
 3. **Only erroneous data is removed.** Delete (through the UI) records that carry wrong input, were half-created by a failed submit, or were stranded mid-flow by a defect. If such a record cannot be removed through the UI, the missing delete/cancel affordance is itself a finding.
 4. **Report the ledger.** List what was created and kept (per flow), and what was removed and why.
+5. **A scripted write asserts its target first.** Before a script saves, it checks that the record it is about to change is one the audit created or one of its own test accounts, and aborts otherwise. A picker is chosen by the option's exact name, and the pick is read back before the write. Never "the first option": a search that does not narrow puts a real account first. In one audit, a holder probe filed a protected operator account into a test position this way, through a picker that ignored the typed text. Both the probe and the picker were defects.
 
 ---
 
