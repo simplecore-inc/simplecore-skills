@@ -104,3 +104,28 @@ Read this before planning a screen or dispatching agents for screen work.
   and switch.
 - **Prevention.** The kit publishes the list of framework parts that screens must not import, and
   the project lint refuses those imports. The count is driven to zero.
+
+## A comparison measured two different designs
+- **What happened.** The board was measured in the kit's first design while the app drew another,
+  because the board toolbar defaults its design to the first one the kit lists. Every font, height
+  and radius came out different, and none of it was a real defect.
+- **Prevention.** The board starts in the design the app uses. A comparison records the design
+  attribute of both sides and refuses to diff when they differ.
+
+## A metrics round measured the sign-in page
+- **What happened.** The session had expired, the app redirected to sign-in, and the script
+  measured whatever page was on screen after a fixed wait.
+- **Prevention.** A measurement asserts the screen's root slot first. It signs in and retries once
+  if the slot is missing, and otherwise writes nothing.
+
+## Board tokens lost to the kit's own defaults
+- **What happened.** The board wrote its design tokens on a bare `:root`. The kit sets the same
+  tokens on `:root[data-design=...]`, which outranks it, so the board drew the kit's colours while
+  the app, whose theme uses the same selector as the kit, drew the product's.
+- **Prevention.** Board and app themes are written under the same selector the kit uses. A check
+  compares one token on both sides under the same design.
+
+## The page language never followed the locale
+- **What happened.** `<html lang>` stayed `en` on board and app while the copy was Korean.
+- **Prevention.** The i18n provider writes `documentElement.lang` on every locale change, and a
+  rendered check asserts that it equals the active locale.
