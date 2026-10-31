@@ -29,7 +29,7 @@ public class BuildingService extends SimpliXBaseService<Building, String> {
     @Transactional                                            // writes override readOnly
     public BuildingDetailDTO create(BuildingCreateDTO dto) {
         Building entity = new Building();
-        modelMapper.map(dto, entity);                         // ModelMapper is provided by the base class
+        modelMapper.map(dto, entity);                         // the project's mapper skips fields the request leaves out, so entity defaults survive (runtime-behaviour.md)
         return saveAndGetProjection(entity, dto.getSiteId()); // custom private helper (see below)
     }
 
@@ -111,7 +111,7 @@ What the service MUST implement (per entity, NOT inherited):
 
 | Method | When required | Notes |
 |---|---|---|
-| `create(CreateDTO)` | always | `@Transactional`; typically ends with `saveAndGetProjection(...)` |
+| `create(CreateDTO)` | always | `@Transactional`; typically ends with `saveAndGetProjection(...)`. Never defaults a field here: the project's mapper keeps the entity default for a field the request omits (`framework/runtime-behaviour.md` § A create request overwrites the entity's defaults with null) |
 | `update(Entity, UpdateDTO)` | always | `@Transactional`; must check ID mismatch → `SimpliXGeneralException(GEN_CONFLICT)` |
 | `delete(String)` / `batchDelete(List<String>)` | always | `@Transactional`; delegate to base-class delete helpers |
 | `search(Map<String,String>)` | always | parse with `SearchableParamsParser`, delegate to `findAllWithSearch` |

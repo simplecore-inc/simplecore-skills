@@ -545,6 +545,46 @@ function serviceOverwriteIndex(files) {
   return map;
 }
 
+let _createMappingIndex = null;
+/**
+ * What decides whether a create request can overwrite the default its entity starts with.
+ *
+ * <p>A service creates with `new Entity()` and `modelMapper.map(createDTO, entity)`. The entity's
+ * defaults are in place before the copy, and a mapper that copies absent values too replaces each
+ * with null: a NOT NULL column then refuses the insert, any other column stores a value nobody
+ * chose. The defect needs two facts in the project, both read here, and one fix, which is a
+ * decision about the mapper rather than a line in any service:
+ *
+ * <ul>
+ *   <li>`entitiesWithDefaults` - the `@Entity` classes declaring an `@Builder.Default`;</li>
+ *   <li>`mapperSkipsNulls` - some main source configures the mapper with `setSkipNullEnabled(true)`,
+ *       `setPropertyCondition(...)` or `Conditions.isNotNull()`. Which of them is right for
+ *       update requests is the project's call; any of them means the call was made.</li>
+ * </ul>
+ *
+ * @param files every Java source in the project
+ * @returns `{ entitiesWithDefaults: Set<string>, mapperSkipsNulls: boolean }`
+ */
+function createMappingIndex(files) {
+  if (_createMappingIndex) return _createMappingIndex;
+  const entitiesWithDefaults = new Set();
+  let mapperSkipsNulls = false;
+  for (const abs of files) {
+    let src;
+    try { src = fs.readFileSync(abs, "utf8"); } catch { continue; }
+    const clean = stripCommentsAndStrings(src);
+    if (/\bsetSkipNullEnabled\s*\(\s*true\s*\)|\bsetPropertyCondition\s*\(|\bConditions\s*\.\s*isNotNull\b/.test(clean)) {
+      mapperSkipsNulls = true;
+    }
+    if (/@Entity\b/.test(clean) && /@Builder\s*\.\s*Default\b/.test(clean)) {
+      const cls = clean.match(/\bclass\s+(\w+)/);
+      if (cls) entitiesWithDefaults.add(cls[1]);
+    }
+  }
+  _createMappingIndex = { entitiesWithDefaults, mapperSkipsNulls };
+  return _createMappingIndex;
+}
+
 let _i18nIndex = null;
 /**
  * Which field names carry a `<name>I18n` translation map, and which DTO classes declare one.
@@ -658,7 +698,7 @@ function baseControllerEntity(clean) {
   return clean.match(/\bclass\s+(\w+)\s+extends\s+SimpliXBaseController\s*<\s*(\w+)\s*,/) ?? null;
 }
 
-function resetIndexes() { _entityIdIndex = null; _i18nIndex = null; _generatorInputIndex = null; _entityBundleIndex = null; }
+function resetIndexes() { _createMappingIndex = null; _entityIdIndex = null; _i18nIndex = null; _generatorInputIndex = null; _entityBundleIndex = null; }
 
 // ---------------------------------------------------------------------------
 // Rules
@@ -1030,6 +1070,111 @@ const RULES = [
 
         @NotBlank
         private String ownerId;
+    }
+}`,
+        },
+      ],
+    },
+  },
+  {
+    id: "create-request-overwrites-entity-default",
+    invariant: "framework/runtime-behaviour / canonical-service",
+    level: "error",
+    desc: "A service copies a create request onto a new entity with `modelMapper.map(createDto, entity)` while entities in the project declare defaults (`@Builder.Default`) and nothing in the project makes the mapper skip what a request leaves out. ModelMapper copies an absent field as null by default, so the null replaces the default the entity was built with: a NOT NULL column refuses the insert (a 409 on a form that sent every field it has), any other column silently stores null. The entity default and the request's absence both look right alone; the unit tests mock the mapper and never see it. The fix is one decision about the mapper for every entity, never a patch per service: a null in a `*CreateDTO` means 'use the default' and is skipped (`framework/runtime-behaviour.md` § A create request overwrites the entity's defaults with null), proved by mapping every empty CreateDTO onto a new entity and asserting no default is lost",
+    appliesTo: (p) => isService(p) && !/src\/test\//.test(p),
+    check: (c, _rel, ctx) => {
+      const idx = ctx?.createMapping;
+      if (!idx || idx.mapperSkipsNulls || idx.entitiesWithDefaults.size === 0) return [];
+      const clean = stripCommentsAndStrings(c);
+      const requests = new Set([...clean.matchAll(/\b\w+CreateDTO\s+(\w+)\b/g)].map((m) => m[1]));
+      if (requests.size === 0) return [];
+      const hits = [];
+      for (const m of clean.matchAll(/\b\w*[mM]apper\s*\.\s*map\s*\(\s*(\w+)\s*,\s*([\w.]+?)\s*\)/g)) {
+        if (!requests.has(m[1])) continue;
+        hits.push({
+          line: clean.slice(0, m.index).split("\n").length,
+          excerpt: `${m[0].replace(/\s+/g, " ")} copies a create request onto a new entity, and no mapper in the project skips an absent field (${[...idx.entitiesWithDefaults].slice(0, 3).join(", ")} declare defaults)`,
+        });
+      }
+      return hits;
+    },
+    samples: {
+      file: "modules/<module>/src/main/java/<pkg>/web/<feature>/service/ThingService.java",
+      ctx: { createMapping: { entitiesWithDefaults: new Set(["Thing"]), mapperSkipsNulls: false } },
+      broken: `public class ThingService extends SimpliXBaseService<Thing, String> {
+
+    @Transactional
+    public ThingDetailDTO create(ThingCreateDTO createDTO) {
+        Thing entity = new Thing();
+        modelMapper.map(createDTO, entity);
+        return saveAndGetProjection(entity);
+    }
+}`,
+      fixed: `public class ThingService extends SimpliXBaseService<Thing, String> {
+
+    @Transactional
+    public ThingDetailDTO create(ThingCreateDTO createDTO) {
+        Thing entity = Thing.builder().label(createDTO.getLabel()).build();
+        return saveAndGetProjection(entity);
+    }
+}`,
+      hit: [
+        {
+          note: "the mapper builds the entity itself from the type",
+          source: `public class ThingService extends SimpliXBaseService<Thing, String> {
+
+    @Transactional
+    public ThingDetailDTO create(ThingCreateDTO request) {
+        Thing entity = modelMapper.map(request, Thing.class);
+        return saveAndGetProjection(entity);
+    }
+}`,
+        },
+      ],
+      miss: [
+        {
+          note: "the project configures the mapper to skip what a create request leaves out",
+          ctx: { createMapping: { entitiesWithDefaults: new Set(["Thing"]), mapperSkipsNulls: true } },
+          source: `public class ThingService extends SimpliXBaseService<Thing, String> {
+
+    @Transactional
+    public ThingDetailDTO create(ThingCreateDTO createDTO) {
+        Thing entity = new Thing();
+        modelMapper.map(createDTO, entity);
+        return saveAndGetProjection(entity);
+    }
+}`,
+        },
+        {
+          note: "no entity in the project declares a default, so there is nothing to overwrite",
+          ctx: { createMapping: { entitiesWithDefaults: new Set(), mapperSkipsNulls: false } },
+          source: `public class ThingService extends SimpliXBaseService<Thing, String> {
+
+    @Transactional
+    public ThingDetailDTO create(ThingCreateDTO createDTO) {
+        Thing entity = new Thing();
+        modelMapper.map(createDTO, entity);
+        return saveAndGetProjection(entity);
+    }
+}`,
+        },
+        {
+          note: "an update request mapped onto the loaded entity, where null is how a field is cleared",
+          source: `public class ThingService extends SimpliXBaseService<Thing, String> {
+
+    @Transactional
+    public ThingDetailDTO update(Thing entity, ThingUpdateDTO updateDto) {
+        modelMapper.map(updateDto, entity);
+        return saveAndGetProjection(entity);
+    }
+}`,
+        },
+        {
+          note: "an entity mapped out to a projection, which no request reaches",
+          source: `public class ThingService extends SimpliXBaseService<Thing, String> {
+
+    public ThingDetailDTO detail(Thing entity, ThingCreateDTO template) {
+        return modelMapper.map(entity, ThingDetailDTO.class);
     }
 }`,
         },
@@ -2363,7 +2508,7 @@ if (files.length === 0) {
   console.error("  run from the backend project root, or pass --root=<dir>");
   process.exit(2);
 }
-const ctx = { entityIds: entityIdIndex(files), encrypted: encryptedFieldIndex(files), fields: fieldIndex(files), i18n: i18nIndex(files), overwrites: serviceOverwriteIndex(files), emptyDefaults: emptyDefaultIndex(files), audit: auditSettings(), generatorInputs: generatorInputIndex(), bundles: entityBundleIndex() };
+const ctx = { entityIds: entityIdIndex(files), encrypted: encryptedFieldIndex(files), fields: fieldIndex(files), i18n: i18nIndex(files), overwrites: serviceOverwriteIndex(files), createMapping: createMappingIndex(files), emptyDefaults: emptyDefaultIndex(files), audit: auditSettings(), generatorInputs: generatorInputIndex(), bundles: entityBundleIndex() };
 const results = new Map();
 let suppressedCount = 0;
 
