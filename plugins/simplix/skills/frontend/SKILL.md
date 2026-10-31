@@ -427,10 +427,13 @@ These invariants apply to **every** frontend file you touch. Treat each as invio
       close. That choice is written in the framework's comment beside the code, so the next reader
       knows they are re-opening a decision rather than fixing an oversight. What is never a
       screen's business either way: a screen must not work around the difference.
-    - **One measure for the three.** The panel column, the drawer and the dialog are one width, so
-      switching the setting never changes how much content fits; a width that differs between them
-      is a framework defect, and an audit reading the narrow one would report a screen defect that
-      is really a setting.
+    - **Each presentation takes its width from its own tokens, and the user resizes all three.**
+      The panel shares the row with the list, so its default is the widest that leaves the list
+      its own minimum; the drawer and the dialog cover the list and default wider. Default, minimum
+      and maximum come from the design tokens (`detail-panel`, `detail-drawer`, `detail-dialog`),
+      never from a screen. The resize handle is centred on the presentation's edge, and the chosen
+      width is kept only when the operator asks the browser to remember it. An audit judges a
+      screen at each presentation's own default, never one presentation's width against another's.
 70. **A sentence holding a value that can be absent is judged by that value, not by the record
     that carries it** - `t("k", { site: site?.siteName ?? "" })` typechecks, builds green, and
     renders a title ending in an em dash with nothing after it, and the first paint of every one of
