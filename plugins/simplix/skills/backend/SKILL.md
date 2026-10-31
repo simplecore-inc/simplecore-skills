@@ -11,10 +11,11 @@ Single source of truth for backend Java work in a SimpliX project. SimpliX is a 
 
 1. Use the **Task Router** below to find your task category → Read the referenced files
 2. **Before writing ANY controller/service/DTO, run the generator-first gate (invariant #15).** It is the top-priority decision: any REST surface backed by a single entity MUST be scaffolded via `yo simplix:generate` → `promote` → customize - never hand-written from scratch. Only entity-less/aggregation surfaces may be hand-authored. This check comes FIRST, before you consider annotations, DTOs, or anything else.
-3. **Past the generator (customizing, or a permitted hand-authored surface), run the precedent gate (invariant #19)** - locate two same-shape precedent surfaces and read them end to end before writing.
-4. Then review the rest of the **Non-Negotiable Invariants** - especially #2 (`@PreAuthorize`), #8 (constructor).
-5. After writing, verify every invariant holds per the **After Writing** checklist.
-6. **Check the project's wiring once per session** (see below) and offer `/simplix:init` when a piece is missing.
+3. **Before building any infrastructure capability (scheduling, distributed locks, execution logs, retries, mail, files, cache, encryption, auditing, permissions), check the SimpliX modules first** (`simplix-scheduler`, `simplix-email`, `simplix-file`, `simplix-cache`, `simplix-encryption`, `simplix-auth`, `simplix-hibernate`, ...: each module's README and `docs/`) and the project's existing use of them. Use the module the way the precedent does; a hand-rolled mechanism beside a framework one is a defect. Example: a periodic job is `@Scheduled` + `@SchedulerName` + `@SchedulerLock` (simplix-scheduler registers it and logs every run), never a custom tick or dedupe-only guard.
+4. **Past the generator (customizing, or a permitted hand-authored surface), run the precedent gate (invariant #19)** - locate two same-shape precedent surfaces and read them end to end before writing.
+5. Then review the rest of the **Non-Negotiable Invariants** - especially #2 (`@PreAuthorize`), #8 (constructor).
+6. After writing, verify every invariant holds per the **After Writing** checklist.
+7. **Check the project's wiring once per session** (see below) and offer `/simplix:init` when a piece is missing.
 
 ### Project wiring - check on load, offer once
 
