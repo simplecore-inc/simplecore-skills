@@ -29,18 +29,6 @@ back.
 - A different diagram was placed than the one asked for → cite figures by number and title.
 - Figures ended up in two folders → one generator, one output folder.
 
-## Deck
-
-- The deck's `.xml` was edited as if it were PowerPoint → it is the editor's source and is changed
-  only through the tool server.
-- The wrong pages were merged → name the pages by id and title before merging.
-- Stretch was made the default and many pages looked wrong → only where it reads well.
-- The running head differed from the contents page, a page carried two titles, and the second band's
-  type shrank on some pages → fixed in the kit and master, checked on every page.
-- The deck rendered landscape and work went on → a tool defect stops the deck work until fixed.
-- Absolute paths and embedded images broke the preview; a PowerPoint repair prompt survived three
-  attempts → find the cause in the tool and fix it there.
-
 ## Review
 
 - A whole-document pass stopped at chapter 6 and was reported done → the coverage check in

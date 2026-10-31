@@ -18,7 +18,6 @@ verbose=0
 # name | directory to run from | discover arguments
 suites=(
   "bidkit|$plugin/scripts|-s bidkit/tests -t ."
-  "slide-decks checks|$plugin/skills/slide-decks/scripts/checks/tests|-s ."
   "proposal-writing|$plugin/skills/proposal-writing/scripts/tests|-s ."
   "svg-diagrams docfigures|$plugin/skills/svg-diagrams/scripts/docfigures/tests|-s ."
 )

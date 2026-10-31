@@ -16,9 +16,8 @@ General-purpose skills that apply to any repository.
 | ----- | ----------- |
 | `simplecore:korean-docs` | Korean output standards for all deliverables - writing, translation, proofreading, and glossary (GLOSSARY.md) management. Ships a base glossary, a style reference catalog, and an automated glossary audit script. |
 | `simplecore:svg-diagrams` | Create diagrams as SVG or ASCII - flowcharts, sequence/state/class/ER diagrams, system architecture, pipelines, and network layouts. Includes JSON-spec auto-layout, Mermaid conversion, a render audit script that catches missing arrowheads, text overflow, and clipped content, and the shared document-figure library (`scripts/docfigures/`) a project's figure modules import to build and verify every figure of a document. |
-| `simplecore:proposal-writing` | The content standard for a Korean bid proposal, its presentation summary and the technical documents around them - what a page must claim, how a requirement is answered in the panel's own words, controlled language for every reader-facing string, enumerations as lists, self-contained references and annex naming, honest reporting of tests and evidence, and the evaluator-persona review that judges the result. Ships the content checks in `scripts/` (requirement ids, tender citations, annex references, scoring coverage, shared facts, page volume, claims triage), run through the slide-decks runner. |
-| `simplecore:slide-decks` | The typesetting standard for a deck compiled by slideglance from `.sgx` sources - a portrait document volume and a landscape presentation summary. Carries the design contract, the page and slide rhythm, templates and the component catalogue, the running head, page fill and budget, figure boards and placement, the builder's behaviours and the checks, and edits every deck through the SlideGlance MCP rather than as files. Reads every path, board and check from the project's own `.claude/slide-decks.json`, and ships the shared deck checks in `scripts/checks/` with their runner `scripts/check.py`, reading the deck through the `scripts/bidkit/` library. |
-| `simplecore:bid-proposal` | Runs one bid from the issued tender to the submitted package - tender transcription, score simulation, kickoff decisions asked once, manuscript, figures and annexes, persona and Korean review, the proposal deck chapter by chapter, the presentation deck, the quantitative volume, expected Q&A and the packaged deliverables - with a ledger in the bid repository so any session resumes where the last stopped. Orders the work and makes the calls; the standards come from the skills above. |
+| `simplecore:proposal-writing` | The content standard for a Korean bid proposal, its presentation summary and the technical documents around them - what a page must claim, how a requirement is answered in the panel's own words, controlled language for every reader-facing string, enumerations as lists, self-contained references and annex naming, honest reporting of tests and evidence, and the evaluator-persona review that judges the result. Ships the content checks in `scripts/` (requirement ids, tender citations, annex references, scoring coverage, shared facts, page volume, claims triage), each run directly. |
+| `simplecore:bid-proposal` | Runs one bid from the issued tender to the submitted package - tender transcription, score simulation, kickoff decisions asked once, manuscript, figures and annexes, persona and Korean review, the presentation deck, the quantitative volume, expected Q&A and the packaged deliverables - with a ledger in the bid repository so any session resumes where the last stopped. Orders the work and makes the calls; the standards come from the skills above. |
 
 It also registers the commands, agents and hooks below, each documented further down:
 
@@ -58,8 +57,8 @@ Both gates are inactive until the project declares them, and each skill checks f
 
 - Claude Code 2.x
 - Node.js 18+ - used by the korean-docs audit tooling, the svg-diagrams layout/conversion scripts, and the simplix frontend audit scripts
-- Python 3 - used by the svg-diagrams render audit script and figure library, the `bidkit` library, and the slide-decks and proposal-writing checks
-- Optional Python packages, needed only by the steps that name them: Pillow (the slide-decks `foothole` check, the svg-diagrams raster lint rule, the board PDF watermark, the raster delivery route), PyMuPDF (the board PDF watermark and the delivery PDF's picture resampling) and img2pdf (the raster delivery route); `rsvg-convert` binds the delivery PDF
+- Python 3 - used by the svg-diagrams render audit script and figure library, the `bidkit` library, and the proposal-writing checks
+- Optional Python package, needed only by the steps that name it: Pillow (the svg-diagrams raster lint rule)
 - Chrome or Chromium, found on the usual install paths or named by `CHROME` - used by the svg-diagrams render, crop, hotspot and contrast steps
 - Optional: `npm install -g beautiful-mermaid` - used by svg-diagrams for Mermaid sequence, state, class and ER rendering and for ASCII output; a plugin install runs no package manager, so nothing installs it for you
 - A browser-automation MCP (Claude in Chrome or equivalent) - used by `simplix:frontend-e2e`
@@ -359,7 +358,7 @@ Notes for symlink users:
 
 ## Development
 
-The Python suites of the `simplecore` plugin (the `bidkit` library, the slide-decks checks, the proposal-writing checks and the svg-diagrams figure library) run with one command, which starts each suite from the directory its imports expect, prints one count line per suite and exits non-zero when any fails:
+The Python suites of the `simplecore` plugin (the `bidkit` library, the proposal-writing checks and the svg-diagrams figure library) run with one command, which starts each suite from the directory its imports expect, prints one count line per suite and exits non-zero when any fails:
 
 ```bash
 plugins/simplecore/scripts/test.sh        # add -v for each suite's full output

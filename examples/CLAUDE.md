@@ -11,7 +11,7 @@ Before starting any task, check whether an installed skill matches it. If a skil
 The skills from the `simplecore-skills` marketplace are designed for proactive use - invoke them without waiting for the user to name them:
 
 - **svg-diagrams** - invoke for ANY diagram or visualization request: architecture pictures, flowcharts, sequence/state/class/ER diagrams, pipelines, network and infrastructure layouts, ASCII diagrams, Mermaid. Trigger even when the user only says "draw", "visualize", "show the structure", or uses Korean phrases such as 다이어그램, 구성도, 도식화, 그림 그려. Always run the bundled render audit before delivering an SVG.
-- **proposal-writing**, **slide-decks** and **bid-proposal** - the proposal set: what a Korean bid document says, how the decks it is submitted as are typeset, and the runner that takes one bid from the issued tender to the submitted package. Invoke the runner to start or resume a bid, and the two standards when writing or typesetting any of its documents.
+- **proposal-writing** and **bid-proposal** - the proposal set: what a Korean bid document says, and the runner that takes one bid from the issued tender to the submitted package. Invoke the runner to start or resume a bid, and the standard when writing any of its documents.
 - **korean-docs** - when the [Korean Output Environment](#optional-korean-output-environment) chapter below is active, invoke for document writing, translation, proofreading, review, screen copy, and glossary work. Ordinary answers do not invoke it.
 
 ### SimpliX projects

@@ -36,8 +36,7 @@ requirement names, requirement IDs, product names and legally fixed terms.
   because the typesetting never breaks inside an item. A list closing a sentence
   (`개발 · 시험 · 운영 지원을 … 수행합니다`) binds only the word next to the dot, so a list whose
   last item must stay whole is written as its own phrase rather than run into the clause. Where
-  the lines fall is the typesetting's job (`simplecore:slide-decks`, references/body-pages.md),
-  never a line break typed into the words.
+  the lines fall is the typesetting's job, never a line break typed into the words.
 - **A vague pointer at the head of a printed explanation** (`이 범위`, `이 운영 기반`, `그 장비`
   beside the standard's own list) is replaced by the business, the system, the record, the
   condition or the preceding action it stands for.
@@ -110,8 +109,7 @@ The presentation must work both when projected and when read without the present
 - The slide body expands the claim into demand, implementation, verification and
   deliverable. Rewrite labels that require the evaluator to guess the relationship.
 - The speaker notes use the same actor, term, number, condition and outcome as the visible
-  slide, and they are written for the ear by `simplecore:slide-decks`' rules (「The script is
-  heard, not read」): the screen's order in its printed words, then the evidence and the
+  slide, and they are written for the ear: the screen's order in its printed words, then the evidence and the
   judgment the slide cannot carry. They never point to positions or rename the same concept.
 - Read the notes alone in order. Each note must be understandable without `왼쪽`,
   `오른쪽`, `위`, `아래`, `이 도식` or a visible arrow.

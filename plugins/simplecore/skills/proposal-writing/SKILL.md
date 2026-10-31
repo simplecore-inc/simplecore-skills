@@ -1,6 +1,6 @@
 ---
 name: proposal-writing
-description: Use when writing, revising, translating, reviewing or auditing the copy of a Korean bid proposal, its presentation summary or a technical document around them (titles, body, tables, figure labels, captions, speaker notes), when deciding what a page or slide claims and how much it answers, when a requirement or evaluation item has to be traced to where it is answered, when transcribing an issued tender into Markdown the authors can cite, or when reviewing a document as its evaluators. Not for where a string is set on a page or slide (slide-decks). Triggers - 제안서, 기술문서, 제안요청서, RFP 정리, RFP 문서화, 요구사항 정리, 요구사항 목록, 요구사항 대응, 평가항목, 평가위원, 발표본, 발표자 노트, 문구 검토, 카피 검수, 용어 통일, 열거, 별첨, 증빙, 페르소나 검토, 제안서 검토.
+description: Use when writing, revising, translating, reviewing or auditing the copy of a Korean bid proposal, its presentation summary or a technical document around them (titles, body, tables, figure labels, captions, speaker notes), when deciding what a page or slide claims and how much it answers, when a requirement or evaluation item has to be traced to where it is answered, when transcribing an issued tender into Markdown the authors can cite, or when reviewing a document as its evaluators. Triggers - 제안서, 기술문서, 제안요청서, RFP 정리, RFP 문서화, 요구사항 정리, 요구사항 목록, 요구사항 대응, 평가항목, 평가위원, 발표본, 발표자 노트, 문구 검토, 카피 검수, 용어 통일, 열거, 별첨, 증빙, 페르소나 검토, 제안서 검토.
 ---
 
 # Proposal and technical-document writing
@@ -10,8 +10,7 @@ explain itself with nobody standing beside it. A technical document is read by w
 inherits the system, against what it actually does. Both fail the same way: a sentence
 that needs a reader to supply the missing actor, condition or result.
 
-**This skill carries what the document says. How it is set on a page belongs to
-`simplecore:slide-decks`**, which invokes this one for every reader-facing string.
+**This skill carries what the document says, not how it is set on a page.**
 Korean sentence-level standard, glossary and audit are `simplecore:korean-docs`; this
 skill never restates its register table or its word rules.
 
@@ -137,7 +136,7 @@ facts several chapters state - one row per fact, with the wording to print and t
 print it - has to say what a page takes from a row, or the row gets pasted whole: a writer who
 obeys a rule demanding only the wording, character for character, prints the whole row on every
 page it lists, and the repetition is the rule's defect rather than the writer's (the case:
-slide-decks [checks.md](../slide-decks/references/checks.md#the-shared-checks-and-the-runner); read it before writing such a table's
+[references/checks.md](references/checks.md); read it before writing such a table's
 rule). Say that a page prints the sentences it uses, character for character, that the
 sentences it does not use are printed by the pages that do, and that a page never repeats what
 a neighbouring page in its own chapter already printed. A standalone annex is the exception,
@@ -156,8 +155,7 @@ conditions, measures or deliverables. Review the lead, the notes and the figure 
 one copy unit before rendering.
 
 **The printed line is written and the spoken line is spoken.** A script has to stand
-without the slide, and `simplecore:slide-decks` sets how it is written for the ear
-(「The script is heard, not read」): it follows the screen in the words printed there and adds
+without the slide and is written for the ear: it follows the screen in the words printed there and adds
 what the slide cannot carry - why it matters and what the proposer commits to.
 
 ## Submitted document copy
@@ -221,9 +219,8 @@ as naturally as a horizontal row, and a run of horizontal rows reads as one page
 
 ## Presentation copy
 
-Which strings on a slide are sentences is `simplecore:slide-decks`' decision: the title, the
-one-line claim under it and a note or source line are, and the body is short phrases in
-shapes (its 「Slides」 section and references/landscape-slides.md). What each string says is
+On a slide the title, the one-line claim under it and a note or source line are sentences,
+and the body is short phrases in shapes. What each string says is
 this skill's. A sentence names a clear subject, action, object and result - who checks,
 records, submits, approves or retries, and under what condition - in the proposer voice for
 commitments (`수행합니다`, `확인합니다`, `기록합니다`, `제출합니다`, `확정합니다`). A phrase in a
@@ -320,8 +317,8 @@ letter or a number survives a reordering of the annex, a source number survives 
 being deleted, a board frame id survives the board it named being left out, and the build
 reports none of it. Read each reference against the annex's own inventory (the import
 order, the bibliography's rows, the capture numbers, the frame index) over the body, the
-manuscripts and the slides; `annexref` does it (the breaks one document carried: slide-decks
-[checks.md](../slide-decks/references/checks.md#the-shared-checks-and-the-runner); read them before trusting a reference that survived a
+manuscripts and the slides; `annexref` does it (the breaks one document carried:
+[references/checks.md](references/checks.md); read them before trusting a reference that survived a
 reordering).
 
 **An evidence number that indexes files outside the document is a reference to nothing.**
@@ -396,8 +393,7 @@ evidence and unresolved decisions visible in the result.
 
 ## The checks this skill ships
 
-`scripts/` holds the checks of what the document says, beside the deck checks of
-`simplecore:slide-decks`:
+`scripts/` holds the checks of what the document says:
 
 - `reqid`: every cited requirement id, ranges included, is one the digest issues.
 - `rfpwords`: every noun a requirement's tender wording names is written somewhere.
@@ -412,17 +408,14 @@ evidence and unresolved decisions visible in the result.
 - `claims`: the Jev triage of manuscript lines that read as a measured result with no evidence
   beside them. It never gates; its flags are read against their source.
 
-Each is run through the slide-decks runner by name, from anywhere inside the project
-(`python3 <skills>/slide-decks/scripts/check.py run reqid evaluation`), or declared in a
-phase of `checks.preflight` or `checks.after`; a script can also be run directly, which is how
-a check's own options are given. **Before the deck exists**, while the manuscript is written,
-`reqid`, `annexref` and `evaluation` run directly with `--manuscript-only`
-(`python3 <skills>/proposal-writing/scripts/reqid.py --manuscript-only`), which opens no deck
-server; the runner passes only `--deck`. `<skills>` in these commands is the plugin's skills
-directory, `${CLAUDE_PLUGIN_ROOT}/skills`. Every one reads its keys from the project's
-`.claude/slide-decks.json` and exits 2 naming a key it needs and does not find. What each reads and when it fails is in the slide-decks
-[checks](../slide-decks/references/checks.md#the-shared-checks-and-the-runner); the keys and
-their defaults are in its [config](../slide-decks/references/config.md).
+Each is a script run directly from anywhere inside the project
+(`python3 <skills>/proposal-writing/scripts/reqid.py`), which is also how a check's own options
+are given. **Before the deck exists**, while the manuscript is written, `reqid`, `annexref` and
+`evaluation` run with `--manuscript-only`, which opens no deck server. `<skills>` in these
+commands is the plugin's skills directory, `${CLAUDE_PLUGIN_ROOT}/skills`. Every one reads its
+keys from the project's `.claude/slide-decks.json` and exits 2 naming a key it needs and does not
+find. What each reads and when it fails is in [references/checks.md](references/checks.md); the
+keys are in [references/config.md](references/config.md).
 
 ## Before the copy is done
 

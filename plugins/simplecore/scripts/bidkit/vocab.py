@@ -3,7 +3,7 @@
 Which components carry a name, a prose block or a caption, which arguments are
 furniture, and which master names mark a body page are facts about the kit a
 deck binds, not about the check reading it. They live in
-`skills/slide-decks/assets/kits/<kit>.json`, and a project that adds its own
+`scripts/bidkit/kits/<kit>.json`, and a project that adds its own
 components overrides a class with a file of the same shape.
 
 Declaration, in the deck's entry of `.claude/slide-decks.json`:
@@ -25,7 +25,7 @@ from typing import Iterator
 
 from .config import ConfigError, DeckConfig, parse_jsonc
 
-KITS_DIR = Path(__file__).resolve().parents[2] / "skills" / "slide-decks" / "assets" / "kits"
+KITS_DIR = Path(__file__).resolve().parent / "kits"
 
 _ITEM = re.compile(r"^(\w+)\[\]\.(\w+)$")
 _ROW0 = re.compile(r"^(\w+)\[0\]\[\]$")

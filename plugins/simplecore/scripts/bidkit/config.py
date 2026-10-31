@@ -114,7 +114,7 @@ def find_config(start: Path | None = None) -> Path:
         if candidate.is_file():
             return candidate
     raise ConfigError(f"no {CONFIG_NAME} at or above {here}; declare the deck as the "
-                      "slide-decks skill's references/config.md describes")
+                      "proposal-writing skill's references/config.md describes")
 
 
 def _dig(data: Any, key: str) -> Any:

@@ -184,8 +184,7 @@ discovers them.
 - **A figure that outlives its slide.** The drawing keeps a structure the prose has
   since corrected - a zone that collects where the proposal says it receives, a colour
   that means a verdict on a word that is not one. Figures are reviewed at source.
-- **Time.** Speech at the rate measured by reading the script aloud (`simplecore:slide-decks`,
-  「The script is heard, not read」), plus the page turns: two seconds a turn is the number that
+- **Time.** Speech at the rate measured by reading the script aloud, plus the page turns: two seconds a turn is the number that
   made a 19.6-minute deck read as 21.2.
 
 **Merging pages is a legitimate answer to a timing failure**, and the reviewers will
