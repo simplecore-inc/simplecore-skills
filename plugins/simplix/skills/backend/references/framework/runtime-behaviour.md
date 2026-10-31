@@ -96,62 +96,38 @@ history.
 A create copies the request onto a new entity: `new Entity()`, then
 `modelMapper.map(createDto, entity)`. The entity's defaults (`@Builder.Default`, a field
 initializer; Lombok's `@NoArgsConstructor` applies the `@Builder.Default` ones) are in place before
-the copy. The mapper bean that `SimpliXModelMapperAutoConfiguration` builds does not skip nulls, so
-a field the request left out is copied as `null` over the default.
+the copy, and a mapper that copies absent values replaces each of them with `null`.
 
-- **Symptom:** `POST .../create` without an optional field answers 409 with
-  `null value in column "<col>" violates not-null constraint` in the log, on a form that sent every
-  field it has. On a nullable column there is no error: the default is silently replaced by null.
-- **Why nothing else shows it:** bean validation passes (the field is optional), the generated
-  service tests mock the mapper, and the generated form omits the optional fields, so the screen is
-  the first thing that exercises it.
-- **Do not patch it per service.** `if (dto.getActive() == null) entity.setActive(true)` in one
-  `create` leaves every other entity and every later one with the defect. It is one decision about
-  the mapper.
-- **Skip absent fields on create requests only.** An update request replaces the record, and a
-  `null` in it is how a field is cleared, so a global `setSkipNullEnabled(true)` makes nullable
-  fields impossible to clear. The `*UpdateDTO` extends its `*CreateDTO`, so the test is the class of
-  the object being mapped (`getSimpleName().endsWith("CreateDTO")` on the root source), never an
-  `instanceof` on the parent.
-- **Adjust the SimpliX bean, never replace it.** The bean is `@ConditionalOnMissingBean`, and a
-  replacement drops its time zone and `Map` converters. Install the condition from a
-  `BeanPostProcessor`:
+**The framework decides it.** The mapper bean `SimpliXModelMapperAutoConfiguration` builds installs
+`CreateRequestNullSkipCondition` (`dev.simplecore.simplix.web.mapping`): a `null` is skipped only
+when the root object being mapped is a `*CreateDTO`, the role name the generator gives every create
+request. An update request replaces the record and a `null` in it still clears a field; the
+`*UpdateDTO` extends its `*CreateDTO`, and the condition reads the class of the object being
+mapped, so the subclass is not mistaken for its parent. `install` wraps any property condition the
+mapper already has and runs once.
 
-```java
-@Configuration(proxyBeanMethods = false)
-@ConditionalOnClass(ModelMapper.class)
-class CreateRequestMappingConfiguration {
-    @Bean
-    static BeanPostProcessor createRequestNullSkipInstaller() {
-        return new BeanPostProcessor() {
-            public Object postProcessAfterInitialization(Object bean, String name) {
-                if (bean instanceof ModelMapper mapper) {
-                    // wraps any existing property condition, installs once
-                    CreateRequestNullSkipCondition.install(mapper);
-                }
-                return bean;
-            }
-        };
-    }
-}
-```
-
-`CreateRequestNullSkipCondition.applies(context)` is true when `context.getSource() != null`;
-otherwise it walks `context.getParent()` to the root and is true only when the root source's class
-name does not end in `CreateDTO`.
-
-- **Prove it over every entity at once, without a database.** A test in the deployable module
-  scans the `*DTOs` containers for `*CreateDTO`, maps an empty one onto `new <Entity>()` with the
-  real bean (`ApplicationContextRunner` over `SimpliXModelMapperAutoConfiguration` plus the
-  project's configuration), and fails on any property that was non-null before and is null after.
-  It reads the classpath, so a DTO added later is covered. Keep the unit test of the condition
-  with a control that maps through a mapper without it and loses the default.
+- **Symptom on a framework without it:** `POST .../create` without an optional field answers 409
+  with `null value in column "<col>" violates not-null constraint`, on a form that sent every field
+  it has; on a nullable column the default is silently replaced by null. Bean validation passes and
+  the generated service tests mock the mapper, so the screen is the first thing that sees it.
+- **Never patch it per service or per project.** `if (dto.getActive() == null)
+  entity.setActive(true)` in one `create` leaves every other entity with the defect, and a project
+  copy of the condition duplicates the framework's. A project on an older SimpliX upgrades it.
+- **Never replace the SimpliX mapper bean.** It is `@ConditionalOnMissingBean`, and a replacement
+  drops the condition along with the time zone and `Map` converters.
+- **Keep the classpath guard in the deployable module.** A test scans the `*DTOs` containers for
+  `*CreateDTO`, maps an empty one onto `new <Entity>()` with the real bean
+  (`ApplicationContextRunner` over `SimpliXModelMapperAutoConfiguration`), and fails on any
+  property that was non-null before and is null after. It reads the classpath, so a DTO added later
+  is covered, and it fails the build on a framework version without the condition.
 - **The contract and the yml disagree here.** `yo simplix:config` writes `required: true` for
   every NOT NULL column, defaulted ones included, and the DTO template turns `required` into
   `@NotNull`. A NOT NULL column with an entity default is optional in the contract: set
   `required: false` on it in the yml, so a regeneration does not make the form demand it.
 - `audit-backend.mjs` reports `create-request-overwrites-entity-default` while services map a
-  create request and no mapper configuration in the project skips absent fields.
+  create request, entities declare defaults, and neither a mapper configuration in the project nor
+  the SimpliX starter jar the project resolves (the version in its build files) skips absent
+  fields.
 
 ## Never run a build while the application is running
 

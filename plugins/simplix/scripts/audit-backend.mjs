@@ -545,6 +545,40 @@ function serviceOverwriteIndex(files) {
   return map;
 }
 
+/** The class the SimpliX starter's auto-configured ModelMapper installs to keep create defaults. */
+const FRAMEWORK_CREATE_SKIP_ENTRY = "dev/simplecore/simplix/web/mapping/CreateRequestNullSkipCondition.class";
+
+/**
+ * Whether the `spring-boot-starter-simplix` the project declares already skips an absent create
+ * field. The version comes from the project's own build files (a `simplix` entry in
+ * `gradle/libs.versions.toml`, or `simplixVersion` in `gradle.properties`); the jar of that version
+ * is looked up in the local Maven repository and the Gradle cache, and its central directory is
+ * read for the condition class, whose name a zip stores uncompressed. A version that cannot be
+ * found resolves to false, so the rule keeps reporting until the fix is provably on the classpath.
+ *
+ * @param root the backend project root
+ * @returns true when a resolved starter jar of the declared version carries the condition
+ */
+function frameworkSkipsCreateNulls(root = ROOT) {
+  const read = (f) => { try { return fs.readFileSync(path.join(root, f), "utf8"); } catch { return ""; } };
+  const version = read("gradle/libs.versions.toml").match(/^\s*simplix\s*=\s*"([^"]+)"/m)?.[1]
+    ?? read("gradle.properties").match(/^\s*simplixVersion\s*=\s*(\S+)/m)?.[1];
+  if (!version) return false;
+  const dirs = [
+    path.join(os.homedir(), ".m2", "repository", "dev", "simplecore", "simplix", "spring-boot-starter-simplix", version),
+  ];
+  const cache = path.join(os.homedir(), ".gradle", "caches", "modules-2", "files-2.1", "dev.simplecore.simplix", "spring-boot-starter-simplix", version);
+  try { for (const h of fs.readdirSync(cache)) dirs.push(path.join(cache, h)); } catch { /* not cached */ }
+  for (const dir of dirs) {
+    let names = [];
+    try { names = fs.readdirSync(dir).filter((n) => n.endsWith(".jar") && !/-(sources|javadoc)\.jar$/.test(n)); } catch { continue; }
+    for (const n of names) {
+      try { if (fs.readFileSync(path.join(dir, n)).includes(FRAMEWORK_CREATE_SKIP_ENTRY)) return true; } catch { /* unreadable */ }
+    }
+  }
+  return false;
+}
+
 let _createMappingIndex = null;
 /**
  * What decides whether a create request can overwrite the default its entity starts with.
@@ -559,7 +593,9 @@ let _createMappingIndex = null;
  *   <li>`entitiesWithDefaults` - the `@Entity` classes declaring an `@Builder.Default`;</li>
  *   <li>`mapperSkipsNulls` - some main source configures the mapper with `setSkipNullEnabled(true)`,
  *       `setPropertyCondition(...)` or `Conditions.isNotNull()`. Which of them is right for
- *       update requests is the project's call; any of them means the call was made.</li>
+ *       update requests is the project's call; any of them means the call was made - or the
+ *       SimpliX starter the project resolves ships `CreateRequestNullSkipCondition`, which its
+ *       auto-configured mapper installs (`frameworkSkipsCreateNulls`).</li>
  * </ul>
  *
  * @param files every Java source in the project
@@ -581,6 +617,7 @@ function createMappingIndex(files) {
       if (cls) entitiesWithDefaults.add(cls[1]);
     }
   }
+  if (!mapperSkipsNulls && frameworkSkipsCreateNulls()) mapperSkipsNulls = true;
   _createMappingIndex = { entitiesWithDefaults, mapperSkipsNulls };
   return _createMappingIndex;
 }
@@ -1146,7 +1183,7 @@ const RULES = [
     id: "create-request-overwrites-entity-default",
     invariant: "framework/runtime-behaviour / canonical-service",
     level: "error",
-    desc: "A service copies a create request onto a new entity with `modelMapper.map(createDto, entity)` while entities in the project declare defaults (`@Builder.Default`) and nothing in the project makes the mapper skip what a request leaves out. ModelMapper copies an absent field as null by default, so the null replaces the default the entity was built with: a NOT NULL column refuses the insert (a 409 on a form that sent every field it has), any other column silently stores null. The entity default and the request's absence both look right alone; the unit tests mock the mapper and never see it. The fix is one decision about the mapper for every entity, never a patch per service: a null in a `*CreateDTO` means 'use the default' and is skipped (`framework/runtime-behaviour.md` § A create request overwrites the entity's defaults with null), proved by mapping every empty CreateDTO onto a new entity and asserting no default is lost",
+    desc: "A service copies a create request onto a new entity with `modelMapper.map(createDto, entity)` while entities in the project declare defaults (`@Builder.Default`) and neither the project nor the SimpliX starter it resolves makes the mapper skip what a request leaves out. ModelMapper copies an absent field as null by default, so the null replaces the default the entity was built with: a NOT NULL column refuses the insert (a 409 on a form that sent every field it has), any other column silently stores null. The entity default and the request's absence both look right alone; the unit tests mock the mapper and never see it. The fix is the framework's: a SimpliX starter whose auto-configured mapper installs `CreateRequestNullSkipCondition` skips a null in a `*CreateDTO` (`framework/runtime-behaviour.md` § A create request overwrites the entity's defaults with null); upgrade to it rather than patching a service, and keep the classpath test that maps every empty CreateDTO onto a new entity",
     appliesTo: (p) => isService(p) && !/src\/test\//.test(p),
     check: (c, _rel, ctx) => {
       const idx = ctx?.createMapping;
