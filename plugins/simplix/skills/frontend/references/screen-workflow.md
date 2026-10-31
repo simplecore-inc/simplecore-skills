@@ -63,6 +63,13 @@ Read this before planning a screen or dispatching agents for screen work.
     It is the drift #67 describes: the next screen copies the hand-built one, not the template.
 11. **Every mistake the workflow produces becomes a case below, and a check where a machine can
     see it**, added in the same change, with every instance the check finds fixed.
+12. **A focus style that removes the outline keeps one under forced colors.** A tint, a ring or a
+    halo is invisible there: backgrounds are replaced and box-shadow is dropped. The framework's
+    base stylesheet draws a 2px system-colour outline on every focused element in that mode, and
+    declares it important, so a slot or screen that writes `outline-none` for its own look needs no
+    second rule. An important outline removal would outrank it, and `audit-frontend.mjs` rule
+    `important-outline-removal` refuses one. A keyboard cursor that moves without moving focus (a
+    combobox or command item) is matched by the attribute that carries it, in the same base rule.
 
 ## Cases
 
@@ -187,3 +194,18 @@ Read this before planning a screen or dispatching agents for screen work.
   template improvement, and it had to be added by hand.
 - **Prevention.** The CLI keeps each file's last render as a merge base, and carries template
   changes into edited files by a three-way merge. It reports a conflict instead of writing it.
+
+## A focus tint was the only focus mark, and forced colors removed it
+- **What happened.** The language selector, and every control written the same way, showed
+  keyboard focus as a background tint or a box-shadow halo and set `outline-none`. Under Windows
+  High Contrast (`forced-colors: active`) backgrounds are replaced and box-shadow is dropped, so
+  focus left no mark at all.
+- **Why it was missed.** Every control had a focus style, so a source check for "does this slot
+  show focus" passed, and a screenshot in the normal palette showed it. Only the forced-colors
+  palette removes it, and no test emulated that.
+- **Prevention.** One base-stylesheet rule draws the outline on every `:focus-visible` element
+  and on the rows that hold a keyboard cursor, important, outside every cascade layer. Reach is
+  proved by checking that no declaration in the shipped CSS can outrank it (an important outline
+  removal), and in a browser with `emulateMedia({ forcedColors: "active" })` by tabbing every
+  stop of several screens and reading each computed outline style and width. Read the style as
+  well as the width: Chromium reports a width of 1px for `outline-style: none`.

@@ -1330,6 +1330,21 @@ function spinnerBesideMark(content) {
   return hits;
 }
 
+/**
+ * A class or declaration that removes the outline and marks it important.
+ *
+ * <p>`@simplix-react/ui` draws a 2px system-colour outline on every focused element under forced
+ * colors (Windows High Contrast), where backgrounds are replaced and box-shadow is dropped, so a
+ * focus style drawn as a tint, a ring or a halo is gone. That outline is an important declaration
+ * in the theme's base stylesheet, which is why a slot that strips the outline for its own focus
+ * look needs no second rule. The one thing that can still beat it is another important
+ * declaration, so this finds the important forms of the removal: the bang before or after
+ * `outline-none` and `outline-0` (with or without a variant), the same on an arbitrary outline
+ * property, and a declaration in a style string written `none !important`.
+ */
+const IMPORTANT_OUTLINE_REMOVAL =
+  /(?<![\w-])(?:[\w[\]=&.:%()-]+:)*(?:!(?:outline-(?:none|0)|\[outline(?:-style)?:(?:none|0)\])|(?:outline-(?:none|0)|\[outline(?:-style)?:(?:none|0)\])!)(?![\w-])|\boutline(?:-style|-width)?\s*:\s*["'`]?\s*(?:none|0(?:px)?)\s*!important/;
+
 const RULES = [
   {
     id: "a-form-reports-a-refusal-as-a-toast",
@@ -4174,6 +4189,41 @@ export interface AreaDetailDTO {
         {
           note: "a div carrying no layout utility at all",
           source: `<div className="text-sm text-muted-foreground">{displayData.name}</div>`,
+        },
+      ],
+    },
+  },
+  {
+    id: "important-outline-removal",
+    invariant: "#79 / screen-workflow rule 12",
+    level: "error",
+    desc: "A class that removes the outline and marks it important. Under forced colors (Windows High Contrast) backgrounds are replaced and box-shadow is dropped, so a focus style drawn as a tint, a ring or a halo is invisible, and `@simplix-react/ui` draws one 2px system-colour outline on every focused element instead. That outline is itself important, so a slot that strips the outline for its own focus look keeps a visible focus there without saying anything; the single thing that outranks it is another important declaration. An important removal therefore leaves the control with no focus indicator for the readers who need one most, and nothing errors. Write the removal plain and let the base rule answer under forced colors",
+    appliesTo: isSource,
+    check: (c) => lineHits(c, IMPORTANT_OUTLINE_REMOVAL, notCommentLine),
+    samples: {
+      file: "modules/<domain>/src/widgets/<entity>/toolbar.tsx",
+      broken: `<button type="button" className="rounded-md px-2 focus-visible:outline-none! focus-visible:bg-muted">
+  {label}
+</button>`,
+      fixed: `<button type="button" className="rounded-md px-2 focus-visible:outline-none focus-visible:bg-muted">
+  {label}
+</button>`,
+      miss: [
+        {
+          note: "the plain removal, which the base rule outranks under forced colors",
+          source: `<button className="focus-visible:outline-none focus-visible:shadow-[var(--focus-halo)]">{label}</button>`,
+        },
+        {
+          note: "an important modifier on a utility that is not an outline removal",
+          source: `<input className="focus-visible:border-[var(--ring)]! focus-visible:shadow-none" />`,
+        },
+        {
+          note: "an outline offset carries the bang but removes nothing",
+          source: `<a className="outline-offset-0! focus-visible:outline-2">{label}</a>`,
+        },
+        {
+          note: "a comment that records the old class",
+          source: `// was focus-visible:outline-none! before the base rule covered it`,
         },
       ],
     },
@@ -8791,6 +8841,31 @@ function selftestMechanisms() {
         return [undefined, "0.3.8", "0.3.9-SNAPSHOT", "0.3.10"].map(modeWith).join(",")
           === "multiple,single,multiple,multiple";
       },
+    },
+    {
+      name: "IMPORTANT_OUTLINE_REMOVAL: the bang in front, behind, behind a variant, on an arbitrary property and in a style string",
+      pass: () =>
+        [
+          "outline-none!",
+          "!outline-none",
+          "focus-visible:outline-0!",
+          "dark:focus-visible:!outline-none",
+          "[outline:none]!",
+          "outline: none !important",
+          "outline-style: 'none !important'",
+        ].every((text) => IMPORTANT_OUTLINE_REMOVAL.test(text)),
+    },
+    {
+      name: "IMPORTANT_OUTLINE_REMOVAL: a plain removal, an offset, an unrelated bang and a longer name stay silent",
+      pass: () =>
+        [
+          "outline-none",
+          "focus-visible:outline-none",
+          "outline-offset-0!",
+          "focus-visible:border-[var(--ring)]!",
+          "no-outline-none!",
+          "outline: 2px solid Highlight",
+        ].every((text) => !IMPORTANT_OUTLINE_REMOVAL.test(text)),
     },
     {
       name: "readsServerData: a domain import puts server data in scope, a bare file does not",
