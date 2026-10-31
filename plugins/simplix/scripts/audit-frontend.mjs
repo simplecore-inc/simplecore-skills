@@ -6141,7 +6141,8 @@ const canManage = useCan("manage", SUBJECTS.area);
           source: `import { useGetUserAccount } from "@acme/domain-user";
 
 <Text>{String(row.isTypeLocked)}</Text>`,
-        },        {
+        },
+        {
           note: "a plain-string field the same line first tests as a key of a map - an object would fail the test and never reach the text",
           source: `import { useGetLedger } from "@acme/domain-billing";
 
