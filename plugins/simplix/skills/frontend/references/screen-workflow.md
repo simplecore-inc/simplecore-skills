@@ -181,6 +181,11 @@ Read this before planning a screen or dispatching agents for screen work.
     document fetched by hand is unwrapped from its `SimpliXApiResponse` envelope (`body`) before it
     is compared, and two snapshots are compared by name, never by lines.
     Example: a raw curl into `openapi/meta.json` read as 22k changed lines and false removals.
+    Example: a refresh that only added one controller's operations read as 7198 inserted and 5714
+    deleted lines under the default diff, because the new CRUD block resembles an existing one and
+    the default algorithm aligns them as moves; `git diff --diff-algorithm=patience --numstat` read
+    1484 inserted and 0 deleted, and the operation id sequences were identical. Read a refresh with
+    the patience algorithm, and compare the id sequences, before reporting that operations reshuffled.
 36. **A board frame draws every row action the generated page adds.** The list falls back to cards
     when its columns plus the row-action strip outgrow the pane, so a frame without the page's row
     actions draws a table where the app draws cards, and the comparison reports the whole table as
