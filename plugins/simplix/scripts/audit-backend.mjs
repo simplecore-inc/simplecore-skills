@@ -1995,6 +1995,99 @@ public class ApiExceptionAdvice {
     },
   },
   {
+    id: "throw-time-message-utils",
+    invariant: "#3",
+    level: "error",
+    desc: "A statement that throws resolves an argument-less error message with `MessageUtils.get(\"error.x\")`: a `throw`, an `orElseThrow` supplier, or any `new <Name>Exception(...)`. The exception then carries the resolved text, so the HTTP layer cannot translate it again, and the text follows the thread's locale at throw time. Throw the `{error.<domain>.<key>}` placeholder, which the HTTP layer resolves to the request locale. A call that passes arguments (a count, a name) is the one case resolved at throw time, and a failure envelope built in a controller is not thrown through the handler, so neither is flagged. A message resolved into a local variable first and thrown afterwards is not followed",
+    appliesTo: (p) => p.endsWith(".java"),
+    check: (c) => {
+      const bare = stripCommentsAndStrings(c);
+      // An exception advice is the HTTP layer, where a message is meant to be resolved.
+      if (/@(?:Rest)?ControllerAdvice\b|@ExceptionHandler\b/.test(bare)) return [];
+      const clean = stripComments(c);
+      const lines = clean.split("\n");
+      const hits = [];
+      for (const m of clean.matchAll(/\bMessageUtils\.get\(\s*"error\.[^"]+"\s*\)/g)) {
+        // Both strip functions blank what they remove and never delete it, so an index into one
+        // text is the same index into the other. The literal is read from `clean` and the
+        // statement around it from `bare`, where a `;` or a brace inside a string cannot end it.
+        let start = m.index;
+        while (start > 0 && !";{}".includes(bare[start - 1])) start--;
+        if (!/\bthrow\b|\borElseThrow\s*\(|\bnew\s+\w*Exception\s*\(/.test(bare.slice(start, m.index))) continue;
+        const line = clean.slice(0, m.index).split("\n").length;
+        hits.push({ line, excerpt: lines[line - 1].trim().slice(0, 150) });
+      }
+      return hits;
+    },
+    samples: {
+      file: "modules/site/src/main/java/app/web/site/service/AreaService.java",
+      broken: `        if (entity == null) {
+            throw new SimpliXGeneralException(ErrorCode.GEN_NOT_FOUND, MessageUtils.get("error.area.notFound"), null);
+        }`,
+      fixed: `        if (entity == null) {
+            throw new SimpliXGeneralException(ErrorCode.GEN_NOT_FOUND, "{error.area.notFound}", null);
+        }`,
+      hit: [
+        {
+          note: "an orElseThrow supplier, where the exception is constructed with no throw keyword",
+          source: `        Area entity = repository.findById(areaId)
+            .orElseThrow(() -> new SimpliXGeneralException(ErrorCode.GEN_NOT_FOUND, MessageUtils.get("error.area.notFound"), null));`,
+        },
+        {
+          note: "the call wrapped onto the line after the constructor, as a long line is wrapped",
+          source: `            throw new SimpliXGeneralException(ErrorCode.GEN_CONFLICT,
+                MessageUtils.get("error.area.cannotDeleteSelf"), null);`,
+        },
+        {
+          note: "a switch arm, which throws with no brace or semicolon before it",
+          source: `            default -> throw new SimpliXGeneralException(ErrorCode.BIZ_INVALID_STATE, MessageUtils.get("error.area.kindUnknown"), null);`,
+        },
+        {
+          note: "a string holding a brace and a semicolon ahead of the call in the same statement",
+          source: `            throw new SimpliXGeneralException(ErrorCode.GEN_CONFLICT, "{error.area.a};" + MessageUtils.get("error.area.b"), null);`,
+        },
+      ],
+      miss: [
+        {
+          note: "a call that carries arguments, the case resolved at throw time",
+          source: `            throw new SimpliXGeneralException(ErrorCode.GEN_NOT_FOUND, MessageUtils.get("error.area.notFoundWithId", areaId), null);`,
+        },
+        {
+          note: "a failure envelope returned from a controller, which never passes through the handler",
+          source: `        return repository.findById(areaId).map(SimpliXApiResponse::ok)
+            .orElse(SimpliXApiResponse.failure(null, MessageUtils.get("error.area.notFound")));`,
+        },
+        {
+          note: "a lookup in the statement after a throw",
+          source: `        if (blank) { throw new SimpliXGeneralException(ErrorCode.GEN_CONFLICT, "{error.area.blank}", null); }
+        String label = MessageUtils.get("error.area.label");`,
+        },
+        {
+          note: "a key that is not an error key",
+          source: `            throw new SimpliXGeneralException(ErrorCode.GEN_CONFLICT, MessageUtils.get("entities.Area.areaCode"), null);`,
+        },
+        {
+          note: "a key that is not a literal",
+          source: `            throw new SimpliXGeneralException(ErrorCode.GEN_CONFLICT, MessageUtils.get(definition.errorKey()), null);`,
+        },
+        {
+          note: "the call written inside a comment",
+          source: `            // throw new SimpliXGeneralException(ErrorCode.GEN_NOT_FOUND, MessageUtils.get("error.area.notFound"), null);`,
+        },
+        {
+          note: "an exception advice, which is the HTTP layer where the message is resolved",
+          source: `@RestControllerAdvice
+public class ApiExceptionAdvice {
+    @ExceptionHandler(Exception.class)
+    SimpliXApiResponse<Void> internal() {
+        throw new IllegalStateException(MessageUtils.get("error.internal.server"));
+    }
+}`,
+        },
+      ],
+    },
+  },
+  {
     id: "debug-log-in-web-layer",
     invariant: "#14",
     level: "error",
