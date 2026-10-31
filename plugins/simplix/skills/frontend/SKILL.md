@@ -466,6 +466,7 @@ These invariants apply to **every** frontend file you touch. Treat each as invio
     - **Agreement is measured.** App screen and design frame are compared by rendered metrics per control role, never by eye. How much of each screen stays customised is reported, and an item customised on a second screen is the signal to lift it.
     - **Make it mechanical.** The kit lists the framework parts screens must not import directly, and the project lint configuration refuses them, so the kit stays the only route.
     - **A gap is closed in the generator.** When a screen has no page kind or no overridable template, add a generic one to the CLI, with tests and no product names. A hand-built screen is the last resort and carries a comment stating why no generator change could serve it.
+    - **Every mistake this workflow produces becomes a case and a check.** Before planning screen work or dispatching agents for it, read `references/screen-workflow-cases.md`. When a mistake shows up (a wrong reference, a drifted copy, a gap found late, an invented rule), add a case there. Where a machine can see it, add the check in the same change, then fix every instance it finds.
     - **The trap** is that hand-composing one screen from kit parts looks equivalent and is faster once. It is the drift #67 describes: the next screen copies the hand-built one, not the template.
 
 ---
