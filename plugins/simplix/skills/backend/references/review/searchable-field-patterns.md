@@ -10,7 +10,7 @@ This document provides comprehensive guidance for configuring `@SearchableField`
 - [SearchOperator Reference](#searchoperator-reference)
 - [Entity Field Type to Operator Mapping](#entity-field-type-to-operator-mapping)
 - [entityField Path Patterns](#entityfield-path-patterns)
-- [sortField Priority](#sortfield-priority)
+- [sortField Priority](#sortfield-priority) (and `sortAlias` for localized names)
 - [URL Parameter Format](#url-parameter-format)
 - [Common Patterns](#common-patterns)
 - [Troubleshooting](#troubleshooting)
@@ -433,6 +433,19 @@ private String name;
 ```
 
 ---
+
+### Localized name columns: `sortAlias`
+
+A localized name (`roleName`) is sorted through one sibling per language (`roleNameSortEn`,
+`roleNameSortKo`, ...), so the name field itself is `sortable = false` and the siblings carry
+`sortable = true` with `@Schema(hidden = true)`. SimpliX Meta publishes the siblings as the
+name field's `sortAlias`, keyed by language code. The two request shapes sort differently:
+
+- **GET `/search`**: the client sorts by the visible name (`sort=roleName.asc`); the service
+  passes the params through `LocalizedSearchParams.rewrite(params, "roleName")`, which moves the
+  sort onto the reader's language.
+- **POST `/search`**: the client sends the alias for its language (`roleNameSortKo`) in the
+  `SearchCondition` sort, taken from `sortAlias`; nothing rewrites a POST body.
 
 ## URL Parameter Format
 

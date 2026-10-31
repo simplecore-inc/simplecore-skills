@@ -145,6 +145,24 @@ private Set<CmsTagEntry> tagEntries;
 
 ---
 
+## Id collection JPA does not map: `@References`
+
+An `@ElementCollection` of id strings (`Set<String> roleIds`) is a reference JPA knows nothing
+about, so nothing tells SimpliX Meta what the ids point at, and a screen hand-writes the peek
+labels and the picker. Name the target on the entity field:
+
+```java
+@ElementCollection
+@CollectionTable(name = "user_account_roles", joinColumns = @JoinColumn(name = "user_id"))
+@Column(name = "role_id", length = 36)
+@References(UserRole.class)
+private Set<String> roleIds = new HashSet<>();
+```
+
+Meta then publishes the field's reference (target entity, its id and name field) on every DTO
+field mapped to it. The audit's `id-collection-without-references` fails an `@ElementCollection`
+of `String` named `*Ids` without it.
+
 ## Self-Reference Pattern (Tree Entities)
 
 ### Entity Definition

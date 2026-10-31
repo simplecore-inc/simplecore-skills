@@ -588,7 +588,77 @@ function i18nIndex(files) {
   return _i18nIndex;
 }
 
-function resetIndexes() { _entityIdIndex = null; _i18nIndex = null; }
+
+// --- Generator inputs and entity bundles -----------------------------------
+
+let _generatorInputIndex = null;
+/**
+ * The entities that have generator input, by name, each with the controller class name its yml
+ * names (`controllerName`) or the generator's default `<Entity>RestController`.
+ *
+ * <p>Read from `.simplix/entity/*.yml` at the backend root. Only the two top-level keys are read,
+ * so no yml parser is needed: `entity:` and `controllerName:` are plain scalars at column 0.
+ *
+ * @param root the backend project root
+ * @returns entity name -> expected controller class name
+ */
+function generatorInputIndex(root = ROOT) {
+  if (_generatorInputIndex) return _generatorInputIndex;
+  const map = new Map();
+  const dir = path.join(root, ".simplix", "entity");
+  let names = [];
+  try { names = fs.readdirSync(dir).filter((n) => /\.ya?ml$/.test(n)); } catch { names = []; }
+  for (const n of names) {
+    let src;
+    try { src = fs.readFileSync(path.join(dir, n), "utf8"); } catch { continue; }
+    const entity = src.match(/^entity:\s*["']?(\w+)["']?\s*$/m)?.[1] ?? n.replace(/\.ya?ml$/, "");
+    const controller = src.match(/^controllerName:\s*["']?(\w+)["']?\s*$/m)?.[1];
+    map.set(entity, controller || `${entity}RestController`);
+  }
+  _generatorInputIndex = map;
+  return map;
+}
+
+let _entityBundleIndex = null;
+/**
+ * Every `.properties` bundle under a `src/main/resources` of the backend, as
+ * `{ file, keys }`, where `file` is relative to the root and `keys` is the set of keys it defines.
+ *
+ * @param root the backend project root
+ * @returns the bundles found
+ */
+function entityBundleIndex(root = ROOT) {
+  if (_entityBundleIndex) return _entityBundleIndex;
+  const bundles = [];
+  const visit = (dir) => {
+    let entries;
+    try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch { return; }
+    for (const e of entries) {
+      const abs = path.join(dir, e.name);
+      if (e.isDirectory()) {
+        if (!EXCLUDE_DIRS.has(e.name)) visit(abs);
+      } else if (e.name.endsWith(".properties")
+          && abs.includes(`${path.sep}src${path.sep}main${path.sep}resources${path.sep}`)) {
+        let src;
+        try { src = fs.readFileSync(abs, "utf8"); } catch { continue; }
+        const keys = new Set();
+        for (const m of src.matchAll(/^[ \t]*([^#!\s=:][^=:\s]*)[ \t]*[=:]/gm)) keys.add(m[1]);
+        bundles.push({ file: path.relative(root, abs), keys });
+      }
+    }
+  };
+  visit(path.join(root, "src"));
+  for (const d of SRC_ROOTS) visit(path.join(root, d));
+  _entityBundleIndex = bundles;
+  return bundles;
+}
+
+/** The entity type argument of `extends SimpliXBaseController<E, ...>`, or null. */
+function baseControllerEntity(clean) {
+  return clean.match(/\bclass\s+(\w+)\s+extends\s+SimpliXBaseController\s*<\s*(\w+)\s*,/) ?? null;
+}
+
+function resetIndexes() { _entityIdIndex = null; _i18nIndex = null; _generatorInputIndex = null; _entityBundleIndex = null; }
 
 // ---------------------------------------------------------------------------
 // Rules
@@ -600,6 +670,146 @@ function resetIndexes() { _entityIdIndex = null; _i18nIndex = null; }
 // ---------------------------------------------------------------------------
 
 const RULES = [
+  {
+    id: "entity-without-generator-input",
+    invariant: "#15",
+    level: "error",
+    desc: "A controller extends SimpliXBaseController<E, ...> while E has no .simplix/entity/E.yml - the surface is maintained by hand, so the generator can never regenerate it and every contract gap has to be closed in Java. Write the yml (`yo simplix:config E`), generate, diff and promote; an internalized child has no controller at all",
+    appliesTo: isController,
+    check: (c, _rel, ctx) => {
+      const inputs = ctx?.generatorInputs;
+      if (!inputs) return [];
+      const clean = stripCommentsAndStrings(c);
+      const m = baseControllerEntity(clean);
+      if (!m || inputs.has(m[2])) return [];
+      return [{ line: clean.slice(0, m.index).split("\n").length, excerpt: `${m[1]} serves ${m[2]}, and .simplix/entity/${m[2]}.yml does not exist` }];
+    },
+    samples: {
+      file: "modules/user/src/main/java/app/web/user/controller/AdminThingRestController.java",
+      ctx: { generatorInputs: new Map([["Other", "OtherRestController"]]) },
+      broken: `public class AdminThingRestController extends SimpliXBaseController<Thing, String> {\n}`,
+      fixed: `public class AdminThingRestController extends SimpliXBaseController<Other, String> {\n}`,
+      miss: [
+        {
+          note: "a non-CRUD controller that extends no SimpliX base",
+          source: `@SimpliXStandardApi\npublic class ThingReportRestController {\n}`,
+          ctx: { generatorInputs: new Map() },
+        },
+      ],
+    },
+  },
+  {
+    id: "controller-name-not-from-yml",
+    invariant: "#15",
+    level: "error",
+    desc: "The controller of a yml-backed entity is not the class the yml names (`controllerName`, default `<Entity>RestController`) - promote moves the generated file of the yml's name, so a second controller lands on the same @RequestMapping, or the live one is renamed and every operation id the frontend is keyed on changes. Set `controllerName` to the live class name",
+    appliesTo: isController,
+    check: (c, _rel, ctx) => {
+      const inputs = ctx?.generatorInputs;
+      if (!inputs) return [];
+      const clean = stripCommentsAndStrings(c);
+      const m = baseControllerEntity(clean);
+      if (!m || !inputs.has(m[2])) return [];
+      const expected = inputs.get(m[2]);
+      if (expected === m[1]) return [];
+      return [{ line: clean.slice(0, m.index).split("\n").length, excerpt: `${m[1]} serves ${m[2]}, whose yml names ${expected}` }];
+    },
+    samples: {
+      file: "modules/user/src/main/java/app/web/user/controller/AdminThingRestController.java",
+      ctx: { generatorInputs: new Map([["Thing", "ThingRestController"]]) },
+      broken: `public class AdminThingRestController extends SimpliXBaseController<Thing, String> {\n}`,
+      fixed: `public class ThingRestController extends SimpliXBaseController<Thing, String> {\n}`,
+      miss: [
+        {
+          note: "a yml that names the Admin controller through controllerName",
+          source: `public class AdminThingRestController extends SimpliXBaseController<Thing, String> {\n}`,
+          ctx: { generatorInputs: new Map([["Thing", "AdminThingRestController"]]) },
+        },
+      ],
+    },
+  },
+  {
+    id: "id-collection-without-references",
+    invariant: "reference-field-patterns",
+    level: "error",
+    desc: "An @ElementCollection of id strings named `*Ids` carries no @References(Target.class) - JPA maps no relation for it, so SimpliX Meta cannot say what the ids point at and a screen has to hand-write the peek labels and the picker",
+    appliesTo: (p) => /\/entity\/[^/]+\.java$/.test(p.split(path.sep).join("/")),
+    check: (c) => {
+      const clean = stripCommentsAndStrings(c);
+      const hits = [];
+      // The field's annotations are everything since the previous statement or block end:
+      // annotation arguments nest parentheses (@CollectionTable(joinColumns = @JoinColumn(...))),
+      // which a parenthesis-free pattern cannot step over.
+      for (const m of clean.matchAll(/\bprivate\s+(?:List|Set|Collection)\s*<\s*String\s*>\s+(\w+Ids)\b/g)) {
+        const before = clean.slice(0, m.index);
+        const start = Math.max(before.lastIndexOf(";"), before.lastIndexOf("{"), before.lastIndexOf("}"));
+        const annotations = before.slice(start + 1);
+        if (!/@ElementCollection\b/.test(annotations) || /@References\b/.test(annotations)) continue;
+        hits.push({ line: before.split("\n").length, excerpt: `${m[1]} is an @ElementCollection of ids without @References` });
+      }
+      return hits;
+    },
+    samples: {
+      file: "packages/domain-user/src/main/java/app/domain/user/entity/Account.java",
+      broken: `public class Account {\n    @ElementCollection\n    @CollectionTable(name = "account_roles")\n    private Set<String> roleIds = new HashSet<>();\n}`,
+      fixed: `public class Account {\n    @ElementCollection\n    @CollectionTable(name = "account_roles")\n    @References(Role.class)\n    private Set<String> roleIds = new HashSet<>();\n}`,
+      hit: [
+        {
+          note: "annotation arguments that nest parentheses",
+          source: `public class Account {\n    @ElementCollection\n    @CollectionTable(\n        name = "account_roles",\n        joinColumns = @JoinColumn(name = "account_id",\n                foreignKey = @ForeignKey(name = "fk"))\n    )\n    @Column(name = "role_id", length = 36)\n    @Builder.Default\n    private Set<String> roleIds = new HashSet<>();\n}`,
+        },
+      ],
+      miss: [
+        {
+          note: "nested annotation arguments with @References present",
+          source: `public class Account {\n    @ElementCollection\n    @CollectionTable(\n        name = "account_roles",\n        joinColumns = @JoinColumn(name = "account_id")\n    )\n    @References(Role.class)\n    private Set<String> roleIds = new HashSet<>();\n}`,
+        },
+        {
+          note: "an element collection of values that are not ids",
+          source: `public class Account {\n    @ElementCollection\n    private Set<String> notificationOptOuts = new HashSet<>();\n}`,
+        },
+      ],
+    },
+  },
+  {
+    id: "entity-bundle-without-plural",
+    invariant: "#16",
+    level: "error",
+    desc: "A label bundle names the entity (`entities.<E>=`) but not its plural (`entities.<E>._plural=`) - SimpliX Meta then publishes no plural for that locale, and the empty-state, not-found and tile copy a template draws from it falls back to the singular or to nothing",
+    appliesTo: (p) => /\/entity\/[^/]+\.java$/.test(p.split(path.sep).join("/")),
+    check: (c, rel, ctx) => {
+      const bundles = ctx?.bundles;
+      const clean = stripCommentsAndStrings(c);
+      if (!bundles || !/@Entity\b/.test(clean)) return [];
+      const entity = clean.match(/\bclass\s+(\w+)/)?.[1] ?? path.basename(rel, ".java");
+      return bundles
+        .filter((b) => b.keys.has(`entities.${entity}`) && !b.keys.has(`entities.${entity}._plural`))
+        .map((b) => ({ line: 1, excerpt: `${b.file} defines entities.${entity} without entities.${entity}._plural` }));
+    },
+    samples: {
+      file: "packages/domain-user/src/main/java/app/domain/user/entity/Account.java",
+      ctx: { bundles: [{ file: "x/src/main/resources/messages/entities-account_ko.properties", keys: new Set(["entities.Account", "entities.Account.email"]) }] },
+      broken: `@Entity\npublic class Account {\n}`,
+      fixed: `@Entity\npublic class Other {\n}`,
+      hit: [
+        {
+          note: "the plural present in one locale and missing in another",
+          source: `@Entity\npublic class Account {\n}`,
+          ctx: { bundles: [
+            { file: "x/src/main/resources/messages/entities-account.properties", keys: new Set(["entities.Account", "entities.Account._plural"]) },
+            { file: "x/src/main/resources/messages/entities-account_ko.properties", keys: new Set(["entities.Account"]) },
+          ] },
+        },
+      ],
+      miss: [
+        {
+          note: "every locale carries the plural",
+          source: `@Entity\npublic class Account {\n}`,
+          ctx: { bundles: [{ file: "x/src/main/resources/messages/entities-account.properties", keys: new Set(["entities.Account", "entities.Account._plural"]) }] },
+        },
+      ],
+    },
+  },
   {
     id: "not-blank-on-a-meaningfully-empty-field",
     invariant: "validation-patterns / frontend #34",
@@ -2153,7 +2363,7 @@ if (files.length === 0) {
   console.error("  run from the backend project root, or pass --root=<dir>");
   process.exit(2);
 }
-const ctx = { entityIds: entityIdIndex(files), encrypted: encryptedFieldIndex(files), fields: fieldIndex(files), i18n: i18nIndex(files), overwrites: serviceOverwriteIndex(files), emptyDefaults: emptyDefaultIndex(files), audit: auditSettings() };
+const ctx = { entityIds: entityIdIndex(files), encrypted: encryptedFieldIndex(files), fields: fieldIndex(files), i18n: i18nIndex(files), overwrites: serviceOverwriteIndex(files), emptyDefaults: emptyDefaultIndex(files), audit: auditSettings(), generatorInputs: generatorInputIndex(), bundles: entityBundleIndex() };
 const results = new Map();
 let suppressedCount = 0;
 

@@ -93,6 +93,23 @@ fields:
 | `thymeleafBaseDir` | String | Template directory path | Optional |
 | `defaultSortField` | String | Default sort field | Optional |
 | `defaultSortDirection` | String | `asc` or `desc` | Optional |
+| `controllerName` | String | REST controller class name; default `<Entity>RestController`. Set it to keep a live name, since the operation ids derive from it (`generator/promote-workflow.md` § Before generating) | Optional |
+
+### Project template keys
+
+A project's own templates may read further top-level keys through `ymlConfig`. Each one replaces a
+manual rewrite that every regeneration would otherwise undo:
+
+| Key | Read by | Emits |
+|---|---|---|
+| `permissionGroup` | controller template | `hasPermission('<group>', ...)` instead of the entity name (#9) |
+| `notFoundMessageKey` | controller template | `MessageUtils.get("<key>")` instead of an English not-found literal (#3) |
+| `ownerPermission` | controller template | `or @<entity>Service.hasOwnerPermission(...)` on update, get and edit form |
+
+When a hunk survives every regeneration as the same hand edit, it is template input: add a key, read
+it in `.simplix/templates/`, set it in the yml and regenerate, rather than repeating the edit after
+each promote. Only logic the generator has no input for (a Keycloak call, a derived count) stays as
+customisation.
 
 ---
 

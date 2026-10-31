@@ -119,6 +119,12 @@ private Boolean active = true;
 
 Every initialised field on an entity carries `@Builder.Default`: the entity class carries `@Builder` (`../convention/annotation-ordering.md`), and Lombok's builder ignores an initialiser without it, so an entity built through the builder holds `null` there.
 
+### Tone: `@BooleanTone`
+
+`@BooleanTone(whenTrue = ToneKind.SUCCESS, whenFalse = ToneKind.DANGER)` on the entity field gives
+each value of a flag its badge tone, and reaches every DTO field mapped to that column. On a DTO
+field it covers a derived flag with no column, and wins over the entity's.
+
 ### Common Boolean Fields
 
 ```java
@@ -152,6 +158,11 @@ private ContentStatus status = ContentStatus.DRAFT;
 - Always use `EnumType.STRING` (not `ORDINAL`)
 - Set appropriate `length` for the longest enum value
 - Provide default value when appropriate
+
+### Tone: `@Tone` on a constant
+
+A status badge reads its colour from the contract: put `@Tone(ToneKind.DANGER)` on the enum
+constant itself (`@Tone(ToneKind.DANGER) SUSPENDED`). A constant without it is neutral.
 
 ### LabeledEnum Interface
 
@@ -308,6 +319,20 @@ private String name;
 @Column(name = "name_i18n")
 private Map<String, String> nameI18n;
 ```
+
+### Entity name and plural (every locale)
+
+SimpliX Meta publishes each entity's display name and plural from its label bundle. Every locale
+defines both keys, the plural on its own line:
+
+```properties
+entities.UserRole=User Role
+entities.UserRole._plural=User Roles
+```
+
+A locale with no grammatical plural repeats the name (`entities.UserRole._plural=사용자 역할`).
+Templates draw empty-state, not-found and tile copy from them. The audit's
+`entity-bundle-without-plural` fails a bundle with `entities.<Entity>=` and no `._plural`.
 
 ### Multiple i18n Fields
 

@@ -81,6 +81,15 @@ On a clash, either **rename the hand-authored class to a role-specific name**
 because it is managed through its parent aggregate (see the child-entity patterns). After
 every `promote`, re-compile and confirm no pre-existing service was overwritten.
 
+**A controller's class name is part of the API contract.** SimpliX Meta and the OpenAPI document
+derive every operation id from it (`AdminUserRoleRest_search`), and the frontend's generated hooks
+are keyed on those ids. Renaming a live controller to the generator's `<Entity>RestController`
+renames every id the frontend consumes. Keep the live name with the yml key `controllerName`
+(`entity/yml-configuration.md`): `generate` writes and `promote` moves the file of that name. The
+audit's `controller-name-not-from-yml` fails a controller whose name is not the one its yml names,
+and `entity-without-generator-input` fails a `SimpliXBaseController` subclass whose entity has no
+yml at all.
+
 ## Trimming a generated controller is manual, and verified after each cut
 
 Never bulk-delete endpoint methods with a fragile script: a mis-parse silently eats the
@@ -100,22 +109,18 @@ being made.
 
 ## After promoting: the permission target, the ID-mismatch message and the tag
 
-The controller template emits the entity name as the permission target
-(`hasPermission('<Entity>', '<action>')`). Invariant #9 forbids a per-entity target, and the
-audit's `permission-target-not-group` fails every endpoint that keeps it, so rewrite each target to
-the feature-area group the related controllers already share: grep the existing `hasPermission('`
-targets, and where the project keeps its own group table, that table wins. A project can instead
-make its copy of `.simplix/templates/controller/rest/EntityRestController.java.template` emit its
-group.
+Where the project's controller template reads `permissionGroup`, `notFoundMessageKey` and
+`ownerPermission` (`entity/yml-configuration.md` § Project template keys), set those yml keys
+before generating and there is nothing to rewrite here. Otherwise:
 
-The service template's `update` guard resolves its message at throw time through the injected
-`MessageSource`, with an English default. Rewrite it to throw the `{error.<domain>.idCannotChange}`
-placeholder (SKILL.md #3; the shape is in `template-customization.md` § Service Template Example)
-and add the key to the error bundle of every locale the project ships.
-
-Check the generated `@Tag(name)` in the same pass: it is the domain namespace
-`{module}.{subdomain}.{Entity}` with no `web` segment (#10; the audit's
-`tag-java-package-namespace` fails one).
+- The controller template emits the entity name as the permission target. Invariant #9 forbids it
+  (the audit's `permission-target-not-group`): rewrite each target to the feature-area group the
+  related controllers share, or move the rewrite into the template behind `permissionGroup`.
+- The service template's `update` guard resolves its message at throw time with an English
+  default. Throw the `{error.<domain>.idCannotChange}` placeholder (SKILL.md #3;
+  `template-customization.md` § Service Template Example) and add the key in every locale.
+- The generated `@Tag(name)` is `{module}.{subdomain}.{Entity}` with no `web` segment (#10; the
+  audit's `tag-java-package-namespace`). Its description is the entity's class `@Comment`.
 
 ## Post-Promote Verification
 
