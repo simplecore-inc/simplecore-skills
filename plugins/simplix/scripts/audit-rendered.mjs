@@ -247,6 +247,9 @@ const DEFAULTS = {
    * reads as 「there were never any false positives here」.
    */
   minVisibleRatio: 0.5,
+  // pressableControlClippedByItsContainer: the share of a control that must survive a
+  // container that clips without scrolling. Any real cut is a defect, so only rounding is spared.
+  minUncutRatio: 0.98,
 
   /**
    * How long to keep re-measuring while the screen is still arriving.
@@ -1915,6 +1918,86 @@ const unresolvedKeyOnTheScreen = {
   },
 };
 
+/**
+ * A control cut by a container that does not scroll, so part of it is past an edge nobody can
+ * reach.
+ *
+ * The defect it exists to catch: a detail panel's footer holds its actions in a row that cannot
+ * wrap, the panel is a card with `overflow: hidden`, and on a phone the last action lands past the
+ * card's right edge. It is drawn, it is labelled, the hit test at its rectangle answers with the
+ * control itself, so `pressableControlsTakeThePress` is satisfied - and the reader cannot see or
+ * press most of it.
+ *
+ * **What the rule asks.** For each control, how much of its rectangle survives the ancestors that
+ * clip without scrolling (`overflow: hidden` or `clip`)? Under the tolerance, the control is cut.
+ * An ancestor that scrolls (`auto`, `scroll`) is not counted: a reader reaches what is in it by
+ * scrolling, which is a working screen.
+ */
+const pressableControlClippedByItsContainer = {
+  id: "pressableControlClippedByItsContainer",
+  grade: "error",
+  title:
+    "a control cut by a container that does not scroll - part of it is past an edge the reader cannot reach",
+  page: (o) => {
+    const findings = [];
+    const visible = (el) => {
+      const s = getComputedStyle(el);
+      if (s.visibility === "hidden" || s.display === "none" || Number(s.opacity) === 0) return false;
+      const r = el.getBoundingClientRect();
+      return r.width >= o.minControlPx && r.height >= o.minControlPx;
+    };
+    const inert = (el) => {
+      for (let n = el; n && n !== document.body; n = n.parentElement) {
+        if (n.hasAttribute?.("inert") || n.getAttribute?.("aria-hidden") === "true") return true;
+      }
+      return false;
+    };
+    const fixedClip = (v) => v === "hidden" || v === "clip";
+    const label = (el) => {
+      const t = (el.getAttribute("aria-label") || el.textContent || el.getAttribute("title") || "")
+        .replace(/\s+/g, " ")
+        .trim();
+      return t.length > 40 ? t.slice(0, 40) + "…" : t || `<${el.tagName.toLowerCase()}>`;
+    };
+    let compared = 0;
+    for (const el of document.querySelectorAll(o.pressableSelector)) {
+      if (!visible(el) || inert(el)) continue;
+      const r = el.getBoundingClientRect();
+      let x1 = r.left;
+      let x2 = r.right;
+      let y1 = r.top;
+      let y2 = r.bottom;
+      let cutBy = null;
+      for (let n = el.parentElement; n && n !== document.documentElement; n = n.parentElement) {
+        const cs = getComputedStyle(n);
+        const box = n.getBoundingClientRect();
+        if (fixedClip(cs.overflowX) && (x1 < box.left - 0.5 || x2 > box.right + 0.5)) {
+          x1 = Math.max(x1, box.left);
+          x2 = Math.min(x2, box.right);
+          cutBy ??= n;
+        }
+        if (fixedClip(cs.overflowY) && (y1 < box.top - 0.5 || y2 > box.bottom + 0.5)) {
+          y1 = Math.max(y1, box.top);
+          y2 = Math.min(y2, box.bottom);
+          cutBy ??= n;
+        }
+      }
+      compared += 1;
+      if (!cutBy) continue;
+      const kept = Math.max(0, x2 - x1) * Math.max(0, y2 - y1);
+      const whole = r.width * r.height;
+      if (whole && kept / whole >= o.minUncutRatio) continue;
+      const cls = (cutBy.getAttribute?.("class") || "").split(/\s+/).filter(Boolean).slice(0, 3);
+      findings.push({
+        control: label(el),
+        keptPercent: Math.round((100 * kept) / whole),
+        cutBy: `<${cutBy.tagName.toLowerCase()}${cls.length ? ` class="${cls.join(" ")}"` : ""}>`,
+      });
+    }
+    return { compared, findings };
+  },
+};
+
 export const checks = [
   countedListDrawsNoRows,
   standingMessageDrawsNoClose,
@@ -1923,6 +2006,7 @@ export const checks = [
   textBoxesOverlap,
   blockInsideParagraph,
   pressableControlsTakeThePress,
+  pressableControlClippedByItsContainer,
   openPaneDrawsNothing,
   regionCrushedToASliver,
   pageFrozenAroundAScrollingRegion,
@@ -2860,6 +2944,34 @@ const FIXTURES = {
         .foot{position:relative;display:flex;gap:8px;padding:12px 16px}button{padding:8px 14px}
         .glow{position:absolute;inset:0;pointer-events:none}</style>
         <div class=foot><button>저장</button><div class=glow></div></div>`,
+    },
+  },
+  pressableControlClippedByItsContainer: {
+    broken: {
+      // The defect this was written from: a detail footer whose action row cannot wrap, inside a
+      // card that clips, at a phone's width - the last action sits past the card's right edge.
+      "a footer row that cannot wrap inside a clipping card":
+        `<style>body{margin:0;font:14px sans-serif}
+        .card{width:300px;overflow:hidden;border:1px solid #ccc}
+        .foot{display:flex;gap:8px;padding:12px;white-space:nowrap}button{padding:8px 14px}</style>
+        <div class=card><div class=foot>
+          <button>닫기</button><button>설정 메일 보내기</button><button>정지</button><button>편집</button>
+        </div></div>`,
+    },
+    quiet: {
+      "the same footer allowed to wrap":
+        `<style>body{margin:0;font:14px sans-serif}
+        .card{width:300px;overflow:hidden;border:1px solid #ccc}
+        .foot{display:flex;flex-wrap:wrap;gap:8px;padding:12px}button{padding:8px 14px}</style>
+        <div class=card><div class=foot>
+          <button>닫기</button><button>설정 메일 보내기</button><button>정지</button><button>편집</button>
+        </div></div>`,
+      // A strip that scrolls sideways is reachable: the reader scrolls to the tab they want.
+      "a tab strip that scrolls sideways":
+        `<style>body{margin:0;font:14px sans-serif}
+        .strip{width:300px;overflow-x:auto;white-space:nowrap}button{padding:8px 14px}</style>
+        <div class=strip><button>전체</button><button>활성</button><button>초대 중</button>
+          <button>휴면</button><button>정지</button><button>외부 감사자</button></div>`,
     },
   },
   regionCrushedToASliver: {
