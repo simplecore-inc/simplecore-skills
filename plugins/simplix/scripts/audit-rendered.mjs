@@ -274,6 +274,19 @@ const DEFAULTS = {
   minUncutRatio: 0.98,
 
   /**
+   * `buttonWithoutBackground`: whether this design requires every button to carry a fill.
+   *
+   * <p>A design that draws ghost or link buttons on purpose sets this to false, or narrows it with
+   * `buttonFillDesigns` (the `data-design` values on `<html>` the rule applies under; empty means
+   * every design). `buttonFillExemptSelector` names controls the design draws bare by decision,
+   * such as a table header's sort control, and the report says how many it spared.
+   */
+  requireButtonFill: true,
+  buttonFillDesigns: [],
+  buttonFillExemptSelector: "",
+  buttonSelector: 'button:not([role="tab"]):not([role="menuitem"]):not([role="option"]):not([role="switch"]):not([role="checkbox"]):not([role="radio"]), [role="button"]',
+
+  /**
    * How long to keep re-measuring while the screen is still arriving.
    *
    * <p>A list, a census and a permission read all resolve after the document does, and the state
@@ -2128,6 +2141,70 @@ const pageLanguageFollowsTheLocale = {
   },
 };
 
+/**
+ * A visible button whose ground is transparent: a ghost or link button drawn as bare text.
+ *
+ * The defect it was written from: a detail footer holding 「사용 중지」 tinted, 「편집」 filled and
+ * 「삭제」 as bare red text between them, so one of three verbs read as a caption rather than a
+ * control. A design that requires a fill on every button (`requireButtonFill`) is judged here;
+ * one that allows ghost buttons turns it off or limits it with `buttonFillDesigns`.
+ *
+ * **What the rule asks.** For each visible, non-inert button, whether its computed background
+ * colour has alpha 0 and it paints no background image. A control hidden at rest (opacity 0, a
+ * row action strip waiting for hover) is not visible and is not judged.
+ */
+const buttonWithoutBackground = {
+  id: "buttonWithoutBackground",
+  grade: "error",
+  title: "a visible button with a transparent background - bare text where the design draws every button filled",
+  page: (o) => {
+    const findings = [];
+    if (!o.requireButtonFill) return { compared: 0, findings };
+    const design = document.documentElement.dataset.design ?? "";
+    if (o.buttonFillDesigns.length > 0 && !o.buttonFillDesigns.includes(design)) return { compared: 0, findings };
+    const visible = (el) => {
+      for (let n = el; n && n !== document.documentElement; n = n.parentElement) {
+        const s = getComputedStyle(n);
+        if (s.visibility === "hidden" || s.display === "none" || Number(s.opacity) === 0) return false;
+      }
+      const r = el.getBoundingClientRect();
+      return r.width >= o.minControlPx && r.height >= o.minControlPx;
+    };
+    const inert = (el) => {
+      for (let n = el; n && n !== document.body; n = n.parentElement) {
+        if (n.hasAttribute?.("inert") || n.getAttribute?.("aria-hidden") === "true") return true;
+      }
+      return false;
+    };
+    const clear = (c) => {
+      if (!c || c === "transparent") return true;
+      const m = c.match(/rgba?\(([^)]+)\)/);
+      if (!m) return false;
+      const parts = m[1].split(/[,\s/]+/).filter(Boolean);
+      return parts.length === 4 && Number(parts[3]) === 0;
+    };
+    const label = (el) => {
+      const t = (el.getAttribute("aria-label") || el.textContent || el.getAttribute("title") || "").replace(/\s+/g, " ").trim();
+      return t.length > 40 ? t.slice(0, 40) + "…" : t || `<${el.tagName.toLowerCase()}>`;
+    };
+    let compared = 0;
+    let exempt = 0;
+    for (const el of document.querySelectorAll(o.buttonSelector)) {
+      if (!visible(el) || inert(el)) continue;
+      if (o.buttonFillExemptSelector && el.matches(o.buttonFillExemptSelector)) { exempt += 1; continue; }
+      compared += 1;
+      const s = getComputedStyle(el);
+      if (!clear(s.backgroundColor) || s.backgroundImage !== "none") continue;
+      findings.push({
+        control: label(el),
+        slot: el.getAttribute("data-slot") || "",
+        variant: el.getAttribute("data-variant") || "",
+      });
+    }
+    return { compared, exempt, findings };
+  },
+};
+
 export const checks = [
   countedListDrawsNoRows,
   standingMessageDrawsNoClose,
@@ -2142,6 +2219,7 @@ export const checks = [
   pageFrozenAroundAScrollingRegion,
   unresolvedKeyOnTheScreen,
   pageLanguageFollowsTheLocale,
+  buttonWithoutBackground,
 ];
 
 /** One self-contained expression, ready for any driver's evaluate call. */
@@ -3144,6 +3222,30 @@ const FIXTURES = {
         .foot{position:relative;display:flex;gap:8px;padding:12px 16px}button{padding:8px 14px}
         .glow{position:absolute;inset:0;pointer-events:none}</style>
         <div class=foot><button>저장</button><div class=glow></div></div>`,
+    },
+  },
+  buttonWithoutBackground: {
+    broken: {
+      // The footer this was written from: a tinted verb, a filled verb, and a bare red one.
+      "a footer whose delete is bare red text":
+        `<style>body{margin:0;font:14px sans-serif}.foot{display:flex;gap:8px;padding:12px}
+        button{padding:8px 14px;border:0}.tint{background:#fde8e8;color:#b42318}.fill{background:#2563eb;color:#fff}
+        .bare{background:transparent;color:#b42318}</style>
+        <div class=foot><button class=tint>사용 중지</button><button class=bare>삭제</button><button class=fill>편집</button></div>`,
+    },
+    quiet: {
+      "the same footer with delete tinted":
+        `<style>body{margin:0;font:14px sans-serif}.foot{display:flex;gap:8px;padding:12px}
+        button{padding:8px 14px;border:0}.tint{background:#fde8e8;color:#b42318}.fill{background:#2563eb;color:#fff}</style>
+        <div class=foot><button class=tint>사용 중지</button><button class=tint>삭제</button><button class=fill>편집</button></div>`,
+      // A control hidden until its row is pointed at is not on the screen to be judged.
+      "a row action strip hidden at rest":
+        `<style>body{margin:0;font:14px sans-serif}button{padding:8px 14px;border:0;background:transparent}
+        .strip{opacity:0}</style><div class=strip><button aria-label="편집">E</button></div>`,
+      // A tab is not a button, however it is drawn.
+      "a tab strip of bare tabs":
+        `<style>body{margin:0;font:14px sans-serif}button{padding:8px 14px;border:0;background:transparent}</style>
+        <div role=tablist><button role=tab>전체</button><button role=tab>활성</button></div>`,
     },
   },
   pressableControlClippedByItsContainer: {
