@@ -132,9 +132,11 @@ before generating and there is nothing to rewrite here. Otherwise:
 - The controller template emits the entity name as the permission target. Invariant #9 forbids it
   (the audit's `permission-target-not-group`): rewrite each target to the feature-area group the
   related controllers share, or move the rewrite into the template behind `permissionGroup`.
-- The service template's `update` guard resolves its message at throw time with an English
-  default. Throw the `{error.<domain>.idCannotChange}` placeholder (SKILL.md #3;
-  `template-customization.md` § Service Template Example) and add the key in every locale.
+- A service template copied from an older generation resolves the `update` guard's message at
+  throw time with an English default (the audit's `throw-time-english-default`). Throw the
+  `{error.<domain>.idCannotChange}` placeholder (SKILL.md #3; `template-customization.md` §
+  Service Template Example; the generator's sample throws `{error.id.cannot.change}`), add the
+  key in every locale, and change the template's copy so the next promote needs no rewrite.
 - The generated `@Tag(name)` is `{module}.{subdomain}.{Entity}` with no `web` segment (#10; the
   audit's `tag-java-package-namespace`). Its description is the entity's class `@Comment`.
 

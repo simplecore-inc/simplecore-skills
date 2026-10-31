@@ -1930,6 +1930,71 @@ public class AreaService extends SimpliXBaseService<Area, String> {
     },
   },
   {
+    id: "throw-time-english-default",
+    invariant: "#3",
+    level: "error",
+    desc: "A service resolves an argument-less error message at throw time with an English default: `getMessage(\"error.x\", null, \"<English text>\", locale)`. The exception carries the resolved text, so the HTTP layer cannot translate it again, the default hides a key missing from a bundle, and the translation-coverage test cannot see a bare key passed to a MessageSource. Throw the `{error.<domain>.<key>}` placeholder, which the HTTP layer resolves to the request locale. A message that carries arguments (a count, a name) is the one case resolved at throw time",
+    appliesTo: (p) => p.endsWith(".java"),
+    check: (c) => {
+      // An exception advice is the HTTP layer, where a message is meant to be resolved.
+      if (/@(?:Rest)?ControllerAdvice\b|@ExceptionHandler\b/.test(stripCommentsAndStrings(c))) return [];
+      const clean = stripComments(c);
+      const lines = clean.split("\n");
+      const hits = [];
+      for (const m of clean.matchAll(/\bgetMessage\(\s*"error\.[^"]+"\s*,\s*null\s*,\s*"/g)) {
+        const line = clean.slice(0, m.index).split("\n").length;
+        hits.push({ line, excerpt: lines[line - 1].trim().slice(0, 150) });
+      }
+      return hits;
+    },
+    samples: {
+      file: "modules/site/src/main/java/app/web/site/service/AreaService.java",
+      broken: `        if (!Objects.equals(entity.getAreaId(), updateDto.getAreaId())) {
+            String message = messageSource.getMessage("error.id.cannot.change", null, "ID cannot be changed", LocaleContextHolder.getLocale());
+            throw new SimpliXGeneralException(ErrorCode.GEN_CONFLICT, message, null);
+        }`,
+      fixed: `        if (!Objects.equals(entity.getAreaId(), updateDto.getAreaId())) {
+            throw new SimpliXGeneralException(ErrorCode.GEN_CONFLICT, "{error.id.cannot.change}", null);
+        }`,
+      hit: [
+        {
+          note: "the call wrapped onto several lines, as the tree template wrapped it",
+          source: `            String message = messageSource.getMessage("error.area.cannot.change", null,
+                "Area cannot be changed after creation", LocaleContextHolder.getLocale());`,
+        },
+        {
+          note: "a receiver under another name",
+          source: `            String message = messages.getMessage("error.id.cannot.change", null, "ID cannot be changed", locale);`,
+        },
+      ],
+      miss: [
+        {
+          note: "a message that carries arguments, the case resolved at throw time",
+          source: `            String message = messageSource.getMessage("error.entity.not.found",
+                new Object[]{"Area", areaId}, "Area not found", LocaleContextHolder.getLocale());`,
+        },
+        {
+          note: "a key that is not an error key",
+          source: `            String label = messageSource.getMessage("entities.Area.areaCode", null, "Area code", locale);`,
+        },
+        {
+          note: "the call written inside a comment",
+          source: `            // messageSource.getMessage("error.id.cannot.change", null, "ID cannot be changed", locale)`,
+        },
+        {
+          note: "an exception advice, which is the HTTP layer where the message is resolved",
+          source: `@RestControllerAdvice
+public class ApiExceptionAdvice {
+    @ExceptionHandler(Exception.class)
+    SimpliXApiResponse<Void> internal() {
+        return SimpliXApiResponse.failure(null, messageSource.getMessage("error.internal.server", null, "Internal error", LocaleContextHolder.getLocale()));
+    }
+}`,
+        },
+      ],
+    },
+  },
+  {
     id: "debug-log-in-web-layer",
     invariant: "#14",
     level: "error",

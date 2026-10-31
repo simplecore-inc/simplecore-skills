@@ -202,7 +202,7 @@ public class <%= entityName %>Service extends SimpliXBaseService<<%= entityName 
     @Transactional
     public <%= entityName %>DetailDTO update(<%= entityName %> entity, <%= entityName %>UpdateDTO updateDto) {
         if (!Objects.equals(entity.get<%= capitalizeFirstLetter(ymlConfig.idField) %>(), updateDto.get<%= capitalizeFirstLetter(ymlConfig.idField) %>())) {
-            throw new SimpliXGeneralException(ErrorCode.GEN_CONFLICT, "{error.<domain>.idCannotChange}", null);
+            throw new SimpliXGeneralException(ErrorCode.GEN_CONFLICT, "{error.id.cannot.change}", null);
         }
         modelMapper.map(updateDto, entity);
         return saveAndGetProjection(entity);
@@ -212,7 +212,7 @@ public class <%= entityName %>Service extends SimpliXBaseService<<%= entityName 
 }
 ```
 
-> The shipped service template resolves the ID-mismatch message at throw time: `messageSource.getMessage("error.id.cannot.change", null, "ID cannot be changed", LocaleContextHolder.getLocale())`. A message with no arguments is the `{error.<domain>.<key>}` placeholder that SKILL.md #3 has resolved at the HTTP layer, and a bare key passed to `MessageSource` is one the translation-coverage test cannot see, so the text above throws the placeholder. `promote-workflow.md` § After promoting rewrites the guard in the promoted service, as it rewrites the permission target; a project can instead make its copy of the template throw the placeholder.
+> The generator's sample service template throws the placeholder, as above. A template copied from an older generation resolves the message at throw time: `messageSource.getMessage("error.id.cannot.change", null, "ID cannot be changed", LocaleContextHolder.getLocale())`, which the audit's `throw-time-english-default` flags. A message with no arguments is the `{error.<domain>.<key>}` placeholder that SKILL.md #3 has resolved at the HTTP layer, and a bare key passed to `MessageSource` is one the translation-coverage test cannot see. Change the project's copy of the template, then every service promoted from it (`promote-workflow.md` § After promoting). `error.id.cannot.change` is the key the `messages` bundle of every SimpliX project already carries; a project that names the key by its own domain adds it in every locale.
 
 ---
 
