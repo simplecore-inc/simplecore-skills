@@ -18,6 +18,9 @@ Read this before planning a screen or dispatching agents for screen work.
      `unchecked`. The project's `pnpm lint` runs it.
    - `simplix generated --all` regenerates every recorded screen and page; an edited file is
      `merged`, `current`, `conflict` (left alone unless `--write-conflicts`) or `no base`.
+   - An edited file with no base is adopted after a reviewed diff: `simplix generated --adopt
+     <path...>` prints the diff between the file and its current render, and records that render as
+     the base once a person confirms every difference is a deliberate customisation.
    - `simplix generated --share` reports per screen the lines in blocks and edited files against
      the generated lines, and lists each customisation a second screen repeats (rule 6).
    - A kit ships `crud-page.stories.hbs` beside `crud-page.hbs`; with `templates.storiesDir` set in
