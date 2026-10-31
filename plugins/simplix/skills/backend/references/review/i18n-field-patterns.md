@@ -122,7 +122,7 @@ private Map<String, String> titleI18n;
 A DTO record field with no entity column (a command body's `reason`, say) has no entity label key;
 the entity message test reports a `<entity>.<field>` key for it as orphaned. Give it a `{field.*}`
 key in the bean-validation bundle instead.
-Example: `adjust.reason` in the entity bundle fails the translation test; `field.reason` in the validation bundle passes.
+Example: `<entity>.reason` in the entity bundle fails the translation test; `field.reason` in the validation bundle passes.
 
 ## CRITICAL: @I18nTrans Mandatory Pattern
 

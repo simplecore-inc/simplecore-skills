@@ -180,7 +180,7 @@ Meta still document it inside `SimpliXApiResponse`. A client generated from thos
 unwraps a field that is not there. Return `SimpliXApiResponse` from every endpoint the generated
 frontend reads; an endpoint that must answer a bare body is documented by hand and read by a
 hand-written client.
-Example: `public CreditBalance balance()` answers `{"amount":5}` while Meta says `{"body":{"amount":5}}`.
+Example: `public <Entity>Summary summary()` answers `{"total":5}` while Meta says `{"body":{"total":5}}`.
 
 ## A transactional class is proxied by its interface
 
@@ -206,7 +206,7 @@ Example: `simplix.scheduler.mode: in-memory` with the switch unset ran every `@S
 change also breaks is neither run nor reported. When a change touches a shared bundle or a shared
 type, run the affected tests of every module by name (or `--continue`), and read the test XML
 under `build/test-results/` for the failure text: the summary says which task failed, not why.
-Example: an orphaned label key failed `EntityMessageTranslationTest` in a module the first failure hid; a migration naming `user_accounts` instead of the table `users` showed "relation does not exist" only in the XML.
+Example: an orphaned label key failed the entity message test in a module the first failure hid; a migration naming the wrong table showed "relation does not exist" only in the XML.
 
 ## A framework snapshot is published by its owner only
 
@@ -215,5 +215,5 @@ Every backend on the machine resolves the framework snapshot from `~/.m2`, so
 A change that needs a framework addition (a new `ErrorCode`, say) is made without it where the
 project can (map the refusal in the project's advice), and the framework change goes to whoever
 owns the snapshot.
-Example: a snapshot from 15:35 against framework commits to 18:04 would have shipped three hours of unreviewed API to every build.
+Example: publishing from a framework checkout three hours ahead of the last snapshot ships three hours of unreviewed API to every build on the machine.
 

@@ -288,13 +288,13 @@ locale pass answers the account read (`/user/me`) as the locale under test, matc
 
 The account's saved locale decides the language, not the browser's storage: a pass that sets only
 `localStorage["i18n:locale"]` measures one language twice. Set it through the account
-(`PATCH /api/v1/user/me/locale`) or answer the account read as above, and let
+(the project's own locale endpoint) or answer the account read as above, and let
 `compare-rendered.mjs`'s language warning confirm it.
 
 Several responses of one endpoint can arrive on one screen (a tab count asks with `size=1`), so a
 driver that keeps the last response reads the wrong page; keep every response's content and pick
 by its query. A filter result is asserted against the operator's case semantics: `contains` is
-case-insensitive, so `ownerName.contains=Credits` also returns `e2e-credits-a`.
+case-insensitive, so `name.contains=Shop` also returns `e2e-shop-a`.
 
 A presentation the reader picked is remembered only while "remember in this browser" is on. With it
 off, a reload returns to the installation's default presentation, so a proof that a width is not

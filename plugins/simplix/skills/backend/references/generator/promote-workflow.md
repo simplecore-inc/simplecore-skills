@@ -74,9 +74,9 @@ count. Four promoted files is the normal shape for an entity with no optional pa
 In a grouped backend (`modules/<group>/<module>`), `modulePath` and `promoteModule` start with an
 existing group. A first segment that is no group makes generate and promote create a new top-level
 module beside the groups, and nothing else refuses it. `audit-backend.mjs` rule
-`generator-module-outside-the-groups` fails it; an ungrouped backend has no groups and the rule is
-silent there.
-Example: `promoteModule: billing` creates `modules/billing`; `promoteModule: admin/billing` is the module.
+`generator-module-outside-the-groups` fails it against the groups the project lists in
+`.claude/simplix.json` `audit.moduleGroups`; with no list the rule is silent.
+Example: `promoteModule: <module>` creates `modules/<module>`; `promoteModule: <group>/<module>` is the module.
 
 ## Before generating: the collision check (MANDATORY)
 

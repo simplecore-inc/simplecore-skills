@@ -129,7 +129,7 @@ Read this before planning a screen or dispatching agents for screen work.
 24. **A fence pattern names subpaths.** A `no-restricted-imports` group entry `<scope>/*` refuses
     `<scope>/api` and accepts `<scope>/api/core`, the usual import form. Write `<scope>/**`, and give
     the fence's self-test a hit case for a subpath.
-    Example: `@tauri-apps/*` let `import { invoke } from "@tauri-apps/api/core"` through.
+    Example: `@<vendor>/*` let `import { x } from "@<vendor>/api/core"` through.
 25. **An unbroken value inside a flex row wraps with `wrap-anywhere`.** `break-words` does not lower
     the min-content width, so a long token in a flex child runs past the edge (and is clipped by a
     dialog). A fit check that passed before such a fix is re-run after it.
@@ -157,7 +157,7 @@ Read this before planning a screen or dispatching agents for screen work.
 30. **Generated hook names are read after a Meta refresh.** SimpliX Meta pluralises an operation
     tag that is already plural; name the tag in the singular in the backend before the frontend
     imports the hook.
-    Example: tag `Credits` produced `useGetAllCreditss`.
+    Example: tag `Orders` produced `useGetAllOrderss`.
 31. **A command that confirms uses the kit's confirm, one per direction.** Panels in an app use the
     kit's `useActionConfirm` (the board refuses framework imports, so a framework dialog has no
     frame); its label is fixed per confirm, so a grant/revoke pair takes two.
@@ -167,7 +167,7 @@ Read this before planning a screen or dispatching agents for screen work.
     generated files hold your own change, and resolve one conflicting file by hand rather than
     through the project-wide flag. A template change makes every screen rendered from the old
     template stale at once: the author tells whoever has an uncommitted screen to re-scaffold.
-    Example: one agent's gate run reported a conflict on another agent's `credit-ledger-entry.stories.tsx`.
+    Example: one agent's gate run reported a conflict on another agent's `<entity>.stories.tsx`.
 33. **A list's columns are built from the fields the blocks draw.** `contract.columns(...)` over
     every field sums `minTableWidth` for columns that are never drawn, so the later columns never
     appear; pass only the drawn fields.

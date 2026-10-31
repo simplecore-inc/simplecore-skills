@@ -53,6 +53,8 @@ It also registers the command, agent and hooks below, each documented further do
 
 Both gates are inactive until the project declares them, and each skill checks for that on load and offers `/simplix:init` when a piece is missing.
 
+A rule added to a skill is generic: a project's names, paths, entities, ports, accounts and lists go to that project's instructions or configuration, and a rule that needs them reads them from configuration. Reading it otherwise is how an audit rule shipped with one project's module groups as its constant instead of reading `audit.moduleGroups` from `.claude/simplix.json`.
+
 ## Requirements
 
 - Claude Code 2.x
