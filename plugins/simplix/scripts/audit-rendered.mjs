@@ -13,6 +13,7 @@
  *   node audit-rendered.mjs --url <u> --check countedListDrawsNoRows
  *   node audit-rendered.mjs --list                  # the checks and what each catches
  *   node audit-rendered.mjs --print <id>            # the snippet, to paste into any driver
+ *   node audit-rendered.mjs --url <u> --options @<design>.audit.json  # options from a file
  *   node audit-rendered.mjs --selftest              # both directions, against generated fixtures
  *
  * An unrecognised option stops the run. `--selftest` is spelt the same way in all three audit
@@ -345,6 +346,11 @@ const DEFAULTS = {
    * keeps a toast out is that it floats rather than standing in the column.
    */
   messageRoles: ["alert", "note", "status"],
+
+  /** How much larger than its box's text a numeric leaf is drawn before the box is a figure. */
+  figureFontRatio: 1.4,
+  /** The longest a figure's leaf runs, its unit included (「2개」, 「98.5%」). */
+  figureMaxChars: 12,
 
   /**
    * Surfaces the reader opened, whose content is not taking the page.
@@ -1489,6 +1495,13 @@ const standingMessageDrawsNoClose = {
       if (column.width <= 0 || r.width < o.messageBandWidthRatio * column.width) continue;
       if (el.querySelector(o.messageStructureSelector)) continue;
       if (prose(el).length < o.messageProseChars) continue;
+      // A figure tile is tinted, rounded and spans the column on a phone, and still says a number
+      // rather than a sentence: a box holding a numeric leaf set well above its own text is a figure.
+      const base = Number.parseFloat(s.fontSize) || 0;
+      const isFigure = [...el.querySelectorAll("*")].some((n) =>
+        n.children.length === 0 && /\d/.test(n.textContent || "") && (n.textContent || "").trim().length <= o.figureMaxChars
+        && Number.parseFloat(getComputedStyle(n).fontSize) >= o.figureFontRatio * base);
+      if (isFigure) continue;
       add(el, "shape");
     }
 
@@ -1658,6 +1671,12 @@ const theFigureRowSitsAgainstTheHeader = {
       if (column.width <= 0 || r.width < o.messageBandWidthRatio * column.width) continue;
       if (el.querySelector(o.messageStructureSelector)) continue;
       if (prose(el).length < o.messageProseChars) continue;
+      // A figure tile spanning a phone's column is not a message (see standingMessageDrawsNoClose).
+      const base = Number.parseFloat(s.fontSize) || 0;
+      const isFigure = [...el.querySelectorAll("*")].some((n) =>
+        n.children.length === 0 && /\d/.test(n.textContent || "") && (n.textContent || "").trim().length <= o.figureMaxChars
+        && Number.parseFloat(getComputedStyle(n).fontSize) >= o.figureFontRatio * base);
+      if (isFigure) continue;
       add(el);
     }
 
@@ -1831,6 +1850,12 @@ const theCardRegionReadsLoudestFirst = {
       if (column.width <= 0 || r.width < o.messageBandWidthRatio * column.width) continue;
       if (el.querySelector(o.messageStructureSelector)) continue;
       if (prose(el).length < o.messageProseChars) continue;
+      // A figure tile spanning a phone's column is not a message (see standingMessageDrawsNoClose).
+      const base = Number.parseFloat(s.fontSize) || 0;
+      const isFigure = [...el.querySelectorAll("*")].some((n) =>
+        n.children.length === 0 && /\d/.test(n.textContent || "") && (n.textContent || "").trim().length <= o.figureMaxChars
+        && Number.parseFloat(getComputedStyle(n).fontSize) >= o.figureFontRatio * base);
+      if (isFigure) continue;
       add(el);
     }
 
@@ -2045,19 +2070,26 @@ const pressableControlClippedByItsContainer = {
       let y1 = r.top;
       let y2 = r.bottom;
       let cutBy = null;
+      // Past a container that scrolls on an axis, a cut further up on that axis is only where
+      // the scroll stands: the reader scrolls the control into view, so that axis is not judged.
+      let scrolledX = false;
+      let scrolledY = false;
+      const scrolls = (v) => v === "auto" || v === "scroll";
       for (let n = el.parentElement; n && n !== document.documentElement; n = n.parentElement) {
         const cs = getComputedStyle(n);
         const box = n.getBoundingClientRect();
-        if (fixedClip(cs.overflowX) && (x1 < box.left - 0.5 || x2 > box.right + 0.5)) {
+        if (!scrolledX && fixedClip(cs.overflowX) && (x1 < box.left - 0.5 || x2 > box.right + 0.5)) {
           x1 = Math.max(x1, box.left);
           x2 = Math.min(x2, box.right);
           cutBy ??= n;
         }
-        if (fixedClip(cs.overflowY) && (y1 < box.top - 0.5 || y2 > box.bottom + 0.5)) {
+        if (!scrolledY && fixedClip(cs.overflowY) && (y1 < box.top - 0.5 || y2 > box.bottom + 0.5)) {
           y1 = Math.max(y1, box.top);
           y2 = Math.min(y2, box.bottom);
           cutBy ??= n;
         }
+        if (scrolls(cs.overflowX)) scrolledX = true;
+        if (scrolls(cs.overflowY)) scrolledY = true;
       }
       compared += 1;
       if (!cutBy) continue;
@@ -2451,6 +2483,12 @@ const FIXTURES = {
         </main>`,
     },
     quiet: {
+      // Two figure tiles stacked on a phone above one info card: the tiles are not messages.
+      "figure tiles across a phone column":
+        `<style>body{margin:0;font:14px sans-serif;width:390px}main{display:block;padding:12px}
+        .tile{background:#f4f4f5;border-radius:8px;padding:12px;margin-bottom:8px}.n{font-size:24px;font-weight:600}</style>
+        <main><div><div class=tile><div>Roles</div><div class=n>2</div><div>Default catalogue for every installation</div></div>
+        <div class=tile><div>Feature areas</div><div class=n>4</div><div>The groups permissions are granted in</div></div></div></main>`,
       // The order the header control lists them in.
       "danger, warning, info, help in that order":
         `<style>body{margin:0;font:14px sans-serif}main{padding:16px;width:1000px}
@@ -2558,6 +2596,11 @@ const FIXTURES = {
         <button>삭제</button> <button>취소</button></main>`,
     },
     quiet: {
+      // A figure tile that spans a phone's column: tinted, rounded, a caption, and a number.
+      "a figure tile across a phone column":
+        `<style>body{margin:0;font:14px sans-serif;width:390px}main{display:block;padding:12px}
+        .tile{background:#f4f4f5;border-radius:8px;padding:12px}.n{font-size:24px;font-weight:600}</style>
+        <main><div class=tile><div>역할</div><div class=n>2개</div><div>기본 카탈로그와 설치마다 더한 역할</div></div></main>`,
       // The same screen written correctly. Every message closes and every one draws its glyph.
       "three messages, each with its close and its glyph":
         `<style>body{margin:0;font:14px sans-serif}main{padding:16px;width:1000px}
@@ -3268,6 +3311,14 @@ const FIXTURES = {
         <div class=card><div class=foot>
           <button>닫기</button><button>설정 메일 보내기</button><button>정지</button><button>편집</button>
         </div></div>`,
+      // A pager below the fold of a scrolling column, inside a shell row that clips: the column
+      // scrolls the pager into view, so the shell's edge is only where the scroll stands.
+      "a pager below the fold of a scrolling column inside a clipping shell":
+        `<style>body{margin:0;font:14px sans-serif}
+        .shell{display:flex;height:300px;overflow:hidden}.col{flex:1;overflow:auto}
+        .body{height:280px}.pager{display:flex;gap:8px;padding:8px}button{padding:8px 14px}</style>
+        <div class=shell><div class=col><div class=body>목록</div>
+          <div class=pager><button>이전 페이지</button><button>다음 페이지</button></div></div></div>`,
       // A strip that scrolls sideways is reachable: the reader scrolls to the tab they want.
       "a tab strip that scrolls sideways":
         `<style>body{margin:0;font:14px sans-serif}
@@ -3607,7 +3658,10 @@ function arg(name) {
 
 function main() {
   if (reportUnknown(OPTIONS.unknown, OPTION_SPEC)) return 2;
-  const options = { ...DEFAULTS, ...JSON.parse(arg("options") ?? "{}") };
+  // `--options @<file>` reads a design's or a product's options file, such as the one a kit keeps
+  // beside its design, so the decision lives with the design rather than in every command line.
+  const rawOptions = arg("options") ?? "{}";
+  const options = { ...DEFAULTS, ...JSON.parse(rawOptions.startsWith("@") ? fs.readFileSync(rawOptions.slice(1), "utf8") : rawOptions) };
   const only = arg("check");
   const selected = only ? checks.filter((c) => c.id === only) : checks;
   // A check id that names no check selects nothing, and nothing run reads exactly like a clean
