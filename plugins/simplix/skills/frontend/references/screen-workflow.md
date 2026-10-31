@@ -185,6 +185,10 @@ Read this before planning a screen or dispatching agents for screen work.
     when its columns plus the row-action strip outgrow the pane, so a frame without the page's row
     actions draws a table where the app draws cards, and the comparison reports the whole table as
     missing.
+37. **A record detail's tabs exist from its first render.** `RecordDetail` fixes its active tab at
+    first render, so a blocks file that returns tabs only after the record loads opens on an empty
+    pane with no tab active, which `openPaneDrawsNothing` cannot see because no pane is active.
+    Return the tab list unconditionally and let each tab draw its own loading state.
 
 ## Cases
 
