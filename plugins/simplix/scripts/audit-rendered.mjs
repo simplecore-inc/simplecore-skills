@@ -32,6 +32,10 @@
  * and 「compared 186 elements」 are one line to an exit status and two different sentences to
  * a reader - only the second shows a check that ran and reached nothing.
  *
+ * Agreement between a screen and its design-reference frame is a two-page question, so it lives in
+ * the sibling `compare-rendered.mjs` (control role metrics, refusing different designs or a missing
+ * root slot); every check here judges one page.
+ *
  * Vocabulary (what counts as a row, what a total reads like, what an empty state says) is
  * options with documented defaults, never constants: a product that writes its totals
  * differently overrides them with --options <json> rather than editing this file.
@@ -49,6 +53,24 @@ import { parseOptions, reportUnknown } from "./lib/cli-options.mjs";
 // ---------------------------------------------------------------------------
 
 const DEFAULTS = {
+  /**
+   * Scripts and the languages written in them, for `pageLanguageFollowsTheLocale`. A script with
+   * no languages listed (Latin) is written in too many to name, so only a language that belongs to
+   * another row is wrong for it.
+   */
+  scriptLanguages: {
+    Hangul: { pattern: "\\p{Script=Hangul}", languages: ["ko"] },
+    Kana: { pattern: "[\\p{Script=Hiragana}\\p{Script=Katakana}]", languages: ["ja"] },
+    Han: { pattern: "\\p{Script=Han}", languages: ["zh", "ja", "ko"] },
+    Latin: { pattern: "\\p{Script=Latin}", languages: [] },
+  },
+  /** Fewer painted letters than this and the page's language is not judged. */
+  langMinLetters: 40,
+  /** The share of letters one script must hold before the page counts as written in it. */
+  langDominance: 0.6,
+  /** The active locale, when the caller knows it; the attribute must then name exactly this. */
+  expectLang: undefined,
+
   /**
    * How wide a clipping element has to be before it counts as a region. Narrower than this it is
    * a control, an icon well or a rule, and none of those is holding a screen the reader lost.
@@ -1998,6 +2020,72 @@ const pressableControlClippedByItsContainer = {
   },
 };
 
+
+/**
+ * The page's language attribute disagrees with the language its copy is written in.
+ *
+ * The defect it exists to catch: the locale switched to Korean, every label on the screen is
+ * Korean, and `<html lang>` still says `en`, so a screen reader reads Korean with an English voice
+ * and a browser offers to translate a page that is already in the reader's language. Nothing about
+ * the screen looks wrong, which is why no visual review finds it.
+ *
+ * **What the rule asks.** Which script the painted letters are mostly in, and whether the root's
+ * `lang` names a language written in it. The scripts and the languages that write them are
+ * options (`scriptLanguages`), so a product in another script adds its own row. A page with too
+ * few letters to judge compares nothing, and a page mostly in a script many languages share
+ * (Latin) is judged only against `expectLang`: its data may be Latin under any locale. Where the
+ * caller knows the active locale it passes `expectLang`, and the attribute must name exactly that.
+ */
+const pageLanguageFollowsTheLocale = {
+  id: "pageLanguageFollowsTheLocale",
+  grade: "error",
+  title: "<html lang> names a language other than the one the page is written in",
+  page: (o) => {
+    const findings = [];
+    const lang = (document.documentElement.getAttribute("lang") || "").toLowerCase();
+    const primary = lang.split("-")[0];
+    if (o.expectLang) {
+      if (primary !== String(o.expectLang).toLowerCase().split("-")[0]) {
+        findings.push(`<html lang="${lang}"> while the active locale is ${o.expectLang}`);
+      }
+      return { compared: 1, findings };
+    }
+    const counts = {};
+    let letters = 0;
+    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+    for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+      const el = node.parentElement;
+      if (!el) continue;
+      const style = getComputedStyle(el);
+      if (style.display === "none" || style.visibility === "hidden") continue;
+      for (const ch of node.nodeValue || "") {
+        for (const [script, row] of Object.entries(o.scriptLanguages)) {
+          if (new RegExp(row.pattern, "u").test(ch)) {
+            counts[script] = (counts[script] || 0) + 1;
+            letters += 1;
+            break;
+          }
+        }
+      }
+    }
+    if (letters < o.langMinLetters) return { compared: 0, findings };
+    const [script, count] = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
+    if (count / letters < o.langDominance) return { compared: 1, findings };
+    const languages = o.scriptLanguages[script].languages;
+    if (!primary) {
+      findings.push(`<html> carries no lang while the page is written in ${script} (${count} of ${letters} letters)`);
+    } else if (languages.length > 0 && !languages.includes(primary)) {
+      findings.push(
+        `<html lang="${lang}"> while ${count} of ${letters} painted letters are ${script}, a script ` +
+          `${languages.join(" / ")} is written in: the page announces one language and reads in another`,
+      );
+    }
+    // A page mostly in a script many languages share (Latin) is not judged without `expectLang`:
+    // a Korean screen listing Latin names, codes and addresses is still a Korean screen.
+    return { compared: 1, findings };
+  },
+};
+
 export const checks = [
   countedListDrawsNoRows,
   standingMessageDrawsNoClose,
@@ -2011,6 +2099,7 @@ export const checks = [
   regionCrushedToASliver,
   pageFrozenAroundAScrollingRegion,
   unresolvedKeyOnTheScreen,
+  pageLanguageFollowsTheLocale,
 ];
 
 /** One self-contained expression, ready for any driver's evaluate call. */
@@ -2125,6 +2214,36 @@ function evaluate(session, url, check, options) {
  * across content.
  */
 const FIXTURES = {
+  pageLanguageFollowsTheLocale: {
+    broken: {
+      // The screen this check was written from: the locale switched to Korean, the attribute kept.
+      "a Korean screen announced as English":
+        `<html lang=en><style>body{margin:0;font:14px sans-serif}</style>
+        <h1>운영 콘솔</h1><p>계정을 검색하고 상태를 확인합니다. 정지된 계정은 사유와 함께 표시됩니다.</p>
+        <p>최근 로그인 기록과 역할을 확인하세요.</p>`,
+      "a Korean screen with no language at all":
+        `<style>body{margin:0;font:14px sans-serif}</style>
+        <h1>운영 콘솔</h1><p>계정을 검색하고 상태를 확인합니다. 정지된 계정은 사유와 함께 표시됩니다.</p>
+        <p>최근 로그인 기록과 역할을 확인하세요.</p>`,
+    },
+    quiet: {
+      "a Korean screen announced as Korean":
+        `<html lang=ko><style>body{margin:0;font:14px sans-serif}</style>
+        <h1>운영 콘솔</h1><p>계정을 검색하고 상태를 확인합니다. 정지된 계정은 사유와 함께 표시됩니다.</p>
+        <p>최근 로그인 기록과 역할을 확인하세요.</p>`,
+      "an English screen with a Korean name in it":
+        `<html lang=en><style>body{margin:0;font:14px sans-serif}</style>
+        <h1>Operations console</h1><p>Search accounts and check their standing. Suspended accounts show the reason. Owner: 김민수</p>`,
+      // A Korean screen whose rows are Latin data: judged only when the caller names the locale.
+      "a Korean-locale list of Latin names and codes":
+        `<html lang=ko><style>body{margin:0;font:14px sans-serif}</style>
+        <p>Jane Doe jane.doe@example.test ACCOUNT-0001 Operations Manager London Office</p>
+        <p>John Smith john.smith@example.test ACCOUNT-0002 Support Engineer Berlin Office</p>`,
+      // Too little text to say what language the page is in.
+      "a page of figures":
+        `<html lang=en><style>body{margin:0;font:14px sans-serif}</style><p>12 · 340 · 7</p><p>운영</p>`,
+    },
+  },
   theCardRegionReadsLoudestFirst: {
     broken: {
       // **The shape the product actually paints, and the one a fixture written from the rule's

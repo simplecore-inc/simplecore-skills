@@ -11,6 +11,17 @@ Read this before planning a screen or dispatching agents for screen work.
    edited. The CLI rewrites a generated file only while it is untouched, and the generated-state
    report lists every edited one, so a template change is reviewed against each instead of being
    skipped. Block files hold the decisions that belong to one screen only.
+   - `simplix generated` lists every generated file and story as `untouched`, `edited` or `stale`
+     (untouched, but the current templates render something else) and exits non-zero only for a
+     stale one. Each file records the command that made it after its `@simplix-render`
+     fingerprint, which is what lets the report re-render it; a file stamped without one is
+     `unchecked`. The project's `pnpm lint` runs it.
+   - `simplix generated --all` regenerates every recorded screen and page; edited files are kept.
+   - `simplix generated --share` reports per screen the lines in blocks and edited files against
+     the generated lines, and lists each customisation a second screen repeats (rule 6).
+   - A kit ships `crud-page.stories.hbs` beside `crud-page.hbs`; with `templates.storiesDir` set in
+     `simplix.config.ts`, `simplix scaffold` writes the board story from the same context, with
+     sample rows, and tracks it like a screen file.
 3. **Existing screens are rewritten, never patched toward the workflow.** Read the old files as a
    list of behaviours to keep: data, filters, columns, actions, confirmations, permissions, copy.
    Re-apply them on the regenerated screen, then delete the old files.
@@ -26,8 +37,15 @@ Read this before planning a screen or dispatching agents for screen work.
 6. **Agreement is measured.** Compare app screen and board frame by rendered metrics per control
    role (height, gap, radius, font, variant). Report how much of each screen stays customised. An
    item customised on a second screen is the signal to lift it.
+   - `node <plugin>/scripts/compare-rendered.mjs --app <url> --board <url> --root-slot <slot>`
+     measures both pages and lists every role property that differs. It refuses (exit 2) when the
+     root slot is missing on either side or the two roots carry different `data-design`.
+   - `audit-rendered.mjs --check pageLanguageFollowsTheLocale` asserts `<html lang>` names the
+     page's language; pass `--options '{"expectLang":"ko"}'` when the locale is known.
 7. **The fence is mechanical.** The kit lists the framework parts that screens must not import
-   directly, and the project lint refuses them.
+   directly (`simplix.fence` in its package.json), and the project lint refuses them.
+   `simplix kit-fence` fails when the lint config's `no-restricted-imports` override differs from
+   the kit's list; `simplix kit-fence --write` copies the list in.
 8. **A gap is closed in the generator.** A screen with no page kind or no overridable template
    gets a generic one in the CLI, with tests and no product names. A hand-built screen is the last
    resort, and a comment states why no generator change could serve it.
@@ -129,3 +147,23 @@ Read this before planning a screen or dispatching agents for screen work.
 - **What happened.** `<html lang>` stayed `en` on board and app while the copy was Korean.
 - **Prevention.** The i18n provider writes `documentElement.lang` on every locale change, and a
   rendered check asserts that it equals the active locale.
+
+## A kit consumed by link resolved its dependencies from its own checkout
+- **What happened.** Once the app linked the sibling kit checkout instead of holding it as
+  workspace packages, the kit's source resolved its imports from the checkout's own
+  `node_modules`: those linked a different framework checkout than the app did, and a stylesheet
+  import the kit never declared (`tw-animate-css`) stopped resolving when that install was redone.
+- **Prevention.** The kit checkout's install links the same framework checkout as the app
+  (`SIMPLIX_FRAMEWORK_PATH`); compare `realpath` of one framework package from both trees. A kit
+  declares every package its sources and stylesheets import.
+
+## A checks chain stopped at a known failure before the new checks ran
+- **What happened.** `pnpm lint` ran the workspace lint first; it failed on screens awaiting
+  regeneration, so the generated-state and fence checks after it never ran.
+- **Prevention.** Cheap whole-project checks run first in the chain, the per-package lint last.
+
+## A long-running dev server kept the old build plugin
+- **What happened.** A change to the board's Vite plugin (the design-token scoper) had no effect on
+  the running Storybook, which kept refusing the new token file with the old error.
+- **Prevention.** After changing a build plugin or a dependency's install, restart the dev server
+  before reading any result from it.
