@@ -280,12 +280,15 @@ const DEFAULTS = {
    * <p>A design that draws ghost or link buttons on purpose sets this to false, or narrows it with
    * `buttonFillDesigns` (the `data-design` values on `<html>` the rule applies under; empty means
    * every design). `buttonFillExemptSelector` names controls the design draws bare by decision,
-   * such as a table header's sort control, and the report says how many it spared.
+   * such as a table header's sort control, and the report says how many it spared. A disclosure
+   * (`aria-expanded` without `aria-haspopup`: a menu branch, an accordion head) is a heading that
+   * folds what follows it, drawn like the rows beside it, and is left out the way a tab is; a
+   * button that opens a popup carries `aria-haspopup` and is still judged.
    */
   requireButtonFill: true,
   buttonFillDesigns: [],
   buttonFillExemptSelector: "",
-  buttonSelector: 'button:not([role="tab"]):not([role="menuitem"]):not([role="option"]):not([role="switch"]):not([role="checkbox"]):not([role="radio"]), [role="button"]',
+  buttonSelector: 'button:not([role="tab"]):not([role="menuitem"]):not([role="option"]):not([role="switch"]):not([role="checkbox"]):not([role="radio"]):not([aria-expanded]:not([aria-haspopup])), [role="button"]:not([aria-expanded]:not([aria-haspopup]))',
 
   /**
    * How long to keep re-measuring while the screen is still arriving.
@@ -3621,6 +3624,10 @@ const FIXTURES = {
         button{padding:8px 14px;border:0}.tint{background:#fde8e8;color:#b42318}.fill{background:#2563eb;color:#fff}
         .bare{background:transparent;color:#b42318}</style>
         <div class=foot><button class=tint>사용 중지</button><button class=bare>삭제</button><button class=fill>편집</button></div>`,
+      // Expanded state alone does not spare a control that opens a menu.
+      "a bare menu trigger that opens a popup":
+        `<style>body{margin:0;font:14px sans-serif}button{padding:8px 14px;border:0;background:transparent}</style>
+        <div><button aria-expanded=false aria-haspopup=menu>더 보기</button></div>`,
     },
     quiet: {
       "the same footer with delete tinted":
@@ -3631,6 +3638,10 @@ const FIXTURES = {
       "a row action strip hidden at rest":
         `<style>body{margin:0;font:14px sans-serif}button{padding:8px 14px;border:0;background:transparent}
         .strip{opacity:0}</style><div class=strip><button aria-label="편집">E</button></div>`,
+      // A menu branch folds the rows under it; it is drawn as bare as the links beside it.
+      "a navigation branch drawn as a bare row":
+        `<style>body{margin:0;font:14px sans-serif}button,a{display:block;padding:8px 14px;border:0;background:transparent}</style>
+        <div><button aria-expanded=true>운영</button><a href="/jobs">작업</a></div>`,
       // A tab is not a button, however it is drawn.
       "a tab strip of bare tabs":
         `<style>body{margin:0;font:14px sans-serif}button{padding:8px 14px;border:0;background:transparent}</style>
