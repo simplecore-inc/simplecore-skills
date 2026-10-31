@@ -204,8 +204,12 @@ Read this before planning a screen or dispatching agents for screen work.
   show focus" passed, and a screenshot in the normal palette showed it. Only the forced-colors
   palette removes it, and no test emulated that.
 - **Prevention.** One base-stylesheet rule draws the outline on every `:focus-visible` element
-  and on the rows that hold a keyboard cursor, important, outside every cascade layer. Reach is
-  proved by checking that no declaration in the shipped CSS can outrank it (an important outline
-  removal), and in a browser with `emulateMedia({ forcedColors: "active" })` by tabbing every
-  stop of several screens and reading each computed outline style and width. Read the style as
-  well as the width: Chromium reports a width of 1px for `outline-style: none`.
+  and on the rows that hold a keyboard cursor, important, outside every cascade layer, drawn
+  inside the border box. Reach is proved by checking that no declaration in the shipped CSS can
+  outrank it (an important outline removal), and in a browser with
+  `emulateMedia({ forcedColors: "active" })` by tabbing every stop of several screens and reading
+  each computed outline style and width. Read the style as well as the width: Chromium reports a
+  width of 1px for `outline-style: none`. A computed outline is not a painted one: an outline
+  drawn outside the box is cut off by every ancestor that clips (row action strips, tab lists,
+  filter segments, menu rows), so the same sweep also walks each stop's ancestors for an overflow
+  that clips the outline.
