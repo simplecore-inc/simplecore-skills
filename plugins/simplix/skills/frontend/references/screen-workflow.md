@@ -171,3 +171,15 @@ Read this before planning a screen or dispatching agents for screen work.
   the running Storybook, which kept refusing the new token file with the old error.
 - **Prevention.** After changing a build plugin or a dependency's install, restart the dev server
   before reading any result from it.
+
+## A blocks column that redeclares a field loses the contract's marks
+- **What happened.** Users' list blocks wrote their own email column, so the code mark the template
+  derived from the contract never reached it.
+- **Prevention.** A blocks column spreads the generated column and overrides only what the screen
+  decides, such as the header or the width. It never redeclares the field.
+
+## An edited generated file froze against later template changes
+- **What happened.** The CLI leaves an edited file alone, so the users list and detail missed a
+  template improvement, and it had to be added by hand.
+- **Prevention.** The CLI keeps each file's last render as a merge base, and carries template
+  changes into edited files by a three-way merge. It reports a conflict instead of writing it.
