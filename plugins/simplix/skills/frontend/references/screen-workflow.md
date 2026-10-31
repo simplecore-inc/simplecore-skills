@@ -97,6 +97,16 @@ Read this before planning a screen or dispatching agents for screen work.
 20. **A list's minimum table width is measured, not declared.** A declared width below the drawn
     columns scrolled sideways; the framework list measures the drawn table and raises the tier.
     A width sweep reads after the list's layout animation ends.
+21. **Every paged list screen is a generated list page, in every app.** A portal or self-service
+    list is `simplix scaffold` over a paged searchable endpoint and then customised, the same as an
+    operator list; a list placed by hand inside a static page or a record page (a cursor read, a
+    list adapter, or a list hook asked for a page, feeding rows to a table) is a defect. Where the
+    backend has no such endpoint, generate it first and force the caller's scope server-side; where
+    the entity already has an operator surface, the second surface comes from its own yml whose
+    `entity` key names the entity, so its class names, DTOs and tag stay apart. A growing set inside
+    a record's tab is `adaptForcedList` on that record's generated detail.
+    `paged-list-in-a-page-not-generated-as-a-list` in `audit-frontend.mjs` flags a page directory
+    with no generated list page that draws a paged read.
 
 ## Cases
 
@@ -251,3 +261,13 @@ Read this before planning a screen or dispatching agents for screen work.
   batch alike. The rule sits on the side that builds the body, because the backend cannot tell an
   absent field from a null one. `batch-update-built-from-a-list-read` in `audit-frontend.mjs`
   flags a file that reads a list and sends a multi-update or batch update with no edit-form read.
+
+## A portal list was hand-placed inside a static page
+- **What happened.** A customer's usage history was built as a static page with a cursor list,
+  because the backend served only the desktop app's cursor endpoint. The list had no filters, no
+  sort, no total and no pager, and template changes never reached it. The generator could not make
+  a second surface over the entity, which already had an operator surface, without colliding on the
+  service bean and the DTO names.
+- **Prevention.** Rule 21; the generator reads the yml's `entity` key apart from its file name, and
+  the audit rule above fails the hand-placed form.
+

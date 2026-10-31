@@ -670,27 +670,28 @@ function i18nIndex(files) {
 
 let _generatorInputIndex = null;
 /**
- * The entities that have generator input, by name, each with the controller class name its yml
- * names (`controllerName`) or the generator's default `<Entity>RestController`.
+ * The entities that have generator input, by name, each with the controller class names its ymls
+ * name (`controllerName`, or the generator's default `<yml name>RestController`). An entity has
+ * more than one when a second surface is generated over it from its own yml, whose file name is the
+ * class prefix and whose `entity` key names the entity.
  *
  * <p>Read from `.simplix/entity/*.yml` at the backend root. Only the two top-level keys are read,
  * so no yml parser is needed: `entity:` and `controllerName:` are plain scalars at column 0.
  *
  * @param root the backend project root
- * @returns entity name -> expected controller class name
+ * @returns entity name -> the controller class names its ymls expect
  */
 function generatorInputIndex(root = ROOT) {
   if (_generatorInputIndex) return _generatorInputIndex;
   const map = new Map();
   const dir = path.join(root, ".simplix", "entity");
-  let names = [];
-  try { names = fs.readdirSync(dir).filter((n) => /\.ya?ml$/.test(n)); } catch { names = []; }
+  const names = fs.existsSync(dir) ? fs.readdirSync(dir).filter((n) => /\.ya?ml$/.test(n)) : [];
   for (const n of names) {
-    let src;
-    try { src = fs.readFileSync(path.join(dir, n), "utf8"); } catch { continue; }
-    const entity = src.match(/^entity:\s*["']?(\w+)["']?\s*$/m)?.[1] ?? n.replace(/\.ya?ml$/, "");
+    const src = fs.readFileSync(path.join(dir, n), "utf8");
+    const prefix = n.replace(/\.ya?ml$/, "");
+    const entity = src.match(/^entity:\s*["']?(\w+)["']?\s*$/m)?.[1] ?? prefix;
     const controller = src.match(/^controllerName:\s*["']?(\w+)["']?\s*$/m)?.[1];
-    map.set(entity, controller || `${entity}RestController`);
+    map.set(entity, [...(map.get(entity) ?? []), controller || `${prefix}RestController`]);
   }
   _generatorInputIndex = map;
   return map;
@@ -829,7 +830,7 @@ const RULES = [
     },
     samples: {
       file: "modules/user/src/main/java/app/web/user/controller/AdminThingRestController.java",
-      ctx: { generatorInputs: new Map([["Other", "OtherRestController"]]) },
+      ctx: { generatorInputs: new Map([["Other", ["OtherRestController"]]]) },
       broken: `public class AdminThingRestController extends SimpliXBaseController<Thing, String> {\n}`,
       fixed: `public class AdminThingRestController extends SimpliXBaseController<Other, String> {\n}`,
       miss: [
@@ -854,19 +855,24 @@ const RULES = [
       const m = baseControllerEntity(clean);
       if (!m || !inputs.has(m[2])) return [];
       const expected = inputs.get(m[2]);
-      if (expected === m[1]) return [];
-      return [{ line: clean.slice(0, m.index).split("\n").length, excerpt: `${m[1]} serves ${m[2]}, whose yml names ${expected}` }];
+      if (expected.includes(m[1])) return [];
+      return [{ line: clean.slice(0, m.index).split("\n").length, excerpt: `${m[1]} serves ${m[2]}, whose yml names ${expected.join(" or ")}` }];
     },
     samples: {
       file: "modules/user/src/main/java/app/web/user/controller/AdminThingRestController.java",
-      ctx: { generatorInputs: new Map([["Thing", "ThingRestController"]]) },
+      ctx: { generatorInputs: new Map([["Thing", ["ThingRestController"]]]) },
       broken: `public class AdminThingRestController extends SimpliXBaseController<Thing, String> {\n}`,
       fixed: `public class ThingRestController extends SimpliXBaseController<Thing, String> {\n}`,
       miss: [
         {
           note: "a yml that names the Admin controller through controllerName",
           source: `public class AdminThingRestController extends SimpliXBaseController<Thing, String> {\n}`,
-          ctx: { generatorInputs: new Map([["Thing", "AdminThingRestController"]]) },
+          ctx: { generatorInputs: new Map([["Thing", ["AdminThingRestController"]]]) },
+        },
+        {
+          note: "a second surface generated over the same entity from its own yml",
+          source: `public class MyThingRestController extends SimpliXBaseController<Thing, String> {\n}`,
+          ctx: { generatorInputs: new Map([["Thing", ["AdminThingRestController", "MyThingRestController"]]]) },
         },
       ],
     },

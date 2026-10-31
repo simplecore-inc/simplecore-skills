@@ -2586,6 +2586,111 @@ window.history.replaceState(null, "", window.location.pathname + window.location
     },
   },
   {
+    id: "paged-list-in-a-page-not-generated-as-a-list",
+    invariant: "#32 / #79",
+    level: "error",
+    desc: "A page that was not generated as a list page (no `@simplix-generated page/*crud-page` file beside it) holds a list fed by a paged or cursor read. Every paged list screen is generated from the kit list template with `simplix scaffold` and then customised; a list placed by hand inside a static or record page has no filter bar, no sort, no page size and no total, and none of the fixes later made to the template reach it. Generate the list screen (behind a paged searchable endpoint, forced to the caller's scope server-side where it is a self surface) and move what the page said around the list into its blocks; a growing set inside a record's tab is `adaptForcedList` on the record's generated detail, not a page",
+    appliesTo: (p) => (isTsx(p) || /\.ts$/.test(p)) && /(^|\/)pages\//.test(p),
+    check: (c, rel) => {
+      // The page directory decides, not this file: a generated list page keeps its customisation
+      // in a sibling `page.blocks.tsx`, which reads the same hooks and must stay silent.
+      const dir = path.join(ROOT, path.dirname(rel));
+      const siblings = fs.existsSync(dir) ? fs.readdirSync(dir).filter((name) => /\.tsx?$/.test(name)) : [];
+      const GENERATED_LIST = /@simplix-generated\s+page\/[\w-]*(?:crud|list)[\w-]*/;
+      const generatedAsList = siblings.some((name) =>
+        GENERATED_LIST.test(fs.readFileSync(path.join(dir, name), "utf8").slice(0, 600)));
+      if (generatedAsList || GENERATED_LIST.test(c.slice(0, 600))) return [];
+
+      // A list sink: rows handed to a table, or a list component drawn here. A read with no sink
+      // (a count, a total in a tile) is not a list, whatever page size it asks for.
+      const SINK = /\brows\s*:|<(?:CrudList|DataTable|Table|TableCard)\b|\buseCrudList\s*\(/;
+      if (!SINK.test(c)) return [];
+
+      // The paged read: a cursor, the list adapters, or a list/search hook asked for a page.
+      // Type arguments may sit between the name and the call: `useCursorPages<Page, Row>(`.
+      const TYPE_ARGS = String.raw`(?:<[^()]{0,200}?>)?\s*\(`;
+      const reads = [
+        new RegExp(String.raw`\buseCursorPages\s*` + TYPE_ARGS, "g"),
+        new RegExp(String.raw`\b(?:adaptOrvalList|adaptForcedList|useInfiniteQuery)\s*` + TYPE_ARGS, "g"),
+        new RegExp(String.raw`\buse(?:List|Search)[A-Z]\w*\s*` + TYPE_ARGS + String.raw`\s*\{[^}]{0,400}?\bpage\s*:`, "g"),
+      ];
+      const lines = c.split("\n");
+      const hits = [];
+      for (const pattern of reads) {
+        let m;
+        while ((m = pattern.exec(c)) !== null) {
+          const line = c.slice(0, m.index).split("\n").length;
+          hits.push({ line, excerpt: (lines[line - 1] ?? "").trim() });
+        }
+      }
+      return hits;
+    },
+    samples: {
+      file: "modules/<group>/<domain>/src/pages/my-things/page.blocks.tsx",
+      broken: {
+        files: {
+          "modules/<group>/<domain>/src/pages/my-things/page.tsx": `/**
+ * @simplix-generated page/clarity-static-page
+ */
+export function MyThingsPage() { return null; }`,
+        },
+        source: `export function usePageBlocks() {
+  const history = useCursorPages<ThingPage, ThingRow>({ queryKey, fetchPage, items: (p) => p.entries, next: (p) => p.nextCursor });
+  return { body: <RecordTabBody content={{ list: { rows: history.items, columns } }} /> };
+}`,
+      },
+      fixed: {
+        files: {
+          "modules/<group>/<domain>/src/pages/my-things/crud-page.tsx": `/**
+ * @simplix-generated page/clarity-crud-page
+ */
+export function MyThingsCrudPage() { return null; }`,
+        },
+        source: `export function usePageBlocks() {
+  const list = useCrudList(adaptOrvalList(useListMyThings));
+  return { body: <CrudList list={list} /> };
+}`,
+      },
+      miss: [
+        {
+          note: "a static page reading a total for a tile, with no list drawn",
+          files: {
+            "modules/<group>/<domain>/src/pages/my-things/page.tsx": `/**
+ * @simplix-generated page/clarity-static-page
+ */
+export function MyThingsPage() { return null; }`,
+          },
+          source: `export function usePageBlocks() {
+  const total = useListThings({ page: 0, size: 1 }).data?.totalElements;
+  return { body: <Tile value={total} /> };
+}`,
+        },
+        {
+          note: "a widget outside pages/ that draws a forced list in a record tab",
+          file: "modules/<group>/<domain>/src/widgets/thing/detail.blocks.tsx",
+          source: `export function useTabs() {
+  const list = useCrudList(adaptForcedList(useListParts, { "thingId.equals": id }));
+  return { list: { rows: list.data, columns } };
+}`,
+        },
+        {
+          note: "a bounded catalogue read in a generated list page's blocks",
+          files: {
+            "modules/<group>/<domain>/src/pages/setting/crud-page.tsx": `/**
+ * @simplix-generated page/clarity-crud-page
+ */
+export function SettingCrudPage() { return null; }`,
+          },
+          file: "modules/<group>/<domain>/src/pages/setting/page.blocks.tsx",
+          source: `export function usePageBlocks() {
+  const catalogue = useListSettings({ page: 0, size: 500 });
+  return { tabs: [{ list: { rows: catalogue.data, columns } }] };
+}`,
+        },
+      ],
+    },
+  },
+  {
     id: "row-action-that-reads-as-text",
     invariant: "#20",
     level: "error",

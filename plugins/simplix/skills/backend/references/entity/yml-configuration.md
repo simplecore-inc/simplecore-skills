@@ -86,7 +86,7 @@ fields:
 
 | Property | Type | Description | Required |
 |----------|------|-------------|----------|
-| `entity` | String | Entity class name | Yes |
+| `entity` | String | Entity class name. The yml's file name is the class prefix of everything generated (`<Name>Service`, `<Name>DTOs`, the `@Tag`); the two differ only for a second surface over an entity that already has one (§ A second surface over one entity) | Yes |
 | `modulePath` | String | Package path (e.g., `cms/channel`) | Yes |
 | `idField` | String | Primary key field name | Yes |
 | `nameField` | String | Display name field | Yes |
@@ -94,6 +94,19 @@ fields:
 | `defaultSortField` | String | Default sort field | Optional |
 | `defaultSortDirection` | String | `asc` or `desc` | Optional |
 | `controllerName` | String | REST controller class name; default `<Entity>RestController`. Set it to keep a live name, since the operation ids derive from it (`generator/promote-workflow.md` § Before generating) | Optional |
+
+### A second surface over one entity
+
+A self-scoped portal list beside an operators' list reads the same entity through different
+classes. Write a second yml named after the new surface, with `entity` naming the entity:
+`.simplix/entity/My<Entity>.yml` with `entity: <Entity>`, its own `modulePath`, `promoteModule`
+and `thymeleafBaseDir`. `yo simplix:generate My<Entity>` then `yo simplix:promote My<Entity>
+--module <promoteModule>` write `My<Entity>Service`, `My<Entity>DTOs` and
+`My<Entity>RestController`, so the bean names, the DTO names SimpliX Meta keys its types by, and
+the tag the frontend names the entity after never collide with the first surface. Trim it to its
+reads and force the caller's scope in the service (SKILL.md #15③). Templates read the entity
+class as `entityName` and the prefix as `classPrefix`; a project template still writing
+`<%= entityName %>Service` generates the second surface under the first one's class names.
 
 ### Project template keys
 
