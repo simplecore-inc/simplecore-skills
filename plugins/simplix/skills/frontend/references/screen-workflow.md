@@ -8,15 +8,16 @@ Read this before planning a screen or dispatching agents for screen work.
    bring the board into agreement. A gap at any step is closed at that step's layer, not worked
    around in a later one.
 2. **Customisation is tracked, not forbidden.** A scaffolded file or generated story may be
-   edited. The CLI rewrites a generated file only while it is untouched, and the generated-state
-   report lists every edited one, so a template change is reviewed against each instead of being
-   skipped. Block files hold the decisions that belong to one screen only.
+   edited. The CLI rewrites an untouched file, and merges a template change into an edited one
+   three-way against the render it last wrote (kept in `.simplix/generated/`); a conflict is
+   reported, never written. Block files hold the decisions that belong to one screen only.
    - `simplix generated` lists every generated file and story as `untouched`, `edited` or `stale`
      (untouched, but the current templates render something else) and exits non-zero only for a
      stale one. Each file records the command that made it after its `@simplix-render`
      fingerprint, which is what lets the report re-render it; a file stamped without one is
      `unchecked`. The project's `pnpm lint` runs it.
-   - `simplix generated --all` regenerates every recorded screen and page; edited files are kept.
+   - `simplix generated --all` regenerates every recorded screen and page; an edited file is
+     `merged`, `current`, `conflict` (left alone unless `--write-conflicts`) or `no base`.
    - `simplix generated --share` reports per screen the lines in blocks and edited files against
      the generated lines, and lists each customisation a second screen repeats (rule 6).
    - A kit ships `crud-page.stories.hbs` beside `crud-page.hbs`; with `templates.storiesDir` set in
