@@ -213,3 +213,18 @@ Read this before planning a screen or dispatching agents for screen work.
   drawn outside the box is cut off by every ancestor that clips (row action strips, tab lists,
   filter segments, menu rows), so the same sweep also walks each stop's ancestors for an overflow
   that clips the outline.
+
+## A batch save built from the list read
+
+A settings page saved its changed rows as one multi-update whose bodies were assembled from the
+list read. The list DTO does not carry `defaultValue`, the update writes every field it declares
+and an absent one as null, and the save cleared the stored default on every row it touched. Each
+screen read correctly; the loss showed only in the database.
+
+- An update body starts from that record's edit-form read (`get<Entity>ForEdit(id)`) and changes
+  only the edited fields over it, for one record and for a batch alike. The generated form already
+  reads for edit; a hand-written batch save is where the list row gets reused instead.
+- The backend cannot tell an absent field from a null one without field presence, so the rule
+  sits on the side that builds the body.
+- `batch-update-built-from-a-list-read` in `audit-frontend.mjs` flags a file that reads a list and
+  sends a multi-update or batch update with no edit-form read in it.

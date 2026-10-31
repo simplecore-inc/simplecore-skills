@@ -1501,6 +1501,33 @@ const RULES = [
     },
   },
   {
+    id: "batch-update-built-from-a-list-read",
+    invariant: "#34 / screen-workflow § A batch save built from the list read",
+    level: "error",
+    desc: "A file that reads a list (`useList*`, `useSearch*`, `useCrudList`) and sends a multi-update or batch update, with no edit-form read (`*ForEdit`) anywhere in it. An update writes every field its DTO declares and writes an absent one as null, so a body assembled from list rows silently clears every field the list DTO does not carry - a stored default, a description, an option set - on every row the save touches. Build each body from that row's edit-form read (`get<Entity>ForEdit(id)`) and change only the edited fields over it; the generated form already does this for one record. A file that reads for edit is left alone, since it has the full record to build from",
+    appliesTo: (p) => /\.tsx?$/.test(p) && !/\.(test|spec)\.tsx?$/.test(p) && !/generated(-meta)?\//.test(p),
+    check: (c) => {
+      if (!/\b(useList\w*|useSearch\w*|useCrudList)\s*\(/.test(c)) return [];
+      if (/ForEdit\b/.test(c)) return [];
+      const hits = [];
+      for (const m of c.matchAll(/\buse(MultiUpdate|BatchUpdate)\w*\s*\(/g)) {
+        hits.push({ line: lineOfIndex(c, m.index), excerpt: m[0] });
+      }
+      return hits;
+    },
+    samples: {
+      file: "modules/<domain>/src/pages/<entity>/page.blocks.tsx",
+      broken: `const list = useListThings({ page: 0, size: 100 });
+const update = useMultiUpdateThings();
+const save = (changes) => update.mutateAsync({ data: changes.map((row) => ({ thingId: row.thingId, name: row.name, value: row.value })) });`,
+      fixed: `const list = useListThings({ page: 0, size: 100 });
+const update = useMultiUpdateThings();
+const save = async (changes) => update.mutateAsync({
+  data: await Promise.all(changes.map(async (change) => ({ ...(await getThingForEdit(change.id)), value: change.value }))),
+});`,
+    },
+  },
+  {
     id: "row-action-that-only-some-rows-draw",
     invariant: "#50 / board kit `rowActions`",
     level: "error",
