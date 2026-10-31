@@ -90,7 +90,7 @@ fields:
 | `modulePath` | String | Package path (e.g., `cms/channel`) | Yes |
 | `idField` | String | Primary key field name | Yes |
 | `nameField` | String | Display name field | Yes |
-| `thymeleafBaseDir` | String | Template directory path | Optional |
+| `thymeleafBaseDir` | String | Template directory path, and the REST path: the controller template writes `@RequestMapping("/" + thymeleafBaseDir)`. Set it to the URL the controller must serve (`admin/billing/credit-hold`) | Optional |
 | `defaultSortField` | String | Default sort field | Optional |
 | `defaultSortDirection` | String | `asc` or `desc` | Optional |
 | `controllerName` | String | REST controller class name; default `<Entity>RestController`. Set it to keep a live name, since the operation ids derive from it (`generator/promote-workflow.md` § Before generating) | Optional |

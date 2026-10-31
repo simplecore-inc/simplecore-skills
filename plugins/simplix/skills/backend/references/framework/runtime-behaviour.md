@@ -11,6 +11,10 @@ symptom.
 3. [Generated CRUD writes no audit event](#generated-crud-writes-no-audit-event)
 4. [A create request overwrites the entity's defaults with null](#a-create-request-overwrites-the-entitys-defaults-with-null)
 5. [Never run a build while the application is running](#never-run-a-build-while-the-application-is-running)
+6. [A properties record does not take `@Validated`](#a-properties-record-does-not-take-validated)
+7. [A `@DataJpaTest` slice does not load the project's JPA configuration](#a-datajpatest-slice-does-not-load-the-projects-jpa-configuration)
+8. [A limit test needs more than one owner](#a-limit-test-needs-more-than-one-owner)
+9. [Two Gradle subprojects never share a leaf name](#two-gradle-subprojects-never-share-a-leaf-name)
 
 ---
 
@@ -138,3 +142,27 @@ so it reads as a missing dependency.
 
 Stop the application, build, start it again. This is the backend half of the same rule the
 frontend has for typechecking against a running dev server.
+
+## A properties record does not take `@Validated`
+
+A `@ConfigurationProperties` record cannot be proxied, so `@Validated` on it stops the full
+application context, while a slice test that never binds the record passes. Check the values in
+the record's compact constructor and throw there. The audit's `validated-properties-record` fails it.
+
+## A `@DataJpaTest` slice does not load the project's JPA configuration
+
+Auditing (`@CreatedDate`, `@LastModifiedDate`, the auditor) and the project's repository settings
+live in its own JPA configuration class, which a slice does not scan. Import it into every
+`@DataJpaTest`, or each insert fails on a null `created_at`.
+
+## A limit test needs more than one owner
+
+A per-account limit and a global limit refuse the same request when the test uses one account,
+so a missing global gate passes. Prove a global limit with requests spread across several
+accounts in parallel, and a per-user limit with one user spending from several accounts.
+
+## Two Gradle subprojects never share a leaf name
+
+`:modules:<a>:<name>` and `:modules:<b>:<name>` both publish `<group>:<name>`, and Gradle's conflict
+resolution silently substitutes one for the other on a consumer's classpath: the build fails with
+"package does not exist" for the one that was dropped. Give every subproject a unique last segment.

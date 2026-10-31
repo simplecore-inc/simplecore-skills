@@ -11,6 +11,7 @@ Move generated CRUD code from `generated/` to `src/` after verification.
 | Argument | Required | Description |
 |----------|----------|-------------|
 | EntityName | **YES** | The name of the entity to promote |
+| `--module` | **YES** | The yml's `promoteModule` (e.g. `admin/billing`); promote refuses to run without it |
 
 ## Why Promote?
 
@@ -41,10 +42,10 @@ The repository is not in the mapping: the generator does not write it (`template
 
 ```bash
 # Promote (skips if destination exists)
-yo simplix:promote EntityName
+yo simplix:promote EntityName --module <promoteModule>
 
 # Force overwrite existing files in src/
-yo simplix:promote EntityName --force
+yo simplix:promote EntityName --module <promoteModule> --force
 ```
 
 With `--force`, the form this handbook uses, promote overwrites `src/` without asking; without it,
@@ -62,7 +63,7 @@ a file that already exists in `src/` is skipped. Either way the collision check 
 yo simplix:generate CmsContentLink --force
 
 # Promote to src/ (use --force if files already exist)
-yo simplix:promote CmsContentLink --force
+yo simplix:promote CmsContentLink --module <promoteModule> --force
 ```
 
 It reports one `From` / `To` pair per artefact - service, controller, DTOs, service test - and a
@@ -75,6 +76,12 @@ verify no hand-authored `X{Service,RestController,DTOs}` already exists in the t
 `modulePath` package. `yo simplix:generate X` + `promote` will clobber a same-named
 hand-written `XService` - a lifecycle or action service, say - with a generated CRUD one and
 delete its logic.
+
+**The clash is by simple class name across the whole tree, not only in the target package.**
+Spring names a bean after the class's simple name, so a generated `XService` beside any other
+`XService` (a worker's queue service in another module, say) stops the context with a
+conflicting bean definition. Grep `class XService\b` and `class XRestController\b` over every
+source root before generating.
 
 On a clash, either **rename the hand-authored class to a role-specific name**
 (`XLifecycleService`, `XQueryService`) before generating, or **do not generate `X`** at all
@@ -139,7 +146,7 @@ find generated -name "EntityName*" -type f
 
 ## Checklist
 
-- [ ] Run `yo simplix:promote EntityName --force`
+- [ ] Run `yo simplix:promote EntityName --module <promoteModule> --force`
 - [ ] Verify no files remain in `generated/` for the entity
 - [ ] Every `hasPermission` target rewritten to the feature-area group (#9), and the `@Tag` free of a `web` segment (#10)
 - [ ] The service's ID-mismatch guard throws the `{error.<domain>.idCannotChange}` placeholder (#3)

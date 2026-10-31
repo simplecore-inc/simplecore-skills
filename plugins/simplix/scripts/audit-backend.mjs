@@ -2519,6 +2519,54 @@ public class PublicContentRestController {
       ],
     },
   },
+  {
+    id: "validated-properties-record",
+    invariant: "runtime",
+    level: "error",
+    desc: "@Validated on a @ConfigurationProperties record - a record cannot be proxied, so a slice test that never binds it passes and the full context fails to start. Check the values in the record's compact constructor instead",
+    appliesTo: () => true,
+    check: (c) => {
+      const code = stripCommentsAndStrings(c);
+      if (!/@ConfigurationProperties\b/.test(code) || !/\brecord\s+\w+\s*[(<]/.test(code)) {
+        return [];
+      }
+      return lineHits(code, /^\s*@Validated\b/);
+    },
+    samples: {
+      file: "packages/billing/src/main/java/app/billing/LedgerProperties.java",
+      broken: `@Validated
+@ConfigurationProperties(prefix = "app.ledger")
+public record LedgerProperties(@Min(1) int limit) {
+}`,
+      hit: [
+        {
+          note: "@Validated below the properties annotation",
+          source: `@ConfigurationProperties(prefix = "app.ledger")
+@Validated
+public record LedgerProperties(@Min(1) int limit) {
+}`,
+        },
+      ],
+      fixed: `@ConfigurationProperties(prefix = "app.ledger")
+public record LedgerProperties(int limit) {
+    public LedgerProperties {
+        if (limit < 1) {
+            throw new IllegalArgumentException("app.ledger.limit must be at least 1");
+        }
+    }
+}`,
+      miss: [
+        {
+          note: "@Validated on a properties class, which Spring can proxy",
+          source: `@Validated
+@ConfigurationProperties(prefix = "app.ledger")
+public class LedgerProperties {
+    @Min(1) private int limit;
+}`,
+        },
+      ],
+    },
+  },
 ];
 
 // ---------------------------------------------------------------------------
