@@ -107,6 +107,10 @@ Read this before planning a screen or dispatching agents for screen work.
     a record's tab is `adaptForcedList` on that record's generated detail.
     `paged-list-in-a-page-not-generated-as-a-list` in `audit-frontend.mjs` flags a page directory
     with no generated list page that draws a paged read.
+22. **A screen is removed with its generated record.** `simplix generated` re-renders every file
+    its `.simplix/generated/` record names, so a page or story deleted without its record comes
+    back on the next run (`pnpm lint` runs it), with its barrel export. Delete the record in the
+    same change, by name.
 
 ## Cases
 
