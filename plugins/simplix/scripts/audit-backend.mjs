@@ -843,6 +843,41 @@ const RULES = [
     },
   },
   {
+    id: "date-search-field-with-exclusive-bounds",
+    invariant: "review/searchable-field-patterns",
+    level: "review",
+    desc: "A temporal SearchDTO field offers GREATER_THAN / LESS_THAN without GREATER_THAN_OR_EQUAL_TO / LESS_THAN_OR_EQUAL_TO - the frontend's date range filter writes the inclusive pair, so every ranged read is refused as an invalid parameter and the list shows a load failure. Declare `greaterThanOrEqual, lessThanOrEqual, between` in the yml and regenerate, or say on the field why the bounds are exclusive",
+    appliesTo: isDtoContainer,
+    check: (c) => {
+      const clean = stripCommentsAndStrings(c);
+      const hits = [];
+      const field = /@SearchableField\s*\(([^)]*)\)\s*(?:@[\w.]+(?:\([^)]*\))?\s*)*private\s+(?:Instant|LocalDate|LocalDateTime|OffsetDateTime|ZonedDateTime)\s+(\w+)/g;
+      for (const m of clean.matchAll(field)) {
+        const operators = m[1];
+        const exclusive = /\b(?:GREATER_THAN|LESS_THAN)\b(?!_)/.test(operators);
+        const inclusive = /\bGREATER_THAN_OR_EQUAL_TO\b/.test(operators) && /\bLESS_THAN_OR_EQUAL_TO\b/.test(operators);
+        if (!exclusive || inclusive) continue;
+        hits.push({ line: clean.slice(0, m.index).split("\n").length, excerpt: `${m[2]} offers exclusive bounds only` });
+      }
+      return hits;
+    },
+    samples: {
+      file: "modules/order/src/main/java/app/web/order/dto/OrderDTOs.java",
+      broken: `public class OrderDTOs {\n    public static class OrderSearchDTO {\n        @FieldLabel("{entities.Order.placedAt}")\n        @SearchableField(entityField = "placedAt", operators = {GREATER_THAN, LESS_THAN, BETWEEN}, sortable = true)\n        private Instant placedAt;\n    }\n}`,
+      fixed: `public class OrderDTOs {\n    public static class OrderSearchDTO {\n        @FieldLabel("{entities.Order.placedAt}")\n        @SearchableField(entityField = "placedAt", operators = {GREATER_THAN_OR_EQUAL_TO, LESS_THAN_OR_EQUAL_TO, BETWEEN}, sortable = true)\n        private Instant placedAt;\n    }\n}`,
+      miss: [
+        {
+          note: "a number field with exclusive bounds",
+          source: `public class OrderDTOs {\n    public static class OrderSearchDTO {\n        @SearchableField(entityField = "total", operators = {GREATER_THAN, LESS_THAN, BETWEEN})\n        private Long total;\n    }\n}`,
+        },
+        {
+          note: "a date field offering both kinds of bound",
+          source: `public class OrderDTOs {\n    public static class OrderSearchDTO {\n        @SearchableField(operators = {GREATER_THAN, LESS_THAN, GREATER_THAN_OR_EQUAL_TO, LESS_THAN_OR_EQUAL_TO})\n        private LocalDate dueOn;\n    }\n}`,
+        },
+      ],
+    },
+  },
+  {
     id: "controller-name-not-from-yml",
     invariant: "#15",
     level: "error",
