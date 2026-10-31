@@ -464,6 +464,7 @@ These invariants apply to **every** frontend file you touch. Treat each as invio
     - **Something more than one screen needs goes into the kit first, then into the template.** It never goes into one screen.
     - **A gap is closed in the generator.** When a screen has no page kind or no overridable template, add a generic one to the CLI, with tests and no product names, and write the project template for it. A hand-built screen is the last resort and carries a comment stating why no generator change could serve it.
     - **Make it mechanical.** The project's lint configuration refuses screen code importing the framework's screen-composition parts directly, so the kit stays the only route. Re-running the generator on a finished screen must leave its generated part unchanged.
+    - **A requested screen change is lifted, then swept.** When a change asked for on one screen works there, find where it belongs and change it there, in this order: the template, then the kit, then the framework. Census every screen the lifted change reaches, regenerate or fix each one, and drive each in the browser before calling the request done. Leaving the fix on the one screen it was asked for is how its siblings keep the old form.
     - **The trap** is that hand-composing one screen from kit parts looks equivalent and is faster once. It is the drift #67 describes: the next screen copies the hand-built one, not the template.
 
 ---
