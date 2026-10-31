@@ -203,8 +203,8 @@ body:
 | `endsWith` | `LIKE %?` | Suffix match |
 | `greaterThan` | `> ?` | Greater than |
 | `lessThan` | `< ?` | Less than |
-| `greaterThanOrEquals` | `>= ?` | Greater or equal |
-| `lessThanOrEquals` | `<= ?` | Less or equal |
+| `greaterThanOrEqual` (or `greaterThanOrEquals`) | `>= ?` | Greater or equal; the lower bound of a date range |
+| `lessThanOrEqual` (or `lessThanOrEquals`) | `<= ?` | Less or equal; the upper bound of a date range |
 | `between` | `BETWEEN ? AND ?` | Range |
 | `in` | `IN (?)` | Multiple values |
 | `isNull` | `IS NULL` | Null check |
@@ -225,9 +225,11 @@ active:
 status:
   searchOperators: [equals, in]
 
-# Date field
+# Date field (Instant, LocalDate, LocalTime): the inclusive pair, never greaterThan / lessThan alone.
+# The frontend's date range filter sends greaterThanOrEqualTo and lessThanOrEqualTo, and a field
+# that does not declare them answers every ranged read with SEARCH_INVALID_PARAMETER.
 createdAt:
-  searchOperators: [between, greaterThan, lessThan]
+  searchOperators: [between, greaterThanOrEqual, lessThanOrEqual]
 
 # ID field (FK)
 channelId:
@@ -371,7 +373,7 @@ fields:
   publishedAt:
     sortable: true
     views: [list, detail, edit]
-    searchOperators: [between, greaterThan, lessThan]
+    searchOperators: [between, greaterThanOrEqual, lessThanOrEqual]
 
   featured:
     sortable: true

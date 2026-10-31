@@ -845,13 +845,13 @@ const RULES = [
   {
     id: "date-search-field-with-exclusive-bounds",
     invariant: "review/searchable-field-patterns",
-    level: "review",
-    desc: "A temporal SearchDTO field offers GREATER_THAN / LESS_THAN without GREATER_THAN_OR_EQUAL_TO / LESS_THAN_OR_EQUAL_TO - the frontend's date range filter writes the inclusive pair, so every ranged read is refused as an invalid parameter and the list shows a load failure. Declare `greaterThanOrEqual, lessThanOrEqual, between` in the yml and regenerate, or say on the field why the bounds are exclusive",
+    level: "error",
+    desc: "A temporal SearchDTO field offers GREATER_THAN / LESS_THAN without GREATER_THAN_OR_EQUAL_TO / LESS_THAN_OR_EQUAL_TO - the frontend's date range filter writes the inclusive pair, so every ranged read answers SEARCH_INVALID_PARAMETER and the list shows a load failure. Declare `greaterThanOrEqual, lessThanOrEqual, between` in the yml and regenerate (the generator's default for Instant, LocalDate, LocalTime and the datetime types); where the bounds really are exclusive, mark the field with `simplix-audit-ignore[date-search-field-with-exclusive-bounds]` and the reason",
     appliesTo: isDtoContainer,
     check: (c) => {
       const clean = stripCommentsAndStrings(c);
       const hits = [];
-      const field = /@SearchableField\s*\(([^)]*)\)\s*(?:@[\w.]+(?:\([^)]*\))?\s*)*private\s+(?:Instant|LocalDate|LocalDateTime|OffsetDateTime|ZonedDateTime)\s+(\w+)/g;
+      const field = /@SearchableField\s*\(([^)]*)\)\s*(?:@[\w.]+(?:\([^)]*\))?\s*)*private\s+(?:Instant|LocalDate|LocalTime|LocalDateTime|OffsetDateTime|ZonedDateTime)\s+(\w+)/g;
       for (const m of clean.matchAll(field)) {
         const operators = m[1];
         const exclusive = /\b(?:GREATER_THAN|LESS_THAN)\b(?!_)/.test(operators);
@@ -865,6 +865,20 @@ const RULES = [
       file: "modules/order/src/main/java/app/web/order/dto/OrderDTOs.java",
       broken: `public class OrderDTOs {\n    public static class OrderSearchDTO {\n        @FieldLabel("{entities.Order.placedAt}")\n        @SearchableField(entityField = "placedAt", operators = {GREATER_THAN, LESS_THAN, BETWEEN}, sortable = true)\n        private Instant placedAt;\n    }\n}`,
       fixed: `public class OrderDTOs {\n    public static class OrderSearchDTO {\n        @FieldLabel("{entities.Order.placedAt}")\n        @SearchableField(entityField = "placedAt", operators = {GREATER_THAN_OR_EQUAL_TO, LESS_THAN_OR_EQUAL_TO, BETWEEN}, sortable = true)\n        private Instant placedAt;\n    }\n}`,
+      hit: [
+        {
+          note: "a LocalDate field with the exclusive pair",
+          source: `public class RoleDTOs {\n    public static class RoleSearchDTO {\n        @SearchableField(entityField = "validFrom", operators = {BETWEEN, GREATER_THAN, LESS_THAN}, sortable = true)\n        private LocalDate validFrom;\n    }\n}`,
+        },
+        {
+          note: "a LocalTime field with the exclusive pair",
+          source: `public class ShiftDTOs {\n    public static class ShiftSearchDTO {\n        @SearchableField(entityField = "startsAt", operators = {GREATER_THAN, LESS_THAN})\n        private LocalTime startsAt;\n    }\n}`,
+        },
+        {
+          note: "only one inclusive bound beside an exclusive one",
+          source: `public class OrderDTOs {\n    public static class OrderSearchDTO {\n        @SearchableField(entityField = "placedAt", operators = {GREATER_THAN_OR_EQUAL_TO, LESS_THAN, BETWEEN})\n        private Instant placedAt;\n    }\n}`,
+        },
+      ],
       miss: [
         {
           note: "a number field with exclusive bounds",

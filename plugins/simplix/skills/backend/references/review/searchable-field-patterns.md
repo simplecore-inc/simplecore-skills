@@ -184,7 +184,7 @@ Operators must match the field's **semantic purpose**, not just its Java type. T
 | URL / file path | `floorPlanUrl`, `imageUrl` | `CONTAINS` | Partial match only. No EQUALS |
 | Coordinates | `latitude`, `longitude` | `GTE`, `LTE`, `BETWEEN` | Range/bounding-box queries. No EQUALS - exact coordinate match is meaningless |
 | Monetary / numeric | `price`, `viewCount` | `EQUALS`, `GT`, `LT`, `BETWEEN` | Range queries |
-| Date/time | `createdAt`, `publishAt` | `GTE`, `LTE`, `BETWEEN` | Inclusive range queries |
+| Date/time (`Instant`, `LocalDate`, `LocalTime`) | `createdAt`, `publishAt` | `GREATER_THAN_OR_EQUAL_TO`, `LESS_THAN_OR_EQUAL_TO`, `BETWEEN` | The inclusive pair is mandatory: the frontend's date range filter writes `<field>.greaterThanOrEqualTo` and `<field>.lessThanOrEqualTo` |
 | Boolean | `active`, `deleted` | `EQUALS` | True/false only |
 | Enum | `status`, `type` | `EQUALS`, `IN`, `NOT_IN` | Status, type filters |
 | @ManyToOne ID | `channel.channelId` | `EQUALS`, `IN` | Reference lookup |
@@ -527,10 +527,10 @@ public static class BasicEntitySearchDTO {
     @SearchableField(operators = {EQUALS})
     private Boolean active;
 
-    @SearchableField(operators = {BETWEEN, GREATER_THAN, LESS_THAN}, sortable = true)
+    @SearchableField(operators = {BETWEEN, GREATER_THAN_OR_EQUAL_TO, LESS_THAN_OR_EQUAL_TO}, sortable = true)
     private Instant createdAt;
 
-    @SearchableField(operators = {BETWEEN, GREATER_THAN, LESS_THAN}, sortable = true)
+    @SearchableField(operators = {BETWEEN, GREATER_THAN_OR_EQUAL_TO, LESS_THAN_OR_EQUAL_TO}, sortable = true)
     private Instant updatedAt;
 }
 ```
@@ -562,7 +562,7 @@ public static class CmsContentSearchDTO {
     private ContentStatus status;
 
     // Date range
-    @SearchableField(operators = {BETWEEN, GREATER_THAN, LESS_THAN}, sortable = true)
+    @SearchableField(operators = {BETWEEN, GREATER_THAN_OR_EQUAL_TO, LESS_THAN_OR_EQUAL_TO}, sortable = true)
     private Instant publishAt;
 
     // Boolean flag
@@ -574,7 +574,7 @@ public static class CmsContentSearchDTO {
     private Long viewCount;
 
     // Audit fields
-    @SearchableField(operators = {BETWEEN, GREATER_THAN, LESS_THAN}, sortable = true)
+    @SearchableField(operators = {BETWEEN, GREATER_THAN_OR_EQUAL_TO, LESS_THAN_OR_EQUAL_TO}, sortable = true)
     private Instant createdAt;
 
     @SearchableField(operators = {EQUALS, CONTAINS})
@@ -646,7 +646,7 @@ public static class UserAccountSearchDTO {
     private Set<String> roleIds;
 
     // Last login range
-    @SearchableField(operators = {BETWEEN, GREATER_THAN, IS_NULL})
+    @SearchableField(operators = {BETWEEN, GREATER_THAN_OR_EQUAL_TO, LESS_THAN_OR_EQUAL_TO, IS_NULL})
     private Instant lastLoginAt;
 }
 ```
@@ -734,6 +734,18 @@ GET /api/items?createdAt.between=2024-01-01
 # Correct - two values
 GET /api/items?createdAt.between=2024-01-01T00:00:00Z,2024-12-31T23:59:59Z
 ```
+
+### Issue: A date range filter answers SEARCH_INVALID_PARAMETER
+
+**Symptom**: the list shows a load failure as soon as the date range filter is used; the request carries `<field>.greaterThanOrEqualTo` and `<field>.lessThanOrEqualTo`.
+
+**Cause**: the field declares `GREATER_THAN` / `LESS_THAN` only, so the framework refuses the inclusive operators as undeclared. The generator used to write `[between, greaterThan, lessThan]` into the yml of every temporal field, so a yml created before the default changed still carries it.
+
+**Fix**: declare `searchOperators: [between, greaterThanOrEqual, lessThanOrEqual]` in the yml, regenerate, and merge into the promoted DTO the `{BETWEEN, GREATER_THAN_OR_EQUAL_TO, LESS_THAN_OR_EQUAL_TO}` the generator now emits. The audit rule `date-search-field-with-exclusive-bounds` (an error) lists every field that still has the exclusive pair. A field whose bounds really are exclusive says why in a comment beside it and carries a `simplix-audit-ignore[date-search-field-with-exclusive-bounds]` marker with the reason.
+
+**Verify with a request**, not a read: `GET /<entity>/search?<field>.greaterThanOrEqualTo=<ISO instant>&<field>.lessThanOrEqualTo=<ISO instant>` answers 200.
+
+---
 
 ### Issue: Instant Field Path with `.id` Suffix
 
