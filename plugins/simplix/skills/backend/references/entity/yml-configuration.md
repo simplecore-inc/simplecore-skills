@@ -151,7 +151,24 @@ fields:
 | `unique` | Boolean | Unique constraint |
 | `maxLength` | Integer | Max string length |
 | `searchOperators` | Array | Search operators |
+| `searchKeyword` | Boolean | Includes the search field in the list's keyword search |
+| `comment` | String | The `@Schema` description of the field in every DTO; wins over the entity's `@Comment` and Javadoc |
 | `reference` | Object | Entity relationship config |
+
+### A derived field
+
+A `@Formula` attribute has no column, so it is declared in the yml like a read-only column: `views:
+[list, detail]`, its `sortable`, `searchOperators` and `searchKeyword`, and a `comment`. The comment
+is the only description input the generator has for it: the generator reads `@Comment` and a Javadoc
+sitting directly above the annotations, and a Javadoc above an annotation whose string argument
+contains a closing parenthesis (a `@Formula` subquery) is not read, so the field would be described
+by its name.
+
+A derived multilingual name is two formula attributes, `<x>` and `<x>I18n` (a JSON-typed
+`Map<String, String>` over the source column), and both are declared in every view that shows the
+name. The generated list and detail DTOs then carry `@I18nTrans(source = "<x>I18n")` on the name and
+the hidden map beside it; the search field points at the base column, which is the one a pattern
+operator can run on.
 
 ---
 
