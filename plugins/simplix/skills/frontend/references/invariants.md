@@ -800,8 +800,11 @@ control, and the message stands, the board is the thing that moves.
 
 **Detecting it**: `standingMessageDrawsNoClose` in `audit-rendered.mjs` decides it on the painted
 page - a standing message in the page's own column with no way to put it away, or with no glyph
-saying its kind. It reads a page that has only been loaded, where nothing answers a press, so
-whatever message is there is standing; run past a submit, it reports the refusal too. A source
+saying its kind. The close is owed only on a page that carries the console header's restore
+control (`restoreControlSelector`, drawn whenever the screen registers a closable message), so
+the irreversibility warning of an identity provider's confirmation page stays without one; the
+glyph is owed on every page. It reads a page that has only been loaded, where nothing answers a
+press, so whatever message is there is standing; run past a submit, it reports the refusal too. A source
 gate in the project can hold the unconditional half as well - walk the JSX, skip any banner
 contained in a dialog / sheet / help card / notice card or in a file that is a sign-in surface end
 to end, and report the rest. A banner drawn under a condition is NOT decidable that way: a state

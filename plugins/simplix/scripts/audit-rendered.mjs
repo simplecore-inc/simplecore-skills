@@ -353,6 +353,20 @@ const DEFAULTS = {
    */
   closeTrailingRatio: 0.25,
 
+  /**
+   * What the console's page header draws once a screen holds messages that can be put away: the
+   * cluster of controls that bring a closed one back.
+   *
+   * <p>**The page says it is the console, and a close is owed only where it says so.** A message
+   * with no close is a defect where closing it moves it into this cluster. On a page with no such
+   * cluster (a sign-in or account page served by an identity provider, a kiosk body) a closed
+   * message would be gone with nothing to bring it back, and a warning that has to stay on screen
+   * is correct without a close. The cluster is drawn whenever the screen registers a closable
+   * message, hidden or not, so its presence does not depend on anything having been put away yet.
+   * A shell that marks its header differently names its own selector through `--options`.
+   */
+  restoreControlSelector: '[data-part="console-notice-menu"]',
+
   /** What a message draws to reach a reader who cannot separate two tints. */
   messageGlyphSelector: 'svg, img, [role="img"]',
 
@@ -592,6 +606,9 @@ const countedListDrawsNoRows = {
  * sticky header are supposed to work, so anything inside one, or positioned `fixed`/`sticky`,
  * is out. What remains is two leaves in ordinary flow occupying one box, which is never
  * intended.
+ *
+ * **An inline element is compared line by line.** A sentence that wraps is one element and two
+ * boxes, and the rectangle around both contains whatever else shares its first line.
  */
 const textBoxesOverlap = {
   id: "textBoxesOverlap",
@@ -645,8 +662,7 @@ const textBoxesOverlap = {
     // intersect happily while the screen shows neither. Every page with a scrolling list under a
     // footer reports the same pair, so the check that is meant to find one real collision comes
     // back with a handful of them on every screen and stops being read.
-    const onScreen = (el) => {
-      const r = el.getBoundingClientRect();
+    const onScreen = (el, r) => {
       let x1 = r.left;
       let y1 = r.top;
       let x2 = r.right;
@@ -677,17 +693,31 @@ const textBoxesOverlap = {
     const sampled = leaves.length > o.maxLeaves;
     if (sampled) leaves = leaves.slice(0, o.maxLeaves);
 
+    // **One box per line box, never the union of them.** An inline element that wraps - the
+    // `<span>` a message catalogue puts around every sentence, so a paragraph of text, a link and
+    // more text is three of them - reports one `getBoundingClientRect` covering both of its
+    // lines, and that rectangle contains whatever else is on the first line. The neighbours then
+    // "overlap" it on every paragraph that wraps, though the glyphs are disjoint. `getClientRects`
+    // gives the fragments the reader sees, and a block box gives exactly one, so the same call
+    // serves both.
     const boxes = [];
-    for (const el of leaves) {
-      const r = onScreen(el);
+    leaves.forEach((el, index) => {
+      const t = own(el);
       // Which layer the text belongs to, rather than whether it is on one. Dropping raised text
       // altogether was the safe-looking reading and it takes the dialogs with it - and a help
       // table with a squeezed column is exactly the kind of thing that only shows up inside one.
       // Comparing within a layer keeps the modal-over-page pair quiet and the two-texts-inside-
       // one-modal pair loud.
-      if (r) boxes.push({ el, r, t: own(el), layer: layerOf(el) });
-    }
+      const layer = layerOf(el);
+      for (const fragment of el.getClientRects()) {
+        if (fragment.width <= 0 || fragment.height <= 0) continue;
+        const r = onScreen(el, fragment);
+        if (r) boxes.push({ el, index, r, t, layer });
+      }
+    });
     let compared = 0;
+    // A pair of elements is one finding however many of their fragments meet.
+    const reported = new Set();
 
     for (let i = 0; i < boxes.length; i += 1) {
       for (let j = i + 1; j < boxes.length; j += 1) {
@@ -704,6 +734,10 @@ const textBoxesOverlap = {
         const areaA = a.r.width * a.r.height;
         const areaB = b.r.width * b.r.height;
         if (w * h < o.minOverlapRatio * Math.min(areaA, areaB)) continue;
+
+        const pair = `${a.index}:${b.index}`;
+        if (reported.has(pair)) continue;
+        reported.add(pair);
 
         findings.push(
           `「${clip(a.t)}」 and 「${clip(b.t)}」 are painted into the same box — they overlap by ` +
@@ -1310,11 +1344,14 @@ const pageFrozenAroundAScrollingRegion = {
  * message on a page and went quiet about the third. Each was right about the case that prompted
  * it. A message with no close cannot hide from the page it is painted on.
  *
- * **What makes a close owed.** The `main` landmark, which is the console shell. A sign-in panel,
- * a kiosk body and a phone screen draw none - and on those there is no header control to bring a
- * closed message back, so a close would delete it rather than move it. The same question the
+ * **What makes a close owed.** The `main` landmark finds the messages, and the restore control
+ * (`restoreControlSelector`) is what makes a close owed on them. A sign-in panel, a kiosk body, a
+ * phone screen and an identity provider's confirmation page draw no such control, and on those
+ * there is nothing to bring a closed message back, so a close would delete it rather than move it
+ * (an irreversibility warning has to stay on the screen it is about). The same question the
  * board's own gate asks of its frames, and for the same reason; nothing here needs to know which
- * screens those are, because the page says so itself.
+ * screens those are, because the page says so itself. **The glyph is owed everywhere**: a message
+ * carried by colour alone reaches half its readers on any page.
  *
  * **It reads a page nobody has acted on, and that is what makes the question answerable.** A
  * transient failure - a submit the server refused, a field rejecting what is being typed - is the
@@ -1342,6 +1379,10 @@ const standingMessageDrawsNoClose = {
     // into, so a close would lose the message rather than move it, and nothing is owed.
     const main = document.querySelector("main, [role=main]");
     if (!main) return { compared: 0, findings };
+    // **Whether a close is owed is a property of the page, not of the message.** The header's
+    // cluster of restore controls is drawn when the screen holds closable messages; without it
+    // there is nowhere for a closed message to go, and a warning that must stay visible is right.
+    const closeOwed = document.querySelector(o.restoreControlSelector) !== null;
 
     const clear = (c) => c === "transparent" || c === "rgba(0, 0, 0, 0)" || /\/\s*0(?:\.0+)?\s*\)\s*$/.test(c);
     const visible = (el) => {
@@ -1453,11 +1494,12 @@ const standingMessageDrawsNoClose = {
       const glyph = [...el.querySelectorAll(o.messageGlyphSelector)].some(
         (g) => !g.closest('button, [role="button"], a[href]'),
       );
-      if (close && glyph) continue;
+      const missesClose = closeOwed && !close;
+      if (!missesClose && glyph) continue;
       const said = prose(el).replace(/\s+/g, " ").slice(0, 40);
       findings.push(
         `「${said}」 — `
-          + (close
+          + (!missesClose
             ? "this message draws no glyph of its own, so which kind it is reaches only a reader who "
               + "can separate the two tints. A message carried by colour alone has reached half of them"
             : "this message has no close. It is standing in the page's own column on a screen whose "
@@ -1465,7 +1507,7 @@ const standingMessageDrawsNoClose = {
               + "it — the control for its kind is tinted and pulses while one of that kind is hidden. "
               + "What does not close is the answer to something the reader just did, and that is gone "
               + "before a page anybody merely opened is read")
-          + (glyph ? "" : close ? "" : ", and it draws no glyph either")
+          + (glyph || !missesClose ? "" : ", and it draws no glyph either")
           + ` (found by ${how === "role" ? "the role it publishes" : "the band it draws"}, ${where(el)})`,
       );
       if (findings.length >= o.maxFindings) break;
@@ -2405,6 +2447,7 @@ const FIXTURES = {
         .msg{border:1px solid #ccc;border-radius:6px;padding:8px 12px;background:#eff6ff;display:flex;gap:8px;align-items:center;margin-bottom:8px}
         .msg .body{flex:1}.x{width:24px;height:24px;border:0;background:none}
         .figs{display:flex;gap:16px}.fig{width:220px;height:90px;border:1px solid #ddd;border-radius:6px;padding:12px}</style>
+        <header style="padding:8px 16px"><div data-part="console-notice-menu"><button aria-label="restore"><svg width=16 height=16><circle cx=8 cy=8 r=7/></svg></button></div></header>
         <main>
         <div role=note class=msg><svg width=16 height=16><circle cx=8 cy=8 r=7/></svg><span class=body>이력은 회차마다 남습니다</span><button class=x><svg width=12 height=12><path d="M1 1 L11 11"/></svg></button></div>
         <div role=note class=msg><svg width=16 height=16><circle cx=8 cy=8 r=7/></svg><span class=body>되돌리기는 마지막 회차만 가능합니다</span><button class=x><svg width=12 height=12><path d="M1 1 L11 11"/></svg></button></div>
@@ -2416,6 +2459,7 @@ const FIXTURES = {
       "a tinted band holding a sentence, with no role and no close":
         `<style>body{margin:0;font:14px sans-serif}main{padding:16px;width:1000px}
         .band{border:1px solid #fde68a;border-radius:6px;padding:8px 12px;background:#fffbeb;display:flex;gap:8px;align-items:center}</style>
+        <header style="padding:8px 16px"><div data-part="console-notice-menu"></div></header>
         <main><div class=band><svg width=16 height=16><path d="M8 1 L15 14 H1 Z"/></svg>
         <span>정책이 없는 안전구역이 1곳 있습니다</span></div></main>`,
       // A message that closes and says nothing about which kind it is. Colour alone reaches only
@@ -2426,6 +2470,14 @@ const FIXTURES = {
         .msg .body{flex:1}.x{width:24px;height:24px;border:0;background:none}</style>
         <main><div role=alert class=msg><span class=body>수신하지 못한 사람이 2명 있습니다</span>
         <button class=x><svg width=12 height=12><path d="M1 1 L11 11"/></svg></button></div></main>`,
+      // The glyph is owed on every page. A confirmation page with no restore control asks for no
+      // close, and a warning there that is carried by its tint alone is still half-read.
+      "a warning with no glyph on a page with no restore control":
+        `<style>body{margin:0;font:14px sans-serif}main{padding:16px;width:600px}
+        .msg{border:1px solid #fecaca;border-radius:6px;padding:8px 12px;background:#fef2f2}</style>
+        <main><h1>계정 삭제</h1>
+        <div role=alert class=msg>이 작업은 되돌릴 수 없습니다</div>
+        <button>삭제</button> <button>취소</button></main>`,
     },
     quiet: {
       // The same screen written correctly. Every message closes and every one draws its glyph.
@@ -2447,6 +2499,15 @@ const FIXTURES = {
         <div class=card><h2>로그인</h2>
         <div role=alert class=msg><svg width=16 height=16><path d="M8 1 L15 14 H1 Z"/></svg> 계정 없는 연결</div>
         <input placeholder="아이디"><input type=password></div>`,
+      // The irreversibility warning of a confirmation page served by an identity provider. It has
+      // a `main` and draws its glyph, and the page has no header control to bring a closed message
+      // back, so a close would delete the one sentence the page exists to show.
+      "a warning that must stay visible, on a page with no restore control":
+        `<style>body{margin:0;font:14px sans-serif}main{padding:16px;width:600px}
+        .msg{border:1px solid #fecaca;border-radius:6px;padding:8px 12px;background:#fef2f2}</style>
+        <main><h1>계정 삭제</h1>
+        <div role=alert class=msg><svg width=16 height=16><path d="M8 1 L15 14 H1 Z"/></svg> 이 작업은 되돌릴 수 없습니다</div>
+        <button>삭제</button> <button>취소</button></main>`,
       // A toast. It floats over the page, it goes on its own, and it is not standing in the column.
       "a toast floating over the page":
         `<style>body{margin:0;font:14px sans-serif}main{padding:16px;width:1000px}
@@ -2903,6 +2964,19 @@ const FIXTURES = {
         <table style="width:600px"><tbody>
           <tr><td>휴게시설 설치·관리기준</td></tr><tr><td>위험성평가 실시</td></tr></tbody></table>
         <div class=pager>행: 10</div>`,
+      // Two labels positioned onto one another in an ordinary card, outside any dialog.
+      "two absolutely positioned labels in one box":
+        `<style>body{margin:0;font:14px sans-serif}
+        .card{position:relative;width:320px;height:48px;border:1px solid #ccc;margin:12px}
+        .card span{position:absolute;left:12px}</style>
+        <div class=card><span style="top:8px">보존 기간</span><span style="top:12px">3년 · 법정 최소</span></div>`,
+      // Line boxes are still compared: a wrapping span has a fragment on its second line, and a
+      // label painted over that fragment is a collision. A check that dropped inline elements to
+      // quiet the paragraph case would go silent here.
+      "a label painted over the second line of a wrapping span":
+        `<style>body{margin:0;font:14px/20px sans-serif}p{position:relative;width:300px;margin:12px}
+        .tag{position:absolute;left:8px;top:20px}</style>
+        <p><span>스팸 메일함도 확인하고, 그래도 없으면 입력한 주소가 맞는지 확인한 뒤 잠시 후 다시 시도하세요.</span><span class=tag>재전송 대기</span></p>`,
     },
     quiet: {
       "the same two tables, one under the other":
@@ -2928,6 +3002,13 @@ const FIXTURES = {
         table{border-collapse:collapse}</style>
         <table><tbody><tr><td>산업안전보건법</td><td>고용노동부</td></tr>
         <tr><td>중대재해처벌법</td><td>법무부</td></tr></tbody></table>`,
+      // A message catalogue wraps every sentence in an inline span, so this is what a paragraph of
+      // text, a link and more text looks like. The last span wraps: its union rectangle covers
+      // both lines and contains the first span and the link, though no glyph touches another.
+      "a wrapping paragraph of span, link and span":
+        `<style>body{margin:0;font:14px/20px sans-serif}p{width:400px;margin:12px}</style>
+        <p><span>인증 메일을 받지 못하셨나요?</span> <a href="#">메일 다시 보내기</a>
+        <span>스팸 메일함도 확인하고, 그래도 없으면 입력한 주소가 맞는지 확인한 뒤 잠시 후 다시 시도하세요.</span></p>`,
       // The row is below the panel's bottom edge and clipped away, so nothing is on screen where
       // the layout says it is. Reading the raw rectangle makes it collide with the footer under
       // the panel, which is what every list screen with a scroll looks like.
@@ -3281,6 +3362,71 @@ const FIXTURES = {
 };
 
 /**
+ * Measures a page that must fire, once more when the first reading found nothing to compare.
+ *
+ * <p><b>`compared 0` with no finding on a broken page is a page that was not measured, never a
+ * check that passed.</b> The fixture is written to hold the defect, so a check with nothing to
+ * compare there was pointed at something other than the fixture: the browser answered before the
+ * new document replaced the old one, or the settle loop gave up on a page that had not painted.
+ * The same page measured alone comes out right, which is what makes the failure look like a
+ * defect in the check. One more reading re-opens the page; a second empty reading is reported as
+ * it stands, because a page that cannot be measured twice is a finding and not noise. A reading
+ * with a finding is a measurement whatever it compared: a check may report what it could not
+ * judge as a finding of its own.
+ *
+ * @param {() => { compared: number, findings: unknown[] }} measure opens the page and reads it
+ * @returns {{ out: { compared: number, findings: unknown[] }, retried: boolean }}
+ */
+function measureBroken(measure) {
+  const first = measure();
+  if (first.compared > 0 || first.findings.length > 0) return { out: first, retried: false };
+  return { out: measure(), retried: true };
+}
+
+/**
+ * Rows proving the retry itself, with no browser: a reading that compared nothing is measured
+ * again, a measured reading is not, and a page that compares nothing twice stays a failure.
+ */
+function retryRows() {
+  const reading = (compared, findings = []) => ({ compared, findings });
+  const sequence = (...readings) => {
+    const calls = { n: 0 };
+    return { calls, measure: () => readings[Math.min(calls.n++, readings.length - 1)] };
+  };
+  const cases = [
+    [
+      "a broken page that compared nothing is measured again, and the second reading stands",
+      sequence(reading(0), reading(3, ["x"])),
+      (r, calls) => calls.n === 2 && r.retried && r.out.compared === 3 && r.out.findings.length === 1,
+    ],
+    [
+      "a broken page that was measured the first time is not measured again",
+      sequence(reading(3, ["x"]), reading(0)),
+      (r, calls) => calls.n === 1 && !r.retried && r.out.compared === 3,
+    ],
+    [
+      "a broken page whose reading holds a finding is a measurement even when it compared 0",
+      sequence(reading(0, ["x"]), reading(4, ["y"])),
+      (r, calls) => calls.n === 1 && !r.retried && r.out.findings.length === 1,
+    ],
+    [
+      "a broken page that compares nothing twice is not retried a third time and stays unmeasured",
+      sequence(reading(0), reading(0), reading(5, ["x"])),
+      (r, calls) => calls.n === 2 && r.retried && r.out.compared === 0,
+    ],
+  ];
+  return cases.map(([name, { calls, measure }, holds]) => {
+    const result = measureBroken(measure);
+    return [
+      "selftest · retry of an unmeasured broken page",
+      name,
+      `measured ${calls.n} time${calls.n === 1 ? "" : "s"}, last reading compared ${result.out.compared}`,
+      holds(result, calls),
+    ];
+  });
+}
+
+/**
  * Both directions, against generated fixtures.
  *
  * <p>`selected` narrows to `--check <id>`, because iterating on one check should not mean sitting
@@ -3290,6 +3436,7 @@ const FIXTURES = {
 function selfTest(session, options, selected = checks) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "audit-rendered-"));
   const rows = [];
+  let measuredAgain = 0;
   try {
     for (const check of selected) {
       const pages = FIXTURES[check.id];
@@ -3301,12 +3448,18 @@ function selfTest(session, options, selected = checks) {
         for (const [name, html] of Object.entries(pages[direction])) {
           const file = path.join(dir, `${check.id}-${direction}-${rows.length}.html`);
           fs.writeFileSync(file, `<!doctype html><meta charset=utf-8>${html}`);
-          const out = evaluate(session, `file://${file}`, check, options);
+          const measure = () => evaluate(session, `file://${file}`, check, options);
+          // A quiet page may compare nothing on purpose (a screen the check has no subject on),
+          // so only a page that must fire is measured again.
+          const { out, retried } =
+            direction === "broken" ? measureBroken(measure) : { out: measure(), retried: false };
+          if (retried) measuredAgain += 1;
           const fired = out.findings.length > 0;
           rows.push([
             `${check.id} · ${direction}`,
             name,
             `compared ${out.compared}, ${out.findings.length} findings` +
+              (retried ? " (the first reading compared 0 and found nothing, so the page was measured again)" : "") +
               (fired ? ` — ${out.findings[0]}` : ""),
             fired === (direction === "broken"),
           ]);
@@ -3316,16 +3469,20 @@ function selfTest(session, options, selected = checks) {
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }
+  // The retry's own cases need no browser, so they run with every self-test, narrowed or not.
+  rows.push(...retryRows());
 
   let failed = 0;
   for (const [id, name, detail, ok] of rows) {
     if (!ok) failed += 1;
     console.log(`${ok ? "✔" : "✖"} ${id} — ${name}\n   ${detail}`);
   }
+  const again =
+    measuredAgain > 0 ? `, ${measuredAgain} measured again after an empty first reading` : "";
   console.log(
     failed === 0
-      ? `\n✔ ${selected.length} checks, ${rows.length} pages, both directions`
-      : `\n✖ ${failed} of ${rows.length} pages came out wrong — a check proved in one direction has not been added`,
+      ? `\n✔ ${selected.length} checks, ${rows.length} pages, both directions${again}`
+      : `\n✖ ${failed} of ${rows.length} pages came out wrong${again}: a check proved in one direction has not been added`,
   );
   return failed === 0 ? 0 : 1;
 }
