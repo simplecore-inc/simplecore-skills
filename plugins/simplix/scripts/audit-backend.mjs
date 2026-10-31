@@ -2692,6 +2692,51 @@ public class ApprovalInboxService {
     },
   },
   {
+    id: "message-converters-replaced",
+    invariant: "#1",
+    level: "error",
+    desc: "A WebMvcConfigurer overrides configureMessageConverters(List): adding anything there makes Spring MVC skip its default converters, so no Resource converter is registered and every ResponseEntity<Resource> answers 500. Change converters in extendMessageConverters(List), which receives the defaults (framework/runtime-behaviour.md)",
+    appliesTo: (p) => /\.java$/.test(p) && !/src\/test\//.test(p),
+    check: (c) => lineHits(stripCommentsAndStrings(c), /\bvoid\s+configureMessageConverters\s*\(\s*(?:@\w+\s+)*(?:final\s+)?(?:java\.util\.)?List\s*</),
+    samples: {
+      file: "app/config/WebConfig.java",
+      broken: `public class WebConfig implements WebMvcConfigurer {
+    @Override
+    public void configureMessageConverters(@NonNull List<HttpMessageConverter<?>> converters) {
+        converters.add(new StringHttpMessageConverter());
+    }
+}`,
+      fixed: `public class WebConfig implements WebMvcConfigurer {
+    @Override
+    public void extendMessageConverters(@NonNull List<HttpMessageConverter<?>> converters) {
+        converters.add(0, new StringHttpMessageConverter());
+    }
+}`,
+      miss: [
+        {
+          note: "the Spring 7 ServerBuilder form keeps the defaults and only swaps the converters it names",
+          source: `public class WebConfig implements WebMvcConfigurer {
+    @Override
+    public void configureMessageConverters(HttpMessageConverters.ServerBuilder builder) {
+        builder.withStringConverter(new StringHttpMessageConverter(StandardCharsets.UTF_8));
+    }
+}`,
+        },
+      ],
+      hit: [
+        {
+          note: "a final parameter with a qualified List",
+          source: `public class WebConfig implements WebMvcConfigurer {
+    @Override
+    public void configureMessageConverters(final java.util.List<HttpMessageConverter<?>> converters) {
+        converters.add(new MappingJackson2HttpMessageConverter());
+    }
+}`,
+        },
+      ],
+    },
+  },
+  {
     id: "undocumented-response-entity",
     invariant: "#1",
     level: "review",

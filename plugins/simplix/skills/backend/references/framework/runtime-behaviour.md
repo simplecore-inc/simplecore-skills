@@ -20,6 +20,7 @@ symptom.
 12. [A scheduler lock needs the scheduler switched on](#a-scheduler-lock-needs-the-scheduler-switched-on)
 13. [A Gradle build stops at the first red module](#a-gradle-build-stops-at-the-first-red-module)
 14. [A framework snapshot is published by its owner only](#a-framework-snapshot-is-published-by-its-owner-only)
+15. [Overriding `configureMessageConverters(List)` drops Spring's defaults](#overriding-configuremessageconverterslist-drops-springs-defaults)
 
 ---
 
@@ -229,3 +230,16 @@ project can (map the refusal in the project's advice), and the framework change 
 owns the snapshot.
 Example: publishing from a framework checkout three hours ahead of the last snapshot ships three hours of unreviewed API to every build on the machine.
 
+## Overriding `configureMessageConverters(List)` drops Spring's defaults
+
+A `WebMvcConfigurer` that adds anything to the list in `configureMessageConverters(List)` makes
+Spring MVC skip its default converters, so the resource, resource region, form and XML converters
+are never registered. Every `ResponseEntity<Resource>` then answers 500 with
+`HttpMessageNotWritableException: No converter for [class ...UrlResource]`, while JSON endpoints
+keep working. A contract test on `MockMvcBuilders.standaloneSetup` cannot see it, because the
+standalone setup carries Spring's defaults whatever the application registers. Change converters
+in `extendMessageConverters(List)`, which receives the default list, and prove a download with a
+test over the real auto-configuration (`@SpringBootTest` on a random port, or a
+`WebApplicationContextRunner` with `webAppContextSetup`), asking for a whole file and a `Range`.
+The audit's `message-converters-replaced` refuses the override.
+Example: `configureMessageConverters(c) { c.add(new StringHttpMessageConverter()); }` turns every file download into a 500.
