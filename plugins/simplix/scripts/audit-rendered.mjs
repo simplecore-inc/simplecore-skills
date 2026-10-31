@@ -465,6 +465,47 @@ const DEFAULTS = {
 
   /** How far two boxes' tops may differ and still be on one line. */
   figureRowTopSlackPx: 6,
+
+  /**
+   * `valueOffTheTokenSet`: whether a painted value has to be one the design's tokens give. Off by
+   * default, because a page with no token set would report every value it paints; a project turns
+   * it on in its options file once its theme is generated from tokens.
+   */
+  offTokenCheck: false,
+  /**
+   * Which custom properties form the token set, as name globs (`--fs-*`). Empty takes every custom
+   * property the page's stylesheets declare; a strict profile names only the generated theme's.
+   */
+  offTokenNames: [],
+  /** The computed properties judged, each with the kind its tokens are resolved as. */
+  offTokenProperties: {
+    color: "color",
+    backgroundColor: "color",
+    borderTopColor: "color",
+    fontSize: "length",
+    lineHeight: "length",
+    fontWeight: "weight",
+    borderTopLeftRadius: "length",
+    boxShadow: "shadow",
+    paddingTop: "spacing",
+    paddingLeft: "spacing",
+    marginTop: "spacing",
+    marginLeft: "spacing",
+    rowGap: "spacing",
+    columnGap: "spacing",
+  },
+  /** Values allowed besides the tokens. */
+  offTokenAllow: ["0px", "normal", "auto", "none", "transparent", "rgba(0, 0, 0, 0)"],
+  /** Accept a spacing value that is a whole multiple of the page's `--spacing`. */
+  offTokenSpacingMultiples: true,
+  /** Subtrees not judged (charts, illustrations, a user's own content). */
+  offTokenIgnoreSelector: "",
+  /** A radius at or above this many pixels draws a full pill whatever its value (`calc(infinity)`). */
+  offTokenFullRadiusPx: 9999,
+  /** How many off-token values the page may paint before the check fails; it only goes down. */
+  offTokenMax: 0,
+  /** How many property=value groups the report lists. */
+  offTokenReportGroups: 25,
 };
 
 // ---------------------------------------------------------------------------
@@ -2237,6 +2278,115 @@ const buttonWithoutBackground = {
   },
 };
 
+/**
+ * A painted value that no token gives - a font size, weight, radius, shadow, colour or spacing the
+ * design never named.
+ *
+ * The defect it exists to catch: a theme generated from the product's tokens, and a kit whose
+ * classes still say `text-[13.5px]` and `font-[550]`. The screen renders, every class compiles, a
+ * source grep counts literals in files nobody renders, and the console draws a type scale the
+ * product does not have. Only the painted page says which values reached the reader.
+ *
+ * **The token set is the page's own**: every custom property its stylesheets declare (or the ones
+ * `offTokenNames` lists), resolved through a probe element as the kind each property is judged by,
+ * so a token defined as `var(--other)` or `calc()` is compared as what it draws. Two renderings
+ * that equal a token are normalised first: a radius at `offTokenFullRadiusPx` or above is the full
+ * pill whatever its value (Tailwind writes `calc(infinity * 1px)`), and the transparent zero
+ * layers Tailwind composes into every shadow (`ring-0`, `shadow` stacking) are dropped.
+ */
+const valueOffTheTokenSet = {
+  id: "valueOffTheTokenSet",
+  grade: "error",
+  title: "a painted size, weight, radius, shadow, colour or spacing that no token of the page gives",
+  page: (o) => {
+    const findings = [];
+    if (!o.offTokenCheck) return { compared: 0, findings };
+    const glob = (g) => new RegExp(`^${g.replace(/[.+?^${}()|[\]\\]/g, "\\$&").replace(/\*/g, ".*")}$`);
+    const wanted = o.offTokenNames.map(glob);
+    const names = new Set();
+    const walk = (rules) => {
+      for (const rule of rules) {
+        if (rule.style) for (const prop of rule.style) if (prop.startsWith("--")) names.add(prop);
+        if (rule.cssRules) walk(rule.cssRules);
+      }
+    };
+    for (const sheet of document.styleSheets) {
+      try { walk(sheet.cssRules); } catch { /* a cross-origin sheet cannot be read */ }
+    }
+    const tokens = [...names].filter((n) => wanted.length === 0 || wanted.some((r) => r.test(n)));
+    const probe = document.createElement("div");
+    probe.style.cssText = "position:absolute;visibility:hidden;pointer-events:none;border-style:solid";
+    document.body.appendChild(probe);
+    const dropEmpty = (shadow) => {
+      if (!shadow || shadow === "none") return "none";
+      const layers = shadow.split(/,(?![^(]*\))/).map((l) => l.trim());
+      // A layer in a fully transparent colour draws nothing, whatever its offsets.
+      const kept = layers.filter((l) => !/^(rgba\(0, 0, 0, 0\)|transparent)(\s|$)/.test(l));
+      return kept.length === 0 ? "none" : kept.join(", ");
+    };
+    const set = { color: new Set(), length: new Set(), weight: new Set(), shadow: new Set(), spacing: new Set() };
+    const resolve = {
+      color: (v) => { probe.style.color = ""; probe.style.color = v; return getComputedStyle(probe).color; },
+      length: (v) => { probe.style.width = ""; probe.style.width = v; const w = getComputedStyle(probe).width; return probe.style.width ? w : ""; },
+      weight: (v) => { probe.style.fontWeight = ""; probe.style.fontWeight = v; return probe.style.fontWeight ? getComputedStyle(probe).fontWeight : ""; },
+      shadow: (v) => { probe.style.boxShadow = ""; probe.style.boxShadow = v; return probe.style.boxShadow ? dropEmpty(getComputedStyle(probe).boxShadow) : ""; },
+    };
+    for (const name of tokens) {
+      const ref = `var(${name})`;
+      for (const kind of ["color", "length", "weight", "shadow"]) {
+        const v = resolve[kind](ref);
+        if (v && v !== "auto") set[kind].add(v);
+      }
+    }
+    const spacingUnit = parseFloat(resolve.length("var(--spacing)")) || 0;
+    probe.remove();
+    for (const v of set.length) set.spacing.add(v);
+    const allow = new Set(o.offTokenAllow);
+    const ignored = (el) => o.offTokenIgnoreSelector && el.closest(o.offTokenIgnoreSelector);
+    const onToken = (kind, value) => {
+      if (allow.has(value)) return true;
+      if (kind === "shadow") return set.shadow.has(dropEmpty(value)) || dropEmpty(value) === "none";
+      if (kind === "spacing") {
+        if (set.spacing.has(value)) return true;
+        const px = parseFloat(value);
+        if (o.offTokenSpacingMultiples && spacingUnit > 0 && Number.isFinite(px)) return Math.abs(px / spacingUnit - Math.round(px / spacingUnit)) < 0.01;
+        return false;
+      }
+      return set[kind].has(value);
+    };
+    const groups = new Map();
+    let compared = 0;
+    let off = 0;
+    for (const el of document.body.querySelectorAll("*")) {
+      const r = el.getBoundingClientRect();
+      if (r.width === 0 || r.height === 0 || ignored(el)) continue;
+      const s = getComputedStyle(el);
+      if (s.visibility === "hidden") continue;
+      for (const [prop, kind] of Object.entries(o.offTokenProperties)) {
+        let value = s[prop];
+        if (value === undefined || value === "") continue;
+        if (prop === "borderTopColor" && (s.borderTopStyle === "none" || parseFloat(s.borderTopWidth) === 0)) continue;
+        if (prop === "borderTopLeftRadius" && parseFloat(value) >= o.offTokenFullRadiusPx) continue;
+        if (kind === "spacing" && value.startsWith("-")) value = value.slice(1);
+        compared += 1;
+        if (onToken(kind, value)) continue;
+        off += 1;
+        const key = `${prop}=${value}`;
+        const g = groups.get(key) ?? { n: 0, slot: "" };
+        g.n += 1;
+        if (!g.slot) g.slot = el.closest("[data-slot]")?.getAttribute("data-slot") ?? el.tagName.toLowerCase();
+        groups.set(key, g);
+      }
+    }
+    if (off > o.offTokenMax) {
+      findings.push(`${off} off-token values (max ${o.offTokenMax}) in ${groups.size} property=value groups, against ${tokens.length} custom properties`);
+      const sorted = [...groups.entries()].sort((a, b) => b[1].n - a[1].n).slice(0, o.offTokenReportGroups);
+      for (const [key, g] of sorted) findings.push(`${key} ×${g.n} (first in ${g.slot})`);
+    }
+    return { compared, off, tokens: tokens.length, findings };
+  },
+};
+
 export const checks = [
   countedListDrawsNoRows,
   standingMessageDrawsNoClose,
@@ -2252,6 +2402,7 @@ export const checks = [
   unresolvedKeyOnTheScreen,
   pageLanguageFollowsTheLocale,
   buttonWithoutBackground,
+  valueOffTheTokenSet,
 ];
 
 /** One self-contained expression, ready for any driver's evaluate call. */
@@ -3291,6 +3442,31 @@ const FIXTURES = {
         <div role=tablist><button role=tab>전체</button><button role=tab>활성</button></div>`,
     },
   },
+  valueOffTheTokenSet: {
+    // The check is off by default, so its fixtures turn it on.
+    options: { offTokenCheck: true },
+    broken: {
+      // A kit cell drawn at a literal size beside a theme whose type scale has no such size.
+      "a table cell at 13.5px under a scale of 13 and 14":
+        `<style>:root{--fs-sm:13px;--fs-md:14px;--spacing:4px}body{margin:0;font-size:var(--fs-md);line-height:normal}
+        td{font-size:13.5px;padding:0}</style><table><tr><td>Senior producer</td></tr></table>`,
+      "a weight the scale does not have":
+        `<style>:root{--fw-semibold:600;--spacing:4px}body{margin:0;font-weight:var(--fw-semibold);line-height:normal}
+        b{font-weight:550}</style><p><b>Active</b></p>`,
+    },
+    quiet: {
+      "every value read from a token":
+        `<style>:root{--fs-md:14px;--fw-semibold:600;--radius-md:8px;--spacing:4px;--ink:#12201f}
+        body{margin:0;font-size:var(--fs-md);font-weight:var(--fw-semibold);color:var(--ink);line-height:normal}
+        .c{border-radius:var(--radius-md);padding:calc(var(--spacing)*3)}</style><div class=c>Senior producer</div>`,
+      // Tailwind's pill and its composed shadow stack render as the tokens they stand for.
+      "a pill at calc(infinity) and an empty Tailwind ring stack":
+        `<style>:root{--radius-full:9999px;--fs-md:14px;--fw-regular:400;--spacing:4px;--ink:#12201f}
+        body{margin:0;font-size:var(--fs-md);font-weight:var(--fw-regular);color:var(--ink);line-height:normal}
+        span{display:inline-block;border-radius:calc(infinity * 1px);padding:4px 8px;
+        box-shadow:0 0 #0000,0 0 #0000,0 0 #0000,0 0 #0000}</style><span>Active</span>`,
+    },
+  },
   pressableControlClippedByItsContainer: {
     broken: {
       // The defect this was written from: a detail footer whose action row cannot wrap, inside a
@@ -3601,7 +3777,7 @@ function selfTest(session, options, selected = checks) {
         for (const [name, html] of Object.entries(pages[direction])) {
           const file = path.join(dir, `${check.id}-${direction}-${rows.length}.html`);
           fs.writeFileSync(file, `<!doctype html><meta charset=utf-8>${html}`);
-          const measure = () => evaluate(session, `file://${file}`, check, options);
+          const measure = () => evaluate(session, `file://${file}`, check, { ...options, ...pages.options });
           // A quiet page may compare nothing on purpose (a screen the check has no subject on),
           // so only a page that must fire is measured again.
           const { out, retried } =
