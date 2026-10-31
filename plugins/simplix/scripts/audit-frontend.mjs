@@ -2586,6 +2586,39 @@ window.history.replaceState(null, "", window.location.pathname + window.location
     },
   },
   {
+    id: "list-search-mapped-by-hand",
+    invariant: "#32 / #79",
+    level: "error",
+    desc: "A list's free text (`_search`) moved onto one field by hand, in a `transformFilters` or any function that destructures or reads `_search`. The request builder drops `_search` unless the list passes `searchKey`, and a searchable backend refuses a key with no operator, so the hand mapping is what made one screen's box work while every sibling's narrowed nothing - and it searches one field where the entity declares several. Mark the fields an operator types to find a record with `@SearchableField(keyword = true)` (`searchKeyword: true` in the entity yml), regenerate, and let the generated list pass `searchKey: SEARCHABLE_KEYWORD_PARAM`",
+    appliesTo: (path) => isTsx(path) || /\.ts$/.test(path),
+    check: (c) => {
+      const hits = [];
+      const lines = c.split("\n");
+      const reads = /\{\s*_search\s*(?::\s*[A-Za-z_$][\w$]*)?\s*[,}]|\[\s*["'`]_search["'`]\s*\]|\.\s*_search\b/g;
+      let m;
+      while ((m = reads.exec(c)) !== null) {
+        const line = c.slice(0, m.index).split("\n").length;
+        hits.push({ line, excerpt: (lines[line - 1] ?? "").trim() });
+      }
+      return hits;
+    },
+    samples: {
+      file: "modules/<group>/<module>/src/widgets/<entity>/list.tsx",
+      broken: `function searchOnName(filters: Record<string, unknown>) {
+  const { _search: text, ...rest } = filters;
+  return typeof text === "string" ? { ...rest, "name.contains": text } : rest;
+}`,
+      fixed: `const options = { searchKey: SEARCHABLE_KEYWORD_PARAM };
+return useCrudList<Row>(adaptOrvalList<Row>(useListEntities, options), { stateMode: "server" });`,
+      miss: [
+        {
+          note: "a filter key that merely contains the word",
+          source: `const filters = { "searchIndex.contains": text };`,
+        },
+      ],
+    },
+  },
+  {
     id: "paged-list-in-a-page-not-generated-as-a-list",
     invariant: "#32 / #79",
     level: "error",

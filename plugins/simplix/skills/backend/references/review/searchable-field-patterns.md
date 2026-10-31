@@ -28,6 +28,23 @@ This document provides comprehensive guidance for configuring `@SearchableField`
 | `operators` | SearchOperator[] | `{}` | Allowed search operators. Empty = all operators allowed |
 | `sortable` | boolean | `false` | Whether this field can be used for sorting |
 | `sortField` | String | `""` | Field used for sorting. Priority: sortField > entityField > DTO field name |
+| `keyword` | boolean | `false` | The field takes part in the route's keyword search (searchable-jpa 2.0.1+). Only a `String` whose operators allow `CONTAINS` |
+
+### Keyword search (the list's search box)
+
+A list's search box sends its text as the reserved `keyword` query parameter. The parser ORs a
+`CONTAINS` over every field marked `keyword = true` and ANDs that group with the other conditions.
+A DTO that marks none refuses the parameter (`SEARCH_INVALID_QUERY_SYNTAX`), and SimpliX Meta
+publishes `searchable.keyword: true`, so the generated list wires its box only where the route
+takes it and hides it elsewhere.
+
+- Mark the text fields an operator types to find a record: names, codes, keys, messages. Never
+  `createdBy` / `updatedBy`.
+- On a generated entity, set `searchKeyword: true` on the field in `.simplix/entity/<Entity>.yml`
+  so a regenerate keeps it; the DTO template writes `keyword = true` from it. A field added by hand
+  to a promoted DTO carries the attribute in its own annotation.
+- A screen that maps `_search` onto one field by hand is the defect this replaces
+  (`list-search-mapped-by-hand` in the frontend audit).
 
 ### Basic Usage
 

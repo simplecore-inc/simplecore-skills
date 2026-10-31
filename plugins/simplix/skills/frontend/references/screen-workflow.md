@@ -26,6 +26,15 @@ Read this before planning a screen or dispatching agents for screen work.
    - A kit ships `crud-page.stories.hbs` beside `crud-page.hbs`; with `templates.storiesDir` set in
      `simplix.config.ts`, `simplix scaffold` writes the board story from the same context, with
      sample rows, and tracks it like a screen file.
+   - A board that already draws the screen under its own name is claimed through
+     `templates.story.files` (`{ "<entity>": "<frame>.stories.tsx" }`, keyed by the entity's
+     kebab name, or by an `add-page` story's default name). The scaffold then writes to that
+     frame instead of laying a second one beside it, and `simplix generated --adopt <frame>` gives
+     a hand-drawn frame the render's header and records its base. Two frames for one screen are
+     the symptom.
+   - Regenerate a domain (`simplix meta`) only while the backend answers: the non-base locales
+     take their words from the server's translations, and a run against a server that is down
+     writes the base locale's words into every locale (the CLI warns `No server translations`).
 3. **Existing screens are rewritten, never patched toward the workflow.** Read the old files as a
    list of behaviours to keep: data, filters, columns, actions, confirmations, permissions, copy.
    Re-apply them on the regenerated screen, then delete the old files.
