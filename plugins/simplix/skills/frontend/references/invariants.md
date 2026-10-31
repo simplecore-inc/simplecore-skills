@@ -449,6 +449,14 @@ this and the list written under those conditions does not name them.
   `vite.dedupe.js`), else every `resolve.dedupe: [...]` written as a literal list in a Vite
   config; a Vite config declaring the list any other way (an identifier, a spread) stops the
   run with exit 2, because a list it cannot read is not an empty one.
+- **A UI kit installed from a checkout of its own can resolve its own framework copy.** The
+  script follows each `@simplix-react-ui-kits/*` package the app resolves (through the
+  `node_modules` of the root and of each workspace package, never through a path written in
+  the script), finds the `@simplix-react/ui` that package resolves from where it lives, and
+  fails when its real path differs from the app's. A dedupe list does not excuse it: the list
+  decides which copy a bundle holds, and the type checker still reads the kit's. Install the
+  kit with `SIMPLIX_FRAMEWORK_PATH` set to the app's framework checkout. `--selftest` proves
+  the comparison on two temporary trees.
 - **Missing chrome has TWO causes, and WHICH pages lost it tells them apart before you
   touch anything.** Duplication takes out every page past the package boundary - the
   app's own pages keep their header while every `modules/*` page loses it. When only
