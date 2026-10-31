@@ -547,6 +547,67 @@ function projectionProps(relPath) {
 }
 
 /**
+ * Properties each entity's detail and list projections declare as a plain string, keyed by model
+ * file stem, read from both generators' output (`src/generated/model` and
+ * `src/generated-meta/model`).
+ *
+ * <p>A name ending in `Type` or `Status` is only a guess that the field is an enum; the generated
+ * model says what it is. Built on first use and kept.
+ */
+let stringPropIndex = null;
+
+function stringPropsByModel() {
+  if (stringPropIndex) return stringPropIndex;
+  stringPropIndex = new Map();
+  const packagesDir = path.join(ROOT, "packages");
+  if (!fs.existsSync(packagesDir)) return stringPropIndex;
+  for (const pkg of fs.readdirSync(packagesDir)) {
+    for (const sub of ["src/generated/model", "src/generated-meta/model"]) {
+      const modelDir = path.join(packagesDir, pkg, sub);
+      if (!fs.existsSync(modelDir)) continue;
+      for (const file of fs.readdirSync(modelDir)) {
+        if (!file.endsWith(".ts")) continue;
+        const src = fs.readFileSync(path.join(modelDir, file), "utf8");
+        const props = new Set();
+        for (const m of src.matchAll(/^ {2}(\w+)\??:\s*string(?:\s*\|\s*null)?;/gm)) props.add(m[1]);
+        stringPropIndex.set(file.replace(/\.ts$/, ""), props);
+      }
+    }
+  }
+  return stringPropIndex;
+}
+
+/**
+ * @param relPath a widget file, whose directory names the entity the scaffold generated it for
+ * @returns the properties both the entity's detail and list projections that exist declare as a
+ *          plain string, or an empty set when neither model is present
+ */
+function projectionStringProps(relPath) {
+  const dir = path.basename(path.dirname(relPath));
+  const camel = dir.replace(/-(\w)/g, (_, c) => c.toUpperCase());
+  const index = stringPropsByModel();
+  let props = null;
+  for (const suffix of ["DetailDTO", "ListDTO"]) {
+    const model = index.get(camel + suffix);
+    if (!model) continue;
+    props = props ? new Set([...props].filter((p) => model.has(p))) : new Set(model);
+  }
+  return props ?? new Set();
+}
+
+/**
+ * Whether every enum-looking path a line stringifies ends in a property the generated contract
+ * declares as a plain string, so the line can only be turning text into text.
+ *
+ * @param line the source line
+ * @param stringProps the properties the entity's projections declare as `string`
+ */
+function stringifiedPathsArePlainStrings(line, stringProps) {
+  const paths = [...line.matchAll(/(?:String\(\s*|\$\{\s*)((?:[A-Za-z_$][\w$]*\.)+\w+)/g)].map((m) => m[1]);
+  return paths.length > 0 && paths.every((p) => stringProps.has(p.slice(p.lastIndexOf(".") + 1)));
+}
+
+/**
  * The source of every exported function in the project, keyed by name.
  *
  * <p>Built on first use. A detail panel routinely hands a whole record to a shared formatter
@@ -6229,11 +6290,12 @@ const canManage = useCan("manage", SUBJECTS.area);
     level: "error",
     desc: "Enum-looking field turned into text by String() or template interpolation with no resolveBootEnum on the line — a boot enum is an object, so the cell renders `[object Object]`",
     appliesTo: isTsx,
-    check: (c) =>
+    check: (c, rel) =>
       // A file holding no server data cannot be holding a boot enum, whatever it names its
       // fields - the same guard `unresolved-boot-enum-label` uses. Without it this fires on
       // every local literal union called `kind`, and a rule that cries wolf takes the real
-      // ones beside it down.
+      // ones beside it down. A field the entity's generated model types as a plain string is
+      // text whatever its name ends in (`exceptionType` holding a class name).
       readsServerData(c)
         ? lineHits(
             c,
@@ -6242,7 +6304,8 @@ const canManage = useCan("manage", SUBJECTS.area);
             // out: that key sits inside quotes and never reaches the interpolation as a
             // property access.
             /(?:String\(\s*|\$\{\s*)(?:[A-Za-z_$][\w$]*\.)+(?!is[A-Z])\w*(?:[Ss]tatus|[Tt]ype|[Kk]ind|[Mm]ode|[Cc]hannel)\b/,
-            (line) => !line.includes("resolveBootEnum") && !stringifiedPathsAreKeyTested(line),
+            (line) => !line.includes("resolveBootEnum") && !stringifiedPathsAreKeyTested(line)
+              && !stringifiedPathsArePlainStrings(line, projectionStringProps(rel)),
           )
         : [],
     samples: {
@@ -8982,6 +9045,15 @@ function runSample(rule, sample) {
  */
 function selftestMechanisms() {
   const cases = [
+    {
+      name: "stringifiedPathsArePlainStrings: a field the model types as a string is text",
+      pass: () => stringifiedPathsArePlainStrings(`String(record.exceptionType ?? "")`, new Set(["exceptionType"])),
+    },
+    {
+      name: "stringifiedPathsArePlainStrings: a field the model does not type as a string is still suspect",
+      pass: () => !stringifiedPathsArePlainStrings(`String(record.jobStatus ?? "")`, new Set(["exceptionType"]))
+        && !stringifiedPathsArePlainStrings(`String(record.exceptionType) + String(row.status)`, new Set(["exceptionType"])),
+    },
     {
       name: "jsxOpenTag: a `>` inside an arrow body does not end the tag",
       pass: () => jsxOpenTag(`<Button onClick={() => setOpen(true)} disabled>x`, 0).tag
