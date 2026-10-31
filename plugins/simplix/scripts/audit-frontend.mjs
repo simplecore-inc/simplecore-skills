@@ -109,6 +109,16 @@ function lineOfIndex(content, index) {
   return content.slice(0, index).split("\n").length;
 }
 
+/**
+ * Whether every enum-looking path a line stringifies is also tested on that line as a key of a map
+ * (`x.kind in TONES`). A boot enum is an object, so `obj in TONES` is false and the branch that
+ * turns it into text is never reached: such a line can only stringify a plain string.
+ */
+function stringifiedPathsAreKeyTested(line) {
+  const paths = [...line.matchAll(/(?:String\(\s*|\$\{\s*)((?:[A-Za-z_$][\w$]*\.)+\w+)/g)].map((m) => m[1]);
+  return paths.length > 0 && paths.every((path) => line.includes(`${path} in `));
+}
+
 function lineHits(content, re, filter) {
   const hits = [];
   const lines = content.split("\n");
@@ -6094,7 +6104,7 @@ const canManage = useCan("manage", SUBJECTS.area);
             // out: that key sits inside quotes and never reaches the interpolation as a
             // property access.
             /(?:String\(\s*|\$\{\s*)(?:[A-Za-z_$][\w$]*\.)+(?!is[A-Z])\w*(?:[Ss]tatus|[Tt]ype|[Kk]ind|[Mm]ode|[Cc]hannel)\b/,
-            (line) => !line.includes("resolveBootEnum"),
+            (line) => !line.includes("resolveBootEnum") && !stringifiedPathsAreKeyTested(line),
           )
         : [],
     samples: {
@@ -6131,6 +6141,11 @@ const canManage = useCan("manage", SUBJECTS.area);
           source: `import { useGetUserAccount } from "@acme/domain-user";
 
 <Text>{String(row.isTypeLocked)}</Text>`,
+        },        {
+          note: "a plain-string field the same line first tests as a key of a map - an object would fail the test and never reach the text",
+          source: `import { useGetLedger } from "@acme/domain-billing";
+
+value: (entry) => entry.kind && entry.kind in KIND_TONES ? { label: t(\`kinds.\${entry.kind}\`) } : undefined,`,
         },
       ],
     },
