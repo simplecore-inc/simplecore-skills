@@ -2419,6 +2419,69 @@ return key ? <AlertBanner title={t(key)} /> : null;`,
     },
   },
   {
+    id: "blocks-file-imports-a-value-from-its-generated-widget",
+    invariant: "#79",
+    level: "error",
+    desc: "A `*.blocks.tsx` file that imports a value (not `import type` and not only `{ type X }` names) from its generated sibling `./detail`, `./list` or `./form`. The generated widget imports its blocks file, so a value import back closes a module cycle, and Vite answers an edit to either file inside a cycle with a full page reload instead of a hot update. Nothing else fails: it type-checks, builds and renders. What the blocks hook needs from the widget (the contract's field and filter tables) arrives as an argument of the hook, so import only types from the sibling and read the tables from the hook's input",
+    appliesTo: (p) => /(^|\/)(detail|list|form)\.blocks\.tsx$/.test(p),
+    check: (c) => {
+      const hits = [];
+      const lines = c.split("\n");
+      const at = (index) => {
+        const line = c.slice(0, index).split("\n").length;
+        return { line, excerpt: (lines[line - 1] ?? "").trim() };
+      };
+      // Only the three generated siblings: a blocks file importing a helper beside it is not a cycle.
+      const fromSibling = /import\s+([^;'"]*?)\s*from\s*["']\.\/(?:detail|list|form)(?:\.tsx?|\.js)?["']/g;
+      let m;
+      while ((m = fromSibling.exec(c)) !== null) {
+        const clause = m[1].trim();
+        if (/^type\s/.test(clause)) continue;
+        const brace = clause.indexOf("{");
+        const head = (brace === -1 ? clause : clause.slice(0, brace)).replace(/,\s*$/, "").trim();
+        const names = brace === -1 ? [] : clause.slice(brace + 1, clause.lastIndexOf("}")).split(",").map((n) => n.trim()).filter(Boolean);
+        // A default or namespace binding is a value; so is any named binding without `type`.
+        if (head || names.some((n) => !/^type\s/.test(n))) hits.push(at(m.index));
+      }
+      // A bare side-effect import keeps the edge too.
+      const bare = /import\s*["']\.\/(?:detail|list|form)(?:\.tsx?|\.js)?["']/g;
+      while ((m = bare.exec(c)) !== null) hits.push(at(m.index));
+      return hits;
+    },
+    samples: {
+      file: "modules/<domain>/src/widgets/<entity>/list.blocks.tsx",
+      broken: `import type { RecordColumn } from "@simplix-react-ui-kits/console-clarity/entity";
+import {
+  EntityColumnFields,
+  type EntityRow,
+} from "./list";
+
+export function useListBlocks(_list: { readonly generated: readonly RecordColumn<EntityRow>[] }) {
+  return { columns: EntityColumnFields.length ? undefined : undefined };
+}`,
+      fixed: `import type { ContractField, RecordColumn } from "@simplix-react-ui-kits/console-clarity/entity";
+import type { EntityRow } from "./list";
+
+export function useListBlocks({ fields }: { readonly generated: readonly RecordColumn<EntityRow>[]; readonly fields: readonly ContractField[] }) {
+  return { columns: fields.length ? undefined : undefined };
+}`,
+      miss: [
+        {
+          note: "inline type names only, which the transform erases",
+          file: "modules/<domain>/src/widgets/<entity>/detail.blocks.tsx",
+          source: `import { type EntityDetailProps } from "./detail";
+export function useDetailBlocks(_d: { readonly props: EntityDetailProps }) { return {}; }`,
+        },
+        {
+          note: "a value from a helper beside the blocks file, which is not the generated widget",
+          file: "modules/<domain>/src/widgets/<entity>/form.blocks.tsx",
+          source: `import { formSections } from "./form-sections";
+export function useFormBlocks() { return { sections: formSections }; }`,
+        },
+      ],
+    },
+  },
+  {
     id: "session-token-read-from-the-query-string",
     invariant: "#77",
     level: "error",
