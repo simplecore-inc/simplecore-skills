@@ -2349,7 +2349,9 @@ const valueOffTheTokenSet = {
     }
     const tokens = [...names].filter((n) => wanted.length === 0 || wanted.some((r) => r.test(n)));
     const probe = document.createElement("div");
-    probe.style.cssText = "position:absolute;visibility:hidden;pointer-events:none;border-style:solid";
+    // Content box and no border: a page that resets to border-box and leaves the default border width
+    // would otherwise read a 4px token as the 6px of its own border.
+    probe.style.cssText = "position:absolute;visibility:hidden;pointer-events:none;box-sizing:content-box;border-style:solid;border-width:0";
     document.body.appendChild(probe);
     const dropEmpty = (shadow) => {
       if (!shadow || shadow === "none") return "none";
@@ -3656,6 +3658,12 @@ const FIXTURES = {
         body{margin:0;font-size:var(--fs-md);font-weight:var(--fw-regular);color:var(--ink);line-height:normal}
         span{display:inline-block;border-radius:calc(infinity * 1px);padding:4px 8px;
         box-shadow:0 0 #0000,0 0 #0000,0 0 #0000,0 0 #0000}</style><span>Active</span>`,
+      // A page that resets every box to border-box without zeroing the border width: a small token must
+      // still resolve to its own length.
+      "a 4px spacing token on a page that resets to border-box":
+        `<style>:root{--sp-1:4px;--fs-md:14px;--fw-regular:400;--ink:#12201f}*{box-sizing:border-box}
+        body{margin:0;font-size:var(--fs-md);font-weight:var(--fw-regular);color:var(--ink);line-height:normal}
+        span{display:inline-block;padding:4px}</style><span>English</span>`,
       // An auto margin computes to the free space it took, which no token gives; nested or flat.
       "an auto margin pushing the last item of a bar to its end, in a nested rule":
         `<style>:root{--fs-md:14px;--fw-regular:400;--spacing:4px;--ink:#12201f}
