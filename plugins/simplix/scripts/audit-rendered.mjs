@@ -2595,6 +2595,13 @@ export const checks = [
 
 /** One self-contained expression, ready for any driver's evaluate call. */
 export function snippet(check, options = {}) {
+  // An option name this script does not know is refused rather than ignored: a misspelt or
+  // misplaced key leaves the check on its defaults, and a check on the wrong defaults can compare
+  // nothing and read exactly like a clean screen. Keys starting with `$` are annotations.
+  const unknown = Object.keys(options).filter((k) => !k.startsWith("$") && !(k in DEFAULTS));
+  if (unknown.length > 0) {
+    throw new Error(`unknown option ${unknown.join(", ")}; options: ${Object.keys(DEFAULTS).join(" ")}`);
+  }
   const o = { ...DEFAULTS, ...options };
   return `(${String(check.page)})(${JSON.stringify(o)})`;
 }
@@ -4095,7 +4102,14 @@ function main() {
   // `--options @<file>` reads a design's or a product's options file, such as the one a kit keeps
   // beside its design, so the decision lives with the design rather than in every command line.
   const rawOptions = arg("options") ?? "{}";
-  const options = { ...DEFAULTS, ...JSON.parse(rawOptions.startsWith("@") ? fs.readFileSync(rawOptions.slice(1), "utf8") : rawOptions) };
+  const given = JSON.parse(rawOptions.startsWith("@") ? fs.readFileSync(rawOptions.slice(1), "utf8") : rawOptions);
+  const unknownKeys = Object.keys(given).filter((k) => !k.startsWith("$") && !(k in DEFAULTS));
+  if (unknownKeys.length > 0) {
+    console.error(`unknown option ${unknownKeys.join(", ")} in --options`);
+    console.error(`  options: ${Object.keys(DEFAULTS).join(" ")}`);
+    return 2;
+  }
+  const options = { ...DEFAULTS, ...given };
   const only = arg("check");
   const selected = only ? checks.filter((c) => c.id === only) : checks;
   // A check id that names no check selects nothing, and nothing run reads exactly like a clean
@@ -4117,7 +4131,12 @@ function main() {
       console.error(`no such check: ${arg("print")}`);
       return 2;
     }
-    console.log(snippet(c, options));
+    try {
+      console.log(snippet(c, options));
+    } catch (e) {
+      console.error(e.message);
+      return 2;
+    }
     return 0;
   }
   // Everything below here drives a browser. A session this run opens is this run's to close, on
