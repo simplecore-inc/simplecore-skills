@@ -274,6 +274,18 @@ Neither is a defect. Reproduce at mount before reporting either, and say in the 
 
 ---
 
+## Selecting records and tabs in every locale
+
+A driver that opens a record by its visible name or a tab by its label times out the moment the
+locale changes. Select a row by `[data-testid^="list-row-"]` with the id taken from the list
+response (the card layout a narrow list falls into has no `tr`), a tab by
+`[aria-controls$="-content-<value>"]`, and match a response item on its own id field, never on
+"the id appears in the item" (`createdBy` carries the signed-in account's id). Take routes from
+`apps/<app>/src/routes/`, never from a menu label, and pick "the first record" per route: the
+first row may be the development account, and a grouped list opens nothing on its first row. A
+locale pass answers the account read (`/user/me`) as the locale under test, matching
+`"locale"\s*:` since the body may be pretty-printed, and aborts every non-GET.
+
 ## A charting library's defaults read as a broken component
 
 A chart legend that draws and does nothing, a slice that will not hide, a series that will not

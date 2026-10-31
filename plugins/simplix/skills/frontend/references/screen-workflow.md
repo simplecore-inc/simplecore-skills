@@ -70,6 +70,33 @@ Read this before planning a screen or dispatching agents for screen work.
     second rule. An important outline removal would outrank it, and `audit-frontend.mjs` rule
     `important-outline-removal` refuses one. A keyboard cursor that moves without moving focus (a
     combobox or command item) is matched by the attribute that carries it, in the same base rule.
+13. **The kit typechecks against the framework's built `dist`, the browser runs its `src`.** A
+    new framework prop works in the dev server and fails the kit's `tsc` with "Property does not
+    exist" until the framework package is rebuilt; rebuild it before a kit typecheck. A framework
+    worktree has no `dist`, and an app config that loads a framework plugin from `dist` fails to
+    start there: copy `dist` from the main checkout.
+14. **A slot override is checked in the generated rule, not in the style file.** The merge keeps
+    every base utility the override does not name, so an override that adds only a colour keeps
+    the base `opacity-30` and its hover state; name both states. A slot that styles its direct
+    children (a trigger's `span` as `flow-root`) beats a utility on that child, which then needs
+    `!`. An axis a `*.style.ts` declares and its component does not pass is dead silently.
+15. **A ref read inside a mount-only effect is read once.** A component that looked up its
+    section at mount never observed it when the presentation changed later; observe on change,
+    and prove it by switching presentation after a reload.
+16. **One CSS custom property name carries one meaning.** An inline variable on a component that
+    shared its name with a theme variable at `:root` overrode the theme's value; rename one.
+17. **A kit test that reads files needs Node types its package does not have.** Check the
+    package's `tsconfig` `include` before adding one: a test outside it is never typechecked, and
+    one inside it fails on `node:fs`. The kit has no DOM test environment, so a hook is tested by
+    pulling its pure parts out and through `renderToStaticMarkup`.
+18. **A script binary is a dependency.** A package script that calls `oxlint` with no package
+    declaring it fails with `command not found` on a clean install; declare the binary.
+19. **The rendered audit takes the design's options file.** A caller of `snippet()` passes the
+    kit's `<design>.audit.json` as the options argument; the script refuses an option name it
+    does not know, so a misspelt key stops the run instead of leaving the check on its defaults.
+20. **A list's minimum table width is measured, not declared.** A declared width below the drawn
+    columns scrolled sideways; the framework list measures the drawn table and raises the tier.
+    A width sweep reads after the list's layout animation ends.
 
 ## Cases
 
