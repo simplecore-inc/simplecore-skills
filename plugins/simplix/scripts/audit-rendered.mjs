@@ -2304,12 +2304,24 @@ const valueOffTheTokenSet = {
     const glob = (g) => new RegExp(`^${g.replace(/[.+?^${}()|[\]\\]/g, "\\$&").replace(/\*/g, ".*")}$`);
     const wanted = o.offTokenNames.map(glob);
     const names = new Set();
-    const walk = (rules) => {
+    // Rules declaring an auto margin, by side: the computed value of an auto margin is the free
+    // space it took, a length no token gives, so those sides are not judged. A nested rule's
+    // selector is written out against its parent, the way CSS nesting reads it.
+    const autoMargin = { marginLeft: [], marginTop: [] };
+    const full = (sel, parent) =>
+      !parent ? sel : sel.split(/,(?![^(]*\))/).map((part) => (part.includes("&") ? part.replaceAll("&", `:is(${parent})`) : `:is(${parent}) ${part.trim()}`)).join(", ");
+    const walk = (rules, parent) => {
       for (const rule of rules) {
-        if (rule.style) for (const prop of rule.style) if (prop.startsWith("--")) names.add(prop);
-        if (rule.cssRules) walk(rule.cssRules);
+        const selector = rule.selectorText ? full(rule.selectorText, parent) : parent;
+        if (rule.style) {
+          for (const prop of rule.style) if (prop.startsWith("--")) names.add(prop);
+          if (rule.selectorText) for (const side of Object.keys(autoMargin)) if (rule.style[side] === "auto") autoMargin[side].push(selector);
+        }
+        if (rule.cssRules) walk(rule.cssRules, selector);
       }
     };
+    const matchesAny = (el, selectors) => selectors.some((sel) => { try { return el.matches(sel); } catch { return false; } });
+    const isAutoMargin = (el, prop) => el.style[prop] === "auto" || matchesAny(el, autoMargin[prop] ?? []);
     for (const sheet of document.styleSheets) {
       try { walk(sheet.cssRules); } catch { /* a cross-origin sheet cannot be read */ }
     }
@@ -2368,6 +2380,7 @@ const valueOffTheTokenSet = {
         if (prop === "borderTopColor" && (s.borderTopStyle === "none" || parseFloat(s.borderTopWidth) === 0)) continue;
         if (prop === "borderTopLeftRadius" && parseFloat(value) >= o.offTokenFullRadiusPx) continue;
         if (kind === "spacing" && value.startsWith("-")) value = value.slice(1);
+        if (prop in autoMargin && isAutoMargin(el, prop)) continue;
         compared += 1;
         if (onToken(kind, value)) continue;
         off += 1;
@@ -3453,6 +3466,11 @@ const FIXTURES = {
       "a weight the scale does not have":
         `<style>:root{--fw-semibold:600;--spacing:4px}body{margin:0;font-weight:var(--fw-semibold);line-height:normal}
         b{font-weight:550}</style><p><b>Active</b></p>`,
+      // An auto margin is spared by side only: a literal margin beside it is still judged.
+      "a literal margin on the item an auto margin pushes":
+        `<style>:root{--fs-md:14px;--fw-regular:400;--spacing:4px;--ink:#12201f}
+        body{margin:0;font-size:var(--fs-md);font-weight:var(--fw-regular);color:var(--ink);line-height:normal}
+        .bar{display:flex;width:600px}.end{margin-left:auto;margin-top:13px}</style><div class=bar><span>Brand</span><span class=end>English</span></div>`,
     },
     quiet: {
       "every value read from a token":
@@ -3465,6 +3483,11 @@ const FIXTURES = {
         body{margin:0;font-size:var(--fs-md);font-weight:var(--fw-regular);color:var(--ink);line-height:normal}
         span{display:inline-block;border-radius:calc(infinity * 1px);padding:4px 8px;
         box-shadow:0 0 #0000,0 0 #0000,0 0 #0000,0 0 #0000}</style><span>Active</span>`,
+      // An auto margin computes to the free space it took, which no token gives; nested or flat.
+      "an auto margin pushing the last item of a bar to its end, in a nested rule":
+        `<style>:root{--fs-md:14px;--fw-regular:400;--spacing:4px;--ink:#12201f}
+        body{margin:0;font-size:var(--fs-md);font-weight:var(--fw-regular);color:var(--ink);line-height:normal}
+        html{ .bar{display:flex;width:600px} .end{margin-left:auto} }</style><div class=bar><span>Brand</span><span class=end>English</span></div>`,
     },
   },
   pressableControlClippedByItsContainer: {
