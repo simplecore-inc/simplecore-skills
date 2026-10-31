@@ -34,8 +34,10 @@ Read this before planning a screen or dispatching agents for screen work.
 5. **A requested change is lifted, then swept.** Once it works on the screen it was asked for,
    apply it at the first layer of 4 that owns it, census every screen it reaches, fix each, and
    check each before calling the request done.
-6. **Agreement is measured.** Compare app screen and board frame by rendered metrics per control
-   role (height, gap, radius, font, variant). Report how much of each screen stays customised. An
+6. **Agreement is measured, down to the detail.** Compare app screen and board frame by rendered
+   metrics for every control role and every kit part both sides draw (buttons and their icon gaps,
+   explanation cards, record heads, toolbars, badges, footers): height, padding, gap, radius,
+   border, background, font, variant. A part on one side only is a difference. Report how much of each screen stays customised. An
    item customised on a second screen is the signal to lift it.
    - `node <plugin>/scripts/compare-rendered.mjs --app <url> --board <url> --root-slot <slot>`
      measures both pages and lists every role property that differs. It refuses (exit 2) when the
