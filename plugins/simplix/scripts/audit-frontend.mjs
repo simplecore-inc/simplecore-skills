@@ -841,7 +841,9 @@ function localeCatalogues() {
       // catalogues are `<module>/<component>` and an app's are the bare `<component>`. Both shapes
       // are in use in one repository, and a package that declares its own overrides either.
       const segments = path.relative(ROOT, at).split(path.sep);
-      const byConvention = segments[0] === "modules" && segments.length > 1 ? segments[1] : null;
+      // A grouped module (`modules/admin/user/src/locales`) is `admin-user`, as the CLI names it.
+      const srcAt = segments.indexOf("src");
+      const byConvention = segments[0] === "modules" && srcAt > 1 ? segments.slice(1, srcAt).join("-") : null;
       const prefix = declaredNamespace(at) ?? byConvention;
       for (const sub of fs.readdirSync(at, { withFileTypes: true })) {
         if (!sub.isDirectory()) continue;
@@ -7921,6 +7923,30 @@ const saveContacts = async (contacts: ContactItemDTO[]) => {
 // ---------------------------------------------------------------------------
 
 /**
+ * The workspace units under `<base>/`: each directory there, except that a directory with neither
+ * a `package.json` nor a `src/` of its own is a group of units (`modules/admin/user`) and contributes the
+ * directories inside it instead. A grouped layout is otherwise invisible to every rule that walks
+ * one level, and a scan that never reaches a module prints what a clean module prints.
+ */
+function workspaceUnitDirs(base) {
+  const root = path.join(ROOT, base);
+  if (!fs.existsSync(root)) return [];
+  const dirs = [];
+  for (const entry of fs.readdirSync(root, { withFileTypes: true })) {
+    if (!entry.isDirectory() || entry.name.startsWith(".") || EXCLUDE_DIRS.has(entry.name)) continue;
+    const dir = path.join(root, entry.name);
+    if (fs.existsSync(path.join(dir, "package.json")) || fs.existsSync(path.join(dir, "src"))) {
+      dirs.push(dir);
+      continue;
+    }
+    for (const inner of fs.readdirSync(dir, { withFileTypes: true })) {
+      if (inner.isDirectory() && !inner.name.startsWith(".")) dirs.push(path.join(dir, inner.name));
+    }
+  }
+  return dirs;
+}
+
+/**
  * Export entries of a workspace package that carry no `source` condition (invariant #5).
  *
  * <p><b>The dev server then serves that subpath from `dist/`, and a source edit reaches nothing.</b>
@@ -7941,10 +7967,8 @@ const saveContacts = async (contacts: ContactItemDTO[]) => {
 function packageExportFindings() {
   const findings = [];
   for (const base of ["modules", "packages"]) {
-    const root = path.join(ROOT, base);
-    if (!fs.existsSync(root)) continue;
-    for (const name of fs.readdirSync(root)) {
-      const manifest = path.join(root, name, "package.json");
+    for (const unit of workspaceUnitDirs(base)) {
+      const manifest = path.join(unit, "package.json");
       if (!fs.existsSync(manifest)) continue;
       let parsed;
       try {
@@ -7998,10 +8022,8 @@ function packageExportFindings() {
 function packageTypesFindings() {
   const findings = [];
   for (const base of ["modules", "packages"]) {
-    const root = path.join(ROOT, base);
-    if (!fs.existsSync(root)) continue;
-    for (const name of fs.readdirSync(root)) {
-      const manifest = path.join(root, name, "package.json");
+    for (const unit of workspaceUnitDirs(base)) {
+      const manifest = path.join(unit, "package.json");
       if (!fs.existsSync(manifest)) continue;
       let parsed;
       try {
@@ -8065,11 +8087,9 @@ function localeFindings() {
   const reviews = [];
   const dirs = new Set();
   for (const base of ["modules"]) {
-    const moduleRoot = path.join(ROOT, base);
-    if (!fs.existsSync(moduleRoot)) continue;
-    for (const mod of fs.readdirSync(moduleRoot)) {
+    for (const unit of workspaceUnitDirs(base)) {
       for (const kind of ["widgets", "features"]) {
-        const d = path.join(moduleRoot, mod, "src", "locales", kind);
+        const d = path.join(unit, "src", "locales", kind);
         if (fs.existsSync(path.join(d, "en.json"))) dirs.add(d);
       }
     }
@@ -8112,10 +8132,8 @@ function localeFindings() {
 function koCatalogues() {
   const found = [];
   for (const base of ["modules", "apps"]) {
-    const root = path.join(ROOT, base);
-    if (!fs.existsSync(root)) continue;
-    for (const unit of fs.readdirSync(root)) {
-      const locales = path.join(root, unit, "src", "locales");
+    for (const unit of workspaceUnitDirs(base)) {
+      const locales = path.join(unit, "src", "locales");
       if (!fs.existsSync(locales)) continue;
       // Its own descent: the shared `walk` collects TypeScript sources only.
       const descend = (dir) => {
@@ -8561,7 +8579,7 @@ const COLLECTION_RULES = [
     samples: {
       broken: {
         files: {
-          "modules/site/package.json": `{
+          "modules/admin/site/package.json": `{
   "name": "@acme/site",
   "exports": {
     ".": { "source": "./src/index.ts", "types": "./dist/index.d.ts", "import": "./dist/index.js" }
@@ -8572,7 +8590,7 @@ const COLLECTION_RULES = [
       },
       fixed: {
         files: {
-          "modules/site/package.json": `{
+          "modules/admin/site/package.json": `{
   "name": "@acme/site",
   "exports": {
     ".": { "source": "./src/index.ts", "types": "./src/index.ts", "import": "./dist/index.js" }
