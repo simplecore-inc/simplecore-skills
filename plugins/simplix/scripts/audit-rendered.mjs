@@ -2441,7 +2441,7 @@ const valueOffTheTokenSet = {
  * it is large (24px, or 18.66px bold); an icon (an SVG whose stroke or fill is painted, up to
  * `contrastIconMaxPx`) meets `contrastMinIcon`. A control that is `disabled` or `aria-disabled` is
  * exempt, as WCAG exempts an inactive component; a row that merely explains why it leads nowhere
- * is not disabled and is judged.
+ * is not disabled and is judged. Text at `font-size: 0` paints nothing and is not judged.
  *
  * **Judge it in every theme.** The defect above is invisible in the theme the author looked at, so
  * a run that read one mode has not read the other: switch the mode and run it again.
@@ -2554,6 +2554,9 @@ const textContrastBelowMinimum = {
       const s = getComputedStyle(el);
       // Glyphs painted from a background (a clipped gradient) have no text colour to read.
       if (s.backgroundClip === "text" || s.webkitBackgroundClip === "text") continue;
+      // Text set to font-size 0 paints no glyph: a one-pixel separator drawn as a background keeps its
+      // character in the markup, and the character's colour against the separator's own fill is not a mark.
+      if (parseFloat(s.fontSize) === 0) continue;
       const px = parseFloat(s.fontSize);
       const large = px >= o.contrastLargePx || (px >= o.contrastLargeBoldPx && Number(s.fontWeight) >= 700);
       judge(el, "text", s.webkitTextFillColor || s.color, own, large ? o.contrastMinLargeText : o.contrastMinText);
@@ -3682,6 +3685,11 @@ const FIXTURES = {
       "dark text on a translucent white wash over a dark panel":
         `<style>body{margin:0;font:14px sans-serif;background:#14252a}.wash{background:rgba(255,255,255,.04);padding:12px;color:#12201f}</style>
         <div class=wash>Hover row</div>`,
+      // The separator below with its character painted: the text colour sits on the separator's own fill.
+      "a separator whose character is painted in a colour near its own fill":
+        `<style>body{margin:0;font:14px sans-serif;background:#fff}
+        .rule{display:inline-block;width:1px;height:11px;background:#7f918f;color:#566765;font-size:14px}</style>
+        <span>Owner</span><span class=rule> · </span><span>Updated</span>`,
     },
     quiet: {
       "the same column with light labels":
@@ -3702,6 +3710,11 @@ const FIXTURES = {
         <div class=hero>Welcome back</div>`,
       "ordinary ink on white":
         `<style>body{margin:0;font:14px sans-serif;color:#12201f;background:#fff}</style><p>Account lifecycle</p>`,
+      // A one-pixel separator drawn as a background keeps its character in the markup at font-size 0.
+      "a separator whose character is set to font-size 0":
+        `<style>body{margin:0;font:14px sans-serif;background:#fff}
+        .rule{display:inline-block;width:1px;height:11px;background:#7f918f;color:#566765;font-size:0}</style>
+        <span>Owner</span><span class=rule> · </span><span>Updated</span>`,
     },
   },
   pressableControlClippedByItsContainer: {
