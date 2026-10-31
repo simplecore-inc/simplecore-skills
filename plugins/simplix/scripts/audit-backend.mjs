@@ -387,7 +387,8 @@ function fieldIndex(files) {
       // Only this class's own fields: a nested class's are indexed under its own name, and the
       // brace walk hands back the whole body including them, so the depth is checked by counting
       // the braces before each match.
-      for (const f of body.matchAll(/(?:^|\n)\s{4,8}private\s+(?:final\s+)?[\w<>,\s[\]]+?\s+(\w+)\s*;/g)) {
+      // A declaration with an initializer (`= false;`) is a field too; a builder default is written that way.
+      for (const f of body.matchAll(/(?:^|\n)\s{4,8}private\s+(?:final\s+)?[\w<>,\s[\]]+?\s+(\w+)\s*(?:=[^;\n]*)?;/g)) {
         held.add(f[1]);
       }
       if (held.size) map.set(cls[1], held);
@@ -2047,6 +2048,46 @@ public class AreaService extends SimpliXBaseService<Area, String> {
 }`,
       // The rule needs the entity index to know Area's PK is `areaId`.
       ctx: { entityIds: new Map([["Area", "areaId"]]) },
+    },
+  },
+  {
+    id: "unique-field-soft-delete-on-hard-entity",
+    invariant: "#15②",
+    level: "error",
+    desc: "A @UniqueField names `softDeleteField` on an entity that declares no such field. The uniqueness check then queries an attribute Hibernate cannot resolve, so every create through that DTO answers 500 before anything is saved. The generator's DTO template wrote the soft-delete pair on every entity; name it only where the entity declares the flag (implements the project's soft-delete contract)",
+    appliesTo: isDtoContainer,
+    check: (c, _rel, ctx) => {
+      const clean = stripComments(c);
+      const hits = [];
+      for (const m of clean.matchAll(/@UniqueField\(\s*entity\s*=\s*(\w+)\.class[^)]*?softDeleteField\s*=\s*"(\w+)"/g)) {
+        const fields = ctx?.fields?.get(m[1]);
+        if (!fields) continue; // the entity is not in this project's sources - nothing to assert against
+        if (fields.has(m[2])) continue;
+        hits.push({ line: clean.slice(0, m.index).split("\n").length, excerpt: `${m[1]} declares no ${m[2]} field` });
+      }
+      return hits;
+    },
+    samples: {
+      file: "modules/site/src/main/java/app/web/site/dto/AreaDTOs.java",
+      broken: `public class AreaDTOs {
+    @UniqueFields({
+        @UniqueField(entity = Area.class, field = "code", property = "code",
+                idField = "areaId", idProperty = "areaId",
+                softDeleteField = "deleted", softDeleteType = SoftDeleteType.BOOLEAN)
+    })
+    public static class AreaCreateDTO {
+    }
+}`,
+      fixed: `public class AreaDTOs {
+    @UniqueFields({
+        @UniqueField(entity = Area.class, field = "code", property = "code",
+                idField = "areaId", idProperty = "areaId")
+    })
+    public static class AreaCreateDTO {
+    }
+}`,
+      // The rule needs the field index to know Area declares no \`deleted\`.
+      ctx: { fields: new Map([["Area", new Set(["areaId", "code"])]]) },
     },
   },
   {
