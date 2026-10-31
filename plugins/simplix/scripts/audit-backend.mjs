@@ -697,6 +697,40 @@ function generatorInputIndex(root = ROOT) {
   return map;
 }
 
+/**
+ * The generator inputs themselves, `.simplix/entity/*.yml` at the backend root, as absolute paths.
+ * They join the scan beside the Java sources so a rule can judge a yml; the Java indexes never
+ * read them.
+ *
+ * @param root the backend project root
+ * @returns absolute paths of the generator ymls
+ */
+function generatorInputFiles(root = ROOT) {
+  const dir = path.join(root, ".simplix", "entity");
+  if (!fs.existsSync(dir)) return [];
+  return fs.readdirSync(dir).filter((n) => /\.ya?ml$/.test(n)).map((n) => path.join(dir, n));
+}
+
+/**
+ * The module groups of a grouped multi-module backend: the directories directly under `modules/`
+ * that carry no build file of their own, so they hold modules rather than being one
+ * (`modules/admin/user`). An ungrouped backend (`modules/user` with its own `build.gradle`) has
+ * none, and every rule reading this stays silent there.
+ *
+ * @param root the backend project root
+ * @returns the group directory names
+ */
+function moduleGroupIndex(root = ROOT) {
+  const dir = path.join(root, "modules");
+  let entries;
+  try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch { return new Set(); }
+  const BUILD_FILES = ["build.gradle", "build.gradle.kts", "pom.xml"];
+  return new Set(entries
+    .filter((e) => e.isDirectory() && !EXCLUDE_DIRS.has(e.name)
+      && !BUILD_FILES.some((b) => fs.existsSync(path.join(dir, e.name, b))))
+    .map((e) => e.name));
+}
+
 let _entityBundleIndex = null;
 /**
  * Every `.properties` bundle under a `src/main/resources` of the backend, as
@@ -838,6 +872,48 @@ const RULES = [
           note: "a non-CRUD controller that extends no SimpliX base",
           source: `@SimpliXStandardApi\npublic class ThingReportRestController {\n}`,
           ctx: { generatorInputs: new Map() },
+        },
+      ],
+    },
+  },
+  {
+    id: "generator-module-outside-the-groups",
+    invariant: "generator/promote-workflow",
+    level: "error",
+    desc: "A generator yml's `modulePath` or `promoteModule` starts with a segment that is not one of the backend's module groups (the directories under `modules/` that hold modules). Nothing refuses it: generate and promote create `modules/<that segment>` beside the groups, a module no group owns and no fence sees. Name the group first (`promoteModule: admin/billing`, not `billing`); an ungrouped backend has no groups and the rule is silent there",
+    appliesTo: (p) => /(^|\/)\.simplix\/entity\/[^/]+\.ya?ml$/.test(p.split(path.sep).join("/")),
+    check: (c, _rel, ctx) => {
+      const groups = ctx?.moduleGroups;
+      if (!groups || groups.size === 0) return [];
+      const out = [];
+      const lines = c.split("\n");
+      lines.forEach((l, i) => {
+        const m = l.match(/^(modulePath|promoteModule):\s*["']?([\w./-]+)["']?\s*(?:#.*)?$/);
+        if (!m) return;
+        const first = m[2].split("/")[0];
+        if (!groups.has(first)) {
+          out.push({ line: i + 1, excerpt: `${m[1]}: ${m[2]} - "${first}" is not a module group (${[...groups].sort().join(", ")})` });
+        }
+      });
+      return out;
+    },
+    samples: {
+      file: ".simplix/entity/CreditAccount.yml",
+      ctx: { moduleGroups: new Set(["admin", "common", "portal", "shared"]) },
+      broken: `entity: CreditAccount\nmodulePath: billing\npromoteModule: billing\nthymeleafBaseDir: admin/billing/account\n`,
+      fixed: `entity: CreditAccount\nmodulePath: admin/billing\npromoteModule: admin/billing\nthymeleafBaseDir: admin/billing/account\n`,
+      hit: [
+        { note: "a quoted value whose first segment is no group", source: `promoteModule: "speech/voice"\n` },
+      ],
+      miss: [
+        {
+          note: "an ungrouped backend, where every module sits directly under modules/",
+          source: `modulePath: billing\npromoteModule: billing\n`,
+          ctx: { moduleGroups: new Set() },
+        },
+        {
+          note: "a deeper path inside a group",
+          source: `modulePath: common/main/audit\npromoteModule: common/main\n`,
         },
       ],
     },
@@ -2840,14 +2916,16 @@ if (files.length === 0) {
   console.error("  run from the backend project root, or pass --root=<dir>");
   process.exit(2);
 }
-const ctx = { entityIds: entityIdIndex(files), encrypted: encryptedFieldIndex(files), fields: fieldIndex(files), i18n: i18nIndex(files), overwrites: serviceOverwriteIndex(files), createMapping: createMappingIndex(files), emptyDefaults: emptyDefaultIndex(files), audit: auditSettings(), generatorInputs: generatorInputIndex(), bundles: entityBundleIndex() };
+const ctx = { entityIds: entityIdIndex(files), encrypted: encryptedFieldIndex(files), fields: fieldIndex(files), i18n: i18nIndex(files), overwrites: serviceOverwriteIndex(files), createMapping: createMappingIndex(files), emptyDefaults: emptyDefaultIndex(files), audit: auditSettings(), generatorInputs: generatorInputIndex(), bundles: entityBundleIndex(), moduleGroups: moduleGroupIndex() };
+// The generator ymls are scanned too, after the Java indexes are built from the Java files alone.
+const scanned = [...files, ...generatorInputFiles()];
 const results = new Map();
 let suppressedCount = 0;
 
 for (const rule of RULES) {
   if (ruleFilter && !ruleFilter.includes(rule.id)) continue;
   const bucket = { rule, hits: [] };
-  for (const abs of files) {
+  for (const abs of scanned) {
     const rel = path.relative(ROOT, abs);
     if (!rule.appliesTo(rel)) continue;
     let content;

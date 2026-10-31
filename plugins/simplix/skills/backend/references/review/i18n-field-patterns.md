@@ -117,6 +117,13 @@ private Map<String, String> titleI18n;
 
 ---
 
+### A DTO-only field takes its label from the validation bundle
+
+A DTO record field with no entity column (a command body's `reason`, say) has no entity label key;
+the entity message test reports a `<entity>.<field>` key for it as orphaned. Give it a `{field.*}`
+key in the bean-validation bundle instead.
+Example: `adjust.reason` in the entity bundle fails the translation test; `field.reason` in the validation bundle passes.
+
 ## CRITICAL: @I18nTrans Mandatory Pattern
 
 > **IMPORTANT**: Every I18n-capable field MUST follow the paired field pattern. Missing either the `@I18nTrans` annotation or the paired `@JsonIgnore` I18n field will cause i18n resolution to fail.

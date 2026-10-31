@@ -15,6 +15,11 @@ symptom.
 7. [A `@DataJpaTest` slice does not load the project's JPA configuration](#a-datajpatest-slice-does-not-load-the-projects-jpa-configuration)
 8. [A limit test needs more than one owner](#a-limit-test-needs-more-than-one-owner)
 9. [Two Gradle subprojects never share a leaf name](#two-gradle-subprojects-never-share-a-leaf-name)
+10. [A bare body is served bare, and the documents still say enveloped](#a-bare-body-is-served-bare-and-the-documents-still-say-enveloped)
+11. [A transactional class is proxied by its interface](#a-transactional-class-is-proxied-by-its-interface)
+12. [A scheduler lock needs the scheduler switched on](#a-scheduler-lock-needs-the-scheduler-switched-on)
+13. [A Gradle build stops at the first red module](#a-gradle-build-stops-at-the-first-red-module)
+14. [A framework snapshot is published by its owner only](#a-framework-snapshot-is-published-by-its-owner-only)
 
 ---
 
@@ -166,3 +171,49 @@ accounts in parallel, and a per-user limit with one user spending from several a
 `:modules:<a>:<name>` and `:modules:<b>:<name>` both publish `<group>:<name>`, and Gradle's conflict
 resolution silently substitutes one for the other on a consumer's classpath: the build fails with
 "package does not exist" for the one that was dropped. Give every subproject a unique last segment.
+
+## A bare body is served bare, and the documents still say enveloped
+
+`SimpliXResponseBodyAdvice` ships in the starter and no configuration registers it, so an endpoint
+that returns a DTO directly answers the bare DTO, while the springdoc schema customizer and SimpliX
+Meta still document it inside `SimpliXApiResponse`. A client generated from those documents
+unwraps a field that is not there. Return `SimpliXApiResponse` from every endpoint the generated
+frontend reads; an endpoint that must answer a bare body is documented by hand and read by a
+hand-written client.
+Example: `public CreditBalance balance()` answers `{"amount":5}` while Meta says `{"body":{"amount":5}}`.
+
+## A transactional class is proxied by its interface
+
+`@Transactional` on a class that implements an interface yields a JDK proxy, so a test or a bean
+that autowires the concrete class fails with `BeanNotOfRequiredTypeException`. Autowire the
+interface.
+Example: `@Autowired JobQueueService` fails where `@Autowired JobQueue` starts.
+
+## A scheduler lock needs the scheduler switched on
+
+`@SchedulerLock` locks nothing unless the domain scheduler is enabled
+(`application.domain.scheduler.enabled`) so `@EnableSchedulerLock` and the lock provider load, the
+JDBC lock provider is on the server's classpath, and a migration creates the `shedlock` table in
+every profile (a local-profile initializer is not a migration). Enabling the domain scheduler also
+starts every framework scheduler it owns, the audit purge among them; say so in the change. The
+scheduler aspect records duration only, so a job that must report how many items it handled logs
+that count itself.
+Example: `simplix.scheduler.mode: in-memory` with the switch unset ran every `@SchedulerLock` job unlocked on each node.
+
+## A Gradle build stops at the first red module
+
+`./gradlew build` stops at the first module whose tests fail, so a test in another module that the
+change also breaks is neither run nor reported. When a change touches a shared bundle or a shared
+type, run the affected tests of every module by name (or `--continue`), and read the test XML
+under `build/test-results/` for the failure text: the summary says which task failed, not why.
+Example: an orphaned label key failed `EntityMessageTranslationTest` in a module the first failure hid; a migration naming `user_accounts` instead of the table `users` showed "relation does not exist" only in the XML.
+
+## A framework snapshot is published by its owner only
+
+Every backend on the machine resolves the framework snapshot from `~/.m2`, so
+`publishToMavenLocal` from a framework checkout changes the API every other agent builds against.
+A change that needs a framework addition (a new `ErrorCode`, say) is made without it where the
+project can (map the refusal in the project's advice), and the framework change goes to whoever
+owns the snapshot.
+Example: a snapshot from 15:35 against framework commits to 18:04 would have shipped three hours of unreviewed API to every build.
+

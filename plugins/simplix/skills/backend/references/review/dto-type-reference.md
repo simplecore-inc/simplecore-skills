@@ -142,6 +142,14 @@ The controller receives `List<OrderUpdateDTO>` and the service applies changes p
 
 ---
 
+## A code set is an enum in the contract
+
+A DTO field that carries one of a fixed set of codes (a ledger entry's kind, a refusal reason) is a
+Java enum, never a `String` with the codes listed in Javadoc. The OpenAPI document and SimpliX Meta
+then carry the set, and the frontend generates its labels and filters from it instead of copying
+the codes by hand.
+Example: `String kind; // GRANT, SPEND, REFUND` becomes `LedgerKind kind`.
+
 ## Summary Table
 
 | DTO | Lombok | Extends | Purpose | Always generated? |
