@@ -693,6 +693,72 @@ function entityBundleIndex(root = ROOT) {
   return bundles;
 }
 
+/**
+ * The constant names an enum body declares, read from the text after its opening brace up to the
+ * first `;` (or the closing brace). Annotations and constructor arguments are dropped first, since
+ * either may hold commas.
+ *
+ * @param body comment- and string-blanked source starting just inside the enum's `{`
+ * @returns the constant names in declaration order
+ */
+function enumConstants(body) {
+  let list = body.slice(0, body.search(/[;}]/) < 0 ? body.length : body.search(/[;}]/));
+  list = list.replace(/@[\w.]+/g, " ");
+  for (let prev = ""; prev !== list;) { prev = list; list = list.replace(/\([^()]*\)/g, " "); }
+  return list.split(",").map((s) => s.trim()).filter((s) => /^[A-Z][A-Z0-9_]*$/.test(s));
+}
+
+/**
+ * The `enums.*` keys each locale ships, keyed by the locale a bundle's file name carries
+ * (`_ko`, `_pt_BR`; none is `default`). Only bundles holding at least one `enums.` key count, so
+ * the locales come from the project's own enum bundles and are never a list written here.
+ *
+ * @param bundles the `{ file, keys }` index of every main-resources bundle
+ * @returns locale -> union of the enum keys its bundles define
+ */
+function enumBundleLocales(bundles) {
+  const byLocale = new Map();
+  for (const b of bundles) {
+    const enumKeys = [...b.keys].filter((k) => k.startsWith("enums."));
+    if (!enumKeys.length) continue;
+    const locale = path.basename(b.file).match(/_([a-z]{2,3}(?:_[A-Z]{2})?)\.properties$/)?.[1] ?? "default";
+    if (!byLocale.has(locale)) byLocale.set(locale, new Set());
+    for (const k of enumKeys) byLocale.get(locale).add(k);
+  }
+  return byLocale;
+}
+
+/** Field-name suffixes that mark display text in any project; `audit.i18nDisplayText.namePattern` replaces them. */
+const DISPLAY_TEXT_NAME = "^(?:name|title|label|description|summary|message|subject|body)$|[a-z0-9](?:Name|Title|Label|Description|Summary|Message|Subject|Body)$";
+/** Column-comment words that mark display text; `audit.i18nDisplayText.commentPattern` replaces them. */
+const DISPLAY_TEXT_COMMENT = "\\b(?:display name|display text|shown as|title|label|caption|headline)\\b";
+
+/**
+ * What `display-text-without-i18n` reads as display text, and which fields a project has judged
+ * to stay in one language. Both come from the `audit` section of `.claude/simplix.json`:
+ *
+ * @example
+ * { "audit": {
+ *     "i18nDisplayText": { "namePattern": "<regex>", "commentPattern": "<regex>" },
+ *     "i18nAllow": [{ "entity": "<Entity>", "field": "<field>", "reason": "<why it stays single-language>" }]
+ * } }
+ *
+ * An allow entry with an empty reason suppresses nothing, as with the line marker.
+ *
+ * @param audit the project's `audit` settings
+ * @returns the two patterns and an allow-list lookup
+ */
+function displayTextPolicy(audit = {}) {
+  const cfg = audit?.i18nDisplayText ?? {};
+  const allow = (Array.isArray(audit?.i18nAllow) ? audit.i18nAllow : [])
+    .filter((a) => a && typeof a.reason === "string" && a.reason.trim());
+  return {
+    name: new RegExp(cfg.namePattern ?? DISPLAY_TEXT_NAME),
+    comment: new RegExp(cfg.commentPattern ?? DISPLAY_TEXT_COMMENT, "i"),
+    allowed: (entity, field) => allow.some((a) => a.entity === entity && a.field === field),
+  };
+}
+
 /** The entity type argument of `extends SimpliXBaseController<E, ...>`, or null. */
 function baseControllerEntity(clean) {
   return clean.match(/\bclass\s+(\w+)\s+extends\s+SimpliXBaseController\s*<\s*(\w+)\s*,/) ?? null;
@@ -2206,6 +2272,132 @@ public class ApprovalInboxService {
 public class PublicContentRestController {
     public ResponseEntity<Resource> stream(@PathVariable String id) { return null; }
 }`,
+    },
+  },
+  {
+    id: "labeled-enum-without-labels",
+    invariant: "#16",
+    level: "error",
+    desc: "A LabeledEnum constant has no `enums.{SimpleName}.{CONSTANT}` key in one of the locales the enums bundles ship - SimpliX Meta then publishes the key with no text for that locale, and the screen prints the constant name (or the English label under another language)",
+    appliesTo: (p) => /\.java$/.test(p) && !/src\/test\//.test(p),
+    check: (c, rel, ctx) => {
+      const clean = stripCommentsAndStrings(c);
+      const decl = clean.match(/\benum\s+(\w+)\s+implements\s+[\w.,\s]*\bLabeledEnum\b[^{]*\{/);
+      if (!decl || !ctx?.bundles) return [];
+      const constants = enumConstants(clean.slice(decl.index + decl[0].length));
+      const byLocale = enumBundleLocales(ctx.bundles);
+      const hits = [];
+      for (const [locale, keys] of byLocale) {
+        const missing = constants.filter((k) => !keys.has(`enums.${decl[1]}.${k}`));
+        if (missing.length) {
+          hits.push({ line: clean.slice(0, decl.index).split("\n").length,
+            excerpt: `${decl[1]}: no ${locale} label for ${missing.join(", ")}` });
+        }
+      }
+      return hits;
+    },
+    samples: {
+      file: "packages/domain-site/src/main/java/app/domain/site/enums/AreaStatus.java",
+      ctx: { bundles: [
+        { file: "x/src/main/resources/messages/enums/enums-site-messages.properties", keys: new Set(["enums.AreaStatus.OPEN", "enums.AreaStatus.CLOSED"]) },
+        { file: "x/src/main/resources/messages/enums/enums-site-messages_ko.properties", keys: new Set(["enums.AreaStatus.OPEN"]) },
+      ] },
+      broken: `public enum AreaStatus implements LabeledEnum {\n    OPEN,\n    CLOSED\n}`,
+      fixed: `public enum AreaStatus implements LabeledEnum {\n    OPEN\n}`,
+      hit: [
+        {
+          note: "an enum with no labels in any bundle, constants carrying annotations and constructor arguments",
+          source: `public enum Standing implements LabeledEnum {\n    @Tone(ToneKind.SUCCESS)\n    ACTIVE(" AND a.enabled = true"),\n    SUSPENDED(" AND a.enabled = false");\n    private final String predicate;\n}`,
+        },
+      ],
+      miss: [
+        {
+          note: "every constant labelled in every locale, the labels living in another module's bundle",
+          source: `public enum AreaStatus implements LabeledEnum {\n    @Tone(ToneKind.SUCCESS) OPEN,\n    CLOSED;\n    public boolean open() { return this == OPEN; }\n}`,
+          ctx: { bundles: [
+            { file: "a/src/main/resources/messages/enums/enums-a-messages.properties", keys: new Set(["enums.AreaStatus.OPEN", "enums.AreaStatus.CLOSED"]) },
+            { file: "b/src/main/resources/messages/enums/enums-b-messages_ko.properties", keys: new Set(["enums.AreaStatus.OPEN", "enums.AreaStatus.CLOSED"]) },
+          ] },
+        },
+      ],
+    },
+  },
+  {
+    id: "api-enum-not-labeled",
+    invariant: "#16",
+    level: "review",
+    desc: "An enum documented with @Schema for a request or response is not a LabeledEnum - SimpliX Meta publishes it with no label keys, so every locale shows the constant names. Implement LabeledEnum and add its `enums.*` keys, or mark the line when the values are machine codes nobody reads",
+    appliesTo: (p) => /\.java$/.test(p) && !/src\/test\//.test(p),
+    check: (c) => {
+      const clean = stripCommentsAndStrings(c);
+      const decl = clean.match(/@Schema\b[^;{}]*?\benum\s+(\w+)\s*(implements\s+[^{]*)?\{/);
+      if (!decl || /\bLabeledEnum\b/.test(decl[2] ?? "")) return [];
+      return [{ line: clean.slice(0, decl.index).split("\n").length, excerpt: `${decl[1]} is exposed through @Schema without LabeledEnum` }];
+    },
+    samples: {
+      file: "modules/user-admin/src/main/java/app/web/user/admin/dto/Standing.java",
+      broken: `@Schema(description = "Where an account stands")\npublic enum Standing {\n    ACTIVE, SUSPENDED\n}`,
+      fixed: `@Schema(description = "Where an account stands")\npublic enum Standing implements LabeledEnum {\n    ACTIVE, SUSPENDED\n}`,
+      miss: [
+        { note: "an internal enum no contract documents", source: `public enum Realm {\n    STAFF, CUSTOMER\n}` },
+      ],
+    },
+  },
+  {
+    id: "display-text-without-i18n",
+    invariant: "i18n-field-patterns",
+    level: "review",
+    desc: "A String entity column whose name or @Comment marks display text has no `<field>I18n` sibling - text an operator or the product writes once and people read in several languages is stored in one language. Convert it (entity/field-types.md § Multilingual text: which columns), or record it in `audit.i18nAllow` of `.claude/simplix.json` with the reason it stays single-language",
+    appliesTo: (p) => /\/entity\/[^/]+\.java$/.test(p.split(path.sep).join("/")),
+    check: (c, rel, ctx) => {
+      const clean = stripCommentsAndStrings(c);
+      if (!/@Entity\b/.test(clean)) return [];
+      const entity = clean.match(/\bclass\s+(\w+)/)?.[1] ?? path.basename(rel, ".java");
+      const policy = displayTextPolicy(ctx?.audit);
+      const declared = new Set([...clean.matchAll(/\b(?:private|protected)\s+[\w<>,.?\s]+?\s+(\w+)\s*[;=]/g)].map((m) => m[1]));
+      const hits = [];
+      for (const m of clean.matchAll(/\b(?:private|protected)\s+String\s+(\w+)\s*[;=]/g)) {
+        const field = m[1];
+        const before = clean.slice(0, m.index);
+        const start = Math.max(before.lastIndexOf(";"), before.lastIndexOf("{"), before.lastIndexOf("}"));
+        if (/@Transient\b/.test(before.slice(start + 1))) continue;
+        // The raw source at the same offsets: comment and string bodies are blanked in `clean`.
+        const comment = c.slice(start + 1, m.index).match(/@Comment\s*\(\s*"([^"]*)"/)?.[1] ?? "";
+        if (declared.has(`${field}I18n`)) continue;
+        // Derived columns of a localized field (`nameSearch`, `nameSortEn`) follow their base.
+        const base = field.match(/^(\w+?)(?:Search|Sort[A-Z][a-z])$/)?.[1];
+        if (base && declared.has(`${base}I18n`)) continue;
+        if (!policy.name.test(field) && !(comment && policy.comment.test(comment))) continue;
+        if (policy.allowed(entity, field)) continue;
+        hits.push({ line: before.split("\n").length, excerpt: `${entity}.${field}${comment ? ` (${comment})` : ""} has no ${field}I18n` });
+      }
+      return hits;
+    },
+    samples: {
+      file: "packages/domain-site/src/main/java/app/domain/site/entity/Area.java",
+      broken: `@Entity\npublic class Area {\n    @Column(name = "area_name")\n    private String areaName;\n}`,
+      fixed: `@Entity\npublic class Area {\n    @Column(name = "area_name")\n    private String areaName;\n    @JdbcTypeCode(SqlTypes.JSON)\n    private Map<String, String> areaNameI18n;\n    private String areaNameSearch;\n    private String areaNameSortEn;\n}`,
+      hit: [
+        { note: "marked by its comment, not its name", source: `@Entity\npublic class Notice {\n    @Comment("Text shown as the banner title")\n    private String headline;\n}` },
+        {
+          note: "an allow entry without a reason suppresses nothing",
+          source: `@Entity\npublic class Area {\n    private String areaName;\n}`,
+          ctx: { audit: { i18nAllow: [{ entity: "Area", field: "areaName", reason: "" }] } },
+        },
+      ],
+      miss: [
+        { note: "a code, an id and a username are not display text", source: `@Entity\npublic class Area {\n    @Comment("Stable code clients refer to")\n    private String areaCode;\n    private String areaId;\n    private String username;\n}` },
+        {
+          note: "allow-listed with its reason",
+          source: `@Entity\npublic class Team {\n    private String name;\n}`,
+          ctx: { audit: { i18nAllow: [{ entity: "Team", field: "name", reason: "the customer names their own team" }] } },
+        },
+        {
+          note: "a project that narrows the name pattern",
+          source: `@Entity\npublic class Mail {\n    private String subject;\n}`,
+          ctx: { audit: { i18nDisplayText: { namePattern: "(?:Name|Title)$" } } },
+        },
+      ],
     },
   },
   {

@@ -181,6 +181,13 @@ public enum ContentStatus implements LabeledEnum {
 }
 ```
 
+This includes an enum that lives beside its DTOs in a web module and appears in a request or
+response: without `LabeledEnum`, Meta publishes no label keys and every locale prints the
+constant names. Its bundle goes in that module's own `messages/enums/` (a domain module's enum
+translation test reads a module enum's keys there as orphans). The audit's
+`labeled-enum-without-labels` fails a constant missing a key in any locale the enum bundles ship,
+and `api-enum-not-labeled` lists a `@Schema` enum that is not a `LabeledEnum`.
+
 `LabeledEnum` supplies `getLabel()` itself: it resolves `enums.{SimpleName}.{CONSTANT}` from the `messages/enums/**` bundles in the request locale, and the enum serializes as `{"value": ..., "label": ...}`. Never override `getLabel()`, since an override returning `name()` or a literal bypasses the bundles and every locale shows the same text. Never give a constant a class body (`ACTIVE { ... }`): the key is built from the runtime class's simple name, which for such a constant is its anonymous subclass, so its label is never found.
 
 ### Enum File Location
@@ -320,7 +327,39 @@ private String name;
 private Map<String, String> nameI18n;
 ```
 
-### Entity name and plural (every locale)
+### Multilingual text: which columns
+
+The backend decides which text is multilingual; the frontend generates a per-language input from
+every `<field>I18n` map the contract carries. A `String` column gets a `<field>I18n` sibling when
+an operator or the product writes it once and people who read another language see it: a name,
+title, label or description of a catalogue record (a role, a position, a permission, a plan, a
+voice), a notice body, a mail template's subject. It stays one language when it is a code, id,
+email, URL, hash or machine value; a person's own data (their name, bio, address); content an end
+user writes about their own things (a team name, a voice name); an operator's note on one record;
+or a log or snapshot of what was sent.
+
+A converted field follows the role precedent in full:
+
+- the entity: `<field>I18n` (`@JdbcTypeCode(SqlTypes.JSON)`), `<field>Search`, and one
+  `<field>Sort<Lang>` per language, filled by the project's derived-column listener
+- a Flyway migration that adds the columns (to the Envers `_aud` table too when the entity is
+  `@Audited`) and backfills the current value as the default locale's entry
+- the yml entries (`type: Map<String, String>`), then generate, and port the generated hunks into
+  the promoted DTOs: the SearchDTO searches `<field>Search` and sorts on the hidden
+  `<field>Sort<Lang>` fields, the service rewrites `sort=<field>` onto the reader's language,
+  Create carries `Map<String, @Size(max = n) String>`, Detail and List read through
+  `@I18nTrans(source = "<field>I18n")` with the map `@JsonIgnore`d, and an embedding DTO uses
+  `@I18nTrans(source = "<ref>.<field>I18n", target = "<field>")`
+- code that seeds the record writes the seed language's entry into the map
+- labels for every new field in every locale
+
+The audit's `display-text-without-i18n` lists, for review, a `String` entity column whose name or
+`@Comment` marks display text and has no sibling. The patterns default to generic words and are
+replaced in `.claude/simplix.json` under `audit.i18nDisplayText` (`namePattern`,
+`commentPattern`); a field judged to stay one language goes in `audit.i18nAllow` as
+`{ "entity", "field", "reason" }`, and an entry without a reason suppresses nothing.
+
+### Entity name, plural and description (every locale)
 
 SimpliX Meta publishes each entity's display name and plural from its label bundle. Every locale
 defines both keys, the plural on its own line:
@@ -333,6 +372,12 @@ entities.UserRole._plural=User Roles
 A locale with no grammatical plural repeats the name (`entities.UserRole._plural=사용자 역할`).
 Templates draw empty-state, not-found and tile copy from them. The audit's
 `entity-bundle-without-plural` fails a bundle with `entities.<Entity>=` and no `._plural`.
+`entities.<Entity>._description` is the page's one-sentence description, published as the
+entity's `description` when a bundle carries it.
+
+A join entity whose rows only map one record to another carries `@MappingEntity`
+(`dev.simplecore.simplix.core.entity.annotation`), so Meta never lists it as a holder of either
+end and the detail screen draws no tab of raw mapping rows.
 
 ### Multiple i18n Fields
 
