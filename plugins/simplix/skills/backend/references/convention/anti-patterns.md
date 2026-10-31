@@ -874,9 +874,20 @@ recreate** (no engine widens a check constraint in place), **do not fail where t
 is absent** (an installation created before the column carried one), and **skip the engines
 that write no check constraint at all** (SQLite under Hibernate).
 
-**Detection**: for each enum used as a persisted column, compare its constant set against the
-constraint the database holds. There is no source-only form of this check - the answer is in
-the database, which is exactly why it is missed.
+**Closed or open, decided per enum.** A closed enum (`@Enumerated(EnumType.STRING)`, the value set
+is the contract) carries a check constraint listing exactly its constants. An open enum, mapped
+through an `OpenEnumConverter` subclass so that an unknown stored value still reads, carries **no**
+value list: a list on it reintroduces exactly the migration this mapping exists to avoid. Either
+way the column is wide enough for the longest constant, and an Envers `_aud` table gets the same
+rule as its entity table.
+
+**Detection**: an integration test on the migrated database, never a source scan, since the answer
+is in the database. It walks the JPA metamodel (no hand-kept list), resolves each enum attribute's
+table and column through Hibernate's mapping model, reads the constraint literals from
+`pg_constraint`, and asserts per column: closed lists equal `values()` names, open columns hold no
+list, every constant fits the width. It reports every mismatch in one assertion, and reports a
+shape it cannot judge (ordinal storage, another converter, an embeddable, a collection) rather
+than skipping it. Prove it red by adding a constant to a closed enum and by removing one.
 
 ---
 
