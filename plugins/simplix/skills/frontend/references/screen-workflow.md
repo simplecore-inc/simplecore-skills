@@ -27,7 +27,10 @@ Read this before planning a screen or dispatching agents for screen work.
      The order and the fold belong to the page shell, which already has them: a screen passes
      its cards and notices as data and never composes the strip, the toggle or the order itself.
      Before building a fold, a toggle or a summary row, grep the kit for the one a page already
-     uses; a second mechanism beside it is a defect even when it works. A census
+     uses; a second mechanism beside it is a defect even when it works. Rebuilding a part that exists
+     needs a stated reason in its doc comment; when the existing one lacks a behaviour, the
+     behaviour is added to it. The screen that already uses the part well is the reference the
+     others are made identical to. A census
      table of every screen with these three columns, as built and as designed, shows the drift.
    - **Invent a part when the purpose calls for one.** A presentation made for the screen's purpose
      (a trend in the header, a gauge, a flow bar, a timeline, a matrix) is preferred over bending
