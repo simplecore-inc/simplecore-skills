@@ -18,6 +18,7 @@ them is fixed by repeating the rule; each is fixed by the mechanism named beside
 | A correction reaches a running agent only when its turn ends, after it has committed | a change of direction stops the agent first, then sends the new brief; nothing is relayed to an agent mid-commit |
 | Several agents change the same template or shell in parallel | one owner per template and per shell file for the duration of the change; others wait for its hash |
 | Every screen is regenerated at once, so a defect in the template lands on all of them before one is seen | the pilot sequence below |
+| A kit part takes a per-screen presentation flag (draw these row actions as labelled buttons), so one screen opts out of the look every other screen has, often with a borrowed action type for a verb no type names | a part presents one way; a verb no type names gets its own icon or a new type in the kit, and a boolean prop that changes look rather than content is removed or carries a written reason |
 | A rule lives in prose only | each rule gets a machine check with a hit and a miss case before the widening starts |
 
 Misreading: "the agent was told, so the next screens will follow". Telling is not a mechanism; the
