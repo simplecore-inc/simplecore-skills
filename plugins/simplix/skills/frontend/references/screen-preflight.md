@@ -103,3 +103,6 @@ and every landed change, and its table is what a report quotes. A class found la
 line before it is fixed. Prove each line on a known hit before trusting a 0: a command whose
 failure is swallowed reports 0 for the wrong reason (a grep exiting 1 and its output discarded).
 The work is finished when the script prints clean, never when a reading of the code finds nothing.
+When a line counts something that is not the defect (the code that refuses a retired marker,
+the sentence documenting the refusal), the line is corrected; the check it counted is never
+removed to bring the number down.
